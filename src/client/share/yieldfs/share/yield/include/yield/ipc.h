@@ -48,6 +48,8 @@ typedef struct yajl_gen_t* yajl_gen;
 
 
 #define YIELD_SOCKET_PROTOTYPES \
+virtual bool aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block ); \
+virtual ssize_t aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block ); \
 virtual bool bind( auto_Object<SocketAddress> to_sockaddr ); \
 virtual bool close(); \
 virtual bool connect( auto_Object<SocketAddress> to_sockaddr ); \
@@ -55,20 +57,22 @@ virtual bool get_blocking_mode() const; \
 virtual auto_Object<SocketAddress> getpeername(); \
 virtual auto_Object<SocketAddress> getsockname(); \
 virtual operator int() const; \
-virtual ssize_t recv( void* buffer, size_t buffer_len ); \
-virtual ssize_t send( const void* buffer, size_t buffer_len ); \
-virtual ssize_t sendmsg( const struct iovec* buffers, uint32_t buffers_count ); \
+virtual ssize_t read( void* buffer, size_t buffer_len ); \
 virtual bool set_blocking_mode( bool blocking ); \
 virtual bool shutdown(); \
 virtual bool want_read() const; \
-virtual bool want_write() const;
+virtual bool want_write() const; \
+virtual ssize_t write( const void* buffer, size_t buffer_len ); \
+virtual ssize_t writev( const struct iovec* buffers, uint32_t buffers_count );
 
 
 namespace YIELD
 {
+  class Connection;
   class FDEventQueue;
-  class FDAndInternalEventQueue;
-  class ONCRPCRecordInputStream;
+  class HTTPRequest;
+  class IOCompletionPort;
+  class ONCRPCRequest;
   class Socket;
   class SocketAddress;
   class SSLContext;
@@ -77,6 +81,169 @@ namespace YIELD
 #endif
   class TCPSocket;
   class URI;
+
+
+  template <class ReadProtocolMessageType, class WriteProtocolMessageType>
+  class Peer
+  {
+  public:
+    // EventTarget
+    virtual bool send( Event& ev ) { return my_stage->send( ev ); }
+
+  protected:
+    Peer( auto_Object<Log> log );
+
+    void attach( auto_Object<Connection> connection, auto_Object<> context, bool enable_read, bool enable_write );
+    virtual ssize_t deserialize( auto_Object<ReadProtocolMessageType> protocol_message, auto_Object<Buffer> buffer );    
+    void detach( auto_Object<Connection> connection );
+    auto_Object<Stage> get_helper_peer_stage() const { return helper_peer_stage != NULL ? helper_peer_stage : my_stage; }    
+    auto_Object<Log> get_log() const { return log; }
+    virtual void handleDeserializedProtocolMessage( auto_Object<ReadProtocolMessageType> protocol_message ) = 0;
+    virtual void handleEvent( Event& );
+    inline bool haveAIO() const { return io_completion_port != NULL; }
+    virtual bool read( auto_Object<ReadProtocolMessageType> protocol_message, size_t buffer_capacity = 1024 );
+    void set_helper_peer_stage( auto_Object<Stage> helper_peer_stage ) { this->helper_peer_stage = helper_peer_stage; }    
+    virtual auto_Object<Buffer> serialize( auto_Object<WriteProtocolMessageType> protocol_message );
+    virtual bool write( auto_Object<WriteProtocolMessageType> protocol_message, auto_Object<Buffer> buffer );
+
+  private:
+    auto_Object<Log> log;
+    auto_Object<FDEventQueue> fd_event_queue;
+    auto_Object<IOCompletionPort> io_completion_port;
+    auto_Object<Stage> my_stage;
+    auto_Object<Stage> helper_peer_stage;
+  };
+
+
+  template <class ProtocolRequestType, class ProtocolResponseType>
+  class Client : public Peer<ProtocolResponseType, ProtocolRequestType>
+  {
+  public:    
+    const static uint64_t OPERATION_TIMEOUT_DEFAULT = 30 * NS_IN_S;
+    const static uint8_t OPERATION_RETRIES_MAX_DEFAULT = UINT8_MAX;    
+
+  protected:
+    Client( const URI& absolute_uri, auto_Object<Log> log, uint8_t operation_retries_max, const Time& operation_timeout, auto_Object<SocketAddress> peername, auto_Object<SSLContext> ssl_context );
+    virtual ~Client();
+
+    auto_Object<Stage> get_protocol_request_writer_stage() const { return this->get_helper_peer_stage(); }
+    auto_Object<Stage> get_protocol_response_reader_stage() const { return this->get_helper_peer_stage(); }
+    void set_protocol_request_writer_stage( auto_Object<Stage> protocol_request_writer_stage ) { this->set_helper_peer_stage( protocol_request_writer_stage ); }
+    void set_protocol_response_reader_stage( auto_Object<Stage> protocol_response_reader_stage ) { this->set_helper_peer_stage( protocol_response_reader_stage ); }
+
+    // Peer
+    virtual ssize_t deserialize( auto_Object<ProtocolResponseType> protocol_response, auto_Object<Buffer> buffer );    
+    virtual void handleEvent( Event& );
+    virtual void handleDeserializedProtocolMessage( auto_Object<ProtocolResponseType> protocol_response );
+    virtual bool read( auto_Object<ProtocolResponseType> protocol_response, size_t buffer_capacity );
+    virtual bool write( auto_Object<ProtocolRequestType> protocol_request, auto_Object<Buffer> buffer );
+
+  private:
+    auto_Object<URI> absolute_uri;
+    uint8_t operation_retries_max;
+    Time operation_timeout;
+    auto_Object<SocketAddress> peername;
+    auto_Object<SSLContext> ssl_context;
+
+    std::vector<Connection*> idle_connections;
+  };
+
+
+  class Connection : public Event
+  {
+  public:
+    Connection( auto_Object<Socket> _socket )
+      : _socket( _socket )
+    { }
+
+    auto_Object<Socket> get_socket() const { return _socket; }
+
+    bool operator==( const Connection& other ) const { return _socket == other._socket; }
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( Connection, 201 );
+
+  private:
+    ~Connection() { }
+
+    auto_Object<Socket> _socket;
+  };
+
+
+  class ProtocolRequest : public Request
+  { 
+  public:
+    virtual ~ProtocolRequest() { }
+
+    auto_Object<Connection> get_connection() const { return connection; }
+    void set_connection( auto_Object<Connection> connection ) { this->connection = connection; }
+
+  protected:
+    ProtocolRequest() // Outgoing
+    { }
+    
+    ProtocolRequest( auto_Object<Connection> connection ) // Incoming
+      : connection( connection )
+    { }
+
+    ProtocolRequest( const ProtocolRequest& )
+    {
+      DebugBreak(); // Prevent copying
+    }
+
+  private:
+    auto_Object<Connection> connection;
+  };
+
+  
+  template <class ProtocolRequestType>
+  class ProtocolResponse : public Response
+  { 
+  public:
+    virtual ~ProtocolResponse() { }
+
+    auto_Object<Connection> get_connection() const { return protocol_request->get_connection(); }
+    auto_Object<ProtocolRequestType> get_protocol_request() const { return protocol_request; }
+
+  protected:
+    ProtocolResponse( auto_Object<ProtocolRequestType> protocol_request )
+      : protocol_request( protocol_request )
+    { }
+
+    ProtocolResponse( const ProtocolResponse<ProtocolRequestType>& )
+    { 
+      DebugBreak(); // Prevent copying
+    } 
+  
+  private:
+    auto_Object<ProtocolRequestType> protocol_request;
+  };
+
+
+  template <class ProtocolRequestType, class ProtocolResponseType>
+  class Server : public EventHandler, public Peer<ProtocolRequestType, ProtocolResponseType>
+  {
+  public:
+    // EventHandler
+    virtual void handleEvent( Event& );
+
+    // EventTarget
+    bool send( Event& ev ) { return Peer<ProtocolRequestType, ProtocolResponseType>::send( ev ); }
+
+  protected:
+    Server( auto_Object<Log> log ) 
+      : Peer<ProtocolRequestType, ProtocolResponseType>( log )
+    { }
+
+    virtual auto_Object<ProtocolRequestType> createProtocolRequest( auto_Object<Connection> connection ) = 0;
+    auto_Object<Stage> get_protocol_request_reader_stage() const { return this->get_helper_peer_stage(); }
+    auto_Object<Stage> get_protocol_response_writer_stage() const { return this->get_helper_peer_stage(); }
+    void set_protocol_request_reader_stage( auto_Object<Stage> protocol_request_reader_stage ) { this->set_helper_peer_stage( protocol_request_reader_stage ); }
+    void set_protocol_response_writer_stage( auto_Object<Stage> protocol_response_writer_stage ) { this->set_helper_peer_stage( protocol_response_writer_stage ); }
+
+    // Peer
+    virtual bool write( auto_Object<ProtocolResponseType> protocol_response, auto_Object<Buffer> buffer );
+  };
 
 
   class EventFDPipe : public Object
@@ -114,56 +281,60 @@ namespace YIELD
   };
 
 
-  class FDEventQueue : public EventQueue
+  class FDEventQueue : public TimerEventQueue
   {
   public:
-    class FDEvent : public Event
+    class POLLERREvent : public Event
     {
     public:
-      FDEvent( auto_Object<> context, uint32_t error_code, bool _want_read )
-        : context( context ), error_code( error_code ), _want_read( _want_read )
+      POLLERREvent( auto_Object<> context, int32_t errno_ )
+        : context( context ), errno_( errno_ )
       { }
 
       inline auto_Object<> get_context() const { return context; }
-      inline uint32_t get_error_code() const { return error_code; }
-      inline bool want_read() const { return _want_read; }
+      inline int32_t get_errno() const { return errno_; }
 
       // Object
-      YIELD_OBJECT_PROTOTYPES( FDEvent, 202 );
+      YIELD_OBJECT_PROTOTYPES( POLLERREvent, 224 );
 
     private:
-      ~FDEvent() { }
-
-      auto_Object<> context;
-      uint32_t error_code;
-      bool _want_read;
+      auto_Object<> context;        
+      int32_t errno_;
     };
 
 
-    class TimerEvent : public Event
+    class POLLINEvent : public Event
     {
     public:
-      TimerEvent( const Time& timeout, const Time& period, auto_Object<> context = NULL )
-        : context( context ), 
-          fire_time( Time() + timeout ), 
-          timeout( timeout ), period( period )
+      POLLINEvent( auto_Object<> context )
+        : context( context )
       { }
 
-      auto_Object<> get_context() const { return context; }
-      const Time& get_fire_time() const { return fire_time; }
-      const Time& get_period() const { return period; }
-      const Time& get_timeout() const { return timeout; }
+      inline auto_Object<> get_context() const { return context; }
 
       // Object
-      YIELD_OBJECT_PROTOTYPES( TimerEvent, 218 );    
+      YIELD_OBJECT_PROTOTYPES( POLLINEvent, 225 );
 
     private:
-      ~TimerEvent() { }
-
-      auto_Object<> context;
-      Time fire_time, timeout, period;
+      auto_Object<> context;        
     };
 
+
+    class POLLOUTEvent : public Event
+    {
+    public:
+      POLLOUTEvent( auto_Object<> context )
+        : context( context )
+      { }
+
+      inline auto_Object<> get_context() const { return context; }
+
+      // Object
+      YIELD_OBJECT_PROTOTYPES( POLLOUTEvent, 226 );
+
+    private:
+      auto_Object<> context;        
+    };
 
 
     FDEventQueue();
@@ -172,23 +343,21 @@ namespace YIELD
     void detach( int fd );
     bool toggle( int fd, bool enable_read, bool enable_write );
 
-    void signal() { eventfd_pipe->signal(); }
-    auto_Object<TimerEvent> timer_create( const Time& timeout, auto_Object<> context = NULL ) { return timer_create( timeout, Time( static_cast<uint64_t>( 0 ) ), context ); }
-    auto_Object<TimerEvent> timer_create( const Time& timeout, const Time& period, auto_Object<> context = NULL );
-
     // Object
     YIELD_OBJECT_PROTOTYPES( FDEventQueue, 203 );
 
     // EventQueue
-    virtual bool enqueue( Event& ); // Discards events
-    virtual Event* dequeue();
+    virtual bool enqueue( Event& );
     virtual Event* dequeue( uint64_t timeout_ns );
 
   protected:
     virtual ~FDEventQueue();
 
   private:
-#if defined(YIELD_HAVE_LINUX_EPOLL)
+#if defined(_WIN32)
+    fd_set *read_fds, *read_fds_copy, *write_fds, *write_fds_copy, *except_fds, *except_fds_copy;
+    STLHashMap<Object*>::iterator next_fd_to_check;
+#elif defined(YIELD_HAVE_LINUX_EPOLL)
     int poll_fd;
     struct epoll_event* returned_events;
 #elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
@@ -198,200 +367,36 @@ namespace YIELD
     int poll_fd;
     port_event_t* returned_events;
 #else
-#ifdef _WIN32
-    fd_set *read_fds, *read_fds_copy, *write_fds, *write_fds_copy, *except_fds, *except_fds_copy;
-    STLHashMap<Object*>::iterator next_fd_to_check;
-#else
     typedef std::vector<pollfd> pollfd_vector;
     pollfd_vector::size_type next_pollfd_to_check;
     pollfd_vector pollfds;
-#endif
 #endif
 
     int active_fds;
     auto_Object<EventFDPipe> eventfd_pipe;
     STLHashMap<Object*> fd_to_context_map;
-    std::vector<TimerEvent*> timers;
-
-
-    static bool compareTimerEvents( const TimerEvent*, const TimerEvent* );
-    FDEvent* dequeueFDEvent();
-    TimerEvent* dequeueTimerEvent();
-    int poll();
-    int poll( uint64_t timeout_ns );
   };
 
 
-  class FDAndInternalEventQueue : public FDEventQueue, private NonBlockingFiniteQueue<Event*, 2048>
+  class IOCompletionPort : public TimerEventQueue
   {
   public:
-    FDAndInternalEventQueue();
+    IOCompletionPort();
+    ~IOCompletionPort();
+
+    bool attach( int fd );
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( FDAndInternalEventQueue, 204 );
+    YIELD_OBJECT_PROTOTYPES( IOCompletionPort, 228 );
 
     // EventQueue
-    Event* dequeue();
-    Event* dequeue( uint64_t timeout_ns );
     bool enqueue( Event& );
-    Event* try_dequeue();    
-
+    virtual Event* dequeue( uint64_t timeout_ns );
+    
   private:
-    ~FDAndInternalEventQueue() { }
-
-    bool dequeue_blocked;
-  };
-
-
-  template <class ProtocolRequestType, class ProtocolResponseType>
-  class SocketClient
-  {
-  public:    
-    const static uint64_t OPERATION_TIMEOUT_DEFAULT = 30 * NS_IN_S;
-    const static uint8_t RECONNECT_TRIES_MAX_DEFAULT = UINT8_MAX;
-
-  protected:
-    SocketClient( const URI& absolute_uri, auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peername, uint8_t reconnect_tries_max, auto_Object<SSLContext> ssl_context );
-    virtual ~SocketClient();
-
-
-    virtual auto_Object<ProtocolRequestType> createProtocolRequest( auto_Object<Request> request ) = 0;
-    virtual auto_Object<ProtocolResponseType> createProtocolResponse( auto_Object<ProtocolRequestType> protocol_request ) = 0;
-
-    virtual void respond( auto_Object<ProtocolRequestType> protocol_request, auto_Object<ProtocolResponseType> protocol_response ) = 0;
-    virtual void respond( auto_Object<ProtocolRequestType> protocol_request, auto_Object<ExceptionResponse> exception_response ) = 0;
-
-    // EventHandler
-    void handleEvent( Event& );
-
-    // EventTarget
-    virtual bool send( Event& ev ) { return my_stage->send( ev ); }
-
-  private:
-    auto_Object<URI> absolute_uri;
-    auto_Object<FDAndInternalEventQueue> fd_event_queue;
-    auto_Object<Log> log;
-    Time operation_timeout;
-    auto_Object<SocketAddress> peername;
-    uint8_t reconnect_tries_max;
-    auto_Object<SSLContext> ssl_context;
-
-    auto_Object<Stage> my_stage;
-
-
-    class Connection : public Object
-    {
-    public:
-      enum State { IDLE = 0, CONNECTING = 1, WRITING = 2, READING = 3 };
-
-      Connection( auto_Object<Socket> _socket, uint8_t reconnect_tries_max );
-
-      const Time& get_last_activity_time() const { return last_activity_time; }
-      auto_Object<ProtocolRequestType> get_protocol_request() const { return protocol_request; }
-      inline State get_state() const { return state; }
-      void set_protocol_request( auto_Object<ProtocolRequestType> protocol_request ) { this->protocol_request = protocol_request; }
-      auto_Object<ProtocolResponseType> get_protocol_response() const { return protocol_response; }      
-      auto_Object<Socket> get_socket() const { return _socket; }
-      uint8_t get_reconnect_tries_left() const { return reconnect_tries_left; }
-      void set_protocol_response( auto_Object<ProtocolResponseType> protocol_response ) { this->protocol_response = protocol_response; }
-      void set_reconnect_tries_left( uint8_t reconnect_tries_left ) { this->reconnect_tries_left = reconnect_tries_left; }
-      inline void set_state( State state ) { this->state = state; }      
-      void touch() { this->last_activity_time = Time(); }       
-
-      bool operator==( const Connection& other ) const { return _socket == other._socket; }
-
-      // Object
-      YIELD_OBJECT_PROTOTYPES( Connection, 201 );
-
-    private:
-      ~Connection() { }
-
-      auto_Object<Socket> _socket;
-      uint8_t reconnect_tries_left;
-
-      State state;
-      Time last_activity_time;
-
-      auto_Object<ProtocolRequestType> protocol_request;
-      auto_Object<ProtocolResponseType> protocol_response;
-    };
-
-
-    auto_Object<Connection> createConnection();
-    void recreateConnection( auto_Object<Connection> );
-    std::vector<Connection*> connections;
-  };
-
-
-  class SocketServer : public EventHandler
-  {
-  public:
-    // EventHandler
-    void handleEvent( Event& );
-
-  protected:
-    SocketServer( auto_Object<Stage> protocol_request_reader_stage ) 
-      : protocol_request_reader_stage( protocol_request_reader_stage )
-    { }
-
-
-    template <class ProtocolRequestType>
-    class ProtocolRequestReader : public EventHandler
-    {
-    public:
-      // Object
-      YIELD_OBJECT_PROTOTYPES( ProtocolRequestReader<ProtocolRequestType>, 0 );    
-
-      // EventHandler
-      void handleEvent( Event& );
-
-    protected:      
-      ProtocolRequestReader( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log )
-        : log( log ), fd_event_queue( fd_event_queue )
-      { }
-
-      virtual ~ProtocolRequestReader() { }
-
-
-      auto_Object<Log> log;
-
-
-      virtual auto_Object<ProtocolRequestType> createProtocolRequest( auto_Object<Socket> _socket ) = 0;
-      virtual bool sendProtocolRequest( auto_Object<ProtocolRequestType> protocol_request ) = 0;
-
-    private:
-      auto_Object<FDAndInternalEventQueue> fd_event_queue;
-    };
-
-
-    template <class ProtocolResponseType>
-    class ProtocolResponseWriter : public EventHandler
-    {
-    public:
-      ProtocolResponseWriter( auto_Object<Log> log = NULL ) 
-        : log ( log )
-      { }
-
-      void set_protocol_request_reader_stage( auto_Object<Stage> protocol_request_reader_stage ) { this->protocol_request_reader_stage = protocol_request_reader_stage; }
-
-      // Object
-      YIELD_OBJECT_PROTOTYPES( ProtocolResponseWriter<ProtocolResponseType>, 0 );
-
-      // EventHandler
-      void handleEvent( Event& );
-
-    protected:
-      virtual ~ProtocolResponseWriter() { }
-
-      auto_Object<Log> log;
-
-    private:
-      auto_Object<Stage> protocol_request_reader_stage;
-    };
-
-
-  private:
-    auto_Object<Stage> protocol_request_reader_stage;
+#ifdef _WIN32
+    void* hIoCompletionPort;
+#endif
   };
 
 
@@ -476,10 +481,39 @@ namespace YIELD
   };
 
 
-  class HTTPRequest : public Request, public HTTPMessage
+  class HTTPResponse : public ProtocolResponse<HTTPRequest>, public HTTPMessage
   {
   public:
-    HTTPRequest(); // Incoming
+    HTTPResponse( auto_Object<HTTPRequest> http_request ); // Incoming
+    HTTPResponse( auto_Object<HTTPRequest> http_request, uint16_t status_code ); // Outgoing
+    HTTPResponse( auto_Object<HTTPRequest> http_request, uint16_t status_code, auto_Object<Buffer> body ); // Outgoing
+
+    ssize_t deserialize( auto_Object<Buffer> );
+    uint16_t get_status_code() const { return status_code; }
+    auto_Object<Buffer> serialize();
+    void set_body( auto_Object<Buffer> body ) { this->body = body; }
+    void set_status_code( uint16_t status_code ) { this->status_code = status_code; }
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( HTTPResponse, 206 );
+
+  protected:
+    virtual ~HTTPResponse() { }
+
+  private:
+    HTTPResponse( const HTTPResponse& http_response )
+      : ProtocolResponse<HTTPRequest>( http_response )
+    { }
+
+    uint8_t http_version;
+    union { char status_code_str[4]; uint16_t status_code; };
+  };
+
+
+  class HTTPRequest : public ProtocolRequest, public HTTPMessage
+  {
+  public:
+    HTTPRequest( auto_Object<Connection> connection ); // Incoming
     HTTPRequest( const char* method, const char* relative_uri, const char* host, auto_Object<Buffer> body = NULL ); // Outgoing
     HTTPRequest( const char* method, const URI& absolute_uri, auto_Object<Buffer> body = NULL ); // Outgoing
 
@@ -495,11 +529,16 @@ namespace YIELD
     // Object
     YIELD_OBJECT_PROTOTYPES( HTTPRequest, 205 );
 
+    // ProtocolRequest
+    auto_Object<HTTPResponse> createProtocolResponse() { return new HTTPResponse( incRef() ); }
+
   protected:
     virtual ~HTTPRequest();
 
   private:
-    HTTPRequest( const HTTPRequest& ) { DebugBreak(); } // Prevent copying
+    HTTPRequest( const HTTPRequest& http_request )
+      : ProtocolRequest( http_request )
+    { }
 
     void init( const char* method, const char* relative_uri, const char* host, auto_Object<Buffer> body );
 
@@ -508,41 +547,14 @@ namespace YIELD
   };
 
 
-  class HTTPResponse : public Response, public HTTPMessage
-  {
-  public:
-    HTTPResponse(); // Incoming
-    HTTPResponse( uint16_t status_code ); // Outgoing
-    HTTPResponse( uint16_t status_code, auto_Object<Buffer> body ); // Outgoing
-
-    ssize_t deserialize( auto_Object<Buffer> );
-    uint16_t get_status_code() const { return status_code; }
-    auto_Object<Buffer> serialize();
-    void set_body( auto_Object<Buffer> body ) { this->body = body; }
-    void set_status_code( uint16_t status_code ) { this->status_code = status_code; }
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( HTTPResponse, 206 );
-
-  protected:
-    virtual ~HTTPResponse() { }
-
-  private:
-    HTTPResponse( const HTTPResponse& ) { DebugBreak(); } // Prevent copying
-
-    uint8_t http_version;
-    union { char status_code_str[4]; uint16_t status_code; };
-  };
-
-
-  class HTTPClient : public EventHandler, public SocketClient<HTTPRequest, HTTPResponse>
+  class HTTPClient : public EventHandler, public Client<HTTPRequest, HTTPResponse>
   {
   public:
     static auto_Object<HTTPClient> create( const URI& absolute_uri, 
                                            auto_Object<StageGroup> stage_group, 
                                            auto_Object<Log> log = NULL, 
+                                           uint8_t operation_retries_max = OPERATION_RETRIES_MAX_DEFAULT,
                                            const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
-                                           uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
                                            auto_Object<SSLContext> ssl_context = NULL );
 
     static auto_Object<HTTPResponse> GET( const URI& absolute_uri, auto_Object<Log> log = NULL );
@@ -553,26 +565,26 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( HTTPClient, 207 );
 
     // EventHandler
-    virtual void handleEvent( Event& ev ) { SocketClient<HTTPRequest, HTTPResponse>::handleEvent( ev ); }
+    virtual void handleEvent( Event& ev ) { Client<HTTPRequest, HTTPResponse>::handleEvent( ev ); }
 
     // EventTarget
-    virtual bool send( Event& ev ) { return SocketClient<HTTPRequest, HTTPResponse>::send( ev ); }
+    virtual bool send( Event& ev ) { return Client<HTTPRequest, HTTPResponse>::send( ev ); }
 
   private:
-    HTTPClient( const URI& absolute_uri, auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peername, uint8_t reconnect_tries_max, auto_Object<SSLContext> ssl_context );
+    HTTPClient( const URI& absolute_uri, auto_Object<Log> log, uint8_t operation_retries_max, const Time& operation_timeout, auto_Object<SocketAddress> peername, auto_Object<SSLContext> ssl_context )
+      : Client<HTTPRequest, HTTPResponse>( absolute_uri, log, operation_retries_max, operation_timeout, peername, ssl_context )
+    { }
+
     virtual ~HTTPClient() { }
 
     static auto_Object<HTTPResponse> sendHTTPRequest( const char* method, const YIELD::URI& uri, auto_Object<Buffer> body, auto_Object<Log> log );
 
-    // Client
-    virtual auto_Object<HTTPRequest> createProtocolRequest( auto_Object<Request> request );
-    virtual auto_Object<HTTPResponse> createProtocolResponse( auto_Object<HTTPRequest> http_request );
-    virtual void respond( auto_Object<HTTPRequest> http_request, auto_Object<HTTPResponse> http_response );
-    virtual void respond( auto_Object<HTTPRequest> http_request, auto_Object<ExceptionResponse> exception_response );
+    void set_http_request_writer_stage( auto_Object<Stage> http_request_writer_stage ) { set_protocol_request_writer_stage( http_request_writer_stage ); }
+    void set_http_response_reader_stage( auto_Object<Stage> http_response_reader_stage ) { set_protocol_response_reader_stage( http_response_reader_stage ); }
   };
     
 
-  class HTTPServer : public SocketServer
+  class HTTPServer : public Server<HTTPRequest, HTTPResponse>
   {
   public:
     template <class StageGroupType> 
@@ -586,89 +598,27 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( HTTPServer, 0 );
 
   protected:
-    HTTPServer( auto_Object<Stage> http_request_reader_stage ) 
-      : SocketServer( http_request_reader_stage )
+    HTTPServer( auto_Object<EventTarget> http_request_target, auto_Object<Log> log ) 
+      : Server<HTTPRequest, HTTPResponse>( log ), http_request_target( http_request_target )
     { }
 
+    auto_Object<Stage> get_http_request_reader_stage() const { return get_protocol_request_reader_stage(); }
+    auto_Object<Stage> get_http_response_writer_stage() const { return get_protocol_response_writer_stage(); }
 
-    class HTTPRequest : public YIELD::HTTPRequest
+    // Peer
+    void handleDeserializedProtocolMessage( auto_Object<HTTPRequest> http_request );
+
+    // Server
+    virtual auto_Object<HTTPRequest> createProtocolRequest( auto_Object<Connection> connection )
     {
-    public:
-      HTTPRequest( auto_Object<Stage> http_response_writer_stage, auto_Object<Socket> tcp_socket )
-        : http_response_writer_stage( http_response_writer_stage ), tcp_socket( tcp_socket )
-      { }
+      return new HTTPRequest( connection );
+    }
 
-      auto_Object<Socket> get_socket() const { return tcp_socket; }
+  private:
+    auto_Object<EventTarget> http_request_target;
 
-      // HTTPRequest
-      bool respond( uint16_t status_code )
-      {
-        return http_response_writer_stage->send( *( new HTTPServer::HTTPResponse( status_code, tcp_socket ) ) );
-      }
-
-      bool respond( uint16_t status_code, auto_Object<Buffer> body )
-      {
-        return http_response_writer_stage->send( *( new HTTPServer::HTTPResponse( status_code, body, tcp_socket ) ) );
-      }
-
-      bool respond( Response& ) { DebugBreak(); return false; }
-
-    private:
-      auto_Object<Stage> http_response_writer_stage;
-      auto_Object<Socket> tcp_socket;
-    };
-
-
-    class HTTPRequestReader : public ProtocolRequestReader<HTTPRequest>
-    {
-    public:
-      HTTPRequestReader( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<EventTarget> http_request_target, auto_Object<Stage> http_response_writer_stage, auto_Object<Log> log )
-        : ProtocolRequestReader<HTTPRequest>( fd_event_queue, log ), http_request_target( http_request_target ), http_response_writer_stage( http_response_writer_stage )
-      { }
-
-      // Object
-      YIELD_OBJECT_PROTOTYPES( HTTPRequestReader, 0 );    
-
-    private:
-      ~HTTPRequestReader() { }
-
-      auto_Object<EventTarget> http_request_target;
-      auto_Object<Stage> http_response_writer_stage;
-
-      // ProtocolRequestReader
-      auto_Object<HTTPRequest> createProtocolRequest( auto_Object<Socket> _socket )
-      {
-        return new HTTPRequest( http_response_writer_stage, _socket );
-      }
-
-      bool sendProtocolRequest( auto_Object<HTTPRequest> http_request )
-      {
-        return http_request_target->send( *http_request.release() );
-      }
-    };
-
-
-    class HTTPResponse : public YIELD::HTTPResponse
-    {
-    public:
-      HTTPResponse( uint16_t status_code, auto_Object<Socket> _socket )
-        : YIELD::HTTPResponse( status_code ), tcp_socket( tcp_socket )
-      { }
-
-      HTTPResponse( uint16_t status_code, auto_Object<Buffer> body, auto_Object<Socket> tcp_socket )
-        : YIELD::HTTPResponse( status_code, body ), tcp_socket( tcp_socket )
-      { }
-
-      auto_Object<Socket> get_socket() const { return tcp_socket; }
-
-    private:
-      ~HTTPResponse() { }
-
-      auto_Object<Socket> tcp_socket;
-    };
-
-
-    typedef ProtocolResponseWriter<HTTPResponse> HTTPResponseWriter;
+    void set_http_request_reader_stage( auto_Object<Stage> http_request_reader_stage ) { set_protocol_request_reader_stage( http_request_reader_stage ); }
+    void set_http_response_writer_stage( auto_Object<Stage> http_response_writer_stage ) { set_protocol_response_writer_stage( http_response_writer_stage ); }
   };
 
 
@@ -689,16 +639,15 @@ namespace YIELD
   protected:
     JSONMarshaller( JSONMarshaller& parent_json_marshaller, const Declaration& root_decl );
 
-    virtual void write( const Declaration& );
-    virtual void write( const Map* ); // Can be NULL for empty maps
-    virtual void write( const Object* ); // Can be NULL for empty maps
-    virtual void write( const Sequence* ); // Can be NULL for empty sequences
+    virtual void writeDeclaration( const Declaration& );
+    virtual void writeMap( const Map* ); // Can be NULL for empty maps
+    virtual void writeSequence( const Sequence* ); // Can be NULL for empty sequences
+    virtual void writeStruct( const Object* ); // Can be NULL for empty maps
 
   private:
-    bool write_empty_strings;
-
     bool in_map;
     const Declaration* root_decl; // Mostly for debugging, also used to indicate if this is the root JSONMarshaller
+    bool write_empty_strings;
     yajl_gen writer;
 
     void flushYAJLBuffer();
@@ -731,6 +680,35 @@ namespace YIELD
   };
 
 
+  class NamedPipe : public Object
+  {
+  public:
+    static auto_Object<NamedPipe> open( const Path& path, uint32_t flags = O_RDWR, mode_t mode = File::DEFAULT_MODE );            
+
+    virtual ssize_t read( void* buffer, size_t buffer_len );
+    virtual ssize_t write( const void* buffer, size_t buffer_len );
+    virtual ssize_t writev( const iovec* buffers, uint32_t buffers_count );
+    
+    // Object
+    YIELD_OBJECT_PROTOTYPES( NamedPipe, 4 );  
+
+  private:
+#ifdef WIN32
+    NamedPipe( auto_Object<File> underlying_file, bool connected );
+#else
+    NamedPipe( auto_Object<File> underlying_file );
+#endif
+    ~NamedPipe() { }
+
+    auto_Object<File> underlying_file;
+
+#ifdef _WIN32
+    bool connected;
+    bool connect();
+#endif
+  };
+
+
   template <class ONCRPCMessageType> // CRTP
   class ONCRPCMessage
   {
@@ -742,11 +720,12 @@ namespace YIELD
     auto_Object<Buffer> serialize();
 
   protected:
-    ONCRPCMessage( uint32_t xid, auto_Object<Interface> _interface, auto_Object<> body );
+    ONCRPCMessage();
+    ONCRPCMessage( uint32_t xid, auto_Object<> body );
     virtual ~ONCRPCMessage();
 
+    uint32_t xid;
     auto_Object<> body;
-    auto_Object<Interface> _interface;
 
   private:
     enum 
@@ -757,71 +736,68 @@ namespace YIELD
       DESERIALIZE_DONE 
     } deserialize_state;
 
-    uint32_t record_fragment_length;
-    std::string record_fragment_string;
-    uint32_t xid;
+    auto_Object<Buffer> first_record_fragment_buffer, current_record_fragment_buffer;
+    size_t expected_record_fragment_length, received_record_fragment_length;
   };
 
 
-  class ONCRPCRequest : public Request, public ONCRPCMessage<ONCRPCRequest>
+  class ONCRPCResponse : public ProtocolResponse<ONCRPCRequest>, public ONCRPCMessage<ONCRPCResponse>
   {
   public:
-    const static uint32_t AUTH_NONE = 0;
-
-    ONCRPCRequest( auto_Object<Interface> _interface ); // Incoming
-    ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, auto_Object<> body ); // Outgoing
-    ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, auto_Object<> credential, auto_Object<> body ); // Outgoing
-
-    uint32_t get_credential_auth_flavor() const { return credential_auth_flavor; }
-    auto_Object<> get_credential() const { return credential; }
-    uint32_t get_prog() const { return prog; }
-    uint32_t get_proc() const { return proc; }
-    uint32_t get_vers() const { return vers; }
-    void set_credential_auth_flavor( uint32_t credential_auth_flavor ) { this->credential_auth_flavor = credential_auth_flavor; }
-    void set_credential( auto_Object<> credential ) { this->credential = credential; }
+    ONCRPCResponse( auto_Object<ONCRPCRequest> oncrpc_request, auto_Object<> body );
+    ONCRPCResponse( uint32_t xid, auto_Object<> body ); // For testing
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( ONCRPCRequest, 213 );    
-
-  protected:
-    virtual ~ONCRPCRequest() { }
+    YIELD_OBJECT_PROTOTYPES( ONCRPCResponse, 208 );
+    void marshal( Marshaller& );
+    void unmarshal( Unmarshaller& );
 
   private:
     template <class> friend class ONCRPCMessage;
 
-    // ONCRPCMessage
-    void deserializeONCRPCRequestResponseHeader( XDRUnmarshaller& );
-    void serializeONCRPCRequestResponseHeader( XDRMarshaller& );
+    ~ONCRPCResponse() { }
+  };
 
 
+  class ONCRPCRequest : public ProtocolRequest, public ONCRPCMessage<ONCRPCRequest>
+  {
+  public:
+    const static uint32_t AUTH_NONE = 0;
+
+
+    ONCRPCRequest( auto_Object<Connection> connection, auto_Object<Interface> _interface ); // Incoming
+    ONCRPCRequest( auto_Object<Interface> _interface, uint32_t prog, uint32_t proc, uint32_t vers, auto_Object<> body ); // Outgoing
+    ONCRPCRequest( auto_Object<Interface> _interface, uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, auto_Object<> credential, auto_Object<> body ); // Outgoing
+
+    uint32_t get_credential_auth_flavor() const { return credential_auth_flavor; }
+    auto_Object<> get_credential() const { return credential; }
+    auto_Object<Interface> get_interface() const { return _interface; }
+    uint32_t get_prog() const { return prog; }
+    uint32_t get_proc() const { return proc; }
+    uint32_t get_vers() const { return vers; }
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( ONCRPCRequest, 213 );    
+    void marshal( Marshaller& );
+    void unmarshal( Unmarshaller& );
+
+    // Request
+    virtual bool respond( Response& response );
+
+    // ProtocolRequest
+    auto_Object<ONCRPCResponse> createProtocolResponse() { return new ONCRPCResponse( incRef(), _interface->createResponse( get_body()->get_tag() ).release() ); }
+
+  private:
+    ~ONCRPCRequest() { }
+
+    auto_Object<Interface> _interface;
     uint32_t prog, proc, vers, credential_auth_flavor;
     auto_Object<> credential;
   };
 
 
-  class ONCRPCResponse : public Response, public ONCRPCMessage<ONCRPCResponse>
-  {
-  public:
-    ONCRPCResponse( auto_Object<Interface> _interface, auto_Object<> body ); // Incoming
-    ONCRPCResponse( uint32_t xid, auto_Object<> body ); // Outgoing
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( ONCRPCResponse, 208 );
-
-  protected:
-    virtual ~ONCRPCResponse() { }
-
-  private:
-    template <class> friend class ONCRPCMessage;
-
-    // ONCRPCMessage
-    void deserializeONCRPCRequestResponseHeader( XDRUnmarshaller& );
-    void serializeONCRPCRequestResponseHeader( XDRMarshaller& );
-  };
-
-
   template <class InterfaceType>
-  class ONCRPCClient : public InterfaceType, public SocketClient<ONCRPCRequest, ONCRPCResponse>
+  class ONCRPCClient : public InterfaceType, public Client<ONCRPCRequest, ONCRPCResponse>
   {
   public:
     template <class ONCRPCClientType>
@@ -829,52 +805,33 @@ namespace YIELD
                                                  auto_Object<StageGroup> stage_group, 
                                                  auto_Object<Log> log = NULL, 
                                                  const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
-                                                 uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
+                                                 uint8_t operation_retries_max = OPERATION_RETRIES_MAX_DEFAULT,
                                                  auto_Object<SSLContext> ssl_context = NULL );
-    // EventHandler
-    virtual void handleEvent( Event& ev ) { SocketClient<ONCRPCRequest, ONCRPCResponse>::handleEvent( ev ); }
-
     // EventTarget
-    virtual bool send( Event& ev ) { return SocketClient<ONCRPCRequest, ONCRPCResponse>::send( ev ); }
+    virtual bool send( Event& ev ) 
+    { 
+      return Client<ONCRPCRequest, ONCRPCResponse>::send( ev ); 
+    }
+
+    // EventHandler
+    virtual void handleEvent( Event& ev ) 
+    { 
+      if ( InterfaceType::checkRequest( ev ) != NULL )
+        Client<ONCRPCRequest, ONCRPCResponse>::handleEvent( *( new ONCRPCRequest( this->incRef(), 0x20000000 + InterfaceType::get_tag(), ev.get_tag(), InterfaceType::get_tag(), ev ) ) );
+      else
+        Client<ONCRPCRequest, ONCRPCResponse>::handleEvent( ev );
+    }
 
   protected:
-    ONCRPCClient( const URI& absolute_uri, auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peername, uint8_t reconnect_tries_max, auto_Object<SSLContext> ssl_context )
-      : SocketClient<ONCRPCRequest, ONCRPCResponse>( absolute_uri, fd_event_queue, log, operation_timeout, peername, reconnect_tries_max, ssl_context )
+    ONCRPCClient( const URI& absolute_uri, auto_Object<Log> log, uint8_t operation_retries_max, const Time& operation_timeout, auto_Object<SocketAddress> peername, auto_Object<SSLContext> ssl_context )
+      : Client<ONCRPCRequest, ONCRPCResponse>( absolute_uri, log, operation_retries_max, operation_timeout, peername, ssl_context )
     { }
 
     virtual ~ONCRPCClient() { }
-
-    // Client
-    virtual auto_Object<ONCRPCRequest> createProtocolRequest( auto_Object<Request> request )
-    {
-      if ( request->get_tag() == YIELD_OBJECT_TAG( ONCRPCRequest ) )
-        return static_cast<ONCRPCRequest*>( request.release() );
-      else
-        return new ONCRPCRequest( 0x20000000 + InterfaceType::get_tag(), request->get_tag(), InterfaceType::get_tag(), request.release() );
-    }
-
-    virtual auto_Object<ONCRPCResponse> createProtocolResponse( auto_Object<ONCRPCRequest> oncrpc_request )
-    {
-      auto_Object<Response> response = InterfaceType::createResponse( static_cast<Request*>( oncrpc_request->get_body().get() )->get_tag() );
-      if ( response != NULL )
-        return new ONCRPCResponse( this->incRef(), response.release() );
-      else
-        return NULL;
-    }
-
-    virtual void respond( auto_Object<ONCRPCRequest> oncrpc_request, auto_Object<ONCRPCResponse> oncrpc_response )
-    {
-      static_cast<Request*>( oncrpc_request->get_body().get() )->respond( static_cast<Response*>( oncrpc_response->get_body().get() )->incRef() );
-    }
-
-    virtual void respond( auto_Object<ONCRPCRequest> oncrpc_request, auto_Object<ExceptionResponse> exception_response )
-    {
-      static_cast<Request*>( oncrpc_request->get_body().get() )->respond( *exception_response.release() );
-    }
   };
 
   
-  class ONCRPCServer : public SocketServer
+  class ONCRPCServer : public Server<ONCRPCRequest, ONCRPCResponse>
   {
   public:
     static auto_Object<ONCRPCServer> create( const URI& absolute_uri,
@@ -887,93 +844,92 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( ONCRPCServer, 0 );
    
   protected:
-    ONCRPCServer( auto_Object<Stage> oncrpc_request_reader_stage ) 
-      : SocketServer( oncrpc_request_reader_stage )
+    ONCRPCServer( auto_Object<Interface> _interface, auto_Object<Log> log ) 
+      : Server<ONCRPCRequest, ONCRPCResponse>( log ), _interface( _interface )
     { }
 
+    auto_Object<Stage> get_oncrpc_request_reader_stage() const { return get_protocol_request_reader_stage(); }
+    auto_Object<Stage> get_oncrpc_response_writer_stage() const { return get_protocol_response_writer_stage(); }
 
-    class ONCRPCRequest : public YIELD::ONCRPCRequest
+    // Peer
+    void handleDeserializedProtocolMessage( auto_Object<ONCRPCRequest> oncrpc_request );
+
+    // Server
+    auto_Object<ONCRPCRequest> createProtocolRequest( auto_Object<Connection> connection )
     {
-    public:
-      ONCRPCRequest( auto_Object<Interface> _interface, auto_Object<Socket> _socket )
-        : YIELD::ONCRPCRequest( _interface ), _socket( _socket )
-      { }
+      return new ONCRPCRequest( connection, _interface );
+    }
 
-      auto_Object<Socket> get_socket() const { return _socket; }
+  private:
+    auto_Object<Interface> _interface;
 
-    private:
-      auto_Object<Socket> _socket;
-    };
-
-
-    class ONCRPCResponse : public YIELD::ONCRPCResponse
-    {
-    public:
-      ONCRPCResponse( uint32_t xid, auto_Object<> body, auto_Object<Socket> _socket )
-        : YIELD::ONCRPCResponse( xid, body ), _socket( _socket )
-      { }
-
-      auto_Object<Socket> get_socket() const { return _socket; }
-
-    private:
-      ~ONCRPCResponse() { }
-
-      auto_Object<Socket> _socket;
-    };
+    void set_oncrpc_request_reader_stage( auto_Object<Stage> oncrpc_request_reader_stage ) { set_protocol_request_reader_stage( oncrpc_request_reader_stage ); }
+    void set_oncrpc_response_writer_stage( auto_Object<Stage> oncrpc_response_writer_stage ) { set_protocol_response_writer_stage( oncrpc_response_writer_stage ); }
+  };
 
 
-    class ONCRPCResponder : public EventTarget
-    {
-    public:
-      ONCRPCResponder( auto_Object<ONCRPCRequest> oncrpc_request, auto_Object<Stage> oncrpc_response_writer_stage )
-        : oncrpc_request( oncrpc_request ), oncrpc_response_writer_stage( oncrpc_response_writer_stage )
-      { }
+  class Pipe : public Object
+  {
+  public:
+    static auto_Object<Pipe> create();
 
-      // Object    
-      YIELD_OBJECT_PROTOTYPES( ONCRPCResponder, 0 );
+    ssize_t read( void* buffer, size_t buffer_len );
+    ssize_t write( const void* buffer, size_t buffer_len );
 
-      // EventTarget
-      bool send( Event& ev )
-      {
-        ONCRPCResponse* oncrpc_response = new ONCRPCResponse( oncrpc_request->get_xid(), ev, oncrpc_request->get_socket() );
-        return oncrpc_response_writer_stage->send( *oncrpc_response );
-      }
+    // Object
+    YIELD_OBJECT_PROTOTYPES( Pipe, 6 );
 
-    private:
-      auto_Object<ONCRPCRequest> oncrpc_request;
-      auto_Object<Stage> oncrpc_response_writer_stage;
-    };
+  private:
+#ifdef _WIN32
+    Pipe( void* ends[2] );
+#else
+    Pipe( int ends[2] );
+#endif
+    ~Pipe() { }
 
-
-    class ONCRPCRequestReader : public ProtocolRequestReader<ONCRPCRequest>
-    {
-    public:
-      ONCRPCRequestReader( auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Interface> _interface, auto_Object<Log> log, auto_Object<Stage> oncrpc_response_writer_stage )
-        : ProtocolRequestReader<ONCRPCRequest>( fd_event_queue, log ), _interface( _interface ), oncrpc_response_writer_stage( oncrpc_response_writer_stage )
-      { }
-
-    private:
-      ~ONCRPCRequestReader() { }
-
-      auto_Object<Interface> _interface;
-      auto_Object<Stage> oncrpc_response_writer_stage;
-
-      // ProtocolRequestReader
-      auto_Object<ONCRPCRequest> createProtocolRequest( auto_Object<Socket> _socket )
-      {
-        return new ONCRPCRequest( _interface, _socket );
-      }
-
-      bool sendProtocolRequest( auto_Object<ONCRPCRequest> oncrpc_request )
-      {
-        Request* body = static_cast<Request*>( oncrpc_request->get_body().release() ); // Dangerous
-        body->set_response_target( new ONCRPCResponder( oncrpc_request, oncrpc_response_writer_stage ) );
-        return _interface->send( *body );
-      }
-    };
+#ifdef _WIN32
+    void* ends[2];
+#else
+    int ends[2];
+#endif
+  };
 
 
-    typedef ProtocolResponseWriter<ONCRPCResponse> ONCRPCResponseWriter;
+  class Process : public Object
+  {
+  public:
+    static auto_Object<Process> create( const Path& executable_file_path ); // No arguments
+    static auto_Object<Process> create( int argc, char** argv );    
+    static auto_Object<Process> create( const Path& executable_file_path, const char** null_terminated_argv ); // execv style
+
+    auto_Object<Pipe> get_stdin() const { return child_stdin; }
+    auto_Object<Pipe> get_stdout() const { return child_stdout; }
+    auto_Object<Pipe> get_stderr() const { return child_stderr; }
+
+    bool kill(); // SIGKILL
+    bool poll( int* out_return_code = 0 ); // Calls waitpid() but WNOHANG, out_return_code can be NULL    
+    bool terminate(); // SIGTERM
+    int wait(); // Calls waitpid() and suspends the calling process until the child exits, use carefully
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( Process, 7 );
+
+  private:
+#ifdef _WIN32
+    Process( void* hChildProcess, void* hChildThread,       
+#else
+    Process( int child_pid, 
+#endif
+      auto_Object<Pipe> child_stdin, auto_Object<Pipe> child_stdout, auto_Object<Pipe> child_stderr );
+
+    ~Process();
+
+#ifdef _WIN32
+    void *hChildProcess, *hChildThread;
+#else
+    int child_pid;
+#endif
+    auto_Object<Pipe> child_stdin, child_stdout, child_stderr;  
   };
 
 
@@ -1015,10 +971,60 @@ namespace YIELD
   class Socket : public Event
   {
   public:
+    class AIOConnectControlBlock : public AIOControlBlock<Event>
+    {
+    public:
+      AIOConnectControlBlock( auto_Object<> context, auto_Object<SocketAddress> peername, auto_Object<Buffer> write_buffer )
+        : context( context ), peername( peername ), write_buffer( write_buffer )
+      { }
+
+      auto_Object<> get_context() const { return context; }
+      auto_Object<SocketAddress> get_peername() const { return peername; }
+      auto_Object<Buffer> get_write_buffer() const { return write_buffer; }
+
+      // Object
+      YIELD_OBJECT_PROTOTYPES( AIOConnectControlBlock, 223 );
+
+    private:
+      auto_Object<> context;
+      auto_Object<SocketAddress> peername;
+      auto_Object<Buffer> write_buffer;
+    };
+
+
+    class AIOReadControlBlock : public AIOControlBlock<Event>
+    {
+    public:
+      AIOReadControlBlock( auto_Object<Buffer> buffer, auto_Object<> context )
+        : buffer( buffer ), context( context )
+      { }
+
+      auto_Object<Buffer> get_buffer() const { return buffer; }
+      auto_Object<> get_context() const { return context; }
+
+      // Object
+      YIELD_OBJECT_PROTOTYPES( AIOReadControlBlock, 227 );
+
+      // AIOControlBlock
+      virtual void onCompletion( size_t bytes_transferred )
+      { 
+        AIOControlBlock<Event>::onCompletion( bytes_transferred );
+        buffer->put( NULL, bytes_transferred ); 
+      }
+
+    private:
+      auto_Object<Buffer> buffer;
+      auto_Object<> context;
+    };
+
+
     int get_domain() const { return domain; }
     int get_protocol() const { return protocol; }
     int get_type() const { return type; }
     bool operator==( const Socket& other ) const { return static_cast<int>( *this ) == static_cast<int>( other ); } \
+    virtual ssize_t read( auto_Object<Buffer> buffer );
+    void set_read_buffer( auto_Object<Buffer> buffer ) { this->read_buffer = read_buffer; }
+    virtual ssize_t write( auto_Object<Buffer> buffer );
     YIELD_SOCKET_PROTOTYPES;
 
     // Object
@@ -1034,6 +1040,7 @@ namespace YIELD
     Socket( const Socket& ) { DebugBreak(); } // Prevent copying
 
     int domain, type, protocol;
+    auto_Object<Buffer> read_buffer;
     int _socket;
 
     bool blocking_mode;
@@ -1043,9 +1050,34 @@ namespace YIELD
   class TCPSocket : public Socket
   {
   public:
-    static auto_Object<TCPSocket> create(); // Defaults to domain = AF_INET6
+    class AIOAcceptControlBlock : public AIOControlBlock<Event>
+    {
+    public:
+      AIOAcceptControlBlock( auto_Object<TCPSocket> accepted_tcp_socket, auto_Object<Buffer> read_buffer );
 
+      auto_Object<TCPSocket> get_accepted_tcp_socket() const { return accepted_tcp_socket; }
+      auto_Object<Buffer> get_read_buffer() const { return read_buffer; }
+
+      // Object
+      YIELD_OBJECT_PROTOTYPES( AIOAcceptControlBlock, 222 );
+
+      // AIOControlBlock
+      virtual void onCompletion( size_t bytes_transferred );
+
+    private:
+      ~AIOAcceptControlBlock() { }
+
+      auto_Object<TCPSocket> accepted_tcp_socket;
+      auto_Object<Buffer> read_buffer;
+    };
+
+
+    static auto_Object<TCPSocket> create(); // Defaults to domain = AF_INET6
     virtual auto_Object<TCPSocket> accept();
+#ifdef _WIN32
+    virtual bool aio_accept( auto_Object<AIOAcceptControlBlock> aio_accept_control_block );
+    virtual bool aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block );
+#endif
     virtual bool listen();
     virtual bool shutdown();
 
@@ -1053,13 +1085,18 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( TCPSocket, 212 );
 
   protected:
-    TCPSocket( int domain, int _socket ); // Accepted socket
+    TCPSocket( int domain, int _socket );
     virtual ~TCPSocket() { }
 
     int _accept();
 
   private:
+#ifdef _WIN32
+    static void *lpfnAcceptEx, *lpfnConnectEx;
+#endif
+
     size_t partial_write_len;
+
   };
 
 
@@ -1068,14 +1105,9 @@ namespace YIELD
   public:
     static auto_Object<TCPListenQueue> create( auto_Object<SocketAddress> sockname );
  
-    // Object
-    YIELD_OBJECT_PROTOTYPES( TCPListenQueue, 0 );
-
     // EventQueue
-    bool enqueue( Event& );
-    Event* dequeue();
-    Event* dequeue( uint64_t );
-    Event* try_dequeue() { return dequeue( 0 ); }
+    Event* dequeue() { return dequeue( static_cast<uint64_t>( -1 ) ); }
+    Event* dequeue( uint64_t timeout_ns );
 
   protected:
     TCPListenQueue( auto_Object<TCPSocket> listen_tcp_socket );
@@ -1130,9 +1162,9 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( SSLSocket, 216 );
 
     // Socket
-    virtual ssize_t recv( void* buffer, size_t buffer_len );
-    virtual ssize_t send( const void* buffer, size_t buffer_len );
-    virtual ssize_t sendmsg( const struct iovec* buffers, uint32_t buffers_count );
+    virtual ssize_t read( void* buffer, size_t buffer_len );
+    virtual ssize_t write( const void* buffer, size_t buffer_len );
+    virtual ssize_t writev( const struct iovec* buffers, uint32_t buffers_count );
     virtual bool want_read() const;
     virtual bool want_write() const;
 
@@ -1145,9 +1177,6 @@ namespace YIELD
     SSLSocket( int domain, int _socket, auto_Object<SSLContext> ctx, SSL& ssl );
     ~SSLSocket();
 
-//    static void info_callback( const SSL* ssl, int where, int ret );
-
-
     auto_Object<SSLContext> ctx;
     SSL* ssl;
   };
@@ -1158,9 +1187,6 @@ namespace YIELD
   public:
     static auto_Object<SSLListenQueue> create( auto_Object<SocketAddress> sockname, auto_Object<SSLContext> ssl_context );
  
-    // Object
-    YIELD_OBJECT_PROTOTYPES( SSLListenQueue, 0 );
-
   private:
     SSLListenQueue( auto_Object<SSLSocket> listen_ssl_socket );
     ~SSLListenQueue() { }
@@ -1192,21 +1218,13 @@ namespace YIELD
   {
   public:
     static auto_Object<UDPSocket> create();
-    static auto_Object<UDPSocket> create( char* recvfrom_buffer, size_t recvfrom_buffer_len );
 
     // Object
     YIELD_OBJECT_PROTOTYPES( UDPSocket, 219 );
 
-    // Socket
-    virtual ssize_t recv( void* buffer, size_t buffer_len );
-
   private:
-    UDPSocket( int domain, int _socket );
-    UDPSocket( int domain, char* recvfrom_buffer, size_t recvfrom_buffer_len, int _socket );    
-    ~UDPSocket();
-
-    char* recvfrom_buffer;
-    size_t recvfrom_buffer_len, recvfrom_buffer_remaining;
+    UDPSocket( int domain, int _socket );    
+    ~UDPSocket() { }
   };
 
 
@@ -1219,19 +1237,14 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( UDPRecvFromQueue, 0 );
 
     // EventQueue
-    bool enqueue( Event& );
-    Event* dequeue();
-    Event* dequeue( uint64_t );
-    Event* try_dequeue() { return dequeue( 0 ); }
+    Event* dequeue( uint64_t timeout_ns );
 
   private:
-    UDPRecvFromQueue( auto_Object<SocketAddress> recvfrom_sockname, auto_Object<UDPSocket> recvfrom_socket );
+    UDPRecvFromQueue( auto_Object<SocketAddress> recvfrom_sockname, auto_Object<UDPSocket> recvfrom_udp_socket );
     ~UDPRecvFromQueue() { }
 
     auto_Object<SocketAddress> recvfrom_sockname;
-    auto_Object<UDPSocket> recvfrom_socket;
-
-    UDPSocket* recvfrom();
+    auto_Object<UDPSocket> recvfrom_udp_socket;
   };
 
 
@@ -1309,23 +1322,18 @@ namespace YIELD
                                                                       auto_Object<StageGroup> stage_group, 
                                                                       auto_Object<Log> log, 
                                                                       const Time& operation_timeout, 
-                                                                      uint8_t reconnect_tries_max,
+                                                                      uint8_t operation_retries_max,
                                                                       auto_Object<SSLContext> ssl_context )
    {
      auto_Object<SocketAddress> peername = SocketAddress::create( absolute_uri );
      if ( peername != NULL && peername->get_port() != 0 )
      {
-#ifdef YIELD_HAVE_OPENSSL
-       if ( absolute_uri.get_scheme() == "oncrpcs" && ssl_context == NULL )
-         ssl_context = new SSLContext( SSLv23_client_method() );
-#endif
-       auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
-       auto_Object<ONCRPCClientType> oncrpc_client = new ONCRPCClientType( absolute_uri, fd_event_queue, log, operation_timeout, peername, reconnect_tries_max, ssl_context );
-       stage_group->createStage( oncrpc_client->incRef(), 1, fd_event_queue->incRef(), NULL, log );
+       auto_Object<ONCRPCClientType> oncrpc_client = new ONCRPCClientType( absolute_uri, log, operation_retries_max, operation_timeout, peername, ssl_context );
+       auto_Object<Stage> oncrpc_client_stage = stage_group->createStage( oncrpc_client->incRef(), 1, new FDEventQueue, NULL, log );
        return oncrpc_client;
      }
-
-     return NULL;
+     else
+       return NULL;
    }
 };
 

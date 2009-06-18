@@ -202,6 +202,8 @@ namespace YIELD
   class Interface : public EventHandler
   {
   public:
+    virtual Request* checkRequest( Object& request ) = 0; // Casts an Object to a Request if the request belongs to the interface
+    virtual Response* checkResponse( Object& response ) = 0; // Casts an Object to a Response if the request belongs to the interface
     virtual auto_Object<Request> createRequest( uint32_t tag ) = 0;
     virtual auto_Object<Response> createResponse( uint32_t tag ) = 0;    
     virtual auto_Object<ExceptionResponse> createExceptionResponse( uint32_t tag ) = 0;
@@ -474,7 +476,7 @@ namespace YIELD
       if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
       {
         std::ostringstream log_str;
-        log_str << "StageImpl: thread #" << Thread::getCurrentThreadId() << " processing " << ev.get_type_name() << " at the " << get_stage_name() << " stage.";
+        log_str << "yield::StageImpl: thread #" << Thread::getCurrentThreadId() << " processing " << ev.get_type_name() << " at the " << get_stage_name() << " stage.";
         log->getStream( Log::LOG_DEBUG ) << log_str.str();
       }
 
@@ -792,6 +794,56 @@ namespace YIELD
   private:
     std::vector<SEDAStageGroupThread*> threads;
     void startThreads( auto_Object<Stage> stage, int16_t thread_count );
+  };
+
+
+  class TimerEventQueue : public EventQueue, private NonBlockingFiniteQueue<Event*, 2048>
+  {
+  public:
+    class TimerEvent : public Event
+    {
+    public:
+      TimerEvent( const Time& timeout, const Time& period, auto_Object<> context = NULL )
+        : context( context ), 
+          fire_time( Time() + timeout ), 
+          timeout( timeout ), period( period )
+      { }
+
+      auto_Object<> get_context() const { return context; }
+      const Time& get_fire_time() const { return fire_time; }
+      const Time& get_period() const { return period; }
+      const Time& get_timeout() const { return timeout; }
+
+      // Object
+      YIELD_OBJECT_PROTOTYPES( TimerEvent, 218 );    
+
+    private:
+      ~TimerEvent() { }
+
+      auto_Object<> context;
+      Time fire_time, timeout, period;
+    };
+
+    
+    TimerEventQueue();
+    virtual ~TimerEventQueue();
+
+    uint64_t getNSUntilNextTimer();
+
+    auto_Object<TimerEvent> timer_create( const Time& timeout, auto_Object<> context = NULL ) { return timer_create( timeout, Time( static_cast<uint64_t>( 0 ) ), context ); }
+    auto_Object<TimerEvent> timer_create( const Time& timeout, const Time& period, auto_Object<> context = NULL );
+
+    // EventQueue
+    virtual bool enqueue( Event& );
+    virtual Event* dequeue() { return dequeue( static_cast<uint64_t>( -1 ) ); }
+    virtual Event* dequeue( uint64_t timeout_ns );
+    virtual Event* try_dequeue();
+
+  private:
+    std::vector<TimerEvent*> timers;
+
+
+    static bool compareTimerEvents( const TimerEvent*, const TimerEvent* );
   };
 };
 

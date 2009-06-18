@@ -20,16 +20,17 @@ namespace org
       template <class ProxyType, class InterfaceType>
       class Proxy : public YIELD::ONCRPCClient<InterfaceType>
       {
+      public:
+        // YIELD::EventHandler
+        void handleEvent( YIELD::Event& );
+          
       protected:
-        Proxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context );
+        Proxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::Log> log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context );
         virtual ~Proxy();
 
         void getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials );
         void getpasswdFromUserCredentials( const std::string& user_id, const std::string& group_id, int& out_uid, int& out_gid );
         void getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials );        
-
-        // YIELD::ONCRPCClient
-        virtual YIELD::auto_Object<YIELD::ONCRPCRequest> createProtocolRequest( YIELD::auto_Object<YIELD::Request> body );
 
       private:
         get_passwd_from_user_credentials_t get_passwd_from_user_credentials;

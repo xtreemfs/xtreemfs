@@ -21,13 +21,12 @@ namespace org
         static YIELD::auto_Object<OSDProxyMux> create( YIELD::auto_Object<DIRProxy> dir_proxy,
                                                        YIELD::auto_Object<StageGroupType> stage_group,
                                                        YIELD::auto_Object<YIELD::Log> log = NULL,
+                                                       uint8_t operation_retries_max = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_RETRIES_MAX_DEFAULT,
                                                        const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
-                                                       uint8_t reconnect_tries_max = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::RECONNECT_TRIES_MAX_DEFAULT,
                                                        YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL )
         {
-          YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue = new YIELD::FDAndInternalEventQueue;
-          YIELD::auto_Object<OSDProxyMux> osd_proxy_mux = new OSDProxyMux( dir_proxy, fd_event_queue, log, operation_timeout, reconnect_tries_max, ssl_context, stage_group );                                                                            
-          stage_group->createStage( osd_proxy_mux->incRef(), 1, fd_event_queue->incRef() );
+          YIELD::auto_Object<OSDProxyMux> osd_proxy_mux = new OSDProxyMux( dir_proxy, log, operation_timeout, operation_retries_max, ssl_context, stage_group );                                                                            
+          stage_group->createStage( osd_proxy_mux->incRef() );
           return osd_proxy_mux;
         }
 
@@ -37,18 +36,14 @@ namespace org
         // YIELD::EventHandler
         void handleEvent( YIELD::Event& );
 
-        // YIELD::EventTarget
-        virtual bool send( YIELD::Event& ev ) { return fd_event_queue->enqueue( ev ); }
-
       private:
-        OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::StageGroup> stage_group );
+        OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, uint8_t operation_retries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::StageGroup> stage_group );
         ~OSDProxyMux();
 
-        YIELD::auto_Object<DIRProxy> dir_proxy;
-        YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue;
+        YIELD::auto_Object<DIRProxy> dir_proxy;        
         YIELD::auto_Object<YIELD::Log> log;
         YIELD::Time operation_timeout;
-        uint8_t reconnect_tries_max;
+        uint8_t operation_retries_max;
         YIELD::auto_Object<YIELD::SSLContext> ssl_context;
         YIELD::auto_Object<YIELD::StageGroup> stage_group;
 

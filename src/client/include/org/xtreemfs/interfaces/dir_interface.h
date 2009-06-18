@@ -18,7 +18,7 @@ namespace org
   {
     namespace interfaces
     {
-      enum ServiceType { SERVICE_TYPE_MRC = 1, SERVICE_TYPE_OSD = 2, SERVICE_TYPE_VOLUME = 3 };
+      enum ServiceType { SERVICE_TYPE_MIXED = 0, SERVICE_TYPE_MRC = 1, SERVICE_TYPE_OSD = 2, SERVICE_TYPE_VOLUME = 3 };
 
 
       class AddressMapping : public YIELD::Object
@@ -57,7 +57,7 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( AddressMapping, 1030 );
 
         // YIELD::Object
-        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "uuid" ), uuid ); marshaller.write( YIELD::Marshaller::Declaration( "version" ), version ); marshaller.write( YIELD::Marshaller::Declaration( "protocol" ), protocol ); marshaller.write( YIELD::Marshaller::Declaration( "address" ), address ); marshaller.write( YIELD::Marshaller::Declaration( "port" ), port ); marshaller.write( YIELD::Marshaller::Declaration( "match_network" ), match_network ); marshaller.write( YIELD::Marshaller::Declaration( "ttl_s" ), ttl_s ); marshaller.write( YIELD::Marshaller::Declaration( "uri" ), uri ); }
+        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "uuid" ), uuid ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "version" ), version ); marshaller.writeString( YIELD::Marshaller::Declaration( "protocol" ), protocol ); marshaller.writeString( YIELD::Marshaller::Declaration( "address" ), address ); marshaller.writeUint16( YIELD::Marshaller::Declaration( "port" ), port ); marshaller.writeString( YIELD::Marshaller::Declaration( "match_network" ), match_network ); marshaller.writeUint32( YIELD::Marshaller::Declaration( "ttl_s" ), ttl_s ); marshaller.writeString( YIELD::Marshaller::Declaration( "uri" ), uri ); }
         void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "uuid" ), uuid ); version = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "version" ) ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "protocol" ), protocol ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "address" ), address ); port = unmarshaller.readUint16( YIELD::Unmarshaller::Declaration( "port" ) ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "match_network" ), match_network ); ttl_s = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "ttl_s" ) ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "uri" ), uri ); }
 
       protected:
@@ -81,7 +81,7 @@ namespace org
 
         // YIELD::Object
         YIELD_OBJECT_PROTOTYPES( AddressMappingSet, 1031 );
-        void marshal( YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.write( YIELD::Marshaller::Declaration( "value" ), ( *this )[value_i] ); } }
+        void marshal( YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "value" ), ( *this )[value_i] ); } }
         void unmarshal( YIELD::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::AddressMapping value; unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "value" ), &value ); push_back( value ); }
 
         // YIELD::Sequence
@@ -95,7 +95,7 @@ namespace org
 
         // YIELD::Object
         YIELD_OBJECT_PROTOTYPES( ServiceDataMap, 1032 );
-        void marshal( YIELD::Marshaller& marshaller ) const { for ( const_iterator i = begin(); i != end(); i++ ) { marshaller.write( YIELD::Marshaller::Declaration( i->first.c_str(), static_cast<uint32_t>( 0 ) ), i->second ); } }
+        void marshal( YIELD::Marshaller& marshaller ) const { for ( const_iterator i = begin(); i != end(); i++ ) { marshaller.writeString( YIELD::Marshaller::Declaration( i->first.c_str(), static_cast<uint32_t>( 0 ) ), i->second ); } }
         void unmarshal( YIELD::Unmarshaller& unmarshaller ) { std::string key; unmarshaller.readString( YIELD::Unmarshaller::Declaration( 0, static_cast<uint32_t>( 0 ) ), key ); if ( !key.empty() ) { std::string value; unmarshaller.readString( YIELD::Unmarshaller::Declaration( key.c_str(), static_cast<uint32_t>( 0 ) ), value ); ( *this )[key] = value; } }
 
         // YIELD::Map
@@ -105,7 +105,7 @@ namespace org
       class Service : public YIELD::Object
       {
       public:
-        Service() : type( SERVICE_TYPE_MRC ), version( 0 ), last_updated_s( 0 ) { }
+        Service() : type( SERVICE_TYPE_MIXED ), version( 0 ), last_updated_s( 0 ) { }
         Service( org::xtreemfs::interfaces::ServiceType type, const std::string& uuid, uint64_t version, const std::string& name, uint64_t last_updated_s, const org::xtreemfs::interfaces::ServiceDataMap& data ) : type( type ), uuid( uuid ), version( version ), name( name ), last_updated_s( last_updated_s ), data( data ) { }
         Service( org::xtreemfs::interfaces::ServiceType type, const char* uuid, size_t uuid_len, uint64_t version, const char* name, size_t name_len, uint64_t last_updated_s, const org::xtreemfs::interfaces::ServiceDataMap& data ) : type( type ), uuid( uuid, uuid_len ), version( version ), name( name, name_len ), last_updated_s( last_updated_s ), data( data ) { }
         virtual ~Service() { }
@@ -131,7 +131,7 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( Service, 1034 );
 
         // YIELD::Object
-        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "type" ), static_cast<int32_t>( type ) ); marshaller.write( YIELD::Marshaller::Declaration( "uuid" ), uuid ); marshaller.write( YIELD::Marshaller::Declaration( "version" ), version ); marshaller.write( YIELD::Marshaller::Declaration( "name" ), name ); marshaller.write( YIELD::Marshaller::Declaration( "last_updated_s" ), last_updated_s ); marshaller.write( YIELD::Marshaller::Declaration( "data" ), data ); }
+        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeInt32( YIELD::Marshaller::Declaration( "type" ), static_cast<int32_t>( type ) ); marshaller.writeString( YIELD::Marshaller::Declaration( "uuid" ), uuid ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "version" ), version ); marshaller.writeString( YIELD::Marshaller::Declaration( "name" ), name ); marshaller.writeUint64( YIELD::Marshaller::Declaration( "last_updated_s" ), last_updated_s ); marshaller.writeMap( YIELD::Marshaller::Declaration( "data" ), data ); }
         void unmarshal( YIELD::Unmarshaller& unmarshaller ) { type = ( org::xtreemfs::interfaces::ServiceType )unmarshaller.readInt32( YIELD::Unmarshaller::Declaration( "type" ) ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "uuid" ), uuid ); version = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "version" ) ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "name" ), name ); last_updated_s = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "last_updated_s" ) ); unmarshaller.readMap( YIELD::Unmarshaller::Declaration( "data" ), &data ); }
 
       protected:
@@ -153,7 +153,7 @@ namespace org
 
         // YIELD::Object
         YIELD_OBJECT_PROTOTYPES( ServiceSet, 1035 );
-        void marshal( YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.write( YIELD::Marshaller::Declaration( "value" ), ( *this )[value_i] ); } }
+        void marshal( YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( YIELD::Marshaller::Declaration( "value" ), ( *this )[value_i] ); } }
         void unmarshal( YIELD::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::Service value; unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "value" ), &value ); push_back( value ); }
 
         // YIELD::Sequence
@@ -185,7 +185,7 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( DirService, 1035 );
 
         // YIELD::Object
-        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "address" ), address ); marshaller.write( YIELD::Marshaller::Declaration( "port" ), port ); marshaller.write( YIELD::Marshaller::Declaration( "protocol" ), protocol ); marshaller.write( YIELD::Marshaller::Declaration( "interface_version" ), interface_version ); }
+        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "address" ), address ); marshaller.writeUint16( YIELD::Marshaller::Declaration( "port" ), port ); marshaller.writeString( YIELD::Marshaller::Declaration( "protocol" ), protocol ); marshaller.writeUint32( YIELD::Marshaller::Declaration( "interface_version" ), interface_version ); }
         void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "address" ), address ); port = unmarshaller.readUint16( YIELD::Unmarshaller::Declaration( "port" ) ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "protocol" ), protocol ); interface_version = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "interface_version" ) ); }
 
       protected:
@@ -317,7 +317,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_address_mappings_getResponse, 1101 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "address_mappings" ), address_mappings ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( YIELD::Marshaller::Declaration( "address_mappings" ), address_mappings ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( YIELD::Unmarshaller::Declaration( "address_mappings" ), &address_mappings ); }
 
         protected:
@@ -342,7 +342,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_address_mappings_getRequest, 1101 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "uuid" ), uuid ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "uuid" ), uuid ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "uuid" ), uuid ); }
 
         protected:
@@ -380,7 +380,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_address_mappings_removeRequest, 1103 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "uuid" ), uuid ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "uuid" ), uuid ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "uuid" ), uuid ); }
 
         protected:
@@ -403,7 +403,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_address_mappings_setResponse, 1102 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "_return_value" ), _return_value ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeUint64( YIELD::Marshaller::Declaration( "_return_value" ), _return_value ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { _return_value = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "_return_value" ) ); }
 
         protected:
@@ -426,7 +426,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_address_mappings_setRequest, 1102 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "address_mappings" ), address_mappings ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( YIELD::Marshaller::Declaration( "address_mappings" ), address_mappings ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( YIELD::Unmarshaller::Declaration( "address_mappings" ), &address_mappings ); }
 
         protected:
@@ -475,7 +475,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_discover_dirResponse, 1152 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "dir_service" ), dir_service ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( YIELD::Marshaller::Declaration( "dir_service" ), dir_service ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "dir_service" ), &dir_service ); }
 
         protected:
@@ -511,7 +511,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_global_time_s_getResponse, 1108 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "_return_value" ), _return_value ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeUint64( YIELD::Marshaller::Declaration( "_return_value" ), _return_value ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { _return_value = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "_return_value" ) ); }
 
         protected:
@@ -547,7 +547,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_service_get_by_typeResponse, 1106 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "services" ), services ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( YIELD::Marshaller::Declaration( "services" ), services ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( YIELD::Unmarshaller::Declaration( "services" ), &services ); }
 
         protected:
@@ -557,7 +557,7 @@ namespace org
         class xtreemfs_service_get_by_typeRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
-          xtreemfs_service_get_by_typeRequest() : type( SERVICE_TYPE_MRC ) { }
+          xtreemfs_service_get_by_typeRequest() : type( SERVICE_TYPE_MIXED ) { }
           xtreemfs_service_get_by_typeRequest( org::xtreemfs::interfaces::ServiceType type ) : type( type ) { }
           virtual ~xtreemfs_service_get_by_typeRequest() { }
 
@@ -570,7 +570,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_service_get_by_typeRequest, 1106 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "type" ), static_cast<int32_t>( type ) ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeInt32( YIELD::Marshaller::Declaration( "type" ), static_cast<int32_t>( type ) ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { type = ( org::xtreemfs::interfaces::ServiceType )unmarshaller.readInt32( YIELD::Unmarshaller::Declaration( "type" ) ); }
 
         protected:
@@ -593,7 +593,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_service_get_by_uuidResponse, 1107 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "services" ), services ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( YIELD::Marshaller::Declaration( "services" ), services ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( YIELD::Unmarshaller::Declaration( "services" ), &services ); }
 
         protected:
@@ -618,7 +618,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_service_get_by_uuidRequest, 1107 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "uuid" ), uuid ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "uuid" ), uuid ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "uuid" ), uuid ); }
 
         protected:
@@ -641,7 +641,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_service_get_by_nameResponse, 1109 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "services" ), services ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( YIELD::Marshaller::Declaration( "services" ), services ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( YIELD::Unmarshaller::Declaration( "services" ), &services ); }
 
         protected:
@@ -666,7 +666,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_service_get_by_nameRequest, 1109 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "name" ), name ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "name" ), name ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "name" ), name ); }
 
         protected:
@@ -689,7 +689,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_service_registerResponse, 1104 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "_return_value" ), _return_value ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeUint64( YIELD::Marshaller::Declaration( "_return_value" ), _return_value ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { _return_value = unmarshaller.readUint64( YIELD::Unmarshaller::Declaration( "_return_value" ) ); }
 
         protected:
@@ -712,7 +712,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_service_registerRequest, 1104 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "service" ), service ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( YIELD::Marshaller::Declaration( "service" ), service ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Unmarshaller::Declaration( "service" ), &service ); }
 
         protected:
@@ -750,7 +750,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_service_deregisterRequest, 1105 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "uuid" ), uuid ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "uuid" ), uuid ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "uuid" ), uuid ); }
 
         protected:
@@ -788,7 +788,7 @@ namespace org
           YIELD_OBJECT_PROTOTYPES( xtreemfs_service_offlineRequest, 1110 );
 
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "uuid" ), uuid ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "uuid" ), uuid ); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "uuid" ), uuid ); }
 
         protected:
@@ -839,7 +839,7 @@ namespace org
             virtual void throwStackClone() const { throw ConcurrentModificationException( stack_trace); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "stack_trace" ), stack_trace ); }
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "stack_trace" ), stack_trace ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "stack_trace" ), stack_trace ); }
 
         protected:
           std::string stack_trace;
@@ -863,7 +863,7 @@ namespace org
             virtual void throwStackClone() const { throw InvalidArgumentException( error_message); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "error_message" ), error_message ); }
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "error_message" ), error_message ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "error_message" ), error_message ); }
 
         protected:
           std::string error_message;
@@ -891,7 +891,7 @@ namespace org
             virtual void throwStackClone() const { throw ProtocolException( accept_stat, error_code, stack_trace); }
           void unmarshal( YIELD::Unmarshaller& unmarshaller ) { accept_stat = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "accept_stat" ) ); error_code = unmarshaller.readUint32( YIELD::Unmarshaller::Declaration( "error_code" ) ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "stack_trace" ), stack_trace ); }
           // YIELD::Object
-          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.write( YIELD::Marshaller::Declaration( "accept_stat" ), accept_stat ); marshaller.write( YIELD::Marshaller::Declaration( "error_code" ), error_code ); marshaller.write( YIELD::Marshaller::Declaration( "stack_trace" ), stack_trace ); }
+          void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeUint32( YIELD::Marshaller::Declaration( "accept_stat" ), accept_stat ); marshaller.writeUint32( YIELD::Marshaller::Declaration( "error_code" ), error_code ); marshaller.writeString( YIELD::Marshaller::Declaration( "stack_trace" ), stack_trace ); }
 
         protected:
           uint32_t accept_stat;
@@ -946,6 +946,48 @@ namespace org
 
 
         // YIELD::Interface
+          virtual YIELD::Request* checkRequest( Object& request )
+          {
+            switch ( request.get_tag() )
+            {
+              case 1101: return static_cast<xtreemfs_address_mappings_getRequest*>( &request );
+              case 1103: return static_cast<xtreemfs_address_mappings_removeRequest*>( &request );
+              case 1102: return static_cast<xtreemfs_address_mappings_setRequest*>( &request );
+              case 1150: return static_cast<xtreemfs_checkpointRequest*>( &request );
+              case 1152: return static_cast<xtreemfs_discover_dirRequest*>( &request );
+              case 1108: return static_cast<xtreemfs_global_time_s_getRequest*>( &request );
+              case 1106: return static_cast<xtreemfs_service_get_by_typeRequest*>( &request );
+              case 1107: return static_cast<xtreemfs_service_get_by_uuidRequest*>( &request );
+              case 1109: return static_cast<xtreemfs_service_get_by_nameRequest*>( &request );
+              case 1104: return static_cast<xtreemfs_service_registerRequest*>( &request );
+              case 1105: return static_cast<xtreemfs_service_deregisterRequest*>( &request );
+              case 1110: return static_cast<xtreemfs_service_offlineRequest*>( &request );
+              case 1151: return static_cast<xtreemfs_shutdownRequest*>( &request );
+              default: return NULL;
+            }
+          }
+
+          virtual YIELD::Response* checkResponse( Object& response )
+          {
+            switch ( response.get_tag() )
+            {
+              case 1101: return static_cast<xtreemfs_address_mappings_getResponse*>( &response );
+              case 1103: return static_cast<xtreemfs_address_mappings_removeResponse*>( &response );
+              case 1102: return static_cast<xtreemfs_address_mappings_setResponse*>( &response );
+              case 1150: return static_cast<xtreemfs_checkpointResponse*>( &response );
+              case 1152: return static_cast<xtreemfs_discover_dirResponse*>( &response );
+              case 1108: return static_cast<xtreemfs_global_time_s_getResponse*>( &response );
+              case 1106: return static_cast<xtreemfs_service_get_by_typeResponse*>( &response );
+              case 1107: return static_cast<xtreemfs_service_get_by_uuidResponse*>( &response );
+              case 1109: return static_cast<xtreemfs_service_get_by_nameResponse*>( &response );
+              case 1104: return static_cast<xtreemfs_service_registerResponse*>( &response );
+              case 1105: return static_cast<xtreemfs_service_deregisterResponse*>( &response );
+              case 1110: return static_cast<xtreemfs_service_offlineResponse*>( &response );
+              case 1151: return static_cast<xtreemfs_shutdownResponse*>( &response );
+              default: return NULL;
+            }
+          }
+
           virtual YIELD::auto_Object<YIELD::Request> createRequest( uint32_t tag )
           {
             switch ( tag )

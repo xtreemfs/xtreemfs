@@ -1,4 +1,4 @@
-// Revision: 1531
+// Revision: 1549
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -611,18 +611,27 @@ void FixedBuffer::as_iovecs( std::vector<struct iovec>& out_iovecs ) const
   out_iovecs.push_back( iov );
   Buffer::as_iovecs( out_iovecs );
 }
+size_t FixedBuffer::capacity() const
+{
+  return _capacity;
+}
+FixedBuffer::operator void*()
+{
+  return static_cast<uint8_t*>( iov.iov_base ) + _consumed;
+}
 size_t FixedBuffer::get( void* into_buffer, size_t into_buffer_len )
 {
-  if ( size() - _consumed < into_buffer_len )
-    into_buffer_len = size() - _consumed;
-  memcpy_s( into_buffer, into_buffer_len, static_cast<uint8_t*>( iov.iov_base ) + _consumed, into_buffer_len );
+  if ( iov.iov_len - _consumed < into_buffer_len )
+    into_buffer_len = iov.iov_len - _consumed;
+  if ( into_buffer != NULL )
+    memcpy_s( into_buffer, into_buffer_len, static_cast<uint8_t*>( iov.iov_base ) + _consumed, into_buffer_len );
   _consumed += into_buffer_len;
   return into_buffer_len;
 }
 size_t FixedBuffer::get( std::string& into_string, size_t into_string_len )
 {
-  if ( size() - _consumed < into_string_len )
-    into_string_len = size() - _consumed;
+  if ( iov.iov_len - _consumed < into_string_len )
+    into_string_len = iov.iov_len - _consumed;
   into_string.append( reinterpret_cast<char*>( static_cast<uint8_t*>( iov.iov_base ) + _consumed ), into_string_len );
   _consumed += into_string_len;
   return into_string_len;
@@ -634,12 +643,16 @@ bool FixedBuffer::operator==( const FixedBuffer& other ) const
 }
 size_t FixedBuffer::put( const void* from_buffer, size_t from_buffer_len )
 {
-  if ( capacity() - size() < from_buffer_len )
-    from_buffer_len = capacity() - size();
-  if ( from_buffer != iov.iov_base )
-    memcpy_s( static_cast<uint8_t*>( iov.iov_base ) + size(), capacity() - size(), from_buffer, from_buffer_len );
+  if ( capacity() - iov.iov_len < from_buffer_len )
+    from_buffer_len = capacity() - iov.iov_len;
+  if ( from_buffer != NULL && from_buffer != iov.iov_base )
+    memcpy_s( static_cast<uint8_t*>( iov.iov_base ) + iov.iov_len, capacity() - iov.iov_len, from_buffer, from_buffer_len );
   iov.iov_len += from_buffer_len;
   return from_buffer_len;
+}
+size_t FixedBuffer::size() const
+{
+  return iov.iov_len - _consumed;
 }
 
 
@@ -1114,110 +1127,6 @@ void Mutex::release()
 }
 
 
-// named_pipe.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-#ifdef _WIN32
-#include <windows.h>
-#pragma warning( push )
-#pragma warning( disable: 4100 )
-#endif
-auto_Object<NamedPipe> NamedPipe::open( const Path& path, uint32_t flags, mode_t mode )
-{
-#ifdef _WIN32
-  Path named_pipe_base_dir_path( TEXT( "\\\\.\\pipe" ) );
-  Path named_pipe_path( named_pipe_base_dir_path + path );
-  if ( ( flags & O_CREAT ) == O_CREAT ) // Server
-  {
-    HANDLE hPipe = CreateNamedPipe( named_pipe_path, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_WAIT, PIPE_UNLIMITED_INSTANCES, 4096, 4096, 0, NULL );
-    if ( hPipe != INVALID_HANDLE_VALUE )
-      return new NamedPipe( new File( hPipe ), false );
-  }
-  else // Client
-  {
-    auto_Object<File> underlying_file = File::open( named_pipe_path, flags );
-    if ( underlying_file != NULL )
-      return new NamedPipe( underlying_file, true );
-  }
-#else
-  if ( ( flags & O_CREAT ) == O_CREAT )
-  {
-    if ( ::mkfifo( path, mode ) != -1 )
-      flags ^= O_CREAT;
-    else
-      return NULL;
-  }
-  auto_Object<File> underlying_file = File::open( path, flags );
-  if ( underlying_file != NULL )
-    return new NamedPipe( underlying_file );
-#endif
-  return NULL;
-}
-#ifdef _WIN32
-NamedPipe::NamedPipe( auto_Object<File> underlying_file, bool connected )
-  : underlying_file( underlying_file ), connected( connected )
-{ }
-#else
-NamedPipe::NamedPipe( auto_Object<File> underlying_file )
-  : underlying_file( underlying_file )
-{ }
-#endif
-#ifdef _WIN32
-bool NamedPipe::connect()
-{
-  if ( connected )
-    return true;
-  else
-  {
-    if ( ConnectNamedPipe( *underlying_file, NULL ) != 0 ||
-         GetLastError() == ERROR_PIPE_CONNECTED )
-    {
-      connected = true;
-      return true;
-    }
-    else
-      return false;
-  }
-}
-#endif
-ssize_t NamedPipe::read( void* buffer, size_t buffer_len )
-{
-#ifdef _WIN32
-  if ( connect() )
-    return underlying_file->read( buffer, buffer_len );
-  else
-    return -1;
-#else
-  return underlying_file->read( buffer, buffer_len );
-#endif
-}
-ssize_t NamedPipe::write( const void* buffer, size_t buffer_len )
-{
-#ifdef _WIN32
-  if ( connect() )
-    return underlying_file->write( buffer, buffer_len );
-  else
-    return -1;
-#else
-  return underlying_file->write( buffer, buffer_len );
-#endif
-}
-ssize_t NamedPipe::writev( const iovec* buffers, uint32_t buffers_count )
-{
-#ifdef _WIN32
-  if ( connect() )
-    return underlying_file->writev( buffers, buffers_count );
-  else
-    return -1;
-#else
-  return underlying_file->writev( buffers, buffers_count );
-#endif
-}
-#ifdef _WIN32
-#pragma warning( pop )
-#endif
-
-
 // page_aligned_buffer.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -1481,293 +1390,51 @@ Path Path::abspath() const
 }
 
 
-// pipe.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-#ifdef _WIN32
-#include <windows.h>
-#endif
-auto_Object<Pipe> Pipe::create()
-{
-#ifdef _WIN32
-  SECURITY_ATTRIBUTES pipe_security_attributes;
-  pipe_security_attributes.nLength = sizeof( SECURITY_ATTRIBUTES );
-  pipe_security_attributes.bInheritHandle = TRUE;
-  pipe_security_attributes.lpSecurityDescriptor = NULL;
-  void* ends[2];
-  if ( CreatePipe( &ends[0], &ends[1], &pipe_security_attributes, 0 ) )
-  {
-    if ( SetHandleInformation( ends[0], HANDLE_FLAG_INHERIT, 0 ) &&
-         SetHandleInformation( ends[1], HANDLE_FLAG_INHERIT, 0 ) )
-      return new Pipe( ends );
-    else
-    {
-      CloseHandle( ends[0] );
-      CloseHandle( ends[1] );
-    }
-  }
-#else
-  int ends[2];
-  if ( ::pipe( ends ) != -1 )
-    return new Pipe( ends );
-#endif
-  return NULL;
-}
-#ifdef _WIN32
-Pipe::Pipe( void* ends[2] )
-#else
-Pipe::Pipe( int ends[2] )
-#endif
-{
-  memcpy_s( this->ends, sizeof( this->ends ), ends, sizeof( ends ) );
-}
-ssize_t Pipe::read( void* buffer, size_t buffer_len )
-{
-#ifdef _WIN32
-  DWORD dwBytesRead;
-  if ( ::ReadFile( ends[0], buffer, buffer_len, &dwBytesRead, NULL ) )
-    return static_cast<ssize_t>( dwBytesRead );
-  else
-    return -1;
-#else
-  return ::read( ends[0], buffer, buffer_len );
-#endif
-}
-ssize_t Pipe::write( const void* buffer, size_t buffer_len )
-{
-#ifdef _WIN32
-  DWORD dwBytesWritten;
-  if ( ::WriteFile( ends[1], buffer, buffer_len, &dwBytesWritten, NULL ) )
-    return static_cast<ssize_t>( dwBytesWritten );
-  else
-    return -1;
-#else
-  return ::write( ends[1], buffer, buffer_len );
-#endif
-}
-
-
 // pretty_printer.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 PrettyPrinter::PrettyPrinter( std::ostream& os )
   : os( os )
 { }
-
-void PrettyPrinter::write( const Declaration&, bool value )
+void PrettyPrinter::writeBool( const Declaration&, bool value )
 {
   if ( value )
     os << "true, ";
   else
     os << "false, ";
 }
-
-void PrettyPrinter::write( const Declaration&, auto_Object<Buffer> )
+void PrettyPrinter::writeBuffer( const Declaration&, auto_Object<Buffer> )
 { }
-
-void PrettyPrinter::write( const Declaration&, double value )
+void PrettyPrinter::writeDouble( const Declaration&, double value )
 {
   os << value << ", ";
 }
-
-void PrettyPrinter::write( const Declaration&, int64_t value )
+void PrettyPrinter::writeInt64( const Declaration&, int64_t value )
 {
   os << value << ", ";
 }
-
-void PrettyPrinter::write( const Declaration&, const char* value, size_t value_len )
-{
-  os.write( value, value_len );
-  os << ", ";
-}
-
-void PrettyPrinter::write( const Declaration&, const Object& value )
-{
-  os << value.get_type_name() << "( ";
-  value.marshal( *this );
-  os << " ), ";
-}
-
-void PrettyPrinter::write( const Declaration&, const Map& value )
+void PrettyPrinter::writeMap( const Declaration&, const Map& value )
 {
   os << value.get_type_name() << " (";
   value.marshal( *this );
   os << " ), ";
 }
-
-void PrettyPrinter::write( const Declaration&, const Sequence& value )
+void PrettyPrinter::writeStruct( const Declaration&, const Object& value )
+{
+  os << value.get_type_name() << "( ";
+  value.marshal( *this );
+  os << " ), ";
+}
+void PrettyPrinter::writeSequence( const Declaration&, const Sequence& value )
 {
   os << "[ ";
   value.marshal( *this );
   os << " ], ";
 }
-
-
-// process.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-#if defined(_WIN32)
-#include <windows.h>
-#else
-#include <signal.h>
-#include <sys/wait.h> // For waitpid
-#endif
-auto_Object<Process> Process::create( const Path& command_line )
+void PrettyPrinter::writeString( const Declaration&, const char* value, size_t value_len )
 {
-#ifdef _WIN32
-  auto_Object<Pipe> child_stdin, child_stdout, child_stderr;
-  //auto_Object<Pipe> child_stdin = Pipe::create(),
-  //                  child_stdout = Pipe::create(),
-  //                  child_stderr = Pipe::create();
-  STARTUPINFO startup_info;
-  ZeroMemory( &startup_info, sizeof( STARTUPINFO ) );
-  startup_info.cb = sizeof( STARTUPINFO );
-  //startup_info.hStdInput = *child_stdin->get_input_stream()->get_file();
-  //startup_info.hStdOutput = *child_stdout->get_output_stream()->get_file();
-  //startup_info.hStdError = *child_stdout->get_output_stream()->get_file();
-  //startup_info.dwFlags = STARTF_USESTDHANDLES;
-  PROCESS_INFORMATION proc_info;
-  ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );
-  if ( CreateProcess( NULL, const_cast<wchar_t*>( command_line.get_wide_path().c_str() ) , NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startup_info, &proc_info ) )
-    return new Process( proc_info.hProcess, proc_info.hThread, child_stdin, child_stdout, child_stderr );
-  else
-    return NULL;
-#else
-  const char* argv[] = { static_cast<const char*>( NULL ) };
-  return create( command_line, argv );
-#endif
-}
-auto_Object<Process> Process::create( int argc, char** argv )
-{
-  std::vector<char*> argvv;
-  for ( int arg_i = 1; arg_i < argc; arg_i++ )
-    argvv.push_back( argv[arg_i] );
-  argvv.push_back( NULL );
-  return create( argv[0], const_cast<const char**>( &argvv[0] ) );
-}
-auto_Object<Process> Process::create( const Path& executable_file_path, const char** null_terminated_argv )
-{
-#ifdef _WIN32
-  const std::string& executable_file_path_str = static_cast<const std::string&>( executable_file_path );
-  std::string command_line;
-  if ( executable_file_path_str.find( ' ' ) == -1 )
-    command_line.append( executable_file_path_str );
-  else
-  {
-    command_line.append( "\"", 1 );
-    command_line.append( executable_file_path_str );
-    command_line.append( "\"", 1 );
-  }
-  size_t arg_i = 0;
-  while ( null_terminated_argv[arg_i] != NULL )
-  {
-    command_line.append( " ", 1 );
-    command_line.append( null_terminated_argv[arg_i] );
-    arg_i++;
-  }
-  return create( command_line );
-#else
-  auto_Object<Pipe> child_stdin, child_stdout, child_stderr;
-  //auto_Object<Pipe> child_stdin = Pipe::create(),
-  //                  child_stdout = Pipe::create(),
-  //                  child_stderr = Pipe::create();
-  pid_t child_pid = fork();
-  if ( child_pid == -1 )
-    return NULL;
-  else if ( child_pid == 0 ) // Child
-  {
-    //close( STDIN_FILENO );
-    //dup2( *child_stdin->get_input_stream()->get_file(), STDIN_FILENO ); // Set stdin to read end of stdin pipe
-    //close( STDOUT_FILENO );
-    //dup2( *child_stdout->get_output_stream()->get_file(), STDOUT_FILENO ); // Set stdout to write end of stdout pipe
-    //close( STDERR_FILENO );
-    //dup2( *child_stderr->get_output_stream()->get_file(), STDERR_FILENO ); // Set stderr to write end of stderr pipe
-    std::vector<char*> argv_with_executable_file_path;
-    argv_with_executable_file_path.push_back( const_cast<char*>( static_cast<const char*>( executable_file_path ) ) );
-    size_t arg_i = 0;
-    while ( null_terminated_argv[arg_i] != NULL )
-    {
-      argv_with_executable_file_path.push_back( const_cast<char*>( null_terminated_argv[arg_i] ) );
-      arg_i++;
-    }
-    argv_with_executable_file_path.push_back( NULL );
-    execv( executable_file_path, &argv_with_executable_file_path[0] );
-    return NULL;
-  }
-  else // Parent
-    return new Process( child_pid, child_stdin, child_stdout, child_stderr );
-#endif
-}
-#ifdef _WIN32
-Process::Process( HANDLE hChildProcess, HANDLE hChildThread, auto_Object<Pipe> child_stdin, auto_Object<Pipe> child_stdout, auto_Object<Pipe> child_stderr )
-  : hChildProcess( hChildProcess ), hChildThread( hChildThread ),
-    child_stdin( child_stdin ), child_stdout( child_stdout ), child_stderr( child_stderr )
-{ }
-#else
-Process::Process( pid_t child_pid, auto_Object<Pipe> child_stdin, auto_Object<Pipe> child_stdout, auto_Object<Pipe> child_stderr )
-  : child_pid( child_pid ),
-    child_stdin( child_stdin ), child_stdout( child_stdout ), child_stderr( child_stderr )
-{ }
-#endif
-Process::~Process()
-{
-#ifdef _WIN32
-  CloseHandle( hChildProcess );
-  CloseHandle( hChildThread );
-#endif
-}
-bool Process::kill()
-{
-#ifdef _WIN32
-  return TerminateProcess( hChildProcess, 0 ) == TRUE;
-#else
-  return ::kill( child_pid, SIGKILL ) == 0;
-#endif
-}
-bool Process::poll( int* out_return_code )
-{
-#ifdef _WIN32
-  if ( WaitForSingleObject( hChildProcess, 0 ) != WAIT_TIMEOUT )
-  {
-    if ( out_return_code )
-    {
-      DWORD dwChildExitCode;
-      GetExitCodeProcess( hChildProcess, &dwChildExitCode );
-      *out_return_code = ( int )dwChildExitCode;
-    }
-    return true;
-  }
-  else
-    return false;
-#else
-  return waitpid( child_pid, out_return_code, WNOHANG ) >= 0;
-#endif
-}
-bool Process::terminate()
-{
-#ifdef _WIN32
-  return TerminateProcess( hChildProcess, 0 ) == TRUE;
-#else
-  return ::kill( child_pid, SIGTERM ) == 0;
-#endif
-}
-int Process::wait()
-{
-#ifdef _WIN32
-  WaitForSingleObject( hChildProcess, INFINITE );
-  DWORD dwChildExitCode;
-  GetExitCodeProcess( hChildProcess, &dwChildExitCode );
-  return ( int )dwChildExitCode;
-#else
-  int stat_loc;
-  if ( waitpid( child_pid, &stat_loc, 0 ) >= 0 )
-    return stat_loc;
-  else
-    return -1;
-#endif
+  os.write( value, value_len );
+  os << ", ";
 }
 
 
@@ -2287,7 +1954,6 @@ void TestSuite::run( TestResult& test_result )
       called_tearDown = true;
       ( *test_i )->tearDown();
       test_result_log_stream << ": passed";
-      continue;
     }
     catch ( YIELD::AssertionException& exc )
     {
@@ -3238,16 +2904,16 @@ Path Volume::volname( const Path& path )
 // xdr_marshaller.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-void XDRMarshaller::write( const Declaration& decl )
+void XDRMarshaller::writeDeclaration( const Declaration& decl )
 {
   if ( !in_map_stack.empty() && in_map_stack.back() && decl.get_identifier() )
-    Marshaller::write( Declaration(), decl.get_identifier() );
+    Marshaller::writeString( Declaration(), decl.get_identifier() );
 }
-void XDRMarshaller::write( const Declaration& decl, bool value )
+void XDRMarshaller::writeBool( const Declaration& decl, bool value )
 {
-  write( decl, value ? 1 : 0 );
+  writeInt32( decl, value ? 1 : 0 );
 }
-void XDRMarshaller::write( const Declaration& decl, auto_Object<Buffer> value )
+void XDRMarshaller::writeBuffer( const Declaration& decl, auto_Object<Buffer> value )
 {
   size_t value_size = 0;
   auto_Object<Buffer> next_buffer = value;
@@ -3256,7 +2922,7 @@ void XDRMarshaller::write( const Declaration& decl, auto_Object<Buffer> value )
     value_size += next_buffer->size();
     next_buffer = next_buffer->get_next_buffer();
   }
-  write( decl, static_cast<int32_t>( value_size ) );
+  writeInt32( decl, static_cast<int32_t>( value_size ) );
   BufferedMarshaller::write( value );
   if ( value_size % 4 != 0 )
   {
@@ -3264,19 +2930,19 @@ void XDRMarshaller::write( const Declaration& decl, auto_Object<Buffer> value )
     write( static_cast<const void*>( zeros ), 4 - ( value_size % 4 ) );
   }
 }
-void XDRMarshaller::write( const Declaration& decl, double value )
+void XDRMarshaller::writeDouble( const Declaration& decl, double value )
 {
-  write( decl );
+  writeDeclaration( decl );
   write( &value, sizeof( value ) );
 }
-void XDRMarshaller::write( const Declaration& decl, float value )
+void XDRMarshaller::writeFloat( const Declaration& decl, float value )
 {
-  write( decl );
+  writeDeclaration( decl );
   write( &value, sizeof( value ) );
 }
-void XDRMarshaller::write( const Declaration& decl, int32_t value )
+void XDRMarshaller::writeInt32( const Declaration& decl, int32_t value )
 {
-  write( decl );
+  writeDeclaration( decl );
 #ifdef __MACH__
   value = htonl( value );
 #else
@@ -3284,38 +2950,38 @@ void XDRMarshaller::write( const Declaration& decl, int32_t value )
 #endif
   write( &value, sizeof( value ) );
 }
-void XDRMarshaller::write( const Declaration& decl, int64_t value )
+void XDRMarshaller::writeInt64( const Declaration& decl, int64_t value )
 {
-  write( decl );
+  writeDeclaration( decl );
   value = Machine::htonll( value );
   write( &value, sizeof( value ) );
 }
-void XDRMarshaller::write( const Declaration& decl, const Map& value )
+void XDRMarshaller::writeMap( const Declaration& decl, const Map& value )
 {
-  write( decl, static_cast<int32_t>( value.get_size() ) );
+  writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
   in_map_stack.push_back( true );
   value.marshal( *this );
   in_map_stack.pop_back();
 }
-void XDRMarshaller::write( const Declaration& decl, const Object& value )
+void XDRMarshaller::writeSequence( const Declaration& decl, const Sequence& value )
 {
-  write( decl );
+  writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
   value.marshal( *this );
 }
-void XDRMarshaller::write( const Declaration& decl, const Sequence& value )
+void XDRMarshaller::writeString( const Declaration& decl, const char* value, size_t value_len )
 {
-  write( decl, static_cast<int32_t>( value.get_size() ) );
-  value.marshal( *this );
-}
-void XDRMarshaller::write( const Declaration& decl, const char* value, size_t value_len )
-{
-  write( decl, static_cast<int32_t>( value_len ) );
+  writeInt32( decl, static_cast<int32_t>( value_len ) );
   write( static_cast<const void*>( value ), value_len );
   if ( value_len % 4 != 0 )
   {
     static char zeros[] = { 0, 0, 0 };
     write( static_cast<const void*>( zeros ), 4 - ( value_len % 4 ) );
   }
+}
+void XDRMarshaller::writeStruct( const Declaration& decl, const Object& value )
+{
+  writeDeclaration( decl );
+  value.marshal( *this );
 }
 
 

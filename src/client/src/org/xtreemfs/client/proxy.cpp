@@ -24,8 +24,8 @@ using namespace org::xtreemfs::client;
 
 
 template <class ProxyType, class InterfaceType>
-Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
-  : YIELD::ONCRPCClient<InterfaceType>( absolute_uri, fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, ssl_context )
+Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::Log> log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
+  : YIELD::ONCRPCClient<InterfaceType>( absolute_uri, log, operation_retries_max, operation_timeout, peer_sockaddr, ssl_context )
 {
   get_user_credentials_from_passwd = NULL;
   get_passwd_from_user_credentials = NULL;
@@ -79,14 +79,17 @@ Proxy<ProxyType, InterfaceType>::~Proxy()
 }
 
 template <class ProxyType, class InterfaceType>
-YIELD::auto_Object<YIELD::ONCRPCRequest> Proxy<ProxyType, InterfaceType>::createProtocolRequest( YIELD::auto_Object<YIELD::Request> request )
+void Proxy<ProxyType, InterfaceType>::handleEvent( YIELD::Event& ev )
 {
-  YIELD::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
-  getCurrentUserCredentials( *user_credentials.get() );
-  YIELD::auto_Object<YIELD::ONCRPCRequest> oncrpc_request = YIELD::ONCRPCClient<InterfaceType>::createProtocolRequest( request );
-  oncrpc_request->set_credential_auth_flavor( org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR );
-  oncrpc_request->set_credential( user_credentials.release() );
-  return oncrpc_request;
+  if ( InterfaceType::checkRequest( ev ) != NULL )
+  {
+    YIELD::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
+    getCurrentUserCredentials( *user_credentials.get() );
+    YIELD::auto_Object<YIELD::ONCRPCRequest> oncrpc_request = new YIELD::ONCRPCRequest( this->incRef(), 0x20000000 + InterfaceType::get_tag(), ev.get_tag(), InterfaceType::get_tag(), org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release(), ev );
+    YIELD::ONCRPCClient<InterfaceType>::handleEvent( *oncrpc_request.release() );
+  }
+  else
+    YIELD::ONCRPCClient<InterfaceType>::handleEvent( ev );
 }
 
 template <class ProxyType, class InterfaceType>

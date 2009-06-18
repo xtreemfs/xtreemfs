@@ -1,4 +1,4 @@
-// Revision: 1531
+// Revision: 1549
 
 #include "yield/arch.h"
 using namespace YIELD;
@@ -211,5 +211,66 @@ void StageGroupThread::run()
   is_running = true;
   _run();
   is_running = false;
+}
+
+
+// timer_event_queue.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+TimerEventQueue::TimerEventQueue()
+{
+  std::make_heap( timers.begin(), timers.end(), compareTimerEvents );
+}
+TimerEventQueue::~TimerEventQueue()
+{
+  // TODO: delete timers
+}
+bool TimerEventQueue::compareTimerEvents( const TimerEvent* left, const TimerEvent* right )
+{
+  return left->get_fire_time() < right->get_fire_time();
+}
+auto_Object<TimerEventQueue::TimerEvent> TimerEventQueue::timer_create( const Time& timeout, const Time& period, auto_Object<> context )
+{
+  TimerEvent* timer_event = new TimerEvent( timeout, period, context );
+  timers.push_back( timer_event );
+  std::make_heap( timers.begin(), timers.end(), compareTimerEvents );
+  return timer_event->incRef();
+}
+Event* TimerEventQueue::dequeue( uint64_t )
+{
+  DebugBreak();
+  return NULL;
+}
+bool TimerEventQueue::enqueue( Event& ev )
+{
+  return NonBlockingFiniteQueue<Event*, 2048>::enqueue( &ev );
+}
+uint64_t TimerEventQueue::getNSUntilNextTimer()
+{
+  if ( timers.empty() )
+    return static_cast<uint64_t>( -1 );
+  else
+    return ( timers.back()->get_fire_time() - Time() ).as_unix_time_ns();
+}
+Event* TimerEventQueue::try_dequeue()
+{
+  if ( !timers.empty() )
+  {
+    Time current_time;
+    if ( timers.back()->get_fire_time() <= current_time )
+    {
+      TimerEvent* timer_event = timers.back();
+      timers.pop_back();
+      make_heap( timers.begin(), timers.end(), compareTimerEvents );
+      if ( timer_event->get_period() != 0 )
+      {
+        TimerEvent* next_timer_event = new TimerEvent( timer_event->get_period(), timer_event->get_period(), timer_event->get_context() );
+        timers.push_back( next_timer_event );
+        std::push_heap( timers.begin(), timers.end(), compareTimerEvents );
+      }
+      return timer_event;
+    }
+  }
+  return NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
 }
 

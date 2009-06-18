@@ -5,10 +5,6 @@
 using namespace org::xtreemfs::client;
 
 
-DIRProxy::DIRProxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
-  : Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>( absolute_uri, fd_event_queue, log, operation_timeout, peer_sockaddr, reconnect_tries_max, ssl_context )
-{ }
-
 DIRProxy::~DIRProxy()
 {
   for ( std::map<std::string, CachedAddressMappings*>::iterator uuid_to_address_mappings_i = uuid_to_address_mappings_cache.begin(); uuid_to_address_mappings_i != uuid_to_address_mappings_cache.end(); uuid_to_address_mappings_i++ )

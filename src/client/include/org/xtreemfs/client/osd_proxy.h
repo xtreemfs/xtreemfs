@@ -32,12 +32,12 @@ namespace org
                                                     YIELD::auto_Object<YIELD::StageGroup> stage_group,
                                                     const std::string& uuid,
                                                     YIELD::auto_Object<YIELD::Log> log = NULL,
+                                                    uint8_t operation_retries_max = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_RETRIES_MAX_DEFAULT,
                                                     const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
                                                     const YIELD::Time& ping_interval = PING_INTERVAL_DEFAULT,
-                                                    uint8_t reconnect_tries_max = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::RECONNECT_TRIES_MAX_DEFAULT,
                                                     YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL )
         {
-          YIELD::auto_Object<OSDProxy> osd_proxy = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::create<OSDProxy>( absolute_uri, stage_group, log, operation_timeout, reconnect_tries_max, ssl_context );
+          YIELD::auto_Object<OSDProxy> osd_proxy = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::create<OSDProxy>( absolute_uri, stage_group, log, operation_timeout, operation_retries_max, ssl_context );
           osd_proxy->set_ping_interval( ping_interval );
           osd_proxy->set_uuid( uuid );
           return osd_proxy;
@@ -51,12 +51,19 @@ namespace org
         void set_rtt( const YIELD::Time& rtt ) { this->rtt = rtt; }
         void set_vivaldi_coordinates( const org::xtreemfs::interfaces::VivaldiCoordinates& vivaldi_coordinates ) { this->vivaldi_coordinates = vivaldi_coordinates; }
 
+        // YIELD::Object
         YIELD_OBJECT_PROTOTYPES( OSDProxy, 0 );
+
+        // YIELD::EventHandler
+        void handleEvent( YIELD::Event& ev ) { YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::handleEvent( ev ); }
 
       private:
         friend class YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>;
 
-        OSDProxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context );
+        OSDProxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::Log> log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
+          : Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>( absolute_uri, log, operation_retries_max, operation_timeout, peer_sockaddr, ssl_context )
+        { }
+
         ~OSDProxy() { }
 
         

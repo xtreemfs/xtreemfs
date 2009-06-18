@@ -31,11 +31,11 @@ namespace org
         static YIELD::auto_Object<DIRProxy> create( const YIELD::URI& absolute_uri,
                                                     YIELD::auto_Object<YIELD::StageGroup> stage_group,
                                                     YIELD::auto_Object<YIELD::Log> log = NULL,
+                                                    uint8_t operation_retries_max = YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::OPERATION_RETRIES_MAX_DEFAULT,
                                                     const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::OPERATION_TIMEOUT_DEFAULT,
-                                                    uint8_t reconnect_tries_max = YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::RECONNECT_TRIES_MAX_DEFAULT,
                                                     YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL )
         {
-          return YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::create<DIRProxy>( absolute_uri, stage_group, log, operation_timeout, reconnect_tries_max, ssl_context );
+          return YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::create<DIRProxy>( absolute_uri, stage_group, log, operation_timeout, operation_retries_max, ssl_context );
         }
 
         YIELD::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> getAddressMappingsFromUUID( const std::string& uuid );
@@ -44,7 +44,10 @@ namespace org
       private:
         friend class YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>;
 
-        DIRProxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::FDAndInternalEventQueue> fd_event_queue, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, uint8_t reconnect_tries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context );
+        DIRProxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::Log> log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
+            : Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>( absolute_uri, log, operation_retries_max, operation_timeout, peer_sockaddr, ssl_context )
+        { }
+
         ~DIRProxy();
 
 

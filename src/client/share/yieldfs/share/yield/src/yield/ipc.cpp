@@ -1,8 +1,203 @@
-// Revision: 1531
+// Revision: 1549
 
 #include "yield/ipc.h"
 using namespace YIELD;
 using std::memset;
+
+
+// client.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4995 )
+#include <ws2tcpip.h>
+#pragma warning( pop )
+#define ETIMEDOUT WSAETIMEDOUT
+#endif
+template <class ProtocolRequestType, class ProtocolResponseType>
+Client<ProtocolRequestType, ProtocolResponseType>::Client( const URI& absolute_uri, auto_Object<Log> log, uint8_t operation_retries_max, const Time& operation_timeout, auto_Object<SocketAddress> peername, auto_Object<SSLContext> ssl_context )
+  : Peer<ProtocolResponseType, ProtocolRequestType>( log ), operation_retries_max( operation_retries_max ), operation_timeout( operation_timeout ), peername( peername ), ssl_context( ssl_context )
+{
+  this->absolute_uri = new URI( absolute_uri );
+}
+template <class ProtocolRequestType, class ProtocolResponseType>
+Client<ProtocolRequestType, ProtocolResponseType>::~Client()
+{
+  for ( typename std::vector<Connection*>::iterator idle_connection_i = idle_connections.begin(); idle_connection_i != idle_connections.end(); idle_connection_i++ )
+    Object::decRef( **idle_connection_i );
+}
+template <class ProtocolRequestType, class ProtocolResponseType>
+void Client<ProtocolRequestType, ProtocolResponseType>::handleDeserializedProtocolMessage( auto_Object<ProtocolResponseType> protocol_response )
+{
+  this->get_helper_peer_stage()->send( *protocol_response->get_connection().release() );
+  protocol_response->get_protocol_request()->set_connection( NULL );
+  protocol_response->get_protocol_request()->respond( *protocol_response.release() );
+}
+template <class ProtocolRequestType, class ProtocolResponseType>
+void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
+{
+  switch ( ev.get_tag() )
+  {
+    case YIELD_OBJECT_TAG( TCPSocket::AIOConnectControlBlock ):
+    {
+      TCPSocket::AIOConnectControlBlock& aio_connect_control_block = static_cast<TCPSocket::AIOConnectControlBlock&>( ev );
+      ProtocolRequestType* protocol_request = static_cast<ProtocolRequestType*>( aio_connect_control_block.get_context().release() );
+      this->detach( protocol_request->get_connection() );
+      get_protocol_request_writer_stage()->send( *protocol_request );
+      Object::decRef( ev );
+    }
+    break;
+    case YIELD_OBJECT_TAG( Connection ):
+    {
+      idle_connections.push_back( static_cast<Connection*>( &ev ) );
+    }
+    return;
+    case YIELD_OBJECT_TAG( FDEventQueue::POLLOUTEvent ):
+    {
+      FDEventQueue::POLLOUTEvent& pollout_event = static_cast<FDEventQueue::POLLOUTEvent&>( ev );
+      auto_Object<> context( pollout_event.get_context() );
+      switch ( context->get_tag() )
+      {
+        case YIELD_OBJECT_TAG( ProtocolRequestType ): // Non-blocking connection completed
+        {
+          auto_Object<ProtocolRequestType> protocol_request( static_cast<ProtocolRequestType*>( context.release() ) );
+          auto_Object<Connection> connection = protocol_request->get_connection();
+          this->detach( connection );
+          if ( connection->get_socket()->connect( peername ) )
+          {
+            connection->get_socket()->set_blocking_mode( true );
+            get_protocol_request_writer_stage()->send( *protocol_request.release() );
+          }
+          else
+          {
+            protocol_request->set_connection( NULL );
+            protocol_request->respond( *( new ExceptionResponse ) );
+          }
+          Object::decRef( ev );
+        }
+        break;
+        default:
+        {
+          Peer<ProtocolResponseType, ProtocolRequestType>::handleEvent( ev );
+        }
+        break;
+      }
+    }
+    break;
+    case YIELD_OBJECT_TAG( FDEventQueue::POLLERREvent ):
+    {
+      DebugBreak();
+    }
+    break;
+    case YIELD_OBJECT_TAG( FDEventQueue::TimerEvent ):
+    {
+      DebugBreak();
+      //FDEventQueue::TimerEvent& timer_event = static_cast<FDEventQueue::TimerEvent&>( ev );
+      //protocol_request = static_cast<ProtocolRequestType*>( timer_event.get_context().release() );
+      //Object::decRef( ev );
+    }
+    break;
+    case YIELD_OBJECT_TAG( ProtocolRequestType ):
+    {
+      if ( static_cast<ProtocolRequestType&>( ev ).get_connection() == NULL )
+      {
+        auto_Object<ProtocolRequestType> protocol_request( static_cast<ProtocolRequestType&>( ev ) );
+        if ( !idle_connections.empty() )
+        {
+          protocol_request->set_connection( idle_connections.back()->incRef() );
+          idle_connections.pop_back();
+          get_protocol_request_writer_stage()->send( *protocol_request.release() );
+        }
+        else
+        {
+          auto_Object<Socket> _socket;
+#ifdef YIELD_HAVE_OPENSSL
+          if ( absolute_uri->get_scheme()[absolute_uri->get_scheme().size()-1] == 's' &&
+               ssl_context != NULL )
+            _socket = SSLSocket::create( ssl_context ).release();
+          else
+#endif
+          if ( absolute_uri->get_scheme()[absolute_uri->get_scheme().size()-1] == 'u' )
+            _socket = UDPSocket::create().release();
+          else
+            _socket = TCPSocket::create().release();
+          auto_Object<Log> log = this->get_log();
+          if ( log != NULL && log->get_level() >= Log::LOG_INFO && static_cast<int>( *_socket ) != -1 )
+            _socket = new TracingSocket( _socket, log );
+          auto_Object<Connection> connection = new Connection( _socket );
+          protocol_request->set_connection( connection );
+          _socket->set_blocking_mode( false );
+          this->attach( connection, protocol_request->incRef(), false, true );
+          bool connect_ret;
+          if ( this->haveAIO() )
+            connect_ret = _socket->aio_connect( new TCPSocket::AIOConnectControlBlock( protocol_request->incRef(), peername, NULL ) );
+          else
+            connect_ret = _socket->connect( peername );
+          if ( connect_ret )
+          {
+            this->detach( connection );
+            _socket->set_blocking_mode( true);
+            get_protocol_request_writer_stage()->send( *protocol_request.release() );
+          }
+          else if ( connection->get_socket()->want_write() )
+            return;
+          else
+          {
+            protocol_request->set_connection( NULL );
+            protocol_request->respond( *( new ExceptionResponse() ) );
+          }
+        }
+      }
+      else
+      {
+        Peer<ProtocolResponseType, ProtocolRequestType>::handleEvent( ev );
+        return;
+      }
+    }
+    break;
+    default:
+    {
+      Peer<ProtocolResponseType, ProtocolRequestType>::handleEvent( ev );
+    }
+    return;
+  }
+}
+template <class ProtocolRequestType, class ProtocolResponseType>
+ssize_t Client<ProtocolRequestType, ProtocolResponseType>::deserialize( auto_Object<ProtocolResponseType> protocol_response, auto_Object<Buffer> buffer )
+{
+  ssize_t deserialize_ret = Peer<ProtocolResponseType, ProtocolRequestType>::deserialize( protocol_response, buffer );
+  if ( deserialize_ret != 0 )
+    protocol_response->get_protocol_request()->respond( *( new ExceptionResponse ) );
+  return deserialize_ret;
+}
+template <class ProtocolRequestType, class ProtocolResponseType>
+bool Client<ProtocolRequestType, ProtocolResponseType>::read( auto_Object<ProtocolResponseType> protocol_response, size_t buffer_capacity )
+{
+  if ( Peer<ProtocolResponseType, ProtocolRequestType>::read( protocol_response, buffer_capacity ) )
+    return true;
+  else
+  {
+    protocol_response->get_protocol_request()->respond( *( new ExceptionResponse ) );
+    return false;
+  }
+}
+template <class ProtocolRequestType, class ProtocolResponseType>
+bool Client<ProtocolRequestType, ProtocolResponseType>::write( auto_Object<ProtocolRequestType> protocol_request, auto_Object<Buffer> buffer )
+{
+  if ( Peer<ProtocolResponseType, ProtocolRequestType>::write( protocol_request, buffer ) )
+  {
+    get_protocol_response_reader_stage()->send( *protocol_request->createProtocolResponse().release() );
+    return true;
+  }
+  else
+  {
+    protocol_request->respond( *( new ExceptionResponse ) );
+    return false;
+  }
+}
+template class Client<HTTPRequest, HTTPResponse>;
+template class Client<ONCRPCRequest, ONCRPCResponse>;
 
 
 // eventfd_pipe.cpp
@@ -69,7 +264,7 @@ void EventFDPipe::clear()
   ::read( fd, reinterpret_cast<char*>( &m ), sizeof( m ) );
 #else
   char m;
-  read_end->recv( &m, sizeof( m ) );
+  read_end->read( &m, sizeof( m ) );
 #endif
 }
 #ifndef YIELD_HAVE_LINUX_EVENTFD
@@ -89,70 +284,8 @@ void EventFDPipe::signal()
   ::write( fd, reinterpret_cast<char*>( &m ), sizeof( m ) );
 #else
   char m = 1;
-  write_end->send( &m, sizeof( m ) );
+  write_end->write( &m, sizeof( m ) );
 #endif
-}
-
-
-// fd_and_internal_event_queue.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-FDAndInternalEventQueue::FDAndInternalEventQueue()
-{
-  dequeue_blocked = true;
-}
-Event* FDAndInternalEventQueue::dequeue()
-{
-  dequeue_blocked = true; // Induces extra signals, but avoids this race:
-// D: dequeue from NBFQ, NULL
-// E: enqueue to NBFQ
-// E: check blocked, = false, no signal
-// D: set blocked = true, block with event in NBFQ but no signal
-  Event* ev = NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
-  if ( ev != NULL )
-  {
-//    dequeue_blocked = false;
-    return ev;
-  }
-  ev = FDEventQueue::dequeue();
-//  dequeue_blocked = false;
-  if ( ev != NULL )
-    return ev;
-  return NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
-}
-Event* FDAndInternalEventQueue::dequeue( uint64_t timeout_ns )
-{
-  dequeue_blocked = true;
-  Event* ev = NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
-  if ( ev != NULL )
-  {
-//    dequeue_blocked = false;
-    return ev;
-  }
-  ev = FDEventQueue::dequeue( timeout_ns );
-//  dequeue_blocked = false;
-  if ( ev )
-    return ev;
-  return NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
-}
-bool FDAndInternalEventQueue::enqueue( Event& ev )
-{
-  bool result = NonBlockingFiniteQueue<Event*, 2048>::enqueue( &ev );
-  if ( dequeue_blocked )
-    FDEventQueue::signal();
-  else
-    DebugBreak();
-  return result;
-}
-Event* FDAndInternalEventQueue::try_dequeue()
-{
-  Event* ev = NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
-  if ( ev != NULL )
-    return ev;
-  ev = FDEventQueue::try_dequeue();
-  if ( ev )
-    return ev;
-  return NonBlockingFiniteQueue<Event*, 2048>::try_dequeue();
 }
 
 
@@ -209,23 +342,19 @@ FDEventQueue::FDEventQueue()
 #endif
   active_fds = 0;
   eventfd_pipe = EventFDPipe::create();
-  if ( eventfd_pipe != NULL &&
-       attach( eventfd_pipe->get_read_end(), eventfd_pipe->incRef() ) )
-  {
-    std::make_heap( timers.begin(), timers.end(), compareTimerEvents );
-  }
-  else
+  if ( eventfd_pipe == NULL ||
+       !attach( eventfd_pipe->get_read_end(), eventfd_pipe->incRef() ) )
     throw Exception();
 }
 FDEventQueue::~FDEventQueue()
 {
-#if defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE)
-  close( poll_fd );
-  delete [] returned_events;
-#elif defined(_WIN32)
+#if defined(_WIN32)
   delete read_fds; delete read_fds_copy;
   delete write_fds; delete write_fds_copy;
   delete except_fds; delete except_fds_copy;
+#elif defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE)
+  close( poll_fd );
+  delete [] returned_events;
 #endif
 }
 bool FDEventQueue::attach( int fd, auto_Object<> context, bool enable_read, bool enable_write )
@@ -280,7 +409,7 @@ bool FDEventQueue::attach( int fd, auto_Object<> context, bool enable_read, bool
     }
     else
       return true;
-#elif !defined(_WIN32)
+#else
     std::vector<struct pllfd::size_type pollfd_i_max = pollfds.size();
     for ( std::vector<struct pollfd>::size_type pollfd_i = 0; pollfd_i < pollfd_i_max; pollfd_i++ )
     {
@@ -301,96 +430,61 @@ bool FDEventQueue::attach( int fd, auto_Object<> context, bool enable_read, bool
   else
     return toggle( fd, enable_read, enable_write );
 }
-bool FDEventQueue::compareTimerEvents( const TimerEvent* left, const TimerEvent* right )
-{
-  return left->get_fire_time() < right->get_fire_time();
-}
-Event* FDEventQueue::dequeue()
-{
-  if ( timers.empty() )
-  {
-    if ( active_fds <= 0 )
-    {
-      active_fds = poll();
-      if ( active_fds <= 0 )
-        return NULL;
-    }
-    return dequeueFDEvent();
-  }
-  else
-    return dequeue( static_cast<uint64_t>( -1 ) );
-}
 Event* FDEventQueue::dequeue( uint64_t timeout_ns )
 {
-  TimerEvent* timer_event = dequeueTimerEvent();
-  if ( timer_event != NULL )
-    return timer_event;
+  Event* ev = TimerEventQueue::try_dequeue();
+  if ( ev != NULL )
+    return ev;
   if ( active_fds <= 0 )
   {
-    if ( timers.empty() )
-      active_fds = poll( timeout_ns );
+    uint64_t ns_until_next_timer = TimerEventQueue::getNSUntilNextTimer();
+    if ( ns_until_next_timer < timeout_ns )
+      timeout_ns = ns_until_next_timer;
+#if defined(_WIN32)
+    memcpy_s( read_fds_copy, sizeof( *read_fds_copy ), read_fds, sizeof( *read_fds ) );
+    memcpy_s( write_fds_copy, sizeof( *write_fds_copy ), write_fds, sizeof( *write_fds ) );
+    memcpy_s( except_fds_copy, sizeof( *except_fds_copy ), except_fds, sizeof( *except_fds ) );
+    next_fd_to_check = fd_to_context_map.begin();
+    struct timeval poll_tv = Time( timeout_ns );
+    active_fds = select( 0, read_fds_copy, write_fds_copy, except_fds_copy, &poll_tv );
+#elif defined(YIELD_HAVE_LINUX_EPOLL)
+    active_fds = epoll_wait( poll_fd, returned_events, MAX_EVENTS_PER_POLL, timeout_ns == static_cast<uint64_t>( -1 ) ? -1 : static_cast<int>( timeout_ns / NS_IN_MS ) );
+#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
+    if ( timeout_ns == static_cast<uint64_t>( -1 )
+      active_fds = kevent( poll_fd, 0, 0, returned_events, MAX_EVENTS_PER_POLL, NULL );
     else
     {
-      Time current_time;
-      const Time& next_fire_time = timers[0]->get_fire_time();
-      if ( next_fire_time > current_time )
-      {
-        timeout_ns = next_fire_time - current_time;
-        active_fds = poll( timeout_ns );
-      }
-      else
-        return dequeueTimerEvent();
+      struct timespec poll_tv = Time( timeout_ns );
+      active_fds = kevent( poll_fd, 0, 0, returned_events, MAX_EVENTS_PER_POLL, &poll_tv );
     }
+    else
+#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+    uint_t nget = 1;
+    if ( timeout_ns == static_cast<uint64_t>( -1 ) )
+      active_fds = port_get( poll_fd, returned_events, NULL );
+    else
+    {
+      struct timespec poll_tv = Time( timeout_ns );
+    //			active_fds = port_getn( poll_fd, returned_events, MAX_EVENTS_PER_POLL, &nget, &poll_tv );
+      active_fds = port_get( poll_fd, returned_events, &poll_tv );
+    }
+    if ( active_fds == 0 )
+      active_fds = ( int )nget;
+#else
+    next_pollfd_to_check = 0;
+    active_fds = poll( &pollfds[0], pollfds.size(), timeout_ns == static_cast<uint64_t>( -1 ) ? -1 : static_cast<int>( timeout_ns / NS_IN_MS ) );
+#endif
     if ( active_fds <= 0 )
       return NULL;
   }
-  timer_event = dequeueTimerEvent();
-  if ( timer_event != NULL )
-    return timer_event;
-  else
-    return dequeueFDEvent();
-}
-FDEventQueue::FDEvent* FDEventQueue::dequeueFDEvent()
-{
-#if defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
-  while ( active_fds > 0 )
-  {
-    active_fds--;
-#if defined(YIELD_HAVE_LINUX_EPOLL)
-    if ( returned_events[active_fds].data.ptr != eventfd_pipe.get() )
-      return new FDEvent( Object::incRef( static_cast<Object*>( returned_events[active_fds].data.ptr ) ), 0, ( returned_events[active_fds].events & EPOLLIN ) == EPOLLIN );
-#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
-    if ( returned_events[active_fds].ident != eventfd_pipe->get_read_end() )
-      return new FDEvent( Object::incRef( static_cast<Object*>( returned_events[active_fds].udata ) ), 0, returned_events[active_fds].filter == EVFILT_READ );
-#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
-    if ( returned_events[active_fds].portev_source == PORT_SOURCE_FD )
-    {
-      int fd = returned_events[active_fds].portev_object;
-      if ( fd != eventfd_pipe->get_read_end() )
-      {
-        Object* context = static_cast<Object*>( returned_events[active_fds].portev_user );
-        bool want_read = returned_events[active_fds].portev_events & POLLIN ) || ( returned_events[active_fds].portev_events & POLLRDNORM );
-        memset( &returned_events[active_fds], 0, sizeof( returned_events[active_fds] ) );
-        return new FDEvent( Object::incRef( context ), 0, want_read );
-      }
-    }
-    else
-      continue;
-#endif
-    // The signal was set
-    eventfd_pipe->clear();
-    return NULL;
-  }
-#else
-#ifdef _WIN32
+#if defined(_WIN32)
   while ( active_fds > 0 && next_fd_to_check != fd_to_context_map.end() )
   {
     unsigned int fd = next_fd_to_check->first;
-    uint32_t error_code;
-    bool want_read;
     if ( FD_ISSET( fd, read_fds_copy ) )
     {
       FD_CLR( fd, read_fds_copy );
+      active_fds--;
       if ( fd == static_cast<unsigned int>( eventfd_pipe->get_read_end() ) )
       {
         eventfd_pipe->clear();
@@ -398,32 +492,71 @@ FDEventQueue::FDEvent* FDEventQueue::dequeueFDEvent()
         return NULL;
       }
       else
-      {
-        error_code = 0;
-        want_read = true;
-      }
+        return new POLLINEvent( Object::incRef( fd_to_context_map.find( fd ) ) );
     }
     else if ( FD_ISSET( fd, write_fds_copy ) )
     {
       FD_CLR( fd, write_fds_copy );
-      error_code = 0;
-      want_read = false;
+      active_fds--;
+      return new POLLOUTEvent( Object::incRef( fd_to_context_map.find( fd ) ) );
     }
     else if ( FD_ISSET( fd, except_fds_copy ) )
     {
       FD_CLR( fd, except_fds_copy );
+      active_fds--;
       int so_error; int so_error_len = sizeof( so_error );
       ::getsockopt( fd, SOL_SOCKET, SO_ERROR, reinterpret_cast<char*>( &so_error ), &so_error_len );
-      error_code = so_error;
-      want_read = false;
+      return new POLLERREvent( Object::incRef( fd_to_context_map.find( fd ) ), so_error );
     }
     else
     {
       next_fd_to_check++;
       continue;
     }
+  }
+#elif defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+  while ( active_fds > 0 )
+  {
     active_fds--;
-    return new FDEvent( Object::incRef( fd_to_context_map.find( fd ) ), error_code, want_read );
+#if defined(YIELD_HAVE_LINUX_EPOLL)
+    if ( returned_events[active_fds].data.ptr != eventfd_pipe.get() )
+    {
+      Object* context = Object::incRef( static_cast<Object*>( returned_events[active_fds].data.ptr ) );
+      if ( ( returned_events[active_fds].events & EPOLLIN ) == EPOLLIN )
+        return new POLLINEvent( context );
+      else
+        return new POLLOUTEvent( context );
+    }
+#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
+    if ( returned_events[active_fds].ident != eventfd_pipe->get_read_end() )
+    {
+      Object* context = Object::incRef( static_cast<Object*>( returned_events[active_fds].udata ) );
+      if ( returned_events[active_fds].filter == EVFILT_READ )
+        return new POLLINEvent( context );
+      else
+        return new POLLOUTEvent( context );
+    }
+#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+    if ( returned_events[active_fds].portev_source == PORT_SOURCE_FD )
+    {
+      int fd = returned_events[active_fds].portev_object;
+      if ( fd != eventfd_pipe->get_read_end() )
+      {
+        Object* context = Object::incRef( static_cast<Object*>( returned_events[active_fds].portev_user ) );
+        int portev_events = returned_events[active_fds].portev_events;
+        memset( &returned_events[active_fds], 0, sizeof( returned_events[active_fds] ) );
+        if ( ( portev_events & POLLIN ) == POLLIN ||
+             ( portev_events & POLLRDNORM ) == POLLRDNORM )
+          return new POLLINEvent( context );
+        else
+          return new POLLOUTEvent( context );
+      }
+    }
+    else
+      continue;
+#endif
+    // The signal was set
+    eventfd_pipe->clear();
   }
 #else
   pollfd_vector::size_type pollfds_size = pollfds.size();
@@ -432,7 +565,7 @@ FDEventQueue::FDEvent* FDEventQueue::dequeueFDEvent()
     if ( pollfds[next_pollfd_to_check].revents != 0 )
     {
       int fd = pollfds[next_pollfd_to_check].fd;
-      bool want_read = pollfds[next_pollfd_to_check].revents & POLLIN;
+      int revents = [next_pollfd_to_check].revents;
       pollfds[next_pollfd_to_check].revents = 0;
       next_pollfd_to_check++;
       active_fds--;
@@ -442,35 +575,22 @@ FDEventQueue::FDEvent* FDEventQueue::dequeueFDEvent()
         return NULL;
       }
       else
-        return new FDEvent( Object::incRef( fd_to_context_map.find( fd ) ), 0, want_read );
+      {
+        Object* context = Object::incRef( fd_to_context_map.find( fd ) );
+        if ( ( revents & POLLIN ) == POLLIN )
+          return new POLLINEvent( context );
+        else if ( ( revents & POLLOUT ) == POLLOUT )
+          return new POLLOUTEvent( context );
+        else if ( ( revents & POLLERR ) == POLLERR || ( revents & POLLHUP ) == POLLHUP )
+          return new POLLERREvent( context );
+        else
+          DebugBreak();
     }
     else
       next_pollfd_to_check++;
   }
-#endif
-#endif
   active_fds = 0;
-  return NULL;
-}
-FDEventQueue::TimerEvent* FDEventQueue::dequeueTimerEvent()
-{
-  if ( !timers.empty() )
-  {
-    Time current_time;
-    if ( timers.back()->get_fire_time() <= current_time )
-    {
-      TimerEvent* timer_event = timers.back();
-      timers.pop_back();
-      make_heap( timers.begin(), timers.end(), compareTimerEvents );
-      if ( timer_event->get_period() != 0 )
-      {
-        TimerEvent* next_timer_event = new TimerEvent( timer_event->get_period(), timer_event->get_period(), timer_event->get_context() );
-        timers.push_back( next_timer_event );
-        std::push_heap( timers.begin(), timers.end(), compareTimerEvents );
-      }
-      return timer_event;
-    }
-  }
+#endif
   return NULL;
 }
 void FDEventQueue::detach( int fd )
@@ -492,7 +612,7 @@ void FDEventQueue::detach( int fd )
   kevent( poll_fd, change_events, 2, 0, 0, NULL );
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
   port_dissociate( poll_fd, PORT_SOURCE_FD, fd );
-#elif !defined(_WIN32)
+#else
   if ( fd_to_context_map.remove( fd ) != 0 )
   {
     pollfd_vector::size_type j = ( next_pollfd_to_check > 0 ) ? next_pollfd_to_check - 1 : 0;
@@ -518,75 +638,13 @@ void FDEventQueue::detach( int fd )
         return;
     }
   }
-#else
-  DebugBreak();
 #endif
 }
 bool FDEventQueue::enqueue( Event& ev )
 {
-#ifdef _DEBUG
-  std::cerr << "yield::FDEventQueue: discarding enqueued event " << ev.get_type_name() << "." << std::endl;
-#endif
-  Object::decRef( ev );
-  return true;
-}
-int FDEventQueue::poll()
-{
-#if defined(YIELD_HAVE_LINUX_EPOLL)
-  return epoll_wait( poll_fd, returned_events, MAX_EVENTS_PER_POLL, -1 );
-#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
-  return kevent( poll_fd, 0, 0, returned_events, MAX_EVENTS_PER_POLL, NULL );
-#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
-  uint_t nget = 1;
-//active_fds = port_getn( poll_fd, returned_events, MAX_EVENTS_PER_POLL, &nget, NULL );
-  int active_fds = port_get( poll_fd, returned_events, NULL );
-  if ( active_fds == 0 )
-    active_fds = ( int )nget;
-  return active_fds;
-#elif defined(_WIN32)
-  memcpy_s( read_fds_copy, sizeof( *read_fds_copy ), read_fds, sizeof( *read_fds ) );
-  memcpy_s( write_fds_copy, sizeof( *write_fds_copy ), write_fds, sizeof( *write_fds ) );
-  memcpy_s( except_fds_copy, sizeof( *except_fds_copy ), except_fds, sizeof( *except_fds ) );
-  next_fd_to_check = fd_to_context_map.begin();
-  return select( 0, read_fds_copy, write_fds_copy, except_fds_copy, NULL );
-#else
-  next_pollfd_to_check = 0;
-  return ::poll( &pollfds[0], pollfds.size(), -1 );
-#endif
-}
-int FDEventQueue::poll( uint64_t timeout_ns )
-{
-#if defined(YIELD_HAVE_LINUX_EPOLL)
-  return epoll_wait( poll_fd, returned_events, MAX_EVENTS_PER_POLL, static_cast<int>( timeout_ns / NS_IN_MS ) );
-#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
-  struct timespec poll_tv = Time( timeout_ns );
-  return kevent( poll_fd, 0, 0, returned_events, MAX_EVENTS_PER_POLL, &poll_tv );
-#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
-  uint_t nget = 1;
-  struct timespec poll_tv = Time( timeout_ns );
-//			active_fds = port_getn( poll_fd, returned_events, MAX_EVENTS_PER_POLL, &nget, &poll_tv );
-  int active_fds = port_get( poll_fd, returned_events, &poll_tv );
-  if ( active_fds == 0 )
-    active_fds = ( int )nget;
-  return active_fds;
-#elif defined(_WIN32)
-  memcpy_s( read_fds_copy, sizeof( *read_fds_copy ), read_fds, sizeof( *read_fds ) );
-  memcpy_s( write_fds_copy, sizeof( *write_fds_copy ), write_fds, sizeof( *write_fds ) );
-  memcpy_s( except_fds_copy, sizeof( *except_fds_copy ), except_fds, sizeof( *except_fds ) );
-  next_fd_to_check = fd_to_context_map.begin();
-  struct timeval poll_tv = Time( timeout_ns );
-  return select( 0, read_fds_copy, write_fds_copy, except_fds_copy, &poll_tv );
-#else
-  next_pollfd_to_check = 0;
-  return ::poll( &pollfds[0], pollfds.size(), static_cast<int>( timeout_ns / NS_IN_MS ) );
-#endif
-}
-auto_Object<FDEventQueue::TimerEvent> FDEventQueue::timer_create( const Time& timeout, const Time& period, auto_Object<> context )
-{
-  TimerEvent* timer_event = new TimerEvent( timeout, period, context );
-  timers.push_back( timer_event );
-  std::make_heap( timers.begin(), timers.end(), compareTimerEvents );
-  return timer_event->incRef();
+  bool result = TimerEventQueue::enqueue( ev );
+  eventfd_pipe->signal();
+  return result;
 }
 bool FDEventQueue::toggle( int fd, bool enable_read, bool enable_write )
 {
@@ -631,7 +689,7 @@ bool FDEventQueue::toggle( int fd, bool enable_read, bool enable_write )
   }
   else
     return port_dissociate( poll_fd, PORT_SOURCE_FD, fd ) != -1;
-#elif !defined(_WIN32)
+#else
   pollfd_vector::size_type j = ( next_pollfd_to_check > 0 ) ? next_pollfd_to_check - 1 : 0;
   pollfd_vector::size_type j_max = pollfds.size();
   for ( unsigned char i = 0; i < 2; i++ )
@@ -660,9 +718,6 @@ bool FDEventQueue::toggle( int fd, bool enable_read, bool enable_write )
       break;
   }
   return false;
-#else
-  DebugBreak();
-  return false;
 #endif
 }
 #ifdef _WIN32
@@ -676,8 +731,8 @@ bool FDEventQueue::toggle( int fd, bool enable_read, bool enable_write )
 auto_Object<HTTPClient> HTTPClient::create( const URI& absolute_uri,
                                             auto_Object<StageGroup> stage_group,
                                             auto_Object<Log> log,
+                                            uint8_t operation_retries_max,
                                             const Time& operation_timeout,
-                                            uint8_t reconnect_tries_max,
                                             auto_Object<SSLContext> ssl_context )
 {
   YIELD::URI checked_absolute_uri( absolute_uri );
@@ -690,26 +745,28 @@ auto_Object<HTTPClient> HTTPClient::create( const URI& absolute_uri,
     if ( absolute_uri.get_scheme() == "https" && ssl_context == NULL )
       ssl_context = new SSLContext( SSLv23_client_method() );
 #endif
-    auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
-    auto_Object<HTTPClient> http_client = new HTTPClient( absolute_uri, fd_event_queue, log, operation_timeout, peername, reconnect_tries_max, ssl_context );
-    stage_group->createStage( http_client->incRef(), 1, fd_event_queue->incRef(), NULL, log );
+    auto_Object<EventQueue> http_client_event_queue, http_request_writer_event_queue, http_response_reader_event_queue;
+#ifdef _WIN32
+    http_client_event_queue = new IOCompletionPort;
+    http_request_writer_event_queue = new IOCompletionPort;
+    http_response_reader_event_queue = new IOCompletionPort;
+#else
+    http_client_event_queue = new FDEventQueue;
+    http_request_writer_event_queue = new FDEventQueue;
+    http_response_reader_event_queue = new FDEventQueue;
+#endif
+    auto_Object<HTTPClient> http_client = new HTTPClient( absolute_uri, log, operation_retries_max, operation_timeout, peername, ssl_context );
+    auto_Object<Stage> http_client_stage = stage_group->createStage( http_client->incRef(), 1, http_client_event_queue, NULL, log );
+    auto_Object<HTTPClient> http_request_writer = new HTTPClient( absolute_uri, log, operation_retries_max, operation_timeout, peername, ssl_context );
+    auto_Object<Stage> http_request_writer_stage = stage_group->createStage( http_request_writer->incRef(), 1, http_request_writer_event_queue, NULL, log );
+    auto_Object<HTTPClient> http_response_reader = new HTTPClient( absolute_uri, log, operation_retries_max, operation_timeout, peername, ssl_context );
+    auto_Object<Stage> http_response_reader_stage = stage_group->createStage( http_response_reader->incRef(), 1, http_response_reader_event_queue, NULL, log );
+    http_client->set_http_request_writer_stage( http_request_writer_stage );
+    http_request_writer->set_http_response_reader_stage( http_response_reader_stage );
+    http_response_reader->set_helper_peer_stage( http_client_stage );
     return http_client;
   }
   return NULL;
-}
-HTTPClient::HTTPClient( const URI& absolute_uri, auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peername, uint8_t reconnect_tries_max, auto_Object<SSLContext> ssl_context )
-  : SocketClient<HTTPRequest, HTTPResponse>( absolute_uri, fd_event_queue, log, operation_timeout, peername, reconnect_tries_max, ssl_context )
-{ }
-auto_Object<HTTPRequest> HTTPClient::createProtocolRequest( auto_Object<Request> body )
-{
-  if ( body->get_tag() == YIELD_OBJECT_TAG( HTTPRequest ) )
-    return static_cast<HTTPRequest*>( body.release() );
-  else
-    return NULL;
-}
-auto_Object<HTTPResponse> HTTPClient::createProtocolResponse( auto_Object<HTTPRequest> )
-{
-  return new HTTPResponse;
 }
 auto_Object<HTTPResponse> HTTPClient::GET( const URI& absolute_uri, auto_Object<Log> log )
 {
@@ -727,18 +784,10 @@ auto_Object<HTTPResponse> HTTPClient::PUT( const URI& absolute_uri, const Path& 
   file->read( *body, file_size );
   return sendHTTPRequest( "PUT", absolute_uri, body.release(), log );
 }
-void HTTPClient::respond( auto_Object<HTTPRequest> http_request, auto_Object<HTTPResponse> http_response )
-{
-  http_request->respond( *http_response.release() );
-}
-void HTTPClient::respond( auto_Object<HTTPRequest> http_request, auto_Object<ExceptionResponse> exception_response )
-{
-  http_request->respond( *exception_response.release() );
-}
 auto_Object<HTTPResponse> HTTPClient::sendHTTPRequest( const char* method, const YIELD::URI& absolute_uri, auto_Object<Buffer> body, auto_Object<Log> log )
 {
   auto_Object<StageGroup> stage_group = new SEDAStageGroup( "HTTPClient", 0, NULL, log );
-  auto_Object<HTTPClient> http_client = HTTPClient::create( absolute_uri, stage_group, log, HTTPClient::OPERATION_TIMEOUT_DEFAULT, 3 );
+  auto_Object<HTTPClient> http_client = HTTPClient::create( absolute_uri, stage_group, log );
   auto_Object<HTTPRequest> http_request = new HTTPRequest( method, absolute_uri, body );
   http_request->set_header( "User-Agent", "Flog 0.99" );
   auto_Object< OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > > http_response_queue( new OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > );
@@ -829,7 +878,8 @@ auto_Object<Buffer> HTTPMessage::serialize()
 // http_request.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-HTTPRequest::HTTPRequest()
+HTTPRequest::HTTPRequest( auto_Object<Connection> connection )
+  : ProtocolRequest( connection )
 {
   method[0] = 0;
   uri = new char[2];
@@ -960,11 +1010,11 @@ ssize_t HTTPRequest::deserialize( auto_Object<Buffer> buffer )
 }
 bool HTTPRequest::respond( uint16_t status_code )
 {
-  return respond( *( new HTTPResponse( status_code ) ) );
+  return respond( *( new HTTPResponse( incRef(), status_code ) ) );
 }
 bool HTTPRequest::respond( uint16_t status_code, auto_Object<Buffer> body )
 {
-  return respond( *( new HTTPResponse( status_code, body ) ) );
+  return respond( *( new HTTPResponse( incRef(), status_code, body ) ) );
 }
 auto_Object<Buffer> HTTPRequest::serialize()
 {
@@ -982,19 +1032,20 @@ auto_Object<Buffer> HTTPRequest::serialize()
 // http_response.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-HTTPResponse::HTTPResponse()
+HTTPResponse::HTTPResponse( auto_Object<HTTPRequest> http_request )
+  : ProtocolResponse<HTTPRequest>( http_request )
 {
   memset( status_code_str, 0, sizeof( status_code_str ) );
   deserialize_state = DESERIALIZING_HTTP_VERSION;
 }
-HTTPResponse::HTTPResponse( uint16_t status_code )
-  : status_code( status_code )
+HTTPResponse::HTTPResponse( auto_Object<HTTPRequest> http_request, uint16_t status_code )
+  : ProtocolResponse<HTTPRequest>( http_request ), status_code( status_code )
 {
   http_version = 1;
   deserialize_state = DESERIALIZE_DONE;
 }
-HTTPResponse::HTTPResponse( uint16_t status_code, auto_Object<Buffer> body )
-  : HTTPMessage( body ), status_code( status_code )
+HTTPResponse::HTTPResponse( auto_Object<HTTPRequest> http_request, uint16_t status_code, auto_Object<Buffer> body )
+  : ProtocolResponse<HTTPRequest>( http_request ), HTTPMessage( body ), status_code( status_code )
 {
   deserialize_state = DESERIALIZE_DONE;
 }
@@ -1160,14 +1211,23 @@ auto_Object<HTTPServer> HTTPServer::create( const URI& absolute_uri,
       tcp_listen_queue = TCPListenQueue::create( sockname );
     if ( tcp_listen_queue != NULL )
     {
-      auto_Object<HTTPResponseWriter> http_response_writer = new HTTPResponseWriter( log );
-      auto_Object<Stage> http_response_writer_stage = static_cast<StageGroupImpl<StageGroupType>*>( stage_group.get() )->createStage( http_response_writer, log ).release();
-      auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
-      auto_Object<HTTPRequestReader> http_request_reader = new HTTPRequestReader( fd_event_queue, http_request_target, http_response_writer_stage, log );
-      auto_Object<Stage> http_request_reader_stage = stage_group->createStage( http_request_reader, 1, fd_event_queue, NULL, log );
-      http_response_writer->set_protocol_request_reader_stage( http_request_reader_stage );
-      auto_Object<HTTPServer> http_server = new HTTPServer( http_request_reader_stage );
+      auto_Object<EventQueue> http_request_reader_event_queue, http_response_writer_event_queue;
+#ifdef _WIN32
+      http_request_reader_event_queue = new IOCompletionPort;
+      http_response_writer_event_queue = new IOCompletionPort;
+#else
+      http_request_reader_event_queue = new FDEventQueue;
+      http_response_writer_event_queue = new FDEventQueue;
+#endif
+      auto_Object<HTTPServer> http_request_reader = new HTTPServer( http_request_target, log );
+      auto_Object<Stage> http_request_reader_stage = stage_group->createStage( http_request_reader, 1, http_request_reader_event_queue, NULL, log );
+      auto_Object<HTTPServer> http_response_writer = new HTTPServer( http_request_target, log );
+      auto_Object<Stage> http_response_writer_stage = stage_group->createStage( http_response_writer, 1, http_response_writer_event_queue, NULL, log );
+      auto_Object<HTTPServer> http_server = new HTTPServer( http_request_target, log );
       stage_group->createStage( http_server, 1, tcp_listen_queue, NULL, log );
+      http_server->set_http_request_reader_stage( http_request_reader_stage );
+      http_request_reader->set_http_response_writer_stage( http_response_writer_stage );
+      http_response_writer->set_http_request_reader_stage( http_request_reader_stage );
       return http_server;
     }
   }
@@ -1179,6 +1239,97 @@ auto_Object<HTTPServer> HTTPServer::create<SEDAStageGroup>( const URI& absolute_
                                             auto_Object<SEDAStageGroup> stage_group,
                                             auto_Object<Log> log,
                                             auto_Object<SSLContext> ssl_context );
+void HTTPServer::handleDeserializedProtocolMessage( auto_Object<HTTPRequest> http_request )
+{
+  http_request->set_response_target( get_http_response_writer_stage()->incRef() );
+  http_request_target->send( *http_request.release() );
+}
+
+
+// io_completion_port.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4995 )
+#include <ws2tcpip.h>
+#pragma warning( pop )
+#endif
+IOCompletionPort::IOCompletionPort()
+{
+#ifdef _WIN32
+  hIoCompletionPort = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, NULL, 0 );
+#endif
+}
+IOCompletionPort::~IOCompletionPort()
+{
+#ifdef _WIN32
+  CloseHandle( hIoCompletionPort );
+#endif
+}
+bool IOCompletionPort::attach( int fd )
+{
+#ifdef _WIN32
+  return CreateIoCompletionPort( ( HANDLE )fd, hIoCompletionPort, 1, 0 ) != INVALID_HANDLE_VALUE;
+#else
+  return false;
+#endif
+}
+Event* IOCompletionPort::dequeue( uint64_t timeout_ns )
+{
+  Event* ev = TimerEventQueue::try_dequeue();
+  if ( ev != NULL )
+    return ev;
+#ifdef _WIN32
+  DWORD dwNumberOfBytesTransferred;
+  ULONG_PTR ulpCompletionKey;
+  struct AIOControlBlock<Event>::aiocb* aiocb_;
+  if ( GetQueuedCompletionStatus( hIoCompletionPort, &dwNumberOfBytesTransferred, &ulpCompletionKey, ( LPOVERLAPPED* )&aiocb_, timeout_ns == static_cast<uint64_t>( -1 ) ? INFINITE : static_cast<DWORD>( timeout_ns / NS_IN_MS ) ) )
+  {
+    if ( ulpCompletionKey == 0 ) // Signal
+      return NULL; // TODO: dequeue from AIOEnqueueContralBlock
+    else if ( ulpCompletionKey == 1 ) // I/O completion
+    {
+      AIOControlBlock<Event>* aio_control_block = aiocb_->this_;
+      if ( aio_control_block->isComplete() ) // The I/O operation returned immediately and has already been processed; throw away the AIOCB and try to dequeue again
+      {
+        Object::decRef( *aio_control_block );
+        return NULL;
+      }
+      else
+      {
+        aio_control_block->onCompletion( dwNumberOfBytesTransferred );
+        return aio_control_block;
+      }
+    }
+    else
+    {
+      DebugBreak();
+      return NULL;
+    }
+  }
+  else if ( GetLastError() == WAIT_TIMEOUT )
+    return NULL;
+  else
+  {
+    AIOControlBlock<Event>* aio_control_block = aiocb_->this_;
+    if ( aio_control_block->isComplete() ) DebugBreak();
+    // aio_control_block->onError( GetLastError() );
+    return aio_control_block;
+  }
+#else
+  DebugBreak();
+  return NULL;
+#endif
+}
+bool IOCompletionPort::enqueue( Event& ev )
+{
+  bool result = TimerEventQueue::enqueue( ev );
+#ifdef _WIN32
+  PostQueuedCompletionStatus( hIoCompletionPort, 0, 0, NULL );
+#endif
+  return result;
+}
 
 
 // json_marshaller.cpp
@@ -1211,49 +1362,49 @@ void JSONMarshaller::flushYAJLBuffer()
   BufferedMarshaller::write( buffer, len );
   yajl_gen_clear( writer );
 }
-void JSONMarshaller::write( const Declaration& decl, bool value )
+void JSONMarshaller::writeBool( const Declaration& decl, bool value )
 {
-  write( decl );
+  writeDeclaration( decl );
   yajl_gen_bool( writer, ( int )value );
   flushYAJLBuffer();
 }
-void JSONMarshaller::write( const Declaration& decl, auto_Object<Buffer> value )
+void JSONMarshaller::writeBuffer( const Declaration& decl, auto_Object<Buffer> value )
 {
-  write( decl );
+  writeDeclaration( decl );
   DebugBreak();
 }
-void JSONMarshaller::write( const Declaration& decl )
+void JSONMarshaller::writeDeclaration( const Declaration& decl )
 {
   if ( in_map && decl.get_identifier() )
     yajl_gen_string( writer, reinterpret_cast<const unsigned char*>( decl.get_identifier() ), static_cast<unsigned int>( strnlen( decl.get_identifier(), UINT16_MAX ) ) );
 }
-void JSONMarshaller::write( const Declaration& decl, double value )
+void JSONMarshaller::writeDouble( const Declaration& decl, double value )
 {
-  write( decl );
+  writeDeclaration( decl );
   yajl_gen_double( writer, value );
   flushYAJLBuffer();
 }
-void JSONMarshaller::write( const Declaration& decl, int64_t value )
+void JSONMarshaller::writeInt64( const Declaration& decl, int64_t value )
 {
-  write( decl );
+  writeDeclaration( decl );
   yajl_gen_integer( writer, ( long )value );
   flushYAJLBuffer();
 }
-void JSONMarshaller::write( const Declaration& decl, const Map& value )
+void JSONMarshaller::writeMap( const Declaration& decl, const Map& value )
 {
-  write( decl );
-  JSONMarshaller( *this, decl ).write( &value );
+  writeDeclaration( decl );
+  JSONMarshaller( *this, decl ).writeMap( &value );
 }
-void JSONMarshaller::write( const Map* value )
+void JSONMarshaller::writeMap( const Map* value )
 {
-  write( static_cast<const Object*>( value ) );
+  writeStruct( static_cast<const Object*>( value ) );
 }
-void JSONMarshaller::write( const Declaration& decl, const Object& value )
+void JSONMarshaller::writeStruct( const Declaration& decl, const Object& value )
 {
-  write( decl );
-  JSONMarshaller( *this, decl ).write( &value );
+  writeDeclaration( decl );
+  JSONMarshaller( *this, decl ).writeStruct( &value );
 }
-void JSONMarshaller::write( const Object* value )
+void JSONMarshaller::writeStruct( const Object* value )
 {
   yajl_gen_map_open( writer );
   in_map = true;
@@ -1262,12 +1413,12 @@ void JSONMarshaller::write( const Object* value )
   yajl_gen_map_close( writer );
   flushYAJLBuffer();
 }
-void JSONMarshaller::write( const Declaration& decl, const Sequence& value )
+void JSONMarshaller::writeSequence( const Declaration& decl, const Sequence& value )
 {
-  write( decl );
-  JSONMarshaller( *this, decl ).write( &value );
+  writeDeclaration( decl );
+  JSONMarshaller( *this, decl ).writeSequence( &value );
 }
-void JSONMarshaller::write( const Sequence* value )
+void JSONMarshaller::writeSequence( const Sequence* value )
 {
   yajl_gen_array_open( writer );
   in_map = false;
@@ -1276,11 +1427,11 @@ void JSONMarshaller::write( const Sequence* value )
   yajl_gen_array_close( writer );
   flushYAJLBuffer();
 }
-void JSONMarshaller::write( const Declaration& decl, const char* value, size_t value_len )
+void JSONMarshaller::writeString( const Declaration& decl, const char* value, size_t value_len )
 {
   if ( value_len > 0 || write_empty_strings )
   {
-    write( decl );
+    writeDeclaration( decl );
     yajl_gen_string( writer, reinterpret_cast<const unsigned char*>( value ), static_cast<unsigned int>( value_len ) );
     flushYAJLBuffer();
   }
@@ -1645,10 +1796,10 @@ void JSONUnmarshaller::readString( const Declaration& decl, std::string& str )
     if ( decl.get_identifier() ) // Read the value
     {
       if ( json_value->as_string != NULL )
-        str.assign( *json_value->as_string );
+        str.assign( static_cast<const std::string&>( *json_value->as_string ) );
     }
     else // Read the identifier
-      str.assign( *json_value->identifier );
+      str.assign( static_cast<const std::string&>( *json_value->identifier ) );
   }
 }
 void JSONUnmarshaller::readStruct( Object& s )
@@ -1693,15 +1844,124 @@ JSONValue* JSONUnmarshaller::readJSONValue( const Declaration& decl )
 }
 
 
+// named_pipe.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef _WIN32
+#include <windows.h>
+#pragma warning( push )
+#pragma warning( disable: 4100 )
+#endif
+auto_Object<NamedPipe> NamedPipe::open( const Path& path, uint32_t flags, mode_t mode )
+{
+#ifdef _WIN32
+  Path named_pipe_base_dir_path( TEXT( "\\\\.\\pipe" ) );
+  Path named_pipe_path( named_pipe_base_dir_path + path );
+  if ( ( flags & O_CREAT ) == O_CREAT ) // Server
+  {
+    HANDLE hPipe = CreateNamedPipe( named_pipe_path, PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_WAIT, PIPE_UNLIMITED_INSTANCES, 4096, 4096, 0, NULL );
+    if ( hPipe != INVALID_HANDLE_VALUE )
+      return new NamedPipe( new File( hPipe ), false );
+  }
+  else // Client
+  {
+    auto_Object<File> underlying_file = File::open( named_pipe_path, flags );
+    if ( underlying_file != NULL )
+      return new NamedPipe( underlying_file, true );
+  }
+#else
+  if ( ( flags & O_CREAT ) == O_CREAT )
+  {
+    if ( ::mkfifo( path, mode ) != -1 )
+      flags ^= O_CREAT;
+    else
+      return NULL;
+  }
+  auto_Object<File> underlying_file = File::open( path, flags );
+  if ( underlying_file != NULL )
+    return new NamedPipe( underlying_file );
+#endif
+  return NULL;
+}
+#ifdef _WIN32
+NamedPipe::NamedPipe( auto_Object<File> underlying_file, bool connected )
+  : underlying_file( underlying_file ), connected( connected )
+{ }
+#else
+NamedPipe::NamedPipe( auto_Object<File> underlying_file )
+  : underlying_file( underlying_file )
+{ }
+#endif
+#ifdef _WIN32
+bool NamedPipe::connect()
+{
+  if ( connected )
+    return true;
+  else
+  {
+    if ( ConnectNamedPipe( *underlying_file, NULL ) != 0 ||
+         GetLastError() == ERROR_PIPE_CONNECTED )
+    {
+      connected = true;
+      return true;
+    }
+    else
+      return false;
+  }
+}
+#endif
+ssize_t NamedPipe::read( void* buffer, size_t buffer_len )
+{
+#ifdef _WIN32
+  if ( connect() )
+    return underlying_file->read( buffer, buffer_len );
+  else
+    return -1;
+#else
+  return underlying_file->read( buffer, buffer_len );
+#endif
+}
+ssize_t NamedPipe::write( const void* buffer, size_t buffer_len )
+{
+#ifdef _WIN32
+  if ( connect() )
+    return underlying_file->write( buffer, buffer_len );
+  else
+    return -1;
+#else
+  return underlying_file->write( buffer, buffer_len );
+#endif
+}
+ssize_t NamedPipe::writev( const iovec* buffers, uint32_t buffers_count )
+{
+#ifdef _WIN32
+  if ( connect() )
+    return underlying_file->writev( buffers, buffers_count );
+  else
+    return -1;
+#else
+  return underlying_file->writev( buffers, buffers_count );
+#endif
+}
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
+
+
 // oncrpc_message.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 template <class ONCRPCMessageType>
-ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage( uint32_t xid, auto_Object<Interface> _interface, auto_Object<> body )
-  : body( body ), _interface( _interface ), xid( xid )
+ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage()
+{
+  xid = 0;
+  deserialize_state = DESERIALIZING_RECORD_FRAGMENT_MARKER;
+}
+template <class ONCRPCMessageType>
+ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage( uint32_t xid, auto_Object<> body )
+  : xid( xid ), body( body )
 {
   deserialize_state = DESERIALIZING_RECORD_FRAGMENT_MARKER;
-  record_fragment_length = 0;
 }
 template <class ONCRPCMessageType>
 ONCRPCMessage<ONCRPCMessageType>::~ONCRPCMessage()
@@ -1726,14 +1986,14 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize( auto_Object<Buffer> buffe
         if ( record_fragment_marker & ( 1 << 31UL ) )
         {
           last_record_fragment = true;
-          record_fragment_length = record_fragment_marker ^ ( 1 << 31 );
+          expected_record_fragment_length = record_fragment_marker ^ ( 1 << 31 );
         }
         else
         {
           last_record_fragment = false;
-          record_fragment_length = record_fragment_marker;
+          expected_record_fragment_length = record_fragment_marker;
         }
-        if ( record_fragment_length > 32 * 1024 * 1024 ) DebugBreak();
+        if ( expected_record_fragment_length > 32 * 1024 * 1024 ) DebugBreak();
         deserialize_state = DESERIALIZING_RECORD_FRAGMENT;
       }
       else if ( record_fragment_marker_filled == 0 )
@@ -1747,45 +2007,38 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize( auto_Object<Buffer> buffe
     // Drop down
     case DESERIALIZING_RECORD_FRAGMENT:
     {
-      if ( buffer->size() == record_fragment_length ) // Common case
+      received_record_fragment_length = buffer->size();
+      if ( received_record_fragment_length == expected_record_fragment_length ) // Common case
       {
         XDRUnmarshaller xdr_unmarshaller( buffer );
-        xid = xdr_unmarshaller.readUint32( "xid ");
-        static_cast<ONCRPCMessageType*>( this )->deserializeONCRPCRequestResponseHeader( xdr_unmarshaller );
-        if ( body != NULL )
-          xdr_unmarshaller.readStruct( XDRUnmarshaller::Declaration(), body.get() );
+        static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
         deserialize_state = DESERIALIZE_DONE;
         return 0;
       }
       else
       {
-        record_fragment_string.reserve( record_fragment_length );
         deserialize_state = DESERIALIZING_LONG_RECORD_FRAGMENT;
+        current_record_fragment_buffer = first_record_fragment_buffer = buffer;
+        return expected_record_fragment_length - received_record_fragment_length;
       }
     }
-    // Drop down
+    break;
     case DESERIALIZING_LONG_RECORD_FRAGMENT:
     {
-      buffer->get( record_fragment_string, record_fragment_length - record_fragment_string.size() );
-      do
+      current_record_fragment_buffer->set_next_buffer( buffer );
+      current_record_fragment_buffer = buffer;
+      received_record_fragment_length += buffer->size();
+      if ( received_record_fragment_length == expected_record_fragment_length )
       {
-        if ( record_fragment_string.size() == record_fragment_length )
-        {
-          auto_Object<Buffer> record_fragment_buffer = new HeapBuffer( record_fragment_length );
-          record_fragment_buffer->put( record_fragment_string );
-          XDRUnmarshaller xdr_unmarshaller( record_fragment_buffer );
-          xid = xdr_unmarshaller.readUint32( "xid ");
-          static_cast<ONCRPCMessageType*>( this )->deserializeONCRPCRequestResponseHeader( xdr_unmarshaller );
-          if ( body != NULL )
-            xdr_unmarshaller.readStruct( XDRUnmarshaller::Declaration(), body.get() );
-          deserialize_state = DESERIALIZE_DONE;
-          return 0;
-        }
-        else
-          buffer = buffer->get_next_buffer();
-      } while ( buffer != NULL );
-      return record_fragment_length - record_fragment_string.size();
+        XDRUnmarshaller xdr_unmarshaller( first_record_fragment_buffer );
+        static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
+        deserialize_state = DESERIALIZE_DONE;
+        return 0;
+      }
+      else
+        return expected_record_fragment_length - received_record_fragment_length;
     }
+    break;
     case DESERIALIZE_DONE: return 0;
   }
   DebugBreak();
@@ -1795,9 +2048,7 @@ template <class ONCRPCMessageType>
 auto_Object<Buffer> ONCRPCMessage<ONCRPCMessageType>::serialize()
 {
   XDRMarshaller xdr_marshaller;
-  xdr_marshaller.write( XDRMarshaller::Declaration( "xid" ), static_cast<int32_t>( get_xid() ) );
-  static_cast<ONCRPCMessageType*>( this )->serializeONCRPCRequestResponseHeader( xdr_marshaller );
-  xdr_marshaller.write( XDRMarshaller::Declaration(), *body );
+  static_cast<ONCRPCMessageType*>( this )->marshal( xdr_marshaller );
   auto_Object<Buffer> xdr_buffer = xdr_marshaller.get_buffer();
   // Calculate the record fragment length from the sizes of all the buffers in the chain
   uint32_t record_fragment_length = 0;
@@ -1825,140 +2076,205 @@ template class ONCRPCMessage<ONCRPCResponse>;
 // oncrpc_request.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-ONCRPCRequest::ONCRPCRequest( auto_Object<Interface> _interface )
-  : ONCRPCMessage<ONCRPCRequest>( 0, _interface, NULL )
+ONCRPCRequest::ONCRPCRequest( auto_Object<Connection> connection, auto_Object<Interface> _interface )
+  : ProtocolRequest( connection ), _interface( _interface )
 { }
-ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, auto_Object<> body )
-  : ONCRPCMessage<ONCRPCRequest>( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), NULL, body ),
+ONCRPCRequest::ONCRPCRequest( auto_Object<Interface> _interface, uint32_t prog, uint32_t proc, uint32_t vers, auto_Object<> body )
+  : ONCRPCMessage<ONCRPCRequest>( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
+    _interface( _interface ),
     prog( prog ), proc( proc ), vers( vers )
 {
   credential_auth_flavor = AUTH_NONE;
 }
-ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, auto_Object<> credential, auto_Object<> body )
-  : ONCRPCMessage<ONCRPCRequest>( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), NULL, body ),
+ONCRPCRequest::ONCRPCRequest( auto_Object<Interface> _interface, uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, auto_Object<> credential, auto_Object<> body )
+  : ONCRPCMessage<ONCRPCRequest>( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
+    _interface( _interface ),
     prog( prog ), proc( proc ), vers( vers ),
     credential_auth_flavor( credential_auth_flavor ), credential( credential )
 { }
-void ONCRPCRequest::deserializeONCRPCRequestResponseHeader( XDRUnmarshaller& xdr_unmarshaller )
+void ONCRPCRequest::marshal( Marshaller& marshaller )
 {
-  int32_t msg_type = xdr_unmarshaller.readInt32( "msg_type" );
-  if ( msg_type == 0 ) // CALL
-  {
-    uint32_t rpcvers = xdr_unmarshaller.readUint32( "rpcvers" );
-    if ( rpcvers == 2 )
-    {
-      xdr_unmarshaller.readUint32( "prog" );
-      xdr_unmarshaller.readUint32( "vers" );
-      uint32_t proc = xdr_unmarshaller.readUint32( "proc" );
-      xdr_unmarshaller.readUint32( "credential_auth_flavor" );
-      uint32_t credential_auth_body_length = xdr_unmarshaller.readUint32( "credential_auth_body_length" );
-      if ( credential_auth_body_length > 0 )
-        DebugBreak();
-      xdr_unmarshaller.readUint32( "verf_auth_flavor" );
-      uint32_t verf_auth_body_length = xdr_unmarshaller.readUint32( "credential_auth_body_length" );
-      if ( verf_auth_body_length > 0 )
-        DebugBreak();
-      body = _interface->createRequest( proc ).release();
-    }
-  }
-}
-void ONCRPCRequest::serializeONCRPCRequestResponseHeader( XDRMarshaller& xdr_marshaller )
-{
-  xdr_marshaller.write( XDRMarshaller::Declaration( "msg_type" ), static_cast<int32_t>( 0 ) ); // MSG_CALL
-  xdr_marshaller.write( XDRMarshaller::Declaration( "rpcvers" ), static_cast<int32_t>( 2 ) );
-  xdr_marshaller.write( XDRMarshaller::Declaration( "prog" ), static_cast<int32_t>( prog ) );
-  xdr_marshaller.write( XDRMarshaller::Declaration( "vers" ), static_cast<int32_t>( vers ) );
-  xdr_marshaller.write( XDRMarshaller::Declaration( "proc" ), static_cast<int32_t>( proc ) );
-  xdr_marshaller.write( XDRMarshaller::Declaration( "credential_auth_flavor" ), static_cast<int32_t>( credential_auth_flavor ) );
+  marshaller.writeInt32( "xid", xid );
+  marshaller.writeInt32( "msg_type", 0 ); // MSG_CALL
+  marshaller.writeInt32( "rpcvers", 2 );
+  marshaller.writeInt32( "prog", prog );
+  marshaller.writeInt32( "vers", vers );
+  marshaller.writeInt32( "proc", proc );
+  marshaller.writeInt32( "credential_auth_flavor", credential_auth_flavor );
   if ( credential_auth_flavor == AUTH_NONE || credential == NULL )
-    xdr_marshaller.write( XDRMarshaller::Declaration( "credential_auth_body_length" ), static_cast<int32_t>( 0 ) );
+    marshaller.writeInt32( "credential_auth_body_length", 0 );
   else
   {
     XDRMarshaller credential_auth_body_xdr_marshaller;
     credential->marshal( credential_auth_body_xdr_marshaller );
-    static_cast<Marshaller&>( xdr_marshaller ).write( "credential_auth_body", credential_auth_body_xdr_marshaller.get_buffer() );
+    marshaller.writeBuffer( "credential_auth_body", credential_auth_body_xdr_marshaller.get_buffer() );
   }
-  xdr_marshaller.write( XDRMarshaller::Declaration( "verf_auth_flavor" ), static_cast<int32_t>( AUTH_NONE ) );
-  xdr_marshaller.write( XDRMarshaller::Declaration( "verf_auth_body_length" ), static_cast<int32_t>( 0 ) );
+  marshaller.writeInt32( "verf_auth_flavor", AUTH_NONE );
+  marshaller.writeInt32( "verf_auth_body_length", 0 );
+  marshaller.writeStruct( XDRMarshaller::Declaration(), *body );
+}
+bool ONCRPCRequest::respond( Response& response )
+{
+  if ( this->get_response_target() == NULL )
+  {
+    auto_Object<> body = get_body();
+    Request* interface_request = _interface->checkRequest( *body );
+    if ( interface_request != NULL )
+    {
+      if ( response.get_tag() == YIELD_OBJECT_TAG( ONCRPCResponse ) )
+      {
+        ONCRPCResponse& oncrpc_response = static_cast<ONCRPCResponse&>( response );
+        auto_Object<> oncrpc_response_body = oncrpc_response.get_body();
+        Response* interface_response = _interface->checkResponse( *oncrpc_response_body );
+        if ( interface_response != NULL )
+        {
+          Object::decRef( response );
+          return interface_request->respond( interface_response->incRef() );
+        }
+      }
+      else
+        return interface_request->respond( response );
+    }
+  }
+  return ProtocolRequest::respond( response );
+}
+void ONCRPCRequest::unmarshal( Unmarshaller& unmarshaller )
+{
+  xid = unmarshaller.readUint32( "xid" );
+  int32_t msg_type = unmarshaller.readInt32( "msg_type" );
+  if ( msg_type == 0 ) // CALL
+  {
+    uint32_t rpcvers = unmarshaller.readUint32( "rpcvers" );
+    if ( rpcvers == 2 )
+    {
+      unmarshaller.readUint32( "prog" );
+      unmarshaller.readUint32( "vers" );
+      uint32_t proc = unmarshaller.readUint32( "proc" );
+      unmarshaller.readUint32( "credential_auth_flavor" );
+      std::string credential_auth_body;
+      unmarshaller.readString( "credential_auth_body", credential_auth_body );
+      unmarshaller.readUint32( "verf_auth_flavor" );
+      uint32_t verf_auth_body_length = unmarshaller.readUint32( "credential_auth_body_length" );
+      if ( verf_auth_body_length > 0 )
+        DebugBreak();
+      if ( body != NULL )
+        unmarshaller.readStruct( Unmarshaller::Declaration(), body.get() );
+      else
+      {
+        if ( _interface != NULL )
+        {
+          body = _interface->createRequest( proc ).release();
+          unmarshaller.readStruct( Unmarshaller::Declaration(), body.get() );
+        }
+      }
+    }
+  }
 }
 
 
 // oncrpc_response.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-ONCRPCResponse::ONCRPCResponse( auto_Object<Interface> _interface, auto_Object<> body )
-  : ONCRPCMessage<ONCRPCResponse>( 0, _interface, body )
+ONCRPCResponse::ONCRPCResponse( auto_Object<ONCRPCRequest> oncrpc_request, auto_Object<> body )
+  : ProtocolResponse<ONCRPCRequest>( oncrpc_request ),
+    ONCRPCMessage<ONCRPCResponse>( oncrpc_request->get_xid(), body )
 { }
 ONCRPCResponse::ONCRPCResponse( uint32_t xid, auto_Object<> body )
-  : ONCRPCMessage<ONCRPCResponse>( xid, NULL, body )
+  : ProtocolResponse<ONCRPCRequest>( NULL ), ONCRPCMessage<ONCRPCResponse>( xid, body )
 { }
-void ONCRPCResponse::deserializeONCRPCRequestResponseHeader( XDRUnmarshaller& xdr_unmarshaller )
+void ONCRPCResponse::marshal( Marshaller& marshaller )
 {
-  int32_t msg_type = xdr_unmarshaller.readInt32( "msg_type" );
+  marshaller.writeInt32( "xid", xid );
+  marshaller.writeInt32( "msg_type", 1 ); // MSG_REPLY
+  marshaller.writeInt32( "reply_stat", 0 ); // MSG_ACCEPTED
+  marshaller.writeInt32( "verf_auth_flavor", 0 );
+  marshaller.writeInt32( "verf_authbody_length", 0 );
+  if ( body == NULL || body->get_tag() != YIELD_OBJECT_TAG( ExceptionResponse ) )
+    marshaller.writeInt32( "accept_stat", 0 ); // SUCCESS
+  else
+    marshaller.writeInt32( "accept_stat", 5 ); // SYSTEM_ERR
+  marshaller.writeStruct( Marshaller::Declaration(), *body );
+}
+void ONCRPCResponse::unmarshal( Unmarshaller& unmarshaller )
+{
+  xid = unmarshaller.readUint32( "xid" );
+  int32_t msg_type = unmarshaller.readInt32( "msg_type" );
   if ( msg_type == 1 ) // REPLY
   {
-    uint32_t reply_stat = xdr_unmarshaller.readUint32( "reply_stat" );
+    uint32_t reply_stat = unmarshaller.readUint32( "reply_stat" );
     if ( reply_stat == 0 ) // MSG_ACCEPTED
     {
-      uint32_t verf_auth_flavor = xdr_unmarshaller.readUint32( "verf_auth_flavor" );
-      uint32_t verf_auth_body_length = xdr_unmarshaller.readUint32( "verf_auth_body_length" );
-      if ( verf_auth_flavor == 0 && verf_auth_body_length == 0 )
+      uint32_t verf_auth_flavor = unmarshaller.readUint32( "verf_auth_flavor" );
+      uint32_t verf_authbody_length = unmarshaller.readUint32( "verf_authbody_length" );
+      if ( verf_auth_flavor == 0 && verf_authbody_length == 0 )
       {
-        uint32_t accept_stat = xdr_unmarshaller.readUint32( "accept_stat" );
-        if ( accept_stat != 0 ) // != SUCCESS
+        uint32_t accept_stat = unmarshaller.readUint32( "accept_stat" );
+        switch ( accept_stat )
         {
-          switch ( accept_stat )
+          case 0:
           {
-            case 1: body = new ExceptionResponse( "ONC-RPC exception: program unavailable" ); break;
-            case 2: body = new ExceptionResponse( "ONC-RPC exception: program mismatch" ); break;
-            case 3: body = new ExceptionResponse( "ONC-RPC exception: procedure unavailable" ); break;
-            case 4: body = new ExceptionResponse( "ONC-RPC exception: garbage arguments" ); break;
-            case 5: body = new ExceptionResponse( "ONC-RPC exception: system error" ); break;
-            default:
+            if ( body != NULL )
+              unmarshaller.readStruct( XDRUnmarshaller::Declaration(), body.get() );
+            else
             {
-              if ( _interface != NULL )
-              {
-                body = _interface->createExceptionResponse( accept_stat ).release();
-                if ( body == NULL )
-                  body = new ExceptionResponse( "ONC-RPC exception: system error" );
-              }
-              else
-                body = new ExceptionResponse( "ONC-RPC exception: system error" );
+              body = get_protocol_request()->get_interface()->createResponse( get_protocol_request()->get_body()->get_tag() ).release();
+              if ( body != NULL )
+                unmarshaller.readStruct( XDRUnmarshaller::Declaration(), body.get() );
             }
-            break;
           }
+          break;
+          case 1: body = new ExceptionResponse( "ONC-RPC exception: program unavailable" ); break;
+          case 2: body = new ExceptionResponse( "ONC-RPC exception: program mismatch" ); break;
+          case 3: body = new ExceptionResponse( "ONC-RPC exception: procedure unavailable" ); break;
+          case 4: body = new ExceptionResponse( "ONC-RPC exception: garbage arguments" ); break;
+          case 5: body = new ExceptionResponse( "ONC-RPC exception: system error" ); break;
+          default:
+          {
+            body = get_protocol_request()->get_interface()->createExceptionResponse( accept_stat ).release();
+            if ( body != NULL )
+              unmarshaller.readStruct( XDRUnmarshaller::Declaration(), body.get() );
+            else
+              body = new ExceptionResponse( "ONC-RPC exception: system error" );
+          }
+          break;
         }
       }
       else
         body = new ExceptionResponse( "ONC-RPC exception: received unexpected verification body on response" );
     }
+    else if ( reply_stat == 1 ) // MSG_REJECTED
+      body = new ExceptionResponse( "ONC-RPC exception: received MSG_REJECTED reply_stat" );
     else
-    {
-      if ( reply_stat == 1 ) // MSG_REJECTED
-        body = new ExceptionResponse( "ONC-RPC exception: received MSG_REJECTED reply_stat" );
-      else
-        body = new ExceptionResponse( "ONC-RPC exception: received unknown reply_stat" );
-    }
+      body = new ExceptionResponse( "ONC-RPC exception: received unknown reply_stat" );
   }
   else
     body = new ExceptionResponse( "ONC-RPC exception: received unknown msg_type" );
-}
-void ONCRPCResponse::serializeONCRPCRequestResponseHeader( XDRMarshaller& xdr_marshaller )
-{
-  xdr_marshaller.write( XDRMarshaller::Declaration( "msg_type" ), static_cast<int32_t>( 1 ) ); // MSG_REPLY
-  xdr_marshaller.write( XDRMarshaller::Declaration( "reply_stat" ), static_cast<int32_t>( 0 ) ); // MSG_ACCEPTED
-  xdr_marshaller.write( XDRMarshaller::Declaration( "verf_auth_flavor" ), static_cast<int32_t>( 0 ) );
-  xdr_marshaller.write( XDRMarshaller::Declaration( "verf_auth_body_length" ), static_cast<int32_t>( 0 ) );
-  if ( body->get_tag() != YIELD_OBJECT_TAG( ExceptionResponse ) )
-    xdr_marshaller.write( XDRMarshaller::Declaration( "accept_stat" ), static_cast<int32_t>( 0 ) ); // SUCCESS
-  else
-    xdr_marshaller.write( XDRMarshaller::Declaration( "accept_stat" ), static_cast<int32_t>( 5 ) ); // SYSTEM_ERR
 }
 
 
 // oncrpc_server.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+namespace YIELD
+{
+  class ONCRPCResponder : public EventTarget
+  {
+  public:
+    ONCRPCResponder( auto_Object<ONCRPCRequest> oncrpc_request, auto_Object<Stage> oncrpc_response_writer_stage )
+      : oncrpc_request( oncrpc_request ), oncrpc_response_writer_stage( oncrpc_response_writer_stage )
+    { }
+    // Object
+    YIELD_OBJECT_PROTOTYPES( ONCRPCResponder, 0 );
+    // EventTarget
+    bool send( Event& ev )
+    {
+      return oncrpc_response_writer_stage->send( *( new ONCRPCResponse( oncrpc_request, ev ) ) );
+    }
+  private:
+    auto_Object<ONCRPCRequest> oncrpc_request;
+    auto_Object<Stage> oncrpc_response_writer_stage;
+  };
+};
 auto_Object<ONCRPCServer> ONCRPCServer::create( const URI& absolute_uri,
                                                 auto_Object<Interface> _interface,
                                                 auto_Object<StageGroup> stage_group,
@@ -1968,44 +2284,447 @@ auto_Object<ONCRPCServer> ONCRPCServer::create( const URI& absolute_uri,
   auto_Object<SocketAddress> sockname = SocketAddress::create( absolute_uri );
   if ( sockname != NULL )
   {
+    auto_Object<EventQueue> oncrpc_server_event_queue;
     if ( absolute_uri.get_scheme() == "oncrpcu" )
-    {
-      auto_Object<UDPRecvFromQueue> udp_recvfrom_queue = UDPRecvFromQueue::create( sockname );
-      if ( udp_recvfrom_queue != NULL )
-      {
-        auto_Object<ONCRPCResponseWriter> oncrpc_response_writer = new ONCRPCResponseWriter( log );
-        auto_Object<Stage> oncrpc_response_writer_stage = stage_group->createStage( oncrpc_response_writer->incRef(), 1, NULL, NULL, log );
-        auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
-        auto_Object<Stage> oncrpc_request_reader_stage = stage_group->createStage( new ONCRPCRequestReader( fd_event_queue->incRef(), _interface, log, oncrpc_response_writer_stage ), 1, fd_event_queue->incRef(), NULL, log );
-        oncrpc_response_writer->set_protocol_request_reader_stage( oncrpc_request_reader_stage );
-        auto_Object<ONCRPCServer> oncrpc_server = new ONCRPCServer( oncrpc_request_reader_stage );
-        stage_group->createStage( oncrpc_server->incRef(), 1, udp_recvfrom_queue.release(), NULL, log );
-        return oncrpc_server;
-      }
-    }
+      oncrpc_server_event_queue = UDPRecvFromQueue::create( sockname ).release();
     else
     {
       auto_Object<TCPListenQueue> tcp_listen_queue;
 #ifdef YIELD_HAVE_OPENSSL
       if ( absolute_uri.get_scheme() == "oncrpcs" && ssl_context != NULL )
-        tcp_listen_queue = SSLListenQueue::create( sockname, ssl_context ).release();
+        oncrpc_server_event_queue = SSLListenQueue::create( sockname, ssl_context ).release();
       else
 #endif
-        tcp_listen_queue = TCPListenQueue::create( sockname );
-      if ( tcp_listen_queue != NULL )
-      {
-        auto_Object<ONCRPCResponseWriter> oncrpc_response_writer = new ONCRPCResponseWriter( log );
-        auto_Object<Stage> oncrpc_response_writer_stage = stage_group->createStage( oncrpc_response_writer->incRef(), 1, NULL, NULL, log );
-        auto_Object<FDAndInternalEventQueue> fd_event_queue = new FDAndInternalEventQueue;
-        auto_Object<Stage> oncrpc_request_reader_stage = stage_group->createStage( new ONCRPCRequestReader( fd_event_queue->incRef(), _interface, log, oncrpc_response_writer_stage ), 1, fd_event_queue->incRef(), NULL, log );
-        oncrpc_response_writer->set_protocol_request_reader_stage( oncrpc_request_reader_stage );
-        auto_Object<ONCRPCServer> oncrpc_server = new ONCRPCServer( oncrpc_request_reader_stage );
-        stage_group->createStage( oncrpc_server->incRef(), 1, tcp_listen_queue.release(), NULL, log );
-        return oncrpc_server;
-      }
+        oncrpc_server_event_queue = TCPListenQueue::create( sockname ).release();
+    }
+    if ( oncrpc_server_event_queue != NULL )
+    {
+      auto_Object<ONCRPCServer> oncrpc_server = new ONCRPCServer( _interface, log );
+      stage_group->createStage( oncrpc_server->incRef(), 1, oncrpc_server_event_queue.release(), NULL, log );
+      return oncrpc_server;
     }
   }
   return NULL;
+}
+void ONCRPCServer::handleDeserializedProtocolMessage( auto_Object<ONCRPCRequest> oncrpc_request )
+{
+  auto_Object<> oncrpc_request_body = oncrpc_request->get_body();
+  Request* interface_request = _interface->checkRequest( *oncrpc_request_body );
+  if ( interface_request != NULL )
+  {
+    oncrpc_request_body.release();
+    interface_request->set_response_target( new ONCRPCResponder( oncrpc_request, get_oncrpc_response_writer_stage() ) );
+    _interface->send( *interface_request );
+  }
+  else
+    DebugBreak();
+}
+
+
+// peer.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4100 )
+#endif
+template <class ReadProtocolMessageType, class WriteProtocolMessageType>
+Peer<ReadProtocolMessageType, WriteProtocolMessageType>::Peer( auto_Object<Log> log )
+  : log( log )
+{ }
+template <class ReadProtocolMessageType, class WriteProtocolMessageType>
+void Peer<ReadProtocolMessageType, WriteProtocolMessageType>::attach( auto_Object<Connection> connection, auto_Object<> context, bool enable_read, bool enable_write )
+{
+  if ( fd_event_queue != NULL )
+    fd_event_queue->attach( *connection->get_socket(), context, enable_read, enable_write );
+  else
+    io_completion_port->attach( *connection->get_socket() );
+}
+template <class ReadProtocolMessageType, class WriteProtocolMessageType>
+ssize_t Peer<ReadProtocolMessageType, WriteProtocolMessageType>::deserialize( auto_Object<ReadProtocolMessageType> protocol_message, auto_Object<Buffer> buffer )
+{
+  return protocol_message->deserialize( buffer );
+}
+template <class ReadProtocolMessageType, class WriteProtocolMessageType>
+void Peer<ReadProtocolMessageType, WriteProtocolMessageType>::detach( auto_Object<Connection> connection )
+{
+  if ( fd_event_queue != NULL )
+    fd_event_queue->detach( *connection->get_socket() );
+}
+template <class ReadProtocolMessageType, class WriteProtocolMessageType>
+void Peer<ReadProtocolMessageType, WriteProtocolMessageType>::handleEvent( Event& ev )
+{
+  switch ( ev.get_tag() )
+  {
+    case YIELD_OBJECT_TAG( Socket::AIOReadControlBlock ):
+    {
+      Socket::AIOReadControlBlock& aio_read_control_block = static_cast<Socket::AIOReadControlBlock&>( ev );
+      auto_Object<ReadProtocolMessageType> protocol_message( static_cast<ReadProtocolMessageType*>( aio_read_control_block.get_context().release() ) );
+      auto_Object<Buffer> buffer = aio_read_control_block.get_buffer();
+      ssize_t deserialize_ret = deserialize( protocol_message, buffer );
+      if ( deserialize_ret == 0 )
+      {
+        detach( protocol_message->get_connection() );
+        handleDeserializedProtocolMessage( protocol_message );
+      }
+      else if ( deserialize_ret > 0 )
+        read( protocol_message, deserialize_ret );
+      Object::decRef( ev );
+    }
+    break;
+    case YIELD_OBJECT_TAG( FDEventQueue::POLLINEvent ):
+    {
+      FDEventQueue::POLLINEvent& pollin_event = static_cast<FDEventQueue::POLLINEvent&>( ev );
+      read( static_cast<ReadProtocolMessageType*>( pollin_event.get_context().release() ) );
+      Object::decRef( ev );
+    }
+    break;
+    case YIELD_OBJECT_TAG( ReadProtocolMessageType ):
+    {
+      read( static_cast<ReadProtocolMessageType&>( ev ) );
+    }
+    break;
+    case YIELD_OBJECT_TAG( StageStartupEvent ):
+    {
+      StageStartupEvent& stage_startup_event = static_cast<StageStartupEvent&>( ev );
+      my_stage = stage_startup_event.get_stage();
+      auto_Object<EventQueue> my_event_queue = my_stage->get_event_queue();
+      switch ( my_event_queue->get_tag() )
+      {
+        case YIELD_OBJECT_TAG( FDEventQueue ): fd_event_queue = static_cast<FDEventQueue*>( my_event_queue.release() ); break;
+        case YIELD_OBJECT_TAG( IOCompletionPort ): io_completion_port = static_cast<IOCompletionPort*>( my_event_queue.release() ); break;
+        default: DebugBreak();
+      }
+      Object::decRef( ev );
+    }
+    return;
+    case YIELD_OBJECT_TAG( StageShutdownEvent ):
+    {
+//      my_stage = NULL;
+      Object::decRef( ev );
+    }
+    return;
+    case YIELD_OBJECT_TAG( WriteProtocolMessageType ):
+    {
+      auto_Object<WriteProtocolMessageType> protocol_message( static_cast<WriteProtocolMessageType&>( ev ) );
+      auto_Object<Buffer> buffer = serialize( protocol_message );
+      write( protocol_message, buffer );
+    }
+    break;
+    default:
+    {
+      Object::decRef( ev );
+    }
+    break;
+  }
+}
+template <class ReadProtocolMessageType, class WriteProtocolMessageType>
+bool Peer<ReadProtocolMessageType, WriteProtocolMessageType>::read( auto_Object<ReadProtocolMessageType> protocol_message, size_t buffer_capacity )
+{
+  auto_Object<Connection> connection( protocol_message->get_connection() );
+  connection->get_socket()->set_blocking_mode( false );
+  attach( connection, protocol_message->incRef(), false, false );
+  for ( ;; )
+  {
+    auto_Object<Buffer> buffer( new HeapBuffer( buffer_capacity ) );
+    ssize_t read_ret;
+    if ( haveAIO() )
+      read_ret = connection->get_socket()->aio_read( new Socket::AIOReadControlBlock( buffer, protocol_message->incRef() ) );
+    else
+      read_ret = connection->get_socket()->read( buffer );
+    if ( read_ret > 0 )
+    {
+      ssize_t deserialize_ret = deserialize( protocol_message, buffer );
+      if ( deserialize_ret == 0 )
+      {
+        detach( connection );
+        connection->get_socket()->set_blocking_mode( true );
+        handleDeserializedProtocolMessage( protocol_message );
+        return true;
+      }
+      else if ( deserialize_ret > 0 )
+      {
+        buffer_capacity = static_cast<size_t>( deserialize_ret );
+        continue;
+      }
+      else
+        break;
+    }
+    else if ( read_ret < 0 )
+    {
+      if ( connection->get_socket()->want_read() )
+      {
+        if ( fd_event_queue != NULL )
+          fd_event_queue->toggle( *connection->get_socket(), true, false );
+        return true;
+      }
+      else if ( connection->get_socket()->want_write() )
+      {
+        if ( fd_event_queue != NULL )
+          fd_event_queue->toggle( *connection->get_socket(), false, true );
+        return true;
+      }
+      else
+        break;
+    }
+    else
+      break;
+  }
+  detach( connection );
+  connection->get_socket()->close();
+  return false;
+}
+template <class ReadProtocolMessageType, class WriteProtocolMessageType>
+auto_Object<Buffer>  Peer<ReadProtocolMessageType, WriteProtocolMessageType>::serialize( auto_Object<WriteProtocolMessageType> protocol_message )
+{
+  return protocol_message->serialize();
+}
+template <class ReadProtocolMessageType, class WriteProtocolMessageType>
+bool Peer<ReadProtocolMessageType, WriteProtocolMessageType>::write( auto_Object<WriteProtocolMessageType> protocol_message, auto_Object<Buffer> buffer )
+{
+  auto_Object<Connection> connection( protocol_message->get_connection() );
+  connection->get_socket()->set_blocking_mode( true );
+  ssize_t write_ret = connection->get_socket()->write( buffer );
+  return write_ret >= 0;
+}
+template class Peer<HTTPRequest, HTTPResponse>;
+template class Peer<HTTPResponse, HTTPRequest>;
+template class Peer<ONCRPCRequest, ONCRPCResponse>;
+template class Peer<ONCRPCResponse, ONCRPCRequest>;
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
+
+
+// pipe.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef _WIN32
+#include <windows.h>
+#endif
+auto_Object<Pipe> Pipe::create()
+{
+#ifdef _WIN32
+  SECURITY_ATTRIBUTES pipe_security_attributes;
+  pipe_security_attributes.nLength = sizeof( SECURITY_ATTRIBUTES );
+  pipe_security_attributes.bInheritHandle = TRUE;
+  pipe_security_attributes.lpSecurityDescriptor = NULL;
+  void* ends[2];
+  if ( CreatePipe( &ends[0], &ends[1], &pipe_security_attributes, 0 ) )
+  {
+    if ( SetHandleInformation( ends[0], HANDLE_FLAG_INHERIT, 0 ) &&
+         SetHandleInformation( ends[1], HANDLE_FLAG_INHERIT, 0 ) )
+      return new Pipe( ends );
+    else
+    {
+      CloseHandle( ends[0] );
+      CloseHandle( ends[1] );
+    }
+  }
+#else
+  int ends[2];
+  if ( ::pipe( ends ) != -1 )
+    return new Pipe( ends );
+#endif
+  return NULL;
+}
+#ifdef _WIN32
+Pipe::Pipe( void* ends[2] )
+#else
+Pipe::Pipe( int ends[2] )
+#endif
+{
+  this->ends[0] = ends[0];
+  this->ends[1] = ends[1];
+}
+ssize_t Pipe::read( void* buffer, size_t buffer_len )
+{
+#ifdef _WIN32
+  DWORD dwBytesRead;
+  if ( ::ReadFile( ends[0], buffer, buffer_len, &dwBytesRead, NULL ) )
+    return static_cast<ssize_t>( dwBytesRead );
+  else
+    return -1;
+#else
+  return ::read( ends[0], buffer, buffer_len );
+#endif
+}
+ssize_t Pipe::write( const void* buffer, size_t buffer_len )
+{
+#ifdef _WIN32
+  DWORD dwBytesWritten;
+  if ( ::WriteFile( ends[1], buffer, buffer_len, &dwBytesWritten, NULL ) )
+    return static_cast<ssize_t>( dwBytesWritten );
+  else
+    return -1;
+#else
+  return ::write( ends[1], buffer, buffer_len );
+#endif
+}
+
+
+// process.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#if defined(_WIN32)
+#include <windows.h>
+#else
+#include <signal.h>
+#include <sys/wait.h> // For waitpid
+#endif
+auto_Object<Process> Process::create( const Path& command_line )
+{
+#ifdef _WIN32
+  auto_Object<Pipe> child_stdin, child_stdout, child_stderr;
+  //auto_Object<Pipe> child_stdin = Pipe::create(),
+  //                  child_stdout = Pipe::create(),
+  //                  child_stderr = Pipe::create();
+  STARTUPINFO startup_info;
+  ZeroMemory( &startup_info, sizeof( STARTUPINFO ) );
+  startup_info.cb = sizeof( STARTUPINFO );
+  //startup_info.hStdInput = *child_stdin->get_input_stream()->get_file();
+  //startup_info.hStdOutput = *child_stdout->get_output_stream()->get_file();
+  //startup_info.hStdError = *child_stdout->get_output_stream()->get_file();
+  //startup_info.dwFlags = STARTF_USESTDHANDLES;
+  PROCESS_INFORMATION proc_info;
+  ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );
+  if ( CreateProcess( NULL, const_cast<wchar_t*>( command_line.get_wide_path().c_str() ) , NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startup_info, &proc_info ) )
+    return new Process( proc_info.hProcess, proc_info.hThread, child_stdin, child_stdout, child_stderr );
+  else
+    return NULL;
+#else
+  const char* argv[] = { static_cast<const char*>( NULL ) };
+  return create( command_line, argv );
+#endif
+}
+auto_Object<Process> Process::create( int argc, char** argv )
+{
+  std::vector<char*> argvv;
+  for ( int arg_i = 1; arg_i < argc; arg_i++ )
+    argvv.push_back( argv[arg_i] );
+  argvv.push_back( NULL );
+  return create( argv[0], const_cast<const char**>( &argvv[0] ) );
+}
+auto_Object<Process> Process::create( const Path& executable_file_path, const char** null_terminated_argv )
+{
+#ifdef _WIN32
+  const std::string& executable_file_path_str = static_cast<const std::string&>( executable_file_path );
+  std::string command_line;
+  if ( executable_file_path_str.find( ' ' ) == -1 )
+    command_line.append( executable_file_path_str );
+  else
+  {
+    command_line.append( "\"", 1 );
+    command_line.append( executable_file_path_str );
+    command_line.append( "\"", 1 );
+  }
+  size_t arg_i = 0;
+  while ( null_terminated_argv[arg_i] != NULL )
+  {
+    command_line.append( " ", 1 );
+    command_line.append( null_terminated_argv[arg_i] );
+    arg_i++;
+  }
+  return create( command_line );
+#else
+  auto_Object<Pipe> child_stdin, child_stdout, child_stderr;
+  //auto_Object<Pipe> child_stdin = Pipe::create(),
+  //                  child_stdout = Pipe::create(),
+  //                  child_stderr = Pipe::create();
+  pid_t child_pid = fork();
+  if ( child_pid == -1 )
+    return NULL;
+  else if ( child_pid == 0 ) // Child
+  {
+    //close( STDIN_FILENO );
+    //dup2( *child_stdin->get_input_stream()->get_file(), STDIN_FILENO ); // Set stdin to read end of stdin pipe
+    //close( STDOUT_FILENO );
+    //dup2( *child_stdout->get_output_stream()->get_file(), STDOUT_FILENO ); // Set stdout to write end of stdout pipe
+    //close( STDERR_FILENO );
+    //dup2( *child_stderr->get_output_stream()->get_file(), STDERR_FILENO ); // Set stderr to write end of stderr pipe
+    std::vector<char*> argv_with_executable_file_path;
+    argv_with_executable_file_path.push_back( const_cast<char*>( static_cast<const char*>( executable_file_path ) ) );
+    size_t arg_i = 0;
+    while ( null_terminated_argv[arg_i] != NULL )
+    {
+      argv_with_executable_file_path.push_back( const_cast<char*>( null_terminated_argv[arg_i] ) );
+      arg_i++;
+    }
+    argv_with_executable_file_path.push_back( NULL );
+    execv( executable_file_path, &argv_with_executable_file_path[0] );
+    return NULL;
+  }
+  else // Parent
+    return new Process( child_pid, child_stdin, child_stdout, child_stderr );
+#endif
+}
+#ifdef _WIN32
+Process::Process( HANDLE hChildProcess, HANDLE hChildThread, auto_Object<Pipe> child_stdin, auto_Object<Pipe> child_stdout, auto_Object<Pipe> child_stderr )
+  : hChildProcess( hChildProcess ), hChildThread( hChildThread ),
+    child_stdin( child_stdin ), child_stdout( child_stdout ), child_stderr( child_stderr )
+{ }
+#else
+Process::Process( pid_t child_pid, auto_Object<Pipe> child_stdin, auto_Object<Pipe> child_stdout, auto_Object<Pipe> child_stderr )
+  : child_pid( child_pid ),
+    child_stdin( child_stdin ), child_stdout( child_stdout ), child_stderr( child_stderr )
+{ }
+#endif
+Process::~Process()
+{
+#ifdef _WIN32
+  CloseHandle( hChildProcess );
+  CloseHandle( hChildThread );
+#endif
+}
+bool Process::kill()
+{
+#ifdef _WIN32
+  return TerminateProcess( hChildProcess, 0 ) == TRUE;
+#else
+  return ::kill( child_pid, SIGKILL ) == 0;
+#endif
+}
+bool Process::poll( int* out_return_code )
+{
+#ifdef _WIN32
+  if ( WaitForSingleObject( hChildProcess, 0 ) != WAIT_TIMEOUT )
+  {
+    if ( out_return_code )
+    {
+      DWORD dwChildExitCode;
+      GetExitCodeProcess( hChildProcess, &dwChildExitCode );
+      *out_return_code = ( int )dwChildExitCode;
+    }
+    return true;
+  }
+  else
+    return false;
+#else
+  return waitpid( child_pid, out_return_code, WNOHANG ) >= 0;
+#endif
+}
+bool Process::terminate()
+{
+#ifdef _WIN32
+  return TerminateProcess( hChildProcess, 0 ) == TRUE;
+#else
+  return ::kill( child_pid, SIGTERM ) == 0;
+#endif
+}
+int Process::wait()
+{
+#ifdef _WIN32
+  WaitForSingleObject( hChildProcess, INFINITE );
+  DWORD dwChildExitCode;
+  GetExitCodeProcess( hChildProcess, &dwChildExitCode );
+  return ( int )dwChildExitCode;
+#else
+  int stat_loc;
+  if ( waitpid( child_pid, &stat_loc, 0 ) >= 0 )
+    return stat_loc;
+  else
+    return -1;
+#endif
 }
 
 
@@ -2323,6 +3042,66 @@ void RFC822Headers::set_iovec( const struct iovec& iovec )
 }
 
 
+// server.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
+
+
+template <class ProtocolRequestType, class ProtocolResponseType>
+void Server<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
+{
+  switch ( ev.get_tag() )
+  {
+#ifdef YIELD_HAVE_OPENSSL
+    case YIELD_OBJECT_TAG( SSLSocket ):
+#endif
+    case YIELD_OBJECT_TAG( TCPSocket ):
+    case YIELD_OBJECT_TAG( UDPSocket ):
+    {
+      auto_Object<Socket> _socket = static_cast<Socket&>( ev );
+      auto_Object<Log> log = this->get_log();
+      if ( log != NULL && log->get_level() >= Log::LOG_INFO && static_cast<int>( *_socket ) != -1 )
+        _socket = new TracingSocket( _socket, log );
+      Connection* connection = new Connection( _socket );
+      get_protocol_request_reader_stage()->send( *connection );
+    }
+    break;
+
+    case YIELD_OBJECT_TAG( Connection ):
+    {
+      auto_Object<Connection> connection = static_cast<Connection&>( ev );
+      auto_Object<ProtocolRequestType> protocol_request( createProtocolRequest( connection ) );
+      protocol_request->set_connection( connection );
+      this->read( protocol_request );
+    }
+    break;
+
+    default:
+    {
+      Peer<ProtocolRequestType, ProtocolResponseType>::handleEvent( ev );
+    }
+    break;
+  }
+}
+
+template <class ProtocolRequestType, class ProtocolResponseType>
+bool Server<ProtocolRequestType, ProtocolResponseType>::write( auto_Object<ProtocolResponseType> protocol_response, auto_Object<Buffer> buffer )
+{
+  if ( Peer<ProtocolRequestType, ProtocolResponseType>::write( protocol_response, buffer ) )
+  {
+    get_protocol_request_reader_stage()->send( *protocol_response->get_connection().release() );
+    return true;
+  }
+  else
+    return false;
+}
+
+
+template class Server<HTTPRequest, HTTPResponse>;
+template class Server<ONCRPCRequest, ONCRPCResponse>;
+
+
 // socket.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -2343,6 +3122,37 @@ Socket::Socket( int domain, int type, int protocol, int _socket )
 Socket::~Socket()
 {
   close();
+}
+bool Socket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
+{
+  return connect( aio_connect_control_block->get_peername() );
+}
+ssize_t Socket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
+{
+  if ( read_buffer != NULL )
+    return read( aio_read_control_block->get_buffer() );
+  else
+  {
+#ifdef _WIN32
+    auto_Object<Buffer> buffer = aio_read_control_block->get_buffer();
+    WSABUF wsabuf[1];
+    wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) );
+    wsabuf[0].len = buffer->capacity() - buffer->size();
+    DWORD dwNumberOfBytesReceived, dwFlags = 0;
+    if ( ::WSARecv( _socket, wsabuf, 1, &dwNumberOfBytesReceived, &dwFlags, *aio_read_control_block, NULL ) == 0 )
+    {
+      // The read returned immediately with data
+      aio_read_control_block->onCompletion( dwNumberOfBytesReceived );
+      aio_read_control_block.release(); // The AIOCB will still come back to the completion port, so keep a reference
+      return static_cast<ssize_t>( dwNumberOfBytesReceived );
+    }
+    else if ( ::WSAGetLastError() == WSA_IO_PENDING )
+      aio_read_control_block.release(); // No data available, the AIOCB will come back to the completion port when it is; keep a reference
+    return -1;
+#else
+    return read( aio_read_control_block->get_buffer() );
+#endif
+  }
 }
 bool Socket::bind( auto_Object<SocketAddress> to_sockaddr )
 {
@@ -2498,51 +3308,30 @@ Socket::operator int() const
 {
   return _socket;
 }
-ssize_t Socket::recv( void* buffer, size_t buffer_len )
+ssize_t Socket::read( auto_Object<Buffer> buffer )
 {
+  ssize_t read_ret = read( static_cast<void*>( *buffer ), buffer->capacity() - buffer->size() );
+  if ( read_ret > 0 )
+    buffer->put( static_cast<void*>( *buffer ), read_ret );
+  return read_ret;
+}
+ssize_t Socket::read( void* buffer, size_t buffer_len )
+{
+  if ( read_buffer != NULL )
+  {
+    if ( buffer_len > read_buffer->size() )
+      buffer_len = read_buffer->size();
+    read_buffer->get( buffer, buffer_len );
+    if ( read_buffer->size() == 0 )
+      read_buffer = NULL;
+    return buffer_len;
+  }
 #if defined(_WIN32)
   return ::recv( _socket, static_cast<char*>( buffer ), static_cast<int>( buffer_len ), 0 ); // No real advantage to WSARecv on Win32 for one buffer
 #elif defined(__linux)
   return ::recv( _socket, buffer, buffer_len, MSG_NOSIGNAL );
 #else
   return ::recv( _socket, buffer, buffer_len, 0 );
-#endif
-}
-ssize_t Socket::send( const void* buffer, size_t buffer_len )
-{
-#ifdef _WIN32
-  struct iovec buffers[1];
-  buffers[0].iov_base = const_cast<void*>( buffer );
-  buffers[0].iov_len = buffer_len;
-  return sendmsg( buffers, 1 );
-#else
-#ifdef __linux
-  return ::send( _socket, buffer, buffer_len, MSG_NOSIGNAL );
-#else
-  return ::send( _socket, buffer, buffer_len, 0 );
-#endif
-#endif
-}
-ssize_t Socket::sendmsg( const struct iovec* buffers, uint32_t buffers_count )
-{
-#ifdef _WIN32
-  DWORD dwWrittenLength;
-  ssize_t send_ret = ::WSASend( _socket, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ), buffers_count, &dwWrittenLength, 0, NULL, NULL );
-  if ( send_ret >= 0 )
-    return static_cast<ssize_t>( dwWrittenLength );
-  else
-    return send_ret;
-#else
-  // Use sendmsg instead of writev to pass flags on Linux
-  struct msghdr _msghdr;
-  memset( &_msghdr, 0, sizeof( _msghdr ) );
-  _msghdr.msg_iov = const_cast<iovec*>( buffers );
-  _msghdr.msg_iovlen = buffers_count;
-#ifdef __linux
-  return ::sendmsg( _socket, &_msghdr, MSG_NOSIGNAL ); // MSG_NOSIGNAL = disable SIGPIPE
-#else
-  return ::sendmsg( _socket, &_msghdr, 0 );
-#endif
 #endif
 }
 bool Socket::set_blocking_mode( bool blocking )
@@ -2592,7 +3381,14 @@ bool Socket::shutdown()
 bool Socket::want_read() const
 {
 #ifdef _WIN32
-  return ::WSAGetLastError() == WSAEWOULDBLOCK || ::WSAGetLastError() == WSAEINPROGRESS;
+//  DWORD dwLastError = ::WSAGetLastError();
+  switch ( ::WSAGetLastError() )
+  {
+    case WSAEINPROGRESS:
+    case WSAEWOULDBLOCK:
+    case WSA_IO_PENDING: return true;
+    default: return false;
+  }
 #else
   return errno == EWOULDBLOCK;
 #endif
@@ -2600,6 +3396,49 @@ bool Socket::want_read() const
 bool Socket::want_write() const
 {
   return want_read();
+}
+ssize_t Socket::write( auto_Object<Buffer> buffer )
+{
+  std::vector<struct iovec> iovecs;
+  buffer->as_iovecs( iovecs );
+  return writev( &iovecs[0], iovecs.size() );
+}
+ssize_t Socket::write( const void* buffer, size_t buffer_len )
+{
+#ifdef _WIN32
+  struct iovec buffers[1];
+  buffers[0].iov_base = const_cast<void*>( buffer );
+  buffers[0].iov_len = buffer_len;
+  return writev( buffers, 1 );
+#else
+#ifdef __linux
+  return ::send( _socket, buffer, buffer_len, MSG_NOSIGNAL );
+#else
+  return ::send( _socket, buffer, buffer_len, 0 );
+#endif
+#endif
+}
+ssize_t Socket::writev( const struct iovec* buffers, uint32_t buffers_count )
+{
+#ifdef _WIN32
+  DWORD dwWrittenLength;
+  ssize_t write_ret = ::WSASend( _socket, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ), buffers_count, &dwWrittenLength, 0, NULL, NULL );
+  if ( write_ret >= 0 )
+    return static_cast<ssize_t>( dwWrittenLength );
+  else
+    return write_ret;
+#else
+  // Use sendmsg instead of writev to pass flags on Linux
+  struct msghdr _msghdr;
+  memset( &_msghdr, 0, sizeof( _msghdr ) );
+  _msghdr.msg_iov = const_cast<iovec*>( buffers );
+  _msghdr.msg_iovlen = buffers_count;
+#ifdef __linux
+  return ::sendmsg( _socket, &_msghdr, MSG_NOSIGNAL ); // MSG_NOSIGNAL = disable SIGPIPE
+#else
+  return ::sendmsg( _socket, &_msghdr, 0 );
+#endif
+#endif
 }
 
 
@@ -2779,482 +3618,6 @@ bool SocketAddress::operator==( const SocketAddress& other ) const
   else
     return false;
 }
-
-
-// socket_client.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-#ifdef _WIN32
-#pragma warning( push )
-#pragma warning( disable: 4995 )
-#include <ws2tcpip.h>
-#pragma warning( pop )
-#define ETIMEDOUT WSAETIMEDOUT
-#endif
-template <class ProtocolRequestType, class ProtocolResponseType>
-SocketClient<ProtocolRequestType, ProtocolResponseType>::SocketClient( const URI& absolute_uri, auto_Object<FDAndInternalEventQueue> fd_event_queue, auto_Object<Log> log, const Time& operation_timeout, auto_Object<SocketAddress> peername, uint8_t reconnect_tries_max, auto_Object<SSLContext> ssl_context )
-  : fd_event_queue( fd_event_queue ), log( log ), operation_timeout( operation_timeout ), peername( peername ), reconnect_tries_max( reconnect_tries_max )
-{
-  this->absolute_uri = new URI( absolute_uri );
-  my_stage = NULL;
-}
-template <class ProtocolRequestType, class ProtocolResponseType>
-SocketClient<ProtocolRequestType, ProtocolResponseType>::~SocketClient()
-{
-  for ( typename std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
-    Object::decRef( **connection_i );
-}
-template <class ProtocolRequestType, class ProtocolResponseType>
-void SocketClient<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
-{
-  auto_Object<Connection> connection;
-  uint32_t fd_event_error_code = 0;
-  switch ( ev.get_tag() )
-  {
-    case YIELD_OBJECT_TAG( StageStartupEvent ):
-    {
-      StageStartupEvent& stage_startup_event = static_cast<StageStartupEvent&>( ev );
-      my_stage = stage_startup_event.get_stage();
-      Object::decRef( ev );
-    }
-    return;
-    case YIELD_OBJECT_TAG( StageShutdownEvent ):
-    {
-      my_stage = NULL;
-      Object::decRef( ev );
-    }
-    return;
-    case YIELD_OBJECT_TAG( FDEventQueue::FDEvent ):
-    {
-      FDEventQueue::FDEvent& fd_event = static_cast<FDEventQueue::FDEvent&>( ev );
-      connection = static_cast<Connection*>( fd_event.get_context().release() );
-      connection->touch();
-      fd_event_error_code = fd_event.get_error_code();
-      Object::decRef( ev );
-    }
-    break;
-    case YIELD_OBJECT_TAG( FDEventQueue::TimerEvent ):
-    {
-      FDEventQueue::TimerEvent& timer_event = static_cast<FDEventQueue::TimerEvent&>( ev );
-      auto_Object<> timer_event_context = timer_event.get_context();
-      if ( timer_event_context == NULL ) // Check connection timeouts
-      {
-        typename std::vector<Connection*>::size_type connection_i = 0;
-        for ( connection_i = 0; connection_i < connections.size(); connection_i++ )
-        {
-          Connection* connection = connections[connection_i];
-          if ( connection->get_state() != Connection::IDLE )
-          {
-            Time connection_idle_time = Time() - connection->get_last_activity_time();
-            if ( connection_idle_time > operation_timeout )
-            {
-              if ( log != NULL )
-                log->getStream( Log::LOG_ERR ) << "yield::SocketClient: connection to " << *absolute_uri << " exceeded idle timeout (idle for " << connection_idle_time.as_unix_time_s() << " seconds, last activity at " << connection->get_last_activity_time() << "), dropping.";
-              connection->get_socket()->shutdown();
-              recreateConnection( connection ); // May erase connection from the connections vector, which is why connection_i can't be an iterator
-            }
-          }
-        }
-        Object::decRef( ev );
-        return;
-      }
-      else if ( timer_event_context->get_tag() == YIELD_OBJECT_TAG( Connection ) ) // A reconnect try after n seconds
-      {
-        connection = static_cast<Connection*>( timer_event_context.release() );
-        connection->touch();
-        Object::decRef( ev );
-        // Drop down
-      }
-      else
-        DebugBreak();
-    }
-    break;
-    default:
-    {
-      auto_Object<ProtocolRequestType> protocol_request = createProtocolRequest( static_cast<Request&>( ev ) ); // Give it the original reference to ev
-      for ( typename std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); connection_i++ )
-      {
-        if ( ( *connection_i )->get_state() == Connection::IDLE )
-        {
-          connection = ( *connection_i )->incRef();
-          connection->set_state( Connection::CONNECTING );
-          connection->touch();
-          break;
-        }
-      }
-      if ( connection != NULL )
-        connection->set_state( Connection::WRITING );
-      else
-      {
-        connection = createConnection();
-        connection->set_state( Connection::CONNECTING );
-        connections.push_back( &connection->incRef() );
-      }
-      connection->set_protocol_request( protocol_request );
-    }
-    break;
-  }
-  if ( fd_event_error_code == 0 )
-  {
-    switch ( connection->get_state() )
-    {
-      case Connection::CONNECTING:
-      {
-        if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
-          log->getStream( Log::LOG_DEBUG ) << "yield::SocketClient: trying to connect to " << *absolute_uri << ", attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << ".";
-        if ( connection->get_socket()->connect( peername ) )
-        {
-          if ( log != NULL )
-            log->getStream( Log::LOG_INFO ) << "yield::SocketClient: successfully connected to " << *absolute_uri << ".";
-          fd_event_queue->attach( *connection->get_socket(), connection->incRef() ); // Only attach AFTER connecting, in case the socket has to be re-created
-          connection->set_state( Connection::WRITING );
-          // Drop down to WRITING
-  	    }
-        else if ( connection->get_socket()->want_write() ) // Wait for non-blocking connect() to complete
-        {
-          if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
-            log->getStream( Log::LOG_DEBUG ) << "yield::SocketClient: waiting for non-blocking connect() to " << *absolute_uri << " to complete.";
-          fd_event_queue->attach( *connection->get_socket(), connection->incRef(), false, true );
-          connection->set_state( Connection::CONNECTING );
-        }
-        else
-        {
-          if ( log != NULL )
-            log->getStream( Log::LOG_ERR ) << "yield::SocketClient: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to " << *absolute_uri << " failed: " << Exception::strerror();
-          recreateConnection( connection );
-          return;
-        }
-      }
-      // No break here, to allow drop down to WRITING
-      case Connection::WRITING:
-      {
-        auto_Object<ProtocolRequestType> protocol_request = connection->get_protocol_request();
-        connection->get_socket()->set_blocking_mode( true ); // Hack
-        auto_Object<Buffer> protocol_request_buffer = protocol_request->serialize();
-        std::vector<struct iovec> protocol_request_iovecs;
-        protocol_request_buffer->as_iovecs( protocol_request_iovecs );
-        if ( connection->get_socket()->sendmsg( &protocol_request_iovecs[0], protocol_request_iovecs.size() ) > 0 )
-        {
-          if ( log != NULL )
-            log->getStream( Log::LOG_INFO ) << "yield::SocketClient: successfully wrote " << protocol_request->get_type_name() << " to " << *absolute_uri << ".";
-          connection->set_protocol_response( createProtocolResponse( protocol_request ) );
-          connection->set_state( Connection::READING );
-        }
-        else
-        {
-          if ( log != NULL )
-            log->getStream( Log::LOG_ERR ) << "yield::SocketClient: lost connection to " << *absolute_uri << " on write, error: " << Exception::strerror() << ".";
-          recreateConnection( connection );
-          return;
-        }
-        // Drop down to READING
-      }
-      // No break here, to allow drop down to READING
-      case Connection::READING:
-      {
-        auto_Object<ProtocolResponseType> protocol_response = connection->get_protocol_response();
-        if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
-          log->getStream( Log::LOG_DEBUG ) << "yield::SocketClient: trying to read " << protocol_response->get_type_name() << " from " << *absolute_uri << ".";
-        connection->get_socket()->set_blocking_mode( false );
-        for ( ;; )
-        {
-          auto_Object<HeapBuffer> protocol_response_buffer = new HeapBuffer( 1024 );
-          ssize_t recv_ret = connection->get_socket()->recv( *protocol_response_buffer, 1024 );
-          if ( recv_ret > 0 )
-          {
-            protocol_response_buffer->put( *protocol_response_buffer, recv_ret );
-            ssize_t deserialize_ret = protocol_response->deserialize( protocol_response_buffer->incRef() );
-            if ( deserialize_ret == 0 )
-            {
-              respond( connection->get_protocol_request(), connection->get_protocol_response() );
-              connection->set_protocol_request( NULL );
-              connection->set_protocol_response( NULL );
-              connection->set_reconnect_tries_left( reconnect_tries_max );
-              connection->set_state( Connection::IDLE );
-              fd_event_queue->toggle( *connection->get_socket(), false, false );
-            }
-            else if ( deserialize_ret > 0 )
-              continue;
-            else
-              recreateConnection( connection );
-          }
-          else if ( recv_ret == 0 )
-          {
-            if ( log != NULL )
-              log->getStream( Log::LOG_ERR ) << "yield::SocketClient: lost connection to " << *absolute_uri << " on read, ret = 0.";
-            recreateConnection( connection );
-          }
-          else
-          {
-            if ( connection->get_socket()->want_read() )
-              fd_event_queue->toggle( *connection->get_socket(), true, false );
-            else if ( connection->get_socket()->want_write() )
-              fd_event_queue->toggle( *connection->get_socket(), true, true );
-            else
-            {
-              if ( log != NULL )
-                log->getStream( Log::LOG_ERR ) << "yield::SocketClient: lost connection to " << *absolute_uri << " on read, error: " << Exception::strerror() << ".";
-              recreateConnection( connection );
-            }
-          }
-          return;
-        }
-      }
-      default: DebugBreak(); return;
-    }
-  }
-  else if ( log != NULL ) // fd_event_error_code != 0
-  {
-    log->getStream( Log::LOG_ERR ) << "yield::SocketClient: connection attempt #" << static_cast<uint32_t>( reconnect_tries_max - connection->get_reconnect_tries_left() ) << " to " << *absolute_uri << " failed: " << Exception::strerror( fd_event_error_code );
-    recreateConnection( connection.release() );
-  }
-}
-template <class ProtocolRequestType, class ProtocolResponseType>
-auto_Object<typename SocketClient<ProtocolRequestType, ProtocolResponseType>::Connection> SocketClient<ProtocolRequestType, ProtocolResponseType>::createConnection()
-{
-  auto_Object<Socket> _socket;
-#ifdef YIELD_HAVE_OPENSSL
-  if ( absolute_uri->get_scheme()[absolute_uri->get_scheme().size()-1] == 's' &&
-       ssl_context != NULL )
-    _socket = SSLSocket::create( ssl_context ).release();
-  else
-#endif
-  if ( absolute_uri->get_scheme()[absolute_uri->get_scheme().size()-1] == 'u' )
-    _socket = UDPSocket::create().release();
-  else
-    _socket = TCPSocket::create().release();
-  if ( log != NULL && log->get_level() >= Log::LOG_INFO )
-    _socket = new TracingSocket( _socket, log );
-  return new Connection( _socket, reconnect_tries_max );
-}
-template <class ProtocolRequestType, class ProtocolResponseType>
-void SocketClient<ProtocolRequestType, ProtocolResponseType>::recreateConnection( auto_Object<Connection> connection )
-{
-  for ( typename std::vector<Connection*>::iterator connection_i = connections.begin(); connection_i != connections.end(); )
-  {
-    if ( **connection_i == *connection )
-    {
-      uint8_t reconnect_tries_left = connection->get_reconnect_tries_left();
-      auto_Object<ProtocolRequestType> protocol_request = connection->get_protocol_request();
-      fd_event_queue->detach( *connection->get_socket() );
-      connection->get_socket()->close();
-      YIELD::Object::decRef( *connection ); // The reference in connections
-      if ( --reconnect_tries_left > 0 )
-      {
-        connection = createConnection();
-        *connection_i = &connection->incRef();
-        connection->set_protocol_request( protocol_request );
-        connection->set_reconnect_tries_left( reconnect_tries_left );
-        connection->set_state( Connection::CONNECTING );
-        fd_event_queue->timer_create( Time( 1 * NS_IN_S ), connection->incRef() ); // Wait for a delay to attach, add to connections, and try to connect again
-      }
-      else
-      {
-        connections.erase( connection_i );
-        if ( log != NULL )
-          log->getStream( Log::LOG_ERR ) << "yield::SocketClient: exhausted connection retries to " << *absolute_uri << ".";
-        if ( protocol_request != NULL )
-        {
-          // We've lost errno here
-#ifdef _WIN32
-          respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
-#else
-          respond( protocol_request, new ExceptionResponse( "exhausted connection retries" ) );
-#endif
-        }
-      }
-      break;
-    }
-    else
-      ++connection_i;
-  }
-}
-template <class ProtocolRequestType, class ProtocolResponseType>
-SocketClient<ProtocolRequestType, ProtocolResponseType>::Connection::Connection( auto_Object<Socket> _socket, uint8_t reconnect_tries_max )
-  : _socket( _socket ), reconnect_tries_left( reconnect_tries_max )
-{
-  state = IDLE;
-}
-template class SocketClient<HTTPRequest, HTTPResponse>;
-template class SocketClient<ONCRPCRequest, ONCRPCResponse>;
-
-
-// socket_server.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
-void SocketServer::handleEvent( Event& ev )
-{
-  switch ( ev.get_tag() )
-  {
-#ifdef YIELD_HAVE_OPENSSL
-    case YIELD_OBJECT_TAG( SSLSocket ):
-#endif
-    case YIELD_OBJECT_TAG( TCPSocket ):
-    case YIELD_OBJECT_TAG( UDPSocket ):
-    {
-      protocol_request_reader_stage->send( ev );
-    }
-    break;
-
-    default: handleUnknownEvent( ev );
-  }
-}
-
-template <class ProtocolRequestType>
-void SocketServer::ProtocolRequestReader<ProtocolRequestType>::handleEvent( Event& ev )
-{
-  auto_Object<ProtocolRequestType> protocol_request;
-  auto_Object<Socket> _socket;
-
-
-  switch ( ev.get_tag() )
-  {
-    case YIELD_OBJECT_TAG( FDEventQueue::FDEvent ):
-    {
-      FDEventQueue::FDEvent& fd_event = static_cast<FDEventQueue::FDEvent&>( ev );
-      auto_Object<> context = fd_event.get_context();
-
-      switch ( context->get_tag() )
-      {
-        case YIELD_OBJECT_TAG( ProtocolRequestType ):
-        {
-          protocol_request = static_cast<ProtocolRequestType*>( context.release() );
-          _socket = protocol_request->get_socket();
-          Object::decRef( ev );
-        }
-        break;
-
-#ifdef YIELD_HAVE_OPENSSL
-        case YIELD_OBJECT_TAG( SSLSocket ):
-#endif
-        case YIELD_OBJECT_TAG( TCPSocket ):
-        case YIELD_OBJECT_TAG( UDPSocket ):
-        {
-          _socket = static_cast<Socket*>( context.release() );
-          fd_event_queue->detach( *_socket );
-          Object::decRef( ev );
-          return;
-        }
-        break;
-
-        default: DebugBreak(); return;
-      }
-    }
-    break;
-
-#ifdef YIELD_HAVE_OPENSSL
-    case YIELD_OBJECT_TAG( SSLSocket ):
-#endif
-    case YIELD_OBJECT_TAG( TCPSocket ):
-    {
-      _socket = static_cast<Socket&>( ev );
-      if ( log != NULL && log->get_level() >= Log::LOG_INFO && static_cast<int>( *_socket ) != -1 )
-        _socket = new TracingSocket( _socket, log );
-      protocol_request = createProtocolRequest( _socket );
-      fd_event_queue->detach( *_socket );
-      fd_event_queue->attach( *_socket, protocol_request->incRef(), true );
-    }
-    return; // Wait for a read notification
-
-    case YIELD_OBJECT_TAG( UDPSocket ):
-    {
-      _socket = static_cast<Socket&>( ev );
-      if ( log != NULL && log->get_level() >= Log::LOG_INFO )
-        _socket = new TracingSocket( _socket, log );
-      protocol_request = createProtocolRequest( _socket );
-    }
-    break;
-
-    default: handleUnknownEvent( ev ); return;
-  }
-
-  auto_Object<HeapBuffer> protocol_request_buffer = new HeapBuffer( 1024 );
-
-  ssize_t recv_ret = _socket->recv( *protocol_request_buffer, 1024 );
-
-  if ( recv_ret > 0 )
-  {
-    protocol_request_buffer->put( *protocol_request_buffer, recv_ret );
-
-    ssize_t deserialize_ret = protocol_request->deserialize( protocol_request_buffer->incRef() );
-
-    if ( deserialize_ret == 0 )
-    {
-      if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
-        log->getStream( Log::LOG_DEBUG ) << get_type_name() << ": successfully deserialized " << protocol_request->get_type_name() << ".";
-
-      fd_event_queue->detach( *_socket );
-      fd_event_queue->attach( *_socket, &_socket->incRef(), true );
-      sendProtocolRequest( static_cast<ProtocolRequestType&>( protocol_request->incRef() ) );
-      return;
-    }
-    else if ( deserialize_ret > 0 )
-    {
-      if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
-        log->getStream( Log::LOG_DEBUG ) << get_type_name() << ": partially deserialized " << protocol_request->get_type_name() << ".";
-
-      fd_event_queue->toggle( *_socket, true, false );
-      return;
-    }
-  }
-  else if ( recv_ret < 0 )
-  {
-    if ( _socket->want_read() )
-    {
-      fd_event_queue->toggle( *_socket, true, false );
-      return;
-    }
-    else if ( _socket->want_write() )
-    {
-      fd_event_queue->toggle( *_socket, true, true );
-      return;
-    }
-  }
-
-  fd_event_queue->detach( *_socket );
-  _socket->close();
-  Object::decRef( *protocol_request ); // The reference that's attached to fd_event_queue
-}
-
-
-template class SocketServer::ProtocolRequestReader<HTTPServer::HTTPRequest>;
-template class SocketServer::ProtocolRequestReader<ONCRPCServer::ONCRPCRequest>;
-
-
-template <class ProtocolResponseType>
-void SocketServer::ProtocolResponseWriter<ProtocolResponseType>::handleEvent( Event& ev )
-{
-  switch( ev.get_tag() )
-  {
-    case YIELD_OBJECT_TAG( ProtocolResponseType ):
-    {
-      ProtocolResponseType& protocol_response = static_cast<ProtocolResponseType&>( ev );
-      auto_Object<Socket> _socket = protocol_response.get_socket();
-
-      auto_Object<Buffer> protocol_response_buffer = protocol_response.serialize();
-      std::vector<struct iovec> iovecs;
-      protocol_response_buffer->as_iovecs( iovecs );
-
-      _socket->sendmsg( &iovecs[0], iovecs.size() );
-
-      Object::decRef( protocol_response );
-
-      if ( protocol_request_reader_stage != NULL &&
-           _socket->get_tag() != YIELD_OBJECT_TAG( UDPSocket ) )
-        protocol_request_reader_stage->send( *_socket.release() );
-    }
-    break;
-
-    default: handleUnknownEvent( ev ); break;
-  }
-}
-
-
-template class SocketServer::ProtocolResponseWriter<HTTPServer::HTTPResponse>;
-template class SocketServer::ProtocolResponseWriter<ONCRPCServer::ONCRPCResponse>;
 
 
 // ssl_context.cpp
@@ -3514,25 +3877,9 @@ void SSLSocket::info_callback( const SSL* ssl, int where, int ret )
   reinterpret_cast<SSLSocket*>( SSL_get_app_data( const_cast<SSL*>( ssl ) ) )->log->getStream( Log::LOG_NOTICE ) << "SSLSocket: " << info.str();
 }
 */
-ssize_t SSLSocket::recv( void* buffer, size_t buffer_len )
+ssize_t SSLSocket::read( void* buffer, size_t buffer_len )
 {
   return SSL_read( ssl, buffer, static_cast<int>( buffer_len ) );
-}
-ssize_t SSLSocket::send( const void* buffer, size_t buffer_len )
-{
-  return SSL_write( ssl, buffer, static_cast<int>( buffer_len ) );
-}
-ssize_t SSLSocket::sendmsg( const struct iovec* buffers, uint32_t buffers_count )
-{
-  if ( buffers_count == 1 )
-    return send( buffers[0].iov_base, buffers[0].iov_len );
-  else
-  {
-    std::string buffer;
-    for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-      buffer.append( static_cast<const char*>( buffers[buffer_i].iov_base ), buffers[buffer_i].iov_len );
-    return send( buffer.c_str(), buffer.size() );
-  }
 }
 bool SSLSocket::shutdown()
 {
@@ -3548,6 +3895,22 @@ bool SSLSocket::want_read() const
 bool SSLSocket::want_write() const
 {
   return SSL_want_write( ssl ) == 1;
+}
+ssize_t SSLSocket::write( const void* buffer, size_t buffer_len )
+{
+  return SSL_write( ssl, buffer, static_cast<int>( buffer_len ) );
+}
+ssize_t SSLSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
+{
+  if ( buffers_count == 1 )
+    return write( buffers[0].iov_base, buffers[0].iov_len );
+  else
+  {
+    std::string buffer;
+    for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+      buffer.append( static_cast<const char*>( buffers[buffer_i].iov_base ), buffers[buffer_i].iov_len );
+    return write( buffer.c_str(), buffer.size() );
+  }
 }
 #endif
 
@@ -3571,75 +3934,60 @@ auto_Object<TCPListenQueue> TCPListenQueue::create( auto_Object<SocketAddress> s
 TCPListenQueue::TCPListenQueue( auto_Object<TCPSocket> listen_tcp_socket )
   : listen_tcp_socket( listen_tcp_socket )
 {
-  this->attach( *listen_tcp_socket, NULL );
-}
-bool TCPListenQueue::enqueue( Event& ev )
-{
-  switch ( ev.get_tag() )
-  {
-    case YIELD_OBJECT_TAG( StageStartupEvent ):	break;
-    case YIELD_OBJECT_TAG( StageShutdownEvent ): listen_tcp_socket->close(); break;
-  }
-  Object::decRef( ev );
-  return true;
-}
-Event* TCPListenQueue::dequeue()
-{
-  return listen_tcp_socket->accept().release();
+  attach( *listen_tcp_socket, listen_tcp_socket->incRef() );
 }
 Event* TCPListenQueue::dequeue( uint64_t timeout_ns )
 {
-  if ( FDEventQueue::dequeue( timeout_ns ) )
+  Event* ev = FDEventQueue::dequeue( timeout_ns );
+  if ( ev != NULL )
   {
+    switch ( ev->get_tag() )
+    {
+      case YIELD_OBJECT_TAG( FDEventQueue::POLLINEvent ):
+      {
+        FDEventQueue::POLLINEvent* pollin_event = static_cast<FDEventQueue::POLLINEvent*>( ev );
+        if ( pollin_event->get_context() == static_cast<Object*>( listen_tcp_socket.get() ) )
+        {
+          auto_Object<TCPSocket> accepted_tcp_socket = listen_tcp_socket->accept();
 #ifdef YIELD_HAVE_SOLARIS_EVENT_PORTS
-    Event* ev = listen_tcp_socket->accept().release();
-    // The event port automatically dissociates events, so we have to re-associate here
-    toggle( *listen_tcp_socket, NULL, true, false );
-    return ev;
-#else
-    return listen_tcp_socket->accept().release();
+        // The event port automatically dissociates events, so we have to re-associate here
+        toggle( *listen_tcp_socket, NULL, true, false );
 #endif
+          Object::decRef( *ev );
+          return accepted_tcp_socket.release();
+        }
+      }
+      break;
+    }
   }
-  else
-    return NULL;
+  return ev;
 }
 
 
 // tcp_socket.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #if defined(_WIN32)
 #pragma warning( push )
 #pragma warning( disable: 4995 )
 #include <ws2tcpip.h>
+#include <mswsock.h>
 #pragma warning( pop )
 #else
 #include <netinet/in.h> // For the IPPROTO_* constants
 #include <netinet/tcp.h> // For the TCP_* constants
 #include <sys/socket.h>
 #endif
-
 #include <cstring>
-
-
-auto_Object<TCPSocket> TCPSocket::create()
-{
-  int domain = AF_INET6;
-  int _socket = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
-  if ( _socket != -1 )
-    return new TCPSocket( domain, _socket );
-  else
-    return NULL;
-}
-
+#ifdef _WIN32
+void* TCPSocket::lpfnAcceptEx = NULL;
+void* TCPSocket::lpfnConnectEx = NULL;
+#endif
 TCPSocket::TCPSocket( int domain, int _socket )
   : Socket( domain, SOCK_STREAM, IPPROTO_TCP, _socket )
 {
   partial_write_len = 0;
 }
-
 auto_Object<TCPSocket> TCPSocket::accept()
 {
 #ifdef _WIN32
@@ -3653,14 +4001,104 @@ auto_Object<TCPSocket> TCPSocket::accept()
   else
     return NULL;
 }
-
 int TCPSocket::_accept()
 {
   sockaddr_storage peer_sockaddr_storage;
   socklen_t peer_sockaddr_storage_len = sizeof( peer_sockaddr_storage );
   return ::accept( *this, ( struct sockaddr* )&peer_sockaddr_storage, &peer_sockaddr_storage_len );
 }
-
+#ifdef _WIN32
+bool TCPSocket::aio_accept( auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
+{
+  if ( TCPSocket::lpfnAcceptEx == NULL )
+  {
+    GUID GuidAcceptEx = WSAID_ACCEPTEX;
+    LPFN_ACCEPTEX lpfnAcceptEx;
+    DWORD dwBytes;
+    WSAIoctl( *this, SIO_GET_EXTENSION_FUNCTION_POINTER, &GuidAcceptEx, sizeof( GuidAcceptEx ), &lpfnAcceptEx, sizeof( lpfnAcceptEx ), &dwBytes, NULL, NULL );
+    TCPSocket::lpfnAcceptEx = lpfnAcceptEx;
+  }
+  auto_Object<TCPSocket> accepted_tcp_socket = aio_accept_control_block->get_accepted_tcp_socket();
+  auto_Object<Buffer> read_buffer = aio_accept_control_block->get_read_buffer();
+  size_t sizeof_sockaddr = ( get_domain() == AF_INET6 ) ? sizeof( sockaddr_in6 ) : sizeof( sockaddr_in );
+  if ( read_buffer->capacity() < ( sizeof_sockaddr + 16 ) * 2 ) DebugBreak();
+  DWORD dwBytesReceived;
+  if ( static_cast<LPFN_ACCEPTEX>( lpfnAcceptEx )( *this, *accepted_tcp_socket, *read_buffer, 0, sizeof_sockaddr + 16, sizeof_sockaddr + 16, &dwBytesReceived, ( LPOVERLAPPED )*aio_accept_control_block ) )
+  {
+    aio_accept_control_block->onCompletion( dwBytesReceived );
+    aio_accept_control_block.release(); // Keep this reference in the queue
+    return true;
+  }
+  else if ( ::WSAGetLastError() == WSA_IO_PENDING )
+  {
+    aio_accept_control_block.release();
+    return true;
+  }
+  else
+    return false;
+}
+bool TCPSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
+{
+  if ( TCPSocket::lpfnConnectEx == NULL )
+  {
+    GUID GuidConnectEx = WSAID_CONNECTEX;
+    LPFN_CONNECTEX lpfnConnectEx;
+    DWORD dwBytes;
+    WSAIoctl( *this, SIO_GET_EXTENSION_FUNCTION_POINTER, &GuidConnectEx, sizeof( GuidConnectEx ), &lpfnConnectEx, sizeof( lpfnConnectEx ), &dwBytes, NULL, NULL );
+    TCPSocket::lpfnConnectEx = lpfnConnectEx;
+  }
+  if ( bind( SocketAddress::create( NULL, 0 ) ) )
+  {
+    for ( ;; )
+    {
+      struct sockaddr* name; socklen_t namelen;
+      if ( aio_connect_control_block->get_peername()->as_struct_sockaddr( get_domain(), name, namelen ) )
+      {
+        PVOID lpSendBuffer;
+        DWORD dwSendDataLength;
+        auto_Object<Buffer> write_buffer = aio_connect_control_block->get_write_buffer();
+        if ( write_buffer != NULL )
+        {
+          lpSendBuffer = *write_buffer;
+          dwSendDataLength = write_buffer->size();
+        }
+        else
+        {
+          lpSendBuffer = NULL;
+          dwSendDataLength = 0;
+        }
+        DWORD dwBytesSent;
+        if ( static_cast<LPFN_CONNECTEX>( lpfnConnectEx )( *this, name, namelen, lpSendBuffer, dwSendDataLength, &dwBytesSent, *aio_connect_control_block ) )
+        {
+          aio_connect_control_block->onCompletion( dwBytesSent );
+          aio_connect_control_block.release(); // Keep this reference in the queue
+          return true;
+        }
+        else if ( ::WSAGetLastError() == WSA_IO_PENDING )
+        {
+          aio_connect_control_block.release(); // Keep this reference in the queue
+          return false;
+        }
+        else
+          return false;
+      }
+      else
+        return false;
+    }
+  }
+  else
+    return false;
+}
+#endif
+auto_Object<TCPSocket> TCPSocket::create()
+{
+  int domain = AF_INET6;
+  int _socket = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
+  if ( _socket != -1 )
+    return new TCPSocket( domain, _socket );
+  else
+    return NULL;
+}
 bool TCPSocket::listen()
 {
   int flag = 1;
@@ -3673,7 +4111,6 @@ bool TCPSocket::listen()
   setsockopt( *this, SOL_SOCKET, SO_LINGER, ( char* )&lingeropt, ( int )sizeof( lingeropt ) );
   return ::listen( *this, SOMAXCONN ) != -1;
 }
-
 bool TCPSocket::shutdown()
 {
 #ifdef _WIN32
@@ -3681,6 +4118,15 @@ bool TCPSocket::shutdown()
 #else
   return ::shutdown( *this, SHUT_RDWR ) != -1;
 #endif
+}
+TCPSocket::AIOAcceptControlBlock::AIOAcceptControlBlock( auto_Object<TCPSocket> accepted_tcp_socket, auto_Object<Buffer> read_buffer )
+  : accepted_tcp_socket( accepted_tcp_socket ), read_buffer( read_buffer )
+{ }
+void TCPSocket::AIOAcceptControlBlock::onCompletion( size_t bytes_transferred )
+{
+  read_buffer->put( NULL, bytes_transferred );
+  size_t sizeof_sockaddr = ( accepted_tcp_socket->get_domain() == AF_INET6 ) ? sizeof( sockaddr_in6 ) : sizeof( sockaddr_in );
+  read_buffer->get( NULL, ( sizeof_sockaddr + 16 ) * 2 );
 }
 
 
@@ -3691,6 +4137,14 @@ TracingSocket::TracingSocket( auto_Object<Socket> underlying_socket, auto_Object
   : Socket( underlying_socket->get_domain(), underlying_socket->get_type(), underlying_socket->get_protocol(), -1 ),
     underlying_socket( underlying_socket ), log( log )
 { }
+bool TracingSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
+{
+  return underlying_socket->aio_connect( aio_connect_control_block );
+}
+ssize_t TracingSocket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
+{
+  return underlying_socket->aio_read( aio_read_control_block );
+}
 bool TracingSocket::bind( auto_Object<SocketAddress> to_sockaddr )
 {
   std::string to_hostname;
@@ -3726,63 +4180,19 @@ TracingSocket::operator int() const
 {
   return underlying_socket->operator int();
 }
-ssize_t TracingSocket::recv( void* buffer, size_t buffer_len )
+ssize_t TracingSocket::read( void* buffer, size_t buffer_len )
 {
   log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: trying to read " << buffer_len << " bytes from socket #" << ( int )*this << ".";
-  ssize_t recv_ret = underlying_socket->recv( buffer, buffer_len );
-  if ( recv_ret > 0 )
+  ssize_t read_ret = underlying_socket->read( buffer, buffer_len );
+  if ( read_ret > 0 )
   {
-    log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: read " << recv_ret << " bytes from socket #" << ( int )*this << ".";
-    log->write( buffer, recv_ret, Log::LOG_DEBUG );
+    log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: read " << read_ret << " bytes from socket #" << ( int )*this << ".";
+    log->write( buffer, read_ret, Log::LOG_DEBUG );
     log->write( "\n", Log::LOG_DEBUG );
   }
-  else if ( recv_ret == 0 || ( !underlying_socket->want_read() && !underlying_socket->want_write() ) )
+  else if ( read_ret == 0 || ( !underlying_socket->want_read() && !underlying_socket->want_write() ) )
     log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: lost connection while trying to read socket #" <<  ( int )*this << ".";
-  return recv_ret;
-}
-ssize_t TracingSocket::send( const void* buffer, size_t buffer_len )
-{
-  log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: trying to write " << buffer_len << " bytes to socket #" << ( int )*this << ".";
-  ssize_t send_ret = underlying_socket->send( buffer, buffer_len );
-  if ( send_ret >= 0 )
-  {
-    log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: wrote " << send_ret << " bytes to socket #" << ( int )*this << ".";
-    log->write( buffer, send_ret, Log::LOG_DEBUG );
-    log->write( "\n", Log::LOG_DEBUG );
-  }
-  else if ( !underlying_socket->want_read() && !underlying_socket->want_write() )
-    log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: lost connection while trying to write to socket #" <<  ( int )*this << ".";
-  return send_ret;
-}
-ssize_t TracingSocket::sendmsg( const struct iovec* buffers, uint32_t buffers_count )
-{
-  size_t buffers_len = 0;
-  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-    buffers_len += buffers[buffer_i].iov_len;
-  log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: trying to write " << buffers_len << " bytes to socket #" << ( int )*this << ".";
-  ssize_t sendmsg_ret = underlying_socket->sendmsg( buffers, buffers_count );
-  if ( sendmsg_ret >= 0 )
-  {
-    size_t temp_sendmsg_ret = sendmsg_ret;
-    log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: wrote " << sendmsg_ret << " bytes to socket #" << ( int )*this << ".";
-    for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-    {
-      if ( static_cast<ssize_t>( buffers[buffer_i].iov_len ) <= temp_sendmsg_ret )
-      {
-        log->write( buffers[buffer_i].iov_base, buffers[buffer_i].iov_len, Log::LOG_DEBUG );
-        temp_sendmsg_ret -= buffers[buffer_i].iov_len;
-      }
-      else
-      {
-        log->write( buffers[buffer_i].iov_base, temp_sendmsg_ret, Log::LOG_DEBUG );
-        break;
-      }
-    }
-    log->write( "\n", Log::LOG_DEBUG );
-  }
-  else if ( !underlying_socket->want_read() && !underlying_socket->want_write() )
-    log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: lost connection while trying to write to socket #" <<  ( int )*this << ".";
-  return sendmsg_ret;
+  return read_ret;
 }
 bool TracingSocket::set_blocking_mode( bool blocking )
 {
@@ -3807,6 +4217,50 @@ bool TracingSocket::want_write() const
   if ( want_write_ret )
     log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: would block on write on socket #" << ( int )*this << ".";
   return want_write_ret;
+}
+ssize_t TracingSocket::write( const void* buffer, size_t buffer_len )
+{
+  log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: trying to write " << buffer_len << " bytes to socket #" << ( int )*this << ".";
+  ssize_t write_ret = underlying_socket->write( buffer, buffer_len );
+  if ( write_ret >= 0 )
+  {
+    log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: wrote " << write_ret << " bytes to socket #" << ( int )*this << ".";
+    log->write( buffer, write_ret, Log::LOG_DEBUG );
+    log->write( "\n", Log::LOG_DEBUG );
+  }
+  else if ( !underlying_socket->want_read() && !underlying_socket->want_write() )
+    log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: lost connection while trying to write to socket #" <<  ( int )*this << ".";
+  return write_ret;
+}
+ssize_t TracingSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
+{
+  size_t buffers_len = 0;
+  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+    buffers_len += buffers[buffer_i].iov_len;
+  log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: trying to write " << buffers_len << " bytes to socket #" << ( int )*this << ".";
+  ssize_t writev_ret = underlying_socket->writev( buffers, buffers_count );
+  if ( writev_ret >= 0 )
+  {
+    size_t temp_sendmsg_ret = static_cast<size_t>( writev_ret );
+    log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: wrote " << writev_ret << " bytes to socket #" << ( int )*this << ".";
+    for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+    {
+      if ( buffers[buffer_i].iov_len <= temp_sendmsg_ret )
+      {
+        log->write( buffers[buffer_i].iov_base, buffers[buffer_i].iov_len, Log::LOG_DEBUG );
+        temp_sendmsg_ret -= buffers[buffer_i].iov_len;
+      }
+      else
+      {
+        log->write( buffers[buffer_i].iov_base, temp_sendmsg_ret, Log::LOG_DEBUG );
+        break;
+      }
+    }
+    log->write( "\n", Log::LOG_DEBUG );
+  }
+  else if ( !underlying_socket->want_read() && !underlying_socket->want_write() )
+    log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: lost connection while trying to write to socket #" <<  ( int )*this << ".";
+  return writev_ret;
 }
 
 
@@ -3833,60 +4287,46 @@ auto_Object<UDPRecvFromQueue> UDPRecvFromQueue::create( auto_Object<SocketAddres
   }
   return NULL;
 }
-UDPRecvFromQueue::UDPRecvFromQueue( auto_Object<SocketAddress> recvfrom_sockname, auto_Object<UDPSocket> recvfrom_socket )
-  : recvfrom_sockname( recvfrom_sockname ), recvfrom_socket( recvfrom_socket )
+UDPRecvFromQueue::UDPRecvFromQueue( auto_Object<SocketAddress> recvfrom_sockname, auto_Object<UDPSocket> recvfrom_udp_socket )
+  : recvfrom_sockname( recvfrom_sockname ), recvfrom_udp_socket( recvfrom_udp_socket )
 {
-  this->attach( *recvfrom_socket, NULL );
-}
-bool UDPRecvFromQueue::enqueue( Event& ev )
-{
-  switch ( ev.get_tag() )
-  {
-    case YIELD_OBJECT_TAG( StageStartupEvent ):	break;
-    case YIELD_OBJECT_TAG( StageShutdownEvent ): recvfrom_socket->close(); break;
-  }
-  Object::decRef( ev );
-  return true;
-}
-Event* UDPRecvFromQueue::dequeue()
-{
-  return recvfrom();
+  this->attach( *recvfrom_udp_socket, NULL );
 }
 Event* UDPRecvFromQueue::dequeue( uint64_t timeout_ns )
 {
-  if ( FDEventQueue::dequeue( timeout_ns ) )
+  Event* ev = FDEventQueue::dequeue( timeout_ns );
+  if ( ev != NULL )
   {
-#ifdef YIELD_HAVE_SOLARIS_EVENT_PORTS
-    Event* ev = recvfrom();
-    // The event port automatically dissociates events, so we have to re-associate here
-    toggle( *recvfrom_socket, NULL, true, false );
-    return ev;
-#else
-    return recvfrom();
-#endif
-  }
-  else
-    return NULL;
-}
-UDPSocket* UDPRecvFromQueue::recvfrom()
-{
-  char recvfrom_buffer[1024];
-  struct sockaddr_storage recvfrom_peername;
-  socklen_t recvfrom_peername_len = sizeof( recvfrom_peername );
-  ssize_t recvfrom_ret = ::recvfrom( *recvfrom_socket, recvfrom_buffer, 1024, 0, reinterpret_cast<struct sockaddr*>( &recvfrom_peername ), &recvfrom_peername_len );
-  if ( recvfrom_ret > 0 )
-  {
-    auto_Object<UDPSocket> udp_socket = UDPSocket::create( recvfrom_buffer, static_cast<size_t>( recvfrom_ret ) );
-    if ( udp_socket != NULL )
+    if ( ev->get_tag() == YIELD_OBJECT_TAG( FDEventQueue::POLLINEvent ) )
     {
-      int so_reuseaddr = 1;
-      if ( ::setsockopt( *udp_socket, SOL_SOCKET, SO_REUSEADDR, ( char* )&so_reuseaddr, sizeof( so_reuseaddr ) ) != -1 &&
-           udp_socket->bind( recvfrom_sockname ) && // Need to bind to the address we're doing the recvfrom on so that response sends also come from that address (= allows UDP clients to filter all but the server's responses)
-           udp_socket->connect( new SocketAddress( recvfrom_peername ) ) )
-           return udp_socket.release();
+#ifdef YIELD_HAVE_SOLARIS_EVENT_PORTS
+      // The event port automatically dissociates events, so we have to re-associate here
+      toggle( *recvfrom_udp_socket, NULL, true, false );
+#endif
+      Object::decRef( ev );
+      auto_Object<Buffer> recvfrom_buffer = new HeapBuffer( 1024 );
+      struct sockaddr_storage recvfrom_peername;
+      socklen_t recvfrom_peername_len = sizeof( recvfrom_peername );
+      ssize_t recvfrom_ret = ::recvfrom( *recvfrom_udp_socket, *recvfrom_buffer, recvfrom_buffer->capacity(), 0, reinterpret_cast<struct sockaddr*>( &recvfrom_peername ), &recvfrom_peername_len );
+      if ( recvfrom_ret > 0 )
+      {
+        auto_Object<UDPSocket> udp_socket = UDPSocket::create();
+        if ( udp_socket != NULL )
+        {
+          int so_reuseaddr = 1;
+          if ( ::setsockopt( *udp_socket, SOL_SOCKET, SO_REUSEADDR, ( char* )&so_reuseaddr, sizeof( so_reuseaddr ) ) != -1 &&
+               udp_socket->bind( recvfrom_sockname ) && // Need to bind to the address we're doing the recvfrom on so that response sends also come from that address (= allows UDP clients to filter all but the server's responses)
+               udp_socket->connect( new SocketAddress( recvfrom_peername ) ) )
+          {
+            recvfrom_buffer->put( NULL, recvfrom_ret );
+            udp_socket->set_read_buffer( recvfrom_buffer );
+            return udp_socket.release();
+          }
+        }
+      }
     }
   }
-  return NULL;
+  return ev;
 }
 
 
@@ -3911,53 +4351,9 @@ auto_Object<UDPSocket> UDPSocket::create()
   else
     return NULL;
 }
-auto_Object<UDPSocket> UDPSocket::create( char* recvfrom_buffer, size_t recvfrom_buffer_len )
-{
-  int domain = AF_INET6;
-  int _socket = Socket::create( domain, SOCK_DGRAM, IPPROTO_UDP );
-  if ( _socket != -1 )
-    return new UDPSocket( domain, recvfrom_buffer, recvfrom_buffer_len, _socket );
-  else
-    return NULL;
-}
 UDPSocket::UDPSocket( int domain, int _socket )
   : Socket( domain, SOCK_DGRAM, IPPROTO_UDP, _socket )
-{
-  recvfrom_buffer = NULL;
-}
-UDPSocket::UDPSocket( int domain, char* recvfrom_buffer, size_t recvfrom_buffer_len, int _socket )
-  : Socket( domain, SOCK_DGRAM, IPPROTO_UDP, _socket )
-{
-  this->recvfrom_buffer = new char[recvfrom_buffer_len];
-  memcpy_s( this->recvfrom_buffer, recvfrom_buffer_len, recvfrom_buffer, recvfrom_buffer_len );
-  this->recvfrom_buffer_len = this->recvfrom_buffer_remaining = recvfrom_buffer_len;
-}
-UDPSocket::~UDPSocket()
-{
-  delete [] recvfrom_buffer;
-}
-ssize_t UDPSocket::recv( void* buffer, size_t buffer_len )
-{
-  if ( recvfrom_buffer != NULL )
-  {
-    if ( buffer_len >= recvfrom_buffer_remaining )
-    {
-      buffer_len = recvfrom_buffer_remaining;
-      memcpy_s( buffer, buffer_len, recvfrom_buffer, recvfrom_buffer_remaining );
-      delete [] recvfrom_buffer;
-      recvfrom_buffer = NULL;
-      recvfrom_buffer_len = recvfrom_buffer_remaining = 0;
-    }
-    else
-    {
-      memcpy_s( buffer, buffer_len, recvfrom_buffer, buffer_len );
-      recvfrom_buffer_remaining -= buffer_len;
-    }
-    return buffer_len;
-  }
-  else
-    return Socket::recv( buffer, buffer_len );
-}
+{ }
 
 
 // uri.cpp
