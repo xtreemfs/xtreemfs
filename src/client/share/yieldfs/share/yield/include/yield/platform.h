@@ -38,7 +38,6 @@ extern "C"
 #endif
 #ifdef YIELD_HAVE_POSIX_FILE_AIO
 #include <aio.h>
-#include <signal.h>
 #endif
 #include <stdint.h>
 #include <sys/uio.h> // For struct iovec
@@ -511,8 +510,10 @@ namespace YIELD
   public:
     AIOControlBlock()
     {
+#if defined(_WIN32) || defined(YIELD_HAVE_POSIX_FILE_AIO)
       memset( &aiocb_, 0, sizeof( aiocb_ ) );
       aiocb_.this_ = this;
+#endif
       complete = false;
     }
 
@@ -530,10 +531,12 @@ namespace YIELD
   private:
     friend class IOCompletionPort;
 
+#if defined(_WIN32) || defined(YIELD_HAVE_POSIX_FILE_AIO)
     struct aiocb : ::aiocb
     {
       AIOControlBlock* this_;
     } aiocb_;
+#endif
 
     bool complete;
   };
@@ -2118,7 +2121,7 @@ namespace YIELD
     virtual ~Marshaller() { }
 
     virtual void writeBool( const Declaration& decl, bool value ) = 0;
-    void writeBuffer( const Declaration& decl, auto_Object<StringBuffer> value );
+    void writeBuffer( const Declaration& decl, auto_Object<StringBuffer> value ) { writeBuffer( decl, auto_Object<Buffer>( value.release() ) ); }
     virtual void writeBuffer( const Declaration& decl, auto_Object<Buffer> value ) = 0;
     virtual void writeFloat( const Declaration& decl, float value ) { writeDouble( decl, value ); }
     virtual void writeDouble( const Declaration& decl, double value ) = 0;
