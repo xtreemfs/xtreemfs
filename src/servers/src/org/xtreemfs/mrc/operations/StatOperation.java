@@ -43,7 +43,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class StatOperation extends MRCOperation {
-        
+    
     public StatOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -81,9 +81,8 @@ public class StatOperation extends MRCOperation {
         long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : file.getSize();
         Stat stat = new Stat(mode, file.getLinkCount(), 1, 1, 0, size, (long) file.getAtime() * (long) 1e9,
             (long) file.getMtime() * (long) 1e9, (long) file.getCtime() * (long) 1e9, file.getOwnerId(), file
-                    .getOwningGroupId(), volume.getId() + ":" + file.getId(), linkTarget, file.getEpoch(),
-            (int) file.getW32Attrs());
-        // TODO: check whether Win32 attrs are 32 or 64 bits long
+                    .getOwningGroupId(), volume.getId() + ":" + file.getId(), linkTarget,
+            file.isDirectory() ? 0: file.getEpoch(), (int) file.getW32Attrs());
         
         // set the response
         rq.setResponse(new getattrResponse(stat));

@@ -95,6 +95,8 @@ public class CreateFileOperation extends MRCOperation {
             rq.getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.getMode(), 0, 0, false, 0, 0,
             update);
         
+        sMan.setNumFiles(sMan.getNumFiles() + 1, update);
+        
         // set the file ID as the last one
         sMan.setLastFileId(fileId, update);
         

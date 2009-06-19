@@ -59,7 +59,6 @@ public class StatusPageOperation extends MRCOperation {
             LOCALRESYNC("<!-- $LOCALRESYNC -->"),
             MEMSTAT("<!-- $MEMSTAT -->"),
             UUIDCACHE("<!-- $UUIDCACHE -->"),
-            STATCOLLECT("<!-- $STATCOLLECT -->"),
             DISKFREE("<!-- $DISKFREE -->"),
             PROTOVERSION("<!-- $PROTOVERSION -->"),
             VERSION("<!-- $VERSION -->");

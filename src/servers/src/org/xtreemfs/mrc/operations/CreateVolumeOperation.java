@@ -135,11 +135,20 @@ public class CreateVolumeOperation extends MRCOperation {
                         + "' already exists in Directory Service, id='" + uuid + "'");
                 }
             
+            // determine owner and owning group for the new volume
+            String uid = volData.getOwner_user_id();
+            String gid = volData.getOwner_group_id();
+            
+            if ("".equals(uid))
+                uid = rq.getDetails().userId;
+            if ("".equals(gid))
+                gid = rq.getDetails().groupIds.get(0);
+            
             // create the volume locally
             master.getVolumeManager().createVolume(master.getFileAccessManager(), volumeId,
                 volData.getName(), (short) volData.getAccess_control_policy().intValue(),
-                (short) volData.getOsd_selection_policy().intValue(), null, volData.getOwner_user_id(),
-                volData.getOwner_group_id(), volData.getDefault_striping_policy(), volData.getMode());
+                (short) volData.getOsd_selection_policy().intValue(), null, uid, gid,
+                volData.getDefault_striping_policy(), volData.getMode());
             
             // register the volume at the Directory Service
             

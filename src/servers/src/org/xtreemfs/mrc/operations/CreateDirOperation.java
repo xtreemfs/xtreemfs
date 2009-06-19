@@ -95,6 +95,8 @@ public class CreateDirOperation extends MRCOperation {
         sMan.createDir(fileId, res.getParentDirId(), res.getFileName(), time, time, time,
             rq.getDetails().userId, rq.getDetails().groupIds.get(0), rqArgs.getMode(), 0, update);
         
+        sMan.setNumDirs(sMan.getNumDirs() + 1, update);
+        
         // set the file ID as the last one
         sMan.setLastFileId(fileId, update);
         

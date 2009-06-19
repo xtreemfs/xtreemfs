@@ -95,6 +95,7 @@ public class UpdateFileSizeOperation extends MRCOperation {
             // the current epoch
             if (epochNo > file.getEpoch() || newFileSize > file.getSize()) {
                 
+                long oldFileSize = file.getSize();
                 int time = (int) (TimeSync.getGlobalTime() / 1000);
                 
                 file.setSize(newFileSize);
@@ -104,6 +105,9 @@ public class UpdateFileSizeOperation extends MRCOperation {
                 
                 sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
                 sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
+                
+                // update the volume size
+                sMan.setVolumeSize(sMan.getVolumeSize() + newFileSize - oldFileSize, update);
             }
 
             else if (Logging.isDebug())

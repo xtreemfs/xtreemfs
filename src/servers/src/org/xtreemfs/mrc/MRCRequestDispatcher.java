@@ -48,6 +48,7 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.dir.client.DIRClient;
+import org.xtreemfs.dir.discovery.DiscoveryUtils;
 import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.LifeCycleListener;
@@ -57,17 +58,21 @@ import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.DirService;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.MRCInterface.MRCException;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
+import org.xtreemfs.interfaces.MRCInterface.ProtocolException;
+import org.xtreemfs.interfaces.MRCInterface.errnoException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.operations.StatusPageOperation;
 import org.xtreemfs.mrc.operations.StatusPageOperation.Vars;
@@ -82,10 +87,6 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.xtreemfs.dir.discovery.DiscoveryUtils;
-import org.xtreemfs.interfaces.MRCInterface.ProtocolException;
-import org.xtreemfs.interfaces.DirService;
-import org.xtreemfs.interfaces.MRCInterface.errnoException;
 
 /**
  * 
@@ -128,15 +129,18 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         IllegalAccessException, InstantiationException, DatabaseException {
         
         this.config = config;
-
+        
         if (this.config.getDirectoryService().getHostName().equals(DiscoveryUtils.AUTODISCOVER_HOSTNAME)) {
-            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "trying to discover local XtreemFS DIR service...");
+            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                "trying to discover local XtreemFS DIR service...");
             DirService dir = DiscoveryUtils.discoverDir(10);
             if (dir == null) {
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "CANNOT FIND XtreemFS DIR service via discovery broadcasts... no response");
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this,
+                    "CANNOT FIND XtreemFS DIR service via discovery broadcasts... no response");
                 throw new IOException("no DIR service found via discovery broadcast");
             }
-            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "found XtreemFS DIR service at "+dir.getAddress()+":"+dir.getPort());
+            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "found XtreemFS DIR service at "
+                + dir.getAddress() + ":" + dir.getPort());
             config.setDirectoryService(new InetSocketAddress(dir.getAddress(), dir.getPort()));
         }
         
@@ -192,7 +196,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 dmap.put("usedRAM", Long.toString(usedRAM));
                 dmap.put("geoCoordinates", config.getGeoCoordinates());
                 try {
-                    dmap.put("status_page_url", "http://" + config.getUUID().getAddress().getAddress().getHostAddress()+":"
+                    dmap.put("status_page_url", "http://"
+                        + config.getUUID().getAddress().getAddress().getHostAddress() + ":"
                         + config.getHttpPort());
                 } catch (UnknownUUIDException ex) {
                     // should never happen
@@ -261,37 +266,38 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     }
     
     public void startup() {
-
+        
         try {
             TimeSync.initializeLocal(config.getRemoteTimeSync(), config.getLocalClockRenew());
-
+            
             clientStage.start();
             clientStage.waitForStartup();
-
+            
             UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
             UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(),
                 config.isUsingSSL() ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME);
-
+            
             heartbeatThread.initialize();
             heartbeatThread.start();
-
-            // TimeSync.getInstance().enableRemoteSynchronization(dirClient); XXX
+            
+            // TimeSync.getInstance().enableRemoteSynchronization(dirClient);
+            // XXX
             osdMonitor.start();
             osdMonitor.waitForStartup();
-
+            
             procStage.start();
             procStage.waitForStartup();
-
+            
             volumeManager.init();
             volumeManager.addVolumeChangeListener(osdMonitor);
-
+            
             serverStage.start();
             serverStage.waitForStartup();
-        
+            
             if (Logging.isInfo())
                 Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
                     "MRC operational, listening on port %d", config.getPort());
-
+            
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "STARTUP FAILED!");
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
@@ -468,6 +474,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             for (VolumeInfo v : vols) {
                 
                 ServiceSet osdList = osdMonitor.getUsableOSDs(v.getId());
+                StorageManager sMan = volumeManager.getStorageManager(v.getId());
                 
                 volTableBuf.append("<tr><td align=\"left\">");
                 volTableBuf.append(v.getName());
@@ -493,6 +500,14 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 volTableBuf.append(v.getOsdPolicyId());
                 volTableBuf.append("</td></tr><tr><td class=\"subtitle\">replica policy</td><td>");
                 volTableBuf.append(v.getReplicaPolicyId());
+                volTableBuf.append("</td></tr><tr><td class=\"subtitle\">#files</td><td>");
+                volTableBuf.append(sMan.getNumFiles());
+                volTableBuf.append("</td></tr><tr></tr><tr><td class=\"subtitle\">#directories</td><td>");
+                volTableBuf.append(sMan.getNumDirs());
+                volTableBuf.append("</td></tr><tr><td class=\"subtitle\">free disk space:</td><td>");
+                volTableBuf.append(OutputUtils.formatBytes(osdMonitor.getFreeSpace(v.getId())));
+                volTableBuf.append("</td></tr><tr><td class=\"subtitle\">occupied disk space:</td><td>");
+                volTableBuf.append(OutputUtils.formatBytes(sMan.getVolumeSize()));
                 volTableBuf.append("</td></tr></table></td></tr>");
             }
             

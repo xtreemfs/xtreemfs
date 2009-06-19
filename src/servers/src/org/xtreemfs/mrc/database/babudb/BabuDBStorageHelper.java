@@ -236,8 +236,21 @@ public class BabuDBStorageHelper {
     
     public static byte[] getLastAssignedFileId(BabuDB database, String dbName) throws BabuDBException {
         
-        byte[] bytes = database.directLookup(dbName, BabuDBStorageManager.LAST_ID_INDEX,
+        byte[] bytes = database.directLookup(dbName, BabuDBStorageManager.VOLUME_INDEX,
             BabuDBStorageManager.LAST_ID_KEY);
+        
+        if (bytes == null) {
+            bytes = new byte[8];
+            ByteBuffer tmp = ByteBuffer.wrap(bytes);
+            tmp.putLong(0);
+        }
+        
+        return bytes;
+    }
+    
+    public static byte[] getVolumeMetadata(BabuDB database, String dbName, byte[] key) throws BabuDBException {
+        
+        byte[] bytes = database.directLookup(dbName, BabuDBStorageManager.VOLUME_INDEX, key);
         
         if (bytes == null) {
             bytes = new byte[8];
@@ -424,9 +437,9 @@ public class BabuDBStorageHelper {
                 return resolveLink(database, dbName, rcValue, fileName);
             
             byte[][] keyBufs = new byte[][] {
-                BabuDBStorageHelper.createFileKey(parentId, fileName, FileMetadata.FC_METADATA), rcKey};
+                BabuDBStorageHelper.createFileKey(parentId, fileName, FileMetadata.FC_METADATA), rcKey };
             byte[][] valBufs = new byte[][] {
-                database.directLookup(dbName, BabuDBStorageManager.FILE_INDEX, keyBufs[0]), rcValue};
+                database.directLookup(dbName, BabuDBStorageManager.FILE_INDEX, keyBufs[0]), rcValue };
             
             return new BufferBackedFileMetadata(keyBufs, valBufs, BabuDBStorageManager.FILE_INDEX);
         }

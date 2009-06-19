@@ -104,7 +104,10 @@ public class MRCHelper {
             usable_osds,
             read_only,
             add_replica,
-            free_space
+            free_space,
+            used_space,
+            num_files,
+            num_dirs
     }
     
     public enum FileType {
@@ -310,6 +313,12 @@ public class MRCHelper {
             }
             case free_space:
                 return file.getId() == 1 ? String.valueOf(osdMan.getFreeSpace(volume.getId())) : "";
+            case used_space:
+                return file.getId() == 1 ? String.valueOf(sMan.getVolumeSize()) : "";
+            case num_files:
+                return file.getId() == 1 ? String.valueOf(sMan.getNumFiles()) : "";
+            case num_dirs:
+                return file.getId() == 1 ? String.valueOf(sMan.getNumDirs()) : "";
             }
         }
         

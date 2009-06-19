@@ -68,9 +68,15 @@ public class BabuDBStorageManager implements StorageManager {
     
     public static final int     FILE_ID_INDEX         = 3;
     
-    public static final int     LAST_ID_INDEX         = 4;
+    public static final int     VOLUME_INDEX          = 4;
     
-    public static final byte[]  LAST_ID_KEY           = { '*' };
+    public static final byte[]  LAST_ID_KEY           = { 'i' };
+    
+    public static final byte[]  VOL_SIZE_KEY          = { 's' };
+    
+    public static final byte[]  NUM_FILES_KEY         = { 'f' };
+    
+    public static final byte[]  NUM_DIRS_KEY          = { 'd' };
     
     private static final String DEFAULT_SP_ATTR_NAME  = "sp";
     
@@ -183,7 +189,7 @@ public class BabuDBStorageManager implements StorageManager {
         byte[] idBytes = new byte[8];
         ByteBuffer.wrap(idBytes).putLong(0, fileId);
         
-        update.addUpdate(LAST_ID_INDEX, LAST_ID_KEY, idBytes);
+        update.addUpdate(VOLUME_INDEX, LAST_ID_KEY, idBytes);
     }
     
     @Override
@@ -676,6 +682,69 @@ public class BabuDBStorageManager implements StorageManager {
         
     }
     
+    @Override
+    public void setVolumeSize(long newSize, AtomicDBUpdate update) throws DatabaseException {
+        
+        byte[] sizeBytes = new byte[8];
+        ByteBuffer.wrap(sizeBytes).putLong(0, newSize);
+        
+        update.addUpdate(VOLUME_INDEX, VOL_SIZE_KEY, sizeBytes);
+    }
+    
+    @Override
+    public long getVolumeSize() throws DatabaseException {
+        
+        try {
+            byte[] sizeBytes = BabuDBStorageHelper.getVolumeMetadata(database, dbName, VOL_SIZE_KEY);
+            return ByteBuffer.wrap(sizeBytes).getLong(0);
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+    
+    @Override
+    public void setNumFiles(long numFiles, AtomicDBUpdate update) throws DatabaseException {
+        
+        byte[] sizeBytes = new byte[8];
+        ByteBuffer.wrap(sizeBytes).putLong(0, numFiles);
+        
+        update.addUpdate(VOLUME_INDEX, NUM_FILES_KEY, sizeBytes);
+    }
+    
+    @Override
+    public long getNumFiles() throws DatabaseException {
+        
+        try {
+            byte[] sizeBytes = BabuDBStorageHelper.getVolumeMetadata(database, dbName, NUM_FILES_KEY);
+            return ByteBuffer.wrap(sizeBytes).getLong(0);
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+    
+    @Override
+    public void setNumDirs(long numDirs, AtomicDBUpdate update) throws DatabaseException {
+        
+        byte[] sizeBytes = new byte[8];
+        ByteBuffer.wrap(sizeBytes).putLong(0, numDirs);
+        
+        update.addUpdate(VOLUME_INDEX, NUM_DIRS_KEY, sizeBytes);
+    }
+    
+    @Override
+    public long getNumDirs() throws DatabaseException {
+        
+        try {
+            byte[] sizeBytes = BabuDBStorageHelper.getVolumeMetadata(database, dbName, NUM_DIRS_KEY);
+            return ByteBuffer.wrap(sizeBytes).getLong(0);
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+    
     public void dump() throws BabuDBException {
         
         System.out.println("FILE_ID_INDEX");
@@ -700,31 +769,3 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
 }
-
-//
-// public long getDBFileSize() {
-// return backend.getDBFileSize();
-// }
-//
-// public long getNumberOfFiles() {
-// return backend.getNumberOfFiles();
-// }
-//
-// public long getNumberOfDirs() {
-// return backend.getNumberOfDirs();
-// }
-//
-// /**
-// *
-// * @param fileID
-// * @return true, if the file with the given ID exists, false otherwise
-// * @throws DatabaseException
-// */
-// public boolean exists(String fileID) throws DatabaseException {
-// try {
-// return (getFileEntity(Long.parseLong(fileID)) != null);
-// } catch (NumberFormatException e) {
-// throw new
-// DatabaseException("StorageManager.exists(fileID) : wrong fileID-format");
-// }
-// }

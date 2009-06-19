@@ -117,6 +117,12 @@ public interface StorageManager {
     
     public void setMetadata(FileMetadata metadata, byte type, AtomicDBUpdate update) throws DatabaseException;
     
+    public void setVolumeSize(long newSize, AtomicDBUpdate update) throws DatabaseException;
+    
+    public void setNumFiles(long numFiles, AtomicDBUpdate update) throws DatabaseException;
+    
+    public void setNumDirs(long numFiles, AtomicDBUpdate update) throws DatabaseException;
+    
     public void setDefaultStripingPolicy(long fileId, org.xtreemfs.interfaces.StripingPolicy defaultSp,
         AtomicDBUpdate update) throws DatabaseException;
     
@@ -135,6 +141,12 @@ public interface StorageManager {
     public FileMetadata getMetadata(long fileId) throws DatabaseException;
     
     public FileMetadata getMetadata(long parentId, String fileName) throws DatabaseException;
+    
+    public long getVolumeSize() throws DatabaseException;
+    
+    public long getNumFiles() throws DatabaseException;
+    
+    public long getNumDirs() throws DatabaseException;
     
     public StripingPolicy getDefaultStripingPolicy(long fileId) throws DatabaseException;
     
