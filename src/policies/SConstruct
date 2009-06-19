@@ -1,6 +1,13 @@
-SConscript( "../client/proj/org/xtreemfs/client/xtreemfs-client-lib.SConscript" )
+import os.path
 
-Import( "build_conf", "build_env"  )
+
+build_env = Environment()
+build_env["CPPPATH"] = [os.path.abspath( "../client/include" )]
+
+build_conf = build_env.Configure()
+
+Export( "build_env", "build_conf" )
+
 
 if build_conf.CheckCHeader( "xos_ams.h" ):
     SConscript( "proj/xos_ams_flog.SConscript" )
