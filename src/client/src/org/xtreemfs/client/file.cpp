@@ -127,7 +127,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       YIELD::auto_Buffer data = object_data.get_data();
       if ( !data->empty() )
       {
-        if ( data->size() < RBUF_REMAINING )
+        if ( data->size() <= RBUF_REMAINING )
         {
           memcpy_s( rbuf_p, RBUF_REMAINING, static_cast<void*>( *data ), data->size() );
           rbuf_p += data->size();
@@ -135,7 +135,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         }
         else
         {
-          log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received data (size=" << data->size() << " larger than available buffer space (" << RBUF_REMAINING << ")";
+          log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received data (size=" << data->size() << ") larger than available buffer space (" << RBUF_REMAINING << ")";
           YIELD::ExceptionResponse::set_errno( EIO );
           return -1;
         }
@@ -144,7 +144,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       uint32_t zero_padding = object_data.get_zero_padding();
       if ( zero_padding > 0 )
       {
-        if ( zero_padding < RBUF_REMAINING )
+        if ( zero_padding <= RBUF_REMAINING )
         {
           memset( rbuf_p, 0, zero_padding );
           rbuf_p += zero_padding;
@@ -163,7 +163,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     }
 
 #ifdef _DEBUG
-    if ( static_cast<size_t>( rbuf_p - rbuf_start ) > size ) DebugBreak();
+    if ( static_cast<size_t>( rbuf_p - rbuf_start ) > size ) YIELD::DebugBreak();
 #endif
     return static_cast<ssize_t>( rbuf_p - rbuf_start );
   }
