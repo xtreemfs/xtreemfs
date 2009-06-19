@@ -33,6 +33,8 @@ namespace org
         void getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials );        
 
       private:
+        YIELD::auto_Log log;
+
         get_passwd_from_user_credentials_t get_passwd_from_user_credentials;
         YIELD::STLHashMap<YIELD::STLHashMap<std::pair<int, int>*>*> user_credentials_to_passwd_cache;
 
@@ -40,6 +42,20 @@ namespace org
         YIELD::STLHashMap<YIELD::STLHashMap<org::xtreemfs::interfaces::UserCredentials*>*> passwd_to_user_credentials_cache;
 
         std::vector<YIELD::SharedLibrary*> policy_shared_libraries;
+
+        template <typename PolicyFunctionType> 
+        bool getPolicyFunction( const YIELD::Path& policy_shared_library_path, YIELD::auto_Object<YIELD::SharedLibrary> policy_shared_library, const char* policy_function_name, PolicyFunctionType& out_policy_function )
+        {
+          PolicyFunctionType policy_function = policy_shared_library->getFunction<PolicyFunctionType>( policy_function_name );
+          if ( policy_function != NULL )
+          {
+            log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: using " << policy_function_name << " from " << policy_shared_library_path << ".";
+            out_policy_function = policy_function;
+            return true;
+          }
+          else
+            return false;
+        }
       };
     };
   };
