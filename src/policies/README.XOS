@@ -1,0 +1,13 @@
+The ams_module is required for XtreemOS installations to allow grid users to access their home volumes.
+
+1. build the shared library
+> python scons.py
+
+2. create the policies directory
+> mkdir -p /lib/xtreemfs/policies/
+
+3. copy the .so file
+> cp lib/libxos_ams_flog.so /lib/xtreemfs/policies/
+
+
+The client (xtsf_mount) will automatically load the library and use the AMS for account mappings.
