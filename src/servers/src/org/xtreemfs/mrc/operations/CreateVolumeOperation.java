@@ -138,8 +138,8 @@ public class CreateVolumeOperation extends MRCOperation {
             // create the volume locally
             master.getVolumeManager().createVolume(master.getFileAccessManager(), volumeId,
                 volData.getName(), (short) volData.getAccess_control_policy().intValue(),
-                (short) volData.getOsd_selection_policy().intValue(), null, rq.getDetails().userId,
-                rq.getDetails().groupIds.get(0), volData.getDefault_striping_policy(), volData.getMode());
+                (short) volData.getOsd_selection_policy().intValue(), null, volData.getOwner_user_id(),
+                volData.getOwner_group_id(), volData.getDefault_striping_policy(), volData.getMode());
             
             // register the volume at the Directory Service
             
@@ -183,7 +183,7 @@ public class CreateVolumeOperation extends MRCOperation {
             // set the response
             rq.setResponse(new xtreemfs_mkvolResponse());
             finishRequest(rq);
-        
+            
         } catch (Throwable exc) {
             finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
         } finally {
