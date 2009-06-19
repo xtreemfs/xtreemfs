@@ -104,6 +104,8 @@ void Proxy<ProxyType, InterfaceType>::handleEvent( YIELD::Event& ev )
 template <class ProxyType, class InterfaceType>
 void Proxy<ProxyType, InterfaceType>::getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials )
 {
+  log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: getting current user credentials.";
+
 #ifdef _WIN32
   if ( get_user_credentials_from_passwd )
     getUserCredentialsFrompasswd( -1, -1, out_user_credentials );
@@ -154,6 +156,8 @@ void Proxy<ProxyType, InterfaceType>::getCurrentUserCredentials( org::xtreemfs::
 template <class ProxyType, class InterfaceType>
 void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::string& user_id, const std::string& group_id, int& out_uid, int& out_gid )
 {
+  log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: getting passwd from UserCredentials (user_id=" << user_id << ", group_id=" << group_id << ").";
+
   uint32_t user_id_hash = YIELD::string_hash( user_id.c_str() );
   uint32_t group_id_hash = YIELD::string_hash( group_id.c_str() );
 
@@ -165,6 +169,7 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
     {
       out_uid = passwd->first;
       out_gid = passwd->second;
+      log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: found user and group IDs in cache, " << user_id << "=" << out_uid << ", group_id=" << out_gid << ".";
       return;
     }
   }
@@ -172,10 +177,12 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
   bool have_passwd = false;
   if ( get_passwd_from_user_credentials )
   {
+    log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: calling get_passwd_from_user_credentials_ret with user_id=" << user_id << ", group_id=" << group_id << ".";
     int get_passwd_from_user_credentials_ret = get_passwd_from_user_credentials( user_id.c_str(), group_id.c_str(), &out_uid, &out_gid );
     if ( get_passwd_from_user_credentials_ret >= 0 )
       have_passwd = true;
-//    else    
+    else
+      log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: get_passwd_from_user_credentials_ret with user_id=" << user_id << ", group_id=" << group_id << " failed with errno=" << ( get_passwd_from_user_credentials_ret * -1 );
 //      throw YIELD::Exception( get_passwd_from_user_credentials_ret * -1 );
   }
 
@@ -184,6 +191,8 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
 #ifdef _WIN32
     YIELD::DebugBreak();
 #else
+    log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: calling getpwnam_r and getgrnam_r with user_id=" << user_id << ", group_id=" << group_id << ".";
+
     struct passwd pwd, *pwd_res;
     char pwd_buf[PWD_BUF_LEN]; int pwd_buf_len = sizeof( pwd_buf );
     struct group grp, *grp_res;
@@ -200,9 +209,12 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
       //    throw YIELD::Exception();
       out_uid = 0;
       out_gid = 0;
+      log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: getpwnam_r and getgrnam_r with user_id=" << user_id << ", group_id=" << group_id << " failed, errno=" << errno << ", setting user/group to root.";
     }
 #endif
   }
+
+  log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: " << user_id << "=" << out_uid << ", " << group_id << "=" << out_gid << ", storing in cache.";
 
   if ( user_id_to_passwd_cache == NULL )
   {
@@ -216,6 +228,8 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
 template <class ProxyType, class InterfaceType>
 void Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials )
 {
+  log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: getting UserCredentials from passwd (uid=" << uid << ", gid=" << gid << ").";
+
   YIELD::STLHashMap<org::xtreemfs::interfaces::UserCredentials*>* uid_to_user_credentials_cache = passwd_to_user_credentials_cache.find( static_cast<uint32_t>( gid ) );
   if ( uid_to_user_credentials_cache != NULL )
   {
@@ -223,16 +237,21 @@ void Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
     if ( user_credentials != NULL )
     {
       out_user_credentials = *user_credentials;
+      log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: found UserCredentials in cache, " << uid << "=" << out_user_credentials.get_user_id() << ", " << gid << "=" << out_user_credentials.get_group_ids()[0] << ".";
       return;
     }
   }
 
   if ( get_user_credentials_from_passwd )
   {
+    log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: calling get_user_credentials_from_passwd with uid=" << uid << ", gid=" << gid << ".";
+
     size_t user_id_len = 0, group_ids_len = 0;
     int get_user_credentials_from_passwd_ret = get_user_credentials_from_passwd( uid, gid, NULL, &user_id_len, NULL, &group_ids_len );
     if ( get_user_credentials_from_passwd_ret >= 0 )
     {
+      log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: calling get_user_credentials_from_passwd with uid=" << uid << ", gid=" << gid << " returned " << get_user_credentials_from_passwd_ret << ", allocating space for UserCredentials.";
+
       if ( user_id_len > 0 && group_ids_len > 0 )
       {
         char* user_id = new char[user_id_len];
@@ -241,6 +260,8 @@ void Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
         get_user_credentials_from_passwd_ret = get_user_credentials_from_passwd( uid, gid, user_id, &user_id_len, group_ids, &group_ids_len );
         if ( get_user_credentials_from_passwd_ret >= 0 )
         {
+          log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: get_user_credentials_from_passwd succeeded, " << uid << "=" << out_user_credentials.get_user_id() << ", " << gid << "=" << out_user_credentials.get_group_ids()[0] << ".";
+
           out_user_credentials.set_user_id( user_id );
 
           char* group_ids_p = group_ids;
