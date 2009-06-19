@@ -152,7 +152,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
   {
     YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
   }
-  catch ( std::exception& exc )
+  catch ( std::exception& )
   {
     YIELD::Exception::set_errno( EIO );
   }
@@ -195,7 +195,7 @@ bool File::truncate( uint64_t new_size )
   {
     YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
   }
-  catch ( std::exception& excguess  )
+  catch ( std::exception& )
   {
     YIELD::Exception::set_errno( EIO );
   }
