@@ -94,30 +94,32 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 {
   try
   {
-    char* rbuf_p = static_cast<char*>( rbuf );
-    size_t rbuf_size = size;
-    uint64_t file_offset = offset, file_offset_max = offset + size;
+    YIELD::auto_Log log = parent_volume->get_log();
+    char *rbuf_start = static_cast<char*>( rbuf ), *rbuf_p = static_cast<char*>( rbuf );
+#define RBUF_REMAINING ( size - static_cast<size_t>( rbuf_p - rbuf_start ) )
     uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;
 
-    while ( file_offset < file_offset_max )
-    {
-      uint64_t object_number = file_offset / stripe_size;
-      uint32_t object_offset = file_offset % stripe_size;
-      uint64_t object_size = file_offset_max - file_offset;
+    for ( ;; )
+    {      
+      uint64_t object_number = offset / stripe_size;
+      uint32_t object_offset = offset % stripe_size;
+      uint64_t object_size = RBUF_REMAINING;
       if ( object_offset + object_size > stripe_size )
         object_size = stripe_size - object_offset;
 
-      parent_volume->get_log()->getStream( YIELD::Log::LOG_INFO ) << 
+      log->getStream( YIELD::Log::LOG_INFO ) << 
         "org::xtreemfs::client::File: reading " << object_size << 
         " bytes from offset " << object_offset <<
         " in object number " << object_number << 
         " of file " << file_credentials.get_xcap().get_file_id() <<
-        ", file offset = " << file_offset << ".";
+        ", file offset = " << offset <<
+        ", remaining buffer size = " << RBUF_REMAINING <<
+        ".";
 
       org::xtreemfs::interfaces::ObjectData object_data;
       parent_volume->get_osd_proxy_mux()->read( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ), object_data );
 
-      parent_volume->get_log()->getStream( YIELD::Log::LOG_INFO ) << 
+      log->getStream( YIELD::Log::LOG_INFO ) << 
         "org::xtreemfs::client::File: read " << object_data.get_data()->size() <<
         " bytes from file " << file_credentials.get_xcap().get_file_id() <<
         " with " << object_data.get_zero_padding() << " bytes of zero padding.";
@@ -125,28 +127,45 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       YIELD::auto_Buffer data = object_data.get_data();
       if ( !data->empty() )
       {
-        memcpy_s( rbuf_p, size - static_cast<size_t>( rbuf_p - static_cast<char*>( rbuf ) ), static_cast<void*>( *data ), data->size() );
-        rbuf_p += data->size();
-        rbuf_size -= data->size();
-        file_offset += data->size();
+        if ( data->size() < RBUF_REMAINING )
+        {
+          memcpy_s( rbuf_p, RBUF_REMAINING, static_cast<void*>( *data ), data->size() );
+          rbuf_p += data->size();
+          offset += data->size();
+        }
+        else
+        {
+          log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received data (size=" << data->size() << " larger than available buffer space (" << RBUF_REMAINING << ")";
+          YIELD::ExceptionResponse::set_errno( EIO );
+          return -1;
+        }
       }
 
       uint32_t zero_padding = object_data.get_zero_padding();
       if ( zero_padding > 0 )
       {
-        if ( zero_padding > rbuf_size )
-          zero_padding = static_cast<uint32_t>( rbuf_size );
-        memset( rbuf_p, 0, zero_padding );
-        rbuf_p += zero_padding;
-        rbuf_size -= zero_padding; 
-        file_offset += zero_padding;
+        if ( zero_padding < RBUF_REMAINING )
+        {
+          memset( rbuf_p, 0, zero_padding );
+          rbuf_p += zero_padding;
+          offset += zero_padding;
+        }
+        else
+        {
+          log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received zero_padding (" << zero_padding << ") larger than available buffer space (" << ( size - static_cast<size_t>( rbuf_p - rbuf_start ) );
+          YIELD::ExceptionResponse::set_errno( EIO );
+          return -1;
+        }
       }
 
       if ( data->size() < object_size )
         break;
     }
 
-    return static_cast<ssize_t>( file_offset - offset );
+#ifdef _DEBUG
+    if ( static_cast<size_t>( rbuf_p - rbuf_start ) > size ) DebugBreak();
+#endif
+    return static_cast<ssize_t>( rbuf_p - rbuf_start );
   }
   catch ( ProxyExceptionResponse& proxy_exception_response )
   {
