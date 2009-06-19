@@ -41,7 +41,7 @@ Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, YIELD::a
   YIELD::auto_Object<YIELD::Volume> volume = new YIELD::Volume;
   for ( std::vector<YIELD::Path>::iterator policy_dir_path_i = policy_dir_paths.begin(); policy_dir_path_i != policy_dir_paths.end(); policy_dir_path_i++ )
   {
-    log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: scanning " << ( *policy_dir_path_i ).abspath() << " for policy shared libraries.";
+    log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: scanning " << *policy_dir_path_i << " for policy shared libraries.";
     std::vector<YIELD::Path> file_names;
     volume->listdir( *policy_dir_path_i, file_names );
     for ( std::vector<YIELD::Path>::iterator file_name_i = file_names.begin(); file_name_i != file_names.end(); file_name_i++ )
@@ -169,7 +169,7 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
     {
       out_uid = passwd->first;
       out_gid = passwd->second;
-      log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: found user and group IDs in cache, " << user_id << "=" << out_uid << ", group_id=" << out_gid << ".";
+      log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: found user and group IDs in cache, " << user_id << "=" << out_uid << ", " << group_id << "=" << out_gid << ".";
       return;
     }
   }
