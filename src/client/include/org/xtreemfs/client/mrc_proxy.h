@@ -28,7 +28,7 @@ namespace org
       public:
         static YIELD::auto_Object<MRCProxy> create( const YIELD::URI& absolute_uri,
                                                     YIELD::auto_Object<YIELD::StageGroup> stage_group,
-                                                    YIELD::auto_Object<YIELD::Log> log = NULL,
+                                                    YIELD::auto_Log log = NULL,
                                                     uint8_t operation_retries_max = YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::OPERATION_RETRIES_MAX_DEFAULT,
                                                     const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::OPERATION_TIMEOUT_DEFAULT,
                                                     YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL )
@@ -44,7 +44,7 @@ namespace org
       private:
         friend class YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>;
 
-        MRCProxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::Log> log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
+        MRCProxy( const YIELD::URI& absolute_uri, YIELD::auto_Log log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
           : Proxy<MRCProxy, org::xtreemfs::interfaces::MRCInterface>( absolute_uri, log, operation_retries_max, operation_timeout, peer_sockaddr, ssl_context )
         { }
 

@@ -24,7 +24,7 @@ using namespace org::xtreemfs::client;
 
 
 template <class ProxyType, class InterfaceType>
-Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::Log> log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
+Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, YIELD::auto_Log log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
   : YIELD::ONCRPCClient<InterfaceType>( absolute_uri, log, operation_retries_max, operation_timeout, peer_sockaddr, ssl_context )
 {
   get_user_credentials_from_passwd = NULL;

@@ -23,20 +23,6 @@ using namespace org::xtreemfs::client;
 #endif
 
 
-#define ORG_XTREEMFS_CLIENT_FILE_OPERATION_BEGIN( OperationName ) \
-  try
-
-#define ORG_XTREEMFS_CLIENT_FILE_OPERATION_END( OperationName ) \
-  catch ( ProxyExceptionResponse& proxy_exception_response ) \
-  { \
-    YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() ); \
-  } \
-  catch ( std::exception& ) \
-  { \
-    YIELD::Exception::set_errno( EACCES ); \
-  }
-
-
 File::File( YIELD::auto_Object<Volume> parent_volume, YIELD::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
 : parent_volume( parent_volume ), mrc_proxy( mrc_proxy ), path( path ), file_credentials( file_credentials )
 { }
@@ -60,7 +46,7 @@ bool File::close()
 
 bool File::flush()
 {
-  ORG_XTREEMFS_CLIENT_FILE_OPERATION_BEGIN( flush )
+  try
   {
     if ( !latest_osd_write_response.get_new_file_size().empty() )  
     {
@@ -69,11 +55,19 @@ bool File::flush()
     }  
     return true;
   }
-  ORG_XTREEMFS_CLIENT_FILE_OPERATION_END( flush );
+  catch ( ProxyExceptionResponse& proxy_exception_response )
+  {
+    YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
+  }
+  catch ( std::exception& )
+  {
+    YIELD::Exception::set_errno( EIO );
+  }
+
   return false;
 }
 
-YIELD::auto_Object<YIELD::Stat> File::getattr()
+YIELD::auto_Stat File::getattr()
 {
   return parent_volume->getattr( path );
 }
@@ -98,7 +92,7 @@ bool File::listxattr( std::vector<std::string>& out_names )
 
 ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 {
-  ORG_XTREEMFS_CLIENT_FILE_OPERATION_BEGIN( read )
+  try
   {
     char* rbuf_p = static_cast<char*>( rbuf );
     size_t rbuf_size = size;
@@ -128,10 +122,10 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         " bytes from file " << file_credentials.get_xcap().get_file_id() <<
         " with " << object_data.get_zero_padding() << " bytes of zero padding.";
 
-      YIELD::StringBuffer* data = object_data.get_data().get();
+      YIELD::auto_Buffer data = object_data.get_data();
       if ( !data->empty() )
       {
-        memcpy_s( rbuf_p, size - static_cast<size_t>( rbuf_p - static_cast<char*>( rbuf ) ), data->c_str(), data->size() );
+        memcpy_s( rbuf_p, size - static_cast<size_t>( rbuf_p - static_cast<char*>( rbuf ) ), static_cast<void*>( *data ), data->size() );
         rbuf_p += data->size();
         rbuf_size -= data->size();
         file_offset += data->size();
@@ -154,7 +148,15 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 
     return static_cast<ssize_t>( file_offset - offset );
   }
-  ORG_XTREEMFS_CLIENT_FILE_OPERATION_END( read );
+  catch ( ProxyExceptionResponse& proxy_exception_response )
+  {
+    YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
+  }
+  catch ( std::exception& exc )
+  {
+    YIELD::Exception::set_errno( EIO );
+  }
+
   return -1;
 }
 
@@ -176,7 +178,7 @@ bool File::sync()
 
 bool File::truncate( uint64_t new_size )
 {
-  ORG_XTREEMFS_CLIENT_FILE_OPERATION_BEGIN( truncate )
+  try
   {
     org::xtreemfs::interfaces::XCap truncate_xcap;
     mrc_proxy->ftruncate( file_credentials.get_xcap(), truncate_xcap );
@@ -189,13 +191,21 @@ bool File::truncate( uint64_t new_size )
       flush();
     return true;
   }
-  ORG_XTREEMFS_CLIENT_FILE_OPERATION_END( truncate );
+  catch ( ProxyExceptionResponse& proxy_exception_response )
+  {
+    YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
+  }
+  catch ( std::exception& excguess  )
+  {
+    YIELD::Exception::set_errno( EIO );
+  }
+
   return false;
 }
 
 ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
-  ORG_XTREEMFS_CLIENT_FILE_OPERATION_BEGIN( write )
+  try
   {
     YIELD::auto_Object< YIELD::OneSignalEventQueue<> > write_response_queue( new YIELD::OneSignalEventQueue<> );
 
@@ -211,7 +221,7 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
       uint64_t object_size = file_offset_max - file_offset;
       if ( object_offset + object_size > stripe_size )
         object_size = stripe_size - object_offset;
-      org::xtreemfs::interfaces::ObjectData object_data( new YIELD::StringBuffer( wbuf_p, static_cast<uint32_t>( object_size ) ), 0, 0, false );
+      org::xtreemfs::interfaces::ObjectData object_data( new YIELD::StringLiteralBuffer( wbuf_p, static_cast<uint32_t>( object_size ) ), 0, 0, false );
       org::xtreemfs::interfaces::OSDInterface::writeRequest* write_request = new org::xtreemfs::interfaces::OSDInterface::writeRequest( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, 0, object_data );
 
       write_request->set_response_target( write_response_queue->incRef() );
@@ -235,7 +245,15 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
 
     return static_cast<ssize_t>( file_offset - offset );
   }
-  ORG_XTREEMFS_CLIENT_FILE_OPERATION_END( write );
+  catch ( ProxyExceptionResponse& proxy_exception_response )
+  {
+    YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
+  }
+  catch ( std::exception& )
+  {
+    YIELD::Exception::set_errno( EIO );
+  }
+
   return -1;
 }
 

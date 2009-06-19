@@ -38,7 +38,7 @@ using namespace org::xtreemfs::client;
   } \
 
 
-Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Object<YIELD::Log> log, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
+Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Log log, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
   : name( name ), flags( flags ), log( log )
 {
   YIELD::auto_Object<YIELD::StageGroup> stage_group = new YIELD::SEDAStageGroup( name.c_str() );
@@ -82,7 +82,7 @@ bool Volume::chown( const YIELD::Path& path, int uid, int gid )
   return false;
 }
 
-YIELD::auto_Object<YIELD::Stat> Volume::getattr( const YIELD::Path& path )
+YIELD::auto_Stat Volume::getattr( const YIELD::Path& path )
 {
   ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( getattr )
   {
@@ -92,7 +92,7 @@ YIELD::auto_Object<YIELD::Stat> Volume::getattr( const YIELD::Path& path )
   return NULL;
 }
 
-YIELD::auto_Object<YIELD::Stat> Volume::getattr( const Path& path )
+YIELD::auto_Stat Volume::getattr( const Path& path )
 {
   org::xtreemfs::interfaces::Stat stbuf;
   mrc_proxy->getattr( path, stbuf );

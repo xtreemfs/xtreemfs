@@ -1,4 +1,4 @@
-// Revision: 1549
+// Revision: 1557
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -12,7 +12,21 @@ void Buffer::as_iovecs( std::vector<struct iovec>& out_iovecs ) const
   if ( next_buffer != NULL )
     next_buffer->as_iovecs( out_iovecs );
 }
-void Buffer::set_next_buffer( auto_Object<Buffer> next_buffer )
+bool Buffer::operator==( const Buffer& other ) const
+{
+  if ( size() == other.size() )
+  {
+    void* this_base = static_cast<void*>( *this );
+    void* other_base = static_cast<void*>( other );
+    if ( this_base != NULL && other_base != NULL )
+      return memcmp( this_base, other_base, size() ) == 0;
+    else
+      return false;
+  }
+  else
+    return false;
+}
+void Buffer::set_next_buffer( auto_Buffer next_buffer )
 {
   if ( this->next_buffer != NULL ) DebugBreak();
   this->next_buffer = next_buffer;
@@ -35,13 +49,13 @@ void BufferedMarshaller::write( const void* buffer, size_t buffer_len )
     {
       buffer_len -= put_len;
       buffer = static_cast<const uint8_t*>( buffer ) + put_len;
-      auto_Object<Buffer> next_buffer = new HeapBuffer( current_buffer->capacity() * 2 );
+      auto_Buffer next_buffer = new HeapBuffer( current_buffer->capacity() * 2 );
       current_buffer->set_next_buffer( next_buffer );
       current_buffer = next_buffer;
     }
   }
 }
-void BufferedMarshaller::write( auto_Object<Buffer> buffer )
+void BufferedMarshaller::write( auto_Buffer buffer )
 {
   if ( current_buffer != NULL )
   {
@@ -53,6 +67,64 @@ void BufferedMarshaller::write( auto_Object<Buffer> buffer )
   }
   else
     DebugBreak();
+}
+
+
+// buffered_unmarshaller.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+namespace YIELD
+{
+  class PartialBuffer : public FixedBuffer
+  {
+  public:
+    PartialBuffer( auto_Buffer underlying_buffer, size_t size )
+      : FixedBuffer( size ), underlying_buffer( underlying_buffer )
+    {
+      iov.iov_base = *underlying_buffer;
+      iov.iov_len = size;
+    }
+  private:
+    auto_Buffer underlying_buffer;
+  };
+};
+auto_Buffer BufferedUnmarshaller::readBuffer( size_t size )
+{
+  size_t source_buffer_size = source_buffer->size();
+  if ( source_buffer_size < size )
+  {
+    auto_Buffer buffer( new HeapBuffer( size ) );
+    readBytes( *buffer, size );
+    buffer->put( NULL, size );
+    return buffer;
+  }
+  else if ( source_buffer_size == size )
+  {
+    auto_Buffer buffer( source_buffer );
+    source_buffer = source_buffer->get_next_buffer();
+    return buffer;
+  }
+  else
+  {
+    auto_Buffer buffer( new PartialBuffer( source_buffer, size ) );
+    source_buffer->get( NULL, size );
+    return buffer;
+  }
+}
+void BufferedUnmarshaller::readBytes( void* into_buffer, size_t into_buffer_len )
+{
+  while ( into_buffer_len > 0 )
+  {
+    size_t consumed_len = source_buffer->get( into_buffer, into_buffer_len );
+    if ( consumed_len == into_buffer_len )
+      return;
+    else
+    {
+      into_buffer = static_cast<char*>( into_buffer ) + consumed_len;
+      into_buffer_len -= consumed_len;
+      source_buffer = source_buffer->get_next_buffer();
+    }
+  }
 }
 
 
@@ -352,7 +424,7 @@ bool File::flush()
   return true;
 #endif
 }
-auto_Object<Stat> File::getattr()
+auto_Stat File::getattr()
 {
 #ifdef _WIN32
   BY_HANDLE_FILE_INFORMATION by_handle_file_information;
@@ -367,7 +439,7 @@ auto_Object<Stat> File::getattr()
 }
 uint64_t File::get_size()
 {
-  auto_Object<Stat> stbuf = getattr();
+  auto_Stat stbuf = getattr();
   if ( stbuf != NULL )
     return stbuf->get_size();
   else
@@ -414,7 +486,7 @@ bool File::listxattr( std::vector<std::string>& out_names )
   return false;
 #endif
 }
-auto_Object<File> File::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
+auto_File File::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
 #ifdef _WIN32
   DWORD file_access_flags = 0,
@@ -615,7 +687,7 @@ size_t FixedBuffer::capacity() const
 {
   return _capacity;
 }
-FixedBuffer::operator void*()
+FixedBuffer::operator void*() const
 {
   return static_cast<uint8_t*>( iov.iov_base ) + _consumed;
 }
@@ -699,7 +771,7 @@ namespace YIELD
   class FileLog : public Log
   {
   public:
-    FileLog( auto_Object<File> file, Level level )
+    FileLog( auto_File file, Level level )
       : Log( level ), file( file )
     { }
     // Log
@@ -708,7 +780,7 @@ namespace YIELD
       file->write( str, str_len );
     }
   private:
-    auto_Object<File> file;
+    auto_File file;
   };
   class ostreamLog : public Log
   {
@@ -726,7 +798,7 @@ namespace YIELD
     std::ostream& underlying_ostream;
   };
 };
-Log::Stream::Stream( auto_Object<Log> log, Log::Level level )
+Log::Stream::Stream( auto_Log log, Log::Level level )
   : log( log ), level( level )
 { }
 Log::Stream::Stream( const Stream& other )
@@ -758,13 +830,13 @@ Log::Stream::~Stream()
     log->write( stamped_oss.str(), level );
   }
 }
-auto_Object<Log> Log::open( std::ostream& underlying_ostream, Level level )
+auto_Log Log::open( std::ostream& underlying_ostream, Level level )
 {
   return new ostreamLog( underlying_ostream, level );
 }
-auto_Object<Log> Log::open( const Path& file_path, Level level )
+auto_Log Log::open( const Path& file_path, Level level )
 {
-  auto_Object<File> file = File::open( file_path, O_CREAT|O_WRONLY|O_APPEND );
+  auto_File file = File::open( file_path, O_CREAT|O_WRONLY|O_APPEND );
   if ( file != NULL )
     return new FileLog( file, level );
   else
@@ -905,7 +977,7 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
 #endif
 auto_Object<MemoryMappedFile> MemoryMappedFile::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes, size_t minimum_size )
 {
-  auto_Object<File> file = File::open( path, flags, mode, attributes );
+  auto_File file = File::open( path, flags, mode, attributes );
   if ( file != NULL )
   {
     size_t current_file_size;
@@ -916,7 +988,7 @@ auto_Object<MemoryMappedFile> MemoryMappedFile::open( const Path& path, uint32_t
       uliFileSize.LowPart = GetFileSize( *file, &uliFileSize.HighPart );
       current_file_size = static_cast<size_t>( uliFileSize.QuadPart );
 #else
-      auto_Object<Stat> stbuf = file->stat();
+      auto_Stat stbuf = file->stat();
       if ( stbuf != NULL )
         current_file_size = stbuf->get_size();
       else
@@ -934,7 +1006,7 @@ auto_Object<MemoryMappedFile> MemoryMappedFile::open( const Path& path, uint32_t
   else
     return NULL;
 }
-MemoryMappedFile::MemoryMappedFile( auto_Object<File> underlying_file, uint32_t open_flags )
+MemoryMappedFile::MemoryMappedFile( auto_File underlying_file, uint32_t open_flags )
   : underlying_file( underlying_file ), open_flags( open_flags )
 {
 #ifdef _WIN32
@@ -1403,7 +1475,7 @@ void PrettyPrinter::writeBool( const Declaration&, bool value )
   else
     os << "false, ";
 }
-void PrettyPrinter::writeBuffer( const Declaration&, auto_Object<Buffer> )
+void PrettyPrinter::writeBuffer( const Declaration&, auto_Buffer )
 { }
 void PrettyPrinter::writeDouble( const Declaration&, double value )
 {
@@ -1663,7 +1735,7 @@ void* SharedLibrary::getFunction( const char* function_name, void* missing_funct
 #pragma warning( push )
 #pragma warning( disable: 4100 )
 #endif
-auto_Object<Stat> Stat::stat( const Path& path )
+auto_Stat Stat::stat( const Path& path )
 {
 #ifdef _WIN32
   WIN32_FIND_DATA find_data;
@@ -2435,26 +2507,6 @@ Time::operator std::string() const
 }
 
 
-// unmarshaller.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-void Unmarshaller::read( void* into_buffer, size_t into_buffer_len )
-{
-  while ( into_buffer_len > 0 )
-  {
-    size_t consumed_len = source_buffer->get( into_buffer, into_buffer_len );
-    if ( consumed_len == into_buffer_len )
-      return;
-    else
-    {
-      into_buffer = static_cast<char*>( into_buffer ) + consumed_len;
-      into_buffer_len -= consumed_len;
-      source_buffer = source_buffer->get_next_buffer();
-    }
-  }
-}
-
-
 // volume.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -2493,7 +2545,7 @@ namespace YIELD
     { }
     readdir_to_listdirCallback& operator=( const readdir_to_listdirCallback& ) { return *this; }
     // Volume::readdirCallback
-    bool operator()( const Path& dirent_name, auto_Object<Stat> stbuf )
+    bool operator()( const Path& dirent_name, auto_Stat stbuf )
     {
       return listdir_callback( dirent_name );
     }
@@ -2638,7 +2690,7 @@ bool Volume::mktree( const Path& path, mode_t mode )
       return false;
   return ret;
 }
-auto_Object<File> Volume::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
+auto_File Volume::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
   return File::open( path, flags, mode, attributes );
 }
@@ -2680,7 +2732,7 @@ bool Volume::readdir( const Path& path, const YIELD::Path& match_file_name_prefi
         if ( match_file_name_prefix.empty() ||
              strstr( next_dirent->d_name, match_file_name_prefix ) == next_dirent->d_name )
         {
-          auto_Object<Stat> stbuf = stat( path + next_dirent->d_name );
+          auto_Stat stbuf = stat( path + next_dirent->d_name );
           if ( stbuf != NULL )
           {
             if ( !callback( next_dirent->d_name, stbuf ) )
@@ -2751,7 +2803,7 @@ namespace YIELD
     rmtree_readdirCallback( Volume& volume ) : volume( volume )
     { }
     rmtree_readdirCallback& operator=( const rmtree_readdirCallback& ) { return *this; }
-    virtual bool operator()( const Path& path, auto_Object<Stat> stbuf )
+    virtual bool operator()( const Path& path, auto_Stat stbuf )
     {
       if ( stbuf->ISDIR() )
         return volume.rmtree( path );
@@ -2764,7 +2816,7 @@ namespace YIELD
 };
 bool Volume::rmtree( const Path& path )
 {
-  auto_Object<Stat> path_stat = Stat::stat( path );
+  auto_Stat path_stat = Stat::stat( path );
   if ( path_stat != NULL && path_stat->ISDIR() )
   {
     rmtree_readdirCallback readdir_callback( *this );
@@ -2832,13 +2884,13 @@ bool Volume::symlink( const Path& old_path, const Path& new_path )
 }
 bool Volume::touch( const Path& path, mode_t mode )
 {
-  auto_Object<File> file = creat( path, mode );
+  auto_File file = creat( path, mode );
   return file != NULL;
 }
 bool Volume::truncate( const Path& path, uint64_t new_size )
 {
 #ifdef _WIN32
-  auto_Object<File> file = Volume::open( path, O_CREAT|O_WRONLY, File::DEFAULT_MODE );
+  auto_File file = Volume::open( path, O_CREAT|O_WRONLY, File::DEFAULT_MODE );
   if ( file!= NULL )
   {
     file->truncate( new_size );
@@ -2861,7 +2913,7 @@ bool Volume::unlink( const Path& path )
 bool Volume::utimens( const Path& path, const YIELD::Time& atime, const YIELD::Time& mtime, const YIELD::Time& ctime )
 {
 #ifdef _WIN32
-  auto_Object<File> file = open( path, O_WRONLY );
+  auto_File file = open( path, O_WRONLY );
   if ( file!= NULL )
   {
     FILETIME ftCreationTime = ctime, ftLastAccessTime = atime, ftLastWriteTime = mtime;
@@ -2913,10 +2965,10 @@ void XDRMarshaller::writeBool( const Declaration& decl, bool value )
 {
   writeInt32( decl, value ? 1 : 0 );
 }
-void XDRMarshaller::writeBuffer( const Declaration& decl, auto_Object<Buffer> value )
+void XDRMarshaller::writeBuffer( const Declaration& decl, auto_Buffer value )
 {
   size_t value_size = 0;
-  auto_Object<Buffer> next_buffer = value;
+  auto_Buffer next_buffer = value;
   while ( next_buffer != NULL )
   {
     value_size += next_buffer->size();
@@ -2992,22 +3044,30 @@ bool XDRUnmarshaller::readBool( const Declaration& decl )
 {
   return readInt32( decl ) == 1;
 }
+auto_Buffer XDRUnmarshaller::readBuffer( const Declaration& decl )
+{
+  size_t size = readInt32( decl );
+  if ( size % 4 == 0 )
+    return BufferedUnmarshaller::readBuffer( size );
+  else
+    return BufferedUnmarshaller::readBuffer( size + 4 - ( size % 4 ) );
+}
 double XDRUnmarshaller::readDouble( const Declaration& )
 {
   double value;
-  read( &value, sizeof( value ) );
+  readBytes( &value, sizeof( value ) );
   return value;
 }
 float XDRUnmarshaller::readFloat( const Declaration& )
 {
   float value;
-  read( &value, sizeof( value ) );
+  readBytes( &value, sizeof( value ) );
   return value;
 }
 int32_t XDRUnmarshaller::readInt32( const Declaration& )
 {
   int32_t value;
-  read( &value, sizeof( value ) );
+  readBytes( &value, sizeof( value ) );
 #ifdef __MACH__
   return ntohl( value );
 #else
@@ -3017,7 +3077,7 @@ int32_t XDRUnmarshaller::readInt32( const Declaration& )
 int64_t XDRUnmarshaller::readInt64( const Declaration& )
 {
   int64_t value;
-  read( &value, sizeof( value ) );
+  readBytes( &value, sizeof( value ) );
   return Machine::ntohll( value );
 }
 Map* XDRUnmarshaller::readMap( const Declaration& decl, Map* value )
@@ -3058,7 +3118,7 @@ void XDRUnmarshaller::readString( const Declaration& decl, std::string& str )
       else
         padded_str_len = str_len + 4 - padded_str_len;
       str.resize( padded_str_len );
-      read( const_cast<char*>( str.c_str() ), padded_str_len );
+      readBytes( const_cast<char*>( str.c_str() ), padded_str_len );
       str.resize( str_len );
     }
   }

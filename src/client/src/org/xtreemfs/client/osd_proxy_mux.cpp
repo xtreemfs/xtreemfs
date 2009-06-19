@@ -72,7 +72,7 @@ namespace org
 };
 
 
-OSDProxyMux::OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::auto_Object<YIELD::Log> log, const YIELD::Time& operation_timeout, uint8_t operation_retries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::StageGroup> stage_group )
+OSDProxyMux::OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::auto_Log log, const YIELD::Time& operation_timeout, uint8_t operation_retries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::StageGroup> stage_group )
   : dir_proxy( dir_proxy ), log( log ), operation_timeout( operation_timeout ), operation_retries_max( operation_retries_max ), ssl_context( ssl_context ), stage_group( stage_group )
 {
   get_osd_ping_interval_s = NULL;

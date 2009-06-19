@@ -1,4 +1,4 @@
-// Revision: 1549
+// Revision: 1557
 
 #include "yield/arch.h"
 using namespace YIELD;
@@ -43,10 +43,10 @@ namespace YIELD
   class SEDAStageGroupThread : public StageGroupThread
   {
   public:
-    SEDAStageGroupThread( const std::string& stage_group_name, auto_Object<ProcessorSet> limit_logical_processor_set, auto_Object<Log> log, auto_Object<Stage> stage )
+    SEDAStageGroupThread( const std::string& stage_group_name, auto_Object<ProcessorSet> limit_logical_processor_set, auto_Object<Log> log, auto_Stage stage )
       : StageGroupThread( stage_group_name, limit_logical_processor_set, log ), stage( stage )
     { }
-    auto_Object<Stage> get_stage() { return stage; }
+    auto_Stage get_stage() { return stage; }
     // Object
     YIELD_OBJECT_PROTOTYPES( SEDAStageGroupThread, 0 );
     // StageGroupThread
@@ -65,7 +65,7 @@ namespace YIELD
     }
   private:
     ~SEDAStageGroupThread() { }
-    auto_Object<Stage> stage;
+    auto_Stage stage;
     // StageGroupThread
     void _run()
     {
@@ -83,7 +83,7 @@ SEDAStageGroup::~SEDAStageGroup()
   for ( std::vector<SEDAStageGroupThread*>::iterator thread_i = threads.begin(); thread_i != threads.end(); thread_i++ )
     Object::decRef( **thread_i );
 }
-void SEDAStageGroup::startThreads( auto_Object<Stage> stage, int16_t thread_count )
+void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
 {
   for ( unsigned short thread_i = 0; thread_i < thread_count; thread_i++ )
   {
@@ -108,7 +108,7 @@ void SEDAStageGroup::startThreads( auto_Object<Stage> stage, int16_t thread_coun
 #endif
 
 
-StageGroup::StageGroup( const std::string& name, auto_Object<ProcessorSet> limit_physical_processor_set, auto_Object<EventTarget> stage_stats_event_target )
+StageGroup::StageGroup( const std::string& name, auto_Object<ProcessorSet> limit_physical_processor_set, auto_EventTarget stage_stats_event_target )
 : name( name ), limit_physical_processor_set( limit_physical_processor_set ), stage_stats_event_target( stage_stats_event_target )
 {
   if ( limit_physical_processor_set != NULL )

@@ -142,7 +142,7 @@ extern "C"
 
 #define YIELD_MARSHALLER_PROTOTYPES \
   virtual void writeBool( const Declaration& decl, bool value ); \
-  virtual void writeBuffer( const Declaration& decl, auto_Object<Buffer> value ); \
+  virtual void writeBuffer( const Declaration& decl, auto_Buffer value ); \
   virtual void writeDouble( const Declaration& decl, double value ); \
   virtual void writeInt64( const Declaration& decl, int64_t value ); \
   virtual void writeMap( const Declaration& decl, const YIELD::Map& value ); \
@@ -191,6 +191,7 @@ void TestSuiteName##_##TestCaseName##Test::runTest()
 
 #define YIELD_UNMARSHALLER_PROTOTYPES \
   virtual bool readBool( const Declaration& decl ); \
+  virtual auto_Buffer readBuffer( const Declaration& decl ); \
   virtual double readDouble( const Declaration& decl ); \
   virtual int64_t readInt64( const Declaration& decl ); \
   virtual YIELD::Map* readMap( const Declaration& decl, Map* value = NULL ); \
@@ -747,9 +748,10 @@ namespace YIELD
     virtual size_t get( void* into_buffer, size_t into_buffer_len ) = 0;
     virtual size_t get( std::string& into_string, size_t into_string_len ) = 0;
     auto_Object<Buffer> get_next_buffer() const { return next_buffer; }    
-    operator char*() { return static_cast<char*>( static_cast<void*>( *this ) ); }
-    operator unsigned char*() { return static_cast<unsigned char*>( static_cast<void*>( *this ) ); }
-    virtual operator void*() { return NULL; }
+    operator char*() const { return static_cast<char*>( static_cast<void*>( *this ) ); }
+    operator unsigned char*() const { return static_cast<unsigned char*>( static_cast<void*>( *this ) ); }
+    virtual operator void*() const { return NULL; }
+    bool operator==( const Buffer& other ) const;
     size_t put( const std::string& from_string ) { return put( from_string.c_str(), from_string.size() ); }
     virtual size_t put( const void* from_buffer, size_t from_buffer_len ) = 0;
     void set_next_buffer( auto_Object<Buffer> next_buffer );
@@ -761,6 +763,8 @@ namespace YIELD
   private:
     auto_Object<Buffer> next_buffer;
   };
+
+  typedef auto_Object<Buffer> auto_Buffer;
 
 
   class FixedBuffer : public Buffer
@@ -776,7 +780,7 @@ namespace YIELD
     size_t get( std::string&, size_t into_string_len );
     void as_iovecs( std::vector<struct iovec>& out_iovecs ) const;
     size_t capacity() const;
-    operator void*();
+    operator void*() const;
     virtual size_t put( const void* from_buffer, size_t from_buffer_len );
     size_t size() const;
 
@@ -857,6 +861,13 @@ namespace YIELD
       : FixedBuffer( string_literal_len )
     {
       iov.iov_base = const_cast<char*>( string_literal );
+      iov.iov_len = string_literal_len;
+    }
+
+    StringLiteralBuffer( const void* string_literal, size_t string_literal_len )
+      : FixedBuffer( string_literal_len )
+    {
+      iov.iov_base = const_cast<void*>( string_literal );
       iov.iov_len = string_literal_len;
     }
 
@@ -1212,6 +1223,8 @@ namespace YIELD
     int fd;
 #endif
   };
+
+  typedef auto_Object<File> auto_File;
 
 
   // Adapted from N. Askitis and J. Zobel, "Cache-conscious collision resolution in string hash tables", 2005.
@@ -2019,6 +2032,8 @@ namespace YIELD
     Level level;
   };
 
+  typedef auto_Object<Log> auto_Log;
+
 
   class Machine
   {
@@ -2121,8 +2136,7 @@ namespace YIELD
     virtual ~Marshaller() { }
 
     virtual void writeBool( const Declaration& decl, bool value ) = 0;
-    void writeBuffer( const Declaration& decl, auto_Object<StringBuffer> value ) { writeBuffer( decl, auto_Object<Buffer>( value.release() ) ); }
-    virtual void writeBuffer( const Declaration& decl, auto_Object<Buffer> value ) = 0;
+    virtual void writeBuffer( const Declaration& decl, auto_Buffer value ) = 0;
     virtual void writeFloat( const Declaration& decl, float value ) { writeDouble( decl, value ); }
     virtual void writeDouble( const Declaration& decl, double value ) = 0;
     virtual void writeInt8( const Declaration& decl, int8_t value ) { writeInt16( decl, value ); }
@@ -2145,7 +2159,7 @@ namespace YIELD
   class BufferedMarshaller : public Marshaller
   {
   public:
-    auto_Object<Buffer> get_buffer() const { return first_buffer; }
+    auto_Buffer get_buffer() const { return first_buffer; }
 
   protected:
     BufferedMarshaller() 
@@ -2156,10 +2170,10 @@ namespace YIELD
     { }
 
     void write( const void* buffer, size_t buffer_len );    
-    void write( auto_Object<Buffer> buffer );
+    void write( auto_Buffer buffer );
 
   private:
-    auto_Object<Buffer> first_buffer, current_buffer;
+    auto_Buffer first_buffer, current_buffer;
   };
 
 
@@ -2710,6 +2724,8 @@ namespace YIELD
     Stat( const Stat& ) { DebugBreak(); } // Prevent copying
   };
 
+  typedef auto_Object<Stat> auto_Stat;
+
 
   static inline std::ostream& operator<<( std::ostream& os, const Stat& stbuf )
   {
@@ -2892,16 +2908,16 @@ namespace YIELD
   class TestResult
   {
   public:
-    TestResult( auto_Object<Log> log )
+    TestResult( auto_Log log )
       : log( log)
     { }
 
     virtual ~TestResult() { }
 
-    auto_Object<Log> get_log() const { return log; }
+    auto_Log get_log() const { return log; }
 
   private:
-    auto_Object<Log> log;
+    auto_Log log;
   };
 
 
@@ -2957,7 +2973,8 @@ namespace YIELD
 
     virtual ~Unmarshaller() { }
 
-    virtual bool readBool( const Declaration& ) = 0;
+    virtual bool readBool( const Declaration& decl ) = 0;
+    virtual auto_Buffer readBuffer( const Declaration& decl ) = 0;
     virtual double readDouble( const Declaration& ) = 0;
     virtual float readFloat( const Declaration& decl ) { return static_cast<float>( readDouble( decl ) ); }
     virtual int8_t readInt8( const Declaration& decl ) { return static_cast<int8_t>( readInt16( decl ) ); }
@@ -2972,19 +2989,25 @@ namespace YIELD
     virtual uint16_t readUint16( const Declaration& decl ) { return static_cast<uint16_t>( readInt16( decl ) ); }
     virtual uint32_t readUint32( const Declaration& decl ) { return static_cast<uint32_t>( readInt32( decl ) ); }
     virtual uint64_t readUint64( const Declaration& decl ) { return static_cast<uint64_t>( readInt64( decl ) ); }
+  };
+
+
+  class BufferedUnmarshaller : public Unmarshaller
+  {
+  public:
+    virtual ~BufferedUnmarshaller() { }
+
 
   protected:
-    Unmarshaller()
-    { }
-
-    Unmarshaller( auto_Object<Buffer> source_buffer )
+    BufferedUnmarshaller( auto_Buffer source_buffer )
         : source_buffer( source_buffer )
     { }
 
-    void read( void*, size_t );
+    void readBytes( void*, size_t );
+    auto_Buffer readBuffer( size_t size );
 
   private:
-    auto_Object<Buffer> source_buffer;
+    auto_Buffer source_buffer;  
   };
 
 
@@ -3010,15 +3033,15 @@ namespace YIELD
       virtual ~readdirCallback() { }
 
       // Return false to stop reading
-      virtual bool operator()( const Path& dirent_name, auto_Object<Stat> stbuf ) = 0;
+      virtual bool operator()( const Path& dirent_name, auto_Stat stbuf ) = 0;
     };
 
 
     YIELD_VOLUME_PROTOTYPES;
 
     // Convenience methods that don't make any system calls, so subclasses don't have to re-implement them
-    virtual auto_Object<File> creat( const Path& path ) { return creat( path, File::DEFAULT_MODE ); }
-    virtual auto_Object<File> creat( const Path& path, mode_t mode ) { return open( path, O_CREAT|O_WRONLY|O_TRUNC, mode ); }
+    virtual auto_File creat( const Path& path ) { return creat( path, File::DEFAULT_MODE ); }
+    virtual auto_File creat( const Path& path, mode_t mode ) { return open( path, O_CREAT|O_WRONLY|O_TRUNC, mode ); }
     virtual bool exists( const Path& path );
     virtual bool listdir( const Path& path, listdirCallback& callback ) { return listdir( path, Path(), callback ); }
     virtual bool listdir( const Path& path, const Path& match_file_name_prefix, listdirCallback& callback );
@@ -3029,12 +3052,12 @@ namespace YIELD
     virtual bool mkdir( const Path& path ) { return mkdir( path, DEFAULT_DIRECTORY_MODE ); }
     virtual bool mktree( const Path& path ) { return mktree( path, DEFAULT_DIRECTORY_MODE ); }
     virtual bool mktree( const Path& path, mode_t mode );
-    virtual auto_Object<File> open( const Path& path ) { return open( path, O_RDONLY, File::DEFAULT_MODE, 0 ); }
-    virtual auto_Object<File> open( const Path& path, uint32_t flags ) { return open( path, flags, File::DEFAULT_MODE, 0 ); }
-    virtual auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode ) { return open( path, flags, mode, 0 ); }
+    virtual auto_File open( const Path& path ) { return open( path, O_RDONLY, File::DEFAULT_MODE, 0 ); }
+    virtual auto_File open( const Path& path, uint32_t flags ) { return open( path, flags, File::DEFAULT_MODE, 0 ); }
+    virtual auto_File open( const Path& path, uint32_t flags, mode_t mode ) { return open( path, flags, mode, 0 ); }
     virtual bool readdir( const Path& path, readdirCallback& callback ) { return readdir( path, Path(), callback ); }
     virtual bool rmtree( const Path& path );
-    virtual auto_Object<Stat> stat( const Path& path ) { return getattr( path ); }
+    virtual auto_Stat stat( const Path& path ) { return getattr( path ); }
     virtual bool touch( const Path& path ) { return touch( path, File::DEFAULT_MODE ); }
     virtual bool touch( const Path& path, mode_t mode );
 
@@ -3066,11 +3089,11 @@ namespace YIELD
   };
 
 
-  class XDRUnmarshaller : public Unmarshaller
+  class XDRUnmarshaller : public BufferedUnmarshaller
   {
   public:
-    XDRUnmarshaller( auto_Object<Buffer> source_buffer )
-        : Unmarshaller( source_buffer )
+    XDRUnmarshaller( auto_Buffer source_buffer )
+        : BufferedUnmarshaller( source_buffer )
     { }
 
     // Unmarshaller

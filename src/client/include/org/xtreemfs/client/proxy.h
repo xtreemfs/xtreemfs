@@ -25,7 +25,7 @@ namespace org
         void handleEvent( YIELD::Event& );
           
       protected:
-        Proxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::Log> log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context );
+        Proxy( const YIELD::URI& absolute_uri, YIELD::auto_Log log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context );
         virtual ~Proxy();
 
         void getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials );

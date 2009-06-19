@@ -31,7 +31,7 @@ namespace org
         static YIELD::auto_Object<OSDProxy> create( const YIELD::URI& absolute_uri,
                                                     YIELD::auto_Object<YIELD::StageGroup> stage_group,
                                                     const std::string& uuid,
-                                                    YIELD::auto_Object<YIELD::Log> log = NULL,
+                                                    YIELD::auto_Log log = NULL,
                                                     uint8_t operation_retries_max = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_RETRIES_MAX_DEFAULT,
                                                     const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
                                                     const YIELD::Time& ping_interval = PING_INTERVAL_DEFAULT,
@@ -60,7 +60,7 @@ namespace org
       private:
         friend class YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>;
 
-        OSDProxy( const YIELD::URI& absolute_uri, YIELD::auto_Object<YIELD::Log> log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
+        OSDProxy( const YIELD::URI& absolute_uri, YIELD::auto_Log log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
           : Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>( absolute_uri, log, operation_retries_max, operation_timeout, peer_sockaddr, ssl_context )
         { }
 

@@ -105,7 +105,7 @@ namespace org
           return createProxy<MRCProxy>( uri, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT );
         }
 
-        YIELD::auto_Object<YIELD::Log> get_log()
+        YIELD::auto_Log get_log()
         {
           if ( log == NULL )
             log = YIELD::Log::open( std::cout, get_log_level() );
@@ -183,7 +183,7 @@ namespace org
         std::string pkcs12_file_path, pkcs12_passphrase;
         YIELD::Time operation_timeout;
 
-        YIELD::auto_Object<YIELD::Log> log;
+        YIELD::auto_Log log;
         YIELD::auto_Object<YIELD::SSLContext> ssl_context;
         YIELD::auto_Object<YIELD::StageGroup> stage_group;
 
