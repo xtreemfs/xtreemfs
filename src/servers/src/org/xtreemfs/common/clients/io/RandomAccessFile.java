@@ -79,7 +79,7 @@ public class RandomAccessFile implements ObjectStore {
         @Override
         public List<Replica> getReplicaOrder(List<Replica> replicas) {
             List<Replica> list = new ArrayList<Replica>(replicas);
-            Collections.shuffle(replicas);
+            Collections.shuffle(list);
             return list;
         }
     }; 
@@ -92,8 +92,8 @@ public class RandomAccessFile implements ObjectStore {
         @Override
         public List<Replica> getReplicaOrder(List<Replica> replicas) {
             List<Replica> list = new ArrayList<Replica>(replicas);
-            Collections.rotate(replicas, rotateValue);
-            rotateValue = 0 - (((0 - rotateValue) + 1) % replicas.size());
+            Collections.rotate(list, rotateValue);
+            rotateValue = 0 - (((0 - rotateValue) + 1) % list.size());
             return list;
         }
     }; 
@@ -169,7 +169,7 @@ public class RandomAccessFile implements ObjectStore {
         this.xLoc = new XLocations(fileCredentials.getXlocs());
         
         // always use first replica at beginning (original order)
-        replicaOrder = xLoc.getReplicas();
+        replicaOrder = this.replicaSelectionPolicy.getReplicaOrder(xLoc.getReplicas());
         
         byteMapper = ByteMapperFactory.createByteMapper(
                 stripingPolicy.getPolicyId(), stripingPolicy.getStripeSizeForObject(0), this);
@@ -588,8 +588,6 @@ public class RandomAccessFile implements ObjectStore {
      * @throws Exception
      */
     public void addReplica(List<ServiceUUID> osds, StripingPolicy spPolicy, int replicationFlags) throws Exception {
-        XLocations xLoc = new XLocations(fileCredentials.getXlocs());
-
         // check correct parameters
         if (osds.size() != spPolicy.getWidth())
             throw new IllegalArgumentException("Too many or less OSDs in list.");
@@ -658,7 +656,6 @@ public class RandomAccessFile implements ObjectStore {
      * removes "all" replicas, so that only one (the first) replica exists
      */
     public void removeAllReplicas() throws Exception {
-        XLocations xLoc = new XLocations(fileCredentials.getXlocs());
         List<Replica> replicas = xLoc.getReplicas();
         for (int i = 1; i < replicas.size(); i++) {
             removeReplica(replicas.get(i));
@@ -671,8 +668,6 @@ public class RandomAccessFile implements ObjectStore {
      * @throws Exception
      */
     public List<ServiceUUID> getSuitableOSDsForAReplica() throws Exception {
-        XLocations xLoc = new XLocations(fileCredentials.getXlocs());
-
         RPCResponse<StringSet> r = mrcClient.xtreemfs_get_suitable_osds(mrcAddress, fileId);
         StringSet osds = r.get();
         r.freeBuffers();

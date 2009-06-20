@@ -28,7 +28,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.interfaces.XCap;
 
@@ -118,6 +117,10 @@ public class Capability {
         return xcap.getAccess_mode();
     }
     
+    /**
+     * returns the absolute time, when the capability expires (in seconds)
+     * @return
+     */
     public long getExpires() {
         return xcap.getExpires_s();
     }

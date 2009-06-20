@@ -22,28 +22,31 @@
 /*
  * AUTHORS: Christian Lorenz (ZIB)
  */
-package org.xtreemfs.sandbox.tests.ReplicationStressTest;
+package org.xtreemfs.sandbox.tests.replicationStressTest;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.xtreemfs.common.clients.io.RandomAccessFile;
+import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.interfaces.UserCredentials;
 
 /**
- * a reader for reading replicas which are marked as full replicas (preferred)
- * <br>09.06.2009
+ * a reader for reading replicas which are marked as ondemand replicas (preferred)
+ * <br>
+ * 08.06.2009
  */
-public class FullReplicaReader extends ReplicationStressTestReader {
+public class OnDemandReader extends ReplicationStressTestReader {
     /**
      * @throws Exception
      * 
      */
-    public FullReplicaReader(int threadNo, InetSocketAddress mrcAddress,
+    public OnDemandReader(int threadNo, InetSocketAddress mrcAddress,
             CopyOnWriteArrayList<FileInfo> fileList, Random random, UserCredentials userCredentials)
             throws Exception {
         super(threadNo, mrcAddress, fileList, random, userCredentials);
@@ -54,10 +57,8 @@ public class FullReplicaReader extends ReplicationStressTestReader {
      * 
      * @return throughput
      */
-    public int readFile(FileInfo file) throws Exception {
-        double factor = random.nextDouble();
-        factor = (factor - 0.4 > 0) ? (factor - 0.4) : factor; // rather smaller partsizes
-        int partSize = (int) Math.round(ReplicationStressTest.PART_SIZE * factor);
+    public double readFile(FileInfo file) throws Exception {
+        int partSize = (int) (ReplicationStressTest.PART_SIZE * 5 * random.nextDouble()); // random partsize
         long timeRequiredForReading = 0;
 
         java.io.RandomAccessFile originalFile = null;
@@ -69,19 +70,14 @@ public class FullReplicaReader extends ReplicationStressTestReader {
 
             long filesize = raf.length();
 
-            // prepare spot-sample-ranges for reading file
-            final int SPOT_SAMPLE_COUNT = 10;
+            // prepare ranges for reading file
             List<Long> startOffsets = new LinkedList<Long>();
-            for (int i = 0; i < SPOT_SAMPLE_COUNT; i++) {
-                long startOffset;
-                do { // get a part in range of filedata
-                    startOffset = random.nextLong();
-                } while (startOffset + partSize > filesize);
+            for (long startOffset = 0; startOffset < filesize; startOffset = startOffset + partSize + 1) {
                 startOffsets.add(startOffset);
             }
-            
-            // sleep a short time, so the background replication could begin
-            Thread.sleep(SLEEP_TIME);
+
+            // shuffle list for non straight forward reading
+            Collections.shuffle(startOffsets, random);
 
             // read file
             for (Long startOffset : startOffsets) {
@@ -99,8 +95,16 @@ public class FullReplicaReader extends ReplicationStressTestReader {
                     ReplicationStressTest.containedErrors = true;
                     file.readFromDisk(expectedResult, originalFile, startOffset, filesize);
 
+                    System.out.println(e.getMessage());
                     log(e.getCause().toString(), file, startOffset, startOffset + partSize, filesize, result,
                             expectedResult);
+                    StringBuffer s = new StringBuffer();
+                    for (Replica replica : raf.getXLoc().getReplicas()) {
+                        s.append(replica.getOSDs().toString());
+                    }
+                    System.out.println(s.toString());
+                    System.out.println("number of replicas:\t" + raf.getXLoc().getNumReplicas());
+
                     continue;
                 }
 
@@ -112,7 +116,7 @@ public class FullReplicaReader extends ReplicationStressTestReader {
                             expectedResult);
                 }
             }
-            return (int) ((SPOT_SAMPLE_COUNT * partSize / 1024) / (timeRequiredForReading / 1000)); // KB/s
+            return ((filesize / 1024.0) / (timeRequiredForReading / 1000.0)); // KB/s
         } finally {
             if (originalFile != null)
                 originalFile.close();

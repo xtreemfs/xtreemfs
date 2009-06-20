@@ -22,7 +22,7 @@
 /*
  * AUTHORS: Christian Lorenz (ZIB)
  */
-package org.xtreemfs.sandbox.tests.ReplicationStressTest;
+package org.xtreemfs.sandbox.tests.replicationStressTest;
 
 import java.net.InetSocketAddress;
 import java.util.Arrays;
@@ -129,7 +129,7 @@ public abstract class ReplicationStressTestReader implements Runnable {
         client.waitForStartup();
     }
     
-    protected abstract int readFile(FileInfo file) throws Exception;
+    protected abstract double readFile(FileInfo file) throws Exception;
 
     public void shutdown() throws Exception {
         client.shutdown();
@@ -150,17 +150,18 @@ public abstract class ReplicationStressTestReader implements Runnable {
         }
 
         int fileCounter = 0;
-        int throughputSum = 0;
+        double throughputSum = 0;
         while (!Thread.interrupted()) {
             try {
                 // get any file from list
                 FileInfo file = fileList.get(random.nextInt(fileList.size()));
-                throughputSum += readFile(file);
+                throughputSum += readFile(file); // KB/s
 
                 if (++fileCounter % 100 == 0) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.test, this,
-                            "%s has read %d files. Average throughput: %d.",
-                            Thread.currentThread().getName(), fileCounter, throughputSum / 100);
+                            "%s has read %d files. Average throughput: %d KB/s.",
+                            Thread.currentThread().getName(), fileCounter,
+                            Math.round((throughputSum / 100) * 1000 ) / 1000); // KB/s
                     throughputSum = 0; // reset
                 }
 

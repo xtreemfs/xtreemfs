@@ -60,23 +60,41 @@ public class RandomStrategy extends TransferStrategy {
 
     @Override
     protected NextRequest selectNextHook() throws TransferStrategyException {
-        long objectNo = -1;
+        long objectNo;
 
         // first fetch a preferred object
         if (!this.preferredObjects.isEmpty()) {
             objectNo = this.preferredObjects.get(random.nextInt(this.preferredObjects.size()));
         } else { // fetch any object
-            if (!this.requiredObjects.isEmpty()) {
-                objectNo = this.requiredObjects.get(random.nextInt(this.requiredObjects.size()));
-            }
+            objectNo = this.requiredObjects.get(random.nextInt(this.requiredObjects.size()));
         }
 
-        // select OSD
-        if (objectNo != -1)
+        try {
+            // select OSD
             return selectNextOSDHook(objectNo);
-        else
-            // nothing to fetch
-            return null;
+        } catch (TransferStrategyException e) {
+            // special error case => take another object
+
+            // just a simple break-condition, but the good one would be too expensive
+            for (int objectToTest = this.getObjectsCount(), preferredObjectToTest = 0;; objectToTest--) {
+                try {
+                    // first try to fetch a preferred object
+                    if (!this.preferredObjects.isEmpty()
+                            && preferredObjectToTest < this.preferredObjects.size()) {
+                        objectNo = this.preferredObjects.get(random.nextInt(this.preferredObjects.size()));
+                        preferredObjectToTest++;
+                    } else { // fetch any object
+                        objectNo = this.requiredObjects.get(random.nextInt(this.requiredObjects.size()));
+                    }
+
+                    // select OSD
+                    return selectNextOSDHook(objectNo);
+                } catch (TransferStrategyException e1) {
+                    if (objectToTest == 1) // if all objects are tried throw exception
+                        throw e;
+                }
+            }
+        }
     }
 
     @Override

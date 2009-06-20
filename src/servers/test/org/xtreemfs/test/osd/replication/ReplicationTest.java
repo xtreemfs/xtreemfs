@@ -377,7 +377,7 @@ public class ReplicationTest extends TestCase {
         // check object list
         ObjectList objectList = resp2.getObject_list().get(0);
         assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        long[] list = desirializeObjectList(objectList);
+        long[] list = deserializeObjectList(objectList);
         assertNotNull(list);
         assertEquals(1, list.length);
         assertEquals(objectNo, list[0]);
@@ -399,7 +399,7 @@ public class ReplicationTest extends TestCase {
         InternalReadLocalResponse resp = r.get();
         assertEquals(0, resp.getData().getData().limit());
         assertEquals(1, resp.getObject_list().size());
-        assertEquals(0, desirializeObjectList(resp.getObject_list().get(0)).length);
+        assertEquals(0, deserializeObjectList(resp.getObject_list().get(0)).length);
         r.freeBuffers();
 
         // write data
@@ -469,7 +469,7 @@ public class ReplicationTest extends TestCase {
         ObjectList objectList = r.get();
         r.freeBuffers();
         assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        long[] list = desirializeObjectList(objectList);
+        long[] list = deserializeObjectList(objectList);
         assertEquals(0, list.length);
 
         // write object to replica 1
@@ -483,7 +483,7 @@ public class ReplicationTest extends TestCase {
         objectList = r.get();
         r.freeBuffers();
         assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        list = desirializeObjectList(objectList);
+        list = deserializeObjectList(objectList);
         assertEquals(1, list.length);
         assertEquals(objectNo, list[0]);
 
@@ -504,7 +504,7 @@ public class ReplicationTest extends TestCase {
         objectList = r.get();
         r.freeBuffers();
         assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        list = desirializeObjectList(objectList);
+        list = deserializeObjectList(objectList);
         assertEquals(3, list.length);
         Arrays.sort(list);
         assertTrue(Arrays.binarySearch(list, objectNo) >= 0);
@@ -512,7 +512,7 @@ public class ReplicationTest extends TestCase {
         assertTrue(Arrays.binarySearch(list, objectNo + 2) >= 0);
     }
 
-    private long[] desirializeObjectList(ObjectList objectList) throws IOException,
+    private long[] deserializeObjectList(ObjectList objectList) throws IOException,
             ClassNotFoundException {
         long[] list = null;
         ByteArrayInputStream bis = new ByteArrayInputStream(objectList.getObject_list().array());

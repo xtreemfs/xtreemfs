@@ -122,11 +122,21 @@ public abstract class TransferStrategy {
      */
     public void selectNext() throws TransferStrategyException {
         this.next = null;
-        NextRequest next = selectNextHook();
-        if (next != null && next.isAllSet())
-            this.next = next;
+
+        if (this.getObjectsCount() > 0) {
+            assert (this.preferredObjects.size() > 0 || this.requiredObjects.size() > 0);
+
+            NextRequest next = selectNextHook();
+            if (next != null && next.isAllSet())
+                this.next = next;
+        }
     }
 
+    /**
+     * maskerades if an object could not be used at the moment as it is using another object
+     * @return
+     * @throws TransferStrategyException
+     */
     protected abstract NextRequest selectNextHook() throws TransferStrategyException;
 
     /**

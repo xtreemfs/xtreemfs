@@ -25,12 +25,14 @@
 package org.xtreemfs.osd.replication;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.ServiceAvailability;
+import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -45,8 +47,12 @@ import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.InternalReadLocalResponse;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.mrc.UserException;
+import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.client.OSDClient;
@@ -264,12 +270,18 @@ public class ReplicatingFile {
      */
     private final OSDRequestDispatcher       master;
 
+    /**
+     * controls how many fetch-object-requests will be sent for a file (used for load-balancing)
+     */
+    private static int                       maxRequestsPerFile;
+
     public final String                      fileID;
     final TransferStrategy                   strategy;
     final long                               lastObject;
     private XLocations                       xLoc;
     private Capability                       cap;
     private CowPolicy                        cow;
+    private InetSocketAddress                mrcAddress = null;
 
     /**
      * if the file is removed while it will be replicated
@@ -427,28 +439,31 @@ public class ReplicatingFile {
      * @throws TransferStrategyException
      */
     public void replicate() throws TransferStrategyException {
-        strategy.selectNext();
-        NextRequest next = strategy.getNext();
+        while (objectsInProgress.size() < maxRequestsPerFile) {
+            strategy.selectNext();
+            NextRequest next = strategy.getNext();
 
-        if (next != null) { // there is something to fetch
-            // object replication is in progress
-            processObject(next.objectNo);
+            if (next != null) { // there is something to fetch
+                // object replication is in progress
+                processObject(next.objectNo);
 
-            // FIXME: only for debugging
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                    "fetch object %s:%d from OSD %s", fileID, next.objectNo, next.osd);
+                // FIXME: only for debugging
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "fetch object %s:%d from OSD %s", fileID, next.objectNo, next.osd);
 
-            try {
-                sendFetchObjectRequest(next.objectNo, next.osd);
-            } catch (UnknownUUIDException e) {
-                // try other OSD
-                objectsInProgress.get(next.objectNo).replicateObject();
+                try {
+                    sendFetchObjectRequest(next.objectNo, next.osd);
+                } catch (UnknownUUIDException e) {
+                    // try other OSD
+                    objectsInProgress.get(next.objectNo).replicateObject();
+                }
+            } else { // nothing to replicate anymore (hopefully all necessary objects have been replicated)
+//                assert (objectsInProgress.size() == 0);
+                // if (Logging.isDebug())
+                // Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                // "stop replicating file %s", fileID);
+                break;
             }
-        } else { // file must be fully replicated (background replication)
-            assert (objectsInProgress.size() == 0);
-//            if (Logging.isDebug())
-//                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-//                        "stop replicating file %s", fileID);
         }
     }
 
@@ -467,7 +482,7 @@ public class ReplicatingFile {
             if (objectCompleted) {
                 objectReplicationCompleted(objectNo);
 
-                if (isFullReplica) {
+                if (strategy.getObjectsCount() > 0) { // there are still objects to fetch
                     // FIXME: only for debugging
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                             "background replication: replicate next object for file %s", fileID);
@@ -498,7 +513,7 @@ public class ReplicatingFile {
             if (objectCompleted) {
                 objectReplicationCompleted(objectNo);
 
-                if (isFullReplica) {
+                if (strategy.getObjectsCount() > 0) { // there are still objects to fetch
                     // FIXME: only for debugging
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                             "background replication: replicate next object for file %s", fileID);
@@ -539,6 +554,19 @@ public class ReplicatingFile {
      */
     private void sendFetchObjectRequest(final long objectNo, final ServiceUUID osd)
             throws UnknownUUIDException {
+        // check capability validity and update capability if necessary
+        try {
+            checkCap();
+        } catch (IOException e1) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this,
+                    "cannot update capability for file %s due to " + e1.getLocalizedMessage(),
+                    fileID);
+        } catch (ONCRPCException e1) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this,
+                    "cannot update capability for file %s due to " + e1.getLocalizedMessage(),
+                    fileID);
+        }
+        
         OSDClient client = master.getOSDClient();
         // TODO: change this, if using different striping policies
         RPCResponse<InternalReadLocalResponse> response = client.internal_read_local(osd.getAddress(),
@@ -579,5 +607,65 @@ public class ReplicatingFile {
         for (ReplicatingObject object : objectsInProgress.values()) {
             object.sendError(error);
         }
+    }
+
+    /**
+     * checks if the capability is still valid; renews the capability if necessary
+     * @throws IOException
+     * @throws ONCRPCException
+     */
+    public void checkCap() throws IOException, ONCRPCException {
+        try {
+            long curTime = TimeSync.getGlobalTime() / 1000; // s
+            
+            // get the correct MRC only once and only if the capability must be updated
+            if (cap.getExpires() - curTime < 60 * 1000) { // capability expires in less than 60s
+                if (mrcAddress == null) {
+                    String volume = null;
+                    try {
+                        // get volume of file
+                        volume = new MRCHelper.GlobalFileIdResolver(fileID).getVolumeId();
+
+                        // get MRC appropriate for this file
+                        RPCResponse<ServiceSet> r = master.getDIRClient().xtreemfs_service_get_by_uuid(null,
+                                volume);
+                        ServiceSet sSet;
+                        sSet = r.get();
+                        r.freeBuffers();
+
+                        if (sSet.size() != 0)
+                            mrcAddress = new ServiceUUID(sSet.get(0).getData().get("mrc")).getAddress();
+                        else
+                            throw new IOException("Cannot find a MRC.");
+                    } catch (UserException e) {
+                        Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this, e.getLocalizedMessage()
+                                + "; for file %s", fileID);
+                    }
+
+                }
+
+                // update Xcap
+                RPCResponse<XCap> r = master.getMRCClient().xtreemfs_renew_capability(mrcAddress,
+                        cap.getXCap());
+                XCap xCap = r.get();
+                r.freeBuffers();
+
+                cap = new Capability(xCap, master.getConfig().getCapabilitySecret());
+            }
+        } catch (InterruptedException e) {
+            // ignore
+        }
+    }
+
+    /**
+     * adjust this value for load-balancing 
+     * @param requestsPerFile
+     */
+    public static void setMaxRequestsPerFile(int requestsPerFile) {
+        // at least one request MUST be sent per file
+        if(requestsPerFile > 1)
+            ReplicatingFile.maxRequestsPerFile = requestsPerFile;
+        else
+            ReplicatingFile.maxRequestsPerFile = 1;
     }
 }

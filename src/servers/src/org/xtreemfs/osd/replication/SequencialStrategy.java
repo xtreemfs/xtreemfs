@@ -61,23 +61,38 @@ public class SequencialStrategy extends TransferStrategy {
 
     @Override
     protected NextRequest selectNextHook() throws TransferStrategyException {
-        long objectNo = -1;
-
-        // first fetch a preferred object
+        long objectNo;
+        // first try to fetch a preferred object
         if (!this.preferredObjects.isEmpty()) {
             objectNo = this.preferredObjects.get(0);
         } else { // fetch any object
-            if (!this.requiredObjects.isEmpty()) {
-                objectNo = this.requiredObjects.get(0);
-            }
+            objectNo = this.requiredObjects.get(0);
         }
 
-        // select OSD
-        if (objectNo != -1)
+        try {
+            // select OSD
             return selectNextOSDHook(objectNo);
-        else
-            // nothing to fetch
-            return null;
+        } catch (TransferStrategyException e) {
+            // special error case => take another object
+
+            for (int objectToTest = this.getObjectsCount(), preferredObjectToTest = 0, requiredObjectToTest = 0;; objectToTest--) {
+                try {
+                    // first try to fetch a preferred object
+                    if (!this.preferredObjects.isEmpty()
+                            && preferredObjectToTest < this.preferredObjects.size()) {
+                        objectNo = this.preferredObjects.get(preferredObjectToTest++);
+                    } else { // fetch any object
+                        objectNo = this.requiredObjects.get(requiredObjectToTest++);
+                    }
+
+                    // select OSD
+                    return selectNextOSDHook(objectNo);
+                } catch (TransferStrategyException e1) {
+                    if (objectToTest == 1) // if all objects are tried throw exception
+                        throw e;
+                }
+            }
+        }
     }
 
     @Override

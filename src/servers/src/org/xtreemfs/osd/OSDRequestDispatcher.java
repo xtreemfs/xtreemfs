@@ -71,6 +71,7 @@ import org.xtreemfs.interfaces.OSDInterface.xtreemfs_broadcast_gmaxRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
+import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.osd.operations.CheckObjectOperation;
 import org.xtreemfs.osd.operations.CleanupGetResultsOperation;
@@ -123,8 +124,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     protected final DIRClient                           dirClient;
     
+    protected final MRCClient                           mrcClient;
+
     protected final OSDClient                           osdClient;
-    
+
     protected final RPCNIOSocketClient                  rpcClient;
     
     protected final RPCNIOSocketServer                  rpcServer;
@@ -247,6 +250,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         // ----------------------------------------
         
         dirClient = new DIRClient(rpcClient, config.getDirectoryService());
+        mrcClient = new MRCClient(rpcClient, null);
         osdClient = new OSDClient(rpcClient);
         
         TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew());
@@ -479,6 +483,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     public DIRClient getDIRClient() {
         return dirClient;
+    }
+    
+    public MRCClient getMRCClient() {
+        return mrcClient;
     }
     
     public OSDClient getOSDClient() {

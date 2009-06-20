@@ -29,6 +29,7 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -523,12 +524,18 @@ public class HashStorageLayout extends StorageLayout {
 
         File fileDir = new File(generateAbsoluteFilePath(fileId));
         if (fileDir.exists()) {
-            String[] objs = fileDir.list();
+            String[] objs = fileDir.list(new FilenameFilter() {
+                @Override
+                public boolean accept(File dir, String name) {
+                    if(name.startsWith(".")) // ignore special files (metadata, .tepoch)
+                        return false;
+                    else
+                        return true;
+                }
+            });
             objectList = new long[objs.length];
 
             for (int i = 0; i < objs.length; i++) {
-                if (objs[i].startsWith("."))
-                    continue; // ignore special files (metadata, .tepoch)
                 objectList[i] = parseFileName(objs[i]).objNo;
             }
         } else

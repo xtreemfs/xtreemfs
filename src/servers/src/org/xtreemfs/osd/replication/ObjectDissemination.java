@@ -46,7 +46,12 @@ public class ObjectDissemination {
     private OSDRequestDispatcher master;
 
     /**
-     * objects of these files are downloading currently or in future
+     * controls how many fetch-object-requests will be allowed to sent overall by all files (used for load-balancing)
+     */
+    private static final int                 MAX_REQUESTS_OVERALL = 100;
+
+    /**
+     * objects of these files are downloading currently or in future <br>
      * key: fileID
      */
     private HashMap<String, ReplicatingFile> filesInProgress;
@@ -67,6 +72,9 @@ public class ObjectDissemination {
             // add file to filesInProgress
             file = new ReplicatingFile(fileID, xLoc, capability, cow, master);
             this.filesInProgress.put(fileID, file);
+            
+            // update requestsPerFile for all files (load-balancing)
+            ReplicatingFile.setMaxRequestsPerFile(MAX_REQUESTS_OVERALL / filesInProgress.size());
 
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "start replicating file %s",
@@ -137,7 +145,13 @@ public class ObjectDissemination {
         filesInProgress.remove(fileID);
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "stop replicating file %s", fileID);
-        
+
+        // update requestsPerFile for all files (load-balancing)
+        if (filesInProgress.size() == 0)
+            ReplicatingFile.setMaxRequestsPerFile(MAX_REQUESTS_OVERALL / 1);
+        else
+            ReplicatingFile.setMaxRequestsPerFile(MAX_REQUESTS_OVERALL / filesInProgress.size());
+
         // TODO: save persistent marker that all objects of file are completely replicated, if replica is full replica 
     }
 

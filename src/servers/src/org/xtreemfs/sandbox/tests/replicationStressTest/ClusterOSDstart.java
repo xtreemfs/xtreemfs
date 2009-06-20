@@ -22,7 +22,7 @@
 /*
  * AUTHORS: Christian Lorenz (ZIB)
  */
-package org.xtreemfs.sandbox.tests.ReplicationStressTest;
+package org.xtreemfs.sandbox.tests.replicationStressTest;
 
 import java.io.IOException;
 import java.util.ArrayList;

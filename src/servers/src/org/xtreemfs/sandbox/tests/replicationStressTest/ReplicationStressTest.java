@@ -22,7 +22,7 @@
 /*
  * AUTHORS: Christian Lorenz (ZIB)
  */
-package org.xtreemfs.sandbox.tests.ReplicationStressTest;
+package org.xtreemfs.sandbox.tests.replicationStressTest;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -53,7 +53,7 @@ import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.client.MRCClient;
-import org.xtreemfs.sandbox.tests.ReplicationStressTest.ReplicationStressTestReader.FileInfo;
+import org.xtreemfs.sandbox.tests.replicationStressTest.ReplicationStressTestReader.FileInfo;
 
 /**
  * A not ending long-run stress test which creates replicas and read the data with x clients. <br>
@@ -94,19 +94,22 @@ public class ReplicationStressTest {
     MRCClient                        mrcClient;
 
     private Random                   random;
+    private int                      replicationFlags                          = 0;
 
     static boolean                   containedErrors                           = false;
 
     /**
      * controller(-thread)
+     * @param replicationFlags TODO
      * 
      * @throws Exception
      */
-    public ReplicationStressTest(InetSocketAddress dirAddress, Random random) throws Exception {
+    public ReplicationStressTest(InetSocketAddress dirAddress, Random random, int replicationFlags) throws Exception {
         Thread.currentThread().setName("WriterThread");
         Logging.start(Logging.LEVEL_DEBUG, Category.test, Category.replication);
 
         this.random = random;
+        this.replicationFlags = replicationFlags;
 
         // user credentials
         StringSet groupIDs = new StringSet();
@@ -192,8 +195,9 @@ public class ReplicationStressTest {
 
     /**
      * fill files with data (different sizes)
+     * @param holePropability TODO
      */
-    public FileInfo writeFile(long maxFilesize) throws Exception {
+    public FileInfo writeFile(long maxFilesize, int holePropability) throws Exception {
         FileInfo file = new FileInfo(getFileName());
         file.holes = new TreeSet<Long>();
         double factor = random.nextDouble();
@@ -219,7 +223,7 @@ public class ReplicationStressTest {
                 raf.write(data, 0, data.length);
             } else {
                 while (raf.getFilePointer() + PART_SIZE < filesize) {
-                    if (random.nextInt(100) > HOLE_PROPABILITY) {
+                    if (random.nextInt(100) > holePropability) {
                         // read and write A piece of data
                         data = new byte[PART_SIZE];
                         in.read(data);
@@ -249,8 +253,8 @@ public class ReplicationStressTest {
                         + file.filename + " is not correctly written. It should be " + filesize
                         + " instead of " + mrcFilesize + ".");
 
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.test, this, "file " + file.filename
-                    + " successfully written");
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.test, this,
+                    "file %s with a filesize of %d MB successfully written.", file.filename, mrcFilesize / 1024 / 1024);
         } finally {
             if (in != null)
                 in.close();
@@ -288,8 +292,7 @@ public class ReplicationStressTest {
             if (replica.size() >= raf.getStripingPolicy().getWidth()) {
                 Collections.shuffle(replica, random);
                 replica = replica.subList(0, raf.getStripingPolicy().getWidth());
-                raf.addReplica(replica, raf.getStripingPolicy(), Constants.REPL_FLAG_STRATEGY_RANDOM
-                        | Constants.REPL_FLAG_FILL_ON_DEMAND);
+                raf.addReplica(replica, raf.getStripingPolicy(), replicationFlags);
                 added++;
             } else
                 break;
@@ -369,7 +372,7 @@ public class ReplicationStressTest {
      *            the command line arguments
      */
     public static void main(String[] args) throws Exception {
-        final int MANDATORY_ARGS = 6;
+        final int MANDATORY_ARGS = 7;
 
         if (args.length < MANDATORY_ARGS || args.length > MANDATORY_ARGS)
             usage();
@@ -385,19 +388,35 @@ public class ReplicationStressTest {
         int maxFilesize = Integer.parseInt(args[argNumber++]) * 1024 * 1024; // MB => byte
         Random random = new Random(Integer.parseInt(args[argNumber++]));
         int stripeWidth = Integer.parseInt(args[argNumber++]);
+        String replicaType = args[argNumber++];
+
+        // parse replica type
+        int replicationFlags = 0;
+        if (replicaType.equals("full")) {
+            replicationFlags = Constants.REPL_FLAG_STRATEGY_RANDOM;
+        } else if (replicaType.equals("ondemand")) {
+            replicationFlags = Constants.REPL_FLAG_STRATEGY_RANDOM | Constants.REPL_FLAG_FILL_ON_DEMAND;
+        } else
+            usage();
 
         // create file list
         CopyOnWriteArrayList<FileInfo> fileList = new CopyOnWriteArrayList<FileInfo>();
 
-        ReplicationStressTest controller = new ReplicationStressTest(dirAddress, random);
+        ReplicationStressTest controller = new ReplicationStressTest(dirAddress, random, replicationFlags);
         controller.initializeVolume(stripeWidth);
 
         Thread[] readerThreads = new Thread[threadNumber];
         // create reading threads
         for (int i = 0; i < threadNumber; i++) {
-            readerThreads[i] = new Thread(new OnDemandReader(i, controller.mrcClient
-                    .getDefaultServerAddress(), fileList, new Random(random.nextLong()),
-                    controller.userCredentials));
+            if (replicaType.equals("full")) {
+                readerThreads[i] = new Thread(new FullReplicaReader(i, controller.mrcClient
+                        .getDefaultServerAddress(), fileList, new Random(random.nextLong()),
+                        controller.userCredentials));
+            } else if (replicaType.equals("ondemand")) {
+                readerThreads[i] = new Thread(new OnDemandReader(i, controller.mrcClient
+                        .getDefaultServerAddress(), fileList, new Random(random.nextLong()),
+                        controller.userCredentials));
+            }
         }
 
         // write filedata to disk
@@ -411,7 +430,11 @@ public class ReplicationStressTest {
         // write 4 (5) files at start
         for (int i = 0; i < 4; i++) {
             // create new file
-            FileInfo file = controller.writeFile(maxFilesize);
+            FileInfo file;
+            if (replicaType.equals("full"))
+                file = controller.writeFile(maxFilesize, 0);
+            else
+                file = controller.writeFile(maxFilesize, HOLE_PROPABILITY);
             controller.prepareReplication(file.filename);
 
             fileList.add(file);
@@ -421,7 +444,7 @@ public class ReplicationStressTest {
         while (!Thread.interrupted()) {
             try {
                 // create new file
-                FileInfo file = controller.writeFile(maxFilesize);
+                FileInfo file = controller.writeFile(maxFilesize, HOLE_PROPABILITY);
                 controller.prepareReplication(file.filename);
 
                 fileList.add(file);
@@ -464,8 +487,7 @@ public class ReplicationStressTest {
     public static void usage() {
         StringBuffer out = new StringBuffer();
         out.append("Usage: java -cp <xtreemfs-jar> org.xtreemfs.sandbox.tests.ReplicationStressTest ");
-        out
-                .append("<DIR-address> <tmp-directory> <number of readers> <max. filesize in MB> <random seed> <stripe width>\n");
+        out.append("<DIR-address> <tmp-directory> <number of readers> <max. filesize in MB> <random seed> <stripe width> <full|ondemand>\n");
         out.append("THIS TEST WILL NEVER END!\n");
         System.out.println(out.toString());
         System.exit(1);
