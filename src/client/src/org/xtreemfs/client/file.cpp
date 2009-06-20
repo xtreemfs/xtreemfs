@@ -158,7 +158,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         }
       }
 
-      if ( data->size() < object_size )
+      if ( data->size() < object_size || RBUF_REMAINING == 0 )
         break;
     }
 
