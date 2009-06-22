@@ -1,4 +1,4 @@
-// Revision: 148
+// Revision: 153
 
 #include "yield.h"
 #include "yieldfs.h"
@@ -120,8 +120,8 @@ namespace yieldfs
   class FUSEUnix
   {
   public:
-    FUSEUnix( YIELD::auto_Volume volume, uint32_t flags, YIELD::auto_Log )
-      : volume( volume ), flags( flags ), log( log )
+    FUSEUnix( YIELD::auto_Volume volume, uint32_t flags )
+      : volume( volume ), flags( flags )
     { }
 
     int main( char* argv0, const char* mount_point )
@@ -518,7 +518,7 @@ namespace yieldfs
   private:
     YIELD::auto_Volume volume;
     uint32_t flags;
-    YIELD::auto_Log log;
+
 
     static inline YIELD::File* get_file( fuse_file_info* fi )
     {
@@ -559,8 +559,8 @@ namespace yieldfs
   class FUSEWin32
   {
   public:
-    FUSEWin32( YIELD::auto_Volume volume, uint32_t flags, YIELD::auto_Log )
-      : volume( volume ), flags( flags ), log( log )
+    FUSEWin32( YIELD::auto_Volume volume, uint32_t flags )
+      : volume( volume ), flags( flags )
     { }
 
     int main( const char* mount_point )
@@ -1122,7 +1122,6 @@ namespace yieldfs
   private:
     YIELD::auto_Volume volume;
     uint32_t flags;
-    YIELD::auto_Log log;
 
 
     static inline YIELD::File* get_file( PDOKAN_FILE_INFO DokanFileInfo )
@@ -1444,12 +1443,12 @@ int FUSE::getegid()
 }
 #endif
 */
-FUSE::FUSE( YIELD::auto_Volume volume, uint32_t flags, YIELD::auto_Log log )
+FUSE::FUSE( YIELD::auto_Volume volume, uint32_t flags )
 {
 #ifdef _WIN32
-  fuse_win32 = new FUSEWin32( volume, flags, log );
+  fuse_win32 = new FUSEWin32( volume, flags );
 #else
-  fuse_unix = new FUSEUnix( volume, flags, log );
+  fuse_unix = new FUSEUnix( volume, flags );
 #endif
 }
 FUSE::~FUSE()

@@ -130,7 +130,7 @@ namespace org
             }
 
             // Create the FUSE object then run forever in its main()
-            YIELD::auto_Object<yieldfs::FUSE> fuse = new yieldfs::FUSE( volume, fuse_flags, get_log() );
+            std::auto_ptr<yieldfs::FUSE> fuse( new yieldfs::FUSE( volume, fuse_flags ) );
 #ifdef _WIN32
             ret = fuse->main( mount_point.c_str() );
 #else

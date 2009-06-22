@@ -97,10 +97,11 @@ namespace yieldfs
   class FUSE
   {
   public:
-	  const static uint32_t FUSE_FLAG_DEBUG = 1;
-	  const static uint32_t FUSE_FLAG_DIRECT_IO = 2;
+    const static uint32_t FUSE_FLAG_DEBUG = 1;
+    const static uint32_t FUSE_FLAG_DIRECT_IO = 2;
 
-    FUSE( YIELD::auto_Volume volume, uint32_t flags = 0, YIELD::auto_Log = NULL );
+    FUSE( YIELD::auto_Volume volume, uint32_t flags = 0 );
+    ~FUSE();
 
 #ifdef _WIN32
     int main( const char* drive_letter );
@@ -115,9 +116,6 @@ namespace yieldfs
 #else
     FUSEUnix* fuse_unix;
 #endif
-
-  private:
-    ~FUSE();
   };
 
 
