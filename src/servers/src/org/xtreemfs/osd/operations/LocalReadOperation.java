@@ -138,10 +138,10 @@ public final class LocalReadOperation extends OSDOperation {
                 // FIXME: check if implementation delivers only raw data
                 data = result.getObjectData(true, (int) args.getOffset(), (int) args.getLength());
             } else {
-                data = new ObjectData(result.getData(), 0, 0, result.isChecksumInvalidOnOSD());
+                data = new ObjectData(0, result.isChecksumInvalidOnOSD(), 0, result.getData());
             }
         } else
-            data = new ObjectData(null, 0, 0, result.isChecksumInvalidOnOSD());
+            data = new ObjectData(0, result.isChecksumInvalidOnOSD(), 0, null);
 
         master.objectSent();
         if (data.getData() != null)

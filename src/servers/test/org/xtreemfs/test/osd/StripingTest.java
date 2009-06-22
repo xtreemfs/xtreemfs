@@ -230,7 +230,7 @@ public class StripingTest extends TestCase {
 
                 // write an object with the given test size
 
-                ObjectData objdata = new ObjectData(data.createViewBuffer(), 0, 0, false);
+                ObjectData objdata = new ObjectData(0, false, 0, data.createViewBuffer());
                 RPCResponse<OSDWriteResponse> r = client.write(osdIDs.get(osdIndex).getAddress(),
                         file, fcred, i, 0, 0, 0, objdata);
                 OSDWriteResponse resp = r.get();
@@ -258,7 +258,7 @@ public class StripingTest extends TestCase {
 
         // write the nineth object, check the file size
         int obj = 8;
-        ObjectData objdata = new ObjectData(data.createViewBuffer(), 0, 0, false);
+        ObjectData objdata = new ObjectData(0, false, 0, data.createViewBuffer());
         RPCResponse<OSDWriteResponse> r = client.write(osdIDs.get(obj % osdIDs.size()).getAddress(),
                 FILE_ID, fcred, obj, 0, 0, 0, objdata);
         OSDWriteResponse resp = r.get();
@@ -269,7 +269,7 @@ public class StripingTest extends TestCase {
         // write the fifth object, check the file size
         obj = 5;
 
-        objdata = new ObjectData(data.createViewBuffer(), 0, 0, false);
+        objdata = new ObjectData(0, false, 0, data.createViewBuffer());
         r = client.write(osdIDs.get(obj % osdIDs.size()).getAddress(),
                 FILE_ID, fcred, obj, 0, 0, 0, objdata);
         resp = r.get();
@@ -293,7 +293,7 @@ public class StripingTest extends TestCase {
         BufferPool.free(result.getData());
 
         // write the first object, check the file size header (must be null)
-        objdata = new ObjectData(data.createViewBuffer(), 0, 0, false);
+        objdata = new ObjectData(0, false, 0, data.createViewBuffer());
         r = client.write(osdIDs.get(obj % osdIDs.size()).getAddress(),
                 FILE_ID, fcred, obj, 0, 0, 0, objdata);
         resp = r.get();
@@ -311,14 +311,14 @@ public class StripingTest extends TestCase {
         System.arraycopy(data.array(), 0, paddedData, 0, data.limit());
 
         // write first object
-        ObjectData objdata = new ObjectData(data.createViewBuffer(), 0, 0, false);
+        ObjectData objdata = new ObjectData(0, false, 0, data.createViewBuffer());
         RPCResponse<OSDWriteResponse> r = client.write(osdIDs.get(0).getAddress(),
                 FILE_ID, fcred, 0, 0, 0, 0, objdata);
         OSDWriteResponse resp = r.get();
         r.freeBuffers();
 
         // write second object
-        objdata = new ObjectData(data.createViewBuffer(), 0, 0, false);
+        objdata = new ObjectData(0, false, 0, data.createViewBuffer());
         r = client.write(osdIDs.get(1).getAddress(),
                 FILE_ID, fcred, 1, 0, 0, 0, objdata);
         resp = r.get();
@@ -351,7 +351,7 @@ public class StripingTest extends TestCase {
         // create a file with five objects
         // -------------------------------
         for (int i = 0, osdIndex = 0; i < 5; i++, osdIndex = i % osdIDs.size()) {
-            ObjectData objdata = new ObjectData(data.createViewBuffer(), 0, 0, false);
+            ObjectData objdata = new ObjectData(0, false, 0, data.createViewBuffer());
             RPCResponse<OSDWriteResponse> r = client.write(osdIDs.get(osdIndex).getAddress(),
                     FILE_ID, fcred, i, 0, 0, 0, objdata);
             OSDWriteResponse resp = r.get();
@@ -532,7 +532,7 @@ public class StripingTest extends TestCase {
         // write new data to the first object
         // ----------------------------------
 
-        ObjectData objdata = new ObjectData(data.createViewBuffer(), 0, 0, false);
+        ObjectData objdata = new ObjectData(0, false, 0, data.createViewBuffer());
         rt = client.write(osdIDs.get(0).getAddress(),
                 FILE_ID, fcred, 0, 0, 0, 0, objdata);
         resp = rt.get();
@@ -615,7 +615,7 @@ public class StripingTest extends TestCase {
                 
                 // write an object with a random amount of bytes
                 final int size = (int) ((SIZE - 1) * Math.random()) + 1;
-                ObjectData objdata = new ObjectData(SetupUtils.generateData(size), 0, 0, false);
+                ObjectData objdata = new ObjectData(0, false, 0, SetupUtils.generateData(size));
                 RPCResponse<OSDWriteResponse> r = client.write(osdIDs.get(osdIndex).getAddress(),
                         FILE_ID, fcred, objId, 0, 0, 0, objdata);
                 responses.add(r);

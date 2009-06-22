@@ -176,7 +176,7 @@ public class ReplicationTest extends TestCase {
     }
 
     private ObjectData getObjectData(ReusableBuffer data) {
-        return new ObjectData(data.createViewBuffer(), 0, 0, false);
+        return new ObjectData(0, false, 0, data.createViewBuffer());
     }
 
     @Test

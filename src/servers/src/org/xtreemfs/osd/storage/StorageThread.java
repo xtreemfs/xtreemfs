@@ -237,7 +237,7 @@ public class StorageThread extends Stage {
             final boolean fullRead = (length == -1) || length == sp.getStripeSizeForObject(objNo);
             
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "READ: %s-%d", fileId, objNo);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "READ: %s-%d offset=%d, length=%d", fileId, objNo, offset, length);
             }
             
             int objVer = fi.getObjectVersion(objNo);

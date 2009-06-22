@@ -93,8 +93,8 @@ public class ObjectInformation {
         assert(length >= 0);
         if (isLastObject) {
             switch (status) {
-                case EXISTS: return new ObjectData(data, 0, 0, checksumInvalidOnOSD);
-                case DOES_NOT_EXIST: return new ObjectData(null,0,0,checksumInvalidOnOSD);
+                case EXISTS: return new ObjectData(0, checksumInvalidOnOSD, 0, data);
+                case DOES_NOT_EXIST: return new ObjectData(0,checksumInvalidOnOSD, 0, null);
                 case PADDING_OBJECT: throw new RuntimeException("padding object must not be last object!");
             }
         } else {
@@ -102,11 +102,11 @@ public class ObjectInformation {
                 case EXISTS: {
                     final int paddingZeros = length-data.remaining();
                     assert(paddingZeros >= 0) : "offset: "+offset+" length: "+length+" remaining: "+data.remaining();
-                    return new ObjectData(data,0,paddingZeros,checksumInvalidOnOSD);
+                    return new ObjectData(0,checksumInvalidOnOSD, paddingZeros, data);
                 }
                 case DOES_NOT_EXIST:
                 case PADDING_OBJECT: {
-                    return new ObjectData(data, 0, length, checksumInvalidOnOSD);
+                    return new ObjectData(0, checksumInvalidOnOSD, length, data);
                 }
             }
         }

@@ -291,6 +291,9 @@ public final class ReadOperation extends OSDOperation {
 
     public void sendResponse(OSDRequest rq, ObjectData result) {
         readResponse response = new readResponse(result);
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, response.toString());
+        }
         rq.sendSuccess(response);
     }
 

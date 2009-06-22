@@ -429,7 +429,7 @@ public class RandomAccessFile implements ObjectStore {
         try {
             // uses always first replica
             ServiceUUID osd = replicaOrder.get(0).getOSDs().get(stripingPolicy.getOSDforObject(objectNo));
-            ObjectData odata = new ObjectData(data, 0, 0, false);
+            ObjectData odata = new ObjectData(0, false, 0, data);
             response = osdClient.write(osd.getAddress(), fileId, fileCredentials, objectNo, 0, (int)firstByteInObject, 0, odata);
             OSDWriteResponse owr = response.get();
             this.updateWriteResponse(owr);

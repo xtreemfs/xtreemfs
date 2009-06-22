@@ -388,8 +388,11 @@ public class xtfs_repl {
                 }
                 
                 // from the remaining set, take a subset of OSDs
-                for (int i = 0; i < osds.size(); i++) {
-                    osds.add(list.poll().osd);
+                while (osds.size() < file.getStripingPolicy().getWidth()) {
+                    final ServiceUUID osd = list.poll().osd;
+                    if (osd == null)
+                        break;
+                    osds.add(osd);
                 }
             }
             addReplica(osds, replicationFlags);
@@ -545,6 +548,11 @@ public class xtfs_repl {
         options.put(REMOVE_REPLICA_INTERACTIVE, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(REMOVE_AUTOMATIC_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(HELP, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put("c", new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put("cpass", new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put("t", new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put("tpass", new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put(REPLICATION_FLAG_FILL_ONDEMAND, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(REPLICATION_FLAG_TRANSFER_STRATEGY, new CliOption(CliOption.OPTIONTYPE.STRING));
         
@@ -732,6 +740,11 @@ public class xtfs_repl {
         out.append("\t-" + REMOVE_REPLICA + " <UUID_of_head-OSD>"
             + ": removes the replica with the given head OSD\n");
         out.append("\t-" + REMOVE_AUTOMATIC_REPLICA + ": removes a randomly selected replica\n");
+        out.append("\tTo use SSL it is necessary to also specify credentials:");
+        out.append("\t            -c  <creds_file>            a PKCS#12 file containing user credentials");
+        out.append("\t            -cpass <creds_passphrase>   a pass phrase to decrypt the the user credentials file");
+        out.append("\t            -t  <trusted_CAs>           a PKCS#12 file containing a set of certificates from trusted CAs");
+        out.append("\t            -tpass <trusted_passphrase> a pass phrase to decrypt the trusted CAs file");
         out.append("\t-" + REPLICATION_FLAG_TRANSFER_STRATEGY + " " + TRANSFER_STRATEGY_RANDOM + "|" + TRANSFER_STRATEGY_SEQUENCIAL
                 + ": the replica to add will use the chosen strategy\n");
         out.append("\t-" + REPLICATION_FLAG_FILL_ONDEMAND
