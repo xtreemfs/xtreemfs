@@ -17,10 +17,10 @@ module org # 1000
 
       struct ObjectData # 51
       {
-        buffer data;
         uint32_t checksum;
-        uint32_t zero_padding;
         boolean invalid_checksum_on_osd;
+        uint32_t zero_padding;
+        buffer data;
       };
 
       struct ObjectList # 55
