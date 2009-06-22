@@ -1,4 +1,4 @@
-// Revision: 147
+// Revision: 148
 
 #include "yield.h"
 #include "yieldfs.h"
@@ -47,7 +47,7 @@ namespace yieldfs
 
 namespace yieldfs
 {
-  class CachedStat : public yidl::Object
+  class CachedStat : public YIELD::Object
   {
   public:
     CachedStat( const YIELD::Path& path, YIELD::auto_Stat stbuf )
@@ -61,7 +61,7 @@ namespace yieldfs
     double get_creation_epoch_time_s() const { return creation_epoch_time_s; }
 
     // Object
-    YIDL_OBJECT_PROTOTYPES( yieldfs::CachedStat, 0 );
+    YIELD_OBJECT_PROTOTYPES( yieldfs::CachedStat, 0 );
 
   private:
     YIELD::Path path;
@@ -454,7 +454,7 @@ namespace yieldfs
 
     static int release( const char* path, struct fuse_file_info* fi )
     {
-      yidl::Object::decRef( get_file( fi ) );
+      YIELD::Object::decRef( get_file( fi ) );
       fi->fh = 0;
       return 0;
     }
@@ -773,7 +773,7 @@ namespace yieldfs
 	    LPCWSTR					FileName,
 	    PDOKAN_FILE_INFO		DokanFileInfo )
     {
-      yidl::Object::decRef( get_file( DokanFileInfo ) );
+      YIELD::Object::decRef( get_file( DokanFileInfo ) );
       DokanFileInfo->Context = NULL;
       return ERROR_SUCCESS;
     }
@@ -1001,7 +1001,7 @@ namespace yieldfs
         if ( file != NULL )
         {
           read_ret = file->read( Buffer, BufferLength, Offset );
-          yidl::Object::decRef( *file );
+          YIELD::Object::decRef( *file );
         }
         else
           return -1 * ::GetLastError();
@@ -1103,7 +1103,7 @@ namespace yieldfs
         if ( file != NULL )
         {
           write_ret = file->write( Buffer, NumberOfBytesToWrite, Offset );
-          yidl::Object::decRef( *file );
+          YIELD::Object::decRef( *file );
         }
         else
           return -1 * ::GetLastError();
@@ -1157,13 +1157,13 @@ namespace yieldfs
   private:
     friend class MetadataCachingVolume;
 
-    MetadataCachingFile( yidl::auto_Object<MetadataCachingVolume> parent_volume, const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log = NULL )
+    MetadataCachingFile( YIELD::auto_Object<MetadataCachingVolume> parent_volume, const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log = NULL )
       : StackableFile( path, underlying_file, log ), parent_volume( parent_volume )
     { }
 
     ~MetadataCachingFile() { }
 
-    yidl::auto_Object<MetadataCachingVolume> parent_volume;
+    YIELD::auto_Object<MetadataCachingVolume> parent_volume;
   };
 };
 
@@ -1514,7 +1514,7 @@ namespace yieldfs
     ~MetadataCachingVolumereaddirCallback()
     {
       for ( std::vector<CachedStat*>::iterator cached_stat_i = cached_stats.begin(); cached_stat_i != cached_stats.end(); cached_stat_i++ )
-        yidl::Object::decRef( **cached_stat_i );
+        YIELD::Object::decRef( **cached_stat_i );
     }
     MetadataCachingVolumereaddirCallback& operator=( const MetadataCachingVolumereaddirCallback& ) { return *this; }
     void flush()
@@ -1560,7 +1560,7 @@ MetadataCachingVolume::MetadataCachingVolume( YIELD::auto_Volume underlying_volu
 MetadataCachingVolume::~MetadataCachingVolume()
 {
 //  for ( YIELD::HashMap<CachedStat*>::iterator directory_entry_i = directory_entry_cache.begin(); directory_entry_i != directory_entry_cache.end(); directory_entry_i++ )
-//    yidl::Object::decRef( directory_entry_i->second );
+//    YIELD::Object::decRef( directory_entry_i->second );
 }
 bool MetadataCachingVolume::chmod( const YIELD::Path& path, mode_t mode )
 {
@@ -1572,7 +1572,7 @@ bool MetadataCachingVolume::chown( const YIELD::Path& path, int32_t uid, int32_t
   evict( path );
   return underlying_volume->chown( path, uid, gid );
 }
-yidl::auto_Object<CachedStat> MetadataCachingVolume::evict( const YIELD::Path& path )
+YIELD::auto_Object<CachedStat> MetadataCachingVolume::evict( const YIELD::Path& path )
 {
   lock.acquire();
   CachedStat* cached_stat = YIELD::HATTrie<CachedStat*>::erase( static_cast<const std::string&>( path ) );
@@ -1593,17 +1593,17 @@ void MetadataCachingVolume::evicttree( const YIELD::Path& path )
     for ( std::vector<CachedStat*>::iterator directory_entry_i = cached_stats.begin(); directory_entry_i != cached_stats.end(); directory_entry_i++ )
     {
       log->getStream( YIELD::Log::LOG_INFO ) << "MetadataCachingVolume: evicted " << ( *directory_entry_i )->get_path();
-      yidl::Object::decRef( **directory_entry_i );
+      YIELD::Object::decRef( **directory_entry_i );
     }
   }
   else
   {
     for ( std::vector<CachedStat*>::iterator directory_entry_i = cached_stats.begin(); directory_entry_i != cached_stats.end(); directory_entry_i++ )
-      yidl::Object::decRef( **directory_entry_i );
+      YIELD::Object::decRef( **directory_entry_i );
   }
 }
 */
-yidl::auto_Object<CachedStat> MetadataCachingVolume::find( const YIELD::Path& path )
+YIELD::auto_Object<CachedStat> MetadataCachingVolume::find( const YIELD::Path& path )
 {
   lock.acquire();
   CachedStat* cached_stat = YIELD::HATTrie<CachedStat*>::find( static_cast<const std::string&>( path ) );
@@ -1640,7 +1640,7 @@ yidl::auto_Object<CachedStat> MetadataCachingVolume::find( const YIELD::Path& pa
 }
 YIELD::auto_Stat MetadataCachingVolume::getattr( const YIELD::Path& path )
 {
-  yidl::auto_Object<CachedStat> cached_stat = find( path );
+  YIELD::auto_Object<CachedStat> cached_stat = find( path );
   if ( cached_stat != NULL )
     return static_cast<CachedStat*>( cached_stat.get() )->get_stat();
   else
