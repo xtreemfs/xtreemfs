@@ -240,7 +240,7 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
       uint64_t object_size = file_offset_max - file_offset;
       if ( object_offset + object_size > stripe_size )
         object_size = stripe_size - object_offset;
-      org::xtreemfs::interfaces::ObjectData object_data( new YIELD::StringLiteralBuffer( wbuf_p, static_cast<uint32_t>( object_size ) ), 0, 0, false );
+      org::xtreemfs::interfaces::ObjectData object_data( 0, false, 0, new YIELD::StringLiteralBuffer( wbuf_p, static_cast<uint32_t>( object_size ) ) );
       org::xtreemfs::interfaces::OSDInterface::writeRequest* write_request = new org::xtreemfs::interfaces::OSDInterface::writeRequest( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, 0, object_data );
 
       write_request->set_response_target( write_response_queue->incRef() );

@@ -4,7 +4,7 @@
 #ifndef _ORG_XTREEMFS_INTERFACES_TYPES_H_
 #define _ORG_XTREEMFS_INTERFACES_TYPES_H_
 
-#include "yield/platform.h"
+#include "yield/base.h"
 #include <string>
 #include <vector>
 
@@ -26,14 +26,14 @@ namespace org
 
         // YIELD::Object
         YIELD_OBJECT_PROTOTYPES( StringSet, 1001 );
-        void marshal( YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeString( YIELD::Marshaller::Declaration( "value" ), ( *this )[value_i] ); } }
-        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { std::string value; unmarshaller.readString( YIELD::Unmarshaller::Declaration( "value" ), value ); push_back( value ); }
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }
+        void marshal( YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeString( YIELD::Declaration( "value" ), ( *this )[value_i] ); } }
+        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { std::string value; unmarshaller.readString( YIELD::Declaration( "value" ), value ); push_back( value ); }
       };
 
-      class UserCredentials : public YIELD::Object
+      class UserCredentials : public YIELD::Struct
       {
       public:
         UserCredentials() { }
@@ -55,9 +55,9 @@ namespace org
         // YIELD::Object
         YIELD_OBJECT_PROTOTYPES( UserCredentials, 1002 );
 
-        // YIELD::Object
-        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Marshaller::Declaration( "user_id" ), user_id ); marshaller.writeSequence( YIELD::Marshaller::Declaration( "group_ids" ), group_ids ); marshaller.writeString( YIELD::Marshaller::Declaration( "password" ), password ); }
-        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Unmarshaller::Declaration( "user_id" ), user_id ); unmarshaller.readSequence( YIELD::Unmarshaller::Declaration( "group_ids" ), &group_ids ); unmarshaller.readString( YIELD::Unmarshaller::Declaration( "password" ), password ); }
+        // YIELD::Struct
+        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Declaration( "user_id" ), user_id ); marshaller.writeSequence( YIELD::Declaration( "group_ids" ), group_ids ); marshaller.writeString( YIELD::Declaration( "password" ), password ); }
+        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Declaration( "user_id" ), user_id ); unmarshaller.readSequence( YIELD::Declaration( "group_ids" ), &group_ids ); unmarshaller.readString( YIELD::Declaration( "password" ), password ); }
 
       protected:
         std::string user_id;

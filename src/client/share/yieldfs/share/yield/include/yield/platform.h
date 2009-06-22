@@ -4,25 +4,16 @@
 #ifndef _YIELD_PLATFORM_H_
 #define _YIELD_PLATFORM_H_
 
-#define __STDC_LIMIT_MACROS
+#include "yield/base.h"
+
 #ifdef _WIN32
 #include <hash_map>
-#include <msstdint.h>
 typedef int ssize_t;
 extern "C"
 {
   __declspec( dllimport ) void __stdcall DebugBreak();
-  __declspec( dllimport ) long __stdcall InterlockedCompareExchange( volatile long* current_value, long new_value, long old_value );
-  __declspec( dllimport ) long long __stdcall InterlockedCompareExchange64( volatile long long* current_value, long long new_value, long long old_value );
-  __declspec( dllimport ) long __stdcall InterlockedIncrement( volatile long* );
-  __declspec( dllimport ) long __stdcall InterlockedDecrement( volatile long* );
 }
 #else
-#if defined(__GNUC__) && ( ( __GNUC__ == 4 && __GNUC_MINOR__ >= 2 ) || __GNUC__ > 4 )
-#define __YIELD_HAVE_GNUC_ATOMIC_OPS_INTRINSICS 1
-#elif defined(__sun)
-#include <atomic.h>
-#endif
 #include <errno.h>
 #if !defined(__sun) && ( __GNUC__ >= 4 || ( __GNUC__ == 4 && __GNUC_MINOR__ >= 3 ) )
 #include <tr1/unordered_map>
@@ -39,8 +30,6 @@ extern "C"
 #ifdef YIELD_HAVE_POSIX_FILE_AIO
 #include <aio.h>
 #endif
-#include <stdint.h>
-#include <sys/uio.h> // For struct iovec
 #include <unistd.h>
 #endif
 
@@ -99,19 +88,8 @@ extern "C"
 #else
 #define SHLIBSUFFIX "so"
 #endif
-#ifdef __sun
-#define YIELD yield_
-#else
-#define YIELD yield
 #endif
 #endif
-#endif
-
-#define ASSERT_TRUE( stat ) { if ( !( ( stat ) == true ) ) throw YIELD::AssertionException( __FILE__, __LINE__, #stat" != true" ); }
-#define ASSERT_FALSE( stat ) { if ( !( ( stat ) == false ) ) throw YIELD::AssertionException( __FILE__, __LINE__, #stat" != false" ); }
-#define ASSERT_EQUAL( stat_a, stat_b ) { if ( !( ( stat_a ) == ( stat_b ) ) ) throw YIELD::AssertionException( __FILE__, __LINE__, #stat_a" != "#stat_b ); }
-#define ASSERT_NOTEQUAL( stat_a, stat_b ) { if ( !( ( stat_a ) != ( stat_b ) ) ) throw YIELD::AssertionException( __FILE__, __LINE__, #stat_a" == "#stat_b ); }
-#define FAIL() throw YIELD::AssertionException( __FILE__, __LINE__ );
 
 #define NS_IN_US 1000ULL
 #define NS_IN_MS 1000000ULL
@@ -120,8 +98,6 @@ extern "C"
 #define US_IN_S  1000000
 
 #define YIELD_CUCKOO_HASH_TABLE_MAX_LG_TABLE_SIZE_IN_BINS 20
-
-// #define YIELD_DEBUG_REFERENCE_COUNTING 1
 
 #define YIELD_EXCEPTION_WHAT_BUFFER_LENGTH 128
 
@@ -140,64 +116,7 @@ extern "C"
   virtual ssize_t write( const void* buffer, size_t buffer_len, uint64_t offset ); \
   virtual ssize_t writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset );
 
-#define YIELD_MARSHALLER_PROTOTYPES \
-  virtual void writeBool( const Declaration& decl, bool value ); \
-  virtual void writeBuffer( const Declaration& decl, auto_Buffer value ); \
-  virtual void writeDouble( const Declaration& decl, double value ); \
-  virtual void writeInt64( const Declaration& decl, int64_t value ); \
-  virtual void writeMap( const Declaration& decl, const YIELD::Map& value ); \
-  virtual void writeSequence( const Declaration& decl, const YIELD::Sequence& value ); \
-  virtual void writeString( const Declaration&, const char* value, size_t value_len ); \
-  virtual void writeStruct( const Declaration& decl, const YIELD::Object& value );
-
-#define YIELD_OBJECT_PROTOTYPES( type_name, tag ) \
-    type_name & incRef() { return YIELD::Object::incRef( *this ); } \
-    const static uint32_t __tag = static_cast<uint32_t>( tag ); \
-    virtual uint32_t get_tag() const { return __tag; } \
-    const char* get_type_name() const { return #type_name; }
-
-#define YIELD_OBJECT_TAG( type ) type::__tag
-
 #define YIELD_STRING_HASH_NEXT( c, hash ) hash = hash ^ ( ( hash << 5 ) + ( hash >> 2 ) + c )
-
-#define YIELD_TEST_SUITE_EX( TestSuiteName, TestSuiteType ) \
-  YIELD::TestSuite& TestSuiteName##TestSuite() { static TestSuiteType* ts = new TestSuiteType( #TestSuiteName ); return *ts; } \
-class TestSuiteName##TestSuiteDest { public: ~TestSuiteName##TestSuiteDest() { delete &TestSuiteName##TestSuite(); } }; \
-TestSuiteName##TestSuiteDest TestSuiteName##TestSuiteDestObj;
-
-#define YIELD_TEST_SUITE( TestSuiteName ) YIELD_TEST_SUITE_EX( TestSuiteName, YIELD::TestSuite )
-
-#define YIELD_TEST_CASE_EX( TestSuiteName, TestCaseName, TestCaseType ) \
-extern YIELD::TestSuite& TestSuiteName##TestSuite(); \
-class TestSuiteName##_##TestCaseName##Test : public TestCaseType \
-{ \
-public:\
-  TestSuiteName##_##TestCaseName##Test() \
-  : TestCaseType( TestSuiteName##TestSuite(), # TestCaseName ) \
-  { } \
-  void runTest(); \
-};\
-TestSuiteName##_##TestCaseName##Test TestSuiteName##_##TestCaseName##Test_inst;\
-void TestSuiteName##_##TestCaseName##Test::runTest()
-
-#define YIELD_TEST_CASE( TestSuiteName, TestCaseName ) YIELD_TEST_CASE_EX( TestSuiteName, TestCaseName, YIELD::TestCase )
-
-#ifdef YIELD_BUILDING_STANDALONE_TEST
-#define YIELD_TEST_MAIN( TestSuiteName ) \
-  int main( int argc, char** argv ) { return YIELD::TestRunner().run( TestSuiteName##TestSuite() ); }
-#else
-#define YIELD_TEST_MAIN( TestSuiteName )
-#endif
-
-#define YIELD_UNMARSHALLER_PROTOTYPES \
-  virtual bool readBool( const Declaration& decl ); \
-  virtual auto_Buffer readBuffer( const Declaration& decl ); \
-  virtual double readDouble( const Declaration& decl ); \
-  virtual int64_t readInt64( const Declaration& decl ); \
-  virtual YIELD::Map* readMap( const Declaration& decl, Map* value = NULL ); \
-  virtual YIELD::Sequence* readSequence( const Declaration& decl, YIELD::Sequence* value = NULL ); \
-  virtual void readString( const Declaration& decl, std::string& ); \
-  virtual YIELD::Object* readStruct( const Declaration& decl, YIELD::Object* value = NULL );  
 
 #define YIELD_VOLUME_PROTOTYPES \
     virtual bool access( const YIELD::Path& path, int amode ); \
@@ -208,9 +127,9 @@ void TestSuiteName##_##TestCaseName##Test::runTest()
     virtual bool link( const YIELD::Path& old_path, const YIELD::Path& new_path ); \
     virtual bool listxattr( const YIELD::Path& path, std::vector<std::string>& out_names ); \
     virtual bool mkdir( const YIELD::Path& path, mode_t mode ); \
-    virtual YIELD::auto_Object<YIELD::File> open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes ); \
+    virtual YIELD::auto_File open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes ); \
     virtual bool readdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, YIELD::Volume::readdirCallback& callback ); \
-    virtual YIELD::auto_Object<YIELD::Path> readlink( const YIELD::Path& path ); \
+    virtual YIELD::auto_Path readlink( const YIELD::Path& path ); \
     virtual bool removexattr( const YIELD::Path& path, const std::string& name ); \
     virtual bool rename( const YIELD::Path& from_path, const YIELD::Path& to_path ); \
     virtual bool rmdir( const YIELD::Path& path ); \
@@ -225,7 +144,6 @@ void TestSuiteName##_##TestCaseName##Test::runTest()
 
 
 #ifdef _WIN32
-
     struct aiocb
     {
       unsigned long Internal;
@@ -260,12 +178,6 @@ typedef uint32_t fsblkcnt_t;
 typedef uint32_t fsfilcnt_t;
 #endif
 
-struct iovec
-{
-  size_t iov_len;
-  void* iov_base;
-};
-
 typedef int mode_t;
 
 struct _OVERLAPPED;
@@ -292,159 +204,20 @@ struct statvfs
 struct _WIN32_FIND_DATAW;
 typedef _WIN32_FIND_DATAW WIN32_FIND_DATAW;
 typedef WIN32_FIND_DATAW WIN32_FIND_DATA;
-
 #else
-
 struct statvfs;
 struct timespec;
-
 #endif
-
 struct timeval;
-
-
-#ifndef _WIN32
-inline void memcpy_s( void* dest, size_t dest_size, const void* src, size_t count )
-{
-  memcpy( dest, src, count );
-}
-#endif
 
 
 namespace YIELD
 {
-  class Map;
-  class Marshaller;
   class Path;
-  class Sequence;
   class Stat;
-  class Unmarshaller;
   class TestResult;
   class TestSuite;
 
-
-  static inline int32_t atomic_cas( volatile int32_t* current_value, int32_t new_value, int32_t old_value )
-  {
-#if defined(_WIN32)
-    return InterlockedCompareExchange( reinterpret_cast<volatile long*>( current_value ), new_value, old_value );
-#elif defined(__YIELD_HAVE_GNUC_ATOMIC_OPS_INTRINSICS)
-    return __sync_val_compare_and_swap( current_value, old_value, new_value );
-#elif defined(__sun)
-    return atomic_cas_32( current_value, old_value, new_value );
-#elif defined(__i386__) || defined(__x86_64__)
-    int32_t prev;
-    asm volatile(	"lock\n"
-            "cmpxchgl %1,%2\n"
-          : "=a" ( prev )
-                : "r" ( new_value ), "m" ( *current_value ) , "0" ( old_value )
-                : "memory"
-              );
-    return prev;
-#elif defined(__ppc__)
-    int32_t prev;
-    asm volatile(	"					\n\
-            1:	lwarx   %0,0,%2 \n\
-            cmpw    0,%0,%3 \n\
-            bne     2f		\n\
-            stwcx.  %4,0,%2 \n\
-            bne-    1b		\n\
-            sync\n"
-            "2:"
-          : "=&r" ( prev ), "=m" ( *current_value )
-                : "r" ( current_value ), "r" ( old_value ), "r" ( new_value ), "m" ( *current_value )
-                : "cc", "memory"
-              );
-    return prev;
-#else
-#error
-#endif
-  }
-
-  static inline int64_t atomic_cas( volatile int64_t* current_value, int64_t new_value, int64_t old_value )
-  {
-#if defined(_WIN32)
-    return InterlockedCompareExchange64( current_value, new_value, old_value );
-#elif defined(__YIELD_HAVE_GNUC_ATOMIC_OPS_INTRINSICS)
-    return __sync_val_compare_and_swap( current_value, old_value, new_value );
-#elif defined(__sun)
-    return atomic_cas_64( current_value, old_value, new_value );
-#elif defined(__x86_64__)
-    int64_t prev;
-    asm volatile(	"lock\n"
-            "cmpxchgq %1,%2\n"
-          : "=a" ( prev )
-                : "r" ( new_value ), "m" ( *current_value ) , "0" ( old_value )
-                : "memory"
-              );
-    return prev;
-#elif defined(__ppc__)
-    int64_t prev;
-    asm volatile(	"					\n\
-            1:	ldarx   %0,0,%2 \n\
-            cmpd    0,%0,%3 \n\
-            bne     2f		\n\
-            stdcx.  %4,0,%2 \n\
-            bne-    1b		\n\
-            sync\n"
-            "2:"
-          : "=&r" ( prev ), "=m" ( *current_value )
-                : "r" ( current_value ), "r" ( old_value ), "r" ( new_value ), "m" ( *current_value )
-                : "cc", "memory"
-              );
-    return prev;
-#else
-    // 32-bit systems
-    *((int*)0) = 0xabadcafe;
-    return 0;
-#endif
-  }
-
-  static inline int32_t atomic_dec( volatile int32_t* current_value )
-  {
-#if defined(_WIN32)
-    return InterlockedDecrement( reinterpret_cast<volatile long*>( current_value ) );
-#elif defined(__YIELD_HAVE_GNUC_ATOMIC_OPS_INTRINSICS)
-    return __sync_sub_and_fetch( current_value, 1 );
-#elif defined(__sun)
-    return atomic_dec_32_nv( current_value );
-#else
-    int32_t old_value, new_value;
-
-    do
-    {
-      old_value = *current_value;
-#ifdef _DEBUG
-      if ( old_value == 0 )  { *((int*)0) = 0xabadcafe; }
-#endif
-      new_value = old_value - 1;
-    }
-    while ( atomic_cas( current_value, new_value, old_value ) != old_value );
-
-    return new_value;
-#endif
-  }
-
-  static inline int32_t atomic_inc( volatile int32_t* current_value )
-  {
-#if defined(_WIN32)
-    return InterlockedIncrement( reinterpret_cast<volatile long*>( current_value ) );
-#elif defined(__YIELD_HAVE_GNUC_ATOMIC_OPS_INTRINSICS)
-    return __sync_add_and_fetch( current_value, 1 );
-#elif defined(__sun)
-    return atomic_inc_32_nv( current_value );
-#else
-    int32_t old_value, new_value;
-
-    do
-    {
-      old_value = *current_value;
-      new_value = old_value + 1;
-    }
-    while ( atomic_cas( current_value, new_value, old_value ) != old_value );
-
-    return new_value;
-#endif
-  }
 
 #ifdef _WIN32
   static inline void DebugBreak()
@@ -505,43 +278,6 @@ namespace YIELD
   }
 
 
-  template <class ParentType>
-  class AIOControlBlock : public ParentType
-  {
-  public:
-    AIOControlBlock()
-    {
-#if defined(_WIN32) || defined(YIELD_HAVE_POSIX_FILE_AIO)
-      memset( &aiocb_, 0, sizeof( aiocb_ ) );
-      aiocb_.this_ = this;
-#endif
-      complete = false;
-    }
-
-    inline bool isComplete() const { return complete; }
-    virtual void onCompletion( size_t ) { complete = true; }
-#if defined(_WIN32)
-    operator OVERLAPPED*() { return reinterpret_cast<OVERLAPPED*>( &aiocb_ ); }
-#elif defined(YIELD_HAVE_POSIX_FILE_AIO)
-    operator ::aiocb*() { return &aiocb_; }
-#endif
-
-  protected:
-    virtual ~AIOControlBlock() { }
-
-  private:
-    friend class IOCompletionPort;
-
-#if defined(_WIN32) || defined(YIELD_HAVE_POSIX_FILE_AIO)
-    struct aiocb : ::aiocb
-    {
-      AIOControlBlock* this_;
-    } aiocb_;
-#endif
-
-    bool complete;
-  };
-
 
   class Exception : public std::exception
   {
@@ -571,68 +307,6 @@ namespace YIELD
 
   private:
     void init( const char* what );
-  };
-
-
-  class Object
-  {      
-  public:
-    Object() : refcnt( 1 )
-    { }
-
-    static inline void decRef( Object& object )
-    {
-#ifdef YIELD_DEBUG_REFERENCE_COUNTING
-      if ( atomic_dec( &object.refcnt ) < 0 )
-        DebugBreak();
-#else
-      if ( atomic_dec( &object.refcnt ) == 0 )
-        delete &object;
-#endif
-    }
-
-    static inline void decRef( Object* object )
-    {
-      if ( object )
-        Object::decRef( *object );
-    }
-
-    template <class ObjectType>
-    static inline ObjectType& incRef( ObjectType& object )
-    {
-#ifdef YIELD_DEBUG_REFERENCE_COUNTING
-      if ( object.refcnt <= 0 )
-        DebugBreak();
-#endif
-      atomic_inc( &object.refcnt );
-      return object;
-    }
-
-    template <class ObjectType>
-    static inline ObjectType* incRef( ObjectType* object )
-    {
-      if ( object )
-        incRef( *object );
-      return object;
-    }
-
-    inline Object& incRef()
-    {
-      incRef( *this );
-      return *this;
-    }
-
-    virtual uint32_t get_tag() const = 0;
-    virtual const char* get_type_name() const = 0;
-    virtual void marshal( Marshaller& ) const { }
-    virtual void unmarshal( Unmarshaller& ) { }
-
-  protected:
-    virtual ~Object()
-    { }
-
-  private:
-    volatile int32_t refcnt;
   };
 
 
@@ -690,190 +364,44 @@ namespace YIELD
   }
 
 
-  class AssertionException : public Exception
+  template <class ParentType>
+  class AIOControlBlock : public ParentType
   {
   public:
-    AssertionException( const char* file_name, int line_number, const char* info = "" )
+    AIOControlBlock()
     {
-#ifdef _WIN32
-      _snprintf_s( what_buffer, 1024, "line number %d in %s (%s)", line_number, file_name, info );
-#else
-      snprintf( what_buffer, 1024, "line number %d in %s (%s)", line_number, file_name, info );
+#if defined(_WIN32) || defined(YIELD_HAVE_POSIX_FILE_AIO)
+      memset( &aiocb_, 0, sizeof( aiocb_ ) );
+      aiocb_.this_ = this;
 #endif
+      complete = false;
     }
 
-    // std::exception
-    virtual const char* what() const throw() { return what_buffer; }
-
-  private:
-    char what_buffer[1024];
-  };
-
-
-  template <class ObjectType = Object>
-  class auto_Object // Like auto_ptr, but using Object::decRef instead of delete; an operator delete( void* ) on Object doesn't work, because the object is destructed before that call
-  {
-  public:
-    auto_Object() : object( 0 ) { }
-    auto_Object( ObjectType* object ) : object( object ) { }
-    auto_Object( ObjectType& object ) : object( &object ) { }
-    auto_Object( const auto_Object<ObjectType>& other ) { object = Object::incRef( other.object ); }
-    ~auto_Object() { Object::decRef( object ); }
-
-    inline ObjectType* get() const { return object; }
-    auto_Object& operator=( const auto_Object<ObjectType>& other ) { Object::decRef( this->object ); object = Object::incRef( other.object ); return *this; }
-    auto_Object& operator=( ObjectType* object ) { Object::decRef( this->object ); this->object = object; return *this; }
-    inline bool operator==( const auto_Object<ObjectType>& other ) const { return object == other.object; }
-    inline bool operator==( const ObjectType* other ) const { return object == other; }
-    inline bool operator!=( const ObjectType* other ) const { return object != other; }
-    // operator ObjectType*() const { return object; } // Creates sneaky bugs
-    inline ObjectType* operator->() const { return get(); }
-    inline ObjectType& operator*() const { return *get(); }
-    inline ObjectType* release() { ObjectType* temp_object = object; object = 0; return temp_object; }
-    inline void reset( ObjectType* object ) { Object::decRef( this->object ); this->object = object; }
-
-  private:
-    ObjectType* object;
-  };
-
-
-  class Buffer : public Object
-  {
-  public:    
-    virtual ~Buffer() { }
-
-    virtual void as_iovecs( std::vector<struct iovec>& out_iovecs ) const;
-    virtual size_t capacity() const = 0;
-    bool empty() const { return size() == 0; }
-    virtual size_t get( void* into_buffer, size_t into_buffer_len ) = 0;
-    virtual size_t get( std::string& into_string, size_t into_string_len ) = 0;
-    auto_Object<Buffer> get_next_buffer() const { return next_buffer; }    
-    operator char*() const { return static_cast<char*>( static_cast<void*>( *this ) ); }
-    operator unsigned char*() const { return static_cast<unsigned char*>( static_cast<void*>( *this ) ); }
-    virtual operator void*() const { return NULL; }
-    bool operator==( const Buffer& other ) const;
-    size_t put( const std::string& from_string ) { return put( from_string.c_str(), from_string.size() ); }
-    virtual size_t put( const void* from_buffer, size_t from_buffer_len ) = 0;
-    void set_next_buffer( auto_Object<Buffer> next_buffer );
-    virtual size_t size() const = 0;
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( Buffer, 0 );
-            
-  private:
-    auto_Object<Buffer> next_buffer;
-  };
-
-  typedef auto_Object<Buffer> auto_Buffer;
-
-
-  class FixedBuffer : public Buffer
-  {
-  public:
-    bool operator==( const FixedBuffer& other ) const;
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( FixedBuffer, 15 );
-
-    // Buffer
-    size_t get( void* into_buffer, size_t into_buffer_len );
-    size_t get( std::string&, size_t into_string_len );
-    void as_iovecs( std::vector<struct iovec>& out_iovecs ) const;
-    size_t capacity() const;
-    operator void*() const;
-    virtual size_t put( const void* from_buffer, size_t from_buffer_len );
-    size_t size() const;
+    inline bool isComplete() const { return complete; }
+    virtual void onCompletion( size_t ) { complete = true; }
+#if defined(_WIN32)
+    operator OVERLAPPED*() { return reinterpret_cast<OVERLAPPED*>( &aiocb_ ); }
+#elif defined(YIELD_HAVE_POSIX_FILE_AIO)
+    operator ::aiocb*() { return &aiocb_; }
+#endif
 
   protected:
-    FixedBuffer( size_t capacity );
-
-    struct iovec iov;
+    virtual ~AIOControlBlock() { }
 
   private:
-    size_t _capacity;
-    size_t _consumed; // Total number of bytes consumed by get()
+    friend class IOCompletionPort;
+
+#if defined(_WIN32) || defined(YIELD_HAVE_POSIX_FILE_AIO)
+    struct aiocb : ::aiocb
+    {
+      AIOControlBlock* this_;
+    } aiocb_;
+#endif
+
+    bool complete;
   };
 
 
-  class GatherBuffer : public Buffer
-  {
-  public:
-    GatherBuffer( const struct iovec* iovecs, uint32_t iovecs_len );
-
-    // Buffer
-    void as_iovecs( std::vector<struct iovec>& out_iovecs ) const;
-    size_t capacity() const { return size(); }
-    size_t get( void*, size_t ) { DebugBreak(); return 0; }
-    size_t get( std::string&, size_t ) { DebugBreak(); return 0; }
-    size_t put( const void*, size_t ) { DebugBreak(); return 0; }
-    size_t size() const;
-
-  private:
-    const struct iovec* iovecs;
-    uint32_t iovecs_len;
-  };    
-
-
-  class StringBuffer : public Buffer
-  {
-  public:
-    StringBuffer();
-    StringBuffer( size_t capacity );
-    StringBuffer( const std::string& );
-    StringBuffer( const char* );
-    StringBuffer( const char*, size_t );
-
-    const char* c_str() const { return _string.c_str(); }
-    operator std::string&() { return _string; }
-    operator const std::string&() const { return _string; }
-    bool operator==( const StringBuffer& other ) const { return _string == other._string; }
-    bool operator==( const char* other ) const { return _string == other; }
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( StringBuffer, 13 );
-
-    // Buffer
-    void as_iovecs( std::vector<struct iovec>& out_iovecs ) const;
-    size_t capacity() const { return _string.capacity(); }
-    size_t get( void* into_buffer, size_t into_buffer_len );
-    size_t get( std::string& into_string, size_t into_string_len );
-    size_t put( const void*, size_t );
-    size_t size() const { return _string.size(); }
-
-  private:
-    std::string _string;
-
-    size_t _consumed;
-  };
-
-
-  class StringLiteralBuffer : public FixedBuffer
-  {
-  public:
-    StringLiteralBuffer( const char* string_literal )
-      : FixedBuffer( strnlen( string_literal, UINT16_MAX ) )
-    {
-      iov.iov_base = const_cast<char*>( string_literal );
-      iov.iov_len = capacity();
-    }
-
-    StringLiteralBuffer( const char* string_literal, size_t string_literal_len )
-      : FixedBuffer( string_literal_len )
-    {
-      iov.iov_base = const_cast<char*>( string_literal );
-      iov.iov_len = string_literal_len;
-    }
-
-    StringLiteralBuffer( const void* string_literal, size_t string_literal_len )
-      : FixedBuffer( string_literal_len )
-    {
-      iov.iov_base = const_cast<void*>( string_literal );
-      iov.iov_len = string_literal_len;
-    }
-
-    // Buffer
-    size_t put( const void*, size_t ) { DebugBreak(); return 0; }
-  };
 
 
   class CountingSemaphore
@@ -1172,7 +700,7 @@ namespace YIELD
   };
 
 
-  class File : public Object
+  class File : public YIELD::Object
   {
   public:
     const static uint32_t DEFAULT_FLAGS = O_RDONLY;
@@ -1187,10 +715,10 @@ namespace YIELD
     File( int fd );
 #endif
 
-    static auto_Object<File> open( const Path& path ) { return open( path, DEFAULT_FLAGS, DEFAULT_MODE ); }
-    static auto_Object<File> open( const Path& path, uint32_t flags ) { return open( path, flags, DEFAULT_MODE ); }
-    static auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode ) { return open( path, flags, mode, DEFAULT_ATTRIBUTES ); }
-    static auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
+    static YIELD::auto_Object<File> open( const Path& path ) { return open( path, DEFAULT_FLAGS, DEFAULT_MODE ); }
+    static YIELD::auto_Object<File> open( const Path& path, uint32_t flags ) { return open( path, flags, DEFAULT_MODE ); }
+    static YIELD::auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode ) { return open( path, flags, mode, DEFAULT_ATTRIBUTES ); }
+    static YIELD::auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
 
     virtual uint64_t get_size();
 #ifdef _WIN32
@@ -1201,7 +729,7 @@ namespace YIELD
     virtual ssize_t read( void* buffer, size_t buffer_len ); // Reads from the current file pointer
     virtual bool seek( uint64_t offset ); // Seeks from the beginning of the file
     virtual bool seek( uint64_t offset, unsigned char whence );
-    virtual auto_Object<Stat> stat() { return getattr(); }
+    virtual YIELD::auto_Object<Stat> stat() { return getattr(); }
     virtual ssize_t write( const void* buffer, size_t buffer_len ); // Writes from the current position
     virtual ssize_t writev( const iovec* buffers, uint32_t buffers_count ); // Writes from the current file pointer
 
@@ -1224,7 +752,7 @@ namespace YIELD
 #endif
   };
 
-  typedef auto_Object<File> auto_File;
+  typedef YIELD::auto_Object<File> auto_File;
 
 
   // Adapted from N. Askitis and J. Zobel, "Cache-conscious collision resolution in string hash tables", 2005.
@@ -1934,15 +1462,7 @@ namespace YIELD
   };
 
 
-  class HeapBuffer : public FixedBuffer
-  {
-  public:
-    HeapBuffer( size_t capacity );
-    virtual ~HeapBuffer();
-  };
-
-
-  class Log : public Object
+  class Log : public YIELD::Object
   {
   public:
     // Adapted from syslog levels
@@ -1976,17 +1496,17 @@ namespace YIELD
     private:
       friend class Log;
 
-      Stream( auto_Object<Log> log, Level level );
+      Stream( YIELD::auto_Object<Log> log, Level level );
 
-      auto_Object<Log> log;
+      YIELD::auto_Object<Log> log;
       Level level;
 
       std::ostringstream oss;
     };
 
 
-    static auto_Object<Log> open( std::ostream&, Level level );
-    static auto_Object<Log> open( const Path& file_path, Level level );
+    static YIELD::auto_Object<Log> open( std::ostream&, Level level );
+    static YIELD::auto_Object<Log> open( const Path& file_path, Level level );
 
     inline Level get_level() const { return level; }
     Stream getStream() { return Stream( incRef(), level ); }
@@ -2032,7 +1552,7 @@ namespace YIELD
     Level level;
   };
 
-  typedef auto_Object<Log> auto_Log;
+  typedef YIELD::auto_Object<Log> auto_Log;
 
 
   class Machine
@@ -2107,82 +1627,12 @@ namespace YIELD
   };
 
 
-  class Map : public Object
+  class MemoryMappedFile : public YIELD::Object
   {
   public:
-    virtual size_t get_size() const = 0;
-  };
-
-
-  class Marshaller : public Object
-  {
-  public:
-    class Declaration
-    {
-    public:
-      Declaration() : identifier( 0 ), tag( 0 ) { }
-      Declaration( const char* identifier ) : identifier( identifier ), tag( 0 ) { }
-      Declaration( const char* identifier, uint32_t tag ) : identifier( identifier ), tag( tag ) { }
-
-      const char* get_identifier() const { return identifier; }
-      uint32_t get_tag() const { return tag; }
-
-    private:
-      const char* identifier;
-      uint32_t tag;
-    };
-
-
-    virtual ~Marshaller() { }
-
-    virtual void writeBool( const Declaration& decl, bool value ) = 0;
-    virtual void writeBuffer( const Declaration& decl, auto_Buffer value ) = 0;
-    virtual void writeFloat( const Declaration& decl, float value ) { writeDouble( decl, value ); }
-    virtual void writeDouble( const Declaration& decl, double value ) = 0;
-    virtual void writeInt8( const Declaration& decl, int8_t value ) { writeInt16( decl, value ); }
-    virtual void writeInt16( const Declaration& decl, int16_t value ) { writeInt32( decl, value ); }
-    virtual void writeInt32( const Declaration& decl, int32_t value ) { writeInt64( decl, value ); }
-    virtual void writeInt64( const Declaration&, int64_t ) = 0;
-    virtual void writeMap( const Declaration& decl, const Map& value ) = 0;
-    virtual void writeSequence( const Declaration& decl, const Sequence& value ) = 0;
-    virtual void writeStruct( const Declaration& decl, const Object& value ) = 0;
-    virtual void writeString( const Declaration& decl, const std::string& value ) { writeString( decl, value.c_str(), value.size() ); }
-    virtual void writeString( const Declaration& decl, const char* value ) { writeString( decl, value, strnlen( value, UINT16_MAX ) ); }
-    virtual void writeString( const Declaration&, const char* value, size_t value_len ) = 0;
-    virtual void writeUint8( const Declaration& decl, uint8_t value ) { writeInt8( decl, static_cast<int8_t>( value ) ); }
-    virtual void writeUint16( const Declaration& decl, uint16_t value ) { writeInt16( decl, static_cast<int16_t>( value ) ); }
-    virtual void writeUint32( const Declaration& decl, uint32_t value ) { writeInt32( decl, static_cast<int32_t>( value ) ); }
-    virtual void writeUint64( const Declaration& decl, uint64_t value ) { writeInt64( decl, static_cast<int64_t>( value ) ); }
-  };
-
-
-  class BufferedMarshaller : public Marshaller
-  {
-  public:
-    auto_Buffer get_buffer() const { return first_buffer; }
-
-  protected:
-    BufferedMarshaller() 
-    { }
-
-    BufferedMarshaller( BufferedMarshaller& parent_buffered_marshaller )
-      : current_buffer( parent_buffered_marshaller.current_buffer )
-    { }
-
-    void write( const void* buffer, size_t buffer_len );    
-    void write( auto_Buffer buffer );
-
-  private:
-    auto_Buffer first_buffer, current_buffer;
-  };
-
-
-  class MemoryMappedFile : public Object
-  {
-  public:
-    static auto_Object<MemoryMappedFile> open( const Path& path ) { return open( path, File::DEFAULT_FLAGS, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES, 0 ); }
-    static auto_Object<MemoryMappedFile> open( const Path& path, uint32_t flags ) { return open( path, flags, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES, 0 ); }
-    static auto_Object<MemoryMappedFile> open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes, size_t minimum_size );
+    static YIELD::auto_Object<MemoryMappedFile> open( const Path& path ) { return open( path, File::DEFAULT_FLAGS, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES, 0 ); }
+    static YIELD::auto_Object<MemoryMappedFile> open( const Path& path, uint32_t flags ) { return open( path, flags, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES, 0 ); }
+    static YIELD::auto_Object<MemoryMappedFile> open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes, size_t minimum_size );
 
     virtual bool close();
     inline size_t get_size() const { return size; }
@@ -2197,11 +1647,11 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( MemoryMappedFile, 3 );
 
   protected:
-    MemoryMappedFile( auto_Object<File> underlying_file, uint32_t open_flags );
+    MemoryMappedFile( YIELD::auto_Object<File> underlying_file, uint32_t open_flags );
     virtual ~MemoryMappedFile() { close(); }
 
   private:
-    auto_Object<File> underlying_file;
+    YIELD::auto_Object<File> underlying_file;
     uint32_t open_flags;
 
 #ifdef _WIN32
@@ -2210,6 +1660,8 @@ namespace YIELD
     char* start;
     size_t size;
   };
+
+  typedef YIELD::auto_Object<MemoryMappedFile> auto_MemoryMappedFile;
 
 
   class Mutex
@@ -2388,18 +1840,7 @@ namespace YIELD
   };
 
 
-  class PageAlignedBuffer : public FixedBuffer
-  {
-  public:
-    PageAlignedBuffer( size_t capacity );
-    virtual ~PageAlignedBuffer();
-
-  private:
-    static size_t page_size;
-  };
-
-
-  class Path : public Object
+  class Path : public YIELD::Object
   {
   public:
     Path() { }
@@ -2461,25 +1902,10 @@ namespace YIELD
     return os;
   }
 
-
-  class PrettyPrinter : public Marshaller
-  {
-  public:
-    PrettyPrinter( std::ostream& );
-    PrettyPrinter& operator=( const PrettyPrinter& ) { return *this; }
-
-    // Marshaller
-    YIELD_MARSHALLER_PROTOTYPES;
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( PrettyPrinter, 0 );
-
-  private:
-    std::ostream& os;
-  };
+  typedef YIELD::auto_Object<Path> auto_Path;
 
 
-  class ProcessorSet : public Object
+  class ProcessorSet : public YIELD::Object
   {
   public:
     ProcessorSet();
@@ -2599,17 +2025,10 @@ namespace YIELD
   };
 
 
-  class Sequence : public Object
+  class SharedLibrary : public YIELD::Object
   {
   public:
-    virtual size_t get_size() const = 0;
-  };
-
-
-  class SharedLibrary : public Object
-  {
-  public:
-    static auto_Object<SharedLibrary> open( const Path& file_prefix, const char* argv0 = 0 );
+    static YIELD::auto_Object<SharedLibrary> open( const Path& file_prefix, const char* argv0 = 0 );
 
     void* getFunction( const char* function_name, void* missing_function_return_value = NULL );
 
@@ -2629,34 +2048,13 @@ namespace YIELD
     void* handle;
   };
 
-
-  template <size_t Capacity>
-  class StackBuffer : public FixedBuffer
-  {
-  public:
-    StackBuffer()
-      : FixedBuffer( Capacity )
-    {
-      iov.iov_base = _stack_buffer;
-    }
-
-    StackBuffer( const void* from_buffer )
-      : FixedBuffer( Capacity )
-    {
-      iov.iov_base = _stack_buffer;
-      memcpy_s( _stack_buffer, Capacity, from_buffer, Capacity );
-      iov.iov_len = Capacity;
-    }
-
-  private:
-    uint8_t _stack_buffer[Capacity];
-  };
+  typedef YIELD::auto_Object<SharedLibrary> auto_SharedLibrary;
 
 
-  class Stat : public Object
+  class Stat : public YIELD::Object
   {
   public:   
-    static auto_Object<Stat> stat( const Path& path );
+    static YIELD::auto_Object<Stat> stat( const Path& path );
 
 #ifdef _WIN32
     Stat( mode_t mode, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime, uint32_t attributes );
@@ -2724,7 +2122,7 @@ namespace YIELD
     Stat( const Stat& ) { DebugBreak(); } // Prevent copying
   };
 
-  typedef auto_Object<Stat> auto_Stat;
+  typedef YIELD::auto_Object<Stat> auto_Stat;
 
 
   static inline std::ostream& operator<<( std::ostream& os, const Stat& stbuf )
@@ -2843,7 +2241,7 @@ namespace YIELD
   };
 
 
-  class Thread : public Object
+  class Thread : public YIELD::Object
   {
   public:
     static unsigned long createTLSKey();
@@ -2888,130 +2286,7 @@ namespace YIELD
   };
 
 
-  class TestCase
-  {
-  public:
-    TestCase( TestSuite& test_suite, const std::string& name ); 
-    virtual ~TestCase() { }
-
-    virtual void setUp() { }
-    virtual void runTest() { }
-    virtual void run( TestResult& test_result );
-    virtual void tearDown() { }
-    const char* shortDescription() const { return short_description.c_str(); }
-
-  protected:
-    std::string short_description;
-  };
-
-
-  class TestResult
-  {
-  public:
-    TestResult( auto_Log log )
-      : log( log)
-    { }
-
-    virtual ~TestResult() { }
-
-    auto_Log get_log() const { return log; }
-
-  private:
-    auto_Log log;
-  };
-
-
-  class TestRunner
-  {
-  public:
-    TestRunner( Log::Level log_level = Log::LOG_NOTICE );
-    virtual ~TestRunner() { }
-
-    virtual int run( TestSuite& test_suite );
-
-  private:
-    Log::Level log_level;
-  };
-
-
-  class TestSuite : private std::vector<TestCase*>
-  {
-  public:
-    TestSuite( const std::string& name );
-    virtual ~TestSuite();
-
-    void addTest( TestCase* test_case, bool own_test_case = true ); // for addTest( new ... )
-    void addTest( TestCase& test_case, bool own_test_case = false ); // for addTest( *this )
-    const std::string& get_name() const { return name; }
-    virtual void run( TestResult& test_result );
-
-  private:
-    std::string name;
-
-    std::vector<bool> own_test_cases;
-  };
-
-
-  class Unmarshaller : public Object
-  {
-  public:
-    class Declaration
-    {
-    public:
-      Declaration() : identifier( 0 ), tag( 0 ) { }
-      Declaration( const char* identifier ) : identifier( identifier ), tag( 0 ) { }
-      Declaration( const char* identifier, uint32_t tag ) : identifier( identifier ), tag( tag ) { }
-
-      const char* get_identifier() const { return identifier; }
-      uint32_t get_tag() const { return tag; }
-
-    private:
-      const char* identifier;
-      uint32_t tag;
-    };
-
-
-    virtual ~Unmarshaller() { }
-
-    virtual bool readBool( const Declaration& decl ) = 0;
-    virtual auto_Buffer readBuffer( const Declaration& decl ) = 0;
-    virtual double readDouble( const Declaration& ) = 0;
-    virtual float readFloat( const Declaration& decl ) { return static_cast<float>( readDouble( decl ) ); }
-    virtual int8_t readInt8( const Declaration& decl ) { return static_cast<int8_t>( readInt16( decl ) ); }
-    virtual int16_t readInt16( const Declaration& decl ) { return static_cast<int16_t>( readInt32( decl ) ); }
-    virtual int32_t readInt32( const Declaration& decl ) { return static_cast<int32_t>( readInt64( decl ) ); }
-    virtual int64_t readInt64( const Declaration& decl ) = 0;
-    virtual Map* readMap( const Declaration& decl, Map* value = NULL ) = 0;
-    virtual Sequence* readSequence( const Declaration& decl, Sequence* value = NULL ) = 0;
-    virtual void readString( const Declaration& decl, std::string& value ) = 0;
-    virtual Object* readStruct( const Declaration& decl, Object* value = NULL ) = 0;
-    virtual uint8_t readUint8( const Declaration& decl ) { return static_cast<uint8_t>( readInt8( decl ) ); }
-    virtual uint16_t readUint16( const Declaration& decl ) { return static_cast<uint16_t>( readInt16( decl ) ); }
-    virtual uint32_t readUint32( const Declaration& decl ) { return static_cast<uint32_t>( readInt32( decl ) ); }
-    virtual uint64_t readUint64( const Declaration& decl ) { return static_cast<uint64_t>( readInt64( decl ) ); }
-  };
-
-
-  class BufferedUnmarshaller : public Unmarshaller
-  {
-  public:
-    virtual ~BufferedUnmarshaller() { }
-
-
-  protected:
-    BufferedUnmarshaller( auto_Buffer source_buffer )
-        : source_buffer( source_buffer )
-    { }
-
-    void readBytes( void*, size_t );
-    auto_Buffer readBuffer( size_t size );
-
-  private:
-    auto_Buffer source_buffer;  
-  };
-
-
-  class Volume : public Object
+  class Volume : public YIELD::Object
   {
   public:    
     const static mode_t DEFAULT_DIRECTORY_MODE = S_IREAD|S_IWRITE|S_IEXEC;
@@ -3068,42 +2343,7 @@ namespace YIELD
     virtual ~Volume() { }
   };
 
-
-  class XDRMarshaller : public BufferedMarshaller
-  {
-  public:
-    // Marshaller
-    YIELD_MARSHALLER_PROTOTYPES;
-    void writeFloat( const Declaration& decl, float value );
-    void writeInt32( const Declaration& decl, int32_t value );
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( XDRMarshaller, 0 );
-
-  protected:
-    inline void write( const void* buffer, size_t buffer_len ) { BufferedMarshaller::write( buffer, buffer_len ); }
-    virtual void writeDeclaration( const Declaration& decl );
-
-  private:
-    std::vector<bool> in_map_stack;
-  };
-
-
-  class XDRUnmarshaller : public BufferedUnmarshaller
-  {
-  public:
-    XDRUnmarshaller( auto_Buffer source_buffer )
-        : BufferedUnmarshaller( source_buffer )
-    { }
-
-    // Unmarshaller
-    YIELD_UNMARSHALLER_PROTOTYPES;
-    float readFloat( const Declaration& decl );
-    int32_t readInt32( const Declaration& decl );
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( XDRUnmarshaller, 0 );
-  };
+  typedef YIELD::auto_Object<Volume> auto_Volume;
 };
 
 #endif

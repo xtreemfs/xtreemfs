@@ -1,131 +1,7 @@
-// Revision: 1557
+// Revision: 1568
 
 #include "yield/platform.h"
 using namespace YIELD;
-
-
-// buffer.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-void Buffer::as_iovecs( std::vector<struct iovec>& out_iovecs ) const
-{
-  if ( next_buffer != NULL )
-    next_buffer->as_iovecs( out_iovecs );
-}
-bool Buffer::operator==( const Buffer& other ) const
-{
-  if ( size() == other.size() )
-  {
-    void* this_base = static_cast<void*>( *this );
-    void* other_base = static_cast<void*>( other );
-    if ( this_base != NULL && other_base != NULL )
-      return memcmp( this_base, other_base, size() ) == 0;
-    else
-      return false;
-  }
-  else
-    return false;
-}
-void Buffer::set_next_buffer( auto_Buffer next_buffer )
-{
-  if ( this->next_buffer != NULL ) DebugBreak();
-  this->next_buffer = next_buffer;
-}
-
-
-// buffered_marshaller.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-void BufferedMarshaller::write( const void* buffer, size_t buffer_len )
-{
-  if ( current_buffer == NULL )
-    current_buffer = first_buffer = new HeapBuffer( buffer_len >= 16 ? buffer_len : 16 );
-  for ( ;; )
-  {
-    size_t put_len = current_buffer->put( buffer, buffer_len );
-    if ( put_len == buffer_len )
-      return;
-    else
-    {
-      buffer_len -= put_len;
-      buffer = static_cast<const uint8_t*>( buffer ) + put_len;
-      auto_Buffer next_buffer = new HeapBuffer( current_buffer->capacity() * 2 );
-      current_buffer->set_next_buffer( next_buffer );
-      current_buffer = next_buffer;
-    }
-  }
-}
-void BufferedMarshaller::write( auto_Buffer buffer )
-{
-  if ( current_buffer != NULL )
-  {
-    current_buffer->set_next_buffer( buffer );
-    current_buffer = new HeapBuffer( current_buffer->capacity() );
-    while ( buffer->get_next_buffer() != NULL )
-      buffer = buffer->get_next_buffer();
-    buffer->set_next_buffer( current_buffer );
-  }
-  else
-    DebugBreak();
-}
-
-
-// buffered_unmarshaller.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-namespace YIELD
-{
-  class PartialBuffer : public FixedBuffer
-  {
-  public:
-    PartialBuffer( auto_Buffer underlying_buffer, size_t size )
-      : FixedBuffer( size ), underlying_buffer( underlying_buffer )
-    {
-      iov.iov_base = *underlying_buffer;
-      iov.iov_len = size;
-    }
-  private:
-    auto_Buffer underlying_buffer;
-  };
-};
-auto_Buffer BufferedUnmarshaller::readBuffer( size_t size )
-{
-  size_t source_buffer_size = source_buffer->size();
-  if ( source_buffer_size < size )
-  {
-    auto_Buffer buffer( new HeapBuffer( size ) );
-    readBytes( *buffer, size );
-    buffer->put( NULL, size );
-    return buffer;
-  }
-  else if ( source_buffer_size == size )
-  {
-    auto_Buffer buffer( source_buffer );
-    source_buffer = source_buffer->get_next_buffer();
-    return buffer;
-  }
-  else
-  {
-    auto_Buffer buffer( new PartialBuffer( source_buffer, size ) );
-    source_buffer->get( NULL, size );
-    return buffer;
-  }
-}
-void BufferedUnmarshaller::readBytes( void* into_buffer, size_t into_buffer_len )
-{
-  while ( into_buffer_len > 0 )
-  {
-    size_t consumed_len = source_buffer->get( into_buffer, into_buffer_len );
-    if ( consumed_len == into_buffer_len )
-      return;
-    else
-    {
-      into_buffer = static_cast<char*>( into_buffer ) + consumed_len;
-      into_buffer_len -= consumed_len;
-      source_buffer = source_buffer->get_next_buffer();
-    }
-  }
-}
 
 
 // counting_semaphore.cpp
@@ -669,100 +545,6 @@ ssize_t File::writev( const iovec* buffers, uint32_t buffers_count, uint64_t off
 #endif
 
 
-// fixed_buffer.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-FixedBuffer::FixedBuffer( size_t capacity )
-  : _capacity( capacity )
-{
-  _consumed = 0;
-  iov.iov_len = 0;
-}
-void FixedBuffer::as_iovecs( std::vector<struct iovec>& out_iovecs ) const
-{
-  out_iovecs.push_back( iov );
-  Buffer::as_iovecs( out_iovecs );
-}
-size_t FixedBuffer::capacity() const
-{
-  return _capacity;
-}
-FixedBuffer::operator void*() const
-{
-  return static_cast<uint8_t*>( iov.iov_base ) + _consumed;
-}
-size_t FixedBuffer::get( void* into_buffer, size_t into_buffer_len )
-{
-  if ( iov.iov_len - _consumed < into_buffer_len )
-    into_buffer_len = iov.iov_len - _consumed;
-  if ( into_buffer != NULL )
-    memcpy_s( into_buffer, into_buffer_len, static_cast<uint8_t*>( iov.iov_base ) + _consumed, into_buffer_len );
-  _consumed += into_buffer_len;
-  return into_buffer_len;
-}
-size_t FixedBuffer::get( std::string& into_string, size_t into_string_len )
-{
-  if ( iov.iov_len - _consumed < into_string_len )
-    into_string_len = iov.iov_len - _consumed;
-  into_string.append( reinterpret_cast<char*>( static_cast<uint8_t*>( iov.iov_base ) + _consumed ), into_string_len );
-  _consumed += into_string_len;
-  return into_string_len;
-}
-bool FixedBuffer::operator==( const FixedBuffer& other ) const
-{
-  return iov.iov_len == other.iov.iov_len &&
-         memcmp( iov.iov_base, other.iov.iov_base, iov.iov_len ) == 0;
-}
-size_t FixedBuffer::put( const void* from_buffer, size_t from_buffer_len )
-{
-  if ( capacity() - iov.iov_len < from_buffer_len )
-    from_buffer_len = capacity() - iov.iov_len;
-  if ( from_buffer != NULL && from_buffer != iov.iov_base )
-    memcpy_s( static_cast<uint8_t*>( iov.iov_base ) + iov.iov_len, capacity() - iov.iov_len, from_buffer, from_buffer_len );
-  iov.iov_len += from_buffer_len;
-  return from_buffer_len;
-}
-size_t FixedBuffer::size() const
-{
-  return iov.iov_len - _consumed;
-}
-
-
-// gather_buffer.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-GatherBuffer::GatherBuffer( const struct iovec* iovecs, uint32_t iovecs_len )
-  : iovecs( iovecs ), iovecs_len( iovecs_len )
-{ }
-void GatherBuffer::as_iovecs( std::vector<struct iovec>& out_iovecs ) const
-{
-  for ( uint32_t iovec_i = 0; iovec_i < iovecs_len; iovec_i++ )
-    out_iovecs.push_back( iovecs[iovec_i] );
-  Buffer::as_iovecs( out_iovecs );
-}
-size_t GatherBuffer::size() const
-{
-  size_t _size = 0;
-  for ( uint32_t iovec_i = 0; iovec_i < iovecs_len; iovec_i++ )
-    _size += iovecs[iovec_i].iov_len;
-  return _size;
-}
-
-
-// heap_buffer.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-HeapBuffer::HeapBuffer( size_t capacity )
-  : FixedBuffer( capacity )
-{
-  iov.iov_base = new uint8_t[capacity];
-}
-HeapBuffer::~HeapBuffer()
-{
-  delete [] static_cast<uint8_t*>( iov.iov_base );
-}
-
-
 // log.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -975,7 +757,7 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
 #else
 #include <sys/mman.h>
 #endif
-auto_Object<MemoryMappedFile> MemoryMappedFile::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes, size_t minimum_size )
+auto_MemoryMappedFile MemoryMappedFile::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes, size_t minimum_size )
 {
   auto_File file = File::open( path, flags, mode, attributes );
   if ( file != NULL )
@@ -997,7 +779,7 @@ auto_Object<MemoryMappedFile> MemoryMappedFile::open( const Path& path, uint32_t
     }
     else
       current_file_size = 0;
-    auto_Object<MemoryMappedFile> memory_mapped_file = new MemoryMappedFile( file, flags );
+    YIELD::auto_Object<MemoryMappedFile> memory_mapped_file = new MemoryMappedFile( file, flags );
     if ( memory_mapped_file->resize( std::max( minimum_size, current_file_size ) ) )
       return memory_mapped_file;
     else
@@ -1196,40 +978,6 @@ void Mutex::release()
 #else
   pthread_mutex_unlock( &pthread_mutex );
 #endif
-}
-
-
-// page_aligned_buffer.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
-#endif
-size_t PageAlignedBuffer::page_size = 0;
-PageAlignedBuffer::PageAlignedBuffer( size_t capacity )
-  : FixedBuffer( capacity )
-{
-  if ( page_size == 0 )
-  {
-#ifdef _WIN32
-    SYSTEM_INFO system_info;
-    GetSystemInfo( &system_info );
-    page_size = system_info.dwPageSize;
-#else
-    page_size = sysconf( _SC_PAGESIZE );
-#endif
-  }
-#ifdef _WIN32
-  iov.iov_base = static_cast<uint8_t*>( _aligned_malloc( capacity, page_size ) );
-#else
-  posix_memalign( &iov.iov_base, page_size, capacity );
-#endif
-}
-PageAlignedBuffer::~PageAlignedBuffer()
-{
-  free( iov.iov_base );
 }
 
 
@@ -1462,54 +1210,6 @@ Path Path::abspath() const
 }
 
 
-// pretty_printer.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-PrettyPrinter::PrettyPrinter( std::ostream& os )
-  : os( os )
-{ }
-void PrettyPrinter::writeBool( const Declaration&, bool value )
-{
-  if ( value )
-    os << "true, ";
-  else
-    os << "false, ";
-}
-void PrettyPrinter::writeBuffer( const Declaration&, auto_Buffer )
-{ }
-void PrettyPrinter::writeDouble( const Declaration&, double value )
-{
-  os << value << ", ";
-}
-void PrettyPrinter::writeInt64( const Declaration&, int64_t value )
-{
-  os << value << ", ";
-}
-void PrettyPrinter::writeMap( const Declaration&, const Map& value )
-{
-  os << value.get_type_name() << " (";
-  value.marshal( *this );
-  os << " ), ";
-}
-void PrettyPrinter::writeStruct( const Declaration&, const Object& value )
-{
-  os << value.get_type_name() << "( ";
-  value.marshal( *this );
-  os << " ), ";
-}
-void PrettyPrinter::writeSequence( const Declaration&, const Sequence& value )
-{
-  os << "[ ";
-  value.marshal( *this );
-  os << " ], ";
-}
-void PrettyPrinter::writeString( const Declaration&, const char* value, size_t value_len )
-{
-  os.write( value, value_len );
-  os << ", ";
-}
-
-
 // processor_set.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -1655,7 +1355,7 @@ void ProcessorSet::set( uint16_t processor_i )
 #else
 #define DLOPEN( file_path ) dlopen( file_path, RTLD_NOW|RTLD_GLOBAL )
 #endif
-auto_Object<SharedLibrary> SharedLibrary::open( const Path& file_prefix, const char* argv0 )
+auto_SharedLibrary SharedLibrary::open( const Path& file_prefix, const char* argv0 )
 {
   char file_path[PATH_MAX];
   void* handle;
@@ -1884,166 +1584,6 @@ Stat::operator WIN32_FIND_DATA() const
 #ifdef _WIN32
 #pragma warning( pop )
 #endif
-
-
-// string_buffer.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
-StringBuffer::StringBuffer()
-{
-  _consumed = 0;
-}
-
-StringBuffer::StringBuffer( size_t capacity )
-{
-  _string.reserve( capacity );
-  _consumed = 0;
-}
-
-StringBuffer::StringBuffer( const std::string& str )
-  : _string( str )
-{
-  _consumed = 0;
-}
-
-StringBuffer::StringBuffer( const char* str )
- : _string( str )
-{
-  _consumed = 0;
-}
-
-StringBuffer::StringBuffer( const char* str, size_t str_len )
-  : _string( str, str_len )
-{
-  _consumed = 0;
-}
-
-void StringBuffer::as_iovecs( std::vector<struct iovec>& out_iovecs ) const
-{
-  struct iovec iov;
-  iov.iov_base = const_cast<char*>( _string.c_str() );
-  iov.iov_len = _string.size();
-  out_iovecs.push_back( iov );
-  Buffer::as_iovecs( out_iovecs );
-}
-
-size_t StringBuffer::get( void* into_buffer, size_t into_buffer_len )
-{
-  if ( size() - _consumed < into_buffer_len )
-    into_buffer_len = size() - _consumed;
-  memcpy_s( into_buffer, into_buffer_len, _string.c_str() + _consumed, into_buffer_len );
-  _consumed += into_buffer_len;
-  return into_buffer_len;
-}
-
-size_t StringBuffer::get( std::string& into_string, size_t into_string_len )
-{
-  if ( size() - _consumed < into_string_len )
-    into_string_len = size() - _consumed;
-  into_string.append( _string.c_str() + _consumed, into_string_len );
-  _consumed += into_string_len;
-  return into_string_len;
-}
-
-size_t StringBuffer::put( const void* from_buffer, size_t from_buffer_len )
-{
-  _string.append( static_cast<const char*>( from_buffer ), from_buffer_len );
-  return from_buffer_len;
-}
-
-
-// test_case.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-TestCase::TestCase( TestSuite& test_suite, const std::string& name )
-  : short_description( test_suite.get_name() + "_" + name )
-{
-  test_suite.addTest( *this );
-}
-void TestCase::run( TestResult& )
-{
-  runTest();
-}
-
-
-// test_runner.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-#include <iostream>
-TestRunner::TestRunner( Log::Level log_level )
-  : log_level( log_level )
-{ }
-int TestRunner::run( TestSuite& test_suite )
-{
-  TestResult* test_result = new TestResult( Log::open( std::cout, log_level ) );
-  test_suite.run( *test_result );
-  return 0;
-}
-
-
-// test_suite.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-TestSuite::TestSuite( const std::string& name )
-  : name( name )
-{ }
-TestSuite::~TestSuite()
-{
-  for ( std::vector<TestCase*>::size_type test_case_i = 0; test_case_i < size(); test_case_i++ )
-  {
-    if ( own_test_cases[test_case_i] )
-      delete at( test_case_i );
-  }
-}
-void TestSuite::addTest( TestCase* test_case, bool own_test_case )
-{
-  if ( test_case )
-  {
-    push_back( test_case );
-    own_test_cases.push_back( own_test_case );
-  }
-}
-void TestSuite::addTest( TestCase& test_case, bool own_test_case )
-{
-  push_back( &test_case );
-  own_test_cases.push_back( own_test_case );
-}
-void TestSuite::run( TestResult& test_result )
-{
-  for ( iterator test_i = begin(); test_i != end(); test_i++ )
-  {
-    Log::Stream test_result_log_stream = test_result.get_log()->getStream();
-    bool called_runTest = false, called_tearDown = false;
-    try
-    {
-      test_result_log_stream << ( *test_i )->shortDescription();
-      ( *test_i )->setUp();
-      called_runTest = true;
-      ( *test_i )->run( test_result );
-      called_tearDown = true;
-      ( *test_i )->tearDown();
-      test_result_log_stream << ": passed";
-    }
-    catch ( YIELD::AssertionException& exc )
-    {
-      test_result_log_stream << " failed: " << exc.what();
-    }
-    catch ( std::exception& exc )
-    {
-      test_result_log_stream << " threw unknown exception: " << exc.what();
-    }
-    catch ( ... )
-    {
-      test_result_log_stream << " threw unknown non-exception";
-    }
-    if ( called_runTest && !called_tearDown )
-      try { ( *test_i )->tearDown(); } catch ( ... ) { }
-   // ret_code |= 1;
-  }
-}
 
 
 // thread.cpp
@@ -2754,7 +2294,7 @@ bool Volume::readdir( const Path& path, const YIELD::Path& match_file_name_prefi
   return false;
 #endif
 }
-auto_Object<Path> Volume::readlink( const Path& path )
+auto_Path Volume::readlink( const Path& path )
 {
 #ifdef _WIN32
   ::SetLastError( ERROR_NOT_SUPPORTED );
@@ -2951,182 +2491,4 @@ Path Volume::volname( const Path& path )
 #ifdef _WIN32
 #pragma warning( pop )
 #endif
-
-
-// xdr_marshaller.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-void XDRMarshaller::writeDeclaration( const Declaration& decl )
-{
-  if ( !in_map_stack.empty() && in_map_stack.back() && decl.get_identifier() )
-    Marshaller::writeString( Declaration(), decl.get_identifier() );
-}
-void XDRMarshaller::writeBool( const Declaration& decl, bool value )
-{
-  writeInt32( decl, value ? 1 : 0 );
-}
-void XDRMarshaller::writeBuffer( const Declaration& decl, auto_Buffer value )
-{
-  size_t value_size = 0;
-  auto_Buffer next_buffer = value;
-  while ( next_buffer != NULL )
-  {
-    value_size += next_buffer->size();
-    next_buffer = next_buffer->get_next_buffer();
-  }
-  writeInt32( decl, static_cast<int32_t>( value_size ) );
-  BufferedMarshaller::write( value );
-  if ( value_size % 4 != 0 )
-  {
-    static char zeros[] = { 0, 0, 0 };
-    write( static_cast<const void*>( zeros ), 4 - ( value_size % 4 ) );
-  }
-}
-void XDRMarshaller::writeDouble( const Declaration& decl, double value )
-{
-  writeDeclaration( decl );
-  write( &value, sizeof( value ) );
-}
-void XDRMarshaller::writeFloat( const Declaration& decl, float value )
-{
-  writeDeclaration( decl );
-  write( &value, sizeof( value ) );
-}
-void XDRMarshaller::writeInt32( const Declaration& decl, int32_t value )
-{
-  writeDeclaration( decl );
-#ifdef __MACH__
-  value = htonl( value );
-#else
-  value = Machine::htonl( value );
-#endif
-  write( &value, sizeof( value ) );
-}
-void XDRMarshaller::writeInt64( const Declaration& decl, int64_t value )
-{
-  writeDeclaration( decl );
-  value = Machine::htonll( value );
-  write( &value, sizeof( value ) );
-}
-void XDRMarshaller::writeMap( const Declaration& decl, const Map& value )
-{
-  writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
-  in_map_stack.push_back( true );
-  value.marshal( *this );
-  in_map_stack.pop_back();
-}
-void XDRMarshaller::writeSequence( const Declaration& decl, const Sequence& value )
-{
-  writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
-  value.marshal( *this );
-}
-void XDRMarshaller::writeString( const Declaration& decl, const char* value, size_t value_len )
-{
-  writeInt32( decl, static_cast<int32_t>( value_len ) );
-  write( static_cast<const void*>( value ), value_len );
-  if ( value_len % 4 != 0 )
-  {
-    static char zeros[] = { 0, 0, 0 };
-    write( static_cast<const void*>( zeros ), 4 - ( value_len % 4 ) );
-  }
-}
-void XDRMarshaller::writeStruct( const Declaration& decl, const Object& value )
-{
-  writeDeclaration( decl );
-  value.marshal( *this );
-}
-
-
-// xdr_unmarshaller.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-bool XDRUnmarshaller::readBool( const Declaration& decl )
-{
-  return readInt32( decl ) == 1;
-}
-auto_Buffer XDRUnmarshaller::readBuffer( const Declaration& decl )
-{
-  size_t size = readInt32( decl );
-  if ( size % 4 == 0 )
-    return BufferedUnmarshaller::readBuffer( size );
-  else
-    return BufferedUnmarshaller::readBuffer( size + 4 - ( size % 4 ) );
-}
-double XDRUnmarshaller::readDouble( const Declaration& )
-{
-  double value;
-  readBytes( &value, sizeof( value ) );
-  return value;
-}
-float XDRUnmarshaller::readFloat( const Declaration& )
-{
-  float value;
-  readBytes( &value, sizeof( value ) );
-  return value;
-}
-int32_t XDRUnmarshaller::readInt32( const Declaration& )
-{
-  int32_t value;
-  readBytes( &value, sizeof( value ) );
-#ifdef __MACH__
-  return ntohl( value );
-#else
-  return Machine::ntohl( value );
-#endif
-}
-int64_t XDRUnmarshaller::readInt64( const Declaration& )
-{
-  int64_t value;
-  readBytes( &value, sizeof( value ) );
-  return Machine::ntohll( value );
-}
-Map* XDRUnmarshaller::readMap( const Declaration& decl, Map* value )
-{
-  if ( value )
-  {
-    size_t size = readInt32( decl );
-    for ( size_t i = 0; i < size; i++ )
-      value->unmarshal( *this );
-  }
-  return value;
-}
-Sequence* XDRUnmarshaller::readSequence( const Declaration& decl, Sequence* value )
-{
-  if ( value )
-  {
-    size_t size = readInt32( decl );
-    if ( size <= UINT16_MAX )
-    {
-      for ( size_t i = 0; i < size; i++ )
-        value->unmarshal( *this );
-    }
-    else
-      throw Exception( "read array length beyond maximum" );
-  }
-  return value;
-}
-void XDRUnmarshaller::readString( const Declaration& decl, std::string& str )
-{
-  size_t str_len = readInt32( decl );
-  if ( str_len < UINT16_MAX )
-  {
-    if ( str_len != 0 )
-    {
-      size_t padded_str_len = str_len % 4;
-      if ( padded_str_len == 0 )
-        padded_str_len = str_len;
-      else
-        padded_str_len = str_len + 4 - padded_str_len;
-      str.resize( padded_str_len );
-      readBytes( const_cast<char*>( str.c_str() ), padded_str_len );
-      str.resize( str_len );
-    }
-  }
-}
-Object* XDRUnmarshaller::readStruct( const Declaration&, Object* value )
-{
-  if ( value )
-    value->unmarshal( *this );
-  return value;
-}
 

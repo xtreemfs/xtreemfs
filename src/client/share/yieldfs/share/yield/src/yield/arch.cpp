@@ -1,4 +1,4 @@
-// Revision: 1557
+// Revision: 1568
 
 #include "yield/arch.h"
 using namespace YIELD;
@@ -43,7 +43,7 @@ namespace YIELD
   class SEDAStageGroupThread : public StageGroupThread
   {
   public:
-    SEDAStageGroupThread( const std::string& stage_group_name, auto_Object<ProcessorSet> limit_logical_processor_set, auto_Object<Log> log, auto_Stage stage )
+    SEDAStageGroupThread( const std::string& stage_group_name, YIELD::auto_Object<ProcessorSet> limit_logical_processor_set, YIELD::auto_Object<Log> log, auto_Stage stage )
       : StageGroupThread( stage_group_name, limit_logical_processor_set, log ), stage( stage )
     { }
     auto_Stage get_stage() { return stage; }
@@ -53,7 +53,7 @@ namespace YIELD
     void stop()
     {
       should_run = false;
-      auto_Object<StageShutdownEvent> stage_shutdown_event = new StageShutdownEvent;
+      YIELD::auto_Object<StageShutdownEvent> stage_shutdown_event = new StageShutdownEvent;
       for ( ;; )
       {
         stage->send( stage_shutdown_event->incRef() );
@@ -108,7 +108,7 @@ void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
 #endif
 
 
-StageGroup::StageGroup( const std::string& name, auto_Object<ProcessorSet> limit_physical_processor_set, auto_EventTarget stage_stats_event_target )
+StageGroup::StageGroup( const std::string& name, YIELD::auto_Object<ProcessorSet> limit_physical_processor_set, auto_EventTarget stage_stats_event_target )
 : name( name ), limit_physical_processor_set( limit_physical_processor_set ), stage_stats_event_target( stage_stats_event_target )
 {
   if ( limit_physical_processor_set != NULL )
@@ -141,7 +141,7 @@ StageGroup::StageGroup( const std::string& name, auto_Object<ProcessorSet> limit
 #error
 #endif
 #endif
-StageGroupThread::StageGroupThread( const std::string& stage_group_name, auto_Object<ProcessorSet> limit_logical_processor_set, auto_Object<Log> log )
+StageGroupThread::StageGroupThread( const std::string& stage_group_name, YIELD::auto_Object<ProcessorSet> limit_logical_processor_set, YIELD::auto_Object<Log> log )
   : stage_group_name( stage_group_name ), limit_logical_processor_set( limit_logical_processor_set ), log( log )
 {
   is_running = false;
@@ -229,7 +229,7 @@ bool TimerEventQueue::compareTimerEvents( const TimerEvent* left, const TimerEve
 {
   return left->get_fire_time() < right->get_fire_time();
 }
-auto_Object<TimerEventQueue::TimerEvent> TimerEventQueue::timer_create( const Time& timeout, const Time& period, auto_Object<> context )
+YIELD::auto_Object<TimerEventQueue::TimerEvent> TimerEventQueue::timer_create( const Time& timeout, const Time& period, YIELD::auto_Object<> context )
 {
   TimerEvent* timer_event = new TimerEvent( timeout, period, context );
   timers.push_back( timer_event );

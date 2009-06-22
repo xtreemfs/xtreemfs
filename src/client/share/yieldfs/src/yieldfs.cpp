@@ -1,4 +1,4 @@
-// Revision: 145
+// Revision: 147
 
 #include "yield.h"
 #include "yieldfs.h"
@@ -47,7 +47,7 @@ namespace yieldfs
 
 namespace yieldfs
 {
-  class CachedStat : public YIELD::Object
+  class CachedStat : public yidl::Object
   {
   public:
     CachedStat( const YIELD::Path& path, YIELD::auto_Stat stbuf )
@@ -61,7 +61,7 @@ namespace yieldfs
     double get_creation_epoch_time_s() const { return creation_epoch_time_s; }
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( yieldfs::CachedStat, 2711482493 );
+    YIDL_OBJECT_PROTOTYPES( yieldfs::CachedStat, 0 );
 
   private:
     YIELD::Path path;
@@ -87,7 +87,7 @@ namespace yieldfs
   class DataCachingFile : public StackableFile
   {
   public:
-    DataCachingFile( const YIELD::Path& path, YIELD::auto_Object<YIELD::File> underlying_file, YIELD::auto_Log log = NULL )
+    DataCachingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log = NULL )
       : StackableFile( path, underlying_file, log )
     { }
 
@@ -120,7 +120,7 @@ namespace yieldfs
   class FUSEUnix
   {
   public:
-    FUSEUnix( YIELD::auto_Object<YIELD::Volume> volume, uint32_t flags, YIELD::auto_Log log )
+    FUSEUnix( YIELD::auto_Volume volume, uint32_t flags, YIELD::auto_Log )
       : volume( volume ), flags( flags ), log( log )
     { }
 
@@ -439,7 +439,7 @@ namespace yieldfs
 
     static int readlink( const char* path, char *linkbuf, size_t size )
     {
-      YIELD::auto_Object<YIELD::Path> linkpath = get_volume().readlink( path );
+      YIELD::auto_Path linkpath = get_volume().readlink( path );
       if ( linkpath!= NULL )
       {
         if ( size > linkpath->size() + 1 )
@@ -454,7 +454,7 @@ namespace yieldfs
 
     static int release( const char* path, struct fuse_file_info* fi )
     {
-      YIELD::Object::decRef( get_file( fi ) );
+      yidl::Object::decRef( get_file( fi ) );
       fi->fh = 0;
       return 0;
     }
@@ -516,7 +516,7 @@ namespace yieldfs
     }
 
   private:
-    YIELD::auto_Object<YIELD::Volume> volume;
+    YIELD::auto_Volume volume;
     uint32_t flags;
     YIELD::auto_Log log;
 
@@ -559,7 +559,7 @@ namespace yieldfs
   class FUSEWin32
   {
   public:
-    FUSEWin32( YIELD::auto_Object<YIELD::Volume> volume, uint32_t flags, YIELD::auto_Log log )
+    FUSEWin32( YIELD::auto_Volume volume, uint32_t flags, YIELD::auto_Log )
       : volume( volume ), flags( flags ), log( log )
     { }
 
@@ -773,7 +773,7 @@ namespace yieldfs
 	    LPCWSTR					FileName,
 	    PDOKAN_FILE_INFO		DokanFileInfo )
     {
-      YIELD::Object::decRef( get_file( DokanFileInfo ) );
+      yidl::Object::decRef( get_file( DokanFileInfo ) );
       DokanFileInfo->Context = NULL;
       return ERROR_SUCCESS;
     }
@@ -1001,7 +1001,7 @@ namespace yieldfs
         if ( file != NULL )
         {
           read_ret = file->read( Buffer, BufferLength, Offset );
-          YIELD::Object::decRef( *file );
+          yidl::Object::decRef( *file );
         }
         else
           return -1 * ::GetLastError();
@@ -1103,7 +1103,7 @@ namespace yieldfs
         if ( file != NULL )
         {
           write_ret = file->write( Buffer, NumberOfBytesToWrite, Offset );
-          YIELD::Object::decRef( *file );
+          yidl::Object::decRef( *file );
         }
         else
           return -1 * ::GetLastError();
@@ -1120,7 +1120,7 @@ namespace yieldfs
     }
 
   private:
-    YIELD::auto_Object<YIELD::Volume> volume;
+    YIELD::auto_Volume volume;
     uint32_t flags;
     YIELD::auto_Log log;
 
@@ -1157,13 +1157,13 @@ namespace yieldfs
   private:
     friend class MetadataCachingVolume;
 
-    MetadataCachingFile( YIELD::auto_Object<MetadataCachingVolume> parent_volume, const YIELD::Path& path, YIELD::auto_Object<YIELD::File> underlying_file, YIELD::auto_Log log = NULL )
+    MetadataCachingFile( yidl::auto_Object<MetadataCachingVolume> parent_volume, const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log = NULL )
       : StackableFile( path, underlying_file, log ), parent_volume( parent_volume )
     { }
 
     ~MetadataCachingFile() { }
 
-    YIELD::auto_Object<MetadataCachingVolume> parent_volume;
+    yidl::auto_Object<MetadataCachingVolume> parent_volume;
   };
 };
 
@@ -1180,7 +1180,7 @@ namespace yieldfs
   class TracingFile : public StackableFile
   {
   public:
-    TracingFile( const YIELD::Path& path, YIELD::auto_Object<YIELD::File> underlying_file, YIELD::auto_Log log );
+    TracingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log );
 
     YIELD_FILE_PROTOTYPES;
 
@@ -1398,9 +1398,9 @@ ssize_t DataCachingFile::writev( const struct iovec* buffers, uint32_t buffers_c
 // data_caching_volume.cpp
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
-YIELD::auto_Object<YIELD::File> DataCachingVolume::open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
+YIELD::auto_File DataCachingVolume::open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
-  YIELD::auto_Object<YIELD::File> file = underlying_volume->open( path, flags, mode, attributes );
+  YIELD::auto_File file = underlying_volume->open( path, flags, mode, attributes );
   if ( file != NULL )
     return new DataCachingFile( path, file, log );
   else
@@ -1444,7 +1444,7 @@ int FUSE::getegid()
 }
 #endif
 */
-FUSE::FUSE( YIELD::auto_Object<YIELD::Volume> volume, uint32_t flags, YIELD::auto_Log log )
+FUSE::FUSE( YIELD::auto_Volume volume, uint32_t flags, YIELD::auto_Log log )
 {
 #ifdef _WIN32
   fuse_win32 = new FUSEWin32( volume, flags, log );
@@ -1514,7 +1514,7 @@ namespace yieldfs
     ~MetadataCachingVolumereaddirCallback()
     {
       for ( std::vector<CachedStat*>::iterator cached_stat_i = cached_stats.begin(); cached_stat_i != cached_stats.end(); cached_stat_i++ )
-        YIELD::Object::decRef( **cached_stat_i );
+        yidl::Object::decRef( **cached_stat_i );
     }
     MetadataCachingVolumereaddirCallback& operator=( const MetadataCachingVolumereaddirCallback& ) { return *this; }
     void flush()
@@ -1551,16 +1551,16 @@ namespace yieldfs
 MetadataCachingVolume::MetadataCachingVolume()
 : ttl_s( 5 )
 { }
-MetadataCachingVolume::MetadataCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, double ttl_s )
+MetadataCachingVolume::MetadataCachingVolume( YIELD::auto_Volume underlying_volume, double ttl_s )
 : StackableVolume( underlying_volume ), ttl_s( ttl_s )
 { }
-MetadataCachingVolume::MetadataCachingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, YIELD::auto_Log log, double ttl_s )
+MetadataCachingVolume::MetadataCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log, double ttl_s )
 : StackableVolume( underlying_volume, log ), ttl_s( ttl_s )
 { }
 MetadataCachingVolume::~MetadataCachingVolume()
 {
 //  for ( YIELD::HashMap<CachedStat*>::iterator directory_entry_i = directory_entry_cache.begin(); directory_entry_i != directory_entry_cache.end(); directory_entry_i++ )
-//    YIELD::Object::decRef( directory_entry_i->second );
+//    yidl::Object::decRef( directory_entry_i->second );
 }
 bool MetadataCachingVolume::chmod( const YIELD::Path& path, mode_t mode )
 {
@@ -1572,7 +1572,7 @@ bool MetadataCachingVolume::chown( const YIELD::Path& path, int32_t uid, int32_t
   evict( path );
   return underlying_volume->chown( path, uid, gid );
 }
-YIELD::auto_Object<CachedStat> MetadataCachingVolume::evict( const YIELD::Path& path )
+yidl::auto_Object<CachedStat> MetadataCachingVolume::evict( const YIELD::Path& path )
 {
   lock.acquire();
   CachedStat* cached_stat = YIELD::HATTrie<CachedStat*>::erase( static_cast<const std::string&>( path ) );
@@ -1593,17 +1593,17 @@ void MetadataCachingVolume::evicttree( const YIELD::Path& path )
     for ( std::vector<CachedStat*>::iterator directory_entry_i = cached_stats.begin(); directory_entry_i != cached_stats.end(); directory_entry_i++ )
     {
       log->getStream( YIELD::Log::LOG_INFO ) << "MetadataCachingVolume: evicted " << ( *directory_entry_i )->get_path();
-      YIELD::Object::decRef( **directory_entry_i );
+      yidl::Object::decRef( **directory_entry_i );
     }
   }
   else
   {
     for ( std::vector<CachedStat*>::iterator directory_entry_i = cached_stats.begin(); directory_entry_i != cached_stats.end(); directory_entry_i++ )
-      YIELD::Object::decRef( **directory_entry_i );
+      yidl::Object::decRef( **directory_entry_i );
   }
 }
 */
-YIELD::auto_Object<CachedStat> MetadataCachingVolume::find( const YIELD::Path& path )
+yidl::auto_Object<CachedStat> MetadataCachingVolume::find( const YIELD::Path& path )
 {
   lock.acquire();
   CachedStat* cached_stat = YIELD::HATTrie<CachedStat*>::find( static_cast<const std::string&>( path ) );
@@ -1640,7 +1640,7 @@ YIELD::auto_Object<CachedStat> MetadataCachingVolume::find( const YIELD::Path& p
 }
 YIELD::auto_Stat MetadataCachingVolume::getattr( const YIELD::Path& path )
 {
-  YIELD::auto_Object<CachedStat> cached_stat = find( path );
+  yidl::auto_Object<CachedStat> cached_stat = find( path );
   if ( cached_stat != NULL )
     return static_cast<CachedStat*>( cached_stat.get() )->get_stat();
   else
@@ -1689,9 +1689,9 @@ bool MetadataCachingVolume::mkdir( const YIELD::Path& path, mode_t mode )
   evict( getParentDirectoryPath( path ) );
   return underlying_volume->mkdir( path, mode );
 }
-YIELD::auto_Object<YIELD::File> MetadataCachingVolume::open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
+YIELD::auto_File MetadataCachingVolume::open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
-  YIELD::auto_Object<YIELD::File> file = underlying_volume->open( path, flags, mode, attributes );
+  YIELD::auto_File file = underlying_volume->open( path, flags, mode, attributes );
   if ( file != NULL )
   {
     if ( ( flags & O_CREAT ) == O_CREAT )
@@ -1867,7 +1867,7 @@ bool StackableVolume::mkdir( const YIELD::Path& path, mode_t mode )
 {
   return underlying_volume->mkdir( path, mode );
 }
-YIELD::auto_Object<YIELD::File> StackableVolume::open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
+YIELD::auto_File StackableVolume::open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
   return underlying_volume->open( path, flags, mode, attributes );
 }
@@ -1875,7 +1875,7 @@ bool StackableVolume::readdir( const YIELD::Path& path, const YIELD::Path& match
 {
   return underlying_volume->readdir( path, match_file_name_prefix, callback );
 }
-YIELD::auto_Object<YIELD::Path> StackableVolume::readlink( const YIELD::Path& path )
+YIELD::auto_Path StackableVolume::readlink( const YIELD::Path& path )
 {
   return underlying_volume->readlink( path );
 }
@@ -1929,7 +1929,7 @@ YIELD::Path StackableVolume::volname( const YIELD::Path& path )
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 #include <iostream>
-TracingFile::TracingFile( const YIELD::Path& path, YIELD::auto_Object<YIELD::File> underlying_file, YIELD::auto_Log log )
+TracingFile::TracingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log )
   : StackableFile( path, underlying_file, log )
 {
   if ( this->log == NULL )
@@ -2013,7 +2013,7 @@ namespace yieldfs
   class TracingVolumelistdirCallback : public YIELD::Volume::listdirCallback
   {
   public:
-    TracingVolumelistdirCallback( YIELD::Volume::listdirCallback& user_listdir_callback, YIELD::auto_Log log )
+    TracingVolumelistdirCallback( YIELD::Volume::listdirCallback& user_listdir_callback, YIELD::auto_Log )
       : user_listdir_callback( user_listdir_callback ), log( log )
     { }
 
@@ -2035,7 +2035,7 @@ namespace yieldfs
   class TracingVolumereaddirCallback : public YIELD::Volume::readdirCallback
   {
   public:
-    TracingVolumereaddirCallback( YIELD::Volume::readdirCallback& user_readdir_callback, YIELD::auto_Log log )
+    TracingVolumereaddirCallback( YIELD::Volume::readdirCallback& user_readdir_callback, YIELD::auto_Log )
       : user_readdir_callback( user_readdir_callback ), log( log )
     { }
 
@@ -2060,13 +2060,13 @@ TracingVolume::TracingVolume()
   log = YIELD::Log::open( std::cout, YIELD::Log::LOG_INFO );
 }
 
-TracingVolume::TracingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume )
+TracingVolume::TracingVolume( YIELD::auto_Volume underlying_volume )
   : StackableVolume( underlying_volume )
 {
   log = YIELD::Log::open( std::cout, YIELD::Log::LOG_INFO );
 }
 
-TracingVolume::TracingVolume( YIELD::auto_Object<YIELD::Volume> underlying_volume, YIELD::auto_Log log )
+TracingVolume::TracingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log )
   : StackableVolume( underlying_volume, log )
 { }
 
@@ -2133,9 +2133,9 @@ bool TracingVolume::mktree( const YIELD::Path& path, mode_t mode )
   return trace( log, "yieldfs::TracingVolume::mktree", path, mode, underlying_volume->mktree( path, mode ) );
 }
 
-YIELD::auto_Object<YIELD::File> TracingVolume::open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
+YIELD::auto_File TracingVolume::open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
-  YIELD::auto_Object<YIELD::File> file = underlying_volume->open( path, flags, mode, attributes );
+  YIELD::auto_File file = underlying_volume->open( path, flags, mode, attributes );
   if( file != NULL )
     file = new TracingFile( path, file, log );
 
@@ -2152,9 +2152,9 @@ bool TracingVolume::readdir( const YIELD::Path& path, const YIELD::Path& match_f
   return trace( log, "yieldfs::TracingVolume::readdir", path, underlying_volume->readdir( path, match_file_name_prefix, tracing_volume_readdir_callback ) );
 }
 
-YIELD::auto_Object<YIELD::Path> TracingVolume::readlink( const YIELD::Path& path )
+YIELD::auto_Path TracingVolume::readlink( const YIELD::Path& path )
 {
-  YIELD::auto_Object<YIELD::Path> link_path = underlying_volume->readlink( path );
+  YIELD::auto_Path link_path = underlying_volume->readlink( path );
   trace( log, "yieldfs::TracingVolume::readlink", path, link_path != NULL );
   return link_path;
 }

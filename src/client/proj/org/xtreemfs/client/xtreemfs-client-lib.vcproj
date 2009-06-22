@@ -1,454 +1,484 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
-	ProjectType="Visual C++"
-	Version="9.00"
-	Name="xtreemfs-client-lib"
-	ProjectGUID="{FFA69254-B8BC-4E99-B60C-F4B96511124A}"
-	RootNamespace="xtreemfs-client-lib"
-	Keyword="Win32Proj"
-	TargetFrameworkVersion="131072"
-	>
-	<Platforms>
-		<Platform
-			Name="Win32"
-		/>
-	</Platforms>
-	<ToolFiles>
-	</ToolFiles>
-	<Configurations>
-		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
-			IntermediateDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
-			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include"
-				PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="3"
-				RuntimeTypeInfo="false"
-				UsePrecompiledHeader="0"
-				ProgramDataBaseFileName="$(TargetDir)$(TargetName).pdb"
-				WarningLevel="4"
-				DebugInformationFormat="4"
-				CompileAs="0"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				AdditionalDependencies="libeay32.lib ssleay32.lib"
-				OutputFile="$(ProjectDir)..\..\..\..\lib\xtreemfs-client_d.lib"
-				AdditionalLibraryDirectories=""
-				IgnoreAllDefaultLibraries="false"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
-			IntermediateDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
-			ConfigurationType="4"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include"
-				PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
-				StringPooling="false"
-				RuntimeLibrary="2"
-				EnableFunctionLevelLinking="true"
-				RuntimeTypeInfo="false"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="0"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLibrarianTool"
-				AdditionalDependencies="libeay32.lib ssleay32.lib"
-				OutputFile="$(ProjectDir)..\..\..\..\lib\xtreemfs-client.lib"
-				AdditionalLibraryDirectories=""
-				IgnoreAllDefaultLibraries="false"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-	</Configurations>
-	<References>
-	</References>
-	<Files>
-		<Filter
-			Name="Header Files"
-			Filter="h;hpp;hxx;hm;inl;inc;xsd"
-			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
-			>
-			<File
-				RelativePath="..\..\..\..\include\org\xtreemfs\client.h"
-				>
-			</File>
-			<Filter
-				Name="client"
-				>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\client\dir_proxy.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\client\file.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\client\mrc_proxy.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\client\osd_proxy.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\client\osd_proxy_mux.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\client\path.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\client\policy.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\client\proxy.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\client\proxy_exception_response.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\client\volume.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="interfaces"
-				>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\interfaces\constants.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\interfaces\dir_interface.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\interfaces\mrc_interface.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\interfaces\mrc_osd_types.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\interfaces\osd_interface.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\include\org\xtreemfs\interfaces\types.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="interfaces"
-				>
-				<File
-					RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\constants.idl"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCMIDLTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCMIDLTool"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\dir_interface.idl"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCMIDLTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCMIDLTool"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\mrc_interface.idl"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCMIDLTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCMIDLTool"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\mrc_osd_types.idl"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCMIDLTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCMIDLTool"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\osd_interface.idl"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCMIDLTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCMIDLTool"
-						/>
-					</FileConfiguration>
-				</File>
-				<File
-					RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\types.idl"
-					>
-					<FileConfiguration
-						Name="Debug|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCMIDLTool"
-						/>
-					</FileConfiguration>
-					<FileConfiguration
-						Name="Release|Win32"
-						ExcludedFromBuild="true"
-						>
-						<Tool
-							Name="VCMIDLTool"
-						/>
-					</FileConfiguration>
-				</File>
-			</Filter>
-		</Filter>
-		<Filter
-			Name="Source Files"
-			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
-			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
-			>
-			<File
-				RelativePath="..\..\..\..\share\yieldfs\share\yield\src\uriparser.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yajl.c"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\..\share\yieldfs\src\yieldfs.cpp"
-				>
-			</File>
-			<Filter
-				Name="xtreemfs"
-				>
-				<Filter
-					Name="client"
-					>
-					<File
-						RelativePath="..\..\..\..\src\org\xtreemfs\client\dir_proxy.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\..\..\..\src\org\xtreemfs\client\file.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\..\..\..\src\org\xtreemfs\client\main.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\..\..\src\org\xtreemfs\client\mrc_proxy.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\..\..\..\src\org\xtreemfs\client\multi_response_target.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\..\..\..\src\org\xtreemfs\client\multi_response_target.h"
-						>
-					</File>
-					<File
-						RelativePath="..\..\..\..\src\org\xtreemfs\client\osd_proxy_mux.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\..\..\..\src\org\xtreemfs\client\path.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\..\..\..\src\org\xtreemfs\client\proxy.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\..\..\..\src\org\xtreemfs\client\proxy_exception_response.cpp"
-						>
-					</File>
-					<File
-						RelativePath="..\..\..\..\src\org\xtreemfs\client\volume.cpp"
-						>
-					</File>
-				</Filter>
-			</Filter>
-			<Filter
-				Name="yield"
-				>
-				<File
-					RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\arch.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\ipc.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\platform.cpp"
-					>
-				</File>
-			</Filter>
-		</Filter>
-	</Files>
-	<Globals>
-	</Globals>
+    ProjectType="Visual C++"
+    Version="9.00"
+    Name="xtreemfs-client-lib"
+    ProjectGUID="{FFA69254-B8BC-4E99-B60C-F4B96511124A}"
+    RootNamespace="xtreemfs-client-lib"
+    Keyword="Win32Proj"
+    TargetFrameworkVersion="131072"
+    >
+    <Platforms>
+        <Platform
+            Name="Win32"
+        />
+    </Platforms>
+    <ToolFiles>
+    </ToolFiles>
+    <Configurations>
+        <Configuration
+            Name="Debug|Win32"
+            OutputDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
+            IntermediateDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
+            ConfigurationType="4"
+            InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+            CharacterSet="2"
+            >
+            <Tool
+                Name="VCCLCompilerTool"
+                Optimization="0"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include"
+                PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
+                BasicRuntimeChecks="3"
+                RuntimeLibrary="3"
+                RuntimeTypeInfo="false"
+                UsePrecompiledHeader="0"
+                WarningLevel="4"
+                DebugInformationFormat="4"
+                ProgramDataBaseFileName="$(TargetDir)$(TargetName).pdb"
+                CompileAs="0"
+            />
+            <Tool
+                Name="VCLibrarianTool"
+                UseLibraryDependencyInputs="true"
+                AdditionalDependencies="libeay32.lib ssleay32.lib"
+                AdditionalLibraryDirectories=""
+                OutputFile="$(ProjectDir)..\..\..\..\lib\xtreemfs-client_d.lib"
+                IgnoreAllDefaultLibraries="false"
+                GenerateDebugInformation="true"
+                RandomizedBaseAddress="1"
+                DataExecutionPrevention="0"
+            />
+            <Tool
+                Name="VCLinkerTool"
+                UseLibraryDependencyInputs="true"
+                AdditionalDependencies="libeay32.lib ssleay32.lib"
+                AdditionalLibraryDirectories=""
+                OutputFile="$(ProjectDir)..\..\..\..\lib\xtreemfs-client_d.lib"
+                IgnoreAllDefaultLibraries="false"
+                IgnoreDefaultLibraryNames="LIBc.lib;libcmt.lib"
+                GenerateDebugInformation="true"
+                RandomizedBaseAddress="2"
+                DataExecutionPrevention="0"
+                SubSystem="0"
+            />
+        </Configuration>
+        <Configuration
+            Name="Release|Win32"
+            OutputDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
+            IntermediateDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
+            ConfigurationType="4"
+            InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+            CharacterSet="2"
+            >
+            <Tool
+                Name="VCCLCompilerTool"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include"
+                PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
+                StringPooling="false"
+                RuntimeLibrary="2"
+                EnableFunctionLevelLinking="true"
+                RuntimeTypeInfo="false"
+                UsePrecompiledHeader="0"
+                WarningLevel="3"
+                DebugInformationFormat="0"
+            />
+            <Tool
+                Name="VCLibrarianTool"
+                UseLibraryDependencyInputs="true"
+                AdditionalDependencies="libeay32.lib ssleay32.lib"
+                AdditionalLibraryDirectories=""
+                OutputFile="$(ProjectDir)..\..\..\..\lib\xtreemfs-client.lib"
+                IgnoreAllDefaultLibraries="false"
+                GenerateDebugInformation="false"
+                RandomizedBaseAddress="1"
+                DataExecutionPrevention="0"
+            />
+            <Tool
+                Name="VCLinkerTool"
+                UseLibraryDependencyInputs="true"
+                AdditionalDependencies="libeay32.lib ssleay32.lib"
+                AdditionalLibraryDirectories=""
+                OutputFile="$(ProjectDir)..\..\..\..\lib\xtreemfs-client.lib"
+                IgnoreAllDefaultLibraries="false"
+                GenerateDebugInformation="false"
+                RandomizedBaseAddress="1"
+                DataExecutionPrevention="0"
+                SubSystem="0"
+            />
+        </Configuration>
+        <Configuration
+            Name="Release|Win32"
+            OutputDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
+            IntermediateDirectory="$(ProjectDir)build\$(ConfigurationName)\$(ProjectName)"
+            ConfigurationType="4"
+            InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+            CharacterSet="2"
+            >
+            <Tool
+                Name="VCCLCompilerTool"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include"
+                PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
+                StringPooling="false"
+                RuntimeLibrary="2"
+                EnableFunctionLevelLinking="true"
+                RuntimeTypeInfo="false"
+                UsePrecompiledHeader="0"
+                WarningLevel="3"
+                DebugInformationFormat="0"
+            />
+            <Tool
+                Name="VCLibrarianTool"
+                UseLibraryDependencyInputs="true"
+                AdditionalDependencies="libeay32.lib ssleay32.lib"
+                AdditionalLibraryDirectories=""
+                OutputFile="$(ProjectDir)..\..\..\..\lib\xtreemfs-client.lib"
+                IgnoreAllDefaultLibraries="false"
+                GenerateDebugInformation="false"
+                RandomizedBaseAddress="1"
+                DataExecutionPrevention="0"
+            />
+            <Tool
+                Name="VCLinkerTool"
+                UseLibraryDependencyInputs="true"
+                AdditionalDependencies="libeay32.lib ssleay32.lib"
+                AdditionalLibraryDirectories=""
+                OutputFile="$(ProjectDir)..\..\..\..\lib\xtreemfs-client.lib"
+                IgnoreAllDefaultLibraries="false"
+                GenerateDebugInformation="false"
+                RandomizedBaseAddress="1"
+                DataExecutionPrevention="0"
+                SubSystem="0"
+            />
+        </Configuration>
+    </Configurations>
+    <References>
+    </References>
+    <Files>
+                <Filter
+            Name="Header Files"
+            Filter="h;hpp;hxx;hm;inl;inc;xsd"
+            UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
+            >
+            <Filter Name="client">
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\client\dir_proxy.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\client\file.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\client\mrc_proxy.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\client\osd_proxy.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\client\osd_proxy_mux.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\client\path.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\client\policy.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\client\proxy.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\client\proxy_exception_response.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\client\volume.h"
+    >
+</File>
+</Filter>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\client.h"
+    >
+</File>
+<Filter Name="interfaces">
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\interfaces\constants.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\interfaces\dir_interface.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\interfaces\mrc_interface.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\interfaces\mrc_osd_types.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\interfaces\osd_interface.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\interfaces\types.h"
+    >
+</File>
+</Filter>
+<Filter Name="interfaces">
+<File
+    RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\constants.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\dir_interface.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\mrc_interface.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\mrc_osd_types.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\osd_interface.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\..\..\..\interfaces\org\xtreemfs\interfaces\types.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+</Filter>
+
+        </Filter>
+
+        <Filter
+            Name="Source Files"
+            Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
+            UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
+            >
+            <Filter Name="xtreemfs">
+<Filter Name="client">
+<File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\main.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\multi_response_target.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\dir_proxy.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\file.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\mrc_proxy.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\multi_response_target.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\osd_proxy_mux.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\path.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\proxy.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\proxy_exception_response.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\volume.cpp"
+    >
+</File>
+</Filter>
+</Filter>
+<Filter Name="yieldfs">
+<Filter Name="include">
+<File
+    RelativePath="..\..\..\..\share\yieldfs\include\yieldfs.h"
+    >
+</File>
+</Filter>
+<Filter Name="share">
+<Filter Name="yield">
+<Filter Name="include">
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\atomic.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\banned.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\msstdint.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\SimpleOpt.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\uriparser.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yajl.h"
+    >
+</File>
+<Filter Name="yield">
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield\arch.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield\base.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield\ipc.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield\main.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield\platform.h"
+    >
+</File>
+</Filter>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yunit.h"
+    >
+</File>
+</Filter>
+<Filter Name="src">
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\uriparser.c"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yajl.c"
+    >
+</File>
+<Filter Name="yield">
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\arch.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\base.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\ipc.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\platform.cpp"
+    >
+</File>
+</Filter>
+</Filter>
+</Filter>
+</Filter>
+<Filter Name="src">
+<File
+    RelativePath="..\..\..\..\share\yieldfs\src\yieldfs.cpp"
+    >
+</File>
+</Filter>
+</Filter>
+
+        </Filter>
+    </Files>
+    <Globals>
+    </Globals>
 </VisualStudioProject>
