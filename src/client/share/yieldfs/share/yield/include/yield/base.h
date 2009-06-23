@@ -4,6 +4,13 @@
 #ifndef _YIELD_BASE_H_
 #define _YIELD_BASE_H_
 
+#define __STDC_LIMIT_MACROS
+#ifdef _WIN32
+#include "msstdint.h"
+#else
+#include <stdint.h>
+#endif
+
 #include <cstring>
 #include <ostream>
 #include <string>
@@ -14,7 +21,6 @@
 #endif
 
 #include "atomic.h"
-
 
 #ifdef __sun
 #define YIELD yield_

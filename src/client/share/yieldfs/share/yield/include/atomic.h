@@ -4,7 +4,6 @@
 #ifndef _ATOMIC_H_
 #define _ATOMIC_H_
 
-#define __STDC_LIMIT_MACROS
 #ifdef _WIN32
 #include "msstdint.h"
 #else

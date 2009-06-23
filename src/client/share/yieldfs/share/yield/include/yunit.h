@@ -4,6 +4,7 @@
 #ifndef _YUNIT_H_
 #define _YUNIT_H_
 
+#include <cstdio>
 #include <iostream>
 
 
