@@ -21,7 +21,7 @@ namespace org
       enum StripingPolicyType { STRIPING_POLICY_RAID0 = 0 };
 
 
-      class NewFileSize : public YIELD::Struct
+      class NewFileSize : public ::YIELD::Struct
       {
       public:
         NewFileSize() : size_in_bytes( 0 ), truncate_epoch( 0 ) { }
@@ -39,15 +39,15 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( NewFileSize, 1011 );
 
         // YIELD::Struct
-        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeUint64( YIELD::Declaration( "size_in_bytes" ), size_in_bytes ); marshaller.writeUint32( YIELD::Declaration( "truncate_epoch" ), truncate_epoch ); }
-        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { size_in_bytes = unmarshaller.readUint64( YIELD::Declaration( "size_in_bytes" ) ); truncate_epoch = unmarshaller.readUint32( YIELD::Declaration( "truncate_epoch" ) ); }
+        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeUint64( ::YIELD::Declaration( "size_in_bytes" ), size_in_bytes ); marshaller.writeUint32( ::YIELD::Declaration( "truncate_epoch" ), truncate_epoch ); }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { size_in_bytes = unmarshaller.readUint64( ::YIELD::Declaration( "size_in_bytes" ) ); truncate_epoch = unmarshaller.readUint32( ::YIELD::Declaration( "truncate_epoch" ) ); }
 
       protected:
         uint64_t size_in_bytes;
         uint32_t truncate_epoch;
       };
 
-      class NewFileSizeSet : public YIELD::Sequence, public std::vector<org::xtreemfs::interfaces::NewFileSize>
+      class NewFileSizeSet : public ::YIELD::Sequence, public std::vector<org::xtreemfs::interfaces::NewFileSize>
       {
       public:
         NewFileSizeSet() { }
@@ -60,11 +60,11 @@ namespace org
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }
-        void marshal( YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( YIELD::Declaration( "value" ), ( *this )[value_i] ); } }
-        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::NewFileSize value; unmarshaller.readStruct( YIELD::Declaration( "value" ), &value ); push_back( value ); }
+        void marshal( ::YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( ::YIELD::Declaration( "value" ), ( *this )[value_i] ); } }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::NewFileSize value; unmarshaller.readStruct( ::YIELD::Declaration( "value" ), &value ); push_back( value ); }
       };
 
-      class OSDtoMRCData : public YIELD::Struct
+      class OSDtoMRCData : public ::YIELD::Struct
       {
       public:
         OSDtoMRCData() : caching_policy( 0 ) { }
@@ -84,15 +84,15 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( OSDtoMRCData, 1013 );
 
         // YIELD::Struct
-        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeUint8( YIELD::Declaration( "caching_policy" ), caching_policy ); marshaller.writeString( YIELD::Declaration( "data" ), data ); }
-        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { caching_policy = unmarshaller.readUint8( YIELD::Declaration( "caching_policy" ) ); unmarshaller.readString( YIELD::Declaration( "data" ), data ); }
+        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeUint8( ::YIELD::Declaration( "caching_policy" ), caching_policy ); marshaller.writeString( ::YIELD::Declaration( "data" ), data ); }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { caching_policy = unmarshaller.readUint8( ::YIELD::Declaration( "caching_policy" ) ); unmarshaller.readString( ::YIELD::Declaration( "data" ), data ); }
 
       protected:
         uint8_t caching_policy;
         std::string data;
       };
 
-      class OSDtoMRCDataSet : public YIELD::Sequence, public std::vector<org::xtreemfs::interfaces::OSDtoMRCData>
+      class OSDtoMRCDataSet : public ::YIELD::Sequence, public std::vector<org::xtreemfs::interfaces::OSDtoMRCData>
       {
       public:
         OSDtoMRCDataSet() { }
@@ -105,11 +105,11 @@ namespace org
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }
-        void marshal( YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( YIELD::Declaration( "value" ), ( *this )[value_i] ); } }
-        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::OSDtoMRCData value; unmarshaller.readStruct( YIELD::Declaration( "value" ), &value ); push_back( value ); }
+        void marshal( ::YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( ::YIELD::Declaration( "value" ), ( *this )[value_i] ); } }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::OSDtoMRCData value; unmarshaller.readStruct( ::YIELD::Declaration( "value" ), &value ); push_back( value ); }
       };
 
-      class OSDWriteResponse : public YIELD::Struct
+      class OSDWriteResponse : public ::YIELD::Struct
       {
       public:
         OSDWriteResponse() { }
@@ -127,15 +127,15 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( OSDWriteResponse, 1017 );
 
         // YIELD::Struct
-        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( YIELD::Declaration( "new_file_size" ), new_file_size ); marshaller.writeSequence( YIELD::Declaration( "opaque_data" ), opaque_data ); }
-        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( YIELD::Declaration( "new_file_size" ), &new_file_size ); unmarshaller.readSequence( YIELD::Declaration( "opaque_data" ), &opaque_data ); }
+        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( ::YIELD::Declaration( "new_file_size" ), new_file_size ); marshaller.writeSequence( ::YIELD::Declaration( "opaque_data" ), opaque_data ); }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( ::YIELD::Declaration( "new_file_size" ), &new_file_size ); unmarshaller.readSequence( ::YIELD::Declaration( "opaque_data" ), &opaque_data ); }
 
       protected:
         org::xtreemfs::interfaces::NewFileSizeSet new_file_size;
         org::xtreemfs::interfaces::OSDtoMRCDataSet opaque_data;
       };
 
-      class StripingPolicy : public YIELD::Struct
+      class StripingPolicy : public ::YIELD::Struct
       {
       public:
         StripingPolicy() : type( STRIPING_POLICY_RAID0 ), stripe_size( 0 ), width( 0 ) { }
@@ -155,8 +155,8 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( StripingPolicy, 1019 );
 
         // YIELD::Struct
-        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeInt32( YIELD::Declaration( "type" ), static_cast<int32_t>( type ) ); marshaller.writeUint32( YIELD::Declaration( "stripe_size" ), stripe_size ); marshaller.writeUint32( YIELD::Declaration( "width" ), width ); }
-        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { type = ( org::xtreemfs::interfaces::StripingPolicyType )unmarshaller.readInt32( YIELD::Declaration( "type" ) ); stripe_size = unmarshaller.readUint32( YIELD::Declaration( "stripe_size" ) ); width = unmarshaller.readUint32( YIELD::Declaration( "width" ) ); }
+        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeInt32( ::YIELD::Declaration( "type" ), static_cast<int32_t>( type ) ); marshaller.writeUint32( ::YIELD::Declaration( "stripe_size" ), stripe_size ); marshaller.writeUint32( ::YIELD::Declaration( "width" ), width ); }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { type = ( org::xtreemfs::interfaces::StripingPolicyType )unmarshaller.readInt32( ::YIELD::Declaration( "type" ) ); stripe_size = unmarshaller.readUint32( ::YIELD::Declaration( "stripe_size" ) ); width = unmarshaller.readUint32( ::YIELD::Declaration( "width" ) ); }
 
       protected:
         org::xtreemfs::interfaces::StripingPolicyType type;
@@ -164,7 +164,7 @@ namespace org
         uint32_t width;
       };
 
-      class Replica : public YIELD::Struct
+      class Replica : public ::YIELD::Struct
       {
       public:
         Replica() : replication_flags( 0 ) { }
@@ -184,8 +184,8 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( Replica, 1020 );
 
         // YIELD::Struct
-        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( YIELD::Declaration( "striping_policy" ), striping_policy ); marshaller.writeUint32( YIELD::Declaration( "replication_flags" ), replication_flags ); marshaller.writeSequence( YIELD::Declaration( "osd_uuids" ), osd_uuids ); }
-        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Declaration( "striping_policy" ), &striping_policy ); replication_flags = unmarshaller.readUint32( YIELD::Declaration( "replication_flags" ) ); unmarshaller.readSequence( YIELD::Declaration( "osd_uuids" ), &osd_uuids ); }
+        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( ::YIELD::Declaration( "striping_policy" ), striping_policy ); marshaller.writeUint32( ::YIELD::Declaration( "replication_flags" ), replication_flags ); marshaller.writeSequence( ::YIELD::Declaration( "osd_uuids" ), osd_uuids ); }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( ::YIELD::Declaration( "striping_policy" ), &striping_policy ); replication_flags = unmarshaller.readUint32( ::YIELD::Declaration( "replication_flags" ) ); unmarshaller.readSequence( ::YIELD::Declaration( "osd_uuids" ), &osd_uuids ); }
 
       protected:
         org::xtreemfs::interfaces::StripingPolicy striping_policy;
@@ -193,7 +193,7 @@ namespace org
         org::xtreemfs::interfaces::StringSet osd_uuids;
       };
 
-      class ReplicaSet : public YIELD::Sequence, public std::vector<org::xtreemfs::interfaces::Replica>
+      class ReplicaSet : public ::YIELD::Sequence, public std::vector<org::xtreemfs::interfaces::Replica>
       {
       public:
         ReplicaSet() { }
@@ -206,11 +206,11 @@ namespace org
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }
-        void marshal( YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( YIELD::Declaration( "value" ), ( *this )[value_i] ); } }
-        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::Replica value; unmarshaller.readStruct( YIELD::Declaration( "value" ), &value ); push_back( value ); }
+        void marshal( ::YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( ::YIELD::Declaration( "value" ), ( *this )[value_i] ); } }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::Replica value; unmarshaller.readStruct( ::YIELD::Declaration( "value" ), &value ); push_back( value ); }
       };
 
-      class XCap : public YIELD::Struct
+      class XCap : public ::YIELD::Struct
       {
       public:
         XCap() : access_mode( 0 ), expires_s( 0 ), truncate_epoch( 0 ) { }
@@ -240,8 +240,8 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( XCap, 1022 );
 
         // YIELD::Struct
-        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeString( YIELD::Declaration( "file_id" ), file_id ); marshaller.writeUint32( YIELD::Declaration( "access_mode" ), access_mode ); marshaller.writeUint64( YIELD::Declaration( "expires_s" ), expires_s ); marshaller.writeString( YIELD::Declaration( "client_identity" ), client_identity ); marshaller.writeUint32( YIELD::Declaration( "truncate_epoch" ), truncate_epoch ); marshaller.writeString( YIELD::Declaration( "server_signature" ), server_signature ); }
-        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( YIELD::Declaration( "file_id" ), file_id ); access_mode = unmarshaller.readUint32( YIELD::Declaration( "access_mode" ) ); expires_s = unmarshaller.readUint64( YIELD::Declaration( "expires_s" ) ); unmarshaller.readString( YIELD::Declaration( "client_identity" ), client_identity ); truncate_epoch = unmarshaller.readUint32( YIELD::Declaration( "truncate_epoch" ) ); unmarshaller.readString( YIELD::Declaration( "server_signature" ), server_signature ); }
+        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( ::YIELD::Declaration( "file_id" ), file_id ); marshaller.writeUint32( ::YIELD::Declaration( "access_mode" ), access_mode ); marshaller.writeUint64( ::YIELD::Declaration( "expires_s" ), expires_s ); marshaller.writeString( ::YIELD::Declaration( "client_identity" ), client_identity ); marshaller.writeUint32( ::YIELD::Declaration( "truncate_epoch" ), truncate_epoch ); marshaller.writeString( ::YIELD::Declaration( "server_signature" ), server_signature ); }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( ::YIELD::Declaration( "file_id" ), file_id ); access_mode = unmarshaller.readUint32( ::YIELD::Declaration( "access_mode" ) ); expires_s = unmarshaller.readUint64( ::YIELD::Declaration( "expires_s" ) ); unmarshaller.readString( ::YIELD::Declaration( "client_identity" ), client_identity ); truncate_epoch = unmarshaller.readUint32( ::YIELD::Declaration( "truncate_epoch" ) ); unmarshaller.readString( ::YIELD::Declaration( "server_signature" ), server_signature ); }
 
       protected:
         std::string file_id;
@@ -252,7 +252,7 @@ namespace org
         std::string server_signature;
       };
 
-      class XLocSet : public YIELD::Struct
+      class XLocSet : public ::YIELD::Struct
       {
       public:
         XLocSet() : version( 0 ), read_only_file_size( 0 ) { }
@@ -276,8 +276,8 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( XLocSet, 1023 );
 
         // YIELD::Struct
-        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( YIELD::Declaration( "replicas" ), replicas ); marshaller.writeUint32( YIELD::Declaration( "version" ), version ); marshaller.writeString( YIELD::Declaration( "repUpdatePolicy" ), repUpdatePolicy ); marshaller.writeUint64( YIELD::Declaration( "read_only_file_size" ), read_only_file_size ); }
-        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( YIELD::Declaration( "replicas" ), &replicas ); version = unmarshaller.readUint32( YIELD::Declaration( "version" ) ); unmarshaller.readString( YIELD::Declaration( "repUpdatePolicy" ), repUpdatePolicy ); read_only_file_size = unmarshaller.readUint64( YIELD::Declaration( "read_only_file_size" ) ); }
+        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( ::YIELD::Declaration( "replicas" ), replicas ); marshaller.writeUint32( ::YIELD::Declaration( "version" ), version ); marshaller.writeString( ::YIELD::Declaration( "repUpdatePolicy" ), repUpdatePolicy ); marshaller.writeUint64( ::YIELD::Declaration( "read_only_file_size" ), read_only_file_size ); }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( ::YIELD::Declaration( "replicas" ), &replicas ); version = unmarshaller.readUint32( ::YIELD::Declaration( "version" ) ); unmarshaller.readString( ::YIELD::Declaration( "repUpdatePolicy" ), repUpdatePolicy ); read_only_file_size = unmarshaller.readUint64( ::YIELD::Declaration( "read_only_file_size" ) ); }
 
       protected:
         org::xtreemfs::interfaces::ReplicaSet replicas;
@@ -286,7 +286,7 @@ namespace org
         uint64_t read_only_file_size;
       };
 
-      class FileCredentials : public YIELD::Struct
+      class FileCredentials : public ::YIELD::Struct
       {
       public:
         FileCredentials() { }
@@ -304,15 +304,15 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( FileCredentials, 1024 );
 
         // YIELD::Struct
-        void marshal( YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( YIELD::Declaration( "xlocs" ), xlocs ); marshaller.writeStruct( YIELD::Declaration( "xcap" ), xcap ); }
-        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( YIELD::Declaration( "xlocs" ), &xlocs ); unmarshaller.readStruct( YIELD::Declaration( "xcap" ), &xcap ); }
+        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( ::YIELD::Declaration( "xlocs" ), xlocs ); marshaller.writeStruct( ::YIELD::Declaration( "xcap" ), xcap ); }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( ::YIELD::Declaration( "xlocs" ), &xlocs ); unmarshaller.readStruct( ::YIELD::Declaration( "xcap" ), &xcap ); }
 
       protected:
         org::xtreemfs::interfaces::XLocSet xlocs;
         org::xtreemfs::interfaces::XCap xcap;
       };
 
-      class FileCredentialsSet : public YIELD::Sequence, public std::vector<org::xtreemfs::interfaces::FileCredentials>
+      class FileCredentialsSet : public ::YIELD::Sequence, public std::vector<org::xtreemfs::interfaces::FileCredentials>
       {
       public:
         FileCredentialsSet() { }
@@ -325,8 +325,8 @@ namespace org
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }
-        void marshal( YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( YIELD::Declaration( "value" ), ( *this )[value_i] ); } }
-        void unmarshal( YIELD::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::FileCredentials value; unmarshaller.readStruct( YIELD::Declaration( "value" ), &value ); push_back( value ); }
+        void marshal( ::YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( ::YIELD::Declaration( "value" ), ( *this )[value_i] ); } }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::FileCredentials value; unmarshaller.readStruct( ::YIELD::Declaration( "value" ), &value ); push_back( value ); }
       };
 
 

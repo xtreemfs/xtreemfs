@@ -623,6 +623,7 @@ namespace YIELD
       {
         if ( stages[stage_i] == NULL )
         {
+          stage->get_event_handler()->handleEvent( *( new StageStartupEvent( stage ) ) );
           stages[stage_i] = stage.release();
           return;
         }

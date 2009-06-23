@@ -981,6 +981,40 @@ void Mutex::release()
 }
 
 
+// page_aligned_buffer.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <stdlib.h>
+#endif
+size_t PageAlignedBuffer::page_size = 0;
+PageAlignedBuffer::PageAlignedBuffer( size_t capacity )
+  : FixedBuffer( capacity )
+{
+  if ( page_size == 0 )
+  {
+#ifdef _WIN32
+    SYSTEM_INFO system_info;
+    GetSystemInfo( &system_info );
+    page_size = system_info.dwPageSize;
+#else
+    page_size = sysconf( _SC_PAGESIZE );
+#endif
+  }
+#ifdef _WIN32
+  iov.iov_base = static_cast<uint8_t*>( _aligned_malloc( capacity, page_size ) );
+#else
+  posix_memalign( &iov.iov_base, page_size, capacity );
+#endif
+}
+PageAlignedBuffer::~PageAlignedBuffer()
+{
+  free( iov.iov_base );
+}
+
+
 // path.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -2490,4 +2524,186 @@ Path Volume::volname( const Path& path )
 #ifdef _WIN32
 #pragma warning( pop )
 #endif
+
+
+// xdr_marshaller.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+void XDRMarshaller::writeDeclaration( const YIELD::Declaration& decl )
+{
+  if ( !in_map_stack.empty() && in_map_stack.back() && decl.get_identifier() )
+    YIELD::Marshaller::writeString( YIELD::Declaration(), decl.get_identifier() );
+}
+void XDRMarshaller::writeBoolean( const YIELD::Declaration& decl, bool value )
+{
+  writeInt32( decl, value ? 1 : 0 );
+}
+void XDRMarshaller::writeBuffer( const YIELD::Declaration& decl, YIELD::auto_Buffer value )
+{
+  size_t value_size = 0;
+  YIELD::auto_Buffer next_buffer = value;
+  while ( next_buffer != NULL )
+  {
+    value_size += next_buffer->size();
+    next_buffer = next_buffer->get_next_buffer();
+  }
+  writeInt32( decl, static_cast<int32_t>( value_size ) );
+  BufferedMarshaller::write( value );
+  if ( value_size % 4 != 0 )
+  {
+    static char zeros[] = { 0, 0, 0 };
+    write( static_cast<const void*>( zeros ), 4 - ( value_size % 4 ) );
+  }
+}
+void XDRMarshaller::writeDouble( const YIELD::Declaration& decl, double value )
+{
+  writeDeclaration( decl );
+  write( &value, sizeof( value ) );
+}
+void XDRMarshaller::writeFloat( const YIELD::Declaration& decl, float value )
+{
+  writeDeclaration( decl );
+  write( &value, sizeof( value ) );
+}
+void XDRMarshaller::writeInt32( const YIELD::Declaration& decl, int32_t value )
+{
+  writeDeclaration( decl );
+#ifdef __MACH__
+  value = htonl( value );
+#else
+  value = Machine::htonl( value );
+#endif
+  write( &value, sizeof( value ) );
+}
+void XDRMarshaller::writeInt64( const YIELD::Declaration& decl, int64_t value )
+{
+  writeDeclaration( decl );
+  value = Machine::htonll( value );
+  write( &value, sizeof( value ) );
+}
+void XDRMarshaller::writeMap( const YIELD::Declaration& decl, const YIELD::Map& value )
+{
+  writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
+  in_map_stack.push_back( true );
+  value.marshal( *this );
+  in_map_stack.pop_back();
+}
+void XDRMarshaller::writeSequence( const YIELD::Declaration& decl, const YIELD::Sequence& value )
+{
+  writeInt32( decl, static_cast<int32_t>( value.get_size() ) );
+  value.marshal( *this );
+}
+void XDRMarshaller::writeString( const YIELD::Declaration& decl, const char* value, size_t value_len )
+{
+  writeInt32( decl, static_cast<int32_t>( value_len ) );
+  write( static_cast<const void*>( value ), value_len );
+  if ( value_len % 4 != 0 )
+  {
+    static char zeros[] = { 0, 0, 0 };
+    write( static_cast<const void*>( zeros ), 4 - ( value_len % 4 ) );
+  }
+}
+void XDRMarshaller::writeStruct( const YIELD::Declaration& decl, const YIELD::Struct& value )
+{
+  writeDeclaration( decl );
+  value.marshal( *this );
+}
+
+
+// xdr_unmarshaller.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+bool XDRUnmarshaller::readBoolean( const YIELD::Declaration& decl )
+{
+  return readInt32( decl ) == 1;
+}
+YIELD::auto_Buffer XDRUnmarshaller::readBuffer( const YIELD::Declaration& decl )
+{
+  size_t size = readInt32( decl );
+  //size_t size_mod_4 = size % 4;
+  //if ( size_mod_4 == 0 )
+    return BufferedUnmarshaller::readBuffer( size );
+  //else
+  //{
+  //  auto_Buffer buffer = BufferedUnmarshaller::readBuffer( size );
+  //  char zeros[4];
+  //  readBytes( zeros, size_mod_4 );
+  //  return buffer;
+  //}
+}
+double XDRUnmarshaller::readDouble( const YIELD::Declaration& )
+{
+  double value;
+  readBytes( &value, sizeof( value ) );
+  return value;
+}
+float XDRUnmarshaller::readFloat( const YIELD::Declaration& )
+{
+  float value;
+  readBytes( &value, sizeof( value ) );
+  return value;
+}
+int32_t XDRUnmarshaller::readInt32( const YIELD::Declaration& )
+{
+  int32_t value;
+  readBytes( &value, sizeof( value ) );
+#ifdef __MACH__
+  return ntohl( value );
+#else
+  return Machine::ntohl( value );
+#endif
+}
+int64_t XDRUnmarshaller::readInt64( const YIELD::Declaration& )
+{
+  int64_t value;
+  readBytes( &value, sizeof( value ) );
+  return Machine::ntohll( value );
+}
+YIELD::Map* XDRUnmarshaller::readMap( const YIELD::Declaration& decl, YIELD::Map* value )
+{
+  if ( value )
+  {
+    size_t size = readInt32( decl );
+    for ( size_t i = 0; i < size; i++ )
+      value->unmarshal( *this );
+  }
+  return value;
+}
+YIELD::Sequence* XDRUnmarshaller::readSequence( const YIELD::Declaration& decl, YIELD::Sequence* value )
+{
+  if ( value )
+  {
+    size_t size = readInt32( decl );
+    if ( size <= UINT16_MAX )
+    {
+      for ( size_t i = 0; i < size; i++ )
+        value->unmarshal( *this );
+    }
+  }
+  return value;
+}
+void XDRUnmarshaller::readString( const YIELD::Declaration& decl, std::string& str )
+{
+  size_t str_len = readInt32( decl );
+  if ( str_len < UINT16_MAX )
+  {
+    if ( str_len != 0 )
+    {
+      size_t padded_str_len = str_len % 4;
+      if ( padded_str_len == 0 )
+        padded_str_len = str_len;
+      else
+        padded_str_len = str_len + 4 - padded_str_len;
+      str.resize( padded_str_len );
+      readBytes( const_cast<char*>( str.c_str() ), padded_str_len );
+      str.resize( str_len );
+    }
+  }
+}
+YIELD::Struct* XDRUnmarshaller::readStruct( const YIELD::Declaration&, YIELD::Struct* value )
+{
+  if ( value )
+    value->unmarshal( *this );
+  return value;
+}
 

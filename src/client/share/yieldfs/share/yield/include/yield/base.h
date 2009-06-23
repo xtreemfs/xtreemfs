@@ -31,7 +31,7 @@
 // #define YIELD_DEBUG_REFERENCE_COUNTING 1
 
 #define YIELD_OBJECT_PROTOTYPES( type_name, tag ) \
-    type_name & incRef() { return YIELD::Object::incRef( *this ); } \
+    type_name & incRef() { return ::YIELD::Object::incRef( *this ); } \
     const static uint32_t __tag = static_cast<uint32_t>( tag ); \
     virtual uint32_t get_tag() const { return __tag; } \
     const char* get_type_name() const { return #type_name; }
@@ -235,17 +235,6 @@ namespace YIELD
   {
   public:
     virtual size_t get_size() const = 0;
-  };
-
-
-  class PageAlignedBuffer : public FixedBuffer
-  {
-  public:
-    PageAlignedBuffer( size_t capacity );
-    virtual ~PageAlignedBuffer();
-
-  private:
-    static size_t page_size;
   };
 
 
@@ -522,39 +511,6 @@ namespace YIELD
 
   private:
     YIELD::auto_Buffer source_buffer;
-  };
-
-
-  class XDRMarshaller : public BufferedMarshaller
-  {
-  public:
-    // Marshaller
-    YIDL_MARSHALLER_PROTOTYPES;
-    void writeBuffer( const Declaration& decl, auto_Buffer value );
-    void writeFloat( const Declaration& decl, float value );
-    void writeInt32( const Declaration& decl, int32_t value );
-
-  protected:
-    inline void write( const void* buffer, size_t buffer_len ) { BufferedMarshaller::write( buffer, buffer_len ); }
-    virtual void writeDeclaration( const Declaration& decl );
-
-  private:
-    std::vector<bool> in_map_stack;
-  };
-
-
-  class XDRUnmarshaller : public BufferedUnmarshaller
-  {
-  public:
-    XDRUnmarshaller( auto_Buffer source_buffer )
-        : BufferedUnmarshaller( source_buffer )
-    { }
-
-    // Unmarshaller
-    YIDL_UNMARSHALLER_PROTOTYPES;
-    auto_Buffer readBuffer( const Declaration& decl );
-    float readFloat( const Declaration& decl );
-    int32_t readInt32( const Declaration& decl );
   };
 };
 
