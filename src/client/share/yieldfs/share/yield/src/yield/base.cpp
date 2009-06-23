@@ -450,16 +450,16 @@ bool XDRUnmarshaller::readBoolean( const YIELD::Declaration& decl )
 YIELD::auto_Buffer XDRUnmarshaller::readBuffer( const YIELD::Declaration& decl )
 {
   size_t size = readInt32( decl );
-  size_t size_mod_4 = size % 4;
-  if ( size_mod_4 == 0 )
+//  size_t size_mod_4 = size % 4;
+//  if ( size_mod_4 == 0 )
     return BufferedUnmarshaller::readBuffer( size );
-  else
-  {
-    auto_Buffer buffer = BufferedUnmarshaller::readBuffer( size );
-    char zeros[4];
-    readBytes( zeros, size_mod_4 );
-    return buffer;
-  }
+//  else
+//  {
+//    auto_Buffer buffer = BufferedUnmarshaller::readBuffer( size );
+//    char zeros[4];
+//    readBytes( zeros, size_mod_4 );
+//    return buffer;
+//  }
 }
 double XDRUnmarshaller::readDouble( const YIELD::Declaration& )
 {
