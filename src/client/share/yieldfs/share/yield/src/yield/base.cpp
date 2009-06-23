@@ -1,4 +1,4 @@
-// Revision: 1574
+// Revision: 1575
 
 #include "yield/base.h"
 using namespace YIELD;
@@ -450,10 +450,16 @@ bool XDRUnmarshaller::readBoolean( const YIELD::Declaration& decl )
 YIELD::auto_Buffer XDRUnmarshaller::readBuffer( const YIELD::Declaration& decl )
 {
   size_t size = readInt32( decl );
-  if ( size % 4 == 0 )
+  size_t size_mod_4 = size % 4;
+  if ( size_mod_4 == 0 )
     return BufferedUnmarshaller::readBuffer( size );
   else
-    return BufferedUnmarshaller::readBuffer( size + 4 - ( size % 4 ) );
+  {
+    auto_Buffer buffer = BufferedUnmarshaller::readBuffer( size );
+    char zeros[4];
+    readBytes( zeros, size_mod_4 );
+    return buffer;
+  }
 }
 double XDRUnmarshaller::readDouble( const YIELD::Declaration& )
 {
