@@ -202,7 +202,7 @@ def mount_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAUL
             log_file_path = os.path.join( "log", "client" + mount_dir_name + ".log" )
             stderr = stdout = open( log_file_path, "a" )
             xtfs_mount_process = Popen( xtfs_mount_args, shell=True, stdout=stdout, stderr=stderr )
-        
+
 
 def run_tests( mnt_dir_path=MNT_DIR_PATH_DEFAULT, num_osds=NUM_OSDS_DEFAULT, verbose=False ):
     if verbose:
@@ -276,6 +276,11 @@ def start_services( debug_level=DEBUG_LEVEL_DEFAULT, num_osds=NUM_OSDS_DEFAULT, 
         _start_service( "osd", str( osdnum ) )
 
     time.sleep( 1.0 ) # Wait for the servers to start
+    try :
+    	check_services( num_osds )
+    except:
+	    traceback.print_exc()
+	    clean( num_osds )
 
 def _start_service( service_name, service_num="" ):        
     args = [os.path.join( os.environ["JAVA_HOME"], "bin", "java" )] 
@@ -290,8 +295,27 @@ def _start_service( service_name, service_num="" ):
     p = Popen( args, shell=True, stdout=stdout, stderr=stderr )
     time.sleep( 1.0 )
     open( os.path.join( "run", service_name + service_num + ".run" ), "w+" ).write( str( p.pid ) )
-           
-           
+
+def check_services( num_osds=NUM_OSDS_DEFAULT ):
+    for osdnum in xrange( num_osds ):
+        _check_service( "osd", str( osdnum ) )
+    _check_service( "mrc" )
+    _check_service( "dir" ) # Stop the DIR last so the other services can deregister
+
+def _check_service( service_name, service_num="" ):
+    run_file_path = os.path.join( "run", service_name + service_num + ".run" )
+    if os.path.exists( run_file_path ):
+	service_pid = int( open( run_file_path ).read().strip() )
+	print "Checking", service_name.upper() + service_num, "service with PID", service_pid
+	try:
+		(procid, exitvalue) = os.waitpid(service_pid,os.WNOHANG)
+	except OSError, e:
+		print e
+		raise Exception, "service died after startup: " + service_name.upper() + service_num+". check service log for more information."
+	if (exitvalue != 0) and (procid != 0):
+		raise Exception, "service died after startup: ",service_name.upper() + service_num+". check service log for more information."
+
+	    
 def stop_services( num_osds=NUM_OSDS_DEFAULT ):
     for osdnum in xrange( num_osds ):
         _stop_service( "osd", str( osdnum ) )
