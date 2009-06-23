@@ -118,13 +118,14 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 
       org::xtreemfs::interfaces::ObjectData object_data;
       parent_volume->get_osd_proxy_mux()->read( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ), object_data );
+      YIELD::auto_Buffer data = object_data.get_data();
+      uint32_t zero_padding = object_data.get_zero_padding();
 
       log->getStream( YIELD::Log::LOG_INFO ) << 
-        "org::xtreemfs::client::File: read " << object_data.get_data()->size() <<
+        "org::xtreemfs::client::File: read " << data->size() <<
         " bytes from file " << file_credentials.get_xcap().get_file_id() <<
-        " with " << object_data.get_zero_padding() << " bytes of zero padding.";
+        " with " << zero_padding << " bytes of zero padding.";
 
-      YIELD::auto_Buffer data = object_data.get_data();
       if ( !data->empty() )
       {
         if ( data->size() <= RBUF_REMAINING )
@@ -135,13 +136,12 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         }
         else
         {
-          log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received data (size=" << data->size() << ") larger than available buffer space (" << RBUF_REMAINING << ")";
+          log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received data (data size=" << data->size() << ", zero_padding=" << zero_padding << ") larger than available buffer space (" << RBUF_REMAINING << ")";
           YIELD::ExceptionResponse::set_errno( EIO );
           return -1;
         }
       }
 
-      uint32_t zero_padding = object_data.get_zero_padding();
       if ( zero_padding > 0 )
       {
         if ( zero_padding <= RBUF_REMAINING )
@@ -152,7 +152,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         }
         else
         {
-          log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received zero_padding (" << zero_padding << ") larger than available buffer space (" << ( size - static_cast<size_t>( rbuf_p - rbuf_start ) );
+          log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received zero_padding (data size=" << data->size() << ", zero_padding=" << zero_padding << ") larger than available buffer space (" << RBUF_REMAINING << ")";
           YIELD::ExceptionResponse::set_errno( EIO );
           return -1;
         }
