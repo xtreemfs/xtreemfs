@@ -47,7 +47,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class ChangeOwnerOperation extends MRCOperation {
-        
+    
     public ChangeOwnerOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -97,13 +97,23 @@ public class ChangeOwnerOperation extends MRCOperation {
         }
         
         // check whether the owner may be changed
-        if (rqArgs.getUser_id().equals("")) {
+        
+        if (!rqArgs.getUser_id().equals("")) {
+            // if a UID is provided, restrict operation to root user
             if (!rq.getDetails().superUser)
                 throw new UserException(ErrNo.EACCES, "changing owners is restricted to superusers");
             
-        } else
+        } else {
+            // if only a GID is provided, restrict the op to a privileged user
+            // that is either root or in the group that is supposed to be
+            // assigned
             faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser,
                 rq.getDetails().groupIds);
+            if (!(rq.getDetails().superUser || rq.getDetails().groupIds.contains(rqArgs.getGroup_id())))
+                throw new UserException(
+                    ErrNo.EACCES,
+                    "changing owning groups is restricted to superusers or file owners who are in the group that is supposed to be assigned");
+        }
         
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
         
@@ -121,5 +131,4 @@ public class ChangeOwnerOperation extends MRCOperation {
         update.execute();
         
     }
-    
 }
