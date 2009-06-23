@@ -215,8 +215,6 @@ namespace YIELD
 {
   class Path;
   class Stat;
-  class TestResult;
-  class TestSuite;
 
 
 #ifdef _WIN32

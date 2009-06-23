@@ -96,7 +96,6 @@ namespace yunit
   class TestRunner
   {
   public:
-    TestRunner();
     virtual ~TestRunner() { }
 
     virtual int run( TestSuite& test_suite );
@@ -176,14 +175,14 @@ namespace yunit
   };
 
 
-  TestCase::TestCase( TestSuite& test_suite, const std::string& name )
+  inline TestCase::TestCase( TestSuite& test_suite, const std::string& name )
     : short_description( test_suite.get_name() + "_" + name )
   {
     test_suite.addTest( *this );
   }
 
 
-  int TestRunner::run( TestSuite& test_suite )
+  inline int TestRunner::run( TestSuite& test_suite )
   {
     TestResult* test_result = new TestResult;
     test_suite.run( *test_result );
