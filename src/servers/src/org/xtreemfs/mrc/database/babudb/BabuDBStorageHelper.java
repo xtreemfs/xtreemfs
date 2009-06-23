@@ -502,6 +502,7 @@ public class BabuDBStorageHelper {
                 .getLinkCount()) : new BufferBackedRCMetadata(0, fileName, tmp.getOwnerId(), tmp
                 .getOwningGroupId(), tmp.getId(), tmp.getPerms(), tmp.getW32Attrs(), tmp.getLinkCount(), tmp
                 .getEpoch(), tmp.getIssuedEpoch(), tmp.isReadOnly());
+        tmp2.setXLocList(tmp.getXLocList());
         valBufs[FileMetadata.RC_METADATA] = tmp2.getValue();
         byte[][] keyBufs = new byte[][] { null, tmp2.getKey() };
         
