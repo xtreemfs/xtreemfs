@@ -82,7 +82,7 @@ OSDProxyMux::OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::auto_Lo
   policy_dir_paths.push_back( "policies" );
   policy_dir_paths.push_back( "lib" );
   policy_dir_paths.push_back( YIELD::Path() );
-  YIELD::auto_Object<YIELD::Volume> volume = new YIELD::Volume;
+  YIELD::auto_Volume volume = new YIELD::Volume;
   for ( std::vector<YIELD::Path>::iterator policy_dir_path_i = policy_dir_paths.begin(); policy_dir_path_i != policy_dir_paths.end(); policy_dir_path_i++ )
   {
     std::vector<YIELD::Path> file_names;

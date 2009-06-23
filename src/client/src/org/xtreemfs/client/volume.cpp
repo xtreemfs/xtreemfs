@@ -166,7 +166,7 @@ bool Volume::mkdir( const YIELD::Path& path, mode_t mode )
   return false;
 }
 
-YIELD::auto_Object<YIELD::File> Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t mode, uint32_t attributes )
+YIELD::auto_File Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
   ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( open )
   {
@@ -393,7 +393,7 @@ bool Volume::truncate( const YIELD::Path& path, uint64_t new_size )
 {
   ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( truncate )
   {
-    YIELD::auto_Object<YIELD::File> file = YIELD::Volume::open( path, O_TRUNC );
+    YIELD::auto_File file = YIELD::Volume::open( path, O_TRUNC );
     if ( file != NULL )
       return file->truncate( new_size );
     else

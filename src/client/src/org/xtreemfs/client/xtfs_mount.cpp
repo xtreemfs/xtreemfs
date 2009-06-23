@@ -79,7 +79,7 @@ namespace org
             if ( cache_metadata )
               volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
 
-            YIELD::auto_Object<YIELD::Volume> volume = new Volume( *dir_uri, volume_name, volume_flags, get_log()
+            YIELD::auto_Volume volume = new Volume( *dir_uri, volume_name, volume_flags, get_log()
 #ifdef YIELD_HAVE_OPENSSL
                                                                    , get_ssl_context() 
 #endif
@@ -118,7 +118,7 @@ namespace org
               get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
             }
 
-            YIELD::auto_Object<YIELD::NamedPipe> parent_named_pipe; // Outside the if so it stays in scope (and open) while the client is running
+            YIELD::auto_NamedPipe parent_named_pipe; // Outside the if so it stays in scope (and open) while the client is running
             if ( !parent_named_pipe_path.empty() )
             {
               parent_named_pipe = YIELD::NamedPipe::open( parent_named_pipe_path );

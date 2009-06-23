@@ -1,4 +1,4 @@
-// Revision: 153
+// Revision: 154
 
 #include "yield.h"
 #include "yieldfs.h"
@@ -1179,7 +1179,7 @@ namespace yieldfs
   class TracingFile : public StackableFile
   {
   public:
-    TracingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log );
+    TracingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log );
 
     YIELD_FILE_PROTOTYPES;
 
@@ -1928,7 +1928,7 @@ YIELD::Path StackableVolume::volname( const YIELD::Path& path )
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 #include <iostream>
-TracingFile::TracingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log )
+TracingFile::TracingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log )
   : StackableFile( path, underlying_file, log )
 {
   if ( this->log == NULL )
@@ -2012,7 +2012,7 @@ namespace yieldfs
   class TracingVolumelistdirCallback : public YIELD::Volume::listdirCallback
   {
   public:
-    TracingVolumelistdirCallback( YIELD::Volume::listdirCallback& user_listdir_callback, YIELD::auto_Log )
+    TracingVolumelistdirCallback( YIELD::Volume::listdirCallback& user_listdir_callback, YIELD::auto_Log log )
       : user_listdir_callback( user_listdir_callback ), log( log )
     { }
 
@@ -2034,7 +2034,7 @@ namespace yieldfs
   class TracingVolumereaddirCallback : public YIELD::Volume::readdirCallback
   {
   public:
-    TracingVolumereaddirCallback( YIELD::Volume::readdirCallback& user_readdir_callback, YIELD::auto_Log )
+    TracingVolumereaddirCallback( YIELD::Volume::readdirCallback& user_readdir_callback, YIELD::auto_Log log )
       : user_readdir_callback( user_readdir_callback ), log( log )
     { }
 
@@ -2065,7 +2065,7 @@ TracingVolume::TracingVolume( YIELD::auto_Volume underlying_volume )
   log = YIELD::Log::open( std::cout, YIELD::Log::LOG_INFO );
 }
 
-TracingVolume::TracingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log )
+TracingVolume::TracingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log )
   : StackableVolume( underlying_volume, log )
 { }
 

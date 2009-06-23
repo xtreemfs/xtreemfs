@@ -38,7 +38,7 @@ Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, YIELD::a
   policy_dir_paths.push_back( "/lib/xtreemfs/policies/" );
 #endif
 
-  YIELD::auto_Object<YIELD::Volume> volume = new YIELD::Volume;
+  YIELD::auto_Volume volume = new YIELD::Volume;
   for ( std::vector<YIELD::Path>::iterator policy_dir_path_i = policy_dir_paths.begin(); policy_dir_path_i != policy_dir_paths.end(); policy_dir_path_i++ )
   {
     log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: scanning " << *policy_dir_path_i << " for policy shared libraries.";

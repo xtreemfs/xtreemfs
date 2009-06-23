@@ -31,7 +31,7 @@ namespace yieldfs
     YIELD_FILE_PROTOTYPES;
 
   protected:
-    StackableFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log )
+    StackableFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log )
       : path( path ), underlying_file( underlying_file ), log( log )
     { }
 
@@ -62,7 +62,7 @@ namespace yieldfs
       : underlying_volume( underlying_volume )
     { }
 
-    StackableVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log )
+    StackableVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log )
       : underlying_volume( underlying_volume ), log( log )
     { }
 
@@ -82,7 +82,7 @@ namespace yieldfs
       : StackableVolume( underlying_volume )
     { }
 
-    DataCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log )
+    DataCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log )
       : StackableVolume( underlying_volume, log )
     { }
 
@@ -171,7 +171,7 @@ namespace yieldfs
   public:
     TracingVolume(); // For testing
     TracingVolume( YIELD::auto_Volume underlying_volume ); // Log to std::cout
-    TracingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log ); // Steals a reference to log
+    TracingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log ); // Steals a reference to log
 
     // YIELD::Volume
     YIELD_VOLUME_PROTOTYPES;
