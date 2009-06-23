@@ -147,7 +147,7 @@ void Proxy<ProxyType, InterfaceType>::getCurrentUserCredentials( org::xtreemfs::
   uid_t caller_uid = yieldfs::FUSE::geteuid();
   gid_t caller_gid = yieldfs::FUSE::getegid();
   if ( caller_uid != static_cast<uid_t>( -1 ) && caller_gid != static_cast<gid_t>( -1 ) &&
-       getUserCredentialsFrompasswd( caller_uid, caller_gid, out_user_credentials )
+       getUserCredentialsFrompasswd( caller_uid, caller_gid, out_user_credentials ) )
      return;
   else
   {
