@@ -294,18 +294,22 @@ void Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
     {
       if ( pwd_res != NULL && pwd_res->pw_name != NULL )
       {
-        if ( getgrgid_r( gid, &grp, grp_buf, grp_buf_len, &grp_res ) == 0 )
+        out_user_credentials.set_user_id( pwd_res->pw_name );
+
+        if ( gid != -1 )
         {
-          if ( grp_res != NULL && grp_res->gr_name != NULL )
+          if ( getgrgid_r( gid, &grp, grp_buf, grp_buf_len, &grp_res ) == 0 )
           {
-            out_user_credentials.set_user_id( pwd_res->pw_name );
-            out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( grp_res->gr_name ) );
+            if ( grp_res != NULL && grp_res->gr_name != NULL )
+              out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( grp_res->gr_name ) );
+            else
+              throw YIELD::Exception( "no such gid" );
           }
           else
-            throw YIELD::Exception( "no such gid" );
+            throw YIELD::Exception();
         }
         else
-          throw YIELD::Exception();
+          out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( "" ) );
       }
       else
         throw YIELD::Exception( "no such uid" );
