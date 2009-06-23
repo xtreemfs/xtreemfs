@@ -236,7 +236,7 @@ namespace YIELD
   {
   public:
     // EventTarget
-    virtual bool send( Event& ev ) { return my_stage->send( ev ); }
+    virtual bool send( Event& ev );
 
   protected:
     Peer( auto_Log log );
@@ -1156,16 +1156,17 @@ namespace YIELD
     // EventTarget
     virtual bool send( Event& ev ) 
     { 
-      return Client<ONCRPCRequest, ONCRPCResponse>::send( ev ); 
+      if ( InterfaceType::checkRequest( ev ) != NULL )
+        return Client<ONCRPCRequest, ONCRPCResponse>::send( *( new ONCRPCRequest( this->incRef(), 0x20000000 + InterfaceType::get_tag(), ev.get_tag(), InterfaceType::get_tag(), ev ) ) );
+      else
+        return Client<ONCRPCRequest, ONCRPCResponse>::send( ev );
     }
 
     // EventHandler
-    virtual void handleEvent( Event& ev ) 
-    { 
-      if ( InterfaceType::checkRequest( ev ) != NULL )
-        Client<ONCRPCRequest, ONCRPCResponse>::handleEvent( *( new ONCRPCRequest( this->incRef(), 0x20000000 + InterfaceType::get_tag(), ev.get_tag(), InterfaceType::get_tag(), ev ) ) );
-      else
-        Client<ONCRPCRequest, ONCRPCResponse>::handleEvent( ev );
+    // Have to override so StageStartupEvent doesn't go to InterfaceType
+    virtual void handleEvent( Event& ev )
+    {
+      Client<ONCRPCRequest, ONCRPCResponse>::handleEvent( ev );
     }
 
   protected:

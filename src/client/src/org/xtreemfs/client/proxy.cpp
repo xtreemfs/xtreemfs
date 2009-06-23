@@ -94,17 +94,17 @@ Proxy<ProxyType, InterfaceType>::~Proxy()
 }
 
 template <class ProxyType, class InterfaceType>
-void Proxy<ProxyType, InterfaceType>::handleEvent( YIELD::Event& ev )
+bool Proxy<ProxyType, InterfaceType>::send( YIELD::Event& ev )
 {
   if ( InterfaceType::checkRequest( ev ) != NULL )
   {
     YIELD::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
     getCurrentUserCredentials( *user_credentials.get() );
     YIELD::auto_Object<YIELD::ONCRPCRequest> oncrpc_request = new YIELD::ONCRPCRequest( this->incRef(), 0x20000000 + InterfaceType::get_tag(), ev.get_tag(), InterfaceType::get_tag(), org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release(), ev );
-    YIELD::ONCRPCClient<InterfaceType>::handleEvent( *oncrpc_request.release() );
+    return YIELD::ONCRPCClient<InterfaceType>::send( *oncrpc_request.release() );
   }
   else
-    YIELD::ONCRPCClient<InterfaceType>::handleEvent( ev );
+    return YIELD::ONCRPCClient<InterfaceType>::send( ev );
 }
 
 template <class ProxyType, class InterfaceType>

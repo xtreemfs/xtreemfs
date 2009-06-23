@@ -2401,7 +2401,7 @@ void Peer<ReadProtocolMessageType, WriteProtocolMessageType>::handleEvent( Event
     return;
     case YIELD_OBJECT_TAG( StageShutdownEvent ):
     {
-//      my_stage = NULL;
+      my_stage = NULL;
       YIELD::Object::decRef( ev );
     }
     return;
@@ -2474,6 +2474,17 @@ bool Peer<ReadProtocolMessageType, WriteProtocolMessageType>::read( YIELD::auto_
   detach( connection );
   connection->get_socket()->close();
   return false;
+}
+template <class ReadProtocolMessageType, class WriteProtocolMessageType>
+bool Peer<ReadProtocolMessageType, WriteProtocolMessageType>::send( Event& ev )
+{
+  if ( my_stage != NULL )
+    return my_stage->send( ev );
+  else
+  {
+    YIELD::Object::decRef( ev );
+    return true;
+  }
 }
 template <class ReadProtocolMessageType, class WriteProtocolMessageType>
 YIELD::auto_Buffer  Peer<ReadProtocolMessageType, WriteProtocolMessageType>::serialize( YIELD::auto_Object<WriteProtocolMessageType> protocol_message )

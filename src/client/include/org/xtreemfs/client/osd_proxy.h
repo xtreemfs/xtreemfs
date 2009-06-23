@@ -55,7 +55,11 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( OSDProxy, 0 );
 
         // YIELD::EventHandler
-        void handleEvent( YIELD::Event& ev ) { YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::handleEvent( ev ); }
+        bool send( YIELD::Event& ev ) 
+        { 
+          // Bypass Proxy so no credentials are attached; the credentials for OSD operations are in FileCredentials passed explicitly to the operation
+          return YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::send( ev ); 
+        }
 
       private:
         friend class YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>;
