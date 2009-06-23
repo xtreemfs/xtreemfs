@@ -7,6 +7,10 @@
 #include "yield/platform.h"
 
 #ifndef _WIN32
+#include <unistd.h>
+#endif
+
+#ifndef _WIN32
 struct fuse_args;
 #endif
 
@@ -106,8 +110,8 @@ namespace yieldfs
 #ifdef _WIN32
     int main( const char* drive_letter );
 #else
-    static int geteuid();
-    static int getegid();
+    static uid_t geteuid();
+    static gid_t getegid();
     int main( char* argv0, const char* mount_point );
     int main( struct fuse_args&, const char* mount_point );
 #endif

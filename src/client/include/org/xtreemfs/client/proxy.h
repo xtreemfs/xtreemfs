@@ -29,17 +29,21 @@ namespace org
         virtual ~Proxy();
 
         void getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials );
+#ifndef _WIN32
         void getpasswdFromUserCredentials( const std::string& user_id, const std::string& group_id, int& out_uid, int& out_gid );
-        void getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials );        
+        bool getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials );        
+#endif
 
       private:
         YIELD::auto_Log log;
 
+#ifndef _WIN32
         get_passwd_from_user_credentials_t get_passwd_from_user_credentials;
         YIELD::STLHashMap<YIELD::STLHashMap<std::pair<int, int>*>*> user_credentials_to_passwd_cache;
 
         get_user_credentials_from_passwd_t get_user_credentials_from_passwd;
         YIELD::STLHashMap<YIELD::STLHashMap<org::xtreemfs::interfaces::UserCredentials*>*> passwd_to_user_credentials_cache;
+#endif
 
         std::vector<YIELD::SharedLibrary*> policy_shared_libraries;
 

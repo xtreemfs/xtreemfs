@@ -1415,7 +1415,7 @@ YIELD::auto_File DataCachingVolume::open( const YIELD::Path& path, uint32_t flag
 #endif
 #ifndef _WIN32
 bool FUSE::is_running = false;
-int FUSE::geteuid()
+uid_t FUSE::geteuid()
 {
   if ( is_running )
   {
@@ -1423,12 +1423,12 @@ int FUSE::geteuid()
     if ( ctx && ctx->pid != 0 && ctx->private_data != NULL )
       return ctx->uid;
     else
-      return -1;
+      return static_cast<uid_t>( -1 );
   }
   else
-    return -1;
+    return static_cast<uid_t>( -1 );
 }
-int FUSE::getegid()
+gid_t FUSE::getegid()
 {
   if ( is_running )
   {
@@ -1436,10 +1436,10 @@ int FUSE::getegid()
     if ( ctx && ctx->pid != 0 && ctx->private_data != NULL )
       return ctx->gid;
     else
-      return -1;
+      return static_cast<gid_t>( -1 );
   }
   else
-    return -1;
+    return static_cast<gid_t>( -1 );
 }
 #endif
 FUSE::FUSE( YIELD::auto_Volume volume, uint32_t flags )

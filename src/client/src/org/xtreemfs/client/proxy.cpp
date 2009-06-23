@@ -27,8 +27,10 @@ template <class ProxyType, class InterfaceType>
 Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, YIELD::auto_Log log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
   : YIELD::ONCRPCClient<InterfaceType>( absolute_uri, log, operation_retries_max, operation_timeout, peer_sockaddr, ssl_context ), log( log )
 {
+#ifndef _WIN32
   get_user_credentials_from_passwd = NULL;
   get_passwd_from_user_credentials = NULL;
+#endif
 
   std::vector<YIELD::Path> policy_dir_paths;
   policy_dir_paths.push_back( YIELD::Path() );
@@ -56,8 +58,10 @@ Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, YIELD::a
         if ( policy_shared_library != NULL )
         {
           bool found_policy_function = false;
+#ifndef _WIN32
           found_policy_function |= getPolicyFunction( policy_shared_library_path, policy_shared_library, "get_passwd_from_user_credentials", get_passwd_from_user_credentials );
           found_policy_function |= getPolicyFunction( policy_shared_library_path, policy_shared_library, "get_user_credentials_from_passwd", get_user_credentials_from_passwd );
+#endif
           if ( found_policy_function )
             policy_shared_libraries.push_back( policy_shared_library.release() );
         }
@@ -72,6 +76,7 @@ Proxy<ProxyType, InterfaceType>::~Proxy()
   for ( std::vector<YIELD::SharedLibrary*>::iterator policy_shared_library_i = policy_shared_libraries.begin(); policy_shared_library_i != policy_shared_libraries.end(); policy_shared_library_i++ )
     YIELD::Object::decRef( **policy_shared_library_i );
 
+#ifndef _WIN32
   for ( YIELD::STLHashMap<YIELD::STLHashMap<std::pair<int,int>*>*>::iterator i = user_credentials_to_passwd_cache.begin(); i != user_credentials_to_passwd_cache.end(); i++ )
   {
     for ( YIELD::STLHashMap<std::pair<int,int>*>::iterator j = i->second->begin(); j != i->second->end(); j++ )
@@ -85,6 +90,7 @@ Proxy<ProxyType, InterfaceType>::~Proxy()
       delete j->second;
     delete i->second;
   }
+#endif
 }
 
 template <class ProxyType, class InterfaceType>
@@ -107,50 +113,55 @@ void Proxy<ProxyType, InterfaceType>::getCurrentUserCredentials( org::xtreemfs::
   log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: getting current user credentials.";
 
 #ifdef _WIN32
-  if ( get_user_credentials_from_passwd )
-    getUserCredentialsFrompasswd( -1, -1, out_user_credentials );
-  else
+  DWORD dwLevel = 1;
+  LPWKSTA_USER_INFO_1 user_info = NULL;
+  if ( NetWkstaUserGetInfo( NULL, dwLevel, (LPBYTE *)&user_info ) == NERR_Success )
   {
-    DWORD dwLevel = 1;
-    LPWKSTA_USER_INFO_1 user_info = NULL;
-    if ( NetWkstaUserGetInfo( NULL, dwLevel, (LPBYTE *)&user_info ) == NERR_Success )
+    if ( user_info !=NULL )
     {
-      if ( user_info !=NULL )
-      {
-        int username_wcslen = static_cast<int>( wcsnlen( user_info->wkui1_username, UINT16_MAX ) );
-        int username_strlen = WideCharToMultiByte( GetACP(), 0, user_info->wkui1_username, username_wcslen, NULL, 0, 0, NULL );
-        char* user_id = new char[username_strlen+1];
-        WideCharToMultiByte( GetACP(), 0, user_info->wkui1_username, username_wcslen, user_id, username_strlen+1, 0, NULL );
-        out_user_credentials.set_user_id( user_id, username_strlen );
-        delete [] user_id;
+      int username_wcslen = static_cast<int>( wcsnlen( user_info->wkui1_username, UINT16_MAX ) );
+      int username_strlen = WideCharToMultiByte( GetACP(), 0, user_info->wkui1_username, username_wcslen, NULL, 0, 0, NULL );
+      char* user_id = new char[username_strlen+1];
+      WideCharToMultiByte( GetACP(), 0, user_info->wkui1_username, username_wcslen, user_id, username_strlen+1, 0, NULL );
+      out_user_credentials.set_user_id( user_id, username_strlen );
+      delete [] user_id;
 
-        int logon_domain_wcslen = static_cast<int>( wcsnlen( user_info->wkui1_logon_domain, UINT16_MAX ) );
-        int logon_domain_strlen = WideCharToMultiByte( GetACP(), 0, user_info->wkui1_logon_domain, logon_domain_wcslen, NULL, 0, 0, NULL );
-        char* group_id = new char[logon_domain_strlen+1];
-        WideCharToMultiByte( GetACP(), 0, user_info->wkui1_logon_domain, logon_domain_wcslen, group_id, logon_domain_strlen+1, 0, NULL );
-        std::string group_id_str( group_id, logon_domain_strlen );
-        delete [] group_id;
-        org::xtreemfs::interfaces::StringSet group_ids;
-        group_ids.push_back( group_id_str );
-        out_user_credentials.set_group_ids( group_ids );
+      int logon_domain_wcslen = static_cast<int>( wcsnlen( user_info->wkui1_logon_domain, UINT16_MAX ) );
+      int logon_domain_strlen = WideCharToMultiByte( GetACP(), 0, user_info->wkui1_logon_domain, logon_domain_wcslen, NULL, 0, 0, NULL );
+      char* group_id = new char[logon_domain_strlen+1];
+      WideCharToMultiByte( GetACP(), 0, user_info->wkui1_logon_domain, logon_domain_wcslen, group_id, logon_domain_strlen+1, 0, NULL );
+      std::string group_id_str( group_id, logon_domain_strlen );
+      delete [] group_id;
+      org::xtreemfs::interfaces::StringSet group_ids;
+      group_ids.push_back( group_id_str );
+      out_user_credentials.set_group_ids( group_ids );
 
-        NetApiBufferFree( user_info );
+      NetApiBufferFree( user_info );
 
-        return;
-      }
+      return;
     }
 
     throw YIELD::Exception( "could not retrieve user_id and group_id" );
   }
 #else
-  int caller_uid = yieldfs::FUSE::geteuid();
-  if ( caller_uid < 0 ) caller_uid = ::geteuid();
-  int caller_gid = yieldfs::FUSE::getegid();
-  if ( caller_gid < 0 ) caller_gid = ::getegid();
-  getUserCredentialsFrompasswd( caller_uid, caller_gid, out_user_credentials );
+  uid_t caller_uid = yieldfs::FUSE::geteuid();
+  gid_t caller_gid = yieldfs::FUSE::getegid();
+  if ( caller_uid != static_cast<uid_t>( -1 ) && caller_gid != static_cast<gid_t>( -1 ) &&
+       getUserCredentialsFrompasswd( caller_uid, caller_gid, out_user_credentials )
+     return;
+  else
+  {
+    caller_uid = ::geteuid();
+    caller_gid = ::getegid();
+    if ( getUserCredentialsFrompasswd( caller_uid, caller_gid, out_user_credentials )  )
+      return;
+    else
+      throw YIELD::Exception();
+  }
 #endif
 }
 
+#ifndef _WIN32
 template <class ProxyType, class InterfaceType>
 void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::string& user_id, const std::string& group_id, int& out_uid, int& out_gid )
 {
@@ -181,14 +192,10 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
       have_passwd = true;
     else
       log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: get_passwd_from_user_credentials_ret with user_id=" << user_id << ", group_id=" << group_id << " failed with errno=" << ( get_passwd_from_user_credentials_ret * -1 );
-//      throw YIELD::Exception( get_passwd_from_user_credentials_ret * -1 );
   }
 
   if ( !have_passwd )
   {
-#ifdef _WIN32
-    YIELD::DebugBreak();
-#else
     log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: calling getpwnam_r and getgrnam_r with user_id=" << user_id << ", group_id=" << group_id << ".";
 
     struct passwd pwd, *pwd_res;
@@ -204,12 +211,10 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
     }
     else
     {
-      //    throw YIELD::Exception();
       out_uid = 0;
       out_gid = 0;
       log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: getpwnam_r and getgrnam_r with user_id=" << user_id << ", group_id=" << group_id << " failed, errno=" << errno << ", setting user/group to root.";
     }
-#endif
   }
 
   log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: " << user_id << "=" << out_uid << ", " << group_id << "=" << out_gid << ", storing in cache.";
@@ -224,7 +229,7 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
 }
 
 template <class ProxyType, class InterfaceType>
-void Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials )
+bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials )
 {
   log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: getting UserCredentials from passwd (uid=" << uid << ", gid=" << gid << ").";
 
@@ -236,7 +241,7 @@ void Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
     {
       out_user_credentials = *user_credentials;
       log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Proxy: found UserCredentials in cache, " << uid << "=" << out_user_credentials.get_user_id() << ", " << gid << "=" << out_user_credentials.get_group_ids()[0] << ".";
-      return;
+      return true;
     }
   }
 
@@ -270,19 +275,17 @@ void Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
             group_ids_p += group_ids_ss.back().size() + 1;
           }
           out_user_credentials.set_group_ids( group_ids_ss );
+          // Drop down to insert the credentials into the cache
         }
         else
-          throw YIELD::Exception( get_user_credentials_from_passwd_ret * -1 );
+          return false;
       }
     }
     else
-      throw YIELD::Exception( get_user_credentials_from_passwd_ret * -1 );
+      return false;
   }
   else
   {
-#ifdef _WIN32
-    YIELD::DebugBreak();
-#else
     struct passwd pwd, *pwd_res;
     char pwd_buf[PWD_BUF_LEN]; int pwd_buf_len = sizeof( pwd_buf );
     struct group grp, *grp_res;
@@ -300,21 +303,22 @@ void Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
           {
             if ( grp_res != NULL && grp_res->gr_name != NULL )
               out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( grp_res->gr_name ) );
+              // Drop down to insert the credentials into the cache
             else
-              throw YIELD::Exception( "no such gid" );
+              return false;
           }
           else
-            throw YIELD::Exception();
+            return false;
         }
         else
           out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( "" ) );
+          // Drop down to insert the credentials into the cache
       }
       else
-        throw YIELD::Exception( "no such uid" );
+        return false;
     }
     else
-      throw YIELD::Exception();
-#endif
+      return false;
   }
 
   if ( uid_to_user_credentials_cache == NULL )
@@ -324,7 +328,10 @@ void Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
   }
 
   uid_to_user_credentials_cache->insert( static_cast<uint32_t>( uid ), new org::xtreemfs::interfaces::UserCredentials( out_user_credentials ) );
+
+  return true;
 }
+#endif
 
 
 template class Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>;
