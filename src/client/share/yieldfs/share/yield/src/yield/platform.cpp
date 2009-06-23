@@ -1,4 +1,4 @@
-// Revision: 1578
+// Revision: 1579
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -1538,11 +1538,10 @@ Stat::operator struct stat() const
   memset( &stbuf, 0, sizeof( stbuf ) );
 #ifdef _WIN32
   stbuf.st_mode = static_cast<unsigned short>( mode );
-  stbuf.st_size = static_cast<off_t>( size );
 #else
   stbuf.st_mode = mode;
-  stbuf.st_size = static_cast<size_t>( size );
 #endif
+  stbuf.st_size = static_cast<off_t>( size );
   stbuf.st_atime = atime.as_unix_time_s();
   stbuf.st_mtime = mtime.as_unix_time_s();
   stbuf.st_ctime = ctime.as_unix_time_s();
