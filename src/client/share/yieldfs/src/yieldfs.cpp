@@ -1,4 +1,4 @@
-// Revision: 155
+// Revision: 159
 
 #include "yield.h"
 #include "yieldfs.h"
@@ -1413,8 +1413,8 @@ YIELD::auto_File DataCachingVolume::open( const YIELD::Path& path, uint32_t flag
 #ifdef _WIN32
 #else
 #endif
-/*
 #ifndef _WIN32
+bool FUSE::is_running = false;
 int FUSE::geteuid()
 {
   if ( is_running )
@@ -1442,7 +1442,6 @@ int FUSE::getegid()
     return -1;
 }
 #endif
-*/
 FUSE::FUSE( YIELD::auto_Volume volume, uint32_t flags )
 {
 #ifdef _WIN32
@@ -1467,10 +1466,12 @@ int FUSE::main( const char* mount_point )
 #else
 int FUSE::main( char* argv0, const char* mount_point )
 {
+  is_running = true;
   return fuse_unix->main( argv0, mount_point );
 }
 int FUSE::main( struct fuse_args& fuse_args_, const char* mount_point )
 {
+  is_running = true;
   return fuse_unix->main( fuse_args_, mount_point );
 }
 #endif

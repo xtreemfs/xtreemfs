@@ -143,12 +143,10 @@ void Proxy<ProxyType, InterfaceType>::getCurrentUserCredentials( org::xtreemfs::
     throw YIELD::Exception( "could not retrieve user_id and group_id" );
   }
 #else
-//  int caller_uid = yieldfs::FUSE::geteuid();
-//  if ( caller_uid < 0 ) caller_uid = ::geteuid();
-//  int caller_gid = yieldfs::FUSE::getegid();
- // if ( caller_gid < 0 ) caller_gid = ::getegid();
-  int caller_uid = ::geteuid();
-  int caller_gid = ::getegid();
+  int caller_uid = yieldfs::FUSE::geteuid();
+  if ( caller_uid < 0 ) caller_uid = ::geteuid();
+  int caller_gid = yieldfs::FUSE::getegid();
+  if ( caller_gid < 0 ) caller_gid = ::getegid();
   getUserCredentialsFrompasswd( caller_uid, caller_gid, out_user_credentials );
 #endif
 }

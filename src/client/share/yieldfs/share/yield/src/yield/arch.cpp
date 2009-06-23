@@ -1,5 +1,4 @@
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+// Revision: 1585
 
 #include "yield/arch.h"
 using namespace YIELD;
@@ -71,7 +70,6 @@ namespace YIELD
     void _run()
     {
       Thread::set_name( stage->get_stage_name() );
-      stage->get_event_handler()->handleEvent( *( new StageStartupEvent( stage ) ) );
       while ( should_run )
         visitStage( *stage );
     }

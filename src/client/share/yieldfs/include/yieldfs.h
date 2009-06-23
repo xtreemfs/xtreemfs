@@ -106,6 +106,8 @@ namespace yieldfs
 #ifdef _WIN32
     int main( const char* drive_letter );
 #else
+    static int geteuid();
+    static int getegid();
     int main( char* argv0, const char* mount_point );
     int main( struct fuse_args&, const char* mount_point );
 #endif
@@ -115,6 +117,7 @@ namespace yieldfs
     FUSEWin32* fuse_win32;
 #else
     FUSEUnix* fuse_unix;
+    static bool is_running;
 #endif
   };
 
