@@ -623,7 +623,6 @@ namespace YIELD
       {
         if ( stages[stage_i] == NULL )
         {
-          stage->get_event_handler()->handleEvent( *( new StageStartupEvent( stage ) ) );
           stages[stage_i] = stage.release();
           return;
         }
@@ -786,6 +785,7 @@ namespace YIELD
       else
         stage = new StageImpl<EventHandlerType, EventQueueType, Mutex>( event_handler, event_queue, stage_stats_event_target, log );
 
+      event_handler->handleEvent( *( new StageStartupEvent( stage ) ) );
       this->addStage( stage );
       startThreads( stage, thread_count );
 

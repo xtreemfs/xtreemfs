@@ -1,4 +1,5 @@
-// Revision: 1579
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "yield/arch.h"
 using namespace YIELD;
