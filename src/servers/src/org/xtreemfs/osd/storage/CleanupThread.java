@@ -208,14 +208,14 @@ public class CleanupThread extends LifeCycleThread {
                                  }
                              } else {
                                  volume.mrc = new ServiceUUID(s.get(0).getData().get("mrc"));
-                                 RPCResponse<String> r = mrcClient.xtreemfs_checkFileExists(volume.mrc.getAddress(), volume.id, perVolume.get(volume));
+                                 RPCResponse<String> r = mrcClient.xtreemfs_checkFileExists(volume.mrc.getAddress(), volume.id, perVolume.get(volume), localUUID.toString());
                                  String eval = r.get();
                                  r.freeBuffers();
                                  if (eval.equals("2")) {
                                      //volume was deleted (not a dead volume, since MRC answered!)
                                      results.add(String.format(DELETED_VOLUME_FORMAT, volume.id,volume.mrc));
                                  } else {
-                                     //check all files...
+                                     //check all files... TODO deal with unrestoreable replica-zombies
                                      StringSet files = perVolume.get(volume);
                                      final AtomicInteger numZombies = new AtomicInteger(0);
                                      final AtomicInteger openOFTChecks = new AtomicInteger(0);
@@ -245,7 +245,9 @@ public class CleanupThread extends LifeCycleThread {
                                                      }
                                                  }
                                              });
-                                         }
+                                         } //else if (eval.charAt(i) = '3') {
+                                             
+                                         // }
                                      }
                                      
                                      synchronized (openOFTChecks) {

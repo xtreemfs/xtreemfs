@@ -582,9 +582,9 @@ public class MRCClient extends ONCRPCClient {
     /* xtreemfs-specific calls */
 
     public RPCResponse<String> xtreemfs_checkFileExists(InetSocketAddress server, String volumeId,
-        StringSet fileIds) {
+        StringSet fileIds, String osdUUID) {
         
-        xtreemfs_check_file_existsRequest rq = new xtreemfs_check_file_existsRequest(volumeId, fileIds);
+        xtreemfs_check_file_existsRequest rq = new xtreemfs_check_file_existsRequest(volumeId, fileIds, osdUUID);
         RPCResponse<String> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<String>() {
             
             @Override

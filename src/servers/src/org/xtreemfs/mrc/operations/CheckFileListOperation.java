@@ -24,6 +24,8 @@
 
 package org.xtreemfs.mrc.operations;
 
+import java.util.Iterator;
+
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsResponse;
@@ -32,6 +34,8 @@ import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 
 /**
@@ -49,7 +53,7 @@ public class CheckFileListOperation extends MRCOperation {
         
         final xtreemfs_check_file_existsRequest rqArgs = (xtreemfs_check_file_existsRequest) rq
                 .getRequestArgs();
-        
+        final String osd = rqArgs.getOsd_uuid(); 
         final VolumeManager vMan = master.getVolumeManager();
         StorageManager sMan = vMan.getStorageManager(rqArgs.getVolume_id());
         
@@ -61,6 +65,30 @@ public class CheckFileListOperation extends MRCOperation {
                 for (String fileId : rqArgs.getFile_ids()) {
                     if (fileId == null)
                         throw new MRCException("file ID was null!");
+                    
+                    FileMetadata mData = sMan.getMetadata(Long.parseLong(fileId));
+                    if (mData == null) response += "0";
+                    else {
+                        // check the xLocations-list of the recognized file
+                        boolean registered = false;
+                        Iterator<XLoc> iter = mData.getXLocList().iterator();
+                        XLoc loc;
+                        while (iter.hasNext()) {
+                            loc = iter.next();
+                            short count = loc.getOSDCount();
+                            for (int i=0;i<count;i++) {
+                                // stop if entry was found
+                                if (loc.getOSD(i).equals(osd)) {
+                                    registered = true;
+                                    break;
+                                }
+                            }
+                            
+                            if (registered) break;
+                        }
+                        
+                        response += (registered) ? "1" : "0"; // TODO properly "3" for replica-zombie to mark up immediately deletion
+                    }
                     response += sMan.getMetadata(Long.parseLong(fileId)) != null ? "1" : "0";
                 }
             } catch (UserException ue) {
