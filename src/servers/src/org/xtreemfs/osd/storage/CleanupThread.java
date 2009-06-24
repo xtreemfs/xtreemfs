@@ -215,24 +215,28 @@ public class CleanupThread extends LifeCycleThread {
                                      //volume was deleted (not a dead volume, since MRC answered!)
                                      results.add(String.format(DELETED_VOLUME_FORMAT, volume.id,volume.mrc));
                                  } else {
-                                     //check all files... TODO deal with unrestoreable replica-zombies
+                                     //check all files... 
                                      StringSet files = perVolume.get(volume);
                                      final AtomicInteger numZombies = new AtomicInteger(0);
                                      final AtomicInteger openOFTChecks = new AtomicInteger(0);
                                      
-                                     for (int i = 0; i < files.size(); i++) {
-                                         if (eval.charAt(i) == '0') {
+                                     for (int i = 0; i < files.size(); i++) {                                         
+                                         if (eval.charAt(i) == '0' || eval.charAt(i) == '3') {
+                                             // remove abandoned replicas immediately
+                                             final boolean abandoned = (eval.charAt(i) == '3');
+                                             
                                              // retrieve the fileName
                                              final String fName = volume.id+":"+files.get(i);
+                                             
                                              // retrieve the fileData
                                              final FileData fData = l.files.get(fName);
-                                                                                          
+                                             
                                              // check against the OFT
                                              openOFTChecks.incrementAndGet();
                                              master.getPreprocStage().checkDeleteOnClose(files.get(i), new DeleteOnCloseCallback() {
                                                  @Override
                                                  public void deleteOnCloseResult(boolean isDeleteOnClose, Exception error) {
-                                                     if (!isDeleteOnClose){
+                                                     if (!isDeleteOnClose && !abandoned){
                                                          // file is zombie
                                                          numZombies.incrementAndGet();
                                                          zombies.incrementAndGet();
@@ -242,12 +246,20 @@ public class CleanupThread extends LifeCycleThread {
                                                                  openOFTChecks.notify();
                                                              }
                                                          }
+                                                     // deal with the unrestoreable replica
+                                                     } else if (!isDeleteOnClose) {
+                                                         master.getDeletionStage().deleteObjects(fName, null, new DeletionStage.DeleteObjectsCallback() {
+                                                             
+                                                             @Override
+                                                             public void deleteComplete(Exception error) {
+                                                                 if (error != null)
+                                                                     results.add(String.format(ZOMBIE_DELETE_ERROR_FORMAT, fName, error.getMessage()));
+                                                             }
+                                                         });
                                                      }
                                                  }
                                              });
-                                         } //else if (eval.charAt(i) = '3') {
-                                             
-                                         // }
+                                         } 
                                      }
                                      
                                      synchronized (openOFTChecks) {

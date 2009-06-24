@@ -87,9 +87,8 @@ public class CheckFileListOperation extends MRCOperation {
                             if (registered) break;
                         }
                         
-                        response += (registered) ? "1" : "0"; // TODO properly "3" for replica-zombie to mark up immediately deletion
+                        response += (registered) ? "1" : "3";
                     }
-                    response += sMan.getMetadata(Long.parseLong(fileId)) != null ? "1" : "0";
                 }
             } catch (UserException ue) {
                 response = "2";
