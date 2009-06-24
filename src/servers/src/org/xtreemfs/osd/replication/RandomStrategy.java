@@ -35,13 +35,19 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.interfaces.Constants;
 
 /**
  * A simple strategy, which selects objects and replicas randomly. <br>
  * 08.12.2008
  */
 public class RandomStrategy extends TransferStrategy {
-    private Random random;
+    /**
+     * identifies the random strategy in replication flags
+     */
+    public static final int              REPLICATION_FLAG = Constants.REPL_FLAG_STRATEGY_RANDOM;
+
+    private Random                       random;
 
     /**
      * Contains a list of possible OSDs for each object. It's used to notice which OSDs were already requested.

@@ -112,7 +112,7 @@ public class xtfs_repl {
 
     public final static String      TRANSFER_STRATEGY_RANDOM           = "random";
 
-    public final static String      TRANSFER_STRATEGY_SEQUENCIAL       = "sequencial";
+    public final static String      TRANSFER_STRATEGY_SEQUENTIAL       = "sequential";
 
     public final static int         DEFAULT_REPLICATION_FLAGS          = Constants.REPL_FLAG_STRATEGY_RANDOM;
 
@@ -293,7 +293,7 @@ public class xtfs_repl {
                     in = new BufferedReader(new InputStreamReader(System.in));
                     System.out
                             .println("Please choose if replica should be filled until it is full (full) or only ondemand (ondemand)"
-                                    + " and a Transfer Strategy (random | sequencial).");
+                                    + " and a Transfer Strategy (random | sequential).");
                     System.out.println("# Please use ',' as seperator. #");
                     args = in.readLine().split(",");
                     
@@ -305,7 +305,7 @@ public class xtfs_repl {
                     }
                     if(argsList.contains("random"))
                         replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_RANDOM;
-                    if(argsList.contains("sequencial"))
+                    if(argsList.contains("sequential"))
                         replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_SIMPLE;
                     
                     break;
@@ -620,7 +620,7 @@ public class xtfs_repl {
 
                         if (method.equals(TRANSFER_STRATEGY_RANDOM))
                             replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_RANDOM;
-                        else if (method.equals(TRANSFER_STRATEGY_SEQUENCIAL))
+                        else if (method.equals(TRANSFER_STRATEGY_SEQUENTIAL))
                             replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_SIMPLE;
                     }
 
@@ -672,7 +672,7 @@ public class xtfs_repl {
 
                         if (method.equals(TRANSFER_STRATEGY_RANDOM))
                             replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_RANDOM;
-                        else if(method.equals(TRANSFER_STRATEGY_SEQUENCIAL))
+                        else if(method.equals(TRANSFER_STRATEGY_SEQUENTIAL))
                             replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_SIMPLE;
                     }
                     
@@ -740,12 +740,13 @@ public class xtfs_repl {
         out.append("\t-" + REMOVE_REPLICA + " <UUID_of_head-OSD>"
             + ": removes the replica with the given head OSD\n");
         out.append("\t-" + REMOVE_AUTOMATIC_REPLICA + ": removes a randomly selected replica\n");
+        out.append("\t-" + REPLICATION_FLAG_TRANSFER_STRATEGY + " " + TRANSFER_STRATEGY_RANDOM + "|" + TRANSFER_STRATEGY_SEQUENTIAL);
         out.append("\tTo use SSL it is necessary to also specify credentials:");
         out.append("\t            -c  <creds_file>            a PKCS#12 file containing user credentials");
         out.append("\t            -cpass <creds_passphrase>   a pass phrase to decrypt the the user credentials file");
         out.append("\t            -t  <trusted_CAs>           a PKCS#12 file containing a set of certificates from trusted CAs");
         out.append("\t            -tpass <trusted_passphrase> a pass phrase to decrypt the trusted CAs file");
-        out.append("\t-" + REPLICATION_FLAG_TRANSFER_STRATEGY + " " + TRANSFER_STRATEGY_RANDOM + "|" + TRANSFER_STRATEGY_SEQUENCIAL
+        out.append("\t-" + REPLICATION_FLAG_TRANSFER_STRATEGY + " " + TRANSFER_STRATEGY_RANDOM + "|" + TRANSFER_STRATEGY_SEQUENTIAL
                 + ": the replica to add will use the chosen strategy\n");
         out.append("\t-" + REPLICATION_FLAG_FILL_ONDEMAND
                         + ": if set the replica to add will be filled ondemand; otherwise it will be automatically filled until it is full\n");

@@ -45,7 +45,7 @@ import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.osd.replication.RandomStrategy;
-import org.xtreemfs.osd.replication.SequencialStrategy;
+import org.xtreemfs.osd.replication.SequentialStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy;
 import org.xtreemfs.osd.replication.TransferStrategy.NextRequest;
 import org.xtreemfs.osd.replication.TransferStrategy.TransferStrategyException;
@@ -120,7 +120,7 @@ public class TransferStrategiesTest extends TestCase {
 
     @Before
     public void setUp() throws Exception {
-        this.strategy = new SequencialStrategy(fileID, xLoc, new ServiceAvailability());
+        this.strategy = new SequentialStrategy(fileID, xLoc, new ServiceAvailability());
     }
 
     @After
@@ -164,33 +164,12 @@ public class TransferStrategiesTest extends TestCase {
         assertEquals(5, this.strategy.getObjectsCount());
     }
 
-    // @Test
-    // public void testCurrentReplicaNotInReplicaList() {
-    // this.strategy = new SimpleStrategy(fileID, xLoc, filesize, new ServiceAvailability());
-    // for (int i = 0; i < 5; i++) {
-    // this.strategy.addObject(i, false);
-    // }
-    //
-    // for (int i = 0; i < xLoc.getNumReplicas() * xLoc.getLocalReplica().getStripingPolicy().getWidth(); i++)
-    // {
-    // this.strategy.selectNext();
-    // NextRequest next = this.strategy.getNext();
-    // if (next != null) {
-    // assertNotSame(xLoc.getLocalReplica().getOSDForObject(objectNo), next.osd);
-    // } else
-    // break;
-    // }
-    // for (int i = 0; i < 20; i++) {
-    // assertTrue(strategy.isHole(i));
-    // }
-    // }
-
     /**
-     * Test method for {@link org.xtreemfs.osd.replication.SequencialStrategy#selectNext()}.
+     * Test method for {@link org.xtreemfs.osd.replication.SequentialStrategy#selectNext()}.
      */
     @Test
-    public void testSelectNextForSequencialTransfer() {
-        this.strategy = new SequencialStrategy(fileID, xLoc, new ServiceAvailability());
+    public void testSelectNextForSequentialTransfer() {
+        this.strategy = new SequentialStrategy(fileID, xLoc, new ServiceAvailability());
         this.strategy.addObject(0, false);
         this.strategy.addObject(1, true);
         this.strategy.addObject(2, false);

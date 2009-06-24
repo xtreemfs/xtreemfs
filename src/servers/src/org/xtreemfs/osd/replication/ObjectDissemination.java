@@ -26,6 +26,7 @@ package org.xtreemfs.osd.replication;
 import java.util.HashMap;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.LRUCache;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -55,11 +56,17 @@ public class ObjectDissemination {
      * key: fileID
      */
     private HashMap<String, ReplicatingFile> filesInProgress;
+    
+    /**
+     * simple FIFO-cache for last completed files 
+     */
+    LRUCache<String, ReplicatingFile> lastCompletedFilesCache;
 
     public ObjectDissemination(OSDRequestDispatcher master) {
         this.master = master;
 
         this.filesInProgress = new HashMap<String, ReplicatingFile>();
+        this.lastCompletedFilesCache = new LRUCache<String, ReplicatingFile>(20);
     }
 
     /**
@@ -69,16 +76,20 @@ public class ObjectDissemination {
             CowPolicy cow, final StageRequest rq) {
         ReplicatingFile file = this.filesInProgress.get(fileID);
         if (file == null) { // file not in progress
+            // try to get it from cache
+            file = this.lastCompletedFilesCache.get(fileID);
+            if (file == null) // create new one
+                file = new ReplicatingFile(fileID, xLoc, capability, cow, master);
+
             // add file to filesInProgress
-            file = new ReplicatingFile(fileID, xLoc, capability, cow, master);
             this.filesInProgress.put(fileID, file);
-            
+
             // update requestsPerFile for all files (load-balancing)
             ReplicatingFile.setMaxRequestsPerFile(MAX_REQUESTS_OVERALL / filesInProgress.size());
 
             if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "start replicating file %s",
-                    fileID);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "start replicating file %s", fileID);
         }
 
         // update to newer cap, ...
@@ -142,7 +153,11 @@ public class ObjectDissemination {
      */
     private void fileCompleted(String fileID) {
         // if the last requested object was fetched for this file => remove from map
-        filesInProgress.remove(fileID);
+        ReplicatingFile completedFile = filesInProgress.remove(fileID);
+        assert(completedFile!=null);
+        // cache completed file
+        lastCompletedFilesCache.put(fileID, completedFile);
+
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "stop replicating file %s", fileID);
 

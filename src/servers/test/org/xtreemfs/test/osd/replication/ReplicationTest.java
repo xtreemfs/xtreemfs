@@ -472,7 +472,7 @@ public class ReplicationTest extends TestCase {
         long[] list = deserializeObjectList(objectList);
         assertEquals(0, list.length);
 
-        // write object to replica 1
+        // write object to replica 1 : OSD 1
         RPCResponse<OSDWriteResponse> w = client.write(xLoc.getOSDsForObject(objectNo).get(0).getAddress(),
                 fileID, fcred, objectNo, 0, 0, 0, getObjectData(this.data));
         OSDWriteResponse wResp = w.get();
@@ -487,29 +487,56 @@ public class ReplicationTest extends TestCase {
         assertEquals(1, list.length);
         assertEquals(objectNo, list[0]);
 
-        // write object to replica 1
-        w = client.write(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), fileID, fcred, objectNo + 1, 0,
+        // write object to replica 1 : OSD 2
+        w = client.write(xLoc.getOSDsForObject(objectNo + 1).get(0).getAddress(), fileID, fcred, objectNo + 1, 0,
                 0, 0, getObjectData(this.data));
         wResp = w.get();
         w.freeBuffers();
 
-        // write object to replica 1
-        w = client.write(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), fileID, fcred, objectNo + 2, 0,
+        // write object to replica 1 : OSD 3
+        w = client.write(xLoc.getOSDsForObject(objectNo + 2).get(0).getAddress(), fileID, fcred, objectNo + 2, 0,
                 0, 0, getObjectData(this.data));
         wResp = w.get();
         w.freeBuffers();
 
-        // read data
+        // write object to replica 1 : OSD 1
+        w = client.write(xLoc.getOSDsForObject(objectNo + 3).get(0).getAddress(), fileID, fcred, objectNo + 3, 0,
+                0, 0, getObjectData(this.data));
+        wResp = w.get();
+        w.freeBuffers();
+
+        // read object list from OSD 1 : OSD 1
         r = client.internal_getObjectList(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), fileID, fcred);
         objectList = r.get();
         r.freeBuffers();
         assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
         list = deserializeObjectList(objectList);
-        assertEquals(3, list.length);
+        assertEquals(2, list.length);
         Arrays.sort(list);
-        assertTrue(Arrays.binarySearch(list, objectNo) >= 0);
-        assertTrue(Arrays.binarySearch(list, objectNo + 1) >= 0);
-        assertTrue(Arrays.binarySearch(list, objectNo + 2) >= 0);
+        long[] expected = { objectNo, objectNo + 3 };
+        assertTrue(Arrays.equals(expected, list));
+
+        // read object list from OSD 1 : OSD 2
+        r = client.internal_getObjectList(xLoc.getOSDsForObject(objectNo + 1).get(0).getAddress(), fileID, fcred);
+        objectList = r.get();
+        r.freeBuffers();
+        assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
+        list = deserializeObjectList(objectList);
+        assertEquals(1, list.length);
+        Arrays.sort(list);
+        long[] expected2 = { objectNo + 1 };
+        assertTrue(Arrays.equals(expected2, list));
+
+        // read object list from OSD 1 : OSD 3
+        r = client.internal_getObjectList(xLoc.getOSDsForObject(objectNo + 2).get(0).getAddress(), fileID, fcred);
+        objectList = r.get();
+        r.freeBuffers();
+        assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
+        list = deserializeObjectList(objectList);
+        assertEquals(1, list.length);
+        Arrays.sort(list);
+        long[] expected3 = { objectNo + 2 };
+        assertTrue(Arrays.equals(expected3, list));
     }
 
     private long[] deserializeObjectList(ObjectList objectList) throws IOException,

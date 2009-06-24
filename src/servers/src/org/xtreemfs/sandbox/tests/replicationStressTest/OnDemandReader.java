@@ -24,7 +24,6 @@
  */
 package org.xtreemfs.sandbox.tests.replicationStressTest;
 
-import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -34,39 +33,33 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.xloc.Replica;
-import org.xtreemfs.interfaces.UserCredentials;
 
 /**
- * a reader for reading replicas which are marked as ondemand replicas (preferred)
- * <br>
+ * a reader for reading replicas which are marked as ondemand replicas (preferred) <br>
  * 08.06.2009
  */
-public class OnDemandReader extends ReplicationStressTestReader {
+class OnDemandReader extends Reader {
     /**
      * @throws Exception
      * 
      */
-    public OnDemandReader(int threadNo, InetSocketAddress mrcAddress,
-            CopyOnWriteArrayList<FileInfo> fileList, Random random, UserCredentials userCredentials)
+    public OnDemandReader(CopyOnWriteArrayList<TestFile> fileList, Random random, int threadNo)
             throws Exception {
-        super(threadNo, mrcAddress, fileList, random, userCredentials);
+        super(fileList, random, threadNo);
     }
 
     /**
      * read/replicate files
-     * 
-     * @return throughput
      */
-    public double readFile(FileInfo file) throws Exception {
-        int partSize = (int) (ReplicationStressTest.PART_SIZE * 5 * random.nextDouble()); // random partsize
+    public void readFile(TestFile file) throws Exception {
+        int partSize = (int) (StressTest.PART_SIZE * 5 * random.nextDouble()); // random partsize
         long timeRequiredForReading = 0;
 
         java.io.RandomAccessFile originalFile = null;
         try {
-            originalFile = new java.io.RandomAccessFile(ReplicationStressTest.tmpDir
-                    + ReplicationStressTest.tmpFilename, "r");
-            RandomAccessFile raf = new RandomAccessFile("r", mrcAddress, ReplicationStressTest.VOLUME_NAME
-                    + ReplicationStressTest.DIR_PATH + file.filename, client, userCredentials);
+            originalFile = new java.io.RandomAccessFile(TestFile.diskDir + TestFile.DISK_FILENAME, "r");
+            RandomAccessFile raf = new RandomAccessFile("r", mrcAddress, TestFile.VOLUME_NAME
+                    + TestFile.DIR_PATH + file.filename, client, TestFile.userCredentials);
 
             long filesize = raf.length();
 
@@ -92,7 +85,7 @@ public class OnDemandReader extends ReplicationStressTestReader {
                     timeRequiredForReading += System.currentTimeMillis() - timeBefore;
                 } catch (Exception e) {
                     // TODO: catch exception, if request is rejected because of change of XLocations version
-                    ReplicationStressTest.containedErrors = true;
+                    StressTest.containedErrors = true;
                     file.readFromDisk(expectedResult, originalFile, startOffset, filesize);
 
                     System.out.println(e.getMessage());
@@ -111,12 +104,13 @@ public class OnDemandReader extends ReplicationStressTestReader {
                 // ASSERT the byte-data
                 file.readFromDisk(expectedResult, originalFile, startOffset, filesize);
                 if (!Arrays.equals(result, expectedResult)) {
-                    ReplicationStressTest.containedErrors = true;
+                    StressTest.containedErrors = true;
                     log("Read wrong data.", file, startOffset, startOffset + partSize, filesize, result,
                             expectedResult);
                 }
             }
-            return ((filesize / 1024.0) / (timeRequiredForReading / 1000.0)); // KB/s
+            // monitor throughput
+            Monitoring.monitorThroughput(Thread.currentThread().getName(), filesize, timeRequiredForReading);
         } finally {
             if (originalFile != null)
                 originalFile.close();

@@ -27,109 +27,39 @@ package org.xtreemfs.sandbox.tests.replicationStressTest;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Random;
-import java.util.SortedSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.interfaces.UserCredentials;
 
 /**
- * Reader Thread (Client)
- * <br>
+ * Reader Thread (Client) <br>
  * 08.06.2009
  */
-public abstract class ReplicationStressTestReader implements Runnable {
-    /**
-     * one instance will be written once and will be not modified after this (deep)
-     */
-    public static class FileInfo {
-        final String    filename;
-        /**
-         * start offsets of the holes
-         */
-        SortedSet<Long> holes;
+abstract class Reader implements Runnable {
+    static final int                               SLEEP_TIME = 1000 * 1; // sleep 1 second
 
-        /**
-         * 
-         */
-        public FileInfo(String filename) {
-            this.filename = filename;
-        }
+    protected final RPCNIOSocketClient             client;
+    protected InetSocketAddress                    mrcAddress;
+    final int                                      threadNo;
 
-        public void readFromXtreemFS(byte[] buffer, RandomAccessFile in, long startOffset) throws Exception {
-            in.seek(startOffset);
-            in.read(buffer, 0, buffer.length);
-        }
+    protected final CopyOnWriteArrayList<TestFile> fileList;
+    protected Random                               random;
 
-        public void readFromDisk(byte[] buffer, java.io.RandomAccessFile in, long startOffset, long filesize)
-                throws Exception {
-            int bufferSize = buffer.length;
-            long endOffset = startOffset + bufferSize;
-
-            // read data from file
-            in.seek(startOffset);
-            in.read(buffer);
-
-            // check for holes => modify expected data
-            for (Long holeStartOffset : holes) {
-                long holeEndOffset = holeStartOffset + ReplicationStressTest.PART_SIZE;
-                if (containsHoleInRange(holeStartOffset, startOffset, endOffset)) {
-                    int from = ((holeStartOffset - startOffset) < 0) ? 0
-                            : (int) (holeStartOffset - startOffset);
-                    int to = ((holeEndOffset - startOffset) > bufferSize) ? bufferSize
-                            : (int) (holeEndOffset - startOffset);
-                    // swap some data to zeros
-                    Arrays.fill(buffer, from, to, (byte) 0);
-                }
-            }
-
-            // check for EOF => modify expected data
-            if (endOffset > filesize) { // EOF with data
-                // swap data to zeros
-                Arrays.fill(buffer, (int) (filesize - startOffset), bufferSize, (byte) 0);
-            }
-        }
-
-        public boolean containsHoleInRange(long hole, long startOffset, long endOffset) {
-            boolean result = false;
-            if ((hole >= startOffset && hole < endOffset) // hole begins in area
-                    || (hole + ReplicationStressTest.PART_SIZE > startOffset && hole
-                            + ReplicationStressTest.PART_SIZE <= endOffset) // hole ends in area
-                    || (hole < startOffset && hole + ReplicationStressTest.PART_SIZE > endOffset)) // hole begins ahead and ends
-                // after area
-                result = true;
-            return result;
-        }
-    }
-
-    static final int                         SLEEP_TIME = 1000 * 1; // sleep 1 second
-
-    protected final UserCredentials          userCredentials;
-    protected final RPCNIOSocketClient       client;
-    protected InetSocketAddress              mrcAddress;
-    int                                      threadNo;
-
-    protected CopyOnWriteArrayList<FileInfo> fileList;
-    protected Random                         random;
-
-    public ReplicationStressTestReader(int threadNo, InetSocketAddress mrcAddress,
-            CopyOnWriteArrayList<FileInfo> fileList, Random random, UserCredentials userCredentials)
-            throws Exception {
-        this.mrcAddress = mrcAddress;
+    public Reader(CopyOnWriteArrayList<TestFile> fileList,
+            Random random, int threadNo) throws Exception {
+        this.mrcAddress = TestFile.mrcAddress;
         this.fileList = fileList;
         this.random = random;
-        this.userCredentials = userCredentials;
         this.threadNo = threadNo;
 
         client = new RPCNIOSocketClient(null, 10000, 5 * 60 * 1000);
         client.start();
         client.waitForStartup();
     }
-    
-    protected abstract double readFile(FileInfo file) throws Exception;
+
+    protected abstract void readFile(TestFile file) throws Exception;
 
     public void shutdown() throws Exception {
         client.shutdown();
@@ -150,19 +80,17 @@ public abstract class ReplicationStressTestReader implements Runnable {
         }
 
         int fileCounter = 0;
-        double throughputSum = 0;
         while (!Thread.interrupted()) {
             try {
                 // get any file from list
-                FileInfo file = fileList.get(random.nextInt(fileList.size()));
-                throughputSum += readFile(file); // KB/s
+                TestFile file = fileList.get(random.nextInt(fileList.size()));
+                readFile(file);
 
                 if (++fileCounter % 100 == 0) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.test, this,
-                            "%s has read %d files. Average throughput: %d KB/s.",
-                            Thread.currentThread().getName(), fileCounter,
-                            Math.round((throughputSum / 100) * 1000 ) / 1000); // KB/s
-                    throughputSum = 0; // reset
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.test, this, "%s has read %d files.",
+                            Thread.currentThread().getName(), fileCounter);
+                    Monitoring.printThroughput(Thread.currentThread().getName());
+                    Monitoring.resetEntry(Thread.currentThread().getName());
                 }
 
                 // sleep some time, so the OSDs will not overload
@@ -183,7 +111,7 @@ public abstract class ReplicationStressTestReader implements Runnable {
         }
     }
 
-    protected void log(String message, FileInfo file, long startOffset, long endOffset, long filesize,
+    protected void log(String message, TestFile file, long startOffset, long endOffset, long filesize,
             byte[] read, byte[] expected) {
         System.out
                 .println("#####################################################################################################");
@@ -196,7 +124,7 @@ public abstract class ReplicationStressTestReader implements Runnable {
         StringBuffer sb = new StringBuffer();
         sb.append("offsets of holes (start-end): ");
         for (Long holeStartOffset : file.holes) {
-            sb.append(holeStartOffset + "-" + (holeStartOffset + ReplicationStressTest.PART_SIZE));
+            sb.append(holeStartOffset + "-" + (holeStartOffset + StressTest.PART_SIZE));
             sb.append(", ");
         }
         System.out.println(sb.toString());
@@ -210,7 +138,7 @@ public abstract class ReplicationStressTestReader implements Runnable {
                 + Arrays.toString(Arrays.copyOfRange(expected, expected.length - 32, expected.length)));
 
         for (Long holeStartOffset : file.holes) {
-            long holeEndOffset = holeStartOffset + ReplicationStressTest.PART_SIZE;
+            long holeEndOffset = holeStartOffset + StressTest.PART_SIZE;
             if (holeStartOffset >= startOffset && holeStartOffset <= endOffset) { // hole begins in area
                 System.out.println("bytes (read) around hole start at position:"
                         + holeStartOffset

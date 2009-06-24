@@ -70,7 +70,7 @@ import org.xtreemfs.osd.storage.ObjectInformation.ObjectStatus;
  * attends to the replication of all objects of this file <br>
  * 01.04.2009
  */
-public class ReplicatingFile {
+class ReplicatingFile {
     /*
      * inner class
      */
@@ -328,7 +328,7 @@ public class ReplicatingFile {
 
         // create a new strategy
         if (xLoc.getLocalReplica().isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE))
-            strategy = new SequencialStrategy(fileID, xLoc, osdAvailability);
+            strategy = new SequentialStrategy(fileID, xLoc, osdAvailability);
         else if (xLoc.getLocalReplica().isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM))
             strategy = new RandomStrategy(fileID, xLoc, osdAvailability);
         else
@@ -337,7 +337,7 @@ public class ReplicatingFile {
         // check if background replication is required
         isFullReplica = !xLoc.getLocalReplica().isFilledOnDemand();
         if (isFullReplica) {
-            // get striping coloumn of local OSD
+            // get striping column of local OSD
             int coloumn = xLoc.getLocalReplica().getOSDs().indexOf(master.getConfig().getUUID());
             // add all objects (for this OSD) to strategy
             for (int object = coloumn; object <= lastObject; object += sp.getWidth()) {
@@ -470,7 +470,7 @@ public class ReplicatingFile {
     /**
      * 
      * @param objectNo
-     * @param usedOSD TODO
+     * @param usedOSD
      * @param data
      */
     public void objectFetched(long objectNo, final ServiceUUID usedOSD, ObjectData data) {
@@ -502,7 +502,7 @@ public class ReplicatingFile {
      * Checks if it is a hole. Otherwise it tries to use another OSD for fetching.
      * 
      * @param objectNo
-     * @param usedOSD TODO
+     * @param usedOSD
      */
     public void objectNotFetched(long objectNo, final ServiceUUID usedOSD) {
         ReplicatingObject object = objectsInProgress.get(objectNo);

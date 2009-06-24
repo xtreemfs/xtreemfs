@@ -29,6 +29,7 @@ import java.util.List;
 import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.interfaces.Constants;
 
 /**
  * A simple transfer strategy, which fetches the next object and iterates sequentially through the replicas
@@ -39,7 +40,12 @@ import org.xtreemfs.common.xloc.XLocations;
  * width). <br>
  * 13.10.2008
  */
-public class SequencialStrategy extends TransferStrategy {
+public class SequentialStrategy extends TransferStrategy {
+    /**
+     * identifies the sequential strategy in replication flags
+     */
+    public static final int              REPLICATION_FLAG = Constants.REPL_FLAG_STRATEGY_SIMPLE;
+
     /**
      * contains the position (replica) in xLoc list of the next OSD which should be used for this stripe<br>
      * key: stripe
@@ -50,7 +56,7 @@ public class SequencialStrategy extends TransferStrategy {
     /**
      * @param rqDetails
      */
-    public SequencialStrategy(String fileId, XLocations xLoc, ServiceAvailability osdAvailability) {
+    public SequentialStrategy(String fileId, XLocations xLoc, ServiceAvailability osdAvailability) {
         super(fileId, xLoc, osdAvailability);
         int stripeWidth = xLoc.getLocalReplica().getStripingPolicy().getWidth();
         this.nextOSDforObject = new HashMap<Integer, Integer>(stripeWidth);

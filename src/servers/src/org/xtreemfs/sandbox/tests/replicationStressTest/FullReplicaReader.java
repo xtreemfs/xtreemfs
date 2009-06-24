@@ -27,7 +27,6 @@ package org.xtreemfs.sandbox.tests.replicationStressTest;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -43,46 +42,41 @@ import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.ObjectList;
-import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.osd.client.OSDClient;
 
 /**
- * a reader for reading replicas which are marked as full replicas (preferred)
- * <br>09.06.2009
+ * a reader for reading replicas which are marked as full replicas (preferred) <br>
+ * 09.06.2009
  */
-public class FullReplicaReader extends ReplicationStressTestReader {
-    
-    private OSDClient osdClient;
+class FullReplicaReader extends Reader {
+
+    protected OSDClient               osdClient;
     private static HashSet<Replica> completedReplicas = new HashSet<Replica>();
-    
+
     /**
      * @throws Exception
      * 
      */
-    public FullReplicaReader(int threadNo, InetSocketAddress mrcAddress,
-            CopyOnWriteArrayList<FileInfo> fileList, Random random, UserCredentials userCredentials)
+    public FullReplicaReader(CopyOnWriteArrayList<TestFile> fileList, Random random, int threadNo)
             throws Exception {
-        super(threadNo, mrcAddress, fileList, random, userCredentials);
+        super(fileList, random, threadNo);
         this.osdClient = new OSDClient(client);
     }
 
     /**
      * read/replicate files
-     * 
-     * @return throughput
      */
-    public double readFile(FileInfo file) throws Exception {
+    public void readFile(TestFile file) throws Exception {
         double factor = random.nextDouble();
         factor = (factor - 0.6 > 0) ? (factor - 0.6) : factor; // rather smaller partsizes
-        int partSize = (int) Math.round(ReplicationStressTest.PART_SIZE * factor);
+        int partSize = (int) Math.round(StressTest.PART_SIZE * factor);
         long timeRequiredForReading = 0;
 
         java.io.RandomAccessFile originalFile = null;
         try {
-            originalFile = new java.io.RandomAccessFile(ReplicationStressTest.tmpDir
-                    + ReplicationStressTest.tmpFilename, "r");
-            RandomAccessFile raf = new RandomAccessFile("r", mrcAddress, ReplicationStressTest.VOLUME_NAME
-                    + ReplicationStressTest.DIR_PATH + file.filename, client, userCredentials);
+            originalFile = new java.io.RandomAccessFile(TestFile.diskDir + TestFile.DISK_FILENAME, "r");
+            RandomAccessFile raf = new RandomAccessFile("r", mrcAddress, TestFile.VOLUME_NAME
+                    + TestFile.DIR_PATH + file.filename, client, TestFile.userCredentials);
 
             long filesize = raf.length();
             StripingPolicyImpl sp = raf.getCurrentlyUsedReplica().getStripingPolicy();
@@ -98,7 +92,7 @@ public class FullReplicaReader extends ReplicationStressTestReader {
                 } while (startOffset + partSize > filesize || startOffset < 0); // try again
                 startOffsets.add(startOffset);
             }
-            
+
             // sleep a short time, so the background replication could begin
             Thread.sleep(SLEEP_TIME);
 
@@ -115,7 +109,7 @@ public class FullReplicaReader extends ReplicationStressTestReader {
                     timeRequiredForReading += System.currentTimeMillis() - timeBefore;
                 } catch (Exception e) {
                     // TODO: catch exception, if request is rejected because of change of XLocations version
-                    ReplicationStressTest.containedErrors = true;
+                    StressTest.containedErrors = true;
                     file.readFromDisk(expectedResult, originalFile, startOffset, filesize);
 
                     log(e.getCause().toString(), file, startOffset, startOffset + partSize, filesize, result,
@@ -126,15 +120,15 @@ public class FullReplicaReader extends ReplicationStressTestReader {
                 // ASSERT the byte-data
                 file.readFromDisk(expectedResult, originalFile, startOffset, filesize);
                 if (!Arrays.equals(result, expectedResult)) {
-                    ReplicationStressTest.containedErrors = true;
+                    StressTest.containedErrors = true;
                     log("Read wrong data.", file, startOffset, startOffset + partSize, filesize, result,
                             expectedResult);
                 }
             }
-            
+
             // wait some time so the background replication could work
             Thread.sleep(SLEEP_TIME);
-            
+
             // check if replica is complete => background replication should work
             // get object lists from all OSDs (by RAF)
             long objects = 0; // sum of all saved objects from all OSDs of this replica
@@ -151,10 +145,12 @@ public class FullReplicaReader extends ReplicationStressTestReader {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.test, this,
                     "Replica %s (Head-OSD) of file %s has replicated %d objects (= %d KB of %d KB).", raf
                             .getCurrentlyUsedReplica().getHeadOsd().toString(), file.filename, objects,
-                    (objects * sp.getStripeSizeForObject(1)) / 1024,
-                    filesize / 1024);
+                    (objects * sp.getStripeSizeForObject(1)) / 1024, filesize / 1024);
 
-            if (objects == lastObject + 1 && !raf.getCurrentlyUsedReplica().isFull()) { // replication is completed; all objects are replicated
+            if (objects == lastObject + 1 && !raf.getCurrentlyUsedReplica().isFull()) { // replication is
+                                                                                        // completed; all
+                                                                                        // objects are
+                                                                                        // replicated
                 if (!completedReplicas.contains(raf.getCurrentlyUsedReplica())) {
                     completedReplicas.add(raf.getCurrentlyUsedReplica());
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.test, this,
@@ -164,14 +160,15 @@ public class FullReplicaReader extends ReplicationStressTestReader {
             } else
                 completedReplicas.remove(raf.getCurrentlyUsedReplica());
 
-            return ((SPOT_SAMPLE_COUNT * partSize / 1024.0) / (timeRequiredForReading / 1000.0)); // KB/s
+            // monitor throughput
+            Monitoring.monitorThroughput(Thread.currentThread().getName(), filesize, timeRequiredForReading);
         } finally {
             if (originalFile != null)
                 originalFile.close();
         }
     }
 
-    private long[] deserializeObjectList(ObjectList objectList) throws IOException, ClassNotFoundException {
+    protected long[] deserializeObjectList(ObjectList objectList) throws IOException, ClassNotFoundException {
         long[] list = null;
         ByteArrayInputStream bis = new ByteArrayInputStream(objectList.getObject_list().array());
         ObjectInputStream ois = new ObjectInputStream(bis);
