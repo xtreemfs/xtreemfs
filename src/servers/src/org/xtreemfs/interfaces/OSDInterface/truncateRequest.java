@@ -45,14 +45,14 @@ public class truncateRequest implements org.xtreemfs.interfaces.utils.Request
     {
         this.file_credentials.deserialize( from_hash_map.get( "file_credentials" ) );
         this.file_id = ( String )from_hash_map.get( "file_id" );
-        this.new_file_size = ( ( Long )from_hash_map.get( "new_file_size" ) ).longValue();
+        this.new_file_size = ( from_hash_map.get( "new_file_size" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "new_file_size" ) ).longValue() : ( ( Long )from_hash_map.get( "new_file_size" ) ).longValue();
     }
     
     public void deserialize( Object[] from_array )
     {
         this.file_credentials.deserialize( from_array[0] );
         this.file_id = ( String )from_array[1];
-        this.new_file_size = ( ( Long )from_array[2] ).longValue();        
+        this.new_file_size = ( from_array[2] instanceof Integer ) ? ( ( Integer )from_array[2] ).longValue() : ( ( Long )from_array[2] ).longValue();        
     }
 
     public void deserialize( ReusableBuffer buf )

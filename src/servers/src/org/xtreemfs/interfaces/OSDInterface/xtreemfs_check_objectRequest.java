@@ -47,16 +47,16 @@ public class xtreemfs_check_objectRequest implements org.xtreemfs.interfaces.uti
     {
         this.file_credentials.deserialize( from_hash_map.get( "file_credentials" ) );
         this.file_id = ( String )from_hash_map.get( "file_id" );
-        this.object_number = ( ( Long )from_hash_map.get( "object_number" ) ).longValue();
-        this.object_version = ( ( Long )from_hash_map.get( "object_version" ) ).longValue();
+        this.object_number = ( from_hash_map.get( "object_number" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "object_number" ) ).longValue() : ( ( Long )from_hash_map.get( "object_number" ) ).longValue();
+        this.object_version = ( from_hash_map.get( "object_version" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "object_version" ) ).longValue() : ( ( Long )from_hash_map.get( "object_version" ) ).longValue();
     }
     
     public void deserialize( Object[] from_array )
     {
         this.file_credentials.deserialize( from_array[0] );
         this.file_id = ( String )from_array[1];
-        this.object_number = ( ( Long )from_array[2] ).longValue();
-        this.object_version = ( ( Long )from_array[3] ).longValue();        
+        this.object_number = ( from_array[2] instanceof Integer ) ? ( ( Integer )from_array[2] ).longValue() : ( ( Long )from_array[2] ).longValue();
+        this.object_version = ( from_array[3] instanceof Integer ) ? ( ( Integer )from_array[3] ).longValue() : ( ( Long )from_array[3] ).longValue();        
     }
 
     public void deserialize( ReusableBuffer buf )

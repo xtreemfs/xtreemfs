@@ -48,7 +48,7 @@ public class setxattrRequest implements org.xtreemfs.interfaces.utils.Request
         this.path = ( String )from_hash_map.get( "path" );
         this.name = ( String )from_hash_map.get( "name" );
         this.value = ( String )from_hash_map.get( "value" );
-        this.flags = ( ( Integer )from_hash_map.get( "flags" ) ).intValue();
+        this.flags = ( from_hash_map.get( "flags" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "flags" ) ).intValue() : ( ( Long )from_hash_map.get( "flags" ) ).intValue();
     }
     
     public void deserialize( Object[] from_array )
@@ -56,7 +56,7 @@ public class setxattrRequest implements org.xtreemfs.interfaces.utils.Request
         this.path = ( String )from_array[0];
         this.name = ( String )from_array[1];
         this.value = ( String )from_array[2];
-        this.flags = ( ( Integer )from_array[3] ).intValue();        
+        this.flags = ( from_array[3] instanceof Integer ) ? ( ( Integer )from_array[3] ).intValue() : ( ( Long )from_array[3] ).intValue();        
     }
 
     public void deserialize( ReusableBuffer buf )

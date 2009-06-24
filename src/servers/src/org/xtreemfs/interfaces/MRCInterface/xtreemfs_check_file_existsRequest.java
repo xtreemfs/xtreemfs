@@ -14,20 +14,22 @@ public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interface
     public static final int TAG = 1231;
 
     
-    public xtreemfs_check_file_existsRequest() { volume_id = ""; file_ids = new StringSet(); }
-    public xtreemfs_check_file_existsRequest( String volume_id, StringSet file_ids ) { this.volume_id = volume_id; this.file_ids = file_ids; }
-    public xtreemfs_check_file_existsRequest( Object from_hash_map ) { volume_id = ""; file_ids = new StringSet(); this.deserialize( from_hash_map ); }
-    public xtreemfs_check_file_existsRequest( Object[] from_array ) { volume_id = ""; file_ids = new StringSet();this.deserialize( from_array ); }
+    public xtreemfs_check_file_existsRequest() { volume_id = ""; file_ids = new StringSet(); osd_uuid = ""; }
+    public xtreemfs_check_file_existsRequest( String volume_id, StringSet file_ids, String osd_uuid ) { this.volume_id = volume_id; this.file_ids = file_ids; this.osd_uuid = osd_uuid; }
+    public xtreemfs_check_file_existsRequest( Object from_hash_map ) { volume_id = ""; file_ids = new StringSet(); osd_uuid = ""; this.deserialize( from_hash_map ); }
+    public xtreemfs_check_file_existsRequest( Object[] from_array ) { volume_id = ""; file_ids = new StringSet(); osd_uuid = "";this.deserialize( from_array ); }
 
     public String getVolume_id() { return volume_id; }
     public void setVolume_id( String volume_id ) { this.volume_id = volume_id; }
     public StringSet getFile_ids() { return file_ids; }
     public void setFile_ids( StringSet file_ids ) { this.file_ids = file_ids; }
+    public String getOsd_uuid() { return osd_uuid; }
+    public void setOsd_uuid( String osd_uuid ) { this.osd_uuid = osd_uuid; }
 
     // Object
     public String toString()
     {
-        return "xtreemfs_check_file_existsRequest( " + "\"" + volume_id + "\"" + ", " + file_ids.toString() + " )";
+        return "xtreemfs_check_file_existsRequest( " + "\"" + volume_id + "\"" + ", " + file_ids.toString() + ", " + "\"" + osd_uuid + "\"" + " )";
     }
 
     // Serializable
@@ -43,18 +45,21 @@ public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interface
     {
         this.volume_id = ( String )from_hash_map.get( "volume_id" );
         this.file_ids.deserialize( ( Object[] )from_hash_map.get( "file_ids" ) );
+        this.osd_uuid = ( String )from_hash_map.get( "osd_uuid" );
     }
     
     public void deserialize( Object[] from_array )
     {
         this.volume_id = ( String )from_array[0];
-        this.file_ids.deserialize( ( Object[] )from_array[1] );        
+        this.file_ids.deserialize( ( Object[] )from_array[1] );
+        this.osd_uuid = ( String )from_array[2];        
     }
 
     public void deserialize( ReusableBuffer buf )
     {
         volume_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
         file_ids = new StringSet(); file_ids.deserialize( buf );
+        osd_uuid = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
     }
 
     public Object serialize()
@@ -62,6 +67,7 @@ public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interface
         HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
         to_hash_map.put( "volume_id", volume_id );
         to_hash_map.put( "file_ids", file_ids.serialize() );
+        to_hash_map.put( "osd_uuid", osd_uuid );
         return to_hash_map;        
     }
 
@@ -69,6 +75,7 @@ public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interface
     {
         org.xtreemfs.interfaces.utils.XDRUtils.serializeString( volume_id, writer );
         file_ids.serialize( writer );
+        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( osd_uuid, writer );
     }
     
     public int calculateSize()
@@ -76,6 +83,7 @@ public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interface
         int my_size = 0;
         my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(volume_id);
         my_size += file_ids.calculateSize();
+        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(osd_uuid);
         return my_size;
     }
 
@@ -84,7 +92,8 @@ public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interface
 
 
     private String volume_id;
-    private StringSet file_ids;    
+    private StringSet file_ids;
+    private String osd_uuid;    
 
 }
 

@@ -46,17 +46,17 @@ public class utimensRequest implements org.xtreemfs.interfaces.utils.Request
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
         this.path = ( String )from_hash_map.get( "path" );
-        this.atime_ns = ( ( Long )from_hash_map.get( "atime_ns" ) ).longValue();
-        this.mtime_ns = ( ( Long )from_hash_map.get( "mtime_ns" ) ).longValue();
-        this.ctime_ns = ( ( Long )from_hash_map.get( "ctime_ns" ) ).longValue();
+        this.atime_ns = ( from_hash_map.get( "atime_ns" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "atime_ns" ) ).longValue() : ( ( Long )from_hash_map.get( "atime_ns" ) ).longValue();
+        this.mtime_ns = ( from_hash_map.get( "mtime_ns" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "mtime_ns" ) ).longValue() : ( ( Long )from_hash_map.get( "mtime_ns" ) ).longValue();
+        this.ctime_ns = ( from_hash_map.get( "ctime_ns" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "ctime_ns" ) ).longValue() : ( ( Long )from_hash_map.get( "ctime_ns" ) ).longValue();
     }
     
     public void deserialize( Object[] from_array )
     {
         this.path = ( String )from_array[0];
-        this.atime_ns = ( ( Long )from_array[1] ).longValue();
-        this.mtime_ns = ( ( Long )from_array[2] ).longValue();
-        this.ctime_ns = ( ( Long )from_array[3] ).longValue();        
+        this.atime_ns = ( from_array[1] instanceof Integer ) ? ( ( Integer )from_array[1] ).longValue() : ( ( Long )from_array[1] ).longValue();
+        this.mtime_ns = ( from_array[2] instanceof Integer ) ? ( ( Integer )from_array[2] ).longValue() : ( ( Long )from_array[2] ).longValue();
+        this.ctime_ns = ( from_array[3] instanceof Integer ) ? ( ( Integer )from_array[3] ).longValue() : ( ( Long )from_array[3] ).longValue();        
     }
 
     public void deserialize( ReusableBuffer buf )

@@ -94,7 +94,7 @@ module org # 1000
 
         // XtreemFS-specific operations
         void xtreemfs_checkpoint() # 30;
-        void xtreemfs_check_file_exists( string volume_id, StringSet file_ids, out string bitmap ) # 31;
+        void xtreemfs_check_file_exists( string volume_id, StringSet file_ids, string osd_uuid, out string bitmap ) # 31;
         void xtreemfs_dump_database( string dump_file ) # 32;
         void xtreemfs_get_suitable_osds( string file_id, out StringSet osd_uuids ) # 33;
         void xtreemfs_internal_debug( string operation, out string result ) # 34;

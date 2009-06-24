@@ -43,14 +43,14 @@ public class ObjectList implements org.xtreemfs.interfaces.utils.Serializable
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
         this.object_list = ( ReusableBuffer )from_hash_map.get( "object_list" );
-        this.object_list_type = ( ( Integer )from_hash_map.get( "object_list_type" ) ).intValue();
+        this.object_list_type = ( from_hash_map.get( "object_list_type" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "object_list_type" ) ).intValue() : ( ( Long )from_hash_map.get( "object_list_type" ) ).intValue();
         this.is_complete = ( ( Boolean )from_hash_map.get( "is_complete" ) ).booleanValue();
     }
     
     public void deserialize( Object[] from_array )
     {
         this.object_list = ( ReusableBuffer )from_array[0];
-        this.object_list_type = ( ( Integer )from_array[1] ).intValue();
+        this.object_list_type = ( from_array[1] instanceof Integer ) ? ( ( Integer )from_array[1] ).intValue() : ( ( Long )from_array[1] ).intValue();
         this.is_complete = ( ( Boolean )from_array[2] ).booleanValue();        
     }
 

@@ -46,17 +46,17 @@ public class openRequest implements org.xtreemfs.interfaces.utils.Request
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
         this.path = ( String )from_hash_map.get( "path" );
-        this.flags = ( ( Integer )from_hash_map.get( "flags" ) ).intValue();
-        this.mode = ( ( Integer )from_hash_map.get( "mode" ) ).intValue();
-        this.attributes = ( ( Integer )from_hash_map.get( "attributes" ) ).intValue();
+        this.flags = ( from_hash_map.get( "flags" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "flags" ) ).intValue() : ( ( Long )from_hash_map.get( "flags" ) ).intValue();
+        this.mode = ( from_hash_map.get( "mode" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "mode" ) ).intValue() : ( ( Long )from_hash_map.get( "mode" ) ).intValue();
+        this.attributes = ( from_hash_map.get( "attributes" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "attributes" ) ).intValue() : ( ( Long )from_hash_map.get( "attributes" ) ).intValue();
     }
     
     public void deserialize( Object[] from_array )
     {
         this.path = ( String )from_array[0];
-        this.flags = ( ( Integer )from_array[1] ).intValue();
-        this.mode = ( ( Integer )from_array[2] ).intValue();
-        this.attributes = ( ( Integer )from_array[3] ).intValue();        
+        this.flags = ( from_array[1] instanceof Integer ) ? ( ( Integer )from_array[1] ).intValue() : ( ( Long )from_array[1] ).intValue();
+        this.mode = ( from_array[2] instanceof Integer ) ? ( ( Integer )from_array[2] ).intValue() : ( ( Long )from_array[2] ).intValue();
+        this.attributes = ( from_array[3] instanceof Integer ) ? ( ( Integer )from_array[3] ).intValue() : ( ( Long )from_array[3] ).intValue();        
     }
 
     public void deserialize( ReusableBuffer buf )

@@ -40,14 +40,14 @@ public class NewFileSize implements org.xtreemfs.interfaces.utils.Serializable
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.size_in_bytes = ( ( Long )from_hash_map.get( "size_in_bytes" ) ).longValue();
-        this.truncate_epoch = ( ( Integer )from_hash_map.get( "truncate_epoch" ) ).intValue();
+        this.size_in_bytes = ( from_hash_map.get( "size_in_bytes" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "size_in_bytes" ) ).longValue() : ( ( Long )from_hash_map.get( "size_in_bytes" ) ).longValue();
+        this.truncate_epoch = ( from_hash_map.get( "truncate_epoch" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "truncate_epoch" ) ).intValue() : ( ( Long )from_hash_map.get( "truncate_epoch" ) ).intValue();
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.size_in_bytes = ( ( Long )from_array[0] ).longValue();
-        this.truncate_epoch = ( ( Integer )from_array[1] ).intValue();        
+        this.size_in_bytes = ( from_array[0] instanceof Integer ) ? ( ( Integer )from_array[0] ).longValue() : ( ( Long )from_array[0] ).longValue();
+        this.truncate_epoch = ( from_array[1] instanceof Integer ) ? ( ( Integer )from_array[1] ).intValue() : ( ( Long )from_array[1] ).intValue();        
     }
 
     public void deserialize( ReusableBuffer buf )

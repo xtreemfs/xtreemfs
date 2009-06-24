@@ -49,20 +49,20 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
         this.file_id = ( String )from_hash_map.get( "file_id" );
-        this.access_mode = ( ( Integer )from_hash_map.get( "access_mode" ) ).intValue();
-        this.expires_s = ( ( Long )from_hash_map.get( "expires_s" ) ).longValue();
+        this.access_mode = ( from_hash_map.get( "access_mode" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "access_mode" ) ).intValue() : ( ( Long )from_hash_map.get( "access_mode" ) ).intValue();
+        this.expires_s = ( from_hash_map.get( "expires_s" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "expires_s" ) ).longValue() : ( ( Long )from_hash_map.get( "expires_s" ) ).longValue();
         this.client_identity = ( String )from_hash_map.get( "client_identity" );
-        this.truncate_epoch = ( ( Integer )from_hash_map.get( "truncate_epoch" ) ).intValue();
+        this.truncate_epoch = ( from_hash_map.get( "truncate_epoch" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "truncate_epoch" ) ).intValue() : ( ( Long )from_hash_map.get( "truncate_epoch" ) ).intValue();
         this.server_signature = ( String )from_hash_map.get( "server_signature" );
     }
     
     public void deserialize( Object[] from_array )
     {
         this.file_id = ( String )from_array[0];
-        this.access_mode = ( ( Integer )from_array[1] ).intValue();
-        this.expires_s = ( ( Long )from_array[2] ).longValue();
+        this.access_mode = ( from_array[1] instanceof Integer ) ? ( ( Integer )from_array[1] ).intValue() : ( ( Long )from_array[1] ).intValue();
+        this.expires_s = ( from_array[2] instanceof Integer ) ? ( ( Integer )from_array[2] ).longValue() : ( ( Long )from_array[2] ).longValue();
         this.client_identity = ( String )from_array[3];
-        this.truncate_epoch = ( ( Integer )from_array[4] ).intValue();
+        this.truncate_epoch = ( from_array[4] instanceof Integer ) ? ( ( Integer )from_array[4] ).intValue() : ( ( Long )from_array[4] ).intValue();
         this.server_signature = ( String )from_array[5];        
     }
 

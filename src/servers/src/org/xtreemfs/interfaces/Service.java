@@ -50,9 +50,9 @@ public class Service implements org.xtreemfs.interfaces.utils.Serializable
     {
         
         this.uuid = ( String )from_hash_map.get( "uuid" );
-        this.version = ( ( Long )from_hash_map.get( "version" ) ).longValue();
+        this.version = ( from_hash_map.get( "version" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "version" ) ).longValue() : ( ( Long )from_hash_map.get( "version" ) ).longValue();
         this.name = ( String )from_hash_map.get( "name" );
-        this.last_updated_s = ( ( Long )from_hash_map.get( "last_updated_s" ) ).longValue();
+        this.last_updated_s = ( from_hash_map.get( "last_updated_s" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "last_updated_s" ) ).longValue() : ( ( Long )from_hash_map.get( "last_updated_s" ) ).longValue();
         this.data.deserialize( ( HashMap<String, Object> )from_hash_map.get( "data" ) );
     }
     
@@ -60,9 +60,9 @@ public class Service implements org.xtreemfs.interfaces.utils.Serializable
     {
         
         this.uuid = ( String )from_array[1];
-        this.version = ( ( Long )from_array[2] ).longValue();
+        this.version = ( from_array[2] instanceof Integer ) ? ( ( Integer )from_array[2] ).longValue() : ( ( Long )from_array[2] ).longValue();
         this.name = ( String )from_array[3];
-        this.last_updated_s = ( ( Long )from_array[4] ).longValue();
+        this.last_updated_s = ( from_array[4] instanceof Integer ) ? ( ( Integer )from_array[4] ).longValue() : ( ( Long )from_array[4] ).longValue();
         this.data.deserialize( ( HashMap<String, Object> )from_array[5] );        
     }
 

@@ -42,16 +42,16 @@ public class InternalGmax implements org.xtreemfs.interfaces.utils.Serializable
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.epoch = ( ( Long )from_hash_map.get( "epoch" ) ).longValue();
-        this.last_object_id = ( ( Long )from_hash_map.get( "last_object_id" ) ).longValue();
-        this.file_size = ( ( Long )from_hash_map.get( "file_size" ) ).longValue();
+        this.epoch = ( from_hash_map.get( "epoch" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "epoch" ) ).longValue() : ( ( Long )from_hash_map.get( "epoch" ) ).longValue();
+        this.last_object_id = ( from_hash_map.get( "last_object_id" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "last_object_id" ) ).longValue() : ( ( Long )from_hash_map.get( "last_object_id" ) ).longValue();
+        this.file_size = ( from_hash_map.get( "file_size" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "file_size" ) ).longValue() : ( ( Long )from_hash_map.get( "file_size" ) ).longValue();
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.epoch = ( ( Long )from_array[0] ).longValue();
-        this.last_object_id = ( ( Long )from_array[1] ).longValue();
-        this.file_size = ( ( Long )from_array[2] ).longValue();        
+        this.epoch = ( from_array[0] instanceof Integer ) ? ( ( Integer )from_array[0] ).longValue() : ( ( Long )from_array[0] ).longValue();
+        this.last_object_id = ( from_array[1] instanceof Integer ) ? ( ( Integer )from_array[1] ).longValue() : ( ( Long )from_array[1] ).longValue();
+        this.file_size = ( from_array[2] instanceof Integer ) ? ( ( Integer )from_array[2] ).longValue() : ( ( Long )from_array[2] ).longValue();        
     }
 
     public void deserialize( ReusableBuffer buf )

@@ -46,17 +46,17 @@ public class xtreemfs_broadcast_gmaxRequest implements org.xtreemfs.interfaces.u
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
         this.fileId = ( String )from_hash_map.get( "fileId" );
-        this.truncateEpoch = ( ( Long )from_hash_map.get( "truncateEpoch" ) ).longValue();
-        this.lastObject = ( ( Long )from_hash_map.get( "lastObject" ) ).longValue();
-        this.fileSize = ( ( Long )from_hash_map.get( "fileSize" ) ).longValue();
+        this.truncateEpoch = ( from_hash_map.get( "truncateEpoch" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "truncateEpoch" ) ).longValue() : ( ( Long )from_hash_map.get( "truncateEpoch" ) ).longValue();
+        this.lastObject = ( from_hash_map.get( "lastObject" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "lastObject" ) ).longValue() : ( ( Long )from_hash_map.get( "lastObject" ) ).longValue();
+        this.fileSize = ( from_hash_map.get( "fileSize" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "fileSize" ) ).longValue() : ( ( Long )from_hash_map.get( "fileSize" ) ).longValue();
     }
     
     public void deserialize( Object[] from_array )
     {
         this.fileId = ( String )from_array[0];
-        this.truncateEpoch = ( ( Long )from_array[1] ).longValue();
-        this.lastObject = ( ( Long )from_array[2] ).longValue();
-        this.fileSize = ( ( Long )from_array[3] ).longValue();        
+        this.truncateEpoch = ( from_array[1] instanceof Integer ) ? ( ( Integer )from_array[1] ).longValue() : ( ( Long )from_array[1] ).longValue();
+        this.lastObject = ( from_array[2] instanceof Integer ) ? ( ( Integer )from_array[2] ).longValue() : ( ( Long )from_array[2] ).longValue();
+        this.fileSize = ( from_array[3] instanceof Integer ) ? ( ( Integer )from_array[3] ).longValue() : ( ( Long )from_array[3] ).longValue();        
     }
 
     public void deserialize( ReusableBuffer buf )

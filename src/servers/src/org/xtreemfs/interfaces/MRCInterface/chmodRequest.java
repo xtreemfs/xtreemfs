@@ -42,13 +42,13 @@ public class chmodRequest implements org.xtreemfs.interfaces.utils.Request
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
         this.path = ( String )from_hash_map.get( "path" );
-        this.mode = ( ( Integer )from_hash_map.get( "mode" ) ).intValue();
+        this.mode = ( from_hash_map.get( "mode" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "mode" ) ).intValue() : ( ( Long )from_hash_map.get( "mode" ) ).intValue();
     }
     
     public void deserialize( Object[] from_array )
     {
         this.path = ( String )from_array[0];
-        this.mode = ( ( Integer )from_array[1] ).intValue();        
+        this.mode = ( from_array[1] instanceof Integer ) ? ( ( Integer )from_array[1] ).intValue() : ( ( Long )from_array[1] ).intValue();        
     }
 
     public void deserialize( ReusableBuffer buf )

@@ -40,13 +40,13 @@ public class OSDtoMRCData implements org.xtreemfs.interfaces.utils.Serializable
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.caching_policy = ( ( Integer )from_hash_map.get( "caching_policy" ) ).intValue();
+        this.caching_policy = ( from_hash_map.get( "caching_policy" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "caching_policy" ) ).intValue() : ( ( Long )from_hash_map.get( "caching_policy" ) ).intValue();
         this.data = ( String )from_hash_map.get( "data" );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.caching_policy = ( ( Integer )from_array[0] ).intValue();
+        this.caching_policy = ( from_array[0] instanceof Integer ) ? ( ( Integer )from_array[0] ).intValue() : ( ( Long )from_array[0] ).intValue();
         this.data = ( String )from_array[1];        
     }
 

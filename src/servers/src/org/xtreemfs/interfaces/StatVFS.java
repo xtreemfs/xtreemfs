@@ -44,18 +44,18 @@ public class StatVFS implements org.xtreemfs.interfaces.utils.Serializable
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.bsize = ( ( Integer )from_hash_map.get( "bsize" ) ).intValue();
-        this.bfree = ( ( Long )from_hash_map.get( "bfree" ) ).longValue();
+        this.bsize = ( from_hash_map.get( "bsize" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "bsize" ) ).intValue() : ( ( Long )from_hash_map.get( "bsize" ) ).intValue();
+        this.bfree = ( from_hash_map.get( "bfree" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "bfree" ) ).longValue() : ( ( Long )from_hash_map.get( "bfree" ) ).longValue();
         this.fsid = ( String )from_hash_map.get( "fsid" );
-        this.namelen = ( ( Integer )from_hash_map.get( "namelen" ) ).intValue();
+        this.namelen = ( from_hash_map.get( "namelen" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "namelen" ) ).intValue() : ( ( Long )from_hash_map.get( "namelen" ) ).intValue();
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.bsize = ( ( Integer )from_array[0] ).intValue();
-        this.bfree = ( ( Long )from_array[1] ).longValue();
+        this.bsize = ( from_array[0] instanceof Integer ) ? ( ( Integer )from_array[0] ).intValue() : ( ( Long )from_array[0] ).intValue();
+        this.bfree = ( from_array[1] instanceof Integer ) ? ( ( Integer )from_array[1] ).longValue() : ( ( Long )from_array[1] ).longValue();
         this.fsid = ( String )from_array[2];
-        this.namelen = ( ( Integer )from_array[3] ).intValue();        
+        this.namelen = ( from_array[3] instanceof Integer ) ? ( ( Integer )from_array[3] ).intValue() : ( ( Long )from_array[3] ).intValue();        
     }
 
     public void deserialize( ReusableBuffer buf )

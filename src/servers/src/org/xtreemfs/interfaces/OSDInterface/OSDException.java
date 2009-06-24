@@ -43,14 +43,14 @@ public class OSDException extends org.xtreemfs.interfaces.utils.ONCRPCException
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.error_code = ( ( Integer )from_hash_map.get( "error_code" ) ).intValue();
+        this.error_code = ( from_hash_map.get( "error_code" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "error_code" ) ).intValue() : ( ( Long )from_hash_map.get( "error_code" ) ).intValue();
         this.error_message = ( String )from_hash_map.get( "error_message" );
         this.stack_trace = ( String )from_hash_map.get( "stack_trace" );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.error_code = ( ( Integer )from_array[0] ).intValue();
+        this.error_code = ( from_array[0] instanceof Integer ) ? ( ( Integer )from_array[0] ).intValue() : ( ( Long )from_array[0] ).intValue();
         this.error_message = ( String )from_array[1];
         this.stack_trace = ( String )from_array[2];        
     }

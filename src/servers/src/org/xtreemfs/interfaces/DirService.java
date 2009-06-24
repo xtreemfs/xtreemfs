@@ -45,17 +45,17 @@ public class DirService implements org.xtreemfs.interfaces.utils.Serializable
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
         this.address = ( String )from_hash_map.get( "address" );
-        this.port = ( ( Integer )from_hash_map.get( "port" ) ).intValue();
+        this.port = ( from_hash_map.get( "port" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "port" ) ).intValue() : ( ( Long )from_hash_map.get( "port" ) ).intValue();
         this.protocol = ( String )from_hash_map.get( "protocol" );
-        this.interface_version = ( ( Integer )from_hash_map.get( "interface_version" ) ).intValue();
+        this.interface_version = ( from_hash_map.get( "interface_version" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "interface_version" ) ).intValue() : ( ( Long )from_hash_map.get( "interface_version" ) ).intValue();
     }
     
     public void deserialize( Object[] from_array )
     {
         this.address = ( String )from_array[0];
-        this.port = ( ( Integer )from_array[1] ).intValue();
+        this.port = ( from_array[1] instanceof Integer ) ? ( ( Integer )from_array[1] ).intValue() : ( ( Long )from_array[1] ).intValue();
         this.protocol = ( String )from_array[2];
-        this.interface_version = ( ( Integer )from_array[3] ).intValue();        
+        this.interface_version = ( from_array[3] instanceof Integer ) ? ( ( Integer )from_array[3] ).intValue() : ( ( Long )from_array[3] ).intValue();        
     }
 
     public void deserialize( ReusableBuffer buf )
