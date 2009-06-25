@@ -278,13 +278,15 @@ def start_services( debug_level=DEBUG_LEVEL_DEFAULT, num_osds=NUM_OSDS_DEFAULT, 
         _start_service( "osd", str( osdnum ) )
 
     time.sleep( 1.0 ) # Wait for the servers to start
-    try :
+
+    try:
+#        pass
     	check_services( num_osds )
     except:
-	    traceback.print_exc()
-	    stop_services( num_osds )
-            unmount_volumes()
-            sys.exit( ret )
+        traceback.print_exc()
+        stop_services( num_osds )
+        unmount_volumes()
+        sys.exit( 1 )
 
 def _start_service( service_name, service_num="" ):        
     args = [os.path.join( os.environ["JAVA_HOME"], "bin", "java" )] 
@@ -312,12 +314,13 @@ def _check_service( service_name, service_num="" ):
 	service_pid = int( open( run_file_path ).read().strip() )
 	print "Checking", service_name.upper() + service_num, "service with PID", service_pid
 	try:
-		(procid, exitvalue) = os.waitpid(service_pid,os.WNOHANG)
-	except OSError, e:
-		print e
-		raise Exception, "service died after startup: " + service_name.upper() + service_num+". check service log for more information."
-	if (exitvalue != 0) and (procid != 0):
-		raise Exception, "service died after startup: ",service_name.upper() + service_num+". check service log for more information."
+            procid, exitvalue = os.waitpid( service_pid, os.WNOHANG )
+	except OSError:
+            traceback.print_exc()
+            raise OSError, "service died after startup: " + service_name.upper() + service_num + ". check service log for more information."
+
+        if procid != 0 and exitvalue != 0:
+            raise OSError, "service died after startup: " + service_name.upper() + service_num + ". check service log for more information."
 
 	    
 def stop_services( num_osds=NUM_OSDS_DEFAULT ):
