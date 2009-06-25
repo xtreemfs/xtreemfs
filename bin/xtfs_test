@@ -12,6 +12,7 @@ original_cwd = os.getcwd()
 # Constants
 # Private key passphrases
 CLIENT_PKCS12_PASSPHRASE = "passphrase"
+PKCS12_PASSPHRASE = "passphrase"
 DIR_PKCS12_PASSPHRASE = "passphrase" 
 MRC_PKCS12_PASSPHRASE = "passphrase" 
 OSD_PKCS12_PASSPHRASE = "passphrase" 
@@ -281,7 +282,9 @@ def start_services( debug_level=DEBUG_LEVEL_DEFAULT, num_osds=NUM_OSDS_DEFAULT, 
     	check_services( num_osds )
     except:
 	    traceback.print_exc()
-	    clean( num_osds )
+	    stop_services( num_osds )
+            unmount_volumes()
+            sys.exit( ret )
 
 def _start_service( service_name, service_num="" ):        
     args = [os.path.join( os.environ["JAVA_HOME"], "bin", "java" )] 
