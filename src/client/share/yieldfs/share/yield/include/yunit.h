@@ -162,6 +162,8 @@ namespace yunit
           std::cout << " threw unknown non-exception";
         }
 
+        std::cout << std::endl;
+
         if ( called_runTest && !called_tearDown )
           try { ( *test_i )->tearDown(); } catch ( ... ) { }
 

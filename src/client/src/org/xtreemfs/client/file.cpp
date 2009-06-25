@@ -107,6 +107,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       if ( object_offset + object_size > stripe_size )
         object_size = stripe_size - object_offset;
 
+#ifdef _DEBUG
       log->getStream( YIELD::Log::LOG_INFO ) << 
         "org::xtreemfs::client::File: reading " << object_size << 
         " bytes from offset " << object_offset <<
@@ -115,16 +116,19 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         ", file offset = " << offset <<
         ", remaining buffer size = " << RBUF_REMAINING <<
         ".";
+#endif
 
       org::xtreemfs::interfaces::ObjectData object_data;
       parent_volume->get_osd_proxy_mux()->read( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ), object_data );
       YIELD::auto_Buffer data = object_data.get_data();
       uint32_t zero_padding = object_data.get_zero_padding();
 
+#ifdef _DEBUG
       log->getStream( YIELD::Log::LOG_INFO ) << 
         "org::xtreemfs::client::File: read " << data->size() <<
         " bytes from file " << file_credentials.get_xcap().get_file_id() <<
         " with " << zero_padding << " bytes of zero padding.";
+#endif
 
       if ( !data->empty() )
       {

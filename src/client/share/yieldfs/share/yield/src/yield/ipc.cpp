@@ -1,8 +1,341 @@
-// Revision: 1585
+// Revision: 1586
 
+#include "yield/arch.h"
 #include "yield/ipc.h"
 using namespace YIELD;
 using std::memset;
+
+
+// test_interface.h
+#include <string>
+namespace YIELD
+{
+  #ifndef YIELD_TESTINTERFACE_INTERFACE_PARENT_CLASS
+  #if defined( YIELD_INTERFACE_PARENT_CLASS )
+  #define YIELD_TESTINTERFACE_INTERFACE_PARENT_CLASS YIELD_INTERFACE_PARENT_CLASS
+  #else
+  #define YIELD_TESTINTERFACE_INTERFACE_PARENT_CLASS ::YIELD::Interface
+  #endif
+  #endif
+  #ifndef YIELD_TESTINTERFACE_REQUEST_PARENT_CLASS
+  #if defined( YIELD_REQUEST_PARENT_CLASS )
+  #define YIELD_TESTINTERFACE_REQUEST_PARENT_CLASS YIELD_REQUEST_PARENT_CLASS
+  #else
+  #define YIELD_TESTINTERFACE_REQUEST_PARENT_CLASS ::YIELD::Request
+  #endif
+  #endif
+  #ifndef YIELD_TESTINTERFACE_RESPONSE_PARENT_CLASS
+  #if defined( YIELD_RESPONSE_PARENT_CLASS )
+  #define YIELD_TESTINTERFACE_RESPONSE_PARENT_CLASS YIELD_RESPONSE_PARENT_CLASS
+  #else
+  #define YIELD_TESTINTERFACE_RESPONSE_PARENT_CLASS ::YIELD::Response
+  #endif
+  #endif
+  #ifndef YIELD_TESTINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
+  #if defined( YIELD_EXCEPTION_RESPONSE_PARENT_CLASS )
+  #define YIELD_TESTINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS YIELD_EXCEPTION_RESPONSE_PARENT_CLASS
+  #else
+  #define YIELD_TESTINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS ::YIELD::ExceptionResponse
+  #endif
+  #endif
+  class TestInterface : public YIELD_TESTINTERFACE_INTERFACE_PARENT_CLASS
+  {
+  public:
+    TestInterface() { }
+    virtual ~TestInterface() { }
+    virtual void Boolean( bool in_data, bool& out_data ) { Boolean( in_data, out_data, static_cast<uint64_t>( -1 ) ); }
+    virtual void Boolean( bool in_data, bool& out_data, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<BooleanRequest> __request( new BooleanRequest( in_data ) ); ::YIELD::auto_Object< ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > > > __response_queue = new ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > >; __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<BooleanResponse> __response = __response_queue->dequeue_typed<BooleanResponse>( response_timeout_ns ); out_data = __response->get_out_data(); }
+    virtual void Double( double in_data, double& out_data ) { Double( in_data, out_data, static_cast<uint64_t>( -1 ) ); }
+    virtual void Double( double in_data, double& out_data, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<DoubleRequest> __request( new DoubleRequest( in_data ) ); ::YIELD::auto_Object< ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > > > __response_queue = new ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > >; __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<DoubleResponse> __response = __response_queue->dequeue_typed<DoubleResponse>( response_timeout_ns ); out_data = __response->get_out_data(); }
+    virtual void Int( int64_t in_data, int64_t& out_data ) { Int( in_data, out_data, static_cast<uint64_t>( -1 ) ); }
+    virtual void Int( int64_t in_data, int64_t& out_data, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<IntRequest> __request( new IntRequest( in_data ) ); ::YIELD::auto_Object< ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > > > __response_queue = new ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > >; __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<IntResponse> __response = __response_queue->dequeue_typed<IntResponse>( response_timeout_ns ); out_data = __response->get_out_data(); }
+    virtual void String( const std::string& in_data, std::string& out_data ) { String( in_data, out_data, static_cast<uint64_t>( -1 ) ); }
+    virtual void String( const std::string& in_data, std::string& out_data, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<StringRequest> __request( new StringRequest( in_data ) ); ::YIELD::auto_Object< ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > > > __response_queue = new ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > >; __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<StringResponse> __response = __response_queue->dequeue_typed<StringResponse>( response_timeout_ns ); out_data = __response->get_out_data(); }
+    virtual void Uint( uint64_t in_data, uint64_t& out_data ) { Uint( in_data, out_data, static_cast<uint64_t>( -1 ) ); }
+    virtual void Uint( uint64_t in_data, uint64_t& out_data, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<UintRequest> __request( new UintRequest( in_data ) ); ::YIELD::auto_Object< ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > > > __response_queue = new ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > >; __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<UintResponse> __response = __response_queue->dequeue_typed<UintResponse>( response_timeout_ns ); out_data = __response->get_out_data(); }
+    // Request/response pair definitions for the operations in TestInterface
+    class BooleanResponse : public YIELD_TESTINTERFACE_RESPONSE_PARENT_CLASS
+    {
+    public:
+      BooleanResponse() : out_data( false ) { }
+      BooleanResponse( bool out_data ) : out_data( out_data ) { }
+      virtual ~BooleanResponse() { }
+      void set_out_data( bool out_data ) { this->out_data = out_data; }
+      bool get_out_data() const { return out_data; }
+      bool operator==( const BooleanResponse& other ) const { return out_data == other.out_data; }
+      // YIELD::Object
+      YIELD_OBJECT_PROTOTYPES( BooleanResponse, 1 );
+      // YIELD::Struct
+      void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeBoolean( ::YIELD::Declaration( "out_data" ), out_data ); }
+      void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { out_data = unmarshaller.readBoolean( ::YIELD::Declaration( "out_data" ) ); }
+    protected:
+      bool out_data;
+    };
+    class BooleanRequest : public YIELD_TESTINTERFACE_REQUEST_PARENT_CLASS
+    {
+    public:
+      BooleanRequest() : in_data( false ) { }
+      BooleanRequest( bool in_data ) : in_data( in_data ) { }
+      virtual ~BooleanRequest() { }
+      void set_in_data( bool in_data ) { this->in_data = in_data; }
+      bool get_in_data() const { return in_data; }
+      bool operator==( const BooleanRequest& other ) const { return in_data == other.in_data; }
+      // YIELD::Object
+      YIELD_OBJECT_PROTOTYPES( BooleanRequest, 1 );
+      // YIELD::Struct
+      void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeBoolean( ::YIELD::Declaration( "in_data" ), in_data ); }
+      void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { in_data = unmarshaller.readBoolean( ::YIELD::Declaration( "in_data" ) ); }
+    protected:
+      bool in_data;
+    };
+    class DoubleResponse : public YIELD_TESTINTERFACE_RESPONSE_PARENT_CLASS
+    {
+    public:
+      DoubleResponse() : out_data( 0 ) { }
+      DoubleResponse( double out_data ) : out_data( out_data ) { }
+      virtual ~DoubleResponse() { }
+      void set_out_data( double out_data ) { this->out_data = out_data; }
+      double get_out_data() const { return out_data; }
+      bool operator==( const DoubleResponse& other ) const { return out_data == other.out_data; }
+      // YIELD::Object
+      YIELD_OBJECT_PROTOTYPES( DoubleResponse, 2 );
+      // YIELD::Struct
+      void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeDouble( ::YIELD::Declaration( "out_data" ), out_data ); }
+      void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { out_data = unmarshaller.readDouble( ::YIELD::Declaration( "out_data" ) ); }
+    protected:
+      double out_data;
+    };
+    class DoubleRequest : public YIELD_TESTINTERFACE_REQUEST_PARENT_CLASS
+    {
+    public:
+      DoubleRequest() : in_data( 0 ) { }
+      DoubleRequest( double in_data ) : in_data( in_data ) { }
+      virtual ~DoubleRequest() { }
+      void set_in_data( double in_data ) { this->in_data = in_data; }
+      double get_in_data() const { return in_data; }
+      bool operator==( const DoubleRequest& other ) const { return in_data == other.in_data; }
+      // YIELD::Object
+      YIELD_OBJECT_PROTOTYPES( DoubleRequest, 2 );
+      // YIELD::Struct
+      void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeDouble( ::YIELD::Declaration( "in_data" ), in_data ); }
+      void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { in_data = unmarshaller.readDouble( ::YIELD::Declaration( "in_data" ) ); }
+    protected:
+      double in_data;
+    };
+    class IntResponse : public YIELD_TESTINTERFACE_RESPONSE_PARENT_CLASS
+    {
+    public:
+      IntResponse() : out_data( 0 ) { }
+      IntResponse( int64_t out_data ) : out_data( out_data ) { }
+      virtual ~IntResponse() { }
+      void set_out_data( int64_t out_data ) { this->out_data = out_data; }
+      int64_t get_out_data() const { return out_data; }
+      bool operator==( const IntResponse& other ) const { return out_data == other.out_data; }
+      // YIELD::Object
+      YIELD_OBJECT_PROTOTYPES( IntResponse, 3 );
+      // YIELD::Struct
+      void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeInt64( ::YIELD::Declaration( "out_data" ), out_data ); }
+      void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { out_data = unmarshaller.readInt64( ::YIELD::Declaration( "out_data" ) ); }
+    protected:
+      int64_t out_data;
+    };
+    class IntRequest : public YIELD_TESTINTERFACE_REQUEST_PARENT_CLASS
+    {
+    public:
+      IntRequest() : in_data( 0 ) { }
+      IntRequest( int64_t in_data ) : in_data( in_data ) { }
+      virtual ~IntRequest() { }
+      void set_in_data( int64_t in_data ) { this->in_data = in_data; }
+      int64_t get_in_data() const { return in_data; }
+      bool operator==( const IntRequest& other ) const { return in_data == other.in_data; }
+      // YIELD::Object
+      YIELD_OBJECT_PROTOTYPES( IntRequest, 3 );
+      // YIELD::Struct
+      void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeInt64( ::YIELD::Declaration( "in_data" ), in_data ); }
+      void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { in_data = unmarshaller.readInt64( ::YIELD::Declaration( "in_data" ) ); }
+    protected:
+      int64_t in_data;
+    };
+    class StringResponse : public YIELD_TESTINTERFACE_RESPONSE_PARENT_CLASS
+    {
+    public:
+      StringResponse() { }
+      StringResponse( const std::string& out_data ) : out_data( out_data ) { }
+      StringResponse( const char* out_data, size_t out_data_len ) : out_data( out_data, out_data_len ) { }
+      virtual ~StringResponse() { }
+      void set_out_data( const std::string& out_data ) { set_out_data( out_data.c_str(), out_data.size() ); }
+      void set_out_data( const char* out_data, size_t out_data_len ) { this->out_data.assign( out_data, out_data_len ); }
+      const std::string& get_out_data() const { return out_data; }
+      bool operator==( const StringResponse& other ) const { return out_data == other.out_data; }
+      // YIELD::Object
+      YIELD_OBJECT_PROTOTYPES( StringResponse, 4 );
+      // YIELD::Struct
+      void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( ::YIELD::Declaration( "out_data" ), out_data ); }
+      void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( ::YIELD::Declaration( "out_data" ), out_data ); }
+    protected:
+      std::string out_data;
+    };
+    class StringRequest : public YIELD_TESTINTERFACE_REQUEST_PARENT_CLASS
+    {
+    public:
+      StringRequest() { }
+      StringRequest( const std::string& in_data ) : in_data( in_data ) { }
+      StringRequest( const char* in_data, size_t in_data_len ) : in_data( in_data, in_data_len ) { }
+      virtual ~StringRequest() { }
+      void set_in_data( const std::string& in_data ) { set_in_data( in_data.c_str(), in_data.size() ); }
+      void set_in_data( const char* in_data, size_t in_data_len ) { this->in_data.assign( in_data, in_data_len ); }
+      const std::string& get_in_data() const { return in_data; }
+      bool operator==( const StringRequest& other ) const { return in_data == other.in_data; }
+      // YIELD::Object
+      YIELD_OBJECT_PROTOTYPES( StringRequest, 4 );
+      // YIELD::Struct
+      void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( ::YIELD::Declaration( "in_data" ), in_data ); }
+      void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( ::YIELD::Declaration( "in_data" ), in_data ); }
+    protected:
+      std::string in_data;
+    };
+    class UintResponse : public YIELD_TESTINTERFACE_RESPONSE_PARENT_CLASS
+    {
+    public:
+      UintResponse() : out_data( 0 ) { }
+      UintResponse( uint64_t out_data ) : out_data( out_data ) { }
+      virtual ~UintResponse() { }
+      void set_out_data( uint64_t out_data ) { this->out_data = out_data; }
+      uint64_t get_out_data() const { return out_data; }
+      bool operator==( const UintResponse& other ) const { return out_data == other.out_data; }
+      // YIELD::Object
+      YIELD_OBJECT_PROTOTYPES( UintResponse, 5 );
+      // YIELD::Struct
+      void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeUint64( ::YIELD::Declaration( "out_data" ), out_data ); }
+      void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { out_data = unmarshaller.readUint64( ::YIELD::Declaration( "out_data" ) ); }
+    protected:
+      uint64_t out_data;
+    };
+    class UintRequest : public YIELD_TESTINTERFACE_REQUEST_PARENT_CLASS
+    {
+    public:
+      UintRequest() : in_data( 0 ) { }
+      UintRequest( uint64_t in_data ) : in_data( in_data ) { }
+      virtual ~UintRequest() { }
+      void set_in_data( uint64_t in_data ) { this->in_data = in_data; }
+      uint64_t get_in_data() const { return in_data; }
+      bool operator==( const UintRequest& other ) const { return in_data == other.in_data; }
+      // YIELD::Object
+      YIELD_OBJECT_PROTOTYPES( UintRequest, 5 );
+      // YIELD::Struct
+      void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeUint64( ::YIELD::Declaration( "in_data" ), in_data ); }
+      void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { in_data = unmarshaller.readUint64( ::YIELD::Declaration( "in_data" ) ); }
+    protected:
+      uint64_t in_data;
+    };
+    // YIELD::Object
+    YIELD_OBJECT_PROTOTYPES( TestInterface, 0 );
+    // YIELD::EventHandler
+    virtual void handleEvent( ::YIELD::Event& ev )
+    {
+      try
+      {
+        // Switch on the event types that this interface handles, unwrap the corresponding requests and delegate to impl
+        switch ( ev.get_tag() )
+        {
+          case 1UL: handleBooleanRequest( static_cast<BooleanRequest&>( ev ) ); return;
+          case 2UL: handleDoubleRequest( static_cast<DoubleRequest&>( ev ) ); return;
+          case 3UL: handleIntRequest( static_cast<IntRequest&>( ev ) ); return;
+          case 4UL: handleStringRequest( static_cast<StringRequest&>( ev ) ); return;
+          case 5UL: handleUintRequest( static_cast<UintRequest&>( ev ) ); return;
+          default: handleUnknownEvent( ev ); return;
+        }
+      }
+      catch( ::YIELD::ExceptionResponse* exception_response )
+      {
+        static_cast< ::YIELD::Request& >( ev ).respond( *exception_response );
+      }
+      catch ( ::YIELD::ExceptionResponse& exception_response )
+      {
+        static_cast< ::YIELD::Request& >( ev ).respond( *exception_response.clone() );
+      }
+      catch ( ::YIELD::Exception& exc )
+      {
+        static_cast< ::YIELD::Request& >( ev ).respond( *( new ::YIELD::ExceptionResponse( exc ) ) );
+      }
+      ::YIELD::Object::decRef( ev );
+    }
+    // YIELD::Interface
+      virtual ::YIELD::Request* checkRequest( Object& request )
+      {
+        switch ( request.get_tag() )
+        {
+          case 1: return static_cast<BooleanRequest*>( &request );
+          case 2: return static_cast<DoubleRequest*>( &request );
+          case 3: return static_cast<IntRequest*>( &request );
+          case 4: return static_cast<StringRequest*>( &request );
+          case 5: return static_cast<UintRequest*>( &request );
+          default: return NULL;
+        }
+      }
+      virtual ::YIELD::Response* checkResponse( Object& response )
+      {
+        switch ( response.get_tag() )
+        {
+          case 1: return static_cast<BooleanResponse*>( &response );
+          case 2: return static_cast<DoubleResponse*>( &response );
+          case 3: return static_cast<IntResponse*>( &response );
+          case 4: return static_cast<StringResponse*>( &response );
+          case 5: return static_cast<UintResponse*>( &response );
+          default: return NULL;
+        }
+      }
+      virtual ::YIELD::auto_Object< ::YIELD::Request > createRequest( uint32_t tag )
+      {
+        switch ( tag )
+        {
+          case 1: return new BooleanRequest;
+          case 2: return new DoubleRequest;
+          case 3: return new IntRequest;
+          case 4: return new StringRequest;
+          case 5: return new UintRequest;
+          default: return NULL;
+        }
+      }
+      virtual ::YIELD::auto_Object< ::YIELD::Response > createResponse( uint32_t tag )
+      {
+        switch ( tag )
+        {
+          case 1: return new BooleanResponse;
+          case 2: return new DoubleResponse;
+          case 3: return new IntResponse;
+          case 4: return new StringResponse;
+          case 5: return new UintResponse;
+          default: return NULL;
+        }
+      }
+      virtual ::YIELD::auto_Object< ::YIELD::ExceptionResponse> createExceptionResponse( uint32_t ) { return NULL; }
+  protected:
+    virtual void handleBooleanRequest( BooleanRequest& req ) { ::YIELD::auto_Object<BooleanResponse> resp( new BooleanResponse ); bool out_data; _Boolean( req.get_in_data(), out_data ); resp->set_out_data( out_data ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
+    virtual void handleDoubleRequest( DoubleRequest& req ) { ::YIELD::auto_Object<DoubleResponse> resp( new DoubleResponse ); double out_data; _Double( req.get_in_data(), out_data ); resp->set_out_data( out_data ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
+    virtual void handleIntRequest( IntRequest& req ) { ::YIELD::auto_Object<IntResponse> resp( new IntResponse ); int64_t out_data; _Int( req.get_in_data(), out_data ); resp->set_out_data( out_data ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
+    virtual void handleStringRequest( StringRequest& req ) { ::YIELD::auto_Object<StringResponse> resp( new StringResponse ); std::string out_data; _String( req.get_in_data(), out_data ); resp->set_out_data( out_data ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
+    virtual void handleUintRequest( UintRequest& req ) { ::YIELD::auto_Object<UintResponse> resp( new UintResponse ); uint64_t out_data; _Uint( req.get_in_data(), out_data ); resp->set_out_data( out_data ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
+  virtual void _Boolean( bool, bool&  ) { }
+    virtual void _Double( double, double&  ) { }
+    virtual void _Int( int64_t, int64_t&  ) { }
+    virtual void _String( const std::string& , std::string&  ) { }
+    virtual void _Uint( uint64_t, uint64_t&  ) { }
+  };
+  // Use this macro in an implementation class to get all of the prototypes for the operations in TestInterface
+  #define YIELD_TESTINTERFACE_PROTOTYPES \
+  virtual void _Boolean( bool in_data, bool& out_data );\
+  virtual void _Double( double in_data, double& out_data );\
+  virtual void _Int( int64_t in_data, int64_t& out_data );\
+  virtual void _String( const std::string& in_data, std::string& out_data );\
+  virtual void _Uint( uint64_t in_data, uint64_t& out_data );
+  #define YIELD_TESTINTERFACE_HANDLEEVENT_PROTOTYPES \
+  virtual void handleBooleanRequest( BooleanRequest& req );\
+  virtual void handleDoubleRequest( DoubleRequest& req );\
+  virtual void handleIntRequest( IntRequest& req );\
+  virtual void handleStringRequest( StringRequest& req );\
+  virtual void handleUintRequest( UintRequest& req );
+};
 
 
 // client.cpp

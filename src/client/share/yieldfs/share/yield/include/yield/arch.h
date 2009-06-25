@@ -364,12 +364,14 @@ namespace YIELD
     // EventTarget
     bool send( Event& ev )
     {
+#ifdef _DEBUG
       if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
       {
         std::ostringstream log_str;
         log_str << "yield::StageImpl: thread #" << Thread::getCurrentThreadId() << " sending " << ev.get_type_name() << " to the " << get_stage_name() << " stage.";
         log->getStream( Log::LOG_DEBUG ) << log_str.str();
       }
+#endif
 
       ++event_queue_length;
       ++event_queue_arrival_count;
@@ -479,12 +481,14 @@ namespace YIELD
       if ( event_queueing_time_ns < 2 * NS_IN_S )
         event_queueing_time_sampler.setNextSample( static_cast<double>( event_queueing_time_ns * NS_IN_MS ) );
 
+#ifdef _DEBUG
       if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
       {
         std::ostringstream log_str;
         log_str << "yield::StageImpl: thread #" << Thread::getCurrentThreadId() << " processing " << ev.get_type_name() << " at the " << get_stage_name() << " stage.";
         log->getStream( Log::LOG_DEBUG ) << log_str.str();
       }
+#endif
 
       double start_time_ms = Time::getCurrentUnixTimeMS();
 

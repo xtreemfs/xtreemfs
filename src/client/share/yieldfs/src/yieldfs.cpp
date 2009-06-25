@@ -1,4 +1,4 @@
-// Revision: 159
+// Revision: 161
 
 #include "yield.h"
 #include "yieldfs.h"
@@ -1209,15 +1209,19 @@ bool DataCachingFile::datasync()
 }
 bool DataCachingFile::flush()
 {
+#ifdef _DEBUG
   if ( log != NULL )
     log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: flush().";
+#endif
   for ( CachedPageMap::iterator cached_page_i = cached_pages.begin(); cached_page_i != cached_pages.end(); cached_page_i++ )
   {
     if ( cached_page_i->second->get_dirty_bit() )
     {
       underlying_file->write( cached_page_i->second->get_data(), cached_page_i->second->get_data_len(), cached_page_i->first * YIELDFS_CACHED_PAGE_SIZE );
+#ifdef _DEBUG
       if ( log != NULL )
         log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: flushing page " << cached_page_i->first << ".";
+#endif
     }
     delete cached_page_i->second;
   }
@@ -1249,26 +1253,34 @@ ssize_t DataCachingFile::read( void* buffer, size_t buffer_len, uint64_t offset 
     CachedPage* cached_page = cached_pages.find( cached_page_i );
     if ( cached_page != NULL )
     {
+#ifdef _DEBUG
       if ( log != NULL )
         log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read hit on page " << cached_page_i << " with length " << cached_page->get_data_len() << ".";
+#endif
     }
     else
     {
+#ifdef _DEBUG
       if ( log != NULL )
         log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read miss on page " << cached_page_i << ".";
+#endif
       cached_page = new CachedPage;
       ssize_t read_ret = underlying_file->read( cached_page->get_data(), YIELDFS_CACHED_PAGE_SIZE, offset );
       if ( read_ret >= 0 )
       {
+#ifdef _DEBUG
         if ( log != NULL )
           log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read " << cached_page->get_data_len() << " bytes into page " << cached_page_i << ".";
+#endif
         cached_page->set_data_len( static_cast<uint16_t>( read_ret ) );
         cached_pages.insert( cached_page_i, cached_page );
       }
       else
       {
+#ifdef _DEBUG
         if ( log != NULL )
           log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read on page " << cached_page_i << " failed";
+#endif
         delete cached_page;
         return read_ret;
       }
@@ -1326,25 +1338,33 @@ ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t 
     CachedPage* cached_page = cached_pages.find( cached_page_i );
     if ( cached_page != NULL )
     {
+#ifdef _DEBUG
       if ( log != NULL )
         log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: write hit on page " << cached_page_i << ".";
+#endif
     }
     else
     {
+#ifdef _DEBUG
       if ( log != NULL )
         log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: write miss on page " << cached_page_i << ".";
+#endif
       cached_page = new CachedPage;
       if ( remaining_buffer_len < YIELDFS_CACHED_PAGE_SIZE ) // The buffer is smaller than a page, so we have to read the whole page and then overwrite part of it
       {
+#ifdef _DEBUG
         if ( log != NULL )
           log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: writing partial page " << cached_page_i << ", must read from underlying file system.";
+#endif
         ssize_t read_ret = underlying_file->read( cached_page->get_data(), YIELDFS_CACHED_PAGE_SIZE, offset );
         if ( read_ret >= 0 )
           cached_page->set_data_len( static_cast<uint16_t>( read_ret ) );
         else
         {
+#ifdef _DEBUG
           if ( log != NULL )
             log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read on page " << cached_page_i << " failed";
+#endif
           delete cached_page;
           return read_ret;
         }
@@ -1354,8 +1374,10 @@ ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t 
     cached_page->set_dirty_bit();
     if ( remaining_buffer_len > YIELDFS_CACHED_PAGE_SIZE )
     {
+#ifdef _DEBUG
       if ( log != NULL )
         log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: filling page " << cached_page_i << ".";
+#endif
       memcpy_s( cached_page->get_data(), YIELDFS_CACHED_PAGE_SIZE, wrote_to_buffer_p, YIELDFS_CACHED_PAGE_SIZE );
       cached_page->set_data_len( YIELDFS_CACHED_PAGE_SIZE );
       cached_pages.insert( cached_page_i, cached_page );
@@ -1366,8 +1388,10 @@ ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t 
     }
     else
     {
+#ifdef _DEBUG
       if ( log != NULL )
         log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: partially filling page " << cached_page_i << ".";
+#endif
       memcpy_s( cached_page->get_data(), YIELDFS_CACHED_PAGE_SIZE, wrote_to_buffer_p, remaining_buffer_len );
       if ( remaining_buffer_len > cached_page->get_data_len() )
         cached_page->set_data_len( static_cast<uint16_t>( remaining_buffer_len ) );
@@ -1577,32 +1601,12 @@ YIELD::auto_Object<CachedStat> MetadataCachingVolume::evict( const YIELD::Path& 
   lock.acquire();
   CachedStat* cached_stat = YIELD::HATTrie<CachedStat*>::erase( static_cast<const std::string&>( path ) );
   lock.release();
+#ifdef _DEBUG
   if ( cached_stat && log != NULL )
       log->getStream( YIELD::Log::LOG_INFO ) << "MetadataCachingVolume: evicted " << path;
+#endif
   return cached_stat;
 }
-/*
-void MetadataCachingVolume::evicttree( const YIELD::Path& path )
-{
-  std::vector<CachedStat*> cached_stats;
-  lock.acquire();
-  YIELD::HATTrie<CachedStat*>::erase_by_prefix( static_cast<const std::string&>( path ), &cached_stats );
-  lock.release();
-  if ( log && log->get_level() >= YIELD::Log::LOG_INFO )
-  {
-    for ( std::vector<CachedStat*>::iterator directory_entry_i = cached_stats.begin(); directory_entry_i != cached_stats.end(); directory_entry_i++ )
-    {
-      log->getStream( YIELD::Log::LOG_INFO ) << "MetadataCachingVolume: evicted " << ( *directory_entry_i )->get_path();
-      YIELD::Object::decRef( **directory_entry_i );
-    }
-  }
-  else
-  {
-    for ( std::vector<CachedStat*>::iterator directory_entry_i = cached_stats.begin(); directory_entry_i != cached_stats.end(); directory_entry_i++ )
-      YIELD::Object::decRef( **directory_entry_i );
-  }
-}
-*/
 YIELD::auto_Object<CachedStat> MetadataCachingVolume::find( const YIELD::Path& path )
 {
   lock.acquire();
@@ -1613,8 +1617,10 @@ YIELD::auto_Object<CachedStat> MetadataCachingVolume::find( const YIELD::Path& p
     {
       cached_stat->incRef(); // Must incRef before releasing the lock in case another thread wants to erase this entry
       lock.release();
+#ifdef _DEBUG
       if ( log != NULL )
         log->getStream( YIELD::Log::LOG_INFO ) << "MetadataCachingVolume: hit " << path << ".";
+#endif
       return cached_stat;
     }
     else
@@ -1633,8 +1639,10 @@ YIELD::auto_Object<CachedStat> MetadataCachingVolume::find( const YIELD::Path& p
   else
   {
     lock.release();
+#ifdef _DEBUG
     if ( log != NULL )
       log->getStream( YIELD::Log::LOG_INFO ) << "MetadataCachingVolume: miss " << path << ".";
+#endif
     return NULL;
   }
 }
@@ -1673,8 +1681,10 @@ void MetadataCachingVolume::insert( CachedStat* cached_stat )
 {
   lock.acquire();
   YIELD::HATTrie<CachedStat*>::insert( static_cast<const std::string&>( cached_stat->get_path() ), &cached_stat->incRef() );
+#ifdef _DEBUG
   if ( log != NULL )
     log->getStream( YIELD::Log::LOG_INFO ) << "MetadataCachingVolume: caching " << cached_stat->get_path() << ".";
+#endif
   lock.release();
 }
 bool MetadataCachingVolume::link( const YIELD::Path& old_path, const YIELD::Path& new_path )
