@@ -168,10 +168,10 @@ def _generate_ssl_config( enable_ssl, pkcs12_file_path, pkcs12_passphrase ):
         return """\
 ssl.enabled = true
 ssl.service_creds = %(pkcs12_file_path)s
-ssl.service_creds.pw = %(pks12_passphrase)s
+ssl.service_creds.pw = %(pkcs12_passphrase)s
 ssl.service_creds.container = PKCS12
 ssl.trusted_certs = %(TRUSTED_CERTS_JKS_FILE_PATH)s
-ssl.trusted_certs.pw = %(TRUSTED_CERTS_JCS_PASSPHRASE)s
+ssl.trusted_certs.pw = %(TRUSTED_CERTS_JKS_PASSPHRASE)s
 ssl.trusted_certs.container = JKS        
 """ % locals()
     else:        
@@ -191,7 +191,7 @@ def mount_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAUL
             xtfs_mount_args = [XTFS_MOUNT_FILE_PATH]
             xtfs_mount_args.extend( ( "-d", str( debug_level ) ) )                
             xtfs_mount_args.append( "-f" ) # So we can redirect stdout and stderr
-            if enable_ssl: xtfs_mount_args.extend( client_ssl_args )
+            if enable_ssl: xtfs_mount_args.extend( CLIENT_SSL_ARGS )
             if direct_io: xtfs_mount_args.extend( ( "-o", "direct_io" ) )
             DIR_ONCRPC_PORT = globals()["DIR_ONCRPC_PORT"]
             xtfs_mount_args.append( "%(service_host)s:%(DIR_ONCRPC_PORT)s/test_%(osdnum)u" % locals() )                
