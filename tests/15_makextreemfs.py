@@ -12,17 +12,21 @@ class makextreemfsTest(unittest.TestCase):
         self.stderr = stderr
         
     def runTest( self ):
-        if os.path.exists( "xtreemfs" ):
-            shutil.rmtree( "xtreemfs" )
-            
-        retcode = subprocess.call( "svn co http://xtreemfs.googlecode.com/svn/trunk xtreemfs", shell=True ) #, stdout=PIPE, stderr=STDOUT )         #
-        self.assertEqual( retcode, 0 )
-
-        retcode = subprocess.call( "make -C xtreemfs", shell=True ) #, stdout=PIPE, stderr=STDOUT )         
-        self.assertEqual( retcode, 0 )
-
-        if os.path.exists( "xtreemfs" ):
-            shutil.rmtree( "xtreemfs" )
+	    
+	if self.direct_io:
+		print >>self.stdout, self.__class__.__name__ + ": skipping nondirect volume", os.getcwd()
+	else:
+		if os.path.exists( "xtreemfs" ):
+		shutil.rmtree( "xtreemfs" )
+		
+		retcode = subprocess.call( "svn co http://xtreemfs.googlecode.com/svn/trunk xtreemfs", shell=True ) #, stdout=PIPE, stderr=STDOUT )         #
+		self.assertEqual( retcode, 0 )
+	
+		retcode = subprocess.call( "make -C xtreemfs", shell=True ) #, stdout=PIPE, stderr=STDOUT )         
+		self.assertEqual( retcode, 0 )
+	
+		if os.path.exists( "xtreemfs" ):
+		shutil.rmtree( "xtreemfs" )
 
 
 def createTestSuite( *args, **kwds ):     
