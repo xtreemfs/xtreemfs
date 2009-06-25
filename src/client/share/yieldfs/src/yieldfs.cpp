@@ -1,4 +1,4 @@
-// Revision: 161
+// Revision: 162
 
 #include "yield.h"
 #include "yieldfs.h"
@@ -87,7 +87,7 @@ namespace yieldfs
   class DataCachingFile : public StackableFile
   {
   public:
-    DataCachingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log = NULL )
+    DataCachingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log = NULL )
       : StackableFile( path, underlying_file, log )
     { }
 
@@ -1156,7 +1156,7 @@ namespace yieldfs
   private:
     friend class MetadataCachingVolume;
 
-    MetadataCachingFile( YIELD::auto_Object<MetadataCachingVolume> parent_volume, const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log = NULL )
+    MetadataCachingFile( YIELD::auto_Object<MetadataCachingVolume> parent_volume, const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log = NULL )
       : StackableFile( path, underlying_file, log ), parent_volume( parent_volume )
     { }
 
