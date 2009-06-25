@@ -1,5 +1,5 @@
 Name:           XtreemFS-server
-Version:        0.99.0
+Version:        0.99.1
 Release:        1
 License:        GPL
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build

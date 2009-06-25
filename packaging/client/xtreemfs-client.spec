@@ -1,5 +1,5 @@
 Name:           XtreemFS-client
-Version:        0.99.0
+Version:        0.99.1
 Release:        1
 License:        GPL
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
@@ -28,8 +28,9 @@ BuildRequires:  openssl-devel >= 0.8 kernel redhat-rpm-config >= 0
 
 
 %description
-XtreemFS is an object-based file system that is designed for federated IT infrastructures that are connected by wide-area networks. This packages containes the XtreemFS client component.
+XtreemFS is a distributed, object-based file system. More information can be found at www.xtreemfs.org.
 
+This package contains the XtreemFS client module.
 
 %prep
 %setup -q
