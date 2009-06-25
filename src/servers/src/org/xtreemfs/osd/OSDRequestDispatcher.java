@@ -112,7 +112,7 @@ import com.sun.net.httpserver.HttpServer;
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     UDPReceiverInterface {
     
-    public final static String                          VERSION = "1.0.0 (v1.0 RC1)";
+    public final static String                          VERSION = "1.0.0 (v1.0 RC2)";
     
     protected final Map<Integer, OSDOperation>          operations;
     

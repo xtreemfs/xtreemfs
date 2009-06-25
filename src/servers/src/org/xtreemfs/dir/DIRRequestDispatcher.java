@@ -76,7 +76,7 @@ import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRequestListener,
     LifeCycleListener {
     
-    public final static String                 VERSION           = "1.0.0 (v1.0 RC1)";
+    public final static String                 VERSION           = "1.0.0 (v1.0 RC2)";
     
     /**
      * index for address mappings, stores uuid -> AddressMappingSet

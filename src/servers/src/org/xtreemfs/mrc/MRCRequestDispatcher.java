@@ -95,7 +95,7 @@ import com.sun.net.httpserver.HttpServer;
 public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     DBAccessResultListener {
     
-    public final static String           VERSION            = "1.0.0 (v1.0 RC1)";
+    public final static String           VERSION            = "1.0.0 (v1.0 RC2)";
     
     private static final int             RPC_TIMEOUT        = 10000;
     
