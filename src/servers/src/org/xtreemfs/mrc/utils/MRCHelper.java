@@ -178,6 +178,7 @@ public class MRCHelper {
         int width = Math.min((int) stripingPolicy.getWidth(), osdMaps.size());
         stripingPolicy = sMan.createStripingPolicy(stripingPolicy.getPattern(), stripingPolicy
                 .getStripeSize(), width);
+        sp.setWidth(width);
         
         // add the OSDs to the X-Locations list, according to the OSD selection
         // policy
