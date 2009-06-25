@@ -73,7 +73,8 @@ namespace org
           OPTION_PEM_CERTIFICATE_FILE_PATH = 5,
           OPTION_PEM_PRIVATE_KEY_FILE_PATH = 6,
           OPTION_PEM_PRIVATE_KEY_PASSPHRASE = 7,
-          OPTION_TIMEOUT_MS = 8
+          OPTION_TIMEOUT_MS = 8,
+          OPTION_TRACE_SOCKET_IO = 9
         };
 
 
@@ -90,6 +91,9 @@ namespace org
 
           addOption( OPTION_TIMEOUT_MS, "-t", "--timeout-ms", "n" );
           operation_timeout = static_cast<uint64_t>( 5 * NS_IN_S );
+
+          addOption( OPTION_TRACE_SOCKET_IO, "--trace-socket-io" );
+          trace_socket_io = false;
         }
 
         virtual ~Main()
@@ -127,6 +131,11 @@ namespace org
           }
 
           return ssl_context;
+        }
+
+        bool get_trace_socket_io() const
+        {
+          return trace_socket_io;
         }
 
         YIELD::auto_Object<YIELD::URI> parseURI( const char* uri_c_str )
@@ -174,6 +183,8 @@ namespace org
             }
             break;
 
+            case OPTION_TRACE_SOCKET_IO: trace_socket_io = true; break;
+
             default: YIELD::Main::parseOption( id, arg ); break;
           }
         }
@@ -182,6 +193,7 @@ namespace org
         std::string pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase;
         std::string pkcs12_file_path, pkcs12_passphrase;
         YIELD::Time operation_timeout;
+        bool trace_socket_io;
 
         YIELD::auto_Log log;
         YIELD::auto_Object<YIELD::SSLContext> ssl_context;
@@ -198,7 +210,7 @@ namespace org
           if ( stage_group == NULL )
             stage_group = new YIELD::SEDAStageGroup( "XtreemFS StageGroup" );
 
-          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, stage_group, get_log(), 3, operation_timeout, get_ssl_context() );
+          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, stage_group, trace_socket_io ? get_log() : NULL, 3, operation_timeout, get_ssl_context() );
           if ( proxy != NULL )
             return proxy;
           else

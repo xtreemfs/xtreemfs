@@ -1,4 +1,4 @@
-// Revision: 1586
+// Revision: 1597
 
 #include "yield/arch.h"
 #include "yield/ipc.h"
@@ -4554,12 +4554,12 @@ ssize_t TracingSocket::read( void* buffer, size_t buffer_len )
 }
 bool TracingSocket::set_blocking_mode( bool blocking )
 {
-  log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: setting socket #" << ( int )*this << " to " << ( ( blocking ) ? "blocking mode." : "non-blocking mode." );
+//  log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: setting socket #" << ( int )*this << " to " << ( ( blocking ) ? "blocking mode." : "non-blocking mode." );
   return underlying_socket->set_blocking_mode( blocking );
 }
 bool TracingSocket::shutdown()
 {
-  log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: shutting down socket #" << ( int )*this << ".";
+//  log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: shutting down socket #" << ( int )*this << ".";
   return underlying_socket->shutdown();
 }
 bool TracingSocket::want_read() const

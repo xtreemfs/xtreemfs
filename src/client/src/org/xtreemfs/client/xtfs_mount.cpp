@@ -79,11 +79,7 @@ namespace org
             if ( cache_metadata )
               volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
 
-            YIELD::auto_Volume volume = new Volume( *dir_uri, volume_name, volume_flags, get_log()
-#ifdef YIELD_HAVE_OPENSSL
-                                                                   , get_ssl_context() 
-#endif
-                                                                 );
+            YIELD::auto_Volume volume = new Volume( *dir_uri, volume_name, volume_flags, get_log(), get_ssl_context(), get_trace_socket_io() );
 
             // Stack volumes as indicated
             if ( cache_data )
