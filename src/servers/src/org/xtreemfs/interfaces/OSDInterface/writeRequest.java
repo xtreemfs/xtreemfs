@@ -53,10 +53,10 @@ public class writeRequest implements org.xtreemfs.interfaces.utils.Request
     {
         this.file_credentials.deserialize( from_hash_map.get( "file_credentials" ) );
         this.file_id = ( String )from_hash_map.get( "file_id" );
-        this.object_number = ( from_hash_map.get( "object_number" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "object_number" ) ).longValue() : ( ( Long )from_hash_map.get( "object_number" ) ).longValue();
-        this.object_version = ( from_hash_map.get( "object_version" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "object_version" ) ).longValue() : ( ( Long )from_hash_map.get( "object_version" ) ).longValue();
-        this.offset = ( from_hash_map.get( "offset" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "offset" ) ).intValue() : ( ( Long )from_hash_map.get( "offset" ) ).intValue();
-        this.lease_timeout = ( from_hash_map.get( "lease_timeout" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "lease_timeout" ) ).longValue() : ( ( Long )from_hash_map.get( "lease_timeout" ) ).longValue();
+        this.object_number = ( ( Long )from_hash_map.get( "object_number" ) ).longValue();
+        this.object_version = ( ( Long )from_hash_map.get( "object_version" ) ).longValue();
+        this.offset = ( ( Integer )from_hash_map.get( "offset" ) ).intValue();
+        this.lease_timeout = ( ( Long )from_hash_map.get( "lease_timeout" ) ).longValue();
         this.object_data.deserialize( from_hash_map.get( "object_data" ) );
     }
     
@@ -64,10 +64,10 @@ public class writeRequest implements org.xtreemfs.interfaces.utils.Request
     {
         this.file_credentials.deserialize( from_array[0] );
         this.file_id = ( String )from_array[1];
-        this.object_number = ( from_array[2] instanceof Integer ) ? ( ( Integer )from_array[2] ).longValue() : ( ( Long )from_array[2] ).longValue();
-        this.object_version = ( from_array[3] instanceof Integer ) ? ( ( Integer )from_array[3] ).longValue() : ( ( Long )from_array[3] ).longValue();
-        this.offset = ( from_array[4] instanceof Integer ) ? ( ( Integer )from_array[4] ).intValue() : ( ( Long )from_array[4] ).intValue();
-        this.lease_timeout = ( from_array[5] instanceof Integer ) ? ( ( Integer )from_array[5] ).longValue() : ( ( Long )from_array[5] ).longValue();
+        this.object_number = ( ( Long )from_array[2] ).longValue();
+        this.object_version = ( ( Long )from_array[3] ).longValue();
+        this.offset = ( ( Integer )from_array[4] ).intValue();
+        this.lease_timeout = ( ( Long )from_array[5] ).longValue();
         this.object_data.deserialize( from_array[6] );        
     }
 

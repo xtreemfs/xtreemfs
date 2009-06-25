@@ -43,14 +43,14 @@ public class Replica implements org.xtreemfs.interfaces.utils.Serializable
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
         this.striping_policy.deserialize( from_hash_map.get( "striping_policy" ) );
-        this.replication_flags = ( from_hash_map.get( "replication_flags" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "replication_flags" ) ).intValue() : ( ( Long )from_hash_map.get( "replication_flags" ) ).intValue();
+        this.replication_flags = ( ( Integer )from_hash_map.get( "replication_flags" ) ).intValue();
         this.osd_uuids.deserialize( ( Object[] )from_hash_map.get( "osd_uuids" ) );
     }
     
     public void deserialize( Object[] from_array )
     {
         this.striping_policy.deserialize( from_array[0] );
-        this.replication_flags = ( from_array[1] instanceof Integer ) ? ( ( Integer )from_array[1] ).intValue() : ( ( Long )from_array[1] ).intValue();
+        this.replication_flags = ( ( Integer )from_array[1] ).intValue();
         this.osd_uuids.deserialize( ( Object[] )from_array[2] );        
     }
 

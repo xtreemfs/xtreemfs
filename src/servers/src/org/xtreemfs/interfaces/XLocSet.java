@@ -45,17 +45,17 @@ public class XLocSet implements org.xtreemfs.interfaces.utils.Serializable
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
         this.replicas.deserialize( ( Object[] )from_hash_map.get( "replicas" ) );
-        this.version = ( from_hash_map.get( "version" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "version" ) ).intValue() : ( ( Long )from_hash_map.get( "version" ) ).intValue();
+        this.version = ( ( Integer )from_hash_map.get( "version" ) ).intValue();
         this.repUpdatePolicy = ( String )from_hash_map.get( "repUpdatePolicy" );
-        this.read_only_file_size = ( from_hash_map.get( "read_only_file_size" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "read_only_file_size" ) ).longValue() : ( ( Long )from_hash_map.get( "read_only_file_size" ) ).longValue();
+        this.read_only_file_size = ( ( Long )from_hash_map.get( "read_only_file_size" ) ).longValue();
     }
     
     public void deserialize( Object[] from_array )
     {
         this.replicas.deserialize( ( Object[] )from_array[0] );
-        this.version = ( from_array[1] instanceof Integer ) ? ( ( Integer )from_array[1] ).intValue() : ( ( Long )from_array[1] ).intValue();
+        this.version = ( ( Integer )from_array[1] ).intValue();
         this.repUpdatePolicy = ( String )from_array[2];
-        this.read_only_file_size = ( from_array[3] instanceof Integer ) ? ( ( Integer )from_array[3] ).longValue() : ( ( Long )from_array[3] ).longValue();        
+        this.read_only_file_size = ( ( Long )from_array[3] ).longValue();        
     }
 
     public void deserialize( ReusableBuffer buf )

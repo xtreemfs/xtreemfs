@@ -43,15 +43,15 @@ public class StripingPolicy implements org.xtreemfs.interfaces.utils.Serializabl
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
         
-        this.stripe_size = ( from_hash_map.get( "stripe_size" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "stripe_size" ) ).intValue() : ( ( Long )from_hash_map.get( "stripe_size" ) ).intValue();
-        this.width = ( from_hash_map.get( "width" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "width" ) ).intValue() : ( ( Long )from_hash_map.get( "width" ) ).intValue();
+        this.stripe_size = ( ( Integer )from_hash_map.get( "stripe_size" ) ).intValue();
+        this.width = ( ( Integer )from_hash_map.get( "width" ) ).intValue();
     }
     
     public void deserialize( Object[] from_array )
     {
         
-        this.stripe_size = ( from_array[1] instanceof Integer ) ? ( ( Integer )from_array[1] ).intValue() : ( ( Long )from_array[1] ).intValue();
-        this.width = ( from_array[2] instanceof Integer ) ? ( ( Integer )from_array[2] ).intValue() : ( ( Long )from_array[2] ).intValue();        
+        this.stripe_size = ( ( Integer )from_array[1] ).intValue();
+        this.width = ( ( Integer )from_array[2] ).intValue();        
     }
 
     public void deserialize( ReusableBuffer buf )

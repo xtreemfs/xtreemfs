@@ -53,24 +53,24 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
         this.uuid = ( String )from_hash_map.get( "uuid" );
-        this.version = ( from_hash_map.get( "version" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "version" ) ).longValue() : ( ( Long )from_hash_map.get( "version" ) ).longValue();
+        this.version = ( ( Long )from_hash_map.get( "version" ) ).longValue();
         this.protocol = ( String )from_hash_map.get( "protocol" );
         this.address = ( String )from_hash_map.get( "address" );
-        this.port = ( from_hash_map.get( "port" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "port" ) ).intValue() : ( ( Long )from_hash_map.get( "port" ) ).intValue();
+        this.port = ( ( Integer )from_hash_map.get( "port" ) ).intValue();
         this.match_network = ( String )from_hash_map.get( "match_network" );
-        this.ttl_s = ( from_hash_map.get( "ttl_s" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "ttl_s" ) ).intValue() : ( ( Long )from_hash_map.get( "ttl_s" ) ).intValue();
+        this.ttl_s = ( ( Integer )from_hash_map.get( "ttl_s" ) ).intValue();
         this.uri = ( String )from_hash_map.get( "uri" );
     }
     
     public void deserialize( Object[] from_array )
     {
         this.uuid = ( String )from_array[0];
-        this.version = ( from_array[1] instanceof Integer ) ? ( ( Integer )from_array[1] ).longValue() : ( ( Long )from_array[1] ).longValue();
+        this.version = ( ( Long )from_array[1] ).longValue();
         this.protocol = ( String )from_array[2];
         this.address = ( String )from_array[3];
-        this.port = ( from_array[4] instanceof Integer ) ? ( ( Integer )from_array[4] ).intValue() : ( ( Long )from_array[4] ).intValue();
+        this.port = ( ( Integer )from_array[4] ).intValue();
         this.match_network = ( String )from_array[5];
-        this.ttl_s = ( from_array[6] instanceof Integer ) ? ( ( Integer )from_array[6] ).intValue() : ( ( Long )from_array[6] ).intValue();
+        this.ttl_s = ( ( Integer )from_array[6] ).intValue();
         this.uri = ( String )from_array[7];        
     }
 

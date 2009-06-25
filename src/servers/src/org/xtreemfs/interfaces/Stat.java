@@ -66,40 +66,40 @@ public class Stat implements org.xtreemfs.interfaces.utils.Serializable
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.mode = ( from_hash_map.get( "mode" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "mode" ) ).intValue() : ( ( Long )from_hash_map.get( "mode" ) ).intValue();
-        this.nlink = ( from_hash_map.get( "nlink" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "nlink" ) ).intValue() : ( ( Long )from_hash_map.get( "nlink" ) ).intValue();
-        this.uid = ( from_hash_map.get( "uid" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "uid" ) ).intValue() : ( ( Long )from_hash_map.get( "uid" ) ).intValue();
-        this.gid = ( from_hash_map.get( "gid" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "gid" ) ).intValue() : ( ( Long )from_hash_map.get( "gid" ) ).intValue();
-        this.unused_dev = ( from_hash_map.get( "unused_dev" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "unused_dev" ) ).intValue() : ( ( Long )from_hash_map.get( "unused_dev" ) ).intValue();
-        this.size = ( from_hash_map.get( "size" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "size" ) ).longValue() : ( ( Long )from_hash_map.get( "size" ) ).longValue();
-        this.atime_ns = ( from_hash_map.get( "atime_ns" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "atime_ns" ) ).longValue() : ( ( Long )from_hash_map.get( "atime_ns" ) ).longValue();
-        this.mtime_ns = ( from_hash_map.get( "mtime_ns" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "mtime_ns" ) ).longValue() : ( ( Long )from_hash_map.get( "mtime_ns" ) ).longValue();
-        this.ctime_ns = ( from_hash_map.get( "ctime_ns" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "ctime_ns" ) ).longValue() : ( ( Long )from_hash_map.get( "ctime_ns" ) ).longValue();
+        this.mode = ( ( Integer )from_hash_map.get( "mode" ) ).intValue();
+        this.nlink = ( ( Integer )from_hash_map.get( "nlink" ) ).intValue();
+        this.uid = ( ( Integer )from_hash_map.get( "uid" ) ).intValue();
+        this.gid = ( ( Integer )from_hash_map.get( "gid" ) ).intValue();
+        this.unused_dev = ( ( Integer )from_hash_map.get( "unused_dev" ) ).intValue();
+        this.size = ( ( Long )from_hash_map.get( "size" ) ).longValue();
+        this.atime_ns = ( ( Long )from_hash_map.get( "atime_ns" ) ).longValue();
+        this.mtime_ns = ( ( Long )from_hash_map.get( "mtime_ns" ) ).longValue();
+        this.ctime_ns = ( ( Long )from_hash_map.get( "ctime_ns" ) ).longValue();
         this.user_id = ( String )from_hash_map.get( "user_id" );
         this.group_id = ( String )from_hash_map.get( "group_id" );
         this.file_id = ( String )from_hash_map.get( "file_id" );
         this.link_target = ( String )from_hash_map.get( "link_target" );
-        this.truncate_epoch = ( from_hash_map.get( "truncate_epoch" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "truncate_epoch" ) ).intValue() : ( ( Long )from_hash_map.get( "truncate_epoch" ) ).intValue();
-        this.attributes = ( from_hash_map.get( "attributes" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "attributes" ) ).intValue() : ( ( Long )from_hash_map.get( "attributes" ) ).intValue();
+        this.truncate_epoch = ( ( Integer )from_hash_map.get( "truncate_epoch" ) ).intValue();
+        this.attributes = ( ( Integer )from_hash_map.get( "attributes" ) ).intValue();
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.mode = ( from_array[0] instanceof Integer ) ? ( ( Integer )from_array[0] ).intValue() : ( ( Long )from_array[0] ).intValue();
-        this.nlink = ( from_array[1] instanceof Integer ) ? ( ( Integer )from_array[1] ).intValue() : ( ( Long )from_array[1] ).intValue();
-        this.uid = ( from_array[2] instanceof Integer ) ? ( ( Integer )from_array[2] ).intValue() : ( ( Long )from_array[2] ).intValue();
-        this.gid = ( from_array[3] instanceof Integer ) ? ( ( Integer )from_array[3] ).intValue() : ( ( Long )from_array[3] ).intValue();
-        this.unused_dev = ( from_array[4] instanceof Integer ) ? ( ( Integer )from_array[4] ).intValue() : ( ( Long )from_array[4] ).intValue();
-        this.size = ( from_array[5] instanceof Integer ) ? ( ( Integer )from_array[5] ).longValue() : ( ( Long )from_array[5] ).longValue();
-        this.atime_ns = ( from_array[6] instanceof Integer ) ? ( ( Integer )from_array[6] ).longValue() : ( ( Long )from_array[6] ).longValue();
-        this.mtime_ns = ( from_array[7] instanceof Integer ) ? ( ( Integer )from_array[7] ).longValue() : ( ( Long )from_array[7] ).longValue();
-        this.ctime_ns = ( from_array[8] instanceof Integer ) ? ( ( Integer )from_array[8] ).longValue() : ( ( Long )from_array[8] ).longValue();
+        this.mode = ( ( Integer )from_array[0] ).intValue();
+        this.nlink = ( ( Integer )from_array[1] ).intValue();
+        this.uid = ( ( Integer )from_array[2] ).intValue();
+        this.gid = ( ( Integer )from_array[3] ).intValue();
+        this.unused_dev = ( ( Integer )from_array[4] ).intValue();
+        this.size = ( ( Long )from_array[5] ).longValue();
+        this.atime_ns = ( ( Long )from_array[6] ).longValue();
+        this.mtime_ns = ( ( Long )from_array[7] ).longValue();
+        this.ctime_ns = ( ( Long )from_array[8] ).longValue();
         this.user_id = ( String )from_array[9];
         this.group_id = ( String )from_array[10];
         this.file_id = ( String )from_array[11];
         this.link_target = ( String )from_array[12];
-        this.truncate_epoch = ( from_array[13] instanceof Integer ) ? ( ( Integer )from_array[13] ).intValue() : ( ( Long )from_array[13] ).intValue();
-        this.attributes = ( from_array[14] instanceof Integer ) ? ( ( Integer )from_array[14] ).intValue() : ( ( Long )from_array[14] ).intValue();        
+        this.truncate_epoch = ( ( Integer )from_array[13] ).intValue();
+        this.attributes = ( ( Integer )from_array[14] ).intValue();        
     }
 
     public void deserialize( ReusableBuffer buf )

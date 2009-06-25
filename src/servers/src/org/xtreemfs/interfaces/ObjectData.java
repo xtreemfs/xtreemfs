@@ -44,17 +44,17 @@ public class ObjectData implements org.xtreemfs.interfaces.utils.Serializable
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.checksum = ( from_hash_map.get( "checksum" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "checksum" ) ).intValue() : ( ( Long )from_hash_map.get( "checksum" ) ).intValue();
+        this.checksum = ( ( Integer )from_hash_map.get( "checksum" ) ).intValue();
         this.invalid_checksum_on_osd = ( ( Boolean )from_hash_map.get( "invalid_checksum_on_osd" ) ).booleanValue();
-        this.zero_padding = ( from_hash_map.get( "zero_padding" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "zero_padding" ) ).intValue() : ( ( Long )from_hash_map.get( "zero_padding" ) ).intValue();
+        this.zero_padding = ( ( Integer )from_hash_map.get( "zero_padding" ) ).intValue();
         this.data = ( ReusableBuffer )from_hash_map.get( "data" );
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.checksum = ( from_array[0] instanceof Integer ) ? ( ( Integer )from_array[0] ).intValue() : ( ( Long )from_array[0] ).intValue();
+        this.checksum = ( ( Integer )from_array[0] ).intValue();
         this.invalid_checksum_on_osd = ( ( Boolean )from_array[1] ).booleanValue();
-        this.zero_padding = ( from_array[2] instanceof Integer ) ? ( ( Integer )from_array[2] ).intValue() : ( ( Long )from_array[2] ).intValue();
+        this.zero_padding = ( ( Integer )from_array[2] ).intValue();
         this.data = ( ReusableBuffer )from_array[3];        
     }
 

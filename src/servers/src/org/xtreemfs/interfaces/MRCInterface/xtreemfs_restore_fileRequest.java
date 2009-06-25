@@ -49,18 +49,18 @@ public class xtreemfs_restore_fileRequest implements org.xtreemfs.interfaces.uti
     {
         this.file_path = ( String )from_hash_map.get( "file_path" );
         this.file_id = ( String )from_hash_map.get( "file_id" );
-        this.file_size = ( from_hash_map.get( "file_size" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "file_size" ) ).longValue() : ( ( Long )from_hash_map.get( "file_size" ) ).longValue();
+        this.file_size = ( ( Long )from_hash_map.get( "file_size" ) ).longValue();
         this.osd_uuid = ( String )from_hash_map.get( "osd_uuid" );
-        this.stripe_size = ( from_hash_map.get( "stripe_size" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "stripe_size" ) ).intValue() : ( ( Long )from_hash_map.get( "stripe_size" ) ).intValue();
+        this.stripe_size = ( ( Integer )from_hash_map.get( "stripe_size" ) ).intValue();
     }
     
     public void deserialize( Object[] from_array )
     {
         this.file_path = ( String )from_array[0];
         this.file_id = ( String )from_array[1];
-        this.file_size = ( from_array[2] instanceof Integer ) ? ( ( Integer )from_array[2] ).longValue() : ( ( Long )from_array[2] ).longValue();
+        this.file_size = ( ( Long )from_array[2] ).longValue();
         this.osd_uuid = ( String )from_array[3];
-        this.stripe_size = ( from_array[4] instanceof Integer ) ? ( ( Integer )from_array[4] ).intValue() : ( ( Long )from_array[4] ).intValue();        
+        this.stripe_size = ( ( Integer )from_array[4] ).intValue();        
     }
 
     public void deserialize( ReusableBuffer buf )

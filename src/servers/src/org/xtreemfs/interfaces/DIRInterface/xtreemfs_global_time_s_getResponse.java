@@ -39,12 +39,12 @@ public class xtreemfs_global_time_s_getResponse implements org.xtreemfs.interfac
         
     public void deserialize( HashMap<String, Object> from_hash_map )
     {
-        this.returnValue = ( from_hash_map.get( "returnValue" ) instanceof Integer ) ? ( ( Integer )from_hash_map.get( "returnValue" ) ).longValue() : ( ( Long )from_hash_map.get( "returnValue" ) ).longValue();
+        this.returnValue = ( ( Long )from_hash_map.get( "returnValue" ) ).longValue();
     }
     
     public void deserialize( Object[] from_array )
     {
-        this.returnValue = ( from_array[0] instanceof Integer ) ? ( ( Integer )from_array[0] ).longValue() : ( ( Long )from_array[0] ).longValue();        
+        this.returnValue = ( ( Long )from_array[0] ).longValue();        
     }
 
     public void deserialize( ReusableBuffer buf )
