@@ -55,6 +55,7 @@ CLIENT_WHITE_LIST=(
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 XOS_ADDONS_WHITE_LIST=(
 	"src/servers/xtreemos" "xtreemos"
+	"src/policies" "policies"
 	"AUTHORS" ""
 	"COPYING" ""
 )
@@ -201,6 +202,11 @@ build_xtreemos_addons() {
 	create_dir $PACKAGE_PATH
 	create_dir $PACKAGE_PATH_TMP
 	cp -a $XTREEMFS_HOME_DIR/* $PACKAGE_PATH_TMP
+	
+	# replace the scons.py softlink + dependencies
+	rm $PACKAGE_PATH_TMP/src/policies/scons.py
+	cp $PACKAGE_PATH_TMP/src/client/scons.py $PACKAGE_PATH_TMP/src/policies/scons.py
+	cp -r $PACKAGE_PATH_TMP/src/client/scons-local-* $PACKAGE_PATH_TMP/src/policies
 
 	# delete all from black-list in temporary dir
 	delete_xos_addons_black_list $PACKAGE_PATH_TMP
@@ -210,8 +216,10 @@ build_xtreemos_addons() {
 	
 	# delete all .svn directories
 	find $PACKAGE_PATH -name ".svn" -print0 | xargs -0 rm -rf
+	
+	exit 1
 
-	tar czf "$XOS_ADDONS_PACKAGE_NAME.tar.gz" -C $PACKAGE_PATH/xtreemos .
+	tar czf "$XOS_ADDONS_PACKAGE_NAME.tar.gz" -C $PACKAGE_PATH .
 }
 
 function copy_server_white_list() {
