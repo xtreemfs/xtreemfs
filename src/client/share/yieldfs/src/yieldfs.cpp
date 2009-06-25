@@ -1,4 +1,4 @@
-// Revision: 162
+// Revision: 163
 
 #include "yield.h"
 #include "yieldfs.h"
@@ -1599,7 +1599,16 @@ bool MetadataCachingVolume::chown( const YIELD::Path& path, int32_t uid, int32_t
 YIELD::auto_Object<CachedStat> MetadataCachingVolume::evict( const YIELD::Path& path )
 {
   lock.acquire();
-  CachedStat* cached_stat = YIELD::HATTrie<CachedStat*>::erase( static_cast<const std::string&>( path ) );
+  CachedStat* cached_stat;
+  // cached_stat = YIELD::HATTrie<CachedStat*>::erase( static_cast<const std::string&>( path ) );
+  iterator cached_stat_i = std::map<std::string, CachedStat*>::find( static_cast<const std::string&>( path ) );
+  if ( cached_stat_i != end() )
+  {
+    cached_stat = cached_stat_i->second;
+    erase( cached_stat_i );
+  }
+  else
+    cached_stat = NULL;
   lock.release();
 #ifdef _DEBUG
   if ( cached_stat && log != NULL )
@@ -1610,9 +1619,12 @@ YIELD::auto_Object<CachedStat> MetadataCachingVolume::evict( const YIELD::Path& 
 YIELD::auto_Object<CachedStat> MetadataCachingVolume::find( const YIELD::Path& path )
 {
   lock.acquire();
-  CachedStat* cached_stat = YIELD::HATTrie<CachedStat*>::find( static_cast<const std::string&>( path ) );
-  if ( cached_stat )
+  //CachedStat* cached_stat = YIELD::HATTrie<CachedStat*>::find( static_cast<const std::string&>( path ) );
+  //if ( cached_stat != NULL )
+  const_iterator cached_stat_i = std::map<std::string, CachedStat*>::find( static_cast<const std::string&>( path ) );
+  if ( cached_stat_i != end() )
   {
+    CachedStat* cached_stat = cached_stat_i->second;
     if ( YIELD::Time::getCurrentUnixTimeS() - cached_stat->get_creation_epoch_time_s() < ttl_s )
     {
       cached_stat->incRef(); // Must incRef before releasing the lock in case another thread wants to erase this entry
@@ -1680,16 +1692,25 @@ YIELD::Path MetadataCachingVolume::getParentDirectoryPath( const YIELD::Path& pa
 void MetadataCachingVolume::insert( CachedStat* cached_stat )
 {
   lock.acquire();
-  YIELD::HATTrie<CachedStat*>::insert( static_cast<const std::string&>( cached_stat->get_path() ), &cached_stat->incRef() );
+  // YIELD::HATTrie<CachedStat*>::insert( static_cast<const std::string&>( cached_stat->get_path() ), &cached_stat->incRef() );
+  const_iterator cached_stat_i = std::map<std::string, CachedStat*>::find( static_cast<const std::string&>( cached_stat->get_path() ) );
+  if ( cached_stat_i == end() )
+  {
 #ifdef _DEBUG
-  if ( log != NULL )
-    log->getStream( YIELD::Log::LOG_INFO ) << "MetadataCachingVolume: caching " << cached_stat->get_path() << ".";
+    if ( log != NULL )
+      log->getStream( YIELD::Log::LOG_INFO ) << "MetadataCachingVolume: caching " << cached_stat->get_path() << ".";
 #endif
+    std::map<std::string, CachedStat*>::insert( std::make_pair( static_cast<const std::string&>( cached_stat->get_path() ), &cached_stat->incRef() ) );
+  }
+  else
+  {
+    if ( log != NULL )
+      log->getStream( YIELD::Log::LOG_WARNING ) << "MetadataCachingVolume::insert already have " << cached_stat->get_path() << " in cache. Race condition?";
+  }
   lock.release();
 }
 bool MetadataCachingVolume::link( const YIELD::Path& old_path, const YIELD::Path& new_path )
 {
-  // evicttree( new_path );
   evict( new_path );
   evict( old_path );
   return underlying_volume->link( old_path, new_path );
@@ -1715,12 +1736,15 @@ YIELD::auto_File MetadataCachingVolume::open( const YIELD::Path& path, uint32_t 
 bool MetadataCachingVolume::readdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, YIELD::Volume::readdirCallback& callback )
 {
   MetadataCachingVolumereaddirCallback ttl_cached_readdir_callback( *this, callback );
+  // Do a listdir first to gather CachedStats for the directory
+  // This is an optimization for the common case of all of the children of a directory being in cache at once
   if ( underlying_volume->listdir( path, match_file_name_prefix, ttl_cached_readdir_callback ) )
   {
-    ttl_cached_readdir_callback.flush();
+    // All of the child directory entries were in the cache
+    ttl_cached_readdir_callback.flush(); // Copy them to the readdir callback
     return true;
   }
-  else
+  else // One of the child directory entries wasn't in the cache; do a real readdir and cache everything it receives
     return underlying_volume->readdir( path, match_file_name_prefix, ttl_cached_readdir_callback );
 }
 bool MetadataCachingVolume::removexattr( const YIELD::Path& path, const std::string& name )
@@ -1773,9 +1797,12 @@ bool MetadataCachingVolume::unlink( const YIELD::Path& path )
 void MetadataCachingVolume::updateCachedFileSize( const YIELD::Path& path, uint64_t new_file_size )
 {
   lock.acquire();
-  CachedStat* cached_stat = YIELD::HATTrie<CachedStat*>::find( static_cast<const std::string&>( path ) );
-  if ( cached_stat )
-    cached_stat->get_stat()->set_size( new_file_size );
+//  CachedStat* cached_stat = YIELD::HATTrie<CachedStat*>::find( static_cast<const std::string&>( path ) );
+//  if ( cached_stat )
+//    cached_stat->get_stat()->set_size( new_file_size );
+  const_iterator cached_stat_i = std::map<std::string, CachedStat*>::find( static_cast<const std::string&>( path ) );
+  if ( cached_stat_i != end() )
+    cached_stat_i->second->get_stat()->set_size( new_file_size );
   lock.release();
 }
 bool MetadataCachingVolume::utimens( const YIELD::Path& path, const YIELD::Time& atime, const YIELD::Time& mtime, const YIELD::Time& ctime )
