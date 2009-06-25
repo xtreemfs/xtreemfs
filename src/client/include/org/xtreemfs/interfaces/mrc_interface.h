@@ -363,8 +363,8 @@ namespace org
         virtual void xtreemfs_checkpoint() { xtreemfs_checkpoint( static_cast<uint64_t>( -1 ) ); }
         virtual void xtreemfs_checkpoint( uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_checkpointRequest> __request( new xtreemfs_checkpointRequest() ); ::YIELD::auto_Object< ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > > > __response_queue = new ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > >; __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_checkpointResponse> __response = __response_queue->dequeue_typed<xtreemfs_checkpointResponse>( response_timeout_ns ); }
 
-        virtual void xtreemfs_check_file_exists( const std::string& volume_id, const org::xtreemfs::interfaces::StringSet& file_ids, std::string& bitmap ) { xtreemfs_check_file_exists( volume_id, file_ids, bitmap, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_check_file_exists( const std::string& volume_id, const org::xtreemfs::interfaces::StringSet& file_ids, std::string& bitmap, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_check_file_existsRequest> __request( new xtreemfs_check_file_existsRequest( volume_id, file_ids ) ); ::YIELD::auto_Object< ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > > > __response_queue = new ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > >; __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_check_file_existsResponse> __response = __response_queue->dequeue_typed<xtreemfs_check_file_existsResponse>( response_timeout_ns ); bitmap = __response->get_bitmap(); }
+        virtual void xtreemfs_check_file_exists( const std::string& volume_id, const org::xtreemfs::interfaces::StringSet& file_ids, const std::string& osd_uuid, std::string& bitmap ) { xtreemfs_check_file_exists( volume_id, file_ids, osd_uuid, bitmap, static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_check_file_exists( const std::string& volume_id, const org::xtreemfs::interfaces::StringSet& file_ids, const std::string& osd_uuid, std::string& bitmap, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_check_file_existsRequest> __request( new xtreemfs_check_file_existsRequest( volume_id, file_ids, osd_uuid ) ); ::YIELD::auto_Object< ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > > > __response_queue = new ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > >; __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_check_file_existsResponse> __response = __response_queue->dequeue_typed<xtreemfs_check_file_existsResponse>( response_timeout_ns ); bitmap = __response->get_bitmap(); }
 
         virtual void xtreemfs_dump_database( const std::string& dump_file ) { xtreemfs_dump_database( dump_file, static_cast<uint64_t>( -1 ) ); }
         virtual void xtreemfs_dump_database( const std::string& dump_file, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_dump_databaseRequest> __request( new xtreemfs_dump_databaseRequest( dump_file ) ); ::YIELD::auto_Object< ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > > > __response_queue = new ::YIELD::OneSignalEventQueue< ::YIELD::NonBlockingFiniteQueue< ::YIELD::Event*, 16 > >; __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_dump_databaseResponse> __response = __response_queue->dequeue_typed<xtreemfs_dump_databaseResponse>( response_timeout_ns ); }
@@ -1439,8 +1439,8 @@ namespace org
         {
         public:
           xtreemfs_check_file_existsRequest() { }
-          xtreemfs_check_file_existsRequest( const std::string& volume_id, const org::xtreemfs::interfaces::StringSet& file_ids ) : volume_id( volume_id ), file_ids( file_ids ) { }
-          xtreemfs_check_file_existsRequest( const char* volume_id, size_t volume_id_len, const org::xtreemfs::interfaces::StringSet& file_ids ) : volume_id( volume_id, volume_id_len ), file_ids( file_ids ) { }
+          xtreemfs_check_file_existsRequest( const std::string& volume_id, const org::xtreemfs::interfaces::StringSet& file_ids, const std::string& osd_uuid ) : volume_id( volume_id ), file_ids( file_ids ), osd_uuid( osd_uuid ) { }
+          xtreemfs_check_file_existsRequest( const char* volume_id, size_t volume_id_len, const org::xtreemfs::interfaces::StringSet& file_ids, const char* osd_uuid, size_t osd_uuid_len ) : volume_id( volume_id, volume_id_len ), file_ids( file_ids ), osd_uuid( osd_uuid, osd_uuid_len ) { }
           virtual ~xtreemfs_check_file_existsRequest() { }
 
           void set_volume_id( const std::string& volume_id ) { set_volume_id( volume_id.c_str(), volume_id.size() ); }
@@ -1448,19 +1448,23 @@ namespace org
           const std::string& get_volume_id() const { return volume_id; }
           void set_file_ids( const org::xtreemfs::interfaces::StringSet&  file_ids ) { this->file_ids = file_ids; }
           const org::xtreemfs::interfaces::StringSet& get_file_ids() const { return file_ids; }
+          void set_osd_uuid( const std::string& osd_uuid ) { set_osd_uuid( osd_uuid.c_str(), osd_uuid.size() ); }
+          void set_osd_uuid( const char* osd_uuid, size_t osd_uuid_len ) { this->osd_uuid.assign( osd_uuid, osd_uuid_len ); }
+          const std::string& get_osd_uuid() const { return osd_uuid; }
 
-          bool operator==( const xtreemfs_check_file_existsRequest& other ) const { return volume_id == other.volume_id && file_ids == other.file_ids; }
+          bool operator==( const xtreemfs_check_file_existsRequest& other ) const { return volume_id == other.volume_id && file_ids == other.file_ids && osd_uuid == other.osd_uuid; }
 
           // YIELD::Object
           YIELD_OBJECT_PROTOTYPES( xtreemfs_check_file_existsRequest, 1231 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( ::YIELD::Declaration( "volume_id" ), volume_id ); marshaller.writeSequence( ::YIELD::Declaration( "file_ids" ), file_ids ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( ::YIELD::Declaration( "volume_id" ), volume_id ); unmarshaller.readSequence( ::YIELD::Declaration( "file_ids" ), &file_ids ); }
+          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( ::YIELD::Declaration( "volume_id" ), volume_id ); marshaller.writeSequence( ::YIELD::Declaration( "file_ids" ), file_ids ); marshaller.writeString( ::YIELD::Declaration( "osd_uuid" ), osd_uuid ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( ::YIELD::Declaration( "volume_id" ), volume_id ); unmarshaller.readSequence( ::YIELD::Declaration( "file_ids" ), &file_ids ); unmarshaller.readString( ::YIELD::Declaration( "osd_uuid" ), osd_uuid ); }
 
         protected:
           std::string volume_id;
           org::xtreemfs::interfaces::StringSet file_ids;
+          std::string osd_uuid;
         };
 
         class xtreemfs_dump_databaseResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2564,7 +2568,7 @@ namespace org
         virtual void handleunlinkRequest( unlinkRequest& req ) { ::YIELD::auto_Object<unlinkResponse> resp( new unlinkResponse ); org::xtreemfs::interfaces::FileCredentialsSet file_credentials; _unlink( req.get_path(), file_credentials ); resp->set_file_credentials( file_credentials ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
         virtual void handleutimensRequest( utimensRequest& req ) { ::YIELD::auto_Object<utimensResponse> resp( new utimensResponse ); _utimens( req.get_path(), req.get_atime_ns(), req.get_mtime_ns(), req.get_ctime_ns() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
         virtual void handlextreemfs_checkpointRequest( xtreemfs_checkpointRequest& req ) { ::YIELD::auto_Object<xtreemfs_checkpointResponse> resp( new xtreemfs_checkpointResponse ); _xtreemfs_checkpoint(); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_check_file_existsRequest( xtreemfs_check_file_existsRequest& req ) { ::YIELD::auto_Object<xtreemfs_check_file_existsResponse> resp( new xtreemfs_check_file_existsResponse ); std::string bitmap; _xtreemfs_check_file_exists( req.get_volume_id(), req.get_file_ids(), bitmap ); resp->set_bitmap( bitmap ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
+        virtual void handlextreemfs_check_file_existsRequest( xtreemfs_check_file_existsRequest& req ) { ::YIELD::auto_Object<xtreemfs_check_file_existsResponse> resp( new xtreemfs_check_file_existsResponse ); std::string bitmap; _xtreemfs_check_file_exists( req.get_volume_id(), req.get_file_ids(), req.get_osd_uuid(), bitmap ); resp->set_bitmap( bitmap ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
         virtual void handlextreemfs_dump_databaseRequest( xtreemfs_dump_databaseRequest& req ) { ::YIELD::auto_Object<xtreemfs_dump_databaseResponse> resp( new xtreemfs_dump_databaseResponse ); _xtreemfs_dump_database( req.get_dump_file() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
         virtual void handlextreemfs_get_suitable_osdsRequest( xtreemfs_get_suitable_osdsRequest& req ) { ::YIELD::auto_Object<xtreemfs_get_suitable_osdsResponse> resp( new xtreemfs_get_suitable_osdsResponse ); org::xtreemfs::interfaces::StringSet osd_uuids; _xtreemfs_get_suitable_osds( req.get_file_id(), osd_uuids ); resp->set_osd_uuids( osd_uuids ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
         virtual void handlextreemfs_internal_debugRequest( xtreemfs_internal_debugRequest& req ) { ::YIELD::auto_Object<xtreemfs_internal_debugResponse> resp( new xtreemfs_internal_debugResponse ); std::string result; _xtreemfs_internal_debug( req.get_operation(), result ); resp->set_result( result ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
@@ -2603,7 +2607,7 @@ namespace org
         virtual void _unlink( const std::string& , org::xtreemfs::interfaces::FileCredentialsSet&  ) { }
         virtual void _utimens( const std::string& , uint64_t, uint64_t, uint64_t ) { }
         virtual void _xtreemfs_checkpoint() { }
-        virtual void _xtreemfs_check_file_exists( const std::string& , const org::xtreemfs::interfaces::StringSet& , std::string&  ) { }
+        virtual void _xtreemfs_check_file_exists( const std::string& , const org::xtreemfs::interfaces::StringSet& , const std::string& , std::string&  ) { }
         virtual void _xtreemfs_dump_database( const std::string&  ) { }
         virtual void _xtreemfs_get_suitable_osds( const std::string& , org::xtreemfs::interfaces::StringSet&  ) { }
         virtual void _xtreemfs_internal_debug( const std::string& , std::string&  ) { }
@@ -2645,7 +2649,7 @@ namespace org
       virtual void _unlink( const std::string& path, org::xtreemfs::interfaces::FileCredentialsSet& file_credentials );\
       virtual void _utimens( const std::string& path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns );\
       virtual void _xtreemfs_checkpoint();\
-      virtual void _xtreemfs_check_file_exists( const std::string& volume_id, const org::xtreemfs::interfaces::StringSet& file_ids, std::string& bitmap );\
+      virtual void _xtreemfs_check_file_exists( const std::string& volume_id, const org::xtreemfs::interfaces::StringSet& file_ids, const std::string& osd_uuid, std::string& bitmap );\
       virtual void _xtreemfs_dump_database( const std::string& dump_file );\
       virtual void _xtreemfs_get_suitable_osds( const std::string& file_id, org::xtreemfs::interfaces::StringSet& osd_uuids );\
       virtual void _xtreemfs_internal_debug( const std::string& operation, std::string& result );\
