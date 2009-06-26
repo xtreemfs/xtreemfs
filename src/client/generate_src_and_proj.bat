@@ -11,7 +11,7 @@ set YIELD_PATH=%XTREEMFS_PATH%\..\yield
 set PYTHONPATH=%PYTHONPATH%;%YIELD_PATH%\src\py
 
 set DEPEND_GOOGLE_BREAKPAD_FLAGS=-I %GOOGLE_BREAKPAD_PATH%\src -c %XTREEMFS_CLIENT_PATH%\proj\google-breakpad\google-breakpad.SConscript
-set DEPEND_YIELD_INCLUDE_FLAGS=-I %XTREEMFS_CLIENT_PATH%\share\yieldfs\share\yield\include --Dw YIELD_HAVE_OPENSSL
+set DEPEND_YIELD_INCLUDE_FLAGS=-I %XTREEMFS_CLIENT_PATH%\share\yieldfs\share\yield\include -D YIELD_HAVE_OPENSSL
 set DEPEND_YIELD_LIB_FLAGS=--lw libeay32.lib --lw ssleay32.lib --lwS libeay32.lib --lwS ssleay32.lib --lu ssl
 set DEPEND_YIELDFS_INCLUDE_FLAGS=-I %XTREEMFS_CLIENT_PATH%\share\yieldfs\include %DEPEND_YIELD_INCLUDE_FLAGS%
 set DEPEND_YIELDFS_LIB_FLAGS=--lu fuse %DEPEND_YIELD_LIB_FLAGS%

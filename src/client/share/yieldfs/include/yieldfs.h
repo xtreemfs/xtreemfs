@@ -10,6 +10,9 @@
 #include <unistd.h>
 #endif
 
+#include <map>
+#include <string>
+
 #ifndef _WIN32
 struct fuse_args;
 #endif
@@ -126,7 +129,7 @@ namespace yieldfs
   };
 
 
-  class MetadataCachingVolume : public StackableVolume, private YIELD::HATTrie<CachedStat*>
+  class MetadataCachingVolume : public StackableVolume, private std::map<std::string, CachedStat*> // YIELD::HATTrie<CachedStat*>
   {
   public:
     MetadataCachingVolume(); // For testing

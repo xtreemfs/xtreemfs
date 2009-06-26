@@ -61,8 +61,8 @@ except:
 
     Export( "build_env", "build_conf" )
 
-defines = []
-if sys.platform.startswith( "win" ): defines.extend( ["YIELD_HAVE_OPENSSL"] )
+defines = ["YIELD_HAVE_OPENSSL"]
+if sys.platform.startswith( "win" ): defines.extend( [] )
 else: defines.extend( [] )
 for define in defines:
     if sys.platform.startswith( "win" ): define_switch = '/D "' + define + '"'

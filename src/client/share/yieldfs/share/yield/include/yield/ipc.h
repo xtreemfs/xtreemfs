@@ -553,10 +553,10 @@ namespace YIELD
 
     // Socket
     virtual ssize_t read( void* buffer, size_t buffer_len );
-    virtual ssize_t write( const void* buffer, size_t buffer_len );
-    virtual ssize_t writev( const struct iovec* buffers, uint32_t buffers_count );
     virtual bool want_read() const;
     virtual bool want_write() const;
+    virtual ssize_t write( const void* buffer, size_t buffer_len );
+    virtual ssize_t writev( const struct iovec* buffers, uint32_t buffers_count );
 
     // TCPSocket
     YIELD::auto_Object<TCPSocket> accept();
