@@ -49,6 +49,7 @@ OSD_ONCRPC_PORT = 32640
 
 # Option defaults
 DEBUG_LEVEL_DEFAULT = 0
+DEBUG_LEVEL_DEFAULT_SERVICES = 6
 NUM_OSDS_DEFAULT = 1
 ENABLE_SSL_DEFAULT = False
 STRIPE_SIZE_DEFAULT = 128
@@ -262,7 +263,7 @@ def run_tests( mnt_dir_path=MNT_DIR_PATH_DEFAULT, num_osds=NUM_OSDS_DEFAULT, tes
         return 1
     
     
-def start_services( debug_level=DEBUG_LEVEL_DEFAULT, num_osds=NUM_OSDS_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT ):
+def start_services( debug_level=DEBUG_LEVEL_DEFAULT_SERVICES, num_osds=NUM_OSDS_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT ):
     for subdir_name in ( "config", "data", "log", "run" ):
         if not os.path.exists( subdir_name ):
             os.mkdir( subdir_name )
@@ -341,6 +342,14 @@ def _stop_service( service_name, service_num="" ):
                os.kill( service_pid, signal.SIGTERM )
             except:
                traceback.print_exc()
+            time.sleep(1)
+            try:
+                (procid, exitvalue) = os.waitpid(service_pid,os.WNOHANG)
+                if (procid == 0):
+                    print "process did not terminate... sending SIGKILL"
+                    os.kill( service_pid, signal.SIGKILL )
+            except:
+                pass
         os.unlink( run_file_path )
 #    else:
 #        print "ERROR:", run_file_path, "does not exist,", service_name.upper(), "service is not running."
