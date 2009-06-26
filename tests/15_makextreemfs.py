@@ -6,10 +6,11 @@ have_called_createTestSuite = False
 
 
 class makextreemfsTest(unittest.TestCase):
-    def __init__( self, stdout=sys.stdout, stderr=sys.stderr, *args, **kwds ):
+    def __init__( self, direct_io=False, stdout=sys.stdout, stderr=sys.stderr, *args, **kwds ):
         unittest.TestCase.__init__( self )
         self.stdout = stdout
         self.stderr = stderr
+        self.direct_io = direct_io
         
     def runTest( self ):
 	    
