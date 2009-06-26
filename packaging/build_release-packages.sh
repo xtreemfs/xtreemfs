@@ -216,8 +216,6 @@ build_xtreemos_addons() {
 	
 	# delete all .svn directories
 	find $PACKAGE_PATH -name ".svn" -print0 | xargs -0 rm -rf
-	
-	exit 1
 
 	tar czf "$XOS_ADDONS_PACKAGE_NAME.tar.gz" -C $PACKAGE_PATH .
 }
