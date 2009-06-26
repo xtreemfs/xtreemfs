@@ -4163,22 +4163,20 @@ SSLListenQueue::SSLListenQueue( YIELD::auto_Object<SSLSocket> listen_ssl_socket 
 #endif
 auto_SSLSocket SSLSocket::create( auto_SSLContext ctx )
 {
-  SSL* ssl = SSL_new( ctx->get_ssl_ctx() );
-  if ( ssl != NULL )
-  {
-    int domain = AF_INET6;
-    int _socket = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
-    if ( _socket != -1 )
-      return new SSLSocket( domain, _socket, ctx, *ssl );
-  }
-  return NULL;
+  int domain = AF_INET6;
+  int _socket = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
+  if ( _socket != -1 )
+    return new SSLSocket( domain, _socket, ctx, NULL );
+  else
+    return NULL;
 }
-SSLSocket::SSLSocket( int domain, int _socket, auto_SSLContext ctx, SSL& ssl )
-  : TCPSocket( domain, _socket ), ctx( ctx ), ssl( &ssl )
+SSLSocket::SSLSocket( int domain, int _socket, auto_SSLContext ctx, SSL* ssl )
+  : TCPSocket( domain, _socket ), ctx( ctx ), ssl( ssl )
 { }
 SSLSocket::~SSLSocket()
 {
-  SSL_free( ssl );
+  if ( ssl != NULL )
+    SSL_free( ssl );
 }
 auto_TCPSocket SSLSocket::accept()
 {
@@ -4189,7 +4187,7 @@ auto_TCPSocket SSLSocket::accept()
     SSL* peer_ssl = SSL_new( ctx->get_ssl_ctx() );
     SSL_set_fd( peer_ssl, peer_socket );
     SSL_set_accept_state( peer_ssl );
-    return new SSLSocket( get_domain(), peer_socket, ctx, *peer_ssl );
+    return new SSLSocket( get_domain(), peer_socket, ctx, peer_ssl );
   }
   else
     return NULL;
@@ -4198,6 +4196,8 @@ bool SSLSocket::connect( auto_SocketAddress peer_sockaddr )
 {
   if ( TCPSocket::connect( peer_sockaddr ) )
   {
+    if ( ssl == NULL )
+      ssl = SSL_new( ctx->get_ssl_ctx() );
     SSL_set_fd( ssl, *this );
     SSL_set_connect_state( ssl );
     return true;
@@ -4237,26 +4237,38 @@ void SSLSocket::info_callback( const SSL* ssl, int where, int ret )
 */
 ssize_t SSLSocket::read( void* buffer, size_t buffer_len )
 {
-  return SSL_read( ssl, buffer, static_cast<int>( buffer_len ) );
+  if ( ssl != NULL )
+    return SSL_read( ssl, buffer, static_cast<int>( buffer_len ) );
+  else
+    return -1;
 }
 bool SSLSocket::shutdown()
 {
-  if ( SSL_shutdown( ssl ) != -1 )
+  if ( ssl != NULL && SSL_shutdown( ssl ) != -1 )
     return TCPSocket::shutdown();
   else
     return false;
 }
 bool SSLSocket::want_read() const
 {
-  return SSL_want_read( ssl ) == 1;
+  if ( ssl != NULL )
+    return SSL_want_read( ssl ) == 1;
+  else
+    return TCPSocket::want_read();
 }
 bool SSLSocket::want_write() const
 {
-  return SSL_want_write( ssl ) == 1;
+  if ( ssl != NULL ) // Connected
+    return SSL_want_write( ssl ) == 1;
+  else
+    return TCPSocket::want_write();
 }
 ssize_t SSLSocket::write( const void* buffer, size_t buffer_len )
 {
-  return SSL_write( ssl, buffer, static_cast<int>( buffer_len ) );
+  if ( ssl != NULL )
+    return SSL_write( ssl, buffer, static_cast<int>( buffer_len ) );
+  else
+    return -1;
 }
 ssize_t SSLSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
 {

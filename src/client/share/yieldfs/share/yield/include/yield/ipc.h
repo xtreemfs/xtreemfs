@@ -563,7 +563,7 @@ namespace YIELD
     bool shutdown();
 
   private:
-    SSLSocket( int domain, int _socket, auto_SSLContext ctx, SSL& ssl );
+    SSLSocket( int domain, int _socket, auto_SSLContext ctx, SSL* ssl );
     ~SSLSocket();
 
     auto_SSLContext ctx;
