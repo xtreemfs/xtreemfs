@@ -1,4 +1,4 @@
-// Revision: 1597
+// Revision: 1602
 
 #include "yield/arch.h"
 #include "yield/ipc.h"
@@ -394,16 +394,23 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
       {
         YIELD::auto_Object<ProtocolRequestType> protocol_request( static_cast<ProtocolRequestType*>( context.release() ) );
         YIELD::auto_Object<Connection> connection = protocol_request->get_connection();
-        this->detach( connection );
-        if ( connection->get_socket()->connect( peername ) )
+        switch ( connection->get_socket()->connect( peername ) )
         {
-          connection->get_socket()->set_blocking_mode( true );
-          get_protocol_request_writer_stage()->send( *protocol_request.release() );
-        }
-        else
-        {
-          protocol_request->set_connection( NULL );
-          protocol_request->respond( *( new ExceptionResponse ) );
+          case Socket::CONNECT_STATUS_OK:
+          {
+            this->detach( connection );
+            connection->get_socket()->set_blocking_mode( true );
+            get_protocol_request_writer_stage()->send( *protocol_request.release() );
+          }
+          break;
+          case Socket::CONNECT_STATUS_WOULDBLOCK: break;
+          case Socket::CONNECT_STATUS_ERROR:
+          {
+            this->detach( connection );
+            protocol_request->set_connection( NULL );
+            protocol_request->respond( *( new ExceptionResponse ) );
+          }
+          break;
         }
         YIELD::Object::decRef( ev );
       }
@@ -462,25 +469,34 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
           YIELD::auto_Object<Connection> connection = new Connection( _socket );
           protocol_request->set_connection( connection );
           _socket->set_blocking_mode( false );
-          bool connect_ret;
+          Socket::ConnectStatus connect_status;
           if ( this->haveAIO() )
           {
             this->attach( connection, protocol_request->incRef(), false, true );
-            connect_ret = _socket->aio_connect( new TCPSocket::AIOConnectControlBlock( protocol_request->incRef(), peername, NULL ) );
+            connect_status = _socket->aio_connect( new TCPSocket::AIOConnectControlBlock( protocol_request->incRef(), peername, NULL ) );
           }
           else
-            connect_ret = _socket->connect( peername );
-          if ( connect_ret )
+            connect_status = _socket->connect( peername );
+          switch ( connect_status )
           {
-            _socket->set_blocking_mode( true);
-            get_protocol_request_writer_stage()->send( *protocol_request.release() );
-          }
-          else if ( connection->get_socket()->want_write() )
-            this->attach( connection, protocol_request->incRef(), false, true ); // attach AFTER trying to connect, in case the socket was re-created on a fallback from IPv6 to IPv6
-          else
-          {
-            protocol_request->set_connection( NULL );
-            protocol_request->respond( *( new ExceptionResponse() ) );
+            case Socket::CONNECT_STATUS_OK:
+            {
+              _socket->set_blocking_mode( true);
+              get_protocol_request_writer_stage()->send( *protocol_request.release() );
+            }
+            break;
+            case Socket::CONNECT_STATUS_WOULDBLOCK:
+            {
+              if ( !this->haveAIO() )
+                this->attach( connection, protocol_request->incRef(), false, true ); // attach AFTER trying to connect, in case the socket was re-created on a fallback from IPv6 to IPv6
+            }
+            break;
+            case Socket::CONNECT_STATUS_ERROR:
+            {
+              protocol_request->set_connection( NULL );
+              protocol_request->respond( *( new ExceptionResponse() ) );
+            }
+            break;
           }
         }
       }
@@ -562,7 +578,7 @@ auto_EventFDPipe EventFDPipe::create()
     YIELD::auto_Object<TCPSocket> write_end = TCPSocket::create();
     if ( write_end != NULL )
     {
-      if ( write_end->connect( listen_socket->getsockname() ) )
+      if ( write_end->connect( listen_socket->getsockname() ) == Socket::CONNECT_STATUS_OK )
       {
         write_end->set_blocking_mode( false );
         YIELD::auto_Object<TCPSocket> read_end = listen_socket->accept();
@@ -3468,7 +3484,7 @@ Socket::~Socket()
 {
   close();
 }
-bool Socket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
+Socket::ConnectStatus Socket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
   return connect( aio_connect_control_block->get_peername() );
 }
@@ -3534,7 +3550,7 @@ bool Socket::close()
   return ::close( _socket ) != -1;
 #endif
 }
-bool Socket::connect( auto_SocketAddress to_sockaddr )
+Socket::ConnectStatus Socket::connect( auto_SocketAddress to_sockaddr )
 {
   for ( ;; )
   {
@@ -3542,23 +3558,23 @@ bool Socket::connect( auto_SocketAddress to_sockaddr )
     if ( to_sockaddr->as_struct_sockaddr( domain, name, namelen ) )
     {
       if ( ::connect( *this, name, namelen ) != -1 )
-        return true;
+        return CONNECT_STATUS_OK;
       else
       {
 #ifdef _WIN32
         switch ( ::WSAGetLastError() )
         {
-          case WSAEISCONN: return true;
+          case WSAEISCONN: return CONNECT_STATUS_OK;
           case WSAEWOULDBLOCK:
           case WSAEINPROGRESS:
-          case WSAEINVAL: return false;
+          case WSAEINVAL: return CONNECT_STATUS_WOULDBLOCK;
           case WSAEAFNOSUPPORT:
 #else
         switch ( errno )
         {
-          case EISCONN: return true;
+          case EISCONN: return CONNECT_STATUS_OK;
           case EWOULDBLOCK:
-          case EINPROGRESS: return false;
+          case EINPROGRESS: return CONNECT_STATUS_WOULDBLOCK;
           case EAFNOSUPPORT:
 #endif
           {
@@ -3572,10 +3588,10 @@ bool Socket::connect( auto_SocketAddress to_sockaddr )
               continue; // Try to connect again
             }
             else
-              return false;
+              return CONNECT_STATUS_ERROR;
           }
           break;
-          default: return false;
+          default: return CONNECT_STATUS_ERROR;
         }
       }
     }
@@ -3589,7 +3605,7 @@ bool Socket::connect( auto_SocketAddress to_sockaddr )
       continue; // Try to connect again
     }
     else
-      return false;
+      return CONNECT_STATUS_ERROR;
   }
 }
 int Socket::create( int& domain, int type, int protocol )
@@ -3726,12 +3742,7 @@ bool Socket::shutdown()
 bool Socket::want_read() const
 {
 #ifdef _WIN32
-  switch ( ::WSAGetLastError() )
-  {
-    case WSAEWOULDBLOCK:
-    case WSA_IO_PENDING: return true;
-    default: return false;
-  }
+  return ::WSAGetLastError() == WSAEWOULDBLOCK || ::WSAGetLastError() == WSA_IO_PENDING;
 #else
   return errno == EWOULDBLOCK;
 #endif
@@ -3739,20 +3750,9 @@ bool Socket::want_read() const
 bool Socket::want_write() const
 {
 #ifdef _WIN32
-  switch ( ::WSAGetLastError() )
-  {
-    case WSAEINPROGRESS:
-    case WSAEWOULDBLOCK:
-    case WSA_IO_PENDING: return true;
-    default: return false;
-  }
+  return ::WSAGetLastError() == WSAEWOULDBLOCK || ::WSAGetLastError() == WSA_IO_PENDING;
 #else
-  switch ( errno )
-  {
-    case EINPROGRESS:
-    case EWOULDBLOCK: return true;
-    default: return false;
-  }
+  return errno == EWOULDBLOCK;
 #endif
 }
 ssize_t Socket::write( YIELD::auto_Buffer buffer )
@@ -4163,20 +4163,23 @@ SSLListenQueue::SSLListenQueue( YIELD::auto_Object<SSLSocket> listen_ssl_socket 
 #endif
 auto_SSLSocket SSLSocket::create( auto_SSLContext ctx )
 {
-  int domain = AF_INET6;
-  int _socket = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
-  if ( _socket != -1 )
-    return new SSLSocket( domain, _socket, ctx, NULL );
-  else
-    return NULL;
+  SSL* ssl = SSL_new( ctx->get_ssl_ctx() );
+  if ( ssl != NULL )
+  {
+    int domain = AF_INET6;
+    int _socket = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
+    if ( _socket != -1 )
+      return new SSLSocket( domain, _socket, ctx, ssl );
+    else
+      return NULL;
+  }
 }
 SSLSocket::SSLSocket( int domain, int _socket, auto_SSLContext ctx, SSL* ssl )
   : TCPSocket( domain, _socket ), ctx( ctx ), ssl( ssl )
 { }
 SSLSocket::~SSLSocket()
 {
-  if ( ssl != NULL )
-    SSL_free( ssl );
+  SSL_free( ssl );
 }
 auto_TCPSocket SSLSocket::accept()
 {
@@ -4192,18 +4195,17 @@ auto_TCPSocket SSLSocket::accept()
   else
     return NULL;
 }
-bool SSLSocket::connect( auto_SocketAddress peer_sockaddr )
+Socket::ConnectStatus SSLSocket::connect( auto_SocketAddress peer_sockaddr )
 {
-  if ( TCPSocket::connect( peer_sockaddr ) )
+  ConnectStatus connect_status = TCPSocket::connect( peer_sockaddr );
+  if ( connect_status == CONNECT_STATUS_OK )
   {
-    if ( ssl == NULL )
-      ssl = SSL_new( ctx->get_ssl_ctx() );
     SSL_set_fd( ssl, *this );
     SSL_set_connect_state( ssl );
-    return true;
+    return CONNECT_STATUS_OK;
   }
   else
-    return false;
+    return connect_status;
 }
 /*
 void SSLSocket::info_callback( const SSL* ssl, int where, int ret )
@@ -4237,38 +4239,26 @@ void SSLSocket::info_callback( const SSL* ssl, int where, int ret )
 */
 ssize_t SSLSocket::read( void* buffer, size_t buffer_len )
 {
-  if ( ssl != NULL )
-    return SSL_read( ssl, buffer, static_cast<int>( buffer_len ) );
-  else
-    return -1;
+  return SSL_read( ssl, buffer, static_cast<int>( buffer_len ) );
 }
 bool SSLSocket::shutdown()
 {
-  if ( ssl != NULL && SSL_shutdown( ssl ) != -1 )
+  if ( SSL_shutdown( ssl ) != -1 )
     return TCPSocket::shutdown();
   else
     return false;
 }
 bool SSLSocket::want_read() const
 {
-  if ( ssl != NULL )
-    return SSL_want_read( ssl ) == 1;
-  else
-    return TCPSocket::want_read();
+  return SSL_want_read( ssl ) == 1;
 }
 bool SSLSocket::want_write() const
 {
-  if ( ssl != NULL ) // Connected
-    return SSL_want_write( ssl ) == 1;
-  else
-    return TCPSocket::want_write();
+  return SSL_want_write( ssl ) == 1;
 }
 ssize_t SSLSocket::write( const void* buffer, size_t buffer_len )
 {
-  if ( ssl != NULL )
-    return SSL_write( ssl, buffer, static_cast<int>( buffer_len ) );
-  else
-    return -1;
+  return SSL_write( ssl, buffer, static_cast<int>( buffer_len ) );
 }
 ssize_t SSLSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
 {
@@ -4407,7 +4397,7 @@ bool TCPSocket::aio_accept( YIELD::auto_Object<AIOAcceptControlBlock> aio_accept
   else
     return false;
 }
-bool TCPSocket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
+Socket::ConnectStatus TCPSocket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
   if ( TCPSocket::lpfnConnectEx == NULL )
   {
@@ -4442,22 +4432,22 @@ bool TCPSocket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_conn
         {
           aio_connect_control_block->onCompletion( dwBytesSent );
           aio_connect_control_block.release(); // Keep this reference in the queue
-          return true;
+          return CONNECT_STATUS_OK;
         }
         else if ( ::WSAGetLastError() == WSA_IO_PENDING )
         {
           aio_connect_control_block.release(); // Keep this reference in the queue
-          return false;
+          return CONNECT_STATUS_WOULDBLOCK;
         }
         else
-          return false;
+          return CONNECT_STATUS_ERROR;
       }
       else
-        return false;
+        return CONNECT_STATUS_ERROR;
     }
   }
   else
-    return false;
+    return CONNECT_STATUS_ERROR;
 }
 #endif
 auto_TCPSocket TCPSocket::create()
@@ -4507,7 +4497,7 @@ TracingSocket::TracingSocket( auto_Socket underlying_socket, auto_Log log )
   : Socket( underlying_socket->get_domain(), underlying_socket->get_type(), underlying_socket->get_protocol(), -1 ),
     underlying_socket( underlying_socket ), log( log )
 { }
-bool TracingSocket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
+Socket::ConnectStatus TracingSocket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
   return underlying_socket->aio_connect( aio_connect_control_block );
 }
@@ -4527,7 +4517,7 @@ bool TracingSocket::close()
   log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: closing socket #" << ( int )*this << ".";
   return underlying_socket->close();
 }
-bool TracingSocket::connect( auto_SocketAddress to_sockaddr )
+Socket::ConnectStatus TracingSocket::connect( auto_SocketAddress to_sockaddr )
 {
   std::string to_hostname;
   if ( to_sockaddr->getnameinfo( to_hostname ) )

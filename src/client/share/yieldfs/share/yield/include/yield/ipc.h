@@ -48,11 +48,11 @@ typedef struct yajl_gen_t* yajl_gen;
 
 
 #define YIELD_SOCKET_PROTOTYPES \
-virtual bool aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block ); \
+virtual ConnectStatus aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block ); \
 virtual ssize_t aio_read( YIELD::auto_Object<AIOReadControlBlock> aio_read_control_block ); \
 virtual bool bind( auto_SocketAddress to_sockaddr ); \
 virtual bool close(); \
-virtual bool connect( auto_SocketAddress to_sockaddr ); \
+virtual ConnectStatus connect( auto_SocketAddress to_sockaddr ); \
 virtual bool get_blocking_mode() const; \
 virtual auto_SocketAddress getpeername(); \
 virtual auto_SocketAddress getsockname(); \
@@ -400,6 +400,7 @@ namespace YIELD
     };
 
 
+    enum ConnectStatus { CONNECT_STATUS_ERROR = -1, CONNECT_STATUS_OK = 0, CONNECT_STATUS_WOULDBLOCK = 1 };
     int get_domain() const { return domain; }
     int get_protocol() const { return protocol; }
     int get_type() const { return type; }
@@ -460,7 +461,7 @@ namespace YIELD
     virtual YIELD::auto_Object<TCPSocket> accept();
 #ifdef _WIN32
     virtual bool aio_accept( YIELD::auto_Object<AIOAcceptControlBlock> aio_accept_control_block );
-    virtual bool aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block );
+    virtual ConnectStatus aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block );
 #endif
     virtual bool listen();
     virtual bool shutdown();
@@ -559,7 +560,7 @@ namespace YIELD
 
     // TCPSocket
     YIELD::auto_Object<TCPSocket> accept();
-    bool connect( auto_SocketAddress peername );
+    ConnectStatus connect( auto_SocketAddress peername );
     bool shutdown();
 
   private:
