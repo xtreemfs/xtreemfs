@@ -32,6 +32,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.foundation.ErrNo;
@@ -114,13 +117,22 @@ public class MRCHelper {
         nexists, dir, file
     }
     
-    public static Service createDSVolumeInfo(VolumeInfo vol, OSDStatusManager osdMan, String mrcUUID) {
+    public static Service createDSVolumeInfo(VolumeInfo vol, OSDStatusManager osdMan, StorageManager sMan,
+        String mrcUUID) {
         
         String free = String.valueOf(osdMan.getFreeSpace(vol.getId()));
+        String volSize = null;
+        try {
+            volSize = String.valueOf(sMan.getVolumeSize());
+        } catch (DatabaseException e) {
+            Logging.logMessage(Logging.LEVEL_ERROR, Category.db, null, OutputUtils.stackTraceToString(e),
+                new Object[0]);
+        }
         
         ServiceDataMap dmap = new ServiceDataMap();
         dmap.put("mrc", mrcUUID);
         dmap.put("free", free);
+        dmap.put("used", volSize);
         Service sreg = new Service(ServiceType.SERVICE_TYPE_VOLUME, vol.getId(), 0, vol.getName(), 0, dmap);
         
         return sreg;

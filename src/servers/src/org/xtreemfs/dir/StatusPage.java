@@ -167,7 +167,7 @@ public class StatusPage {
                 if (dataEntry.getKey().equals("last_updated")) {
                     
                 } else if (dataEntry.getKey().equals("free") || dataEntry.getKey().equals("total")
-                    || dataEntry.getKey().endsWith("RAM")) {
+                    || dataEntry.getKey().endsWith("RAM") || dataEntry.getKey().equals("used")) {
                     dump.append(" bytes (");
                     dump.append(OutputUtils.formatBytes(Long.parseLong(dataEntry.getValue())));
                     dump.append(")");

@@ -208,7 +208,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 
                 try {
                     for (VolumeInfo vol : volumeManager.getVolumes()) {
-                        Service dsVolumeInfo = MRCHelper.createDSVolumeInfo(vol, osdMonitor, uuid);
+                        Service dsVolumeInfo = MRCHelper.createDSVolumeInfo(vol, osdMonitor, volumeManager
+                                .getStorageManager(vol.getId()), uuid);
                         sregs.add(dsVolumeInfo);
                     }
                 } catch (DatabaseException exc) {
