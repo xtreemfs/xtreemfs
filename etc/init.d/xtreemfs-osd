@@ -2,7 +2,7 @@
 
 ### BEGIN INIT INFO
 # Provides:          xtreemfs-osd
-# Required-Start:    $network
+# Required-Start:    $network xtreemfs-dir
 # Required-Stop:     $network
 # Default-Start:     3 4 5
 # Short-Description: XtreemFS OSD
@@ -68,7 +68,7 @@ start() {
     echo -e "Starting XtreemFS Object Storage Device (OSD)...\n\n" >> $LOG_OSD
 
     echo -n "starting Object Storage Device (OSD)..."
-    sudo -u $XTREEMFS_USER $JAVA_CALL org.xtreemfs.osd.OSD $CONFIG_OSD >> $LOG_OSD 2>&1 &
+    su -s /bin/sh - $XTREEMFS_USER -c "$JAVA_CALL org.xtreemfs.osd.OSD $CONFIG_OSD" >> $LOG_OSD 2>&1 &
     PROCPID=$!
     echo $PROCPID > $PID_OSD
     sleep 1s
