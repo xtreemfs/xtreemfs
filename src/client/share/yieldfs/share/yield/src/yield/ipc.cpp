@@ -3840,6 +3840,8 @@ auto_SSLSocket SSLSocket::create( auto_SSLContext ctx )
     else
       return NULL;
   }
+  else
+    return NULL;
 }
 SSLSocket::SSLSocket( int domain, int _socket, auto_SSLContext ctx, SSL* ssl )
   : TCPSocket( domain, _socket ), ctx( ctx ), ssl( ssl )

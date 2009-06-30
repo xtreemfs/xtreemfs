@@ -1,5 +1,5 @@
 Name:           XtreemFS-XOS-addons
-Version:        0.99.0
+Version:        0.99.2
 Release:        1
 License:        GPL
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
@@ -10,7 +10,7 @@ Source0:        %{name}-%{version}.tar.gz
 Requires:       tar
 
 %description
-XtreemFS is an object-based file system that is designed for federated IT infrastructures that are connected by wide-area networks. This packages containes the XtreemFS server components (DIR, MRC, OSD).
+XtreemFS is an object-based file system that is designed for federated IT infrastructures that are connected by wide-area networks. This package contains optional XtreemOS add-ons (DIR, MRC, OSD).
 
 NOTE: REQUIRES SUN JAVA 6 RUNTIME ENVIREMENT!
 

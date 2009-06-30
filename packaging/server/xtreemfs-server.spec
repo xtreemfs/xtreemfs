@@ -1,5 +1,5 @@
 Name:           XtreemFS-server
-Version:        0.99.1
+Version:        0.99.2
 Release:        1
 License:        GPL
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
@@ -7,10 +7,9 @@ Group:          Networking
 Summary:        XtreemFS server components (DIR, MRC, OSD)
 Source0:        %{name}-%{version}.tar.gz
 Requires:       grep
-Requires:       sudo
 
 %description
-XtreemFS is a distributed, object-based file system. More information can be found at www.xtreemfs.org.
+XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
 
 This package contains the XtreemFS server components (DIR, MRC, OSD).
 To run the XtreemFS services, a SUN JAVA 6 RUNTIME ENVIROMENT IS REQUIRED! Make sure that Java is installed in /usr/bin, or $JAVA_HOME is set.
