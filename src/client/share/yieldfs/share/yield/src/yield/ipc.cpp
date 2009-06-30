@@ -1,4 +1,4 @@
-// Revision: 1604
+// Revision: 1607
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -1360,16 +1360,16 @@ extern "C"
 JSONMarshaller::JSONMarshaller( bool write_empty_strings )
 : write_empty_strings( write_empty_strings )
 {
-  root_decl = NULL;
+  root_key = NULL;
   writer = yajl_gen_alloc( NULL );
 }
-JSONMarshaller::JSONMarshaller( JSONMarshaller& parent_json_marshaller, const YIELD::Declaration& root_decl )
-  : BufferedMarshaller( parent_json_marshaller ), root_decl( &root_decl ),
+JSONMarshaller::JSONMarshaller( JSONMarshaller& parent_json_marshaller, const char* root_key )
+  : BufferedMarshaller( parent_json_marshaller ), root_key( root_key ),
     write_empty_strings( parent_json_marshaller.write_empty_strings ), writer( parent_json_marshaller.writer )
 { }
 JSONMarshaller::~JSONMarshaller()
 {
-  if ( root_decl == NULL ) // This is the root JSONMarshaller
+  if ( root_key == NULL ) // This is the root JSONMarshaller
     yajl_gen_free( writer );
 }
 void JSONMarshaller::flushYAJLBuffer()
@@ -1380,33 +1380,37 @@ void JSONMarshaller::flushYAJLBuffer()
   BufferedMarshaller::write( buffer, len );
   yajl_gen_clear( writer );
 }
-void JSONMarshaller::writeBoolean( const YIELD::Declaration& decl, bool value )
+void JSONMarshaller::writeBoolean( const char* key, uint32_t, bool value )
 {
-  writeDeclaration( decl );
+  writeKey( key );
   yajl_gen_bool( writer, ( int )value );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeDeclaration( const YIELD::Declaration& decl )
+void JSONMarshaller::writeBuffer( const char* key, uint32_t, auto_Buffer )
 {
-  if ( in_map && decl.get_identifier() )
-    yajl_gen_string( writer, reinterpret_cast<const unsigned char*>( decl.get_identifier() ), static_cast<unsigned int>( strnlen( decl.get_identifier(), UINT16_MAX ) ) );
+  DebugBreak();
 }
-void JSONMarshaller::writeDouble( const YIELD::Declaration& decl, double value )
+void JSONMarshaller::writeKey( const char* key )
 {
-  writeDeclaration( decl );
+  if ( in_map && key != NULL )
+    yajl_gen_string( writer, reinterpret_cast<const unsigned char*>( key ), static_cast<unsigned int>( strnlen( key, UINT16_MAX ) ) );
+}
+void JSONMarshaller::writeDouble( const char* key, uint32_t, double value )
+{
+  writeKey( key );
   yajl_gen_double( writer, value );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeInt64( const YIELD::Declaration& decl, int64_t value )
+void JSONMarshaller::writeInt64( const char* key, uint32_t, int64_t value )
 {
-  writeDeclaration( decl );
+  writeKey( key );
   yajl_gen_integer( writer, ( long )value );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeMap( const YIELD::Declaration& decl, const YIELD::Map& value )
+void JSONMarshaller::writeMap( const char* key, uint32_t, const YIELD::Map& value )
 {
-  writeDeclaration( decl );
-  JSONMarshaller( *this, decl ).writeMap( &value );
+  writeKey( key );
+  JSONMarshaller( *this, key ).writeMap( &value );
 }
 void JSONMarshaller::writeMap( const YIELD::Map* value )
 {
@@ -1417,10 +1421,10 @@ void JSONMarshaller::writeMap( const YIELD::Map* value )
   yajl_gen_map_close( writer );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeStruct( const YIELD::Declaration& decl, const YIELD::Struct& value )
+void JSONMarshaller::writeStruct( const char* key, uint32_t, const YIELD::Struct& value )
 {
-  writeDeclaration( decl );
-  JSONMarshaller( *this, decl ).writeStruct( &value );
+  writeKey( key );
+  JSONMarshaller( *this, key ).writeStruct( &value );
 }
 void JSONMarshaller::writeStruct( const YIELD::Struct* value )
 {
@@ -1431,10 +1435,10 @@ void JSONMarshaller::writeStruct( const YIELD::Struct* value )
   yajl_gen_map_close( writer );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeSequence( const YIELD::Declaration& decl, const YIELD::Sequence& value )
+void JSONMarshaller::writeSequence( const char* key, uint32_t, const YIELD::Sequence& value )
 {
-  writeDeclaration( decl );
-  JSONMarshaller( *this, decl ).writeSequence( &value );
+  writeKey( key );
+  JSONMarshaller( *this, key ).writeSequence( &value );
 }
 void JSONMarshaller::writeSequence( const YIELD::Sequence* value )
 {
@@ -1445,11 +1449,11 @@ void JSONMarshaller::writeSequence( const YIELD::Sequence* value )
   yajl_gen_array_close( writer );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeString( const YIELD::Declaration& decl, const char* value, size_t value_len )
+void JSONMarshaller::writeString( const char* key, uint32_t, const char* value, size_t value_len )
 {
   if ( value_len > 0 || write_empty_strings )
   {
-    writeDeclaration( decl );
+    writeKey( key );
     yajl_gen_string( writer, reinterpret_cast<const unsigned char*>( value ), static_cast<unsigned int>( value_len ) );
     flushYAJLBuffer();
   }
@@ -1660,25 +1664,25 @@ yajl_callbacks JSONObject::JSONObject_yajl_callbacks =
 };
 JSONUnmarshaller::JSONUnmarshaller( YIELD::auto_Buffer source_buffer )
 {
-  root_decl = NULL;
+  root_key = NULL;
   root_json_value = new JSONObject( source_buffer );
   next_json_value = root_json_value->child;
 }
-JSONUnmarshaller::JSONUnmarshaller( const YIELD::Declaration& root_decl, JSONValue& root_json_value )
-  : root_decl( &root_decl ), root_json_value( &root_json_value ),
+JSONUnmarshaller::JSONUnmarshaller( const char* root_key, JSONValue& root_json_value )
+  : root_key( root_key ), root_json_value( &root_json_value ),
     next_json_value( root_json_value.child )
 { }
 JSONUnmarshaller::~JSONUnmarshaller()
 {
-  if ( root_decl == NULL )
+  if ( root_key == NULL )
     delete root_json_value;
 }
-bool JSONUnmarshaller::readBoolean( const YIELD::Declaration& decl )
+bool JSONUnmarshaller::readBoolean( const char* key, uint32_t )
 {
-  JSONValue* json_value = readJSONValue( decl );
+  JSONValue* json_value = readJSONValue( key );
   if ( json_value )
   {
-    if ( decl.get_identifier() ) // Read the value
+    if ( key != NULL ) // Read the value
       return json_value->as_integer != 0;
     else // Read the identifier
       return false; // Doesn't make any sense
@@ -1686,12 +1690,17 @@ bool JSONUnmarshaller::readBoolean( const YIELD::Declaration& decl )
   else
     return false;
 }
-double JSONUnmarshaller::readDouble( const YIELD::Declaration& decl )
+auto_Buffer JSONUnmarshaller::readBuffer( const char*, uint32_t, auto_Buffer value )
 {
-  JSONValue* json_value = readJSONValue( decl );
+  DebugBreak();
+  return value;
+}
+double JSONUnmarshaller::readDouble( const char* key, uint32_t )
+{
+  JSONValue* json_value = readJSONValue( key );
   if ( json_value )
   {
-    if ( decl.get_identifier() ) // Read the value
+    if ( key != NULL ) // Read the value
       return json_value->as_double;
     else // Read the identifier
       return atof( json_value->identifier->c_str() );
@@ -1699,12 +1708,12 @@ double JSONUnmarshaller::readDouble( const YIELD::Declaration& decl )
   else
     return 0;
 }
-int64_t JSONUnmarshaller::readInt64( const YIELD::Declaration& decl )
+int64_t JSONUnmarshaller::readInt64( const char* key, uint32_t )
 {
-  JSONValue* json_value = readJSONValue( decl );
+  JSONValue* json_value = readJSONValue( key );
   if ( json_value )
   {
-    if ( decl.get_identifier() ) // Read the value
+    if ( key != NULL ) // Read the value
       return json_value->as_integer;
     else // Read the identifier
       return atoi( json_value->identifier->c_str() );
@@ -1712,74 +1721,66 @@ int64_t JSONUnmarshaller::readInt64( const YIELD::Declaration& decl )
   else
     return 0;
 }
-YIELD::Map* JSONUnmarshaller::readMap( const YIELD::Declaration& decl, YIELD::Map* value )
+void JSONUnmarshaller::readMap( const char* key, uint32_t, YIELD::Map& value )
 {
-  if ( value )
+  JSONValue* json_value;
+  if ( key != NULL )
   {
-    JSONValue* json_value;
-    if ( decl.get_identifier() )
-    {
-      json_value = readJSONValue( decl );
-      if ( json_value == NULL )
-        return value;
-    }
-    else if ( root_json_value && !root_json_value->have_read )
-    {
-      if ( root_json_value->is_map )
-        json_value = root_json_value;
-      else
-        return value;
-    }
-    else
-      return value;
-    JSONUnmarshaller child_source_istream( decl, *json_value );
-    child_source_istream.readMap( *value );
-    json_value->have_read = true;
+    json_value = readJSONValue( key );
+    if ( json_value == NULL )
+      return;
   }
-  return value;
+  else if ( root_json_value && !root_json_value->have_read )
+  {
+    if ( root_json_value->is_map )
+      json_value = root_json_value;
+    else
+      return;
+  }
+  else
+    return;
+  JSONUnmarshaller child_json_unmarshaller( key, *json_value );
+  child_json_unmarshaller.readMap( value );
+  json_value->have_read = true;
 }
 void JSONUnmarshaller::readMap( YIELD::Map& value )
 {
   while ( next_json_value )
     value.unmarshal( *this );
 }
-YIELD::Sequence* JSONUnmarshaller::readSequence( const YIELD::Declaration& decl, YIELD::Sequence* value )
+void JSONUnmarshaller::readSequence( const char* key, uint32_t, YIELD::Sequence& value )
 {
-  if ( value )
+  JSONValue* json_value;
+  if ( key != NULL )
   {
-    JSONValue* json_value;
-    if ( decl.get_identifier() )
-    {
-      json_value = readJSONValue( decl );
-      if ( json_value == NULL )
-        return value;
-    }
-    else if ( root_json_value && !root_json_value->have_read )
-    {
-      if ( !root_json_value->is_map )
-        json_value = root_json_value;
-      else
-        return value;
-    }
-    else
-      return value;
-    JSONUnmarshaller child_source_istream( decl, *json_value );
-    child_source_istream.readSequence( *value );
-    json_value->have_read = true;
+    json_value = readJSONValue( key );
+    if ( json_value == NULL )
+      return;
   }
-  return value;
+  else if ( root_json_value && !root_json_value->have_read )
+  {
+    if ( !root_json_value->is_map )
+      json_value = root_json_value;
+    else
+      return;
+  }
+  else
+    return;
+  JSONUnmarshaller child_json_unmarshaller( key, *json_value );
+  child_json_unmarshaller.readSequence( value );
+  json_value->have_read = true;
 }
 void JSONUnmarshaller::readSequence( YIELD::Sequence& value )
 {
   while ( next_json_value )
     value.unmarshal( *this );
 }
-void JSONUnmarshaller::readString( const YIELD::Declaration& decl, std::string& str )
+void JSONUnmarshaller::readString( const char* key, uint32_t, std::string& str )
 {
-  JSONValue* json_value = readJSONValue( decl );
+  JSONValue* json_value = readJSONValue( key );
   if ( json_value )
   {
-    if ( decl.get_identifier() ) // Read the value
+    if ( key != NULL ) // Read the value
     {
       if ( json_value->as_string != NULL )
         str.assign( static_cast<const std::string&>( *json_value->as_string ) );
@@ -1788,46 +1789,42 @@ void JSONUnmarshaller::readString( const YIELD::Declaration& decl, std::string& 
       str.assign( static_cast<const std::string&>( *json_value->identifier ) );
   }
 }
-YIELD::Struct* JSONUnmarshaller::readStruct( const YIELD::Declaration& decl, YIELD::Struct* value )
+void JSONUnmarshaller::readStruct( const char* key, uint32_t, YIELD::Struct& value )
 {
-  if ( value )
+  JSONValue* json_value;
+  if ( key != NULL )
   {
-    JSONValue* json_value;
-    if ( decl.get_identifier() )
-    {
-      json_value = readJSONValue( decl );
-      if ( json_value == NULL )
-        return value;
-    }
-    else if ( root_json_value && !root_json_value->have_read )
-    {
-      if ( root_json_value->is_map )
-        json_value = root_json_value;
-      else
-        return value;
-    }
-    else
-      return value;
-    JSONUnmarshaller child_source_istream( decl, *json_value );
-    child_source_istream.readStruct( *value );
-    json_value->have_read = true;
+    json_value = readJSONValue( key );
+    if ( json_value == NULL )
+      return;
   }
-  return value;
+  else if ( root_json_value && !root_json_value->have_read )
+  {
+    if ( root_json_value->is_map )
+      json_value = root_json_value;
+    else
+      return;
+  }
+  else
+    return;
+  JSONUnmarshaller child_json_unmarshaller( key, *json_value );
+  child_json_unmarshaller.readStruct( value );
+  json_value->have_read = true;
 }
 void JSONUnmarshaller::readStruct( YIELD::Struct& s )
 {
   s.unmarshal( *this );
 }
-JSONValue* JSONUnmarshaller::readJSONValue( const YIELD::Declaration& decl )
+JSONValue* JSONUnmarshaller::readJSONValue( const char* key )
 {
   if ( root_json_value->is_map )
   {
-    if ( decl.get_identifier() ) // Given a key, reading a value
+    if ( key != NULL ) // Given a key, reading a value
     {
       JSONValue* child_json_value = root_json_value->child;
       while ( child_json_value )
       {
-        if ( !child_json_value->have_read && *child_json_value->identifier == decl.get_identifier() )
+        if ( !child_json_value->have_read && *child_json_value->identifier == key )
         {
           child_json_value->have_read = true;
           return child_json_value;
@@ -1970,7 +1967,7 @@ ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage()
   deserialize_state = DESERIALIZING_RECORD_FRAGMENT_MARKER;
 }
 template <class ONCRPCMessageType>
-ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage( uint32_t xid, YIELD::auto_Object<> body )
+ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage( uint32_t xid, auto_Struct body )
   : xid( xid ), body( body )
 {
   deserialize_state = DESERIALIZING_RECORD_FRAGMENT_MARKER;
@@ -1979,7 +1976,7 @@ template <class ONCRPCMessageType>
 ONCRPCMessage<ONCRPCMessageType>::~ONCRPCMessage()
 { }
 template <class ONCRPCMessageType>
-ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize( YIELD::auto_Buffer buffer )
+ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize( auto_Buffer buffer )
 {
   switch ( deserialize_state )
   {
@@ -2022,7 +2019,7 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize( YIELD::auto_Buffer buffer
       received_record_fragment_length = buffer->size();
       if ( received_record_fragment_length == expected_record_fragment_length ) // Common case
       {
-        YIELD::XDRUnmarshaller xdr_unmarshaller( buffer );
+        XDRUnmarshaller xdr_unmarshaller( buffer );
         static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
         deserialize_state = DESERIALIZE_DONE;
         return 0;
@@ -2042,7 +2039,7 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize( YIELD::auto_Buffer buffer
       received_record_fragment_length += buffer->size();
       if ( received_record_fragment_length == expected_record_fragment_length )
       {
-        YIELD::XDRUnmarshaller xdr_unmarshaller( first_record_fragment_buffer );
+        XDRUnmarshaller xdr_unmarshaller( first_record_fragment_buffer );
         static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
         deserialize_state = DESERIALIZE_DONE;
         return 0;
@@ -2057,14 +2054,14 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize( YIELD::auto_Buffer buffer
   return -1;
 }
 template <class ONCRPCMessageType>
-YIELD::auto_Buffer ONCRPCMessage<ONCRPCMessageType>::serialize()
+auto_Buffer ONCRPCMessage<ONCRPCMessageType>::serialize()
 {
-  YIELD::XDRMarshaller xdr_marshaller;
+  XDRMarshaller xdr_marshaller;
   static_cast<ONCRPCMessageType*>( this )->marshal( xdr_marshaller );
-  YIELD::auto_Buffer xdr_buffer = xdr_marshaller.get_buffer();
+  auto_Buffer xdr_buffer = xdr_marshaller.get_buffer();
   // Calculate the record fragment length from the sizes of all the buffers in the chain
   uint32_t record_fragment_length = 0;
-  YIELD::auto_Buffer next_xdr_buffer = xdr_buffer;
+  auto_Buffer next_xdr_buffer = xdr_buffer;
   while ( next_xdr_buffer != NULL )
   {
     record_fragment_length += next_xdr_buffer->size();
@@ -2077,7 +2074,7 @@ YIELD::auto_Buffer ONCRPCMessage<ONCRPCMessageType>::serialize()
 #else
   record_fragment_marker = Machine::htonl( record_fragment_marker );
 #endif
-  YIELD::auto_Buffer record_fragment_length_buffer = new YIELD::StackBuffer<4>( &record_fragment_marker );
+  auto_Buffer record_fragment_length_buffer = new StackBuffer<4>( &record_fragment_marker );
   record_fragment_length_buffer->set_next_buffer( xdr_buffer );
   return record_fragment_length_buffer;
 }
@@ -2088,55 +2085,55 @@ template class ONCRPCMessage<ONCRPCResponse>;
 // oncrpc_request.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-ONCRPCRequest::ONCRPCRequest( YIELD::auto_Object<Connection> connection, YIELD::auto_Object<Interface> _interface )
+ONCRPCRequest::ONCRPCRequest( auto_Object<Connection> connection, auto_Object<Interface> _interface )
   : ProtocolRequest( connection ), _interface( _interface )
 { }
-ONCRPCRequest::ONCRPCRequest( YIELD::auto_Object<Interface> _interface, uint32_t prog, uint32_t proc, uint32_t vers, YIELD::auto_Object<> body )
+ONCRPCRequest::ONCRPCRequest( auto_Object<Interface> _interface, uint32_t prog, uint32_t proc, uint32_t vers, auto_Struct body )
   : ONCRPCMessage<ONCRPCRequest>( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
     _interface( _interface ),
     prog( prog ), proc( proc ), vers( vers )
 {
   credential_auth_flavor = AUTH_NONE;
 }
-ONCRPCRequest::ONCRPCRequest( YIELD::auto_Object<Interface> _interface, uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, YIELD::auto_Object<> credential, YIELD::auto_Object<> body )
+ONCRPCRequest::ONCRPCRequest( auto_Object<Interface> _interface, uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, auto_Object<> credential, auto_Struct body )
   : ONCRPCMessage<ONCRPCRequest>( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
     _interface( _interface ),
     prog( prog ), proc( proc ), vers( vers ),
     credential_auth_flavor( credential_auth_flavor ), credential( credential )
 { }
-void ONCRPCRequest::marshal( YIELD::Marshaller& marshaller )
+void ONCRPCRequest::marshal( Marshaller& marshaller )
 {
-  marshaller.writeInt32( "xid", xid );
-  marshaller.writeInt32( "msg_type", 0 ); // MSG_CALL
-  marshaller.writeInt32( "rpcvers", 2 );
-  marshaller.writeInt32( "prog", prog );
-  marshaller.writeInt32( "vers", vers );
-  marshaller.writeInt32( "proc", proc );
-  marshaller.writeInt32( "credential_auth_flavor", credential_auth_flavor );
+  marshaller.writeInt32( "xid", 0, xid );
+  marshaller.writeInt32( "msg_type", 0, 0 ); // MSG_CALL
+  marshaller.writeInt32( "rpcvers", 0, 2 );
+  marshaller.writeInt32( "prog", 0, prog );
+  marshaller.writeInt32( "vers", 0, vers );
+  marshaller.writeInt32( "proc", 0, proc );
+  marshaller.writeInt32( "credential_auth_flavor", 0, credential_auth_flavor );
   if ( credential_auth_flavor == AUTH_NONE || credential == NULL )
-    marshaller.writeInt32( "credential_auth_body_length", 0 );
+    marshaller.writeInt32( "credential_auth_body_length", 0, 0 );
   else
   {
-    YIELD::XDRMarshaller credential_auth_body_xdr_marshaller;
+    XDRMarshaller credential_auth_body_xdr_marshaller;
     credential->marshal( credential_auth_body_xdr_marshaller );
-    marshaller.writeBuffer( "credential_auth_body", credential_auth_body_xdr_marshaller.get_buffer() );
+    marshaller.writeBuffer( "credential_auth_body", 0, credential_auth_body_xdr_marshaller.get_buffer() );
   }
-  marshaller.writeInt32( "verf_auth_flavor", AUTH_NONE );
-  marshaller.writeInt32( "verf_auth_body_length", 0 );
-  marshaller.writeStruct( "body", static_cast<YIELD::Struct&>( *body ) );
+  marshaller.writeInt32( "verf_auth_flavor", 0, AUTH_NONE );
+  marshaller.writeInt32( "verf_auth_body_length", 0, 0 );
+  marshaller.writeStruct( "body", 0, static_cast<Struct&>( *body ) );
 }
 bool ONCRPCRequest::respond( Response& response )
 {
   if ( this->get_response_target() == NULL )
   {
-    YIELD::auto_Object<> body = get_body();
+    auto_Struct body = get_body();
     Request* interface_request = _interface->checkRequest( *body );
     if ( interface_request != NULL )
     {
       if ( response.get_tag() == YIELD_OBJECT_TAG( ONCRPCResponse ) )
       {
         ONCRPCResponse& oncrpc_response = static_cast<ONCRPCResponse&>( response );
-        YIELD::auto_Object<> oncrpc_response_body = oncrpc_response.get_body();
+        auto_Struct oncrpc_response_body = oncrpc_response.get_body();
         Response* interface_response = _interface->checkResponse( *oncrpc_response_body );
         if ( interface_response != NULL )
         {
@@ -2155,33 +2152,33 @@ bool ONCRPCRequest::respond( Response& response )
   }
   return ProtocolRequest::respond( response );
 }
-void ONCRPCRequest::unmarshal( YIELD::Unmarshaller& unmarshaller )
+void ONCRPCRequest::unmarshal( Unmarshaller& unmarshaller )
 {
-  xid = unmarshaller.readUint32( "xid" );
-  int32_t msg_type = unmarshaller.readInt32( "msg_type" );
+  xid = unmarshaller.readUint32( "xid", 0 );
+  int32_t msg_type = unmarshaller.readInt32( "msg_type", 0 );
   if ( msg_type == 0 ) // CALL
   {
-    uint32_t rpcvers = unmarshaller.readUint32( "rpcvers" );
+    uint32_t rpcvers = unmarshaller.readUint32( "rpcvers", 0 );
     if ( rpcvers == 2 )
     {
-      unmarshaller.readUint32( "prog" );
-      unmarshaller.readUint32( "vers" );
-      uint32_t proc = unmarshaller.readUint32( "proc" );
-      unmarshaller.readUint32( "credential_auth_flavor" );
+      unmarshaller.readUint32( "prog", 0 );
+      unmarshaller.readUint32( "vers", 0 );
+      uint32_t proc = unmarshaller.readUint32( "proc", 0 );
+      unmarshaller.readUint32( "credential_auth_flavor", 0 );
       std::string credential_auth_body;
-      unmarshaller.readString( "credential_auth_body", credential_auth_body );
-      unmarshaller.readUint32( "verf_auth_flavor" );
-      uint32_t verf_auth_body_length = unmarshaller.readUint32( "credential_auth_body_length" );
+      unmarshaller.readString( "credential_auth_body", 0, credential_auth_body );
+      unmarshaller.readUint32( "verf_auth_flavor", 0 );
+      uint32_t verf_auth_body_length = unmarshaller.readUint32( "credential_auth_body_length", 0 );
       if ( verf_auth_body_length > 0 )
         DebugBreak();
       if ( body != NULL )
-        unmarshaller.readStruct( "body", static_cast<YIELD::Struct*>( body.get() ) );
+        unmarshaller.readStruct( "body", 0, *body );
       else
       {
         if ( _interface != NULL )
         {
           body = _interface->createRequest( proc ).release();
-          unmarshaller.readStruct( "body", static_cast<YIELD::Struct*>( body.get() ) );
+          unmarshaller.readStruct( "body", 0, *body );
         }
       }
     }
@@ -2192,51 +2189,51 @@ void ONCRPCRequest::unmarshal( YIELD::Unmarshaller& unmarshaller )
 // oncrpc_response.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-ONCRPCResponse::ONCRPCResponse( YIELD::auto_Object<ONCRPCRequest> oncrpc_request, YIELD::auto_Object<> body )
+ONCRPCResponse::ONCRPCResponse( auto_Object<ONCRPCRequest> oncrpc_request, auto_Struct body )
   : ProtocolResponse<ONCRPCRequest>( oncrpc_request ),
     ONCRPCMessage<ONCRPCResponse>( oncrpc_request->get_xid(), body )
 { }
-ONCRPCResponse::ONCRPCResponse( uint32_t xid, YIELD::auto_Object<> body )
+ONCRPCResponse::ONCRPCResponse( uint32_t xid, auto_Struct body )
   : ProtocolResponse<ONCRPCRequest>( NULL ), ONCRPCMessage<ONCRPCResponse>( xid, body )
 { }
-void ONCRPCResponse::marshal( YIELD::Marshaller& marshaller )
+void ONCRPCResponse::marshal( Marshaller& marshaller )
 {
-  marshaller.writeInt32( "xid", xid );
-  marshaller.writeInt32( "msg_type", 1 ); // MSG_REPLY
-  marshaller.writeInt32( "reply_stat", 0 ); // MSG_ACCEPTED
-  marshaller.writeInt32( "verf_auth_flavor", 0 );
-  marshaller.writeInt32( "verf_authbody_length", 0 );
+  marshaller.writeInt32( "xid", 0, xid );
+  marshaller.writeInt32( "msg_type", 0, 1 ); // MSG_REPLY
+  marshaller.writeInt32( "reply_stat", 0, 0 ); // MSG_ACCEPTED
+  marshaller.writeInt32( "verf_auth_flavor", 0, 0 );
+  marshaller.writeInt32( "verf_authbody_length", 0, 0 );
   if ( body == NULL || body->get_tag() != YIELD_OBJECT_TAG( ExceptionResponse ) )
-    marshaller.writeInt32( "accept_stat", 0 ); // SUCCESS
+    marshaller.writeInt32( "accept_stat", 0, 0 ); // SUCCESS
   else
-    marshaller.writeInt32( "accept_stat", 5 ); // SYSTEM_ERR
-  marshaller.writeStruct( "body", static_cast<YIELD::Struct&>( *body ) );
+    marshaller.writeInt32( "accept_stat", 0, 5 ); // SYSTEM_ERR
+  marshaller.writeStruct( "body", 0, *body );
 }
-void ONCRPCResponse::unmarshal( YIELD::Unmarshaller& unmarshaller )
+void ONCRPCResponse::unmarshal( Unmarshaller& unmarshaller )
 {
-  xid = unmarshaller.readUint32( "xid" );
-  int32_t msg_type = unmarshaller.readInt32( "msg_type" );
+  xid = unmarshaller.readUint32( "xid", 0 );
+  int32_t msg_type = unmarshaller.readInt32( "msg_type", 0 );
   if ( msg_type == 1 ) // REPLY
   {
-    uint32_t reply_stat = unmarshaller.readUint32( "reply_stat" );
+    uint32_t reply_stat = unmarshaller.readUint32( "reply_stat", 0 );
     if ( reply_stat == 0 ) // MSG_ACCEPTED
     {
-      uint32_t verf_auth_flavor = unmarshaller.readUint32( "verf_auth_flavor" );
-      uint32_t verf_authbody_length = unmarshaller.readUint32( "verf_authbody_length" );
+      uint32_t verf_auth_flavor = unmarshaller.readUint32( "verf_auth_flavor", 0 );
+      uint32_t verf_authbody_length = unmarshaller.readUint32( "verf_authbody_length", 0 );
       if ( verf_auth_flavor == 0 && verf_authbody_length == 0 )
       {
-        uint32_t accept_stat = unmarshaller.readUint32( "accept_stat" );
+        uint32_t accept_stat = unmarshaller.readUint32( "accept_stat", 0 );
         switch ( accept_stat )
         {
           case 0:
           {
             if ( body != NULL )
-              unmarshaller.readStruct( "body", static_cast<YIELD::Struct*>( body.get() ) );
+              unmarshaller.readStruct( "body", 0, *body );
             else
             {
               body = get_protocol_request()->get_interface()->createResponse( get_protocol_request()->get_body()->get_tag() ).release();
               if ( body != NULL )
-                unmarshaller.readStruct( "body", static_cast<YIELD::Struct*>( body.get() ) );
+                unmarshaller.readStruct( "body", 0, *body );
             }
           }
           break;
@@ -2249,7 +2246,7 @@ void ONCRPCResponse::unmarshal( YIELD::Unmarshaller& unmarshaller )
           {
             body = get_protocol_request()->get_interface()->createExceptionResponse( accept_stat ).release();
             if ( body != NULL )
-              unmarshaller.readStruct( "body", static_cast<YIELD::Struct*>( body.get() ) );
+              unmarshaller.readStruct( "body", 0, *body );
             else
               body = new ExceptionResponse( "ONC-RPC exception: system error" );
           }
@@ -2277,7 +2274,7 @@ namespace YIELD
   class ONCRPCResponder : public EventTarget
   {
   public:
-    ONCRPCResponder( YIELD::auto_Object<ONCRPCRequest> oncrpc_request, auto_Stage oncrpc_response_writer_stage )
+    ONCRPCResponder( auto_Object<ONCRPCRequest> oncrpc_request, auto_Stage oncrpc_response_writer_stage )
       : oncrpc_request( oncrpc_request ), oncrpc_response_writer_stage( oncrpc_response_writer_stage )
     { }
     // Object
@@ -2288,25 +2285,25 @@ namespace YIELD
       return oncrpc_response_writer_stage->send( *( new ONCRPCResponse( oncrpc_request, ev ) ) );
     }
   private:
-    YIELD::auto_Object<ONCRPCRequest> oncrpc_request;
+    auto_Object<ONCRPCRequest> oncrpc_request;
     auto_Stage oncrpc_response_writer_stage;
   };
 };
 auto_ONCRPCServer ONCRPCServer::create( const URI& absolute_uri,
-                                                YIELD::auto_Object<Interface> _interface,
-                                                YIELD::auto_Object<StageGroup> stage_group,
+                                                auto_Object<Interface> _interface,
+                                                auto_Object<StageGroup> stage_group,
                                                 auto_Log log,
                                                 auto_SSLContext ssl_context )
 {
   auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
   if ( sockname != NULL )
   {
-    YIELD::auto_Object<EventQueue> oncrpc_server_event_queue;
+    auto_Object<EventQueue> oncrpc_server_event_queue;
     if ( absolute_uri.get_scheme() == "oncrpcu" )
       oncrpc_server_event_queue = UDPRecvFromQueue::create( sockname ).release();
     else
     {
-      YIELD::auto_Object<TCPListenQueue> tcp_listen_queue;
+      auto_Object<TCPListenQueue> tcp_listen_queue;
 #ifdef YIELD_HAVE_OPENSSL
       if ( absolute_uri.get_scheme() == "oncrpcs" && ssl_context != NULL )
         oncrpc_server_event_queue = SSLListenQueue::create( sockname, ssl_context ).release();
@@ -2316,16 +2313,16 @@ auto_ONCRPCServer ONCRPCServer::create( const URI& absolute_uri,
     }
     if ( oncrpc_server_event_queue != NULL )
     {
-      YIELD::auto_Object<ONCRPCServer> oncrpc_server = new ONCRPCServer( _interface, log );
+      auto_Object<ONCRPCServer> oncrpc_server = new ONCRPCServer( _interface, log );
       stage_group->createStage( oncrpc_server->incRef(), 1, oncrpc_server_event_queue.release(), NULL, log );
       return oncrpc_server;
     }
   }
   return NULL;
 }
-void ONCRPCServer::handleDeserializedProtocolMessage( YIELD::auto_Object<ONCRPCRequest> oncrpc_request )
+void ONCRPCServer::handleDeserializedProtocolMessage( auto_Object<ONCRPCRequest> oncrpc_request )
 {
-  YIELD::auto_Object<> oncrpc_request_body = oncrpc_request->get_body();
+  auto_Struct oncrpc_request_body = oncrpc_request->get_body();
   Request* interface_request = _interface->checkRequest( *oncrpc_request_body );
   if ( interface_request != NULL )
   {
@@ -3840,6 +3837,8 @@ auto_SSLSocket SSLSocket::create( auto_SSLContext ctx )
     else
       return NULL;
   }
+  else
+    return NULL;
 }
 SSLSocket::SSLSocket( int domain, int _socket, auto_SSLContext ctx, SSL* ssl )
   : TCPSocket( domain, _socket ), ctx( ctx ), ssl( ssl )

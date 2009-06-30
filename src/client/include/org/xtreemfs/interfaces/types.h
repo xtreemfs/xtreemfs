@@ -29,8 +29,8 @@ namespace org
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }
-        void marshal( ::YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeString( ::YIELD::Declaration( "value" ), ( *this )[value_i] ); } }
-        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { std::string value; unmarshaller.readString( ::YIELD::Declaration( "value" ), value ); push_back( value ); }
+        void marshal( ::YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeString( "value", 0, ( *this )[value_i] ); } }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { std::string value; unmarshaller.readString( "value", 0, value ); push_back( value ); }
       };
 
       class UserCredentials : public ::YIELD::Struct
@@ -56,8 +56,8 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( UserCredentials, 1002 );
 
         // YIELD::Struct
-        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( ::YIELD::Declaration( "user_id" ), user_id ); marshaller.writeSequence( ::YIELD::Declaration( "group_ids" ), group_ids ); marshaller.writeString( ::YIELD::Declaration( "password" ), password ); }
-        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( ::YIELD::Declaration( "user_id" ), user_id ); unmarshaller.readSequence( ::YIELD::Declaration( "group_ids" ), &group_ids ); unmarshaller.readString( ::YIELD::Declaration( "password" ), password ); }
+        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "user_id", 0, user_id ); marshaller.writeSequence( "group_ids", 0, group_ids ); marshaller.writeString( "password", 0, password ); }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "user_id", 0, user_id ); unmarshaller.readSequence( "group_ids", 0, group_ids ); unmarshaller.readString( "password", 0, password ); }
 
       protected:
         std::string user_id;

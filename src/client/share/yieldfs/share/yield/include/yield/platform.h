@@ -728,6 +728,7 @@ namespace YIELD
     virtual bool seek( uint64_t offset ); // Seeks from the beginning of the file
     virtual bool seek( uint64_t offset, unsigned char whence );
     virtual YIELD::auto_Object<Stat> stat() { return getattr(); }
+    virtual ssize_t write( auto_Buffer buffer );
     virtual ssize_t write( const void* buffer, size_t buffer_len ); // Writes from the current position
     virtual ssize_t writev( const iovec* buffers, uint32_t buffers_count ); // Writes from the current file pointer
 
@@ -2359,14 +2360,13 @@ namespace YIELD
   {
   public:
     // Marshaller
-    YIDL_MARSHALLER_PROTOTYPES;
-    void writeBuffer( const Declaration& decl, auto_Buffer value );
-    void writeFloat( const Declaration& decl, float value );
-    void writeInt32( const Declaration& decl, int32_t value );
+    YIELD_MARSHALLER_PROTOTYPES;
+    void writeFloat( const char* key, uint32_t tag, float value );
+    void writeInt32( const char* key, uint32_t tag, int32_t value );
 
   protected:
     inline void write( const void* buffer, size_t buffer_len ) { BufferedMarshaller::write( buffer, buffer_len ); }
-    virtual void writeDeclaration( const Declaration& decl );
+    virtual void writeKey( const char* key );
 
   private:
     std::vector<bool> in_map_stack;
@@ -2381,10 +2381,9 @@ namespace YIELD
     { }
 
     // Unmarshaller
-    YIDL_UNMARSHALLER_PROTOTYPES;
-    auto_Buffer readBuffer( const Declaration& decl );
-    float readFloat( const Declaration& decl );
-    int32_t readInt32( const Declaration& decl );
+    YIELD_UNMARSHALLER_PROTOTYPES;
+    float readFloat( const char* key, uint32_t tag );
+    int32_t readInt32( const char* key, uint32_t tag );
   };
 };
 

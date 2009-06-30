@@ -966,19 +966,19 @@ namespace YIELD
     virtual ~JSONMarshaller(); // If the stream is wrapped in map, sequence, etc. then the constructor will append the final } or [, so the underlying output stream should not be deleted before this object!
 
     // Marshaller
-    YIDL_MARSHALLER_PROTOTYPES;
+    YIELD_MARSHALLER_PROTOTYPES;
 
   protected:
-    JSONMarshaller( JSONMarshaller& parent_json_marshaller, const YIELD::Declaration& root_decl );
+    JSONMarshaller( JSONMarshaller& parent_json_marshaller, const char* root_key );
 
-    virtual void writeDeclaration( const YIELD::Declaration& );
+    virtual void writeKey( const char* );
     virtual void writeMap( const YIELD::Map* ); // Can be NULL for empty maps
     virtual void writeSequence( const YIELD::Sequence* ); // Can be NULL for empty sequences
     virtual void writeStruct( const YIELD::Struct* ); // Can be NULL for empty maps
 
   private:
     bool in_map;
-    const YIELD::Declaration* root_decl; // Mostly for debugging, also used to indicate if this is the root JSONMarshaller
+    const char* root_key; // Mostly for debugging, also used to indicate if this is the root JSONMarshaller
     bool write_empty_strings;
     yajl_gen writer;
 
@@ -993,19 +993,19 @@ namespace YIELD
     virtual ~JSONUnmarshaller();
 
     // Unmarshaller
-    YIDL_UNMARSHALLER_PROTOTYPES;
+    YIELD_UNMARSHALLER_PROTOTYPES;
 
   protected:
-    JSONUnmarshaller( const YIELD::Declaration& root_decl, JSONValue& root_json_value );
+    JSONUnmarshaller( const char* root_key, JSONValue& root_json_value );
 
   private:
-    const YIELD::Declaration* root_decl;
+    const char* root_key;
     JSONValue *root_json_value, *next_json_value;
 
     void readMap( YIELD::Map& );
     void readSequence( YIELD::Sequence& );
     void readStruct( YIELD::Struct& );
-    JSONValue* readJSONValue( const YIELD::Declaration& decl );
+    JSONValue* readJSONValue( const char* key );
   };
 
 
@@ -1044,7 +1044,7 @@ namespace YIELD
   class ONCRPCMessage
   {
   public:
-    YIELD::auto_Object<> get_body() const { return body; }
+    auto_Struct get_body() const { return body; }
     uint32_t get_xid() const { return xid; }
 
     ssize_t deserialize( YIELD::auto_Buffer );
@@ -1052,11 +1052,11 @@ namespace YIELD
 
   protected:
     ONCRPCMessage();
-    ONCRPCMessage( uint32_t xid, YIELD::auto_Object<> body );
+    ONCRPCMessage( uint32_t xid, auto_Struct body );
     virtual ~ONCRPCMessage();
 
     uint32_t xid;
-    YIELD::auto_Object<> body;
+    auto_Struct body;
 
   private:
     enum 
@@ -1075,8 +1075,8 @@ namespace YIELD
   class ONCRPCResponse : public ProtocolResponse<ONCRPCRequest>, public ONCRPCMessage<ONCRPCResponse>
   {
   public:
-    ONCRPCResponse( YIELD::auto_Object<ONCRPCRequest> oncrpc_request, YIELD::auto_Object<> body );
-    ONCRPCResponse( uint32_t xid, YIELD::auto_Object<> body ); // For testing
+    ONCRPCResponse( YIELD::auto_Object<ONCRPCRequest> oncrpc_request, auto_Struct body );
+    ONCRPCResponse( uint32_t xid, auto_Struct body ); // For testing
 
     // Object
     YIELD_OBJECT_PROTOTYPES( ONCRPCResponse, 208 );
@@ -1099,8 +1099,8 @@ namespace YIELD
 
 
     ONCRPCRequest( YIELD::auto_Object<Connection> connection, YIELD::auto_Object<Interface> _interface ); // Incoming
-    ONCRPCRequest( YIELD::auto_Object<Interface> _interface, uint32_t prog, uint32_t proc, uint32_t vers, YIELD::auto_Object<> body ); // Outgoing
-    ONCRPCRequest( YIELD::auto_Object<Interface> _interface, uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, YIELD::auto_Object<> credential, YIELD::auto_Object<> body ); // Outgoing
+    ONCRPCRequest( YIELD::auto_Object<Interface> _interface, uint32_t prog, uint32_t proc, uint32_t vers, auto_Struct body ); // Outgoing
+    ONCRPCRequest( YIELD::auto_Object<Interface> _interface, uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, YIELD::auto_Object<> credential, auto_Struct body ); // Outgoing
 
     uint32_t get_credential_auth_flavor() const { return credential_auth_flavor; }
     YIELD::auto_Object<> get_credential() const { return credential; }

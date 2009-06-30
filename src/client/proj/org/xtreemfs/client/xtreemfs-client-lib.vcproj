@@ -429,6 +429,10 @@
     RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield\platform.h"
     >
 </File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield\rrd.h"
+    >
+</File>
 </Filter>
 <File
     RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield.h"

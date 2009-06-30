@@ -330,56 +330,43 @@ namespace YIELD
   class Struct : public Object
   { };
 
-
-  class Declaration
-  {
-  public:
-    Declaration() : identifier( 0 ), tag( 0 ) { }
-    Declaration( const char* identifier ) : identifier( identifier ), tag( 0 ) { }
-    Declaration( const char* identifier, uint32_t tag ) : identifier( identifier ), tag( tag ) { }
-
-    const char* get_identifier() const { return identifier; }
-    uint32_t get_tag() const { return tag; }
-
-  private:
-    const char* identifier;
-    uint32_t tag;
-  };
+  typedef auto_Object<Struct> auto_Struct;
 
 
   class Marshaller
   {
   public:
-     virtual ~Marshaller() { }
+    virtual ~Marshaller() { }
 
-    virtual void writeBoolean( const Declaration& decl, bool value ) = 0;
-    virtual void writeBuffer( const Declaration&, auto_Buffer ) { }
-    virtual void writeFloat( const Declaration& decl, float value ) { writeDouble( decl, value ); }
-    virtual void writeDouble( const Declaration& decl, double value ) = 0;
-    virtual void writeInt8( const Declaration& decl, int8_t value ) { writeInt16( decl, value ); }
-    virtual void writeInt16( const Declaration& decl, int16_t value ) { writeInt32( decl, value ); }
-    virtual void writeInt32( const Declaration& decl, int32_t value ) { writeInt64( decl, value ); }
-    virtual void writeInt64( const Declaration& decl, int64_t value ) = 0;
-    virtual void writeMap( const Declaration& decl, const Map& value ) = 0;
-    virtual void writeSequence( const Declaration& decl, const Sequence& value ) = 0;
-    virtual void writeStruct( const Declaration& decl, const Struct& value ) = 0;
-    virtual void writeString( const Declaration& decl, const std::string& value ) { writeString( decl, value.c_str(), value.size() ); }
-    virtual void writeString( const Declaration& decl, const char* value ) { writeString( decl, value, strnlen( value, UINT16_MAX ) ); }
-    virtual void writeString( const Declaration&, const char* value, size_t value_len ) = 0;
-    virtual void writeUint8( const Declaration& decl, uint8_t value ) { writeInt8( decl, static_cast<int8_t>( value ) ); }
-    virtual void writeUint16( const Declaration& decl, uint16_t value ) { writeInt16( decl, static_cast<int16_t>( value ) ); }
-    virtual void writeUint32( const Declaration& decl, uint32_t value ) { writeInt32( decl, static_cast<int32_t>( value ) ); }
-    virtual void writeUint64( const Declaration& decl, uint64_t value ) { writeInt64( decl, static_cast<int64_t>( value ) ); }
+    virtual void writeBoolean( const char* key, uint32_t tag, bool value ) = 0;
+    virtual void writeBuffer( const char* key, uint32_t tag, auto_Buffer value ) = 0;
+    virtual void writeFloat( const char* key, uint32_t tag, float value ) { writeDouble( key, tag, value ); }
+    virtual void writeDouble( const char* key, uint32_t tag, double value ) = 0;
+    virtual void writeInt8( const char* key, uint32_t tag, int8_t value ) { writeInt16( key, tag, value ); }
+    virtual void writeInt16( const char* key, uint32_t tag, int16_t value ) { writeInt32( key, tag, value ); }
+    virtual void writeInt32( const char* key, uint32_t tag, int32_t value ) { writeInt64( key, tag, value ); }
+    virtual void writeInt64( const char* key, uint32_t tag, int64_t value ) = 0;
+    virtual void writeMap( const char* key, uint32_t tag, const Map& value ) = 0;
+    virtual void writeSequence( const char* key, uint32_t tag, const Sequence& value ) = 0;
+    virtual void writeStruct( const char* key, uint32_t tag, const Struct& value ) = 0;
+    virtual void writeString( const char* key, uint32_t tag, const std::string& value ) { writeString( key, tag, value.c_str(), value.size() ); }
+    virtual void writeString( const char* key, uint32_t tag, const char* value ) { writeString( key, tag, value, strnlen( value, UINT16_MAX ) ); }
+    virtual void writeString( const char* key, uint32_t tag, const char* value, size_t value_len ) = 0;
+    virtual void writeUint8( const char* key, uint32_t tag, uint8_t value ) { writeInt8( key, tag, static_cast<int8_t>( value ) ); }
+    virtual void writeUint16( const char* key, uint32_t tag, uint16_t value ) { writeInt16( key, tag, static_cast<int16_t>( value ) ); }
+    virtual void writeUint32( const char* key, uint32_t tag, uint32_t value ) { writeInt32( key, tag, static_cast<int32_t>( value ) ); }
+    virtual void writeUint64( const char* key, uint32_t tag, uint64_t value ) { writeInt64( key, tag, static_cast<int64_t>( value ) ); }
   };
 
-#define YIDL_MARSHALLER_PROTOTYPES \
-  virtual void writeBoolean( const YIELD::Declaration& decl, bool value ); \
-  virtual void writeDouble( const YIELD::Declaration& decl, double value ); \
-  virtual void writeInt64( const YIELD::Declaration& decl, int64_t value ); \
-  virtual void writeMap( const YIELD::Declaration& decl, const YIELD::Map& value ); \
-  virtual void writeSequence( const YIELD::Declaration& decl, const YIELD::Sequence& value ); \
-  virtual void writeString( const YIELD::Declaration& decl, const char* value, size_t value_len ); \
-  virtual void writeStruct( const YIELD::Declaration& decl, const YIELD::Struct& value );
+#define YIELD_MARSHALLER_PROTOTYPES \
+  virtual void writeBoolean( const char* key, uint32_t tag, bool value ); \
+  virtual void writeBuffer( const char* key, uint32_t tag, auto_Buffer value ); \
+  virtual void writeDouble( const char* key, uint32_t tag, double value ); \
+  virtual void writeInt64( const char* key, uint32_t tag, int64_t value ); \
+  virtual void writeMap( const char* key, uint32_t tag, const YIELD::Map& value ); \
+  virtual void writeSequence( const char* key, uint32_t tag, const YIELD::Sequence& value ); \
+  virtual void writeString( const char* key, uint32_t tag, const char* value, size_t value_len ); \
+  virtual void writeStruct( const char* key, uint32_t tag, const YIELD::Struct& value );
 
 
   class PrettyPrinter : public Marshaller
@@ -392,50 +379,7 @@ namespace YIELD
     PrettyPrinter& operator=( const PrettyPrinter& ) { return *this; }
 
     // Marshaller
-    void writeBoolean( const Declaration&, bool value )
-    {
-      if ( value )
-        os << "true, ";
-      else
-        os << "false, ";
-    }
-
-    void writeDouble( const Declaration&, double value )
-    {
-      os << value << ", ";
-    }
-
-    void writeInt64( const Declaration&, int64_t value )
-    {
-      os << value << ", ";
-    }
-
-    void writeMap( const Declaration&, const Map& value )
-    {
-      os << value.get_type_name() << "( ";
-      value.marshal( *this );
-      os << " ), ";
-    }
-
-    void writeSequence( const Declaration&, const Sequence& value )
-    {
-      os << "[ ";
-      value.marshal( *this );
-      os << " ], ";
-    }
-
-    void writeString( const Declaration&, const char* value, size_t value_len )
-    {
-      os.write( value, value_len );
-      os << ", ";
-    }
-
-    void writeStruct( const Declaration&, const Struct& value )
-    {
-      os << value.get_type_name() << "( ";
-      value.marshal( *this );
-      os << " ), ";
-    }
+    YIELD_MARSHALLER_PROTOTYPES;
 
   private:
     std::ostream& os;
@@ -447,32 +391,33 @@ namespace YIELD
   public:
     virtual ~Unmarshaller() { }
 
-    virtual bool readBoolean( const Declaration& decl ) = 0;
-    virtual auto_Buffer readBuffer( const Declaration& ) { return NULL; }
-    virtual double readDouble( const Declaration& ) = 0;
-    virtual float readFloat( const Declaration& decl ) { return static_cast<float>( readDouble( decl ) ); }
-    virtual int8_t readInt8( const Declaration& decl ) { return static_cast<int8_t>( readInt16( decl ) ); }
-    virtual int16_t readInt16( const Declaration& decl ) { return static_cast<int16_t>( readInt32( decl ) ); }
-    virtual int32_t readInt32( const Declaration& decl ) { return static_cast<int32_t>( readInt64( decl ) ); }
-    virtual int64_t readInt64( const Declaration& decl ) = 0;
-    virtual Map* readMap( const Declaration& decl, Map* value = NULL ) = 0;
-    virtual Sequence* readSequence( const Declaration& decl, Sequence* value = NULL ) = 0;
-    virtual void readString( const Declaration& decl, std::string& value ) = 0;
-    virtual Struct* readStruct( const Declaration& decl, Struct* value = NULL ) = 0;
-    virtual uint8_t readUint8( const Declaration& decl ) { return static_cast<uint8_t>( readInt8( decl ) ); }
-    virtual uint16_t readUint16( const Declaration& decl ) { return static_cast<uint16_t>( readInt16( decl ) ); }
-    virtual uint32_t readUint32( const Declaration& decl ) { return static_cast<uint32_t>( readInt32( decl ) ); }
-    virtual uint64_t readUint64( const Declaration& decl ) { return static_cast<uint64_t>( readInt64( decl ) ); }
+    virtual bool readBoolean( const char* key, uint32_t tag ) = 0;
+    virtual auto_Buffer readBuffer( const char* key, uint32_t tag, auto_Buffer value ) = 0;
+    virtual double readDouble( const char* key, uint32_t tag ) = 0;
+    virtual float readFloat( const char* key, uint32_t tag ) { return static_cast<float>( readDouble( key, tag ) ); }
+    virtual int8_t readInt8( const char* key, uint32_t tag ) { return static_cast<int8_t>( readInt16( key, tag ) ); }
+    virtual int16_t readInt16( const char* key, uint32_t tag ) { return static_cast<int16_t>( readInt32( key, tag ) ); }
+    virtual int32_t readInt32( const char* key, uint32_t tag ) { return static_cast<int32_t>( readInt64( key, tag ) ); }
+    virtual int64_t readInt64( const char* key, uint32_t tag ) = 0;
+    virtual void readMap( const char* key, uint32_t tag, Map& value ) = 0;
+    virtual void readSequence( const char* key, uint32_t tag, Sequence& value ) = 0;
+    virtual void readString( const char* key, uint32_t tag, std::string& value ) = 0;
+    virtual void readStruct( const char* key, uint32_t tag, Struct& value ) = 0;
+    virtual uint8_t readUint8( const char* key, uint32_t tag ) { return static_cast<uint8_t>( readInt8( key, tag ) ); }
+    virtual uint16_t readUint16( const char* key, uint32_t tag ) { return static_cast<uint16_t>( readInt16( key, tag ) ); }
+    virtual uint32_t readUint32( const char* key, uint32_t tag ) { return static_cast<uint32_t>( readInt32( key, tag ) ); }
+    virtual uint64_t readUint64( const char* key, uint32_t tag ) { return static_cast<uint64_t>( readInt64( key, tag ) ); }
   };
 
-#define YIDL_UNMARSHALLER_PROTOTYPES \
-  virtual bool readBoolean( const YIELD::Declaration& decl ); \
-  virtual double readDouble( const YIELD::Declaration& decl ); \
-  virtual int64_t readInt64( const YIELD::Declaration& decl ); \
-  virtual YIELD::Map* readMap( const YIELD::Declaration& decl, YIELD::Map* value = NULL ); \
-  virtual YIELD::Sequence* readSequence( const YIELD::Declaration& decl, YIELD::Sequence* value = NULL ); \
-  virtual void readString( const YIELD::Declaration& decl, std::string& ); \
-  virtual YIELD::Struct* readStruct( const YIELD::Declaration& decl, YIELD::Struct* value = NULL );
+#define YIELD_UNMARSHALLER_PROTOTYPES \
+  virtual bool readBoolean( const char* key, uint32_t tag ); \
+  virtual auto_Buffer readBuffer( const char* key, uint32_t tag, auto_Buffer value ); \
+  virtual double readDouble( const char* key, uint32_t tag ); \
+  virtual int64_t readInt64( const char* key, uint32_t tag ); \
+  virtual void readMap( const char* key, uint32_t tag, YIELD::Map& value ); \
+  virtual void readSequence( const char* key, uint32_t tag, YIELD::Sequence& value ); \
+  virtual void readString( const char* key, uint32_t tag, std::string& value ); \
+  virtual void readStruct( const char* key, uint32_t tag, YIELD::Struct& value );
 
 
   class BufferedMarshaller : public YIELD::Marshaller
