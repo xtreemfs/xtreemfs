@@ -9,4 +9,4 @@ Package: xtreemfs-client
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, fuse-utils (>= 2.6), attr (>=2), python (>= 2.4)
 Description: XtreemFS client
- XtreemFS is an object-based file system that is designed for federated IT infrastructures that are connected by wide-area networks. This packages containes the XtreemFS client component.
+ XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org. This package contains the XtreemFS client module.
