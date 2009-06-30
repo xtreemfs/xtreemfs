@@ -88,10 +88,10 @@ def doSet(filename, options):
         return 0
 
 def printSP(filename,sp):
-    print "file:        ",filename
-    print "policy:      ",sp['pattern']
-    print "stripe-size: ",sp['size']
-    print "width (kB):  ",sp['width']
+    print "file:             ",filename
+    print "policy:           ",sp['pattern']
+    print "stripe-size (kB): ",sp['size']
+    print "width:            ",sp['width']
 
 def readxattr(filename, attr):
     cmd = ["getfattr","--absolute-names","--only-values","-n",attr,filename]
