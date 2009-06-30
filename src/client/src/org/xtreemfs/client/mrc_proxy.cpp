@@ -11,8 +11,10 @@ void MRCProxy::chown( const Path& path, int uid, int gid )
   YIELD::DebugBreak();
 #else
   org::xtreemfs::interfaces::UserCredentials user_credentials;
-  this->getUserCredentialsFrompasswd( uid, gid, user_credentials );
-  org::xtreemfs::interfaces::MRCInterface::chown( path, user_credentials.get_user_id(), user_credentials.get_group_ids()[0] );
+  if ( this->getUserCredentialsFrompasswd( uid, gid, user_credentials ) )
+    org::xtreemfs::interfaces::MRCInterface::chown( path, user_credentials.get_user_id(), user_credentials.get_group_ids()[0] );
+  else
+    throw YIELD::Exception();
 #endif
 }
 

@@ -327,36 +327,36 @@ bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
     struct group grp, *grp_res;
     char grp_buf[GRP_BUF_LEN]; int grp_buf_len = sizeof( grp_buf );
 
-    if ( getpwuid_r( uid, &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 )
+    if ( uid != -1 )
     {
-      if ( pwd_res != NULL && pwd_res->pw_name != NULL )
+      if ( getpwuid_r( uid, &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 )
       {
-        out_user_credentials.set_user_id( pwd_res->pw_name );
-
-        if ( gid != -1 )
+        if ( pwd_res != NULL && pwd_res->pw_name != NULL )
         {
-          if ( getgrgid_r( gid, &grp, grp_buf, grp_buf_len, &grp_res ) == 0 )
-          {
-            if ( grp_res != NULL && grp_res->gr_name != NULL )
-              out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( grp_res->gr_name ) );
-              // Drop down to insert the credentials into the cache
-            else
-              return false;
-          }
-          else
-            return false;
-        }
-        else
-          out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( "" ) );
-          // Drop down to insert the credentials into the cache
-      }
-      else
+          out_user_credentials.set_user_id( pwd_res->pw_name );
+        } else
+          return false;
+      } else
         return false;
-    }
-    else
-      return false;
-  }
+    } else
+      out_user_credentials.set_user_id( "" );
 
+    if ( gid != -1 )
+    {
+      if ( getgrgid_r( gid, &grp, grp_buf, grp_buf_len, &grp_res ) == 0 )
+      {
+        if ( grp_res != NULL && grp_res->gr_name != NULL )
+          out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( grp_res->gr_name ) );
+        // Drop down to insert the credentials into the cache
+        else
+          return false;
+      } else
+        return false;
+    } else
+      out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( "" ) );
+      // Drop down to insert the credentials into the cache
+  }
+  
   if ( uid_to_user_credentials_cache == NULL )
   {
     uid_to_user_credentials_cache = new YIELD::STLHashMap<org::xtreemfs::interfaces::UserCredentials*>;
