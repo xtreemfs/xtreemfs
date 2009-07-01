@@ -194,7 +194,8 @@ public class BabuDBStorageManager implements StorageManager {
     
     @Override
     public FileMetadata createDir(long fileId, long parentId, String fileName, int atime, int ctime,
-        int mtime, String userId, String groupId, int perms, long w32Attrs, AtomicDBUpdate update) {
+        int mtime, String userId, String groupId, int perms, long w32Attrs, AtomicDBUpdate update)
+        throws DatabaseException {
         
         // create metadata
         BufferBackedFileMetadata fileMetadata = new BufferBackedFileMetadata(parentId, fileName, userId,
@@ -209,13 +210,15 @@ public class BabuDBStorageManager implements StorageManager {
         update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(fileId, (byte) 3),
             BabuDBStorageHelper.createFileIdIndexValue(parentId, fileName));
         
+        updateCount(NUM_DIRS_KEY, true, update);
+        
         return fileMetadata;
     }
     
     @Override
     public FileMetadata createFile(long fileId, long parentId, String fileName, int atime, int ctime,
         int mtime, String userId, String groupId, int perms, long w32Attrs, long size, boolean readOnly,
-        int epoch, int issEpoch, AtomicDBUpdate update) {
+        int epoch, int issEpoch, AtomicDBUpdate update) throws DatabaseException {
         
         // create metadata
         BufferBackedFileMetadata fileMetadata = new BufferBackedFileMetadata(parentId, fileName, userId,
@@ -229,6 +232,9 @@ public class BabuDBStorageManager implements StorageManager {
         // add an entry to the file ID index
         update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(fileId, (byte) 3),
             BabuDBStorageHelper.createFileIdIndexValue(parentId, fileName));
+        
+        setVolumeSize(getVolumeSize() + size, update);
+        updateCount(NUM_FILES_KEY, true, update);
         
         return fileMetadata;
     }
@@ -352,6 +358,11 @@ public class BabuDBStorageManager implements StorageManager {
                 while (it.hasNext())
                     update.addUpdate(BabuDBStorageManager.XATTRS_INDEX, it.next().getKey(), null);
                 
+                setVolumeSize(getVolumeSize() - file.getSize(), update);
+                if (file.isDirectory())
+                    updateCount(NUM_DIRS_KEY, false, update);
+                else
+                    updateCount(NUM_FILES_KEY, false, update);
             }
             
             return file.getLinkCount();
@@ -703,13 +714,17 @@ public class BabuDBStorageManager implements StorageManager {
         }
     }
     
-    @Override
-    public void setNumFiles(long numFiles, AtomicDBUpdate update) throws DatabaseException {
+    private void updateCount(byte[] key, boolean increment, AtomicDBUpdate update) throws DatabaseException {
         
-        byte[] sizeBytes = new byte[8];
-        ByteBuffer.wrap(sizeBytes).putLong(0, numFiles);
-        
-        update.addUpdate(VOLUME_INDEX, NUM_FILES_KEY, sizeBytes);
+        try {
+            byte[] countBytes = BabuDBStorageHelper.getVolumeMetadata(database, dbName, key);
+            ByteBuffer countBuf = ByteBuffer.wrap(countBytes);
+            countBuf.putLong(0, countBuf.getLong() + (increment ? 1 : -1));
+            
+            update.addUpdate(VOLUME_INDEX, key, countBytes);
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
     }
     
     @Override
@@ -722,15 +737,6 @@ public class BabuDBStorageManager implements StorageManager {
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
-    }
-    
-    @Override
-    public void setNumDirs(long numDirs, AtomicDBUpdate update) throws DatabaseException {
-        
-        byte[] sizeBytes = new byte[8];
-        ByteBuffer.wrap(sizeBytes).putLong(0, numDirs);
-        
-        update.addUpdate(VOLUME_INDEX, NUM_DIRS_KEY, sizeBytes);
     }
     
     @Override

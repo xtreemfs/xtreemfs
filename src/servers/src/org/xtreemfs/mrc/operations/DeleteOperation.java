@@ -53,7 +53,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class DeleteOperation extends MRCOperation {
-        
+    
     public DeleteOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -127,14 +127,6 @@ public class DeleteOperation extends MRCOperation {
         
         if (file.getLinkCount() > 1)
             MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, update);
-        else {
-            if(file.isDirectory())
-                sMan.setNumDirs(sMan.getNumDirs() - 1, update);
-            else {
-                sMan.setVolumeSize(sMan.getVolumeSize() - file.getSize(), update);
-                sMan.setNumFiles(sMan.getNumFiles() - 1, update);
-            }
-        }
         
         // set the response
         rq.setResponse(new unlinkResponse(creds));

@@ -119,10 +119,6 @@ public interface StorageManager {
     
     public void setVolumeSize(long newSize, AtomicDBUpdate update) throws DatabaseException;
     
-    public void setNumFiles(long numFiles, AtomicDBUpdate update) throws DatabaseException;
-    
-    public void setNumDirs(long numFiles, AtomicDBUpdate update) throws DatabaseException;
-    
     public void setDefaultStripingPolicy(long fileId, org.xtreemfs.interfaces.StripingPolicy defaultSp,
         AtomicDBUpdate update) throws DatabaseException;
     

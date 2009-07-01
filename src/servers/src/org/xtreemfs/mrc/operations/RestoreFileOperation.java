@@ -95,8 +95,6 @@ public class RestoreFileOperation extends MRCOperation {
                     
                     // set the file ID as the last one
                     sMan.setLastFileId(nextFileId, update);
-                    
-                    sMan.setNumFiles(sMan.getNumFiles() + 1, update);
                 }
             } catch (DatabaseException exc) {
                 if (exc.getType() != ExceptionType.FILE_EXISTS)

@@ -157,8 +157,6 @@ public class OpenOperation extends MRCOperation {
                 
                 // set the file ID as the last one
                 sMan.setLastFileId(fileId, update);
-                
-                sMan.setNumFiles(sMan.getNumFiles() + 1, update);
             }
 
             else
