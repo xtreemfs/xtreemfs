@@ -364,7 +364,17 @@ def unmount_volumes( mnt_dir_path=os.path.abspath( os.path.join( original_cwd, "
            fusermount_args = " ".join( ["fusermount", "-u", mount_point_dir_path] )
            print "Unmounting volume with", fusermount_args
            call( fusermount_args, shell=True )
-        
+
+def save_status_pages( num_osds ):
+    try:
+        os.system("wget -O /tmp/mrc_status.html http://localhost:30636")
+        os.system("wget -O /tmp/dir_status.html http://localhost:30638")
+        for osdnum in xrange( num_osds ):
+            port = str( 30640+osdnum )
+            os.system("wget -O /tmp/osd"+str( osdnum )+"_status.html http://localhost:"+port)
+    except:
+        print "cannot fetch status pages"
+
 
 if __name__ == "__main__":
     if not check_environment():
@@ -374,6 +384,7 @@ if __name__ == "__main__":
     option_parser = OptionParser( usage )
     option_parser.add_option( "--autotest", action="store_true", dest="autotest", help="run the autotests: start servers on localhost, create and mount volumes on localhost, then run all tests" )
     option_parser.add_option( "-c", "--clean", action="store_true", dest="clean", help="--stop and remove any directories used by the autotests" )
+    option_parser.add_option( "-p", "--status-pages", action="store_true", dest="spages", help="save the status pages of all services after all tests completed" )
     option_parser.add_option( "-d", action="store", dest="debug_level", default=DEBUG_LEVEL_DEFAULT, help="client and server syslog/debug levels (EMERG, NOTICE, INFO, etc.)" )
     option_parser.add_option( "--enable-ssl", action="store_true", dest="enable_ssl", default=ENABLE_SSL_DEFAULT )
     option_parser.add_option( "-m", action="append", dest="test_module_names", help="name(s) of test module(s) to run" )
@@ -410,7 +421,9 @@ if __name__ == "__main__":
             traceback.print_exc()
             sys.exit( 1 )
             
-        ret = run_tests( num_osds=options.num_osds, test_module_names=options.test_module_names, verbose=True )        
+        ret = run_tests( num_osds=options.num_osds, test_module_names=options.test_module_names, verbose=True )
+        if options.spages:
+            save_status_pages( num_osds=options.num_osds )
         stop_services( num_osds=options.num_osds )
         unmount_volumes()
         sys.exit( ret )
