@@ -1,5 +1,5 @@
 Name:           XtreemFS-client
-Version:        0.99.2
+Version:        0.99.3
 Release:        1
 License:        GPL
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build

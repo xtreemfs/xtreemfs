@@ -1,5 +1,5 @@
 Name:           XtreemFS-server
-Version:        0.99.2
+Version:        0.99.3
 Release:        1
 License:        GPL
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
@@ -7,6 +7,7 @@ Group:          Networking
 Summary:        XtreemFS server components (DIR, MRC, OSD)
 Source0:        %{name}-%{version}.tar.gz
 Requires:       grep
+Requires:       sudo
 
 %description
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
