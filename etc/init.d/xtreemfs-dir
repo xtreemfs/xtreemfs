@@ -62,12 +62,14 @@ start() {
 
     pre_check
 
+    chown xtreemfs $LOG_DS
     echo >> $LOG_DS
     date >> $LOG_DS
     echo -e "Starting XtreemFS Directory Service (DIR)...\n\n" >> $LOG_DS
 
+    rm $PID_DS
     echo -n "starting XtreemFS Directory Service (DIR)..."
-    su -s /bin/sh - $XTREEMFS_USER -c "$JAVA_CALL org.xtreemfs.dir.DIR $CONFIG_DS" >> $LOG_DS 2>&1 &
+    sudo -u $XTREEMFS_USER $JAVA_CALL org.xtreemfs.dir.DIR $CONFIG_DS >> $LOG_DS 2>&1 &
     PROCPID=$!
     echo $PROCPID > $PID_DS
     sleep 1s

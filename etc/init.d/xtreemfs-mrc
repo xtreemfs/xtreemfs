@@ -68,7 +68,7 @@ start() {
     echo -e "Starting XtreemFS Metadata and Replica Catalog (MRC)...\n\n" >> $LOG_MRC
 
     echo -n "starting XtreemFS Metadata and Replica Catalog (MRC)..."
-    su -s /bin/sh - $XTREEMFS_USER -c "$JAVA_CALL org.xtreemfs.mrc.MRC $CONFIG_MRC" >> $LOG_MRC 2>&1 &
+    sudo -u $XTREEMFS_USER $JAVA_CALL org.xtreemfs.mrc.MRC $CONFIG_MRC >> $LOG_MRC 2>&1 &
     PROCPID=$!
     echo $PROCPID > $PID_MRC
     sleep 1s
