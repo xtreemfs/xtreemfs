@@ -286,8 +286,8 @@ public class MRCHelper {
                 return ref != null ? "3" : file.isDirectory() ? "2" : "1";
             case url:
                 InetSocketAddress addr = config.getDirectoryService();
-                return (config.isUsingSSL() ? Constants.ONCRPC_SCHEME : Constants.ONCRPCS_SCHEME) + "://"
-                    + addr.getHostName() + ":" + addr.getPort() + "/" + path;
+                return (config.isUsingSSL() ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME) + "://"
+                    + addr.getAddress().getCanonicalHostName() + ":" + addr.getPort() + "/" + path;
             case owner:
                 return file.getOwnerId();
             case group:
