@@ -54,7 +54,8 @@ bool Volume::access( const YIELD::Path& path, int amode )
 {
   ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( access )
   {
-    return mrc_proxy->access( Path( this->name, path ), amode );
+    return true;
+    // return mrc_proxy->access( Path( this->name, path ), amode );
   }
   ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( access );
   return false;
