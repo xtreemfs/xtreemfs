@@ -114,10 +114,10 @@ public class StatusPage {
             long version = 0;
             for (AddressMapping am : ams) {
                 dump.append("<tr><td class=\"mapping\">");
-                String endpoint = am.getUri()+" ("+am.getProtocol() + "," + am.getAddress() + "," + am.getPort()+")";
-                dump.append("<a href=\"" + endpoint + "\">");
+                String endpoint = am.getUri() + " (" + am.getProtocol() + "," + am.getAddress() + ","
+                    + am.getPort() + ")";
                 dump.append(endpoint);
-                dump.append("</a></td><td class=\"mapping\">");
+                dump.append("</td><td class=\"mapping\">");
                 dump.append(am.getMatch_network());
                 dump.append("</td><td class=\"mapping\">");
                 dump.append(am.getTtl_s());
@@ -163,8 +163,18 @@ public class StatusPage {
                 dump.append("<tr><td width=\"30%\">");
                 dump.append(dataEntry.getKey());
                 dump.append("</td><td><b>");
+                
+                if (dataEntry.getKey().equals("status_page_url")) {
+                    dump.append("<a href=\"");
+                    dump.append(dataEntry.getValue());
+                    dump.append("\">");
+                }
+                
                 dump.append(dataEntry.getValue());
-                if (dataEntry.getKey().equals("last_updated")) {
+                
+                if (dataEntry.getKey().equals("status_page_url")) {
+                    dump.append("</a>");
+                } else if (dataEntry.getKey().equals("last_updated")) {
                     
                 } else if (dataEntry.getKey().equals("free") || dataEntry.getKey().equals("total")
                     || dataEntry.getKey().endsWith("RAM") || dataEntry.getKey().equals("used")) {
