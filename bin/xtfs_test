@@ -52,6 +52,7 @@ DEBUG_LEVEL_DEFAULT = 0
 DEBUG_LEVEL_DEFAULT_SERVICES = 6
 NUM_OSDS_DEFAULT = 1
 ENABLE_SSL_DEFAULT = False
+CACHE_METADATA_DEFAULT = False
 STRIPE_SIZE_DEFAULT = 128
 STRIPING_POLICY_TYPE_DEFAULT = "RAID0"
 
@@ -181,7 +182,7 @@ ssl.enabled = false
 """            
 
 
-def mount_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, mnt_dir_path=MNT_DIR_PATH_DEFAULT, num_osds=NUM_OSDS_DEFAULT, service_host="localhost" ):
+def mount_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, mnt_dir_path=MNT_DIR_PATH_DEFAULT, num_osds=NUM_OSDS_DEFAULT, service_host="localhost", cache_metadata=CACHE_METADATA_DEFAULT ):
     assert os.getcwd() == original_cwd
     try: os.mkdir( mnt_dir_path )
     except: pass
@@ -193,6 +194,7 @@ def mount_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAUL
             xtfs_mount_args.extend( ( "-d", str( debug_level ) ) )                
             xtfs_mount_args.append( "-f" ) # So we can redirect stdout and stderr
             if enable_ssl: xtfs_mount_args.extend( CLIENT_SSL_ARGS )
+            if cache_metadata: xtfs_mount_args.extend( "--cache-metadata" )
             if direct_io: xtfs_mount_args.extend( ( "-o", "direct_io" ) )
             DIR_ONCRPC_PORT = globals()["DIR_ONCRPC_PORT"]
             xtfs_mount_args.append( "%(service_host)s:%(DIR_ONCRPC_PORT)s/test_%(osdnum)u" % locals() )                
@@ -387,6 +389,7 @@ if __name__ == "__main__":
     option_parser.add_option( "-p", "--status-pages", action="store_true", dest="spages", help="save the status pages of all services after all tests completed" )
     option_parser.add_option( "-d", action="store", dest="debug_level", default=DEBUG_LEVEL_DEFAULT, help="client and server syslog/debug levels (EMERG, NOTICE, INFO, etc.)" )
     option_parser.add_option( "--enable-ssl", action="store_true", dest="enable_ssl", default=ENABLE_SSL_DEFAULT )
+    option_parser.add_option( "--cache-metadata", action="store_true", dest="cache_metadata", default=CACHE_METADATA_DEFAULT )
     option_parser.add_option( "-m", action="append", dest="test_module_names", help="name(s) of test module(s) to run" )
     option_parser.add_option( "-o", action="store", dest="num_osds", type="int", default=NUM_OSDS_DEFAULT, help="number of OSDs to start" )
     option_parser.add_option( "--start", action="store_true", dest="start_services", help="start local servers" )
@@ -414,7 +417,7 @@ if __name__ == "__main__":
         
         try:
             create_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host )
-            mount_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host )
+            mount_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host, cache_metadata=options.cache_metadata )
         except KeyboardInterrupt:
             sys.exit( 1 )
         except:
