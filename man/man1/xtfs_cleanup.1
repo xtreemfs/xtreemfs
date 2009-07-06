@@ -1,4 +1,4 @@
-.TH xtfs_cleanup 1 "May 2009" "The XtreemFS Distributed File System" "XtreemFS server"
+.TH xtfs_cleanup 1 "July 2009" "The XtreemFS Distributed File System" "XtreemFS server"
 .SH NAME
 xtfs_cleanup \- checks for each file on the OSD, if it has an entry at the Metadata Server (MRC). 
 .SH SYNOPSIS
@@ -17,42 +17,53 @@ Starts the cleanup process on the OSD identified by UUID '4ef54-kl345-2l35jn-3k4
 .SH OPTIONS
 .TP
 .TP
-\fB-h\fP                   show usage info
+\fB-c \fI<creds_file>
+a PKCS#12 file containing user credentials for SSL-based server connections
 .TP
-\fB-dir\fP <uri> directory service to use (e.g. 'oncrpc://localhost:32638')
-If no URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'
-In case of a secured URI ('oncrpcs://...'), it is necessary to also specify SSL settings (-c, -cp, -t, -tp).
+\fB-cpass \fI<creds_passphrase>
+a pass phrase to decrypt the the user credentials file for SSL-based server connections
 .TP
-\fB-c\fP  <creds_file>         a PKCS#12 file containing user credentials
+\fB-deleteVolumes
+volume deletion - deletes volumes that might be dead!
 .TP
-\fB-cpass\fP <creds_passphrase>   a pass phrase to decrypt the the user credentials file
+\fB-dir \fI<uri>
+Specifies the directory service to use (e.g. 'oncrpc://localhost:32638'). If no URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'. In case of a secured URI ('oncrpcs://...'), it is necessary to also specify SSL settings.
 .TP
-\fB-t\fP  <trusted_CAs>        a PKCS#12 file containing a set of certificates from trusted CAs
+\fB-e
+erase mode - all files will be removed without further request!
 .TP
-\fB-tpass\fP <trusted_passphrase> a pass phrase to decrypt the trusted CAs file
+\fB-h
+show usage info
 .TP
-\fB-r\fP                   restore mode - all files will be restored to directory '/lost+found/' at the volume they are located
+\fB-i
+interactive mode
 .TP
-\fB-e\fP                   !erase mode - all files will be removed without further request!
+\fB-p \fI<admin_passphrase>
+the administrator password for password protection-enabled systems
 .TP
-\fB-deleteVolumes\fP       !volume deletion - deletes volumes that might be dead!
+\fB-r
+restore mode - all files will be restored to directory '/lost+found/' at the volume they are located
 .TP
-\fB-i\fP                   interactive mode
+\fB-stop
+suspend the currently running cleanup
 .TP
-\fB-stop\fP                suspend the currently running cleanup
+\fB-t \fI<trusted_CAs>
+a PKCS#12 file containing a set of certificates from trusted CAs for SSL-based server connections
 .TP
-\fB-p\fP <admin_passphrase> your administrator password.Use it, if password-protection is enabled
+\fB-tpass \fI<trusted_passphrase>
+a pass phrase to decrypt the trusted CAs file for SSL-based server connections
 
 .SH "SEE ALSO"
-.BR xtfs_mount (1),
-.BR xtfs_umount (1),
-.BR xtfs_sp (1),
-.BR xtfs_mkvol (1),
-.BR xtfs_rmvol (1),
 .BR xtfs_lsvol (1),
-.BR xtfs_stat (1),
+.BR xtfs_mkvol (1),
+.BR xtfs_mount (1),
 .BR xtfs_mrcdbtool (1),
-.BR xtfs_scrub (1)
+.BR xtfs_repl (1),
+.BR xtfs_rmvol (1),
+.BR xtfs_scrub (1),
+.BR xtfs_sp (1),
+.BR xtfs_stat (1),
+.BR xtfs_umount (1)
 .BR
 
 .SH AVAILABILITY

@@ -1,0 +1,88 @@
+.TH xtfs_repl 1 "July 2009" "The XtreemFS Distributed File System" "XtreemFS server"
+.SH NAME
+xtfs_repl \- tool for the management of file replicas.
+.SH SYNOPSIS
+\fBxtfs_repl [ \fIoptions\fB ] <file>
+.br
+
+.SH DESCRIPTION
+.I xtfs_repl
+adds, removes and lists replicas of a given file.
+
+.SH EXAMPLE USAGE
+.B "xtfs_repl --set_readonly --auto_add dns xtreemfs/file.txt"
+.PP
+Marks the file 'xtreemfs/file.txt' as read-only and automatically adds a new replica to the file, provided that the path refers to a file in a mounted XtreemFS volume. OSDs for the new replica are automatically selected, as close to the client as possible.
+
+.SH OPTIONS
+.TP
+.TP
+\fB-a \fI<UUID_of_OSD1 UUID_of_OSD2 ...>
+Adds a replica from the given space-separated list of OSDs. Since the replica will be assigned the same striping policy as the original file, the number of OSDs must match the number of OSDs in the original file's striping policy.
+.TP
+\fB-c \fI<creds_file>
+a PKCS#12 file containing user credentials for SSL-based server connections
+.TP
+\fB-cpass \fI<creds_passphrase>
+a pass phrase to decrypt the the user credentials file for SSL-based server connections
+.TP
+\fB-h/--help
+show usage info
+.TP
+\fB-l
+lists all replicas of the given file
+.TP
+\fB-o
+Lists all suitable OSDs that can be used for a new replica of the given file. OSDs that are already assigned other replicas of the file will be automatically excluded from the list.
+.TP
+\fB-r \fI<UUID_of_head-OSD>
+Removes the replica with the given head OSD. The head OSD is the first OSD in the OSD list of a replica.
+.TP
+\fB-t \fI<trusted_CAs>
+a PKCS#12 file containing a set of certificates from trusted CAs for SSL-based server connections
+.TP
+\fB-tpass \fI<trusted_passphrase>
+a pass phrase to decrypt the trusted CAs file for SSL-based server connections
+.TP
+\fB--auto_add \fIrandom|dns
+Adds a replica and automatically selects OSDs according to the chosen method. The \fIrandom\fP method selects a random subset of all available OSDs for the new replica. The \fIdns\fP method selects those OSDs that are closest to the machine at which this command is executed.
+.TP
+\fB--auto_remove
+removes a randomly selected replica from the given file
+.TP
+\fB--interactive_add
+an interactive mode for adding a replica
+.TP
+\fB--interactive_remove
+an interactive mode for removing a replica
+.TP
+\fB--is_readonly
+checks if the file is marked as read-only
+.TP
+\fB--ondemand
+If set, the new replica will be created without any content. Data from other replicas will be streamed to the new replica on demand, i.e. objects will be transmitted as soon as missing replica content is being accessed. If the switch is not set, data will be immediately streamed from other replicas, with the aim of filling the new replica as soon as possible.
+.TP
+\fB--set_readonly
+Marks the file as read-only. Having marked the file as read-only will effect that any kind of write access to the file will be denied in the future. Marking a file as read-only is a prerequisite for adding new replicas to the file.
+.TP
+\fB--set_writeable
+Revokes the read-only status of a file. This is only possible as long as the file has no more than a single replica. 
+.TP
+\fB--strategy \fIrandom|sequential
+EXPERIMENTAL - specifies the strategy for data transfers that are initiated between OSDs in order to stream data between replicas
+
+.SH "SEE ALSO"
+.BR xtfs_cleanup (1),
+.BR xtfs_lsvol (1),
+.BR xtfs_mkvol (1),
+.BR xtfs_mount (1),
+.BR xtfs_mrcdbtool (1),
+.BR xtfs_rmvol (1),
+.BR xtfs_scrub (1),
+.BR xtfs_sp (1),
+.BR xtfs_stat (1),
+.BR xtfs_umount (1)
+.BR
+
+.SH AVAILABILITY
+The xtfs_mrcdbtool command is part of the XtreemFS-server package and is available from http://www.xtreemfs.org
