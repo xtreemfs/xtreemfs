@@ -74,88 +74,91 @@ import org.xtreemfs.utils.CLIParser.CliOption;
  */
 public class xtfs_repl {
     public final static String      ADD_REPLICA                        = "a";
-
+    
     public final static String      ADD_REPLICA_INTERACTIVE            = "-interactive_add";
-
+    
     public final static String      ADD_AUTOMATIC_REPLICA              = "-auto_add";
-
+    
     public final static String      REMOVE_REPLICA                     = "r";
-
+    
     public final static String      REMOVE_REPLICA_INTERACTIVE         = "-interactive_remove";
-
+    
     public final static String      REMOVE_AUTOMATIC_REPLICA           = "-auto_remove";
-
+    
     public final static String      SET_READ_ONLY                      = "-set_readonly";
-
+    
     public final static String      SET_WRITABLE                       = "-set_writeable";
-
+    
     public final static String      IS_READ_ONLY                       = "-is_readonly";
-
+    
     public final static String      LIST_REPLICAS                      = "l";
-
+    
     public final static String      LIST_SUITABLE_OSDS_FOR_REPLICA     = "o";
-
+    
     public final static String      HELP                               = "h";
-
+    
+    public final static String      HELP_LONG                          = "-help";
+    
     /**
-     * hidden command creates a volume and a file (for names see user input) with some data
+     * hidden command creates a volume and a file (for names see user input)
+     * with some data
      */
     public final static String      CREATE_TEST_ENV                    = "CREATE_TEST_ENV";
-
+    
     public final static String      METHOD_RANDOM                      = "random";
-
+    
     public final static String      METHOD_DNS                         = "dns";
-
+    
     public final static String      REPLICATION_FLAG_FILL_ONDEMAND     = "-ondemand";
-
+    
     public final static String      REPLICATION_FLAG_TRANSFER_STRATEGY = "-strategy";
-
+    
     public final static String      TRANSFER_STRATEGY_RANDOM           = "random";
-
+    
     public final static String      TRANSFER_STRATEGY_SEQUENTIAL       = "sequential";
-
+    
     public final static int         DEFAULT_REPLICATION_FLAGS          = Constants.REPL_FLAG_STRATEGY_RANDOM;
-
+    
     private final String            relPath;
-
+    
     private final String            volPath;
-
+    
     private RandomAccessFile        file;
-
+    
     private MRCClient               mrcClient;
-
+    
     public final UserCredentials    credentials;
-
+    
     public final String             volume;
-
+    
     private final InetSocketAddress dirAddress;
-
+    
     private final DIRClient         dirClient;
-
+    
     private InetSocketAddress       mrcAddress;
-
+    
     private XLocations              xLoc;
-
+    
     private RPCNIOSocketClient      client;
-
+    
     private TimeSync                timeSync;
-
+    
     public static final Pattern     IPV4_PATTERN                       = Pattern
                                                                                .compile("b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)"
-                                                                                       + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)b");
-
+                                                                                   + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)b");
+    
     public static final Pattern     IPV6_PATTERN                       = Pattern
                                                                                .compile(
-                                                                                       "((([0-9a-f]{1,4}+:){7}+[0-9a-f]{1,4}+)|(:(:[0-9a-f]"
-                                                                                               + "{1,4}+){1,6}+)|(([0-9a-f]{1,4}+:){1,6}+:)|(::)|(([0-9a-f]"
-                                                                                               + "{1,4}+:)(:[0-9a-f]{1,4}+){1,5}+)|(([0-9a-f]{1,4}+:){1,2}"
-                                                                                               + "+(:[0-9a-f]{1,4}+){1,4}+)|(([0-9a-f]{1,4}+:){1,3}+(:[0-9a-f]{1,4}+)"
-                                                                                               + "{1,3}+)|(([0-9a-f]{1,4}+:){1,4}+(:[0-9a-f]{1,4}+){1,2}+)|(([0-9a-f]"
-                                                                                               + "{1,4}+:){1,5}+(:[0-9a-f]{1,4}+))|(((([0-9a-f]{1,4}+:)?([0-9a-f]"
-                                                                                               + "{1,4}+:)?([0-9a-f]{1,4}+:)?([0-9a-f]{1,4}+:)?)|:)(:(([0-9]{1,3}+\\.)"
-                                                                                               + "{3}+[0-9]{1,3}+)))|(:(:[0-9a-f]{1,4}+)*:([0-9]{1,3}+\\.){3}+[0-9]"
-                                                                                               + "{1,3}+))(/[0-9]+)?",
-                                                                                       Pattern.CASE_INSENSITIVE);
+                                                                                   "((([0-9a-f]{1,4}+:){7}+[0-9a-f]{1,4}+)|(:(:[0-9a-f]"
+                                                                                       + "{1,4}+){1,6}+)|(([0-9a-f]{1,4}+:){1,6}+:)|(::)|(([0-9a-f]"
+                                                                                       + "{1,4}+:)(:[0-9a-f]{1,4}+){1,5}+)|(([0-9a-f]{1,4}+:){1,2}"
+                                                                                       + "+(:[0-9a-f]{1,4}+){1,4}+)|(([0-9a-f]{1,4}+:){1,3}+(:[0-9a-f]{1,4}+)"
+                                                                                       + "{1,3}+)|(([0-9a-f]{1,4}+:){1,4}+(:[0-9a-f]{1,4}+){1,2}+)|(([0-9a-f]"
+                                                                                       + "{1,4}+:){1,5}+(:[0-9a-f]{1,4}+))|(((([0-9a-f]{1,4}+:)?([0-9a-f]"
+                                                                                       + "{1,4}+:)?([0-9a-f]{1,4}+:)?([0-9a-f]{1,4}+:)?)|:)(:(([0-9]{1,3}+\\.)"
+                                                                                       + "{3}+[0-9]{1,3}+)))|(:(:[0-9a-f]{1,4}+)*:([0-9]{1,3}+\\.){3}+[0-9]"
+                                                                                       + "{1,3}+))(/[0-9]+)?",
+                                                                                   Pattern.CASE_INSENSITIVE);
     
     /**
      * required for METHOD_DNS <br>
@@ -257,11 +260,13 @@ public class xtfs_repl {
             BufferedReader in = null;
             while (true) {
                 try {
-                    // at the moment all replicas must have the same StripingPolicy
+                    // at the moment all replicas must have the same
+                    // StripingPolicy
                     in = new BufferedReader(new InputStreamReader(System.in));
                     System.out.println("Please select " + file.getStripingPolicy().getWidth()
                         + " OSD(s) which should be used for the replica.");
-                    System.out.println("# Select the OSD(s) through the prefix-numbers and use ',' as seperator. #");
+                    System.out
+                            .println("# Select the OSD(s) through the prefix-numbers and use ',' as seperator. #");
                     osdNumbers = in.readLine().split(",");
                     
                     // correct count of OSDs
@@ -293,19 +298,19 @@ public class xtfs_repl {
                     in = new BufferedReader(new InputStreamReader(System.in));
                     System.out
                             .println("Please choose if replica should be filled until it is full (full) or only ondemand (ondemand)"
-                                    + " and a Transfer Strategy (random | sequential).");
+                                + " and a Transfer Strategy (random | sequential).");
                     System.out.println("# Please use ',' as seperator. #");
                     args = in.readLine().split(",");
                     
                     List<String> argsList = Arrays.asList(args);
-                    if(argsList.contains("ondemand"))
+                    if (argsList.contains("ondemand"))
                         replicationFlags = replicationFlags | Constants.REPL_FLAG_FILL_ON_DEMAND;
-                    if(argsList.contains("full")) {
+                    if (argsList.contains("full")) {
                         // do nothing
                     }
-                    if(argsList.contains("random"))
+                    if (argsList.contains("random"))
                         replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_RANDOM;
-                    if(argsList.contains("sequential"))
+                    if (argsList.contains("sequential"))
                         replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_SIMPLE;
                     
                     break;
@@ -317,7 +322,7 @@ public class xtfs_repl {
                         in.close();
                 }
             }
-
+            
             addReplica(osds, replicationFlags);
         } else
             System.err.println("File is not marked as read-only.");
@@ -335,7 +340,7 @@ public class xtfs_repl {
     public void addReplicaAutomatically(String method, int replicationFlags) throws Exception {
         if (file.isReadOnly()) {
             List<ServiceUUID> suitableOSDs = file.getSuitableOSDsForAReplica();
-            if(suitableOSDs.size() == 0) {
+            if (suitableOSDs.size() == 0) {
                 System.err.println("could not create replica: no suitable OSDs available");
                 System.exit(1);
             }
@@ -548,6 +553,7 @@ public class xtfs_repl {
         options.put(REMOVE_REPLICA_INTERACTIVE, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(REMOVE_AUTOMATIC_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(HELP, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put(HELP_LONG, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put("c", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("cpass", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("t", new CliOption(CliOption.OPTIONTYPE.STRING));
@@ -565,6 +571,12 @@ public class xtfs_repl {
         }
         
         CliOption h = options.get(HELP);
+        if (h.switchValue) {
+            usage();
+            return;
+        }
+        
+        h = options.get(HELP_LONG);
         if (h.switchValue) {
             usage();
             return;
@@ -605,61 +617,9 @@ public class xtfs_repl {
             for (Entry<String, CliOption> e : options.entrySet()) {
                 
                 if (e.getKey().equals(ADD_REPLICA) && e.getValue().stringValue != null) {
-
+                    
                     system.initialize();
-
-                    // parse replication flags
-                    int replicationFlags = DEFAULT_REPLICATION_FLAGS;
-                    CliOption option = options.get(REPLICATION_FLAG_FILL_ONDEMAND);
-                    if (option != null && option.switchValue)
-                        replicationFlags = replicationFlags | Constants.REPL_FLAG_FILL_ON_DEMAND;
-
-                    option = options.get(REPLICATION_FLAG_TRANSFER_STRATEGY);
-                    if (option != null && option.stringValue != null) {
-                        String method = option.stringValue.replace('\"', ' ').trim();
-
-                        if (method.equals(TRANSFER_STRATEGY_RANDOM))
-                            replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_RANDOM;
-                        else if (method.equals(TRANSFER_STRATEGY_SEQUENTIAL))
-                            replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_SIMPLE;
-                    }
-
-                    StringTokenizer st = new StringTokenizer(e.getValue().stringValue, "\", \t");
-                    List<ServiceUUID> osds = new ArrayList<ServiceUUID>(st.countTokens());
-
-                    if (st.countTokens() > 0) {
-                        while (st.hasMoreTokens())
-                            osds.add(new ServiceUUID(st.nextToken()));
-                        system.addReplica(osds, replicationFlags);
-                    } else
-                        usage();
-                } else if (e.getKey().equals(ADD_REPLICA_INTERACTIVE) && e.getValue().switchValue) {
-
-                    system.initialize();
-
-                    // interactive mode
-                    system.addReplica();
-                } else if (e.getKey().equals(REMOVE_REPLICA) && e.getValue().stringValue != null) {
-
-                    system.initialize();
-
-                    String headOSD = e.getValue().stringValue.replace('\"', ' ').trim();
-
-                    if (headOSD.length() > 0) {
-                        ServiceUUID osd = new ServiceUUID(headOSD);
-                        system.removeReplica(osd);
-                    } else
-                        usage();
-
-                } else if (e.getKey().equals(REMOVE_REPLICA_INTERACTIVE) && e.getValue().stringValue != null) {
-
-                    system.initialize();
-
-                    // interactive mode
-                    system.removeReplica();
-
-                } else if (e.getKey().equals(ADD_AUTOMATIC_REPLICA) && e.getValue().stringValue != null) {
-
+                    
                     // parse replication flags
                     int replicationFlags = DEFAULT_REPLICATION_FLAGS;
                     CliOption option = options.get(REPLICATION_FLAG_FILL_ONDEMAND);
@@ -669,10 +629,62 @@ public class xtfs_repl {
                     option = options.get(REPLICATION_FLAG_TRANSFER_STRATEGY);
                     if (option != null && option.stringValue != null) {
                         String method = option.stringValue.replace('\"', ' ').trim();
-
+                        
                         if (method.equals(TRANSFER_STRATEGY_RANDOM))
                             replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_RANDOM;
-                        else if(method.equals(TRANSFER_STRATEGY_SEQUENTIAL))
+                        else if (method.equals(TRANSFER_STRATEGY_SEQUENTIAL))
+                            replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_SIMPLE;
+                    }
+                    
+                    StringTokenizer st = new StringTokenizer(e.getValue().stringValue, "\", \t");
+                    List<ServiceUUID> osds = new ArrayList<ServiceUUID>(st.countTokens());
+                    
+                    if (st.countTokens() > 0) {
+                        while (st.hasMoreTokens())
+                            osds.add(new ServiceUUID(st.nextToken()));
+                        system.addReplica(osds, replicationFlags);
+                    } else
+                        usage();
+                } else if (e.getKey().equals(ADD_REPLICA_INTERACTIVE) && e.getValue().switchValue) {
+                    
+                    system.initialize();
+                    
+                    // interactive mode
+                    system.addReplica();
+                } else if (e.getKey().equals(REMOVE_REPLICA) && e.getValue().stringValue != null) {
+                    
+                    system.initialize();
+                    
+                    String headOSD = e.getValue().stringValue.replace('\"', ' ').trim();
+                    
+                    if (headOSD.length() > 0) {
+                        ServiceUUID osd = new ServiceUUID(headOSD);
+                        system.removeReplica(osd);
+                    } else
+                        usage();
+                    
+                } else if (e.getKey().equals(REMOVE_REPLICA_INTERACTIVE) && e.getValue().stringValue != null) {
+                    
+                    system.initialize();
+                    
+                    // interactive mode
+                    system.removeReplica();
+                    
+                } else if (e.getKey().equals(ADD_AUTOMATIC_REPLICA) && e.getValue().stringValue != null) {
+                    
+                    // parse replication flags
+                    int replicationFlags = DEFAULT_REPLICATION_FLAGS;
+                    CliOption option = options.get(REPLICATION_FLAG_FILL_ONDEMAND);
+                    if (option != null && option.switchValue)
+                        replicationFlags = replicationFlags | Constants.REPL_FLAG_FILL_ON_DEMAND;
+                    
+                    option = options.get(REPLICATION_FLAG_TRANSFER_STRATEGY);
+                    if (option != null && option.stringValue != null) {
+                        String method = option.stringValue.replace('\"', ' ').trim();
+                        
+                        if (method.equals(TRANSFER_STRATEGY_RANDOM))
+                            replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_RANDOM;
+                        else if (method.equals(TRANSFER_STRATEGY_SEQUENTIAL))
                             replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_SIMPLE;
                     }
                     
@@ -705,7 +717,7 @@ public class xtfs_repl {
                     system.listSuitableOSDs();
                 } else if (e.getKey().equals(CREATE_TEST_ENV) && e.getValue().switchValue) { // hidden
                     // command
-//                    system.createTestEnv(volume, filePath);
+                    // system.createTestEnv(volume, filePath);
                 }
                 
             }
@@ -723,33 +735,38 @@ public class xtfs_repl {
         out.append("Usage: " + xtfs_repl.class.getSimpleName());
         out.append(" [options] <path>\n");
         out.append("options:\n");
-        out.append("\t-" + IS_READ_ONLY + ": checks if the file is already marked as read-only\n");
-        out.append("\t-" + SET_READ_ONLY + ": marks the file as read-only\n");
-        out.append("\t-" + SET_WRITABLE + ": marks the file as writable (normal file)\n");
+        out.append("\t-" + ADD_REPLICA
+            + " <UUID_of_OSD1 UUID_of_OSD2 ...>: Adds a replica with the given OSDs. "
+            + "The number of OSDs must be the same as in the file's striping policy. "
+            + "Use space as seperator.\n");
+        out.append("\t-" + HELP + " -" + HELP_LONG + ": show usage info\n");
         out.append("\t-" + LIST_REPLICAS + ": lists all replicas of this file\n");
         out.append("\t-" + LIST_SUITABLE_OSDS_FOR_REPLICA
-            + ": Lists all suitable OSDs for this file, which can be used for a new replica\n");
-        out.append("\t-" + ADD_REPLICA_INTERACTIVE + ": an interactive mode for adding a replica\n");
-        out.append("\t-" + REMOVE_REPLICA_INTERACTIVE + ": an interactive mode for removing a replica\n");
-        out.append("\t-" + ADD_REPLICA
-            + " <UUID_of_OSD1 UUID_of_OSD2 ...>: Adds a replica with the given OSDs."
-            + "The given number of OSDs must be the same as in the striping policy."
-            + "Use space as seperator.\n");
-        out.append("\t-" + ADD_AUTOMATIC_REPLICA + " " + METHOD_RANDOM + "|" + METHOD_DNS
-            + ": adds a replica and automatically selects OSDs according to the chosen method\n");
+            + ": lists all suitable OSDs for this file, which can be used for a new replica\n");
         out.append("\t-" + REMOVE_REPLICA + " <UUID_of_head-OSD>"
             + ": removes the replica with the given head OSD\n");
+        out.append("\t-" + ADD_AUTOMATIC_REPLICA + " " + METHOD_RANDOM + "|" + METHOD_DNS
+            + ": adds a replica and automatically selects OSDs according to the chosen method\n");
         out.append("\t-" + REMOVE_AUTOMATIC_REPLICA + ": removes a randomly selected replica\n");
-        out.append("\t-" + REPLICATION_FLAG_TRANSFER_STRATEGY + " " + TRANSFER_STRATEGY_RANDOM + "|" + TRANSFER_STRATEGY_SEQUENTIAL);
-        out.append("\tTo use SSL it is necessary to also specify credentials:");
-        out.append("\t            -c  <creds_file>            a PKCS#12 file containing user credentials");
-        out.append("\t            -cpass <creds_passphrase>   a pass phrase to decrypt the the user credentials file");
-        out.append("\t            -t  <trusted_CAs>           a PKCS#12 file containing a set of certificates from trusted CAs");
-        out.append("\t            -tpass <trusted_passphrase> a pass phrase to decrypt the trusted CAs file");
-        out.append("\t-" + REPLICATION_FLAG_TRANSFER_STRATEGY + " " + TRANSFER_STRATEGY_RANDOM + "|" + TRANSFER_STRATEGY_SEQUENTIAL
-                + ": the replica to add will use the chosen strategy\n");
-        out.append("\t-" + REPLICATION_FLAG_FILL_ONDEMAND
-                        + ": if set the replica to add will be filled ondemand; otherwise it will be automatically filled until it is full\n");
+        out.append("\t-" + ADD_REPLICA_INTERACTIVE + ": an interactive mode for adding a replica\n");
+        out.append("\t-" + REMOVE_REPLICA_INTERACTIVE + ": an interactive mode for removing a replica\n");
+        out.append("\t-" + IS_READ_ONLY + ": checks if the file is already marked as read-only\n");
+        out
+                .append("\t-"
+                    + REPLICATION_FLAG_FILL_ONDEMAND
+                    + ": if set, the replica to add will be filled on demand; otherwise it will be filled automatically until it is full\n");
+        out.append("\t-" + SET_READ_ONLY + ": marks the file as read-only\n");
+        out.append("\t-" + SET_WRITABLE + ": marks the file as writable (normal file)\n");
+        out.append("\t-" + REPLICATION_FLAG_TRANSFER_STRATEGY + " " + TRANSFER_STRATEGY_RANDOM + "|"
+            + TRANSFER_STRATEGY_SEQUENTIAL + ": the replica to add will use the chosen strategy\n");
+        out.append("\n");
+        out.append("\tTo use SSL it is necessary to also specify credentials:\n");
+        out.append("\t  -c  <creds_file>: a PKCS#12 file containing user credentials\n");
+        out.append("\t  -cpass <creds_passphrase>: a pass phrase to decrypt the the user credentials file\n");
+        out
+                .append("\t  -t <trusted_CAs>: a PKCS#12 file containing a set of certificates from trusted CAs\n");
+        out.append("\t  -tpass <trusted_passphrase>: a pass phrase to decrypt the trusted CAs file");
+        
         System.out.println(out.toString());
     }
     

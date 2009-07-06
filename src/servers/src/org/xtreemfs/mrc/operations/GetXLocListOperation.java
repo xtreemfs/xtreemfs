@@ -33,6 +33,7 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 import org.xtreemfs.mrc.volumes.VolumeManager;
@@ -42,7 +43,7 @@ import org.xtreemfs.mrc.volumes.VolumeManager;
  * @author stender
  */
 public class GetXLocListOperation extends MRCOperation {
-        
+    
     public GetXLocListOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -62,11 +63,20 @@ public class GetXLocListOperation extends MRCOperation {
         StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
         
         FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
+        
         if (file == null)
             throw new UserException(ErrNo.ENOENT, "file '" + idRes.getLocalFileId() + "' does not exist");
         
+        if (file.isDirectory())
+            throw new UserException(ErrNo.EISDIR, "'" + idRes.getLocalFileId() + "' is a directory");
+        
+        XLocList xloc = file.getXLocList();
+        if (xloc == null)
+            throw new UserException(ErrNo.EIO, "'" + idRes.getLocalFileId()
+                + "' does not have a locations list");
+        
         // get the replicas from the X-Loc list
-        ReplicaSet replicas = Converter.xLocListToXLocSet(file.getXLocList()).getReplicas();
+        ReplicaSet replicas = Converter.xLocListToXLocSet(xloc).getReplicas();
         
         // set the response
         rq.setResponse(new xtreemfs_replica_listResponse(replicas));
