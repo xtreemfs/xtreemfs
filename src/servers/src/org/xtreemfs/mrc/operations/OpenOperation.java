@@ -61,7 +61,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class OpenOperation extends MRCOperation {
-        
+    
     public OpenOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -86,6 +86,14 @@ public class OpenOperation extends MRCOperation {
         
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
         FileMetadata file = null;
+
+        // analyze the flags
+        boolean create = (rqArgs.getFlags() & FileAccessManager.O_CREAT) != 0;
+        boolean excl = (rqArgs.getFlags() & FileAccessManager.O_EXCL) != 0;
+        boolean truncate = (rqArgs.getFlags() & FileAccessManager.O_TRUNC) != 0;
+        boolean write = (rqArgs.getFlags() & (FileAccessManager.O_WRONLY | FileAccessManager.O_RDWR)) != 0;
+        
+        boolean createNew = false;
         
         // check whether the file/directory exists
         try {
@@ -93,8 +101,7 @@ public class OpenOperation extends MRCOperation {
             res.checkIfFileDoesNotExist();
             
             // check if O_CREAT and O_EXCL are set; if so, send an exception
-            if ((rqArgs.getFlags() & FileAccessManager.O_CREAT) != 0
-                && (rqArgs.getFlags() & FileAccessManager.O_EXCL) != 0)
+            if (create && excl)
                 res.checkIfFileExistsAlready();
             
             file = res.getFile();
@@ -136,7 +143,7 @@ public class OpenOperation extends MRCOperation {
             
             // if the file does not exist, check whether the O_CREAT flag
             // has been provided
-            if (exc.getErrno() == ErrNo.ENOENT && (rqArgs.getFlags() & FileAccessManager.O_CREAT) != 0) {
+            if (exc.getErrno() == ErrNo.ENOENT && create) {
                 
                 // check for write permission in parent dir
                 // check whether the parent directory grants write access
@@ -157,6 +164,8 @@ public class OpenOperation extends MRCOperation {
                 
                 // set the file ID as the last one
                 sMan.setLastFileId(fileId, update);
+                
+                createNew = true;
             }
 
             else
@@ -166,7 +175,7 @@ public class OpenOperation extends MRCOperation {
         // get the current epoch, use (and increase) the truncate number if
         // the open mode is truncate
         int trEpoch = file.getEpoch();
-        if ((rqArgs.getFlags() & FileAccessManager.O_TRUNC) != 0) {
+        if (truncate) {
             file.setIssuedEpoch(file.getIssuedEpoch() + 1);
             trEpoch = file.getIssuedEpoch();
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
@@ -211,6 +220,7 @@ public class OpenOperation extends MRCOperation {
         xLocSet.setReplicas(rsPol.getSortedReplicaList(xLocSet.getReplicas(), ((InetSocketAddress) rq
                 .getRPCRequest().getClientIdentity()).getAddress()));
         
+        // issue a new capability
         Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), TimeSync
                 .getGlobalTime()
             / 1000 + Capability.DEFAULT_VALIDITY,
@@ -224,16 +234,24 @@ public class OpenOperation extends MRCOperation {
                                 .toString());
         
         // update POSIX timestamps of file
-        MRCHelper.updateFileTimes(res.getParentsParentId(), file, !master.getConfig().isNoAtime(), true,
-            true, sMan, update);
         
-        // update POSIX timestamps of parent directory
-        MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true, true, sMan,
-            update);
+        // create or truncate: ctime + mtime, atime only if create
+        if (createNew || truncate)
+            MRCHelper.updateFileTimes(res.getParentsParentId(), file, createNew ? !master.getConfig()
+                    .isNoAtime() : false, true, true, sMan, update);
         
-        // update POSIX timestamps of parent directory
-        if (!master.getConfig().isNoAtime())
-            MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), true, false, false, sMan,
+        // write: ctime + mtime
+        else if (write)
+            MRCHelper.updateFileTimes(res.getParentsParentId(), file, false, true, true, sMan, update);
+        
+        // otherwise: only atime, if necessary
+        else if (!master.getConfig().isNoAtime())
+            MRCHelper.updateFileTimes(res.getParentsParentId(), file, true, false, false, sMan, update);
+        
+        // update POSIX timestamps of parent directory, in case of a newly
+        // created file
+        if (createNew)
+            MRCHelper.updateFileTimes(res.getParentsParentId(), res.getParentDir(), false, true, true, sMan,
                 update);
         
         // set the response
