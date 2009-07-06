@@ -36,6 +36,7 @@ import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLoc;
+import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.volumes.VolumeManager;
 
 /**
@@ -71,22 +72,27 @@ public class CheckFileListOperation extends MRCOperation {
                     else {
                         // check the xLocations-list of the recognized file
                         boolean registered = false;
-                        Iterator<XLoc> iter = mData.getXLocList().iterator();
-                        XLoc loc;
-                        while (iter.hasNext()) {
-                            loc = iter.next();
-                            short count = loc.getOSDCount();
-                            for (int i=0;i<count;i++) {
-                                // stop if entry was found
-                                if (loc.getOSD(i).equals(osd)) {
-                                    registered = true;
-                                    break;
+                        XLocList list = mData.getXLocList();
+                        if (list==null) {
+                            registered = true;
+                            // TODO mData.setXLocList(sMan.createXLocList(sMan.createXLoc(stripingPolicy, new String[]{osd}, replFlags),replicas, replUpdatePolicy, version));
+                        } else {
+                            Iterator<XLoc> iter = list.iterator();
+                            XLoc loc;
+                            while (iter.hasNext()) {
+                                loc = iter.next();
+                                short count = loc.getOSDCount();
+                                for (int i=0;i<count;i++) {
+                                    // stop if entry was found
+                                    if (loc.getOSD(i).equals(osd)) {
+                                        registered = true;
+                                        break;
+                                    }
                                 }
+                                
+                                if (registered) break;
                             }
-                            
-                            if (registered) break;
                         }
-                        
                         response += (registered) ? "1" : "3";
                     }
                 }
