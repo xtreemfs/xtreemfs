@@ -27,6 +27,7 @@ package org.xtreemfs.mrc.operations;
 import java.util.Iterator;
 
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsResponse;
 import org.xtreemfs.mrc.MRCException;
@@ -35,6 +36,7 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.volumes.VolumeManager;
@@ -74,8 +76,15 @@ public class CheckFileListOperation extends MRCOperation {
                         boolean registered = false;
                         XLocList list = mData.getXLocList();
                         if (list==null) {
+                            StripingPolicy sp = sMan.createStripingPolicy("RAID0", (int) mData.getSize(), 1);
+                            mData.setXLocList(
+                                sMan.createXLocList(
+                                    new XLoc[] {
+                                        sMan.createXLoc(sp, new String[]{osd}, 0)
+                                    }, Constants.REPL_UPDATE_PC_NONE, 0
+                                )
+                            );
                             registered = true;
-                            // TODO mData.setXLocList(sMan.createXLocList(sMan.createXLoc(stripingPolicy, new String[]{osd}, replFlags),replicas, replUpdatePolicy, version));
                         } else {
                             Iterator<XLoc> iter = list.iterator();
                             XLoc loc;
