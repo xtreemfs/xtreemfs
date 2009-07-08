@@ -106,7 +106,17 @@ namespace YIELD
         CSimpleOpt::SOption sentinel_simpleopt_option = SO_END_OF_OPTIONS;
         simpleopt_options.push_back( sentinel_simpleopt_option );
 
-        CSimpleOpt args( argc, argv, &simpleopt_options[0] );
+        // Make copies of the strings in argv so that SimpleOpt can punch holes in them
+        std::vector<char*> argvv;
+        for ( int arg_i = 0; arg_i < argc; arg_i++ )
+        {
+          size_t arg_len = strnlen( argv[arg_i], SIZE_MAX ) + 1;
+          char* arg = new char[arg_len];
+          memcpy_s( arg, arg_len, argv[arg_i], arg_len );
+          argvv.push_back( arg ); 
+        }
+
+        CSimpleOpt args( argc, &argvv[0], &simpleopt_options[0] );
 
         while ( args.Next() )
         {
@@ -160,7 +170,9 @@ namespace YIELD
 
         parseFiles( args.FileCount(), args.Files() );
 
-        std::vector<char*> argvv;
+        for ( std::vector<char*>::iterator arg_i = argvv.begin(); arg_i != argvv.end(); arg_i++ )
+          delete [] *arg_i;
+        argvv.clear();
 
         // Replace argv[0] with the absolute path to the executable
         char argv0[PATH_MAX];
@@ -206,6 +218,7 @@ namespace YIELD
         for ( int arg_i = 1; arg_i < argc; arg_i++ )
           argvv.push_back( argv[arg_i] );
 
+        // Pass the original argv to _main instead of the copies SimpleOpt punched holes in
         return _main( static_cast<int>( argvv.size() ), &argvv[0] );
       }
       catch ( YIELD::Exception& exc ) // Don't catch std::exceptions like bad_alloc
