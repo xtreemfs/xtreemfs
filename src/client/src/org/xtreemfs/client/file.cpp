@@ -36,7 +36,6 @@ namespace org
           : FixedBuffer( len )
         {
           iov.iov_base = buf;
-          iov.iov_len = len;
         }
       };
 
@@ -156,31 +155,39 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 {
   try
   {
-    YIELD::auto_Log log = parent_volume->get_log();
+    YIELD::auto_Log log( parent_volume->get_log() );
+
+#ifdef _DEBUG
+    log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File::read( rbuf, size=" << size << ", offset=" << offset << " )";
+#endif
+
     char *rbuf_start = static_cast<char*>( rbuf ), *rbuf_p = static_cast<char*>( rbuf ), *rbuf_end = static_cast<char*>( rbuf ) + size;
+    uint64_t current_file_offset = offset;
     uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;    
 
     YIELD::auto_Object< YIELD::OneSignalEventQueue<> > read_response_queue( new YIELD::OneSignalEventQueue<> );
     size_t expected_read_response_count = 0;
 
+    size_t ret = 0;
+
     while ( rbuf_p < rbuf_end )
     {      
-      uint64_t object_number = offset / stripe_size;
-      uint32_t object_offset = offset % stripe_size;
-      size_t object_size = static_cast<uint64_t>( rbuf_end - rbuf_p );
+      uint64_t object_number = current_file_offset / stripe_size;
+      uint32_t object_offset = current_file_offset % stripe_size;
+      size_t object_size = static_cast<size_t>( rbuf_end - rbuf_p );
       if ( object_offset + object_size > stripe_size )
         object_size = stripe_size - object_offset;
 
-//#ifdef _DEBUG
-//      log->getStream( YIELD::Log::LOG_INFO ) << 
-//        "org::xtreemfs::client::File: reading " << object_size << 
-//        " bytes from offset " << object_offset <<
-//        " in object number " << object_number << 
-//        " of file " << file_credentials.get_xcap().get_file_id() <<
-//        ", file offset = " << offset <<
-//        ", remaining buffer size = " << RBUF_REMAINING <<
-//        ".";
-//#endif
+#ifdef _DEBUG
+      log->getStream( YIELD::Log::LOG_INFO ) << 
+        "org::xtreemfs::client::File: issuing read for " << object_size << 
+        " bytes from object number " << object_number <<
+        " in file " << file_credentials.get_xcap().get_file_id() <<
+        "(object offset = " << object_offset <<
+        ", file offset = " << current_file_offset <<
+        ", remaining buffer size = " << static_cast<size_t>( rbuf_end - rbuf_p ) <<
+        ").";
+#endif
 
       org::xtreemfs::interfaces::OSDInterface::readRequest* read_request = new org::xtreemfs::interfaces::OSDInterface::readRequest( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ) );
       FileReadONCRPCRequest* file_read_oncrpc_request = new FileReadONCRPCRequest( parent_volume->get_osd_proxy_mux()->incRef(), read_request, new FileReadBuffer( rbuf_p, object_size ) );
@@ -190,16 +197,13 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       expected_read_response_count++;
 
       rbuf_p += object_size;
-
-//#ifdef _DEBUG
-//      log->getStream( YIELD::Log::LOG_INFO ) << 
-//        "org::xtreemfs::client::File: read " << data->size() <<
-//        " bytes from file " << file_credentials.get_xcap().get_file_id() <<
-//        " with " << zero_padding << " bytes of zero padding.";
-//#endif
+      current_file_offset += object_size;
     }
 
-    rbuf_p = rbuf_start;
+#ifdef _DEBUG
+    log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File: issued " << expected_read_response_count << " parallel reads.";
+#endif
+
 
     for ( size_t read_response_i = 0; read_response_i < expected_read_response_count; read_response_i++ )
     {
@@ -220,25 +224,28 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
           org::xtreemfs::interfaces::OSDInterface::readResponse& read_response = static_cast<org::xtreemfs::interfaces::OSDInterface::readResponse&>( *body );
           YIELD::auto_Buffer data( read_response.get_object_data().get_data() );
           uint32_t zero_padding = read_response.get_object_data().get_zero_padding();
+          rbuf_p = static_cast<char*>( static_cast<void*>( *data ) );
 
-          if ( !data->empty() )
-          {
-            if ( rbuf_p + data->size() <= rbuf_end )
-              rbuf_p += data->size();
-            else
-            {
-              log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received data (data size=" << data->size() << ", zero_padding=" << zero_padding << ") larger than available buffer space (" << static_cast<size_t>( rbuf_end - rbuf_p ) << ")";
-              YIELD::ExceptionResponse::set_errno( EIO );
-              return -1;
-            }
-          }
+#ifdef _DEBUG
+          log->getStream( YIELD::Log::LOG_INFO ) << 
+            "org::xtreemfs::client::File: read " << data->size() <<
+            " bytes from file " << file_credentials.get_xcap().get_file_id() <<            
+            " with " << zero_padding << " bytes of zero padding" <<
+            ", starting from buffer offset " << static_cast<size_t>( rbuf_p - rbuf_start ) << 
+            ", read # " << ( read_response_i + 1 ) << " of " << expected_read_response_count << " parallel reads" <<
+            ".";
+#endif
+
+          ret += data->size();
 
           if ( zero_padding > 0 )
-          {
+          { 
+            rbuf_p += data->size();
+
             if ( rbuf_p + zero_padding <= rbuf_end )
             {
               memset( rbuf_p, 0, zero_padding );
-              rbuf_p += zero_padding;
+              ret += zero_padding;
             }
             else
             {
@@ -254,10 +261,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       }
     }
 
-#ifdef _DEBUG
-    if ( static_cast<size_t>( rbuf_p - rbuf_start ) > size ) YIELD::DebugBreak();
-#endif
-    return static_cast<ssize_t>( rbuf_p - rbuf_start );
+    return static_cast<ssize_t>( ret );
   }
   catch ( ProxyExceptionResponse& proxy_exception_response )
   {

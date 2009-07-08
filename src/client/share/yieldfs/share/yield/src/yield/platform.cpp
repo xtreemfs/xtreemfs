@@ -2855,7 +2855,7 @@ bool XDRUnmarshaller::readBoolean( const char* key, uint32_t tag )
 void XDRUnmarshaller::readBuffer( const char* key, uint32_t tag, auto_Buffer value )
 {
   size_t size = readInt32( key, tag );
-  if ( value->size() < size ) DebugBreak();
+  if ( value->capacity() < size ) DebugBreak();
   readBytes( *value, size );
   value->put( NULL, size );
 }
