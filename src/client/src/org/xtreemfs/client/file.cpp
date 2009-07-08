@@ -250,7 +250,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         }
         break;
 
-        default: DebugBreak();
+        default: YIELD::DebugBreak();
       }
     }
 

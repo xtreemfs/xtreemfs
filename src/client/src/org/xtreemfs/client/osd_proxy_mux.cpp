@@ -236,7 +236,7 @@ void OSDProxyMux::handleEvent( YIELD::Event& ev )
         }
         return;
       
-        default: DebugBreak(); return;
+        default: YIELD::DebugBreak(); return;
       }      
     }
     break;
