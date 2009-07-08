@@ -124,7 +124,7 @@ namespace YIELD
   };
 
 
-  template <class InternalQueueType = NonBlockingFiniteQueue<Event*, 2048> >
+  template <class InternalQueueType = NonBlockingFiniteQueue<Event*, 256> >
   class OneSignalEventQueue : public EventQueue, private InternalQueueType
   {
   public:
@@ -212,6 +212,8 @@ namespace YIELD
     virtual YIELD::auto_Object<Response> createResponse( uint32_t tag ) = 0;    
     virtual YIELD::auto_Object<ExceptionResponse> createExceptionResponse( uint32_t tag ) = 0;
   };
+
+  typedef auto_Object<Interface> auto_Interface;
 
 
   class Response : public Event
@@ -345,18 +347,19 @@ namespace YIELD
   // A separate templated version for subclasses to inherit from (MG1Stage, CohortStage, etc.)
   // This helps eliminate some virtual function calls by having the specific EventHandler type instead of a generic EventHandler pointer
   template <class EventHandlerType, class EventQueueType, class LockType>
-  class StageImpl : public Stage//, private StatsEventSource<LockType>
+  class StageImpl : public Stage
   {
   public:
     StageImpl( YIELD::auto_Object<EventHandlerType> event_handler, YIELD::auto_Object<EventQueueType> event_queue, auto_EventTarget, YIELD::auto_Object<Log> log )
-      : //StatsEventSource<LockType>( 2000, stage_stats_event_target ),
-        event_handler( event_handler ), event_queue( event_queue ), log( log )
+      : event_handler( event_handler ), event_queue( event_queue ), log( log )
     {      
       event_queue_length = event_queue_arrival_count = 1; // send() would normally inc these, but we can't use send() because it's a virtual function; instead we enqueue directly and inc the lengths ourselves
       event_queue_full_count = 0;
-
-      event_queue_length = event_queue_arrival_count = 0;
-      rho = elapsed_ms = 0;
+      rho = 0;
+      arrival_rate_rrd = RRD::creat( get_stage_name() + std::string( "_arrival_rate" ) );
+      service_rate_rrd = RRD::creat( get_stage_name() + std::string( "_service_rate" ) );
+      if ( arrival_rate_rrd != NULL && service_rate_rrd != NULL )
+        statistics_timer_queue.addTimer( new StatisticsTimer( ( StageImpl<EventHandlerType, EventQueueType, LockType>& )this->incRef() ) );
     }
 
     double get_rho() const { return rho; }
@@ -471,8 +474,15 @@ namespace YIELD
     YIELD::auto_Object<EventQueueType> event_queue;
     YIELD::auto_Object<Log> log;
 
-    unsigned char event_queue_full_count;
     LockType lock;
+
+    // Statistics
+    uint32_t event_queue_length, event_queue_arrival_count;
+    unsigned char event_queue_full_count;
+    Sampler<double, 2000, Mutex> event_processing_time_sampler, event_queueing_time_sampler;
+    double rho;
+    TimerQueue statistics_timer_queue;
+    auto_RRD arrival_rate_rrd, service_rate_rrd;
 
 
     void _callEventHandler( Event& ev )
@@ -497,48 +507,37 @@ namespace YIELD
       double event_processing_time_ms = Time::getCurrentUnixTimeMS() - start_time_ms;
       if ( event_processing_time_ms < 10 * MS_IN_S )
         event_processing_time_sampler.setNextSample( event_processing_time_ms );
-
-      // StatsEventSource<LockType>::checkTimer();
     }
 
 
-    Sampler<double, 2000, Mutex> event_queueing_time_sampler, event_processing_time_sampler;
-    Sampler<uint32_t, 2000, Mutex> queue_length_sampler;
-    Sampler<double, 2000, Mutex> arrival_rate_sampler;
-    uint32_t event_queue_length, event_queue_arrival_count;
-    double rho, elapsed_ms;
-
-    /*
-    // StatsEventSource
-    StatsEvent* createStatsEvent( double elapsed_ms )
+    class StatisticsTimer : public Timer
     {
-      elapsed_ms += elapsed_ms;
+    public:
+      StatisticsTimer( auto_Object< StageImpl<EventHandlerType, EventQueueType, LockType> > stage )
+        : Timer( 1 * NS_IN_S, 1 * NS_IN_S ), stage( stage )
+      { }
 
-      uint32_t event_queue_length = this->event_queue_length;
-      queue_length_sampler.setNextSample( event_queue_length );
-      double arrival_rate = static_cast<double>( event_queue_arrival_count ) / elapsed_ms;
-      event_queue_arrival_count = 0;
-      arrival_rate_sampler.setNextSample( arrival_rate );
+      // Timer
+      void fire()
+      {        
+        Time elapsed_time( Time() - last_fire_time );
 
-      if ( elapsed_ms < 1000 )
-        return NULL;
-      else
-      {
-        StageStatsEvent* stage_stats_ev = new StageStatsEvent( get_event_handler().get_type_name() );
+        double arrival_rate_s = static_cast<double>( stage->event_queue_arrival_count ) / elapsed_time.as_unix_time_s();
+        stage->event_queue_arrival_count = 0;
+        stage->arrival_rate_rrd->append( arrival_rate_s );
 
-        stage_stats_ev->queue_length_samples_count = queue_length_sampler.getSamplesCount();
-        stage_stats_ev->queue_length_statistics = queue_length_sampler.getStatistics();
-        stage_stats_ev->event_queueing_time_statistics = event_queueing_time_sampler.getStatistics();
-        stage_stats_ev->event_processing_time_statistics = event_processing_time_sampler.getStatistics();
+        double service_rate_s = 1000.0 / static_cast<uint64_t>( stage->event_processing_time_sampler.get_percentile( 0.9 ) );
+        stage->event_processing_time_sampler.clear();
+        stage->service_rate_rrd->append( service_rate_s );
 
-        stage_stats_ev->arrival_rate_s = arrival_rate_sampler.getStatistics().ninetieth_percentile * 1000.0;
-        stage_stats_ev->service_rate_s = 1000.0 / static_cast<uint64_t>( stage_stats_ev->event_processing_time_statistics.ninetieth_percentile );
-        stage_stats_ev->rho = rho = ( stage_stats_ev->service_rate_s > 0 ) ? stage_stats_ev->arrival_rate_s / stage_stats_ev->service_rate_s : 0;
-
-        return stage_stats_ev;
+        last_fire_time = Time();
       }
-    }
-    */
+
+    private:
+      auto_Object< StageImpl<EventHandlerType, EventQueueType, LockType> > stage;
+
+      Time last_fire_time;
+    };
   };
 
 
@@ -805,56 +804,6 @@ namespace YIELD
   private:
     std::vector<SEDAStageGroupThread*> threads;
     void startThreads( auto_Stage stage, int16_t thread_count );
-  };
-
-
-  class TimerEventQueue : public EventQueue, private NonBlockingFiniteQueue<Event*, 2048>
-  {
-  public:
-    class TimerEvent : public Event
-    {
-    public:
-      TimerEvent( const Time& timeout, const Time& period, YIELD::auto_Object<> context = NULL )
-        : context( context ), 
-          fire_time( Time() + timeout ), 
-          timeout( timeout ), period( period )
-      { }
-
-      YIELD::auto_Object<> get_context() const { return context; }
-      const Time& get_fire_time() const { return fire_time; }
-      const Time& get_period() const { return period; }
-      const Time& get_timeout() const { return timeout; }
-
-      // Object
-      YIELD_OBJECT_PROTOTYPES( TimerEvent, 218 );    
-
-    private:
-      ~TimerEvent() { }
-
-      YIELD::auto_Object<> context;
-      Time fire_time, timeout, period;
-    };
-
-    
-    TimerEventQueue();
-    virtual ~TimerEventQueue();
-
-    uint64_t getNSUntilNextTimer();
-
-    YIELD::auto_Object<TimerEvent> timer_create( const Time& timeout, YIELD::auto_Object<> context = NULL ) { return timer_create( timeout, Time( static_cast<uint64_t>( 0 ) ), context ); }
-    YIELD::auto_Object<TimerEvent> timer_create( const Time& timeout, const Time& period, YIELD::auto_Object<> context = NULL );
-
-    // EventQueue
-    virtual bool enqueue( Event& );
-    virtual Event* dequeue() { return dequeue( static_cast<uint64_t>( -1 ) ); }
-    virtual Event* dequeue( uint64_t timeout_ns );
-    virtual Event* try_dequeue();
-
-  private:
-    std::vector<TimerEvent*> timers;
-
-
-    static bool compareTimerEvents( const TimerEvent*, const TimerEvent* );
   };
 };
 

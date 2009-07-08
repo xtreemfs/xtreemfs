@@ -70,7 +70,7 @@ namespace org
 
         // YIELD::Struct
         void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeUint32( "checksum", 0, checksum ); marshaller.writeBoolean( "invalid_checksum_on_osd", 0, invalid_checksum_on_osd ); marshaller.writeUint32( "zero_padding", 0, zero_padding ); marshaller.writeBuffer( "data", 0, data ); }
-        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { checksum = unmarshaller.readUint32( "checksum", 0 ); invalid_checksum_on_osd = unmarshaller.readBoolean( "invalid_checksum_on_osd", 0 ); zero_padding = unmarshaller.readUint32( "zero_padding", 0 ); data = unmarshaller.readBuffer( "data", 0, data ); }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { checksum = unmarshaller.readUint32( "checksum", 0 ); invalid_checksum_on_osd = unmarshaller.readBoolean( "invalid_checksum_on_osd", 0 ); zero_padding = unmarshaller.readUint32( "zero_padding", 0 ); unmarshaller.readBuffer( "data", 0, data ); }
 
       protected:
         uint32_t checksum;
@@ -100,7 +100,7 @@ namespace org
 
         // YIELD::Struct
         void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeBuffer( "object_list", 0, object_list ); marshaller.writeUint32( "object_list_type", 0, object_list_type ); marshaller.writeBoolean( "is_complete", 0, is_complete ); }
-        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { object_list = unmarshaller.readBuffer( "object_list", 0, object_list ); object_list_type = unmarshaller.readUint32( "object_list_type", 0 ); is_complete = unmarshaller.readBoolean( "is_complete", 0 ); }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readBuffer( "object_list", 0, object_list ); object_list_type = unmarshaller.readUint32( "object_list_type", 0 ); is_complete = unmarshaller.readBoolean( "is_complete", 0 ); }
 
       protected:
         ::YIELD::auto_Buffer object_list;

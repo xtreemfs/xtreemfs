@@ -1,4 +1,4 @@
-// Revision: 1607
+// Revision: 1624
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -415,6 +415,12 @@ auto_File File::open( const Path& path, uint32_t flags, mode_t mode, uint32_t at
     return new File( fd );
 #endif
   return NULL;
+}
+ssize_t File::read( auto_Buffer buffer )
+{
+  ssize_t read_ret = read( static_cast<void*>( *buffer ), buffer->capacity() );
+  buffer->put( NULL, read_ret );
+  return read_ret;
 }
 ssize_t File::read( void* buffer, size_t buffer_len, uint64_t offset )
 {
@@ -1378,6 +1384,128 @@ void ProcessorSet::set( uint16_t processor_i )
 }
 
 
+// rrd.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+RRD::Record::Record( double value )
+  : value( value )
+{ }
+RRD::Record::Record( const Time& time, double value )
+  : time( time ), value( value )
+{ }
+void RRD::Record::marshal( Marshaller& marshaller )
+{
+  marshaller.writeUint64( "time", 0, time );
+  marshaller.writeDouble( "value", 0, value );
+}
+void RRD::Record::unmarshal( Unmarshaller& unmarshaller )
+{
+  time = unmarshaller.readUint64( "time", 0 );
+  value = unmarshaller.readDouble( "time", 0 );
+}
+RRD::RecordSet::~RecordSet()
+{
+  for ( iterator record_i = begin(); record_i != end(); record_i++ )
+    Object::decRef( *record_i );
+}
+RRD::RRD( const Path& base_dir_path )
+  : base_dir_path( base_dir_path )
+{
+  Path file_stem( base_dir_path.split().second );
+  current_file_path = base_dir_path + ( static_cast<const std::string>( file_stem ) + ".rrd" );
+}
+RRD::~RRD()
+{ }
+void RRD::append( double value )
+{
+  XDRMarshaller xdr_marshaller;
+  Record( value ).marshal( xdr_marshaller );
+  auto_File current_file( File::open( current_file_path, O_CREAT|O_WRONLY|O_APPEND ) );
+  if ( current_file != NULL )
+    current_file->write( xdr_marshaller.get_buffer() );
+}
+auto_Object<RRD> RRD::creat( const Path& base_dir_path )
+{
+  Volume().rmtree( base_dir_path );
+  if ( Volume().mktree( base_dir_path ) )
+    return new RRD( base_dir_path );
+  else
+    return NULL;
+}
+void RRD::fetch_all( RecordSet& out_records )
+{
+  auto_File current_file( File::open( current_file_path ) );
+  if ( current_file != NULL )
+  {
+    for ( ;; )
+    {
+      StackBuffer<16> xdr_buffer;
+      if ( current_file->read( xdr_buffer.incRef() ) == 16 )
+      {
+        XDRUnmarshaller xdr_unmarshaller( xdr_buffer.incRef() );
+        Record* record = new Record( static_cast<uint64_t>( 0 ), 0 );
+        record->unmarshal( xdr_unmarshaller );
+        out_records.push_back( record );
+      }
+      else
+        break;
+    }
+  }
+}
+void RRD::fetch_from( const Time& start_time, RecordSet& out_records )
+{
+  RecordSet all_records;
+  fetch_all( all_records );
+  for ( RecordSet::iterator record_i = all_records.begin(); record_i != all_records.end(); )
+  {
+    if ( ( *record_i )->get_time() >= start_time )
+    {
+      out_records.push_back( *record_i );
+      record_i = all_records.erase( record_i );
+    }
+    else
+      ++record_i;
+  }
+}
+void RRD::fetch_range( const Time& start_time, const Time& end_time, RecordSet& out_records )
+{
+  RecordSet all_records;
+  fetch_all( all_records );
+  for ( RecordSet::iterator record_i = all_records.begin(); record_i != all_records.end(); )
+  {
+    if ( ( *record_i )->get_time() >= start_time && ( *record_i )->get_time() <= end_time )
+    {
+      out_records.push_back( *record_i );
+      record_i = all_records.erase( record_i );
+    }
+    else
+      ++record_i;
+  }
+}
+void RRD::fetch_until( const Time& end_time, RecordSet& out_records )
+{
+  RecordSet all_records;
+  fetch_all( all_records );
+  for ( RecordSet::iterator record_i = all_records.begin(); record_i != all_records.end(); )
+  {
+    if ( ( *record_i )->get_time() <= end_time )
+    {
+      out_records.push_back( *record_i );
+      record_i = all_records.erase( record_i );
+    }
+    else
+      ++record_i;
+  }
+}
+auto_Object<RRD> RRD::open( const Path& base_dir_path )
+{
+  if ( Volume().isdir( base_dir_path ) )
+    return new RRD( base_dir_path );
+  else
+    return NULL;
+}
+
+
 // shared_library.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -2084,6 +2212,89 @@ Time::operator std::string() const
 }
 
 
+// timer_queue.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#include <queue>
+#include <utility>
+namespace YIELD
+{
+  class TimerQueueThread : public Thread
+  {
+  public:
+    TimerQueueThread()
+    {
+      should_run = true;
+    }
+    void enqueueTimer( Timer* timer )
+    {
+      new_timers_queue.enqueue( timer );
+      new_timers_queue_signal.release();
+    }
+    void stop()
+    {
+      should_run = false;
+      new_timers_queue_signal.release();
+    }
+    // Thread
+    void run()
+    {
+      Thread::set_name( "TimerQueueThread" );
+      while ( should_run )
+      {
+        Timer* new_timer = new_timers_queue.dequeue();
+        if ( new_timer != NULL )
+          timers.push( std::make_pair( Time() + new_timer->get_timeout(), new_timer ) );
+        if ( timers.empty() )
+          new_timers_queue_signal.acquire();
+        else
+        {
+          while ( should_run && !timers.empty() && Time::getCurrentUnixTimeNS() >= timers.top().first )
+          {
+            Timer* timer = timers.top().second;
+					  timers.pop();
+            timer->fire();
+            if ( timer->get_period() != 0 )
+              timers.push( std::make_pair( Time() + timer->get_period(), timer ) );
+            else
+              Object::decRef( *timer );
+          }
+          if ( should_run )
+          {
+            if ( !timers.empty() )
+            {
+              int64_t timeout_ns = timers.top().first - Time::getCurrentUnixTimeNS();
+              new_timers_queue_signal.timed_acquire( timeout_ns );
+            }
+          }
+          else
+            break;
+        }
+      }
+    }
+  private:
+    NonBlockingFiniteQueue<Timer*, 16> new_timers_queue;
+    Mutex new_timers_queue_signal;
+    bool should_run;
+    std::priority_queue< std::pair<uint64_t, Timer*>, std::vector< std::pair<uint64_t, Timer*> >, std::greater< std::pair<uint64_t, Timer*> > > timers;
+  };
+};
+TimerQueue::TimerQueue()
+{
+  thread = new TimerQueueThread();
+  thread->start();
+}
+TimerQueue::~TimerQueue()
+{
+  ( ( TimerQueueThread* )thread )->stop();
+  delete thread;
+}
+void TimerQueue::addTimer( auto_Object<Timer> timer )
+{
+  ( ( TimerQueueThread* )thread )->enqueueTimer( timer.release() );
+}
+
+
 // volume.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -2178,8 +2389,28 @@ bool Volume::exists( const Path& path )
 #ifdef _WIN32
   return GetFileAttributesW( path ) != INVALID_FILE_ATTRIBUTES;
 #else
-  struct stat temp_stat;
-  return ::stat( path, &temp_stat ) == 0;
+  struct stat stbuf;
+  return ::stat( path, &stbuf ) == 0;
+#endif
+}
+bool Volume::isdir( const Path& path )
+{
+#ifdef _WIN32
+  DWORD dwFileAttributes = GetFileAttributesW( path );
+  return dwFileAttributes != INVALID_FILE_ATTRIBUTES && ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) == FILE_ATTRIBUTE_DIRECTORY;
+#else
+  struct stat stbuf;
+  return ::stat( path, &stbuf ) == 0 && S_ISDIR( stbuf.st_mode );
+#endif
+}
+bool Volume::isfile( const Path& path )
+{
+#ifdef _WIN32
+  DWORD dwFileAttributes = GetFileAttributesW( path );
+  return dwFileAttributes != INVALID_FILE_ATTRIBUTES && ( dwFileAttributes & FILE_ATTRIBUTE_NORMAL ) == FILE_ATTRIBUTE_NORMAL;
+#else
+  struct stat stbuf;
+  return ::stat( path, &stbuf ) == 0 && S_ISREG( stbuf.st_mode );
 #endif
 }
 YIELD::auto_Object<YIELD::Stat> Volume::getattr( const Path& path )
@@ -2621,18 +2852,12 @@ bool XDRUnmarshaller::readBoolean( const char* key, uint32_t tag )
 {
   return readInt32( key, tag ) == 1;
 }
-YIELD::auto_Buffer XDRUnmarshaller::readBuffer( const char* key, uint32_t tag, auto_Buffer value )
+void XDRUnmarshaller::readBuffer( const char* key, uint32_t tag, auto_Buffer value )
 {
   size_t size = readInt32( key, tag );
-  if ( value == NULL )
-    return BufferedUnmarshaller::readBuffer( size );
-  else
-  {
-    if ( value->size() < size ) DebugBreak();
-    readBytes( *value, size );
-    value->put( NULL, size );
-    return value;
-  }
+  if ( value->size() < size ) DebugBreak();
+  readBytes( *value, size );
+  value->put( NULL, size );
 }
 double XDRUnmarshaller::readDouble( const char*, uint32_t )
 {

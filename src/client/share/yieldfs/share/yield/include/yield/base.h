@@ -392,7 +392,7 @@ namespace YIELD
     virtual ~Unmarshaller() { }
 
     virtual bool readBoolean( const char* key, uint32_t tag ) = 0;
-    virtual auto_Buffer readBuffer( const char* key, uint32_t tag, auto_Buffer value ) = 0;
+    virtual void readBuffer( const char* key, uint32_t tag, auto_Buffer value ) = 0;
     virtual double readDouble( const char* key, uint32_t tag ) = 0;
     virtual float readFloat( const char* key, uint32_t tag ) { return static_cast<float>( readDouble( key, tag ) ); }
     virtual int8_t readInt8( const char* key, uint32_t tag ) { return static_cast<int8_t>( readInt16( key, tag ) ); }
@@ -411,7 +411,7 @@ namespace YIELD
 
 #define YIELD_UNMARSHALLER_PROTOTYPES \
   virtual bool readBoolean( const char* key, uint32_t tag ); \
-  virtual auto_Buffer readBuffer( const char* key, uint32_t tag, auto_Buffer value ); \
+  virtual void readBuffer( const char* key, uint32_t tag, auto_Buffer value ); \
   virtual double readDouble( const char* key, uint32_t tag ); \
   virtual int64_t readInt64( const char* key, uint32_t tag ); \
   virtual void readMap( const char* key, uint32_t tag, YIELD::Map& value ); \
@@ -452,7 +452,6 @@ namespace YIELD
     { }
 
     void readBytes( void*, size_t );
-    YIELD::auto_Buffer readBuffer( size_t size );
 
   private:
     YIELD::auto_Buffer source_buffer;

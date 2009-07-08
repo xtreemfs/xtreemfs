@@ -724,6 +724,7 @@ namespace YIELD
 #else
     operator int() const { return fd; }
 #endif    
+    virtual ssize_t read( auto_Buffer buffer ); // Reads from the current file pointer
     virtual ssize_t read( void* buffer, size_t buffer_len ); // Reads from the current file pointer
     virtual bool seek( uint64_t offset ); // Seeks from the beginning of the file
     virtual bool seek( uint64_t offset, unsigned char whence );
@@ -1948,12 +1949,58 @@ namespace YIELD
   };
 
 
-  struct SamplerStatistics
+  class RRD : public Object
   {
-    double min, max;
-    double median, mean;
-    double ninetieth_percentile;
+  public: 
+    class Record : public Object
+    {
+    public:
+      Record( double value );
+      Record( const Time& time, double value );
+
+      const Time& get_time() const { return time; }
+      double get_value() const { return value; }
+      operator double() const { return value; }
+
+      // Object
+      YIELD_OBJECT_PROTOTYPES( RRD::Record, 0 );
+      void marshal( Marshaller& marshaller );
+      void unmarshal( Unmarshaller& unmarshaller );
+
+    private:
+      Time time;
+      double value;
+    };
+
+    
+    class RecordSet : public std::vector<Record*>
+    {
+    public:
+      ~RecordSet();
+    };
+
+
+    static auto_Object<RRD> creat( const Path& base_dir_path );
+    static auto_Object<RRD> open( const Path& base_dir_path );
+
+    void append( double value );
+    void fetch_all( RecordSet& out_records );
+    void fetch_from( const Time& start_time, RecordSet& out_records );
+    void fetch_range( const Time& start_time, const Time& end_time, RecordSet& out_records );
+    void fetch_until( const Time& end_time, RecordSet& out_records );
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( RRD, 0 );
+
+  private:
+    RRD( const Path& base_dir_path );
+    ~RRD();
+
+    Path base_dir_path, current_file_path;
   };
+
+  typedef auto_Object<RRD> auto_RRD;
+
 
   template <typename SampleType, size_t ArraySize, class LockType = NOPLock>
   class Sampler
@@ -1966,9 +2013,89 @@ namespace YIELD
       min = static_cast<SampleType>( ULONG_MAX ); max = 0; total = 0;
     }
 
+    void clear()
+    {
+      lock.acquire();
+      samples_count = 0;
+      lock.release();
+    }
+
+    SampleType get_max() const 
+    { 
+      return max; 
+    }
+
+    SampleType get_mean()
+    {
+      lock.acquire();
+      SampleType mean;
+
+      if ( samples_count > 0 )
+        mean = static_cast<SampleType>( static_cast<double>( total ) / static_cast<double>( samples_count ) );
+      else
+        mean = 0;
+
+      lock.release();
+      return mean;
+    }
+ 
+    SampleType get_median()
+    {
+      lock.acquire();
+      SampleType median;
+
+      if ( samples_count > 0 )
+      {
+        std::sort( samples, samples + samples_count );
+        size_t sc_div_2 = samples_count / 2;
+        if ( samples_count % 2 == 1 )
+          median = samples[sc_div_2];
+        else
+        {
+          SampleType median_temp = samples[sc_div_2] + samples[sc_div_2-1];
+          if ( median_temp > 0 )
+            median = static_cast<SampleType>( static_cast<double>( median_temp ) / 2.0 );
+          else
+            median = 0;
+        }
+      }
+      else
+        median = 0;
+
+      lock.release();
+      return median;
+    }
+
+    SampleType get_min() const 
+    { 
+      return min; 
+    }
+
+    SampleType get_percentile( double percentile )
+    {
+      lock.acquire();
+      SampleType ninetieth_percentile;
+
+      if ( samples_count > 0 )
+      {
+        std::sort( samples, samples + samples_count );
+        ninetieth_percentile = samples[static_cast<size_t>( percentile * static_cast<double>( samples_count ) )];
+      }
+      else
+        ninetieth_percentile = 0;
+
+      lock.release();
+      return ninetieth_percentile;
+    }
+
+    uint32_t get_samples_count() const
+    { 
+      return samples_count; 
+    }
+
     void setNextSample( SampleType sample )
     {
-      if ( samples_lock.try_acquire() )
+      if ( lock.try_acquire() )
       {
         samples[samples_pos] = sample;
         samples_pos = ( samples_pos + 1 ) % ArraySize;
@@ -1980,58 +2107,14 @@ namespace YIELD
           max = sample;
         total += sample;
 
-        samples_lock.release();
+        lock.release();
       }
-    }
-
-    uint32_t getSamplesCount()
-    {
-      return samples_count;
-    }
-
-    SamplerStatistics getStatistics()
-    {
-      samples_lock.acquire();
-
-      SamplerStatistics stats;
-
-      if ( samples_count > 1 )
-      {
-        stats.min = static_cast<double>( min );
-        stats.max = static_cast<double>( max );
-        stats.mean = static_cast<double>( total ) / static_cast<double>( samples_count );
-
-        // Sort for the median and ninetieth percentile
-        std::sort( samples, samples + samples_count );
-
-        stats.ninetieth_percentile = static_cast<double>( samples[static_cast<size_t>( 0.9 * static_cast<double>( samples_count ) )] );
-
-        size_t sc_div_2 = samples_count / 2;
-        if ( samples_count % 2 == 1 )
-          stats.median = static_cast<double>( samples[sc_div_2] );
-        else
-        {
-          SampleType median_temp = samples[sc_div_2] + samples[sc_div_2-1];
-          if ( median_temp > 0 )
-            stats.median = median_temp / 2.0;
-          else
-            stats.median = 0;
-        }
-      }
-      else if ( samples_count == 1 )
-        stats.min = stats.max = stats.mean = stats.median = stats.ninetieth_percentile = static_cast<double>( samples[0] );
-      else
-        memset( &stats, 0, sizeof( stats ) );
-
-      samples_lock.release();
-
-      return stats;
     }
 
   protected:
     SampleType samples[ArraySize+1], min, max; SampleType total;
     uint32_t samples_pos, samples_count;
-    LockType samples_lock;
+    LockType lock;
   };
 
 
@@ -2264,6 +2347,7 @@ namespace YIELD
 
 
     Thread();
+    virtual ~Thread();
 
     unsigned long get_id() const { return id; }
     void set_name( const char* name ) { setThreadName( get_id(), name ); }
@@ -2275,9 +2359,6 @@ namespace YIELD
 
     // Object
     YIELD_OBJECT_PROTOTYPES( Thread, 14 );
-
-  protected:
-    virtual ~Thread();
 
   private:
     unsigned long id;
@@ -2293,6 +2374,47 @@ namespace YIELD
 #else
     static void* thread_stub( void* );
 #endif
+  };
+
+
+  class Timer : public Object
+  {
+  public:
+    Timer( const Time& timeout )
+      : timeout( timeout ), period( static_cast<uint64_t>( 0 ) )
+    { }
+
+    Timer( const Time& timeout, const Time& period )
+      : timeout( timeout ), period( period )
+    { }
+
+    virtual ~Timer()
+    { }
+    
+    const Time& get_period() const { return period; }
+    const Time& get_timeout() const { return timeout; }
+    virtual void fire() = 0;
+    void set_period( const Time& period ) { this->period = period; }
+    void set_timeout( const Time& timeout ) { this->timeout = timeout; }
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( Timer, 0 );
+
+  private:
+    Time period, timeout;
+  };
+
+
+  class TimerQueue
+  {
+  public:
+    TimerQueue();
+    ~TimerQueue();
+
+    void addTimer( auto_Object<Timer> timer );
+
+  private:
+    Thread* thread;
   };
 
 
@@ -2322,12 +2444,16 @@ namespace YIELD
     };
 
 
+    virtual ~Volume() { }
+
     YIELD_VOLUME_PROTOTYPES;
 
     // Convenience methods that don't make any system calls, so subclasses don't have to re-implement them
     virtual auto_File creat( const Path& path ) { return creat( path, File::DEFAULT_MODE ); }
     virtual auto_File creat( const Path& path, mode_t mode ) { return open( path, O_CREAT|O_WRONLY|O_TRUNC, mode ); }
     virtual bool exists( const Path& path );
+    virtual bool isdir( const Path& path );
+    virtual bool isfile( const Path& path );
     virtual bool listdir( const Path& path, listdirCallback& callback ) { return listdir( path, Path(), callback ); }
     virtual bool listdir( const Path& path, const Path& match_file_name_prefix, listdirCallback& callback );
     virtual bool listdir( const Path& path, std::vector<Path>& out_names ) { return listdir( path, Path(), out_names ); }
@@ -2348,9 +2474,6 @@ namespace YIELD
 
     // Object
     YIELD_OBJECT_PROTOTYPES( Volume, 15 );
-
-  protected:
-    virtual ~Volume() { }
   };
 
   typedef YIELD::auto_Object<Volume> auto_Volume;

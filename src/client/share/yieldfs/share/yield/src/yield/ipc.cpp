@@ -1,4 +1,4 @@
-// Revision: 1607
+// Revision: 1624
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -98,14 +98,13 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
         Peer<ProtocolResponseType, ProtocolRequestType>::handleEvent( ev );
     }
     break;
-    case YIELD_OBJECT_TAG( FDEventQueue::TimerEvent ):
-    {
-      DebugBreak();
+//    case YIELD_OBJECT_TAG( FDEventQueue::TimerEvent ):
+//    {
       //FDEventQueue::TimerEvent& timer_event = static_cast<FDEventQueue::TimerEvent&>( ev );
       //protocol_request = static_cast<ProtocolRequestType*>( timer_event.get_context().release() );
       //Object::decRef( ev );
-    }
-    break;
+//    }
+//    break;
     case YIELD_OBJECT_TAG( ProtocolRequestType ):
     {
       if ( static_cast<ProtocolRequestType&>( ev ).get_connection() == NULL )
@@ -450,14 +449,11 @@ bool FDEventQueue::attach( int fd, YIELD::auto_Object<> context, bool enable_rea
 }
 Event* FDEventQueue::dequeue( uint64_t timeout_ns )
 {
-  Event* ev = TimerEventQueue::try_dequeue();
+  Event* ev = NonBlockingFiniteQueue<Event*, 256>::try_dequeue();
   if ( ev != NULL )
     return ev;
   if ( active_fds <= 0 )
   {
-    uint64_t ns_until_next_timer = TimerEventQueue::getNSUntilNextTimer();
-    if ( ns_until_next_timer < timeout_ns )
-      timeout_ns = ns_until_next_timer;
 #if defined(_WIN32)
     memcpy_s( read_fds_copy, sizeof( *read_fds_copy ), read_fds, sizeof( *read_fds ) );
     memcpy_s( write_fds_copy, sizeof( *write_fds_copy ), write_fds, sizeof( *write_fds ) );
@@ -660,7 +656,7 @@ void FDEventQueue::detach( int fd )
 }
 bool FDEventQueue::enqueue( Event& ev )
 {
-  bool result = TimerEventQueue::enqueue( ev );
+  bool result = NonBlockingFiniteQueue<Event*, 256>::enqueue( &ev );
   eventfd_pipe->signal();
   return result;
 }
@@ -1295,7 +1291,7 @@ bool IOCompletionPort::attach( int fd )
 }
 Event* IOCompletionPort::dequeue( uint64_t timeout_ns )
 {
-  Event* ev = TimerEventQueue::try_dequeue();
+  Event* ev = NonBlockingFiniteQueue<Event*, 256>::try_dequeue();
   if ( ev != NULL )
     return ev;
 #ifdef _WIN32
@@ -1342,7 +1338,7 @@ Event* IOCompletionPort::dequeue( uint64_t timeout_ns )
 }
 bool IOCompletionPort::enqueue( Event& ev )
 {
-  bool result = TimerEventQueue::enqueue( ev );
+  bool result = NonBlockingFiniteQueue<Event*, 256>::enqueue( &ev );
 #ifdef _WIN32
   PostQueuedCompletionStatus( hIoCompletionPort, 0, 0, NULL );
 #endif
@@ -1386,7 +1382,7 @@ void JSONMarshaller::writeBoolean( const char* key, uint32_t, bool value )
   yajl_gen_bool( writer, ( int )value );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeBuffer( const char* key, uint32_t, auto_Buffer )
+void JSONMarshaller::writeBuffer( const char*, uint32_t, auto_Buffer )
 {
   DebugBreak();
 }
@@ -1690,10 +1686,9 @@ bool JSONUnmarshaller::readBoolean( const char* key, uint32_t )
   else
     return false;
 }
-auto_Buffer JSONUnmarshaller::readBuffer( const char*, uint32_t, auto_Buffer value )
+void JSONUnmarshaller::readBuffer( const char*, uint32_t, auto_Buffer value )
 {
   DebugBreak();
-  return value;
 }
 double JSONUnmarshaller::readDouble( const char* key, uint32_t )
 {
@@ -1982,76 +1977,111 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize( auto_Buffer buffer )
   {
     case DESERIALIZING_RECORD_FRAGMENT_MARKER:
     {
-      uint32_t record_fragment_marker = 0;
-      size_t record_fragment_marker_filled = buffer->get( &record_fragment_marker, sizeof( record_fragment_marker ) );
-      if ( record_fragment_marker_filled == sizeof( record_fragment_marker ) )
-      {
-#ifdef __MACH__
-        record_fragment_marker = ntohl( record_fragment_marker );
-#else
-        record_fragment_marker = Machine::ntohl( record_fragment_marker );
-#endif
-        bool last_record_fragment;
-        if ( record_fragment_marker & ( 1 << 31UL ) )
-        {
-          last_record_fragment = true;
-          expected_record_fragment_length = record_fragment_marker ^ ( 1 << 31 );
-        }
-        else
-        {
-          last_record_fragment = false;
-          expected_record_fragment_length = record_fragment_marker;
-        }
-        if ( expected_record_fragment_length > 32 * 1024 * 1024 ) DebugBreak();
+      ssize_t deserialize_ret = deserializeRecordFragmentMarker( buffer );
+      if ( deserialize_ret == 0 )
         deserialize_state = DESERIALIZING_RECORD_FRAGMENT;
-      }
-      else if ( record_fragment_marker_filled == 0 )
-        return sizeof( record_fragment_marker );
       else
-      {
-        DebugBreak();
-        return sizeof( record_fragment_marker );
-      }
+        return deserialize_ret;
     }
     // Drop down
     case DESERIALIZING_RECORD_FRAGMENT:
     {
-      received_record_fragment_length = buffer->size();
-      if ( received_record_fragment_length == expected_record_fragment_length ) // Common case
-      {
-        XDRUnmarshaller xdr_unmarshaller( buffer );
-        static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
+      ssize_t deserialize_ret = deserializeRecordFragmentMarker( buffer );
+      if ( deserialize_ret == 0 )
         deserialize_state = DESERIALIZE_DONE;
-        return 0;
-      }
-      else
+      else if ( deserialize_ret > 0 )
       {
         deserialize_state = DESERIALIZING_LONG_RECORD_FRAGMENT;
-        current_record_fragment_buffer = first_record_fragment_buffer = buffer;
-        return expected_record_fragment_length - received_record_fragment_length;
+        return deserialize_ret;
       }
+      else
+        return deserialize_ret;
     }
     break;
     case DESERIALIZING_LONG_RECORD_FRAGMENT:
     {
-      current_record_fragment_buffer->set_next_buffer( buffer );
-      current_record_fragment_buffer = buffer;
-      received_record_fragment_length += buffer->size();
-      if ( received_record_fragment_length == expected_record_fragment_length )
-      {
-        XDRUnmarshaller xdr_unmarshaller( first_record_fragment_buffer );
-        static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
+      ssize_t deserialize_ret = deserializeRecordFragmentMarker( buffer );
+      if ( deserialize_ret == 0 )
         deserialize_state = DESERIALIZE_DONE;
-        return 0;
-      }
       else
-        return expected_record_fragment_length - received_record_fragment_length;
+        return deserialize_ret;
     }
     break;
     case DESERIALIZE_DONE: return 0;
   }
   DebugBreak();
   return -1;
+}
+template <class ONCRPCMessageType>
+ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker( auto_Buffer buffer )
+{
+  uint32_t record_fragment_marker = 0;
+  size_t record_fragment_marker_filled = buffer->get( &record_fragment_marker, sizeof( record_fragment_marker ) );
+  if ( record_fragment_marker_filled == sizeof( record_fragment_marker ) )
+  {
+#ifdef __MACH__
+    record_fragment_marker = ntohl( record_fragment_marker );
+#else
+    record_fragment_marker = Machine::ntohl( record_fragment_marker );
+#endif
+    bool last_record_fragment;
+    if ( record_fragment_marker & ( 1 << 31UL ) )
+    {
+      last_record_fragment = true;
+      expected_record_fragment_length = record_fragment_marker ^ ( 1 << 31 );
+    }
+    else
+    {
+      last_record_fragment = false;
+      expected_record_fragment_length = record_fragment_marker;
+    }
+    if ( expected_record_fragment_length > 32 * 1024 * 1024 ) DebugBreak();
+    return 0;
+  }
+  else if ( record_fragment_marker_filled == 0 )
+    return sizeof( record_fragment_marker );
+  else
+  {
+    DebugBreak();
+    return sizeof( record_fragment_marker );
+  }
+}
+template <class ONCRPCMessageType>
+ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment( auto_Buffer buffer )
+{
+  received_record_fragment_length = buffer->size();
+  if ( received_record_fragment_length == expected_record_fragment_length ) // Common case
+  {
+    XDRUnmarshaller xdr_unmarshaller( buffer );
+    static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
+    return 0;
+  }
+  else
+  {
+    current_record_fragment_buffer = first_record_fragment_buffer = buffer;
+    return expected_record_fragment_length - received_record_fragment_length;
+  }
+}
+template <class ONCRPCMessageType>
+ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment( auto_Buffer buffer )
+{
+  current_record_fragment_buffer->set_next_buffer( buffer );
+  current_record_fragment_buffer = buffer;
+  received_record_fragment_length += buffer->size();
+  if ( received_record_fragment_length == expected_record_fragment_length )
+  {
+    XDRUnmarshaller xdr_unmarshaller( first_record_fragment_buffer );
+    static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
+    deserialize_state = DESERIALIZE_DONE;
+    return 0;
+  }
+  else
+    return expected_record_fragment_length - received_record_fragment_length;
+}
+template <class ONCRPCMessageType>
+void ONCRPCMessage<ONCRPCMessageType>::marshal( Marshaller& marshaller )
+{
+  marshaller.writeUint32( "xid", 0, xid );
 }
 template <class ONCRPCMessageType>
 auto_Buffer ONCRPCMessage<ONCRPCMessageType>::serialize()
@@ -2078,6 +2108,11 @@ auto_Buffer ONCRPCMessage<ONCRPCMessageType>::serialize()
   record_fragment_length_buffer->set_next_buffer( xdr_buffer );
   return record_fragment_length_buffer;
 }
+template <class ONCRPCMessageType>
+void ONCRPCMessage<ONCRPCMessageType>::unmarshal( Unmarshaller& unmarshaller )
+{
+  xid = unmarshaller.readUint32( "xid", 0 );
+}
 template class ONCRPCMessage<ONCRPCRequest>;
 template class ONCRPCMessage<ONCRPCResponse>;
 
@@ -2085,25 +2120,41 @@ template class ONCRPCMessage<ONCRPCResponse>;
 // oncrpc_request.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-ONCRPCRequest::ONCRPCRequest( auto_Object<Connection> connection, auto_Object<Interface> _interface )
+ONCRPCRequest::ONCRPCRequest( auto_Object<Connection> connection, auto_Interface _interface )
   : ProtocolRequest( connection ), _interface( _interface )
 { }
-ONCRPCRequest::ONCRPCRequest( auto_Object<Interface> _interface, uint32_t prog, uint32_t proc, uint32_t vers, auto_Struct body )
+ONCRPCRequest::ONCRPCRequest( auto_Interface _interface, auto_Struct body )
+  : ONCRPCMessage<ONCRPCRequest>( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
+    _interface( _interface )
+{
+  prog = 0x20000000 + _interface->get_tag();
+  proc = body->get_tag();
+  vers = _interface->get_tag();
+  credential_auth_flavor = AUTH_NONE;
+}
+ONCRPCRequest::ONCRPCRequest( auto_Interface _interface, uint32_t credential_auth_flavor, auto_Struct credential, auto_Struct body )
   : ONCRPCMessage<ONCRPCRequest>( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
     _interface( _interface ),
+    credential_auth_flavor( credential_auth_flavor ), credential( credential )
+{
+  prog = 0x20000000 + _interface->get_tag();
+  proc = body->get_tag();
+  vers = _interface->get_tag();
+}
+ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, auto_Struct body )
+  : ONCRPCMessage<ONCRPCRequest>( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
     prog( prog ), proc( proc ), vers( vers )
 {
   credential_auth_flavor = AUTH_NONE;
 }
-ONCRPCRequest::ONCRPCRequest( auto_Object<Interface> _interface, uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, auto_Object<> credential, auto_Struct body )
+ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, auto_Struct credential, auto_Struct body )
   : ONCRPCMessage<ONCRPCRequest>( static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
-    _interface( _interface ),
     prog( prog ), proc( proc ), vers( vers ),
     credential_auth_flavor( credential_auth_flavor ), credential( credential )
 { }
 void ONCRPCRequest::marshal( Marshaller& marshaller )
 {
-  marshaller.writeInt32( "xid", 0, xid );
+  ONCRPCMessage<ONCRPCRequest>::marshal( marshaller );
   marshaller.writeInt32( "msg_type", 0, 0 ); // MSG_CALL
   marshaller.writeInt32( "rpcvers", 0, 2 );
   marshaller.writeInt32( "prog", 0, prog );
@@ -2120,7 +2171,7 @@ void ONCRPCRequest::marshal( Marshaller& marshaller )
   }
   marshaller.writeInt32( "verf_auth_flavor", 0, AUTH_NONE );
   marshaller.writeInt32( "verf_auth_body_length", 0, 0 );
-  marshaller.writeStruct( "body", 0, static_cast<Struct&>( *body ) );
+  marshaller.writeStruct( "body", 0, *get_body() );
 }
 bool ONCRPCRequest::respond( Response& response )
 {
@@ -2154,7 +2205,7 @@ bool ONCRPCRequest::respond( Response& response )
 }
 void ONCRPCRequest::unmarshal( Unmarshaller& unmarshaller )
 {
-  xid = unmarshaller.readUint32( "xid", 0 );
+  ONCRPCMessage<ONCRPCRequest>::unmarshal( unmarshaller );
   int32_t msg_type = unmarshaller.readInt32( "msg_type", 0 );
   if ( msg_type == 0 ) // CALL
   {
@@ -2171,6 +2222,7 @@ void ONCRPCRequest::unmarshal( Unmarshaller& unmarshaller )
       uint32_t verf_auth_body_length = unmarshaller.readUint32( "credential_auth_body_length", 0 );
       if ( verf_auth_body_length > 0 )
         DebugBreak();
+      auto_Struct body( get_body() );
       if ( body != NULL )
         unmarshaller.readStruct( "body", 0, *body );
       else
@@ -2178,7 +2230,11 @@ void ONCRPCRequest::unmarshal( Unmarshaller& unmarshaller )
         if ( _interface != NULL )
         {
           body = _interface->createRequest( proc ).release();
-          unmarshaller.readStruct( "body", 0, *body );
+          if ( body != NULL )
+          {
+            unmarshaller.readStruct( "body", 0, *body );
+            set_body( body );
+          }
         }
       }
     }
@@ -2198,20 +2254,29 @@ ONCRPCResponse::ONCRPCResponse( uint32_t xid, auto_Struct body )
 { }
 void ONCRPCResponse::marshal( Marshaller& marshaller )
 {
-  marshaller.writeInt32( "xid", 0, xid );
+  ONCRPCMessage<ONCRPCResponse>::marshal( marshaller );
   marshaller.writeInt32( "msg_type", 0, 1 ); // MSG_REPLY
   marshaller.writeInt32( "reply_stat", 0, 0 ); // MSG_ACCEPTED
   marshaller.writeInt32( "verf_auth_flavor", 0, 0 );
   marshaller.writeInt32( "verf_authbody_length", 0, 0 );
-  if ( body == NULL || body->get_tag() != YIELD_OBJECT_TAG( ExceptionResponse ) )
-    marshaller.writeInt32( "accept_stat", 0, 0 ); // SUCCESS
+  auto_Struct body( get_body() );
+  if ( body != NULL )
+  {
+    if ( body->get_tag() != YIELD_OBJECT_TAG( ExceptionResponse ) )
+    {
+      marshaller.writeInt32( "accept_stat", 0, 0 ); // SUCCESS
+      marshaller.writeStruct( "body", 0, *body );
+    }
+    else
+      marshaller.writeInt32( "accept_stat", 0, 5 ); // SYSTEM_ERR
+  }
   else
     marshaller.writeInt32( "accept_stat", 0, 5 ); // SYSTEM_ERR
-  marshaller.writeStruct( "body", 0, *body );
 }
 void ONCRPCResponse::unmarshal( Unmarshaller& unmarshaller )
 {
-  xid = unmarshaller.readUint32( "xid", 0 );
+  ONCRPCMessage<ONCRPCResponse>::unmarshal( unmarshaller );
+  auto_Struct body;
   int32_t msg_type = unmarshaller.readInt32( "msg_type", 0 );
   if ( msg_type == 1 ) // REPLY
   {
@@ -2263,6 +2328,7 @@ void ONCRPCResponse::unmarshal( Unmarshaller& unmarshaller )
   }
   else
     body = new ExceptionResponse( "ONC-RPC exception: received unknown msg_type" );
+  set_body( body );
 }
 
 
@@ -2290,7 +2356,7 @@ namespace YIELD
   };
 };
 auto_ONCRPCServer ONCRPCServer::create( const URI& absolute_uri,
-                                                auto_Object<Interface> _interface,
+                                                auto_Interface _interface,
                                                 auto_Object<StageGroup> stage_group,
                                                 auto_Log log,
                                                 auto_SSLContext ssl_context )

@@ -221,6 +221,26 @@ void OSDProxyMux::handleEvent( YIELD::Event& ev )
 {
   switch ( ev.get_tag() )
   {
+    case YIELD_OBJECT_TAG( YIELD::ONCRPCRequest ):
+    {
+      YIELD::ONCRPCRequest& oncrpc_request = static_cast<YIELD::ONCRPCRequest&>( ev );
+      YIELD::auto_Struct body = oncrpc_request.get_body();
+
+      switch ( body->get_tag() )
+      {
+        case YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::readRequest ):
+        {
+          org::xtreemfs::interfaces::OSDInterface::readRequest* read_request = static_cast<org::xtreemfs::interfaces::OSDInterface::readRequest*>( body.get() );
+          YIELD::auto_Object<OSDProxy> osd_proxy = getTCPOSDProxy( read_request->get_file_credentials(), read_request->get_object_number() );
+          osd_proxy->send( ev );
+        }
+        return;
+      
+        default: DebugBreak(); return;
+      }      
+    }
+    break;
+
     case YIELD_OBJECT_TAG( OSDPingResponse ):
     {
       OSDPingResponse& ping_response = static_cast<OSDPingResponse&>( ev );
@@ -237,6 +257,7 @@ void OSDProxyMux::handleEvent( YIELD::Event& ev )
     }
     break;
 
+/*
     case YIELD_OBJECT_TAG( YIELD::FDEventQueue::TimerEvent ):
     {
       YIELD::auto_Object<OSDProxy> udp_osd_proxy = static_cast<OSDProxy*>( static_cast<YIELD::FDEventQueue::TimerEvent&>( ev ).get_context().release() );
@@ -244,6 +265,8 @@ void OSDProxyMux::handleEvent( YIELD::Event& ev )
       YIELD::Object::decRef( ev );
     }
     break;
+*/
+
 
     default:
     {

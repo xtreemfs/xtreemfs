@@ -23,6 +23,79 @@ using namespace org::xtreemfs::client;
 #endif
 
 
+namespace org
+{
+  namespace xtreemfs
+  {
+    namespace client
+    {
+      class FileReadBuffer : public YIELD::FixedBuffer
+      {
+      public:
+        FileReadBuffer( void* buf, size_t len )
+          : FixedBuffer( len )
+        {
+          iov.iov_base = buf;
+          iov.iov_len = len;
+        }
+      };
+
+      typedef YIELD::auto_Object<FileReadBuffer> auto_FileReadBuffer;
+
+
+      class FileReadONCRPCResponse : public YIELD::ONCRPCResponse
+      {
+      public:
+        FileReadONCRPCResponse( YIELD::auto_Object<YIELD::ONCRPCRequest> oncrpc_request, auto_FileReadBuffer buffer )
+          : YIELD::ONCRPCResponse( oncrpc_request, NULL ), buffer( buffer )
+        { }
+
+        ssize_t deserialize( YIELD::auto_Buffer buffer )
+        {
+          // deserialize the record fragment marker
+          // Read the size of an ONC-RPC response header into a separate buffer
+          // Read the first parts of ObjectData
+          // Read the rest into this->buffer
+          return -1;
+        }
+
+      private:
+        ~FileReadONCRPCResponse() { }
+
+        auto_FileReadBuffer buffer;
+      };
+
+
+      class FileReadONCRPCRequest : public YIELD::ONCRPCRequest
+      {
+      public:
+        FileReadONCRPCRequest( YIELD::auto_Interface osd_interface, YIELD::auto_Struct read_request, auto_FileReadBuffer buffer )
+          : ONCRPCRequest( osd_interface, read_request ), buffer( buffer )
+        { }
+
+        YIELD::auto_ONCRPCResponse createProtocolResponse() { return new FileReadONCRPCResponse( this->incRef(), buffer ); }
+
+      private:
+        auto_FileReadBuffer buffer;
+      };      
+
+
+      class FileWriteBuffer : public YIELD::FixedBuffer
+      {
+      public:
+        FileWriteBuffer( const void* buf, size_t len )
+          : FixedBuffer( len )
+        {
+          iov.iov_base = const_cast<void*>( buf );
+          iov.iov_len = len;
+        }
+      };
+    };
+  }
+};
+
+
+
 File::File( YIELD::auto_Object<Volume> parent_volume, YIELD::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
 : parent_volume( parent_volume ), mrc_proxy( mrc_proxy ), path( path ), file_credentials( file_credentials )
 { }
@@ -95,41 +168,54 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
   try
   {
     YIELD::auto_Log log = parent_volume->get_log();
-    char *rbuf_start = static_cast<char*>( rbuf ), *rbuf_p = static_cast<char*>( rbuf );
-#define RBUF_REMAINING ( size - static_cast<size_t>( rbuf_p - rbuf_start ) )
+    char *rbuf_start = static_cast<char*>( rbuf ), *rbuf_p = static_cast<char*>( rbuf ), *rbuf_end = static_cast<char*>( rbuf ) + size;
     uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;
 
-    for ( ;; )
+    YIELD::auto_Object< YIELD::OneSignalEventQueue<> > read_response_queue( new YIELD::OneSignalEventQueue<> );
+    size_t expected_read_response_count = 0;
+
+    while ( rbuf_p < rbuf_end )
     {      
       uint64_t object_number = offset / stripe_size;
       uint32_t object_offset = offset % stripe_size;
-      uint64_t object_size = RBUF_REMAINING;
+      size_t object_size = static_cast<uint64_t>( rbuf_end - rbuf_p );
       if ( object_offset + object_size > stripe_size )
         object_size = stripe_size - object_offset;
 
-#ifdef _DEBUG
-      log->getStream( YIELD::Log::LOG_INFO ) << 
-        "org::xtreemfs::client::File: reading " << object_size << 
-        " bytes from offset " << object_offset <<
-        " in object number " << object_number << 
-        " of file " << file_credentials.get_xcap().get_file_id() <<
-        ", file offset = " << offset <<
-        ", remaining buffer size = " << RBUF_REMAINING <<
-        ".";
-#endif
+//#ifdef _DEBUG
+//      log->getStream( YIELD::Log::LOG_INFO ) << 
+//        "org::xtreemfs::client::File: reading " << object_size << 
+//        " bytes from offset " << object_offset <<
+//        " in object number " << object_number << 
+//        " of file " << file_credentials.get_xcap().get_file_id() <<
+//        ", file offset = " << offset <<
+//        ", remaining buffer size = " << RBUF_REMAINING <<
+//        ".";
+//#endif
 
-      org::xtreemfs::interfaces::ObjectData object_data;
-      parent_volume->get_osd_proxy_mux()->read( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ), object_data );
-      YIELD::auto_Buffer data = object_data.get_data();
-      uint32_t zero_padding = object_data.get_zero_padding();
+      org::xtreemfs::interfaces::OSDInterface::readRequest* read_request = new org::xtreemfs::interfaces::OSDInterface::readRequest( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ) );
+      FileReadONCRPCRequest* file_read_oncrpc_request = new FileReadONCRPCRequest( parent_volume->get_osd_proxy_mux()->incRef(), read_request, new FileReadBuffer( rbuf_p, object_size ) );
+      file_read_oncrpc_request->set_response_target( read_response_queue->incRef() );
 
-#ifdef _DEBUG
-      log->getStream( YIELD::Log::LOG_INFO ) << 
-        "org::xtreemfs::client::File: read " << data->size() <<
-        " bytes from file " << file_credentials.get_xcap().get_file_id() <<
-        " with " << zero_padding << " bytes of zero padding.";
-#endif
+      parent_volume->get_osd_proxy_mux()->send( *file_read_oncrpc_request );
+      expected_read_response_count++;
 
+      rbuf_p += object_size;
+
+//#ifdef _DEBUG
+//      log->getStream( YIELD::Log::LOG_INFO ) << 
+//        "org::xtreemfs::client::File: read " << data->size() <<
+//        " bytes from file " << file_credentials.get_xcap().get_file_id() <<
+//        " with " << zero_padding << " bytes of zero padding.";
+//#endif
+    }
+
+    for ( size_t read_response_i = 0; read_response_i < expected_read_response_count; read_response_i++ )
+    {
+      FileReadONCRPCResponse& file_read_oncrpc_response = read_response_queue->dequeue_typed<FileReadONCRPCResponse>();
+    }
+
+/*
       if ( !data->empty() )
       {
         if ( data->size() <= RBUF_REMAINING )
@@ -164,7 +250,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 
       if ( data->size() < object_size || RBUF_REMAINING == 0 )
         break;
-    }
+*/
 
 #ifdef _DEBUG
     if ( static_cast<size_t>( rbuf_p - rbuf_start ) > size ) YIELD::DebugBreak();
@@ -230,11 +316,11 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
   try
   {
-    YIELD::auto_Object< YIELD::OneSignalEventQueue<> > write_response_queue( new YIELD::OneSignalEventQueue<> );
-
     const char* wbuf_p = static_cast<const char*>( buffer );
     uint64_t file_offset = offset, file_offset_max = offset + buffer_len;
     uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;
+
+    YIELD::auto_Object< YIELD::OneSignalEventQueue<> > write_response_queue( new YIELD::OneSignalEventQueue<> );
     size_t expected_write_response_count = 0;
 
     while ( file_offset < file_offset_max )
@@ -244,7 +330,7 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
       uint64_t object_size = file_offset_max - file_offset;
       if ( object_offset + object_size > stripe_size )
         object_size = stripe_size - object_offset;
-      org::xtreemfs::interfaces::ObjectData object_data( 0, false, 0, new YIELD::StringLiteralBuffer( wbuf_p, static_cast<uint32_t>( object_size ) ) );
+      org::xtreemfs::interfaces::ObjectData object_data( 0, false, 0, new FileWriteBuffer( wbuf_p, static_cast<uint32_t>( object_size ) ) );
       org::xtreemfs::interfaces::OSDInterface::writeRequest* write_request = new org::xtreemfs::interfaces::OSDInterface::writeRequest( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, 0, object_data );
 
       write_request->set_response_target( write_response_queue->incRef() );

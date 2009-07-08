@@ -1,4 +1,4 @@
-// Revision: 1607
+// Revision: 1624
 
 #include "yield/base.h"
 using namespace YIELD;
@@ -68,44 +68,6 @@ void BufferedMarshaller::write( YIELD::auto_Buffer buffer )
 // buffered_unmarshaller.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-namespace YIELD
-{
-  class PartialBuffer : public FixedBuffer
-  {
-  public:
-    PartialBuffer( YIELD::auto_Buffer underlying_buffer, size_t size )
-      : FixedBuffer( size ), underlying_buffer( underlying_buffer )
-    {
-      iov.iov_base = *underlying_buffer;
-      iov.iov_len = size;
-    }
-  private:
-    YIELD::auto_Buffer underlying_buffer;
-  };
-};
-YIELD::auto_Buffer BufferedUnmarshaller::readBuffer( size_t size )
-{
-  size_t source_buffer_size = source_buffer->size();
-  if ( source_buffer_size < size )
-  {
-    auto_Buffer buffer( new HeapBuffer( size ) );
-    readBytes( *buffer, size );
-    buffer->put( NULL, size );
-    return buffer;
-  }
-  else if ( source_buffer_size == size )
-  {
-    YIELD::auto_Buffer buffer( source_buffer );
-    source_buffer = source_buffer->get_next_buffer();
-    return buffer;
-  }
-  else
-  {
-    YIELD::auto_Buffer buffer( new PartialBuffer( source_buffer, size ) );
-    source_buffer->get( NULL, size );
-    return buffer;
-  }
-}
 void BufferedUnmarshaller::readBytes( void* into_buffer, size_t into_buffer_len )
 {
   while ( into_buffer_len > 0 )
