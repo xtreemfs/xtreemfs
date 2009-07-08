@@ -1057,14 +1057,6 @@ namespace YIELD
     ONCRPCMessage( uint32_t xid, auto_Struct body );
     virtual ~ONCRPCMessage();
 
-    ssize_t deserializeRecordFragmentMarker( auto_Buffer );
-    ssize_t deserializeRecordFragment( auto_Buffer );
-    ssize_t deserializeLongRecordFragment( auto_Buffer );
-    size_t get_expected_record_fragment_length() const { return expected_record_fragment_length; }
-    void marshal( Marshaller& marshaller );
-    void unmarshal( Unmarshaller& unmarshaller );
-
-  private:
     enum 
     { 
       DESERIALIZING_RECORD_FRAGMENT_MARKER, 
@@ -1073,8 +1065,17 @@ namespace YIELD
       DESERIALIZE_DONE 
     } deserialize_state;
 
-    auto_Buffer first_record_fragment_buffer, current_record_fragment_buffer;
     size_t expected_record_fragment_length, received_record_fragment_length;
+
+    ssize_t deserializeRecordFragmentMarker( auto_Buffer );
+    ssize_t deserializeRecordFragment( auto_Buffer );
+    ssize_t deserializeLongRecordFragment( auto_Buffer );
+    size_t get_expected_record_fragment_length() const { return expected_record_fragment_length; }
+    void marshal( Marshaller& marshaller );
+    void unmarshal( Unmarshaller& unmarshaller );
+
+  private:
+    auto_Buffer first_record_fragment_buffer, current_record_fragment_buffer;
 
     uint32_t xid;
     auto_Struct body;

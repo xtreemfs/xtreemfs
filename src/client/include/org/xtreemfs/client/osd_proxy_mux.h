@@ -31,7 +31,7 @@ namespace org
         }
 
         // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( OSDProxyMux, 0 );
+        OSDProxyMux& incRef() { return YIELD::Object::incRef( *this ); }
 
         // YIELD::EventHandler
         void handleEvent( YIELD::Event& );

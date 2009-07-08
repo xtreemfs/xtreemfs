@@ -1,4 +1,4 @@
-// Revision: 1624
+// Revision: 1625
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -1986,27 +1986,23 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize( auto_Buffer buffer )
     // Drop down
     case DESERIALIZING_RECORD_FRAGMENT:
     {
-      ssize_t deserialize_ret = deserializeRecordFragmentMarker( buffer );
+      ssize_t deserialize_ret = deserializeRecordFragment( buffer );
       if ( deserialize_ret == 0 )
         deserialize_state = DESERIALIZE_DONE;
       else if ( deserialize_ret > 0 )
-      {
         deserialize_state = DESERIALIZING_LONG_RECORD_FRAGMENT;
-        return deserialize_ret;
-      }
-      else
-        return deserialize_ret;
+      return deserialize_ret;
     }
-    break;
+    // Drop down
     case DESERIALIZING_LONG_RECORD_FRAGMENT:
     {
-      ssize_t deserialize_ret = deserializeRecordFragmentMarker( buffer );
+      ssize_t deserialize_ret = deserializeLongRecordFragment( buffer );
       if ( deserialize_ret == 0 )
         deserialize_state = DESERIALIZE_DONE;
       else
         return deserialize_ret;
     }
-    break;
+    // Drop down
     case DESERIALIZE_DONE: return 0;
   }
   DebugBreak();
@@ -2276,7 +2272,7 @@ void ONCRPCResponse::marshal( Marshaller& marshaller )
 void ONCRPCResponse::unmarshal( Unmarshaller& unmarshaller )
 {
   ONCRPCMessage<ONCRPCResponse>::unmarshal( unmarshaller );
-  auto_Struct body;
+  auto_Struct body( get_body() );
   int32_t msg_type = unmarshaller.readInt32( "msg_type", 0 );
   if ( msg_type == 1 ) // REPLY
   {

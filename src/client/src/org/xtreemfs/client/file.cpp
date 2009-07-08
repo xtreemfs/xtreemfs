@@ -40,43 +40,32 @@ namespace org
         }
       };
 
-      typedef YIELD::auto_Object<FileReadBuffer> auto_FileReadBuffer;
-
 
       class FileReadONCRPCResponse : public YIELD::ONCRPCResponse
       {
       public:
-        FileReadONCRPCResponse( YIELD::auto_Object<YIELD::ONCRPCRequest> oncrpc_request, auto_FileReadBuffer buffer )
-          : YIELD::ONCRPCResponse( oncrpc_request, NULL ), buffer( buffer )
+        FileReadONCRPCResponse( YIELD::auto_Object<YIELD::ONCRPCRequest> oncrpc_request, YIELD::auto_Buffer buffer )
+          : YIELD::ONCRPCResponse( oncrpc_request, 
+                                   new org::xtreemfs::interfaces::OSDInterface::readResponse(
+                                     org::xtreemfs::interfaces::ObjectData( 0, false, 0, buffer ) ) )
         { }
-
-        ssize_t deserialize( YIELD::auto_Buffer buffer )
-        {
-          // deserialize the record fragment marker
-          // Read the size of an ONC-RPC response header into a separate buffer
-          // Read the first parts of ObjectData
-          // Read the rest into this->buffer
-          return -1;
-        }
 
       private:
         ~FileReadONCRPCResponse() { }
-
-        auto_FileReadBuffer buffer;
       };
 
 
       class FileReadONCRPCRequest : public YIELD::ONCRPCRequest
       {
       public:
-        FileReadONCRPCRequest( YIELD::auto_Interface osd_interface, YIELD::auto_Struct read_request, auto_FileReadBuffer buffer )
+        FileReadONCRPCRequest( YIELD::auto_Interface osd_interface, YIELD::auto_Struct read_request, YIELD::auto_Buffer buffer )
           : ONCRPCRequest( osd_interface, read_request ), buffer( buffer )
         { }
 
         YIELD::auto_ONCRPCResponse createProtocolResponse() { return new FileReadONCRPCResponse( this->incRef(), buffer ); }
 
       private:
-        auto_FileReadBuffer buffer;
+        YIELD::auto_Buffer buffer;
       };      
 
 
@@ -169,7 +158,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
   {
     YIELD::auto_Log log = parent_volume->get_log();
     char *rbuf_start = static_cast<char*>( rbuf ), *rbuf_p = static_cast<char*>( rbuf ), *rbuf_end = static_cast<char*>( rbuf ) + size;
-    uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;
+    uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;    
 
     YIELD::auto_Object< YIELD::OneSignalEventQueue<> > read_response_queue( new YIELD::OneSignalEventQueue<> );
     size_t expected_read_response_count = 0;
@@ -210,47 +199,60 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 //#endif
     }
 
+    rbuf_p = rbuf_start;
+
     for ( size_t read_response_i = 0; read_response_i < expected_read_response_count; read_response_i++ )
     {
       FileReadONCRPCResponse& file_read_oncrpc_response = read_response_queue->dequeue_typed<FileReadONCRPCResponse>();
-    }
+      YIELD::auto_Struct body = file_read_oncrpc_response.get_body();
+      Object::decRef( file_read_oncrpc_response );
 
-/*
-      if ( !data->empty() )
-      {
-        if ( data->size() <= RBUF_REMAINING )
+      switch ( body->get_tag() )
+      {        
+        case YIELD_OBJECT_TAG( YIELD::ExceptionResponse ):
         {
-          memcpy_s( rbuf_p, RBUF_REMAINING, static_cast<void*>( *data ), data->size() );
-          rbuf_p += data->size();
-          offset += data->size();
+          throw static_cast<YIELD::ExceptionResponse&>( *body.release() );
         }
-        else
-        {
-          log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received data (data size=" << data->size() << ", zero_padding=" << zero_padding << ") larger than available buffer space (" << RBUF_REMAINING << ")";
-          YIELD::ExceptionResponse::set_errno( EIO );
-          return -1;
-        }
-      }
-
-      if ( zero_padding > 0 )
-      {
-        if ( zero_padding <= RBUF_REMAINING )
-        {
-          memset( rbuf_p, 0, zero_padding );
-          rbuf_p += zero_padding;
-          offset += zero_padding;
-        }
-        else
-        {
-          log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received zero_padding (data size=" << data->size() << ", zero_padding=" << zero_padding << ") larger than available buffer space (" << RBUF_REMAINING << ")";
-          YIELD::ExceptionResponse::set_errno( EIO );
-          return -1;
-        }
-      }
-
-      if ( data->size() < object_size || RBUF_REMAINING == 0 )
         break;
-*/
+
+        case YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::readResponse ):
+        {
+          org::xtreemfs::interfaces::OSDInterface::readResponse& read_response = static_cast<org::xtreemfs::interfaces::OSDInterface::readResponse&>( *body );
+          YIELD::auto_Buffer data( read_response.get_object_data().get_data() );
+          uint32_t zero_padding = read_response.get_object_data().get_zero_padding();
+
+          if ( !data->empty() )
+          {
+            if ( rbuf_p + data->size() <= rbuf_end )
+              rbuf_p += data->size();
+            else
+            {
+              log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received data (data size=" << data->size() << ", zero_padding=" << zero_padding << ") larger than available buffer space (" << static_cast<size_t>( rbuf_end - rbuf_p ) << ")";
+              YIELD::ExceptionResponse::set_errno( EIO );
+              return -1;
+            }
+          }
+
+          if ( zero_padding > 0 )
+          {
+            if ( rbuf_p + zero_padding <= rbuf_end )
+            {
+              memset( rbuf_p, 0, zero_padding );
+              rbuf_p += zero_padding;
+            }
+            else
+            {
+              log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received zero_padding (data size=" << data->size() << ", zero_padding=" << zero_padding << ") larger than available buffer space (" << static_cast<size_t>( rbuf_end - rbuf_p ) << ")";
+              YIELD::ExceptionResponse::set_errno( EIO );
+              return -1;
+            }
+          }
+        }
+        break;
+
+        default: DebugBreak();
+      }
+    }
 
 #ifdef _DEBUG
     if ( static_cast<size_t>( rbuf_p - rbuf_start ) > size ) YIELD::DebugBreak();

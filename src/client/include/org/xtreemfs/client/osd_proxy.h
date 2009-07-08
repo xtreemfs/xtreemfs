@@ -50,9 +50,9 @@ namespace org
         void set_ping_interval( const YIELD::Time& ping_interval ) { this->ping_interval = ping_interval; }
         void set_rtt( const YIELD::Time& rtt ) { this->rtt = rtt; }
         void set_vivaldi_coordinates( const org::xtreemfs::interfaces::VivaldiCoordinates& vivaldi_coordinates ) { this->vivaldi_coordinates = vivaldi_coordinates; }
-
+        
         // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( OSDProxy, 0 );
+        OSDProxy& incRef() { return YIELD::Object::incRef( *this ); }
 
         // YIELD::EventHandler
         bool send( YIELD::Event& ev ) 

@@ -2031,7 +2031,7 @@ namespace YIELD
       SampleType mean;
 
       if ( samples_count > 0 )
-        mean = static_cast<SampleType>( static_cast<double>( total ) / static_cast<double>( samples_count ) );
+        mean = static_cast<double>( total ) / static_cast<double>( samples_count );
       else
         mean = 0;
 
@@ -2039,7 +2039,7 @@ namespace YIELD
       return mean;
     }
  
-    SampleType get_median()
+    SampleType get_median() const 
     {
       lock.acquire();
       SampleType median;
@@ -2054,7 +2054,7 @@ namespace YIELD
         {
           SampleType median_temp = samples[sc_div_2] + samples[sc_div_2-1];
           if ( median_temp > 0 )
-            median = static_cast<SampleType>( static_cast<double>( median_temp ) / 2.0 );
+            median = median_temp / 2.0;
           else
             median = 0;
         }
