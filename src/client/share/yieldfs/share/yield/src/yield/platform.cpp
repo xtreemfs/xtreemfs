@@ -1,4 +1,4 @@
-// Revision: 1625
+// Revision: 1627
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -1412,7 +1412,7 @@ RRD::RRD( const Path& base_dir_path )
   : base_dir_path( base_dir_path )
 {
   Path file_stem( base_dir_path.split().second );
-  current_file_path = base_dir_path + ( static_cast<const std::string>( file_stem ) + ".rrd" );
+  current_file_path = base_dir_path + ( static_cast<const std::string&>( file_stem ) + ".rrd" );
 }
 RRD::~RRD()
 { }
