@@ -410,11 +410,11 @@
 </File>
 <Filter Name="yield">
 <File
-    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield\arch.h"
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield\base.h"
     >
 </File>
 <File
-    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield\base.h"
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield\concurrency.h"
     >
 </File>
 <File
@@ -427,6 +427,10 @@
 </File>
 <File
     RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield\platform.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield\rrd.h"
     >
 </File>
 </Filter>
@@ -450,11 +454,11 @@
 </File>
 <Filter Name="yield">
 <File
-    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\arch.cpp"
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\base.cpp"
     >
 </File>
 <File
-    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\base.cpp"
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\concurrency.cpp"
     >
 </File>
 <File

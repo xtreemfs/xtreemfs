@@ -4,7 +4,7 @@
 #ifndef _YIELD_H
 #define _YIELD_H
 
-#include "yield/arch.h"
+#include "yield/concurrency.h"
 #include "yield/ipc.h"
 #include "yield/platform.h"
 

@@ -4,7 +4,7 @@
 #ifndef _YIELD_IPC_H
 #define _YIELD_IPC_H
 
-#include "yield/arch.h"
+#include "yield/concurrency.h"
 
 
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__MACH__)

@@ -94,8 +94,8 @@ build_env.Library( "../../../../lib/xtreemfs-client", (
     r"../../../../src/org/xtreemfs/client/volume.cpp",
     r"../../../../share/yieldfs/share/yield/src/uriparser.c",
     r"../../../../share/yieldfs/share/yield/src/yajl.c",
-    r"../../../../share/yieldfs/share/yield/src/yield/arch.cpp",
     r"../../../../share/yieldfs/share/yield/src/yield/base.cpp",
+    r"../../../../share/yieldfs/share/yield/src/yield/concurrency.cpp",
     r"../../../../share/yieldfs/share/yield/src/yield/ipc.cpp",
     r"../../../../share/yieldfs/share/yield/src/yield/platform.cpp",
     r"../../../../share/yieldfs/src/yieldfs.cpp" ) )

@@ -1,4 +1,4 @@
-// Revision: 1627
+// Revision: 1628
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -2855,7 +2855,7 @@ bool XDRUnmarshaller::readBoolean( const char* key, uint32_t tag )
 void XDRUnmarshaller::readBuffer( const char* key, uint32_t tag, auto_Buffer value )
 {
   size_t size = readInt32( key, tag );
-  if ( value->capacity() < size ) DebugBreak();
+  if ( value->capacity() - value->size() < size ) DebugBreak();
   readBytes( *value, size );
   value->put( NULL, size );
 }

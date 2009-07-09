@@ -6,8 +6,8 @@
 
 #include "constants.h"
 #include "types.h"
-#include "yield/arch.h"
 #include "yield/base.h"
+#include "yield/concurrency.h"
 #include <map>
 #include <vector>
 

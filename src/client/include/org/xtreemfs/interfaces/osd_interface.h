@@ -6,8 +6,8 @@
 
 #include "constants.h"
 #include "mrc_osd_types.h"
-#include "yield/arch.h"
 #include "yield/base.h"
+#include "yield/concurrency.h"
 #include <vector>
 
 
