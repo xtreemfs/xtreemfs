@@ -25,9 +25,7 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 package org.xtreemfs.osd.storage;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.util.List;
 
 import org.xtreemfs.common.buffer.BufferPool;
@@ -44,10 +42,10 @@ import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
-import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_broadcast_gmaxRequest;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.stages.StorageStage.CachesFlushedCallback;
 import org.xtreemfs.osd.stages.StorageStage.GetFileSizeCallback;
@@ -578,24 +576,20 @@ public class StorageThread extends Stage {
         final GetObjectListCallback cback = (GetObjectListCallback) rq.getCallback();
         final String fileId = (String) rq.getArgs()[0];
         
-        long[] objectList = layout.getObjectList(fileId);
+        ObjectSet objectSet = layout.getObjectList(fileId);
 
-        // serialize objectList
-        ReusableBuffer objectListBuffer = null;
+        // serialize objectSet
+        ReusableBuffer objectSetBuffer = null;
         try {
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(bos);
-            oos.writeObject(objectList);
-            oos.flush();
-            oos.close();
-            bos.close();
-            objectListBuffer = ReusableBuffer.wrap(bos.toByteArray());
+            byte[] serialized = objectSet.getSerializedBitSet();
+            objectSetBuffer = ReusableBuffer.wrap(serialized);
         } catch (IOException e) {
             cback.getObjectListComplete(null, e);
         }
-        
+
         // TODO: set "is complete" flag correctly
-        ObjectList objList = new ObjectList(objectListBuffer, OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY,
+        // TODO: interface must be changed and then this must be adapted
+        ObjectList objList = new ObjectList(objectSetBuffer, objectSet.getStripeWidth(),
                 false);
         cback.getObjectListComplete(objList, null);
     }

@@ -24,9 +24,6 @@
  */
 package org.xtreemfs.sandbox.tests.replicationStressTest;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -43,6 +40,7 @@ import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.osd.client.OSDClient;
+import org.xtreemfs.osd.replication.ObjectSet;
 
 /**
  * a reader for reading replicas which are marked as full replicas (preferred) <br>
@@ -138,8 +136,9 @@ class FullReplicaReader extends Reader {
                 ObjectList list = response.get();
                 response.freeBuffers();
 
-                long[] objectList = deserializeObjectList(list);
-                objects += objectList.length;
+                ObjectSet objectList = new ObjectSet(list.getObject_list_type(), 0, list.getObject_list()
+                                .array());
+                objects += objectList.size();
             }
 
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.test, this,
@@ -147,7 +146,7 @@ class FullReplicaReader extends Reader {
                             .getCurrentlyUsedReplica().getHeadOsd().toString(), file.filename, objects,
                     (objects * sp.getStripeSizeForObject(1)) / 1024, filesize / 1024);
 
-            if (objects == lastObject + 1 && !raf.getCurrentlyUsedReplica().isFull()) { // replication is
+            if (objects == lastObject + 1 && !raf.getCurrentlyUsedReplica().isComplete()) { // replication is
                                                                                         // completed; all
                                                                                         // objects are
                                                                                         // replicated
@@ -166,18 +165,5 @@ class FullReplicaReader extends Reader {
             if (originalFile != null)
                 originalFile.close();
         }
-    }
-
-    protected long[] deserializeObjectList(ObjectList objectList) throws IOException, ClassNotFoundException {
-        long[] list = null;
-        ByteArrayInputStream bis = new ByteArrayInputStream(objectList.getObject_list().array());
-        ObjectInputStream ois = new ObjectInputStream(bis);
-        Object o = ois.readObject();
-        ois.close();
-        bis.close();
-
-        // TODO: support more types
-        list = (long[]) o;
-        return list;
     }
 }

@@ -45,7 +45,7 @@ public class XLocations {
 
     public XLocations(XLocSet xloc) {
         this.xloc = xloc;
-        replicas = new ArrayList(xloc.getReplicas().size());
+        replicas = new ArrayList<Replica>(xloc.getReplicas().size());
         for (org.xtreemfs.interfaces.Replica r : xloc.getReplicas()) {
             replicas.add(new Replica(r));
         }

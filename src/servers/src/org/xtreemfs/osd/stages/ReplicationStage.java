@@ -136,7 +136,7 @@ public class ReplicationStage extends Stage {
         CowPolicy cow = (CowPolicy) rq.getArgs()[4];
 
         // if replica exist
-        if (xLoc.getNumReplicas() > 1 || !xLoc.getLocalReplica().isFull()) {
+        if (xLoc.getNumReplicas() > 1 || !xLoc.getLocalReplica().isComplete()) {
             disseminationLayer.fetchObject(fileId, objectNo, xLoc, cap, cow, rq);
         } else
             // object does not exist locally and no replica exists => hole

@@ -35,32 +35,33 @@ import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequestDispatcher;
-import org.xtreemfs.osd.replication.TransferStrategy.TransferStrategyException;
+import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.TransferStrategyException;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.osd.storage.CowPolicy;
 
 /**
- * Handles the fetching of replicas.
- * <br>15.09.2008
+ * Handles the fetching of replicas. <br>
+ * 15.09.2008
  */
 public class ObjectDissemination {
-    private OSDRequestDispatcher master;
+    private OSDRequestDispatcher             master;
 
     /**
-     * controls how many fetch-object-requests will be allowed to sent overall by all files (used for load-balancing)
+     * controls how many fetch-object-requests will be allowed to sent overall by all files (used for
+     * load-balancing)
      */
-    private static final int                 MAX_REQUESTS_OVERALL = 100;
+    private static final int                 MAX_REQUESTS_OVERALL = 20;
 
     /**
      * objects of these files are downloading currently or in future <br>
      * key: fileID
      */
     private HashMap<String, ReplicatingFile> filesInProgress;
-    
+
     /**
-     * simple FIFO-cache for last completed files 
+     * simple FIFO-cache for last completed files
      */
-    LRUCache<String, ReplicatingFile> lastCompletedFilesCache;
+    LRUCache<String, ReplicatingFile>        lastCompletedFilesCache;
 
     public ObjectDissemination(OSDRequestDispatcher master) {
         this.master = master;
@@ -94,14 +95,14 @@ public class ObjectDissemination {
 
         // update to newer cap, ...
         file.update(capability, xLoc, cow);
-        
+
         // keep in mind current request
-        if(file.isObjectInProgress(objectNo)) {
+        if (file.isObjectInProgress(objectNo)) {
             // propably another request is already fetching this object
             file.addObjectForReplicating(objectNo, rq);
-        } else {  
+        } else {
             file.addObjectForReplicating(objectNo, rq);
-    
+
             // start replication
             try {
                 file.replicate();
@@ -121,45 +122,51 @@ public class ObjectDissemination {
 
     /**
      * process all necessary actions if object was fetched correctly, otherwise triggers new fetch-attempt
-     * @param usedOSD TODO
+     * 
+     * @param usedOSD
+     *            TODO
      */
     public void objectFetched(String fileID, long objectNo, final ServiceUUID usedOSD, ObjectData data) {
         ReplicatingFile file = filesInProgress.get(fileID);
-        assert(file != null);
+        assert (file != null);
 
         file.objectFetched(objectNo, usedOSD, data);
-        
+
         if (!file.isReplicating())
             fileCompleted(file.fileID);
     }
-    
+
     /**
      * process all necessary actions, because object could not be fetched
-     * @param usedOSD TODO
+     * 
+     * @param usedOSD
+     *            TODO
      */
     public void objectNotFetched(String fileID, final ServiceUUID usedOSD, long objectNo) {
         ReplicatingFile file = filesInProgress.get(fileID);
-        assert(file != null);
+        assert (file != null);
 
         file.objectNotFetched(objectNo, usedOSD);
-        
+
         if (!file.isReplicating())
-            fileCompleted(file.fileID);        
+            fileCompleted(file.fileID);
     }
 
     /**
      * cleans up maps, lists, ...
+     * 
      * @param fileID
      */
     private void fileCompleted(String fileID) {
         // if the last requested object was fetched for this file => remove from map
         ReplicatingFile completedFile = filesInProgress.remove(fileID);
-        assert(completedFile!=null);
+        assert (completedFile != null);
         // cache completed file
         lastCompletedFilesCache.put(fileID, completedFile);
 
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "stop replicating file %s", fileID);
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "stop replicating file %s",
+                    fileID);
 
         // update requestsPerFile for all files (load-balancing)
         if (filesInProgress.size() == 0)
@@ -167,12 +174,13 @@ public class ObjectDissemination {
         else
             ReplicatingFile.setMaxRequestsPerFile(MAX_REQUESTS_OVERALL / filesInProgress.size());
 
-        // TODO: save persistent marker that all objects of file are completely replicated, if replica is full replica 
+        // TODO: save persistent marker that all objects of file are completely replicated, if replica is full
+        // replica
     }
 
     /**
      * Stops replication for this file.
-     */ 
+     */
     public void cancelFile(String fileID) {
         ReplicatingFile file = filesInProgress.get(fileID);
         if (file != null)
@@ -183,13 +191,13 @@ public class ObjectDissemination {
                 // delete directly
                 filesInProgress.remove(fileID);
     }
-    
+
     /**
      * sends an error to all belonging clients of this file (for all objects)
      */
     public void sendError(String fileID, Exception e) {
         ReplicatingFile file = filesInProgress.get(fileID);
-        assert(file != null);
+        assert (file != null);
 
         file.reportError(e);
     }

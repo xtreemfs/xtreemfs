@@ -24,6 +24,7 @@
  */
 package org.xtreemfs.sandbox.tests.replicationStressTest;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -37,6 +38,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.util.ONCRPCServiceURL;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.dir.client.DIRClient;
@@ -49,11 +51,10 @@ import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
-import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.client.MRCClient;
-import org.xtreemfs.osd.replication.RandomStrategy;
-import org.xtreemfs.osd.replication.SequentialStrategy;
+import org.xtreemfs.osd.replication.transferStrategies.RandomStrategy;
+import org.xtreemfs.osd.replication.transferStrategies.SequentialStrategy;
 import org.xtreemfs.utils.CLIParser;
 import org.xtreemfs.utils.CLIParser.CliOption;
 
@@ -84,8 +85,9 @@ public class StressTest {
 
     public static final String        START_READERS_ONLY           = "-readers";
 
-    public static final String        REPLICA_TYPE_FULL            = "-full";                        // otherwise
-    // ondemand
+    public static final String        FULL_REPLICA                 = "-full";                        // otherwise ondemand
+
+    public static final String        TIME_TILL_NEW_FILE           = "-time";                        // otherwise ondemand
 
     public static final String        TRANSFER_STRATEGY            = "-strategy";
 
@@ -99,7 +101,7 @@ public class StressTest {
 
     public static final int           DEFAULT_THREAD_NUMBER        = 2;
 
-    public static final int           DEFAULT_MAX_FILESIZE         = 100;                            // MB
+    public static final int           DEFAULT_MAX_FILESIZE         = 100 * 1024 * 1024;              // 100 MB
 
     public static final int           DEFAULT_STRIPE_WIDTH         = 1;
 
@@ -115,8 +117,6 @@ public class StressTest {
     static final int                  PART_SIZE                    = 1024 * 1024;                    // 1MB
 
     static final int                  STRIPE_SIZE                  = 128;                            // KB
-
-    static UserCredentials            userCredentials;
 
     private static TimeSync           timeSync;
     private static RPCNIOSocketClient client;
@@ -155,7 +155,7 @@ public class StressTest {
             int stripeWidth) throws ONCRPCException, IOException, InterruptedException {
 
         // create a volume (no access control)
-        RPCResponse r2 = mrcClient.mkvol(null, userCredentials, volumeName,
+        RPCResponse r2 = mrcClient.mkvol(null, TestFile.userCredentials, volumeName,
                 OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE.intValue(), new StripingPolicy(
                         StripingPolicyType.STRIPING_POLICY_RAID0, STRIPE_SIZE, stripeWidth),
                 AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL.intValue(), 0);
@@ -163,7 +163,7 @@ public class StressTest {
         r2.freeBuffers();
 
         // create a directory
-        r2 = mrcClient.mkdir(null, userCredentials, volumeName + dirPath, 0);
+        r2 = mrcClient.mkdir(null, TestFile.userCredentials, volumeName + dirPath, 0);
         r2.get();
         r2.freeBuffers();
 
@@ -231,8 +231,9 @@ public class StressTest {
         options.put(STRIPE_WIDTH, new CliOption(CliOption.OPTIONTYPE.NUMBER));
         options.put(RANDOM_SEED, new CliOption(CliOption.OPTIONTYPE.NUMBER));
         options.put(START_READERS_ONLY, new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put(REPLICA_TYPE_FULL, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put(FULL_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(TRANSFER_STRATEGY, new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(TIME_TILL_NEW_FILE, new CliOption(CliOption.OPTIONTYPE.NUMBER));
 
         try {
             CLIParser.parseCLI(args, options, arguments);
@@ -249,18 +250,14 @@ public class StressTest {
         }
 
         // mandatory arguments
-        if (arguments.size() < 3) {
+        if (arguments.size() < 3 || arguments.size() > 3) {
             usage();
             return;
         }
 
         // parse dir-address
-        final String dirURL = arguments.get(DIR_ADDRESS_ARG_POSITION).substring(0,
-                arguments.get(DIR_ADDRESS_ARG_POSITION).indexOf(":"));
-        final int dirPort = Integer.parseInt(arguments.get(DIR_ADDRESS_ARG_POSITION).substring(
-                arguments.get(DIR_ADDRESS_ARG_POSITION).indexOf(":") + 1,
-                arguments.get(DIR_ADDRESS_ARG_POSITION).length()));
-        final InetSocketAddress dirAddress = new InetSocketAddress(dirURL, dirPort);
+        final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0));
+        final InetSocketAddress dirAddress = new InetSocketAddress(dirURL.getHost(), dirURL.getPort());
 
         // parse tmp-dir
         String tmpDir = arguments.get(TMP_DIR_ARG_POSITION);
@@ -271,11 +268,12 @@ public class StressTest {
         // parse options
         boolean debug = false;
         int threadNo = DEFAULT_THREAD_NUMBER;
-        int maxFilesize = DEFAULT_MAX_FILESIZE;
+        int maxFilesize = DEFAULT_MAX_FILESIZE; // in bytes
         int stripeWidth = DEFAULT_STRIPE_WIDTH;
         random = new Random(DEFAULT_RANDOM_SEED);
         boolean readersOnly = false;
         int replicationFlags = Constants.REPL_FLAG_FILL_ON_DEMAND;
+        int timeTillNewFile = -1;
         for (Entry<String, CliOption> e : options.entrySet()) {
             if (e.getKey().equals(DEBUG) && e.getValue().switchValue) {
                 debug = e.getValue().switchValue;
@@ -284,7 +282,7 @@ public class StressTest {
                 threadNo = e.getValue().numValue.intValue();
             }
             if (e.getKey().equals(MAX_FILESIZE) && e.getValue().numValue != null) {
-                maxFilesize = e.getValue().numValue.intValue();
+                maxFilesize = e.getValue().numValue.intValue() * 1024 * 1024;
             }
             if (e.getKey().equals(STRIPE_WIDTH) && e.getValue().numValue != null) {
                 stripeWidth = e.getValue().numValue.intValue();
@@ -295,8 +293,11 @@ public class StressTest {
             if (e.getKey().equals(START_READERS_ONLY) && e.getValue().switchValue) {
                 readersOnly = e.getValue().switchValue;
             }
-            if (e.getKey().equals(REPLICA_TYPE_FULL) && e.getValue().switchValue) {
+            if (e.getKey().equals(FULL_REPLICA) && e.getValue().switchValue) {
                 replicationFlags = 0; // default
+            }
+            if (e.getKey().equals(TIME_TILL_NEW_FILE) && e.getValue().numValue != null) {
+                timeTillNewFile = e.getValue().numValue.intValue();
             }
             if (e.getKey().equals(TRANSFER_STRATEGY) && e.getValue().stringValue != null) {
                 if (e.getValue().stringValue.equals(TRANSFER_STRATEGY_RANDOM))
@@ -326,19 +327,22 @@ public class StressTest {
         // start services
         timeSync = TimeSync.initialize(dirClient, 60 * 1000, 50);
         timeSync.waitForStartup();
+        
+        Monitoring.start();
 
         UUIDResolver.start(dirClient, 1000, 10 * 10 * 1000);
 
         // write filedata to disk
+        new File(tmpDir).mkdirs();
         writeTmpFileToDisk(tmpDir + TestFile.DISK_FILENAME, maxFilesize);
 
         // get MRC
         InetSocketAddress mrcAddress;
         if (!readersOnly)
             // ... and initialize volume
-            mrcAddress = getMRC(dirClient, TestFile.VOLUME_NAME);
-        else
             mrcAddress = getMRC(dirClient, null);
+        else
+            mrcAddress = getMRC(dirClient, TestFile.VOLUME_NAME);
         MRCClient mrcClient = new MRCClient(client, mrcAddress);
         initializeVolume(mrcClient, TestFile.VOLUME_NAME, TestFile.DIR_PATH, stripeWidth);
 
@@ -346,6 +350,8 @@ public class StressTest {
         TestFile.diskFileFilesize = maxFilesize;
         TestFile.mrcAddress = mrcAddress;
         TestFile.diskDir = tmpDir;
+        if (timeTillNewFile != -1)
+            Writer.SLEEP_TIME_UNTIL_NEW_FILE_WILL_BE_WRITTEN = timeTillNewFile;
 
         // create file list
         CopyOnWriteArrayList<TestFile> fileList = new CopyOnWriteArrayList<TestFile>();
@@ -409,19 +415,30 @@ public class StressTest {
 
     public static void usage() {
         StringBuffer out = new StringBuffer();
-        out.append("Usage: java -cp <xtreemfs-jar> " + StressTest.class.getSimpleName());
+        out.append("Usage: java -cp <xtreemfs-jar> " + StressTest.class.getCanonicalName());
         out.append(" [options] <DIR-address> <tmp-directory> <reader-type>\n");
         out.append("options:\n");
-        out.append("\t-" + THREAD_NUMBER + ": number of threads/clients (default: " + DEFAULT_THREAD_NUMBER
+        out.append("\t-" + THREAD_NUMBER + ":\t\t\t\t number of threads/clients (default: " + DEFAULT_THREAD_NUMBER
                 + ")\n");
-        out.append("\t-" + MAX_FILESIZE + ": max filesize (in MB) (default: " + DEFAULT_MAX_FILESIZE + ")\n");
-        out.append("\t-" + STRIPE_WIDTH + ": stripe width / number of OSDs per file (in KB) (default: "
+        out.append("\t-" + MAX_FILESIZE + ":\t\t\t\t max filesize (in MB) (default: " + DEFAULT_MAX_FILESIZE
+                + "MB)\n");
+        out.append("\t-" + STRIPE_WIDTH + ":\t\t\t\t stripe width / number of OSDs per file (default: "
                 + DEFAULT_STRIPE_WIDTH + ")\n");
-        out.append("\t-" + RANDOM_SEED + ": seed of used random\n");
+        out.append("\t-" + DEBUG + ":\t\t\t debug output\n");
+        out.append("\t-" + RANDOM_SEED + ":\t\t\t\t seed of used random\n");
+        out.append("\t-" + START_READERS_ONLY + ":\t\t\t starts only the readers, no writer\n");
+        out.append("\t-" + FULL_REPLICA
+                + ":\t\t\t\t if set the replica will be a full replica (otherwise an ondemand replica)\n");
+        out.append("\t-" + TIME_TILL_NEW_FILE + ":\t\t\t\t sets the time to wait till a new file will be written\n");
+        out.append("\t-" + TRANSFER_STRATEGY
+                + " <transfer strategy>:\t chooses the used transfer strategy (default: random)\n");
         out.append("reader-types:\n");
-        out.append("\t-" + READER_TYPE_ONDEMAND + ": \n");
-        out.append("\t-" + READER_TYPE_FULL + ": \n");
-        out.append("NOTE: THIS TEST WILL NEVER END!\n");
+        out.append("\t" + READER_TYPE_ONDEMAND + ":\t for ondemand replicas\n");
+        out.append("\t" + READER_TYPE_FULL + ":\t\t for full replicas\n");
+        out.append("transfer-strategies:\n");
+        out.append("\t" + TRANSFER_STRATEGY_RANDOM + ":\t\t random selection of objects and OSDs (default)\n");
+        out.append("\t" + TRANSFER_STRATEGY_SEQUENTIAL + ":\t sequential selection of objects and OSDs\n");
+        out.append("NOTE: MAYBE THIS TEST NEVER ENDS!\n");
         System.out.println(out.toString());
         System.exit(1);
     }

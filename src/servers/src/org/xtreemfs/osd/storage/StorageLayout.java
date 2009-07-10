@@ -35,6 +35,7 @@ import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.osd.replication.ObjectSet;
 
 /**
  * Abstracts object data access from underlying on-disk storage layout.
@@ -298,5 +299,5 @@ public abstract class StorageLayout {
      * @param fileId
      * @return null, if file does not exist, otherwise objectList
      */
-    public abstract long[] getObjectList(String fileId);
+    public abstract ObjectSet getObjectList(String fileId);
 }

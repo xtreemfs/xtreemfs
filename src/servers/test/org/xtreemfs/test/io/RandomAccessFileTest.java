@@ -281,9 +281,9 @@ public class RandomAccessFileTest extends TestCase {
         
         // check if replication flags are set correctly
         List<org.xtreemfs.common.xloc.Replica> replicas = randomAccessFile.getXLoc().getReplicas();
-        assertTrue(replicas.get(0).isFull()); // original should be marked as full
-        assertFalse(replicas.get(1).isFull()); // replica 1 is empty
-        assertFalse(replicas.get(2).isFull()); // replica 2 is empty
+        assertTrue(replicas.get(0).isComplete()); // original should be marked as full
+        assertFalse(replicas.get(1).isComplete()); // replica 1 is empty
+        assertFalse(replicas.get(2).isComplete()); // replica 2 is empty
         assertTrue(replicas.get(1).isFilledOnDemand()); // replica 1 should be filled ondemand
         assertFalse(replicas.get(2).isFilledOnDemand()); // replica 2 should be filled until it is full
         assertTrue(replicas.get(1).isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM)); // replica 1 is using random strategy

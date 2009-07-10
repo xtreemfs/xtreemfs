@@ -44,11 +44,12 @@ import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
-import org.xtreemfs.osd.replication.RandomStrategy;
-import org.xtreemfs.osd.replication.SequentialStrategy;
-import org.xtreemfs.osd.replication.TransferStrategy;
-import org.xtreemfs.osd.replication.TransferStrategy.NextRequest;
-import org.xtreemfs.osd.replication.TransferStrategy.TransferStrategyException;
+import org.xtreemfs.osd.replication.transferStrategies.RandomStrategy;
+import org.xtreemfs.osd.replication.transferStrategies.SequentialPrefetchingStrategy;
+import org.xtreemfs.osd.replication.transferStrategies.SequentialStrategy;
+import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy;
+import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.NextRequest;
+import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.TransferStrategyException;
 import org.xtreemfs.test.SetupUtils;
 
 /**
@@ -128,8 +129,8 @@ public class TransferStrategiesTest extends TestCase {
     }
 
     /**
-     * Test method for {@link org.xtreemfs.osd.replication.TransferStrategy#addRequiredObject(long)} and
-     * {@link org.xtreemfs.osd.replication.TransferStrategy#removeRequiredObject(long)} .
+     * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#addRequiredObject(long)} and
+     * {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#removeRequiredObject(long)} .
      */
     @Test
     public void testAddAndRemoveRequiredObject() {
@@ -138,8 +139,8 @@ public class TransferStrategiesTest extends TestCase {
     }
 
     /**
-     * Test method for {@link org.xtreemfs.osd.replication.TransferStrategy#addPreferredObject(long)} and
-     * {@link org.xtreemfs.osd.replication.TransferStrategy#removePreferredObject(long)} .
+     * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#addPreferredObject(long)} and
+     * {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#removePreferredObject(long)} .
      */
     @Test
     public void testAddAndRemovePreferredObject() {
@@ -148,8 +149,8 @@ public class TransferStrategiesTest extends TestCase {
     }
 
     /**
-     * Test method for {@link org.xtreemfs.osd.replication.TransferStrategy#getRequiredObjectsCount()} and
-     * {@link org.xtreemfs.osd.replication.TransferStrategy#getPreferredObjectsCount()} .
+     * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#getRequiredObjectsCount()} and
+     * {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#getPreferredObjectsCount()} .
      */
     @Test
     public void testGetXXXObjectsCount() {
@@ -165,7 +166,7 @@ public class TransferStrategiesTest extends TestCase {
     }
 
     /**
-     * Test method for {@link org.xtreemfs.osd.replication.SequentialStrategy#selectNext()}.
+     * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.SequentialStrategy#selectNext()}.
      */
     @Test
     public void testSelectNextForSequentialTransfer() {
@@ -227,12 +228,12 @@ public class TransferStrategiesTest extends TestCase {
             next = this.strategy.getNext();
             assertNull(next);
         } catch (TransferStrategyException e) {
-            fail();
+            fail(e.getLocalizedMessage());
         }
     }
 
     /**
-     * Test method for {@link org.xtreemfs.osd.replication.RandomStrategy#selectNext()}.
+     * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.RandomStrategy#selectNext()}.
      */
     @Test
     public void testSelectNextForRandomTransfer() {
@@ -274,7 +275,54 @@ public class TransferStrategiesTest extends TestCase {
             next = this.strategy.getNext();
             assertNull(next);
         } catch (TransferStrategyException e) {
-            fail();
+            fail(e.getLocalizedMessage());
+        }
+    }
+
+    /**
+     * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.SequentialPrefetchingStrategy#selectNext()}.
+     */
+    @Test
+    public void testSelectNextForSequentialPrefetchingTransfer() {
+        this.strategy = new SequentialPrefetchingStrategy(fileID, xLoc, new ServiceAvailability(), Long.MAX_VALUE);
+        this.strategy.addObject(0, true);
+        this.strategy.addObject(60, true);
+        this.strategy.addObject(72, true);
+
+        // objects count
+        assertEquals(3, strategy.getObjectsCount());
+
+        try {
+            // preferred objects
+            this.strategy.selectNext();
+            NextRequest next = this.strategy.getNext();
+            assertEquals(0, next.objectNo);
+            // check, if objects are added by prefetching
+            int objectsToPrefetch = SequentialPrefetchingStrategy.DEFAULT_PREFETCHING_COUNT + 3;
+            assertEquals(2 + objectsToPrefetch, strategy.getObjectsCount());
+
+            this.strategy.selectNext();
+            next = this.strategy.getNext();
+            assertEquals(60, next.objectNo);
+            // check, if objects are added by prefetching
+            objectsToPrefetch += SequentialPrefetchingStrategy.DEFAULT_PREFETCHING_COUNT + 2 - 1;
+            assertEquals(1 + objectsToPrefetch, strategy.getObjectsCount());
+
+            this.strategy.selectNext();
+            next = this.strategy.getNext();
+            assertEquals(72, next.objectNo);
+            // check, if objects are added by prefetching
+            objectsToPrefetch += SequentialPrefetchingStrategy.DEFAULT_PREFETCHING_COUNT + 1 - 3;
+            assertEquals(0 + objectsToPrefetch, strategy.getObjectsCount());
+
+            // prefetched objects
+            this.strategy.selectNext();
+            next = this.strategy.getNext();
+            assertEquals(3, next.objectNo);
+            
+            // ... and more
+        } catch (TransferStrategyException e) {
+            fail(e.getLocalizedMessage());
         }
     }
 }

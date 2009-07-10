@@ -27,6 +27,7 @@ package org.xtreemfs.osd.replication;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -58,8 +59,11 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.osd.operations.EventWriteObject;
 import org.xtreemfs.osd.operations.OSDOperation;
-import org.xtreemfs.osd.replication.TransferStrategy.NextRequest;
-import org.xtreemfs.osd.replication.TransferStrategy.TransferStrategyException;
+import org.xtreemfs.osd.replication.transferStrategies.RandomStrategy;
+import org.xtreemfs.osd.replication.transferStrategies.SequentialStrategy;
+import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy;
+import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.NextRequest;
+import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.TransferStrategyException;
 import org.xtreemfs.osd.stages.ReplicationStage.FetchObjectCallback;
 import org.xtreemfs.osd.stages.Stage.StageRequest;
 import org.xtreemfs.osd.storage.CowPolicy;
@@ -189,7 +193,7 @@ class ReplicatingFile {
          */
         public boolean objectNotFetched(final ServiceUUID usedOSD) throws TransferStrategyException {
             // check if it is a hole
-            if (xLoc.getReplica(usedOSD).isFull()) {
+            if (xLoc.getReplica(usedOSD).isComplete()) {
                 // => hole or error; we assume it is a hole
                 if (hasDataFromEarlierResponses() && hasWaitingRequests()) {
                     // no hole, but an object for which only a replica with a wrong checksum could be found
@@ -268,6 +272,11 @@ class ReplicatingFile {
     /*
      * outer class
      */
+    /**
+     * the absolute maximum that can be set for maxRequestsPerFile
+     */
+    private static final int                 MAX_MAX_REQUESTS_PER_FILE = 5;
+
     private final OSDRequestDispatcher       master;
 
     /**
@@ -340,8 +349,9 @@ class ReplicatingFile {
             // get striping column of local OSD
             int coloumn = xLoc.getLocalReplica().getOSDs().indexOf(master.getConfig().getUUID());
             // add all objects (for this OSD) to strategy
-            for (int object = coloumn; object <= lastObject; object += sp.getWidth()) {
-                strategy.addObject(object, false);
+            Iterator<Long> objectsIt = sp.getObjectsOfOSD(coloumn, 0, lastObject);
+            while (objectsIt.hasNext()) {
+                strategy.addObject(objectsIt.next(), false);
             }
         }
     }
@@ -663,8 +673,11 @@ class ReplicatingFile {
      */
     public static void setMaxRequestsPerFile(int requestsPerFile) {
         // at least one request MUST be sent per file
-        if(requestsPerFile > 1)
-            ReplicatingFile.maxRequestsPerFile = requestsPerFile;
+        if(requestsPerFile >= 1)
+            if(requestsPerFile <= MAX_MAX_REQUESTS_PER_FILE)
+                ReplicatingFile.maxRequestsPerFile = requestsPerFile;
+            else
+                ReplicatingFile.maxRequestsPerFile = MAX_MAX_REQUESTS_PER_FILE;
         else
             ReplicatingFile.maxRequestsPerFile = 1;
     }

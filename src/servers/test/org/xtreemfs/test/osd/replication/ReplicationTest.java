@@ -24,10 +24,7 @@
  */
 package org.xtreemfs.test.osd.replication;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream;
 import java.util.Arrays;
 
 import junit.framework.TestCase;
@@ -59,6 +56,7 @@ import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.client.OSDClient;
+import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -377,10 +375,10 @@ public class ReplicationTest extends TestCase {
         // check object list
         ObjectList objectList = resp2.getObject_list().get(0);
         assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        long[] list = deserializeObjectList(objectList);
+        ObjectSet list = new ObjectSet(objectList.getObject_list_type(), 0, objectList.getObject_list().array());
         assertNotNull(list);
-        assertEquals(1, list.length);
-        assertEquals(objectNo, list[0]);
+        assertEquals(1, list.size());
+        assertTrue(list.contains(objectNo));
 
         r2.freeBuffers();
         BufferPool.free(resp2.getData().getData());
@@ -399,7 +397,9 @@ public class ReplicationTest extends TestCase {
         InternalReadLocalResponse resp = r.get();
         assertEquals(0, resp.getData().getData().limit());
         assertEquals(1, resp.getObject_list().size());
-        assertEquals(0, deserializeObjectList(resp.getObject_list().get(0)).length);
+        ObjectSet list = new ObjectSet(resp.getObject_list().get(0).getObject_list_type(), 0, resp
+                        .getObject_list().get(0).getObject_list().array());
+        assertEquals(0, list.size());
         r.freeBuffers();
 
         // write data
@@ -469,8 +469,8 @@ public class ReplicationTest extends TestCase {
         ObjectList objectList = r.get();
         r.freeBuffers();
         assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        long[] list = deserializeObjectList(objectList);
-        assertEquals(0, list.length);
+        ObjectSet list = new ObjectSet(objectList.getObject_list_type(), 0, objectList.getObject_list().array());
+        assertEquals(0, list.size());
 
         // write object to replica 1 : OSD 1
         RPCResponse<OSDWriteResponse> w = client.write(xLoc.getOSDsForObject(objectNo).get(0).getAddress(),
@@ -483,9 +483,9 @@ public class ReplicationTest extends TestCase {
         objectList = r.get();
         r.freeBuffers();
         assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        list = deserializeObjectList(objectList);
-        assertEquals(1, list.length);
-        assertEquals(objectNo, list[0]);
+        list = new ObjectSet(objectList.getObject_list_type(), 0, objectList.getObject_list().array());
+        assertEquals(1, list.size());
+        assertTrue(list.contains(objectNo));
 
         // write object to replica 1 : OSD 2
         w = client.write(xLoc.getOSDsForObject(objectNo + 1).get(0).getAddress(), fileID, fcred, objectNo + 1, 0,
@@ -510,46 +510,29 @@ public class ReplicationTest extends TestCase {
         objectList = r.get();
         r.freeBuffers();
         assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        list = deserializeObjectList(objectList);
-        assertEquals(2, list.length);
-        Arrays.sort(list);
-        long[] expected = { objectNo, objectNo + 3 };
-        assertTrue(Arrays.equals(expected, list));
+        list = new ObjectSet(objectList.getObject_list_type(), 0, objectList.getObject_list().array());
+        assertEquals(2, list.size());
+        assertTrue(list.contains(objectNo));
+        assertTrue(list.contains(objectNo + 3));
 
         // read object list from OSD 1 : OSD 2
-        r = client.internal_getObjectList(xLoc.getOSDsForObject(objectNo + 1).get(0).getAddress(), fileID, fcred);
+        r = client.internal_getObjectList(xLoc.getOSDsForObject(objectNo + 1).get(0).getAddress(), fileID,
+                fcred);
         objectList = r.get();
         r.freeBuffers();
         assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        list = deserializeObjectList(objectList);
-        assertEquals(1, list.length);
-        Arrays.sort(list);
-        long[] expected2 = { objectNo + 1 };
-        assertTrue(Arrays.equals(expected2, list));
+        list = new ObjectSet(objectList.getObject_list_type(), 0, objectList.getObject_list().array());
+        assertEquals(1, list.size());
+        assertTrue(list.contains(objectNo + 1));
 
         // read object list from OSD 1 : OSD 3
-        r = client.internal_getObjectList(xLoc.getOSDsForObject(objectNo + 2).get(0).getAddress(), fileID, fcred);
+        r = client.internal_getObjectList(xLoc.getOSDsForObject(objectNo + 2).get(0).getAddress(), fileID,
+                fcred);
         objectList = r.get();
         r.freeBuffers();
         assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        list = deserializeObjectList(objectList);
-        assertEquals(1, list.length);
-        Arrays.sort(list);
-        long[] expected3 = { objectNo + 2 };
-        assertTrue(Arrays.equals(expected3, list));
-    }
-
-    private long[] deserializeObjectList(ObjectList objectList) throws IOException,
-            ClassNotFoundException {
-        long[] list = null;
-        ByteArrayInputStream bis = new ByteArrayInputStream(objectList.getObject_list().array());
-        ObjectInputStream ois = new ObjectInputStream(bis);
-        Object o = ois.readObject();
-        ois.close();
-        bis.close();
-
-        // TODO: support more types
-        list = (long[]) o;
-        return list;
+        list = new ObjectSet(objectList.getObject_list_type(), 0, objectList.getObject_list().array());
+        assertEquals(1, list.size());
+        assertTrue(list.contains(objectNo + 2));
     }
 }

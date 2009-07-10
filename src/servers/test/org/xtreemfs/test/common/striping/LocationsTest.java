@@ -110,7 +110,7 @@ public class LocationsTest extends TestCase {
         
         // set none
         r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
-        assertFalse(r.isFull());
+        assertFalse(r.isComplete());
         assertFalse(r.isFilledOnDemand());
         assertFalse(r.isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM));
         assertFalse(r.isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE));
@@ -118,7 +118,7 @@ public class LocationsTest extends TestCase {
         // set full
         replicationFlags = Constants.REPL_FLAG_IS_FULL;
         r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
-        assertTrue(r.isFull());
+        assertTrue(r.isComplete());
         assertFalse(r.isFilledOnDemand());
         assertFalse(r.isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM));
         assertFalse(r.isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE));
@@ -126,7 +126,7 @@ public class LocationsTest extends TestCase {
         // set filledOnDemand and RandomStrategy
         replicationFlags = Constants.REPL_FLAG_FILL_ON_DEMAND | Constants.REPL_FLAG_STRATEGY_RANDOM;
         r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
-        assertFalse(r.isFull());
+        assertFalse(r.isComplete());
         assertTrue(r.isFilledOnDemand());
         assertTrue(r.isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM));
         assertFalse(r.isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE));

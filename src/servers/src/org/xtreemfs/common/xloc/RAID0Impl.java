@@ -24,10 +24,12 @@
 
 package org.xtreemfs.common.xloc;
 
+import java.util.Iterator;
+
 import org.xtreemfs.interfaces.Replica;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class RAID0Impl extends StripingPolicyImpl {
@@ -36,7 +38,7 @@ public class RAID0Impl extends StripingPolicyImpl {
 
     RAID0Impl(Replica replica) {
         super(replica);
-        stripe_size_in_bytes = policy.getStripe_size()*1024;
+        stripe_size_in_bytes = policy.getStripe_size() * 1024;
         if (stripe_size_in_bytes <= 0)
             throw new IllegalArgumentException("size must be > 0");
     }
@@ -72,7 +74,7 @@ public class RAID0Impl extends StripingPolicyImpl {
     }
 
     public String toString() {
-        return "StripingPolicy RAID0: "+policy;
+        return "StripingPolicy RAID0: " + policy;
     }
 
     @Override
@@ -85,4 +87,31 @@ public class RAID0Impl extends StripingPolicyImpl {
         return objNo % getWidth() == relativeOsdNo;
     }
 
+    @Override
+    public Iterator<Long> getObjectsOfOSD(final int osdIndex, final long startObjectNo,
+            final long endObjectNo) {
+        return new Iterator<Long>() {
+            // first correct objectNo will be set if the first time "next()" is called
+            private long object = (getRow(startObjectNo) * getWidth() + osdIndex) - getWidth();
+
+            @Override
+            public boolean hasNext() {
+                return (object + getWidth() <= endObjectNo);
+            }
+
+            @Override
+            public Long next() {
+                object += getWidth();
+                return object;
+            }
+
+            /**
+             * method does nothing, because it's a virtual iterator
+             */
+            @Override
+            public void remove() {
+                // nothing to do
+            }
+        };
+    }
 }

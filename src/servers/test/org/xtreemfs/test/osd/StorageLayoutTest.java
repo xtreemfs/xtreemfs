@@ -29,7 +29,6 @@ package org.xtreemfs.test.osd;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
@@ -44,6 +43,7 @@ import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.ObjectInformation;
@@ -144,7 +144,7 @@ public class StorageLayoutTest extends TestCase {
                 StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1), 0, new StringSet()));// new RAID0(64, 1);
 
         assertFalse(layout.fileExists(fileId));
-        assertEquals(0, layout.getObjectList(fileId).length);
+        assertEquals(0, layout.getObjectList(fileId).size());
 
         ReusableBuffer data = BufferPool.allocate(64);
         for (int i = 0; i < 64; i++) {
@@ -160,11 +160,12 @@ public class StorageLayoutTest extends TestCase {
         }
         BufferPool.free(data);
 
-        long[] objectList = layout.getObjectList(fileId);
+        ObjectSet objectList = layout.getObjectList(fileId);
         // check
-        Arrays.sort(objectNos);
-        Arrays.sort(objectList);
-        assertTrue(Arrays.equals(objectNos, objectList));
+        ObjectSet objectNosList = new ObjectSet(1, 0, objectNos.length);
+        for (long object : objectNos)
+            objectNosList.add(object);
+        assertTrue(objectList.equals(objectNosList));
     }
 
     public static void main(String[] args) {

@@ -46,7 +46,7 @@ import org.xtreemfs.interfaces.utils.ONCRPCException;
  * 22.06.2009
  */
 class Writer implements Runnable {
-    static final int                               SLEEP_TIME_UNTIL_NEW_FILE_WILL_BE_WRITTEN = 1000 * 60 * 10; // 10
+    static int                                     SLEEP_TIME_UNTIL_NEW_FILE_WILL_BE_WRITTEN = 1000 * 60 * 10; // 10
     // minutes
     /**
      * max this number of replicas will be added/remove all at once
@@ -255,14 +255,14 @@ class Writer implements Runnable {
                 int replicaNumber = random.nextInt(raf.getXLoc().getReplicas().size());
                 // replicaNumber = (replicaNumber == 0) ? 1 : replicaNumber;
                 replica = raf.getXLoc().getReplicas().get(replicaNumber);
-            } while (replica.isFull());
+            } while (replica.isComplete());
 
             raf.removeReplica(replica);
             removed++;
         }
         boolean containsAtLeastOneFullReplica = false;
         for (Replica replica : raf.getXLoc().getReplicas()) {
-            containsAtLeastOneFullReplica = replica.isFull() || containsAtLeastOneFullReplica;
+            containsAtLeastOneFullReplica = replica.isComplete() || containsAtLeastOneFullReplica;
         }
         assert (containsAtLeastOneFullReplica);
         if (!containsAtLeastOneFullReplica)

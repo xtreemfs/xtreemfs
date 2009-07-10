@@ -35,7 +35,7 @@ public class Monitoring {
     protected static Monitoring     instance;
 
     /**
-     * value: B/ms
+     * value: B/s
      */
     protected HashMap<String, Long> entries;
 
@@ -43,8 +43,7 @@ public class Monitoring {
      * Creates a new instance of Monitoring
      */
     private Monitoring() {
-        instance = this;
-        HashMap<String, Long> entries = new HashMap<String, Long>();
+        entries = new HashMap<String, Long>();
     }
 
     public synchronized static void start() {
@@ -70,20 +69,21 @@ public class Monitoring {
      * throughput
      */
     /**
-     * @param requiredTime in ms
+     * @param requiredTime
+     *            in ms
      */
     public static void monitorThroughput(String key, long bytes, long requiredTime) {
         if (instance.entries.containsKey(key)) {
             Long lastValue = instance.entries.get(key);
-            instance.entries.put(key, (lastValue + (bytes / requiredTime)) / 2);
+            instance.entries.put(key, (long) ((lastValue + (bytes / (requiredTime / 1000d))) / 2));
         } else
-            instance.entries.put(key, bytes / requiredTime);
+            instance.entries.put(key, (long) (bytes / (requiredTime / 1000d)));
     }
 
     public static void printThroughput(String key) {
         Long value = instance.entries.get(key);
         if (value != null) {
-            double normalized = value / 1024 * 1000; // KB/s
+            double normalized = value / 1024; // KB/s
             String output = Math.round((normalized * 1000) / 1000) + "KB/s";
             System.out.println("average throughput:\t" + key + ":\t" + output);
         }

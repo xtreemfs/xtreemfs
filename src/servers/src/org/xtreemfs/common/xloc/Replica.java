@@ -54,7 +54,7 @@ public class Replica {
 
     public List<ServiceUUID> getOSDs() {
         if (osds == null) {
-            osds = new ArrayList(replica.getOsd_uuids().size());
+            osds = new ArrayList<ServiceUUID>(replica.getOsd_uuids().size());
             for (String osd : replica.getOsd_uuids()) {
                 ServiceUUID uuid = new ServiceUUID(osd);
                 osds.add(uuid);
@@ -137,7 +137,7 @@ public class Replica {
      * checks if this replica is marked as being full 
      * @return
      */
-    public boolean isFull() {
+    public boolean isComplete() {
         return ((Constants.REPL_FLAG_IS_FULL & replica.getReplication_flags()) == Constants.REPL_FLAG_IS_FULL);
     }
 
@@ -147,5 +147,13 @@ public class Replica {
      */
     public boolean isFilledOnDemand() {
         return ((Constants.REPL_FLAG_FILL_ON_DEMAND & replica.getReplication_flags()) == Constants.REPL_FLAG_FILL_ON_DEMAND);
+    }
+
+    /**
+     * checks if this replica should be a full replica or should replicate objects only ondemand
+     * @return true, if full, false if ondemand
+     */
+    public boolean isFilledUntilFull() {
+        return ((Constants.REPL_FLAG_FILL_ON_DEMAND ^ replica.getReplication_flags()) == Constants.REPL_FLAG_FILL_ON_DEMAND);
     }
 }

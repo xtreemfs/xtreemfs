@@ -48,6 +48,7 @@ import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.osd.OSDConfig;
+import org.xtreemfs.osd.replication.ObjectSet;
 
 /**
  * 
@@ -519,27 +520,27 @@ public class HashStorageLayout extends StorageLayout {
     }
 
     @Override
-    public long[] getObjectList(String fileId) {
-        long[] objectList;
+    public ObjectSet getObjectList(String fileId) {
+        ObjectSet objectList;
 
         File fileDir = new File(generateAbsoluteFilePath(fileId));
         if (fileDir.exists()) {
             String[] objs = fileDir.list(new FilenameFilter() {
                 @Override
                 public boolean accept(File dir, String name) {
-                    if(name.startsWith(".")) // ignore special files (metadata, .tepoch)
+                    if (name.startsWith(".")) // ignore special files (metadata, .tepoch)
                         return false;
                     else
                         return true;
                 }
             });
-            objectList = new long[objs.length];
+            objectList = new ObjectSet(objs.length);
 
             for (int i = 0; i < objs.length; i++) {
-                objectList[i] = parseFileName(objs[i]).objNo;
+                objectList.add(parseFileName(objs[i]).objNo);
             }
         } else
-            objectList = new long[0];
+            objectList = new ObjectSet(0);
             
         return objectList;
     }

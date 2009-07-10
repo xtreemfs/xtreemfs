@@ -27,11 +27,12 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
 package org.xtreemfs.test.common.striping;
 
 
+import java.util.Iterator;
+
 import junit.framework.TestCase;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
-import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
@@ -142,4 +143,63 @@ public class RAID0Test extends TestCase {
         assertEquals(42, policy.getObjectNoForOffset(256L * KILOBYTE * 43 - 1-1));
     }
 
+    public void testGetObjectsOfOSDiterator() throws Exception {
+        Replica r = new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 3), 0, new StringSet());
+        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r);
+
+        long startObject = 0, endObject = 12;
+        Iterator<Long> objectsIt = policy.getObjectsOfOSD(0, startObject, endObject);
+        long objectNo = startObject;
+        while(objectsIt.hasNext()) {
+            assertEquals(objectNo, objectsIt.next().longValue());
+            assertTrue(objectNo <= endObject);
+            objectNo += policy.getWidth();
+        }
+
+        startObject = 2;
+        endObject = 25;
+        objectsIt = policy.getObjectsOfOSD(2, startObject, endObject);
+        objectNo = startObject;
+        while(objectsIt.hasNext()) {
+            assertEquals(objectNo, objectsIt.next().longValue());
+            assertTrue(objectNo <= endObject);
+            objectNo += policy.getWidth();
+        }
+
+        startObject = 0;
+        endObject = 5;
+        objectsIt = policy.getObjectsOfOSD(0, startObject, endObject);
+        objectNo = startObject;
+        while(objectsIt.hasNext()) {
+            assertEquals(objectNo, objectsIt.next().longValue());
+            assertTrue(objectNo <= endObject);
+            objectNo += policy.getWidth();
+        }
+
+        startObject = 2;
+        endObject = 4;
+        objectsIt = policy.getObjectsOfOSD(1, startObject, endObject);
+        objectNo = 1;
+        while(objectsIt.hasNext()) {
+            assertEquals(objectNo, objectsIt.next().longValue());
+            assertTrue(objectNo <= endObject);
+            objectNo += policy.getWidth();
+        }
+
+        startObject = 2;
+        endObject = 1;
+        objectsIt = policy.getObjectsOfOSD(2, startObject, endObject);
+        objectNo = startObject;
+        assertFalse(objectsIt.hasNext());
+
+        startObject = 32215;
+        endObject = 32435;
+        objectsIt = policy.getObjectsOfOSD(0, startObject, endObject);
+        objectNo = 32214;
+        while(objectsIt.hasNext()) {
+            assertEquals(objectNo, objectsIt.next().longValue());
+            assertTrue(objectNo <= endObject);
+            objectNo += policy.getWidth();
+        }
+    }
 }
