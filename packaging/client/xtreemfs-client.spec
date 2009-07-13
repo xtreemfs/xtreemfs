@@ -43,19 +43,15 @@ python scons.py
 %install
 BIN_DIR="$RPM_BUILD_ROOT/usr/bin"
 MAN_DIR="$RPM_BUILD_ROOT/usr/share/man"
-XTREEMFS_CONFIG_DIR=$RPM_BUILD_ROOT/etc/xos/xtreemfs/  
+XTREEMFS_CONFIG_DIR=$RPM_BUILD_ROOT/etc/xos/xtreemfs/
 
 # copy bins
 mkdir -p $BIN_DIR
-#cp tools/xtfs_* $BIN_DIR
-#cp src/xtfs_* $BIN_DIR
-
-#cd ..
 cp bin/xtfs_* $BIN_DIR
 
 # copy config files
 mkdir -p $XTREEMFS_CONFIG_DIR
-cp config/* $XTREEMFS_CONFIG_DIR
+cp config/default_dir $XTREEMFS_CONFIG_DIR
 
 # copy man-pages
 mkdir -p $MAN_DIR

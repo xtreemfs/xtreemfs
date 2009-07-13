@@ -10,12 +10,6 @@ TMP_PATH="/tmp/fsdRLgT24fDM7YqmfFlg85gLVf6aLGA6G"
 # white list for files/dirs which should be copied
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 SERVER_WHITE_LIST=(
-	"bin/xtfs_cleanup" "bin/xtfs_cleanup"
-	"bin/xtfs_mrcdbtool" "bin/xtfs_mrcdbtool"
-	"bin/xtfs_scrub" "bin/xtfs_scrub"
-	"man/man1/xtfs_mrcdbtool.1" "man/man1/xtfs_mrcdbtool.1"
-	"man/man1/xtfs_scrub.1" "man/man1/xtfs_scrub.1"
-	"man/man1/xtfs_cleanup.1" "man/man1/xtfs_cleanup.1"
 	"etc/xos/xtreemfs/default_dir" "config/default_dir"
 	"etc/xos/xtreemfs/dirconfig.properties" "config/dirconfig.properties"
 	"etc/xos/xtreemfs/mrcconfig.properties" "config/mrcconfig.properties"
@@ -53,6 +47,23 @@ CLIENT_WHITE_LIST=(
 	"COPYING" ""
 )
 
+# white list for files/dirs which should be copied
+# source (relative from XTREEMFS_HOME_DIR) and destination (in package)
+TOOLS_WHITE_LIST=(
+	"bin/xtfs_cleanup" "bin/xtfs_cleanup"
+	"bin/xtfs_mrcdbtool" "bin/xtfs_mrcdbtool"
+	"bin/xtfs_scrub" "bin/xtfs_scrub"
+	"bin/xtfs_repl" "bin/xtfs_repl"
+	"man/man1/xtfs_cleanup.1" "man/man1/xtfs_cleanup.1"
+	"man/man1/xtfs_mrcdbtool.1" "man/man1/xtfs_mrcdbtool.1"
+	"man/man1/xtfs_scrub.1" "man/man1/xtfs_scrub.1"
+	"man/man1/xtfs_repl.1" "man/man1/xtfs_repl.1"
+	"etc/xos/xtreemfs/default_dir" "config/default_dir"
+	"src/servers/dist" "dist"
+	"AUTHORS" ""
+	"COPYING" ""
+)
+
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 XOS_ADDONS_WHITE_LIST=(
 	"src/servers/xtreemos" "xtreemos"
@@ -68,6 +79,10 @@ SERVER_BLACK_LIST=(
 
 # black list for files/dirs which should NEVER be copied
 CLIENT_BLACK_LIST=(
+)
+
+# black list for files/dirs which should NEVER be copied
+TOOLS_BLACK_LIST=(
 )
 
 # black list for files/dirs which should NEVER be copied
@@ -96,39 +111,29 @@ EOF
 build_source_tarball() {
 	PACKAGE_PATH="$TMP_PATH/$SOURCE_TARBALL_NAME"
 
-	cleanup_client $PACKAGE_PATH
-
 	echo "build source distribution"
+
+	cleanup_client $PACKAGE_PATH
 
 	# delete all from black-list in temporary dir
 	delete_source_black_list $PACKAGE_PATH
 
 	# delete all .svn directories
-	find $PACKAGE_PATH -name ".svn" -print0 | xargs -0 rm -rf
+	delete_svn $PACKAGE_PATH
 
 	# create archiv
 	tar -czf "$SOURCE_TARBALL_NAME.tar.gz" -C $TMP_PATH $SOURCE_TARBALL_NAME
 }
 
 # client package
-cleanup_client() {
-	CLEANUP_PATH=$1
-	echo "cleanup client"
-
-	# copy to temporary dir
-	create_dir $CLEANUP_PATH
-	cp -a $XTREEMFS_HOME_DIR/* "$CLEANUP_PATH"
-
-	make -C "$CLEANUP_PATH" distclean
-}
 
 build_client_package() {
 	PACKAGE_PATH="$TMP_PATH/$CLIENT_PACKAGE_NAME"
 	CLEANUP_PATH="$TMP_PATH/$CLIENT_PACKAGE_NAME""_compile"
 
-	cleanup_client $CLEANUP_PATH
-
 	echo "build client package"
+
+	cleanup_client $CLEANUP_PATH
 
 	# copy to temporary dir
 	create_dir $PACKAGE_PATH
@@ -140,16 +145,16 @@ build_client_package() {
 	copy_client_white_list $CLEANUP_PATH $PACKAGE_PATH
 
 	# delete all .svn directories
-	find $PACKAGE_PATH -name ".svn" -print0 | xargs -0 rm -rf
+	delete_svn $PACKAGE_PATH
 
-	# create archiv
-	#tar -cjf "$CLIENT_PACKAGE_NAME.tar.bz2" -C $TMP_PATH $CLIENT_PACKAGE_NAME
+	# create archive
 	tar -czf "$CLIENT_PACKAGE_NAME.tar.gz" -C $TMP_PATH $CLIENT_PACKAGE_NAME
 }
 
 # server package
 compile_server() {
 	COMPILE_PATH=$1
+	
 	echo "compile server"
 
 	create_dir $COMPILE_PATH
@@ -165,9 +170,9 @@ build_server_package() {
 	PACKAGE_PATH="$TMP_PATH/$SERVER_PACKAGE_NAME"
 	COMPILE_PATH="$TMP_PATH/$SERVER_PACKAGE_NAME""_compile"
 
-	compile_server $COMPILE_PATH
-
 	echo "build server package"
+
+	compile_server $COMPILE_PATH
 
 	create_dir $PACKAGE_PATH
 
@@ -186,11 +191,33 @@ build_server_package() {
 	copy_server_white_list $COMPILE_PATH $PACKAGE_PATH
 
 	# delete all .svn directories
-	find $PACKAGE_PATH -name ".svn" -print0 | xargs -0 rm -rf
+	delete_svn $PACKAGE_PATH
 
 	# create archiv
-	#tar -cjf "$SERVER_PACKAGE_NAME.tar.bz2" -C $TMP_PATH $SERVER_PACKAGE_NAME
 	tar -czf "$SERVER_PACKAGE_NAME.tar.gz" -C $TMP_PATH $SERVER_PACKAGE_NAME
+}
+
+build_tools_package() {
+	PACKAGE_PATH="$TMP_PATH/$TOOLS_PACKAGE_NAME"
+	COMPILE_PATH="$TMP_PATH/$TOOLS_PACKAGE_NAME""_compile"
+
+	echo "build tools package"
+
+	compile_server $COMPILE_PATH
+
+	create_dir $PACKAGE_PATH
+
+	# delete all from black-list in temporary dir
+	delete_tools_black_list $COMPILE_PATH
+
+	# copy white-list to temporary dir
+	copy_tools_white_list $COMPILE_PATH $PACKAGE_PATH
+
+	# delete all .svn directories
+	delete_svn $PACKAGE_PATH
+
+	# create archiv
+	tar -czf "$TOOLS_PACKAGE_NAME.tar.gz" -C $TMP_PATH $TOOLS_PACKAGE_NAME
 }
 
 build_xtreemos_addons() {
@@ -216,7 +243,7 @@ build_xtreemos_addons() {
 	copy_xos_addons_white_list $PACKAGE_PATH_TMP $PACKAGE_PATH
 	
 	# delete all .svn directories
-	find $PACKAGE_PATH -name ".svn" -print0 | xargs -0 rm -rf
+	delete_svn $PACKAGE_PATH
 
 	tar czf "$XOS_ADDONS_PACKAGE_NAME.tar.gz" -C $PACKAGE_PATH .
 }
@@ -259,6 +286,25 @@ function copy_client_white_list() {
 	done
 }
 
+function copy_tools_white_list() {
+	SRC_PATH=$1
+	DEST_PATH=$2
+
+	for (( i = 0 ; i < ${#TOOLS_WHITE_LIST[@]} ; i=i+2 ))
+	do
+		SRC="$SRC_PATH/${TOOLS_WHITE_LIST[$i]}"
+		# if directory doesn't exist, create it for copying file
+		if [ -d $SRC_PATH/${TOOLS_WHITE_LIST[i]} ]; then
+			mkdir -p "$DEST_PATH/${TOOLS_WHITE_LIST[i+1]}"
+			SRC="$SRC/*"
+		else
+			TMP_DIRNAME=${TOOLS_WHITE_LIST[i+1]%/*}
+			mkdir -p "$DEST_PATH/$TMP_DIRNAME"
+		fi
+		cp -a $SRC "$DEST_PATH/${TOOLS_WHITE_LIST[$i+1]}"
+	done
+}
+
 function copy_xos_addons_white_list() {
 	SRC_PATH=$1
 	DEST_PATH=$2
@@ -296,6 +342,15 @@ function delete_client_black_list() {
 	done
 }
 
+function delete_tools_black_list() {
+	SRC_PATH=$1
+
+	for (( i = 0 ; i < ${#TOOLS_BLACK_LIST[@]} ; i++ ))
+	do
+		rm -Rf "$SRC_PATH/${TOOLS_BLACK_LIST[i]}"
+	done
+}
+
 function delete_xos_addons_black_list() {
 	SRC_PATH=$1
 
@@ -322,6 +377,23 @@ function create_dir() {
 	mkdir -p $CREATE_DIR
 }
 
+function cleanup_client() {
+	CLEANUP_PATH=$1
+	echo "cleanup client"
+
+	# copy to temporary dir
+	create_dir $CLEANUP_PATH
+	cp -a $XTREEMFS_HOME_DIR/* "$CLEANUP_PATH"
+
+	make -C "$CLEANUP_PATH" distclean
+}
+
+function delete_svn() {
+	PACKAGE_PATH=$1
+	find $PACKAGE_PATH -name ".svn" -print0 | xargs -0 rm -rf
+}
+
+
 VERSION=
 XTREEMFS_HOME_DIR=
 
@@ -344,6 +416,7 @@ fi
 
 CLIENT_PACKAGE_NAME="XtreemFS-client-$VERSION"
 SERVER_PACKAGE_NAME="XtreemFS-server-$VERSION"
+TOOLS_PACKAGE_NAME="XtreemFS-tools-$VERSION"
 XOS_ADDONS_PACKAGE_NAME="XtreemFS-XOS-addons-$VERSION"
 SOURCE_TARBALL_NAME="XtreemFS-$VERSION"
 
@@ -353,6 +426,7 @@ create_dir $TMP_PATH
 # build packages
 build_client_package
 build_server_package
+build_tools_package
 build_xtreemos_addons
 build_source_tarball
 

@@ -45,14 +45,6 @@ mkdir -p $XTREEMFS_INIT_DIR
 cp init.d-scripts/xtreemfs-* $XTREEMFS_INIT_DIR
 chmod a+x $XTREEMFS_INIT_DIR/xtreemfs-*
 
-# copy bins
-mkdir -p $BIN_DIR
-cp bin/xtfs_* $BIN_DIR
-
-# copy man-pages  
-mkdir -p $MAN_DIR  
-cp -R man/* $MAN_DIR/
-
 %post
 XTREEMFS_CONFIG_DIR=$RPM_BUILD_ROOT/etc/xos/xtreemfs/
 
@@ -72,7 +64,5 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root)
 /usr/share/java/*.jar
 /etc/init.d/xtreemfs-*
-/usr/bin/xtfs_*
-/usr/share/man/man1/xtfs_*
 /etc/xos/
 /etc/xos/xtreemfs/*

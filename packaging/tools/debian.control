@@ -1,0 +1,12 @@
+Source: xtreemfs-tools
+Section: unknown
+Priority: optional
+Maintainer: xtreemfs <xtreemfs-users@googlegroups.com>
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.7.2
+
+Package: xtreemfs-tools
+Architecture: all
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: XtreemFS administration tools
+ XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org. This package contains XtreemFS administration tools. To run the tools, a SUN JAVA 6 RUNTIME ENVIROMENT IS REQUIRED! Make sure that Java is installed in /usr/bin, or $JAVA_HOME is set.

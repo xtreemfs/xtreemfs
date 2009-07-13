@@ -15,7 +15,7 @@ else
 CFLAGS += -O2
 endif
 
-DESTDIR=$(CURDIR)/debian/xtreemfs-server
+DESTDIR=$(CURDIR)/debian/xtreemfs-tools
 XTREEMFS_JAR_DIR=$(DESTDIR)/usr/share/java/
 XTREEMFS_CONFIG_DIR=$(DESTDIR)/etc/xos/xtreemfs
 XTREEMFS_INIT_DIR=$(DESTDIR)/etc/init.d/
@@ -57,19 +57,19 @@ install: build
 	
 	# copy jars
 	mkdir -p $(XTREEMFS_JAR_DIR)
-	cp dist/XtreemFS.jar $(XTREEMFS_JAR_DIR)
-	cp lib/*.jar $(XTREEMFS_JAR_DIR)
+	cp dist/XtreemFS.jar $(XTREEMFS_JAR_DIR)/XtreemFS-tools.jar
 
 	# copy config files
-	mkdir -p $(XTREEMFS_CONFIG_DIR)
-	cp config/*.properties $(XTREEMFS_CONFIG_DIR)/
-	# copy generate_uuid script  
-	cp packaging/generate_uuid $(XTREEMFS_CONFIG_DIR)/
-
-	# copy init.d files
-	mkdir -p $(XTREEMFS_INIT_DIR)
-	cp init.d-scripts/xtreemfs-* $(XTREEMFS_INIT_DIR)
-	chmod a+x $(XTREEMFS_INIT_DIR)/xtreemfs-*
+	#mkdir -p $(XTREEMFS_CONFIG_DIR)
+	#cp config/* $(XTREEMFS_CONFIG_DIR)/
+	
+	# copy bins
+	mkdir -p $(BIN_DIR)
+	cp bin/xtfs_* $(BIN_DIR)
+	
+	# copy man-pages
+	mkdir -p $(MAN_DIR)
+	cp -R man/* $(MAN_DIR)
 
 # Build architecture-independent files here.
 binary-indep: build install
