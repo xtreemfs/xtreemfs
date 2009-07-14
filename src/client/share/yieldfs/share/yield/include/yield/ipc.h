@@ -30,6 +30,7 @@ struct fd_set;
 #ifdef YIELD_HAVE_ZLIB
 #ifdef _WIN32
 #undef ZLIB_WINAPI // So zlib doesn't #include windows.h
+#pragma comment( lib, "zdll.lib" )
 #endif
 #include "zlib.h"
 #endif
@@ -48,8 +49,8 @@ typedef struct yajl_gen_t* yajl_gen;
 
 
 #define YIELD_SOCKET_PROTOTYPES \
-virtual ConnectStatus aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block ); \
-virtual ssize_t aio_read( YIELD::auto_Object<AIOReadControlBlock> aio_read_control_block ); \
+virtual ConnectStatus aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block ); \
+virtual ssize_t aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block ); \
 virtual bool bind( auto_SocketAddress to_sockaddr ); \
 virtual bool close(); \
 virtual ConnectStatus connect( auto_SocketAddress to_sockaddr ); \
@@ -75,10 +76,81 @@ namespace YIELD
   class URI;
 
 
-  class EventFDPipe : public YIELD::Object
+#ifdef YIELD_HAVE_ZLIB
+  class Diefleder
   {
   public:
-    static YIELD::auto_Object<EventFDPipe> create();
+    static auto_Buffer deflate( auto_Buffer buffer, int level = Z_BEST_COMPRESSION )
+    {
+      z_stream zstream;
+      zstream.zalloc = Z_NULL;
+      zstream.zfree = Z_NULL;
+      zstream.opaque = Z_NULL;      
+
+      if ( deflateInit( &zstream, level ) == Z_OK )
+      {
+        auto_Buffer first_out_buffer = new StackBuffer<4096>;
+        auto_Buffer current_out_buffer = first_out_buffer;
+        zstream.next_out = static_cast<Bytef*>( static_cast<void*>( *current_out_buffer ) );
+        zstream.avail_out = current_out_buffer->capacity();
+
+        std::vector<struct iovec> iovecs;
+        buffer->as_iovecs( iovecs );
+
+        for ( size_t iovec_i = 0; iovec_i < iovecs.size(); iovec_i++ )
+        {
+          zstream.next_in = reinterpret_cast<Bytef*>( iovecs[iovec_i].iov_base );
+          zstream.avail_in = iovecs[iovec_i].iov_len;
+
+          int deflate_ret;
+          while ( ( deflate_ret = ::deflate( &zstream, Z_NO_FLUSH ) ) == Z_OK )
+          {
+            if ( zstream.avail_out > 0 )
+            {
+              while ( ( deflate_ret = ::deflate( &zstream, Z_FINISH ) ) == Z_OK ) // Z_OK = need more buffer space to finish compression, Z_STREAM_END = really done
+              {
+                current_out_buffer->put( NULL, current_out_buffer->capacity() );
+                auto_Buffer new_out_buffer = new StackBuffer<4096>;
+                current_out_buffer->set_next_buffer( new_out_buffer );
+                current_out_buffer = new_out_buffer;
+                zstream.next_out = static_cast<Bytef*>( static_cast<void*>( *current_out_buffer ) );
+                zstream.avail_out = current_out_buffer->capacity();
+              }
+
+              if ( deflate_ret == Z_STREAM_END )
+              {
+                if ( ( deflate_ret = deflateEnd( &zstream ) ) == Z_OK )
+                {
+                  if ( zstream.avail_out < current_out_buffer->capacity() )
+                    current_out_buffer->put( NULL, current_out_buffer->capacity() - zstream.avail_out );
+
+                  return first_out_buffer;
+                }
+              }
+            }
+            else
+            {
+              current_out_buffer->put( NULL, current_out_buffer->capacity() );
+              StackBuffer<4096> new_out_buffer = new StackBuffer<4096>;
+              current_out_buffer->set_next_buffer( new_out_buffer );
+              current_out_buffer = new_out_buffer;
+              zstream.next_out = static_cast<Bytef*>( static_cast<void*>( *current_out_buffer ) );
+              zstream.avail_out = current_out_buffer->capacity();
+            }
+          }
+        }
+      }
+
+      return NULL;
+    }
+  };
+#endif
+
+
+  class EventFDPipe : public Object 
+  {
+  public:
+    static auto_Object<EventFDPipe> create();
 
 #ifdef YIELD_HAVE_LINUX_EVENTFD
     int get_read_end() const { return fd; }
@@ -206,7 +278,7 @@ namespace YIELD
 
     int active_fds;
     auto_Object<EventFDPipe> eventfd_pipe;
-    STLHashMap<Object*> fd_to_context_map;
+    STLHashMap<Object*> fd_to_context_map;    
   };
 
 
@@ -238,7 +310,7 @@ namespace YIELD
   {
   public:
     // EventTarget
-    virtual bool send( Event& ev );
+    virtual void send( Event& ev );
 
   protected:
     Peer( auto_Log log );
@@ -503,6 +575,7 @@ namespace YIELD
 
   private:
     auto_Object<TCPSocket> listen_tcp_socket;
+    Mutex lock;
   };
 
   typedef auto_Object<TCPListenQueue> auto_TCPListenQueue;
@@ -711,7 +784,7 @@ namespace YIELD
     virtual void handleEvent( Event& );
 
     // EventTarget
-    bool send( Event& ev ) { return Peer<ProtocolRequestType, ProtocolResponseType>::send( ev ); }
+    void send( Event& ev ) { Peer<ProtocolRequestType, ProtocolResponseType>::send( ev ); }
 
   protected:
     Server( auto_Log log ) 
@@ -774,6 +847,62 @@ namespace YIELD
     }
 
     void allocateHeapBuffer();
+  };
+
+
+  class HTTPBenchmarkDriver : public EventHandler
+  {
+  public:
+    static auto_Object<HTTPBenchmarkDriver> create( auto_EventTarget http_request_target, uint8_t in_flight_request_count, const Path& wlog_file_path );
+    virtual ~HTTPBenchmarkDriver();
+
+    void get_request_rates( std::vector<double>& out_request_rates );
+    void get_response_rates( std::vector<double>& out_response_rates );
+    void wait();
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( HTTPBenchmarkDriver, 0 );
+
+    // EventHandler
+    void handleEvent( Event& );
+
+  private:
+    HTTPBenchmarkDriver( auto_EventTarget http_request_target, uint8_t in_flight_http_request_count, const std::vector<URI*>& wlog_uris );
+
+    auto_EventTarget http_request_target;
+    uint8_t in_flight_http_request_count;
+    std::vector<URI*> wlog_uris;
+
+    auto_Stage my_stage;
+    Mutex wait_signal;
+
+    void sendHTTPRequest();
+
+    // Statistics
+    Mutex statistics_lock;
+    static TimerQueue statistics_timer_queue;
+    uint32_t requests_sent_in_period, responses_received_in_period;
+    std::vector<double> request_rates, response_rates;
+
+    class StatisticsTimer : public TimerQueue::Timer
+    {
+    public:
+      StatisticsTimer( auto_Object<HTTPBenchmarkDriver> http_benchmark_driver )
+        : Timer( 5 * NS_IN_S, 5 * NS_IN_S ), http_benchmark_driver( http_benchmark_driver )
+      { }
+
+      // Timer
+      bool fire( const Time& elapsed_time ) 
+      {
+        http_benchmark_driver->calculateStatistics( elapsed_time );
+        return true;
+      }
+
+    private:
+      auto_Object<HTTPBenchmarkDriver> http_benchmark_driver;
+    };
+
+    void calculateStatistics( const Time& elapsed_time );
   };
 
 
@@ -852,9 +981,9 @@ namespace YIELD
     uint8_t get_http_version() const { return http_version; }
     const char* get_method() const { return method; }
     const char* get_uri() const { return uri; }    
-    virtual bool respond( uint16_t status_code );
-    virtual bool respond( uint16_t status_code, auto_Buffer body );
-    virtual bool respond( Response& response ) { return Request::respond( response ); }
+    virtual void respond( uint16_t status_code );
+    virtual void respond( uint16_t status_code, auto_Buffer body );
+    virtual void respond( Response& response ) { Request::respond( response ); }
     auto_Buffer serialize();
 
     // Object
@@ -901,7 +1030,7 @@ namespace YIELD
     virtual void handleEvent( Event& ev ) { Client<HTTPRequest, HTTPResponse>::handleEvent( ev ); }
 
     // EventTarget
-    virtual bool send( Event& ev ) { return Client<HTTPRequest, HTTPResponse>::send( ev ); }
+    virtual void send( Event& ev ) { Client<HTTPRequest, HTTPResponse>::send( ev ); }
 
   private:
     HTTPClient( const URI& absolute_uri, auto_Log log, uint8_t operation_retries_max, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
@@ -928,6 +1057,12 @@ namespace YIELD
                                            auto_Object<StageGroupType> stage_group,                        
                                            auto_Log log = NULL, 
                                            auto_SSLContext ssl_context = NULL );
+
+    template <class StageGroupType>
+    static auto_Object<HTTPServer> create( auto_EventTarget http_request_target,
+                                           auto_Object<StageGroupType> stage_group,
+                                           auto_Object<TCPListenQueue> tcp_listen_queue,
+                                           auto_Log log = NULL );
 
     // Object
     YIELD_OBJECT_PROTOTYPES( HTTPServer, 0 );
@@ -1128,7 +1263,7 @@ namespace YIELD
     virtual void unmarshal( Unmarshaller& );
 
     // Request
-    virtual bool respond( Response& response );
+    virtual void respond( Response& );
 
     // ProtocolRequest
     virtual auto_ONCRPCResponse createProtocolResponse() { return new ONCRPCResponse( incRef(), _interface->createResponse( get_body()->get_tag() ).release() ); }
@@ -1161,7 +1296,7 @@ namespace YIELD
       if ( peername != NULL && peername->get_port() != 0 )
       {
         auto_Object<ONCRPCClientType> oncrpc_client = new ONCRPCClientType( absolute_uri, log, operation_retries_max, operation_timeout, peername, ssl_context );
-        auto_Stage oncrpc_client_stage = stage_group->createStage( oncrpc_client->incRef(), 1, new FDEventQueue, NULL, log );
+        auto_Stage oncrpc_client_stage = stage_group->createStage( oncrpc_client->incRef(), new FDEventQueue, 1 );
         return oncrpc_client;
       }
       else
@@ -1169,16 +1304,16 @@ namespace YIELD
     }
 
     // EventTarget
-    virtual bool send( Event& ev ) 
+    virtual void send( Event& ev ) 
     { 
       if ( InterfaceType::checkRequest( ev ) != NULL )
-        return Client<ONCRPCRequest, ONCRPCResponse>::send( *( new ONCRPCRequest( this->incRef(), ev ) ) );
+        Client<ONCRPCRequest, ONCRPCResponse>::send( *( new ONCRPCRequest( this->incRef(), ev ) ) );
       else
-        return Client<ONCRPCRequest, ONCRPCResponse>::send( ev );
+        Client<ONCRPCRequest, ONCRPCResponse>::send( ev );
     }
 
     // EventHandler
-    // Have to override so StageStartupEvent doesn't go to InterfaceType
+    // Have to override so Stage::StartupEvent doesn't go to InterfaceType
     virtual void handleEvent( Event& ev )
     {
       Client<ONCRPCRequest, ONCRPCResponse>::handleEvent( ev );
@@ -1284,7 +1419,7 @@ namespace YIELD
 #ifdef _WIN32
     Process( void* hChildProcess, void* hChildThread,       
 #else
-    Process( int child_pid, 
+    Process( pid_t child_pid, 
 #endif
       auto_Object<Pipe> child_stdin, auto_Object<Pipe> child_stdout, auto_Object<Pipe> child_stderr );
 

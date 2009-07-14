@@ -25,7 +25,7 @@ void MultiResponseTarget::respond( std::vector<YIELD::Event*>& responses, YIELD:
   final_response_target->send( responses[responses.size() - 1]->incRef() );
 }
 
-bool MultiResponseTarget::send( YIELD::Event& ev )
+void MultiResponseTarget::send( YIELD::Event& ev )
 {
   responses_lock.acquire();
 
@@ -39,7 +39,7 @@ bool MultiResponseTarget::send( YIELD::Event& ev )
       {
         respond( static_cast<YIELD::ExceptionResponse*>( *response_i )->incRef(), final_response_target );
         responses_lock.release();
-        return true;
+        return;
       }
     }
 
@@ -47,6 +47,4 @@ bool MultiResponseTarget::send( YIELD::Event& ev )
   }
 
   responses_lock.release();
-
-  return true;
 }

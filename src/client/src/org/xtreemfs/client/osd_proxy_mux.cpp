@@ -44,7 +44,7 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( OSDPingResponseTarget, 0 );
 
         // YIELD::EventTarget
-        bool send( YIELD::Event& ev )       
+        void send( YIELD::Event& ev )       
         {
           switch ( ev.get_tag() )
           {
@@ -53,11 +53,11 @@ namespace org
               YIELD::Time rtt = YIELD::Time() - creation_time;
               OSDPingResponse* response = new OSDPingResponse( static_cast<org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse&>( ev ).get_remote_coordinates(), rtt, target_osd_uuid );
               YIELD::Object::decRef( ev );
-              return osd_proxy_mux->send( *response );
+              osd_proxy_mux->send( *response );
             }
             break;
 
-            default: YIELD::Object::decRef( ev ); return true;
+            default: YIELD::Object::decRef( ev );
           }
         }
 

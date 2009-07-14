@@ -22,7 +22,7 @@ namespace org
       {
       public:
         // YIELD::EventTarget
-        virtual bool send( YIELD::Event& ev );
+        virtual void send( YIELD::Event& ev );
           
       protected:
         Proxy( const YIELD::URI& absolute_uri, YIELD::auto_Log log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context );

@@ -1,4 +1,4 @@
-// Revision: 1628
+// Revision: 1654
 
 #include "yield/base.h"
 using namespace YIELD;
@@ -49,13 +49,13 @@ void BufferedMarshaller::write( const void* buffer, size_t buffer_len )
     {
       buffer_len -= put_len;
       buffer = static_cast<const uint8_t*>( buffer ) + put_len;
-      YIELD::auto_Buffer next_buffer = new HeapBuffer( current_buffer->capacity() * 2 );
+      auto_Buffer next_buffer = new HeapBuffer( current_buffer->capacity() * 2 );
       current_buffer->set_next_buffer( next_buffer );
       current_buffer = next_buffer;
     }
   }
 }
-void BufferedMarshaller::write( YIELD::auto_Buffer buffer )
+void BufferedMarshaller::write( auto_Buffer buffer )
 {
   current_buffer->set_next_buffer( buffer );
   current_buffer = new HeapBuffer( current_buffer->capacity() );

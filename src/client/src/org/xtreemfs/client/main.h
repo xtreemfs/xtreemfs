@@ -208,7 +208,7 @@ namespace org
             checked_uri.set_port( default_port );
 
           if ( stage_group == NULL )
-            stage_group = new YIELD::SEDAStageGroup( "XtreemFS StageGroup" );
+            stage_group = new YIELD::SEDAStageGroup;
 
           YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, stage_group, trace_socket_io ? get_log() : NULL, 3, operation_timeout, get_ssl_context() );
           if ( proxy != NULL )

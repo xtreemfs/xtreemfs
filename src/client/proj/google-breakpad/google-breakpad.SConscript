@@ -8,6 +8,7 @@ except:
 
     include_dir_paths = os.environ.has_key( "CPPPATH" ) and os.environ["CPPPATH"].split( sys.platform.startswith( "win" ) and ';' or ':' ) or []
 
+    if os.environ.get( "CC" ): build_env["CC"] = os.environ.get( "CC" )
     if os.environ.get( "CXX" ): build_env["CXX"] = os.environ.get( "CXX" )
     build_env["CCFLAGS"] = os.environ.get( "CCFLAGS", "" ).strip()
     lib_dir_paths = os.environ.has_key( "LIBPATH" ) and os.environ["LIBPATH"].split( sys.platform.startswith( "win" ) and ';' or ':' ) or []
@@ -44,7 +45,7 @@ except:
         if ARGUMENTS.get( "profile-cpu", 0 ):  build_env["CCFLAGS"] += "-pg "; build_env["LINKFLAGS"] += "-pg "
         if ARGUMENTS.get( "profile-heap", 0 ): build_env["CCFLAGS"] += "-fno-omit-frame-pointer "; build_env["LIBS"].append( "tcmalloc" )
         if ARGUMENTS.get( "release", 0 ): build_env["CCFLAGS"] += "-O2 "
-        else: build_env["CCFLAGS"] += "-g -D_DEBUG "        
+        else: build_env["CCFLAGS"] += "-g -D_DEBUG "
         if ARGUMENTS.get( "shared", 0 ): build_env["CCFLAGS"] += "-fPIC "
         if not ARGUMENTS.get( "with-rtti", 0 ) and sys.platform != "darwin": build_env["CCFLAGS"] += "-fno-rtti " # Disable RTTI by default
 

@@ -6,13 +6,12 @@
 
 #include "yield/platform.h"
 
+#include <map>
+
 
 #define YIELD_STAGES_PER_GROUP_MAX 32
-
-#ifdef __sun
-#define YIELD_RECORD_PERFCTRS 1
-#include <libcpc.h>
-#endif
+// YIELD_MG1_POLLING_TABLE_SIZE should be a Fibonnaci number: 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584
+#define YIELD_MG1_POLLING_TABLE_SIZE 144
 
 
 namespace YIELD
@@ -22,28 +21,23 @@ namespace YIELD
   class Response;
 
 
-  class Event : public YIELD::Struct
+  class Event : public Struct
   {
   public:
     // Object
     Event& incRef() { return Object::incRef( *this ); }
 
   protected:
-    Event() : enqueued_time_ns( 0 ) { }
     virtual ~Event() { }
-
-  private:
-    template <class, class, class> friend class StageImpl;
-    uint64_t enqueued_time_ns;
   };
 
-  typedef YIELD::auto_Object<Event> auto_Event;
+  typedef auto_Object<Event> auto_Event;
 
 
-  class EventTarget : public YIELD::Object
+  class EventTarget : public Object
   {
   public:
-    virtual bool send( Event& ) = 0;
+    virtual void send( Event& ) = 0;
 
     // Object
     EventTarget& incRef() { return Object::incRef( *this ); }
@@ -53,7 +47,7 @@ namespace YIELD
     virtual ~EventTarget() { }
   };
 
-  typedef YIELD::auto_Object<EventTarget> auto_EventTarget;
+  typedef auto_Object<EventTarget> auto_EventTarget;
 
 
   class EventHandler : public EventTarget
@@ -65,10 +59,10 @@ namespace YIELD
     virtual void handleUnknownEvent( Event& );
 
     // Object
-    EventHandler& incRef() { return YIELD::Object::incRef( *this ); }
+    EventHandler& incRef() { return Object::incRef( *this ); }
 
     // EventTarget
-    bool send( Event& );
+    void send( Event& );
 
   protected:
     EventHandler() { }
@@ -77,6 +71,8 @@ namespace YIELD
   private:
     Mutex handleEvent_lock;
   };
+
+  typedef auto_Object<EventHandler> auto_EventHandler;
 
 
   class EventQueue : public EventTarget
@@ -109,9 +105,14 @@ namespace YIELD
     virtual Event* try_dequeue() { return dequeue( 0 ); }
 
     // EventTarget
-    bool send( Event& ev )
+    void send( Event& ev )
     {
-      return enqueue( ev );
+#ifdef _DEBUG
+      if ( !enqueue( ev ) ) 
+        DebugBreak();
+#else
+      enqueue( ev );
+#endif
     }
 
   protected:
@@ -123,84 +124,28 @@ namespace YIELD
     ExpectedEventType& _checkDequeuedEventAgainstExpectedEventType( Event& dequeued_ev );
   };
 
+  typedef auto_Object<EventQueue> auto_EventQueue;
 
-  template <class InternalQueueType = NonBlockingFiniteQueue<Event*, 256> >
-  class OneSignalEventQueue : public EventQueue, private InternalQueueType
+
+  class OneSignalEventQueue : public EventQueue, private NonBlockingFiniteQueue<Event*, 256>
   {
   public:
-    ~OneSignalEventQueue() { }
-
     // Object
     YIELD_OBJECT_PROTOTYPES( OneSignalEventQueue, 101 );
 
     // EventQueue
-    Event* dequeue()
-    {
-      Event* result = InternalQueueType::try_dequeue();
+    Event* dequeue();
+    Event* dequeue( uint64_t timeout_ns );
+    bool enqueue( Event& ev );
+    Event* try_dequeue();
 
-      if ( result != 0 ) // Hot case
-        return result; // Don't dec the semaphore, just let a cold acquire succeed on an empty queue
-      else
-      {
-        do
-        {
-          empty.acquire();
-          result = InternalQueueType::try_dequeue();
-        }
-        while ( result == 0 );
+  private:
+    ~OneSignalEventQueue() { }
 
-        return result;
-      }
-    }
-
-    Event* dequeue( uint64_t timeout_ns )
-    {
-      Event* result = InternalQueueType::try_dequeue();
-
-      if ( result != 0 )
-        return result;
-      else
-      {
-        for ( ;; )
-        {
-
-          uint64_t before_acquire_time_ns = Time::getCurrentUnixTimeNS();
-
-          empty.timed_acquire( timeout_ns );
-
-          if ( ( result = InternalQueueType::try_dequeue() ) != 0 )
-            break;
-
-          uint64_t waited_ns = Time::getCurrentUnixTimeNS() - before_acquire_time_ns;
-          if ( waited_ns >= timeout_ns )
-            break;
-          else
-            timeout_ns -= static_cast<uint64_t>( waited_ns );
-        }
-
-        return result;
-      }
-    }
-
-    bool enqueue( Event& ev )
-    {
-      if ( InternalQueueType::enqueue( &ev ) )
-      {
-        empty.release();
-        return true;
-      }
-      else
-        return false;
-    }
-
-    inline Event* try_dequeue()
-    {
-      return InternalQueueType::try_dequeue();
-    }
-
-  protected:
     CountingSemaphore empty;
   };
+
+  typedef auto_Object<OneSignalEventQueue> auto_OneSignalEventQueue;
 
 
   class Interface : public EventHandler
@@ -208,9 +153,9 @@ namespace YIELD
   public:
     virtual Request* checkRequest( Object& request ) = 0; // Casts an Object to a Request if the request belongs to the interface
     virtual Response* checkResponse( Object& response ) = 0; // Casts an Object to a Response if the request belongs to the interface
-    virtual YIELD::auto_Object<Request> createRequest( uint32_t tag ) = 0;
-    virtual YIELD::auto_Object<Response> createResponse( uint32_t tag ) = 0;
-    virtual YIELD::auto_Object<ExceptionResponse> createExceptionResponse( uint32_t tag ) = 0;
+    virtual auto_Object<Request> createRequest( uint32_t tag ) = 0;
+    virtual auto_Object<Response> createResponse( uint32_t tag ) = 0;
+    virtual auto_Object<ExceptionResponse> createExceptionResponse( uint32_t tag ) = 0;
   };
 
   typedef auto_Object<Interface> auto_Interface;
@@ -227,20 +172,15 @@ namespace YIELD
     virtual ~Response() { }
   };
 
+  typedef auto_Object<Response> auto_Response;
+
 
   class Request : public Event
   {
   public:
-    virtual bool respond( Response& response )
+    virtual void respond( Response& response )
     {
-      if ( response_target != NULL )
-        return response_target->send( response );
-      else
-      {
-        Object::decRef( response );
-        DebugBreak();
-        return false;
-      }
+      response_target->send( response );
     }
 
     // Object
@@ -256,6 +196,8 @@ namespace YIELD
   private:
     auto_EventTarget response_target;
   };
+
+  typedef auto_Object<Request> auto_Request;
 
 
   class ExceptionResponse : public Response, public Exception
@@ -274,6 +216,8 @@ namespace YIELD
     // Object
     YIELD_OBJECT_PROTOTYPES( ExceptionResponse, 102 );
   };
+
+  typedef auto_Object<ExceptionResponse> auto_ExceptionResponse;
 
 
   template <class ExpectedEventType>
@@ -306,134 +250,83 @@ namespace YIELD
   class Stage : public EventTarget
   {
   public:
-    virtual const char* get_stage_name() const = 0;
-    virtual YIELD::auto_Object<EventHandler> get_event_handler() = 0;
-    virtual YIELD::auto_Object<EventQueue> get_event_queue() = 0;
+    class StartupEvent : public Event
+    {
+    public:
+      StartupEvent( auto_Object<Stage> stage )
+        : stage( stage )
+      { }
+
+      auto_Object<Stage> get_stage() { return stage; }
+
+      // Object
+      YIELD_OBJECT_PROTOTYPES( Stage::StartupEvent, 104 );
+
+    private:
+      auto_Object<Stage> stage;
+    };
+
+
+    class ShutdownEvent : public Event
+    {
+    public:
+      // Object
+      YIELD_OBJECT_PROTOTYPES( Stage::ShutdownEvent, 105 );
+    };
+
 
     virtual double get_rho() const { return 0; }
+    virtual const char* get_stage_name() const = 0;
+    virtual auto_Object<EventHandler> get_event_handler() = 0;
+    virtual auto_Object<EventQueue> get_event_queue() = 0;
 
-    virtual bool visit() { return false; }; // Blocking visit, for SEDA
-    virtual bool visit( uint64_t ) { return false; }; // Timed visit, for CohortS
+    virtual bool visit() { return false; }; // Blocking visit
+    virtual bool visit( uint64_t ) { return false; }; // Timed visit
 
     // Object
     YIELD_OBJECT_PROTOTYPES( Stage, 103 );
 
   protected:
-    Stage()
-    {
-#ifdef YIELD_RECORD_PERFCTRS
-#ifdef __sun
-      last_recorded_cpc_events_time_ns = 0;
-      pic0_total = pic1_total = 0;
-#endif
-#endif
-    }
-
     virtual ~Stage() { }
-
-  private:
-#ifdef YIELD_RECORD_PERFCTRS
-#ifdef __sun
-    friend class StageGroupThread;
-    uint64_t pic0_total, pic1_total;
-    uint64_t last_recorded_cpc_events_time_ns;
-#endif
-#endif
   };
 
-  typedef YIELD::auto_Object<Stage> auto_Stage;
+  typedef auto_Object<Stage> auto_Stage;
 
 
   // A separate templated version for subclasses to inherit from (MG1Stage, CohortStage, etc.)
   // This helps eliminate some virtual function calls by having the specific EventHandler type instead of a generic EventHandler pointer
   template <class EventHandlerType, class EventQueueType, class LockType>
-  class StageImpl : public Stage
+  class TemplatedStageImpl : public Stage
   {
   public:
-    StageImpl( YIELD::auto_Object<EventHandlerType> event_handler, YIELD::auto_Object<EventQueueType> event_queue, auto_EventTarget, YIELD::auto_Object<Log> log )
-      : event_handler( event_handler ), event_queue( event_queue ), log( log )
-    {
-      event_queue_length = event_queue_arrival_count = 1; // send() would normally inc these, but we can't use send() because it's a virtual function; instead we enqueue directly and inc the lengths ourselves
-      event_queue_full_count = 0;
-      rho = 0;
-      arrival_rate_rrd = RRD::creat( get_stage_name() + std::string( "_arrival_rate" ) );
-      service_rate_rrd = RRD::creat( get_stage_name() + std::string( "_service_rate" ) );
-      if ( arrival_rate_rrd != NULL && service_rate_rrd != NULL )
-        statistics_timer_queue.addTimer( new StatisticsTimer( ( StageImpl<EventHandlerType, EventQueueType, LockType>& )this->incRef() ) );
-    }
-
-    double get_rho() const { return rho; }
+    TemplatedStageImpl( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue, unsigned long running_stage_tls_key )
+      : event_handler( event_handler ), event_queue( event_queue ), running_stage_tls_key( running_stage_tls_key )
+    { }
 
     // EventTarget
-    bool send( Event& ev )
+    void send( Event& ev )
     {
-#ifdef _DEBUG
-      if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
-      {
-        std::ostringstream log_str;
-        log_str << "yield::StageImpl: thread #" << Thread::getCurrentThreadId() << " sending " << ev.get_type_name() << " to the " << get_stage_name() << " stage.";
-        log->getStream( Log::LOG_DEBUG ) << log_str.str();
-      }
-#endif
-
-      ++event_queue_length;
-      ++event_queue_arrival_count;
-
       if ( event_queue->enqueue( ev ) )
-        return true;
+        return;
       else
-      {
-        if ( event_queue_full_count++ < 10 )
-          std::cerr << "yield::StageImpl: " << Time() << ": queue full #" << static_cast<unsigned short>( event_queue_full_count ) << " at " << event_handler->get_type_name() << " stage." << std::endl;
-
-        /*
-        StageGroupThread* running_stage_group_thread = stage_group.get_running_stage_group_thread();
-
-        for ( unsigned char lock_acquire_tries = 0; lock_acquire_tries < 15; lock_acquire_tries++ )
-        {
-          // Acquire the lock on the receiving stage
-          if ( lock.timed_acquire( static_cast<uint64_t>( lock_acquire_tries * NS_IN_MS ) ) )
-          {
-            while ( running_stage_group_thread->shouldRun() )
-            {
-              // Keep trying to enqueue until it succeeds
-              // Process an event from the head of the queue
-              Event* head_ev = event_queue->try_dequeue();
-              if ( head_ev )
-              {
-                --event_queue_length;
-                _callEventHandler( *head_ev );
-              }
-
-              // Try to enqueue the send() event
-              if ( event_queue->enqueue( ev ) )
-              {
-                lock.release();
-                return true;
-              }
-            }
-          }
-        }
-        */
-
-        return false;
-      }
+        DebugBreak();
     }
 
     // Stage
     const char* get_stage_name() const { return event_handler->get_type_name(); }
-    YIELD::auto_Object<EventHandler> get_event_handler() { return event_handler->incRef(); }
-    YIELD::auto_Object<EventQueue> get_event_queue() { return static_cast<EventQueue&>( event_queue->incRef() ); }
+    auto_Object<EventHandler> get_event_handler() { return event_handler->incRef(); }
+    auto_Object<EventQueue> get_event_queue() { return static_cast<EventQueue&>( event_queue->incRef() ); }
 
     bool visit()
     {
       if ( lock.try_acquire() )
       {
+        Thread::setTLS( running_stage_tls_key, this );
+
         Event* ev = event_queue->dequeue();
         if ( ev != NULL )
         {
-          --event_queue_length;
-          _callEventHandler( *ev );
+          event_handler->handleEvent( *ev );
           lock.release();
           return true;
         }
@@ -451,11 +344,12 @@ namespace YIELD
     {
       if ( lock.try_acquire() )
       {
+        Thread::setTLS( running_stage_tls_key, this );
+
         Event* ev = event_queue->dequeue( timeout_ns );
         if ( ev != NULL )
         {
-          --event_queue_length;
-          _callEventHandler( *ev );
+          event_handler->handleEvent( *ev );
           lock.release();
           return true;
         }
@@ -470,110 +364,152 @@ namespace YIELD
     }
 
   private:
-    YIELD::auto_Object<EventHandlerType> event_handler;
-    YIELD::auto_Object<EventQueueType> event_queue;
-    YIELD::auto_Object<Log> log;
+    auto_Object<EventHandlerType> event_handler;
+    auto_Object<EventQueueType> event_queue;
+    unsigned long running_stage_tls_key;
+
+    LockType lock;
+  };
+
+
+  template <class LockType>
+  class InstrumentedStageImpl : public Stage
+  {
+  public:
+    InstrumentedStageImpl( auto_Object<EventHandler> event_handler, auto_Object<EventQueue> event_queue, unsigned long running_stage_tls_key );
+
+    // EventTarget
+    void send( Event& ev );
+
+    // Stage
+    const char* get_stage_name() const { return event_handler->get_type_name(); }
+    auto_Object<EventHandler> get_event_handler() { return event_handler; }
+    auto_Object<EventQueue> get_event_queue() { return event_queue; }
+    bool visit();
+    bool visit( uint64_t timeout_ns );
+
+  private:
+    auto_Object<EventHandler> event_handler;
+    auto_Object<EventQueue> event_queue;
+    unsigned long running_stage_tls_key;
 
     LockType lock;
 
     // Statistics
+    static TimerQueue statistics_timer_queue;
     uint32_t event_queue_length, event_queue_arrival_count;
-    unsigned char event_queue_full_count;
-    Sampler<double, 2000, Mutex> event_processing_time_sampler, event_queueing_time_sampler;
-    double rho;
-    TimerQueue statistics_timer_queue;
-    auto_RRD arrival_rate_rrd, service_rate_rrd;
+    Sampler<uint64_t, 2000, Mutex> event_processing_time_sampler;
+    std::map<const char*, uint64_t> send_counters; Mutex send_counters_lock;
 
 
-    void _callEventHandler( Event& ev )
-    {
-      uint64_t event_queueing_time_ns = Time::getCurrentUnixTimeNS() - ev.enqueued_time_ns;
-      if ( event_queueing_time_ns < 2 * NS_IN_S )
-        event_queueing_time_sampler.setNextSample( static_cast<double>( event_queueing_time_ns * NS_IN_MS ) );
-
-#ifdef _DEBUG
-      if ( log != NULL && log->get_level() >= Log::LOG_DEBUG )
-      {
-        std::ostringstream log_str;
-        log_str << "yield::StageImpl: thread #" << Thread::getCurrentThreadId() << " processing " << ev.get_type_name() << " at the " << get_stage_name() << " stage.";
-        log->getStream( Log::LOG_DEBUG ) << log_str.str();
-      }
-#endif
-
-      double start_time_ms = Time::getCurrentUnixTimeMS();
-
-      event_handler->handleEvent( ev );
-
-      double event_processing_time_ms = Time::getCurrentUnixTimeMS() - start_time_ms;
-      if ( event_processing_time_ms < 10 * MS_IN_S )
-        event_processing_time_sampler.setNextSample( event_processing_time_ms );
-    }
-
-
-    class StatisticsTimer : public Timer
+    class StatisticsTimer : public TimerQueue::Timer
     {
     public:
-      StatisticsTimer( auto_Object< StageImpl<EventHandlerType, EventQueueType, LockType> > stage )
-        : Timer( 1 * NS_IN_S, 1 * NS_IN_S ), stage( stage )
-      { }
+      StatisticsTimer( auto_Object<Stage> stage );
 
       // Timer
-      void fire()
+      bool fire( const Time& elapsed_time );
+
+    private:
+      auto_Object<Stage> stage;
+    };
+
+
+    // StageImpl
+    void _callEventHandler( Event& );
+  };
+
+
+  class StageGroup : public Object
+  {
+  public:
+    template <class EventHandlerType>
+    auto_Stage createStage( auto_Object<EventHandlerType> event_handler )
+    {
+      return createStage( static_cast<EventHandler*>( event_handler.release() ) );
+    }
+
+    template <class EventHandlerType, class EventQueueType>
+    auto_Stage createStage( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue )
+    {
+      return createStage( static_cast<EventHandler*>( event_handler.release() ), static_cast<EventQueue*>( event_queue.release() ) );
+    }
+
+    template <class EventHandlerType>
+    auto_Stage createStage( auto_Object<EventHandlerType> event_handler, int16_t thread_count )
+    {
+      return createStage( static_cast<EventHandler*>( event_handler.release() ), NULL, thread_count );
+    }
+
+    template <class EventHandlerType, class EventQueueType>
+    auto_Stage createStage( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue, int16_t thread_count )
+    {
+      return createStage( static_cast<EventHandler*>( event_handler.release() ), static_cast<EventQueue*>( event_queue.release() ), thread_count );
+    }
+    
+    virtual auto_Stage createStage( auto_Object<EventHandler> event_handler,                                    
+                                    auto_Object<EventQueue> event_queue = NULL,
+                                    int16_t thread_count = 1 ) = 0;
+
+    auto_ProcessorSet get_limit_physical_processor_set() const { return limit_physical_processor_set; }
+    auto_ProcessorSet get_limit_logical_processor_set() const { return limit_logical_processor_set; }
+    Stage** get_stages() { return &stages[0]; }
+
+    // Object
+    StageGroup& incRef() { return Object::incRef( *this ); }
+
+  protected:
+    StageGroup( auto_ProcessorSet limit_physical_processor_set );
+    virtual ~StageGroup();
+
+
+    void addStage( auto_Stage stage );  
+    unsigned long get_running_stage_tls_key() const { return running_stage_tls_key; }
+
+
+    class Thread : public ::YIELD::Thread
+    {
+    public:
+      virtual ~Thread() { }
+
+      virtual void stop() { should_run = false; }
+
+      // YIELD::Thread
+      void run();
+      virtual void start();
+
+    protected:
+      Thread( auto_ProcessorSet limit_logical_processor_set );
+
+      bool is_running, should_run;
+
+      virtual void _run() = 0;
+
+      inline bool visitStage( Stage& stage )
       {
-        Time elapsed_time( Time() - last_fire_time );
+        return stage.visit();
+      }
 
-        double arrival_rate_s = static_cast<double>( stage->event_queue_arrival_count ) / elapsed_time.as_unix_time_s();
-        stage->event_queue_arrival_count = 0;
-        stage->arrival_rate_rrd->append( arrival_rate_s );
-
-        double service_rate_s = 1000.0 / static_cast<uint64_t>( stage->event_processing_time_sampler.get_percentile( 0.9 ) );
-        stage->event_processing_time_sampler.clear();
-        stage->service_rate_rrd->append( service_rate_s );
-
-        last_fire_time = Time();
+      inline bool visitStage( Stage& stage, uint64_t timeout_ns )
+      {
+        return stage.visit( timeout_ns );
       }
 
     private:
-      auto_Object< StageImpl<EventHandlerType, EventQueueType, LockType> > stage;
+      std::string stage_group_name;
+      auto_ProcessorSet limit_logical_processor_set;
 
-      Time last_fire_time;
+  //    auto_PerformanceCounterSet performance_counter_set;
     };
-  };
-
-
-  class StageGroupThread;
-
-  class StageGroup : public YIELD::Object
-  {
-  public:
-    virtual auto_Stage createStage( YIELD::auto_Object<EventHandler> event_handler,
-                                            int16_t thread_count = 1,
-                                            YIELD::auto_Object<EventQueue> event_queue = NULL,
-                                            auto_EventTarget stage_stats_event_target = NULL,
-                                            YIELD::auto_Object<Log> log = NULL ) = 0;
-
-    YIELD::auto_Object<ProcessorSet> get_limit_physical_processor_set() const { return limit_physical_processor_set; }
-    YIELD::auto_Object<ProcessorSet> get_limit_logical_processor_set() const { return limit_logical_processor_set; }
-    const std::string& get_name() const { return name; }
-    unsigned long get_running_stage_group_thread_tls_key() const { return running_stage_group_thread_tls_key; }
-    inline StageGroupThread* get_running_stage_group_thread() const { return static_cast<StageGroupThread*>( Thread::getTLS( running_stage_group_thread_tls_key ) ); }
-
-    // Object
-    StageGroup& incRef() { return YIELD::Object::incRef( *this ); }
-
-  protected:
-    StageGroup( const std::string& name, YIELD::auto_Object<ProcessorSet> limit_physical_processor_set, auto_EventTarget stage_stats_event_target );
-    virtual ~StageGroup() { }
-
-    auto_EventTarget get_stage_stats_event_target() const { return stage_stats_event_target; }
 
   private:
-    std::string name;
-    YIELD::auto_Object<ProcessorSet> limit_physical_processor_set, limit_logical_processor_set;
-    auto_EventTarget stage_stats_event_target;
+    auto_ProcessorSet limit_physical_processor_set, limit_logical_processor_set;
 
-    unsigned long running_stage_group_thread_tls_key;
+    unsigned long running_stage_tls_key;
+    Stage* stages[YIELD_STAGES_PER_GROUP_MAX];
   };
+
+  typedef auto_Object<StageGroup> auto_StageGroup;
 
 
   template <class StageGroupType> // CRTP
@@ -582,191 +518,190 @@ namespace YIELD
   public:
     // Templated createStage's that pass the real EventHandler and EventQueue types to StageImpl to bypass the interfaces
     template <class EventHandlerType>
-    auto_Stage createStage( YIELD::auto_Object<EventHandlerType> event_handler, int16_t thread_count, YIELD::auto_Object<EventQueue> event_queue, auto_EventTarget stage_stats_event_target, YIELD::auto_Object<Log> log )
+    auto_Stage createStage( auto_Object<EventHandlerType> event_handler )
     {
-      return static_cast<StageGroupType*>( this )->createStage< EventHandlerType, OneSignalEventQueue<> >( event_handler, thread_count, new OneSignalEventQueue<>, stage_stats_event_target, log );
+      return static_cast<StageGroupType*>( this )->createStage<EventHandlerType, OneSignalEventQueue>( event_handler, new OneSignalEventQueue, 1 );
     }
 
     template <class EventHandlerType>
-    auto_Stage createStage( YIELD::auto_Object<EventHandlerType> event_handler, YIELD::auto_Object<Log> log )
+    auto_Stage createStage( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueue> event_queue, int16_t thread_count )
     {
-      return static_cast<StageGroupType*>( this )->createStage< EventHandlerType, OneSignalEventQueue<> >( event_handler, 1, new OneSignalEventQueue<>, NULL, log );
+      return static_cast<StageGroupType*>( this )->createStage<EventHandlerType, OneSignalEventQueue>( event_handler, new OneSignalEventQueue, thread_count );
     }
 
     // StageGroup
-    auto_Stage createStage( YIELD::auto_Object<EventHandler> event_handler, int16_t thread_count = 1, YIELD::auto_Object<EventQueue> event_queue = NULL, auto_EventTarget stage_stats_event_target = NULL, YIELD::auto_Object<Log> log = NULL )
+    auto_Stage createStage( auto_Object<EventHandler> event_handler, auto_Object<EventQueue> event_queue = NULL, int16_t thread_count = 1 )
     {
       if ( event_queue == NULL )
-        return createStage<EventHandler>( event_handler, thread_count, event_queue, stage_stats_event_target, log );
+        return createStage<EventHandler>( event_handler, event_queue, thread_count );
       else
-        return static_cast<StageGroupType*>( this )->createStage<EventHandler, EventQueue>( event_handler, thread_count, event_queue, stage_stats_event_target, log );
+        return static_cast<StageGroupType*>( this )->createStage<EventHandler, EventQueue>( event_handler, event_queue, thread_count );
     }
 
   protected:
-    StageGroupImpl( const std::string& name, YIELD::auto_Object<ProcessorSet> limit_physical_processor_set, auto_EventTarget stage_stats_event_target, YIELD::auto_Object<Log> log )
-      : StageGroup( name, limit_physical_processor_set, stage_stats_event_target ), log( log )
-    {
-      memset( stages, 0, sizeof( stages ) );
-    }
-
-    virtual ~StageGroupImpl()
-    {
-      for ( uint8_t stage_i = 0; stage_i < YIELD_STAGES_PER_GROUP_MAX; stage_i++ )
-        Object::decRef( stages[stage_i] );
-    }
-
-    YIELD::auto_Object<Log> log;
-
-    Stage* stages[YIELD_STAGES_PER_GROUP_MAX];
-
-    void addStage( auto_Stage stage )
-    {
-      unsigned char stage_i;
-      for ( stage_i = 0; stage_i < YIELD_STAGES_PER_GROUP_MAX; stage_i++ )
-      {
-        if ( stages[stage_i] == NULL )
-        {
-          stages[stage_i] = stage.release();
-          return;
-        }
-      }
-
-      DebugBreak();
-    }
-
-    YIELD::auto_Object<Log> get_log() const { return log; }
-  };
-
-
-  class StageGroupThread : public Thread
-  {
-  public:
-    virtual ~StageGroupThread();
-
-    virtual void stop() = 0;
-
-    // Thread
-    void run();
-    virtual void start();
-
-  protected:
-    StageGroupThread( const std::string& stage_group_name, YIELD::auto_Object<ProcessorSet> limit_logical_processor_set = NULL, YIELD::auto_Object<Log> = NULL );
-
-
-    bool is_running, should_run;
-
-
-    virtual void _run() = 0;
-
-    inline bool visitStage( Stage& stage )
-    {
-#ifdef YIELD_RECORD_PERFCTRS
-      startPerformanceCounterSampling();
-#endif
-
-      bool success = stage.visit();
-
-#ifdef YIELD_RECORD_PERFCTRS
-      stopPerformanceCounterSampling( stage, success );
-#endif
-
-      return success;
-    }
-
-    inline bool visitStage( Stage& stage, uint64_t timeout_ns )
-    {
-#ifdef YIELD_RECORD_PERFCTRS
-      startPerformanceCounterSampling();
-#endif
-
-      bool success = stage.visit( timeout_ns );
-
-#ifdef YIELD_RECORD_PERFCTRS
-      stopPerformanceCounterSampling( stage, success );
-#endif
-
-      return success;
-    }
-
-  private:
-    std::string stage_group_name;
-    YIELD::auto_Object<ProcessorSet> limit_logical_processor_set;
-    YIELD::auto_Object<Log> log;
-
-#ifdef YIELD_RECORD_PERFCTRS
-#ifdef __sun
-    cpc_t* cpc; cpc_set_t* cpc_set;
-    int pic0_index, pic1_index;
-    cpc_buf_t *before_cpc_buf, *after_cpc_buf, *diff_cpc_buf;
-
-    inline void startPerformanceCounterSampling()
-    {
-      cpc_set_sample( cpc, cpc_set, before_cpc_buf );
-    }
-
-    inline void stopPerformanceCounterSampling( Stage& stage, bool visit_was_successful )
-    {
-      cpc_set_sample( cpc, cpc_set, after_cpc_buf );
-      cpc_buf_sub( cpc, diff_cpc_buf, after_cpc_buf, before_cpc_buf );
-      uint64_t pic0; cpc_buf_get( cpc, diff_cpc_buf, pic0_index, &pic0 );
-      stage.pic0_total += pic0;
-      uint64_t pic1; cpc_buf_get( cpc, diff_cpc_buf, pic1_index, &pic1 );
-      stage.pic1_total += pic1;
-
-      if ( visit_was_successful )
-      {
-        uint64_t current_time_ns = Time::getCurrentUnixTimeNS();
-        if ( stage.last_recorded_cpc_events_time_ns - current_time_ns >= 5 * NS_IN_S )
-        {
-          stage.last_recorded_cpc_events_time_ns = current_time_ns;
-          std::ostringstream cout_str;
-          cout_str << stage.get_stage_name() << " performance counter totals: " << stage.pic0_total << "/" << stage.pic1_total << std::endl;
-          std::cout << cout_str.str();
-        }
-      }
-    }
-#endif
-#endif
-  };
-
-
-  class StageStartupEvent : public Event
-  {
-  public:
-    StageStartupEvent( auto_Stage stage )
-      : stage( stage )
+    StageGroupImpl( auto_ProcessorSet limit_physical_processor_set )
+      : StageGroup( limit_physical_processor_set )
     { }
 
-    auto_Stage get_stage() { return stage; }
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( StageStartupEvent, 104 );
-
-  private:
-    auto_Stage stage;
+    virtual ~StageGroupImpl()
+    { }
   };
 
 
-  class StageShutdownEvent : public Event
+  class VisitPolicy
+  {
+  protected:
+    VisitPolicy( Stage** stages )
+      : stages( stages )
+    { }
+
+    Stage** stages;
+  };
+
+
+  template <class VisitPolicyType>
+  class PerProcessorStageGroup : public StageGroupImpl< PerProcessorStageGroup<VisitPolicyType> >
   {
   public:
+    PerProcessorStageGroup( const char* name = "Main stage group", auto_Object<ProcessorSet> limit_physical_processor_set = NULL, int16_t threads_per_physical_processor = 1 );
+
+    template <class EventHandlerType, class EventQueueType>
+    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue, int16_t thread_count )
+    {
+      if ( thread_count <= 0 || thread_count > static_cast<int16_t>( this->physical_processor_threads.size() ) )
+        thread_count = static_cast<int16_t>( this->physical_processor_threads.size() );
+
+      auto_Object<Stage> stage;
+      if ( event_handler->isThreadSafe() )
+        stage = new TemplatedStageImpl<EventHandlerType, EventQueueType, NOPLock>( event_handler, event_queue, this->get_running_stage_tls_key() );
+      else
+        stage = new TemplatedStageImpl<EventHandlerType, EventQueueType, Mutex>( event_handler, event_queue, this->get_running_stage_tls_key() );
+
+      stage->get_event_handler()->handleEvent( *( new Stage::StartupEvent( stage ) ) );
+
+      for ( int16_t thread_i = 0; thread_i < thread_count; thread_i++ )
+      {
+        logical_processor_threads[next_stage_for_logical_processor_i]->addStage( stage->incRef() );
+        next_stage_for_logical_processor_i = ( next_stage_for_logical_processor_i + 1 ) % logical_processor_threads.size();
+      }
+
+      this->addStage( stage );
+
+      return stage;
+    }
+
     // Object
-    YIELD_OBJECT_PROTOTYPES( StageShutdownEvent, 105 );
+    YIELD_OBJECT_PROTOTYPES( PerProcessorStageGroup<VisitPolicyType>, 0 );
+
+  protected:
+    virtual ~PerProcessorStageGroup();
+
+  private:
+    uint16_t threads_per_physical_processor;
+
+
+    class Thread : public StageGroup::Thread
+    {
+    public:
+      virtual void addStage( Stage& ) = 0;
+
+      // StageGroupThread
+      void stop();
+
+    protected:
+      Thread( auto_Object<ProcessorSet> limit_logical_processor_set, const std::string& stage_group_name, Stage** stages );    
+      
+      std::string stage_group_name;
+      VisitPolicyType visit_policy;
+    };
+
+     
+    class PhysicalProcessorThread : public Thread
+    {
+    public:
+      PhysicalProcessorThread( auto_Object<ProcessorSet> limit_logical_processor_set, const std::string& stage_group_name );
+
+      PhysicalProcessorThread& operator=( const PhysicalProcessorThread& ) { return *this; }
+
+      Stage** get_stages() { return stages; }
+
+      // PerProcessorStageGroup::Thread
+      void addStage( Stage& );
+
+    private:
+      ~PhysicalProcessorThread() { }
+
+      Stage* stage;
+      Stage* stages[YIELD_STAGES_PER_GROUP_MAX];
+
+      // StageGroup::Thread
+      void _run();
+    };
+
+
+    class LogicalProcessorThread : public Thread
+    {
+    public:
+      LogicalProcessorThread( auto_Object<ProcessorSet> limit_logical_processor_set, PhysicalProcessorThread& physical_processor_thread, const std::string& stage_group_name );
+      
+      LogicalProcessorThread& operator=( const LogicalProcessorThread& ) { return *this; }
+
+      // PerProcessorStageGroup::Thread
+      void addStage( Stage& );
+
+    private:
+      PhysicalProcessorThread& physical_processor_thread;
+
+      // StageGroup::Thread
+      void _run();
+    };
+
+
+    std::vector<Thread*> physical_processor_threads;
+    std::vector<Thread*> logical_processor_threads;
+    uint16_t next_stage_for_logical_processor_i;
+
+    std::vector<Stage*> stages; // This can be a vector since it's only iterated on stage creation and destruction, unlike the fixed-length vectors used for visiting
   };
 
 
-  class SEDAStageGroupThread;
+  class MG1VisitPolicy : public VisitPolicy
+  {
+  public:
+    MG1VisitPolicy( Stage** stages );
+
+    Stage* getNextStageToVisit( bool )
+    {
+      if ( polling_table_pos < YIELD_MG1_POLLING_TABLE_SIZE )
+        return stages[polling_table[polling_table_pos++]];
+      else
+      {
+        populatePollingTable();
+        polling_table_pos = 0;
+        return stages[polling_table[polling_table_pos++]];
+      }
+    }
+
+  private:
+    uint8_t polling_table[YIELD_MG1_POLLING_TABLE_SIZE]; uint32_t polling_table_pos;
+    uint32_t golden_ratio_circle[YIELD_MG1_POLLING_TABLE_SIZE];
+    double last_rhos[YIELD_STAGES_PER_GROUP_MAX]; // These are only used in populating the polling table, but we have to keep the values to use in smoothing
+
+    bool populatePollingTable();
+  };
+
+  typedef PerProcessorStageGroup<MG1VisitPolicy> MG1StageGroup;
 
 
   class SEDAStageGroup : public StageGroupImpl<SEDAStageGroup>
   {
   public:
-    SEDAStageGroup( const char* name, ProcessorSet* limit_physical_processor_set = NULL, auto_EventTarget stage_stats_event_target = NULL, YIELD::auto_Object<Log> log = NULL )
-        : StageGroupImpl<SEDAStageGroup>( name, limit_physical_processor_set, stage_stats_event_target, log )
+    SEDAStageGroup( auto_ProcessorSet limit_physical_processor_set = NULL )
+        : StageGroupImpl<SEDAStageGroup>( limit_physical_processor_set )
     { }
 
     template <class EventHandlerType, class EventQueueType>
-    auto_Stage createStage( YIELD::auto_Object<EventHandlerType> event_handler, int16_t thread_count, YIELD::auto_Object<EventQueueType> event_queue, auto_EventTarget stage_stats_event_target = NULL, YIELD::auto_Object<Log> log = NULL )
+    auto_Stage createStage( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue, int16_t thread_count )
     {
       if ( thread_count == -1 )
       {
@@ -776,20 +711,16 @@ namespace YIELD
           thread_count = Machine::getOnlinePhysicalProcessorCount();
       }
 
-      if ( stage_stats_event_target == NULL )
-        stage_stats_event_target = this->get_stage_stats_event_target();
-
-      if ( log == NULL )
-        log = this->get_log();
-
       auto_Stage stage;
       if ( event_handler->isThreadSafe() )
-        stage = new StageImpl<EventHandlerType, EventQueueType, NOPLock>( event_handler, event_queue, stage_stats_event_target, log );
+        stage = new TemplatedStageImpl<EventHandlerType, EventQueueType, NOPLock>( event_handler, event_queue, get_running_stage_tls_key() );
       else
-        stage = new StageImpl<EventHandlerType, EventQueueType, Mutex>( event_handler, event_queue, stage_stats_event_target, log );
+        stage = new TemplatedStageImpl<EventHandlerType, EventQueueType, Mutex>( event_handler, event_queue, get_running_stage_tls_key() );
 
-      event_handler->handleEvent( *( new StageStartupEvent( stage ) ) );
+      event_handler->handleEvent( *( new Stage::StartupEvent( stage ) ) );
+
       this->addStage( stage );
+
       startThreads( stage, thread_count );
 
       return stage;
@@ -802,9 +733,95 @@ namespace YIELD
     virtual ~SEDAStageGroup();
 
   private:
-    std::vector<SEDAStageGroupThread*> threads;
+    class Thread : public StageGroup::Thread
+    {
+    public:
+      Thread( auto_ProcessorSet limit_logical_processor_set, auto_Stage stage );
+
+      auto_Stage get_stage() { return stage; }
+
+      // Object
+      YIELD_OBJECT_PROTOTYPES( SEDAStageGroup::Thread, 0 );
+
+      // StageGroup::Thread
+      void stop();
+
+    private:
+      ~Thread() { }
+
+      auto_Stage stage;
+      
+      // StageGroup::Thread
+      void _run();
+    };
+
+    std::vector<Thread*> threads;
     void startThreads( auto_Stage stage, int16_t thread_count );
   };
+
+
+  class SRPTVisitPolicy : public VisitPolicy
+  {
+  public:
+    SRPTVisitPolicy( Stage** stages ) : VisitPolicy( stages )
+    {
+      next_stage_i = 0;
+    }
+
+    inline Stage* getNextStageToVisit( bool last_visit_was_successful )
+    {
+      if ( last_visit_was_successful )
+        return stages[0];
+      else
+      {
+        next_stage_i = ( next_stage_i + 1 ) % YIELD_STAGES_PER_GROUP_MAX;
+        return stages[next_stage_i];
+      }
+    }
+
+  private:
+    unsigned char next_stage_i;
+  };
+
+  typedef PerProcessorStageGroup<SRPTVisitPolicy> SRPTStageGroup;
+
+
+  class WavefrontVisitPolicy : public VisitPolicy
+  {
+  public:
+    WavefrontVisitPolicy( Stage** stages ) 
+      : VisitPolicy( stages )
+    {
+      forward = true;
+      next_stage_i = 0;
+    }
+
+    inline Stage* getNextStageToVisit( bool )
+    {
+      if ( forward )
+      {
+        if ( next_stage_i < YIELD_STAGES_PER_GROUP_MAX - 1 )
+          ++next_stage_i;
+        else
+          forward = false;
+      }
+      else
+      {
+        if ( next_stage_i > 0 )
+          --next_stage_i;
+        else
+          forward = true;
+      }
+
+      return stages[next_stage_i];
+    }
+
+  private:
+    bool forward;
+    unsigned char next_stage_i;
+  };
+
+  typedef PerProcessorStageGroup<WavefrontVisitPolicy> CohortStageGroup;
 };
 
 #endif

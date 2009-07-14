@@ -23,7 +23,7 @@ namespace org
         YIELD_OBJECT_PROTOTYPES( MultiResponseTarget, 0 );
 
         // YIELD::EventTarget
-        bool send( YIELD::Event& );
+        void send( YIELD::Event& );
 
       protected:
         virtual void respond( YIELD::auto_Object<YIELD::ExceptionResponse> exception_response, YIELD::auto_Object<YIELD::EventTarget> final_response_target );

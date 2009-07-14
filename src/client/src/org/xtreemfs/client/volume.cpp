@@ -41,7 +41,7 @@ using namespace org::xtreemfs::client;
 Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Log log, YIELD::auto_Object<YIELD::SSLContext> ssl_context, bool trace_socket_io )
   : name( name ), flags( flags ), log( log )
 {
-  YIELD::auto_Object<YIELD::StageGroup> stage_group = new YIELD::SEDAStageGroup( name.c_str() );
+  YIELD::auto_Object<YIELD::StageGroup> stage_group = new YIELD::SEDAStageGroup;
   dir_proxy = DIRProxy::create( dir_uri, stage_group, trace_socket_io ? log : NULL, DIRProxy::OPERATION_RETRIES_MAX_DEFAULT, 10 * NS_IN_S, ssl_context );
 
   YIELD::auto_Object<YIELD::URI> mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );

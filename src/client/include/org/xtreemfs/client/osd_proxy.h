@@ -54,11 +54,11 @@ namespace org
         // YIELD::Object
         OSDProxy& incRef() { return YIELD::Object::incRef( *this ); }
 
-        // YIELD::EventHandler
-        bool send( YIELD::Event& ev ) 
+        // YIELD::EventTarget
+        void send( YIELD::Event& ev ) 
         { 
           // Bypass Proxy so no credentials are attached; the credentials for OSD operations are in FileCredentials passed explicitly to the operation
-          return YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::send( ev ); 
+          YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::send( ev ); 
         }
 
       private:

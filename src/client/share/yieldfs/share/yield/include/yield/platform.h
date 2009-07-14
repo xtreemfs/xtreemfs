@@ -32,6 +32,9 @@ extern "C"
 #endif
 #include <unistd.h>
 #endif
+#ifdef __sun
+#include <libcpc.h>
+#endif
 
 #include <algorithm>
 #include <cstring>
@@ -39,6 +42,7 @@ extern "C"
 #include <fcntl.h>
 #include <memory>
 #include <iostream>
+#include <queue>
 #include <sstream>
 #include <stdio.h>
 #include <stdlib.h>
@@ -332,7 +336,7 @@ namespace YIELD
     void as_iso_date( char* out_str, uint8_t out_str_len ) const;
     void as_iso_date_time( char* out_str, uint8_t out_str_len ) const;
     uint64_t as_unix_time_ns() const { return unix_time_ns; }
-    uint64_t as_unix_time_ms() const { return unix_time_ns / NS_IN_S; }
+    uint64_t as_unix_time_ms() const { return unix_time_ns / NS_IN_MS; }
     uint32_t as_unix_time_s() const { return static_cast<uint32_t>( unix_time_ns / NS_IN_S ); }
     operator uint64_t() const { return unix_time_ns; }
     operator struct timeval() const;
@@ -342,11 +346,13 @@ namespace YIELD
     operator struct timespec() const;
 #endif
     Time operator+( const Time& other ) const { return Time( unix_time_ns + other.unix_time_ns ); }
+    Time& operator+=( const Time& other ) { unix_time_ns += other.unix_time_ns; return *this; }
     Time operator-( const Time& other ) const { return Time( unix_time_ns - other.unix_time_ns ); }
+    Time& operator-=( const Time& other ) { unix_time_ns -= other.unix_time_ns; return *this; }
     bool operator<( const Time& other ) const { return unix_time_ns < other.unix_time_ns; }
     bool operator>( const Time& other ) const { return unix_time_ns > other.unix_time_ns; }
     bool operator>=( const Time& other ) const { return unix_time_ns >= other.unix_time_ns; }
-    Time& operator=( uint64_t unix_time_ns ) { this->unix_time_ns = unix_time_ns; return *this; }
+    Time& operator=( uint64_t unix_time_ns ) { this->unix_time_ns = unix_time_ns; return *this; }    
     operator std::string() const;
 
   private:
@@ -698,7 +704,7 @@ namespace YIELD
   };
 
 
-  class File : public YIELD::Object
+  class File : public Object
   {
   public:
     const static uint32_t DEFAULT_FLAGS = O_RDONLY;
@@ -1462,7 +1468,7 @@ namespace YIELD
   };
 
 
-  class Log : public YIELD::Object
+  class Log : public Object
   {
   public:
     // Adapted from syslog levels
@@ -1627,7 +1633,7 @@ namespace YIELD
   };
 
 
-  class MemoryMappedFile : public YIELD::Object
+  class MemoryMappedFile : public Object
   {
   public:
     static YIELD::auto_Object<MemoryMappedFile> open( const Path& path ) { return open( path, File::DEFAULT_FLAGS, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES, 0 ); }
@@ -1851,7 +1857,7 @@ namespace YIELD
   };
 
 
-  class Path : public YIELD::Object
+  class Path : public Object
   {
   public:
     Path() { }
@@ -1916,7 +1922,36 @@ namespace YIELD
   typedef YIELD::auto_Object<Path> auto_Path;
 
 
-  class ProcessorSet : public YIELD::Object
+  class PerformanceCounterSet : public Object
+  {
+  public:
+    static auto_Object<PerformanceCounterSet> create();
+    
+    bool addEvent( const char* name );
+    void startCounting();
+    void stopCounting( uint64_t* counts );
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( PerformanceCounterSet, 0 );
+
+  private:    
+#ifdef __sun
+    PerformanceCounterSet( cpc_t* cpc, cpc_set_t* cpc_set );
+    cpc_t* cpc; cpc_set_t* cpc_set;
+
+    std::vector<int> event_indices;
+    cpc_buf_t* start_cpc_buf;
+#else
+    PerformanceCounterSet() { }
+#endif
+
+    ~PerformanceCounterSet();
+  };
+
+  typedef auto_Object<PerformanceCounterSet> auto_PerformanceCounterSet;
+
+
+  class ProcessorSet : public Object
   {
   public:
     ProcessorSet();
@@ -1947,6 +1982,8 @@ namespace YIELD
     int psetid;
 #endif
   };
+
+  typedef auto_Object<ProcessorSet> auto_ProcessorSet;
 
 
   class RRD : public Object
@@ -1980,8 +2017,8 @@ namespace YIELD
     };
 
 
-    static auto_Object<RRD> creat( const Path& base_dir_path );
-    static auto_Object<RRD> open( const Path& base_dir_path );
+    static auto_Object<RRD> creat( const Path& file_path );
+    static auto_Object<RRD> open( const Path& file_path );
 
     void append( double value );
     void fetch_all( RecordSet& out_records );
@@ -1993,10 +2030,10 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( RRD, 0 );
 
   private:
-    RRD( const Path& base_dir_path );
+    RRD( const Path& file_path );
     ~RRD();
 
-    Path base_dir_path, current_file_path;
+    Path current_file_path;
   };
 
   typedef auto_Object<RRD> auto_RRD;
@@ -2118,7 +2155,7 @@ namespace YIELD
   };
 
 
-  class SharedLibrary : public YIELD::Object
+  class SharedLibrary : public Object
   {
   public:
     static YIELD::auto_Object<SharedLibrary> open( const Path& file_prefix, const char* argv0 = 0 );
@@ -2144,7 +2181,7 @@ namespace YIELD
   typedef YIELD::auto_Object<SharedLibrary> auto_SharedLibrary;
 
 
-  class Stat : public YIELD::Object
+  class Stat : public Object
   {
   public:   
     static YIELD::auto_Object<Stat> stat( const Path& path );
@@ -2334,7 +2371,7 @@ namespace YIELD
   };
 
 
-  class Thread : public YIELD::Object
+  class Thread : public Object
   {
   public:
     static unsigned long createTLSKey();
@@ -2377,48 +2414,71 @@ namespace YIELD
   };
 
 
-  class Timer : public Object
-  {
-  public:
-    Timer( const Time& timeout )
-      : period( static_cast<uint64_t>( 0 ) ), timeout( timeout )
-    { }
-
-    Timer( const Time& timeout, const Time& period )
-      : period( period ), timeout( timeout )
-    { }
-
-    virtual ~Timer()
-    { }
-    
-    const Time& get_period() const { return period; }
-    const Time& get_timeout() const { return timeout; }
-    virtual void fire() = 0;
-    void set_period( const Time& period ) { this->period = period; }
-    void set_timeout( const Time& timeout ) { this->timeout = timeout; }
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( Timer, 0 );
-
-  private:
-    Time period, timeout;
-  };
-
-
   class TimerQueue
   {
   public:
+    class Timer : public Object
+    {
+    public:
+      Timer( const Time& timeout );
+      Timer( const Time& timeout, const Time& period );
+      virtual ~Timer();
+      
+      const Time& get_period() const { return period; }
+      const Time& get_timeout() const { return timeout; }
+      virtual bool fire( const Time& elapsed_time ) = 0;
+      void set_period( const Time& period ) { this->period = period; }
+      void set_timeout( const Time& timeout ) { this->timeout = timeout; }
+
+      // Object
+      YIELD_OBJECT_PROTOTYPES( Timer, 0 );
+
+    private:
+      friend class TimerQueue;
+
+      Time period, timeout;
+
+#ifdef _WIN32
+      void *hTimer, *hTimerQueue;
+#endif
+      Time last_fire_time;
+    };
+
+
     TimerQueue();
     ~TimerQueue();
 
     void addTimer( auto_Object<Timer> timer );
 
   private:
-    Thread* thread;
+#ifdef _WIN32
+    void* hTimerQueue;
+    static void __stdcall WaitOrTimerCallback( void*, unsigned char );
+#else
+    class Thread : public ::YIELD::Thread
+    {
+    public:
+      Thread();
+      
+      void enqueueTimer( Timer* timer );
+      void stop();
+
+      // Thread
+      void run();
+
+    private:
+      NonBlockingFiniteQueue<TimerQueue::Timer*, 16> new_timers_queue;
+      Mutex new_timers_queue_signal;
+      bool should_run;
+      std::priority_queue< std::pair<uint64_t, Timer*>, std::vector< std::pair<uint64_t, Timer*> >, std::greater< std::pair<uint64_t, Timer*> > > timers;
+    }; 
+
+    Thread thread;
+#endif
   };
 
 
-  class Volume : public YIELD::Object
+  class Volume : public Object
   {
   public:    
     const static mode_t DEFAULT_DIRECTORY_MODE = S_IREAD|S_IWRITE|S_IEXEC;

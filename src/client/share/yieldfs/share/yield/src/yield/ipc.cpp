@@ -1,4 +1,4 @@
-// Revision: 1628
+// Revision: 1654
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -25,10 +25,10 @@ template <class ProtocolRequestType, class ProtocolResponseType>
 Client<ProtocolRequestType, ProtocolResponseType>::~Client()
 {
   for ( typename std::vector<Connection*>::iterator idle_connection_i = idle_connections.begin(); idle_connection_i != idle_connections.end(); idle_connection_i++ )
-    YIELD::Object::decRef( **idle_connection_i );
+    Object::decRef( **idle_connection_i );
 }
 template <class ProtocolRequestType, class ProtocolResponseType>
-void Client<ProtocolRequestType, ProtocolResponseType>::handleDeserializedProtocolMessage( YIELD::auto_Object<ProtocolResponseType> protocol_response )
+void Client<ProtocolRequestType, ProtocolResponseType>::handleDeserializedProtocolMessage( auto_Object<ProtocolResponseType> protocol_response )
 {
   this->get_helper_peer_stage()->send( *protocol_response->get_connection().release() );
   protocol_response->get_protocol_request()->set_connection( NULL );
@@ -45,7 +45,7 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
       ProtocolRequestType* protocol_request = static_cast<ProtocolRequestType*>( aio_connect_control_block.get_context().release() );
       this->detach( protocol_request->get_connection() );
       get_protocol_request_writer_stage()->send( *protocol_request );
-      YIELD::Object::decRef( ev );
+      Object::decRef( ev );
     }
     break;
     case YIELD_OBJECT_TAG( Connection ):
@@ -56,11 +56,11 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
     case YIELD_OBJECT_TAG( FDEventQueue::POLLOUTEvent ):
     {
       FDEventQueue::POLLOUTEvent& pollout_event = static_cast<FDEventQueue::POLLOUTEvent&>( ev );
-      YIELD::auto_Object<> context( pollout_event.get_context() );
+      auto_Object<> context( pollout_event.get_context() );
       if ( context->get_tag() == YIELD_OBJECT_TAG( ProtocolRequestType ) ) // Non-blocking connection completed
       {
-        YIELD::auto_Object<ProtocolRequestType> protocol_request( static_cast<ProtocolRequestType*>( context.release() ) );
-        YIELD::auto_Object<Connection> connection = protocol_request->get_connection();
+        auto_Object<ProtocolRequestType> protocol_request( static_cast<ProtocolRequestType*>( context.release() ) );
+        auto_Object<Connection> connection = protocol_request->get_connection();
         switch ( connection->get_socket()->connect( peername ) )
         {
           case Socket::CONNECT_STATUS_OK:
@@ -79,7 +79,7 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
           }
           break;
         }
-        YIELD::Object::decRef( ev );
+        Object::decRef( ev );
       }
       else
         Peer<ProtocolResponseType, ProtocolRequestType>::handleEvent( ev );
@@ -88,11 +88,11 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
     case YIELD_OBJECT_TAG( FDEventQueue::POLLERREvent ):
     {
       FDEventQueue::POLLERREvent& pollerr_event = static_cast<FDEventQueue::POLLERREvent&>( ev );
-      YIELD::auto_Object<> context( pollerr_event.get_context() );
+      auto_Object<> context( pollerr_event.get_context() );
       if ( context->get_tag() == YIELD_OBJECT_TAG( ProtocolRequestType ) ) // Non-blocking connection completed
       {
         static_cast<ProtocolRequestType*>( context.get() )->respond( *( new ExceptionResponse( pollerr_event.get_errno() ) ) );
-        YIELD::Object::decRef( ev );
+        Object::decRef( ev );
       }
       else
         Peer<ProtocolResponseType, ProtocolRequestType>::handleEvent( ev );
@@ -109,7 +109,7 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
     {
       if ( static_cast<ProtocolRequestType&>( ev ).get_connection() == NULL )
       {
-        YIELD::auto_Object<ProtocolRequestType> protocol_request( static_cast<ProtocolRequestType&>( ev ) );
+        auto_Object<ProtocolRequestType> protocol_request( static_cast<ProtocolRequestType&>( ev ) );
         if ( !idle_connections.empty() )
         {
           protocol_request->set_connection( idle_connections.back()->incRef() );
@@ -132,7 +132,7 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
           auto_Log log = this->get_log();
           if ( log != NULL && log->get_level() >= Log::LOG_INFO && static_cast<int>( *_socket ) != -1 )
             _socket = new TracingSocket( _socket, log );
-          YIELD::auto_Object<Connection> connection = new Connection( _socket );
+          auto_Object<Connection> connection = new Connection( _socket );
           protocol_request->set_connection( connection );
           _socket->set_blocking_mode( false );
           Socket::ConnectStatus connect_status;
@@ -181,7 +181,7 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
   }
 }
 template <class ProtocolRequestType, class ProtocolResponseType>
-ssize_t Client<ProtocolRequestType, ProtocolResponseType>::deserialize( YIELD::auto_Object<ProtocolResponseType> protocol_response, YIELD::auto_Buffer buffer )
+ssize_t Client<ProtocolRequestType, ProtocolResponseType>::deserialize( auto_Object<ProtocolResponseType> protocol_response, auto_Buffer buffer )
 {
   ssize_t deserialize_ret = Peer<ProtocolResponseType, ProtocolRequestType>::deserialize( protocol_response, buffer );
   if ( deserialize_ret < 0 )
@@ -189,7 +189,7 @@ ssize_t Client<ProtocolRequestType, ProtocolResponseType>::deserialize( YIELD::a
   return deserialize_ret;
 }
 template <class ProtocolRequestType, class ProtocolResponseType>
-bool Client<ProtocolRequestType, ProtocolResponseType>::read( YIELD::auto_Object<ProtocolResponseType> protocol_response, size_t buffer_capacity )
+bool Client<ProtocolRequestType, ProtocolResponseType>::read( auto_Object<ProtocolResponseType> protocol_response, size_t buffer_capacity )
 {
   if ( Peer<ProtocolResponseType, ProtocolRequestType>::read( protocol_response, buffer_capacity ) )
     return true;
@@ -200,7 +200,7 @@ bool Client<ProtocolRequestType, ProtocolResponseType>::read( YIELD::auto_Object
   }
 }
 template <class ProtocolRequestType, class ProtocolResponseType>
-bool Client<ProtocolRequestType, ProtocolResponseType>::write( YIELD::auto_Object<ProtocolRequestType> protocol_request, YIELD::auto_Buffer buffer )
+bool Client<ProtocolRequestType, ProtocolResponseType>::write( auto_Object<ProtocolRequestType> protocol_request, auto_Buffer buffer )
 {
   if ( Peer<ProtocolResponseType, ProtocolRequestType>::write( protocol_request, buffer ) )
   {
@@ -236,18 +236,18 @@ auto_EventFDPipe EventFDPipe::create()
   if ( fd != -1 )
     return new EventFDPipe( fd );
 #else
-  YIELD::auto_Object<TCPSocket> listen_socket = TCPSocket::create();
+  auto_Object<TCPSocket> listen_socket = TCPSocket::create();
   if ( listen_socket != NULL &&
        listen_socket->bind( SocketAddress::create( "localhost", 0 ) ) &&
        listen_socket->listen() )
   {
-    YIELD::auto_Object<TCPSocket> write_end = TCPSocket::create();
+    auto_Object<TCPSocket> write_end = TCPSocket::create();
     if ( write_end != NULL )
     {
       if ( write_end->connect( listen_socket->getsockname() ) == Socket::CONNECT_STATUS_OK )
       {
         write_end->set_blocking_mode( false );
-        YIELD::auto_Object<TCPSocket> read_end = listen_socket->accept();
+        auto_Object<TCPSocket> read_end = listen_socket->accept();
         if ( read_end != NULL )
         {
           read_end->set_blocking_mode( false );
@@ -264,7 +264,7 @@ EventFDPipe::EventFDPipe( int fd )
   : fd( fd )
 { }
 #else
-EventFDPipe::EventFDPipe( YIELD::auto_Object<TCPSocket> read_end, YIELD::auto_Object<TCPSocket> write_end )
+EventFDPipe::EventFDPipe( auto_Object<TCPSocket> read_end, auto_Object<TCPSocket> write_end )
   : read_end( read_end ), write_end( write_end )
 { }
 #endif
@@ -374,7 +374,7 @@ FDEventQueue::~FDEventQueue()
   delete [] returned_events;
 #endif
 }
-bool FDEventQueue::attach( int fd, YIELD::auto_Object<> context, bool enable_read, bool enable_write )
+bool FDEventQueue::attach( int fd, auto_Object<> context, bool enable_read, bool enable_write )
 {
   if ( fd_to_context_map.find( fd ) == NULL )
   {
@@ -427,7 +427,7 @@ bool FDEventQueue::attach( int fd, YIELD::auto_Object<> context, bool enable_rea
     else
       return true;
 #else
-    std::vector<struct pllfd::size_type pollfd_i_max = pollfds.size();
+    std::vector<struct pollfd>::size_type pollfd_i_max = pollfds.size();
     for ( std::vector<struct pollfd>::size_type pollfd_i = 0; pollfd_i < pollfd_i_max; pollfd_i++ )
     {
       if ( pollfds[pollfd_i].fd == fd )
@@ -579,7 +579,7 @@ Event* FDEventQueue::dequeue( uint64_t timeout_ns )
     if ( pollfds[next_pollfd_to_check].revents != 0 )
     {
       int fd = pollfds[next_pollfd_to_check].fd;
-      int revents = [next_pollfd_to_check].revents;
+      int revents = pollfds[next_pollfd_to_check].revents;
       pollfds[next_pollfd_to_check].revents = 0;
       next_pollfd_to_check++;
       active_fds--;
@@ -596,9 +596,13 @@ Event* FDEventQueue::dequeue( uint64_t timeout_ns )
         else if ( ( revents & POLLOUT ) == POLLOUT )
           return new POLLOUTEvent( context );
         else if ( ( revents & POLLERR ) == POLLERR || ( revents & POLLHUP ) == POLLHUP )
-          return new POLLERREvent( context );
+          return new POLLERREvent( context, 0 );
         else
+        {
           DebugBreak();
+          return NULL;
+        }
+      }
     }
     else
       next_pollfd_to_check++;
@@ -739,17 +743,123 @@ bool FDEventQueue::toggle( int fd, bool enable_read, bool enable_write )
 #endif
 
 
+// http_benchmark_driver.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+TimerQueue HTTPBenchmarkDriver::statistics_timer_queue;
+HTTPBenchmarkDriver::HTTPBenchmarkDriver( auto_EventTarget http_request_target, uint8_t in_flight_http_request_count, const std::vector<URI*>& wlog_uris )
+  : http_request_target( http_request_target ), in_flight_http_request_count( in_flight_http_request_count ), wlog_uris( wlog_uris )
+{
+  requests_sent_in_period = responses_received_in_period = 0;
+  statistics_timer_queue.addTimer( new StatisticsTimer( incRef() ) );
+}
+HTTPBenchmarkDriver::~HTTPBenchmarkDriver()
+{
+  for ( std::vector<URI*>::iterator wlog_uri_i = wlog_uris.begin(); wlog_uri_i != wlog_uris.end(); wlog_uri_i++ )
+    delete *wlog_uri_i;
+}
+auto_Object<HTTPBenchmarkDriver> HTTPBenchmarkDriver::create( auto_EventTarget http_request_target, uint8_t in_flight_http_request_count, const Path& wlog_file_path )
+{
+  auto_MemoryMappedFile wlog = MemoryMappedFile::open( wlog_file_path );
+  if ( wlog != NULL )
+  {
+    char *wlog_p = static_cast<char*>( *wlog ), *wlog_end = wlog_p + wlog->get_size();
+    std::vector<URI*> wlog_uris;
+    while ( wlog_p < wlog_end )
+    {
+      char* uri_str = wlog_p;
+      size_t uri_str_len = strnlen( uri_str, UINT16_MAX );
+      auto_URI uri( URI::parse( uri_str, uri_str_len ) );
+      if ( uri != NULL )
+        wlog_uris.push_back( uri.release() );
+      wlog_p += uri_str_len + 1;
+    }
+    std::reverse( wlog_uris.begin(), wlog_uris.end() ); // So we can pop them in the right order
+    return new HTTPBenchmarkDriver( http_request_target, in_flight_http_request_count, wlog_uris );
+  }
+  else
+    return NULL;
+}
+void HTTPBenchmarkDriver::calculateStatistics( const Time& elapsed_time )
+{
+  statistics_lock.acquire();
+  double request_rate = static_cast<double>( requests_sent_in_period ) / elapsed_time.as_unix_time_s();
+  request_rates.push_back( request_rate );
+  requests_sent_in_period = 0;
+  double response_rate = static_cast<double>( responses_received_in_period ) / elapsed_time.as_unix_time_s();
+  response_rates.push_back( response_rate );
+  responses_received_in_period = 0;
+  statistics_lock.release();
+}
+void HTTPBenchmarkDriver::get_request_rates( std::vector<double>& out_request_rates )
+{
+  statistics_lock.acquire();
+  out_request_rates.insert( out_request_rates.end(), request_rates.begin(), request_rates.end() );
+  statistics_lock.release();
+}
+void HTTPBenchmarkDriver::get_response_rates( std::vector<double>& out_response_rates )
+{
+  statistics_lock.acquire();
+  out_response_rates.insert( out_response_rates.end(), response_rates.begin(), response_rates.end() );
+  statistics_lock.release();
+}
+void HTTPBenchmarkDriver::handleEvent( Event& ev )
+{
+  switch ( ev.get_tag() )
+  {
+    case YIELD_OBJECT_TAG( Stage::StartupEvent ):
+    {
+      my_stage = static_cast<Stage::StartupEvent&>( ev ).get_stage();
+      Object::decRef( ev );
+      uint8_t max_in_flight_http_request_count = in_flight_http_request_count;
+      in_flight_http_request_count = 0;
+      for ( uint8_t http_request_i = 0; http_request_i < max_in_flight_http_request_count; http_request_i++ )
+        sendHTTPRequest();
+    }
+    break;
+    case YIELD_OBJECT_TAG( HTTPResponse ):
+    {
+      in_flight_http_request_count--;
+      responses_received_in_period++;
+      Object::decRef( ev );
+      sendHTTPRequest();
+    }
+    break;
+    default: handleUnknownEvent( ev );
+  }
+}
+void HTTPBenchmarkDriver::wait()
+{
+  wait_signal.acquire();
+}
+void HTTPBenchmarkDriver::sendHTTPRequest()
+{
+  if ( !wlog_uris.empty() )
+  {
+    URI* wlog_uri = wlog_uris.back();
+    wlog_uris.pop_back();
+    HTTPRequest* http_req = new HTTPRequest( "GET", wlog_uri->get_resource().c_str() );
+    http_req->set_response_target( my_stage->incRef() );
+    in_flight_http_request_count++;
+    requests_sent_in_period++;
+    http_request_target->send( *http_req );
+  }
+  else if ( in_flight_http_request_count == 0 )
+    wait_signal.release();
+}
+
+
 // http_client.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 auto_HTTPClient HTTPClient::create( const URI& absolute_uri,
-                                            YIELD::auto_Object<StageGroup> stage_group,
-                                            auto_Log log,
-                                            uint8_t operation_retries_max,
-                                            const Time& operation_timeout,
-                                            auto_SSLContext ssl_context )
+                                    auto_Object<StageGroup> stage_group,
+                                    auto_Log log,
+                                    uint8_t operation_retries_max,
+                                    const Time& operation_timeout,
+                                    auto_SSLContext ssl_context )
 {
-  YIELD::URI checked_absolute_uri( absolute_uri );
+  URI checked_absolute_uri( absolute_uri );
   if ( checked_absolute_uri.get_port() == 0 )
     checked_absolute_uri.set_port( 80 );
   auto_SocketAddress peername = SocketAddress::create( absolute_uri );
@@ -759,7 +869,7 @@ auto_HTTPClient HTTPClient::create( const URI& absolute_uri,
     if ( absolute_uri.get_scheme() == "https" && ssl_context == NULL )
       ssl_context = new SSLContext( SSLv23_client_method() );
 #endif
-    YIELD::auto_Object<EventQueue> http_client_event_queue, http_request_writer_event_queue, http_response_reader_event_queue;
+    auto_Object<EventQueue> http_client_event_queue, http_request_writer_event_queue, http_response_reader_event_queue;
 #ifdef _WIN32
     http_client_event_queue = new IOCompletionPort;
     http_request_writer_event_queue = new IOCompletionPort;
@@ -769,12 +879,12 @@ auto_HTTPClient HTTPClient::create( const URI& absolute_uri,
     http_request_writer_event_queue = new FDEventQueue;
     http_response_reader_event_queue = new FDEventQueue;
 #endif
-    YIELD::auto_Object<HTTPClient> http_client = new HTTPClient( absolute_uri, log, operation_retries_max, operation_timeout, peername, ssl_context );
-    auto_Stage http_client_stage = stage_group->createStage( http_client->incRef(), 1, http_client_event_queue, NULL, log );
-    YIELD::auto_Object<HTTPClient> http_request_writer = new HTTPClient( absolute_uri, log, operation_retries_max, operation_timeout, peername, ssl_context );
-    auto_Stage http_request_writer_stage = stage_group->createStage( http_request_writer->incRef(), 1, http_request_writer_event_queue, NULL, log );
-    YIELD::auto_Object<HTTPClient> http_response_reader = new HTTPClient( absolute_uri, log, operation_retries_max, operation_timeout, peername, ssl_context );
-    auto_Stage http_response_reader_stage = stage_group->createStage( http_response_reader->incRef(), 1, http_response_reader_event_queue, NULL, log );
+    auto_Object<HTTPClient> http_client = new HTTPClient( absolute_uri, log, operation_retries_max, operation_timeout, peername, ssl_context );
+    auto_Stage http_client_stage = stage_group->createStage( http_client->incRef(),  http_client_event_queue, 1 );
+    auto_Object<HTTPClient> http_request_writer = new HTTPClient( absolute_uri, log, operation_retries_max, operation_timeout, peername, ssl_context );
+    auto_Stage http_request_writer_stage = stage_group->createStage( http_request_writer->incRef(), http_request_writer_event_queue, 1 );
+    auto_Object<HTTPClient> http_response_reader = new HTTPClient( absolute_uri, log, operation_retries_max, operation_timeout, peername, ssl_context );
+    auto_Stage http_response_reader_stage = stage_group->createStage( http_response_reader->incRef(), http_response_reader_event_queue, 1 );
     http_client->set_http_request_writer_stage( http_request_writer_stage );
     http_request_writer->set_http_response_reader_stage( http_response_reader_stage );
     http_response_reader->set_helper_peer_stage( http_client_stage );
@@ -786,7 +896,7 @@ auto_HTTPResponse HTTPClient::GET( const URI& absolute_uri, auto_Log log )
 {
   return sendHTTPRequest( "GET", absolute_uri, NULL, log );
 }
-auto_HTTPResponse HTTPClient::PUT( const URI& absolute_uri, YIELD::auto_Buffer body, auto_Log log )
+auto_HTTPResponse HTTPClient::PUT( const URI& absolute_uri, auto_Buffer body, auto_Log log )
 {
   return sendHTTPRequest( "PUT", absolute_uri, body, log );
 }
@@ -794,17 +904,17 @@ auto_HTTPResponse HTTPClient::PUT( const URI& absolute_uri, const Path& body_fil
 {
   auto_File file = File::open( body_file_path );
   size_t file_size = static_cast<size_t>( file->getattr()->get_size() );
-  YIELD::auto_Object<YIELD::HeapBuffer> body = new YIELD::HeapBuffer( file_size );
+  auto_Object<HeapBuffer> body = new HeapBuffer( file_size );
   file->read( *body, file_size );
   return sendHTTPRequest( "PUT", absolute_uri, body.release(), log );
 }
-auto_HTTPResponse HTTPClient::sendHTTPRequest( const char* method, const YIELD::URI& absolute_uri, YIELD::auto_Buffer body, auto_Log log )
+auto_HTTPResponse HTTPClient::sendHTTPRequest( const char* method, const URI& absolute_uri, auto_Buffer body, auto_Log log )
 {
-  YIELD::auto_Object<StageGroup> stage_group = new SEDAStageGroup( "HTTPClient", 0, NULL, log );
-  YIELD::auto_Object<HTTPClient> http_client = HTTPClient::create( absolute_uri, stage_group, log );
+  auto_StageGroup stage_group = new SEDAStageGroup;
+  auto_HTTPClient http_client = HTTPClient::create( absolute_uri, stage_group, log );
   auto_HTTPRequest http_request = new HTTPRequest( method, absolute_uri, body );
   http_request->set_header( "User-Agent", "Flog 0.99" );
-  YIELD::auto_Object< OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > > http_response_queue( new OneSignalEventQueue< NonBlockingFiniteQueue<Event*, 16 > > );
+  auto_OneSignalEventQueue http_response_queue( new OneSignalEventQueue );
   http_request->set_response_target( http_response_queue->incRef() );
   http_client->send( http_request->incRef() );
   return http_response_queue->dequeue_typed<HTTPResponse>();
@@ -818,12 +928,12 @@ HTTPMessage::HTTPMessage()
 {
   http_version = 1;
 }
-HTTPMessage::HTTPMessage( YIELD::auto_Buffer body )
+HTTPMessage::HTTPMessage( auto_Buffer body )
   : body( body )
 {
   http_version = 1;
 }
-ssize_t HTTPMessage::deserialize( YIELD::auto_Buffer buffer )
+ssize_t HTTPMessage::deserialize( auto_Buffer buffer )
 {
   switch ( deserialize_state )
   {
@@ -869,7 +979,7 @@ ssize_t HTTPMessage::deserialize( YIELD::auto_Buffer buffer )
     default: DebugBreak(); return -1;
   }
 }
-YIELD::auto_Buffer HTTPMessage::serialize()
+auto_Buffer HTTPMessage::serialize()
 {
   // Finalize headers
   if ( body != NULL && get_header( "Content-Length", NULL ) == NULL )
@@ -883,7 +993,7 @@ YIELD::auto_Buffer HTTPMessage::serialize()
     set_header( "Content-Length", content_length_str );
   }
   set_iovec( "\r\n", 2 );
-  YIELD::auto_Buffer buffer = RFC822Headers::serialize();
+  auto_Buffer buffer = RFC822Headers::serialize();
   buffer->set_next_buffer( body );
   return buffer;
 }
@@ -892,7 +1002,7 @@ YIELD::auto_Buffer HTTPMessage::serialize()
 // http_request.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-HTTPRequest::HTTPRequest( YIELD::auto_Object<Connection> connection )
+HTTPRequest::HTTPRequest( auto_Object<Connection> connection )
   : ProtocolRequest( connection )
 {
   method[0] = 0;
@@ -902,17 +1012,17 @@ HTTPRequest::HTTPRequest( YIELD::auto_Object<Connection> connection )
   http_version = 1;
   deserialize_state = DESERIALIZING_METHOD;
 }
-HTTPRequest::HTTPRequest( const char* method, const char* relative_uri, const char* host, YIELD::auto_Buffer body )
+HTTPRequest::HTTPRequest( const char* method, const char* relative_uri, const char* host, auto_Buffer body )
   : HTTPMessage( body )
 {
   init( method, relative_uri, host, body );
 }
-HTTPRequest::HTTPRequest( const char* method, const URI& absolute_uri, YIELD::auto_Buffer body )
+HTTPRequest::HTTPRequest( const char* method, const URI& absolute_uri, auto_Buffer body )
   : HTTPMessage( body )
 {
   init( method, absolute_uri.get_resource().c_str(), absolute_uri.get_host().c_str(), body );
 }
-void HTTPRequest::init( const char* method, const char* relative_uri, const char* host, YIELD::auto_Buffer body )
+void HTTPRequest::init( const char* method, const char* relative_uri, const char* host, auto_Buffer body )
 {
 #ifdef _WIN32
   strncpy_s( this->method, 16, method, 16 );
@@ -930,7 +1040,7 @@ HTTPRequest::~HTTPRequest()
 {
   delete [] uri;
 }
-ssize_t HTTPRequest::deserialize( YIELD::auto_Buffer buffer )
+ssize_t HTTPRequest::deserialize( auto_Buffer buffer )
 {
   switch ( deserialize_state )
   {
@@ -1022,18 +1132,18 @@ ssize_t HTTPRequest::deserialize( YIELD::auto_Buffer buffer )
     default: return HTTPMessage::deserialize( buffer );
   }
 }
-bool HTTPRequest::respond( uint16_t status_code )
+void HTTPRequest::respond( uint16_t status_code )
 {
-  return respond( *( new HTTPResponse( incRef(), status_code ) ) );
+  respond( *( new HTTPResponse( incRef(), status_code ) ) );
 }
-bool HTTPRequest::respond( uint16_t status_code, YIELD::auto_Buffer body )
+void HTTPRequest::respond( uint16_t status_code, auto_Buffer body )
 {
-  return respond( *( new HTTPResponse( incRef(), status_code, body ) ) );
+  respond( *( new HTTPResponse( incRef(), status_code, body ) ) );
 }
-YIELD::auto_Buffer HTTPRequest::serialize()
+auto_Buffer HTTPRequest::serialize()
 {
   size_t method_len = strnlen( method, 16 );
-  YIELD::auto_Buffer buffer = new YIELD::HeapBuffer( method_len + 1 + uri_len + 11 );
+  auto_Buffer buffer = new HeapBuffer( method_len + 1 + uri_len + 11 );
   buffer->put( method, method_len );
   buffer->put( " ", 1 );
   buffer->put( uri, uri_len );
@@ -1058,12 +1168,12 @@ HTTPResponse::HTTPResponse( auto_HTTPRequest http_request, uint16_t status_code 
   http_version = 1;
   deserialize_state = DESERIALIZE_DONE;
 }
-HTTPResponse::HTTPResponse( auto_HTTPRequest http_request, uint16_t status_code, YIELD::auto_Buffer body )
+HTTPResponse::HTTPResponse( auto_HTTPRequest http_request, uint16_t status_code, auto_Buffer body )
   : ProtocolResponse<HTTPRequest>( http_request ), HTTPMessage( body ), status_code( status_code )
 {
   deserialize_state = DESERIALIZE_DONE;
 }
-ssize_t HTTPResponse::deserialize( YIELD::auto_Buffer buffer )
+ssize_t HTTPResponse::deserialize( auto_Buffer buffer )
 {
   switch ( deserialize_state )
   {
@@ -1143,7 +1253,7 @@ ssize_t HTTPResponse::deserialize( YIELD::auto_Buffer buffer )
     default: return HTTPMessage::deserialize( buffer );
   }
 }
-YIELD::auto_Buffer HTTPResponse::serialize()
+auto_Buffer HTTPResponse::serialize()
 {
   const char* status_line;
   size_t status_line_len;
@@ -1194,7 +1304,7 @@ YIELD::auto_Buffer HTTPResponse::serialize()
     case 507: status_line = "HTTP/1.1 507 Insufficient Storage\r\n"; status_line_len = 35; break;
     default: status_line = "HTTP/1.1 500 Internal Server Error\r\n"; status_line_len = 36; break;
   }
-  YIELD::auto_Buffer buffer = new YIELD::StringLiteralBuffer( status_line, status_line_len );
+  auto_Buffer buffer = new StringLiteralBuffer( status_line, status_line_len );
   char date[32];
   Time().as_http_date_time( date, 32 );
   set_header( "Date", date );
@@ -1208,15 +1318,15 @@ YIELD::auto_Buffer HTTPResponse::serialize()
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 template <class StageGroupType>
 auto_HTTPServer HTTPServer::create( const URI& absolute_uri,
-                                            auto_EventTarget http_request_target,
-                                            YIELD::auto_Object<StageGroupType> stage_group,
-                                            auto_Log log,
-                                            auto_SSLContext ssl_context )
+                                    auto_EventTarget http_request_target,
+                                    auto_Object<StageGroupType> stage_group,
+                                    auto_Log log,
+                                    auto_SSLContext ssl_context )
 {
   auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
   if ( sockname != NULL )
   {
-    YIELD::auto_Object<TCPListenQueue> tcp_listen_queue;
+    auto_Object<TCPListenQueue> tcp_listen_queue;
 #ifdef YIELD_HAVE_OPENSSL
     if ( absolute_uri.get_scheme() == "https" && ssl_context != NULL )
       tcp_listen_queue = SSLListenQueue::create( sockname, ssl_context ).release();
@@ -1224,35 +1334,57 @@ auto_HTTPServer HTTPServer::create( const URI& absolute_uri,
 #endif
       tcp_listen_queue = TCPListenQueue::create( sockname );
     if ( tcp_listen_queue != NULL )
-    {
-      YIELD::auto_Object<EventQueue> http_request_reader_event_queue, http_response_writer_event_queue;
-#ifdef _WIN32
-      http_request_reader_event_queue = new IOCompletionPort;
-      http_response_writer_event_queue = new IOCompletionPort;
-#else
-      http_request_reader_event_queue = new FDEventQueue;
-      http_response_writer_event_queue = new FDEventQueue;
-#endif
-      YIELD::auto_Object<HTTPServer> http_request_reader = new HTTPServer( http_request_target, log );
-      auto_Stage http_request_reader_stage = stage_group->createStage( http_request_reader, 1, http_request_reader_event_queue, NULL, log );
-      YIELD::auto_Object<HTTPServer> http_response_writer = new HTTPServer( http_request_target, log );
-      auto_Stage http_response_writer_stage = stage_group->createStage( http_response_writer, 1, http_response_writer_event_queue, NULL, log );
-      YIELD::auto_Object<HTTPServer> http_server = new HTTPServer( http_request_target, log );
-      stage_group->createStage( http_server, 1, tcp_listen_queue, NULL, log );
-      http_server->set_http_request_reader_stage( http_request_reader_stage );
-      http_request_reader->set_http_response_writer_stage( http_response_writer_stage );
-      http_response_writer->set_http_request_reader_stage( http_request_reader_stage );
-      return http_server;
-    }
+      return create( http_request_target, stage_group, tcp_listen_queue, log );
   }
   return NULL;
 }
+template <class StageGroupType>
+auto_HTTPServer HTTPServer::create( auto_EventTarget http_request_target,
+                                    auto_Object<StageGroupType> stage_group,
+                                    auto_Object<TCPListenQueue> tcp_listen_queue,
+                                    auto_Log log )
+{
+  auto_Object<EventQueue> http_request_reader_event_queue, http_response_writer_event_queue;
+#ifdef _WIN32
+  http_request_reader_event_queue = new IOCompletionPort;
+  http_response_writer_event_queue = new IOCompletionPort;
+#else
+  http_request_reader_event_queue = new FDEventQueue;
+  http_response_writer_event_queue = new FDEventQueue;
+#endif
+  auto_Object<HTTPServer> http_request_reader = new HTTPServer( http_request_target, log );
+  auto_Stage http_request_reader_stage = stage_group->createStage( http_request_reader, http_request_reader_event_queue, 1 );
+  auto_Object<HTTPServer> http_response_writer = new HTTPServer( http_request_target, log );
+  auto_Stage http_response_writer_stage = stage_group->createStage( http_response_writer, http_response_writer_event_queue, 1 );
+  auto_Object<HTTPServer> http_server = new HTTPServer( http_request_target, log );
+  stage_group->createStage( http_server, tcp_listen_queue, 1 );
+  http_server->set_http_request_reader_stage( http_request_reader_stage );
+  http_request_reader->set_http_response_writer_stage( http_response_writer_stage );
+  http_response_writer->set_http_request_reader_stage( http_request_reader_stage );
+  return http_server;
+}
+template
+auto_HTTPServer HTTPServer::create<StageGroup>( const URI& absolute_uri,
+                                                auto_EventTarget http_request_target,
+                                                auto_Object<StageGroup> stage_group,
+                                                auto_Log log,
+                                                auto_SSLContext ssl_context );
 template
 auto_HTTPServer HTTPServer::create<SEDAStageGroup>( const URI& absolute_uri,
-                                            auto_EventTarget http_request_target,
-                                            YIELD::auto_Object<SEDAStageGroup> stage_group,
-                                            auto_Log log,
-                                            auto_SSLContext ssl_context );
+                                                    auto_EventTarget http_request_target,
+                                                    auto_Object<SEDAStageGroup> stage_group,
+                                                    auto_Log log,
+                                                    auto_SSLContext ssl_context );
+template
+auto_HTTPServer HTTPServer::create<StageGroup>( auto_EventTarget http_request_target,
+                                                auto_Object<StageGroup> stage_group,
+                                                auto_Object<TCPListenQueue> tcp_listen_queue,
+                                                auto_Log log );
+template
+auto_HTTPServer HTTPServer::create<SEDAStageGroup>( auto_EventTarget http_request_target,
+                                                    auto_Object<SEDAStageGroup> stage_group,
+                                                    auto_Object<TCPListenQueue> tcp_listen_queue,
+                                                    auto_Log log );
 void HTTPServer::handleDeserializedProtocolMessage( auto_HTTPRequest http_request )
 {
   http_request->set_response_target( get_http_response_writer_stage()->incRef() );
@@ -1403,12 +1535,12 @@ void JSONMarshaller::writeInt64( const char* key, uint32_t, int64_t value )
   yajl_gen_integer( writer, ( long )value );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeMap( const char* key, uint32_t, const YIELD::Map& value )
+void JSONMarshaller::writeMap( const char* key, uint32_t, const Map& value )
 {
   writeKey( key );
   JSONMarshaller( *this, key ).writeMap( &value );
 }
-void JSONMarshaller::writeMap( const YIELD::Map* value )
+void JSONMarshaller::writeMap( const Map* value )
 {
   yajl_gen_map_open( writer );
   in_map = true;
@@ -1417,12 +1549,12 @@ void JSONMarshaller::writeMap( const YIELD::Map* value )
   yajl_gen_map_close( writer );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeStruct( const char* key, uint32_t, const YIELD::Struct& value )
+void JSONMarshaller::writeStruct( const char* key, uint32_t, const Struct& value )
 {
   writeKey( key );
   JSONMarshaller( *this, key ).writeStruct( &value );
 }
-void JSONMarshaller::writeStruct( const YIELD::Struct* value )
+void JSONMarshaller::writeStruct( const Struct* value )
 {
   yajl_gen_map_open( writer );
   in_map = true;
@@ -1431,12 +1563,12 @@ void JSONMarshaller::writeStruct( const YIELD::Struct* value )
   yajl_gen_map_close( writer );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeSequence( const char* key, uint32_t, const YIELD::Sequence& value )
+void JSONMarshaller::writeSequence( const char* key, uint32_t, const Sequence& value )
 {
   writeKey( key );
   JSONMarshaller( *this, key ).writeSequence( &value );
 }
-void JSONMarshaller::writeSequence( const YIELD::Sequence* value )
+void JSONMarshaller::writeSequence( const Sequence* value )
 {
   yajl_gen_array_open( writer );
   in_map = false;
@@ -1468,7 +1600,7 @@ namespace YIELD
   class JSONValue
   {
   public:
-    JSONValue( YIELD::auto_Object<YIELD::StringBuffer> identifier, bool is_map )
+    JSONValue( auto_Object<StringBuffer> identifier, bool is_map )
       : identifier( identifier ), is_map( is_map )
     {
       parent = child = prev = next = NULL;
@@ -1480,9 +1612,9 @@ namespace YIELD
       delete child;
       delete next;
     }
-    YIELD::auto_Object<YIELD::StringBuffer> identifier;
+    auto_Object<StringBuffer> identifier;
     bool is_map;
-    YIELD::auto_Object<YIELD::StringBuffer> as_string;
+    auto_Object<StringBuffer> as_string;
     union
     {
       double as_double;
@@ -1502,7 +1634,7 @@ namespace YIELD
   class JSONObject : public JSONValue
   {
   public:
-    JSONObject( YIELD::auto_Buffer source_buffer )
+    JSONObject( auto_Buffer source_buffer )
     {
       current_json_value = parent_json_value = NULL;
       reader = yajl_alloc( &JSONObject_yajl_callbacks, NULL, this );
@@ -1565,7 +1697,7 @@ namespace YIELD
     {
       JSONObject* self = static_cast<JSONObject*>( _self );
       JSONValue& json_value = self->createNextJSONValue();
-      json_value.as_string = new YIELD::StringBuffer( reinterpret_cast<const char*>( buffer ), len );
+      json_value.as_string = new StringBuffer( reinterpret_cast<const char*>( buffer ), len );
       return 1;
     }
     static int handle_yajl_start_map( void* _self )
@@ -1613,7 +1745,7 @@ namespace YIELD
     }
     JSONValue& createNextJSONValue( bool is_map = false )
     {
-      YIELD::auto_Object<YIELD::StringBuffer> identifier = next_map_key_len != 0 ? new YIELD::StringBuffer( next_map_key, next_map_key_len ) : NULL;
+      auto_Object<StringBuffer> identifier = next_map_key_len != 0 ? new StringBuffer( next_map_key, next_map_key_len ) : NULL;
       next_map_key = NULL; next_map_key_len = 0;
       if ( current_json_value == NULL )
       {
@@ -1658,7 +1790,7 @@ yajl_callbacks JSONObject::JSONObject_yajl_callbacks =
   handle_yajl_start_array,
   handle_yajl_end_array
 };
-JSONUnmarshaller::JSONUnmarshaller( YIELD::auto_Buffer source_buffer )
+JSONUnmarshaller::JSONUnmarshaller( auto_Buffer source_buffer )
 {
   root_key = NULL;
   root_json_value = new JSONObject( source_buffer );
@@ -1716,7 +1848,7 @@ int64_t JSONUnmarshaller::readInt64( const char* key, uint32_t )
   else
     return 0;
 }
-void JSONUnmarshaller::readMap( const char* key, uint32_t, YIELD::Map& value )
+void JSONUnmarshaller::readMap( const char* key, uint32_t, Map& value )
 {
   JSONValue* json_value;
   if ( key != NULL )
@@ -1738,12 +1870,12 @@ void JSONUnmarshaller::readMap( const char* key, uint32_t, YIELD::Map& value )
   child_json_unmarshaller.readMap( value );
   json_value->have_read = true;
 }
-void JSONUnmarshaller::readMap( YIELD::Map& value )
+void JSONUnmarshaller::readMap( Map& value )
 {
   while ( next_json_value )
     value.unmarshal( *this );
 }
-void JSONUnmarshaller::readSequence( const char* key, uint32_t, YIELD::Sequence& value )
+void JSONUnmarshaller::readSequence( const char* key, uint32_t, Sequence& value )
 {
   JSONValue* json_value;
   if ( key != NULL )
@@ -1765,7 +1897,7 @@ void JSONUnmarshaller::readSequence( const char* key, uint32_t, YIELD::Sequence&
   child_json_unmarshaller.readSequence( value );
   json_value->have_read = true;
 }
-void JSONUnmarshaller::readSequence( YIELD::Sequence& value )
+void JSONUnmarshaller::readSequence( Sequence& value )
 {
   while ( next_json_value )
     value.unmarshal( *this );
@@ -1784,7 +1916,7 @@ void JSONUnmarshaller::readString( const char* key, uint32_t, std::string& str )
       str.assign( static_cast<const std::string&>( *json_value->identifier ) );
   }
 }
-void JSONUnmarshaller::readStruct( const char* key, uint32_t, YIELD::Struct& value )
+void JSONUnmarshaller::readStruct( const char* key, uint32_t, Struct& value )
 {
   JSONValue* json_value;
   if ( key != NULL )
@@ -1806,7 +1938,7 @@ void JSONUnmarshaller::readStruct( const char* key, uint32_t, YIELD::Struct& val
   child_json_unmarshaller.readStruct( value );
   json_value->have_read = true;
 }
-void JSONUnmarshaller::readStruct( YIELD::Struct& s )
+void JSONUnmarshaller::readStruct( Struct& s )
 {
   s.unmarshal( *this );
 }
@@ -2169,7 +2301,7 @@ void ONCRPCRequest::marshal( Marshaller& marshaller )
   marshaller.writeInt32( "verf_auth_body_length", 0, 0 );
   marshaller.writeStruct( "body", 0, *get_body() );
 }
-bool ONCRPCRequest::respond( Response& response )
+void ONCRPCRequest::respond( Response& response )
 {
   if ( this->get_response_target() == NULL )
   {
@@ -2342,9 +2474,9 @@ namespace YIELD
     // Object
     YIELD_OBJECT_PROTOTYPES( ONCRPCResponder, 0 );
     // EventTarget
-    bool send( Event& ev )
+    void send( Event& ev )
     {
-      return oncrpc_response_writer_stage->send( *( new ONCRPCResponse( oncrpc_request, ev ) ) );
+      oncrpc_response_writer_stage->send( *( new ONCRPCResponse( oncrpc_request, ev ) ) );
     }
   private:
     auto_Object<ONCRPCRequest> oncrpc_request;
@@ -2376,7 +2508,7 @@ auto_ONCRPCServer ONCRPCServer::create( const URI& absolute_uri,
     if ( oncrpc_server_event_queue != NULL )
     {
       auto_Object<ONCRPCServer> oncrpc_server = new ONCRPCServer( _interface, log );
-      stage_group->createStage( oncrpc_server->incRef(), 1, oncrpc_server_event_queue.release(), NULL, log );
+      stage_group->createStage( oncrpc_server->incRef(), oncrpc_server_event_queue.release() );
       return oncrpc_server;
     }
   }
@@ -2409,7 +2541,7 @@ Peer<ReadProtocolMessageType, WriteProtocolMessageType>::Peer( auto_Log log )
   : log( log )
 { }
 template <class ReadProtocolMessageType, class WriteProtocolMessageType>
-void Peer<ReadProtocolMessageType, WriteProtocolMessageType>::attach( YIELD::auto_Object<Connection> connection, YIELD::auto_Object<> context, bool enable_read, bool enable_write )
+void Peer<ReadProtocolMessageType, WriteProtocolMessageType>::attach( auto_Object<Connection> connection, auto_Object<> context, bool enable_read, bool enable_write )
 {
   if ( fd_event_queue != NULL )
     fd_event_queue->attach( *connection->get_socket(), context, enable_read, enable_write );
@@ -2417,12 +2549,12 @@ void Peer<ReadProtocolMessageType, WriteProtocolMessageType>::attach( YIELD::aut
     io_completion_port->attach( *connection->get_socket() );
 }
 template <class ReadProtocolMessageType, class WriteProtocolMessageType>
-ssize_t Peer<ReadProtocolMessageType, WriteProtocolMessageType>::deserialize( YIELD::auto_Object<ReadProtocolMessageType> protocol_message, YIELD::auto_Buffer buffer )
+ssize_t Peer<ReadProtocolMessageType, WriteProtocolMessageType>::deserialize( auto_Object<ReadProtocolMessageType> protocol_message, auto_Buffer buffer )
 {
   return protocol_message->deserialize( buffer );
 }
 template <class ReadProtocolMessageType, class WriteProtocolMessageType>
-void Peer<ReadProtocolMessageType, WriteProtocolMessageType>::detach( YIELD::auto_Object<Connection> connection )
+void Peer<ReadProtocolMessageType, WriteProtocolMessageType>::detach( auto_Object<Connection> connection )
 {
   if ( fd_event_queue != NULL )
     fd_event_queue->detach( *connection->get_socket() );
@@ -2435,8 +2567,8 @@ void Peer<ReadProtocolMessageType, WriteProtocolMessageType>::handleEvent( Event
     case YIELD_OBJECT_TAG( Socket::AIOReadControlBlock ):
     {
       Socket::AIOReadControlBlock& aio_read_control_block = static_cast<Socket::AIOReadControlBlock&>( ev );
-      YIELD::auto_Object<ReadProtocolMessageType> protocol_message( static_cast<ReadProtocolMessageType*>( aio_read_control_block.get_context().release() ) );
-      YIELD::auto_Buffer buffer = aio_read_control_block.get_buffer();
+      auto_Object<ReadProtocolMessageType> protocol_message( static_cast<ReadProtocolMessageType*>( aio_read_control_block.get_context().release() ) );
+      auto_Buffer buffer = aio_read_control_block.get_buffer();
       ssize_t deserialize_ret = deserialize( protocol_message, buffer );
       if ( deserialize_ret == 0 )
       {
@@ -2445,14 +2577,14 @@ void Peer<ReadProtocolMessageType, WriteProtocolMessageType>::handleEvent( Event
       }
       else if ( deserialize_ret > 0 )
         read( protocol_message, deserialize_ret );
-      YIELD::Object::decRef( ev );
+      Object::decRef( ev );
     }
     break;
     case YIELD_OBJECT_TAG( FDEventQueue::POLLINEvent ):
     {
       FDEventQueue::POLLINEvent& pollin_event = static_cast<FDEventQueue::POLLINEvent&>( ev );
       read( static_cast<ReadProtocolMessageType*>( pollin_event.get_context().release() ) );
-      YIELD::Object::decRef( ev );
+      Object::decRef( ev );
     }
     break;
     case YIELD_OBJECT_TAG( ReadProtocolMessageType ):
@@ -2460,49 +2592,49 @@ void Peer<ReadProtocolMessageType, WriteProtocolMessageType>::handleEvent( Event
       read( static_cast<ReadProtocolMessageType&>( ev ) );
     }
     break;
-    case YIELD_OBJECT_TAG( StageStartupEvent ):
+    case YIELD_OBJECT_TAG( Stage::StartupEvent ):
     {
-      StageStartupEvent& stage_startup_event = static_cast<StageStartupEvent&>( ev );
+      Stage::StartupEvent& stage_startup_event = static_cast<Stage::StartupEvent&>( ev );
       my_stage = stage_startup_event.get_stage();
-      YIELD::auto_Object<EventQueue> my_event_queue = my_stage->get_event_queue();
+      auto_Object<EventQueue> my_event_queue = my_stage->get_event_queue();
       switch ( my_event_queue->get_tag() )
       {
         case YIELD_OBJECT_TAG( FDEventQueue ): fd_event_queue = static_cast<FDEventQueue*>( my_event_queue.release() ); break;
         case YIELD_OBJECT_TAG( IOCompletionPort ): io_completion_port = static_cast<IOCompletionPort*>( my_event_queue.release() ); break;
         default: DebugBreak();
       }
-      YIELD::Object::decRef( ev );
+      Object::decRef( ev );
     }
     return;
-    case YIELD_OBJECT_TAG( StageShutdownEvent ):
+    case YIELD_OBJECT_TAG( Stage::ShutdownEvent ):
     {
       my_stage = NULL;
-      YIELD::Object::decRef( ev );
+      Object::decRef( ev );
     }
     return;
     case YIELD_OBJECT_TAG( WriteProtocolMessageType ):
     {
-      YIELD::auto_Object<WriteProtocolMessageType> protocol_message( static_cast<WriteProtocolMessageType&>( ev ) );
-      YIELD::auto_Buffer buffer = serialize( protocol_message );
+      auto_Object<WriteProtocolMessageType> protocol_message( static_cast<WriteProtocolMessageType&>( ev ) );
+      auto_Buffer buffer = serialize( protocol_message );
       write( protocol_message, buffer );
     }
     break;
     default:
     {
-      YIELD::Object::decRef( ev );
+      Object::decRef( ev );
     }
     break;
   }
 }
 template <class ReadProtocolMessageType, class WriteProtocolMessageType>
-bool Peer<ReadProtocolMessageType, WriteProtocolMessageType>::read( YIELD::auto_Object<ReadProtocolMessageType> protocol_message, size_t buffer_capacity )
+bool Peer<ReadProtocolMessageType, WriteProtocolMessageType>::read( auto_Object<ReadProtocolMessageType> protocol_message, size_t buffer_capacity )
 {
-  YIELD::auto_Object<Connection> connection( protocol_message->get_connection() );
+  auto_Object<Connection> connection( protocol_message->get_connection() );
   connection->get_socket()->set_blocking_mode( false );
   attach( connection, protocol_message->incRef(), false, false );
   for ( ;; )
   {
-    YIELD::auto_Buffer buffer( new YIELD::HeapBuffer( buffer_capacity ) );
+    auto_Buffer buffer( new HeapBuffer( buffer_capacity ) );
     ssize_t read_ret;
     if ( haveAIO() )
       read_ret = connection->get_socket()->aio_read( new Socket::AIOReadControlBlock( buffer, protocol_message->incRef() ) );
@@ -2551,25 +2683,22 @@ bool Peer<ReadProtocolMessageType, WriteProtocolMessageType>::read( YIELD::auto_
   return false;
 }
 template <class ReadProtocolMessageType, class WriteProtocolMessageType>
-bool Peer<ReadProtocolMessageType, WriteProtocolMessageType>::send( Event& ev )
+void Peer<ReadProtocolMessageType, WriteProtocolMessageType>::send( Event& ev )
 {
   if ( my_stage != NULL )
-    return my_stage->send( ev );
+    my_stage->send( ev );
   else
-  {
-    YIELD::Object::decRef( ev );
-    return true;
-  }
+    Object::decRef( ev );
 }
 template <class ReadProtocolMessageType, class WriteProtocolMessageType>
-YIELD::auto_Buffer  Peer<ReadProtocolMessageType, WriteProtocolMessageType>::serialize( YIELD::auto_Object<WriteProtocolMessageType> protocol_message )
+auto_Buffer  Peer<ReadProtocolMessageType, WriteProtocolMessageType>::serialize( auto_Object<WriteProtocolMessageType> protocol_message )
 {
   return protocol_message->serialize();
 }
 template <class ReadProtocolMessageType, class WriteProtocolMessageType>
-bool Peer<ReadProtocolMessageType, WriteProtocolMessageType>::write( YIELD::auto_Object<WriteProtocolMessageType> protocol_message, YIELD::auto_Buffer buffer )
+bool Peer<ReadProtocolMessageType, WriteProtocolMessageType>::write( auto_Object<WriteProtocolMessageType> protocol_message, auto_Buffer buffer )
 {
-  YIELD::auto_Object<Connection> connection( protocol_message->get_connection() );
+  auto_Object<Connection> connection( protocol_message->get_connection() );
   connection->get_socket()->set_blocking_mode( true );
   ssize_t write_ret = connection->get_socket()->write( buffer );
   return write_ret >= 0;
@@ -2714,7 +2843,7 @@ auto_Process Process::create( const Path& executable_file_path, const char** nul
   }
   return create( command_line );
 #else
-  YIELD::auto_Object<Pipe> child_stdin, child_stdout, child_stderr;
+  auto_Object<Pipe> child_stdin, child_stdout, child_stderr;
   //auto_Object<Pipe> child_stdin = Pipe::create(),
   //                  child_stdout = Pipe::create(),
   //                  child_stderr = Pipe::create();
@@ -2746,12 +2875,12 @@ auto_Process Process::create( const Path& executable_file_path, const char** nul
 #endif
 }
 #ifdef _WIN32
-Process::Process( HANDLE hChildProcess, HANDLE hChildThread, YIELD::auto_Object<Pipe> child_stdin, YIELD::auto_Object<Pipe> child_stdout, YIELD::auto_Object<Pipe> child_stderr )
+Process::Process( HANDLE hChildProcess, HANDLE hChildThread, auto_Object<Pipe> child_stdin, auto_Object<Pipe> child_stdout, auto_Object<Pipe> child_stderr )
   : hChildProcess( hChildProcess ), hChildThread( hChildThread ),
     child_stdin( child_stdin ), child_stdout( child_stdout ), child_stderr( child_stderr )
 { }
 #else
-Process::Process( pid_t child_pid, YIELD::auto_Object<Pipe> child_stdin, YIELD::auto_Object<Pipe> child_stdout, YIELD::auto_Object<Pipe> child_stderr )
+Process::Process( pid_t child_pid, auto_Object<Pipe> child_stdin, auto_Object<Pipe> child_stdout, auto_Object<Pipe> child_stderr )
   : child_pid( child_pid ),
     child_stdin( child_stdin ), child_stdout( child_stdout ), child_stderr( child_stderr )
 { }
@@ -2887,7 +3016,7 @@ void RFC822Headers::copy_iovec( const char* data, size_t len )
   if ( data[len-1] == 0 ) len--;
   set_iovec( buffer_p_before, len );
 }
-ssize_t RFC822Headers::deserialize( YIELD::auto_Buffer buffer )
+ssize_t RFC822Headers::deserialize( auto_Buffer buffer )
 {
   for ( ;; )
   {
@@ -3063,9 +3192,9 @@ char* RFC822Headers::get_header( const char* header_name, const char* default_va
   }
   return const_cast<char*>( default_value );
 }
-YIELD::auto_Buffer RFC822Headers::serialize()
+auto_Buffer RFC822Headers::serialize()
 {
-  return new YIELD::GatherBuffer( heap_iovecs != NULL ? heap_iovecs : stack_iovecs, iovecs_filled );
+  return new GatherBuffer( heap_iovecs != NULL ? heap_iovecs : stack_iovecs, iovecs_filled );
 }
 //void RFC822Headers::set_header( const char* header, size_t header_len )
 //{
@@ -3157,8 +3286,8 @@ void Server<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
 
     case YIELD_OBJECT_TAG( Connection ):
     {
-      YIELD::auto_Object<Connection> connection = static_cast<Connection&>( ev );
-      YIELD::auto_Object<ProtocolRequestType> protocol_request( createProtocolRequest( connection ) );
+      auto_Object<Connection> connection = static_cast<Connection&>( ev );
+      auto_Object<ProtocolRequestType> protocol_request( createProtocolRequest( connection ) );
       protocol_request->set_connection( connection );
       this->read( protocol_request );
     }
@@ -3173,7 +3302,7 @@ void Server<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
 }
 
 template <class ProtocolRequestType, class ProtocolResponseType>
-bool Server<ProtocolRequestType, ProtocolResponseType>::write( YIELD::auto_Object<ProtocolResponseType> protocol_response, YIELD::auto_Buffer buffer )
+bool Server<ProtocolRequestType, ProtocolResponseType>::write( auto_Object<ProtocolResponseType> protocol_response, auto_Buffer buffer )
 {
   if ( Peer<ProtocolRequestType, ProtocolResponseType>::write( protocol_response, buffer ) )
   {
@@ -3210,18 +3339,18 @@ Socket::~Socket()
 {
   close();
 }
-Socket::ConnectStatus Socket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
+Socket::ConnectStatus Socket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
   return connect( aio_connect_control_block->get_peername() );
 }
-ssize_t Socket::aio_read( YIELD::auto_Object<AIOReadControlBlock> aio_read_control_block )
+ssize_t Socket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
 {
   if ( read_buffer != NULL )
     return read( aio_read_control_block->get_buffer() );
   else
   {
 #ifdef _WIN32
-    YIELD::auto_Buffer buffer = aio_read_control_block->get_buffer();
+    auto_Buffer buffer = aio_read_control_block->get_buffer();
     WSABUF wsabuf[1];
     wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) );
     wsabuf[0].len = buffer->capacity() - buffer->size();
@@ -3395,7 +3524,7 @@ Socket::operator int() const
 {
   return _socket;
 }
-ssize_t Socket::read( YIELD::auto_Buffer buffer )
+ssize_t Socket::read( auto_Buffer buffer )
 {
   ssize_t read_ret = read( static_cast<void*>( *buffer ), buffer->capacity() - buffer->size() );
   if ( read_ret > 0 )
@@ -3481,7 +3610,7 @@ bool Socket::want_write() const
   return errno == EWOULDBLOCK;
 #endif
 }
-ssize_t Socket::write( YIELD::auto_Buffer buffer )
+ssize_t Socket::write( auto_Buffer buffer )
 {
   std::vector<struct iovec> iovecs;
   buffer->as_iovecs( iovecs );
@@ -3861,7 +3990,7 @@ void SSLContext::throwOpenSSLException()
 #ifdef YIELD_HAVE_OPENSSL
 auto_SSLListenQueue SSLListenQueue::create( auto_SocketAddress sockname, auto_SSLContext ssl_context )
 {
-  YIELD::auto_Object<SSLSocket> listen_ssl_socket = SSLSocket::create( ssl_context );
+  auto_Object<SSLSocket> listen_ssl_socket = SSLSocket::create( ssl_context );
   if ( listen_ssl_socket != NULL &&
        listen_ssl_socket->bind( sockname ) &&
        listen_ssl_socket->listen() )
@@ -3869,7 +3998,7 @@ auto_SSLListenQueue SSLListenQueue::create( auto_SocketAddress sockname, auto_SS
   else
     return NULL;
 }
-SSLListenQueue::SSLListenQueue( YIELD::auto_Object<SSLSocket> listen_ssl_socket )
+SSLListenQueue::SSLListenQueue( auto_Object<SSLSocket> listen_ssl_socket )
   : TCPListenQueue( listen_ssl_socket.release() )
 { }
 #endif
@@ -4011,7 +4140,7 @@ ssize_t SSLSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
 #endif
 auto_TCPListenQueue TCPListenQueue::create( auto_SocketAddress sockname )
 {
-  YIELD::auto_Object<TCPSocket> listen_tcp_socket = TCPSocket::create();
+  auto_Object<TCPSocket> listen_tcp_socket = TCPSocket::create();
   if ( listen_tcp_socket != NULL &&
        listen_tcp_socket->bind( sockname ) &&
        listen_tcp_socket->listen() )
@@ -4019,36 +4148,44 @@ auto_TCPListenQueue TCPListenQueue::create( auto_SocketAddress sockname )
   else
     return NULL;
 }
-TCPListenQueue::TCPListenQueue( YIELD::auto_Object<TCPSocket> listen_tcp_socket )
+TCPListenQueue::TCPListenQueue( auto_Object<TCPSocket> listen_tcp_socket )
   : listen_tcp_socket( listen_tcp_socket )
 {
   attach( *listen_tcp_socket, listen_tcp_socket->incRef() );
 }
 Event* TCPListenQueue::dequeue( uint64_t timeout_ns )
 {
-  Event* ev = FDEventQueue::dequeue( timeout_ns );
-  if ( ev != NULL )
+  if ( lock.timed_acquire( timeout_ns ) )
   {
-    switch ( ev->get_tag() )
+    Event* ev = FDEventQueue::dequeue( timeout_ns );
+    if ( ev != NULL )
     {
-      case YIELD_OBJECT_TAG( FDEventQueue::POLLINEvent ):
+      switch ( ev->get_tag() )
       {
-        FDEventQueue::POLLINEvent* pollin_event = static_cast<FDEventQueue::POLLINEvent*>( ev );
-        if ( pollin_event->get_context() == static_cast<Object*>( listen_tcp_socket.get() ) )
+        case YIELD_OBJECT_TAG( FDEventQueue::POLLINEvent ):
         {
-          YIELD::auto_Object<TCPSocket> accepted_tcp_socket = listen_tcp_socket->accept();
+          FDEventQueue::POLLINEvent* pollin_event = static_cast<FDEventQueue::POLLINEvent*>( ev );
+          if ( pollin_event->get_context() == static_cast<Object*>( listen_tcp_socket.get() ) )
+          {
+            auto_Object<TCPSocket> accepted_tcp_socket = listen_tcp_socket->accept();
 #ifdef YIELD_HAVE_SOLARIS_EVENT_PORTS
-        // The event port automatically dissociates events, so we have to re-associate here
-        toggle( *listen_tcp_socket, NULL, true, false );
+            // The event port automatically dissociates events, so we have to re-associate here
+            toggle( *listen_tcp_socket, true, false );
 #endif
-          Object::decRef( *ev );
-          return accepted_tcp_socket.release();
+            lock.release();
+            Object::decRef( *ev );
+            return accepted_tcp_socket.release();
+          }
         }
+        break;
       }
-      break;
     }
+    else
+      lock.release();
+    return ev;
   }
-  return ev;
+  else
+    return NULL;
 }
 
 
@@ -4225,11 +4362,11 @@ TracingSocket::TracingSocket( auto_Socket underlying_socket, auto_Log log )
   : Socket( underlying_socket->get_domain(), underlying_socket->get_type(), underlying_socket->get_protocol(), -1 ),
     underlying_socket( underlying_socket ), log( log )
 { }
-Socket::ConnectStatus TracingSocket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
+Socket::ConnectStatus TracingSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
   return underlying_socket->aio_connect( aio_connect_control_block );
 }
-ssize_t TracingSocket::aio_read( YIELD::auto_Object<AIOReadControlBlock> aio_read_control_block )
+ssize_t TracingSocket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
 {
   return underlying_socket->aio_read( aio_read_control_block );
 }
@@ -4365,7 +4502,7 @@ ssize_t TracingSocket::writev( const struct iovec* buffers, uint32_t buffers_cou
 #endif
 auto_UDPRecvFromQueue UDPRecvFromQueue::create( auto_SocketAddress sockname )
 {
-  YIELD::auto_Object<UDPSocket> udp_socket = UDPSocket::create();
+  auto_Object<UDPSocket> udp_socket = UDPSocket::create();
   if ( udp_socket != NULL )
   {
     int so_reuseaddr = 1;
@@ -4375,7 +4512,7 @@ auto_UDPRecvFromQueue UDPRecvFromQueue::create( auto_SocketAddress sockname )
   }
   return NULL;
 }
-UDPRecvFromQueue::UDPRecvFromQueue( auto_SocketAddress recvfrom_sockname, YIELD::auto_Object<UDPSocket> recvfrom_udp_socket )
+UDPRecvFromQueue::UDPRecvFromQueue( auto_SocketAddress recvfrom_sockname, auto_Object<UDPSocket> recvfrom_udp_socket )
   : recvfrom_sockname( recvfrom_sockname ), recvfrom_udp_socket( recvfrom_udp_socket )
 {
   this->attach( *recvfrom_udp_socket, NULL );
@@ -4389,16 +4526,16 @@ Event* UDPRecvFromQueue::dequeue( uint64_t timeout_ns )
     {
 #ifdef YIELD_HAVE_SOLARIS_EVENT_PORTS
       // The event port automatically dissociates events, so we have to re-associate here
-      toggle( *recvfrom_udp_socket, NULL, true, false );
+      toggle( *recvfrom_udp_socket, true, false );
 #endif
       Object::decRef( ev );
-      YIELD::auto_Buffer recvfrom_buffer = new YIELD::HeapBuffer( 1024 );
+      auto_Buffer recvfrom_buffer = new HeapBuffer( 1024 );
       struct sockaddr_storage recvfrom_peername;
       socklen_t recvfrom_peername_len = sizeof( recvfrom_peername );
       ssize_t recvfrom_ret = ::recvfrom( *recvfrom_udp_socket, *recvfrom_buffer, recvfrom_buffer->capacity(), 0, reinterpret_cast<struct sockaddr*>( &recvfrom_peername ), &recvfrom_peername_len );
       if ( recvfrom_ret > 0 )
       {
-        YIELD::auto_Object<UDPSocket> udp_socket = UDPSocket::create();
+        auto_Object<UDPSocket> udp_socket = UDPSocket::create();
         if ( udp_socket != NULL )
         {
           int so_reuseaddr = 1;

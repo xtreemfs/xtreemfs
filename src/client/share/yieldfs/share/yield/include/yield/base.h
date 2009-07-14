@@ -40,6 +40,7 @@
 
 
 #ifdef _WIN32
+
 struct iovec
 {
   size_t iov_len;
@@ -47,10 +48,19 @@ struct iovec
 };
 
 #else
+
 inline void memcpy_s( void* dest, size_t dest_size, const void* src, size_t count )
 {
   memcpy( dest, src, count );
 }
+
+#ifdef __sun
+inline size_t strnlen( const char* s, size_t maxlen )
+{
+  return strlen( s );
+}
+#endif
+
 #endif
 
 
@@ -164,6 +174,7 @@ namespace YIELD
     operator unsigned char*() const { return static_cast<unsigned char*>( static_cast<void*>( *this ) ); }
     virtual operator void*() const { return NULL; }
     bool operator==( const Buffer& other ) const;
+    size_t put( const char* from_string ) { return put( from_string, strlen( from_string ) ); }
     size_t put( const std::string& from_string ) { return put( from_string.c_str(), from_string.size() ); }
     virtual size_t put( const void* from_buffer, size_t from_buffer_len ) = 0;
     void set_next_buffer( auto_Object<Buffer> next_buffer );
@@ -420,10 +431,10 @@ namespace YIELD
   virtual void readStruct( const char* key, uint32_t tag, YIELD::Struct& value );
 
 
-  class BufferedMarshaller : public YIELD::Marshaller
+  class BufferedMarshaller : public Marshaller
   {
   public:
-    YIELD::auto_Buffer get_buffer() const { return first_buffer; }
+    auto_Buffer get_buffer() const { return first_buffer; }
 
   protected:
     BufferedMarshaller()
@@ -434,27 +445,27 @@ namespace YIELD
     { }
 
     void write( const void* buffer, size_t buffer_len );
-    void write( YIELD::auto_Buffer buffer );
+    void write( auto_Buffer buffer );
 
   private:
-    YIELD::auto_Buffer first_buffer, current_buffer;
+    auto_Buffer first_buffer, current_buffer;
   };
 
 
-  class BufferedUnmarshaller : public YIELD::Unmarshaller
+  class BufferedUnmarshaller : public Unmarshaller
   {
   public:
     virtual ~BufferedUnmarshaller() { }
 
   protected:
-    BufferedUnmarshaller( YIELD::auto_Buffer source_buffer )
+    BufferedUnmarshaller( auto_Buffer source_buffer )
         : source_buffer( source_buffer )
     { }
 
     void readBytes( void*, size_t );
 
   private:
-    YIELD::auto_Buffer source_buffer;
+    auto_Buffer source_buffer;
   };
 };
 

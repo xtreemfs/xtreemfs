@@ -1,4 +1,4 @@
-// Revision: 1628
+// Revision: 1654
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -851,7 +851,7 @@ bool MemoryMappedFile::resize( size_t new_size )
         return false;
     }
 #endif
-    if ( size == new_size || underlying_file->truncate( new_size ) )
+    if ( size <= new_size || underlying_file->truncate( new_size ) )
     {
 #ifdef _WIN32
       unsigned long map_flags = PAGE_READONLY;
@@ -1254,6 +1254,76 @@ Path Path::abspath() const
 }
 
 
+// performance_counter_set.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef __sun
+#include <libcpc.h>
+#endif
+auto_Object<PerformanceCounterSet> PerformanceCounterSet::create()
+{
+#ifdef __sun
+  cpc_t* cpc = cpc_open( CPC_VER_CURRENT );
+  if ( cpc != NULL )
+  {
+    cpc_set_t* cpc_set = cpc_set_create( cpc );
+    if ( cpc_set != NULL )
+      return new PerformanceCounterSet( cpc, cpc_set );
+    else
+      cpc_close( cpc );
+  }
+#endif
+  return NULL;
+}
+#ifdef __sun
+PerformanceCounterSet::PerformanceCounterSet( cpc_t* cpc, cpc_set_t* cpc_set )
+  : cpc( cpc ), cpc_set( cpc_set )
+{
+  start_cpc_buf = NULL;
+}
+#endif
+PerformanceCounterSet::~PerformanceCounterSet()
+{
+#ifdef __sun
+  cpc_set_destroy( cpc, cpc_set );
+  cpc_close( cpc );
+#endif
+}
+bool PerformanceCounterSet::addEvent( const char* name )
+{
+#ifdef __sun
+  int event_index = cpc_set_add_request( cpc, cpc_set, name, 0, CPC_COUNT_USER, 0, NULL );
+  if ( event_index != -1 )
+  {
+    event_indices.push_back( event_index );
+    return true;
+  }
+#endif
+  return false;
+}
+void PerformanceCounterSet::startCounting()
+{
+#ifdef __sun
+  if ( start_cpc_buf == NULL )
+    start_cpc_buf = cpc_buf_create( cpc, cpc_set );
+  cpc_bind_curlwp( cpc, cpc_set, 0 );
+  cpc_set_sample( cpc, cpc_set, start_cpc_buf );
+#endif
+}
+void PerformanceCounterSet::stopCounting( uint64_t* counts )
+{
+#ifdef __sun
+  cpc_buf_t* stop_cpc_buf = cpc_buf_create( cpc, cpc_set );
+  cpc_set_sample( cpc, cpc_set, stop_cpc_buf );
+  cpc_buf_t* diff_cpc_buf = cpc_buf_create( cpc, cpc_set );
+  cpc_buf_sub( cpc, diff_cpc_buf, stop_cpc_buf, start_cpc_buf );
+  for ( std::vector<int>::size_type event_index_i = 0; event_index_i < event_indices.size(); event_index_i++ )
+    cpc_buf_get( cpc, diff_cpc_buf, event_indices[event_index_i], &counts[event_index_i] );
+  cpc_unbind( cpc, cpc_set );
+#endif
+}
+
+
 // processor_set.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -1408,12 +1478,9 @@ RRD::RecordSet::~RecordSet()
   for ( iterator record_i = begin(); record_i != end(); record_i++ )
     Object::decRef( *record_i );
 }
-RRD::RRD( const Path& base_dir_path )
-  : base_dir_path( base_dir_path )
-{
-  Path file_stem( base_dir_path.split().second );
-  current_file_path = base_dir_path + ( static_cast<const std::string&>( file_stem ) + ".rrd" );
-}
+RRD::RRD( const Path& file_path )
+  : current_file_path( file_path )
+{ }
 RRD::~RRD()
 { }
 void RRD::append( double value )
@@ -1424,11 +1491,11 @@ void RRD::append( double value )
   if ( current_file != NULL )
     current_file->write( xdr_marshaller.get_buffer() );
 }
-auto_Object<RRD> RRD::creat( const Path& base_dir_path )
+auto_Object<RRD> RRD::creat( const Path& file_path )
 {
-  Volume().rmtree( base_dir_path );
-  if ( Volume().mktree( base_dir_path ) )
-    return new RRD( base_dir_path );
+  if ( !Volume().exists( file_path ) ||
+       Volume().unlink( file_path ) )
+    return new RRD( file_path );
   else
     return NULL;
 }
@@ -1497,10 +1564,10 @@ void RRD::fetch_until( const Time& end_time, RecordSet& out_records )
       ++record_i;
   }
 }
-auto_Object<RRD> RRD::open( const Path& base_dir_path )
+auto_Object<RRD> RRD::open( const Path& file_path )
 {
-  if ( Volume().isdir( base_dir_path ) )
-    return new RRD( base_dir_path );
+  if ( Volume().isfile( file_path ) )
+    return new RRD( file_path );
   else
     return NULL;
 }
@@ -2215,84 +2282,153 @@ Time::operator std::string() const
 // timer_queue.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
 #include <queue>
 #include <utility>
-namespace YIELD
-{
-  class TimerQueueThread : public Thread
-  {
-  public:
-    TimerQueueThread()
-    {
-      should_run = true;
-    }
-    void enqueueTimer( Timer* timer )
-    {
-      new_timers_queue.enqueue( timer );
-      new_timers_queue_signal.release();
-    }
-    void stop()
-    {
-      should_run = false;
-      new_timers_queue_signal.release();
-    }
-    // Thread
-    void run()
-    {
-      Thread::set_name( "TimerQueueThread" );
-      while ( should_run )
-      {
-        Timer* new_timer = new_timers_queue.dequeue();
-        if ( new_timer != NULL )
-          timers.push( std::make_pair( Time() + new_timer->get_timeout(), new_timer ) );
-        if ( timers.empty() )
-          new_timers_queue_signal.acquire();
-        else
-        {
-          while ( should_run && !timers.empty() && Time::getCurrentUnixTimeNS() >= timers.top().first )
-          {
-            Timer* timer = timers.top().second;
-					  timers.pop();
-            timer->fire();
-            if ( timer->get_period() != 0 )
-              timers.push( std::make_pair( Time() + timer->get_period(), timer ) );
-            else
-              Object::decRef( *timer );
-          }
-          if ( should_run )
-          {
-            if ( !timers.empty() )
-            {
-              int64_t timeout_ns = timers.top().first - Time::getCurrentUnixTimeNS();
-              new_timers_queue_signal.timed_acquire( timeout_ns );
-            }
-          }
-          else
-            break;
-        }
-      }
-    }
-  private:
-    NonBlockingFiniteQueue<Timer*, 16> new_timers_queue;
-    Mutex new_timers_queue_signal;
-    bool should_run;
-    std::priority_queue< std::pair<uint64_t, Timer*>, std::vector< std::pair<uint64_t, Timer*> >, std::greater< std::pair<uint64_t, Timer*> > > timers;
-  };
-};
+
+
 TimerQueue::TimerQueue()
 {
-  thread = new TimerQueueThread();
-  thread->start();
+#ifdef _WIN32
+  hTimerQueue = CreateTimerQueue();
+#else
+  thread.start();
+#endif
 }
+
 TimerQueue::~TimerQueue()
 {
-  ( ( TimerQueueThread* )thread )->stop();
-  delete thread;
+#ifdef _WIN32
+  DeleteTimerQueueEx( hTimerQueue, NULL );
+#else
+  thread.stop();
+#endif
 }
+
 void TimerQueue::addTimer( auto_Object<Timer> timer )
 {
-  ( ( TimerQueueThread* )thread )->enqueueTimer( timer.release() );
+#ifdef _WIN32
+  timer->hTimerQueue = hTimerQueue;
+  CreateTimerQueueTimer( &timer->hTimer,
+                         hTimerQueue,
+                         WaitOrTimerCallback,
+                         &timer->incRef(),
+                         static_cast<DWORD>( timer->get_timeout().as_unix_time_ms() ),
+                         static_cast<DWORD>( timer->get_period().as_unix_time_ms() ),
+                         WT_EXECUTEDEFAULT );
+#else
+  thread.enqueueTimer( timer.release() );
+#endif
 }
+
+#ifdef _WIN32
+VOID CALLBACK TimerQueue::WaitOrTimerCallback( PVOID lpParameter, BOOLEAN TimerOrWaitFired )
+{
+  TimerQueue::Timer* timer = static_cast<TimerQueue::Timer*>( lpParameter );
+
+  if ( TimerOrWaitFired )
+  {
+    bool keep_firing = timer->fire( Time() - timer->last_fire_time );
+
+    if ( timer->get_period() == 0 )
+      Object::decRef( *timer );
+    else if ( keep_firing )
+      timer->last_fire_time = Time();
+    else
+      CancelTimerQueueTimer( timer->hTimerQueue, timer->hTimer );
+  }
+  else
+    Object::decRef( *timer );
+}
+#endif
+
+TimerQueue::Timer::Timer( const Time& timeout )
+  : period( static_cast<uint64_t>( 0 ) ), timeout( timeout )
+{
+#ifdef _WIN32
+  hTimer = hTimerQueue = NULL;
+#endif
+}
+
+TimerQueue::Timer::Timer( const Time& timeout, const Time& period )
+  : period( period ), timeout( timeout )
+{
+#ifdef _WIN32
+  hTimer = hTimerQueue = NULL;
+#endif
+}
+
+TimerQueue::Timer::~Timer()
+{ }
+
+
+#ifndef _WIN32
+TimerQueue::Thread::Thread()
+{
+   should_run = true;
+}
+
+void TimerQueue::Thread::enqueueTimer( TimerQueue::Timer* timer )
+{
+  new_timers_queue.enqueue( timer );
+  new_timers_queue_signal.release();
+}
+
+void TimerQueue::Thread::run()
+{
+  set_name( "TimerQueueThread" );
+
+  while ( should_run )
+  {
+    TimerQueue::Timer* new_timer = new_timers_queue.dequeue();
+    if ( new_timer != NULL )
+     timers.push( std::make_pair( Time() + new_timer->get_timeout(), new_timer ) );
+
+    if ( timers.empty() )
+      new_timers_queue_signal.acquire();
+    else
+    {
+      while ( should_run && !timers.empty() && Time::getCurrentUnixTimeNS() >= timers.top().first )
+      {
+        TimerQueue::Timer* timer = timers.top().second;
+        timers.pop();
+
+        bool keep_firing = timer->fire( Time() - timer->last_fire_time );
+
+        if ( timer->get_period() != 0 && keep_firing )
+        {
+          timer->last_fire_time = Time();
+          timers.push( std::make_pair( Time() + timer->get_period(), timer ) );
+        }
+        else
+          Object::decRef( *timer );
+      }
+
+      if ( should_run )
+      {
+        if ( !timers.empty() )
+        {
+          int64_t timeout_ns = timers.top().first - Time::getCurrentUnixTimeNS();
+          new_timers_queue_signal.timed_acquire( timeout_ns );
+        }
+      }
+      else
+        break;
+    }
+  }
+}
+
+void TimerQueue::Thread::stop()
+{
+   should_run = false;
+   new_timers_queue_signal.release();
+}
+#endif
 
 
 // volume.cpp
