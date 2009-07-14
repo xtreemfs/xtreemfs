@@ -1,4 +1,4 @@
-// Revision: 1654
+// Revision: 1657
 
 #include "yield/concurrency.h"
 using namespace YIELD;
@@ -37,8 +37,6 @@ void EventHandler::send( Event& ev )
 // instrumented_stage_impl.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-TimerQueue InstrumentedStageImpl<NOPLock>::statistics_timer_queue;
-TimerQueue InstrumentedStageImpl<Mutex>::statistics_timer_queue;
 template <class LockType>
 InstrumentedStageImpl<LockType>::InstrumentedStageImpl( auto_Object<EventHandler> event_handler, auto_Object<EventQueue> event_queue, unsigned long running_stage_tls_key )
   : event_handler( event_handler ), event_queue( event_queue ), running_stage_tls_key( running_stage_tls_key )
