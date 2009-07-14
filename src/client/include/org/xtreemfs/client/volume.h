@@ -24,8 +24,10 @@ namespace org
       public:
         const static uint32_t VOLUME_FLAG_CACHE_FILES = 1;
         const static uint32_t VOLUME_FLAG_CACHE_METADATA = 2;
+        const static uint32_t VOLUME_FLAG_TRACE_FILE_IO = 4;
+        const static uint32_t VOLUME_FLAG_TRACE_SOCKET_IO = 8;
 
-        Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags = 0, YIELD::auto_Log log = NULL, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL, bool trace_socket_io = false );
+        Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags = 0, YIELD::auto_Log log = NULL, YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL );
 
         uint32_t get_flags() const { return flags; }
         YIELD::auto_Log get_log() const { return log; }

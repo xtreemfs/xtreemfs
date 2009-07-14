@@ -44,6 +44,18 @@ namespace org
           addOption( XTFS_MOUNT_OPTION_FUSE_OPTION, "-o", NULL, "<fuse_option>" );
 
           addOption( XTFS_MOUNT_OPTION_PARENT_NAMED_PIPE_PATH, "--parent-named-pipe-path", NULL, "internal only" );
+
+          addOption( XTFS_MOUNT_OPTION_TRACE_DATA_CACHE, "--trace-data-cache" );
+          trace_data_cache = false;
+
+          addOption( XTFS_MOUNT_OPTION_TRACE_FILE_IO, "--trace-file-io" );
+          trace_file_io = false;
+
+          addOption( XTFS_MOUNT_OPTION_TRACE_METADATA_CACHE, "--trace-metadata-cache" );
+          trace_metadata_cache = false;
+
+          addOption( XTFS_MOUNT_OPTION_TRACE_VOLUME_CALLS, "--trace-volume-calls" );
+          trace_volume_calls = false;
         }
 
       private:
@@ -54,7 +66,11 @@ namespace org
           XTFS_MOUNT_OPTION_DIRECT_IO = 12,
           XTFS_MOUNT_OPTION_FOREGROUND = 13,
           XTFS_MOUNT_OPTION_FUSE_OPTION = 14,
-          XTFS_MOUNT_OPTION_PARENT_NAMED_PIPE_PATH = 15
+          XTFS_MOUNT_OPTION_PARENT_NAMED_PIPE_PATH = 15,
+          XTFS_MOUNT_OPTION_TRACE_DATA_CACHE = 16,
+          XTFS_MOUNT_OPTION_TRACE_FILE_IO = 17,
+          XTFS_MOUNT_OPTION_TRACE_METADATA_CACHE = 18,
+          XTFS_MOUNT_OPTION_TRACE_VOLUME_CALLS = 19
         };
 
         bool cache_data, cache_metadata;
@@ -64,6 +80,7 @@ namespace org
         std::string fuse_o_args;
         std::string mount_point, volume_name;
         YIELD::Path parent_named_pipe_path;
+        bool trace_data_cache, trace_file_io, trace_metadata_cache, trace_volume_calls;
 
 
         // YIELD::Main
@@ -73,45 +90,43 @@ namespace org
 
           if ( foreground )
           {
-            uint32_t volume_flags = 0;
+            uint32_t fuse_flags = 0, volume_flags = 0;
+
             if ( cache_data )
               volume_flags |= Volume::VOLUME_FLAG_CACHE_FILES;
             if ( cache_metadata )
               volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
+            if ( trace_file_io )
+              volume_flags |= Volume::VOLUME_FLAG_TRACE_FILE_IO;
+            if ( get_trace_socket_io() )
+              volume_flags |= Volume::VOLUME_FLAG_TRACE_SOCKET_IO;
 
-            YIELD::auto_Volume volume = new Volume( *dir_uri, volume_name, volume_flags, get_log(), get_ssl_context(), get_trace_socket_io() );
+            YIELD::auto_Volume volume = new Volume( *dir_uri, volume_name, volume_flags, get_log(), get_ssl_context() );
 
             // Stack volumes as indicated
             if ( cache_data )
             {
-              volume = new yieldfs::DataCachingVolume( volume, get_log() );
+              volume = new yieldfs::DataCachingVolume( volume, trace_data_cache ? get_log() : NULL );
               get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching data.";
             }
 
             if ( cache_metadata )
             {
-              volume = new yieldfs::MetadataCachingVolume( volume, get_log(), 5 );
+              volume = new yieldfs::MetadataCachingVolume( volume, trace_metadata_cache ? get_log() : NULL, 5 );
               get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching metadata.";
-            }
-
-            if ( get_log_level() >= YIELD::Log::LOG_INFO )
-            {
-              volume = new yieldfs::TracingVolume( volume, get_log() );
-              get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": tracing volume operations.";
-            }
-
-            // Set flags to pass to FUSE based on command line options
-            uint32_t fuse_flags = 0;
-            if ( get_log_level() >= YIELD::Log::LOG_INFO )
-            {
-              fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
-              get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE debugging.";
             }
 
             if ( direct_io )
             {
               fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
               get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
+            }
+
+            if ( trace_volume_calls && get_log_level() >= YIELD::Log::LOG_INFO )
+            {
+              volume = new yieldfs::TracingVolume( volume, get_log() );
+              fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
+              get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": tracing volume operations.";
             }
 
             YIELD::auto_NamedPipe parent_named_pipe; // Outside the if so it stays in scope (and open) while the client is running
@@ -212,7 +227,12 @@ namespace org
               foreground = true;
             }
             break;
-              
+
+            case XTFS_MOUNT_OPTION_TRACE_DATA_CACHE: trace_data_cache = true; break;
+            case XTFS_MOUNT_OPTION_TRACE_FILE_IO: trace_file_io = true; break;
+            case XTFS_MOUNT_OPTION_TRACE_METADATA_CACHE: trace_metadata_cache = true; break;
+            case XTFS_MOUNT_OPTION_TRACE_VOLUME_CALLS: trace_volume_calls = true; break;
+            
             default: Main::parseOption( id, arg ); break;
           }
         }

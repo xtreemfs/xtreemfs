@@ -72,7 +72,7 @@ namespace YIELD
   class Connection;
   class HTTPRequest;
   class ONCRPCRequest;
-  class TCPSocket;
+  class TCPSocketPair;
   class URI;
 
 
@@ -170,14 +170,14 @@ namespace YIELD
 #ifdef YIELD_HAVE_LINUX_EVENTFD
     EventFDPipe( int fd );
 #else
-    EventFDPipe( auto_Object<TCPSocket> read_end, auto_Object<TCPSocket> write_end );
+    EventFDPipe( auto_Object<TCPSocketPair> tcp_socket_pair );
 #endif
     ~EventFDPipe();
 
 #ifdef YIELD_HAVE_LINUX_EVENTFD
     int fd;
 #else
-    auto_Object<TCPSocket> read_end, write_end;
+    auto_Object<TCPSocketPair> tcp_socket_pair;
 #endif
   };
 
@@ -558,6 +558,30 @@ namespace YIELD
   };
 
   typedef auto_Object<TCPSocket> auto_TCPSocket;
+
+
+  class TCPSocketPair : public Object
+  {
+  public:
+    static auto_Object<TCPSocketPair> create();
+
+    auto_TCPSocket get_read_end() const { return read_end; }
+    auto_TCPSocket get_write_end() const { return write_end; }
+
+    ssize_t read( void* buffer, size_t buffer_len );
+    ssize_t write( const void* buffer, size_t buffer_len );
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( TCPSocketPair, 0 );
+
+  private:
+    TCPSocketPair( auto_TCPSocket read_end, auto_TCPSocket write_end );
+    ~TCPSocketPair() { }
+
+    auto_TCPSocket read_end, write_end;
+  };
+
+  typedef auto_Object<TCPSocketPair> auto_TCPSocketPair;
 
 
   class TCPListenQueue : public FDEventQueue

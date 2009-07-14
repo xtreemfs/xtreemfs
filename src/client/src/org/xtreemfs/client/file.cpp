@@ -179,14 +179,17 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         object_size = stripe_size - object_offset;
 
 #ifdef _DEBUG
-      log->getStream( YIELD::Log::LOG_INFO ) << 
-        "org::xtreemfs::client::File: issuing read for " << object_size << 
-        " bytes from object number " << object_number <<
-        " in file " << file_credentials.get_xcap().get_file_id() <<
-        "(object offset = " << object_offset <<
-        ", file offset = " << current_file_offset <<
-        ", remaining buffer size = " << static_cast<size_t>( rbuf_end - rbuf_p ) <<
-        ").";
+      if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+      {
+        log->getStream( YIELD::Log::LOG_INFO ) << 
+          "org::xtreemfs::client::File: issuing read for " << object_size << 
+          " bytes from object number " << object_number <<
+          " in file " << file_credentials.get_xcap().get_file_id() <<
+          "(object offset = " << object_offset <<
+          ", file offset = " << current_file_offset <<
+          ", remaining buffer size = " << static_cast<size_t>( rbuf_end - rbuf_p ) <<
+          ").";
+      }
 #endif
 
       org::xtreemfs::interfaces::OSDInterface::readRequest* read_request = new org::xtreemfs::interfaces::OSDInterface::readRequest( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ) );
@@ -201,9 +204,9 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     }
 
 #ifdef _DEBUG
-    log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File: issued " << expected_read_response_count << " parallel reads.";
+    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+      log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File: issued " << expected_read_response_count << " parallel reads.";
 #endif
-
 
     for ( size_t read_response_i = 0; read_response_i < expected_read_response_count; read_response_i++ )
     {
@@ -227,13 +230,16 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
           rbuf_p = static_cast<char*>( static_cast<void*>( *data ) );
 
 #ifdef _DEBUG
-          log->getStream( YIELD::Log::LOG_INFO ) << 
-            "org::xtreemfs::client::File: read " << data->size() <<
-            " bytes from file " << file_credentials.get_xcap().get_file_id() <<            
-            " with " << zero_padding << " bytes of zero padding" <<
-            ", starting from buffer offset " << static_cast<size_t>( rbuf_p - rbuf_start ) << 
-            ", read # " << ( read_response_i + 1 ) << " of " << expected_read_response_count << " parallel reads" <<
-            ".";
+          if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+          {
+            log->getStream( YIELD::Log::LOG_INFO ) << 
+              "org::xtreemfs::client::File: read " << data->size() <<
+              " bytes from file " << file_credentials.get_xcap().get_file_id() <<            
+              " with " << zero_padding << " bytes of zero padding" <<
+              ", starting from buffer offset " << static_cast<size_t>( rbuf_p - rbuf_start ) << 
+              ", read # " << ( read_response_i + 1 ) << " of " << expected_read_response_count << " parallel reads" <<
+              ".";
+          }
 #endif
 
           ret += data->size();

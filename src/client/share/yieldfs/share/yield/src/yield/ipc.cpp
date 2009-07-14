@@ -236,25 +236,12 @@ auto_EventFDPipe EventFDPipe::create()
   if ( fd != -1 )
     return new EventFDPipe( fd );
 #else
-  auto_Object<TCPSocket> listen_socket = TCPSocket::create();
-  if ( listen_socket != NULL &&
-       listen_socket->bind( SocketAddress::create( "localhost", 0 ) ) &&
-       listen_socket->listen() )
+  auto_TCPSocketPair tcp_socket_pair = TCPSocketPair::create();
+  if ( tcp_socket_pair != NULL )
   {
-    auto_Object<TCPSocket> write_end = TCPSocket::create();
-    if ( write_end != NULL )
-    {
-      if ( write_end->connect( listen_socket->getsockname() ) == Socket::CONNECT_STATUS_OK )
-      {
-        write_end->set_blocking_mode( false );
-        auto_Object<TCPSocket> read_end = listen_socket->accept();
-        if ( read_end != NULL )
-        {
-          read_end->set_blocking_mode( false );
-          return new EventFDPipe( read_end, write_end );
-        }
-      }
-    }
+    tcp_socket_pair->get_read_end()->set_blocking_mode( false );
+    tcp_socket_pair->get_write_end()->set_blocking_mode( false );
+    return new EventFDPipe( tcp_socket_pair );
   }
 #endif
   return NULL;
@@ -264,8 +251,8 @@ EventFDPipe::EventFDPipe( int fd )
   : fd( fd )
 { }
 #else
-EventFDPipe::EventFDPipe( auto_Object<TCPSocket> read_end, auto_Object<TCPSocket> write_end )
-  : read_end( read_end ), write_end( write_end )
+EventFDPipe::EventFDPipe( auto_Object<TCPSocketPair> tcp_socket_pair )
+  : tcp_socket_pair( tcp_socket_pair )
 { }
 #endif
 EventFDPipe::~EventFDPipe()
@@ -281,17 +268,17 @@ void EventFDPipe::clear()
   ::read( fd, reinterpret_cast<char*>( &m ), sizeof( m ) );
 #else
   char m;
-  read_end->read( &m, sizeof( m ) );
+  tcp_socket_pair->read( &m, sizeof( m ) );
 #endif
 }
 #ifndef YIELD_HAVE_LINUX_EVENTFD
 int EventFDPipe::get_read_end() const
 {
-  return *read_end;
+  return *tcp_socket_pair->get_read_end();
 }
 int EventFDPipe::get_write_end() const
 {
-  return *write_end;
+  return *tcp_socket_pair->get_write_end();
 }
 #endif
 void EventFDPipe::signal()
@@ -300,8 +287,7 @@ void EventFDPipe::signal()
   uint64_t m = 1;
   ::write( fd, reinterpret_cast<char*>( &m ), sizeof( m ) );
 #else
-  char m = 1;
-  write_end->write( &m, sizeof( m ) );
+  tcp_socket_pair->write( "m", 1 );
 #endif
 }
 
@@ -4352,6 +4338,42 @@ void TCPSocket::AIOAcceptControlBlock::onCompletion( size_t bytes_transferred )
   read_buffer->put( NULL, bytes_transferred );
   size_t sizeof_sockaddr = ( accepted_tcp_socket->get_domain() == AF_INET6 ) ? sizeof( sockaddr_in6 ) : sizeof( sockaddr_in );
   read_buffer->get( NULL, ( sizeof_sockaddr + 16 ) * 2 );
+}
+
+
+// tcp_socket_pair.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+TCPSocketPair::TCPSocketPair( auto_TCPSocket read_end, auto_TCPSocket write_end )
+  : read_end( read_end ), write_end( write_end )
+{ }
+auto_TCPSocketPair TCPSocketPair::create()
+{
+  auto_Object<TCPSocket> listen_socket = TCPSocket::create();
+  if ( listen_socket != NULL &&
+       listen_socket->bind( SocketAddress::create( "localhost", 0 ) ) &&
+       listen_socket->listen() )
+  {
+    auto_Object<TCPSocket> write_end = TCPSocket::create();
+    if ( write_end != NULL )
+    {
+      if ( write_end->connect( listen_socket->getsockname() ) == Socket::CONNECT_STATUS_OK )
+      {
+        auto_Object<TCPSocket> read_end = listen_socket->accept();
+        if ( read_end != NULL )
+          return new TCPSocketPair( read_end, write_end );
+      }
+    }
+  }
+  return NULL;
+}
+ssize_t TCPSocketPair::read( void* buffer, size_t buffer_len )
+{
+  return read_end->read( buffer, buffer_len );
+}
+ssize_t TCPSocketPair::write( const void* buffer, size_t buffer_len )
+{
+  return write_end->write( buffer, buffer_len );
 }
 
 
