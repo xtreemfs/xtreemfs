@@ -554,7 +554,13 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             }
         } catch (IOException ex) {
             con.connectFailed();
-            closeConnection(key, new IOException("server not reachable", ex));
+            String endpoint;
+            try {
+                endpoint = con.getEndpoint().toString();
+            } catch (Exception ex2) {
+                endpoint = "unknown";
+            }
+            closeConnection(key, new IOException("server '"+endpoint+"' not reachable", ex));
         }
         
     }
