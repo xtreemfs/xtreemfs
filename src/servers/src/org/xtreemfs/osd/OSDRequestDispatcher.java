@@ -108,11 +108,10 @@ import org.xtreemfs.osd.striping.UDPReceiverInterface;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.common.VersionManagement;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     UDPReceiverInterface {
-    
-    public final static String                          VERSION = "1.0.0 (v1.0 RC2)";
     
     protected final Map<Integer, OSDOperation>          operations;
     
@@ -165,6 +164,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     private final ServiceAvailability                   serviceAvailability;
 
     public OSDRequestDispatcher(OSDConfig config) throws IOException {
+
+        Logging.logMessage(Logging.LEVEL_INFO, this,"XtreemFS OSD version "+VersionManagement.RELEASE_VERSION);
         
         this.config = config;
         assert (config.getUUID() != null);
@@ -506,7 +507,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     }
     
     public void crashPerformed(Throwable cause) {
-        CrashReporter.reportXtreemFSCrash("OSD", this.VERSION, cause);
+        CrashReporter.reportXtreemFSCrash("OSD", VersionManagement.RELEASE_VERSION, cause);
         this.shutdown();
     }
     

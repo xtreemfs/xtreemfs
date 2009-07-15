@@ -64,6 +64,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import java.net.InetAddress;
 import org.xtreemfs.babudb.BabuDBInsertGroup;
+import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.dir.discovery.DiscoveryMsgThread;
 import org.xtreemfs.foundation.CrashReporter;
@@ -75,8 +76,6 @@ import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
  */
 public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRequestListener,
     LifeCycleListener {
-    
-    public final static String                 VERSION           = "1.0.0 (v1.0 RC2)";
     
     /**
      * index for address mappings, stores uuid -> AddressMappingSet
@@ -108,6 +107,9 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     
     public DIRRequestDispatcher(final DIRConfig config) throws IOException, BabuDBException {
         super("DIR RqDisp");
+
+        Logging.logMessage(Logging.LEVEL_INFO, this,"XtreemFS Direcory Service version "+VersionManagement.RELEASE_VERSION);
+
         registry = new HashMap();
         
         // start up babudb
@@ -353,7 +355,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     
     @Override
     public void crashPerformed(Throwable cause) {
-        CrashReporter.reportXtreemFSCrash("DIR", this.VERSION, cause);
+        CrashReporter.reportXtreemFSCrash("DIR", VersionManagement.RELEASE_VERSION, cause);
         try {
             shutdown();
         } catch (Exception e) {

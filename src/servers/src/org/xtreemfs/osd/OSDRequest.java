@@ -94,6 +94,7 @@ public final class OSDRequest {
 
     public void sendInternalServerError(Throwable cause) {
         if (getRpcRequest() != null) {
+            Logging.logMessage(Logging.LEVEL_ERROR, this,"internal server error:"+cause);
             getRpcRequest().sendInternalServerError(cause, new errnoException());
         } else {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "internal server error on internal request: %s",

@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.util.Date;
 
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
@@ -144,7 +145,7 @@ public class StatusPage {
         tmp = tmp.replace(Vars.LOCALRESYNC.toString(), Long.toString(TimeSync
                 .getLocalRenewInterval()));
         tmp = tmp.replace(Vars.UUIDCACHE.toString(), UUIDResolver.getCache());
-        tmp = tmp.replace(Vars.VERSION.toString(), OSDRequestDispatcher.VERSION);
+        tmp = tmp.replace(Vars.VERSION.toString(), VersionManagement.RELEASE_VERSION);
         tmp = tmp.replace(Vars.PROTOVERSION.toString(), Integer.toString(OSDInterface.getVersion()));
         /*tmp = tmp.replace(Vars.STATCOLLECT.toString(), "basic stats: "+(StatisticsStage.collect_statistics ? "enabled" : "disabled")+
                 "<BR>per stage request details: "+(StatisticsStage.measure_request_times ? "enabled" : "disabled"));*/

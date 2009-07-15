@@ -37,6 +37,7 @@ import java.util.Stack;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.ONCRPCServiceURL;
@@ -249,7 +250,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
 
         Logging.start(Logging.LEVEL_WARN);
 
-        System.out.println("XtreemFS scrubber version "+OSDRequestDispatcher.VERSION+" (file system data integrity check)\n");
+        System.out.println("XtreemFS scrubber version "+VersionManagement.RELEASE_VERSION+" (file system data integrity check)\n");
 
         Map<String, CliOption> options = new HashMap<String, CliOption>();
         List<String> arguments = new ArrayList<String>(1);

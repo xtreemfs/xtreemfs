@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -224,7 +225,7 @@ public class StatusPage {
         tmp = tmp.replace(Vars.TIME.toString(), new Date(time).toString() + " (" + time + ")");
         tmp = tmp.replace(Vars.TABLEDUMP.toString(), dump.toString());
         
-        tmp = tmp.replace(Vars.VERSION.toString(), DIRRequestDispatcher.VERSION);
+        tmp = tmp.replace(Vars.VERSION.toString(), VersionManagement.RELEASE_VERSION);
         tmp = tmp.replace(Vars.PROTOVERSION.toString(), Integer.toString(DIRInterface.getVersion()));
         
         return tmp;

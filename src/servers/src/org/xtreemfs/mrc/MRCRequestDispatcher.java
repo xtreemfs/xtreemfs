@@ -87,6 +87,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.common.VersionManagement;
 
 /**
  * 
@@ -94,8 +95,6 @@ import com.sun.net.httpserver.HttpServer;
  */
 public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     DBAccessResultListener {
-    
-    public final static String           VERSION            = "1.0.0 (v1.0 RC2)";
     
     private static final int             RPC_TIMEOUT        = 10000;
     
@@ -127,7 +126,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     public MRCRequestDispatcher(final MRCConfig config) throws IOException, ClassNotFoundException,
         IllegalAccessException, InstantiationException, DatabaseException {
-        
+
+        Logging.logMessage(Logging.LEVEL_INFO, this,"XtreemFS Metadata Service version "+VersionManagement.RELEASE_VERSION);
+
         this.config = config;
         
         if (this.config.getDirectoryService().getHostName().equals(DiscoveryUtils.AUTODISCOVER_HOSTNAME)) {
@@ -423,7 +424,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         data.put(Vars.UUID, config.getUUID().toString());
         data.put(Vars.UUIDCACHE, UUIDResolver.getCache());
         data.put(Vars.PROTOVERSION, Integer.toString(MRCInterface.getVersion()));
-        data.put(Vars.VERSION, VERSION);
+        data.put(Vars.VERSION, VersionManagement.RELEASE_VERSION);
         
         data.put(Vars.PINKYQ, Long.toString(this.serverStage.getPendingRequests()));
         data.put(Vars.NUMCON, Integer.toString(this.serverStage.getNumConnections()));
@@ -557,7 +558,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     }
     
     public void crashPerformed(Throwable cause) {
-        CrashReporter.reportXtreemFSCrash("MRC", this.VERSION, cause);
+        CrashReporter.reportXtreemFSCrash("MRC", VersionManagement.RELEASE_VERSION, cause);
         try {
             shutdown();
         } catch (Exception e) {
