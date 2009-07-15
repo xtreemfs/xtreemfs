@@ -1,4 +1,4 @@
-// Revision: 1658
+// Revision: 1661
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -450,14 +450,13 @@ Event* FDEventQueue::dequeue( uint64_t timeout_ns )
 #elif defined(YIELD_HAVE_LINUX_EPOLL)
     active_fds = epoll_wait( poll_fd, returned_events, MAX_EVENTS_PER_POLL, timeout_ns == static_cast<uint64_t>( -1 ) ? -1 : static_cast<int>( timeout_ns / NS_IN_MS ) );
 #elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
-    if ( timeout_ns == static_cast<uint64_t>( -1 )
+    if ( timeout_ns == static_cast<uint64_t>( -1 ) )
       active_fds = kevent( poll_fd, 0, 0, returned_events, MAX_EVENTS_PER_POLL, NULL );
     else
     {
       struct timespec poll_tv = Time( timeout_ns );
       active_fds = kevent( poll_fd, 0, 0, returned_events, MAX_EVENTS_PER_POLL, &poll_tv );
     }
-    else
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
     uint_t nget = 1;
     if ( timeout_ns == static_cast<uint64_t>( -1 ) )
@@ -475,7 +474,7 @@ Event* FDEventQueue::dequeue( uint64_t timeout_ns )
     active_fds = poll( &pollfds[0], pollfds.size(), timeout_ns == static_cast<uint64_t>( -1 ) ? -1 : static_cast<int>( timeout_ns / NS_IN_MS ) );
 #endif
     if ( active_fds <= 0 )
-      return NULL;
+      return NonBlockingFiniteQueue<Event*, 256>::try_dequeue();;
   }
 #if defined(_WIN32)
   while ( active_fds > 0 && next_fd_to_check != fd_to_context_map.end() )
@@ -489,7 +488,7 @@ Event* FDEventQueue::dequeue( uint64_t timeout_ns )
       {
         eventfd_pipe->clear();
         next_fd_to_check++;
-        return NULL;
+        continue;
       }
       else
         return new POLLINEvent( Object::incRef( fd_to_context_map.find( fd ) ) );
@@ -595,7 +594,7 @@ Event* FDEventQueue::dequeue( uint64_t timeout_ns )
   }
   active_fds = 0;
 #endif
-  return NULL;
+  return NonBlockingFiniteQueue<Event*, 256>::try_dequeue();
 }
 void FDEventQueue::detach( int fd )
 {
@@ -910,12 +909,13 @@ auto_HTTPResponse HTTPClient::sendHTTPRequest( const char* method, const URI& ab
 // http_message.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-HTTPMessage::HTTPMessage()
+HTTPMessage::HTTPMessage( uint8_t reserve_iovecs_count )
+  : RFC822Headers( reserve_iovecs_count )
 {
   http_version = 1;
 }
-HTTPMessage::HTTPMessage( auto_Buffer body )
-  : body( body )
+HTTPMessage::HTTPMessage( uint8_t reserve_iovecs_count, auto_Buffer body )
+  : RFC822Headers( reserve_iovecs_count ), body( body )
 {
   http_version = 1;
 }
@@ -968,20 +968,24 @@ ssize_t HTTPMessage::deserialize( auto_Buffer buffer )
 auto_Buffer HTTPMessage::serialize()
 {
   // Finalize headers
-  if ( body != NULL && get_header( "Content-Length", NULL ) == NULL )
+  if ( body != NULL )
   {
-    char content_length_str[32];
+    if ( get_header( "Content-Length", NULL ) == NULL )
+    {
+      char content_length_str[32];
 #ifdef _WIN32
-    sprintf_s( content_length_str, 32, "%u", body->size() );
+      sprintf_s( content_length_str, 32, "%u", body->size() );
 #else
-    snprintf( content_length_str, 32, "%zu", body->size() );
+      snprintf( content_length_str, 32, "%zu", body->size() );
 #endif
-    set_header( "Content-Length", content_length_str );
+      set_header( "Content-Length", content_length_str );
+    }
+    set_next_iovec( "\r\n", 2 );
+    set_next_iovec( static_cast<const char*>( static_cast<void*>( *body ) ), body->size() );
   }
-  set_iovec( "\r\n", 2 );
-  auto_Buffer buffer = RFC822Headers::serialize();
-  buffer->set_next_buffer( body );
-  return buffer;
+  else
+    set_next_iovec( "\r\n", 2 );
+  return RFC822Headers::serialize();
 }
 
 
@@ -989,7 +993,7 @@ auto_Buffer HTTPMessage::serialize()
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 HTTPRequest::HTTPRequest( auto_Object<Connection> connection )
-  : ProtocolRequest( connection )
+  : ProtocolRequest( connection ), HTTPMessage( 4 )
 {
   method[0] = 0;
   uri = new char[2];
@@ -999,12 +1003,12 @@ HTTPRequest::HTTPRequest( auto_Object<Connection> connection )
   deserialize_state = DESERIALIZING_METHOD;
 }
 HTTPRequest::HTTPRequest( const char* method, const char* relative_uri, const char* host, auto_Buffer body )
-  : HTTPMessage( body )
+  : HTTPMessage( 4, body )
 {
   init( method, relative_uri, host, body );
 }
 HTTPRequest::HTTPRequest( const char* method, const URI& absolute_uri, auto_Buffer body )
-  : HTTPMessage( body )
+  : HTTPMessage( 4, body )
 {
   init( method, absolute_uri.get_resource().c_str(), absolute_uri.get_host().c_str(), body );
 }
@@ -1128,14 +1132,11 @@ void HTTPRequest::respond( uint16_t status_code, auto_Buffer body )
 }
 auto_Buffer HTTPRequest::serialize()
 {
-  size_t method_len = strnlen( method, 16 );
-  auto_Buffer buffer = new HeapBuffer( method_len + 1 + uri_len + 11 );
-  buffer->put( method, method_len );
-  buffer->put( " ", 1 );
-  buffer->put( uri, uri_len );
-  buffer->put( " HTTP/1.1\r\n", 11 );
-  buffer->set_next_buffer( HTTPMessage::serialize() );
-  return buffer;
+  RFC822Headers::set_iovec( 0, method, strnlen( method, 16 ) );
+  RFC822Headers::set_iovec( 1, " ", 1 );
+  RFC822Headers::set_iovec( 2, uri, uri_len );
+  RFC822Headers::set_iovec( 3, " HTTP/1.1\r\n", 11 );
+  return HTTPMessage::serialize();
 }
 
 
@@ -1143,19 +1144,19 @@ auto_Buffer HTTPRequest::serialize()
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 HTTPResponse::HTTPResponse( auto_HTTPRequest http_request )
-  : ProtocolResponse<HTTPRequest>( http_request )
+  : ProtocolResponse<HTTPRequest>( http_request ), HTTPMessage( 1 )
 {
   memset( status_code_str, 0, sizeof( status_code_str ) );
   deserialize_state = DESERIALIZING_HTTP_VERSION;
 }
 HTTPResponse::HTTPResponse( auto_HTTPRequest http_request, uint16_t status_code )
-  : ProtocolResponse<HTTPRequest>( http_request ), status_code( status_code )
+  : ProtocolResponse<HTTPRequest>( http_request ), HTTPMessage( 1 ), status_code( status_code )
 {
   http_version = 1;
   deserialize_state = DESERIALIZE_DONE;
 }
 HTTPResponse::HTTPResponse( auto_HTTPRequest http_request, uint16_t status_code, auto_Buffer body )
-  : ProtocolResponse<HTTPRequest>( http_request ), HTTPMessage( body ), status_code( status_code )
+  : ProtocolResponse<HTTPRequest>( http_request ), HTTPMessage( 1, body ), status_code( status_code )
 {
   deserialize_state = DESERIALIZE_DONE;
 }
@@ -1290,12 +1291,11 @@ auto_Buffer HTTPResponse::serialize()
     case 507: status_line = "HTTP/1.1 507 Insufficient Storage\r\n"; status_line_len = 35; break;
     default: status_line = "HTTP/1.1 500 Internal Server Error\r\n"; status_line_len = 36; break;
   }
-  auto_Buffer buffer = new StringLiteralBuffer( status_line, status_line_len );
+  RFC822Headers::set_iovec( 0, status_line, status_line_len );
   char date[32];
   Time().as_http_date_time( date, 32 );
   set_header( "Date", date );
-  buffer->set_next_buffer( HTTPMessage::serialize() );
-  return buffer;
+  return HTTPMessage::serialize();
 }
 
 
@@ -1474,24 +1474,25 @@ extern "C"
 JSONMarshaller::JSONMarshaller( bool write_empty_strings )
 : write_empty_strings( write_empty_strings )
 {
+  buffer = new StringBuffer;
   root_key = NULL;
   writer = yajl_gen_alloc( NULL );
 }
 JSONMarshaller::JSONMarshaller( JSONMarshaller& parent_json_marshaller, const char* root_key )
-  : BufferedMarshaller( parent_json_marshaller ), root_key( root_key ),
+  : buffer( parent_json_marshaller.buffer ), root_key( root_key ),
     write_empty_strings( parent_json_marshaller.write_empty_strings ), writer( parent_json_marshaller.writer )
 { }
 JSONMarshaller::~JSONMarshaller()
 {
-  if ( root_key == NULL ) // This is the root JSONMarshaller
-    yajl_gen_free( writer );
+//  if ( root_key == NULL ) // This is the root JSONMarshaller
+//    yajl_gen_free( writer );
 }
 void JSONMarshaller::flushYAJLBuffer()
 {
   const unsigned char* buffer;
   unsigned int len;
   yajl_gen_get_buf( writer, &buffer, &len );
-  BufferedMarshaller::write( buffer, len );
+  this->buffer->put( buffer, len );
   yajl_gen_clear( writer );
 }
 void JSONMarshaller::writeBoolean( const char* key, uint32_t, bool value )
@@ -1620,27 +1621,23 @@ namespace YIELD
   class JSONObject : public JSONValue
   {
   public:
-    JSONObject( auto_Buffer source_buffer )
+    JSONObject( auto_Buffer json_buffer )
     {
       current_json_value = parent_json_value = NULL;
       reader = yajl_alloc( &JSONObject_yajl_callbacks, NULL, this );
       next_map_key = NULL; next_map_key_len = 0;
-      while ( source_buffer != NULL )
+      const unsigned char* jsonText = static_cast<const unsigned char*>( static_cast<void*>( *json_buffer ) );
+      unsigned int jsonTextLength = static_cast<unsigned int>( json_buffer->size() );
+      yajl_status yajl_parse_status = yajl_parse( reader, jsonText, jsonTextLength );
+      if ( yajl_parse_status == yajl_status_ok )
+        return;
+      else if ( yajl_parse_status != yajl_status_insufficient_data )
       {
-        const unsigned char* jsonText = static_cast<const unsigned char*>( static_cast<void*>( *source_buffer ) );
-        unsigned int jsonTextLength = static_cast<unsigned int>( source_buffer->size() );
-        yajl_status yajl_parse_status = yajl_parse( reader, jsonText, jsonTextLength );
-        if ( yajl_parse_status == yajl_status_ok )
-          return;
-        else if ( yajl_parse_status != yajl_status_insufficient_data )
-        {
-          unsigned char* yajl_error_str = yajl_get_error( reader, 1, jsonText, jsonTextLength );
-          std::ostringstream what;
-          what << __FILE__ << ":" << __LINE__ << ": JSON parsing error: " << reinterpret_cast<char*>( yajl_error_str ) << std::endl;
-          yajl_free_error( yajl_error_str );
-          throw Exception( what.str() );
-        }
-        source_buffer = source_buffer->get_next_buffer();
+        unsigned char* yajl_error_str = yajl_get_error( reader, 1, jsonText, jsonTextLength );
+        std::ostringstream what;
+        what << __FILE__ << ":" << __LINE__ << ": JSON parsing error: " << reinterpret_cast<char*>( yajl_error_str ) << std::endl;
+        yajl_free_error( yajl_error_str );
+        throw Exception( what.str() );
       }
     }
     ~JSONObject()
@@ -1776,10 +1773,10 @@ yajl_callbacks JSONObject::JSONObject_yajl_callbacks =
   handle_yajl_start_array,
   handle_yajl_end_array
 };
-JSONUnmarshaller::JSONUnmarshaller( auto_Buffer source_buffer )
+JSONUnmarshaller::JSONUnmarshaller( auto_Buffer buffer )
 {
   root_key = NULL;
-  root_json_value = new JSONObject( source_buffer );
+  root_json_value = new JSONObject( buffer );
   next_json_value = root_json_value->child;
 }
 JSONUnmarshaller::JSONUnmarshaller( const char* root_key, JSONValue& root_json_value )
@@ -1788,8 +1785,8 @@ JSONUnmarshaller::JSONUnmarshaller( const char* root_key, JSONValue& root_json_v
 { }
 JSONUnmarshaller::~JSONUnmarshaller()
 {
-  if ( root_key == NULL )
-    delete root_json_value;
+//  if ( root_key == NULL )
+//    delete root_json_value;
 }
 bool JSONUnmarshaller::readBoolean( const char* key, uint32_t )
 {
@@ -2138,18 +2135,14 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker( auto_
 #else
     record_fragment_marker = Machine::ntohl( record_fragment_marker );
 #endif
-    bool last_record_fragment;
-    if ( record_fragment_marker & ( 1 << 31UL ) )
+    if ( record_fragment_marker & ( 1 << 31UL ) ) // The highest bit set = last record fragment
     {
-      last_record_fragment = true;
-      expected_record_fragment_length = record_fragment_marker ^ ( 1 << 31 );
+      record_fragment_length = record_fragment_marker ^ ( 1 << 31 );
+      if ( record_fragment_length > 32 * 1024 * 1024 )
+        DebugBreak();
     }
     else
-    {
-      last_record_fragment = false;
-      expected_record_fragment_length = record_fragment_marker;
-    }
-    if ( expected_record_fragment_length > 32 * 1024 * 1024 ) DebugBreak();
+      DebugBreak();
     return 0;
   }
   else if ( record_fragment_marker_filled == 0 )
@@ -2163,34 +2156,34 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker( auto_
 template <class ONCRPCMessageType>
 ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment( auto_Buffer buffer )
 {
-  received_record_fragment_length = buffer->size();
-  if ( received_record_fragment_length == expected_record_fragment_length ) // Common case
+  if ( buffer->size() >= record_fragment_length ) // Common case
   {
+    record_fragment_buffer = buffer;
     XDRUnmarshaller xdr_unmarshaller( buffer );
     static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
     return 0;
   }
   else
   {
-    current_record_fragment_buffer = first_record_fragment_buffer = buffer;
-    return expected_record_fragment_length - received_record_fragment_length;
+    record_fragment_buffer = new StringBuffer;
+    buffer->get( static_cast<std::string&>( *static_cast<StringBuffer*>( record_fragment_buffer.get() ) ),
+                 buffer->size() );
+    return record_fragment_length - buffer->size();
   }
 }
 template <class ONCRPCMessageType>
 ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment( auto_Buffer buffer )
 {
-  current_record_fragment_buffer->set_next_buffer( buffer );
-  current_record_fragment_buffer = buffer;
-  received_record_fragment_length += buffer->size();
-  if ( received_record_fragment_length == expected_record_fragment_length )
+  buffer->get( static_cast<std::string&>( *static_cast<StringBuffer*>( record_fragment_buffer.get() ) ),
+               record_fragment_length - record_fragment_buffer->size() );
+  if ( record_fragment_buffer->size() == record_fragment_length )
   {
-    XDRUnmarshaller xdr_unmarshaller( first_record_fragment_buffer );
+    XDRUnmarshaller xdr_unmarshaller( record_fragment_buffer );
     static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
-    deserialize_state = DESERIALIZE_DONE;
     return 0;
   }
   else
-    return expected_record_fragment_length - received_record_fragment_length;
+    return record_fragment_length - record_fragment_buffer->size();
 }
 template <class ONCRPCMessageType>
 void ONCRPCMessage<ONCRPCMessageType>::marshal( Marshaller& marshaller )
@@ -2201,26 +2194,18 @@ template <class ONCRPCMessageType>
 auto_Buffer ONCRPCMessage<ONCRPCMessageType>::serialize()
 {
   XDRMarshaller xdr_marshaller;
+  xdr_marshaller.writeUint32( "record_fragment_marker", 0, 0 );
   static_cast<ONCRPCMessageType*>( this )->marshal( xdr_marshaller );
-  auto_Buffer xdr_buffer = xdr_marshaller.get_buffer();
-  // Calculate the record fragment length from the sizes of all the buffers in the chain
-  uint32_t record_fragment_length = 0;
-  auto_Buffer next_xdr_buffer = xdr_buffer;
-  while ( next_xdr_buffer != NULL )
-  {
-    record_fragment_length += next_xdr_buffer->size();
-    next_xdr_buffer = next_xdr_buffer->get_next_buffer();
-  }
-  if ( record_fragment_length > 32 * 1024 * 1024 ) DebugBreak();
+  auto_StringBuffer xdr_buffer = xdr_marshaller.get_buffer();
+  uint32_t record_fragment_length = xdr_buffer->size() - sizeof( uint32_t );
   uint32_t record_fragment_marker = record_fragment_length | ( 1 << 31 ); // Indicate that this is the last fragment
 #ifdef __MACH__
   record_fragment_marker = htonl( record_fragment_marker );
 #else
   record_fragment_marker = Machine::htonl( record_fragment_marker );
 #endif
-  auto_Buffer record_fragment_length_buffer = new StackBuffer<4>( &record_fragment_marker );
-  record_fragment_length_buffer->set_next_buffer( xdr_buffer );
-  return record_fragment_length_buffer;
+  static_cast<std::string&>( *xdr_buffer ).replace( 0, sizeof( uint32_t ), reinterpret_cast<const char*>( &record_fragment_marker ), sizeof( uint32_t ) );
+  return xdr_buffer.release();
 }
 template <class ONCRPCMessageType>
 void ONCRPCMessage<ONCRPCMessageType>::unmarshal( Unmarshaller& unmarshaller )
@@ -2281,7 +2266,7 @@ void ONCRPCRequest::marshal( Marshaller& marshaller )
   {
     XDRMarshaller credential_auth_body_xdr_marshaller;
     credential->marshal( credential_auth_body_xdr_marshaller );
-    marshaller.writeBuffer( "credential_auth_body", 0, credential_auth_body_xdr_marshaller.get_buffer() );
+    marshaller.writeBuffer( "credential_auth_body", 0, credential_auth_body_xdr_marshaller.get_buffer().release() );
   }
   marshaller.writeInt32( "verf_auth_flavor", 0, AUTH_NONE );
   marshaller.writeInt32( "verf_auth_body_length", 0, 0 );
@@ -2933,17 +2918,16 @@ int Process::wait()
 // rfc822_headers.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-RFC822Headers::RFC822Headers()
+RFC822Headers::RFC822Headers( uint8_t reserve_iovecs_count )
 {
   deserialize_state = DESERIALIZING_LEADING_WHITESPACE;
-//#ifdef _DEBUG
-//  memset( stack_buffer, 0, sizeof ( stack_buffer ) );
-//#endif
   buffer_p = stack_buffer;
   heap_buffer = NULL;
   heap_buffer_len = 0;
   heap_iovecs = NULL;
-  iovecs_filled = 0;
+  for ( uint8_t iovec_i = 0; iovec_i < reserve_iovecs_count; iovec_i++ )
+    memset( &stack_iovecs[iovec_i], 0, sizeof( stack_iovecs[iovec_i] ) );
+  iovecs_filled = reserve_iovecs_count;
 }
 RFC822Headers::~RFC822Headers()
 {
@@ -2967,40 +2951,6 @@ void RFC822Headers::allocateHeapBuffer()
     delete [] heap_buffer;
     heap_buffer = new_heap_buffer;
   }
-}
-void RFC822Headers::copy_iovec( const char* data, size_t len )
-{
-  if ( heap_buffer == NULL )
-  {
-    if ( ( buffer_p + len - stack_buffer ) > YIELD_RFC822_HEADERS_STACK_BUFFER_LENGTH )
-    {
-      heap_buffer = new char[len];
-      heap_buffer_len = len;
-      // Don't need to copy anything from the stack buffer or change pointers, since we're not deleting that memory or parsing over it again
-      buffer_p = heap_buffer;
-    }
-  }
-  else if ( static_cast<size_t>( buffer_p + len - heap_buffer ) > heap_buffer_len )
-  {
-    heap_buffer_len += len;
-    char* new_heap_buffer = new char[heap_buffer_len];
-    memcpy_s( new_heap_buffer, heap_buffer_len, heap_buffer, buffer_p - heap_buffer );
-    // Since we're copying the old heap_buffer and deleting its contents we need to adjust the pointers
-    struct iovec* iovecs = ( heap_iovecs == NULL ) ? stack_iovecs : heap_iovecs;
-    for ( uint8_t iovec_i = 0; iovec_i < iovecs_filled; iovec_i++ )
-    {
-      if ( iovecs[iovec_i].iov_base >= heap_buffer && iovecs[iovec_i].iov_base <= buffer_p )
-        iovecs[iovec_i].iov_base = new_heap_buffer + ( static_cast<char*>( iovecs[iovec_i].iov_base ) - heap_buffer );
-    }
-    buffer_p = new_heap_buffer + ( buffer_p - heap_buffer );
-    delete [] heap_buffer;
-    heap_buffer = new_heap_buffer;
-  }
-  char* buffer_p_before = buffer_p;
-  memcpy_s( buffer_p, len, data, len );
-  buffer_p += len;
-  if ( data[len-1] == 0 ) len--;
-  set_iovec( buffer_p_before, len );
 }
 ssize_t RFC822Headers::deserialize( auto_Buffer buffer )
 {
@@ -3151,10 +3101,10 @@ ssize_t RFC822Headers::deserialize( auto_Buffer buffer )
                 const char* header_value = temp_buffer_p;
                 size_t header_value_len = strnlen( header_value, UINT16_MAX );
                 temp_buffer_p += header_value_len + 1;
-                set_iovec( header_name, header_name_len );
-                set_iovec( ": ", 2 );
-                set_iovec( header_value, header_value_len );
-                set_iovec( "\r\n", 2 );
+                set_next_iovec( header_name, header_name_len );
+                set_next_iovec( ": ", 2 );
+                set_next_iovec( header_value, header_value_len );
+                set_next_iovec( "\r\n", 2 );
               }
               deserialize_state = DESERIALIZE_DONE;
               return 0;
@@ -3173,7 +3123,8 @@ char* RFC822Headers::get_header( const char* header_name, const char* default_va
   struct iovec* iovecs = heap_iovecs != NULL ? heap_iovecs : stack_iovecs;
   for ( uint8_t iovec_i = 0; iovec_i < iovecs_filled; iovec_i += 4 )
   {
-    if ( strncmp( static_cast<const char*>( iovecs[iovec_i].iov_base ), header_name, iovecs[iovec_i].iov_len ) == 0 )
+    if ( iovecs[iovec_i].iov_len > 0 &&
+         strncmp( static_cast<const char*>( iovecs[iovec_i].iov_base ), header_name, iovecs[iovec_i].iov_len ) == 0 )
       return static_cast<char*>( iovecs[iovec_i+2].iov_base );
   }
   return const_cast<char*>( default_value );
@@ -3189,7 +3140,7 @@ auto_Buffer RFC822Headers::serialize()
 //  if ( header[header_len-1] != '\n' )
 //  {
 //    copy_iovec( header, header_len );
-//    set_iovec( "\r\n", 2 );
+//    set_next_iovec( "\r\n", 2 );
 //  }
 //  else
 //    copy_iovec( header, header_len );
@@ -3197,33 +3148,90 @@ auto_Buffer RFC822Headers::serialize()
 //}
 void RFC822Headers::set_header( const char* header_name, const char* header_value )
 {
-  set_iovec( header_name, strnlen( header_name, UINT16_MAX ) );
-  set_iovec( ": ", 2 );
-  set_iovec( header_value, strnlen( header_value, UINT16_MAX ) );
-  set_iovec( "\r\n", 2 );
+  set_next_iovec( header_name, strnlen( header_name, UINT16_MAX ) );
+  set_next_iovec( ": ", 2 );
+  set_next_iovec( header_value, strnlen( header_value, UINT16_MAX ) );
+  set_next_iovec( "\r\n", 2 );
 }
 void RFC822Headers::set_header( const char* header_name, char* header_value )
 {
-  set_iovec( header_name, strnlen( header_name, UINT16_MAX ) );
-  set_iovec( ": ", 2 );
-  copy_iovec( header_value, strnlen( header_value, UINT16_MAX ) );
-  set_iovec( "\r\n", 2 );
+  set_next_iovec( header_name, strnlen( header_name, UINT16_MAX ) );
+  set_next_iovec( ": ", 2 );
+  set_next_iovec( header_value, strnlen( header_value, UINT16_MAX ) );
+  set_next_iovec( "\r\n", 2 );
 }
 void RFC822Headers::set_header( char* header_name, char* header_value )
 {
-  copy_iovec( header_name, strnlen( header_name, UINT16_MAX ) );
-  set_iovec( ": ", 2 );
-  copy_iovec( header_value, strnlen( header_value, UINT16_MAX ) );
-  set_iovec( "\r\n", 2 );
+  set_next_iovec( header_name, strnlen( header_name, UINT16_MAX ) );
+  set_next_iovec( ": ", 2 );
+  set_next_iovec( header_value, strnlen( header_value, UINT16_MAX ) );
+  set_next_iovec( "\r\n", 2 );
 }
 void RFC822Headers::set_header( const std::string& header_name, const std::string& header_value )
 {
-  copy_iovec( header_name.c_str(), header_name.size() );
-  set_iovec( ": ", 2 );
-  copy_iovec( header_value.c_str(), header_value.size() );
-  set_iovec( "\r\n", 2 );
+  set_next_iovec( const_cast<char*>( header_name.c_str() ), header_name.size() ); // Copy
+  set_next_iovec( ": ", 2 );
+  set_next_iovec( const_cast<char*>( header_value.c_str() ), header_value.size() ); // Copy
+  set_next_iovec( "\r\n", 2 );
 }
-void RFC822Headers::set_iovec( const struct iovec& iovec )
+void RFC822Headers::set_iovec( uint8_t iovec_i, const char* data, size_t len )
+{
+  struct iovec _iovec;
+  _iovec.iov_base = const_cast<char*>( data );
+  _iovec.iov_len = len;
+  if ( heap_iovecs == NULL )
+  {
+    stack_iovecs[iovec_i].iov_base = const_cast<char*>( data );
+    stack_iovecs[iovec_i].iov_len = len;
+  }
+  else
+  {
+    heap_iovecs[iovec_i].iov_base = const_cast<char*>( data );
+    heap_iovecs[iovec_i].iov_len = len;
+  }
+}
+void RFC822Headers::set_next_iovec( char* data, size_t len )
+{
+  if ( heap_buffer == NULL )
+  {
+    if ( ( buffer_p + len - stack_buffer ) > YIELD_RFC822_HEADERS_STACK_BUFFER_LENGTH )
+    {
+      heap_buffer = new char[len];
+      heap_buffer_len = len;
+      // Don't need to copy anything from the stack buffer or change pointers, since we're not deleting that memory or parsing over it again
+      buffer_p = heap_buffer;
+    }
+  }
+  else if ( static_cast<size_t>( buffer_p + len - heap_buffer ) > heap_buffer_len )
+  {
+    heap_buffer_len += len;
+    char* new_heap_buffer = new char[heap_buffer_len];
+    memcpy_s( new_heap_buffer, heap_buffer_len, heap_buffer, buffer_p - heap_buffer );
+    // Since we're copying the old heap_buffer and deleting its contents we need to adjust the pointers
+    struct iovec* iovecs = ( heap_iovecs == NULL ) ? stack_iovecs : heap_iovecs;
+    for ( uint8_t iovec_i = 0; iovec_i < iovecs_filled; iovec_i++ )
+    {
+      if ( iovecs[iovec_i].iov_base >= heap_buffer && iovecs[iovec_i].iov_base <= buffer_p )
+        iovecs[iovec_i].iov_base = new_heap_buffer + ( static_cast<char*>( iovecs[iovec_i].iov_base ) - heap_buffer );
+    }
+    buffer_p = new_heap_buffer + ( buffer_p - heap_buffer );
+    delete [] heap_buffer;
+    heap_buffer = new_heap_buffer;
+  }
+  const char* buffer_p_before = buffer_p;
+  memcpy_s( buffer_p, len, data, len );
+  buffer_p += len;
+  if ( data[len-1] == 0 ) len--;
+  set_next_iovec( buffer_p_before, len );
+}
+void RFC822Headers::set_next_iovec( const char* data, size_t len )
+{
+  struct iovec _iovec;
+  _iovec.iov_base = const_cast<char*>( data );
+  _iovec.iov_len = len;
+  set_next_iovec( _iovec );
+}
+void RFC822Headers::set_next_iovec( const struct iovec& iovec )
 {
   if ( heap_iovecs == NULL )
   {
@@ -3598,9 +3606,10 @@ bool Socket::want_write() const
 }
 ssize_t Socket::write( auto_Buffer buffer )
 {
-  std::vector<struct iovec> iovecs;
-  buffer->as_iovecs( iovecs );
-  return writev( &iovecs[0], iovecs.size() );
+  if ( buffer->get_tag() == YIELD_OBJECT_TAG( GatherBuffer ) )
+    return writev( static_cast<GatherBuffer*>( buffer.get() )->get_iovecs(), static_cast<GatherBuffer*>( buffer.get() )->get_iovecs_len() );
+  else
+    return write( static_cast<void*>( *buffer ), buffer->size() );
 }
 ssize_t Socket::write( const void* buffer, size_t buffer_len )
 {
@@ -3652,6 +3661,7 @@ ssize_t Socket::writev( const struct iovec* buffers, uint32_t buffers_count )
 #else
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #endif
 SocketAddress::SocketAddress( struct addrinfo& addrinfo_list )
@@ -4141,37 +4151,29 @@ TCPListenQueue::TCPListenQueue( auto_Object<TCPSocket> listen_tcp_socket )
 }
 Event* TCPListenQueue::dequeue( uint64_t timeout_ns )
 {
-  if ( lock.timed_acquire( timeout_ns ) )
+  Event* ev = FDEventQueue::dequeue( timeout_ns );
+  if ( ev != NULL )
   {
-    Event* ev = FDEventQueue::dequeue( timeout_ns );
-    if ( ev != NULL )
+    switch ( ev->get_tag() )
     {
-      switch ( ev->get_tag() )
+      case YIELD_OBJECT_TAG( FDEventQueue::POLLINEvent ):
       {
-        case YIELD_OBJECT_TAG( FDEventQueue::POLLINEvent ):
+        FDEventQueue::POLLINEvent* pollin_event = static_cast<FDEventQueue::POLLINEvent*>( ev );
+        if ( pollin_event->get_context() == static_cast<Object*>( listen_tcp_socket.get() ) )
         {
-          FDEventQueue::POLLINEvent* pollin_event = static_cast<FDEventQueue::POLLINEvent*>( ev );
-          if ( pollin_event->get_context() == static_cast<Object*>( listen_tcp_socket.get() ) )
-          {
-            auto_Object<TCPSocket> accepted_tcp_socket = listen_tcp_socket->accept();
+          auto_Object<TCPSocket> accepted_tcp_socket = listen_tcp_socket->accept();
 #ifdef YIELD_HAVE_SOLARIS_EVENT_PORTS
-            // The event port automatically dissociates events, so we have to re-associate here
-            toggle( *listen_tcp_socket, true, false );
+          // The event port automatically dissociates events, so we have to re-associate here
+          toggle( *listen_tcp_socket, true, false );
 #endif
-            lock.release();
-            Object::decRef( *ev );
-            return accepted_tcp_socket.release();
-          }
+          Object::decRef( *ev );
+          return accepted_tcp_socket.release();
         }
-        break;
       }
+      break;
     }
-    else
-      lock.release();
-    return ev;
   }
-  else
-    return NULL;
+  return ev;
 }
 
 

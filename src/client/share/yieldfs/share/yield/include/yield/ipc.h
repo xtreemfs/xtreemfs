@@ -94,8 +94,8 @@ namespace YIELD
         zstream.next_out = static_cast<Bytef*>( static_cast<void*>( *current_out_buffer ) );
         zstream.avail_out = current_out_buffer->capacity();
 
+/*
         std::vector<struct iovec> iovecs;
-        buffer->as_iovecs( iovecs );
 
         for ( size_t iovec_i = 0; iovec_i < iovecs.size(); iovec_i++ )
         {
@@ -139,6 +139,7 @@ namespace YIELD
             }
           }
         }
+        */
       }
 
       return NULL;
@@ -599,7 +600,6 @@ namespace YIELD
 
   private:
     auto_Object<TCPSocket> listen_tcp_socket;
-    Mutex lock;
   };
 
   typedef auto_Object<TCPListenQueue> auto_TCPListenQueue;
@@ -829,7 +829,7 @@ namespace YIELD
   class RFC822Headers
   {
   public:
-    RFC822Headers();
+    RFC822Headers( uint8_t reserve_iovecs_count = 0 );
     virtual ~RFC822Headers();
 
     ssize_t deserialize( auto_Buffer );
@@ -843,9 +843,10 @@ namespace YIELD
     auto_Buffer serialize();
 
   protected:
-    void copy_iovec( const char* data, size_t len );
-    void set_iovec( const char* data, size_t len ) { struct iovec _iovec; _iovec.iov_base = const_cast<char*>( data ); _iovec.iov_len = len; set_iovec( _iovec ); }
-    void set_iovec( const struct iovec& out_iovec );
+    void set_iovec( uint8_t iovec_i, const char* data, size_t len );
+    void set_next_iovec( char* data, size_t len ); // Copies data
+    void set_next_iovec( const char* data, size_t len ); // Does not copy data
+    void set_next_iovec( const struct iovec& out_iovec );
 
   private:
     enum { DESERIALIZING_LEADING_WHITESPACE, DESERIALIZING_HEADER_NAME, DESERIALIZING_HEADER_NAME_VALUE_SEPARATOR, DESERIALIZING_HEADER_VALUE, DESERIALIZING_HEADER_VALUE_TERMINATOR, DESERIALIZING_TRAILING_CRLF, DESERIALIZE_DONE } deserialize_state;
@@ -937,8 +938,8 @@ namespace YIELD
     uint8_t get_http_version() const { return http_version; }
 
   protected:
-    HTTPMessage();
-    HTTPMessage( auto_Buffer body );
+    HTTPMessage( uint8_t reserve_iovecs_count );
+    HTTPMessage( uint8_t reserve_iovecs_count, auto_Buffer body );
     virtual ~HTTPMessage() { }
 
 
@@ -983,8 +984,8 @@ namespace YIELD
     virtual ~HTTPResponse() { }
 
   private:
-    HTTPResponse( const HTTPResponse& http_response )
-      : ProtocolResponse<HTTPRequest>( http_response )
+    HTTPResponse( const HTTPResponse& http_response ) // Prevent copying
+      : ProtocolResponse<HTTPRequest>( http_response ), HTTPMessage( 0 )
     { }
 
     uint8_t http_version;
@@ -1020,8 +1021,8 @@ namespace YIELD
     virtual ~HTTPRequest();
 
   private:
-    HTTPRequest( const HTTPRequest& http_request )
-      : ProtocolRequest( http_request )
+    HTTPRequest( const HTTPRequest& http_request ) // Prevent copying
+      : ProtocolRequest( http_request ), HTTPMessage( 0 )
     { }
 
     void init( const char* method, const char* relative_uri, const char* host, auto_Buffer body );
@@ -1120,11 +1121,13 @@ namespace YIELD
 
   class JSONValue;
 
-  class JSONMarshaller : public BufferedMarshaller
+  class JSONMarshaller : public Marshaller
   {
   public:
     JSONMarshaller( bool write_empty_strings = true );
     virtual ~JSONMarshaller(); // If the stream is wrapped in map, sequence, etc. then the constructor will append the final } or [, so the underlying output stream should not be deleted before this object!
+
+    auto_StringBuffer get_buffer() const { return buffer; }
 
     // Marshaller
     YIELD_MARSHALLER_PROTOTYPES;
@@ -1144,13 +1147,14 @@ namespace YIELD
     yajl_gen writer;
 
     void flushYAJLBuffer();
+    auto_StringBuffer buffer;
   };
 
 
   class JSONUnmarshaller : public Unmarshaller
   {
   public:
-    JSONUnmarshaller( auto_Buffer source_buffer );
+    JSONUnmarshaller( auto_Buffer buffer );
     virtual ~JSONUnmarshaller();
 
     // Unmarshaller
@@ -1224,17 +1228,17 @@ namespace YIELD
       DESERIALIZE_DONE 
     } deserialize_state;
 
-    size_t expected_record_fragment_length, received_record_fragment_length;
-
     ssize_t deserializeRecordFragmentMarker( auto_Buffer );
     ssize_t deserializeRecordFragment( auto_Buffer );
     ssize_t deserializeLongRecordFragment( auto_Buffer );
-    size_t get_expected_record_fragment_length() const { return expected_record_fragment_length; }
+
+    // Object
     void marshal( Marshaller& marshaller );
     void unmarshal( Unmarshaller& unmarshaller );
 
   private:
-    auto_Buffer first_record_fragment_buffer, current_record_fragment_buffer;
+    uint32_t record_fragment_length;
+    auto_Buffer record_fragment_buffer;
 
     uint32_t xid;
     auto_Struct body;

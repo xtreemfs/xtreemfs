@@ -54,7 +54,7 @@ inline void memcpy_s( void* dest, size_t dest_size, const void* src, size_t coun
   memcpy( dest, src, count );
 }
 
-#ifdef __sun
+#ifndef __linux__
 inline size_t strnlen( const char* s, size_t maxlen )
 {
   return strlen( s );
@@ -67,6 +67,8 @@ inline size_t strnlen( const char* s, size_t maxlen )
 namespace YIELD
 {
   class Marshaller;
+  class Sequence;
+  class Struct;
   class Unmarshaller;
 
 
@@ -164,27 +166,21 @@ namespace YIELD
   public:
     virtual ~Buffer() { }
 
-    virtual void as_iovecs( std::vector<struct iovec>& out_iovecs ) const;
     virtual size_t capacity() const = 0;
     bool empty() const { return size() == 0; }
     virtual size_t get( void* into_buffer, size_t into_buffer_len ) = 0;
     virtual size_t get( std::string& into_string, size_t into_string_len ) = 0;
-    auto_Object<Buffer> get_next_buffer() const { return next_buffer; }
     operator char*() const { return static_cast<char*>( static_cast<void*>( *this ) ); }
     operator unsigned char*() const { return static_cast<unsigned char*>( static_cast<void*>( *this ) ); }
-    virtual operator void*() const { return NULL; }
+    virtual operator void*() const = 0;
     bool operator==( const Buffer& other ) const;
     size_t put( const char* from_string ) { return put( from_string, strlen( from_string ) ); }
     size_t put( const std::string& from_string ) { return put( from_string.c_str(), from_string.size() ); }
     virtual size_t put( const void* from_buffer, size_t from_buffer_len ) = 0;
-    void set_next_buffer( auto_Object<Buffer> next_buffer );
     virtual size_t size() const = 0;
 
     // Object
-    YIELD_OBJECT_PROTOTYPES( Buffer, 0 );
-
-  private:
-    auto_Object<Buffer> next_buffer;
+    YIELD_OBJECT_PROTOTYPES( Buffer, 1 );
   };
 
   typedef auto_Object<Buffer> auto_Buffer;
@@ -195,11 +191,14 @@ namespace YIELD
   public:
     bool operator==( const FixedBuffer& other ) const;
 
+    // Object
+    YIELD_OBJECT_PROTOTYPES( FixedBuffer, 2 );
+
     // Buffer
     size_t get( void* into_buffer, size_t into_buffer_len );
     size_t get( std::string&, size_t into_string_len );
-    void as_iovecs( std::vector<struct iovec>& out_iovecs ) const;
     size_t capacity() const;
+    operator iovec() const { return iov; }
     operator void*() const;
     virtual size_t put( const void* from_buffer, size_t from_buffer_len );
     size_t size() const;
@@ -220,12 +219,18 @@ namespace YIELD
   public:
     GatherBuffer( const struct iovec* iovecs, uint32_t iovecs_len );
 
+    const struct iovec* get_iovecs() const { return iovecs; }
+    uint32_t get_iovecs_len() const { return iovecs_len; }
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( GatherBuffer, 3 );
+
     // Buffer
-    void as_iovecs( std::vector<struct iovec>& out_iovecs ) const;
     size_t capacity() const { return size(); }
     size_t get( void*, size_t ) { return 0; }
     size_t get( std::string&, size_t ) { return 0; }
     size_t put( const void*, size_t ) { return 0; }
+    operator void*() const;
     size_t size() const;
 
   private:
@@ -239,6 +244,9 @@ namespace YIELD
   public:
     HeapBuffer( size_t capacity );
     virtual ~HeapBuffer();
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( HeapBuffer, 4 );
   };
 
 
@@ -247,101 +255,6 @@ namespace YIELD
   public:
     virtual size_t get_size() const = 0;
   };
-
-
-  class Sequence : public Object
-  {
-  public:
-    virtual size_t get_size() const = 0;
-  };
-
-
-  template <size_t Capacity>
-  class StackBuffer : public FixedBuffer
-  {
-  public:
-    StackBuffer()
-      : FixedBuffer( Capacity )
-    {
-      iov.iov_base = _stack_buffer;
-    }
-
-    StackBuffer( const void* from_buffer )
-      : FixedBuffer( Capacity )
-    {
-      iov.iov_base = _stack_buffer;
-      memcpy_s( _stack_buffer, Capacity, from_buffer, Capacity );
-      iov.iov_len = Capacity;
-    }
-
-  private:
-    uint8_t _stack_buffer[Capacity];
-  };
-
-
-  class StringBuffer : public Buffer
-  {
-  public:
-    StringBuffer();
-    StringBuffer( size_t capacity );
-    StringBuffer( const std::string& );
-    StringBuffer( const char* );
-    StringBuffer( const char*, size_t );
-
-    const char* c_str() const { return _string.c_str(); }
-    operator std::string&() { return _string; }
-    operator const std::string&() const { return _string; }
-    bool operator==( const StringBuffer& other ) const { return _string == other._string; }
-    bool operator==( const char* other ) const { return _string == other; }
-
-    // Buffer
-    void as_iovecs( std::vector<struct iovec>& out_iovecs ) const;
-    size_t capacity() const { return _string.capacity(); }
-    size_t get( void* into_buffer, size_t into_buffer_len );
-    size_t get( std::string& into_string, size_t into_string_len );
-    size_t put( const void*, size_t );
-    size_t size() const { return _string.size(); }
-
-  private:
-    std::string _string;
-
-    size_t _consumed;
-  };
-
-
-  class StringLiteralBuffer : public FixedBuffer
-  {
-  public:
-    StringLiteralBuffer( const char* string_literal )
-      : FixedBuffer( strnlen( string_literal, UINT16_MAX ) )
-    {
-      iov.iov_base = const_cast<char*>( string_literal );
-      iov.iov_len = capacity();
-    }
-
-    StringLiteralBuffer( const char* string_literal, size_t string_literal_len )
-      : FixedBuffer( string_literal_len )
-    {
-      iov.iov_base = const_cast<char*>( string_literal );
-      iov.iov_len = string_literal_len;
-    }
-
-    StringLiteralBuffer( const void* string_literal, size_t string_literal_len )
-      : FixedBuffer( string_literal_len )
-    {
-      iov.iov_base = const_cast<void*>( string_literal );
-      iov.iov_len = string_literal_len;
-    }
-
-    // Buffer
-    size_t put( const void*, size_t ) { return 0; }
-  };
-
-
-  class Struct : public Object
-  { };
-
-  typedef auto_Object<Struct> auto_Struct;
 
 
   class Marshaller
@@ -397,6 +310,112 @@ namespace YIELD
   };
 
 
+  class Sequence : public Object
+  {
+  public:
+    virtual size_t get_size() const = 0;
+  };
+
+
+  template <size_t Capacity>
+  class StackBuffer : public FixedBuffer
+  {
+  public:
+    StackBuffer()
+      : FixedBuffer( Capacity )
+    {
+      iov.iov_base = _stack_buffer;
+    }
+
+    StackBuffer( const void* from_buffer )
+      : FixedBuffer( Capacity )
+    {
+      iov.iov_base = _stack_buffer;
+      memcpy_s( _stack_buffer, Capacity, from_buffer, Capacity );
+      iov.iov_len = Capacity;
+    }
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( StackBuffer, 5 );
+
+  private:
+    uint8_t _stack_buffer[Capacity];
+  };
+
+
+  class StringBuffer : public Buffer
+  {
+  public:
+    StringBuffer();
+    StringBuffer( size_t capacity );
+    StringBuffer( const std::string& );
+    StringBuffer( const char* );
+    StringBuffer( const char*, size_t );
+
+    const char* c_str() const { return _string.c_str(); }
+    operator std::string&() { return _string; }
+    operator const std::string&() const { return _string; }
+    operator void*() const { return const_cast<char*>( _string.c_str() ); }
+    bool operator==( const StringBuffer& other ) const { return _string == other._string; }
+    bool operator==( const char* other ) const { return _string == other; }
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( StringBuffer, 6 );
+
+    // Buffer
+    size_t capacity() const { return _string.capacity(); }
+    size_t get( void* into_buffer, size_t into_buffer_len );
+    size_t get( std::string& into_string, size_t into_string_len );
+    size_t put( const void*, size_t );
+    size_t size() const { return _string.size(); }
+
+  private:
+    std::string _string;
+
+    size_t _consumed;
+  };
+
+  typedef auto_Object<StringBuffer> auto_StringBuffer;
+
+
+  class StringLiteralBuffer : public FixedBuffer
+  {
+  public:
+    StringLiteralBuffer( const char* string_literal )
+      : FixedBuffer( strnlen( string_literal, UINT16_MAX ) )
+    {
+      iov.iov_base = const_cast<char*>( string_literal );
+      iov.iov_len = capacity();
+    }
+
+    StringLiteralBuffer( const char* string_literal, size_t string_literal_len )
+      : FixedBuffer( string_literal_len )
+    {
+      iov.iov_base = const_cast<char*>( string_literal );
+      iov.iov_len = string_literal_len;
+    }
+
+    StringLiteralBuffer( const void* string_literal, size_t string_literal_len )
+      : FixedBuffer( string_literal_len )
+    {
+      iov.iov_base = const_cast<void*>( string_literal );
+      iov.iov_len = string_literal_len;
+    }
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( StringLiteralBuffer, 7 );
+
+    // Buffer
+    size_t put( const void*, size_t ) { return 0; }
+  };
+
+
+  class Struct : public Object
+  { };
+
+  typedef auto_Object<Struct> auto_Struct;
+
+
   class Unmarshaller
   {
   public:
@@ -429,44 +448,6 @@ namespace YIELD
   virtual void readSequence( const char* key, uint32_t tag, YIELD::Sequence& value ); \
   virtual void readString( const char* key, uint32_t tag, std::string& value ); \
   virtual void readStruct( const char* key, uint32_t tag, YIELD::Struct& value );
-
-
-  class BufferedMarshaller : public Marshaller
-  {
-  public:
-    auto_Buffer get_buffer() const { return first_buffer; }
-
-  protected:
-    BufferedMarshaller()
-    { }
-
-    BufferedMarshaller( BufferedMarshaller& parent_buffered_marshaller )
-      : current_buffer( parent_buffered_marshaller.current_buffer )
-    { }
-
-    void write( const void* buffer, size_t buffer_len );
-    void write( auto_Buffer buffer );
-
-  private:
-    auto_Buffer first_buffer, current_buffer;
-  };
-
-
-  class BufferedUnmarshaller : public Unmarshaller
-  {
-  public:
-    virtual ~BufferedUnmarshaller() { }
-
-  protected:
-    BufferedUnmarshaller( auto_Buffer source_buffer )
-        : source_buffer( source_buffer )
-    { }
-
-    void readBytes( void*, size_t );
-
-  private:
-    auto_Buffer source_buffer;
-  };
 };
 
 #endif

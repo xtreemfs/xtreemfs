@@ -1,4 +1,4 @@
-// Revision: 1658
+// Revision: 1661
 
 #include "yield/base.h"
 using namespace YIELD;
@@ -7,11 +7,6 @@ using namespace YIELD;
 // buffer.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-void Buffer::as_iovecs( std::vector<struct iovec>& out_iovecs ) const
-{
-  if ( next_buffer != NULL )
-    next_buffer->as_iovecs( out_iovecs );
-}
 bool Buffer::operator==( const Buffer& other ) const
 {
   if ( size() == other.size() )
@@ -26,63 +21,6 @@ bool Buffer::operator==( const Buffer& other ) const
   else
     return false;
 }
-void Buffer::set_next_buffer( auto_Buffer next_buffer )
-{
-//  if ( this->next_buffer != NULL ) DebugBreak();
-  this->next_buffer = next_buffer;
-}
-
-
-// buffered_marshaller.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-void BufferedMarshaller::write( const void* buffer, size_t buffer_len )
-{
-  if ( current_buffer == NULL )
-    current_buffer = first_buffer = new HeapBuffer( buffer_len >= 16 ? buffer_len : 16 );
-  for ( ;; )
-  {
-    size_t put_len = current_buffer->put( buffer, buffer_len );
-    if ( put_len == buffer_len )
-      return;
-    else
-    {
-      buffer_len -= put_len;
-      buffer = static_cast<const uint8_t*>( buffer ) + put_len;
-      auto_Buffer next_buffer = new HeapBuffer( current_buffer->capacity() * 2 );
-      current_buffer->set_next_buffer( next_buffer );
-      current_buffer = next_buffer;
-    }
-  }
-}
-void BufferedMarshaller::write( auto_Buffer buffer )
-{
-  current_buffer->set_next_buffer( buffer );
-  current_buffer = new HeapBuffer( current_buffer->capacity() );
-  while ( buffer->get_next_buffer() != NULL )
-    buffer = buffer->get_next_buffer();
-  buffer->set_next_buffer( current_buffer );
-}
-
-
-// buffered_unmarshaller.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-void BufferedUnmarshaller::readBytes( void* into_buffer, size_t into_buffer_len )
-{
-  while ( into_buffer_len > 0 )
-  {
-    size_t consumed_len = source_buffer->get( into_buffer, into_buffer_len );
-    if ( consumed_len == into_buffer_len )
-      return;
-    else
-    {
-      into_buffer = static_cast<char*>( into_buffer ) + consumed_len;
-      into_buffer_len -= consumed_len;
-      source_buffer = source_buffer->get_next_buffer();
-    }
-  }
-}
 
 
 // fixed_buffer.cpp
@@ -93,11 +31,6 @@ FixedBuffer::FixedBuffer( size_t capacity )
 {
   _consumed = 0;
   iov.iov_len = 0;
-}
-void FixedBuffer::as_iovecs( std::vector<struct iovec>& out_iovecs ) const
-{
-  out_iovecs.push_back( iov );
-  Buffer::as_iovecs( out_iovecs );
 }
 size_t FixedBuffer::capacity() const
 {
@@ -150,11 +83,10 @@ size_t FixedBuffer::size() const
 GatherBuffer::GatherBuffer( const struct iovec* iovecs, uint32_t iovecs_len )
   : iovecs( iovecs ), iovecs_len( iovecs_len )
 { }
-void GatherBuffer::as_iovecs( std::vector<struct iovec>& out_iovecs ) const
+GatherBuffer::operator void*() const
 {
-  for ( uint32_t iovec_i = 0; iovec_i < iovecs_len; iovec_i++ )
-    out_iovecs.push_back( iovecs[iovec_i] );
-  Buffer::as_iovecs( out_iovecs );
+  *((int*)0) = 0xabadcafe;
+  return NULL;
 }
 size_t GatherBuffer::size() const
 {
@@ -257,15 +189,6 @@ StringBuffer::StringBuffer( const char* str, size_t str_len )
   : _string( str, str_len )
 {
   _consumed = 0;
-}
-
-void StringBuffer::as_iovecs( std::vector<struct iovec>& out_iovecs ) const
-{
-  struct iovec iov;
-  iov.iov_base = const_cast<char*>( _string.c_str() );
-  iov.iov_len = _string.size();
-  out_iovecs.push_back( iov );
-  Buffer::as_iovecs( out_iovecs );
 }
 
 size_t StringBuffer::get( void* into_buffer, size_t into_buffer_len )

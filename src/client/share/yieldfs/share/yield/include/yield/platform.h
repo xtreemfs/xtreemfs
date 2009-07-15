@@ -1976,7 +1976,7 @@ namespace YIELD
 
 #if defined(_WIN32)
     unsigned long mask;
-#elif defined(__linux)
+#elif defined(__linux__)
     void* cpu_set;
 #elif defined(__sun)
     int psetid;
@@ -2539,34 +2539,39 @@ namespace YIELD
   typedef YIELD::auto_Object<Volume> auto_Volume;
 
 
-  class XDRMarshaller : public BufferedMarshaller
+  class XDRMarshaller : public Marshaller
   {
   public:
+    XDRMarshaller();
+
+    auto_StringBuffer get_buffer() const { return buffer; }
+
     // Marshaller
     YIELD_MARSHALLER_PROTOTYPES;
     void writeFloat( const char* key, uint32_t tag, float value );
     void writeInt32( const char* key, uint32_t tag, int32_t value );
 
   protected:
-    inline void write( const void* buffer, size_t buffer_len ) { BufferedMarshaller::write( buffer, buffer_len ); }
     virtual void writeKey( const char* key );
 
   private:
+    auto_StringBuffer buffer;
     std::vector<bool> in_map_stack;
   };
 
 
-  class XDRUnmarshaller : public BufferedUnmarshaller
+  class XDRUnmarshaller : public Unmarshaller
   {
   public:
-    XDRUnmarshaller( auto_Buffer source_buffer )
-        : BufferedUnmarshaller( source_buffer )
-    { }
+    XDRUnmarshaller( auto_Buffer buffer );
 
     // Unmarshaller
     YIELD_UNMARSHALLER_PROTOTYPES;
     float readFloat( const char* key, uint32_t tag );
     int32_t readInt32( const char* key, uint32_t tag );
+
+  private:
+    auto_Buffer buffer;
   };
 };
 

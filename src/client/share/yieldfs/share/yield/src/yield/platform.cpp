@@ -1,4 +1,4 @@
-// Revision: 1658
+// Revision: 1661
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -286,10 +286,10 @@ bool File::close()
 }
 bool File::datasync()
 {
-#if defined(_WIN32) || defined(__MACH__)
-  return true;
-#else
+#if defined(__linux__) || defined(__sun)
   return fdatasync( fd ) != -1;
+#else
+  return true;
 #endif
 }
 bool File::flush()
@@ -1489,7 +1489,7 @@ void RRD::append( double value )
   Record( value ).marshal( xdr_marshaller );
   auto_File current_file( File::open( current_file_path, O_CREAT|O_WRONLY|O_APPEND ) );
   if ( current_file != NULL )
-    current_file->write( xdr_marshaller.get_buffer() );
+    current_file->write( xdr_marshaller.get_buffer().release() );
 }
 auto_Object<RRD> RRD::creat( const Path& file_path )
 {
@@ -2900,6 +2900,10 @@ Path Volume::volname( const Path& path )
 // xdr_marshaller.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+XDRMarshaller::XDRMarshaller()
+{
+  buffer = new StringBuffer;
+}
 void XDRMarshaller::writeKey( const char* key )
 {
   if ( !in_map_stack.empty() && in_map_stack.back() && key != NULL )
@@ -2911,30 +2915,23 @@ void XDRMarshaller::writeBoolean( const char* key, uint32_t tag, bool value )
 }
 void XDRMarshaller::writeBuffer( const char* key, uint32_t tag, YIELD::auto_Buffer value )
 {
-  size_t value_size = 0;
-  YIELD::auto_Buffer next_buffer = value;
-  while ( next_buffer != NULL )
-  {
-    value_size += next_buffer->size();
-    next_buffer = next_buffer->get_next_buffer();
-  }
-  writeInt32( key, tag, static_cast<int32_t>( value_size ) );
-  BufferedMarshaller::write( value );
-  if ( value_size % 4 != 0 )
+  writeInt32( key, tag, static_cast<int32_t>( value->size() ) );
+  buffer->put( static_cast<void*>( *value ), value->size() );
+  if ( value->size() % 4 != 0 )
   {
     static char zeros[] = { 0, 0, 0 };
-    write( static_cast<const void*>( zeros ), 4 - ( value_size % 4 ) );
+    buffer->put( static_cast<const void*>( zeros ), 4 - ( value->size() % 4 ) );
   }
 }
 void XDRMarshaller::writeDouble( const char* key, uint32_t, double value )
 {
   writeKey( key );
-  write( &value, sizeof( value ) );
+  buffer->put( &value, sizeof( value ) );
 }
 void XDRMarshaller::writeFloat( const char* key, uint32_t, float value )
 {
   writeKey( key );
-  write( &value, sizeof( value ) );
+  buffer->put( &value, sizeof( value ) );
 }
 void XDRMarshaller::writeInt32( const char* key, uint32_t, int32_t value )
 {
@@ -2944,13 +2941,13 @@ void XDRMarshaller::writeInt32( const char* key, uint32_t, int32_t value )
 #else
   value = Machine::htonl( value );
 #endif
-  write( &value, sizeof( value ) );
+  buffer->put( &value, sizeof( value ) );
 }
 void XDRMarshaller::writeInt64( const char* key, uint32_t, int64_t value )
 {
   writeKey( key );
   value = Machine::htonll( value );
-  write( &value, sizeof( value ) );
+  buffer->put( &value, sizeof( value ) );
 }
 void XDRMarshaller::writeMap( const char* key, uint32_t tag, const YIELD::Map& value )
 {
@@ -2967,11 +2964,11 @@ void XDRMarshaller::writeSequence( const char* key, uint32_t tag, const YIELD::S
 void XDRMarshaller::writeString( const char* key, uint32_t tag, const char* value, size_t value_len )
 {
   writeInt32( key, tag, static_cast<int32_t>( value_len ) );
-  write( static_cast<const void*>( value ), value_len );
+  buffer->put( static_cast<const void*>( value ), value_len );
   if ( value_len % 4 != 0 )
   {
     static char zeros[] = { 0, 0, 0 };
-    write( static_cast<const void*>( zeros ), 4 - ( value_len % 4 ) );
+    buffer->put( static_cast<const void*>( zeros ), 4 - ( value_len % 4 ) );
   }
 }
 void XDRMarshaller::writeStruct( const char* key, uint32_t, const YIELD::Struct& value )
@@ -2984,6 +2981,9 @@ void XDRMarshaller::writeStruct( const char* key, uint32_t, const YIELD::Struct&
 // xdr_unmarshaller.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+XDRUnmarshaller::XDRUnmarshaller( auto_Buffer buffer )
+  : buffer( buffer )
+{ }
 bool XDRUnmarshaller::readBoolean( const char* key, uint32_t tag )
 {
   return readInt32( key, tag ) == 1;
@@ -2992,25 +2992,25 @@ void XDRUnmarshaller::readBuffer( const char* key, uint32_t tag, auto_Buffer val
 {
   size_t size = readInt32( key, tag );
   if ( value->capacity() - value->size() < size ) DebugBreak();
-  readBytes( *value, size );
+  buffer->get( static_cast<void*>( *value ), size );
   value->put( NULL, size );
 }
 double XDRUnmarshaller::readDouble( const char*, uint32_t )
 {
   double value;
-  readBytes( &value, sizeof( value ) );
+  buffer->get( &value, sizeof( value ) );
   return value;
 }
 float XDRUnmarshaller::readFloat( const char*, uint32_t )
 {
   float value;
-  readBytes( &value, sizeof( value ) );
+  buffer->get( &value, sizeof( value ) );
   return value;
 }
 int32_t XDRUnmarshaller::readInt32( const char*, uint32_t )
 {
   int32_t value;
-  readBytes( &value, sizeof( value ) );
+  buffer->get( &value, sizeof( value ) );
 #ifdef __MACH__
   return ntohl( value );
 #else
@@ -3020,7 +3020,7 @@ int32_t XDRUnmarshaller::readInt32( const char*, uint32_t )
 int64_t XDRUnmarshaller::readInt64( const char*, uint32_t )
 {
   int64_t value;
-  readBytes( &value, sizeof( value ) );
+  buffer->get( &value, sizeof( value ) );
   return Machine::ntohll( value );
 }
 void XDRUnmarshaller::readMap( const char* key, uint32_t tag, YIELD::Map& value )
@@ -3051,7 +3051,7 @@ void XDRUnmarshaller::readString( const char* key, uint32_t tag, std::string& va
       else
         padded_str_len = str_len + 4 - padded_str_len;
       value.resize( padded_str_len );
-      readBytes( const_cast<char*>( value.c_str() ), padded_str_len );
+      buffer->get( const_cast<char*>( value.c_str() ), padded_str_len );
       value.resize( str_len );
     }
   }
