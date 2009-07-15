@@ -153,12 +153,13 @@ bool File::listxattr( std::vector<std::string>& out_names )
 
 ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 {
+  YIELD::auto_Log log( parent_volume->get_log() );
+
   try
   {
-    YIELD::auto_Log log( parent_volume->get_log() );
-
 #ifdef _DEBUG
-    log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File::read( rbuf, size=" << size << ", offset=" << offset << " )";
+    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+      log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File::read( rbuf, size=" << size << ", offset=" << offset << " )";
 #endif
 
     char *rbuf_start = static_cast<char*>( rbuf ), *rbuf_p = static_cast<char*>( rbuf ), *rbuf_end = static_cast<char*>( rbuf ) + size;
@@ -271,10 +272,24 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
   }
   catch ( ProxyExceptionResponse& proxy_exception_response )
   {
+    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+    {
+      log->getStream( YIELD::Log::LOG_INFO ) <<
+      "org::xtreemfs::client::File: read threw ProxyExceptionResponse " <<
+      "(errno= " << proxy_exception_response.get_platform_error_code() <<
+      ", strerror=" << YIELD::Exception::strerror( proxy_exception_response.get_platform_error_code() ) << ").";
+    }
+
     YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
   }
   catch ( std::exception& )
   {
+    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+    {
+      log->getStream( YIELD::Log::LOG_INFO ) <<
+      "org::xtreemfs::client::File: read threw std::exception, setting errno to EIO.";
+    }
+
     YIELD::Exception::set_errno( EIO );
   }
 
@@ -324,12 +339,19 @@ bool File::truncate( uint64_t new_size )
   return false;
 }
 
-ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
+ssize_t File::write( const void* buffer, size_t size, uint64_t offset )
 {
+  YIELD::auto_Log log( parent_volume->get_log() );
+
+#ifdef _DEBUG
+  if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+    log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File::write( wbuf, size=" << size << ", offset=" << offset << " )";
+#endif
+
   try
   {
     const char* wbuf_p = static_cast<const char*>( buffer );
-    uint64_t file_offset = offset, file_offset_max = offset + buffer_len;
+    uint64_t file_offset = offset, file_offset_max = offset + size;
     uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;
 
     YIELD::auto_Object<YIELD::OneSignalEventQueue> write_response_queue( new YIELD::OneSignalEventQueue );
@@ -368,10 +390,24 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
   }
   catch ( ProxyExceptionResponse& proxy_exception_response )
   {
+    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+    {
+      log->getStream( YIELD::Log::LOG_INFO ) <<
+      "org::xtreemfs::client::File: write threw ProxyExceptionResponse " <<
+      "(errno= " << proxy_exception_response.get_platform_error_code() <<
+      ", strerror=" << YIELD::Exception::strerror( proxy_exception_response.get_platform_error_code() ) << ").";
+    }
+
     YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
   }
   catch ( std::exception& )
   {
+    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+    {
+      log->getStream( YIELD::Log::LOG_INFO ) <<
+      "org::xtreemfs::client::File: write threw std::exception, setting errno to EIO.";
+    }
+
     YIELD::Exception::set_errno( EIO );
   }
 
