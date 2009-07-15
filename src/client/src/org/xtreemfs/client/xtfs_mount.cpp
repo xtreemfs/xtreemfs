@@ -92,6 +92,23 @@ namespace org
           {
             uint32_t fuse_flags = 0, volume_flags = 0;
 
+            if ( get_log_level() >= YIELD::Log::LOG_INFO )
+              trace_volume_calls = true;              
+            if ( get_log_level() >= YIELD::Log::LOG_DEBUG )
+            {
+              trace_data_cache = true;
+              trace_file_io = true;
+              trace_metadata_cache = true;
+            }
+
+            if ( get_log_level() < YIELD::Log::LOG_INFO &&
+                 ( trace_data_cache || 
+                   trace_file_io || 
+                   trace_metadata_cache || 
+                   get_trace_socket_io() || 
+                   trace_volume_calls ) )
+              get_log()->set_level( YIELD::Log::LOG_INFO );
+
             if ( cache_data )
               volume_flags |= Volume::VOLUME_FLAG_CACHE_FILES;
             if ( cache_metadata )
