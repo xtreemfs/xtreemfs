@@ -374,7 +374,7 @@ bool Volume::statvfs( const YIELD::Path&, struct statvfs* statvfsbuf )
       mrc_proxy->statvfs( this->name, xtreemfs_statvfsbuf );
       statvfsbuf->f_bsize = xtreemfs_statvfsbuf.get_bsize();
       statvfsbuf->f_bavail = statvfsbuf->f_bfree = xtreemfs_statvfsbuf.get_bfree();
-      statvfsbuf->f_blocks = xtreemfs_statvfsbuf.get_bfree() * 1024;
+      statvfsbuf->f_blocks = xtreemfs_statvfsbuf.get_bfree();
       statvfsbuf->f_namemax = xtreemfs_statvfsbuf.get_namelen();
       return true;
     }
