@@ -127,7 +127,7 @@ namespace YIELD
   typedef auto_Object<EventQueue> auto_EventQueue;
 
 
-  class OneSignalEventQueue : public EventQueue, private NonBlockingFiniteQueue<Event*, 256>
+  class OneSignalEventQueue : public EventQueue, private STLQueue<Event*>
   {
   public:
     // Object

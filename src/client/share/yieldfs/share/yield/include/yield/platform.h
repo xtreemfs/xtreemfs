@@ -2391,6 +2391,41 @@ namespace YIELD
   };
 
 
+  template <class ElementType>
+  class STLQueue : private std::queue<ElementType>
+  {
+  public:
+    bool enqueue( ElementType element )
+    {
+      lock.acquire();
+      std::queue<ElementType>::push( element );
+      lock.release();
+      return true;
+    }
+
+    ElementType try_dequeue()
+    {
+      if ( lock.try_acquire() )
+      {
+        if ( !std::queue<ElementType>::empty() )
+        {
+          ElementType element = std::queue<ElementType>::back();
+          std::queue<ElementType>::pop();
+          lock.release();
+          return element;
+        }
+        else
+          lock.release();
+      }
+
+      return 0;
+    }
+
+  private:
+    Mutex lock;
+  };
+
+
   class Thread : public Object
   {
   public:

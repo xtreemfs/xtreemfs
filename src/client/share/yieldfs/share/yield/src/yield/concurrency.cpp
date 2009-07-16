@@ -1,4 +1,4 @@
-// Revision: 1664
+// Revision: 1666
 
 #include "yield/concurrency.h"
 using namespace YIELD;
@@ -308,7 +308,7 @@ bool MG1VisitPolicy::populatePollingTable()
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 Event* OneSignalEventQueue::dequeue()
 {
-  Event* result = NonBlockingFiniteQueue<Event*, 256>::try_dequeue();
+  Event* result = STLQueue::try_dequeue();
   if ( result != 0 ) // Hot case
     return result; // Don't dec the semaphore, just let a cold acquire succeed on an empty queue
   else
@@ -316,7 +316,7 @@ Event* OneSignalEventQueue::dequeue()
     do
     {
       empty.acquire();
-      result = NonBlockingFiniteQueue<Event*, 256>::try_dequeue();
+      result = STLQueue::try_dequeue();
     }
     while ( result == 0 );
     return result;
@@ -324,7 +324,7 @@ Event* OneSignalEventQueue::dequeue()
 }
 Event* OneSignalEventQueue::dequeue( uint64_t timeout_ns )
 {
-  Event* result = NonBlockingFiniteQueue<Event*, 256>::try_dequeue();
+  Event* result = STLQueue::try_dequeue();
   if ( result != 0 )
     return result;
   else
@@ -333,7 +333,7 @@ Event* OneSignalEventQueue::dequeue( uint64_t timeout_ns )
     {
       uint64_t before_acquire_time_ns = Time::getCurrentUnixTimeNS();
       empty.timed_acquire( timeout_ns );
-      if ( ( result = NonBlockingFiniteQueue<Event*, 256>::try_dequeue() ) != 0 )
+      if ( ( result = STLQueue::try_dequeue() ) != 0 )
         break;
       uint64_t waited_ns = Time::getCurrentUnixTimeNS() - before_acquire_time_ns;
       if ( waited_ns >= timeout_ns )
@@ -346,7 +346,7 @@ Event* OneSignalEventQueue::dequeue( uint64_t timeout_ns )
 }
 bool OneSignalEventQueue::enqueue( Event& ev )
 {
-  if ( NonBlockingFiniteQueue<Event*, 256>::enqueue( &ev ) )
+  if ( STLQueue::enqueue( &ev ) )
   {
     empty.release();
     return true;
@@ -356,7 +356,7 @@ bool OneSignalEventQueue::enqueue( Event& ev )
 }
 Event* OneSignalEventQueue::try_dequeue()
 {
-  return NonBlockingFiniteQueue<Event*, 256>::try_dequeue();
+  return STLQueue::try_dequeue();
 }
 
 

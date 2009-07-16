@@ -1,4 +1,4 @@
-// Revision: 1664
+// Revision: 1666
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -264,7 +264,7 @@ bool Client<ProtocolRequestType, ProtocolResponseType>::write( auto_Object<Proto
     auto_Object<ProtocolResponseType> protocol_response( protocol_request->createProtocolResponse() );
 #ifdef _DEBUG
     if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
-      this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: created " << protocol_response->get_type_name() << "/" << reinterpret_cast<uint64_t>( protocol_response.get() ) << " for " << protocol_request->get_type_name() << "/" << reinterpret_cast<uint64_t>( protocol_request.get() ) << ", sending to protocol request reader stage.";
+      this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: created " << protocol_response->get_type_name() << "/" << reinterpret_cast<uint64_t>( protocol_response.get() ) << " for " << protocol_request->get_type_name() << "/" << reinterpret_cast<uint64_t>( protocol_request.get() ) << ", sending to protocol response reader stage.";
 #endif
     get_protocol_response_reader_stage()->send( *protocol_response.release() );
     return true;
