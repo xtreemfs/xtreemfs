@@ -31,7 +31,7 @@ template <class ProtocolRequestType, class ProtocolResponseType>
 void Client<ProtocolRequestType, ProtocolResponseType>::handleDeserializedProtocolMessage( auto_Object<ProtocolResponseType> protocol_response )
 {
 #ifdef _DEBUG
-  if ( ( this->get_flags() && this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+  if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
     this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: respond()ing to deserialized ProtocolResponse and giving back idle connection.";
 #endif
   this->get_helper_peer_stage()->send( *protocol_response->get_connection().release() );
@@ -128,7 +128,7 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
     {
 #ifdef _DEBUG
       if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
-        this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: received new ProtocolRequest for " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port();
+        this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: received new ProtocolRequest for " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << ".";
 #endif
       if ( static_cast<ProtocolRequestType&>( ev ).get_connection() == NULL )
       {
@@ -136,7 +136,7 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
         if ( !idle_connections.empty() )
         {
           if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
-            this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: using idle connection from pool of " << idle_connections.size() << " connections to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port();
+            this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: using idle connection from pool of " << idle_connections.size() << " connections to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << ".";
           protocol_request->set_connection( idle_connections.back()->incRef() );
           idle_connections.pop_back();
           get_protocol_request_writer_stage()->send( *protocol_request.release() );
@@ -145,7 +145,7 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
         {
 #ifdef _DEBUG
           if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
-            this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: creating new connection to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port();
+            this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: creating new connection to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << ".";
 #endif
           auto_Socket _socket;
 #ifdef YIELD_HAVE_OPENSSL
@@ -2673,7 +2673,7 @@ bool Peer<ReadProtocolMessageType, WriteProtocolMessageType>::read( auto_Object<
       read_ret = connection->get_socket()->read( buffer );
 #ifdef _DEBUG
     if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-      get_log()->getStream( Log::LOG_INFO ) << "yield::Peer: read from socket returned " << read_ret << ".";
+      get_log()->getStream( Log::LOG_INFO ) << "yield::Peer: read returned " << read_ret << ".";
 #endif
     if ( read_ret > 0 )
     {
@@ -2693,13 +2693,17 @@ bool Peer<ReadProtocolMessageType, WriteProtocolMessageType>::read( auto_Object<
       {
 #ifdef _DEBUG
         if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-          get_log()->getStream( Log::LOG_INFO ) << "yield::Peer: ProtocolMessage partially deserialized, reading again.";
+          get_log()->getStream( Log::LOG_INFO ) << "yield::Peer: partially deserialized ProtocolMessage, reading again.";
 #endif
         buffer_capacity = static_cast<size_t>( deserialize_ret );
         continue;
       }
       else
+      {
+        if ( get_log() != NULL )
+          get_log()->getStream( Log::LOG_WARNING ) << "yield::Peer: error deserializing ProtocolMessage.";
         break;
+      }
     }
     else if ( read_ret < 0 )
     {
@@ -2721,6 +2725,10 @@ bool Peer<ReadProtocolMessageType, WriteProtocolMessageType>::read( auto_Object<
     else
       break;
   }
+#ifdef _DEBUG
+  if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
+    get_log()->getStream( Log::LOG_INFO ) << "yield::Peer: lost connection on read/deserialize.";
+#endif
   detach( connection );
   connection->get_socket()->close();
   return false;
@@ -2744,6 +2752,10 @@ bool Peer<ReadProtocolMessageType, WriteProtocolMessageType>::write( auto_Object
   auto_Object<Connection> connection( protocol_message->get_connection() );
   connection->get_socket()->set_blocking_mode( true );
   ssize_t write_ret = connection->get_socket()->write( buffer );
+#ifdef _DEBUG
+  if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
+    get_log()->getStream( Log::LOG_INFO ) << "yield::Peer: ProtocolMessage write returned " << write_ret << ".";
+#endif
   return write_ret >= 0;
 }
 template class Peer<HTTPRequest, HTTPResponse>;
