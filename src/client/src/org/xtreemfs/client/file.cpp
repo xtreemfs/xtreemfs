@@ -259,7 +259,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         }
       }
       else
-        DebugBreak();
+        YIELD::DebugBreak();
     }
   }
   catch ( ProxyExceptionResponse& proxy_exception_response )
