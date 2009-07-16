@@ -1767,7 +1767,7 @@ namespace YIELD
         if ( atomic_cas( reinterpret_cast<volatile uint_ptr*>( &elements[last_try_pos] ), 
                          try_element == reinterpret_cast<ElementType>( 1 ) ? 
                            ( reinterpret_cast<uint_ptr>( element ) | PTR_HIGH_BIT ) : 
-                           element,
+                           reinterpret_cast<uint_ptr>( element ),
                          reinterpret_cast<uint_ptr>( try_element ) == reinterpret_cast<uint_ptr>( try_element ) ) )
         {
           if ( try_pos % 2 == 0 )
