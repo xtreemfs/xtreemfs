@@ -1709,9 +1709,15 @@ namespace YIELD
 
     bool enqueue( ElementType element )
     {
-//			if ( ( uint_ptr )element & 0x1 ) DebugBreak();
+#ifdef _DEBUG
+			if ( reinterpret_cast<uint_ptr>( element ) & 0x1 ) DebugBreak();
+#endif
+
       element = reinterpret_cast<ElementType>( reinterpret_cast<uint_ptr>( element ) >> 1 );
-//			if ( ( uint_ptr )element & PTR_HIGH_BIT ) DebugBreak();
+
+#ifdef _DEBUG
+      if ( reinterpret_cast<uint_ptr>( element ) & PTR_HIGH_BIT ) DebugBreak();
+#endif
 
       int32_t copied_tail, last_try_pos, try_pos; // te, ate, temp
       ElementType try_element;
@@ -1747,7 +1753,7 @@ namespace YIELD
 
           if ( try_element != reinterpret_cast<ElementType>( 0 ) &&
                try_element != reinterpret_cast<ElementType>( 1 ) )
-            return false;						// Queue is full
+            return false; // Queue is full
 
           atomic_cas( &head, last_try_pos, try_pos );
 
@@ -1758,7 +1764,11 @@ namespace YIELD
           continue;
 
         // diff next line
-        if ( atomic_cas( ( volatile uint_ptr* )&elements[last_try_pos], ( uint_ptr )( ( try_element == reinterpret_cast<ElementType>( 1 ) ) ? reinterpret_cast<ElementType>( reinterpret_cast<uint_ptr>( element ) | PTR_HIGH_BIT ) : element ), ( uint_ptr )try_element ) == ( uint_ptr )try_element )
+        if ( atomic_cas( reinterpret_cast<volatile uint_ptr*>( &elements[last_try_pos] ), 
+                         try_element == reinterpret_cast<ElementType>( 1 ) ? 
+                           ( reinterpret_cast<uint_ptr>( element ) | PTR_HIGH_BIT ) : 
+                           reinterpret_cast<uint_ptr>( element ),
+                         reinterpret_cast<uint_ptr>( try_element ) == reinterpret_cast<uint_ptr>( try_element ) ) )
         {
           if ( try_pos % 2 == 0 )
             atomic_cas( &tail, try_pos, copied_tail );
@@ -1810,12 +1820,14 @@ namespace YIELD
         if ( copied_head != head )
           continue;
 
-        if ( atomic_cas( ( volatile uint_ptr* )&elements[try_pos], ( ( uint_ptr )try_element & ( uint_ptr )0x80000000 ) ? 1 : 0, ( uint_ptr )try_element ) == ( uint_ptr )try_element )
+        if ( atomic_cas( reinterpret_cast<volatile uint_ptr*>( &elements[try_pos] ), 
+                         ( reinterpret_cast<uint_ptr>( try_element ) & static_cast<uint_ptr>( 0x80000000 ) ) ? 1 : 0, 
+                         reinterpret_cast<uint_ptr>( try_element ) == reinterpret_cast<uint_ptr>( try_element ) ) )
         {
           if ( try_pos % 2 == 0 )
             atomic_cas( &head, try_pos, copied_head );
 
-          return reinterpret_cast<ElementType>( ( ( ( uint_ptr )try_element & PTR_LOW_BITS ) << 1 ) );
+          return reinterpret_cast<ElementType>( ( reinterpret_cast<uint_ptr>( try_element ) & PTR_LOW_BITS ) << 1 );
         }
       }
     }
