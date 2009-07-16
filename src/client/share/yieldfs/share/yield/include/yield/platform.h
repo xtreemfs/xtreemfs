@@ -1710,7 +1710,7 @@ namespace YIELD
     bool enqueue( ElementType element )
     {
 #ifdef _DEBUG
-			if ( reinterpret_cast<uint_ptr>( element ) & 0x1 ) DebugBreak();
+      if ( reinterpret_cast<uint_ptr>( element ) & 0x1 ) DebugBreak();
 #endif
 
       element = reinterpret_cast<ElementType>( reinterpret_cast<uint_ptr>( element ) >> 1 );
@@ -1767,7 +1767,7 @@ namespace YIELD
         if ( atomic_cas( reinterpret_cast<volatile uint_ptr*>( &elements[last_try_pos] ), 
                          try_element == reinterpret_cast<ElementType>( 1 ) ? 
                            ( reinterpret_cast<uint_ptr>( element ) | PTR_HIGH_BIT ) : 
-                           reinterpret_cast<uint_ptr>( element ),
+                           element,
                          reinterpret_cast<uint_ptr>( try_element ) == reinterpret_cast<uint_ptr>( try_element ) ) )
         {
           if ( try_pos % 2 == 0 )
@@ -1821,7 +1821,7 @@ namespace YIELD
           continue;
 
         if ( atomic_cas( reinterpret_cast<volatile uint_ptr*>( &elements[try_pos] ), 
-                         ( reinterpret_cast<uint_ptr>( try_element ) & static_cast<uint_ptr>( 0x80000000 ) ) ? 1 : 0, 
+                         ( reinterpret_cast<uint_ptr>( try_element ) & PTR_HIGH_BIT ) ? 1 : 0, 
                          reinterpret_cast<uint_ptr>( try_element ) == reinterpret_cast<uint_ptr>( try_element ) ) )
         {
           if ( try_pos % 2 == 0 )
