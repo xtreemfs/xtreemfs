@@ -54,7 +54,7 @@ namespace org
           addOption( XTFS_MOUNT_OPTION_TRACE_METADATA_CACHE, "--trace-metadata-cache" );
           trace_metadata_cache = false;
 
-          addOption( XTFS_MOUNT_OPTION_TRACE_VOLUME_OPERATIONS, "--trace-volume-calls" );
+          addOption( XTFS_MOUNT_OPTION_TRACE_VOLUME_OPERATIONS, "--trace-volume-operations" );
           trace_volume_operations = false;
         }
 
