@@ -2409,7 +2409,7 @@ namespace YIELD
       {
         if ( !std::queue<ElementType>::empty() )
         {
-          ElementType element = std::queue<ElementType>::back();
+          ElementType element = std::queue<ElementType>::front();
           std::queue<ElementType>::pop();
           lock.release();
           return element;
