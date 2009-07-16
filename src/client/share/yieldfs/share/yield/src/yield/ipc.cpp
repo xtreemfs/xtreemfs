@@ -1,4 +1,4 @@
-// Revision: 1661
+// Revision: 1664
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -31,8 +31,8 @@ template <class ProtocolRequestType, class ProtocolResponseType>
 void Client<ProtocolRequestType, ProtocolResponseType>::handleDeserializedProtocolMessage( auto_Object<ProtocolResponseType> protocol_response )
 {
 #ifdef _DEBUG
-  if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-    get_log()->getStream( Log::LOG_INFO ) << "yield::Client: respond()ing to deserialized ProtocolResponse and giving back idle connection.";
+  if ( ( this->get_flags() && this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+    this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: respond()ing to deserialized ProtocolResponse and giving back idle connection.";
 #endif
   this->get_helper_peer_stage()->send( *protocol_response->get_connection().release() );
   protocol_response->get_protocol_request()->set_connection( NULL );
@@ -66,15 +66,15 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
         auto_Object<ProtocolRequestType> protocol_request( static_cast<ProtocolRequestType*>( context.release() ) );
         auto_Object<Connection> connection = protocol_request->get_connection();
 #ifdef _DEBUG
-        if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-          get_log()->getStream( Log::LOG_INFO ) << "yield::Client: attempting to connect() to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << ".";
+        if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+          this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: attempting to connect() to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << ".";
 #endif
         switch ( connection->get_socket()->connect( peername ) )
         {
           case Socket::CONNECT_STATUS_OK:
           {
-            if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-               get_log()->getStream( Log::LOG_INFO ) << "yield::Client: successfully connected to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << ".";
+            if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+               this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: successfully connected to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << ".";
             this->detach( connection );
             connection->get_socket()->set_blocking_mode( true );
             get_protocol_request_writer_stage()->send( *protocol_request.release() );
@@ -82,14 +82,14 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
           break;
           case Socket::CONNECT_STATUS_WOULDBLOCK:
           {
-            if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-              get_log()->getStream( Log::LOG_INFO ) << "yield::Client: connect() to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << " would block.";
+            if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+              this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: connect() to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << " would block.";
           }
           break;
           case Socket::CONNECT_STATUS_ERROR:
           {
-            if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-              get_log()->getStream( Log::LOG_INFO ) << "yield::Client: connect() to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << " failed, sending ExceptionResponse to ProtocolRequest.";
+            if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+              this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: connect() to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << " failed, sending ExceptionResponse to ProtocolRequest.";
             this->detach( connection );
             protocol_request->set_connection( NULL );
             protocol_request->respond( *( new ExceptionResponse ) );
@@ -108,8 +108,8 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
       auto_Object<> context( pollerr_event.get_context() );
       if ( context->get_tag() == YIELD_OBJECT_TAG( ProtocolRequestType ) ) // Non-blocking connection attemptfailed
       {
-        if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-          get_log()->getStream( Log::LOG_INFO ) << "yield::Client: connect() to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << " failed, sending ExceptionResponse to ProtocolRequest.";
+        if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+          this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: connect() to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << " failed, sending ExceptionResponse to ProtocolRequest.";
         static_cast<ProtocolRequestType*>( context.get() )->respond( *( new ExceptionResponse( pollerr_event.get_errno() ) ) );
         Object::decRef( ev );
       }
@@ -127,16 +127,16 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
     case YIELD_OBJECT_TAG( ProtocolRequestType ):
     {
 #ifdef _DEBUG
-      if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-        get_log()->getStream( Log::LOG_INFO ) << "yield::Client: received new ProtocolRequest for " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port();
+      if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+        this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: received new ProtocolRequest for " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port();
 #endif
       if ( static_cast<ProtocolRequestType&>( ev ).get_connection() == NULL )
       {
         auto_Object<ProtocolRequestType> protocol_request( static_cast<ProtocolRequestType&>( ev ) );
         if ( !idle_connections.empty() )
         {
-          if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-            get_log()->getStream( Log::LOG_INFO ) << "yield::Client: using idle connection from pool of " << idle_connections.size() << " connections to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port();
+          if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+            this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: using idle connection from pool of " << idle_connections.size() << " connections to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port();
           protocol_request->set_connection( idle_connections.back()->incRef() );
           idle_connections.pop_back();
           get_protocol_request_writer_stage()->send( *protocol_request.release() );
@@ -144,8 +144,8 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
         else
         {
 #ifdef _DEBUG
-          if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-            get_log()->getStream( Log::LOG_INFO ) << "yield::Client: creating new connection to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port();
+          if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+            this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: creating new connection to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port();
 #endif
           auto_Socket _socket;
 #ifdef YIELD_HAVE_OPENSSL
@@ -159,7 +159,7 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
           else
             _socket = TCPSocket::create().release();
           auto_Log log = this->get_log();
-          if ( ( get_flags() & PEER_FLAG_TRACE_IO ) == PEER_FLAG_TRACE_IO &&
+          if ( ( this->get_flags() & this->PEER_FLAG_TRACE_IO ) == this->PEER_FLAG_TRACE_IO &&
                log != NULL && log->get_level() >= Log::LOG_INFO &&
                static_cast<int>( *_socket ) != -1 )
             _socket = new TracingSocket( _socket, log );
@@ -167,8 +167,8 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
           protocol_request->set_connection( connection );
           _socket->set_blocking_mode( false );
 #ifdef _DEBUG
-          if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-            get_log()->getStream( Log::LOG_INFO ) << "yield::Client: attempting to connect() to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << ".";
+          if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+            this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: attempting to connect() to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << ".";
 #endif
           Socket::ConnectStatus connect_status;
           if ( this->haveAIO() )
@@ -183,8 +183,8 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
             case Socket::CONNECT_STATUS_OK:
             {
 #ifdef _DEBUG
-              if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-                 get_log()->getStream( Log::LOG_INFO ) << "yield::Client: successfully connected to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << ".";
+              if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+                 this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: successfully connected to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << ".";
 #endif
               _socket->set_blocking_mode( true);
               get_protocol_request_writer_stage()->send( *protocol_request.release() );
@@ -193,8 +193,8 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
             case Socket::CONNECT_STATUS_WOULDBLOCK:
             {
 #ifdef _DEBUG
-              if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-                get_log()->getStream( Log::LOG_INFO ) << "yield::Client: connect() to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << " would block.";
+              if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+                this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: connect() to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << " would block.";
 #endif
               if ( !this->haveAIO() )
                 this->attach( connection, protocol_request->incRef(), false, true ); // attach AFTER trying to connect, in case the socket was re-created on a fallback from IPv6 to IPv6
@@ -203,8 +203,8 @@ void Client<ProtocolRequestType, ProtocolResponseType>::handleEvent( Event& ev )
             case Socket::CONNECT_STATUS_ERROR:
             {
 #ifdef _DEBUG
-              if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-                get_log()->getStream( Log::LOG_INFO ) << "yield::Client: connect() to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << " failed, sending ExceptionResponse to ProtocolRequest.";
+              if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+                this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: connect() to " << absolute_uri->get_host() << ":" << absolute_uri->get_port() << " failed, sending ExceptionResponse to ProtocolRequest.";
 #endif
               protocol_request->set_connection( NULL );
               protocol_request->respond( *( new ExceptionResponse() ) );
@@ -234,8 +234,8 @@ ssize_t Client<ProtocolRequestType, ProtocolResponseType>::deserialize( auto_Obj
   if ( deserialize_ret < 0 )
   {
 #ifdef _DEBUG
-    if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-      get_log()->getStream( Log::LOG_INFO ) << "yield::Client: ProtocolResponse deserialize returned < 0, responding to ProtocolRequest with ExceptionResponse.";
+    if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+      this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: ProtocolResponse deserialize returned < 0, responding to ProtocolRequest with ExceptionResponse.";
 #endif
     protocol_response->get_protocol_request()->respond( *( new ExceptionResponse ) );
   }
@@ -249,8 +249,8 @@ bool Client<ProtocolRequestType, ProtocolResponseType>::read( auto_Object<Protoc
   else
   {
 #ifdef _DEBUG
-    if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-      get_log()->getStream( Log::LOG_INFO ) << "yield::Client: ProtocolResponse read returned false, responding to ProtocolRequest with ExceptionResponse.";
+    if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+      this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: ProtocolResponse read returned false, responding to ProtocolRequest with ExceptionResponse.";
 #endif
     protocol_response->get_protocol_request()->respond( *( new ExceptionResponse ) );
     return false;
@@ -266,8 +266,8 @@ bool Client<ProtocolRequestType, ProtocolResponseType>::write( auto_Object<Proto
   }
   else
   {
-    if ( ( get_flags() & PEER_FLAG_TRACE_OPERATIONS ) == PEER_FLAG_TRACE_OPERATIONS && get_log() != NULL )
-      get_log()->getStream( Log::LOG_INFO ) << "yield::Client: ProtocolResponse write returned false, responding to ProtocolRequest with ExceptionResponse.";
+    if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+      this->get_log()->getStream( Log::LOG_INFO ) << "yield::Client: ProtocolResponse write returned false, responding to ProtocolRequest with ExceptionResponse.";
     protocol_request->respond( *( new ExceptionResponse ) );
     return false;
   }
