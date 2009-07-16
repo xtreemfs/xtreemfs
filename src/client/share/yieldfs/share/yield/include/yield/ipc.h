@@ -1342,9 +1342,30 @@ namespace YIELD
     virtual void send( Event& ev ) 
     { 
       if ( InterfaceType::checkRequest( ev ) != NULL )
-        Client<ONCRPCRequest, ONCRPCResponse>::send( *( new ONCRPCRequest( this->incRef(), ev ) ) );
+      {
+        ONCRPCRequest* oncrpc_request = new ONCRPCRequest( this->incRef(), ev );
+#ifdef _DEBUG
+        if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+          this->get_log()->getStream( Log::LOG_INFO ) << "yield::ONCRPCClient: creating new ONCRPCRequest (pointer=" << reinterpret_cast<uint64_t>( oncrpc_request ) << ", xid=" << oncrpc_request->get_xid() << ") for interface request " << ev.get_type_name() << ".";
+#endif
+
+        Client<ONCRPCRequest, ONCRPCResponse>::send( *oncrpc_request );
+      }
       else
+      {
+#ifdef _DEBUG
+        if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
+        {
+          switch ( ev.get_tag() )
+          {
+            case YIELD_OBJECT_TAG( ONCRPCRequest ): this->get_log()->getStream( Log::LOG_INFO ) << "yield::ONCRPCClient: send()'ing ONCRPCRequest/" << reinterpret_cast<uint64_t>( &ev ) << " (xid=" << static_cast<ONCRPCRequest&>( ev ).get_xid() << ")."; break;
+            case YIELD_OBJECT_TAG( ONCRPCResponse ): this->get_log()->getStream( Log::LOG_INFO ) << "yield::ONCRPCClient: send()'ing ONCRPCRequest/" << reinterpret_cast<uint64_t>( &ev ) << " (xid=" << static_cast<ONCRPCResponse&>( ev ).get_xid() << ")."; break;
+          }
+        }
+#endif
+
         Client<ONCRPCRequest, ONCRPCResponse>::send( ev );
+      }
     }
 
     // EventHandler
