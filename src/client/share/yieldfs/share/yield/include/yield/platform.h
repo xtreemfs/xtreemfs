@@ -1764,11 +1764,14 @@ namespace YIELD
           continue;
 
         // diff next line
-        if ( atomic_cas( reinterpret_cast<volatile uint_ptr*>( &elements[last_try_pos] ), 
-                         try_element == reinterpret_cast<ElementType>( 1 ) ? 
-                           ( reinterpret_cast<uint_ptr>( element ) | PTR_HIGH_BIT ) : 
-                           reinterpret_cast<uint_ptr>( element ),
-                         reinterpret_cast<uint_ptr>( try_element ) == reinterpret_cast<uint_ptr>( try_element ) ) )
+        if ( 
+             atomic_cas( 
+                         reinterpret_cast<volatile uint_ptr*>( &elements[last_try_pos] ), 
+                         try_element == reinterpret_cast<ElementType>( 1 ) ? ( reinterpret_cast<uint_ptr>( element ) | PTR_HIGH_BIT ) : reinterpret_cast<uint_ptr>( element ),
+                         reinterpret_cast<uint_ptr>( try_element )
+                       ) 
+             == reinterpret_cast<uint_ptr>( try_element ) 
+           )
         {
           if ( try_pos % 2 == 0 )
             atomic_cas( &tail, try_pos, copied_tail );
@@ -1820,9 +1823,14 @@ namespace YIELD
         if ( copied_head != head )
           continue;
 
-        if ( atomic_cas( reinterpret_cast<volatile uint_ptr*>( &elements[try_pos] ), 
+        if ( 
+             atomic_cas( 
+                         reinterpret_cast<volatile uint_ptr*>( &elements[try_pos] ), 
                          ( reinterpret_cast<uint_ptr>( try_element ) & PTR_HIGH_BIT ) ? 1 : 0, 
-                         reinterpret_cast<uint_ptr>( try_element ) == reinterpret_cast<uint_ptr>( try_element ) ) )
+                         reinterpret_cast<uint_ptr>( try_element )
+                       ) 
+             == reinterpret_cast<uint_ptr>( try_element ) 
+           )
         {
           if ( try_pos % 2 == 0 )
             atomic_cas( &head, try_pos, copied_head );
