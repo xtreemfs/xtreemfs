@@ -1346,7 +1346,7 @@ namespace YIELD
         ONCRPCRequest* oncrpc_request = new ONCRPCRequest( this->incRef(), ev );
 #ifdef _DEBUG
         if ( ( this->get_flags() & this->PEER_FLAG_TRACE_OPERATIONS ) == this->PEER_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
-          this->get_log()->getStream( Log::LOG_INFO ) << "yield::ONCRPCClient: creating new ONCRPCRequest (pointer=" << reinterpret_cast<uint64_t>( oncrpc_request ) << ", xid=" << oncrpc_request->get_xid() << ") for interface request " << ev.get_type_name() << ".";
+          this->get_log()->getStream( Log::LOG_INFO ) << "yield::ONCRPCClient: creating new ONCRPCRequest/" << reinterpret_cast<uint64_t>( oncrpc_request ) << " (xid=" << oncrpc_request->get_xid() << ") for interface request " << ev.get_type_name() << ".";
 #endif
 
         Client<ONCRPCRequest, ONCRPCResponse>::send( *oncrpc_request );

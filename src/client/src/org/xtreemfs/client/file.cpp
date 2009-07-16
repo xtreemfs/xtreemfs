@@ -367,6 +367,19 @@ ssize_t File::write( const void* buffer, size_t size, uint64_t offset )
       org::xtreemfs::interfaces::ObjectData object_data( 0, false, 0, new FileWriteBuffer( wbuf_p, static_cast<uint32_t>( object_size ) ) );
       org::xtreemfs::interfaces::OSDInterface::writeRequest* write_request = new org::xtreemfs::interfaces::OSDInterface::writeRequest( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, 0, object_data );
 
+#ifdef _DEBUG
+      if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+      {
+        log->getStream( YIELD::Log::LOG_INFO ) << 
+          "org::xtreemfs::client::File: issuing write of " << object_size << 
+          " bytes to object number " << object_number <<
+          " in file " << file_credentials.get_xcap().get_file_id() <<
+          "(object offset = " << object_offset <<
+          ", file offset = " << file_offset  <<
+          ").";
+      }
+#endif
+
       write_request->set_response_target( write_response_queue->incRef() );
       parent_volume->get_osd_proxy_mux()->send( *write_request );
       expected_write_response_count++;
@@ -378,13 +391,34 @@ ssize_t File::write( const void* buffer, size_t size, uint64_t offset )
     for ( size_t write_response_i = 0; write_response_i < expected_write_response_count; write_response_i++ )
     {
       org::xtreemfs::interfaces::OSDInterface::writeResponse& write_response = write_response_queue->dequeue_typed<org::xtreemfs::interfaces::OSDInterface::writeResponse>();
+
+#ifdef _DEBUG
+      if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+        log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File: write received response # " << write_response_i << " of " << expected_write_response_count << ".";
+#endif
+
       if ( write_response.get_osd_write_response() > latest_osd_write_response )
+      {
+#ifdef _DEBUG
+        if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+          log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File: OSD write response is newer than latest known.";
+#endif
+
         latest_osd_write_response = write_response.get_osd_write_response();
+      }
+
       YIELD::Object::decRef( write_response );
     }
 
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
+    {
+#ifdef _DEBUG
+      if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+        log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File: flushing file size updates.";
+#endif
+
       flush();
+    }
 
     return static_cast<ssize_t>( file_offset - offset );
   }
