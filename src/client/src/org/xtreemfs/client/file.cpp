@@ -394,6 +394,8 @@ ssize_t File::write( const void* buffer, size_t size, uint64_t offset )
       file_offset += object_size;
     }
 
+    std::vector<org::xtreemfs::interfaces::OSDInterface::writeResponse*> write_responses;
+
     for ( size_t write_response_i = 0; write_response_i < expected_write_response_count; write_response_i++ )
     {
       org::xtreemfs::interfaces::OSDInterface::writeResponse& write_response = write_response_queue->dequeue_typed<org::xtreemfs::interfaces::OSDInterface::writeResponse>();
@@ -413,8 +415,12 @@ ssize_t File::write( const void* buffer, size_t size, uint64_t offset )
         latest_osd_write_response = write_response.get_osd_write_response();
       }
 
-      YIELD::Object::decRef( write_response );
+      // YIELD::Object::decRef( write_response );
+      write_responses.push_back( &write_response );
     }
+
+    for ( std::vector<org::xtreemfs::interfaces::OSDInterface::writeResponse*>::iterator write_response_i = write_responses.begin(); write_response_i != write_responses.end(); write_response_i++ )
+      YIELD::Object::decRef( **write_response_i );    
 
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
     {
