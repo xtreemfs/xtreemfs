@@ -20,12 +20,13 @@ namespace org
         template <class StageGroupType>
         static YIELD::auto_Object<OSDProxyMux> create( YIELD::auto_Object<DIRProxy> dir_proxy,
                                                        YIELD::auto_Object<StageGroupType> stage_group,
+                                                        uint32_t flags = 0,
                                                        YIELD::auto_Log log = NULL,
                                                        uint8_t operation_retries_max = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_RETRIES_MAX_DEFAULT,
                                                        const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
                                                        YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL )
         {
-          YIELD::auto_Object<OSDProxyMux> osd_proxy_mux = new OSDProxyMux( dir_proxy, log, operation_timeout, operation_retries_max, ssl_context, stage_group );                                                                            
+          YIELD::auto_Object<OSDProxyMux> osd_proxy_mux = new OSDProxyMux( dir_proxy, flags, log, operation_timeout, operation_retries_max, ssl_context, stage_group );                                                                            
           stage_group->createStage( osd_proxy_mux->incRef() );
           return osd_proxy_mux;
         }
@@ -37,10 +38,11 @@ namespace org
         void handleEvent( YIELD::Event& );
 
       private:
-        OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::auto_Log log, const YIELD::Time& operation_timeout, uint8_t operation_retries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::StageGroup> stage_group );
+        OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, uint8_t operation_retries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::StageGroup> stage_group );
         ~OSDProxyMux();
 
         YIELD::auto_Object<DIRProxy> dir_proxy;        
+        uint32_t flags;
         YIELD::auto_Log log;
         YIELD::Time operation_timeout;
         uint8_t operation_retries_max;

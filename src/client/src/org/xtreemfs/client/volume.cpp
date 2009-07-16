@@ -38,16 +38,16 @@ using namespace org::xtreemfs::client;
   } \
 
 
-Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Log log, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
+Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Log log, uint32_t proxy_flags, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
   : name( name ), flags( flags ), log( log )
 {
   YIELD::auto_Object<YIELD::StageGroup> stage_group = new YIELD::SEDAStageGroup;
-  dir_proxy = DIRProxy::create( dir_uri, stage_group, ( flags & VOLUME_FLAG_TRACE_SOCKET_IO ) == VOLUME_FLAG_TRACE_SOCKET_IO ? log : NULL, DIRProxy::OPERATION_RETRIES_MAX_DEFAULT, 10 * NS_IN_S, ssl_context );
+  dir_proxy = DIRProxy::create( dir_uri, stage_group, proxy_flags, log, DIRProxy::OPERATION_RETRIES_MAX_DEFAULT, 10 * NS_IN_S, ssl_context );
 
   YIELD::auto_Object<YIELD::URI> mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
-  mrc_proxy = MRCProxy::create( *mrc_uri, stage_group, ( flags & VOLUME_FLAG_TRACE_SOCKET_IO ) == VOLUME_FLAG_TRACE_SOCKET_IO ? log : NULL, MRCProxy::OPERATION_RETRIES_MAX_DEFAULT, 10 * NS_IN_S, ssl_context );
+  mrc_proxy = MRCProxy::create( *mrc_uri, stage_group, proxy_flags, log, MRCProxy::OPERATION_RETRIES_MAX_DEFAULT, 10 * NS_IN_S, ssl_context );
 
-  osd_proxy_mux = OSDProxyMux::create( dir_proxy, stage_group, ( flags & VOLUME_FLAG_TRACE_SOCKET_IO ) == VOLUME_FLAG_TRACE_SOCKET_IO ? log : NULL, OSDProxy::OPERATION_RETRIES_MAX_DEFAULT, 10 * NS_IN_S, ssl_context );
+  osd_proxy_mux = OSDProxyMux::create( dir_proxy, stage_group, proxy_flags, log, OSDProxy::OPERATION_RETRIES_MAX_DEFAULT, 10 * NS_IN_S, ssl_context );
 }
 
 bool Volume::access( const YIELD::Path& path, int amode )

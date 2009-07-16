@@ -74,7 +74,9 @@ namespace org
           OPTION_PEM_PRIVATE_KEY_FILE_PATH = 6,
           OPTION_PEM_PRIVATE_KEY_PASSPHRASE = 7,
           OPTION_TIMEOUT_MS = 8,
-          OPTION_TRACE_SOCKET_IO = 9
+          OPTION_TRACE_AUTH = 9,
+          OPTION_TRACE_NETWORK_IO = 10,
+          OPTION_TRACE_NETWORK_OPERATIONS = 11
         };
 
 
@@ -92,8 +94,14 @@ namespace org
           addOption( OPTION_TIMEOUT_MS, "-t", "--timeout-ms", "n" );
           operation_timeout = static_cast<uint64_t>( 5 * NS_IN_S );
 
-          addOption( OPTION_TRACE_SOCKET_IO, "--trace-socket-io" );
-          trace_socket_io = false;
+          addOption( OPTION_TRACE_AUTH, "--trace-auth" );
+          trace_auth = false;
+
+          addOption( OPTION_TRACE_NETWORK_IO, "--trace-network-io" );
+          trace_network_io = false;
+
+          addOption( OPTION_TRACE_NETWORK_OPERATIONS, "--trace-network-operations" );
+          trace_network_operations = false;
         }
 
         virtual ~Main()
@@ -133,10 +141,19 @@ namespace org
           return ssl_context;
         }
 
-        bool get_trace_socket_io() const
+        uint32_t get_proxy_flags() const 
         {
-          return trace_socket_io;
-        }
+          uint32_t proxy_flags = 0;
+
+          if ( trace_auth )
+            proxy_flags |= DIRProxy::PROXY_FLAG_TRACE_AUTH;
+          if ( trace_network_io )
+            proxy_flags |= DIRProxy::PROXY_FLAG_TRACE_IO;
+          if ( trace_network_operations )
+            proxy_flags |= DIRProxy::PROXY_FLAG_TRACE_OPERATIONS;
+
+          return proxy_flags;
+        }       
 
         YIELD::auto_Object<YIELD::URI> parseURI( const char* uri_c_str )
         {
@@ -183,7 +200,9 @@ namespace org
             }
             break;
 
-            case OPTION_TRACE_SOCKET_IO: trace_socket_io = true; break;
+            case OPTION_TRACE_AUTH: trace_auth = true; break;
+            case OPTION_TRACE_NETWORK_IO: trace_network_io = true; break;
+            case OPTION_TRACE_NETWORK_OPERATIONS: trace_network_operations = true; break;
 
             default: YIELD::Main::parseOption( id, arg ); break;
           }
@@ -193,7 +212,7 @@ namespace org
         std::string pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase;
         std::string pkcs12_file_path, pkcs12_passphrase;
         YIELD::Time operation_timeout;
-        bool trace_socket_io;
+        bool trace_auth, trace_network_io, trace_network_operations;
 
         YIELD::auto_Log log;
         YIELD::auto_Object<YIELD::SSLContext> ssl_context;
@@ -210,7 +229,7 @@ namespace org
           if ( stage_group == NULL )
             stage_group = new YIELD::SEDAStageGroup;
 
-          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, stage_group, trace_socket_io ? get_log() : NULL, 3, operation_timeout, get_ssl_context() );
+          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, stage_group, get_proxy_flags(), get_log(), 3, operation_timeout, get_ssl_context() );
           if ( proxy != NULL )
             return proxy;
           else
