@@ -372,9 +372,10 @@ bool Volume::statvfs( const YIELD::Path&, struct statvfs* statvfsbuf )
       memset( statvfsbuf, 0, sizeof( *statvfsbuf ) );
       xtreemfs::interfaces::StatVFS xtreemfs_statvfsbuf;
       mrc_proxy->statvfs( this->name, xtreemfs_statvfsbuf );
-      statvfsbuf->f_bsize = xtreemfs_statvfsbuf.get_bsize();
-      statvfsbuf->f_bavail = statvfsbuf->f_bfree = xtreemfs_statvfsbuf.get_bfree();
-      statvfsbuf->f_blocks = xtreemfs_statvfsbuf.get_bfree();
+      statvfsbuf->f_bavail = xtreemfs_statvfsbuf.get_bavail();
+      statvfsbuf->f_bfree = xtreemfs_statvfsbuf.get_bavail();
+      statvfsbuf->f_blocks = xtreemfs_statvfsbuf.get_blocks();
+      statvfsbuf->f_bsize = xtreemfs_statvfsbuf.get_bsize();     
       statvfsbuf->f_namemax = xtreemfs_statvfsbuf.get_namelen();
       return true;
     }

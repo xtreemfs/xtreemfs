@@ -11,87 +11,87 @@ namespace org
   {
     namespace client
     {
-      class OSDPingResponse : public YIELD::Response
-      {
-      public:
-        OSDPingResponse( const org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates, const YIELD::Time& rtt, const std::string& target_osd_uuid )
-          : remote_coordinates( remote_coordinates ), rtt( rtt ), target_osd_uuid( target_osd_uuid )
-        { }
-  
-        const org::xtreemfs::interfaces::VivaldiCoordinates& get_remote_coordinates() const { return remote_coordinates; }
-        const YIELD::Time& get_rtt() const { return rtt; }
-        const std::string& get_target_osd_uuid() const { return target_osd_uuid; }
-
-        // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( OSDPingResponse, YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse ) );
-
-      private:
-        org::xtreemfs::interfaces::VivaldiCoordinates remote_coordinates;
-        YIELD::Time rtt;
-        std::string target_osd_uuid;
-      };
-
-
-      class OSDPingResponseTarget : public YIELD::EventTarget
-      {
-      public:
-        OSDPingResponseTarget( YIELD::auto_Object<OSDProxyMux> osd_proxy_mux, const std::string& target_osd_uuid )
-          : osd_proxy_mux( osd_proxy_mux ), target_osd_uuid( target_osd_uuid )
-        { }
-
-        // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( OSDPingResponseTarget, 0 );
-
-        // YIELD::EventTarget
-        void send( YIELD::Event& ev )       
-        {
-          switch ( ev.get_tag() )
-          {
-            case YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse ):
-            {
-              YIELD::Time rtt = YIELD::Time() - creation_time;
-              OSDPingResponse* response = new OSDPingResponse( static_cast<org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse&>( ev ).get_remote_coordinates(), rtt, target_osd_uuid );
-              YIELD::Object::decRef( ev );
-              osd_proxy_mux->send( *response );
-            }
-            break;
-
-            default: YIELD::Object::decRef( ev );
-          }
-        }
-
-      private:
-        YIELD::auto_Object<OSDProxyMux> osd_proxy_mux;
-        std::string target_osd_uuid;
-
-        YIELD::Time creation_time;
-      };
-
-
-      class OSDReadResponseTarget : public YIELD::EventTarget
-      {
-      public:
-        OSDReadResponseTarget( YIELD::auto_Object<org::xtreemfs::interfaces::OSDInterface::readRequest> read_request )
-          : original_response_target( read_request->get_response_target() ), read_request( read_request )
-        { }
-
-        // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( OSDReadResponseTarget, 1 );
-
-        // YIELD::EventTarget
-        void send( YIELD::Event& ev )
-        {
-          if ( ev.get_tag() == YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::readResponse ) )
-            static_cast<org::xtreemfs::interfaces::OSDInterface::readResponse&>( ev ).set_selected_file_replica( read_request->get_selected_file_replica() );
-          original_response_target->send( ev );
-        }
-
-      private:
-        YIELD::auto_EventTarget original_response_target;
-        YIELD::auto_Object<org::xtreemfs::interfaces::OSDInterface::readRequest> read_request;
-      };
-
-
+//      class OSDPingResponse : public YIELD::Response
+//      {
+//      public:
+//        OSDPingResponse( const org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates, const YIELD::Time& rtt, const std::string& target_osd_uuid )
+//          : remote_coordinates( remote_coordinates ), rtt( rtt ), target_osd_uuid( target_osd_uuid )
+//        { }
+//  
+//        const org::xtreemfs::interfaces::VivaldiCoordinates& get_remote_coordinates() const { return remote_coordinates; }
+//        const YIELD::Time& get_rtt() const { return rtt; }
+//        const std::string& get_target_osd_uuid() const { return target_osd_uuid; }
+//
+//        // YIELD::Object
+//        YIELD_OBJECT_PROTOTYPES( OSDPingResponse, YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse ) );
+//
+//      private:
+//        org::xtreemfs::interfaces::VivaldiCoordinates remote_coordinates;
+//        YIELD::Time rtt;
+//        std::string target_osd_uuid;
+//      };
+//
+//
+//      class OSDPingResponseTarget : public YIELD::EventTarget
+//      {
+//      public:
+//        OSDPingResponseTarget( YIELD::auto_Object<OSDProxyMux> osd_proxy_mux, const std::string& target_osd_uuid )
+//          : osd_proxy_mux( osd_proxy_mux ), target_osd_uuid( target_osd_uuid )
+//        { }
+//
+//        // YIELD::Object
+//        YIELD_OBJECT_PROTOTYPES( OSDPingResponseTarget, 0 );
+//
+//        // YIELD::EventTarget
+//        void send( YIELD::Event& ev )       
+//        {
+//          switch ( ev.get_tag() )
+//          {
+//            case YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse ):
+//            {
+//              YIELD::Time rtt = YIELD::Time() - creation_time;
+//              OSDPingResponse* response = new OSDPingResponse( static_cast<org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse&>( ev ).get_remote_coordinates(), rtt, target_osd_uuid );
+//              YIELD::Object::decRef( ev );
+//              osd_proxy_mux->send( *response );
+//            }
+//            break;
+//
+//            default: YIELD::Object::decRef( ev );
+//          }
+//        }
+//
+//      private:
+//        YIELD::auto_Object<OSDProxyMux> osd_proxy_mux;
+//        std::string target_osd_uuid;
+//
+//        YIELD::Time creation_time;
+//      };
+//
+//
+//      class OSDReadResponseTarget : public YIELD::EventTarget
+//      {
+//      public:
+//        OSDReadResponseTarget( YIELD::auto_Object<org::xtreemfs::interfaces::OSDInterface::readRequest> read_request )
+//          : original_response_target( read_request->get_response_target() ), read_request( read_request )
+//        { }
+//
+//        // YIELD::Object
+//        YIELD_OBJECT_PROTOTYPES( OSDReadResponseTarget, 1 );
+//
+//        // YIELD::EventTarget
+//        void send( YIELD::Event& ev )
+//        {
+//          if ( ev.get_tag() == YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::readResponse ) )
+//            static_cast<org::xtreemfs::interfaces::OSDInterface::readResponse&>( ev ).set_selected_file_replica( read_request->get_selected_file_replica() );
+//          original_response_target->send( ev );
+//        }
+//
+//      private:
+//        YIELD::auto_EventTarget original_response_target;
+//        YIELD::auto_Object<org::xtreemfs::interfaces::OSDInterface::readRequest> read_request;
+//      };
+//
+//
       class OSDTruncateResponseTarget : public YIELD::EventTarget
       {
       public:
@@ -151,30 +151,30 @@ namespace org
         std::vector<YIELD::Event*> responses;
         YIELD::Mutex responses_lock;
       };
-
-      
-      class OSDWriteResponseTarget : public YIELD::EventTarget
-      {
-      public:
-        OSDWriteResponseTarget( YIELD::auto_Object<org::xtreemfs::interfaces::OSDInterface::writeRequest> write_request )
-          : original_response_target( write_request->get_response_target() ), write_request( write_request )
-        { }
-
-        // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( OSDWriteResponseTarget, 1 );
-
-        // YIELD::EventTarget
-        void send( YIELD::Event& ev )
-        {
-          if ( ev.get_tag() == YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::writeResponse ) )
-            static_cast<org::xtreemfs::interfaces::OSDInterface::writeResponse&>( ev ).set_selected_file_replica( write_request->get_selected_file_replica() );
-          original_response_target->send( ev );
-        }
-
-      private:
-        YIELD::auto_EventTarget original_response_target;
-        YIELD::auto_Object<org::xtreemfs::interfaces::OSDInterface::writeRequest> write_request;
-      };
+//
+//      
+//      class OSDWriteResponseTarget : public YIELD::EventTarget
+//      {
+//      public:
+//        OSDWriteResponseTarget( YIELD::auto_Object<org::xtreemfs::interfaces::OSDInterface::writeRequest> write_request )
+//          : original_response_target( write_request->get_response_target() ), write_request( write_request )
+//        { }
+//
+//        // YIELD::Object
+//        YIELD_OBJECT_PROTOTYPES( OSDWriteResponseTarget, 1 );
+//
+//        // YIELD::EventTarget
+//        void send( YIELD::Event& ev )
+//        {
+//          if ( ev.get_tag() == YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::writeResponse ) )
+//            static_cast<org::xtreemfs::interfaces::OSDInterface::writeResponse&>( ev ).set_selected_file_replica( write_request->get_selected_file_replica() );
+//          original_response_target->send( ev );
+//        }
+//
+//      private:
+//        YIELD::auto_EventTarget original_response_target;
+//        YIELD::auto_Object<org::xtreemfs::interfaces::OSDInterface::writeRequest> write_request;
+//      };
     };
   };
 };
@@ -334,55 +334,53 @@ YIELD::auto_Object<OSDProxy> OSDProxyMux::getTCPOSDProxy( const std::string& osd
       throw YIELD::Exception( "no acceptable ONC-RPC URI for UUID" );
   }
 
-  if ( udp_osd_proxy != NULL )
-    pingOSD( udp_osd_proxy );
+  //if ( udp_osd_proxy != NULL )
+  //  pingOSD( udp_osd_proxy );
 
   return tcp_osd_proxy;
 }
 
-void OSDProxyMux::handleEvent( YIELD::Event& ev )
-{
-  switch ( ev.get_tag() )
-  {
-    case YIELD_OBJECT_TAG( OSDPingResponse ):
-    {
-      OSDPingResponse& ping_response = static_cast<OSDPingResponse&>( ev );
-
-      OSDProxyMap::iterator osd_proxies_i = osd_proxies.find( ping_response.get_target_osd_uuid() );
-      if ( osd_proxies_i != osd_proxies.end() )
-      {
-        OSDProxy* udp_osd_proxy = osd_proxies_i->second.second;
-        udp_osd_proxy->set_rtt( ping_response.get_rtt() );
-        udp_osd_proxy->set_vivaldi_coordinates( ping_response.get_remote_coordinates() );
-      }
-
-      YIELD::Object::decRef( ev );
-    }
-    break;
-
-/*
-    case YIELD_OBJECT_TAG( YIELD::FDEventQueue::TimerEvent ):
-    {
-      YIELD::auto_Object<OSDProxy> udp_osd_proxy = static_cast<OSDProxy*>( static_cast<YIELD::FDEventQueue::TimerEvent&>( ev ).get_context().release() );
-      pingOSD( udp_osd_proxy );
-      YIELD::Object::decRef( ev );
-    }
-    break;
-*/
-
-    default:
-    {
-      org::xtreemfs::interfaces::OSDInterface::handleEvent( ev );
-    }
-    break;
-  }
-}
+//void OSDProxyMux::handleEvent( YIELD::Event& ev )
+//{
+//  switch ( ev.get_tag() )
+//  {
+//    case YIELD_OBJECT_TAG( OSDPingResponse ):
+//    {
+//      OSDPingResponse& ping_response = static_cast<OSDPingResponse&>( ev );
+//
+//      OSDProxyMap::iterator osd_proxies_i = osd_proxies.find( ping_response.get_target_osd_uuid() );
+//      if ( osd_proxies_i != osd_proxies.end() )
+//      {
+//        OSDProxy* udp_osd_proxy = osd_proxies_i->second.second;
+//        udp_osd_proxy->set_rtt( ping_response.get_rtt() );
+//        udp_osd_proxy->set_vivaldi_coordinates( ping_response.get_remote_coordinates() );
+//      }
+//
+//      YIELD::Object::decRef( ev );
+//    }
+//    break;
+//
+//    case YIELD_OBJECT_TAG( YIELD::FDEventQueue::TimerEvent ):
+//    {
+//      YIELD::auto_Object<OSDProxy> udp_osd_proxy = static_cast<OSDProxy*>( static_cast<YIELD::FDEventQueue::TimerEvent&>( ev ).get_context().release() );
+//      pingOSD( udp_osd_proxy );
+//      YIELD::Object::decRef( ev );
+//    }
+//    break;
+//
+//    default:
+//    {
+//      org::xtreemfs::interfaces::OSDInterface::handleEvent( ev );
+//    }
+//    break;
+//  }
+//}
 
 void OSDProxyMux::handlereadRequest( readRequest& req )
 {
   YIELD::auto_Object<OSDProxy> tcp_osd_proxy( getTCPOSDProxy( req, req.get_file_credentials(), req.get_object_number() ) );
-  if ( req.get_response_target()->get_tag() != YIELD_OBJECT_TAG( OSDReadResponseTarget ) )
-    req.set_response_target( new OSDReadResponseTarget( req ) );
+  //if ( req.get_response_target()->get_tag() != YIELD_OBJECT_TAG( OSDReadResponseTarget ) )
+  //  req.set_response_target( new OSDReadResponseTarget( req ) );
   static_cast<YIELD::EventTarget*>( tcp_osd_proxy.get() )->send( req );
 }
 
@@ -415,31 +413,31 @@ void OSDProxyMux::handleunlinkRequest( unlinkRequest& req )
 void OSDProxyMux::handlewriteRequest( writeRequest& req )
 {
   YIELD::auto_Object<OSDProxy> tcp_osd_proxy( getTCPOSDProxy( req, req.get_file_credentials(), req.get_object_number() ) );
-  if ( req.get_response_target()->get_tag() != YIELD_OBJECT_TAG( OSDWriteResponseTarget ) )
-    req.set_response_target( new OSDWriteResponseTarget( req ) );
+  //if ( req.get_response_target()->get_tag() != YIELD_OBJECT_TAG( OSDWriteResponseTarget ) )
+  //  req.set_response_target( new OSDWriteResponseTarget( req ) );
   static_cast<YIELD::EventTarget*>( tcp_osd_proxy.get() )->send( req );
 }
 
-void OSDProxyMux::pingOSD( YIELD::auto_Object<OSDProxy> udp_osd_proxy )
-{
-  if ( get_osd_ping_interval_s )
-  {
-    int osd_ping_interval_s = get_osd_ping_interval_s( udp_osd_proxy->get_uuid().c_str() );
-    YIELD::Time osd_ping_interval( osd_ping_interval_s * NS_IN_S );
-    udp_osd_proxy->set_ping_interval( osd_ping_interval );
-//    if ( osd_ping_interval_s != 0 )
-//      fd_event_queue->timer_create( osd_ping_interval, udp_osd_proxy.release() );
-//    else
-      return;
-  }
-  else
-  {
-    udp_osd_proxy->set_ping_interval( YIELD::Time( static_cast<uint64_t>( 0 ) ) );
-    // return; 
-  }
-
-  org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingRequest* ping_request = new org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingRequest;
-  ping_request->set_response_target( new OSDPingResponseTarget( this->incRef(), udp_osd_proxy->get_uuid() ) );
-
-  static_cast<YIELD::EventTarget*>( udp_osd_proxy.get() )->send( *ping_request );
-}
+//void OSDProxyMux::pingOSD( YIELD::auto_Object<OSDProxy> udp_osd_proxy )
+//{
+//  if ( get_osd_ping_interval_s )
+//  {
+//    int osd_ping_interval_s = get_osd_ping_interval_s( udp_osd_proxy->get_uuid().c_str() );
+//    YIELD::Time osd_ping_interval( osd_ping_interval_s * NS_IN_S );
+//    udp_osd_proxy->set_ping_interval( osd_ping_interval );
+////    if ( osd_ping_interval_s != 0 )
+////      fd_event_queue->timer_create( osd_ping_interval, udp_osd_proxy.release() );
+////    else
+//      return;
+//  }
+//  else
+//  {
+//    udp_osd_proxy->set_ping_interval( YIELD::Time( static_cast<uint64_t>( 0 ) ) );
+//    // return; 
+//  }
+//
+//  org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingRequest* ping_request = new org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingRequest;
+//  ping_request->set_response_target( new OSDPingResponseTarget( this->incRef(), udp_osd_proxy->get_uuid() ) );
+//
+//  static_cast<YIELD::EventTarget*>( udp_osd_proxy.get() )->send( *ping_request );
+//}

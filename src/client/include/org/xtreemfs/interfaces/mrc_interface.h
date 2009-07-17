@@ -136,33 +136,36 @@ namespace org
       class StatVFS : public ::YIELD::Struct
       {
       public:
-        StatVFS() : bsize( 0 ), bfree( 0 ), namelen( 0 ) { }
-        StatVFS( uint32_t bsize, uint64_t bfree, const std::string& fsid, uint32_t namelen ) : bsize( bsize ), bfree( bfree ), fsid( fsid ), namelen( namelen ) { }
-        StatVFS( uint32_t bsize, uint64_t bfree, const char* fsid, size_t fsid_len, uint32_t namelen ) : bsize( bsize ), bfree( bfree ), fsid( fsid, fsid_len ), namelen( namelen ) { }
+        StatVFS() : bsize( 0 ), bavail( 0 ), blocks( 0 ), namelen( 0 ) { }
+        StatVFS( uint32_t bsize, uint64_t bavail, uint64_t blocks, const std::string& fsid, uint32_t namelen ) : bsize( bsize ), bavail( bavail ), blocks( blocks ), fsid( fsid ), namelen( namelen ) { }
+        StatVFS( uint32_t bsize, uint64_t bavail, uint64_t blocks, const char* fsid, size_t fsid_len, uint32_t namelen ) : bsize( bsize ), bavail( bavail ), blocks( blocks ), fsid( fsid, fsid_len ), namelen( namelen ) { }
         virtual ~StatVFS() { }
 
         void set_bsize( uint32_t bsize ) { this->bsize = bsize; }
         uint32_t get_bsize() const { return bsize; }
-        void set_bfree( uint64_t bfree ) { this->bfree = bfree; }
-        uint64_t get_bfree() const { return bfree; }
+        void set_bavail( uint64_t bavail ) { this->bavail = bavail; }
+        uint64_t get_bavail() const { return bavail; }
+        void set_blocks( uint64_t blocks ) { this->blocks = blocks; }
+        uint64_t get_blocks() const { return blocks; }
         void set_fsid( const std::string& fsid ) { set_fsid( fsid.c_str(), fsid.size() ); }
         void set_fsid( const char* fsid, size_t fsid_len ) { this->fsid.assign( fsid, fsid_len ); }
         const std::string& get_fsid() const { return fsid; }
         void set_namelen( uint32_t namelen ) { this->namelen = namelen; }
         uint32_t get_namelen() const { return namelen; }
 
-        bool operator==( const StatVFS& other ) const { return bsize == other.bsize && bfree == other.bfree && fsid == other.fsid && namelen == other.namelen; }
+        bool operator==( const StatVFS& other ) const { return bsize == other.bsize && bavail == other.bavail && blocks == other.blocks && fsid == other.fsid && namelen == other.namelen; }
 
         // YIELD::Object
         YIELD_OBJECT_PROTOTYPES( StatVFS, 1043 );
 
         // YIELD::Struct
-        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeUint32( "bsize", 0, bsize ); marshaller.writeUint64( "bfree", 0, bfree ); marshaller.writeString( "fsid", 0, fsid ); marshaller.writeUint32( "namelen", 0, namelen ); }
-        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { bsize = unmarshaller.readUint32( "bsize", 0 ); bfree = unmarshaller.readUint64( "bfree", 0 ); unmarshaller.readString( "fsid", 0, fsid ); namelen = unmarshaller.readUint32( "namelen", 0 ); }
+        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeUint32( "bsize", 0, bsize ); marshaller.writeUint64( "bavail", 0, bavail ); marshaller.writeUint64( "blocks", 0, blocks ); marshaller.writeString( "fsid", 0, fsid ); marshaller.writeUint32( "namelen", 0, namelen ); }
+        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { bsize = unmarshaller.readUint32( "bsize", 0 ); bavail = unmarshaller.readUint64( "bavail", 0 ); blocks = unmarshaller.readUint64( "blocks", 0 ); unmarshaller.readString( "fsid", 0, fsid ); namelen = unmarshaller.readUint32( "namelen", 0 ); }
 
       protected:
         uint32_t bsize;
-        uint64_t bfree;
+        uint64_t bavail;
+        uint64_t blocks;
         std::string fsid;
         uint32_t namelen;
       };
