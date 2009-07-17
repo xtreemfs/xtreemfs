@@ -2,7 +2,6 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "org/xtreemfs/client/osd_proxy_mux.h"
-#include "multi_response_target.h"
 using namespace org::xtreemfs::client;
 
 
@@ -67,13 +66,122 @@ namespace org
 
         YIELD::Time creation_time;
       };
+
+
+      class OSDReadResponseTarget : public YIELD::EventTarget
+      {
+      public:
+        OSDReadResponseTarget( YIELD::auto_Object<org::xtreemfs::interfaces::OSDInterface::readRequest> read_request )
+          : original_response_target( read_request->get_response_target() ), read_request( read_request )
+        { }
+
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( OSDReadResponseTarget, 1 );
+
+        // YIELD::EventTarget
+        void send( YIELD::Event& ev )
+        {
+          if ( ev.get_tag() == YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::readResponse ) )
+            static_cast<org::xtreemfs::interfaces::OSDInterface::readResponse&>( ev ).set_selected_file_replica( read_request->get_selected_file_replica() );
+          original_response_target->send( ev );
+        }
+
+      private:
+        YIELD::auto_EventTarget original_response_target;
+        YIELD::auto_Object<org::xtreemfs::interfaces::OSDInterface::readRequest> read_request;
+      };
+
+
+      class OSDTruncateResponseTarget : public YIELD::EventTarget
+      {
+      public:
+        OSDTruncateResponseTarget( size_t expected_response_count, YIELD::auto_EventTarget final_response_target )
+          : expected_response_count( expected_response_count ), final_response_target( final_response_target )
+        { }
+
+        virtual ~OSDTruncateResponseTarget()
+        {
+          for ( std::vector<YIELD::Event*>::iterator response_i = responses.begin(); response_i != responses.end(); response_i++ )
+            YIELD::Object::decRef( **response_i );
+        }
+
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( OSDTruncateResponseTarget, 0 );
+
+        // YIELD::EventTarget
+        void send( YIELD::Event& ev )
+        {
+          responses_lock.acquire();
+
+          responses.push_back( &ev );
+
+          if ( responses.size() == expected_response_count )
+          {
+            for ( std::vector<YIELD::Event*>::iterator response_i = responses.begin(); response_i != responses.end(); response_i++ )
+            {
+              if ( ( *response_i )->get_tag() == YIELD_OBJECT_TAG( YIELD::ExceptionResponse ) )
+              {
+                respond( static_cast<YIELD::ExceptionResponse*>( *response_i )->incRef(), final_response_target );
+                responses_lock.release();
+                return;
+              }
+            }
+
+            respond( responses, final_response_target );
+          }
+
+          responses_lock.release();
+        }
+
+      protected:
+        virtual void respond( YIELD::auto_Object<YIELD::ExceptionResponse> exception_response, YIELD::auto_EventTarget final_response_target )
+        {
+          final_response_target->send( *exception_response.release() );
+        }
+
+        virtual void respond( std::vector<YIELD::Event*>& responses, YIELD::auto_EventTarget final_response_target )
+        {
+          final_response_target->send( responses[responses.size() - 1]->incRef() );
+        }
+
+      private:
+        size_t expected_response_count;
+        YIELD::auto_EventTarget final_response_target;
+
+        std::vector<YIELD::Event*> responses;
+        YIELD::Mutex responses_lock;
+      };
+
+      
+      class OSDWriteResponseTarget : public YIELD::EventTarget
+      {
+      public:
+        OSDWriteResponseTarget( YIELD::auto_Object<org::xtreemfs::interfaces::OSDInterface::writeRequest> write_request )
+          : original_response_target( write_request->get_response_target() ), write_request( write_request )
+        { }
+
+        // YIELD::Object
+        YIELD_OBJECT_PROTOTYPES( OSDWriteResponseTarget, 1 );
+
+        // YIELD::EventTarget
+        void send( YIELD::Event& ev )
+        {
+          if ( ev.get_tag() == YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::writeResponse ) )
+            static_cast<org::xtreemfs::interfaces::OSDInterface::writeResponse&>( ev ).set_selected_file_replica( write_request->get_selected_file_replica() );
+          original_response_target->send( ev );
+        }
+
+      private:
+        YIELD::auto_EventTarget original_response_target;
+        YIELD::auto_Object<org::xtreemfs::interfaces::OSDInterface::writeRequest> write_request;
+      };
     };
   };
 };
 
 
-OSDProxyMux::OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, uint8_t operation_retries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::StageGroup> stage_group )
-  : dir_proxy( dir_proxy ), flags( flags ), log( log ), operation_timeout( operation_timeout ), operation_retries_max( operation_retries_max ), ssl_context( ssl_context ), stage_group( stage_group )
+OSDProxyMux::OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SSLContext ssl_context, YIELD::auto_Object<YIELD::StageGroup> stage_group )
+  : dir_proxy( dir_proxy ), flags( flags ), log( log ), operation_timeout( operation_timeout ), ssl_context( ssl_context ), stage_group( stage_group )
 {
   get_osd_ping_interval_s = NULL;
   select_file_replica = NULL;
@@ -114,53 +222,68 @@ OSDProxyMux::~OSDProxyMux()
   }
 }
 
-YIELD::auto_Object<OSDProxy> OSDProxyMux::getTCPOSDProxy( const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t object_number )
+YIELD::auto_Object<OSDProxy> OSDProxyMux::getTCPOSDProxy( OSDProxyRequest& osd_proxy_request, const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t object_number )
 {
   const org::xtreemfs::interfaces::ReplicaSet& file_replicas = file_credentials.get_xlocs().get_replicas();
   const org::xtreemfs::interfaces::Replica* selected_file_replica = NULL;
-  if ( file_replicas.size() == 1 || select_file_replica == NULL )
-    selected_file_replica = &file_replicas[0];
+
+  if ( osd_proxy_request.get_selected_file_replica() != SIZE_MAX )
+    selected_file_replica = &file_replicas[osd_proxy_request.get_selected_file_replica()];
   else
   {
-    struct file_replica_t* c_file_replicas = new file_replica_t[file_replicas.size()];
-    for ( org::xtreemfs::interfaces::ReplicaSet::size_type file_replica_i = 0; file_replica_i < file_replicas.size(); file_replica_i++ )
+    if ( file_replicas.size() == 1 || select_file_replica == NULL )
     {
-      const org::xtreemfs::interfaces::Replica& file_replica = file_replicas[file_replica_i];
-      const org::xtreemfs::interfaces::StringSet& osd_uuids = file_replica.get_osd_uuids();
-      struct file_replica_t& c_file_replica = c_file_replicas[file_replica_i];
-      c_file_replica.striping_policy_type = file_replica.get_striping_policy().get_type();
-      c_file_replica.osds = new osd_t[osd_uuids.size()];
-      c_file_replica.osds_len = osd_uuids.size();
-      for ( org::xtreemfs::interfaces::StringSet::size_type osd_i = 0; osd_i < osd_uuids.size(); osd_i++ )
+      selected_file_replica = &file_replicas[0];
+      osd_proxy_request.set_selected_file_replica( 0 );
+    }
+    else
+    {
+      struct file_replica_t* c_file_replicas = new file_replica_t[file_replicas.size()];
+      for ( org::xtreemfs::interfaces::ReplicaSet::size_type file_replica_i = 0; file_replica_i < file_replicas.size(); file_replica_i++ )
       {
-        struct osd_t& c_osd = c_file_replica.osds[osd_i];
-        memset( &c_osd, 0, sizeof( c_osd ) );
-        c_osd.uuid = osd_uuids[osd_i].c_str();
-        OSDProxyMap::iterator osd_proxies_i = osd_proxies.find( osd_uuids[osd_i] );
-        if ( osd_proxies_i != osd_proxies.end() )
+        const org::xtreemfs::interfaces::Replica& file_replica = file_replicas[file_replica_i];
+        const org::xtreemfs::interfaces::StringSet& osd_uuids = file_replica.get_osd_uuids();
+        struct file_replica_t& c_file_replica = c_file_replicas[file_replica_i];
+        c_file_replica.striping_policy_type = file_replica.get_striping_policy().get_type();
+        c_file_replica.osds = new osd_t[osd_uuids.size()];
+        c_file_replica.osds_len = osd_uuids.size();
+        for ( org::xtreemfs::interfaces::StringSet::size_type osd_i = 0; osd_i < osd_uuids.size(); osd_i++ )
         {
-          OSDProxy* udp_osd_proxy = osd_proxies_i->second.second;
-          if ( udp_osd_proxy != NULL )
+          struct osd_t& c_osd = c_file_replica.osds[osd_i];
+          memset( &c_osd, 0, sizeof( c_osd ) );
+          c_osd.uuid = osd_uuids[osd_i].c_str();
+          OSDProxyMap::iterator osd_proxies_i = osd_proxies.find( osd_uuids[osd_i] );
+          if ( osd_proxies_i != osd_proxies.end() )
           {
-            c_osd.rtt_ms = static_cast<int>( udp_osd_proxy->get_rtt().as_unix_time_ms() );
-            c_osd.x_coordinate = udp_osd_proxy->get_vivaldi_coordinates().get_x_coordinate();
-            c_osd.y_coordinate = udp_osd_proxy->get_vivaldi_coordinates().get_y_coordinate();
-            c_osd.local_error = udp_osd_proxy->get_vivaldi_coordinates().get_local_error();
+            OSDProxy* udp_osd_proxy = osd_proxies_i->second.second;
+            if ( udp_osd_proxy != NULL )
+            {
+              c_osd.rtt_ms = static_cast<int>( udp_osd_proxy->get_rtt().as_unix_time_ms() );
+              c_osd.x_coordinate = udp_osd_proxy->get_vivaldi_coordinates().get_x_coordinate();
+              c_osd.y_coordinate = udp_osd_proxy->get_vivaldi_coordinates().get_y_coordinate();
+              c_osd.local_error = udp_osd_proxy->get_vivaldi_coordinates().get_local_error();
+            }
           }
         }
       }
+
+      int selected_file_replica_i = select_file_replica( file_credentials.get_xcap().get_file_id().c_str(), file_credentials.get_xcap().get_access_mode(), c_file_replicas, file_replicas.size() );
+      if ( selected_file_replica_i >= 0 )
+      {
+        selected_file_replica = &file_replicas[selected_file_replica_i];
+        osd_proxy_request.set_selected_file_replica( selected_file_replica_i );
+      }
+      else
+      {
+        selected_file_replica = &file_replicas[0];
+        osd_proxy_request.set_selected_file_replica( 0 );
+      }
+
+      for ( org::xtreemfs::interfaces::ReplicaSet::size_type file_replica_i = 0; file_replica_i < file_replicas.size(); file_replica_i++ )
+        delete [] c_file_replicas[file_replica_i].osds;
+      delete [] c_file_replicas;
     }
-
-    int selected_file_replica_i = select_file_replica( file_credentials.get_xcap().get_file_id().c_str(), file_credentials.get_xcap().get_access_mode(), c_file_replicas, file_replicas.size() );
-    if ( selected_file_replica_i >= 0 )
-      selected_file_replica = &file_replicas[selected_file_replica_i];
-    else
-      selected_file_replica = &file_replicas[0];
-
-    for ( org::xtreemfs::interfaces::ReplicaSet::size_type file_replica_i = 0; file_replica_i < file_replicas.size(); file_replica_i++ )
-      delete [] c_file_replicas[file_replica_i].osds;
-    delete [] c_file_replicas;
-  }
+  }    
 
   const org::xtreemfs::interfaces::StripingPolicy& striping_policy = selected_file_replica->get_striping_policy();
 
@@ -196,13 +319,13 @@ YIELD::auto_Object<OSDProxy> OSDProxyMux::getTCPOSDProxy( const std::string& osd
     {
 #ifdef YIELD_HAVE_OPENSSL
       if ( ssl_context != NULL && ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCS_SCHEME )
-        tcp_osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), stage_group, osd_uuid, flags, log, OSDProxy::OPERATION_RETRIES_MAX_DEFAULT, operation_timeout, OSDProxy::PING_INTERVAL_DEFAULT, ssl_context ).release();
+        tcp_osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), stage_group, osd_uuid, flags, log, operation_timeout, OSDProxy::PING_INTERVAL_DEFAULT, ssl_context ).release();
       else
 #endif
       if ( ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPC_SCHEME )
-        tcp_osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), stage_group, osd_uuid, flags, log, OSDProxy::OPERATION_RETRIES_MAX_DEFAULT, operation_timeout, OSDProxy::PING_INTERVAL_DEFAULT, ssl_context ).release();
+        tcp_osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), stage_group, osd_uuid, flags, log, operation_timeout, OSDProxy::PING_INTERVAL_DEFAULT, ssl_context ).release();
 //      else if ( ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
-//        udp_osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), stage_group, osd_uuid, flags, log, OSDProxy::OPERATION_RETRIES_MAX_DEFAULT, operation_timeout, OSDProxy::PING_INTERVAL_DEFAULT, ssl_context ).release();
+//        udp_osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), stage_group, osd_uuid, flags, log, operation_timeout, OSDProxy::PING_INTERVAL_DEFAULT, ssl_context ).release();
     }
 
     if ( tcp_osd_proxy != NULL )
@@ -231,7 +354,7 @@ void OSDProxyMux::handleEvent( YIELD::Event& ev )
         case YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::readRequest ):
         {
           org::xtreemfs::interfaces::OSDInterface::readRequest* read_request = static_cast<org::xtreemfs::interfaces::OSDInterface::readRequest*>( body.get() );
-          YIELD::auto_Object<OSDProxy> osd_proxy = getTCPOSDProxy( read_request->get_file_credentials(), read_request->get_object_number() );
+          YIELD::auto_Object<OSDProxy> osd_proxy = getTCPOSDProxy( *read_request, read_request->get_file_credentials(), read_request->get_object_number() );
           osd_proxy->send( ev );
         }
         return;
@@ -267,7 +390,6 @@ void OSDProxyMux::handleEvent( YIELD::Event& ev )
     break;
 */
 
-
     default:
     {
       org::xtreemfs::interfaces::OSDInterface::handleEvent( ev );
@@ -278,7 +400,10 @@ void OSDProxyMux::handleEvent( YIELD::Event& ev )
 
 void OSDProxyMux::handlereadRequest( readRequest& req )
 {
-  static_cast<YIELD::EventTarget*>( getTCPOSDProxy( req.get_file_credentials(), req.get_object_number() ).get() )->send( req );
+  YIELD::auto_Object<OSDProxy> tcp_osd_proxy( getTCPOSDProxy( req, req.get_file_credentials(), req.get_object_number() ) );
+  if ( req.get_response_target()->get_tag() != YIELD_OBJECT_TAG( OSDReadResponseTarget ) )
+    req.set_response_target( new OSDReadResponseTarget( req ) );
+  static_cast<YIELD::EventTarget*>( tcp_osd_proxy.get() )->send( req );
 }
 
 void OSDProxyMux::handletruncateRequest( truncateRequest& req )
@@ -286,7 +411,7 @@ void OSDProxyMux::handletruncateRequest( truncateRequest& req )
   const org::xtreemfs::interfaces::ReplicaSet& replicas = req.get_file_credentials().get_xlocs().get_replicas();
 
   if ( req.get_response_target() != NULL )
-    req.set_response_target( new MultiResponseTarget( replicas.size(),  req.get_response_target() ) );
+    req.set_response_target( new OSDTruncateResponseTarget( replicas.size(),  req.get_response_target() ) );
 
   for ( org::xtreemfs::interfaces::ReplicaSet::const_iterator replica_i = replicas.begin(); replica_i != replicas.end(); replica_i++ )
     static_cast<YIELD::EventTarget*>( getTCPOSDProxy( ( *replica_i ).get_osd_uuids()[0] ).get() )->send( req.incRef() );
@@ -299,7 +424,7 @@ void OSDProxyMux::handleunlinkRequest( unlinkRequest& req )
   const org::xtreemfs::interfaces::ReplicaSet& replicas = req.get_file_credentials().get_xlocs().get_replicas();
 
   if ( req.get_response_target() != NULL )
-    req.set_response_target( new MultiResponseTarget( replicas.size(), req.get_response_target() ) );
+    req.set_response_target( new OSDTruncateResponseTarget( replicas.size(), req.get_response_target() ) );
 
   for ( org::xtreemfs::interfaces::ReplicaSet::const_iterator replica_i = replicas.begin(); replica_i != replicas.end(); replica_i++ )
     static_cast<YIELD::EventTarget*>( getTCPOSDProxy( ( *replica_i ).get_osd_uuids()[0] ).get() )->send( req.incRef() );
@@ -309,7 +434,10 @@ void OSDProxyMux::handleunlinkRequest( unlinkRequest& req )
 
 void OSDProxyMux::handlewriteRequest( writeRequest& req )
 {
-  static_cast<YIELD::EventTarget*>( getTCPOSDProxy( req.get_file_credentials(), req.get_object_number() ).get() )->send( req );
+  YIELD::auto_Object<OSDProxy> tcp_osd_proxy( getTCPOSDProxy( req, req.get_file_credentials(), req.get_object_number() ) );
+  if ( req.get_response_target()->get_tag() != YIELD_OBJECT_TAG( OSDWriteResponseTarget ) )
+    req.set_response_target( new OSDWriteResponseTarget( req ) );
+  static_cast<YIELD::EventTarget*>( tcp_osd_proxy.get() )->send( req );
 }
 
 void OSDProxyMux::pingOSD( YIELD::auto_Object<OSDProxy> udp_osd_proxy )

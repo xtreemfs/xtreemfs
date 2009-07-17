@@ -5,6 +5,8 @@
 #define _ORG_XTREEMFS_CLIENT_OSD_PROXY_H_
 
 #include "org/xtreemfs/client/proxy.h"
+#include "org/xtreemfs/client/osd_proxy_request.h"
+#include "org/xtreemfs/client/osd_proxy_response.h"
 
 #ifdef _WIN32
 #pragma warning( push )
@@ -33,16 +35,9 @@ namespace org
                                                     const std::string& uuid,
                                                     uint32_t flags = 0,
                                                     YIELD::auto_Log log = NULL,
-                                                    uint8_t operation_retries_max = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_RETRIES_MAX_DEFAULT,
                                                     const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
                                                     const YIELD::Time& ping_interval = PING_INTERVAL_DEFAULT,
-                                                    YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL )
-        {
-          YIELD::auto_Object<OSDProxy> osd_proxy = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::create<OSDProxy>( absolute_uri, stage_group, flags, log, operation_timeout, operation_retries_max, ssl_context );
-          osd_proxy->set_ping_interval( ping_interval );
-          osd_proxy->set_uuid( uuid );
-          return osd_proxy;
-        }
+                                                    YIELD::auto_SSLContext ssl_context = NULL );
 
         const YIELD::Time& get_ping_interval() const { return ping_interval; }
         const YIELD::Time& get_rtt() const { return rtt; }
@@ -65,39 +60,19 @@ namespace org
       private:
         friend class YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>;
 
-        OSDProxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
-          : Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>( absolute_uri, flags, log, operation_retries_max, operation_timeout, peer_sockaddr, ssl_context )
+        OSDProxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SocketAddress peer_sockaddr, YIELD::auto_SSLContext ssl_context )
+          : Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>( absolute_uri, flags, log, operation_timeout, peer_sockaddr, ssl_context )
         { }
 
         ~OSDProxy() { }
-
         
         YIELD::Time ping_interval, rtt;
         std::string uuid;
         org::xtreemfs::interfaces::VivaldiCoordinates vivaldi_coordinates;
-
-
-        void set_uuid( const std::string& uuid ) { this->uuid = uuid; }
-
-        // YIELD::ONCRPCClient
-        YIELD::auto_Object<YIELD::ONCRPCRequest> createProtocolRequest( YIELD::auto_Object<YIELD::Request> body );
       };
 
 
-      static inline bool operator>( const org::xtreemfs::interfaces::OSDWriteResponse& left, const org::xtreemfs::interfaces::OSDWriteResponse& right )
-      {
-        if ( left.get_new_file_size().empty() )
-          return false;
-        else if ( right.get_new_file_size().empty() )
-          return true;
-        else if ( left.get_new_file_size()[0].get_truncate_epoch() > right.get_new_file_size()[0].get_truncate_epoch() )
-          return true;
-        else if ( left.get_new_file_size()[0].get_truncate_epoch() == right.get_new_file_size()[0].get_truncate_epoch() &&
-                  left.get_new_file_size()[0].get_size_in_bytes() > right.get_new_file_size()[0].get_size_in_bytes() )
-          return true;
-        else
-          return false;
-      }
+      bool operator>( const org::xtreemfs::interfaces::OSDWriteResponse& left, const org::xtreemfs::interfaces::OSDWriteResponse& right );
     };
   };
 };

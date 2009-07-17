@@ -20,13 +20,12 @@ namespace org
         template <class StageGroupType>
         static YIELD::auto_Object<OSDProxyMux> create( YIELD::auto_Object<DIRProxy> dir_proxy,
                                                        YIELD::auto_Object<StageGroupType> stage_group,
-                                                        uint32_t flags = 0,
+                                                       uint32_t flags = 0,
                                                        YIELD::auto_Log log = NULL,
-                                                       uint8_t operation_retries_max = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_RETRIES_MAX_DEFAULT,
                                                        const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
-                                                       YIELD::auto_Object<YIELD::SSLContext> ssl_context = NULL )
+                                                       YIELD::auto_SSLContext ssl_context = NULL )
         {
-          YIELD::auto_Object<OSDProxyMux> osd_proxy_mux = new OSDProxyMux( dir_proxy, flags, log, operation_timeout, operation_retries_max, ssl_context, stage_group );                                                                            
+          YIELD::auto_Object<OSDProxyMux> osd_proxy_mux = new OSDProxyMux( dir_proxy, flags, log, operation_timeout, ssl_context, stage_group );                                                                            
           stage_group->createStage( osd_proxy_mux->incRef() );
           return osd_proxy_mux;
         }
@@ -38,15 +37,14 @@ namespace org
         void handleEvent( YIELD::Event& );
 
       private:
-        OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, uint8_t operation_retries_max, YIELD::auto_Object<YIELD::SSLContext> ssl_context, YIELD::auto_Object<YIELD::StageGroup> stage_group );
+        OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SSLContext ssl_context, YIELD::auto_Object<YIELD::StageGroup> stage_group );
         ~OSDProxyMux();
 
         YIELD::auto_Object<DIRProxy> dir_proxy;        
         uint32_t flags;
         YIELD::auto_Log log;
         YIELD::Time operation_timeout;
-        uint8_t operation_retries_max;
-        YIELD::auto_Object<YIELD::SSLContext> ssl_context;
+        YIELD::auto_SSLContext ssl_context;
         YIELD::auto_Object<YIELD::StageGroup> stage_group;
 
         typedef std::map< std::string, std::pair<OSDProxy*, OSDProxy*> > OSDProxyMap;
@@ -58,7 +56,7 @@ namespace org
         std::vector<YIELD::SharedLibrary*> policy_shared_libraries;
 
 
-        YIELD::auto_Object<OSDProxy> getTCPOSDProxy( const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t object_number );
+        YIELD::auto_Object<OSDProxy> getTCPOSDProxy( OSDProxyRequest& osd_proxy_request, const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t object_number );
         YIELD::auto_Object<OSDProxy> getTCPOSDProxy( const std::string& osd_uuid );        
         void pingOSD( YIELD::auto_Object<OSDProxy> udp_osd_proxy );
 

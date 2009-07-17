@@ -5,7 +5,6 @@
 #include "org/xtreemfs/client/mrc_proxy.h"
 #include "org/xtreemfs/client/osd_proxy.h"
 #include "org/xtreemfs/client/volume.h"
-#include "multi_response_target.h"
 using namespace org::xtreemfs::client;
 
 #include <errno.h>
@@ -85,7 +84,9 @@ namespace org
 
 File::File( YIELD::auto_Object<Volume> parent_volume, YIELD::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
 : parent_volume( parent_volume ), mrc_proxy( mrc_proxy ), path( path ), file_credentials( file_credentials )
-{ }
+{
+  selected_file_replica = SIZE_MAX;
+}
 
 File::~File()
 {
@@ -194,6 +195,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 #endif
 
       org::xtreemfs::interfaces::OSDInterface::readRequest* read_request = new org::xtreemfs::interfaces::OSDInterface::readRequest( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ) );
+      read_request->set_selected_file_replica( selected_file_replica );
       FileReadONCRPCRequest* file_read_oncrpc_request = new FileReadONCRPCRequest( parent_volume->get_osd_proxy_mux()->incRef(), read_request, new FileReadBuffer( rbuf_p, object_size ) );
       file_read_oncrpc_request->set_response_target( read_response_queue->incRef() );
 
@@ -222,8 +224,10 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       {
         org::xtreemfs::interfaces::OSDInterface::readResponse& read_response = static_cast<org::xtreemfs::interfaces::OSDInterface::readResponse&>( *body );
         YIELD::auto_Buffer data( read_response.get_object_data().get_data() );
-        uint32_t zero_padding = read_response.get_object_data().get_zero_padding();
         rbuf_p = static_cast<char*>( static_cast<void*>( *data ) );
+        uint32_t zero_padding = read_response.get_object_data().get_zero_padding();
+        if ( read_response.get_selected_file_replica() != SIZE_MAX )
+          selected_file_replica = read_response.get_selected_file_replica();
 
 #ifdef _DEBUG
         if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
@@ -353,7 +357,6 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
     log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File::write( wbuf, size=" << size << ", offset=" << offset << " )";
 #endif
 
-
   try
   {
     const char *wbuf_p = static_cast<const char*>( wbuf ), *wbuf_end = static_cast<const char*>( wbuf ) + size;
@@ -372,6 +375,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
         object_size = stripe_size - object_offset;
       org::xtreemfs::interfaces::ObjectData object_data( 0, false, 0, new FileWriteBuffer( wbuf_p, static_cast<uint32_t>( object_size ) ) );
       org::xtreemfs::interfaces::OSDInterface::writeRequest* write_request = new org::xtreemfs::interfaces::OSDInterface::writeRequest( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, 0, object_data );
+      write_request->set_selected_file_replica( selected_file_replica );
 
 #ifdef _DEBUG
       if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
@@ -398,6 +402,8 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
     for ( size_t write_response_i = 0; write_response_i < expected_write_response_count; write_response_i++ )
     {
       org::xtreemfs::interfaces::OSDInterface::writeResponse& write_response = write_response_queue->dequeue_typed<org::xtreemfs::interfaces::OSDInterface::writeResponse>();
+      if ( write_response.get_selected_file_replica() != SIZE_MAX )
+        selected_file_replica = write_response.get_selected_file_replica();
 
 #ifdef _DEBUG
       if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )

@@ -16,8 +16,8 @@ using std::memset;
 #define ETIMEDOUT WSAETIMEDOUT
 #endif
 template <class ProtocolRequestType, class ProtocolResponseType>
-Client<ProtocolRequestType, ProtocolResponseType>::Client( const URI& absolute_uri, uint32_t flags, auto_Log log, uint8_t operation_retries_max, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
-  : Peer<ProtocolResponseType, ProtocolRequestType>( flags, log ), operation_retries_max( operation_retries_max ), operation_timeout( operation_timeout ), peername( peername ), ssl_context( ssl_context )
+Client<ProtocolRequestType, ProtocolResponseType>::Client( const URI& absolute_uri, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
+  : Peer<ProtocolResponseType, ProtocolRequestType>( flags, log ), operation_timeout( operation_timeout ), peername( peername ), ssl_context( ssl_context )
 {
   this->absolute_uri = new URI( absolute_uri );
 }
@@ -905,7 +905,6 @@ auto_HTTPClient HTTPClient::create( const URI& absolute_uri,
                                     auto_Object<StageGroup> stage_group,
                                     uint32_t flags,
                                     auto_Log log,
-                                    uint8_t operation_retries_max,
                                     const Time& operation_timeout,
                                     auto_SSLContext ssl_context )
 {
@@ -929,11 +928,11 @@ auto_HTTPClient HTTPClient::create( const URI& absolute_uri,
     http_request_writer_event_queue = new FDEventQueue;
     http_response_reader_event_queue = new FDEventQueue;
 #endif
-    auto_Object<HTTPClient> http_client = new HTTPClient( absolute_uri, flags, log, operation_retries_max, operation_timeout, peername, ssl_context );
+    auto_Object<HTTPClient> http_client = new HTTPClient( absolute_uri, flags, log, operation_timeout, peername, ssl_context );
     auto_Stage http_client_stage = stage_group->createStage( http_client->incRef(),  http_client_event_queue, 1 );
-    auto_Object<HTTPClient> http_request_writer = new HTTPClient( absolute_uri, flags, log, operation_retries_max, operation_timeout, peername, ssl_context );
+    auto_Object<HTTPClient> http_request_writer = new HTTPClient( absolute_uri, flags, log, operation_timeout, peername, ssl_context );
     auto_Stage http_request_writer_stage = stage_group->createStage( http_request_writer->incRef(), http_request_writer_event_queue, 1 );
-    auto_Object<HTTPClient> http_response_reader = new HTTPClient( absolute_uri, flags, log, operation_retries_max, operation_timeout, peername, ssl_context );
+    auto_Object<HTTPClient> http_response_reader = new HTTPClient( absolute_uri, flags, log, operation_timeout, peername, ssl_context );
     auto_Stage http_response_reader_stage = stage_group->createStage( http_response_reader->incRef(), http_response_reader_event_queue, 1 );
     http_client->set_http_request_writer_stage( http_request_writer_stage );
     http_request_writer->set_http_response_reader_stage( http_response_reader_stage );

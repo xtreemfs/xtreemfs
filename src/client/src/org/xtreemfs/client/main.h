@@ -124,7 +124,7 @@ namespace org
           return log;
         }
 
-        YIELD::auto_Object<YIELD::SSLContext> get_ssl_context()
+        YIELD::auto_SSLContext get_ssl_context()
         {
           if ( ssl_context == NULL )
           {
@@ -215,7 +215,7 @@ namespace org
         bool trace_auth, trace_network_io, trace_network_operations;
 
         YIELD::auto_Log log;
-        YIELD::auto_Object<YIELD::SSLContext> ssl_context;
+        YIELD::auto_SSLContext ssl_context;
         YIELD::auto_Object<YIELD::StageGroup> stage_group;
 
 

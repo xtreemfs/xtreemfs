@@ -24,8 +24,8 @@ using namespace org::xtreemfs::client;
 
 
 template <class ProxyType, class InterfaceType>
-Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context )
-  : YIELD::ONCRPCClient<InterfaceType>( absolute_uri, flags, log, operation_retries_max, operation_timeout, peer_sockaddr, ssl_context ), log( log )
+Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SocketAddress peer_sockaddr, YIELD::auto_SSLContext ssl_context )
+  : YIELD::ONCRPCClient<InterfaceType>( absolute_uri, flags, log, operation_timeout, peer_sockaddr, ssl_context ), log( log )
 {
 #ifndef _WIN32
   get_user_credentials_from_passwd = NULL;
@@ -368,7 +368,6 @@ bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
   return true;
 }
 #endif
-
 
 template class Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>;
 template class Proxy<MRCProxy, org::xtreemfs::interfaces::MRCInterface>;

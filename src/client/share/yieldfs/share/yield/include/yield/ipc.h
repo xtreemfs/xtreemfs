@@ -755,10 +755,9 @@ namespace YIELD
   {
   public:    
     const static uint64_t OPERATION_TIMEOUT_DEFAULT = 30 * NS_IN_S;
-    const static uint8_t OPERATION_RETRIES_MAX_DEFAULT = UINT8_MAX;    
 
   protected:
-    Client( const URI& absolute_uri, uint32_t flags, auto_Log log, uint8_t operation_retries_max, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context );
+    Client( const URI& absolute_uri, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context );
     virtual ~Client();
 
     auto_Stage get_protocol_request_writer_stage() const { return this->get_helper_peer_stage(); }
@@ -775,7 +774,6 @@ namespace YIELD
 
   private:
     auto_Object<URI> absolute_uri;
-    uint8_t operation_retries_max;
     Time operation_timeout;
     auto_SocketAddress peername;
     auto_SSLContext ssl_context;
@@ -1046,7 +1044,6 @@ namespace YIELD
                                            auto_Object<StageGroup> stage_group, 
                                            uint32_t flags = 0,
                                            auto_Log log = NULL, 
-                                           uint8_t operation_retries_max = OPERATION_RETRIES_MAX_DEFAULT,
                                            const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
                                            auto_SSLContext ssl_context = NULL );
 
@@ -1064,8 +1061,8 @@ namespace YIELD
     virtual void send( Event& ev ) { Client<HTTPRequest, HTTPResponse>::send( ev ); }
 
   private:
-    HTTPClient( const URI& absolute_uri, uint32_t flags, auto_Log log, uint8_t operation_retries_max, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
-      : Client<HTTPRequest, HTTPResponse>( absolute_uri, flags, log, operation_retries_max, operation_timeout, peername, ssl_context )
+    HTTPClient( const URI& absolute_uri, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
+      : Client<HTTPRequest, HTTPResponse>( absolute_uri, flags, log, operation_timeout, peername, ssl_context )
     { }
 
     virtual ~HTTPClient() { }
@@ -1324,13 +1321,12 @@ namespace YIELD
                                                  uint32_t flags = 0,
                                                  auto_Log log = NULL, 
                                                  const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
-                                                 uint8_t operation_retries_max = OPERATION_RETRIES_MAX_DEFAULT,
                                                  auto_SSLContext ssl_context = NULL )
     {
       auto_SocketAddress peername = SocketAddress::create( absolute_uri );
       if ( peername != NULL && peername->get_port() != 0 )
       {
-        auto_Object<ONCRPCClientType> oncrpc_client = new ONCRPCClientType( absolute_uri, flags, log, operation_retries_max, operation_timeout, peername, ssl_context );
+        auto_Object<ONCRPCClientType> oncrpc_client = new ONCRPCClientType( absolute_uri, flags, log, operation_timeout, peername, ssl_context );
         auto_Stage oncrpc_client_stage = stage_group->createStage( oncrpc_client->incRef(), new FDEventQueue, 1 );
         return oncrpc_client;
       }
@@ -1376,8 +1372,8 @@ namespace YIELD
     }
 
   protected:
-    ONCRPCClient( const URI& absolute_uri, uint32_t flags, auto_Log log, uint8_t operation_retries_max, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
-      : Client<ONCRPCRequest, ONCRPCResponse>( absolute_uri, flags, log, operation_retries_max, operation_timeout, peername, ssl_context )
+    ONCRPCClient( const URI& absolute_uri, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
+      : Client<ONCRPCRequest, ONCRPCResponse>( absolute_uri, flags, log, operation_timeout, peername, ssl_context )
     { }
 
     virtual ~ONCRPCClient() { }

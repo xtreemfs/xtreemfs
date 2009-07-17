@@ -182,6 +182,14 @@
     >
 </File>
 <File
+    RelativePath="..\..\..\..\include\org\xtreemfs\client\osd_proxy_request.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\include\org\xtreemfs\client\osd_proxy_response.h"
+    >
+</File>
+<File
     RelativePath="..\..\..\..\include\org\xtreemfs\client\path.h"
     >
 </File>
@@ -333,10 +341,6 @@
     >
 </File>
 <File
-    RelativePath="..\..\..\..\src\org\xtreemfs\client\multi_response_target.h"
-    >
-</File>
-<File
     RelativePath="..\..\..\..\src\org\xtreemfs\client\dir_proxy.cpp"
     >
 </File>
@@ -349,7 +353,7 @@
     >
 </File>
 <File
-    RelativePath="..\..\..\..\src\org\xtreemfs\client\multi_response_target.cpp"
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\osd_proxy.cpp"
     >
 </File>
 <File

@@ -24,12 +24,12 @@ namespace org
         const static uint32_t PROXY_FLAG_TRACE_IO = YIELD::Peer<YIELD::ONCRPCRequest, YIELD::ONCRPCResponse>::PEER_FLAG_TRACE_IO;
         const static uint32_t PROXY_FLAG_TRACE_OPERATIONS = YIELD::Peer<YIELD::ONCRPCRequest, YIELD::ONCRPCResponse>::PEER_FLAG_TRACE_OPERATIONS;
         const static uint32_t PROXY_FLAG_TRACE_AUTH = 8;
-
+        
         // YIELD::EventTarget
         virtual void send( YIELD::Event& ev );
           
       protected:
-        Proxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, uint8_t operation_retries_max, const YIELD::Time& operation_timeout, YIELD::auto_Object<YIELD::SocketAddress> peer_sockaddr, YIELD::auto_Object<YIELD::SSLContext> ssl_context );
+        Proxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SocketAddress peer_sockaddr, YIELD::auto_SSLContext ssl_context );
         virtual ~Proxy();
 
         void getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials );
