@@ -229,7 +229,7 @@ namespace org
           if ( stage_group == NULL )
             stage_group = new YIELD::SEDAStageGroup;
 
-          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, stage_group, get_proxy_flags(), get_log(), 3, operation_timeout, get_ssl_context() );
+          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, stage_group, get_proxy_flags(), get_log(), operation_timeout, get_ssl_context() );
           if ( proxy != NULL )
             return proxy;
           else
