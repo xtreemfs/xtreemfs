@@ -41,8 +41,12 @@ module org # 1000
 
       struct StatVFS # 43
       {
+        //size of a block in bytes
         uint32_t bsize;
-        uint64_t bfree;
+        //number of free blocks in the file system
+        uint64_t bavail;
+        //total number of blocks in file system
+        uint64_t blocks;
         string fsid;
         uint32_t namelen;
       };
