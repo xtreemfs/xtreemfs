@@ -1,4 +1,4 @@
-// Revision: 1666
+// Revision: 1669
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -2408,6 +2408,10 @@ void ONCRPCRequest::unmarshal( Unmarshaller& unmarshaller )
 // oncrpc_response.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+ONCRPCResponse::ONCRPCResponse( auto_Object<ONCRPCRequest> oncrpc_request )
+  : ProtocolResponse<ONCRPCRequest>( oncrpc_request ),
+    ONCRPCMessage<ONCRPCResponse>( oncrpc_request->get_xid(), NULL )
+{ }
 ONCRPCResponse::ONCRPCResponse( auto_Object<ONCRPCRequest> oncrpc_request, auto_Struct body )
   : ProtocolResponse<ONCRPCRequest>( oncrpc_request ),
     ONCRPCMessage<ONCRPCResponse>( oncrpc_request->get_xid(), body )
@@ -2439,7 +2443,7 @@ void ONCRPCResponse::marshal( Marshaller& marshaller )
 void ONCRPCResponse::unmarshal( Unmarshaller& unmarshaller )
 {
   ONCRPCMessage<ONCRPCResponse>::unmarshal( unmarshaller );
-  auto_Struct body( get_body() );
+  auto_Struct body;
   int32_t msg_type = unmarshaller.readInt32( "msg_type", 0 );
   if ( msg_type == 1 ) // REPLY
   {
@@ -2455,12 +2459,12 @@ void ONCRPCResponse::unmarshal( Unmarshaller& unmarshaller )
         {
           case 0:
           {
-            if ( body != NULL )
-              unmarshaller.readStruct( "body", 0, *body );
-            else
+            auto_ONCRPCRequest oncrpc_request( get_protocol_request() );
+            auto_Struct oncrpc_request_body( oncrpc_request->get_body() );
+            if ( oncrpc_request_body != NULL &&
+                 oncrpc_request->get_interface()->checkRequest( *oncrpc_request_body ) )
             {
-              body = get_protocol_request()->get_interface()->createResponse( get_protocol_request()->get_body()->get_tag() ).release();
-              if ( body != NULL )
+                body = static_cast<Request*>( oncrpc_request_body.get() )->createResponse().release();
                 unmarshaller.readStruct( "body", 0, *body );
             }
           }

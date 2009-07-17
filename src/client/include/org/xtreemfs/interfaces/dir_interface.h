@@ -343,7 +343,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "uuid", 0, uuid ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "uuid", 0, uuid ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "uuid", 0, uuid ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_address_mappings_getResponse; }
+
 
         protected:
           std::string uuid;
@@ -381,7 +383,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "uuid", 0, uuid ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "uuid", 0, uuid ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "uuid", 0, uuid ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_address_mappings_removeResponse; }
+
 
         protected:
           std::string uuid;
@@ -427,7 +431,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( "address_mappings", 0, address_mappings ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "address_mappings", 0, address_mappings ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "address_mappings", 0, address_mappings ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_address_mappings_setResponse; }
+
 
         protected:
           org::xtreemfs::interfaces::AddressMappingSet address_mappings;
@@ -456,6 +462,8 @@ namespace org
 
           // YIELD::Object
           YIELD_OBJECT_PROTOTYPES( xtreemfs_checkpointRequest, 1104 );
+          // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_checkpointResponse; }
 
         };
 
@@ -492,6 +500,8 @@ namespace org
 
           // YIELD::Object
           YIELD_OBJECT_PROTOTYPES( xtreemfs_discover_dirRequest, 1105 );
+          // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_discover_dirResponse; }
 
         };
 
@@ -528,6 +538,8 @@ namespace org
 
           // YIELD::Object
           YIELD_OBJECT_PROTOTYPES( xtreemfs_global_time_s_getRequest, 1106 );
+          // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_global_time_s_getResponse; }
 
         };
 
@@ -571,7 +583,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeInt32( "type", 0, static_cast<int32_t>( type ) ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { type = ( org::xtreemfs::interfaces::ServiceType )unmarshaller.readInt32( "type", 0 ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { type = ( org::xtreemfs::interfaces::ServiceType )unmarshaller.readInt32( "type", 0 ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_service_get_by_typeResponse; }
+
 
         protected:
           org::xtreemfs::interfaces::ServiceType type;
@@ -619,7 +633,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "uuid", 0, uuid ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "uuid", 0, uuid ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "uuid", 0, uuid ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_service_get_by_uuidResponse; }
+
 
         protected:
           std::string uuid;
@@ -667,7 +683,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "name", 0, name ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "name", 0, name ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "name", 0, name ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_service_get_by_nameResponse; }
+
 
         protected:
           std::string name;
@@ -713,7 +731,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "service", 0, service ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "service", 0, service ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "service", 0, service ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_service_registerResponse; }
+
 
         protected:
           org::xtreemfs::interfaces::Service service;
@@ -751,7 +771,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "uuid", 0, uuid ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "uuid", 0, uuid ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "uuid", 0, uuid ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_service_deregisterResponse; }
+
 
         protected:
           std::string uuid;
@@ -789,7 +811,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "uuid", 0, uuid ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "uuid", 0, uuid ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "uuid", 0, uuid ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_service_offlineResponse; }
+
 
         protected:
           std::string uuid;
@@ -818,6 +842,8 @@ namespace org
 
           // YIELD::Object
           YIELD_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 1113 );
+          // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_shutdownResponse; }
 
         };
 

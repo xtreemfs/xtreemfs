@@ -178,16 +178,25 @@ namespace YIELD
   class Request : public Event
   {
   public:
+    virtual auto_Response createResponse() = 0;
+
+    auto_EventTarget get_response_target() const 
+    { 
+      return response_target; 
+    }
+
     virtual void respond( Response& response )
     {
       response_target->send( response );
     }
 
+    void set_response_target( auto_EventTarget response_target ) 
+    { 
+      this->response_target = response_target; 
+    }
+
     // Object
     Request& incRef() { return Object::incRef( *this ); }
-
-    auto_EventTarget get_response_target() const { return response_target; }
-    void set_response_target( auto_EventTarget response_target ) { this->response_target = response_target; }
 
   protected:
     Request() { }

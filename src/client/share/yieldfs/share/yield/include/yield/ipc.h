@@ -1017,6 +1017,9 @@ namespace YIELD
     // Object
     YIELD_OBJECT_PROTOTYPES( HTTPRequest, 205 );
 
+    // Request
+    virtual auto_Response createResponse() { return createProtocolResponse().release(); }
+
     // ProtocolRequest
     auto_HTTPResponse createProtocolResponse() { return new HTTPResponse( incRef() ); }
 
@@ -1251,7 +1254,8 @@ namespace YIELD
   class ONCRPCResponse : public ProtocolResponse<ONCRPCRequest>, public ONCRPCMessage<ONCRPCResponse>
   {
   public:
-    ONCRPCResponse( auto_Object<ONCRPCRequest> oncrpc_request, auto_Struct body );
+    ONCRPCResponse( auto_Object<ONCRPCRequest> oncrpc_request ); // Incoming, creates the body from the interface on demand
+    ONCRPCResponse( auto_Object<ONCRPCRequest> oncrpc_request, auto_Struct body ); // Outgoing
     ONCRPCResponse( uint32_t xid, auto_Struct body ); // For testing
 
     // Object
@@ -1294,10 +1298,11 @@ namespace YIELD
     virtual void unmarshal( Unmarshaller& );
 
     // Request
+    virtual auto_Response createResponse() { return createProtocolResponse().release(); }
     virtual void respond( Response& );
 
     // ProtocolRequest
-    virtual auto_ONCRPCResponse createProtocolResponse() { return new ONCRPCResponse( incRef(), _interface->createResponse( get_body()->get_tag() ).release() ); }
+    virtual auto_ONCRPCResponse createProtocolResponse() { return new ONCRPCResponse( incRef() ); }
 
   protected:
     virtual ~ONCRPCRequest() { }

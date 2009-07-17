@@ -38,33 +38,27 @@ namespace org
         }
       };
 
-
-      class FileReadONCRPCResponse : public YIELD::ONCRPCResponse
+      class FileReadResponse : public org::xtreemfs::interfaces::OSDInterface::readResponse
       {
       public:
-        FileReadONCRPCResponse( YIELD::auto_Object<YIELD::ONCRPCRequest> oncrpc_request, YIELD::auto_Buffer buffer )
-          : YIELD::ONCRPCResponse( oncrpc_request, 
-                                   new org::xtreemfs::interfaces::OSDInterface::readResponse(
-                                     org::xtreemfs::interfaces::ObjectData( 0, false, 0, buffer ) ) )
+        FileReadResponse( YIELD::auto_Buffer buffer )
+          : org::xtreemfs::interfaces::OSDInterface::readResponse( org::xtreemfs::interfaces::ObjectData( 0, false, 0, buffer ) )
         { }
-
-      private:
-        ~FileReadONCRPCResponse() { }
       };
 
-
-      class FileReadONCRPCRequest : public YIELD::ONCRPCRequest
+      class FileReadRequest : public org::xtreemfs::interfaces::OSDInterface::readRequest
       {
       public:
-        FileReadONCRPCRequest( YIELD::auto_Interface osd_interface, YIELD::auto_Struct read_request, YIELD::auto_Buffer buffer )
-          : ONCRPCRequest( osd_interface, read_request ), buffer( buffer )
+        FileReadRequest( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, YIELD::auto_Buffer buffer ) 
+          : org::xtreemfs::interfaces::OSDInterface::readRequest( file_credentials, file_id, object_number, object_version, offset, length ), 
+          buffer( buffer )
         { }
 
-        YIELD::auto_ONCRPCResponse createProtocolResponse() { return new FileReadONCRPCResponse( this->incRef(), buffer ); }
+        YIELD::auto_Response createResponse() { return new FileReadResponse( buffer ); }
 
       private:
         YIELD::auto_Buffer buffer;
-      };      
+      };
 
 
       class FileWriteBuffer : public YIELD::FixedBuffer
@@ -153,7 +147,7 @@ bool File::listxattr( std::vector<std::string>& out_names )
 
 ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 {
-  std::vector<FileReadONCRPCResponse*> file_read_oncrpc_responses;
+  std::vector<org::xtreemfs::interfaces::OSDInterface::readResponse*> read_responses;
   YIELD::auto_Log log( parent_volume->get_log() );
   ssize_t ret = 0;
 
@@ -194,12 +188,11 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       }
 #endif
 
-      org::xtreemfs::interfaces::OSDInterface::readRequest* read_request = new org::xtreemfs::interfaces::OSDInterface::readRequest( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ) );
+      org::xtreemfs::interfaces::OSDInterface::readRequest* read_request = new FileReadRequest( file_credentials, file_credentials.get_xcap().get_file_id(), object_number, 0, object_offset, static_cast<uint32_t>( object_size ), new FileReadBuffer( rbuf_p, object_size ) );
+      read_request->set_response_target( read_response_queue->incRef() );
       read_request->set_selected_file_replica( selected_file_replica );
-      FileReadONCRPCRequest* file_read_oncrpc_request = new FileReadONCRPCRequest( parent_volume->get_osd_proxy_mux()->incRef(), read_request, new FileReadBuffer( rbuf_p, object_size ) );
-      file_read_oncrpc_request->set_response_target( read_response_queue->incRef() );
 
-      parent_volume->get_osd_proxy_mux()->send( *file_read_oncrpc_request );
+      parent_volume->get_osd_proxy_mux()->send( *read_request );
       expected_read_response_count++;
 
       rbuf_p += object_size;
@@ -213,57 +206,48 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 
     for ( size_t read_response_i = 0; read_response_i < expected_read_response_count; read_response_i++ )
     {
-      FileReadONCRPCResponse& file_read_oncrpc_response = read_response_queue->dequeue_typed<FileReadONCRPCResponse>();
-      YIELD::auto_Struct body = file_read_oncrpc_response.get_body();
-      // Object::decRef( file_read_oncrpc_response );
-      file_read_oncrpc_responses.push_back( &file_read_oncrpc_response );
+      org::xtreemfs::interfaces::OSDInterface::readResponse& read_response = read_response_queue->dequeue_typed<org::xtreemfs::interfaces::OSDInterface::readResponse>();
+      // Object::decRef( read_response );
+      read_responses.push_back( &read_response );
 
-      if ( body->get_tag() == YIELD_OBJECT_TAG( YIELD::ExceptionResponse ) )
-          throw static_cast<YIELD::ExceptionResponse&>( *body.release() );
-      else if ( body->get_tag() == YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::readResponse ) )
-      {
-        org::xtreemfs::interfaces::OSDInterface::readResponse& read_response = static_cast<org::xtreemfs::interfaces::OSDInterface::readResponse&>( *body );
-        YIELD::auto_Buffer data( read_response.get_object_data().get_data() );
-        rbuf_p = static_cast<char*>( static_cast<void*>( *data ) );
-        uint32_t zero_padding = read_response.get_object_data().get_zero_padding();
-        if ( read_response.get_selected_file_replica() != SIZE_MAX )
-          selected_file_replica = read_response.get_selected_file_replica();
+      YIELD::auto_Buffer data( read_response.get_object_data().get_data() );
+      rbuf_p = static_cast<char*>( static_cast<void*>( *data ) );
+      uint32_t zero_padding = read_response.get_object_data().get_zero_padding();
+      if ( read_response.get_selected_file_replica() != SIZE_MAX )
+        selected_file_replica = read_response.get_selected_file_replica();
 
 #ifdef _DEBUG
-        if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
-        {
-          log->getStream( YIELD::Log::LOG_INFO ) << 
-            "org::xtreemfs::client::File: read " << data->size() <<
-            " bytes from file " << file_credentials.get_xcap().get_file_id() <<            
-            " with " << zero_padding << " bytes of zero padding" <<
-            ", starting from buffer offset " << static_cast<size_t>( rbuf_p - rbuf_start ) << 
-            ", read # " << ( read_response_i + 1 ) << " of " << expected_read_response_count << " parallel reads" <<
-            ".";
-        }
+      if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+      {
+        log->getStream( YIELD::Log::LOG_INFO ) << 
+          "org::xtreemfs::client::File: read " << data->size() <<
+          " bytes from file " << file_credentials.get_xcap().get_file_id() <<            
+          " with " << zero_padding << " bytes of zero padding" <<
+          ", starting from buffer offset " << static_cast<size_t>( rbuf_p - rbuf_start ) << 
+          ", read # " << ( read_response_i + 1 ) << " of " << expected_read_response_count << " parallel reads" <<
+          ".";
+      }
 #endif
 
-        ret += data->size();
+      ret += data->size();
 
-        if ( zero_padding > 0 )
-        { 
-          rbuf_p += data->size();
+      if ( zero_padding > 0 )
+      { 
+        rbuf_p += data->size();
 
-          if ( rbuf_p + zero_padding <= rbuf_end )
-          {
-            memset( rbuf_p, 0, zero_padding );
-            ret += zero_padding;
-          }
-          else
-          {
-            log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received zero_padding (data size=" << data->size() << ", zero_padding=" << zero_padding << ") larger than available buffer space (" << static_cast<size_t>( rbuf_end - rbuf_p ) << ")";
-            YIELD::ExceptionResponse::set_errno( EIO );
-            ret = -1;
-            break;
-          }
+        if ( rbuf_p + zero_padding <= rbuf_end )
+        {
+          memset( rbuf_p, 0, zero_padding );
+          ret += zero_padding;
+        }
+        else
+        {
+          log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received zero_padding (data size=" << data->size() << ", zero_padding=" << zero_padding << ") larger than available buffer space (" << static_cast<size_t>( rbuf_end - rbuf_p ) << ")";
+          YIELD::ExceptionResponse::set_errno( EIO );
+          ret = -1;
+          break;
         }
       }
-      else
-        YIELD::DebugBreak();
     }
   }
   catch ( ProxyExceptionResponse& proxy_exception_response )
@@ -297,7 +281,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     ret = -1;
   }
 
-  for ( std::vector<FileReadONCRPCResponse*>::iterator file_read_oncrpc_response_i = file_read_oncrpc_responses.begin(); file_read_oncrpc_response_i != file_read_oncrpc_responses.end(); file_read_oncrpc_response_i++ )
+  for ( std::vector<org::xtreemfs::interfaces::OSDInterface::readResponse*>::iterator file_read_oncrpc_response_i = read_responses.begin(); file_read_oncrpc_response_i != read_responses.end(); file_read_oncrpc_response_i++ )
     YIELD::Object::decRef( **file_read_oncrpc_response_i );
 
   return ret;

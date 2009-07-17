@@ -355,7 +355,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "object_number", 0, object_number ); marshaller.writeUint64( "object_version", 0, object_version ); marshaller.writeUint32( "offset", 0, offset ); marshaller.writeUint32( "length", 0, length ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); object_number = unmarshaller.readUint64( "object_number", 0 ); object_version = unmarshaller.readUint64( "object_version", 0 ); offset = unmarshaller.readUint32( "offset", 0 ); length = unmarshaller.readUint32( "length", 0 ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); object_number = unmarshaller.readUint64( "object_number", 0 ); object_version = unmarshaller.readUint64( "object_version", 0 ); offset = unmarshaller.readUint32( "offset", 0 ); length = unmarshaller.readUint32( "length", 0 ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new readResponse; }
+
 
         protected:
           org::xtreemfs::interfaces::FileCredentials file_credentials;
@@ -412,7 +414,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "new_file_size", 0, new_file_size ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); new_file_size = unmarshaller.readUint64( "new_file_size", 0 ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); new_file_size = unmarshaller.readUint64( "new_file_size", 0 ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new truncateResponse; }
+
 
         protected:
           org::xtreemfs::interfaces::FileCredentials file_credentials;
@@ -454,7 +458,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new unlinkResponse; }
+
 
         protected:
           org::xtreemfs::interfaces::FileCredentials file_credentials;
@@ -515,7 +521,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "object_number", 0, object_number ); marshaller.writeUint64( "object_version", 0, object_version ); marshaller.writeUint32( "offset", 0, offset ); marshaller.writeUint64( "lease_timeout", 0, lease_timeout ); marshaller.writeStruct( "object_data", 0, object_data ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); object_number = unmarshaller.readUint64( "object_number", 0 ); object_version = unmarshaller.readUint64( "object_version", 0 ); offset = unmarshaller.readUint32( "offset", 0 ); lease_timeout = unmarshaller.readUint64( "lease_timeout", 0 ); unmarshaller.readStruct( "object_data", 0, object_data ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); object_number = unmarshaller.readUint64( "object_number", 0 ); object_version = unmarshaller.readUint64( "object_version", 0 ); offset = unmarshaller.readUint32( "offset", 0 ); lease_timeout = unmarshaller.readUint64( "lease_timeout", 0 ); unmarshaller.readStruct( "object_data", 0, object_data ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new writeResponse; }
+
 
         protected:
           org::xtreemfs::interfaces::FileCredentials file_credentials;
@@ -565,7 +573,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "fileId", 0, fileId ); marshaller.writeUint64( "truncateEpoch", 0, truncateEpoch ); marshaller.writeUint64( "lastObject", 0, lastObject ); marshaller.writeUint64( "fileSize", 0, fileSize ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "fileId", 0, fileId ); truncateEpoch = unmarshaller.readUint64( "truncateEpoch", 0 ); lastObject = unmarshaller.readUint64( "lastObject", 0 ); fileSize = unmarshaller.readUint64( "fileSize", 0 ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "fileId", 0, fileId ); truncateEpoch = unmarshaller.readUint64( "truncateEpoch", 0 ); lastObject = unmarshaller.readUint64( "lastObject", 0 ); fileSize = unmarshaller.readUint64( "fileSize", 0 ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_broadcast_gmaxResponse; }
+
 
         protected:
           std::string fileId;
@@ -622,7 +632,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "object_number", 0, object_number ); marshaller.writeUint64( "object_version", 0, object_version ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); object_number = unmarshaller.readUint64( "object_number", 0 ); object_version = unmarshaller.readUint64( "object_version", 0 ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); object_number = unmarshaller.readUint64( "object_number", 0 ); object_version = unmarshaller.readUint64( "object_version", 0 ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_check_objectResponse; }
+
 
         protected:
           org::xtreemfs::interfaces::FileCredentials file_credentials;
@@ -664,6 +676,8 @@ namespace org
 
           // YIELD::Object
           YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_get_resultsRequest, 1409 );
+          // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_cleanup_get_resultsResponse; }
 
         };
 
@@ -700,6 +714,8 @@ namespace org
 
           // YIELD::Object
           YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_is_runningRequest, 1408 );
+          // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_cleanup_is_runningResponse; }
 
         };
 
@@ -737,7 +753,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeBoolean( "remove_zombies", 0, remove_zombies ); marshaller.writeBoolean( "remove_unavail_volume", 0, remove_unavail_volume ); marshaller.writeBoolean( "lost_and_found", 0, lost_and_found ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { remove_zombies = unmarshaller.readBoolean( "remove_zombies", 0 ); remove_unavail_volume = unmarshaller.readBoolean( "remove_unavail_volume", 0 ); lost_and_found = unmarshaller.readBoolean( "lost_and_found", 0 ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { remove_zombies = unmarshaller.readBoolean( "remove_zombies", 0 ); remove_unavail_volume = unmarshaller.readBoolean( "remove_unavail_volume", 0 ); lost_and_found = unmarshaller.readBoolean( "lost_and_found", 0 ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_cleanup_startResponse; }
+
 
         protected:
           bool remove_zombies;
@@ -780,6 +798,8 @@ namespace org
 
           // YIELD::Object
           YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_statusRequest, 1407 );
+          // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_cleanup_statusResponse; }
 
         };
 
@@ -806,6 +826,8 @@ namespace org
 
           // YIELD::Object
           YIELD_OBJECT_PROTOTYPES( xtreemfs_cleanup_stopRequest, 1406 );
+          // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_cleanup_stopResponse; }
 
         };
 
@@ -853,7 +875,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_internal_get_gmaxResponse; }
+
 
         protected:
           org::xtreemfs::interfaces::FileCredentials file_credentials;
@@ -904,7 +928,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_internal_get_file_sizeResponse; }
+
 
         protected:
           org::xtreemfs::interfaces::FileCredentials file_credentials;
@@ -957,7 +983,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "new_file_size", 0, new_file_size ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); new_file_size = unmarshaller.readUint64( "new_file_size", 0 ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); new_file_size = unmarshaller.readUint64( "new_file_size", 0 ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_internal_truncateResponse; }
+
 
         protected:
           org::xtreemfs::interfaces::FileCredentials file_credentials;
@@ -1019,7 +1047,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "object_number", 0, object_number ); marshaller.writeUint64( "object_version", 0, object_version ); marshaller.writeUint64( "offset", 0, offset ); marshaller.writeUint64( "length", 0, length ); marshaller.writeBoolean( "attachObjectList", 0, attachObjectList ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); object_number = unmarshaller.readUint64( "object_number", 0 ); object_version = unmarshaller.readUint64( "object_version", 0 ); offset = unmarshaller.readUint64( "offset", 0 ); length = unmarshaller.readUint64( "length", 0 ); attachObjectList = unmarshaller.readBoolean( "attachObjectList", 0 ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); object_number = unmarshaller.readUint64( "object_number", 0 ); object_version = unmarshaller.readUint64( "object_version", 0 ); offset = unmarshaller.readUint64( "offset", 0 ); length = unmarshaller.readUint64( "length", 0 ); attachObjectList = unmarshaller.readBoolean( "attachObjectList", 0 ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_internal_read_localResponse; }
+
 
         protected:
           org::xtreemfs::interfaces::FileCredentials file_credentials;
@@ -1075,7 +1105,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_internal_get_object_listResponse; }
+
 
         protected:
           org::xtreemfs::interfaces::FileCredentials file_credentials;
@@ -1122,7 +1154,9 @@ namespace org
 
           // YIELD::Struct
           void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "coordinates", 0, coordinates ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "coordinates", 0, coordinates ); }
+          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "coordinates", 0, coordinates ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_pingResponse; }
+
 
         protected:
           org::xtreemfs::interfaces::VivaldiCoordinates coordinates;
@@ -1151,6 +1185,8 @@ namespace org
 
           // YIELD::Object
           YIELD_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 1350 );
+          // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_shutdownResponse; }
 
         };
 
