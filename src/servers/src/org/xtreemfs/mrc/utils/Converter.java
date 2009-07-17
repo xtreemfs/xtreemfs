@@ -145,43 +145,47 @@ public class Converter {
         
         return sb.toString();
     }
-
+    
     public static String xLocListToJSON(XLocList xLocList) throws JSONException, UnknownUUIDException {
-
-        Map<String,Object> list = new HashMap();
-        list.put("update-policy",xLocList.getReplUpdatePolicy());
-        list.put("version",Long.valueOf(xLocList.getVersion()));
-        List<Map<String,Object>> replicas = new ArrayList(xLocList.getReplicaCount());
+        
+        Map<String, Object> list = new HashMap();
+        list.put("update-policy", xLocList.getReplUpdatePolicy());
+        list.put("version", Long.valueOf(xLocList.getVersion()));
+        List<Map<String, Object>> replicas = new ArrayList(xLocList.getReplicaCount());
         Iterator<XLoc> iter = xLocList.iterator();
         while (iter.hasNext()) {
             XLoc l = iter.next();
-            Map<String,Object> replica = new HashMap();
+            Map<String, Object> replica = new HashMap();
             replica.put("striping-policy", getStripingPolicyAsJSON(l.getStripingPolicy()));
             replica.put("replication-flags", new Long(0));
-            List<Map<String,String>> osds = new ArrayList(l.getOSDCount());
+            List<Map<String, String>> osds = new ArrayList(l.getOSDCount());
             for (int i = 0; i < l.getOSDCount(); i++) {
-                Map<String,String> osd = new HashMap();
+                Map<String, String> osd = new HashMap();
                 final ServiceUUID uuid = new ServiceUUID(l.getOSD(i));
                 osd.put("uuid", uuid.toString());
-                osd.put("address",uuid.getAddress().getHostName());
+                osd.put("address", uuid.getAddress().getHostName() + ":" + uuid.getAddress().getPort());
                 osds.add(osd);
             }
             replica.put("osds", osds);
             replicas.add(replica);
         }
-        list.put("replicas",replicas);
-
+        list.put("replicas", replicas);
+        
         return JSONParser.writeJSON(list);
     }
     
-//    public static void main(String[] args) {
-//        BufferBackedStripingPolicy sp = new BufferBackedStripingPolicy("RAID0", 256, 2);
-//        BufferBackedXLoc repl1 = new BufferBackedXLoc(sp, new String[] { "osd1", "osd2" }, 0);
-//        BufferBackedXLoc repl2 = new BufferBackedXLoc(sp, new String[] { "osd4" }, 0);
-//        XLocList xLocList = new BufferBackedXLocList(new BufferBackedXLoc[] { repl1, repl2 }, "policy", 3);
-//        
-//        System.out.println(xLocListToString(xLocList));
-//    }
+    // public static void main(String[] args) {
+    // BufferBackedStripingPolicy sp = new BufferBackedStripingPolicy("RAID0",
+    // 256, 2);
+    // BufferBackedXLoc repl1 = new BufferBackedXLoc(sp, new String[] { "osd1",
+    // "osd2" }, 0);
+    // BufferBackedXLoc repl2 = new BufferBackedXLoc(sp, new String[] { "osd4"
+    // }, 0);
+    // XLocList xLocList = new BufferBackedXLocList(new BufferBackedXLoc[] {
+    // repl1, repl2 }, "policy", 3);
+    //        
+    // System.out.println(xLocListToString(xLocList));
+    // }
     
     /**
      * Converts an XLocSet to an XLocList
@@ -237,7 +241,7 @@ public class Converter {
             Replica repl = new Replica(sp, xRepl.getReplicationFlags(), osds);
             replicas.add(repl);
         }
-
+        
         XLocSet xLocSet = new XLocSet();
         xLocSet.setReplicas(replicas);
         xLocSet.setRepUpdatePolicy(xLocList.getReplUpdatePolicy());
@@ -291,7 +295,8 @@ public class Converter {
         long size = (Long) spMap.get("size");
         long width = (Long) spMap.get("width");
         
-        return new org.xtreemfs.interfaces.StripingPolicy(StripingPolicyType.valueOf(pattern), (int)size, (int)width);
+        return new org.xtreemfs.interfaces.StripingPolicy(StripingPolicyType.valueOf(pattern), (int) size,
+            (int) width);
     }
     
     /**
@@ -321,28 +326,28 @@ public class Converter {
                 .getStripeSize(), sp.getWidth());
     }
     
-    public static String stripingPolicyToJSONString(StripingPolicy sp)
-        throws JSONException {
+    public static String stripingPolicyToJSONString(StripingPolicy sp) throws JSONException {
         return JSONParser.writeJSON(getStripingPolicyAsJSON(sp));
     }
-
+    
     static Replica replicaFromJSON(String value) throws JSONException {
-        Map<String,Object> jsonObj = (Map<String, Object>) JSONParser.parseJSON(new JSONString(value));
-        long rf = (Long)jsonObj.get("replication-flags");
-        Map<String,Object> jsonSP = (Map<String, Object>) jsonObj.get("striping-policy");
+        Map<String, Object> jsonObj = (Map<String, Object>) JSONParser.parseJSON(new JSONString(value));
+        long rf = (Long) jsonObj.get("replication-flags");
+        Map<String, Object> jsonSP = (Map<String, Object>) jsonObj.get("striping-policy");
         final String spName = (String) jsonSP.get("pattern");
         StripingPolicyType spType = StripingPolicyType.STRIPING_POLICY_RAID0;
         final long width = (Long) jsonSP.get("width");
         final long size = (Long) jsonSP.get("size");
-        org.xtreemfs.interfaces.StripingPolicy sp = new org.xtreemfs.interfaces.StripingPolicy(spType, (int)size, (int)width);
+        org.xtreemfs.interfaces.StripingPolicy sp = new org.xtreemfs.interfaces.StripingPolicy(spType,
+            (int) size, (int) width);
         List<String> osds = (List<String>) jsonObj.get("osds");
         StringSet osdUuids = new StringSet();
         for (String osd : osds)
             osdUuids.add(osd);
-        return new Replica(sp, (int)rf, osdUuids);
+        return new Replica(sp, (int) rf, osdUuids);
     }
-
-    private static Map<String,Object> getStripingPolicyAsJSON(StripingPolicy sp) {
+    
+    private static Map<String, Object> getStripingPolicyAsJSON(StripingPolicy sp) {
         Map<String, Object> spMap = new HashMap<String, Object>();
         spMap.put("pattern", sp.getPattern());
         spMap.put("size", sp.getStripeSize());
