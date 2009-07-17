@@ -50,8 +50,11 @@ public class StatFSOperation extends MRCOperation {
         final VolumeManager vMan = master.getVolumeManager();
         final VolumeInfo volume = vMan.getVolumeByName(rqArgs.getVolume_name());
         
-        long blocks = master.getOSDStatusManager().getFreeSpace(volume.getId()) / 1024L;
-        StatVFS statfs = new StatVFS(1024, blocks, volume.getId(), 1024);
+        long bavail = master.getOSDStatusManager().getFreeSpace(volume.getId()) / 1024L;
+        long used_blocks = vMan.getStorageManager(volume.getId()).getVolumeSize() / 1024L;
+        long blocks = bavail+used_blocks;
+
+        StatVFS statfs = new StatVFS(1024, bavail, blocks, volume.getId(), 1024);
         
         // set the response
         rq.setResponse(new statvfsResponse(statfs));
