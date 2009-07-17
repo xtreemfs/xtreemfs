@@ -1,5 +1,5 @@
 Name:           XtreemFS-tools
-Version:        0.99.3
+Version:        _VERSION_
 Release:        1
 License:        GPL
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build

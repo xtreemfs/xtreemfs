@@ -393,6 +393,21 @@ function delete_svn() {
 	find $PACKAGE_PATH -name ".svn" -print0 | xargs -0 rm -rf
 }
 
+function prepare_build_files() {
+    cp -r $BUILD_FILES_DIR/home:xtreemfs $TARGET_DIR
+    find $TARGET_DIR/home:xtreemfs -type f -exec sed -i "s/_VERSION_/$VERSION/g" {} \;
+}
+
+function move_packages() {
+    cp $CLIENT_PACKAGE_NAME.tar.gz $TARGET_DIR/home:xtreemfs/xtreemfs-client
+    mv $CLIENT_PACKAGE_NAME.tar.gz $TARGET_DIR/home:xtreemfs/xtreemfs-client-testing
+    cp $SERVER_PACKAGE_NAME.tar.gz $TARGET_DIR/home:xtreemfs/xtreemfs-server
+    mv $SERVER_PACKAGE_NAME.tar.gz $TARGET_DIR/home:xtreemfs/xtreemfs-server-testing
+    #cp $TOOLS_PACKAGE_NAME.tar.gz $TARGET_DIR/home:xtreemfs/xtreemfs-tools
+    mv $TOOLS_PACKAGE_NAME.tar.gz $TARGET_DIR/home:xtreemfs/xtreemfs-tools-testing
+    mv $XOS_ADDONS_PACKAGE_NAME.tar.gz $TARGET_DIR
+    mv $SOURCE_TARBALL_NAME.tar.gz $TARGET_DIR
+}
 
 VERSION=
 XTREEMFS_HOME_DIR=
@@ -414,21 +429,27 @@ then
 	usage
 fi
 
+BUILD_FILES_DIR=build-service
 CLIENT_PACKAGE_NAME="XtreemFS-client-$VERSION"
 SERVER_PACKAGE_NAME="XtreemFS-server-$VERSION"
 TOOLS_PACKAGE_NAME="XtreemFS-tools-$VERSION"
 XOS_ADDONS_PACKAGE_NAME="XtreemFS-XOS-addons-$VERSION"
 SOURCE_TARBALL_NAME="XtreemFS-$VERSION"
 
+TARGET_DIR=./dist
+
 # create temporary directory
 create_dir $TMP_PATH
+create_dir $TARGET_DIR
 
 # build packages
+prepare_build_files
 build_client_package
 build_server_package
 build_tools_package
 build_xtreemos_addons
 build_source_tarball
+move_packages
 
 # delete temporary directory
 rm -Rf $TMP_PATH
