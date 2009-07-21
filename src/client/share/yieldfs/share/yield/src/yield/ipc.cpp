@@ -1841,7 +1841,7 @@ public:
   // EventTarget
   void send( Event& ev )
   {
-    ONCRPCResponse* oncrpc_response = new ONCRPCResponse( oncrpc_request->get_xid(), ev );
+    ONCRPCResponse* oncrpc_response = new ONCRPCResponse( oncrpc_request->get_interface(), oncrpc_request->get_xid(), ev );
     oncrpc_response_writer_stage->send( *oncrpc_response );
   }
 private:
