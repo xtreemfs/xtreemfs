@@ -43,10 +43,10 @@ namespace org
 
 #ifndef _WIN32
         get_passwd_from_user_credentials_t get_passwd_from_user_credentials;
-        YIELD::STLHashMap<YIELD::STLHashMap<std::pair<int, int>*>*> user_credentials_to_passwd_cache;
+        std::map<std::string,std::map<std::string,std::pair<int, int>*>*> user_credentials_to_passwd_cache;
 
         get_user_credentials_from_passwd_t get_user_credentials_from_passwd;
-        YIELD::STLHashMap<YIELD::STLHashMap<org::xtreemfs::interfaces::UserCredentials*>*> passwd_to_user_credentials_cache;
+        std::map<int,std::map<int,org::xtreemfs::interfaces::UserCredentials*>*> passwd_to_user_credentials_cache;
 #endif
 
         std::vector<YIELD::SharedLibrary*> policy_shared_libraries;

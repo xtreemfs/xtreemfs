@@ -79,16 +79,16 @@ Proxy<ProxyType, InterfaceType>::~Proxy()
     YIELD::Object::decRef( **policy_shared_library_i );
 
 #ifndef _WIN32
-  for ( YIELD::STLHashMap<YIELD::STLHashMap<std::pair<int,int>*>*>::iterator i = user_credentials_to_passwd_cache.begin(); i != user_credentials_to_passwd_cache.end(); i++ )
+  for ( std::map<std::string,std::map<std::string,std::pair<int,int>*>*>::iterator i = user_credentials_to_passwd_cache.begin(); i != user_credentials_to_passwd_cache.end(); i++ )
   {
-    for ( YIELD::STLHashMap<std::pair<int,int>*>::iterator j = i->second->begin(); j != i->second->end(); j++ )
+    for ( std::map<std::string,std::pair<int,int>*>::iterator j = i->second->begin(); j != i->second->end(); j++ )
       delete j->second;
     delete i->second;
   }
 
-  for ( YIELD::STLHashMap<YIELD::STLHashMap<org::xtreemfs::interfaces::UserCredentials*>*>::iterator i = passwd_to_user_credentials_cache.begin(); i != passwd_to_user_credentials_cache.end(); i++ )
+  for ( std::map<int,std::map<int,org::xtreemfs::interfaces::UserCredentials*>*>::iterator i = passwd_to_user_credentials_cache.begin(); i != passwd_to_user_credentials_cache.end(); i++ )
   {
-    for ( YIELD::STLHashMap<org::xtreemfs::interfaces::UserCredentials*>::iterator j = i->second->begin(); j != i->second->end(); j++ )
+    for ( std::map<int,org::xtreemfs::interfaces::UserCredentials*>::iterator j = i->second->begin(); j != i->second->end(); j++ )
       delete j->second;
     delete i->second;
   }
@@ -175,17 +175,14 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
     log->getStream( YIELD::Log::LOG_DEBUG ) << "org::xtreemfs::client::Proxy: getting passwd from UserCredentials (user_id=" << user_id << ", group_id=" << group_id << ").";
 #endif
 
-  uint32_t user_id_hash = YIELD::string_hash( user_id.c_str() );
-  uint32_t group_id_hash = YIELD::string_hash( group_id.c_str() );
-
-  YIELD::STLHashMap<std::pair<int, int>*>* user_id_to_passwd_cache = user_credentials_to_passwd_cache.find( group_id_hash );
-  if ( user_id_to_passwd_cache != NULL )
+  std::map<std::string,std::map<std::string,std::pair<int, int>*>*>::iterator group_i = user_credentials_to_passwd_cache.find( group_id );
+  if ( group_i != user_credentials_to_passwd_cache.end() )
   {
-    std::pair<int,int>* passwd = user_id_to_passwd_cache->find( user_id_hash );
-    if ( passwd != NULL )
+    std::map<std::string,std::pair<int,int>*>::iterator user_i = group_i->second->find( user_id );
+    if ( user_i != group_i->second->end() )
     {
-      out_uid = passwd->first;
-      out_gid = passwd->second;
+      out_uid = user_i->second->first;
+      out_gid = user_i->second->second;
 #ifdef _DEBUG
       if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )
         log->getStream( YIELD::Log::LOG_DEBUG ) << "org::xtreemfs::client::Proxy: found user and group IDs in cache, " << user_id << "=" << out_uid << ", " << group_id << "=" << out_gid << ".";
@@ -240,13 +237,13 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
     log->getStream( YIELD::Log::LOG_DEBUG ) << "org::xtreemfs::client::Proxy: " << user_id << "=" << out_uid << ", " << group_id << "=" << out_gid << ", storing in cache.";
 #endif
 
-  if ( user_id_to_passwd_cache == NULL )
+  if ( group_i != user_credentials_to_passwd_cache.end() )
+    group_i->second->insert( std::make_pair( user_id, new std::pair<int,int>( out_uid, out_gid ) ) );
+  else
   {
-    user_id_to_passwd_cache = new YIELD::STLHashMap<std::pair<int,int>*>;
-    user_credentials_to_passwd_cache.insert( group_id_hash, user_id_to_passwd_cache );
+    user_credentials_to_passwd_cache[group_id] = new std::map<std::string,std::pair<int,int>*>;
+    user_credentials_to_passwd_cache[group_id]->insert( std::make_pair( user_id, new std::pair<int,int>( out_uid, out_gid ) ) );
   }
-
-  user_id_to_passwd_cache->insert( user_id_hash, new std::pair<int,int>( out_uid, out_gid ) );
 }
 
 template <class ProxyType, class InterfaceType>
@@ -257,13 +254,13 @@ bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
     log->getStream( YIELD::Log::LOG_DEBUG ) << "org::xtreemfs::client::Proxy: getting UserCredentials from passwd (uid=" << uid << ", gid=" << gid << ").";
 #endif
 
-  YIELD::STLHashMap<org::xtreemfs::interfaces::UserCredentials*>* uid_to_user_credentials_cache = passwd_to_user_credentials_cache.find( static_cast<uint32_t>( gid ) );
-  if ( uid_to_user_credentials_cache != NULL )
+  std::map<int,std::map<int,org::xtreemfs::interfaces::UserCredentials*>*>::iterator group_i = passwd_to_user_credentials_cache.find( gid );
+  if ( group_i != passwd_to_user_credentials_cache.end() )
   {
-    org::xtreemfs::interfaces::UserCredentials* user_credentials = uid_to_user_credentials_cache->find( static_cast<uint32_t>( uid ) );
-    if ( user_credentials != NULL )
+    std::map<int,org::xtreemfs::interfaces::UserCredentials*>::iterator user_i = group_i->second->find( uid );
+    if ( user_i != group_i->second->end() )
     {
-      out_user_credentials = *user_credentials;
+      out_user_credentials = *user_i->second;
 #ifdef _DEBUG
       if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )
         log->getStream( YIELD::Log::LOG_DEBUG ) << "org::xtreemfs::client::Proxy: found UserCredentials in cache, " << uid << "=" << out_user_credentials.get_user_id() << ", " << gid << "=" << out_user_credentials.get_group_ids()[0] << ".";
@@ -357,13 +354,13 @@ bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
       // Drop down to insert the credentials into the cache
   }
   
-  if ( uid_to_user_credentials_cache == NULL )
+  if ( group_i != passwd_to_user_credentials_cache.end() )
+    group_i->second->insert( std::make_pair( uid, new org::xtreemfs::interfaces::UserCredentials( out_user_credentials ) ) );
+  else
   {
-    uid_to_user_credentials_cache = new YIELD::STLHashMap<org::xtreemfs::interfaces::UserCredentials*>;
-    passwd_to_user_credentials_cache.insert( static_cast<uint32_t>( gid ), uid_to_user_credentials_cache );
+    passwd_to_user_credentials_cache[gid] = new std::map<int,org::xtreemfs::interfaces::UserCredentials*>;
+    passwd_to_user_credentials_cache[gid]->insert( std::make_pair( uid, new org::xtreemfs::interfaces::UserCredentials( out_user_credentials ) ) );
   }
-
-  uid_to_user_credentials_cache->insert( static_cast<uint32_t>( uid ), new org::xtreemfs::interfaces::UserCredentials( out_user_credentials ) );
 
   return true;
 }

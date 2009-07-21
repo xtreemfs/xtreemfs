@@ -506,87 +506,6 @@ namespace YIELD
   typedef YIELD::auto_Object<File> auto_File;
 
   
-  template <class ElementType>
-  class InterThreadQueue : private std::queue<ElementType>
-  {
-  public:
-    ElementType dequeue()
-    {
-      if ( signal.acquire() )
-      {
-        if ( lock.try_acquire() )
-        {
-          if ( std::queue<ElementType>::size() > 0 )
-          {
-            ElementType element = std::queue<ElementType>::front();
-            std::queue<ElementType>::pop();
-            lock.release();
-            return element;
-          }
-          else
-            lock.release();
-        }
-      }
-
-      return NULL;
-    }
-
-    void enqueue( ElementType element )
-    {
-      lock.acquire();
-      std::queue<ElementType>::push( element );
-      lock.release();
-      signal.release();
-    }
-
-    ElementType timed_dequeue( uint64_t timeout_ns )
-    {
-      if ( signal.timed_acquire( timeout_ns ) )
-      {
-        if ( lock.try_acquire() )
-        {
-          if ( std::queue<ElementType>::size() > 0 )
-          {
-            ElementType element = std::queue<ElementType>::front();
-            std::queue<ElementType>::pop();
-            lock.release();
-            return element;
-          }
-          else
-            lock.release();
-        }
-      }
-
-      return NULL;
-    }
-
-    ElementType try_dequeue()
-    {
-      if ( signal.try_acquire() )
-      {
-        if ( lock.try_acquire() )
-        {
-          if ( std::queue<ElementType>::size() > 0 )
-          {
-            ElementType element = std::queue<ElementType>::front();
-            std::queue<ElementType>::pop();
-            lock.release();
-            return element;
-          }
-          else
-            lock.release();
-        }
-      }
-
-      return NULL;
-    }
-
-  private:
-    CountingSemaphore lock;
-    CountingSemaphore signal;
-  };
-
-
   class Log : public Object
   {
   public:
@@ -810,6 +729,86 @@ namespace YIELD
 #endif
   };
 
+
+  template <class ElementType>
+  class InterThreadQueue : private std::queue<ElementType>
+  {
+  public:
+    ElementType dequeue()
+    {
+      if ( signal.acquire() )
+      {
+        if ( lock.try_acquire() )
+        {
+          if ( std::queue<ElementType>::size() > 0 )
+          {
+            ElementType element = std::queue<ElementType>::front();
+            std::queue<ElementType>::pop();
+            lock.release();
+            return element;
+          }
+          else
+            lock.release();
+        }
+      }
+
+      return NULL;
+    }
+
+    void enqueue( ElementType element )
+    {
+      lock.acquire();
+      std::queue<ElementType>::push( element );
+      lock.release();
+      signal.release();
+    }
+
+    ElementType timed_dequeue( uint64_t timeout_ns )
+    {
+      if ( signal.timed_acquire( timeout_ns ) )
+      {
+        if ( lock.try_acquire() )
+        {
+          if ( std::queue<ElementType>::size() > 0 )
+          {
+            ElementType element = std::queue<ElementType>::front();
+            std::queue<ElementType>::pop();
+            lock.release();
+            return element;
+          }
+          else
+            lock.release();
+        }
+      }
+
+      return NULL;
+    }
+
+    ElementType try_dequeue()
+    {
+      if ( signal.try_acquire() )
+      {
+        if ( lock.try_acquire() )
+        {
+          if ( std::queue<ElementType>::size() > 0 )
+          {
+            ElementType element = std::queue<ElementType>::front();
+            std::queue<ElementType>::pop();
+            lock.release();
+            return element;
+          }
+          else
+            lock.release();
+        }
+      }
+
+      return NULL;
+    }
+
+  private:
+    Mutex lock;
+    CountingSemaphore signal;
+  };
 
 
   class NOPLock
