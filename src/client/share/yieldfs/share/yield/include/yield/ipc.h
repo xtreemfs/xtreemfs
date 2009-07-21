@@ -450,7 +450,7 @@ namespace YIELD
     const static uint32_t CLIENT_FLAG_TRACE_IO = 1;
     const static uint32_t CLIENT_FLAG_TRACE_OPERATIONS = 2;
 
-    const static uint64_t OPERATION_TIMEOUT_DEFAULT = 30 * NS_IN_S;
+    const static uint64_t OPERATION_TIMEOUT_DEFAULT = 5 * NS_IN_S;
 
     // EventHandler
     virtual void handleEvent( Event& );
@@ -477,6 +477,8 @@ namespace YIELD
     class AIOWriteControlBlock;
 
     auto_AIOQueue aio_queue;
+    
+    auto_TimerQueue operation_timer_queue;
   };
 
 

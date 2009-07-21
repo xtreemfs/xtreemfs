@@ -1315,7 +1315,7 @@ namespace YIELD
   };
 
 
-  class TimerQueue
+  class TimerQueue : public Object
   {
   public:
     class Timer : public Object
@@ -1351,6 +1351,9 @@ namespace YIELD
 
     void addTimer( auto_Object<Timer> timer );
 
+    // Object
+    YIELD_OBJECT_PROTOTYPES( TimerQueue, 0 );
+
   private:
 #ifdef _WIN32
     void* hTimerQueue;
@@ -1376,6 +1379,8 @@ namespace YIELD
     Thread thread;
 #endif
   };
+
+  typedef auto_Object<TimerQueue> auto_TimerQueue;
 
 
   class Volume : public Object

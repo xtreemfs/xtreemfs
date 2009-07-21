@@ -1,4 +1,4 @@
-// Revision: 1680
+// Revision: 1682
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -20,6 +20,7 @@ Client<RequestType, ResponseType>::Client( const URI& absolute_uri, uint32_t fla
 {
   this->absolute_uri = new URI( absolute_uri );
   aio_queue = new AIOQueue;
+  operation_timer_queue = new TimerQueue;
 }
 template <class RequestType, class ResponseType>
 Client<RequestType, ResponseType>::~Client()
@@ -39,7 +40,9 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
       {
         Socket* socket_ = idle_sockets.back();
         idle_sockets.pop_back();
-        socket_->aio_write( new AIOWriteControlBlock( request.serialize(), request ) );
+        AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request.serialize(), request, operation_timeout, operation_timer_queue );
+        operation_timer_queue->addTimer( static_cast<TimerQueue::Timer*>( aio_write_control_block )->incRef() );
+        socket_->aio_write( aio_write_control_block );
       }
       else
       {
@@ -59,7 +62,9 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
              log != NULL && log->get_level() >= Log::LOG_INFO &&
              static_cast<int>( *socket_ ) != -1 )
           socket_ = new TracingSocket( socket_, log );
-        socket_->aio_connect( new AIOConnectControlBlock( peername, request ) );
+        AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( peername, request, operation_timeout, operation_timer_queue );
+        operation_timer_queue->addTimer( static_cast<TimerQueue::Timer*>( aio_connect_control_block )->incRef() );
+        socket_->aio_connect( aio_connect_control_block );
       }
     }
     break;
@@ -71,71 +76,125 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
   }
 }
 template <class RequestType, class ResponseType>
-class Client<RequestType, ResponseType>::AIOConnectControlBlock : public TCPSocket::AIOConnectControlBlock
+class Client<RequestType, ResponseType>::AIOConnectControlBlock : public virtual TCPSocket::AIOConnectControlBlock, public virtual TimerQueue::Timer
 {
 public:
-  AIOConnectControlBlock( auto_SocketAddress peername, auto_Object<RequestType> request )
+  AIOConnectControlBlock( auto_SocketAddress peername, auto_Object<RequestType> request, const Time& timeout, auto_TimerQueue timer_queue )
     : Socket::AIOConnectControlBlock( peername ),
-      request( request )
+      TimerQueue::Timer( timeout ),
+      request( request ),
+      timer_queue( timer_queue )
   { }
   // AIOControlBlock
   void onCompletion( size_t )
   {
-    get_socket()->aio_write( new AIOWriteControlBlock( request->serialize(), request ) );
+    if ( request_lock.try_acquire() )
+    {
+      AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request->serialize(), request, get_timeout(), timer_queue );
+      timer_queue->addTimer( static_cast<TimerQueue::Timer*>( aio_write_control_block )->incRef() );
+      get_socket()->aio_write( aio_write_control_block );
+    }
   }
   void onError( uint32_t error_code )
   {
-    request->respond( *( new ExceptionResponse( error_code ) ) );
+    if ( request_lock.try_acquire() )
+      request->respond( *( new ExceptionResponse( error_code ) ) );
+  }
+  // TimerQueue::Timer
+  bool fire( const Time& )
+  {
+    if ( request_lock.try_acquire() )
+      request->respond( *( new ExceptionResponse( ETIMEDOUT ) ) );
+    return true;
   }
 private:
   auto_Object<RequestType> request;
+  Mutex request_lock;
+  auto_TimerQueue timer_queue;
 };
 template <class RequestType, class ResponseType>
-class Client<RequestType, ResponseType>::AIOReadControlBlock : public Socket::AIOReadControlBlock
+class Client<RequestType, ResponseType>::AIOReadControlBlock : public virtual Socket::AIOReadControlBlock, public virtual TimerQueue::Timer
 {
 public:
-  AIOReadControlBlock( auto_Buffer buffer, auto_Object<RequestType> request, auto_Object<ResponseType> response )
+  AIOReadControlBlock( auto_Buffer buffer, auto_Object<RequestType> request, auto_Object<ResponseType> response, const Time& timeout, auto_TimerQueue timer_queue )
     : Socket::AIOReadControlBlock( buffer ),
-      request( request ), response( response )
+      TimerQueue::Timer( timeout ),
+      request( request ), response( response ),
+      timer_queue( timer_queue )
   { }
   // AIOControlBlock
   void onCompletion( size_t bytes_transferred )
   {
-    Socket::AIOReadControlBlock::onCompletion( bytes_transferred );
-    ssize_t deserialize_ret = response->deserialize( get_buffer() );
-    if ( deserialize_ret == 0 )
-      request->respond( *response.release() );
-    else if ( deserialize_ret > 0 )
-      get_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), request, response ) );
-    else
-      request->respond( *( new ExceptionResponse ) );
+    if ( request_lock.try_acquire() )
+    {
+      Socket::AIOReadControlBlock::onCompletion( bytes_transferred );
+      ssize_t deserialize_ret = response->deserialize( get_buffer() );
+      if ( deserialize_ret == 0 )
+        request->respond( *response.release() );
+      else if ( deserialize_ret > 0 )
+      {
+        AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( 1024 ), request, response, get_timeout(), timer_queue );
+        timer_queue->addTimer( static_cast<TimerQueue::Timer*>( aio_read_control_block )->incRef() );
+        get_socket()->aio_read( aio_read_control_block );
+      }
+      else
+        request->respond( *( new ExceptionResponse ) );
+    }
   }
   void onError( uint32_t error_code )
   {
-    request->respond( *( new ExceptionResponse( error_code ) ) );
+    if ( request_lock.try_acquire() )
+      request->respond( *( new ExceptionResponse( error_code ) ) );
+  }
+  // TimerQueue::Timer
+  bool fire( const Time& )
+  {
+    if ( request_lock.try_acquire() )
+      request->respond( *( new ExceptionResponse( ETIMEDOUT ) ) );
+    return true;
   }
 private:
   auto_Object<RequestType> request;
+  Mutex request_lock;
   auto_Object<ResponseType> response;
+  auto_TimerQueue timer_queue;
 };
 template <class RequestType, class ResponseType>
-class Client<RequestType, ResponseType>::AIOWriteControlBlock : public Socket::AIOWriteControlBlock
+class Client<RequestType, ResponseType>::AIOWriteControlBlock : public virtual Socket::AIOWriteControlBlock, public virtual TimerQueue::Timer
 {
 public:
-  AIOWriteControlBlock( auto_Buffer buffer, auto_Object<RequestType> request )
-    : Socket::AIOWriteControlBlock( buffer ), request( request )
+  AIOWriteControlBlock( auto_Buffer buffer, auto_Object<RequestType> request, const Time& timeout, auto_TimerQueue timer_queue )
+    : Socket::AIOWriteControlBlock( buffer ),
+      TimerQueue::Timer( timeout ),
+      request( request ),
+      timer_queue( timer_queue )
   { }
   // AIOControlBlock
   void onCompletion( size_t )
   {
-    get_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), request, static_cast<ResponseType*>( request->createResponse().release() ) ) );
+    if ( request_lock.try_acquire() )
+    {
+      AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( 1024 ), request, static_cast<ResponseType*>( request->createResponse().release() ), get_timeout(), timer_queue );
+      timer_queue->addTimer( static_cast<TimerQueue::Timer*>( aio_read_control_block )->incRef() );
+      get_socket()->aio_read( aio_read_control_block );
+    }
   }
   void onError( uint32_t error_code )
   {
-    request->respond( *( new ExceptionResponse( error_code ) ) );
+    if ( request_lock.try_acquire() )
+      request->respond( *( new ExceptionResponse( error_code ) ) );
+  }
+  // TimerQueue::Timer
+  bool fire( const Time& )
+  {
+    if ( request_lock.try_acquire() )
+      request->respond( *( new ExceptionResponse( ETIMEDOUT ) ) );
+    return true;
   }
 private:
   auto_Object<RequestType> request;
+  Mutex request_lock;
+  auto_TimerQueue timer_queue;
 };
 template class Client<HTTPRequest, HTTPResponse>;
 template class Client<ONCRPCRequest, ONCRPCResponse>;
