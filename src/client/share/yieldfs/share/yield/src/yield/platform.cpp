@@ -1,4 +1,4 @@
-// Revision: 1679
+// Revision: 1680
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -44,7 +44,7 @@ public:
       else
         break;
 #else
-      AIOControlBlock* aio_control_block = aio_control_block_queue->dequeue();
+      AIOControlBlock* aio_control_block = aio_queue.aio_control_block_queue->dequeue();
       if ( aio_control_block != NULL )
       {
         aio_control_block->execute();
@@ -81,8 +81,6 @@ AIOQueue::~AIOQueue()
 #else
   for ( std::vector<WorkerThread*>::iterator worker_thread_i = worker_threads.begin(); worker_thread_i != worker_threads.end(); worker_thread_i++ )
     submit( NULL );
-//  delete aio_control_block_queue_signal;
-//  delete aio_control_block_queue_lock;
 #endif
 }
 void AIOQueue::associate( int fd )
@@ -102,10 +100,7 @@ void AIOQueue::submit( auto_AIOControlBlock aio_control_block )
 #ifdef _WIN32
   PostQueuedCompletionStatus( hIoCompletionPort, 0, 1, *aio_control_block.release() );
 #else
-  aio_control_block_queue_lock->acquire();
-  aio_control_block_queue.push( aio_control_block.release() );
-  aio_control_block_queue_lock->release();
-  aio_control_block_queue_signal->release();
+  aio_control_block_queue->enqueue( aio_control_block.release() );
 #endif
 }
 
