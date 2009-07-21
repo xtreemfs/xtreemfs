@@ -1,4 +1,4 @@
-// Revision: 1674
+// Revision: 1679
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -44,25 +44,14 @@ public:
       else
         break;
 #else
-      aio_queue.aio_control_block_queue_signal->acquire();
-      if ( aio_queue.aio_control_block_queue_lock->try_acquire() )
+      AIOControlBlock* aio_control_block = aio_control_block_queue->dequeue();
+      if ( aio_control_block != NULL )
       {
-        if ( aio_queue.aio_control_block_queue.size() > 0 )
-        {
-          ::YIELD::AIOControlBlock* aio_control_block = aio_queue.aio_control_block_queue.front();
-          aio_queue.aio_control_block_queue.pop();
-          aio_queue.aio_control_block_queue_lock->release();
-          if ( aio_control_block != NULL )
-          {
-            aio_control_block->execute();
-            Object::decRef( *aio_control_block );
-          }
-          else
-            break;
-        }
-        else
-          aio_queue.aio_control_block_queue_lock->release();
+        aio_control_block->execute();
+        Object::decRef( *aio_control_block );
       }
+      else
+        break;
 #endif
     }
     Object::decRef( *this );
@@ -75,8 +64,7 @@ AIOQueue::AIOQueue()
 #ifdef _WIN32
   hIoCompletionPort = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0 );
 #else
-  aio_control_block_queue_signal = new CountingSemaphore;
-  aio_control_block_queue_lock = new Mutex;
+  aio_control_block_queue = new InterThreadQueue<AIOControlBlock*>;
 #endif
   uint16_t worker_thread_count = Machine::getOnlineLogicalProcessorCount();
   for ( uint16_t worker_thread_i = 0; worker_thread_i < worker_thread_count; worker_thread_i++ )
@@ -2440,7 +2428,7 @@ void TimerQueue::addTimer( auto_Object<Timer> timer )
                          static_cast<DWORD>( timer->get_period().as_unix_time_ms() ),
                          WT_EXECUTEDEFAULT );
 #else
-  thread.enqueueTimer( timer.release() );
+  thread.addTimer( timer.release() );
 #endif
 }
 
@@ -2491,24 +2479,20 @@ TimerQueue::Thread::Thread()
    should_run = true;
 }
 
-void TimerQueue::Thread::enqueueTimer( TimerQueue::Timer* timer )
-{
-  new_timers_queue.enqueue( timer );
-  new_timers_queue_signal.release();
-}
-
 void TimerQueue::Thread::run()
 {
   set_name( "TimerQueueThread" );
 
   while ( should_run )
   {
-    TimerQueue::Timer* new_timer = new_timers_queue.dequeue();
-    if ( new_timer != NULL )
-     timers.push( std::make_pair( Time() + new_timer->get_timeout(), new_timer ) );
-
     if ( timers.empty() )
-      new_timers_queue_signal.acquire();
+    {
+      TimerQueue::Timer* new_timer = new_timers_queue.dequeue();
+      if ( new_timer != NULL )
+        timers.push( std::make_pair( Time() + new_timer->get_timeout(), new_timer ) );
+      else
+        break;
+    }
     else
     {
       while ( should_run && !timers.empty() && Time::getCurrentUnixTimeNS() >= timers.top().first )
@@ -2532,7 +2516,9 @@ void TimerQueue::Thread::run()
         if ( !timers.empty() )
         {
           int64_t timeout_ns = timers.top().first - Time::getCurrentUnixTimeNS();
-          new_timers_queue_signal.timed_acquire( timeout_ns );
+          TimerQueue::Timer* new_timer = new_timers_queue.timed_dequeue( timeout_ns );
+          if ( new_timer != NULL )
+            timers.push( std::make_pair( Time() + new_timer->get_timeout(), new_timer ) );
         }
       }
       else
@@ -2543,8 +2529,8 @@ void TimerQueue::Thread::run()
 
 void TimerQueue::Thread::stop()
 {
-   should_run = false;
-   new_timers_queue_signal.release();
+  should_run = false;
+  new_timers_queue.enqueue( NULL );
 }
 #endif
 

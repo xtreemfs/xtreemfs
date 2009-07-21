@@ -207,8 +207,7 @@ struct timeval;
 
 namespace YIELD
 {
-  class CountingSemaphore;
-  class Mutex;
+  template <class> class InterThreadQueue;
   class Path;
   class Stat;
 
@@ -418,9 +417,7 @@ namespace YIELD
 #ifdef _WIN32
     void* hIoCompletionPort;
 #else
-    std::queue<AIOControlBlock*> aio_control_block_queue;
-    Mutex* aio_control_block_queue_lock;
-    CountingSemaphore* aio_control_block_queue_signal;
+    InterThreadQueue<AIOControlBlock*>* aio_control_block_queue;
 #endif
 
     class WorkerThread;
@@ -507,6 +504,87 @@ namespace YIELD
   };
 
   typedef YIELD::auto_Object<File> auto_File;
+
+  
+  template <class ElementType>
+  class InterThreadQueue : private std::queue<ElementType>
+  {
+  public:
+    ElementType dequeue()
+    {
+      if ( signal.acquire() )
+      {
+        if ( lock.try_acquire() )
+        {
+          if ( std::queue<ElementType>::size() > 0 )
+          {
+            ElementType element = std::queue<ElementType>::front();
+            std::queue<ElementType>::pop();
+            lock.release();
+            return element;
+          }
+          else
+            lock.release();
+        }
+      }
+
+      return NULL;
+    }
+
+    void enqueue( ElementType element )
+    {
+      lock.acquire();
+      std::queue<ElementType>::push( element );
+      lock.release();
+      signal.release();
+    }
+
+    ElementType timed_dequeue( uint64_t timeout_ns )
+    {
+      if ( signal.timed_acquire( timeout_ns ) )
+      {
+        if ( lock.try_acquire() )
+        {
+          if ( std::queue<ElementType>::size() > 0 )
+          {
+            ElementType element = std::queue<ElementType>::front();
+            std::queue<ElementType>::pop();
+            lock.release();
+            return element;
+          }
+          else
+            lock.release();
+        }
+      }
+
+      return NULL;
+    }
+
+    ElementType try_dequeue()
+    {
+      if ( signal.try_acquire() )
+      {
+        if ( lock.try_acquire() )
+        {
+          if ( std::queue<ElementType>::size() > 0 )
+          {
+            ElementType element = std::queue<ElementType>::front();
+            std::queue<ElementType>::pop();
+            lock.release();
+            return element;
+          }
+          else
+            lock.release();
+        }
+      }
+
+      return NULL;
+    }
+
+  private:
+    CountingSemaphore lock;
+    CountingSemaphore signal;
+  };
 
 
   class Log : public Object
@@ -1283,16 +1361,15 @@ namespace YIELD
     {
     public:
       Thread();
-      
-      void enqueueTimer( Timer* timer );
+
+      void addTimer( Timer* timer ) { new_timers_queue.enqueue( timer ); }
       void stop();
 
       // Thread
       void run();
 
     private:
-      NonBlockingFiniteQueue<TimerQueue::Timer*, 16> new_timers_queue;
-      Mutex new_timers_queue_signal;
+      InterThreadQueue<TimerQueue::Timer*> new_timers_queue;
       bool should_run;
       std::priority_queue< std::pair<uint64_t, Timer*>, std::vector< std::pair<uint64_t, Timer*> >, std::greater< std::pair<uint64_t, Timer*> > > timers;
     }; 

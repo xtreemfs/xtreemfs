@@ -110,11 +110,18 @@ namespace YIELD
   typedef auto_Object<EventHandler> auto_EventHandler;
 
 
-  class EventQueue : public EventTarget, private std::queue<Event*>
+  class EventQueue : public EventTarget, private InterThreadQueue<Event*>
   {
   public:
-    Event* dequeue();
-    Event* dequeue( uint64_t timeout_ns );
+    Event* dequeue()
+    {
+      return InterThreadQueue<Event*>::dequeue();
+    }
+
+    Event* dequeue( uint64_t timeout_ns )
+    {
+      return InterThreadQueue<Event*>::timed_dequeue( timeout_ns );
+    }
 
     template <class ExpectedEventType>
     ExpectedEventType& dequeue_typed()
@@ -186,7 +193,10 @@ namespace YIELD
         throw Exception( "EventQueue::dequeue_typed: timed out" );
     }
 
-    void enqueue( Event& ev );
+    void enqueue( Event& ev )
+    {
+      InterThreadQueue<Event*>::enqueue( &ev );
+    }
 
     // Object
     YIELD_OBJECT_PROTOTYPES( EventQueue, 0 );
@@ -422,7 +432,7 @@ namespace YIELD
     template <class EventHandlerType>
     auto_Stage createStage( auto_Object<EventHandlerType> event_handler, int16_t thread_count )
     {
-      return createStage( static_cast<EventHandler*>( event_handler.release() ), NULL, thread_count );
+      return createStage( static_cast<EventHandler*>( event_handler.release() ), thread_count );
     }
     
     virtual auto_Stage createStage( auto_Object<EventHandler> event_handler, int16_t thread_count = 1 ) = 0;

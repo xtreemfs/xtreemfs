@@ -1,4 +1,4 @@
-// Revision: 1674
+// Revision: 1679
 
 #include "yield/concurrency.h"
 using namespace YIELD;
@@ -31,56 +31,6 @@ void EventHandler::send( Event& ev )
     handleEvent( ev );
     handleEvent_lock.release();
   }
-}
-
-
-// event_queue.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-Event* EventQueue::dequeue()
-{
-  if ( empty.acquire() )
-  {
-    if ( lock.try_acquire() )
-    {
-      if ( std::queue<Event*>::size() > 0 )
-      {
-        Event* event = std::queue<Event*>::front();
-        std::queue<Event*>::pop();
-        lock.release();
-        return event;
-      }
-      else
-        lock.release();
-    }
-  }
-  return NULL;
-}
-Event* EventQueue::dequeue( uint64_t timeout_ns )
-{
-  if ( empty.timed_acquire( timeout_ns ) )
-  {
-    if ( lock.try_acquire() )
-    {
-      if ( std::queue<Event*>::size() > 0 )
-      {
-        Event* event = std::queue<Event*>::front();
-        std::queue<Event*>::pop();
-        lock.release();
-        return event;
-      }
-      else
-        lock.release();
-    }
-  }
-  return NULL;
-}
-void EventQueue::enqueue( Event& ev )
-{
-  lock.acquire();
-  std::queue<Event*>::push( &ev );
-  lock.release();
-  empty.release();
 }
 
 
