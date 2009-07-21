@@ -162,7 +162,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     uint64_t current_file_offset = offset;
     uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;    
 
-    YIELD::auto_Object<YIELD::OneSignalEventQueue> read_response_queue( new YIELD::OneSignalEventQueue );
+    YIELD::auto_EventQueue read_response_queue( new YIELD::EventQueue );
     size_t expected_read_response_count = 0;
 
     while ( rbuf_p < rbuf_end )
@@ -347,7 +347,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
     uint64_t current_file_offset = offset;
     uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;
 
-    YIELD::auto_Object<YIELD::OneSignalEventQueue> write_response_queue( new YIELD::OneSignalEventQueue );
+    YIELD::auto_EventQueue write_response_queue( new YIELD::EventQueue );
     size_t expected_write_response_count = 0;
 
     while ( wbuf_p < wbuf_end )

@@ -7,7 +7,7 @@
 #include "yield/base.h"
 
 #ifdef _WIN32
-#include <hash_map>
+#include <banned.h>
 typedef int ssize_t;
 extern "C"
 {
@@ -15,25 +15,20 @@ extern "C"
 }
 #else
 #include <errno.h>
-#if !defined(__sun) && ( __GNUC__ >= 4 || ( __GNUC__ == 4 && __GNUC_MINOR__ >= 3 ) )
-#include <tr1/unordered_map>
-#else
-#include <ext/hash_map>
-#endif
 #include <limits.h>
 #include <pthread.h>
+#include <unistd.h>
 #if defined(__MACH__)
 #include <mach/semaphore.h>
-#elif !defined(_WIN32)
+#else
 #include <semaphore.h>
 #endif
 #ifdef YIELD_HAVE_POSIX_FILE_AIO
 #include <aio.h>
 #endif
-#include <unistd.h>
-#endif
 #ifdef __sun
 #include <libcpc.h>
+#endif
 #endif
 
 #include <algorithm>
@@ -52,9 +47,6 @@ extern "C"
 #include <utility>
 #include <vector>
 
-#ifdef _WIN32
-#include <banned.h>
-#endif
 
 #ifdef _WIN32
 #ifndef DLLEXPORT
@@ -100,8 +92,6 @@ extern "C"
 #define NS_IN_S  1000000000ULL
 #define MS_IN_S  1000
 #define US_IN_S  1000000
-
-#define YIELD_CUCKOO_HASH_TABLE_MAX_LG_TABLE_SIZE_IN_BINS 20
 
 #define YIELD_EXCEPTION_WHAT_BUFFER_LENGTH 128
 
@@ -217,6 +207,8 @@ struct timeval;
 
 namespace YIELD
 {
+  class CountingSemaphore;
+  class Mutex;
   class Path;
   class Stat;
 
@@ -368,8 +360,7 @@ namespace YIELD
   }
 
 
-  template <class ParentType>
-  class AIOControlBlock : public ParentType
+  class AIOControlBlock : public Object
   {
   public:
     AIOControlBlock()
@@ -378,34 +369,65 @@ namespace YIELD
       memset( &aiocb_, 0, sizeof( aiocb_ ) );
       aiocb_.this_ = this;
 #endif
-      complete = false;
     }
 
-    inline bool isComplete() const { return complete; }
-    virtual void onCompletion( size_t ) { complete = true; }
+#ifdef _WIN32
+    static AIOControlBlock* from_OVERLAPPED( OVERLAPPED* overlapped ) { return reinterpret_cast<struct aiocb*>( overlapped )->this_; }
+#endif
+
+    virtual void onCompletion( size_t bytes_transferred ) = 0;    
+    virtual void onError( uint32_t error_code ) = 0;
 #if defined(_WIN32)
     operator OVERLAPPED*() { return reinterpret_cast<OVERLAPPED*>( &aiocb_ ); }
 #elif defined(YIELD_HAVE_POSIX_FILE_AIO)
     operator ::aiocb*() { return &aiocb_; }
 #endif
 
+    virtual void execute() = 0;
+
   protected:
     virtual ~AIOControlBlock() { }
 
   private:
-    friend class IOCompletionPort;
-
 #if defined(_WIN32) || defined(YIELD_HAVE_POSIX_FILE_AIO)
     struct aiocb : ::aiocb
     {
       AIOControlBlock* this_;
     } aiocb_;
 #endif
+  };
+  
+  typedef auto_Object<AIOControlBlock> auto_AIOControlBlock;
 
-    bool complete;
+
+  class AIOQueue : public Object
+  {
+  public:
+    AIOQueue();
+
+    void associate( int fd );
+    void associate( void* handle );
+    void submit( auto_AIOControlBlock aio_control_block );
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( AIOQueue, 0 );
+
+  private:
+    ~AIOQueue();
+
+#ifdef _WIN32
+    void* hIoCompletionPort;
+#else
+    std::queue<AIOControlBlock*> aio_control_block_queue;
+    Mutex* aio_control_block_queue_lock;
+    CountingSemaphore* aio_control_block_queue_signal;
+#endif
+
+    class WorkerThread;
+    std::vector<WorkerThread*> worker_threads;
   };
 
-
+  typedef auto_Object<AIOQueue> auto_AIOQueue;
 
 
   class CountingSemaphore
@@ -427,280 +449,6 @@ namespace YIELD
 #else
     sem_t sem;
 #endif
-  };
-
-
-  template <class ValueType>
-  class CuckooHashTable
-  {
-  public:
-    CuckooHashTable( uint8_t lg_table_size_in_bins = 6, uint8_t records_per_bin = 8, uint8_t table_count = 2 )
-      : lg_table_size_in_bins( lg_table_size_in_bins ), records_per_bin( records_per_bin ), table_count( table_count )
-    {
-      per_table_records_filled = new uint32_t[table_count];
-      table_size_in_bins = table_size_in_records = 0;
-      resizeTables( lg_table_size_in_bins );
-      clear();
-    }
-
-    ~CuckooHashTable()
-    {
-      delete [] per_table_records_filled;
-      delete [] tables;
-    }
-
-    CuckooHashTable<ValueType>& operator=( const CuckooHashTable<ValueType>& ) { return *this; }
-
-    void clear()
-    {
-      std::memset( tables, 0, sizeof( Record ) * table_size_in_records * table_count );
-      for ( uint8_t table_i = 0; table_i < table_count; table_i++ ) per_table_records_filled[table_i] = 0;
-      total_records_filled = 0;
-    }
-
-    inline bool empty() const { return size() == 0; }
-
-    inline ValueType erase( const std::string& external_key ) { return erase( external_key.c_str() ); }
-    inline ValueType erase( const char* external_key ) { return erase( string_hash( external_key ) ); }
-    inline ValueType erase( const char* external_key, size_t external_key_len ) { return erase( string_hash( external_key, external_key_len ) ); }
-    ValueType erase( uint32_t external_key )
-    {
-      uint32_t internal_key = external_key;
-      Record* record;
-
-      for ( uint8_t table_i = 0; table_i < table_count; table_i++ )
-      {
-        record = getRecord( table_i, internal_key, external_key );
-        if ( record )
-        {
-          ValueType old_value = record->value;
-          std::memset( record, 0, sizeof( Record ) );
-          total_records_filled--;
-          per_table_records_filled[table_i]--;
-          return old_value;
-        }
-        else
-          internal_key = rehashKey( internal_key );
-      }
-
-      return 0;
-    }
-
-    inline ValueType find( const std::string& external_key ) const { return find( external_key.c_str() ); }
-    inline ValueType find( const char* external_key ) const { return find( string_hash( external_key ) ); }
-    inline ValueType find( const char* external_key, size_t external_key_len ) const { return find( string_hash( external_key, external_key_len ) ); }
-    ValueType find( uint32_t external_key ) const
-    {
-      uint32_t internal_key = external_key;
-      Record* record;
-
-      for ( uint8_t table_i = 0; table_i < table_count; table_i++ )
-      {
-        record = getRecord( table_i, internal_key, external_key );
-        if ( record )
-          return record->value;
-        else
-          internal_key = rehashKey( internal_key );
-      }
-
-      return 0;
-    }
-
-    inline void insert( const std::string& external_key, ValueType value ) { insert( external_key.c_str(), value ); }
-    inline void insert( const char* external_key, ValueType value ) { insert( string_hash( external_key ), value ); }
-    inline void insert( const char* external_key, size_t external_key_len, ValueType value ) { insert( string_hash( external_key, external_key_len ), value ); }
-    void insert( uint32_t external_key, ValueType value )
-    {
-      while ( lg_table_size_in_bins < YIELD_CUCKOO_HASH_TABLE_MAX_LG_TABLE_SIZE_IN_BINS )
-      {
-        if ( insertWithoutResize( external_key, value ) )
-          return;
-        else
-          resizeTables( lg_table_size_in_bins + 1 ); // Will set lg_table_size_in_bins
-      }
-
-//			DebugBreak();
-    }
-
-    class iterator
-    {
-    public:
-      iterator( CuckooHashTable<ValueType>& cht, size_t record_i ) : cht( cht ), record_i( record_i ) { }
-      iterator( const iterator& other ) : cht( other.cht ), record_i( other.record_i ) { }
-
-      iterator& operator=( const iterator& other ) 
-      { 
-        if ( &cht == &other.cht )
-          this->record_i = other.record_i;
-        return *this;        
-      }
-
-      iterator& operator++()
-      {
-        return ++( *this );
-      }
-
-      iterator& operator++( int )
-      {
-        record_i++;
-        while ( record_i < ( cht.table_count * cht.table_size_in_records ) &&
-              cht.tables[record_i].external_key == 0 )
-          record_i++;
-        return *this;
-      }
-
-      ValueType& operator*()
-      {
-        return cht.tables[record_i].value;
-      }
-
-      bool operator!=( const iterator& other ) const
-      {
-        return record_i != other.record_i;
-      }
-
-    private:
-      CuckooHashTable<ValueType>& cht;
-      size_t record_i;
-    };
-
-    iterator begin() { return iterator( *this, 0 ); }
-
-    iterator end()
-    {
-      if ( total_records_filled > 0 )
-      {
-        size_t record_i = table_count * table_size_in_records;
-        while ( record_i > 0 )
-        {
-          if ( tables[record_i].external_key != 0 )
-            break;
-          record_i--;
-        }
-        return iterator( *this, record_i );
-      }
-      else
-        return iterator( *this, 0 );
-    }
-
-    inline size_t size() const { return total_records_filled; }
-
-  private:
-    uint8_t lg_table_size_in_bins, records_per_bin, table_count;
-    unsigned table_size_in_records, table_size_in_bins;
-
-    struct Record
-    {
-      uint32_t external_key;
-      ValueType value;
-    };
-
-    Record* tables;
-    uint32_t total_records_filled, *per_table_records_filled;
-
-
-    Record* getRecord( uint8_t table_i, uint32_t internal_key, uint32_t external_key ) const
-    {
-      Record* table = tables + ( table_i * table_size_in_records );
-      uint32_t bin_i = internal_key & ( table_size_in_bins -1 ), bin_i_end = bin_i + records_per_bin;
-      for ( ; bin_i < bin_i_end; bin_i++ )
-      {
-        if ( table[bin_i].external_key == external_key )
-        {
-          //if ( bin_i_end - bin_i < records_per_bin ) DebugBreak();
-          return &table[bin_i];
-        }
-      }
-      return 0;
-    }
-
-    inline uint32_t rehashKey( uint32_t key ) const
-    {
-      return key ^ ( key >> lg_table_size_in_bins );
-    }
-
-    bool insertWithoutResize( uint32_t external_key, ValueType value )
-    {
-      if ( find( external_key ) == value )
-        return true;
-
-      uint32_t internal_key = external_key;
-      Record* record;
-
-      for ( uint8_t table_i = 0; table_i < table_count; table_i++ )
-      {
-        record = getRecord( table_i, internal_key, 0 ); // Get an empty record
-
-        if ( record )
-        {
-          record->external_key = external_key;
-          record->value = value;
-          total_records_filled++;
-          per_table_records_filled[table_i]++;
-          return true;
-        }
-        else
-          internal_key = rehashKey( internal_key );
-      }
-
-      return false;
-    }
-
-    void resizeTables( uint8_t new_lg_table_size_in_bins )
-    {
-      Record* old_tables = tables;
-      uint8_t old_lg_table_size_in_bins = lg_table_size_in_bins;
-  //		uint32_t old_table_size_in_bins = table_size_in_bins;
-      uint32_t old_table_size_in_records = table_size_in_records;
-
-      while ( new_lg_table_size_in_bins < YIELD_CUCKOO_HASH_TABLE_MAX_LG_TABLE_SIZE_IN_BINS )
-      {
-        lg_table_size_in_bins = new_lg_table_size_in_bins;
-        table_size_in_bins = 1 << lg_table_size_in_bins;
-        table_size_in_records = table_size_in_bins * records_per_bin;
-        tables = new Record[table_size_in_records * table_count];
-        this->clear();
-        total_records_filled = 0;
-
-        if ( new_lg_table_size_in_bins == old_lg_table_size_in_bins ) // We're being called from the constructor
-          return;
-        else // There are old records
-        {
-          for ( uint8_t old_table_i = 0; old_table_i < table_count; old_table_i++ )
-          {
-            Record* old_table = old_tables + ( old_table_i * old_table_size_in_records );
-            for ( uint32_t old_record_i = 0; old_record_i < old_table_size_in_records; old_record_i++ )
-            {
-              Record* old_record = &old_table[old_record_i];
-              if ( old_record->external_key != 0 )
-              {
-                if ( insertWithoutResize( old_record->external_key, old_record->value ) )
-                  continue;
-                else
-                {
-                  new_lg_table_size_in_bins++;
-                  break; // Out of the old_record_i for loop
-                }
-              }
-            }
-
-            if ( new_lg_table_size_in_bins != lg_table_size_in_bins ) // We were unable to insert an old record without a resize
-              break; // Out of the old_table_i for loop
-          }
-
-          if ( new_lg_table_size_in_bins == lg_table_size_in_bins ) // We successfully resized the table
-          {
-            delete [] old_tables;
-            return;
-          }
-          else // We could not insert all of the old records in the resized table, try again
-            delete [] tables;
-        }
-      }
-
-//			DebugBreak(); // We could not insert all of the old records without going past the max lg_table_size.
-              // Something is definitely wrong.
-    }
   };
 
 
@@ -759,713 +507,6 @@ namespace YIELD
   };
 
   typedef YIELD::auto_Object<File> auto_File;
-
-
-  // Adapted from N. Askitis and J. Zobel, "Cache-conscious collision resolution in string hash tables", 2005.
-  template <class ValueType>
-  class StringArrayHashTable
-  {
-  public:
-    class Slot
-    {
-    public:
-      class Entry
-      {
-      public:
-        Entry( const unsigned char* data_p )
-        {
-          memcpy_s( &key_len, sizeof( key_len ), data_p, sizeof( key_len ) ); data_p += sizeof( key_len );
-          key = data_p; data_p += key_len;
-          memcpy_s( &value, sizeof( value ), data_p, sizeof( value ) );
-        }
-
-        Entry( const unsigned char* key, uint16_t key_len )
-          : key( key ), key_len( key_len ), value( 0 )
-        { }
-
-        Entry( const unsigned char* key, uint16_t key_len, ValueType value )
-          : key( key ), key_len( key_len ), value( value )
-        { }
-
-        Entry( const Entry& other )
-          : key( other.key ), key_len( other.key_len ), value( other.value )
-        { }
-
-        inline bool empty() const { return get_key_len() == 0; }
-        inline const unsigned char* get_key() const { return key; }
-        inline const uint16_t get_key_len() const { return key_len; }
-        inline ValueType get_value() const { return value; }
-        inline uint16_t get_value_offset() const { return sizeof( key_len ) + key_len; }
-
-        inline bool operator==( const Entry& other ) const
-        {
-          return this->key_len == other.key_len &&
-                 std::memcmp( this->key, key, key_len ) == 0;
-        }
-
-        unsigned char* serialize( unsigned char* data_p ) const
-        {
-          memcpy_s( data_p, sizeof( key_len ), &key_len, sizeof( key_len ) ); data_p += sizeof( key_len );
-          memcpy_s( data_p, key_len, key, key_len ); data_p += key_len;
-          memcpy_s( data_p, sizeof( value ), &value, sizeof( value ) ); data_p += sizeof( value );
-          return data_p;
-        }
-
-        inline uint16_t size() const { return sizeof( key_len ) + key_len + sizeof( value ); }
-
-        inline bool startswith( const unsigned char* key_prefix, uint16_t key_prefix_len ) const
-        {
-          return this->key_len >= key_prefix_len &&
-                 std::memcmp( this->key, key_prefix, key_prefix_len ) == 0;
-        }
-
-      private:
-        const unsigned char* key;
-        uint16_t key_len;
-        ValueType value;
-      };
-
-
-      class const_iterator
-      {
-      public:
-        const_iterator( const unsigned char* data_p ) : data_p( data_p ) { }
-        const_iterator( const const_iterator& other ) : data_p( other.data_p ) { }
-
-        const_iterator& operator++()
-        {
-          return ++( *this );
-        }
-
-        const_iterator& operator++( int )
-        {
-          data_p += Entry( data_p ).size();
-          return *this;
-        }
-
-        Entry operator*() const
-        {
-          return Entry( data_p );
-        }
-
-        bool operator!=( const const_iterator& other ) const
-        {
-          return data_p != other.data_p;
-        }
-
-      private:
-        const unsigned char* data_p;
-      };
-
-
-      Slot()
-      {
-        data = NULL;
-        data_len = 0;
-      }
-
-      ~Slot()
-      {
-        delete [] data;
-      }
-
-      inline const_iterator begin() const { return const_iterator( data ); }
-      inline bool empty() const { return size() == 0; }
-      const_iterator end() const { return const_iterator( data+data_len ); }
-
-      ValueType erase( const unsigned char* key, uint16_t key_len )
-      {
-        if ( data_len > 0 )
-        {
-          Entry erase_entry( key, key_len );
-          unsigned char *data_p = data, *data_end = data + data_len;
-          while ( data_p < data_end )
-          {
-            Entry test_entry( data_p );
-            if ( test_entry == erase_entry )
-            {
-              if ( test_entry.size() > data_len )
-              {
-                memmove( data_p, data_p + test_entry.size(), data_len - test_entry.size() );
-                data_len -= test_entry.size();
-                // Don't re-allocate
-              }
-              else
-              {
-                delete [] data;
-                data = NULL;
-                data_len = 0;
-              }
-#if defined(_WIN32) && defined(_DEBUG)
-              if(_heapchk()!=_HEAPOK) DebugBreak();
-#endif
-              return test_entry.get_value();
-            }
-            else
-              data_p += test_entry.size();
-          }
-        }
-#if defined(_WIN32) && defined(_DEBUG)
-        else if ( data != NULL )
-          DebugBreak();
-#endif
-
-        return 0;
-      }
-
-      void erase_by_prefix( const unsigned char* key_prefix, uint16_t key_prefix_len, std::vector<ValueType>* out_values = NULL )
-      {
-        if ( data_len > 0 )
-        {
-          // Assume that a large number of entries will match and copy in what remains instead of using memmove
-          unsigned char *new_data = new unsigned char[data_len], *new_data_p = new_data;
-
-          unsigned char *data_p = data, *data_end = data + data_len;
-          while ( data_p < data_end )
-          {
-            Entry test_entry( data_p );
-            if ( test_entry.startswith( key_prefix, key_prefix_len ) )
-            {
-              if ( out_values )
-                out_values->push_back( test_entry.get_value() );
-            }
-            else
-            {
-              memcpy_s( new_data_p, test_entry.size(), data_p, test_entry.size() );
-              new_data_p += test_entry.size();
-            }
-
-            data_p += test_entry.size();
-          }
-
-          delete [] data;
-          data_len = new_data_p - new_data;
-          if ( data_len > 0 )
-            data = new_data;
-          else
-            data = NULL;
-        }
-#if defined(_WIN32) && defined(_DEBUG)
-        else if ( data != NULL )
-          DebugBreak();
-#endif
-
-#if defined(_WIN32) && defined(_DEBUG)
-        if(_heapchk()!=_HEAPOK) DebugBreak();
-#endif
-      }
-
-      ValueType find( const unsigned char* key, uint16_t key_len ) const
-      {
-        if ( data_len > 0 )
-        {
-          Entry find_entry( key, key_len );
-          unsigned char *data_p = data, *data_end = data + data_len;
-          while ( data_p < data_end )
-          {
-            Entry test_entry( data_p );
-            if ( test_entry == find_entry )
-              return test_entry.get_value();
-            else
-              data_p += test_entry.size();
-          }
-        }
-#if defined(_WIN32) && defined(_DEBUG)
-        else if ( data != NULL )
-          DebugBreak();
-#endif
-
-        return 0;
-      }
-
-      void find_by_prefix( const unsigned char* key_prefix, uint16_t key_prefix_len, std::vector<ValueType>& out_values ) const
-      {
-        if ( data_len > 0 )
-        {
-          unsigned char *data_p = data, *data_end = data + data_len;
-          while ( data_p < data_end )
-          {
-            Entry test_entry( data_p );
-            if ( test_entry.startswith( key_prefix, key_prefix_len ) )
-              out_values.push_back( test_entry.get_value() );
-            data_p += test_entry.size();
-          }
-        }
-#if defined(_WIN32) && defined(_DEBUG)
-        else if ( data != NULL )
-          DebugBreak();
-#endif
-      }
-
-      void insert( const unsigned char* key, uint16_t key_len, ValueType value )
-      {
-        Entry insert_entry( key, key_len, value );
-
-        if ( data_len > 0 )
-        {
-          // Search for a duplicate string in this slot and, if present, replace its value
-          unsigned char *data_p = data, *data_end = data + data_len;
-          while ( data_p < data_end )
-          {
-            Entry test_entry( data_p );
-            if ( test_entry == insert_entry )
-            {
-              memcpy_s( data_p + test_entry.get_value_offset(), sizeof( value ), &value, sizeof( value ) );
-              return;
-            }
-            else
-              data_p += test_entry.size();
-          }
-
-          unsigned char *new_data = new unsigned char[data_len + insert_entry.size()], *new_data_p = new_data;
-          memcpy_s( new_data_p, data_len, data, data_len );
-          new_data_p += data_len;
-          delete [] data;
-          new_data_p = insert_entry.serialize( new_data_p );
-          data = new_data;
-          data_len = new_data_p - new_data;
-        }
-        else
-        {
-#if defined(_WIN32) && defined(_DEBUG)
-          if ( data != NULL ) DebugBreak();
-#endif
-          data = new unsigned char[insert_entry.size()];
-          insert_entry.serialize( data );
-          data_len = insert_entry.size();
-        }
-
-#if defined(_WIN32) && defined(_DEBUG)
-        if(_heapchk()!=_HEAPOK) DebugBreak();
-#endif
-      }
-
-      size_t size() const
-      {
-        if ( data_len > 0 )
-        {
-          size_t size_ = 0;
-          unsigned char *data_p = data, *data_end = data + data_len;
-          while ( data_p < data_end )
-          {
-            data_p += Entry( data_p ).size();
-            size_++;
-          }
-          return size_;
-        }
-        else
-        {
-#if defined(_WIN32) && defined(_DEBUG)
-          if ( data != NULL ) DebugBreak();
-#endif
-          return 0;
-        }
-      }
-
-    private:
-      unsigned char* data; size_t data_len;
-    };
-
-
-    StringArrayHashTable( uint32_t slot_count = 1000 )
-	  : slot_count( slot_count )
-  	{
-  	  slots = new Slot[slot_count];
-  	}
-
-    ~StringArrayHashTable()
-    {
-      delete [] slots;
-    }
-
-    inline bool empty() const { return size() == 0; }
-
-    inline void erase( const std::string& key ) { erase( key.c_str(), key.size() ); }
-    inline void erase( const unsigned char* key ) { erase( key, strnlen( key, UINT16_MAX ) ); }
-    inline void erase( const char* key, size_t key_len ) { erase( reinterpret_cast<const unsigned char*>( key ), static_cast<uint16_t>( key_len ) ); }
-    ValueType erase( const unsigned char* key, uint16_t key_len )
-    {
-      uint32_t slot_i = string_hash( key, key_len ) % slot_count;
-      return slots[slot_i].erase( key, key_len );
-    }
-
-    inline ValueType find( const std::string& key ) const { return find( key.c_str(), key.size() ); }
-    inline ValueType find( const char* key ) const { return find( key, strnlen( key, UINT16_MAX ) ); }
-    inline ValueType find( const char* key, size_t key_len ) const { return find( reinterpret_cast<const unsigned char*>( key ), static_cast<uint16_t>( key_len ) ); }
-    ValueType find( const unsigned char* key, uint16_t key_len ) const
-    {
-      uint32_t slot_i = string_hash( key, key_len ) % slot_count;
-      return slots[slot_i].find( key, key_len );
-    }
-
-    inline void insert( const std::string& key, ValueType value ) { insert( key.c_str(), key.size(), value ); }
-    inline void insert( const char* key, ValueType value ) { insert( key, strnlen( key, UINT16_MAX ), value ); }
-    inline void insert( const char* key, size_t key_len, ValueType value ) { insert( reinterpret_cast<const unsigned char*>( key ), static_cast<uint16_t>( key_len ), value ); }
-    void insert( const unsigned char* key, uint16_t key_len, ValueType value )
-    {
-      uint32_t slot_i = string_hash( key, key_len ) % slot_count;
-      slots[slot_i].insert( key, key_len, value );
-    }
-
-    size_t size() const
-    {
-      size_t size_ = 0;
-      for ( uint32_t slot_i = 0; slot_i < slot_count; slot_i++ )
-        size_ += slots[slot_i].size();
-      return size_;
-    }
-
-  private:
-    uint32_t slot_count;
-
-    Slot* slots;
-  };
-
-
-  // Adapted from N. Askitis and R. Sinha, "HAT-trie: A Cache-conscious Trie-based Data Structure for Strings", 2007.
-  template <class ValueType>
-  class HATTrie
-  {
-  public:
-    HATTrie( size_t leaf_bucket_size = 256 )
-      : root_bucket( leaf_bucket_size )
-    { }
-
-    inline bool empty() const { return size() == 0; }
-
-    inline ValueType erase( const std::string& key ) { return erase( key.c_str(), key.size() ); }
-    inline ValueType erase( const unsigned char* key ) { return erase( key, strnlen( key, UINT16_MAX ) ); }
-    inline ValueType erase( const char* key, size_t key_len ) { return erase( reinterpret_cast<const unsigned char*>( key ), static_cast<uint16_t>( key_len ) ); }
-    inline ValueType erase( const unsigned char* key, uint16_t key_len ) { return root_bucket.erase( key, key_len ); }
-
-    inline void erase_by_prefix( const std::string& key_prefix, std::vector<ValueType>* out_values = NULL ) { erase_by_prefix( key_prefix.c_str(), key_prefix.size(), out_values );  }
-    inline void erase_by_prefix( const char* key_prefix, std::vector<ValueType>* out_values = NULL ) { erase_by_prefix( key_prefix, strnlen( key_prefix, UINT16_MAX ), out_values );  }
-    inline void erase_by_prefix( const char* key_prefix, size_t key_prefix_len, std::vector<ValueType>* out_values = NULL ) { erase_by_prefix( reinterpret_cast<const unsigned char*>( key_prefix ), static_cast<uint16_t>( key_prefix_len ), out_values );  }
-    inline void erase_by_prefix( const unsigned char* key_prefix, uint16_t key_prefix_len, std::vector<ValueType>* out_values = NULL ) { root_bucket.erase_by_prefix( key_prefix, key_prefix_len, out_values ); }
-
-    inline ValueType find( const std::string& key ) const { return find( key.c_str(), key.size() ); }
-    inline ValueType find( const char* key ) const { return find( key, strnlen( key, UINT16_MAX ) ); }
-    inline ValueType find( const char* key, size_t key_len ) const { return find( reinterpret_cast<const unsigned char*>( key ), static_cast<uint16_t>( key_len ) ); }
-    inline ValueType find( const unsigned char* key, uint16_t key_len ) const { return root_bucket.find( key, key_len ); }
-
-    inline void find_by_prefix( const std::string& key_prefix, std::vector<ValueType>& out_values ) const { find_by_prefix( key_prefix.c_str(), key_prefix.size(), out_values );  }
-    inline void find_by_prefix( const char* key_prefix, std::vector<ValueType>& out_values ) const { find_by_prefix( key_prefix, strnlen( key_prefix, UINT16_MAX ), out_values );  }
-    inline void find_by_prefix( const char* key_prefix, size_t key_prefix_len, std::vector<ValueType>& out_values ) const { find_by_prefix( reinterpret_cast<const unsigned char*>( key_prefix ), static_cast<uint16_t>( key_prefix_len ), out_values );  }
-    inline void find_by_prefix( const unsigned char* key_prefix, uint16_t key_prefix_len, std::vector<ValueType>& out_values ) const { root_bucket.find_by_prefix( key_prefix, key_prefix_len, out_values ); }
-
-    inline void insert( const std::string& key, ValueType value ) { insert( key.c_str(), key.size(), value ); }
-    inline void insert( const char* key, ValueType value ) { insert( key, strnlen( key, UINT16_MAX ), value ); }
-    inline void insert( const char* key, size_t key_len, ValueType value ) { insert( reinterpret_cast<const unsigned char*>( key ), static_cast<uint16_t>( key_len ), value ); }
-    inline void insert( const unsigned char* key, uint16_t key_len, ValueType value ) { root_bucket.insert( key, key_len, value ); }
-
-    inline size_t size() const { return root_bucket.size(); }
-
-  private:
-    class Bucket
-    {
-    public:
-      enum Type { INTERNAL = 1, LEAF };
-
-      virtual ~Bucket() { }
-
-      Type get_type() const { return type; }
-
-    protected:
-      Bucket( Type type )
-        : type( type )
-      { }
-
-    private:
-      Type type;
-    };
-
-
-    class LeafBucket : public Bucket, public StringArrayHashTable<ValueType>::Slot
-    {
-    public:
-      LeafBucket() : Bucket( Bucket::LEAF )
-      { }
-    };
-
-
-    class InternalBucket : public Bucket
-    {
-    public:
-      InternalBucket( size_t leaf_bucket_size )
-        : Bucket( Bucket::INTERNAL ), leaf_bucket_size( leaf_bucket_size )
-      {
-        memset( child_buckets, 0, sizeof( child_buckets ) );
-      }
-
-      ~InternalBucket()
-      {
-        for ( size_t child_bucket_i = 0; child_bucket_i < 257; child_bucket_i++ )
-          delete child_buckets[child_bucket_i];
-      }
-
-      inline bool empty() const { return size() == 0; }
-
-      ValueType erase( const unsigned char* key, uint16_t key_len )
-      {
-        Bucket* child_bucket = findChildBucket( key, key_len );
-        if ( child_bucket != NULL )
-        {
-          ValueType value;
-
-          switch ( child_bucket->get_type() )
-          {
-            case Bucket::INTERNAL:
-            {
-#if defined(_WIN32) && defined(_DEBUG)
-              if ( key_len == 0 )
-                DebugBreak();
-#endif
-              value = static_cast<InternalBucket*>( child_bucket )->erase( key+1, key_len-1 );
-              if ( static_cast<InternalBucket*>( child_bucket )->empty() )
-                eraseChildBucket( key, key_len );
-            }
-            break;
-
-            case Bucket::LEAF:
-            {
-              if ( key_len > 0 )
-                value = static_cast<LeafBucket*>( child_bucket )->erase( key+1, key_len-1 );
-              else
-                value = static_cast<LeafBucket*>( child_bucket )->erase( key, key_len );
-
-              if ( static_cast<LeafBucket*>( child_bucket )->empty() )
-                eraseChildBucket( key, key_len );
-            }
-            break;
-
-            default: return 0;
-          }
-
-          return value;
-        }
-        else
-          return 0;
-      }
-
-      void erase_by_prefix( const unsigned char* key_prefix, uint16_t key_prefix_len, std::vector<ValueType>* out_values )
-      {
-        if ( key_prefix_len > 0 )
-        {
-          Bucket* child_bucket = findChildBucket( key_prefix, key_prefix_len );
-          if ( child_bucket )
-          {
-            switch ( child_bucket->get_type() )
-            {
-              case Bucket::INTERNAL: static_cast<InternalBucket*>( child_bucket )->erase_by_prefix( key_prefix+1, key_prefix_len-1, out_values );
-              case Bucket::LEAF: static_cast<LeafBucket*>( child_bucket )->erase_by_prefix( key_prefix+1, key_prefix_len-1, out_values );
-            }
-          }
-        }
-        else // Everything below this bucket matches the key_prefix
-        {
-          for ( size_t child_bucket_i = 0; child_bucket_i < 257; child_bucket_i++ )
-          {
-            if ( child_buckets[child_bucket_i] )
-            {
-              switch ( child_buckets[child_bucket_i]->get_type() )
-              {
-                case Bucket::INTERNAL:
-                {
-                  static_cast<InternalBucket*>( child_buckets[child_bucket_i] )->erase_by_prefix( key_prefix, key_prefix_len, out_values );
-                  if ( static_cast<InternalBucket*>( child_buckets[child_bucket_i] )->empty() )
-                  {
-                    delete child_buckets[child_bucket_i];
-                    child_buckets[child_bucket_i] = NULL;
-                  }
-                }
-                break;
-
-                case Bucket::LEAF:
-                {
-                  static_cast<LeafBucket*>( child_buckets[child_bucket_i] )->erase_by_prefix( key_prefix, key_prefix_len, out_values );
-                  if ( static_cast<LeafBucket*>( child_buckets[child_bucket_i] )->empty() )
-                  {
-                    delete child_buckets[child_bucket_i];
-                    child_buckets[child_bucket_i] = NULL;
-                  }
-                }
-              }
-
-            }
-          }
-        }
-      }
-
-      ValueType find( const unsigned char* key, uint16_t key_len ) const
-      {
-        Bucket* child_bucket = findChildBucket( key, key_len );
-        if ( child_bucket != NULL )
-        {
-          switch ( child_bucket->get_type() )
-          {
-            case Bucket::INTERNAL:
-            {
-#if defined(_WIN32) && defined(_DEBUG)
-              if ( key_len == 0 )
-                DebugBreak();
-#endif
-              return static_cast<InternalBucket*>( child_bucket )->find( key+1, key_len-1 );
-            }
-            break;
-
-            case Bucket::LEAF:
-            {
-              if ( key_len > 0 )
-                return static_cast<LeafBucket*>( child_bucket )->find( key+1, key_len-1 );
-              else
-                return static_cast<LeafBucket*>( child_bucket )->find( key, key_len );
-            }
-            break;
-
-            default: return 0;
-          }
-        }
-        else
-          return 0;
-      }
-
-      void find_by_prefix( const unsigned char* key_prefix, uint16_t key_prefix_len, std::vector<ValueType>& out_values ) const
-      {
-        if ( key_prefix_len > 0 )
-        {
-          Bucket* child_bucket = findChildBucket( key_prefix, key_prefix_len );
-          if ( child_bucket )
-          {
-            switch ( child_bucket->get_type() )
-            {
-              case Bucket::INTERNAL: return static_cast<InternalBucket*>( child_bucket )->find_by_prefix( key_prefix+1, key_prefix_len-1, out_values );
-              case Bucket::LEAF: return static_cast<LeafBucket*>( child_bucket )->find_by_prefix( key_prefix+1, key_prefix_len-1, out_values );
-            }
-          }
-        }
-        else // Everything below this bucket matches the key_prefix
-        {
-          for ( size_t child_bucket_i = 0; child_bucket_i < 257; child_bucket_i++ )
-          {
-            if ( child_buckets[child_bucket_i] )
-            {
-              switch ( child_buckets[child_bucket_i]->get_type() )
-              {
-                case Bucket::INTERNAL: static_cast<InternalBucket*>( child_buckets[child_bucket_i] )->find_by_prefix( key_prefix, key_prefix_len, out_values ); break;
-                case Bucket::LEAF: static_cast<LeafBucket*>( child_buckets[child_bucket_i] )->find_by_prefix( key_prefix, key_prefix_len, out_values ); break;
-              }
-            }
-          }
-        }
-      }
-
-      void insert( const unsigned char* key, uint16_t key_len, ValueType value )
-      {
-        Bucket* child_bucket = findChildBucket( key, key_len );
-        if ( child_bucket != NULL )
-        {
-          switch ( child_bucket->get_type() )
-          {
-            case Bucket::INTERNAL:
-            {
-#if defined(_WIN32) && defined(_DEBUG)
-              if ( key_len == 0 )
-                DebugBreak();
-#endif
-              return static_cast<InternalBucket*>( child_bucket )->insert( key+1, key_len-1, value );
-            }
-            break;
-
-            case Bucket::LEAF:
-            {
-              LeafBucket* child_leaf_bucket = static_cast<LeafBucket*>( child_bucket );
-              if ( child_leaf_bucket->size() < leaf_bucket_size )
-              {
-                if ( key_len > 0 )
-                  child_leaf_bucket->insert( key+1, key_len-1, value );
-                else
-                  child_leaf_bucket->insert( key, key_len, value );
-              }
-              else // Child LeafBucket is full, burst it into A grand-child buckets
-              {
-#if defined(_WIN32) && defined(_DEBUG)
-                if ( key_len == 0 )
-                  DebugBreak();
-#endif
-                InternalBucket* child_internal_bucket = new InternalBucket( leaf_bucket_size );
-                for ( typename LeafBucket::const_iterator entry_i = child_leaf_bucket->begin(); entry_i != child_leaf_bucket->end(); entry_i++ )
-                {
-                  typename LeafBucket::Entry entry = *entry_i;
-                  child_internal_bucket->insert( entry.get_key(), entry.get_key_len(), entry.get_value() );
-                }
-                child_internal_bucket->insert( key+1, key_len-1, value );
-                child_buckets[key[0]+1] = child_internal_bucket;
-                delete child_leaf_bucket;
-              }
-            }
-            break;
-          }
-        }
-        else if ( key_len > 0 )
-        {
-          child_bucket = child_buckets[key[0]+1] = new LeafBucket;
-          static_cast<LeafBucket*>( child_bucket )->insert( key+1, key_len-1, value );
-        }
-        else
-        {
-          child_bucket = child_buckets[0] = new LeafBucket;
-          static_cast<LeafBucket*>( child_bucket )->insert( key, key_len, value );
-        }
-      }
-
-      size_t size() const
-      {
-        size_t size_ = 0;
-        for ( size_t child_bucket_i = 0; child_bucket_i < 257; child_bucket_i++ )
-        {
-          if ( child_buckets[child_bucket_i] )
-          {
-            switch ( child_buckets[child_bucket_i]->get_type() )
-            {
-              case Bucket::INTERNAL: size_ += static_cast<InternalBucket*>( child_buckets[child_bucket_i] )->size(); break;
-              case Bucket::LEAF: size_ += static_cast<LeafBucket*>( child_buckets[child_bucket_i] )->size(); break;
-            }
-          }
-        }
-        return size_;
-      }
-
-    private:
-      size_t leaf_bucket_size;
-
-      Bucket* child_buckets[257]; // empty string bucket + one bucket for every possible unsigned char value
-
-      Bucket* findChildBucket( const unsigned char* key, uint16_t key_len ) const
-      {
-        if ( key_len > 0 )
-          return child_buckets[key[0]+1];
-        else
-          return child_buckets[0];
-      }
-
-      void eraseChildBucket( const unsigned char* key, uint16_t key_len )
-      {
-        if ( key_len > 0 )
-        {
-          delete child_buckets[key[0]+1];
-          child_buckets[key[0]+1] = NULL;
-        }
-        else
-        {
-          delete child_buckets[0];
-          child_buckets[0] = NULL;
-        }
-      }
-    };
-
-
-    InternalBucket root_bucket;
-  };
 
 
   class Log : public Object
@@ -1691,169 +732,6 @@ namespace YIELD
 #endif
   };
 
-
-  template <class ElementType, uint32_t QueueLength>
-  class NonBlockingFiniteQueue
-  {
-  public:
-    NonBlockingFiniteQueue()
-    {
-      head = 0;
-      tail = 1;
-
-      for ( size_t element_i = 0; element_i < QueueLength+2; element_i++ )
-        elements[element_i] = reinterpret_cast<ElementType>( 0 );
-
-      elements[0] = reinterpret_cast<ElementType>( 1 );
-    }
-
-    bool enqueue( ElementType element )
-    {
-#ifdef _DEBUG
-      if ( reinterpret_cast<uint_ptr>( element ) & 0x1 ) DebugBreak();
-#endif
-
-      element = reinterpret_cast<ElementType>( reinterpret_cast<uint_ptr>( element ) >> 1 );
-
-#ifdef _DEBUG
-      if ( reinterpret_cast<uint_ptr>( element ) & PTR_HIGH_BIT ) DebugBreak();
-#endif
-
-      int32_t copied_tail, last_try_pos, try_pos; // te, ate, temp
-      ElementType try_element;
-
-      for ( ;; )
-      {
-        copied_tail = tail;
-        last_try_pos = copied_tail;
-        try_element = reinterpret_cast<ElementType>( elements[last_try_pos] );
-        try_pos = ( last_try_pos + 1 ) % ( QueueLength + 2 );
-
-        while ( try_element != reinterpret_cast<ElementType>( 0 ) &&
-                try_element != reinterpret_cast<ElementType>( 1 ) )
-        {
-          if ( copied_tail != tail )
-            break;
-
-          if ( try_pos == head )
-            break;
-
-          try_element = reinterpret_cast<ElementType>( elements[try_pos] );
-          last_try_pos = try_pos;
-          try_pos = ( last_try_pos + 1 ) % ( QueueLength + 2 );
-        }
-
-        if ( copied_tail != tail ) // Someone changed tail while we were looping
-          continue;
-
-        if ( try_pos == head )
-        {
-          last_try_pos = ( try_pos + 1 ) % ( QueueLength + 2 );
-          try_element = reinterpret_cast<ElementType>( elements[last_try_pos] );
-
-          if ( try_element != reinterpret_cast<ElementType>( 0 ) &&
-               try_element != reinterpret_cast<ElementType>( 1 ) )
-            return false; // Queue is full
-
-          atomic_cas( &head, last_try_pos, try_pos );
-
-          continue;
-        }
-
-        if ( copied_tail != tail )
-          continue;
-
-        // diff next line
-        if ( 
-             atomic_cas( 
-                         reinterpret_cast<volatile uint_ptr*>( &elements[last_try_pos] ), 
-                         try_element == reinterpret_cast<ElementType>( 1 ) ? ( reinterpret_cast<uint_ptr>( element ) | PTR_HIGH_BIT ) : reinterpret_cast<uint_ptr>( element ),
-                         reinterpret_cast<uint_ptr>( try_element )
-                       ) 
-             == reinterpret_cast<uint_ptr>( try_element ) 
-           )
-        {
-          if ( try_pos % 2 == 0 )
-            atomic_cas( &tail, try_pos, copied_tail );
-
-          return true;
-        }
-      }
-    }
-
-    ElementType dequeue()
-    {
-      return try_dequeue();
-    }
-
-    ElementType try_dequeue()
-    {
-      int32_t copied_head, try_pos;
-      ElementType try_element;
-
-      for ( ;; )
-      {
-        copied_head = head;
-        try_pos = ( copied_head + 1 ) % ( QueueLength + 2 );
-        try_element = reinterpret_cast<ElementType>( elements[try_pos] );
-
-        while ( try_element == reinterpret_cast<ElementType>( 0 ) ||
-                try_element == reinterpret_cast<ElementType>( 1 ) )
-        {
-          if ( copied_head != head )
-            break;
-
-          if ( try_pos == tail )
-            return 0;
-
-          try_pos = ( try_pos + 1 ) % ( QueueLength + 2 );
-
-          try_element = reinterpret_cast<ElementType>( elements[try_pos] );
-        }
-
-        if ( copied_head != head )
-          continue;
-
-        if ( try_pos == tail )
-        {
-          atomic_cas( &tail, ( try_pos + 1 ) % ( QueueLength + 2 ), try_pos );
-          continue;
-        }
-
-        if ( copied_head != head )
-          continue;
-
-        if ( 
-             atomic_cas( 
-                         reinterpret_cast<volatile uint_ptr*>( &elements[try_pos] ), 
-                         ( reinterpret_cast<uint_ptr>( try_element ) & PTR_HIGH_BIT ) ? 1 : 0, 
-                         reinterpret_cast<uint_ptr>( try_element )
-                       ) 
-             == reinterpret_cast<uint_ptr>( try_element ) 
-           )
-        {
-          if ( try_pos % 2 == 0 )
-            atomic_cas( &head, try_pos, copied_head );
-
-          return reinterpret_cast<ElementType>( ( reinterpret_cast<uint_ptr>( try_element ) & PTR_LOW_BITS ) << 1 );
-        }
-      }
-    }
-
-  private:
-    volatile ElementType elements[QueueLength+2]; // extra 2 for sentinels
-    volatile int32_t head, tail;
-
-#if defined(__LLP64__) || defined(__LP64__)
-    typedef int64_t uint_ptr;
-    const static uint_ptr PTR_HIGH_BIT = 0x8000000000000000;
-    const static uint_ptr PTR_LOW_BITS = 0x7fffffffffffffff;
-#else
-    typedef int32_t uint_ptr;
-    const static uint_ptr PTR_HIGH_BIT = 0x80000000;
-    const static uint_ptr PTR_LOW_BITS = 0x7fffffff;
-#endif
-  };
 
 
   class NOPLock
@@ -2315,115 +1193,6 @@ namespace YIELD
     os << " }";
     return os;
   }
-
-
-  template <class ValueType>
-  class STLHashMap
-  {
-  public:
-#if defined(_WIN32)
-    typedef typename stdext::hash_map<uint32_t, ValueType>::iterator iterator;
-    typedef typename stdext::hash_map<uint32_t, ValueType>::const_iterator const_iterator;
-#elif defined(__GNUC__)
-#if !defined(__sun) && ( __GNUC__ >= 4 || ( __GNUC__ == 4 && __GNUC_MINOR__ >= 3 ) )
-    typedef typename std::tr1::unordered_map<uint32_t, ValueType>::iterator iterator;
-    typedef typename std::tr1::unordered_map<uint32_t, ValueType>::const_iterator const_iterator;
-#else
-    typedef typename __gnu_cxx::hash_map<uint32_t, ValueType>::iterator iterator;
-    typedef typename __gnu_cxx::hash_map<uint32_t, ValueType>::const_iterator const_iterator;
-#endif
-#endif
-
-
-    inline iterator begin() { return std_hash_map.begin(); }
-    inline void clear() { std_hash_map.clear(); }
-    inline bool empty() const { return std_hash_map.empty(); }
-    inline iterator end() { return std_hash_map.end(); }
-
-    inline ValueType erase( const std::string& key ) { return remove( key.c_str() ); }
-    inline ValueType erase( const char* key ) { return remove( key ); }
-
-    // Apple's g++ doesn't like find to be const
-    inline ValueType find( const std::string& key ) { return find( key.c_str() ); }
-    inline ValueType find( const std::string& key, ValueType default_value ) { return find( key.c_str(), default_value ); }
-    inline ValueType find( const char* key ) { return find( string_hash( key ) ); }
-    inline ValueType find( const char* key, ValueType default_value ) { ValueType value = find( string_hash( key ) ); return value != 0 ? value : default_value; }
-    ValueType find( uint32_t key )
-    {
-      iterator i = std_hash_map.find( key );
-      if ( i != std_hash_map.end() )
-        return i->second;
-      else
-        return 0;
-    }
-
-    inline void insert( const std::string& key, ValueType value ) { insert( key.c_str(), value ); }
-    inline void insert( const char* key, ValueType value ) { insert( string_hash( key ), value ); }
-    inline void insert( uint32_t key, ValueType value ) { std_hash_map.insert( std::make_pair( key, value ) ); }
-
-    inline ValueType remove( const std::string& key ) { return remove( key.c_str() ); }
-    inline ValueType remove( const char* key ) { return remove( string_hash( key ) ); }
-    ValueType remove( uint32_t key )
-    {
-      iterator i = std_hash_map.find( key );
-      if ( i != std_hash_map.end() )
-      {
-        ValueType value = i->second;
-        std_hash_map.erase( i );
-        return value;
-      }
-      else
-        return 0;
-    }
-
-    inline size_t size() const { return std_hash_map.size(); }
-
-  protected:
-#if defined(_WIN32)
-    stdext::hash_map<uint32_t, ValueType> std_hash_map;
-#elif defined(__GNUC__)
-#if !defined(__sun) && ( __GNUC__ >= 4 || ( __GNUC__ == 4 && __GNUC_MINOR__ >= 3 ) )
-    std::tr1::unordered_map<uint32_t, ValueType> std_hash_map;
-#else
-    __gnu_cxx::hash_map<uint32_t, ValueType> std_hash_map;
-#endif
-#endif
-  };
-
-
-  template <class ElementType>
-  class STLQueue : private std::queue<ElementType>
-  {
-  public:
-    bool enqueue( ElementType element )
-    {
-      lock.acquire();
-      std::queue<ElementType>::push( element );
-      lock.release();
-      return true;
-    }
-
-    ElementType try_dequeue()
-    {
-      if ( lock.try_acquire() )
-      {
-        if ( !std::queue<ElementType>::empty() )
-        {
-          ElementType element = std::queue<ElementType>::front();
-          std::queue<ElementType>::pop();
-          lock.release();
-          return element;
-        }
-        else
-          lock.release();
-      }
-
-      return 0;
-    }
-
-  private:
-    Mutex lock;
-  };
 
 
   class Thread : public Object

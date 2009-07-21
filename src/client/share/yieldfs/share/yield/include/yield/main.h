@@ -7,9 +7,7 @@
 #include "yield.h"
 
 #include <algorithm>
-#include <cstdlib> // For srand
 #include <cstring>
-#include <ctime> // For time()
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -18,22 +16,17 @@
 #ifdef _WIN32
 #pragma warning( push )
 #pragma warning( disable: 4995 )
-#endif
-#include "SimpleOpt.h"
-#ifdef _WIN32
-#pragma warning( pop )
-#endif
-
-#if defined(_WIN32)
 #include <winsock2.h>
 #pragma comment( lib, "ws2_32.lib" )
-#elif defined(__MACH__)
-#include <mach-o/dyld.h> // For _NSGetExecutablePath
-#include <signal.h>
+#include "SimpleOpt.h"
+#pragma warning( pop )
 #else
+#include "SimpleOpt.h"
 #include <signal.h>
+#ifdef __MACH__
+#include <mach-o/dyld.h> // For _NSGetExecutablePath
 #endif
-
+#endif
 
 namespace YIELD
 {
@@ -87,7 +80,7 @@ namespace YIELD
       signal( SIGPIPE, SIG_IGN );
 #endif
 
-      srand( static_cast<unsigned int>( std::time( 0 ) ) );
+      int ret = 0;
 
       try
       {
@@ -225,13 +218,19 @@ namespace YIELD
           argvv.push_back( argv[arg_i] );
 
         // Pass the original argv to _main instead of the copies SimpleOpt punched holes in
-        return _main( static_cast<int>( argvv.size() ), &argvv[0] );
+        ret = _main( static_cast<int>( argvv.size() ), &argvv[0] );
       }
       catch ( YIELD::Exception& exc ) // Don't catch std::exceptions like bad_alloc
       {
         std::cerr << exc.what() << std::endl;
-        return 1;
+        ret = 1;
       }
+
+#ifdef _WIN32
+      ::WSACleanup();
+#endif
+
+      return ret;
     }
 
   protected:

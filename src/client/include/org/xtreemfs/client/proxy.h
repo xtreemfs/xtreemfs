@@ -21,8 +21,8 @@ namespace org
       class Proxy : public YIELD::ONCRPCClient<InterfaceType>
       {
       public:
-        const static uint32_t PROXY_FLAG_TRACE_IO = YIELD::Peer<YIELD::ONCRPCRequest, YIELD::ONCRPCResponse>::PEER_FLAG_TRACE_IO;
-        const static uint32_t PROXY_FLAG_TRACE_OPERATIONS = YIELD::Peer<YIELD::ONCRPCRequest, YIELD::ONCRPCResponse>::PEER_FLAG_TRACE_OPERATIONS;
+        const static uint32_t PROXY_FLAG_TRACE_IO = YIELD::Client<YIELD::ONCRPCRequest, YIELD::ONCRPCResponse>::CLIENT_FLAG_TRACE_IO;
+        const static uint32_t PROXY_FLAG_TRACE_OPERATIONS = YIELD::Client<YIELD::ONCRPCRequest, YIELD::ONCRPCResponse>::CLIENT_FLAG_TRACE_OPERATIONS;
         const static uint32_t PROXY_FLAG_TRACE_AUTH = 8;
         
         // YIELD::EventTarget

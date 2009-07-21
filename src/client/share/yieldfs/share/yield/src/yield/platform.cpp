@@ -1,7 +1,125 @@
-// Revision: 1669
+// Revision: 1674
 
 #include "yield/platform.h"
 using namespace YIELD;
+
+
+// aio_queue.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef _WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
+class AIOQueue::WorkerThread : public Thread
+{
+public:
+  WorkerThread( AIOQueue& aio_queue )
+    : aio_queue( aio_queue )
+  { }
+  AIOQueue::WorkerThread& operator=( const AIOQueue::WorkerThread& ) { return *this; }
+  // Thread
+  void run()
+  {
+    set_name( "AIOQueue::WorkerThread" );
+    for ( ;; )
+    {
+#ifdef _WIN32
+      DWORD dwBytesTransferred; ULONG_PTR ulCompletionKey; LPOVERLAPPED lpOverlapped;
+      if ( GetQueuedCompletionStatus( aio_queue.hIoCompletionPort, &dwBytesTransferred, &ulCompletionKey, &lpOverlapped, INFINITE ) )
+      {
+        ::YIELD::AIOControlBlock* aio_control_block = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
+        if ( ulCompletionKey == 0 )
+          aio_control_block->onCompletion( dwBytesTransferred );
+        else
+          aio_control_block->execute();
+        Object::decRef( *aio_control_block );
+      }
+      else if ( lpOverlapped != NULL )
+      {
+        ::YIELD::AIOControlBlock* aio_control_block = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
+        aio_control_block->onError( ::GetLastError() );
+        Object::decRef( *aio_control_block );
+      }
+      else
+        break;
+#else
+      aio_queue.aio_control_block_queue_signal->acquire();
+      if ( aio_queue.aio_control_block_queue_lock->try_acquire() )
+      {
+        if ( aio_queue.aio_control_block_queue.size() > 0 )
+        {
+          ::YIELD::AIOControlBlock* aio_control_block = aio_queue.aio_control_block_queue.front();
+          aio_queue.aio_control_block_queue.pop();
+          aio_queue.aio_control_block_queue_lock->release();
+          if ( aio_control_block != NULL )
+          {
+            aio_control_block->execute();
+            Object::decRef( *aio_control_block );
+          }
+          else
+            break;
+        }
+        else
+          aio_queue.aio_control_block_queue_lock->release();
+      }
+#endif
+    }
+    Object::decRef( *this );
+  }
+private:
+  AIOQueue& aio_queue;
+};
+AIOQueue::AIOQueue()
+{
+#ifdef _WIN32
+  hIoCompletionPort = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0 );
+#else
+  aio_control_block_queue_signal = new CountingSemaphore;
+  aio_control_block_queue_lock = new Mutex;
+#endif
+  uint16_t worker_thread_count = Machine::getOnlineLogicalProcessorCount();
+  for ( uint16_t worker_thread_i = 0; worker_thread_i < worker_thread_count; worker_thread_i++ )
+  {
+    WorkerThread* worker_thread = new WorkerThread( *this );
+    worker_thread->start();
+    worker_threads.push_back( worker_thread );
+  }
+}
+AIOQueue::~AIOQueue()
+{
+#ifdef _WIN32
+  CloseHandle( hIoCompletionPort );
+#else
+  for ( std::vector<WorkerThread*>::iterator worker_thread_i = worker_threads.begin(); worker_thread_i != worker_threads.end(); worker_thread_i++ )
+    submit( NULL );
+//  delete aio_control_block_queue_signal;
+//  delete aio_control_block_queue_lock;
+#endif
+}
+void AIOQueue::associate( int fd )
+{
+#ifdef _WIN32
+  associate( reinterpret_cast<HANDLE>( fd ) );
+#endif
+}
+void AIOQueue::associate( void* handle )
+{
+#ifdef _WIN32
+  CreateIoCompletionPort( handle, hIoCompletionPort, 0, 0 );
+#endif
+}
+void AIOQueue::submit( auto_AIOControlBlock aio_control_block )
+{
+#ifdef _WIN32
+  PostQueuedCompletionStatus( hIoCompletionPort, 0, 1, *aio_control_block.release() );
+#else
+  aio_control_block_queue_lock->acquire();
+  aio_control_block_queue.push( aio_control_block.release() );
+  aio_control_block_queue_lock->release();
+  aio_control_block_queue_signal->release();
+#endif
+}
 
 
 // counting_semaphore.cpp

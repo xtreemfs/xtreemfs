@@ -96,7 +96,7 @@ namespace yieldfs
   private:
     ~DataCachingFile();
 
-    typedef YIELD::STLHashMap<CachedPage*> CachedPageMap;
+    typedef std::map<uint64_t, CachedPage*> CachedPageMap;
     CachedPageMap cached_pages;
   };
 };
@@ -1249,20 +1249,22 @@ ssize_t DataCachingFile::read( void* buffer, size_t buffer_len, uint64_t offset 
   size_t remaining_buffer_len = buffer_len;
   while ( remaining_buffer_len > 0 )
   {
-    uint32_t cached_page_i = static_cast<uint32_t>( offset / YIELDFS_CACHED_PAGE_SIZE );
-    CachedPage* cached_page = cached_pages.find( cached_page_i );
-    if ( cached_page != NULL )
+    CachedPage* cached_page;
+    uint64_t cached_page_number = offset / YIELDFS_CACHED_PAGE_SIZE;
+    CachedPageMap::iterator cached_page_i = cached_pages.find( static_cast<uint32_t>( offset / YIELDFS_CACHED_PAGE_SIZE ) );
+    if ( cached_page_i != cached_pages.end() )
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read hit on page " << cached_page_i << " with length " << cached_page->get_data_len() << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read hit on page " << cached_page_number << " with length " << cached_page->get_data_len() << ".";
 #endif
+      cached_page = cached_page_i->second;
     }
     else
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read miss on page " << cached_page_i << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read miss on page " << cached_page_number << ".";
 #endif
       cached_page = new CachedPage;
       ssize_t read_ret = underlying_file->read( cached_page->get_data(), YIELDFS_CACHED_PAGE_SIZE, offset );
@@ -1270,16 +1272,16 @@ ssize_t DataCachingFile::read( void* buffer, size_t buffer_len, uint64_t offset 
       {
 #ifdef _DEBUG
         if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read " << cached_page->get_data_len() << " bytes into page " << cached_page_i << ".";
+          log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read " << cached_page->get_data_len() << " bytes into page " << cached_page_number << ".";
 #endif
         cached_page->set_data_len( static_cast<uint16_t>( read_ret ) );
-        cached_pages.insert( cached_page_i, cached_page );
+        cached_pages[cached_page_number] = cached_page;
       }
       else
       {
 #ifdef _DEBUG
         if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read on page " << cached_page_i << " failed";
+          log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read on page " << cached_page_number << " failed";
 #endif
         delete cached_page;
         return read_ret;
@@ -1334,27 +1336,29 @@ ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t 
   ssize_t ret = 0;
   while ( remaining_buffer_len > 0 )
   {
-    uint32_t cached_page_i = static_cast<uint32_t>( offset / YIELDFS_CACHED_PAGE_SIZE );
-    CachedPage* cached_page = cached_pages.find( cached_page_i );
-    if ( cached_page != NULL )
+    CachedPage* cached_page;
+    uint64_t cached_page_number = offset / YIELDFS_CACHED_PAGE_SIZE;
+    CachedPageMap::iterator cached_page_i = cached_pages.find( cached_page_number );
+    if ( cached_page_i != cached_pages.end() )
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: write hit on page " << cached_page_i << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: write hit on page " << cached_page_number << ".";
 #endif
+      cached_page = cached_page_i->second;
     }
     else
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: write miss on page " << cached_page_i << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: write miss on page " << cached_page_number << ".";
 #endif
       cached_page = new CachedPage;
       if ( remaining_buffer_len < YIELDFS_CACHED_PAGE_SIZE ) // The buffer is smaller than a page, so we have to read the whole page and then overwrite part of it
       {
 #ifdef _DEBUG
         if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: writing partial page " << cached_page_i << ", must read from underlying file system.";
+          log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: writing partial page " << cached_page_number << ", must read from underlying file system.";
 #endif
         ssize_t read_ret = underlying_file->read( cached_page->get_data(), YIELDFS_CACHED_PAGE_SIZE, offset );
         if ( read_ret >= 0 )
@@ -1363,24 +1367,24 @@ ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t 
         {
 #ifdef _DEBUG
           if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read on page " << cached_page_i << " failed";
+            log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read on page " << cached_page_number << " failed";
 #endif
           delete cached_page;
           return read_ret;
         }
       }
-      cached_pages.insert( cached_page_i, cached_page );
+      cached_pages[cached_page_number] = cached_page;
     }
     cached_page->set_dirty_bit();
     if ( remaining_buffer_len > YIELDFS_CACHED_PAGE_SIZE )
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: filling page " << cached_page_i << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: filling page " << cached_page_number << ".";
 #endif
       memcpy_s( cached_page->get_data(), YIELDFS_CACHED_PAGE_SIZE, wrote_to_buffer_p, YIELDFS_CACHED_PAGE_SIZE );
       cached_page->set_data_len( YIELDFS_CACHED_PAGE_SIZE );
-      cached_pages.insert( cached_page_i, cached_page );
+      cached_pages[cached_page_number] = cached_page;
       wrote_to_buffer_p += YIELDFS_CACHED_PAGE_SIZE;
       remaining_buffer_len -= YIELDFS_CACHED_PAGE_SIZE;
       offset += YIELDFS_CACHED_PAGE_SIZE;
@@ -1390,7 +1394,7 @@ ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t 
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: partially filling page " << cached_page_i << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: partially filling page " << cached_page_number << ".";
 #endif
       memcpy_s( cached_page->get_data(), YIELDFS_CACHED_PAGE_SIZE, wrote_to_buffer_p, remaining_buffer_len );
       if ( remaining_buffer_len > cached_page->get_data_len() )

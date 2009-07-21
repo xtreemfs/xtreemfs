@@ -7,6 +7,7 @@
 #include "yield/platform.h"
 
 #include <map>
+#include <queue>
 
 
 #define YIELD_STAGES_PER_GROUP_MAX 32
@@ -32,6 +33,40 @@ namespace YIELD
   };
 
   typedef auto_Object<Event> auto_Event;
+
+
+  class Response : public Event
+  {
+  public:
+    // Object
+    Response& incRef() { return Object::incRef( *this ); }
+
+  protected:
+    Response() { }
+    virtual ~Response() { }
+  };
+
+  typedef auto_Object<Response> auto_Response;
+
+
+  class ExceptionResponse : public Response, public Exception
+  {
+  public:
+    ExceptionResponse() { }
+    ExceptionResponse( uint32_t error_code ) : Exception( error_code ) { }
+    ExceptionResponse( const char* what ) : Exception( what ) { }
+    ExceptionResponse( const Exception& other ) : Exception( other ) { }
+    ExceptionResponse( const ExceptionResponse& other ) : Exception( other ) { }
+    virtual ~ExceptionResponse() throw() { }
+
+    virtual ExceptionResponse* clone() const { return new ExceptionResponse( what() ); }
+    virtual void throwStackClone() const { throw ExceptionResponse( what() ); }
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( ExceptionResponse, 102 );
+  };
+
+  typedef auto_Object<ExceptionResponse> auto_ExceptionResponse;
 
 
   class EventTarget : public Object
@@ -75,77 +110,102 @@ namespace YIELD
   typedef auto_Object<EventHandler> auto_EventHandler;
 
 
-  class EventQueue : public EventTarget
+  class EventQueue : public EventTarget, private std::queue<Event*>
   {
   public:
-    virtual Event* dequeue() = 0; // Blocking
-    virtual Event* dequeue( uint64_t timeout_ns ) = 0;
+    Event* dequeue();
+    Event* dequeue( uint64_t timeout_ns );
 
     template <class ExpectedEventType>
     ExpectedEventType& dequeue_typed()
     {
       Event* dequeued_ev = dequeue();
-      if ( dequeued_ev )
-        return _checkDequeuedEventAgainstExpectedEventType<ExpectedEventType>( *dequeued_ev );
+      if ( dequeued_ev != NULL )
+      {
+        switch ( dequeued_ev->get_tag() )
+        {
+          case YIELD_OBJECT_TAG( ExpectedEventType ):
+          {
+            return static_cast<ExpectedEventType&>( *dequeued_ev );
+          }
+          break;
+            
+          case YIELD_OBJECT_TAG( ExceptionResponse ):
+          {
+            try
+            {
+              static_cast<ExceptionResponse*>( dequeued_ev )->throwStackClone();
+            }
+            catch ( ExceptionResponse& )
+            {
+              Object::decRef( *dequeued_ev );
+              throw;
+            }
+          }
+
+         default: throw Exception( "EventQueue::deqeue_typed: received unexpected, non-exception event type" );
+        }
+      }
       else
-        throw Exception( "EventQueue::dequeue_typed: blocking dequeue was broken" );
+        throw Exception( "EventQueue::dequeue_typed: timed out" );
     }
 
     template <class ExpectedEventType>
     ExpectedEventType& dequeue_typed( uint64_t timeout_ns )
     {
       Event* dequeued_ev = dequeue( timeout_ns );
-      if ( dequeued_ev )
-        return _checkDequeuedEventAgainstExpectedEventType<ExpectedEventType>( *dequeued_ev );
+      if ( dequeued_ev != NULL )
+      {
+        switch ( dequeued_ev->get_tag() )
+        {
+          case YIELD_OBJECT_TAG( ExpectedEventType ):
+          {
+            return static_cast<ExpectedEventType&>( *dequeued_ev );
+          }
+          break;
+            
+          case YIELD_OBJECT_TAG( ExceptionResponse ):
+          {
+            try
+            {
+              static_cast<ExceptionResponse*>( dequeued_ev )->throwStackClone();
+            }
+            catch ( ExceptionResponse& )
+            {
+              Object::decRef( *dequeued_ev );
+              throw;
+            }
+
+            throw Exception( "should never reach this point" );
+          }
+
+         default: throw Exception( "EventQueue::deqeue_typed: received unexpected, non-exception event type" );
+        }
+      }
       else
         throw Exception( "EventQueue::dequeue_typed: timed out" );
     }
 
-    virtual bool enqueue( Event& ev ) = 0;
-    virtual Event* try_dequeue() { return dequeue( 0 ); }
+    void enqueue( Event& ev );
+
+    // Object
+    YIELD_OBJECT_PROTOTYPES( EventQueue, 0 );
 
     // EventTarget
     void send( Event& ev )
     {
-#ifdef _DEBUG
-      if ( !enqueue( ev ) ) 
-        DebugBreak();
-#else
       enqueue( ev );
-#endif
     }
-
-  protected:
-    EventQueue() { }
-    virtual ~EventQueue() { }
 
   private:
     template <class ExpectedEventType>
     ExpectedEventType& _checkDequeuedEventAgainstExpectedEventType( Event& dequeued_ev );
+
+    CountingSemaphore empty;
+    Mutex lock;
   };
 
   typedef auto_Object<EventQueue> auto_EventQueue;
-
-
-  class OneSignalEventQueue : public EventQueue, private STLQueue<Event*>
-  {
-  public:
-    // Object
-    YIELD_OBJECT_PROTOTYPES( OneSignalEventQueue, 101 );
-
-    // EventQueue
-    Event* dequeue();
-    Event* dequeue( uint64_t timeout_ns );
-    bool enqueue( Event& ev );
-    Event* try_dequeue();
-
-  private:
-    ~OneSignalEventQueue() { }
-
-    CountingSemaphore empty;
-  };
-
-  typedef auto_Object<OneSignalEventQueue> auto_OneSignalEventQueue;
 
 
   class Interface : public EventHandler
@@ -161,18 +221,51 @@ namespace YIELD
   typedef auto_Object<Interface> auto_Interface;
 
 
-  class Response : public Event
+  class Stage : public EventTarget
   {
   public:
+    class StartupEvent : public Event
+    {
+    public:
+      StartupEvent( auto_Object<Stage> stage )
+        : stage( stage )
+      { }
+
+      auto_Object<Stage> get_stage() { return stage; }
+
+      // Object
+      YIELD_OBJECT_PROTOTYPES( Stage::StartupEvent, 104 );
+
+    private:
+      auto_Object<Stage> stage;
+    };
+
+
+    class ShutdownEvent : public Event
+    {
+    public:
+      // Object
+      YIELD_OBJECT_PROTOTYPES( Stage::ShutdownEvent, 105 );
+    };
+
+
+    virtual double get_rho() const { return 0; }
+    virtual const char* get_stage_name() const = 0;
+    virtual auto_Object<EventHandler> get_event_handler() = 0;
+
+    virtual bool visit() { return false; }; // Blocking visit
+    virtual bool visit( uint64_t ) { return false; }; // Timed visit
+
     // Object
-    Response& incRef() { return Object::incRef( *this ); }
+    YIELD_OBJECT_PROTOTYPES( Stage, 103 );
 
   protected:
-    Response() { }
-    virtual ~Response() { }
+    virtual ~Stage() { }
+
+    EventQueue event_queue;
   };
 
-  typedef auto_Object<Response> auto_Response;
+  typedef auto_Object<Stage> auto_Stage;
 
 
   class Request : public Event
@@ -209,122 +302,25 @@ namespace YIELD
   typedef auto_Object<Request> auto_Request;
 
 
-  class ExceptionResponse : public Response, public Exception
-  {
-  public:
-    ExceptionResponse() { }
-    ExceptionResponse( uint32_t error_code ) : Exception( error_code ) { }
-    ExceptionResponse( const char* what ) : Exception( what ) { }
-    ExceptionResponse( const Exception& other ) : Exception( other ) { }
-    ExceptionResponse( const ExceptionResponse& other ) : Exception( other ) { }
-    virtual ~ExceptionResponse() throw() { }
-
-    virtual ExceptionResponse* clone() const { return new ExceptionResponse( what() ); }
-    virtual void throwStackClone() const { throw ExceptionResponse( what() ); }
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( ExceptionResponse, 102 );
-  };
-
-  typedef auto_Object<ExceptionResponse> auto_ExceptionResponse;
-
-
-  template <class ExpectedEventType>
-  ExpectedEventType& EventQueue::_checkDequeuedEventAgainstExpectedEventType( Event& dequeued_ev )
-  {
-    switch ( dequeued_ev.get_tag() )
-    {
-      case YIELD_OBJECT_TAG( ExpectedEventType ): return static_cast<ExpectedEventType&>( dequeued_ev );
-
-      case YIELD_OBJECT_TAG( ExceptionResponse ):
-      {
-        try
-        {
-          static_cast<ExceptionResponse&>( dequeued_ev ).throwStackClone();
-        }
-        catch ( ExceptionResponse& )
-        {
-          Object::decRef( dequeued_ev );
-          throw;
-        }
-
-        throw Exception( "should never reach this point" );
-      }
-
-     default: throw Exception( "EventQueue::deqeue_typed: received unexpected, non-exception event type" );
-    }
-  }
-
-
-  class Stage : public EventTarget
-  {
-  public:
-    class StartupEvent : public Event
-    {
-    public:
-      StartupEvent( auto_Object<Stage> stage )
-        : stage( stage )
-      { }
-
-      auto_Object<Stage> get_stage() { return stage; }
-
-      // Object
-      YIELD_OBJECT_PROTOTYPES( Stage::StartupEvent, 104 );
-
-    private:
-      auto_Object<Stage> stage;
-    };
-
-
-    class ShutdownEvent : public Event
-    {
-    public:
-      // Object
-      YIELD_OBJECT_PROTOTYPES( Stage::ShutdownEvent, 105 );
-    };
-
-
-    virtual double get_rho() const { return 0; }
-    virtual const char* get_stage_name() const = 0;
-    virtual auto_Object<EventHandler> get_event_handler() = 0;
-    virtual auto_Object<EventQueue> get_event_queue() = 0;
-
-    virtual bool visit() { return false; }; // Blocking visit
-    virtual bool visit( uint64_t ) { return false; }; // Timed visit
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( Stage, 103 );
-
-  protected:
-    virtual ~Stage() { }
-  };
-
-  typedef auto_Object<Stage> auto_Stage;
-
-
   // A separate templated version for subclasses to inherit from (MG1Stage, CohortStage, etc.)
   // This helps eliminate some virtual function calls by having the specific EventHandler type instead of a generic EventHandler pointer
-  template <class EventHandlerType, class EventQueueType, class LockType>
-  class TemplatedStageImpl : public Stage
+  template <class EventHandlerType, class LockType>
+  class TemplatedStage : public Stage
   {
   public:
-    TemplatedStageImpl( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue, unsigned long running_stage_tls_key )
-      : event_handler( event_handler ), event_queue( event_queue ), running_stage_tls_key( running_stage_tls_key )
+    TemplatedStage( auto_Object<EventHandlerType> event_handler, unsigned long running_stage_tls_key )
+      : event_handler( event_handler ), running_stage_tls_key( running_stage_tls_key )
     { }
 
     // EventTarget
     void send( Event& ev )
     {
-      if ( event_queue->enqueue( ev ) )
-        return;
-      else
-        DebugBreak();
+      event_queue.enqueue( ev );
     }
 
     // Stage
     const char* get_stage_name() const { return event_handler->get_type_name(); }
-    auto_Object<EventHandler> get_event_handler() { return event_handler->incRef(); }
-    auto_Object<EventQueue> get_event_queue() { return static_cast<EventQueue&>( event_queue->incRef() ); }
+    auto_Object<EventHandler> get_event_handler() { return event_handler->incRef(); }    
 
     bool visit()
     {
@@ -332,7 +328,7 @@ namespace YIELD
       {
         Thread::setTLS( running_stage_tls_key, this );
 
-        Event* ev = event_queue->dequeue();
+        Event* ev = event_queue.dequeue();
         if ( ev != NULL )
         {
           event_handler->handleEvent( *ev );
@@ -355,7 +351,7 @@ namespace YIELD
       {
         Thread::setTLS( running_stage_tls_key, this );
 
-        Event* ev = event_queue->dequeue( timeout_ns );
+        Event* ev = event_queue.dequeue( timeout_ns );
         if ( ev != NULL )
         {
           event_handler->handleEvent( *ev );
@@ -374,7 +370,6 @@ namespace YIELD
 
   private:
     auto_Object<EventHandlerType> event_handler;
-    auto_Object<EventQueueType> event_queue;
     unsigned long running_stage_tls_key;
 
     LockType lock;
@@ -385,7 +380,7 @@ namespace YIELD
   class InstrumentedStageImpl : public Stage
   {
   public:
-    InstrumentedStageImpl( auto_Object<EventHandler> event_handler, auto_Object<EventQueue> event_queue, unsigned long running_stage_tls_key );
+    InstrumentedStageImpl( auto_Object<EventHandler> event_handler, unsigned long running_stage_tls_key );
 
     // EventTarget
     void send( Event& ev );
@@ -399,30 +394,16 @@ namespace YIELD
 
   private:
     auto_Object<EventHandler> event_handler;
-    auto_Object<EventQueue> event_queue;
     unsigned long running_stage_tls_key;
 
     LockType lock;
 
     // Statistics
     static TimerQueue statistics_timer_queue;
+    class StatisticsTimer;
     uint32_t event_queue_length, event_queue_arrival_count;
     Sampler<uint64_t, 2000, Mutex> event_processing_time_sampler;
     std::map<const char*, uint64_t> send_counters; Mutex send_counters_lock;
-
-
-    class StatisticsTimer : public TimerQueue::Timer
-    {
-    public:
-      StatisticsTimer( auto_Object<Stage> stage );
-
-      // Timer
-      bool fire( const Time& elapsed_time );
-
-    private:
-      auto_Object<Stage> stage;
-    };
-
 
     // StageImpl
     void _callEventHandler( Event& );
@@ -438,27 +419,13 @@ namespace YIELD
       return createStage( static_cast<EventHandler*>( event_handler.release() ) );
     }
 
-    template <class EventHandlerType, class EventQueueType>
-    auto_Stage createStage( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue )
-    {
-      return createStage( static_cast<EventHandler*>( event_handler.release() ), static_cast<EventQueue*>( event_queue.release() ) );
-    }
-
     template <class EventHandlerType>
     auto_Stage createStage( auto_Object<EventHandlerType> event_handler, int16_t thread_count )
     {
       return createStage( static_cast<EventHandler*>( event_handler.release() ), NULL, thread_count );
     }
-
-    template <class EventHandlerType, class EventQueueType>
-    auto_Stage createStage( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue, int16_t thread_count )
-    {
-      return createStage( static_cast<EventHandler*>( event_handler.release() ), static_cast<EventQueue*>( event_queue.release() ), thread_count );
-    }
     
-    virtual auto_Stage createStage( auto_Object<EventHandler> event_handler,                                    
-                                    auto_Object<EventQueue> event_queue = NULL,
-                                    int16_t thread_count = 1 ) = 0;
+    virtual auto_Stage createStage( auto_Object<EventHandler> event_handler, int16_t thread_count = 1 ) = 0;
 
     auto_ProcessorSet get_limit_physical_processor_set() const { return limit_physical_processor_set; }
     auto_ProcessorSet get_limit_logical_processor_set() const { return limit_logical_processor_set; }
@@ -529,22 +496,19 @@ namespace YIELD
     template <class EventHandlerType>
     auto_Stage createStage( auto_Object<EventHandlerType> event_handler )
     {
-      return static_cast<StageGroupType*>( this )->createStage<EventHandlerType, OneSignalEventQueue>( event_handler, new OneSignalEventQueue, 1 );
+      return static_cast<StageGroupType*>( this )->createStage<EventHandlerType, EventQueue>( event_handler, 1 );
     }
 
     template <class EventHandlerType>
-    auto_Stage createStage( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueue> event_queue, int16_t thread_count )
+    auto_Stage createStage( auto_Object<EventHandlerType> event_handler, int16_t thread_count )
     {
-      return static_cast<StageGroupType*>( this )->createStage<EventHandlerType, OneSignalEventQueue>( event_handler, new OneSignalEventQueue, thread_count );
+      return static_cast<StageGroupType*>( this )->createStage<EventHandlerType>( event_handler, thread_count );
     }
 
     // StageGroup
-    auto_Stage createStage( auto_Object<EventHandler> event_handler, auto_Object<EventQueue> event_queue = NULL, int16_t thread_count = 1 )
+    auto_Stage createStage( auto_Object<EventHandler> event_handler, int16_t thread_count = 1 )
     {
-      if ( event_queue == NULL )
-        return createStage<EventHandler>( event_handler, event_queue, thread_count );
-      else
-        return static_cast<StageGroupType*>( this )->createStage<EventHandler, EventQueue>( event_handler, event_queue, thread_count );
+      return createStage<EventHandler>( event_handler, thread_count );
     }
 
   protected:
@@ -574,17 +538,17 @@ namespace YIELD
   public:
     PerProcessorStageGroup( const char* name = "Main stage group", auto_Object<ProcessorSet> limit_physical_processor_set = NULL, int16_t threads_per_physical_processor = 1 );
 
-    template <class EventHandlerType, class EventQueueType>
-    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue, int16_t thread_count )
+    template <class EventHandlerType>
+    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t thread_count )
     {
       if ( thread_count <= 0 || thread_count > static_cast<int16_t>( this->physical_processor_threads.size() ) )
         thread_count = static_cast<int16_t>( this->physical_processor_threads.size() );
 
       auto_Object<Stage> stage;
       if ( event_handler->isThreadSafe() )
-        stage = new TemplatedStageImpl<EventHandlerType, EventQueueType, NOPLock>( event_handler, event_queue, this->get_running_stage_tls_key() );
+        stage = new TemplatedStage<EventHandlerType, NOPLock>( event_handler, this->get_running_stage_tls_key() );
       else
-        stage = new TemplatedStageImpl<EventHandlerType, EventQueueType, Mutex>( event_handler, event_queue, this->get_running_stage_tls_key() );
+        stage = new TemplatedStage<EventHandlerType, Mutex>( event_handler, this->get_running_stage_tls_key() );
 
       stage->get_event_handler()->handleEvent( *( new Stage::StartupEvent( stage ) ) );
 
@@ -614,57 +578,28 @@ namespace YIELD
     public:
       virtual void addStage( Stage& ) = 0;
 
-      // StageGroupThread
-      void stop();
+      // StageGroup::Thread
+      void stop()
+      {
+        should_run = false;
+        while ( is_running )
+          Thread::sleep( 5 * NS_IN_MS );
+      }
 
     protected:
-      Thread( auto_Object<ProcessorSet> limit_logical_processor_set, const std::string& stage_group_name, Stage** stages );    
+      Thread( auto_Object<ProcessorSet> limit_logical_processor_set, const std::string& stage_group_name, Stage** stages )
+        : StageGroup::Thread( limit_logical_processor_set ),
+          stage_group_name( stage_group_name ),
+          visit_policy( stages )
+      { }
       
       std::string stage_group_name;
       VisitPolicyType visit_policy;
     };
 
-     
-    class PhysicalProcessorThread : public Thread
-    {
-    public:
-      PhysicalProcessorThread( auto_Object<ProcessorSet> limit_logical_processor_set, const std::string& stage_group_name );
-
-      PhysicalProcessorThread& operator=( const PhysicalProcessorThread& ) { return *this; }
-
-      Stage** get_stages() { return stages; }
-
-      // PerProcessorStageGroup::Thread
-      void addStage( Stage& );
-
-    private:
-      ~PhysicalProcessorThread() { }
-
-      Stage* stage;
-      Stage* stages[YIELD_STAGES_PER_GROUP_MAX];
-
-      // StageGroup::Thread
-      void _run();
-    };
-
-
-    class LogicalProcessorThread : public Thread
-    {
-    public:
-      LogicalProcessorThread( auto_Object<ProcessorSet> limit_logical_processor_set, PhysicalProcessorThread& physical_processor_thread, const std::string& stage_group_name );
-      
-      LogicalProcessorThread& operator=( const LogicalProcessorThread& ) { return *this; }
-
-      // PerProcessorStageGroup::Thread
-      void addStage( Stage& );
-
-    private:
-      PhysicalProcessorThread& physical_processor_thread;
-
-      // StageGroup::Thread
-      void _run();
-    };
-
+    class PhysicalProcessorThread;
+    class LogicalProcessorThread;
+        
 
     std::vector<Thread*> physical_processor_threads;
     std::vector<Thread*> logical_processor_threads;
@@ -709,8 +644,8 @@ namespace YIELD
         : StageGroupImpl<SEDAStageGroup>( limit_physical_processor_set )
     { }
 
-    template <class EventHandlerType, class EventQueueType>
-    auto_Stage createStage( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue, int16_t thread_count )
+    template <class EventHandlerType>
+    auto_Stage createStage( auto_Object<EventHandlerType> event_handler, int16_t thread_count )
     {
       if ( thread_count == -1 )
       {
@@ -722,9 +657,9 @@ namespace YIELD
 
       auto_Stage stage;
       if ( event_handler->isThreadSafe() )
-        stage = new TemplatedStageImpl<EventHandlerType, EventQueueType, NOPLock>( event_handler, event_queue, get_running_stage_tls_key() );
+        stage = new TemplatedStage<EventHandlerType, NOPLock>( event_handler, get_running_stage_tls_key() );
       else
-        stage = new TemplatedStageImpl<EventHandlerType, EventQueueType, Mutex>( event_handler, event_queue, get_running_stage_tls_key() );
+        stage = new TemplatedStage<EventHandlerType, Mutex>( event_handler, get_running_stage_tls_key() );
 
       event_handler->handleEvent( *( new Stage::StartupEvent( stage ) ) );
 
@@ -742,28 +677,7 @@ namespace YIELD
     virtual ~SEDAStageGroup();
 
   private:
-    class Thread : public StageGroup::Thread
-    {
-    public:
-      Thread( auto_ProcessorSet limit_logical_processor_set, auto_Stage stage );
-
-      auto_Stage get_stage() { return stage; }
-
-      // Object
-      YIELD_OBJECT_PROTOTYPES( SEDAStageGroup::Thread, 0 );
-
-      // StageGroup::Thread
-      void stop();
-
-    private:
-      ~Thread() { }
-
-      auto_Stage stage;
-      
-      // StageGroup::Thread
-      void _run();
-    };
-
+    class Thread;
     std::vector<Thread*> threads;
     void startThreads( auto_Stage stage, int16_t thread_count );
   };

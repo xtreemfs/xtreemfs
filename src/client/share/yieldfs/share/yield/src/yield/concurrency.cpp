@@ -1,4 +1,4 @@
-// Revision: 1669
+// Revision: 1674
 
 #include "yield/concurrency.h"
 using namespace YIELD;
@@ -34,13 +34,63 @@ void EventHandler::send( Event& ev )
 }
 
 
-// instrumented_stage_impl.cpp
+// event_queue.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+Event* EventQueue::dequeue()
+{
+  if ( empty.acquire() )
+  {
+    if ( lock.try_acquire() )
+    {
+      if ( std::queue<Event*>::size() > 0 )
+      {
+        Event* event = std::queue<Event*>::front();
+        std::queue<Event*>::pop();
+        lock.release();
+        return event;
+      }
+      else
+        lock.release();
+    }
+  }
+  return NULL;
+}
+Event* EventQueue::dequeue( uint64_t timeout_ns )
+{
+  if ( empty.timed_acquire( timeout_ns ) )
+  {
+    if ( lock.try_acquire() )
+    {
+      if ( std::queue<Event*>::size() > 0 )
+      {
+        Event* event = std::queue<Event*>::front();
+        std::queue<Event*>::pop();
+        lock.release();
+        return event;
+      }
+      else
+        lock.release();
+    }
+  }
+  return NULL;
+}
+void EventQueue::enqueue( Event& ev )
+{
+  lock.acquire();
+  std::queue<Event*>::push( &ev );
+  lock.release();
+  empty.release();
+}
+
+
+// instrumented_stage.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 template <class LockType> TimerQueue InstrumentedStageImpl<LockType>::statistics_timer_queue;
 template <class LockType>
-InstrumentedStageImpl<LockType>::InstrumentedStageImpl( auto_Object<EventHandler> event_handler, auto_Object<EventQueue> event_queue, unsigned long running_stage_tls_key )
-  : event_handler( event_handler ), event_queue( event_queue ), running_stage_tls_key( running_stage_tls_key )
+InstrumentedStageImpl<LockType>::InstrumentedStageImpl( auto_Object<EventHandler> event_handler, unsigned long running_stage_tls_key )
+  : event_handler( event_handler ), running_stage_tls_key( running_stage_tls_key )
 {
   event_queue_length = event_queue_arrival_count = 1; // send() would normally inc these, but we can't use send() because it's a virtual function; instead we enqueue directly and inc the lengths ourselves
   statistics_timer_queue.addTimer( new StatisticsTimer( incRef() ) );
@@ -72,10 +122,7 @@ void InstrumentedStageImpl<LockType>::send( Event& ev )
     running_stage->send_counters_lock.release();
   }
   */
-  if ( event_queue->enqueue( ev ) )
-    return;
-  else
-    DebugBreak();
+  event_queue.enqueue( ev );
 }
 template <class LockType>
 bool InstrumentedStageImpl<LockType>::visit()
@@ -83,7 +130,7 @@ bool InstrumentedStageImpl<LockType>::visit()
   if ( lock.try_acquire() )
   {
     Thread::setTLS( running_stage_tls_key, this );
-    Event* ev = event_queue->dequeue();
+    Event* ev = event_queue.dequeue();
     if ( ev != NULL )
     {
       --event_queue_length;
@@ -106,7 +153,7 @@ bool InstrumentedStageImpl<LockType>::visit( uint64_t timeout_ns )
   if ( lock.try_acquire() )
   {
     Thread::setTLS( running_stage_tls_key, this );
-    Event* ev = event_queue->dequeue( timeout_ns );
+    Event* ev = event_queue.dequeue( timeout_ns );
     if ( ev != NULL )
     {
       --event_queue_length;
@@ -124,54 +171,60 @@ bool InstrumentedStageImpl<LockType>::visit( uint64_t timeout_ns )
     return false;
 }
 template <class LockType>
-InstrumentedStageImpl<LockType>::StatisticsTimer::StatisticsTimer( auto_Object<Stage> stage )
-  : Timer( 1 * NS_IN_S, 1 * NS_IN_S ), stage( stage )
-{ }
-template <class LockType>
-bool InstrumentedStageImpl<LockType>::StatisticsTimer::fire( const Time& )
+class InstrumentedStageImpl<LockType>::StatisticsTimer : public TimerQueue::Timer
 {
-  // double arrival_rate_s = static_cast<double>( stage->event_queue_arrival_count ) / elapsed_time.as_unix_time_s();
-  // stage->event_queue_arrival_count = 0;
-  //if ( strcmp( stage->get_stage_name(), "HTTPBenchmarkDriver" ) != 0 )
-  //{
-  //  double service_rate_s_max = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_min();
-  //  double service_rate_s_min = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_max();
-  //  double service_rate_s_25 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.25 );
-  //  double service_rate_s_50 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.50 );
-  //  double service_rate_s_75 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.75 );
-  //  double service_rate_s_95 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.95 );
-  //  double service_rate_s_mean = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_mean();
-  //  double service_rate_s_median = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_median();
-  //  std::ostringstream cout_line;
-  //  cout_line << "{\"" << stage->get_stage_name() << "\":{";
-  //  cout_line << "\"service_rate_s_max\": " << service_rate_s_max;
-  //  cout_line << ",\"service_rate_s_min\": " << service_rate_s_min;
-  //  cout_line << ",\"service_rate_s_25\": " << service_rate_s_25;
-  //  cout_line << ",\"service_rate_s_50\": " << service_rate_s_50;
-  //  cout_line << ",\"service_rate_s_75\": " << service_rate_s_75;
-  //  cout_line << ",\"service_rate_s_95\": " << service_rate_s_95;
-  //  cout_line << ",\"service_rate_s_mean\": " << service_rate_s_mean;
-  //  cout_line << ",\"service_rate_s_median\": " << service_rate_s_median;
-  //  cout_line << "}" << std::endl;
-  //  std::cout << cout_line.str();
-  //}
-  //if ( !stage->send_counters.empty() )
-  //{
-  //  std::ostringstream cout_line;
-  //  cout_line << "{\"" << stage->get_stage_name() << "\":{";
-  //  stage->send_counters_lock.acquire();
-  //  double send_counters_total = 0;
-  //  for ( std::map<const char*, uint64_t>::const_iterator send_counter_i = stage->send_counters.begin(); send_counter_i != stage->send_counters.end(); send_counter_i++ )
-  //    send_counters_total += send_counter_i->second;
-  //  for ( std::map<const char*, uint64_t>::const_iterator send_counter_i = stage->send_counters.begin(); send_counter_i != stage->send_counters.end(); send_counter_i++ )
-  //    cout_line << "\"" << send_counter_i->first << "\":" << static_cast<double>( send_counter_i->second ) / send_counters_total << ",";
-  //  stage->send_counters_lock.release();
-  //  cout_line << "\"\":0}}";
-  //  cout_line << std::endl;
-  //  std::cout << cout_line.str();
-  //}
-  return true;
-}
+public:
+  StatisticsTimer( auto_Object<Stage> stage )
+    : Timer( 1 * NS_IN_S, 1 * NS_IN_S ), stage( stage )
+  { }
+  // Timer
+  bool fire( const Time& )
+  {
+    // double arrival_rate_s = static_cast<double>( stage->event_queue_arrival_count ) / elapsed_time.as_unix_time_s();
+    // stage->event_queue_arrival_count = 0;
+    //if ( strcmp( stage->get_stage_name(), "HTTPBenchmarkDriver" ) != 0 )
+    //{
+    //  double service_rate_s_max = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_min();
+    //  double service_rate_s_min = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_max();
+    //  double service_rate_s_25 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.25 );
+    //  double service_rate_s_50 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.50 );
+    //  double service_rate_s_75 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.75 );
+    //  double service_rate_s_95 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.95 );
+    //  double service_rate_s_mean = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_mean();
+    //  double service_rate_s_median = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_median();
+    //  std::ostringstream cout_line;
+    //  cout_line << "{\"" << stage->get_stage_name() << "\":{";
+    //  cout_line << "\"service_rate_s_max\": " << service_rate_s_max;
+    //  cout_line << ",\"service_rate_s_min\": " << service_rate_s_min;
+    //  cout_line << ",\"service_rate_s_25\": " << service_rate_s_25;
+    //  cout_line << ",\"service_rate_s_50\": " << service_rate_s_50;
+    //  cout_line << ",\"service_rate_s_75\": " << service_rate_s_75;
+    //  cout_line << ",\"service_rate_s_95\": " << service_rate_s_95;
+    //  cout_line << ",\"service_rate_s_mean\": " << service_rate_s_mean;
+    //  cout_line << ",\"service_rate_s_median\": " << service_rate_s_median;
+    //  cout_line << "}" << std::endl;
+    //  std::cout << cout_line.str();
+    //}
+    //if ( !stage->send_counters.empty() )
+    //{
+    //  std::ostringstream cout_line;
+    //  cout_line << "{\"" << stage->get_stage_name() << "\":{";
+    //  stage->send_counters_lock.acquire();
+    //  double send_counters_total = 0;
+    //  for ( std::map<const char*, uint64_t>::const_iterator send_counter_i = stage->send_counters.begin(); send_counter_i != stage->send_counters.end(); send_counter_i++ )
+    //    send_counters_total += send_counter_i->second;
+    //  for ( std::map<const char*, uint64_t>::const_iterator send_counter_i = stage->send_counters.begin(); send_counter_i != stage->send_counters.end(); send_counter_i++ )
+    //    cout_line << "\"" << send_counter_i->first << "\":" << static_cast<double>( send_counter_i->second ) / send_counters_total << ",";
+    //  stage->send_counters_lock.release();
+    //  cout_line << "\"\":0}}";
+    //  cout_line << std::endl;
+    //  std::cout << cout_line.str();
+    //}
+    return true;
+  }
+private:
+  auto_Object<Stage> stage;
+};
 template class InstrumentedStageImpl<NOPLock>;
 template class InstrumentedStageImpl<Mutex>;
 
@@ -303,63 +356,6 @@ bool MG1VisitPolicy::populatePollingTable()
 }
 
 
-// one_signal_event_queue.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-Event* OneSignalEventQueue::dequeue()
-{
-  Event* result = STLQueue<Event*>::try_dequeue();
-  if ( result != 0 ) // Hot case
-    return result; // Don't dec the semaphore, just let a cold acquire succeed on an empty queue
-  else
-  {
-    do
-    {
-      empty.acquire();
-      result = STLQueue<Event*>::try_dequeue();
-    }
-    while ( result == 0 );
-    return result;
-  }
-}
-Event* OneSignalEventQueue::dequeue( uint64_t timeout_ns )
-{
-  Event* result = STLQueue<Event*>::try_dequeue();
-  if ( result != 0 )
-    return result;
-  else
-  {
-    for ( ;; )
-    {
-      uint64_t before_acquire_time_ns = Time::getCurrentUnixTimeNS();
-      empty.timed_acquire( timeout_ns );
-      if ( ( result = STLQueue<Event*>::try_dequeue() ) != 0 )
-        break;
-      uint64_t waited_ns = Time::getCurrentUnixTimeNS() - before_acquire_time_ns;
-      if ( waited_ns >= timeout_ns )
-        break;
-      else
-        timeout_ns -= static_cast<uint64_t>( waited_ns );
-    }
-    return result;
-  }
-}
-bool OneSignalEventQueue::enqueue( Event& ev )
-{
-  if ( STLQueue<Event*>::enqueue( &ev ) )
-  {
-    empty.release();
-    return true;
-  }
-  else
-    return false;
-}
-Event* OneSignalEventQueue::try_dequeue()
-{
-  return STLQueue<Event*>::try_dequeue();
-}
-
-
 // per_processor_stage_group.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -401,108 +397,112 @@ PerProcessorStageGroup<VisitPolicyType>::~PerProcessorStageGroup()
     ( *stage_i )->get_event_handler()->handleEvent( stage_shutdown_ev.incRef() );
 }
 template <class VisitPolicyType>
-PerProcessorStageGroup<VisitPolicyType>::Thread::Thread( auto_ProcessorSet limit_logical_processor_set, const std::string& stage_group_name, Stage** stages )
-  : StageGroup::Thread( limit_logical_processor_set ),
-    stage_group_name( stage_group_name ),
-    visit_policy( stages )
-{ }
-template <class VisitPolicyType>
-void PerProcessorStageGroup<VisitPolicyType>::Thread::stop()
+class PerProcessorStageGroup<VisitPolicyType>::PhysicalProcessorThread : public Thread
 {
-  should_run = false;
-  while ( is_running )
-    Thread::sleep( 5 * NS_IN_MS );
-}
-template <class VisitPolicyType>
-PerProcessorStageGroup<VisitPolicyType>::PhysicalProcessorThread::PhysicalProcessorThread( auto_ProcessorSet limit_logical_processor_set, const std::string& stage_group_name )
-  : Thread( limit_logical_processor_set, stage_group_name, stages )
-{
-  memset( stages, 0, sizeof( stages ) );
-  stage = NULL;
-}
-template <class VisitPolicyType>
-void PerProcessorStageGroup<VisitPolicyType>::PhysicalProcessorThread::addStage( Stage& stage )
-{
-  if ( !this->is_running ) this->start();
-  // Use a single pointer as a "queue" instead of a non-blocking finite queue, which is mostly overhead after startup
-  while ( this->stage != NULL ) Thread::sleep( 1 * NS_IN_MS );
-  this->stage = &stage;
-}
-template <class VisitPolicyType>
-void PerProcessorStageGroup<VisitPolicyType>::PhysicalProcessorThread::_run()
-{
-  // Per-thread variables on the stack
-  uint64_t visit_timeout_ns = 0;
-  uint64_t last_successful_visit_time_ns = Time::getCurrentUnixTimeNS();
-  while ( this->should_run )
+public:
+  PhysicalProcessorThread( auto_Object<ProcessorSet> limit_logical_processor_set, const std::string& stage_group_name )
+    : Thread( limit_logical_processor_set, stage_group_name, stages )
   {
-    Stage* next_stage_to_visit = this->visit_policy.getNextStageToVisit( visit_timeout_ns == 0 );
-    if ( next_stage_to_visit && this->visitStage( *next_stage_to_visit, visit_timeout_ns ) )
+    memset( stages, 0, sizeof( stages ) );
+    stage = NULL;
+  }
+  PhysicalProcessorThread& operator=( const PhysicalProcessorThread& ) { return *this; }
+  Stage** get_stages() { return stages; }
+  // PerProcessorStageGroup::Thread
+  void addStage( Stage& stage )
+  {
+    if ( !this->is_running ) this->start();
+    // Use a single pointer as a "queue" instead of a non-blocking finite queue, which is mostly overhead after startup
+    while ( this->stage != NULL ) Thread::sleep( 1 * NS_IN_MS );
+    this->stage = &stage;
+  }
+private:
+  ~PhysicalProcessorThread() { }
+  Stage* stage;
+  Stage* stages[YIELD_STAGES_PER_GROUP_MAX];
+  // StageGroup::Thread
+  void _run()
+  {
+    // Per-thread variables on the stack
+    uint64_t visit_timeout_ns = 0;
+    uint64_t last_successful_visit_time_ns = Time::getCurrentUnixTimeNS();
+    while ( this->should_run )
     {
-      visit_timeout_ns = 0;
-      last_successful_visit_time_ns = Time::getCurrentUnixTimeNS();
-    }
-    else
-    {
-      if ( Time::getCurrentUnixTimeNS() - last_successful_visit_time_ns > 200 * NS_IN_MS &&
-          visit_timeout_ns < 20 * NS_IN_MS )
-       visit_timeout_ns += NS_IN_MS;
-    }
-    if ( stage )
-    {
-      Stage* stage = this->stage;
-      this->stage = NULL;
-      unsigned char stage_i;
-      for ( stage_i = 0; stage_i < YIELD_STAGES_PER_GROUP_MAX; stage_i++ )
+      Stage* next_stage_to_visit = this->visit_policy.getNextStageToVisit( visit_timeout_ns == 0 );
+      if ( next_stage_to_visit && this->visitStage( *next_stage_to_visit, visit_timeout_ns ) )
       {
-        if ( stages[stage_i] == NULL )
+        visit_timeout_ns = 0;
+        last_successful_visit_time_ns = Time::getCurrentUnixTimeNS();
+      }
+      else
+      {
+        if ( Time::getCurrentUnixTimeNS() - last_successful_visit_time_ns > 200 * NS_IN_MS &&
+            visit_timeout_ns < 20 * NS_IN_MS )
+         visit_timeout_ns += NS_IN_MS;
+      }
+      if ( stage )
+      {
+        Stage* stage = this->stage;
+        this->stage = NULL;
+        unsigned char stage_i;
+        for ( stage_i = 0; stage_i < YIELD_STAGES_PER_GROUP_MAX; stage_i++ )
         {
-          stages[stage_i] = stage;
-          break;
+          if ( stages[stage_i] == NULL )
+          {
+            stages[stage_i] = stage;
+            break;
+          }
+        }
+        if ( stage_i == YIELD_STAGES_PER_GROUP_MAX )
+        {
+          std::ostringstream cerr_str;
+          cerr_str << "PerProcessorStageGroupThread: too many stages on thread " << this->get_id() << ", failing." << std::endl;
+          std::cerr << cerr_str;
+          DebugBreak();
         }
       }
-      if ( stage_i == YIELD_STAGES_PER_GROUP_MAX )
+    }
+  }
+};
+template <class VisitPolicyType>
+class PerProcessorStageGroup<VisitPolicyType>::LogicalProcessorThread : public Thread
+{
+public:
+  LogicalProcessorThread( auto_Object<ProcessorSet> limit_logical_processor_set, PhysicalProcessorThread& physical_processor_thread, const std::string& stage_group_name )
+    : Thread( limit_logical_processor_set, stage_group_name, physical_processor_thread.get_stages() ),
+      physical_processor_thread( physical_processor_thread )
+  { }
+  LogicalProcessorThread& operator=( const LogicalProcessorThread& ) { return *this; }
+  // PerProcessorStageGroup::Thread
+  void addStage( Stage& stage )
+  {
+    physical_processor_thread.addStage( stage );
+  }
+private:
+  PhysicalProcessorThread& physical_processor_thread;
+  // StageGroup::Thread
+  void _run()
+  {
+    // Per-thread variables on the stack
+    uint64_t visit_timeout_ns = 0;
+    uint64_t last_successful_visit_time_ns = Time::getCurrentUnixTimeNS();
+    while ( this->should_run )
+    {
+      Stage* next_stage_to_visit = this->visit_policy.getNextStageToVisit( visit_timeout_ns == 0 );
+      if ( next_stage_to_visit && this->visitStage( *next_stage_to_visit, visit_timeout_ns ) )
       {
-        std::ostringstream cerr_str;
-        cerr_str << "PerProcessorStageGroupThread: too many stages on thread " << this->get_id() << ", failing." << std::endl;
-        std::cerr << cerr_str;
-        DebugBreak();
+        visit_timeout_ns = 0;
+        last_successful_visit_time_ns = Time::getCurrentUnixTimeNS();
+      }
+      else
+      {
+        if ( Time::getCurrentUnixTimeNS() - last_successful_visit_time_ns > 200 * NS_IN_MS &&
+            visit_timeout_ns < 20 * NS_IN_MS )
+         visit_timeout_ns += NS_IN_MS;
       }
     }
   }
-}
-template <class VisitPolicyType>
-PerProcessorStageGroup<VisitPolicyType>::LogicalProcessorThread::LogicalProcessorThread( auto_ProcessorSet limit_logical_processor_set, PhysicalProcessorThread& physical_processor_thread, const std::string& stage_group_name )
-  : Thread( limit_logical_processor_set, stage_group_name, physical_processor_thread.get_stages() ),
-    physical_processor_thread( physical_processor_thread )
-{ }
-template <class VisitPolicyType>
-void PerProcessorStageGroup<VisitPolicyType>::LogicalProcessorThread::addStage( Stage& stage )
-{
-  physical_processor_thread.addStage( stage );
-}
-template <class VisitPolicyType>
-void PerProcessorStageGroup<VisitPolicyType>::LogicalProcessorThread::_run()
-{
-  // Per-thread variables on the stack
-  uint64_t visit_timeout_ns = 0;
-  uint64_t last_successful_visit_time_ns = Time::getCurrentUnixTimeNS();
-  while ( this->should_run )
-  {
-    Stage* next_stage_to_visit = this->visit_policy.getNextStageToVisit( visit_timeout_ns == 0 );
-    if ( next_stage_to_visit && this->visitStage( *next_stage_to_visit, visit_timeout_ns ) )
-    {
-      visit_timeout_ns = 0;
-      last_successful_visit_time_ns = Time::getCurrentUnixTimeNS();
-    }
-    else
-    {
-      if ( Time::getCurrentUnixTimeNS() - last_successful_visit_time_ns > 200 * NS_IN_MS &&
-          visit_timeout_ns < 20 * NS_IN_MS )
-       visit_timeout_ns += NS_IN_MS;
-    }
-  }
-}
+};
 template class PerProcessorStageGroup<MG1VisitPolicy>;
 template class PerProcessorStageGroup<SRPTVisitPolicy>;
 template class PerProcessorStageGroup<WavefrontVisitPolicy>;
@@ -511,18 +511,47 @@ template class PerProcessorStageGroup<WavefrontVisitPolicy>;
 // seda_stage_group.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
+class SEDAStageGroup::Thread : public StageGroup::Thread
+{
+public:
+  Thread( auto_ProcessorSet limit_logical_processor_set, auto_Stage stage )
+    : StageGroup::Thread( limit_logical_processor_set ), stage( stage )
+  { }
+  auto_Stage get_stage() { return stage; }
+  // Object
+  YIELD_OBJECT_PROTOTYPES( SEDAStageGroup::Thread, 0 );
+  // StageGroup::Thread
+  void stop()
+  {
+    should_run = false;
+    auto_Object<Stage::ShutdownEvent> stage_shutdown_event = new Stage::ShutdownEvent;
+    for ( ;; )
+    {
+      stage->send( stage_shutdown_event->incRef() );
+      if ( is_running )
+        Thread::sleep( 50 * NS_IN_MS );
+      else
+        break;
+    }
+  }
+private:
+  ~Thread() { }
+  auto_Stage stage;
+  // StageGroup::Thread
+  void _run()
+  {
+    Thread::set_name( stage->get_stage_name() );
+    while ( should_run )
+      visitStage( *stage );
+  }
+};
 SEDAStageGroup::~SEDAStageGroup()
 {
   for ( std::vector<Thread*>::iterator thread_i = threads.begin(); thread_i != threads.end(); thread_i++ )
     ( *thread_i )->stop();
-
   for ( std::vector<Thread*>::iterator thread_i = threads.begin(); thread_i != threads.end(); thread_i++ )
     Object::decRef( **thread_i );
 }
-
 void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
 {
   for ( unsigned short thread_i = 0; thread_i < thread_count; thread_i++ )
@@ -530,32 +559,6 @@ void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
     Thread* thread = new Thread( get_limit_logical_processor_set(), stage );
     thread->start();
     this->threads.push_back( thread );
-  }
-}
-
-SEDAStageGroup::Thread::Thread( auto_ProcessorSet limit_logical_processor_set, auto_Stage stage )
-  : StageGroup::Thread( limit_logical_processor_set ), stage( stage )
-{ }
-
-void SEDAStageGroup::Thread::_run()
-{
-  Thread::set_name( stage->get_stage_name() );
-
-  while ( should_run )
-    visitStage( *stage );
-}
-
-void SEDAStageGroup::Thread::stop()
-{
-  should_run = false;
-  auto_Object<Stage::ShutdownEvent> stage_shutdown_event = new Stage::ShutdownEvent;
-  for ( ;; )
-  {
-    stage->send( stage_shutdown_event->incRef() );
-    if ( is_running )
-      Thread::sleep( 50 * NS_IN_MS );
-    else
-      break;
   }
 }
 
