@@ -889,7 +889,7 @@ namespace YIELD
   {
   public:
     ONCRPCResponse( auto_Interface interface_ ); // Incoming, creates the body from the interface on demand
-    ONCRPCResponse( uint32_t xid, auto_Struct body ); // Outgoing
+    ONCRPCResponse( auto_Interface interface_, uint32_t xid, auto_Struct body ); // Outgoing
 
     // Object
     YIELD_OBJECT_PROTOTYPES( ONCRPCResponse, 208 );

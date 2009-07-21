@@ -1609,7 +1609,7 @@ ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, uint3
 { }
 auto_Response ONCRPCRequest::createResponse()
 {
-  return new ONCRPCResponse( get_xid(), static_cast<Request*>( get_body().get() )->createResponse().release() );
+  return new ONCRPCResponse( get_interface(), get_xid(), static_cast<Request*>( get_body().get() )->createResponse().release() );
 }
 void ONCRPCRequest::marshal( Marshaller& marshaller )
 {
@@ -1705,8 +1705,8 @@ void ONCRPCRequest::unmarshal( Unmarshaller& unmarshaller )
 ONCRPCResponse::ONCRPCResponse( auto_Interface interface_ )
   : ONCRPCMessage<ONCRPCResponse>( interface_ )
 { }
-ONCRPCResponse::ONCRPCResponse( uint32_t xid, auto_Struct body )
-  : ONCRPCMessage<ONCRPCResponse>( NULL, xid, body )
+ONCRPCResponse::ONCRPCResponse( auto_Interface interface_, uint32_t xid, auto_Struct body )
+  : ONCRPCMessage<ONCRPCResponse>( interface_, xid, body )
 { }
 void ONCRPCResponse::marshal( Marshaller& marshaller )
 {
