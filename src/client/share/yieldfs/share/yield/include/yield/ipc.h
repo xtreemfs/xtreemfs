@@ -479,6 +479,7 @@ namespace YIELD
     auto_AIOQueue aio_queue;
     
     auto_TimerQueue operation_timer_queue;
+    class OperationTimer;
   };
 
 
