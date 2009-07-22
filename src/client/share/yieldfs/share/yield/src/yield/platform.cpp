@@ -86,6 +86,7 @@ private:
       {
         aio_control_block->execute();
         Object::decRef( *aio_control_block );
+        idle_worker_threads.enqueue( this );
       }
       else
         break;
