@@ -79,7 +79,7 @@ namespace org
 File::File( YIELD::auto_Object<Volume> parent_volume, YIELD::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
 : parent_volume( parent_volume ), mrc_proxy( mrc_proxy ), path( path ), file_credentials( file_credentials )
 {
-  selected_file_replica = SIZE_MAX;
+  selected_file_replica = 0;
 }
 
 File::~File()
@@ -213,7 +213,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       YIELD::auto_Buffer data( read_response.get_object_data().get_data() );
       rbuf_p = static_cast<char*>( static_cast<void*>( *data ) );
       uint32_t zero_padding = read_response.get_object_data().get_zero_padding();
-      if ( read_response.get_selected_file_replica() != SIZE_MAX )
+      if ( read_response.get_selected_file_replica() != 0 )
         selected_file_replica = read_response.get_selected_file_replica();
 
 #ifdef _DEBUG
@@ -386,7 +386,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
     for ( size_t write_response_i = 0; write_response_i < expected_write_response_count; write_response_i++ )
     {
       org::xtreemfs::interfaces::OSDInterface::writeResponse& write_response = write_response_queue->dequeue_typed<org::xtreemfs::interfaces::OSDInterface::writeResponse>();
-      if ( write_response.get_selected_file_replica() != SIZE_MAX )
+      if ( write_response.get_selected_file_replica() != 0 )
         selected_file_replica = write_response.get_selected_file_replica();
 
 #ifdef _DEBUG

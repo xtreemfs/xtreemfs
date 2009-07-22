@@ -36,7 +36,7 @@ namespace org
         org::xtreemfs::interfaces::FileCredentials file_credentials;
 
         org::xtreemfs::interfaces::OSDWriteResponse latest_osd_write_response;
-        size_t selected_file_replica;
+        ssize_t selected_file_replica;
       };
     };
   };

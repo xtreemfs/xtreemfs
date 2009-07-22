@@ -54,7 +54,6 @@ namespace org
         select_file_replica_t select_file_replica;
         std::vector<YIELD::SharedLibrary*> policy_shared_libraries;
 
-
         YIELD::auto_Object<OSDProxy> getTCPOSDProxy( OSDProxyRequest& osd_proxy_request, const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t object_number );
         YIELD::auto_Object<OSDProxy> getTCPOSDProxy( const std::string& osd_uuid );        
         //void pingOSD( YIELD::auto_Object<OSDProxy> udp_osd_proxy );
@@ -64,6 +63,10 @@ namespace org
         void handletruncateRequest( truncateRequest& req );
         void handleunlinkRequest( unlinkRequest& req );
         void handlewriteRequest( writeRequest& req );
+
+        // Response targets
+        class ReadResponseTarget;
+        class TruncateResponseTarget;
       };
     };
   };

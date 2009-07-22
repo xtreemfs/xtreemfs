@@ -16,16 +16,16 @@ namespace org
       class OSDProxyRequest : public YIELD::Request
       {
       public:
-        size_t get_selected_file_replica() const { return selected_file_replica; }
-        void set_selected_file_replica( size_t selected_file_replica ) { this->selected_file_replica = selected_file_replica; }
+        ssize_t get_selected_file_replica() const { return selected_file_replica; }
+        void set_selected_file_replica( ssize_t selected_file_replica ) { this->selected_file_replica = selected_file_replica; }        
 
       protected:
         OSDProxyRequest()
-          : selected_file_replica( SIZE_MAX )
+          : selected_file_replica( 0 )
         { }
 
       private:
-        size_t selected_file_replica;
+        ssize_t selected_file_replica;        
       };
     };
   };
