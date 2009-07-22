@@ -627,7 +627,7 @@ class ReplicatingFile {
      * sends an error to all belonging clients (for all objects of the file)
      */
     public void reportError(Exception error) {
-        Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this, error.getMessage());
+        Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this, "%s", error.getMessage());
         for (ReplicatingObject object : waitingRequests.values()) {
             object.sendError(error);
         }
