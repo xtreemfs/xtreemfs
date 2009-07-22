@@ -29,12 +29,13 @@ namespace org
       {
       public:
         static YIELD::auto_Object<DIRProxy> create( const YIELD::URI& absolute_uri,
+                                                    YIELD::auto_AIOQueue aio_queue = NULL,
                                                     uint32_t flags = 0,
                                                     YIELD::auto_Log log = NULL,
                                                     const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::OPERATION_TIMEOUT_DEFAULT,
                                                     YIELD::auto_SSLContext ssl_context = NULL )
         {
-          return YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::create<DIRProxy>( absolute_uri, flags, log, operation_timeout, ssl_context );
+          return YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::create<DIRProxy>( absolute_uri, aio_queue, flags, log, operation_timeout, ssl_context );
         }
 
         YIELD::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> getAddressMappingsFromUUID( const std::string& uuid );
@@ -43,8 +44,8 @@ namespace org
       private:
         friend class YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>;
 
-        DIRProxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SocketAddress peer_sockaddr, YIELD::auto_SSLContext ssl_context )
-            : Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>( absolute_uri, flags, log, operation_timeout, peer_sockaddr, ssl_context )
+        DIRProxy( const YIELD::URI& absolute_uri, YIELD::auto_AIOQueue aio_queue, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SocketAddress peer_sockaddr, YIELD::auto_SSLContext ssl_context )
+            : Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>( absolute_uri, aio_queue, flags, log, operation_timeout, peer_sockaddr, ssl_context )
         { }
 
         ~DIRProxy();

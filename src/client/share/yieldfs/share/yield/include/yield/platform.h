@@ -402,16 +402,20 @@ namespace YIELD
   class AIOQueue : public Object
   {
   public:
-    AIOQueue();
-
     void associate( int fd );
     void associate( void* handle );
+    static auto_Object<AIOQueue> create();
     void submit( auto_AIOControlBlock aio_control_block );
 
     // Object
     YIELD_OBJECT_PROTOTYPES( AIOQueue, 0 );
 
   private:
+#ifdef _WIN32
+    AIOQueue( void* hIoCompletionPort );
+#else
+    AIOQueue();
+#endif
     ~AIOQueue();
 
 #ifdef _WIN32

@@ -1,4 +1,4 @@
-// Revision: 1688
+// Revision: 1689
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -15,11 +15,10 @@ using namespace YIELD;
 #define ETIMEDOUT WSAETIMEDOUT
 #endif
 template <class RequestType, class ResponseType>
-Client<RequestType, ResponseType>::Client( const URI& absolute_uri, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
-  : flags( flags ), log( log ), operation_timeout( operation_timeout ), peername( peername ), ssl_context( ssl_context )
+Client<RequestType, ResponseType>::Client( const URI& absolute_uri, auto_AIOQueue aio_queue, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
+  : aio_queue( aio_queue ), flags( flags ), log( log ), operation_timeout( operation_timeout ), peername( peername ), ssl_context( ssl_context )
 {
   this->absolute_uri = new URI( absolute_uri );
-  aio_queue = new AIOQueue;
   operation_timer_queue = new TimerQueue;
 }
 template <class RequestType, class ResponseType>
@@ -325,7 +324,7 @@ void HTTPBenchmarkDriver::sendHTTPRequest()
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 auto_HTTPClient HTTPClient::create( const URI& absolute_uri,
-                                    auto_Object<StageGroup> stage_group,
+                                    auto_AIOQueue aio_queue,
                                     uint32_t flags,
                                     auto_Log log,
                                     const Time& operation_timeout,
@@ -337,13 +336,17 @@ auto_HTTPClient HTTPClient::create( const URI& absolute_uri,
   auto_SocketAddress peername = SocketAddress::create( absolute_uri );
   if ( peername != NULL )
   {
+    if ( aio_queue == NULL )
+    {
+      aio_queue = AIOQueue::create();
+      if ( aio_queue == NULL )
+        return NULL;
+    }
 #ifdef YIELD_HAVE_OPENSSL
     if ( absolute_uri.get_scheme() == "https" && ssl_context == NULL )
       ssl_context = SSLContext::create( SSLv23_client_method() );
 #endif
-    auto_Object<HTTPClient> http_client = new HTTPClient( absolute_uri, flags, log, operation_timeout, peername, ssl_context );
-    auto_Stage http_client_stage = stage_group->createStage( http_client->incRef() );
-    return http_client;
+    return new HTTPClient( absolute_uri, aio_queue, flags, log, operation_timeout, peername, ssl_context );
   }
   return NULL;
 }
@@ -365,8 +368,7 @@ auto_HTTPResponse HTTPClient::PUT( const URI& absolute_uri, const Path& body_fil
 }
 auto_HTTPResponse HTTPClient::sendHTTPRequest( const char* method, const URI& absolute_uri, auto_Buffer body, auto_Log log )
 {
-  auto_StageGroup stage_group = new SEDAStageGroup;
-  auto_HTTPClient http_client = HTTPClient::create( absolute_uri, stage_group, 0, log );
+  auto_HTTPClient http_client = HTTPClient::create( absolute_uri, NULL, 0, log );
   auto_HTTPRequest http_request = new HTTPRequest( method, absolute_uri, body );
   http_request->set_header( "User-Agent", "Flog 0.99" );
   auto_EventQueue http_response_queue( new EventQueue );
@@ -850,10 +852,9 @@ private:
   auto_AIOQueue aio_queue;
   auto_EventTarget http_request_target;
 };
-HTTPServer::HTTPServer( auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket )
-  : http_request_target( http_request_target ), listen_tcp_socket( listen_tcp_socket )
+HTTPServer::HTTPServer( auto_AIOQueue aio_queue, auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket )
+  : aio_queue( aio_queue ), http_request_target( http_request_target ), listen_tcp_socket( listen_tcp_socket )
 {
-  aio_queue = new AIOQueue;
   listen_tcp_socket->associate( aio_queue );
   listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( aio_queue, http_request_target ) );
 }
@@ -874,7 +875,11 @@ auto_HTTPServer HTTPServer::create( const URI& absolute_uri,
       listen_tcp_socket = TCPSocket::create();
     if ( listen_tcp_socket->bind( sockname ) &&
          listen_tcp_socket->listen() )
-      return new HTTPServer( http_request_target, listen_tcp_socket );
+    {
+      auto_AIOQueue aio_queue = AIOQueue::create();
+      if ( aio_queue != NULL )
+        return new HTTPServer( aio_queue, http_request_target, listen_tcp_socket );
+    }
   }
   return NULL;
 }
@@ -1973,35 +1978,37 @@ auto_ONCRPCServer ONCRPCServer::create( const URI& absolute_uri,
   auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
   if ( sockname != NULL )
   {
-    if ( absolute_uri.get_scheme() == "oncrpcu" )
+    auto_AIOQueue aio_queue( AIOQueue::create() );
+    if ( aio_queue != NULL )
     {
-      auto_UDPSocket udp_socket( UDPSocket::create() );
-      if ( udp_socket != NULL &&
-           udp_socket->bind( sockname ) )
+      if ( absolute_uri.get_scheme() == "oncrpcu" )
       {
-        auto_AIOQueue aio_queue( new AIOQueue );
-        udp_socket->associate( aio_queue );
-        udp_socket->aio_recvfrom( new AIORecvFromControlBlock( interface_ ) );
-        return new ONCRPCServer( aio_queue, interface_, udp_socket.release() );
+        auto_UDPSocket udp_socket( UDPSocket::create() );
+        if ( udp_socket != NULL &&
+             udp_socket->bind( sockname ) )
+        {
+          udp_socket->associate( aio_queue );
+          udp_socket->aio_recvfrom( new AIORecvFromControlBlock( interface_ ) );
+          return new ONCRPCServer( aio_queue, interface_, udp_socket.release() );
+        }
       }
-    }
-    else
-    {
-      auto_TCPSocket listen_tcp_socket;
-#ifdef YIELD_HAVE_OPENSSL
-      if ( absolute_uri.get_scheme() == "oncrpcs" && ssl_context != NULL )
-        listen_tcp_socket = SSLSocket::create( ssl_context ).release();
       else
-#endif
-        listen_tcp_socket = TCPSocket::create();
-      if ( listen_tcp_socket != NULL &&
-           listen_tcp_socket->bind( sockname ) &&
-           listen_tcp_socket->listen() )
       {
-        auto_AIOQueue aio_queue( new AIOQueue );
-        listen_tcp_socket->associate( aio_queue );
-        listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( aio_queue, interface_ ) );
-        return new ONCRPCServer( aio_queue, interface_, listen_tcp_socket.release() );
+        auto_TCPSocket listen_tcp_socket;
+#ifdef YIELD_HAVE_OPENSSL
+        if ( absolute_uri.get_scheme() == "oncrpcs" && ssl_context != NULL )
+          listen_tcp_socket = SSLSocket::create( ssl_context ).release();
+        else
+#endif
+          listen_tcp_socket = TCPSocket::create();
+        if ( listen_tcp_socket != NULL &&
+             listen_tcp_socket->bind( sockname ) &&
+             listen_tcp_socket->listen() )
+        {
+          listen_tcp_socket->associate( aio_queue );
+          listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( aio_queue, interface_ ) );
+          return new ONCRPCServer( aio_queue, interface_, listen_tcp_socket.release() );
+        }
       }
     }
   }

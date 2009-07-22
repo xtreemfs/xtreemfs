@@ -516,7 +516,7 @@ namespace YIELD
     virtual void handleEvent( Event& );
 
   protected:
-    Client( const URI& absolute_uri, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context );
+    Client( const URI& absolute_uri, auto_AIOQueue aio_queue, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context );
     virtual ~Client();
 
     uint32_t get_flags() const { return flags; }
@@ -524,6 +524,7 @@ namespace YIELD
 
   private:
     auto_Object<URI> absolute_uri;
+    auto_AIOQueue aio_queue;
     uint32_t flags;
     auto_Log log;
     Time operation_timeout;
@@ -535,8 +536,6 @@ namespace YIELD
     class AIOConnectControlBlock;
     class AIOReadControlBlock;
     class AIOWriteControlBlock;
-
-    auto_AIOQueue aio_queue;
     
     auto_TimerQueue operation_timer_queue;
     class OperationTimer;
@@ -738,7 +737,7 @@ namespace YIELD
   {
   public:
     static auto_Object<HTTPClient> create( const URI& absolute_uri, 
-                                           auto_Object<StageGroup> stage_group, 
+                                           auto_AIOQueue aio_queue,
                                            uint32_t flags = 0,
                                            auto_Log log = NULL, 
                                            const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
@@ -755,8 +754,8 @@ namespace YIELD
     virtual void handleEvent( Event& ev ) { Client<HTTPRequest, HTTPResponse>::handleEvent( ev ); }
 
   private:
-    HTTPClient( const URI& absolute_uri, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
-      : Client<HTTPRequest, HTTPResponse>( absolute_uri, flags, log, operation_timeout, peername, ssl_context )
+    HTTPClient( const URI& absolute_uri, auto_AIOQueue aio_queue, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
+      : Client<HTTPRequest, HTTPResponse>( absolute_uri, aio_queue, flags, log, operation_timeout, peername, ssl_context )
     { }
 
     virtual ~HTTPClient() { }
@@ -779,7 +778,7 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( HTTPServer, 0 );
 
   private:
-    HTTPServer( auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket ) ;
+    HTTPServer( auto_AIOQueue aio_queue, auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket ) ;
 
     auto_EventTarget http_request_target;
     auto_TCPSocket listen_tcp_socket;
@@ -980,6 +979,7 @@ namespace YIELD
   public:
     template <class ONCRPCClientType>
     static auto_Object<ONCRPCClientType> create( const URI& absolute_uri, 
+                                                 auto_AIOQueue aio_queue = NULL,
                                                  uint32_t flags = 0,
                                                  auto_Log log = NULL, 
                                                  const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
@@ -987,7 +987,16 @@ namespace YIELD
     {
       auto_SocketAddress peername = SocketAddress::create( absolute_uri );
       if ( peername != NULL && peername->get_port() != 0 )
-        return new ONCRPCClientType( absolute_uri, flags, log, operation_timeout, peername, ssl_context );        
+      {
+        if ( aio_queue == NULL )
+        {
+          aio_queue = AIOQueue::create();
+          if ( aio_queue == NULL )
+            return NULL;
+        }
+
+        return new ONCRPCClientType( absolute_uri, aio_queue, flags, log, operation_timeout, peername, ssl_context );        
+      }
       else
         return NULL;
     }
@@ -1023,8 +1032,8 @@ namespace YIELD
     }
 
   protected:
-    ONCRPCClient( const URI& absolute_uri, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
-      : Client<ONCRPCRequest, ONCRPCResponse>( absolute_uri, flags, log, operation_timeout, peername, ssl_context )
+    ONCRPCClient( const URI& absolute_uri, auto_AIOQueue aio_queue, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
+      : Client<ONCRPCRequest, ONCRPCResponse>( absolute_uri, aio_queue, flags, log, operation_timeout, peername, ssl_context )
     { }
 
     virtual ~ONCRPCClient() { }

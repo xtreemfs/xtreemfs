@@ -225,7 +225,7 @@ namespace org
           if ( checked_uri.get_port() == 0 )
             checked_uri.set_port( default_port );
 
-          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, get_ssl_context() );
+          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, NULL, get_proxy_flags(), get_log(), operation_timeout, get_ssl_context() );
           if ( proxy != NULL )
             return proxy;
           else

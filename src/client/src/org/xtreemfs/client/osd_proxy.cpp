@@ -7,13 +7,14 @@ using namespace org::xtreemfs::client;
 
 YIELD::auto_Object<OSDProxy> OSDProxy::create( const YIELD::URI& absolute_uri,
                                                const std::string& uuid,
+                                               YIELD::auto_AIOQueue aio_queue,
                                                uint32_t flags,
                                                YIELD::auto_Log log,
                                                const YIELD::Time& operation_timeout,
                                                const YIELD::Time& ping_interval,
                                                YIELD::auto_SSLContext ssl_context )
 {
-  YIELD::auto_Object<OSDProxy> osd_proxy = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::create<OSDProxy>( absolute_uri, flags, log, operation_timeout, ssl_context );
+  YIELD::auto_Object<OSDProxy> osd_proxy = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::create<OSDProxy>( absolute_uri, aio_queue, flags, log, operation_timeout, ssl_context );
   osd_proxy->set_ping_interval( ping_interval );
   osd_proxy->uuid = uuid;
   return osd_proxy;

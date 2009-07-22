@@ -1,4 +1,4 @@
-// Revision: 1688
+// Revision: 1689
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -135,11 +135,25 @@ private:
   }
 };
 #endif
-AIOQueue::AIOQueue()
+auto_AIOQueue AIOQueue::create()
 {
 #ifdef _WIN32
-  hIoCompletionPort = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0 );
+  HANDLE hIoCompletionPort = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0 );
+  if ( hIoCompletionPort != INVALID_HANDLE_VALUE )
+    return new AIOQueue( hIoCompletionPort );
+  else
+    return NULL;
+#else
+  return new AIOQueue;
 #endif
+}
+#ifdef _WIN32
+AIOQueue::AIOQueue( HANDLE hIoCompletionPort )
+  : hIoCompletionPort( hIoCompletionPort )
+#else
+AIOQueue::AIOQueue()
+#endif
+{
   idle_worker_threads = new InterThreadQueue<BlockingWorkerThread*>;
   uint16_t worker_thread_count = Machine::getOnlineLogicalProcessorCount();
 #ifdef _WIN32

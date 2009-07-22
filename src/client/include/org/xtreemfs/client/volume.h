@@ -48,9 +48,11 @@ namespace org
         uint32_t flags;
         YIELD::auto_Log log;
 
+        YIELD::auto_AIOQueue aio_queue;
         YIELD::auto_Object<DIRProxy> dir_proxy;
         YIELD::auto_Object<MRCProxy> mrc_proxy;
         YIELD::auto_Object<OSDProxyMux> osd_proxy_mux;
+        YIELD::auto_StageGroup stage_group;
 
         void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );
         void set_errno( const char* operation_name, ProxyExceptionResponse& proxy_exception_response );

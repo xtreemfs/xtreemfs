@@ -18,12 +18,14 @@ namespace org
       {
       public:
         static YIELD::auto_Object<OSDProxyMux> create( YIELD::auto_Object<DIRProxy> dir_proxy,
+                                                       YIELD::auto_AIOQueue aio_queue = NULL,
                                                        uint32_t flags = 0,
                                                        YIELD::auto_Log log = NULL,
                                                        const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
-                                                       YIELD::auto_SSLContext ssl_context = NULL )
+                                                       YIELD::auto_SSLContext ssl_context = NULL,
+                                                       YIELD::auto_StageGroup stage_group = NULL )
         {
-          return new OSDProxyMux( dir_proxy, flags, log, operation_timeout, ssl_context );                                                                            
+          return new OSDProxyMux( dir_proxy, aio_queue, flags, log, operation_timeout, ssl_context, stage_group );
         }
 
         // YIELD::Object
@@ -33,14 +35,16 @@ namespace org
         // void handleEvent( YIELD::Event& );
 
       private:
-        OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SSLContext ssl_context );
+        OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, YIELD::auto_AIOQueue aio_queue, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SSLContext ssl_context, YIELD::auto_StageGroup stage_group );
         ~OSDProxyMux();
 
         YIELD::auto_Object<DIRProxy> dir_proxy;        
+        YIELD::auto_AIOQueue aio_queue;
         uint32_t flags;
         YIELD::auto_Log log;
         YIELD::Time operation_timeout;
         YIELD::auto_SSLContext ssl_context;
+        YIELD::auto_StageGroup stage_group;
 
         typedef std::map< std::string, std::pair<OSDProxy*, OSDProxy*> > OSDProxyMap;
         OSDProxyMap osd_proxies;
