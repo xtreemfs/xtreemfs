@@ -197,7 +197,6 @@ namespace YIELD
 
     private:
       auto_SocketAddress peername;
-      auto_Object<Socket> socket_;
     };
 
 
@@ -287,27 +286,25 @@ namespace YIELD
    class AIOAcceptControlBlock : public AIOControlBlock
    {
     public:
-      AIOAcceptControlBlock( auto_Object<TCPSocket> accepted_tcp_socket, auto_Buffer read_buffer );
-
       auto_Object<TCPSocket> get_accepted_tcp_socket() const { return accepted_tcp_socket; }
-      auto_Buffer get_read_buffer() const { return read_buffer; }
 
       // Object
       YIELD_OBJECT_PROTOTYPES( AIOAcceptControlBlock, 222 );
 
       // AIOControlBlock
       void execute();
-      virtual void onCompletion( size_t bytes_transferred );
 
     private:
-      ~AIOAcceptControlBlock() { }
-
-      auto_Object<TCPSocket> accepted_tcp_socket;
-      auto_Buffer read_buffer;
+      auto_Object<TCPSocket> accepted_tcp_socket;      
+#ifdef _WIN32
+      friend class TCPSocket;
+      char peer_sockaddr[88];
+#endif
     };
 
 
     static auto_Object<TCPSocket> create(); // Defaults to domain = AF_INET6
+    static auto_Object<TCPSocket> create( int domain );
     virtual auto_Object<TCPSocket> accept();
     virtual void aio_accept( auto_Object<AIOAcceptControlBlock> aio_accept_control_block );
     virtual void aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block );
@@ -338,12 +335,12 @@ namespace YIELD
   {
   public:
 #ifdef YIELD_HAVE_OPENSSL
-    SSLContext( SSL_METHOD* method = SSLv23_client_method() ); // No certificate
-    SSLContext( SSL_METHOD* method, const Path& pem_certificate_file_path, const Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase );
-    SSLContext( SSL_METHOD* method, const std::string& pem_certificate_str, const std::string& pem_private_key_str, const std::string& pem_private_key_passphrase );
-    SSLContext( SSL_METHOD* method, const Path& pkcs12_file_path, const std::string& pkcs12_passphrase );
+    static auto_Object<SSLContext> create( SSL_METHOD* method = SSLv23_client_method() ); // No certificate
+    static auto_Object<SSLContext> create( SSL_METHOD* method, const Path& pem_certificate_file_path, const Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase );
+    static auto_Object<SSLContext> create( SSL_METHOD* method, const std::string& pem_certificate_str, const std::string& pem_private_key_str, const std::string& pem_private_key_passphrase );
+    static auto_Object<SSLContext> create( SSL_METHOD* method, const Path& pkcs12_file_path, const std::string& pkcs12_passphrase );
 #else
-    SSLContext();
+    static auto_Object<SSLContext> create();
 #endif
 
 #ifdef YIELD_HAVE_OPENSSL
@@ -354,15 +351,16 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( SSLContext, 215 );
 
   private:
+#ifdef YIELD_HAVE_OPENSSL
+    SSLContext( SSL_CTX* ctx );
+#else
+    SSLContext();
+#endif
     ~SSLContext();
 
-    std::string pem_private_key_passphrase;
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_HAVE_OPENSSL    
+    static SSL_CTX* createSSL_CTX( SSL_METHOD* method );
     SSL_CTX* ctx;
-
-    SSL_CTX* createSSL_CTX( SSL_METHOD* method );
-    static int pem_password_callback( char *buf, int size, int, void *userdata );
-    void throwOpenSSLException();
 #endif
 	};
 
@@ -374,20 +372,25 @@ namespace YIELD
   class SSLSocket : public TCPSocket
   {
   public:
-    static auto_Object<SSLSocket> create( auto_SSLContext ctx );
+    static auto_Object<SSLSocket> create( auto_SSLContext ctx ); // Defaults to domain = AF_INET6
+    static auto_Object<SSLSocket> create( int domain, auto_SSLContext ctx );
 
     // Object
     YIELD_OBJECT_PROTOTYPES( SSLSocket, 216 );
 
     // Socket
-    virtual ssize_t read( void* buffer, size_t buffer_len );
-    virtual bool want_read() const;
-    virtual bool want_write() const;
-    virtual ssize_t write( const void* buffer, size_t buffer_len );
-    virtual ssize_t writev( const struct iovec* buffers, uint32_t buffers_count );
+    void aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block );
+    void aio_write( auto_Object<AIOWriteControlBlock> aio_write_control_block );
+    ssize_t read( void* buffer, size_t buffer_len );
+    bool want_read() const;
+    bool want_write() const;
+    ssize_t write( const void* buffer, size_t buffer_len );
+    ssize_t writev( const struct iovec* buffers, uint32_t buffers_count );
 
     // TCPSocket
-    auto_Object<TCPSocket> accept();
+    auto_TCPSocket accept();    
+    void aio_accept( auto_Object<AIOAcceptControlBlock> aio_accept_control_block );
+    void aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block );
     ConnectStatus connect( auto_SocketAddress peername );
     bool shutdown();
 
@@ -427,7 +430,64 @@ namespace YIELD
   class UDPSocket : public Socket
   {
   public:
-    static auto_Object<UDPSocket> create();
+    class AIORecvFromControlBlock : public AIOControlBlock
+    {
+    public:
+      AIORecvFromControlBlock( auto_Buffer buffer );
+
+      auto_Buffer get_buffer() const { return buffer; }
+      auto_SocketAddress get_peer_sockaddr() const;
+
+      // Object
+      YIELD_OBJECT_PROTOTYPES( UDPSocket::AIORecvFromControlBlock, 0 );
+
+      // AIOControlBlock
+      void execute();
+      void onCompletion( size_t bytes_transferred );
+
+    protected:
+      ~AIORecvFromControlBlock();
+
+    private:
+      auto_Buffer buffer;
+
+      friend class UDPSocket;
+      struct sockaddr_storage* peer_sockaddr;
+    };
+
+
+    class AIOSendToControlBlock : public AIOControlBlock
+    {
+    public:
+      AIOSendToControlBlock( auto_Buffer buffer, auto_SocketAddress peer_sockaddr )
+        : buffer( buffer ), peer_sockaddr( peer_sockaddr )
+      { }
+
+      auto_Buffer get_buffer() const { return buffer; }
+      auto_SocketAddress get_peer_sockaddr() const { return peer_sockaddr; }
+
+      // Object
+      YIELD_OBJECT_PROTOTYPES( UDPSocket::AIOSendToControlBlock, 0 );
+
+      // AIOControlBlock
+      void execute();
+
+    protected:
+      AIOSendToControlBlock() { }
+
+    private:
+      auto_Buffer buffer;
+      auto_SocketAddress peer_sockaddr;
+    };
+
+
+    void aio_recvfrom( auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block );
+    void aio_sendto( auto_Object<AIOSendToControlBlock> aio_sendto_control_bolck );
+    static auto_Object<UDPSocket> create();    
+    ssize_t recvfrom( auto_Buffer buffer, struct sockaddr_storage& peer_sockaddr );
+    ssize_t recvfrom( void* buffer, size_t buffer_len, struct sockaddr_storage& peer_sockaddr );
+    ssize_t sendto( auto_Buffer buffer, auto_SocketAddress peer_sockaddr );
+    ssize_t sendto( const void* buffer, size_t buffer_len, auto_SocketAddress peer_sockaddr );
 
     // Object
     YIELD_OBJECT_PROTOTYPES( UDPSocket, 219 );
@@ -480,25 +540,6 @@ namespace YIELD
     
     auto_TimerQueue operation_timer_queue;
     class OperationTimer;
-  };
-
-
-  template <class RequestType, class ResponseType>
-  class Server : public EventHandler
-  {
-  public:
-    // EventHandler
-    virtual void handleEvent( Event& );
-
-  protected:
-    Server( auto_Log log ) 
-      : log( log )
-    { }
-
-    virtual auto_Object<RequestType> createRequest() = 0;
-
-  private:
-    auto_Log log;
   };
 
 
@@ -726,32 +767,29 @@ namespace YIELD
   typedef auto_Object<HTTPClient> auto_HTTPClient;
     
 
-  class HTTPServer : public Server<HTTPRequest, HTTPResponse>
+  class HTTPServer : public Object
   {
   public:
-    template <class StageGroupType> 
     static auto_Object<HTTPServer> create( const URI& absolute_uri,
                                            auto_EventTarget http_request_target, 
-                                           auto_Object<StageGroupType> stage_group,                        
                                            auto_Log log = NULL, 
                                            auto_SSLContext ssl_context = NULL );
 
     // Object
     YIELD_OBJECT_PROTOTYPES( HTTPServer, 0 );
 
-  protected:
-    HTTPServer( auto_EventTarget http_request_target, auto_Log log ) 
-      : Server<HTTPRequest, HTTPResponse>( log ), http_request_target( http_request_target )
-    { }
-
-    // Server
-    virtual auto_HTTPRequest createRequest()
-    {
-      return new HTTPRequest;
-    }
-
   private:
+    HTTPServer( auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket ) ;
+
     auto_EventTarget http_request_target;
+    auto_TCPSocket listen_tcp_socket;
+
+    class AIOAcceptControlBlock;
+    class AIOReadControlBlock;
+
+    auto_AIOQueue aio_queue;
+
+    class HTTPResponseTarget;
   };
 
   typedef auto_Object<HTTPServer> auto_HTTPServer;
@@ -890,14 +928,12 @@ namespace YIELD
   public:
     ONCRPCResponse( auto_Interface interface_ ); // Incoming, creates the body from the interface on demand
     ONCRPCResponse( auto_Interface interface_, uint32_t xid, auto_Struct body ); // Outgoing
+    virtual ~ONCRPCResponse() { }
 
     // Object
     YIELD_OBJECT_PROTOTYPES( ONCRPCResponse, 208 );
     virtual void marshal( Marshaller& );
     virtual void unmarshal( Unmarshaller& );
-
-  protected:
-    virtual ~ONCRPCResponse() { }
   };
 
   typedef auto_Object<ONCRPCResponse> auto_ONCRPCResponse;
@@ -913,6 +949,7 @@ namespace YIELD
     ONCRPCRequest( auto_Interface interface_, uint32_t credential_auth_flavor, auto_Struct credential, auto_Struct body ); // Outgoing
     ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, auto_Struct body ); // For testing
     ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, auto_Struct credential, auto_Struct body ); // For testing
+    virtual ~ONCRPCRequest() { }
 
     uint32_t get_credential_auth_flavor() const { return credential_auth_flavor; }
     auto_Struct get_credential() const { return credential; }
@@ -929,9 +966,6 @@ namespace YIELD
     virtual auto_Response createResponse();
     virtual void respond( Response& );
 
-  protected:
-    virtual ~ONCRPCRequest() { }
-
   private:
     uint32_t prog, proc, vers, credential_auth_flavor;
     auto_Struct credential;
@@ -946,7 +980,6 @@ namespace YIELD
   public:
     template <class ONCRPCClientType>
     static auto_Object<ONCRPCClientType> create( const URI& absolute_uri, 
-                                                 auto_Object<StageGroup> stage_group, 
                                                  uint32_t flags = 0,
                                                  auto_Log log = NULL, 
                                                  const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
@@ -954,11 +987,7 @@ namespace YIELD
     {
       auto_SocketAddress peername = SocketAddress::create( absolute_uri );
       if ( peername != NULL && peername->get_port() != 0 )
-      {
-        auto_Object<ONCRPCClientType> oncrpc_client = new ONCRPCClientType( absolute_uri, flags, log, operation_timeout, peername, ssl_context );
-        auto_Stage oncrpc_client_stage = stage_group->createStage( oncrpc_client->incRef() );
-        return oncrpc_client;
-      }
+        return new ONCRPCClientType( absolute_uri, flags, log, operation_timeout, peername, ssl_context );        
       else
         return NULL;
     }
@@ -1002,12 +1031,11 @@ namespace YIELD
   };
 
   
-  class ONCRPCServer : public Server<ONCRPCRequest, ONCRPCResponse>
+  class ONCRPCServer : public Object
   {
   public:
     static auto_Object<ONCRPCServer> create( const URI& absolute_uri,
                                              auto_Interface interface_,
-                                             auto_Object<StageGroup> stage_group, 
                                              auto_Log log = NULL, 
                                              auto_SSLContext ssl_context = NULL );
 
@@ -1015,19 +1043,16 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( ONCRPCServer, 0 );
    
   protected:
-    ONCRPCServer( auto_Interface interface_, auto_Log log ) 
-      : Server<ONCRPCRequest, ONCRPCResponse>( log ), interface_( interface_ )
-    { }
-
-    // Server
-    auto_Object<ONCRPCRequest> createRequest()
-    {
-      return new ONCRPCRequest( interface_ );
-    }
+    ONCRPCServer( auto_AIOQueue aio_queue, auto_Interface interface_, auto_Socket socket_ );
 
   private:
+    auto_AIOQueue aio_queue;
     auto_Interface interface_;
-    auto_Log log;
+    auto_Socket socket_;
+
+    class AIOAcceptControlBlock;
+    class AIOReadControlBlock;
+    class AIORecvFromControlBlock;
 
     class ONCRPCResponseTarget;
   };

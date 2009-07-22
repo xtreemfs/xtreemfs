@@ -27,13 +27,12 @@ namespace org
       {
       public:
         static YIELD::auto_Object<MRCProxy> create( const YIELD::URI& absolute_uri,
-                                                    YIELD::auto_Object<YIELD::StageGroup> stage_group,
                                                     uint32_t flags = 0,
                                                     YIELD::auto_Log log = NULL,
                                                     const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::OPERATION_TIMEOUT_DEFAULT,
                                                     YIELD::auto_SSLContext ssl_context = NULL )
         {
-          return YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::create<MRCProxy>( absolute_uri, stage_group, flags, log, operation_timeout, ssl_context );
+          return YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::create<MRCProxy>( absolute_uri, flags, log, operation_timeout, ssl_context );
         }
 
         // org::xtreemfs::interfaces::MRCInterface

@@ -374,8 +374,8 @@ namespace YIELD
     static AIOControlBlock* from_OVERLAPPED( OVERLAPPED* overlapped ) { return reinterpret_cast<struct aiocb*>( overlapped )->this_; }
 #endif
 
-    virtual void onCompletion( size_t bytes_transferred ) = 0;    
-    virtual void onError( uint32_t error_code ) = 0;
+    virtual void onCompletion( size_t ) { }    
+    virtual void onError( uint32_t ) { }
 #if defined(_WIN32)
     operator OVERLAPPED*() { return reinterpret_cast<OVERLAPPED*>( &aiocb_ ); }
 #elif defined(YIELD_HAVE_POSIX_FILE_AIO)

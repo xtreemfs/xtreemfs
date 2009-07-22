@@ -31,7 +31,6 @@ namespace org
 
 
         static YIELD::auto_Object<OSDProxy> create( const YIELD::URI& absolute_uri,
-                                                    YIELD::auto_Object<YIELD::StageGroup> stage_group,
                                                     const std::string& uuid,
                                                     uint32_t flags = 0,
                                                     YIELD::auto_Log log = NULL,

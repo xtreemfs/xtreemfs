@@ -76,7 +76,7 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
   }
 }
 template <class RequestType, class ResponseType>
-class Client<RequestType, ResponseType>::AIOConnectControlBlock : public TCPSocket::AIOConnectControlBlock
+class Client<RequestType, ResponseType>::AIOConnectControlBlock : public Socket::AIOConnectControlBlock
 {
 public:
   AIOConnectControlBlock( auto_SocketAddress peername, auto_Object<RequestType> request, const Time& timeout, auto_TimerQueue timer_queue )
@@ -339,7 +339,7 @@ auto_HTTPClient HTTPClient::create( const URI& absolute_uri,
   {
 #ifdef YIELD_HAVE_OPENSSL
     if ( absolute_uri.get_scheme() == "https" && ssl_context == NULL )
-      ssl_context = new SSLContext( SSLv23_client_method() );
+      ssl_context = SSLContext::create( SSLv23_client_method() );
 #endif
     auto_Object<HTTPClient> http_client = new HTTPClient( absolute_uri, flags, log, operation_timeout, peername, ssl_context );
     auto_Stage http_client_stage = stage_group->createStage( http_client->incRef() );
@@ -463,7 +463,7 @@ auto_Buffer HTTPMessage::serialize()
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 HTTPRequest::HTTPRequest()
-  : HTTPMessage( 4 )
+  : HTTPMessage( 0 )
 {
   method[0] = 0;
   uri = new char[2];
@@ -614,7 +614,7 @@ auto_Buffer HTTPRequest::serialize()
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 HTTPResponse::HTTPResponse()
-  : HTTPMessage( 1 )
+  : HTTPMessage( 0 )
 {
   memset( status_code_str, 0, sizeof( status_code_str ) );
   deserialize_state = DESERIALIZING_HTTP_VERSION;
@@ -772,56 +772,112 @@ auto_Buffer HTTPResponse::serialize()
 // http_server.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-template <class StageGroupType>
+class HTTPServer::HTTPResponseTarget : public EventTarget
+{
+public:
+  HTTPResponseTarget( auto_Socket socket_ )
+    : socket_( socket_ )
+  { }
+  // Object
+  YIELD_OBJECT_PROTOTYPES( HTTPServer::HTTPResponseTarget, 0 );
+  // EventTarget
+  void send( Event& ev )
+  {
+    if ( ev.get_tag() == YIELD_OBJECT_TAG( HTTPResponse ) )
+    {
+      HTTPResponse& http_response = static_cast<HTTPResponse&>( ev );
+      socket_->aio_write( new Socket::AIOWriteControlBlock( http_response.serialize() ) );
+      Object::decRef( http_response );
+    }
+    else
+      DebugBreak();
+  }
+private:
+  auto_Socket socket_;
+};
+class HTTPServer::AIOReadControlBlock : public Socket::AIOReadControlBlock
+{
+public:
+  AIOReadControlBlock( auto_Buffer buffer, auto_HTTPRequest http_request, auto_EventTarget http_request_target )
+    : Socket::AIOReadControlBlock( buffer ), http_request( http_request ), http_request_target( http_request_target )
+  { }
+  void onCompletion( size_t bytes_transferred )
+  {
+    Socket::AIOReadControlBlock::onCompletion( bytes_transferred );
+    for ( ;; )
+    {
+      ssize_t deserialize_ret = http_request->deserialize( get_buffer() );
+      if ( deserialize_ret == 0 )
+      {
+        http_request->set_response_target( new HTTPResponseTarget( get_socket() ) );
+        http_request_target->send( *http_request.release() );
+        return;
+        // http_request = new HTTPRequest;
+        // Try to deserialize the next http_request
+      }
+      else if ( deserialize_ret > 0 )
+      {
+        get_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), http_request, http_request_target ) );
+        return;
+      }
+      else
+        DebugBreak();
+    }
+  }
+  void onError( uint32_t )
+  {
+    get_socket()->close();
+  }
+private:
+  auto_HTTPRequest http_request;
+  auto_EventTarget http_request_target;
+};
+class HTTPServer::AIOAcceptControlBlock : public TCPSocket::AIOAcceptControlBlock
+{
+public:
+  AIOAcceptControlBlock( auto_AIOQueue aio_queue, auto_EventTarget http_request_target )
+    : aio_queue( aio_queue ), http_request_target( http_request_target )
+  { }
+  void onCompletion( size_t )
+  {
+    get_accepted_tcp_socket()->associate( aio_queue );
+    get_accepted_tcp_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), new HTTPRequest, http_request_target ) );
+    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( aio_queue, http_request_target ) );
+  }
+  void onError( uint32_t )
+  { }
+private:
+  auto_AIOQueue aio_queue;
+  auto_EventTarget http_request_target;
+};
+HTTPServer::HTTPServer( auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket )
+  : http_request_target( http_request_target ), listen_tcp_socket( listen_tcp_socket )
+{
+  aio_queue = new AIOQueue;
+  listen_tcp_socket->associate( aio_queue );
+  listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( aio_queue, http_request_target ) );
+}
 auto_HTTPServer HTTPServer::create( const URI& absolute_uri,
                                     auto_EventTarget http_request_target,
-                                    auto_Object<StageGroupType> stage_group,
                                     auto_Log log,
                                     auto_SSLContext ssl_context )
 {
-//  auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
-//  if ( sockname != NULL )
-//  {
-//    auto_Object<TCPListenQueue> tcp_listen_queue;
-//#ifdef YIELD_HAVE_OPENSSL
-//    if ( absolute_uri.get_scheme() == "https" && ssl_context != NULL )
-//      tcp_listen_queue = SSLListenQueue::create( sockname, ssl_context ).release();
-//    else
-//#endif
-//      tcp_listen_queue = TCPListenQueue::create( sockname );
-//
-//    if ( tcp_listen_queue != NULL )
-//      return create( http_request_target, stage_group, tcp_listen_queue, log );
-//  }
+  auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
+  if ( sockname != NULL )
+  {
+    auto_TCPSocket listen_tcp_socket;
+#ifdef YIELD_HAVE_OPENSSL
+    if ( absolute_uri.get_scheme() == "https" && ssl_context != NULL )
+      listen_tcp_socket = SSLSocket::create( ssl_context ).release();
+    else
+#endif
+      listen_tcp_socket = TCPSocket::create();
+    if ( listen_tcp_socket->bind( sockname ) &&
+         listen_tcp_socket->listen() )
+      return new HTTPServer( http_request_target, listen_tcp_socket );
+  }
   return NULL;
 }
-  //auto_Object<HTTPServer> http_request_reader = new HTTPServer( http_request_target, log );
-  //auto_Stage http_request_reader_stage = stage_group->createStage( http_request_reader, http_request_reader_event_queue, 1 );
-  //auto_Object<HTTPServer> http_response_writer = new HTTPServer( http_request_target, log );
-  //auto_Stage http_response_writer_stage = stage_group->createStage( http_response_writer, http_response_writer_event_queue, 1 );
-  //auto_Object<HTTPServer> http_server = new HTTPServer( http_request_target, log );
-  //stage_group->createStage( http_server, tcp_listen_queue, 1 );
-  //http_server->set_http_request_reader_stage( http_request_reader_stage );
-  //http_request_reader->set_http_response_writer_stage( http_response_writer_stage );
-  //http_response_writer->set_http_request_reader_stage( http_request_reader_stage );
-  //return http_server;
-template
-auto_HTTPServer HTTPServer::create<StageGroup>( const URI& absolute_uri,
-                                                auto_EventTarget http_request_target,
-                                                auto_Object<StageGroup> stage_group,
-                                                auto_Log log,
-                                                auto_SSLContext ssl_context );
-template
-auto_HTTPServer HTTPServer::create<SEDAStageGroup>( const URI& absolute_uri,
-                                                    auto_EventTarget http_request_target,
-                                                    auto_Object<SEDAStageGroup> stage_group,
-                                                    auto_Log log,
-                                                    auto_SSLContext ssl_context );
-//void HTTPServer::handleDeserializedProtocolMessage( auto_HTTPRequest http_request )
-//{
-//  http_request->set_response_target( get_http_response_writer_stage()->incRef() );
-//  http_request_target->send( *http_request.release() );
-//}
 
 
 // json_marshaller.cpp
@@ -1785,69 +1841,172 @@ void ONCRPCResponse::unmarshal( Unmarshaller& unmarshaller )
 // oncrpc_server.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-auto_ONCRPCServer ONCRPCServer::create( const URI& absolute_uri,
-                                        auto_Interface interface_,
-                                        auto_Object<StageGroup> stage_group,
-                                        auto_Log log,
-                                        auto_SSLContext ssl_context )
-{
-//  auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
-//  if ( sockname != NULL )
-//  {
-//    auto_Object<EventQueue> oncrpc_server_event_queue;
-//    if ( absolute_uri.get_scheme() == "oncrpcu" )
-//      oncrpc_server_event_queue = UDPRecvFromQueue::create( sockname ).release();
-//    else
-//    {
-//      auto_Object<TCPListenQueue> tcp_listen_queue;
-//#ifdef YIELD_HAVE_OPENSSL
-//      if ( absolute_uri.get_scheme() == "oncrpcs" && ssl_context != NULL )
-//        oncrpc_server_event_queue = SSLListenQueue::create( sockname, ssl_context ).release();
-//      else
-//#endif
-//        oncrpc_server_event_queue = TCPListenQueue::create( sockname ).release();
-//    }
-//
-//    if ( oncrpc_server_event_queue != NULL )
-//    {
-//      auto_Object<ONCRPCServer> oncrpc_server = new ONCRPCServer( interface_, log );
-//      stage_group->createStage( oncrpc_server->incRef(), oncrpc_server_event_queue.release() );
-//      return oncrpc_server;
-//    }
-//  }
-  return NULL;
-}
-//void ONCRPCServer::handleDeserializedProtocolMessage( auto_Object<ONCRPCRequest> oncrpc_request )
-//{
-//  auto_Struct oncrpc_request_body = oncrpc_request->get_body();
-//  Request* interface_request = interface_->checkRequest( *oncrpc_request_body );
-//  if ( interface_request != NULL )
-//  {
-//    oncrpc_request_body.release();
-//    interface_request->set_response_target( new ONCRPCResponder( oncrpc_request, get_oncrpc_response_writer_stage() ) );
-//    interface_->send( *interface_request );
-//  }
-//  else
-//    DebugBreak();
-//}
 class ONCRPCServer::ONCRPCResponseTarget : public EventTarget
 {
 public:
-  ONCRPCResponseTarget( auto_Object<ONCRPCRequest> oncrpc_request, auto_Stage oncrpc_response_writer_stage )
-    : oncrpc_request( oncrpc_request ), oncrpc_response_writer_stage( oncrpc_response_writer_stage )
+  ONCRPCResponseTarget( auto_Interface interface_, auto_ONCRPCRequest oncrpc_request, auto_SocketAddress peer_sockaddr, auto_Socket socket_ )
+    : interface_( interface_ ), oncrpc_request( oncrpc_request ), peer_sockaddr( peer_sockaddr ), socket_( socket_ )
   { }
   // Object
-  YIELD_OBJECT_PROTOTYPES( ONCRPCResponseTarget, 0 );
+  YIELD_OBJECT_PROTOTYPES( ONCRPCServer::ONCRPCResponseTarget, 0 );
   // EventTarget
   void send( Event& ev )
   {
-    ONCRPCResponse* oncrpc_response = new ONCRPCResponse( oncrpc_request->get_interface(), oncrpc_request->get_xid(), ev );
-    oncrpc_response_writer_stage->send( *oncrpc_response );
+    ONCRPCResponse oncrpc_response( interface_, oncrpc_request->get_xid(), ev );
+    if ( peer_sockaddr != NULL )
+      static_cast<UDPSocket*>( socket_.get() )->aio_sendto( new UDPSocket::AIOSendToControlBlock( oncrpc_response.serialize(), peer_sockaddr ) );
+    else
+      socket_->aio_write( new Socket::AIOWriteControlBlock( oncrpc_response.serialize() ) );
   }
 private:
-  auto_Object<ONCRPCRequest> oncrpc_request;
-  auto_Stage oncrpc_response_writer_stage;
+  auto_Interface interface_;
+  auto_ONCRPCRequest oncrpc_request;
+  auto_SocketAddress peer_sockaddr;
+  auto_Socket socket_;
 };
+class ONCRPCServer::AIOReadControlBlock : public Socket::AIOReadControlBlock
+{
+public:
+  AIOReadControlBlock( auto_Buffer buffer, auto_Interface interface_, auto_ONCRPCRequest oncrpc_request )
+    : Socket::AIOReadControlBlock( buffer ), interface_( interface_ ), oncrpc_request( oncrpc_request )
+  { }
+  void onCompletion( size_t bytes_transferred )
+  {
+    Socket::AIOReadControlBlock::onCompletion( bytes_transferred );
+    for ( ;; )
+    {
+      ssize_t deserialize_ret = oncrpc_request->deserialize( get_buffer() );
+      if ( deserialize_ret == 0 )
+      {
+        auto_Struct oncrpc_request_body = oncrpc_request->get_body();
+        Request* interface_request = interface_->checkRequest( *oncrpc_request_body );
+        if ( interface_request != NULL )
+        {
+          oncrpc_request_body.release();
+          interface_request->set_response_target( new ONCRPCResponseTarget( interface_, oncrpc_request, NULL, get_socket() ) );
+          interface_->send( *interface_request );
+        }
+        else
+          DebugBreak();
+        return;
+      }
+      else if ( deserialize_ret > 0 )
+      {
+        get_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), interface_, oncrpc_request ) );
+        return;
+      }
+      else
+        DebugBreak();
+    }
+  }
+  void onError( uint32_t )
+  {
+    get_socket()->close();
+  }
+private:
+  auto_Interface interface_;
+  auto_ONCRPCRequest oncrpc_request;
+};
+class ONCRPCServer::AIORecvFromControlBlock : public UDPSocket::AIORecvFromControlBlock
+{
+public:
+  AIORecvFromControlBlock( auto_Interface interface_ )
+    : UDPSocket::AIORecvFromControlBlock( new HeapBuffer( 1024 ) ),
+      interface_( interface_ )
+  { }
+  // AIOControlBlock
+  void onCompletion( size_t bytes_transferred )
+  {
+    UDPSocket::AIORecvFromControlBlock::onCompletion( bytes_transferred );
+    ONCRPCRequest* oncrpc_request = new ONCRPCRequest( interface_ );
+    ssize_t deserialize_ret = oncrpc_request->deserialize( get_buffer() );
+    if ( deserialize_ret == 0 )
+    {
+      auto_Struct oncrpc_request_body = oncrpc_request->get_body();
+      Request* interface_request = interface_->checkRequest( *oncrpc_request_body );
+      if ( interface_request != NULL )
+      {
+        oncrpc_request_body.release();
+        interface_request->set_response_target( new ONCRPCResponseTarget( interface_, oncrpc_request, get_peer_sockaddr(), get_socket() ) );
+        interface_->send( *interface_request );
+      }
+      static_cast<UDPSocket*>( get_socket().get() )->aio_recvfrom( new AIORecvFromControlBlock( interface_) );
+    }
+    else if ( deserialize_ret < 0 )
+      Object::decRef( *oncrpc_request );
+    else
+      DebugBreak();
+  }
+  void onError( uint32_t error_code )
+  {
+    // DebugBreak();
+  }
+private:
+  auto_Interface interface_;
+};
+class ONCRPCServer::AIOAcceptControlBlock : public TCPSocket::AIOAcceptControlBlock
+{
+public:
+  AIOAcceptControlBlock( auto_AIOQueue aio_queue, auto_Interface interface_ )
+    : aio_queue( aio_queue ), interface_( interface_ )
+  { }
+  void onCompletion( size_t )
+  {
+    get_accepted_tcp_socket()->associate( aio_queue );
+    get_accepted_tcp_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), interface_, new ONCRPCRequest( interface_ ) ) );
+    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( aio_queue, interface_ ) );
+  }
+  void onError( uint32_t )
+  { }
+private:
+  auto_AIOQueue aio_queue;
+  auto_Interface interface_;
+};
+ONCRPCServer::ONCRPCServer( auto_AIOQueue aio_queue, auto_Interface interface_, auto_Socket socket_ )
+  : aio_queue( aio_queue ), interface_( interface_ ), socket_( socket_ )
+{ }
+auto_ONCRPCServer ONCRPCServer::create( const URI& absolute_uri,
+                                        auto_Interface interface_,
+                                        auto_Log log,
+                                        auto_SSLContext ssl_context )
+{
+  auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
+  if ( sockname != NULL )
+  {
+    if ( absolute_uri.get_scheme() == "oncrpcu" )
+    {
+      auto_UDPSocket udp_socket( UDPSocket::create() );
+      if ( udp_socket != NULL &&
+           udp_socket->bind( sockname ) )
+      {
+        auto_AIOQueue aio_queue( new AIOQueue );
+        udp_socket->associate( aio_queue );
+        udp_socket->aio_recvfrom( new AIORecvFromControlBlock( interface_ ) );
+        return new ONCRPCServer( aio_queue, interface_, udp_socket.release() );
+      }
+    }
+    else
+    {
+      auto_TCPSocket listen_tcp_socket;
+#ifdef YIELD_HAVE_OPENSSL
+      if ( absolute_uri.get_scheme() == "oncrpcs" && ssl_context != NULL )
+        listen_tcp_socket = SSLSocket::create( ssl_context ).release();
+      else
+#endif
+        listen_tcp_socket = TCPSocket::create();
+      if ( listen_tcp_socket != NULL &&
+           listen_tcp_socket->bind( sockname ) &&
+           listen_tcp_socket->listen() )
+      {
+        auto_AIOQueue aio_queue( new AIOQueue );
+        listen_tcp_socket->associate( aio_queue );
+        listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( aio_queue, interface_ ) );
+        return new ONCRPCServer( aio_queue, interface_, listen_tcp_socket.release() );
+      }
+    }
+  }
+  return NULL;
+}
 
 
 // pipe.cpp
@@ -2417,54 +2576,6 @@ void RFC822Headers::set_next_iovec( const struct iovec& iovec )
     DebugBreak();
   iovecs_filled++;
 }
-
-
-// server.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
-template <class RequestType, class ResponseType>
-void Server<RequestType, ResponseType>::handleEvent( Event& )
-{
-//  switch ( ev.get_tag() )
-//  {
-//#ifdef YIELD_HAVE_OPENSSL
-//    case YIELD_OBJECT_TAG( SSLSocket ):
-//#endif
-//    case YIELD_OBJECT_TAG( TCPSocket ):
-//    case YIELD_OBJECT_TAG( UDPSocket ):
-//    {
-//      auto_Socket socket_ = static_cast<Socket&>( ev );
-//      auto_Log log = this->get_log();
-//      if ( log != NULL && log->get_level() >= Log::LOG_INFO && static_cast<int>( *socket_ ) != -1 )
-//        socket_ = new TracingSocket( socket_, log );
-//      Connection* connection = new Connection( socket_ );
-//      get_protocol_request_reader_stage()->send( *connection );
-//    }
-//    break;
-//
-//    case YIELD_OBJECT_TAG( Connection ):
-//    {
-//      auto_Object<Connection> connection = static_cast<Connection&>( ev );
-//      auto_Object<RequestType> request( createProtocolRequest( connection ) );
-//      request->set_connection( connection );
-//      this->read( request );
-//    }
-//    break;
-//
-//    default:
-//    {
-//      Peer<RequestType, ResponseType>::handleEvent( ev );
-//    }
-//    break;
-//  }
-}
-
-
-template class Server<HTTPRequest, HTTPResponse>;
-template class Server<ONCRPCRequest, ONCRPCResponse>;
 
 
 // socket.cpp
@@ -3046,58 +3157,71 @@ bool SocketAddress::operator==( const SocketAddress& other ) const
 #endif
 #endif
 #ifdef YIELD_HAVE_OPENSSL
-SSLContext::SSLContext( SSL_METHOD* method )
+static int pem_password_callback( char *buf, int size, int, void *userdata )
 {
-  ctx = createSSL_CTX( method );
+  const std::string* pem_password = static_cast<const std::string*>( userdata );
+  if ( size > static_cast<int>( pem_password->size() ) )
+    size = static_cast<int>( pem_password->size() );
+  memcpy_s( buf, size, pem_password->c_str(), size );
+  return size;
 }
-SSLContext::SSLContext( SSL_METHOD* method, const Path& pem_certificate_file_path, const Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase )
-  : pem_private_key_passphrase( pem_private_key_passphrase )
+SSLContext::SSLContext( SSL_CTX* ctx )
+  : ctx( ctx )
+{ }
+auto_SSLContext SSLContext::create( SSL_METHOD* method )
 {
-  ctx = createSSL_CTX( method );
+  SSL_CTX* ctx = createSSL_CTX( method );
+  if ( ctx != NULL )
+    return new SSLContext( ctx );
+  else
+    return NULL;
+}
+auto_SSLContext SSLContext::create( SSL_METHOD* method, const Path& pem_certificate_file_path, const Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase )
+{
+  SSL_CTX* ctx = createSSL_CTX( method );
   if ( SSL_CTX_use_certificate_file( ctx, pem_certificate_file_path, SSL_FILETYPE_PEM ) > 0 )
   {
     if ( !pem_private_key_passphrase.empty() )
     {
       SSL_CTX_set_default_passwd_cb( ctx, pem_password_callback );
-      SSL_CTX_set_default_passwd_cb_userdata( ctx, this );
+      SSL_CTX_set_default_passwd_cb_userdata( ctx, const_cast<std::string*>( &pem_private_key_passphrase ) );
     }
     if ( SSL_CTX_use_PrivateKey_file( ctx, pem_private_key_file_path, SSL_FILETYPE_PEM ) > 0 )
-      return;
+      return new SSLContext( ctx );
   }
-  throwOpenSSLException();
+  return NULL;
 }
-SSLContext::SSLContext( SSL_METHOD* method, const std::string& pem_certificate_str, const std::string& pem_private_key_str, const std::string& pem_private_key_passphrase )
-  : pem_private_key_passphrase( pem_private_key_passphrase )
+auto_SSLContext SSLContext::create( SSL_METHOD* method, const std::string& pem_certificate_str, const std::string& pem_private_key_str, const std::string& pem_private_key_passphrase )
 {
-  ctx = createSSL_CTX( method );
+  SSL_CTX* ctx = createSSL_CTX( method );
   BIO* pem_certificate_bio = BIO_new_mem_buf( reinterpret_cast<void*>( const_cast<char*>( pem_certificate_str.c_str() ) ), static_cast<int>( pem_certificate_str.size() ) );
   if ( pem_certificate_bio != NULL )
   {
-    X509* cert = PEM_read_bio_X509( pem_certificate_bio, NULL, pem_password_callback, this );
+    X509* cert = PEM_read_bio_X509( pem_certificate_bio, NULL, pem_password_callback, const_cast<std::string*>( &pem_private_key_passphrase ) );
     if ( cert != NULL )
     {
       SSL_CTX_use_certificate( ctx, cert );
       BIO* pem_private_key_bio = BIO_new_mem_buf( reinterpret_cast<void*>( const_cast<char*>( pem_private_key_str.c_str() ) ), static_cast<int>( pem_private_key_str.size() ) );
       if ( pem_private_key_bio != NULL )
       {
-        EVP_PKEY* pkey = PEM_read_bio_PrivateKey( pem_private_key_bio, NULL, pem_password_callback, this );
+        EVP_PKEY* pkey = PEM_read_bio_PrivateKey( pem_private_key_bio, NULL, pem_password_callback, const_cast<std::string*>( &pem_private_key_passphrase ) );
         if ( pkey != NULL )
         {
           SSL_CTX_use_PrivateKey( ctx, pkey );
           BIO_free( pem_certificate_bio );
           BIO_free( pem_private_key_bio );
-          return;
+          return new SSLContext( ctx );
         }
         BIO_free( pem_private_key_bio );
       }
     }
     BIO_free( pem_certificate_bio );
   }
-  throwOpenSSLException();
+  return NULL;
 }
-SSLContext::SSLContext( SSL_METHOD* method, const Path& pkcs12_file_path, const std::string& pkcs12_passphrase )
+auto_SSLContext SSLContext::create( SSL_METHOD* method, const Path& pkcs12_file_path, const std::string& pkcs12_passphrase )
 {
-  ctx = createSSL_CTX( method );
+  SSL_CTX* ctx = createSSL_CTX( method );
   BIO* bio = BIO_new_file( pkcs12_file_path, "rb" );
   if ( bio != NULL )
   {
@@ -3120,22 +3244,21 @@ SSLContext::SSLContext( SSL_METHOD* method, const Path& pkcs12_file_path, const 
             X509_STORE_add_cert( store, store_cert );
           }
           BIO_free( bio );
-          return;
-        }
-        else
-        {
-          BIO_free( bio );
-          throw Exception( "invalid PKCS#12 file or passphrase" );
+          return new SSLContext( ctx );
         }
       }
     }
     BIO_free( bio );
   }
-  throwOpenSSLException();
+  return NULL;
 }
 #else
 SSLContext::SSLContext()
 { }
+auto_SSLContext SSLContext::create()
+{
+  return new SSLContext;
+}
 #endif
 SSLContext::~SSLContext()
 {
@@ -3160,23 +3283,7 @@ SSL_CTX* SSLContext::createSSL_CTX( SSL_METHOD* method )
     return ctx;
   }
   else
-  {
-    throwOpenSSLException();
     return NULL;
-  }
-}
-int SSLContext::pem_password_callback( char *buf, int size, int, void *userdata )
-{
-  SSLContext* this_ = static_cast<SSLContext*>( userdata );
-  if ( size > static_cast<int>( this_->pem_private_key_passphrase.size() ) )
-    size = static_cast<int>( this_->pem_private_key_passphrase.size() );
-  memcpy_s( buf, size, this_->pem_private_key_passphrase.c_str(), size );
-  return size;
-}
-void SSLContext::throwOpenSSLException()
-{
-  SSL_load_error_strings();
-  throw Exception( ERR_error_string( ERR_get_error(), NULL ) );
 }
 #endif
 
@@ -3195,10 +3302,13 @@ void SSLContext::throwOpenSSLException()
 #endif
 auto_SSLSocket SSLSocket::create( auto_SSLContext ctx )
 {
+  return create( AF_INET6, ctx );
+}
+auto_SSLSocket SSLSocket::create( int domain, auto_SSLContext ctx )
+{
   SSL* ssl = SSL_new( ctx->get_ssl_ctx() );
   if ( ssl != NULL )
   {
-    int domain = AF_INET6;
     int socket_ = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
     if ( socket_ != -1 )
       return new SSLSocket( domain, socket_, ctx, ssl );
@@ -3228,6 +3338,38 @@ auto_TCPSocket SSLSocket::accept()
   }
   else
     return NULL;
+}
+void SSLSocket::aio_accept( auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
+{
+  aio_accept_control_block->set_socket( incRef() );
+  if ( aio_queue != NULL )
+    aio_queue->submit( aio_accept_control_block.release() );
+  else
+    aio_accept_control_block->execute();
+}
+void SSLSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
+{
+  aio_connect_control_block->set_socket( incRef() );
+  if ( aio_queue != NULL )
+    aio_queue->submit( aio_connect_control_block.release() );
+  else
+    aio_connect_control_block->execute();
+}
+void SSLSocket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
+{
+  aio_read_control_block->set_socket( incRef() );
+  if ( aio_queue != NULL )
+    aio_queue->submit( aio_read_control_block.release() );
+  else
+    aio_read_control_block->execute();
+}
+void SSLSocket::aio_write( auto_Object<AIOWriteControlBlock> aio_write_control_block )
+{
+  aio_write_control_block->set_socket( incRef() );
+  if ( aio_queue != NULL )
+    aio_queue->submit( aio_write_control_block.release() );
+  else
+    aio_write_control_block->execute();
 }
 Socket::ConnectStatus SSLSocket::connect( auto_SocketAddress peer_sockaddr )
 {
@@ -3312,6 +3454,8 @@ ssize_t SSLSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
 // tcp_socket.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
+
 #if defined(_WIN32)
 #pragma warning( push )
 #pragma warning( disable: 4995 )
@@ -3323,16 +3467,22 @@ ssize_t SSLSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
 #include <netinet/tcp.h> // For the TCP_* constants
 #include <sys/socket.h>
 #endif
+
 #include <cstring>
+
+
 #ifdef _WIN32
 void* TCPSocket::lpfnAcceptEx = NULL;
 void* TCPSocket::lpfnConnectEx = NULL;
 #endif
+
+
 TCPSocket::TCPSocket( int domain, int socket_ )
   : Socket( domain, SOCK_STREAM, IPPROTO_TCP, socket_ )
 {
   partial_write_len = 0;
 }
+
 auto_TCPSocket TCPSocket::accept()
 {
 #ifdef _WIN32
@@ -3346,43 +3496,49 @@ auto_TCPSocket TCPSocket::accept()
   else
     return NULL;
 }
+
 int TCPSocket::_accept()
 {
   sockaddr_storage peer_sockaddr_storage;
   socklen_t peer_sockaddr_storage_len = sizeof( peer_sockaddr_storage );
   return ::accept( *this, ( struct sockaddr* )&peer_sockaddr_storage, &peer_sockaddr_storage_len );
 }
+
 void TCPSocket::aio_accept( YIELD::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
 {
-#ifdef _WIN32
-  if ( TCPSocket::lpfnAcceptEx == NULL )
-  {
-    GUID GuidAcceptEx = WSAID_ACCEPTEX;
-    LPFN_ACCEPTEX lpfnAcceptEx;
-    DWORD dwBytes;
-    WSAIoctl( *this, SIO_GET_EXTENSION_FUNCTION_POINTER, &GuidAcceptEx, sizeof( GuidAcceptEx ), &lpfnAcceptEx, sizeof( lpfnAcceptEx ), &dwBytes, NULL, NULL );
-    TCPSocket::lpfnAcceptEx = lpfnAcceptEx;
-  }
-  YIELD::auto_Object<TCPSocket> accepted_tcp_socket( aio_accept_control_block->get_accepted_tcp_socket() );
-  YIELD::auto_Buffer read_buffer( aio_accept_control_block->get_read_buffer() );
-  size_t sizeof_sockaddr = ( get_domain() == AF_INET6 ) ? sizeof( sockaddr_in6 ) : sizeof( sockaddr_in );
-  if ( read_buffer->capacity() < ( sizeof_sockaddr + 16 ) * 2 ) DebugBreak();
-  DWORD dwBytesReceived;
-  if ( static_cast<LPFN_ACCEPTEX>( lpfnAcceptEx )( *this, *accepted_tcp_socket, *read_buffer, 0, sizeof_sockaddr + 16, sizeof_sockaddr + 16, &dwBytesReceived, ( LPOVERLAPPED )*aio_accept_control_block ) ||
-       ::WSAGetLastError() == WSA_IO_PENDING )
-    aio_accept_control_block.release();
-  else
-    aio_accept_control_block->onError( Exception::get_errno() );
-#else
+  aio_accept_control_block->set_socket( incRef() );
+
   if ( aio_queue != NULL )
+  {
+#ifdef _WIN32
+    if ( lpfnAcceptEx == NULL )
+    {
+      GUID GuidAcceptEx = WSAID_ACCEPTEX;
+      DWORD dwBytes;
+      WSAIoctl( *this, SIO_GET_EXTENSION_FUNCTION_POINTER, &GuidAcceptEx, sizeof( GuidAcceptEx ), &lpfnAcceptEx, sizeof( lpfnAcceptEx ), &dwBytes, NULL, NULL );
+    }
+
+    aio_accept_control_block->accepted_tcp_socket = TCPSocket::create( get_domain() );
+    size_t sizeof_peer_sockaddr = ( get_domain() == AF_INET6 ) ? sizeof( sockaddr_in6 ) : sizeof( sockaddr_in );
+
+    DWORD dwBytesReceived;
+    if ( static_cast<LPFN_ACCEPTEX>( lpfnAcceptEx )( *this, *aio_accept_control_block->accepted_tcp_socket, aio_accept_control_block->peer_sockaddr, 0, sizeof_peer_sockaddr + 16, sizeof_peer_sockaddr + 16, &dwBytesReceived, ( LPOVERLAPPED )*aio_accept_control_block ) ||
+         ::WSAGetLastError() == WSA_IO_PENDING )
+      aio_accept_control_block.release();
+    else
+      aio_accept_control_block->onError( Exception::get_errno() );
+#else
     aio_queue->submit( aio_accept_control_block.release() );
+#endif
+  }
   else
     aio_accept_control_block->execute();
-#endif
 }
+
 void TCPSocket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
   aio_connect_control_block->set_socket( incRef() );
+
   if ( aio_queue != NULL )
   {
 #ifdef _WIN32
@@ -3392,6 +3548,7 @@ void TCPSocket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_conn
       DWORD dwBytes;
       WSAIoctl( *this, SIO_GET_EXTENSION_FUNCTION_POINTER, &GuidConnectEx, sizeof( GuidConnectEx ), &lpfnConnectEx, sizeof( lpfnConnectEx ), &dwBytes, NULL, NULL );
     }
+
     for ( ;; )
     {
       struct sockaddr* name; socklen_t namelen;
@@ -3423,6 +3580,7 @@ void TCPSocket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_conn
       else
         break;
     }
+
     aio_connect_control_block->onError( Exception::get_errno() );
 #else
     aio_queue->submit( aio_connect_control_block.release() );
@@ -3431,15 +3589,21 @@ void TCPSocket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_conn
   else
     aio_connect_control_block->execute();
 }
+
 auto_TCPSocket TCPSocket::create()
 {
-  int domain = AF_INET6;
+  return create( AF_INET6 );
+}
+
+auto_TCPSocket TCPSocket::create( int domain )
+{
   int socket_ = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
   if ( socket_ != -1 )
     return new TCPSocket( domain, socket_ );
   else
     return NULL;
 }
+
 bool TCPSocket::listen()
 {
   int flag = 1;
@@ -3452,6 +3616,7 @@ bool TCPSocket::listen()
   setsockopt( *this, SOL_SOCKET, SO_LINGER, ( char* )&lingeropt, ( int )sizeof( lingeropt ) );
   return ::listen( *this, SOMAXCONN ) != -1;
 }
+
 bool TCPSocket::shutdown()
 {
 #ifdef _WIN32
@@ -3460,17 +3625,17 @@ bool TCPSocket::shutdown()
   return ::shutdown( *this, SHUT_RDWR ) != -1;
 #endif
 }
-TCPSocket::AIOAcceptControlBlock::AIOAcceptControlBlock( YIELD::auto_Object<TCPSocket> accepted_tcp_socket, YIELD::auto_Buffer read_buffer )
-  : accepted_tcp_socket( accepted_tcp_socket ), read_buffer( read_buffer )
-{ }
+
+
 void TCPSocket::AIOAcceptControlBlock::execute()
 {
-}
-void TCPSocket::AIOAcceptControlBlock::onCompletion( size_t bytes_transferred )
-{
-  read_buffer->put( NULL, bytes_transferred );
-  size_t sizeof_sockaddr = ( accepted_tcp_socket->get_domain() == AF_INET6 ) ? sizeof( sockaddr_in6 ) : sizeof( sockaddr_in );
-  read_buffer->get( NULL, ( sizeof_sockaddr + 16 ) * 2 );
+  accepted_tcp_socket = static_cast<TCPSocket*>( get_socket().get() )->accept();
+  if ( accepted_tcp_socket != NULL )
+  {
+    onCompletion( 0 );
+  }
+  else
+    onError( Exception::get_errno() );
 }
 
 
@@ -3629,10 +3794,76 @@ UDPSocket::UDPSocket( int domain, int socket_ )
 { }
 void UDPSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
+  aio_connect_control_block->set_socket( incRef() );
   if ( connect( aio_connect_control_block->get_peername() ) == CONNECT_STATUS_OK )
     aio_connect_control_block->onCompletion( 0 );
   else
     aio_connect_control_block->onError( Exception::get_errno() );
+}
+void UDPSocket::aio_recvfrom( auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block )
+{
+  aio_recvfrom_control_block->set_socket( incRef() );
+  if ( aio_queue != NULL )
+  {
+#ifdef _WIN32
+    auto_Buffer buffer( aio_recvfrom_control_block->get_buffer() );
+    WSABUF wsabuf[1];
+    wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) );
+    wsabuf[0].len = buffer->capacity() - buffer->size();
+    DWORD dwNumberOfBytesReceived, dwFlags = 0;
+    socklen_t peer_sockaddr_len = sizeof( *aio_recvfrom_control_block->peer_sockaddr );
+    if ( ::WSARecvFrom( *this, wsabuf, 1, &dwNumberOfBytesReceived, &dwFlags, reinterpret_cast<struct sockaddr*>( aio_recvfrom_control_block->peer_sockaddr ), &peer_sockaddr_len, *aio_recvfrom_control_block, NULL ) == 0 ||
+         ::WSAGetLastError() == WSA_IO_PENDING )
+         aio_recvfrom_control_block.release();
+    else
+      aio_recvfrom_control_block->onError( ::WSAGetLastError() );
+#else
+    aio_queue->submit( aio_recvfrom_control_block.release() );
+#endif
+  }
+  else
+    aio_recvfrom_control_block->execute();
+}
+void UDPSocket::aio_sendto( auto_Object<AIOSendToControlBlock> aio_sendto_control_block )
+{
+  aio_sendto_control_block->set_socket( incRef() );
+  if ( aio_queue != NULL )
+  {
+#ifdef _WIN32
+    struct sockaddr* peer_sockaddr; socklen_t peer_sockaddr_len;
+    if ( aio_sendto_control_block->get_peer_sockaddr()->as_struct_sockaddr( get_domain(), peer_sockaddr, peer_sockaddr_len ) )
+    {
+      auto_Buffer buffer( aio_sendto_control_block->get_buffer() );
+      if ( buffer->get_tag() == YIELD_OBJECT_TAG( GatherBuffer ) )
+      {
+        DWORD dwNumberOfBytesSent;
+        if ( ::WSASendTo( socket_, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( static_cast<GatherBuffer*>( buffer.get() )->get_iovecs() ) ), static_cast<GatherBuffer*>( buffer.get() )->get_iovecs_len(), &dwNumberOfBytesSent, 0, peer_sockaddr, peer_sockaddr_len, *aio_sendto_control_block, NULL ) == 0 ||
+             ::WSAGetLastError() == WSA_IO_PENDING )
+          aio_sendto_control_block.release();
+        else
+          aio_sendto_control_block->onError( ::WSAGetLastError() );
+      }
+      else
+      {
+        WSABUF wsabuf[1];
+        wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) );
+        wsabuf[0].len = buffer->size();
+        DWORD dwNumberOfBytesSent;
+        if ( ::WSASendTo( socket_, wsabuf, 1, &dwNumberOfBytesSent, 0, peer_sockaddr, peer_sockaddr_len, *aio_sendto_control_block, NULL ) == 0 ||
+             ::WSAGetLastError() == WSA_IO_PENDING )
+          aio_sendto_control_block.release();
+        else
+          aio_sendto_control_block->onError( ::WSAGetLastError() );
+      }
+    }
+    else
+      aio_sendto_control_block->onError( ::WSAGetLastError() );
+#else
+    aio_queue->submit( aio_sendto_control_block.release() );
+#endif
+  }
+  else
+    aio_sendto_control_block->execute();
 }
 auto_UDPSocket UDPSocket::create()
 {
@@ -3641,7 +3872,68 @@ auto_UDPSocket UDPSocket::create()
   if ( socket_ != -1 )
     return new UDPSocket( domain, socket_ );
   else
-    return NULL;
+  {
+    domain = AF_INET;
+    socket_ = Socket::create( domain, SOCK_DGRAM, IPPROTO_UDP );
+    if ( socket_ != -1 )
+      return new UDPSocket( domain, socket_ );
+    else
+      return NULL;
+  }
+}
+ssize_t UDPSocket::recvfrom( auto_Buffer buffer, struct sockaddr_storage& peer_sockaddr )
+{
+  return recvfrom( static_cast<void*>( *buffer ), buffer->size(), peer_sockaddr );
+}
+ssize_t UDPSocket::recvfrom( void* buffer, size_t buffer_len, struct sockaddr_storage& peer_sockaddr )
+{
+  socklen_t peer_sockaddr_len = sizeof( peer_sockaddr );
+  return ::recvfrom( *this, static_cast<char*>( buffer ), buffer_len, 0, reinterpret_cast<struct sockaddr*>( &peer_sockaddr ), &peer_sockaddr_len );
+}
+ssize_t UDPSocket::sendto( auto_Buffer buffer, auto_SocketAddress peer_sockaddr )
+{
+  return sendto( static_cast<void*>( *buffer ), buffer->size(), peer_sockaddr );
+}
+ssize_t UDPSocket::sendto( const void* buffer, size_t buffer_len, auto_SocketAddress _peer_sockaddr )
+{
+  struct sockaddr* peer_sockaddr; socklen_t peer_sockaddr_len;
+  if ( _peer_sockaddr->as_struct_sockaddr( get_domain(), peer_sockaddr, peer_sockaddr_len ) )
+    return ::sendto( *this, static_cast<const char*>( buffer ), buffer_len, 0, peer_sockaddr, peer_sockaddr_len );
+  else
+    return -1;
+}
+UDPSocket::AIORecvFromControlBlock::AIORecvFromControlBlock( auto_Buffer buffer )
+  : buffer( buffer )
+{
+  peer_sockaddr = new sockaddr_storage;
+}
+UDPSocket::AIORecvFromControlBlock::~AIORecvFromControlBlock()
+{
+  delete peer_sockaddr;
+}
+auto_SocketAddress UDPSocket::AIORecvFromControlBlock::get_peer_sockaddr() const
+{
+  return new SocketAddress( *peer_sockaddr );
+}
+void UDPSocket::AIORecvFromControlBlock::execute()
+{
+  ssize_t recvfrom_ret = static_cast<UDPSocket*>( get_socket().get() )->recvfrom( buffer, *peer_sockaddr );
+  if ( recvfrom_ret > 0 )
+    onCompletion( static_cast<size_t>( recvfrom_ret ) );
+  else
+    onError( Exception::get_errno() );
+}
+void UDPSocket::AIORecvFromControlBlock::onCompletion( size_t bytes_transferred )
+{
+  buffer->put( NULL, bytes_transferred );
+}
+void UDPSocket::AIOSendToControlBlock::execute()
+{
+  ssize_t sendto_ret = static_cast<UDPSocket*>( get_socket().get() )->sendto( buffer, peer_sockaddr );
+  if ( sendto_ret >= 0 )
+    onCompletion( static_cast<size_t>( sendto_ret ) );
+  else
+    onError( Exception::get_errno() );
 }
 
 

@@ -130,11 +130,11 @@ namespace org
           {
 #ifdef YIELD_HAVE_OPENSSL
             if ( !pkcs12_file_path.empty() )
-              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pkcs12_file_path, pkcs12_passphrase );
+              ssl_context = YIELD::SSLContext::create( SSLv3_client_method(), pkcs12_file_path, pkcs12_passphrase );
             else if ( !pem_certificate_file_path.empty() && !pem_private_key_file_path.empty() )
-              ssl_context = new YIELD::SSLContext( SSLv3_client_method(), pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase );
+              ssl_context = YIELD::SSLContext::create( SSLv3_client_method(), pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase );
 #else
-            ssl_context = new YIELD::SSLContext;
+            ssl_context = YIELD::SSLContext::create();
 #endif
           }
 
@@ -216,7 +216,6 @@ namespace org
 
         YIELD::auto_Log log;
         YIELD::auto_SSLContext ssl_context;
-        YIELD::auto_Object<YIELD::StageGroup> stage_group;
 
 
         template <class ProxyType>
@@ -226,10 +225,7 @@ namespace org
           if ( checked_uri.get_port() == 0 )
             checked_uri.set_port( default_port );
 
-          if ( stage_group == NULL )
-            stage_group = new YIELD::SEDAStageGroup;
-
-          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, stage_group, get_proxy_flags(), get_log(), operation_timeout, get_ssl_context() );
+          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, get_ssl_context() );
           if ( proxy != NULL )
             return proxy;
           else
