@@ -27,7 +27,7 @@
             <Tool
                 Name="VCCLCompilerTool"
                 Optimization="0"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
                 BasicRuntimeChecks="3"
                 RuntimeLibrary="3"
@@ -73,7 +73,7 @@
             >
             <Tool
                 Name="VCCLCompilerTool"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
                 StringPooling="false"
                 RuntimeLibrary="2"
@@ -117,7 +117,7 @@
             >
             <Tool
                 Name="VCCLCompilerTool"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
                 StringPooling="false"
                 RuntimeLibrary="2"
@@ -155,18 +155,7 @@
     <References>
     </References>
     <Files>
-                <Filter
-            Name="Header Files"
-            Filter="h;hpp;hxx;hm;inl;inc;xsd"
-            UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
-            >
-            <File
-    RelativePath="..\..\..\..\src\org\xtreemfs\client\main.h"
-    >
-</File>
-
-        </Filter>
-
+        
         <Filter
             Name="Source Files"
             Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"

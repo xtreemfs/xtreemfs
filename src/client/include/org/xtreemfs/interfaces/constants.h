@@ -1,10 +1,10 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef _ORG_XTREEMFS_INTERFACES_CONSTANTS_H_
-#define _ORG_XTREEMFS_INTERFACES_CONSTANTS_H_
+    #ifndef _ORG_XTREEMFS_INTERFACES_CONSTANTS_H_
+    #define _ORG_XTREEMFS_INTERFACES_CONSTANTS_H_
 
-#include <string>
+    #include <string>
 
 
 namespace org

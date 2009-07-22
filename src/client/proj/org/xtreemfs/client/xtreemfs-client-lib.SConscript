@@ -67,15 +67,19 @@ for define in defines:
     else: define_switch = "-D" + define
     if not define_switch in build_env["CCFLAGS"]: build_env["CCFLAGS"] += define_switch + " "
 
-include_dir_paths = [os.path.abspath( '../../../../share/yieldfs/share/yield/include' ), os.path.abspath( '../../../../share/yieldfs/include' ), os.path.abspath( '../../../../include' )]
+include_dir_paths = [os.path.abspath( '../../../../share/yieldfs/share/yield/include' ), os.path.abspath( '../../../../share/yieldfs/include' ), os.path.abspath( '../../../../share/google-breakpad/src' ), os.path.abspath( '../../../../include' )]
 for include_dir_path in include_dir_paths:
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
+
+lib_dir_paths = [os.path.abspath( '../../../../lib' )]
+for lib_dir_path in lib_dir_paths:
+    if not lib_dir_path in build_env["LIBPATH"]: build_env["LIBPATH"].append( lib_dir_path )
 
 # Don't add libs until after custom and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
 for lib in []:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 if sys.platform.startswith( "win" ):
-    for lib in ["libeay32.lib", "ssleay32.lib", "libeay32.lib", "ssleay32.lib"]:
+    for lib in ["libeay32.lib", "ssleay32.lib"]:
        if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
 if not sys.platform.startswith( "win" ):
