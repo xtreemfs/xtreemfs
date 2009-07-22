@@ -26,6 +26,7 @@ package org.xtreemfs.utils;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
@@ -42,7 +43,6 @@ import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
 import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
@@ -50,21 +50,17 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.Replica;
+import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.dir.client.DIRClient;
+import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.interfaces.AccessControlPolicyType;
-import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
-import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.ServiceSet;
-import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StringSet;
-import org.xtreemfs.interfaces.StripingPolicy;
-import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.client.MRCClient;
@@ -102,16 +98,11 @@ public class xtfs_repl {
 
     public final static String      HELP_LONG                          = "-help";
 
-    /**
-     * hidden command creates a volume and a file (for names see user input) with some data
-     */
-    public final static String      CREATE_TEST_ENV                    = "CREATE_TEST_ENV";
-
     public final static String      METHOD_RANDOM                      = "random";
 
     public final static String      METHOD_DNS                         = "dns";
 
-    public final static String      REPLICATION_FLAG_FILL_ONDEMAND     = "-ondemand";
+    public final static String      REPLICATION_FLAG_FULL_REPLICA     = "-full";
 
     public final static String      REPLICATION_FLAG_TRANSFER_STRATEGY = "-strategy";
 
@@ -119,7 +110,17 @@ public class xtfs_repl {
 
     public final static String      TRANSFER_STRATEGY_SEQUENTIAL       = "sequential";
 
-    public final static int         DEFAULT_REPLICATION_FLAGS          = Constants.REPL_FLAG_STRATEGY_RANDOM;
+    public final static String      SSL_CREDS_FILE                     = "c";
+
+    public final static String      SSL_CREDS_PASSWORD                 = "cpass";
+
+    public final static String      SSL_TRUSTED_CA_FILE                = "t";
+
+    public final static String      SSL_TRUSTED_CA_PASSWORD            = "tpass";
+
+    public final static int         DEFAULT_REPLICATION_FLAGS          = ReplicationFlags
+                                                                               .setPartialReplica(ReplicationFlags
+                                                                                       .setRandomStrategy(0));
 
     private final String            relPath;
 
@@ -184,12 +185,13 @@ public class xtfs_repl {
     }
 
     /**
+     * @param sslOptions TODO
      * @throws IOException
      * @throws InterruptedException
      * @throws ONCRPCException
      * 
      */
-    public xtfs_repl(String relPath, InetSocketAddress dirAddress, String volume, String volPath)
+    public xtfs_repl(String relPath, InetSocketAddress dirAddress, String volume, String volPath, SSLOptions sslOptions)
             throws Exception {
         try {
             Logging.start(Logging.LEVEL_ERROR, Category.tool);
@@ -199,12 +201,13 @@ public class xtfs_repl {
             this.volume = volume;
             this.dirAddress = dirAddress;
 
+            // TODO: use REAL user credentials (this is a SECURITY HOLE)
             StringSet groupIDs = new StringSet();
             groupIDs.add("root");
             this.credentials = new UserCredentials("root", groupIDs, "");
 
             // client
-            client = new RPCNIOSocketClient(null, 10000, 5 * 60 * 1000);
+            client = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
             client.start();
             client.waitForStartup();
             dirClient = new DIRClient(client, dirAddress);
@@ -298,21 +301,21 @@ public class xtfs_repl {
                 try {
                     in = new BufferedReader(new InputStreamReader(System.in));
                     System.out
-                            .println("Please choose if replica should be filled until it is full (full) or only ondemand (ondemand)"
+                            .println("Please choose the type of the replica (full | partial)"
                                     + " and a Transfer Strategy (random | sequential).");
                     System.out.println("# Please use ',' as seperator. #");
                     args = in.readLine().split(",");
 
                     List<String> argsList = Arrays.asList(args);
-                    if (argsList.contains("ondemand"))
-                        replicationFlags = replicationFlags | Constants.REPL_FLAG_FILL_ON_DEMAND;
+                    if (argsList.contains("partial"))
+                        replicationFlags = ReplicationFlags.setPartialReplica(replicationFlags);
                     if (argsList.contains("full")) {
-                        // do nothing
+                        replicationFlags = ReplicationFlags.setFullReplica(replicationFlags);
                     }
                     if (argsList.contains("random"))
-                        replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_RANDOM;
+                        replicationFlags = ReplicationFlags.setRandomStrategy(replicationFlags);
                     if (argsList.contains("sequential"))
-                        replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_SIMPLE;
+                        replicationFlags = ReplicationFlags.setSequentialStrategy(replicationFlags);
 
                     break;
                 } catch (IOException e) {
@@ -334,7 +337,7 @@ public class xtfs_repl {
             // at the moment all replicas must have the same StripingPolicy
             file.addReplica(osds, file.getStripingPolicy(), replicationFlags);
 
-            if ((Constants.REPL_FLAG_FILL_ON_DEMAND & replicationFlags) != Constants.REPL_FLAG_FILL_ON_DEMAND)
+            if (ReplicationFlags.isFullReplica(replicationFlags))
                 startReplicationOnOSDs(osds.get(0));
         } else
             System.err.println("File is not marked as read-only.");
@@ -418,7 +421,7 @@ public class xtfs_repl {
     private void startReplicationOnOSDs(ServiceUUID addedOSD) throws IOException {
         // get just added replica
         Replica addedReplica = file.getXLoc().getReplica(addedOSD);
-        if (addedReplica.isFilledOnDemand()) // break, because replica should not be filled
+        if (addedReplica.isPartialReplica()) // break, because replica should not be filled
             return;
         StripingPolicyImpl sp = addedReplica.getStripingPolicy();
         String fileID = file.getFileId();
@@ -485,9 +488,23 @@ public class xtfs_repl {
     }
 
     public void removeReplica(ServiceUUID osd) throws Exception {
-        if (file.isReadOnly())
-            file.removeReplica(osd);
-        else
+        if (file.isReadOnly()) {
+            boolean noOtherCompleteReplica = true;
+            if (file.getXLoc().getReplica(osd).isComplete()) { // complete replica
+                // check if another replica is also complete
+                for (Replica r : file.getXLoc().getReplicas())
+                    if (r.isComplete()) {
+                        noOtherCompleteReplica = false;
+                        break;
+                    }
+                if (!noOtherCompleteReplica)
+                    file.removeReplica(osd);
+                else
+                    System.err.println("This is the last remaining COMPLETE replica. It cannot be removed,"
+                            + " otherwise it can happen that the file will be destroyed.");
+            } else
+                file.removeReplica(osd);
+        } else
             System.err.println("File is not marked as read-only.");
     }
 
@@ -599,12 +616,12 @@ public class xtfs_repl {
         options.put(REMOVE_AUTOMATIC_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(HELP, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(HELP_LONG, new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put("c", new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put("cpass", new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put("t", new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put("tpass", new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(SSL_CREDS_FILE, new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(SSL_CREDS_PASSWORD, new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(SSL_TRUSTED_CA_FILE, new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(SSL_TRUSTED_CA_PASSWORD, new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put(REPLICATION_FLAG_FILL_ONDEMAND, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put(REPLICATION_FLAG_FULL_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(REPLICATION_FLAG_TRANSFER_STRATEGY, new CliOption(CliOption.OPTIONTYPE.STRING));
 
         try {
@@ -636,9 +653,7 @@ public class xtfs_repl {
         xtfs_repl system = null;
 
         try {
-
             // resolve the path
-
             final String filePath = utils.expandPath(arguments.get(0));
             final String url = utils.getxattr(filePath, "xtreemfs.url");
 
@@ -658,28 +673,38 @@ public class xtfs_repl {
             final String volPath = i3 == -1 ? "" : url.substring(i3);
             final InetSocketAddress dirAddress = new InetSocketAddress(dirURL, dirPort);
 
-            system = new xtfs_repl(filePath, dirAddress, volume, volPath);
+            // create SSL options (if set)
+            SSLOptions sslOptions = null;
+            if ((options.get(SSL_CREDS_FILE).stringValue != null)
+                    && (options.get(SSL_CREDS_PASSWORD).stringValue != null)
+                    && (options.get(SSL_TRUSTED_CA_FILE).stringValue != null)
+                    && (options.get(SSL_TRUSTED_CA_PASSWORD).stringValue != null)) { // SSL set
+                sslOptions = new SSLOptions(new FileInputStream(options.get(SSL_CREDS_FILE).stringValue),
+                        options.get(SSL_CREDS_PASSWORD).stringValue, new FileInputStream(options
+                                .get(SSL_TRUSTED_CA_FILE).stringValue),
+                        options.get(SSL_TRUSTED_CA_PASSWORD).stringValue);
+            }
+
+            system = new xtfs_repl(filePath, dirAddress, volume, volPath, sslOptions);
+            system.initialize();
 
             for (Entry<String, CliOption> e : options.entrySet()) {
-
                 if (e.getKey().equals(ADD_REPLICA) && e.getValue().stringValue != null) {
-
-                    system.initialize();
 
                     // parse replication flags
                     int replicationFlags = DEFAULT_REPLICATION_FLAGS;
-                    CliOption option = options.get(REPLICATION_FLAG_FILL_ONDEMAND);
+                    CliOption option = options.get(REPLICATION_FLAG_FULL_REPLICA);
                     if (option != null && option.switchValue)
-                        replicationFlags = replicationFlags | Constants.REPL_FLAG_FILL_ON_DEMAND;
+                        replicationFlags = ReplicationFlags.setFullReplica(replicationFlags);
 
                     option = options.get(REPLICATION_FLAG_TRANSFER_STRATEGY);
                     if (option != null && option.stringValue != null) {
                         String method = option.stringValue.replace('\"', ' ').trim();
 
                         if (method.equals(TRANSFER_STRATEGY_RANDOM))
-                            replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_RANDOM;
+                            replicationFlags = ReplicationFlags.setRandomStrategy(replicationFlags);
                         else if (method.equals(TRANSFER_STRATEGY_SEQUENTIAL))
-                            replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_SIMPLE;
+                            replicationFlags = ReplicationFlags.setSequentialStrategy(replicationFlags);
                     }
 
                     StringTokenizer st = new StringTokenizer(e.getValue().stringValue, "\", \t");
@@ -691,15 +716,13 @@ public class xtfs_repl {
                         system.addReplica(osds, replicationFlags);
                     } else
                         usage();
-                } else if (e.getKey().equals(ADD_REPLICA_INTERACTIVE) && e.getValue().switchValue) {
 
-                    system.initialize();
+                } else if (e.getKey().equals(ADD_REPLICA_INTERACTIVE) && e.getValue().switchValue) {
 
                     // interactive mode
                     system.addReplica();
-                } else if (e.getKey().equals(REMOVE_REPLICA) && e.getValue().stringValue != null) {
 
-                    system.initialize();
+                } else if (e.getKey().equals(REMOVE_REPLICA) && e.getValue().stringValue != null) {
 
                     String headOSD = e.getValue().stringValue.replace('\"', ' ').trim();
 
@@ -711,8 +734,6 @@ public class xtfs_repl {
 
                 } else if (e.getKey().equals(REMOVE_REPLICA_INTERACTIVE) && e.getValue().stringValue != null) {
 
-                    system.initialize();
-
                     // interactive mode
                     system.removeReplica();
 
@@ -720,18 +741,18 @@ public class xtfs_repl {
 
                     // parse replication flags
                     int replicationFlags = DEFAULT_REPLICATION_FLAGS;
-                    CliOption option = options.get(REPLICATION_FLAG_FILL_ONDEMAND);
+                    CliOption option = options.get(REPLICATION_FLAG_FULL_REPLICA);
                     if (option != null && option.switchValue)
-                        replicationFlags = replicationFlags | Constants.REPL_FLAG_FILL_ON_DEMAND;
+                        replicationFlags = ReplicationFlags.setFullReplica(replicationFlags);
 
                     option = options.get(REPLICATION_FLAG_TRANSFER_STRATEGY);
                     if (option != null && option.stringValue != null) {
                         String method = option.stringValue.replace('\"', ' ').trim();
 
                         if (method.equals(TRANSFER_STRATEGY_RANDOM))
-                            replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_RANDOM;
+                            replicationFlags = ReplicationFlags.setRandomStrategy(replicationFlags);
                         else if (method.equals(TRANSFER_STRATEGY_SEQUENTIAL))
-                            replicationFlags = replicationFlags | Constants.REPL_FLAG_STRATEGY_SIMPLE;
+                            replicationFlags = ReplicationFlags.setSequentialStrategy(replicationFlags);
                     }
 
                     String method = e.getValue().stringValue.replace('\"', ' ').trim();
@@ -744,28 +765,18 @@ public class xtfs_repl {
                                 + METHOD_DNS + "'");
 
                 } else if (e.getKey().equals(REMOVE_AUTOMATIC_REPLICA) && e.getValue().switchValue) {
-                    system.initialize();
                     system.removeReplicaAutomatically(METHOD_RANDOM);
                 } else if (e.getKey().equals(SET_READ_ONLY) && e.getValue().switchValue) {
-                    system.initialize();
                     system.setReadOnly(true);
                 } else if (e.getKey().equals(SET_WRITABLE) && e.getValue().switchValue) {
-                    system.initialize();
                     system.setReadOnly(false);
                 } else if (e.getKey().equals(IS_READ_ONLY) && e.getValue().switchValue) {
-                    system.initialize();
                     system.isReadOnly();
                 } else if (e.getKey().equals(LIST_REPLICAS) && e.getValue().switchValue) {
-                    system.initialize();
                     system.listReplicas();
                 } else if (e.getKey().equals(LIST_SUITABLE_OSDS_FOR_REPLICA) && e.getValue().switchValue) {
-                    system.initialize();
                     system.listSuitableOSDs();
-                } else if (e.getKey().equals(CREATE_TEST_ENV) && e.getValue().switchValue) { // hidden
-                    // command
-                    // system.createTestEnv(volume, filePath);
                 }
-
             }
         } catch (Exception e) {
             System.err.println("an error has occurred");
@@ -785,92 +796,34 @@ public class xtfs_repl {
             + " <UUID_of_OSD1 UUID_of_OSD2 ...>: Adds a replica with the given OSDs. "
             + "The number of OSDs must be the same as in the file's striping policy. "
             + "Use space as seperator.\n");
-        out.append("\t-" + HELP + " -" + HELP_LONG + ": show usage info\n");
+        out.append("\t-" + HELP + "/-" + HELP_LONG + ": show usage info\n");
         out.append("\t-" + LIST_REPLICAS + ": lists all replicas of this file\n");
         out.append("\t-" + LIST_SUITABLE_OSDS_FOR_REPLICA
             + ": lists all suitable OSDs for this file, which can be used for a new replica\n");
         out.append("\t-" + REMOVE_REPLICA + " <UUID_of_head-OSD>"
             + ": removes the replica with the given head OSD\n");
-        out.append("\t-" + ADD_AUTOMATIC_REPLICA + " " + METHOD_RANDOM + "|" + METHOD_DNS
-            + ": adds a replica and automatically selects OSDs according to the chosen method\n");
+        out.append("\t-" + ADD_AUTOMATIC_REPLICA + " {" + METHOD_RANDOM + "|" + METHOD_DNS
+            + "}: adds a replica and automatically selects OSDs according to the chosen method\n");
         out.append("\t-" + REMOVE_AUTOMATIC_REPLICA + ": removes a randomly selected replica\n");
         out.append("\t-" + ADD_REPLICA_INTERACTIVE + ": an interactive mode for adding a replica\n");
         out.append("\t-" + REMOVE_REPLICA_INTERACTIVE + ": an interactive mode for removing a replica\n");
         out.append("\t-" + IS_READ_ONLY + ": checks if the file is already marked as read-only\n");
-        out
-                .append("\t-"
-                    + REPLICATION_FLAG_FILL_ONDEMAND
-                    + ": if set, the replica to add will be filled on demand; otherwise it will be filled automatically until it is full\n");
+        out.append("\t-" + REPLICATION_FLAG_FULL_REPLICA
+                        + ": if set, the replica will be a complete copy of the file; otherwise only requested data will be replicated\n");
         out.append("\t-" + SET_READ_ONLY + ": marks the file as read-only\n");
         out.append("\t-" + SET_WRITABLE + ": marks the file as writable (normal file)\n");
-        out.append("\t-" + REPLICATION_FLAG_TRANSFER_STRATEGY + " " + TRANSFER_STRATEGY_RANDOM + "|"
-            + TRANSFER_STRATEGY_SEQUENTIAL + ": the replica to add will use the chosen strategy\n");
+        out.append("\t-" + REPLICATION_FLAG_TRANSFER_STRATEGY + " {" + TRANSFER_STRATEGY_RANDOM + "|"
+                + TRANSFER_STRATEGY_SEQUENTIAL + "}: the replica to add will use the chosen strategy\n");
         out.append("\n");
         out.append("\tTo use SSL it is necessary to also specify credentials:\n");
-        out.append("\t  -c  <creds_file>: a PKCS#12 file containing user credentials\n");
-        out.append("\t  -cpass <creds_passphrase>: a pass phrase to decrypt the the user credentials file\n");
-        out
-                .append("\t  -t <trusted_CAs>: a PKCS#12 file containing a set of certificates from trusted CAs\n");
-        out.append("\t  -tpass <trusted_passphrase>: a pass phrase to decrypt the trusted CAs file");
-        
+        out.append("\t-" + SSL_CREDS_FILE + " <creds_file>: a PKCS#12 file containing user credentials\n");
+        out.append("\t-" + SSL_CREDS_PASSWORD
+                + " <creds_passphrase>: a pass phrase to decrypt the the user credentials file\n");
+        out.append("\t-" + SSL_TRUSTED_CA_FILE
+                + " <trusted_CAs>: a PKCS#12 file containing a set of certificates from trusted CAs\n");
+        out.append("\t-" + SSL_TRUSTED_CA_PASSWORD
+                + " <trusted_passphrase>: a pass phrase to decrypt the trusted CAs file");
+
         System.out.println(out.toString());
-    }
-
-    /**
-     * creates a volume, dir and a file with some data
-     * 
-     * @throws InterruptedException
-     * @throws IOException
-     * @throws ONCRPCException
-     */
-    private void createTestEnv(String volume, String filepath) throws ONCRPCException, IOException,
-            InterruptedException {
-        ServiceSet sSet;
-        // get MRC address
-        RPCResponse<ServiceSet> r0 = dirClient.xtreemfs_service_get_by_type(null,
-                ServiceType.SERVICE_TYPE_MRC);
-        sSet = r0.get();
-        r0.freeBuffers();
-
-        if (sSet.size() != 0)
-            mrcAddress = new ServiceUUID(sSet.get(0).getUuid()).getAddress();
-        else {
-            System.err.println("cannot find MRC");
-            System.exit(1);
-        }
-
-        mrcClient = new MRCClient(client, mrcAddress);
-
-        // create a volume (no access control)
-        RPCResponse r = mrcClient.mkvol(mrcAddress, credentials, volume,
-                OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE.intValue(), new StripingPolicy(
-                        StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1),
-                AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL.intValue(), 0);
-        r.get();
-        r.freeBuffers();
-
-        // create a directory
-        int index = 0;
-        if (filepath.startsWith("/"))
-            index = 1;
-        while ((index = filepath.indexOf("/", index + 1)) != -1) { // dirs
-            String curDir = filepath.substring(0, index);
-            r = mrcClient.mkdir(mrcAddress, credentials, volume + curDir, 0);
-            r.get();
-            r.freeBuffers();
-        }
-
-        // create a file
-        r = mrcClient.create(mrcAddress, credentials, volume + filepath, 0);
-        r.get();
-        r.freeBuffers();
-
-        // fill file with some data
-        byte[] bytesIn = new String("Hello Test").getBytes();
-        int length = bytesIn.length;
-        ReusableBuffer data = ReusableBuffer.wrap(bytesIn);
-
-        file = new RandomAccessFile("rw", mrcAddress, volume + filepath, client, credentials);
-        file.writeObject(0, 0, data);
     }
 }

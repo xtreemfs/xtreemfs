@@ -40,11 +40,11 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
+import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
-import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.InternalReadLocalResponse;
 import org.xtreemfs.interfaces.ObjectData;
@@ -60,6 +60,7 @@ import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.osd.operations.EventWriteObject;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.replication.transferStrategies.RandomStrategy;
+import org.xtreemfs.osd.replication.transferStrategies.SequentialPrefetchingStrategy;
 import org.xtreemfs.osd.replication.transferStrategies.SequentialStrategy;
 import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy;
 import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.NextRequest;
@@ -285,12 +286,12 @@ class ReplicatingFile {
     private static int                       maxRequestsPerFile;
 
     public final String                      fileID;
-    final TransferStrategy                   strategy;
-    final long                               lastObject;
+    private final TransferStrategy           strategy;
+    private final long                       lastObject;
     private XLocations                       xLoc;
     private Capability                       cap;
     private CowPolicy                        cow;
-    private InetSocketAddress                mrcAddress = null;
+    private InetSocketAddress                mrcAddress                = null;
 
     /**
      * if the file is removed while it will be replicated
@@ -331,20 +332,22 @@ class ReplicatingFile {
         this.cancelled = false;
         this.objectsInProgress = new HashMap<Long, ReplicatingObject>();
         this.waitingRequests = new HashMap<Long, ReplicatingObject>();
-
+        
         StripingPolicyImpl sp = xLoc.getLocalReplica().getStripingPolicy();
         this.lastObject = sp.getObjectNoForOffset(xLoc.getXLocSet().getRead_only_file_size() - 1);
 
         // create a new strategy
-        if (xLoc.getLocalReplica().isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE))
-            strategy = new SequentialStrategy(fileID, xLoc, osdAvailability);
-        else if (xLoc.getLocalReplica().isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM))
+        if (ReplicationFlags.isRandomStrategy(xLoc.getLocalReplica().getTransferStrategyFlags()))
             strategy = new RandomStrategy(fileID, xLoc, osdAvailability);
+        else if (ReplicationFlags.isSequentialStrategy(xLoc.getLocalReplica().getTransferStrategyFlags()))
+            strategy = new SequentialStrategy(fileID, xLoc, osdAvailability);
+        else if (ReplicationFlags.isSequentialPrefetchingStrategy(xLoc.getLocalReplica().getTransferStrategyFlags()))
+            strategy = new SequentialPrefetchingStrategy(fileID, xLoc, osdAvailability, lastObject);
         else
             throw new IllegalArgumentException("Set Replication Strategy not known.");
 
         // check if background replication is required
-        isFullReplica = !xLoc.getLocalReplica().isFilledOnDemand();
+        isFullReplica = !xLoc.getLocalReplica().isPartialReplica();
         if (isFullReplica) {
             // get striping column of local OSD
             int coloumn = xLoc.getLocalReplica().getOSDs().indexOf(master.getConfig().getUUID());
@@ -354,6 +357,35 @@ class ReplicatingFile {
                 strategy.addObject(objectsIt.next(), false);
             }
         }
+    }
+    
+    /**
+     * updates the capability and XLocations-list, if they are newer
+     * @return true, if something has changed
+     */
+    public boolean update(Capability cap, XLocations xLoc, CowPolicy cow) {
+        boolean changed = false;
+        this.cow = cow;
+        // if newer
+        if (cap.getExpires() > this.cap.getExpires() || cap.getEpochNo() > this.cap.getEpochNo()) {
+            this.cap = cap;
+            changed = true;
+        }
+        if (hasXLocChanged(xLoc)) {
+            this.xLoc = xLoc;
+            this.strategy.updateXLoc(xLoc);
+            changed = true;
+        }
+        return changed;
+    }
+
+    /**
+     * checks if the xLoc has changed since the last update (or creation-time)
+     * @param xLoc
+     * @return
+     */
+    public boolean hasXLocChanged(XLocations xLoc) {
+        return xLoc.getXLocSet().getVersion() > this.xLoc.getXLocSet().getVersion();
     }
 
     /**
@@ -426,21 +458,6 @@ class ReplicatingFile {
      */
     public int getNumberOfWaitingObjects() {
         return waitingRequests.size();
-    }
-
-    /**
-     * updates the capability and XLocations-list, if they are newer
-     */
-    public void update(Capability cap, XLocations xLoc, CowPolicy cow) {
-        this.cow = cow;
-        // if newer
-        if (cap.getExpires() > this.cap.getExpires() || cap.getEpochNo() > this.cap.getEpochNo()) {
-            this.cap = cap;
-        }
-        if (xLoc.getXLocSet().getVersion() > this.xLoc.getXLocSet().getVersion()) {
-            this.xLoc = xLoc;
-            this.strategy.updateXLoc(xLoc);
-        }
     }
 
     /**

@@ -59,7 +59,8 @@ public class ObjectDissemination {
     private HashMap<String, ReplicatingFile> filesInProgress;
 
     /**
-     * simple FIFO-cache for last completed files
+     * Simple LRU-cache for last completed files.<br>
+     * NOTE: contains only NOT canceled files
      */
     LRUCache<String, ReplicatingFile>        lastCompletedFilesCache;
 
@@ -77,9 +78,13 @@ public class ObjectDissemination {
             CowPolicy cow, final StageRequest rq) {
         ReplicatingFile file = this.filesInProgress.get(fileID);
         if (file == null) { // file not in progress
-            // try to get it from cache
+            /*
+             * Optimization: Use a cache of last completed files, so no new instance must be created every
+             * time. But use file from cache only if the xLoc has not changed. Otherwise it could be not
+             * guaranteed, that the informations in the ReplicatingFile instance are correct (up-to-date).
+             */
             file = this.lastCompletedFilesCache.get(fileID);
-            if (file == null) // create new one
+            if (file == null || (file != null && file.hasXLocChanged(xLoc))) // create new one
                 file = new ReplicatingFile(fileID, xLoc, capability, cow, master);
 
             // add file to filesInProgress
@@ -161,8 +166,19 @@ public class ObjectDissemination {
         // if the last requested object was fetched for this file => remove from map
         ReplicatingFile completedFile = filesInProgress.remove(fileID);
         assert (completedFile != null);
-        // cache completed file
-        lastCompletedFilesCache.put(fileID, completedFile);
+
+        /*
+         * Optimization: Canceled files will be never reused. Because in most cases they are canceled due to
+         * the removal of the local replica.
+         */
+        if(completedFile.isStopped()) {
+            // do not cache canceled files
+            // remove canceled file from cache
+            lastCompletedFilesCache.remove(fileID);
+        } else {
+            // cache completed file
+            lastCompletedFilesCache.put(fileID, completedFile);
+        }
 
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "stop replicating file %s",

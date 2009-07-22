@@ -79,9 +79,10 @@ class Writer implements Runnable {
 
     @Override
     public void run() {
+        Thread.currentThread().setName("WriterThread");
         try {
             // write 5 files at startup
-            for (int i = 1; i <= 5; i++) {
+            for (int i = 1; i <= 6; i++) {
                 // create new file
                 TestFile file = writeFile(HOLE_PROPABILITY);
                 prepareReplication(file.filename);
@@ -102,17 +103,24 @@ class Writer implements Runnable {
                 fileList.add(file);
 
                 // add/remove replicas for existing files
+                boolean switch1 = false;
                 for (int i = 0; i < 10; i++) {
                     Thread.sleep(SLEEP_TIME_UNTIL_NEW_FILE_WILL_BE_WRITTEN / 10);
 
-                    for (int j = 0; j < fileList.size() * 0.5; j++) { // change 1/2 of files
-                        file = fileList.get(random.nextInt(fileList.size()));
-                        removeReplicas(file.filename, random.nextInt(MAX_REPLICA_CHURN) + 1);
+                    if (switch1) {
+                        // add replicas
+                        for (int j = 0; j < fileList.size() * 0.5; j++) { // change 1/2 of files
+                            file = fileList.get(random.nextInt(fileList.size()));
+                            addReplicas(file.filename, random.nextInt(MAX_REPLICA_CHURN) + 1);
+                        }
+                    } else {
+                        // remove replicas
+                        for (int j = 0; j < fileList.size() * 0.5; j++) { // change 1/2 of files
+                            file = fileList.get(random.nextInt(fileList.size()));
+                            removeReplicas(file.filename, random.nextInt(MAX_REPLICA_CHURN) + 1);
+                        }
                     }
-                    for (int j = 0; j < fileList.size() * 0.5; j++) { // change 1/2 of files
-                        file = fileList.get(random.nextInt(fileList.size()));
-                        addReplicas(file.filename, random.nextInt(MAX_REPLICA_CHURN) + 1);
-                    }
+                    switch1 = !switch1;
                 }
             } catch (InterruptedException e) {
                 break;

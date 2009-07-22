@@ -38,8 +38,9 @@ import org.xtreemfs.interfaces.Constants;
  */
 public class SequentialPrefetchingStrategy extends SequentialStrategy {
     /**
-     * TODO identifies the sequential strategy in replication flags
+     * identifies the sequential strategy in replication flags
      */
+    // TODO: after protocol change: use correct flag
     public static final int    REPLICATION_FLAG          = Constants.REPL_FLAG_STRATEGY_SIMPLE;
 
     public static int          DEFAULT_PREFETCHING_COUNT = 5;

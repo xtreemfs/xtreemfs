@@ -40,7 +40,6 @@ import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
-import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_broadcast_gmaxRequest;
 import org.xtreemfs.osd.ErrorCodes;
@@ -72,7 +71,7 @@ public class StorageThread extends Stage {
 
     public static final int      STAGEOP_GET_FILE_SIZE   = 7;
 
-    public static final int      STAGEOP_GET_OBJECT_LIST = 8;
+    public static final int      STAGEOP_GET_OBJECT_SET = 8;
 
     private MetadataCache        cache;
     
@@ -119,8 +118,8 @@ public class StorageThread extends Stage {
             case STAGEOP_GET_FILE_SIZE:
                 processGetFileSize(method);
                 break;
-            case STAGEOP_GET_OBJECT_LIST:
-                processGetObjectList(method);
+            case STAGEOP_GET_OBJECT_SET:
+                processGetObjectSet(method);
                 break;
             }
             
@@ -572,26 +571,13 @@ public class StorageThread extends Stage {
     /**
      * @param method
      */
-    private void processGetObjectList(StageRequest rq) {
+    private void processGetObjectSet(StageRequest rq) {
         final GetObjectListCallback cback = (GetObjectListCallback) rq.getCallback();
         final String fileId = (String) rq.getArgs()[0];
         
         ObjectSet objectSet = layout.getObjectList(fileId);
 
-        // serialize objectSet
-        ReusableBuffer objectSetBuffer = null;
-        try {
-            byte[] serialized = objectSet.getSerializedBitSet();
-            objectSetBuffer = ReusableBuffer.wrap(serialized);
-        } catch (IOException e) {
-            cback.getObjectListComplete(null, e);
-        }
-
-        // TODO: set "is complete" flag correctly
-        // TODO: interface must be changed and then this must be adapted
-        ObjectList objList = new ObjectList(objectSetBuffer, objectSet.getStripeWidth(),
-                false);
-        cback.getObjectListComplete(objList, null);
+        cback.getObjectSetComplete(objectSet, null);
     }
 
     private ReusableBuffer padWithZeros(ReusableBuffer data, int stripeSize) {

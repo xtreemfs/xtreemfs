@@ -39,6 +39,7 @@ import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
@@ -284,10 +285,10 @@ public class RandomAccessFileTest extends TestCase {
         assertTrue(replicas.get(0).isComplete()); // original should be marked as full
         assertFalse(replicas.get(1).isComplete()); // replica 1 is empty
         assertFalse(replicas.get(2).isComplete()); // replica 2 is empty
-        assertTrue(replicas.get(1).isFilledOnDemand()); // replica 1 should be filled ondemand
-        assertFalse(replicas.get(2).isFilledOnDemand()); // replica 2 should be filled until it is full
-        assertTrue(replicas.get(1).isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM)); // replica 1 is using random strategy
-        assertTrue(replicas.get(2).isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE)); // replica 2 is using simple strategy
+        assertTrue(replicas.get(1).isPartialReplica()); // replica 1 should be filled ondemand
+        assertFalse(replicas.get(2).isPartialReplica()); // replica 2 should be filled until it is full
+        assertTrue(ReplicationFlags.isRandomStrategy(replicas.get(1).getTransferStrategyFlags())); // replica 1 is using random strategy
+        assertTrue(ReplicationFlags.isSequentialStrategy(replicas.get(2).getTransferStrategyFlags())); // replica 2 is using sequential strategy
         
         
         // remove the first replica

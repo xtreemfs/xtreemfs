@@ -23,6 +23,8 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 package org.xtreemfs.osd.operations;
 
+import java.io.IOException;
+
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -40,6 +42,7 @@ import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.osd.stages.StorageStage.GetObjectListCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.storage.ObjectInformation;
@@ -101,11 +104,11 @@ public final class LocalReadOperation extends OSDOperation {
             }
         } else {
             if (args.getAttachObjectList()) { // object list is requested
-                master.getStorageStage().getObjectList(args.getFile_id(), rq,
+                master.getStorageStage().getObjectSet(args.getFile_id(), rq,
                         new GetObjectListCallback() {
                             @Override
-                            public void getObjectListComplete(ObjectList objectList, Exception error) {
-                                postReadObjectList(rq, args, result, objectList, error);
+                            public void getObjectSetComplete(ObjectSet objectSet, Exception error) {
+                                postReadObjectSet(rq, args, result, objectSet, error);
                             }
                         });
             } else
@@ -113,8 +116,8 @@ public final class LocalReadOperation extends OSDOperation {
         }
     }
 
-    public void postReadObjectList(final OSDRequest rq, xtreemfs_internal_read_localRequest args,
-            ObjectInformation data, ObjectList result, Exception error) {
+    public void postReadObjectSet(final OSDRequest rq, xtreemfs_internal_read_localRequest args,
+            ObjectInformation data, ObjectSet result, Exception error) {
         if (error != null) {
             if (error instanceof ONCRPCException) {
                 rq.sendException((ONCRPCException) error);
@@ -122,7 +125,21 @@ public final class LocalReadOperation extends OSDOperation {
                 rq.sendInternalServerError(error);
             }
         } else {
-            readFinish(rq, args, data, result);
+            // serialize objectSet
+            ReusableBuffer objectSetBuffer = null;
+            byte[] serialized;
+            try {
+                serialized = result.getSerializedBitSet();
+                objectSetBuffer = ReusableBuffer.wrap(serialized);
+
+                // TODO: set "is complete" flag correctly
+                // TODO: interface must be changed and then this must be adapted
+                ObjectList objList = new ObjectList(objectSetBuffer, result.getStripeWidth(),
+                        false);
+                readFinish(rq, args, data, objList);
+            } catch (IOException e) {
+                rq.sendInternalServerError(e);
+            }
         }
     }
 

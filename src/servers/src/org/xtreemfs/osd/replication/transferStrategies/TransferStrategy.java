@@ -24,6 +24,9 @@ package org.xtreemfs.osd.replication.transferStrategies;
  * AUTHORS: Christian Lorenz (ZIB)
  */
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
@@ -96,6 +99,11 @@ public abstract class TransferStrategy {
      * checks if the OSD is available (e.g. network interrupt)
      */
     protected final ServiceAvailability osdAvailability;
+    
+    /**
+     * contains the collected object sets from other OSDs (if collected)
+     */
+    protected Map<ServiceUUID, ObjectSet> objectsOnOSDs;
 
     /**
      * @param rqDetails
@@ -107,6 +115,7 @@ public abstract class TransferStrategy {
         // TODO use correct stripe width for less memory usage
         this.requiredObjects = new ObjectSet();
         this.preferredObjects = new ObjectSet();
+        this.objectsOnOSDs = new HashMap<ServiceUUID, ObjectSet>();
         this.osdAvailability = osdAvailability;
         this.next = null;
     }
@@ -214,5 +223,15 @@ public abstract class TransferStrategy {
      */
     public int getObjectsCount() {
         return preferredObjects.size() + requiredObjects.size();
+    }
+
+    /**
+     * adds/updates the object set of the given OSD
+     * 
+     * @param set
+     * @param osd
+     */
+    public void setOSDsObjectSet(ObjectSet set, ServiceUUID osd) {
+        objectsOnOSDs.put(osd, set);
     }
 }

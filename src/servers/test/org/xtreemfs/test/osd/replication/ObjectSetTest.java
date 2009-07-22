@@ -85,7 +85,7 @@ public class ObjectSetTest extends TestCase {
             byte[] otherObject = serialize(list);
             try {
                 deserialized = new ObjectSet(set.getStripeWidth(), 0, otherObject);
-            } catch (ClassCastException e) {
+            } catch (Exception e) {
                 // correct
             }
         }

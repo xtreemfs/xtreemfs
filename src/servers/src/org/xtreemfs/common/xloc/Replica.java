@@ -72,8 +72,8 @@ public class Replica {
     }
 
     public String toString() {
-        return "Replica "+stripingPolicy+", "+replica+" "+
-                "OSD: "+osds;
+        return "Replica " + stripingPolicy + ", " + replica + ", Flags: " + replica.getReplication_flags()
+                + ", OSD: " + osds;
     }
 
     /**
@@ -120,21 +120,18 @@ public class Replica {
     }
 
     /**
-     * checks if the given strategy is equals to the set strategy for this replica 
-     * @param strategy
+     * Returns the replication flags. These could be used with the <code>ReplicationFlags</code> methods to identify which
+     * strategy is set.
+     * 
      * @return
      */
-    public boolean isStrategy(int strategy) {
-        if ((strategy & replica.getReplication_flags()) == Constants.REPL_FLAG_STRATEGY_SIMPLE)
-            return true;
-        else if ((strategy & replica.getReplication_flags()) == Constants.REPL_FLAG_STRATEGY_RANDOM)
-            return true;
-        else
-            return false;
+    public int getTransferStrategyFlags() {
+        return replica.getReplication_flags();
     }
-    
+
     /**
-     * checks if this replica is marked as being full 
+     * checks if this replica is complete, so it contains ALL objects of the file
+     * 
      * @return
      */
     public boolean isComplete() {
@@ -142,18 +139,10 @@ public class Replica {
     }
 
     /**
-     * checks if this replica should be a full replica or should replicate objects only ondemand
-     * @return true, if ondemand, false if full
+     * checks if this replica is a partial (ondemand) or full replica
+     * @return true, if partial; false if full
      */
-    public boolean isFilledOnDemand() {
+    public boolean isPartialReplica() {
         return ((Constants.REPL_FLAG_FILL_ON_DEMAND & replica.getReplication_flags()) == Constants.REPL_FLAG_FILL_ON_DEMAND);
-    }
-
-    /**
-     * checks if this replica should be a full replica or should replicate objects only ondemand
-     * @return true, if full, false if ondemand
-     */
-    public boolean isFilledUntilFull() {
-        return ((Constants.REPL_FLAG_FILL_ON_DEMAND ^ replica.getReplication_flags()) == Constants.REPL_FLAG_FILL_ON_DEMAND);
     }
 }

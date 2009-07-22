@@ -24,6 +24,8 @@
  */
 package org.xtreemfs.osd.operations;
 
+import java.io.IOException;
+
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -35,6 +37,7 @@ import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.osd.stages.StorageStage.GetObjectListCallback;
 
 /**
@@ -68,17 +71,17 @@ public class GetObjectListOperation extends OSDOperation {
 
 //        System.out.println("rq: " + args);
 
-        master.getStorageStage().getObjectList(args.getFile_id(), rq,
+        master.getStorageStage().getObjectSet(args.getFile_id(), rq,
                 new GetObjectListCallback() {
                     @Override
-                    public void getObjectListComplete(ObjectList result, Exception error) {
+                    public void getObjectSetComplete(ObjectSet result, Exception error) {
                         postReadObjectList(rq, args, result, error);
                     }
                 });
     }
 
     public void postReadObjectList(final OSDRequest rq, xtreemfs_internal_get_object_listRequest args,
-            ObjectList result, Exception error) {
+            ObjectSet result, Exception error) {
         if (error != null) {
             if (error instanceof ONCRPCException) {
                 rq.sendException((ONCRPCException) error);
@@ -86,7 +89,21 @@ public class GetObjectListOperation extends OSDOperation {
                 rq.sendInternalServerError(error);
             }
         } else {
-            sendResponse(rq, result);
+            // serialize objectSet
+            ReusableBuffer objectSetBuffer = null;
+            byte[] serialized;
+            try {
+                serialized = result.getSerializedBitSet();
+                objectSetBuffer = ReusableBuffer.wrap(serialized);
+
+                // TODO: set "is complete" flag correctly
+                // TODO: interface must be changed and then this must be adapted
+                ObjectList objList = new ObjectList(objectSetBuffer, result.getStripeWidth(),
+                        false);
+                sendResponse(rq, objList);
+            } catch (IOException e) {
+                rq.sendInternalServerError(e);
+            }
         }
     }
 

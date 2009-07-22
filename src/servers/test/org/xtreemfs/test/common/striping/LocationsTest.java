@@ -35,6 +35,7 @@ import junit.textui.TestRunner;
 import org.junit.Test;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
@@ -111,25 +112,25 @@ public class LocationsTest extends TestCase {
         // set none
         r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
         assertFalse(r.isComplete());
-        assertFalse(r.isFilledOnDemand());
-        assertFalse(r.isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM));
-        assertFalse(r.isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE));
+        assertFalse(r.isPartialReplica());
+        assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
+        assertFalse(ReplicationFlags.isSequentialStrategy(r.getTransferStrategyFlags()));
 
         // set full
         replicationFlags = Constants.REPL_FLAG_IS_FULL;
         r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
         assertTrue(r.isComplete());
-        assertFalse(r.isFilledOnDemand());
-        assertFalse(r.isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM));
-        assertFalse(r.isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE));
+        assertFalse(r.isPartialReplica());
+        assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
+        assertFalse(ReplicationFlags.isSequentialStrategy(r.getTransferStrategyFlags()));
 
         // set filledOnDemand and RandomStrategy
         replicationFlags = Constants.REPL_FLAG_FILL_ON_DEMAND | Constants.REPL_FLAG_STRATEGY_RANDOM;
         r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
         assertFalse(r.isComplete());
-        assertTrue(r.isFilledOnDemand());
-        assertTrue(r.isStrategy(Constants.REPL_FLAG_STRATEGY_RANDOM));
-        assertFalse(r.isStrategy(Constants.REPL_FLAG_STRATEGY_SIMPLE));
+        assertTrue(r.isPartialReplica());
+        assertTrue(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
+        assertFalse(ReplicationFlags.isSequentialStrategy(r.getTransferStrategyFlags()));
     }
 
     public static void main(String[] args) {

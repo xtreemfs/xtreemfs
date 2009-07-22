@@ -26,8 +26,6 @@ package org.xtreemfs.sandbox.tests.replicationStressTest;
 
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -65,9 +63,6 @@ class FullReplicaReader extends Reader {
      * read/replicate files
      */
     public void readFile(TestFile file) throws Exception {
-        double factor = random.nextDouble();
-        factor = (factor - 0.6 > 0) ? (factor - 0.6) : factor; // rather smaller partsizes
-        int partSize = (int) Math.round(StressTest.PART_SIZE * factor);
         long timeRequiredForReading = 0;
 
         java.io.RandomAccessFile originalFile = null;
@@ -80,48 +75,35 @@ class FullReplicaReader extends Reader {
             StripingPolicyImpl sp = raf.getCurrentlyUsedReplica().getStripingPolicy();
             long lastObject = sp.getObjectNoForOffset(filesize - 1);
 
-            // prepare spot-sample-ranges for reading file
-            final int SPOT_SAMPLE_COUNT = 10;
-            List<Long> startOffsets = new LinkedList<Long>();
-            for (int i = 0; i < SPOT_SAMPLE_COUNT; i++) {
-                long startOffset;
-                do { // get a part in range of filedata
-                    startOffset = random.nextLong() % filesize;
-                } while (startOffset + partSize > filesize || startOffset < 0); // try again
-                startOffsets.add(startOffset);
-            }
-
             // sleep a short time, so the background replication could begin
             Thread.sleep(SLEEP_TIME);
 
-            // read file
-            for (Long startOffset : startOffsets) {
-                byte[] result = new byte[partSize];
-                byte[] expectedResult = new byte[partSize];
+            /*
+             * read only the first 1024byte
+             */
+            byte[] result = new byte[1024];
+            byte[] expectedResult = new byte[1024];
 
-                // read
-                try {
-                    // monitoring: time (latency/throughput)
-                    long timeBefore = System.currentTimeMillis();
-                    file.readFromXtreemFS(result, raf, startOffset);
-                    timeRequiredForReading += System.currentTimeMillis() - timeBefore;
-                } catch (Exception e) {
-                    // TODO: catch exception, if request is rejected because of change of XLocations version
-                    StressTest.containedErrors = true;
-                    file.readFromDisk(expectedResult, originalFile, startOffset, filesize);
+            // read
+            try {
+                // monitoring: time (latency/throughput)
+                long timeBefore = System.currentTimeMillis();
+                file.readFromXtreemFS(result, raf, 0);
+                timeRequiredForReading += System.currentTimeMillis() - timeBefore;
+            } catch (Exception e) {
+                // TODO: catch exception, if request is rejected because of change of XLocations version
+                StressTest.containedErrors = true;
+                file.readFromDisk(expectedResult, originalFile, 0, filesize);
 
-                    log(e.getCause().toString(), file, startOffset, startOffset + partSize, filesize, result,
-                            expectedResult);
-                    break;
-                }
+                log(e.getCause().toString(), file, 0, 0 + 1024, filesize, result, expectedResult);
+            }
 
-                // ASSERT the byte-data
-                file.readFromDisk(expectedResult, originalFile, startOffset, filesize);
-                if (!Arrays.equals(result, expectedResult)) {
-                    StressTest.containedErrors = true;
-                    log("Read wrong data.", file, startOffset, startOffset + partSize, filesize, result,
-                            expectedResult);
-                }
+            // ASSERT the byte-data
+            file.readFromDisk(expectedResult, originalFile, 0, filesize);
+            if (!Arrays.equals(result, expectedResult)) {
+                StressTest.containedErrors = true;
+                log("Read wrong data.", file, 0, 0 + 1024, filesize, result,
+                        expectedResult);
             }
 
             // wait some time so the background replication could work
@@ -140,16 +122,14 @@ class FullReplicaReader extends Reader {
                                 .array());
                 objects += objectList.size();
             }
-
+            
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.test, this,
                     "Replica %s (Head-OSD) of file %s has replicated %d objects (= %d KB of %d KB).", raf
                             .getCurrentlyUsedReplica().getHeadOsd().toString(), file.filename, objects,
                     (objects * sp.getStripeSizeForObject(1)) / 1024, filesize / 1024);
 
-            if (objects == lastObject + 1 && !raf.getCurrentlyUsedReplica().isComplete()) { // replication is
-                                                                                        // completed; all
-                                                                                        // objects are
-                                                                                        // replicated
+            if (objects == lastObject + 1 && !raf.getCurrentlyUsedReplica().isComplete()) {
+                // replication is completed; all objects are replicated
                 if (!completedReplicas.contains(raf.getCurrentlyUsedReplica())) {
                     completedReplicas.add(raf.getCurrentlyUsedReplica());
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.test, this,

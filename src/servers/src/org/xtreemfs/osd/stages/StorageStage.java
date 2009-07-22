@@ -33,9 +33,9 @@ import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.OSDWriteResponse;
-import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.ObjectInformation;
@@ -137,15 +137,15 @@ public class StorageStage extends Stage {
         public void gmaxComplete(InternalGmax result, Exception error);
     }
 
-    public void getObjectList(String fileId, OSDRequest request,
+    public void getObjectSet(String fileId, OSDRequest request,
             GetObjectListCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_OBJECT_LIST, new Object[] { fileId },
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_OBJECT_SET, new Object[] { fileId },
                 request, listener);
     }
 
     public static interface GetObjectListCallback {
 
-        public void getObjectListComplete(ObjectList result, Exception error);
+        public void getObjectSetComplete(ObjectSet result, Exception error);
     }
 
     public void enqueueOperation(String fileId, int stageOp, Object[] args, OSDRequest request, Object callback) {

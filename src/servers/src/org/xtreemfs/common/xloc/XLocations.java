@@ -145,4 +145,9 @@ public class XLocations {
     public List<ServiceUUID> getOSDsForObject(long objectNo) {
         return getOSDsForObject(objectNo, null);
     }
+    
+    @Override
+    public String toString() {
+        return "local replica: " + localReplica + ", other replicas: " + replicas;
+    }
 }

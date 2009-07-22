@@ -41,11 +41,11 @@ import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.ONCRPCServiceURL;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
+import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
-import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
@@ -54,7 +54,6 @@ import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.osd.replication.transferStrategies.RandomStrategy;
-import org.xtreemfs.osd.replication.transferStrategies.SequentialStrategy;
 import org.xtreemfs.utils.CLIParser;
 import org.xtreemfs.utils.CLIParser.CliOption;
 
@@ -272,7 +271,7 @@ public class StressTest {
         int stripeWidth = DEFAULT_STRIPE_WIDTH;
         random = new Random(DEFAULT_RANDOM_SEED);
         boolean readersOnly = false;
-        int replicationFlags = Constants.REPL_FLAG_FILL_ON_DEMAND;
+        int replicationFlags = ReplicationFlags.setPartialReplica(0);
         int timeTillNewFile = -1;
         for (Entry<String, CliOption> e : options.entrySet()) {
             if (e.getKey().equals(DEBUG) && e.getValue().switchValue) {
@@ -301,9 +300,9 @@ public class StressTest {
             }
             if (e.getKey().equals(TRANSFER_STRATEGY) && e.getValue().stringValue != null) {
                 if (e.getValue().stringValue.equals(TRANSFER_STRATEGY_RANDOM))
-                    replicationFlags = replicationFlags | RandomStrategy.REPLICATION_FLAG;
+                    replicationFlags = ReplicationFlags.setRandomStrategy(replicationFlags);
                 else if (e.getValue().stringValue.equals(TRANSFER_STRATEGY_SEQUENTIAL))
-                    replicationFlags = replicationFlags | SequentialStrategy.REPLICATION_FLAG;
+                    replicationFlags = ReplicationFlags.setSequentialStrategy(replicationFlags);
             } else {
                 replicationFlags = replicationFlags | DEFAULT_TRANSFER_STRATEGY;
             }
@@ -434,9 +433,11 @@ public class StressTest {
                 + " <transfer strategy>:\t chooses the used transfer strategy (default: random)\n");
         out.append("reader-types:\n");
         out.append("\t" + READER_TYPE_ONDEMAND + ":\t for ondemand replicas\n");
-        out.append("\t" + READER_TYPE_FULL + ":\t\t for full replicas\n");
+        out.append("\t" + READER_TYPE_FULL + ":\t\t for full replicas (you must also set the option -"
+                + FULL_REPLICA + ")\n");
         out.append("transfer-strategies:\n");
-        out.append("\t" + TRANSFER_STRATEGY_RANDOM + ":\t\t random selection of objects and OSDs (default)\n");
+        out.append("\t" + TRANSFER_STRATEGY_RANDOM
+                        + ":\t\t random selection of objects and OSDs (default)\n");
         out.append("\t" + TRANSFER_STRATEGY_SEQUENTIAL + ":\t sequential selection of objects and OSDs\n");
         out.append("NOTE: MAYBE THIS TEST NEVER ENDS!\n");
         System.out.println(out.toString());

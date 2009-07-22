@@ -33,8 +33,9 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.Random;
-import java.util.zip.DeflaterInputStream;
 import java.util.zip.DeflaterOutputStream;
+import java.util.zip.InflaterInputStream;
+
 
 /**
  * Stores the objects in a Java BitSet. <br>
@@ -111,7 +112,7 @@ public class ObjectSet implements Iterable<Long> {
     public ObjectSet(int stripeWidth, int firstObjectNo, byte[] serializedBitSet) throws ClassCastException,
             IOException, ClassNotFoundException {
         // TODO: if the set is too large, the set is compressed
-        this.objects = deserialize(serializedBitSet);
+        this.objects = deserializeAndDecompress(serializedBitSet);
 
         this.stripeWidth = stripeWidth;
         this.firstObjectNo = firstObjectNo;
@@ -245,6 +246,9 @@ public class ObjectSet implements Iterable<Long> {
      * @return
      */
     public boolean intersection(ObjectSet otherSet) {
+        if (stripeWidth != otherSet.stripeWidth || firstObjectNo != otherSet.firstObjectNo)
+            throw new IllegalArgumentException(
+                    "The sets are not compatible. They must have the same stripe width and first object number.");
         int previousLength = objects.cardinality();
         objects.and(otherSet.objects);
         return (objects.cardinality() != previousLength) ? true : false;
@@ -258,6 +262,9 @@ public class ObjectSet implements Iterable<Long> {
      * @return
      */
     public boolean union(ObjectSet otherSet) {
+        if (stripeWidth != otherSet.stripeWidth || firstObjectNo != otherSet.firstObjectNo)
+            throw new IllegalArgumentException(
+                    "The sets are not compatible. They must have the same stripe width and first object number.");
         int previousLength = objects.cardinality();
         objects.or(otherSet.objects);
         return (objects.cardinality() != previousLength) ? true : false;
@@ -273,6 +280,12 @@ public class ObjectSet implements Iterable<Long> {
 
         return (objects.size() != previousLength) ? true : false;
     }
+    
+    @Override
+    public String toString() {
+        return "stripe width: " + stripeWidth + ", first objectNo: " + firstObjectNo + ", objects: "
+                + objects.toString();
+    }
 
     /*
      * serialization
@@ -287,7 +300,7 @@ public class ObjectSet implements Iterable<Long> {
 
     public byte[] getSerializedBitSet() throws IOException {
         // TODO: compress if the set is too large
-        return serialize(objects);
+        return serializeAndCompress(objects);
     }
 
     /**
@@ -358,7 +371,7 @@ public class ObjectSet implements Iterable<Long> {
     protected static BitSet deserializeAndDecompress(byte[] set) throws IOException, ClassNotFoundException,
             ClassCastException {
         ByteArrayInputStream bis = new ByteArrayInputStream(set);
-        DeflaterInputStream gz = new DeflaterInputStream(bis);
+        InflaterInputStream gz = new InflaterInputStream(bis);
         ObjectInputStream ois = new ObjectInputStream(gz);
         Object o = ois.readObject();
         ois.close();
