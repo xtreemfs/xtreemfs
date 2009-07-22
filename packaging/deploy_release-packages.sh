@@ -29,7 +29,7 @@ if [ ! -f "/usr/bin/osc" ]; then
   exit 1
 fi
 
-cd $DIR/home:xtreemfs
+cd $DIR
 if [ $CMD == "test" ]; then
 
   # create a tmp dir, check out current build files, delete all files
