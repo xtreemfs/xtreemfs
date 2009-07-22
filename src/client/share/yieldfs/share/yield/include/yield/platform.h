@@ -416,12 +416,16 @@ namespace YIELD
 
 #ifdef _WIN32
     void* hIoCompletionPort;
-#else
-    InterThreadQueue<AIOControlBlock*>* aio_control_block_queue;
 #endif
 
     class WorkerThread;
-    std::vector<WorkerThread*> worker_threads;
+    class BlockingWorkerThread;
+#ifdef _WIN32
+    class IOCPWorkerThread;
+#endif
+
+    std::vector<WorkerThread*> all_worker_threads;
+    InterThreadQueue<BlockingWorkerThread*>* idle_worker_threads;
   };
 
   typedef auto_Object<AIOQueue> auto_AIOQueue;

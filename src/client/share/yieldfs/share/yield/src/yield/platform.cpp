@@ -1,4 +1,4 @@
-// Revision: 1682
+// Revision: 1688
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -14,37 +14,74 @@ using namespace YIELD;
 class AIOQueue::WorkerThread : public Thread
 {
 public:
-  WorkerThread( AIOQueue& aio_queue )
-    : aio_queue( aio_queue )
-  { }
-  AIOQueue::WorkerThread& operator=( const AIOQueue::WorkerThread& ) { return *this; }
+  void stop()
+  {
+    _stop();
+    while ( is_running )
+      Thread::yield();
+  }
   // Thread
   void run()
   {
     set_name( "AIOQueue::WorkerThread" );
+    is_running = true;
+    _run();
+    is_running = false;
+  }
+protected:
+  WorkerThread()
+  {
+    is_running = false;
+  }
+  bool is_running;
+private:
+  virtual void _run() = 0;
+  virtual void _stop() { }
+};
+class AIOQueue::BlockingWorkerThread : public WorkerThread
+{
+public:
+  BlockingWorkerThread( InterThreadQueue<BlockingWorkerThread*>& idle_worker_threads )
+    : idle_worker_threads( idle_worker_threads )
+  {
+#ifdef _WIN32
+    hIoCompletionPort = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 1 );
+#endif
+  }
+  AIOQueue::BlockingWorkerThread& operator=( const AIOQueue::BlockingWorkerThread& ) { return *this; }
+  void enqueue( auto_AIOControlBlock aio_control_block )
+  {
+#ifdef _WIN32
+    PostQueuedCompletionStatus( hIoCompletionPort, 0, 1, *aio_control_block.release() );
+#else
+    aio_control_block_queue.enqueue( aio_control_block.release() );
+#endif
+  }
+private:
+#ifdef _WIN32
+  HANDLE hIoCompletionPort;
+#else
+  InterThreadQueue<AIOControlBlock*> aio_control_block_queue;
+#endif
+  InterThreadQueue<BlockingWorkerThread*>& idle_worker_threads;
+  // WorkerThread
+  void _run()
+  {
     for ( ;; )
     {
 #ifdef _WIN32
       DWORD dwBytesTransferred; ULONG_PTR ulCompletionKey; LPOVERLAPPED lpOverlapped;
-      if ( GetQueuedCompletionStatus( aio_queue.hIoCompletionPort, &dwBytesTransferred, &ulCompletionKey, &lpOverlapped, INFINITE ) )
+      if ( GetQueuedCompletionStatus( hIoCompletionPort, &dwBytesTransferred, &ulCompletionKey, &lpOverlapped, INFINITE ) )
       {
         ::YIELD::AIOControlBlock* aio_control_block = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
-        if ( ulCompletionKey == 0 )
-          aio_control_block->onCompletion( dwBytesTransferred );
-        else
-          aio_control_block->execute();
+        aio_control_block->execute();
         Object::decRef( *aio_control_block );
-      }
-      else if ( lpOverlapped != NULL )
-      {
-        ::YIELD::AIOControlBlock* aio_control_block = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
-        aio_control_block->onError( ::GetLastError() );
-        Object::decRef( *aio_control_block );
+        idle_worker_threads.enqueue( this );
       }
       else
         break;
 #else
-      AIOControlBlock* aio_control_block = aio_queue.aio_control_block_queue->dequeue();
+      AIOControlBlock* aio_control_block = aio_control_block_queue.dequeue();
       if ( aio_control_block != NULL )
       {
         aio_control_block->execute();
@@ -56,32 +93,75 @@ public:
     }
     Object::decRef( *this );
   }
-private:
-  AIOQueue& aio_queue;
+  void _stop()
+  {
+#ifdef _WIN32
+    CloseHandle( hIoCompletionPort );
+#else
+    enqueue( NULL );
+#endif
+  }
 };
+#ifdef _WIN32
+class AIOQueue::IOCPWorkerThread : public WorkerThread
+{
+public:
+  IOCPWorkerThread( HANDLE hIoCompletionPort )
+    : hIoCompletionPort( hIoCompletionPort )
+  { }
+private:
+  HANDLE hIoCompletionPort;
+  // WorkerThread
+  void _run()
+  {
+    for ( ;; )
+    {
+      DWORD dwBytesTransferred; ULONG_PTR ulCompletionKey; LPOVERLAPPED lpOverlapped;
+      if ( GetQueuedCompletionStatus( hIoCompletionPort, &dwBytesTransferred, &ulCompletionKey, &lpOverlapped, INFINITE ) )
+      {
+        ::YIELD::AIOControlBlock* aio_control_block = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
+        aio_control_block->onCompletion( dwBytesTransferred );
+        Object::decRef( *aio_control_block );
+      }
+      else if ( lpOverlapped != NULL )
+      {
+        ::YIELD::AIOControlBlock* aio_control_block = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
+        aio_control_block->onError( ::GetLastError() );
+        Object::decRef( *aio_control_block );
+      }
+      else
+        break;
+    }
+  }
+};
+#endif
 AIOQueue::AIOQueue()
 {
 #ifdef _WIN32
   hIoCompletionPort = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0 );
-#else
-  aio_control_block_queue = new InterThreadQueue<AIOControlBlock*>;
 #endif
+  idle_worker_threads = new InterThreadQueue<BlockingWorkerThread*>;
   uint16_t worker_thread_count = Machine::getOnlineLogicalProcessorCount();
-  for ( uint16_t worker_thread_i = 0; worker_thread_i < worker_thread_count; worker_thread_i++ )
+#ifdef _WIN32
+  for ( uint16_t iocp_worker_thread_i = 0; iocp_worker_thread_i < worker_thread_count; iocp_worker_thread_i++ )
   {
-    WorkerThread* worker_thread = new WorkerThread( *this );
-    worker_thread->start();
-    worker_threads.push_back( worker_thread );
+    IOCPWorkerThread* iocp_worker_thread = new IOCPWorkerThread( hIoCompletionPort );
+    iocp_worker_thread->start();
+    all_worker_threads.push_back( iocp_worker_thread );
   }
+#endif
 }
 AIOQueue::~AIOQueue()
 {
 #ifdef _WIN32
   CloseHandle( hIoCompletionPort );
-#else
-  for ( std::vector<WorkerThread*>::iterator worker_thread_i = worker_threads.begin(); worker_thread_i != worker_threads.end(); worker_thread_i++ )
-    submit( NULL );
 #endif
+  for ( std::vector<WorkerThread*>::iterator worker_thread_i = all_worker_threads.begin(); worker_thread_i != all_worker_threads.end(); worker_thread_i++ )
+  {
+    ( *worker_thread_i )->stop();
+    Object::decRef( **worker_thread_i );
+  }
+  delete idle_worker_threads;
 }
 void AIOQueue::associate( int fd )
 {
@@ -97,11 +177,14 @@ void AIOQueue::associate( void* handle )
 }
 void AIOQueue::submit( auto_AIOControlBlock aio_control_block )
 {
-#ifdef _WIN32
-  PostQueuedCompletionStatus( hIoCompletionPort, 0, 1, *aio_control_block.release() );
-#else
-  aio_control_block_queue->enqueue( aio_control_block.release() );
-#endif
+  BlockingWorkerThread* blocking_worker_thread = idle_worker_threads->try_dequeue();
+  if ( blocking_worker_thread == NULL )
+  {
+    blocking_worker_thread = new BlockingWorkerThread( *idle_worker_threads );
+    blocking_worker_thread->start();
+    all_worker_threads.push_back( blocking_worker_thread );
+  }
+  blocking_worker_thread->enqueue( aio_control_block );
 }
 
 
