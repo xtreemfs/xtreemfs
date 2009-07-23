@@ -511,7 +511,7 @@ namespace YIELD
     const static uint32_t CLIENT_FLAG_TRACE_OPERATIONS = 2;
 
     const static uint64_t OPERATION_TIMEOUT_DEFAULT = 5 * NS_IN_S;
-
+    
     // EventHandler
     virtual void handleEvent( Event& );
 
@@ -531,7 +531,7 @@ namespace YIELD
     auto_SocketAddress peername;
     auto_SSLContext ssl_context;
     
-    std::vector<Socket*> idle_sockets;
+    InterThreadQueue<Socket*> idle_sockets;
 
     class AIOConnectControlBlock;
     class AIOReadControlBlock;
