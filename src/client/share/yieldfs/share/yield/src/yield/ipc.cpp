@@ -1,4 +1,4 @@
-// Revision: 1690
+// Revision: 1692
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -24,6 +24,7 @@ Client<RequestType, ResponseType>::Client( const URI& absolute_uri, auto_AIOQueu
 template <class RequestType, class ResponseType>
 Client<RequestType, ResponseType>::~Client()
 {
+  Object::decRef( *this->absolute_uri );
   for ( typename std::vector<Socket*>::iterator idle_socket_i = idle_sockets.begin(); idle_socket_i != idle_sockets.end(); idle_socket_i++ )
     Object::decRef( **idle_socket_i );
 }
@@ -35,11 +36,15 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
     case YIELD_OBJECT_TAG( RequestType ):
     {
       RequestType& request = static_cast<RequestType&>( ev );
+      if ( ( this->get_flags() & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
+        log->getStream( Log::LOG_INFO ) << "yield::Client sending " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << ".";
       if ( !idle_sockets.empty() )
       {
         Socket* socket_ = idle_sockets.back();
         idle_sockets.pop_back();
-        AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request.serialize(), request, operation_timeout, operation_timer_queue );
+        if ( ( this->get_flags() & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
+          log->getStream( Log::LOG_INFO ) << "yield::Client: writing " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << ".";
+        AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request.serialize(), ( ( this->get_flags() & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL ) ? log : NULL, request, operation_timeout, operation_timer_queue );
         operation_timer_queue->addTimer( new OperationTimer( aio_write_control_block->incRef(), operation_timeout ) );
         socket_->aio_write( aio_write_control_block );
       }
@@ -61,7 +66,9 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
              log != NULL && log->get_level() >= Log::LOG_INFO &&
              static_cast<int>( *socket_ ) != -1 )
           socket_ = new TracingSocket( socket_, log );
-        AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( peername, request, operation_timeout, operation_timer_queue );
+        if ( ( this->get_flags() & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
+          log->getStream( Log::LOG_INFO ) << "yield::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << ".";
+        AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( peername, this->absolute_uri->incRef(), ( ( this->get_flags() & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL ) ? log : NULL, request, operation_timeout, operation_timer_queue );
         operation_timer_queue->addTimer( new OperationTimer( aio_connect_control_block->incRef(), operation_timeout ) );
         socket_->aio_connect( aio_connect_control_block );
       }
@@ -78,8 +85,10 @@ template <class RequestType, class ResponseType>
 class Client<RequestType, ResponseType>::AIOConnectControlBlock : public Socket::AIOConnectControlBlock
 {
 public:
-  AIOConnectControlBlock( auto_SocketAddress peername, auto_Object<RequestType> request, const Time& timeout, auto_TimerQueue timer_queue )
+  AIOConnectControlBlock( auto_SocketAddress peername, auto_URI absolute_uri, auto_Log log, auto_Object<RequestType> request, const Time& timeout, auto_TimerQueue timer_queue )
     : Socket::AIOConnectControlBlock( peername ),
+      absolute_uri( absolute_uri ),
+      log( log ),
       request( request ),
       timeout( timeout ),
       timer_queue( timer_queue )
@@ -89,7 +98,9 @@ public:
   {
     if ( request_lock.try_acquire() )
     {
-      AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request->serialize(), request, timeout, timer_queue );
+      if ( log != NULL )
+        log->getStream( Log::LOG_INFO ) << "yield::Client: successfully connected to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << ".";
+      AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request->serialize(), log, request, timeout, timer_queue );
       timer_queue->addTimer( new OperationTimer( aio_write_control_block->incRef(), timeout ) );
       get_socket()->aio_write( aio_write_control_block );
     }
@@ -97,9 +108,15 @@ public:
   void onError( uint32_t error_code )
   {
     if ( request_lock.try_acquire() )
+    {
+      if ( log != NULL )
+        log->getStream( Log::LOG_INFO ) << "yield::Client: connect() to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " failed, errno=" << error_code << ", strerror=" << Exception::strerror( error_code ) << ".";
       request->respond( *( new ExceptionResponse( error_code ) ) );
+    }
   }
 private:
+  auto_URI absolute_uri;
+  auto_Log log;
   auto_Object<RequestType> request;
   Mutex request_lock;
   Time timeout;
@@ -109,8 +126,9 @@ template <class RequestType, class ResponseType>
 class Client<RequestType, ResponseType>::AIOReadControlBlock : public Socket::AIOReadControlBlock
 {
 public:
-  AIOReadControlBlock( auto_Buffer buffer, auto_Object<RequestType> request, auto_Object<ResponseType> response, const Time& timeout, auto_TimerQueue timer_queue )
+  AIOReadControlBlock( auto_Buffer buffer, auto_Log log, auto_Object<RequestType> request, auto_Object<ResponseType> response, const Time& timeout, auto_TimerQueue timer_queue )
     : Socket::AIOReadControlBlock( buffer ),
+      log( log ),
       request( request ), response( response ),
       timeout( timeout ),
       timer_queue( timer_queue )
@@ -120,26 +138,43 @@ public:
   {
     if ( request_lock.try_acquire() )
     {
+      if ( log != NULL )
+        log->getStream( Log::LOG_INFO ) << "yield::Client: read " << bytes_transferred << " bytes for " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ".";
       Socket::AIOReadControlBlock::onCompletion( bytes_transferred );
       ssize_t deserialize_ret = response->deserialize( get_buffer() );
       if ( deserialize_ret == 0 )
+      {
+        if ( log != NULL )
+          log->getStream( Log::LOG_INFO ) << "yield::Client: successfully deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
         request->respond( *response.release() );
+      }
       else if ( deserialize_ret > 0 )
       {
-        AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( 1024 ), request, response, timeout, timer_queue );
+        if ( log != NULL )
+          log->getStream( Log::LOG_INFO ) << "yield::Client: partially deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", reading again.";
+        AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( 1024 ), log, request, response, timeout, timer_queue );
         timer_queue->addTimer( new OperationTimer( aio_read_control_block->incRef(), timeout ) );
         get_socket()->aio_read( aio_read_control_block );
       }
       else
+      {
+        if ( log != NULL )
+          log->getStream( Log::LOG_INFO ) << "yield::Client: error deserializing " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
         request->respond( *( new ExceptionResponse ) );
+      }
     }
   }
   void onError( uint32_t error_code )
   {
     if ( request_lock.try_acquire() )
+    {
+      if ( log != NULL )
+        log->getStream( Log::LOG_INFO ) << "yield::Client: error reading " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       request->respond( *( new ExceptionResponse( error_code ) ) );
+    }
   }
 private:
+  auto_Log log;
   auto_Object<RequestType> request;
   Mutex request_lock;
   auto_Object<ResponseType> response;
@@ -150,8 +185,9 @@ template <class RequestType, class ResponseType>
 class Client<RequestType, ResponseType>::AIOWriteControlBlock : public Socket::AIOWriteControlBlock
 {
 public:
-  AIOWriteControlBlock( auto_Buffer buffer, auto_Object<RequestType> request, const Time& timeout, auto_TimerQueue timer_queue )
+  AIOWriteControlBlock( auto_Buffer buffer, auto_Log log, auto_Object<RequestType> request, const Time& timeout, auto_TimerQueue timer_queue )
     : Socket::AIOWriteControlBlock( buffer ),
+      log( log ),
       request( request ),
       timeout( timeout ),
       timer_queue( timer_queue )
@@ -159,11 +195,16 @@ public:
   // Object
   YIELD_OBJECT_PROTOTYPES( AIOWriteControlBlock, 0 );
   // AIOControlBlock
-  void onCompletion( size_t )
+  void onCompletion( size_t bytes_transferred )
   {
     if ( request_lock.try_acquire() )
     {
-      AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( 1024 ), request, static_cast<ResponseType*>( request->createResponse().release() ), timeout, timer_queue );
+      if ( log != NULL )
+        log->getStream( Log::LOG_INFO ) << "yield::Client: wrote " << bytes_transferred << " bytes for " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
+      auto_Object<ResponseType> response( static_cast<ResponseType*>( request->createResponse().release() ) );
+      if ( log != NULL )
+        log->getStream( Log::LOG_INFO ) << "yield::Client: created " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << " to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
+      AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( 1024 ), log, request, response, timeout, timer_queue );
       timer_queue->addTimer( new OperationTimer( aio_read_control_block->incRef(), timeout ) );
       get_socket()->aio_read( aio_read_control_block );
     }
@@ -171,9 +212,14 @@ public:
   void onError( uint32_t error_code )
   {
     if ( request_lock.try_acquire() )
+    {
+      if ( log != NULL )
+        log->getStream( Log::LOG_INFO ) << "yield::Client: error writing " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       request->respond( *( new ExceptionResponse( error_code ) ) );
+    }
   }
 private:
+  auto_Log log;
   auto_Object<RequestType> request;
   Mutex request_lock;
   Time timeout;
