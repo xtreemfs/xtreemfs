@@ -1,4 +1,4 @@
-// Revision: 1699
+// Revision: 1700
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -2650,10 +2650,6 @@ void Socket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
     aio_read_control_block->set_socket( incRef() );
   if ( aio_read_control_block->get_buffer()->size() != 0 )
     DebugBreak();
-  if ( aio_read_control_block->get_buffer()->size() != 0 )
-    DebugBreak();
-  if ( aio_read_control_block->get_buffer()->size() != 0 )
-    DebugBreak();
   if ( aio_queue != NULL )
   {
 #ifdef _WIN32
@@ -2668,7 +2664,15 @@ void Socket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
     else
       aio_read_control_block->onError( ::WSAGetLastError() );
 #else
-    aio_queue->submit( aio_read_control_block.release() );
+    if ( blocking_mode )
+      set_blocking_mode( false );
+    ssize_t read_ret = read( aio_read_control_block->get_buffer() );
+    if ( read_ret > 0 )
+      aio_read_control_block->onCompletion( static_cast<size_t>( read_ret ) );
+    else if ( want_read() || want_write() )
+      aio_queue->submit( aio_read_control_block.release() );
+    else
+      aio_read_control_block->onError( Exception::get_errno() );
 #endif
   }
   else
@@ -2704,7 +2708,15 @@ void Socket::aio_write( auto_Object<AIOWriteControlBlock> aio_write_control_bloc
         aio_write_control_block->onError( ::WSAGetLastError() );
     }
 #else
-    aio_queue->submit( aio_write_control_block.release() );
+    if ( blocking_mode )
+      set_blocking_mode( false );
+    ssize_t write_ret = write( aio_write_control_block->get_buffer() );
+    if ( write_ret > 0 )
+      aio_write_control_block->onCompletion( static_cast<size_t>( write_ret ) );
+    else if ( want_write() || want_read() )
+      aio_queue->submit( aio_write_control_block.release() );
+    else
+      aio_write_control_block->onError( Exception::get_errno() );
 #endif
   }
   else
@@ -2992,14 +3004,20 @@ ssize_t Socket::writev( const struct iovec* buffers, uint32_t buffers_count )
 }
 void Socket::AIOConnectControlBlock::execute()
 {
-  if ( get_socket()->connect( get_peername() ) == CONNECT_STATUS_OK )
+  auto_Socket socket_( get_socket() );
+  if ( !socket_->blocking_mode )
+    socket_->set_blocking_mode( true );
+  if ( socket_->connect( get_peername() ) == CONNECT_STATUS_OK )
     onCompletion( 0 );
   else
     onError( Exception::get_errno() );
 }
 void Socket::AIOReadControlBlock::execute()
 {
-  ssize_t read_ret = get_socket()->read( get_buffer() );
+  auto_Socket socket_( get_socket() );
+  if ( !socket_->blocking_mode )
+    socket_->set_blocking_mode( true );
+  ssize_t read_ret = socket_->read( get_buffer() );
   if ( read_ret > 0 )
     onCompletion( static_cast<size_t>( read_ret ) );
   else
@@ -3007,7 +3025,10 @@ void Socket::AIOReadControlBlock::execute()
 }
 void Socket::AIOWriteControlBlock::execute()
 {
-  ssize_t write_ret = get_socket()->write( get_buffer() );
+  auto_Socket socket_( get_socket() );
+  if ( !socket_->blocking_mode )
+    socket_->set_blocking_mode( true );
+  ssize_t write_ret = socket_->write( get_buffer() );
   if ( write_ret > 0 )
     onCompletion( static_cast<size_t>( write_ret ) );
   else
@@ -3638,7 +3659,15 @@ void TCPSocket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_conn
 
     aio_connect_control_block->onError( Exception::get_errno() );
 #else
-    aio_queue->submit( aio_connect_control_block.release() );
+    if ( get_blocking_mode() )
+      set_blocking_mode( false );
+
+    switch ( connect( aio_connect_control_block->get_peername() ) )
+    {
+      case CONNECT_STATUS_OK: aio_connect_control_block->onCompletion( 0 ); break;
+      case CONNECT_STATUS_WOULDBLOCK: aio_queue->submit( aio_connect_control_block.release() ); break;
+      default: aio_connect_control_block->onError( Exception::get_errno() ); break;
+    }
 #endif
   }
   else
