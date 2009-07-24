@@ -1365,7 +1365,7 @@ namespace org
           try
           {
             // Switch on the event types that this interface handles, unwrap the corresponding requests and delegate to impl
-            switch ( ev.get_tag() )
+            switch ( ev.get_type_id() )
             {
               case 1301UL: handlereadRequest( static_cast<readRequest&>( ev ) ); return;
               case 1302UL: handletruncateRequest( static_cast<truncateRequest&>( ev ) ); return;
@@ -1408,7 +1408,7 @@ namespace org
         // YIELD::Interface
           virtual ::YIELD::Request* checkRequest( Object& request )
           {
-            switch ( request.get_tag() )
+            switch ( request.get_type_id() )
             {
               case 1301: return static_cast<readRequest*>( &request );
               case 1302: return static_cast<truncateRequest*>( &request );
@@ -1434,7 +1434,7 @@ namespace org
 
           virtual ::YIELD::Response* checkResponse( Object& response )
           {
-            switch ( response.get_tag() )
+            switch ( response.get_type_id() )
             {
               case 1301: return static_cast<readResponse*>( &response );
               case 1302: return static_cast<truncateResponse*>( &response );

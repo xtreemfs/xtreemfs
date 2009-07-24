@@ -9,10 +9,10 @@ using namespace YIELD;
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 void EventHandler::handleUnknownEvent( Event& ev )
 {
-  switch ( ev.get_tag() )
+  switch ( ev.get_type_id() )
   {
-    case YIELD_OBJECT_TAG( Stage::StartupEvent ):
-    case YIELD_OBJECT_TAG( Stage::ShutdownEvent ): Object::decRef( ev ); break;
+    case YIELD_OBJECT_TYPE_ID( Stage::StartupEvent ):
+    case YIELD_OBJECT_TYPE_ID( Stage::ShutdownEvent ): Object::decRef( ev ); break;
     default:
     {
       std::cerr << get_type_name() << " dropping unknown event: " << ev.get_type_name() << std::endl;
@@ -32,151 +32,6 @@ void EventHandler::send( Event& ev )
     handleEvent_lock.release();
   }
 }
-
-
-// instrumented_stage.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-template <class LockType> TimerQueue InstrumentedStageImpl<LockType>::statistics_timer_queue;
-template <class LockType>
-InstrumentedStageImpl<LockType>::InstrumentedStageImpl( auto_Object<EventHandler> event_handler, unsigned long running_stage_tls_key )
-  : event_handler( event_handler ), running_stage_tls_key( running_stage_tls_key )
-{
-  event_queue_length = event_queue_arrival_count = 1; // send() would normally inc these, but we can't use send() because it's a virtual function; instead we enqueue directly and inc the lengths ourselves
-  statistics_timer_queue.addTimer( new StatisticsTimer( incRef() ) );
-}
-template <class LockType>
-void InstrumentedStageImpl<LockType>::_callEventHandler( Event& ev )
-{
-  uint64_t start_time_ns = Time::getCurrentUnixTimeNS();
-  event_handler->handleEvent( ev );
-  uint64_t event_processing_time_ns = Time::getCurrentUnixTimeNS() - start_time_ns;
-  if ( event_processing_time_ns < 10 * NS_IN_S )
-    event_processing_time_sampler.setNextSample( event_processing_time_ns );
-}
-template <class LockType>
-void InstrumentedStageImpl<LockType>::send( Event& ev )
-{
-  ++event_queue_length;
-  ++event_queue_arrival_count;
-/*
-  Stage* running_stage = static_cast<Stage*>( Thread::getTLS( running_stage_tls_key ) );
-  if ( running_stage != NULL )
-  {
-    running_stage->send_counters_lock.acquire();
-    std::map<const char*, uint64_t>::iterator send_counter_i = running_stage->send_counters.find( this->get_stage_name() );
-    if ( send_counter_i != running_stage->send_counters.end() )
-      send_counter_i->second++;
-    else
-      running_stage->send_counters.insert( std::make_pair( this->get_stage_name(), 1 ) );
-    running_stage->send_counters_lock.release();
-  }
-  */
-  event_queue.enqueue( ev );
-}
-template <class LockType>
-bool InstrumentedStageImpl<LockType>::visit()
-{
-  if ( lock.try_acquire() )
-  {
-    Thread::setTLS( running_stage_tls_key, this );
-    Event* ev = event_queue.dequeue();
-    if ( ev != NULL )
-    {
-      --event_queue_length;
-      _callEventHandler( *ev );
-      lock.release();
-      return true;
-    }
-    else
-    {
-      lock.release();
-      return false;
-    }
-  }
-  else
-    return false;
-}
-template <class LockType>
-bool InstrumentedStageImpl<LockType>::visit( uint64_t timeout_ns )
-{
-  if ( lock.try_acquire() )
-  {
-    Thread::setTLS( running_stage_tls_key, this );
-    Event* ev = event_queue.dequeue( timeout_ns );
-    if ( ev != NULL )
-    {
-      --event_queue_length;
-      _callEventHandler( *ev );
-      lock.release();
-      return true;
-    }
-    else
-    {
-      lock.release();
-      return false;
-    }
-  }
-  else
-    return false;
-}
-template <class LockType>
-class InstrumentedStageImpl<LockType>::StatisticsTimer : public TimerQueue::Timer
-{
-public:
-  StatisticsTimer( auto_Object<Stage> stage )
-    : Timer( 1 * NS_IN_S, 1 * NS_IN_S ), stage( stage )
-  { }
-  // Timer
-  bool fire( const Time& )
-  {
-    // double arrival_rate_s = static_cast<double>( stage->event_queue_arrival_count ) / elapsed_time.as_unix_time_s();
-    // stage->event_queue_arrival_count = 0;
-    //if ( strcmp( stage->get_stage_name(), "HTTPBenchmarkDriver" ) != 0 )
-    //{
-    //  double service_rate_s_max = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_min();
-    //  double service_rate_s_min = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_max();
-    //  double service_rate_s_25 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.25 );
-    //  double service_rate_s_50 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.50 );
-    //  double service_rate_s_75 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.75 );
-    //  double service_rate_s_95 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.95 );
-    //  double service_rate_s_mean = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_mean();
-    //  double service_rate_s_median = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_median();
-    //  std::ostringstream cout_line;
-    //  cout_line << "{\"" << stage->get_stage_name() << "\":{";
-    //  cout_line << "\"service_rate_s_max\": " << service_rate_s_max;
-    //  cout_line << ",\"service_rate_s_min\": " << service_rate_s_min;
-    //  cout_line << ",\"service_rate_s_25\": " << service_rate_s_25;
-    //  cout_line << ",\"service_rate_s_50\": " << service_rate_s_50;
-    //  cout_line << ",\"service_rate_s_75\": " << service_rate_s_75;
-    //  cout_line << ",\"service_rate_s_95\": " << service_rate_s_95;
-    //  cout_line << ",\"service_rate_s_mean\": " << service_rate_s_mean;
-    //  cout_line << ",\"service_rate_s_median\": " << service_rate_s_median;
-    //  cout_line << "}" << std::endl;
-    //  std::cout << cout_line.str();
-    //}
-    //if ( !stage->send_counters.empty() )
-    //{
-    //  std::ostringstream cout_line;
-    //  cout_line << "{\"" << stage->get_stage_name() << "\":{";
-    //  stage->send_counters_lock.acquire();
-    //  double send_counters_total = 0;
-    //  for ( std::map<const char*, uint64_t>::const_iterator send_counter_i = stage->send_counters.begin(); send_counter_i != stage->send_counters.end(); send_counter_i++ )
-    //    send_counters_total += send_counter_i->second;
-    //  for ( std::map<const char*, uint64_t>::const_iterator send_counter_i = stage->send_counters.begin(); send_counter_i != stage->send_counters.end(); send_counter_i++ )
-    //    cout_line << "\"" << send_counter_i->first << "\":" << static_cast<double>( send_counter_i->second ) / send_counters_total << ",";
-    //  stage->send_counters_lock.release();
-    //  cout_line << "\"\":0}}";
-    //  cout_line << std::endl;
-    //  std::cout << cout_line.str();
-    //}
-    return true;
-  }
-private:
-  auto_Object<Stage> stage;
-};
-template class InstrumentedStageImpl<NOPLock>;
-template class InstrumentedStageImpl<Mutex>;
 
 
 // mg1_stage_group.cpp
@@ -510,6 +365,109 @@ void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
     thread->start();
     this->threads.push_back( thread );
   }
+}
+
+
+// stage.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+
+
+
+TimerQueue Stage::statistics_timer_queue;
+
+
+class Stage::StatisticsTimer : public TimerQueue::Timer
+{
+public:
+  StatisticsTimer( auto_Object<Stage> stage )
+    : Timer( 1 * NS_IN_S, 1 * NS_IN_S ), stage( stage )
+  { }
+
+  // Timer
+  bool fire( const Time& elapsed_time )
+  {
+    stage->arrival_rate_s = static_cast<double>( stage->event_queue_arrival_count ) / elapsed_time.as_unix_time_s();
+    stage->event_queue_arrival_count = 0;
+
+    stage->service_rate_s = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_mean();
+
+    stage->rho = stage->arrival_rate_s / stage->service_rate_s;
+
+    //if ( strcmp( stage->get_stage_name(), "HTTPBenchmarkDriver" ) != 0 )
+    //{
+    //  double service_rate_s_max = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_min();
+    //  double service_rate_s_min = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_max();
+    //  double service_rate_s_25 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.25 );
+    //  double service_rate_s_50 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.50 );
+    //  double service_rate_s_75 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.75 );
+    //  double service_rate_s_95 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.95 );
+    //  double service_rate_s_mean = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_mean();
+    //  double service_rate_s_median = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_median();
+    //  std::ostringstream cout_line;
+    //  cout_line << "{\"" << stage->get_stage_name() << "\":{";
+    //  cout_line << "\"service_rate_s_max\": " << service_rate_s_max;
+    //  cout_line << ",\"service_rate_s_min\": " << service_rate_s_min;
+    //  cout_line << ",\"service_rate_s_25\": " << service_rate_s_25;
+    //  cout_line << ",\"service_rate_s_50\": " << service_rate_s_50;
+    //  cout_line << ",\"service_rate_s_75\": " << service_rate_s_75;
+    //  cout_line << ",\"service_rate_s_95\": " << service_rate_s_95;
+    //  cout_line << ",\"service_rate_s_mean\": " << service_rate_s_mean;
+    //  cout_line << ",\"service_rate_s_median\": " << service_rate_s_median;
+    //  cout_line << "}" << std::endl;
+    //  std::cout << cout_line.str();
+    //}
+
+    //if ( !stage->send_counters.empty() )
+    //{
+    //  std::ostringstream cout_line;
+    //  cout_line << "{\"" << stage->get_stage_name() << "\":{";
+    //  stage->send_counters_lock.acquire();
+    //  double send_counters_total = 0;
+    //  for ( std::map<const char*, uint64_t>::const_iterator send_counter_i = stage->send_counters.begin(); send_counter_i != stage->send_counters.end(); send_counter_i++ )
+    //    send_counters_total += send_counter_i->second;
+    //  for ( std::map<const char*, uint64_t>::const_iterator send_counter_i = stage->send_counters.begin(); send_counter_i != stage->send_counters.end(); send_counter_i++ )
+    //    cout_line << "\"" << send_counter_i->first << "\":" << static_cast<double>( send_counter_i->second ) / send_counters_total << ",";
+    //  stage->send_counters_lock.release();
+    //  cout_line << "\"\":0}}";
+    //  cout_line << std::endl;
+    //  std::cout << cout_line.str();
+    //}
+
+    return true;
+  }
+
+private:
+  auto_Object<Stage> stage;
+};
+
+
+Stage::Stage()
+{
+  event_queue_length = event_queue_arrival_count = 1; // send() would normally inc these, but we can't use send() because it's a virtual function; instead we enqueue directly and inc the lengths ourselves
+  statistics_timer_queue.addTimer( new StatisticsTimer( incRef() ) );
+}
+
+void Stage::send( Event& ev )
+{
+  ++event_queue_length;
+  ++event_queue_arrival_count;
+
+/*
+  Stage* running_stage = static_cast<Stage*>( Thread::getTLS( running_stage_tls_key ) );
+  if ( running_stage != NULL )
+  {
+    running_stage->send_counters_lock.acquire();
+    std::map<const char*, uint64_t>::iterator send_counter_i = running_stage->send_counters.find( this->get_stage_name() );
+    if ( send_counter_i != running_stage->send_counters.end() )
+      send_counter_i->second++;
+    else
+      running_stage->send_counters.insert( std::make_pair( this->get_stage_name(), 1 ) );
+    running_stage->send_counters_lock.release();
+  }
+  */
+
+  event_queue.enqueue( ev );
 }
 
 

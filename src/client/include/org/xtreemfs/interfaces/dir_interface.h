@@ -936,7 +936,7 @@ namespace org
           try
           {
             // Switch on the event types that this interface handles, unwrap the corresponding requests and delegate to impl
-            switch ( ev.get_tag() )
+            switch ( ev.get_type_id() )
             {
               case 1101UL: handlextreemfs_address_mappings_getRequest( static_cast<xtreemfs_address_mappings_getRequest&>( ev ) ); return;
               case 1102UL: handlextreemfs_address_mappings_removeRequest( static_cast<xtreemfs_address_mappings_removeRequest&>( ev ) ); return;
@@ -974,7 +974,7 @@ namespace org
         // YIELD::Interface
           virtual ::YIELD::Request* checkRequest( Object& request )
           {
-            switch ( request.get_tag() )
+            switch ( request.get_type_id() )
             {
               case 1101: return static_cast<xtreemfs_address_mappings_getRequest*>( &request );
               case 1102: return static_cast<xtreemfs_address_mappings_removeRequest*>( &request );
@@ -995,7 +995,7 @@ namespace org
 
           virtual ::YIELD::Response* checkResponse( Object& response )
           {
-            switch ( response.get_tag() )
+            switch ( response.get_type_id() )
             {
               case 1101: return static_cast<xtreemfs_address_mappings_getResponse*>( &response );
               case 1102: return static_cast<xtreemfs_address_mappings_removeResponse*>( &response );

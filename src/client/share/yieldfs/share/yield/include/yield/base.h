@@ -30,13 +30,13 @@
 
 // #define YIELD_DEBUG_REFERENCE_COUNTING 1
 
-#define YIELD_OBJECT_PROTOTYPES( type_name, tag ) \
+#define YIELD_OBJECT_PROTOTYPES( type_name, type_id ) \
     type_name & incRef() { return ::YIELD::Object::incRef( *this ); } \
-    const static uint32_t __tag = static_cast<uint32_t>( tag ); \
-    virtual uint32_t get_tag() const { return __tag; } \
+    const static uint32_t __type_id = static_cast<uint32_t>( type_id ); \
+    virtual uint32_t get_type_id() const { return __type_id; } \
     const char* get_type_name() const { return #type_name; }
 
-#define YIELD_OBJECT_TAG( type ) type::__tag
+#define YIELD_OBJECT_TYPE_ID( type ) type::__type_id
 
 
 #ifdef _WIN32
@@ -120,7 +120,7 @@ namespace YIELD
       return *this;
     }
 
-    virtual uint32_t get_tag() const = 0;
+    virtual uint32_t get_type_id() const = 0;
     virtual const char* get_type_name() const = 0;
     virtual void marshal( Marshaller& ) const { }
     virtual void unmarshal( Unmarshaller& ) { }

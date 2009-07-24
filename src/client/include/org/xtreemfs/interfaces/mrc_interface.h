@@ -2357,7 +2357,7 @@ namespace org
           try
           {
             // Switch on the event types that this interface handles, unwrap the corresponding requests and delegate to impl
-            switch ( ev.get_tag() )
+            switch ( ev.get_type_id() )
             {
               case 1201UL: handleaccessRequest( static_cast<accessRequest&>( ev ) ); return;
               case 1202UL: handlechmodRequest( static_cast<chmodRequest&>( ev ) ); return;
@@ -2420,7 +2420,7 @@ namespace org
         // YIELD::Interface
           virtual ::YIELD::Request* checkRequest( Object& request )
           {
-            switch ( request.get_tag() )
+            switch ( request.get_type_id() )
             {
               case 1201: return static_cast<accessRequest*>( &request );
               case 1202: return static_cast<chmodRequest*>( &request );
@@ -2466,7 +2466,7 @@ namespace org
 
           virtual ::YIELD::Response* checkResponse( Object& response )
           {
-            switch ( response.get_tag() )
+            switch ( response.get_type_id() )
             {
               case 1201: return static_cast<accessResponse*>( &response );
               case 1202: return static_cast<chmodResponse*>( &response );

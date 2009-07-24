@@ -412,7 +412,7 @@ namespace YIELD
     TracingSocket( auto_Socket underlying_socket, auto_Log log );
   
     // Object
-    virtual uint32_t get_tag() const { return underlying_socket->get_tag(); }
+    virtual uint32_t get_type_id() const { return underlying_socket->get_type_id(); }
     const char* get_type_name() const { return underlying_socket->get_type_name(); }
 
     // Socket
@@ -1019,10 +1019,10 @@ namespace YIELD
 #ifdef _DEBUG
         if ( ( this->get_flags() & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
         {
-          switch ( ev.get_tag() )
+          switch ( ev.get_type_id() )
           {
-            case YIELD_OBJECT_TAG( ONCRPCRequest ): this->get_log()->getStream( Log::LOG_INFO ) << "yield::ONCRPCClient: send()'ing ONCRPCRequest/" << reinterpret_cast<uint64_t>( &ev ) << " (xid=" << static_cast<ONCRPCRequest&>( ev ).get_xid() << ")."; break;
-            case YIELD_OBJECT_TAG( ONCRPCResponse ): this->get_log()->getStream( Log::LOG_INFO ) << "yield::ONCRPCClient: send()'ing ONCRPCRequest/" << reinterpret_cast<uint64_t>( &ev ) << " (xid=" << static_cast<ONCRPCResponse&>( ev ).get_xid() << ")."; break;
+            case YIELD_OBJECT_TYPE_ID( ONCRPCRequest ): this->get_log()->getStream( Log::LOG_INFO ) << "yield::ONCRPCClient: send()'ing ONCRPCRequest/" << reinterpret_cast<uint64_t>( &ev ) << " (xid=" << static_cast<ONCRPCRequest&>( ev ).get_xid() << ")."; break;
+            case YIELD_OBJECT_TYPE_ID( ONCRPCResponse ): this->get_log()->getStream( Log::LOG_INFO ) << "yield::ONCRPCClient: send()'ing ONCRPCRequest/" << reinterpret_cast<uint64_t>( &ev ) << " (xid=" << static_cast<ONCRPCResponse&>( ev ).get_xid() << ")."; break;
           }
         }
 #endif

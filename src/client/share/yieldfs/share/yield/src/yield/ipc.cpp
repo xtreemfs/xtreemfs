@@ -31,9 +31,9 @@ Client<RequestType, ResponseType>::~Client()
 template <class RequestType, class ResponseType>
 void Client<RequestType, ResponseType>::handleEvent( Event& ev )
 {
-  switch ( ev.get_tag() )
+  switch ( ev.get_type_id() )
   {
-    case YIELD_OBJECT_TAG( RequestType ):
+    case YIELD_OBJECT_TYPE_ID( RequestType ):
     {
       RequestType& request = static_cast<RequestType&>( ev );
       if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
@@ -313,9 +313,9 @@ void HTTPBenchmarkDriver::get_response_rates( std::vector<double>& out_response_
 }
 void HTTPBenchmarkDriver::handleEvent( Event& ev )
 {
-  switch ( ev.get_tag() )
+  switch ( ev.get_type_id() )
   {
-    case YIELD_OBJECT_TAG( Stage::StartupEvent ):
+    case YIELD_OBJECT_TYPE_ID( Stage::StartupEvent ):
     {
       my_stage = static_cast<Stage::StartupEvent&>( ev ).get_stage();
       Object::decRef( ev );
@@ -325,7 +325,7 @@ void HTTPBenchmarkDriver::handleEvent( Event& ev )
         sendHTTPRequest();
     }
     break;
-    case YIELD_OBJECT_TAG( HTTPResponse ):
+    case YIELD_OBJECT_TYPE_ID( HTTPResponse ):
     {
       in_flight_http_request_count--;
       responses_received_in_period++;
@@ -822,7 +822,7 @@ public:
   // EventTarget
   void send( Event& ev )
   {
-    if ( ev.get_tag() == YIELD_OBJECT_TAG( HTTPResponse ) )
+    if ( ev.get_type_id() == YIELD_OBJECT_TYPE_ID( HTTPResponse ) )
     {
       HTTPResponse& http_response = static_cast<HTTPResponse&>( ev );
       socket_->aio_write( new Socket::AIOWriteControlBlock( http_response.serialize() ) );
@@ -1681,18 +1681,18 @@ ONCRPCRequest::ONCRPCRequest( auto_Interface interface_ )
 ONCRPCRequest::ONCRPCRequest( auto_Interface interface_, auto_Struct body )
   : ONCRPCMessage<ONCRPCRequest>( interface_, static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body )
 {
-  prog = 0x20000000 + interface_->get_tag();
-  proc = body->get_tag();
-  vers = interface_->get_tag();
+  prog = 0x20000000 + interface_->get_type_id();
+  proc = body->get_type_id();
+  vers = interface_->get_type_id();
   credential_auth_flavor = AUTH_NONE;
 }
 ONCRPCRequest::ONCRPCRequest( auto_Interface interface_, uint32_t credential_auth_flavor, auto_Struct credential, auto_Struct body )
   : ONCRPCMessage<ONCRPCRequest>( interface_, static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
     credential_auth_flavor( credential_auth_flavor ), credential( credential )
 {
-  prog = 0x20000000 + interface_->get_tag();
-  proc = body->get_tag();
-  vers = interface_->get_tag();
+  prog = 0x20000000 + interface_->get_type_id();
+  proc = body->get_type_id();
+  vers = interface_->get_type_id();
 }
 ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, auto_Struct body )
   : ONCRPCMessage<ONCRPCRequest>( NULL, static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
@@ -1739,7 +1739,7 @@ void ONCRPCRequest::respond( Response& response )
     Request* interface_request = interface_->checkRequest( *body );
     if ( interface_request != NULL )
     {
-      if ( response.get_tag() == YIELD_OBJECT_TAG( ONCRPCResponse ) )
+      if ( response.get_type_id() == YIELD_OBJECT_TYPE_ID( ONCRPCResponse ) )
       {
         ONCRPCResponse& oncrpc_response = static_cast<ONCRPCResponse&>( response );
         auto_Struct oncrpc_response_body = oncrpc_response.get_body();
@@ -1749,7 +1749,7 @@ void ONCRPCRequest::respond( Response& response )
           Object::decRef( response );
           return interface_request->respond( interface_response->incRef() );
         }
-        else if ( oncrpc_response_body->get_tag() == YIELD_OBJECT_TAG( ExceptionResponse ) )
+        else if ( oncrpc_response_body->get_type_id() == YIELD_OBJECT_TYPE_ID( ExceptionResponse ) )
         {
           Object::decRef( response );
           return interface_request->respond( static_cast<ExceptionResponse&>( *oncrpc_response_body.release() ) );
@@ -1816,7 +1816,7 @@ void ONCRPCResponse::marshal( Marshaller& marshaller )
   auto_Struct body( get_body() );
   if ( body != NULL )
   {
-    if ( body->get_tag() != YIELD_OBJECT_TAG( ExceptionResponse ) )
+    if ( body->get_type_id() != YIELD_OBJECT_TYPE_ID( ExceptionResponse ) )
     {
       marshaller.writeInt32( "accept_stat", 0, 0 ); // SUCCESS
       marshaller.writeStruct( "body", 0, *body );
@@ -2673,7 +2673,7 @@ void Socket::aio_write( auto_Object<AIOWriteControlBlock> aio_write_control_bloc
   {
 #ifdef _WIN32
     auto_Buffer buffer( aio_write_control_block->get_buffer() );
-    if ( buffer->get_tag() == YIELD_OBJECT_TAG( GatherBuffer ) )
+    if ( buffer->get_type_id() == YIELD_OBJECT_TYPE_ID( GatherBuffer ) )
     {
       DWORD dwNumberOfBytesSent;
       if ( ::WSASend( socket_, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( static_cast<GatherBuffer*>( buffer.get() )->get_iovecs() ) ), static_cast<GatherBuffer*>( buffer.get() )->get_iovecs_len(), &dwNumberOfBytesSent, 0, *aio_write_control_block, NULL ) == 0 ||
@@ -2939,7 +2939,7 @@ bool Socket::want_write() const
 }
 ssize_t Socket::write( auto_Buffer buffer )
 {
-  if ( buffer->get_tag() == YIELD_OBJECT_TAG( GatherBuffer ) )
+  if ( buffer->get_type_id() == YIELD_OBJECT_TYPE_ID( GatherBuffer ) )
     return writev( static_cast<GatherBuffer*>( buffer.get() )->get_iovecs(), static_cast<GatherBuffer*>( buffer.get() )->get_iovecs_len() );
   else
     return write( static_cast<void*>( *buffer ), buffer->size() );
@@ -3878,7 +3878,7 @@ void UDPSocket::aio_sendto( auto_Object<AIOSendToControlBlock> aio_sendto_contro
     if ( aio_sendto_control_block->get_peer_sockaddr()->as_struct_sockaddr( get_domain(), peer_sockaddr, peer_sockaddr_len ) )
     {
       auto_Buffer buffer( aio_sendto_control_block->get_buffer() );
-      if ( buffer->get_tag() == YIELD_OBJECT_TAG( GatherBuffer ) )
+      if ( buffer->get_type_id() == YIELD_OBJECT_TYPE_ID( GatherBuffer ) )
       {
         DWORD dwNumberOfBytesSent;
         if ( ::WSASendTo( socket_, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( static_cast<GatherBuffer*>( buffer.get() )->get_iovecs() ) ), static_cast<GatherBuffer*>( buffer.get() )->get_iovecs_len(), &dwNumberOfBytesSent, 0, peer_sockaddr, peer_sockaddr_len, *aio_sendto_control_block, NULL ) == 0 ||

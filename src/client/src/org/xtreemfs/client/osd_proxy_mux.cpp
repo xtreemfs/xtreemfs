@@ -17,7 +17,7 @@ using namespace org::xtreemfs::client;
 //        const std::string& get_target_osd_uuid() const { return target_osd_uuid; }
 //
 //        // YIELD::Object
-//        YIELD_OBJECT_PROTOTYPES( OSDPingResponse, YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse ) );
+//        YIELD_OBJECT_PROTOTYPES( OSDPingResponse, YIELD_OBJECT_TYPE_ID( org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse ) );
 //
 //      private:
 //        org::xtreemfs::interfaces::VivaldiCoordinates remote_coordinates;
@@ -39,9 +39,9 @@ using namespace org::xtreemfs::client;
 //        // YIELD::EventTarget
 //        void send( YIELD::Event& ev )       
 //        {
-//          switch ( ev.get_tag() )
+//          switch ( ev.get_type_id() )
 //          {
-//            case YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse ):
+//            case YIELD_OBJECT_TYPE_ID( org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse ):
 //            {
 //              YIELD::Time rtt = YIELD::Time() - creation_time;
 //              OSDPingResponse* response = new OSDPingResponse( static_cast<org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse&>( ev ).get_remote_coordinates(), rtt, target_osd_uuid );
@@ -79,7 +79,7 @@ using namespace org::xtreemfs::client;
 //        // YIELD::EventTarget
 //        void send( YIELD::Event& ev )
 //        {
-//          if ( ev.get_tag() == YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::writeResponse ) )
+//          if ( ev.get_type_id() == YIELD_OBJECT_TYPE_ID( org::xtreemfs::interfaces::OSDInterface::writeResponse ) )
 //            static_cast<org::xtreemfs::interfaces::OSDInterface::writeResponse&>( ev ).set_selected_file_replica( write_request->get_selected_file_replica() );
 //          original_response_target->send( ev );
 //        }
@@ -103,16 +103,16 @@ public:
   // YIELD::EventTarget
   void send( YIELD::Event& ev )
   {
-    switch ( ev.get_tag() )
+    switch ( ev.get_type_id() )
     {
-      case YIELD_OBJECT_TAG( org::xtreemfs::interfaces::OSDInterface::readResponse ):
+      case YIELD_OBJECT_TYPE_ID( org::xtreemfs::interfaces::OSDInterface::readResponse ):
       {
         static_cast<org::xtreemfs::interfaces::OSDInterface::readResponse&>( ev ).set_selected_file_replica( read_request->get_selected_file_replica() );
         original_response_target->send( ev );
       }
       break;
 
-      case YIELD_OBJECT_TAG( YIELD::ExceptionResponse ):
+      case YIELD_OBJECT_TYPE_ID( YIELD::ExceptionResponse ):
       {
         if ( read_request->get_file_credentials().get_xlocs().get_replicas().size() > 1 )
         {
@@ -169,7 +169,7 @@ public:
     {
       for ( std::vector<YIELD::Event*>::iterator response_i = responses.begin(); response_i != responses.end(); response_i++ )
       {
-        if ( ( *response_i )->get_tag() == YIELD_OBJECT_TAG( YIELD::ExceptionResponse ) )
+        if ( ( *response_i )->get_type_id() == YIELD_OBJECT_TYPE_ID( YIELD::ExceptionResponse ) )
         {
           respond( static_cast<YIELD::ExceptionResponse*>( *response_i )->incRef(), final_response_target );
           responses_lock.release();
@@ -391,9 +391,9 @@ YIELD::auto_Object<OSDProxy> OSDProxyMux::getTCPOSDProxy( const std::string& osd
 
 //void OSDProxyMux::handleEvent( YIELD::Event& ev )
 //{
-//  switch ( ev.get_tag() )
+//  switch ( ev.get_type_id() )
 //  {
-//    case YIELD_OBJECT_TAG( OSDPingResponse ):
+//    case YIELD_OBJECT_TYPE_ID( OSDPingResponse ):
 //    {
 //      OSDPingResponse& ping_response = static_cast<OSDPingResponse&>( ev );
 //
@@ -409,7 +409,7 @@ YIELD::auto_Object<OSDProxy> OSDProxyMux::getTCPOSDProxy( const std::string& osd
 //    }
 //    break;
 //
-//    case YIELD_OBJECT_TAG( YIELD::FDEventQueue::TimerEvent ):
+//    case YIELD_OBJECT_TYPE_ID( YIELD::FDEventQueue::TimerEvent ):
 //    {
 //      YIELD::auto_Object<OSDProxy> udp_osd_proxy = static_cast<OSDProxy*>( static_cast<YIELD::FDEventQueue::TimerEvent&>( ev ).get_context().release() );
 //      pingOSD( udp_osd_proxy );
@@ -428,7 +428,7 @@ YIELD::auto_Object<OSDProxy> OSDProxyMux::getTCPOSDProxy( const std::string& osd
 void OSDProxyMux::handlereadRequest( readRequest& req )
 {
   YIELD::auto_Object<OSDProxy> tcp_osd_proxy( getTCPOSDProxy( req, req.get_file_credentials(), req.get_object_number() ) );
-  if ( req.get_response_target()->get_tag() != YIELD_OBJECT_TAG( ReadResponseTarget ) )
+  if ( req.get_response_target()->get_type_id() != YIELD_OBJECT_TYPE_ID( ReadResponseTarget ) )
     req.set_response_target( new ReadResponseTarget( incRef(), req ) );
   static_cast<YIELD::EventTarget*>( tcp_osd_proxy.get() )->send( req );
 }
@@ -462,7 +462,7 @@ void OSDProxyMux::handleunlinkRequest( unlinkRequest& req )
 void OSDProxyMux::handlewriteRequest( writeRequest& req )
 {
   YIELD::auto_Object<OSDProxy> tcp_osd_proxy( getTCPOSDProxy( req, req.get_file_credentials(), req.get_object_number() ) );
-  //if ( req.get_response_target()->get_tag() != YIELD_OBJECT_TAG( OSDWriteResponseTarget ) )
+  //if ( req.get_response_target()->get_type_id() != YIELD_OBJECT_TYPE_ID( OSDWriteResponseTarget ) )
   //  req.set_response_target( new OSDWriteResponseTarget( req ) );
   static_cast<YIELD::EventTarget*>( tcp_osd_proxy.get() )->send( req );
 }
