@@ -1591,7 +1591,7 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker( auto_
 #else
     record_fragment_marker = Machine::ntohl( record_fragment_marker );
 #endif
-    if ( ( record_fragment_marker & ( 1 << 31UL ) ) == ( 1 << 31UL ) ) // The highest bit set = last record fragment
+    if ( ( record_fragment_marker >> 31 ) != 0 ) // The highest bit set = last record fragment
     {
       record_fragment_length = record_fragment_marker ^ ( 1 << 31UL );
       if ( record_fragment_length < 32 * 1024 * 1024 )
