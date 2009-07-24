@@ -14,18 +14,44 @@ using namespace YIELD;
 class AIOQueue::BlockingWorkerThread : public Thread
 {
 public:
-  BlockingWorkerThread( auto_AIOControlBlock aio_control_block )
-    : aio_control_block( aio_control_block )
-  { }
+  BlockingWorkerThread( InterThreadQueue<BlockingWorkerThread*>* idle_blocking_worker_threads_queue )
+    : idle_blocking_worker_threads_queue( idle_blocking_worker_threads_queue )
+  {
+    is_running = false;
+  }
+  void enqueue( auto_AIOControlBlock aio_control_block )
+  {
+    work_queue.enqueue( aio_control_block.release() );
+  }
+  void stop()
+  {
+    enqueue( NULL );
+    while ( is_running )
+      Thread::yield();
+  }
   // Thread
   void run()
   {
-    set_name( "AIOQueue::IOCPWorkerThread" );
-    aio_control_block->execute();
-    Object::decRef( *this );
+    is_running = true;
+    set_name( "AIOQueue::BlockingWorkerThread" );
+    for ( ;; )
+    {
+      AIOControlBlock* aio_control_block = work_queue.dequeue();
+      if ( aio_control_block != NULL )
+      {
+        aio_control_block->execute();
+        Object::decRef( *aio_control_block );
+        idle_blocking_worker_threads_queue->enqueue( this );
+      }
+      else
+        break;
+    }
+    is_running = false;
   }
 private:
-  auto_AIOControlBlock aio_control_block;
+  InterThreadQueue<BlockingWorkerThread*>* idle_blocking_worker_threads_queue;
+  bool is_running;
+  InterThreadQueue<AIOControlBlock*> work_queue;
 };
 #ifdef _WIN32
 class AIOQueue::IOCPWorkerThread : public Thread
@@ -33,10 +59,18 @@ class AIOQueue::IOCPWorkerThread : public Thread
 public:
   IOCPWorkerThread( HANDLE hIoCompletionPort )
     : hIoCompletionPort( hIoCompletionPort )
-  { }
+  {
+    is_running = false;
+  }
+  void stop()
+  {
+    while ( is_running )
+      Thread::yield();
+  }
   // Thread
   void run()
   {
+    is_running = true;
     set_name( "AIOQueue::IOCPWorkerThread" );
     for ( ;; )
     {
@@ -56,10 +90,11 @@ public:
       else
         break;
     }
-    Object::decRef( *this );
+    is_running = false;
   }
 private:
   HANDLE hIoCompletionPort;
+  bool is_running;
 };
 #endif
 auto_AIOQueue AIOQueue::create()
@@ -81,19 +116,32 @@ AIOQueue::AIOQueue( HANDLE hIoCompletionPort )
 AIOQueue::AIOQueue()
 #endif
 {
-  uint16_t worker_thread_count = Machine::getOnlineLogicalProcessorCount();
 #ifdef _WIN32
-  for ( uint16_t iocp_worker_thread_i = 0; iocp_worker_thread_i < worker_thread_count; iocp_worker_thread_i++ )
+  uint16_t iocp_worker_thread_count = Machine::getOnlineLogicalProcessorCount();
+  for ( uint16_t iocp_worker_thread_i = 0; iocp_worker_thread_i < iocp_worker_thread_count; iocp_worker_thread_i++ )
   {
     IOCPWorkerThread* iocp_worker_thread = new IOCPWorkerThread( hIoCompletionPort );
+    all_iocp_worker_threads.push_back( iocp_worker_thread );
     iocp_worker_thread->start();
   }
 #endif
+  idle_blocking_worker_threads_queue = new InterThreadQueue<BlockingWorkerThread*>;
 }
 AIOQueue::~AIOQueue()
 {
+  for ( std::vector<BlockingWorkerThread*>::iterator blocking_worker_thread_i = all_blocking_worker_threads.begin(); blocking_worker_thread_i != all_blocking_worker_threads.end(); blocking_worker_thread_i++ )
+  {
+    ( *blocking_worker_thread_i )->stop();
+    Object::decRef( **blocking_worker_thread_i );
+  }
+  delete idle_blocking_worker_threads_queue;
 #ifdef _WIN32
   CloseHandle( hIoCompletionPort );
+  for ( std::vector<IOCPWorkerThread*>::iterator iocp_worker_thread_i = all_iocp_worker_threads.begin(); iocp_worker_thread_i != all_iocp_worker_threads.end(); iocp_worker_thread_i++ )
+  {
+    ( *iocp_worker_thread_i )->stop();
+    Object::decRef( **iocp_worker_thread_i );
+  }
 #endif
 }
 void AIOQueue::associate( int fd )
@@ -110,8 +158,14 @@ void AIOQueue::associate( void* handle )
 }
 void AIOQueue::submit( auto_AIOControlBlock aio_control_block )
 {
-  BlockingWorkerThread* blocking_worker_thread = new BlockingWorkerThread( aio_control_block );
-  blocking_worker_thread->start();
+  BlockingWorkerThread* blocking_worker_thread = idle_blocking_worker_threads_queue->try_dequeue();
+  if ( blocking_worker_thread == NULL )
+  {
+    blocking_worker_thread = new BlockingWorkerThread( idle_blocking_worker_threads_queue );
+    all_blocking_worker_threads.push_back( blocking_worker_thread );
+    blocking_worker_thread->start();
+  }
+  blocking_worker_thread->enqueue( aio_control_block );
 }
 
 

@@ -423,8 +423,11 @@ namespace YIELD
 #endif
 
     class BlockingWorkerThread;
+    std::vector<BlockingWorkerThread*> all_blocking_worker_threads;
+    InterThreadQueue<BlockingWorkerThread*>* idle_blocking_worker_threads_queue;
 #ifdef _WIN32
     class IOCPWorkerThread;
+    std::vector<IOCPWorkerThread*> all_iocp_worker_threads;
 #endif
   };
 
