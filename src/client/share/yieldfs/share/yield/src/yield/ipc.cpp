@@ -42,7 +42,7 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
       if ( socket_ != NULL )
       {
         if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-          log->getStream( Log::LOG_INFO ) << "yield::Client: writing " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << ".";
+          log->getStream( Log::LOG_INFO ) << "yield::Client: writing " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " on socket #" << reinterpret_cast<uint64_t>( socket_ ) << ".";
         AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request.serialize(), *this, request );
         operation_timer_queue->addTimer( new OperationTimer( aio_write_control_block->incRef(), operation_timeout ) );
         socket_->aio_write( aio_write_control_block );
@@ -65,7 +65,7 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
              static_cast<int>( *socket_ ) != -1 )
           socket_ = new TracingSocket( socket_, log );
         if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-          log->getStream( Log::LOG_INFO ) << "yield::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << ".";
+          log->getStream( Log::LOG_INFO ) << "yield::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " with socket #" << reinterpret_cast<uint64_t>( socket_ ) << ".";
         AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( *this, peername, request );
         operation_timer_queue->addTimer( new OperationTimer( aio_connect_control_block->incRef(), operation_timeout ) );
         socket_->aio_connect( aio_connect_control_block );
@@ -96,7 +96,7 @@ public:
     if ( request_lock.try_acquire() )
     {
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( Log::LOG_INFO ) << "yield::Client: successfully connected to " << client.absolute_uri->get_host() << ":" << client.absolute_uri->get_port() << ".";
+        client.log->getStream( Log::LOG_INFO ) << "yield::Client: successfully connected to " << client.absolute_uri->get_host() << ":" << client.absolute_uri->get_port() << " on socket #" << reinterpret_cast<uint64_t>( get_socket().get() ) << ".";
       AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request->serialize(), client, request );
       client.operation_timer_queue->addTimer( new OperationTimer( aio_write_control_block->incRef(), client.operation_timeout ) );
       get_socket()->aio_write( aio_write_control_block );
@@ -132,7 +132,7 @@ public:
     if ( request_lock.try_acquire() )
     {
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( Log::LOG_INFO ) << "yield::Client: read " << bytes_transferred << " bytes for " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ".";
+        client.log->getStream( Log::LOG_INFO ) << "yield::Client: read " << bytes_transferred << " bytes from socket #" << reinterpret_cast<uint64_t>( get_socket().get() ) << " for " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ".";
       Socket::AIOReadControlBlock::onCompletion( bytes_transferred );
       ssize_t deserialize_ret = response->deserialize( get_buffer() );
       if ( deserialize_ret == 0 )
@@ -193,7 +193,7 @@ public:
     if ( request_lock.try_acquire() )
     {
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( Log::LOG_INFO ) << "yield::Client: wrote " << bytes_transferred << " bytes for " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
+        client.log->getStream( Log::LOG_INFO ) << "yield::Client: wrote " << bytes_transferred << " bytes to socket # " << reinterpret_cast<uint64_t>( get_socket().get() ) << " for " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
       auto_Object<ResponseType> response( static_cast<ResponseType*>( request->createResponse().release() ) );
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
         client.log->getStream( Log::LOG_INFO ) << "yield::Client: created " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << " to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
