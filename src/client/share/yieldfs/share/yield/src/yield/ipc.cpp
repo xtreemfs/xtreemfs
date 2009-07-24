@@ -2646,7 +2646,12 @@ Socket::~Socket()
 }
 void Socket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
 {
-  aio_read_control_block->set_socket( incRef() );
+  if ( aio_read_control_block->get_socket() == NULL )
+    aio_read_control_block->set_socket( incRef() );
+  if ( aio_read_control_block->get_buffer()->size() != 0 )
+    DebugBreak();
+  if ( aio_read_control_block->get_buffer()->size() != 0 )
+    DebugBreak();
   if ( aio_read_control_block->get_buffer()->size() != 0 )
     DebugBreak();
   if ( aio_queue != NULL )
@@ -2671,7 +2676,8 @@ void Socket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
 }
 void Socket::aio_write( auto_Object<AIOWriteControlBlock> aio_write_control_block )
 {
-  aio_write_control_block->set_socket( incRef() );
+  if ( aio_write_control_block->get_socket() == NULL )
+    aio_write_control_block->set_socket( incRef() );
   if ( aio_queue != NULL )
   {
 #ifdef _WIN32
@@ -3553,7 +3559,8 @@ int TCPSocket::_accept()
 
 void TCPSocket::aio_accept( YIELD::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
 {
-  aio_accept_control_block->set_socket( incRef() );
+  if ( aio_accept_control_block->get_socket() == NULL )
+    aio_accept_control_block->set_socket( incRef() );
 
   if ( aio_queue != NULL )
   {
@@ -3584,7 +3591,8 @@ void TCPSocket::aio_accept( YIELD::auto_Object<AIOAcceptControlBlock> aio_accept
 
 void TCPSocket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
-  aio_connect_control_block->set_socket( incRef() );
+  if ( aio_connect_control_block->get_socket() == NULL )
+    aio_connect_control_block->set_socket( incRef() );
 
   if ( aio_queue != NULL )
   {
@@ -3695,14 +3703,20 @@ TracingSocket::TracingSocket( auto_Socket underlying_socket, auto_Log log )
 { }
 void TracingSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
+  if ( aio_connect_control_block->get_socket() == NULL )
+    aio_connect_control_block->set_socket( incRef() );
   underlying_socket->aio_connect( aio_connect_control_block );
 }
 void TracingSocket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
 {
+  if ( aio_read_control_block->get_socket() == NULL )
+    aio_read_control_block->set_socket( incRef() );
   underlying_socket->aio_read( aio_read_control_block );
 }
 void TracingSocket::aio_write( auto_Object<AIOWriteControlBlock> aio_write_control_block )
 {
+  if ( aio_write_control_block->get_socket() == NULL )
+    aio_write_control_block->set_socket( incRef() );
   underlying_socket->aio_write( aio_write_control_block );
 }
 bool TracingSocket::bind( auto_SocketAddress to_sockaddr )
@@ -3841,7 +3855,8 @@ UDPSocket::UDPSocket( int domain, int socket_ )
 { }
 void UDPSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
-  aio_connect_control_block->set_socket( incRef() );
+  if ( aio_connect_control_block->get_socket() == NULL )
+    aio_connect_control_block->set_socket( incRef() );
   if ( connect( aio_connect_control_block->get_peername() ) == CONNECT_STATUS_OK )
     aio_connect_control_block->onCompletion( 0 );
   else
@@ -3849,7 +3864,8 @@ void UDPSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_con
 }
 void UDPSocket::aio_recvfrom( auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block )
 {
-  aio_recvfrom_control_block->set_socket( incRef() );
+  if ( aio_recvfrom_control_block->get_socket() == NULL )
+    aio_recvfrom_control_block->set_socket( incRef() );
   if ( aio_queue != NULL )
   {
 #ifdef _WIN32
@@ -3873,7 +3889,8 @@ void UDPSocket::aio_recvfrom( auto_Object<AIORecvFromControlBlock> aio_recvfrom_
 }
 void UDPSocket::aio_sendto( auto_Object<AIOSendToControlBlock> aio_sendto_control_block )
 {
-  aio_sendto_control_block->set_socket( incRef() );
+  if ( aio_sendto_control_block->get_socket() == NULL )
+    aio_sendto_control_block->set_socket( incRef() );
   if ( aio_queue != NULL )
   {
 #ifdef _WIN32
