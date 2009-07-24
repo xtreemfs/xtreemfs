@@ -173,7 +173,11 @@ namespace YIELD
     {
     public:
       auto_Object<Socket> get_socket() { return socket_; }
-      void set_socket( auto_Object<Socket> socket_ ) { this->socket_ = socket_; }
+
+    protected:
+      AIOControlBlock( auto_Object<Socket> socket_ )
+        : socket_( socket_ )
+      { }
 
     private:      
       auto_Object<Socket> socket_;
@@ -183,8 +187,8 @@ namespace YIELD
     class AIOConnectControlBlock : public AIOControlBlock
     {
     public:
-      AIOConnectControlBlock( auto_SocketAddress peername )
-        : peername( peername )
+      AIOConnectControlBlock( auto_SocketAddress peername, auto_Object<Socket> socket_ )
+        : AIOControlBlock( socket_ ), peername( peername )
       { }
 
       auto_SocketAddress get_peername() const { return peername; }
@@ -203,8 +207,8 @@ namespace YIELD
     class AIOReadControlBlock : public AIOControlBlock
     {
     public:
-      AIOReadControlBlock( auto_Buffer buffer )
-        : buffer( buffer )
+      AIOReadControlBlock( auto_Buffer buffer, auto_Object<Socket> socket_ )
+        : AIOControlBlock( socket_ ), buffer( buffer )
       { }
 
       auto_Buffer get_buffer() const { return buffer; }
@@ -214,11 +218,7 @@ namespace YIELD
 
       // AIOControlBlock
       void execute();
-
-      virtual void onCompletion( size_t bytes_transferred )
-      { 
-        buffer->put( NULL, bytes_transferred ); 
-      }
+      virtual void onCompletion( size_t bytes_transferred );
 
     private:
       auto_Buffer buffer;
@@ -228,8 +228,8 @@ namespace YIELD
     class AIOWriteControlBlock : public AIOControlBlock
     {
     public:
-      AIOWriteControlBlock( auto_Buffer buffer )
-        : buffer( buffer )
+      AIOWriteControlBlock( auto_Buffer buffer, auto_Object<Socket> socket_ )
+        : AIOControlBlock( socket_ ), buffer( buffer )
       { }
 
       auto_Buffer get_buffer() const { return buffer; }
@@ -286,6 +286,10 @@ namespace YIELD
    class AIOAcceptControlBlock : public AIOControlBlock
    {
     public:
+      AIOAcceptControlBlock( auto_Socket socket_ )
+        : AIOControlBlock( socket_ )
+      { }
+
       auto_Object<TCPSocket> get_accepted_tcp_socket() const { return accepted_tcp_socket; }
 
       // Object
@@ -433,7 +437,7 @@ namespace YIELD
     class AIORecvFromControlBlock : public AIOControlBlock
     {
     public:
-      AIORecvFromControlBlock( auto_Buffer buffer );
+      AIORecvFromControlBlock( auto_Buffer buffer, auto_Socket socket_ );
 
       auto_Buffer get_buffer() const { return buffer; }
       auto_SocketAddress get_peer_sockaddr() const;
@@ -459,8 +463,8 @@ namespace YIELD
     class AIOSendToControlBlock : public AIOControlBlock
     {
     public:
-      AIOSendToControlBlock( auto_Buffer buffer, auto_SocketAddress peer_sockaddr )
-        : buffer( buffer ), peer_sockaddr( peer_sockaddr )
+      AIOSendToControlBlock( auto_Buffer buffer, auto_SocketAddress peer_sockaddr, auto_Socket socket_ )
+        : AIOControlBlock( socket_ ), buffer( buffer ), peer_sockaddr( peer_sockaddr )
       { }
 
       auto_Buffer get_buffer() const { return buffer; }
@@ -471,9 +475,6 @@ namespace YIELD
 
       // AIOControlBlock
       void execute();
-
-    protected:
-      AIOSendToControlBlock() { }
 
     private:
       auto_Buffer buffer;

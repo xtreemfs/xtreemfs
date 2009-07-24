@@ -42,8 +42,8 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
       if ( socket_ != NULL )
       {
         if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-          log->getStream( Log::LOG_INFO ) << "yield::Client: writing " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " on socket #" << reinterpret_cast<uint64_t>( socket_ ) << ".";
-        AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request.serialize(), *this, request );
+          log->getStream( Log::LOG_INFO ) << "yield::Client: writing " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " on socket #" << static_cast<int>( *socket_ ) << ".";
+        AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request.serialize(), *this, request, socket_->incRef() );
         // operation_timer_queue->addTimer( new OperationTimer( aio_write_control_block->incRef(), operation_timeout ) );
         socket_->aio_write( aio_write_control_block );
       }
@@ -65,8 +65,8 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
              static_cast<int>( *socket_ ) != -1 )
           socket_ = new TracingSocket( socket_, log );
         if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-          log->getStream( Log::LOG_INFO ) << "yield::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " with socket #" << reinterpret_cast<uint64_t>( socket_ ) << ".";
-        AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( *this, peername, request );
+          log->getStream( Log::LOG_INFO ) << "yield::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " with socket #" << static_cast<int>( *socket_ ) << ".";
+        AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( *this, peername, request, socket_->incRef() );
         // operation_timer_queue->addTimer( new OperationTimer( aio_connect_control_block->incRef(), operation_timeout ) );
         socket_->aio_connect( aio_connect_control_block );
       }
@@ -84,8 +84,8 @@ template <class RequestType, class ResponseType>
 class Client<RequestType, ResponseType>::AIOConnectControlBlock : public Socket::AIOConnectControlBlock
 {
 public:
-  AIOConnectControlBlock( Client<RequestType,ResponseType>& client, auto_SocketAddress peername, auto_Object<RequestType> request )
-    : Socket::AIOConnectControlBlock( peername ),
+  AIOConnectControlBlock( Client<RequestType,ResponseType>& client, auto_SocketAddress peername, auto_Object<RequestType> request, auto_Socket socket_ )
+    : Socket::AIOConnectControlBlock( peername, socket_ ),
       client( client ),
       request( request )
   { }
@@ -97,7 +97,7 @@ public:
     {
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
         client.log->getStream( Log::LOG_INFO ) << "yield::Client: successfully connected to " << client.absolute_uri->get_host() << ":" << client.absolute_uri->get_port() << " on socket #" << static_cast<int>( *get_socket() ) << ".";
-      AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request->serialize(), client, request );
+      AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request->serialize(), client, request, get_socket() );
       // client.operation_timer_queue->addTimer( new OperationTimer( aio_write_control_block->incRef(), client.operation_timeout ) );
       get_socket()->aio_write( aio_write_control_block );
     }
@@ -120,8 +120,8 @@ template <class RequestType, class ResponseType>
 class Client<RequestType, ResponseType>::AIOReadControlBlock : public Socket::AIOReadControlBlock
 {
 public:
-  AIOReadControlBlock( auto_Buffer buffer, Client<RequestType,ResponseType>& client, auto_Object<RequestType> request, auto_Object<ResponseType> response )
-    : Socket::AIOReadControlBlock( buffer ),
+  AIOReadControlBlock( auto_Buffer buffer, Client<RequestType,ResponseType>& client, auto_Object<RequestType> request, auto_Object<ResponseType> response, auto_Socket socket_ )
+    : Socket::AIOReadControlBlock( buffer, socket_ ),
       client( client ),
       request( request ), response( response )
   { }
@@ -146,7 +146,7 @@ public:
       {
         if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
           client.log->getStream( Log::LOG_INFO ) << "yield::Client: partially deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", reading again with " << deserialize_ret << " byte buffer.";
-        AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( deserialize_ret ), client, request, response );
+        AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( deserialize_ret ), client, request, response, get_socket() );
         // client.operation_timer_queue->addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
         get_socket()->aio_read( aio_read_control_block );
       }
@@ -179,8 +179,8 @@ template <class RequestType, class ResponseType>
 class Client<RequestType, ResponseType>::AIOWriteControlBlock : public Socket::AIOWriteControlBlock
 {
 public:
-  AIOWriteControlBlock( auto_Buffer buffer, Client<RequestType,ResponseType>& client, auto_Object<RequestType> request )
-    : Socket::AIOWriteControlBlock( buffer ),
+  AIOWriteControlBlock( auto_Buffer buffer, Client<RequestType,ResponseType>& client, auto_Object<RequestType> request, auto_Socket socket_ )
+    : Socket::AIOWriteControlBlock( buffer, socket_ ),
       client( client ),
       request( request )
   { }
@@ -193,11 +193,11 @@ public:
     if ( request_lock.try_acquire() )
     {
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( Log::LOG_INFO ) << "yield::Client: wrote " << bytes_transferred << " bytes to socket # " << static_cast<int>( *get_socket() ) << " for " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
+        client.log->getStream( Log::LOG_INFO ) << "yield::Client: wrote " << bytes_transferred << " bytes to socket #" << static_cast<int>( *get_socket() ) << " for " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
       auto_Object<ResponseType> response( static_cast<ResponseType*>( request->createResponse().release() ) );
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
         client.log->getStream( Log::LOG_INFO ) << "yield::Client: created " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << " to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
-      AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( 1024 ), client, request, response );
+      AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( 1024 ), client, request, response, get_socket() );
       // client.operation_timer_queue->addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
       get_socket()->aio_read( aio_read_control_block );
     }
@@ -825,7 +825,7 @@ public:
     if ( ev.get_type_id() == YIELD_OBJECT_TYPE_ID( HTTPResponse ) )
     {
       HTTPResponse& http_response = static_cast<HTTPResponse&>( ev );
-      socket_->aio_write( new Socket::AIOWriteControlBlock( http_response.serialize() ) );
+      socket_->aio_write( new Socket::AIOWriteControlBlock( http_response.serialize(), socket_->incRef() ) );
       Object::decRef( http_response );
     }
     else
@@ -837,8 +837,8 @@ private:
 class HTTPServer::AIOReadControlBlock : public Socket::AIOReadControlBlock
 {
 public:
-  AIOReadControlBlock( auto_Buffer buffer, auto_HTTPRequest http_request, auto_EventTarget http_request_target )
-    : Socket::AIOReadControlBlock( buffer ), http_request( http_request ), http_request_target( http_request_target )
+  AIOReadControlBlock( auto_Buffer buffer, auto_HTTPRequest http_request, auto_EventTarget http_request_target, auto_Socket socket_ )
+    : Socket::AIOReadControlBlock( buffer, socket_ ), http_request( http_request ), http_request_target( http_request_target )
   { }
   void onCompletion( size_t bytes_transferred )
   {
@@ -856,7 +856,7 @@ public:
       }
       else if ( deserialize_ret > 0 )
       {
-        get_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), http_request, http_request_target ) );
+        get_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), http_request, http_request_target, get_socket() ) );
         return;
       }
       else
@@ -874,14 +874,14 @@ private:
 class HTTPServer::AIOAcceptControlBlock : public TCPSocket::AIOAcceptControlBlock
 {
 public:
-  AIOAcceptControlBlock( auto_AIOQueue aio_queue, auto_EventTarget http_request_target )
-    : aio_queue( aio_queue ), http_request_target( http_request_target )
+  AIOAcceptControlBlock( auto_AIOQueue aio_queue, auto_EventTarget http_request_target, auto_Socket socket_ )
+    : TCPSocket::AIOAcceptControlBlock( socket_ ), aio_queue( aio_queue ), http_request_target( http_request_target )
   { }
   void onCompletion( size_t )
   {
     get_accepted_tcp_socket()->associate( aio_queue );
-    get_accepted_tcp_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), new HTTPRequest, http_request_target ) );
-    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( aio_queue, http_request_target ) );
+    get_accepted_tcp_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), new HTTPRequest, http_request_target, get_accepted_tcp_socket().release() ) );
+    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( aio_queue, http_request_target, get_socket() ) );
   }
   void onError( uint32_t )
   { }
@@ -893,7 +893,7 @@ HTTPServer::HTTPServer( auto_AIOQueue aio_queue, auto_EventTarget http_request_t
   : aio_queue( aio_queue ), http_request_target( http_request_target ), listen_tcp_socket( listen_tcp_socket )
 {
   listen_tcp_socket->associate( aio_queue );
-  listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( aio_queue, http_request_target ) );
+  listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( aio_queue, http_request_target, listen_tcp_socket->incRef() ) );
 }
 auto_HTTPServer HTTPServer::create( const URI& absolute_uri,
                                     auto_EventTarget http_request_target,
@@ -1897,9 +1897,9 @@ public:
   {
     ONCRPCResponse oncrpc_response( interface_, oncrpc_request->get_xid(), ev );
     if ( peer_sockaddr != NULL )
-      static_cast<UDPSocket*>( socket_.get() )->aio_sendto( new UDPSocket::AIOSendToControlBlock( oncrpc_response.serialize(), peer_sockaddr ) );
+      static_cast<UDPSocket*>( socket_.get() )->aio_sendto( new UDPSocket::AIOSendToControlBlock( oncrpc_response.serialize(), peer_sockaddr, socket_ ) );
     else
-      socket_->aio_write( new Socket::AIOWriteControlBlock( oncrpc_response.serialize() ) );
+      socket_->aio_write( new Socket::AIOWriteControlBlock( oncrpc_response.serialize(), socket_ ) );
   }
 private:
   auto_Interface interface_;
@@ -1910,8 +1910,8 @@ private:
 class ONCRPCServer::AIOReadControlBlock : public Socket::AIOReadControlBlock
 {
 public:
-  AIOReadControlBlock( auto_Buffer buffer, auto_Interface interface_, auto_ONCRPCRequest oncrpc_request )
-    : Socket::AIOReadControlBlock( buffer ), interface_( interface_ ), oncrpc_request( oncrpc_request )
+  AIOReadControlBlock( auto_Buffer buffer, auto_Interface interface_, auto_ONCRPCRequest oncrpc_request, auto_Socket socket_ )
+    : Socket::AIOReadControlBlock( buffer, socket_ ), interface_( interface_ ), oncrpc_request( oncrpc_request )
   { }
   void onCompletion( size_t bytes_transferred )
   {
@@ -1935,7 +1935,7 @@ public:
       }
       else if ( deserialize_ret > 0 )
       {
-        get_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), interface_, oncrpc_request ) );
+        get_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), interface_, oncrpc_request, get_socket() ) );
         return;
       }
       else
@@ -1953,8 +1953,8 @@ private:
 class ONCRPCServer::AIORecvFromControlBlock : public UDPSocket::AIORecvFromControlBlock
 {
 public:
-  AIORecvFromControlBlock( auto_Interface interface_ )
-    : UDPSocket::AIORecvFromControlBlock( new HeapBuffer( 1024 ) ),
+  AIORecvFromControlBlock( auto_Interface interface_, auto_Socket socket_ )
+    : UDPSocket::AIORecvFromControlBlock( new HeapBuffer( 1024 ), socket_ ),
       interface_( interface_ )
   { }
   // AIOControlBlock
@@ -1973,7 +1973,7 @@ public:
         interface_request->set_response_target( new ONCRPCResponseTarget( interface_, oncrpc_request, get_peer_sockaddr(), get_socket() ) );
         interface_->send( *interface_request );
       }
-      static_cast<UDPSocket*>( get_socket().get() )->aio_recvfrom( new AIORecvFromControlBlock( interface_) );
+      static_cast<UDPSocket*>( get_socket().get() )->aio_recvfrom( new AIORecvFromControlBlock( interface_, get_socket() ) );
     }
     else if ( deserialize_ret < 0 )
       Object::decRef( *oncrpc_request );
@@ -1990,14 +1990,14 @@ private:
 class ONCRPCServer::AIOAcceptControlBlock : public TCPSocket::AIOAcceptControlBlock
 {
 public:
-  AIOAcceptControlBlock( auto_AIOQueue aio_queue, auto_Interface interface_ )
-    : aio_queue( aio_queue ), interface_( interface_ )
+  AIOAcceptControlBlock( auto_AIOQueue aio_queue, auto_Interface interface_, auto_Socket socket_ )
+    : TCPSocket::AIOAcceptControlBlock( socket_ ), aio_queue( aio_queue ), interface_( interface_ )
   { }
   void onCompletion( size_t )
   {
     get_accepted_tcp_socket()->associate( aio_queue );
-    get_accepted_tcp_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), interface_, new ONCRPCRequest( interface_ ) ) );
-    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( aio_queue, interface_ ) );
+    get_accepted_tcp_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), interface_, new ONCRPCRequest( interface_ ), get_accepted_tcp_socket().release() ) );
+    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( aio_queue, interface_, get_socket() ) );
   }
   void onError( uint32_t )
   { }
@@ -2026,7 +2026,7 @@ auto_ONCRPCServer ONCRPCServer::create( const URI& absolute_uri,
              udp_socket->bind( sockname ) )
         {
           udp_socket->associate( aio_queue );
-          udp_socket->aio_recvfrom( new AIORecvFromControlBlock( interface_ ) );
+          udp_socket->aio_recvfrom( new AIORecvFromControlBlock( interface_, udp_socket->incRef() ) );
           return new ONCRPCServer( aio_queue, interface_, udp_socket.release() );
         }
       }
@@ -2044,7 +2044,7 @@ auto_ONCRPCServer ONCRPCServer::create( const URI& absolute_uri,
              listen_tcp_socket->listen() )
         {
           listen_tcp_socket->associate( aio_queue );
-          listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( aio_queue, interface_ ) );
+          listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( aio_queue, interface_, listen_tcp_socket->incRef() ) );
           return new ONCRPCServer( aio_queue, interface_, listen_tcp_socket.release() );
         }
       }
@@ -2646,10 +2646,10 @@ Socket::~Socket()
 }
 void Socket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
 {
-  if ( aio_read_control_block->get_socket() == NULL )
-    aio_read_control_block->set_socket( incRef() );
+#ifdef _DEBUG
   if ( aio_read_control_block->get_buffer()->size() != 0 )
     DebugBreak();
+#endif
   if ( aio_queue != NULL )
   {
 #ifdef _WIN32
@@ -2668,6 +2668,8 @@ void Socket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
     ssize_t read_ret = read( aio_read_control_block->get_buffer() );
     if ( read_ret > 0 )
       aio_read_control_block->onCompletion( static_cast<size_t>( read_ret ) );
+    else if ( read_ret == 0 )
+      aio_read_control_block->onError( ECONNRESET );
     else if ( want_read() || want_write() )
     {
       set_blocking_mode( true );
@@ -2682,8 +2684,6 @@ void Socket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
 }
 void Socket::aio_write( auto_Object<AIOWriteControlBlock> aio_write_control_block )
 {
-  if ( aio_write_control_block->get_socket() == NULL )
-    aio_write_control_block->set_socket( incRef() );
   if ( aio_queue != NULL )
   {
 #ifdef _WIN32
@@ -2712,7 +2712,7 @@ void Socket::aio_write( auto_Object<AIOWriteControlBlock> aio_write_control_bloc
 #else
     set_blocking_mode( false );
     ssize_t write_ret = write( aio_write_control_block->get_buffer() );
-    if ( write_ret > 0 )
+    if ( write_ret >= 0 )
       aio_write_control_block->onCompletion( static_cast<size_t>( write_ret ) );
     else if ( want_write() || want_read() )
     {
@@ -3021,10 +3021,14 @@ void Socket::AIOReadControlBlock::execute()
   else
     onError( Exception::get_errno() );
 }
+void Socket::AIOReadControlBlock::onCompletion( size_t bytes_transferred )
+{
+  buffer->put( NULL, bytes_transferred );
+}
 void Socket::AIOWriteControlBlock::execute()
 {
   ssize_t write_ret = get_socket()->write( get_buffer() );
-  if ( write_ret > 0 )
+  if ( write_ret >= 0 )
     onCompletion( static_cast<size_t>( write_ret ) );
   else
     onError( Exception::get_errno() );
@@ -3410,7 +3414,6 @@ auto_TCPSocket SSLSocket::accept()
 }
 void SSLSocket::aio_accept( auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
 {
-  aio_accept_control_block->set_socket( incRef() );
   if ( aio_queue != NULL )
     aio_queue->submit( aio_accept_control_block.release() );
   else
@@ -3418,7 +3421,6 @@ void SSLSocket::aio_accept( auto_Object<AIOAcceptControlBlock> aio_accept_contro
 }
 void SSLSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
-  aio_connect_control_block->set_socket( incRef() );
   if ( aio_queue != NULL )
     aio_queue->submit( aio_connect_control_block.release() );
   else
@@ -3426,7 +3428,6 @@ void SSLSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_con
 }
 void SSLSocket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
 {
-  aio_read_control_block->set_socket( incRef() );
   if ( aio_queue != NULL )
     aio_queue->submit( aio_read_control_block.release() );
   else
@@ -3434,8 +3435,7 @@ void SSLSocket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_bloc
 }
 void SSLSocket::aio_write( auto_Object<AIOWriteControlBlock> aio_write_control_block )
 {
-  aio_write_control_block->set_socket( incRef() );
-  if ( aio_queue != NULL )
+   if ( aio_queue != NULL )
     aio_queue->submit( aio_write_control_block.release() );
   else
     aio_write_control_block->execute();
@@ -3575,9 +3575,6 @@ int TCPSocket::_accept()
 
 void TCPSocket::aio_accept( YIELD::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
 {
-  if ( aio_accept_control_block->get_socket() == NULL )
-    aio_accept_control_block->set_socket( incRef() );
-
   if ( aio_queue != NULL )
   {
 #ifdef _WIN32
@@ -3607,9 +3604,6 @@ void TCPSocket::aio_accept( YIELD::auto_Object<AIOAcceptControlBlock> aio_accept
 
 void TCPSocket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
-  if ( aio_connect_control_block->get_socket() == NULL )
-    aio_connect_control_block->set_socket( incRef() );
-
   if ( aio_queue != NULL )
   {
 #ifdef _WIN32
@@ -3740,20 +3734,14 @@ TracingSocket::TracingSocket( auto_Socket underlying_socket, auto_Log log )
 { }
 void TracingSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
-  if ( aio_connect_control_block->get_socket() == NULL )
-    aio_connect_control_block->set_socket( incRef() );
   underlying_socket->aio_connect( aio_connect_control_block );
 }
 void TracingSocket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
 {
-  if ( aio_read_control_block->get_socket() == NULL )
-    aio_read_control_block->set_socket( incRef() );
   underlying_socket->aio_read( aio_read_control_block );
 }
 void TracingSocket::aio_write( auto_Object<AIOWriteControlBlock> aio_write_control_block )
 {
-  if ( aio_write_control_block->get_socket() == NULL )
-    aio_write_control_block->set_socket( incRef() );
   underlying_socket->aio_write( aio_write_control_block );
 }
 bool TracingSocket::bind( auto_SocketAddress to_sockaddr )
@@ -3892,8 +3880,6 @@ UDPSocket::UDPSocket( int domain, int socket_ )
 { }
 void UDPSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
-  if ( aio_connect_control_block->get_socket() == NULL )
-    aio_connect_control_block->set_socket( incRef() );
   if ( connect( aio_connect_control_block->get_peername() ) == CONNECT_STATUS_OK )
     aio_connect_control_block->onCompletion( 0 );
   else
@@ -3901,8 +3887,6 @@ void UDPSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_con
 }
 void UDPSocket::aio_recvfrom( auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block )
 {
-  if ( aio_recvfrom_control_block->get_socket() == NULL )
-    aio_recvfrom_control_block->set_socket( incRef() );
   if ( aio_queue != NULL )
   {
 #ifdef _WIN32
@@ -3926,8 +3910,6 @@ void UDPSocket::aio_recvfrom( auto_Object<AIORecvFromControlBlock> aio_recvfrom_
 }
 void UDPSocket::aio_sendto( auto_Object<AIOSendToControlBlock> aio_sendto_control_block )
 {
-  if ( aio_sendto_control_block->get_socket() == NULL )
-    aio_sendto_control_block->set_socket( incRef() );
   if ( aio_queue != NULL )
   {
 #ifdef _WIN32
@@ -4003,8 +3985,8 @@ ssize_t UDPSocket::sendto( const void* buffer, size_t buffer_len, auto_SocketAdd
   else
     return -1;
 }
-UDPSocket::AIORecvFromControlBlock::AIORecvFromControlBlock( auto_Buffer buffer )
-  : buffer( buffer )
+UDPSocket::AIORecvFromControlBlock::AIORecvFromControlBlock( auto_Buffer buffer, auto_Socket socket_ )
+: Socket::AIOControlBlock( socket_ ), buffer( buffer )
 {
   peer_sockaddr = new sockaddr_storage;
 }
