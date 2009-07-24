@@ -120,9 +120,9 @@ class ReplicatingFile {
             NextRequest next = strategy.getNext();
 
             if (next != null) { // OSD found for fetching object
-                // FIXME: only for debugging
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "fetch object %s:%d from OSD %s", fileID, next.objectNo, next.osd);
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "%s:%d - fetch object from OSD %s", fileID, next.objectNo, next.osd);
 
                 try {
                     sendFetchObjectRequest(next.objectNo, next.osd);
@@ -141,7 +141,7 @@ class ReplicatingFile {
 
         /**
          * 
-         * @param usedOSD TODO
+         * @param usedOSD
          * @return true, if object is completed; false otherwise
          * @throws TransferStrategyException
          */
@@ -153,7 +153,7 @@ class ReplicatingFile {
 
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.replication, this,
-                            "OBJECT FETCHED %s:%d", fileID, objectNo);
+                            "%s:%d - OBJECT FETCHED", fileID, objectNo);
 
                 if (!isStopped()) {
                     // write data to disk
@@ -165,9 +165,9 @@ class ReplicatingFile {
 
                 return true;
             } else {
-                // FIXME: only for debugging
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "fetched object %s:%d has invalid checksum", fileID, objectNo);
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "%s:%d - fetched object has an invalid checksum", fileID, objectNo);
 
                 // save data, in case other replicas are less useful
                 this.data = data;
@@ -202,11 +202,11 @@ class ReplicatingFile {
 
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, Logging.Category.replication, this,
-                                "OBJECT FETCHED %s:%d, but with wrong checksum", fileID, objectNo);
+                                "%s:%d - OBJECT FETCHED, but with wrong checksum", fileID, objectNo);
                 } else {
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                                "OBJECT %s:%d COULD NOT BE FETCHED FROM A FULL REPLICA; MUST BE A HOLE.", fileID, objectNo);
+                                "%s:%d - OBJECT COULD NOT BE FETCHED FROM A FULL REPLICA; MUST BE A HOLE.", fileID, objectNo);
 
                     if (hasWaitingRequests())
                         sendResponses(null, ObjectStatus.PADDING_OBJECT);
@@ -216,9 +216,9 @@ class ReplicatingFile {
                 return true;
             } else {
                 // if (!ReplicatingFile.cancelled) {
-                // FIXME: only for debugging
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "object %s:%d could not be fetched from OSD => try next OSD", fileID, objectNo);
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "%s:%d - object could not be fetched from OSD => try next OSD", fileID, objectNo);
 
                 // try next replica
                 strategy.addObject(objectNo, hasWaitingRequests());
@@ -474,9 +474,9 @@ class ReplicatingFile {
                 // object replication is in progress
                 processObject(next.objectNo);
 
-                // FIXME: only for debugging
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "fetch object %s:%d from OSD %s", fileID, next.objectNo, next.osd);
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                            "%s:%d - fetch object from OSD %s", fileID, next.objectNo, next.osd);
 
                 try {
                     sendFetchObjectRequest(next.objectNo, next.osd);
@@ -484,13 +484,8 @@ class ReplicatingFile {
                     // try other OSD
                     objectsInProgress.get(next.objectNo).replicateObject();
                 }
-            } else { // nothing to replicate anymore (hopefully all necessary objects have been replicated)
-//                assert (objectsInProgress.size() == 0);
-                // if (Logging.isDebug())
-                // Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                // "stop replicating file %s", fileID);
+            } else
                 break;
-            }
         }
     }
 
@@ -510,12 +505,12 @@ class ReplicatingFile {
                 objectReplicationCompleted(objectNo);
 
                 if (strategy.getObjectsCount() > 0) { // there are still objects to fetch
-                    // FIXME: only for debugging
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                            "background replication: replicate next object for file %s", fileID);
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                                "background replication: replicate next object for file %s", fileID);
                     replicate(); // background replication
                 }
-            }
+      }
         } catch (TransferStrategyException e) {
             // TODO: differ between ErrorCodes
             object.sendError(new OSDException(ErrorCodes.IO_ERROR, e.getMessage(), e.getStackTrace()
@@ -541,12 +536,12 @@ class ReplicatingFile {
                 objectReplicationCompleted(objectNo);
 
                 if (strategy.getObjectsCount() > 0) { // there are still objects to fetch
-                    // FIXME: only for debugging
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                            "background replication: replicate next object for file %s", fileID);
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                                "background replication: replicate next object for file %s", fileID);
                     replicate(); // background replication
                 }
-            }
+      }
         } catch (TransferStrategyException e) {
             // TODO: differ between ErrorCodes
             object.sendError(new OSDException(ErrorCodes.IO_ERROR, e.getMessage(), e.getStackTrace()
@@ -598,7 +593,7 @@ class ReplicatingFile {
         // TODO: change this, if using different striping policies
         RPCResponse<InternalReadLocalResponse> response = client.internal_read_local(osd.getAddress(),
                 fileID, new FileCredentials(xLoc.getXLocSet(), cap.getXCap()), objectNo, 0, 0, xLoc
-                        .getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo), false);
+                        .getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo), false, null);
 
         response.registerListener(new RPCResponseAvailableListener<InternalReadLocalResponse>() {
             @Override

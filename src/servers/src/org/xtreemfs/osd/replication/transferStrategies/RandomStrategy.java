@@ -114,9 +114,10 @@ public class RandomStrategy extends TransferStrategy {
 
         // to check, if all OSDs have been tested
         List<ServiceUUID> testedOSDs = new ArrayList<ServiceUUID>(this.getAvailableOSDsForObject(objectNo));
-        // FIXME: only for debugging
-        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                "available OSDs for file %s: %s.", fileID, testedOSDs.toString());
+
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                    "%s - available OSDs for file: %s", fileID, testedOSDs.toString());
 
         if (testedOSDs.size() == 0)
             throw new TransferStrategyException("No OSD could be found for object " + objectNo
@@ -135,9 +136,10 @@ public class RandomStrategy extends TransferStrategy {
             }
             // OSD is not available => remove it from list
             testedOSDs.remove(osd);
-            // FIXME: only for debugging
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "OSD %s is not available",
-                    osd.toString());
+
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "OSD %s is not available", osd.toString());
         }
         // if no OSD could be found
         if (next.osd == null) {

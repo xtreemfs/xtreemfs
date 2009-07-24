@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.interfaces.Constants;
 
 /**
  *
@@ -135,7 +134,7 @@ public class Replica {
      * @return
      */
     public boolean isComplete() {
-        return ((Constants.REPL_FLAG_IS_FULL & replica.getReplication_flags()) == Constants.REPL_FLAG_IS_FULL);
+        return ReplicationFlags.isReplicaComplete(replica.getReplication_flags());
     }
 
     /**
@@ -143,6 +142,6 @@ public class Replica {
      * @return true, if partial; false if full
      */
     public boolean isPartialReplica() {
-        return ((Constants.REPL_FLAG_FILL_ON_DEMAND & replica.getReplication_flags()) == Constants.REPL_FLAG_FILL_ON_DEMAND);
+        return ReplicationFlags.isPartialReplica(replica.getReplication_flags());
     }
 }

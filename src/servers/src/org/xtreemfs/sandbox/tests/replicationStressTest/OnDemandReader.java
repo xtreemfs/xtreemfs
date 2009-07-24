@@ -109,8 +109,10 @@ class OnDemandReader extends Reader {
                             expectedResult);
                 }
             }
+            long throughput = (timeRequiredForReading == 0) ? (filesize / 1)
+                    : (filesize / timeRequiredForReading);
             // monitor throughput
-            Monitoring.monitorThroughput(Thread.currentThread().getName(), filesize, timeRequiredForReading);
+            super.monitoring.putAverageLong(MONITORING_KEY_THROUGHPUT, throughput); // byte/ms
         } finally {
             if (originalFile != null)
                 originalFile.close();

@@ -95,7 +95,7 @@ public class ObjectDissemination {
 
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                        "start replicating file %s", fileID);
+                        "%s - start replicating file", fileID);
         }
 
         // update to newer cap, ...
@@ -129,7 +129,6 @@ public class ObjectDissemination {
      * process all necessary actions if object was fetched correctly, otherwise triggers new fetch-attempt
      * 
      * @param usedOSD
-     *            TODO
      */
     public void objectFetched(String fileID, long objectNo, final ServiceUUID usedOSD, ObjectData data) {
         ReplicatingFile file = filesInProgress.get(fileID);
@@ -145,7 +144,6 @@ public class ObjectDissemination {
      * process all necessary actions, because object could not be fetched
      * 
      * @param usedOSD
-     *            TODO
      */
     public void objectNotFetched(String fileID, final ServiceUUID usedOSD, long objectNo) {
         ReplicatingFile file = filesInProgress.get(fileID);
@@ -181,7 +179,7 @@ public class ObjectDissemination {
         }
 
         if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "stop replicating file %s",
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "%s - stop replicating file",
                     fileID);
 
         // update requestsPerFile for all files (load-balancing)
@@ -190,8 +188,7 @@ public class ObjectDissemination {
         else
             ReplicatingFile.setMaxRequestsPerFile(MAX_REQUESTS_OVERALL / filesInProgress.size());
 
-        // TODO: save persistent marker that all objects of file are completely replicated, if replica is full
-        // replica
+        // TODO: save persistent marker that all objects of file are completely replicated, if it is a full replica
     }
 
     /**

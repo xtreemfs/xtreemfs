@@ -118,7 +118,7 @@ class FullReplicaReader extends Reader {
                 ObjectList list = response.get();
                 response.freeBuffers();
 
-                ObjectSet objectList = new ObjectSet(list.getObject_list_type(), 0, list.getObject_list()
+                ObjectSet objectList = new ObjectSet(list.getStripeWidth(), list.getFirstObjectNo(), list.getSet()
                                 .array());
                 objects += objectList.size();
             }
@@ -139,8 +139,10 @@ class FullReplicaReader extends Reader {
             } else
                 completedReplicas.remove(raf.getCurrentlyUsedReplica());
 
+            long throughput = (timeRequiredForReading == 0) ? (1024 / 1)
+                    : (1024 / timeRequiredForReading);
             // monitor throughput
-            Monitoring.monitorThroughput(Thread.currentThread().getName(), filesize, timeRequiredForReading);
+            super.monitoring.putAverageLong(MONITORING_KEY_THROUGHPUT, throughput); // byte/ms
         } finally {
             if (originalFile != null)
                 originalFile.close();

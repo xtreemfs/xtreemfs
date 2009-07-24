@@ -144,7 +144,7 @@ public class StorageLayoutTest extends TestCase {
                 StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1), 0, new StringSet()));// new RAID0(64, 1);
 
         assertFalse(layout.fileExists(fileId));
-        assertEquals(0, layout.getObjectList(fileId).size());
+        assertEquals(0, layout.getObjectSet(fileId).size());
 
         ReusableBuffer data = BufferPool.allocate(64);
         for (int i = 0; i < 64; i++) {
@@ -160,7 +160,7 @@ public class StorageLayoutTest extends TestCase {
         }
         BufferPool.free(data);
 
-        ObjectSet objectList = layout.getObjectList(fileId);
+        ObjectSet objectList = layout.getObjectSet(fileId);
         // check
         ObjectSet objectNosList = new ObjectSet(1, 0, objectNos.length);
         for (long object : objectNos)

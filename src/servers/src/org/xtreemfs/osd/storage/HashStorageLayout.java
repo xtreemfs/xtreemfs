@@ -520,8 +520,8 @@ public class HashStorageLayout extends StorageLayout {
     }
 
     @Override
-    public ObjectSet getObjectList(String fileId) {
-        ObjectSet objectList;
+    public ObjectSet getObjectSet(String fileId) {
+        ObjectSet objectSet;
 
         File fileDir = new File(generateAbsoluteFilePath(fileId));
         if (fileDir.exists()) {
@@ -534,15 +534,15 @@ public class HashStorageLayout extends StorageLayout {
                         return true;
                 }
             });
-            objectList = new ObjectSet(objs.length);
+            objectSet = new ObjectSet(objs.length);
 
             for (int i = 0; i < objs.length; i++) {
-                objectList.add(parseFileName(objs[i]).objNo);
+                objectSet.add(parseFileName(objs[i]).objNo);
             }
         } else
-            objectList = new ObjectSet(0);
+            objectSet = new ObjectSet(0);
             
-        return objectList;
+        return objectSet;
     }
 
     private String generateAbsoluteFilePath(String fileId) {

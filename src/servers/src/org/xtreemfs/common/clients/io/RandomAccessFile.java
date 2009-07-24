@@ -247,10 +247,6 @@ public class RandomAccessFile implements ObjectStore {
     
         RPCResponse<ObjectData> response = null;
     
-        // FIXME: only for debugging
-        Logging.logMessage(Logging.LEVEL_DEBUG, Category.tool, this, "available OSDs for reading object %d from file %s: %s",
-                objectNo, fileId, xLoc.getOSDsForObject(objectNo).toString());
-
         int size = 0;
         ObjectData data = null;
         ReusableBuffer buffer = null;
@@ -263,9 +259,9 @@ public class RandomAccessFile implements ObjectStore {
             // get OSD
             ServiceUUID osd = replica.getOSDForObject(objectNo);
             try {
-                // FIXME: only for debugging
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.tool, this, "read object %d from file %s from OSD %s",
-                        objectNo, fileId, osd);
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.tool, this,
+                            "%s:%d - read object from OSD %s", objectNo, fileId, osd);
 
                 response = osdClient.read(osd.getAddress(), fileId, fileCredentials, objectNo, 0,
                         offset, length);
@@ -282,9 +278,6 @@ public class RandomAccessFile implements ObjectStore {
                 if (data.getZero_padding() == 0) {
                     buffer = data.getData();
                 } else {
-                    // FIXME: only for debugging
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.tool, this, "pad zeros to object %d from file %s",
-                            objectNo, fileId);
                     final int dataSize = data.getData().capacity();
                     if (data.getData().enlarge(dataSize + data.getZero_padding())) {
                         data.getData().position(dataSize);
@@ -557,7 +550,7 @@ public class RandomAccessFile implements ObjectStore {
                 // set filesize on mrc
                 forceFileSize(filesize);
 
-                // TODO: maybe request all OSDs to inform them that the file is read-only now
+                // TODO: maybe request all OSDs to inform them that the file is read-only now???
 
                 forceFileCredentialsUpdate(translateMode("r"));
             } else {
@@ -584,7 +577,7 @@ public class RandomAccessFile implements ObjectStore {
      * adds a replica for this file
      * @param osds
      * @param spPolicy
-     * @param replicationFlags TODO
+     * @param replicationFlags
      * @throws Exception
      */
     public void addReplica(List<ServiceUUID> osds, StripingPolicy spPolicy, int replicationFlags) throws Exception {

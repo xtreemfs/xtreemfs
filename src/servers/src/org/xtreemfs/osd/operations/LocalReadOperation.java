@@ -132,10 +132,8 @@ public final class LocalReadOperation extends OSDOperation {
                 serialized = result.getSerializedBitSet();
                 objectSetBuffer = ReusableBuffer.wrap(serialized);
 
-                // TODO: set "is complete" flag correctly
-                // TODO: interface must be changed and then this must be adapted
                 ObjectList objList = new ObjectList(objectSetBuffer, result.getStripeWidth(),
-                        false);
+                        result.getFirstObjectNo());
                 readFinish(rq, args, data, objList);
             } catch (IOException e) {
                 rq.sendInternalServerError(e);
@@ -148,11 +146,9 @@ public final class LocalReadOperation extends OSDOperation {
         ObjectData data = null;
         // send raw data
         if (result.getStatus() == ObjectStatus.EXISTS) {
-            // TODO: better implementation
             final boolean isRangeRequested = (args.getOffset() > 0)
                     || (args.getLength() < result.getStripeSize());
             if (isRangeRequested) {
-                // FIXME: check if implementation delivers only raw data
                 data = result.getObjectData(true, (int) args.getOffset(), (int) args.getLength());
             } else {
                 data = new ObjectData(0, result.isChecksumInvalidOnOSD(), 0, result.getData());
@@ -170,7 +166,7 @@ public final class LocalReadOperation extends OSDOperation {
 
     public void sendResponse(OSDRequest rq, ObjectData result, ObjectList objectList) {
         ObjectListSet set = new ObjectListSet();
-        if (objectList != null && objectList.getObject_list().limit() != 0)
+        if (objectList != null && objectList.getSet().limit() != 0)
             set.add(objectList);
 
         InternalReadLocalResponse readLocalResponse = new InternalReadLocalResponse(result, set);

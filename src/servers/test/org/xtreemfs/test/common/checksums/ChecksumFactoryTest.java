@@ -29,7 +29,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -44,7 +43,6 @@ import org.junit.Before;
 import org.xtreemfs.common.checksums.ChecksumAlgorithm;
 import org.xtreemfs.common.checksums.ChecksumFactory;
 import org.xtreemfs.common.checksums.ChecksumProvider;
-import org.xtreemfs.common.checksums.algorithms.SDBM;
 import org.xtreemfs.common.checksums.provider.JavaChecksumProvider;
 import org.xtreemfs.common.logging.Logging;
 
@@ -128,8 +126,8 @@ public class ChecksumFactoryTest extends TestCase {
 //	}
 
 	/**
-	 * @param algorithm TODO
-	 * @param returnAlgorithm TODO
+	 * @param algorithm
+	 * @param returnAlgorithm
 	 * @return
 	 * @throws NoSuchAlgorithmException
 	 */
@@ -144,7 +142,7 @@ public class ChecksumFactoryTest extends TestCase {
 	}
 
 	/**
-	 * @param algorithm TODO
+	 * @param algorithm
 	 * @return
 	 * @throws NoSuchAlgorithmException
 	 */
@@ -207,11 +205,9 @@ public class ChecksumFactoryTest extends TestCase {
 					long xtreemfsValue = computeXtreemfsChecksum("Adler32", true);
 					return xtreemfsValue;
 				} catch (NoSuchAlgorithmException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 					return 0l;
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 					return 0l;
 				}
@@ -252,11 +248,9 @@ public class ChecksumFactoryTest extends TestCase {
 					}
 					return values;
 				} catch (NoSuchAlgorithmException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 					return null;
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 					return null;
 				}
@@ -277,7 +271,7 @@ public class ChecksumFactoryTest extends TestCase {
 	 * and returns the results of the computations
 	 *
 	 * @param THREADS
-	 * @param computation TODO
+	 * @param computation
 	 * @return a list of futures, which contain the results of the computations
 	 * @throws InterruptedException
 	 */

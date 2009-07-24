@@ -37,6 +37,7 @@ import org.xtreemfs.interfaces.InternalReadLocalResponse;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.ObjectList;
+import org.xtreemfs.interfaces.ObjectListSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
@@ -201,9 +202,12 @@ public class OSDClient extends ONCRPCClient {
 
     public RPCResponse<InternalReadLocalResponse> internal_read_local(InetSocketAddress server,
             String file_id, FileCredentials credentials, long object_number, long object_version,
-            long offset, long length, boolean attachObjectList) {
+            long offset, long length, boolean attachObjectList, ObjectListSet requiredObjects) {
+        if (requiredObjects == null)
+            requiredObjects = new ObjectListSet();
+
         xtreemfs_internal_read_localRequest rq = new xtreemfs_internal_read_localRequest(credentials,
-                file_id, object_number, object_version, offset, length, attachObjectList);
+                file_id, object_number, object_version, offset, length, attachObjectList, requiredObjects);
 
         RPCResponse<InternalReadLocalResponse> r = sendRequest(server, rq.getTag(), rq,
                 new RPCResponseDecoder<InternalReadLocalResponse>() {

@@ -45,7 +45,7 @@ public class SequentialStrategy extends TransferStrategy {
     /**
      * identifies the sequential strategy in replication flags
      */
-    public static final int             REPLICATION_FLAG = Constants.REPL_FLAG_STRATEGY_SIMPLE;
+    public static final int             REPLICATION_FLAG = Constants.REPL_FLAG_STRATEGY_SEQUENTIAL;
 
     protected SequentialObjectSelection objectSelection;
     protected SequentialOSDSelection    osdSelection;

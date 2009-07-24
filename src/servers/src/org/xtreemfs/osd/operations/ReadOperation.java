@@ -254,7 +254,6 @@ public final class ReadOperation extends OSDOperation {
                 rq.sendInternalServerError(error);
             }
         } else {
-            // TODO: check implementation!
             try {
                 // replication always delivers full objects => cut data
                 if (args.getOffset() > 0 || args.getLength() < result.getStripeSize()) {

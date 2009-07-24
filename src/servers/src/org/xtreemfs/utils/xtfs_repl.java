@@ -185,7 +185,7 @@ public class xtfs_repl {
     }
 
     /**
-     * @param sslOptions TODO
+     * @param sslOptions
      * @throws IOException
      * @throws InterruptedException
      * @throws ONCRPCException
@@ -591,7 +591,6 @@ public class xtfs_repl {
                 timeSync.waitForShutdown();
             }
         } catch (Exception e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }

@@ -299,5 +299,5 @@ public abstract class StorageLayout {
      * @param fileId
      * @return null, if file does not exist, otherwise objectList
      */
-    public abstract ObjectSet getObjectList(String fileId);
+    public abstract ObjectSet getObjectSet(String fileId);
 }

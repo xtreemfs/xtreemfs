@@ -83,8 +83,8 @@ public class ReplicationStage extends Stage {
     /**
      * Checks the response from a requested replica.
      * Only for internal use. 
-     * @param usedOSD TODO
-     * @param error TODO
+     * @param usedOSD
+     * @param error
      */
     public void internalObjectFetched(String fileId, long objectNo, ServiceUUID usedOSD, ObjectData data,
             OSDException error) {

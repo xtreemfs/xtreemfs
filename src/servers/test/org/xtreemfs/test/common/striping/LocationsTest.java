@@ -37,7 +37,6 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.common.xloc.XLocations;
-import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
@@ -112,23 +111,31 @@ public class LocationsTest extends TestCase {
         // set none
         r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
         assertFalse(r.isComplete());
-        assertFalse(r.isPartialReplica());
+        assertTrue(r.isPartialReplica());
         assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
         assertFalse(ReplicationFlags.isSequentialStrategy(r.getTransferStrategyFlags()));
 
-        // set full
-        replicationFlags = Constants.REPL_FLAG_IS_FULL;
+        // set complete
+        replicationFlags = ReplicationFlags.setReplicaIsComplete(0);
         r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
         assertTrue(r.isComplete());
-        assertFalse(r.isPartialReplica());
+        assertTrue(r.isPartialReplica());
         assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
         assertFalse(ReplicationFlags.isSequentialStrategy(r.getTransferStrategyFlags()));
 
-        // set filledOnDemand and RandomStrategy
-        replicationFlags = Constants.REPL_FLAG_FILL_ON_DEMAND | Constants.REPL_FLAG_STRATEGY_RANDOM;
+        // set partial replica and RandomStrategy
+        replicationFlags = ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0));
         r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
         assertFalse(r.isComplete());
         assertTrue(r.isPartialReplica());
+        assertTrue(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
+        assertFalse(ReplicationFlags.isSequentialStrategy(r.getTransferStrategyFlags()));
+
+        // set full replica and RandomStrategy
+        replicationFlags = ReplicationFlags.setFullReplica(ReplicationFlags.setRandomStrategy(0));
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
+        assertFalse(r.isComplete());
+        assertFalse(r.isPartialReplica());
         assertTrue(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
         assertFalse(ReplicationFlags.isSequentialStrategy(r.getTransferStrategyFlags()));
     }

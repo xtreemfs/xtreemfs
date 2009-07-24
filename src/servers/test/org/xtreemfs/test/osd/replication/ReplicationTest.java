@@ -39,6 +39,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
+import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Constants;
@@ -52,7 +53,6 @@ import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
-import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.client.OSDClient;
@@ -151,9 +151,11 @@ public class ReplicationTest extends TestCase {
     private void setReplicated(long filesize, int indexOfFullReplica) {
         // set replication flags
         for(Replica r : xLoc.getXLocSet().getReplicas())
-            r.setReplication_flags(Constants.REPL_FLAG_FILL_ON_DEMAND | Constants.REPL_FLAG_STRATEGY_RANDOM);
+            r.setReplication_flags(ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0)));
         // set first replica full
-        xLoc.getXLocSet().getReplicas().get(indexOfFullReplica).setReplication_flags(Constants.REPL_FLAG_IS_FULL);
+        xLoc.getXLocSet().getReplicas().get(indexOfFullReplica).setReplication_flags(
+                ReplicationFlags.setReplicaIsComplete(xLoc.getXLocSet().getReplicas().get(indexOfFullReplica)
+                        .getReplication_flags()));
         // set read-only and filesize
         xLoc.getXLocSet().setRepUpdatePolicy(Constants.REPL_UPDATE_PC_RONLY);
         xLoc.getXLocSet().setRead_only_file_size(filesize);
@@ -349,18 +351,18 @@ public class ReplicationTest extends TestCase {
 
         // read data
         RPCResponse<InternalReadLocalResponse> r2 = client.internal_read_local(serverID.getAddress(), fileID,
-                fcred, objectNo, 0, 0, stripeSize, false);
+                fcred, objectNo, 0, 0, stripeSize, false, null);
         InternalReadLocalResponse resp2 = r2.get();
 
         assertTrue(Arrays.equals(data.array(), resp2.getData().getData().array()));
-        assertEquals(0, resp2.getObject_list().size());
+        assertEquals(0, resp2.getObject_set().size());
 
         r2.freeBuffers();
         BufferPool.free(resp2.getData().getData());
         
         // read only part of data
         r2 = client.internal_read_local(serverID.getAddress(), fileID,
-                fcred, objectNo, 0, stripeSize/4, stripeSize/2, true);
+                fcred, objectNo, 0, stripeSize/4, stripeSize/2, true, null);
         resp2 = r2.get();
 
         int j = stripeSize / 4;
@@ -370,12 +372,11 @@ public class ReplicationTest extends TestCase {
         for (int i = 0; i < responseData.length; i++) {
             assertEquals(dataBytes[j++], responseData[i]);
         }
-        assertEquals(1, resp2.getObject_list().size());
+        assertEquals(1, resp2.getObject_set().size());
         
         // check object list
-        ObjectList objectList = resp2.getObject_list().get(0);
-        assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        ObjectSet list = new ObjectSet(objectList.getObject_list_type(), 0, objectList.getObject_list().array());
+        ObjectList objectList = resp2.getObject_set().get(0);
+        ObjectSet list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet().array());
         assertNotNull(list);
         assertEquals(1, list.size());
         assertTrue(list.contains(objectNo));
@@ -393,12 +394,12 @@ public class ReplicationTest extends TestCase {
 
         // read object, before one has been written
         RPCResponse<InternalReadLocalResponse> r = client.internal_read_local(xLoc.getOSDsForObject(objectNo)
-                .get(0).getAddress(), fileID, fcred, objectNo, 0, 0, stripeSize, true);
+                .get(0).getAddress(), fileID, fcred, objectNo, 0, 0, stripeSize, true, null);
         InternalReadLocalResponse resp = r.get();
         assertEquals(0, resp.getData().getData().limit());
-        assertEquals(1, resp.getObject_list().size());
-        ObjectSet list = new ObjectSet(resp.getObject_list().get(0).getObject_list_type(), 0, resp
-                        .getObject_list().get(0).getObject_list().array());
+        assertEquals(1, resp.getObject_set().size());
+        ObjectSet list = new ObjectSet(resp.getObject_set().get(0).getStripeWidth(), resp.getObject_set()
+                .get(0).getFirstObjectNo(), resp.getObject_set().get(0).getSet().array());
         assertEquals(0, list.size());
         r.freeBuffers();
 
@@ -417,12 +418,12 @@ public class ReplicationTest extends TestCase {
 
         // read data
         r = client.internal_read_local(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), fileID, fcred,
-                objectNo, 0, 0, stripeSize, false);
+                objectNo, 0, 0, stripeSize, false, null);
         resp = r.get();
         assertTrue(Arrays.equals(data.array(), resp.getData().getData().array()));
         r.freeBuffers();
         r = client.internal_read_local(xLoc.getOSDsForObject(objectNo + 2).get(0).getAddress(), fileID,
-                fcred, objectNo + 2, 0, 0, stripeSize, false);
+                fcred, objectNo + 2, 0, 0, stripeSize, false, null);
         resp = r.get();
         assertTrue(Arrays.equals(data.array(), resp.getData().getData().array()));
         r.freeBuffers();
@@ -430,7 +431,7 @@ public class ReplicationTest extends TestCase {
 
         // read higher object than has been written (EOF)
         r = client.internal_read_local(xLoc.getOSDsForObject(objectNo + 3).get(0).getAddress(), fileID,
-                fcred, objectNo + 3, 0, 0, stripeSize, false);
+                fcred, objectNo + 3, 0, 0, stripeSize, false, null);
         resp = r.get();
         assertEquals(0, resp.getData().getData().limit());
         r.freeBuffers();
@@ -438,7 +439,7 @@ public class ReplicationTest extends TestCase {
 
         // read object that has not been written (hole)
         r = client.internal_read_local(xLoc.getOSDsForObject(objectNo + 1).get(0).getAddress(), fileID,
-                fcred, objectNo + 1, 0, 0, stripeSize, false);
+                fcred, objectNo + 1, 0, 0, stripeSize, false, null);
         resp = r.get();
         assertEquals(0, resp.getData().getData().limit());
         r.freeBuffers();
@@ -468,8 +469,7 @@ public class ReplicationTest extends TestCase {
                 .getAddress(), fileID, fcred);
         ObjectList objectList = r.get();
         r.freeBuffers();
-        assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        ObjectSet list = new ObjectSet(objectList.getObject_list_type(), 0, objectList.getObject_list().array());
+        ObjectSet list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet().array());
         assertEquals(0, list.size());
 
         // write object to replica 1 : OSD 1
@@ -482,8 +482,7 @@ public class ReplicationTest extends TestCase {
         r = client.internal_getObjectList(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), fileID, fcred);
         objectList = r.get();
         r.freeBuffers();
-        assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        list = new ObjectSet(objectList.getObject_list_type(), 0, objectList.getObject_list().array());
+        list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet().array());
         assertEquals(1, list.size());
         assertTrue(list.contains(objectNo));
 
@@ -509,8 +508,7 @@ public class ReplicationTest extends TestCase {
         r = client.internal_getObjectList(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), fileID, fcred);
         objectList = r.get();
         r.freeBuffers();
-        assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        list = new ObjectSet(objectList.getObject_list_type(), 0, objectList.getObject_list().array());
+        list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet().array());
         assertEquals(2, list.size());
         assertTrue(list.contains(objectNo));
         assertTrue(list.contains(objectNo + 3));
@@ -520,8 +518,7 @@ public class ReplicationTest extends TestCase {
                 fcred);
         objectList = r.get();
         r.freeBuffers();
-        assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        list = new ObjectSet(objectList.getObject_list_type(), 0, objectList.getObject_list().array());
+        list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet().array());
         assertEquals(1, list.size());
         assertTrue(list.contains(objectNo + 1));
 
@@ -530,8 +527,7 @@ public class ReplicationTest extends TestCase {
                 fcred);
         objectList = r.get();
         r.freeBuffers();
-        assertTrue(objectList.getObject_list_type() == OSDInterface.OBJECT_LIST_TYPE_JAVA_LONG_ARRAY);
-        list = new ObjectSet(objectList.getObject_list_type(), 0, objectList.getObject_list().array());
+        list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet().array());
         assertEquals(1, list.size());
         assertTrue(list.contains(objectNo + 2));
     }

@@ -327,8 +327,6 @@ public class StressTest {
         timeSync = TimeSync.initialize(dirClient, 60 * 1000, 50);
         timeSync.waitForStartup();
         
-        Monitoring.start();
-
         UUIDResolver.start(dirClient, 1000, 10 * 10 * 1000);
 
         // write filedata to disk

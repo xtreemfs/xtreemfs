@@ -36,19 +36,19 @@ import org.xtreemfs.osd.replication.transferStrategies.SequentialStrategy;
  */
 public class ReplicationFlags {
     public static int setReplicaIsComplete(int flags) {
-        return flags | Constants.REPL_FLAG_IS_FULL;
+        return flags | Constants.REPL_FLAG_IS_COMPLETE;
     }
 
     public static int setReplicaIsNotComplete(int flags) {
-        return flags ^ Constants.REPL_FLAG_IS_FULL;
+        return flags & ~Constants.REPL_FLAG_IS_COMPLETE;
     }
 
     public static int setPartialReplica(int flags) {
-        return flags | Constants.REPL_FLAG_FILL_ON_DEMAND;
+        return flags & ~Constants.REPL_FLAG_FULL_REPLICA;
     }
 
     public static int setFullReplica(int flags) {
-        return flags ^ Constants.REPL_FLAG_FILL_ON_DEMAND;
+        return flags | Constants.REPL_FLAG_FULL_REPLICA;
     }
 
     public static int setRandomStrategy(int flags) {
@@ -79,15 +79,15 @@ public class ReplicationFlags {
     }
 
     public static boolean isReplicaComplete(int flags) {
-        return (flags & Constants.REPL_FLAG_IS_FULL) == Constants.REPL_FLAG_IS_FULL;
+        return (flags & Constants.REPL_FLAG_IS_COMPLETE) == Constants.REPL_FLAG_IS_COMPLETE;
     }
 
     public static boolean isPartialReplica(int flags) {
-        return (flags & Constants.REPL_FLAG_FILL_ON_DEMAND) == Constants.REPL_FLAG_FILL_ON_DEMAND;
+        return (flags & Constants.REPL_FLAG_FULL_REPLICA) == 0;
     }
 
     public static boolean isFullReplica(int flags) {
-        return (flags & Constants.REPL_FLAG_FILL_ON_DEMAND) == 0;
+        return (flags & Constants.REPL_FLAG_FULL_REPLICA) == Constants.REPL_FLAG_FULL_REPLICA;
     }
 
     public static boolean isRandomStrategy(int flags) {

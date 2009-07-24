@@ -262,8 +262,9 @@ public class RandomAccessFileTest extends TestCase {
         replica1 = replica1.subList(0, randomAccessFile.getStripingPolicy().getWidth());
 
         // add a replica
-        randomAccessFile.addReplica(replica1, randomAccessFile.getStripingPolicy(), Constants.REPL_FLAG_STRATEGY_RANDOM | Constants.REPL_FLAG_FILL_ON_DEMAND);
-        
+        randomAccessFile.addReplica(replica1, randomAccessFile.getStripingPolicy(), ReplicationFlags
+                .setPartialReplica(ReplicationFlags.setRandomStrategy(0)));
+       
         // check
         assertEquals(2, randomAccessFile.getCredentials().getXlocs().getReplicas().size());
         // TODO: check if the correct OSDs are in the list as a replica
@@ -273,7 +274,8 @@ public class RandomAccessFileTest extends TestCase {
         replica2 = replica2.subList(0, randomAccessFile.getStripingPolicy().getWidth());
 
         // add a second replica
-        randomAccessFile.addReplica(replica2, randomAccessFile.getStripingPolicy(), Constants.REPL_FLAG_STRATEGY_SIMPLE);
+        randomAccessFile.addReplica(replica2, randomAccessFile.getStripingPolicy(), ReplicationFlags
+                .setFullReplica(ReplicationFlags.setSequentialStrategy(0)));
         // check
         // check
         assertEquals(3, randomAccessFile.getCredentials().getXlocs().getReplicas().size());

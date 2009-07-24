@@ -37,6 +37,7 @@ import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
+import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
@@ -460,8 +461,7 @@ public class MRCHelper {
                 for (int i = 0; i < replicas.length; i++)
                     replicas[i] = xLoc.getReplica(i);
                 
-                replicas[0].setReplicationFlags(replicas[0].getReplicationFlags()
-                    | Constants.REPL_FLAG_IS_FULL);
+                replicas[0].setReplicationFlags(ReplicationFlags.setReplicaIsComplete(replicas[0].getReplicationFlags()));
                 
                 XLocList newXLoc = sMan.createXLocList(replicas, readOnly ? Constants.REPL_UPDATE_PC_RONLY
                     : Constants.REPL_UPDATE_PC_NONE, xLoc.getVersion());

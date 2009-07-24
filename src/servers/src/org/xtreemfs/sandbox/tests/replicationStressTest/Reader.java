@@ -31,6 +31,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.monitoring.NumberMonitoring;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 
 /**
@@ -38,7 +39,9 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
  * 08.06.2009
  */
 abstract class Reader implements Runnable {
-    static final int                               SLEEP_TIME = 1000 * 1; // sleep 1 second
+    static final int                               SLEEP_TIME                = 1000 * 1;    // sleep 1 second
+
+    public static final String                     MONITORING_KEY_THROUGHPUT = "throughput";
 
     protected final RPCNIOSocketClient             client;
     protected InetSocketAddress                    mrcAddress;
@@ -47,8 +50,9 @@ abstract class Reader implements Runnable {
     protected final CopyOnWriteArrayList<TestFile> fileList;
     protected Random                               random;
 
-    public Reader(CopyOnWriteArrayList<TestFile> fileList,
-            Random random, int threadNo) throws Exception {
+    protected NumberMonitoring                     monitoring;
+
+    public Reader(CopyOnWriteArrayList<TestFile> fileList, Random random, int threadNo) throws Exception {
         this.mrcAddress = TestFile.mrcAddress;
         this.fileList = fileList;
         this.random = random;
@@ -57,6 +61,8 @@ abstract class Reader implements Runnable {
         client = new RPCNIOSocketClient(null, 10000, 5 * 60 * 1000);
         client.start();
         client.waitForStartup();
+        
+        monitoring = new NumberMonitoring();
     }
 
     protected abstract void readFile(TestFile file) throws Exception;
@@ -89,12 +95,13 @@ abstract class Reader implements Runnable {
                 if (++fileCounter % 100 == 0) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.test, this, "%s has read %d files.",
                             Thread.currentThread().getName(), fileCounter);
-                    Monitoring.printThroughput(Thread.currentThread().getName());
-                    Monitoring.resetEntry(Thread.currentThread().getName());
+                    System.out.println(Thread.currentThread().getName() + ": "
+                            + (monitoring.get(MONITORING_KEY_THROUGHPUT) * 1000 / 1024) + "KB/s");
+                    monitoring.remove(MONITORING_KEY_THROUGHPUT); // reset
                 }
 
                 // sleep some time, so the OSDs will not overload
-                Thread.sleep(SLEEP_TIME);
+             Thread.sleep(SLEEP_TIME);
             } catch (InterruptedException e) {
                 break;
             } catch (Exception e) {

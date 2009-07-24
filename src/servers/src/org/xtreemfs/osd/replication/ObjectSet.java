@@ -111,7 +111,6 @@ public class ObjectSet implements Iterable<Long> {
 
     public ObjectSet(int stripeWidth, int firstObjectNo, byte[] serializedBitSet) throws ClassCastException,
             IOException, ClassNotFoundException {
-        // TODO: if the set is too large, the set is compressed
         this.objects = deserializeAndDecompress(serializedBitSet);
 
         this.stripeWidth = stripeWidth;
@@ -299,7 +298,6 @@ public class ObjectSet implements Iterable<Long> {
     }
 
     public byte[] getSerializedBitSet() throws IOException {
-        // TODO: compress if the set is too large
         return serializeAndCompress(objects);
     }
 

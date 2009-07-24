@@ -575,7 +575,7 @@ public class StorageThread extends Stage {
         final GetObjectListCallback cback = (GetObjectListCallback) rq.getCallback();
         final String fileId = (String) rq.getArgs()[0];
         
-        ObjectSet objectSet = layout.getObjectList(fileId);
+        ObjectSet objectSet = layout.getObjectSet(fileId);
 
         cback.getObjectSetComplete(objectSet, null);
     }

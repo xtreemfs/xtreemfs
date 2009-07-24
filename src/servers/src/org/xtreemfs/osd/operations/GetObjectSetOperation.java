@@ -44,14 +44,14 @@ import org.xtreemfs.osd.stages.StorageStage.GetObjectListCallback;
  *
  * <br>15.06.2009
  */
-public class GetObjectListOperation extends OSDOperation {
+public class GetObjectSetOperation extends OSDOperation {
     final int procId;
 
     final String sharedSecret;
 
     final ServiceUUID localUUID;
 
-    public GetObjectListOperation(OSDRequestDispatcher master) {
+    public GetObjectSetOperation(OSDRequestDispatcher master) {
         super(master);
         xtreemfs_internal_get_object_listRequest rq = new xtreemfs_internal_get_object_listRequest();
         procId = xtreemfs_internal_get_object_listRequest.TAG;
@@ -96,10 +96,8 @@ public class GetObjectListOperation extends OSDOperation {
                 serialized = result.getSerializedBitSet();
                 objectSetBuffer = ReusableBuffer.wrap(serialized);
 
-                // TODO: set "is complete" flag correctly
-                // TODO: interface must be changed and then this must be adapted
                 ObjectList objList = new ObjectList(objectSetBuffer, result.getStripeWidth(),
-                        false);
+                        result.getFirstObjectNo());
                 sendResponse(rq, objList);
             } catch (IOException e) {
                 rq.sendInternalServerError(e);
