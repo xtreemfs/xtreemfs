@@ -145,8 +145,8 @@ public:
       else if ( deserialize_ret > 0 )
       {
         if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-          client.log->getStream( Log::LOG_INFO ) << "yield::Client: partially deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", reading again.";
-        AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( 1024 ), client, request, response );
+          client.log->getStream( Log::LOG_INFO ) << "yield::Client: partially deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", reading again with " << deserialize_ret << " byte buffer.";
+        AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( deserialize_ret ), client, request, response );
         client.operation_timer_queue->addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
         get_socket()->aio_read( aio_read_control_block );
       }
@@ -1591,9 +1591,9 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker( auto_
 #else
     record_fragment_marker = Machine::ntohl( record_fragment_marker );
 #endif
-    if ( ( record_fragment_marker & ( 1 << 31 ) ) == ( 1 << 31 ) ) // The highest bit set = last record fragment
+    if ( ( record_fragment_marker & ( 1 << 31UL ) ) == ( 1 << 31UL ) ) // The highest bit set = last record fragment
     {
-      record_fragment_length = record_fragment_marker ^ ( 1 << 31 );
+      record_fragment_length = record_fragment_marker ^ ( 1 << 31UL );
       if ( record_fragment_length < 32 * 1024 * 1024 )
         return 0;
       else
