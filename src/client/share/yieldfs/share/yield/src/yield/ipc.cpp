@@ -1,4 +1,4 @@
-// Revision: 1692
+// Revision: 1699
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -2647,12 +2647,14 @@ Socket::~Socket()
 void Socket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
 {
   aio_read_control_block->set_socket( incRef() );
+  if ( aio_read_control_block->get_buffer()->size() != 0 )
+    DebugBreak();
   if ( aio_queue != NULL )
   {
 #ifdef _WIN32
     auto_Buffer buffer( aio_read_control_block->get_buffer() );
     WSABUF wsabuf[1];
-    wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) );
+    wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) ) + buffer->size();
     wsabuf[0].len = buffer->capacity() - buffer->size();
     DWORD dwNumberOfBytesReceived, dwFlags = 0;
     if ( ::WSARecv( socket_, wsabuf, 1, &dwNumberOfBytesReceived, &dwFlags, *aio_read_control_block, NULL ) == 0 ||
@@ -2863,9 +2865,9 @@ Socket::operator int() const
 }
 ssize_t Socket::read( auto_Buffer buffer )
 {
-  ssize_t read_ret = read( static_cast<void*>( *buffer ), buffer->capacity() - buffer->size() );
+  ssize_t read_ret = read( static_cast<char*>( static_cast<void*>( *buffer ) ) + buffer->size(), buffer->capacity() - buffer->size() );
   if ( read_ret > 0 )
-    buffer->put( static_cast<void*>( *buffer ), read_ret );
+    buffer->put( NULL, read_ret );
   return read_ret;
 }
 ssize_t Socket::read( void* buffer, size_t buffer_len )
