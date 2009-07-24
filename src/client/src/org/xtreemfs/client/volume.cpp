@@ -48,7 +48,7 @@ Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t fla
   YIELD::auto_Object<YIELD::URI> mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
   mrc_proxy = MRCProxy::create( *mrc_uri, aio_queue, proxy_flags, log, 5 * NS_IN_S, ssl_context );
   stage_group->createStage( mrc_proxy );
-  osd_proxy_mux = OSDProxyMux::create( dir_proxy, aio_queue, proxy_flags, log, 1 * NS_IN_S, ssl_context, stage_group );
+  osd_proxy_mux = OSDProxyMux::create( dir_proxy, aio_queue, proxy_flags, log, 10 * NS_IN_S, ssl_context, stage_group );
   stage_group->createStage( osd_proxy_mux );
 }
 

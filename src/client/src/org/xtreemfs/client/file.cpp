@@ -249,6 +249,19 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         }
       }
     }
+
+#ifdef _DEBUG
+    if ( static_cast<size_t>( ret ) > size ) 
+      YIELD::DebugBreak();
+
+    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+    {
+      log->getStream( YIELD::Log::LOG_INFO ) << 
+        "org::xtreemfs::client::File: read " << ret <<
+        " bytes from file " << file_credentials.get_xcap().get_file_id() <<
+        " in total, returning from read().";           
+    }
+#endif
   }
   catch ( ProxyExceptionResponse& proxy_exception_response )
   {
