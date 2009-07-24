@@ -26,9 +26,9 @@ module org # 1000
       struct ObjectList # 55
       {
         // serialized datatype
-        buffer object_list;
-        uint32_t object_list_type;
-        boolean is_complete;
+        buffer set;
+        uint32_t stripeWidth;
+        uint32_t firstObjectNo;
       };
 
       typedef sequence<ObjectList> ObjectListSet # 56;
@@ -37,7 +37,7 @@ module org # 1000
       {
         ObjectData data;
         // serialized datatype
-        ObjectListSet object_list;
+        ObjectListSet object_set;
       };
 
       struct VivaldiCoordinates # 53
@@ -54,9 +54,6 @@ module org # 1000
         const uint32_t DEFAULT_ONCRPC_PORT = 32640;
         const uint32_t DEFAULT_ONCRPCS_PORT = 32640;
         const uint32_t DEFAULT_HTTP_PORT = 30640; 
-
-        const uint32_t OBJECT_LIST_TYPE_JAVA_LONG_ARRAY = 1;
-        const uint32_t OBJECT_LIST_TYPE_BLOOM_FILTER = 2;
 
         // Exceptions
         exception ConcurrentModificationException # 6 { string stack_trace; };
@@ -83,10 +80,11 @@ module org # 1000
         void xtreemfs_cleanup_stop() #106;
 	
         InternalGmax xtreemfs_internal_get_gmax( FileCredentials file_credentials, string file_id ) # 100;
-        uint64_t xtreemfs_internal_get_file_size( FileCredentials file_credentials, string file_id ) # 104;
         void xtreemfs_internal_truncate( FileCredentials file_credentials, string file_id, uint64_t new_file_size, out OSDWriteResponse osd_write_response ) # 101;
-        InternalReadLocalResponse xtreemfs_internal_read_local( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length, boolean attachObjectList ) # 102;
-        ObjectList xtreemfs_internal_get_object_list( FileCredentials file_credentials, string file_id) # 110;
+        uint64_t xtreemfs_internal_get_file_size( FileCredentials file_credentials, string file_id ) # 104;
+
+        InternalReadLocalResponse xtreemfs_internal_read_local( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length, boolean attachObjectList, ObjectListSet requiredObjects) # 102;
+        ObjectList xtreemfs_internal_get_object_set( FileCredentials file_credentials, string file_id) # 110;
 
         void xtreemfs_ping( VivaldiCoordinates coordinates, out VivaldiCoordinates remote_coordinates ) #1001;
         void xtreemfs_shutdown() # 50;
