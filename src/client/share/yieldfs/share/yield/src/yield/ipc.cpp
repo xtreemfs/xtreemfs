@@ -147,12 +147,12 @@ public:
         }
         else if ( deserialize_ret > 0 )
         {
-          if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-            client.log->getStream( Log::LOG_INFO ) << "yield::Client: partially deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", reading again with " << deserialize_ret << " byte buffer.";
           auto_Buffer buffer( get_buffer() );
-          if ( buffer->capacity() - buffer->size() < static_cast<size_t>( deserialize_ret ) )
+//          if ( buffer->capacity() - buffer->size() < static_cast<size_t>( deserialize_ret ) )
             buffer = new HeapBuffer( deserialize_ret );
           // else re-use the same buffer
+          if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
+            client.log->getStream( Log::LOG_INFO ) << "yield::Client: partially deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", reading again with " << ( buffer->capacity() - buffer->size() ) << " byte buffer.";
           AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( buffer, client, request, response, get_socket() );
           TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
           get_socket()->aio_read( aio_read_control_block );
