@@ -1616,19 +1616,19 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker( auto_
 template <class ONCRPCMessageType>
 ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment( auto_Buffer buffer )
 {
-  size_t buffer_size = buffer->size() - buffer->position();
-  if ( buffer_size == record_fragment_length ) // Common case
+  size_t gettable_buffer_size = buffer->size() - buffer->position();
+  if ( gettable_buffer_size == record_fragment_length ) // Common case
   {
     record_fragment_buffer = buffer;
     XDRUnmarshaller xdr_unmarshaller( buffer );
     static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
     return 0;
   }
-  else if ( buffer_size < record_fragment_length )
+  else if ( gettable_buffer_size < record_fragment_length )
   {
     record_fragment_buffer = new HeapBuffer( record_fragment_length );
-    buffer->get( static_cast<void*>( *record_fragment_buffer ), buffer_size );
-    record_fragment_buffer->put( NULL, buffer_size );
+    buffer->get( static_cast<void*>( *record_fragment_buffer ), gettable_buffer_size );
+    record_fragment_buffer->put( NULL, gettable_buffer_size );
     return record_fragment_length - record_fragment_buffer->size();
   }
   else
@@ -1642,18 +1642,18 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment( auto_Buffer
 template <class ONCRPCMessageType>
 ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment( auto_Buffer buffer )
 {
-  size_t buffer_size = buffer->size();
+  size_t gettable_buffer_size = buffer->size() - buffer->position();
   size_t remaining_record_fragment_length = record_fragment_length - record_fragment_buffer->size();
-  if ( buffer_size < remaining_record_fragment_length )
+  if ( gettable_buffer_size < remaining_record_fragment_length )
   {
-    buffer->get( static_cast<char*>( *record_fragment_buffer ) + record_fragment_buffer->size(), buffer_size );
-    record_fragment_buffer->put( NULL, buffer_size );
+    buffer->get( static_cast<char*>( *record_fragment_buffer ) + record_fragment_buffer->size(), gettable_buffer_size );
+    record_fragment_buffer->put( NULL, gettable_buffer_size );
     return record_fragment_length - record_fragment_buffer->size();
   }
-  else if ( buffer_size == remaining_record_fragment_length )
+  else if ( gettable_buffer_size == remaining_record_fragment_length )
   {
-    buffer->get( static_cast<char*>( *record_fragment_buffer ) + record_fragment_buffer->size(), buffer_size );
-    record_fragment_buffer->put( NULL, buffer_size );
+    buffer->get( static_cast<char*>( *record_fragment_buffer ) + record_fragment_buffer->size(), gettable_buffer_size );
+    record_fragment_buffer->put( NULL, gettable_buffer_size );
     XDRUnmarshaller xdr_unmarshaller( record_fragment_buffer );
     static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
     return 0;
