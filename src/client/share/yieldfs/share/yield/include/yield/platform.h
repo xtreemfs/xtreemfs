@@ -1425,6 +1425,8 @@ namespace YIELD
 
   private:
     auto_Buffer buffer;
+
+    void read( void*, size_t );
   };
 };
 

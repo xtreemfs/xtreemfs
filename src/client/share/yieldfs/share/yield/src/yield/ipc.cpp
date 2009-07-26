@@ -1,4 +1,4 @@
-// Revision: 1706
+// Revision: 1708
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -12,6 +12,7 @@ using namespace YIELD;
 #pragma warning( disable: 4995 )
 #include <ws2tcpip.h>
 #pragma warning( pop )
+#define ECONNABORTED WSAECONNABORTED
 #define ETIMEDOUT WSAETIMEDOUT
 #endif
 template <class RequestType, class ResponseType>
@@ -132,31 +133,39 @@ public:
     {
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
         client.log->getStream( Log::LOG_INFO ) << "yield::Client: read " << bytes_transferred << " bytes from socket #" << static_cast<int>( *get_socket() ) << " for " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ".";
-      Socket::AIOReadControlBlock::onCompletion( bytes_transferred );
-      ssize_t deserialize_ret = response->deserialize( get_buffer() );
-      if ( deserialize_ret == 0 )
+      if ( bytes_transferred > 0 )
       {
-        if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-          client.log->getStream( Log::LOG_INFO ) << "yield::Client: successfully deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
-        request->respond( *response.release() );
-        client.idle_sockets.enqueue( get_socket().release() );
-      }
-      else if ( deserialize_ret > 0 )
-      {
-        if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-          client.log->getStream( Log::LOG_INFO ) << "yield::Client: partially deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", reading again with " << deserialize_ret << " byte buffer.";
-        AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( deserialize_ret ), client, request, response, get_socket() );
-        TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
-        get_socket()->aio_read( aio_read_control_block );
-      }
-      else
-      {
-        if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
+        Socket::AIOReadControlBlock::onCompletion( bytes_transferred );
+        ssize_t deserialize_ret = response->deserialize( get_buffer() );
+        if ( deserialize_ret == 0 )
+        {
+          if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
+            client.log->getStream( Log::LOG_INFO ) << "yield::Client: successfully deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
+          request->respond( *response.release() );
+          client.idle_sockets.enqueue( get_socket().release() );
+          return;
+        }
+        else if ( deserialize_ret > 0 )
+        {
+          if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
+            client.log->getStream( Log::LOG_INFO ) << "yield::Client: partially deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", reading again with " << deserialize_ret << " byte buffer.";
+          auto_Buffer buffer( get_buffer() );
+          if ( buffer->capacity() - buffer->size() < static_cast<size_t>( deserialize_ret ) )
+            buffer = new HeapBuffer( deserialize_ret );
+          // else re-use the same buffer
+          AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( buffer, client, request, response, get_socket() );
+          TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
+          get_socket()->aio_read( aio_read_control_block );
+          return;
+        }
+        else if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
           client.log->getStream( Log::LOG_INFO ) << "yield::Client: error deserializing " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
-        request->respond( *( new ExceptionResponse ) );
-        get_socket()->shutdown();
-        get_socket()->close();
       }
+      else if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
+        client.log->getStream( Log::LOG_INFO ) << "yield::Client: lost connection trying " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
+      request->respond( *( new ExceptionResponse( ECONNABORTED ) ) );
+      get_socket()->shutdown();
+      get_socket()->close();
     }
   }
   void onError( uint32_t error_code )
@@ -166,6 +175,8 @@ public:
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
         client.log->getStream( Log::LOG_INFO ) << "yield::Client: error reading " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       request->respond( *( new ExceptionResponse( error_code ) ) );
+      get_socket()->shutdown();
+      get_socket()->close();
     }
   }
 private:
@@ -1605,41 +1616,54 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker( auto_
 template <class ONCRPCMessageType>
 ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment( auto_Buffer buffer )
 {
-  size_t buffer_size = buffer->size(); // Use a temporary variable so we know the original buffer size after the get() in the else branch
-  if ( buffer_size >= record_fragment_length ) // Common case
+  size_t buffer_size = buffer->size() - buffer->position();
+  if ( buffer_size == record_fragment_length ) // Common case
   {
     record_fragment_buffer = buffer;
     XDRUnmarshaller xdr_unmarshaller( buffer );
     static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
     return 0;
   }
-  else
+  else if ( buffer_size < record_fragment_length )
   {
     record_fragment_buffer = new HeapBuffer( record_fragment_length );
     buffer->get( static_cast<void*>( *record_fragment_buffer ), buffer_size );
     record_fragment_buffer->put( NULL, buffer_size );
     return record_fragment_length - record_fragment_buffer->size();
   }
+  else
+  {
+#ifdef _DEBUG
+    DebugBreak();
+#endif
+    return -1;
+  }
 }
 template <class ONCRPCMessageType>
 ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment( auto_Buffer buffer )
 {
   size_t buffer_size = buffer->size();
-  size_t record_fragment_buffer_size = record_fragment_buffer->size();
-  if ( record_fragment_length - record_fragment_buffer_size <= buffer_size ) // Complete the record fragment
+  size_t remaining_record_fragment_length = record_fragment_length - record_fragment_buffer->size();
+  if ( buffer_size < remaining_record_fragment_length )
   {
-    buffer_size = record_fragment_length - record_fragment_buffer_size;
-    buffer->get( static_cast<void*>( *record_fragment_buffer ), buffer_size );
+    buffer->get( static_cast<char*>( *record_fragment_buffer ) + record_fragment_buffer->size(), buffer_size );
+    record_fragment_buffer->put( NULL, buffer_size );
+    return record_fragment_length - record_fragment_buffer->size();
+  }
+  else if ( buffer_size == remaining_record_fragment_length )
+  {
+    buffer->get( static_cast<char*>( *record_fragment_buffer ) + record_fragment_buffer->size(), buffer_size );
     record_fragment_buffer->put( NULL, buffer_size );
     XDRUnmarshaller xdr_unmarshaller( record_fragment_buffer );
     static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
     return 0;
   }
-  else
+  else // The buffer is larger than we need to fill the record fragment, logic error somewhere
   {
-    buffer->get( static_cast<void*>( *record_fragment_buffer ), buffer_size );
-    record_fragment_buffer->put( NULL, buffer_size );
-    return record_fragment_length - record_fragment_buffer->size();
+#ifdef _DEBUG
+    DebugBreak();
+#endif
+    return -1;
   }
 }
 template <class ONCRPCMessageType>
@@ -2647,7 +2671,7 @@ Socket::~Socket()
 void Socket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
 {
 #ifdef _DEBUG
-  if ( aio_read_control_block->get_buffer()->size() != 0 )
+  if ( aio_read_control_block->get_buffer()->capacity() - aio_read_control_block->get_buffer()->size() == 0 )
     DebugBreak();
 #endif
   if ( aio_queue != NULL )
@@ -2655,7 +2679,7 @@ void Socket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
 #ifdef _WIN32
     auto_Buffer buffer( aio_read_control_block->get_buffer() );
     WSABUF wsabuf[1];
-    wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) ) + buffer->size();
+    wsabuf[0].buf = static_cast<char*>( *buffer ) + buffer->size();
     wsabuf[0].len = buffer->capacity() - buffer->size();
     DWORD dwNumberOfBytesReceived, dwFlags = 0;
     if ( ::WSARecv( socket_, wsabuf, 1, &dwNumberOfBytesReceived, &dwFlags, *aio_read_control_block, NULL ) == 0 ||
@@ -2700,7 +2724,7 @@ void Socket::aio_write( auto_Object<AIOWriteControlBlock> aio_write_control_bloc
     else
     {
       WSABUF wsabuf[1];
-      wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) );
+      wsabuf[0].buf = static_cast<char*>( *buffer );
       wsabuf[0].len = buffer->size();
       DWORD dwNumberOfBytesSent;
       if ( ::WSASend( socket_, wsabuf, 1, &dwNumberOfBytesSent, 0, *aio_write_control_block, NULL ) == 0 ||
@@ -2887,7 +2911,7 @@ Socket::operator int() const
 }
 ssize_t Socket::read( auto_Buffer buffer )
 {
-  ssize_t read_ret = read( static_cast<char*>( static_cast<void*>( *buffer ) ) + buffer->size(), buffer->capacity() - buffer->size() );
+  ssize_t read_ret = read( static_cast<char*>( *buffer ) + buffer->size(), buffer->capacity() - buffer->size() );
   if ( read_ret > 0 )
     buffer->put( NULL, read_ret );
   return read_ret;
@@ -3016,7 +3040,7 @@ void Socket::AIOConnectControlBlock::execute()
 void Socket::AIOReadControlBlock::execute()
 {
   ssize_t read_ret = get_socket()->read( get_buffer() );
-  if ( read_ret > 0 )
+  if ( read_ret >= 0 )
     onCompletion( static_cast<size_t>( read_ret ) );
   else
     onError( Exception::get_errno() );

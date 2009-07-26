@@ -1,4 +1,4 @@
-// Revision: 1706
+// Revision: 1708
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -3174,6 +3174,13 @@ void XDRMarshaller::writeStruct( const char* key, uint32_t, const YIELD::Struct&
 XDRUnmarshaller::XDRUnmarshaller( auto_Buffer buffer )
   : buffer( buffer )
 { }
+void XDRUnmarshaller::read( void* buffer, size_t buffer_len )
+{
+#ifdef _DEBUG
+  if ( this->buffer->size() - this->buffer->position() < buffer_len ) DebugBreak();
+#endif
+  this->buffer->get( buffer, buffer_len );
+}
 bool XDRUnmarshaller::readBoolean( const char* key, uint32_t tag )
 {
   return readInt32( key, tag ) == 1;
@@ -3182,25 +3189,25 @@ void XDRUnmarshaller::readBuffer( const char* key, uint32_t tag, auto_Buffer val
 {
   size_t size = readInt32( key, tag );
   if ( value->capacity() - value->size() < size ) DebugBreak();
-  buffer->get( static_cast<void*>( *value ), size );
+  read( static_cast<void*>( *value ), size );
   value->put( NULL, size );
 }
 double XDRUnmarshaller::readDouble( const char*, uint32_t )
 {
   double value;
-  buffer->get( &value, sizeof( value ) );
+  read( &value, sizeof( value ) );
   return value;
 }
 float XDRUnmarshaller::readFloat( const char*, uint32_t )
 {
   float value;
-  buffer->get( &value, sizeof( value ) );
+  read( &value, sizeof( value ) );
   return value;
 }
 int32_t XDRUnmarshaller::readInt32( const char*, uint32_t )
 {
   int32_t value;
-  buffer->get( &value, sizeof( value ) );
+  read( &value, sizeof( value ) );
 #ifdef __MACH__
   return ntohl( value );
 #else
@@ -3210,7 +3217,7 @@ int32_t XDRUnmarshaller::readInt32( const char*, uint32_t )
 int64_t XDRUnmarshaller::readInt64( const char*, uint32_t )
 {
   int64_t value;
-  buffer->get( &value, sizeof( value ) );
+  read( &value, sizeof( value ) );
   return Machine::ntohll( value );
 }
 void XDRUnmarshaller::readMap( const char* key, uint32_t tag, YIELD::Map& value )
@@ -3241,7 +3248,7 @@ void XDRUnmarshaller::readString( const char* key, uint32_t tag, std::string& va
       else
         padded_str_len = str_len + 4 - padded_str_len;
       value.resize( padded_str_len );
-      buffer->get( const_cast<char*>( value.c_str() ), padded_str_len );
+      read( const_cast<char*>( value.c_str() ), padded_str_len );
       value.resize( str_len );
     }
   }

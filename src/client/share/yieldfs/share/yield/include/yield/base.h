@@ -183,20 +183,40 @@ namespace YIELD
   public:
     virtual ~Buffer() { }
 
+    // capacity: the number of bytes available in the buffer >= size
     virtual size_t capacity() const = 0;
-    bool empty() const { return size() == 0; }    
+
+    inline bool empty() const { return size() == 0; }
+
+    // get: copy out of the buffer, advancing position
     virtual size_t get( void* into_buffer, size_t into_buffer_len ) = 0;
+
+    // Casts to get at the underlying buffer; may not be implemented by some buffers
     operator char*() const { return static_cast<char*>( static_cast<void*>( *this ) ); }
     operator unsigned char*() const { return static_cast<unsigned char*>( static_cast<void*>( *this ) ); }
     virtual operator void*() const = 0;
     bool operator==( const Buffer& other ) const;
-    size_t put( const char* from_string ) { return put( from_string, strlen( from_string ) ); }
-    size_t put( const std::string& from_string ) { return put( from_string.c_str(), from_string.size() ); }
+
+    // position: get and set the get() position
+    size_t position() const;
+    void position( size_t new_position );
+
+    // put: append bytes to the buffer, increases size but not position
+    size_t put( const char* from_string );
+    size_t put( const std::string& from_string );
     virtual size_t put( const void* from_buffer, size_t from_buffer_len ) = 0;
+
+    // size: the number of filled bytes, <= capacity
     virtual size_t size() const = 0;
 
     // Object
     YIELD_OBJECT_PROTOTYPES( Buffer, 1 );
+
+  protected:
+    Buffer();
+
+  private:
+    size_t _position;
   };
 
   typedef auto_Object<Buffer> auto_Buffer;
@@ -225,7 +245,6 @@ namespace YIELD
 
   private:
     size_t _capacity;
-    size_t _consumed; // Total number of bytes consumed by get()
   };
 
 
@@ -384,8 +403,6 @@ namespace YIELD
 
   private:
     std::string _string;
-
-    size_t _consumed;
   };
 
   typedef auto_Object<StringBuffer> auto_StringBuffer;
