@@ -252,7 +252,7 @@ namespace YIELD
     int get_protocol() const { return protocol; }
     int get_type() const { return type; }
     bool operator==( const Socket& other ) const { return static_cast<int>( *this ) == static_cast<int>( other ); } \
-    virtual ssize_t read( auto_Buffer buffer );
+    virtual ssize_t read( auto_Buffer buffer, bool update_buffer_size = true );
     virtual ssize_t write( auto_Buffer buffer );
     YIELD_SOCKET_PROTOTYPES;
 

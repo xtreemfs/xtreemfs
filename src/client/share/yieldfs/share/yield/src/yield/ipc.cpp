@@ -148,7 +148,7 @@ public:
         else if ( deserialize_ret > 0 )
         {
           auto_Buffer buffer( get_buffer() );
-//          if ( buffer->capacity() - buffer->size() < static_cast<size_t>( deserialize_ret ) )
+          if ( buffer->capacity() - buffer->size() < static_cast<size_t>( deserialize_ret ) )
             buffer = new HeapBuffer( deserialize_ret );
           // else re-use the same buffer
           if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
@@ -2689,7 +2689,7 @@ void Socket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
       aio_read_control_block->onError( ::WSAGetLastError() );
 #else
     set_blocking_mode( false );
-    ssize_t read_ret = read( aio_read_control_block->get_buffer() );
+    ssize_t read_ret = read( aio_read_control_block->get_buffer(), false ); // false = don't update the buffer size, onCompletion will do that
     if ( read_ret > 0 )
       aio_read_control_block->onCompletion( static_cast<size_t>( read_ret ) );
     else if ( read_ret == 0 )
@@ -2909,10 +2909,10 @@ Socket::operator int() const
 {
   return socket_;
 }
-ssize_t Socket::read( auto_Buffer buffer )
+ssize_t Socket::read( auto_Buffer buffer, bool update_buffer_size )
 {
   ssize_t read_ret = read( static_cast<char*>( *buffer ) + buffer->size(), buffer->capacity() - buffer->size() );
-  if ( read_ret > 0 )
+  if ( read_ret > 0 && update_buffer_size )
     buffer->put( NULL, read_ret );
   return read_ret;
 }
@@ -3039,9 +3039,7 @@ void Socket::AIOConnectControlBlock::execute()
 }
 void Socket::AIOReadControlBlock::execute()
 {
-  auto_Buffer buffer( get_buffer() );
-  // Don't go through read( Buffer ) because it does a buffer->put( NULL, read_ret ) to update the buffer size, which onCompletion also does
-  ssize_t read_ret = get_socket()->read( static_cast<char*>( *buffer ) + buffer->size(), buffer->capacity() - buffer->size() );
+  ssize_t read_ret = get_socket()->read( get_buffer(), false ); // false = don't update buffer size, onCompletion will do that
   if ( read_ret >= 0 )
     onCompletion( static_cast<size_t>( read_ret ) );
   else
