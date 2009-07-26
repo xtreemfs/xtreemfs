@@ -3039,7 +3039,9 @@ void Socket::AIOConnectControlBlock::execute()
 }
 void Socket::AIOReadControlBlock::execute()
 {
-  ssize_t read_ret = get_socket()->read( get_buffer() );
+  auto_Buffer buffer( get_buffer() );
+  // Don't go through read( Buffer ) because it does a buffer->put( NULL, read_ret ) to update the buffer size, which onCompletion also does
+  ssize_t read_ret = get_socket()->read( static_cast<char*>( *buffer ) + buffer->size(), buffer->capacity() - buffer->size() );
   if ( read_ret >= 0 )
     onCompletion( static_cast<size_t>( read_ret ) );
   else
