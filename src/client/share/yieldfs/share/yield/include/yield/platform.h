@@ -9,10 +9,6 @@
 #ifdef _WIN32
 #include <banned.h>
 typedef int ssize_t;
-extern "C"
-{
-  __declspec( dllimport ) void __stdcall DebugBreak();
-}
 #else
 #include <errno.h>
 #include <limits.h>
@@ -109,8 +105,6 @@ extern "C"
   virtual bool truncate( uint64_t offset ); \
   virtual ssize_t write( const void* buffer, size_t buffer_len, uint64_t offset ); \
   virtual ssize_t writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset );
-
-#define YIELD_STRING_HASH_NEXT( c, hash ) hash = hash ^ ( ( hash << 5 ) + ( hash >> 2 ) + c )
 
 #define YIELD_VOLUME_PROTOTYPES \
     virtual bool access( const YIELD::Path& path, int amode ); \
@@ -210,66 +204,6 @@ namespace YIELD
   template <class> class InterThreadQueue;
   class Path;
   class Stat;
-
-
-#ifdef _WIN32
-  static inline void DebugBreak()
-  {
-    ::DebugBreak();
-  }
-#else
-  static inline void DebugBreak()
-  {
-    *((int*)0) = 0xabadcafe;
-  }
-#endif
-
-  static inline uint32_t string_hash( const char* str )
-  {
-    uint32_t hash = 0;
-
-    while ( *str != 0 )
-    {
-      YIELD_STRING_HASH_NEXT( *str, hash );
-      str++;
-    }
-
-    return hash;
-  }
-
-  static inline uint32_t string_hash( const char* str, size_t str_len )
-  {
-    size_t str_i = 0;
-    uint32_t hash = 0;
-
-    while ( str_i < str_len )
-    {
-      YIELD_STRING_HASH_NEXT( str[str_i], hash );
-      str_i++;
-    }
-
-    return hash;
-  }
-
-  static inline uint32_t string_hash( const std::string& str )
-  {
-    return string_hash( str.c_str(), str.size() );
-  }
-
-  static inline uint32_t string_hash( const unsigned char* str, size_t str_len )
-  {
-    size_t str_i = 0;
-    uint32_t hash = 0;
-
-    while ( str_i < str_len )
-    {
-      YIELD_STRING_HASH_NEXT( str[str_i], hash );
-      str_i++;
-    }
-
-    return hash;
-  }
-
 
 
   class Exception : public std::exception
@@ -1357,13 +1291,18 @@ namespace YIELD
     ~TimerQueue();
 
     void addTimer( auto_Object<Timer> timer );
+    static void destroyDefaultTimerQueue();
+    static TimerQueue& getDefaultTimerQueue();
 
     // Object
     YIELD_OBJECT_PROTOTYPES( TimerQueue, 0 );
 
   private:
 #ifdef _WIN32
+    TimerQueue( void* hTimerQueue );
+
     void* hTimerQueue;
+
     static void __stdcall WaitOrTimerCallback( void*, unsigned char );
 #else
     class Thread : public ::YIELD::Thread
@@ -1385,6 +1324,8 @@ namespace YIELD
 
     Thread thread;
 #endif
+
+    static TimerQueue* default_timer_queue;
   };
 
   typedef auto_Object<TimerQueue> auto_TimerQueue;

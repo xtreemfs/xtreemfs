@@ -14,9 +14,13 @@
 #include <cstring>
 #include <ostream>
 #include <string>
-#include <vector>
 
-#ifndef _WIN32
+#ifdef _WIN32
+extern "C"
+{
+  __declspec( dllimport ) void __stdcall DebugBreak();
+}
+#else
 #include <sys/uio.h> // For struct iovec
 #endif
 
@@ -72,6 +76,19 @@ namespace YIELD
   class Unmarshaller;
 
 
+#ifdef _WIN32
+  static inline void DebugBreak()
+  {
+    ::DebugBreak();
+  }
+#else
+  static inline void DebugBreak()
+  {
+    *((int*)0) = 0xabadcafe;
+  }
+#endif
+
+
   class Object
   {
   public:
@@ -80,13 +97,13 @@ namespace YIELD
 
     static inline void decRef( Object& object )
     {
-//#ifdef YIELD_DEBUG_REFERENCE_COUNTING
-//      if ( atomic_dec( &object.refcnt ) < 0 )
-//        DebugBreak();
-//#else
+#ifdef YIELD_DEBUG_REFERENCE_COUNTING
+      if ( atomic_dec( &object.refcnt ) < 0 )
+        DebugBreak();
+#else
       if ( atomic_dec( &object.refcnt ) == 0 )
         delete &object;
-//#endif
+#endif
     }
 
     static inline void decRef( Object* object )
@@ -98,10 +115,10 @@ namespace YIELD
     template <class ObjectType>
     static inline ObjectType& incRef( ObjectType& object )
     {
-//#ifdef YIELD_DEBUG_REFERENCE_COUNTING
-//      if ( object.refcnt <= 0 )
-//        DebugBreak();
-//#endif
+#ifdef YIELD_DEBUG_REFERENCE_COUNTING
+      if ( object.refcnt <= 0 )
+        DebugBreak();
+#endif
       atomic_inc( &object.refcnt );
       return object;
     }
@@ -167,9 +184,8 @@ namespace YIELD
     virtual ~Buffer() { }
 
     virtual size_t capacity() const = 0;
-    bool empty() const { return size() == 0; }
+    bool empty() const { return size() == 0; }    
     virtual size_t get( void* into_buffer, size_t into_buffer_len ) = 0;
-    virtual size_t get( std::string& into_string, size_t into_string_len ) = 0;
     operator char*() const { return static_cast<char*>( static_cast<void*>( *this ) ); }
     operator unsigned char*() const { return static_cast<unsigned char*>( static_cast<void*>( *this ) ); }
     virtual operator void*() const = 0;
@@ -196,7 +212,6 @@ namespace YIELD
 
     // Buffer
     size_t get( void* into_buffer, size_t into_buffer_len );
-    size_t get( std::string&, size_t into_string_len );
     size_t capacity() const;
     operator iovec() const { return iov; }
     operator void*() const;
@@ -228,7 +243,6 @@ namespace YIELD
     // Buffer
     size_t capacity() const { return size(); }
     size_t get( void*, size_t ) { return 0; }
-    size_t get( std::string&, size_t ) { return 0; }
     size_t put( const void*, size_t ) { return 0; }
     operator void*() const;
     size_t size() const;
@@ -365,9 +379,8 @@ namespace YIELD
     // Buffer
     size_t capacity() const { return _string.capacity(); }
     size_t get( void* into_buffer, size_t into_buffer_len );
-    size_t get( std::string& into_string, size_t into_string_len );
     size_t put( const void*, size_t );
-    size_t size() const { return _string.size(); }
+    size_t size() const;
 
   private:
     std::string _string;
@@ -381,26 +394,9 @@ namespace YIELD
   class StringLiteralBuffer : public FixedBuffer
   {
   public:
-    StringLiteralBuffer( const char* string_literal )
-      : FixedBuffer( strnlen( string_literal, UINT16_MAX ) )
-    {
-      iov.iov_base = const_cast<char*>( string_literal );
-      iov.iov_len = capacity();
-    }
-
-    StringLiteralBuffer( const char* string_literal, size_t string_literal_len )
-      : FixedBuffer( string_literal_len )
-    {
-      iov.iov_base = const_cast<char*>( string_literal );
-      iov.iov_len = string_literal_len;
-    }
-
-    StringLiteralBuffer( const void* string_literal, size_t string_literal_len )
-      : FixedBuffer( string_literal_len )
-    {
-      iov.iov_base = const_cast<void*>( string_literal );
-      iov.iov_len = string_literal_len;
-    }
+    StringLiteralBuffer( const char* string_literal );
+    StringLiteralBuffer( const char* string_literal, size_t string_literal_len );
+    StringLiteralBuffer( const void* string_literal, size_t string_literal_len );
 
     // Object
     YIELD_OBJECT_PROTOTYPES( StringLiteralBuffer, 7 );

@@ -1,4 +1,4 @@
-// Revision: 1700
+// Revision: 1706
 
 #include "yield/base.h"
 using namespace YIELD;
@@ -48,14 +48,6 @@ size_t FixedBuffer::get( void* into_buffer, size_t into_buffer_len )
     memcpy_s( into_buffer, into_buffer_len, static_cast<uint8_t*>( iov.iov_base ) + _consumed, into_buffer_len );
   _consumed += into_buffer_len;
   return into_buffer_len;
-}
-size_t FixedBuffer::get( std::string& into_string, size_t into_string_len )
-{
-  if ( iov.iov_len - _consumed < into_string_len )
-    into_string_len = iov.iov_len - _consumed;
-  into_string.append( reinterpret_cast<char*>( static_cast<uint8_t*>( iov.iov_base ) + _consumed ), into_string_len );
-  _consumed += into_string_len;
-  return into_string_len;
 }
 bool FixedBuffer::operator==( const FixedBuffer& other ) const
 {
@@ -159,59 +151,68 @@ void PrettyPrinter::writeStruct( const char*, uint32_t, const Struct& value )
 // string_buffer.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 StringBuffer::StringBuffer()
 {
   _consumed = 0;
 }
-
 StringBuffer::StringBuffer( size_t capacity )
 {
   _string.reserve( capacity );
   _consumed = 0;
 }
-
 StringBuffer::StringBuffer( const std::string& str )
   : _string( str )
 {
   _consumed = 0;
 }
-
 StringBuffer::StringBuffer( const char* str )
  : _string( str )
 {
   _consumed = 0;
 }
-
 StringBuffer::StringBuffer( const char* str, size_t str_len )
   : _string( str, str_len )
 {
   _consumed = 0;
 }
-
 size_t StringBuffer::get( void* into_buffer, size_t into_buffer_len )
 {
-  if ( size() - _consumed < into_buffer_len )
-    into_buffer_len = size() - _consumed;
+  if ( size() < into_buffer_len )
+    into_buffer_len = size();
   memcpy_s( into_buffer, into_buffer_len, _string.c_str() + _consumed, into_buffer_len );
   _consumed += into_buffer_len;
   return into_buffer_len;
 }
-
-size_t StringBuffer::get( std::string& into_string, size_t into_string_len )
-{
-  if ( size() - _consumed < into_string_len )
-    into_string_len = size() - _consumed;
-  into_string.append( _string.c_str() + _consumed, into_string_len );
-  _consumed += into_string_len;
-  return into_string_len;
-}
-
 size_t StringBuffer::put( const void* from_buffer, size_t from_buffer_len )
 {
   _string.append( static_cast<const char*>( from_buffer ), from_buffer_len );
   return from_buffer_len;
+}
+size_t StringBuffer::size() const
+{
+  return _string.size() - _consumed;
+}
+
+
+// string_literal_buffer.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+StringLiteralBuffer::StringLiteralBuffer( const char* string_literal )
+  : FixedBuffer( strnlen( string_literal, UINT16_MAX ) )
+{
+  iov.iov_base = const_cast<char*>( string_literal );
+  iov.iov_len = capacity();
+}
+StringLiteralBuffer::StringLiteralBuffer( const char* string_literal, size_t string_literal_len )
+  : FixedBuffer( string_literal_len )
+{
+  iov.iov_base = const_cast<char*>( string_literal );
+  iov.iov_len = string_literal_len;
+}
+StringLiteralBuffer::StringLiteralBuffer( const void* string_literal, size_t string_literal_len )
+  : FixedBuffer( string_literal_len )
+{
+  iov.iov_base = const_cast<void*>( string_literal );
+  iov.iov_len = string_literal_len;
 }
 

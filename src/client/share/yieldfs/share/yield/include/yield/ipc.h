@@ -538,7 +538,6 @@ namespace YIELD
     class AIOReadControlBlock;
     class AIOWriteControlBlock;
     
-    auto_TimerQueue operation_timer_queue;
     class OperationTimer;
   };
 
@@ -622,7 +621,6 @@ namespace YIELD
 
     // Statistics
     Mutex statistics_lock;
-    static TimerQueue statistics_timer_queue;
     class StatisticsTimer;
     uint32_t requests_sent_in_period, responses_received_in_period;
     std::vector<double> request_rates, response_rates;
@@ -885,10 +883,10 @@ namespace YIELD
   class ONCRPCMessage
   {
   public:
+    virtual ssize_t deserialize( auto_Buffer );
     auto_Struct get_body() const { return body; }
     auto_Interface get_interface() const { return interface_; }
     uint32_t get_xid() const { return xid; }    
-    virtual ssize_t deserialize( auto_Buffer );
     virtual auto_Buffer serialize();
     void set_body( auto_Struct body ) { this->body = body; }
 

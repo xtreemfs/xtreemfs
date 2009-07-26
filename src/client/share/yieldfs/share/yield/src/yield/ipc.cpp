@@ -1,4 +1,4 @@
-// Revision: 1700
+// Revision: 1706
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -19,7 +19,6 @@ Client<RequestType, ResponseType>::Client( const URI& absolute_uri, auto_AIOQueu
   : aio_queue( aio_queue ), flags( flags ), log( log ), operation_timeout( operation_timeout ), peername( peername ), ssl_context( ssl_context )
 {
   this->absolute_uri = new URI( absolute_uri );
-  operation_timer_queue = new TimerQueue;
 }
 template <class RequestType, class ResponseType>
 Client<RequestType, ResponseType>::~Client()
@@ -44,7 +43,7 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
         if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
           log->getStream( Log::LOG_INFO ) << "yield::Client: writing " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " on socket #" << static_cast<int>( *socket_ ) << ".";
         AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request.serialize(), *this, request, socket_->incRef() );
-        // operation_timer_queue->addTimer( new OperationTimer( aio_write_control_block->incRef(), operation_timeout ) );
+        TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), operation_timeout ) );
         socket_->aio_write( aio_write_control_block );
       }
       else
@@ -67,7 +66,7 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
         if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
           log->getStream( Log::LOG_INFO ) << "yield::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " with socket #" << static_cast<int>( *socket_ ) << ".";
         AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( *this, peername, request, socket_->incRef() );
-        // operation_timer_queue->addTimer( new OperationTimer( aio_connect_control_block->incRef(), operation_timeout ) );
+        TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_connect_control_block->incRef(), operation_timeout ) );
         socket_->aio_connect( aio_connect_control_block );
       }
       Object::decRef( *socket_ );
@@ -98,7 +97,7 @@ public:
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
         client.log->getStream( Log::LOG_INFO ) << "yield::Client: successfully connected to " << client.absolute_uri->get_host() << ":" << client.absolute_uri->get_port() << " on socket #" << static_cast<int>( *get_socket() ) << ".";
       AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request->serialize(), client, request, get_socket() );
-      // client.operation_timer_queue->addTimer( new OperationTimer( aio_write_control_block->incRef(), client.operation_timeout ) );
+      TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), client.operation_timeout ) );
       get_socket()->aio_write( aio_write_control_block );
     }
   }
@@ -147,7 +146,7 @@ public:
         if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
           client.log->getStream( Log::LOG_INFO ) << "yield::Client: partially deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", reading again with " << deserialize_ret << " byte buffer.";
         AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( deserialize_ret ), client, request, response, get_socket() );
-        // client.operation_timer_queue->addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
+        TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
         get_socket()->aio_read( aio_read_control_block );
       }
       else
@@ -198,7 +197,7 @@ public:
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
         client.log->getStream( Log::LOG_INFO ) << "yield::Client: created " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << " to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
       AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( 1024 ), client, request, response, get_socket() );
-      // client.operation_timer_queue->addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
+      TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
       get_socket()->aio_read( aio_read_control_block );
     }
   }
@@ -239,7 +238,6 @@ template class Client<ONCRPCRequest, ONCRPCResponse>;
 // http_benchmark_driver.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-TimerQueue HTTPBenchmarkDriver::statistics_timer_queue;
 class HTTPBenchmarkDriver::StatisticsTimer : public TimerQueue::Timer
 {
 public:
@@ -259,7 +257,7 @@ HTTPBenchmarkDriver::HTTPBenchmarkDriver( auto_EventTarget http_request_target, 
   : http_request_target( http_request_target ), in_flight_http_request_count( in_flight_http_request_count ), wlog_uris( wlog_uris )
 {
   requests_sent_in_period = responses_received_in_period = 0;
-  statistics_timer_queue.addTimer( new StatisticsTimer( incRef() ) );
+  TimerQueue::getDefaultTimerQueue().addTimer( new StatisticsTimer( incRef() ) );
 }
 HTTPBenchmarkDriver::~HTTPBenchmarkDriver()
 {
@@ -850,9 +848,7 @@ public:
       {
         http_request->set_response_target( new HTTPResponseTarget( get_socket() ) );
         http_request_target->send( *http_request.release() );
-        return;
-        // http_request = new HTTPRequest;
-        // Try to deserialize the next http_request
+        http_request = new HTTPRequest;
       }
       else if ( deserialize_ret > 0 )
       {
@@ -1564,7 +1560,6 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize( auto_Buffer buffer )
         deserialize_state = DESERIALIZING_LONG_RECORD_FRAGMENT;
       return deserialize_ret;
     }
-    // Drop down
     case DESERIALIZING_LONG_RECORD_FRAGMENT:
     {
       ssize_t deserialize_ret = deserializeLongRecordFragment( buffer );
@@ -1605,15 +1600,13 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker( auto_
   else if ( record_fragment_marker_filled == 0 )
     return sizeof( record_fragment_marker );
   else
-  {
-    DebugBreak();
-    return sizeof( record_fragment_marker );
-  }
+    return -1;
 }
 template <class ONCRPCMessageType>
 ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment( auto_Buffer buffer )
 {
-  if ( buffer->size() >= record_fragment_length ) // Common case
+  size_t buffer_size = buffer->size(); // Use a temporary variable so we know the original buffer size after the get() in the else branch
+  if ( buffer_size >= record_fragment_length ) // Common case
   {
     record_fragment_buffer = buffer;
     XDRUnmarshaller xdr_unmarshaller( buffer );
@@ -1622,25 +1615,32 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment( auto_Buffer
   }
   else
   {
-    record_fragment_buffer = new StringBuffer;
-    buffer->get( static_cast<std::string&>( *static_cast<StringBuffer*>( record_fragment_buffer.get() ) ),
-                 buffer->size() );
-    return record_fragment_length - buffer->size();
+    record_fragment_buffer = new HeapBuffer( record_fragment_length );
+    buffer->get( static_cast<void*>( *record_fragment_buffer ), buffer_size );
+    record_fragment_buffer->put( NULL, buffer_size );
+    return record_fragment_length - record_fragment_buffer->size();
   }
 }
 template <class ONCRPCMessageType>
 ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment( auto_Buffer buffer )
 {
-  buffer->get( static_cast<std::string&>( *static_cast<StringBuffer*>( record_fragment_buffer.get() ) ),
-               record_fragment_length - record_fragment_buffer->size() );
-  if ( record_fragment_buffer->size() == record_fragment_length )
+  size_t buffer_size = buffer->size();
+  size_t record_fragment_buffer_size = record_fragment_buffer->size();
+  if ( record_fragment_length - record_fragment_buffer_size <= buffer_size ) // Complete the record fragment
   {
+    buffer_size = record_fragment_length - record_fragment_buffer_size;
+    buffer->get( static_cast<void*>( *record_fragment_buffer ), buffer_size );
+    record_fragment_buffer->put( NULL, buffer_size );
     XDRUnmarshaller xdr_unmarshaller( record_fragment_buffer );
     static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
     return 0;
   }
   else
+  {
+    buffer->get( static_cast<void*>( *record_fragment_buffer ), buffer_size );
+    record_fragment_buffer->put( NULL, buffer_size );
     return record_fragment_length - record_fragment_buffer->size();
+  }
 }
 template <class ONCRPCMessageType>
 void ONCRPCMessage<ONCRPCMessageType>::marshal( Marshaller& marshaller )

@@ -1,4 +1,4 @@
-// Revision: 1700
+// Revision: 1706
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -2457,6 +2457,9 @@ Time::operator std::string() const
 #include <utility>
 
 
+TimerQueue* TimerQueue::default_timer_queue = NULL;
+
+
 TimerQueue::TimerQueue()
 {
 #ifdef _WIN32
@@ -2466,10 +2469,17 @@ TimerQueue::TimerQueue()
 #endif
 }
 
+#ifdef _WIN32
+TimerQueue::TimerQueue( HANDLE hTimerQueue )
+  : hTimerQueue( hTimerQueue )
+{ }
+#endif
+
 TimerQueue::~TimerQueue()
 {
 #ifdef _WIN32
-  DeleteTimerQueueEx( hTimerQueue, NULL );
+  if ( hTimerQueue != NULL )
+    DeleteTimerQueueEx( hTimerQueue, NULL );
 #else
   thread.stop();
 #endif
@@ -2489,6 +2499,23 @@ void TimerQueue::addTimer( auto_Object<Timer> timer )
 #else
   thread.addTimer( timer.release() );
 #endif
+}
+
+void TimerQueue::destroyDefaultTimerQueue()
+{
+  if ( default_timer_queue != NULL )
+    delete default_timer_queue;
+}
+
+TimerQueue& TimerQueue::getDefaultTimerQueue()
+{
+  if ( default_timer_queue == NULL )
+#ifdef _WIN32
+    default_timer_queue = new TimerQueue( NULL );
+#else
+    default_timer_queue = new TimerQueue;
+#endif
+  return *default_timer_queue;
 }
 
 #ifdef _WIN32

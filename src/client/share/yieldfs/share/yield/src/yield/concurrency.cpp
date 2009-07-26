@@ -1,4 +1,4 @@
-// Revision: 1700
+// Revision: 1706
 
 #include "yield/concurrency.h"
 using namespace YIELD;
@@ -374,9 +374,6 @@ void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
 
 
 
-TimerQueue Stage::statistics_timer_queue;
-
-
 class Stage::StatisticsTimer : public TimerQueue::Timer
 {
 public:
@@ -445,7 +442,7 @@ private:
 Stage::Stage()
 {
   event_queue_length = event_queue_arrival_count = 1; // send() would normally inc these, but we can't use send() because it's a virtual function; instead we enqueue directly and inc the lengths ourselves
-  statistics_timer_queue.addTimer( new StatisticsTimer( incRef() ) );
+  TimerQueue::getDefaultTimerQueue().addTimer( new StatisticsTimer( incRef() ) );
 }
 
 void Stage::send( Event& ev )

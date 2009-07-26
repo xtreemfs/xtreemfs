@@ -317,7 +317,6 @@ namespace YIELD
     uint32_t event_queue_length, event_queue_arrival_count;
 
   private:
-    static TimerQueue statistics_timer_queue;
     class StatisticsTimer;
 
     double arrival_rate_s, rho, service_rate_s;
