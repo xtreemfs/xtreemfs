@@ -875,6 +875,47 @@ The process will be started and can be stopped by setting the option
 \texttt{-stop}. To watch the cleanup progress use option \texttt{-i} for the
 interactive mode. For further informations see \texttt{man xtfs\_cleanup}.
 
+\subsection{Read-Only Replication}
+Read-only replication allows you to create copies of files on several OSDs. Since the files are immutable (read-only) there is no overhead for coordinating the replicas. XtreemFS supports partial and full replicas.
+A partial replica will only fetch the data requested by a client (ondemand). A full replica does this also, but it fetches the data additionally without client-requests until all data of the file has been replicated (background replication).
+With XtreemFS all replicas are initially empty but can be used immediately by applications. If the replica do not have the requested data, it fetches it from another replica and saves it locally for further requests. This helps you to reduce start-up times, network bandwidth and disk usage.
+
+So far XtreemFS only supports to manage replicas manually. Before the replication can be used the file must be marked as read-only with the following command:
+
+\begin{verbatim}
+$> xtfs_repl --set_readonly local-path-of-file
+\end{verbatim}
+
+After a file is marked as read-only replicas can be added. The tool supports differend replica creation modes. One creates a replica by selecting the OSDs randomly or by selecting the nearest OSDs by using the DNS of the local machine. Also an interactive mode for selecting OSDs could be used to create a replica. And the last mode uses the OSDs given by the arguments.
+
+As default partial replicas will be created. To create a full replica the option \texttt{--full} must be set.
+
+XtreemFS supports different transfer strategies which has an big impact on the speed of the replication. A transfer strategy must be chosen for each replica.
+
+To create a full replica by random selection of OSDs and usage of the random transfer strategy, the following command must be used:
+
+\begin{verbatim}
+$> xtfs_repl --auto_add random --full --strategy random local-path-of-file
+\end{verbatim}
+
+To list all replicas and OSDs of the file use:
+
+\begin{verbatim}
+$> xtfs_repl -l local-path-of-file
+\end{verbatim}
+
+Removing also supports muliple modes. Again an interactive mode and a mode which is choosing the replica randomly. To remove a specific replica, the head-OSD (first OSD) of this replica must be given as an argument. At least one complete replica must exist, so the tool will not remove a complete replica, if no others exists. To remove the just created replica use the following command and change head-osd to the one listed by \texttt{xtfs_repl -l}:
+
+\begin{verbatim}
+$> xtfs_repl -r head-OSD local-path-of-file
+\end{verbatim}
+
+For further options see:
+
+\begin{verbatim}
+$> xtfs_repl -h
+\end{verbatim}
+
 
 \chapter{The XtreemFS Client}
 
