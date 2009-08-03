@@ -49,7 +49,7 @@ public abstract class TransferStrategy {
         /**
          * if true, the OSD must return a list of all local available objects
          */
-        public boolean requestObjectList = false;
+        public boolean attachObjectSet = false;
         
         boolean isAllSet() {
             return (osd != null) && (objectNo != -1);

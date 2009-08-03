@@ -113,7 +113,7 @@ public class SequentialStrategy extends TransferStrategy {
             if (osdAvailability.isServiceAvailable(osd)) {
                 next.osd = osd;
                 // no object list
-                next.requestObjectList = false;
+                next.attachObjectSet = false;
                 break;
             } else {
                 // try next OSD

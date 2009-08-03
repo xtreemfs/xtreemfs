@@ -189,7 +189,7 @@ public class TransferStrategiesTest extends TestCase {
             assertEquals(1, next.objectNo);
             List<ServiceUUID> osds = xLoc.getOSDsForObject(next.objectNo, localReplica);
             assertEquals(osds.get(replicaForStripe2++ % osds.size()), next.osd);
-            assertFalse(next.requestObjectList);
+            assertFalse(next.attachObjectSet);
 
             // stripe 3 (preferred)
             this.strategy.selectNext();
@@ -197,7 +197,7 @@ public class TransferStrategiesTest extends TestCase {
             assertEquals(2, next.objectNo);
             osds = xLoc.getOSDsForObject(next.objectNo, localReplica);
             assertEquals(osds.get(replicaForStripe3++ % osds.size()), next.osd);
-            assertFalse(next.requestObjectList);
+            assertFalse(next.attachObjectSet);
 
             // stripe 1
             this.strategy.selectNext();
@@ -205,7 +205,7 @@ public class TransferStrategiesTest extends TestCase {
             assertEquals(0, next.objectNo);
             osds = xLoc.getOSDsForObject(next.objectNo, localReplica);
             assertEquals(osds.get(replicaForStripe1++ % osds.size()), next.osd);
-            assertFalse(next.requestObjectList);
+            assertFalse(next.attachObjectSet);
 
             // stripe 1
             this.strategy.selectNext();
@@ -213,7 +213,7 @@ public class TransferStrategiesTest extends TestCase {
             assertEquals(3, next.objectNo);
             osds = xLoc.getOSDsForObject(next.objectNo, localReplica);
             assertEquals(osds.get(replicaForStripe1++ % osds.size()), next.osd);
-            assertFalse(next.requestObjectList);
+            assertFalse(next.attachObjectSet);
 
             // stripe 2
             this.strategy.selectNext();
@@ -221,7 +221,7 @@ public class TransferStrategiesTest extends TestCase {
             assertEquals(4, next.objectNo);
             osds = xLoc.getOSDsForObject(next.objectNo, localReplica);
             assertEquals(osds.get(replicaForStripe2++ % osds.size()), next.osd);
-            assertFalse(next.requestObjectList);
+            assertFalse(next.attachObjectSet);
 
             // no more requests possible
             this.strategy.selectNext();
@@ -264,7 +264,7 @@ public class TransferStrategiesTest extends TestCase {
                         contained = true;
                 }
                 assertTrue(contained);
-                assertFalse(next.requestObjectList);
+                assertFalse(next.attachObjectSet);
             }
 
             for (int i = 0; i < objectsToRequest.size(); i++)

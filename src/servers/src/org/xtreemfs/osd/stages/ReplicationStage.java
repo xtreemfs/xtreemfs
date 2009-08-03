@@ -32,11 +32,13 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.include.foundation.json.JSONException;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.replication.ObjectDissemination;
+import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.osd.storage.CowPolicy;
 import org.xtreemfs.osd.storage.ObjectInformation;
 
@@ -84,12 +86,13 @@ public class ReplicationStage extends Stage {
      * Checks the response from a requested replica.
      * Only for internal use. 
      * @param usedOSD
+     * @param objectList TODO
      * @param error
      */
     public void internalObjectFetched(String fileId, long objectNo, ServiceUUID usedOSD, ObjectData data,
-            OSDException error) {
+            ObjectList objectList, OSDException error) {
         this.enqueueOperation(STAGEOP_INTERNAL_OBJECT_FETCHED, new Object[] { fileId, objectNo, usedOSD,
-                data, error }, null, null);
+                data, objectList, error }, null, null);
     }
 
     /**
@@ -149,7 +152,8 @@ public class ReplicationStage extends Stage {
         long objectNo = (Long) rq.getArgs()[1];
         final ServiceUUID usedOSD = (ServiceUUID) rq.getArgs()[2];
         ObjectData data = (ObjectData) rq.getArgs()[3];
-        final OSDException error = (OSDException) rq.getArgs()[4];
+        ObjectList objectList = (ObjectList) rq.getArgs()[4];
+        final OSDException error = (OSDException) rq.getArgs()[5];
 
         if (error != null) {
             // it could happen the request is rejected, because the XLoc is outdated caused by removing the
@@ -158,6 +162,18 @@ public class ReplicationStage extends Stage {
                 // send client error
                 disseminationLayer.sendError(fileId, error);
         } else {
+            // decode object list, if attached
+            if(objectList != null){
+                try {
+                    ObjectSet objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet().array());
+                    disseminationLayer.objectSetFetched(fileId, usedOSD, objectSet);
+                } catch (IOException e) {
+                    Logging.logError(Logging.LEVEL_ERROR, this, e);
+                } catch (ClassNotFoundException e) {
+                    Logging.logError(Logging.LEVEL_ERROR, this, e);
+                }
+            }
+            
             if (data != null && data.getData().limit() != 0)
                 disseminationLayer.objectFetched(fileId, objectNo, usedOSD, data);
             else {

@@ -131,7 +131,7 @@ public class RandomStrategy extends TransferStrategy {
                 next.osd = osd;
 
                 // no object list
-                next.requestObjectList = false;
+                next.attachObjectSet = false;
                 break;
             }
             // OSD is not available => remove it from list

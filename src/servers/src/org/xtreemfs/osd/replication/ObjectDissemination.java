@@ -206,6 +206,15 @@ public class ObjectDissemination {
     }
 
     /**
+     * 
+     */
+    public void objectSetFetched(String fileID, ServiceUUID osd, ObjectSet objectSet) {
+        ReplicatingFile file = filesInProgress.get(fileID);
+        if (file != null)
+            file.objectSetFetched(osd, objectSet);
+    }
+
+    /**
      * sends an error to all belonging clients of this file (for all objects)
      */
     public void sendError(String fileID, Exception e) {

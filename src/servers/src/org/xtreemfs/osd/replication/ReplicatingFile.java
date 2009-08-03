@@ -48,6 +48,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.InternalReadLocalResponse;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
@@ -125,7 +126,7 @@ class ReplicatingFile {
                             "%s:%d - fetch object from OSD %s", fileID, next.objectNo, next.osd);
 
                 try {
-                    sendFetchObjectRequest(next.objectNo, next.osd);
+                    sendFetchObjectRequest(next.objectNo, next.osd, next.attachObjectSet);
                 } catch (UnknownUUIDException e) {
                     // try other OSD
                     replicateObject();
@@ -479,7 +480,7 @@ class ReplicatingFile {
                             "%s:%d - fetch object from OSD %s", fileID, next.objectNo, next.osd);
 
                 try {
-                    sendFetchObjectRequest(next.objectNo, next.osd);
+                    sendFetchObjectRequest(next.objectNo, next.osd, next.attachObjectSet);
                 } catch (UnknownUUIDException e) {
                     // try other OSD
                     objectsInProgress.get(next.objectNo).replicateObject();
@@ -570,11 +571,21 @@ class ReplicatingFile {
     }
 
     /**
+     * 
+     */
+    public void objectSetFetched(ServiceUUID osd, ObjectSet objectSet) {
+        strategy.setOSDsObjectSet(objectSet, osd);
+    }
+
+    /**
      * Sends a RPC for reading the object on another OSD.
+     * 
+     * @param attachObjectSet
+     *            TODO
      * 
      * @throws UnknownUUIDException
      */
-    private void sendFetchObjectRequest(final long objectNo, final ServiceUUID osd)
+    private void sendFetchObjectRequest(final long objectNo, final ServiceUUID osd, boolean attachObjectSet)
             throws UnknownUUIDException {
         // check capability validity and update capability if necessary
         try {
@@ -593,21 +604,25 @@ class ReplicatingFile {
         // TODO: change this, if using different striping policies
         RPCResponse<InternalReadLocalResponse> response = client.internal_read_local(osd.getAddress(),
                 fileID, new FileCredentials(xLoc.getXLocSet(), cap.getXCap()), objectNo, 0, 0, xLoc
-                        .getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo), false, null);
+                        .getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo), attachObjectSet, null);
 
         response.registerListener(new RPCResponseAvailableListener<InternalReadLocalResponse>() {
             @Override
             public void responseAvailable(RPCResponse<InternalReadLocalResponse> r) {
                 try {
-                    ObjectData data = r.get().getData();
-                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, data, null);
+                    InternalReadLocalResponse internalReadLocalResponse = r.get();
+                    ObjectData data = internalReadLocalResponse.getData();
+                    ObjectList objectList = null;
+                    if(internalReadLocalResponse.getObject_set().size() == 1)
+                        objectList = internalReadLocalResponse.getObject_set().get(0);
+                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, data, objectList, null);
                 } catch (ONCRPCException e) {
 //                    osdAvailability.setServiceWasNotAvailable(osd);
-                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, (OSDException) e);
+                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null, (OSDException) e);
                     e.printStackTrace();
                 } catch (IOException e) {
                     osdAvailability.setServiceWasNotAvailable(osd);
-                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null);
+                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null, null);
                     e.printStackTrace();
                 } catch (InterruptedException e) {
                     // ignore
