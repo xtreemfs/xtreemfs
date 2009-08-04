@@ -27,6 +27,7 @@ import java.util.List;
 
 import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.osd.replication.selection.SequentialOSDSelection;
@@ -56,7 +57,12 @@ public class SequentialStrategy extends TransferStrategy {
     public SequentialStrategy(String fileId, XLocations xLoc, ServiceAvailability osdAvailability) {
         super(fileId, xLoc, osdAvailability);
         objectSelection = new SequentialObjectSelection();
-        osdSelection = new SequentialOSDSelection(xLoc.getLocalReplica().getStripingPolicy().getWidth());
+        // find max stripe width
+        int maxStripeWidth = 0;
+        for (Replica replica : xLoc.getReplicas())
+            if (maxStripeWidth < replica.getStripingPolicy().getWidth())
+                maxStripeWidth = replica.getStripingPolicy().getWidth();
+        osdSelection = new SequentialOSDSelection(maxStripeWidth);
     }
 
     @Override

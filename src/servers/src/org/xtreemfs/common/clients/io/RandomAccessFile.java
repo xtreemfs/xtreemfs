@@ -575,13 +575,18 @@ public class RandomAccessFile implements ObjectStore {
 
     /**
      * adds a replica for this file
+     * 
      * @param osds
      * @param spPolicy
      * @param replicationFlags
      * @throws Exception
      */
-    public void addReplica(List<ServiceUUID> osds, StripingPolicy spPolicy, int replicationFlags) throws Exception {
+    public void addReplica(List<ServiceUUID> osds, StripingPolicy spPolicy, int replicationFlags)
+            throws Exception {
         // check correct parameters
+        if (spPolicy.getStripe_size() != stripingPolicy.getPolicy().getStripe_size())
+            throw new IllegalArgumentException("New replica must have a stripe size of "
+                    + stripingPolicy.getStripeSizeForObject(0) + ".");
         if (osds.size() != spPolicy.getWidth())
             throw new IllegalArgumentException("Too many or less OSDs in list.");
         for (ServiceUUID osd : osds) {
@@ -694,7 +699,7 @@ public class RandomAccessFile implements ObjectStore {
 
     public long getStripeSize() {
         // the stripe size of a file is constant.
-        return stripingPolicy.getStripeSizeForObject(0);
+        return stripingPolicy.getPolicy().getStripe_size();
     }
 
     public XLocations getXLoc() {

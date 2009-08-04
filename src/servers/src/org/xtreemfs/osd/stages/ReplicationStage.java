@@ -138,10 +138,10 @@ public class ReplicationStage extends Stage {
         Capability cap = (Capability) rq.getArgs()[3];
         CowPolicy cow = (CowPolicy) rq.getArgs()[4];
 
-        // if replica exist
-        if (xLoc.getNumReplicas() > 1 || !xLoc.getLocalReplica().isComplete()) {
+        // if replica exist and stripe size of all replicas is the same
+        if (xLoc.getNumReplicas() > 1 && !xLoc.getLocalReplica().isComplete())
             disseminationLayer.fetchObject(fileId, objectNo, xLoc, cap, cow, rq);
-        } else
+        else
             // object does not exist locally and no replica exists => hole
             callback.fetchComplete(new ObjectInformation(ObjectInformation.ObjectStatus.PADDING_OBJECT, null,
                     xLoc.getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo)), null);

@@ -34,8 +34,6 @@ import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.Transfer
  * Selects the OSDs sequentially (like Round-Robin). It iterates not strictly through the replicas, because it
  * uses different position-pointers for every stripe. This is necessary, otherwise it could happen some
  * replicas will be never used, which could cause in an infinite loop.<br>
- * NOTE: This strategy assumes that all replicas uses the same striping policy (more precisely the same stripe
- * width). <br>
  * 29.06.2009
  */
 public class SequentialOSDSelection {
@@ -44,24 +42,23 @@ public class SequentialOSDSelection {
      * key: stripe<br>
      * value: index of replica
      */
-    // TODO: works only if all replicas are using the same striping policy
     private HashMap<Integer, Integer> nextOSDforObject;
 
-    private final int                 stripeWidth;
+    private final int                 maxStripeWidth;
 
     private int                       lastKnownNumberOfReplicas;
-
+    
     /**
      * Creates a new instance. Sets an initial value for the number of replicas.
-     * @param stripeWidth
+     * @param maxStripeWidth
      */
-    public SequentialOSDSelection(int stripeWidth) {
-        this.stripeWidth = stripeWidth;
-        this.nextOSDforObject = new HashMap<Integer, Integer>(stripeWidth);
+    public SequentialOSDSelection(int maxStripeWidth) {
+        this.maxStripeWidth = maxStripeWidth;
+        this.nextOSDforObject = new HashMap<Integer, Integer>(maxStripeWidth);
         this.lastKnownNumberOfReplicas = 0;
 
         // set first replica as start position for all stripes
-        for (int i = 0; i < stripeWidth; i++)
+        for (int i = 0; i < maxStripeWidth; i++)
             this.nextOSDforObject.put(i, 0);
     }
 
@@ -80,6 +77,7 @@ public class SequentialOSDSelection {
         int positionOfNextOSD = getPositionOfNextOSD(objectNo);
         increasePositionOfOSD(objectNo);
 
+        // each OSD in list represents a replica
         return osds.get(positionOfNextOSD);
     }
 
@@ -90,7 +88,7 @@ public class SequentialOSDSelection {
      * @return
      */
     protected int getPositionOfNextOSD(long objectNo) {
-        return nextOSDforObject.get((int) (objectNo % stripeWidth));
+        return nextOSDforObject.get((int) (objectNo % maxStripeWidth));
     }
 
     /**
@@ -99,8 +97,8 @@ public class SequentialOSDSelection {
      * @param objectNo
      */
     protected void increasePositionOfOSD(long objectNo) {
-        int oldPosition = nextOSDforObject.get((int) (objectNo % stripeWidth));
+        int oldPosition = nextOSDforObject.get((int) (objectNo % maxStripeWidth));
         // do not count local replica
-        nextOSDforObject.put((int) (objectNo % stripeWidth), ++oldPosition % (lastKnownNumberOfReplicas - 1));
+        nextOSDforObject.put((int) (objectNo % maxStripeWidth), ++oldPosition % (lastKnownNumberOfReplicas - 1));
     }
 }

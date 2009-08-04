@@ -50,7 +50,7 @@ public class ObjectDissemination {
      * controls how many fetch-object-requests will be allowed to sent overall by all files (used for
      * load-balancing)
      */
-    private static final int                 MAX_REQUESTS_OVERALL = 20;
+    private static final int                 MAX_OBJECTS_IN_PROGRESS_OVERALL = 20;
 
     /**
      * objects of these files are downloading currently or in future <br>
@@ -91,7 +91,7 @@ public class ObjectDissemination {
             this.filesInProgress.put(fileID, file);
 
             // update requestsPerFile for all files (load-balancing)
-            ReplicatingFile.setMaxRequestsPerFile(MAX_REQUESTS_OVERALL / filesInProgress.size());
+            ReplicatingFile.setMaxObjectsInProgressPerFile(MAX_OBJECTS_IN_PROGRESS_OVERALL / filesInProgress.size());
 
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
@@ -182,11 +182,11 @@ public class ObjectDissemination {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "%s - stop replicating file",
                     fileID);
 
-        // update requestsPerFile for all files (load-balancing)
+        // update allowed max objects in progress for all files (load-balancing)
         if (filesInProgress.size() == 0)
-            ReplicatingFile.setMaxRequestsPerFile(MAX_REQUESTS_OVERALL / 1);
+            ReplicatingFile.setMaxObjectsInProgressPerFile(MAX_OBJECTS_IN_PROGRESS_OVERALL / 1);
         else
-            ReplicatingFile.setMaxRequestsPerFile(MAX_REQUESTS_OVERALL / filesInProgress.size());
+            ReplicatingFile.setMaxObjectsInProgressPerFile(MAX_OBJECTS_IN_PROGRESS_OVERALL / filesInProgress.size());
 
         // TODO: save persistent marker that all objects of file are completely replicated, if it is a full replica
     }

@@ -140,7 +140,7 @@ public abstract class TransferStrategy {
     }
 
     /**
-     * maskerades if an object could not be used at the moment as it is using another object
+     * Masquerades if an object could not be used at the moment as it is using another object
      * @return
      * @throws TransferStrategyException
      */

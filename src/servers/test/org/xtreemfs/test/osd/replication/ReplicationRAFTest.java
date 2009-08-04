@@ -165,208 +165,78 @@ public class ReplicationRAFTest extends TestCase {
         BufferPool.free(data);
     }
 
-    /**
-     * this test must fail because of delayed deletion of data after removing a replica
-     * @throws Exception
-     */
     @Test
-    public void testRemoveAndAddInShortTime() throws Exception {
+    public void testReplicasWithDifferentStripingPolicies() throws Exception {
         RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/testfile",
                 testEnv.getRpcClient(), userCredentials);
-        OSDClient osdClient = testEnv.getOSDClient();
+        raf.setOSDSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
+
+        // check if original replica hast a stripe width of 2
+        assertEquals(2, raf.getStripingPolicy().getWidth());
+        writeData(raf);
+
+        // set read-only
+        raf.setReadOnly(true);
+
+        // add replica
+        List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
+        assertEquals(6, replicas.size());
+
+        // add replica with stripe width of 1
+        StripingPolicy sp = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, (int) raf
+                .getStripeSize(), 1);
+        raf.addReplica(replicas.subList(0, 1), sp, ReplicationFlags.setPartialReplica(ReplicationFlags
+                .setSequentialStrategy(0)));
+        assertEquals(2, raf.getXLoc().getNumReplicas());
+        assertEquals(1, raf.getXLoc().getReplica(1).getStripingPolicy().getWidth());
+
+        // add replica with stripe width of 3
+        sp = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, (int) raf.getStripeSize(), 3);
+        raf.addReplica(replicas.subList(1, 4), sp, ReplicationFlags.setPartialReplica(ReplicationFlags
+                .setRandomStrategy(0)));
+        assertEquals(3, raf.getXLoc().getNumReplicas());
+        assertEquals(3, raf.getXLoc().getReplica(2).getStripingPolicy().getWidth());
+
+        // read 3 times (each replica will be read)
+        for (int i = 0; i < 3; i++) {
+            raf.seek(0);
+            byte[] resultBuffer = new byte[data.limit()];
+            raf.read(resultBuffer, 0, resultBuffer.length);
+
+            // change used replica
+            raf.changeReplicaOrder();
+        }
+    }
+
+    @Test
+    public void testSimple() throws Exception {
+        RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/testfile",
+                testEnv.getRpcClient(), userCredentials);
     
         // test needs a stripe width of 2 OSDs
         assertEquals(2, raf.getStripingPolicy().getWidth());
     
         writeData(raf);
-    
+        
         // set read-only
         raf.setReadOnly(true);
+        assertEquals(data.limit(), raf.getXLoc().getXLocSet().getRead_only_file_size());
     
-        // read only from replica 2
-        raf.setOSDSelectionPolicy(new RandomAccessFile.ReplicaSelectionPolicy() {
-            @Override
-            public List<Replica> getReplicaOrder(List<Replica> replicas) {
-                List<Replica> list = new ArrayList<Replica>();
-                if (replicas.size() > 1)
-                    list.add(replicas.get(1));
-                else
-                    list.add(replicas.get(0));
-                return list;
-            }
-        });
+        // set new deterministic selection of OSDs
+        raf.setOSDSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
     
-        // add replica
+        // add replicas
         List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
         assertEquals(6, replicas.size());
+        raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy(), ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0)));
+        raf.addReplica(replicas.subList(2, 4), raf.getStripingPolicy(), ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0)));
+        raf.addReplica(replicas.subList(4, 6), raf.getStripingPolicy(), ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0)));
     
-        for (int i = 0; i < 2; i++) {
-            raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy(),
-                    ReplicationFlags.setFullReplica(ReplicationFlags.setRandomStrategy(0)));
-            assertEquals(2, raf.getXLoc().getNumReplicas());
+        // assert 4 replicas
+        assertEquals(4, raf.getXLoc().getNumReplicas());
     
-            // read an object from this replica => replicate objects
-            raf.seek(0);
-            byte[] resultBuffer = new byte[STRIPE_SIZE * 2];
-            raf.read(resultBuffer, 0, resultBuffer.length);
-    
-            // sleep some time so all objects could be replicated
-            System.out.println("Test is waiting 5s.");
-            Thread.sleep(5000);
-    
-            // check if objects would be really replicated
-            RPCResponse<ObjectList> r = osdClient.internal_getObjectList(replicas.get(0).getAddress(), raf
-                    .getFileId(), raf.getCredentials());
-            ObjectList objectList = r.get();
-            r.freeBuffers();
-            ObjectSet objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList
-                    .getSet().array());
-            System.out.println("run " + i + ": " + objectSet);
-            assertTrue(10 <= objectSet.size());
-            r = osdClient.internal_getObjectList(replicas.get(0).getAddress(), raf.getFileId(), raf
-                    .getCredentials());
-            objectList = r.get();
-            r.freeBuffers();
-            objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList
-                    .getSet().array());
-            System.out.println("run " + i + ": " + objectSet);
-            assertTrue(10 <= objectSet.size());
-    
-            // remove replica
-            raf.removeReplica(replicas.get(0));
-            assertEquals(1, raf.getXLoc().getNumReplicas());
-    
-            // add replica again
-            raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy(),
-                    ReplicationFlags.setFullReplica(ReplicationFlags.setRandomStrategy(0)));
-            assertEquals(2, raf.getXLoc().getNumReplicas());
-    
-            // read an object from this replica => replicate objects
-            raf.seek(0);
-            resultBuffer = new byte[STRIPE_SIZE * 2];
-            raf.read(resultBuffer, 0, resultBuffer.length);
-    
-            // wait, so the open-file-table could close the file and delete all the data (THAT'S THE PROBLEM)
-            System.out.println("Test is waiting 60s.");
-            Thread.sleep(60000);
-    
-            r = osdClient.internal_getObjectList(replicas.get(0).getAddress(), raf.getFileId(), raf
-                    .getCredentials());
-            objectList = r.get();
-            r.freeBuffers();
-            objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList
-                    .getSet().array());
-            System.out.println("run " + i + ": " + objectSet);
-            assertTrue(0 == objectSet.size());
-            r = osdClient.internal_getObjectList(replicas.get(1).getAddress(), raf.getFileId(), raf
-                    .getCredentials());
-            objectList = r.get();
-            r.freeBuffers();
-            objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList
-                    .getSet().array());
-            System.out.println("run " + i + ": " + objectSet);
-            assertTrue(0 == objectSet.size());
-            
-            // remove replica
-            raf.removeReplica(replicas.get(0));
-            assertEquals(1, raf.getXLoc().getNumReplicas());
-        }
+        readSimple(raf);
     }
-
-    @Test
-        public void testReplicaRemoval() throws Exception {
-            RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/testfile",
-                    testEnv.getRpcClient(), userCredentials);
-            // test needs a stripe width of 2 OSDs
-            assertEquals(2, raf.getStripingPolicy().getWidth());
-    
-            writeData(raf);
-    
-            // set read-only
-            raf.setReadOnly(true);
-    
-            // add replica
-            List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
-            assertEquals(6, replicas.size());
-            raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy(), ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0)));
-            assertEquals(2, raf.getXLoc().getNumReplicas());
-    
-            // read only from replica 2
-            raf.setOSDSelectionPolicy(new RandomAccessFile.ReplicaSelectionPolicy() {
-                @Override
-                public List<Replica> getReplicaOrder(List<Replica> replicas) {
-                    List<Replica> list = new ArrayList<Replica>();
-                    if(replicas.size() > 1)
-                        list.add(replicas.get(1));
-                    else
-                        list.add(replicas.get(0));
-                    return list;
-                }
-            });
-    
-            // read every object from this replica => replicate objects
-            // read and check data => replication
-            raf.seek(0);
-            byte[] resultBuffer = new byte[data.limit()];
-            raf.read(resultBuffer, 0, resultBuffer.length);
-            assertTrue(Arrays.equals(data.array(), resultBuffer));
-    
-            // save old credentials
-            FileCredentials credentials = raf.getCredentials();
-    
-            // remove replica
-            raf.removeReplica(replicas.get(0));
-            assertEquals(1, raf.getXLoc().getNumReplicas());
-    
-            OSDClient osdClient = testEnv.getOSDClient();
-    
-            // NOTE: as long as xLoc cache is not implemented this test will not work
-            // check, if old XLoc will be rejected
-    //        RPCResponse<ObjectData> r = osdClient.read(replicas.get(0).getAddress(), raf.getFileId(),
-    //                credentials, 0, 0, 0, STRIPE_SIZE);
-    //        try {
-    //            ObjectData oData = r.get();
-    //            fail();
-    //        } catch (Exception e) {
-    //            // correct
-    //        }
-    //        r.freeBuffers();
-    
-            // NOTE: as long as xLoc cache is not implemented this tests will work
-            // wait, so the open-file-table could close the file and delete the data
-            System.out.println("Test is waiting 60s.");
-            Thread.sleep(60000);
-    
-            // check, if objects are deleted on OSDs (only spot check)
-            RPCResponse<ObjectList> r = osdClient.internal_getObjectList(replicas.get(0).getAddress(), raf
-                    .getFileId(), credentials);
-            ObjectList objectList = r.get();
-            r.freeBuffers();
-            ObjectSet objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet()
-                    .array());
-            assertEquals(0, objectSet.size());
-            r = osdClient.internal_getObjectList(replicas.get(1).getAddress(), raf
-                    .getFileId(), credentials);
-            objectList = r.get();
-            r.freeBuffers();
-            objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet()
-                    .array());
-            assertEquals(0, objectSet.size());
-            r = osdClient.internal_getObjectList(replicas.get(1).getAddress(), raf
-                    .getFileId(), credentials);
-            objectList = r.get();
-            r.freeBuffers();
-            objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet()
-                    .array());
-            assertEquals(0, objectSet.size());
-    
-            // read and check data on remaining (original) replica
-            raf.setOSDSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
-            raf.seek(0);
-            resultBuffer = new byte[data.limit()];
-            raf.read(resultBuffer, 0, resultBuffer.length);
-            assertTrue(Arrays.equals(data.array(), resultBuffer));
-        }
 
     @Test
     public void testFullReplicas() throws Exception {
@@ -540,33 +410,207 @@ public class ReplicationRAFTest extends TestCase {
     }
 
     @Test
-    public void testSimple() throws Exception {
+        public void testReplicaRemoval() throws Exception {
+            RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/testfile",
+                    testEnv.getRpcClient(), userCredentials);
+            // test needs a stripe width of 2 OSDs
+            assertEquals(2, raf.getStripingPolicy().getWidth());
+    
+            writeData(raf);
+    
+            // set read-only
+            raf.setReadOnly(true);
+    
+            // add replica
+            List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
+            assertEquals(6, replicas.size());
+            raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy(), ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0)));
+            assertEquals(2, raf.getXLoc().getNumReplicas());
+    
+            // read only from replica 2
+            raf.setOSDSelectionPolicy(new RandomAccessFile.ReplicaSelectionPolicy() {
+                @Override
+                public List<Replica> getReplicaOrder(List<Replica> replicas) {
+                    List<Replica> list = new ArrayList<Replica>();
+                    if(replicas.size() > 1)
+                        list.add(replicas.get(1));
+                    else
+                        list.add(replicas.get(0));
+                    return list;
+                }
+            });
+    
+            // read every object from this replica => replicate objects
+            // read and check data => replication
+            raf.seek(0);
+            byte[] resultBuffer = new byte[data.limit()];
+            raf.read(resultBuffer, 0, resultBuffer.length);
+            assertTrue(Arrays.equals(data.array(), resultBuffer));
+    
+            // save old credentials
+            FileCredentials credentials = raf.getCredentials();
+    
+            // remove replica
+            raf.removeReplica(replicas.get(0));
+            assertEquals(1, raf.getXLoc().getNumReplicas());
+    
+            OSDClient osdClient = testEnv.getOSDClient();
+    
+            // NOTE: as long as xLoc cache is not implemented this test will not work
+            // check, if old XLoc will be rejected
+    //        RPCResponse<ObjectData> r = osdClient.read(replicas.get(0).getAddress(), raf.getFileId(),
+    //                credentials, 0, 0, 0, STRIPE_SIZE);
+    //        try {
+    //            ObjectData oData = r.get();
+    //            fail();
+    //        } catch (Exception e) {
+    //            // correct
+    //        }
+    //        r.freeBuffers();
+    
+            // NOTE: as long as xLoc cache is not implemented this tests will work
+            // wait, so the open-file-table could close the file and delete the data
+            System.out.println("Test is waiting 60s.");
+            Thread.sleep(60000);
+    
+            // check, if objects are deleted on OSDs (only spot check)
+            RPCResponse<ObjectList> r = osdClient.internal_getObjectList(replicas.get(0).getAddress(), raf
+                    .getFileId(), credentials);
+            ObjectList objectList = r.get();
+            r.freeBuffers();
+            ObjectSet objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet()
+                    .array());
+            assertEquals(0, objectSet.size());
+            r = osdClient.internal_getObjectList(replicas.get(1).getAddress(), raf
+                    .getFileId(), credentials);
+            objectList = r.get();
+            r.freeBuffers();
+            objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet()
+                    .array());
+            assertEquals(0, objectSet.size());
+            r = osdClient.internal_getObjectList(replicas.get(1).getAddress(), raf
+                    .getFileId(), credentials);
+            objectList = r.get();
+            r.freeBuffers();
+            objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet()
+                    .array());
+            assertEquals(0, objectSet.size());
+    
+            // read and check data on remaining (original) replica
+            raf.setOSDSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
+            raf.seek(0);
+            resultBuffer = new byte[data.limit()];
+            raf.read(resultBuffer, 0, resultBuffer.length);
+            assertTrue(Arrays.equals(data.array(), resultBuffer));
+        }
+
+    /**
+     * this test must fail because of delayed deletion of data after removing a replica
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testRemoveAndAddInShortTime() throws Exception {
         RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/testfile",
                 testEnv.getRpcClient(), userCredentials);
-
+        OSDClient osdClient = testEnv.getOSDClient();
+    
         // test needs a stripe width of 2 OSDs
         assertEquals(2, raf.getStripingPolicy().getWidth());
-
+    
         writeData(raf);
-        
+    
         // set read-only
         raf.setReadOnly(true);
-        assertEquals(data.limit(), raf.getXLoc().getXLocSet().getRead_only_file_size());
-
-        // set new deterministic selection of OSDs
-        raf.setOSDSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
-
-        // add replicas
+    
+        // read only from replica 2
+        raf.setOSDSelectionPolicy(new RandomAccessFile.ReplicaSelectionPolicy() {
+            @Override
+            public List<Replica> getReplicaOrder(List<Replica> replicas) {
+                List<Replica> list = new ArrayList<Replica>();
+                if (replicas.size() > 1)
+                    list.add(replicas.get(1));
+                else
+                    list.add(replicas.get(0));
+                return list;
+            }
+        });
+    
+        // add replica
         List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
         assertEquals(6, replicas.size());
-        raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy(), ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0)));
-        raf.addReplica(replicas.subList(2, 4), raf.getStripingPolicy(), ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0)));
-        raf.addReplica(replicas.subList(4, 6), raf.getStripingPolicy(), ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0)));
-
-        // assert 4 replicas
-        assertEquals(4, raf.getXLoc().getNumReplicas());
-
-        readSimple(raf);
+    
+        for (int i = 0; i < 2; i++) {
+            raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy(),
+                    ReplicationFlags.setFullReplica(ReplicationFlags.setRandomStrategy(0)));
+            assertEquals(2, raf.getXLoc().getNumReplicas());
+    
+            // read an object from this replica => replicate objects
+            raf.seek(0);
+            byte[] resultBuffer = new byte[STRIPE_SIZE * 2];
+            raf.read(resultBuffer, 0, resultBuffer.length);
+    
+            // sleep some time so all objects could be replicated
+            System.out.println("Test is waiting 5s.");
+            Thread.sleep(5000);
+    
+            // check if objects would be really replicated
+            RPCResponse<ObjectList> r = osdClient.internal_getObjectList(replicas.get(0).getAddress(), raf
+                    .getFileId(), raf.getCredentials());
+            ObjectList objectList = r.get();
+            r.freeBuffers();
+            ObjectSet objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList
+                    .getSet().array());
+            System.out.println("run " + i + ": " + objectSet);
+            assertTrue(10 <= objectSet.size());
+            r = osdClient.internal_getObjectList(replicas.get(0).getAddress(), raf.getFileId(), raf
+                    .getCredentials());
+            objectList = r.get();
+            r.freeBuffers();
+            objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList
+                    .getSet().array());
+            System.out.println("run " + i + ": " + objectSet);
+            assertTrue(10 <= objectSet.size());
+    
+            // remove replica
+            raf.removeReplica(replicas.get(0));
+            assertEquals(1, raf.getXLoc().getNumReplicas());
+    
+            // add replica again
+            raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy(),
+                    ReplicationFlags.setFullReplica(ReplicationFlags.setRandomStrategy(0)));
+            assertEquals(2, raf.getXLoc().getNumReplicas());
+    
+            // read an object from this replica => replicate objects
+            raf.seek(0);
+            resultBuffer = new byte[STRIPE_SIZE * 2];
+            raf.read(resultBuffer, 0, resultBuffer.length);
+    
+            // wait, so the open-file-table could close the file and delete all the data (THAT'S THE PROBLEM)
+            System.out.println("Test is waiting 60s.");
+            Thread.sleep(60000);
+    
+            r = osdClient.internal_getObjectList(replicas.get(0).getAddress(), raf.getFileId(), raf
+                    .getCredentials());
+            objectList = r.get();
+            r.freeBuffers();
+            objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList
+                    .getSet().array());
+            System.out.println("run " + i + ": " + objectSet);
+            assertTrue(0 == objectSet.size());
+            r = osdClient.internal_getObjectList(replicas.get(1).getAddress(), raf.getFileId(), raf
+                    .getCredentials());
+            objectList = r.get();
+            r.freeBuffers();
+            objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList
+                    .getSet().array());
+            System.out.println("run " + i + ": " + objectSet);
+            assertTrue(0 == objectSet.size());
+            
+            // remove replica
+            raf.removeReplica(replicas.get(0));
+            assertEquals(1, raf.getXLoc().getNumReplicas());
+        }
     }
 
     private void readSimple(RandomAccessFile raf) throws Exception {

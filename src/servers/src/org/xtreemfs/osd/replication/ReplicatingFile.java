@@ -40,6 +40,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
+import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
@@ -240,6 +241,7 @@ class ReplicatingFile {
          */
         private void sendResponses(ReusableBuffer data, ObjectStatus status) {
             List<StageRequest> reqs = getWaitingRequests();
+            // IMPORTANT: stripe size must be the same in all striping policies
             StripingPolicyImpl sp = xLoc.getLocalReplica().getStripingPolicy();
             // responses
             for (StageRequest rq : reqs) {
@@ -277,14 +279,14 @@ class ReplicatingFile {
     /**
      * the absolute maximum that can be set for maxRequestsPerFile
      */
-    private static final int                 MAX_MAX_REQUESTS_PER_FILE = 5;
+    private static final int                 MAX_MAX_OBJECTS_IN_PROGRESS = 5;
 
     private final OSDRequestDispatcher       master;
 
     /**
-     * controls how many fetch-object-requests will be sent for a file (used for load-balancing)
+     * controls how many fetch-object-requests will be sent per file (used for load-balancing)
      */
-    private static int                       maxRequestsPerFile;
+    private static int                       maxObjectsInProgress;
 
     public final String                      fileID;
     private final TransferStrategy           strategy;
@@ -334,7 +336,9 @@ class ReplicatingFile {
         this.objectsInProgress = new HashMap<Long, ReplicatingObject>();
         this.waitingRequests = new HashMap<Long, ReplicatingObject>();
         
+        // IMPORTANT: stripe size must be the same in all striping policies
         StripingPolicyImpl sp = xLoc.getLocalReplica().getStripingPolicy();
+        assert(checkEqualStripeSizeOfReplicas(xLoc.getReplicas()));
         this.lastObject = sp.getObjectNoForOffset(xLoc.getXLocSet().getRead_only_file_size() - 1);
 
         // create a new strategy
@@ -467,7 +471,7 @@ class ReplicatingFile {
      * @throws TransferStrategyException
      */
     public void replicate() throws TransferStrategyException {
-        while (objectsInProgress.size() < maxRequestsPerFile) {
+        while (objectsInProgress.size() < maxObjectsInProgress) {
             strategy.selectNext();
             NextRequest next = strategy.getNext();
 
@@ -599,12 +603,13 @@ class ReplicatingFile {
                     "cannot update capability for file %s due to " + e1.getLocalizedMessage(),
                     fileID);
         }
-        
+
         OSDClient client = master.getOSDClient();
-        // TODO: change this, if using different striping policies
+        // IMPORTANT: stripe size must be the same in all striping policies
         RPCResponse<InternalReadLocalResponse> response = client.internal_read_local(osd.getAddress(),
                 fileID, new FileCredentials(xLoc.getXLocSet(), cap.getXCap()), objectNo, 0, 0, xLoc
-                        .getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo), attachObjectSet, null);
+                        .getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo),
+                attachObjectSet, null);
 
         response.registerListener(new RPCResponseAvailableListener<InternalReadLocalResponse>() {
             @Override
@@ -696,16 +701,28 @@ class ReplicatingFile {
 
     /**
      * adjust this value for load-balancing 
-     * @param requestsPerFile
+     * @param maxObjects
      */
-    public static void setMaxRequestsPerFile(int requestsPerFile) {
-        // at least one request MUST be sent per file
-        if(requestsPerFile >= 1)
-            if(requestsPerFile <= MAX_MAX_REQUESTS_PER_FILE)
-                ReplicatingFile.maxRequestsPerFile = requestsPerFile;
+    public static void setMaxObjectsInProgressPerFile(int maxObjects) {
+        // at least one request/object MUST be sent per file
+        if(maxObjects >= 1)
+            if(maxObjects <= MAX_MAX_OBJECTS_IN_PROGRESS)
+                ReplicatingFile.maxObjectsInProgress = maxObjects;
             else
-                ReplicatingFile.maxRequestsPerFile = MAX_MAX_REQUESTS_PER_FILE;
+                ReplicatingFile.maxObjectsInProgress = MAX_MAX_OBJECTS_IN_PROGRESS;
         else
-            ReplicatingFile.maxRequestsPerFile = 1;
+            ReplicatingFile.maxObjectsInProgress = 1;
+    }
+
+    /*
+     * additional test if asserts are enabled
+     */
+    private boolean checkEqualStripeSizeOfReplicas(List<Replica> replicas) {
+        boolean allEqual = true;
+        int stripeSize = replicas.get(0).getStripingPolicy().getStripeSizeForObject(0);
+        for (Replica replica : replicas)
+            if (stripeSize != replica.getStripingPolicy().getStripeSizeForObject(0))
+                allEqual = false;
+        return allEqual;
     }
 }
