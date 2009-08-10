@@ -32,7 +32,6 @@ namespace org
 
         static YIELD::auto_Object<OSDProxy> create( const YIELD::URI& absolute_uri,
                                                     const std::string& uuid,
-                                                    YIELD::auto_AIOQueue aio_queue = NULL,
                                                     uint32_t flags = 0,
                                                     YIELD::auto_Log log = NULL,
                                                     const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
@@ -60,8 +59,8 @@ namespace org
       private:
         friend class YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>;
 
-        OSDProxy( const YIELD::URI& absolute_uri, YIELD::auto_AIOQueue aio_queue, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SocketAddress peer_sockaddr, YIELD::auto_SSLContext ssl_context )
-          : Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>( absolute_uri, aio_queue, flags, log, operation_timeout, peer_sockaddr, ssl_context )
+        OSDProxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SocketAddress peer_sockaddr, YIELD::auto_SSLContext ssl_context )
+          : Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>( absolute_uri, flags, log, operation_timeout, peer_sockaddr, ssl_context )
         { }
 
         ~OSDProxy() { }

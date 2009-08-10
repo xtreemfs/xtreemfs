@@ -49,6 +49,8 @@ namespace org
           }
           else
           {
+            YIELD::Socket::init();
+
 #ifdef ORG_XTREEMFS_CLIENT_HAVE_GOOGLE_BREAKPAD
             google_breakpad::ExceptionHandler* exception_handler;
             void* MinidumpCallback_context = this;
@@ -61,7 +63,11 @@ namespace org
 #error
 #endif
 #endif
-            return YIELD::Main::main( argc, argv );
+            int ret = YIELD::Main::main( argc, argv );
+
+            YIELD::Socket::destroy();
+
+            return ret;
           }
         }
 
@@ -155,7 +161,7 @@ namespace org
           return proxy_flags;
         }       
 
-        YIELD::auto_Object<YIELD::URI> parseURI( const char* uri_c_str )
+        YIELD::auto_URI parseURI( const char* uri_c_str )
         {
           std::string uri_str( uri_c_str );
           if ( uri_str.find( "://" ) == std::string::npos )
@@ -166,12 +172,12 @@ namespace org
               uri_str = org::xtreemfs::interfaces::ONCRPC_SCHEME + std::string( "://" ) + uri_str;
           }
 
-          return YIELD::auto_Object<YIELD::URI>( new YIELD::URI( uri_str ) );
+          return YIELD::auto_URI( new YIELD::URI( uri_str ) );
         }
 
-        YIELD::auto_Object<YIELD::URI> parseVolumeURI( const char* volume_uri_c_str, std::string& volume_name )
+        YIELD::auto_URI parseVolumeURI( const char* volume_uri_c_str, std::string& volume_name )
         {
-          YIELD::auto_Object<YIELD::URI> volume_uri = parseURI( volume_uri_c_str );
+          YIELD::auto_URI volume_uri = parseURI( volume_uri_c_str );
           if ( volume_uri->get_resource().size() > 1 )
           {
             volume_name = volume_uri->get_resource().c_str() + 1;
@@ -225,7 +231,7 @@ namespace org
           if ( checked_uri.get_port() == 0 )
             checked_uri.set_port( default_port );
 
-          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, NULL, get_proxy_flags(), get_log(), operation_timeout, get_ssl_context() );
+          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, get_ssl_context() );
           if ( proxy != NULL )
             return proxy;
           else

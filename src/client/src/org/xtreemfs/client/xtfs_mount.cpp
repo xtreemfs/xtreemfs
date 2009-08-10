@@ -75,7 +75,7 @@ namespace org
 
         bool cache_data, cache_metadata;
         bool direct_io;
-        YIELD::auto_Object<YIELD::URI> dir_uri;
+        YIELD::auto_URI dir_uri;
         bool foreground;
         std::string fuse_o_args;
         std::string mount_point, volume_name;

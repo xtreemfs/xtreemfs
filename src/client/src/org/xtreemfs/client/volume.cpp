@@ -41,14 +41,13 @@ using namespace org::xtreemfs::client;
 Volume::Volume( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Log log, uint32_t proxy_flags, YIELD::auto_SSLContext ssl_context )
   : name( name ), flags( flags ), log( log )
 {
-  aio_queue = YIELD::AIOQueue::create();
   stage_group = new YIELD::SEDAStageGroup;
-  dir_proxy = DIRProxy::create( dir_uri, aio_queue, proxy_flags, log, 5 * NS_IN_S, ssl_context );
+  dir_proxy = DIRProxy::create( dir_uri, proxy_flags, log, 5 * NS_IN_S, ssl_context );
   stage_group->createStage( dir_proxy );
-  YIELD::auto_Object<YIELD::URI> mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
-  mrc_proxy = MRCProxy::create( *mrc_uri, aio_queue, proxy_flags, log, 5 * NS_IN_S, ssl_context );
+  YIELD::auto_URI mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
+  mrc_proxy = MRCProxy::create( *mrc_uri, proxy_flags, log, 5 * NS_IN_S, ssl_context );
   stage_group->createStage( mrc_proxy );
-  osd_proxy_mux = OSDProxyMux::create( dir_proxy, aio_queue, proxy_flags, log, 10 * NS_IN_S, ssl_context, stage_group );
+  osd_proxy_mux = OSDProxyMux::create( dir_proxy, proxy_flags, log, 10 * NS_IN_S, ssl_context, stage_group );
   stage_group->createStage( osd_proxy_mux );
 }
 

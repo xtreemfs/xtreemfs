@@ -19,11 +19,15 @@ typedef int ssize_t;
 #else
 #include <semaphore.h>
 #endif
-#ifdef YIELD_HAVE_POSIX_FILE_AIO
-#include <aio.h>
-#endif
 #ifdef __sun
 #include <libcpc.h>
+#define YIELD_HAVE_PERFORMANCE_COUNTERS 1
+#endif
+#ifdef YIELD_HAVE_PAPI
+#define YIELD_HAVE_PERFORMANCE_COUNTERS 1
+#endif
+#ifdef YIELD_HAVE_POSIX_FILE_AIO
+#include <aio.h>
 #endif
 #endif
 
@@ -201,7 +205,7 @@ struct timeval;
 
 namespace YIELD
 {
-  template <class> class InterThreadQueue;
+  template <class> class SynchronizedSTLQueue;
   class Path;
   class Stat;
 
@@ -307,16 +311,13 @@ namespace YIELD
 #ifdef _WIN32
     static AIOControlBlock* from_OVERLAPPED( OVERLAPPED* overlapped ) { return reinterpret_cast<struct aiocb*>( overlapped )->this_; }
 #endif
-
-    virtual void onCompletion( size_t ) { }    
-    virtual void onError( uint32_t ) { }
+    virtual void onCompletion( size_t bytes_transferred ) = 0;
+    virtual void onError( uint32_t error_code ) = 0;
 #if defined(_WIN32)
     operator OVERLAPPED*() { return reinterpret_cast<OVERLAPPED*>( &aiocb_ ); }
 #elif defined(YIELD_HAVE_POSIX_FILE_AIO)
     operator ::aiocb*() { return &aiocb_; }
 #endif
-
-    virtual void execute() = 0;
 
   protected:
     virtual ~AIOControlBlock() { }
@@ -331,41 +332,6 @@ namespace YIELD
   };
   
   typedef auto_Object<AIOControlBlock> auto_AIOControlBlock;
-
-
-  class AIOQueue : public Object
-  {
-  public:
-    void associate( int fd );
-    void associate( void* handle );
-    static auto_Object<AIOQueue> create();
-    void submit( auto_AIOControlBlock aio_control_block );
-
-    // Object
-    YIELD_OBJECT_PROTOTYPES( AIOQueue, 0 );
-
-  private:
-#ifdef _WIN32
-    AIOQueue( void* hIoCompletionPort );
-#else
-    AIOQueue();
-#endif
-    ~AIOQueue();
-
-#ifdef _WIN32
-    void* hIoCompletionPort;
-#endif
-
-    class BlockingWorkerThread;
-    std::vector<BlockingWorkerThread*> all_blocking_worker_threads;
-    InterThreadQueue<BlockingWorkerThread*>* idle_blocking_worker_threads_queue;
-#ifdef _WIN32
-    class IOCPWorkerThread;
-    std::vector<IOCPWorkerThread*> all_iocp_worker_threads;
-#endif
-  };
-
-  typedef auto_Object<AIOQueue> auto_AIOQueue;
 
 
   class CountingSemaphore
@@ -671,87 +637,6 @@ namespace YIELD
   };
 
 
-  template <class ElementType>
-  class InterThreadQueue : private std::queue<ElementType>
-  {
-  public:
-    ElementType dequeue()
-    {
-      if ( signal.acquire() )
-      {
-        if ( lock.try_acquire() )
-        {
-          if ( std::queue<ElementType>::size() > 0 )
-          {
-            ElementType element = std::queue<ElementType>::front();
-            std::queue<ElementType>::pop();
-            lock.release();
-            return element;
-          }
-          else
-            lock.release();
-        }
-      }
-
-      return NULL;
-    }
-
-    void enqueue( ElementType element )
-    {
-      lock.acquire();
-      std::queue<ElementType>::push( element );
-      lock.release();
-      signal.release();
-    }
-
-    ElementType timed_dequeue( uint64_t timeout_ns )
-    {
-      if ( signal.timed_acquire( timeout_ns ) )
-      {
-        if ( lock.try_acquire() )
-        {
-          if ( std::queue<ElementType>::size() > 0 )
-          {
-            ElementType element = std::queue<ElementType>::front();
-            std::queue<ElementType>::pop();
-            lock.release();
-            return element;
-          }
-          else
-            lock.release();
-        }
-      }
-
-      return NULL;
-    }
-
-    ElementType try_dequeue()
-    {
-      if ( signal.try_acquire() )
-      {
-        if ( lock.try_acquire() )
-        {
-          if ( std::queue<ElementType>::size() > 0 )
-          {
-            ElementType element = std::queue<ElementType>::front();
-            std::queue<ElementType>::pop();
-            lock.release();
-            return element;
-          }
-          else
-            lock.release();
-        }
-      }
-
-      return NULL;
-    }
-
-  private:
-    Mutex lock;
-    CountingSemaphore signal;
-  };
-
-
   class NOPLock
   {
   public:
@@ -759,6 +644,165 @@ namespace YIELD
     inline bool try_acquire() { return true; }
     inline bool timed_acquire( uint64_t ) { return true; }
     inline void release() { }
+  };
+
+
+  template <class ElementType, uint32_t QueueLength>
+  class NonBlockingFiniteQueue
+  {
+  public:
+    NonBlockingFiniteQueue()
+    {
+      head = 0;
+      tail = 1;
+
+      for ( size_t element_i = 0; element_i < QueueLength+2; element_i++ )
+        elements[element_i] = reinterpret_cast<ElementType>( 0 );
+
+      elements[0] = reinterpret_cast<ElementType>( 1 );
+    }
+
+    ElementType dequeue()
+    {
+      int32_t copied_head, try_pos;
+      ElementType try_element;
+
+      for ( ;; )
+      {
+        copied_head = head;
+        try_pos = ( copied_head + 1 ) % ( QueueLength + 2 );
+        try_element = reinterpret_cast<ElementType>( elements[try_pos] );
+
+        while ( try_element == reinterpret_cast<ElementType>( 0 ) ||
+                try_element == reinterpret_cast<ElementType>( 1 ) )
+        {
+          if ( copied_head != head )
+            break;
+
+          if ( try_pos == tail )
+            return 0;
+
+          try_pos = ( try_pos + 1 ) % ( QueueLength + 2 );
+
+          try_element = reinterpret_cast<ElementType>( elements[try_pos] );
+        }
+
+        if ( copied_head != head )
+          continue;
+
+        if ( try_pos == tail )
+        {
+          atomic_cas( &tail, ( try_pos + 1 ) % ( QueueLength + 2 ), try_pos );
+          continue;
+        }
+
+        if ( copied_head != head )
+          continue;
+
+        if ( 
+             atomic_cas( 
+                         reinterpret_cast<volatile uint_ptr*>( &elements[try_pos] ), 
+                         ( reinterpret_cast<uint_ptr>( try_element ) & PTR_HIGH_BIT ) ? 1 : 0, 
+                         reinterpret_cast<uint_ptr>( try_element )
+                       ) 
+             == reinterpret_cast<uint_ptr>( try_element ) 
+           )
+        {
+          if ( try_pos % 2 == 0 )
+            atomic_cas( &head, try_pos, copied_head );
+
+          return reinterpret_cast<ElementType>( ( reinterpret_cast<uint_ptr>( try_element ) & PTR_LOW_BITS ) << 1 );
+        }
+      }
+    }
+
+    bool enqueue( ElementType element )
+    {
+#ifdef _DEBUG
+      if ( reinterpret_cast<uint_ptr>( element ) & 0x1 ) DebugBreak();
+#endif
+
+      element = reinterpret_cast<ElementType>( reinterpret_cast<uint_ptr>( element ) >> 1 );
+
+#ifdef _DEBUG
+      if ( reinterpret_cast<uint_ptr>( element ) & PTR_HIGH_BIT ) DebugBreak();
+#endif
+
+      int32_t copied_tail, last_try_pos, try_pos; // te, ate, temp
+      ElementType try_element;
+
+      for ( ;; )
+      {
+        copied_tail = tail;
+        last_try_pos = copied_tail;
+        try_element = reinterpret_cast<ElementType>( elements[last_try_pos] );
+        try_pos = ( last_try_pos + 1 ) % ( QueueLength + 2 );
+
+        while ( try_element != reinterpret_cast<ElementType>( 0 ) &&
+                try_element != reinterpret_cast<ElementType>( 1 ) )
+        {
+          if ( copied_tail != tail )
+            break;
+
+          if ( try_pos == head )
+            break;
+
+          try_element = reinterpret_cast<ElementType>( elements[try_pos] );
+          last_try_pos = try_pos;
+          try_pos = ( last_try_pos + 1 ) % ( QueueLength + 2 );
+        }
+
+        if ( copied_tail != tail ) // Someone changed tail while we were looping
+          continue;
+
+        if ( try_pos == head )
+        {
+          last_try_pos = ( try_pos + 1 ) % ( QueueLength + 2 );
+          try_element = reinterpret_cast<ElementType>( elements[last_try_pos] );
+
+          if ( try_element != reinterpret_cast<ElementType>( 0 ) &&
+               try_element != reinterpret_cast<ElementType>( 1 ) )
+            return false; // Queue is full
+
+          atomic_cas( &head, last_try_pos, try_pos );
+
+          continue;
+        }
+
+        if ( copied_tail != tail )
+          continue;
+
+        // diff next line
+        if ( 
+             atomic_cas( 
+                         reinterpret_cast<volatile uint_ptr*>( &elements[last_try_pos] ), 
+                         try_element == reinterpret_cast<ElementType>( 1 ) ? ( reinterpret_cast<uint_ptr>( element ) | PTR_HIGH_BIT ) : reinterpret_cast<uint_ptr>( element ),
+                         reinterpret_cast<uint_ptr>( try_element )
+                       ) 
+             == reinterpret_cast<uint_ptr>( try_element ) 
+           )
+        {
+          if ( try_pos % 2 == 0 )
+            atomic_cas( &tail, try_pos, copied_tail );
+
+          return true;
+        }
+      }
+    }
+
+  private:
+    volatile ElementType elements[QueueLength+2]; // extra 2 for sentinels
+    volatile int32_t head, tail;
+
+#if defined(__LLP64__) || defined(__LP64__)
+    typedef int64_t uint_ptr;
+    const static uint_ptr PTR_HIGH_BIT = 0x8000000000000000;
+    const static uint_ptr PTR_LOW_BITS = 0x7fffffffffffffff;
+#else
+    typedef int32_t uint_ptr;
+    const static uint_ptr PTR_HIGH_BIT = 0x80000000;
+    const static uint_ptr PTR_LOW_BITS = 0x7fffffff;
+#endif
   };
 
 
@@ -838,11 +882,20 @@ namespace YIELD
   typedef YIELD::auto_Object<Path> auto_Path;
 
 
+#ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
   class PerformanceCounterSet : public Object
   {
   public:
+    enum Event 
+    {
+      EVENT_L1_DCM, // L1 data cache miss
+      EVENT_L2_DCM, // L2 data cache miss
+      EVENT_L2_ICM // L2 instruction cache miss
+    };
+
     static auto_Object<PerformanceCounterSet> create();
     
+    bool addEvent( Event event );
     bool addEvent( const char* name );
     void startCounting();
     void stopCounting( uint64_t* counts );
@@ -851,20 +904,22 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( PerformanceCounterSet, 0 );
 
   private:    
-#ifdef __sun
+#if defined(__sun)
     PerformanceCounterSet( cpc_t* cpc, cpc_set_t* cpc_set );
     cpc_t* cpc; cpc_set_t* cpc_set;
 
     std::vector<int> event_indices;
     cpc_buf_t* start_cpc_buf;
-#else
-    PerformanceCounterSet() { }
+#elif defined(YIELD_HAVE_PAPI)
+    PerformanceCounterSet( int papi_eventset );
+    int papi_eventset;
 #endif
 
     ~PerformanceCounterSet();
   };
 
   typedef auto_Object<PerformanceCounterSet> auto_PerformanceCounterSet;
+#endif
 
 
   class ProcessorSet : public Object
@@ -878,7 +933,7 @@ namespace YIELD
     uint16_t count() const;
     bool empty() const;
     bool isset( uint16_t processor_i ) const;
-    void set( uint16_t processor_i );    
+    bool set( uint16_t processor_i );    
 
     // Object
     YIELD_OBJECT_PROTOTYPES( ProcessorSet, 8 );
@@ -1068,6 +1123,132 @@ namespace YIELD
     SampleType samples[ArraySize+1], min, max; SampleType total;
     uint32_t samples_pos, samples_count;
     LockType lock;
+  };
+
+
+  template <class ElementType, uint32_t QueueLength>
+  class SynchronizedNonBlockingFiniteQueue : private NonBlockingFiniteQueue<ElementType, QueueLength>
+  {
+  public:
+    ElementType dequeue()
+    {
+      ElementType element = NonBlockingFiniteQueue<ElementType, QueueLength>::dequeue();
+
+      while ( element == 0 )
+      {
+        signal.acquire();
+        element = NonBlockingFiniteQueue<ElementType, QueueLength>::dequeue();
+      }
+
+      return element;
+    }
+
+    bool enqueue( ElementType element )
+    {
+      bool enqueued = NonBlockingFiniteQueue<ElementType, QueueLength>::enqueue( element );
+      signal.release();
+      return enqueued;
+    }
+
+    ElementType timed_dequeue( uint64_t timeout_ns )
+    {
+      ElementType element = NonBlockingFiniteQueue<ElementType, QueueLength>::dequeue();
+
+      if ( element != 0 )
+        return element;
+      else
+      {
+        signal.timed_acquire( timeout_ns );
+        return NonBlockingFiniteQueue<ElementType, QueueLength>::dequeue();
+      }
+    }
+
+    ElementType try_dequeue()
+    {
+      return NonBlockingFiniteQueue<ElementType, QueueLength>::dequeue();
+    }
+
+  private:
+    CountingSemaphore signal;
+  };
+
+
+  template <class ElementType>
+  class SynchronizedSTLQueue : private std::queue<ElementType>
+  {
+  public:
+    ElementType dequeue()
+    {
+      signal.acquire();
+      lock.acquire();
+      if ( std::queue<ElementType>::size() > 0 )
+      {
+        ElementType element = std::queue<ElementType>::front();
+        std::queue<ElementType>::pop();
+        lock.release();
+        return element;
+      }
+      else
+      {
+        lock.release();
+        return NULL;
+      }
+    }
+
+    bool enqueue( ElementType element )
+    {
+      lock.acquire();
+      std::queue<ElementType>::push( element );
+      lock.release();
+      signal.release();
+      return true;
+    }
+
+    ElementType timed_dequeue( uint64_t timeout_ns )
+    {
+      if ( signal.timed_acquire( timeout_ns ) )
+      {
+        if ( lock.try_acquire() )
+        {
+          if ( std::queue<ElementType>::size() > 0 )
+          {
+            ElementType element = std::queue<ElementType>::front();
+            std::queue<ElementType>::pop();
+            lock.release();
+            return element;
+          }
+          else
+            lock.release();
+        }
+      }
+
+      return NULL;
+    }
+
+    ElementType try_dequeue()
+    {
+      if ( signal.try_acquire() )
+      {
+        if ( lock.try_acquire() )
+        {
+          if ( std::queue<ElementType>::size() > 0 )
+          {
+            ElementType element = std::queue<ElementType>::front();
+            std::queue<ElementType>::pop();
+            lock.release();
+            return element;
+          }
+          else
+            lock.release();
+        }
+      }
+
+      return NULL;
+    }
+
+  private:
+    Mutex lock;
+    CountingSemaphore signal;
   };
 
 
@@ -1317,7 +1498,7 @@ namespace YIELD
       void run();
 
     private:
-      InterThreadQueue<TimerQueue::Timer*> new_timers_queue;
+      SynchronizedSTLQueue<TimerQueue::Timer*> new_timers_queue;
       bool should_run;
       std::priority_queue< std::pair<uint64_t, Timer*>, std::vector< std::pair<uint64_t, Timer*> >, std::greater< std::pair<uint64_t, Timer*> > > timers;
     }; 

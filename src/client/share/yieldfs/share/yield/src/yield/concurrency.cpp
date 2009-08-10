@@ -1,7 +1,75 @@
-// Revision: 1708
+// Revision: 1790
 
 #include "yield/concurrency.h"
 using namespace YIELD;
+
+
+// color_stage_group.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+class ColorStageGroup::Thread : public ::YIELD::Thread
+{
+public:
+  Thread( auto_STLEventQueue event_queue, uint16_t logical_processor_i, const char* name )
+    : event_queue( event_queue ), logical_processor_i( logical_processor_i ), name( name )
+  {
+    is_running = false;
+    should_run = true;
+  }
+  void stop()
+  {
+    should_run = false;
+    auto_Object<Stage::ShutdownEvent> stage_shutdown_event( new Stage::ShutdownEvent );
+    while ( is_running )
+    {
+      event_queue->enqueue( stage_shutdown_event->incRef() );
+      Thread::sleep( 5 * NS_IN_MS );
+    }
+  }
+  // Thread
+  void run()
+  {
+    is_running = true;
+    this->set_name( name.c_str() );
+    this->set_processor_affinity( logical_processor_i );
+    while ( should_run )
+    {
+      Event* event = event_queue->dequeue();
+      if ( event != NULL )
+      {
+        if ( event->get_next_stage() != NULL )
+          event->get_next_stage()->visit( *event );
+      }
+    }
+    is_running = false;
+  }
+private:
+  auto_STLEventQueue event_queue;
+  uint16_t logical_processor_i;
+  std::string name;
+  bool is_running, should_run;
+};
+ColorStageGroup::ColorStageGroup( const char* name, uint16_t start_logical_processor_i, int16_t thread_count )
+{
+  event_queue = new STLEventQueue;
+  uint16_t online_logical_processor_count = Machine::getOnlineLogicalProcessorCount();
+  if ( thread_count == -1 )
+    thread_count = static_cast<int16_t>( online_logical_processor_count );
+  for ( uint16_t logical_processor_i = start_logical_processor_i; logical_processor_i < start_logical_processor_i + thread_count; logical_processor_i++ )
+  {
+    Thread* thread = new Thread( event_queue, logical_processor_i % online_logical_processor_count, name );
+    thread->start();
+    threads.push_back( thread );
+  }
+}
+ColorStageGroup::~ColorStageGroup()
+{
+  for ( std::vector<Thread*>::iterator thread_i = threads.begin(); thread_i != threads.end(); thread_i++ )
+  {
+    ( *thread_i )->stop();
+    Object::decRef( **thread_i );
+  }
+}
 
 
 // event_handler.cpp
@@ -34,7 +102,40 @@ void EventHandler::send( Event& ev )
 }
 
 
-// mg1_stage_group.cpp
+// event_target_mux.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+EventTargetMux::EventTargetMux()
+{
+  event_targets = NULL;
+  event_targets_len = 0;
+}
+EventTargetMux::~EventTargetMux()
+{
+  for ( size_t event_target_i = 0; event_target_i < event_targets_len; event_target_i++ )
+    Object::decRef( *event_targets[event_target_i] );
+  delete [] event_targets;
+}
+void EventTargetMux::addEventTarget( auto_EventTarget event_target )
+{
+  EventTarget** new_event_targets = new EventTarget*[event_targets_len+1];
+  if ( event_targets != NULL )
+  {
+    memcpy_s( new_event_targets, ( event_targets_len + 1 ) * sizeof( EventTarget* ), event_targets, event_targets_len * sizeof( EventTarget* ) );
+    delete [] event_targets;
+  }
+  event_targets = new_event_targets;
+  event_targets[event_targets_len] = event_target.release();
+  event_targets_len++;
+}
+void EventTargetMux::send( Event& ev )
+{
+  next_event_target_i = ( next_event_target_i + 1 ) % event_targets_len;
+  event_targets[next_event_target_i]->send( ev );
+}
+
+
+// mg1_visit_policy.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #include <cmath>
@@ -161,171 +262,119 @@ bool MG1VisitPolicy::populatePollingTable()
 }
 
 
-// per_processor_stage_group.cpp
+// polling_stage_group.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 template <class VisitPolicyType>
-PerProcessorStageGroup<VisitPolicyType>::PerProcessorStageGroup( const char* name, auto_ProcessorSet limit_physical_processor_set, int16_t threads_per_physical_processor )
-  : StageGroupImpl< PerProcessorStageGroup<VisitPolicyType > >( limit_physical_processor_set )
-{
-  uint16_t logical_processors_per_physical_processor = Machine::getLogicalProcessorsPerPhysicalProcessor();
-  uint16_t online_physical_processor_count = Machine::getOnlinePhysicalProcessorCount();
-  if ( threads_per_physical_processor < 0 )
-    this->threads_per_physical_processor = logical_processors_per_physical_processor;
-  else if ( threads_per_physical_processor == 0 )
-    this->threads_per_physical_processor = 1;
-  else
-    this->threads_per_physical_processor = threads_per_physical_processor;
-  for ( uint16_t physical_processor_i = 0; physical_processor_i < online_physical_processor_count; physical_processor_i++ )
-  {
-    if ( limit_physical_processor_set == NULL || limit_physical_processor_set->isset( physical_processor_i ) )
-    {
-      PhysicalProcessorThread* physical_processor_thread = new PhysicalProcessorThread( new ProcessorSet( physical_processor_i * logical_processors_per_physical_processor ), name );
-      physical_processor_threads.push_back( physical_processor_thread );
-      logical_processor_threads.push_back( physical_processor_thread );
-      for ( int16_t logical_thread_per_physical_processor_i = 1; logical_thread_per_physical_processor_i < this->threads_per_physical_processor; logical_thread_per_physical_processor_i++ )
-        logical_processor_threads.push_back( new LogicalProcessorThread( new ProcessorSet( ( logical_processors_per_physical_processor * physical_processor_i ) + ( logical_thread_per_physical_processor_i % logical_processors_per_physical_processor ) ), *physical_processor_thread, name ) );
-    }
-  }
-  next_stage_for_logical_processor_i = 0;
-}
-template <class VisitPolicyType>
-PerProcessorStageGroup<VisitPolicyType>::~PerProcessorStageGroup()
-{
-  for ( typename std::vector<Thread*>::iterator logical_processor_thread_i = logical_processor_threads.begin(); logical_processor_thread_i != logical_processor_threads.end(); logical_processor_thread_i++ )
-  {
-    ( *logical_processor_thread_i )->stop();
-    Object::decRef( **logical_processor_thread_i );
-  }
-  Stage::ShutdownEvent stage_shutdown_ev;
-  for ( std::vector<Stage*>::iterator stage_i = stages.begin(); stage_i != stages.end(); stage_i++ )
-    ( *stage_i )->get_event_handler()->handleEvent( stage_shutdown_ev.incRef() );
-}
-template <class VisitPolicyType>
-class PerProcessorStageGroup<VisitPolicyType>::PhysicalProcessorThread : public Thread
+class PollingStageGroup<VisitPolicyType>::Thread : public ::YIELD::Thread
 {
 public:
-  PhysicalProcessorThread( auto_Object<ProcessorSet> limit_logical_processor_set, const std::string& stage_group_name )
-    : Thread( limit_logical_processor_set, stage_group_name, stages )
+  Thread( uint16_t logical_processor_i, const char* name, Stage** stages )
+    : logical_processor_i( logical_processor_i ),
+      name( name ),
+      visit_policy( stages )
   {
-    memset( stages, 0, sizeof( stages ) );
-    stage = NULL;
+    is_running = false;
+    should_run = true;
   }
-  PhysicalProcessorThread& operator=( const PhysicalProcessorThread& ) { return *this; }
-  Stage** get_stages() { return stages; }
-  // PerProcessorStageGroup::Thread
-  void addStage( Stage& stage )
+  void stop()
   {
-    if ( !this->is_running ) this->start();
-    // Use a single pointer as a "queue" instead of a non-blocking finite queue, which is mostly overhead after startup
-    while ( this->stage != NULL ) Thread::sleep( 1 * NS_IN_MS );
-    this->stage = &stage;
+    should_run = false;
+    while ( is_running )
+      Thread::yield();
   }
-private:
-  ~PhysicalProcessorThread() { }
-  Stage* stage;
-  Stage* stages[YIELD_STAGES_PER_GROUP_MAX];
-  // StageGroup::Thread
-  void _run()
+  // Thread
+  void run()
   {
-    // Per-thread variables on the stack
-    uint64_t visit_timeout_ns = 0;
-    uint64_t last_successful_visit_time_ns = Time::getCurrentUnixTimeNS();
-    while ( this->should_run )
+    is_running = true;
+    this->set_name( name.c_str() );
+    if ( !this->set_processor_affinity( logical_processor_i ) )
+      std::cerr << "yield::PollingStageGroup::Thread: error on set_processor_affinity( " << logical_processor_i << " ): " << Exception::strerror() << std::endl;
+    uint64_t visit_timeout_ns = 1 * NS_IN_MS;
+    uint64_t successful_visits = 0, total_visits = 0;
+    while ( should_run )
     {
-      Stage* next_stage_to_visit = this->visit_policy.getNextStageToVisit( visit_timeout_ns == 0 );
-      if ( next_stage_to_visit && this->visitStage( *next_stage_to_visit, visit_timeout_ns ) )
+      Stage* next_stage_to_visit = visit_policy.getNextStageToVisit( visit_timeout_ns == 0 );
+      if ( next_stage_to_visit != NULL )
       {
-        visit_timeout_ns = 0;
-        last_successful_visit_time_ns = Time::getCurrentUnixTimeNS();
-      }
-      else
-      {
-        if ( Time::getCurrentUnixTimeNS() - last_successful_visit_time_ns > 200 * NS_IN_MS &&
-            visit_timeout_ns < 20 * NS_IN_MS )
-         visit_timeout_ns += NS_IN_MS;
-      }
-      if ( stage )
-      {
-        Stage* stage = this->stage;
-        this->stage = NULL;
-        unsigned char stage_i;
-        for ( stage_i = 0; stage_i < YIELD_STAGES_PER_GROUP_MAX; stage_i++ )
+        total_visits++;
+        if ( next_stage_to_visit->visit( visit_timeout_ns ) )
         {
-          if ( stages[stage_i] == NULL )
-          {
-            stages[stage_i] = stage;
-            break;
-          }
+          successful_visits++;
+          visit_timeout_ns = 0;
         }
-        if ( stage_i == YIELD_STAGES_PER_GROUP_MAX )
-        {
-          std::ostringstream cerr_str;
-          cerr_str << "PerProcessorStageGroupThread: too many stages on thread " << this->get_id() << ", failing." << std::endl;
-          std::cerr << cerr_str;
-          DebugBreak();
-        }
+        else if ( visit_timeout_ns < 1 * NS_IN_MS )
+          visit_timeout_ns += 1;
       }
     }
+    std::cout << "yield::PollingStageGroup::Thread: visit efficiency = " << static_cast<double>( successful_visits ) / static_cast<double>( total_visits ) << std::endl;
+    is_running = false;
   }
+private:
+  uint16_t logical_processor_i;
+  std::string name;
+  VisitPolicyType visit_policy;
+  bool is_running, should_run;
 };
 template <class VisitPolicyType>
-class PerProcessorStageGroup<VisitPolicyType>::LogicalProcessorThread : public Thread
+PollingStageGroup<VisitPolicyType>::PollingStageGroup( const char* name, uint16_t start_logical_processor_i, int16_t thread_count, bool use_thread_local_event_queues )
+  : use_thread_local_event_queues( use_thread_local_event_queues )
 {
-public:
-  LogicalProcessorThread( auto_Object<ProcessorSet> limit_logical_processor_set, PhysicalProcessorThread& physical_processor_thread, const std::string& stage_group_name )
-    : Thread( limit_logical_processor_set, stage_group_name, physical_processor_thread.get_stages() ),
-      physical_processor_thread( physical_processor_thread )
-  { }
-  LogicalProcessorThread& operator=( const LogicalProcessorThread& ) { return *this; }
-  // PerProcessorStageGroup::Thread
-  void addStage( Stage& stage )
+  uint16_t online_logical_processor_count = Machine::getOnlineLogicalProcessorCount();
+  if ( thread_count == -1 )
+    thread_count = static_cast<int16_t>( online_logical_processor_count );
+  for ( uint16_t logical_processor_i = start_logical_processor_i; logical_processor_i < start_logical_processor_i + thread_count; logical_processor_i++ )
   {
-    physical_processor_thread.addStage( stage );
+    Thread* thread = new Thread( logical_processor_i % online_logical_processor_count, name, this->get_stages() );
+    thread->start();
+    threads.push_back( thread );
   }
-private:
-  PhysicalProcessorThread& physical_processor_thread;
-  // StageGroup::Thread
-  void _run()
+}
+template <class VisitPolicyType>
+PollingStageGroup<VisitPolicyType>::~PollingStageGroup()
+{
+  for ( typename std::vector<Thread*>::iterator thread_i = threads.begin(); thread_i != threads.end(); thread_i++ )
   {
-    // Per-thread variables on the stack
-    uint64_t visit_timeout_ns = 0;
-    uint64_t last_successful_visit_time_ns = Time::getCurrentUnixTimeNS();
-    while ( this->should_run )
-    {
-      Stage* next_stage_to_visit = this->visit_policy.getNextStageToVisit( visit_timeout_ns == 0 );
-      if ( next_stage_to_visit && this->visitStage( *next_stage_to_visit, visit_timeout_ns ) )
-      {
-        visit_timeout_ns = 0;
-        last_successful_visit_time_ns = Time::getCurrentUnixTimeNS();
-      }
-      else
-      {
-        if ( Time::getCurrentUnixTimeNS() - last_successful_visit_time_ns > 200 * NS_IN_MS &&
-            visit_timeout_ns < 20 * NS_IN_MS )
-         visit_timeout_ns += NS_IN_MS;
-      }
-    }
+    ( *thread_i )->stop();
+    Object::decRef( **thread_i );
   }
-};
-template class PerProcessorStageGroup<MG1VisitPolicy>;
-template class PerProcessorStageGroup<SRPTVisitPolicy>;
-template class PerProcessorStageGroup<WavefrontVisitPolicy>;
+}
+template class PollingStageGroup<DBRVisitPolicy>;
+template class PollingStageGroup<MG1VisitPolicy>;
+template class PollingStageGroup<SRPTVisitPolicy>;
+template class PollingStageGroup<WavefrontVisitPolicy>;
+
+
+// request.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+auto_EventTarget Request::get_response_target() const
+{
+  return response_target;
+}
+void Request::respond( Response& response )
+{
+  response_target->send( response );
+}
+void Request::set_response_target( auto_EventTarget response_target )
+{
+  this->response_target = response_target;
+}
 
 
 // seda_stage_group.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-class SEDAStageGroup::Thread : public StageGroup::Thread
+class SEDAStageGroup::Thread : public ::YIELD::Thread
 {
 public:
-  Thread( auto_ProcessorSet limit_logical_processor_set, auto_Stage stage )
-    : StageGroup::Thread( limit_logical_processor_set ), stage( stage )
-  { }
+  Thread( auto_Stage stage )
+    : stage( stage )
+  {
+    is_running = false;
+    should_run = true;
+  }
   auto_Stage get_stage() { return stage; }
-  // Object
-  YIELD_OBJECT_PROTOTYPES( SEDAStageGroup::Thread, 0 );
-  // StageGroup::Thread
   void stop()
   {
     should_run = false;
@@ -339,16 +388,27 @@ public:
         break;
     }
   }
+  // Thread
+  void run()
+  {
+    is_running = true;
+    Thread::set_name( stage->get_stage_name() );
+    while ( should_run )
+      stage->visit();
+    is_running = false;
+  }
+  void start()
+  {
+    ::YIELD::Thread::start();
+    while ( !is_running )
+      Thread::yield();
+  }
+  // Object
+  YIELD_OBJECT_PROTOTYPES( SEDAStageGroup::Thread, 0 );
 private:
   ~Thread() { }
   auto_Stage stage;
-  // StageGroup::Thread
-  void _run()
-  {
-    Thread::set_name( stage->get_stage_name() );
-    while ( should_run )
-      visitStage( *stage );
-  }
+  bool is_running, should_run;
 };
 SEDAStageGroup::~SEDAStageGroup()
 {
@@ -361,7 +421,7 @@ void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
 {
   for ( unsigned short thread_i = 0; thread_i < thread_count; thread_i++ )
   {
-    Thread* thread = new Thread( get_limit_logical_processor_set(), stage );
+    Thread* thread = new Thread( stage );
     thread->start();
     this->threads.push_back( thread );
   }
@@ -371,131 +431,107 @@ void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
 // stage.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 class Stage::StatisticsTimer : public TimerQueue::Timer
 {
 public:
   StatisticsTimer( auto_Object<Stage> stage )
-    : Timer( 1 * NS_IN_S, 1 * NS_IN_S ), stage( stage )
+    : Timer( 5 * NS_IN_S, 5 * NS_IN_S ), stage( stage )
   { }
-
   // Timer
   bool fire( const Time& elapsed_time )
   {
-    stage->arrival_rate_s = static_cast<double>( stage->event_queue_arrival_count ) / elapsed_time.as_unix_time_s();
-    stage->event_queue_arrival_count = 0;
-
-    stage->service_rate_s = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_mean();
-
-    stage->rho = stage->arrival_rate_s / stage->service_rate_s;
-
-    //if ( strcmp( stage->get_stage_name(), "HTTPBenchmarkDriver" ) != 0 )
-    //{
-    //  double service_rate_s_max = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_min();
-    //  double service_rate_s_min = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_max();
-    //  double service_rate_s_25 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.25 );
-    //  double service_rate_s_50 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.50 );
-    //  double service_rate_s_75 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.75 );
-    //  double service_rate_s_95 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_percentile( 0.95 );
-    //  double service_rate_s_mean = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_mean();
-    //  double service_rate_s_median = static_cast<double>( NS_IN_S ) / stage->event_processing_time_sampler.get_median();
-    //  std::ostringstream cout_line;
-    //  cout_line << "{\"" << stage->get_stage_name() << "\":{";
-    //  cout_line << "\"service_rate_s_max\": " << service_rate_s_max;
-    //  cout_line << ",\"service_rate_s_min\": " << service_rate_s_min;
-    //  cout_line << ",\"service_rate_s_25\": " << service_rate_s_25;
-    //  cout_line << ",\"service_rate_s_50\": " << service_rate_s_50;
-    //  cout_line << ",\"service_rate_s_75\": " << service_rate_s_75;
-    //  cout_line << ",\"service_rate_s_95\": " << service_rate_s_95;
-    //  cout_line << ",\"service_rate_s_mean\": " << service_rate_s_mean;
-    //  cout_line << ",\"service_rate_s_median\": " << service_rate_s_median;
-    //  cout_line << "}" << std::endl;
-    //  std::cout << cout_line.str();
-    //}
-
-    //if ( !stage->send_counters.empty() )
-    //{
-    //  std::ostringstream cout_line;
-    //  cout_line << "{\"" << stage->get_stage_name() << "\":{";
-    //  stage->send_counters_lock.acquire();
-    //  double send_counters_total = 0;
-    //  for ( std::map<const char*, uint64_t>::const_iterator send_counter_i = stage->send_counters.begin(); send_counter_i != stage->send_counters.end(); send_counter_i++ )
-    //    send_counters_total += send_counter_i->second;
-    //  for ( std::map<const char*, uint64_t>::const_iterator send_counter_i = stage->send_counters.begin(); send_counter_i != stage->send_counters.end(); send_counter_i++ )
-    //    cout_line << "\"" << send_counter_i->first << "\":" << static_cast<double>( send_counter_i->second ) / send_counters_total << ",";
-    //  stage->send_counters_lock.release();
-    //  cout_line << "\"\":0}}";
-    //  cout_line << std::endl;
-    //  std::cout << cout_line.str();
-    //}
-
+    if ( stage->event_queue_arrival_count > 0 )
+    {
+      stage->arrival_rate_s = static_cast<double>( stage->event_queue_arrival_count ) / elapsed_time.as_unix_time_s();
+      stage->event_queue_arrival_count = 0;
+      stage->service_rate_s = static_cast<double>( NS_IN_S ) / stage->event_processing_time_ns_sampler.get_percentile( 0.95 );
+      stage->rho = stage->arrival_rate_s / stage->service_rate_s;
+      //if ( strcmp( stage->get_stage_name(), "HTTPBenchmarkDriver" ) != 0 )
+      //{
+      //  double service_rate_s_max = static_cast<double>( NS_IN_S ) / stage->event_processing_time_ns_sampler.get_min();
+      //  double service_rate_s_min = static_cast<double>( NS_IN_S ) / stage->event_processing_time_ns_sampler.get_max();
+      //  double service_rate_s_25 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_ns_sampler.get_percentile( 0.25 );
+      //  double service_rate_s_50 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_ns_sampler.get_percentile( 0.50 );
+      //  double service_rate_s_75 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_ns_sampler.get_percentile( 0.75 );
+      //  double service_rate_s_95 = static_cast<double>( NS_IN_S ) / stage->event_processing_time_ns_sampler.get_percentile( 0.95 );
+      //  double service_rate_s_mean = static_cast<double>( NS_IN_S ) / stage->event_processing_time_ns_sampler.get_mean();
+      //  double service_rate_s_median = static_cast<double>( NS_IN_S ) / stage->event_processing_time_ns_sampler.get_median();
+      //  std::ostringstream cout_line;
+      //  cout_line << "{\"" << stage->get_stage_name() << "\":{";
+      //  cout_line << "\"service_rate_s_max\": " << service_rate_s_max;
+      //  cout_line << ",\"service_rate_s_min\": " << service_rate_s_min;
+      //  cout_line << ",\"service_rate_s_25\": " << service_rate_s_25;
+      //  cout_line << ",\"service_rate_s_50\": " << service_rate_s_50;
+      //  cout_line << ",\"service_rate_s_75\": " << service_rate_s_75;
+      //  cout_line << ",\"service_rate_s_95\": " << service_rate_s_95;
+      //  cout_line << ",\"service_rate_s_mean\": " << service_rate_s_mean;
+      //  cout_line << ",\"service_rate_s_median\": " << service_rate_s_median;
+      //  cout_line << "}" << std::endl;
+      //  std::cout << cout_line.str();
+      //}
+      //if ( !stage->send_counters.empty() )
+      //{
+      //  std::ostringstream cout_line;
+      //  cout_line << "{\"" << stage->get_stage_name() << "\":{";
+      //  stage->send_counters_lock.acquire();
+      //  double send_counters_total = 0;
+      //  for ( std::map<const char*, uint64_t>::const_iterator send_counter_i = stage->send_counters.begin(); send_counter_i != stage->send_counters.end(); send_counter_i++ )
+      //    send_counters_total += send_counter_i->second;
+      //  for ( std::map<const char*, uint64_t>::const_iterator send_counter_i = stage->send_counters.begin(); send_counter_i != stage->send_counters.end(); send_counter_i++ )
+      //    cout_line << "\"" << send_counter_i->first << "\":" << static_cast<double>( send_counter_i->second ) / send_counters_total << ",";
+      //  stage->send_counters_lock.release();
+      //  cout_line << "\"\":0}}";
+      //  cout_line << std::endl;
+      //  std::cout << cout_line.str();
+      //}
+    }
     return true;
   }
-
 private:
   auto_Object<Stage> stage;
 };
-
-
-Stage::Stage()
+Stage::Stage( const char* name )
+  : name( name )
 {
+  // event_processing_time_ns_total = 0;
   event_queue_length = event_queue_arrival_count = 1; // send() would normally inc these, but we can't use send() because it's a virtual function; instead we enqueue directly and inc the lengths ourselves
-  TimerQueue::getDefaultTimerQueue().addTimer( new StatisticsTimer( incRef() ) );
+  // events_processed_total = 0;
+#ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
+  performance_counters = PerformanceCounterSet::create();
+  performance_counters->addEvent( PerformanceCounterSet::EVENT_L1_DCM );
+  performance_counters->addEvent( PerformanceCounterSet::EVENT_L2_ICM );
+  std::memset( performance_counter_totals, 0, sizeof( performance_counter_totals ) );
+#endif
+  TimerQueue::getDefaultTimerQueue().addTimer( new StatisticsTimer( this ) );
 }
-
-void Stage::send( Event& ev )
+Stage::~Stage()
 {
-  ++event_queue_length;
-  ++event_queue_arrival_count;
-
-/*
-  Stage* running_stage = static_cast<Stage*>( Thread::getTLS( running_stage_tls_key ) );
-  if ( running_stage != NULL )
-  {
-    running_stage->send_counters_lock.acquire();
-    std::map<const char*, uint64_t>::iterator send_counter_i = running_stage->send_counters.find( this->get_stage_name() );
-    if ( send_counter_i != running_stage->send_counters.end() )
-      send_counter_i->second++;
-    else
-      running_stage->send_counters.insert( std::make_pair( this->get_stage_name(), 1 ) );
-    running_stage->send_counters_lock.release();
-  }
-  */
-
-  event_queue.enqueue( ev );
+  //std::cout << get_stage_name() << ": event processing time (ns) total: " << event_processing_time_ns_total << std::endl;
+  //std::cout << get_stage_name() << ": event processing time (ns) expected: " << event_processing_time_ns_sampler.get_percentile( 0.95 ) * events_processed_total << std::endl;
+#ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
+  std::cout << get_stage_name() << ": L1 data cache misses: " << performance_counter_totals[0] << std::endl;
+  std::cout << get_stage_name() << ": L2 instruction cache misses: " << performance_counter_totals[1] << std::endl;
+#endif
 }
 
 
 // stage_group.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-StageGroup::StageGroup( auto_ProcessorSet limit_physical_processor_set )
-: limit_physical_processor_set( limit_physical_processor_set )
+
+
+
+StageGroup::StageGroup()
 {
-  if ( limit_physical_processor_set != NULL )
-  {
-    limit_logical_processor_set = new ProcessorSet;
-    uint16_t online_physical_processor_count = Machine::getOnlinePhysicalProcessorCount();
-    uint16_t logical_processors_per_physical_processor = Machine::getOnlinePhysicalProcessorCount();
-    for ( uint16_t physical_processor_i = 0; physical_processor_i < online_physical_processor_count; physical_processor_i++ )
-    {
-      if ( limit_physical_processor_set->isset( physical_processor_i ) )
-      {
-        for ( uint16_t logical_processor_i = physical_processor_i * logical_processors_per_physical_processor; logical_processor_i < ( physical_processor_i + 1 ) * logical_processors_per_physical_processor; logical_processor_i++ )
-          limit_logical_processor_set->set( logical_processor_i );
-      }
-    }
-  }
-  running_stage_tls_key = Thread::createTLSKey();
   memset( stages, 0, sizeof( stages ) );
 }
+
 StageGroup::~StageGroup()
 {
   for ( uint8_t stage_i = 0; stage_i < YIELD_STAGES_PER_GROUP_MAX; stage_i++ )
     Object::decRef( stages[stage_i] );
 }
+
 void StageGroup::addStage( auto_Stage stage )
 {
   unsigned char stage_i;
@@ -503,31 +539,92 @@ void StageGroup::addStage( auto_Stage stage )
   {
     if ( stages[stage_i] == NULL )
     {
+      stage->set_stage_id( stage_i );
       stages[stage_i] = stage.release();
       return;
     }
   }
+
   DebugBreak();
 }
-StageGroup::Thread::Thread( auto_ProcessorSet limit_logical_processor_set )
-  : limit_logical_processor_set( limit_logical_processor_set )
+
+
+// thread_local_event_queue.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#include <stack>
+class ThreadLocalEventQueue::EventStack : private std::stack<Event*>
 {
-  is_running = false;
-  should_run = true;
+public:
+  Event* pop()
+  {
+    if ( !std::stack<Event*>::empty() )
+    {
+      Event* event = std::stack<Event*>::top();
+      std::stack<Event*>::pop();
+      return event;
+    }
+    else
+      return NULL;
+  }
+  void push( Event& ev )
+  {
+    std::stack<Event*>::push( &ev );
+  }
+};
+ThreadLocalEventQueue::ThreadLocalEventQueue()
+{
+  tls_key = Thread::createTLSKey();
 }
-void StageGroup::Thread::start()
+ThreadLocalEventQueue::~ThreadLocalEventQueue()
 {
-  YIELD::Thread::start();
-  while ( !is_running )
-    Thread::yield();
+  for ( std::vector<EventStack*>::iterator event_stack_i = event_stacks.begin(); event_stack_i != event_stacks.end(); event_stack_i++ )
+    delete *event_stack_i;
 }
-void StageGroup::Thread::run()
+Event* ThreadLocalEventQueue::dequeue()
 {
-  if ( limit_logical_processor_set != NULL )
-    this->set_processor_affinity( *limit_logical_processor_set );
-//  Thread::setTLS( stage_group.get_running_stage_group_thread_tls_key(), this );
-  is_running = true;
-  _run();
-  is_running = false;
+  Event* event = getEventStack()->pop();
+  if ( event != NULL )
+    return event;
+  else
+    return all_processor_event_queue.dequeue();
+}
+bool ThreadLocalEventQueue::enqueue( Event& ev )
+{
+  EventStack* event_stack = static_cast<EventStack*>( Thread::getTLS( tls_key ) );
+  if ( event_stack != NULL )
+  {
+    event_stack->push( ev );
+    return true;
+  }
+  else
+    return all_processor_event_queue.enqueue( &ev );
+}
+ThreadLocalEventQueue::EventStack* ThreadLocalEventQueue::getEventStack()
+{
+  EventStack* event_stack = static_cast<EventStack*>( Thread::getTLS( tls_key ) );
+  if ( event_stack == NULL )
+  {
+    event_stack = new EventStack;
+    Thread::setTLS( tls_key, event_stack );
+    event_stacks.push_back( event_stack );
+  }
+  return event_stack;
+}
+Event* ThreadLocalEventQueue::timed_dequeue( uint64_t timeout_ns )
+{
+  Event* event = getEventStack()->pop();
+  if ( event != NULL )
+    return event;
+  else
+    return all_processor_event_queue.timed_dequeue( timeout_ns );
+}
+Event* ThreadLocalEventQueue::try_dequeue()
+{
+  Event* event = getEventStack()->pop();
+  if ( event != NULL )
+    return event;
+  else
+    return all_processor_event_queue.try_dequeue();
 }
 

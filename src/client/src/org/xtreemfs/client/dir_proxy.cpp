@@ -52,7 +52,7 @@ YIELD::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> DIRProxy::getAd
 }
 
 
-YIELD::auto_Object<YIELD::URI> DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_name )
+YIELD::auto_URI DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_name )
 {
   org::xtreemfs::interfaces::ServiceSet services;
   xtreemfs_service_get_by_name( volume_name, services );

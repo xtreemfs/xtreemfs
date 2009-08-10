@@ -48,7 +48,6 @@ namespace org
         uint32_t flags;
         YIELD::auto_Log log;
 
-        YIELD::auto_AIOQueue aio_queue;
         YIELD::auto_Object<DIRProxy> dir_proxy;
         YIELD::auto_Object<MRCProxy> mrc_proxy;
         YIELD::auto_Object<OSDProxyMux> osd_proxy_mux;

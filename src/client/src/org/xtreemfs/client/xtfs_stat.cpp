@@ -21,7 +21,7 @@ namespace org
         { }
 
       private:
-        YIELD::auto_Object<YIELD::URI> mrc_uri;
+        YIELD::auto_URI mrc_uri;
         Path path;
 
         // YIELD::Main

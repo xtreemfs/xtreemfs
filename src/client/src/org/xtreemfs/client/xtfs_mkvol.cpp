@@ -55,7 +55,7 @@ namespace org
 
         org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy;
         uint32_t mode;
-        YIELD::auto_Object<YIELD::URI> mrc_uri;
+        YIELD::auto_URI mrc_uri;
         std::string owner_group_id, owner_user_id;
         org::xtreemfs::interfaces::OSDSelectionPolicyType osd_selection_policy;
         org::xtreemfs::interfaces::StripingPolicyType striping_policy;

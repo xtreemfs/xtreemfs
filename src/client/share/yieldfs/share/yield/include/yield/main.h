@@ -4,7 +4,7 @@
 #ifndef _YIELD_MAIN_H_
 #define _YIELD_MAIN_H_
 
-#include "yield.h"
+#include "yield/platform.h"
 
 #include <algorithm>
 #include <cstring>
@@ -14,19 +14,16 @@
 #include <vector>
 
 #ifdef _WIN32
-#pragma warning( push )
-#pragma warning( disable: 4995 )
-#include <winsock2.h>
-#pragma comment( lib, "ws2_32.lib" )
 #include "SimpleOpt.h"
-#pragma warning( pop )
+//#include <vld.h>
+#include <windows.h> // For ConsoleCtrlHandler
 #else
 #include "SimpleOpt.h"
-#include <signal.h>
 #ifdef __MACH__
 #include <mach-o/dyld.h> // For _NSGetExecutablePath
 #endif
 #endif
+
 
 namespace YIELD
 {
@@ -72,14 +69,6 @@ namespace YIELD
 
     virtual int main( int argc, char** argv )
     {
-#ifdef _WIN32
-      WORD wVersionRequested = MAKEWORD( 2, 2 );
-      WSADATA wsaData;
-      WSAStartup( wVersionRequested, &wsaData );
-#else
-      signal( SIGPIPE, SIG_IGN );
-#endif
-
       int ret = 0;
 
       try
@@ -226,9 +215,7 @@ namespace YIELD
         ret = 1;
       }
 
-#ifdef _WIN32
-      ::WSACleanup();
-#endif
+      // TimerQueue::destroyDefaultTimerQueue();
 
       return ret;
     }
@@ -266,6 +253,7 @@ namespace YIELD
       SetConsoleCtrlHandler( ConsoleCtrlHandler, TRUE );
       pause_semaphore.acquire();
 #else
+      signal( SIGINT, SignalHandler );
       ::pause();
 #endif
     }
@@ -347,170 +335,9 @@ namespace YIELD
       else
         return FALSE;
     }
+#else
+   static void SignalHandler( int ) { }
 #endif
-  };
-
-
-  class ServerMain : public Main
-  {
-  protected:
-    ServerMain( const char* program_name, const char* program_description = NULL, const char* files_usage = NULL )
-      : Main( program_name, program_description, files_usage )
-    {
-      addOption( SERVER_OPTION_LIMIT_PHYSICAL_PROCESSOR_MASK, "--limit-physical-processor-mask", NULL, "n" );
-
-      addOption( SERVER_OPTION_PORT, "-p", "--port", "n" );
-	    port = 27095;
-
-      addOption( SERVER_OPTION_STAGE_GROUP_REPLICATION, "--stage-group-replication", NULL, "n" );
-      stage_group_replication = 1;
-
-      addOption( SERVER_OPTION_STAGE_GROUP_TYPE, "--scheduler", "--stage-group-type", "seda" );      
-
-      addOption( SERVER_OPTION_THREADS, "-t", "--threads", "n" );
-
-      addOption( SERVER_OPTION_THREADS_PER_PHYSICAL_PROCESSOR, "--threads-per-physical-processor", NULL, "n" );
-      threads_per_physical_processor = 0;
-    }
-
-    virtual ~ServerMain()
-    {
-      for ( std::vector<StageGroup*>::iterator stage_group_i = stage_groups.begin(); stage_group_i != stage_groups.end(); stage_group_i++ )
-        Object::decRef( *stage_group_i );
-    }
-
-    unsigned short get_port() const { return port; }
-
-    const std::vector<StageGroup*>& get_stage_groups() 
-    { 
-      if ( stage_groups.empty() )
-      {
-        for ( uint8_t stage_group_i = 0; stage_group_i < stage_group_replication; stage_group_i++ )
-        {
-          auto_ProcessorSet stage_group_limit_physical_processor_set( limit_physical_processor_set );
-          if ( stage_group_limit_physical_processor_set == NULL )
-          {
-            stage_group_limit_physical_processor_set = new ProcessorSet; 
-            stage_group_limit_physical_processor_set->set( stage_group_i );
-          }
-
-          stage_groups.push_back( new SEDAStageGroup( stage_group_limit_physical_processor_set ) );
-        }
-      }
-
-      return stage_groups; 
-    }
-
-    const std::vector<int16_t>& get_threads() const { return threads; }
-
-    void parseOption( int id, char* arg )
-    {
-      switch ( id )
-      {
-			  case SERVER_OPTION_LIMIT_PHYSICAL_PROCESSOR_MASK:
-			  {
-				  uint32_t limit_physical_processor_mask = atoi( arg );
-          if ( limit_physical_processor_mask != 0 )
-            limit_physical_processor_set = new ProcessorSet( limit_physical_processor_mask );
-
-          std::cout << get_program_name() << ": limiting physical processors to mask: " << limit_physical_processor_mask << std::endl;
-			  }
-			  break;
-
-  			case SERVER_OPTION_PORT:
-        {
-          port = static_cast<uint16_t>( atoi( arg ) ); 
-        }
-        break;
-
-        case SERVER_OPTION_STAGE_GROUP_REPLICATION:
-        {
-          stage_group_replication = static_cast<uint8_t>( atoi( arg ) );
-        }
-        break;
-
-        case SERVER_OPTION_STAGE_GROUP_TYPE:
-        {
-			    if ( strcmp( arg, "cohort" ) == 0 )
-		        std::cout << get_program_name() << ": main stage group = CohortStageGroup" << std::endl;
-			    else if ( strcmp( arg, "mg1" ) == 0 )
-		        std::cout << get_program_name() << ": main stage group = MG1StageGroup" << std::endl;
-			    else if ( strcmp( arg, "seda" ) == 0 )
-		        std::cout << get_program_name() << ": main stage group = SEDAStageGroup" << std::endl;
-			    else if ( strcmp( arg, "srpt" ) == 0 )
-            std::cout << get_program_name() << ": main stage group = SRPTStageGroup" << std::endl;
-
-          for ( uint8_t stage_group_i = 0; stage_group_i < stage_group_replication; stage_group_i++ )
-          {
-            auto_ProcessorSet stage_group_limit_physical_processor_set( limit_physical_processor_set );
-            if ( stage_group_limit_physical_processor_set == NULL )
-            {
-              stage_group_limit_physical_processor_set = new ProcessorSet; 
-              stage_group_limit_physical_processor_set->set( stage_group_i );
-            }
-
-            if ( strcmp( arg, "cohort" ) == 0 )
-              stage_groups.push_back( new CohortStageGroup( get_program_name(), stage_group_limit_physical_processor_set ) );
-            else if ( strcmp( arg, "mg1" ) == 0 )
-              stage_groups.push_back( new MG1StageGroup( get_program_name(), stage_group_limit_physical_processor_set ) );
-            else if ( strcmp( arg, "seda" ) == 0 )
-              stage_groups.push_back( new SEDAStageGroup( stage_group_limit_physical_processor_set ) );
-            else if ( strcmp( arg, "srpt" ) == 0 )
-              stage_groups.push_back( new SRPTStageGroup( get_program_name(), stage_group_limit_physical_processor_set ) );
-          }
-        }
-        break;
-
-			  case SERVER_OPTION_THREADS:
-			  {	
-          std::cout << get_program_name() << ": threads string: " << arg << std::endl;
-				  const char* thread_p = arg;
-				  while ( *thread_p != 0 )
-				  {
-					  if ( isdigit( *thread_p ) )
-						  threads.push_back( *thread_p - '0' );
-					  else if ( *thread_p == 'p' )
-						  threads.push_back( -1 );
-					  else
-						  threads.push_back( 0 );
-
-					  thread_p++;
-				  }
-        }
-        break;
-
-			  case SERVER_OPTION_THREADS_PER_PHYSICAL_PROCESSOR: 
-			  {
-				  if ( strcmp( arg, "p" ) == 0 )
-					  threads_per_physical_processor = -1;
-				  else
-					  threads_per_physical_processor = static_cast<int16_t>( atoi( arg ) );
-
-          std::cout << get_program_name() << ": threads per physical processor: " << threads_per_physical_processor << std::endl;
-			  }
-			  break;
-
-        default: Main::parseOption( id, arg ); break;
-      }
-    }
-
-  private:
-    enum
-    {
-      SERVER_OPTION_LIMIT_PHYSICAL_PROCESSOR_MASK = 10,
-      SERVER_OPTION_PORT = 11,
-      SERVER_OPTION_STAGE_GROUP_REPLICATION = 12,
-      SERVER_OPTION_STAGE_GROUP_TYPE = 13,
-      SERVER_OPTION_THREADS = 14,
-      SERVER_OPTION_THREADS_PER_PHYSICAL_PROCESSOR = 15,
-    };
-
-    auto_ProcessorSet limit_physical_processor_set;
-  	uint16_t port;
-    uint8_t stage_group_replication;
-    std::vector<StageGroup*> stage_groups;
-    std::vector<int16_t> threads;
-	  int16_t threads_per_physical_processor;
   };
 };
 

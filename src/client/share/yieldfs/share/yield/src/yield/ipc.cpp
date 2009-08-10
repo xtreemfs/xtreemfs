@@ -1,4 +1,4 @@
-// Revision: 1708
+// Revision: 1790
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -16,15 +16,15 @@ using namespace YIELD;
 #define ETIMEDOUT WSAETIMEDOUT
 #endif
 template <class RequestType, class ResponseType>
-Client<RequestType, ResponseType>::Client( const URI& absolute_uri, auto_AIOQueue aio_queue, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
-  : aio_queue( aio_queue ), flags( flags ), log( log ), operation_timeout( operation_timeout ), peername( peername ), ssl_context( ssl_context )
+Client<RequestType, ResponseType>::Client( const URI& absolute_uri, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
+  : flags( flags ), log( log ), operation_timeout( operation_timeout ), peername( peername ), ssl_context( ssl_context )
 {
   this->absolute_uri = new URI( absolute_uri );
 }
 template <class RequestType, class ResponseType>
 Client<RequestType, ResponseType>::~Client()
 {
-  Object::decRef( *this->absolute_uri );
+  // Object::decRef( *this->absolute_uri );
 //  for ( typename std::vector<Socket*>::iterator idle_socket_i = idle_sockets.begin(); idle_socket_i != idle_sockets.end(); idle_socket_i++ )
 //    Object::decRef( **idle_socket_i );
 }
@@ -43,8 +43,8 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
       {
         if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
           log->getStream( Log::LOG_INFO ) << "yield::Client: writing " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " on socket #" << static_cast<int>( *socket_ ) << ".";
-        AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request.serialize(), *this, request, socket_->incRef() );
-        TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), operation_timeout ) );
+        AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request.serialize(), *this, request );
+        //TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), operation_timeout ) );
         socket_->aio_write( aio_write_control_block );
       }
       else
@@ -59,15 +59,14 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
           socket_ = UDPSocket::create().release();
         else
           socket_ = TCPSocket::create().release();
-        socket_->associate( aio_queue );
         if ( ( this->flags & this->CLIENT_FLAG_TRACE_IO ) == this->CLIENT_FLAG_TRACE_IO &&
              log != NULL && log->get_level() >= Log::LOG_INFO &&
              static_cast<int>( *socket_ ) != -1 )
           socket_ = new TracingSocket( socket_, log );
         if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
           log->getStream( Log::LOG_INFO ) << "yield::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " with socket #" << static_cast<int>( *socket_ ) << ".";
-        AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( *this, peername, request, socket_->incRef() );
-        TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_connect_control_block->incRef(), operation_timeout ) );
+        AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( *this, peername, request );
+        //TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_connect_control_block->incRef(), operation_timeout ) );
         socket_->aio_connect( aio_connect_control_block );
       }
       Object::decRef( *socket_ );
@@ -84,8 +83,8 @@ template <class RequestType, class ResponseType>
 class Client<RequestType, ResponseType>::AIOConnectControlBlock : public Socket::AIOConnectControlBlock
 {
 public:
-  AIOConnectControlBlock( Client<RequestType,ResponseType>& client, auto_SocketAddress peername, auto_Object<RequestType> request, auto_Socket socket_ )
-    : Socket::AIOConnectControlBlock( peername, socket_ ),
+  AIOConnectControlBlock( Client<RequestType,ResponseType>& client, auto_SocketAddress peername, auto_Object<RequestType> request )
+    : Socket::AIOConnectControlBlock( peername ),
       client( client ),
       request( request )
   { }
@@ -97,8 +96,8 @@ public:
     {
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
         client.log->getStream( Log::LOG_INFO ) << "yield::Client: successfully connected to " << client.absolute_uri->get_host() << ":" << client.absolute_uri->get_port() << " on socket #" << static_cast<int>( *get_socket() ) << ".";
-      AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request->serialize(), client, request, get_socket() );
-      TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), client.operation_timeout ) );
+      AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request->serialize(), client, request );
+      //TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), client.operation_timeout ) );
       get_socket()->aio_write( aio_write_control_block );
     }
   }
@@ -120,8 +119,8 @@ template <class RequestType, class ResponseType>
 class Client<RequestType, ResponseType>::AIOReadControlBlock : public Socket::AIOReadControlBlock
 {
 public:
-  AIOReadControlBlock( auto_Buffer buffer, Client<RequestType,ResponseType>& client, auto_Object<RequestType> request, auto_Object<ResponseType> response, auto_Socket socket_ )
-    : Socket::AIOReadControlBlock( buffer, socket_ ),
+  AIOReadControlBlock( auto_Buffer buffer, Client<RequestType,ResponseType>& client, auto_Object<RequestType> request, auto_Object<ResponseType> response )
+    : Socket::AIOReadControlBlock( buffer ),
       client( client ),
       request( request ), response( response )
   { }
@@ -135,7 +134,6 @@ public:
         client.log->getStream( Log::LOG_INFO ) << "yield::Client: read " << bytes_transferred << " bytes from socket #" << static_cast<int>( *get_socket() ) << " for " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ".";
       if ( bytes_transferred > 0 )
       {
-        Socket::AIOReadControlBlock::onCompletion( bytes_transferred );
         ssize_t deserialize_ret = response->deserialize( get_buffer() );
         if ( deserialize_ret == 0 )
         {
@@ -153,8 +151,8 @@ public:
           // else re-use the same buffer
           if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
             client.log->getStream( Log::LOG_INFO ) << "yield::Client: partially deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", reading again with " << ( buffer->capacity() - buffer->size() ) << " byte buffer.";
-          AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( buffer, client, request, response, get_socket() );
-          TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
+          AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( buffer, client, request, response );
+          //TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
           get_socket()->aio_read( aio_read_control_block );
           return;
         }
@@ -189,14 +187,12 @@ template <class RequestType, class ResponseType>
 class Client<RequestType, ResponseType>::AIOWriteControlBlock : public Socket::AIOWriteControlBlock
 {
 public:
-  AIOWriteControlBlock( auto_Buffer buffer, Client<RequestType,ResponseType>& client, auto_Object<RequestType> request, auto_Socket socket_ )
-    : Socket::AIOWriteControlBlock( buffer, socket_ ),
+  AIOWriteControlBlock( auto_Buffer buffer, Client<RequestType,ResponseType>& client, auto_Object<RequestType> request )
+    : Socket::AIOWriteControlBlock( buffer ),
       client( client ),
       request( request )
   { }
   AIOWriteControlBlock& operator=( const AIOWriteControlBlock& ) { return *this; }
-  // Object
-  YIELD_OBJECT_PROTOTYPES( AIOWriteControlBlock, 0 );
   // AIOControlBlock
   void onCompletion( size_t bytes_transferred )
   {
@@ -207,8 +203,8 @@ public:
       auto_Object<ResponseType> response( static_cast<ResponseType*>( request->createResponse().release() ) );
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
         client.log->getStream( Log::LOG_INFO ) << "yield::Client: created " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << " to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
-      AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( 1024 ), client, request, response, get_socket() );
-      TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
+      AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( 1024 ), client, request, response );
+      //TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
       get_socket()->aio_read( aio_read_control_block );
     }
   }
@@ -269,20 +265,21 @@ HTTPBenchmarkDriver::HTTPBenchmarkDriver( auto_EventTarget http_request_target, 
 {
   requests_sent_in_period = responses_received_in_period = 0;
   TimerQueue::getDefaultTimerQueue().addTimer( new StatisticsTimer( incRef() ) );
+  wait_signal.acquire();
 }
 HTTPBenchmarkDriver::~HTTPBenchmarkDriver()
 {
   for ( std::vector<URI*>::iterator wlog_uri_i = wlog_uris.begin(); wlog_uri_i != wlog_uris.end(); wlog_uri_i++ )
     delete *wlog_uri_i;
 }
-auto_Object<HTTPBenchmarkDriver> HTTPBenchmarkDriver::create( auto_EventTarget http_request_target, uint8_t in_flight_http_request_count, const Path& wlog_file_path )
+auto_Object<HTTPBenchmarkDriver> HTTPBenchmarkDriver::create( auto_EventTarget http_request_target, uint8_t in_flight_http_request_count, const Path& wlog_file_path, uint32_t wlog_uris_length_max, uint8_t wlog_repetitions_count )
 {
   auto_MemoryMappedFile wlog = MemoryMappedFile::open( wlog_file_path );
   if ( wlog != NULL )
   {
     char *wlog_p = static_cast<char*>( *wlog ), *wlog_end = wlog_p + wlog->get_size();
     std::vector<URI*> wlog_uris;
-    while ( wlog_p < wlog_end )
+    while ( wlog_p < wlog_end && wlog_uris.size() < wlog_uris_length_max )
     {
       char* uri_str = wlog_p;
       size_t uri_str_len = strnlen( uri_str, UINT16_MAX );
@@ -292,21 +289,27 @@ auto_Object<HTTPBenchmarkDriver> HTTPBenchmarkDriver::create( auto_EventTarget h
       wlog_p += uri_str_len + 1;
     }
     std::reverse( wlog_uris.begin(), wlog_uris.end() ); // So we can pop them in the right order
-    return new HTTPBenchmarkDriver( http_request_target, in_flight_http_request_count, wlog_uris );
+    std::vector<URI*> repeated_wlog_uris;
+    for ( uint8_t wlog_repetition_i = 0; wlog_repetition_i < wlog_repetitions_count; wlog_repetition_i++ )
+      repeated_wlog_uris.insert( repeated_wlog_uris.end(), wlog_uris.begin(), wlog_uris.end() );
+    return new HTTPBenchmarkDriver( http_request_target, in_flight_http_request_count, repeated_wlog_uris );
   }
   else
     return NULL;
 }
 void HTTPBenchmarkDriver::calculateStatistics( const Time& elapsed_time )
 {
-  statistics_lock.acquire();
-  double request_rate = static_cast<double>( requests_sent_in_period ) / elapsed_time.as_unix_time_s();
-  request_rates.push_back( request_rate );
-  requests_sent_in_period = 0;
-  double response_rate = static_cast<double>( responses_received_in_period ) / elapsed_time.as_unix_time_s();
-  response_rates.push_back( response_rate );
-  responses_received_in_period = 0;
-  statistics_lock.release();
+  if ( elapsed_time.as_unix_time_ns() >= 5 * NS_IN_S )
+  {
+    statistics_lock.acquire();
+    double request_rate = static_cast<double>( requests_sent_in_period ) / elapsed_time.as_unix_time_s();
+    request_rates.push_back( request_rate );
+    requests_sent_in_period = 0;
+    double response_rate = static_cast<double>( responses_received_in_period ) / elapsed_time.as_unix_time_s();
+    response_rates.push_back( response_rate );
+    responses_received_in_period = 0;
+    statistics_lock.release();
+  }
 }
 void HTTPBenchmarkDriver::get_request_rates( std::vector<double>& out_request_rates )
 {
@@ -370,7 +373,6 @@ void HTTPBenchmarkDriver::sendHTTPRequest()
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 auto_HTTPClient HTTPClient::create( const URI& absolute_uri,
-                                    auto_AIOQueue aio_queue,
                                     uint32_t flags,
                                     auto_Log log,
                                     const Time& operation_timeout,
@@ -382,17 +384,11 @@ auto_HTTPClient HTTPClient::create( const URI& absolute_uri,
   auto_SocketAddress peername = SocketAddress::create( absolute_uri );
   if ( peername != NULL )
   {
-    if ( aio_queue == NULL )
-    {
-      aio_queue = AIOQueue::create();
-      if ( aio_queue == NULL )
-        return NULL;
-    }
 #ifdef YIELD_HAVE_OPENSSL
     if ( absolute_uri.get_scheme() == "https" && ssl_context == NULL )
       ssl_context = SSLContext::create( SSLv23_client_method() );
 #endif
-    return new HTTPClient( absolute_uri, aio_queue, flags, log, operation_timeout, peername, ssl_context );
+    return new HTTPClient( absolute_uri, flags, log, operation_timeout, peername, ssl_context );
   }
   return NULL;
 }
@@ -406,7 +402,7 @@ auto_HTTPResponse HTTPClient::PUT( const URI& absolute_uri, auto_Buffer body, au
 }
 auto_HTTPResponse HTTPClient::PUT( const URI& absolute_uri, const Path& body_file_path, auto_Log log )
 {
-  auto_File file = File::open( body_file_path );
+  auto_File file( File::open( body_file_path ) );
   size_t file_size = static_cast<size_t>( file->getattr()->get_size() );
   auto_Object<HeapBuffer> body = new HeapBuffer( file_size );
   file->read( *body, file_size );
@@ -414,13 +410,13 @@ auto_HTTPResponse HTTPClient::PUT( const URI& absolute_uri, const Path& body_fil
 }
 auto_HTTPResponse HTTPClient::sendHTTPRequest( const char* method, const URI& absolute_uri, auto_Buffer body, auto_Log log )
 {
-  auto_HTTPClient http_client = HTTPClient::create( absolute_uri, NULL, 0, log );
-  auto_HTTPRequest http_request = new HTTPRequest( method, absolute_uri, body );
+  auto_HTTPClient http_client( HTTPClient::create( absolute_uri, 0, log ) );
+  auto_HTTPRequest http_request( new HTTPRequest( method, absolute_uri, body ) );
   http_request->set_header( "User-Agent", "Flog 0.99" );
-  auto_EventQueue http_response_queue( new EventQueue );
+  auto_ResponseQueue<HTTPResponse> http_response_queue( new ResponseQueue<HTTPResponse> );
   http_request->set_response_target( http_response_queue->incRef() );
   http_client->send( http_request->incRef() );
-  return http_response_queue->dequeue_typed<HTTPResponse>();
+  return http_response_queue->dequeue();
 }
 
 
@@ -476,7 +472,7 @@ ssize_t HTTPMessage::deserialize( auto_Buffer buffer )
       if ( body == NULL )
         body = buffer;
       else
-        DebugBreak(); // Chain buffers
+        DebugBreak(); // Concatenate buffers
       deserialize_state = DESERIALIZE_DONE;
     }
     case DESERIALIZE_DONE: return 0;
@@ -820,6 +816,24 @@ auto_Buffer HTTPResponse::serialize()
 // http_server.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+class HTTPServer::AIOWriteControlBlock : public Socket::AIOWriteControlBlock
+{
+public:
+  AIOWriteControlBlock( auto_Buffer buffer )
+    : Socket::AIOWriteControlBlock( buffer )
+  { }
+  void onCompletion( size_t )
+  { }
+  void onError( uint32_t error_code )
+  {
+#ifndef _WIN32
+    if ( error_code != EBADF )
+#endif
+      std::cerr << "yield::HTTPServer: error on write (errno=" << error_code << ", strerror=" << Exception::strerror( error_code ) << ")." << std::endl;
+    get_socket()->shutdown();
+    get_socket()->close();
+  }
+};
 class HTTPServer::HTTPResponseTarget : public EventTarget
 {
 public:
@@ -834,7 +848,7 @@ public:
     if ( ev.get_type_id() == YIELD_OBJECT_TYPE_ID( HTTPResponse ) )
     {
       HTTPResponse& http_response = static_cast<HTTPResponse&>( ev );
-      socket_->aio_write( new Socket::AIOWriteControlBlock( http_response.serialize(), socket_->incRef() ) );
+      socket_->aio_write( new AIOWriteControlBlock( http_response.serialize() ) );
       Object::decRef( http_response );
     }
     else
@@ -846,12 +860,11 @@ private:
 class HTTPServer::AIOReadControlBlock : public Socket::AIOReadControlBlock
 {
 public:
-  AIOReadControlBlock( auto_Buffer buffer, auto_HTTPRequest http_request, auto_EventTarget http_request_target, auto_Socket socket_ )
-    : Socket::AIOReadControlBlock( buffer, socket_ ), http_request( http_request ), http_request_target( http_request_target )
+  AIOReadControlBlock( auto_Buffer buffer, auto_HTTPRequest http_request, auto_EventTarget http_request_target )
+    : Socket::AIOReadControlBlock( buffer ), http_request( http_request ), http_request_target( http_request_target )
   { }
-  void onCompletion( size_t bytes_transferred )
+  void onCompletion( size_t )
   {
-    Socket::AIOReadControlBlock::onCompletion( bytes_transferred );
     for ( ;; )
     {
       ssize_t deserialize_ret = http_request->deserialize( get_buffer() );
@@ -863,11 +876,15 @@ public:
       }
       else if ( deserialize_ret > 0 )
       {
-        get_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), http_request, http_request_target, get_socket() ) );
+        get_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), http_request, http_request_target ) );
         return;
       }
       else
-        DebugBreak();
+      {
+        get_socket()->shutdown();
+        get_socket()->close();
+        return;
+      }
     }
   }
   void onError( uint32_t )
@@ -881,26 +898,28 @@ private:
 class HTTPServer::AIOAcceptControlBlock : public TCPSocket::AIOAcceptControlBlock
 {
 public:
-  AIOAcceptControlBlock( auto_AIOQueue aio_queue, auto_EventTarget http_request_target, auto_Socket socket_ )
-    : TCPSocket::AIOAcceptControlBlock( socket_ ), aio_queue( aio_queue ), http_request_target( http_request_target )
+  AIOAcceptControlBlock( auto_EventTarget http_request_target )
+    : http_request_target( http_request_target )
   { }
   void onCompletion( size_t )
   {
-    get_accepted_tcp_socket()->associate( aio_queue );
-    get_accepted_tcp_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), new HTTPRequest, http_request_target, get_accepted_tcp_socket().release() ) );
-    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( aio_queue, http_request_target, get_socket() ) );
+    get_accepted_tcp_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), new HTTPRequest, http_request_target ) );
+    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( http_request_target ) );
   }
-  void onError( uint32_t )
-  { }
+  void onError( uint32_t error_code )
+  {
+    std::cerr << "yield::HTTPServer: error on accept (errno=" << error_code << ", strerror=" << Exception::strerror( error_code ) << ")." << std::endl;
+    get_socket()->shutdown();
+    get_socket()->close();
+  }
 private:
-  auto_AIOQueue aio_queue;
   auto_EventTarget http_request_target;
 };
-HTTPServer::HTTPServer( auto_AIOQueue aio_queue, auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket )
-  : aio_queue( aio_queue ), http_request_target( http_request_target ), listen_tcp_socket( listen_tcp_socket )
+HTTPServer::HTTPServer( auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket )
+  : http_request_target( http_request_target ), listen_tcp_socket( listen_tcp_socket )
 {
-  listen_tcp_socket->associate( aio_queue );
-  listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( aio_queue, http_request_target, listen_tcp_socket->incRef() ) );
+  for ( uint8_t accept_i = 0; accept_i < 10; accept_i++ )
+    listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( http_request_target ) );
 }
 auto_HTTPServer HTTPServer::create( const URI& absolute_uri,
                                     auto_EventTarget http_request_target,
@@ -919,11 +938,7 @@ auto_HTTPServer HTTPServer::create( const URI& absolute_uri,
       listen_tcp_socket = TCPSocket::create();
     if ( listen_tcp_socket->bind( sockname ) &&
          listen_tcp_socket->listen() )
-    {
-      auto_AIOQueue aio_queue = AIOQueue::create();
-      if ( aio_queue != NULL )
-        return new HTTPServer( aio_queue, http_request_target, listen_tcp_socket );
-    }
+      return new HTTPServer( http_request_target, listen_tcp_socket );
   }
   return NULL;
 }
@@ -1908,6 +1923,21 @@ void ONCRPCResponse::unmarshal( Unmarshaller& unmarshaller )
 // oncrpc_server.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+class ONCRPCServer::AIOWriteControlBlock : public Socket::AIOWriteControlBlock
+{
+public:
+  AIOWriteControlBlock( auto_Buffer buffer )
+    : Socket::AIOWriteControlBlock( buffer )
+  { }
+  void onCompletion( size_t )
+  { }
+  void onError( uint32_t error_code )
+  {
+    std::cerr << "yield::ONCRPCServer: error on write (errno=" << error_code << ", strerror=" << Exception::strerror( error_code ) << ")." << std::endl;
+    get_socket()->shutdown();
+    get_socket()->close();
+  }
+};
 class ONCRPCServer::ONCRPCResponseTarget : public EventTarget
 {
 public:
@@ -1921,9 +1951,9 @@ public:
   {
     ONCRPCResponse oncrpc_response( interface_, oncrpc_request->get_xid(), ev );
     if ( peer_sockaddr != NULL )
-      static_cast<UDPSocket*>( socket_.get() )->aio_sendto( new UDPSocket::AIOSendToControlBlock( oncrpc_response.serialize(), peer_sockaddr, socket_ ) );
+      static_cast<UDPSocket*>( socket_.get() )->sendto( oncrpc_response.serialize(), peer_sockaddr );
     else
-      socket_->aio_write( new Socket::AIOWriteControlBlock( oncrpc_response.serialize(), socket_ ) );
+      socket_->aio_write( new AIOWriteControlBlock( oncrpc_response.serialize() ) );
   }
 private:
   auto_Interface interface_;
@@ -1934,12 +1964,11 @@ private:
 class ONCRPCServer::AIOReadControlBlock : public Socket::AIOReadControlBlock
 {
 public:
-  AIOReadControlBlock( auto_Buffer buffer, auto_Interface interface_, auto_ONCRPCRequest oncrpc_request, auto_Socket socket_ )
-    : Socket::AIOReadControlBlock( buffer, socket_ ), interface_( interface_ ), oncrpc_request( oncrpc_request )
+  AIOReadControlBlock( auto_Buffer buffer, auto_Interface interface_, auto_ONCRPCRequest oncrpc_request )
+    : Socket::AIOReadControlBlock( buffer ), interface_( interface_ ), oncrpc_request( oncrpc_request )
   { }
-  void onCompletion( size_t bytes_transferred )
+  void onCompletion( size_t )
   {
-    Socket::AIOReadControlBlock::onCompletion( bytes_transferred );
     for ( ;; )
     {
       ssize_t deserialize_ret = oncrpc_request->deserialize( get_buffer() );
@@ -1955,15 +1984,19 @@ public:
         }
         else
           DebugBreak();
-        return;
+        oncrpc_request = new ONCRPCRequest( interface_ );
       }
       else if ( deserialize_ret > 0 )
       {
-        get_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), interface_, oncrpc_request, get_socket() ) );
+        get_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( deserialize_ret ), interface_, oncrpc_request ) );
         return;
       }
       else
-        DebugBreak();
+      {
+        get_socket()->shutdown();
+        get_socket()->close();
+        return;
+      }
     }
   }
   void onError( uint32_t )
@@ -1977,14 +2010,13 @@ private:
 class ONCRPCServer::AIORecvFromControlBlock : public UDPSocket::AIORecvFromControlBlock
 {
 public:
-  AIORecvFromControlBlock( auto_Interface interface_, auto_Socket socket_ )
-    : UDPSocket::AIORecvFromControlBlock( new HeapBuffer( 1024 ), socket_ ),
+  AIORecvFromControlBlock( auto_Interface interface_ )
+    : UDPSocket::AIORecvFromControlBlock( new HeapBuffer( 1024 ) ),
       interface_( interface_ )
   { }
   // AIOControlBlock
-  void onCompletion( size_t bytes_transferred )
+  void onCompletion( size_t )
   {
-    UDPSocket::AIORecvFromControlBlock::onCompletion( bytes_transferred );
     ONCRPCRequest* oncrpc_request = new ONCRPCRequest( interface_ );
     ssize_t deserialize_ret = oncrpc_request->deserialize( get_buffer() );
     if ( deserialize_ret == 0 )
@@ -1997,14 +2029,14 @@ public:
         interface_request->set_response_target( new ONCRPCResponseTarget( interface_, oncrpc_request, get_peer_sockaddr(), get_socket() ) );
         interface_->send( *interface_request );
       }
-      static_cast<UDPSocket*>( get_socket().get() )->aio_recvfrom( new AIORecvFromControlBlock( interface_, get_socket() ) );
+      static_cast<UDPSocket*>( get_socket().get() )->aio_recvfrom( new AIORecvFromControlBlock( interface_ ) );
     }
     else if ( deserialize_ret < 0 )
       Object::decRef( *oncrpc_request );
     else
       DebugBreak();
   }
-  void onError( uint32_t error_code )
+  void onError( uint32_t )
   {
     // DebugBreak();
   }
@@ -2014,23 +2046,21 @@ private:
 class ONCRPCServer::AIOAcceptControlBlock : public TCPSocket::AIOAcceptControlBlock
 {
 public:
-  AIOAcceptControlBlock( auto_AIOQueue aio_queue, auto_Interface interface_, auto_Socket socket_ )
-    : TCPSocket::AIOAcceptControlBlock( socket_ ), aio_queue( aio_queue ), interface_( interface_ )
+  AIOAcceptControlBlock( auto_Interface interface_ )
+    : interface_( interface_ )
   { }
   void onCompletion( size_t )
   {
-    get_accepted_tcp_socket()->associate( aio_queue );
-    get_accepted_tcp_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), interface_, new ONCRPCRequest( interface_ ), get_accepted_tcp_socket().release() ) );
-    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( aio_queue, interface_, get_socket() ) );
+    get_accepted_tcp_socket()->aio_read( new AIOReadControlBlock( new HeapBuffer( 1024 ), interface_, new ONCRPCRequest( interface_ ) ) );
+    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( interface_ ) );
   }
   void onError( uint32_t )
   { }
 private:
-  auto_AIOQueue aio_queue;
   auto_Interface interface_;
 };
-ONCRPCServer::ONCRPCServer( auto_AIOQueue aio_queue, auto_Interface interface_, auto_Socket socket_ )
-  : aio_queue( aio_queue ), interface_( interface_ ), socket_( socket_ )
+ONCRPCServer::ONCRPCServer( auto_Interface interface_, auto_Socket socket_ )
+  : interface_( interface_ ), socket_( socket_ )
 { }
 auto_ONCRPCServer ONCRPCServer::create( const URI& absolute_uri,
                                         auto_Interface interface_,
@@ -2040,37 +2070,31 @@ auto_ONCRPCServer ONCRPCServer::create( const URI& absolute_uri,
   auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
   if ( sockname != NULL )
   {
-    auto_AIOQueue aio_queue( AIOQueue::create() );
-    if ( aio_queue != NULL )
+    if ( absolute_uri.get_scheme() == "oncrpcu" )
     {
-      if ( absolute_uri.get_scheme() == "oncrpcu" )
+      auto_UDPSocket udp_socket( UDPSocket::create() );
+      if ( udp_socket != NULL &&
+           udp_socket->bind( sockname ) )
       {
-        auto_UDPSocket udp_socket( UDPSocket::create() );
-        if ( udp_socket != NULL &&
-             udp_socket->bind( sockname ) )
-        {
-          udp_socket->associate( aio_queue );
-          udp_socket->aio_recvfrom( new AIORecvFromControlBlock( interface_, udp_socket->incRef() ) );
-          return new ONCRPCServer( aio_queue, interface_, udp_socket.release() );
-        }
+        udp_socket->aio_recvfrom( new AIORecvFromControlBlock( interface_ ) );
+        return new ONCRPCServer( interface_, udp_socket.release() );
       }
-      else
-      {
-        auto_TCPSocket listen_tcp_socket;
+    }
+    else
+    {
+      auto_TCPSocket listen_tcp_socket;
 #ifdef YIELD_HAVE_OPENSSL
-        if ( absolute_uri.get_scheme() == "oncrpcs" && ssl_context != NULL )
-          listen_tcp_socket = SSLSocket::create( ssl_context ).release();
-        else
+      if ( absolute_uri.get_scheme() == "oncrpcs" && ssl_context != NULL )
+        listen_tcp_socket = SSLSocket::create( ssl_context ).release();
+      else
 #endif
-          listen_tcp_socket = TCPSocket::create();
-        if ( listen_tcp_socket != NULL &&
-             listen_tcp_socket->bind( sockname ) &&
-             listen_tcp_socket->listen() )
-        {
-          listen_tcp_socket->associate( aio_queue );
-          listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( aio_queue, interface_, listen_tcp_socket->incRef() ) );
-          return new ONCRPCServer( aio_queue, interface_, listen_tcp_socket.release() );
-        }
+        listen_tcp_socket = TCPSocket::create();
+      if ( listen_tcp_socket != NULL &&
+           listen_tcp_socket->bind( sockname ) &&
+           listen_tcp_socket->listen() )
+      {
+        listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( interface_ ) );
+        return new ONCRPCServer( interface_, listen_tcp_socket.release() );
       }
     }
   }
@@ -2084,6 +2108,24 @@ auto_ONCRPCServer ONCRPCServer::create( const URI& absolute_uri,
 #ifdef _WIN32
 #include <windows.h>
 #endif
+void Pipe::close()
+{
+#ifdef _WIN32
+  if ( ends[0] != INVALID_HANDLE_VALUE )
+  {
+    CloseHandle( ends[0] );
+    ends[0] = INVALID_HANDLE_VALUE;
+  }
+  if ( ends[1] != INVALID_HANDLE_VALUE )
+  {
+    CloseHandle( ends[1] );
+    ends[1] = INVALID_HANDLE_VALUE;
+  }
+#else
+  ::close( ends[0] );
+  ::close( ends[1] );
+#endif
+}
 auto_Pipe Pipe::create()
 {
 #ifdef _WIN32
@@ -2119,6 +2161,10 @@ Pipe::Pipe( int ends[2] )
   this->ends[0] = ends[0];
   this->ends[1] = ends[1];
 }
+Pipe::~Pipe()
+{
+  close();
+}
 ssize_t Pipe::read( void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
@@ -2129,6 +2175,25 @@ ssize_t Pipe::read( void* buffer, size_t buffer_len )
     return -1;
 #else
   return ::read( ends[0], buffer, buffer_len );
+#endif
+}
+bool Pipe::set_blocking_mode( bool blocking )
+{
+#ifdef _WIN32
+  return false;
+#else
+  int current_fcntl_flags = fcntl( ends[0], F_GETFL, 0 );
+  if ( blocking )
+  {
+    if ( ( current_fcntl_flags & O_NONBLOCK ) == O_NONBLOCK )
+      return fcntl( ends[0], F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1 &&
+             fcntl( ends[1], F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1;
+    else
+      return true;
+  }
+  else
+    return fcntl( ends[0], F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1 &&
+           fcntl( ends[1], F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1;
 #endif
 }
 ssize_t Pipe::write( const void* buffer, size_t buffer_len )
@@ -2635,7 +2700,7 @@ void RFC822Headers::set_next_iovec( const struct iovec& iovec )
     else
     {
       heap_iovecs = new struct iovec[UCHAR_MAX];
-      memcpy_s( heap_iovecs, sizeof( *heap_iovecs ), stack_iovecs, sizeof( stack_iovecs ) );
+      memcpy_s( heap_iovecs, sizeof( struct iovec ) * UCHAR_MAX, stack_iovecs, sizeof( stack_iovecs ) );
       heap_iovecs[iovecs_filled] = iovec;
     }
   }
@@ -2650,15 +2715,557 @@ void RFC822Headers::set_next_iovec( const struct iovec& iovec )
 // socket.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#include <vector>
 #ifdef _WIN32
+#ifndef FD_SETSIZE
+#define FD_SETSIZE 1024
+#endif
 #pragma warning( push )
 #pragma warning( disable: 4995 )
 #include <ws2tcpip.h>
 #pragma warning( pop )
 #pragma comment( lib, "ws2_32.lib" )
+#pragma warning( push )
+#pragma warning( disable: 4127 4389 ) // Warning in the FD_* macros
 #else
+#include <errno.h>
+#include <signal.h>
 #include <sys/socket.h>
+#include <unistd.h>
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__MACH__)
+#define YIELD_HAVE_FREEBSD_KQUEUE 1
+#include <sys/types.h>
+#include <sys/event.h>
+#include <sys/time.h>
+#elif defined(__linux__)
+#define YIELD_HAVE_LINUX_EPOLL 1
+#include <sys/epoll.h>
+#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+#include <port.h>
+#include <sys/poll.h>
+#else
+#include <poll.h>
 #endif
+#endif
+#ifdef _WIN32
+class Socket::AIOQueue::IOCPWorkerThread : public Thread
+{
+public:
+  IOCPWorkerThread( HANDLE hIoCompletionPort )
+    : hIoCompletionPort( hIoCompletionPort )
+  {
+    is_running = false;
+  }
+  void stop()
+  {
+    while ( is_running )
+      Thread::yield();
+  }
+  // Thread
+  void run()
+  {
+    is_running = true;
+    set_name( "Socket::AIOQueue::IOCPWorkerThread" );
+    for ( ;; )
+    {
+      DWORD dwBytesTransferred; ULONG_PTR ulCompletionKey; LPOVERLAPPED lpOverlapped;
+      if ( GetQueuedCompletionStatus( hIoCompletionPort, &dwBytesTransferred, &ulCompletionKey, &lpOverlapped, INFINITE ) )
+      {
+        ::YIELD::AIOControlBlock* aio_control_block = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
+        switch ( aio_control_block->get_type_id() )
+        {
+          case YIELD_OBJECT_TYPE_ID( Socket::AIOReadControlBlock ): static_cast<Socket::AIOReadControlBlock*>( aio_control_block )->get_buffer()->put( NULL, dwBytesTransferred ); break;
+          case YIELD_OBJECT_TYPE_ID( UDPSocket::AIORecvFromControlBlock ): static_cast<UDPSocket::AIORecvFromControlBlock*>( aio_control_block )->get_buffer()->put( NULL, dwBytesTransferred ); break;
+        }
+        aio_control_block->onCompletion( dwBytesTransferred );
+        Object::decRef( *aio_control_block );
+      }
+      else if ( lpOverlapped != NULL )
+      {
+        ::YIELD::AIOControlBlock* aio_control_block = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
+        aio_control_block->onError( ::GetLastError() );
+        Object::decRef( *aio_control_block );
+      }
+      else
+        break;
+    }
+    is_running = false;
+  }
+private:
+  HANDLE hIoCompletionPort;
+  bool is_running;
+};
+#endif
+class Socket::AIOQueue::NBIOWorkerThread : public Thread
+{
+public:
+  NBIOWorkerThread()
+  {
+    is_running = false;
+    should_run = true;
+#if defined(_WIN32)
+    FD_ZERO( &read_fds );
+    FD_ZERO( &write_fds );
+    FD_ZERO( &except_fds );
+#elif defined(YIELD_HAVE_LINUX_EPOLL)
+    poll_fd = epoll_create( 32768 );
+#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
+    poll_fd = kqueue();
+#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+    poll_fd = port_create();
+#endif
+#ifdef _WIN32
+    auto_TCPSocket submit_listen_tcp_socket = TCPSocket::create();
+    if ( submit_listen_tcp_socket != NULL &&
+         submit_listen_tcp_socket->bind( SocketAddress::create( "localhost", 0 ) ) &&
+         submit_listen_tcp_socket->listen() )
+    {
+      submit_pipe_write_end = TCPSocket::create();
+      if ( submit_pipe_write_end != NULL &&
+           submit_pipe_write_end->connect( submit_listen_tcp_socket->getsockname() ) )
+      {
+        submit_pipe_read_end = submit_listen_tcp_socket->accept();
+        if ( submit_pipe_read_end != NULL &&
+             submit_pipe_read_end->set_blocking_mode( false ) &&
+             associate( static_cast<int>( *submit_pipe_read_end ), true, false ) )
+         return;
+      }
+    }
+#else
+    submit_pipe = Pipe::create();
+    if ( submit_pipe != NULL &&
+         submit_pipe->set_blocking_mode( false ) &&
+         associate( submit_pipe->get_read_end(), true, false ) )
+        return;
+#endif
+    std::cerr << "Socket::AIOQueue::NBIOWorkerThread: error creating submit pipe: " << Exception::strerror() << std::endl;
+  }
+  ~NBIOWorkerThread()
+  {
+#if defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+    ::close( poll_fd );
+#endif
+  }
+  void submit( auto_Object<AIOControlBlock> aio_control_block )
+  {
+    AIOControlBlock* submit_aio_control_block = aio_control_block.release();
+#ifdef _WIN32
+    submit_pipe_write_end->write( &submit_aio_control_block, sizeof( submit_aio_control_block ) );
+#else
+    submit_pipe->write( &submit_aio_control_block, sizeof( submit_aio_control_block ) );
+#endif
+  }
+  void stop()
+  {
+    should_run = false;
+#ifdef _WIN32
+    submit_pipe_read_end->close();
+    submit_pipe_write_end->close();
+#else
+    submit_pipe->close();
+#endif
+    while ( is_running )
+      Thread::yield();
+  }
+  // Thread
+  void run()
+  {
+    is_running = true;
+    set_name( "Socket::AIOQueue::NBIOWorkerThread" );
+#if defined(_WIN32)
+    fd_set read_fds_copy, write_fds_copy, except_fds_copy;
+    FD_ZERO( &read_fds_copy );
+    FD_ZERO( &write_fds_copy );
+    FD_ZERO( &except_fds_copy );
+#elif defined(YIELD_HAVE_LINUX_EPOLL)
+    struct epoll_event returned_events[8192];
+#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
+    struct kevent returned_events[8192];
+#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+    port_event_t returned_events[1];
+#endif
+    while ( should_run )
+    {
+#if defined(_WIN32)
+      memcpy_s( &read_fds_copy, sizeof( read_fds_copy ), &read_fds, sizeof( read_fds ) );
+      memcpy_s( &write_fds_copy, sizeof( write_fds_copy ), &write_fds, sizeof( write_fds ) );
+      memcpy_s( &except_fds_copy, sizeof( except_fds_copy ), &except_fds, sizeof( except_fds ) );
+      int active_fds = select( 0, &read_fds_copy, &write_fds_copy, &except_fds_copy, NULL );
+#elif defined(YIELD_HAVE_LINUX_EPOLL)
+      int active_fds = epoll_wait( poll_fd, returned_events, 8192, -1 );
+#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
+      int active_fds = kevent( poll_fd, 0, 0, returned_events, 8192, NULL );
+#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+      int active_fds = port_get( poll_fd, returned_events, NULL );
+      if ( active_fds == 0 )
+        active_fds = 1;
+#else
+      int active_fds = poll( &pollfds[0], pollfds.size(), -1 );
+#endif
+      if ( active_fds > 0 && should_run )
+      {
+        std::map<int, AIOControlBlock*>::iterator fd_to_aio_control_block_i;
+#if defined(_WIN32)
+        if ( FD_ISSET( ( SOCKET )static_cast<int>( *submit_pipe_read_end ), &read_fds_copy ) )
+        {
+          active_fds--;
+          FD_CLR( ( SOCKET )static_cast<int>( *submit_pipe_read_end ), &read_fds_copy );
+          dequeueSubmittedAIOControlBlocks();
+        }
+        fd_to_aio_control_block_i = fd_to_aio_control_block_map.begin();
+        while ( active_fds > 0 && fd_to_aio_control_block_i != fd_to_aio_control_block_map.end() )
+        {
+          int fd = fd_to_aio_control_block_i->first;
+          if ( FD_ISSET( fd, &read_fds_copy ) )
+            FD_CLR( fd, &read_fds_copy );
+          else if ( FD_ISSET( fd, &write_fds_copy ) )
+            FD_CLR( fd, &write_fds_copy );
+          else if ( FD_ISSET( fd, &except_fds_copy ) )
+             FD_CLR( fd, &except_fds_copy );
+          else
+          {
+            fd_to_aio_control_block_i++;
+            continue;
+          }
+          active_fds--;
+#elif defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+        while ( active_fds > 0 )
+        {
+          active_fds--;
+#if defined(YIELD_HAVE_LINUX_EPOLL)
+          int fd = returned_events[active_fds].data.fd;
+#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
+          int fd = returned_events[active_fds].ident;
+#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+          int fd = returned_events[active_fds].portev_object;
+#endif
+          if ( fd == submit_pipe->get_read_end() )
+          {
+            dequeueSubmittedAIOControlBlocks();
+#ifdef YIELD_HAVE_SOLARIS_EVENT_PORTS
+            toggle( submit_pipe->get_read_end(), true, false );
+#endif
+            continue;
+          }
+          fd_to_aio_control_block_i = fd_to_aio_control_block_map.find( fd );
+#else
+#error
+#endif
+          if ( processAIOControlBlock( fd_to_aio_control_block_i->second ) )
+#ifdef _WIN32
+            fd_to_aio_control_block_i = fd_to_aio_control_block_map.erase( fd_to_aio_control_block_i );
+#else
+            fd_to_aio_control_block_map.erase( fd_to_aio_control_block_i );
+#endif
+        }
+      }
+      else if ( active_fds < 0 )
+      {
+#ifndef _WIN32
+        if ( errno != EINTR )
+#endif
+          std::cerr << "yield::Socket::AIOQueue::NBIOWorkerThread: error on poll: errno=" << Exception::get_errno() << ", strerror=" << Exception::strerror() << "." << std::endl;
+      }
+    }
+    is_running = false;
+  }
+private:
+  bool is_running, should_run;
+  std::map<int, AIOControlBlock*> fd_to_aio_control_block_map;
+#if defined(_WIN32)
+  fd_set read_fds, write_fds, except_fds;
+  auto_TCPSocket submit_pipe_read_end, submit_pipe_write_end;
+#elif defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+  int poll_fd;
+  auto_Pipe submit_pipe;
+#else
+  std::vector<pollfd> pollfds;
+  auto_Pipe submit_pipe;
+#endif
+  bool associate( int fd, bool enable_read, bool enable_write )
+  {
+#if defined(_WIN32)
+    if ( enable_read ) FD_SET( ( SOCKET )fd, &read_fds );
+    if ( enable_write ) { FD_SET( ( SOCKET )fd, &write_fds ); FD_SET( ( SOCKET )fd, &except_fds ); }
+    return true;
+#elif defined(YIELD_HAVE_LINUX_EPOLL)
+    struct epoll_event change_event;
+    memset( &change_event, 0, sizeof( change_event ) );
+    if ( enable_read ) change_event.events |= EPOLLIN;
+    if ( enable_write ) change_event.events |= EPOLLOUT;
+    change_event.data.fd = fd;
+    return epoll_ctl( poll_fd, EPOLL_CTL_ADD, fd, &change_event ) != -1;
+#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
+    struct kevent change_events[2];
+    EV_SET( &change_events[0], fd, EVFILT_READ, enable_read ? EV_ENABLE : EV_DISABLE, 0, 0, NULL );
+    EV_SET( &change_events[1], fd, EVFILT_WRITE, enable_write ? EV_ENABLE : EV_DISABLE, 0, 0, NULL );
+    return kevent( poll_fd, change_events, 2, 0, 0, NULL ) != -1;
+#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+    int events = 0;
+    if ( enable_read ) events |= POLLIN;
+    if ( enable_write ) events |= POLLOUT;
+    return port_associate( poll_fd, PORT_SOURCE_FD, fd, events, NULL ) != -1;
+#else
+    std::vector<struct pollfd>::size_type pollfd_i_max = pollfds.size();
+    for ( std::vector<struct pollfd>::size_type pollfd_i = 0; pollfd_i < pollfd_i_max; pollfd_i++ )
+    {
+      if ( pollfds[pollfd_i].fd == fd )
+        return false;
+    }
+    struct pollfd attach_pollfd;
+    memset( &attach_pollfd, 0, sizeof( attach_pollfd ) );
+    if ( enable_read ) attach_pollfd.events |= POLLIN;
+    if ( enable_write ) attach_pollfd.events |= POLLOUT;
+    attach_pollfd.fd = fd;
+    attach_pollfd.revents = 0;
+    pollfds.push_back( attach_pollfd );
+    return true;
+#endif
+  }
+  void dequeueSubmittedAIOControlBlocks()
+  {
+    AIOControlBlock* aio_control_block;
+    for ( ;; )
+    {
+#ifdef _WIN32
+      if ( submit_pipe_read_end->read( &aio_control_block, sizeof( aio_control_block ) ) == sizeof( aio_control_block ) )
+#else
+      if ( submit_pipe->read( &aio_control_block, sizeof( aio_control_block ) ) == sizeof( aio_control_block ) )
+#endif
+      {
+        int fd = static_cast<int>( *aio_control_block->get_socket() );
+        associate( fd, false, false );
+        if ( !processAIOControlBlock( aio_control_block ) )
+          fd_to_aio_control_block_map[fd] = aio_control_block;
+      }
+      else
+        break;
+    }
+  }
+  void dissociate( int fd )
+  {
+#if defined(_WIN32)
+    FD_CLR( ( SOCKET )fd, &read_fds );
+    FD_CLR( ( SOCKET )fd, &write_fds );
+    FD_CLR( ( SOCKET )fd, &except_fds );
+#elif defined(YIELD_HAVE_LINUX_EPOLL)
+    struct epoll_event change_event; // From the man page: In kernel versions before 2.6.9, the EPOLL_CTL_DEL operation required a non-NULL pointer in event, even though this argument is ignored. Since kernel 2.6.9, event can be specified as NULL when using EPOLL_CTL_DEL.
+    epoll_ctl( poll_fd, EPOLL_CTL_DEL, fd, &change_event );
+#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
+    struct kevent change_events[2];
+    EV_SET( &change_events[0], fd, EVFILT_READ, EV_DELETE, 0, 0, NULL );
+    EV_SET( &change_events[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL );
+    kevent( poll_fd, change_events, 2, 0, 0, NULL );
+#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+    port_dissociate( poll_fd, PORT_SOURCE_FD, fd );
+#else
+    for ( std::vector<struct pollfd>::iterator pollfd_i = pollfds.begin(); pollfd_i != pollfds.end(); )
+    {
+      if ( ( *pollfd_i ).fd == fd )
+        pollfd_i = pollfds.erase( pollfd_i );
+      else
+        ++pollfd_i;
+    }
+#endif
+  }
+  bool processAIOControlBlock( AIOControlBlock* aio_control_block )
+  {
+    int fd = static_cast<int>( *aio_control_block->get_socket() );
+    switch ( aio_control_block->get_type_id() )
+    {
+      case YIELD_OBJECT_TYPE_ID( Socket::AIOConnectControlBlock ):
+      {
+        Socket::AIOConnectControlBlock* aio_connect_control_block = static_cast<Socket::AIOConnectControlBlock*>( aio_control_block );
+        if ( aio_connect_control_block->get_socket()->connect( aio_connect_control_block->get_peername() ) )
+          aio_connect_control_block->onCompletion( 0 );
+        else if ( aio_connect_control_block->get_socket()->want_connect() )
+        {
+          toggle( fd, false, true );
+          return false;
+        }
+        else
+          aio_connect_control_block->onError( Exception::get_errno() );
+      }
+      break;
+      case YIELD_OBJECT_TYPE_ID( Socket::AIOReadControlBlock ):
+      {
+        Socket::AIOReadControlBlock* aio_read_control_block = static_cast<Socket::AIOReadControlBlock*>( aio_control_block );
+        ssize_t read_ret = aio_read_control_block->get_socket()->read( aio_read_control_block->get_buffer() );
+        if ( read_ret > 0 )
+          aio_read_control_block->onCompletion( static_cast<size_t>( read_ret ) );
+        else if ( read_ret == 0 )
+#ifdef _WIN32
+          aio_read_control_block->onError( WSAECONNABORTED );
+#else
+          aio_read_control_block->onError( ECONNABORTED );
+#endif
+        else if ( aio_read_control_block->get_socket()->want_read() )
+        {
+          toggle( fd, true, false );
+          return false;
+        }
+        else if ( aio_read_control_block->get_socket()->want_write() )
+        {
+          toggle( fd, false, true );
+          return false;
+        }
+        else
+          aio_read_control_block->onError( Exception::get_errno() );
+      }
+      break;
+      case YIELD_OBJECT_TYPE_ID( Socket::AIOWriteControlBlock ):
+      {
+        Socket::AIOWriteControlBlock* aio_write_control_block = static_cast<Socket::AIOWriteControlBlock*>( aio_control_block );
+        ssize_t write_ret = aio_write_control_block->get_socket()->write( aio_write_control_block->get_buffer() );
+        if ( write_ret >= 0 )
+          aio_write_control_block->onCompletion( static_cast<size_t>( write_ret ) );
+        else if ( aio_write_control_block->get_socket()->want_write() )
+        {
+          toggle( fd, false, true );
+          return false;
+        }
+        else if ( aio_write_control_block->get_socket()->want_read() )
+        {
+          toggle( fd, true, false );
+          return false;
+        }
+        else
+          aio_write_control_block->onError( Exception::get_errno() );
+      }
+      break;
+      case YIELD_OBJECT_TYPE_ID( TCPSocket::AIOAcceptControlBlock ):
+      {
+        TCPSocket::AIOAcceptControlBlock* aio_accept_control_block = static_cast<TCPSocket::AIOAcceptControlBlock*>( aio_control_block );
+        aio_accept_control_block->accepted_tcp_socket = static_cast<TCPSocket*>( aio_accept_control_block->get_socket().get() )->accept();
+        if ( aio_accept_control_block->accepted_tcp_socket != NULL )
+          aio_accept_control_block->onCompletion( 0 );
+#ifdef _WIN32
+        else if ( ::WSAGetLastError() == WSAEWOULDBLOCK )
+#else
+        else if ( errno == EWOULDBLOCK )
+#endif
+        {
+          toggle( fd, true, false );
+          return false;
+        }
+        else
+          aio_accept_control_block->onError( Exception::get_errno() );
+      }
+      break;
+      default: DebugBreak();
+    }
+    dissociate( fd );
+    Object::decRef( *aio_control_block );
+    return true;
+  }
+  bool toggle( int fd, bool enable_read, bool enable_write )
+  {
+#if defined(_WIN32)
+    if ( enable_read )
+      FD_SET( ( SOCKET )fd, &read_fds );
+    else
+      FD_CLR( ( SOCKET )fd, &read_fds );
+    if ( enable_write )
+    {
+      FD_SET( ( SOCKET )fd, &write_fds );
+      FD_SET( ( SOCKET )fd, &except_fds );
+    }
+    else
+    {
+      FD_CLR( ( SOCKET )fd, &write_fds );
+      FD_CLR( ( SOCKET )fd, &except_fds );
+    }
+    return true;
+#elif defined(YIELD_HAVE_LINUX_EPOLL)
+    struct epoll_event change_event;
+    memset( &change_event, 0, sizeof( change_event ) );
+    if ( enable_read ) change_event.events |= EPOLLIN;
+    if ( enable_write ) change_event.events |= EPOLLOUT;
+    change_event.data.fd = fd;
+    return epoll_ctl( poll_fd, EPOLL_CTL_MOD, fd, &change_event ) != -1;
+#elif defined YIELD_HAVE_FREEBSD_KQUEUE
+    struct kevent change_events[2];
+    EV_SET( &change_events[0], fd, EVFILT_READ, enable_read ? EV_ENABLE : EV_DISABLE, 0, 0, NULL );
+    EV_SET( &change_events[1], fd, EVFILT_WRITE, enable_write ? EV_ENABLE : EV_DISABLE, 0, 0, NULL );
+    return kevent( poll_fd, change_events, 2, 0, 0, NULL ) != -1;
+#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+    if ( enable_read || enable_write )
+    {
+      int events = 0;
+      if ( enable_read ) events |= POLLIN;
+      if ( enable_write ) events |= POLLOUT;
+      return port_associate( poll_fd, PORT_SOURCE_FD, fd, events, NULL ) != -1;
+    }
+    else
+      return port_dissociate( poll_fd, PORT_SOURCE_FD, fd ) != -1;
+#else
+    for ( std::vector<struct pollfd>::iterator pollfd_i = pollfds.begin(); pollfd_i != pollfds.end(); )
+    {
+      if ( ( *pollfd_i ).fd == fd )
+      {
+        int events = 0;
+        if ( enable_read ) events |= POLLIN;
+        if ( enable_write ) events |= POLLOUT;
+        ( *pollfd_i ).events = events;
+        return true;
+      }
+    }
+    return false;
+#endif
+  }
+};
+Socket::AIOQueue::AIOQueue()
+{
+#ifdef _WIN32
+  hIoCompletionPort = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0 );
+  if ( hIoCompletionPort == INVALID_HANDLE_VALUE ) DebugBreak();
+  uint16_t iocp_worker_thread_count = Machine::getOnlineLogicalProcessorCount();
+  for ( uint16_t iocp_worker_thread_i = 0; iocp_worker_thread_i < iocp_worker_thread_count; iocp_worker_thread_i++ )
+  {
+    IOCPWorkerThread* iocp_worker_thread = new IOCPWorkerThread( hIoCompletionPort );
+    iocp_worker_threads.push_back( iocp_worker_thread );
+    iocp_worker_thread->start();
+  }
+#endif
+}
+Socket::AIOQueue::~AIOQueue()
+{
+#ifdef _WIN32
+  CloseHandle( hIoCompletionPort );
+  for ( std::vector<IOCPWorkerThread*>::iterator iocp_worker_thread_i = iocp_worker_threads.begin(); iocp_worker_thread_i != iocp_worker_threads.end(); iocp_worker_thread_i++ )
+  {
+    ( *iocp_worker_thread_i )->stop();
+    Object::decRef( **iocp_worker_thread_i );
+  }
+#endif
+  for ( std::vector<NBIOWorkerThread*>::iterator nbio_worker_thread_i = nbio_worker_threads.begin(); nbio_worker_thread_i != nbio_worker_threads.end(); nbio_worker_thread_i++ )
+  {
+    ( *nbio_worker_thread_i )->stop();
+    Object::decRef( **nbio_worker_thread_i );
+  }
+}
+#ifdef _WIN32
+void Socket::AIOQueue::associate( Socket& socket_ )
+{
+  CreateIoCompletionPort( reinterpret_cast<HANDLE>( static_cast<int>( socket_ ) ), hIoCompletionPort, 0, 0 );
+}
+#endif
+void Socket::AIOQueue::submit( auto_Object<AIOControlBlock> aio_control_block )
+{
+  if ( nbio_worker_threads.empty() )
+  {
+    uint16_t nbio_worker_thread_count = Machine::getOnlineLogicalProcessorCount();
+    // uint16_t nbio_worker_thread_count = 1;
+    for ( uint16_t nbio_worker_thread_i = 0; nbio_worker_thread_i < nbio_worker_thread_count; nbio_worker_thread_i++ )
+    {
+      NBIOWorkerThread* nbio_worker_thread = new NBIOWorkerThread;
+      nbio_worker_thread->start();
+      nbio_worker_threads.push_back( nbio_worker_thread );
+    }
+  }
+  nbio_worker_threads[Thread::getCurrentThreadId() % nbio_worker_threads.size()]->submit( aio_control_block );
+}
+Socket::AIOQueue* Socket::aio_queue = NULL;
 Socket::Socket( int domain, int type, int protocol, int socket_ )
   : domain( domain ), socket_( socket_ ), type( type ), protocol( protocol )
 {
@@ -2668,92 +3275,112 @@ Socket::~Socket()
 {
   close();
 }
+void Socket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
+{
+  aio_connect_nbio( aio_connect_control_block );
+}
+void Socket::aio_connect_nbio( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
+{
+  aio_connect_control_block->set_socket( *this );
+  set_blocking_mode( false );
+  if ( connect( aio_connect_control_block->get_peername() ) )
+    aio_connect_control_block->onCompletion( 0 );
+  else if ( want_connect() )
+    get_aio_queue().submit( aio_connect_control_block.release() );
+  else
+    aio_connect_control_block->onError( Exception::get_errno() );
+}
 void Socket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
 {
-#ifdef _DEBUG
-  if ( aio_read_control_block->get_buffer()->capacity() - aio_read_control_block->get_buffer()->size() == 0 )
-    DebugBreak();
-#endif
-  if ( aio_queue != NULL )
-  {
 #ifdef _WIN32
-    auto_Buffer buffer( aio_read_control_block->get_buffer() );
-    WSABUF wsabuf[1];
-    wsabuf[0].buf = static_cast<char*>( *buffer ) + buffer->size();
-    wsabuf[0].len = buffer->capacity() - buffer->size();
-    DWORD dwNumberOfBytesReceived, dwFlags = 0;
-    if ( ::WSARecv( socket_, wsabuf, 1, &dwNumberOfBytesReceived, &dwFlags, *aio_read_control_block, NULL ) == 0 ||
-         ::WSAGetLastError() == WSA_IO_PENDING )
-      aio_read_control_block.release();
-    else
-      aio_read_control_block->onError( ::WSAGetLastError() );
+  aio_read_iocp( aio_read_control_block );
 #else
-    set_blocking_mode( false );
-    ssize_t read_ret = read( aio_read_control_block->get_buffer(), false ); // false = don't update the buffer size, onCompletion will do that
-    if ( read_ret > 0 )
-      aio_read_control_block->onCompletion( static_cast<size_t>( read_ret ) );
-    else if ( read_ret == 0 )
-      aio_read_control_block->onError( ECONNRESET );
-    else if ( want_read() || want_write() )
-    {
-      set_blocking_mode( true );
-      aio_queue->submit( aio_read_control_block.release() );
-    }
-    else
-      aio_read_control_block->onError( Exception::get_errno() );
+  aio_read_nbio( aio_read_control_block );
 #endif
-  }
+}
+#ifdef _WIN32
+void Socket::aio_read_iocp( auto_Object<AIOReadControlBlock> aio_read_control_block )
+{
+  aio_read_control_block->set_socket( *this );
+  get_aio_queue().associate( *this );
+  auto_Buffer buffer( aio_read_control_block->get_buffer() );
+  WSABUF wsabuf[1];
+  wsabuf[0].buf = static_cast<char*>( *buffer ) + buffer->size();
+  wsabuf[0].len = buffer->capacity() - buffer->size();
+  DWORD dwNumberOfBytesReceived, dwFlags = 0;
+  if ( ::WSARecv( socket_, wsabuf, 1, &dwNumberOfBytesReceived, &dwFlags, *aio_read_control_block, NULL ) == 0 ||
+       ::WSAGetLastError() == WSA_IO_PENDING )
+    aio_read_control_block.release();
   else
-    aio_read_control_block->execute();
+    aio_read_control_block->onError( ::WSAGetLastError() );
+}
+#endif
+void Socket::aio_read_nbio( auto_Object<AIOReadControlBlock> aio_read_control_block )
+{
+  aio_read_control_block->set_socket( *this );
+  set_blocking_mode( false );
+  ssize_t read_ret = read( aio_read_control_block->get_buffer() );
+  if ( read_ret > 0 )
+    aio_read_control_block->onCompletion( static_cast<size_t>( read_ret ) );
+  else if ( read_ret == 0 )
+#ifdef _WIN32
+    aio_read_control_block->onError( WSAECONNRESET );
+#else
+    aio_read_control_block->onError( ECONNRESET );
+#endif
+  else if ( want_read() || want_write() )
+    get_aio_queue().submit( aio_read_control_block.release() );
+  else
+    aio_read_control_block->onError( Exception::get_errno() );
 }
 void Socket::aio_write( auto_Object<AIOWriteControlBlock> aio_write_control_block )
 {
-  if ( aio_queue != NULL )
-  {
 #ifdef _WIN32
-    auto_Buffer buffer( aio_write_control_block->get_buffer() );
-    if ( buffer->get_type_id() == YIELD_OBJECT_TYPE_ID( GatherBuffer ) )
-    {
-      DWORD dwNumberOfBytesSent;
-      if ( ::WSASend( socket_, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( static_cast<GatherBuffer*>( buffer.get() )->get_iovecs() ) ), static_cast<GatherBuffer*>( buffer.get() )->get_iovecs_len(), &dwNumberOfBytesSent, 0, *aio_write_control_block, NULL ) == 0 ||
-           ::WSAGetLastError() == WSA_IO_PENDING )
-        aio_write_control_block.release();
-      else
-        aio_write_control_block->onError( ::WSAGetLastError() );
-    }
-    else
-    {
-      WSABUF wsabuf[1];
-      wsabuf[0].buf = static_cast<char*>( *buffer );
-      wsabuf[0].len = buffer->size();
-      DWORD dwNumberOfBytesSent;
-      if ( ::WSASend( socket_, wsabuf, 1, &dwNumberOfBytesSent, 0, *aio_write_control_block, NULL ) == 0 ||
-           ::WSAGetLastError() == WSA_IO_PENDING )
-        aio_write_control_block.release();
-      else
-        aio_write_control_block->onError( ::WSAGetLastError() );
-    }
+  aio_write_iocp( aio_write_control_block );
 #else
-    set_blocking_mode( false );
-    ssize_t write_ret = write( aio_write_control_block->get_buffer() );
-    if ( write_ret >= 0 )
-      aio_write_control_block->onCompletion( static_cast<size_t>( write_ret ) );
-    else if ( want_write() || want_read() )
-    {
-      set_blocking_mode( true );
-      aio_queue->submit( aio_write_control_block.release() );
-    }
-    else
-      aio_write_control_block->onError( Exception::get_errno() );
+  aio_write_nbio( aio_write_control_block );
 #endif
+}
+#ifdef _WIN32
+void Socket::aio_write_iocp( auto_Object<AIOWriteControlBlock> aio_write_control_block )
+{
+  aio_write_control_block->set_socket( *this );
+  get_aio_queue().associate( *this );
+  auto_Buffer buffer( aio_write_control_block->get_buffer() );
+  if ( buffer->get_type_id() == YIELD_OBJECT_TYPE_ID( GatherBuffer ) )
+  {
+    DWORD dwNumberOfBytesSent;
+    if ( ::WSASend( socket_, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( static_cast<GatherBuffer*>( buffer.get() )->get_iovecs() ) ), static_cast<GatherBuffer*>( buffer.get() )->get_iovecs_len(), &dwNumberOfBytesSent, 0, *aio_write_control_block, NULL ) == 0 ||
+         ::WSAGetLastError() == WSA_IO_PENDING )
+      aio_write_control_block.release();
+    else
+      aio_write_control_block->onError( ::WSAGetLastError() );
   }
   else
-    aio_write_control_block->execute();
+  {
+    WSABUF wsabuf[1];
+    wsabuf[0].buf = static_cast<char*>( *buffer );
+    wsabuf[0].len = buffer->size();
+    DWORD dwNumberOfBytesSent;
+    if ( ::WSASend( socket_, wsabuf, 1, &dwNumberOfBytesSent, 0, *aio_write_control_block, NULL ) == 0 ||
+         ::WSAGetLastError() == WSA_IO_PENDING )
+      aio_write_control_block.release();
+    else
+      aio_write_control_block->onError( ::WSAGetLastError() );
+  }
 }
-void Socket::associate( auto_AIOQueue aio_queue )
+#endif
+void Socket::aio_write_nbio( auto_Object<AIOWriteControlBlock> aio_write_control_block )
 {
-  this->aio_queue = aio_queue;
-  aio_queue->associate( *this );
+  aio_write_control_block->set_socket( *this );
+  set_blocking_mode( false );
+  ssize_t write_ret = write( aio_write_control_block->get_buffer() );
+  if ( write_ret >= 0 )
+    aio_write_control_block->onCompletion( static_cast<size_t>( write_ret ) );
+  else if ( want_write() || want_read() )
+    get_aio_queue().submit( aio_write_control_block.release() );
+  else
+    aio_write_control_block->onError( Exception::get_errno() );
 }
 bool Socket::bind( auto_SocketAddress to_sockaddr )
 {
@@ -2790,7 +3417,7 @@ bool Socket::close()
   return ::close( socket_ ) != -1;
 #endif
 }
-Socket::ConnectStatus Socket::connect( auto_SocketAddress to_sockaddr )
+bool Socket::connect( auto_SocketAddress to_sockaddr )
 {
   for ( ;; )
   {
@@ -2798,23 +3425,18 @@ Socket::ConnectStatus Socket::connect( auto_SocketAddress to_sockaddr )
     if ( to_sockaddr->as_struct_sockaddr( domain, name, namelen ) )
     {
       if ( ::connect( *this, name, namelen ) != -1 )
-        return CONNECT_STATUS_OK;
+        return true;
       else
       {
 #ifdef _WIN32
         switch ( ::WSAGetLastError() )
         {
-          case WSAEISCONN: return CONNECT_STATUS_OK;
-          case WSAEWOULDBLOCK:
-          case WSAEINPROGRESS:
-          case WSAEINVAL: return CONNECT_STATUS_WOULDBLOCK;
+          case WSAEISCONN: return true;
           case WSAEAFNOSUPPORT:
 #else
         switch ( errno )
         {
-          case EISCONN: return CONNECT_STATUS_OK;
-          case EWOULDBLOCK:
-          case EINPROGRESS: return CONNECT_STATUS_WOULDBLOCK;
+          case EISCONN: return true;
           case EAFNOSUPPORT:
 #endif
           {
@@ -2828,10 +3450,10 @@ Socket::ConnectStatus Socket::connect( auto_SocketAddress to_sockaddr )
               continue; // Try to connect again
             }
             else
-              return CONNECT_STATUS_ERROR;
+              return false;
           }
           break;
-          default: return CONNECT_STATUS_ERROR;
+          default: return false;
         }
       }
     }
@@ -2845,7 +3467,7 @@ Socket::ConnectStatus Socket::connect( auto_SocketAddress to_sockaddr )
       continue; // Try to connect again
     }
     else
-      return CONNECT_STATUS_ERROR;
+      return false;
   }
 }
 int Socket::create( int& domain, int type, int protocol )
@@ -2881,6 +3503,19 @@ int Socket::create( int& domain, int type, int protocol )
     return -1;
 #endif
 }
+void Socket::destroy()
+{
+  delete aio_queue;
+#ifdef _WIN32
+  ::WSACleanup();
+#endif
+}
+Socket::AIOQueue& Socket::get_aio_queue()
+{
+  if ( aio_queue == NULL )
+    aio_queue = new AIOQueue;
+  return *aio_queue;
+}
 bool Socket::get_blocking_mode() const
 {
   return blocking_mode;
@@ -2905,14 +3540,24 @@ auto_SocketAddress Socket::getsockname()
   else
     return NULL;
 }
+void Socket::init()
+{
+#ifdef _WIN32
+  WORD wVersionRequested = MAKEWORD( 2, 2 );
+  WSADATA wsaData;
+  WSAStartup( wVersionRequested, &wsaData );
+#else
+  signal( SIGPIPE, SIG_IGN );
+#endif
+}
 Socket::operator int() const
 {
   return socket_;
 }
-ssize_t Socket::read( auto_Buffer buffer, bool update_buffer_size )
+ssize_t Socket::read( auto_Buffer buffer )
 {
   ssize_t read_ret = read( static_cast<char*>( *buffer ) + buffer->size(), buffer->capacity() - buffer->size() );
-  if ( read_ret > 0 && update_buffer_size )
+  if ( read_ret > 0 )
     buffer->put( NULL, read_ret );
   return read_ret;
 }
@@ -2970,10 +3615,29 @@ bool Socket::shutdown()
 {
   return true;
 }
+bool Socket::want_connect() const
+{
+#ifdef _WIN32
+  switch ( ::WSAGetLastError() )
+  {
+    case WSAEINPROGRESS:
+    case WSAEINVAL:
+    case WSAEWOULDBLOCK: return true;
+    default: return false;
+  }
+#else
+  switch ( errno )
+  {
+    case EINPROGRESS:
+    case EWOULDBLOCK: return true;
+    default: return false;
+  }
+#endif
+}
 bool Socket::want_read() const
 {
 #ifdef _WIN32
-  return ::WSAGetLastError() == WSAEWOULDBLOCK || ::WSAGetLastError() == WSA_IO_PENDING;
+  return ::WSAGetLastError() == WSAEWOULDBLOCK;
 #else
   return errno == EWOULDBLOCK;
 #endif
@@ -2981,7 +3645,7 @@ bool Socket::want_read() const
 bool Socket::want_write() const
 {
 #ifdef _WIN32
-  return ::WSAGetLastError() == WSAEWOULDBLOCK || ::WSAGetLastError() == WSA_IO_PENDING;
+  return ::WSAGetLastError() == WSAEWOULDBLOCK;
 #else
   return errno == EWOULDBLOCK;
 #endif
@@ -3010,53 +3674,32 @@ ssize_t Socket::write( const void* buffer, size_t buffer_len )
 }
 ssize_t Socket::writev( const struct iovec* buffers, uint32_t buffers_count )
 {
-#ifdef _WIN32
+#if defined(_WIN32)
   DWORD dwWrittenLength;
   ssize_t write_ret = ::WSASend( socket_, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ), buffers_count, &dwWrittenLength, 0, NULL, NULL );
   if ( write_ret >= 0 )
     return static_cast<ssize_t>( dwWrittenLength );
   else
     return write_ret;
-#else
+#elif defined(__linux)
   // Use sendmsg instead of writev to pass flags on Linux
   struct msghdr _msghdr;
   memset( &_msghdr, 0, sizeof( _msghdr ) );
   _msghdr.msg_iov = const_cast<iovec*>( buffers );
   _msghdr.msg_iovlen = buffers_count;
-#ifdef __linux
   return ::sendmsg( socket_, &_msghdr, MSG_NOSIGNAL ); // MSG_NOSIGNAL = disable SIGPIPE
+#elif defined(__sun)
+  std::string buffer;
+  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+    buffer.append( static_cast<char*>( buffers[buffer_i].iov_base ), buffers[buffer_i].iov_len );
+  return write( buffer.c_str(), buffer.size() );
 #else
-  return ::sendmsg( socket_, &_msghdr, 0 );
+  return ::writev( socket_, buffers, buffers_count );
 #endif
+}
+#ifdef _WIN32
+#pragma warning( pop )
 #endif
-}
-void Socket::AIOConnectControlBlock::execute()
-{
-  if ( get_socket()->connect( get_peername() ) == CONNECT_STATUS_OK )
-    onCompletion( 0 );
-  else
-    onError( Exception::get_errno() );
-}
-void Socket::AIOReadControlBlock::execute()
-{
-  ssize_t read_ret = get_socket()->read( get_buffer(), false ); // false = don't update buffer size, onCompletion will do that
-  if ( read_ret >= 0 )
-    onCompletion( static_cast<size_t>( read_ret ) );
-  else
-    onError( Exception::get_errno() );
-}
-void Socket::AIOReadControlBlock::onCompletion( size_t bytes_transferred )
-{
-  buffer->put( NULL, bytes_transferred );
-}
-void Socket::AIOWriteControlBlock::execute()
-{
-  ssize_t write_ret = get_socket()->write( get_buffer() );
-  if ( write_ret >= 0 )
-    onCompletion( static_cast<size_t>( write_ret ) );
-  else
-    onError( Exception::get_errno() );
-}
 
 
 // socket_address.cpp
@@ -3136,17 +3779,44 @@ bool SocketAddress::as_struct_sockaddr( int family, struct sockaddr*& out_sockad
 }
 struct addrinfo* SocketAddress::getaddrinfo( const char* hostname, uint16_t port )
 {
-  std::ostringstream servname; // ltoa is not very portable
-  servname << port; // servname = decimal port or service name. Great interface, guys.
+#ifdef _WIN32
+  Socket::init();
+#endif
+  const char* servname;
+#ifdef __sun
+  if ( hostname == NULL )
+    hostname = "0.0.0.0";
+  servname = NULL;
+#else
+  std::ostringstream servname_oss; // ltoa is not very portable
+  servname_oss << port; // servname = decimal port or service name. Great interface, guys.
+  std::string servname_str = servname_oss.str();
+  servname = servname_str.c_str();
+#endif
   struct addrinfo addrinfo_hints;
   memset( &addrinfo_hints, 0, sizeof( addrinfo_hints ) );
   addrinfo_hints.ai_family = AF_UNSPEC;
   if ( hostname == NULL )
     addrinfo_hints.ai_flags |= AI_PASSIVE; // To get INADDR_ANYs
   struct addrinfo* addrinfo_list;
-  int getaddrinfo_ret = ::getaddrinfo( hostname, servname.str().c_str(), &addrinfo_hints, &addrinfo_list );
+  int getaddrinfo_ret = ::getaddrinfo( hostname, servname, &addrinfo_hints, &addrinfo_list );
   if ( getaddrinfo_ret == 0 )
+  {
+#ifdef __sun
+    struct addrinfo* addrinfo_p = addrinfo_list;
+    while ( addrinfo_p != NULL )
+    {
+      switch ( addrinfo_p->ai_family )
+      {
+        case AF_INET: reinterpret_cast<struct sockaddr_in*>( addrinfo_p->ai_addr )->sin_port = htons( port ); break;
+        case AF_INET6: reinterpret_cast<struct sockaddr_in6*>( addrinfo_p->ai_addr )->sin6_port = htons( port ); break;
+        default: DebugBreak();
+      }
+      addrinfo_p = addrinfo_p->ai_next;
+    }
+#endif
     return addrinfo_list;
+  }
   else
     return NULL;
 }
@@ -3396,25 +4066,8 @@ SSL_CTX* SSLContext::createSSL_CTX( SSL_METHOD* method )
 #pragma warning( pop )
 #else
 #include <netinet/in.h> // For the IPPROTO_* constants
+#include <sys/socket.h>
 #endif
-auto_SSLSocket SSLSocket::create( auto_SSLContext ctx )
-{
-  return create( AF_INET6, ctx );
-}
-auto_SSLSocket SSLSocket::create( int domain, auto_SSLContext ctx )
-{
-  SSL* ssl = SSL_new( ctx->get_ssl_ctx() );
-  if ( ssl != NULL )
-  {
-    int socket_ = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
-    if ( socket_ != -1 )
-      return new SSLSocket( domain, socket_, ctx, ssl );
-    else
-      return NULL;
-  }
-  else
-    return NULL;
-}
 SSLSocket::SSLSocket( int domain, int socket_, auto_SSLContext ctx, SSL* ssl )
   : TCPSocket( domain, socket_ ), ctx( ctx ), ssl( ssl )
 { }
@@ -3438,43 +4091,44 @@ auto_TCPSocket SSLSocket::accept()
 }
 void SSLSocket::aio_accept( auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
 {
-  if ( aio_queue != NULL )
-    aio_queue->submit( aio_accept_control_block.release() );
-  else
-    aio_accept_control_block->execute();
-}
-void SSLSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
-{
-  if ( aio_queue != NULL )
-    aio_queue->submit( aio_connect_control_block.release() );
-  else
-    aio_connect_control_block->execute();
+  aio_accept_nbio( aio_accept_control_block );
 }
 void SSLSocket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
 {
-  if ( aio_queue != NULL )
-    aio_queue->submit( aio_read_control_block.release() );
-  else
-    aio_read_control_block->execute();
+  aio_read_nbio( aio_read_control_block );
 }
 void SSLSocket::aio_write( auto_Object<AIOWriteControlBlock> aio_write_control_block )
 {
-   if ( aio_queue != NULL )
-    aio_queue->submit( aio_write_control_block.release() );
-  else
-    aio_write_control_block->execute();
+  aio_write_nbio( aio_write_control_block );
 }
-Socket::ConnectStatus SSLSocket::connect( auto_SocketAddress peer_sockaddr )
+bool SSLSocket::connect( auto_SocketAddress peer_sockaddr )
 {
-  ConnectStatus connect_status = TCPSocket::connect( peer_sockaddr );
-  if ( connect_status == CONNECT_STATUS_OK )
+  if ( TCPSocket::connect( peer_sockaddr ) )
   {
     SSL_set_fd( ssl, *this );
     SSL_set_connect_state( ssl );
-    return CONNECT_STATUS_OK;
+    return true;
   }
   else
-    return connect_status;
+    return false;
+}
+auto_SSLSocket SSLSocket::create( auto_SSLContext ctx )
+{
+  return create( AF_INET6, ctx );
+}
+auto_SSLSocket SSLSocket::create( int domain, auto_SSLContext ctx )
+{
+  SSL* ssl = SSL_new( ctx->get_ssl_ctx() );
+  if ( ssl != NULL )
+  {
+    int socket_ = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
+    if ( socket_ != -1 )
+      return new SSLSocket( domain, socket_, ctx, ssl );
+    else
+      return NULL;
+  }
+  else
+    return NULL;
 }
 /*
 void SSLSocket::info_callback( const SSL* ssl, int where, int ret )
@@ -3547,8 +4201,6 @@ ssize_t SSLSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
 // tcp_socket.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #if defined(_WIN32)
 #pragma warning( push )
 #pragma warning( disable: 4995 )
@@ -3560,22 +4212,16 @@ ssize_t SSLSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
 #include <netinet/tcp.h> // For the TCP_* constants
 #include <sys/socket.h>
 #endif
-
 #include <cstring>
-
-
 #ifdef _WIN32
 void* TCPSocket::lpfnAcceptEx = NULL;
 void* TCPSocket::lpfnConnectEx = NULL;
 #endif
-
-
 TCPSocket::TCPSocket( int domain, int socket_ )
   : Socket( domain, SOCK_STREAM, IPPROTO_TCP, socket_ )
 {
   partial_write_len = 0;
 }
-
 auto_TCPSocket TCPSocket::accept()
 {
 #ifdef _WIN32
@@ -3589,122 +4235,104 @@ auto_TCPSocket TCPSocket::accept()
   else
     return NULL;
 }
-
 int TCPSocket::_accept()
 {
   sockaddr_storage peer_sockaddr_storage;
   socklen_t peer_sockaddr_storage_len = sizeof( peer_sockaddr_storage );
   return ::accept( *this, ( struct sockaddr* )&peer_sockaddr_storage, &peer_sockaddr_storage_len );
 }
-
 void TCPSocket::aio_accept( YIELD::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
 {
-  if ( aio_queue != NULL )
-  {
 #ifdef _WIN32
-    if ( lpfnAcceptEx == NULL )
-    {
-      GUID GuidAcceptEx = WSAID_ACCEPTEX;
-      DWORD dwBytes;
-      WSAIoctl( *this, SIO_GET_EXTENSION_FUNCTION_POINTER, &GuidAcceptEx, sizeof( GuidAcceptEx ), &lpfnAcceptEx, sizeof( lpfnAcceptEx ), &dwBytes, NULL, NULL );
-    }
-
-    aio_accept_control_block->accepted_tcp_socket = TCPSocket::create( get_domain() );
-    size_t sizeof_peer_sockaddr = ( get_domain() == AF_INET6 ) ? sizeof( sockaddr_in6 ) : sizeof( sockaddr_in );
-
-    DWORD dwBytesReceived;
-    if ( static_cast<LPFN_ACCEPTEX>( lpfnAcceptEx )( *this, *aio_accept_control_block->accepted_tcp_socket, aio_accept_control_block->peer_sockaddr, 0, sizeof_peer_sockaddr + 16, sizeof_peer_sockaddr + 16, &dwBytesReceived, ( LPOVERLAPPED )*aio_accept_control_block ) ||
-         ::WSAGetLastError() == WSA_IO_PENDING )
-      aio_accept_control_block.release();
-    else
-      aio_accept_control_block->onError( Exception::get_errno() );
+  aio_accept_iocp( aio_accept_control_block );
 #else
-    aio_queue->submit( aio_accept_control_block.release() );
+  aio_accept_nbio( aio_accept_control_block );
 #endif
-  }
-  else
-    aio_accept_control_block->execute();
 }
-
+#ifdef _WIN32
+void TCPSocket::aio_accept_iocp( YIELD::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
+{
+  aio_accept_control_block->set_socket( *this );
+  get_aio_queue().associate( *this );
+  if ( lpfnAcceptEx == NULL )
+  {
+    GUID GuidAcceptEx = WSAID_ACCEPTEX;
+    DWORD dwBytes;
+    WSAIoctl( *this, SIO_GET_EXTENSION_FUNCTION_POINTER, &GuidAcceptEx, sizeof( GuidAcceptEx ), &lpfnAcceptEx, sizeof( lpfnAcceptEx ), &dwBytes, NULL, NULL );
+  }
+  aio_accept_control_block->accepted_tcp_socket = TCPSocket::create( get_domain() );
+  size_t sizeof_peer_sockaddr = ( get_domain() == AF_INET6 ) ? sizeof( sockaddr_in6 ) : sizeof( sockaddr_in );
+  DWORD dwBytesReceived;
+  if ( static_cast<LPFN_ACCEPTEX>( lpfnAcceptEx )( *this, *aio_accept_control_block->accepted_tcp_socket, aio_accept_control_block->peer_sockaddr, 0, sizeof_peer_sockaddr + 16, sizeof_peer_sockaddr + 16, &dwBytesReceived, ( LPOVERLAPPED )*aio_accept_control_block ) ||
+       ::WSAGetLastError() == WSA_IO_PENDING )
+    aio_accept_control_block.release();
+  else
+    aio_accept_control_block->onError( Exception::get_errno() );
+}
+#endif
+void TCPSocket::aio_accept_nbio( YIELD::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
+{
+  aio_accept_control_block->set_socket( *this );
+  set_blocking_mode( false );
+  get_aio_queue().submit( aio_accept_control_block.release() );
+}
 void TCPSocket::aio_connect( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
-  if ( aio_queue != NULL )
-  {
 #ifdef _WIN32
-    if ( lpfnConnectEx == NULL )
+  aio_connect_iocp( aio_connect_control_block );
+#else
+  aio_connect_nbio( aio_connect_control_block );
+#endif
+}
+#ifdef _WIN32
+void TCPSocket::aio_connect_iocp( YIELD::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
+{
+  aio_connect_control_block->set_socket( *this );
+  if ( lpfnConnectEx == NULL )
+  {
+    GUID GuidConnectEx = WSAID_CONNECTEX;
+    DWORD dwBytes;
+    WSAIoctl( *this, SIO_GET_EXTENSION_FUNCTION_POINTER, &GuidConnectEx, sizeof( GuidConnectEx ), &lpfnConnectEx, sizeof( lpfnConnectEx ), &dwBytes, NULL, NULL );
+  }
+  for ( ;; )
+  {
+    struct sockaddr* name; socklen_t namelen;
+    if ( aio_connect_control_block->get_peername()->as_struct_sockaddr( get_domain(), name, namelen ) )
     {
-      GUID GuidConnectEx = WSAID_CONNECTEX;
-      DWORD dwBytes;
-      WSAIoctl( *this, SIO_GET_EXTENSION_FUNCTION_POINTER, &GuidConnectEx, sizeof( GuidConnectEx ), &lpfnConnectEx, sizeof( lpfnConnectEx ), &dwBytes, NULL, NULL );
-    }
-
-    for ( ;; )
-    {
-      struct sockaddr* name; socklen_t namelen;
-      if ( aio_connect_control_block->get_peername()->as_struct_sockaddr( get_domain(), name, namelen ) )
+      if ( bind( SocketAddress::create( NULL, 0 ) ) )
       {
-        if ( bind( SocketAddress::create( NULL, 0 ) ) )
+        get_aio_queue().associate( *this );
+        DWORD dwBytesSent;
+        if ( static_cast<LPFN_CONNECTEX>( lpfnConnectEx )( *this, name, namelen, NULL, 0, &dwBytesSent, *aio_connect_control_block ) ||
+             ::WSAGetLastError() == WSA_IO_PENDING )
         {
-          DWORD dwBytesSent;
-          if ( static_cast<LPFN_CONNECTEX>( lpfnConnectEx )( *this, name, namelen, NULL, 0, &dwBytesSent, *aio_connect_control_block ) ||
-               ::WSAGetLastError() == WSA_IO_PENDING )
-          {
-            aio_connect_control_block.release();
-            return;
-          }
-          else
-            break;
+          aio_connect_control_block.release();
+          return;
         }
         else
           break;
       }
-      else if ( get_domain() == AF_INET6 )
-      {
-        close();
-        domain = AF_INET; // Fall back to IPv4
-        socket_ = ::socket( domain, get_type(), get_protocol() );
-        aio_queue->associate( *this );
-        continue; // Try to connect again
-      }
       else
         break;
     }
-
-    aio_connect_control_block->onError( Exception::get_errno() );
-#else
-    set_blocking_mode( false );
-    switch ( connect( aio_connect_control_block->get_peername() ) )
+    else if ( get_domain() == AF_INET6 )
     {
-      case CONNECT_STATUS_OK:
-      {
-        aio_connect_control_block->onCompletion( 0 );
-      }
-      break;
-
-      case CONNECT_STATUS_WOULDBLOCK:
-      {
-        set_blocking_mode( true );
-        aio_queue->submit( aio_connect_control_block.release() );
-      }
-      break;
-
-      default:
-      {
-        aio_connect_control_block->onError( Exception::get_errno() );
-      }
-      break;
+      close();
+      domain = AF_INET; // Fall back to IPv4
+      socket_ = ::socket( domain, get_type(), get_protocol() );
+      get_aio_queue().associate( *this );
+      continue; // Try to connect again
     }
-#endif
+    else
+      break;
   }
-  else
-    aio_connect_control_block->execute();
+  aio_connect_control_block->onError( Exception::get_errno() );
 }
-
+#endif
 auto_TCPSocket TCPSocket::create()
 {
   return create( AF_INET6 );
 }
-
 auto_TCPSocket TCPSocket::create( int domain )
 {
   int socket_ = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
@@ -3713,7 +4341,6 @@ auto_TCPSocket TCPSocket::create( int domain )
   else
     return NULL;
 }
-
 bool TCPSocket::listen()
 {
   int flag = 1;
@@ -3726,7 +4353,6 @@ bool TCPSocket::listen()
   setsockopt( *this, SOL_SOCKET, SO_LINGER, ( char* )&lingeropt, ( int )sizeof( lingeropt ) );
   return ::listen( *this, SOMAXCONN ) != -1;
 }
-
 bool TCPSocket::shutdown()
 {
 #ifdef _WIN32
@@ -3734,18 +4360,6 @@ bool TCPSocket::shutdown()
 #else
   return ::shutdown( *this, SHUT_RDWR ) != -1;
 #endif
-}
-
-
-void TCPSocket::AIOAcceptControlBlock::execute()
-{
-  accepted_tcp_socket = static_cast<TCPSocket*>( get_socket().get() )->accept();
-  if ( accepted_tcp_socket != NULL )
-  {
-    onCompletion( 0 );
-  }
-  else
-    onError( Exception::get_errno() );
 }
 
 
@@ -3758,15 +4372,15 @@ TracingSocket::TracingSocket( auto_Socket underlying_socket, auto_Log log )
 { }
 void TracingSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
 {
-  underlying_socket->aio_connect( aio_connect_control_block );
+  aio_connect_nbio( aio_connect_control_block );
 }
-void TracingSocket::aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
+void TracingSocket::aio_read( auto_Object<Socket::AIOReadControlBlock> aio_read_control_block )
 {
-  underlying_socket->aio_read( aio_read_control_block );
+  aio_read_nbio( aio_read_control_block );
 }
-void TracingSocket::aio_write( auto_Object<AIOWriteControlBlock> aio_write_control_block )
+void TracingSocket::aio_write( auto_Object<Socket::AIOWriteControlBlock> aio_write_control_block )
 {
-  underlying_socket->aio_write( aio_write_control_block );
+  aio_write_nbio( aio_write_control_block );
 }
 bool TracingSocket::bind( auto_SocketAddress to_sockaddr )
 {
@@ -3780,7 +4394,7 @@ bool TracingSocket::close()
   log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: closing socket #" << ( int )*this << ".";
   return underlying_socket->close();
 }
-Socket::ConnectStatus TracingSocket::connect( auto_SocketAddress to_sockaddr )
+bool TracingSocket::connect( auto_SocketAddress to_sockaddr )
 {
   std::string to_hostname;
   if ( to_sockaddr->getnameinfo( to_hostname ) )
@@ -3833,6 +4447,13 @@ bool TracingSocket::want_read() const
   if ( want_read_ret )
     log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: would block on read on socket #" << ( int )*this << ".";
   return want_read_ret;
+}
+bool TracingSocket::want_connect() const
+{
+  bool want_connect_ret = underlying_socket->want_connect();
+  if ( want_connect_ret )
+    log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: would block on connect on socket #" << ( int )*this << ".";
+  return want_connect_ret;
 }
 bool TracingSocket::want_write() const
 {
@@ -3902,75 +4523,37 @@ ssize_t TracingSocket::writev( const struct iovec* buffers, uint32_t buffers_cou
 UDPSocket::UDPSocket( int domain, int socket_ )
   : Socket( domain, SOCK_DGRAM, IPPROTO_UDP, socket_ )
 { }
-void UDPSocket::aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block )
-{
-  if ( connect( aio_connect_control_block->get_peername() ) == CONNECT_STATUS_OK )
-    aio_connect_control_block->onCompletion( 0 );
-  else
-    aio_connect_control_block->onError( Exception::get_errno() );
-}
 void UDPSocket::aio_recvfrom( auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block )
 {
-  if ( aio_queue != NULL )
-  {
 #ifdef _WIN32
-    auto_Buffer buffer( aio_recvfrom_control_block->get_buffer() );
-    WSABUF wsabuf[1];
-    wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) );
-    wsabuf[0].len = buffer->capacity() - buffer->size();
-    DWORD dwNumberOfBytesReceived, dwFlags = 0;
-    socklen_t peer_sockaddr_len = sizeof( *aio_recvfrom_control_block->peer_sockaddr );
-    if ( ::WSARecvFrom( *this, wsabuf, 1, &dwNumberOfBytesReceived, &dwFlags, reinterpret_cast<struct sockaddr*>( aio_recvfrom_control_block->peer_sockaddr ), &peer_sockaddr_len, *aio_recvfrom_control_block, NULL ) == 0 ||
-         ::WSAGetLastError() == WSA_IO_PENDING )
-         aio_recvfrom_control_block.release();
-    else
-      aio_recvfrom_control_block->onError( ::WSAGetLastError() );
+  aio_recvfrom_iocp( aio_recvfrom_control_block );
 #else
-    aio_queue->submit( aio_recvfrom_control_block.release() );
+  aio_recvfrom_nbio( aio_recvfrom_control_block );
 #endif
-  }
-  else
-    aio_recvfrom_control_block->execute();
 }
-void UDPSocket::aio_sendto( auto_Object<AIOSendToControlBlock> aio_sendto_control_block )
-{
-  if ( aio_queue != NULL )
-  {
 #ifdef _WIN32
-    struct sockaddr* peer_sockaddr; socklen_t peer_sockaddr_len;
-    if ( aio_sendto_control_block->get_peer_sockaddr()->as_struct_sockaddr( get_domain(), peer_sockaddr, peer_sockaddr_len ) )
-    {
-      auto_Buffer buffer( aio_sendto_control_block->get_buffer() );
-      if ( buffer->get_type_id() == YIELD_OBJECT_TYPE_ID( GatherBuffer ) )
-      {
-        DWORD dwNumberOfBytesSent;
-        if ( ::WSASendTo( socket_, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( static_cast<GatherBuffer*>( buffer.get() )->get_iovecs() ) ), static_cast<GatherBuffer*>( buffer.get() )->get_iovecs_len(), &dwNumberOfBytesSent, 0, peer_sockaddr, peer_sockaddr_len, *aio_sendto_control_block, NULL ) == 0 ||
-             ::WSAGetLastError() == WSA_IO_PENDING )
-          aio_sendto_control_block.release();
-        else
-          aio_sendto_control_block->onError( ::WSAGetLastError() );
-      }
-      else
-      {
-        WSABUF wsabuf[1];
-        wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) );
-        wsabuf[0].len = buffer->size();
-        DWORD dwNumberOfBytesSent;
-        if ( ::WSASendTo( socket_, wsabuf, 1, &dwNumberOfBytesSent, 0, peer_sockaddr, peer_sockaddr_len, *aio_sendto_control_block, NULL ) == 0 ||
-             ::WSAGetLastError() == WSA_IO_PENDING )
-          aio_sendto_control_block.release();
-        else
-          aio_sendto_control_block->onError( ::WSAGetLastError() );
-      }
-    }
-    else
-      aio_sendto_control_block->onError( ::WSAGetLastError() );
-#else
-    aio_queue->submit( aio_sendto_control_block.release() );
-#endif
-  }
+void UDPSocket::aio_recvfrom_iocp( auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block )
+{
+  aio_recvfrom_control_block->set_socket( *this );
+  get_aio_queue().associate( *this );
+  auto_Buffer buffer( aio_recvfrom_control_block->get_buffer() );
+  WSABUF wsabuf[1];
+  wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) );
+  wsabuf[0].len = buffer->capacity() - buffer->size();
+  DWORD dwNumberOfBytesReceived, dwFlags = 0;
+  socklen_t peer_sockaddr_len = sizeof( *aio_recvfrom_control_block->peer_sockaddr );
+  if ( ::WSARecvFrom( *this, wsabuf, 1, &dwNumberOfBytesReceived, &dwFlags, reinterpret_cast<struct sockaddr*>( aio_recvfrom_control_block->peer_sockaddr ), &peer_sockaddr_len, *aio_recvfrom_control_block, NULL ) == 0 ||
+       ::WSAGetLastError() == WSA_IO_PENDING )
+       aio_recvfrom_control_block.release();
   else
-    aio_sendto_control_block->execute();
+    aio_recvfrom_control_block->onError( ::WSAGetLastError() );
+}
+#endif
+void UDPSocket::aio_recvfrom_nbio( auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block )
+{
+  aio_recvfrom_control_block->set_socket( *this );
+  set_blocking_mode( false );
+  get_aio_queue().submit( aio_recvfrom_control_block.release() );
 }
 auto_UDPSocket UDPSocket::create()
 {
@@ -4009,8 +4592,8 @@ ssize_t UDPSocket::sendto( const void* buffer, size_t buffer_len, auto_SocketAdd
   else
     return -1;
 }
-UDPSocket::AIORecvFromControlBlock::AIORecvFromControlBlock( auto_Buffer buffer, auto_Socket socket_ )
-: Socket::AIOControlBlock( socket_ ), buffer( buffer )
+UDPSocket::AIORecvFromControlBlock::AIORecvFromControlBlock( auto_Buffer buffer )
+: buffer( buffer )
 {
   peer_sockaddr = new sockaddr_storage;
 }
@@ -4022,6 +4605,7 @@ auto_SocketAddress UDPSocket::AIORecvFromControlBlock::get_peer_sockaddr() const
 {
   return new SocketAddress( *peer_sockaddr );
 }
+/*
 void UDPSocket::AIORecvFromControlBlock::execute()
 {
   ssize_t recvfrom_ret = static_cast<UDPSocket*>( get_socket().get() )->recvfrom( buffer, *peer_sockaddr );
@@ -4034,14 +4618,7 @@ void UDPSocket::AIORecvFromControlBlock::onCompletion( size_t bytes_transferred 
 {
   buffer->put( NULL, bytes_transferred );
 }
-void UDPSocket::AIOSendToControlBlock::execute()
-{
-  ssize_t sendto_ret = static_cast<UDPSocket*>( get_socket().get() )->sendto( buffer, peer_sockaddr );
-  if ( sendto_ret >= 0 )
-    onCompletion( static_cast<size_t>( sendto_ret ) );
-  else
-    onError( Exception::get_errno() );
-}
+*/
 
 
 // uri.cpp

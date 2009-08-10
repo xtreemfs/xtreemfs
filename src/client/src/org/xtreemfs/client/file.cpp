@@ -162,7 +162,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     uint64_t current_file_offset = offset;
     uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;    
 
-    YIELD::auto_EventQueue read_response_queue( new YIELD::EventQueue );
+    YIELD::auto_ResponseQueue<org::xtreemfs::interfaces::OSDInterface::readResponse> read_response_queue( new YIELD::ResponseQueue<org::xtreemfs::interfaces::OSDInterface::readResponse> );
     size_t expected_read_response_count = 0;
 
     while ( rbuf_p < rbuf_end )
@@ -206,7 +206,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 
     for ( size_t read_response_i = 0; read_response_i < expected_read_response_count; read_response_i++ )
     {
-      org::xtreemfs::interfaces::OSDInterface::readResponse& read_response = read_response_queue->dequeue_typed<org::xtreemfs::interfaces::OSDInterface::readResponse>();
+      org::xtreemfs::interfaces::OSDInterface::readResponse& read_response = read_response_queue->dequeue();
       // Object::decRef( read_response );
       read_responses.push_back( &read_response );
 
@@ -362,7 +362,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
     uint64_t current_file_offset = offset;
     uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;
 
-    YIELD::auto_EventQueue write_response_queue( new YIELD::EventQueue );
+    YIELD::auto_ResponseQueue<org::xtreemfs::interfaces::OSDInterface::writeResponse> write_response_queue( new YIELD::ResponseQueue<org::xtreemfs::interfaces::OSDInterface::writeResponse> );
     size_t expected_write_response_count = 0;
 
     while ( wbuf_p < wbuf_end )
@@ -400,7 +400,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 
     for ( size_t write_response_i = 0; write_response_i < expected_write_response_count; write_response_i++ )
     {
-      org::xtreemfs::interfaces::OSDInterface::writeResponse& write_response = write_response_queue->dequeue_typed<org::xtreemfs::interfaces::OSDInterface::writeResponse>();
+      org::xtreemfs::interfaces::OSDInterface::writeResponse& write_response = write_response_queue->dequeue();
       if ( write_response.get_selected_file_replica() != 0 )
         selected_file_replica = write_response.get_selected_file_replica();
 

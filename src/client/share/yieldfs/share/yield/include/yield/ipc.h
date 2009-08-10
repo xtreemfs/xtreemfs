@@ -35,7 +35,7 @@ virtual void aio_read( auto_Object<AIOReadControlBlock> aio_read_control_block )
 virtual void aio_write( auto_Object<AIOWriteControlBlock> aio_write_control_block ); \
 virtual bool bind( auto_SocketAddress to_sockaddr ); \
 virtual bool close(); \
-virtual ConnectStatus connect( auto_SocketAddress to_sockaddr ); \
+virtual bool connect( auto_SocketAddress to_sockaddr ); \
 virtual bool get_blocking_mode() const; \
 virtual auto_SocketAddress getpeername(); \
 virtual auto_SocketAddress getsockname(); \
@@ -43,6 +43,7 @@ virtual operator int() const; \
 virtual ssize_t read( void* buffer, size_t buffer_len ); \
 virtual bool set_blocking_mode( bool blocking ); \
 virtual bool shutdown(); \
+virtual bool want_connect() const; \
 virtual bool want_read() const; \
 virtual bool want_write() const; \
 virtual ssize_t write( const void* buffer, size_t buffer_len ); \
@@ -66,61 +67,55 @@ namespace YIELD
       z_stream zstream;
       zstream.zalloc = Z_NULL;
       zstream.zfree = Z_NULL;
-      zstream.opaque = Z_NULL;      
+      zstream.opaque = Z_NULL;
 
       if ( deflateInit( &zstream, level ) == Z_OK )
       {
-        auto_Buffer first_out_buffer = new StackBuffer<4096>;
-        auto_Buffer current_out_buffer = first_out_buffer;
-        zstream.next_out = static_cast<Bytef*>( static_cast<void*>( *current_out_buffer ) );
-        zstream.avail_out = current_out_buffer->capacity();
+        zstream.next_in = static_cast<Bytef*>( *buffer );
+        zstream.avail_in = buffer->size();
 
-/*
-        std::vector<struct iovec> iovecs;
+        Bytef zstream_out[4096];
+        zstream.next_out = zstream_out;
+        zstream.avail_out = 4096;
 
-        for ( size_t iovec_i = 0; iovec_i < iovecs.size(); iovec_i++ )
+        auto_Buffer out_buffer( new StringBuffer );
+
+        while ( ::deflate( &zstream, Z_NO_FLUSH ) == Z_OK )
         {
-          zstream.next_in = reinterpret_cast<Bytef*>( iovecs[iovec_i].iov_base );
-          zstream.avail_in = iovecs[iovec_i].iov_len;
-
-          int deflate_ret;
-          while ( ( deflate_ret = ::deflate( &zstream, Z_NO_FLUSH ) ) == Z_OK )
+          if ( zstream.avail_out == 0 ) // Filled zstream_out, copy it into out_buffer and keep deflating
           {
-            if ( zstream.avail_out > 0 )
+            out_buffer->put( zstream_out, sizeof( zstream_out ) );
+            zstream.next_out = zstream_out;
+            zstream.avail_out = sizeof( zstream_out );
+          }
+          else // deflate returned Z_OK without filling zstream_out -> done
+          {
+            int deflate_ret;
+            while ( ( deflate_ret = ::deflate( &zstream, Z_FINISH ) ) == Z_OK ) // Z_OK = need more buffer space to finish compression, Z_STREAM_END = really done
             {
-              while ( ( deflate_ret = ::deflate( &zstream, Z_FINISH ) ) == Z_OK ) // Z_OK = need more buffer space to finish compression, Z_STREAM_END = really done
-              {
-                current_out_buffer->put( NULL, current_out_buffer->capacity() );
-                auto_Buffer new_out_buffer = new StackBuffer<4096>;
-                current_out_buffer->set_next_buffer( new_out_buffer );
-                current_out_buffer = new_out_buffer;
-                zstream.next_out = static_cast<Bytef*>( static_cast<void*>( *current_out_buffer ) );
-                zstream.avail_out = current_out_buffer->capacity();
-              }
+              out_buffer->put( zstream_out, sizeof( zstream_out ) );
+              zstream.next_out = zstream_out;              
+              zstream.avail_out = sizeof( zstream_out );
+            }
 
-              if ( deflate_ret == Z_STREAM_END )
+            if ( deflate_ret == Z_STREAM_END )
+            {
+              if ( deflateEnd( &zstream ) == Z_OK ) // Deallocate zstream
               {
-                if ( ( deflate_ret = deflateEnd( &zstream ) ) == Z_OK )
-                {
-                  if ( zstream.avail_out < current_out_buffer->capacity() )
-                    current_out_buffer->put( NULL, current_out_buffer->capacity() - zstream.avail_out );
+                if ( zstream.avail_out < sizeof( zstream_out ) )
+                  out_buffer->put( zstream_out, sizeof( zstream_out ) - zstream.avail_out );
 
-                  return first_out_buffer;
-                }
+                return out_buffer;
               }
+              else
+                return NULL;
             }
             else
-            {
-              current_out_buffer->put( NULL, current_out_buffer->capacity() );
-              StackBuffer<4096> new_out_buffer = new StackBuffer<4096>;
-              current_out_buffer->set_next_buffer( new_out_buffer );
-              current_out_buffer = new_out_buffer;
-              zstream.next_out = static_cast<Bytef*>( static_cast<void*>( *current_out_buffer ) );
-              zstream.avail_out = current_out_buffer->capacity();
-            }
+              break;
           }
         }
-        */
+
+        deflateEnd( &zstream ); // Deallocate ztream
       }
 
       return NULL;
@@ -172,14 +167,18 @@ namespace YIELD
     class AIOControlBlock : public ::YIELD::AIOControlBlock
     {
     public:
-      auto_Object<Socket> get_socket() { return socket_; }
+      auto_Object<Socket> get_socket() const { return socket_; }
+
+      void set_socket( Socket& socket_ ) 
+      { 
+        if ( this->socket_ == NULL ) 
+          this->socket_ = socket_.incRef(); 
+      }
 
     protected:
-      AIOControlBlock( auto_Object<Socket> socket_ )
-        : socket_( socket_ )
-      { }
+      AIOControlBlock() { }
 
-    private:      
+    private:
       auto_Object<Socket> socket_;
     };
 
@@ -187,17 +186,14 @@ namespace YIELD
     class AIOConnectControlBlock : public AIOControlBlock
     {
     public:
-      AIOConnectControlBlock( auto_SocketAddress peername, auto_Object<Socket> socket_ )
-        : AIOControlBlock( socket_ ), peername( peername )
+      AIOConnectControlBlock( auto_SocketAddress peername )
+        : peername( peername )
       { }
 
       auto_SocketAddress get_peername() const { return peername; }
 
       // Object
       YIELD_OBJECT_PROTOTYPES( AIOConnectControlBlock, 223 );
-
-      // AIOControlBlock
-      void execute();
 
     private:
       auto_SocketAddress peername;
@@ -207,18 +203,14 @@ namespace YIELD
     class AIOReadControlBlock : public AIOControlBlock
     {
     public:
-      AIOReadControlBlock( auto_Buffer buffer, auto_Object<Socket> socket_ )
-        : AIOControlBlock( socket_ ), buffer( buffer )
+      AIOReadControlBlock( auto_Buffer buffer )
+        : buffer( buffer )
       { }
 
       auto_Buffer get_buffer() const { return buffer; }
 
       // Object
       YIELD_OBJECT_PROTOTYPES( AIOReadControlBlock, 227 );
-
-      // AIOControlBlock
-      void execute();
-      virtual void onCompletion( size_t bytes_transferred );
 
     private:
       auto_Buffer buffer;
@@ -228,8 +220,8 @@ namespace YIELD
     class AIOWriteControlBlock : public AIOControlBlock
     {
     public:
-      AIOWriteControlBlock( auto_Buffer buffer, auto_Object<Socket> socket_ )
-        : AIOControlBlock( socket_ ), buffer( buffer )
+      AIOWriteControlBlock( auto_Buffer buffer )
+        : buffer( buffer )
       { }
 
       auto_Buffer get_buffer() const { return buffer; }
@@ -237,22 +229,19 @@ namespace YIELD
       // Object
       YIELD_OBJECT_PROTOTYPES( AIOWriteControlBlock, 228 );
 
-      // AIOControlBlock
-      void execute();
-
     private:
       auto_Buffer buffer;
     };
 
 
-    virtual void aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block ) = 0;
-    void associate( auto_AIOQueue aio_queue );
-    enum ConnectStatus { CONNECT_STATUS_ERROR = -1, CONNECT_STATUS_OK = 0, CONNECT_STATUS_WOULDBLOCK = 1 };    
+    virtual void aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block );
+    static void destroy();
     int get_domain() const { return domain; }
     int get_protocol() const { return protocol; }
     int get_type() const { return type; }
+    static void init();
     bool operator==( const Socket& other ) const { return static_cast<int>( *this ) == static_cast<int>( other ); } \
-    virtual ssize_t read( auto_Buffer buffer, bool update_buffer_size = true );
+    virtual ssize_t read( auto_Buffer buffer );
     virtual ssize_t write( auto_Buffer buffer );
     YIELD_SOCKET_PROTOTYPES;
 
@@ -260,20 +249,53 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( Socket, 211 );
 
   protected:
+    friend class TracingSocket;
+
     Socket( int domain, int type, int protocol, int socket_ );
     virtual ~Socket();
 
+#ifdef _WIN32
+    void aio_read_iocp( auto_Object<AIOReadControlBlock> aio_read_control_block );
+    void aio_write_iocp( auto_Object<AIOWriteControlBlock> aio_write_control_block );
+#endif
+    void aio_connect_nbio( auto_Object<AIOConnectControlBlock> aio_connect_control_block );
+    void aio_read_nbio( auto_Object<AIOReadControlBlock> aio_read_control_block );
+    void aio_write_nbio( auto_Object<AIOWriteControlBlock> aio_write_control_block );
     static int create( int& domain, int type, int protocol );
 
-    int domain, socket_;
+    class AIOQueue
+    {
+    public:
+      AIOQueue();
+      ~AIOQueue();
 
-    auto_AIOQueue aio_queue;
+#ifdef _WIN32
+      void associate( Socket& );
+#endif
+      void submit( auto_Object<AIOControlBlock> aio_control_block );
+
+    private:
+#ifdef _WIN32
+     void* hIoCompletionPort;
+
+     class IOCPWorkerThread;
+     std::vector<IOCPWorkerThread*> iocp_worker_threads;
+#endif
+
+     class NBIOWorkerThread;
+     std::vector<NBIOWorkerThread*> nbio_worker_threads;
+    };
+
+    AIOQueue& get_aio_queue();
+
+    int domain, socket_;
 
   private:
     Socket( const Socket& ) { DebugBreak(); } // Prevent copying
 
     int type, protocol;
 
+    static AIOQueue* aio_queue;
     bool blocking_mode;
   };
 
@@ -286,8 +308,7 @@ namespace YIELD
    class AIOAcceptControlBlock : public AIOControlBlock
    {
     public:
-      AIOAcceptControlBlock( auto_Socket socket_ )
-        : AIOControlBlock( socket_ )
+      AIOAcceptControlBlock()
       { }
 
       auto_Object<TCPSocket> get_accepted_tcp_socket() const { return accepted_tcp_socket; }
@@ -295,10 +316,9 @@ namespace YIELD
       // Object
       YIELD_OBJECT_PROTOTYPES( AIOAcceptControlBlock, 222 );
 
-      // AIOControlBlock
-      void execute();
-
     private:
+      friend class Socket;
+
       auto_Object<TCPSocket> accepted_tcp_socket;      
 #ifdef _WIN32
       friend class TCPSocket;
@@ -306,12 +326,12 @@ namespace YIELD
 #endif
     };
 
-
+    virtual void aio_accept( auto_Object<AIOAcceptControlBlock> aio_accept_control_block );
+    virtual void aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block );
     static auto_Object<TCPSocket> create(); // Defaults to domain = AF_INET6
     static auto_Object<TCPSocket> create( int domain );
     virtual auto_Object<TCPSocket> accept();
-    virtual void aio_accept( auto_Object<AIOAcceptControlBlock> aio_accept_control_block );
-    virtual void aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block );
+
     virtual bool listen();
     virtual bool shutdown();
 
@@ -323,6 +343,13 @@ namespace YIELD
     virtual ~TCPSocket() { }
 
     int _accept();
+
+    // Socket
+#ifdef _WIN32
+    void aio_accept_iocp( auto_Object<AIOAcceptControlBlock> aio_accept_control_block );
+    void aio_connect_iocp( auto_Object<AIOConnectControlBlock> aio_connect_control_block );
+#endif
+    void aio_accept_nbio( auto_Object<AIOAcceptControlBlock> aio_accept_control_block );
 
   private:
 #ifdef _WIN32
@@ -392,10 +419,9 @@ namespace YIELD
     ssize_t writev( const struct iovec* buffers, uint32_t buffers_count );
 
     // TCPSocket
-    auto_TCPSocket accept();    
+    auto_TCPSocket accept();
     void aio_accept( auto_Object<AIOAcceptControlBlock> aio_accept_control_block );
-    void aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block );
-    ConnectStatus connect( auto_SocketAddress peername );
+    bool connect( auto_SocketAddress peername );
     bool shutdown();
 
   private:
@@ -437,17 +463,13 @@ namespace YIELD
     class AIORecvFromControlBlock : public AIOControlBlock
     {
     public:
-      AIORecvFromControlBlock( auto_Buffer buffer, auto_Socket socket_ );
+      AIORecvFromControlBlock( auto_Buffer buffer );
 
       auto_Buffer get_buffer() const { return buffer; }
       auto_SocketAddress get_peer_sockaddr() const;
 
       // Object
       YIELD_OBJECT_PROTOTYPES( UDPSocket::AIORecvFromControlBlock, 0 );
-
-      // AIOControlBlock
-      void execute();
-      void onCompletion( size_t bytes_transferred );
 
     protected:
       ~AIORecvFromControlBlock();
@@ -460,30 +482,7 @@ namespace YIELD
     };
 
 
-    class AIOSendToControlBlock : public AIOControlBlock
-    {
-    public:
-      AIOSendToControlBlock( auto_Buffer buffer, auto_SocketAddress peer_sockaddr, auto_Socket socket_ )
-        : AIOControlBlock( socket_ ), buffer( buffer ), peer_sockaddr( peer_sockaddr )
-      { }
-
-      auto_Buffer get_buffer() const { return buffer; }
-      auto_SocketAddress get_peer_sockaddr() const { return peer_sockaddr; }
-
-      // Object
-      YIELD_OBJECT_PROTOTYPES( UDPSocket::AIOSendToControlBlock, 0 );
-
-      // AIOControlBlock
-      void execute();
-
-    private:
-      auto_Buffer buffer;
-      auto_SocketAddress peer_sockaddr;
-    };
-
-
     void aio_recvfrom( auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block );
-    void aio_sendto( auto_Object<AIOSendToControlBlock> aio_sendto_control_bolck );
     static auto_Object<UDPSocket> create();    
     ssize_t recvfrom( auto_Buffer buffer, struct sockaddr_storage& peer_sockaddr );
     ssize_t recvfrom( void* buffer, size_t buffer_len, struct sockaddr_storage& peer_sockaddr );
@@ -493,8 +492,11 @@ namespace YIELD
     // Object
     YIELD_OBJECT_PROTOTYPES( UDPSocket, 219 );
 
-    // Socket
-    void aio_connect( auto_Object<AIOConnectControlBlock> aio_connect_control_block );
+  protected:
+#ifdef _WIN32
+    void aio_recvfrom_iocp( auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block );
+#endif
+    void aio_recvfrom_nbio( auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block );
 
   private:
     UDPSocket( int domain, int socket_ );    
@@ -517,7 +519,7 @@ namespace YIELD
     virtual void handleEvent( Event& );
 
   protected:
-    Client( const URI& absolute_uri, auto_AIOQueue aio_queue, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context );
+    Client( const URI& absolute_uri, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context );
     virtual ~Client();
 
     uint32_t get_flags() const { return flags; }
@@ -525,14 +527,13 @@ namespace YIELD
 
   private:
     auto_Object<URI> absolute_uri;
-    auto_AIOQueue aio_queue;
     uint32_t flags;
     auto_Log log;
     Time operation_timeout;
     auto_SocketAddress peername;
     auto_SSLContext ssl_context;
     
-    InterThreadQueue<Socket*> idle_sockets;
+    SynchronizedSTLQueue<Socket*> idle_sockets;
 
     class AIOConnectControlBlock;
     class AIOReadControlBlock;
@@ -594,7 +595,7 @@ namespace YIELD
   class HTTPBenchmarkDriver : public EventHandler
   {
   public:
-    static auto_Object<HTTPBenchmarkDriver> create( auto_EventTarget http_request_target, uint8_t in_flight_request_count, const Path& wlog_file_path );
+    static auto_Object<HTTPBenchmarkDriver> create( auto_EventTarget http_request_target, uint8_t in_flight_request_count, const Path& wlog_file_path, uint32_t wlog_uris_length_max = static_cast<uint32_t>( -1 ), uint8_t wlog_repetitions_count = 1 );
     virtual ~HTTPBenchmarkDriver();
 
     void get_request_rates( std::vector<double>& out_request_rates );
@@ -612,7 +613,9 @@ namespace YIELD
 
     auto_EventTarget http_request_target;
     uint8_t in_flight_http_request_count;
+
     std::vector<URI*> wlog_uris;
+    uint8_t wlog_repetitions_count;
 
     auto_Stage my_stage;
     Mutex wait_signal;
@@ -736,7 +739,6 @@ namespace YIELD
   {
   public:
     static auto_Object<HTTPClient> create( const URI& absolute_uri, 
-                                           auto_AIOQueue aio_queue,
                                            uint32_t flags = 0,
                                            auto_Log log = NULL, 
                                            const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
@@ -753,8 +755,8 @@ namespace YIELD
     virtual void handleEvent( Event& ev ) { Client<HTTPRequest, HTTPResponse>::handleEvent( ev ); }
 
   private:
-    HTTPClient( const URI& absolute_uri, auto_AIOQueue aio_queue, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
-      : Client<HTTPRequest, HTTPResponse>( absolute_uri, aio_queue, flags, log, operation_timeout, peername, ssl_context )
+    HTTPClient( const URI& absolute_uri, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
+      : Client<HTTPRequest, HTTPResponse>( absolute_uri, flags, log, operation_timeout, peername, ssl_context )
     { }
 
     virtual ~HTTPClient() { }
@@ -777,15 +779,14 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( HTTPServer, 0 );
 
   private:
-    HTTPServer( auto_AIOQueue aio_queue, auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket ) ;
+    HTTPServer( auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket ) ;
 
     auto_EventTarget http_request_target;
     auto_TCPSocket listen_tcp_socket;
 
     class AIOAcceptControlBlock;
     class AIOReadControlBlock;
-
-    auto_AIOQueue aio_queue;
+    class AIOWriteControlBlock;
 
     class HTTPResponseTarget;
   };
@@ -978,24 +979,14 @@ namespace YIELD
   public:
     template <class ONCRPCClientType>
     static auto_Object<ONCRPCClientType> create( const URI& absolute_uri, 
-                                                 auto_AIOQueue aio_queue = NULL,
                                                  uint32_t flags = 0,
                                                  auto_Log log = NULL, 
                                                  const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
                                                  auto_SSLContext ssl_context = NULL )
-    {
+    {           
       auto_SocketAddress peername = SocketAddress::create( absolute_uri );
       if ( peername != NULL && peername->get_port() != 0 )
-      {
-        if ( aio_queue == NULL )
-        {
-          aio_queue = AIOQueue::create();
-          if ( aio_queue == NULL )
-            return NULL;
-        }
-
-        return new ONCRPCClientType( absolute_uri, aio_queue, flags, log, operation_timeout, peername, ssl_context );        
-      }
+        return new ONCRPCClientType( absolute_uri, flags, log, operation_timeout, peername, ssl_context );        
       else
         return NULL;
     }
@@ -1031,8 +1022,8 @@ namespace YIELD
     }
 
   protected:
-    ONCRPCClient( const URI& absolute_uri, auto_AIOQueue aio_queue, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
-      : Client<ONCRPCRequest, ONCRPCResponse>( absolute_uri, aio_queue, flags, log, operation_timeout, peername, ssl_context )
+    ONCRPCClient( const URI& absolute_uri, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
+      : Client<ONCRPCRequest, ONCRPCResponse>( absolute_uri, flags, log, operation_timeout, peername, ssl_context )
     { }
 
     virtual ~ONCRPCClient() { }
@@ -1051,16 +1042,16 @@ namespace YIELD
     YIELD_OBJECT_PROTOTYPES( ONCRPCServer, 0 );
    
   protected:
-    ONCRPCServer( auto_AIOQueue aio_queue, auto_Interface interface_, auto_Socket socket_ );
+    ONCRPCServer( auto_Interface interface_, auto_Socket socket_ );
 
   private:
-    auto_AIOQueue aio_queue;
     auto_Interface interface_;
     auto_Socket socket_;
 
     class AIOAcceptControlBlock;
     class AIOReadControlBlock;
     class AIORecvFromControlBlock;
+    class AIOWriteControlBlock;
 
     class ONCRPCResponseTarget;
   };
@@ -1073,7 +1064,16 @@ namespace YIELD
   public:
     static auto_Object<Pipe> create();
 
+    void close();
+#ifdef _WIN32
+    void* get_read_end() const { return ends[0]; }
+    void* get_write_end() const { return ends[1]; }
+#else
+    int get_read_end() const { return ends[0]; }
+    int get_write_end() const { return ends[1]; }
+#endif
     ssize_t read( void* buffer, size_t buffer_len );
+    bool set_blocking_mode( bool blocking );
     ssize_t write( const void* buffer, size_t buffer_len );
 
     // Object
@@ -1085,7 +1085,7 @@ namespace YIELD
 #else
     Pipe( int ends[2] );
 #endif
-    ~Pipe() { }
+    ~Pipe();
 
 #ifdef _WIN32
     void* ends[2];

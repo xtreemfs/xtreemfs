@@ -1,172 +1,7 @@
-// Revision: 1708
+// Revision: 1790
 
 #include "yield/platform.h"
 using namespace YIELD;
-
-
-// aio_queue.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-#ifdef _WIN32
-#define NOMINMAX
-#include <windows.h>
-#endif
-class AIOQueue::BlockingWorkerThread : public Thread
-{
-public:
-  BlockingWorkerThread( InterThreadQueue<BlockingWorkerThread*>* idle_blocking_worker_threads_queue )
-    : idle_blocking_worker_threads_queue( idle_blocking_worker_threads_queue )
-  {
-    is_running = false;
-  }
-  void enqueue( auto_AIOControlBlock aio_control_block )
-  {
-    work_queue.enqueue( aio_control_block.release() );
-  }
-  void stop()
-  {
-    enqueue( NULL );
-    while ( is_running )
-      Thread::yield();
-  }
-  // Thread
-  void run()
-  {
-    is_running = true;
-    set_name( "AIOQueue::BlockingWorkerThread" );
-    for ( ;; )
-    {
-      AIOControlBlock* aio_control_block = work_queue.dequeue();
-      if ( aio_control_block != NULL )
-      {
-        aio_control_block->execute();
-        Object::decRef( *aio_control_block );
-        idle_blocking_worker_threads_queue->enqueue( this );
-      }
-      else
-        break;
-    }
-    is_running = false;
-  }
-private:
-  InterThreadQueue<BlockingWorkerThread*>* idle_blocking_worker_threads_queue;
-  bool is_running;
-  InterThreadQueue<AIOControlBlock*> work_queue;
-};
-#ifdef _WIN32
-class AIOQueue::IOCPWorkerThread : public Thread
-{
-public:
-  IOCPWorkerThread( HANDLE hIoCompletionPort )
-    : hIoCompletionPort( hIoCompletionPort )
-  {
-    is_running = false;
-  }
-  void stop()
-  {
-    while ( is_running )
-      Thread::yield();
-  }
-  // Thread
-  void run()
-  {
-    is_running = true;
-    set_name( "AIOQueue::IOCPWorkerThread" );
-    for ( ;; )
-    {
-      DWORD dwBytesTransferred; ULONG_PTR ulCompletionKey; LPOVERLAPPED lpOverlapped;
-      if ( GetQueuedCompletionStatus( hIoCompletionPort, &dwBytesTransferred, &ulCompletionKey, &lpOverlapped, INFINITE ) )
-      {
-        ::YIELD::AIOControlBlock* aio_control_block = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
-        aio_control_block->onCompletion( dwBytesTransferred );
-        Object::decRef( *aio_control_block );
-      }
-      else if ( lpOverlapped != NULL )
-      {
-        ::YIELD::AIOControlBlock* aio_control_block = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
-        aio_control_block->onError( ::GetLastError() );
-        Object::decRef( *aio_control_block );
-      }
-      else
-        break;
-    }
-    is_running = false;
-  }
-private:
-  HANDLE hIoCompletionPort;
-  bool is_running;
-};
-#endif
-auto_AIOQueue AIOQueue::create()
-{
-#ifdef _WIN32
-  HANDLE hIoCompletionPort = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0 );
-  if ( hIoCompletionPort != INVALID_HANDLE_VALUE )
-    return new AIOQueue( hIoCompletionPort );
-  else
-    return NULL;
-#else
-  return new AIOQueue;
-#endif
-}
-#ifdef _WIN32
-AIOQueue::AIOQueue( HANDLE hIoCompletionPort )
-  : hIoCompletionPort( hIoCompletionPort )
-#else
-AIOQueue::AIOQueue()
-#endif
-{
-#ifdef _WIN32
-  uint16_t iocp_worker_thread_count = Machine::getOnlineLogicalProcessorCount();
-  for ( uint16_t iocp_worker_thread_i = 0; iocp_worker_thread_i < iocp_worker_thread_count; iocp_worker_thread_i++ )
-  {
-    IOCPWorkerThread* iocp_worker_thread = new IOCPWorkerThread( hIoCompletionPort );
-    all_iocp_worker_threads.push_back( iocp_worker_thread );
-    iocp_worker_thread->start();
-  }
-#endif
-  idle_blocking_worker_threads_queue = new InterThreadQueue<BlockingWorkerThread*>;
-}
-AIOQueue::~AIOQueue()
-{
-  for ( std::vector<BlockingWorkerThread*>::iterator blocking_worker_thread_i = all_blocking_worker_threads.begin(); blocking_worker_thread_i != all_blocking_worker_threads.end(); blocking_worker_thread_i++ )
-  {
-    ( *blocking_worker_thread_i )->stop();
-    Object::decRef( **blocking_worker_thread_i );
-  }
-  delete idle_blocking_worker_threads_queue;
-#ifdef _WIN32
-  CloseHandle( hIoCompletionPort );
-  for ( std::vector<IOCPWorkerThread*>::iterator iocp_worker_thread_i = all_iocp_worker_threads.begin(); iocp_worker_thread_i != all_iocp_worker_threads.end(); iocp_worker_thread_i++ )
-  {
-    ( *iocp_worker_thread_i )->stop();
-    Object::decRef( **iocp_worker_thread_i );
-  }
-#endif
-}
-void AIOQueue::associate( int fd )
-{
-#ifdef _WIN32
-  associate( reinterpret_cast<HANDLE>( fd ) );
-#endif
-}
-void AIOQueue::associate( void* handle )
-{
-#ifdef _WIN32
-  CreateIoCompletionPort( handle, hIoCompletionPort, 0, 0 );
-#endif
-}
-void AIOQueue::submit( auto_AIOControlBlock aio_control_block )
-{
-  BlockingWorkerThread* blocking_worker_thread = idle_blocking_worker_threads_queue->try_dequeue();
-  if ( blocking_worker_thread == NULL )
-  {
-    blocking_worker_thread = new BlockingWorkerThread( idle_blocking_worker_threads_queue );
-    all_blocking_worker_threads.push_back( blocking_worker_thread );
-    blocking_worker_thread->start();
-  }
-  blocking_worker_thread->enqueue( aio_control_block );
-}
 
 
 // counting_semaphore.cpp
@@ -224,7 +59,7 @@ bool CountingSemaphore::timed_acquire( uint64_t timeout_ns )
   mach_timespec_t timeout_m_ts = { timeout_ns / NS_IN_S, timeout_ns % NS_IN_S };
   return semaphore_timedwait( sem, timeout_m_ts ) == KERN_SUCCESS;
 #else
-  struct timespec timeout_ts = Time( timeout_ns );
+  struct timespec timeout_ts = ( Time() + Time( timeout_ns ) );
   return sem_timedwait( &sem, &timeout_ts ) == 0;
 #endif
 }
@@ -893,7 +728,7 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
   kc = kstat_open();
   if ( kc )
   {
-    uint16_t online_physical_processor_count = 0;
+    uint16_t online_physical_processor_count = 1;
     kstat* ksp = kstat_lookup( kc, "cpu_info", -1, NULL );
     int32_t last_core_id = 0;
     while ( ksp )
@@ -913,10 +748,7 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
       ksp = ksp->ks_next;
     }
     kstat_close( kc );
-    if ( online_physical_processor_count > 0 )
-      return online_physical_processor_count;
-    else
-      return 1;
+    return online_physical_processor_count;
   }
 #endif
   return getOnlineLogicalProcessorCount();
@@ -1133,7 +965,7 @@ bool Mutex::timed_acquire( uint64_t timeout_ns )
   return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
 #else
 #ifdef YIELD_HAVE_PTHREAD_MUTEX_TIMEDLOCK
-  struct timespec timeout_ts = Time( timeout_ns );
+  struct timespec timeout_ts = ( Time() + Time( timeout_ns ) );
   return ( pthread_mutex_timedlock( &pthread_mutex, &timeout_ts ) == 0 );
 #else
   if ( pthread_mutex_trylock( &pthread_mutex ) == 0 )
@@ -1178,10 +1010,12 @@ PageAlignedBuffer::PageAlignedBuffer( size_t capacity )
     page_size = sysconf( _SC_PAGESIZE );
 #endif
   }
-#ifdef _WIN32
+#if defined(_WIN32)
   iov.iov_base = static_cast<uint8_t*>( _aligned_malloc( capacity, page_size ) );
-#else
+#elif !defined(__sun)
   posix_memalign( &iov.iov_base, page_size, capacity );
+#else
+  DebugBreak();
 #endif
 }
 PageAlignedBuffer::~PageAlignedBuffer()
@@ -1422,12 +1256,16 @@ Path Path::abspath() const
 // performance_counter_set.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-#ifdef __sun
+#ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
+#if defined(__sun)
 #include <libcpc.h>
+#elif defined(YIELD_HAVE_PAPI)
+#include <papi.h>
+#include <pthread.h>
 #endif
 auto_Object<PerformanceCounterSet> PerformanceCounterSet::create()
 {
-#ifdef __sun
+#if defined(__sun)
   cpc_t* cpc = cpc_open( CPC_VER_CURRENT );
   if ( cpc != NULL )
   {
@@ -1437,47 +1275,93 @@ auto_Object<PerformanceCounterSet> PerformanceCounterSet::create()
     else
       cpc_close( cpc );
   }
+#elif defined(YIELD_HAVE_PAPI)
+  if ( PAPI_library_init( PAPI_VER_CURRENT ) == PAPI_VER_CURRENT )
+  {
+    if ( PAPI_thread_init( pthread_self ) == PAPI_OK )
+    {
+      int papi_eventset = PAPI_NULL;
+      if ( PAPI_create_eventset( &papi_eventset ) == PAPI_OK )
+        return new PerformanceCounterSet( papi_eventset );
+    }
+  }
 #endif
   return NULL;
 }
-#ifdef __sun
+#if defined(__sun)
 PerformanceCounterSet::PerformanceCounterSet( cpc_t* cpc, cpc_set_t* cpc_set )
   : cpc( cpc ), cpc_set( cpc_set )
 {
   start_cpc_buf = NULL;
 }
+#elif defined(YIELD_HAVE_PAPI)
+PerformanceCounterSet::PerformanceCounterSet( int papi_eventset )
+  : papi_eventset( papi_eventset )
+{ }
 #endif
 PerformanceCounterSet::~PerformanceCounterSet()
 {
-#ifdef __sun
+#if defined(__sun)
   cpc_set_destroy( cpc, cpc_set );
   cpc_close( cpc );
+#elif defined(YIELD_HAVE_PAPI)
+  PAPI_cleanup_eventset( papi_eventset );
+  PAPI_destroy_eventset( &papi_eventset );
+#endif
+}
+bool PerformanceCounterSet::addEvent( Event event )
+{
+#if defined(__sun)
+  switch ( event )
+  {
+    case EVENT_L1_DCM: return addEvent( "DC_miss" );
+    case EVENT_L2_DCM: return addEvent( "DC_refill_from_system" );
+    case EVENT_L2_ICM: return addEvent( "IC_refill_from_system" );
+    default: DebugBreak(); return false;
+  }
+#elif defined(YIELD_HAVE_PAPI)
+  switch ( event )
+  {
+    case EVENT_L1_DCM: return addEvent( "PAPI_l1_dcm" );
+    case EVENT_L2_DCM: return addEvent( "PAPI_l2_dcm" );
+    case EVENT_L2_ICM: return addEvent( "PAPI_l2_icm" );
+    default: DebugBreak(); return false;
+  }
 #endif
 }
 bool PerformanceCounterSet::addEvent( const char* name )
 {
-#ifdef __sun
+#if defined(__sun)
   int event_index = cpc_set_add_request( cpc, cpc_set, name, 0, CPC_COUNT_USER, 0, NULL );
   if ( event_index != -1 )
   {
     event_indices.push_back( event_index );
     return true;
   }
+#elif defined(YIELD_HAVE_PAPI)
+  int papi_event_code;
+  if ( PAPI_event_name_to_code( const_cast<char*>( name ), &papi_event_code ) == PAPI_OK )
+  {
+     if ( PAPI_add_event( papi_eventset, papi_event_code ) == PAPI_OK )
+       return true;
+  }
 #endif
   return false;
 }
 void PerformanceCounterSet::startCounting()
 {
-#ifdef __sun
+#if defined(__sun)
   if ( start_cpc_buf == NULL )
     start_cpc_buf = cpc_buf_create( cpc, cpc_set );
   cpc_bind_curlwp( cpc, cpc_set, 0 );
   cpc_set_sample( cpc, cpc_set, start_cpc_buf );
+#elif defined(YIELD_HAVE_PAPI)
+  PAPI_start( papi_eventset );
 #endif
 }
 void PerformanceCounterSet::stopCounting( uint64_t* counts )
 {
-#ifdef __sun
+#if defined(__sun)
   cpc_buf_t* stop_cpc_buf = cpc_buf_create( cpc, cpc_set );
   cpc_set_sample( cpc, cpc_set, stop_cpc_buf );
   cpc_buf_t* diff_cpc_buf = cpc_buf_create( cpc, cpc_set );
@@ -1485,8 +1369,11 @@ void PerformanceCounterSet::stopCounting( uint64_t* counts )
   for ( std::vector<int>::size_type event_index_i = 0; event_index_i < event_indices.size(); event_index_i++ )
     cpc_buf_get( cpc, diff_cpc_buf, event_indices[event_index_i], &counts[event_index_i] );
   cpc_unbind( cpc, cpc_set );
+#elif defined(YIELD_HAVE_PAPI)
+  PAPI_stop( papi_eventset, reinterpret_cast<long long int*>( counts ) );
 #endif
 }
+#endif
 
 
 // processor_set.cpp
@@ -1596,26 +1483,34 @@ bool ProcessorSet::isset( uint16_t processor_i ) const
     unsigned long bit = ( 1L << processor_i );
     return ( bit & mask ) == bit;
   }
-  else
-    return false;
 #elif defined(__linux)
   return CPU_ISSET( processor_i, static_cast<cpu_set_t*>( cpu_set ) );
 #elif defined(__sun)
-  return psetid != PS_NONE && pset_assign( PS_QUERY, processor_i, NULL ) == psetid;
-#else
-  return false;
+  if ( psetid != PS_NONE )
+  {
+    psetid_t check_psetid;
+    return pset_assign( PS_QUERY, processor_i, &check_psetid ) == 0 &&
+           check_psetid == psetid;
+  }
 #endif
+  return false;
 }
-void ProcessorSet::set( uint16_t processor_i )
+bool ProcessorSet::set( uint16_t processor_i )
 {
 #if defined(_WIN32)
   mask |= ( 1L << processor_i );
 #elif defined(__linux)
   CPU_SET( processor_i, static_cast<cpu_set_t*>( cpu_set ) );
 #elif defined(__sun)
-  if ( psetid == PS_NONE ) pset_create( &psetid );
-  pset_assign( psetid, processor_i, NULL );
+  if ( psetid == PS_NONE )
+  {
+    if ( pset_create( &psetid ) != 0 )
+      return false;
+  }
+  if ( pset_assign( psetid, processor_i, NULL ) != 0 )
+    return false;
 #endif
+  return isset( processor_i );
 }
 
 
@@ -2110,7 +2005,7 @@ bool Thread::set_processor_affinity( unsigned short logical_processor_i )
     CPU_SET( logical_processor_i, &cpu_set );
     return sched_setaffinity( 0, sizeof( cpu_set ), &cpu_set ) == 0;
 #elif defined(__sun)
-    return processor_bind( P_LWPID, thr_self(), logical_processor_i, NULL ) == 0;
+    return processor_bind( P_LWPID, id, logical_processor_i, NULL ) == 0;
 #else
     return false;
 #endif
@@ -2519,13 +2414,14 @@ TimerQueue& TimerQueue::getDefaultTimerQueue()
 }
 
 #ifdef _WIN32
-VOID CALLBACK TimerQueue::WaitOrTimerCallback( PVOID lpParameter, BOOLEAN TimerOrWaitFired )
+VOID CALLBACK TimerQueue::WaitOrTimerCallback( PVOID lpParameter, BOOLEAN )
 {
   TimerQueue::Timer* timer = static_cast<TimerQueue::Timer*>( lpParameter );
 
-  if ( TimerOrWaitFired )
+  Time elapsed_time( Time() - timer->last_fire_time );
+  if ( elapsed_time > 0 )
   {
-    bool keep_firing = timer->fire( Time() - timer->last_fire_time );
+    bool keep_firing = timer->fire( elapsed_time );
 
     if ( timer->get_period() == 0 )
       Object::decRef( *timer );
@@ -2535,7 +2431,7 @@ VOID CALLBACK TimerQueue::WaitOrTimerCallback( PVOID lpParameter, BOOLEAN TimerO
       CancelTimerQueueTimer( timer->hTimerQueue, timer->hTimer );
   }
   else
-    Object::decRef( *timer );
+    timer->last_fire_time = Time();
 }
 #endif
 
