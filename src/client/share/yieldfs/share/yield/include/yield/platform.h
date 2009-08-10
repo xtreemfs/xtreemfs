@@ -1179,19 +1179,19 @@ namespace YIELD
   public:
     ElementType dequeue()
     {
-      signal.acquire();
-      lock.acquire();
-      if ( std::queue<ElementType>::size() > 0 )
+      for ( ;; )
       {
-        ElementType element = std::queue<ElementType>::front();
-        std::queue<ElementType>::pop();
-        lock.release();
-        return element;
-      }
-      else
-      {
-        lock.release();
-        return NULL;
+        signal.acquire();
+        lock.acquire();
+        if ( std::queue<ElementType>::size() > 0 )
+        {
+          ElementType element = std::queue<ElementType>::front();
+          std::queue<ElementType>::pop();
+          lock.release();
+          return element;
+        }
+        else
+          lock.release();
       }
     }
 
@@ -1206,41 +1206,47 @@ namespace YIELD
 
     ElementType timed_dequeue( uint64_t timeout_ns )
     {
-      if ( signal.timed_acquire( timeout_ns ) )
+      for ( ;; )
       {
-        if ( lock.try_acquire() )
-        {
-          if ( std::queue<ElementType>::size() > 0 )
-          {
-            ElementType element = std::queue<ElementType>::front();
-            std::queue<ElementType>::pop();
-            lock.release();
-            return element;
-          }
-          else
-            lock.release();
-        }
-      }
+        uint64_t start_time_ns = Time::getCurrentUnixTimeNS();
 
-      return NULL;
+        if ( signal.timed_acquire( timeout_ns ) )
+        {
+          if ( lock.try_acquire() )
+          {
+            if ( std::queue<ElementType>::size() > 0 )
+            {
+              ElementType element = std::queue<ElementType>::front();
+              std::queue<ElementType>::pop();
+              lock.release();
+              return element;
+            }
+            else
+              lock.release();
+          }
+        }
+
+        uint64_t elapsed_time_ns = Time::getCurrentUnixTimeNS() - start_time_ns;
+        if ( elapsed_time_ns < timeout_ns )
+          timeout_ns -= elapsed_time_ns;
+        else
+          return NULL;
+      }
     }
 
     ElementType try_dequeue()
     {
-      if ( signal.try_acquire() )
+      if ( lock.try_acquire() )
       {
-        if ( lock.try_acquire() )
+        if ( std::queue<ElementType>::size() > 0 )
         {
-          if ( std::queue<ElementType>::size() > 0 )
-          {
-            ElementType element = std::queue<ElementType>::front();
-            std::queue<ElementType>::pop();
-            lock.release();
-            return element;
-          }
-          else
-            lock.release();
+          ElementType element = std::queue<ElementType>::front();
+          std::queue<ElementType>::pop();
+          lock.release();
+          return element;
         }
+        else
+          lock.release();
       }
 
       return NULL;

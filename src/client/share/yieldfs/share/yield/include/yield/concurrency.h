@@ -295,8 +295,6 @@ namespace YIELD
     ResponseType& dequeue()
     {
       Event* dequeued_ev = SynchronizedSTLQueue<Event*>::dequeue();      
-      while ( dequeued_ev == NULL )
-        dequeued_ev = SynchronizedSTLQueue<Event*>::dequeue();
 
       switch ( dequeued_ev->get_type_id() )
       {

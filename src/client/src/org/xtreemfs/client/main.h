@@ -65,7 +65,7 @@ namespace org
 #endif
             int ret = YIELD::Main::main( argc, argv );
 
-            YIELD::Socket::destroy();
+            // YIELD::Socket::destroy();
 
             return ret;
           }
