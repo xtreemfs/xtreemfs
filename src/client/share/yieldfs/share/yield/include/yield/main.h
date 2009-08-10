@@ -14,15 +14,16 @@
 #include <vector>
 
 #ifdef _WIN32
-#include "SimpleOpt.h"
 //#include <vld.h>
 #include <windows.h> // For ConsoleCtrlHandler
 #else
-#include "SimpleOpt.h"
 #ifdef __MACH__
 #include <mach-o/dyld.h> // For _NSGetExecutablePath
 #endif
+#include <signal.h>
 #endif
+
+#include "SimpleOpt.h"
 
 
 namespace YIELD
