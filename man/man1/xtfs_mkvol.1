@@ -19,6 +19,9 @@ creates a new volume named \fIvolume \fRon the XtreemFS MRC running at \fImrchos
 \fB\-a/\-\-access\-control\-policy=NULL|POSIX|VOLUME
 access control policy for the volume
 .TP
+\fB\-g/\-\-owner\-group\-id=group ID
+group ID string of the volume's owning group
+.TP
 \fB\-m/\-\-mode=n
 initial POSIX access mode for the root directory
 .TP
@@ -30,6 +33,9 @@ default striping policy for the volume
 .TP
 \fB\-s/\-\-striping\-policy\-stripe\-size=n
 stripe size for the volume's default striping policy
+.TP
+\fB\-u/\-\-owner\-user\-id=user ID
+user ID string of the volume's owner
 .TP
 \fB\-w/\-\-striping\-policy\-width=n
 striping width (default number of OSDs) for the volume's default striping policy

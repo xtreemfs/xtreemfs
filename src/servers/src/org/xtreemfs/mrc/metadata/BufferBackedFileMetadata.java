@@ -275,8 +275,6 @@ public class BufferBackedFileMetadata implements FileMetadata {
     @Override
     public void setOwnerAndGroup(String owner, String group) {
         
-        BufferBackedXLocList xLocList = rcMetadata.getXLocList();
-        
         BufferBackedRCMetadata tmp = isDirectory() ? new BufferBackedRCMetadata(0, rcMetadata.getFileName(),
             owner, group, rcMetadata.getId(), rcMetadata.getPerms(), rcMetadata.getW32Attrs(), rcMetadata
                     .getLinkCount()) : new BufferBackedRCMetadata(0, rcMetadata.getFileName(), owner, group,
@@ -287,7 +285,7 @@ public class BufferBackedFileMetadata implements FileMetadata {
                 .getValue());
         
         if (!rcMetadata.isDirectory())
-            rcMetadata.setXLocList(xLocList);
+            rcMetadata.setXLocList(rcMetadata.getXLocList());
     }
     
     public byte[] getFCMetadataKey() {
