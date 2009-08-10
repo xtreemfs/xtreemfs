@@ -6,17 +6,12 @@
 	</projects>
 	<buildSpec>
 		<buildCommand>
-			<name>org.python.pydev.PyDevBuilder</name>
-			<arguments>
-			</arguments>
-		</buildCommand>
-		<buildCommand>
 			<name>org.eclipse.ui.externaltools.ExternalToolBuilder</name>
 			<triggers>full,incremental,</triggers>
 			<arguments>
 				<dictionary>
 					<key>LaunchConfigHandle</key>
-					<value>&lt;project&gt;/.externalToolBuilders/org.python.pydev.PyDevBuilder.launch</value>
+					<value>&lt;project&gt;/.externalToolBuilders/xtreemfs-client SCons builder.launch</value>
 				</dictionary>
 			</arguments>
 		</buildCommand>
@@ -26,7 +21,7 @@
 			<arguments>
 				<dictionary>
 					<key>LaunchConfigHandle</key>
-					<value>&lt;project&gt;/.externalToolBuilders/xtreemfs-client-SCons.launch</value>
+					<value>&lt;project&gt;/.externalToolBuilders/org.python.pydev.PyDevBuilder (1).launch</value>
 				</dictionary>
 			</arguments>
 		</buildCommand>

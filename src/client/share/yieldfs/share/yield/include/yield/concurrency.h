@@ -294,35 +294,33 @@ namespace YIELD
   public:
     ResponseType& dequeue()
     {
-      Event* dequeued_ev = SynchronizedSTLQueue<Event*>::dequeue();
-      if ( dequeued_ev != NULL )
-      {
-        switch ( dequeued_ev->get_type_id() )
-        {
-          case YIELD_OBJECT_TYPE_ID( ResponseType ):
-          {
-            return static_cast<ResponseType&>( *dequeued_ev );
-          }
-          break;
-            
-          case YIELD_OBJECT_TYPE_ID( ExceptionResponse ):
-          {
-            try
-            {
-              static_cast<ExceptionResponse*>( dequeued_ev )->throwStackClone();
-            }
-            catch ( ExceptionResponse& )
-            {
-              Object::decRef( *dequeued_ev );
-              throw;
-            }
-          }
+      Event* dequeued_ev = SynchronizedSTLQueue<Event*>::dequeue();      
+      while ( dequeued_ev == NULL )
+        dequeued_ev = SynchronizedSTLQueue<Event*>::dequeue();
 
-         default: throw Exception( "EventQueue::deqeue_typed: received unexpected, non-exception event type" );
+      switch ( dequeued_ev->get_type_id() )
+      {
+        case YIELD_OBJECT_TYPE_ID( ResponseType ):
+        {
+          return static_cast<ResponseType&>( *dequeued_ev );
         }
+        break;
+          
+        case YIELD_OBJECT_TYPE_ID( ExceptionResponse ):
+        {
+          try
+          {
+            static_cast<ExceptionResponse*>( dequeued_ev )->throwStackClone();
+          }
+          catch ( ExceptionResponse& )
+          {
+            Object::decRef( *dequeued_ev );
+            throw;
+          }
+        }
+
+       default: throw Exception( "ResponseQueue::dequeue: received unexpected, non-exception event type" );
       }
-      else
-        throw Exception( "EventQueue::dequeue_typed: timed out" );
     }
 
     void enqueue( Event& ev )
@@ -358,11 +356,11 @@ namespace YIELD
             throw Exception( "should never reach this point" );
           }
 
-         default: throw Exception( "EventQueue::deqeue_typed: received unexpected, non-exception event type" );
+         default: throw Exception( "ResponseQueue::dequeue: received unexpected, non-exception event type" );
         }
       }
       else
-        throw Exception( "EventQueue::dequeue_typed: timed out" );
+        throw Exception( "ResponseQueue::dequeue: timed out" );
     }
 
     // Object

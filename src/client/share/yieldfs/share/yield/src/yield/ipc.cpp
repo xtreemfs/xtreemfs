@@ -3628,6 +3628,7 @@ bool Socket::want_connect() const
 #else
   switch ( errno )
   {
+    case EALREADY:
     case EINPROGRESS:
     case EWOULDBLOCK: return true;
     default: return false;
