@@ -58,7 +58,8 @@ public:
     {
       case YIELD_OBJECT_TYPE_ID( org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse ):
       {
-        YIELD::Time rtt = YIELD::Time() - creation_time;
+        YIELD::Time rtt;
+        rtt -= creation_time;
         PingResponse* ping_response = new PingResponse( static_cast<org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse&>( ev ).get_remote_coordinates(), rtt, target_osd_uuid );
         YIELD::Object::decRef( ev );
         osd_proxy_mux->send( *ping_response );
@@ -276,12 +277,11 @@ YIELD::auto_Object<OSDProxy> OSDProxyMux::getTCPOSDProxy( OSDProxyRequest& osd_p
             }
           }
         }
-        c_file_replicas.push_back( c_file_replica );
       }
     }
 
     int selected_file_replica_i = select_file_replica( file_credentials.get_xcap().get_file_id().c_str(), file_credentials.get_xcap().get_access_mode(), &c_file_replicas[0], c_file_replicas.size() );
-    if ( selected_file_replica_i >= 0 )
+    if ( selected_file_replica_i >= 0 && selected_file_replica_i < file_replicas.size() )
     {
       selected_file_replica = &file_replicas[selected_file_replica_i];
       osd_proxy_request.set_selected_file_replica( selected_file_replica_i + 1 );
@@ -366,9 +366,13 @@ YIELD::auto_Object<OSDProxy> OSDProxyMux::getTCPOSDProxy( const std::string& osd
         {
           int osd_ping_interval_s = get_osd_ping_interval_s( osd_uuid.c_str() );
           YIELD::Time osd_ping_interval( osd_ping_interval_s * NS_IN_S );
-          udp_osd_proxy->set_ping_interval( osd_ping_interval );
-          if ( osd_ping_interval_s != 0 )
+          if ( osd_ping_interval_s > 0 )
+          {
+            udp_osd_proxy->set_ping_interval( osd_ping_interval );
             YIELD::TimerQueue::getDefaultTimerQueue().addTimer( new PingTimer( osd_ping_interval, incRef(), osd_uuid ) );
+          }
+          else
+            udp_osd_proxy->set_ping_interval( YIELD::Time( static_cast<uint64_t>( 0 ) ) );
         }
         else
           udp_osd_proxy->set_ping_interval( YIELD::Time( static_cast<uint64_t>( 0 ) ) );
@@ -411,6 +415,10 @@ void OSDProxyMux::handleEvent( YIELD::Event& ev )
       OSDProxyMap::iterator osd_proxies_i = osd_proxies.find( ping_response.get_target_osd_uuid() );
       if ( osd_proxies_i != osd_proxies.end() )
       {
+        OSDProxy* tcp_osd_proxy = osd_proxies_i->second.first;
+        tcp_osd_proxy->set_rtt( ping_response.get_rtt() );
+        tcp_osd_proxy->set_vivaldi_coordinates( ping_response.get_remote_coordinates() );
+                
         OSDProxy* udp_osd_proxy = osd_proxies_i->second.second;
         udp_osd_proxy->set_rtt( ping_response.get_rtt() );
         udp_osd_proxy->set_vivaldi_coordinates( ping_response.get_remote_coordinates() );
