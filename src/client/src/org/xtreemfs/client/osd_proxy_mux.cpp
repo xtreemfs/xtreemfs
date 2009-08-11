@@ -214,8 +214,8 @@ OSDProxyMux::OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, uint32_t flags
   : dir_proxy( dir_proxy ), flags( flags ), log( log ), operation_timeout( operation_timeout ), ssl_context( ssl_context ), stage_group( stage_group )
 {
   policy_container = new PolicyContainer;
-  get_osd_ping_interval_s = static_cast<get_osd_ping_interval_s_t>( policy_container->getPolicyFunction( "get_osd_ping_interval_s" ) );
-  select_file_replica = static_cast<select_file_replica_t>( policy_container->getPolicyFunction( "select_file_replica" ) );
+  get_osd_ping_interval_s = ( get_osd_ping_interval_s_t )policy_container->getPolicyFunction( "get_osd_ping_interval_s" );
+  select_file_replica = ( select_file_replica_t )policy_container->getPolicyFunction( "select_file_replica" );
 }
 
 OSDProxyMux::~OSDProxyMux()

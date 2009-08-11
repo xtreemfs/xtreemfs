@@ -5,6 +5,7 @@
 #include "org/xtreemfs/client/dir_proxy.h"
 #include "org/xtreemfs/client/mrc_proxy.h"
 #include "org/xtreemfs/client/osd_proxy.h"
+#include "policy_container.h"
 using namespace org::xtreemfs::client;
 
 
@@ -29,8 +30,8 @@ Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, uint32_t
 {
 #ifndef _WIN32
   policy_container = new PolicyContainer;
-  get_user_credentials_from_passwd = static_cast<get_user_credentials_from_passwd_t>( policy_container->getPolicyFunction( "get_passwd_from_user_credentials", get_passwd_from_user_credentials ) );
-  get_passwd_from_user_credentials = static_cast<get_passwd_from_user_credentials_t>( policy_container->getPolicyFunction( "get_user_credentials_from_passwd" ) );
+  get_user_credentials_from_passwd = ( get_user_credentials_from_passwd_t )policy_container->getPolicyFunction( "get_passwd_from_user_credentials" );
+  get_passwd_from_user_credentials = ( get_passwd_from_user_credentials_t )policy_container->getPolicyFunction( "get_user_credentials_from_passwd" );
 #endif
 }
 
