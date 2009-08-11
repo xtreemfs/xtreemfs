@@ -57,6 +57,8 @@ public class ONCRPCRequest {
 
     private final Object              attachment;
 
+    long startT, endT;
+
     ONCRPCRequest(RPCResponseListener listener, int xid, int programId, int versionId, int procedureId, Serializable response, Object attachment,
             UserCredentials credentials) {
         ONCRPCRequestHeader hdr = new ONCRPCRequestHeader(xid, programId, versionId,procedureId,credentials);
@@ -147,6 +149,19 @@ public class ONCRPCRequest {
             for (ReusableBuffer buf : responseFragments) {
                 BufferPool.free(buf);
             }
+        }
+    }
+
+    /**
+     * duration of request from sending the request until the response
+     * was received completeley.
+     * @return duration in ms
+     */
+    public long getDuration() {
+        if (RPCNIOSocketClient.ENABLE_STATISTICS) {
+            return endT-startT;
+        } else {
+            return 0l;
         }
     }
 

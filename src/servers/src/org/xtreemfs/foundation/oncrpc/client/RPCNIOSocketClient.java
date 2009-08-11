@@ -67,6 +67,9 @@ import org.xtreemfs.interfaces.utils.Serializable;
  * @author bjko
  */
 public class RPCNIOSocketClient extends LifeCycleThread {
+
+    public static final boolean ENABLE_STATISTICS = false;
+
     
     /**
      * Maxmimum tries to reconnect to the server
@@ -374,7 +377,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "assemble response");
-        
+
         ONCRPCResponseHeader hdr = null;
         ReusableBuffer firstFragment = null;
         try {
@@ -401,6 +404,10 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 "received response for unknown request with XID %d", xid);
             con.clearResponseFragments();
             return;
+        }
+        if (ENABLE_STATISTICS) {
+            rec.endT = System.currentTimeMillis();
+            con.bytesRX += firstFragment.capacity();
         }
         rec.setResponseFragments(con.getResponseFragments());
         con.clearResponseFragments();
@@ -475,6 +482,10 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                             fragHdrBuffer.position(0);
                             fragHdrBuffer.putInt(fragHdrInt);
                             fragHdrBuffer.position(0);
+                            if (ENABLE_STATISTICS) {
+                                send.startT = System.currentTimeMillis();
+                                con.bytesTX += 4+fragmentSize;
+                            }
                         }
                         
                         final ByteBuffer fragHdrBuffer = con.getRequestFragHdr();
@@ -654,5 +665,21 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     public void shutdown() {
         this.quit = true;
         this.interrupt();
+    }
+
+    /**
+     * Returns the number of bytes received and transferred from/to a server.
+     * @param server
+     * @return an array with the number of bytes received [0] and sent [1]
+     */
+    public long[] getTransferStats(InetSocketAddress server) {
+        ServerConnection con = null;
+         synchronized (connections) {
+             con = connections.get(server);
+         }
+        if (con == null)
+            return null;
+        else
+            return new long[]{con.bytesRX,con.bytesTX};
     }
 }
