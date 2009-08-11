@@ -17,6 +17,11 @@ namespace org
   {
     namespace client
     {
+#ifndef _WIN32
+      class PolicyContainer;
+#endif
+
+
       template <class ProxyType, class InterfaceType>
       class Proxy : public YIELD::ONCRPCClient<InterfaceType>
       {
@@ -42,6 +47,8 @@ namespace org
         YIELD::auto_Log log;
 
 #ifndef _WIN32
+        PolicyContainer* policy_container;
+
         get_passwd_from_user_credentials_t get_passwd_from_user_credentials;
         std::map<std::string,std::map<std::string,std::pair<int, int>*>*> user_credentials_to_passwd_cache;
 

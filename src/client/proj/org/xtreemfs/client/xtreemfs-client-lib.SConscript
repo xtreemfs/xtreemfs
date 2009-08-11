@@ -94,6 +94,7 @@ build_env.Library( "../../../../lib/xtreemfs-client", (
     r"../../../../src/org/xtreemfs/client/osd_proxy.cpp",
     r"../../../../src/org/xtreemfs/client/osd_proxy_mux.cpp",
     r"../../../../src/org/xtreemfs/client/path.cpp",
+    r"../../../../src/org/xtreemfs/client/policy_container.cpp",
     r"../../../../src/org/xtreemfs/client/proxy.cpp",
     r"../../../../src/org/xtreemfs/client/proxy_exception_response.cpp",
     r"../../../../src/org/xtreemfs/client/volume.cpp",

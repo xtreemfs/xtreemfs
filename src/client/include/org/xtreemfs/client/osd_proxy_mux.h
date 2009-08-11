@@ -14,6 +14,9 @@ namespace org
   {
     namespace client
     {
+      class PolicyContainer;
+
+
       class OSDProxyMux : public org::xtreemfs::interfaces::OSDInterface
       {
       public:
@@ -31,7 +34,7 @@ namespace org
         OSDProxyMux& incRef() { return YIELD::Object::incRef( *this ); }
 
         // YIELD::EventHandler
-        // void handleEvent( YIELD::Event& );
+         void handleEvent( YIELD::Event& );
 
       private:
         OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SSLContext ssl_context, YIELD::auto_StageGroup stage_group );
@@ -50,11 +53,10 @@ namespace org
         // Policies callbacks
         get_osd_ping_interval_s_t get_osd_ping_interval_s;
         select_file_replica_t select_file_replica;
-        std::vector<YIELD::SharedLibrary*> policy_shared_libraries;
+        PolicyContainer* policy_container;
 
         YIELD::auto_Object<OSDProxy> getTCPOSDProxy( OSDProxyRequest& osd_proxy_request, const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t object_number );
         YIELD::auto_Object<OSDProxy> getTCPOSDProxy( const std::string& osd_uuid );        
-        //void pingOSD( YIELD::auto_Object<OSDProxy> udp_osd_proxy );
 
         // org::xtreemfs::interfaces::OSDInterface
         void handlereadRequest( readRequest& req );
@@ -62,7 +64,10 @@ namespace org
         void handleunlinkRequest( unlinkRequest& req );
         void handlewriteRequest( writeRequest& req );
 
-        // Response targets
+        class PingRequest;
+        class PingResponse;
+        class PingResponseTarget;
+        class PingTimer;
         class ReadResponseTarget;
         class TruncateResponseTarget;
       };

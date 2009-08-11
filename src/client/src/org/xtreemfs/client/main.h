@@ -74,21 +74,24 @@ namespace org
       protected:
         enum
         {
-          OPTION_PKCS12_FILE_PATH = 3,
-          OPTION_PKCS12_PASSPHRASE = 4,
-          OPTION_PEM_CERTIFICATE_FILE_PATH = 5,
-          OPTION_PEM_PRIVATE_KEY_FILE_PATH = 6,
-          OPTION_PEM_PRIVATE_KEY_PASSPHRASE = 7,
-          OPTION_TIMEOUT_MS = 8,
+          OPTION_OPERATION_TIMEOUT_MS = 3,
+          OPTION_PKCS12_FILE_PATH = 4,
+          OPTION_PKCS12_PASSPHRASE = 5,
+          OPTION_PEM_CERTIFICATE_FILE_PATH = 6,
+          OPTION_PEM_PRIVATE_KEY_FILE_PATH = 7,
+          OPTION_PEM_PRIVATE_KEY_PASSPHRASE = 8,
           OPTION_TRACE_AUTH = 9,
-          OPTION_TRACE_NETWORK_IO = 10,
-          OPTION_TRACE_NETWORK_OPERATIONS = 11
+          OPTION_TRACE_NETWORK_IO = 11,
+          OPTION_TRACE_NETWORK_OPERATIONS = 12
         };
 
 
         Main( const char* program_name, const char* program_description, const char* files_usage = NULL )
           : YIELD::Main( program_name, program_description, files_usage )
         {
+          addOption( OPTION_OPERATION_TIMEOUT_MS, "-t", "--operation-timeout-ms", "n" );
+          operation_timeout = static_cast<uint64_t>( DIRProxy::OPERATION_TIMEOUT_DEFAULT );
+
 #ifdef YIELD_HAVE_OPENSSL
           addOption( OPTION_PEM_CERTIFICATE_FILE_PATH, "--cert", "--pem-certificate-file-path", "PEM certificate file path" );
           addOption( OPTION_PEM_PRIVATE_KEY_FILE_PATH, "--pkey", "--pem-private-key-file-path", "PEM private key file path" );
@@ -96,9 +99,6 @@ namespace org
           addOption( OPTION_PKCS12_FILE_PATH, "--pkcs12-file-path", NULL, "PKCS#12 file path" );
           addOption( OPTION_PKCS12_PASSPHRASE, "--pkcs12-passphrase", NULL, "PKCS#12 passphrase" );
 #endif
-
-          addOption( OPTION_TIMEOUT_MS, "-t", "--timeout-ms", "n" );
-          operation_timeout = static_cast<uint64_t>( 5 * NS_IN_S );
 
           addOption( OPTION_TRACE_AUTH, "--trace-auth" );
           trace_auth = false;
@@ -130,7 +130,12 @@ namespace org
           return log;
         }
 
-        YIELD::auto_SSLContext get_ssl_context()
+        const YIELD::Time& get_operation_timeout() const
+        {
+          return operation_timeout;
+        }
+
+        YIELD::auto_SSLContext get_proxy_ssl_context()
         {
           if ( ssl_context == NULL )
           {
@@ -192,20 +197,19 @@ namespace org
         {
           switch ( id )
           {
+            case OPTION_OPERATION_TIMEOUT_MS:
+            {
+              double operation_timeout_ms = atof( arg );
+              if ( operation_timeout_ms != 0 )
+                operation_timeout = YIELD::Time( static_cast<uint64_t>( operation_timeout_ms * NS_IN_MS ) );
+            }
+            break;
+
             case OPTION_PEM_CERTIFICATE_FILE_PATH: pem_certificate_file_path = arg; break;
             case OPTION_PEM_PRIVATE_KEY_FILE_PATH: pem_private_key_file_path = arg; break;
             case OPTION_PEM_PRIVATE_KEY_PASSPHRASE: pem_private_key_passphrase = arg; break;
             case OPTION_PKCS12_FILE_PATH: pkcs12_file_path = arg; break;
             case OPTION_PKCS12_PASSPHRASE: pkcs12_passphrase = arg; break;
-
-            case OPTION_TIMEOUT_MS:
-            {
-              double timeout_ms = atof( arg );
-              if ( timeout_ms != 0 )
-                operation_timeout = YIELD::Time( static_cast<uint64_t>( timeout_ms * NS_IN_MS ) );
-            }
-            break;
-
             case OPTION_TRACE_AUTH: trace_auth = true; break;
             case OPTION_TRACE_NETWORK_IO: trace_network_io = true; break;
             case OPTION_TRACE_NETWORK_OPERATIONS: trace_network_operations = true; break;
@@ -215,9 +219,9 @@ namespace org
         }
 
       private:
+        YIELD::Time operation_timeout;
         std::string pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase;
         std::string pkcs12_file_path, pkcs12_passphrase;
-        YIELD::Time operation_timeout;
         bool trace_auth, trace_network_io, trace_network_operations;
 
         YIELD::auto_Log log;
@@ -231,7 +235,7 @@ namespace org
           if ( checked_uri.get_port() == 0 )
             checked_uri.set_port( default_port );
 
-          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, get_ssl_context() );
+          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, get_proxy_ssl_context() );
           if ( proxy != NULL )
             return proxy;
           else

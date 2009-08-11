@@ -341,6 +341,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\policy_container.h"
+    >
+</File>
+<File
     RelativePath="..\..\..\..\src\org\xtreemfs\client\dir_proxy.cpp"
     >
 </File>
@@ -362,6 +366,10 @@
 </File>
 <File
     RelativePath="..\..\..\..\src\org\xtreemfs\client\path.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\src\org\xtreemfs\client\policy_container.cpp"
     >
 </File>
 <File

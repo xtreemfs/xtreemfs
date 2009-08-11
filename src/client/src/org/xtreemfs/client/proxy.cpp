@@ -28,57 +28,18 @@ Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, uint32_t
   : YIELD::ONCRPCClient<InterfaceType>( absolute_uri, flags, log, operation_timeout, peer_sockaddr, ssl_context ), log( log )
 {
 #ifndef _WIN32
-  get_user_credentials_from_passwd = NULL;
-  get_passwd_from_user_credentials = NULL;
+  policy_container = new PolicyContainer;
+  get_user_credentials_from_passwd = static_cast<get_user_credentials_from_passwd_t>( policy_container->getPolicyFunction( "get_passwd_from_user_credentials", get_passwd_from_user_credentials ) );
+  get_passwd_from_user_credentials = static_cast<get_passwd_from_user_credentials_t>( policy_container->getPolicyFunction( "get_user_credentials_from_passwd" ) );
 #endif
-
-  std::vector<YIELD::Path> policy_dir_paths;
-  policy_dir_paths.push_back( YIELD::Path() );
-  policy_dir_paths.push_back( "policies" );
-  policy_dir_paths.push_back( "lib" );
-#ifndef _WIN32
-  policy_dir_paths.push_back( "/lib/xtreemfs/policies/" );
-#endif
-
-  YIELD::auto_Volume volume = new YIELD::Volume;
-  for ( std::vector<YIELD::Path>::iterator policy_dir_path_i = policy_dir_paths.begin(); policy_dir_path_i != policy_dir_paths.end(); policy_dir_path_i++ )
-  {
-    if ( log != NULL )
-      log->getStream( YIELD::Log::LOG_DEBUG ) << "org::xtreemfs::client::Proxy: scanning " << *policy_dir_path_i << " for policy shared libraries.";
-    std::vector<YIELD::Path> file_names;
-    volume->listdir( *policy_dir_path_i, file_names );
-    for ( std::vector<YIELD::Path>::iterator file_name_i = file_names.begin(); file_name_i != file_names.end(); file_name_i++ )
-    {
-      const std::string& file_name = static_cast<const std::string&>( *file_name_i );      
-      std::string::size_type dll_pos = file_name.find( SHLIBSUFFIX );
-      if ( dll_pos != std::string::npos && dll_pos != 0 && file_name[dll_pos-1] == '.' )
-      {        
-        YIELD::Path policy_shared_library_path = *policy_dir_path_i  + file_name;
-        if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_DEBUG ) << "org::xtreemfs::client::Proxy: checking " << policy_shared_library_path << " for policy functions.";
-        YIELD::auto_Object<YIELD::SharedLibrary> policy_shared_library = YIELD::SharedLibrary::open( policy_shared_library_path );
-        if ( policy_shared_library != NULL )
-        {
-          bool found_policy_function = false;
-#ifndef _WIN32
-          found_policy_function |= getPolicyFunction( policy_shared_library_path, policy_shared_library, "get_passwd_from_user_credentials", get_passwd_from_user_credentials );
-          found_policy_function |= getPolicyFunction( policy_shared_library_path, policy_shared_library, "get_user_credentials_from_passwd", get_user_credentials_from_passwd );
-#endif
-          if ( found_policy_function )
-            policy_shared_libraries.push_back( policy_shared_library.release() );
-        }
-      }
-    }
-  }
 }
 
 template <class ProxyType, class InterfaceType>
 Proxy<ProxyType, InterfaceType>::~Proxy()
 {
-  for ( std::vector<YIELD::SharedLibrary*>::iterator policy_shared_library_i = policy_shared_libraries.begin(); policy_shared_library_i != policy_shared_libraries.end(); policy_shared_library_i++ )
-    YIELD::Object::decRef( **policy_shared_library_i );
-
 #ifndef _WIN32
+  delete policy_container;
+
   for ( std::map<std::string,std::map<std::string,std::pair<int,int>*>*>::iterator i = user_credentials_to_passwd_cache.begin(); i != user_credentials_to_passwd_cache.end(); i++ )
   {
     for ( std::map<std::string,std::pair<int,int>*>::iterator j = i->second->begin(); j != i->second->end(); j++ )

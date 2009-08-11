@@ -116,7 +116,7 @@ namespace org
             if ( trace_file_io )
               volume_flags |= Volume::VOLUME_FLAG_TRACE_FILE_IO;
 
-            YIELD::auto_Volume volume = new Volume( *dir_uri, volume_name, volume_flags, get_log(), get_proxy_flags(), get_ssl_context() );
+            YIELD::auto_Volume volume = new Volume( *dir_uri, volume_name, volume_flags, get_log(), get_proxy_flags(), get_operation_timeout(), get_proxy_ssl_context() );
 
             // Stack volumes as indicated
             if ( cache_data )
