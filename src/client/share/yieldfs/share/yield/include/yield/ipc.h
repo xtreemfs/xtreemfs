@@ -46,7 +46,6 @@ virtual bool shutdown(); \
 virtual bool want_connect() const; \
 virtual bool want_read() const; \
 virtual bool want_write() const; \
-virtual ssize_t write( const void* buffer, size_t buffer_len ); \
 virtual ssize_t writev( const struct iovec* buffers, uint32_t buffers_count );
 
 
@@ -243,6 +242,7 @@ namespace YIELD
     bool operator==( const Socket& other ) const { return static_cast<int>( *this ) == static_cast<int>( other ); } \
     virtual ssize_t read( auto_Buffer buffer );
     virtual ssize_t write( auto_Buffer buffer );
+    virtual ssize_t write( const void* buffer, size_t buffer_len );
     YIELD_SOCKET_PROTOTYPES;
 
     // Object
@@ -331,9 +331,9 @@ namespace YIELD
     static auto_Object<TCPSocket> create(); // Defaults to domain = AF_INET6
     static auto_Object<TCPSocket> create( int domain );
     virtual auto_Object<TCPSocket> accept();
-
     virtual bool listen();
     virtual bool shutdown();
+    virtual ssize_t writev( const struct iovec* buffers, uint32_t buffers_count );
 
     // Object
     YIELD_OBJECT_PROTOTYPES( TCPSocket, 212 );

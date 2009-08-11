@@ -3660,18 +3660,11 @@ ssize_t Socket::write( auto_Buffer buffer )
 }
 ssize_t Socket::write( const void* buffer, size_t buffer_len )
 {
-#ifdef _WIN32
+  // Go through writev to have a unified partial write path in TCPSocket::writev
   struct iovec buffers[1];
   buffers[0].iov_base = const_cast<void*>( buffer );
   buffers[0].iov_len = buffer_len;
   return writev( buffers, 1 );
-#else
-#ifdef __linux
-  return ::send( socket_, buffer, buffer_len, MSG_NOSIGNAL );
-#else
-  return ::send( socket_, buffer, buffer_len, 0 );
-#endif
-#endif
 }
 ssize_t Socket::writev( const struct iovec* buffers, uint32_t buffers_count )
 {
@@ -4362,6 +4355,67 @@ bool TCPSocket::shutdown()
   return ::shutdown( *this, SHUT_RDWR ) != -1;
 #endif
 }
+ssize_t TCPSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
+{
+  size_t buffers_len = 0;
+  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+    buffers_len += buffers[buffer_i].iov_len;
+  ssize_t ret = 0;
+  for ( ;; )
+  {
+    // Recalculate these every time we do a socket writev
+    // Less efficient than other ways but it reduces the number of (rarely-tested) branches
+    uint32_t wrote_until_buffer_i = 0;
+    size_t wrote_until_buffer_i_pos = 0;
+    if ( partial_write_len > 0 )
+    {
+      size_t temp_partial_write_len = partial_write_len;
+      for ( ;; )
+      {
+        if ( buffers[wrote_until_buffer_i].iov_len < temp_partial_write_len ) // The buffer and part of the next was already written
+        {
+          temp_partial_write_len -= buffers[wrote_until_buffer_i].iov_len;
+          wrote_until_buffer_i++;
+        }
+        else if ( buffers[wrote_until_buffer_i].iov_len == temp_partial_write_len ) // The buffer was already written, but none of the next
+        {
+          temp_partial_write_len = 0;
+          wrote_until_buffer_i++;
+          break;
+        }
+        else // Part of the buffer was written
+        {
+          wrote_until_buffer_i_pos = temp_partial_write_len;
+          break;
+        }
+      }
+    }
+    ssize_t Socket_writev_ret;
+    if ( wrote_until_buffer_i_pos == 0 ) // Writing whole buffers
+      Socket_writev_ret = Socket::writev( &buffers[wrote_until_buffer_i], buffers_count - wrote_until_buffer_i );
+    else // Writing part of a buffer
+    {
+      struct iovec temp_iovec;
+      temp_iovec.iov_base = static_cast<char*>( buffers[wrote_until_buffer_i].iov_base ) + wrote_until_buffer_i_pos;
+      temp_iovec.iov_len = buffers[wrote_until_buffer_i].iov_len - wrote_until_buffer_i_pos;
+      Socket_writev_ret = Socket::writev( &temp_iovec, 1 );
+    }
+    if ( Socket_writev_ret > 0 )
+    {
+      ret += Socket_writev_ret;
+      partial_write_len += Socket_writev_ret;
+      if ( partial_write_len == buffers_len )
+      {
+        partial_write_len = 0;
+        return ret;
+      }
+      else
+        continue; // A large write filled the socket buffer, try to write again until we finish or get an error
+    }
+    else
+      return Socket_writev_ret;
+  }
+}
 
 
 // tracing_socket.cpp
@@ -4462,20 +4516,6 @@ bool TracingSocket::want_write() const
   if ( want_write_ret )
     log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: would block on write on socket #" << ( int )*this << ".";
   return want_write_ret;
-}
-ssize_t TracingSocket::write( const void* buffer, size_t buffer_len )
-{
-  log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: trying to write " << buffer_len << " bytes to socket #" << ( int )*this << ".";
-  ssize_t write_ret = underlying_socket->write( buffer, buffer_len );
-  if ( write_ret >= 0 )
-  {
-    log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: wrote " << write_ret << " bytes to socket #" << ( int )*this << ".";
-    log->write( buffer, write_ret, Log::LOG_DEBUG );
-    log->write( "\n", Log::LOG_DEBUG );
-  }
-  else if ( !underlying_socket->want_read() && !underlying_socket->want_write() )
-    log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: lost connection while trying to write to socket #" <<  ( int )*this << ".";
-  return write_ret;
 }
 ssize_t TracingSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
 {
