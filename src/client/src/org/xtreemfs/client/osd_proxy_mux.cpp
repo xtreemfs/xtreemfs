@@ -210,8 +210,8 @@ private:
 };
 
 
-OSDProxyMux::OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SSLContext ssl_context, YIELD::auto_StageGroup stage_group )
-  : dir_proxy( dir_proxy ), flags( flags ), log( log ), operation_timeout( operation_timeout ), ssl_context( ssl_context ), stage_group( stage_group )
+OSDProxyMux::OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SSLContext ssl_context )
+  : dir_proxy( dir_proxy ), flags( flags ), log( log ), operation_timeout( operation_timeout ), ssl_context( ssl_context )
 {
   policy_container = new PolicyContainer;
   get_osd_ping_interval_s = ( get_osd_ping_interval_s_t )policy_container->getPolicyFunction( "get_osd_ping_interval_s" );

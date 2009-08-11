@@ -166,6 +166,8 @@ namespace YIELD
     class AIOControlBlock : public ::YIELD::AIOControlBlock
     {
     public:
+      virtual ~AIOControlBlock() { }
+
       auto_Object<Socket> get_socket() const { return socket_; }
 
       void set_socket( Socket& socket_ ) 
@@ -189,6 +191,9 @@ namespace YIELD
         : peername( peername )
       { }
 
+      virtual ~AIOConnectControlBlock()
+      { }
+
       auto_SocketAddress get_peername() const { return peername; }
 
       // Object
@@ -206,6 +211,9 @@ namespace YIELD
         : buffer( buffer )
       { }
 
+      virtual ~AIOReadControlBlock()
+      { }
+
       auto_Buffer get_buffer() const { return buffer; }
 
       // Object
@@ -221,6 +229,9 @@ namespace YIELD
     public:
       AIOWriteControlBlock( auto_Buffer buffer )
         : buffer( buffer )
+      { }
+
+      virtual ~AIOWriteControlBlock()
       { }
 
       auto_Buffer get_buffer() const { return buffer; }

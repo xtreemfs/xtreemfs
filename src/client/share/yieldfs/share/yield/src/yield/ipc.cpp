@@ -1,4 +1,4 @@
-// Revision: 1790
+// Revision: 1796
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -99,6 +99,7 @@ public:
       AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request->serialize(), client, request );
       TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), client.operation_timeout ) );
       get_socket()->aio_write( aio_write_control_block );
+      request.reset( NULL );
     }
   }
   void onError( uint32_t error_code )
@@ -108,6 +109,7 @@ public:
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
         client.log->getStream( Log::LOG_INFO ) << "yield::Client: connect() to " << client.absolute_uri->get_host() << ":" << client.absolute_uri->get_port() << " failed, errno=" << error_code << ", strerror=" << Exception::strerror( error_code ) << ".";
       request->respond( *( new ExceptionResponse( error_code ) ) );
+      request.reset( NULL );
     }
   }
 private:
@@ -141,6 +143,7 @@ public:
             client.log->getStream( Log::LOG_INFO ) << "yield::Client: successfully deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
           request->respond( *response.release() );
           client.idle_sockets.enqueue( get_socket().release() );
+          request.reset( NULL );
           return;
         }
         else if ( deserialize_ret > 0 )
@@ -154,6 +157,7 @@ public:
           AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( buffer, client, request, response );
           TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
           get_socket()->aio_read( aio_read_control_block );
+          request.reset( NULL );
           return;
         }
         else if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
@@ -164,6 +168,7 @@ public:
       request->respond( *( new ExceptionResponse( ECONNABORTED ) ) );
       get_socket()->shutdown();
       get_socket()->close();
+      request.reset( NULL );
     }
   }
   void onError( uint32_t error_code )
@@ -175,6 +180,7 @@ public:
       request->respond( *( new ExceptionResponse( error_code ) ) );
       get_socket()->shutdown();
       get_socket()->close();
+      request.reset( NULL );
     }
   }
 private:
@@ -206,6 +212,7 @@ public:
       AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new HeapBuffer( 1024 ), client, request, response );
       TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
       get_socket()->aio_read( aio_read_control_block );
+      request.reset( NULL );
     }
   }
   void onError( uint32_t error_code )
@@ -215,6 +222,7 @@ public:
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
         client.log->getStream( Log::LOG_INFO ) << "yield::Client: error writing " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       request->respond( *( new ExceptionResponse( error_code ) ) );
+      request.reset( NULL );
     }
   }
 private:
