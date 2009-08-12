@@ -152,7 +152,7 @@ public:
           // else re-use the same buffer
           if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
             client.log->getStream( Log::LOG_INFO ) << "yield::Client: partially deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", reading again with " << ( buffer->capacity() - buffer->size() ) << " byte buffer.";
-          AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( buffer, client, request, response );
+          AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( buffer, client, request.release(), response.release() );
           TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
           get_socket()->aio_read( aio_read_control_block );
         }
@@ -175,6 +175,7 @@ public:
       }
       // Clear references so their objects will be deleted now instead of when the timeout occurs (the timeout has the last reference to this control block)
       request = NULL;
+      response = NULL;
       unlink_buffer();
     }
   }
