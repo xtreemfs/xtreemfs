@@ -6,7 +6,7 @@
 
     #include "constants.h"
 #include "mrc_osd_types.h"
-#include "yield/base.h"
+#include "yidl.h"
 #include "yield/concurrency.h"
 #include <vector>
 
@@ -18,7 +18,7 @@ namespace org
     namespace interfaces
     {
 
-      class Stat : public ::YIELD::Struct
+      class Stat : public ::yidl::Struct
       {
       public:
         Stat() : mode( 0 ), nlink( 0 ), uid( 0 ), gid( 0 ), unused_dev( 0 ), size( 0 ), atime_ns( 0 ), mtime_ns( 0 ), ctime_ns( 0 ), truncate_epoch( 0 ), attributes( 0 ) { }
@@ -63,12 +63,12 @@ namespace org
 
         bool operator==( const Stat& other ) const { return mode == other.mode && nlink == other.nlink && uid == other.uid && gid == other.gid && unused_dev == other.unused_dev && size == other.size && atime_ns == other.atime_ns && mtime_ns == other.mtime_ns && ctime_ns == other.ctime_ns && user_id == other.user_id && group_id == other.group_id && file_id == other.file_id && link_target == other.link_target && truncate_epoch == other.truncate_epoch && attributes == other.attributes; }
 
-        // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( Stat, 1040 );
+        // yidl::Object
+        YIDL_OBJECT_PROTOTYPES( Stat, 1040 );
 
         // YIELD::Struct
-        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeUint32( "mode", 0, mode ); marshaller.writeUint32( "nlink", 0, nlink ); marshaller.writeUint32( "uid", 0, uid ); marshaller.writeUint32( "gid", 0, gid ); marshaller.writeInt16( "unused_dev", 0, unused_dev ); marshaller.writeUint64( "size", 0, size ); marshaller.writeUint64( "atime_ns", 0, atime_ns ); marshaller.writeUint64( "mtime_ns", 0, mtime_ns ); marshaller.writeUint64( "ctime_ns", 0, ctime_ns ); marshaller.writeString( "user_id", 0, user_id ); marshaller.writeString( "group_id", 0, group_id ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeString( "link_target", 0, link_target ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); marshaller.writeUint32( "attributes", 0, attributes ); }
-        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { mode = unmarshaller.readUint32( "mode", 0 ); nlink = unmarshaller.readUint32( "nlink", 0 ); uid = unmarshaller.readUint32( "uid", 0 ); gid = unmarshaller.readUint32( "gid", 0 ); unused_dev = unmarshaller.readInt16( "unused_dev", 0 ); size = unmarshaller.readUint64( "size", 0 ); atime_ns = unmarshaller.readUint64( "atime_ns", 0 ); mtime_ns = unmarshaller.readUint64( "mtime_ns", 0 ); ctime_ns = unmarshaller.readUint64( "ctime_ns", 0 ); unmarshaller.readString( "user_id", 0, user_id ); unmarshaller.readString( "group_id", 0, group_id ); unmarshaller.readString( "file_id", 0, file_id ); unmarshaller.readString( "link_target", 0, link_target ); truncate_epoch = unmarshaller.readUint32( "truncate_epoch", 0 ); attributes = unmarshaller.readUint32( "attributes", 0 ); }
+        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint32( "mode", 0, mode ); marshaller.writeUint32( "nlink", 0, nlink ); marshaller.writeUint32( "uid", 0, uid ); marshaller.writeUint32( "gid", 0, gid ); marshaller.writeInt16( "unused_dev", 0, unused_dev ); marshaller.writeUint64( "size", 0, size ); marshaller.writeUint64( "atime_ns", 0, atime_ns ); marshaller.writeUint64( "mtime_ns", 0, mtime_ns ); marshaller.writeUint64( "ctime_ns", 0, ctime_ns ); marshaller.writeString( "user_id", 0, user_id ); marshaller.writeString( "group_id", 0, group_id ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeString( "link_target", 0, link_target ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); marshaller.writeUint32( "attributes", 0, attributes ); }
+        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { mode = unmarshaller.readUint32( "mode", 0 ); nlink = unmarshaller.readUint32( "nlink", 0 ); uid = unmarshaller.readUint32( "uid", 0 ); gid = unmarshaller.readUint32( "gid", 0 ); unused_dev = unmarshaller.readInt16( "unused_dev", 0 ); size = unmarshaller.readUint64( "size", 0 ); atime_ns = unmarshaller.readUint64( "atime_ns", 0 ); mtime_ns = unmarshaller.readUint64( "mtime_ns", 0 ); ctime_ns = unmarshaller.readUint64( "ctime_ns", 0 ); unmarshaller.readString( "user_id", 0, user_id ); unmarshaller.readString( "group_id", 0, group_id ); unmarshaller.readString( "file_id", 0, file_id ); unmarshaller.readString( "link_target", 0, link_target ); truncate_epoch = unmarshaller.readUint32( "truncate_epoch", 0 ); attributes = unmarshaller.readUint32( "attributes", 0 ); }
 
       protected:
         uint32_t mode;
@@ -88,7 +88,7 @@ namespace org
         uint32_t attributes;
       };
 
-      class DirectoryEntry : public ::YIELD::Struct
+      class DirectoryEntry : public ::yidl::Struct
       {
       public:
         DirectoryEntry() { }
@@ -104,19 +104,19 @@ namespace org
 
         bool operator==( const DirectoryEntry& other ) const { return name == other.name && stbuf == other.stbuf; }
 
-        // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( DirectoryEntry, 1041 );
+        // yidl::Object
+        YIDL_OBJECT_PROTOTYPES( DirectoryEntry, 1041 );
 
         // YIELD::Struct
-        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "name", 0, name ); marshaller.writeStruct( "stbuf", 0, stbuf ); }
-        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "name", 0, name ); unmarshaller.readStruct( "stbuf", 0, stbuf ); }
+        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "name", 0, name ); marshaller.writeStruct( "stbuf", 0, stbuf ); }
+        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "name", 0, name ); unmarshaller.readStruct( "stbuf", 0, stbuf ); }
 
       protected:
         std::string name;
         org::xtreemfs::interfaces::Stat stbuf;
       };
 
-      class DirectoryEntrySet : public ::YIELD::Sequence, public std::vector<org::xtreemfs::interfaces::DirectoryEntry>
+      class DirectoryEntrySet : public ::yidl::Sequence, public std::vector<org::xtreemfs::interfaces::DirectoryEntry>
       {
       public:
         DirectoryEntrySet() { }
@@ -124,16 +124,16 @@ namespace org
         DirectoryEntrySet( size_type size ) : std::vector<org::xtreemfs::interfaces::DirectoryEntry>( size ) { }
         virtual ~DirectoryEntrySet() { }
 
-        // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( DirectoryEntrySet, 1042 );
+        // yidl::Object
+        YIDL_OBJECT_PROTOTYPES( DirectoryEntrySet, 1042 );
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }
-        void marshal( ::YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
-        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::DirectoryEntry value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
+        void marshal( ::yidl::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
+        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::DirectoryEntry value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
       };
 
-      class StatVFS : public ::YIELD::Struct
+      class StatVFS : public ::yidl::Struct
       {
       public:
         StatVFS() : bsize( 0 ), bavail( 0 ), blocks( 0 ), namelen( 0 ) { }
@@ -155,12 +155,12 @@ namespace org
 
         bool operator==( const StatVFS& other ) const { return bsize == other.bsize && bavail == other.bavail && blocks == other.blocks && fsid == other.fsid && namelen == other.namelen; }
 
-        // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( StatVFS, 1043 );
+        // yidl::Object
+        YIDL_OBJECT_PROTOTYPES( StatVFS, 1043 );
 
         // YIELD::Struct
-        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeUint32( "bsize", 0, bsize ); marshaller.writeUint64( "bavail", 0, bavail ); marshaller.writeUint64( "blocks", 0, blocks ); marshaller.writeString( "fsid", 0, fsid ); marshaller.writeUint32( "namelen", 0, namelen ); }
-        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { bsize = unmarshaller.readUint32( "bsize", 0 ); bavail = unmarshaller.readUint64( "bavail", 0 ); blocks = unmarshaller.readUint64( "blocks", 0 ); unmarshaller.readString( "fsid", 0, fsid ); namelen = unmarshaller.readUint32( "namelen", 0 ); }
+        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint32( "bsize", 0, bsize ); marshaller.writeUint64( "bavail", 0, bavail ); marshaller.writeUint64( "blocks", 0, blocks ); marshaller.writeString( "fsid", 0, fsid ); marshaller.writeUint32( "namelen", 0, namelen ); }
+        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { bsize = unmarshaller.readUint32( "bsize", 0 ); bavail = unmarshaller.readUint64( "bavail", 0 ); blocks = unmarshaller.readUint64( "blocks", 0 ); unmarshaller.readString( "fsid", 0, fsid ); namelen = unmarshaller.readUint32( "namelen", 0 ); }
 
       protected:
         uint32_t bsize;
@@ -170,7 +170,7 @@ namespace org
         uint32_t namelen;
       };
 
-      class Volume : public ::YIELD::Struct
+      class Volume : public ::yidl::Struct
       {
       public:
         Volume() : mode( 0 ), osd_selection_policy( OSD_SELECTION_POLICY_SIMPLE ), access_control_policy( ACCESS_CONTROL_POLICY_NULL ) { }
@@ -201,12 +201,12 @@ namespace org
 
         bool operator==( const Volume& other ) const { return name == other.name && mode == other.mode && osd_selection_policy == other.osd_selection_policy && default_striping_policy == other.default_striping_policy && access_control_policy == other.access_control_policy && id == other.id && owner_user_id == other.owner_user_id && owner_group_id == other.owner_group_id; }
 
-        // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( Volume, 1044 );
+        // yidl::Object
+        YIDL_OBJECT_PROTOTYPES( Volume, 1044 );
 
         // YIELD::Struct
-        void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "name", 0, name ); marshaller.writeUint32( "mode", 0, mode ); marshaller.writeInt32( "osd_selection_policy", 0, static_cast<int32_t>( osd_selection_policy ) ); marshaller.writeStruct( "default_striping_policy", 0, default_striping_policy ); marshaller.writeInt32( "access_control_policy", 0, static_cast<int32_t>( access_control_policy ) ); marshaller.writeString( "id", 0, id ); marshaller.writeString( "owner_user_id", 0, owner_user_id ); marshaller.writeString( "owner_group_id", 0, owner_group_id ); }
-        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "name", 0, name ); mode = unmarshaller.readUint32( "mode", 0 ); osd_selection_policy = ( org::xtreemfs::interfaces::OSDSelectionPolicyType )unmarshaller.readInt32( "osd_selection_policy", 0 ); unmarshaller.readStruct( "default_striping_policy", 0, default_striping_policy ); access_control_policy = ( org::xtreemfs::interfaces::AccessControlPolicyType )unmarshaller.readInt32( "access_control_policy", 0 ); unmarshaller.readString( "id", 0, id ); unmarshaller.readString( "owner_user_id", 0, owner_user_id ); unmarshaller.readString( "owner_group_id", 0, owner_group_id ); }
+        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "name", 0, name ); marshaller.writeUint32( "mode", 0, mode ); marshaller.writeInt32( "osd_selection_policy", 0, static_cast<int32_t>( osd_selection_policy ) ); marshaller.writeStruct( "default_striping_policy", 0, default_striping_policy ); marshaller.writeInt32( "access_control_policy", 0, static_cast<int32_t>( access_control_policy ) ); marshaller.writeString( "id", 0, id ); marshaller.writeString( "owner_user_id", 0, owner_user_id ); marshaller.writeString( "owner_group_id", 0, owner_group_id ); }
+        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "name", 0, name ); mode = unmarshaller.readUint32( "mode", 0 ); osd_selection_policy = ( org::xtreemfs::interfaces::OSDSelectionPolicyType )unmarshaller.readInt32( "osd_selection_policy", 0 ); unmarshaller.readStruct( "default_striping_policy", 0, default_striping_policy ); access_control_policy = ( org::xtreemfs::interfaces::AccessControlPolicyType )unmarshaller.readInt32( "access_control_policy", 0 ); unmarshaller.readString( "id", 0, id ); unmarshaller.readString( "owner_user_id", 0, owner_user_id ); unmarshaller.readString( "owner_group_id", 0, owner_group_id ); }
 
       protected:
         std::string name;
@@ -219,7 +219,7 @@ namespace org
         std::string owner_group_id;
       };
 
-      class VolumeSet : public ::YIELD::Sequence, public std::vector<org::xtreemfs::interfaces::Volume>
+      class VolumeSet : public ::yidl::Sequence, public std::vector<org::xtreemfs::interfaces::Volume>
       {
       public:
         VolumeSet() { }
@@ -227,13 +227,13 @@ namespace org
         VolumeSet( size_type size ) : std::vector<org::xtreemfs::interfaces::Volume>( size ) { }
         virtual ~VolumeSet() { }
 
-        // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( VolumeSet, 1045 );
+        // yidl::Object
+        YIDL_OBJECT_PROTOTYPES( VolumeSet, 1045 );
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }
-        void marshal( ::YIELD::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
-        void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::Volume value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
+        void marshal( ::yidl::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
+        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::Volume value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
       };
 
 
@@ -301,118 +301,118 @@ namespace org
 
 
         virtual bool access( const std::string& path, uint32_t mode ) { return access( path, mode, static_cast<uint64_t>( -1 ) ); }
-        virtual bool access( const std::string& path, uint32_t mode, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<accessRequest> __request( new accessRequest( path, mode ) ); ::YIELD::auto_ResponseQueue<accessResponse> __response_queue( new ::YIELD::ResponseQueue<accessResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<accessResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); bool _return_value = __response->get__return_value(); return _return_value; }
+        virtual bool access( const std::string& path, uint32_t mode, uint64_t response_timeout_ns ) { ::yidl::auto_Object<accessRequest> __request( new accessRequest( path, mode ) ); ::YIELD::auto_ResponseQueue<accessResponse> __response_queue( new ::YIELD::ResponseQueue<accessResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<accessResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); bool _return_value = __response->get__return_value(); return _return_value; }
 
         virtual void chmod( const std::string& path, uint32_t mode ) { chmod( path, mode, static_cast<uint64_t>( -1 ) ); }
-        virtual void chmod( const std::string& path, uint32_t mode, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<chmodRequest> __request( new chmodRequest( path, mode ) ); ::YIELD::auto_ResponseQueue<chmodResponse> __response_queue( new ::YIELD::ResponseQueue<chmodResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<chmodResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void chmod( const std::string& path, uint32_t mode, uint64_t response_timeout_ns ) { ::yidl::auto_Object<chmodRequest> __request( new chmodRequest( path, mode ) ); ::YIELD::auto_ResponseQueue<chmodResponse> __response_queue( new ::YIELD::ResponseQueue<chmodResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<chmodResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void chown( const std::string& path, const std::string& user_id, const std::string& group_id ) { chown( path, user_id, group_id, static_cast<uint64_t>( -1 ) ); }
-        virtual void chown( const std::string& path, const std::string& user_id, const std::string& group_id, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<chownRequest> __request( new chownRequest( path, user_id, group_id ) ); ::YIELD::auto_ResponseQueue<chownResponse> __response_queue( new ::YIELD::ResponseQueue<chownResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<chownResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void chown( const std::string& path, const std::string& user_id, const std::string& group_id, uint64_t response_timeout_ns ) { ::yidl::auto_Object<chownRequest> __request( new chownRequest( path, user_id, group_id ) ); ::YIELD::auto_ResponseQueue<chownResponse> __response_queue( new ::YIELD::ResponseQueue<chownResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<chownResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void creat( const std::string& path, uint32_t mode ) { creat( path, mode, static_cast<uint64_t>( -1 ) ); }
-        virtual void creat( const std::string& path, uint32_t mode, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<creatRequest> __request( new creatRequest( path, mode ) ); ::YIELD::auto_ResponseQueue<creatResponse> __response_queue( new ::YIELD::ResponseQueue<creatResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<creatResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void creat( const std::string& path, uint32_t mode, uint64_t response_timeout_ns ) { ::yidl::auto_Object<creatRequest> __request( new creatRequest( path, mode ) ); ::YIELD::auto_ResponseQueue<creatResponse> __response_queue( new ::YIELD::ResponseQueue<creatResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<creatResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap ) { ftruncate( write_xcap, truncate_xcap, static_cast<uint64_t>( -1 ) ); }
-        virtual void ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<ftruncateRequest> __request( new ftruncateRequest( write_xcap ) ); ::YIELD::auto_ResponseQueue<ftruncateResponse> __response_queue( new ::YIELD::ResponseQueue<ftruncateResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<ftruncateResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); truncate_xcap = __response->get_truncate_xcap(); }
+        virtual void ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap, uint64_t response_timeout_ns ) { ::yidl::auto_Object<ftruncateRequest> __request( new ftruncateRequest( write_xcap ) ); ::YIELD::auto_ResponseQueue<ftruncateResponse> __response_queue( new ::YIELD::ResponseQueue<ftruncateResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<ftruncateResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); truncate_xcap = __response->get_truncate_xcap(); }
 
         virtual void getattr( const std::string& path, org::xtreemfs::interfaces::Stat& stbuf ) { getattr( path, stbuf, static_cast<uint64_t>( -1 ) ); }
-        virtual void getattr( const std::string& path, org::xtreemfs::interfaces::Stat& stbuf, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<getattrRequest> __request( new getattrRequest( path ) ); ::YIELD::auto_ResponseQueue<getattrResponse> __response_queue( new ::YIELD::ResponseQueue<getattrResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<getattrResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); stbuf = __response->get_stbuf(); }
+        virtual void getattr( const std::string& path, org::xtreemfs::interfaces::Stat& stbuf, uint64_t response_timeout_ns ) { ::yidl::auto_Object<getattrRequest> __request( new getattrRequest( path ) ); ::YIELD::auto_ResponseQueue<getattrResponse> __response_queue( new ::YIELD::ResponseQueue<getattrResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<getattrResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); stbuf = __response->get_stbuf(); }
 
         virtual void getxattr( const std::string& path, const std::string& name, std::string& value ) { getxattr( path, name, value, static_cast<uint64_t>( -1 ) ); }
-        virtual void getxattr( const std::string& path, const std::string& name, std::string& value, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<getxattrRequest> __request( new getxattrRequest( path, name ) ); ::YIELD::auto_ResponseQueue<getxattrResponse> __response_queue( new ::YIELD::ResponseQueue<getxattrResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<getxattrResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); value = __response->get_value(); }
+        virtual void getxattr( const std::string& path, const std::string& name, std::string& value, uint64_t response_timeout_ns ) { ::yidl::auto_Object<getxattrRequest> __request( new getxattrRequest( path, name ) ); ::YIELD::auto_ResponseQueue<getxattrResponse> __response_queue( new ::YIELD::ResponseQueue<getxattrResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<getxattrResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); value = __response->get_value(); }
 
         virtual void link( const std::string& target_path, const std::string& link_path ) { link( target_path, link_path, static_cast<uint64_t>( -1 ) ); }
-        virtual void link( const std::string& target_path, const std::string& link_path, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<linkRequest> __request( new linkRequest( target_path, link_path ) ); ::YIELD::auto_ResponseQueue<linkResponse> __response_queue( new ::YIELD::ResponseQueue<linkResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<linkResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void link( const std::string& target_path, const std::string& link_path, uint64_t response_timeout_ns ) { ::yidl::auto_Object<linkRequest> __request( new linkRequest( target_path, link_path ) ); ::YIELD::auto_ResponseQueue<linkResponse> __response_queue( new ::YIELD::ResponseQueue<linkResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<linkResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void listxattr( const std::string& path, org::xtreemfs::interfaces::StringSet& names ) { listxattr( path, names, static_cast<uint64_t>( -1 ) ); }
-        virtual void listxattr( const std::string& path, org::xtreemfs::interfaces::StringSet& names, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<listxattrRequest> __request( new listxattrRequest( path ) ); ::YIELD::auto_ResponseQueue<listxattrResponse> __response_queue( new ::YIELD::ResponseQueue<listxattrResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<listxattrResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); names = __response->get_names(); }
+        virtual void listxattr( const std::string& path, org::xtreemfs::interfaces::StringSet& names, uint64_t response_timeout_ns ) { ::yidl::auto_Object<listxattrRequest> __request( new listxattrRequest( path ) ); ::YIELD::auto_ResponseQueue<listxattrResponse> __response_queue( new ::YIELD::ResponseQueue<listxattrResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<listxattrResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); names = __response->get_names(); }
 
         virtual void mkdir( const std::string& path, uint32_t mode ) { mkdir( path, mode, static_cast<uint64_t>( -1 ) ); }
-        virtual void mkdir( const std::string& path, uint32_t mode, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<mkdirRequest> __request( new mkdirRequest( path, mode ) ); ::YIELD::auto_ResponseQueue<mkdirResponse> __response_queue( new ::YIELD::ResponseQueue<mkdirResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<mkdirResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void mkdir( const std::string& path, uint32_t mode, uint64_t response_timeout_ns ) { ::yidl::auto_Object<mkdirRequest> __request( new mkdirRequest( path, mode ) ); ::YIELD::auto_ResponseQueue<mkdirResponse> __response_queue( new ::YIELD::ResponseQueue<mkdirResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<mkdirResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void open( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, org::xtreemfs::interfaces::FileCredentials& file_credentials ) { open( path, flags, mode, attributes, file_credentials, static_cast<uint64_t>( -1 ) ); }
-        virtual void open( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<openRequest> __request( new openRequest( path, flags, mode, attributes ) ); ::YIELD::auto_ResponseQueue<openResponse> __response_queue( new ::YIELD::ResponseQueue<openResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<openResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); file_credentials = __response->get_file_credentials(); }
+        virtual void open( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t response_timeout_ns ) { ::yidl::auto_Object<openRequest> __request( new openRequest( path, flags, mode, attributes ) ); ::YIELD::auto_ResponseQueue<openResponse> __response_queue( new ::YIELD::ResponseQueue<openResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<openResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); file_credentials = __response->get_file_credentials(); }
 
         virtual void readdir( const std::string& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries ) { readdir( path, directory_entries, static_cast<uint64_t>( -1 ) ); }
-        virtual void readdir( const std::string& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<readdirRequest> __request( new readdirRequest( path ) ); ::YIELD::auto_ResponseQueue<readdirResponse> __response_queue( new ::YIELD::ResponseQueue<readdirResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<readdirResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); directory_entries = __response->get_directory_entries(); }
+        virtual void readdir( const std::string& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries, uint64_t response_timeout_ns ) { ::yidl::auto_Object<readdirRequest> __request( new readdirRequest( path ) ); ::YIELD::auto_ResponseQueue<readdirResponse> __response_queue( new ::YIELD::ResponseQueue<readdirResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<readdirResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); directory_entries = __response->get_directory_entries(); }
 
         virtual void removexattr( const std::string& path, const std::string& name ) { removexattr( path, name, static_cast<uint64_t>( -1 ) ); }
-        virtual void removexattr( const std::string& path, const std::string& name, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<removexattrRequest> __request( new removexattrRequest( path, name ) ); ::YIELD::auto_ResponseQueue<removexattrResponse> __response_queue( new ::YIELD::ResponseQueue<removexattrResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<removexattrResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void removexattr( const std::string& path, const std::string& name, uint64_t response_timeout_ns ) { ::yidl::auto_Object<removexattrRequest> __request( new removexattrRequest( path, name ) ); ::YIELD::auto_ResponseQueue<removexattrResponse> __response_queue( new ::YIELD::ResponseQueue<removexattrResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<removexattrResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void rename( const std::string& source_path, const std::string& target_path, org::xtreemfs::interfaces::FileCredentialsSet& file_credentials ) { rename( source_path, target_path, file_credentials, static_cast<uint64_t>( -1 ) ); }
-        virtual void rename( const std::string& source_path, const std::string& target_path, org::xtreemfs::interfaces::FileCredentialsSet& file_credentials, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<renameRequest> __request( new renameRequest( source_path, target_path ) ); ::YIELD::auto_ResponseQueue<renameResponse> __response_queue( new ::YIELD::ResponseQueue<renameResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<renameResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); file_credentials = __response->get_file_credentials(); }
+        virtual void rename( const std::string& source_path, const std::string& target_path, org::xtreemfs::interfaces::FileCredentialsSet& file_credentials, uint64_t response_timeout_ns ) { ::yidl::auto_Object<renameRequest> __request( new renameRequest( source_path, target_path ) ); ::YIELD::auto_ResponseQueue<renameResponse> __response_queue( new ::YIELD::ResponseQueue<renameResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<renameResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); file_credentials = __response->get_file_credentials(); }
 
         virtual void rmdir( const std::string& path ) { rmdir( path, static_cast<uint64_t>( -1 ) ); }
-        virtual void rmdir( const std::string& path, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<rmdirRequest> __request( new rmdirRequest( path ) ); ::YIELD::auto_ResponseQueue<rmdirResponse> __response_queue( new ::YIELD::ResponseQueue<rmdirResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<rmdirResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void rmdir( const std::string& path, uint64_t response_timeout_ns ) { ::yidl::auto_Object<rmdirRequest> __request( new rmdirRequest( path ) ); ::YIELD::auto_ResponseQueue<rmdirResponse> __response_queue( new ::YIELD::ResponseQueue<rmdirResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<rmdirResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void setattr( const std::string& path, const org::xtreemfs::interfaces::Stat& stbuf ) { setattr( path, stbuf, static_cast<uint64_t>( -1 ) ); }
-        virtual void setattr( const std::string& path, const org::xtreemfs::interfaces::Stat& stbuf, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<setattrRequest> __request( new setattrRequest( path, stbuf ) ); ::YIELD::auto_ResponseQueue<setattrResponse> __response_queue( new ::YIELD::ResponseQueue<setattrResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<setattrResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void setattr( const std::string& path, const org::xtreemfs::interfaces::Stat& stbuf, uint64_t response_timeout_ns ) { ::yidl::auto_Object<setattrRequest> __request( new setattrRequest( path, stbuf ) ); ::YIELD::auto_ResponseQueue<setattrResponse> __response_queue( new ::YIELD::ResponseQueue<setattrResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<setattrResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void setxattr( const std::string& path, const std::string& name, const std::string& value, int32_t flags ) { setxattr( path, name, value, flags, static_cast<uint64_t>( -1 ) ); }
-        virtual void setxattr( const std::string& path, const std::string& name, const std::string& value, int32_t flags, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<setxattrRequest> __request( new setxattrRequest( path, name, value, flags ) ); ::YIELD::auto_ResponseQueue<setxattrResponse> __response_queue( new ::YIELD::ResponseQueue<setxattrResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<setxattrResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void setxattr( const std::string& path, const std::string& name, const std::string& value, int32_t flags, uint64_t response_timeout_ns ) { ::yidl::auto_Object<setxattrRequest> __request( new setxattrRequest( path, name, value, flags ) ); ::YIELD::auto_ResponseQueue<setxattrResponse> __response_queue( new ::YIELD::ResponseQueue<setxattrResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<setxattrResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void statvfs( const std::string& volume_name, org::xtreemfs::interfaces::StatVFS& stbuf ) { statvfs( volume_name, stbuf, static_cast<uint64_t>( -1 ) ); }
-        virtual void statvfs( const std::string& volume_name, org::xtreemfs::interfaces::StatVFS& stbuf, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<statvfsRequest> __request( new statvfsRequest( volume_name ) ); ::YIELD::auto_ResponseQueue<statvfsResponse> __response_queue( new ::YIELD::ResponseQueue<statvfsResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<statvfsResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); stbuf = __response->get_stbuf(); }
+        virtual void statvfs( const std::string& volume_name, org::xtreemfs::interfaces::StatVFS& stbuf, uint64_t response_timeout_ns ) { ::yidl::auto_Object<statvfsRequest> __request( new statvfsRequest( volume_name ) ); ::YIELD::auto_ResponseQueue<statvfsResponse> __response_queue( new ::YIELD::ResponseQueue<statvfsResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<statvfsResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); stbuf = __response->get_stbuf(); }
 
         virtual void symlink( const std::string& target_path, const std::string& link_path ) { symlink( target_path, link_path, static_cast<uint64_t>( -1 ) ); }
-        virtual void symlink( const std::string& target_path, const std::string& link_path, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<symlinkRequest> __request( new symlinkRequest( target_path, link_path ) ); ::YIELD::auto_ResponseQueue<symlinkResponse> __response_queue( new ::YIELD::ResponseQueue<symlinkResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<symlinkResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void symlink( const std::string& target_path, const std::string& link_path, uint64_t response_timeout_ns ) { ::yidl::auto_Object<symlinkRequest> __request( new symlinkRequest( target_path, link_path ) ); ::YIELD::auto_ResponseQueue<symlinkResponse> __response_queue( new ::YIELD::ResponseQueue<symlinkResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<symlinkResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void unlink( const std::string& path, org::xtreemfs::interfaces::FileCredentialsSet& file_credentials ) { unlink( path, file_credentials, static_cast<uint64_t>( -1 ) ); }
-        virtual void unlink( const std::string& path, org::xtreemfs::interfaces::FileCredentialsSet& file_credentials, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<unlinkRequest> __request( new unlinkRequest( path ) ); ::YIELD::auto_ResponseQueue<unlinkResponse> __response_queue( new ::YIELD::ResponseQueue<unlinkResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<unlinkResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); file_credentials = __response->get_file_credentials(); }
+        virtual void unlink( const std::string& path, org::xtreemfs::interfaces::FileCredentialsSet& file_credentials, uint64_t response_timeout_ns ) { ::yidl::auto_Object<unlinkRequest> __request( new unlinkRequest( path ) ); ::YIELD::auto_ResponseQueue<unlinkResponse> __response_queue( new ::YIELD::ResponseQueue<unlinkResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<unlinkResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); file_credentials = __response->get_file_credentials(); }
 
         virtual void utimens( const std::string& path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns ) { utimens( path, atime_ns, mtime_ns, ctime_ns, static_cast<uint64_t>( -1 ) ); }
-        virtual void utimens( const std::string& path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<utimensRequest> __request( new utimensRequest( path, atime_ns, mtime_ns, ctime_ns ) ); ::YIELD::auto_ResponseQueue<utimensResponse> __response_queue( new ::YIELD::ResponseQueue<utimensResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<utimensResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void utimens( const std::string& path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns, uint64_t response_timeout_ns ) { ::yidl::auto_Object<utimensRequest> __request( new utimensRequest( path, atime_ns, mtime_ns, ctime_ns ) ); ::YIELD::auto_ResponseQueue<utimensResponse> __response_queue( new ::YIELD::ResponseQueue<utimensResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<utimensResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void xtreemfs_checkpoint() { xtreemfs_checkpoint( static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_checkpoint( uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_checkpointRequest> __request( new xtreemfs_checkpointRequest() ); ::YIELD::auto_ResponseQueue<xtreemfs_checkpointResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_checkpointResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_checkpointResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void xtreemfs_checkpoint( uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_checkpointRequest> __request( new xtreemfs_checkpointRequest() ); ::YIELD::auto_ResponseQueue<xtreemfs_checkpointResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_checkpointResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_checkpointResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void xtreemfs_check_file_exists( const std::string& volume_id, const org::xtreemfs::interfaces::StringSet& file_ids, const std::string& osd_uuid, std::string& bitmap ) { xtreemfs_check_file_exists( volume_id, file_ids, osd_uuid, bitmap, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_check_file_exists( const std::string& volume_id, const org::xtreemfs::interfaces::StringSet& file_ids, const std::string& osd_uuid, std::string& bitmap, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_check_file_existsRequest> __request( new xtreemfs_check_file_existsRequest( volume_id, file_ids, osd_uuid ) ); ::YIELD::auto_ResponseQueue<xtreemfs_check_file_existsResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_check_file_existsResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_check_file_existsResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); bitmap = __response->get_bitmap(); }
+        virtual void xtreemfs_check_file_exists( const std::string& volume_id, const org::xtreemfs::interfaces::StringSet& file_ids, const std::string& osd_uuid, std::string& bitmap, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_check_file_existsRequest> __request( new xtreemfs_check_file_existsRequest( volume_id, file_ids, osd_uuid ) ); ::YIELD::auto_ResponseQueue<xtreemfs_check_file_existsResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_check_file_existsResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_check_file_existsResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); bitmap = __response->get_bitmap(); }
 
         virtual void xtreemfs_dump_database( const std::string& dump_file ) { xtreemfs_dump_database( dump_file, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_dump_database( const std::string& dump_file, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_dump_databaseRequest> __request( new xtreemfs_dump_databaseRequest( dump_file ) ); ::YIELD::auto_ResponseQueue<xtreemfs_dump_databaseResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_dump_databaseResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_dump_databaseResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void xtreemfs_dump_database( const std::string& dump_file, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_dump_databaseRequest> __request( new xtreemfs_dump_databaseRequest( dump_file ) ); ::YIELD::auto_ResponseQueue<xtreemfs_dump_databaseResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_dump_databaseResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_dump_databaseResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void xtreemfs_get_suitable_osds( const std::string& file_id, org::xtreemfs::interfaces::StringSet& osd_uuids ) { xtreemfs_get_suitable_osds( file_id, osd_uuids, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_get_suitable_osds( const std::string& file_id, org::xtreemfs::interfaces::StringSet& osd_uuids, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_get_suitable_osdsRequest> __request( new xtreemfs_get_suitable_osdsRequest( file_id ) ); ::YIELD::auto_ResponseQueue<xtreemfs_get_suitable_osdsResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_get_suitable_osdsResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_get_suitable_osdsResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); osd_uuids = __response->get_osd_uuids(); }
+        virtual void xtreemfs_get_suitable_osds( const std::string& file_id, org::xtreemfs::interfaces::StringSet& osd_uuids, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_get_suitable_osdsRequest> __request( new xtreemfs_get_suitable_osdsRequest( file_id ) ); ::YIELD::auto_ResponseQueue<xtreemfs_get_suitable_osdsResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_get_suitable_osdsResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_get_suitable_osdsResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); osd_uuids = __response->get_osd_uuids(); }
 
         virtual void xtreemfs_internal_debug( const std::string& operation, std::string& result ) { xtreemfs_internal_debug( operation, result, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_internal_debug( const std::string& operation, std::string& result, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_internal_debugRequest> __request( new xtreemfs_internal_debugRequest( operation ) ); ::YIELD::auto_ResponseQueue<xtreemfs_internal_debugResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_internal_debugResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_internal_debugResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); result = __response->get_result(); }
+        virtual void xtreemfs_internal_debug( const std::string& operation, std::string& result, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_internal_debugRequest> __request( new xtreemfs_internal_debugRequest( operation ) ); ::YIELD::auto_ResponseQueue<xtreemfs_internal_debugResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_internal_debugResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_internal_debugResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); result = __response->get_result(); }
 
         virtual void xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet& volumes ) { xtreemfs_lsvol( volumes, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet& volumes, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_lsvolRequest> __request( new xtreemfs_lsvolRequest() ); ::YIELD::auto_ResponseQueue<xtreemfs_lsvolResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_lsvolResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_lsvolResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); volumes = __response->get_volumes(); }
+        virtual void xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet& volumes, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_lsvolRequest> __request( new xtreemfs_lsvolRequest() ); ::YIELD::auto_ResponseQueue<xtreemfs_lsvolResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_lsvolResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_lsvolResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); volumes = __response->get_volumes(); }
 
         virtual void xtreemfs_listdir( const std::string& path, org::xtreemfs::interfaces::StringSet& names ) { xtreemfs_listdir( path, names, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_listdir( const std::string& path, org::xtreemfs::interfaces::StringSet& names, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_listdirRequest> __request( new xtreemfs_listdirRequest( path ) ); ::YIELD::auto_ResponseQueue<xtreemfs_listdirResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_listdirResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_listdirResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); names = __response->get_names(); }
+        virtual void xtreemfs_listdir( const std::string& path, org::xtreemfs::interfaces::StringSet& names, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_listdirRequest> __request( new xtreemfs_listdirRequest( path ) ); ::YIELD::auto_ResponseQueue<xtreemfs_listdirResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_listdirResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_listdirResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); names = __response->get_names(); }
 
         virtual void xtreemfs_mkvol( const org::xtreemfs::interfaces::Volume& volume ) { xtreemfs_mkvol( volume, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_mkvol( const org::xtreemfs::interfaces::Volume& volume, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_mkvolRequest> __request( new xtreemfs_mkvolRequest( volume ) ); ::YIELD::auto_ResponseQueue<xtreemfs_mkvolResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_mkvolResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_mkvolResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void xtreemfs_mkvol( const org::xtreemfs::interfaces::Volume& volume, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_mkvolRequest> __request( new xtreemfs_mkvolRequest( volume ) ); ::YIELD::auto_ResponseQueue<xtreemfs_mkvolResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_mkvolResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_mkvolResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void xtreemfs_renew_capability( const org::xtreemfs::interfaces::XCap& old_xcap, org::xtreemfs::interfaces::XCap& renewed_xcap ) { xtreemfs_renew_capability( old_xcap, renewed_xcap, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_renew_capability( const org::xtreemfs::interfaces::XCap& old_xcap, org::xtreemfs::interfaces::XCap& renewed_xcap, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_renew_capabilityRequest> __request( new xtreemfs_renew_capabilityRequest( old_xcap ) ); ::YIELD::auto_ResponseQueue<xtreemfs_renew_capabilityResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_renew_capabilityResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_renew_capabilityResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); renewed_xcap = __response->get_renewed_xcap(); }
+        virtual void xtreemfs_renew_capability( const org::xtreemfs::interfaces::XCap& old_xcap, org::xtreemfs::interfaces::XCap& renewed_xcap, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_renew_capabilityRequest> __request( new xtreemfs_renew_capabilityRequest( old_xcap ) ); ::YIELD::auto_ResponseQueue<xtreemfs_renew_capabilityResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_renew_capabilityResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_renew_capabilityResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); renewed_xcap = __response->get_renewed_xcap(); }
 
         virtual void xtreemfs_replica_add( const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica ) { xtreemfs_replica_add( file_id, new_replica, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_replica_add( const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_replica_addRequest> __request( new xtreemfs_replica_addRequest( file_id, new_replica ) ); ::YIELD::auto_ResponseQueue<xtreemfs_replica_addResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_replica_addResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_replica_addResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void xtreemfs_replica_add( const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_replica_addRequest> __request( new xtreemfs_replica_addRequest( file_id, new_replica ) ); ::YIELD::auto_ResponseQueue<xtreemfs_replica_addResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_replica_addResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_replica_addResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void xtreemfs_replica_list( const std::string& file_id, org::xtreemfs::interfaces::ReplicaSet& replicas ) { xtreemfs_replica_list( file_id, replicas, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_replica_list( const std::string& file_id, org::xtreemfs::interfaces::ReplicaSet& replicas, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_replica_listRequest> __request( new xtreemfs_replica_listRequest( file_id ) ); ::YIELD::auto_ResponseQueue<xtreemfs_replica_listResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_replica_listResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_replica_listResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); replicas = __response->get_replicas(); }
+        virtual void xtreemfs_replica_list( const std::string& file_id, org::xtreemfs::interfaces::ReplicaSet& replicas, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_replica_listRequest> __request( new xtreemfs_replica_listRequest( file_id ) ); ::YIELD::auto_ResponseQueue<xtreemfs_replica_listResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_replica_listResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_replica_listResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); replicas = __response->get_replicas(); }
 
         virtual void xtreemfs_replica_remove( const std::string& file_id, const std::string& osd_uuid, org::xtreemfs::interfaces::XCap& delete_xcap ) { xtreemfs_replica_remove( file_id, osd_uuid, delete_xcap, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_replica_remove( const std::string& file_id, const std::string& osd_uuid, org::xtreemfs::interfaces::XCap& delete_xcap, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_replica_removeRequest> __request( new xtreemfs_replica_removeRequest( file_id, osd_uuid ) ); ::YIELD::auto_ResponseQueue<xtreemfs_replica_removeResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_replica_removeResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_replica_removeResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); delete_xcap = __response->get_delete_xcap(); }
+        virtual void xtreemfs_replica_remove( const std::string& file_id, const std::string& osd_uuid, org::xtreemfs::interfaces::XCap& delete_xcap, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_replica_removeRequest> __request( new xtreemfs_replica_removeRequest( file_id, osd_uuid ) ); ::YIELD::auto_ResponseQueue<xtreemfs_replica_removeResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_replica_removeResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_replica_removeResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); delete_xcap = __response->get_delete_xcap(); }
 
         virtual void xtreemfs_restore_database( const std::string& dump_file ) { xtreemfs_restore_database( dump_file, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_restore_database( const std::string& dump_file, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_restore_databaseRequest> __request( new xtreemfs_restore_databaseRequest( dump_file ) ); ::YIELD::auto_ResponseQueue<xtreemfs_restore_databaseResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_restore_databaseResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_restore_databaseResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void xtreemfs_restore_database( const std::string& dump_file, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_restore_databaseRequest> __request( new xtreemfs_restore_databaseRequest( dump_file ) ); ::YIELD::auto_ResponseQueue<xtreemfs_restore_databaseResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_restore_databaseResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_restore_databaseResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void xtreemfs_restore_file( const std::string& file_path, const std::string& file_id, uint64_t file_size, const std::string& osd_uuid, int32_t stripe_size ) { xtreemfs_restore_file( file_path, file_id, file_size, osd_uuid, stripe_size, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_restore_file( const std::string& file_path, const std::string& file_id, uint64_t file_size, const std::string& osd_uuid, int32_t stripe_size, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_restore_fileRequest> __request( new xtreemfs_restore_fileRequest( file_path, file_id, file_size, osd_uuid, stripe_size ) ); ::YIELD::auto_ResponseQueue<xtreemfs_restore_fileResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_restore_fileResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_restore_fileResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void xtreemfs_restore_file( const std::string& file_path, const std::string& file_id, uint64_t file_size, const std::string& osd_uuid, int32_t stripe_size, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_restore_fileRequest> __request( new xtreemfs_restore_fileRequest( file_path, file_id, file_size, osd_uuid, stripe_size ) ); ::YIELD::auto_ResponseQueue<xtreemfs_restore_fileResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_restore_fileResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_restore_fileResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void xtreemfs_rmvol( const std::string& volume_name ) { xtreemfs_rmvol( volume_name, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_rmvol( const std::string& volume_name, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_rmvolRequest> __request( new xtreemfs_rmvolRequest( volume_name ) ); ::YIELD::auto_ResponseQueue<xtreemfs_rmvolResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_rmvolResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_rmvolResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void xtreemfs_rmvol( const std::string& volume_name, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_rmvolRequest> __request( new xtreemfs_rmvolRequest( volume_name ) ); ::YIELD::auto_ResponseQueue<xtreemfs_rmvolResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_rmvolResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_rmvolResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void xtreemfs_shutdown() { xtreemfs_shutdown( static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_shutdown( uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_shutdownRequest> __request( new xtreemfs_shutdownRequest() ); ::YIELD::auto_ResponseQueue<xtreemfs_shutdownResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_shutdownResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_shutdownResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void xtreemfs_shutdown( uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_shutdownRequest> __request( new xtreemfs_shutdownRequest() ); ::YIELD::auto_ResponseQueue<xtreemfs_shutdownResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_shutdownResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_shutdownResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { xtreemfs_update_file_size( xcap, osd_write_response, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, uint64_t response_timeout_ns ) { ::YIELD::auto_Object<xtreemfs_update_file_sizeRequest> __request( new xtreemfs_update_file_sizeRequest( xcap, osd_write_response ) ); ::YIELD::auto_ResponseQueue<xtreemfs_update_file_sizeResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_update_file_sizeResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::YIELD::auto_Object<xtreemfs_update_file_sizeResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_update_file_sizeRequest> __request( new xtreemfs_update_file_sizeRequest( xcap, osd_write_response ) ); ::YIELD::auto_ResponseQueue<xtreemfs_update_file_sizeResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_update_file_sizeResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_update_file_sizeResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
 
         // Request/response pair definitions for the operations in MRCInterface
@@ -429,12 +429,12 @@ namespace org
 
           bool operator==( const accessResponse& other ) const { return _return_value == other._return_value; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( accessResponse, 1201 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( accessResponse, 1201 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeBoolean( "_return_value", 0, _return_value ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { _return_value = unmarshaller.readBoolean( "_return_value", 0 ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeBoolean( "_return_value", 0, _return_value ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { _return_value = unmarshaller.readBoolean( "_return_value", 0 ); }
 
         protected:
           bool _return_value;
@@ -456,12 +456,12 @@ namespace org
 
           bool operator==( const accessRequest& other ) const { return path == other.path && mode == other.mode; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( accessRequest, 1201 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( accessRequest, 1201 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "mode", 0, mode ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); mode = unmarshaller.readUint32( "mode", 0 ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "mode", 0, mode ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); mode = unmarshaller.readUint32( "mode", 0 ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new accessResponse; }
 
 
@@ -478,8 +478,8 @@ namespace org
 
           bool operator==( const chmodResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( chmodResponse, 1202 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( chmodResponse, 1202 );
 
         };
 
@@ -499,12 +499,12 @@ namespace org
 
           bool operator==( const chmodRequest& other ) const { return path == other.path && mode == other.mode; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( chmodRequest, 1202 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( chmodRequest, 1202 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "mode", 0, mode ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); mode = unmarshaller.readUint32( "mode", 0 ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "mode", 0, mode ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); mode = unmarshaller.readUint32( "mode", 0 ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new chmodResponse; }
 
 
@@ -521,8 +521,8 @@ namespace org
 
           bool operator==( const chownResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( chownResponse, 1203 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( chownResponse, 1203 );
 
         };
 
@@ -546,12 +546,12 @@ namespace org
 
           bool operator==( const chownRequest& other ) const { return path == other.path && user_id == other.user_id && group_id == other.group_id; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( chownRequest, 1203 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( chownRequest, 1203 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeString( "user_id", 0, user_id ); marshaller.writeString( "group_id", 0, group_id ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); unmarshaller.readString( "user_id", 0, user_id ); unmarshaller.readString( "group_id", 0, group_id ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeString( "user_id", 0, user_id ); marshaller.writeString( "group_id", 0, group_id ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); unmarshaller.readString( "user_id", 0, user_id ); unmarshaller.readString( "group_id", 0, group_id ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new chownResponse; }
 
 
@@ -569,8 +569,8 @@ namespace org
 
           bool operator==( const creatResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( creatResponse, 1204 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( creatResponse, 1204 );
 
         };
 
@@ -590,12 +590,12 @@ namespace org
 
           bool operator==( const creatRequest& other ) const { return path == other.path && mode == other.mode; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( creatRequest, 1204 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( creatRequest, 1204 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "mode", 0, mode ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); mode = unmarshaller.readUint32( "mode", 0 ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "mode", 0, mode ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); mode = unmarshaller.readUint32( "mode", 0 ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new creatResponse; }
 
 
@@ -616,12 +616,12 @@ namespace org
 
           bool operator==( const ftruncateResponse& other ) const { return truncate_xcap == other.truncate_xcap; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( ftruncateResponse, 1205 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( ftruncateResponse, 1205 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "truncate_xcap", 0, truncate_xcap ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "truncate_xcap", 0, truncate_xcap ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "truncate_xcap", 0, truncate_xcap ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "truncate_xcap", 0, truncate_xcap ); }
 
         protected:
           org::xtreemfs::interfaces::XCap truncate_xcap;
@@ -639,12 +639,12 @@ namespace org
 
           bool operator==( const ftruncateRequest& other ) const { return write_xcap == other.write_xcap; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( ftruncateRequest, 1205 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( ftruncateRequest, 1205 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "write_xcap", 0, write_xcap ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "write_xcap", 0, write_xcap ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "write_xcap", 0, write_xcap ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "write_xcap", 0, write_xcap ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new ftruncateResponse; }
 
 
@@ -664,12 +664,12 @@ namespace org
 
           bool operator==( const getattrResponse& other ) const { return stbuf == other.stbuf; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( getattrResponse, 1206 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( getattrResponse, 1206 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "stbuf", 0, stbuf ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "stbuf", 0, stbuf ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "stbuf", 0, stbuf ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "stbuf", 0, stbuf ); }
 
         protected:
           org::xtreemfs::interfaces::Stat stbuf;
@@ -689,12 +689,12 @@ namespace org
 
           bool operator==( const getattrRequest& other ) const { return path == other.path; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( getattrRequest, 1206 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( getattrRequest, 1206 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new getattrResponse; }
 
 
@@ -716,12 +716,12 @@ namespace org
 
           bool operator==( const getxattrResponse& other ) const { return value == other.value; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( getxattrResponse, 1207 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( getxattrResponse, 1207 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "value", 0, value ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "value", 0, value ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "value", 0, value ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "value", 0, value ); }
 
         protected:
           std::string value;
@@ -744,12 +744,12 @@ namespace org
 
           bool operator==( const getxattrRequest& other ) const { return path == other.path && name == other.name; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( getxattrRequest, 1207 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( getxattrRequest, 1207 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeString( "name", 0, name ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); unmarshaller.readString( "name", 0, name ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeString( "name", 0, name ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); unmarshaller.readString( "name", 0, name ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new getxattrResponse; }
 
 
@@ -766,8 +766,8 @@ namespace org
 
           bool operator==( const linkResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( linkResponse, 1208 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( linkResponse, 1208 );
 
         };
 
@@ -788,12 +788,12 @@ namespace org
 
           bool operator==( const linkRequest& other ) const { return target_path == other.target_path && link_path == other.link_path; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( linkRequest, 1208 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( linkRequest, 1208 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "target_path", 0, target_path ); marshaller.writeString( "link_path", 0, link_path ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "target_path", 0, target_path ); unmarshaller.readString( "link_path", 0, link_path ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "target_path", 0, target_path ); marshaller.writeString( "link_path", 0, link_path ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "target_path", 0, target_path ); unmarshaller.readString( "link_path", 0, link_path ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new linkResponse; }
 
 
@@ -814,12 +814,12 @@ namespace org
 
           bool operator==( const listxattrResponse& other ) const { return names == other.names; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( listxattrResponse, 1209 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( listxattrResponse, 1209 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( "names", 0, names ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "names", 0, names ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "names", 0, names ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "names", 0, names ); }
 
         protected:
           org::xtreemfs::interfaces::StringSet names;
@@ -839,12 +839,12 @@ namespace org
 
           bool operator==( const listxattrRequest& other ) const { return path == other.path; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( listxattrRequest, 1209 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( listxattrRequest, 1209 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new listxattrResponse; }
 
 
@@ -860,8 +860,8 @@ namespace org
 
           bool operator==( const mkdirResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( mkdirResponse, 1210 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( mkdirResponse, 1210 );
 
         };
 
@@ -881,12 +881,12 @@ namespace org
 
           bool operator==( const mkdirRequest& other ) const { return path == other.path && mode == other.mode; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( mkdirRequest, 1210 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( mkdirRequest, 1210 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "mode", 0, mode ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); mode = unmarshaller.readUint32( "mode", 0 ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "mode", 0, mode ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); mode = unmarshaller.readUint32( "mode", 0 ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new mkdirResponse; }
 
 
@@ -907,12 +907,12 @@ namespace org
 
           bool operator==( const openResponse& other ) const { return file_credentials == other.file_credentials; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( openResponse, 1211 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( openResponse, 1211 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); }
 
         protected:
           org::xtreemfs::interfaces::FileCredentials file_credentials;
@@ -938,12 +938,12 @@ namespace org
 
           bool operator==( const openRequest& other ) const { return path == other.path && flags == other.flags && mode == other.mode && attributes == other.attributes; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( openRequest, 1211 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( openRequest, 1211 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "flags", 0, flags ); marshaller.writeUint32( "mode", 0, mode ); marshaller.writeUint32( "attributes", 0, attributes ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); flags = unmarshaller.readUint32( "flags", 0 ); mode = unmarshaller.readUint32( "mode", 0 ); attributes = unmarshaller.readUint32( "attributes", 0 ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "flags", 0, flags ); marshaller.writeUint32( "mode", 0, mode ); marshaller.writeUint32( "attributes", 0, attributes ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); flags = unmarshaller.readUint32( "flags", 0 ); mode = unmarshaller.readUint32( "mode", 0 ); attributes = unmarshaller.readUint32( "attributes", 0 ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new openResponse; }
 
 
@@ -966,12 +966,12 @@ namespace org
 
           bool operator==( const readdirResponse& other ) const { return directory_entries == other.directory_entries; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( readdirResponse, 1212 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( readdirResponse, 1212 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( "directory_entries", 0, directory_entries ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "directory_entries", 0, directory_entries ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "directory_entries", 0, directory_entries ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "directory_entries", 0, directory_entries ); }
 
         protected:
           org::xtreemfs::interfaces::DirectoryEntrySet directory_entries;
@@ -991,12 +991,12 @@ namespace org
 
           bool operator==( const readdirRequest& other ) const { return path == other.path; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( readdirRequest, 1212 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( readdirRequest, 1212 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new readdirResponse; }
 
 
@@ -1012,8 +1012,8 @@ namespace org
 
           bool operator==( const removexattrResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( removexattrResponse, 1213 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( removexattrResponse, 1213 );
 
         };
 
@@ -1034,12 +1034,12 @@ namespace org
 
           bool operator==( const removexattrRequest& other ) const { return path == other.path && name == other.name; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( removexattrRequest, 1213 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( removexattrRequest, 1213 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeString( "name", 0, name ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); unmarshaller.readString( "name", 0, name ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeString( "name", 0, name ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); unmarshaller.readString( "name", 0, name ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new removexattrResponse; }
 
 
@@ -1060,12 +1060,12 @@ namespace org
 
           bool operator==( const renameResponse& other ) const { return file_credentials == other.file_credentials; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( renameResponse, 1214 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( renameResponse, 1214 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( "file_credentials", 0, file_credentials ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "file_credentials", 0, file_credentials ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "file_credentials", 0, file_credentials ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "file_credentials", 0, file_credentials ); }
 
         protected:
           org::xtreemfs::interfaces::FileCredentialsSet file_credentials;
@@ -1088,12 +1088,12 @@ namespace org
 
           bool operator==( const renameRequest& other ) const { return source_path == other.source_path && target_path == other.target_path; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( renameRequest, 1214 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( renameRequest, 1214 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "source_path", 0, source_path ); marshaller.writeString( "target_path", 0, target_path ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "source_path", 0, source_path ); unmarshaller.readString( "target_path", 0, target_path ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "source_path", 0, source_path ); marshaller.writeString( "target_path", 0, target_path ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "source_path", 0, source_path ); unmarshaller.readString( "target_path", 0, target_path ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new renameResponse; }
 
 
@@ -1110,8 +1110,8 @@ namespace org
 
           bool operator==( const rmdirResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( rmdirResponse, 1215 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( rmdirResponse, 1215 );
 
         };
 
@@ -1129,12 +1129,12 @@ namespace org
 
           bool operator==( const rmdirRequest& other ) const { return path == other.path; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( rmdirRequest, 1215 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( rmdirRequest, 1215 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new rmdirResponse; }
 
 
@@ -1150,8 +1150,8 @@ namespace org
 
           bool operator==( const setattrResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( setattrResponse, 1216 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( setattrResponse, 1216 );
 
         };
 
@@ -1171,12 +1171,12 @@ namespace org
 
           bool operator==( const setattrRequest& other ) const { return path == other.path && stbuf == other.stbuf; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( setattrRequest, 1216 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( setattrRequest, 1216 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeStruct( "stbuf", 0, stbuf ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); unmarshaller.readStruct( "stbuf", 0, stbuf ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeStruct( "stbuf", 0, stbuf ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); unmarshaller.readStruct( "stbuf", 0, stbuf ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new setattrResponse; }
 
 
@@ -1193,8 +1193,8 @@ namespace org
 
           bool operator==( const setxattrResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( setxattrResponse, 1217 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( setxattrResponse, 1217 );
 
         };
 
@@ -1220,12 +1220,12 @@ namespace org
 
           bool operator==( const setxattrRequest& other ) const { return path == other.path && name == other.name && value == other.value && flags == other.flags; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( setxattrRequest, 1217 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( setxattrRequest, 1217 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeString( "name", 0, name ); marshaller.writeString( "value", 0, value ); marshaller.writeInt32( "flags", 0, flags ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); unmarshaller.readString( "name", 0, name ); unmarshaller.readString( "value", 0, value ); flags = unmarshaller.readInt32( "flags", 0 ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeString( "name", 0, name ); marshaller.writeString( "value", 0, value ); marshaller.writeInt32( "flags", 0, flags ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); unmarshaller.readString( "name", 0, name ); unmarshaller.readString( "value", 0, value ); flags = unmarshaller.readInt32( "flags", 0 ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new setxattrResponse; }
 
 
@@ -1248,12 +1248,12 @@ namespace org
 
           bool operator==( const statvfsResponse& other ) const { return stbuf == other.stbuf; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( statvfsResponse, 1218 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( statvfsResponse, 1218 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "stbuf", 0, stbuf ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "stbuf", 0, stbuf ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "stbuf", 0, stbuf ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "stbuf", 0, stbuf ); }
 
         protected:
           org::xtreemfs::interfaces::StatVFS stbuf;
@@ -1273,12 +1273,12 @@ namespace org
 
           bool operator==( const statvfsRequest& other ) const { return volume_name == other.volume_name; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( statvfsRequest, 1218 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( statvfsRequest, 1218 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "volume_name", 0, volume_name ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "volume_name", 0, volume_name ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "volume_name", 0, volume_name ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "volume_name", 0, volume_name ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new statvfsResponse; }
 
 
@@ -1294,8 +1294,8 @@ namespace org
 
           bool operator==( const symlinkResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( symlinkResponse, 1219 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( symlinkResponse, 1219 );
 
         };
 
@@ -1316,12 +1316,12 @@ namespace org
 
           bool operator==( const symlinkRequest& other ) const { return target_path == other.target_path && link_path == other.link_path; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( symlinkRequest, 1219 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( symlinkRequest, 1219 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "target_path", 0, target_path ); marshaller.writeString( "link_path", 0, link_path ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "target_path", 0, target_path ); unmarshaller.readString( "link_path", 0, link_path ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "target_path", 0, target_path ); marshaller.writeString( "link_path", 0, link_path ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "target_path", 0, target_path ); unmarshaller.readString( "link_path", 0, link_path ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new symlinkResponse; }
 
 
@@ -1342,12 +1342,12 @@ namespace org
 
           bool operator==( const unlinkResponse& other ) const { return file_credentials == other.file_credentials; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( unlinkResponse, 1220 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( unlinkResponse, 1220 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( "file_credentials", 0, file_credentials ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "file_credentials", 0, file_credentials ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "file_credentials", 0, file_credentials ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "file_credentials", 0, file_credentials ); }
 
         protected:
           org::xtreemfs::interfaces::FileCredentialsSet file_credentials;
@@ -1367,12 +1367,12 @@ namespace org
 
           bool operator==( const unlinkRequest& other ) const { return path == other.path; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( unlinkRequest, 1220 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( unlinkRequest, 1220 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new unlinkResponse; }
 
 
@@ -1388,8 +1388,8 @@ namespace org
 
           bool operator==( const utimensResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( utimensResponse, 1221 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( utimensResponse, 1221 );
 
         };
 
@@ -1413,12 +1413,12 @@ namespace org
 
           bool operator==( const utimensRequest& other ) const { return path == other.path && atime_ns == other.atime_ns && mtime_ns == other.mtime_ns && ctime_ns == other.ctime_ns; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( utimensRequest, 1221 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( utimensRequest, 1221 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint64( "atime_ns", 0, atime_ns ); marshaller.writeUint64( "mtime_ns", 0, mtime_ns ); marshaller.writeUint64( "ctime_ns", 0, ctime_ns ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); atime_ns = unmarshaller.readUint64( "atime_ns", 0 ); mtime_ns = unmarshaller.readUint64( "mtime_ns", 0 ); ctime_ns = unmarshaller.readUint64( "ctime_ns", 0 ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint64( "atime_ns", 0, atime_ns ); marshaller.writeUint64( "mtime_ns", 0, mtime_ns ); marshaller.writeUint64( "ctime_ns", 0, ctime_ns ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); atime_ns = unmarshaller.readUint64( "atime_ns", 0 ); mtime_ns = unmarshaller.readUint64( "mtime_ns", 0 ); ctime_ns = unmarshaller.readUint64( "ctime_ns", 0 ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new utimensResponse; }
 
 
@@ -1437,8 +1437,8 @@ namespace org
 
           bool operator==( const xtreemfs_checkpointResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_checkpointResponse, 1230 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_checkpointResponse, 1230 );
 
         };
 
@@ -1450,8 +1450,8 @@ namespace org
 
           bool operator==( const xtreemfs_checkpointRequest& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_checkpointRequest, 1230 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_checkpointRequest, 1230 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_checkpointResponse; }
 
@@ -1471,12 +1471,12 @@ namespace org
 
           bool operator==( const xtreemfs_check_file_existsResponse& other ) const { return bitmap == other.bitmap; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_check_file_existsResponse, 1231 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_check_file_existsResponse, 1231 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "bitmap", 0, bitmap ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "bitmap", 0, bitmap ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "bitmap", 0, bitmap ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "bitmap", 0, bitmap ); }
 
         protected:
           std::string bitmap;
@@ -1501,12 +1501,12 @@ namespace org
 
           bool operator==( const xtreemfs_check_file_existsRequest& other ) const { return volume_id == other.volume_id && file_ids == other.file_ids && osd_uuid == other.osd_uuid; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_check_file_existsRequest, 1231 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_check_file_existsRequest, 1231 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "volume_id", 0, volume_id ); marshaller.writeSequence( "file_ids", 0, file_ids ); marshaller.writeString( "osd_uuid", 0, osd_uuid ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "volume_id", 0, volume_id ); unmarshaller.readSequence( "file_ids", 0, file_ids ); unmarshaller.readString( "osd_uuid", 0, osd_uuid ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "volume_id", 0, volume_id ); marshaller.writeSequence( "file_ids", 0, file_ids ); marshaller.writeString( "osd_uuid", 0, osd_uuid ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "volume_id", 0, volume_id ); unmarshaller.readSequence( "file_ids", 0, file_ids ); unmarshaller.readString( "osd_uuid", 0, osd_uuid ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_check_file_existsResponse; }
 
 
@@ -1524,8 +1524,8 @@ namespace org
 
           bool operator==( const xtreemfs_dump_databaseResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_dump_databaseResponse, 1232 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_dump_databaseResponse, 1232 );
 
         };
 
@@ -1543,12 +1543,12 @@ namespace org
 
           bool operator==( const xtreemfs_dump_databaseRequest& other ) const { return dump_file == other.dump_file; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_dump_databaseRequest, 1232 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_dump_databaseRequest, 1232 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "dump_file", 0, dump_file ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "dump_file", 0, dump_file ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "dump_file", 0, dump_file ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "dump_file", 0, dump_file ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_dump_databaseResponse; }
 
 
@@ -1568,12 +1568,12 @@ namespace org
 
           bool operator==( const xtreemfs_get_suitable_osdsResponse& other ) const { return osd_uuids == other.osd_uuids; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_get_suitable_osdsResponse, 1233 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_get_suitable_osdsResponse, 1233 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( "osd_uuids", 0, osd_uuids ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "osd_uuids", 0, osd_uuids ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "osd_uuids", 0, osd_uuids ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "osd_uuids", 0, osd_uuids ); }
 
         protected:
           org::xtreemfs::interfaces::StringSet osd_uuids;
@@ -1593,12 +1593,12 @@ namespace org
 
           bool operator==( const xtreemfs_get_suitable_osdsRequest& other ) const { return file_id == other.file_id; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_get_suitable_osdsRequest, 1233 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_get_suitable_osdsRequest, 1233 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_get_suitable_osdsResponse; }
 
 
@@ -1620,12 +1620,12 @@ namespace org
 
           bool operator==( const xtreemfs_internal_debugResponse& other ) const { return result == other.result; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_internal_debugResponse, 1234 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_debugResponse, 1234 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "result", 0, result ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "result", 0, result ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "result", 0, result ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "result", 0, result ); }
 
         protected:
           std::string result;
@@ -1645,12 +1645,12 @@ namespace org
 
           bool operator==( const xtreemfs_internal_debugRequest& other ) const { return operation == other.operation; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_internal_debugRequest, 1234 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_debugRequest, 1234 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "operation", 0, operation ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "operation", 0, operation ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "operation", 0, operation ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "operation", 0, operation ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_internal_debugResponse; }
 
 
@@ -1670,12 +1670,12 @@ namespace org
 
           bool operator==( const xtreemfs_lsvolResponse& other ) const { return volumes == other.volumes; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_lsvolResponse, 1235 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_lsvolResponse, 1235 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( "volumes", 0, volumes ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "volumes", 0, volumes ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "volumes", 0, volumes ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "volumes", 0, volumes ); }
 
         protected:
           org::xtreemfs::interfaces::VolumeSet volumes;
@@ -1689,8 +1689,8 @@ namespace org
 
           bool operator==( const xtreemfs_lsvolRequest& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_lsvolRequest, 1235 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_lsvolRequest, 1235 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_lsvolResponse; }
 
@@ -1708,12 +1708,12 @@ namespace org
 
           bool operator==( const xtreemfs_listdirResponse& other ) const { return names == other.names; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_listdirResponse, 1236 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_listdirResponse, 1236 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( "names", 0, names ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "names", 0, names ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "names", 0, names ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "names", 0, names ); }
 
         protected:
           org::xtreemfs::interfaces::StringSet names;
@@ -1733,12 +1733,12 @@ namespace org
 
           bool operator==( const xtreemfs_listdirRequest& other ) const { return path == other.path; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_listdirRequest, 1236 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_listdirRequest, 1236 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_listdirResponse; }
 
 
@@ -1754,8 +1754,8 @@ namespace org
 
           bool operator==( const xtreemfs_mkvolResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_mkvolResponse, 1237 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_mkvolResponse, 1237 );
 
         };
 
@@ -1771,12 +1771,12 @@ namespace org
 
           bool operator==( const xtreemfs_mkvolRequest& other ) const { return volume == other.volume; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_mkvolRequest, 1237 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_mkvolRequest, 1237 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "volume", 0, volume ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "volume", 0, volume ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "volume", 0, volume ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "volume", 0, volume ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_mkvolResponse; }
 
 
@@ -1796,12 +1796,12 @@ namespace org
 
           bool operator==( const xtreemfs_renew_capabilityResponse& other ) const { return renewed_xcap == other.renewed_xcap; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_renew_capabilityResponse, 1238 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_renew_capabilityResponse, 1238 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "renewed_xcap", 0, renewed_xcap ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "renewed_xcap", 0, renewed_xcap ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "renewed_xcap", 0, renewed_xcap ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "renewed_xcap", 0, renewed_xcap ); }
 
         protected:
           org::xtreemfs::interfaces::XCap renewed_xcap;
@@ -1819,12 +1819,12 @@ namespace org
 
           bool operator==( const xtreemfs_renew_capabilityRequest& other ) const { return old_xcap == other.old_xcap; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_renew_capabilityRequest, 1238 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_renew_capabilityRequest, 1238 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "old_xcap", 0, old_xcap ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "old_xcap", 0, old_xcap ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "old_xcap", 0, old_xcap ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "old_xcap", 0, old_xcap ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_renew_capabilityResponse; }
 
 
@@ -1840,8 +1840,8 @@ namespace org
 
           bool operator==( const xtreemfs_replica_addResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_addResponse, 1239 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_replica_addResponse, 1239 );
 
         };
 
@@ -1861,12 +1861,12 @@ namespace org
 
           bool operator==( const xtreemfs_replica_addRequest& other ) const { return file_id == other.file_id && new_replica == other.new_replica; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_addRequest, 1239 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_replica_addRequest, 1239 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeStruct( "new_replica", 0, new_replica ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); unmarshaller.readStruct( "new_replica", 0, new_replica ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeStruct( "new_replica", 0, new_replica ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); unmarshaller.readStruct( "new_replica", 0, new_replica ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_replica_addResponse; }
 
 
@@ -1887,12 +1887,12 @@ namespace org
 
           bool operator==( const xtreemfs_replica_listResponse& other ) const { return replicas == other.replicas; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_listResponse, 1240 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_replica_listResponse, 1240 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeSequence( "replicas", 0, replicas ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "replicas", 0, replicas ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "replicas", 0, replicas ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "replicas", 0, replicas ); }
 
         protected:
           org::xtreemfs::interfaces::ReplicaSet replicas;
@@ -1912,12 +1912,12 @@ namespace org
 
           bool operator==( const xtreemfs_replica_listRequest& other ) const { return file_id == other.file_id; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_listRequest, 1240 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_replica_listRequest, 1240 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_replica_listResponse; }
 
 
@@ -1937,12 +1937,12 @@ namespace org
 
           bool operator==( const xtreemfs_replica_removeResponse& other ) const { return delete_xcap == other.delete_xcap; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_removeResponse, 1241 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_replica_removeResponse, 1241 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "delete_xcap", 0, delete_xcap ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "delete_xcap", 0, delete_xcap ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "delete_xcap", 0, delete_xcap ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "delete_xcap", 0, delete_xcap ); }
 
         protected:
           org::xtreemfs::interfaces::XCap delete_xcap;
@@ -1965,12 +1965,12 @@ namespace org
 
           bool operator==( const xtreemfs_replica_removeRequest& other ) const { return file_id == other.file_id && osd_uuid == other.osd_uuid; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_replica_removeRequest, 1241 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_replica_removeRequest, 1241 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeString( "osd_uuid", 0, osd_uuid ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); unmarshaller.readString( "osd_uuid", 0, osd_uuid ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeString( "osd_uuid", 0, osd_uuid ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); unmarshaller.readString( "osd_uuid", 0, osd_uuid ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_replica_removeResponse; }
 
 
@@ -1987,8 +1987,8 @@ namespace org
 
           bool operator==( const xtreemfs_restore_databaseResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_restore_databaseResponse, 1242 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_restore_databaseResponse, 1242 );
 
         };
 
@@ -2006,12 +2006,12 @@ namespace org
 
           bool operator==( const xtreemfs_restore_databaseRequest& other ) const { return dump_file == other.dump_file; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_restore_databaseRequest, 1242 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_restore_databaseRequest, 1242 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "dump_file", 0, dump_file ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "dump_file", 0, dump_file ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "dump_file", 0, dump_file ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "dump_file", 0, dump_file ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_restore_databaseResponse; }
 
 
@@ -2027,8 +2027,8 @@ namespace org
 
           bool operator==( const xtreemfs_restore_fileResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_restore_fileResponse, 1243 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_restore_fileResponse, 1243 );
 
         };
 
@@ -2056,12 +2056,12 @@ namespace org
 
           bool operator==( const xtreemfs_restore_fileRequest& other ) const { return file_path == other.file_path && file_id == other.file_id && file_size == other.file_size && osd_uuid == other.osd_uuid && stripe_size == other.stripe_size; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_restore_fileRequest, 1243 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_restore_fileRequest, 1243 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "file_path", 0, file_path ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "file_size", 0, file_size ); marshaller.writeString( "osd_uuid", 0, osd_uuid ); marshaller.writeInt32( "stripe_size", 0, stripe_size ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_path", 0, file_path ); unmarshaller.readString( "file_id", 0, file_id ); file_size = unmarshaller.readUint64( "file_size", 0 ); unmarshaller.readString( "osd_uuid", 0, osd_uuid ); stripe_size = unmarshaller.readInt32( "stripe_size", 0 ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "file_path", 0, file_path ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "file_size", 0, file_size ); marshaller.writeString( "osd_uuid", 0, osd_uuid ); marshaller.writeInt32( "stripe_size", 0, stripe_size ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_path", 0, file_path ); unmarshaller.readString( "file_id", 0, file_id ); file_size = unmarshaller.readUint64( "file_size", 0 ); unmarshaller.readString( "osd_uuid", 0, osd_uuid ); stripe_size = unmarshaller.readInt32( "stripe_size", 0 ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_restore_fileResponse; }
 
 
@@ -2081,8 +2081,8 @@ namespace org
 
           bool operator==( const xtreemfs_rmvolResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_rmvolResponse, 1244 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_rmvolResponse, 1244 );
 
         };
 
@@ -2100,12 +2100,12 @@ namespace org
 
           bool operator==( const xtreemfs_rmvolRequest& other ) const { return volume_name == other.volume_name; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_rmvolRequest, 1244 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_rmvolRequest, 1244 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "volume_name", 0, volume_name ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "volume_name", 0, volume_name ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "volume_name", 0, volume_name ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "volume_name", 0, volume_name ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_rmvolResponse; }
 
 
@@ -2121,8 +2121,8 @@ namespace org
 
           bool operator==( const xtreemfs_shutdownResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 1245 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 1245 );
 
         };
 
@@ -2134,8 +2134,8 @@ namespace org
 
           bool operator==( const xtreemfs_shutdownRequest& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 1245 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 1245 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_shutdownResponse; }
 
@@ -2149,8 +2149,8 @@ namespace org
 
           bool operator==( const xtreemfs_update_file_sizeResponse& ) const { return true; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_update_file_sizeResponse, 1246 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_update_file_sizeResponse, 1246 );
 
         };
 
@@ -2168,12 +2168,12 @@ namespace org
 
           bool operator==( const xtreemfs_update_file_sizeRequest& other ) const { return xcap == other.xcap && osd_write_response == other.osd_write_response; }
 
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( xtreemfs_update_file_sizeRequest, 1246 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_update_file_sizeRequest, 1246 );
 
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeStruct( "xcap", 0, xcap ); marshaller.writeStruct( "osd_write_response", 0, osd_write_response ); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "xcap", 0, xcap ); unmarshaller.readStruct( "osd_write_response", 0, osd_write_response ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "xcap", 0, xcap ); marshaller.writeStruct( "osd_write_response", 0, osd_write_response ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "xcap", 0, xcap ); unmarshaller.readStruct( "osd_write_response", 0, osd_write_response ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_update_file_sizeResponse; }
 
 
@@ -2198,9 +2198,9 @@ namespace org
             // YIELD::ExceptionResponse
             virtual ExceptionResponse* clone() const { return new ConcurrentModificationException( stack_trace); }
             virtual void throwStackClone() const { throw ConcurrentModificationException( stack_trace); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "stack_trace", 0, stack_trace ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "stack_trace", 0, stack_trace ); }
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "stack_trace", 0, stack_trace ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "stack_trace", 0, stack_trace ); }
 
         protected:
           std::string stack_trace;
@@ -2227,9 +2227,9 @@ namespace org
             // YIELD::ExceptionResponse
             virtual ExceptionResponse* clone() const { return new errnoException( error_code, error_message, stack_trace); }
             virtual void throwStackClone() const { throw errnoException( error_code, error_message, stack_trace); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { error_code = unmarshaller.readUint32( "error_code", 0 ); unmarshaller.readString( "error_message", 0, error_message ); unmarshaller.readString( "stack_trace", 0, stack_trace ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { error_code = unmarshaller.readUint32( "error_code", 0 ); unmarshaller.readString( "error_message", 0, error_message ); unmarshaller.readString( "stack_trace", 0, stack_trace ); }
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeUint32( "error_code", 0, error_code ); marshaller.writeString( "error_message", 0, error_message ); marshaller.writeString( "stack_trace", 0, stack_trace ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint32( "error_code", 0, error_code ); marshaller.writeString( "error_message", 0, error_message ); marshaller.writeString( "stack_trace", 0, stack_trace ); }
 
         protected:
           uint32_t error_code;
@@ -2253,9 +2253,9 @@ namespace org
             // YIELD::ExceptionResponse
             virtual ExceptionResponse* clone() const { return new InvalidArgumentException( error_message); }
             virtual void throwStackClone() const { throw InvalidArgumentException( error_message); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "error_message", 0, error_message ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "error_message", 0, error_message ); }
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "error_message", 0, error_message ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "error_message", 0, error_message ); }
 
         protected:
           std::string error_message;
@@ -2282,9 +2282,9 @@ namespace org
             // YIELD::ExceptionResponse
             virtual ExceptionResponse* clone() const { return new MRCException( error_code, error_message, stack_trace); }
             virtual void throwStackClone() const { throw MRCException( error_code, error_message, stack_trace); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { error_code = unmarshaller.readUint32( "error_code", 0 ); unmarshaller.readString( "error_message", 0, error_message ); unmarshaller.readString( "stack_trace", 0, stack_trace ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { error_code = unmarshaller.readUint32( "error_code", 0 ); unmarshaller.readString( "error_message", 0, error_message ); unmarshaller.readString( "stack_trace", 0, stack_trace ); }
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeUint32( "error_code", 0, error_code ); marshaller.writeString( "error_message", 0, error_message ); marshaller.writeString( "stack_trace", 0, stack_trace ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint32( "error_code", 0, error_code ); marshaller.writeString( "error_message", 0, error_message ); marshaller.writeString( "stack_trace", 0, stack_trace ); }
 
         protected:
           uint32_t error_code;
@@ -2312,9 +2312,9 @@ namespace org
             // YIELD::ExceptionResponse
             virtual ExceptionResponse* clone() const { return new ProtocolException( accept_stat, error_code, stack_trace); }
             virtual void throwStackClone() const { throw ProtocolException( accept_stat, error_code, stack_trace); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { accept_stat = unmarshaller.readUint32( "accept_stat", 0 ); error_code = unmarshaller.readUint32( "error_code", 0 ); unmarshaller.readString( "stack_trace", 0, stack_trace ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { accept_stat = unmarshaller.readUint32( "accept_stat", 0 ); error_code = unmarshaller.readUint32( "error_code", 0 ); unmarshaller.readString( "stack_trace", 0, stack_trace ); }
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeUint32( "accept_stat", 0, accept_stat ); marshaller.writeUint32( "error_code", 0, error_code ); marshaller.writeString( "stack_trace", 0, stack_trace ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint32( "accept_stat", 0, accept_stat ); marshaller.writeUint32( "error_code", 0, error_code ); marshaller.writeString( "stack_trace", 0, stack_trace ); }
 
         protected:
           uint32_t accept_stat;
@@ -2338,9 +2338,9 @@ namespace org
             // YIELD::ExceptionResponse
             virtual ExceptionResponse* clone() const { return new RedirectException( to_uuid); }
             virtual void throwStackClone() const { throw RedirectException( to_uuid); }
-          void unmarshal( ::YIELD::Unmarshaller& unmarshaller ) { unmarshaller.readString( "to_uuid", 0, to_uuid ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "to_uuid", 0, to_uuid ); }
           // YIELD::Struct
-          void marshal( ::YIELD::Marshaller& marshaller ) const { marshaller.writeString( "to_uuid", 0, to_uuid ); }
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "to_uuid", 0, to_uuid ); }
 
         protected:
           std::string to_uuid;
@@ -2348,8 +2348,8 @@ namespace org
 
 
 
-        // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( MRCInterface, 1200 );
+        // yidl::Object
+        YIDL_OBJECT_PROTOTYPES( MRCInterface, 1200 );
 
         // YIELD::EventHandler
         virtual void handleEvent( ::YIELD::Event& ev )
@@ -2413,7 +2413,7 @@ namespace org
             static_cast< ::YIELD::Request& >( ev ).respond( *( new ::YIELD::ExceptionResponse( exc ) ) );
           }
 
-          ::YIELD::Object::decRef( ev );
+          ::yidl::Object::decRef( ev );
         }
 
 
@@ -2516,7 +2516,7 @@ namespace org
             }
           }
 
-          virtual ::YIELD::auto_Object< ::YIELD::Request > createRequest( uint32_t tag )
+          virtual ::yidl::auto_Object< ::YIELD::Request > createRequest( uint32_t tag )
           {
             switch ( tag )
             {
@@ -2562,7 +2562,7 @@ namespace org
             }
           }
 
-          virtual ::YIELD::auto_Object< ::YIELD::Response > createResponse( uint32_t tag )
+          virtual ::yidl::auto_Object< ::YIELD::Response > createResponse( uint32_t tag )
           {
             switch ( tag )
             {
@@ -2608,7 +2608,7 @@ namespace org
             }
           }
 
-          virtual ::YIELD::auto_Object< ::YIELD::ExceptionResponse > createExceptionResponse( uint32_t tag )
+          virtual ::yidl::auto_Object< ::YIELD::ExceptionResponse > createExceptionResponse( uint32_t tag )
           {
             switch ( tag )
             {
@@ -2625,44 +2625,44 @@ namespace org
 
 
       protected:
-        virtual void handleaccessRequest( accessRequest& req ) { ::YIELD::auto_Object<accessResponse> resp( new accessResponse ); bool _return_value = _access( req.get_path(), req.get_mode() ); resp->set__return_value( _return_value ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlechmodRequest( chmodRequest& req ) { ::YIELD::auto_Object<chmodResponse> resp( new chmodResponse ); _chmod( req.get_path(), req.get_mode() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlechownRequest( chownRequest& req ) { ::YIELD::auto_Object<chownResponse> resp( new chownResponse ); _chown( req.get_path(), req.get_user_id(), req.get_group_id() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlecreatRequest( creatRequest& req ) { ::YIELD::auto_Object<creatResponse> resp( new creatResponse ); _creat( req.get_path(), req.get_mode() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handleftruncateRequest( ftruncateRequest& req ) { ::YIELD::auto_Object<ftruncateResponse> resp( new ftruncateResponse ); org::xtreemfs::interfaces::XCap truncate_xcap; _ftruncate( req.get_write_xcap(), truncate_xcap ); resp->set_truncate_xcap( truncate_xcap ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlegetattrRequest( getattrRequest& req ) { ::YIELD::auto_Object<getattrResponse> resp( new getattrResponse ); org::xtreemfs::interfaces::Stat stbuf; _getattr( req.get_path(), stbuf ); resp->set_stbuf( stbuf ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlegetxattrRequest( getxattrRequest& req ) { ::YIELD::auto_Object<getxattrResponse> resp( new getxattrResponse ); std::string value; _getxattr( req.get_path(), req.get_name(), value ); resp->set_value( value ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlelinkRequest( linkRequest& req ) { ::YIELD::auto_Object<linkResponse> resp( new linkResponse ); _link( req.get_target_path(), req.get_link_path() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlelistxattrRequest( listxattrRequest& req ) { ::YIELD::auto_Object<listxattrResponse> resp( new listxattrResponse ); org::xtreemfs::interfaces::StringSet names; _listxattr( req.get_path(), names ); resp->set_names( names ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlemkdirRequest( mkdirRequest& req ) { ::YIELD::auto_Object<mkdirResponse> resp( new mkdirResponse ); _mkdir( req.get_path(), req.get_mode() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handleopenRequest( openRequest& req ) { ::YIELD::auto_Object<openResponse> resp( new openResponse ); org::xtreemfs::interfaces::FileCredentials file_credentials; _open( req.get_path(), req.get_flags(), req.get_mode(), req.get_attributes(), file_credentials ); resp->set_file_credentials( file_credentials ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlereaddirRequest( readdirRequest& req ) { ::YIELD::auto_Object<readdirResponse> resp( new readdirResponse ); org::xtreemfs::interfaces::DirectoryEntrySet directory_entries; _readdir( req.get_path(), directory_entries ); resp->set_directory_entries( directory_entries ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handleremovexattrRequest( removexattrRequest& req ) { ::YIELD::auto_Object<removexattrResponse> resp( new removexattrResponse ); _removexattr( req.get_path(), req.get_name() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlerenameRequest( renameRequest& req ) { ::YIELD::auto_Object<renameResponse> resp( new renameResponse ); org::xtreemfs::interfaces::FileCredentialsSet file_credentials; _rename( req.get_source_path(), req.get_target_path(), file_credentials ); resp->set_file_credentials( file_credentials ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlermdirRequest( rmdirRequest& req ) { ::YIELD::auto_Object<rmdirResponse> resp( new rmdirResponse ); _rmdir( req.get_path() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlesetattrRequest( setattrRequest& req ) { ::YIELD::auto_Object<setattrResponse> resp( new setattrResponse ); _setattr( req.get_path(), req.get_stbuf() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlesetxattrRequest( setxattrRequest& req ) { ::YIELD::auto_Object<setxattrResponse> resp( new setxattrResponse ); _setxattr( req.get_path(), req.get_name(), req.get_value(), req.get_flags() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlestatvfsRequest( statvfsRequest& req ) { ::YIELD::auto_Object<statvfsResponse> resp( new statvfsResponse ); org::xtreemfs::interfaces::StatVFS stbuf; _statvfs( req.get_volume_name(), stbuf ); resp->set_stbuf( stbuf ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlesymlinkRequest( symlinkRequest& req ) { ::YIELD::auto_Object<symlinkResponse> resp( new symlinkResponse ); _symlink( req.get_target_path(), req.get_link_path() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handleunlinkRequest( unlinkRequest& req ) { ::YIELD::auto_Object<unlinkResponse> resp( new unlinkResponse ); org::xtreemfs::interfaces::FileCredentialsSet file_credentials; _unlink( req.get_path(), file_credentials ); resp->set_file_credentials( file_credentials ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handleutimensRequest( utimensRequest& req ) { ::YIELD::auto_Object<utimensResponse> resp( new utimensResponse ); _utimens( req.get_path(), req.get_atime_ns(), req.get_mtime_ns(), req.get_ctime_ns() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_checkpointRequest( xtreemfs_checkpointRequest& req ) { ::YIELD::auto_Object<xtreemfs_checkpointResponse> resp( new xtreemfs_checkpointResponse ); _xtreemfs_checkpoint(); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_check_file_existsRequest( xtreemfs_check_file_existsRequest& req ) { ::YIELD::auto_Object<xtreemfs_check_file_existsResponse> resp( new xtreemfs_check_file_existsResponse ); std::string bitmap; _xtreemfs_check_file_exists( req.get_volume_id(), req.get_file_ids(), req.get_osd_uuid(), bitmap ); resp->set_bitmap( bitmap ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_dump_databaseRequest( xtreemfs_dump_databaseRequest& req ) { ::YIELD::auto_Object<xtreemfs_dump_databaseResponse> resp( new xtreemfs_dump_databaseResponse ); _xtreemfs_dump_database( req.get_dump_file() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_get_suitable_osdsRequest( xtreemfs_get_suitable_osdsRequest& req ) { ::YIELD::auto_Object<xtreemfs_get_suitable_osdsResponse> resp( new xtreemfs_get_suitable_osdsResponse ); org::xtreemfs::interfaces::StringSet osd_uuids; _xtreemfs_get_suitable_osds( req.get_file_id(), osd_uuids ); resp->set_osd_uuids( osd_uuids ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_internal_debugRequest( xtreemfs_internal_debugRequest& req ) { ::YIELD::auto_Object<xtreemfs_internal_debugResponse> resp( new xtreemfs_internal_debugResponse ); std::string result; _xtreemfs_internal_debug( req.get_operation(), result ); resp->set_result( result ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_lsvolRequest( xtreemfs_lsvolRequest& req ) { ::YIELD::auto_Object<xtreemfs_lsvolResponse> resp( new xtreemfs_lsvolResponse ); org::xtreemfs::interfaces::VolumeSet volumes; _xtreemfs_lsvol( volumes ); resp->set_volumes( volumes ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_listdirRequest( xtreemfs_listdirRequest& req ) { ::YIELD::auto_Object<xtreemfs_listdirResponse> resp( new xtreemfs_listdirResponse ); org::xtreemfs::interfaces::StringSet names; _xtreemfs_listdir( req.get_path(), names ); resp->set_names( names ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_mkvolRequest( xtreemfs_mkvolRequest& req ) { ::YIELD::auto_Object<xtreemfs_mkvolResponse> resp( new xtreemfs_mkvolResponse ); _xtreemfs_mkvol( req.get_volume() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_renew_capabilityRequest( xtreemfs_renew_capabilityRequest& req ) { ::YIELD::auto_Object<xtreemfs_renew_capabilityResponse> resp( new xtreemfs_renew_capabilityResponse ); org::xtreemfs::interfaces::XCap renewed_xcap; _xtreemfs_renew_capability( req.get_old_xcap(), renewed_xcap ); resp->set_renewed_xcap( renewed_xcap ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_replica_addRequest( xtreemfs_replica_addRequest& req ) { ::YIELD::auto_Object<xtreemfs_replica_addResponse> resp( new xtreemfs_replica_addResponse ); _xtreemfs_replica_add( req.get_file_id(), req.get_new_replica() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_replica_listRequest( xtreemfs_replica_listRequest& req ) { ::YIELD::auto_Object<xtreemfs_replica_listResponse> resp( new xtreemfs_replica_listResponse ); org::xtreemfs::interfaces::ReplicaSet replicas; _xtreemfs_replica_list( req.get_file_id(), replicas ); resp->set_replicas( replicas ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_replica_removeRequest( xtreemfs_replica_removeRequest& req ) { ::YIELD::auto_Object<xtreemfs_replica_removeResponse> resp( new xtreemfs_replica_removeResponse ); org::xtreemfs::interfaces::XCap delete_xcap; _xtreemfs_replica_remove( req.get_file_id(), req.get_osd_uuid(), delete_xcap ); resp->set_delete_xcap( delete_xcap ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_restore_databaseRequest( xtreemfs_restore_databaseRequest& req ) { ::YIELD::auto_Object<xtreemfs_restore_databaseResponse> resp( new xtreemfs_restore_databaseResponse ); _xtreemfs_restore_database( req.get_dump_file() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_restore_fileRequest( xtreemfs_restore_fileRequest& req ) { ::YIELD::auto_Object<xtreemfs_restore_fileResponse> resp( new xtreemfs_restore_fileResponse ); _xtreemfs_restore_file( req.get_file_path(), req.get_file_id(), req.get_file_size(), req.get_osd_uuid(), req.get_stripe_size() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_rmvolRequest( xtreemfs_rmvolRequest& req ) { ::YIELD::auto_Object<xtreemfs_rmvolResponse> resp( new xtreemfs_rmvolResponse ); _xtreemfs_rmvol( req.get_volume_name() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req ) { ::YIELD::auto_Object<xtreemfs_shutdownResponse> resp( new xtreemfs_shutdownResponse ); _xtreemfs_shutdown(); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
-        virtual void handlextreemfs_update_file_sizeRequest( xtreemfs_update_file_sizeRequest& req ) { ::YIELD::auto_Object<xtreemfs_update_file_sizeResponse> resp( new xtreemfs_update_file_sizeResponse ); _xtreemfs_update_file_size( req.get_xcap(), req.get_osd_write_response() ); req.respond( *resp.release() ); ::YIELD::Object::decRef( req ); }
+        virtual void handleaccessRequest( accessRequest& req ) { ::yidl::auto_Object<accessResponse> resp( new accessResponse ); bool _return_value = _access( req.get_path(), req.get_mode() ); resp->set__return_value( _return_value ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlechmodRequest( chmodRequest& req ) { ::yidl::auto_Object<chmodResponse> resp( new chmodResponse ); _chmod( req.get_path(), req.get_mode() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlechownRequest( chownRequest& req ) { ::yidl::auto_Object<chownResponse> resp( new chownResponse ); _chown( req.get_path(), req.get_user_id(), req.get_group_id() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlecreatRequest( creatRequest& req ) { ::yidl::auto_Object<creatResponse> resp( new creatResponse ); _creat( req.get_path(), req.get_mode() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handleftruncateRequest( ftruncateRequest& req ) { ::yidl::auto_Object<ftruncateResponse> resp( new ftruncateResponse ); org::xtreemfs::interfaces::XCap truncate_xcap; _ftruncate( req.get_write_xcap(), truncate_xcap ); resp->set_truncate_xcap( truncate_xcap ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlegetattrRequest( getattrRequest& req ) { ::yidl::auto_Object<getattrResponse> resp( new getattrResponse ); org::xtreemfs::interfaces::Stat stbuf; _getattr( req.get_path(), stbuf ); resp->set_stbuf( stbuf ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlegetxattrRequest( getxattrRequest& req ) { ::yidl::auto_Object<getxattrResponse> resp( new getxattrResponse ); std::string value; _getxattr( req.get_path(), req.get_name(), value ); resp->set_value( value ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlelinkRequest( linkRequest& req ) { ::yidl::auto_Object<linkResponse> resp( new linkResponse ); _link( req.get_target_path(), req.get_link_path() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlelistxattrRequest( listxattrRequest& req ) { ::yidl::auto_Object<listxattrResponse> resp( new listxattrResponse ); org::xtreemfs::interfaces::StringSet names; _listxattr( req.get_path(), names ); resp->set_names( names ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlemkdirRequest( mkdirRequest& req ) { ::yidl::auto_Object<mkdirResponse> resp( new mkdirResponse ); _mkdir( req.get_path(), req.get_mode() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handleopenRequest( openRequest& req ) { ::yidl::auto_Object<openResponse> resp( new openResponse ); org::xtreemfs::interfaces::FileCredentials file_credentials; _open( req.get_path(), req.get_flags(), req.get_mode(), req.get_attributes(), file_credentials ); resp->set_file_credentials( file_credentials ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlereaddirRequest( readdirRequest& req ) { ::yidl::auto_Object<readdirResponse> resp( new readdirResponse ); org::xtreemfs::interfaces::DirectoryEntrySet directory_entries; _readdir( req.get_path(), directory_entries ); resp->set_directory_entries( directory_entries ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handleremovexattrRequest( removexattrRequest& req ) { ::yidl::auto_Object<removexattrResponse> resp( new removexattrResponse ); _removexattr( req.get_path(), req.get_name() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlerenameRequest( renameRequest& req ) { ::yidl::auto_Object<renameResponse> resp( new renameResponse ); org::xtreemfs::interfaces::FileCredentialsSet file_credentials; _rename( req.get_source_path(), req.get_target_path(), file_credentials ); resp->set_file_credentials( file_credentials ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlermdirRequest( rmdirRequest& req ) { ::yidl::auto_Object<rmdirResponse> resp( new rmdirResponse ); _rmdir( req.get_path() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlesetattrRequest( setattrRequest& req ) { ::yidl::auto_Object<setattrResponse> resp( new setattrResponse ); _setattr( req.get_path(), req.get_stbuf() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlesetxattrRequest( setxattrRequest& req ) { ::yidl::auto_Object<setxattrResponse> resp( new setxattrResponse ); _setxattr( req.get_path(), req.get_name(), req.get_value(), req.get_flags() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlestatvfsRequest( statvfsRequest& req ) { ::yidl::auto_Object<statvfsResponse> resp( new statvfsResponse ); org::xtreemfs::interfaces::StatVFS stbuf; _statvfs( req.get_volume_name(), stbuf ); resp->set_stbuf( stbuf ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlesymlinkRequest( symlinkRequest& req ) { ::yidl::auto_Object<symlinkResponse> resp( new symlinkResponse ); _symlink( req.get_target_path(), req.get_link_path() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handleunlinkRequest( unlinkRequest& req ) { ::yidl::auto_Object<unlinkResponse> resp( new unlinkResponse ); org::xtreemfs::interfaces::FileCredentialsSet file_credentials; _unlink( req.get_path(), file_credentials ); resp->set_file_credentials( file_credentials ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handleutimensRequest( utimensRequest& req ) { ::yidl::auto_Object<utimensResponse> resp( new utimensResponse ); _utimens( req.get_path(), req.get_atime_ns(), req.get_mtime_ns(), req.get_ctime_ns() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_checkpointRequest( xtreemfs_checkpointRequest& req ) { ::yidl::auto_Object<xtreemfs_checkpointResponse> resp( new xtreemfs_checkpointResponse ); _xtreemfs_checkpoint(); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_check_file_existsRequest( xtreemfs_check_file_existsRequest& req ) { ::yidl::auto_Object<xtreemfs_check_file_existsResponse> resp( new xtreemfs_check_file_existsResponse ); std::string bitmap; _xtreemfs_check_file_exists( req.get_volume_id(), req.get_file_ids(), req.get_osd_uuid(), bitmap ); resp->set_bitmap( bitmap ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_dump_databaseRequest( xtreemfs_dump_databaseRequest& req ) { ::yidl::auto_Object<xtreemfs_dump_databaseResponse> resp( new xtreemfs_dump_databaseResponse ); _xtreemfs_dump_database( req.get_dump_file() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_get_suitable_osdsRequest( xtreemfs_get_suitable_osdsRequest& req ) { ::yidl::auto_Object<xtreemfs_get_suitable_osdsResponse> resp( new xtreemfs_get_suitable_osdsResponse ); org::xtreemfs::interfaces::StringSet osd_uuids; _xtreemfs_get_suitable_osds( req.get_file_id(), osd_uuids ); resp->set_osd_uuids( osd_uuids ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_internal_debugRequest( xtreemfs_internal_debugRequest& req ) { ::yidl::auto_Object<xtreemfs_internal_debugResponse> resp( new xtreemfs_internal_debugResponse ); std::string result; _xtreemfs_internal_debug( req.get_operation(), result ); resp->set_result( result ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_lsvolRequest( xtreemfs_lsvolRequest& req ) { ::yidl::auto_Object<xtreemfs_lsvolResponse> resp( new xtreemfs_lsvolResponse ); org::xtreemfs::interfaces::VolumeSet volumes; _xtreemfs_lsvol( volumes ); resp->set_volumes( volumes ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_listdirRequest( xtreemfs_listdirRequest& req ) { ::yidl::auto_Object<xtreemfs_listdirResponse> resp( new xtreemfs_listdirResponse ); org::xtreemfs::interfaces::StringSet names; _xtreemfs_listdir( req.get_path(), names ); resp->set_names( names ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_mkvolRequest( xtreemfs_mkvolRequest& req ) { ::yidl::auto_Object<xtreemfs_mkvolResponse> resp( new xtreemfs_mkvolResponse ); _xtreemfs_mkvol( req.get_volume() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_renew_capabilityRequest( xtreemfs_renew_capabilityRequest& req ) { ::yidl::auto_Object<xtreemfs_renew_capabilityResponse> resp( new xtreemfs_renew_capabilityResponse ); org::xtreemfs::interfaces::XCap renewed_xcap; _xtreemfs_renew_capability( req.get_old_xcap(), renewed_xcap ); resp->set_renewed_xcap( renewed_xcap ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_replica_addRequest( xtreemfs_replica_addRequest& req ) { ::yidl::auto_Object<xtreemfs_replica_addResponse> resp( new xtreemfs_replica_addResponse ); _xtreemfs_replica_add( req.get_file_id(), req.get_new_replica() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_replica_listRequest( xtreemfs_replica_listRequest& req ) { ::yidl::auto_Object<xtreemfs_replica_listResponse> resp( new xtreemfs_replica_listResponse ); org::xtreemfs::interfaces::ReplicaSet replicas; _xtreemfs_replica_list( req.get_file_id(), replicas ); resp->set_replicas( replicas ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_replica_removeRequest( xtreemfs_replica_removeRequest& req ) { ::yidl::auto_Object<xtreemfs_replica_removeResponse> resp( new xtreemfs_replica_removeResponse ); org::xtreemfs::interfaces::XCap delete_xcap; _xtreemfs_replica_remove( req.get_file_id(), req.get_osd_uuid(), delete_xcap ); resp->set_delete_xcap( delete_xcap ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_restore_databaseRequest( xtreemfs_restore_databaseRequest& req ) { ::yidl::auto_Object<xtreemfs_restore_databaseResponse> resp( new xtreemfs_restore_databaseResponse ); _xtreemfs_restore_database( req.get_dump_file() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_restore_fileRequest( xtreemfs_restore_fileRequest& req ) { ::yidl::auto_Object<xtreemfs_restore_fileResponse> resp( new xtreemfs_restore_fileResponse ); _xtreemfs_restore_file( req.get_file_path(), req.get_file_id(), req.get_file_size(), req.get_osd_uuid(), req.get_stripe_size() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_rmvolRequest( xtreemfs_rmvolRequest& req ) { ::yidl::auto_Object<xtreemfs_rmvolResponse> resp( new xtreemfs_rmvolResponse ); _xtreemfs_rmvol( req.get_volume_name() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req ) { ::yidl::auto_Object<xtreemfs_shutdownResponse> resp( new xtreemfs_shutdownResponse ); _xtreemfs_shutdown(); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_update_file_sizeRequest( xtreemfs_update_file_sizeRequest& req ) { ::yidl::auto_Object<xtreemfs_update_file_sizeResponse> resp( new xtreemfs_update_file_sizeResponse ); _xtreemfs_update_file_size( req.get_xcap(), req.get_osd_write_response() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
 
       virtual bool _access( const std::string& , uint32_t ) { return false; }
         virtual void _chmod( const std::string& , uint32_t ) { }

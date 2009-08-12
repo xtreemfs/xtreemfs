@@ -23,7 +23,7 @@ namespace YIELD
   class Stage;
 
 
-  class Event : public Struct
+  class Event : public yidl::Struct
   {
   public:
     Event()
@@ -33,7 +33,7 @@ namespace YIELD
     Stage* get_next_stage() const { return next_stage; }
     void set_next_stage( Stage* next_stage ) { this->next_stage = next_stage; }
 
-    // Object
+    // yidl::Object
     Event& incRef() { return Object::incRef( *this ); }
 
   protected:
@@ -43,23 +43,23 @@ namespace YIELD
     Stage* next_stage;
   };
 
-  typedef auto_Object<Event> auto_Event;
+  typedef yidl::auto_Object<Event> auto_Event;
 
 
-  class EventTarget : public Object
+  class EventTarget : public yidl::Object
   {
   public:
     virtual void send( Event& ) = 0;
 
-    // Object
-    EventTarget& incRef() { return Object::incRef( *this ); }
+    // yidl::Object
+    EventTarget& incRef() { return yidl::Object::incRef( *this ); }
 
   protected:
     EventTarget() { }
     virtual ~EventTarget() { }
   };
 
-  typedef auto_Object<EventTarget> auto_EventTarget;
+  typedef yidl::auto_Object<EventTarget> auto_EventTarget;
 
 
   class EventTargetMux : public EventTarget
@@ -69,8 +69,8 @@ namespace YIELD
 
     void addEventTarget( auto_EventTarget event_target );
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( EventTargetMux, 0 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( EventTargetMux, 0 );
 
     // EventTarget
     void send( Event& );
@@ -83,7 +83,7 @@ namespace YIELD
     size_t next_event_target_i;      
   };
 
-  typedef auto_Object<EventTargetMux> auto_EventTargetMux; 
+  typedef yidl::auto_Object<EventTargetMux> auto_EventTargetMux; 
 
 
   class EventHandler : public EventTarget
@@ -93,8 +93,8 @@ namespace YIELD
     virtual void handleUnknownEvent( Event& );
     virtual bool isThreadSafe() const { return false; }
 
-    // Object
-    EventHandler& incRef() { return Object::incRef( *this ); }
+    // yidl::Object
+    EventHandler& incRef() { return yidl::Object::incRef( *this ); }
 
     // EventTarget
     void send( Event& );
@@ -107,7 +107,7 @@ namespace YIELD
     Mutex handleEvent_lock;
   };
 
-  typedef auto_Object<EventHandler> auto_EventHandler;
+  typedef yidl::auto_Object<EventHandler> auto_EventHandler;
 
 
   class EventQueue : public EventTarget
@@ -118,8 +118,8 @@ namespace YIELD
     virtual Event* timed_dequeue( uint64_t timeout_ns ) = 0;
     virtual Event* try_dequeue() = 0;
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( EventQueue, 0 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( EventQueue, 0 );
 
     // EventTarget
     void send( Event& event )
@@ -128,14 +128,14 @@ namespace YIELD
     }
   };
 
-  typedef auto_Object<EventQueue> auto_EventQueue;
+  typedef yidl::auto_Object<EventQueue> auto_EventQueue;
 
 
   class NonBlockingEventQueue : public EventQueue, private SynchronizedNonBlockingFiniteQueue<Event*, 1024>
   {
   public:
-    // Object
-    YIELD_OBJECT_PROTOTYPES( NonBlockingEventQueue, 0 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( NonBlockingEventQueue, 0 );
       
     // EventQueue
     Event* dequeue()
@@ -159,14 +159,14 @@ namespace YIELD
     }
   };
   
-  typedef auto_Object<NonBlockingEventQueue> auto_NonBlockingEventQueue;
+  typedef yidl::auto_Object<NonBlockingEventQueue> auto_NonBlockingEventQueue;
 
 
   class STLEventQueue : public EventQueue, private SynchronizedSTLQueue<Event*>
   {
   public:
-    // Object
-    YIELD_OBJECT_PROTOTYPES( STLEventQueue, 0 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( STLEventQueue, 0 );
 
     // EventQueue
     Event* dequeue()
@@ -190,7 +190,7 @@ namespace YIELD
     }
   };
 
-  typedef auto_Object<STLEventQueue> auto_STLEventQueue;
+  typedef yidl::auto_Object<STLEventQueue> auto_STLEventQueue;
 
 
   class ThreadLocalEventQueue : public EventQueue
@@ -215,32 +215,32 @@ namespace YIELD
     SynchronizedSTLQueue<Event*> all_processor_event_queue;
   };
 
-  typedef auto_Object<ThreadLocalEventQueue> auto_ThreadLocalEventQueue;
+  typedef yidl::auto_Object<ThreadLocalEventQueue> auto_ThreadLocalEventQueue;
 
 
   class Interface : public EventHandler
   {
   public:
-    virtual Request* checkRequest( Object& request ) = 0; // Casts an Object to a Request if the request belongs to the interface
-    virtual Response* checkResponse( Object& response ) = 0; // Casts an Object to a Response if the request belongs to the interface
-    virtual auto_Object<Request> createRequest( uint32_t tag ) = 0;
-    virtual auto_Object<Response> createResponse( uint32_t tag ) = 0;
-    virtual auto_Object<ExceptionResponse> createExceptionResponse( uint32_t tag ) = 0;
+    virtual Request* checkRequest( yidl::Object& request ) = 0; // Casts an Object to a Request if the request belongs to the interface
+    virtual Response* checkResponse( yidl::Object& response ) = 0; // Casts an Object to a Response if the request belongs to the interface
+    virtual yidl::auto_Object<Request> createRequest( uint32_t tag ) = 0;
+    virtual yidl::auto_Object<Response> createResponse( uint32_t tag ) = 0;
+    virtual yidl::auto_Object<ExceptionResponse> createExceptionResponse( uint32_t tag ) = 0;
   };
 
-  typedef auto_Object<Interface> auto_Interface;
+  typedef yidl::auto_Object<Interface> auto_Interface;
 
 
   class Request : public Event
   {
   public:
-    virtual auto_Object<Response> createResponse() = 0;
+    virtual yidl::auto_Object<Response> createResponse() = 0;
 
     auto_EventTarget get_response_target() const;
     virtual void respond( Response& response );
     void set_response_target( auto_EventTarget response_target );
 
-    // Object
+    // yidl::Object
     Request& incRef() { return Object::incRef( *this ); }
 
   protected:
@@ -251,13 +251,13 @@ namespace YIELD
     auto_EventTarget response_target;
   };
 
-  typedef auto_Object<Request> auto_Request;
+  typedef yidl::auto_Object<Request> auto_Request;
 
 
   class Response : public Event
   {
   public:
-    // Object
+    // yidl::Object
     Response& incRef() { return Object::incRef( *this ); }
 
   protected:
@@ -265,7 +265,7 @@ namespace YIELD
     virtual ~Response() { }
   };
 
-  typedef auto_Object<Response> auto_Response;
+  typedef yidl::auto_Object<Response> auto_Response;
 
 
   class ExceptionResponse : public Response, public Exception
@@ -281,11 +281,11 @@ namespace YIELD
     virtual ExceptionResponse* clone() const { return new ExceptionResponse( what() ); }
     virtual void throwStackClone() const { throw ExceptionResponse( what() ); }
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( ExceptionResponse, 102 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( ExceptionResponse, 102 );
   };
 
-  typedef auto_Object<ExceptionResponse> auto_ExceptionResponse;
+  typedef yidl::auto_Object<ExceptionResponse> auto_ExceptionResponse;
 
 
   template <class ResponseType>
@@ -298,13 +298,13 @@ namespace YIELD
 
       switch ( dequeued_ev->get_type_id() )
       {
-        case YIELD_OBJECT_TYPE_ID( ResponseType ):
+        case YIDL_OBJECT_TYPE_ID( ResponseType ):
         {
           return static_cast<ResponseType&>( *dequeued_ev );
         }
         break;
           
-        case YIELD_OBJECT_TYPE_ID( ExceptionResponse ):
+        case YIDL_OBJECT_TYPE_ID( ExceptionResponse ):
         {
           try
           {
@@ -333,13 +333,13 @@ namespace YIELD
       {
         switch ( dequeued_ev->get_type_id() )
         {
-          case YIELD_OBJECT_TYPE_ID( ResponseType ):
+          case YIDL_OBJECT_TYPE_ID( ResponseType ):
           {
             return static_cast<ResponseType&>( *dequeued_ev );
           }
           break;
             
-          case YIELD_OBJECT_TYPE_ID( ExceptionResponse ):
+          case YIDL_OBJECT_TYPE_ID( ExceptionResponse ):
           {
             try
             {
@@ -361,8 +361,8 @@ namespace YIELD
         throw Exception( "ResponseQueue::dequeue: timed out" );
     }
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( ResponseQueue<ResponseType>, 0 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( ResponseQueue<ResponseType>, 0 );
 
     // EventTarget
     void send( Event& ev )
@@ -372,7 +372,7 @@ namespace YIELD
   };
 
   template <class ResponseType>
-  class auto_ResponseQueue : public auto_Object< ResponseQueue<ResponseType> >
+  class auto_ResponseQueue : public yidl::auto_Object< ResponseQueue<ResponseType> >
   { 
   public:
     auto_ResponseQueue( ResponseQueue<ResponseType>* response_queue )
@@ -388,25 +388,25 @@ namespace YIELD
     class StartupEvent : public Event
     {
     public:
-      StartupEvent( auto_Object<Stage> stage )
+      StartupEvent( yidl::auto_Object<Stage> stage )
         : stage( stage )
       { }
 
-      auto_Object<Stage> get_stage() { return stage; }
+      yidl::auto_Object<Stage> get_stage() { return stage; }
 
-      // Object
-      YIELD_OBJECT_PROTOTYPES( Stage::StartupEvent, 104 );
+      // yidl::Object
+      YIDL_OBJECT_PROTOTYPES( Stage::StartupEvent, 104 );
 
     private:
-      auto_Object<Stage> stage;
+      yidl::auto_Object<Stage> stage;
     };
 
 
     class ShutdownEvent : public Event
     {
     public:
-      // Object
-      YIELD_OBJECT_PROTOTYPES( Stage::ShutdownEvent, 105 );
+      // yidl::Object
+      YIDL_OBJECT_PROTOTYPES( Stage::ShutdownEvent, 105 );
     };
 
 
@@ -415,13 +415,13 @@ namespace YIELD
     double get_service_rate_s() const { return service_rate_s; }
     uint8_t get_stage_id() const { return id; }
     const char* get_stage_name() const { return name; }
-    virtual auto_Object<EventHandler> get_event_handler() = 0;
+    virtual auto_EventHandler get_event_handler() = 0;
     virtual bool visit() = 0;
     virtual bool visit( uint64_t timeout_ns ) = 0;
     virtual void visit( Event& event ) = 0;
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( Stage, 103 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( Stage, 103 );
 
   protected:
     Stage( const char* name );
@@ -447,14 +447,14 @@ namespace YIELD
     void set_stage_id( uint8_t stage_id ) { this->id = stage_id; }
   };
 
-  typedef auto_Object<Stage> auto_Stage;
+  typedef yidl::auto_Object<Stage> auto_Stage;
 
 
   template <class EventHandlerType, class EventQueueType, class LockType>
   class StageImpl : public Stage
   {
   public:
-    StageImpl( auto_Object<EventHandlerType> event_handler, auto_Object<EventQueueType> event_queue )
+    StageImpl( yidl::auto_Object<EventHandlerType> event_handler, yidl::auto_Object<EventQueueType> event_queue )
       : Stage( event_handler->get_type_name() ), event_handler( event_handler ), event_queue( event_queue )
     { }
     
@@ -491,7 +491,7 @@ namespace YIELD
 
     // Stage
     const char* get_stage_name() const { return event_handler->get_type_name(); }
-    auto_Object<EventHandler> get_event_handler() { return event_handler->incRef(); }    
+    auto_EventHandler get_event_handler() { return event_handler->incRef(); }    
 
     bool visit()
     {
@@ -571,8 +571,8 @@ namespace YIELD
     }
 
   private:
-    auto_Object<EventHandlerType> event_handler;
-    auto_Object<EventQueueType> event_queue;
+    yidl::auto_Object<EventHandlerType> event_handler;
+    yidl::auto_Object<EventQueueType> event_queue;
 
     LockType lock;
 
@@ -604,26 +604,26 @@ namespace YIELD
   };
 
 
-  class StageGroup : public Object
+  class StageGroup : public yidl::Object
   {
   public:
     template <class EventHandlerType>
-    auto_Stage createStage( auto_Object<EventHandlerType> event_handler )
+    auto_Stage createStage( yidl::auto_Object<EventHandlerType> event_handler )
     {
       return createStage( static_cast<EventHandler*>( event_handler.release() ) );
     }
 
     template <class EventHandlerType>
-    auto_Stage createStage( auto_Object<EventHandlerType> event_handler, int16_t thread_count )
+    auto_Stage createStage( yidl::auto_Object<EventHandlerType> event_handler, int16_t thread_count )
     {
       return createStage( static_cast<EventHandler*>( event_handler.release() ), thread_count );
     }
     
-    virtual auto_Stage createStage( auto_Object<EventHandler> event_handler, int16_t thread_count = 1 ) = 0;
+    virtual auto_Stage createStage( yidl::auto_Object<EventHandler> event_handler, int16_t thread_count = 1 ) = 0;
 
     Stage** get_stages() { return &stages[0]; }
 
-    // Object
+    // yidl::Object
     StageGroup& incRef() { return Object::incRef( *this ); }
 
   protected:
@@ -636,7 +636,7 @@ namespace YIELD
     Stage* stages[YIELD_STAGES_PER_GROUP_MAX];
   };
 
-  typedef auto_Object<StageGroup> auto_StageGroup;
+  typedef yidl::auto_Object<StageGroup> auto_StageGroup;
 
 
   template <class StageGroupType> // CRTP
@@ -644,19 +644,19 @@ namespace YIELD
   {
   public:
     template <class EventHandlerType>
-    auto_Stage createStage( auto_Object<EventHandlerType> event_handler )
+    auto_Stage createStage( yidl::auto_Object<EventHandlerType> event_handler )
     {
       return static_cast<StageGroupType*>( this )->createStage<EventHandlerType, EventQueue>( event_handler, 1 );
     }
 
     template <class EventHandlerType>
-    auto_Stage createStage( auto_Object<EventHandlerType> event_handler, int16_t thread_count )
+    auto_Stage createStage( yidl::auto_Object<EventHandlerType> event_handler, int16_t thread_count )
     {
       return static_cast<StageGroupType*>( this )->createStage<EventHandlerType>( event_handler, thread_count );
     }
 
     // StageGroup
-    auto_Stage createStage( auto_Object<EventHandler> event_handler, int16_t thread_count = 1 )
+    auto_Stage createStage( yidl::auto_Object<EventHandler> event_handler, int16_t thread_count = 1 )
     {
       return createStage<EventHandler>( event_handler, thread_count );
     }
@@ -674,9 +674,9 @@ namespace YIELD
     ~ColorStageGroup();
 
     template <class EventHandlerType>
-    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t )
+    auto_Stage createStage( yidl::auto_Object<EventHandlerType> event_handler, int16_t )
     {
-      auto_Object<Stage> stage;
+      auto_Stage stage;
       if ( event_handler->isThreadSafe() )
         stage = new StageImpl<EventHandlerType, STLEventQueue, NOPLock>( event_handler, event_queue );
       else
@@ -689,8 +689,8 @@ namespace YIELD
       return stage;
     }
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( ColorStageGroup, 107 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( ColorStageGroup, 107 );
 
   private:
     auto_STLEventQueue event_queue;
@@ -718,9 +718,9 @@ namespace YIELD
     PollingStageGroup( const char* name = "Main stage group", uint16_t start_logical_processor_i = 0, int16_t thread_count = -1, bool use_thread_local_event_queues = false );
 
     template <class EventHandlerType>
-    auto_Object<Stage> createStage( auto_Object<EventHandlerType> event_handler, int16_t )
+    auto_Stage createStage( yidl::auto_Object<EventHandlerType> event_handler, int16_t )
     {
-      auto_Object<Stage> stage;
+      auto_Stage stage;
       if ( use_thread_local_event_queues )
       {
         if ( event_handler->isThreadSafe() )
@@ -743,8 +743,8 @@ namespace YIELD
       return stage;
     }
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( PollingStageGroup<VisitPolicyType>, 0 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( PollingStageGroup<VisitPolicyType>, 0 );
 
   private:
     ~PollingStageGroup();
@@ -901,7 +901,7 @@ namespace YIELD
     SEDAStageGroup() { }
 
     template <class EventHandlerType>
-    auto_Stage createStage( auto_Object<EventHandlerType> event_handler, int16_t thread_count )
+    auto_Stage createStage( yidl::auto_Object<EventHandlerType> event_handler, int16_t thread_count )
     {
       if ( thread_count <= 0 )
         thread_count = Machine::getOnlinePhysicalProcessorCount();
@@ -921,8 +921,8 @@ namespace YIELD
       return stage;
     }
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( SEDAStageGroup, 106 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( SEDAStageGroup, 106 );
 
   protected:
     virtual ~SEDAStageGroup();

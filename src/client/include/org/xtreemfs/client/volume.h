@@ -36,10 +36,10 @@ namespace org
 
         uint32_t get_flags() const { return flags; }
         YIELD::auto_Log get_log() const { return log; }
-        YIELD::auto_Object<OSDProxyMux> get_osd_proxy_mux() const { return osd_proxy_mux; }
+        yidl::auto_Object<OSDProxyMux> get_osd_proxy_mux() const { return osd_proxy_mux; }
 
-        // YIELD::Object
-        YIELD_OBJECT_PROTOTYPES( Volume, 0 );
+        // yidl::Object
+        YIDL_OBJECT_PROTOTYPES( Volume, 0 );
 
         // YIELD::Volume
         YIELD_VOLUME_PROTOTYPES;
@@ -54,9 +54,9 @@ namespace org
         uint32_t flags;
         YIELD::auto_Log log;
 
-        YIELD::auto_Object<DIRProxy> dir_proxy;
-        YIELD::auto_Object<MRCProxy> mrc_proxy;
-        YIELD::auto_Object<OSDProxyMux> osd_proxy_mux;
+        yidl::auto_Object<DIRProxy> dir_proxy;
+        yidl::auto_Object<MRCProxy> mrc_proxy;
+        yidl::auto_Object<OSDProxyMux> osd_proxy_mux;
         YIELD::auto_StageGroup stage_group;
 
         void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );

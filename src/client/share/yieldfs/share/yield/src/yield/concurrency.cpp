@@ -1,4 +1,4 @@
-// Revision: 1796
+// Revision: 1805
 
 #include "yield/concurrency.h"
 using namespace YIELD;
@@ -19,7 +19,7 @@ public:
   void stop()
   {
     should_run = false;
-    auto_Object<Stage::ShutdownEvent> stage_shutdown_event( new Stage::ShutdownEvent );
+    yidl::auto_Object<Stage::ShutdownEvent> stage_shutdown_event( new Stage::ShutdownEvent );
     while ( is_running )
     {
       event_queue->enqueue( stage_shutdown_event->incRef() );
@@ -79,8 +79,8 @@ void EventHandler::handleUnknownEvent( Event& ev )
 {
   switch ( ev.get_type_id() )
   {
-    case YIELD_OBJECT_TYPE_ID( Stage::StartupEvent ):
-    case YIELD_OBJECT_TYPE_ID( Stage::ShutdownEvent ): Object::decRef( ev ); break;
+    case YIDL_OBJECT_TYPE_ID( Stage::StartupEvent ):
+    case YIDL_OBJECT_TYPE_ID( Stage::ShutdownEvent ): Object::decRef( ev ); break;
     default:
     {
       std::cerr << get_type_name() << " dropping unknown event: " << ev.get_type_name() << std::endl;
@@ -378,7 +378,7 @@ public:
   void stop()
   {
     should_run = false;
-    auto_Object<Stage::ShutdownEvent> stage_shutdown_event = new Stage::ShutdownEvent;
+    yidl::auto_Object<Stage::ShutdownEvent> stage_shutdown_event = new Stage::ShutdownEvent;
     for ( ;; )
     {
       stage->send( stage_shutdown_event->incRef() );
@@ -403,8 +403,8 @@ public:
     while ( !is_running )
       Thread::yield();
   }
-  // Object
-  YIELD_OBJECT_PROTOTYPES( SEDAStageGroup::Thread, 0 );
+  // yidl::Object
+  YIDL_OBJECT_PROTOTYPES( SEDAStageGroup::Thread, 0 );
 private:
   ~Thread() { }
   auto_Stage stage;
@@ -434,7 +434,7 @@ void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
 class Stage::StatisticsTimer : public TimerQueue::Timer
 {
 public:
-  StatisticsTimer( auto_Object<Stage> stage )
+  StatisticsTimer( yidl::auto_Object<Stage> stage )
     : Timer( 5 * NS_IN_S, 5 * NS_IN_S ), stage( stage )
   { }
   // Timer
@@ -488,7 +488,7 @@ public:
     return true;
   }
 private:
-  auto_Object<Stage> stage;
+  auto_Stage stage;
 };
 Stage::Stage( const char* name )
   : name( name )

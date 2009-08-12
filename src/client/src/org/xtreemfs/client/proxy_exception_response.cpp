@@ -24,7 +24,7 @@ uint32_t ProxyExceptionResponse::get_platform_error_code() const
     case ENOENT: return ERROR_FILE_NOT_FOUND;
     case WSAETIMEDOUT: return ERROR_NETWORK_BUSY;
 #endif
-    case 0: YIELD::DebugBreak(); return 0;
+    case 0: DebugBreak(); return 0;
     default: return error_code;
   }
 }

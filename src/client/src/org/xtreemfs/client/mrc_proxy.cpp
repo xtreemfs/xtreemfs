@@ -8,7 +8,7 @@ using namespace org::xtreemfs::client;
 void MRCProxy::chown( const Path& path, int uid, int gid )
 {
 #ifdef _WIN32
-  YIELD::DebugBreak();
+  DebugBreak();
 #else
   org::xtreemfs::interfaces::UserCredentials user_credentials;
   if ( this->getUserCredentialsFrompasswd( uid, gid, user_credentials ) )

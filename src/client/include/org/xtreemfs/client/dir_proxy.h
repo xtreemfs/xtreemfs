@@ -28,7 +28,7 @@ namespace org
       class DIRProxy : public Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>
       {
       public:
-        static YIELD::auto_Object<DIRProxy> create( const YIELD::URI& absolute_uri,
+        static yidl::auto_Object<DIRProxy> create( const YIELD::URI& absolute_uri,
                                                     uint32_t flags = 0,
                                                     YIELD::auto_Log log = NULL,
                                                     const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::OPERATION_TIMEOUT_DEFAULT,
@@ -37,7 +37,7 @@ namespace org
           return YIELD::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::create<DIRProxy>( absolute_uri, flags, log, operation_timeout, ssl_context );
         }
 
-        YIELD::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> getAddressMappingsFromUUID( const std::string& uuid );
+        yidl::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> getAddressMappingsFromUUID( const std::string& uuid );
         YIELD::auto_URI getVolumeURIFromVolumeName( const std::string& volume_name );
 
       private:
@@ -60,8 +60,8 @@ namespace org
           const YIELD::Time& get_creation_time() const { return creation_time; }
           uint32_t get_ttl_s() const { return ttl_s; }         
           
-          // YIELD::Object
-          YIELD_OBJECT_PROTOTYPES( CachedAddressMappings, 0 );
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( CachedAddressMappings, 0 );
 
         private:
           ~CachedAddressMappings() { }

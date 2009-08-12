@@ -113,12 +113,12 @@ namespace org
         virtual ~Main()
         { }
 
-        YIELD::auto_Object<DIRProxy> createDIRProxy( const YIELD::URI& uri )
+        yidl::auto_Object<DIRProxy> createDIRProxy( const YIELD::URI& uri )
         {
           return createProxy<DIRProxy>( uri, org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT );
         }
 
-        YIELD::auto_Object<MRCProxy> createMRCProxy( const YIELD::URI& uri )
+        yidl::auto_Object<MRCProxy> createMRCProxy( const YIELD::URI& uri )
         {
           return createProxy<MRCProxy>( uri, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT );
         }
@@ -229,13 +229,13 @@ namespace org
 
 
         template <class ProxyType>
-        YIELD::auto_Object<ProxyType> createProxy( const YIELD::URI& uri, uint16_t default_port )
+        yidl::auto_Object<ProxyType> createProxy( const YIELD::URI& uri, uint16_t default_port )
         {
           YIELD::URI checked_uri( uri );
           if ( checked_uri.get_port() == 0 )
             checked_uri.set_port( default_port );
 
-          YIELD::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, get_proxy_ssl_context() );
+          yidl::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, get_proxy_ssl_context() );
           if ( proxy != NULL )
             return proxy;
           else

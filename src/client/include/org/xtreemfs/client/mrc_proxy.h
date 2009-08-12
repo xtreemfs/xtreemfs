@@ -26,7 +26,7 @@ namespace org
       class MRCProxy : public Proxy<MRCProxy, org::xtreemfs::interfaces::MRCInterface>
       {
       public:
-        static YIELD::auto_Object<MRCProxy> create( const YIELD::URI& absolute_uri,
+        static yidl::auto_Object<MRCProxy> create( const YIELD::URI& absolute_uri,
                                                     uint32_t flags = 0,
                                                     YIELD::auto_Log log = NULL,
                                                     const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::OPERATION_TIMEOUT_DEFAULT,

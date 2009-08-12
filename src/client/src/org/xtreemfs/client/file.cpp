@@ -28,7 +28,7 @@ namespace org
   {
     namespace client
     {
-      class FileReadBuffer : public YIELD::FixedBuffer
+      class FileReadBuffer : public yidl::FixedBuffer
       {
       public:
         FileReadBuffer( void* buf, size_t len )
@@ -41,7 +41,7 @@ namespace org
       class FileReadResponse : public org::xtreemfs::interfaces::OSDInterface::readResponse
       {
       public:
-        FileReadResponse( YIELD::auto_Buffer buffer )
+        FileReadResponse( yidl::auto_Buffer buffer )
           : org::xtreemfs::interfaces::OSDInterface::readResponse( org::xtreemfs::interfaces::ObjectData( 0, false, 0, buffer ) )
         { }
       };
@@ -49,7 +49,7 @@ namespace org
       class FileReadRequest : public org::xtreemfs::interfaces::OSDInterface::readRequest
       {
       public:
-        FileReadRequest( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, YIELD::auto_Buffer buffer ) 
+        FileReadRequest( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, yidl::auto_Buffer buffer ) 
           : org::xtreemfs::interfaces::OSDInterface::readRequest( file_credentials, file_id, object_number, object_version, offset, length ), 
           buffer( buffer )
         { }
@@ -57,11 +57,11 @@ namespace org
         YIELD::auto_Response createResponse() { return new FileReadResponse( buffer ); }
 
       private:
-        YIELD::auto_Buffer buffer;
+        yidl::auto_Buffer buffer;
       };
 
 
-      class FileWriteBuffer : public YIELD::FixedBuffer
+      class FileWriteBuffer : public yidl::FixedBuffer
       {
       public:
         FileWriteBuffer( const void* buf, size_t len )
@@ -76,7 +76,7 @@ namespace org
 };
 
 
-File::File( YIELD::auto_Object<Volume> parent_volume, YIELD::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
+File::File( yidl::auto_Object<Volume> parent_volume, yidl::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
 : parent_volume( parent_volume ), mrc_proxy( mrc_proxy ), path( path ), file_credentials( file_credentials )
 {
   selected_file_replica = 0;
@@ -210,7 +210,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       // Object::decRef( read_response );
       read_responses.push_back( &read_response );
 
-      YIELD::auto_Buffer data( read_response.get_object_data().get_data() );
+      yidl::auto_Buffer data( read_response.get_object_data().get_data() );
       rbuf_p = static_cast<char*>( static_cast<void*>( *data ) );
       uint32_t zero_padding = read_response.get_object_data().get_zero_padding();
       if ( read_response.get_selected_file_replica() != 0 )
@@ -252,7 +252,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 
 #ifdef _DEBUG
     if ( static_cast<size_t>( ret ) > size ) 
-      YIELD::DebugBreak();
+      DebugBreak();
 
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
     {
@@ -297,7 +297,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
   }
 
   for ( std::vector<org::xtreemfs::interfaces::OSDInterface::readResponse*>::iterator file_read_oncrpc_response_i = read_responses.begin(); file_read_oncrpc_response_i != read_responses.end(); file_read_oncrpc_response_i++ )
-    YIELD::Object::decRef( **file_read_oncrpc_response_i );
+    yidl::Object::decRef( **file_read_oncrpc_response_i );
 
   return ret;
 }
@@ -419,7 +419,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
         latest_osd_write_response = write_response.get_osd_write_response();
       }
 
-      // YIELD::Object::decRef( write_response );
+      // yidl::Object::decRef( write_response );
       write_responses.push_back( &write_response );
     }
 
@@ -448,7 +448,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 #endif
 
     for ( std::vector<org::xtreemfs::interfaces::OSDInterface::writeResponse*>::iterator write_response_i = write_responses.begin(); write_response_i != write_responses.end(); write_response_i++ )
-      YIELD::Object::decRef( **write_response_i );    
+      yidl::Object::decRef( **write_response_i );    
 
     YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
 
@@ -472,7 +472,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
   }
 
   for ( std::vector<org::xtreemfs::interfaces::OSDInterface::writeResponse*>::iterator write_response_i = write_responses.begin(); write_response_i != write_responses.end(); write_response_i++ )
-    YIELD::Object::decRef( **write_response_i );    
+    yidl::Object::decRef( **write_response_i );    
 
   return ret;
 }

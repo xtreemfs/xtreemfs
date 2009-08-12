@@ -62,9 +62,9 @@ void Proxy<ProxyType, InterfaceType>::send( YIELD::Event& ev )
 {
   if ( InterfaceType::checkRequest( ev ) != NULL )
   {
-    YIELD::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
+    yidl::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
     getCurrentUserCredentials( *user_credentials.get() );
-    YIELD::auto_Object<YIELD::ONCRPCRequest> oncrpc_request = new YIELD::ONCRPCRequest( this->incRef(), org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release(), ev );
+    yidl::auto_Object<YIELD::ONCRPCRequest> oncrpc_request = new YIELD::ONCRPCRequest( this->incRef(), org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release(), ev );
     YIELD::ONCRPCClient<InterfaceType>::send( *oncrpc_request.release() );
   }
   else

@@ -30,7 +30,7 @@ namespace org
         const static uint64_t PING_INTERVAL_DEFAULT = 0; // No pings
 
 
-        static YIELD::auto_Object<OSDProxy> create( const YIELD::URI& absolute_uri,
+        static yidl::auto_Object<OSDProxy> create( const YIELD::URI& absolute_uri,
                                                     const std::string& uuid,
                                                     uint32_t flags = 0,
                                                     YIELD::auto_Log log = NULL,
@@ -46,8 +46,8 @@ namespace org
         void set_rtt( const YIELD::Time& rtt ) { this->rtt = rtt; }
         void set_vivaldi_coordinates( const org::xtreemfs::interfaces::VivaldiCoordinates& vivaldi_coordinates ) { this->vivaldi_coordinates = vivaldi_coordinates; }
         
-        // YIELD::Object
-        OSDProxy& incRef() { return YIELD::Object::incRef( *this ); }
+        // yidl::Object
+        OSDProxy& incRef() { return yidl::Object::incRef( *this ); }
 
         // YIELD::EventTarget
         void send( YIELD::Event& ev ) 

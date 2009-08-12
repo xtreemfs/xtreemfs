@@ -37,7 +37,7 @@ namespace org
         // YIELD::Main
         int _main( int, char** )
         {
-          YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
+          yidl::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
           org::xtreemfs::interfaces::VolumeSet volumes;
           mrc_proxy->xtreemfs_lsvol( volumes );
 

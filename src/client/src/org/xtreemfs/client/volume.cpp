@@ -274,7 +274,7 @@ bool Volume::readdir( const YIELD::Path& path, const YIELD::Path&, YIELD::Volume
   return false;
 }
 
-YIELD::auto_Object<YIELD::Path> Volume::readlink( const YIELD::Path& path )
+yidl::auto_Object<YIELD::Path> Volume::readlink( const YIELD::Path& path )
 {
   ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( readlink )
   {

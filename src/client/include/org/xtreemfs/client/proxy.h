@@ -59,7 +59,7 @@ namespace org
         std::vector<YIELD::SharedLibrary*> policy_shared_libraries;
 
         template <typename PolicyFunctionType> 
-        bool getPolicyFunction( const YIELD::Path& policy_shared_library_path, YIELD::auto_Object<YIELD::SharedLibrary> policy_shared_library, const char* policy_function_name, PolicyFunctionType& out_policy_function )
+        bool getPolicyFunction( const YIELD::Path& policy_shared_library_path, yidl::auto_Object<YIELD::SharedLibrary> policy_shared_library, const char* policy_function_name, PolicyFunctionType& out_policy_function )
         {
           PolicyFunctionType policy_function = policy_shared_library->getFunction<PolicyFunctionType>( policy_function_name );
           if ( policy_function != NULL )

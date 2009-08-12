@@ -8,7 +8,7 @@ using namespace org::xtreemfs::client;
 PolicyContainer::~PolicyContainer()
 {
   for ( std::vector<YIELD::SharedLibrary*>::iterator policy_shared_library_i = policy_shared_libraries.begin(); policy_shared_library_i != policy_shared_libraries.end(); policy_shared_library_i++ )
-    YIELD::Object::decRef( **policy_shared_library_i );
+    yidl::Object::decRef( **policy_shared_library_i );
 }
 
 void* PolicyContainer::getPolicyFunction( const char* name )
@@ -49,7 +49,7 @@ void* PolicyContainer::getPolicyFunction( const char* name )
         //if ( log != NULL )
         //  log->getStream( YIELD::Log::LOG_DEBUG ) << "org::xtreemfs::client::Proxy: checking " << policy_shared_library_path << " for policy functions.";
 
-        YIELD::auto_Object<YIELD::SharedLibrary> policy_shared_library = YIELD::SharedLibrary::open( policy_shared_library_path );
+        yidl::auto_Object<YIELD::SharedLibrary> policy_shared_library = YIELD::SharedLibrary::open( policy_shared_library_path );
 
         if ( policy_shared_library != NULL )
         {

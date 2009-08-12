@@ -5,6 +5,7 @@ from shutil import copyfile
 # Constants
 MY_DIR_PATH = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
 GOOGLE_BREAKPAD_DIR_PATH = os.path.join( MY_DIR_PATH, "share", "google-breakpad" )
+YIDL_DIR_PATH = os.path.abspath( os.path.join( MY_DIR_PATH, "..", "..", "..", "yidl" ) )
 YIELD_DIR_PATH = os.path.abspath( os.path.join( MY_DIR_PATH, "..", "..", "..", "yield" ) )
 YIELDFS_DIR_PATH = os.path.abspath( os.path.join( MY_DIR_PATH, "..", "..", "..", "yieldfs" ) )
 XTREEMFS_DIR_PATH = os.path.abspath( os.path.join( MY_DIR_PATH, "..", ".." ) )
@@ -16,7 +17,8 @@ INCLUDE_DIR_PATHS = (
                       os.path.join( XTREEMFS_CLIENT_DIR_PATH, "include" ), 
                       os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src" ),
                       os.path.join( XTREEMFS_CLIENT_DIR_PATH, "share", "yieldfs", "include" ),
-                      os.path.join( XTREEMFS_CLIENT_DIR_PATH, "share", "yieldfs", "share", "yield", "include" )
+                      os.path.join( XTREEMFS_CLIENT_DIR_PATH, "share", "yieldfs", "share", "yield", "include" ),
+                      os.path.join( XTREEMFS_CLIENT_DIR_PATH, "share", "yieldfs", "share", "yield", "share", "yidl", "include" ),
                     )
                     
 LIB_DIR_PATHS = ( 
@@ -24,8 +26,8 @@ LIB_DIR_PATHS = (
                 )
                     
                     
-sys.path.append( os.path.join( YIELD_DIR_PATH, "bin" ) )
-sys.path.append( os.path.join( YIELD_DIR_PATH, "src", "py" ) )
+sys.path.append( os.path.join( YIDL_DIR_PATH, "bin" ) )
+sys.path.append( os.path.join( YIDL_DIR_PATH, "src", "py" ) )
 
 from format_src import format_src
 
@@ -37,13 +39,16 @@ from yidl.generator import writeGeneratedFile
 from yidl.idl_parser import parseIDL
 from yidl.targets.cpp_target import *
 
+# Copy yidl source and headers into share/
+copyfile( os.path.join( YIDL_DIR_PATH, "include", "yidl.h" ), os.path.join( XTREEMFS_CLIENT_DIR_PATH, "share", "yieldfs", "share", "yield", "share", "yidl", "include", "yidl.h" ) )
+copyfile( os.path.join( YIDL_DIR_PATH, "src", "cpp", "yidl.cpp" ), os.path.join( XTREEMFS_CLIENT_DIR_PATH, "share", "yieldfs", "share", "yield", "share", "yidl", "src", "cpp", "yidl.h" ) )
 
 # Copy Yield source and headers into share/
 copyfile( os.path.join( YIELD_DIR_PATH, "include", "yield", "main.h" ), os.path.join( XTREEMFS_CLIENT_DIR_PATH, "share", "yieldfs", "share", "yield", "include", "yield", "main.h" ) )
-for file_stem in ( "base", "concurrency", "ipc", "platform" ):
+for file_stem in ( "concurrency", "ipc", "platform" ):
   copyfile( os.path.join( YIELD_DIR_PATH, "include", "yield", file_stem + ".h" ), os.path.join( XTREEMFS_CLIENT_DIR_PATH, "share", "yieldfs", "share", "yield", "include", "yield", file_stem + ".h" ) )
-  copyfile( os.path.join( YIELD_DIR_PATH, "src", "cpp", "yield", file_stem + ".cpp" ), os.path.join( XTREEMFS_CLIENT_DIR_PATH, "share", "yieldfs", "share", "yield", "src", "yield", file_stem + ".cpp" ) )
-
+  copyfile( os.path.join( YIELD_DIR_PATH, "src", "yield", file_stem + ".cpp" ), os.path.join( XTREEMFS_CLIENT_DIR_PATH, "share", "yieldfs", "share", "yield", "src", "yield", file_stem + ".cpp" ) )
+  
 # Copy YieldFS source and headers into share/
 copyfile( os.path.join( YIELDFS_DIR_PATH, "include", "yieldfs.h" ), os.path.join( XTREEMFS_CLIENT_DIR_PATH, "share", "yieldfs", "include", "yieldfs.h" ) )
 copyfile( os.path.join( YIELDFS_DIR_PATH, "src", "yieldfs.cpp" ), os.path.join( XTREEMFS_CLIENT_DIR_PATH, "share", "yieldfs", "src", "yieldfs.cpp" ) )

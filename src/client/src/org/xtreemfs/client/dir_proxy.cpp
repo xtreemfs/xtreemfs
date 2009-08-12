@@ -8,10 +8,10 @@ using namespace org::xtreemfs::client;
 DIRProxy::~DIRProxy()
 {
   for ( std::map<std::string, CachedAddressMappings*>::iterator uuid_to_address_mappings_i = uuid_to_address_mappings_cache.begin(); uuid_to_address_mappings_i != uuid_to_address_mappings_cache.end(); uuid_to_address_mappings_i++ )
-    YIELD::Object::decRef( *uuid_to_address_mappings_i->second );
+    yidl::Object::decRef( *uuid_to_address_mappings_i->second );
 }
 
-YIELD::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> DIRProxy::getAddressMappingsFromUUID( const std::string& uuid )
+yidl::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> DIRProxy::getAddressMappingsFromUUID( const std::string& uuid )
 {
   if ( uuid_to_address_mappings_cache_lock.try_acquire() )
   {
@@ -28,7 +28,7 @@ YIELD::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> DIRProxy::getAd
       }
       else
       {
-        YIELD::Object::decRef( cached_address_mappings );
+        yidl::Object::decRef( cached_address_mappings );
         uuid_to_address_mappings_cache.erase( uuid_to_address_mappings_i );
         uuid_to_address_mappings_cache_lock.release();
       }
@@ -65,7 +65,7 @@ YIELD::auto_URI DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_
       {
         if ( service_data_i->first == "mrc" )
         {
-          YIELD::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> address_mappings = getAddressMappingsFromUUID( service_data_i->second );
+          yidl::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> address_mappings = getAddressMappingsFromUUID( service_data_i->second );
 
           for ( org::xtreemfs::interfaces::AddressMappingSet::const_iterator address_mapping_i = address_mappings->begin(); address_mapping_i != address_mappings->end(); address_mapping_i++ )
           {

@@ -67,7 +67,7 @@ for define in defines:
     else: define_switch = "-D" + define
     if not define_switch in build_env["CCFLAGS"]: build_env["CCFLAGS"] += define_switch + " "
 
-include_dir_paths = [os.path.abspath( '../../../../share/yieldfs/share/yield/include' ), os.path.abspath( '../../../../share/yieldfs/include' ), os.path.abspath( '../../../../share/google-breakpad/src' ), os.path.abspath( '../../../../include' )]
+include_dir_paths = [os.path.abspath( '../../../../share/yieldfs/share/yield/share/yidl/include' ), os.path.abspath( '../../../../share/yieldfs/share/yield/include' ), os.path.abspath( '../../../../share/yieldfs/include' ), os.path.abspath( '../../../../share/google-breakpad/src' ), os.path.abspath( '../../../../include' )]
 for include_dir_path in include_dir_paths:
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
 
@@ -100,7 +100,6 @@ build_env.Library( "../../../../lib/xtreemfs-client", (
     r"../../../../src/org/xtreemfs/client/volume.cpp",
     r"../../../../share/yieldfs/share/yield/src/uriparser.c",
     r"../../../../share/yieldfs/share/yield/src/yajl.c",
-    r"../../../../share/yieldfs/share/yield/src/yield/base.cpp",
     r"../../../../share/yieldfs/share/yield/src/yield/concurrency.cpp",
     r"../../../../share/yieldfs/share/yield/src/yield/ipc.cpp",
     r"../../../../share/yieldfs/share/yield/src/yield/platform.cpp",

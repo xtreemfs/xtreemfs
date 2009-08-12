@@ -136,8 +136,8 @@ namespace yieldfs
     MetadataCachingVolume( YIELD::auto_Volume underlying_volume, double ttl_s );
     MetadataCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log, double ttl_s );
 
-    // YIELD::Object
-    YIELD_OBJECT_PROTOTYPES( MetadataCachingVolume, 0 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( MetadataCachingVolume, 0 );
 
     // YIELD::Volume
     bool chmod( const YIELD::Path& path, mode_t mode );
@@ -168,8 +168,8 @@ namespace yieldfs
 
     YIELD::Mutex lock;
 
-    YIELD::auto_Object<CachedStat> evict( const YIELD::Path& path );
-    YIELD::auto_Object<CachedStat> find( const YIELD::Path& path );
+    yidl::auto_Object<CachedStat> evict( const YIELD::Path& path );
+    yidl::auto_Object<CachedStat> find( const YIELD::Path& path );
     YIELD::Path getParentDirectoryPath( const YIELD::Path& );
     void insert( CachedStat* cached_stat );
     void updateCachedFileSize( const YIELD::Path& path, uint64_t new_file_size );

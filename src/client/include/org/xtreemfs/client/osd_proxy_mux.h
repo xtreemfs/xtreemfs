@@ -20,7 +20,7 @@ namespace org
       class OSDProxyMux : public org::xtreemfs::interfaces::OSDInterface
       {
       public:
-        static YIELD::auto_Object<OSDProxyMux> create( YIELD::auto_Object<DIRProxy> dir_proxy,
+        static yidl::auto_Object<OSDProxyMux> create( yidl::auto_Object<DIRProxy> dir_proxy,
                                                        uint32_t flags = 0,
                                                        YIELD::auto_Log log = NULL,
                                                        const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
@@ -29,17 +29,17 @@ namespace org
           return new OSDProxyMux( dir_proxy, flags, log, operation_timeout, ssl_context );
         }
 
-        // YIELD::Object
-        OSDProxyMux& incRef() { return YIELD::Object::incRef( *this ); }
+        // yidl::Object
+        OSDProxyMux& incRef() { return yidl::Object::incRef( *this ); }
 
         // YIELD::EventHandler
          void handleEvent( YIELD::Event& );
 
       private:
-        OSDProxyMux( YIELD::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SSLContext ssl_context );
+        OSDProxyMux( yidl::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SSLContext ssl_context );
         ~OSDProxyMux();
 
-        YIELD::auto_Object<DIRProxy> dir_proxy;        
+        yidl::auto_Object<DIRProxy> dir_proxy;        
         uint32_t flags;
         YIELD::auto_Log log;
         YIELD::Time operation_timeout;
@@ -53,8 +53,8 @@ namespace org
         select_file_replica_t select_file_replica;
         PolicyContainer* policy_container;
 
-        YIELD::auto_Object<OSDProxy> getTCPOSDProxy( OSDProxyRequest& osd_proxy_request, const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t object_number );
-        YIELD::auto_Object<OSDProxy> getTCPOSDProxy( const std::string& osd_uuid );        
+        yidl::auto_Object<OSDProxy> getTCPOSDProxy( OSDProxyRequest& osd_proxy_request, const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t object_number );
+        yidl::auto_Object<OSDProxy> getTCPOSDProxy( const std::string& osd_uuid );        
 
         // org::xtreemfs::interfaces::OSDInterface
         void handlereadRequest( readRequest& req );

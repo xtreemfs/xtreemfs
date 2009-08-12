@@ -189,7 +189,7 @@ namespace org
           else // !foreground
           {
             YIELD::Path named_pipe_path( "xtfs_mount" );
-            YIELD::auto_Object<YIELD::NamedPipe> server_named_pipe = YIELD::NamedPipe::open( named_pipe_path, O_CREAT|O_RDWR );
+            yidl::auto_Object<YIELD::NamedPipe> server_named_pipe = YIELD::NamedPipe::open( named_pipe_path, O_CREAT|O_RDWR );
             std::vector<char*> argvv;
             argvv.push_back( const_cast<char*>( "--parent-named-pipe-path" ) );
             argvv.push_back( const_cast<char*>( static_cast<const char*>( named_pipe_path ) ) );
@@ -199,7 +199,7 @@ namespace org
                 argvv.push_back( argv[arg_i] );
             }
             argvv.push_back( NULL );
-            YIELD::auto_Object<YIELD::Process> child_process = YIELD::Process::create( argv[0], ( const char** )&argvv[0] );
+            yidl::auto_Object<YIELD::Process> child_process = YIELD::Process::create( argv[0], ( const char** )&argvv[0] );
             if ( child_process != NULL )
             { 
               YIELD::Thread::sleep( 100 * NS_IN_MS );

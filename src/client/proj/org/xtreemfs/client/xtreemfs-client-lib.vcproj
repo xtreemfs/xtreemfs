@@ -27,7 +27,7 @@
             <Tool
                 Name="VCCLCompilerTool"
                 Optimization="0"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\share\yidl\include"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
                 BasicRuntimeChecks="3"
                 RuntimeLibrary="3"
@@ -73,7 +73,7 @@
             >
             <Tool
                 Name="VCCLCompilerTool"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\share\yidl\include"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
                 StringPooling="false"
                 RuntimeLibrary="2"
@@ -117,7 +117,7 @@
             >
             <Tool
                 Name="VCCLCompilerTool"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\share\yidl\include"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
                 StringPooling="false"
                 RuntimeLibrary="2"
@@ -397,18 +397,6 @@
 <Filter Name="yield">
 <Filter Name="include">
 <File
-    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\atomic.h"
-    >
-</File>
-<File
-    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\banned.h"
-    >
-</File>
-<File
-    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\msstdint.h"
-    >
-</File>
-<File
     RelativePath="..\..\..\..\share\yieldfs\share\yield\include\SimpleOpt.h"
     >
 </File>
@@ -421,10 +409,6 @@
     >
 </File>
 <Filter Name="yield">
-<File
-    RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield\base.h"
-    >
-</File>
 <File
     RelativePath="..\..\..\..\share\yieldfs\share\yield\include\yield\concurrency.h"
     >
@@ -451,6 +435,32 @@
     >
 </File>
 </Filter>
+<Filter Name="share">
+<Filter Name="yidl">
+<Filter Name="include">
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\share\yidl\include\atomic.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\share\yidl\include\msstdint.h"
+    >
+</File>
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\share\yidl\include\yidl.h"
+    >
+</File>
+</Filter>
+<Filter Name="src">
+<Filter Name="cpp">
+<File
+    RelativePath="..\..\..\..\share\yieldfs\share\yield\share\yidl\src\cpp\yidl.h"
+    >
+</File>
+</Filter>
+</Filter>
+</Filter>
+</Filter>
 <Filter Name="src">
 <File
     RelativePath="..\..\..\..\share\yieldfs\share\yield\src\uriparser.c"
@@ -461,10 +471,6 @@
     >
 </File>
 <Filter Name="yield">
-<File
-    RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\base.cpp"
-    >
-</File>
 <File
     RelativePath="..\..\..\..\share\yieldfs\share\yield\src\yield\concurrency.cpp"
     >

@@ -27,7 +27,7 @@ namespace org
         // YIELD::Main
         int _main( int, char** )
         {
-          YIELD::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
+          yidl::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
           org::xtreemfs::interfaces::Stat stbuf;
           mrc_proxy->getattr( path, stbuf );
 

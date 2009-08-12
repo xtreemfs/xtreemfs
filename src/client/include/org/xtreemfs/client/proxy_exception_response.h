@@ -47,7 +47,7 @@ namespace org
 
         ProxyExceptionResponse( const char* )
         {
-          YIELD::DebugBreak();
+          DebugBreak();
         }
 
       private:

@@ -4,10 +4,9 @@
 #ifndef _YIELD_PLATFORM_H_
 #define _YIELD_PLATFORM_H_
 
-#include "yield/base.h"
+#include "yidl.h"
 
 #ifdef _WIN32
-#include <banned.h>
 typedef int ssize_t;
 #else
 #include <errno.h>
@@ -99,7 +98,7 @@ typedef int ssize_t;
   virtual bool close(); \
   virtual bool datasync(); \
   virtual bool flush(); \
-  virtual YIELD::auto_Object<YIELD::Stat> getattr(); \
+  virtual yidl::auto_Object<YIELD::Stat> getattr(); \
   virtual bool getxattr( const std::string& name, std::string& out_value ); \
   virtual bool listxattr( std::vector<std::string>& out_names ); \
   virtual ssize_t read( void* buffer, size_t buffer_len, uint64_t offset ); \
@@ -114,7 +113,7 @@ typedef int ssize_t;
     virtual bool access( const YIELD::Path& path, int amode ); \
     virtual bool chmod( const YIELD::Path& path, mode_t mode ); \
     virtual bool chown( const YIELD::Path& path, int32_t tag, int32_t gid ); \
-    virtual YIELD::auto_Object<YIELD::Stat> getattr( const YIELD::Path& path ); \
+    virtual yidl::auto_Object<YIELD::Stat> getattr( const YIELD::Path& path ); \
     virtual bool getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value ); \
     virtual bool link( const YIELD::Path& old_path, const YIELD::Path& new_path ); \
     virtual bool listxattr( const YIELD::Path& path, std::vector<std::string>& out_names ); \
@@ -297,7 +296,7 @@ namespace YIELD
   }
 
 
-  class AIOControlBlock : public Object
+  class AIOControlBlock : public yidl::Object
   {
   public:
     AIOControlBlock()
@@ -331,7 +330,7 @@ namespace YIELD
 #endif
   };
   
-  typedef auto_Object<AIOControlBlock> auto_AIOControlBlock;
+  typedef yidl::auto_Object<AIOControlBlock> auto_AIOControlBlock;
 
 
   class CountingSemaphore
@@ -356,7 +355,7 @@ namespace YIELD
   };
 
 
-  class File : public Object
+  class File : public yidl::Object
   {
   public:
     const static uint32_t DEFAULT_FLAGS = O_RDONLY;
@@ -371,10 +370,10 @@ namespace YIELD
     File( int fd );
 #endif
 
-    static YIELD::auto_Object<File> open( const Path& path ) { return open( path, DEFAULT_FLAGS, DEFAULT_MODE ); }
-    static YIELD::auto_Object<File> open( const Path& path, uint32_t flags ) { return open( path, flags, DEFAULT_MODE ); }
-    static YIELD::auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode ) { return open( path, flags, mode, DEFAULT_ATTRIBUTES ); }
-    static YIELD::auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
+    static yidl::auto_Object<File> open( const Path& path ) { return open( path, DEFAULT_FLAGS, DEFAULT_MODE ); }
+    static yidl::auto_Object<File> open( const Path& path, uint32_t flags ) { return open( path, flags, DEFAULT_MODE ); }
+    static yidl::auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode ) { return open( path, flags, mode, DEFAULT_ATTRIBUTES ); }
+    static yidl::auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
 
     virtual uint64_t get_size();
 #ifdef _WIN32
@@ -382,19 +381,19 @@ namespace YIELD
 #else
     operator int() const { return fd; }
 #endif    
-    virtual ssize_t read( auto_Buffer buffer ); // Reads from the current file pointer
+    virtual ssize_t read( yidl::auto_Buffer buffer ); // Reads from the current file pointer
     virtual ssize_t read( void* buffer, size_t buffer_len ); // Reads from the current file pointer
     virtual bool seek( uint64_t offset ); // Seeks from the beginning of the file
     virtual bool seek( uint64_t offset, unsigned char whence );
-    virtual YIELD::auto_Object<Stat> stat() { return getattr(); }
-    virtual ssize_t write( auto_Buffer buffer );
+    virtual yidl::auto_Object<Stat> stat() { return getattr(); }
+    virtual ssize_t write( yidl::auto_Buffer buffer );
     virtual ssize_t write( const void* buffer, size_t buffer_len ); // Writes from the current position
     virtual ssize_t writev( const iovec* buffers, uint32_t buffers_count ); // Writes from the current file pointer
 
     YIELD_FILE_PROTOTYPES;
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( File, 1 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( File, 1 );
 
   protected:
     File();
@@ -410,10 +409,10 @@ namespace YIELD
 #endif
   };
 
-  typedef YIELD::auto_Object<File> auto_File;
+  typedef yidl::auto_Object<File> auto_File;
 
   
-  class Log : public Object
+  class Log : public yidl::Object
   {
   public:
     // Adapted from syslog levels
@@ -447,17 +446,17 @@ namespace YIELD
     private:
       friend class Log;
 
-      Stream( YIELD::auto_Object<Log> log, Level level );
+      Stream( yidl::auto_Object<Log> log, Level level );
 
-      YIELD::auto_Object<Log> log;
+      yidl::auto_Object<Log> log;
       Level level;
 
       std::ostringstream oss;
     };
 
 
-    static YIELD::auto_Object<Log> open( std::ostream&, Level level );
-    static YIELD::auto_Object<Log> open( const Path& file_path, Level level );
+    static yidl::auto_Object<Log> open( std::ostream&, Level level );
+    static yidl::auto_Object<Log> open( const Path& file_path, Level level );
 
     inline Level get_level() const { return level; }
     Stream getStream() { return Stream( incRef(), level ); }
@@ -487,8 +486,8 @@ namespace YIELD
         write( str, str_len );
     }
     
-    // Object
-    YIELD_OBJECT_PROTOTYPES( Log, 2 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( Log, 2 );
 
   protected:
     Log( Level level )
@@ -503,7 +502,7 @@ namespace YIELD
     Level level;
   };
 
-  typedef YIELD::auto_Object<Log> auto_Log;
+  typedef yidl::auto_Object<Log> auto_Log;
 
 
   class Machine
@@ -578,12 +577,12 @@ namespace YIELD
   };
 
 
-  class MemoryMappedFile : public Object
+  class MemoryMappedFile : public yidl::Object
   {
   public:
-    static YIELD::auto_Object<MemoryMappedFile> open( const Path& path ) { return open( path, File::DEFAULT_FLAGS, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES, 0 ); }
-    static YIELD::auto_Object<MemoryMappedFile> open( const Path& path, uint32_t flags ) { return open( path, flags, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES, 0 ); }
-    static YIELD::auto_Object<MemoryMappedFile> open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes, size_t minimum_size );
+    static yidl::auto_Object<MemoryMappedFile> open( const Path& path ) { return open( path, File::DEFAULT_FLAGS, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES, 0 ); }
+    static yidl::auto_Object<MemoryMappedFile> open( const Path& path, uint32_t flags ) { return open( path, flags, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES, 0 ); }
+    static yidl::auto_Object<MemoryMappedFile> open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes, size_t minimum_size );
 
     virtual bool close();
     inline size_t get_size() const { return size; }
@@ -594,15 +593,15 @@ namespace YIELD
     virtual bool sync( size_t offset, size_t length );
     virtual bool sync( void* ptr, size_t length );
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( MemoryMappedFile, 3 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( MemoryMappedFile, 3 );
 
   protected:
-    MemoryMappedFile( YIELD::auto_Object<File> underlying_file, uint32_t open_flags );
+    MemoryMappedFile( yidl::auto_Object<File> underlying_file, uint32_t open_flags );
     virtual ~MemoryMappedFile() { close(); }
 
   private:
-    YIELD::auto_Object<File> underlying_file;
+    yidl::auto_Object<File> underlying_file;
     uint32_t open_flags;
 
 #ifdef _WIN32
@@ -612,7 +611,7 @@ namespace YIELD
     size_t size;
   };
 
-  typedef YIELD::auto_Object<MemoryMappedFile> auto_MemoryMappedFile;
+  typedef yidl::auto_Object<MemoryMappedFile> auto_MemoryMappedFile;
 
 
   class Mutex
@@ -806,18 +805,7 @@ namespace YIELD
   };
 
 
-  class PageAlignedBuffer : public FixedBuffer
-  {
-  public:
-    PageAlignedBuffer( size_t capacity );
-    virtual ~PageAlignedBuffer();
-
-  private:
-    static size_t page_size;
-  };
-
-
-  class Path : public Object
+  class Path : public yidl::Object
   {
   public:
     Path() { }
@@ -856,8 +844,8 @@ namespace YIELD
     std::pair<Path, Path> splitext() const;
     size_t size() const { return host_charset_path.size(); }
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( Path, 5 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( Path, 5 );
 
   private:
     void init_from_host_charset_path();
@@ -879,11 +867,11 @@ namespace YIELD
     return os;
   }
 
-  typedef YIELD::auto_Object<Path> auto_Path;
+  typedef yidl::auto_Object<Path> auto_Path;
 
 
 #ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
-  class PerformanceCounterSet : public Object
+  class PerformanceCounterSet : public yidl::Object
   {
   public:
     enum Event 
@@ -893,15 +881,15 @@ namespace YIELD
       EVENT_L2_ICM // L2 instruction cache miss
     };
 
-    static auto_Object<PerformanceCounterSet> create();
+    static yidl::auto_Object<PerformanceCounterSet> create();
     
     bool addEvent( Event event );
     bool addEvent( const char* name );
     void startCounting();
     void stopCounting( uint64_t* counts );
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( PerformanceCounterSet, 0 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( PerformanceCounterSet, 0 );
 
   private:    
 #if defined(__sun)
@@ -918,11 +906,11 @@ namespace YIELD
     ~PerformanceCounterSet();
   };
 
-  typedef auto_Object<PerformanceCounterSet> auto_PerformanceCounterSet;
+  typedef yidl::auto_Object<PerformanceCounterSet> auto_PerformanceCounterSet;
 #endif
 
 
-  class ProcessorSet : public Object
+  class ProcessorSet : public yidl::Object
   {
   public:
     ProcessorSet();
@@ -935,8 +923,8 @@ namespace YIELD
     bool isset( uint16_t processor_i ) const;
     bool set( uint16_t processor_i );    
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( ProcessorSet, 8 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( ProcessorSet, 8 );
 
   private:
     ProcessorSet( const ProcessorSet& ) { DebugBreak(); } // Prevent copying
@@ -954,13 +942,13 @@ namespace YIELD
 #endif
   };
 
-  typedef auto_Object<ProcessorSet> auto_ProcessorSet;
+  typedef yidl::auto_Object<ProcessorSet> auto_ProcessorSet;
 
 
-  class RRD : public Object
+  class RRD : public yidl::Object
   {
   public: 
-    class Record : public Object
+    class Record : public yidl::Object
     {
     public:
       Record( double value );
@@ -970,10 +958,10 @@ namespace YIELD
       double get_value() const { return value; }
       operator double() const { return value; }
 
-      // Object
-      YIELD_OBJECT_PROTOTYPES( RRD::Record, 0 );
-      void marshal( Marshaller& marshaller );
-      void unmarshal( Unmarshaller& unmarshaller );
+      // yidl::Object
+      YIDL_OBJECT_PROTOTYPES( RRD::Record, 0 );
+      void marshal( yidl::Marshaller& marshaller );
+      void unmarshal( yidl::Unmarshaller& unmarshaller );
 
     private:
       Time time;
@@ -988,8 +976,8 @@ namespace YIELD
     };
 
 
-    static auto_Object<RRD> creat( const Path& file_path );
-    static auto_Object<RRD> open( const Path& file_path );
+    static yidl::auto_Object<RRD> creat( const Path& file_path );
+    static yidl::auto_Object<RRD> open( const Path& file_path );
 
     void append( double value );
     void fetch_all( RecordSet& out_records );
@@ -997,8 +985,8 @@ namespace YIELD
     void fetch_range( const Time& start_time, const Time& end_time, RecordSet& out_records );
     void fetch_until( const Time& end_time, RecordSet& out_records );
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( RRD, 0 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( RRD, 0 );
 
   private:
     RRD( const Path& file_path );
@@ -1007,7 +995,7 @@ namespace YIELD
     Path current_file_path;
   };
 
-  typedef auto_Object<RRD> auto_RRD;
+  typedef yidl::auto_Object<RRD> auto_RRD;
 
 
   template <typename SampleType, size_t ArraySize, class LockType = NOPLock>
@@ -1258,10 +1246,10 @@ namespace YIELD
   };
 
 
-  class SharedLibrary : public Object
+  class SharedLibrary : public yidl::Object
   {
   public:
-    static YIELD::auto_Object<SharedLibrary> open( const Path& file_prefix, const char* argv0 = 0 );
+    static yidl::auto_Object<SharedLibrary> open( const Path& file_prefix, const char* argv0 = 0 );
 
     void* getFunction( const char* function_name, void* missing_function_return_value = NULL );
 
@@ -1271,8 +1259,8 @@ namespace YIELD
       return ( FunctionType )getFunction( function_name, ( void* )missing_function_return_value );
     }    
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( SharedLibrary, 11 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( SharedLibrary, 11 );
 
   private:
     SharedLibrary( void* handle );
@@ -1281,13 +1269,13 @@ namespace YIELD
     void* handle;
   };
 
-  typedef YIELD::auto_Object<SharedLibrary> auto_SharedLibrary;
+  typedef yidl::auto_Object<SharedLibrary> auto_SharedLibrary;
 
 
-  class Stat : public Object
+  class Stat : public yidl::Object
   {
   public:   
-    static YIELD::auto_Object<Stat> stat( const Path& path );
+    static yidl::auto_Object<Stat> stat( const Path& path );
 
 #ifdef _WIN32
     Stat( mode_t mode, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime, uint32_t attributes );
@@ -1329,8 +1317,8 @@ namespace YIELD
 
     void set_size( uint64_t size ) { this->size = size; }
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( Stat, 12 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( Stat, 12 );
 
   protected:
     virtual ~Stat() { }
@@ -1355,7 +1343,7 @@ namespace YIELD
     Stat( const Stat& ) { DebugBreak(); } // Prevent copying
   };
 
-  typedef YIELD::auto_Object<Stat> auto_Stat;
+  typedef yidl::auto_Object<Stat> auto_Stat;
 
 
   static inline std::ostream& operator<<( std::ostream& os, const Stat& stbuf )
@@ -1400,7 +1388,7 @@ namespace YIELD
   }
 
 
-  class Thread : public Object
+  class Thread : public yidl::Object
   {
   public:
     static unsigned long createTLSKey();
@@ -1423,8 +1411,8 @@ namespace YIELD
 
     virtual void run() = 0;
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( Thread, 14 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( Thread, 14 );
 
   private:
     unsigned long id;
@@ -1443,10 +1431,10 @@ namespace YIELD
   };
 
 
-  class TimerQueue : public Object
+  class TimerQueue : public yidl::Object
   {
   public:
-    class Timer : public Object
+    class Timer : public yidl::Object
     {
     public:
       Timer( const Time& timeout );
@@ -1459,8 +1447,8 @@ namespace YIELD
       void set_period( const Time& period ) { this->period = period; }
       void set_timeout( const Time& timeout ) { this->timeout = timeout; }
 
-      // Object
-      YIELD_OBJECT_PROTOTYPES( Timer, 0 );
+      // yidl::Object
+      YIDL_OBJECT_PROTOTYPES( Timer, 0 );
 
     private:
       friend class TimerQueue;
@@ -1477,12 +1465,12 @@ namespace YIELD
     TimerQueue();
     ~TimerQueue();
 
-    void addTimer( auto_Object<Timer> timer );
+    void addTimer( yidl::auto_Object<Timer> timer );
     static void destroyDefaultTimerQueue();
     static TimerQueue& getDefaultTimerQueue();
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( TimerQueue, 0 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( TimerQueue, 0 );
 
   private:
 #ifdef _WIN32
@@ -1515,10 +1503,10 @@ namespace YIELD
     static TimerQueue* default_timer_queue;
   };
 
-  typedef auto_Object<TimerQueue> auto_TimerQueue;
+  typedef yidl::auto_Object<TimerQueue> auto_TimerQueue;
 
 
-  class Volume : public Object
+  class Volume : public yidl::Object
   {
   public:    
     const static mode_t DEFAULT_DIRECTORY_MODE = S_IREAD|S_IWRITE|S_IEXEC;
@@ -1572,22 +1560,22 @@ namespace YIELD
     virtual bool touch( const Path& path ) { return touch( path, File::DEFAULT_MODE ); }
     virtual bool touch( const Path& path, mode_t mode );
 
-    // Object
-    YIELD_OBJECT_PROTOTYPES( Volume, 15 );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( Volume, 15 );
   };
 
-  typedef YIELD::auto_Object<Volume> auto_Volume;
+  typedef yidl::auto_Object<Volume> auto_Volume;
 
 
-  class XDRMarshaller : public Marshaller
+  class XDRMarshaller : public yidl::Marshaller
   {
   public:
     XDRMarshaller();
 
-    auto_StringBuffer get_buffer() const { return buffer; }
+    yidl::auto_StringBuffer get_buffer() const { return buffer; }
 
     // Marshaller
-    YIELD_MARSHALLER_PROTOTYPES;
+    YIDL_MARSHALLER_PROTOTYPES;
     void writeFloat( const char* key, uint32_t tag, float value );
     void writeInt32( const char* key, uint32_t tag, int32_t value );
 
@@ -1595,23 +1583,23 @@ namespace YIELD
     virtual void writeKey( const char* key );
 
   private:
-    auto_StringBuffer buffer;
+    yidl::auto_StringBuffer buffer;
     std::vector<bool> in_map_stack;
   };
 
 
-  class XDRUnmarshaller : public Unmarshaller
+  class XDRUnmarshaller : public yidl::Unmarshaller
   {
   public:
-    XDRUnmarshaller( auto_Buffer buffer );
+    XDRUnmarshaller( yidl::auto_Buffer buffer );
 
     // Unmarshaller
-    YIELD_UNMARSHALLER_PROTOTYPES;
+    YIDL_UNMARSHALLER_PROTOTYPES;
     float readFloat( const char* key, uint32_t tag );
     int32_t readInt32( const char* key, uint32_t tag );
 
   private:
-    auto_Buffer buffer;
+    yidl::auto_Buffer buffer;
 
     void read( void*, size_t );
   };

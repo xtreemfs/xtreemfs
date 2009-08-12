@@ -27,11 +27,11 @@ namespace org
       private:
         friend class Volume;
 
-        File( YIELD::auto_Object<Volume> parent_volume, YIELD::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials );
+        File( yidl::auto_Object<Volume> parent_volume, yidl::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials );
         ~File();
 
-        YIELD::auto_Object<Volume> parent_volume;
-        YIELD::auto_Object<MRCProxy> mrc_proxy;
+        yidl::auto_Object<Volume> parent_volume;
+        yidl::auto_Object<MRCProxy> mrc_proxy;
         YIELD::Path path;
         org::xtreemfs::interfaces::FileCredentials file_credentials;
 
