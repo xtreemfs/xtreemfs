@@ -41,7 +41,6 @@ from yidl.targets.cpp_target import *
 
 # Copy yidl source and headers into share/
 copyfile( os.path.join( YIDL_DIR_PATH, "include", "yidl.h" ), os.path.join( XTREEMFS_CLIENT_DIR_PATH, "share", "yieldfs", "share", "yield", "share", "yidl", "include", "yidl.h" ) )
-copyfile( os.path.join( YIDL_DIR_PATH, "src", "cpp", "yidl.cpp" ), os.path.join( XTREEMFS_CLIENT_DIR_PATH, "share", "yieldfs", "share", "yield", "share", "yidl", "src", "cpp", "yidl.h" ) )
 
 # Copy Yield source and headers into share/
 copyfile( os.path.join( YIELD_DIR_PATH, "include", "yield", "main.h" ), os.path.join( XTREEMFS_CLIENT_DIR_PATH, "share", "yieldfs", "share", "yield", "include", "yield", "main.h" ) )
