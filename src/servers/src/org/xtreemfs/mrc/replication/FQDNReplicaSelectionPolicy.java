@@ -20,7 +20,7 @@ import org.xtreemfs.interfaces.ReplicaSet;
  */
 public class FQDNReplicaSelectionPolicy implements ReplicaSelectionPolicy {
 
-    public static final short POLICY_ID = (short) 2;
+    public static final short POLICY_ID = (short) 3;
 
     @Override
     public ReplicaSet getSortedReplicaList(ReplicaSet replicas, InetAddress clientAddr) {
