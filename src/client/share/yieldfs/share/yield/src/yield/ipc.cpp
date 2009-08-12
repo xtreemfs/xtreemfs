@@ -1,4 +1,4 @@
-// Revision: 1807
+// Revision: 1808
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -99,7 +99,7 @@ public:
       AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request->serialize(), client, request );
       TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), client.operation_timeout ) );
       get_socket()->aio_write( aio_write_control_block );
-      request.reset( NULL );
+      request = NULL;
     }
   }
   void onError( uint32_t error_code )
@@ -109,7 +109,7 @@ public:
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
         client.log->getStream( Log::LOG_INFO ) << "yield::Client: connect() to " << client.absolute_uri->get_host() << ":" << client.absolute_uri->get_port() << " failed, errno=" << error_code << ", strerror=" << Exception::strerror( error_code ) << ".";
       request->respond( *( new ExceptionResponse( error_code ) ) );
-      request.reset( NULL );
+      request = NULL;
     }
   }
 private:
@@ -143,8 +143,6 @@ public:
             client.log->getStream( Log::LOG_INFO ) << "yield::Client: successfully deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
           request->respond( *response.release() );
           client.idle_sockets.enqueue( get_socket().release() );
-          request.reset( NULL );
-          return;
         }
         else if ( deserialize_ret > 0 )
         {
@@ -157,18 +155,27 @@ public:
           AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( buffer, client, request, response );
           TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
           get_socket()->aio_read( aio_read_control_block );
-          request.reset( NULL );
-          return;
         }
-        else if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-          client.log->getStream( Log::LOG_INFO ) << "yield::Client: error deserializing " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
+        else
+        {
+          if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
+            client.log->getStream( Log::LOG_INFO ) << "yield::Client: error deserializing " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
+          request->respond( *( new ExceptionResponse( ECONNABORTED ) ) );
+          get_socket()->shutdown();
+          get_socket()->close();
+        }
       }
-      else if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( Log::LOG_INFO ) << "yield::Client: lost connection trying " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
-      request->respond( *( new ExceptionResponse( ECONNABORTED ) ) );
-      get_socket()->shutdown();
-      get_socket()->close();
-      request.reset( NULL );
+      else
+      {
+        if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
+          client.log->getStream( Log::LOG_INFO ) << "yield::Client: lost connection trying " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
+        request->respond( *( new ExceptionResponse( ECONNABORTED ) ) );
+        get_socket()->shutdown();
+        get_socket()->close();
+      }
+      // Clear references so their objects will be deleted now instead of when the timeout occurs (the timeout has the last reference to this control block)
+      request = NULL;
+      unlink_buffer();
     }
   }
   void onError( uint32_t error_code )
@@ -180,7 +187,8 @@ public:
       request->respond( *( new ExceptionResponse( error_code ) ) );
       get_socket()->shutdown();
       get_socket()->close();
-      request.reset( NULL );
+      request = NULL;
+      unlink_buffer();
     }
   }
 private:
@@ -212,7 +220,8 @@ public:
       AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new yidl::HeapBuffer( 1024 ), client, request, response );
       TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
       get_socket()->aio_read( aio_read_control_block );
-      request.reset( NULL );
+      request = NULL;
+      unlink_buffer();
     }
   }
   void onError( uint32_t error_code )
@@ -222,7 +231,8 @@ public:
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
         client.log->getStream( Log::LOG_INFO ) << "yield::Client: error writing " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       request->respond( *( new ExceptionResponse( error_code ) ) );
-      request.reset( NULL );
+      request = NULL;
+      unlink_buffer();
     }
   }
 private:
@@ -2968,7 +2978,7 @@ public:
       else if ( active_fds < 0 )
       {
 #ifndef _WIN32
-        if ( errno != EINTR )
+//        if ( errno != EINTR )
 #endif
           std::cerr << "yield::Socket::AIOQueue::NBIOWorkerThread: error on poll: errno=" << Exception::get_errno() << ", strerror=" << Exception::strerror() << "." << std::endl;
       }

@@ -1,4 +1,4 @@
-// Revision: 1807
+// Revision: 1808
 
 #include "yield/concurrency.h"
 using namespace YIELD;
@@ -75,6 +75,9 @@ ColorStageGroup::~ColorStageGroup()
 // event_handler.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+EventHandler::EventHandler()
+  : redirect_event_target( NULL )
+{ }
 void EventHandler::handleUnknownEvent( Event& ev )
 {
   switch ( ev.get_type_id() )
@@ -91,7 +94,9 @@ void EventHandler::handleUnknownEvent( Event& ev )
 }
 void EventHandler::send( Event& ev )
 {
-  if ( isThreadSafe() )
+  if ( redirect_event_target != NULL )
+    redirect_event_target->send( ev );
+  else if ( isThreadSafe() )
     handleEvent( ev );
   else
   {
@@ -99,6 +104,13 @@ void EventHandler::send( Event& ev )
     handleEvent( ev );
     handleEvent_lock.release();
   }
+}
+void EventHandler::set_redirect_event_target( EventTarget* redirect_event_target )
+{
+  if ( this->redirect_event_target == NULL )
+    this->redirect_event_target = redirect_event_target;
+  else
+    DebugBreak();
 }
 
 
@@ -539,6 +551,7 @@ void StageGroup::addStage( auto_Stage stage )
   {
     if ( stages[stage_i] == NULL )
     {
+      stage->get_event_handler()->set_redirect_event_target( stage.get() );
       stage->set_stage_id( stage_i );
       stages[stage_i] = stage.release();
       return;

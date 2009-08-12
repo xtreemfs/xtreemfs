@@ -214,6 +214,8 @@ private:
 OSDProxyMux::OSDProxyMux( yidl::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SSLContext ssl_context )
   : dir_proxy( dir_proxy ), flags( flags ), log( log ), operation_timeout( operation_timeout ), ssl_context( ssl_context )
 {
+  osd_proxy_stage_group = new YIELD::SEDAStageGroup;
+
   policy_container = new PolicyContainer;
   get_osd_ping_interval_s = ( get_osd_ping_interval_s_t )policy_container->getPolicyFunction( "get_osd_ping_interval_s" );
   select_file_replica = ( select_file_replica_t )policy_container->getPolicyFunction( "select_file_replica" );
@@ -353,14 +355,21 @@ yidl::auto_Object<OSDProxy> OSDProxyMux::getTCPOSDProxy( const std::string& osd_
     {
 #ifdef YIELD_HAVE_OPENSSL
       if ( ssl_context != NULL && ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCS_SCHEME )
+      {
         tcp_osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), osd_uuid,  flags, log, operation_timeout, OSDProxy::PING_INTERVAL_DEFAULT, ssl_context ).release();
+        osd_proxy_stage_group->createStage( tcp_osd_proxy->incRef() );
+      }
       else
 #endif
       if ( ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPC_SCHEME )
+      {
         tcp_osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), osd_uuid, flags, log, operation_timeout, OSDProxy::PING_INTERVAL_DEFAULT, ssl_context ).release();
+        osd_proxy_stage_group->createStage( tcp_osd_proxy->incRef() );
+      }
       else if ( ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
       {
         udp_osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), osd_uuid, flags, log, operation_timeout, OSDProxy::PING_INTERVAL_DEFAULT, ssl_context ).release();
+        osd_proxy_stage_group->createStage( udp_osd_proxy->incRef() );
 
         if ( get_osd_ping_interval_s != NULL )
         {

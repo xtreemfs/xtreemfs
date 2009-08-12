@@ -93,6 +93,8 @@ namespace YIELD
     virtual void handleUnknownEvent( Event& );
     virtual bool isThreadSafe() const { return false; }
 
+    void set_redirect_event_target( EventTarget* redirect_event_target );
+
     // yidl::Object
     EventHandler& incRef() { return yidl::Object::incRef( *this ); }
 
@@ -100,11 +102,12 @@ namespace YIELD
     void send( Event& );
 
   protected:
-    EventHandler() { }
+    EventHandler();
     virtual ~EventHandler() { }
 
   private:
     Mutex handleEvent_lock;
+    EventTarget* redirect_event_target;
   };
 
   typedef yidl::auto_Object<EventHandler> auto_EventHandler;

@@ -215,6 +215,7 @@ namespace YIELD
       { }
 
       yidl::auto_Buffer get_buffer() const { return buffer; }
+      void unlink_buffer() { buffer = NULL; }
 
       // yidl::Object
       YIDL_OBJECT_PROTOTYPES( AIOReadControlBlock, 227 );
@@ -235,6 +236,7 @@ namespace YIELD
       { }
 
       yidl::auto_Buffer get_buffer() const { return buffer; }
+      void unlink_buffer() { buffer = NULL; }
 
       // yidl::Object
       YIDL_OBJECT_PROTOTYPES( AIOWriteControlBlock, 228 );

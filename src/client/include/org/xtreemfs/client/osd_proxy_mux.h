@@ -47,6 +47,7 @@ namespace org
 
         typedef std::map< std::string, std::pair<OSDProxy*, OSDProxy*> > OSDProxyMap;
         OSDProxyMap osd_proxies;
+        YIELD::auto_StageGroup osd_proxy_stage_group;
 
         // Policies callbacks
         get_osd_ping_interval_s_t get_osd_ping_interval_s;
