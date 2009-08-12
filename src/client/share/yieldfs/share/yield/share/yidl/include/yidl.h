@@ -177,15 +177,36 @@ namespace yidl
     operator char*() const { return static_cast<char*>( static_cast<void*>( *this ) ); }
     operator unsigned char*() const { return static_cast<unsigned char*>( static_cast<void*>( *this ) ); }
     virtual operator void*() const = 0;
-    bool operator==( const Buffer& other ) const;
+
+    bool operator==( const Buffer& other ) const
+    {
+      if ( size() == other.size() )
+      {
+        void* this_base = static_cast<void*>( *this );
+        void* other_base = static_cast<void*>( other );
+        if ( this_base != NULL && other_base != NULL )
+          return memcmp( this_base, other_base, size() ) == 0;
+        else
+          return false;
+      }
+      else
+        return false;
+    }
 
     // position: get and set the get() position
-    size_t position() const;
-    void position( size_t new_position );
+    size_t position() const { return _position; }
+
+    void position( size_t new_position )
+    {
+      if ( new_position < size() )
+        _position = new_position;
+      else
+        _position = size();
+    }
 
     // put: append bytes to the buffer, increases size but not position
-    size_t put( const char* from_string );
-    size_t put( const std::string& from_string );
+    size_t put( const char* from_string ) { return put( from_string, strlen( from_string ) ); }
+    size_t put( const std::string& from_string ) { return put( from_string.c_str(), from_string.size() ); }
     virtual size_t put( const void* from_buffer, size_t from_buffer_len ) = 0;
 
     // size: the number of filled bytes, <= capacity
@@ -195,7 +216,10 @@ namespace yidl
     YIDL_OBJECT_PROTOTYPES( Buffer, 1 );
 
   protected:
-    Buffer();
+    Buffer()
+    {
+      _position = 0;
+    }
 
   private:
     size_t _position;
