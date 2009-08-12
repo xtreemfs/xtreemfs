@@ -2441,7 +2441,8 @@ void TimerQueue::Thread::run()
     }
     else
     {
-      while ( should_run && !timers.empty() && Time::getCurrentUnixTimeNS() >= timers.top().first )
+      uint64_t current_unix_time_ns = Time::getCurrentUnixTimeNS();
+      if ( timers.top().first <= current_unix_time_ns ) // Earliest timer has expired, fire it
       {
         TimerQueue::Timer* timer = timers.top().second;
         timers.pop();
@@ -2456,19 +2457,13 @@ void TimerQueue::Thread::run()
         else
           Object::decRef( *timer );
       }
-
-      if ( should_run )
+      else // Wait on the new timers queue until a new timer arrives or it's time to fire the next timer
       {
-        if ( !timers.empty() )
-        {
-          int64_t timeout_ns = timers.top().first - Time::getCurrentUnixTimeNS();
-          TimerQueue::Timer* new_timer = new_timers_queue.timed_dequeue( timeout_ns );
-          if ( new_timer != NULL )
-            timers.push( std::make_pair( Time() + new_timer->get_timeout(), new_timer ) );
-        }
+        uint64_t timeout_ns = timers.top().first - current_unix_time_ns;
+        TimerQueue::Timer* new_timer = new_timers_queue.timed_dequeue( timeout_ns );
+        if ( new_timer != NULL )
+          timers.push( std::make_pair( Time() + new_timer->get_timeout(), new_timer ) );
       }
-      else
-        break;
     }
   }
 }

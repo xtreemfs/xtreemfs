@@ -2978,7 +2978,7 @@ public:
       else if ( active_fds < 0 )
       {
 #ifndef _WIN32
-//        if ( errno != EINTR )
+        if ( errno != EINTR )
 #endif
           std::cerr << "yield::Socket::AIOQueue::NBIOWorkerThread: error on poll: errno=" << Exception::get_errno() << ", strerror=" << Exception::strerror() << "." << std::endl;
       }
