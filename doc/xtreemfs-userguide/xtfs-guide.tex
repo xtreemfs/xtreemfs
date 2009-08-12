@@ -171,6 +171,51 @@ When a \emph{new file} is created, the MRC must decide which OSDs to use for sto
  The FQDN of the client and all OSDs is compared and the maximum match (from the end of the FQDN) is used to sort the OSDs. The policy selects the OSDs with the highest number of characters that match. This policy can be used to automatically select OSDs which are close to the client, if the length of the match between two DNS entries also indicate a low latency between two machines. The minimum match can be modified by setting the xattr '\texttt{xtreemfs.osdsel\_policy\_args}' to an integer value larger 0. OSDs with a match smaller than the minimum match are never used.
 \end{itemize}
 
+\subsection{Replica Selection Policies}\label{sec:repl_policies}
+When a client opens a file with more than one replica, the MRC uses a replica selection policy to sort the list of replicas for the client. Clients will always use the first replica in the list. If a replica is not available, the client will automatically select the next replica from the list. Replica selection policies can be used to sort the replica lists, e.g. to ensure that clients use replicas which are close to them. By default, the MRC returns an unmodified list of replicas.
+
+\begin{itemize}
+ \item Default Replica Selection (policy id 1)\index{Default Replica Selection Policy}\index{Replica Selection Policy!default}\\
+       The MRC returns an unmodified list of replicas to the client. This is the default policy.
+
+ \item DNS based Replica Selection  (policy id 3)\index{DNS based Replica Selection}\index{Replica Selection Policy!DNS based}\\
+       This policy is identical to the DNS based OSD Selection (see Sec. \ref{sec:osd_policies}). The list of replicas is sorted from the longest FQDN name match to the shortest.
+
+ \item Datacenter Map Replica Selection  (policy id 4)\index{Datacenter Map Replica Selection}\index{Replica Selection Policy!datacenter map}\\
+       This policy uses a statically configured datacenter map that describes the distance between datacenters. It works only with IPv4 addresses at the moment. Each datacenter has a list of matching IP addresses and networks which is used to assign clients and replicas (OSDs) to datacenters. The replica list is sorted according to the distance between replica and client starting from the closest (smallest distance). Machines in the same datacenter have a distance of 0.
+
+	This policy requires a datacenter map configuration file in \texttt{/etc/xos/xtreemfs/datacentermap} on the MRC machine which is loaded at MRC startup. This config file must contain the following parameters:
+	\begin{itemize}
+		\item \texttt{datacenters=A,B,C}\\
+			A comma separated list of datacenters. Datacenter names may only contain a-z, A-Z, 0-9 and \_.
+
+		\item \texttt{distance.A-B=100}\\
+			For each pair of datacenters, the distance must be specified. As distances are symmetric, it is sufficient to specify A to B.
+
+		\item \texttt{addresses.A=192.168.1.1,192.168.2.0/24}\\
+			For each datacenter a list of matching IP addresses or networks must be specified.
+
+		\item \texttt{max\_cache\_size=1000}\\
+			Sets the size of the address cache that is used to lookup IP-to-datacenter matches.
+	\end{itemize}
+	
+	A sample datacenter map could look like this:
+
+	\begin{verbatim}
+	datacenters=BERLIN,LONDON,NEW_YORK
+	distance.BERLIN-LONDON=10
+	distance.BERLIN-NEW_YORK=140
+	distance.LONDON-NEW_YORK=110
+	addresses.BERLIN=192.168.1.0/24
+	addresses.LONDON=192.168.2.0/24
+	addresses.NEW_YORK=192.168.3.0/24,192.168.100.0/25
+	max_cache_size=100
+	\end{verbatim}
+
+
+\end{itemize}
+
+
 
 \subsection{Striping Policies} \label{sec:striping_policies}
 
@@ -904,7 +949,7 @@ To list all replicas and OSDs of the file use:
 $> xtfs_repl -l local-path-of-file
 \end{verbatim}
 
-Removing also supports muliple modes. Again an interactive mode and a mode which is choosing the replica randomly. To remove a specific replica, the head-OSD (first OSD) of this replica must be given as an argument. At least one complete replica must exist, so the tool will not remove a complete replica, if no others exists. To remove the just created replica use the following command and change head-osd to the one listed by \texttt{xtfs_repl -l}:
+Removing also supports muliple modes. Again an interactive mode and a mode which is choosing the replica randomly. To remove a specific replica, the head-OSD (first OSD) of this replica must be given as an argument. At least one complete replica must exist, so the tool will not remove a complete replica, if no others exists. To remove the just created replica use the following command and change head-osd to the one listed by \texttt{xtfs\_repl -l}:
 
 \begin{verbatim}
 $> xtfs_repl -r head-OSD local-path-of-file
