@@ -376,7 +376,7 @@ namespace YIELD
   { 
   public:
     auto_ResponseQueue( ResponseQueue<ResponseType>* response_queue )
-      : auto_Object< ResponseQueue<ResponseType> >( response_queue )
+      : yidl::auto_Object< ResponseQueue<ResponseType> >( response_queue )
     { }
   };
 

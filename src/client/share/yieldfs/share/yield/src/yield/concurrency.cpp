@@ -1,4 +1,4 @@
-// Revision: 1805
+// Revision: 1807
 
 #include "yield/concurrency.h"
 using namespace YIELD;
@@ -67,7 +67,7 @@ ColorStageGroup::~ColorStageGroup()
   for ( std::vector<Thread*>::iterator thread_i = threads.begin(); thread_i != threads.end(); thread_i++ )
   {
     ( *thread_i )->stop();
-    Object::decRef( **thread_i );
+    yidl::Object::decRef( **thread_i );
   }
 }
 
@@ -336,7 +336,7 @@ PollingStageGroup<VisitPolicyType>::~PollingStageGroup()
   for ( typename std::vector<Thread*>::iterator thread_i = threads.begin(); thread_i != threads.end(); thread_i++ )
   {
     ( *thread_i )->stop();
-    Object::decRef( **thread_i );
+    yidl::Object::decRef( **thread_i );
   }
 }
 template class PollingStageGroup<DBRVisitPolicy>;

@@ -451,14 +451,6 @@
     >
 </File>
 </Filter>
-<Filter Name="src">
-<Filter Name="cpp">
-<File
-    RelativePath="..\..\..\..\share\yieldfs\share\yield\share\yidl\src\cpp\yidl.h"
-    >
-</File>
-</Filter>
-</Filter>
 </Filter>
 </Filter>
 <Filter Name="src">
