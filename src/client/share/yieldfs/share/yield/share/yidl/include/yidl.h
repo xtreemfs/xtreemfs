@@ -4,20 +4,19 @@
 #ifndef _YIDL_H_
 #define _YIDL_H_
 
-#include <cstring>
-#include <ostream>
-#include <string>
-
-#ifdef _WIN32
 #define __STDC_LIMIT_MACROS
+#ifdef _WIN32
 #include "msstdint.h"
 #else
 #include <sys/uio.h> // For struct iovec
-#define __STDC_LIMIT_MACROS
 #include <stdint.h>
 #endif
 
 #include "atomic.h"
+
+#include <cstring>
+#include <ostream>
+#include <string>
 
 
 #ifdef _WIN32
