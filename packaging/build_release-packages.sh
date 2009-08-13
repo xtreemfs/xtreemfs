@@ -404,7 +404,7 @@ function move_packages() {
     mv $CLIENT_PACKAGE_NAME.tar.gz $TARGET_DIR/xtreemfs-client-testing
     cp $SERVER_PACKAGE_NAME.tar.gz $TARGET_DIR/xtreemfs-server
     mv $SERVER_PACKAGE_NAME.tar.gz $TARGET_DIR/xtreemfs-server-testing
-    #cp $TOOLS_PACKAGE_NAME.tar.gz $TARGET_DIR/xtreemfs-tools
+    cp $TOOLS_PACKAGE_NAME.tar.gz $TARGET_DIR/xtreemfs-tools
     mv $TOOLS_PACKAGE_NAME.tar.gz $TARGET_DIR/xtreemfs-tools-testing
     mv $XOS_ADDONS_PACKAGE_NAME.tar.gz $TARGET_DIR
     mv $SOURCE_TARBALL_NAME.tar.gz $TARGET_DIR
