@@ -27,6 +27,7 @@ package org.xtreemfs.mrc.replication;
 import java.net.InetAddress;
 
 import org.xtreemfs.interfaces.ReplicaSet;
+import org.xtreemfs.interfaces.StringSet;
 
 /**
  * Interface for policies implementing replica selection policies.
@@ -48,5 +49,15 @@ public interface ReplicaSelectionPolicy {
      * @return the re-ordered list
      */
     public ReplicaSet getSortedReplicaList(ReplicaSet replicas, InetAddress clientAddr);
+    
+    /**
+     * Sorts the list of OSDs. This method will be invoked when an OSD list is
+     * requested by the client.
+     * 
+     * @param osdIDs a string set with OSD IDs
+     * @param clientAddr the client's address
+     * @return a sorted string set with OSD IDs
+     */
+    public StringSet getSortedOSDList(StringSet osdIDs, InetAddress clientAddr);
     
 }

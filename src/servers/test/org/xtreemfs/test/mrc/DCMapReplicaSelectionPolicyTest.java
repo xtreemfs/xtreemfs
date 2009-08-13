@@ -8,6 +8,10 @@ package org.xtreemfs.test.mrc;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.Properties;
+
+import junit.framework.TestCase;
+import junit.textui.TestRunner;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -27,7 +31,7 @@ import static org.junit.Assert.*;
  *
  * @author bjko
  */
-public class DCMapReplicaSelectionPolicyTest {
+public class DCMapReplicaSelectionPolicyTest extends TestCase {
 
     TestEnvironment env;
 
@@ -169,17 +173,59 @@ public class DCMapReplicaSelectionPolicyTest {
         assertEquals("osd1",sorted.get(0).getOsd_uuids().get(0));
         assertEquals("osd4",sorted.get(1).getOsd_uuids().get(0));
         assertEquals("osd2",sorted.get(2).getOsd_uuids().get(0));
-        assertEquals("osd3",sorted.get(2).getOsd_uuids().get(0));
+        assertEquals("osd3",sorted.get(3).getOsd_uuids().get(0));
 
         clientAddr = InetAddress.getByName("192.168.3.100");
         sorted = policy.getSortedReplicaList(replicas, clientAddr);
 
         assertEquals("osd2",sorted.get(0).getOsd_uuids().get(0));
-        assertEquals("osd1",sorted.get(1).getOsd_uuids().get(0));
-        assertEquals("osd4",sorted.get(2).getOsd_uuids().get(0));
-        assertEquals("osd3",sorted.get(2).getOsd_uuids().get(0));
+        assertEquals("osd4",sorted.get(1).getOsd_uuids().get(0));
+        assertEquals("osd1",sorted.get(2).getOsd_uuids().get(0));
+        assertEquals("osd3",sorted.get(3).getOsd_uuids().get(0));
 
 
+    }
+    
+    public void testSortingOSD() throws Exception {
+        
+        Properties p = new Properties();
+        p.setProperty("datacenters", "A,B,C");
+        p.setProperty("distance.A-B", "10");
+        p.setProperty("distance.A-C", "100");
+        p.setProperty("distance.B-C", "50");
+        p.setProperty("A.addresses","192.168.1.1,192.168.2.0/24");
+        p.setProperty("B.addresses","192.168.1.2,192.168.3.0/24");
+        p.setProperty("C.addresses","192.168.1.3,192.168.4.0/24,192.168.10.10");
+        DCMapReplicaSelectionPolicy policy = new DCMapReplicaSelectionPolicy(p);
+                
+        StringSet osds = new StringSet();
+        osds.add("osd1");
+        osds.add("osd2");
+        osds.add("osd3");
+        osds.add("osd4");
+        
+        UUIDResolver.addTestMapping("osd1", "192.168.2.10", 2222, false);
+        UUIDResolver.addTestMapping("osd2", "192.168.3.11", 2222, false);
+        UUIDResolver.addTestMapping("osd3", "192.168.4.100", 2222, false);
+        UUIDResolver.addTestMapping("osd4", "192.168.1.1", 2222, false);
+        
+        InetAddress clientAddr = InetAddress.getByName("192.168.2.100");
+        StringSet sortedList = policy.getSortedOSDList(osds, clientAddr);
+        assertEquals("osd1",sortedList.get(0));
+        assertEquals("osd4",sortedList.get(1));
+        assertEquals("osd2",sortedList.get(2));
+        assertEquals("osd3",sortedList.get(3));
+        
+        clientAddr = InetAddress.getByName("192.168.3.100");
+        sortedList = policy.getSortedOSDList(osds, clientAddr);
+        assertEquals("osd2",sortedList.get(0));
+        assertEquals("osd1",sortedList.get(1));
+        assertEquals("osd4",sortedList.get(2));
+        assertEquals("osd3",sortedList.get(3));        
+    }
+    
+    public static void main(String[] args) {
+        TestRunner.run(DCMapReplicaSelectionPolicyTest.class);
     }
 
 }

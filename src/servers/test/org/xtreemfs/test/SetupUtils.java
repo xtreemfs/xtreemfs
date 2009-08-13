@@ -51,7 +51,7 @@ import org.xtreemfs.osd.OSDConfig;
  */
 public class SetupUtils {
     
-    public static final String     TEST_DIR         = "/tmp/xtreemfs-test";
+    public static final String     TEST_DIR         = "/tmp/xtreemfs-test2";
     
     public static final String     CERT_DIR         = "test/certs/";
     

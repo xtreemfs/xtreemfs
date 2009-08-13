@@ -9,17 +9,21 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
-import java.util.List;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.PriorityQueue;
 import java.util.Properties;
-import java.util.logging.Level;
 import java.util.regex.Pattern;
+
 import org.xtreemfs.common.LRUCache;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
+import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.mrc.replication.FQDNReplicaSelectionPolicy;
 import org.xtreemfs.mrc.replication.ReplicaSelectionPolicy;
 
@@ -174,7 +178,7 @@ public class DCMapReplicaSelectionPolicy implements ReplicaSelectionPolicy {
                     ServiceUUID uuid = new ServiceUUID(r.getOsd_uuids().get(0));
                     Inet4Address osdAddr = (Inet4Address) uuid.getAddress().getAddress();
 
-                    int match = getDistance(client, osdAddr);
+                    int match = -getDistance(client, osdAddr);
 
                     list.add(new FQDNReplicaSelectionPolicy.SortedReplica(r, match));
                 } catch (UnknownUUIDException ex) {
@@ -193,5 +197,31 @@ public class DCMapReplicaSelectionPolicy implements ReplicaSelectionPolicy {
         } else {
             return replicas;
         }
+    }
+
+    @Override
+    public StringSet getSortedOSDList(StringSet osdIDs, InetAddress clientAddr) {
+        
+        final Inet4Address cAddr = (Inet4Address) clientAddr;
+        
+        Collections.sort(osdIDs, new Comparator<String>() {
+            public int compare(String o1, String o2) {
+                try {
+                    ServiceUUID uuid1 = new ServiceUUID(o1);
+                    ServiceUUID uuid2 = new ServiceUUID(o2);
+                    Inet4Address osdAddr1 = (Inet4Address) uuid1.getAddress().getAddress();
+                    Inet4Address osdAddr2 = (Inet4Address) uuid2.getAddress().getAddress();
+                    
+                    return getDistance(osdAddr1, cAddr) - getDistance(osdAddr2, cAddr);
+                    
+                } catch (UnknownUUIDException e) {
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this, "cannot compare UUIDs");
+                    Logging.logMessage(Logging.LEVEL_WARN, this, OutputUtils.stackTraceToString(e));
+                    return 0;
+                }
+            }
+        });
+        
+        return osdIDs;
     }
 }

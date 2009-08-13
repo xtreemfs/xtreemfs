@@ -7,6 +7,8 @@ package org.xtreemfs.test.mrc;
 
 import java.net.InetAddress;
 import junit.framework.TestCase;
+import junit.textui.TestRunner;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -116,6 +118,39 @@ public class FQDNReplicaSelectionPolicyTest extends TestCase {
 
         assertEquals("osd2",sorted.get(0).getOsd_uuids().get(0));
 
+    }
+    
+    public void testSortingOSDs() throws Exception {
+
+        StringSet osds = new StringSet();
+        osds.add("osd1");
+        osds.add("osd2");
+        osds.add("osd3");
+        osds.add("osd4");
+        osds.add("osd5");
+        
+        UUIDResolver.addTestMapping("osd1", "xtreemfs1.zib.de", 2222, false);
+        UUIDResolver.addTestMapping("osd2", "www.heise.de", 2222, false);
+        UUIDResolver.addTestMapping("osd3", "xtreemfs.zib.de", 2222, false);
+        UUIDResolver.addTestMapping("osd4", "csr-pc29.zib.de", 2222, false);
+        UUIDResolver.addTestMapping("osd5", "download.xtreemfs.com", 2222, false);
+
+        InetAddress clientAddr = InetAddress.getByName("xtreemfs.zib.de");
+        StringSet sorted = p.getSortedOSDList(osds, clientAddr);
+
+        assertEquals("osd3",sorted.get(0));
+        assertEquals("osd1",sorted.get(1));
+        assertEquals("osd4",sorted.get(2));
+
+        clientAddr = InetAddress.getByName("www.heise.de");
+        sorted = p.getSortedOSDList(osds, clientAddr);
+
+        assertEquals("osd2",sorted.get(0));
+
+    }
+    
+    public static void main(String[] args) {
+        TestRunner.run(FQDNReplicaSelectionPolicyTest.class);
     }
 
 }
