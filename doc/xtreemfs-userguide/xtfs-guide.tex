@@ -273,7 +273,7 @@ Plug-in policies have to be deployed in the directory specified by the MRC confi
 
 \section{Installation}
 
-When installing XtreemFS, you can choose from two different installation sources: you can download one of the \emph{pre-packaged releases} that we create for most Linux distributions or you can install directly from the \emph{source tarball}. In the pre-packaged release, the server and the client parts are split into separate packages.
+When installing XtreemFS server components, you can choose from two different installation sources: you can download one of the \emph{pre-packaged releases} that we create for most Linux distributions or you can install directly from the \emph{source tarball}. In the pre-packaged release, the server and the client parts are split into separate packages.
 
 \subsection{Prerequisites}
 
@@ -329,7 +329,7 @@ To create a globally unique UUID you can use tools like \texttt{uuidgen}. During
 
 \subsection{Automatic DIR Service Discovery}
 \label{sec:autodiscover}
-The OSD and MRC discover the DIR service automatically by default. On startup they will broadcast requests to the local LAN and wait up to 10s for a response from a DIR. This works only in a local LAN environment as broadcast messages are not routed to other networks. Local firewalls on the computers on which the services are running can also prevent the automatic discovery from working. The services will select the first DIR which responded which can lead to non-deterministic behaviour if multiple DIR services are present.
+The OSD and MRC discover the DIR service automatically by default. On startup they will broadcast requests to the local LAN and wait up to 10s for a response from a DIR. This works only in a local LAN environment as broadcast messages are not routed to other networks. Local firewalls on the computers on which the services are running can also prevent the automatic discovery from working. The services will select the first DIR which responded which can lead to non-deterministic behavior if multiple DIR services are present.
 
 \textbf{Security:} The automatic discovery is a potential security risk when used in untrusted environments as any user can start-up DIR services.
 
@@ -492,7 +492,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & DIR\\
  Values   & true, false \\
  Default  & true \\
- Description & If set to true the DIR will received UDP broadcasts and advertise itself in response to XtreemFS components using the DIR automatic discoery mechanism. If set to false, the DIR will ignore all UDP traffic. For details see Sec. \ref{sec:autodiscover}.
+ Description & If set to true the DIR will received UDP broadcasts and advertise itself in response to XtreemFS components using the DIR automatic discovery mechanism. If set to false, the DIR will ignore all UDP traffic. For details see Sec. \ref{sec:autodiscover}.
 \end{tabular}
 
 \subsubsection{\texttt{geographic\_coordinates}}
@@ -874,53 +874,7 @@ Example call to \texttt{xtfs\_rmvol} to delete \texttt{myVolume}:
 $> xtfs_rmvol my-mrc-host.com:32636/myVolume
 \end{verbatim}
 
-Volume deletion is restricted to volume owners and superusers.
-
-\subsection{MRC Database Conversion}
-
-The format in which the MRC stores its data on disk may change with future XtreemFS versions. In order that XtreemFS server components may be updated without losing the whole content of the file system, it is possible to create a version-independent XML representation of the metadata stored in MRC database.
-
-Such an XML representation can e.g.\ be created as follows:
-
-\begin{verbatim}
-$> xtfs_mrcdbtool -mrc my-mrc-host.com:32636 \
-   dump /tmp/dump.xml
-\end{verbatim}
-
-This call will create a file \texttt{dump.xml} containing the entire MRC database content in the \texttt{/tmp} directory at \texttt{my-mrc-host.com}.
-
-To restore an MRC database from a dump, execute
-
-\begin{verbatim}
-$> xtfs_mrcdbtool -mrc my-mrc-host.com:32636 \
-   restore /tmp/dump.xml
-\end{verbatim}
-
-This will restore the database stored in \texttt{/tmp/dump.xml} at \texttt{my-mrc-host.com}. Note that for safety reasons, it is only possible to restore a database from a dump if the database of the running MRC does not have any content. To restore an MRC database, it is thus necessary to delete all MRC database files before starting the MRC.
-
-\subsection{Scrubbing and Cleanup}
-
-In real-world environments, errors occur in the course of creating, modifying or deleting files. This can cause corruptions of file data or metadata. Such things happen e.g.\ if the client is suddenly terminated, or loses connection with a server component. There are several such scenarios: if a client writes to a file but does not report file sizes received from the OSD back to the MRC, inconsistencies between the file size stored in the MRC and the actual size of all objects in the OSD will occur. If a client deletes a file from the directory tree, but cannot reach the OSD, orphaned objects will remain on the OSD. If an OSD is terminated during an ongoing write operation, file content will become corrupted.
-
-In order to detect and, if possible, resolve such inconsistencies, tools for scrubbing and OSD cleanup exist. To check the consistency of file sizes and checksums, the following command can be executed:
-
-\begin{verbatim}
-$> xtfs_scrub -dir oncrpc://my-dir-host.com:32638 xtreemfsVolume
-\end{verbatim}
-
-This will scrub each file in the volume \texttt{myVolume}, i.e.\ check file size consistency and set the correct file size on the MRC, if necessary, and check whether an invalid checksum in the OSD indicates a corrupted file content. The \texttt{-dir} argument specifies the directory service that will be used to resolve service UUIDs. Please see \texttt{man xtfs\_scrub} for further details.
-
-A second tool scans an OSD for orphaned objects, which can be used as follows:
-
-\begin{verbatim}
-$> xtfs_cleanup -dir oncrpc://localhost:32638 \
-   uuid:u2i3-28isu2-iwuv29-isjd83
-\end{verbatim}
-The given UUID identifies the OSD to clean and will be resolved by the
-directory service defined by the \texttt{-dir} option (localhost:32638 in this example).
-The process will be started and can be stopped by setting the option
-\texttt{-stop}. To watch the cleanup progress use option \texttt{-i} for the
-interactive mode. For further informations see \texttt{man xtfs\_cleanup}.
+Volume deletion is restricted to volume owners and privileged users.
 
 
 \chapter{The XtreemFS Client}
@@ -932,6 +886,8 @@ As for the XtreemFS Services, there are two different installation sources for t
 \subsection{Prerequisites}
 
 For both installations you need FUSE 2.6 or newer, openSSL 0.9.8 or newer and a Linux 2.6 kernel. For optimal performance we suggest to use FUSE 2.8 with a kernel version 2.6.26 or newer.
+
+To install the client tools, 
 
 To build the XtreemFS Client from sources, you need the openSSL headers (e.g. openssl-devel package), python $\geq$ 2.4, and gcc-c++ $\geq$ 4.2.
 
@@ -1006,8 +962,102 @@ $> xtfs_umount /xtreemfs
 \end{verbatim}
 
 
+\chapter{XtreemFS Tools}
 
-\section{Reading XtreemFS-specific File Info}
+\section{Installation}
+
+When installing XtreemFS tools, you can choose from two different installation sources: you can download one of the \emph{pre-packaged releases} that we create for most Linux distributions or you can install directly from the \emph{source tarball}. In the pre-packaged release, the server and the client parts are split into separate packages.
+
+\subsection{Prerequisites}
+
+For the pre-packaged release, you will need Sun Java JRE 1.6.0 or newer to be installed on the system.
+
+When building XtreemFS directly from the source, you need a Sun Java JDK 1.6.0 or newer, Ant 1.6.5 or newer and gmake.
+
+\subsection{Installing from Pre-Packaged Releases}
+
+On RPM-based distributions (RedHat, Fedora, SuSE, Mandriva, XtreemOS) you can install the package with
+
+
+\begin{verbatim}
+$> rpm -i xtreemfs-tools-1.0.x.rpm
+\end{verbatim}
+
+
+For Debian-based distributions, please use the \texttt{.deb} package provided and install it with
+
+
+\begin{verbatim}
+$> dpkg -i xtreemfs-tools-1.0.x.deb
+\end{verbatim}
+
+
+All XtreemFS tools will be installed to \texttt{/usr/bin}.
+
+\subsection{Installing from Sources}
+
+Extract the tarball with the sources. Change to the top level directory and execute
+
+
+\begin{verbatim}
+$> make
+\end{verbatim}
+
+\section{Maintenance Tools}
+
+Tools for the maintenance of an XtreemFS installation will be described in the following.
+
+\subsection{MRC Database Conversion}
+
+The format in which the MRC stores its data on disk may change with future XtreemFS versions. In order that XtreemFS server components may be updated without losing the whole content of the file system, it is possible to create a version-independent XML representation of the metadata stored in MRC database.
+
+Such an XML representation can e.g.\ be created as follows:
+
+\begin{verbatim}
+$> xtfs_mrcdbtool -mrc my-mrc-host.com:32636 \
+   dump /tmp/dump.xml
+\end{verbatim}
+
+This call will create a file \texttt{dump.xml} containing the entire MRC database content in the \texttt{/tmp} directory at \texttt{my-mrc-host.com}.
+
+To restore an MRC database from a dump, execute
+
+\begin{verbatim}
+$> xtfs_mrcdbtool -mrc my-mrc-host.com:32636 \
+   restore /tmp/dump.xml
+\end{verbatim}
+
+This will restore the database stored in \texttt{/tmp/dump.xml} at \texttt{my-mrc-host.com}. Note that for safety reasons, it is only possible to restore a database from a dump if the database of the running MRC does not have any content. To restore an MRC database, it is thus necessary to delete all MRC database files before starting the MRC.
+
+\subsection{Scrubbing and Cleanup}
+
+In real-world environments, errors occur in the course of creating, modifying or deleting files. This can cause corruptions of file data or metadata. Such things happen e.g.\ if the client is suddenly terminated, or loses connection with a server component. There are several such scenarios: if a client writes to a file but does not report file sizes received from the OSD back to the MRC, inconsistencies between the file size stored in the MRC and the actual size of all objects in the OSD will occur. If a client deletes a file from the directory tree, but cannot reach the OSD, orphaned objects will remain on the OSD. If an OSD is terminated during an ongoing write operation, file content will become corrupted.
+
+In order to detect and, if possible, resolve such inconsistencies, tools for scrubbing and OSD cleanup exist. To check the consistency of file sizes and checksums, the following command can be executed:
+
+\begin{verbatim}
+$> xtfs_scrub -dir oncrpc://my-dir-host.com:32638 xtreemfsVolume
+\end{verbatim}
+
+This will scrub each file in the volume \texttt{myVolume}, i.e.\ check file size consistency and set the correct file size on the MRC, if necessary, and check whether an invalid checksum in the OSD indicates a corrupted file content. The \texttt{-dir} argument specifies the directory service that will be used to resolve service UUIDs. Please see \texttt{man xtfs\_scrub} for further details.
+
+A second tool scans an OSD for orphaned objects, which can be used as follows:
+
+\begin{verbatim}
+$> xtfs_cleanup -dir oncrpc://localhost:32638 \
+   uuid:u2i3-28isu2-iwuv29-isjd83
+\end{verbatim}
+The given UUID identifies the OSD to clean and will be resolved by the
+directory service defined by the \texttt{-dir} option (localhost:32638 in this example).
+The process will be started and can be stopped by setting the option
+\texttt{-stop}. To watch the cleanup progress use option \texttt{-i} for the
+interactive mode. For further information see \texttt{man xtfs\_cleanup}.
+
+\section{User Tools}
+
+There is a range of tools for the specific features of XtreemFS, which will be described in the following.
+
+\subsection{Reading XtreemFS-specific File Info}
 
 In addition to the regular file system information provided by the \texttt{stat} Linux utility, XtreemFS provides the \texttt{xtfs\_stat}\index{xtfs\_stat}\index{XtreemFS stat} tool which displays XtreemFS specific information for a file or directory.
 
@@ -1041,7 +1091,7 @@ The fileID \index{fileID} is the unique identifier of the file used on the OSDs 
 Finally, the XtreemFS replica list shows the striping policy of the file, the number of replicas and for each replica, the OSDs used to store the objects.
 
 
-\section{Changing Striping Policies}
+\subsection{Changing Striping Policies}
 
 It is not (yet) possible to change the striping policy of an existing file, as this would require moving and reformatting data among OSDs. However, individual striping policies can be assigned to new files (i.e. empty files) by changing the default striping policy of the parent directory or volume. For this purpose, XtreemFS provides the \texttt{xtfs\_sp}\index{xtfs\_sp}\index{XtreemFS striping policy tool} tool. The tool can be used to change the striping policy that will be assigned to newly created files.
 
@@ -1066,7 +1116,7 @@ width (kB):   256
 
 When creating a new file, XtreemFS will first check whether a default striping policy has been assigned to the parent directory. If this is not the case, the default striping policy for the volume will be used as the striping policy for the new file. Changing a volume's or directory's default striping policy requires superuser access rights or ownership of the directory or volume.
 
-\section{Changing Replica Selection Policy}\label{sec:repl_select_policy}
+\subsection{Changing Replica Selection Policy}\label{sec:repl_select_policy}
 
 The replica selection policy can only be set for the entire volume. The policies are described in Sec. \ref{sec:repl_policies}. To show and modify the policy for a volume, use the \texttt{xtfs\_repl} tool.
 
@@ -1082,7 +1132,7 @@ displays the current replica selection policy used for the volume. To change the
 
 If you want to use a custom (i.e. plug-in) policy, pass the id instead of the name.
 
-\section{Read-Only Replication}\index{Replication}\index{Replication!read-only}\index{Read-only Replication}
+\subsection{Read-Only Replication}\index{Replication}\index{Replication!read-only}\index{Read-only Replication}
 Read-only replication allows you to create copies of files on several OSDs. Since the files are immutable (read-only) there is no overhead for coordinating the replicas. XtreemFS supports partial and full replicas.
 A partial replica will only fetch the data requested by a client (on demand). A full replica does the same, but it also fetches the data in the background without client requests until all data of the file has been replicated (background replication).
 
@@ -1096,7 +1146,7 @@ So far XtreemFS only supports to manage replicas manually. Before the replicatio
 $> xtfs_repl --set_readonly local-path-of-file
 \end{verbatim}
 
-After a file is marked as read-only replicas can be added. The tool supports differend replica creation modes. The automatic mode retrieves a list of OSDs from the MRC and chooses the best OSD according to the current replica selection policy. You can also select an OSD by sepcifying its UUID on the command line.
+After a file is marked as read-only replicas can be added. The tool supports differend replica creation modes. The automatic mode retrieves a list of OSDs from the MRC and chooses the best OSD according to the current replica selection policy. You can also select an OSD by specifying its UUID on the command line.
 
 By default, partial replicas will be created. To create a full replica the option \texttt{--full} must be set.
 
@@ -1114,7 +1164,7 @@ To list all replicas and OSDs of the file use:
 $> xtfs_repl -l local-path-of-file
 \end{verbatim}
 
-Removing also supports muliple modes. Again there is a mode which is choosing the replica randomly. To remove a specific replica, the head-OSD (first OSD) of this replica must be given as an argument. At least one complete replica must exist, so the tool will not remove a complete replica, if no others exists. To remove the just created replica use the following command and change head-osd to the one listed by \texttt{xtfs\_repl -l}:
+Removing also supports multiple modes. Again there is a mode which is choosing the replica randomly. To remove a specific replica, the head-OSD (first OSD) of this replica must be given as an argument. At least one complete replica must exist, so the tool will not remove a complete replica, if no others exists. To remove the just created replica use the following command and change head-osd to the one listed by \texttt{xtfs\_repl -l}:
 
 \begin{verbatim}
 $> xtfs_repl -r head-OSD local-path-of-file
@@ -1139,11 +1189,11 @@ Please visit the \href{http://www.XtreemFS.org}{XtreemFS website at www.XtreemFS
 
 \textbf{Problem: }The client hangs when opening/copying/creating a file but operations like \texttt{ls} or \texttt{mkdir} work.
 
-\textbf{Solution: }This problem can occurr when an OSD uses a UUID which resolves to an address that the client cannot (correctly) resolve. If you use e.g. \texttt{localhost:32640} as the UUID for the OSD, the client will try to contact the local machine instead of the machine on which the OSD runs. Check the status page of your Directory Service and check the UUID of the OSDs.
+\textbf{Solution: }This problem can occur when an OSD uses a UUID which resolves to an address that the client cannot (correctly) resolve. If you use e.g. \texttt{localhost:32640} as the UUID for the OSD, the client will try to contact the local machine instead of the machine on which the OSD runs. Check the status page of your Directory Service and check the UUID of the OSDs.
 
 \textbf{Problem: } \texttt{xtfs\_mount} does not print an error message but the volume is not mounted (i.e. not listed in the output of \texttt{mount}).
 
-\textbf{Solution: } The client \texttt{xtfs\_mount} automatically goes into background and does not print any error messages or warinings. Use the \texttt{-f} flag when mounting to prevent the client from going into background. All error messages will be printed to the console.
+\textbf{Solution: } The client \texttt{xtfs\_mount} automatically goes into background and does not print any error messages or warnings. Use the \texttt{-f} flag when mounting to prevent the client from going into background. All error messages will be printed to the console.
 
 \appendix
 
