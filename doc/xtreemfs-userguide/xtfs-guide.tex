@@ -12,7 +12,7 @@
 
 \title{XtreemFS Installation and User Guide}
 
-\date{Version 1.0 RC1}
+\date{Version 1.0}
 
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
@@ -32,7 +32,7 @@
 \begin{flushleft}
 \sffamily \begin{LARGE}The XtreemFS Installation and User Guide\end{LARGE}
 
- Version 1.0 RC1
+Version 1.0
 \end{flushleft}
 
 
@@ -103,7 +103,9 @@ You can also mount this volume on remote computers. First make sure that the por
 
 \section{About XtreemFS}
 
-With XtreemFS you are about to install a modern \emph{distributed file system}. As a distributed file system, XtreemFS stores your file data on several servers and you can simply scale your file system by adding more hosts. XtreemFS is a full-featured file system that supports the full POSIX file interface, including \emph{extended attributes} (xattrs). In case of concurrent access by several distributed programs, XtreemFS provides you currently with NFS close-to-open consistency.
+With XtreemFS you are about to install a modern \emph{distributed and replicated file system}. As a distributed file system, XtreemFS stores your file data on several servers and you can simply scale your file system by adding more hosts. XtreemFS is a full-featured file system that supports the full POSIX file interface, including \emph{extended attributes} (xattrs). In case of concurrent access by several distributed programs, XtreemFS provides you currently with NFS close-to-open consistency.
+
+With version 1.0 XtreemFS also supports replication of files. The so called read-only replication allows you to have multiple copies of immutable files. XtreemFS also supports partial replicas which helps you to save disk capacity and network bandwidth; only data that is requested by clients is stored in partial replicas.
 
 XtreemFS has been designed for deployment in \emph{wide-area environments} connected by the Internet. This means that it allows you to mount an XtreemFS volume from any location, given the right permissions; but it also implies that file system installations can span multiple locations or data centers.
 
@@ -1080,13 +1082,15 @@ displays the current replica selection policy used for the volume. To change the
 
 If you want to use a custom (i.e. plug-in) policy, pass the id instead of the name.
 
-\subsection{Read-Only Replication}
+\section{Read-Only Replication}\index{Replication}\index{Replication!read-only}\index{Read-only Replication}
 Read-only replication allows you to create copies of files on several OSDs. Since the files are immutable (read-only) there is no overhead for coordinating the replicas. XtreemFS supports partial and full replicas.
 A partial replica will only fetch the data requested by a client (on demand). A full replica does the same, but it also fetches the data in the background without client requests until all data of the file has been replicated (background replication).
 
 With XtreemFS all replicas are initially empty and can be used immediately by applications. If a replica does not have the requested data, it fetches it from another replica and saves it locally for future requests. This helps you to reduce start-up times, and saves network bandwidth and disk usage.
 
-So far XtreemFS only supports to manage replicas manually. Before the replication can be used the file must be marked as read-only with the following command:
+The XtreemFS client gets a list of replicas from the MRC when opening a file. This list is sorted according to the volume's replica selection policy, i.e. the first replica in the list is the ``best'' replica for the client. The client will use the first replica in the list and automatically switches to the next one if it is not reachable.
+
+So far XtreemFS only supports to manage replicas manually. Before the replication can be used the file must be marked as read-only with the following command:\index{xtfs\_repl}
 
 \begin{verbatim}
 $> xtfs_repl --set_readonly local-path-of-file
@@ -1101,7 +1105,7 @@ XtreemFS supports different transfer strategies which has an big impact on the s
 To create a full replica and usage of the random transfer strategy, the following command must be used. The OSDs are selected according to the volume's replica selection policy. See Sec. \ref{sec:repl_policies} for a description of the policies.
 
 \begin{verbatim}
-$> xtfs_repl --auto_add --full --strategy random local-path-of-file
+$> xtfs_repl --add_auto --full --strategy random local-path-of-file
 \end{verbatim}
 
 To list all replicas and OSDs of the file use:
@@ -1217,16 +1221,17 @@ ssl.trusted_certs.container = jks
 \chapter{Command Line Utilities}
 
 \begin{description}
- \item[xtfs\_mount] The XtreemFS client which mounts an XtreemFS volume locally on a machine.
- \item[xtfs\_umount] Un-mounts a mounted XtreemFS volume.
- \item[xtfs\_mkvol] Creates a new volume on an MRC.
+ \item[xtfs\_cleanup] Deletes orphaned objects on an OSD or creates new metadata objects for orphaned files.
  \item[xtfs\_lsvol] Lists the volumes on an MRC.
+ \item[xtfs\_mkvol] Creates a new volume on an MRC.
+ \item[xtfs\_mount] The XtreemFS client which mounts an XtreemFS volume locally on a machine.
+ \item[xtfs\_mrcdbtool] Dumps an XML representation of the MRC database to a given directory in the MRC's local file system.
+ \item[xtfs\_repl] Displays and controls the replication of files and the replication policies.
  \item[xtfs\_rmvol] Deletes a volume and all files on that volume from the MRC and the OSDs.
  \item[xtfs\_stat] Displays XtreemFS specific file information such as the striping policy and the OSDs.
  \item[xtfs\_sp] Displays and modifies the striping policy for a file, or the default striping policy for directories and volumes.
  \item[xtfs\_scrub] Examines all files in a volume for incorrect file sizes and checksums. In case of incorrect file sizes, file sizes are corrected at the MRC.
- \item[xtfs\_cleanup] Deletes orphaned objects on an OSD or creates new metadata objects for orphaned files.
- \item[xtfs\_mrcdbtool] Dumps an XML representation of the MRC database to a given directory in the MRC's local file system.
+ \item[xtfs\_umount] Un-mounts a mounted XtreemFS volume.
  \end{description}
 
 \printindex
