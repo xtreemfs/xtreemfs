@@ -14,6 +14,7 @@ SERVER_WHITE_LIST=(
 	"etc/xos/xtreemfs/dirconfig.properties" "config/dirconfig.properties"
 	"etc/xos/xtreemfs/mrcconfig.properties" "config/mrcconfig.properties"
 	"etc/xos/xtreemfs/osdconfig.properties" "config/osdconfig.properties"
+	"etc/xos/xtreemfs/datacentermap.example" "config/datacentermap.example"
 	"etc/init.d" "init.d-scripts"
 	"src/servers/lib" "lib"
 	"src/servers/dist" "dist"
