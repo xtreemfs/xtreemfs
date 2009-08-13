@@ -64,8 +64,8 @@ install: build
 	
 	# copy config files
 	mkdir -p $(XTREEMFS_CONFIG_DIR)
-	cp config/* $(XTREEMFS_CONFIG_DIR)/
-
+	cp config/default_dir $(XTREEMFS_CONFIG_DIR)/
+	
 	# copy man-pages
 	mkdir -p $(MAN_DIR)
 	cp -R man/* $(MAN_DIR)/
