@@ -44,23 +44,23 @@ a PKCS#12 file containing a set of certificates from trusted CAs for SSL-based s
 \fB-tpass \fI<trusted_passphrase>
 a pass phrase to decrypt the trusted CAs file for SSL-based server connections
 .TP
-\fB--auto_add \fIrandom|dns
+\fB-w \fI<#OSDs>
+specifies the number of OSDs to be used for this replica (i.e. stripe width)
+.TP
+\fB--add_auto \fIrandom|dns
 Adds a replica and automatically selects OSDs according to the chosen method. The \fIrandom\fP method selects a random subset of all available OSDs for the new replica. The \fIdns\fP method selects those OSDs that are closest to the machine at which this command is executed.
 .TP
-\fB--auto_remove
+\fB--full
+if set, the replica will be a complete copy of the file; otherwise only requested data will be replicated
+.TP
+\fB--remove_auto
 removes a randomly selected replica from the given file
 .TP
-\fB--interactive_add
-an interactive mode for adding a replica
+\fB--rsp_get
+shows the volume's current replica selection policy
 .TP
-\fB--interactive_remove
-an interactive mode for removing a replica
-.TP
-\fB--is_readonly
-checks if the file is marked as read-only
-.TP
-\fB--ondemand
-If set, the new replica will be created without any content. Data from other replicas will be streamed to the new replica on demand, i.e. objects will be transmitted as soon as missing replica content is being accessed. If the switch is not set, data will be immediately streamed from other replicas, with the aim of filling the new replica as soon as possible.
+\fB--rsp_set \fIdefault | fqdn | dcmap | <policy id>
+sets the volume's replica selection policy
 .TP
 \fB--set_readonly
 Marks the file as read-only. Having marked the file as read-only will effect that any kind of write access to the file will be denied in the future. Marking a file as read-only is a prerequisite for adding new replicas to the file.

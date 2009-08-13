@@ -262,11 +262,11 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         options.put("cpass", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("t", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("tpass", new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put("h", new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put("-help", new CliOption(CliOption.OPTIONTYPE.SWITCH));
 
         CLIParser.parseCLI(args, options, arguments);
 
-        if (arguments.size() != 1 || options.get("h").switchValue == true) {
+        if (arguments.size() != 1 || options.get("h").switchValue == true || options.get("--help").switchValue == true) {
             usage();
             return;
         }

@@ -14,20 +14,29 @@ mounts the volume \fIvolume\fR registered at the Directory Service \fIdirhost\fR
 
 .SH OPTIONS
 .TP
-\fB\-c/\-\-cache
-enable client-side caching
+\fB\-d/\-\-debug=\fIlevel
+debug level
 .TP
 \fB\-f/\-\-foreground
 run the client process in the foreground (blocks the shell until the volume is un-mounted)
 .TP
-\fB\-o=fuse_option
+\fB\-h/\-\-help
+print help and exit
+.TP
+\fB\-o=\fIfuse_option
 additional parameters that are passed to FUSE
+.TP
+\fB\-t/\-\-timeout\-ms=\fImillis
+request timeout in milliseconds
+.TP
+\fB\-\-cache\-data
+enable client-side data caching
+.TP
+\fB\-\-cache\-metadata
+enable client-side metadata caching
 .TP
 \fB\-\-cert/-\-pem\-certificate\-file\-path=\fIcertfile
 PEM certificate file path (for SSL installations only)
-.TP
-\fB\-\-pkey/\-\-pem\-private\-key\-file\-path=\fIfile
-PEM private key file path
 .TP
 \fB\-\-pass/\-\-pem\-private\-key\-passphrase=\fIpass
 PEM private key passphrase (for SSL installations only)
@@ -38,14 +47,8 @@ PKCS#12 file path (for SSL installations only)
 \fB\-\-pkcs12\-passphrase=\fIpass
 PKCS#12 file passphrase (for SSL installations only)
 .TP
-\fB\-t/\-\-timeout\-ms=millis
-request timeout in milliseconds
-.TP
-\fB\-d/\-\-debug=\fIlevel
-debug level
-.TP
-\fB\-h/\-\-help
-print help and exit
+\fB\-\-pkey/\-\-pem\-private\-key\-file\-path=\fIfile
+PEM private key file path
 
 .SH "SEE ALSO"
 .BR xtfs_cleanup (1),

@@ -16,35 +16,41 @@ creates a new volume named \fIvolume \fRon the XtreemFS MRC running at \fImrchos
 
 .SH OPTIONS
 .TP
-\fB\-a/\-\-access\-control\-policy=NULL|POSIX|VOLUME
+\fB\-a/\-\-access\-control\-policy=\fINULL|POSIX|VOLUME
 access control policy for the volume
 .TP
-\fB\-g/\-\-owner\-group\-id=group ID
+\fB\-d/\-\-debug=\fIlevel
+debug level
+.TP
+\fB\-g/\-\-owner\-group\-id=\fIgroup ID
 group ID string of the volume's owning group
+.TP
+\fB\-h/\-\-help
+print help and exit
 .TP
 \fB\-m/\-\-mode=n
 initial POSIX access mode for the root directory
 .TP
-\fB\-o/\-\-osd\-selection\-policy=SIMPLE|PROXIMITY
+\fB\-o/\-\-osd\-selection\-policy=\fISIMPLE|PROXIMITY
 policy that defines how OSDs are assigned to new files
 .TP
-\fB\-p/\-\-striping\-policy=NONE|RAID0
+\fB\-p/\-\-striping\-policy=\fINONE|RAID0
 default striping policy for the volume
 .TP
-\fB\-s/\-\-striping\-policy\-stripe\-size=n
+\fB\-s/\-\-striping\-policy\-stripe\-size=\fIn
 stripe size for the volume's default striping policy
 .TP
-\fB\-u/\-\-owner\-user\-id=user ID
+\fB\-t/\-\-timeout\-ms=\fImillis
+request timeout in milliseconds
+.TP
+\fB\-u/\-\-owner\-user\-id=\fIuser ID
 user ID string of the volume's owner
 .TP
-\fB\-w/\-\-striping\-policy\-width=n
+\fB\-w/\-\-striping\-policy\-width=\fIn
 striping width (default number of OSDs) for the volume's default striping policy
 .TP
 \fB\-\-cert/-\-pem\-certificate\-file\-path=\fIcertfile
 PEM certificate file path (for SSL installations only)
-.TP
-\fB\-\-pkey/\-\-pem\-private\-key\-file\-path=\fIfile
-PEM private key file path
 .TP
 \fB\-\-pass/\-\-pem\-private\-key\-passphrase=\fIpass
 PEM private key passphrase (for SSL installations only)
@@ -55,15 +61,8 @@ PKCS#12 file path (for SSL installations only)
 \fB\-\-pkcs12\-passphrase=\fIpass
 PKCS#12 file passphrase (for SSL installations only)
 .TP
-\fB\-t/\-\-timeout\-ms=millis
-request timeout in milliseconds
-.TP
-\fB\-d/\-\-debug=\fIlevel
-debug level
-.TP
-\fB\-h/\-\-help
-print help and exit
-
+\fB\-\-pkey/\-\-pem\-private\-key\-file\-path=\fIfile
+PEM private key file path
 
 .SH "SEE ALSO"
 .BR xtfs_cleanup (1),

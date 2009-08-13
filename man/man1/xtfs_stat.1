@@ -16,14 +16,17 @@ shows information about a file or directory \fIpath\fP in the volume \fIvolume\f
 
 .SH OPTIONS
 .TP
-\fB\-l
-print complete information on volumes
+\fB\-d/\-\-debug=\fIlevel
+debug level
+.TP
+\fB\-h/\-\-help
+print help and exit
+.TP
+\fB\-t/\-\-timeout\-ms=\fImillis
+request timeout in milliseconds
 .TP
 \fB\-\-cert/-\-pem\-certificate\-file\-path=\fIcertfile
 PEM certificate file path (for SSL installations only)
-.TP
-\fB\-\-pkey/\-\-pem\-private\-key\-file\-path=\fIfile
-PEM private key file path
 .TP
 \fB\-\-pass/\-\-pem\-private\-key\-passphrase=\fIpass
 PEM private key passphrase (for SSL installations only)
@@ -34,14 +37,8 @@ PKCS#12 file path (for SSL installations only)
 \fB\-\-pkcs12\-passphrase=\fIpass
 PKCS#12 file passphrase (for SSL installations only)
 .TP
-\fB\-t/\-\-timeout\-ms=millis
-request timeout in milliseconds
-.TP
-\fB\-d/\-\-debug=\fIlevel
-debug level
-.TP
-\fB\-h/\-\-help
-print help and exit
+\fB\-\-pkey/\-\-pem\-private\-key\-file\-path=\fIfile
+PEM private key file path
 
 .SH "SEE ALSO"
 .BR xtfs_cleanup (1),

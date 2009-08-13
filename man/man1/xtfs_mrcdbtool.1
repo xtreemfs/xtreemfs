@@ -20,26 +20,26 @@ Restores the database of the MRC running on \fIlocalhost:32636\fP from the dump 
 
 .SH OPTIONS
 .TP
-.B \-h
-Print help.
-.TP
-.B \-mrc \fImrc_url
-The URL the MRC, e.g. oncrpc://localhost:32636.
-.TP
 .B \-c \fIcreds_file
 Path to a PKCS#12 credentials file (private key + certificate) to use for SSL authentication. Must be present when MRC URL starts with oncrpcs://.
 .TP
 .B \-cpass \fIcreds_passphrase
 An optional passphrase to access the credentials file.
 .TP
+.B \-h
+Print help.
+.TP
+.B \-mrc \fImrc_url
+The URL the MRC, e.g. oncrpc://localhost:32636.
+.TP
+.B \-p \fIpassphrase
+The administrator password, if password protection is enabled
+.TP
 .B \-t \fItrusted_CAs
 Path to a PKCS#12 file containing a set of certificates from trusted certification authorities. These certificates will be used to authenticate the MRC. Must be present when MRC URL starts with oncrpcs://.
 .TP
 .B \-tpass \fItrusted_passphrase
 An optional passphrase to access the truststore file.
-.TP
-.B \-p \fIpassphrase
-The administrator password, if password protection is enabled
 .RE
 
 .SH "SEE ALSO"

@@ -16,23 +16,23 @@ refers to a file or directory that is part of a mounted XtreemFS volume. The \fI
 \fB\-h
 print usage info
 .TP
+\fB\-p/\-\-striping-policy=\fINONE|RAID0
+the striping pattern
+.TP
+\fB\-s/\-\-striping-policy-stripe-size=\fIkb
+size of each stripe (object) in kB
+.TP
+\fB\-v/\-\-verbose
+print more information
+.TP
+\fB\-w/\-\-striping-policy-width=\fIn
+the number of OSDs to stripe the file to
+.TP
 \fB\-\-get
 retrieve and display the default striping policy for a volume or directory
 .TP
 \fB\-\-set
 changes the default striping policy for a volume or directory, -p -s and -w must be specified
-.TP
-\fB\-p/\-\-striping-policy=\fINONE|RAID0
-the striping pattern
-.TP
-\fB\-s/\-\-striping-policy-stripe-size=\fIn
-size of each stripe (object) in kB
-.TP
-\fB\-w/\-\-striping-policy-width=\fIn
-the number of OSDs to stripe the file to
-.TP
-\fB\-v/\-\-verbose
-print more information
 
 .SH EXAMPLE USAGE
 .B "xtfs_sp --set -p RAID0 -w 4 -s 256 ./xtfs-dir
