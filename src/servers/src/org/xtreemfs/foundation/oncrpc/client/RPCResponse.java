@@ -25,6 +25,7 @@
 package org.xtreemfs.foundation.oncrpc.client;
 
 import java.io.IOException;
+
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
@@ -134,4 +135,12 @@ public class RPCResponse<V extends Object> implements RPCResponseListener {
         }
     }
 
+    /**
+     * duration of request from sending the request until the response
+     * was received completeley.
+     * @return duration in ns
+     */
+    public long getDuration() {
+        return request.getDuration();
+    }
 }

@@ -13,8 +13,8 @@ public interface Constants
     public static final int REPL_FLAG_FULL_REPLICA = 0x0002;
     public static final int REPL_FLAG_STRATEGY_SEQUENTIAL = 0x0004;
     public static final int REPL_FLAG_STRATEGY_RANDOM = 0x0008;
-    public static final int REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING = 0x0012;
-    public static final int REPL_FLAG_STRATEGY_RAREST_FIRST = 0x0016;
+    public static final int REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING = 0x000C;
+    public static final int REPL_FLAG_STRATEGY_RAREST_FIRST = 0x0010;
     public static final int SYSTEM_V_FCNTL_H_O_RDONLY = 0x0000;
     public static final int SYSTEM_V_FCNTL_H_O_WRONLY = 0x0001;
     public static final int SYSTEM_V_FCNTL_H_O_RDWR = 0x0002;

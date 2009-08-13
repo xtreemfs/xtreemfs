@@ -5,21 +5,26 @@
 
 package org.xtreemfs.test.mrc;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import java.net.Inet4Address;
 import java.net.InetAddress;
+
+import junit.framework.TestCase;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xtreemfs.mrc.replication.dcmap.Inet4AddressMatcher;
-import static org.junit.Assert.*;
 
 /**
  *
  * @author bjko
  */
-public class Inet4AddressMatcherTest {
+public class Inet4AddressMatcherTest extends TestCase {
 
     public Inet4AddressMatcherTest() {
     }

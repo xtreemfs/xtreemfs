@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.BufferPool;
@@ -64,84 +65,104 @@ import org.xtreemfs.osd.client.OSDClient;
 
 public class RandomAccessFile implements ObjectStore {
     /**
-     * resorts the replicas
-     * <br>12.05.2009
+     * resorts the replicas <br>
+     * 12.05.2009
      */
     public abstract static class ReplicaSelectionPolicy {
         public abstract List<Replica> getReplicaOrder(List<Replica> replicas);
     }
 
     /**
-     * policy randomizes the entries in list
-     * <br>DEFAULT POLICY
+     * policy randomizes the entries in list <br>
+     * DEFAULT POLICY
      */
-    public final ReplicaSelectionPolicy RANDOM_REPLICA_SELECTION_POLICY = new RandomAccessFile.ReplicaSelectionPolicy() {
-        @Override
-        public List<Replica> getReplicaOrder(List<Replica> replicas) {
-            List<Replica> list = new ArrayList<Replica>(replicas);
-            Collections.shuffle(list);
-            return list;
-        }
-    }; 
+    public final ReplicaSelectionPolicy RANDOM_REPLICA_SELECTION_POLICY              = new RandomAccessFile.ReplicaSelectionPolicy() {
+                                                                                         @Override
+                                                                                         public List<Replica> getReplicaOrder(
+                                                                                                 List<Replica> replicas) {
+                                                                                             List<Replica> list = new ArrayList<Replica>(
+                                                                                                     replicas);
+                                                                                             Collections
+                                                                                                     .shuffle(list);
+                                                                                             return list;
+                                                                                         }
+                                                                                     };
 
     /**
      * policy rotates the entries in list (like round-robin)
      */
-    public final ReplicaSelectionPolicy SEQUENTIAL_REPLICA_SELECTION_POLICY = new RandomAccessFile.ReplicaSelectionPolicy() {
-        private int rotateValue = 0;
-        @Override
-        public List<Replica> getReplicaOrder(List<Replica> replicas) {
-            List<Replica> list = new ArrayList<Replica>(replicas);
-            Collections.rotate(list, rotateValue);
-            rotateValue = 0 - (((0 - rotateValue) + 1) % list.size());
-            return list;
-        }
-    }; 
+    public final ReplicaSelectionPolicy SEQUENTIAL_REPLICA_SELECTION_POLICY          = new RandomAccessFile.ReplicaSelectionPolicy() {
+                                                                                         private int rotateValue = 0;
 
-    private MRCClient               mrcClient;
+                                                                                         @Override
+                                                                                         public List<Replica> getReplicaOrder(
+                                                                                                 List<Replica> replicas) {
+                                                                                             List<Replica> list = new ArrayList<Replica>(
+                                                                                                     replicas);
+                                                                                             Collections
+                                                                                                     .rotate(
+                                                                                                             list,
+                                                                                                             rotateValue);
+                                                                                             rotateValue = 0 - (((0 - rotateValue) + 1) % list
+                                                                                                     .size());
+                                                                                             return list;
+                                                                                         }
+                                                                                     };
 
-    private OSDClient               osdClient;
+    private MRCClient                   mrcClient;
 
-    private FileCredentials         fileCredentials;
+    private OSDClient                   osdClient;
 
-    // all replicas have the same striping policy (more precisely the same stripesize) at the moment
-    private StripingPolicyImpl      stripingPolicy;
+    private FileCredentials             fileCredentials;
 
-    private final String            fileId;
+    // all replicas have the same stripesize at the moment
+    private StripingPolicyImpl          stripingPolicy;
 
-    private final int               mode;
+    private final String                fileId;
 
-    private final String            pathName;
+    private final int                   mode;
 
-    private final InetSocketAddress mrcAddress;
+    private final String                pathName;
 
-    private ByteMapper              byteMapper;
+    private final InetSocketAddress     mrcAddress;
 
-    private OSDWriteResponse        wresp;
+    private ByteMapper                  byteMapper;
 
-    private long                    filePos;
+    private OSDWriteResponse            wresp;
 
-    private XLocations              xLoc;
+    private long                        filePos;
 
-    private long                    capTime;
+    private XLocations                  xLoc;
 
-    private List<Replica>           replicaOrder;
+    private long                        capTime;
 
-    private boolean                 isReadOnly;
+    private List<Replica>               replicaOrder;
 
-    private final UserCredentials   credentials;
+    private boolean                     isReadOnly;
 
-    private ReplicaSelectionPolicy  replicaSelectionPolicy;
+    private final UserCredentials       credentials;
+
+    private ReplicaSelectionPolicy      replicaSelectionPolicy;
+
+    private AtomicLong                  monitoringReadDataSizeInLast10s;
+
+//    private Thread                      monitoringThread                             = null;
+
+//    private NumberMonitoring            monitoring;
+
+//    public static final String          MONITORING_KEY_THROUGHPUT_OF_LAST_10_SECONDS = "throughput_of_last_10s";
+
+//    public static final String          MONITORING_KEY_THROUGHPUT                    = "throughput";
 
     public RandomAccessFile(String mode, InetSocketAddress mrcAddress, String pathName,
-            RPCNIOSocketClient rpcClient,
-            String userID, List<String> groupIDs) throws ONCRPCException,InterruptedException,IOException {
-            this(mode, mrcAddress, pathName, rpcClient,  MRCClient.getCredentials(userID, groupIDs));
+            RPCNIOSocketClient rpcClient, String userID, List<String> groupIDs) throws ONCRPCException,
+            InterruptedException, IOException {
+        this(mode, mrcAddress, pathName, rpcClient, MRCClient.getCredentials(userID, groupIDs));
     }
 
     public RandomAccessFile(String mode, InetSocketAddress mrcAddress, String pathName,
-            RPCNIOSocketClient rpcClient, 
-            UserCredentials credentials) throws ONCRPCException,InterruptedException,IOException {
+            RPCNIOSocketClient rpcClient, UserCredentials credentials) throws ONCRPCException,
+            InterruptedException, IOException {
         this.pathName = pathName;
         this.mrcAddress = mrcAddress;
         this.mode = translateMode(mode);
@@ -151,28 +172,29 @@ public class RandomAccessFile implements ObjectStore {
         // use the shared speedy to create an MRC and OSD client
         mrcClient = new MRCClient(rpcClient, mrcAddress);
         osdClient = new OSDClient(rpcClient);
-
-        // create a new file if necessary
+        // enable statistics
+        RPCNIOSocketClient.ENABLE_STATISTICS = true;
 
         this.credentials = credentials;
-        
+
         // OSD selection
         this.replicaSelectionPolicy = RANDOM_REPLICA_SELECTION_POLICY;
 
-        RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, pathName, FileAccessManager.O_CREAT, this.mode, 0);
+        // create a new file if necessary
+        RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, pathName,
+                FileAccessManager.O_CREAT, this.mode, 0);
         fileCredentials = r.get();
         r.freeBuffers();
-
 
         // all replicas have the same striping policy (more precisely the same stripesize) at the moment
         stripingPolicy = StripingPolicyImpl.getPolicy(fileCredentials.getXlocs().getReplicas().get(0));
         this.xLoc = new XLocations(fileCredentials.getXlocs());
-        
+
         // always use first replica at beginning (original order)
         replicaOrder = this.replicaSelectionPolicy.getReplicaOrder(xLoc.getReplicas());
-        
-        byteMapper = ByteMapperFactory.createByteMapper(
-                stripingPolicy.getPolicyId(), stripingPolicy.getStripeSizeForObject(0), this);
+
+        byteMapper = ByteMapperFactory.createByteMapper(stripingPolicy.getPolicyId(), stripingPolicy
+                .getStripeSizeForObject(0), this);
 
         capTime = System.currentTimeMillis();
 
@@ -181,6 +203,29 @@ public class RandomAccessFile implements ObjectStore {
         fileId = fileCredentials.getXcap().getFile_id();
         wresp = null;
         filePos = 0;
+
+//        monitoring = new NumberMonitoring();
+//        monitoringReadDataSizeInLast10s = new AtomicLong(0);
+//        if (Monitoring.isEnabled()) {
+//            monitoringThread = new Thread(new Runnable() {
+//                public static final int INTERVAL = 10000; // 10s
+//
+//                @Override
+//                public void run() {
+//                    while (true) {
+//                        try {
+//                            Thread.sleep(INTERVAL); // sleep
+//                        } catch (InterruptedException e) {
+//                            break; // shutdown
+//                        }
+//                        long sizeInLast10s = monitoringReadDataSizeInLast10s.getAndSet(0);
+//                        monitoring.put(MONITORING_KEY_THROUGHPUT_OF_LAST_10_SECONDS,
+//                                (sizeInLast10s / 1024d) / 10d);
+//                    }
+//                }
+//            });
+//            monitoringThread.start();
+//        }
     }
 
     private static int translateMode(String mode) {
@@ -188,51 +233,51 @@ public class RandomAccessFile implements ObjectStore {
             return FileAccessManager.O_RDONLY;
         if (mode.startsWith("rw"))
             return FileAccessManager.O_RDWR;
-        throw new IllegalArgumentException("invalid mode");  
+        throw new IllegalArgumentException("invalid mode");
     }
 
     private void updateWriteResponse(OSDWriteResponse r) {
         if (r.getNew_file_size().size() > 0) {
-           final NewFileSize nfs = r.getNew_file_size().get(0);
-           if (wresp == null) {
-               wresp = r;
-           } else {
-               final NewFileSize ofs = wresp.getNew_file_size().get(0);
-               if ((nfs.getSize_in_bytes() > ofs.getSize_in_bytes()) && (nfs.getTruncate_epoch() == ofs.getTruncate_epoch())
-                       || (nfs.getTruncate_epoch() > ofs.getTruncate_epoch()) ) {
-                   wresp = r;
-               }
-           }
+            final NewFileSize nfs = r.getNew_file_size().get(0);
+            if (wresp == null) {
+                wresp = r;
+            } else {
+                final NewFileSize ofs = wresp.getNew_file_size().get(0);
+                if ((nfs.getSize_in_bytes() > ofs.getSize_in_bytes())
+                        && (nfs.getTruncate_epoch() == ofs.getTruncate_epoch())
+                        || (nfs.getTruncate_epoch() > ofs.getTruncate_epoch())) {
+                    wresp = r;
+                }
+            }
         }
     }
 
     /**
-     *
+     * 
      * @param resultBuffer
      *            - the buffer into which the data is read.
      * @param offset
      *            - the start offset of the data.
      * @param bytesToRead
      *            - the maximum number of bytes read.
-     * @return - the total number of bytes read into the buffer, or -1 if there
-     *         is no more data because the end of the file has been reached.
+     * @return - the total number of bytes read into the buffer, or -1 if there is no more data because the
+     *         end of the file has been reached.
      * @throws Exception
      * @throws IOException
      */
     public int read(byte[] resultBuffer, int offset, int bytesToRead) throws Exception {
-    
+
         int tmp = byteMapper.read(resultBuffer, offset, bytesToRead, filePos);
         filePos += tmp;
         return tmp;
     }
 
-    public ReusableBuffer readObject(long objectNo)
-            throws IOException {
-            return readObject(objectNo, 0, stripingPolicy.getStripeSizeForObject(objectNo));
+    public ReusableBuffer readObject(long objectNo) throws IOException {
+        return readObject(objectNo, 0, stripingPolicy.getStripeSizeForObject(objectNo));
     }
 
     /**
-     *
+     * 
      * @param objectNo
      *            - relative object number.
      * @param firstByteInObject
@@ -242,16 +287,15 @@ public class RandomAccessFile implements ObjectStore {
      * @return a ReusableBuffer containing the data which was read.
      */
     @Override
-    public ReusableBuffer readObject(long objectNo, int offset, int length)
-            throws IOException {
-    
+    public ReusableBuffer readObject(long objectNo, int offset, int length) throws IOException {
+
         RPCResponse<ObjectData> response = null;
-    
+
         int size = 0;
         ObjectData data = null;
         ReusableBuffer buffer = null;
         Iterator<Replica> iterator = this.replicaOrder.iterator();
-        while(iterator.hasNext()) { // will be aborted, if object could be read
+        while (iterator.hasNext()) { // will be aborted, if object could be read
             Replica replica = iterator.next();
             // check whether capability needs to be renewed
             checkCap();
@@ -263,13 +307,13 @@ public class RandomAccessFile implements ObjectStore {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.tool, this,
                             "%s:%d - read object from OSD %s", objectNo, fileId, osd);
 
-                response = osdClient.read(osd.getAddress(), fileId, fileCredentials, objectNo, 0,
-                        offset, length);
+                response = osdClient.read(osd.getAddress(), fileId, fileCredentials, objectNo, 0, offset,
+                        length);
                 data = response.get();
 
                 if (data.getInvalid_checksum_on_osd()) {
                     // try next replica
-                    if(!iterator.hasNext()) { // all replicas had been tried
+                    if (!iterator.hasNext()) { // all replicas had been tried
                         throw new IOException("object " + objectNo + " has an invalid checksum");
                     }
                 }
@@ -294,19 +338,27 @@ public class RandomAccessFile implements ObjectStore {
                         BufferPool.free(data.getData());
                     }
                 }
+
+                // monitor data for throughput
+//                if (Monitoring.isEnabled()) {
+//                    monitoring.put(MONITORING_KEY_THROUGHPUT, (buffer.limit() / 1024)
+//                            / (response.getDuration() / 1000000000d));
+//                    monitoringReadDataSizeInLast10s.addAndGet(buffer.limit());
+//                }
+
                 break;
             } catch (ONCRPCException ex) {
                 if (buffer != null)
                     BufferPool.free(buffer);
                 // all replicas had been tried or replication has been failed
-                if(!iterator.hasNext() || ((OSDException) ex).getError_code() == ErrorCodes.IO_ERROR) {
+                if (!iterator.hasNext() || ((OSDException) ex).getError_code() == ErrorCodes.IO_ERROR) {
                     throw new IOException("cannot read object", ex);
                 }
             } catch (IOException ex) {
-                if(buffer != null)
+                if (buffer != null)
                     BufferPool.free(buffer);
                 // all replicas had been tried
-                if(!iterator.hasNext()) {
+                if (!iterator.hasNext()) {
                     throw new IOException("cannot read object", ex);
                 }
             } catch (InterruptedException ex) {
@@ -335,7 +387,7 @@ public class RandomAccessFile implements ObjectStore {
         ObjectData data = null;
         ReusableBuffer buffer = null;
         Iterator<Replica> iterator = this.replicaOrder.iterator();
-        while(iterator.hasNext()) { // will be aborted, if object could be read
+        while (iterator.hasNext()) { // will be aborted, if object could be read
             Replica replica = iterator.next();
             try {
                 // get OSD
@@ -346,7 +398,7 @@ public class RandomAccessFile implements ObjectStore {
 
                 if (data.getInvalid_checksum_on_osd()) {
                     // try next replica
-                    if(!iterator.hasNext()) { // all replicas had been tried
+                    if (!iterator.hasNext()) { // all replicas had been tried
                         throw new IOException("object " + objectNo + " has an invalid checksum");
                     }
                 }
@@ -358,14 +410,14 @@ public class RandomAccessFile implements ObjectStore {
                 if (buffer != null)
                     BufferPool.free(buffer);
                 // all replicas had been tried or replication has been failed
-                if(!iterator.hasNext() || ((OSDException) ex).getError_code() == ErrorCodes.IO_ERROR) {
+                if (!iterator.hasNext() || ((OSDException) ex).getError_code() == ErrorCodes.IO_ERROR) {
                     throw new IOException("cannot read object", ex);
                 }
             } catch (IOException ex) {
-                if(buffer != null)
+                if (buffer != null)
                     BufferPool.free(buffer);
                 // all replicas had been tried
-                if(!iterator.hasNext()) {
+                if (!iterator.hasNext()) {
                     throw new IOException("cannot read object", ex);
                 }
             } catch (InterruptedException ex) {
@@ -382,10 +434,10 @@ public class RandomAccessFile implements ObjectStore {
         }
         return size;
     }
+
     /**
-     * Writes bytesToWrite bytes from the writeFromBuffer byte array starting at
-     * offset to this file.
-     *
+     * Writes bytesToWrite bytes from the writeFromBuffer byte array starting at offset to this file.
+     * 
      * @param writeFromBuffer
      * @param offset
      * @param bytesToWrite
@@ -401,7 +453,7 @@ public class RandomAccessFile implements ObjectStore {
 
     /**
      * Writes...
-     *
+     * 
      * @param firstByteInObject
      *            - the start offset in the file
      * @param objectNo
@@ -409,8 +461,7 @@ public class RandomAccessFile implements ObjectStore {
      * @param data
      *            - the data to be written.....
      */
-    public void writeObject(long firstByteInObject, long objectNo, ReusableBuffer data)
-            throws IOException {
+    public void writeObject(long firstByteInObject, long objectNo, ReusableBuffer data) throws IOException {
 
         // check whether capability needs to be renewed
         checkCap();
@@ -423,13 +474,14 @@ public class RandomAccessFile implements ObjectStore {
             // uses always first replica
             ServiceUUID osd = replicaOrder.get(0).getOSDs().get(stripingPolicy.getOSDforObject(objectNo));
             ObjectData odata = new ObjectData(0, false, 0, data);
-            response = osdClient.write(osd.getAddress(), fileId, fileCredentials, objectNo, 0, (int)firstByteInObject, 0, odata);
+            response = osdClient.write(osd.getAddress(), fileId, fileCredentials, objectNo, 0,
+                    (int) firstByteInObject, 0, odata);
             OSDWriteResponse owr = response.get();
             this.updateWriteResponse(owr);
         } catch (ONCRPCException ex) {
-            throw new IOException("cannot write object",ex);
+            throw new IOException("cannot write object", ex);
         } catch (InterruptedException ex) {
-            throw new IOException("cannot write object",ex);
+            throw new IOException("cannot write object", ex);
         } finally {
             if (response != null)
                 response.freeBuffers();
@@ -445,9 +497,9 @@ public class RandomAccessFile implements ObjectStore {
                 r.get();
                 wresp = null;
             } catch (ONCRPCException ex) {
-                throw new IOException("cannot write object",ex);
+                throw new IOException("cannot write object", ex);
             } catch (InterruptedException ex) {
-                throw new IOException("cannot write object",ex);
+                throw new IOException("cannot write object", ex);
             } finally {
                 if (r != null)
                     r.freeBuffers();
@@ -462,10 +514,10 @@ public class RandomAccessFile implements ObjectStore {
             RPCResponse<FileCredentialsSet> r = null;
             RPCResponse delR = null;
             try {
-                r = mrcClient.unlink(mrcAddress, credentials,pathName);
+                r = mrcClient.unlink(mrcAddress, credentials, pathName);
                 FileCredentialsSet fcreds = r.get();
                 if (fcreds.size() > 0) {
-                    //must delete on OSDs too!
+                    // must delete on OSDs too!
                     final FileCredentials delCred = fcreds.get(0);
                     // uses always first replica
                     delR = osdClient.unlink(replicaOrder.get(0).getHeadOsd().getAddress(), fileId, delCred);
@@ -473,9 +525,9 @@ public class RandomAccessFile implements ObjectStore {
                     delR.freeBuffers();
                 }
             } catch (ONCRPCException ex) {
-                throw new IOException("cannot write object",ex);
+                throw new IOException("cannot write object", ex);
             } catch (InterruptedException ex) {
-                throw new IOException("cannot write object",ex);
+                throw new IOException("cannot write object", ex);
             } finally {
                 if (r != null)
                     r.freeBuffers();
@@ -491,11 +543,11 @@ public class RandomAccessFile implements ObjectStore {
             r = mrcClient.getattr(mrcAddress, credentials, pathName);
             Stat statInfo = r.get();
 
-            //decide what to use...
+            // decide what to use...
             if (wresp != null) {
                 final NewFileSize localFS = wresp.getNew_file_size().get(0);
 
-                //check if we know a larger file size locally
+                // check if we know a larger file size locally
                 if (localFS.getTruncate_epoch() < statInfo.getTruncate_epoch())
                     return statInfo.getSize();
                 if (localFS.getSize_in_bytes() > statInfo.getSize())
@@ -503,19 +555,22 @@ public class RandomAccessFile implements ObjectStore {
             }
             return statInfo.getSize();
         } catch (ONCRPCException ex) {
-            throw new IOException("cannot write object",ex);
+            throw new IOException("cannot write object", ex);
         } catch (InterruptedException ex) {
-            throw new IOException("cannot write object",ex);
+            throw new IOException("cannot write object", ex);
         } finally {
             if (r != null)
                 r.freeBuffers();
         }
 
-
     }
 
     public void close() throws IOException {
         flush();
+
+        // shutdown
+//        if (monitoringThread != null)
+//            monitoringThread.interrupt();
     }
 
     /**
@@ -586,7 +641,8 @@ public class RandomAccessFile implements ObjectStore {
         // check correct parameters
         if (spPolicy.getStripe_size() != stripingPolicy.getPolicy().getStripe_size())
             throw new IllegalArgumentException("New replica must have a stripe size of "
-                    + stripingPolicy.getStripeSizeForObject(0) + ".");
+                    + stripingPolicy.getPolicy().getStripe_size() + " (given value is "
+                    + spPolicy.getStripe_size() + ").");
         if (osds.size() != spPolicy.getWidth())
             throw new IllegalArgumentException("Too many or less OSDs in list.");
         for (ServiceUUID osd : osds) {
@@ -601,14 +657,14 @@ public class RandomAccessFile implements ObjectStore {
                 osdSet.add(osd.toString());
             }
 
-            org.xtreemfs.interfaces.Replica newReplica = new org.xtreemfs.interfaces.Replica(spPolicy, replicationFlags,
-                    osdSet);
+            org.xtreemfs.interfaces.Replica newReplica = new org.xtreemfs.interfaces.Replica(spPolicy,
+                    replicationFlags, osdSet);
             RPCResponse r = mrcClient.xtreemfs_replica_add(mrcAddress, credentials, fileId, newReplica);
             r.get();
             r.freeBuffers();
 
             forceFileCredentialsUpdate(translateMode("r"));
-            
+
             replicaOrder = replicaSelectionPolicy.getReplicaOrder(xLoc.getReplicas());
         } else
             throw new IOException("File is not marked as read-only.");
@@ -616,15 +672,17 @@ public class RandomAccessFile implements ObjectStore {
 
     /**
      * removes a replica for this file
+     * 
      * @param replica
      * @throws Exception
      */
     public void removeReplica(Replica replica) throws Exception {
-            removeReplica(replica.getHeadOsd());
+        removeReplica(replica.getHeadOsd());
     }
 
     /**
      * removes a replica for this file
+     * 
      * @param osd
      * @throws Exception
      */
@@ -632,6 +690,20 @@ public class RandomAccessFile implements ObjectStore {
         if (isReadOnly) {
             if (fileCredentials.getXlocs().getReplicas().size() < 2)
                 throw new IOException("Cannot remove last replica.");
+
+            boolean otherCompleteReplicaExists = false;
+            if (xLoc.getReplica(osd).isComplete()) { // complete replica
+                // check if another replica is also complete
+                for (Replica r : xLoc.getReplicas())
+                    if (r.isComplete() && !r.equals(xLoc.getReplica(osd))) {
+                        otherCompleteReplicaExists = true;
+                        break;
+                    }
+                if (!otherCompleteReplicaExists)
+                    throw new IOException(
+                            "This is the last remaining COMPLETE replica. It cannot be removed,"
+                                    + " otherwise it can happen that the file will be destroyed.");
+            }
 
             RPCResponse<XCap> r = mrcClient.xtreemfs_replica_remove(mrcAddress, credentials, fileId, osd
                     .toString());
@@ -644,7 +716,7 @@ public class RandomAccessFile implements ObjectStore {
             r2.freeBuffers();
 
             forceFileCredentialsUpdate(translateMode("r"));
-            
+
             replicaOrder = replicaSelectionPolicy.getReplicaOrder(xLoc.getReplicas());
         } else
             throw new IOException("File is not marked as read-only.");
@@ -662,6 +734,7 @@ public class RandomAccessFile implements ObjectStore {
 
     /**
      * returns suitable OSDs which can be used for a replica of this file
+     * 
      * @return
      * @throws Exception
      */
@@ -672,31 +745,39 @@ public class RandomAccessFile implements ObjectStore {
 
         ArrayList<ServiceUUID> osdList = new ArrayList<ServiceUUID>();
         for (String osd : osds) {
-           ServiceUUID uuid = new ServiceUUID(osd);
-           if (!xLoc.containsOSD(uuid)) // OSD is not used for any replica so far
-               osdList.add(uuid);
+            ServiceUUID uuid = new ServiceUUID(osd);
+            if (!xLoc.containsOSD(uuid)) // OSD is not used for any replica so far
+                osdList.add(uuid);
         }
         return osdList;
     }
-    
-    public void setOSDSelectionPolicy(ReplicaSelectionPolicy policy) {
+
+    public void setReplicaSelectionPolicy(ReplicaSelectionPolicy policy) {
         replicaSelectionPolicy = policy;
         replicaOrder = replicaSelectionPolicy.getReplicaOrder(xLoc.getReplicas());
+        stripingPolicy = replicaOrder.get(0).getStripingPolicy();
     }
 
     // useful for tests
     public void changeReplicaOrder() {
         replicaOrder = replicaSelectionPolicy.getReplicaOrder(xLoc.getReplicas());
+        stripingPolicy = replicaOrder.get(0).getStripingPolicy();
     }
 
     /**
      * returns the StripingPolicy of the first replica (but at the moment it is the same for all replicas)
+     * 
      * @return
      */
     public StripingPolicy getStripingPolicy() {
         return stripingPolicy.getPolicy();
     }
 
+    /**
+     * returns the stripe size of used replica in bytes
+     * 
+     * @return
+     */
     public long getStripeSize() {
         // the stripe size of a file is constant.
         return stripingPolicy.getPolicy().getStripe_size();
@@ -705,11 +786,11 @@ public class RandomAccessFile implements ObjectStore {
     public XLocations getXLoc() {
         return xLoc;
     }
-    
+
     public boolean isReadOnly() {
         return isReadOnly;
     }
-    
+
     public Replica getCurrentlyUsedReplica() {
         return replicaOrder.get(0);
     }
@@ -762,7 +843,7 @@ public class RandomAccessFile implements ObjectStore {
             RPCResponse<XCap> r = mrcClient.xtreemfs_renew_capability(mrcAddress, fileCredentials.getXcap());
             XCap cap = r.get();
             r.freeBuffers();
-            
+
             fileCredentials.setXcap(cap);
 
             capTime = System.currentTimeMillis();
@@ -776,8 +857,10 @@ public class RandomAccessFile implements ObjectStore {
      * @throws IOException
      * @throws InterruptedException
      */
-    private void forceFileCredentialsUpdate(int mode) throws ONCRPCException, IOException, InterruptedException {
-        RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, pathName, FileAccessManager.O_CREAT, mode, 0);
+    private void forceFileCredentialsUpdate(int mode) throws ONCRPCException, IOException,
+            InterruptedException {
+        RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, pathName,
+                FileAccessManager.O_CREAT, mode, 0);
         fileCredentials = r.get();
         r.freeBuffers();
 
@@ -794,12 +877,16 @@ public class RandomAccessFile implements ObjectStore {
             r = mrcClient.xtreemfs_update_file_size(mrcAddress, fileCredentials.getXcap(), wr);
             r.get();
         } catch (ONCRPCException ex) {
-            throw new IOException("cannot update file size",ex);
+            throw new IOException("cannot update file size", ex);
         } catch (InterruptedException ex) {
-            throw new IOException("cannot update file size",ex);
+            throw new IOException("cannot update file size", ex);
         } finally {
             if (r != null)
                 r.freeBuffers();
         }
     }
+
+//    public NumberMonitoring getMonitoringInfo() {
+//        return monitoring;
+//    }
 }

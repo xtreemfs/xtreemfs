@@ -83,6 +83,36 @@ public class NumberMonitoring extends Monitoring<Double> {
     }
 
     /**
+     * Increases the old value about new value.
+     * 
+     * @param key
+     * @param value
+     * @return
+     */
+    public Double putIncreaseFor(String key, Double value) {
+        Double oldValue = super.get(key);
+        if (oldValue != null) {
+            return super.put(key, oldValue + value);
+        } else
+            return super.put(key, value);
+    }
+
+    /**
+     * Decreases the old value about new value.
+     * 
+     * @param key
+     * @param value
+     * @return
+     */
+    public Double putDecreaseFor(String key, Double value) {
+        Double oldValue = super.get(key);
+        if (oldValue != null) {
+            return super.put(key, oldValue - value);
+        } else
+            return super.put(key, value);
+    }
+
+    /**
      * Special method for Longs.
      * 
      * @see org.xtreemfs.common.monitoring.Monitoring#put(java.lang.String, java.lang.Object)
@@ -126,11 +156,33 @@ public class NumberMonitoring extends Monitoring<Double> {
      * @return
      */
     public long putAverageLong(String key, Long value) {
-        Long oldValue = super.get(key).longValue();
+        Double oldValue = super.get(key);
         if (oldValue != null) {
-            return this.putLong(key, (oldValue + value) / 2);
+            return this.put(key, (oldValue + value) / 2d).longValue();
         } else
             return this.putLong(key, value);
+    }
+
+    /**
+     * Increases the old value about new value.
+     * 
+     * @param key
+     * @param value
+     * @return
+     */
+    public long putIncreaseForLong(String key, Long value) {
+        return putIncreaseFor(key, value.doubleValue()).longValue();
+    }
+
+    /**
+     * Decreases the old value about new value.
+     * 
+     * @param key
+     * @param value
+     * @return
+     */
+    public long putDecreaseForLong(String key, Long value) {
+        return putDecreaseFor(key, value.doubleValue()).longValue();
     }
 
     /**

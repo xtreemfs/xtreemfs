@@ -138,6 +138,14 @@ public class LocationsTest extends TestCase {
         assertFalse(r.isPartialReplica());
         assertTrue(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
         assertFalse(ReplicationFlags.isSequentialStrategy(r.getTransferStrategyFlags()));
+
+        // set full replica and RandomStrategy
+        replicationFlags = ReplicationFlags.setFullReplica(ReplicationFlags.setRandomStrategy(0));
+        assertTrue(ReplicationFlags.isFullReplica(replicationFlags));
+        assertTrue(ReplicationFlags.isRandomStrategy(replicationFlags));
+        replicationFlags = ReplicationFlags.setSequentialStrategy(replicationFlags);
+        assertTrue(ReplicationFlags.isSequentialStrategy(replicationFlags));
+        assertTrue(ReplicationFlags.isFullReplica(replicationFlags));
     }
 
     public static void main(String[] args) {

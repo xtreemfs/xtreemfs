@@ -43,6 +43,7 @@ import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.monitoring.Monitoring;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
@@ -86,6 +87,7 @@ public class ReplicationRAFTest extends TestCase {
     public ReplicationRAFTest() {
         // TODO Auto-generated constructor stub
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
+        Monitoring.enable();
     }
 
     /**
@@ -169,7 +171,7 @@ public class ReplicationRAFTest extends TestCase {
     public void testReplicasWithDifferentStripingPolicies() throws Exception {
         RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/testfile",
                 testEnv.getRpcClient(), userCredentials);
-        raf.setOSDSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
+        raf.setReplicaSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
 
         // check if original replica hast a stripe width of 2
         assertEquals(2, raf.getStripingPolicy().getWidth());
@@ -223,7 +225,7 @@ public class ReplicationRAFTest extends TestCase {
         assertEquals(data.limit(), raf.getXLoc().getXLocSet().getRead_only_file_size());
     
         // set new deterministic selection of OSDs
-        raf.setOSDSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
+        raf.setReplicaSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
     
         // add replicas
         List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
@@ -235,7 +237,40 @@ public class ReplicationRAFTest extends TestCase {
         // assert 4 replicas
         assertEquals(4, raf.getXLoc().getNumReplicas());
     
-        readSimple(raf);
+        // read data
+        for (int reads = 0; reads < 4; reads++) {
+            // read and check data => replication
+            byte[] resultBuffer = new byte[data.limit()];
+            raf.seek(0);
+            raf.read(resultBuffer, 0, resultBuffer.length);
+            assertTrue(Arrays.equals(data.array(), resultBuffer));
+
+            raf.changeReplicaOrder();
+        }
+        // read EOF
+        for (int reads = 0; reads < 4; reads++) {
+            byte[] resultBuffer = new byte[STRIPE_SIZE];
+            raf.seek(data.limit());
+            raf.read(resultBuffer, 0, resultBuffer.length);
+            byte[] expected = new byte[STRIPE_SIZE];
+            Arrays.fill(expected, (byte) 0);
+            assertTrue(Arrays.equals(expected, resultBuffer));
+
+            // read EOF with data
+            resultBuffer = new byte[STRIPE_SIZE * 3];
+            raf.seek(data.limit() - STRIPE_SIZE * 2);
+            raf.read(resultBuffer, 0, resultBuffer.length);
+            // check data
+            expected = Arrays.copyOfRange(data.array(), data.limit() - STRIPE_SIZE * 2, data.limit());
+            assertTrue(Arrays.equals(expected, Arrays.copyOfRange(resultBuffer, 0, STRIPE_SIZE * 2)));
+            // check zeros at the end
+            expected = new byte[STRIPE_SIZE];
+            Arrays.fill(expected, (byte) 0);
+            assertTrue(Arrays.equals(expected, Arrays.copyOfRange(resultBuffer, STRIPE_SIZE * 2,
+                    resultBuffer.length)));
+            
+            raf.changeReplicaOrder();
+        }
     }
 
     @Test
@@ -261,7 +296,7 @@ public class ReplicationRAFTest extends TestCase {
         raf.addReplica(replicas.subList(2, 4), raf.getStripingPolicy(), ReplicationFlags.setFullReplica(ReplicationFlags.setRandomStrategy(0)));
         raf.addReplica(replicas.subList(4, 6), raf.getStripingPolicy(), ReplicationFlags.setFullReplica(ReplicationFlags.setRandomStrategy(0)));
     
-        raf.setOSDSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
+        raf.setReplicaSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
     
         // read a few bytes from every replica
         for (int i = 0; i < 8; i++) {
@@ -333,7 +368,7 @@ public class ReplicationRAFTest extends TestCase {
         raf.addReplica(replicas.subList(2, 4), raf.getStripingPolicy(), ReplicationFlags.setFullReplica(ReplicationFlags.setRandomStrategy(0)));
     
         // read data only from replica 2
-        raf.setOSDSelectionPolicy(new RandomAccessFile.ReplicaSelectionPolicy() {
+        raf.setReplicaSelectionPolicy(new RandomAccessFile.ReplicaSelectionPolicy() {
             @Override
             public List<Replica> getReplicaOrder(List<Replica> replicas) {
                 List<Replica> list = new ArrayList<Replica>();
@@ -350,7 +385,7 @@ public class ReplicationRAFTest extends TestCase {
         raf.read(resultBuffer, 0, resultBuffer.length);
     
         // read data only from replica 3
-        raf.setOSDSelectionPolicy(new RandomAccessFile.ReplicaSelectionPolicy() {
+        raf.setReplicaSelectionPolicy(new RandomAccessFile.ReplicaSelectionPolicy() {
             @Override
             public List<Replica> getReplicaOrder(List<Replica> replicas) {
                 List<Replica> list = new ArrayList<Replica>();
@@ -428,7 +463,7 @@ public class ReplicationRAFTest extends TestCase {
             assertEquals(2, raf.getXLoc().getNumReplicas());
     
             // read only from replica 2
-            raf.setOSDSelectionPolicy(new RandomAccessFile.ReplicaSelectionPolicy() {
+            raf.setReplicaSelectionPolicy(new RandomAccessFile.ReplicaSelectionPolicy() {
                 @Override
                 public List<Replica> getReplicaOrder(List<Replica> replicas) {
                     List<Replica> list = new ArrayList<Replica>();
@@ -497,7 +532,7 @@ public class ReplicationRAFTest extends TestCase {
             assertEquals(0, objectSet.size());
     
             // read and check data on remaining (original) replica
-            raf.setOSDSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
+            raf.setReplicaSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
             raf.seek(0);
             resultBuffer = new byte[data.limit()];
             raf.read(resultBuffer, 0, resultBuffer.length);
@@ -524,7 +559,7 @@ public class ReplicationRAFTest extends TestCase {
         raf.setReadOnly(true);
     
         // read only from replica 2
-        raf.setOSDSelectionPolicy(new RandomAccessFile.ReplicaSelectionPolicy() {
+        raf.setReplicaSelectionPolicy(new RandomAccessFile.ReplicaSelectionPolicy() {
             @Override
             public List<Replica> getReplicaOrder(List<Replica> replicas) {
                 List<Replica> list = new ArrayList<Replica>();
@@ -610,43 +645,6 @@ public class ReplicationRAFTest extends TestCase {
             // remove replica
             raf.removeReplica(replicas.get(0));
             assertEquals(1, raf.getXLoc().getNumReplicas());
-        }
-    }
-
-    private void readSimple(RandomAccessFile raf) throws Exception {
-        // read data
-        for (int reads = 0; reads < 4; reads++) {
-            // read and check data => replication
-            byte[] resultBuffer = new byte[data.limit()];
-            raf.seek(0);
-            raf.read(resultBuffer, 0, resultBuffer.length);
-            assertTrue(Arrays.equals(data.array(), resultBuffer));
-            
-            raf.changeReplicaOrder();
-        }
-        // read EOF
-        for (int reads = 0; reads < 4; reads++) {
-            byte[] resultBuffer = new byte[STRIPE_SIZE];
-            raf.seek(data.limit());
-            raf.read(resultBuffer, 0, resultBuffer.length);
-            byte[] expected = new byte[STRIPE_SIZE];
-            Arrays.fill(expected, (byte) 0);
-            assertTrue(Arrays.equals(expected, resultBuffer));
-
-            // read EOF with data
-            resultBuffer = new byte[STRIPE_SIZE * 3];
-            raf.seek(data.limit() - STRIPE_SIZE * 2);
-            raf.read(resultBuffer, 0, resultBuffer.length);
-            // check data
-            expected = Arrays.copyOfRange(data.array(), data.limit() - STRIPE_SIZE * 2, data.limit());
-            assertTrue(Arrays.equals(expected, Arrays.copyOfRange(resultBuffer, 0, STRIPE_SIZE * 2)));
-            // check zeros at the end
-            expected = new byte[STRIPE_SIZE];
-            Arrays.fill(expected, (byte) 0);
-            assertTrue(Arrays.equals(expected, Arrays.copyOfRange(resultBuffer, STRIPE_SIZE * 2,
-                    resultBuffer.length)));
-            
-            raf.changeReplicaOrder();
         }
     }
 

@@ -74,7 +74,7 @@ public class ReplicationFlags {
     private static int resetStrategy(int flags) {
         // TODO: when rarest first strategy is implemented: use correct flag
         int strategyBits = SequentialStrategy.REPLICATION_FLAG | RandomStrategy.REPLICATION_FLAG
-                | SequentialPrefetchingStrategy.REPLICATION_FLAG | RandomStrategy.REPLICATION_FLAG;
+                | SequentialPrefetchingStrategy.REPLICATION_FLAG;
         return (flags | strategyBits) ^ strategyBits;
     }
 

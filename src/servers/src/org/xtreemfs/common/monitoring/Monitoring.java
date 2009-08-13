@@ -154,4 +154,23 @@ public class Monitoring<V> {
                 list.remove(index);
         }
     }
+    
+    /*
+     * system-wide stuff
+     */
+    private static boolean monitoringEnabled = false;
+
+    /**
+     * enables monitoring for the whole system
+     */
+    public static void enable() {
+        monitoringEnabled = true;
+    }
+
+    /**
+     * @return the monitoringEnabled
+     */
+    public static boolean isEnabled() {
+        return monitoringEnabled;
+    }
 }

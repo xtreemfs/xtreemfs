@@ -41,6 +41,7 @@ import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -265,7 +266,7 @@ public class xtfs_repl {
     public void addReplica(List<ServiceUUID> osds, int replicationFlags, int stripeWidth) throws Exception {
         if (file.isReadOnly()) {
             if (stripeWidth == 0) // not set => policy from replica 1
-                stripeWidth = file.getStripingPolicy().getWidth();
+                stripeWidth = osds.size();
 
             StripingPolicy sp = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, (int) file
                     .getStripeSize(), stripeWidth);
@@ -282,13 +283,16 @@ public class xtfs_repl {
     public void addReplicaAutomatically(int replicationFlags, int stripeWidth)
             throws Exception {
         if (file.isReadOnly()) {
+            if (stripeWidth == 0) // not set => policy from replica 1
+                stripeWidth = file.getStripingPolicy().getWidth();
+
             List<ServiceUUID> suitableOSDs = file.getSuitableOSDsForAReplica();
-            if (suitableOSDs.size() == 0) {
-                System.err.println("could not create replica: no suitable OSDs available");
+            if (suitableOSDs.size() < stripeWidth) {
+                System.err.println("could not create replica: not enough suitable OSDs available");
                 System.exit(1);
             }
 
-            addReplica(suitableOSDs.subList(0, file.getStripingPolicy().getWidth()), replicationFlags,
+            addReplica(suitableOSDs.subList(0, stripeWidth), replicationFlags,
                     stripeWidth);
         } else
             System.err.println("File is not marked as read-only.");
@@ -313,12 +317,14 @@ public class xtfs_repl {
         // send requests to all OSDs of this replica
         try {
             List<ServiceUUID> osdList = addedReplica.getOSDs();
+            List<ServiceUUID> osdListCopy = new ArrayList<ServiceUUID>(addedReplica.getOSDs());
             // take lowest objects of file
-            for (int objectNo = 0; osdList.size() != 0; objectNo++) {
+            for (int objectNo = 0; osdListCopy.size() != 0; objectNo++) {
                 // get index of OSD for this object
                 int indexOfOSD = sp.getOSDforObject(objectNo);
                 // remove OSD
-                ServiceUUID osd = osdList.remove(indexOfOSD);
+                ServiceUUID osd = osdList.get(indexOfOSD);
+                osdListCopy.remove(osd);
                 // send request (read only 1 byte)
                 RPCResponse<ObjectData> r = osdClient.read(osd.getAddress(), fileID, cred, objectNo, 0, 0, 1);
                 r.get();
@@ -384,22 +390,7 @@ public class xtfs_repl {
      */
     public void removeReplica(ServiceUUID osd) throws Exception {
         if (file.isReadOnly()) {
-            boolean noOtherCompleteReplica = true;
-            if (file.getXLoc().getReplica(osd).isComplete()) { // complete replica
-                // check if another replica is also complete
-                for (Replica r : file.getXLoc().getReplicas())
-                    if (r.isComplete()) {
-                        noOtherCompleteReplica = false;
-                        break;
-                    }
-                if (!noOtherCompleteReplica)
-                    file.removeReplica(osd);
-                else
-                    throw new IOException(
-                            "This is the last remaining COMPLETE replica. It cannot be removed,"
-                                    + " otherwise it can happen that the file will be destroyed.");
-            } else
-                file.removeReplica(osd);
+            file.removeReplica(osd);
         } else
             System.err.println("File is not marked as read-only.");
     }
@@ -414,9 +405,10 @@ public class xtfs_repl {
             ServiceUUID osd = null;
             Random random = new Random();
             while (true) {
-                Replica replica = xLoc.getReplicas().get(random.nextInt(xLoc.getNumReplicas()));
-                osd = replica.getHeadOsd();
                 try {
+                    Replica replica = file.getXLoc().getReplicas().get(
+                            random.nextInt(file.getXLoc().getNumReplicas()));
+                    osd = replica.getHeadOsd();
                     file.removeReplica(osd);
                     break;
                 } catch (IOException e) {
@@ -463,18 +455,36 @@ public class xtfs_repl {
             out
                     .append("\t Striping Policy: " + r.getStripingPolicy().getPolicy().getType().toString()
                             + "\n");
-            out.append("\t Stripe-Size: " + r.getStripingPolicy().getStripeSizeForObject(0) + "KB\n");
+            out.append("\t Stripe-Size: "
+                    + OutputUtils.formatBytes(r.getStripingPolicy().getStripeSizeForObject(0)) + "\n");
             out.append("\t Stripe-Width: " + r.getStripingPolicy().getWidth() + " (OSDs)\n");
+
+            if (file.isReadOnly()) {
+                out.append("\t Replication Flags:\n");
+                out.append("\t\t Complete: " + r.isComplete() + "\n");
+                out.append("\t\t Replica Type: " + (r.isPartialReplica() ? "partial" : "full") + "\n");
+                String transferStrategy = "unknown";
+                if (ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()))
+                    transferStrategy = "random";
+                else if (ReplicationFlags.isSequentialStrategy(r.getTransferStrategyFlags()))
+                    transferStrategy = "sequential";
+                else if (ReplicationFlags.isSequentialPrefetchingStrategy(r.getTransferStrategyFlags()))
+                    transferStrategy = "sequential prefetching";
+                else if (ReplicationFlags.isRarestFirstStrategy(r.getTransferStrategyFlags()))
+                    transferStrategy = "rarest first";
+                out.append("\t\t Transfer-Strategy: " + transferStrategy + "\n");
+            }
+
             out.append("\t OSDs:\n");
 
             int osdNumber = 1;
             // OSDs of this replica
             for (ServiceUUID osd : r.getOSDs()) {
                 if (osdNumber == 1) {
-                    out.append("\t\t [Head-OSD] ");
+                    out.append("\t\t [Head-OSD]\t");
                     osdNumber++;
                 } else
-                    out.append("\t\t [OSD " + (osdNumber++) + "] ");
+                    out.append("\t\t [OSD " + (osdNumber++) + "]\t");
                 out.append("UUID: " + osd.toString() + ", URL: " + osd.getAddress().toString() + "\n");
             }
         }
@@ -561,6 +571,7 @@ public class xtfs_repl {
         // options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put(OPTION_REPLICATION_FLAG_FULL_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(OPTION_REPLICATION_FLAG_TRANSFER_STRATEGY, new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(OPTION_STRIPE_WIDTH, new CliOption(CliOption.OPTIONTYPE.NUMBER));
         options.put(OPTION_RSEL_POLICY_GET, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(OPTION_RSEL_POLICY_SET, new CliOption(CliOption.OPTIONTYPE.STRING));
 
@@ -720,15 +731,16 @@ public class xtfs_repl {
         out.append("\t-" + OPTION_RSEL_POLICY_SET + " { " + RSEL_POLICY_DEFAULT + " | " + RSEL_POLICY_FQDN + " | "
                 + RSEL_POLICY_DCMAP + " | <policy id> } " + ": set the volume's replica selection policy\n");
         out.append("\t-" + OPTION_ADD_REPLICA
-                + " <UUID_of_OSD1 UUID_of_OSD2 ...>: Adds a replica with the given OSDs. "
+                + " <UUID_of_OSD1,UUID_of_OSD2 ...>: Adds a replica with the given OSDs. "
                 + "The number of OSDs must be the same as in the file's striping policy. "
-                + "Use space as seperator.\n");
-        out.append("\t-" + OPTION_ADD_AUTOMATIC_REPLICA + ": adds a replica and automatically selects the best OSDs (according to the volume's replica selection policy)\n");        out.append("\t-" + OPTION_REMOVE_REPLICA + " <UUID_of_head-OSD>"
-                + ": removes the replica with the given head OSD\n");
-        out.append("\t-" + OPTION_STRIPE_WIDTH
+                + "Use comma as seperator.\n");
+        out.append("\t-" + OPTION_ADD_AUTOMATIC_REPLICA + ": adds a replica and automatically selects the best OSDs (according to the volume's replica selection policy)\n");
+        out.append("\t-" + OPTION_STRIPE_WIDTH + " <number of OSDs>"
                 + ": specifies how many OSDs will be used for this replica (stripe-width)\n");
         out.append("\t-" + OPTION_REPLICATION_FLAG_TRANSFER_STRATEGY + " { " + TRANSFER_STRATEGY_RANDOM + " | "
                 + TRANSFER_STRATEGY_SEQUENTIAL + " }: the replica to add will use the chosen strategy\n");
+        out.append("\t-" + OPTION_REMOVE_REPLICA + " <UUID_of_head-OSD>"
+                + ": removes the replica with the given head OSD\n");
         out.append("\t-" + OPTION_REMOVE_AUTOMATIC_REPLICA + ": removes a randomly selected replica\n");
         out.append("\t-" + OPTION_REPLICATION_FLAG_FULL_REPLICA
                         + ": if set, the replica will be a complete copy of the file; otherwise only requested data will be replicated\n");
