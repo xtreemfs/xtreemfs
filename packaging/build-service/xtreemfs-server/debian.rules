@@ -70,14 +70,6 @@ install: build
 	mkdir -p $(XTREEMFS_INIT_DIR)
 	cp init.d-scripts/xtreemfs-* $(XTREEMFS_INIT_DIR)
 	chmod a+x $(XTREEMFS_INIT_DIR)/xtreemfs-*
-	
-	# copy bins
-	mkdir -p $(BIN_DIR)
-	cp bin/xtfs_* $(BIN_DIR)
-	
-	# copy man-pages
-	mkdir -p $(MAN_DIR)
-	cp -R man/* $(MAN_DIR)
 
 # Build architecture-independent files here.
 binary-indep: build install
