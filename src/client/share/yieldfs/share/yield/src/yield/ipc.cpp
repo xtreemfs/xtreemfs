@@ -59,15 +59,27 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
           socket_ = UDPSocket::create().release();
         else
           socket_ = TCPSocket::create().release();
-        if ( ( this->flags & this->CLIENT_FLAG_TRACE_IO ) == this->CLIENT_FLAG_TRACE_IO &&
-             log != NULL && log->get_level() >= Log::LOG_INFO &&
-             static_cast<int>( *socket_ ) != -1 )
-          socket_ = new TracingSocket( socket_, log );
-        if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-          log->getStream( Log::LOG_INFO ) << "yield::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " with socket #" << static_cast<int>( *socket_ ) << ".";
-        AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( *this, peername, request );
-        TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_connect_control_block->incRef(), operation_timeout ) );
-        socket_->aio_connect( aio_connect_control_block );
+        if ( socket_ != NULL )
+        {
+          if ( ( this->flags & this->CLIENT_FLAG_TRACE_IO ) == this->CLIENT_FLAG_TRACE_IO &&
+               log != NULL && log->get_level() >= Log::LOG_INFO &&
+               static_cast<int>( *socket_ ) != -1 )
+            socket_ = new TracingSocket( socket_, log );
+          if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
+            log->getStream( Log::LOG_INFO ) << "yield::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " with socket #" << static_cast<int>( *socket_ ) << ".";
+          AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( *this, peername, request );
+          TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_connect_control_block->incRef(), operation_timeout ) );
+          socket_->aio_connect( aio_connect_control_block );
+        }
+        else
+        {
+          ExceptionResponse* exception_response = new ExceptionResponse;
+          if ( log != NULL )
+            log->getStream( Log::LOG_ERR ) << "yield::Client: could not create new socket to connect to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << ", error: " << Exception::strerror() << ".";
+          request.respond( *exception_response );
+          yidl::Object::decRef( request );
+          return;
+        }
       }
       yidl::Object::decRef( *socket_ );
     }
