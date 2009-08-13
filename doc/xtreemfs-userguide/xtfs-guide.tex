@@ -172,7 +172,7 @@ When a \emph{new file} is created, the MRC must decide which OSDs to use for sto
 \end{itemize}
 
 \subsection{Replica Selection Policies}\label{sec:repl_policies}
-When a client opens a file with more than one replica, the MRC uses a replica selection policy to sort the list of replicas for the client. Clients will always use the first replica in the list. If a replica is not available, the client will automatically select the next replica from the list. Replica selection policies can be used to sort the replica lists, e.g. to ensure that clients use replicas which are close to them. By default, the MRC returns an unmodified list of replicas.
+When a client opens a file with more than one replica, the MRC uses a replica selection policy to sort the list of replicas for the client. Clients will always use the first replica in the list. If a replica is not available, the client will automatically select the next replica from the list. Replica selection policies can be used to sort the replica lists, e.g. to ensure that clients use replicas which are close to them. By default, the MRC returns an unmodified list of replicas. Section \ref{sec:repl_select_policy} describes how to set and display the policy of a volume.
 
 \begin{itemize}
  \item Default Replica Selection (policy id 1)\index{Default Replica Selection Policy}\index{Replica Selection Policy!default}\\
@@ -920,47 +920,6 @@ The process will be started and can be stopped by setting the option
 \texttt{-stop}. To watch the cleanup progress use option \texttt{-i} for the
 interactive mode. For further informations see \texttt{man xtfs\_cleanup}.
 
-\subsection{Read-Only Replication}
-Read-only replication allows you to create copies of files on several OSDs. Since the files are immutable (read-only) there is no overhead for coordinating the replicas. XtreemFS supports partial and full replicas.
-A partial replica will only fetch the data requested by a client (ondemand). A full replica does this also, but it fetches the data additionally without client-requests until all data of the file has been replicated (background replication).
-With XtreemFS all replicas are initially empty but can be used immediately by applications. If the replica do not have the requested data, it fetches it from another replica and saves it locally for further requests. This helps you to reduce start-up times, network bandwidth and disk usage.
-
-So far XtreemFS only supports to manage replicas manually. Before the replication can be used the file must be marked as read-only with the following command:
-
-\begin{verbatim}
-$> xtfs_repl --set_readonly local-path-of-file
-\end{verbatim}
-
-After a file is marked as read-only replicas can be added. The tool supports differend replica creation modes. One creates a replica by selecting the OSDs randomly or by selecting the nearest OSDs by using the DNS of the local machine. Also an interactive mode for selecting OSDs could be used to create a replica. And the last mode uses the OSDs given by the arguments.
-
-As default partial replicas will be created. To create a full replica the option \texttt{--full} must be set.
-
-XtreemFS supports different transfer strategies which has an big impact on the speed of the replication. A transfer strategy must be chosen for each replica.
-
-To create a full replica by random selection of OSDs and usage of the random transfer strategy, the following command must be used:
-
-\begin{verbatim}
-$> xtfs_repl --auto_add random --full --strategy random local-path-of-file
-\end{verbatim}
-
-To list all replicas and OSDs of the file use:
-
-\begin{verbatim}
-$> xtfs_repl -l local-path-of-file
-\end{verbatim}
-
-Removing also supports muliple modes. Again an interactive mode and a mode which is choosing the replica randomly. To remove a specific replica, the head-OSD (first OSD) of this replica must be given as an argument. At least one complete replica must exist, so the tool will not remove a complete replica, if no others exists. To remove the just created replica use the following command and change head-osd to the one listed by \texttt{xtfs\_repl -l}:
-
-\begin{verbatim}
-$> xtfs_repl -r head-OSD local-path-of-file
-\end{verbatim}
-
-For further options see:
-
-\begin{verbatim}
-$> xtfs_repl -h
-\end{verbatim}
-
 
 \chapter{The XtreemFS Client}
 
@@ -1104,6 +1063,64 @@ width (kB):   256
 \end{verbatim}
 
 When creating a new file, XtreemFS will first check whether a default striping policy has been assigned to the parent directory. If this is not the case, the default striping policy for the volume will be used as the striping policy for the new file. Changing a volume's or directory's default striping policy requires superuser access rights or ownership of the directory or volume.
+
+\section{Changing Replica Selection Policy}\label{sec:repl_select_policy}
+
+The replica selection policy can only be set for the entire volume. The policies are described in Sec. \ref{sec:repl_policies}. To show and modify the policy for a volume, use the \texttt{xtfs\_repl} tool.
+
+\begin{verbatim}
+ $> xtfs_repl --rsp_get /xtreemfs
+\end{verbatim}
+
+displays the current replica selection policy used for the volume. To change the policy to use the datacenter map for  a volume, use
+
+\begin{verbatim}
+ $> xtfs_repl --rsp_set dcmap /xtreemfs
+\end{verbatim}
+
+If you want to use a custom (i.e. plug-in) policy, pass the id instead of the name.
+
+\subsection{Read-Only Replication}
+Read-only replication allows you to create copies of files on several OSDs. Since the files are immutable (read-only) there is no overhead for coordinating the replicas. XtreemFS supports partial and full replicas.
+A partial replica will only fetch the data requested by a client (on demand). A full replica does the same, but it also fetches the data in the background without client requests until all data of the file has been replicated (background replication).
+
+With XtreemFS all replicas are initially empty and can be used immediately by applications. If a replica does not have the requested data, it fetches it from another replica and saves it locally for future requests. This helps you to reduce start-up times, and saves network bandwidth and disk usage.
+
+So far XtreemFS only supports to manage replicas manually. Before the replication can be used the file must be marked as read-only with the following command:
+
+\begin{verbatim}
+$> xtfs_repl --set_readonly local-path-of-file
+\end{verbatim}
+
+After a file is marked as read-only replicas can be added. The tool supports differend replica creation modes. The automatic mode retrieves a list of OSDs from the MRC and chooses the best OSD according to the current replica selection policy. There is also an interactive mode for selecting OSDs yourself. Finally, you can select an OSD by sepcifying its UUID on the command line.
+
+By default, partial replicas will be created. To create a full replica the option \texttt{--full} must be set.
+
+XtreemFS supports different transfer strategies which has an big impact on the speed of the replication and the order in which objects are fetched. A transfer strategy must be chosen for each replica.
+
+To create a full replica and usage of the random transfer strategy, the following command must be used. The OSDs are selected according to the volume's replica selection policy. See Sec. \ref{sec:repl_policies} for a description of the policies.
+
+\begin{verbatim}
+$> xtfs_repl --auto_add --full --strategy random local-path-of-file
+\end{verbatim}
+
+To list all replicas and OSDs of the file use:
+
+\begin{verbatim}
+$> xtfs_repl -l local-path-of-file
+\end{verbatim}
+
+Removing also supports muliple modes. Again an interactive mode and a mode which is choosing the replica randomly. To remove a specific replica, the head-OSD (first OSD) of this replica must be given as an argument. At least one complete replica must exist, so the tool will not remove a complete replica, if no others exists. To remove the just created replica use the following command and change head-osd to the one listed by \texttt{xtfs\_repl -l}:
+
+\begin{verbatim}
+$> xtfs_repl -r head-OSD local-path-of-file
+\end{verbatim}
+
+For further options see:
+
+\begin{verbatim}
+$> xtfs_repl -h
+\end{verbatim}
 
 \chapter{Troubleshooting and Support}
 
