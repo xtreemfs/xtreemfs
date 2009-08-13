@@ -24,19 +24,14 @@
  */
 package org.xtreemfs.utils;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.PriorityQueue;
 import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.Map.Entry;
@@ -61,6 +56,8 @@ import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.StripingPolicy;
+import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.client.MRCClient;
@@ -72,61 +69,57 @@ import org.xtreemfs.utils.CLIParser.CliOption;
  * 06.04.2009
  */
 public class xtfs_repl {
-    public final static String      ADD_REPLICA                        = "a";
+    public final static String      OPTION_HELP                               = "h";
 
-    public final static String      ADD_REPLICA_INTERACTIVE            = "-interactive_add";
+    public final static String      OPTION_HELP_LONG                          = "-help";
 
-    public final static String      ADD_AUTOMATIC_REPLICA              = "-auto_add";
+    public final static String      OPTION_ADD_REPLICA                        = "a";
 
-    public final static String      REMOVE_REPLICA                     = "r";
+    public final static String      OPTION_ADD_AUTOMATIC_REPLICA              = "-add_auto";
 
-    public final static String      REMOVE_REPLICA_INTERACTIVE         = "-interactive_remove";
+    public final static String      OPTION_REMOVE_REPLICA                     = "r";
 
-    public final static String      REMOVE_AUTOMATIC_REPLICA           = "-auto_remove";
+    public final static String      OPTION_REMOVE_AUTOMATIC_REPLICA           = "-remove_auto";
 
-    public final static String      SET_READ_ONLY                      = "-set_readonly";
+    public final static String      OPTION_SET_READ_ONLY                      = "-set_readonly";
 
-    public final static String      SET_WRITABLE                       = "-set_writeable";
+    public final static String      OPTION_SET_WRITABLE                       = "-set_writable";
 
-    public final static String      IS_READ_ONLY                       = "-is_readonly";
+    public final static String      OPTION_LIST_REPLICAS                      = "l";
 
-    public final static String      RSEL_POLICY_GET                    = "-rsp_get";
+    public final static String      OPTION_LIST_SUITABLE_OSDS_FOR_A_REPLICA   = "o";
 
-    public final static String      RSEL_POLICY_SET                    = "-rsp_set";
+    public final static String      OPTION_STRIPE_WIDTH                       = "w";
 
-    public final static String      RSEL_POLICY_DEFAULT                = "default";
+    public final static String      OPTION_RSEL_POLICY_GET                    = "-rsp_get";
 
-    public final static String      RSEL_POLICY_FQDN                   = "fqdn";
+    public final static String      OPTION_RSEL_POLICY_SET                    = "-rsp_set";
 
-    public final static String      RSEL_POLICY_DCMAP                  = "dcmap";
+    public final static String      RSEL_POLICY_DEFAULT                       = "default";
 
-    public final static String      LIST_REPLICAS                      = "l";
+    public final static String      RSEL_POLICY_FQDN                          = "fqdn";
 
-    public final static String      LIST_SUITABLE_OSDS_FOR_REPLICA     = "o";
+    public final static String      RSEL_POLICY_DCMAP                         = "dcmap";
 
-    public final static String      HELP                               = "h";
+    public final static String      OPTION_REPLICATION_FLAG_FULL_REPLICA      = "-full";
 
-    public final static String      HELP_LONG                          = "-help";
+    public final static String      OPTION_REPLICATION_FLAG_TRANSFER_STRATEGY = "-strategy";
 
-    public final static String      REPLICATION_FLAG_FULL_REPLICA     = "-full";
+    public final static String      TRANSFER_STRATEGY_RANDOM                  = "random";
 
-    public final static String      REPLICATION_FLAG_TRANSFER_STRATEGY = "-strategy";
+    public final static String      TRANSFER_STRATEGY_SEQUENTIAL              = "sequential";
 
-    public final static String      TRANSFER_STRATEGY_RANDOM           = "random";
+    public final static String      OPTION_SSL_CREDS_FILE                     = "c";
 
-    public final static String      TRANSFER_STRATEGY_SEQUENTIAL       = "sequential";
+    public final static String      OPTION_SSL_CREDS_PASSWORD                 = "cpass";
 
-    public final static String      SSL_CREDS_FILE                     = "c";
+    public final static String      OPTION_SSL_TRUSTED_CA_FILE                = "t";
 
-    public final static String      SSL_CREDS_PASSWORD                 = "cpass";
+    public final static String      OPTION_SSL_TRUSTED_CA_PASSWORD            = "tpass";
 
-    public final static String      SSL_TRUSTED_CA_FILE                = "t";
-
-    public final static String      SSL_TRUSTED_CA_PASSWORD            = "tpass";
-
-    public final static int         DEFAULT_REPLICATION_FLAGS          = ReplicationFlags
-                                                                               .setPartialReplica(ReplicationFlags
-                                                                                       .setRandomStrategy(0));
+    public final static int         DEFAULT_REPLICATION_FLAGS                 = ReplicationFlags
+                                                                                      .setPartialReplica(ReplicationFlags
+                                                                                              .setRandomStrategy(0));
 
     private final String            relPath;
 
@@ -152,22 +145,22 @@ public class xtfs_repl {
 
     private TimeSync                timeSync;
 
-    public static final Pattern     IPV4_PATTERN                       = Pattern
-                                                                               .compile("b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)"
-                                                                                       + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)b");
+    public static final Pattern     IPV4_PATTERN                              = Pattern
+                                                                                      .compile("b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)"
+                                                                                              + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)b");
 
-    public static final Pattern     IPV6_PATTERN                       = Pattern
-                                                                               .compile(
-                                                                                       "((([0-9a-f]{1,4}+:){7}+[0-9a-f]{1,4}+)|(:(:[0-9a-f]"
-                                                                                               + "{1,4}+){1,6}+)|(([0-9a-f]{1,4}+:){1,6}+:)|(::)|(([0-9a-f]"
-                                                                                               + "{1,4}+:)(:[0-9a-f]{1,4}+){1,5}+)|(([0-9a-f]{1,4}+:){1,2}"
-                                                                                               + "+(:[0-9a-f]{1,4}+){1,4}+)|(([0-9a-f]{1,4}+:){1,3}+(:[0-9a-f]{1,4}+)"
-                                                                                               + "{1,3}+)|(([0-9a-f]{1,4}+:){1,4}+(:[0-9a-f]{1,4}+){1,2}+)|(([0-9a-f]"
-                                                                                               + "{1,4}+:){1,5}+(:[0-9a-f]{1,4}+))|(((([0-9a-f]{1,4}+:)?([0-9a-f]"
-                                                                                               + "{1,4}+:)?([0-9a-f]{1,4}+:)?([0-9a-f]{1,4}+:)?)|:)(:(([0-9]{1,3}+\\.)"
-                                                                                               + "{3}+[0-9]{1,3}+)))|(:(:[0-9a-f]{1,4}+)*:([0-9]{1,3}+\\.){3}+[0-9]"
-                                                                                               + "{1,3}+))(/[0-9]+)?",
-                                                                                       Pattern.CASE_INSENSITIVE);
+    public static final Pattern     IPV6_PATTERN                              = Pattern
+                                                                                      .compile(
+                                                                                              "((([0-9a-f]{1,4}+:){7}+[0-9a-f]{1,4}+)|(:(:[0-9a-f]"
+                                                                                                      + "{1,4}+){1,6}+)|(([0-9a-f]{1,4}+:){1,6}+:)|(::)|(([0-9a-f]"
+                                                                                                      + "{1,4}+:)(:[0-9a-f]{1,4}+){1,5}+)|(([0-9a-f]{1,4}+:){1,2}"
+                                                                                                      + "+(:[0-9a-f]{1,4}+){1,4}+)|(([0-9a-f]{1,4}+:){1,3}+(:[0-9a-f]{1,4}+)"
+                                                                                                      + "{1,3}+)|(([0-9a-f]{1,4}+:){1,4}+(:[0-9a-f]{1,4}+){1,2}+)|(([0-9a-f]"
+                                                                                                      + "{1,4}+:){1,5}+(:[0-9a-f]{1,4}+))|(((([0-9a-f]{1,4}+:)?([0-9a-f]"
+                                                                                                      + "{1,4}+:)?([0-9a-f]{1,4}+:)?([0-9a-f]{1,4}+:)?)|:)(:(([0-9]{1,3}+\\.)"
+                                                                                                      + "{3}+[0-9]{1,3}+)))|(:(:[0-9a-f]{1,4}+)*:([0-9]{1,3}+\\.){3}+[0-9]"
+                                                                                                      + "{1,3}+))(/[0-9]+)?",
+                                                                                              Pattern.CASE_INSENSITIVE);
 
     /**
      * required for METHOD_DNS <br>
@@ -197,8 +190,8 @@ public class xtfs_repl {
      * @throws ONCRPCException
      * 
      */
-    public xtfs_repl(String relPath, InetSocketAddress dirAddress, String volume, String volPath, SSLOptions sslOptions)
-            throws Exception {
+    public xtfs_repl(String relPath, InetSocketAddress dirAddress, String volume, String volPath,
+            SSLOptions sslOptions) throws Exception {
         try {
             Logging.start(Logging.LEVEL_ERROR, Category.tool);
 
@@ -264,94 +257,21 @@ public class xtfs_repl {
                 System.exit(1);
             }
         }
-
-        
-
-        
     }
 
-    // interactive
-    public void addReplica() throws Exception {
+    /*
+     * add replica
+     */
+    public void addReplica(List<ServiceUUID> osds, int replicationFlags, int stripeWidth) throws Exception {
         if (file.isReadOnly()) {
-            List<ServiceUUID> suitableOSDs = listSuitableOSDs();
+            if (stripeWidth == 0) // not set => policy from replica 1
+                stripeWidth = file.getStripingPolicy().getWidth();
 
-            // get OSDs
-            String[] osdNumbers = null;
-            BufferedReader in = null;
-            while (true) {
-                try {
-                    // at the moment all replicas must have the same StripingPolicy
-                    in = new BufferedReader(new InputStreamReader(System.in));
-                    System.out.println("Please select " + file.getStripingPolicy().getWidth()
-                            + " OSD(s) which should be used for the replica.");
-                    System.out
-                            .println("# Select the OSD(s) through the prefix-numbers and use ',' as seperator. #");
-                    osdNumbers = in.readLine().split(",");
+            StripingPolicy sp = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, (int) file
+                    .getStripeSize(), stripeWidth);
+            file.addReplica(osds, sp, replicationFlags);
 
-                    // correct count of OSDs
-                    if (osdNumbers.length != file.getStripingPolicy().getWidth()) {
-                        System.out.println("Please try it again");
-                        continue;
-                    }
-                    break;
-                } catch (IOException e) {
-                    System.out.println("Please try it again");
-                    continue;
-                } finally {
-                    if (in != null)
-                        in.close();
-                }
-            }
-
-            // create list with selected OSDs for replica
-            List<ServiceUUID> osds = new ArrayList<ServiceUUID>(file.getStripingPolicy().getWidth());
-            for (String osdNumber : osdNumbers) {
-                osds.add(suitableOSDs.get(Integer.parseInt(osdNumber) - 1));
-            }
-
-            // get replication flags
-            String[] args = null;
-            int replicationFlags = 0;
-            while (true) {
-                try {
-                    in = new BufferedReader(new InputStreamReader(System.in));
-                    System.out
-                            .println("Please choose the type of the replica (full | partial)"
-                                    + " and a Transfer Strategy (random | sequential).");
-                    System.out.println("# Please use ',' as seperator. #");
-                    args = in.readLine().split(",");
-
-                    List<String> argsList = Arrays.asList(args);
-                    if (argsList.contains("partial"))
-                        replicationFlags = ReplicationFlags.setPartialReplica(replicationFlags);
-                    if (argsList.contains("full")) {
-                        replicationFlags = ReplicationFlags.setFullReplica(replicationFlags);
-                    }
-                    if (argsList.contains("random"))
-                        replicationFlags = ReplicationFlags.setRandomStrategy(replicationFlags);
-                    if (argsList.contains("sequential"))
-                        replicationFlags = ReplicationFlags.setSequentialStrategy(replicationFlags);
-
-                    break;
-                } catch (IOException e) {
-                    System.out.println("Please try it again");
-                    continue;
-                } finally {
-                    if (in != null)
-                        in.close();
-                }
-            }
-
-            addReplica(osds, replicationFlags);
-        } else
-            System.err.println("File is not marked as read-only.");
-    }
-
-    public void addReplica(List<ServiceUUID> osds, int replicationFlags) throws Exception {
-        if (file.isReadOnly()) {
-            // at the moment all replicas must have the same StripingPolicy
-            file.addReplica(osds, file.getStripingPolicy(), replicationFlags);
-
+            // start replication of full replicas
             if (ReplicationFlags.isFullReplica(replicationFlags))
                 startReplicationOnOSDs(osds.get(0));
         } else
@@ -359,7 +279,8 @@ public class xtfs_repl {
     }
 
     // automatic
-    public void addReplicaAutomatically(String method, int replicationFlags) throws Exception {
+    public void addReplicaAutomatically(int replicationFlags, int stripeWidth)
+            throws Exception {
         if (file.isReadOnly()) {
             List<ServiceUUID> suitableOSDs = file.getSuitableOSDsForAReplica();
             if (suitableOSDs.size() == 0) {
@@ -367,61 +288,10 @@ public class xtfs_repl {
                 System.exit(1);
             }
 
-            //we get a sorted list (according to the volumes replica selection policy
-
-            List<ServiceUUID> osds = new ArrayList<ServiceUUID>(file.getStripingPolicy().getWidth());
-            if (suitableOSDs.size() <= file.getStripingPolicy().getWidth()) {
-                osds = suitableOSDs;
-            } else {
-                for (int i = 0; i < file.getStripingPolicy().getWidth(); i++) {
-                    osds.add(suitableOSDs.get(i));
-                }
-            }
-            addReplica(osds, replicationFlags);
+            addReplica(suitableOSDs.subList(0, file.getStripingPolicy().getWidth()), replicationFlags,
+                    stripeWidth);
         } else
             System.err.println("File is not marked as read-only.");
-    }
-
-    private void getReplicaSelectionPolicy() {
-        try {
-            RPCResponse<String> r = mrcClient.getxattr(null, credentials, volume+"/", "xtreemfs.repl_policy_id");
-            String v = r.get();
-            if (v.equals("1")) {
-                System.out.println("replica selection policy: default");
-            } else if (v.equals("3")) {
-                System.out.println("replica selection policy: FQDN");
-            } else if (v.equals("4")) {
-                System.out.println("replica selection policy: DCMap");
-            } else {
-                System.out.println("replica selection policy: custom (#"+v+")");
-            }
-        } catch (Exception ex) {
-            System.err.println("cannot read replica selection policy");
-            ex.printStackTrace();
-        }
-    }
-
-    private void setReplicaSelectionPolicy(String rsp) {
-        try {
-
-            int id = 0;
-            if (rsp.equalsIgnoreCase(RSEL_POLICY_DEFAULT)) {
-                id = 1;
-            } else if (rsp.equalsIgnoreCase(RSEL_POLICY_FQDN)) {
-                id = 3;
-            } else if (rsp.equalsIgnoreCase(RSEL_POLICY_DCMAP)) {
-                id = 4;
-            } else {
-                id = Integer.valueOf(rsp);
-            }
-
-            RPCResponse r = mrcClient.setxattr(null, credentials, volume+"/", "xtreemfs.repl_policy_id", id+"",0);
-            r.get();
-            System.out.println("replication policy changed");
-        } catch (Exception ex) {
-            System.err.println("cannot read replica selection policy");
-            ex.printStackTrace();
-        }
     }
 
     /**
@@ -444,7 +314,7 @@ public class xtfs_repl {
         try {
             List<ServiceUUID> osdList = addedReplica.getOSDs();
             // take lowest objects of file
-            for (int objectNo = 0; osdList.size() == 0; objectNo++) {
+            for (int objectNo = 0; osdList.size() != 0; objectNo++) {
                 // get index of OSD for this object
                 int indexOfOSD = sp.getOSDforObject(objectNo);
                 // remove OSD
@@ -465,40 +335,53 @@ public class xtfs_repl {
         }
     }
 
-    // interactive
-    public void removeReplica() throws Exception {
-        if (file.isReadOnly()) {
-            printListOfReplicas(xLoc.getReplicas());
-
-            int replicaNumber;
-            BufferedReader in = null;
-            while (true) {
-                try {
-                    // at the moment all replicas must have the same
-                    // StripingPolicy
-                    in = new BufferedReader(new InputStreamReader(System.in));
-                    System.out.println("Please select a replica which should be removed.");
-                    System.out.println("# Select the replica through the prefix-number. #");
-                    replicaNumber = Integer.parseInt(in.readLine());
-
-                    break;
-                } catch (NumberFormatException e) {
-                    System.out.println("Please try it again");
-                    continue;
-                } catch (IOException e) {
-                    System.out.println("Please try it again");
-                    continue;
-                } finally {
-                    if (in != null)
-                        in.close();
-                }
+    public void getReplicaSelectionPolicy() {
+        try {
+            RPCResponse<String> r = mrcClient.getxattr(null, credentials, volume + "/",
+                    "xtreemfs.repl_policy_id");
+            String v = r.get();
+            if (v.equals("1")) {
+                System.out.println("replica selection policy: default");
+            } else if (v.equals("3")) {
+                System.out.println("replica selection policy: FQDN");
+            } else if (v.equals("4")) {
+                System.out.println("replica selection policy: DCMap");
+            } else {
+                System.out.println("replica selection policy: custom (#" + v + ")");
             }
-
-            file.removeReplica(xLoc.getReplicas().get(replicaNumber - 1));
-        } else
-            System.err.println("File is not marked as read-only.");
+        } catch (Exception ex) {
+            System.err.println("cannot read replica selection policy");
+            ex.printStackTrace();
+        }
     }
 
+    public void setReplicaSelectionPolicy(String rsp) {
+        try {
+    
+            int id = 0;
+            if (rsp.equalsIgnoreCase(RSEL_POLICY_DEFAULT)) {
+                id = 1;
+            } else if (rsp.equalsIgnoreCase(RSEL_POLICY_FQDN)) {
+                id = 3;
+            } else if (rsp.equalsIgnoreCase(RSEL_POLICY_DCMAP)) {
+                id = 4;
+            } else {
+                id = Integer.valueOf(rsp);
+            }
+    
+            RPCResponse r = mrcClient.setxattr(null, credentials, volume + "/", "xtreemfs.repl_policy_id", id
+                    + "", 0);
+            r.get();
+            System.out.println("replication policy changed");
+        } catch (Exception ex) {
+            System.err.println("cannot read replica selection policy");
+            ex.printStackTrace();
+        }
+    }
+
+    /*
+     * remove replica
+     */
     public void removeReplica(ServiceUUID osd) throws Exception {
         if (file.isReadOnly()) {
             boolean noOtherCompleteReplica = true;
@@ -512,8 +395,9 @@ public class xtfs_repl {
                 if (!noOtherCompleteReplica)
                     file.removeReplica(osd);
                 else
-                    System.err.println("This is the last remaining COMPLETE replica. It cannot be removed,"
-                            + " otherwise it can happen that the file will be destroyed.");
+                    throw new IOException(
+                            "This is the last remaining COMPLETE replica. It cannot be removed,"
+                                    + " otherwise it can happen that the file will be destroyed.");
             } else
                 file.removeReplica(osd);
         } else
@@ -523,26 +407,31 @@ public class xtfs_repl {
     // automatic
     public void removeReplicaAutomatically() throws Exception {
         if (file.isReadOnly()) {
+            if (file.getXLoc().getNumReplicas() <= 1) {
+                System.out.println("No replica exists for removing.");
+                return;
+            }
             ServiceUUID osd = null;
-
             Random random = new Random();
-            Replica replica = xLoc.getReplicas().get(random.nextInt(xLoc.getNumReplicas()));
-            osd = replica.getHeadOsd();
-
-            file.removeReplica(osd);
+            while (true) {
+                Replica replica = xLoc.getReplicas().get(random.nextInt(xLoc.getNumReplicas()));
+                osd = replica.getHeadOsd();
+                try {
+                    file.removeReplica(osd);
+                    break;
+                } catch (IOException e) {
+                    continue;
+                }
+            }
         } else
             System.err.println("File is not marked as read-only.");
     }
 
+    /*
+     * other commands
+     */
     public void setReadOnly(boolean mode) throws Exception {
         file.setReadOnly(mode);
-    }
-
-    public void isReadOnly() throws Exception {
-        if (file.isReadOnly())
-            System.out.println("File is marked as read-only.");
-        else
-            System.out.println("File is NOT marked as read-only.");
     }
 
     public void listReplicas() throws UnknownUUIDException {
@@ -555,19 +444,38 @@ public class xtfs_repl {
         return osds;
     }
 
+    /*
+     * outputs
+     */
     private void printListOfReplicas(List<Replica> replicas) throws UnknownUUIDException {
         StringBuffer out = new StringBuffer();
+
+        // read-only?
+        if (file.isReadOnly())
+            out.append("File is read-only.\n");
+        else
+            out.append("File is writable. No replicas possible.\n");
+
         int replicaNumber = 1;
         for (Replica r : replicas) {
             // head line
-            out.append("[" + replicaNumber + "] ");
-            out.append("REPLICA " + (replicaNumber++) + ": " + r.getStripingPolicy().toString() + "\n");
+            out.append("REPLICA " + (replicaNumber++) + ":\n");
+            out
+                    .append("\t Striping Policy: " + r.getStripingPolicy().getPolicy().getType().toString()
+                            + "\n");
+            out.append("\t Stripe-Size: " + r.getStripingPolicy().getStripeSizeForObject(0) + "KB\n");
+            out.append("\t Stripe-Width: " + r.getStripingPolicy().getWidth() + " (OSDs)\n");
+            out.append("\t OSDs:\n");
 
             int osdNumber = 1;
             // OSDs of this replica
             for (ServiceUUID osd : r.getOSDs()) {
-                out.append("\t OSD " + (osdNumber++) + ": " + osd.toString() + " ("
-                        + osd.getAddress().toString() + ")\n");
+                if (osdNumber == 1) {
+                    out.append("\t\t [Head-OSD] ");
+                    osdNumber++;
+                } else
+                    out.append("\t\t [OSD " + (osdNumber++) + "] ");
+                out.append("UUID: " + osd.toString() + ", URL: " + osd.getAddress().toString() + "\n");
             }
         }
         System.out.print(out.toString());
@@ -578,8 +486,8 @@ public class xtfs_repl {
         if (osds.size() != 0) {
             int number = 1;
             for (ServiceUUID osd : osds) {
-                out.append("[" + number + "] ");
-                out.append(osd.toString() + " (" + osd.getAddress().toString() + ")\n");
+                out.append("[" + number++ + "] ");
+                out.append("UUID: " + osd.toString() + ", URL: " + osd.getAddress().toString() + "\n");
             }
         } else
             out.append("no suitable OSDs available\n");
@@ -608,34 +516,53 @@ public class xtfs_repl {
     }
 
     /**
+     * @param options
+     * @return
+     */
+    private static int parseReplicationFlags(Map<String, CliOption> options) {
+        int replicationFlags = DEFAULT_REPLICATION_FLAGS;
+        CliOption option = options.get(OPTION_REPLICATION_FLAG_FULL_REPLICA);
+        if (option != null && option.switchValue)
+            replicationFlags = ReplicationFlags.setFullReplica(replicationFlags);
+
+        option = options.get(OPTION_REPLICATION_FLAG_TRANSFER_STRATEGY);
+        if (option != null && option.stringValue != null) {
+            String method = option.stringValue.replace('\"', ' ').trim();
+
+            if (method.equals(TRANSFER_STRATEGY_RANDOM))
+                replicationFlags = ReplicationFlags.setRandomStrategy(replicationFlags);
+            else if (method.equals(TRANSFER_STRATEGY_SEQUENTIAL))
+                replicationFlags = ReplicationFlags.setSequentialStrategy(replicationFlags);
+        }
+        return replicationFlags;
+    }
+
+    /**
      * @param args
      */
     public static void main(String[] args) {
 
         Map<String, CliOption> options = new HashMap<String, CliOption>();
         List<String> arguments = new ArrayList<String>(3);
-        options.put(IS_READ_ONLY, new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put(SET_READ_ONLY, new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put(SET_WRITABLE, new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put(LIST_REPLICAS, new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put(LIST_SUITABLE_OSDS_FOR_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put(ADD_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put(ADD_REPLICA_INTERACTIVE, new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put(ADD_AUTOMATIC_REPLICA, new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put(REMOVE_REPLICA, new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put(REMOVE_REPLICA_INTERACTIVE, new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put(REMOVE_AUTOMATIC_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put(HELP, new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put(HELP_LONG, new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put(SSL_CREDS_FILE, new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put(SSL_CREDS_PASSWORD, new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put(SSL_TRUSTED_CA_FILE, new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put(SSL_TRUSTED_CA_PASSWORD, new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put(REPLICATION_FLAG_FULL_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put(REPLICATION_FLAG_TRANSFER_STRATEGY, new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put(RSEL_POLICY_GET, new CliOption(CliOption.OPTIONTYPE.SWITCH));
-        options.put(RSEL_POLICY_SET, new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(OPTION_HELP, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put(OPTION_HELP_LONG, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put(OPTION_SET_READ_ONLY, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put(OPTION_SET_WRITABLE, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put(OPTION_LIST_REPLICAS, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put(OPTION_LIST_SUITABLE_OSDS_FOR_A_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put(OPTION_ADD_REPLICA, new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(OPTION_ADD_AUTOMATIC_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put(OPTION_REMOVE_REPLICA, new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(OPTION_REMOVE_AUTOMATIC_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put(OPTION_SSL_CREDS_FILE, new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(OPTION_SSL_CREDS_PASSWORD, new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(OPTION_SSL_TRUSTED_CA_FILE, new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(OPTION_SSL_TRUSTED_CA_PASSWORD, new CliOption(CliOption.OPTIONTYPE.STRING));
+        // options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(OPTION_REPLICATION_FLAG_FULL_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put(OPTION_REPLICATION_FLAG_TRANSFER_STRATEGY, new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(OPTION_RSEL_POLICY_GET, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put(OPTION_RSEL_POLICY_SET, new CliOption(CliOption.OPTIONTYPE.STRING));
 
         try {
             CLIParser.parseCLI(args, options, arguments);
@@ -645,19 +572,18 @@ public class xtfs_repl {
             return;
         }
 
-        CliOption h = options.get(HELP);
+        CliOption h = options.get(OPTION_HELP);
         if (h.switchValue) {
             usage();
             return;
         }
 
-        
-        h = options.get(HELP_LONG);
+        h = options.get(OPTION_HELP_LONG);
         if (h.switchValue) {
             usage();
             return;
         }
-        
+
         if (arguments.size() < 1) {
             usage();
             return;
@@ -688,41 +614,35 @@ public class xtfs_repl {
 
             // create SSL options (if set)
             SSLOptions sslOptions = null;
-            if ((options.get(SSL_CREDS_FILE).stringValue != null)
-                    && (options.get(SSL_CREDS_PASSWORD).stringValue != null)
-                    && (options.get(SSL_TRUSTED_CA_FILE).stringValue != null)
-                    && (options.get(SSL_TRUSTED_CA_PASSWORD).stringValue != null)) { // SSL set
-                sslOptions = new SSLOptions(new FileInputStream(options.get(SSL_CREDS_FILE).stringValue),
-                        options.get(SSL_CREDS_PASSWORD).stringValue, new FileInputStream(options
-                                .get(SSL_TRUSTED_CA_FILE).stringValue),
-                        options.get(SSL_TRUSTED_CA_PASSWORD).stringValue);
+            if ((options.get(OPTION_SSL_CREDS_FILE).stringValue != null)
+                    && (options.get(OPTION_SSL_CREDS_PASSWORD).stringValue != null)
+                    && (options.get(OPTION_SSL_TRUSTED_CA_FILE).stringValue != null)
+                    && (options.get(OPTION_SSL_TRUSTED_CA_PASSWORD).stringValue != null)) { // SSL set
+                sslOptions = new SSLOptions(new FileInputStream(
+                        options.get(OPTION_SSL_CREDS_FILE).stringValue), options
+                        .get(OPTION_SSL_CREDS_PASSWORD).stringValue, new FileInputStream(options
+                        .get(OPTION_SSL_TRUSTED_CA_FILE).stringValue), options
+                        .get(OPTION_SSL_TRUSTED_CA_PASSWORD).stringValue);
             }
 
             system = new xtfs_repl(filePath, dirAddress, volume, volPath, sslOptions);
-            if ( (options.get(RSEL_POLICY_GET).switchValue) || (options.get(RSEL_POLICY_SET).stringValue != null) ) {
+            if ((options.get(OPTION_RSEL_POLICY_GET).switchValue)
+                    || (options.get(OPTION_RSEL_POLICY_SET).stringValue != null)) {
                 system.initialize(false);
             } else {
                 system.initialize(true);
             }
 
             for (Entry<String, CliOption> e : options.entrySet()) {
-                if (e.getKey().equals(ADD_REPLICA) && e.getValue().stringValue != null) {
+                if (e.getKey().equals(OPTION_ADD_REPLICA) && e.getValue().stringValue != null) {
 
-                    // parse replication flags
-                    int replicationFlags = DEFAULT_REPLICATION_FLAGS;
-                    CliOption option = options.get(REPLICATION_FLAG_FULL_REPLICA);
-                    if (option != null && option.switchValue)
-                        replicationFlags = ReplicationFlags.setFullReplica(replicationFlags);
-
-                    option = options.get(REPLICATION_FLAG_TRANSFER_STRATEGY);
-                    if (option != null && option.stringValue != null) {
-                        String method = option.stringValue.replace('\"', ' ').trim();
-
-                        if (method.equals(TRANSFER_STRATEGY_RANDOM))
-                            replicationFlags = ReplicationFlags.setRandomStrategy(replicationFlags);
-                        else if (method.equals(TRANSFER_STRATEGY_SEQUENTIAL))
-                            replicationFlags = ReplicationFlags.setSequentialStrategy(replicationFlags);
-                    }
+                    // parse replication flags and striping policy
+                    int replicationFlags = parseReplicationFlags(options);
+                    // parse stripe width
+                    int stripeWidth = 0;
+                    CliOption option = options.get(OPTION_STRIPE_WIDTH);
+                    if (option != null && option.numValue != null)
+                        stripeWidth = option.numValue.intValue();
 
                     StringTokenizer st = new StringTokenizer(e.getValue().stringValue, "\", \t");
                     List<ServiceUUID> osds = new ArrayList<ServiceUUID>(st.countTokens());
@@ -730,16 +650,24 @@ public class xtfs_repl {
                     if (st.countTokens() > 0) {
                         while (st.hasMoreTokens())
                             osds.add(new ServiceUUID(st.nextToken()));
-                        system.addReplica(osds, replicationFlags);
+                        system.addReplica(osds, replicationFlags, stripeWidth);
                     } else
                         usage();
 
-                } else if (e.getKey().equals(ADD_REPLICA_INTERACTIVE) && e.getValue().switchValue) {
+                } else if (e.getKey().equals(OPTION_ADD_AUTOMATIC_REPLICA)
+                        && e.getValue().switchValue) {
 
-                    // interactive mode
-                    system.addReplica();
+                    // parse replication flags and striping policy
+                    int replicationFlags = parseReplicationFlags(options);
+                    // parse stripe width
+                    int stripeWidth = 0;
+                    CliOption option = options.get(OPTION_STRIPE_WIDTH);
+                    if (option != null && option.numValue != null)
+                        stripeWidth = option.numValue.intValue();
 
-                } else if (e.getKey().equals(REMOVE_REPLICA) && e.getValue().stringValue != null) {
+                    system.addReplicaAutomatically(replicationFlags, stripeWidth);
+
+                } else if (e.getKey().equals(OPTION_REMOVE_REPLICA) && e.getValue().stringValue != null) {
 
                     String headOSD = e.getValue().stringValue.replace('\"', ' ').trim();
 
@@ -749,43 +677,22 @@ public class xtfs_repl {
                     } else
                         usage();
 
-                } else if (e.getKey().equals(REMOVE_REPLICA_INTERACTIVE) && e.getValue().stringValue != null) {
+                } else if (e.getKey().equals(OPTION_REMOVE_AUTOMATIC_REPLICA) && e.getValue().switchValue) {
 
-                    // interactive mode
-                    system.removeReplica();
-
-                } else if (e.getKey().equals(ADD_AUTOMATIC_REPLICA) && e.getValue().switchValue != null) {
-
-                    // parse replication flags
-                    int replicationFlags = DEFAULT_REPLICATION_FLAGS;
-                    CliOption option = options.get(REPLICATION_FLAG_FULL_REPLICA);
-                    if (option != null && option.switchValue)
-                        replicationFlags = ReplicationFlags.setFullReplica(replicationFlags);
-
-                    option = options.get(REPLICATION_FLAG_TRANSFER_STRATEGY);
-                    if (option != null && option.stringValue != null) {
-                        String method = option.stringValue.replace('\"', ' ').trim();
-
-                        if (method.equals(TRANSFER_STRATEGY_RANDOM))
-                            replicationFlags = ReplicationFlags.setRandomStrategy(replicationFlags);
-                        else if (method.equals(TRANSFER_STRATEGY_SEQUENTIAL))
-                            replicationFlags = ReplicationFlags.setSequentialStrategy(replicationFlags);
-                    }
-                } else if (e.getKey().equals(REMOVE_AUTOMATIC_REPLICA) && e.getValue().switchValue) {
                     system.removeReplicaAutomatically();
-                } else if (e.getKey().equals(SET_READ_ONLY) && e.getValue().switchValue) {
+
+                } else if (e.getKey().equals(OPTION_SET_READ_ONLY) && e.getValue().switchValue) {
                     system.setReadOnly(true);
-                } else if (e.getKey().equals(SET_WRITABLE) && e.getValue().switchValue) {
+                } else if (e.getKey().equals(OPTION_SET_WRITABLE) && e.getValue().switchValue) {
                     system.setReadOnly(false);
-                } else if (e.getKey().equals(IS_READ_ONLY) && e.getValue().switchValue) {
-                    system.isReadOnly();
-                } else if (e.getKey().equals(LIST_REPLICAS) && e.getValue().switchValue) {
+                } else if (e.getKey().equals(OPTION_LIST_REPLICAS) && e.getValue().switchValue) {
                     system.listReplicas();
-                } else if (e.getKey().equals(LIST_SUITABLE_OSDS_FOR_REPLICA) && e.getValue().switchValue) {
+                } else if (e.getKey().equals(OPTION_LIST_SUITABLE_OSDS_FOR_A_REPLICA)
+                        && e.getValue().switchValue) {
                     system.listSuitableOSDs();
-                } else if (e.getKey().equals(RSEL_POLICY_GET) && e.getValue().switchValue) {
+                } else if (e.getKey().equals(OPTION_RSEL_POLICY_GET) && e.getValue().switchValue) {
                     system.getReplicaSelectionPolicy();
-                } else if (e.getKey().equals(RSEL_POLICY_SET) && (e.getValue().stringValue != null)) {
+                } else if (e.getKey().equals(OPTION_RSEL_POLICY_SET) && (e.getValue().stringValue != null)) {
                     system.setReplicaSelectionPolicy(e.getValue().stringValue.trim());
                 }
             }
@@ -803,42 +710,38 @@ public class xtfs_repl {
         out.append("Usage: " + xtfs_repl.class.getSimpleName());
         out.append(" [options] <path>\n");
         out.append("options:\n");
-        out.append("\t-" + ADD_REPLICA
-            + " <UUID_of_OSD1 UUID_of_OSD2 ...>: Adds a replica with the given OSDs. "
-            + "The number of OSDs must be the same as in the file's striping policy. "
-            + "Use space as seperator.\n");
-        out.append("\t-" + HELP + "/-" + HELP_LONG + ": show usage info\n");
-        out.append("\t-" + LIST_REPLICAS + ": lists all replicas of this file\n");
-        out.append("\t-" + LIST_SUITABLE_OSDS_FOR_REPLICA
-            + ": lists all suitable OSDs for this file, which can be used for a new replica\n");
-        out.append("\t-" + REMOVE_REPLICA + " <UUID_of_head-OSD>"
-            + ": removes the replica with the given head OSD\n");
-        out.append("\t-" + ADD_AUTOMATIC_REPLICA + ": adds a replica and automatically selects the best OSDs (according to the volume's replica selection policy)\n");
-        out.append("\t-" + REMOVE_AUTOMATIC_REPLICA + ": removes a randomly selected replica\n");
-        out.append("\t-" + ADD_REPLICA_INTERACTIVE + ": an interactive mode for adding a replica\n");
-        out.append("\t-" + REMOVE_REPLICA_INTERACTIVE + ": an interactive mode for removing a replica\n");
-        out.append("\t-" + IS_READ_ONLY + ": checks if the file is already marked as read-only\n");
-        out.append("\t-" + REPLICATION_FLAG_FULL_REPLICA
+        out.append("\t-" + OPTION_HELP + "/-" + OPTION_HELP_LONG + ": show usage info\n");
+        out.append("\t-" + OPTION_SET_READ_ONLY + ": marks the file as read-only\n");
+        out.append("\t-" + OPTION_SET_WRITABLE + ": marks the file as writable (normal file)\n");
+        out.append("\t-" + OPTION_LIST_REPLICAS + ": lists all replicas of this file\n");
+        out.append("\t-" + OPTION_LIST_SUITABLE_OSDS_FOR_A_REPLICA
+                + ": lists all suitable OSDs for this file, which can be used for a new replica\n");
+        out.append("\t-" + OPTION_RSEL_POLICY_GET + " : show the volume's current replica selection policy\n");
+        out.append("\t-" + OPTION_RSEL_POLICY_SET + " { " + RSEL_POLICY_DEFAULT + " | " + RSEL_POLICY_FQDN + " | "
+                + RSEL_POLICY_DCMAP + " | <policy id> } " + ": set the volume's replica selection policy\n");
+        out.append("\t-" + OPTION_ADD_REPLICA
+                + " <UUID_of_OSD1 UUID_of_OSD2 ...>: Adds a replica with the given OSDs. "
+                + "The number of OSDs must be the same as in the file's striping policy. "
+                + "Use space as seperator.\n");
+        out.append("\t-" + OPTION_ADD_AUTOMATIC_REPLICA + ": adds a replica and automatically selects the best OSDs (according to the volume's replica selection policy)\n");        out.append("\t-" + OPTION_REMOVE_REPLICA + " <UUID_of_head-OSD>"
+                + ": removes the replica with the given head OSD\n");
+        out.append("\t-" + OPTION_STRIPE_WIDTH
+                + ": specifies how many OSDs will be used for this replica (stripe-width)\n");
+        out.append("\t-" + OPTION_REPLICATION_FLAG_TRANSFER_STRATEGY + " { " + TRANSFER_STRATEGY_RANDOM + " | "
+                + TRANSFER_STRATEGY_SEQUENTIAL + " }: the replica to add will use the chosen strategy\n");
+        out.append("\t-" + OPTION_REMOVE_AUTOMATIC_REPLICA + ": removes a randomly selected replica\n");
+        out.append("\t-" + OPTION_REPLICATION_FLAG_FULL_REPLICA
                         + ": if set, the replica will be a complete copy of the file; otherwise only requested data will be replicated\n");
-        out.append("\t-" + SET_READ_ONLY + ": marks the file as read-only\n");
-        out.append("\t-" + SET_WRITABLE + ": marks the file as writable (normal file)\n");
-        out.append("\t-" + REPLICATION_FLAG_TRANSFER_STRATEGY + " {" + TRANSFER_STRATEGY_RANDOM + "|"
-                + TRANSFER_STRATEGY_SEQUENTIAL + "}: the replica to add will use the chosen strategy\n");
         out.append("\n");
         out.append("\tTo use SSL it is necessary to also specify credentials:\n");
-        out.append("\t-" + SSL_CREDS_FILE + " <creds_file>: a PKCS#12 file containing user credentials\n");
-        out.append("\t-" + SSL_CREDS_PASSWORD
+        out.append("\t-" + OPTION_SSL_CREDS_FILE
+                + " <creds_file>: a PKCS#12 file containing user credentials\n");
+        out.append("\t-" + OPTION_SSL_CREDS_PASSWORD
                 + " <creds_passphrase>: a pass phrase to decrypt the the user credentials file\n");
-        out.append("\t-" + SSL_TRUSTED_CA_FILE
+        out.append("\t-" + OPTION_SSL_TRUSTED_CA_FILE
                 + " <trusted_CAs>: a PKCS#12 file containing a set of certificates from trusted CAs\n");
-        out.append("\t-" + SSL_TRUSTED_CA_PASSWORD
+        out.append("\t-" + OPTION_SSL_TRUSTED_CA_PASSWORD
                 + " <trusted_passphrase>: a pass phrase to decrypt the trusted CAs file\n");
-        out.append("\t-" + RSEL_POLICY_GET
-                + " : show the volume's current replica selection policy\n");
-        out.append("\t-" + RSEL_POLICY_SET + " { "+RSEL_POLICY_DEFAULT+ " | "+
-                RSEL_POLICY_FQDN + " | "+ RSEL_POLICY_DCMAP +" | <policy id> } "
-                + ": set the volume's replica selection policy\n");
-        
 
         System.out.println(out.toString());
     }
