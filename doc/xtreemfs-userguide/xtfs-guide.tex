@@ -1096,7 +1096,7 @@ So far XtreemFS only supports to manage replicas manually. Before the replicatio
 $> xtfs_repl --set_readonly local-path-of-file
 \end{verbatim}
 
-After a file is marked as read-only replicas can be added. The tool supports differend replica creation modes. The automatic mode retrieves a list of OSDs from the MRC and chooses the best OSD according to the current replica selection policy. There is also an interactive mode for selecting OSDs yourself. Finally, you can select an OSD by sepcifying its UUID on the command line.
+After a file is marked as read-only replicas can be added. The tool supports differend replica creation modes. The automatic mode retrieves a list of OSDs from the MRC and chooses the best OSD according to the current replica selection policy. You can also select an OSD by sepcifying its UUID on the command line.
 
 By default, partial replicas will be created. To create a full replica the option \texttt{--full} must be set.
 
@@ -1114,7 +1114,7 @@ To list all replicas and OSDs of the file use:
 $> xtfs_repl -l local-path-of-file
 \end{verbatim}
 
-Removing also supports muliple modes. Again an interactive mode and a mode which is choosing the replica randomly. To remove a specific replica, the head-OSD (first OSD) of this replica must be given as an argument. At least one complete replica must exist, so the tool will not remove a complete replica, if no others exists. To remove the just created replica use the following command and change head-osd to the one listed by \texttt{xtfs\_repl -l}:
+Removing also supports muliple modes. Again there is a mode which is choosing the replica randomly. To remove a specific replica, the head-OSD (first OSD) of this replica must be given as an argument. At least one complete replica must exist, so the tool will not remove a complete replica, if no others exists. To remove the just created replica use the following command and change head-osd to the one listed by \texttt{xtfs\_repl -l}:
 
 \begin{verbatim}
 $> xtfs_repl -r head-OSD local-path-of-file
