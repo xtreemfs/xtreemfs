@@ -2867,7 +2867,9 @@ public:
     {
       submit_pipe_read_end = new Socket( AF_UNIX, SOCK_STREAM, 0, socket_vector[0] );
       submit_pipe_write_end = new Socket( AF_UNIX, SOCK_STREAM, 0, socket_vector[1] );
-      return;
+      if ( submit_pipe_read_end->set_blocking_mode( false ) &&
+           associate( static_cast<int>( *submit_pipe_read_end ), true, false ) )
+         return;
     }
 #else
     submit_pipe = Pipe::create();
@@ -3018,7 +3020,6 @@ private:
   fd_set read_fds, write_fds, except_fds;
 #elif defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
   int poll_fd;
-  auto_Pipe submit_pipe;
 #else
   std::vector<pollfd> pollfds;
 #endif
@@ -3044,8 +3045,8 @@ private:
     return epoll_ctl( poll_fd, EPOLL_CTL_ADD, fd, &change_event ) != -1;
 #elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
     struct kevent change_events[2];
-    EV_SET( &change_events[0], fd, EVFILT_READ, enable_read ? EV_ENABLE : EV_DISABLE, 0, 0, NULL );
-    EV_SET( &change_events[1], fd, EVFILT_WRITE, enable_write ? EV_ENABLE : EV_DISABLE, 0, 0, NULL );
+    EV_SET( &change_events[0], fd, EVFILT_READ, EV_ADD | ( enable_read ? EV_ENABLE : EV_DISABLE ), 0, 0, NULL );
+    EV_SET( &change_events[1], fd, EVFILT_WRITE, EV_ADD | ( enable_write ? EV_ENABLE : EV_DISABLE ), 0, 0, NULL );
     return kevent( poll_fd, change_events, 2, 0, 0, NULL ) != -1;
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
     int events = 0;
@@ -3234,7 +3235,7 @@ private:
     struct kevent change_events[2];
     EV_SET( &change_events[0], fd, EVFILT_READ, enable_read ? EV_ENABLE : EV_DISABLE, 0, 0, NULL );
     EV_SET( &change_events[1], fd, EVFILT_WRITE, enable_write ? EV_ENABLE : EV_DISABLE, 0, 0, NULL );
-    return kevent( poll_fd, change_events, 2, 0, 0, NULL ) != -1;
+    return kevent( poll_fd, change_events, 2, 0, 0, NULL ) != -1 || errno == ENOENT; // ENOENT = the event was not originally enabled
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
     if ( enable_read || enable_write )
     {
