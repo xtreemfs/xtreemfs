@@ -63,6 +63,36 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_2539652531B4431885CC00A9BA084F3D"
+        "OwnerKey" = "8:_030F3F58D4C84BB0BA2D98BC9A0F291F"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_2539652531B4431885CC00A9BA084F3D"
+        "OwnerKey" = "8:_F174E0C5AA1F41EF823B26CCCC60C433"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_2539652531B4431885CC00A9BA084F3D"
+        "OwnerKey" = "8:_D7E3E18AEAD748A984D29AC7E0F107A7"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_2539652531B4431885CC00A9BA084F3D"
+        "OwnerKey" = "8:_813FC4DBF3BF49FA8891E893A805EBBB"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_2539652531B4431885CC00A9BA084F3D"
+        "OwnerKey" = "8:_62097A22EAD342D89A71DD8BDEFF5DAF"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_2AC0821EC04BE735757A1CF7C5E64740"
         "OwnerKey" = "8:_030F3F58D4C84BB0BA2D98BC9A0F291F"
         "MsmSig" = "8:_UNDEFINED"
@@ -107,6 +137,36 @@
         {
         "MsmKey" = "8:_5A2DBFE685657D2E9310109BDCB5EE17"
         "OwnerKey" = "8:_F174E0C5AA1F41EF823B26CCCC60C433"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_5A2DBFE685657D2E9310109BDCB5EE17"
+        "OwnerKey" = "8:_D7E3E18AEAD748A984D29AC7E0F107A7"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_5A2DBFE685657D2E9310109BDCB5EE17"
+        "OwnerKey" = "8:_813FC4DBF3BF49FA8891E893A805EBBB"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_5A2DBFE685657D2E9310109BDCB5EE17"
+        "OwnerKey" = "8:_62097A22EAD342D89A71DD8BDEFF5DAF"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_5A2DBFE685657D2E9310109BDCB5EE17"
+        "OwnerKey" = "8:_030F3F58D4C84BB0BA2D98BC9A0F291F"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_5B6D903177C641AB8DA3D5E59B48AC4B"
+        "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -159,8 +219,14 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_B5A0DE9D62A24DA18853418BFB259CFE"
+        "MsmKey" = "8:_C0D2BB9D8D074B00AEE80E76DF374E95"
         "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_D530F0DE72B04DF8BAE304E6F3369DB0"
+        "OwnerKey" = "8:_2539652531B4431885CC00A9BA084F3D"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -171,56 +237,14 @@
         }
         "Entry"
         {
-        "MsmKey" = "8:_DC6CA76C90B348F1BAACC4DA8D9FF7A7"
-        "OwnerKey" = "8:_030F3F58D4C84BB0BA2D98BC9A0F291F"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_DC6CA76C90B348F1BAACC4DA8D9FF7A7"
-        "OwnerKey" = "8:_F174E0C5AA1F41EF823B26CCCC60C433"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_DC6CA76C90B348F1BAACC4DA8D9FF7A7"
-        "OwnerKey" = "8:_D7E3E18AEAD748A984D29AC7E0F107A7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_DC6CA76C90B348F1BAACC4DA8D9FF7A7"
-        "OwnerKey" = "8:_813FC4DBF3BF49FA8891E893A805EBBB"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_DC6CA76C90B348F1BAACC4DA8D9FF7A7"
-        "OwnerKey" = "8:_62097A22EAD342D89A71DD8BDEFF5DAF"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
-        "MsmKey" = "8:_DD4D0D8178444D6F9260B082A7C69C28"
-        "OwnerKey" = "8:_DC6CA76C90B348F1BAACC4DA8D9FF7A7"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_F174E0C5AA1F41EF823B26CCCC60C433"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_FB88C09C4A4C4A57B4816FE032EF0CEB"
-        "OwnerKey" = "8:_UNDEFINED"
-        "MsmSig" = "8:_UNDEFINED"
-        }
-        "Entry"
-        {
         "MsmKey" = "8:_UNDEFINED"
-        "OwnerKey" = "8:_B5A0DE9D62A24DA18853418BFB259CFE"
+        "OwnerKey" = "8:_5B6D903177C641AB8DA3D5E59B48AC4B"
         "MsmSig" = "8:_UNDEFINED"
         }
     }
@@ -305,17 +329,17 @@
     {
         "CustomAction"
         {
-            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_9BFA97F02E93446A8656A80917B6B2E0"
+            "{4AA51A2D-7D85-4A59-BA75-B0809FC8B380}:_0B2EE00F7DCE461082EA5D45D4C59D44"
             {
-            "Name" = "8:dokanPath.exe"
+            "Name" = "8:dokanCtl.vbs"
             "Condition" = "8:"
-            "Object" = "8:"
-            "FileType" = "3:2"
+            "Object" = "8:_C0D2BB9D8D074B00AEE80E76DF374E95"
+            "FileType" = "3:4"
             "InstallAction" = "3:2"
             "Arguments" = "8:"
             "EntryPoint" = "8:"
             "Sequence" = "3:1"
-            "Identifier" = "8:_2823D92D_8284_4EA8_9785_EFADE0D6A7A9"
+            "Identifier" = "8:_CA190535_2F62_4D93_ABC9_D9BE9216B03E"
             "InstallerClass" = "11:FALSE"
             "CustomActionData" = "8:"
             }
@@ -482,10 +506,10 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_FB88C09C4A4C4A57B4816FE032EF0CEB"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C0D2BB9D8D074B00AEE80E76DF374E95"
             {
-            "SourcePath" = "8:src\\dokanPath.exe"
-            "TargetName" = "8:dokanPath.exe"
+            "SourcePath" = "8:src\\dokanCtl.vbs"
+            "TargetName" = "8:dokanCtl.vbs"
             "Tag" = "8:"
             "Folder" = "8:_228D917002644B3BBD28F16D482D8378"
             "Condition" = "8:"
@@ -595,7 +619,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:XtreemFS client"
         "ProductCode" = "8:{BB0A6B75-6FFF-4BDD-B786-10D2C1E23337}"
-        "PackageCode" = "8:{FBE81061-5ECE-4F00-A69F-0656054C85EB}"
+        "PackageCode" = "8:{9319C206-55D1-4E0F-89BB-7EE4E0BEB5B6}"
         "UpgradeCode" = "8:{2A86374A-0526-47B2-B1E8-02CBE9E2AC01}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
@@ -608,7 +632,7 @@
         "Title" = "8:XtreemFS client setup"
         "Subject" = "8:Client for the fast, distributed, replicated XtreemFS."
         "ARPCONTACT" = "8:Zuse Institute Berlin"
-        "Keywords" = "8:filesystem, distributed, replication, striping, fuse"
+        "Keywords" = "8:opensource, filesystem, distributed, replication, striping, posix"
         "ARPCOMMENTS" = "8:XtreemFS is a distributed, object-based file system developed within the EU funded project XtreemOS."
         "ARPURLINFOABOUT" = "8:http://www.zib.de/"
         "ARPPRODUCTICON" = "8:"
@@ -714,21 +738,7 @@
         }
         "Shortcut"
         {
-            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_51CCA4C59EEC48A8B285A00F76B56730"
-            {
-            "Name" = "8:quickstart.rtf"
-            "Arguments" = "8:"
-            "Description" = "8:"
-            "ShowCmd" = "3:1"
-            "IconIndex" = "3:0"
-            "Transitive" = "11:FALSE"
-            "Target" = "8:"
-            "Folder" = "8:_80C1B9E571EA4F5CB82D8D7FA2B42FE9"
-            "WorkingFolder" = "8:_228D917002644B3BBD28F16D482D8378"
-            "Icon" = "8:"
-            "Feature" = "8:"
-            }
-            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_EDA1DBA00F3F4D80B5E768631A381080"
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_1A6BB33DB8334F0B9F1A9151DD1A6C29"
             {
             "Name" = "8:xtreemfs-client-utillity"
             "Arguments" = "8:"
@@ -736,13 +746,13 @@
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:_B5A0DE9D62A24DA18853418BFB259CFE"
+            "Target" = "8:_5B6D903177C641AB8DA3D5E59B48AC4B"
             "Folder" = "8:_80C1B9E571EA4F5CB82D8D7FA2B42FE9"
             "WorkingFolder" = "8:_228D917002644B3BBD28F16D482D8378"
             "Icon" = "8:"
             "Feature" = "8:"
             }
-            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_EFAAC9E6D7714EABBFC88C08AFCB0810"
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_54D2E2546709404489E19759E0CB5CBE"
             {
             "Name" = "8:license.rtf"
             "Arguments" = "8:"
@@ -750,7 +760,21 @@
             "ShowCmd" = "3:1"
             "IconIndex" = "3:0"
             "Transitive" = "11:FALSE"
-            "Target" = "8:"
+            "Target" = "8:_168FF2C98F1E4121862FDC56705C25F0"
+            "Folder" = "8:_80C1B9E571EA4F5CB82D8D7FA2B42FE9"
+            "WorkingFolder" = "8:_228D917002644B3BBD28F16D482D8378"
+            "Icon" = "8:"
+            "Feature" = "8:"
+            }
+            "{970C0BB2-C7D0-45D7-ABFA-7EC378858BC0}:_722E3A83C6DE4016910D6D154F6EE193"
+            {
+            "Name" = "8:quickstart.rtf"
+            "Arguments" = "8:"
+            "Description" = "8:"
+            "ShowCmd" = "3:1"
+            "IconIndex" = "3:0"
+            "Transitive" = "11:FALSE"
+            "Target" = "8:_4FC5143C80F24A3EBB772E157A735BAA"
             "Folder" = "8:_80C1B9E571EA4F5CB82D8D7FA2B42FE9"
             "WorkingFolder" = "8:_228D917002644B3BBD28F16D482D8378"
             "Icon" = "8:"
@@ -784,7 +808,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_97862E0BE00C485DB2C0E167DCA10D6D"
                             "UsePlugInResources" = "11:TRUE"
                             }
                         }
@@ -807,7 +831,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_97862E0BE00C485DB2C0E167DCA10D6D"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "CopyrightWarning"
@@ -856,7 +880,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_97862E0BE00C485DB2C0E167DCA10D6D"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "EulaText"
@@ -868,7 +892,7 @@
                             "ContextData" = "8:"
                             "Attributes" = "3:0"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_168FF2C98F1E4121862FDC56705C25F0"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "Sunken"
@@ -925,7 +949,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_97862E0BE00C485DB2C0E167DCA10D6D"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "UpdateText"
@@ -961,7 +985,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_97862E0BE00C485DB2C0E167DCA10D6D"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "ReadmeText"
@@ -973,7 +997,7 @@
                             "ContextData" = "8:"
                             "Attributes" = "3:0"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_4FC5143C80F24A3EBB772E157A735BAA"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "Sunken"
@@ -1018,7 +1042,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_97862E0BE00C485DB2C0E167DCA10D6D"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "ShowProgress"
@@ -1063,7 +1087,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_97862E0BE00C485DB2C0E167DCA10D6D"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "CopyrightWarning"
@@ -1112,7 +1136,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_97862E0BE00C485DB2C0E167DCA10D6D"
                             "UsePlugInResources" = "11:TRUE"
                             }
                         }
@@ -1135,7 +1159,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_97862E0BE00C485DB2C0E167DCA10D6D"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "EulaText"
@@ -1147,7 +1171,7 @@
                             "ContextData" = "8:"
                             "Attributes" = "3:0"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_168FF2C98F1E4121862FDC56705C25F0"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "Sunken"
@@ -1192,7 +1216,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_97862E0BE00C485DB2C0E167DCA10D6D"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "ShowProgress"
@@ -1237,7 +1261,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_97862E0BE00C485DB2C0E167DCA10D6D"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "ReadmeText"
@@ -1249,7 +1273,7 @@
                             "ContextData" = "8:"
                             "Attributes" = "3:0"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_4FC5143C80F24A3EBB772E157A735BAA"
                             "UsePlugInResources" = "11:TRUE"
                             }
                             "Sunken"
@@ -1285,7 +1309,7 @@
                             "ContextData" = "8:Bitmap"
                             "Attributes" = "3:4"
                             "Setting" = "3:2"
-                            "Value" = "8:"
+                            "Value" = "8:_97862E0BE00C485DB2C0E167DCA10D6D"
                             "UsePlugInResources" = "11:TRUE"
                             }
                         }
@@ -1295,11 +1319,11 @@
         }
         "MergeModule"
         {
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_DC6CA76C90B348F1BAACC4DA8D9FF7A7"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_2539652531B4431885CC00A9BA084F3D"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:policy_9_0_Microsoft_VC90_CRT_x86.msm"
+            "SourcePath" = "8:policy_9_0_Microsoft_VC90_DebugCRT_x86.msm"
                 "Properties"
                 {
                 }
@@ -1309,11 +1333,11 @@
             "Feature" = "8:"
             "IsolateTo" = "8:"
             }
-            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_DD4D0D8178444D6F9260B082A7C69C28"
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_D530F0DE72B04DF8BAE304E6F3369DB0"
             {
             "UseDynamicProperties" = "11:TRUE"
             "IsDependency" = "11:TRUE"
-            "SourcePath" = "8:microsoft_vc90_crt_x86.msm"
+            "SourcePath" = "8:microsoft_vc90_debugcrt_x86.msm"
                 "Properties"
                 {
                 }
@@ -1328,7 +1352,7 @@
         {
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_030F3F58D4C84BB0BA2D98BC9A0F291F"
             {
-            "SourcePath" = "8:..\\bin\\xtfs_lsvol.exe"
+            "SourcePath" = "8:..\\..\\..\\src\\client\\bin\\xtfs_lsvol.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9685661D2E3F4CB2A3377E30C36F09CF"
@@ -1356,7 +1380,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_24852FEEA9F04548802A909D0CB49B27"
             {
-            "SourcePath" = "8:..\\lib\\xtreemfs-client.lib"
+            "SourcePath" = "8:..\\..\\..\\src\\client\\lib\\xtreemfs-client.lib"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9685661D2E3F4CB2A3377E30C36F09CF"
@@ -1384,7 +1408,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_4F37B9A4C3BD44D480307F676F6FB0CB"
             {
-            "SourcePath" = "8:..\\lib\\google-breakpad.lib"
+            "SourcePath" = "8:..\\..\\..\\src\\client\\lib\\google-breakpad.lib"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9685661D2E3F4CB2A3377E30C36F09CF"
@@ -1410,9 +1434,37 @@
                 {
                 }
             }
+            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_5B6D903177C641AB8DA3D5E59B48AC4B"
+            {
+            "SourcePath" = "8:..\\..\\..\\src\\client\\Release\\xtreemfs-client-utillity.exe"
+            "TargetName" = "8:"
+            "Tag" = "8:"
+            "Folder" = "8:_228D917002644B3BBD28F16D482D8378"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            "ProjectOutputGroupRegister" = "3:1"
+            "OutputConfiguration" = "8:"
+            "OutputGroupCanonicalName" = "8:Built"
+            "OutputProjectGuid" = "8:{AF07DB69-BFAB-4018-9004-EB24C5059AF5}"
+            "ShowKeyOutput" = "11:TRUE"
+                "ExcludeFilters"
+                {
+                }
+            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_62097A22EAD342D89A71DD8BDEFF5DAF"
             {
-            "SourcePath" = "8:..\\bin\\xtfs_stat.exe"
+            "SourcePath" = "8:..\\..\\..\\src\\client\\bin\\xtfs_stat.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9685661D2E3F4CB2A3377E30C36F09CF"
@@ -1440,7 +1492,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_813FC4DBF3BF49FA8891E893A805EBBB"
             {
-            "SourcePath" = "8:..\\bin\\xtfs_rmvol.exe"
+            "SourcePath" = "8:..\\..\\..\\src\\client\\bin\\xtfs_rmvol.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9685661D2E3F4CB2A3377E30C36F09CF"
@@ -1466,37 +1518,9 @@
                 {
                 }
             }
-            "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_B5A0DE9D62A24DA18853418BFB259CFE"
-            {
-            "SourcePath" = "8:..\\Release\\xtreemfs-client-utillity.exe"
-            "TargetName" = "8:"
-            "Tag" = "8:"
-            "Folder" = "8:_228D917002644B3BBD28F16D482D8378"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:TRUE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:1"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            "ProjectOutputGroupRegister" = "3:1"
-            "OutputConfiguration" = "8:"
-            "OutputGroupCanonicalName" = "8:Built"
-            "OutputProjectGuid" = "8:{AF07DB69-BFAB-4018-9004-EB24C5059AF5}"
-            "ShowKeyOutput" = "11:TRUE"
-                "ExcludeFilters"
-                {
-                }
-            }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_D7E3E18AEAD748A984D29AC7E0F107A7"
             {
-            "SourcePath" = "8:..\\bin\\xtfs_mkvol.exe"
+            "SourcePath" = "8:..\\..\\..\\src\\client\\bin\\xtfs_mkvol.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9685661D2E3F4CB2A3377E30C36F09CF"
@@ -1524,7 +1548,7 @@
             }
             "{5259A561-127C-4D43-A0A1-72F10C7B3BF8}:_F174E0C5AA1F41EF823B26CCCC60C433"
             {
-            "SourcePath" = "8:..\\bin\\xtfs_mount.exe"
+            "SourcePath" = "8:..\\..\\..\\src\\client\\bin\\xtfs_mount.exe"
             "TargetName" = "8:"
             "Tag" = "8:"
             "Folder" = "8:_9685661D2E3F4CB2A3377E30C36F09CF"
