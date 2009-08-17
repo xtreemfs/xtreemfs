@@ -1,4 +1,4 @@
-// Revision: 1808
+// Revision: 1812
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -1360,7 +1360,7 @@ ProcessorSet::ProcessorSet()
 #elif defined(__sun)
   psetid = PS_NONE; // Don't pset_create until we actually use the set, to avoid leaving state in the system
 #else
-  YIELD::DebugBreak();
+  DebugBreak();
 #endif
 }
 ProcessorSet::ProcessorSet( uint32_t from_mask )
@@ -1374,7 +1374,7 @@ ProcessorSet::ProcessorSet( uint32_t from_mask )
 #elif defined(__sun)
   psetid = PS_NONE;
 #else
-  YIELD::DebugBreak();
+  DebugBreak();
 #endif
   if ( from_mask != 0 )
   {

@@ -23,8 +23,8 @@ namespace org
       const static uint32_t REPL_FLAG_FULL_REPLICA = 0x0002;
       const static uint32_t REPL_FLAG_STRATEGY_SEQUENTIAL = 0x0004;
       const static uint32_t REPL_FLAG_STRATEGY_RANDOM = 0x0008;
-      const static uint32_t REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING = 0x0012;
-      const static uint32_t REPL_FLAG_STRATEGY_RAREST_FIRST = 0x0016;
+      const static uint32_t REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING = 0x000C;
+      const static uint32_t REPL_FLAG_STRATEGY_RAREST_FIRST = 0x0010;
       const static uint32_t SYSTEM_V_FCNTL_H_O_RDONLY = 0x0000;
       const static uint32_t SYSTEM_V_FCNTL_H_O_WRONLY = 0x0001;
       const static uint32_t SYSTEM_V_FCNTL_H_O_RDWR = 0x0002;

@@ -1434,33 +1434,7 @@ namespace YIELD
   class TimerQueue : public yidl::Object
   {
   public:
-    class Timer : public yidl::Object
-    {
-    public:
-      Timer( const Time& timeout );
-      Timer( const Time& timeout, const Time& period );
-      virtual ~Timer();
-      
-      const Time& get_period() const { return period; }
-      const Time& get_timeout() const { return timeout; }
-      virtual bool fire( const Time& elapsed_time ) = 0;
-      void set_period( const Time& period ) { this->period = period; }
-      void set_timeout( const Time& timeout ) { this->timeout = timeout; }
-
-      // yidl::Object
-      YIDL_OBJECT_PROTOTYPES( Timer, 0 );
-
-    private:
-      friend class TimerQueue;
-
-      Time period, timeout;
-
-#ifdef _WIN32
-      void *hTimer, *hTimerQueue;
-#endif
-      Time last_fire_time;
-    };
-
+    class Timer;
 
     TimerQueue();
     ~TimerQueue();
@@ -1501,6 +1475,37 @@ namespace YIELD
 #endif
 
     static TimerQueue* default_timer_queue;
+
+  public:
+    class Timer : public yidl::Object
+    {
+    public:
+      Timer( const Time& timeout );
+      Timer( const Time& timeout, const Time& period );
+      virtual ~Timer();
+      
+      const Time& get_period() const { return period; }
+      const Time& get_timeout() const { return timeout; }
+      virtual bool fire( const Time& elapsed_time ) = 0;
+      void set_period( const Time& period ) { this->period = period; }
+      void set_timeout( const Time& timeout ) { this->timeout = timeout; }
+
+      // yidl::Object
+      YIDL_OBJECT_PROTOTYPES( Timer, 0 );
+
+    private:
+      friend class TimerQueue;
+#ifndef _WIN32
+      friend class TimerQueue::Thread;
+#endif
+
+      Time period, timeout;
+
+#ifdef _WIN32
+      void *hTimer, *hTimerQueue;
+#endif
+      Time last_fire_time;
+    };
   };
 
   typedef yidl::auto_Object<TimerQueue> auto_TimerQueue;

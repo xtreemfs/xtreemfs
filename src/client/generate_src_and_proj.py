@@ -76,7 +76,7 @@ generate_proj(
                include_dir_paths=INCLUDE_DIR_PATHS,
                lib_dir_paths=LIB_DIR_PATHS,
                libs_win=( "libeay32.lib", "ssleay32.lib" ),
-               libs_unix=( "fuse", "ssl", ),
+               libs_unix=( "crypto", "fuse", "ssl", ),
                output_file_path=os.path.join( XTREEMFS_CLIENT_DIR_PATH, "lib", "xtreemfs-client" ),
                src_dir_paths=( 
                                os.path.join( XTREEMFS_CLIENT_DIR_PATH, "include", "org", "xtreemfs" ),

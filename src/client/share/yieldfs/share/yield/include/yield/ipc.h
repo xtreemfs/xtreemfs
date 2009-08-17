@@ -329,10 +329,9 @@ namespace YIELD
       // yidl::Object
       YIDL_OBJECT_PROTOTYPES( AIOAcceptControlBlock, 222 );
 
-    private:
-      friend class Socket;
-
       yidl::auto_Object<TCPSocket> accepted_tcp_socket;      
+
+    private:
 #ifdef _WIN32
       friend class TCPSocket;
       char peer_sockaddr[88];
