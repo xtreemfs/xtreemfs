@@ -36,21 +36,17 @@ JAVA_CALL="$JAVA_HOME/bin/java -cp /usr/share/java/XtreemFS.jar:/usr/share/java/
 
 pre_check() {
 
-	exists=`grep -c $XTREEMFS_USER /etc/passwd`
-	if [ $exists -eq 0 ]
-	then
-		mkdir /var/lib/xtreemfs
-		useradd -r --home /var/lib/xtreemfs $XTREEMFS_USER
-		chown $XTREEMFS_USER /var/lib/xtreemfs
-	else
-        [ -d /var/lib/xtreemfs ] || mkdir /var/lib/xtreemfs
-        chown -R $XTREEMFS_USER /var/lib/xtreemfs
-    fi
-	dir=`dirname $LOG_MRC`
-	if [ ! -e $dir ]
-	then
-		mkdir $dir
-	fi
+        exists=`grep -c $XTREEMFS_USER /etc/passwd`
+        if [ $exists -eq 0 ]
+        then
+                echo "user $XTREEMFS_USER does not exist."
+                exit 1
+        fi
+        dir=`dirname $LOG_MRC`
+        if [ ! -e $dir ]
+        then
+                echo "directory for logfiles $dir does not exist"
+        fi
 }
 
 start() {
