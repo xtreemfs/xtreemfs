@@ -1,4 +1,4 @@
-// Revision: 1812
+// Revision: 1819
 
 #include "yield/ipc.h"
 using namespace YIELD;
@@ -2763,6 +2763,7 @@ void RFC822Headers::set_next_iovec( const struct iovec& iovec )
 #include <unistd.h>
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__MACH__)
 #define YIELD_HAVE_FREEBSD_KQUEUE 1
+#include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
@@ -2843,13 +2844,13 @@ public:
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
     poll_fd = port_create();
 #endif
-#ifdef _WIN32
-    auto_TCPSocket submit_listen_tcp_socket = TCPSocket::create();
+#if defined(_WIN32)
+    auto_TCPSocket submit_listen_tcp_socket = TCPSocket::create( AF_INET );
     if ( submit_listen_tcp_socket != NULL &&
          submit_listen_tcp_socket->bind( SocketAddress::create( "localhost", 0 ) ) &&
          submit_listen_tcp_socket->listen() )
     {
-      submit_pipe_write_end = TCPSocket::create();
+      submit_pipe_write_end = TCPSocket::create( AF_INET );
       if ( submit_pipe_write_end != NULL &&
            submit_pipe_write_end->connect( submit_listen_tcp_socket->getsockname() ) )
       {
@@ -2859,6 +2860,14 @@ public:
              associate( static_cast<int>( *submit_pipe_read_end ), true, false ) )
          return;
       }
+    }
+#elif defined(__MACH__)
+    int socket_vector[2];
+    if ( ::socketpair( AF_UNIX, SOCK_STREAM, 0, socket_vector ) != -1 )
+    {
+      submit_pipe_read_end = new Socket( AF_UNIX, SOCK_STREAM, 0, socket_vector[0] );
+      submit_pipe_write_end = new Socket( AF_UNIX, SOCK_STREAM, 0, socket_vector[1] );
+      return;
     }
 #else
     submit_pipe = Pipe::create();
@@ -2878,7 +2887,7 @@ public:
   void submit( yidl::auto_Object<AIOControlBlock> aio_control_block )
   {
     AIOControlBlock* submit_aio_control_block = aio_control_block.release();
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__MACH__)
     submit_pipe_write_end->write( &submit_aio_control_block, sizeof( submit_aio_control_block ) );
 #else
     submit_pipe->write( &submit_aio_control_block, sizeof( submit_aio_control_block ) );
@@ -2887,7 +2896,7 @@ public:
   void stop()
   {
     should_run = false;
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__MACH__)
     submit_pipe_read_end->close();
     submit_pipe_write_end->close();
 #else
@@ -2968,7 +2977,11 @@ public:
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
           int fd = returned_events[active_fds].portev_object;
 #endif
+#ifdef __MACH__
+          if ( fd == *submit_pipe_read_end )
+#else
           if ( fd == submit_pipe->get_read_end() )
+#endif
           {
             dequeueSubmittedAIOControlBlocks();
 #ifdef YIELD_HAVE_SOLARIS_EVENT_PORTS
@@ -3003,12 +3016,17 @@ private:
   std::map<int, AIOControlBlock*> fd_to_aio_control_block_map;
 #if defined(_WIN32)
   fd_set read_fds, write_fds, except_fds;
-  auto_TCPSocket submit_pipe_read_end, submit_pipe_write_end;
 #elif defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
   int poll_fd;
   auto_Pipe submit_pipe;
 #else
   std::vector<pollfd> pollfds;
+#endif
+#if defined(_WIN32)
+  auto_TCPSocket submit_pipe_read_end, submit_pipe_write_end;
+#elif defined(__MACH__)
+  auto_Socket submit_pipe_read_end, submit_pipe_write_end;
+#else
   auto_Pipe submit_pipe;
 #endif
   bool associate( int fd, bool enable_read, bool enable_write )
@@ -3056,7 +3074,7 @@ private:
     AIOControlBlock* aio_control_block;
     for ( ;; )
     {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__MACH__)
       if ( submit_pipe_read_end->read( &aio_control_block, sizeof( aio_control_block ) ) == sizeof( aio_control_block ) )
 #else
       if ( submit_pipe->read( &aio_control_block, sizeof( aio_control_block ) ) == sizeof( aio_control_block ) )

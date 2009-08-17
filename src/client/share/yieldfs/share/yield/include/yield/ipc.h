@@ -246,6 +246,8 @@ namespace YIELD
     };
 
 
+    Socket( int domain, int type, int protocol, int socket_ );
+
     virtual void aio_connect( yidl::auto_Object<AIOConnectControlBlock> aio_connect_control_block );
     static void destroy();
     int get_domain() const { return domain; }
@@ -264,7 +266,6 @@ namespace YIELD
   protected:
     friend class TracingSocket;
 
-    Socket( int domain, int type, int protocol, int socket_ );
     virtual ~Socket();
 
 #ifdef _WIN32
@@ -338,6 +339,9 @@ namespace YIELD
 #endif
     };
 
+
+    TCPSocket( int domain, int socket_ );
+
     virtual void aio_accept( yidl::auto_Object<AIOAcceptControlBlock> aio_accept_control_block );
     virtual void aio_connect( yidl::auto_Object<AIOConnectControlBlock> aio_connect_control_block );
     static yidl::auto_Object<TCPSocket> create(); // Defaults to domain = AF_INET6
@@ -351,7 +355,6 @@ namespace YIELD
     YIDL_OBJECT_PROTOTYPES( TCPSocket, 212 );
 
   protected:
-    TCPSocket( int domain, int socket_ );
     virtual ~TCPSocket() { }
 
     int _accept();
