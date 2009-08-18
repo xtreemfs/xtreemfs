@@ -10,4 +10,6 @@ $XTREEMFS_CONFIG_DIR/generate_uuid $XTREEMFS_CONFIG_DIR/mrcconfig.properties
 $XTREEMFS_CONFIG_DIR/generate_uuid $XTREEMFS_CONFIG_DIR/osdconfig.properties  
 else  
 echo "UUID can't be generated automatically. Please enter a correct UUID in each config file of a xtreemfs service."  
-fi  
+fi 
+
+$XTREEMFS_CONFIG_DIR/postinstall_setup.sh

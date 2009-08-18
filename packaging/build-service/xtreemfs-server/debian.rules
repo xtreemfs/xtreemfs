@@ -21,6 +21,7 @@ XTREEMFS_CONFIG_DIR=$(DESTDIR)/etc/xos/xtreemfs
 XTREEMFS_INIT_DIR=$(DESTDIR)/etc/init.d/
 BIN_DIR=$(DESTDIR)/usr/bin
 MAN_DIR=$(DESTDIR)/usr/share/man
+DOC_DIR=$(DESTDIR)/usr/share/doc/xtreemfs-server
 
 build: build-stamp
 build-stamp:
@@ -55,6 +56,10 @@ install: build
 #	make install DESTDIR=/usr/src/packages/BUILD/debian/ace
 	# --- end custom part for installing
 	
+	# copy copyright notes
+	mkdir -p $(DOC_DIR)
+	cp COPYING $(DOC_DIR)/
+		
 	# copy jars
 	mkdir -p $(XTREEMFS_JAR_DIR)
 	cp dist/XtreemFS.jar $(XTREEMFS_JAR_DIR)
@@ -65,6 +70,7 @@ install: build
 	cp config/*.properties $(XTREEMFS_CONFIG_DIR)/
 	# copy generate_uuid script  
 	cp packaging/generate_uuid $(XTREEMFS_CONFIG_DIR)/
+	cp packaging/postinstall_setup.sh $(XTREEMFS_CONFIG_DIR)/
 
 	# copy init.d files
 	mkdir -p $(XTREEMFS_INIT_DIR)

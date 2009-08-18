@@ -19,6 +19,7 @@ SERVER_WHITE_LIST=(
 	"src/servers/lib" "lib"
 	"src/servers/dist" "dist"
 	"packaging/generate_uuid" "packaging"
+	"packaging/postinstall_setup.sh" "packaging"
 	"AUTHORS" ""
 	"COPYING" ""
 )
@@ -395,7 +396,12 @@ function delete_svn() {
 }
 
 function prepare_build_files() {
-    cp -r $BUILD_FILES_DIR/* $TARGET_DIR
+    cp -r $BUILD_FILES_DIR/xtreemfs-server $TARGET_DIR/xtreemfs-server
+    cp -r $BUILD_FILES_DIR/xtreemfs-server $TARGET_DIR/xtreemfs-server-testing
+    cp -r $BUILD_FILES_DIR/xtreemfs-client $TARGET_DIR/xtreemfs-client
+    cp -r $BUILD_FILES_DIR/xtreemfs-client $TARGET_DIR/xtreemfs-client-testing
+    cp -r $BUILD_FILES_DIR/xtreemfs-tools $TARGET_DIR/xtreemfs-tools
+    cp -r $BUILD_FILES_DIR/xtreemfs-tools $TARGET_DIR/xtreemfs-tools-testing
     find $TARGET_DIR -type f -exec sed -i "s/_VERSION_/$VERSION/g" {} \;
 }
 

@@ -21,6 +21,7 @@ XTREEMFS_CONFIG_DIR=$(DESTDIR)/etc/xos/xtreemfs
 XTREEMFS_INIT_DIR=$(DESTDIR)/etc/init.d/
 BIN_DIR=$(DESTDIR)/usr/bin
 MAN_DIR=$(DESTDIR)/usr/share/man
+DOC_DIR=$(DESTDIR)/usr/share/doc/xtreemfs-tools
 
 build: build-stamp
 build-stamp:
@@ -54,6 +55,10 @@ install: build
 	# The DESTDIR Has To Be Exactly /usr/src/packages/BUILD/debian/debian/<nameOfPackage>
 #	make install DESTDIR=/usr/src/packages/BUILD/debian/ace
 	# --- end custom part for installing
+	
+	# copy copyright notes
+	mkdir -p $(DOC_DIR)
+	cp COPYING $(DOC_DIR)/
 	
 	# copy jars
 	mkdir -p $(XTREEMFS_JAR_DIR)

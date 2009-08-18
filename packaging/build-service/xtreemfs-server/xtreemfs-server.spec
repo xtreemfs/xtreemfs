@@ -26,8 +26,13 @@ XTREEMFS_CONFIG_DIR=$RPM_BUILD_ROOT/etc/xos/xtreemfs/
 XTREEMFS_INIT_DIR="$RPM_BUILD_ROOT/etc/init.d/"
 BIN_DIR="$RPM_BUILD_ROOT/usr/bin"
 MAN_DIR="$RPM_BUILD_ROOT/usr/share/man"
+DOC_DIR="$RPM_BUILD_ROOT/usr/share/doc/xtreemfs-server"
 
 export NO_BRP_CHECK_BYTECODE_VERSION=true
+
+# copy copyright notes
+mkdir -p $DOC_DIR
+cp COPYING $DOC_DIR
 
 # copy jars
 mkdir -p $XTREEMFS_JAR_DIR
@@ -39,6 +44,7 @@ mkdir -p $XTREEMFS_CONFIG_DIR
 cp config/*.properties $XTREEMFS_CONFIG_DIR
 # copy generate_uuid script
 cp packaging/generate_uuid $XTREEMFS_CONFIG_DIR
+cp packaging/postinstall_setup.sh $XTREEMFS_CONFIG_DIR
 
 # copy init.d files
 mkdir -p $XTREEMFS_INIT_DIR
@@ -57,6 +63,8 @@ else
   echo "UUID can't be generated automatically. Please enter a correct UUID in each config file of a xtreemfs service."
 fi
 
+$XTREEMFS_CONFIG_DIR/postinstall_setup.sh
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -66,3 +74,5 @@ rm -rf $RPM_BUILD_ROOT
 /etc/init.d/xtreemfs-*
 /etc/xos/
 /etc/xos/xtreemfs/*
+/AUTHORS
+/COPYING
