@@ -64,6 +64,8 @@ public class ServiceConfig extends Config {
     
     protected String      adminPassword;
     
+    protected String      hostname;
+    
     public ServiceConfig() {
         super();
     }
@@ -105,16 +107,18 @@ public class ServiceConfig extends Config {
         this.adminPassword = this.readOptionalString("admin_password", "");
         
         this.debugCategories = this.readCategories("debug.categories");
+        
+        this.hostname = readOptionalString("hostname", "");
     }
-
+    
     protected int readDebugLevel() {
         String level = props.getProperty("debug.level");
         if (level == null)
             return Logging.LEVEL_INFO;
         else {
-
+            
             level = level.trim().toUpperCase();
-
+            
             if (level.equals("EMERG")) {
                 return Logging.LEVEL_EMERG;
             } else if (level.equals("ALERT")) {
@@ -132,19 +136,18 @@ public class ServiceConfig extends Config {
             } else if (level.equals("DEBUG")) {
                 return Logging.LEVEL_DEBUG;
             } else {
-
+                
                 try {
                     int levelInt = Integer.valueOf(level);
                     return levelInt;
                 } catch (NumberFormatException ex) {
-                    throw new RuntimeException("'"+level+"' is not a valid level name nor an integer");
+                    throw new RuntimeException("'" + level + "' is not a valid level name nor an integer");
                 }
-
+                
             }
-
-
+            
         }
-
+        
     }
     
     protected Category[] readCategories(String property) {
@@ -226,6 +229,10 @@ public class ServiceConfig extends Config {
     
     public String getAdminPassword() {
         return this.adminPassword;
+    }
+    
+    public String getHostName() {
+        return hostname;
     }
     
 }

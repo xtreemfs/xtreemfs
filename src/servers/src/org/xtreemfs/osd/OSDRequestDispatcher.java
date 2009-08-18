@@ -124,9 +124,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final DIRClient                           dirClient;
     
     protected final MRCClient                           mrcClient;
-
+    
     protected final OSDClient                           osdClient;
-
+    
     protected final RPCNIOSocketClient                  rpcClient;
     
     protected final RPCNIOSocketServer                  rpcServer;
@@ -157,27 +157,31 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final AtomicReference<VivaldiCoordinates> myCoordinates;
     
     protected final CleanupThread                       cThread;
-
+    
     /**
      * reachability of services
      */
     private final ServiceAvailability                   serviceAvailability;
-
+    
     public OSDRequestDispatcher(OSDConfig config) throws IOException {
-
-        Logging.logMessage(Logging.LEVEL_INFO, this,"XtreemFS OSD version "+VersionManagement.RELEASE_VERSION);
+        
+        Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS OSD version "
+            + VersionManagement.RELEASE_VERSION);
         
         this.config = config;
         assert (config.getUUID() != null);
-
+        
         if (this.config.getDirectoryService().getHostName().equals(DiscoveryUtils.AUTODISCOVER_HOSTNAME)) {
-            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "trying to discover local XtreemFS DIR service...");
+            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
+                "trying to discover local XtreemFS DIR service...");
             DirService dir = DiscoveryUtils.discoverDir(10);
             if (dir == null) {
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this, "CANNOT FIND XtreemFS DIR service via discovery broadcasts... no response");
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.net, this,
+                    "CANNOT FIND XtreemFS DIR service via discovery broadcasts... no response");
                 throw new IOException("no DIR service found via discovery broadcast");
             }
-            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "found XtreemFS DIR service at "+dir.getAddress()+":"+dir.getPort());
+            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "found XtreemFS DIR service at "
+                + dir.getAddress() + ":" + dir.getPort());
             config.setDirectoryService(new InetSocketAddress(dir.getAddress(), dir.getPort()));
         }
         
@@ -304,9 +308,11 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 }
                 
                 try {
-                    dmap.put("status_page_url", "http://"
-                        + config.getUUID().getMappings()[0].resolvedAddr.getAddress().getHostAddress() + ":"
-                        + config.getHttpPort());
+                    final String address = "".equals(config.getHostName()) ? config.getAddress() == null ? config
+                            .getUUID().getMappings()[0].resolvedAddr.getAddress().getHostAddress()
+                        : config.getAddress().getHostAddress()
+                        : config.getHostName();
+                    dmap.put("status_page_url", "http://" + address + ":" + config.getHttpPort());
                 } catch (UnknownUUIDException ex) {
                     // should never happen
                 }
@@ -378,7 +384,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             stStage.waitForStartup();
             vStage.waitForStartup();
             cThread.waitForStartup();
-
+            
             heartbeatThread.initialize();
             heartbeatThread.start();
             heartbeatThread.waitForStartup();
@@ -410,9 +416,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             rpcServer.waitForShutdown();
             
             rpcClient.waitForShutdown();
-
+            
             serviceAvailability.shutdown();
-
+            
             udpCom.shutdown();
             preprocStage.shutdown();
             delStage.shutdown();
@@ -621,10 +627,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         op = new CleanupGetResultsOperation(this);
         operations.put(op.getProcedureId(), op);
-
+        
         op = new GetObjectSetOperation(this);
         operations.put(op.getProcedureId(), op);
-
+        
         // --internal events here--
         
         op = new EventCloseFile(this);
@@ -693,7 +699,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public ServiceAvailability getServiceAvailability() {
         return serviceAvailability;
     }
-
+    
     public void objectReceived() {
         numObjsRX.incrementAndGet();
     }

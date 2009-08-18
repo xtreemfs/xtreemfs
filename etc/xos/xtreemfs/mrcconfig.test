@@ -7,7 +7,7 @@
 # 5: notice
 # 6: info (default)
 # 7: debug
-debug.level = 7
+#debug.level = 7
 
 # optional debug categories - a space or comma-separated list of log message categories
 # all (default) - enable logging for all categories
@@ -28,7 +28,10 @@ listen.port = 32636
 http_port = 30636
 
 # optional address for network device, "any" if not specified
-#listen.address = 127.0.0.1
+# listen.address = 127.0.0.1
+
+# optinal host name that is used to register the service at the DIR
+# hostname = foo.bar.com
 
 # interval for querying the Directory Service for new OSDs
 osd_check_interval = 10

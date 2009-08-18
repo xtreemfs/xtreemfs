@@ -503,12 +503,20 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & Specifies the geographic coordinates which are registered with the directory service. Used e.g. by the web console.
 \end{tabular}
 
+\subsubsection{\texttt{hostname} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC, OSD\\
+ Values   & String \\
+ Default  & -\\
+ Description & If specified, it defines the host name that is used to register the service at the directory service. If not specified, the host address defined in \texttt{listen.address} will be used if specified. If neither \texttt{hostname} nor \texttt{listen.address} are specified, the service itself will search for externally reachable network interfaces and advertise their addresses.
+\end{tabular}
+
 \subsubsection{\texttt{http\_port}}
 \begin{tabular}{lp{10cm}}
  Services & DIR, MRC, OSD\\
  Values   & 1 .. 65535 \\
  Default  & 30636 (MRC), 30638 (DIR), 30640 (OSD)\\
- Description & The port on which the built-in HTTP server is listening. The HTTP server is necessary to display the status page.
+ Description & Specifies the geographic coordinates which are registered with the directory service. Used e.g. by the web console.
 \end{tabular}
 
 \subsubsection{\texttt{listen.address} \textit{optional}}
@@ -516,7 +524,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & OSD\\
  Values   & IP address \\
  Default  & -\\
- Description & If specified, defines the interface to listen on. If not specified, the service will listen on all interfaces (any).
+ Description & If specified, it defines the interface to listen on. If not specified, the service will listen on all interfaces (any).
 \end{tabular}
 
 \subsubsection{\texttt{listen.port}}

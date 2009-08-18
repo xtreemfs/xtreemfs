@@ -113,17 +113,17 @@ public class HeartbeatThread extends LifeCycleThread {
         this.quit = true;
         this.interrupt();
     }
-
-    public void initialize() throws IOException{
-
+    
+    public void initialize() throws IOException {
+        
         List<RPCResponse> responses = new LinkedList<RPCResponse>();
-
+        
         // initially, ...
         try {
-
+            
             // ... for each UUID, ...
             for (Service reg : serviceDataGen.getServiceData()) {
-
+                
                 // ... remove old DS entry if necessary
                 RPCResponse<ServiceSet> r1 = client.xtreemfs_service_get_by_uuid(null, reg.getUuid());
                 responses.add(r1);
@@ -132,68 +132,72 @@ public class HeartbeatThread extends LifeCycleThread {
                 if (olset.size() > 0) {
                     currentVersion = olset.get(0).getVersion();
                 }
-
+                
                 reg.setVersion(currentVersion);
                 RPCResponse<Long> r2 = client.xtreemfs_service_register(null, reg);
                 responses.add(r2);
                 r2.get();
-
+                
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
                         "%s successfully registered at Directory Service", uuid);
             }
-
+            
             // ... register the address mapping for the service
-
+            
             AddressMappingSet endpoints = new AddressMappingSet();
-
-            // check if a listen.address is set
-            if (config.getAddress() == null) {
+            
+            // check if hostname or listen.address are set
+            if ("".equals(config.getHostName()) && config.getAddress() == null) {
+                
                 endpoints = NetUtils.getReachableEndpoints(config.getPort(),
                     config.isUsingSSL() ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME);
-
+                
                 if (advertiseUDPEndpoints)
                     endpoints.addAll(NetUtils.getReachableEndpoints(config.getPort(),
                         Constants.ONCRPCU_SCHEME));
-
+                
                 for (AddressMapping endpoint : endpoints) {
                     endpoint.setUuid(uuid.toString());
                 }
-
+                
             } else {
                 // if it is set, we should use that for UUID mapping!
                 endpoints = new AddressMappingSet();
-
+                
                 // remove the leading '/' if necessary
-                String dottedQuad = config.getAddress().toString();
-                if (dottedQuad.startsWith("/"))
-                    dottedQuad = dottedQuad.substring(1);
-
+                String host = "".equals(config.getHostName()) ? config.getAddress().toString() : config
+                        .getHostName();
+                if (host.startsWith("/"))
+                    host = host.substring(1);
+                
+                final String prot = config.isUsingSSL() ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME;
+                
                 // add an oncrpc/oncrpcs mapping
-                endpoints.add(new AddressMapping(uuid.toString(), 0,
-                    config.isUsingSSL() ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME, dottedQuad,
-                    config.getPort(), "*", 3600, uuid.toURL()));
-
+                endpoints.add(new AddressMapping(uuid.toString(), 0, prot, host, config.getPort(), "*", 3600,
+                    prot + "://" + host + ":" + config.getPort()));
+                
                 if (advertiseUDPEndpoints)
-                    endpoints.add(new AddressMapping(uuid.toString(), 0, Constants.ONCRPCU_SCHEME,
-                        dottedQuad, config.getPort(), "*", 3600, uuid.toURL()));
-
+                    endpoints.add(new AddressMapping(uuid.toString(), 0, Constants.ONCRPCU_SCHEME, host,
+                        config.getPort(), "*", 3600, Constants.ONCRPCU_SCHEME + "://" + host + ":"
+                            + config.getPort()));
+                
             }
-
+            
             if (Logging.isInfo()) {
                 Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
                     "registering the following address mapping for the service:");
                 for (AddressMapping mapping : endpoints)
                     Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, mapping.toString());
             }
-
+            
             // fetch the latest address mapping version from the Directory
             // Serivce
             long version = 0;
             RPCResponse<AddressMappingSet> r2 = client.xtreemfs_address_mappings_get(null, uuid.toString());
             try {
                 AddressMappingSet ams = r2.get();
-
+                
                 // retrieve the version number from the address mapping
                 if (ams.size() > 0) {
                     version = ams.get(0).getVersion();
@@ -201,10 +205,10 @@ public class HeartbeatThread extends LifeCycleThread {
             } finally {
                 responses.add(r2);
             }
-
+            
             if (endpoints.size() > 0)
                 endpoints.get(0).setVersion(version);
-
+            
             // register/update the current address mapping
             RPCResponse r3 = client.xtreemfs_address_mappings_set(null, endpoints);
             try {
@@ -215,8 +219,8 @@ public class HeartbeatThread extends LifeCycleThread {
         } catch (InterruptedException ex) {
         } catch (Exception ex) {
             Logging.logMessage(Logging.LEVEL_ERROR, this,
-                "an error occurred while initially contacting the Directory Service: "+ex);
-            throw new IOException("cannot initialize service at XtreemFS DIR: "+ex,ex);
+                "an error occurred while initially contacting the Directory Service: " + ex);
+            throw new IOException("cannot initialize service at XtreemFS DIR: " + ex, ex);
         } finally {
             for (RPCResponse resp : responses)
                 resp.freeBuffers();

@@ -38,6 +38,7 @@ import java.util.Map.Entry;
 
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.auth.AuthenticationProvider;
 import org.xtreemfs.common.buffer.BufferPool;
@@ -87,7 +88,6 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.xtreemfs.common.VersionManagement;
 
 /**
  * 
@@ -126,9 +126,10 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     public MRCRequestDispatcher(final MRCConfig config) throws IOException, ClassNotFoundException,
         IllegalAccessException, InstantiationException, DatabaseException {
-
-        Logging.logMessage(Logging.LEVEL_INFO, this,"XtreemFS Metadata Service version "+VersionManagement.RELEASE_VERSION);
-
+        
+        Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS Metadata Service version "
+            + VersionManagement.RELEASE_VERSION);
+        
         this.config = config;
         
         if (this.config.getDirectoryService().getHostName().equals(DiscoveryUtils.AUTODISCOVER_HOSTNAME)) {
@@ -196,12 +197,16 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 dmap.put("totalRAM", Long.toString(totalRAM));
                 dmap.put("usedRAM", Long.toString(usedRAM));
                 dmap.put("geoCoordinates", config.getGeoCoordinates());
+                
                 try {
-                    dmap.put("status_page_url", "http://"
-                        + config.getUUID().getAddress().getAddress().getHostAddress() + ":"
-                        + config.getHttpPort());
+                    final String address = "".equals(config.getHostName()) ? config.getAddress() == null ? config
+                            .getUUID().getMappings()[0].resolvedAddr.getAddress().getHostAddress()
+                        : config.getAddress().getHostAddress()
+                        : config.getHostName();
+                    dmap.put("status_page_url", "http://" + address + ":" + config.getHttpPort());
                 } catch (UnknownUUIDException ex) {
                     // should never happen
+                    Logging.logError(Logging.LEVEL_ERROR, this, ex);
                 }
                 
                 Service mrcReg = new Service(ServiceType.SERVICE_TYPE_MRC, uuid, 0, "MRC @ " + uuid, 0, dmap);

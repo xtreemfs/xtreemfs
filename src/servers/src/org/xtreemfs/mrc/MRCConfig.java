@@ -60,9 +60,9 @@ public class MRCConfig extends ServiceConfig {
     private String            authenticationProvider;
     
     private String            capabilitySecret;
-
-    private boolean           renewTimedOutCaps;
     
+    private boolean           renewTimedOutCaps;
+        
     /** Creates a new instance of MRCConfig */
     public MRCConfig(String filename) throws IOException {
         super(filename);
@@ -100,7 +100,7 @@ public class MRCConfig extends ServiceConfig {
         this.authenticationProvider = readRequiredString("authentication_provider");
         
         this.capabilitySecret = readRequiredString("capability_secret");
-
+        
         this.renewTimedOutCaps = readOptionalBoolean("renew_to_caps", false);
     }
     
@@ -111,7 +111,7 @@ public class MRCConfig extends ServiceConfig {
     public InetSocketAddress getDirectoryService() {
         return directoryService;
     }
-
+    
     public void setDirectoryService(InetSocketAddress addr) {
         this.directoryService = addr;
     }
@@ -155,7 +155,7 @@ public class MRCConfig extends ServiceConfig {
     public String getCapabilitySecret() {
         return capabilitySecret;
     }
-
+    
     /**
      * @return the renewTimedOutCaps
      */
