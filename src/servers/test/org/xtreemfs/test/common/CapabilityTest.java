@@ -29,6 +29,7 @@ import junit.textui.TestRunner;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -53,15 +54,15 @@ public class CapabilityTest extends TestCase {
     public void testCapability() throws Exception {
         
         // create and test capability that is valid for an hour
-        Capability cap = new Capability("1254:AB", 1, System.currentTimeMillis()/1000+100, "", 1, SECRET);
+        Capability cap = new Capability("1254"+((HashStorageLayout.WIN) ? ":" : "_")+"AB", 1, System.currentTimeMillis()/1000+100, "", 1, SECRET);
         
         assertTrue(cap.isValid());
-        assertEquals(cap.getFileId(), "1254:AB");
+        assertEquals(cap.getFileId(), "1254"+((HashStorageLayout.WIN) ? ":" : "_")+"AB");
         assertEquals(cap.getAccessMode(), 1);
         
         
         // assert that a capability is invalid if it has timed out
-        Capability cap4 = new Capability("bla:2", 1, System.currentTimeMillis() / 1000 - 3600, "", 0,
+        Capability cap4 = new Capability("bla"+((HashStorageLayout.WIN) ? ":" : "_")+"2", 1, System.currentTimeMillis() / 1000 - 3600, "", 0,
             SECRET);
         assertFalse(cap4.isValid());
         

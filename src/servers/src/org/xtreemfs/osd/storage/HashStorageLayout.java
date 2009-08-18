@@ -86,6 +86,8 @@ public class HashStorageLayout extends StorageLayout {
     @Deprecated
     private static final char  CHECKSUM_SEPARATOR    = '-';
     
+    public final static boolean WIN = System.getProperty("os.name").toLowerCase().contains("win");
+    
     private int                prefixLength;
     
     // private StringChecksumAlgorithm hashAlgo;
@@ -563,8 +565,9 @@ public class HashStorageLayout extends StorageLayout {
     }
     
     private String generateRelativeFilePath(String fileId) {
-        StringBuilder path = generateHashPath(fileId);
-        path.append(fileId);
+        String id = (WIN) ? fileId.replace(':', '_') : fileId;
+        StringBuilder path = generateHashPath(id);
+        path.append(id);
         path.append("/");
         return path.toString();
     }
@@ -684,6 +687,7 @@ public class HashStorageLayout extends StorageLayout {
                 int PREVIEW_LENGTH = 15;
                 String currentDir = l.status.pop();
                 File dir = new File(storageDir + currentDir);
+                assert (dir.listFiles() != null) : storageDir+currentDir+" is not a valid directory!";
                 FileReader fReader;
                 
                 File newestFirst = null;
@@ -739,7 +743,8 @@ public class HashStorageLayout extends StorageLayout {
                         + newestLast.length();
                     
                     // insert the data into the FileList
-                    l.files.put(dir.getName(), new FileData(fileSize, (int) (objectSize / 1024)));
+                    l.files.put((WIN) ? dir.getName().replace('_', ':') : dir.getName(), 
+                            new FileData(fileSize, (int) (objectSize / 1024)));
                 }
             } while (l.files.size() < maxNumEntries);
             l.hasMore = true;

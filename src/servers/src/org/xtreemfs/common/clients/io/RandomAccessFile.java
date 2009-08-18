@@ -305,7 +305,7 @@ public class RandomAccessFile implements ObjectStore {
             try {
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.tool, this,
-                            "%s:%d - read object from OSD %s", objectNo, fileId, osd);
+                            "%s:%s - read object from OSD %s", objectNo, fileId, osd);
 
                 response = osdClient.read(osd.getAddress(), fileId, fileCredentials, objectNo, 0, offset,
                         length);
