@@ -1,5 +1,3 @@
-// Revision: 1819
-
 #include "yield/ipc.h"
 using namespace YIELD;
 
@@ -990,8 +988,10 @@ JSONMarshaller::JSONMarshaller( bool write_empty_strings )
   writer = yajl_gen_alloc( NULL );
 }
 JSONMarshaller::JSONMarshaller( JSONMarshaller& parent_json_marshaller, const char* root_key )
-  : buffer( parent_json_marshaller.buffer ), root_key( root_key ),
-    write_empty_strings( parent_json_marshaller.write_empty_strings ), writer( parent_json_marshaller.writer )
+  : root_key( root_key ),
+    write_empty_strings( parent_json_marshaller.write_empty_strings ),
+    writer( parent_json_marshaller.writer ),
+    buffer( parent_json_marshaller.buffer )
 { }
 JSONMarshaller::~JSONMarshaller()
 {

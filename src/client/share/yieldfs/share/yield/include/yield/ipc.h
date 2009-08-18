@@ -1,8 +1,8 @@
 // Copyright 2003-2008 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef _YIELD_IPC_H
-#define _YIELD_IPC_H
+#ifndef _YIELD_IPC_H_
+#define _YIELD_IPC_H_
 
 #include "yield/concurrency.h"
 
@@ -58,68 +58,64 @@ namespace YIELD
 
 
 #ifdef YIELD_HAVE_ZLIB
-  class Diefleder
+  static inline yidl::auto_Buffer deflate( yidl::auto_Buffer buffer, int level = Z_BEST_COMPRESSION )
   {
-  public:
-    static yidl::auto_Buffer deflate( yidl::auto_Buffer buffer, int level = Z_BEST_COMPRESSION )
+    z_stream zstream;
+    zstream.zalloc = Z_NULL;
+    zstream.zfree = Z_NULL;
+    zstream.opaque = Z_NULL;
+
+    if ( deflateInit( &zstream, level ) == Z_OK )
     {
-      z_stream zstream;
-      zstream.zalloc = Z_NULL;
-      zstream.zfree = Z_NULL;
-      zstream.opaque = Z_NULL;
+      zstream.next_in = static_cast<Bytef*>( *buffer );
+      zstream.avail_in = buffer->size();
 
-      if ( deflateInit( &zstream, level ) == Z_OK )
+      Bytef zstream_out[4096];
+      zstream.next_out = zstream_out;
+      zstream.avail_out = 4096;
+
+      yidl::auto_Buffer out_buffer( new yidl::StringBuffer );
+
+      while ( ::deflate( &zstream, Z_NO_FLUSH ) == Z_OK )
       {
-        zstream.next_in = static_cast<Bytef*>( *buffer );
-        zstream.avail_in = buffer->size();
-
-        Bytef zstream_out[4096];
-        zstream.next_out = zstream_out;
-        zstream.avail_out = 4096;
-
-        yidl::auto_Buffer out_buffer( new yidl::StringBuffer );
-
-        while ( ::deflate( &zstream, Z_NO_FLUSH ) == Z_OK )
+        if ( zstream.avail_out == 0 ) // Filled zstream_out, copy it into out_buffer and keep deflating
         {
-          if ( zstream.avail_out == 0 ) // Filled zstream_out, copy it into out_buffer and keep deflating
+          out_buffer->put( zstream_out, sizeof( zstream_out ) );
+          zstream.next_out = zstream_out;
+          zstream.avail_out = sizeof( zstream_out );
+        }
+        else // deflate returned Z_OK without filling zstream_out -> done
+        {
+          int deflate_ret;
+          while ( ( deflate_ret = ::deflate( &zstream, Z_FINISH ) ) == Z_OK ) // Z_OK = need more buffer space to finish compression, Z_STREAM_END = really done
           {
             out_buffer->put( zstream_out, sizeof( zstream_out ) );
-            zstream.next_out = zstream_out;
+            zstream.next_out = zstream_out;              
             zstream.avail_out = sizeof( zstream_out );
           }
-          else // deflate returned Z_OK without filling zstream_out -> done
+
+          if ( deflate_ret == Z_STREAM_END )
           {
-            int deflate_ret;
-            while ( ( deflate_ret = ::deflate( &zstream, Z_FINISH ) ) == Z_OK ) // Z_OK = need more buffer space to finish compression, Z_STREAM_END = really done
+            if ( deflateEnd( &zstream ) == Z_OK ) // Deallocate zstream
             {
-              out_buffer->put( zstream_out, sizeof( zstream_out ) );
-              zstream.next_out = zstream_out;              
-              zstream.avail_out = sizeof( zstream_out );
-            }
+              if ( zstream.avail_out < sizeof( zstream_out ) )
+                out_buffer->put( zstream_out, sizeof( zstream_out ) - zstream.avail_out );
 
-            if ( deflate_ret == Z_STREAM_END )
-            {
-              if ( deflateEnd( &zstream ) == Z_OK ) // Deallocate zstream
-              {
-                if ( zstream.avail_out < sizeof( zstream_out ) )
-                  out_buffer->put( zstream_out, sizeof( zstream_out ) - zstream.avail_out );
-
-                return out_buffer;
-              }
-              else
-                return NULL;
+              return out_buffer;
             }
             else
-              break;
+              return NULL;
           }
+          else
+            break;
         }
-
-        deflateEnd( &zstream ); // Deallocate ztream
       }
 
-      return NULL;
+      deflateEnd( &zstream ); // Deallocate ztream
     }
-  };
+
+    return NULL;
+  }
 #endif
 
 
