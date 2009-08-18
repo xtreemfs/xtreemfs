@@ -107,7 +107,6 @@ typedef int ssize_t;
   virtual bool sync(); \
   virtual bool truncate( uint64_t offset ); \
   virtual ssize_t write( const void* buffer, size_t buffer_len, uint64_t offset ); \
-  virtual ssize_t writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset );
 
 #define YIELD_VOLUME_PROTOTYPES \
     virtual bool access( const YIELD::Path& path, int amode ); \
@@ -388,7 +387,6 @@ namespace YIELD
     virtual yidl::auto_Object<Stat> stat() { return getattr(); }
     virtual ssize_t write( yidl::auto_Buffer buffer );
     virtual ssize_t write( const void* buffer, size_t buffer_len ); // Writes from the current position
-    virtual ssize_t writev( const iovec* buffers, uint32_t buffers_count ); // Writes from the current file pointer
 
     YIELD_FILE_PROTOTYPES;
 

@@ -1,3 +1,5 @@
+// Revision: 1832
+
 #include "yield/ipc.h"
 using namespace YIELD;
 
@@ -1557,17 +1559,6 @@ ssize_t NamedPipe::write( const void* buffer, size_t buffer_len )
     return -1;
 #else
   return underlying_file->write( buffer, buffer_len );
-#endif
-}
-ssize_t NamedPipe::writev( const iovec* buffers, uint32_t buffers_count )
-{
-#ifdef _WIN32
-  if ( connect() )
-    return underlying_file->writev( buffers, buffers_count );
-  else
-    return -1;
-#else
-  return underlying_file->writev( buffers, buffers_count );
 #endif
 }
 #ifdef _WIN32
@@ -3200,6 +3191,23 @@ private:
           aio_accept_control_block->onError( Exception::get_errno() );
       }
       break;
+      case YIDL_OBJECT_TYPE_ID( UDPSocket::AIORecvFromControlBlock ):
+      {
+        UDPSocket::AIORecvFromControlBlock* aio_recvfrom_control_block = static_cast<UDPSocket::AIORecvFromControlBlock*>( aio_control_block );
+        ssize_t recvfrom_ret = static_cast<UDPSocket*>( aio_recvfrom_control_block->get_socket().get() )->recvfrom( aio_recvfrom_control_block->get_buffer(), *aio_recvfrom_control_block->peer_sockaddr );
+        if ( recvfrom_ret > 0 )
+          aio_recvfrom_control_block->onCompletion( static_cast<size_t>( recvfrom_ret ) );
+        else if ( recvfrom_ret == 0 )
+          DebugBreak();
+        else if ( aio_recvfrom_control_block->get_socket()->want_read() )
+        {
+          toggle( fd, true, false );
+          return false;
+        }
+        else
+          aio_recvfrom_control_block->onError( Exception::get_errno() );
+      }
+      break;
       default: DebugBreak();
     }
     dissociate( fd );
@@ -4662,7 +4670,10 @@ auto_UDPSocket UDPSocket::create()
 }
 ssize_t UDPSocket::recvfrom( yidl::auto_Buffer buffer, struct sockaddr_storage& peer_sockaddr )
 {
-  return recvfrom( static_cast<void*>( *buffer ), buffer->size(), peer_sockaddr );
+  ssize_t recvfrom_ret = recvfrom( static_cast<char*>( *buffer ) + buffer->size(), buffer->capacity() - buffer->size(), peer_sockaddr );
+  if ( recvfrom_ret > 0 )
+    buffer->put( NULL, recvfrom_ret );
+  return recvfrom_ret;
 }
 ssize_t UDPSocket::recvfrom( void* buffer, size_t buffer_len, struct sockaddr_storage& peer_sockaddr )
 {

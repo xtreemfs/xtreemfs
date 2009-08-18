@@ -1,4 +1,4 @@
-// Revision: 166
+// Revision: 172
 
 #include "yield.h"
 #include "yieldfs.h"
@@ -1151,7 +1151,6 @@ namespace yieldfs
   {
   public:
     ssize_t write( const void* buffer, size_t buffer_len, uint64_t offset );
-    ssize_t writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset );
 
   private:
     friend class MetadataCachingVolume;
@@ -1405,21 +1404,6 @@ ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t 
   }
   return ret;
 }
-ssize_t DataCachingFile::writev( const struct iovec* buffers, uint32_t buffers_count, uint64_t offset )
-{
-  if ( offset % YIELDFS_CACHED_PAGE_SIZE != 0 )
-    DebugBreak();
-  ssize_t ret = 0;
-  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-  {
-    ssize_t write_ret = write( buffers[buffer_i].iov_base, buffers[buffer_i].iov_len, offset );
-    if ( write_ret >= 0 )
-      offset += write_ret;
-    else
-      return write_ret;
-  }
-  return ret;
-}
 
 
 // data_caching_volume.cpp
@@ -1508,23 +1492,12 @@ int FUSE::main( struct fuse_args& fuse_args_, const char* mount_point )
 // metadata_caching_file.cpp
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
-
-
-
 ssize_t MetadataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
   ssize_t write_ret = underlying_file->write( buffer, buffer_len, offset );
   if ( write_ret >= 0 )
     parent_volume->updateCachedFileSize( get_path(), underlying_file->get_size() );
   return write_ret;
-}
-
-ssize_t MetadataCachingFile::writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset )
-{
-  ssize_t writev_ret = underlying_file->writev( buffers, buffers_count, offset );
-  if ( writev_ret >= 0 )
-    parent_volume->updateCachedFileSize( get_path(), underlying_file->get_size() );
-  return writev_ret;
 }
 
 
@@ -1867,10 +1840,6 @@ ssize_t StackableFile::write( const void* buffer, size_t buffer_len, uint64_t of
 {
   return underlying_file->write( buffer, buffer_len, offset );
 }
-ssize_t StackableFile::writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset )
-{
-  return underlying_file->writev( buffers, buffers_count, offset );
-}
 
 
 // stackable_volume.cpp
@@ -2029,15 +1998,6 @@ ssize_t TracingFile::write( const void* buffer, size_t buffer_len, uint64_t offs
   ssize_t write_ret = underlying_file->write( buffer, buffer_len, offset );
   TracingVolume::trace( log, "yieldfs::TracingFile::write", path, buffer_len, offset, write_ret == static_cast<ssize_t>( buffer_len ) );
   return write_ret;
-}
-ssize_t TracingFile::writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset )
-{
-  ssize_t writev_ret = underlying_file->writev( buffers, buffers_count, offset );
-  if ( buffers_count == 1 )
-    TracingVolume::trace( log, "yieldfs::TracingFile::write", path, buffers[0].iov_len, offset, writev_ret == static_cast<ssize_t>( buffers[0].iov_len ) );
-  else
-    log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::TracingFile::writev( " << path << ", buffers, " << buffers_count << ", " << offset << " )";
-  return writev_ret;
 }
 
 

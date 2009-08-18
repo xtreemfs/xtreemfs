@@ -56,7 +56,6 @@
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\lib"
                 OutputFile="$(ProjectDir)..\..\..\..\bin\xtfs_mkvol.exe"
                 IgnoreAllDefaultLibraries="false"
-                IgnoreDefaultLibraryNames="LIBc.lib;libcmt.lib"
                 GenerateDebugInformation="true"
                 RandomizedBaseAddress="2"
                 DataExecutionPrevention="0"

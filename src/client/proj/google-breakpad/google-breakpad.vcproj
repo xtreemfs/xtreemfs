@@ -56,7 +56,6 @@
                 AdditionalLibraryDirectories=""
                 OutputFile="$(ProjectDir)..\..\lib\google-breakpad_d.lib"
                 IgnoreAllDefaultLibraries="false"
-                IgnoreDefaultLibraryNames="LIBc.lib;libcmt.lib"
                 GenerateDebugInformation="true"
                 RandomizedBaseAddress="2"
                 DataExecutionPrevention="0"

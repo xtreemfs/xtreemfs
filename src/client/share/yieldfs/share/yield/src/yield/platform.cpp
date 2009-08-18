@@ -1,4 +1,4 @@
-// Revision: 1819
+// Revision: 1829
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -522,31 +522,6 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
   if ( seek( offset ) )
     return write( buffer, buffer_len );
-  else
-    return -1;
-}
-ssize_t File::writev( const struct iovec* buffers, uint32_t buffers_count )
-{
-#ifdef _WIN32
-  // WriteFileGather requires the buffers to be aligned on page boundaries and overlapped completion.. not worth the trouble currently.
-  ssize_t ret = 0;
-  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-  {
-    DWORD dwBytesWritten;
-    if ( WriteFile( fd, buffers[buffer_i].iov_base, static_cast<DWORD>( buffers[buffer_i].iov_len ), &dwBytesWritten, NULL ) )
-      ret += dwBytesWritten;
-    else
-      return -1;
-  }
-  return ret;
-#else
-  return ::writev( fd, reinterpret_cast<const ::iovec*>( buffers ), buffers_count );
-#endif
-}
-ssize_t File::writev( const iovec* buffers, uint32_t buffers_count, uint64_t offset )
-{
-  if ( seek( offset ) )
-    return writev( buffers, buffers_count );
   else
     return -1;
 }

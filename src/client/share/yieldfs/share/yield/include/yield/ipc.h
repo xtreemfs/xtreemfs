@@ -488,6 +488,7 @@ namespace YIELD
     private:
       yidl::auto_Buffer buffer;
 
+      friend class Socket;
       friend class UDPSocket;
       struct sockaddr_storage* peer_sockaddr;
     };
@@ -867,7 +868,6 @@ namespace YIELD
 
     virtual ssize_t read( void* buffer, size_t buffer_len );
     virtual ssize_t write( const void* buffer, size_t buffer_len );
-    virtual ssize_t writev( const iovec* buffers, uint32_t buffers_count );
     
     // yidl::Object
     YIDL_OBJECT_PROTOTYPES( NamedPipe, 4 );  

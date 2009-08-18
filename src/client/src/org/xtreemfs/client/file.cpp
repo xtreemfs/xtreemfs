@@ -476,18 +476,3 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 
   return ret;
 }
-
-ssize_t File::writev( const struct iovec* buffers, uint32_t buffers_count, uint64_t offset )
-{
-  if ( buffers_count == 1 )
-    return write( buffers[0].iov_base, buffers[0].iov_len, offset );
-  else
-  {
-#ifdef _WIN32
-    ::SetLastError( ERROR_NOT_SUPPORTED );
-#else
-    errno = ENOTSUP;
-#endif
-    return -1;
-  }
-}
