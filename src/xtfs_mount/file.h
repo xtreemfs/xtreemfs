@@ -1,44 +1,37 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef _ORG_XTREEMFS_CLIENT_FILE_H_
-#define _ORG_XTREEMFS_CLIENT_FILE_H_
+#ifndef _XTFS_MOUNT_FILE_H_
+#define _XTFS_MOUNT_FILE_H_
 
-#include "org/xtreemfs/client/mrc_proxy.h"
-#include "org/xtreemfs/client/osd_proxy.h"
-#include "org/xtreemfs/interfaces/mrc_osd_types.h"
+#include "xtreemfs/mrc_proxy.h"
+#include "xtreemfs/osd_proxy.h"
 
 
-namespace org
+namespace xtreemfs
 {
-  namespace xtreemfs
+  class Volume;
+
+
+  class File : public YIELD::File
   {
-    namespace client
-    {
-      class Volume;
+  public:
+    YIELD_FILE_PROTOTYPES;
+    virtual uint64_t get_size();
 
+  private:
+    friend class Volume;
 
-      class File : public YIELD::File
-      {
-      public:
-        YIELD_FILE_PROTOTYPES;
-        virtual uint64_t get_size();
+    File( yidl::auto_Object<Volume> parent_volume, yidl::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials );
+    ~File();
 
-      private:
-        friend class Volume;
+    yidl::auto_Object<Volume> parent_volume;
+    yidl::auto_Object<MRCProxy> mrc_proxy;
+    YIELD::Path path;
+    org::xtreemfs::interfaces::FileCredentials file_credentials;
 
-        File( yidl::auto_Object<Volume> parent_volume, yidl::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials );
-        ~File();
-
-        yidl::auto_Object<Volume> parent_volume;
-        yidl::auto_Object<MRCProxy> mrc_proxy;
-        YIELD::Path path;
-        org::xtreemfs::interfaces::FileCredentials file_credentials;
-
-        org::xtreemfs::interfaces::OSDWriteResponse latest_osd_write_response;
-        ssize_t selected_file_replica;
-      };
-    };
+    org::xtreemfs::interfaces::OSDWriteResponse latest_osd_write_response;
+    ssize_t selected_file_replica;
   };
 };
 

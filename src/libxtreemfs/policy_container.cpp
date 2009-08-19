@@ -2,7 +2,7 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "policy_container.h"
-using namespace org::xtreemfs::client;
+using namespace xtreemfs;
 
 
 PolicyContainer::~PolicyContainer()
@@ -33,7 +33,7 @@ void* PolicyContainer::getPolicyFunction( const char* name )
   for ( std::vector<YIELD::Path>::iterator policy_dir_path_i = policy_dir_paths.begin(); policy_dir_path_i != policy_dir_paths.end(); policy_dir_path_i++ )
   {
     //if ( log != NULL )
-    //  log->getStream( YIELD::Log::LOG_DEBUG ) << "org::xtreemfs::client::Proxy: scanning " << *policy_dir_path_i << " for policy shared libraries.";
+    //  log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: scanning " << *policy_dir_path_i << " for policy shared libraries.";
 
     std::vector<YIELD::Path> file_names;
     volume->listdir( *policy_dir_path_i, file_names );
@@ -47,7 +47,7 @@ void* PolicyContainer::getPolicyFunction( const char* name )
         YIELD::Path policy_shared_library_path = *policy_dir_path_i  + file_name;
 
         //if ( log != NULL )
-        //  log->getStream( YIELD::Log::LOG_DEBUG ) << "org::xtreemfs::client::Proxy: checking " << policy_shared_library_path << " for policy functions.";
+        //  log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: checking " << policy_shared_library_path << " for policy functions.";
 
         yidl::auto_Object<YIELD::SharedLibrary> policy_shared_library = YIELD::SharedLibrary::open( policy_shared_library_path );
 

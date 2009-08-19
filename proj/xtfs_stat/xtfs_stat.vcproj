@@ -27,7 +27,7 @@
             <Tool
                 Name="VCCLCompilerTool"
                 Optimization="0"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\share\yidl\include"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\google-breakpad\src"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
                 BasicRuntimeChecks="3"
                 RuntimeLibrary="3"
@@ -41,9 +41,9 @@
             <Tool
                 Name="VCLibrarianTool"
                 UseLibraryDependencyInputs="true"
-                AdditionalDependencies="xtreemfs-client_d.lib"
-                AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\lib"
-                OutputFile="$(ProjectDir)..\..\..\..\bin\xtfs_stat.exe"
+                AdditionalDependencies="xtreemfs_d.lib"
+                AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
+                OutputFile="$(ProjectDir)..\..\bin\xtfs_stat.exe"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="true"
                 RandomizedBaseAddress="1"
@@ -52,9 +52,9 @@
             <Tool
                 Name="VCLinkerTool"
                 UseLibraryDependencyInputs="true"
-                AdditionalDependencies="xtreemfs-client_d.lib"
-                AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\lib"
-                OutputFile="$(ProjectDir)..\..\..\..\bin\xtfs_stat.exe"
+                AdditionalDependencies="xtreemfs_d.lib"
+                AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
+                OutputFile="$(ProjectDir)..\..\bin\xtfs_stat.exe"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="true"
                 RandomizedBaseAddress="2"
@@ -72,7 +72,7 @@
             >
             <Tool
                 Name="VCCLCompilerTool"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\share\yidl\include"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\google-breakpad\src"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
                 StringPooling="false"
                 RuntimeLibrary="2"
@@ -85,9 +85,9 @@
             <Tool
                 Name="VCLibrarianTool"
                 UseLibraryDependencyInputs="true"
-                AdditionalDependencies="xtreemfs-client_d.lib"
-                AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\lib"
-                OutputFile="$(ProjectDir)..\..\..\..\bin\xtfs_stat.exe"
+                AdditionalDependencies="xtreemfs_d.lib"
+                AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
+                OutputFile="$(ProjectDir)..\..\bin\xtfs_stat.exe"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -96,9 +96,9 @@
             <Tool
                 Name="VCLinkerTool"
                 UseLibraryDependencyInputs="true"
-                AdditionalDependencies="xtreemfs-client.lib"
-                AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\lib"
-                OutputFile="$(ProjectDir)..\..\..\..\bin\xtfs_stat.exe"
+                AdditionalDependencies="xtreemfs.lib"
+                AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
+                OutputFile="$(ProjectDir)..\..\bin\xtfs_stat.exe"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -116,7 +116,7 @@
             >
             <Tool
                 Name="VCCLCompilerTool"
-                AdditionalIncludeDirectories="$(ProjectDir)..\..\..\..\include;$(ProjectDir)..\..\..\..\share\google-breakpad\src;$(ProjectDir)..\..\..\..\share\yieldfs\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\include;$(ProjectDir)..\..\..\..\share\yieldfs\share\yield\share\yidl\include"
+                AdditionalIncludeDirectories="$(ProjectDir)..\..\include;$(ProjectDir)..\..\share\yidl\include;$(ProjectDir)..\..\share\yield\include;$(ProjectDir)..\..\share\google-breakpad\src"
                 PreprocessorDefinitions="WIN32;_CRT_DISABLE_PERFCRIT_LOCKS;YIELD_HAVE_OPENSSL"
                 StringPooling="false"
                 RuntimeLibrary="2"
@@ -129,9 +129,9 @@
             <Tool
                 Name="VCLibrarianTool"
                 UseLibraryDependencyInputs="true"
-                AdditionalDependencies="xtreemfs-client_d.lib"
-                AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\lib"
-                OutputFile="$(ProjectDir)..\..\..\..\bin\xtfs_stat.exe"
+                AdditionalDependencies="xtreemfs_d.lib"
+                AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
+                OutputFile="$(ProjectDir)..\..\bin\xtfs_stat.exe"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -140,9 +140,9 @@
             <Tool
                 Name="VCLinkerTool"
                 UseLibraryDependencyInputs="true"
-                AdditionalDependencies="xtreemfs-client.lib"
-                AdditionalLibraryDirectories="$(ProjectDir)..\..\..\..\lib"
-                OutputFile="$(ProjectDir)..\..\..\..\bin\xtfs_stat.exe"
+                AdditionalDependencies="xtreemfs.lib"
+                AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
+                OutputFile="$(ProjectDir)..\..\bin\xtfs_stat.exe"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -161,7 +161,7 @@
             UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
             >
             <File
-    RelativePath="..\..\..\..\src\org\xtreemfs\client\xtfs_stat.cpp"
+    RelativePath="..\..\src\xtfs_stat\xtfs_stat.cpp"
     >
 </File>
 

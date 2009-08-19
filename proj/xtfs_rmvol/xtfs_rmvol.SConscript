@@ -1,7 +1,7 @@
 import sys, os.path, platform
 
-SConscript( 'xtreemfs-client-lib.SConscript' )
-SConscript( '../../../google-breakpad/google-breakpad.SConscript' )
+SConscript( '../libxtreemfs/libxtreemfs.SConscript' )
+SConscript( '../google-breakpad/google-breakpad.SConscript' )
 
 
 try:
@@ -70,17 +70,17 @@ for define in defines:
     else: define_switch = "-D" + define
     if not define_switch in build_env["CCFLAGS"]: build_env["CCFLAGS"] += define_switch + " "
 
-include_dir_paths = [os.path.abspath( '../../../../share/yieldfs/share/yield/share/yidl/include' ), os.path.abspath( '../../../../share/yieldfs/share/yield/include' ), os.path.abspath( '../../../../share/yieldfs/include' ), os.path.abspath( '../../../../share/google-breakpad/src' ), os.path.abspath( '../../../../include' )]
+include_dir_paths = [os.path.abspath( '../../share/yidl/include' ), os.path.abspath( '../../share/yield/include' ), os.path.abspath( '../../share/google-breakpad/src' ), os.path.abspath( '../../include' )]
 for include_dir_path in include_dir_paths:
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
 
-lib_dir_paths = [os.path.abspath( '../../../../lib' )]
+lib_dir_paths = [os.path.abspath( '../../lib' )]
 for lib_dir_path in lib_dir_paths:
     if not lib_dir_path in build_env["LIBPATH"]: build_env["LIBPATH"].append( lib_dir_path )
 
 # Don't add libs until after custom and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
-for lib in ["xtreemfs-client"]:
+for lib in ["xtreemfs"]:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
-build_env.Program( "../../../../bin/xtfs_rmvol", (
-    r"../../../../src/org/xtreemfs/client/xtfs_rmvol.cpp" ) )
+build_env.Program( "../../bin/xtfs_rmvol", (
+    r"../../src/xtfs_rmvol/xtfs_rmvol.cpp" ) )

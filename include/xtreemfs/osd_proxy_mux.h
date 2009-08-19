@@ -1,76 +1,70 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef _ORG_XTREEMFS_CLIENT_OSD_PROXY_MUX_H_
-#define _ORG_XTREEMFS_CLIENT_OSD_PROXY_MUX_H_
+#ifndef _XTREEMFS_OSD_PROXY_MUX_H_
+#define _XTREEMFS_OSD_PROXY_MUX_H_
 
-#include "org/xtreemfs/client/dir_proxy.h"
-#include "org/xtreemfs/client/osd_proxy.h"
+#include "xtreemfs/dir_proxy.h"
+#include "xtreemfs/osd_proxy.h"
 
 
-namespace org
+namespace xtreemfs
 {
-  namespace xtreemfs
+  class PolicyContainer;
+
+
+  class OSDProxyMux : public org::xtreemfs::interfaces::OSDInterface
   {
-    namespace client
+  public:
+    static yidl::auto_Object<OSDProxyMux> create( yidl::auto_Object<DIRProxy> dir_proxy,
+                                                   uint32_t flags = 0,
+                                                   YIELD::auto_Log log = NULL,
+                                                   const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
+                                                   YIELD::auto_SSLContext ssl_context = NULL )
     {
-      class PolicyContainer;
+      return new OSDProxyMux( dir_proxy, flags, log, operation_timeout, ssl_context );
+    }
 
+    // yidl::Object
+    OSDProxyMux& incRef() { return yidl::Object::incRef( *this ); }
 
-      class OSDProxyMux : public org::xtreemfs::interfaces::OSDInterface
-      {
-      public:
-        static yidl::auto_Object<OSDProxyMux> create( yidl::auto_Object<DIRProxy> dir_proxy,
-                                                       uint32_t flags = 0,
-                                                       YIELD::auto_Log log = NULL,
-                                                       const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
-                                                       YIELD::auto_SSLContext ssl_context = NULL )
-        {
-          return new OSDProxyMux( dir_proxy, flags, log, operation_timeout, ssl_context );
-        }
+    // YIELD::EventHandler
+     void handleEvent( YIELD::Event& );
 
-        // yidl::Object
-        OSDProxyMux& incRef() { return yidl::Object::incRef( *this ); }
+  private:
+    OSDProxyMux( yidl::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SSLContext ssl_context );
+    ~OSDProxyMux();
 
-        // YIELD::EventHandler
-         void handleEvent( YIELD::Event& );
+    yidl::auto_Object<DIRProxy> dir_proxy;
+    uint32_t flags;
+    YIELD::auto_Log log;
+    YIELD::Time operation_timeout;
+    YIELD::auto_SSLContext ssl_context;
 
-      private:
-        OSDProxyMux( yidl::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SSLContext ssl_context );
-        ~OSDProxyMux();
+    typedef std::map< std::string, std::pair<OSDProxy*, OSDProxy*> > OSDProxyMap;
+    OSDProxyMap osd_proxies;
+    YIELD::auto_StageGroup osd_proxy_stage_group;
 
-        yidl::auto_Object<DIRProxy> dir_proxy;        
-        uint32_t flags;
-        YIELD::auto_Log log;
-        YIELD::Time operation_timeout;
-        YIELD::auto_SSLContext ssl_context;
+    // Policies callbacks
+    get_osd_ping_interval_s_t get_osd_ping_interval_s;
+    select_file_replica_t select_file_replica;
+    PolicyContainer* policy_container;
 
-        typedef std::map< std::string, std::pair<OSDProxy*, OSDProxy*> > OSDProxyMap;
-        OSDProxyMap osd_proxies;
-        YIELD::auto_StageGroup osd_proxy_stage_group;
+    yidl::auto_Object<OSDProxy> getTCPOSDProxy( OSDProxyRequest& osd_proxy_request, const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t object_number );
+    yidl::auto_Object<OSDProxy> getTCPOSDProxy( const std::string& osd_uuid );
 
-        // Policies callbacks
-        get_osd_ping_interval_s_t get_osd_ping_interval_s;
-        select_file_replica_t select_file_replica;
-        PolicyContainer* policy_container;
+    // org::xtreemfs::interfaces::OSDInterface
+    void handlereadRequest( readRequest& req );
+    void handletruncateRequest( truncateRequest& req );
+    void handleunlinkRequest( unlinkRequest& req );
+    void handlewriteRequest( writeRequest& req );
 
-        yidl::auto_Object<OSDProxy> getTCPOSDProxy( OSDProxyRequest& osd_proxy_request, const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t object_number );
-        yidl::auto_Object<OSDProxy> getTCPOSDProxy( const std::string& osd_uuid );        
-
-        // org::xtreemfs::interfaces::OSDInterface
-        void handlereadRequest( readRequest& req );
-        void handletruncateRequest( truncateRequest& req );
-        void handleunlinkRequest( unlinkRequest& req );
-        void handlewriteRequest( writeRequest& req );
-
-        class PingRequest;
-        class PingResponse;
-        class PingResponseTarget;
-        class PingTimer;
-        class ReadResponseTarget;
-        class TruncateResponseTarget;
-      };
-    };
+    class PingRequest;
+    class PingResponse;
+    class PingResponseTarget;
+    class PingTimer;
+    class ReadResponseTarget;
+    class TruncateResponseTarget;
   };
 };
 

@@ -1,8 +1,8 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#include "org/xtreemfs/client/dir_proxy.h"
-using namespace org::xtreemfs::client;
+#include "xtreemfs/dir_proxy.h"
+using namespace xtreemfs;
 
 
 DIRProxy::~DIRProxy()

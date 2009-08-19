@@ -1,69 +1,63 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef _ORG_XTREEMFS_CLIENT_VOLUME_H_
-#define _ORG_XTREEMFS_CLIENT_VOLUME_H_
+#ifndef _XTFS_MOUNT_VOLUME_H_
+#define _XTFS_MOUNT_VOLUME_H_
 
-#include "org/xtreemfs/client/dir_proxy.h"
-#include "org/xtreemfs/client/mrc_proxy.h"
-#include "org/xtreemfs/client/osd_proxy_mux.h"
-#include "org/xtreemfs/client/path.h"
+#include "xtreemfs/dir_proxy.h"
+#include "xtreemfs/mrc_proxy.h"
+#include "xtreemfs/osd_proxy_mux.h"
+#include "xtreemfs/path.h"
 
 
-namespace org
+namespace xtreemfs
 {
-  namespace xtreemfs
+  class OSDProxy;
+
+
+  class Volume : public YIELD::Volume
   {
-    namespace client
-    {
-      class OSDProxy;
+  public:
+    const static uint32_t VOLUME_FLAG_CACHE_FILES = 1;
+    const static uint32_t VOLUME_FLAG_CACHE_METADATA = 2;
+    const static uint32_t VOLUME_FLAG_TRACE_FILE_IO = 4;
 
+    Volume( const YIELD::URI& dir_uri,
+            const std::string& name,
+            uint32_t flags = 0,
+            YIELD::auto_Log log = NULL,
+            uint32_t proxy_flags = 0,
+            const YIELD::Time& proxy_operation_timeout = DIRProxy::OPERATION_TIMEOUT_DEFAULT,
+            YIELD::auto_SSLContext proxy_ssl_context = NULL );
 
-      class Volume : public YIELD::Volume
-      {
-      public:
-        const static uint32_t VOLUME_FLAG_CACHE_FILES = 1;
-        const static uint32_t VOLUME_FLAG_CACHE_METADATA = 2;
-        const static uint32_t VOLUME_FLAG_TRACE_FILE_IO = 4;
+    uint32_t get_flags() const { return flags; }
+    YIELD::auto_Log get_log() const { return log; }
+    yidl::auto_Object<OSDProxyMux> get_osd_proxy_mux() const { return osd_proxy_mux; }
 
-        Volume( const YIELD::URI& dir_uri, 
-                const std::string& name, 
-                uint32_t flags = 0, 
-                YIELD::auto_Log log = NULL, 
-                uint32_t proxy_flags = 0, 
-                const YIELD::Time& proxy_operation_timeout = DIRProxy::OPERATION_TIMEOUT_DEFAULT, 
-                YIELD::auto_SSLContext proxy_ssl_context = NULL );
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( Volume, 0 );
 
-        uint32_t get_flags() const { return flags; }
-        YIELD::auto_Log get_log() const { return log; }
-        yidl::auto_Object<OSDProxyMux> get_osd_proxy_mux() const { return osd_proxy_mux; }
+    // YIELD::Volume
+    YIELD_VOLUME_PROTOTYPES;
+    YIELD::auto_Stat getattr( const Path& path );
+    bool listdir( const YIELD::Path& path, listdirCallback& callback ) { return listdir( path, Path(), callback ); }
+    bool listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback );
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( Volume, 0 );
+  private:
+    ~Volume() { }
 
-        // YIELD::Volume
-        YIELD_VOLUME_PROTOTYPES;
-        YIELD::auto_Stat getattr( const Path& path );
-        bool listdir( const YIELD::Path& path, listdirCallback& callback ) { return listdir( path, Path(), callback ); }
-        bool listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback );
+    std::string name;
+    uint32_t flags;
+    YIELD::auto_Log log;
 
-      private:
-        ~Volume() { }
+    yidl::auto_Object<DIRProxy> dir_proxy;
+    yidl::auto_Object<MRCProxy> mrc_proxy;
+    yidl::auto_Object<OSDProxyMux> osd_proxy_mux;
+    YIELD::auto_StageGroup stage_group;
 
-        std::string name;
-        uint32_t flags;
-        YIELD::auto_Log log;
-
-        yidl::auto_Object<DIRProxy> dir_proxy;
-        yidl::auto_Object<MRCProxy> mrc_proxy;
-        yidl::auto_Object<OSDProxyMux> osd_proxy_mux;
-        YIELD::auto_StageGroup stage_group;
-
-        void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );
-        void set_errno( const char* operation_name, ProxyExceptionResponse& proxy_exception_response );
-        void set_errno( const char* operation_name, std::exception& exc );
-      };
-    };
+    void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );
+    void set_errno( const char* operation_name, ProxyExceptionResponse& proxy_exception_response );
+    void set_errno( const char* operation_name, std::exception& exc );
   };
 };
 

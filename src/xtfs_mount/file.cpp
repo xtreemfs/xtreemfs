@@ -1,11 +1,11 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#include "org/xtreemfs/client/file.h"
-#include "org/xtreemfs/client/mrc_proxy.h"
-#include "org/xtreemfs/client/osd_proxy.h"
-#include "org/xtreemfs/client/volume.h"
-using namespace org::xtreemfs::client;
+#include "file.h"
+#include "xtreemfs/mrc_proxy.h"
+#include "xtreemfs/osd_proxy.h"
+#include "volume.h"
+using namespace xtreemfs;
 
 #include <errno.h>
 
@@ -16,63 +16,53 @@ using namespace org::xtreemfs::client;
 #else
 #include <errno.h>
 #endif
-#include "org/xtreemfs/interfaces/osd_interface.h"
-#ifdef _WIN32
-#pragma warning( pop )
-#endif
 
 
-namespace org
+namespace xtreemfs
 {
-  namespace xtreemfs
+  class FileReadBuffer : public yidl::FixedBuffer
   {
-    namespace client
+  public:
+    FileReadBuffer( void* buf, size_t len )
+      : FixedBuffer( len )
     {
-      class FileReadBuffer : public yidl::FixedBuffer
-      {
-      public:
-        FileReadBuffer( void* buf, size_t len )
-          : FixedBuffer( len )
-        {
-          iov.iov_base = buf;
-        }
-      };
+      iov.iov_base = buf;
+    }
+  };
 
-      class FileReadResponse : public org::xtreemfs::interfaces::OSDInterface::readResponse
-      {
-      public:
-        FileReadResponse( yidl::auto_Buffer buffer )
-          : org::xtreemfs::interfaces::OSDInterface::readResponse( org::xtreemfs::interfaces::ObjectData( 0, false, 0, buffer ) )
-        { }
-      };
+  class FileReadResponse : public org::xtreemfs::interfaces::OSDInterface::readResponse
+  {
+  public:
+    FileReadResponse( yidl::auto_Buffer buffer )
+      : org::xtreemfs::interfaces::OSDInterface::readResponse( org::xtreemfs::interfaces::ObjectData( 0, false, 0, buffer ) )
+    { }
+  };
 
-      class FileReadRequest : public org::xtreemfs::interfaces::OSDInterface::readRequest
-      {
-      public:
-        FileReadRequest( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, yidl::auto_Buffer buffer ) 
-          : org::xtreemfs::interfaces::OSDInterface::readRequest( file_credentials, file_id, object_number, object_version, offset, length ), 
-          buffer( buffer )
-        { }
+  class FileReadRequest : public org::xtreemfs::interfaces::OSDInterface::readRequest
+  {
+  public:
+    FileReadRequest( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, yidl::auto_Buffer buffer ) 
+      : org::xtreemfs::interfaces::OSDInterface::readRequest( file_credentials, file_id, object_number, object_version, offset, length ), 
+      buffer( buffer )
+    { }
 
-        YIELD::auto_Response createResponse() { return new FileReadResponse( buffer ); }
+    YIELD::auto_Response createResponse() { return new FileReadResponse( buffer ); }
 
-      private:
-        yidl::auto_Buffer buffer;
-      };
+  private:
+    yidl::auto_Buffer buffer;
+  };
 
 
-      class FileWriteBuffer : public yidl::FixedBuffer
-      {
-      public:
-        FileWriteBuffer( const void* buf, size_t len )
-          : FixedBuffer( len )
-        {
-          iov.iov_base = const_cast<void*>( buf );
-          iov.iov_len = len;
-        }
-      };
-    };
-  }
+  class FileWriteBuffer : public yidl::FixedBuffer
+  {
+  public:
+    FileWriteBuffer( const void* buf, size_t len )
+      : FixedBuffer( len )
+    {
+      iov.iov_base = const_cast<void*>( buf );
+      iov.iov_len = len;
+    }
+  };
 };
 
 
@@ -155,7 +145,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
   {
 #ifdef _DEBUG
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
-      log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File::read( rbuf, size=" << size << ", offset=" << offset << " )";
+      log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::File::read( rbuf, size=" << size << ", offset=" << offset << " )";
 #endif
 
     char *rbuf_start = static_cast<char*>( rbuf ), *rbuf_p = static_cast<char*>( rbuf ), *rbuf_end = static_cast<char*>( rbuf ) + size;
@@ -177,7 +167,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
       {
         log->getStream( YIELD::Log::LOG_INFO ) << 
-          "org::xtreemfs::client::File: issuing read # " << ( expected_read_response_count + 1 ) <<
+          "xtreemfs::File: issuing read # " << ( expected_read_response_count + 1 ) <<
           " for " << object_size << 
           " bytes from object number " << object_number <<
           " in file " << file_credentials.get_xcap().get_file_id() <<
@@ -201,7 +191,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 
 #ifdef _DEBUG
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
-      log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File: issued " << expected_read_response_count << " parallel reads.";
+      log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::File: issued " << expected_read_response_count << " parallel reads.";
 #endif
 
     for ( size_t read_response_i = 0; read_response_i < expected_read_response_count; read_response_i++ )
@@ -220,7 +210,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
       {
         log->getStream( YIELD::Log::LOG_INFO ) << 
-          "org::xtreemfs::client::File: read " << data->size() <<
+          "xtreemfs::File: read " << data->size() <<
           " bytes from file " << file_credentials.get_xcap().get_file_id() <<            
           " with " << zero_padding << " bytes of zero padding" <<
           ", starting from buffer offset " << static_cast<size_t>( rbuf_p - rbuf_start ) << 
@@ -242,7 +232,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         }
         else
         {
-          log->getStream( YIELD::Log::LOG_ERR ) << "org::xtreemfs::client::File: received zero_padding (data size=" << data->size() << ", zero_padding=" << zero_padding << ") larger than available buffer space (" << static_cast<size_t>( rbuf_end - rbuf_p ) << ")";
+          log->getStream( YIELD::Log::LOG_ERR ) << "xtreemfs::File: received zero_padding (data size=" << data->size() << ", zero_padding=" << zero_padding << ") larger than available buffer space (" << static_cast<size_t>( rbuf_end - rbuf_p ) << ")";
           YIELD::ExceptionResponse::set_errno( EIO );
           ret = -1;
           break;
@@ -257,7 +247,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
     {
       log->getStream( YIELD::Log::LOG_INFO ) << 
-        "org::xtreemfs::client::File: read " << ret <<
+        "xtreemfs::File: read " << ret <<
         " bytes from file " << file_credentials.get_xcap().get_file_id() <<
         " in total, returning from read().";           
     }
@@ -269,7 +259,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
     {
       log->getStream( YIELD::Log::LOG_INFO ) <<
-      "org::xtreemfs::client::File: read threw ProxyExceptionResponse " <<
+      "xtreemfs::File: read threw ProxyExceptionResponse " <<
       "(errno=" << proxy_exception_response.get_platform_error_code() <<
       ", strerror=" << YIELD::Exception::strerror( proxy_exception_response.get_platform_error_code() ) << ").";
     }
@@ -285,7 +275,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
     {
       log->getStream( YIELD::Log::LOG_INFO ) <<
-      "org::xtreemfs::client::File: read threw std::exception " <<
+      "xtreemfs::File: read threw std::exception " <<
       "(what=" << exc.what() << ")" <<
       ", setting errno to EIO.";
     }
@@ -353,7 +343,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 
 #ifdef _DEBUG
   if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
-    log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File::write( wbuf, size=" << size << ", offset=" << offset << " )";
+    log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::File::write( wbuf, size=" << size << ", offset=" << offset << " )";
 #endif
 
   try
@@ -380,7 +370,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
       if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
       {
         log->getStream( YIELD::Log::LOG_INFO ) << 
-          "org::xtreemfs::client::File: issuing write # " << ( expected_write_response_count + 1 ) <<
+          "xtreemfs::File: issuing write # " << ( expected_write_response_count + 1 ) <<
           " of " << object_size << 
           " bytes to object number " << object_number <<
           " in file " << file_credentials.get_xcap().get_file_id() <<
@@ -406,14 +396,14 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 
 #ifdef _DEBUG
       if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
-        log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File: write received response # " << ( write_response_i + 1 ) << " of " << expected_write_response_count << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::File: write received response # " << ( write_response_i + 1 ) << " of " << expected_write_response_count << ".";
 #endif
 
       if ( write_response.get_osd_write_response() > latest_osd_write_response )
       {
 #ifdef _DEBUG
         if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
-          log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File: OSD write response is newer than latest known.";
+          log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::File: OSD write response is newer than latest known.";
 #endif
 
         latest_osd_write_response = write_response.get_osd_write_response();
@@ -427,7 +417,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
     {
 #ifdef _DEBUG
       if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
-        log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::File: flushing file size updates.";
+        log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::File: flushing file size updates.";
 #endif
 
       flush();
@@ -441,7 +431,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
     {
       log->getStream( YIELD::Log::LOG_INFO ) <<
-      "org::xtreemfs::client::File: write threw ProxyExceptionResponse " <<
+      "xtreemfs::File: write threw ProxyExceptionResponse " <<
       "(errno= " << proxy_exception_response.get_platform_error_code() <<
       ", strerror=" << YIELD::Exception::strerror( proxy_exception_response.get_platform_error_code() ) << ").";
     }
@@ -460,7 +450,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
     {
       log->getStream( YIELD::Log::LOG_INFO ) <<
-      "org::xtreemfs::client::File: write threw std::exception " <<
+      "xtreemfs::File: write threw std::exception " <<
       "(what=" << exc.what() << ")" <<
       ", setting errno to EIO.";
     }

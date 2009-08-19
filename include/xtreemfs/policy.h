@@ -1,8 +1,8 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef _ORG_XTREEMFS_CLIENT_POLICY_H_
-#define _ORG_XTREEMFS_CLIENT_POLICY_H_
+#ifndef _XTREEMFS_POLICY_H_
+#define _XTREEMFS_POLICY_H_
 
 #ifdef _WIN32
 #include <stdlib.h>

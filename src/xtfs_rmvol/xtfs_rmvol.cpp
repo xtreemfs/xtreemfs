@@ -1,45 +1,39 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#include "main.h"
-using namespace org::xtreemfs::client;
+#include "xtreemfs/main.h"
+using namespace xtreemfs;
 
 
-namespace org
+namespace xtreemfs
 {
-  namespace xtreemfs
+  class xtfs_rmvol : public Main
   {
-    namespace client
+  public:
+    xtfs_rmvol()
+      : Main( "xtfs_rmvol", "remove a volume from a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
+    { }
+
+  private:
+    YIELD::auto_URI mrc_uri;
+    std::string volume_name;
+
+
+    // YIELD::Main
+    int _main( int, char** )
     {
-      class xtfs_rmvol : public Main
-      {
-      public:
-        xtfs_rmvol()
-          : Main( "xtfs_rmvol", "remove a volume from a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
-        { }
+      yidl::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
+      mrc_proxy->xtreemfs_rmvol( volume_name );
+      return 0;
+    }
 
-      private:
-        YIELD::auto_URI mrc_uri;
-        std::string volume_name;
-
-
-        // YIELD::Main
-        int _main( int, char** )
-        {
-          yidl::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
-          mrc_proxy->xtreemfs_rmvol( volume_name );
-          return 0;
-        }
-
-        void parseFiles( int files_count, char** files )
-        {
-          if ( files_count >= 1 )
-            mrc_uri = parseVolumeURI( files[0], volume_name );
-          else
-            throw YIELD::Exception( "must specify the MRC and volume name as a URI" );
-        }
-      };
-    };
+    void parseFiles( int files_count, char** files )
+    {
+      if ( files_count >= 1 )
+        mrc_uri = parseVolumeURI( files[0], volume_name );
+      else
+        throw YIELD::Exception( "must specify the MRC and volume name as a URI" );
+    }
   };
 };
 

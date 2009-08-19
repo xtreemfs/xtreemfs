@@ -1,20 +1,12 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#include "org/xtreemfs/client/volume.h"
-#include "org/xtreemfs/client/file.h"
-#include "org/xtreemfs/client/osd_proxy.h"
-#include "org/xtreemfs/client/path.h"
-using namespace org::xtreemfs::client;
-
-#ifdef _WIN32
-#pragma warning( push )
-#pragma warning( disable: 4100 )
-#endif
-#include "org/xtreemfs/interfaces/mrc_interface.h"
-#ifdef _WIN32
-#pragma warning( pop )
-#endif
+#include "volume.h"
+#include "file.h"
+#include "xtreemfs/mrc_proxy.h"
+#include "xtreemfs/osd_proxy.h"
+#include "xtreemfs/path.h"
+using namespace xtreemfs;
 
 #include <errno.h>
 #ifdef _WIN32
@@ -24,10 +16,10 @@ using namespace org::xtreemfs::client;
 #endif
 
 
-#define ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( OperationName ) \
+#define VOLUME_OPERATION_BEGIN( OperationName ) \
   try
 
-#define ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( OperationName ) \
+#define VOLUME_OPERATION_END( OperationName ) \
   catch ( ProxyExceptionResponse& proxy_exception_response ) \
   { \
     set_errno( #OperationName, proxy_exception_response ); \
@@ -59,44 +51,44 @@ Volume::Volume( const YIELD::URI& dir_uri,
 
 bool Volume::access( const YIELD::Path& path, int amode )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( access )
+  VOLUME_OPERATION_BEGIN( access )
   {
     return true;
     // return mrc_proxy->access( Path( this->name, path ), amode );
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( access );
+  VOLUME_OPERATION_END( access );
   return false;
 }
 
 bool Volume::chmod( const YIELD::Path& path, mode_t mode )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( chmod )
+  VOLUME_OPERATION_BEGIN( chmod )
   {
     mrc_proxy->chmod( Path( this->name, path ), mode );
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( chmod )
+  VOLUME_OPERATION_END( chmod )
   return false;
 }
 
 bool Volume::chown( const YIELD::Path& path, int uid, int gid )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( chown )
+  VOLUME_OPERATION_BEGIN( chown )
   {
     mrc_proxy->chown( Path( this->name, path ), uid, gid );
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( chown );
+  VOLUME_OPERATION_END( chown );
   return false;
 }
 
 YIELD::auto_Stat Volume::getattr( const YIELD::Path& path )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( getattr )
+  VOLUME_OPERATION_BEGIN( getattr )
   {
     return getattr( Path( this->name, path ) );
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( getattr );
+  VOLUME_OPERATION_END( getattr );
   return NULL;
 }
 
@@ -113,29 +105,29 @@ YIELD::auto_Stat Volume::getattr( const Path& path )
 
 bool Volume::getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( getxattr )
+  VOLUME_OPERATION_BEGIN( getxattr )
   {
     mrc_proxy->getxattr( Path( this->name, path ), name, out_value );
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( getxattr );
+  VOLUME_OPERATION_END( getxattr );
   return false;
 }
 
 bool Volume::link( const YIELD::Path& old_path, const YIELD::Path& new_path )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( link )
+  VOLUME_OPERATION_BEGIN( link )
   {
     mrc_proxy->link( Path( this->name, old_path ), Path( this->name, new_path ) );
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( link );
+  VOLUME_OPERATION_END( link );
   return false;
 }
 
 bool Volume::listdir( const YIELD::Path& path, const YIELD::Path&, listdirCallback& callback )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( listdir )
+  VOLUME_OPERATION_BEGIN( listdir )
   {
     org::xtreemfs::interfaces::StringSet names;
     mrc_proxy->xtreemfs_listdir( Path( this->name, path ), names );
@@ -146,37 +138,37 @@ bool Volume::listdir( const YIELD::Path& path, const YIELD::Path&, listdirCallba
     }
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( listdir );
+  VOLUME_OPERATION_END( listdir );
   return false;
 }
 
 bool Volume::listxattr( const YIELD::Path& path, std::vector<std::string>& out_names )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( listxattr )
+  VOLUME_OPERATION_BEGIN( listxattr )
   {
-    xtreemfs::interfaces::StringSet names;
+    org::xtreemfs::interfaces::StringSet names;
     mrc_proxy->listxattr( Path( this->name, path ), names );
     out_names.assign( names.begin(), names.end() );
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( listxattr );
+  VOLUME_OPERATION_END( listxattr );
   return false;
 }
 
 bool Volume::mkdir( const YIELD::Path& path, mode_t mode )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( mkdir )
+  VOLUME_OPERATION_BEGIN( mkdir )
   {
     mrc_proxy->mkdir( Path( this->name, path ), mode );
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( mkdir );
+  VOLUME_OPERATION_END( mkdir );
   return false;
 }
 
 YIELD::auto_File Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( open )
+  VOLUME_OPERATION_BEGIN( open )
   {
     Path path( this->name, _path );
 
@@ -238,7 +230,7 @@ YIELD::auto_File Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t 
 
     return new File( incRef(), mrc_proxy, path, file_credentials );
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( open );
+  VOLUME_OPERATION_END( open );
   return NULL;
 }
 
@@ -254,7 +246,7 @@ void Volume::osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& fi
 
 bool Volume::readdir( const YIELD::Path& path, const YIELD::Path&, YIELD::Volume::readdirCallback& callback )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( readdir )
+  VOLUME_OPERATION_BEGIN( readdir )
   {
     org::xtreemfs::interfaces::DirectoryEntrySet directory_entries;
     mrc_proxy->readdir( Path( this->name, path ), directory_entries );
@@ -270,25 +262,25 @@ bool Volume::readdir( const YIELD::Path& path, const YIELD::Path&, YIELD::Volume
     }
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( readdir );
+  VOLUME_OPERATION_END( readdir );
   return false;
 }
 
 yidl::auto_Object<YIELD::Path> Volume::readlink( const YIELD::Path& path )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( readlink )
+  VOLUME_OPERATION_BEGIN( readlink )
   {
     org::xtreemfs::interfaces::Stat stbuf;
     mrc_proxy->getattr( Path( this->name, path ), stbuf );
     return new YIELD::Path( stbuf.get_link_target() );
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( readlink );
+  VOLUME_OPERATION_END( readlink );
   return NULL;
 }
 
 bool Volume::rename( const YIELD::Path& from_path, const YIELD::Path& to_path )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( rename )
+  VOLUME_OPERATION_BEGIN( rename )
   {
     Path from_xtreemfs_path( this->name, from_path ), to_xtreemfs_path( this->name, to_path );
     org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
@@ -296,42 +288,42 @@ bool Volume::rename( const YIELD::Path& from_path, const YIELD::Path& to_path )
     osd_unlink( file_credentials_set );
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( rename );
+  VOLUME_OPERATION_END( rename );
   return false;
 }
 
 bool Volume::rmdir( const YIELD::Path& path )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( rmdir )
+  VOLUME_OPERATION_BEGIN( rmdir )
   {
     mrc_proxy->rmdir( Path( this->name, path ) );
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( rmdir );
+  VOLUME_OPERATION_END( rmdir );
   return false;
 }
 
 bool Volume::removexattr( const YIELD::Path& path, const std::string& name )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( removexattr )
+  VOLUME_OPERATION_BEGIN( removexattr )
   {
     mrc_proxy->removexattr( Path( this->name, path ), name );
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( removexattr );
+  VOLUME_OPERATION_END( removexattr );
   return false;
 }
 
 bool Volume::setattr( const YIELD::Path& path, uint32_t file_attributes )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( setattr )
+  VOLUME_OPERATION_BEGIN( setattr )
   {
-    xtreemfs::interfaces::Stat stbuf;
+    org::xtreemfs::interfaces::Stat stbuf;
     stbuf.set_attributes( file_attributes );
     mrc_proxy->setattr( Path( this->name, path ), stbuf );
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( setattr );
+  VOLUME_OPERATION_END( setattr );
   return false;
 }
 
@@ -339,7 +331,7 @@ void Volume::set_errno( const char* operation_name, ProxyExceptionResponse& prox
 {
 #ifdef _DEBUG
   if ( log != NULL )
-    log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Volume: caught exception on " << operation_name << ": " << proxy_exception_response.what();
+    log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::Volume: caught exception on " << operation_name << ": " << proxy_exception_response.what();
 #endif
 
   YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
@@ -349,7 +341,7 @@ void Volume::set_errno( const char* operation_name, std::exception& exc )
 {
 #ifdef _DEBUG
   if ( log != NULL )
-    log->getStream( YIELD::Log::LOG_INFO ) << "org::xtreemfs::client::Volume: caught exception on " << operation_name << ": " << exc.what();
+    log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::Volume: caught exception on " << operation_name << ": " << exc.what();
 #endif
 
 #ifdef _WIN32
@@ -361,23 +353,23 @@ void Volume::set_errno( const char* operation_name, std::exception& exc )
 
 bool Volume::setxattr( const YIELD::Path& path, const std::string& name, const std::string& value, int flags )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( setxattr )
+  VOLUME_OPERATION_BEGIN( setxattr )
   {
     mrc_proxy->setxattr( Path( this->name, path ), name, value, flags );
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( setxattr );
+  VOLUME_OPERATION_END( setxattr );
   return false;
 }
 
 bool Volume::statvfs( const YIELD::Path&, struct statvfs* statvfsbuf )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( statvfs )
+  VOLUME_OPERATION_BEGIN( statvfs )
   {
     if ( statvfsbuf )
     {
       memset( statvfsbuf, 0, sizeof( *statvfsbuf ) );
-      xtreemfs::interfaces::StatVFS xtreemfs_statvfsbuf;
+      org::xtreemfs::interfaces::StatVFS xtreemfs_statvfsbuf;
       mrc_proxy->statvfs( this->name, xtreemfs_statvfsbuf );
       statvfsbuf->f_bavail = xtreemfs_statvfsbuf.get_bavail();
       statvfsbuf->f_bfree = xtreemfs_statvfsbuf.get_bavail();
@@ -389,24 +381,24 @@ bool Volume::statvfs( const YIELD::Path&, struct statvfs* statvfsbuf )
     else
       return false;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( statvfs );
+  VOLUME_OPERATION_END( statvfs );
   return false;
 }
 
 bool Volume::symlink( const YIELD::Path& to_path, const YIELD::Path& from_path )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( symlink )
+  VOLUME_OPERATION_BEGIN( symlink )
   {
     mrc_proxy->symlink( to_path, Path( this->name, from_path ) );
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( symlink );
+  VOLUME_OPERATION_END( symlink );
   return false;
 }
 
 bool Volume::truncate( const YIELD::Path& path, uint64_t new_size )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( truncate )
+  VOLUME_OPERATION_BEGIN( truncate )
   {
     YIELD::auto_File file = YIELD::Volume::open( path, O_TRUNC );
     if ( file != NULL )
@@ -414,31 +406,31 @@ bool Volume::truncate( const YIELD::Path& path, uint64_t new_size )
     else
       return false;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( truncate );
+  VOLUME_OPERATION_END( truncate );
   return false;
 }
 
 bool Volume::unlink( const YIELD::Path& path )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( unlink )
+  VOLUME_OPERATION_BEGIN( unlink )
   {
     org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
     mrc_proxy->unlink( Path( this->name, path ), file_credentials_set );
     osd_unlink( file_credentials_set );
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( unlink );
+  VOLUME_OPERATION_END( unlink );
   return false;
 }
 
 bool Volume::utimens( const YIELD::Path& path, const YIELD::Time& atime, const YIELD::Time& mtime, const YIELD::Time& ctime )
 {
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_BEGIN( utimens )
+  VOLUME_OPERATION_BEGIN( utimens )
   {
     mrc_proxy->utimens( Path( this->name, path ), atime, mtime, ctime );
     return true;
   }
-  ORG_XTREEMFS_CLIENT_VOLUME_OPERATION_END( utimens );
+  VOLUME_OPERATION_END( utimens );
   return false;
 }
 

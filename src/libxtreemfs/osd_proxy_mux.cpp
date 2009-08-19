@@ -1,9 +1,9 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#include "org/xtreemfs/client/osd_proxy_mux.h"
+#include "xtreemfs/osd_proxy_mux.h"
 #include "policy_container.h"
-using namespace org::xtreemfs::client;
+using namespace xtreemfs;
 
 
 class OSDProxyMux::PingRequest : public org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingRequest

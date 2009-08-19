@@ -67,11 +67,11 @@ for define in defines:
     else: define_switch = "-D" + define
     if not define_switch in build_env["CCFLAGS"]: build_env["CCFLAGS"] += define_switch + " "
 
-include_dir_paths = [os.path.abspath( '../../../../share/yieldfs/share/yield/share/yidl/include' ), os.path.abspath( '../../../../share/yieldfs/share/yield/include' ), os.path.abspath( '../../../../share/yieldfs/include' ), os.path.abspath( '../../../../share/google-breakpad/src' ), os.path.abspath( '../../../../include' )]
+include_dir_paths = [os.path.abspath( '../../share/yidl/include' ), os.path.abspath( '../../share/yield/include' ), os.path.abspath( '../../include' )]
 for include_dir_path in include_dir_paths:
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
 
-lib_dir_paths = [os.path.abspath( '../../../../lib' )]
+lib_dir_paths = [os.path.abspath( '../../lib' )]
 for lib_dir_path in lib_dir_paths:
     if not lib_dir_path in build_env["LIBPATH"]: build_env["LIBPATH"].append( lib_dir_path )
 
@@ -83,24 +83,21 @@ if sys.platform.startswith( "win" ):
        if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
 if not sys.platform.startswith( "win" ):
-    for lib in ["crypto", "fuse", "ssl"]:
+    for lib in ["crypto", "ssl"]:
        if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
 
-build_env.Library( "../../../../lib/xtreemfs-client", (
-    r"../../../../src/org/xtreemfs/client/dir_proxy.cpp",
-    r"../../../../src/org/xtreemfs/client/file.cpp",
-    r"../../../../src/org/xtreemfs/client/mrc_proxy.cpp",
-    r"../../../../src/org/xtreemfs/client/osd_proxy.cpp",
-    r"../../../../src/org/xtreemfs/client/osd_proxy_mux.cpp",
-    r"../../../../src/org/xtreemfs/client/path.cpp",
-    r"../../../../src/org/xtreemfs/client/policy_container.cpp",
-    r"../../../../src/org/xtreemfs/client/proxy.cpp",
-    r"../../../../src/org/xtreemfs/client/proxy_exception_response.cpp",
-    r"../../../../src/org/xtreemfs/client/volume.cpp",
-    r"../../../../share/yieldfs/share/yield/src/uriparser.c",
-    r"../../../../share/yieldfs/share/yield/src/yajl.c",
-    r"../../../../share/yieldfs/share/yield/src/yield/concurrency.cpp",
-    r"../../../../share/yieldfs/share/yield/src/yield/ipc.cpp",
-    r"../../../../share/yieldfs/share/yield/src/yield/platform.cpp",
-    r"../../../../share/yieldfs/src/yieldfs.cpp" ) )
+build_env.Library( "../../lib/xtreemfs", (
+    r"../../share/yield/src/uriparser.c",
+    r"../../share/yield/src/yajl.c",
+    r"../../share/yield/src/yield/concurrency.cpp",
+    r"../../share/yield/src/yield/ipc.cpp",
+    r"../../share/yield/src/yield/platform.cpp",
+    r"../../src/libxtreemfs/dir_proxy.cpp",
+    r"../../src/libxtreemfs/mrc_proxy.cpp",
+    r"../../src/libxtreemfs/osd_proxy.cpp",
+    r"../../src/libxtreemfs/osd_proxy_mux.cpp",
+    r"../../src/libxtreemfs/path.cpp",
+    r"../../src/libxtreemfs/policy_container.cpp",
+    r"../../src/libxtreemfs/proxy.cpp",
+    r"../../src/libxtreemfs/proxy_exception_response.cpp" ) )
