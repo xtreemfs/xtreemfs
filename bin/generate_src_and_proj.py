@@ -16,6 +16,7 @@ INCLUDE_DIR_PATHS = (
                       os.path.join( XTREEMFS_DIR_PATH, "include" ), 
                       os.path.join( XTREEMFS_DIR_PATH, "share", "yidl", "include" ),
                       os.path.join( XTREEMFS_DIR_PATH, "share", "yield", "include" ),                      
+                      os.path.join( XTREEMFS_DIR_PATH, "share", "yieldfs", "include" )
                     )
                     
 LIB_DIR_PATHS = ( 
@@ -79,17 +80,18 @@ generate_proj(
                include_dir_paths=INCLUDE_DIR_PATHS,
                lib_dir_paths=LIB_DIR_PATHS,
                libs_win=( "libeay32.lib", "ssleay32.lib" ),
-               libs_unix=( "crypto", "ssl", ),
+               libs_unix=( "crypto", "fuse", "ssl", ),
                output_file_path=os.path.join( XTREEMFS_DIR_PATH, "lib", "xtreemfs" ),
                src_dir_paths=( 
                                os.path.join( XTREEMFS_DIR_PATH, "include", "xtreemfs" ),
                                os.path.join( XTREEMFS_DIR_PATH, "share", "yield", "src" ),                               
+                               os.path.join( XTREEMFS_DIR_PATH, "share", "yieldfs", "src" ),
                                os.path.join( XTREEMFS_DIR_PATH, "src", "interfaces", "org", "xtreemfs" ),
                                os.path.join( XTREEMFS_DIR_PATH, "src", "libxtreemfs" ),
                              )
             )
                      
-for binary_name in ( "xtfs_lsvol", "xtfs_mkvol", "xtfs_rmvol", "xtfs_stat" ):
+for binary_name in ( "xtfs_lsvol", "xtfs_mkvol", "xtfs_mount", "xtfs_rmvol", "xtfs_stat" ):
     os.chdir( os.path.join( XTREEMFS_DIR_PATH, "proj", binary_name ) )
     generate_proj( 
                    binary_name, 
@@ -100,34 +102,12 @@ for binary_name in ( "xtfs_lsvol", "xtfs_mkvol", "xtfs_rmvol", "xtfs_stat" ):
                    defines=DEFINES,
                    include_dir_paths=INCLUDE_DIR_PATHS + ( os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src" ), ),
                    lib_dir_paths=LIB_DIR_PATHS,                   
-                   libs=( "xtreemfs_d.lib", ),                   
+                   libs=( "xtreemfs_d.lib", ),
                    output_file_path=os.path.join( XTREEMFS_DIR_PATH, "bin", binary_name ),
                    src_dir_paths=( os.path.join( XTREEMFS_DIR_PATH, "src", binary_name ), ),
                    type="exe",
                  )
-                 
-os.chdir( os.path.join( XTREEMFS_DIR_PATH, "proj", "xtfs_mount" ) )
-generate_proj( 
-               "xtfs_mount", 
-               dependency_SConscripts=( 
-                                        os.path.join( XTREEMFS_DIR_PATH, "proj", "libxtreemfs", "libxtreemfs.SConscript" ),
-                                        os.path.join( XTREEMFS_DIR_PATH, "proj", "google-breakpad", "google-breakpad.SConscript" ),
-                                      ),
-               defines=DEFINES,
-               include_dir_paths=INCLUDE_DIR_PATHS + 
-                                 ( os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src" ), 
-                                   os.path.join( XTREEMFS_DIR_PATH, "share", "yieldfs", "include" ), ),               
-               lib_dir_paths=LIB_DIR_PATHS,                   
-               libs=( "xtreemfs_d.lib", ),                   
-               libs_unix=( "fuse", ),
-               output_file_path=os.path.join( XTREEMFS_DIR_PATH, "bin", "xtfs_mount" ),
-               src_dir_paths=( 
-                               os.path.join( XTREEMFS_DIR_PATH, "src", "xtfs_mount" ), 
-                               os.path.join( XTREEMFS_DIR_PATH, "share", "yieldfs", "src" ),
-                             ),
-               type="exe",
-             )
-                 
+
                    
 GOOGLE_BREAKPAD_INCLUDE_DIR_PATHS = ( os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src" ), )                   
 GOOGLE_BREAKPAD_EXCLUDED_FILE_NAMES = ( "google_breakpad", )

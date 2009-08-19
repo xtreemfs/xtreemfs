@@ -67,7 +67,7 @@ for define in defines:
     else: define_switch = "-D" + define
     if not define_switch in build_env["CCFLAGS"]: build_env["CCFLAGS"] += define_switch + " "
 
-include_dir_paths = [os.path.abspath( '../../share/yidl/include' ), os.path.abspath( '../../share/yield/include' ), os.path.abspath( '../../include' )]
+include_dir_paths = [os.path.abspath( '../../share/yieldfs/include' ), os.path.abspath( '../../share/yidl/include' ), os.path.abspath( '../../share/yield/include' ), os.path.abspath( '../../include' )]
 for include_dir_path in include_dir_paths:
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
 
@@ -83,7 +83,7 @@ if sys.platform.startswith( "win" ):
        if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
 if not sys.platform.startswith( "win" ):
-    for lib in ["crypto", "ssl"]:
+    for lib in ["crypto", "fuse", "ssl"]:
        if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
 
@@ -93,6 +93,7 @@ build_env.Library( "../../lib/xtreemfs", (
     r"../../share/yield/src/yield/concurrency.cpp",
     r"../../share/yield/src/yield/ipc.cpp",
     r"../../share/yield/src/yield/platform.cpp",
+    r"../../share/yieldfs/src/yieldfs.cpp",
     r"../../src/libxtreemfs/dir_proxy.cpp",
     r"../../src/libxtreemfs/mrc_proxy.cpp",
     r"../../src/libxtreemfs/osd_proxy.cpp",

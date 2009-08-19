@@ -81,13 +81,8 @@ for lib_dir_path in lib_dir_paths:
 # Don't add libs until after custom and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
 for lib in ["xtreemfs"]:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
-if not sys.platform.startswith( "win" ):
-    for lib in ["fuse"]:
-       if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
-
 
 build_env.Program( "../../bin/xtfs_mount", (
     r"../../src/xtfs_mount/file.cpp",
     r"../../src/xtfs_mount/volume.cpp",
-    r"../../src/xtfs_mount/xtfs_mount.cpp",
-    r"../../share/yieldfs/src/yieldfs.cpp" ) )
+    r"../../src/xtfs_mount/xtfs_mount.cpp" ) )
