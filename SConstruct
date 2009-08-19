@@ -1,0 +1,5 @@
+SConscript( "proj/org/xtreemfs/client/xtfs_lsvol.SConscript" )
+SConscript( "proj/org/xtreemfs/client/xtfs_mkvol.SConscript" )
+SConscript( "proj/org/xtreemfs/client/xtfs_mount.SConscript" )
+SConscript( "proj/org/xtreemfs/client/xtfs_rmvol.SConscript" )
+SConscript( "proj/org/xtreemfs/client/xtfs_stat.SConscript" )
