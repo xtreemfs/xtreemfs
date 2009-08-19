@@ -111,11 +111,11 @@ check_test:
 
 .PHONY:	client client_clean client_distclean
 client: check_client
-	python src/client/scons.py -C src/client
+	python share/scons.py
 client_clean: check_client
-	python src/client/scons.py -C src/client -c
+	python share/scons.py -c
 client_distclean: check_client
-	python src/client/scons.py -C src/client -c
+	python share/scons.py -c
 
 .PHONY: server server_clean server_distclean
 server: check_server
