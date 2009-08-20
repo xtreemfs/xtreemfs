@@ -109,7 +109,7 @@ namespace xtfs_mount
         if ( trace_file_io )
           volume_flags |= xtreemfs::Volume::VOLUME_FLAG_TRACE_FILE_IO;
 
-        YIELD::auto_Volume volume = xtreemfs::Volume::create( *dir_uri, volume_name, volume_flags, get_log(), get_proxy_flags(), get_operation_timeout(), get_proxy_ssl_context() );
+        YIELD::auto_Volume volume = xtreemfs::Volume::create( *dir_uri, volume_name, volume_flags, get_log(), get_proxy_flags(), get_operation_timeout(), get_proxy_ssl_context() ).release();
 
         // Stack volumes as indicated
         if ( cache_data )

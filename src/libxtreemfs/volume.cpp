@@ -32,7 +32,7 @@ using namespace xtreemfs;
 
 auto_Volume Volume::create( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Log log, uint32_t proxy_flags, const YIELD::Time& proxy_operation_timeout, YIELD::auto_SSLContext proxy_ssl_context )
 {
-  dir_proxy = DIRProxy::create( dir_uri, proxy_flags, log, proxy_operation_timeout, proxy_ssl_context );
+  auto_DIRProxy dir_proxy = DIRProxy::create( dir_uri, proxy_flags, log, proxy_operation_timeout, proxy_ssl_context );
   if ( dir_proxy != NULL )
   {
     YIELD::auto_URI mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
@@ -54,7 +54,7 @@ auto_Volume Volume::create( const YIELD::URI& dir_uri, const std::string& name, 
           return new Volume( dir_proxy, flags, log, mrc_proxy, name, osd_proxy_mux, stage_group );
         }
         else
-          throw YIELD::Exception( "could not create OSD proxy" );
+          throw YIELD::Exception( "could not create OSD proxy multiplexer" );
       }
       else
         throw YIELD::Exception( "received invalid MRC URI from the directory service" );
@@ -63,7 +63,7 @@ auto_Volume Volume::create( const YIELD::URI& dir_uri, const std::string& name, 
       throw YIELD::Exception( "received invalid MRC URI from the directory service" );
   }
   else
-    throw YIELD::Exception( "invalid DIR URI" );  
+    throw YIELD::Exception( "DIR host does not exist" );  
 }
 
 Volume::Volume( yidl::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, yidl::auto_Object<MRCProxy> mrc_proxy, const std::string& name, yidl::auto_Object<OSDProxyMux> osd_proxy_mux, YIELD::auto_StageGroup stage_group )
