@@ -25,6 +25,7 @@ package org.xtreemfs.dir;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,8 +36,14 @@ import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
+import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
+import org.xtreemfs.babudb.lsmdb.Database;
+import org.xtreemfs.babudb.lsmdb.DatabaseManager;
+import org.xtreemfs.common.VersionManagement;
+import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.dir.discovery.DiscoveryMsgThread;
 import org.xtreemfs.dir.operations.DIROperation;
 import org.xtreemfs.dir.operations.DeleteAddressMappingOperation;
 import org.xtreemfs.dir.operations.DeregisterServiceOperation;
@@ -48,6 +55,7 @@ import org.xtreemfs.dir.operations.GetServicesByTypeOperation;
 import org.xtreemfs.dir.operations.RegisterServiceOperation;
 import org.xtreemfs.dir.operations.ServiceOfflineOperation;
 import org.xtreemfs.dir.operations.SetAddressMappingOperation;
+import org.xtreemfs.foundation.CrashReporter;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.LifeCycleListener;
 import org.xtreemfs.foundation.LifeCycleThread;
@@ -55,20 +63,15 @@ import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
+import org.xtreemfs.include.common.config.BabuDBConfig;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
+import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import java.net.InetAddress;
-import org.xtreemfs.babudb.BabuDBInsertGroup;
-import org.xtreemfs.common.VersionManagement;
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.dir.discovery.DiscoveryMsgThread;
-import org.xtreemfs.foundation.CrashReporter;
-import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 
 /**
  * 
@@ -100,21 +103,25 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     private volatile boolean                   quit;
     
     private final BabuDB                       database;
-
-    private final DiscoveryMsgThread       discoveryThr;
+    
+    private final DatabaseManager              dbMan;
+    
+    private final DiscoveryMsgThread           discoveryThr;
     
     public static final String                 DB_NAME           = "dirdb";
     
     public DIRRequestDispatcher(final DIRConfig config) throws IOException, BabuDBException {
         super("DIR RqDisp");
-
-        Logging.logMessage(Logging.LEVEL_INFO, this,"XtreemFS Direcory Service version "+VersionManagement.RELEASE_VERSION);
-
+        
+        Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS Direcory Service version "
+            + VersionManagement.RELEASE_VERSION);
+        
         registry = new HashMap();
         
         // start up babudb
-        database = BabuDBFactory.getBabuDB(config.getDbDir(), config.getDbDir(), 0, 1024 * 1024 * 16, 60 * 5,
-            SyncMode.FSYNC, 200, 500);
+        database = BabuDBFactory.createBabuDB(new BabuDBConfig(config.getDbDir(), config.getDbDir(), 0,
+            1024 * 1024 * 16, 60 * 5, SyncMode.FSYNC, 200, 500));
+        dbMan = database.getDatabaseManager();
         
         initializeDatabase();
         
@@ -134,10 +141,10 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         quit = false;
         
         server = new RPCNIOSocketServer(config.getPort(), null, this, sslOptions);
-
+        
         if (config.isAutodiscoverEnabled()) {
-            discoveryThr = new DiscoveryMsgThread(InetAddress.getLocalHost().getCanonicalHostName(), config.getPort(),
-                    config.isUsingSSL() ? "oncrpcs" : "oncrpc");
+            discoveryThr = new DiscoveryMsgThread(InetAddress.getLocalHost().getCanonicalHostName(), config
+                    .getPort(), config.isUsingSSL() ? "oncrpcs" : "oncrpc");
             discoveryThr.setLifeCycleListener(this);
         } else {
             discoveryThr = null;
@@ -185,7 +192,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         
         server.start();
         server.waitForStartup();
-
+        
         if (discoveryThr != null) {
             discoveryThr.start();
             discoveryThr.waitForStartup();
@@ -197,12 +204,11 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         server.shutdown();
         server.waitForShutdown();
         database.shutdown();
-
+        
         if (discoveryThr != null) {
             discoveryThr.shutdown();
             discoveryThr.waitForShutdown();
         }
-
         
         this.quit = true;
         this.interrupt();
@@ -212,24 +218,26 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     private void initializeDatabase() {
         final byte[] versionKey = "version".getBytes();
         try {
-            database.createDatabase("dirdbver", 1);
+            Database db = dbMan.createDatabase("dirdbver", 1);
             try {
-                BabuDBInsertGroup ig = database.createInsertGroup("dirdbver");
+                BabuDBInsertGroup ig = db.createInsertGroup();
                 byte[] keyData = new byte[4];
                 ReusableBuffer rb = ReusableBuffer.wrap(keyData);
                 rb.putInt(DIRInterface.getVersion());
-                ig.addInsert(0, versionKey,keyData);
-                database.directInsert(ig);
+                ig.addInsert(0, versionKey, keyData);
+                db.directInsert(ig);
             } catch (BabuDBException ex) {
                 ex.printStackTrace();
                 System.err.println("cannot initialize database");
                 System.exit(1);
             }
         } catch (BabuDBException ex) {
-            //database exists, check version
+            // database exists: check version
             if (ex.getErrorCode() == BabuDBException.ErrorCode.DB_EXISTS) {
                 try {
-                    byte[] value = database.directLookup("dirdbver", 0, versionKey);
+                    Database db = dbMan.getDatabase("dirdbver");
+                    
+                    byte[] value = db.directLookup(0, versionKey);
                     int ver = -1;
                     if ((value != null) && (value.length == 4)) {
                         ReusableBuffer rb = ReusableBuffer.wrap(value);
@@ -237,9 +245,14 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
                     }
                     if (ver != DIRInterface.getVersion()) {
                         Logging.logMessage(Logging.LEVEL_ERROR, this, "OUTDATED DATABASE VERSION DETECTED!");
-                        Logging.logMessage(Logging.LEVEL_ERROR, this, "the database was created contains data with version no %d, this DIR uses version %d.",
-                                ver,DIRInterface.getVersion());
-                        Logging.logMessage(Logging.LEVEL_ERROR, this, "please start an older version of the DIR or remove the old database");
+                        Logging
+                                .logMessage(
+                                    Logging.LEVEL_ERROR,
+                                    this,
+                                    "the database was created contains data with version no %d, this DIR uses version %d.",
+                                    ver, DIRInterface.getVersion());
+                        Logging.logMessage(Logging.LEVEL_ERROR, this,
+                            "please start an older version of the DIR or remove the old database");
                         System.exit(1);
                     }
                 } catch (BabuDBException ex2) {
@@ -253,14 +266,12 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
                 System.exit(1);
             }
         }
-
+        
         try {
-            database.createDatabase("dirdb", 3);
+            dbMan.createDatabase("dirdb", 3);
         } catch (BabuDBException ex) {
             // database already created
         }
-
-
         
     }
     
@@ -298,8 +309,13 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         registry.put(op.getProcedureId(), op);
     }
     
-    public BabuDB getDatabase() {
-        return this.database;
+    public Database getDirDatabase() {
+        try {
+            return database.getDatabaseManager().getDatabase(DB_NAME);
+        } catch (BabuDBException e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+            return null;
+        }
     }
     
     @Override
@@ -332,7 +348,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             op.parseRPCMessage(dirRq);
         } catch (Throwable ex) {
             ex.printStackTrace();
-            rq.sendGarbageArgs(ex.toString(),new ProtocolException());
+            rq.sendGarbageArgs(ex.toString(), new ProtocolException());
             return;
         }
         try {

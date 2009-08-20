@@ -31,7 +31,7 @@ OSD_PKCS12_FILE_PATH = os.path.join( CERT_DIR_PATH, "OSD.p12" )
 TRUSTED_CERTS_JKS_FILE_PATH = os.path.join( CERT_DIR_PATH, "trusted.jks" )
 
 CLASSPATH = ( os.path.join( XTREEMFS_DIR_PATH, "src", "servers", "dist", "XtreemFS.jar" ),
-              os.path.join( XTREEMFS_DIR_PATH, "src", "servers", "lib", "BabuDB-0.1.0-RC.jar" ) )
+              os.path.join( XTREEMFS_DIR_PATH, "src", "servers", "lib", "BabuDB.jar" ) )
 
 CLIENT_SSL_ARGS = ( "--pkcs12-file-path=%(CLIENT_PKCS12_FILE_PATH)s" % globals(), "--pkcs12-passphrase=%(CLIENT_PKCS12_PASSPHRASE)s" % globals() )
 MNT_DIR_PATH_DEFAULT = os.path.abspath( os.path.join( original_cwd, "mnt" ) )

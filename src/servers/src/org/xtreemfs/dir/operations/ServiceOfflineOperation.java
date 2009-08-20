@@ -17,69 +17,70 @@
 
     You should have received a copy of the GNU General Public License
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
 package org.xtreemfs.dir.operations;
 
-import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
-import org.xtreemfs.babudb.BabuDBInsertGroup;
+import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
+import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
-import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_offlineRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_offlineResponse;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class ServiceOfflineOperation extends DIROperation {
-
-    private final int operationNumber;
-
-    private final BabuDB database;
-
+    
+    private final int      operationNumber;
+    
+    private final Database database;
+    
     public ServiceOfflineOperation(DIRRequestDispatcher master) {
         super(master);
         operationNumber = xtreemfs_service_offlineRequest.TAG;
-        database = master.getDatabase();
+        database = master.getDirDatabase();
     }
-
+    
     @Override
     public int getProcedureId() {
         return operationNumber;
     }
-
+    
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final xtreemfs_service_offlineRequest request = (xtreemfs_service_offlineRequest)rq.getRequestMessage();
-
-            byte[] data = database.directLookup(DIRRequestDispatcher.DB_NAME,
-                    DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes());
+            final xtreemfs_service_offlineRequest request = (xtreemfs_service_offlineRequest) rq
+                    .getRequestMessage();
+            
+            byte[] data = database.directLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid()
+                    .getBytes());
             long currentVersion = 0;
             if (data != null) {
                 final Service dbData = new Service();
                 ReusableBuffer buf = ReusableBuffer.wrap(data);
                 dbData.deserialize(buf);
-
+                
                 dbData.setLast_updated_s(0);
-
+                
                 final int dataSize = dbData.calculateSize();
                 ONCRPCBufferWriter writer = new ONCRPCBufferWriter(dataSize);
                 dbData.serialize(writer);
                 writer.flip();
-                assert(writer.getBuffers().size() == 1);
+                assert (writer.getBuffers().size() == 1);
                 byte[] newData = writer.getBuffers().get(0).array();
                 writer.freeBuffers();
-                BabuDBInsertGroup ig = database.createInsertGroup(DIRRequestDispatcher.DB_NAME);
+                BabuDBInsertGroup ig = database.createInsertGroup();
                 ig.addInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes(), newData);
                 database.directInsert(ig);
             }
@@ -94,16 +95,16 @@ public class ServiceOfflineOperation extends DIROperation {
             rq.sendInternalServerError(th);
         }
     }
-
+    
     @Override
     public boolean isAuthRequired() {
         return false;
     }
-
+    
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
         xtreemfs_service_offlineRequest amr = new xtreemfs_service_offlineRequest();
         rq.deserializeMessage(amr);
     }
-
+    
 }

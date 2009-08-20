@@ -24,9 +24,9 @@
 
 package org.xtreemfs.dir.operations;
 
-import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
-import org.xtreemfs.babudb.BabuDBInsertGroup;
+import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
+import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
@@ -41,12 +41,12 @@ public class DeregisterServiceOperation extends DIROperation {
 
     private final int operationNumber;
 
-    private final BabuDB database;
+    private final Database database;
 
     public DeregisterServiceOperation(DIRRequestDispatcher master) {
         super(master);
         operationNumber = xtreemfs_service_deregisterRequest.TAG;
-        database = master.getDatabase();
+        database = master.getDirDatabase();
     }
 
     @Override
@@ -59,7 +59,7 @@ public class DeregisterServiceOperation extends DIROperation {
         try {
             final xtreemfs_service_deregisterRequest request = (xtreemfs_service_deregisterRequest)rq.getRequestMessage();
 
-            BabuDBInsertGroup ig = database.createInsertGroup(DIRRequestDispatcher.DB_NAME);
+            BabuDBInsertGroup ig = database.createInsertGroup();
             ig.addDelete(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes());
             database.directInsert(ig);
             

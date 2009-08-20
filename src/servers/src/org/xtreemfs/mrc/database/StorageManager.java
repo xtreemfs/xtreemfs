@@ -126,6 +126,8 @@ public interface StorageManager {
     
     public short delete(long parentId, String fileName, AtomicDBUpdate update) throws DatabaseException;
     
+    public void delete() throws DatabaseException;
+    
     // getting metadata
     
     public FileMetadata[] resolvePath(Path path) throws DatabaseException;

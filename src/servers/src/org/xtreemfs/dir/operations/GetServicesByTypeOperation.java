@@ -17,7 +17,7 @@
 
     You should have received a copy of the GNU General Public License
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
-*/
+ */
 /*
  * AUTHORS: Björn Kolbeck (ZIB)
  */
@@ -26,63 +26,65 @@ package org.xtreemfs.dir.operations;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
-import org.xtreemfs.babudb.BabuDB;
+
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Service;
-import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_typeRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_typeResponse;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class GetServicesByTypeOperation extends DIROperation {
-
-    private final int operationNumber;
-
-    private final BabuDB database;
-
+    
+    private final int      operationNumber;
+    
+    private final Database database;
+    
     public GetServicesByTypeOperation(DIRRequestDispatcher master) {
         super(master);
         operationNumber = xtreemfs_service_get_by_typeRequest.TAG;
-        database = master.getDatabase();
+        database = master.getDirDatabase();
     }
-
+    
     @Override
     public int getProcedureId() {
         return operationNumber;
     }
-
+    
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final xtreemfs_service_get_by_typeRequest request = (xtreemfs_service_get_by_typeRequest)rq.getRequestMessage();
-
-
-            Iterator<Entry<byte[],byte[]>> iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
-
+            final xtreemfs_service_get_by_typeRequest request = (xtreemfs_service_get_by_typeRequest) rq
+                    .getRequestMessage();
+            
+            Iterator<Entry<byte[], byte[]>> iter = database.directPrefixLookup(
+                DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
+            
             ServiceSet services = new ServiceSet();
-
-            long now = System.currentTimeMillis()/1000l;
-
+            
+            long now = System.currentTimeMillis() / 1000l;
+            
             while (iter.hasNext()) {
-                final Entry<byte[],byte[]> e = iter.next();
+                final Entry<byte[], byte[]> e = iter.next();
                 final Service servEntry = new Service();
                 ReusableBuffer buf = ReusableBuffer.wrap(e.getValue());
                 servEntry.deserialize(buf);
                 if ((request.getType().intValue() == 0) || (servEntry.getType() == request.getType()))
                     services.add(servEntry);
-
+                
                 long secondsSinceLastUpdate = now - servEntry.getLast_updated_s();
-                servEntry.getData().put("seconds_since_last_update",Long.toString(secondsSinceLastUpdate));
-
+                servEntry.getData().put("seconds_since_last_update", Long.toString(secondsSinceLastUpdate));
+                
             }
-
+            
             xtreemfs_service_get_by_typeResponse response = new xtreemfs_service_get_by_typeResponse(services);
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
@@ -90,16 +92,16 @@ public class GetServicesByTypeOperation extends DIROperation {
             rq.sendInternalServerError(ex);
         }
     }
-
+    
     @Override
     public boolean isAuthRequired() {
         return false;
     }
-
+    
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
         xtreemfs_service_get_by_typeRequest amr = new xtreemfs_service_get_by_typeRequest();
         rq.deserializeMessage(amr);
     }
-
+    
 }

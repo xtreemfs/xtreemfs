@@ -11,8 +11,8 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
@@ -88,13 +88,13 @@ public class StatusPage {
     
     public static String getStatusPage(DIRRequestDispatcher master, DIRConfig config) throws BabuDBException {
         
-        final BabuDB database = master.getDatabase();
+        final Database database = master.getDirDatabase();
         
         assert (statusPageTemplate != null);
         
         long time = System.currentTimeMillis();
         
-        Iterator<Entry<byte[], byte[]>> iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME,
+        Iterator<Entry<byte[], byte[]>> iter = database.directPrefixLookup(
             DIRRequestDispatcher.INDEX_ID_ADDRMAPS, new byte[0]);
         
         StringBuilder dump = new StringBuilder();
@@ -132,8 +132,7 @@ public class StatusPage {
         }
         dump.append("</td></tr></table>");
         
-        iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME,
-            DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
+        iter = database.directPrefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
         
         dump
                 .append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Service Registry</td>");

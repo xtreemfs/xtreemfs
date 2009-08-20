@@ -37,18 +37,15 @@ import junit.textui.TestRunner;
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.auth.NullAuthProvider;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.include.common.config.BabuDBConfig;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultAdapter;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
-import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Path;
@@ -61,7 +58,7 @@ public class BabuDBStorageManagerTest extends TestCase {
     
     private StorageManager         mngr;
     
-    private DIRRequestDispatcher      dir;
+    private DIRRequestDispatcher   dir;
     
     private BabuDB                 database;
     
@@ -70,7 +67,7 @@ public class BabuDBStorageManagerTest extends TestCase {
     private Object                 lock         = "";
     
     private boolean                cont;
-
+    
     private TestEnvironment        testEnv;
     
     private DBAccessResultListener listener     = new DBAccessResultAdapter() {
@@ -84,8 +81,7 @@ public class BabuDBStorageManagerTest extends TestCase {
                                                     }
                                                     
                                                     @Override
-                                                    public void requestFailed(Object context,
-                                                        Throwable error) {
+                                                    public void requestFailed(Object context, Throwable error) {
                                                         exc = (Exception) error;
                                                         synchronized (lock) {
                                                             lock.notify();
@@ -105,19 +101,17 @@ public class BabuDBStorageManagerTest extends TestCase {
         DIRConfig config = SetupUtils.createDIRConfig();
         dir = new DIRRequestDispatcher(config);
         dir.startup();
-
-
-        testEnv = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.DIR_CLIENT,
-                    TestEnvironment.Services.TIME_SYNC,TestEnvironment.Services.UUID_RESOLVER
-        });
+        
+        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
+            TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER });
         testEnv.start();
         
         // reset database
         File dbDir = new File(DB_DIRECTORY);
         FSUtils.delTree(dbDir);
         dbDir.mkdirs();
-        database = BabuDBFactory.getBabuDB(DB_DIRECTORY, DB_DIRECTORY, 2, 1024 * 1024 * 16, 5 * 60,
-            SyncMode.FDATASYNC, 300, 1000);
+        database = BabuDBFactory.createBabuDB(new BabuDBConfig(DB_DIRECTORY, DB_DIRECTORY, 2,
+            1024 * 1024 * 16, 5 * 60, SyncMode.FDATASYNC, 300, 1000));
         mngr = new BabuDBStorageManager(database, "volume", "volId");
         
         exc = null;
@@ -155,8 +149,8 @@ public class BabuDBStorageManagerTest extends TestCase {
         final long w32Attrs = 43287473;
         
         AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
-        FileMetadata nextDir = mngr.createFile(fileId1, rootDir.getId(), fileName, 1, 1, 1, userId,
-            groupId, perms, w32Attrs, 12, true, 5, 6, update);
+        FileMetadata nextDir = mngr.createFile(fileId1, rootDir.getId(), fileName, 1, 1, 1, userId, groupId,
+            perms, w32Attrs, 12, true, 5, 6, update);
         mngr.setLastFileId(fileId1, update);
         update.execute();
         waitForResponse();
@@ -183,8 +177,8 @@ public class BabuDBStorageManagerTest extends TestCase {
         final String dirName = "someDir";
         
         update = mngr.createAtomicDBUpdate(listener, null);
-        FileMetadata dir = mngr.createDir(fileId2, rootDir.getId(), dirName, 1, 1, 1, userId,
-            groupId, perms, w32Attrs, update);
+        FileMetadata dir = mngr.createDir(fileId2, rootDir.getId(), dirName, 1, 1, 1, userId, groupId, perms,
+            w32Attrs, update);
         mngr.setLastFileId(fileId2, update);
         update.execute();
         waitForResponse();
@@ -229,8 +223,8 @@ public class BabuDBStorageManagerTest extends TestCase {
         
         // create file again
         update = mngr.createAtomicDBUpdate(listener, null);
-        mngr.createFile(fileId3, rootDir.getId(), fileName, 0, 0, 0, userId, groupId, perms,
-            w32Attrs, 11, true, 3, 4, update);
+        mngr.createFile(fileId3, rootDir.getId(), fileName, 0, 0, 0, userId, groupId, perms, w32Attrs, 11,
+            true, 3, 4, update);
         mngr.setLastFileId(fileId3, update);
         update.execute();
         waitForResponse();
@@ -312,23 +306,23 @@ public class BabuDBStorageManagerTest extends TestCase {
         long nextId = 0;
         
         AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
-        long comp1Id = nextId = mngr.createDir(1, 0, "comp1", 0, 0, 0, userId, groupId, perms,
-            w32Attrs, update).getId();
-        update.execute();
-        waitForResponse();
-        update = mngr.createAtomicDBUpdate(listener, null);
-        nextId = mngr.createDir(2, nextId, "comp2", 0, 0, 0, userId, groupId, perms, w32Attrs,
+        long comp1Id = nextId = mngr.createDir(1, 0, "comp1", 0, 0, 0, userId, groupId, perms, w32Attrs,
             update).getId();
         update.execute();
         waitForResponse();
         update = mngr.createAtomicDBUpdate(listener, null);
-        nextId = mngr.createDir(3, nextId, "comp3", 0, 0, 0, userId, groupId, perms, w32Attrs,
-            update).getId();
+        nextId = mngr.createDir(2, nextId, "comp2", 0, 0, 0, userId, groupId, perms, w32Attrs, update)
+                .getId();
         update.execute();
         waitForResponse();
         update = mngr.createAtomicDBUpdate(listener, null);
-        nextId = mngr.createFile(4, nextId, "file.txt", 0, 0, 0, "usr", "grp", perms, w32Attrs,
-            4711, false, 3, 4, update).getId();
+        nextId = mngr.createDir(3, nextId, "comp3", 0, 0, 0, userId, groupId, perms, w32Attrs, update)
+                .getId();
+        update.execute();
+        waitForResponse();
+        update = mngr.createAtomicDBUpdate(listener, null);
+        nextId = mngr.createFile(4, nextId, "file.txt", 0, 0, 0, "usr", "grp", perms, w32Attrs, 4711, false,
+            3, 4, update).getId();
         update.execute();
         waitForResponse();
         

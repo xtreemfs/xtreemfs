@@ -38,13 +38,16 @@ import java.util.Map.Entry;
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBFactory;
-import org.xtreemfs.babudb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
+import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
+import org.xtreemfs.babudb.lsmdb.Database;
+import org.xtreemfs.babudb.lsmdb.DatabaseManager;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.include.common.config.BabuDBConfig;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -111,27 +114,34 @@ public class BabuDBVolumeManager implements VolumeManager {
         try {
             
             // try to create a new database
-            database = BabuDBFactory.getBabuDB(dbDir, dbLogDir, 2, 1024 * 1024 * 16, 5 * 60, SyncMode.ASYNC,
-                0, 1000);
+            database = BabuDBFactory.createBabuDB(new BabuDBConfig(dbDir, dbLogDir, 2, 1024 * 1024 * 16,
+                5 * 60, SyncMode.ASYNC, 0, 1000));
             
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
         
         try {
-            database.createDatabase(VOLUME_DB_NAME, 3);
+            Database volDB = database.getDatabaseManager().createDatabase(VOLUME_DB_NAME, 3);
             
             // if the creation succeeds, set the version number to the current
             // MRC DB version
             byte[] verBytes = ByteBuffer.wrap(new byte[4])
                     .putInt((int) VersionManagement.getMrcDataVersion()).array();
-            BabuDBInsertGroup ig = database.createInsertGroup(VOLUME_DB_NAME);
+            BabuDBInsertGroup ig = volDB.createInsertGroup();
             ig.addInsert(VERSION_INDEX, VERSION_KEY.getBytes(), verBytes);
-            database.directInsert(ig);
+            volDB.directInsert(ig);
             
         } catch (BabuDBException e) {
             
             if (e.getErrorCode() == ErrorCode.DB_EXISTS) {
+                
+                Database volDB = null;
+                try {
+                    volDB = database.getDatabaseManager().getDatabase(VOLUME_DB_NAME);
+                } catch (BabuDBException e1) {
+                    throw new DatabaseException(e1);
+                }
                 
                 // database already exists
                 if (Logging.isDebug())
@@ -141,8 +151,7 @@ public class BabuDBVolumeManager implements VolumeManager {
                 try {
                     
                     // retrieve the database version number
-                    byte[] verBytes = database.directLookup(VOLUME_DB_NAME, VERSION_INDEX, VERSION_KEY
-                            .getBytes());
+                    byte[] verBytes = volDB.directLookup(VERSION_INDEX, VERSION_KEY.getBytes());
                     int ver = ByteBuffer.wrap(verBytes).getInt();
                     
                     // check the database version number
@@ -172,8 +181,7 @@ public class BabuDBVolumeManager implements VolumeManager {
                 try {
                     
                     // retrieve the list of volumes from the database
-                    Iterator<Entry<byte[], byte[]>> it = database.syncPrefixLookup(VOLUME_DB_NAME, VOL_INDEX,
-                        new byte[0]);
+                    Iterator<Entry<byte[], byte[]>> it = volDB.directPrefixLookup(VOL_INDEX, new byte[0]);
                     List<VolumeInfo> list = new LinkedList<VolumeInfo>();
                     while (it.hasNext())
                         list.add(new BufferBackedVolumeInfo(it.next().getValue()));
@@ -195,13 +203,22 @@ public class BabuDBVolumeManager implements VolumeManager {
     }
     
     public void shutdown() {
-        database.shutdown();
+        
+        try {
+            database.shutdown();
+        } catch (BabuDBException exc) {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.lifecycle, this,
+                "could not shut down volume manager");
+            Logging.logError(Logging.LEVEL_WARN, this, exc);
+        }
     }
     
     public VolumeInfo createVolume(FileAccessManager faMan, String volumeId, String volumeName,
         short fileAccessPolicyId, short osdPolicyId, String osdPolicyArgs, String ownerId,
         String owningGroupId, StripingPolicy defaultStripingPolicy, int initialAccessMode)
         throws UserException, DatabaseException {
+        
+        final DatabaseManager dbMan = database.getDatabaseManager();
         
         if (volumeName.indexOf('/') != -1 || volumeName.indexOf('\\') != -1)
             throw new UserException(ErrNo.EINVAL, "volume name must not contain '/' or '\\'");
@@ -215,14 +232,14 @@ public class BabuDBVolumeManager implements VolumeManager {
         
         // make sure that no volume database with the given name exists
         try {
-            database.deleteDatabase(volumeId, true);
+            dbMan.deleteDatabase(volumeId);
         } catch (BabuDBException exc) {
             // ignore
         }
         
         // create the volume database
         try {
-            database.createDatabase(volumeId, 6);
+            dbMan.createDatabase(volumeId, 6);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
@@ -239,10 +256,11 @@ public class BabuDBVolumeManager implements VolumeManager {
         update.execute();
         
         try {
-            BabuDBInsertGroup ig = database.createInsertGroup(VOLUME_DB_NAME);
+            Database volDB = database.getDatabaseManager().getDatabase(VOLUME_DB_NAME);
+            BabuDBInsertGroup ig = volDB.createInsertGroup();
             ig.addInsert(VOL_INDEX, volumeId.getBytes(), volume.getBuffer());
             ig.addInsert(VOL_NAME_INDEX, volumeName.getBytes(), volumeId.getBytes());
-            database.directInsert(ig);
+            volDB.directInsert(ig);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
@@ -357,9 +375,10 @@ public class BabuDBVolumeManager implements VolumeManager {
         assert (volume instanceof BufferBackedVolumeInfo);
         
         try {
-            BabuDBInsertGroup ig = database.createInsertGroup(VOLUME_DB_NAME);
+            Database db = database.getDatabaseManager().getDatabase(VOLUME_DB_NAME);
+            BabuDBInsertGroup ig = db.createInsertGroup();
             ig.addInsert(VOL_INDEX, volume.getId().getBytes(), ((BufferBackedVolumeInfo) volume).getBuffer());
-            database.syncInsert(ig);
+            db.syncInsert(ig);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
@@ -376,15 +395,19 @@ public class BabuDBVolumeManager implements VolumeManager {
         try {
             
             VolumeInfo volume = getVolumeById(volumeId);
-            mngrMap.remove(volumeId);
+            StorageManager sMan = mngrMap.remove(volumeId);
             volIdMap.remove(volumeId);
             volNameMap.remove(volume.getName());
             
-            BabuDBInsertGroup ig = database.createInsertGroup(VOLUME_DB_NAME);
+            // delete the volume's database
+            sMan.delete();
+            
+            Database db = database.getDatabaseManager().getDatabase(VOLUME_DB_NAME);
+            BabuDBInsertGroup ig = db.createInsertGroup();
             ig.addDelete(VOL_INDEX, volumeId.getBytes());
             ig.addDelete(VOL_NAME_INDEX, volume.getName().getBytes());
             
-            database.directInsert(ig);
+            db.directInsert(ig);
             
             notifyVolumeChangeListeners(VolumeChangeListener.MOD_DELETED, volume);
             
@@ -399,7 +422,7 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     public void checkpointDB() throws DatabaseException {
         try {
-            database.checkpoint();
+            database.getCheckpointer().checkpoint();
         } catch (Exception exc) {
             throw new DatabaseException(exc);
         }

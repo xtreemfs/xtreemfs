@@ -26,14 +26,15 @@ package org.xtreemfs.dir.operations;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
-import org.xtreemfs.babudb.BabuDB;
+
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.interfaces.AddressMapping;
+import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getResponse;
 
@@ -45,12 +46,12 @@ public class GetAddressMappingOperation extends DIROperation {
 
     private final int operationNumber;
 
-    private final BabuDB database;
+    private final Database database;
 
     public GetAddressMappingOperation(DIRRequestDispatcher master) {
         super(master);
         operationNumber = xtreemfs_address_mappings_getRequest.TAG;
-        database = master.getDatabase();
+        database = master.getDirDatabase();
     }
 
     @Override
@@ -65,7 +66,7 @@ public class GetAddressMappingOperation extends DIROperation {
 
             if (request.getUuid().length() > 0) {
                 //single mapping was requested
-                byte[] result = database.directLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
+                byte[] result = database.directLookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
                 if (result == null) {
                     xtreemfs_address_mappings_getResponse response = new xtreemfs_address_mappings_getResponse();
                     rq.sendSuccess(response);
@@ -78,7 +79,7 @@ public class GetAddressMappingOperation extends DIROperation {
             } else {
                 //full list requested
                 AddressMappingSet list = new AddressMappingSet();
-                Iterator<Entry<byte[],byte[]>> iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_ADDRMAPS, new byte[0]);
+                Iterator<Entry<byte[],byte[]>> iter = database.directPrefixLookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, new byte[0]);
                 while (iter.hasNext()) {
                     Entry<byte[],byte[]> e = iter.next();
                     AddressMappingSet set = new AddressMappingSet();

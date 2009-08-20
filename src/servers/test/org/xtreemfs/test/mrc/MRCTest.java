@@ -65,7 +65,7 @@ import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
 
 /**
- * XtreemFS integration test case.
+ * XtreemFS MRC test
  * 
  * @author stender
  */

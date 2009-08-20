@@ -24,9 +24,9 @@
 
 package org.xtreemfs.dir.operations;
 
-import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
-import org.xtreemfs.babudb.BabuDBInsertGroup;
+import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
+import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
@@ -41,12 +41,12 @@ public class DeleteAddressMappingOperation extends DIROperation {
 
     private final int operationNumber;
 
-    private final BabuDB database;
+    private final Database database;
 
     public DeleteAddressMappingOperation(DIRRequestDispatcher master) {
         super(master);
         operationNumber = xtreemfs_address_mappings_removeRequest.TAG;
-        database = master.getDatabase();
+        database = master.getDirDatabase();
     }
 
     @Override
@@ -58,13 +58,14 @@ public class DeleteAddressMappingOperation extends DIROperation {
     public void startRequest(DIRRequest rq) {
         try {
             final xtreemfs_address_mappings_removeRequest request = (xtreemfs_address_mappings_removeRequest)rq.getRequestMessage();
-
-            BabuDBInsertGroup ig = database.createInsertGroup(DIRRequestDispatcher.DB_NAME);
+            
+            BabuDBInsertGroup ig = database.createInsertGroup();
             ig.addDelete(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
             database.directInsert(ig);
             
             xtreemfs_address_mappings_removeResponse response = new xtreemfs_address_mappings_removeResponse();
             rq.sendSuccess(response);
+            
         } catch (BabuDBException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
             rq.sendInternalServerError(ex);

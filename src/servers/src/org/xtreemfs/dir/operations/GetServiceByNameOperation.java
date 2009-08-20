@@ -26,14 +26,15 @@ package org.xtreemfs.dir.operations;
 
 import java.util.Iterator;
 import java.util.Map.Entry;
-import org.xtreemfs.babudb.BabuDB;
+
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.Service;
-import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.interfaces.Service;
+import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_nameRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_nameResponse;
 
@@ -45,12 +46,12 @@ public class GetServiceByNameOperation extends DIROperation {
 
     private final int operationNumber;
 
-    private final BabuDB database;
+    private final Database database;
 
     public GetServiceByNameOperation(DIRRequestDispatcher master) {
         super(master);
         operationNumber = xtreemfs_service_get_by_nameRequest.TAG;
-        database = master.getDatabase();
+        database = master.getDirDatabase();
     }
 
     @Override
@@ -64,7 +65,7 @@ public class GetServiceByNameOperation extends DIROperation {
             final xtreemfs_service_get_by_nameRequest request = (xtreemfs_service_get_by_nameRequest)rq.getRequestMessage();
 
             
-            Iterator<Entry<byte[],byte[]>> iter = database.directPrefixLookup(DIRRequestDispatcher.DB_NAME, DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
+            Iterator<Entry<byte[],byte[]>> iter = database.directPrefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
 
             ServiceSet services = new ServiceSet();
 
