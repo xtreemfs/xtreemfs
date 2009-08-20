@@ -163,6 +163,10 @@
     RelativePath="..\..\include\xtreemfs\dir_proxy.h"
     >
 </File>
+<File
+    RelativePath="..\..\include\xtreemfs\file.h"
+    >
+</File>
 <Filter Name="interfaces">
 <File
     RelativePath="..\..\include\xtreemfs\interfaces\constants.h"
@@ -227,6 +231,10 @@
 </File>
 <File
     RelativePath="..\..\include\xtreemfs\proxy_exception_response.h"
+    >
+</File>
+<File
+    RelativePath="..\..\include\xtreemfs\volume.h"
     >
 </File>
 <Filter Name="interfaces">
@@ -358,6 +366,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\src\libxtreemfs\file.cpp"
+    >
+</File>
+<File
     RelativePath="..\..\src\libxtreemfs\mrc_proxy.cpp"
     >
 </File>
@@ -383,6 +395,10 @@
 </File>
 <File
     RelativePath="..\..\src\libxtreemfs\proxy_exception_response.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\libxtreemfs\volume.cpp"
     >
 </File>
 

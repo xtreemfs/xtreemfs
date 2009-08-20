@@ -82,5 +82,10 @@ for lib_dir_path in lib_dir_paths:
 for lib in ["xtreemfs"]:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
-build_env.Program( "../../bin/xtfs_mount", (
-    r"../../src/xtfs_mount/xtfs_mount.cpp" ) )
+build_env.Program( "../../bin/xtfs3", (
+    r"../../src/xtfs3/bucket.cpp",
+    r"../../src/xtfs3/charProps.c",
+    r"../../src/xtfs3/genx.c",
+    r"../../src/xtfs3/http_request_handler.cpp",
+    r"../../src/xtfs3/object.cpp",
+    r"../../src/xtfs3/xtfs3.cpp" ) )

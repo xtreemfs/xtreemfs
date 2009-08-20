@@ -929,13 +929,16 @@ private:
 class HTTPServer::AIOAcceptControlBlock : public TCPSocket::AIOAcceptControlBlock
 {
 public:
-  AIOAcceptControlBlock( auto_EventTarget http_request_target )
-    : http_request_target( http_request_target )
+  AIOAcceptControlBlock( auto_EventTarget http_request_target, auto_Log log )
+    : http_request_target( http_request_target ), log( log )
   { }
   void onCompletion( size_t )
   {
-    get_accepted_tcp_socket()->aio_read( new AIOReadControlBlock( new yidl::HeapBuffer( 1024 ), new HTTPRequest, http_request_target ) );
-    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( http_request_target ) );
+    auto_Socket accepted_tcp_socket( get_accepted_tcp_socket().release() );
+    if ( log != NULL && log->get_level() >= Log::LOG_INFO )
+      accepted_tcp_socket = new TracingSocket( accepted_tcp_socket, log );
+    accepted_tcp_socket->aio_read( new AIOReadControlBlock( new yidl::HeapBuffer( 1024 ), new HTTPRequest, http_request_target ) );
+    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( http_request_target, log ) );
   }
   void onError( uint32_t error_code )
   {
@@ -945,12 +948,13 @@ public:
   }
 private:
   auto_EventTarget http_request_target;
+  auto_Log log;
 };
-HTTPServer::HTTPServer( auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket )
-  : http_request_target( http_request_target ), listen_tcp_socket( listen_tcp_socket )
+HTTPServer::HTTPServer( auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket, auto_Log log )
+  : http_request_target( http_request_target ), listen_tcp_socket( listen_tcp_socket ), log( log )
 {
   for ( uint8_t accept_i = 0; accept_i < 10; accept_i++ )
-    listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( http_request_target ) );
+    listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( http_request_target, log ) );
 }
 auto_HTTPServer HTTPServer::create( const URI& absolute_uri,
                                     auto_EventTarget http_request_target,
@@ -969,7 +973,7 @@ auto_HTTPServer HTTPServer::create( const URI& absolute_uri,
       listen_tcp_socket = TCPSocket::create();
     if ( listen_tcp_socket->bind( sockname ) &&
          listen_tcp_socket->listen() )
-      return new HTTPServer( http_request_target, listen_tcp_socket );
+      return new HTTPServer( http_request_target, listen_tcp_socket, log );
   }
   return NULL;
 }
@@ -4801,17 +4805,30 @@ void URI::init( UriUriA& parsed_uri )
     while ( path_segment != NULL );
     if ( parsed_uri.query.first != NULL )
     {
-      resource.append( "?" );
-      resource.append( parsed_uri.query.first, parsed_uri.query.afterLast - parsed_uri.query.first );
+      UriQueryListA* query_list;
+      uriDissectQueryMallocA( &query_list, NULL, parsed_uri.query.first, parsed_uri.query.afterLast );
+      UriQueryListA* query_list_p = query_list;
+      while ( query_list_p != NULL )
+      {
+        query.insert( std::make_pair( query_list_p->key, query_list_p->value ) );
+        query_list_p = query_list_p->next;
+      }
+      uriFreeQueryListA( query_list );
     }
   }
   else
     resource = "/";
 }
-URI::operator std::string() const
+std::string URI::get_query_value( const std::string& key, const char* default_query_value ) const
 {
-  std::ostringstream oss;
-  oss << *this;
-  return oss.str();
+  std::multimap<std::string, std::string>::const_iterator query_value_i = query.find( key );
+  if ( query_value_i != query.end() )
+    return query_value_i->second;
+  else
+    return default_query_value;
+}
+std::multimap<std::string, std::string>::const_iterator URI::get_query_values( const std::string& key ) const
+{
+  return query.find( key );
 }
 

@@ -2,16 +2,15 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/main.h"
-using namespace xtreemfs;
 
 
-namespace xtreemfs
+namespace xtfs_rmvol
 {
-  class xtfs_rmvol : public Main
+  class Main : public xtreemfs::Main
   {
   public:
-    xtfs_rmvol()
-      : Main( "xtfs_rmvol", "remove a volume from a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
+    Main()
+      : xtreemfs::Main( "xtfs_rmvol", "remove a volume from a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
     { }
 
   private:
@@ -22,8 +21,7 @@ namespace xtreemfs
     // YIELD::Main
     int _main( int, char** )
     {
-      yidl::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
-      mrc_proxy->xtreemfs_rmvol( volume_name );
+      createMRCProxy( *mrc_uri )->xtreemfs_rmvol( volume_name );
       return 0;
     }
 
@@ -37,8 +35,7 @@ namespace xtreemfs
   };
 };
 
-
 int main( int argc, char** argv )
 {
-  return xtfs_rmvol().main( argc, argv );
+  return xtfs_rmvol::Main().main( argc, argv );
 }

@@ -66,6 +66,8 @@ namespace xtreemfs
     class ReadResponseTarget;
     class TruncateResponseTarget;
   };
+
+  typedef yidl::auto_Object<OSDProxyMux> auto_OSDProxyMux;
 };
 
 #endif

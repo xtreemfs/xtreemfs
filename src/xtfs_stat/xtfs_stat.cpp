@@ -2,28 +2,27 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/main.h"
-using namespace xtreemfs;
 
 #include <iostream>
 
 
-namespace xtreemfs
+namespace xtfs_stat
 {
-  class xtfs_stat : public Main
+  class Main : public xtreemfs::Main
   {
   public:
-    xtfs_stat() 
-      : Main( "xtfs_stat", "show information on a directory, file, or volume", "[oncrpc[s]://]<mrc host>[:port]/volume_name[/file]" )
+    Main() 
+      : xtreemfs::Main( "xtfs_stat", "show information on a directory, file, or volume", "[oncrpc[s]://]<mrc host>[:port]/volume_name[/file]" )
     { }
 
   private:
     YIELD::auto_URI mrc_uri;
-    Path path;
+    xtreemfs::Path path;
 
     // YIELD::Main
     int _main( int, char** )
     {
-      yidl::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
+      xtreemfs::auto_MRCProxy mrc_proxy = createMRCProxy( *mrc_uri );
       org::xtreemfs::interfaces::Stat stbuf;
       mrc_proxy->getattr( path, stbuf );
 
@@ -87,7 +86,7 @@ namespace xtreemfs
       {
         mrc_uri = parseURI( files[0] );
         if ( mrc_uri->get_resource().size() > 1 )
-          path = Path( mrc_uri->get_resource().c_str() + 1 );
+          path = xtreemfs::Path( mrc_uri->get_resource().c_str() + 1 );
         else
           throw YIELD::Exception( "must specify a volume_name/[path]" );
       }
@@ -99,5 +98,5 @@ namespace xtreemfs
 
 int main( int argc, char** argv )
 {
-  return xtfs_stat().main( argc, argv );
+  return xtfs_stat::Main().main( argc, argv );
 }

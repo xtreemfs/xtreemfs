@@ -1,18 +1,17 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#ifndef _XTFS_MOUNT_VOLUME_H_
-#define _XTFS_MOUNT_VOLUME_H_
+#ifndef _XTREEMFS_VOLUME_H_
+#define _XTREEMFS_VOLUME_H_
 
-#include "xtreemfs/dir_proxy.h"
-#include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/osd_proxy_mux.h"
-#include "xtreemfs/path.h"
 
 
 namespace xtreemfs
 {
-  class OSDProxy;
+  class DIRProxy;
+  class MRCProxy;
+  class Path;
 
 
   class Volume : public YIELD::Volume
@@ -40,7 +39,7 @@ namespace xtreemfs
     // YIELD::Volume
     YIELD_VOLUME_PROTOTYPES;
     YIELD::auto_Stat getattr( const Path& path );
-    bool listdir( const YIELD::Path& path, listdirCallback& callback ) { return listdir( path, Path(), callback ); }
+    bool listdir( const YIELD::Path& path, listdirCallback& callback ) { return listdir( path, YIELD::Path(), callback ); }
     bool listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback );
 
   private:
@@ -59,6 +58,8 @@ namespace xtreemfs
     void set_errno( const char* operation_name, ProxyExceptionResponse& proxy_exception_response );
     void set_errno( const char* operation_name, std::exception& exc );
   };
+
+  typedef yidl::auto_Object<Volume> auto_Volume;
 };
 
 #endif

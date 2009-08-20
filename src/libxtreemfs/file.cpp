@@ -1,10 +1,9 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#include "file.h"
+#include "xtreemfs/file.h"
 #include "xtreemfs/mrc_proxy.h"
-#include "xtreemfs/osd_proxy.h"
-#include "volume.h"
+#include "xtreemfs/volume.h"
 using namespace xtreemfs;
 
 #include <errno.h>

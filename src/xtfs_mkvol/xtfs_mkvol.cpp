@@ -2,16 +2,15 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/main.h"
-using namespace xtreemfs;
 
 
-namespace xtreemfs
+namespace xtfs_mkvol
 {
-  class xtfs_mkvol : public Main
+  class Main : public xtreemfs::Main
   {
   public:
-    xtfs_mkvol()
-      : Main( "xtfs_mkvol", "create a new volume on a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
+    Main()
+      : xtreemfs::Main( "xtfs_mkvol", "create a new volume on a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
     {
       addOption( XTFS_MKVOL_OPTION_ACCESS_CONTROL_POLICY, "-a", "--access-control-policy", "NULL|POSIX|VOLUME" );
       access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;
@@ -62,8 +61,7 @@ namespace xtreemfs
     // YIELD::Main
     int _main( int, char** )
     {
-      yidl::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
-      mrc_proxy->xtreemfs_mkvol( org::xtreemfs::interfaces::Volume( volume_name, mode, osd_selection_policy, org::xtreemfs::interfaces::StripingPolicy( striping_policy, striping_policy_stripe_size, striping_policy_width ), access_control_policy, std::string(), owner_user_id, owner_group_id ) );
+      createMRCProxy( *mrc_uri )->xtreemfs_mkvol( org::xtreemfs::interfaces::Volume( volume_name, mode, osd_selection_policy, org::xtreemfs::interfaces::StripingPolicy( striping_policy, striping_policy_stripe_size, striping_policy_width ), access_control_policy, std::string(), owner_user_id, owner_group_id ) );
       return 0;
     }
 
@@ -142,5 +140,5 @@ namespace xtreemfs
 
 int main( int argc, char** argv )
 {
-  return xtfs_mkvol().main( argc, argv );
+  return xtfs_mkvol::Main().main( argc, argv );
 }

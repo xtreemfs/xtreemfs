@@ -4,8 +4,7 @@
 #ifndef _XTREEMFS_MAIN_H_
 #define _XTREEMFS_MAIN_H_
 
-#include "xtreemfs/dir_proxy.h"
-#include "xtreemfs/mrc_proxy.h"
+#include "xtreemfs.h"
 
 #include "yield/main.h"
 

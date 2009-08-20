@@ -4,7 +4,6 @@
 #ifndef _XTREEMFS_MRC_PROXY_H_
 #define _XTREEMFS_MRC_PROXY_H_
 
-#include "xtreemfs/path.h"
 #include "xtreemfs/proxy.h"
 
 #ifdef _WIN32
@@ -19,6 +18,9 @@
 
 namespace xtreemfs
 {
+  class Path;
+
+
   class MRCProxy : public Proxy<MRCProxy, org::xtreemfs::interfaces::MRCInterface>
   {
   public:
@@ -45,6 +47,8 @@ namespace xtreemfs
 
     ~MRCProxy() { }
   };
+
+  typedef yidl::auto_Object<MRCProxy> auto_MRCProxy;
 };
 
 #endif

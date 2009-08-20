@@ -70,6 +70,8 @@ namespace xtreemfs
     std::map<std::string, CachedAddressMappings*> uuid_to_address_mappings_cache;
     YIELD::Mutex uuid_to_address_mappings_cache_lock;
   };
+
+  typedef yidl::auto_Object<DIRProxy> auto_DIRProxy;
 };
 
 #endif

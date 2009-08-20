@@ -66,8 +66,10 @@ namespace xtreemfs
     org::xtreemfs::interfaces::VivaldiCoordinates vivaldi_coordinates;
   };
 
-
-  bool operator>( const org::xtreemfs::interfaces::OSDWriteResponse& left, const org::xtreemfs::interfaces::OSDWriteResponse& right );
+  typedef yidl::auto_Object<OSDProxy> auto_OSDProxy;
 };
+
+
+bool operator>( const org::xtreemfs::interfaces::OSDWriteResponse& left, const org::xtreemfs::interfaces::OSDWriteResponse& right );
 
 #endif

@@ -1,8 +1,8 @@
 // Copyright 2009 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-#include "volume.h"
-#include "file.h"
+#include "xtreemfs/volume.h"
+#include "xtreemfs/file.h"
 #include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/osd_proxy.h"
 #include "xtreemfs/path.h"
@@ -51,13 +51,14 @@ Volume::Volume( const YIELD::URI& dir_uri,
 
 bool Volume::access( const YIELD::Path& path, int amode )
 {
-  VOLUME_OPERATION_BEGIN( access )
-  {
-    return true;
-    // return mrc_proxy->access( Path( this->name, path ), amode );
-  }
-  VOLUME_OPERATION_END( access );
-  return false;
+  return true;
+
+  //VOLUME_OPERATION_BEGIN( access )
+  //{
+  //  // return mrc_proxy->access( Path( this->name, path ), amode );
+  //}
+  //VOLUME_OPERATION_END( access );
+  //return false;
 }
 
 bool Volume::chmod( const YIELD::Path& path, mode_t mode )

@@ -2,9 +2,6 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/main.h"
-#include "volume.h"
-#include "xtreemfs/interfaces/constants.h"
-using namespace xtreemfs;
 
 #include "yieldfs.h"
 
@@ -18,13 +15,13 @@ using namespace xtreemfs;
 #endif
 
 
-namespace xtreemfs
+namespace xtfs_mount
 {
-  class xtfs_mount : public Main
+  class Main : public xtreemfs::Main
   {
   public:
-    xtfs_mount()
-      : Main( "xtfs_mount", "mount an XtreemFS volume", "[oncrpc[s]://]<dir host>[:dir port]/<volume name> <mount point>" )
+    Main()
+      : xtreemfs::Main( "xtfs_mount", "mount an XtreemFS volume", "[oncrpc[s]://]<dir host>[:dir port]/<volume name> <mount point>" )
     {
       addOption( XTFS_MOUNT_OPTION_CACHE_DATA, "--cache-data" );
       cache_data = false;
@@ -106,13 +103,13 @@ namespace xtreemfs
           get_log()->set_level( YIELD::Log::LOG_INFO );
 
         if ( cache_data )
-          volume_flags |= Volume::VOLUME_FLAG_CACHE_FILES;
+          volume_flags |= xtreemfs::Volume::VOLUME_FLAG_CACHE_FILES;
         if ( cache_metadata )
-          volume_flags |= Volume::VOLUME_FLAG_CACHE_METADATA;
+          volume_flags |= xtreemfs::Volume::VOLUME_FLAG_CACHE_METADATA;
         if ( trace_file_io )
-          volume_flags |= Volume::VOLUME_FLAG_TRACE_FILE_IO;
+          volume_flags |= xtreemfs::Volume::VOLUME_FLAG_TRACE_FILE_IO;
 
-        YIELD::auto_Volume volume = new Volume( *dir_uri, volume_name, volume_flags, get_log(), get_proxy_flags(), get_operation_timeout(), get_proxy_ssl_context() );
+        YIELD::auto_Volume volume = new xtreemfs::Volume( *dir_uri, volume_name, volume_flags, get_log(), get_proxy_flags(), get_operation_timeout(), get_proxy_ssl_context() );
 
         // Stack volumes as indicated
         if ( cache_data )
@@ -267,5 +264,5 @@ namespace xtreemfs
 
 int main( int argc, char** argv )
 {
-  return xtfs_mount().main( argc, argv );
+  return xtfs_mount::Main().main( argc, argv );
 }

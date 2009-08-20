@@ -2,19 +2,18 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/main.h"
-using namespace xtreemfs;
 
 #include <iostream>
 #include <sstream>
 
 
-namespace xtreemfs
+namespace xtfs_lsvol
 {
-  class xtfs_lsvol : public Main
+  class Main : public xtreemfs::Main
   {
   public:
-    xtfs_lsvol()
-      : Main( "xtfs_lsvol", "list volumes on a specified MRC", "[oncrpc[s]://]<mrc host>[:port][/<volume name>]" )
+    Main()
+      : xtreemfs::Main( "xtfs_lsvol", "list volumes on a specified MRC", "[oncrpc[s]://]<mrc host>[:port][/<volume name>]" )
     {
       addOption( XTFS_LSVOL_OPTION_LONG_LISTING, "-l" );
       long_listing = false;
@@ -33,7 +32,7 @@ namespace xtreemfs
     // YIELD::Main
     int _main( int, char** )
     {
-      yidl::auto_Object<MRCProxy> mrc_proxy = createMRCProxy( *mrc_uri );
+      xtreemfs::auto_MRCProxy mrc_proxy = createMRCProxy( *mrc_uri );
       org::xtreemfs::interfaces::VolumeSet volumes;
       mrc_proxy->xtreemfs_lsvol( volumes );
 
@@ -88,5 +87,5 @@ namespace xtreemfs
 
 int main( int argc, char** argv )
 {
-  return xtfs_lsvol().main( argc, argv );
+  return xtfs_lsvol::Main().main( argc, argv );
 }

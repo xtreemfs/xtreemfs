@@ -791,10 +791,11 @@ namespace YIELD
     YIDL_OBJECT_PROTOTYPES( HTTPServer, 0 );
 
   private:
-    HTTPServer( auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket ) ;
+    HTTPServer( auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket, auto_Log log ) ;
 
     auto_EventTarget http_request_target;
     auto_TCPSocket listen_tcp_socket;
+    auto_Log log;
 
     class AIOAcceptControlBlock;
     class AIOReadControlBlock;
@@ -1174,17 +1175,14 @@ namespace YIELD
 
     const std::string& get_scheme() const { return scheme; }
     const std::string& get_host() const { return host; }
+    const std::string& get_user() const { return user; }
     const std::string& get_password() const { return password; }
     unsigned short get_port() const { return port; }
     const std::string& get_resource() const { return resource; }
-    const std::string& get_user() const { return user; }
-    operator std::string() const;
-    void set_host( const std::string& host ) { this->host = host; }
+    const std::multimap<std::string, std::string>& get_query() const { return query; }
+    std::string get_query_value( const std::string& key, const char* default_query_value = "" ) const; 
+    std::multimap<std::string, std::string>::const_iterator get_query_values( const std::string& key ) const;
     void set_port( unsigned short port ) { this->port = port; }
-    void set_password( const std::string& password ) { this->password = password; }
-    void set_resource( const std::string& resource ) { this->resource = resource; }
-    void set_scheme( const std::string& scheme ) { this->scheme = scheme; }
-    void set_user( const std::string& user ) { this->user = user; }
 
     // yidl::Object
     YIDL_OBJECT_PROTOTYPES( URI, 221 );
@@ -1201,18 +1199,8 @@ namespace YIELD
     std::string scheme, user, password, host;
     unsigned short port;
     std::string resource;
+    std::multimap<std::string, std::string> query;
   };
-
-  static inline std::ostream& operator<<( std::ostream& os, const URI& uri )
-  {
-    os << uri.get_scheme();
-    os << "://";
-    os << uri.get_host();
-    if ( uri.get_port() != 0 )
-      os << ":" << uri.get_port();
-    os << uri.get_resource();
-    return os;
-  }
 
   typedef yidl::auto_Object<URI> auto_URI;
 };
