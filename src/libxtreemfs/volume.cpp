@@ -30,26 +30,47 @@ using namespace xtreemfs;
   } \
 
 
-Volume::Volume( const YIELD::URI& dir_uri, 
-                const std::string& name, 
-                uint32_t flags, 
-                YIELD::auto_Log log, 
-                uint32_t proxy_flags, 
-                const YIELD::Time& proxy_operation_timeout, 
-                YIELD::auto_SSLContext proxy_ssl_context )
-  : name( name ), flags( flags ), log( log )
+auto_Volume Volume::create( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Log log, uint32_t proxy_flags, const YIELD::Time& proxy_operation_timeout, YIELD::auto_SSLContext proxy_ssl_context )
 {
-  stage_group = new YIELD::SEDAStageGroup;
   dir_proxy = DIRProxy::create( dir_uri, proxy_flags, log, proxy_operation_timeout, proxy_ssl_context );
-  stage_group->createStage( dir_proxy );
-  YIELD::auto_URI mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
-  mrc_proxy = MRCProxy::create( *mrc_uri, proxy_flags, log, proxy_operation_timeout, proxy_ssl_context );
-  stage_group->createStage( mrc_proxy );
-  osd_proxy_mux = OSDProxyMux::create( dir_proxy, proxy_flags, log, proxy_operation_timeout, proxy_ssl_context );
-  stage_group->createStage( osd_proxy_mux );
+  if ( dir_proxy != NULL )
+  {
+    YIELD::auto_URI mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
+    if ( mrc_uri != NULL )
+    {
+      auto_MRCProxy mrc_proxy = MRCProxy::create( *mrc_uri, proxy_flags, log, proxy_operation_timeout, proxy_ssl_context );
+      if ( mrc_proxy != NULL )
+      {
+        org::xtreemfs::interfaces::Stat stbuf;
+        mrc_proxy->getattr( name + "/", stbuf );
+
+        auto_OSDProxyMux osd_proxy_mux = OSDProxyMux::create( dir_proxy, proxy_flags, log, proxy_operation_timeout, proxy_ssl_context );
+        if ( osd_proxy_mux != NULL )
+        {
+          YIELD::auto_StageGroup stage_group = new YIELD::SEDAStageGroup;
+          stage_group->createStage( dir_proxy );
+          stage_group->createStage( mrc_proxy );
+          stage_group->createStage( osd_proxy_mux );
+          return new Volume( dir_proxy, flags, log, mrc_proxy, name, osd_proxy_mux, stage_group );
+        }
+        else
+          throw YIELD::Exception( "could not create OSD proxy" );
+      }
+      else
+        throw YIELD::Exception( "received invalid MRC URI from the directory service" );
+    }
+    else
+      throw YIELD::Exception( "received invalid MRC URI from the directory service" );
+  }
+  else
+    throw YIELD::Exception( "invalid DIR URI" );  
 }
 
-bool Volume::access( const YIELD::Path& path, int amode )
+Volume::Volume( yidl::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, yidl::auto_Object<MRCProxy> mrc_proxy, const std::string& name, yidl::auto_Object<OSDProxyMux> osd_proxy_mux, YIELD::auto_StageGroup stage_group )
+  : dir_proxy( dir_proxy ), flags( flags ), log( log ), mrc_proxy( mrc_proxy ), name( name ), osd_proxy_mux( osd_proxy_mux ), stage_group( stage_group )
+{ }
+
+bool Volume::access( const YIELD::Path&, int )
 {
   return true;
 

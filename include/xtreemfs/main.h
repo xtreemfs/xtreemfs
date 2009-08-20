@@ -224,7 +224,7 @@ namespace xtreemfs
       if ( proxy != NULL )
         return proxy;
       else
-        throw YIELD::Exception();
+        throw YIELD::Exception( "invalid proxy URI" );
     }
 
 #ifdef XTREEMFS_HAVE_GOOGLE_BREAKPAD
