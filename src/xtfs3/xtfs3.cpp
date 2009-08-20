@@ -16,7 +16,7 @@ namespace xtfs3
   {
   public:
     Main() 
-      : xtreemfs::Main( "xtfs3", "mount an XtreemFS volume via S3", "<dir host>[:dir port]/<volume name>" )
+      : xtreemfs::Main( "xtfs3", "mount an XtreemFS volume via S3", "[<XtreemFS dir host>[:dir port]/<XtreemFS volume name>]" )
     {
       addOption( XTFS3_OPTION_PORT, "-p", "--port", "n" );
       port = 8080;
@@ -44,7 +44,11 @@ namespace xtfs3
     {   
       YIELD::auto_StageGroup stage_group( new YIELD::SEDAStageGroup );
 
-      YIELD::auto_Volume volume = new xtreemfs::Volume( *dir_uri, volume_name, 0, get_log(), get_proxy_flags(), get_operation_timeout(), get_proxy_ssl_context() );
+      YIELD::auto_Volume volume;
+      if ( dir_uri != NULL )
+        volume = new xtreemfs::Volume( *dir_uri, volume_name, 0, get_log(), get_proxy_flags(), get_operation_timeout(), get_proxy_ssl_context() );
+      else
+        volume = new YIELD::Volume;
 
       auto_HTTPRequestHandler http_request_handler = new HTTPRequestHandler( virtual_host_name, volume );
       YIELD::auto_Stage http_request_handler_stage = stage_group->createStage( http_request_handler );
@@ -63,10 +67,7 @@ namespace xtfs3
         dir_uri = parseVolumeURI( files[0], volume_name );
         if ( dir_uri->get_port() == 0 )
           dir_uri->set_port( org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT );
-        return;
       }
-
-      throw YIELD::Exception( "must specify dir_host/volume_name" );
     }
 
     void parseOption( int id, char* arg )

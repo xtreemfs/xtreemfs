@@ -165,6 +165,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\src\xtfs3\exceptions.h"
+    >
+</File>
+<File
     RelativePath="..\..\src\xtfs3\genx.h"
     >
 </File>
@@ -174,6 +178,10 @@
 </File>
 <File
     RelativePath="..\..\src\xtfs3\object.h"
+    >
+</File>
+<File
+    RelativePath="..\..\src\xtfs3\xml_marshaller.h"
     >
 </File>
 <File
@@ -194,6 +202,10 @@
 </File>
 <File
     RelativePath="..\..\src\xtfs3\object.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\xtfs3\xml_marshaller.cpp"
     >
 </File>
 <File

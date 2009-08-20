@@ -88,4 +88,5 @@ build_env.Program( "../../bin/xtfs3", (
     r"../../src/xtfs3/genx.c",
     r"../../src/xtfs3/http_request_handler.cpp",
     r"../../src/xtfs3/object.cpp",
+    r"../../src/xtfs3/xml_marshaller.cpp",
     r"../../src/xtfs3/xtfs3.cpp" ) )

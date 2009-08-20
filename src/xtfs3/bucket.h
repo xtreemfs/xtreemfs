@@ -15,7 +15,9 @@ namespace xtfs3
     Bucket( const std::string& name, YIELD::auto_Volume volume );
 
     void delete_();
-    yidl::auto_Buffer get();
+    yidl::auto_Buffer get( const std::string& prefix, const std::string& marker, uint32_t max_keys, const std::string& delimiter );
+    const std::string& get_name() const { return name; }
+    const std::string& get_path() const { return path; }
     void put();
 
     // yidl::Object
@@ -23,6 +25,7 @@ namespace xtfs3
 
   private:
     std::string name;
+    YIELD::Path path;
     YIELD::auto_Volume volume;
   };
 

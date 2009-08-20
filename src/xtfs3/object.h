@@ -9,10 +9,13 @@
 
 namespace xtfs3
 {
-  class Object : public yidl::Object
+  class Bucket;
+
+
+  class Object : public yidl::Struct
   {
   public:
-    Object( const std::string& key, YIELD::auto_Volume volume );
+    Object( yidl::auto_Object<Bucket> bucket, const std::string& key, YIELD::auto_Volume volume );
 
     void delete_();
     yidl::auto_Buffer get();
@@ -20,9 +23,12 @@ namespace xtfs3
 
     // yidl::Object
     YIDL_OBJECT_PROTOTYPES( xtfs3::Object, 0 );
+    void marshal( yidl::Marshaller& marshaller ) const;
 
   private:
+    yidl::auto_Object<Bucket> bucket;
     std::string key;
+    YIELD::Path path;
     YIELD::auto_Volume volume;
   };
 
