@@ -58,6 +58,9 @@ namespace xtreemfs
     void handletruncateRequest( truncateRequest& req );
     void handleunlinkRequest( unlinkRequest& req );
     void handlewriteRequest( writeRequest& req );
+    void handlextreemfs_lock_acquireRequest( xtreemfs_lock_acquireRequest& req );
+    void handlextreemfs_lock_checkRequest( xtreemfs_lock_checkRequest& req );
+    void handlextreemfs_lock_releaseRequest( xtreemfs_lock_releaseRequest& req );
 
     class PingRequest;
     class PingResponse;

@@ -481,6 +481,20 @@ void OSDProxyMux::handleunlinkRequest( unlinkRequest& req )
 
 void OSDProxyMux::handlewriteRequest( writeRequest& req )
 {
-  yidl::auto_Object<OSDProxy> tcp_osd_proxy( getTCPOSDProxy( req, req.get_file_credentials(), req.get_object_number() ) );
-  static_cast<YIELD::EventTarget*>( tcp_osd_proxy.get() )->send( req );
+  getTCPOSDProxy( req, req.get_file_credentials(), req.get_object_number() )->send( req );
+}
+
+void OSDProxyMux::handlextreemfs_lock_acquireRequest( xtreemfs_lock_acquireRequest& req )
+{
+  getTCPOSDProxy( req, req.get_file_credentials(), 0 )->send( req );
+}
+
+void OSDProxyMux::handlextreemfs_lock_checkRequest( xtreemfs_lock_checkRequest& req )
+{
+  getTCPOSDProxy( req, req.get_file_credentials(), 0 )->send( req );
+}
+
+void OSDProxyMux::handlextreemfs_lock_releaseRequest( xtreemfs_lock_releaseRequest& req )
+{
+  getTCPOSDProxy( req, req.get_file_credentials(), 0 )->send( req );
 }
