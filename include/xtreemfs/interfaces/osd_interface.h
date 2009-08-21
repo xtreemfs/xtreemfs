@@ -47,6 +47,40 @@ namespace org
         uint64_t file_size;
       };
 
+      class Lock : public ::yidl::Struct
+      {
+      public:
+        Lock() : client_pid( 0 ), offset( 0 ), length( 0 ) { }
+        Lock( const std::string& client_uuid, uint32_t client_pid, uint64_t offset, uint64_t length ) : client_uuid( client_uuid ), client_pid( client_pid ), offset( offset ), length( length ) { }
+        Lock( const char* client_uuid, size_t client_uuid_len, uint32_t client_pid, uint64_t offset, uint64_t length ) : client_uuid( client_uuid, client_uuid_len ), client_pid( client_pid ), offset( offset ), length( length ) { }
+        virtual ~Lock() { }
+
+        void set_client_uuid( const std::string& client_uuid ) { set_client_uuid( client_uuid.c_str(), client_uuid.size() ); }
+        void set_client_uuid( const char* client_uuid, size_t client_uuid_len ) { this->client_uuid.assign( client_uuid, client_uuid_len ); }
+        const std::string& get_client_uuid() const { return client_uuid; }
+        void set_client_pid( uint32_t client_pid ) { this->client_pid = client_pid; }
+        uint32_t get_client_pid() const { return client_pid; }
+        void set_offset( uint64_t offset ) { this->offset = offset; }
+        uint64_t get_offset() const { return offset; }
+        void set_length( uint64_t length ) { this->length = length; }
+        uint64_t get_length() const { return length; }
+
+        bool operator==( const Lock& other ) const { return client_uuid == other.client_uuid && client_pid == other.client_pid && offset == other.offset && length == other.length; }
+
+        // yidl::Object
+        YIDL_OBJECT_PROTOTYPES( Lock, 1054 );
+
+        // YIELD::Struct
+        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "client_uuid", 0, client_uuid ); marshaller.writeUint32( "client_pid", 0, client_pid ); marshaller.writeUint64( "offset", 0, offset ); marshaller.writeUint64( "length", 0, length ); }
+        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "client_uuid", 0, client_uuid ); client_pid = unmarshaller.readUint32( "client_pid", 0 ); offset = unmarshaller.readUint64( "offset", 0 ); length = unmarshaller.readUint64( "length", 0 ); }
+
+      protected:
+        std::string client_uuid;
+        uint32_t client_pid;
+        uint64_t offset;
+        uint64_t length;
+      };
+
       class ObjectData : public ::yidl::Struct
       {
       public:
@@ -256,8 +290,8 @@ namespace org
         virtual void write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { write( file_credentials, file_id, object_number, object_version, offset, lease_timeout, object_data, osd_write_response, static_cast<uint64_t>( -1 ) ); }
         virtual void write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, uint64_t response_timeout_ns ) { ::yidl::auto_Object<writeRequest> __request( new writeRequest( file_credentials, file_id, object_number, object_version, offset, lease_timeout, object_data ) ); ::YIELD::auto_ResponseQueue<writeResponse> __response_queue( new ::YIELD::ResponseQueue<writeResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<writeResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); osd_write_response = __response->get_osd_write_response(); }
 
-        virtual void xtreemfs_broadcast_gmax( const std::string& fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) { xtreemfs_broadcast_gmax( fileId, truncateEpoch, lastObject, fileSize, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_broadcast_gmax( const std::string& fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_broadcast_gmaxRequest> __request( new xtreemfs_broadcast_gmaxRequest( fileId, truncateEpoch, lastObject, fileSize ) ); ::YIELD::auto_ResponseQueue<xtreemfs_broadcast_gmaxResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_broadcast_gmaxResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_broadcast_gmaxResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+        virtual void xtreemfs_broadcast_gmax( const std::string& file_id, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) { xtreemfs_broadcast_gmax( file_id, truncateEpoch, lastObject, fileSize, static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_broadcast_gmax( const std::string& file_id, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_broadcast_gmaxRequest> __request( new xtreemfs_broadcast_gmaxRequest( file_id, truncateEpoch, lastObject, fileSize ) ); ::YIELD::auto_ResponseQueue<xtreemfs_broadcast_gmaxResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_broadcast_gmaxResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_broadcast_gmaxResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual org::xtreemfs::interfaces::ObjectData xtreemfs_check_object( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version ) { return xtreemfs_check_object( file_credentials, file_id, object_number, object_version, static_cast<uint64_t>( -1 ) ); }
         virtual org::xtreemfs::interfaces::ObjectData xtreemfs_check_object( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_check_objectRequest> __request( new xtreemfs_check_objectRequest( file_credentials, file_id, object_number, object_version ) ); ::YIELD::auto_ResponseQueue<xtreemfs_check_objectResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_check_objectResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_check_objectResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); org::xtreemfs::interfaces::ObjectData _return_value = __response->get__return_value(); return _return_value; }
@@ -292,6 +326,15 @@ namespace org
         virtual org::xtreemfs::interfaces::ObjectList xtreemfs_internal_get_object_set( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id ) { return xtreemfs_internal_get_object_set( file_credentials, file_id, static_cast<uint64_t>( -1 ) ); }
         virtual org::xtreemfs::interfaces::ObjectList xtreemfs_internal_get_object_set( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_internal_get_object_setRequest> __request( new xtreemfs_internal_get_object_setRequest( file_credentials, file_id ) ); ::YIELD::auto_ResponseQueue<xtreemfs_internal_get_object_setResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_internal_get_object_setResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_internal_get_object_setResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); org::xtreemfs::interfaces::ObjectList _return_value = __response->get__return_value(); return _return_value; }
 
+        virtual org::xtreemfs::interfaces::Lock xtreemfs_lock_acquire( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& client_uuid, int32_t client_pid, const std::string& file_id, uint64_t offset, uint64_t length, bool exclusive ) { return xtreemfs_lock_acquire( file_credentials, client_uuid, client_pid, file_id, offset, length, exclusive, static_cast<uint64_t>( -1 ) ); }
+        virtual org::xtreemfs::interfaces::Lock xtreemfs_lock_acquire( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& client_uuid, int32_t client_pid, const std::string& file_id, uint64_t offset, uint64_t length, bool exclusive, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_lock_acquireRequest> __request( new xtreemfs_lock_acquireRequest( file_credentials, client_uuid, client_pid, file_id, offset, length, exclusive ) ); ::YIELD::auto_ResponseQueue<xtreemfs_lock_acquireResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_lock_acquireResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_lock_acquireResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); org::xtreemfs::interfaces::Lock _return_value = __response->get__return_value(); return _return_value; }
+
+        virtual org::xtreemfs::interfaces::Lock xtreemfs_lock_check( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& client_uuid, int32_t client_pid, const std::string& file_id, uint64_t offset, uint64_t length, bool exclusive ) { return xtreemfs_lock_check( file_credentials, client_uuid, client_pid, file_id, offset, length, exclusive, static_cast<uint64_t>( -1 ) ); }
+        virtual org::xtreemfs::interfaces::Lock xtreemfs_lock_check( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& client_uuid, int32_t client_pid, const std::string& file_id, uint64_t offset, uint64_t length, bool exclusive, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_lock_checkRequest> __request( new xtreemfs_lock_checkRequest( file_credentials, client_uuid, client_pid, file_id, offset, length, exclusive ) ); ::YIELD::auto_ResponseQueue<xtreemfs_lock_checkResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_lock_checkResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_lock_checkResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); org::xtreemfs::interfaces::Lock _return_value = __response->get__return_value(); return _return_value; }
+
+        virtual void xtreemfs_lock_release( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, const org::xtreemfs::interfaces::Lock& lock ) { xtreemfs_lock_release( file_credentials, file_id, lock, static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_lock_release( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, const org::xtreemfs::interfaces::Lock& lock, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_lock_releaseRequest> __request( new xtreemfs_lock_releaseRequest( file_credentials, file_id, lock ) ); ::YIELD::auto_ResponseQueue<xtreemfs_lock_releaseResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_lock_releaseResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_lock_releaseResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+
         virtual void xtreemfs_ping( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates, org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates ) { xtreemfs_ping( coordinates, remote_coordinates, static_cast<uint64_t>( -1 ) ); }
         virtual void xtreemfs_ping( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates, org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates, uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_pingRequest> __request( new xtreemfs_pingRequest( coordinates ) ); ::YIELD::auto_ResponseQueue<xtreemfs_pingResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_pingResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_pingResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); remote_coordinates = __response->get_remote_coordinates(); }
 
@@ -314,7 +357,7 @@ namespace org
           bool operator==( const readResponse& other ) const { return object_data == other.object_data; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( readResponse, 1301 );
+          YIDL_OBJECT_PROTOTYPES( readResponse, 1310 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "object_data", 0, object_data ); }
@@ -349,7 +392,7 @@ namespace org
           bool operator==( const readRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id && object_number == other.object_number && object_version == other.object_version && offset == other.offset && length == other.length; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( readRequest, 1301 );
+          YIDL_OBJECT_PROTOTYPES( readRequest, 1310 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "object_number", 0, object_number ); marshaller.writeUint64( "object_version", 0, object_version ); marshaller.writeUint32( "offset", 0, offset ); marshaller.writeUint32( "length", 0, length ); }
@@ -379,7 +422,7 @@ namespace org
           bool operator==( const truncateResponse& other ) const { return osd_write_response == other.osd_write_response; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( truncateResponse, 1302 );
+          YIDL_OBJECT_PROTOTYPES( truncateResponse, 1311 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "osd_write_response", 0, osd_write_response ); }
@@ -408,7 +451,7 @@ namespace org
           bool operator==( const truncateRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id && new_file_size == other.new_file_size; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( truncateRequest, 1302 );
+          YIDL_OBJECT_PROTOTYPES( truncateRequest, 1311 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "new_file_size", 0, new_file_size ); }
@@ -431,7 +474,7 @@ namespace org
           bool operator==( const unlinkResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( unlinkResponse, 1303 );
+          YIDL_OBJECT_PROTOTYPES( unlinkResponse, 1312 );
 
         };
 
@@ -452,7 +495,7 @@ namespace org
           bool operator==( const unlinkRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( unlinkRequest, 1303 );
+          YIDL_OBJECT_PROTOTYPES( unlinkRequest, 1312 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); }
@@ -478,7 +521,7 @@ namespace org
           bool operator==( const writeResponse& other ) const { return osd_write_response == other.osd_write_response; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( writeResponse, 1304 );
+          YIDL_OBJECT_PROTOTYPES( writeResponse, 1313 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "osd_write_response", 0, osd_write_response ); }
@@ -515,7 +558,7 @@ namespace org
           bool operator==( const writeRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id && object_number == other.object_number && object_version == other.object_version && offset == other.offset && lease_timeout == other.lease_timeout && object_data == other.object_data; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( writeRequest, 1304 );
+          YIDL_OBJECT_PROTOTYPES( writeRequest, 1313 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "object_number", 0, object_number ); marshaller.writeUint64( "object_version", 0, object_version ); marshaller.writeUint32( "offset", 0, offset ); marshaller.writeUint64( "lease_timeout", 0, lease_timeout ); marshaller.writeStruct( "object_data", 0, object_data ); }
@@ -542,7 +585,7 @@ namespace org
           bool operator==( const xtreemfs_broadcast_gmaxResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_broadcast_gmaxResponse, 2300 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_broadcast_gmaxResponse, 1320 );
 
         };
 
@@ -550,13 +593,13 @@ namespace org
         {
         public:
           xtreemfs_broadcast_gmaxRequest() : truncateEpoch( 0 ), lastObject( 0 ), fileSize( 0 ) { }
-          xtreemfs_broadcast_gmaxRequest( const std::string& fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) : fileId( fileId ), truncateEpoch( truncateEpoch ), lastObject( lastObject ), fileSize( fileSize ) { }
-          xtreemfs_broadcast_gmaxRequest( const char* fileId, size_t fileId_len, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) : fileId( fileId, fileId_len ), truncateEpoch( truncateEpoch ), lastObject( lastObject ), fileSize( fileSize ) { }
+          xtreemfs_broadcast_gmaxRequest( const std::string& file_id, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) : file_id( file_id ), truncateEpoch( truncateEpoch ), lastObject( lastObject ), fileSize( fileSize ) { }
+          xtreemfs_broadcast_gmaxRequest( const char* file_id, size_t file_id_len, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) : file_id( file_id, file_id_len ), truncateEpoch( truncateEpoch ), lastObject( lastObject ), fileSize( fileSize ) { }
           virtual ~xtreemfs_broadcast_gmaxRequest() { }
 
-          void set_fileId( const std::string& fileId ) { set_fileId( fileId.c_str(), fileId.size() ); }
-          void set_fileId( const char* fileId, size_t fileId_len ) { this->fileId.assign( fileId, fileId_len ); }
-          const std::string& get_fileId() const { return fileId; }
+          void set_file_id( const std::string& file_id ) { set_file_id( file_id.c_str(), file_id.size() ); }
+          void set_file_id( const char* file_id, size_t file_id_len ) { this->file_id.assign( file_id, file_id_len ); }
+          const std::string& get_file_id() const { return file_id; }
           void set_truncateEpoch( uint64_t truncateEpoch ) { this->truncateEpoch = truncateEpoch; }
           uint64_t get_truncateEpoch() const { return truncateEpoch; }
           void set_lastObject( uint64_t lastObject ) { this->lastObject = lastObject; }
@@ -564,19 +607,19 @@ namespace org
           void set_fileSize( uint64_t fileSize ) { this->fileSize = fileSize; }
           uint64_t get_fileSize() const { return fileSize; }
 
-          bool operator==( const xtreemfs_broadcast_gmaxRequest& other ) const { return fileId == other.fileId && truncateEpoch == other.truncateEpoch && lastObject == other.lastObject && fileSize == other.fileSize; }
+          bool operator==( const xtreemfs_broadcast_gmaxRequest& other ) const { return file_id == other.file_id && truncateEpoch == other.truncateEpoch && lastObject == other.lastObject && fileSize == other.fileSize; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_broadcast_gmaxRequest, 2300 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_broadcast_gmaxRequest, 1320 );
 
           // YIELD::Struct
-          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "fileId", 0, fileId ); marshaller.writeUint64( "truncateEpoch", 0, truncateEpoch ); marshaller.writeUint64( "lastObject", 0, lastObject ); marshaller.writeUint64( "fileSize", 0, fileSize ); }
-          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "fileId", 0, fileId ); truncateEpoch = unmarshaller.readUint64( "truncateEpoch", 0 ); lastObject = unmarshaller.readUint64( "lastObject", 0 ); fileSize = unmarshaller.readUint64( "fileSize", 0 ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "truncateEpoch", 0, truncateEpoch ); marshaller.writeUint64( "lastObject", 0, lastObject ); marshaller.writeUint64( "fileSize", 0, fileSize ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); truncateEpoch = unmarshaller.readUint64( "truncateEpoch", 0 ); lastObject = unmarshaller.readUint64( "lastObject", 0 ); fileSize = unmarshaller.readUint64( "fileSize", 0 ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_broadcast_gmaxResponse; }
 
 
         protected:
-          std::string fileId;
+          std::string file_id;
           uint64_t truncateEpoch;
           uint64_t lastObject;
           uint64_t fileSize;
@@ -595,7 +638,7 @@ namespace org
           bool operator==( const xtreemfs_check_objectResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_check_objectResponse, 1403 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_check_objectResponse, 1321 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "_return_value", 0, _return_value ); }
@@ -626,7 +669,7 @@ namespace org
           bool operator==( const xtreemfs_check_objectRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id && object_number == other.object_number && object_version == other.object_version; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_check_objectRequest, 1403 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_check_objectRequest, 1321 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "object_number", 0, object_number ); marshaller.writeUint64( "object_version", 0, object_version ); }
@@ -654,7 +697,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_get_resultsResponse& other ) const { return results == other.results; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_get_resultsResponse, 1409 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_get_resultsResponse, 1330 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "results", 0, results ); }
@@ -673,7 +716,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_get_resultsRequest& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_get_resultsRequest, 1409 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_get_resultsRequest, 1330 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_cleanup_get_resultsResponse; }
 
@@ -692,7 +735,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_is_runningResponse& other ) const { return is_running == other.is_running; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_is_runningResponse, 1408 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_is_runningResponse, 1331 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeBoolean( "is_running", 0, is_running ); }
@@ -711,7 +754,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_is_runningRequest& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_is_runningRequest, 1408 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_is_runningRequest, 1331 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_cleanup_is_runningResponse; }
 
@@ -726,7 +769,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_startResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_startResponse, 1405 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_startResponse, 1332 );
 
         };
 
@@ -747,7 +790,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_startRequest& other ) const { return remove_zombies == other.remove_zombies && remove_unavail_volume == other.remove_unavail_volume && lost_and_found == other.lost_and_found; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_startRequest, 1405 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_startRequest, 1332 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeBoolean( "remove_zombies", 0, remove_zombies ); marshaller.writeBoolean( "remove_unavail_volume", 0, remove_unavail_volume ); marshaller.writeBoolean( "lost_and_found", 0, lost_and_found ); }
@@ -776,7 +819,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_statusResponse& other ) const { return status == other.status; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_statusResponse, 1407 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_statusResponse, 1333 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "status", 0, status ); }
@@ -795,7 +838,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_statusRequest& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_statusRequest, 1407 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_statusRequest, 1333 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_cleanup_statusResponse; }
 
@@ -810,7 +853,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_stopResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_stopResponse, 1406 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_stopResponse, 1334 );
 
         };
 
@@ -823,7 +866,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_stopRequest& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_stopRequest, 1406 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_stopRequest, 1334 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_cleanup_stopResponse; }
 
@@ -842,7 +885,7 @@ namespace org
           bool operator==( const xtreemfs_internal_get_gmaxResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_gmaxResponse, 1400 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_gmaxResponse, 1340 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "_return_value", 0, _return_value ); }
@@ -869,7 +912,7 @@ namespace org
           bool operator==( const xtreemfs_internal_get_gmaxRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_gmaxRequest, 1400 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_gmaxRequest, 1340 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); }
@@ -895,7 +938,7 @@ namespace org
           bool operator==( const xtreemfs_internal_truncateResponse& other ) const { return osd_write_response == other.osd_write_response; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_truncateResponse, 1401 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_truncateResponse, 1341 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "osd_write_response", 0, osd_write_response ); }
@@ -924,7 +967,7 @@ namespace org
           bool operator==( const xtreemfs_internal_truncateRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id && new_file_size == other.new_file_size; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_truncateRequest, 1401 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_truncateRequest, 1341 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "new_file_size", 0, new_file_size ); }
@@ -951,7 +994,7 @@ namespace org
           bool operator==( const xtreemfs_internal_get_file_sizeResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_file_sizeResponse, 1404 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_file_sizeResponse, 1342 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint64( "_return_value", 0, _return_value ); }
@@ -978,7 +1021,7 @@ namespace org
           bool operator==( const xtreemfs_internal_get_file_sizeRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_file_sizeRequest, 1404 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_file_sizeRequest, 1342 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); }
@@ -1004,7 +1047,7 @@ namespace org
           bool operator==( const xtreemfs_internal_read_localResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_read_localResponse, 1402 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_read_localResponse, 1343 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "_return_value", 0, _return_value ); }
@@ -1043,7 +1086,7 @@ namespace org
           bool operator==( const xtreemfs_internal_read_localRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id && object_number == other.object_number && object_version == other.object_version && offset == other.offset && length == other.length && attachObjectList == other.attachObjectList && requiredObjects == other.requiredObjects; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_read_localRequest, 1402 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_read_localRequest, 1343 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "object_number", 0, object_number ); marshaller.writeUint64( "object_version", 0, object_version ); marshaller.writeUint64( "offset", 0, offset ); marshaller.writeUint64( "length", 0, length ); marshaller.writeBoolean( "attachObjectList", 0, attachObjectList ); marshaller.writeSequence( "requiredObjects", 0, requiredObjects ); }
@@ -1075,7 +1118,7 @@ namespace org
           bool operator==( const xtreemfs_internal_get_object_setResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_object_setResponse, 1410 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_object_setResponse, 1344 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "_return_value", 0, _return_value ); }
@@ -1102,7 +1145,7 @@ namespace org
           bool operator==( const xtreemfs_internal_get_object_setRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_object_setRequest, 1410 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_object_setRequest, 1344 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); }
@@ -1113,6 +1156,190 @@ namespace org
         protected:
           org::xtreemfs::interfaces::FileCredentials file_credentials;
           std::string file_id;
+        };
+
+        class xtreemfs_lock_acquireResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
+        {
+        public:
+          xtreemfs_lock_acquireResponse() { }
+          xtreemfs_lock_acquireResponse( const org::xtreemfs::interfaces::Lock& _return_value ) : _return_value( _return_value ) { }
+          virtual ~xtreemfs_lock_acquireResponse() { }
+
+          void set__return_value( const org::xtreemfs::interfaces::Lock&  _return_value ) { this->_return_value = _return_value; }
+          const org::xtreemfs::interfaces::Lock& get__return_value() const { return _return_value; }
+
+          bool operator==( const xtreemfs_lock_acquireResponse& other ) const { return _return_value == other._return_value; }
+
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_acquireResponse, 1350 );
+
+          // YIELD::Struct
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "_return_value", 0, _return_value ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "_return_value", 0, _return_value ); }
+
+        protected:
+          org::xtreemfs::interfaces::Lock _return_value;
+        };
+
+        class xtreemfs_lock_acquireRequest : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS
+        {
+        public:
+          xtreemfs_lock_acquireRequest() : client_pid( 0 ), offset( 0 ), length( 0 ), exclusive( false ) { }
+          xtreemfs_lock_acquireRequest( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& client_uuid, int32_t client_pid, const std::string& file_id, uint64_t offset, uint64_t length, bool exclusive ) : file_credentials( file_credentials ), client_uuid( client_uuid ), client_pid( client_pid ), file_id( file_id ), offset( offset ), length( length ), exclusive( exclusive ) { }
+          xtreemfs_lock_acquireRequest( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const char* client_uuid, size_t client_uuid_len, int32_t client_pid, const char* file_id, size_t file_id_len, uint64_t offset, uint64_t length, bool exclusive ) : file_credentials( file_credentials ), client_uuid( client_uuid, client_uuid_len ), client_pid( client_pid ), file_id( file_id, file_id_len ), offset( offset ), length( length ), exclusive( exclusive ) { }
+          virtual ~xtreemfs_lock_acquireRequest() { }
+
+          void set_file_credentials( const org::xtreemfs::interfaces::FileCredentials&  file_credentials ) { this->file_credentials = file_credentials; }
+          const org::xtreemfs::interfaces::FileCredentials& get_file_credentials() const { return file_credentials; }
+          void set_client_uuid( const std::string& client_uuid ) { set_client_uuid( client_uuid.c_str(), client_uuid.size() ); }
+          void set_client_uuid( const char* client_uuid, size_t client_uuid_len ) { this->client_uuid.assign( client_uuid, client_uuid_len ); }
+          const std::string& get_client_uuid() const { return client_uuid; }
+          void set_client_pid( int32_t client_pid ) { this->client_pid = client_pid; }
+          int32_t get_client_pid() const { return client_pid; }
+          void set_file_id( const std::string& file_id ) { set_file_id( file_id.c_str(), file_id.size() ); }
+          void set_file_id( const char* file_id, size_t file_id_len ) { this->file_id.assign( file_id, file_id_len ); }
+          const std::string& get_file_id() const { return file_id; }
+          void set_offset( uint64_t offset ) { this->offset = offset; }
+          uint64_t get_offset() const { return offset; }
+          void set_length( uint64_t length ) { this->length = length; }
+          uint64_t get_length() const { return length; }
+          void set_exclusive( bool exclusive ) { this->exclusive = exclusive; }
+          bool get_exclusive() const { return exclusive; }
+
+          bool operator==( const xtreemfs_lock_acquireRequest& other ) const { return file_credentials == other.file_credentials && client_uuid == other.client_uuid && client_pid == other.client_pid && file_id == other.file_id && offset == other.offset && length == other.length && exclusive == other.exclusive; }
+
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_acquireRequest, 1350 );
+
+          // YIELD::Struct
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "client_uuid", 0, client_uuid ); marshaller.writeInt32( "client_pid", 0, client_pid ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "offset", 0, offset ); marshaller.writeUint64( "length", 0, length ); marshaller.writeBoolean( "exclusive", 0, exclusive ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "client_uuid", 0, client_uuid ); client_pid = unmarshaller.readInt32( "client_pid", 0 ); unmarshaller.readString( "file_id", 0, file_id ); offset = unmarshaller.readUint64( "offset", 0 ); length = unmarshaller.readUint64( "length", 0 ); exclusive = unmarshaller.readBoolean( "exclusive", 0 ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_lock_acquireResponse; }
+
+
+        protected:
+          org::xtreemfs::interfaces::FileCredentials file_credentials;
+          std::string client_uuid;
+          int32_t client_pid;
+          std::string file_id;
+          uint64_t offset;
+          uint64_t length;
+          bool exclusive;
+        };
+
+        class xtreemfs_lock_checkResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
+        {
+        public:
+          xtreemfs_lock_checkResponse() { }
+          xtreemfs_lock_checkResponse( const org::xtreemfs::interfaces::Lock& _return_value ) : _return_value( _return_value ) { }
+          virtual ~xtreemfs_lock_checkResponse() { }
+
+          void set__return_value( const org::xtreemfs::interfaces::Lock&  _return_value ) { this->_return_value = _return_value; }
+          const org::xtreemfs::interfaces::Lock& get__return_value() const { return _return_value; }
+
+          bool operator==( const xtreemfs_lock_checkResponse& other ) const { return _return_value == other._return_value; }
+
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_checkResponse, 1351 );
+
+          // YIELD::Struct
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "_return_value", 0, _return_value ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "_return_value", 0, _return_value ); }
+
+        protected:
+          org::xtreemfs::interfaces::Lock _return_value;
+        };
+
+        class xtreemfs_lock_checkRequest : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS
+        {
+        public:
+          xtreemfs_lock_checkRequest() : client_pid( 0 ), offset( 0 ), length( 0 ), exclusive( false ) { }
+          xtreemfs_lock_checkRequest( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& client_uuid, int32_t client_pid, const std::string& file_id, uint64_t offset, uint64_t length, bool exclusive ) : file_credentials( file_credentials ), client_uuid( client_uuid ), client_pid( client_pid ), file_id( file_id ), offset( offset ), length( length ), exclusive( exclusive ) { }
+          xtreemfs_lock_checkRequest( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const char* client_uuid, size_t client_uuid_len, int32_t client_pid, const char* file_id, size_t file_id_len, uint64_t offset, uint64_t length, bool exclusive ) : file_credentials( file_credentials ), client_uuid( client_uuid, client_uuid_len ), client_pid( client_pid ), file_id( file_id, file_id_len ), offset( offset ), length( length ), exclusive( exclusive ) { }
+          virtual ~xtreemfs_lock_checkRequest() { }
+
+          void set_file_credentials( const org::xtreemfs::interfaces::FileCredentials&  file_credentials ) { this->file_credentials = file_credentials; }
+          const org::xtreemfs::interfaces::FileCredentials& get_file_credentials() const { return file_credentials; }
+          void set_client_uuid( const std::string& client_uuid ) { set_client_uuid( client_uuid.c_str(), client_uuid.size() ); }
+          void set_client_uuid( const char* client_uuid, size_t client_uuid_len ) { this->client_uuid.assign( client_uuid, client_uuid_len ); }
+          const std::string& get_client_uuid() const { return client_uuid; }
+          void set_client_pid( int32_t client_pid ) { this->client_pid = client_pid; }
+          int32_t get_client_pid() const { return client_pid; }
+          void set_file_id( const std::string& file_id ) { set_file_id( file_id.c_str(), file_id.size() ); }
+          void set_file_id( const char* file_id, size_t file_id_len ) { this->file_id.assign( file_id, file_id_len ); }
+          const std::string& get_file_id() const { return file_id; }
+          void set_offset( uint64_t offset ) { this->offset = offset; }
+          uint64_t get_offset() const { return offset; }
+          void set_length( uint64_t length ) { this->length = length; }
+          uint64_t get_length() const { return length; }
+          void set_exclusive( bool exclusive ) { this->exclusive = exclusive; }
+          bool get_exclusive() const { return exclusive; }
+
+          bool operator==( const xtreemfs_lock_checkRequest& other ) const { return file_credentials == other.file_credentials && client_uuid == other.client_uuid && client_pid == other.client_pid && file_id == other.file_id && offset == other.offset && length == other.length && exclusive == other.exclusive; }
+
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_checkRequest, 1351 );
+
+          // YIELD::Struct
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "client_uuid", 0, client_uuid ); marshaller.writeInt32( "client_pid", 0, client_pid ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "offset", 0, offset ); marshaller.writeUint64( "length", 0, length ); marshaller.writeBoolean( "exclusive", 0, exclusive ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "client_uuid", 0, client_uuid ); client_pid = unmarshaller.readInt32( "client_pid", 0 ); unmarshaller.readString( "file_id", 0, file_id ); offset = unmarshaller.readUint64( "offset", 0 ); length = unmarshaller.readUint64( "length", 0 ); exclusive = unmarshaller.readBoolean( "exclusive", 0 ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_lock_checkResponse; }
+
+
+        protected:
+          org::xtreemfs::interfaces::FileCredentials file_credentials;
+          std::string client_uuid;
+          int32_t client_pid;
+          std::string file_id;
+          uint64_t offset;
+          uint64_t length;
+          bool exclusive;
+        };
+
+        class xtreemfs_lock_releaseResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
+        {
+        public:
+          xtreemfs_lock_releaseResponse() { }
+          virtual ~xtreemfs_lock_releaseResponse() { }
+
+          bool operator==( const xtreemfs_lock_releaseResponse& ) const { return true; }
+
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_releaseResponse, 1352 );
+
+        };
+
+        class xtreemfs_lock_releaseRequest : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_REQUEST_PARENT_CLASS
+        {
+        public:
+          xtreemfs_lock_releaseRequest() { }
+          xtreemfs_lock_releaseRequest( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, const org::xtreemfs::interfaces::Lock& lock ) : file_credentials( file_credentials ), file_id( file_id ), lock( lock ) { }
+          xtreemfs_lock_releaseRequest( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const char* file_id, size_t file_id_len, const org::xtreemfs::interfaces::Lock& lock ) : file_credentials( file_credentials ), file_id( file_id, file_id_len ), lock( lock ) { }
+          virtual ~xtreemfs_lock_releaseRequest() { }
+
+          void set_file_credentials( const org::xtreemfs::interfaces::FileCredentials&  file_credentials ) { this->file_credentials = file_credentials; }
+          const org::xtreemfs::interfaces::FileCredentials& get_file_credentials() const { return file_credentials; }
+          void set_file_id( const std::string& file_id ) { set_file_id( file_id.c_str(), file_id.size() ); }
+          void set_file_id( const char* file_id, size_t file_id_len ) { this->file_id.assign( file_id, file_id_len ); }
+          const std::string& get_file_id() const { return file_id; }
+          void set_lock( const org::xtreemfs::interfaces::Lock&  lock ) { this->lock = lock; }
+          const org::xtreemfs::interfaces::Lock& get_lock() const { return lock; }
+
+          bool operator==( const xtreemfs_lock_releaseRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id && lock == other.lock; }
+
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_releaseRequest, 1352 );
+
+          // YIELD::Struct
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeStruct( "lock", 0, lock ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "file_credentials", 0, file_credentials ); unmarshaller.readString( "file_id", 0, file_id ); unmarshaller.readStruct( "lock", 0, lock ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_lock_releaseResponse; }
+
+
+        protected:
+          org::xtreemfs::interfaces::FileCredentials file_credentials;
+          std::string file_id;
+          org::xtreemfs::interfaces::Lock lock;
         };
 
         class xtreemfs_pingResponse : public ORG_XTREEMFS_INTERFACES_OSDINTERFACE_RESPONSE_PARENT_CLASS
@@ -1128,7 +1355,7 @@ namespace org
           bool operator==( const xtreemfs_pingResponse& other ) const { return remote_coordinates == other.remote_coordinates; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_pingResponse, 2301 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_pingResponse, 1360 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "remote_coordinates", 0, remote_coordinates ); }
@@ -1151,7 +1378,7 @@ namespace org
           bool operator==( const xtreemfs_pingRequest& other ) const { return coordinates == other.coordinates; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_pingRequest, 2301 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_pingRequest, 1360 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "coordinates", 0, coordinates ); }
@@ -1172,7 +1399,7 @@ namespace org
           bool operator==( const xtreemfs_shutdownResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 1350 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 1370 );
 
         };
 
@@ -1185,7 +1412,7 @@ namespace org
           bool operator==( const xtreemfs_shutdownRequest& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 1350 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 1370 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_shutdownResponse; }
 
@@ -1368,24 +1595,27 @@ namespace org
             // Switch on the event types that this interface handles, unwrap the corresponding requests and delegate to impl
             switch ( ev.get_type_id() )
             {
-              case 1301UL: handlereadRequest( static_cast<readRequest&>( ev ) ); return;
-              case 1302UL: handletruncateRequest( static_cast<truncateRequest&>( ev ) ); return;
-              case 1303UL: handleunlinkRequest( static_cast<unlinkRequest&>( ev ) ); return;
-              case 1304UL: handlewriteRequest( static_cast<writeRequest&>( ev ) ); return;
-              case 2300UL: handlextreemfs_broadcast_gmaxRequest( static_cast<xtreemfs_broadcast_gmaxRequest&>( ev ) ); return;
-              case 1403UL: handlextreemfs_check_objectRequest( static_cast<xtreemfs_check_objectRequest&>( ev ) ); return;
-              case 1409UL: handlextreemfs_cleanup_get_resultsRequest( static_cast<xtreemfs_cleanup_get_resultsRequest&>( ev ) ); return;
-              case 1408UL: handlextreemfs_cleanup_is_runningRequest( static_cast<xtreemfs_cleanup_is_runningRequest&>( ev ) ); return;
-              case 1405UL: handlextreemfs_cleanup_startRequest( static_cast<xtreemfs_cleanup_startRequest&>( ev ) ); return;
-              case 1407UL: handlextreemfs_cleanup_statusRequest( static_cast<xtreemfs_cleanup_statusRequest&>( ev ) ); return;
-              case 1406UL: handlextreemfs_cleanup_stopRequest( static_cast<xtreemfs_cleanup_stopRequest&>( ev ) ); return;
-              case 1400UL: handlextreemfs_internal_get_gmaxRequest( static_cast<xtreemfs_internal_get_gmaxRequest&>( ev ) ); return;
-              case 1401UL: handlextreemfs_internal_truncateRequest( static_cast<xtreemfs_internal_truncateRequest&>( ev ) ); return;
-              case 1404UL: handlextreemfs_internal_get_file_sizeRequest( static_cast<xtreemfs_internal_get_file_sizeRequest&>( ev ) ); return;
-              case 1402UL: handlextreemfs_internal_read_localRequest( static_cast<xtreemfs_internal_read_localRequest&>( ev ) ); return;
-              case 1410UL: handlextreemfs_internal_get_object_setRequest( static_cast<xtreemfs_internal_get_object_setRequest&>( ev ) ); return;
-              case 2301UL: handlextreemfs_pingRequest( static_cast<xtreemfs_pingRequest&>( ev ) ); return;
-              case 1350UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( ev ) ); return;
+              case 1310UL: handlereadRequest( static_cast<readRequest&>( ev ) ); return;
+              case 1311UL: handletruncateRequest( static_cast<truncateRequest&>( ev ) ); return;
+              case 1312UL: handleunlinkRequest( static_cast<unlinkRequest&>( ev ) ); return;
+              case 1313UL: handlewriteRequest( static_cast<writeRequest&>( ev ) ); return;
+              case 1320UL: handlextreemfs_broadcast_gmaxRequest( static_cast<xtreemfs_broadcast_gmaxRequest&>( ev ) ); return;
+              case 1321UL: handlextreemfs_check_objectRequest( static_cast<xtreemfs_check_objectRequest&>( ev ) ); return;
+              case 1330UL: handlextreemfs_cleanup_get_resultsRequest( static_cast<xtreemfs_cleanup_get_resultsRequest&>( ev ) ); return;
+              case 1331UL: handlextreemfs_cleanup_is_runningRequest( static_cast<xtreemfs_cleanup_is_runningRequest&>( ev ) ); return;
+              case 1332UL: handlextreemfs_cleanup_startRequest( static_cast<xtreemfs_cleanup_startRequest&>( ev ) ); return;
+              case 1333UL: handlextreemfs_cleanup_statusRequest( static_cast<xtreemfs_cleanup_statusRequest&>( ev ) ); return;
+              case 1334UL: handlextreemfs_cleanup_stopRequest( static_cast<xtreemfs_cleanup_stopRequest&>( ev ) ); return;
+              case 1340UL: handlextreemfs_internal_get_gmaxRequest( static_cast<xtreemfs_internal_get_gmaxRequest&>( ev ) ); return;
+              case 1341UL: handlextreemfs_internal_truncateRequest( static_cast<xtreemfs_internal_truncateRequest&>( ev ) ); return;
+              case 1342UL: handlextreemfs_internal_get_file_sizeRequest( static_cast<xtreemfs_internal_get_file_sizeRequest&>( ev ) ); return;
+              case 1343UL: handlextreemfs_internal_read_localRequest( static_cast<xtreemfs_internal_read_localRequest&>( ev ) ); return;
+              case 1344UL: handlextreemfs_internal_get_object_setRequest( static_cast<xtreemfs_internal_get_object_setRequest&>( ev ) ); return;
+              case 1350UL: handlextreemfs_lock_acquireRequest( static_cast<xtreemfs_lock_acquireRequest&>( ev ) ); return;
+              case 1351UL: handlextreemfs_lock_checkRequest( static_cast<xtreemfs_lock_checkRequest&>( ev ) ); return;
+              case 1352UL: handlextreemfs_lock_releaseRequest( static_cast<xtreemfs_lock_releaseRequest&>( ev ) ); return;
+              case 1360UL: handlextreemfs_pingRequest( static_cast<xtreemfs_pingRequest&>( ev ) ); return;
+              case 1370UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( ev ) ); return;
               default: handleUnknownEvent( ev ); return;
             }
           }
@@ -1411,24 +1641,27 @@ namespace org
           {
             switch ( request.get_type_id() )
             {
-              case 1301: return static_cast<readRequest*>( &request );
-              case 1302: return static_cast<truncateRequest*>( &request );
-              case 1303: return static_cast<unlinkRequest*>( &request );
-              case 1304: return static_cast<writeRequest*>( &request );
-              case 2300: return static_cast<xtreemfs_broadcast_gmaxRequest*>( &request );
-              case 1403: return static_cast<xtreemfs_check_objectRequest*>( &request );
-              case 1409: return static_cast<xtreemfs_cleanup_get_resultsRequest*>( &request );
-              case 1408: return static_cast<xtreemfs_cleanup_is_runningRequest*>( &request );
-              case 1405: return static_cast<xtreemfs_cleanup_startRequest*>( &request );
-              case 1407: return static_cast<xtreemfs_cleanup_statusRequest*>( &request );
-              case 1406: return static_cast<xtreemfs_cleanup_stopRequest*>( &request );
-              case 1400: return static_cast<xtreemfs_internal_get_gmaxRequest*>( &request );
-              case 1401: return static_cast<xtreemfs_internal_truncateRequest*>( &request );
-              case 1404: return static_cast<xtreemfs_internal_get_file_sizeRequest*>( &request );
-              case 1402: return static_cast<xtreemfs_internal_read_localRequest*>( &request );
-              case 1410: return static_cast<xtreemfs_internal_get_object_setRequest*>( &request );
-              case 2301: return static_cast<xtreemfs_pingRequest*>( &request );
-              case 1350: return static_cast<xtreemfs_shutdownRequest*>( &request );
+              case 1310: return static_cast<readRequest*>( &request );
+              case 1311: return static_cast<truncateRequest*>( &request );
+              case 1312: return static_cast<unlinkRequest*>( &request );
+              case 1313: return static_cast<writeRequest*>( &request );
+              case 1320: return static_cast<xtreemfs_broadcast_gmaxRequest*>( &request );
+              case 1321: return static_cast<xtreemfs_check_objectRequest*>( &request );
+              case 1330: return static_cast<xtreemfs_cleanup_get_resultsRequest*>( &request );
+              case 1331: return static_cast<xtreemfs_cleanup_is_runningRequest*>( &request );
+              case 1332: return static_cast<xtreemfs_cleanup_startRequest*>( &request );
+              case 1333: return static_cast<xtreemfs_cleanup_statusRequest*>( &request );
+              case 1334: return static_cast<xtreemfs_cleanup_stopRequest*>( &request );
+              case 1340: return static_cast<xtreemfs_internal_get_gmaxRequest*>( &request );
+              case 1341: return static_cast<xtreemfs_internal_truncateRequest*>( &request );
+              case 1342: return static_cast<xtreemfs_internal_get_file_sizeRequest*>( &request );
+              case 1343: return static_cast<xtreemfs_internal_read_localRequest*>( &request );
+              case 1344: return static_cast<xtreemfs_internal_get_object_setRequest*>( &request );
+              case 1350: return static_cast<xtreemfs_lock_acquireRequest*>( &request );
+              case 1351: return static_cast<xtreemfs_lock_checkRequest*>( &request );
+              case 1352: return static_cast<xtreemfs_lock_releaseRequest*>( &request );
+              case 1360: return static_cast<xtreemfs_pingRequest*>( &request );
+              case 1370: return static_cast<xtreemfs_shutdownRequest*>( &request );
               default: return NULL;
             }
           }
@@ -1437,30 +1670,33 @@ namespace org
           {
             switch ( response.get_type_id() )
             {
-              case 1301: return static_cast<readResponse*>( &response );
-              case 1302: return static_cast<truncateResponse*>( &response );
-              case 1303: return static_cast<unlinkResponse*>( &response );
-              case 1304: return static_cast<writeResponse*>( &response );
-              case 2300: return static_cast<xtreemfs_broadcast_gmaxResponse*>( &response );
-              case 1403: return static_cast<xtreemfs_check_objectResponse*>( &response );
-              case 1409: return static_cast<xtreemfs_cleanup_get_resultsResponse*>( &response );
-              case 1408: return static_cast<xtreemfs_cleanup_is_runningResponse*>( &response );
-              case 1405: return static_cast<xtreemfs_cleanup_startResponse*>( &response );
-              case 1407: return static_cast<xtreemfs_cleanup_statusResponse*>( &response );
-              case 1406: return static_cast<xtreemfs_cleanup_stopResponse*>( &response );
-              case 1400: return static_cast<xtreemfs_internal_get_gmaxResponse*>( &response );
-              case 1401: return static_cast<xtreemfs_internal_truncateResponse*>( &response );
-              case 1404: return static_cast<xtreemfs_internal_get_file_sizeResponse*>( &response );
-              case 1402: return static_cast<xtreemfs_internal_read_localResponse*>( &response );
-              case 1410: return static_cast<xtreemfs_internal_get_object_setResponse*>( &response );
-              case 2301: return static_cast<xtreemfs_pingResponse*>( &response );
-              case 1350: return static_cast<xtreemfs_shutdownResponse*>( &response );
-              case 1306: return static_cast<ConcurrentModificationException*>( &response );
-              case 1307: return static_cast<errnoException*>( &response );
-              case 1308: return static_cast<InvalidArgumentException*>( &response );
-              case 1311: return static_cast<OSDException*>( &response );
-              case 1309: return static_cast<ProtocolException*>( &response );
-              case 1310: return static_cast<RedirectException*>( &response );
+              case 1310: return static_cast<readResponse*>( &response );
+              case 1311: return static_cast<truncateResponse*>( &response );
+              case 1312: return static_cast<unlinkResponse*>( &response );
+              case 1313: return static_cast<writeResponse*>( &response );
+              case 1320: return static_cast<xtreemfs_broadcast_gmaxResponse*>( &response );
+              case 1321: return static_cast<xtreemfs_check_objectResponse*>( &response );
+              case 1330: return static_cast<xtreemfs_cleanup_get_resultsResponse*>( &response );
+              case 1331: return static_cast<xtreemfs_cleanup_is_runningResponse*>( &response );
+              case 1332: return static_cast<xtreemfs_cleanup_startResponse*>( &response );
+              case 1333: return static_cast<xtreemfs_cleanup_statusResponse*>( &response );
+              case 1334: return static_cast<xtreemfs_cleanup_stopResponse*>( &response );
+              case 1340: return static_cast<xtreemfs_internal_get_gmaxResponse*>( &response );
+              case 1341: return static_cast<xtreemfs_internal_truncateResponse*>( &response );
+              case 1342: return static_cast<xtreemfs_internal_get_file_sizeResponse*>( &response );
+              case 1343: return static_cast<xtreemfs_internal_read_localResponse*>( &response );
+              case 1344: return static_cast<xtreemfs_internal_get_object_setResponse*>( &response );
+              case 1350: return static_cast<xtreemfs_lock_acquireResponse*>( &response );
+              case 1351: return static_cast<xtreemfs_lock_checkResponse*>( &response );
+              case 1352: return static_cast<xtreemfs_lock_releaseResponse*>( &response );
+              case 1360: return static_cast<xtreemfs_pingResponse*>( &response );
+              case 1370: return static_cast<xtreemfs_shutdownResponse*>( &response );
+              case 1301: return static_cast<ConcurrentModificationException*>( &response );
+              case 1302: return static_cast<errnoException*>( &response );
+              case 1303: return static_cast<InvalidArgumentException*>( &response );
+              case 1304: return static_cast<OSDException*>( &response );
+              case 1305: return static_cast<ProtocolException*>( &response );
+              case 1306: return static_cast<RedirectException*>( &response );
               default: return NULL;
             }
           }
@@ -1469,24 +1705,27 @@ namespace org
           {
             switch ( tag )
             {
-              case 1301: return new readRequest;
-              case 1302: return new truncateRequest;
-              case 1303: return new unlinkRequest;
-              case 1304: return new writeRequest;
-              case 2300: return new xtreemfs_broadcast_gmaxRequest;
-              case 1403: return new xtreemfs_check_objectRequest;
-              case 1409: return new xtreemfs_cleanup_get_resultsRequest;
-              case 1408: return new xtreemfs_cleanup_is_runningRequest;
-              case 1405: return new xtreemfs_cleanup_startRequest;
-              case 1407: return new xtreemfs_cleanup_statusRequest;
-              case 1406: return new xtreemfs_cleanup_stopRequest;
-              case 1400: return new xtreemfs_internal_get_gmaxRequest;
-              case 1401: return new xtreemfs_internal_truncateRequest;
-              case 1404: return new xtreemfs_internal_get_file_sizeRequest;
-              case 1402: return new xtreemfs_internal_read_localRequest;
-              case 1410: return new xtreemfs_internal_get_object_setRequest;
-              case 2301: return new xtreemfs_pingRequest;
-              case 1350: return new xtreemfs_shutdownRequest;
+              case 1310: return new readRequest;
+              case 1311: return new truncateRequest;
+              case 1312: return new unlinkRequest;
+              case 1313: return new writeRequest;
+              case 1320: return new xtreemfs_broadcast_gmaxRequest;
+              case 1321: return new xtreemfs_check_objectRequest;
+              case 1330: return new xtreemfs_cleanup_get_resultsRequest;
+              case 1331: return new xtreemfs_cleanup_is_runningRequest;
+              case 1332: return new xtreemfs_cleanup_startRequest;
+              case 1333: return new xtreemfs_cleanup_statusRequest;
+              case 1334: return new xtreemfs_cleanup_stopRequest;
+              case 1340: return new xtreemfs_internal_get_gmaxRequest;
+              case 1341: return new xtreemfs_internal_truncateRequest;
+              case 1342: return new xtreemfs_internal_get_file_sizeRequest;
+              case 1343: return new xtreemfs_internal_read_localRequest;
+              case 1344: return new xtreemfs_internal_get_object_setRequest;
+              case 1350: return new xtreemfs_lock_acquireRequest;
+              case 1351: return new xtreemfs_lock_checkRequest;
+              case 1352: return new xtreemfs_lock_releaseRequest;
+              case 1360: return new xtreemfs_pingRequest;
+              case 1370: return new xtreemfs_shutdownRequest;
               default: return NULL;
             }
           }
@@ -1495,24 +1734,27 @@ namespace org
           {
             switch ( tag )
             {
-              case 1301: return new readResponse;
-              case 1302: return new truncateResponse;
-              case 1303: return new unlinkResponse;
-              case 1304: return new writeResponse;
-              case 2300: return new xtreemfs_broadcast_gmaxResponse;
-              case 1403: return new xtreemfs_check_objectResponse;
-              case 1409: return new xtreemfs_cleanup_get_resultsResponse;
-              case 1408: return new xtreemfs_cleanup_is_runningResponse;
-              case 1405: return new xtreemfs_cleanup_startResponse;
-              case 1407: return new xtreemfs_cleanup_statusResponse;
-              case 1406: return new xtreemfs_cleanup_stopResponse;
-              case 1400: return new xtreemfs_internal_get_gmaxResponse;
-              case 1401: return new xtreemfs_internal_truncateResponse;
-              case 1404: return new xtreemfs_internal_get_file_sizeResponse;
-              case 1402: return new xtreemfs_internal_read_localResponse;
-              case 1410: return new xtreemfs_internal_get_object_setResponse;
-              case 2301: return new xtreemfs_pingResponse;
-              case 1350: return new xtreemfs_shutdownResponse;
+              case 1310: return new readResponse;
+              case 1311: return new truncateResponse;
+              case 1312: return new unlinkResponse;
+              case 1313: return new writeResponse;
+              case 1320: return new xtreemfs_broadcast_gmaxResponse;
+              case 1321: return new xtreemfs_check_objectResponse;
+              case 1330: return new xtreemfs_cleanup_get_resultsResponse;
+              case 1331: return new xtreemfs_cleanup_is_runningResponse;
+              case 1332: return new xtreemfs_cleanup_startResponse;
+              case 1333: return new xtreemfs_cleanup_statusResponse;
+              case 1334: return new xtreemfs_cleanup_stopResponse;
+              case 1340: return new xtreemfs_internal_get_gmaxResponse;
+              case 1341: return new xtreemfs_internal_truncateResponse;
+              case 1342: return new xtreemfs_internal_get_file_sizeResponse;
+              case 1343: return new xtreemfs_internal_read_localResponse;
+              case 1344: return new xtreemfs_internal_get_object_setResponse;
+              case 1350: return new xtreemfs_lock_acquireResponse;
+              case 1351: return new xtreemfs_lock_checkResponse;
+              case 1352: return new xtreemfs_lock_releaseResponse;
+              case 1360: return new xtreemfs_pingResponse;
+              case 1370: return new xtreemfs_shutdownResponse;
               default: return NULL;
             }
           }
@@ -1521,12 +1763,12 @@ namespace org
           {
             switch ( tag )
             {
-              case 1306: return new ConcurrentModificationException;
-              case 1307: return new errnoException;
-              case 1308: return new InvalidArgumentException;
-              case 1311: return new OSDException;
-              case 1309: return new ProtocolException;
-              case 1310: return new RedirectException;
+              case 1301: return new ConcurrentModificationException;
+              case 1302: return new errnoException;
+              case 1303: return new InvalidArgumentException;
+              case 1304: return new OSDException;
+              case 1305: return new ProtocolException;
+              case 1306: return new RedirectException;
               default: return NULL;
             }
           }
@@ -1538,7 +1780,7 @@ namespace org
         virtual void handletruncateRequest( truncateRequest& req ) { ::yidl::auto_Object<truncateResponse> resp( new truncateResponse ); org::xtreemfs::interfaces::OSDWriteResponse osd_write_response; _truncate( req.get_file_credentials(), req.get_file_id(), req.get_new_file_size(), osd_write_response ); resp->set_osd_write_response( osd_write_response ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handleunlinkRequest( unlinkRequest& req ) { ::yidl::auto_Object<unlinkResponse> resp( new unlinkResponse ); _unlink( req.get_file_credentials(), req.get_file_id() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlewriteRequest( writeRequest& req ) { ::yidl::auto_Object<writeResponse> resp( new writeResponse ); org::xtreemfs::interfaces::OSDWriteResponse osd_write_response; _write( req.get_file_credentials(), req.get_file_id(), req.get_object_number(), req.get_object_version(), req.get_offset(), req.get_lease_timeout(), req.get_object_data(), osd_write_response ); resp->set_osd_write_response( osd_write_response ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
-        virtual void handlextreemfs_broadcast_gmaxRequest( xtreemfs_broadcast_gmaxRequest& req ) { ::yidl::auto_Object<xtreemfs_broadcast_gmaxResponse> resp( new xtreemfs_broadcast_gmaxResponse ); _xtreemfs_broadcast_gmax( req.get_fileId(), req.get_truncateEpoch(), req.get_lastObject(), req.get_fileSize() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_broadcast_gmaxRequest( xtreemfs_broadcast_gmaxRequest& req ) { ::yidl::auto_Object<xtreemfs_broadcast_gmaxResponse> resp( new xtreemfs_broadcast_gmaxResponse ); _xtreemfs_broadcast_gmax( req.get_file_id(), req.get_truncateEpoch(), req.get_lastObject(), req.get_fileSize() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlextreemfs_check_objectRequest( xtreemfs_check_objectRequest& req ) { ::yidl::auto_Object<xtreemfs_check_objectResponse> resp( new xtreemfs_check_objectResponse ); org::xtreemfs::interfaces::ObjectData _return_value = _xtreemfs_check_object( req.get_file_credentials(), req.get_file_id(), req.get_object_number(), req.get_object_version() ); resp->set__return_value( _return_value ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlextreemfs_cleanup_get_resultsRequest( xtreemfs_cleanup_get_resultsRequest& req ) { ::yidl::auto_Object<xtreemfs_cleanup_get_resultsResponse> resp( new xtreemfs_cleanup_get_resultsResponse ); org::xtreemfs::interfaces::StringSet results; _xtreemfs_cleanup_get_results( results ); resp->set_results( results ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlextreemfs_cleanup_is_runningRequest( xtreemfs_cleanup_is_runningRequest& req ) { ::yidl::auto_Object<xtreemfs_cleanup_is_runningResponse> resp( new xtreemfs_cleanup_is_runningResponse ); bool is_running; _xtreemfs_cleanup_is_running( is_running ); resp->set_is_running( is_running ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
@@ -1550,6 +1792,9 @@ namespace org
         virtual void handlextreemfs_internal_get_file_sizeRequest( xtreemfs_internal_get_file_sizeRequest& req ) { ::yidl::auto_Object<xtreemfs_internal_get_file_sizeResponse> resp( new xtreemfs_internal_get_file_sizeResponse ); uint64_t _return_value = _xtreemfs_internal_get_file_size( req.get_file_credentials(), req.get_file_id() ); resp->set__return_value( _return_value ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlextreemfs_internal_read_localRequest( xtreemfs_internal_read_localRequest& req ) { ::yidl::auto_Object<xtreemfs_internal_read_localResponse> resp( new xtreemfs_internal_read_localResponse ); org::xtreemfs::interfaces::InternalReadLocalResponse _return_value = _xtreemfs_internal_read_local( req.get_file_credentials(), req.get_file_id(), req.get_object_number(), req.get_object_version(), req.get_offset(), req.get_length(), req.get_attachObjectList(), req.get_requiredObjects() ); resp->set__return_value( _return_value ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlextreemfs_internal_get_object_setRequest( xtreemfs_internal_get_object_setRequest& req ) { ::yidl::auto_Object<xtreemfs_internal_get_object_setResponse> resp( new xtreemfs_internal_get_object_setResponse ); org::xtreemfs::interfaces::ObjectList _return_value = _xtreemfs_internal_get_object_set( req.get_file_credentials(), req.get_file_id() ); resp->set__return_value( _return_value ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_lock_acquireRequest( xtreemfs_lock_acquireRequest& req ) { ::yidl::auto_Object<xtreemfs_lock_acquireResponse> resp( new xtreemfs_lock_acquireResponse ); org::xtreemfs::interfaces::Lock _return_value = _xtreemfs_lock_acquire( req.get_file_credentials(), req.get_client_uuid(), req.get_client_pid(), req.get_file_id(), req.get_offset(), req.get_length(), req.get_exclusive() ); resp->set__return_value( _return_value ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_lock_checkRequest( xtreemfs_lock_checkRequest& req ) { ::yidl::auto_Object<xtreemfs_lock_checkResponse> resp( new xtreemfs_lock_checkResponse ); org::xtreemfs::interfaces::Lock _return_value = _xtreemfs_lock_check( req.get_file_credentials(), req.get_client_uuid(), req.get_client_pid(), req.get_file_id(), req.get_offset(), req.get_length(), req.get_exclusive() ); resp->set__return_value( _return_value ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlextreemfs_lock_releaseRequest( xtreemfs_lock_releaseRequest& req ) { ::yidl::auto_Object<xtreemfs_lock_releaseResponse> resp( new xtreemfs_lock_releaseResponse ); _xtreemfs_lock_release( req.get_file_credentials(), req.get_file_id(), req.get_lock() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlextreemfs_pingRequest( xtreemfs_pingRequest& req ) { ::yidl::auto_Object<xtreemfs_pingResponse> resp( new xtreemfs_pingResponse ); org::xtreemfs::interfaces::VivaldiCoordinates remote_coordinates; _xtreemfs_ping( req.get_coordinates(), remote_coordinates ); resp->set_remote_coordinates( remote_coordinates ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req ) { ::yidl::auto_Object<xtreemfs_shutdownResponse> resp( new xtreemfs_shutdownResponse ); _xtreemfs_shutdown(); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
 
@@ -1569,6 +1814,9 @@ namespace org
         virtual uint64_t _xtreemfs_internal_get_file_size( const org::xtreemfs::interfaces::FileCredentials& , const std::string&  ) { return 0; }
         virtual org::xtreemfs::interfaces::InternalReadLocalResponse _xtreemfs_internal_read_local( const org::xtreemfs::interfaces::FileCredentials& , const std::string& , uint64_t, uint64_t, uint64_t, uint64_t, bool, const org::xtreemfs::interfaces::ObjectListSet&  ) { return org::xtreemfs::interfaces::InternalReadLocalResponse(); }
         virtual org::xtreemfs::interfaces::ObjectList _xtreemfs_internal_get_object_set( const org::xtreemfs::interfaces::FileCredentials& , const std::string&  ) { return org::xtreemfs::interfaces::ObjectList(); }
+        virtual org::xtreemfs::interfaces::Lock _xtreemfs_lock_acquire( const org::xtreemfs::interfaces::FileCredentials& , const std::string& , int32_t, const std::string& , uint64_t, uint64_t, bool ) { return org::xtreemfs::interfaces::Lock(); }
+        virtual org::xtreemfs::interfaces::Lock _xtreemfs_lock_check( const org::xtreemfs::interfaces::FileCredentials& , const std::string& , int32_t, const std::string& , uint64_t, uint64_t, bool ) { return org::xtreemfs::interfaces::Lock(); }
+        virtual void _xtreemfs_lock_release( const org::xtreemfs::interfaces::FileCredentials& , const std::string& , const org::xtreemfs::interfaces::Lock&  ) { }
         virtual void _xtreemfs_ping( const org::xtreemfs::interfaces::VivaldiCoordinates& , org::xtreemfs::interfaces::VivaldiCoordinates&  ) { }
         virtual void _xtreemfs_shutdown() { }
       };
@@ -1579,7 +1827,7 @@ namespace org
       virtual void _truncate( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t new_file_size, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );\
       virtual void _unlink( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id );\
       virtual void _write( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, const org::xtreemfs::interfaces::ObjectData& object_data, org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );\
-      virtual void _xtreemfs_broadcast_gmax( const std::string& fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize );\
+      virtual void _xtreemfs_broadcast_gmax( const std::string& file_id, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize );\
       virtual org::xtreemfs::interfaces::ObjectData _xtreemfs_check_object( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version );\
       virtual void _xtreemfs_cleanup_get_results( org::xtreemfs::interfaces::StringSet& results );\
       virtual void _xtreemfs_cleanup_is_running( bool& is_running );\
@@ -1591,6 +1839,9 @@ namespace org
       virtual uint64_t _xtreemfs_internal_get_file_size( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id );\
       virtual org::xtreemfs::interfaces::InternalReadLocalResponse _xtreemfs_internal_read_local( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length, bool attachObjectList, const org::xtreemfs::interfaces::ObjectListSet& requiredObjects );\
       virtual org::xtreemfs::interfaces::ObjectList _xtreemfs_internal_get_object_set( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id );\
+      virtual org::xtreemfs::interfaces::Lock _xtreemfs_lock_acquire( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& client_uuid, int32_t client_pid, const std::string& file_id, uint64_t offset, uint64_t length, bool exclusive );\
+      virtual org::xtreemfs::interfaces::Lock _xtreemfs_lock_check( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& client_uuid, int32_t client_pid, const std::string& file_id, uint64_t offset, uint64_t length, bool exclusive );\
+      virtual void _xtreemfs_lock_release( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, const org::xtreemfs::interfaces::Lock& lock );\
       virtual void _xtreemfs_ping( const org::xtreemfs::interfaces::VivaldiCoordinates& coordinates, org::xtreemfs::interfaces::VivaldiCoordinates& remote_coordinates );\
       virtual void _xtreemfs_shutdown();
 
@@ -1611,6 +1862,9 @@ namespace org
       virtual void handlextreemfs_internal_get_file_sizeRequest( xtreemfs_internal_get_file_sizeRequest& req );\
       virtual void handlextreemfs_internal_read_localRequest( xtreemfs_internal_read_localRequest& req );\
       virtual void handlextreemfs_internal_get_object_setRequest( xtreemfs_internal_get_object_setRequest& req );\
+      virtual void handlextreemfs_lock_acquireRequest( xtreemfs_lock_acquireRequest& req );\
+      virtual void handlextreemfs_lock_checkRequest( xtreemfs_lock_checkRequest& req );\
+      virtual void handlextreemfs_lock_releaseRequest( xtreemfs_lock_releaseRequest& req );\
       virtual void handlextreemfs_pingRequest( xtreemfs_pingRequest& req );\
       virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req );
 

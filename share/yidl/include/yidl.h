@@ -280,39 +280,6 @@ namespace yidl
   };
 
 
-  class GatherBuffer : public Buffer
-  {
-  public:
-    GatherBuffer( const struct iovec* iovecs, uint32_t iovecs_len )
-      : iovecs( iovecs ), iovecs_len( iovecs_len )
-    { }
-
-    const struct iovec* get_iovecs() const { return iovecs; }
-    uint32_t get_iovecs_len() const { return iovecs_len; }
-
-    // Object
-    YIDL_OBJECT_PROTOTYPES( GatherBuffer, 3 );
-
-    // Buffer
-    size_t capacity() const { return size(); }
-    size_t get( void*, size_t ) { return 0; }
-    size_t put( const void*, size_t ) { return 0; }
-    operator void*() const { *((int*)0) = 0xabadcafe; return NULL; }
-
-    size_t size() const
-    {
-      size_t _size = 0;
-      for ( uint32_t iovec_i = 0; iovec_i < iovecs_len; iovec_i++ )
-        _size += iovecs[iovec_i].iov_len;
-      return _size;
-    }
-
-  private:
-    const struct iovec* iovecs;
-    uint32_t iovecs_len;
-  };
-
-
   class HeapBuffer : public FixedBuffer
   {
   public:

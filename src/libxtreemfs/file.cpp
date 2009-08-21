@@ -6,6 +6,8 @@
 #include "xtreemfs/volume.h"
 using namespace xtreemfs;
 
+#include "yieldfs.h"
+
 #include <errno.h>
 
 #ifdef _WIN32
@@ -15,6 +17,24 @@ using namespace xtreemfs;
 #else
 #include <errno.h>
 #endif
+
+
+#define FILE_OPERATION_BEGIN \
+  try \
+  {
+
+#define FILE_OPERATION_END \
+  } \
+  catch ( ProxyExceptionResponse& proxy_exception_response ) \
+  { \
+    YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() ); \
+    return false; \
+  } \
+  catch ( std::exception& ) \
+  { \
+    YIELD::Exception::set_errno( EIO ); \
+    return false; \
+  }
 
 
 namespace xtreemfs
@@ -90,25 +110,17 @@ bool File::close()
 
 bool File::flush()
 {
-  try
-  {
-    if ( !latest_osd_write_response.get_new_file_size().empty() )  
-    {
-      mrc_proxy->xtreemfs_update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
-      latest_osd_write_response.set_new_file_size( org::xtreemfs::interfaces::NewFileSize() );
-    }  
-    return true;
-  }
-  catch ( ProxyExceptionResponse& proxy_exception_response )
-  {
-    YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
-  }
-  catch ( std::exception& )
-  {
-    YIELD::Exception::set_errno( EIO );
-  }
+  FILE_OPERATION_BEGIN;
 
-  return false;
+  if ( !latest_osd_write_response.get_new_file_size().empty() )  
+  {
+    mrc_proxy->xtreemfs_update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
+    latest_osd_write_response.set_new_file_size( org::xtreemfs::interfaces::NewFileSize() );
+  }  
+
+  return true;
+
+  FILE_OPERATION_END;
 }
 
 YIELD::auto_Stat File::getattr()
@@ -129,9 +141,26 @@ bool File::getxattr( const std::string& name, std::string& out_value )
   return parent_volume->getxattr( path, name, out_value );
 }
 
+bool File::is_locked( bool exclusive, uint64_t offset, uint64_t length )
+{
+  org::xtreemfs::interfaces::Lock lock = parent_volume->get_osd_proxy_mux()->xtreemfs_lock_check( file_credentials, YIELD::Socket::getfqdn(), yieldfs::FUSE::getpid(), file_credentials.get_xcap().get_file_id(), offset, length, exclusive );
+  return lock.get_client_pid() != yieldfs::FUSE::getpid();
+}
+
 bool File::listxattr( std::vector<std::string>& out_names )
 {
   return parent_volume->listxattr( path, out_names );
+}
+
+bool File::lock( bool exclusive, uint64_t offset, uint64_t length )
+{
+  FILE_OPERATION_BEGIN;
+
+  org::xtreemfs::interfaces::Lock lock = parent_volume->get_osd_proxy_mux()->xtreemfs_lock_acquire( file_credentials, YIELD::Socket::getfqdn(), yieldfs::FUSE::getpid(), file_credentials.get_xcap().get_file_id(), offset, length, exclusive );
+  locks.push_back( lock );
+  return true;
+
+  FILE_OPERATION_END;
 }
 
 ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
@@ -309,29 +338,39 @@ bool File::sync()
 
 bool File::truncate( uint64_t new_size )
 {
-  try
+  FILE_OPERATION_BEGIN;
+
+  org::xtreemfs::interfaces::XCap truncate_xcap;
+  mrc_proxy->ftruncate( file_credentials.get_xcap(), truncate_xcap );
+  file_credentials.set_xcap( truncate_xcap );
+  org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
+  parent_volume->get_osd_proxy_mux()->truncate( file_credentials, file_credentials.get_xcap().get_file_id(), new_size, osd_write_response );
+  if ( osd_write_response > latest_osd_write_response )
+    latest_osd_write_response = osd_write_response;
+  if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
+    flush();
+  return true;
+
+  FILE_OPERATION_END;
+}
+
+bool File::unlock( uint64_t offset, uint64_t length )
+{
+  FILE_OPERATION_BEGIN;
+
+  if ( !locks.empty() )
   {
-    org::xtreemfs::interfaces::XCap truncate_xcap;
-    mrc_proxy->ftruncate( file_credentials.get_xcap(), truncate_xcap );
-    file_credentials.set_xcap( truncate_xcap );
-    org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
-    parent_volume->get_osd_proxy_mux()->truncate( file_credentials, file_credentials.get_xcap().get_file_id(), new_size, osd_write_response );
-    if ( osd_write_response > latest_osd_write_response )
-      latest_osd_write_response = osd_write_response;
-    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
-      flush();
+    parent_volume->get_osd_proxy_mux()->xtreemfs_lock_release( file_credentials, file_credentials.get_xcap().get_file_id(), locks.back() );
+    locks.pop_back();
     return true;
   }
-  catch ( ProxyExceptionResponse& proxy_exception_response )
-  {
-    YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
-  }
-  catch ( std::exception& )
+  else
   {
     YIELD::Exception::set_errno( EIO );
+    return false;
   }
 
-  return false;
+  FILE_OPERATION_END;
 }
 
 ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )

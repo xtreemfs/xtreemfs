@@ -30,7 +30,7 @@ namespace xtreemfs
     virtual void send( YIELD::Event& ev );
 
   protected:
-    Proxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SocketAddress peer_sockaddr, YIELD::auto_SSLContext ssl_context );
+    Proxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::Socket::auto_Address peer_sockaddr, YIELD::auto_SSLContext ssl_context );
     virtual ~Proxy();
 
     void getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials );

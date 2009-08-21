@@ -1,4 +1,4 @@
-// Revision: 1829
+// Revision: 1841
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -339,6 +339,23 @@ bool File::getxattr( const std::string& name, std::string& out_value )
   return false;
 #endif
 }
+bool File::is_locked( bool exclusive, uint64_t offset, uint64_t length )
+{
+#ifdef _WIN32
+  return false;
+#else
+  struct flock flock_;
+  flock_.l_type   = exclusive ? F_WRLCK : F_RDLCK;
+  flock_.l_whence = SEEK_SET;
+  flock_.l_start  = offset;
+  flock_.l_len    = length;
+  flock_.l_pid    = getpid();
+  if ( fcntl( fd, F_GETLK, &flock_ ) != -1 )
+    return flock_.l_type != F_UNLCK;
+  else
+    return false;
+#endif
+}
 bool File::listxattr( std::vector<std::string>& out_names )
 {
 #ifdef YIELD_HAVE_XATTR_H
@@ -360,6 +377,28 @@ bool File::listxattr( std::vector<std::string>& out_names )
   return true;
 #else
   return false;
+#endif
+}
+bool File::lock( bool exclusive, uint64_t offset, uint64_t length )
+{
+#ifdef _WIN32
+  if ( exclusive )
+  {
+    ULARGE_INTEGER uliOffset, uliLength;
+    uliOffset.QuadPart = offset;
+    uliLength.QuadPart = length;
+    return LockFile( fd, uliOffset.LowPart, uliOffset.HighPart, uliLength.LowPart, uliLength.HighPart ) == TRUE;
+  }
+  else
+    return false;
+#else
+  struct flock flock_;
+  flock_.l_type   = exclusive ? F_WRLCK : F_RDLCK;
+  flock_.l_whence = SEEK_SET;
+  flock_.l_start  = offset;
+  flock_.l_len    = length;
+  flock_.l_pid    = getpid();
+  return fcntl( fd, F_SETLKW, &flock_ ) != -1;
 #endif
 }
 auto_File File::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
@@ -500,6 +539,23 @@ bool File::truncate( uint64_t new_size )
     return false;
 #else
   return ::ftruncate( fd, new_size ) != -1;
+#endif
+}
+bool File::unlock( uint64_t offset, uint64_t length )
+{
+#ifdef _WIN32
+  ULARGE_INTEGER uliOffset, uliLength;
+  uliOffset.QuadPart = offset;
+  uliLength.QuadPart = length;
+  return UnlockFile( fd, uliOffset.LowPart, uliOffset.HighPart, uliLength.LowPart, uliLength.HighPart ) == TRUE;
+#else
+  struct flock flock_;
+  flock_.l_type   = F_UNLCK;
+  flock_.l_whence = SEEK_SET;
+  flock_.l_start  = offset;
+  flock_.l_len    = length;
+  flock_.l_pid    = getpid();
+  return fcntl( fd, F_SETLK, &flock_ ) != -1;
 #endif
 }
 ssize_t File::write( yidl::auto_Buffer buffer )

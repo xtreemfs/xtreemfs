@@ -25,7 +25,7 @@ using namespace xtreemfs;
 
 
 template <class ProxyType, class InterfaceType>
-Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SocketAddress peer_sockaddr, YIELD::auto_SSLContext ssl_context )
+Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::Socket::auto_Address peer_sockaddr, YIELD::auto_SSLContext ssl_context )
   : YIELD::ONCRPCClient<InterfaceType>( absolute_uri, flags, log, operation_timeout, peer_sockaddr, ssl_context ), log( log )
 {
 #ifndef _WIN32

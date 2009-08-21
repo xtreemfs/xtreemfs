@@ -31,6 +31,7 @@ namespace xtreemfs
     org::xtreemfs::interfaces::FileCredentials file_credentials;
 
     org::xtreemfs::interfaces::OSDWriteResponse latest_osd_write_response;
+    std::vector<org::xtreemfs::interfaces::Lock> locks;
     ssize_t selected_file_replica;
   };
 

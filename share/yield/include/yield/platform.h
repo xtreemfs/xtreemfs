@@ -100,12 +100,15 @@ typedef int ssize_t;
   virtual bool flush(); \
   virtual yidl::auto_Object<YIELD::Stat> getattr(); \
   virtual bool getxattr( const std::string& name, std::string& out_value ); \
+  virtual bool is_locked( bool exclusive, uint64_t offset, uint64_t length ); \
   virtual bool listxattr( std::vector<std::string>& out_names ); \
+  virtual bool lock( bool exclusive, uint64_t offset, uint64_t length ); \
   virtual ssize_t read( void* buffer, size_t buffer_len, uint64_t offset ); \
   virtual bool removexattr( const std::string& name ); \
   virtual bool setxattr( const std::string& name, const std::string& value, int flags ); \
   virtual bool sync(); \
   virtual bool truncate( uint64_t offset ); \
+  virtual bool unlock( uint64_t offset, uint64_t length ); \
   virtual ssize_t write( const void* buffer, size_t buffer_len, uint64_t offset ); \
 
 #define YIELD_VOLUME_PROTOTYPES \
@@ -387,7 +390,6 @@ namespace YIELD
     virtual yidl::auto_Object<Stat> stat() { return getattr(); }
     virtual ssize_t write( yidl::auto_Buffer buffer );
     virtual ssize_t write( const void* buffer, size_t buffer_len ); // Writes from the current position
-
     YIELD_FILE_PROTOTYPES;
 
     // yidl::Object

@@ -110,6 +110,7 @@ namespace yieldfs
     FUSE( YIELD::auto_Volume volume, uint32_t flags = 0 );
     ~FUSE();
 
+    static uint32_t getpid();
 #ifdef _WIN32
     int main( const char* drive_letter );
 #else
@@ -199,7 +200,7 @@ namespace yieldfs
     static bool trace( YIELD::auto_Log log, const char* operation_name, const YIELD::Path& path, mode_t mode, bool operation_result );
     static bool trace( YIELD::auto_Log log, const char* operation_name, const YIELD::Path& old_path, const YIELD::Path& new_path, bool operation_result );
     static bool trace( YIELD::auto_Log log, const char* operation_name, const YIELD::Path& path, const std::string& xattr_name, bool operation_result );
-    static bool trace( YIELD::auto_Log log, const char* operation_name, const YIELD::Path& path, size_t size, uint64_t offset, bool operation_result );
+    static bool trace( YIELD::auto_Log log, const char* operation_name, const YIELD::Path& path, uint64_t size, uint64_t offset, bool operation_result );
     static bool trace( YIELD::Log::Stream& log_stream, bool operation_result );
   };
 };

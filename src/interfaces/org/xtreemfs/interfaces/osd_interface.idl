@@ -19,6 +19,8 @@ module org # 1000
       {
         string client_uuid;
         uint32_t client_pid;
+        uint64_t offset;
+        uint64_t length;
       };
 
       struct ObjectData # 51

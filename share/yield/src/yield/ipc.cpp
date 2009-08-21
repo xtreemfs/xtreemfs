@@ -1,5 +1,4 @@
 #include "yield/ipc.h"
-using namespace YIELD;
 
 
 // client.cpp
@@ -14,20 +13,20 @@ using namespace YIELD;
 #define ETIMEDOUT WSAETIMEDOUT
 #endif
 template <class RequestType, class ResponseType>
-Client<RequestType, ResponseType>::Client( const URI& absolute_uri, uint32_t flags, auto_Log log, const Time& operation_timeout, auto_SocketAddress peername, auto_SSLContext ssl_context )
+YIELD::Client<RequestType, ResponseType>::Client( const URI& absolute_uri, uint32_t flags, auto_Log log, const Time& operation_timeout, Socket::auto_Address peername, auto_SSLContext ssl_context )
   : flags( flags ), log( log ), operation_timeout( operation_timeout ), peername( peername ), ssl_context( ssl_context )
 {
   this->absolute_uri = new URI( absolute_uri );
 }
 template <class RequestType, class ResponseType>
-Client<RequestType, ResponseType>::~Client()
+YIELD::Client<RequestType, ResponseType>::~Client()
 {
   // yidl::Object::decRef( *this->absolute_uri );
 //  for ( typename std::vector<Socket*>::iterator idle_socket_i = idle_sockets.begin(); idle_socket_i != idle_sockets.end(); idle_socket_i++ )
 //    Object::decRef( **idle_socket_i );
 }
 template <class RequestType, class ResponseType>
-void Client<RequestType, ResponseType>::handleEvent( Event& ev )
+void YIELD::Client<RequestType, ResponseType>::handleEvent( Event& ev )
 {
   switch ( ev.get_type_id() )
   {
@@ -90,10 +89,10 @@ void Client<RequestType, ResponseType>::handleEvent( Event& ev )
   }
 }
 template <class RequestType, class ResponseType>
-class Client<RequestType, ResponseType>::AIOConnectControlBlock : public Socket::AIOConnectControlBlock
+class YIELD::Client<RequestType, ResponseType>::AIOConnectControlBlock : public Socket::AIOConnectControlBlock
 {
 public:
-  AIOConnectControlBlock( Client<RequestType,ResponseType>& client, auto_SocketAddress peername, yidl::auto_Object<RequestType> request )
+  AIOConnectControlBlock( Client<RequestType,ResponseType>& client, Socket::auto_Address peername, yidl::auto_Object<RequestType> request )
     : Socket::AIOConnectControlBlock( peername ),
       client( client ),
       request( request )
@@ -128,7 +127,7 @@ private:
   Mutex request_lock;
 };
 template <class RequestType, class ResponseType>
-class Client<RequestType, ResponseType>::AIOReadControlBlock : public Socket::AIOReadControlBlock
+class YIELD::Client<RequestType, ResponseType>::AIOReadControlBlock : public Socket::AIOReadControlBlock
 {
 public:
   AIOReadControlBlock( yidl::auto_Buffer buffer, Client<RequestType,ResponseType>& client, yidl::auto_Object<RequestType> request, yidl::auto_Object<ResponseType> response )
@@ -209,7 +208,7 @@ private:
   yidl::auto_Object<ResponseType> response;
 };
 template <class RequestType, class ResponseType>
-class Client<RequestType, ResponseType>::AIOWriteControlBlock : public Socket::AIOWriteControlBlock
+class YIELD::Client<RequestType, ResponseType>::AIOWriteControlBlock : public Socket::AIOWriteControlBlock
 {
 public:
   AIOWriteControlBlock( yidl::auto_Buffer buffer, Client<RequestType,ResponseType>& client, yidl::auto_Object<RequestType> request )
@@ -252,7 +251,7 @@ private:
   Mutex request_lock;
 };
 template <class RequestType, class ResponseType>
-class Client<RequestType, ResponseType>::OperationTimer : public TimerQueue::Timer
+class YIELD::Client<RequestType, ResponseType>::OperationTimer : public TimerQueue::Timer
 {
 public:
   OperationTimer( auto_AIOControlBlock aio_control_block, const Time& operation_timeout )
@@ -267,14 +266,14 @@ public:
 private:
   auto_AIOControlBlock( aio_control_block );
 };
-template class Client<HTTPRequest, HTTPResponse>;
-template class Client<ONCRPCRequest, ONCRPCResponse>;
+template class YIELD::Client<YIELD::HTTPRequest, YIELD::HTTPResponse>;
+template class YIELD::Client<YIELD::ONCRPCRequest, YIELD::ONCRPCResponse>;
 
 
 // http_benchmark_driver.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-class HTTPBenchmarkDriver::StatisticsTimer : public TimerQueue::Timer
+class YIELD::HTTPBenchmarkDriver::StatisticsTimer : public TimerQueue::Timer
 {
 public:
   StatisticsTimer( yidl::auto_Object<HTTPBenchmarkDriver> http_benchmark_driver )
@@ -289,19 +288,19 @@ public:
 private:
   yidl::auto_Object<HTTPBenchmarkDriver> http_benchmark_driver;
 };
-HTTPBenchmarkDriver::HTTPBenchmarkDriver( auto_EventTarget http_request_target, uint8_t in_flight_http_request_count, const std::vector<URI*>& wlog_uris )
+YIELD::HTTPBenchmarkDriver::HTTPBenchmarkDriver( auto_EventTarget http_request_target, uint8_t in_flight_http_request_count, const std::vector<URI*>& wlog_uris )
   : http_request_target( http_request_target ), in_flight_http_request_count( in_flight_http_request_count ), wlog_uris( wlog_uris )
 {
   requests_sent_in_period = responses_received_in_period = 0;
   TimerQueue::getDefaultTimerQueue().addTimer( new StatisticsTimer( incRef() ) );
   wait_signal.acquire();
 }
-HTTPBenchmarkDriver::~HTTPBenchmarkDriver()
+YIELD::HTTPBenchmarkDriver::~HTTPBenchmarkDriver()
 {
   for ( std::vector<URI*>::iterator wlog_uri_i = wlog_uris.begin(); wlog_uri_i != wlog_uris.end(); wlog_uri_i++ )
     delete *wlog_uri_i;
 }
-yidl::auto_Object<HTTPBenchmarkDriver> HTTPBenchmarkDriver::create( auto_EventTarget http_request_target, uint8_t in_flight_http_request_count, const Path& wlog_file_path, uint32_t wlog_uris_length_max, uint8_t wlog_repetitions_count )
+yidl::auto_Object<YIELD::HTTPBenchmarkDriver> YIELD::HTTPBenchmarkDriver::create( auto_EventTarget http_request_target, uint8_t in_flight_http_request_count, const Path& wlog_file_path, uint32_t wlog_uris_length_max, uint8_t wlog_repetitions_count )
 {
   auto_MemoryMappedFile wlog = MemoryMappedFile::open( wlog_file_path );
   if ( wlog != NULL )
@@ -326,7 +325,7 @@ yidl::auto_Object<HTTPBenchmarkDriver> HTTPBenchmarkDriver::create( auto_EventTa
   else
     return NULL;
 }
-void HTTPBenchmarkDriver::calculateStatistics( const Time& elapsed_time )
+void YIELD::HTTPBenchmarkDriver::calculateStatistics( const Time& elapsed_time )
 {
   if ( elapsed_time.as_unix_time_ns() >= 5 * NS_IN_S )
   {
@@ -340,19 +339,19 @@ void HTTPBenchmarkDriver::calculateStatistics( const Time& elapsed_time )
     statistics_lock.release();
   }
 }
-void HTTPBenchmarkDriver::get_request_rates( std::vector<double>& out_request_rates )
+void YIELD::HTTPBenchmarkDriver::get_request_rates( std::vector<double>& out_request_rates )
 {
   statistics_lock.acquire();
   out_request_rates.insert( out_request_rates.end(), request_rates.begin(), request_rates.end() );
   statistics_lock.release();
 }
-void HTTPBenchmarkDriver::get_response_rates( std::vector<double>& out_response_rates )
+void YIELD::HTTPBenchmarkDriver::get_response_rates( std::vector<double>& out_response_rates )
 {
   statistics_lock.acquire();
   out_response_rates.insert( out_response_rates.end(), response_rates.begin(), response_rates.end() );
   statistics_lock.release();
 }
-void HTTPBenchmarkDriver::handleEvent( Event& ev )
+void YIELD::HTTPBenchmarkDriver::handleEvent( Event& ev )
 {
   switch ( ev.get_type_id() )
   {
@@ -377,11 +376,11 @@ void HTTPBenchmarkDriver::handleEvent( Event& ev )
     default: handleUnknownEvent( ev );
   }
 }
-void HTTPBenchmarkDriver::wait()
+void YIELD::HTTPBenchmarkDriver::wait()
 {
   wait_signal.acquire();
 }
-void HTTPBenchmarkDriver::sendHTTPRequest()
+void YIELD::HTTPBenchmarkDriver::sendHTTPRequest()
 {
   if ( !wlog_uris.empty() )
   {
@@ -401,7 +400,7 @@ void HTTPBenchmarkDriver::sendHTTPRequest()
 // http_client.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-auto_HTTPClient HTTPClient::create( const URI& absolute_uri,
+YIELD::auto_HTTPClient YIELD::HTTPClient::create( const URI& absolute_uri,
                                     uint32_t flags,
                                     auto_Log log,
                                     const Time& operation_timeout,
@@ -410,7 +409,7 @@ auto_HTTPClient HTTPClient::create( const URI& absolute_uri,
   URI checked_absolute_uri( absolute_uri );
   if ( checked_absolute_uri.get_port() == 0 )
     checked_absolute_uri.set_port( 80 );
-  auto_SocketAddress peername = SocketAddress::create( absolute_uri );
+  Socket::auto_Address peername = Socket::Address::create( absolute_uri );
   if ( peername != NULL )
   {
 #ifdef YIELD_HAVE_OPENSSL
@@ -421,15 +420,15 @@ auto_HTTPClient HTTPClient::create( const URI& absolute_uri,
   }
   return NULL;
 }
-auto_HTTPResponse HTTPClient::GET( const URI& absolute_uri, auto_Log log )
+YIELD::auto_HTTPResponse YIELD::HTTPClient::GET( const URI& absolute_uri, auto_Log log )
 {
   return sendHTTPRequest( "GET", absolute_uri, NULL, log );
 }
-auto_HTTPResponse HTTPClient::PUT( const URI& absolute_uri, yidl::auto_Buffer body, auto_Log log )
+YIELD::auto_HTTPResponse YIELD::HTTPClient::PUT( const URI& absolute_uri, yidl::auto_Buffer body, auto_Log log )
 {
   return sendHTTPRequest( "PUT", absolute_uri, body, log );
 }
-auto_HTTPResponse HTTPClient::PUT( const URI& absolute_uri, const Path& body_file_path, auto_Log log )
+YIELD::auto_HTTPResponse YIELD::HTTPClient::PUT( const URI& absolute_uri, const Path& body_file_path, auto_Log log )
 {
   auto_File file( File::open( body_file_path ) );
   size_t file_size = static_cast<size_t>( file->getattr()->get_size() );
@@ -437,7 +436,7 @@ auto_HTTPResponse HTTPClient::PUT( const URI& absolute_uri, const Path& body_fil
   file->read( *body, file_size );
   return sendHTTPRequest( "PUT", absolute_uri, body.release(), log );
 }
-auto_HTTPResponse HTTPClient::sendHTTPRequest( const char* method, const URI& absolute_uri, yidl::auto_Buffer body, auto_Log log )
+YIELD::auto_HTTPResponse YIELD::HTTPClient::sendHTTPRequest( const char* method, const URI& absolute_uri, yidl::auto_Buffer body, auto_Log log )
 {
   auto_HTTPClient http_client( HTTPClient::create( absolute_uri, 0, log ) );
   auto_HTTPRequest http_request( new HTTPRequest( method, absolute_uri, body ) );
@@ -452,17 +451,17 @@ auto_HTTPResponse HTTPClient::sendHTTPRequest( const char* method, const URI& ab
 // http_message.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-HTTPMessage::HTTPMessage( uint8_t reserve_iovecs_count )
+YIELD::HTTPMessage::HTTPMessage( uint8_t reserve_iovecs_count )
   : RFC822Headers( reserve_iovecs_count )
 {
   http_version = 1;
 }
-HTTPMessage::HTTPMessage( uint8_t reserve_iovecs_count, yidl::auto_Buffer body )
+YIELD::HTTPMessage::HTTPMessage( uint8_t reserve_iovecs_count, yidl::auto_Buffer body )
   : RFC822Headers( reserve_iovecs_count ), body( body )
 {
   http_version = 1;
 }
-ssize_t HTTPMessage::deserialize( yidl::auto_Buffer buffer )
+ssize_t YIELD::HTTPMessage::deserialize( yidl::auto_Buffer buffer )
 {
   switch ( deserialize_state )
   {
@@ -508,7 +507,7 @@ ssize_t HTTPMessage::deserialize( yidl::auto_Buffer buffer )
     default: DebugBreak(); return -1;
   }
 }
-yidl::auto_Buffer HTTPMessage::serialize()
+yidl::auto_Buffer YIELD::HTTPMessage::serialize()
 {
   // Finalize headers
   if ( body != NULL )
@@ -535,7 +534,7 @@ yidl::auto_Buffer HTTPMessage::serialize()
 // http_request.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-HTTPRequest::HTTPRequest()
+YIELD::HTTPRequest::HTTPRequest()
   : HTTPMessage( 0 )
 {
   method[0] = 0;
@@ -545,17 +544,17 @@ HTTPRequest::HTTPRequest()
   http_version = 1;
   deserialize_state = DESERIALIZING_METHOD;
 }
-HTTPRequest::HTTPRequest( const char* method, const char* relative_uri, const char* host, yidl::auto_Buffer body )
+YIELD::HTTPRequest::HTTPRequest( const char* method, const char* relative_uri, const char* host, yidl::auto_Buffer body )
   : HTTPMessage( 4, body )
 {
   init( method, relative_uri, host, body );
 }
-HTTPRequest::HTTPRequest( const char* method, const URI& absolute_uri, yidl::auto_Buffer body )
+YIELD::HTTPRequest::HTTPRequest( const char* method, const URI& absolute_uri, yidl::auto_Buffer body )
   : HTTPMessage( 4, body )
 {
   init( method, absolute_uri.get_resource().c_str(), absolute_uri.get_host().c_str(), body );
 }
-void HTTPRequest::init( const char* method, const char* relative_uri, const char* host, yidl::auto_Buffer body )
+void YIELD::HTTPRequest::init( const char* method, const char* relative_uri, const char* host, yidl::auto_Buffer body )
 {
 #ifdef _WIN32
   strncpy_s( this->method, 16, method, 16 );
@@ -569,11 +568,11 @@ void HTTPRequest::init( const char* method, const char* relative_uri, const char
   set_header( "Host", const_cast<char*>( host ) );
   deserialize_state = DESERIALIZE_DONE;
 }
-HTTPRequest::~HTTPRequest()
+YIELD::HTTPRequest::~HTTPRequest()
 {
   delete [] uri;
 }
-ssize_t HTTPRequest::deserialize( yidl::auto_Buffer buffer )
+ssize_t YIELD::HTTPRequest::deserialize( yidl::auto_Buffer buffer )
 {
   switch ( deserialize_state )
   {
@@ -665,15 +664,15 @@ ssize_t HTTPRequest::deserialize( yidl::auto_Buffer buffer )
     default: return HTTPMessage::deserialize( buffer );
   }
 }
-void HTTPRequest::respond( uint16_t status_code )
+void YIELD::HTTPRequest::respond( uint16_t status_code )
 {
   respond( *( new HTTPResponse( status_code ) ) );
 }
-void HTTPRequest::respond( uint16_t status_code, yidl::auto_Buffer body )
+void YIELD::HTTPRequest::respond( uint16_t status_code, yidl::auto_Buffer body )
 {
   respond( *( new HTTPResponse( status_code, body ) ) );
 }
-yidl::auto_Buffer HTTPRequest::serialize()
+yidl::auto_Buffer YIELD::HTTPRequest::serialize()
 {
   RFC822Headers::set_iovec( 0, method, strnlen( method, 16 ) );
   RFC822Headers::set_iovec( 1, " ", 1 );
@@ -686,24 +685,24 @@ yidl::auto_Buffer HTTPRequest::serialize()
 // http_response.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-HTTPResponse::HTTPResponse()
+YIELD::HTTPResponse::HTTPResponse()
   : HTTPMessage( 0 )
 {
   memset( status_code_str, 0, sizeof( status_code_str ) );
   deserialize_state = DESERIALIZING_HTTP_VERSION;
 }
-HTTPResponse::HTTPResponse( uint16_t status_code )
+YIELD::HTTPResponse::HTTPResponse( uint16_t status_code )
   : HTTPMessage( 1 ), status_code( status_code )
 {
   http_version = 1;
   deserialize_state = DESERIALIZE_DONE;
 }
-HTTPResponse::HTTPResponse( uint16_t status_code, yidl::auto_Buffer body )
+YIELD::HTTPResponse::HTTPResponse( uint16_t status_code, yidl::auto_Buffer body )
   : HTTPMessage( 1, body ), status_code( status_code )
 {
   deserialize_state = DESERIALIZE_DONE;
 }
-ssize_t HTTPResponse::deserialize( yidl::auto_Buffer buffer )
+ssize_t YIELD::HTTPResponse::deserialize( yidl::auto_Buffer buffer )
 {
   switch ( deserialize_state )
   {
@@ -783,7 +782,7 @@ ssize_t HTTPResponse::deserialize( yidl::auto_Buffer buffer )
     default: return HTTPMessage::deserialize( buffer );
   }
 }
-yidl::auto_Buffer HTTPResponse::serialize()
+yidl::auto_Buffer YIELD::HTTPResponse::serialize()
 {
   const char* status_line;
   size_t status_line_len;
@@ -845,7 +844,7 @@ yidl::auto_Buffer HTTPResponse::serialize()
 // http_server.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-class HTTPServer::AIOWriteControlBlock : public Socket::AIOWriteControlBlock
+class YIELD::HTTPServer::AIOWriteControlBlock : public Socket::AIOWriteControlBlock
 {
 public:
   AIOWriteControlBlock( yidl::auto_Buffer buffer )
@@ -863,7 +862,7 @@ public:
     get_socket()->close();
   }
 };
-class HTTPServer::HTTPResponseTarget : public EventTarget
+class YIELD::HTTPServer::HTTPResponseTarget : public EventTarget
 {
 public:
   HTTPResponseTarget( auto_Socket socket_ )
@@ -886,7 +885,7 @@ public:
 private:
   auto_Socket socket_;
 };
-class HTTPServer::AIOReadControlBlock : public Socket::AIOReadControlBlock
+class YIELD::HTTPServer::AIOReadControlBlock : public Socket::AIOReadControlBlock
 {
 public:
   AIOReadControlBlock( yidl::auto_Buffer buffer, auto_HTTPRequest http_request, auto_EventTarget http_request_target )
@@ -924,16 +923,19 @@ private:
   auto_HTTPRequest http_request;
   auto_EventTarget http_request_target;
 };
-class HTTPServer::AIOAcceptControlBlock : public TCPSocket::AIOAcceptControlBlock
+class YIELD::HTTPServer::AIOAcceptControlBlock : public TCPSocket::AIOAcceptControlBlock
 {
 public:
-  AIOAcceptControlBlock( auto_EventTarget http_request_target )
-    : http_request_target( http_request_target )
+  AIOAcceptControlBlock( auto_EventTarget http_request_target, auto_Log log )
+    : http_request_target( http_request_target ), log( log )
   { }
   void onCompletion( size_t )
   {
-    get_accepted_tcp_socket()->aio_read( new AIOReadControlBlock( new yidl::HeapBuffer( 1024 ), new HTTPRequest, http_request_target ) );
-    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( http_request_target ) );
+    auto_Socket accepted_tcp_socket( get_accepted_tcp_socket().release() );
+    if ( log != NULL && log->get_level() >= Log::LOG_INFO )
+      accepted_tcp_socket = new TracingSocket( accepted_tcp_socket, log );
+    accepted_tcp_socket->aio_read( new AIOReadControlBlock( new yidl::HeapBuffer( 1024 ), new HTTPRequest, http_request_target ) );
+    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( http_request_target, log ) );
   }
   void onError( uint32_t error_code )
   {
@@ -943,19 +945,20 @@ public:
   }
 private:
   auto_EventTarget http_request_target;
+  auto_Log log;
 };
-HTTPServer::HTTPServer( auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket )
-  : http_request_target( http_request_target ), listen_tcp_socket( listen_tcp_socket )
+YIELD::HTTPServer::HTTPServer( auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket, auto_Log log )
+  : http_request_target( http_request_target ), listen_tcp_socket( listen_tcp_socket ), log( log )
 {
   for ( uint8_t accept_i = 0; accept_i < 10; accept_i++ )
-    listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( http_request_target ) );
+    listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( http_request_target, log ) );
 }
-auto_HTTPServer HTTPServer::create( const URI& absolute_uri,
+YIELD::auto_HTTPServer YIELD::HTTPServer::create( const URI& absolute_uri,
                                     auto_EventTarget http_request_target,
                                     auto_Log log,
                                     auto_SSLContext ssl_context )
 {
-  auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
+  Socket::auto_Address sockname = Socket::Address::create( absolute_uri );
   if ( sockname != NULL )
   {
     auto_TCPSocket listen_tcp_socket;
@@ -967,7 +970,7 @@ auto_HTTPServer HTTPServer::create( const URI& absolute_uri,
       listen_tcp_socket = TCPSocket::create();
     if ( listen_tcp_socket->bind( sockname ) &&
          listen_tcp_socket->listen() )
-      return new HTTPServer( http_request_target, listen_tcp_socket );
+      return new HTTPServer( http_request_target, listen_tcp_socket, log );
   }
   return NULL;
 }
@@ -980,25 +983,25 @@ extern "C"
 {
   #include <yajl.h>
 };
-JSONMarshaller::JSONMarshaller( bool write_empty_strings )
+YIELD::JSONMarshaller::JSONMarshaller( bool write_empty_strings )
 : write_empty_strings( write_empty_strings )
 {
   buffer = new yidl::StringBuffer;
   root_key = NULL;
   writer = yajl_gen_alloc( NULL );
 }
-JSONMarshaller::JSONMarshaller( JSONMarshaller& parent_json_marshaller, const char* root_key )
+YIELD::JSONMarshaller::JSONMarshaller( JSONMarshaller& parent_json_marshaller, const char* root_key )
   : root_key( root_key ),
     write_empty_strings( parent_json_marshaller.write_empty_strings ),
     writer( parent_json_marshaller.writer ),
     buffer( parent_json_marshaller.buffer )
 { }
-JSONMarshaller::~JSONMarshaller()
+YIELD::JSONMarshaller::~JSONMarshaller()
 {
 //  if ( root_key == NULL ) // This is the root JSONMarshaller
 //    yajl_gen_free( writer );
 }
-void JSONMarshaller::flushYAJLBuffer()
+void YIELD::JSONMarshaller::flushYAJLBuffer()
 {
   const unsigned char* buffer;
   unsigned int len;
@@ -1006,39 +1009,39 @@ void JSONMarshaller::flushYAJLBuffer()
   this->buffer->put( buffer, len );
   yajl_gen_clear( writer );
 }
-void JSONMarshaller::writeBoolean( const char* key, uint32_t, bool value )
+void YIELD::JSONMarshaller::writeBoolean( const char* key, uint32_t, bool value )
 {
   writeKey( key );
   yajl_gen_bool( writer, ( int )value );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeBuffer( const char*, uint32_t, yidl::auto_Buffer )
+void YIELD::JSONMarshaller::writeBuffer( const char*, uint32_t, yidl::auto_Buffer )
 {
   DebugBreak();
 }
-void JSONMarshaller::writeKey( const char* key )
+void YIELD::JSONMarshaller::writeKey( const char* key )
 {
   if ( in_map && key != NULL )
     yajl_gen_string( writer, reinterpret_cast<const unsigned char*>( key ), static_cast<unsigned int>( strnlen( key, UINT16_MAX ) ) );
 }
-void JSONMarshaller::writeDouble( const char* key, uint32_t, double value )
+void YIELD::JSONMarshaller::writeDouble( const char* key, uint32_t, double value )
 {
   writeKey( key );
   yajl_gen_double( writer, value );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeInt64( const char* key, uint32_t, int64_t value )
+void YIELD::JSONMarshaller::writeInt64( const char* key, uint32_t, int64_t value )
 {
   writeKey( key );
   yajl_gen_integer( writer, ( long )value );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeMap( const char* key, uint32_t, const yidl::Map& value )
+void YIELD::JSONMarshaller::writeMap( const char* key, uint32_t, const yidl::Map& value )
 {
   writeKey( key );
   JSONMarshaller( *this, key ).writeMap( &value );
 }
-void JSONMarshaller::writeMap( const yidl::Map* value )
+void YIELD::JSONMarshaller::writeMap( const yidl::Map* value )
 {
   yajl_gen_map_open( writer );
   in_map = true;
@@ -1047,12 +1050,12 @@ void JSONMarshaller::writeMap( const yidl::Map* value )
   yajl_gen_map_close( writer );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeStruct( const char* key, uint32_t, const yidl::Struct& value )
+void YIELD::JSONMarshaller::writeStruct( const char* key, uint32_t, const yidl::Struct& value )
 {
   writeKey( key );
   JSONMarshaller( *this, key ).writeStruct( &value );
 }
-void JSONMarshaller::writeStruct( const yidl::Struct* value )
+void YIELD::JSONMarshaller::writeStruct( const yidl::Struct* value )
 {
   yajl_gen_map_open( writer );
   in_map = true;
@@ -1061,12 +1064,12 @@ void JSONMarshaller::writeStruct( const yidl::Struct* value )
   yajl_gen_map_close( writer );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeSequence( const char* key, uint32_t, const yidl::Sequence& value )
+void YIELD::JSONMarshaller::writeSequence( const char* key, uint32_t, const yidl::Sequence& value )
 {
   writeKey( key );
   JSONMarshaller( *this, key ).writeSequence( &value );
 }
-void JSONMarshaller::writeSequence( const yidl::Sequence* value )
+void YIELD::JSONMarshaller::writeSequence( const yidl::Sequence* value )
 {
   yajl_gen_array_open( writer );
   in_map = false;
@@ -1075,7 +1078,7 @@ void JSONMarshaller::writeSequence( const yidl::Sequence* value )
   yajl_gen_array_close( writer );
   flushYAJLBuffer();
 }
-void JSONMarshaller::writeString( const char* key, uint32_t, const char* value, size_t value_len )
+void YIELD::JSONMarshaller::writeString( const char* key, uint32_t, const char* value, size_t value_len )
 {
   if ( value_len > 0 || write_empty_strings )
   {
@@ -1093,7 +1096,7 @@ extern "C"
 {
   #include <yajl.h>
 };
-class JSONUnmarshaller::JSONValue
+class YIELD::JSONUnmarshaller::JSONValue
 {
 public:
   JSONValue( yidl::auto_StringBuffer identifier, bool is_map )
@@ -1127,7 +1130,7 @@ protected:
     as_integer = 0;
   }
 };
-class JSONUnmarshaller::JSONObject : public JSONValue
+class YIELD::JSONUnmarshaller::JSONObject : public JSONValue
 {
 public:
   JSONObject( yidl::auto_Buffer json_buffer )
@@ -1267,7 +1270,7 @@ private:
   }
   static yajl_callbacks JSONObject_yajl_callbacks;
 };
-yajl_callbacks JSONUnmarshaller::JSONObject::JSONObject_yajl_callbacks =
+yajl_callbacks YIELD::JSONUnmarshaller::JSONObject::JSONObject_yajl_callbacks =
 {
   handle_yajl_null,
   handle_yajl_boolean,
@@ -1281,22 +1284,22 @@ yajl_callbacks JSONUnmarshaller::JSONObject::JSONObject_yajl_callbacks =
   handle_yajl_start_array,
   handle_yajl_end_array
 };
-JSONUnmarshaller::JSONUnmarshaller( yidl::auto_Buffer buffer )
+YIELD::JSONUnmarshaller::JSONUnmarshaller( yidl::auto_Buffer buffer )
 {
   root_key = NULL;
   root_json_value = new JSONObject( buffer );
   next_json_value = root_json_value->child;
 }
-JSONUnmarshaller::JSONUnmarshaller( const char* root_key, JSONValue& root_json_value )
+YIELD::JSONUnmarshaller::JSONUnmarshaller( const char* root_key, JSONValue& root_json_value )
   : root_key( root_key ), root_json_value( &root_json_value ),
     next_json_value( root_json_value.child )
 { }
-JSONUnmarshaller::~JSONUnmarshaller()
+YIELD::JSONUnmarshaller::~JSONUnmarshaller()
 {
 //  if ( root_key == NULL )
 //    delete root_json_value;
 }
-bool JSONUnmarshaller::readBoolean( const char* key, uint32_t )
+bool YIELD::JSONUnmarshaller::readBoolean( const char* key, uint32_t )
 {
   JSONValue* json_value = readJSONValue( key );
   if ( json_value )
@@ -1309,11 +1312,11 @@ bool JSONUnmarshaller::readBoolean( const char* key, uint32_t )
   else
     return false;
 }
-void JSONUnmarshaller::readBuffer( const char*, uint32_t, yidl::auto_Buffer value )
+void YIELD::JSONUnmarshaller::readBuffer( const char*, uint32_t, yidl::auto_Buffer value )
 {
   DebugBreak();
 }
-double JSONUnmarshaller::readDouble( const char* key, uint32_t )
+double YIELD::JSONUnmarshaller::readDouble( const char* key, uint32_t )
 {
   JSONValue* json_value = readJSONValue( key );
   if ( json_value )
@@ -1326,7 +1329,7 @@ double JSONUnmarshaller::readDouble( const char* key, uint32_t )
   else
     return 0;
 }
-int64_t JSONUnmarshaller::readInt64( const char* key, uint32_t )
+int64_t YIELD::JSONUnmarshaller::readInt64( const char* key, uint32_t )
 {
   JSONValue* json_value = readJSONValue( key );
   if ( json_value )
@@ -1339,7 +1342,7 @@ int64_t JSONUnmarshaller::readInt64( const char* key, uint32_t )
   else
     return 0;
 }
-void JSONUnmarshaller::readMap( const char* key, uint32_t, yidl::Map& value )
+void YIELD::JSONUnmarshaller::readMap( const char* key, uint32_t, yidl::Map& value )
 {
   JSONValue* json_value;
   if ( key != NULL )
@@ -1361,12 +1364,12 @@ void JSONUnmarshaller::readMap( const char* key, uint32_t, yidl::Map& value )
   child_json_unmarshaller.readMap( value );
   json_value->have_read = true;
 }
-void JSONUnmarshaller::readMap( yidl::Map& value )
+void YIELD::JSONUnmarshaller::readMap( yidl::Map& value )
 {
   while ( next_json_value )
     value.unmarshal( *this );
 }
-void JSONUnmarshaller::readSequence( const char* key, uint32_t, yidl::Sequence& value )
+void YIELD::JSONUnmarshaller::readSequence( const char* key, uint32_t, yidl::Sequence& value )
 {
   JSONValue* json_value;
   if ( key != NULL )
@@ -1388,12 +1391,12 @@ void JSONUnmarshaller::readSequence( const char* key, uint32_t, yidl::Sequence& 
   child_json_unmarshaller.readSequence( value );
   json_value->have_read = true;
 }
-void JSONUnmarshaller::readSequence( yidl::Sequence& value )
+void YIELD::JSONUnmarshaller::readSequence( yidl::Sequence& value )
 {
   while ( next_json_value )
     value.unmarshal( *this );
 }
-void JSONUnmarshaller::readString( const char* key, uint32_t, std::string& str )
+void YIELD::JSONUnmarshaller::readString( const char* key, uint32_t, std::string& str )
 {
   JSONValue* json_value = readJSONValue( key );
   if ( json_value )
@@ -1407,7 +1410,7 @@ void JSONUnmarshaller::readString( const char* key, uint32_t, std::string& str )
       str.assign( static_cast<const std::string&>( *json_value->identifier ) );
   }
 }
-void JSONUnmarshaller::readStruct( const char* key, uint32_t, yidl::Struct& value )
+void YIELD::JSONUnmarshaller::readStruct( const char* key, uint32_t, yidl::Struct& value )
 {
   JSONValue* json_value;
   if ( key != NULL )
@@ -1429,11 +1432,11 @@ void JSONUnmarshaller::readStruct( const char* key, uint32_t, yidl::Struct& valu
   child_json_unmarshaller.readStruct( value );
   json_value->have_read = true;
 }
-void JSONUnmarshaller::readStruct( yidl::Struct& s )
+void YIELD::JSONUnmarshaller::readStruct( yidl::Struct& s )
 {
   s.unmarshal( *this );
 }
-JSONUnmarshaller::JSONValue* JSONUnmarshaller::readJSONValue( const char* key )
+YIELD::JSONUnmarshaller::JSONValue* YIELD::JSONUnmarshaller::readJSONValue( const char* key )
 {
   if ( root_json_value->is_map )
   {
@@ -1479,7 +1482,7 @@ JSONUnmarshaller::JSONValue* JSONUnmarshaller::readJSONValue( const char* key )
 #pragma warning( push )
 #pragma warning( disable: 4100 )
 #endif
-auto_NamedPipe NamedPipe::open( const Path& path, uint32_t flags, mode_t mode )
+YIELD::auto_NamedPipe YIELD::NamedPipe::open( const Path& path, uint32_t flags, mode_t mode )
 {
 #ifdef _WIN32
   Path named_pipe_base_dir_path( TEXT( "\\\\.\\pipe" ) );
@@ -1511,16 +1514,16 @@ auto_NamedPipe NamedPipe::open( const Path& path, uint32_t flags, mode_t mode )
   return NULL;
 }
 #ifdef _WIN32
-NamedPipe::NamedPipe( auto_File underlying_file, bool connected )
+YIELD::NamedPipe::NamedPipe( auto_File underlying_file, bool connected )
   : underlying_file( underlying_file ), connected( connected )
 { }
 #else
-NamedPipe::NamedPipe( auto_File underlying_file )
+YIELD::NamedPipe::NamedPipe( auto_File underlying_file )
   : underlying_file( underlying_file )
 { }
 #endif
 #ifdef _WIN32
-bool NamedPipe::connect()
+bool YIELD::NamedPipe::connect()
 {
   if ( connected )
     return true;
@@ -1537,7 +1540,7 @@ bool NamedPipe::connect()
   }
 }
 #endif
-ssize_t NamedPipe::read( void* buffer, size_t buffer_len )
+ssize_t YIELD::NamedPipe::read( void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
   if ( connect() )
@@ -1548,7 +1551,7 @@ ssize_t NamedPipe::read( void* buffer, size_t buffer_len )
   return underlying_file->read( buffer, buffer_len );
 #endif
 }
-ssize_t NamedPipe::write( const void* buffer, size_t buffer_len )
+ssize_t YIELD::NamedPipe::write( const void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
   if ( connect() )
@@ -1568,23 +1571,23 @@ ssize_t NamedPipe::write( const void* buffer, size_t buffer_len )
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 template <class ONCRPCMessageType>
-ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage( auto_Interface interface_ )
+YIELD::ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage( auto_Interface interface_ )
   : interface_( interface_ )
 {
   xid = 0;
   deserialize_state = DESERIALIZING_RECORD_FRAGMENT_MARKER;
 }
 template <class ONCRPCMessageType>
-ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage( auto_Interface interface_, uint32_t xid, yidl::auto_Struct body )
+YIELD::ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage( auto_Interface interface_, uint32_t xid, yidl::auto_Struct body )
   : interface_( interface_ ), xid( xid ), body( body )
 {
   deserialize_state = DESERIALIZING_RECORD_FRAGMENT_MARKER;
 }
 template <class ONCRPCMessageType>
-ONCRPCMessage<ONCRPCMessageType>::~ONCRPCMessage()
+YIELD::ONCRPCMessage<ONCRPCMessageType>::~ONCRPCMessage()
 { }
 template <class ONCRPCMessageType>
-ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize( yidl::auto_Buffer buffer )
+ssize_t YIELD::ONCRPCMessage<ONCRPCMessageType>::deserialize( yidl::auto_Buffer buffer )
 {
   switch ( deserialize_state )
   {
@@ -1621,7 +1624,7 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize( yidl::auto_Buffer buffer 
   return -1;
 }
 template <class ONCRPCMessageType>
-ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker( yidl::auto_Buffer buffer )
+ssize_t YIELD::ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker( yidl::auto_Buffer buffer )
 {
   uint32_t record_fragment_marker = 0;
   size_t record_fragment_marker_filled = buffer->get( &record_fragment_marker, sizeof( record_fragment_marker ) );
@@ -1649,7 +1652,7 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker( yidl:
     return -1;
 }
 template <class ONCRPCMessageType>
-ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment( yidl::auto_Buffer buffer )
+ssize_t YIELD::ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment( yidl::auto_Buffer buffer )
 {
   size_t gettable_buffer_size = buffer->size() - buffer->position();
   if ( gettable_buffer_size == record_fragment_length ) // Common case
@@ -1675,7 +1678,7 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment( yidl::auto_
   }
 }
 template <class ONCRPCMessageType>
-ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment( yidl::auto_Buffer buffer )
+ssize_t YIELD::ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment( yidl::auto_Buffer buffer )
 {
   size_t gettable_buffer_size = buffer->size() - buffer->position();
   size_t remaining_record_fragment_length = record_fragment_length - record_fragment_buffer->size();
@@ -1702,12 +1705,12 @@ ssize_t ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment( yidl::a
   }
 }
 template <class ONCRPCMessageType>
-void ONCRPCMessage<ONCRPCMessageType>::marshal( yidl::Marshaller& marshaller )
+void YIELD::ONCRPCMessage<ONCRPCMessageType>::marshal( yidl::Marshaller& marshaller )
 {
   marshaller.writeUint32( "xid", 0, xid );
 }
 template <class ONCRPCMessageType>
-yidl::auto_Buffer ONCRPCMessage<ONCRPCMessageType>::serialize()
+yidl::auto_Buffer YIELD::ONCRPCMessage<ONCRPCMessageType>::serialize()
 {
   XDRMarshaller xdr_marshaller;
   xdr_marshaller.writeUint32( "record_fragment_marker", 0, 0 );
@@ -1724,21 +1727,21 @@ yidl::auto_Buffer ONCRPCMessage<ONCRPCMessageType>::serialize()
   return xdr_buffer.release();
 }
 template <class ONCRPCMessageType>
-void ONCRPCMessage<ONCRPCMessageType>::unmarshal( yidl::Unmarshaller& unmarshaller )
+void YIELD::ONCRPCMessage<ONCRPCMessageType>::unmarshal( yidl::Unmarshaller& unmarshaller )
 {
   xid = unmarshaller.readUint32( "xid", 0 );
 }
-template class ONCRPCMessage<ONCRPCRequest>;
-template class ONCRPCMessage<ONCRPCResponse>;
+template class YIELD::ONCRPCMessage<YIELD::ONCRPCRequest>;
+template class YIELD::ONCRPCMessage<YIELD::ONCRPCResponse>;
 
 
 // oncrpc_request.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-ONCRPCRequest::ONCRPCRequest( auto_Interface interface_ )
+YIELD::ONCRPCRequest::ONCRPCRequest( auto_Interface interface_ )
   : ONCRPCMessage<ONCRPCRequest>( interface_ )
 { }
-ONCRPCRequest::ONCRPCRequest( auto_Interface interface_, yidl::auto_Struct body )
+YIELD::ONCRPCRequest::ONCRPCRequest( auto_Interface interface_, yidl::auto_Struct body )
   : ONCRPCMessage<ONCRPCRequest>( interface_, static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body )
 {
   prog = 0x20000000 + interface_->get_type_id();
@@ -1746,7 +1749,7 @@ ONCRPCRequest::ONCRPCRequest( auto_Interface interface_, yidl::auto_Struct body 
   vers = interface_->get_type_id();
   credential_auth_flavor = AUTH_NONE;
 }
-ONCRPCRequest::ONCRPCRequest( auto_Interface interface_, uint32_t credential_auth_flavor, yidl::auto_Struct credential, yidl::auto_Struct body )
+YIELD::ONCRPCRequest::ONCRPCRequest( auto_Interface interface_, uint32_t credential_auth_flavor, yidl::auto_Struct credential, yidl::auto_Struct body )
   : ONCRPCMessage<ONCRPCRequest>( interface_, static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
     credential_auth_flavor( credential_auth_flavor ), credential( credential )
 {
@@ -1754,22 +1757,22 @@ ONCRPCRequest::ONCRPCRequest( auto_Interface interface_, uint32_t credential_aut
   proc = body->get_type_id();
   vers = interface_->get_type_id();
 }
-ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, yidl::auto_Struct body )
+YIELD::ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, yidl::auto_Struct body )
   : ONCRPCMessage<ONCRPCRequest>( NULL, static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
     prog( prog ), proc( proc ), vers( vers )
 {
   credential_auth_flavor = AUTH_NONE;
 }
-ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, yidl::auto_Struct credential, yidl::auto_Struct body )
+YIELD::ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, yidl::auto_Struct credential, yidl::auto_Struct body )
   : ONCRPCMessage<ONCRPCRequest>( NULL, static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
     prog( prog ), proc( proc ), vers( vers ),
     credential_auth_flavor( credential_auth_flavor ), credential( credential )
 { }
-auto_Response ONCRPCRequest::createResponse()
+YIELD::auto_Response YIELD::ONCRPCRequest::createResponse()
 {
   return new ONCRPCResponse( get_interface(), get_xid(), static_cast<Request*>( get_body().get() )->createResponse().release() );
 }
-void ONCRPCRequest::marshal( yidl::Marshaller& marshaller )
+void YIELD::ONCRPCRequest::marshal( yidl::Marshaller& marshaller )
 {
   ONCRPCMessage<ONCRPCRequest>::marshal( marshaller );
   marshaller.writeInt32( "msg_type", 0, 0 ); // MSG_CALL
@@ -1790,7 +1793,7 @@ void ONCRPCRequest::marshal( yidl::Marshaller& marshaller )
   marshaller.writeInt32( "verf_auth_body_length", 0, 0 );
   marshaller.writeStruct( "body", 0, *get_body() );
 }
-void ONCRPCRequest::respond( Response& response )
+void YIELD::ONCRPCRequest::respond( Response& response )
 {
   if ( this->get_response_target() == NULL )
   {
@@ -1821,7 +1824,7 @@ void ONCRPCRequest::respond( Response& response )
   }
   return Request::respond( response );
 }
-void ONCRPCRequest::unmarshal( yidl::Unmarshaller& unmarshaller )
+void YIELD::ONCRPCRequest::unmarshal( yidl::Unmarshaller& unmarshaller )
 {
   ONCRPCMessage<ONCRPCRequest>::unmarshal( unmarshaller );
   int32_t msg_type = unmarshaller.readInt32( "msg_type", 0 );
@@ -1860,13 +1863,13 @@ void ONCRPCRequest::unmarshal( yidl::Unmarshaller& unmarshaller )
 // oncrpc_response.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-ONCRPCResponse::ONCRPCResponse( auto_Interface interface_ )
+YIELD::ONCRPCResponse::ONCRPCResponse( auto_Interface interface_ )
   : ONCRPCMessage<ONCRPCResponse>( interface_ )
 { }
-ONCRPCResponse::ONCRPCResponse( auto_Interface interface_, uint32_t xid, yidl::auto_Struct body )
+YIELD::ONCRPCResponse::ONCRPCResponse( auto_Interface interface_, uint32_t xid, yidl::auto_Struct body )
   : ONCRPCMessage<ONCRPCResponse>( interface_, xid, body )
 { }
-void ONCRPCResponse::marshal( yidl::Marshaller& marshaller )
+void YIELD::ONCRPCResponse::marshal( yidl::Marshaller& marshaller )
 {
   ONCRPCMessage<ONCRPCResponse>::marshal( marshaller );
   marshaller.writeInt32( "msg_type", 0, 1 ); // MSG_REPLY
@@ -1887,7 +1890,7 @@ void ONCRPCResponse::marshal( yidl::Marshaller& marshaller )
   else
     marshaller.writeInt32( "accept_stat", 0, 5 ); // SYSTEM_ERR
 }
-void ONCRPCResponse::unmarshal( yidl::Unmarshaller& unmarshaller )
+void YIELD::ONCRPCResponse::unmarshal( yidl::Unmarshaller& unmarshaller )
 {
   ONCRPCMessage<ONCRPCResponse>::unmarshal( unmarshaller );
   yidl::auto_Struct body( get_body() );
@@ -1943,7 +1946,7 @@ void ONCRPCResponse::unmarshal( yidl::Unmarshaller& unmarshaller )
 // oncrpc_server.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-class ONCRPCServer::AIOWriteControlBlock : public Socket::AIOWriteControlBlock
+class YIELD::ONCRPCServer::AIOWriteControlBlock : public Socket::AIOWriteControlBlock
 {
 public:
   AIOWriteControlBlock( yidl::auto_Buffer buffer )
@@ -1958,10 +1961,10 @@ public:
     get_socket()->close();
   }
 };
-class ONCRPCServer::ONCRPCResponseTarget : public EventTarget
+class YIELD::ONCRPCServer::ONCRPCResponseTarget : public EventTarget
 {
 public:
-  ONCRPCResponseTarget( auto_Interface interface_, auto_ONCRPCRequest oncrpc_request, auto_SocketAddress peer_sockaddr, auto_Socket socket_ )
+  ONCRPCResponseTarget( auto_Interface interface_, auto_ONCRPCRequest oncrpc_request, Socket::auto_Address peer_sockaddr, auto_Socket socket_ )
     : interface_( interface_ ), oncrpc_request( oncrpc_request ), peer_sockaddr( peer_sockaddr ), socket_( socket_ )
   { }
   // yidl::Object
@@ -1978,10 +1981,10 @@ public:
 private:
   auto_Interface interface_;
   auto_ONCRPCRequest oncrpc_request;
-  auto_SocketAddress peer_sockaddr;
+  Socket::auto_Address peer_sockaddr;
   auto_Socket socket_;
 };
-class ONCRPCServer::AIOReadControlBlock : public Socket::AIOReadControlBlock
+class YIELD::ONCRPCServer::AIOReadControlBlock : public Socket::AIOReadControlBlock
 {
 public:
   AIOReadControlBlock( yidl::auto_Buffer buffer, auto_Interface interface_, auto_ONCRPCRequest oncrpc_request )
@@ -2027,7 +2030,7 @@ private:
   auto_Interface interface_;
   auto_ONCRPCRequest oncrpc_request;
 };
-class ONCRPCServer::AIORecvFromControlBlock : public UDPSocket::AIORecvFromControlBlock
+class YIELD::ONCRPCServer::AIORecvFromControlBlock : public UDPSocket::AIORecvFromControlBlock
 {
 public:
   AIORecvFromControlBlock( auto_Interface interface_ )
@@ -2063,7 +2066,7 @@ public:
 private:
   auto_Interface interface_;
 };
-class ONCRPCServer::AIOAcceptControlBlock : public TCPSocket::AIOAcceptControlBlock
+class YIELD::ONCRPCServer::AIOAcceptControlBlock : public TCPSocket::AIOAcceptControlBlock
 {
 public:
   AIOAcceptControlBlock( auto_Interface interface_ )
@@ -2079,15 +2082,15 @@ public:
 private:
   auto_Interface interface_;
 };
-ONCRPCServer::ONCRPCServer( auto_Interface interface_, auto_Socket socket_ )
+YIELD::ONCRPCServer::ONCRPCServer( auto_Interface interface_, auto_Socket socket_ )
   : interface_( interface_ ), socket_( socket_ )
 { }
-auto_ONCRPCServer ONCRPCServer::create( const URI& absolute_uri,
+YIELD::auto_ONCRPCServer YIELD::ONCRPCServer::create( const URI& absolute_uri,
                                         auto_Interface interface_,
                                         auto_Log log,
                                         auto_SSLContext ssl_context )
 {
-  auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
+  Socket::auto_Address sockname = Socket::Address::create( absolute_uri );
   if ( sockname != NULL )
   {
     if ( absolute_uri.get_scheme() == "oncrpcu" )
@@ -2128,7 +2131,7 @@ auto_ONCRPCServer ONCRPCServer::create( const URI& absolute_uri,
 #ifdef _WIN32
 #include <windows.h>
 #endif
-void Pipe::close()
+void YIELD::Pipe::close()
 {
 #ifdef _WIN32
   if ( ends[0] != INVALID_HANDLE_VALUE )
@@ -2146,7 +2149,7 @@ void Pipe::close()
   ::close( ends[1] );
 #endif
 }
-auto_Pipe Pipe::create()
+YIELD::auto_Pipe YIELD::Pipe::create()
 {
 #ifdef _WIN32
   SECURITY_ATTRIBUTES pipe_security_attributes;
@@ -2173,19 +2176,19 @@ auto_Pipe Pipe::create()
   return NULL;
 }
 #ifdef _WIN32
-Pipe::Pipe( void* ends[2] )
+YIELD::Pipe::Pipe( void* ends[2] )
 #else
-Pipe::Pipe( int ends[2] )
+YIELD::Pipe::Pipe( int ends[2] )
 #endif
 {
   this->ends[0] = ends[0];
   this->ends[1] = ends[1];
 }
-Pipe::~Pipe()
+YIELD::Pipe::~Pipe()
 {
   close();
 }
-ssize_t Pipe::read( void* buffer, size_t buffer_len )
+ssize_t YIELD::Pipe::read( void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
   DWORD dwBytesRead;
@@ -2197,7 +2200,7 @@ ssize_t Pipe::read( void* buffer, size_t buffer_len )
   return ::read( ends[0], buffer, buffer_len );
 #endif
 }
-bool Pipe::set_blocking_mode( bool blocking )
+bool YIELD::Pipe::set_blocking_mode( bool blocking )
 {
 #ifdef _WIN32
   return false;
@@ -2216,7 +2219,7 @@ bool Pipe::set_blocking_mode( bool blocking )
            fcntl( ends[1], F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1;
 #endif
 }
-ssize_t Pipe::write( const void* buffer, size_t buffer_len )
+ssize_t YIELD::Pipe::write( const void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
   DWORD dwBytesWritten;
@@ -2239,7 +2242,7 @@ ssize_t Pipe::write( const void* buffer, size_t buffer_len )
 #include <signal.h>
 #include <sys/wait.h> // For waitpid
 #endif
-auto_Process Process::create( const Path& command_line )
+YIELD::auto_Process YIELD::Process::create( const Path& command_line )
 {
 #ifdef _WIN32
   auto_Pipe child_stdin, child_stdout, child_stderr;
@@ -2264,7 +2267,7 @@ auto_Process Process::create( const Path& command_line )
   return create( command_line, argv );
 #endif
 }
-auto_Process Process::create( int argc, char** argv )
+YIELD::auto_Process YIELD::Process::create( int argc, char** argv )
 {
   std::vector<char*> argvv;
   for ( int arg_i = 1; arg_i < argc; arg_i++ )
@@ -2272,7 +2275,7 @@ auto_Process Process::create( int argc, char** argv )
   argvv.push_back( NULL );
   return create( argv[0], const_cast<const char**>( &argvv[0] ) );
 }
-auto_Process Process::create( const Path& executable_file_path, const char** null_terminated_argv )
+YIELD::auto_Process YIELD::Process::create( const Path& executable_file_path, const char** null_terminated_argv )
 {
 #ifdef _WIN32
   const std::string& executable_file_path_str = static_cast<const std::string&>( executable_file_path );
@@ -2326,22 +2329,22 @@ auto_Process Process::create( const Path& executable_file_path, const char** nul
 #endif
 }
 #ifdef _WIN32
-Process::Process( HANDLE hChildProcess, HANDLE hChildThread, auto_Pipe child_stdin, auto_Pipe child_stdout, auto_Pipe child_stderr )
+YIELD::Process::Process( HANDLE hChildProcess, HANDLE hChildThread, auto_Pipe child_stdin, auto_Pipe child_stdout, auto_Pipe child_stderr )
   : hChildProcess( hChildProcess ), hChildThread( hChildThread ),
 #else
-Process::Process( pid_t child_pid, auto_Pipe child_stdin, auto_Pipe child_stdout, auto_Pipe child_stderr )
+YIELD::Process::Process( pid_t child_pid, auto_Pipe child_stdin, auto_Pipe child_stdout, auto_Pipe child_stderr )
   : child_pid( child_pid ),
 #endif
     child_stdin( child_stdin ), child_stdout( child_stdout ), child_stderr( child_stderr )
 { }
-Process::~Process()
+YIELD::Process::~Process()
 {
 #ifdef _WIN32
   CloseHandle( hChildProcess );
   CloseHandle( hChildThread );
 #endif
 }
-bool Process::kill()
+bool YIELD::Process::kill()
 {
 #ifdef _WIN32
   return TerminateProcess( hChildProcess, 0 ) == TRUE;
@@ -2349,7 +2352,7 @@ bool Process::kill()
   return ::kill( child_pid, SIGKILL ) == 0;
 #endif
 }
-bool Process::poll( int* out_return_code )
+bool YIELD::Process::poll( int* out_return_code )
 {
 #ifdef _WIN32
   if ( WaitForSingleObject( hChildProcess, 0 ) != WAIT_TIMEOUT )
@@ -2381,7 +2384,7 @@ bool Process::poll( int* out_return_code )
     return false;
 #endif
 }
-bool Process::terminate()
+bool YIELD::Process::terminate()
 {
 #ifdef _WIN32
   return TerminateProcess( hChildProcess, 0 ) == TRUE;
@@ -2389,7 +2392,7 @@ bool Process::terminate()
   return ::kill( child_pid, SIGTERM ) == 0;
 #endif
 }
-int Process::wait()
+int YIELD::Process::wait()
 {
 #ifdef _WIN32
   WaitForSingleObject( hChildProcess, INFINITE );
@@ -2409,7 +2412,7 @@ int Process::wait()
 // rfc822_headers.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-RFC822Headers::RFC822Headers( uint8_t reserve_iovecs_count )
+YIELD::RFC822Headers::RFC822Headers( uint8_t reserve_iovecs_count )
 {
   deserialize_state = DESERIALIZING_LEADING_WHITESPACE;
   buffer_p = stack_buffer;
@@ -2420,11 +2423,11 @@ RFC822Headers::RFC822Headers( uint8_t reserve_iovecs_count )
     memset( &stack_iovecs[iovec_i], 0, sizeof( stack_iovecs[iovec_i] ) );
   iovecs_filled = reserve_iovecs_count;
 }
-RFC822Headers::~RFC822Headers()
+YIELD::RFC822Headers::~RFC822Headers()
 {
   delete [] heap_buffer;
 }
-void RFC822Headers::allocateHeapBuffer()
+void YIELD::RFC822Headers::allocateHeapBuffer()
 {
   if ( heap_buffer_len == 0 )
   {
@@ -2443,7 +2446,7 @@ void RFC822Headers::allocateHeapBuffer()
     heap_buffer = new_heap_buffer;
   }
 }
-ssize_t RFC822Headers::deserialize( yidl::auto_Buffer buffer )
+ssize_t YIELD::RFC822Headers::deserialize( yidl::auto_Buffer buffer )
 {
   for ( ;; )
   {
@@ -2609,7 +2612,7 @@ ssize_t RFC822Headers::deserialize( yidl::auto_Buffer buffer )
     } // switch
   } // for ( ;; )
 }
-char* RFC822Headers::get_header( const char* header_name, const char* default_value )
+char* YIELD::RFC822Headers::get_header( const char* header_name, const char* default_value )
 {
   struct iovec* iovecs = heap_iovecs != NULL ? heap_iovecs : stack_iovecs;
   for ( uint8_t iovec_i = 0; iovec_i < iovecs_filled; iovec_i += 4 )
@@ -2620,9 +2623,9 @@ char* RFC822Headers::get_header( const char* header_name, const char* default_va
   }
   return const_cast<char*>( default_value );
 }
-yidl::auto_Buffer RFC822Headers::serialize()
+yidl::auto_Buffer YIELD::RFC822Headers::serialize()
 {
-  return new yidl::GatherBuffer( heap_iovecs != NULL ? heap_iovecs : stack_iovecs, iovecs_filled );
+  return new GatherBuffer( heap_iovecs != NULL ? heap_iovecs : stack_iovecs, iovecs_filled );
 }
 //void RFC822Headers::set_header( const char* header, size_t header_len )
 //{
@@ -2637,35 +2640,35 @@ yidl::auto_Buffer RFC822Headers::serialize()
 //    copy_iovec( header, header_len );
 //    */
 //}
-void RFC822Headers::set_header( const char* header_name, const char* header_value )
+void YIELD::RFC822Headers::set_header( const char* header_name, const char* header_value )
 {
   set_next_iovec( header_name, strnlen( header_name, UINT16_MAX ) );
   set_next_iovec( ": ", 2 );
   set_next_iovec( header_value, strnlen( header_value, UINT16_MAX ) );
   set_next_iovec( "\r\n", 2 );
 }
-void RFC822Headers::set_header( const char* header_name, char* header_value )
+void YIELD::RFC822Headers::set_header( const char* header_name, char* header_value )
 {
   set_next_iovec( header_name, strnlen( header_name, UINT16_MAX ) );
   set_next_iovec( ": ", 2 );
   set_next_iovec( header_value, strnlen( header_value, UINT16_MAX ) );
   set_next_iovec( "\r\n", 2 );
 }
-void RFC822Headers::set_header( char* header_name, char* header_value )
+void YIELD::RFC822Headers::set_header( char* header_name, char* header_value )
 {
   set_next_iovec( header_name, strnlen( header_name, UINT16_MAX ) );
   set_next_iovec( ": ", 2 );
   set_next_iovec( header_value, strnlen( header_value, UINT16_MAX ) );
   set_next_iovec( "\r\n", 2 );
 }
-void RFC822Headers::set_header( const std::string& header_name, const std::string& header_value )
+void YIELD::RFC822Headers::set_header( const std::string& header_name, const std::string& header_value )
 {
   set_next_iovec( const_cast<char*>( header_name.c_str() ), header_name.size() ); // Copy
   set_next_iovec( ": ", 2 );
   set_next_iovec( const_cast<char*>( header_value.c_str() ), header_value.size() ); // Copy
   set_next_iovec( "\r\n", 2 );
 }
-void RFC822Headers::set_iovec( uint8_t iovec_i, const char* data, size_t len )
+void YIELD::RFC822Headers::set_iovec( uint8_t iovec_i, const char* data, size_t len )
 {
   struct iovec _iovec;
   _iovec.iov_base = const_cast<char*>( data );
@@ -2681,7 +2684,7 @@ void RFC822Headers::set_iovec( uint8_t iovec_i, const char* data, size_t len )
     heap_iovecs[iovec_i].iov_len = len;
   }
 }
-void RFC822Headers::set_next_iovec( char* data, size_t len )
+void YIELD::RFC822Headers::set_next_iovec( char* data, size_t len )
 {
   if ( heap_buffer == NULL )
   {
@@ -2715,14 +2718,14 @@ void RFC822Headers::set_next_iovec( char* data, size_t len )
   if ( data[len-1] == 0 ) len--;
   set_next_iovec( buffer_p_before, len );
 }
-void RFC822Headers::set_next_iovec( const char* data, size_t len )
+void YIELD::RFC822Headers::set_next_iovec( const char* data, size_t len )
 {
   struct iovec _iovec;
   _iovec.iov_base = const_cast<char*>( data );
   _iovec.iov_len = len;
   set_next_iovec( _iovec );
 }
-void RFC822Headers::set_next_iovec( const struct iovec& iovec )
+void YIELD::RFC822Headers::set_next_iovec( const struct iovec& iovec )
 {
   if ( heap_iovecs == NULL )
   {
@@ -2746,7 +2749,742 @@ void RFC822Headers::set_next_iovec( const struct iovec& iovec )
 // socket.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-#include <vector>
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4995 )
+#include <ws2tcpip.h>
+#pragma warning( pop )
+#pragma comment( lib, "ws2_32.lib" )
+#else
+#include <arpa/inet.h>
+#include <errno.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <signal.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif
+YIELD::Socket::AIOQueue* YIELD::Socket::aio_queue = NULL;
+YIELD::Socket::Socket( int domain, int type, int protocol, int socket_ )
+  : domain( domain ), socket_( socket_ ), type( type ), protocol( protocol )
+{
+  blocking_mode = true;
+}
+YIELD::Socket::~Socket()
+{
+  close();
+}
+void YIELD::Socket::aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block )
+{
+  aio_connect_nbio( aio_connect_control_block );
+}
+void YIELD::Socket::aio_connect_nbio( Socket::auto_AIOConnectControlBlock aio_connect_control_block )
+{
+  aio_connect_control_block->set_socket( *this );
+  set_blocking_mode( false );
+  if ( connect( aio_connect_control_block->get_peername() ) )
+    aio_connect_control_block->onCompletion( 0 );
+  else if ( want_connect() )
+    get_aio_queue().submit( aio_connect_control_block.release() );
+  else
+    aio_connect_control_block->onError( Exception::get_errno() );
+}
+void YIELD::Socket::aio_read( yidl::auto_Object<AIOReadControlBlock> aio_read_control_block )
+{
+#ifdef _WIN32
+  aio_read_iocp( aio_read_control_block );
+#else
+  aio_read_nbio( aio_read_control_block );
+#endif
+}
+#ifdef _WIN32
+void YIELD::Socket::aio_read_iocp( yidl::auto_Object<AIOReadControlBlock> aio_read_control_block )
+{
+  aio_read_control_block->set_socket( *this );
+  get_aio_queue().associate( *this );
+  yidl::auto_Buffer buffer( aio_read_control_block->get_buffer() );
+  WSABUF wsabuf[1];
+  wsabuf[0].buf = static_cast<char*>( *buffer ) + buffer->size();
+  wsabuf[0].len = buffer->capacity() - buffer->size();
+  DWORD dwNumberOfBytesReceived, dwFlags = 0;
+  if ( ::WSARecv( socket_, wsabuf, 1, &dwNumberOfBytesReceived, &dwFlags, *aio_read_control_block, NULL ) == 0 ||
+       ::WSAGetLastError() == WSA_IO_PENDING )
+    aio_read_control_block.release();
+  else
+    aio_read_control_block->onError( ::WSAGetLastError() );
+}
+#endif
+void YIELD::Socket::aio_read_nbio( yidl::auto_Object<AIOReadControlBlock> aio_read_control_block )
+{
+  aio_read_control_block->set_socket( *this );
+  set_blocking_mode( false );
+  ssize_t read_ret = read( aio_read_control_block->get_buffer() );
+  if ( read_ret > 0 )
+    aio_read_control_block->onCompletion( static_cast<size_t>( read_ret ) );
+  else if ( read_ret == 0 )
+#ifdef _WIN32
+    aio_read_control_block->onError( WSAECONNRESET );
+#else
+    aio_read_control_block->onError( ECONNRESET );
+#endif
+  else if ( want_read() || want_write() )
+    get_aio_queue().submit( aio_read_control_block.release() );
+  else
+    aio_read_control_block->onError( Exception::get_errno() );
+}
+void YIELD::Socket::aio_write( yidl::auto_Object<AIOWriteControlBlock> aio_write_control_block )
+{
+#ifdef _WIN32
+  aio_write_iocp( aio_write_control_block );
+#else
+  aio_write_nbio( aio_write_control_block );
+#endif
+}
+#ifdef _WIN32
+void YIELD::Socket::aio_write_iocp( yidl::auto_Object<AIOWriteControlBlock> aio_write_control_block )
+{
+  aio_write_control_block->set_socket( *this );
+  get_aio_queue().associate( *this );
+  yidl::auto_Buffer buffer( aio_write_control_block->get_buffer() );
+  if ( buffer->get_type_id() == YIDL_OBJECT_TYPE_ID( GatherBuffer ) )
+  {
+    DWORD dwNumberOfBytesSent;
+    if ( ::WSASend( socket_, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( static_cast<GatherBuffer*>( buffer.get() )->get_iovecs() ) ), static_cast<GatherBuffer*>( buffer.get() )->get_iovecs_len(), &dwNumberOfBytesSent, 0, *aio_write_control_block, NULL ) == 0 ||
+         ::WSAGetLastError() == WSA_IO_PENDING )
+      aio_write_control_block.release();
+    else
+      aio_write_control_block->onError( ::WSAGetLastError() );
+  }
+  else
+  {
+    WSABUF wsabuf[1];
+    wsabuf[0].buf = static_cast<char*>( *buffer );
+    wsabuf[0].len = buffer->size();
+    DWORD dwNumberOfBytesSent;
+    if ( ::WSASend( socket_, wsabuf, 1, &dwNumberOfBytesSent, 0, *aio_write_control_block, NULL ) == 0 ||
+         ::WSAGetLastError() == WSA_IO_PENDING )
+      aio_write_control_block.release();
+    else
+      aio_write_control_block->onError( ::WSAGetLastError() );
+  }
+}
+#endif
+void YIELD::Socket::aio_write_nbio( yidl::auto_Object<AIOWriteControlBlock> aio_write_control_block )
+{
+  aio_write_control_block->set_socket( *this );
+  set_blocking_mode( false );
+  ssize_t write_ret = write( aio_write_control_block->get_buffer() );
+  if ( write_ret >= 0 )
+    aio_write_control_block->onCompletion( static_cast<size_t>( write_ret ) );
+  else if ( want_write() || want_read() )
+    get_aio_queue().submit( aio_write_control_block.release() );
+  else
+    aio_write_control_block->onError( Exception::get_errno() );
+}
+bool YIELD::Socket::bind( Socket::auto_Address to_sockaddr )
+{
+  for ( ;; )
+  {
+    struct sockaddr* name; socklen_t namelen;
+    if ( to_sockaddr->as_struct_sockaddr( domain, name, namelen ) )
+    {
+      if ( ::bind( *this, name, namelen ) != -1 )
+        return true;
+    }
+    if ( domain == AF_INET6 &&
+#ifdef _WIN32
+        ::WSAGetLastError() == WSAEAFNOSUPPORT )
+#else
+        errno == EAFNOSUPPORT )
+#endif
+    {
+      close();
+      this->domain = AF_INET;
+      socket_ = ::socket( AF_INET, type, protocol );
+      if ( !blocking_mode )
+        set_blocking_mode( false );
+    }
+    else
+      return false;
+  }
+}
+bool YIELD::Socket::close()
+{
+#ifdef _WIN32
+  return ::closesocket( socket_ ) != SOCKET_ERROR;
+#else
+  return ::close( socket_ ) != -1;
+#endif
+}
+bool YIELD::Socket::connect( Socket::auto_Address to_sockaddr )
+{
+  for ( ;; )
+  {
+    struct sockaddr* name; socklen_t namelen;
+    if ( to_sockaddr->as_struct_sockaddr( domain, name, namelen ) )
+    {
+      if ( ::connect( *this, name, namelen ) != -1 )
+        return true;
+      else
+      {
+#ifdef _WIN32
+        switch ( ::WSAGetLastError() )
+        {
+          case WSAEISCONN: return true;
+          case WSAEAFNOSUPPORT:
+#else
+        switch ( errno )
+        {
+          case EISCONN: return true;
+          case EAFNOSUPPORT:
+#endif
+          {
+            if ( domain == AF_INET6 )
+            {
+              close();
+              domain = AF_INET; // Fall back to IPv4
+              socket_ = ::socket( domain, type, protocol );
+              if ( !blocking_mode )
+                set_blocking_mode( false );
+              continue; // Try to connect again
+            }
+            else
+              return false;
+          }
+          break;
+          default: return false;
+        }
+      }
+    }
+    else if ( domain == AF_INET6 )
+    {
+      close();
+      domain = AF_INET; // Fall back to IPv4
+      socket_ = ::socket( domain, type, protocol );
+      if ( !blocking_mode )
+        set_blocking_mode( false );
+      continue; // Try to connect again
+    }
+    else
+      return false;
+  }
+}
+int YIELD::Socket::create( int& domain, int type, int protocol )
+{
+#ifdef _WIN32
+  SOCKET socket_ = ::socket( domain, type, protocol );
+  if ( socket_ != INVALID_SOCKET )
+  {
+    if ( domain == AF_INET6 )
+    {
+      DWORD ipv6only = 0; // Allow dual-mode sockets
+      setsockopt( socket_, IPPROTO_IPV6, IPV6_V6ONLY, ( char* )&ipv6only, sizeof( ipv6only ) );
+    }
+    return ( int )socket_;
+  }
+  else if ( domain == AF_INET6 && ::WSAGetLastError() == WSAEAFNOSUPPORT )
+  {
+    domain = AF_INET;
+    return ( int )::socket( AF_INET, type, protocol );
+  }
+  else
+    return false;
+#else
+  int socket_ = ::socket( AF_INET6, type, protocol );
+  if ( socket_ != -1 )
+    return socket_;
+  else if ( domain == AF_INET6 && errno == EAFNOSUPPORT )
+  {
+    domain = AF_INET;
+    return ::socket( AF_INET, type, protocol );
+  }
+  else
+    return -1;
+#endif
+}
+void YIELD::Socket::destroy()
+{
+  delete aio_queue;
+#ifdef _WIN32
+  ::WSACleanup();
+#endif
+}
+YIELD::Socket::AIOQueue& YIELD::Socket::get_aio_queue()
+{
+  if ( aio_queue == NULL )
+    aio_queue = new AIOQueue;
+  return *aio_queue;
+}
+bool YIELD::Socket::get_blocking_mode() const
+{
+  return blocking_mode;
+}
+std::string YIELD::Socket::getfqdn()
+{
+#ifdef _WIN32
+  DWORD dwFQDNLength = 0;
+  GetComputerNameExA( ComputerNameDnsHostname, NULL, &dwFQDNLength );
+  if ( dwFQDNLength > 0 )
+  {
+    char* fqdn_temp = new char[dwFQDNLength];
+    if ( GetComputerNameExA( ComputerNameDnsFullyQualified, fqdn_temp, &dwFQDNLength ) )
+    {
+      std::string fqdn( fqdn_temp, dwFQDNLength );
+      delete [] fqdn_temp;
+      return fqdn;
+    }
+    else
+      delete [] fqdn_temp;
+  }
+  return std::string();
+#else
+  char fqdn[256];
+  ::gethostname( fqdn, 256 );
+  char* first_dot = strstr( fqdn, "." );
+  if ( first_dot != NULL ) *first_dot = 0;
+  // getnameinfo does not return aliases, which means we get "localhost" on Linux if that's the first
+  // entry for 127.0.0.1 in /etc/hosts
+#ifndef __sun
+  char domainname[256];
+  // getdomainname is not a public call on Solaris, apparently
+  if ( getdomainname( domainname, 256 ) == 0 &&
+       domainname[0] != 0 &&
+       strcmp( domainname, "(none)" ) != 0 &&
+       strcmp( domainname, fqdn ) != 0 &&
+       strstr( domainname, "localdomain" ) == NULL )
+         strcat( fqdn, domainname );
+  else
+  {
+#endif
+    // Try gethostbyaddr, like Python
+    uint32_t local_host_addr = inet_addr( "127.0.0.1" );
+    struct hostent* hostents = gethostbyaddr( reinterpret_cast<char*>( &local_host_addr ), sizeof( uint32_t ), AF_INET );
+    if ( hostents )
+    {
+      if ( strchr( hostents->h_name, '.' ) != NULL && strstr( hostents->h_name, "localhost" ) == NULL )
+        strncpy( fqdn, hostents->h_name, 256 );
+      else
+      {
+        for ( unsigned char i = 0; hostents->h_aliases[i] != NULL; i++ )
+        {
+          if ( strchr( hostents->h_aliases[i], '.' ) != NULL && strstr( hostents->h_name, "localhost" ) == NULL )
+          {
+            strncpy( fqdn, hostents->h_aliases[i], 256 );
+            break;
+          }
+        }
+      }
+    }
+#ifndef __sun
+  }
+#endif
+  return fqdn;
+#endif
+}
+std::string YIELD::Socket::gethostname()
+{
+#ifdef _WIN32
+  DWORD dwHostNameLength = 0;
+  GetComputerNameExA( ComputerNameDnsHostname, NULL, &dwHostNameLength );
+  if ( dwHostNameLength > 0 )
+  {
+    char* hostname_temp = new char[dwHostNameLength];
+    if ( GetComputerNameExA( ComputerNameDnsHostname, hostname_temp, &dwHostNameLength ) )
+    {
+      std::string hostname( hostname_temp, dwHostNameLength );
+      delete [] hostname_temp;
+      return hostname;
+    }
+    else
+      delete [] hostname_temp;
+  }
+  return std::string();
+#else
+  char hostname[256];
+  ::gethostname( hostname, 256 );
+  return hostname;
+#endif
+}
+YIELD::Socket::auto_Address YIELD::Socket::getpeername()
+{
+  struct sockaddr_storage peername_sockaddr_storage;
+  memset( &peername_sockaddr_storage, 0, sizeof( peername_sockaddr_storage ) );
+  socklen_t peername_sockaddr_storage_len = sizeof( peername_sockaddr_storage );
+  if ( ::getpeername( *this, reinterpret_cast<struct sockaddr*>( &peername_sockaddr_storage ), &peername_sockaddr_storage_len ) != -1 )
+    return new Socket::Address( peername_sockaddr_storage );
+  else
+    return NULL;
+}
+YIELD::Socket::auto_Address YIELD::Socket::getsockname()
+{
+  struct sockaddr_storage sockname_sockaddr_storage;
+  memset( &sockname_sockaddr_storage, 0, sizeof( sockname_sockaddr_storage ) );
+  socklen_t sockname_sockaddr_storage_len = sizeof( sockname_sockaddr_storage );
+  if ( ::getsockname( *this, reinterpret_cast<struct sockaddr*>( &sockname_sockaddr_storage ), &sockname_sockaddr_storage_len ) != -1 )
+    return new Socket::Address( sockname_sockaddr_storage );
+  else
+    return NULL;
+}
+void YIELD::Socket::init()
+{
+#ifdef _WIN32
+  WORD wVersionRequested = MAKEWORD( 2, 2 );
+  WSADATA wsaData;
+  WSAStartup( wVersionRequested, &wsaData );
+#else
+  signal( SIGPIPE, SIG_IGN );
+#endif
+}
+YIELD::Socket::operator int() const
+{
+  return socket_;
+}
+ssize_t YIELD::Socket::read( yidl::auto_Buffer buffer )
+{
+  ssize_t read_ret = read( static_cast<char*>( *buffer ) + buffer->size(), buffer->capacity() - buffer->size() );
+  if ( read_ret > 0 )
+    buffer->put( NULL, read_ret );
+  return read_ret;
+}
+ssize_t YIELD::Socket::read( void* buffer, size_t buffer_len )
+{
+#if defined(_WIN32)
+  return ::recv( socket_, static_cast<char*>( buffer ), static_cast<int>( buffer_len ), 0 ); // No real advantage to WSARecv on Win32 for one buffer
+#elif defined(__linux)
+  return ::recv( socket_, buffer, buffer_len, MSG_NOSIGNAL );
+#else
+  return ::recv( socket_, buffer, buffer_len, 0 );
+#endif
+}
+bool YIELD::Socket::set_blocking_mode( bool blocking )
+{
+#ifdef _WIN32
+  unsigned long val = blocking ? 0 : 1;
+  if ( ioctlsocket( *this, FIONBIO, &val ) != SOCKET_ERROR )
+  {
+    this->blocking_mode = blocking;
+    return true;
+  }
+  else
+    return false;
+#else
+  int current_fcntl_flags = fcntl( *this, F_GETFL, 0 );
+  if ( blocking )
+  {
+    if ( ( current_fcntl_flags & O_NONBLOCK ) == O_NONBLOCK )
+    {
+      if ( fcntl( *this, F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1 )
+      {
+        this->blocking_mode = true;
+        return true;
+      }
+      else
+        return false;
+    }
+    else
+      return true;
+  }
+  else
+  {
+    if ( fcntl( *this, F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1 )
+    {
+      this->blocking_mode = false;
+      return true;
+    }
+    else
+      return false;
+  }
+#endif
+}
+bool YIELD::Socket::shutdown()
+{
+  return true;
+}
+bool YIELD::Socket::want_connect() const
+{
+#ifdef _WIN32
+  switch ( ::WSAGetLastError() )
+  {
+    case WSAEINPROGRESS:
+    case WSAEINVAL:
+    case WSAEWOULDBLOCK: return true;
+    default: return false;
+  }
+#else
+  switch ( errno )
+  {
+    case EALREADY:
+    case EINPROGRESS:
+    case EWOULDBLOCK: return true;
+    default: return false;
+  }
+#endif
+}
+bool YIELD::Socket::want_read() const
+{
+#ifdef _WIN32
+  return ::WSAGetLastError() == WSAEWOULDBLOCK;
+#else
+  return errno == EWOULDBLOCK;
+#endif
+}
+bool YIELD::Socket::want_write() const
+{
+#ifdef _WIN32
+  return ::WSAGetLastError() == WSAEWOULDBLOCK;
+#else
+  return errno == EWOULDBLOCK;
+#endif
+}
+ssize_t YIELD::Socket::write( yidl::auto_Buffer buffer )
+{
+  if ( buffer->get_type_id() == YIDL_OBJECT_TYPE_ID( GatherBuffer ) )
+    return writev( static_cast<GatherBuffer*>( buffer.get() )->get_iovecs(), static_cast<GatherBuffer*>( buffer.get() )->get_iovecs_len() );
+  else
+    return write( static_cast<void*>( *buffer ), buffer->size() );
+}
+ssize_t YIELD::Socket::write( const void* buffer, size_t buffer_len )
+{
+  // Go through writev to have a unified partial write path in TCPSocket::writev
+  struct iovec buffers[1];
+  buffers[0].iov_base = const_cast<void*>( buffer );
+  buffers[0].iov_len = buffer_len;
+  return writev( buffers, 1 );
+}
+ssize_t YIELD::Socket::writev( const struct iovec* buffers, uint32_t buffers_count )
+{
+#if defined(_WIN32)
+  DWORD dwWrittenLength;
+  ssize_t write_ret = ::WSASend( socket_, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ), buffers_count, &dwWrittenLength, 0, NULL, NULL );
+  if ( write_ret >= 0 )
+    return static_cast<ssize_t>( dwWrittenLength );
+  else
+    return write_ret;
+#elif defined(__linux)
+  // Use sendmsg instead of writev to pass flags on Linux
+  struct msghdr _msghdr;
+  memset( &_msghdr, 0, sizeof( _msghdr ) );
+  _msghdr.msg_iov = const_cast<iovec*>( buffers );
+  _msghdr.msg_iovlen = buffers_count;
+  return ::sendmsg( socket_, &_msghdr, MSG_NOSIGNAL ); // MSG_NOSIGNAL = disable SIGPIPE
+#elif defined(__sun)
+  std::string buffer;
+  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+    buffer.append( static_cast<char*>( buffers[buffer_i].iov_base ), buffers[buffer_i].iov_len );
+  return write( buffer.c_str(), buffer.size() );
+#else
+  return ::writev( socket_, buffers, buffers_count );
+#endif
+}
+
+
+// socket_address.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4995 )
+#include <ws2tcpip.h>
+#pragma warning( pop )
+#else
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#endif
+YIELD::Socket::Address::Address( struct addrinfo& addrinfo_list )
+  : addrinfo_list( &addrinfo_list ), _sockaddr_storage( NULL )
+{ }
+YIELD::Socket::Address::~Address()
+{
+  if ( addrinfo_list != NULL )
+    freeaddrinfo( addrinfo_list );
+  else if ( _sockaddr_storage != NULL )
+    delete _sockaddr_storage;
+}
+YIELD::Socket::Address::Address( const struct sockaddr_storage& _sockaddr_storage )
+{
+  addrinfo_list = NULL;
+  this->_sockaddr_storage = new struct sockaddr_storage;
+  memcpy_s( this->_sockaddr_storage, sizeof( *this->_sockaddr_storage ), &_sockaddr_storage, sizeof( _sockaddr_storage ) );
+}
+YIELD::Socket::auto_Address YIELD::Socket::Address::create( const URI& uri )
+{
+  if ( uri.get_host() == "*" )
+    return create( NULL, uri.get_port() );
+  else
+    return create( uri.get_host().c_str(), uri.get_port() );
+}
+YIELD::Socket::auto_Address YIELD::Socket::Address::create( const char* hostname, uint16_t port )
+{
+  struct addrinfo* addrinfo_list = getaddrinfo( hostname, port );
+  if ( addrinfo_list != NULL )
+    return new Address( *addrinfo_list );
+  else
+    return NULL;
+}
+bool YIELD::Socket::Address::as_struct_sockaddr( int family, struct sockaddr*& out_sockaddr, socklen_t& out_sockaddrlen )
+{
+  if ( addrinfo_list != NULL )
+  {
+    struct addrinfo* addrinfo_p = addrinfo_list;
+    while ( addrinfo_p != NULL )
+    {
+      if ( addrinfo_p->ai_family == family )
+      {
+        out_sockaddr = addrinfo_p->ai_addr;
+        out_sockaddrlen = addrinfo_p->ai_addrlen;
+        return true;
+      }
+      else
+        addrinfo_p = addrinfo_p->ai_next;
+    }
+  }
+  else if ( _sockaddr_storage->ss_family == family )
+  {
+    out_sockaddr = reinterpret_cast<struct sockaddr*>( _sockaddr_storage );
+    out_sockaddrlen = sizeof( *_sockaddr_storage );
+    return true;
+  }
+#ifdef _WIN32
+  ::WSASetLastError( WSAEAFNOSUPPORT );
+#else
+  errno = EAFNOSUPPORT;
+#endif
+  return false;
+}
+struct addrinfo* YIELD::Socket::Address::getaddrinfo( const char* hostname, uint16_t port )
+{
+#ifdef _WIN32
+  Socket::init();
+#endif
+  const char* servname;
+#ifdef __sun
+  if ( hostname == NULL )
+    hostname = "0.0.0.0";
+  servname = NULL;
+#else
+  std::ostringstream servname_oss; // ltoa is not very portable
+  servname_oss << port; // servname = decimal port or service name. Great interface, guys.
+  std::string servname_str = servname_oss.str();
+  servname = servname_str.c_str();
+#endif
+  struct addrinfo addrinfo_hints;
+  memset( &addrinfo_hints, 0, sizeof( addrinfo_hints ) );
+  addrinfo_hints.ai_family = AF_UNSPEC;
+  if ( hostname == NULL )
+    addrinfo_hints.ai_flags |= AI_PASSIVE; // To get INADDR_ANYs
+  struct addrinfo* addrinfo_list;
+  int getaddrinfo_ret = ::getaddrinfo( hostname, servname, &addrinfo_hints, &addrinfo_list );
+  if ( getaddrinfo_ret == 0 )
+  {
+#ifdef __sun
+    struct addrinfo* addrinfo_p = addrinfo_list;
+    while ( addrinfo_p != NULL )
+    {
+      switch ( addrinfo_p->ai_family )
+      {
+        case AF_INET: reinterpret_cast<struct sockaddr_in*>( addrinfo_p->ai_addr )->sin_port = htons( port ); break;
+        case AF_INET6: reinterpret_cast<struct sockaddr_in6*>( addrinfo_p->ai_addr )->sin6_port = htons( port ); break;
+        default: DebugBreak();
+      }
+      addrinfo_p = addrinfo_p->ai_next;
+    }
+#endif
+    return addrinfo_list;
+  }
+  else
+    return NULL;
+}
+bool YIELD::Socket::Address::getnameinfo( std::string& out_hostname, bool numeric ) const
+{
+  char nameinfo[NI_MAXHOST];
+  if ( this->getnameinfo( nameinfo, NI_MAXHOST, numeric ) )
+  {
+    out_hostname.assign( nameinfo );
+    return true;
+  }
+  else
+    return false;
+}
+bool YIELD::Socket::Address::getnameinfo( char* out_hostname, uint32_t out_hostname_len, bool numeric ) const
+{
+  if ( addrinfo_list != NULL )
+  {
+    struct addrinfo* addrinfo_p = addrinfo_list;
+    while ( addrinfo_p != NULL )
+    {
+      if ( ::getnameinfo( addrinfo_p->ai_addr, addrinfo_p->ai_addrlen, out_hostname, out_hostname_len, NULL, 0, numeric ? NI_NUMERICHOST : 0 ) == 0 )
+        return true;
+      else
+        addrinfo_p = addrinfo_p->ai_next;
+    }
+    return false;
+  }
+  else
+    return ::getnameinfo( reinterpret_cast<sockaddr*>( _sockaddr_storage ), static_cast<socklen_t>( sizeof( *_sockaddr_storage ) ), out_hostname, out_hostname_len, NULL, 0, numeric ? NI_NUMERICHOST : 0 ) == 0;
+}
+uint16_t YIELD::Socket::Address::get_port() const
+{
+  if ( addrinfo_list != NULL )
+  {
+    switch ( addrinfo_list->ai_family )
+    {
+      case AF_INET: return ntohs( reinterpret_cast<struct sockaddr_in*>( addrinfo_list->ai_addr )->sin_port );
+      case AF_INET6: return ntohs( reinterpret_cast<struct sockaddr_in6*>( addrinfo_list->ai_addr )->sin6_port );
+      default: DebugBreak(); return 0;
+    }
+  }
+  else
+  {
+    switch ( _sockaddr_storage->ss_family )
+    {
+      case AF_INET: return ntohs( reinterpret_cast<struct sockaddr_in*>( _sockaddr_storage )->sin_port );
+      case AF_INET6: return ntohs( reinterpret_cast<struct sockaddr_in6*>( _sockaddr_storage )->sin6_port );
+      default: DebugBreak(); return 0;
+    }
+  }
+}
+bool YIELD::Socket::Address::operator==( const Address& other ) const
+{
+  if ( addrinfo_list != NULL )
+  {
+    if ( other.addrinfo_list != NULL )
+    {
+      struct addrinfo* addrinfo_p = addrinfo_list;
+      while ( addrinfo_p != NULL )
+      {
+        struct addrinfo* other_addrinfo_p = other.addrinfo_list;
+        while ( other_addrinfo_p != NULL )
+        {
+          if ( addrinfo_p->ai_addrlen == other_addrinfo_p->ai_addrlen &&
+               memcmp( addrinfo_p->ai_addr, other_addrinfo_p->ai_addr, addrinfo_p->ai_addrlen ) == 0 &&
+               addrinfo_p->ai_family == other_addrinfo_p->ai_family &&
+               addrinfo_p->ai_protocol == other_addrinfo_p->ai_protocol &&
+               addrinfo_p->ai_socktype == other_addrinfo_p->ai_socktype
+             )
+               break;
+          else
+            other_addrinfo_p = other_addrinfo_p->ai_next;
+        }
+        if ( other_addrinfo_p != NULL ) // i.e. we found the addrinfo in the other's list
+          addrinfo_p = addrinfo_p->ai_next;
+        else
+          return false;
+      }
+      return true;
+    }
+    else
+      return false;
+  }
+  else if ( other._sockaddr_storage != NULL )
+    return memcmp( _sockaddr_storage, other._sockaddr_storage, sizeof( *_sockaddr_storage ) ) == 0;
+  else
+    return false;
+}
+
+
+// socket_aio_queue.cpp
 #ifdef _WIN32
 #ifndef FD_SETSIZE
 #define FD_SETSIZE 1024
@@ -2755,9 +3493,8 @@ void RFC822Headers::set_next_iovec( const struct iovec& iovec )
 #pragma warning( disable: 4995 )
 #include <ws2tcpip.h>
 #pragma warning( pop )
-#pragma comment( lib, "ws2_32.lib" )
 #pragma warning( push )
-#pragma warning( disable: 4127 4389 ) // Warning in the FD_* macros
+#pragma warning( disable: 4127 4389 ) // Warnings in the FD_* macros
 #else
 #include <errno.h>
 #include <signal.h>
@@ -2777,10 +3514,11 @@ void RFC822Headers::set_next_iovec( const struct iovec& iovec )
 #include <sys/poll.h>
 #else
 #include <poll.h>
+#include <vector>
 #endif
 #endif
 #ifdef _WIN32
-class Socket::AIOQueue::IOCPWorkerThread : public Thread
+class YIELD::Socket::AIOQueue::IOCPWorkerThread : public YIELD::Thread
 {
 public:
   IOCPWorkerThread( HANDLE hIoCompletionPort )
@@ -2828,7 +3566,7 @@ private:
   bool is_running;
 };
 #endif
-class Socket::AIOQueue::NBIOWorkerThread : public Thread
+class YIELD::Socket::AIOQueue::NBIOWorkerThread : public YIELD::Thread
 {
 public:
   NBIOWorkerThread()
@@ -2849,7 +3587,7 @@ public:
 #if defined(_WIN32)
     auto_TCPSocket submit_listen_tcp_socket = TCPSocket::create( AF_INET );
     if ( submit_listen_tcp_socket != NULL &&
-         submit_listen_tcp_socket->bind( SocketAddress::create( "localhost", 0 ) ) &&
+         submit_listen_tcp_socket->bind( Socket::Address::create( "localhost", 0 ) ) &&
          submit_listen_tcp_socket->listen() )
     {
       submit_pipe_write_end = TCPSocket::create( AF_INET );
@@ -3281,7 +4019,7 @@ private:
 #endif
   }
 };
-Socket::AIOQueue::AIOQueue()
+YIELD::Socket::AIOQueue::AIOQueue()
 {
 #ifdef _WIN32
   hIoCompletionPort = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0 );
@@ -3295,7 +4033,7 @@ Socket::AIOQueue::AIOQueue()
   }
 #endif
 }
-Socket::AIOQueue::~AIOQueue()
+YIELD::Socket::AIOQueue::~AIOQueue()
 {
 #ifdef _WIN32
   CloseHandle( hIoCompletionPort );
@@ -3312,12 +4050,12 @@ Socket::AIOQueue::~AIOQueue()
   }
 }
 #ifdef _WIN32
-void Socket::AIOQueue::associate( Socket& socket_ )
+void YIELD::Socket::AIOQueue::associate( Socket& socket_ )
 {
   CreateIoCompletionPort( reinterpret_cast<HANDLE>( static_cast<int>( socket_ ) ), hIoCompletionPort, 0, 0 );
 }
 #endif
-void Socket::AIOQueue::submit( yidl::auto_Object<AIOControlBlock> aio_control_block )
+void YIELD::Socket::AIOQueue::submit( yidl::auto_Object<AIOControlBlock> aio_control_block )
 {
   if ( nbio_worker_threads.empty() )
   {
@@ -3332,641 +4070,9 @@ void Socket::AIOQueue::submit( yidl::auto_Object<AIOControlBlock> aio_control_bl
   }
   nbio_worker_threads[Thread::getCurrentThreadId() % nbio_worker_threads.size()]->submit( aio_control_block );
 }
-Socket::AIOQueue* Socket::aio_queue = NULL;
-Socket::Socket( int domain, int type, int protocol, int socket_ )
-  : domain( domain ), socket_( socket_ ), type( type ), protocol( protocol )
-{
-  blocking_mode = true;
-}
-Socket::~Socket()
-{
-  close();
-}
-void Socket::aio_connect( yidl::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
-{
-  aio_connect_nbio( aio_connect_control_block );
-}
-void Socket::aio_connect_nbio( yidl::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
-{
-  aio_connect_control_block->set_socket( *this );
-  set_blocking_mode( false );
-  if ( connect( aio_connect_control_block->get_peername() ) )
-    aio_connect_control_block->onCompletion( 0 );
-  else if ( want_connect() )
-    get_aio_queue().submit( aio_connect_control_block.release() );
-  else
-    aio_connect_control_block->onError( Exception::get_errno() );
-}
-void Socket::aio_read( yidl::auto_Object<AIOReadControlBlock> aio_read_control_block )
-{
-#ifdef _WIN32
-  aio_read_iocp( aio_read_control_block );
-#else
-  aio_read_nbio( aio_read_control_block );
-#endif
-}
-#ifdef _WIN32
-void Socket::aio_read_iocp( yidl::auto_Object<AIOReadControlBlock> aio_read_control_block )
-{
-  aio_read_control_block->set_socket( *this );
-  get_aio_queue().associate( *this );
-  yidl::auto_Buffer buffer( aio_read_control_block->get_buffer() );
-  WSABUF wsabuf[1];
-  wsabuf[0].buf = static_cast<char*>( *buffer ) + buffer->size();
-  wsabuf[0].len = buffer->capacity() - buffer->size();
-  DWORD dwNumberOfBytesReceived, dwFlags = 0;
-  if ( ::WSARecv( socket_, wsabuf, 1, &dwNumberOfBytesReceived, &dwFlags, *aio_read_control_block, NULL ) == 0 ||
-       ::WSAGetLastError() == WSA_IO_PENDING )
-    aio_read_control_block.release();
-  else
-    aio_read_control_block->onError( ::WSAGetLastError() );
-}
-#endif
-void Socket::aio_read_nbio( yidl::auto_Object<AIOReadControlBlock> aio_read_control_block )
-{
-  aio_read_control_block->set_socket( *this );
-  set_blocking_mode( false );
-  ssize_t read_ret = read( aio_read_control_block->get_buffer() );
-  if ( read_ret > 0 )
-    aio_read_control_block->onCompletion( static_cast<size_t>( read_ret ) );
-  else if ( read_ret == 0 )
-#ifdef _WIN32
-    aio_read_control_block->onError( WSAECONNRESET );
-#else
-    aio_read_control_block->onError( ECONNRESET );
-#endif
-  else if ( want_read() || want_write() )
-    get_aio_queue().submit( aio_read_control_block.release() );
-  else
-    aio_read_control_block->onError( Exception::get_errno() );
-}
-void Socket::aio_write( yidl::auto_Object<AIOWriteControlBlock> aio_write_control_block )
-{
-#ifdef _WIN32
-  aio_write_iocp( aio_write_control_block );
-#else
-  aio_write_nbio( aio_write_control_block );
-#endif
-}
-#ifdef _WIN32
-void Socket::aio_write_iocp( yidl::auto_Object<AIOWriteControlBlock> aio_write_control_block )
-{
-  aio_write_control_block->set_socket( *this );
-  get_aio_queue().associate( *this );
-  yidl::auto_Buffer buffer( aio_write_control_block->get_buffer() );
-  if ( buffer->get_type_id() == YIDL_OBJECT_TYPE_ID( yidl::GatherBuffer ) )
-  {
-    DWORD dwNumberOfBytesSent;
-    if ( ::WSASend( socket_, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( static_cast<yidl::GatherBuffer*>( buffer.get() )->get_iovecs() ) ), static_cast<yidl::GatherBuffer*>( buffer.get() )->get_iovecs_len(), &dwNumberOfBytesSent, 0, *aio_write_control_block, NULL ) == 0 ||
-         ::WSAGetLastError() == WSA_IO_PENDING )
-      aio_write_control_block.release();
-    else
-      aio_write_control_block->onError( ::WSAGetLastError() );
-  }
-  else
-  {
-    WSABUF wsabuf[1];
-    wsabuf[0].buf = static_cast<char*>( *buffer );
-    wsabuf[0].len = buffer->size();
-    DWORD dwNumberOfBytesSent;
-    if ( ::WSASend( socket_, wsabuf, 1, &dwNumberOfBytesSent, 0, *aio_write_control_block, NULL ) == 0 ||
-         ::WSAGetLastError() == WSA_IO_PENDING )
-      aio_write_control_block.release();
-    else
-      aio_write_control_block->onError( ::WSAGetLastError() );
-  }
-}
-#endif
-void Socket::aio_write_nbio( yidl::auto_Object<AIOWriteControlBlock> aio_write_control_block )
-{
-  aio_write_control_block->set_socket( *this );
-  set_blocking_mode( false );
-  ssize_t write_ret = write( aio_write_control_block->get_buffer() );
-  if ( write_ret >= 0 )
-    aio_write_control_block->onCompletion( static_cast<size_t>( write_ret ) );
-  else if ( want_write() || want_read() )
-    get_aio_queue().submit( aio_write_control_block.release() );
-  else
-    aio_write_control_block->onError( Exception::get_errno() );
-}
-bool Socket::bind( auto_SocketAddress to_sockaddr )
-{
-  for ( ;; )
-  {
-    struct sockaddr* name; socklen_t namelen;
-    if ( to_sockaddr->as_struct_sockaddr( domain, name, namelen ) )
-    {
-      if ( ::bind( *this, name, namelen ) != -1 )
-        return true;
-    }
-    if ( domain == AF_INET6 &&
-#ifdef _WIN32
-        ::WSAGetLastError() == WSAEAFNOSUPPORT )
-#else
-        errno == EAFNOSUPPORT )
-#endif
-    {
-      close();
-      this->domain = AF_INET;
-      socket_ = ::socket( AF_INET, type, protocol );
-      if ( !blocking_mode )
-        set_blocking_mode( false );
-    }
-    else
-      return false;
-  }
-}
-bool Socket::close()
-{
-#ifdef _WIN32
-  return ::closesocket( socket_ ) != SOCKET_ERROR;
-#else
-  return ::close( socket_ ) != -1;
-#endif
-}
-bool Socket::connect( auto_SocketAddress to_sockaddr )
-{
-  for ( ;; )
-  {
-    struct sockaddr* name; socklen_t namelen;
-    if ( to_sockaddr->as_struct_sockaddr( domain, name, namelen ) )
-    {
-      if ( ::connect( *this, name, namelen ) != -1 )
-        return true;
-      else
-      {
-#ifdef _WIN32
-        switch ( ::WSAGetLastError() )
-        {
-          case WSAEISCONN: return true;
-          case WSAEAFNOSUPPORT:
-#else
-        switch ( errno )
-        {
-          case EISCONN: return true;
-          case EAFNOSUPPORT:
-#endif
-          {
-            if ( domain == AF_INET6 )
-            {
-              close();
-              domain = AF_INET; // Fall back to IPv4
-              socket_ = ::socket( domain, type, protocol );
-              if ( !blocking_mode )
-                set_blocking_mode( false );
-              continue; // Try to connect again
-            }
-            else
-              return false;
-          }
-          break;
-          default: return false;
-        }
-      }
-    }
-    else if ( domain == AF_INET6 )
-    {
-      close();
-      domain = AF_INET; // Fall back to IPv4
-      socket_ = ::socket( domain, type, protocol );
-      if ( !blocking_mode )
-        set_blocking_mode( false );
-      continue; // Try to connect again
-    }
-    else
-      return false;
-  }
-}
-int Socket::create( int& domain, int type, int protocol )
-{
-#ifdef _WIN32
-  SOCKET socket_ = ::socket( domain, type, protocol );
-  if ( socket_ != INVALID_SOCKET )
-  {
-    if ( domain == AF_INET6 )
-    {
-      DWORD ipv6only = 0; // Allow dual-mode sockets
-      setsockopt( socket_, IPPROTO_IPV6, IPV6_V6ONLY, ( char* )&ipv6only, sizeof( ipv6only ) );
-    }
-    return ( int )socket_;
-  }
-  else if ( domain == AF_INET6 && ::WSAGetLastError() == WSAEAFNOSUPPORT )
-  {
-    domain = AF_INET;
-    return ( int )::socket( AF_INET, type, protocol );
-  }
-  else
-    return false;
-#else
-  int socket_ = ::socket( AF_INET6, type, protocol );
-  if ( socket_ != -1 )
-    return socket_;
-  else if ( domain == AF_INET6 && errno == EAFNOSUPPORT )
-  {
-    domain = AF_INET;
-    return ::socket( AF_INET, type, protocol );
-  }
-  else
-    return -1;
-#endif
-}
-void Socket::destroy()
-{
-  delete aio_queue;
-#ifdef _WIN32
-  ::WSACleanup();
-#endif
-}
-Socket::AIOQueue& Socket::get_aio_queue()
-{
-  if ( aio_queue == NULL )
-    aio_queue = new AIOQueue;
-  return *aio_queue;
-}
-bool Socket::get_blocking_mode() const
-{
-  return blocking_mode;
-}
-auto_SocketAddress Socket::getpeername()
-{
-  struct sockaddr_storage peername_sockaddr_storage;
-  memset( &peername_sockaddr_storage, 0, sizeof( peername_sockaddr_storage ) );
-  socklen_t peername_sockaddr_storage_len = sizeof( peername_sockaddr_storage );
-  if ( ::getpeername( *this, reinterpret_cast<struct sockaddr*>( &peername_sockaddr_storage ), &peername_sockaddr_storage_len ) != -1 )
-    return new SocketAddress( peername_sockaddr_storage );
-  else
-    return NULL;
-}
-auto_SocketAddress Socket::getsockname()
-{
-  struct sockaddr_storage sockname_sockaddr_storage;
-  memset( &sockname_sockaddr_storage, 0, sizeof( sockname_sockaddr_storage ) );
-  socklen_t sockname_sockaddr_storage_len = sizeof( sockname_sockaddr_storage );
-  if ( ::getsockname( *this, reinterpret_cast<struct sockaddr*>( &sockname_sockaddr_storage ), &sockname_sockaddr_storage_len ) != -1 )
-    return new SocketAddress( sockname_sockaddr_storage );
-  else
-    return NULL;
-}
-void Socket::init()
-{
-#ifdef _WIN32
-  WORD wVersionRequested = MAKEWORD( 2, 2 );
-  WSADATA wsaData;
-  WSAStartup( wVersionRequested, &wsaData );
-#else
-  signal( SIGPIPE, SIG_IGN );
-#endif
-}
-Socket::operator int() const
-{
-  return socket_;
-}
-ssize_t Socket::read( yidl::auto_Buffer buffer )
-{
-  ssize_t read_ret = read( static_cast<char*>( *buffer ) + buffer->size(), buffer->capacity() - buffer->size() );
-  if ( read_ret > 0 )
-    buffer->put( NULL, read_ret );
-  return read_ret;
-}
-ssize_t Socket::read( void* buffer, size_t buffer_len )
-{
-#if defined(_WIN32)
-  return ::recv( socket_, static_cast<char*>( buffer ), static_cast<int>( buffer_len ), 0 ); // No real advantage to WSARecv on Win32 for one buffer
-#elif defined(__linux)
-  return ::recv( socket_, buffer, buffer_len, MSG_NOSIGNAL );
-#else
-  return ::recv( socket_, buffer, buffer_len, 0 );
-#endif
-}
-bool Socket::set_blocking_mode( bool blocking )
-{
-#ifdef _WIN32
-  unsigned long val = blocking ? 0 : 1;
-  if ( ioctlsocket( *this, FIONBIO, &val ) != SOCKET_ERROR )
-  {
-    this->blocking_mode = blocking;
-    return true;
-  }
-  else
-    return false;
-#else
-  int current_fcntl_flags = fcntl( *this, F_GETFL, 0 );
-  if ( blocking )
-  {
-    if ( ( current_fcntl_flags & O_NONBLOCK ) == O_NONBLOCK )
-    {
-      if ( fcntl( *this, F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1 )
-      {
-        this->blocking_mode = true;
-        return true;
-      }
-      else
-        return false;
-    }
-    else
-      return true;
-  }
-  else
-  {
-    if ( fcntl( *this, F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1 )
-    {
-      this->blocking_mode = false;
-      return true;
-    }
-    else
-      return false;
-  }
-#endif
-}
-bool Socket::shutdown()
-{
-  return true;
-}
-bool Socket::want_connect() const
-{
-#ifdef _WIN32
-  switch ( ::WSAGetLastError() )
-  {
-    case WSAEINPROGRESS:
-    case WSAEINVAL:
-    case WSAEWOULDBLOCK: return true;
-    default: return false;
-  }
-#else
-  switch ( errno )
-  {
-    case EALREADY:
-    case EINPROGRESS:
-    case EWOULDBLOCK: return true;
-    default: return false;
-  }
-#endif
-}
-bool Socket::want_read() const
-{
-#ifdef _WIN32
-  return ::WSAGetLastError() == WSAEWOULDBLOCK;
-#else
-  return errno == EWOULDBLOCK;
-#endif
-}
-bool Socket::want_write() const
-{
-#ifdef _WIN32
-  return ::WSAGetLastError() == WSAEWOULDBLOCK;
-#else
-  return errno == EWOULDBLOCK;
-#endif
-}
-ssize_t Socket::write( yidl::auto_Buffer buffer )
-{
-  if ( buffer->get_type_id() == YIDL_OBJECT_TYPE_ID( yidl::GatherBuffer ) )
-    return writev( static_cast<yidl::GatherBuffer*>( buffer.get() )->get_iovecs(), static_cast<yidl::GatherBuffer*>( buffer.get() )->get_iovecs_len() );
-  else
-    return write( static_cast<void*>( *buffer ), buffer->size() );
-}
-ssize_t Socket::write( const void* buffer, size_t buffer_len )
-{
-  // Go through writev to have a unified partial write path in TCPSocket::writev
-  struct iovec buffers[1];
-  buffers[0].iov_base = const_cast<void*>( buffer );
-  buffers[0].iov_len = buffer_len;
-  return writev( buffers, 1 );
-}
-ssize_t Socket::writev( const struct iovec* buffers, uint32_t buffers_count )
-{
-#if defined(_WIN32)
-  DWORD dwWrittenLength;
-  ssize_t write_ret = ::WSASend( socket_, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ), buffers_count, &dwWrittenLength, 0, NULL, NULL );
-  if ( write_ret >= 0 )
-    return static_cast<ssize_t>( dwWrittenLength );
-  else
-    return write_ret;
-#elif defined(__linux)
-  // Use sendmsg instead of writev to pass flags on Linux
-  struct msghdr _msghdr;
-  memset( &_msghdr, 0, sizeof( _msghdr ) );
-  _msghdr.msg_iov = const_cast<iovec*>( buffers );
-  _msghdr.msg_iovlen = buffers_count;
-  return ::sendmsg( socket_, &_msghdr, MSG_NOSIGNAL ); // MSG_NOSIGNAL = disable SIGPIPE
-#elif defined(__sun)
-  std::string buffer;
-  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-    buffer.append( static_cast<char*>( buffers[buffer_i].iov_base ), buffers[buffer_i].iov_len );
-  return write( buffer.c_str(), buffer.size() );
-#else
-  return ::writev( socket_, buffers, buffers_count );
-#endif
-}
 #ifdef _WIN32
 #pragma warning( pop )
 #endif
-
-
-// socket_address.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-#ifdef _WIN32
-#pragma warning( push )
-#pragma warning( disable: 4995 )
-#include <ws2tcpip.h>
-#pragma warning( pop )
-#else
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#endif
-SocketAddress::SocketAddress( struct addrinfo& addrinfo_list )
-  : addrinfo_list( &addrinfo_list ), _sockaddr_storage( NULL )
-{ }
-SocketAddress::SocketAddress( const struct sockaddr_storage& _sockaddr_storage )
-{
-  addrinfo_list = NULL;
-  this->_sockaddr_storage = new struct sockaddr_storage;
-  memcpy_s( this->_sockaddr_storage, sizeof( *this->_sockaddr_storage ), &_sockaddr_storage, sizeof( _sockaddr_storage ) );
-}
-auto_SocketAddress SocketAddress::create( const URI& uri )
-{
-  if ( uri.get_host() == "*" )
-    return create( NULL, uri.get_port() );
-  else
-    return create( uri.get_host().c_str(), uri.get_port() );
-}
-auto_SocketAddress SocketAddress::create( const char* hostname, uint16_t port )
-{
-  struct addrinfo* addrinfo_list = getaddrinfo( hostname, port );
-  if ( addrinfo_list != NULL )
-    return new SocketAddress( *addrinfo_list );
-  else
-    return NULL;
-}
-SocketAddress::~SocketAddress()
-{
-  if ( addrinfo_list != NULL )
-    freeaddrinfo( addrinfo_list );
-  else if ( _sockaddr_storage != NULL )
-    delete _sockaddr_storage;
-}
-bool SocketAddress::as_struct_sockaddr( int family, struct sockaddr*& out_sockaddr, socklen_t& out_sockaddrlen )
-{
-  if ( addrinfo_list != NULL )
-  {
-    struct addrinfo* addrinfo_p = addrinfo_list;
-    while ( addrinfo_p != NULL )
-    {
-      if ( addrinfo_p->ai_family == family )
-      {
-        out_sockaddr = addrinfo_p->ai_addr;
-        out_sockaddrlen = addrinfo_p->ai_addrlen;
-        return true;
-      }
-      else
-        addrinfo_p = addrinfo_p->ai_next;
-    }
-  }
-  else if ( _sockaddr_storage->ss_family == family )
-  {
-    out_sockaddr = reinterpret_cast<struct sockaddr*>( _sockaddr_storage );
-    out_sockaddrlen = sizeof( *_sockaddr_storage );
-    return true;
-  }
-#ifdef _WIN32
-  ::WSASetLastError( WSAEAFNOSUPPORT );
-#else
-  errno = EAFNOSUPPORT;
-#endif
-  return false;
-}
-struct addrinfo* SocketAddress::getaddrinfo( const char* hostname, uint16_t port )
-{
-#ifdef _WIN32
-  Socket::init();
-#endif
-  const char* servname;
-#ifdef __sun
-  if ( hostname == NULL )
-    hostname = "0.0.0.0";
-  servname = NULL;
-#else
-  std::ostringstream servname_oss; // ltoa is not very portable
-  servname_oss << port; // servname = decimal port or service name. Great interface, guys.
-  std::string servname_str = servname_oss.str();
-  servname = servname_str.c_str();
-#endif
-  struct addrinfo addrinfo_hints;
-  memset( &addrinfo_hints, 0, sizeof( addrinfo_hints ) );
-  addrinfo_hints.ai_family = AF_UNSPEC;
-  if ( hostname == NULL )
-    addrinfo_hints.ai_flags |= AI_PASSIVE; // To get INADDR_ANYs
-  struct addrinfo* addrinfo_list;
-  int getaddrinfo_ret = ::getaddrinfo( hostname, servname, &addrinfo_hints, &addrinfo_list );
-  if ( getaddrinfo_ret == 0 )
-  {
-#ifdef __sun
-    struct addrinfo* addrinfo_p = addrinfo_list;
-    while ( addrinfo_p != NULL )
-    {
-      switch ( addrinfo_p->ai_family )
-      {
-        case AF_INET: reinterpret_cast<struct sockaddr_in*>( addrinfo_p->ai_addr )->sin_port = htons( port ); break;
-        case AF_INET6: reinterpret_cast<struct sockaddr_in6*>( addrinfo_p->ai_addr )->sin6_port = htons( port ); break;
-        default: DebugBreak();
-      }
-      addrinfo_p = addrinfo_p->ai_next;
-    }
-#endif
-    return addrinfo_list;
-  }
-  else
-    return NULL;
-}
-bool SocketAddress::getnameinfo( std::string& out_hostname, bool numeric ) const
-{
-  char nameinfo[NI_MAXHOST];
-  if ( this->getnameinfo( nameinfo, NI_MAXHOST, numeric ) )
-  {
-    out_hostname.assign( nameinfo );
-    return true;
-  }
-  else
-    return false;
-}
-bool SocketAddress::getnameinfo( char* out_hostname, uint32_t out_hostname_len, bool numeric ) const
-{
-  if ( addrinfo_list != NULL )
-  {
-    struct addrinfo* addrinfo_p = addrinfo_list;
-    while ( addrinfo_p != NULL )
-    {
-      if ( ::getnameinfo( addrinfo_p->ai_addr, addrinfo_p->ai_addrlen, out_hostname, out_hostname_len, NULL, 0, numeric ? NI_NUMERICHOST : 0 ) == 0 )
-        return true;
-      else
-        addrinfo_p = addrinfo_p->ai_next;
-    }
-    return false;
-  }
-  else
-    return ::getnameinfo( reinterpret_cast<sockaddr*>( _sockaddr_storage ), static_cast<socklen_t>( sizeof( *_sockaddr_storage ) ), out_hostname, out_hostname_len, NULL, 0, numeric ? NI_NUMERICHOST : 0 ) == 0;
-}
-uint16_t SocketAddress::get_port() const
-{
-  if ( addrinfo_list != NULL )
-  {
-    switch ( addrinfo_list->ai_family )
-    {
-      case AF_INET: return ntohs( reinterpret_cast<struct sockaddr_in*>( addrinfo_list->ai_addr )->sin_port );
-      case AF_INET6: return ntohs( reinterpret_cast<struct sockaddr_in6*>( addrinfo_list->ai_addr )->sin6_port );
-      default: DebugBreak(); return 0;
-    }
-  }
-  else
-  {
-    switch ( _sockaddr_storage->ss_family )
-    {
-      case AF_INET: return ntohs( reinterpret_cast<struct sockaddr_in*>( _sockaddr_storage )->sin_port );
-      case AF_INET6: return ntohs( reinterpret_cast<struct sockaddr_in6*>( _sockaddr_storage )->sin6_port );
-      default: DebugBreak(); return 0;
-    }
-  }
-}
-bool SocketAddress::operator==( const SocketAddress& other ) const
-{
-  if ( addrinfo_list != NULL )
-  {
-    if ( other.addrinfo_list != NULL )
-    {
-      struct addrinfo* addrinfo_p = addrinfo_list;
-      while ( addrinfo_p != NULL )
-      {
-        struct addrinfo* other_addrinfo_p = other.addrinfo_list;
-        while ( other_addrinfo_p != NULL )
-        {
-          if ( addrinfo_p->ai_addrlen == other_addrinfo_p->ai_addrlen &&
-               memcmp( addrinfo_p->ai_addr, other_addrinfo_p->ai_addr, addrinfo_p->ai_addrlen ) == 0 &&
-               addrinfo_p->ai_family == other_addrinfo_p->ai_family &&
-               addrinfo_p->ai_protocol == other_addrinfo_p->ai_protocol &&
-               addrinfo_p->ai_socktype == other_addrinfo_p->ai_socktype
-             )
-               break;
-          else
-            other_addrinfo_p = other_addrinfo_p->ai_next;
-        }
-        if ( other_addrinfo_p != NULL ) // i.e. we found the addrinfo in the other's list
-          addrinfo_p = addrinfo_p->ai_next;
-        else
-          return false;
-      }
-      return true;
-    }
-    else
-      return false;
-  }
-  else if ( other._sockaddr_storage != NULL )
-    return memcmp( _sockaddr_storage, other._sockaddr_storage, sizeof( *_sockaddr_storage ) ) == 0;
-  else
-    return false;
-}
 
 
 // ssl_context.cpp
@@ -3993,10 +4099,10 @@ static int pem_password_callback( char *buf, int size, int, void *userdata )
   memcpy_s( buf, size, pem_password->c_str(), size );
   return size;
 }
-SSLContext::SSLContext( SSL_CTX* ctx )
+YIELD::SSLContext::SSLContext( SSL_CTX* ctx )
   : ctx( ctx )
 { }
-auto_SSLContext SSLContext::create( SSL_METHOD* method )
+YIELD::auto_SSLContext YIELD::SSLContext::create( SSL_METHOD* method )
 {
   SSL_CTX* ctx = createSSL_CTX( method );
   if ( ctx != NULL )
@@ -4004,7 +4110,7 @@ auto_SSLContext SSLContext::create( SSL_METHOD* method )
   else
     return NULL;
 }
-auto_SSLContext SSLContext::create( SSL_METHOD* method, const Path& pem_certificate_file_path, const Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase )
+YIELD::auto_SSLContext YIELD::SSLContext::create( SSL_METHOD* method, const Path& pem_certificate_file_path, const Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase )
 {
   SSL_CTX* ctx = createSSL_CTX( method );
   if ( SSL_CTX_use_certificate_file( ctx, pem_certificate_file_path, SSL_FILETYPE_PEM ) > 0 )
@@ -4019,7 +4125,7 @@ auto_SSLContext SSLContext::create( SSL_METHOD* method, const Path& pem_certific
   }
   return NULL;
 }
-auto_SSLContext SSLContext::create( SSL_METHOD* method, const std::string& pem_certificate_str, const std::string& pem_private_key_str, const std::string& pem_private_key_passphrase )
+YIELD::auto_SSLContext YIELD::SSLContext::create( SSL_METHOD* method, const std::string& pem_certificate_str, const std::string& pem_private_key_str, const std::string& pem_private_key_passphrase )
 {
   SSL_CTX* ctx = createSSL_CTX( method );
   BIO* pem_certificate_bio = BIO_new_mem_buf( reinterpret_cast<void*>( const_cast<char*>( pem_certificate_str.c_str() ) ), static_cast<int>( pem_certificate_str.size() ) );
@@ -4047,7 +4153,7 @@ auto_SSLContext SSLContext::create( SSL_METHOD* method, const std::string& pem_c
   }
   return NULL;
 }
-auto_SSLContext SSLContext::create( SSL_METHOD* method, const Path& pkcs12_file_path, const std::string& pkcs12_passphrase )
+YIELD::auto_SSLContext YIELD::SSLContext::create( SSL_METHOD* method, const Path& pkcs12_file_path, const std::string& pkcs12_passphrase )
 {
   SSL_CTX* ctx = createSSL_CTX( method );
   BIO* bio = BIO_new_file( pkcs12_file_path, "rb" );
@@ -4088,14 +4194,14 @@ auto_SSLContext SSLContext::create()
   return new SSLContext;
 }
 #endif
-SSLContext::~SSLContext()
+YIELD::SSLContext::~SSLContext()
 {
 #ifdef YIELD_HAVE_OPENSSL
   SSL_CTX_free( ctx );
 #endif
 }
 #ifdef YIELD_HAVE_OPENSSL
-SSL_CTX* SSLContext::createSSL_CTX( SSL_METHOD* method )
+SSL_CTX* YIELD::SSLContext::createSSL_CTX( SSL_METHOD* method )
 {
   SSL_library_init();
   OpenSSL_add_all_algorithms();
@@ -4129,14 +4235,14 @@ SSL_CTX* SSLContext::createSSL_CTX( SSL_METHOD* method )
 #include <netinet/in.h> // For the IPPROTO_* constants
 #include <sys/socket.h>
 #endif
-SSLSocket::SSLSocket( int domain, int socket_, auto_SSLContext ctx, SSL* ssl )
+YIELD::SSLSocket::SSLSocket( int domain, int socket_, auto_SSLContext ctx, SSL* ssl )
   : TCPSocket( domain, socket_ ), ctx( ctx ), ssl( ssl )
 { }
-SSLSocket::~SSLSocket()
+YIELD::SSLSocket::~SSLSocket()
 {
   SSL_free( ssl );
 }
-auto_TCPSocket SSLSocket::accept()
+YIELD::auto_TCPSocket YIELD::SSLSocket::accept()
 {
   SSL_set_fd( ssl, *this );
   int peer_socket = static_cast<int>( TCPSocket::_accept() );
@@ -4150,19 +4256,19 @@ auto_TCPSocket SSLSocket::accept()
   else
     return NULL;
 }
-void SSLSocket::aio_accept( yidl::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
+void YIELD::SSLSocket::aio_accept( yidl::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
 {
   aio_accept_nbio( aio_accept_control_block );
 }
-void SSLSocket::aio_read( yidl::auto_Object<AIOReadControlBlock> aio_read_control_block )
+void YIELD::SSLSocket::aio_read( yidl::auto_Object<AIOReadControlBlock> aio_read_control_block )
 {
   aio_read_nbio( aio_read_control_block );
 }
-void SSLSocket::aio_write( yidl::auto_Object<AIOWriteControlBlock> aio_write_control_block )
+void YIELD::SSLSocket::aio_write( yidl::auto_Object<AIOWriteControlBlock> aio_write_control_block )
 {
   aio_write_nbio( aio_write_control_block );
 }
-bool SSLSocket::connect( auto_SocketAddress peer_sockaddr )
+bool YIELD::SSLSocket::connect( Socket::auto_Address peer_sockaddr )
 {
   if ( TCPSocket::connect( peer_sockaddr ) )
   {
@@ -4173,11 +4279,11 @@ bool SSLSocket::connect( auto_SocketAddress peer_sockaddr )
   else
     return false;
 }
-auto_SSLSocket SSLSocket::create( auto_SSLContext ctx )
+YIELD::auto_SSLSocket YIELD::SSLSocket::create( auto_SSLContext ctx )
 {
   return create( AF_INET6, ctx );
 }
-auto_SSLSocket SSLSocket::create( int domain, auto_SSLContext ctx )
+YIELD::auto_SSLSocket YIELD::SSLSocket::create( int domain, auto_SSLContext ctx )
 {
   SSL* ssl = SSL_new( ctx->get_ssl_ctx() );
   if ( ssl != NULL )
@@ -4221,30 +4327,30 @@ void SSLSocket::info_callback( const SSL* ssl, int where, int ret )
   reinterpret_cast<SSLSocket*>( SSL_get_app_data( const_cast<SSL*>( ssl ) ) )->log->getStream( Log::LOG_NOTICE ) << "SSLSocket: " << info.str();
 }
 */
-ssize_t SSLSocket::read( void* buffer, size_t buffer_len )
+ssize_t YIELD::SSLSocket::read( void* buffer, size_t buffer_len )
 {
   return SSL_read( ssl, buffer, static_cast<int>( buffer_len ) );
 }
-bool SSLSocket::shutdown()
+bool YIELD::SSLSocket::shutdown()
 {
   if ( SSL_shutdown( ssl ) != -1 )
     return TCPSocket::shutdown();
   else
     return false;
 }
-bool SSLSocket::want_read() const
+bool YIELD::SSLSocket::want_read() const
 {
   return SSL_want_read( ssl ) == 1;
 }
-bool SSLSocket::want_write() const
+bool YIELD::SSLSocket::want_write() const
 {
   return SSL_want_write( ssl ) == 1;
 }
-ssize_t SSLSocket::write( const void* buffer, size_t buffer_len )
+ssize_t YIELD::SSLSocket::write( const void* buffer, size_t buffer_len )
 {
   return SSL_write( ssl, buffer, static_cast<int>( buffer_len ) );
 }
-ssize_t SSLSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
+ssize_t YIELD::SSLSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
 {
   if ( buffers_count == 1 )
     return write( buffers[0].iov_base, buffers[0].iov_len );
@@ -4275,15 +4381,15 @@ ssize_t SSLSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
 #endif
 #include <cstring>
 #ifdef _WIN32
-void* TCPSocket::lpfnAcceptEx = NULL;
-void* TCPSocket::lpfnConnectEx = NULL;
+void* YIELD::TCPSocket::lpfnAcceptEx = NULL;
+void* YIELD::TCPSocket::lpfnConnectEx = NULL;
 #endif
-TCPSocket::TCPSocket( int domain, int socket_ )
+YIELD::TCPSocket::TCPSocket( int domain, int socket_ )
   : Socket( domain, SOCK_STREAM, IPPROTO_TCP, socket_ )
 {
   partial_write_len = 0;
 }
-auto_TCPSocket TCPSocket::accept()
+YIELD::auto_TCPSocket YIELD::TCPSocket::accept()
 {
 #ifdef _WIN32
   unsigned int peer_socket = _accept();
@@ -4296,13 +4402,13 @@ auto_TCPSocket TCPSocket::accept()
   else
     return NULL;
 }
-int TCPSocket::_accept()
+int YIELD::TCPSocket::_accept()
 {
   sockaddr_storage peer_sockaddr_storage;
   socklen_t peer_sockaddr_storage_len = sizeof( peer_sockaddr_storage );
   return ::accept( *this, ( struct sockaddr* )&peer_sockaddr_storage, &peer_sockaddr_storage_len );
 }
-void TCPSocket::aio_accept( yidl::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
+void YIELD::TCPSocket::aio_accept( yidl::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
 {
 #ifdef _WIN32
   aio_accept_iocp( aio_accept_control_block );
@@ -4311,7 +4417,7 @@ void TCPSocket::aio_accept( yidl::auto_Object<AIOAcceptControlBlock> aio_accept_
 #endif
 }
 #ifdef _WIN32
-void TCPSocket::aio_accept_iocp( yidl::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
+void YIELD::TCPSocket::aio_accept_iocp( yidl::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
 {
   aio_accept_control_block->set_socket( *this );
   get_aio_queue().associate( *this );
@@ -4331,13 +4437,13 @@ void TCPSocket::aio_accept_iocp( yidl::auto_Object<AIOAcceptControlBlock> aio_ac
     aio_accept_control_block->onError( Exception::get_errno() );
 }
 #endif
-void TCPSocket::aio_accept_nbio( yidl::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
+void YIELD::TCPSocket::aio_accept_nbio( yidl::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
 {
   aio_accept_control_block->set_socket( *this );
   set_blocking_mode( false );
   get_aio_queue().submit( aio_accept_control_block.release() );
 }
-void TCPSocket::aio_connect( yidl::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
+void YIELD::TCPSocket::aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block )
 {
 #ifdef _WIN32
   aio_connect_iocp( aio_connect_control_block );
@@ -4346,7 +4452,7 @@ void TCPSocket::aio_connect( yidl::auto_Object<AIOConnectControlBlock> aio_conne
 #endif
 }
 #ifdef _WIN32
-void TCPSocket::aio_connect_iocp( yidl::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
+void YIELD::TCPSocket::aio_connect_iocp( Socket::auto_AIOConnectControlBlock aio_connect_control_block )
 {
   aio_connect_control_block->set_socket( *this );
   if ( lpfnConnectEx == NULL )
@@ -4360,7 +4466,7 @@ void TCPSocket::aio_connect_iocp( yidl::auto_Object<AIOConnectControlBlock> aio_
     struct sockaddr* name; socklen_t namelen;
     if ( aio_connect_control_block->get_peername()->as_struct_sockaddr( get_domain(), name, namelen ) )
     {
-      if ( bind( SocketAddress::create( NULL, 0 ) ) )
+      if ( bind( Socket::Address::create( NULL, 0 ) ) )
       {
         get_aio_queue().associate( *this );
         DWORD dwBytesSent;
@@ -4390,11 +4496,11 @@ void TCPSocket::aio_connect_iocp( yidl::auto_Object<AIOConnectControlBlock> aio_
   aio_connect_control_block->onError( Exception::get_errno() );
 }
 #endif
-auto_TCPSocket TCPSocket::create()
+YIELD::auto_TCPSocket YIELD::TCPSocket::create()
 {
   return create( AF_INET6 );
 }
-auto_TCPSocket TCPSocket::create( int domain )
+YIELD::auto_TCPSocket YIELD::TCPSocket::create( int domain )
 {
   int socket_ = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
   if ( socket_ != -1 )
@@ -4402,7 +4508,7 @@ auto_TCPSocket TCPSocket::create( int domain )
   else
     return NULL;
 }
-bool TCPSocket::listen()
+bool YIELD::TCPSocket::listen()
 {
   int flag = 1;
   setsockopt( *this, IPPROTO_TCP, TCP_NODELAY, reinterpret_cast<char*>( &flag ), sizeof( int ) );
@@ -4414,7 +4520,7 @@ bool TCPSocket::listen()
   setsockopt( *this, SOL_SOCKET, SO_LINGER, ( char* )&lingeropt, ( int )sizeof( lingeropt ) );
   return ::listen( *this, SOMAXCONN ) != -1;
 }
-bool TCPSocket::shutdown()
+bool YIELD::TCPSocket::shutdown()
 {
 #ifdef _WIN32
   return ::shutdown( *this, SD_BOTH ) == 0;
@@ -4422,7 +4528,7 @@ bool TCPSocket::shutdown()
   return ::shutdown( *this, SHUT_RDWR ) != -1;
 #endif
 }
-ssize_t TCPSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
+ssize_t YIELD::TCPSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
 {
   size_t buffers_len = 0;
   for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
@@ -4488,58 +4594,58 @@ ssize_t TCPSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
 // tracing_socket.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-TracingSocket::TracingSocket( auto_Socket underlying_socket, auto_Log log )
+YIELD::TracingSocket::TracingSocket( auto_Socket underlying_socket, auto_Log log )
   : Socket( underlying_socket->get_domain(), underlying_socket->get_type(), underlying_socket->get_protocol(), -1 ),
     underlying_socket( underlying_socket ), log( log )
 { }
-void TracingSocket::aio_connect( yidl::auto_Object<AIOConnectControlBlock> aio_connect_control_block )
+void YIELD::TracingSocket::aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block )
 {
   aio_connect_nbio( aio_connect_control_block );
 }
-void TracingSocket::aio_read( yidl::auto_Object<Socket::AIOReadControlBlock> aio_read_control_block )
+void YIELD::TracingSocket::aio_read( Socket::auto_AIOReadControlBlock aio_read_control_block )
 {
   aio_read_nbio( aio_read_control_block );
 }
-void TracingSocket::aio_write( yidl::auto_Object<Socket::AIOWriteControlBlock> aio_write_control_block )
+void YIELD::TracingSocket::aio_write( Socket::auto_AIOWriteControlBlock aio_write_control_block )
 {
   aio_write_nbio( aio_write_control_block );
 }
-bool TracingSocket::bind( auto_SocketAddress to_sockaddr )
+bool YIELD::TracingSocket::bind( Socket::auto_Address to_sockaddr )
 {
   std::string to_hostname;
   if ( to_sockaddr->getnameinfo( to_hostname ) )
     log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: binding socket #" << ( int )*this << " to " << to_hostname << ".";
   return underlying_socket->bind( to_sockaddr );
 }
-bool TracingSocket::close()
+bool YIELD::TracingSocket::close()
 {
   log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: closing socket #" << ( int )*this << ".";
   return underlying_socket->close();
 }
-bool TracingSocket::connect( auto_SocketAddress to_sockaddr )
+bool YIELD::TracingSocket::connect( Socket::auto_Address to_sockaddr )
 {
   std::string to_hostname;
   if ( to_sockaddr->getnameinfo( to_hostname ) )
     log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: connecting socket #" << ( int )*this << " to " << to_hostname << ".";
   return underlying_socket->connect( to_sockaddr );
 }
-bool TracingSocket::get_blocking_mode() const
+bool YIELD::TracingSocket::get_blocking_mode() const
 {
   return underlying_socket->get_blocking_mode();
 }
-auto_SocketAddress TracingSocket::getpeername()
+YIELD::Socket::auto_Address YIELD::TracingSocket::getpeername()
 {
   return underlying_socket->getpeername();
 }
-auto_SocketAddress TracingSocket::getsockname()
+YIELD::Socket::auto_Address YIELD::TracingSocket::getsockname()
 {
   return underlying_socket->getsockname();
 }
-TracingSocket::operator int() const
+YIELD::TracingSocket::operator int() const
 {
   return underlying_socket->operator int();
 }
-ssize_t TracingSocket::read( void* buffer, size_t buffer_len )
+ssize_t YIELD::TracingSocket::read( void* buffer, size_t buffer_len )
 {
   log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: trying to read " << buffer_len << " bytes from socket #" << ( int )*this << ".";
   ssize_t read_ret = underlying_socket->read( buffer, buffer_len );
@@ -4553,38 +4659,38 @@ ssize_t TracingSocket::read( void* buffer, size_t buffer_len )
     log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: lost connection while trying to read socket #" <<  ( int )*this << ".";
   return read_ret;
 }
-bool TracingSocket::set_blocking_mode( bool blocking )
+bool YIELD::TracingSocket::set_blocking_mode( bool blocking )
 {
 //  log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: setting socket #" << ( int )*this << " to " << ( ( blocking ) ? "blocking mode." : "non-blocking mode." );
   return underlying_socket->set_blocking_mode( blocking );
 }
-bool TracingSocket::shutdown()
+bool YIELD::TracingSocket::shutdown()
 {
 //  log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: shutting down socket #" << ( int )*this << ".";
   return underlying_socket->shutdown();
 }
-bool TracingSocket::want_read() const
+bool YIELD::TracingSocket::want_read() const
 {
   bool want_read_ret = underlying_socket->want_read();
   if ( want_read_ret )
     log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: would block on read on socket #" << ( int )*this << ".";
   return want_read_ret;
 }
-bool TracingSocket::want_connect() const
+bool YIELD::TracingSocket::want_connect() const
 {
   bool want_connect_ret = underlying_socket->want_connect();
   if ( want_connect_ret )
     log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: would block on connect on socket #" << ( int )*this << ".";
   return want_connect_ret;
 }
-bool TracingSocket::want_write() const
+bool YIELD::TracingSocket::want_write() const
 {
   bool want_write_ret = underlying_socket->want_write();
   if ( want_write_ret )
     log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: would block on write on socket #" << ( int )*this << ".";
   return want_write_ret;
 }
-ssize_t TracingSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
+ssize_t YIELD::TracingSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
 {
   size_t buffers_len = 0;
   for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
@@ -4628,10 +4734,10 @@ ssize_t TracingSocket::writev( const struct iovec* buffers, uint32_t buffers_cou
 #include <netinet/in.h> // For the IPPROTO_* constants
 #include <sys/socket.h>
 #endif
-UDPSocket::UDPSocket( int domain, int socket_ )
+YIELD::UDPSocket::UDPSocket( int domain, int socket_ )
   : Socket( domain, SOCK_DGRAM, IPPROTO_UDP, socket_ )
 { }
-void UDPSocket::aio_recvfrom( yidl::auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block )
+void YIELD::UDPSocket::aio_recvfrom( yidl::auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block )
 {
 #ifdef _WIN32
   aio_recvfrom_iocp( aio_recvfrom_control_block );
@@ -4640,7 +4746,7 @@ void UDPSocket::aio_recvfrom( yidl::auto_Object<AIORecvFromControlBlock> aio_rec
 #endif
 }
 #ifdef _WIN32
-void UDPSocket::aio_recvfrom_iocp( yidl::auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block )
+void YIELD::UDPSocket::aio_recvfrom_iocp( yidl::auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block )
 {
   aio_recvfrom_control_block->set_socket( *this );
   get_aio_queue().associate( *this );
@@ -4657,13 +4763,13 @@ void UDPSocket::aio_recvfrom_iocp( yidl::auto_Object<AIORecvFromControlBlock> ai
     aio_recvfrom_control_block->onError( ::WSAGetLastError() );
 }
 #endif
-void UDPSocket::aio_recvfrom_nbio( yidl::auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block )
+void YIELD::UDPSocket::aio_recvfrom_nbio( yidl::auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block )
 {
   aio_recvfrom_control_block->set_socket( *this );
   set_blocking_mode( false );
   get_aio_queue().submit( aio_recvfrom_control_block.release() );
 }
-auto_UDPSocket UDPSocket::create()
+YIELD::auto_UDPSocket YIELD::UDPSocket::create()
 {
   int domain = AF_INET6;
   int socket_ = Socket::create( domain, SOCK_DGRAM, IPPROTO_UDP );
@@ -4679,23 +4785,23 @@ auto_UDPSocket UDPSocket::create()
       return NULL;
   }
 }
-ssize_t UDPSocket::recvfrom( yidl::auto_Buffer buffer, struct sockaddr_storage& peer_sockaddr )
+ssize_t YIELD::UDPSocket::recvfrom( yidl::auto_Buffer buffer, struct sockaddr_storage& peer_sockaddr )
 {
   ssize_t recvfrom_ret = recvfrom( static_cast<char*>( *buffer ) + buffer->size(), buffer->capacity() - buffer->size(), peer_sockaddr );
   if ( recvfrom_ret > 0 )
     buffer->put( NULL, recvfrom_ret );
   return recvfrom_ret;
 }
-ssize_t UDPSocket::recvfrom( void* buffer, size_t buffer_len, struct sockaddr_storage& peer_sockaddr )
+ssize_t YIELD::UDPSocket::recvfrom( void* buffer, size_t buffer_len, struct sockaddr_storage& peer_sockaddr )
 {
   socklen_t peer_sockaddr_len = sizeof( peer_sockaddr );
   return ::recvfrom( *this, static_cast<char*>( buffer ), buffer_len, 0, reinterpret_cast<struct sockaddr*>( &peer_sockaddr ), &peer_sockaddr_len );
 }
-ssize_t UDPSocket::sendto( yidl::auto_Buffer buffer, auto_SocketAddress peer_sockaddr )
+ssize_t YIELD::UDPSocket::sendto( yidl::auto_Buffer buffer, Socket::auto_Address peer_sockaddr )
 {
   return sendto( static_cast<void*>( *buffer ), buffer->size(), peer_sockaddr );
 }
-ssize_t UDPSocket::sendto( const void* buffer, size_t buffer_len, auto_SocketAddress _peer_sockaddr )
+ssize_t YIELD::UDPSocket::sendto( const void* buffer, size_t buffer_len, Socket::auto_Address _peer_sockaddr )
 {
   struct sockaddr* peer_sockaddr; socklen_t peer_sockaddr_len;
   if ( _peer_sockaddr->as_struct_sockaddr( get_domain(), peer_sockaddr, peer_sockaddr_len ) )
@@ -4703,33 +4809,19 @@ ssize_t UDPSocket::sendto( const void* buffer, size_t buffer_len, auto_SocketAdd
   else
     return -1;
 }
-UDPSocket::AIORecvFromControlBlock::AIORecvFromControlBlock( yidl::auto_Buffer buffer )
+YIELD::UDPSocket::AIORecvFromControlBlock::AIORecvFromControlBlock( yidl::auto_Buffer buffer )
 : buffer( buffer )
 {
   peer_sockaddr = new sockaddr_storage;
 }
-UDPSocket::AIORecvFromControlBlock::~AIORecvFromControlBlock()
+YIELD::UDPSocket::AIORecvFromControlBlock::~AIORecvFromControlBlock()
 {
   delete peer_sockaddr;
 }
-auto_SocketAddress UDPSocket::AIORecvFromControlBlock::get_peer_sockaddr() const
+YIELD::Socket::auto_Address YIELD::UDPSocket::AIORecvFromControlBlock::get_peer_sockaddr() const
 {
-  return new SocketAddress( *peer_sockaddr );
+  return new Socket::Address( *peer_sockaddr );
 }
-/*
-void UDPSocket::AIORecvFromControlBlock::execute()
-{
-  ssize_t recvfrom_ret = static_cast<UDPSocket*>( get_socket().get() )->recvfrom( buffer, *peer_sockaddr );
-  if ( recvfrom_ret > 0 )
-    onCompletion( static_cast<size_t>( recvfrom_ret ) );
-  else
-    onError( Exception::get_errno() );
-}
-void UDPSocket::AIORecvFromControlBlock::onCompletion( size_t bytes_transferred )
-{
-  buffer->put( NULL, bytes_transferred );
-}
-*/
 
 
 // uri.cpp
@@ -4739,11 +4831,11 @@ extern "C"
 {
   #include <uriparser.h>
 };
-URI::URI( const URI& other )
+YIELD::URI::URI( const URI& other )
 : scheme( other.scheme ), user( other.user ), password( other.password ),
   host( other.host ), port( other.port ), resource( other.resource )
 { }
-auto_URI URI::parse( const char* uri, size_t uri_len )
+YIELD::auto_URI YIELD::URI::parse( const char* uri, size_t uri_len )
 {
   UriParserStateA parser_state;
   UriUriA parsed_uri;
@@ -4760,7 +4852,7 @@ auto_URI URI::parse( const char* uri, size_t uri_len )
     return NULL;
   }
 }
-void URI::init( const char* uri, size_t uri_len )
+void YIELD::URI::init( const char* uri, size_t uri_len )
 {
   UriParserStateA parser_state;
   UriUriA parsed_uri;
@@ -4776,7 +4868,7 @@ void URI::init( const char* uri, size_t uri_len )
     throw Exception( "invalid URI" );
   }
 }
-void URI::init( UriUriA& parsed_uri )
+void YIELD::URI::init( UriUriA& parsed_uri )
 {
   scheme.assign( parsed_uri.scheme.first, parsed_uri.scheme.afterLast - parsed_uri.scheme.first );
   host.assign( parsed_uri.hostText.first, parsed_uri.hostText.afterLast - parsed_uri.hostText.first );
@@ -4812,17 +4904,100 @@ void URI::init( UriUriA& parsed_uri )
     while ( path_segment != NULL );
     if ( parsed_uri.query.first != NULL )
     {
-      resource.append( "?" );
-      resource.append( parsed_uri.query.first, parsed_uri.query.afterLast - parsed_uri.query.first );
+      UriQueryListA* query_list;
+      uriDissectQueryMallocA( &query_list, NULL, parsed_uri.query.first, parsed_uri.query.afterLast );
+      UriQueryListA* query_list_p = query_list;
+      while ( query_list_p != NULL )
+      {
+        query.insert( std::make_pair( query_list_p->key, query_list_p->value ) );
+        query_list_p = query_list_p->next;
+      }
+      uriFreeQueryListA( query_list );
     }
   }
   else
     resource = "/";
 }
-URI::operator std::string() const
+std::string YIELD::URI::get_query_value( const std::string& key, const char* default_query_value ) const
 {
-  std::ostringstream oss;
-  oss << *this;
-  return oss.str();
+  std::multimap<std::string, std::string>::const_iterator query_value_i = query.find( key );
+  if ( query_value_i != query.end() )
+    return query_value_i->second;
+  else
+    return default_query_value;
+}
+std::multimap<std::string, std::string>::const_iterator YIELD::URI::get_query_values( const std::string& key ) const
+{
+  return query.find( key );
+}
+
+
+// uuid.cpp
+#ifdef _WIN32
+#include <Rpc.h>
+#pragma comment( lib, "Rpcrt4.lib" )
+#endif
+
+#ifdef YIELD_HAVE_OPENSSL
+#include <openssl/sha.h>
+#endif
+
+#ifndef _WIN32
+#include <cstring>
+#endif
+
+
+YIELD::UUID::UUID()
+{
+#ifdef _WIN32
+  win32_uuid = new ::UUID;
+  UuidCreate( static_cast<::UUID*>( win32_uuid ) );
+#else
+  std::strncpy( unix_uuid, Socket::getfqdn().c_str(), 256 );
+#ifdef YIELD_HAVE_OPENSSL
+  SHA_CTX ctx; SHA1_Init( &ctx );
+  SHA1_Update( &ctx, unix_uuid, strlen( unix_uuid ) );
+  memset( unix_uuid, 0, sizeof( unix_uuid ) );
+  unsigned char sha1sum[SHA_DIGEST_LENGTH]; SHA1_Final( sha1sum, &ctx );
+  static char hex_array[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
+  unsigned int sha1sum_i = 0, unix_uuid_i = 0;
+  for ( ; sha1sum_i < SHA_DIGEST_LENGTH; sha1sum_i++, unix_uuid_i += 2 )
+  {
+   unix_uuid[unix_uuid_i] = hex_array[( sha1sum[sha1sum_i] & 0xf0 ) >> 4];
+   unix_uuid[unix_uuid_i+1] = hex_array[( sha1sum[sha1sum_i] & 0x0f )];
+  }
+  unix_uuid[unix_uuid_i] = 0;
+#endif
+#endif
+}
+
+YIELD::UUID::UUID( const std::string& from_string )
+{
+#ifdef _WIN32
+  win32_uuid = new ::UUID;
+  UuidFromStringA( reinterpret_cast<RPC_CSTR>( const_cast<char*>( from_string.c_str() ) ), static_cast<::UUID*>( win32_uuid ) );
+#else
+  std::strncpy( unix_uuid, from_string.c_str(), 256 );
+#endif
+}
+
+YIELD::UUID::~UUID()
+{
+#ifdef _WIN32
+  delete static_cast<::UUID*>( win32_uuid );
+#endif
+}
+
+YIELD::UUID::operator std::string() const
+{
+#ifdef _WIN32
+  RPC_CSTR temp_to_string;
+  UuidToStringA( static_cast<::UUID*>( win32_uuid ), &temp_to_string );
+  std::string to_string( reinterpret_cast<char*>( temp_to_string ) );
+  RpcStringFreeA( &temp_to_string );
+  return to_string;
+#else
+  return unix_uuid;
+#endif
 }
 
