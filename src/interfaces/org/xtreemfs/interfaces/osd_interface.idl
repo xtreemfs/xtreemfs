@@ -15,6 +15,12 @@ module org # 1000
         uint64_t file_size;
       };
 
+      struct Lock # 54
+      {
+        string client_uuid;
+        uint32_t client_pid;
+      };
+
       struct ObjectData # 51
       {
         uint32_t checksum;
@@ -56,38 +62,42 @@ module org # 1000
         const uint32_t DEFAULT_HTTP_PORT = 30640; 
 
         // Exceptions
-        exception ConcurrentModificationException # 6 { string stack_trace; };
-        exception errnoException # 7 { uint32_t error_code; string error_message; string stack_trace; };
-        exception InvalidArgumentException # 8 { string error_message; };
-        exception OSDException # 11 { uint32_t error_code; string error_message; string stack_trace; };
-        exception ProtocolException # 9 { uint32_t accept_stat; uint32_t error_code; string stack_trace; };
-        exception RedirectException # 10 { string to_uuid; };
+        exception ConcurrentModificationException # 1 { string stack_trace; };
+        exception errnoException # 2 { uint32_t error_code; string error_message; string stack_trace; };
+        exception InvalidArgumentException # 3 { string error_message; };
+        exception OSDException # 4 { uint32_t error_code; string error_message; string stack_trace; };
+        exception ProtocolException # 5 { uint32_t accept_stat; uint32_t error_code; string stack_trace; };
+        exception RedirectException # 6 { string to_uuid; };
 
         // FUSE/POSIX operations
-        void read( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, out ObjectData object_data ) # 1;
-        void truncate( FileCredentials file_credentials, string file_id, uint64_t new_file_size, out OSDWriteResponse osd_write_response ) # 2;
-        void unlink( FileCredentials file_credentials, string file_id ) # 3;
-        void write( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, ObjectData object_data, out OSDWriteResponse osd_write_response ) # 4;
+        void read( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, out ObjectData object_data ) # 10;
+        void truncate( FileCredentials file_credentials, string file_id, uint64_t new_file_size, out OSDWriteResponse osd_write_response ) # 11;
+        void unlink( FileCredentials file_credentials, string file_id ) # 12;
+        void write( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, ObjectData object_data, out OSDWriteResponse osd_write_response ) # 13;
 
         // XtreemFS-specific operations
-      	void xtreemfs_broadcast_gmax( string fileId, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) # 1000;
-        ObjectData xtreemfs_check_object( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version) # 103;
+      	void xtreemfs_broadcast_gmax( string file_id, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) # 20;
+        ObjectData xtreemfs_check_object( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version) # 21;
 
-        void xtreemfs_cleanup_get_results( out StringSet results ) #109;
-        void xtreemfs_cleanup_is_running( out boolean is_running ) #108;
-        void xtreemfs_cleanup_start( boolean remove_zombies, boolean remove_unavail_volume, boolean lost_and_found ) #105;
-        void xtreemfs_cleanup_status( out string status ) #107;
-        void xtreemfs_cleanup_stop() #106;
+        void xtreemfs_cleanup_get_results( out StringSet results ) # 30;
+        void xtreemfs_cleanup_is_running( out boolean is_running ) # 31;
+        void xtreemfs_cleanup_start( boolean remove_zombies, boolean remove_unavail_volume, boolean lost_and_found ) # 32;
+        void xtreemfs_cleanup_status( out string status ) # 33;
+        void xtreemfs_cleanup_stop() # 34;
 	
-        InternalGmax xtreemfs_internal_get_gmax( FileCredentials file_credentials, string file_id ) # 100;
-        void xtreemfs_internal_truncate( FileCredentials file_credentials, string file_id, uint64_t new_file_size, out OSDWriteResponse osd_write_response ) # 101;
-        uint64_t xtreemfs_internal_get_file_size( FileCredentials file_credentials, string file_id ) # 104;
+        InternalGmax xtreemfs_internal_get_gmax( FileCredentials file_credentials, string file_id ) # 40;
+        void xtreemfs_internal_truncate( FileCredentials file_credentials, string file_id, uint64_t new_file_size, out OSDWriteResponse osd_write_response ) # 41;
+        uint64_t xtreemfs_internal_get_file_size( FileCredentials file_credentials, string file_id ) # 42;
+        InternalReadLocalResponse xtreemfs_internal_read_local( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length, boolean attachObjectList, ObjectListSet requiredObjects) # 43;
+        ObjectList xtreemfs_internal_get_object_set( FileCredentials file_credentials, string file_id) # 44;
 
-        InternalReadLocalResponse xtreemfs_internal_read_local( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length, boolean attachObjectList, ObjectListSet requiredObjects) # 102;
-        ObjectList xtreemfs_internal_get_object_set( FileCredentials file_credentials, string file_id) # 110;
+        Lock xtreemfs_lock_acquire( string client_uuid, int32_t client_pid, string file_id, uint64_t offset, uint64_t length ) # 50;
+        Lock xtreemfs_lock_check( string client_uuid, int32_t client_pid, string file_id, uint64_t offset, uint64_t length ) # 51;
+        void xtreemfs_lock_release( string file_id, Lock lock ) # 52;
 
-        void xtreemfs_ping( VivaldiCoordinates coordinates, out VivaldiCoordinates remote_coordinates ) #1001;
-        void xtreemfs_shutdown() # 50;
+        void xtreemfs_ping( VivaldiCoordinates coordinates, out VivaldiCoordinates remote_coordinates ) # 60;
+
+        void xtreemfs_shutdown() # 70;
       };
     };
   };
