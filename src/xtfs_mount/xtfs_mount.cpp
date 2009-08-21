@@ -262,7 +262,7 @@ namespace xtfs_mount
         case XTFS_MOUNT_OPTION_TRACE_METADATA_CACHE: trace_metadata_cache = true; break;
         case XTFS_MOUNT_OPTION_TRACE_VOLUME_OPERATIONS: trace_volume_operations = true; break;
         
-        default: Main::parseOption( id, arg ); break;
+        default: xtreemfs::Main::parseOption( id, arg ); break;
       }
     }
 

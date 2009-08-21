@@ -358,16 +358,13 @@ bool File::unlock( uint64_t offset, uint64_t length )
 {
   FILE_OPERATION_BEGIN;
 
-  if ( !locks.empty() )
+  if ( locks.empty() )
+    return true;
+  else
   {
     parent_volume->get_osd_proxy_mux()->xtreemfs_lock_release( file_credentials, file_credentials.get_xcap().get_file_id(), locks.back() );
     locks.pop_back();
     return true;
-  }
-  else
-  {
-    YIELD::Exception::set_errno( EIO );
-    return false;
   }
 
   FILE_OPERATION_END;

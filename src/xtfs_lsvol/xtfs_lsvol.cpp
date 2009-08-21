@@ -66,7 +66,7 @@ namespace xtfs_lsvol
       switch ( id )
       {
         case XTFS_LSVOL_OPTION_LONG_LISTING: long_listing = true; break;
-        default: Main::parseOption( id, arg ); break;
+        default: xtreemfs::Main::parseOption( id, arg ); break;
       }
     }
 

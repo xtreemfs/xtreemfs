@@ -123,7 +123,7 @@ namespace xtfs_mkvol
           }
           break;
 
-          default: Main::parseOption( id, arg ); break;
+          default: xtreemfs::Main::parseOption( id, arg ); break;
         }
       }
     }
