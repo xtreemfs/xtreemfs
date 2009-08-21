@@ -445,7 +445,7 @@ public class PolicyContainer {
         try {
             Class policyClass = policyClassLoader.loadClass(id, ReplicaSelectionPolicy.class);
             if (policyClass == null)
-                throw new MRCException("policy not found");
+                throw new MRCException("policy not found (id="+id+")");
             return (ReplicaSelectionPolicy) policyClass.newInstance();
             
         } catch (Exception exc) {

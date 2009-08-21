@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class writeRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1304;
+    public static final int TAG = 1313;
 
     
     public writeRequest() { file_credentials = new FileCredentials(); file_id = ""; object_number = 0; object_version = 0; offset = 0; lease_timeout = 0; object_data = new ObjectData(); }
@@ -41,7 +41,7 @@ public class writeRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Serializable
-    public int getTag() { return 1304; }
+    public int getTag() { return 1313; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::writeRequest"; }
 
     public void deserialize( Object from_hash_map )

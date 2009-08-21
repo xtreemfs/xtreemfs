@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_cleanup_startResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1405;
+    public static final int TAG = 1332;
 
     
     public xtreemfs_cleanup_startResponse() {  }
@@ -25,7 +25,7 @@ public class xtreemfs_cleanup_startResponse implements org.xtreemfs.interfaces.u
     }
 
     // Serializable
-    public int getTag() { return 1405; }
+    public int getTag() { return 1332; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_startResponse"; }
 
     public void deserialize( Object from_hash_map )

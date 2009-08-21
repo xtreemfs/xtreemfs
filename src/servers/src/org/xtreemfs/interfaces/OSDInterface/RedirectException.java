@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 1310;
+    public static final int TAG = 1306;
 
     
     public RedirectException() { to_uuid = ""; }
@@ -29,7 +29,7 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     }
 
     // Serializable
-    public int getTag() { return 1310; }
+    public int getTag() { return 1306; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::RedirectException"; }
 
     public void deserialize( Object from_hash_map )

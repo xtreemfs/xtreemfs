@@ -34,6 +34,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponseDecoder;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.InternalReadLocalResponse;
+import org.xtreemfs.interfaces.Lock;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.ObjectList;
@@ -70,6 +71,12 @@ import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_read_localRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_read_localResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_truncateRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_truncateResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_lock_acquireRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_lock_acquireResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_lock_checkRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_lock_checkResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_lock_releaseRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_lock_releaseResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_shutdownRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_shutdownResponse;
 
@@ -360,6 +367,56 @@ public class OSDClient extends ONCRPCClient {
                         xtreemfs_internal_get_object_listResponse resp = new xtreemfs_internal_get_object_listResponse();
                         resp.deserialize(data);
                         return resp.getReturnValue();
+                    }
+                });
+        return r;
+    }
+
+    public RPCResponse<Lock> lock_acquire(InetSocketAddress server,
+            String file_id, FileCredentials credentials, String clientUuid, int pid,
+            long offset, long length, boolean exclusive) {
+        xtreemfs_lock_acquireRequest rq = new xtreemfs_lock_acquireRequest(credentials, clientUuid, pid, file_id, offset, length, exclusive);
+
+        RPCResponse<Lock> r = sendRequest(server, rq.getTag(), rq,
+                new RPCResponseDecoder<Lock>() {
+                    @Override
+                    public Lock getResult(ReusableBuffer data) {
+                        xtreemfs_lock_acquireResponse resp = new xtreemfs_lock_acquireResponse();
+                        resp.deserialize(data);
+                        return resp.getReturnValue();
+                    }
+                });
+        return r;
+    }
+
+    public RPCResponse<Lock> lock_check(InetSocketAddress server,
+            String file_id, FileCredentials credentials, String clientUuid, int pid,
+            long offset, long length, boolean exclusive) {
+        xtreemfs_lock_checkRequest rq = new xtreemfs_lock_checkRequest(credentials, clientUuid, pid, file_id, offset, length, exclusive);
+
+        RPCResponse<Lock> r = sendRequest(server, rq.getTag(), rq,
+                new RPCResponseDecoder<Lock>() {
+                    @Override
+                    public Lock getResult(ReusableBuffer data) {
+                        xtreemfs_lock_checkResponse resp = new xtreemfs_lock_checkResponse();
+                        resp.deserialize(data);
+                        return resp.getReturnValue();
+                    }
+                });
+        return r;
+    }
+
+    public RPCResponse<Lock> lock_release(InetSocketAddress server,
+            String file_id, FileCredentials credentials, String clientUuid, int pid) {
+        xtreemfs_lock_releaseRequest rq = new xtreemfs_lock_releaseRequest(credentials, file_id, new Lock(clientUuid, pid));
+
+        RPCResponse r = sendRequest(server, rq.getTag(), rq,
+                new RPCResponseDecoder() {
+                    @Override
+                    public Lock getResult(ReusableBuffer data) {
+                        xtreemfs_lock_releaseResponse resp = new xtreemfs_lock_releaseResponse();
+                        resp.deserialize(data);
+                        return null;
                     }
                 });
         return r;

@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class truncateResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1302;
+    public static final int TAG = 1311;
 
     
     public truncateResponse() { osd_write_response = new OSDWriteResponse(); }
@@ -29,7 +29,7 @@ public class truncateResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Serializable
-    public int getTag() { return 1302; }
+    public int getTag() { return 1311; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::truncateResponse"; }
 
     public void deserialize( Object from_hash_map )

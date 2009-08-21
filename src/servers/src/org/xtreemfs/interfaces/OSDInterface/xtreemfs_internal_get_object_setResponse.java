@@ -9,28 +9,28 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 
 
-public class xtreemfs_internal_read_localResponse implements org.xtreemfs.interfaces.utils.Response
+public class xtreemfs_internal_get_object_setResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1343;
+    public static final int TAG = 1344;
 
     
-    public xtreemfs_internal_read_localResponse() { returnValue = new InternalReadLocalResponse(); }
-    public xtreemfs_internal_read_localResponse( InternalReadLocalResponse returnValue ) { this.returnValue = returnValue; }
-    public xtreemfs_internal_read_localResponse( Object from_hash_map ) { returnValue = new InternalReadLocalResponse(); this.deserialize( from_hash_map ); }
-    public xtreemfs_internal_read_localResponse( Object[] from_array ) { returnValue = new InternalReadLocalResponse();this.deserialize( from_array ); }
+    public xtreemfs_internal_get_object_setResponse() { returnValue = new ObjectList(); }
+    public xtreemfs_internal_get_object_setResponse( ObjectList returnValue ) { this.returnValue = returnValue; }
+    public xtreemfs_internal_get_object_setResponse( Object from_hash_map ) { returnValue = new ObjectList(); this.deserialize( from_hash_map ); }
+    public xtreemfs_internal_get_object_setResponse( Object[] from_array ) { returnValue = new ObjectList();this.deserialize( from_array ); }
 
-    public InternalReadLocalResponse getReturnValue() { return returnValue; }
-    public void setReturnValue( InternalReadLocalResponse returnValue ) { this.returnValue = returnValue; }
+    public ObjectList getReturnValue() { return returnValue; }
+    public void setReturnValue( ObjectList returnValue ) { this.returnValue = returnValue; }
 
     // Object
     public String toString()
     {
-        return "xtreemfs_internal_read_localResponse( " + returnValue.toString() + " )";
+        return "xtreemfs_internal_get_object_setResponse( " + returnValue.toString() + " )";
     }
 
     // Serializable
-    public int getTag() { return 1343; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_read_localResponse"; }
+    public int getTag() { return 1344; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_object_setResponse"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -49,7 +49,7 @@ public class xtreemfs_internal_read_localResponse implements org.xtreemfs.interf
 
     public void deserialize( ReusableBuffer buf )
     {
-        returnValue = new InternalReadLocalResponse(); returnValue.deserialize( buf );
+        returnValue = new ObjectList(); returnValue.deserialize( buf );
     }
 
     public Object serialize()
@@ -72,7 +72,7 @@ public class xtreemfs_internal_read_localResponse implements org.xtreemfs.interf
     }
 
 
-    private InternalReadLocalResponse returnValue;    
+    private ObjectList returnValue;    
 
 }
 

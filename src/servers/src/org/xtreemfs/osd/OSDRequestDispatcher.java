@@ -109,6 +109,9 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.xtreemfs.common.VersionManagement;
+import org.xtreemfs.osd.operations.LockAcquireOperation;
+import org.xtreemfs.osd.operations.LockCheckOperation;
+import org.xtreemfs.osd.operations.LockReleaseOperation;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     UDPReceiverInterface {
@@ -630,6 +633,15 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         op = new GetObjectSetOperation(this);
         operations.put(op.getProcedureId(), op);
+
+        op = new LockAcquireOperation(this);
+        operations.put(op.getProcedureId(), op);
+
+        op = new LockCheckOperation(this);
+        operations.put(op.getProcedureId(), op);
+        
+        op = new LockReleaseOperation(this);
+        operations.put(op.getProcedureId(), op);
         
         // --internal events here--
         
@@ -669,10 +681,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 xtreemfs_broadcast_gmaxRequest rq = (xtreemfs_broadcast_gmaxRequest) msg.getRequestData();
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
-                        "received GMAX packet for: %s from %s", rq.getFileId(), msg.getAddress());
+                        "received GMAX packet for: %s from %s", rq.getFile_id(), msg.getAddress());
                 
                 BufferPool.free(msg.getPayload());
-                stStage.receivedGMAX_ASYNC(rq.getFileId(), rq.getTruncateEpoch(), rq.getLastObject());
+                stStage.receivedGMAX_ASYNC(rq.getFile_id(), rq.getTruncateEpoch(), rq.getLastObject());
             } else if (msg.getRequestData() instanceof xtreemfs_pingRequest) {
                 xtreemfs_pingRequest rq = (xtreemfs_pingRequest) msg.getRequestData();
                 if (Logging.isDebug())

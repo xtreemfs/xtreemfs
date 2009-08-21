@@ -886,6 +886,21 @@ public class RandomAccessFile implements ObjectStore {
         }
     }
 
+    public Stat stat() throws IOException {
+        RPCResponse<Stat> r = null;
+        try {
+            r = mrcClient.getattr(mrcAddress, credentials, pathName);
+            return r.get();
+        } catch (ONCRPCException ex) {
+            throw new IOException("cannot update file size",ex);
+        } catch (InterruptedException ex) {
+            throw new IOException("cannot update file size",ex);
+        } finally {
+            if (r != null)
+                r.freeBuffers();
+        }
+    }
+
 //    public NumberMonitoring getMonitoringInfo() {
 //        return monitoring;
 //    }

@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_internal_get_file_sizeRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1404;
+    public static final int TAG = 1342;
 
     
     public xtreemfs_internal_get_file_sizeRequest() { file_credentials = new FileCredentials(); file_id = ""; }
@@ -31,7 +31,7 @@ public class xtreemfs_internal_get_file_sizeRequest implements org.xtreemfs.inte
     }
 
     // Serializable
-    public int getTag() { return 1404; }
+    public int getTag() { return 1342; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_file_sizeRequest"; }
 
     public void deserialize( Object from_hash_map )

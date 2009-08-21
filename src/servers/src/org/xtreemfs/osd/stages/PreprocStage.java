@@ -38,17 +38,20 @@ import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
+import org.xtreemfs.interfaces.Lock;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.OSDInterface.ProtocolException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.interfaces.utils.Serializable;
+import org.xtreemfs.osd.AdvisoryLock;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.LocationsCache;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.OpenFileTable;
+import org.xtreemfs.osd.OpenFileTable.OpenFileTableEntry;
 import org.xtreemfs.osd.operations.EventCloseFile;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.storage.CowPolicy;
@@ -64,6 +67,12 @@ public class PreprocStage extends Stage {
     public final static int                STAGEOP_RETURN_LEASE       = 4;
     
     public final static int                STAGEOP_VERIFIY_CLEANUP    = 5;
+
+    public final static int                STAGEOP_ACQUIRE_LOCK       = 10;
+
+    public final static int                STAGEOP_CHECK_LOCK           = 11;
+
+    public final static int                STAGEOP_UNLOCK             = 12;
     
     private final static long              OFT_CLEAN_INTERVAL         = 1000 * 60;
     
@@ -110,6 +119,7 @@ public class PreprocStage extends Stage {
         
         public void parseComplete(OSDRequest result, Exception error);
     }
+
     
     private void doPrepareRequest(StageRequest rq) {
         final OSDRequest request = (OSDRequest) rq.getArgs()[0];
@@ -177,6 +187,98 @@ public class PreprocStage extends Stage {
             oft.setDeleteOnClose(fileId);
         
         callback.deleteOnCloseResult(deleteOnClose, null);
+    }
+
+    public static interface LockOperationCompleteCallback {
+
+        public void parseComplete(Lock result, Exception error);
+    }
+
+    public void acquireLock(String clientUuid, int pid, String fileId, long offset, long length, boolean exclusive,
+            OSDRequest request, LockOperationCompleteCallback listener) {
+        this.enqueueOperation(STAGEOP_ACQUIRE_LOCK, new Object[] { clientUuid,
+        pid, fileId, offset, length, exclusive}, request, listener);
+    }   
+
+    public void doAcquireLock(StageRequest m) {
+        final LockOperationCompleteCallback callback = (LockOperationCompleteCallback) m.getCallback();
+        try {
+            final String clientUuid = (String) m.getArgs()[0];
+            final Integer pid = (Integer)m.getArgs()[1];
+            final String fileId = (String) m.getArgs()[2];
+            final Long offset = (Long) m.getArgs()[3];
+            final Long length = (Long) m.getArgs()[4];
+            final Boolean exclusive = (Boolean) m.getArgs()[5];
+
+            OpenFileTableEntry e = oft.getEntry(fileId);
+            if (e == null) {
+                callback.parseComplete(null, new RuntimeException("no entry in OFT, programmatic erro"));
+                return;
+            }
+
+            AdvisoryLock l = e.acquireLock(clientUuid, pid, offset, length, exclusive);
+            callback.parseComplete(new Lock(l.getClientUuid(), l.getClientPid()), null);
+
+        } catch (Exception ex) {
+            callback.parseComplete(null,ex);
+        }
+    }
+
+    public void checkLock(String clientUuid, int pid, String fileId, long offset, long length, boolean exclusive,
+            OSDRequest request, LockOperationCompleteCallback listener) {
+        this.enqueueOperation(STAGEOP_CHECK_LOCK, new Object[] { clientUuid,
+        pid, fileId, offset, length, exclusive}, request, listener);
+    }
+
+    public void doCheckLock(StageRequest m) {
+        final LockOperationCompleteCallback callback = (LockOperationCompleteCallback) m.getCallback();
+        try {
+            final String clientUuid = (String) m.getArgs()[0];
+            final Integer pid = (Integer)m.getArgs()[1];
+            final String fileId = (String) m.getArgs()[2];
+            final Long offset = (Long) m.getArgs()[3];
+            final Long length = (Long) m.getArgs()[4];
+            final Boolean exclusive = (Boolean) m.getArgs()[5];
+
+            OpenFileTableEntry e = oft.getEntry(fileId);
+            if (e == null) {
+                callback.parseComplete(null, new RuntimeException("no entry in OFT, programmatic erro"));
+                return;
+            }
+
+            AdvisoryLock l = e.checkLock(clientUuid, pid, offset, length, exclusive);
+            callback.parseComplete(new Lock(l.getClientUuid(), l.getClientPid()), null);
+
+        } catch (Exception ex) {
+            callback.parseComplete(null,ex);
+        }
+    }
+
+    public void unlock(String clientUuid, int pid, String fileId,
+            OSDRequest request, LockOperationCompleteCallback listener) {
+        this.enqueueOperation(STAGEOP_UNLOCK, new Object[] { clientUuid,
+        pid, fileId }, request, listener);
+    }
+
+    public void doUnlock(StageRequest m) {
+        final LockOperationCompleteCallback callback = (LockOperationCompleteCallback) m.getCallback();
+        try {
+            final String clientUuid = (String) m.getArgs()[0];
+            final Integer pid = (Integer)m.getArgs()[1];
+            final String fileId = (String) m.getArgs()[2];
+
+            OpenFileTableEntry e = oft.getEntry(fileId);
+            if (e == null) {
+                callback.parseComplete(null, new RuntimeException("no entry in OFT, programmatic erro"));
+                return;
+            }
+
+            e.unlock(clientUuid, pid);
+            callback.parseComplete(null, null);
+
+        } catch (Exception ex) {
+            callback.parseComplete(null,ex);
+        }
     }
     
     @Override
@@ -254,6 +356,12 @@ public class PreprocStage extends Stage {
             doPrepareRequest(m);
         } else if (requestedMethod == STAGEOP_OFT_DELETE) {
             doCheckDeleteOnClose(m);
+        } else if (requestedMethod == STAGEOP_ACQUIRE_LOCK) {
+            doAcquireLock(m);
+        } else if (requestedMethod == STAGEOP_CHECK_LOCK) {
+            doCheckLock(m);
+        } else if (requestedMethod == STAGEOP_UNLOCK) {
+            doUnlock(m);
         }
         
     }

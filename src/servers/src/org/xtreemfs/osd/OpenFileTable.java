@@ -31,6 +31,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.PriorityQueue;
 
 import org.xtreemfs.common.logging.Logging;
@@ -214,12 +216,16 @@ public final class OpenFileTable {
     public int getNumOpenFiles() {
         return this.openFiles.size();
     }
+
+    public OpenFileTableEntry getEntry(String fileId) {
+        return this.openFiles.get(fileId);
+    }
     
-    public List<ClientLease> getLeases(String fileId) {
+    /*public List<ClientLease> getLeases(String fileId) {
         OpenFileTableEntry e = openFiles.get(fileId);
         assert (e != null);
         return e.getClientLeases();
-    }
+    }*/
     
     /**
      * Class used to model an entry in the OpenFileTable
@@ -235,7 +241,9 @@ public final class OpenFileTable {
         
         private boolean           deleteOnClose;
         
-        private List<ClientLease> clientLeases;
+        //private List<ClientLease> clientLeases;
+
+        private Map<String,AdvisoryLock> advisoryLocks;
         
         private CowPolicy         fileCowPolicy;
         
@@ -247,7 +255,7 @@ public final class OpenFileTable {
             fileId = fid;
             expTime = et;
             deleteOnClose = false;
-            clientLeases = new LinkedList();
+            //clientLeases = new LinkedList();
             
             if (cow != null)
                 fileCowPolicy = cow;
@@ -301,12 +309,77 @@ public final class OpenFileTable {
             return this.fileId;
         }
         
-        public List<ClientLease> getClientLeases() {
+        /*public List<ClientLease> getClientLeases() {
             return this.clientLeases;
-        }
+        }*/
         
         public CowPolicy getCowPolicy() {
             return this.fileCowPolicy;
+        }
+
+        public AdvisoryLock acquireLock(String client_uuid, int pid, long offset, long length, boolean exclusive) {
+            final String procId = getProcId(client_uuid, pid);
+            final AdvisoryLock l = new AdvisoryLock(offset, length, exclusive, client_uuid, pid);
+            if (advisoryLocks == null) {
+                advisoryLocks = new HashMap();
+                //don't need to look for new locks here
+                advisoryLocks.put(procId, l);
+
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG,Category.all,this,"acquired lock for file %s by %s (%d-%d)",fileId,procId,offset,length);
+                }
+
+                return l;
+            } else {
+
+                for (Entry<String,AdvisoryLock> e : advisoryLocks.entrySet()) {
+                    if (e.getKey().equals(procId))
+                        continue;
+                    if (e.getValue().isConflicting(l)) {
+                        assert( (e.getValue().getClientPid() != l.getClientPid())
+                                || (!e.getValue().getClientUuid().equals(l.getClientUuid()))) : procId+" vs "+e.getKey();
+                        if (Logging.isDebug()) {
+                            Logging.logMessage(Logging.LEVEL_DEBUG,Category.all,this,"acquired for file %s by %s failed, conflickting lock by",fileId,procId,e.getKey());
+                        }
+                        return e.getValue();
+                    }
+                }
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG,Category.all,this,"acquired lock for file %s by %s (%d-%d)",fileId,procId,offset,length);
+                }
+                advisoryLocks.put(procId, l);
+                return l;
+            }
+        }
+
+        public AdvisoryLock checkLock(String client_uuid, int pid, long offset, long length, boolean exclusive) {
+            final String procId = getProcId(client_uuid, pid);
+            final AdvisoryLock l = new AdvisoryLock(offset, length, exclusive, client_uuid, pid);
+            if (advisoryLocks == null) {
+                return l;
+            } else {
+
+                for (Entry<String,AdvisoryLock> e : advisoryLocks.entrySet()) {
+                    if (e.getKey().equals(procId))
+                        return l;
+                    if (e.getValue().isConflicting(l)) {
+                        return e.getValue();
+                    }
+                }
+                return l;
+            }
+        }
+
+        public void unlock(String client_uuid, int pid) {
+            if (advisoryLocks == null)
+                return;
+            final String procId = getProcId(client_uuid, pid);
+            advisoryLocks.remove(procId);
+        }
+
+
+        private static String getProcId(String clientUuid, int pid) {
+            return String.format("%010d%s",pid,clientUuid);
         }
         
     }

@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_cleanup_startRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1405;
+    public static final int TAG = 1332;
 
     
     public xtreemfs_cleanup_startRequest() { remove_zombies = false; remove_unavail_volume = false; lost_and_found = false; }
@@ -33,7 +33,7 @@ public class xtreemfs_cleanup_startRequest implements org.xtreemfs.interfaces.ut
     }
 
     // Serializable
-    public int getTag() { return 1405; }
+    public int getTag() { return 1332; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_startRequest"; }
 
     public void deserialize( Object from_hash_map )

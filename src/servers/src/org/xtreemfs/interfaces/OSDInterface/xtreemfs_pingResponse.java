@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_pingResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2301;
+    public static final int TAG = 1360;
 
     
     public xtreemfs_pingResponse() { remote_coordinates = new VivaldiCoordinates(); }
@@ -29,7 +29,7 @@ public class xtreemfs_pingResponse implements org.xtreemfs.interfaces.utils.Resp
     }
 
     // Serializable
-    public int getTag() { return 2301; }
+    public int getTag() { return 1360; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse"; }
 
     public void deserialize( Object from_hash_map )

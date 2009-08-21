@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class ProtocolException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 1309;
+    public static final int TAG = 1305;
 
     
     public ProtocolException() { accept_stat = 0; error_code = 0; stack_trace = ""; }
@@ -33,7 +33,7 @@ public class ProtocolException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     }
 
     // Serializable
-    public int getTag() { return 1309; }
+    public int getTag() { return 1305; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::ProtocolException"; }
 
     public void deserialize( Object from_hash_map )

@@ -9,24 +9,24 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 
 
-public class xtreemfs_cleanup_stopResponse implements org.xtreemfs.interfaces.utils.Response
+public class xtreemfs_lock_releaseResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1334;
+    public static final int TAG = 1352;
 
     
-    public xtreemfs_cleanup_stopResponse() {  }
-    public xtreemfs_cleanup_stopResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
-    public xtreemfs_cleanup_stopResponse( Object[] from_array ) { this.deserialize( from_array ); }
+    public xtreemfs_lock_releaseResponse() {  }
+    public xtreemfs_lock_releaseResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
+    public xtreemfs_lock_releaseResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
     // Object
     public String toString()
     {
-        return "xtreemfs_cleanup_stopResponse()";
+        return "xtreemfs_lock_releaseResponse()";
     }
 
     // Serializable
-    public int getTag() { return 1334; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_stopResponse"; }
+    public int getTag() { return 1352; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_lock_releaseResponse"; }
 
     public void deserialize( Object from_hash_map )
     {

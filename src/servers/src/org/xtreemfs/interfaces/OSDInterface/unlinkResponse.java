@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class unlinkResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1303;
+    public static final int TAG = 1312;
 
     
     public unlinkResponse() {  }
@@ -25,7 +25,7 @@ public class unlinkResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Serializable
-    public int getTag() { return 1303; }
+    public int getTag() { return 1312; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::unlinkResponse"; }
 
     public void deserialize( Object from_hash_map )

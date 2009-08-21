@@ -9,15 +9,15 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 
 
-public class xtreemfs_internal_get_gmaxRequest implements org.xtreemfs.interfaces.utils.Request
+public class xtreemfs_internal_get_object_setRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1340;
+    public static final int TAG = 1344;
 
     
-    public xtreemfs_internal_get_gmaxRequest() { file_credentials = new FileCredentials(); file_id = ""; }
-    public xtreemfs_internal_get_gmaxRequest( FileCredentials file_credentials, String file_id ) { this.file_credentials = file_credentials; this.file_id = file_id; }
-    public xtreemfs_internal_get_gmaxRequest( Object from_hash_map ) { file_credentials = new FileCredentials(); file_id = ""; this.deserialize( from_hash_map ); }
-    public xtreemfs_internal_get_gmaxRequest( Object[] from_array ) { file_credentials = new FileCredentials(); file_id = "";this.deserialize( from_array ); }
+    public xtreemfs_internal_get_object_setRequest() { file_credentials = new FileCredentials(); file_id = ""; }
+    public xtreemfs_internal_get_object_setRequest( FileCredentials file_credentials, String file_id ) { this.file_credentials = file_credentials; this.file_id = file_id; }
+    public xtreemfs_internal_get_object_setRequest( Object from_hash_map ) { file_credentials = new FileCredentials(); file_id = ""; this.deserialize( from_hash_map ); }
+    public xtreemfs_internal_get_object_setRequest( Object[] from_array ) { file_credentials = new FileCredentials(); file_id = "";this.deserialize( from_array ); }
 
     public FileCredentials getFile_credentials() { return file_credentials; }
     public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
@@ -27,12 +27,12 @@ public class xtreemfs_internal_get_gmaxRequest implements org.xtreemfs.interface
     // Object
     public String toString()
     {
-        return "xtreemfs_internal_get_gmaxRequest( " + file_credentials.toString() + ", " + "\"" + file_id + "\"" + " )";
+        return "xtreemfs_internal_get_object_setRequest( " + file_credentials.toString() + ", " + "\"" + file_id + "\"" + " )";
     }
 
     // Serializable
-    public int getTag() { return 1340; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_gmaxRequest"; }
+    public int getTag() { return 1344; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_object_setRequest"; }
 
     public void deserialize( Object from_hash_map )
     {
@@ -80,7 +80,7 @@ public class xtreemfs_internal_get_gmaxRequest implements org.xtreemfs.interface
     }
 
     // Request
-    public Response createDefaultResponse() { return new xtreemfs_internal_get_gmaxResponse(); }
+    public Response createDefaultResponse() { return new xtreemfs_internal_get_object_setResponse(); }
 
 
     private FileCredentials file_credentials;
