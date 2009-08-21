@@ -77,4 +77,14 @@ public class AdvisoryLock {
         return clientPid;
     }
 
+    public long getOffset() {
+        return lockStart;
+    }
+
+    public long getLength() {
+        if (lockEnd == LOCK_TO_EOF)
+            return LOCK_TO_EOF;
+        return lockEnd-lockStart+1;
+    }
+
 }
