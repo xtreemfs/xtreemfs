@@ -187,12 +187,13 @@ namespace xtfs_mount
       }
       else // !foreground
       {
-        YIELD::Path named_pipe_path( "xtfs_mount" );
+        char named_pipe_path[128];
+        sprintf( named_pipe_path, ".xtfs_mount-%llu", YIELD::Time().as_unix_time_ns() );
         yidl::auto_Object<YIELD::NamedPipe> server_named_pipe = YIELD::NamedPipe::open( named_pipe_path, O_CREAT|O_RDWR );
 
         std::vector<char*> argvv;
         argvv.push_back( const_cast<char*>( "--parent-named-pipe-path" ) );
-        argvv.push_back( const_cast<char*>( static_cast<const char*>( named_pipe_path ) ) );
+        argvv.push_back( named_pipe_path );
         for ( int arg_i = 1; arg_i < argc; arg_i++ )
         {
           if ( strcmp( argv[arg_i], "-f" ) != 0 )
@@ -205,7 +206,7 @@ namespace xtfs_mount
         { 
           YIELD::Thread::sleep( 100 * NS_IN_MS ); // Wait for the child process to start
 
-          int child_ret;
+          int child_ret = 0;
           if ( !child_process->poll( &child_ret ) ) // Child process started successfully
           {
             if ( server_named_pipe->read( &child_ret, sizeof( child_ret ) ) == sizeof( child_ret ) ) // Child wrote a return code to the named pipe

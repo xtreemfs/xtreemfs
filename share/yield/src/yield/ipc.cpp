@@ -1,5 +1,3 @@
-// Revision: 1832
-
 #include "yield/ipc.h"
 using namespace YIELD;
 
@@ -929,16 +927,13 @@ private:
 class HTTPServer::AIOAcceptControlBlock : public TCPSocket::AIOAcceptControlBlock
 {
 public:
-  AIOAcceptControlBlock( auto_EventTarget http_request_target, auto_Log log )
-    : http_request_target( http_request_target ), log( log )
+  AIOAcceptControlBlock( auto_EventTarget http_request_target )
+    : http_request_target( http_request_target )
   { }
   void onCompletion( size_t )
   {
-    auto_Socket accepted_tcp_socket( get_accepted_tcp_socket().release() );
-    if ( log != NULL && log->get_level() >= Log::LOG_INFO )
-      accepted_tcp_socket = new TracingSocket( accepted_tcp_socket, log );
-    accepted_tcp_socket->aio_read( new AIOReadControlBlock( new yidl::HeapBuffer( 1024 ), new HTTPRequest, http_request_target ) );
-    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( http_request_target, log ) );
+    get_accepted_tcp_socket()->aio_read( new AIOReadControlBlock( new yidl::HeapBuffer( 1024 ), new HTTPRequest, http_request_target ) );
+    static_cast<TCPSocket*>( get_socket().get() )->aio_accept( new AIOAcceptControlBlock( http_request_target ) );
   }
   void onError( uint32_t error_code )
   {
@@ -948,13 +943,12 @@ public:
   }
 private:
   auto_EventTarget http_request_target;
-  auto_Log log;
 };
-HTTPServer::HTTPServer( auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket, auto_Log log )
-  : http_request_target( http_request_target ), listen_tcp_socket( listen_tcp_socket ), log( log )
+HTTPServer::HTTPServer( auto_EventTarget http_request_target, auto_TCPSocket listen_tcp_socket )
+  : http_request_target( http_request_target ), listen_tcp_socket( listen_tcp_socket )
 {
   for ( uint8_t accept_i = 0; accept_i < 10; accept_i++ )
-    listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( http_request_target, log ) );
+    listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( http_request_target ) );
 }
 auto_HTTPServer HTTPServer::create( const URI& absolute_uri,
                                     auto_EventTarget http_request_target,
@@ -973,7 +967,7 @@ auto_HTTPServer HTTPServer::create( const URI& absolute_uri,
       listen_tcp_socket = TCPSocket::create();
     if ( listen_tcp_socket->bind( sockname ) &&
          listen_tcp_socket->listen() )
-      return new HTTPServer( http_request_target, listen_tcp_socket, log );
+      return new HTTPServer( http_request_target, listen_tcp_socket );
   }
   return NULL;
 }
@@ -2371,7 +2365,20 @@ bool Process::poll( int* out_return_code )
   else
     return false;
 #else
-  return waitpid( child_pid, out_return_code, WNOHANG ) >= 0;
+  if ( waitpid( child_pid, out_return_code, WNOHANG ) > 0 ) // waitpid() was successful. The value returned indicates the process ID of the child process whose status information was recorded in the storage pointed to by stat_loc.
+  {
+    if ( WIFEXITED( out_return_code ) ) // Child exited normally
+    {
+      *out_return_code = WEXITSTATUS( out_return_code );
+      return true;
+    }
+    else
+      return false;
+  }
+  // 0 = WNOHANG was specified on the options parameter, but no child process was immediately available.
+  // -1 = waitpid() was not successful. The errno value is set to indicate the error.
+  else
+    return false;
 #endif
 }
 bool Process::terminate()
@@ -4805,30 +4812,17 @@ void URI::init( UriUriA& parsed_uri )
     while ( path_segment != NULL );
     if ( parsed_uri.query.first != NULL )
     {
-      UriQueryListA* query_list;
-      uriDissectQueryMallocA( &query_list, NULL, parsed_uri.query.first, parsed_uri.query.afterLast );
-      UriQueryListA* query_list_p = query_list;
-      while ( query_list_p != NULL )
-      {
-        query.insert( std::make_pair( query_list_p->key, query_list_p->value ) );
-        query_list_p = query_list_p->next;
-      }
-      uriFreeQueryListA( query_list );
+      resource.append( "?" );
+      resource.append( parsed_uri.query.first, parsed_uri.query.afterLast - parsed_uri.query.first );
     }
   }
   else
     resource = "/";
 }
-std::string URI::get_query_value( const std::string& key, const char* default_query_value ) const
+URI::operator std::string() const
 {
-  std::multimap<std::string, std::string>::const_iterator query_value_i = query.find( key );
-  if ( query_value_i != query.end() )
-    return query_value_i->second;
-  else
-    return default_query_value;
-}
-std::multimap<std::string, std::string>::const_iterator URI::get_query_values( const std::string& key ) const
-{
-  return query.find( key );
+  std::ostringstream oss;
+  oss << *this;
+  return oss.str();
 }
 
