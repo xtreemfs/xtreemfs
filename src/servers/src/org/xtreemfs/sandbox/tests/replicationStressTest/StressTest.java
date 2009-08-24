@@ -38,6 +38,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.monitoring.Monitoring;
 import org.xtreemfs.common.util.ONCRPCServiceURL;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
@@ -315,6 +316,8 @@ public class StressTest {
             Logging.start(Logging.LEVEL_DEBUG, Category.test, Category.replication);
         else
             Logging.start(Logging.LEVEL_INFO, Category.test, Category.replication);
+        
+        Monitoring.enable();
 
         // start important services
         // client

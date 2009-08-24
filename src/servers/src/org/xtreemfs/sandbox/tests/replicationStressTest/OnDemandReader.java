@@ -32,6 +32,7 @@ import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.xtreemfs.common.clients.io.RandomAccessFile;
+import org.xtreemfs.common.monitoring.NumberMonitoring;
 import org.xtreemfs.common.xloc.Replica;
 
 /**
@@ -56,9 +57,10 @@ class OnDemandReader extends Reader {
         long timeRequiredForReading = 0;
 
         java.io.RandomAccessFile originalFile = null;
+        RandomAccessFile raf = null;
         try {
             originalFile = new java.io.RandomAccessFile(TestFile.diskDir + TestFile.DISK_FILENAME, "r");
-            RandomAccessFile raf = new RandomAccessFile("r", mrcAddress, TestFile.VOLUME_NAME
+            raf = new RandomAccessFile("r", mrcAddress, TestFile.VOLUME_NAME
                     + TestFile.DIR_PATH + file.filename, client, TestFile.userCredentials);
 
             long filesize = raf.length();
@@ -80,9 +82,7 @@ class OnDemandReader extends Reader {
                 // read
                 try {
                     // monitoring: time (latency/throughput)
-                    long timeBefore = System.currentTimeMillis();
                     file.readFromXtreemFS(result, raf, startOffset);
-                    timeRequiredForReading += System.currentTimeMillis() - timeBefore;
                 } catch (Exception e) {
                     // TODO: catch exception, if request is rejected because of change of XLocations version
                     StressTest.containedErrors = true;
@@ -109,13 +109,17 @@ class OnDemandReader extends Reader {
                             expectedResult);
                 }
             }
-            long throughput = (timeRequiredForReading == 0) ? (filesize / 1)
-                    : (filesize / timeRequiredForReading);
             // monitor throughput
-            super.monitoring.putAverageLong(MONITORING_KEY_THROUGHPUT, throughput); // byte/ms
+            // monitoring: time (latency/throughput)
+            NumberMonitoring monitoringInfo = raf.getMonitoringInfo();
+            // monitor throughput
+            super.monitoring.putAverageLong(MONITORING_KEY_THROUGHPUT, monitoringInfo
+                    .getLong(RandomAccessFile.MONITORING_KEY_THROUGHPUT)); // KB/s
         } finally {
             if (originalFile != null)
                 originalFile.close();
+            if (raf != null)
+                raf.close();
         }
     }
 }

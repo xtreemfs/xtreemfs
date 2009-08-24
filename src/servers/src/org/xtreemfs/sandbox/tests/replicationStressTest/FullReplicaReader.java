@@ -32,6 +32,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.monitoring.NumberMonitoring;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -66,9 +67,10 @@ class FullReplicaReader extends Reader {
         long timeRequiredForReading = 0;
 
         java.io.RandomAccessFile originalFile = null;
+        RandomAccessFile raf =null;
         try {
             originalFile = new java.io.RandomAccessFile(TestFile.diskDir + TestFile.DISK_FILENAME, "r");
-            RandomAccessFile raf = new RandomAccessFile("r", mrcAddress, TestFile.VOLUME_NAME
+            raf = new RandomAccessFile("r", mrcAddress, TestFile.VOLUME_NAME
                     + TestFile.DIR_PATH + file.filename, client, TestFile.userCredentials);
 
             long filesize = raf.length();
@@ -86,10 +88,7 @@ class FullReplicaReader extends Reader {
 
             // read
             try {
-                // monitoring: time (latency/throughput)
-                long timeBefore = System.currentTimeMillis();
                 file.readFromXtreemFS(result, raf, 0);
-                timeRequiredForReading += System.currentTimeMillis() - timeBefore;
             } catch (Exception e) {
                 // TODO: catch exception, if request is rejected because of change of XLocations version
                 StressTest.containedErrors = true;
@@ -139,13 +138,16 @@ class FullReplicaReader extends Reader {
             } else
                 completedReplicas.remove(raf.getCurrentlyUsedReplica());
 
-            long throughput = (timeRequiredForReading == 0) ? (1024 / 1)
-                    : (1024 / timeRequiredForReading);
+            // monitoring: time (latency/throughput)
+            NumberMonitoring monitoringInfo = raf.getMonitoringInfo();
             // monitor throughput
-            super.monitoring.putAverageLong(MONITORING_KEY_THROUGHPUT, throughput); // byte/ms
+            super.monitoring.putAverageLong(MONITORING_KEY_THROUGHPUT, monitoringInfo
+                    .getLong(RandomAccessFile.MONITORING_KEY_THROUGHPUT)); // KB/s
         } finally {
             if (originalFile != null)
                 originalFile.close();
+            if (raf != null)
+                raf.close();
         }
     }
 }

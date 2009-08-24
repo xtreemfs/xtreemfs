@@ -120,8 +120,9 @@ public class NumberMonitoring extends Monitoring<Double> {
      * @param value
      * @return
      */
-    public long putLong(String key, Long value) {
-        return super.put(key, value.doubleValue()).longValue();
+    public Long putLong(String key, Long value) {
+        Double oldValue = super.put(key, value.doubleValue());
+        return (oldValue == null) ? null : oldValue.longValue();
     }
 
     /**
@@ -132,8 +133,9 @@ public class NumberMonitoring extends Monitoring<Double> {
      * @param value
      * @return
      */
-    public long putSmallerLong(String key, Long value) {
-        return this.putSmaller(key, value.doubleValue()).longValue();
+    public Long putSmallerLong(String key, Long value) {
+        Double oldValue = this.putSmaller(key, value.doubleValue());
+        return (oldValue == null) ? null : oldValue.longValue();
     }
 
     /**
@@ -144,8 +146,9 @@ public class NumberMonitoring extends Monitoring<Double> {
      * @param value
      * @return
      */
-    public long putLargerLong(String key, Long value) {
-        return this.putLarger(key, value.doubleValue()).longValue();
+    public Long putLargerLong(String key, Long value) {
+        Double oldValue = this.putLarger(key, value.doubleValue());
+        return (oldValue == null) ? null : oldValue.longValue(); 
     }
 
     /**
@@ -155,10 +158,11 @@ public class NumberMonitoring extends Monitoring<Double> {
      * @param value
      * @return
      */
-    public long putAverageLong(String key, Long value) {
+    public Long putAverageLong(String key, Long value) {
         Double oldValue = super.get(key);
         if (oldValue != null) {
-            return this.put(key, (oldValue + value) / 2d).longValue();
+            this.put(key, (oldValue + value) / 2d).longValue();
+            return oldValue.longValue();
         } else
             return this.putLong(key, value);
     }
@@ -170,8 +174,9 @@ public class NumberMonitoring extends Monitoring<Double> {
      * @param value
      * @return
      */
-    public long putIncreaseForLong(String key, Long value) {
-        return putIncreaseFor(key, value.doubleValue()).longValue();
+    public Long putIncreaseForLong(String key, Long value) {
+        Double oldValue = this.putIncreaseFor(key, value.doubleValue());
+        return (oldValue == null) ? null : oldValue.longValue(); 
     }
 
     /**
@@ -181,8 +186,9 @@ public class NumberMonitoring extends Monitoring<Double> {
      * @param value
      * @return
      */
-    public long putDecreaseForLong(String key, Long value) {
-        return putDecreaseFor(key, value.doubleValue()).longValue();
+    public Long putDecreaseForLong(String key, Long value) {
+        Double oldValue = this.putDecreaseFor(key, value.doubleValue());
+        return (oldValue == null) ? null : oldValue.longValue(); 
     }
 
     /**
@@ -190,7 +196,8 @@ public class NumberMonitoring extends Monitoring<Double> {
      * @param key
      * @return
      */
-    public long getLong(String key) {
-        return super.get(key).longValue();
+    public Long getLong(String key) {
+        Double value = super.get(key);
+        return (value == null) ? null : value.longValue(); 
     }
 }

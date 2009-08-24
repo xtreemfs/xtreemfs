@@ -96,7 +96,7 @@ abstract class Reader implements Runnable {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.test, this, "%s has read %d files.",
                             Thread.currentThread().getName(), fileCounter);
                     System.out.println(Thread.currentThread().getName() + ": "
-                            + (monitoring.get(MONITORING_KEY_THROUGHPUT) * 1000 / 1024) + "KB/s");
+                            + monitoring.get(MONITORING_KEY_THROUGHPUT) + "KB/s");
                     monitoring.remove(MONITORING_KEY_THROUGHPUT); // reset
                 }
 

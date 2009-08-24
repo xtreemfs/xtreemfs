@@ -64,6 +64,8 @@ public class Monitoring<V> {
      * @see java.util.HashMap#put(java.lang.Object, java.lang.Object)
      */
     public V put(String key, V value) {
+        assert (key != null && value != null);
+
         V oldValue = datasets.put(key, value);
 
         // check if listeners are registered
@@ -135,8 +137,10 @@ public class Monitoring<V> {
      */
     public void registerListener(String key, MonitoringListener<V> listener) {
         List<MonitoringListener<V>> list = listeners.get(key);
-        if (list == null)
+        if (list == null) {
             list = new CopyOnWriteArrayList<MonitoringListener<V>>();
+            listeners.put(key, list);
+        }
         list.add(listener);
     }
 

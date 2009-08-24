@@ -36,6 +36,8 @@ import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.monitoring.Monitoring;
+import org.xtreemfs.common.monitoring.NumberMonitoring;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -144,15 +146,24 @@ public class RandomAccessFile implements ObjectStore {
 
     private ReplicaSelectionPolicy      replicaSelectionPolicy;
 
-    private AtomicLong                  monitoringReadDataSizeInLast10s;
+    private AtomicLong                  monitoringReadDataSizeInLastXs;
 
-//    private Thread                      monitoringThread                             = null;
+    private Thread                      monitoringThread                            = null;
 
-//    private NumberMonitoring            monitoring;
+    private NumberMonitoring            monitoring;
 
-//    public static final String          MONITORING_KEY_THROUGHPUT_OF_LAST_10_SECONDS = "throughput_of_last_10s";
+    /**
+     * Measures the throughput of the last 1 second.
+     */
+    public static final String          MONITORING_KEY_THROUGHPUT_OF_LAST_X_SECONDS = "RAF: throughput of last X seconds (KB/s)";
 
-//    public static final String          MONITORING_KEY_THROUGHPUT                    = "throughput";
+    /**
+     * Measures the throughput of the read data so far. Just the time required for the real network-transfer
+     * will be used.
+     */
+    public static final String          MONITORING_KEY_THROUGHPUT                   = "RAF: throughput of all read data so far (KB/s)";
+
+    public static final int             MONITORING_INTERVAL                         = 1000;                                            // 10s
 
     public RandomAccessFile(String mode, InetSocketAddress mrcAddress, String pathName,
             RPCNIOSocketClient rpcClient, String userID, List<String> groupIDs) throws ONCRPCException,
@@ -204,28 +215,27 @@ public class RandomAccessFile implements ObjectStore {
         wresp = null;
         filePos = 0;
 
-//        monitoring = new NumberMonitoring();
-//        monitoringReadDataSizeInLast10s = new AtomicLong(0);
-//        if (Monitoring.isEnabled()) {
-//            monitoringThread = new Thread(new Runnable() {
-//                public static final int INTERVAL = 10000; // 10s
-//
-//                @Override
-//                public void run() {
-//                    while (true) {
-//                        try {
-//                            Thread.sleep(INTERVAL); // sleep
-//                        } catch (InterruptedException e) {
-//                            break; // shutdown
-//                        }
-//                        long sizeInLast10s = monitoringReadDataSizeInLast10s.getAndSet(0);
-//                        monitoring.put(MONITORING_KEY_THROUGHPUT_OF_LAST_10_SECONDS,
-//                                (sizeInLast10s / 1024d) / 10d);
-//                    }
-//                }
-//            });
-//            monitoringThread.start();
-//        }
+        monitoring = new NumberMonitoring();
+        monitoringReadDataSizeInLastXs = new AtomicLong(0);
+        if (Monitoring.isEnabled()) {
+            monitoringThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        while (true) {
+                            Thread.sleep(MONITORING_INTERVAL); // sleep
+
+                            long sizeInLastXs = monitoringReadDataSizeInLastXs.getAndSet(0);
+                            monitoring.put(MONITORING_KEY_THROUGHPUT_OF_LAST_X_SECONDS,
+                                    (sizeInLastXs / 1024d) / (MONITORING_INTERVAL / 1000d));
+                        }
+                    } catch (InterruptedException e) {
+                        // shutdown
+                    }
+                }
+            });
+            monitoringThread.start();
+        }
     }
 
     private static int translateMode(String mode) {
@@ -305,7 +315,7 @@ public class RandomAccessFile implements ObjectStore {
             try {
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.tool, this,
-                            "%s:%s - read object from OSD %s", objectNo, fileId, osd);
+                            "%d:%s - read object from OSD %s", objectNo, fileId, osd);
 
                 response = osdClient.read(osd.getAddress(), fileId, fileCredentials, objectNo, 0, offset,
                         length);
@@ -340,11 +350,11 @@ public class RandomAccessFile implements ObjectStore {
                 }
 
                 // monitor data for throughput
-//                if (Monitoring.isEnabled()) {
-//                    monitoring.put(MONITORING_KEY_THROUGHPUT, (buffer.limit() / 1024)
-//                            / (response.getDuration() / 1000000000d));
-//                    monitoringReadDataSizeInLast10s.addAndGet(buffer.limit());
-//                }
+                if (Monitoring.isEnabled()) {
+                    monitoring.putAverage(MONITORING_KEY_THROUGHPUT, (buffer.limit() / 1024d)
+                            / (response.getDuration() / 1000000000d));
+                    monitoringReadDataSizeInLastXs.addAndGet(buffer.limit());
+                }
 
                 break;
             } catch (ONCRPCException ex) {
@@ -569,8 +579,8 @@ public class RandomAccessFile implements ObjectStore {
         flush();
 
         // shutdown
-//        if (monitoringThread != null)
-//            monitoringThread.interrupt();
+        if (monitoringThread != null)
+            monitoringThread.interrupt();
     }
 
     /**
@@ -892,16 +902,16 @@ public class RandomAccessFile implements ObjectStore {
             r = mrcClient.getattr(mrcAddress, credentials, pathName);
             return r.get();
         } catch (ONCRPCException ex) {
-            throw new IOException("cannot update file size",ex);
+            throw new IOException("cannot update file size", ex);
         } catch (InterruptedException ex) {
-            throw new IOException("cannot update file size",ex);
+            throw new IOException("cannot update file size", ex);
         } finally {
             if (r != null)
                 r.freeBuffers();
         }
     }
 
-//    public NumberMonitoring getMonitoringInfo() {
-//        return monitoring;
-//    }
+    public NumberMonitoring getMonitoringInfo() {
+        return monitoring;
+    }
 }

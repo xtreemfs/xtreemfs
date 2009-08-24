@@ -145,6 +145,7 @@ class Writer implements Runnable {
         long filesize = Math.round(TestFile.diskFileFilesize * factor);
 
         java.io.RandomAccessFile in = null;
+        RandomAccessFile raf = null;
         try {
             in = new java.io.RandomAccessFile(TestFile.diskDir + TestFile.DISK_FILENAME, "rw");
 
@@ -153,7 +154,7 @@ class Writer implements Runnable {
             byte[] data;
 
             // create file in xtreemfs
-            RandomAccessFile raf = new RandomAccessFile("rw", mrcAddress, TestFile.VOLUME_NAME
+            raf = new RandomAccessFile("rw", mrcAddress, TestFile.VOLUME_NAME
                     + TestFile.DIR_PATH + filename, client, TestFile.userCredentials);
 
             if (filesize < StressTest.PART_SIZE) {
@@ -199,6 +200,8 @@ class Writer implements Runnable {
         } finally {
             if (in != null)
                 in.close();
+            if (raf != null)
+                raf.close();
         }
         return new TestFile(filename, filesize, holes);
     }
