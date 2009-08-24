@@ -79,7 +79,7 @@ public class StatOperation extends MRCOperation {
         mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_H_S_IFLNK
             : file.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
         long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : file.getSize();
-        Stat stat = new Stat(mode, file.getLinkCount(), 1, 1, 0, size, (long) file.getAtime() * (long) 1e9,
+        Stat stat = new Stat(file.getId(), mode, file.getLinkCount(), 1, 1, 0, size, (long) file.getAtime() * (long) 1e9,
             (long) file.getMtime() * (long) 1e9, (long) file.getCtime() * (long) 1e9, file.getOwnerId(), file
                     .getOwningGroupId(), volume.getId() + ":" + file.getId(), linkTarget,
             file.isDirectory() ? 0: file.getEpoch(), (int) file.getW32Attrs());
