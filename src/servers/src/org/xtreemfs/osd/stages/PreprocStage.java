@@ -217,7 +217,10 @@ public class PreprocStage extends Stage {
             }
 
             AdvisoryLock l = e.acquireLock(clientUuid, pid, offset, length, exclusive);
-            callback.parseComplete(new Lock(l.getClientUuid(), l.getClientPid(), l.getOffset(), l.getLength()), null);
+            if (l != null)
+                callback.parseComplete(new Lock(l.getClientUuid(), l.getClientPid(), l.getOffset(), l.getLength()), null);
+            else
+                callback.parseComplete(null, new OSDException(ErrNo.EAGAIN, "conflicting lock", ""));
 
         } catch (Exception ex) {
             callback.parseComplete(null,ex);

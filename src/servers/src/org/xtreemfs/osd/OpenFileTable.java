@@ -341,7 +341,7 @@ public final class OpenFileTable {
                         if (Logging.isDebug()) {
                             Logging.logMessage(Logging.LEVEL_DEBUG,Category.all,this,"acquired for file %s by %s failed, conflickting lock by",fileId,procId,e.getKey());
                         }
-                        return e.getValue();
+                        return null;
                     }
                 }
                 if (Logging.isDebug()) {

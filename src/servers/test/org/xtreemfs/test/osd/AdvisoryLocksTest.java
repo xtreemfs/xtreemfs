@@ -35,9 +35,11 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.Lock;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
@@ -170,10 +172,12 @@ public class AdvisoryLocksTest extends TestCase {
         assertEquals(1, l.getClient_pid());
 
         r = osdClient.lock_acquire(serverID.getAddress(), fileId, fcred, "test", 2, 0, 100, true);
-        l = r.get();
-
-        assertEquals("test",l.getClient_uuid());
-        assertEquals(1, l.getClient_pid());
+        try {
+            l = r.get();
+            fail();
+        } catch (OSDException ex) {
+            assertEquals(ErrNo.EAGAIN,ex.getError_code());
+        }
 
         r = osdClient.lock_acquire(serverID.getAddress(), fileId, fcred, "test", 2, 100, 100, true);
         l = r.get();
@@ -200,10 +204,12 @@ public class AdvisoryLocksTest extends TestCase {
         assertEquals(1, l.getClient_pid());
 
         r = osdClient.lock_acquire(serverID.getAddress(), fileId, fcred, "test", 2, 0, 100, true);
-        l = r.get();
-
-        assertEquals("test",l.getClient_uuid());
-        assertEquals(1, l.getClient_pid());
+        try {
+            l = r.get();
+            fail();
+        } catch (OSDException ex) {
+            assertEquals(ErrNo.EAGAIN,ex.getError_code());
+        }
 
         RPCResponse r2 = osdClient.lock_release(serverID.getAddress(), fileId, fcred, "test",1);
         r2.get();
