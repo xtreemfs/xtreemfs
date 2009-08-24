@@ -1,3 +1,5 @@
+// Revision: 1845
+
 #include "yield/platform.h"
 using namespace YIELD;
 
@@ -337,7 +339,7 @@ bool File::getxattr( const std::string& name, std::string& out_value )
   return false;
 #endif
 }
-bool File::is_locked( bool exclusive, uint64_t offset, uint64_t length )
+bool File::getlk( bool exclusive, uint64_t offset, uint64_t length )
 {
 #ifdef _WIN32
   return false;
@@ -375,28 +377,6 @@ bool File::listxattr( std::vector<std::string>& out_names )
   return true;
 #else
   return false;
-#endif
-}
-bool File::lock( bool exclusive, uint64_t offset, uint64_t length )
-{
-#ifdef _WIN32
-  if ( exclusive )
-  {
-    ULARGE_INTEGER uliOffset, uliLength;
-    uliOffset.QuadPart = offset;
-    uliLength.QuadPart = length;
-    return LockFile( fd, uliOffset.LowPart, uliOffset.HighPart, uliLength.LowPart, uliLength.HighPart ) == TRUE;
-  }
-  else
-    return false;
-#else
-  struct flock flock_;
-  flock_.l_type   = exclusive ? F_WRLCK : F_RDLCK;
-  flock_.l_whence = SEEK_SET;
-  flock_.l_start  = offset;
-  flock_.l_len    = length;
-  flock_.l_pid    = getpid();
-  return fcntl( fd, F_SETLKW, &flock_ ) != -1;
 #endif
 }
 auto_File File::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
@@ -486,14 +466,6 @@ bool File::removexattr( const std::string& name )
   return false;
 #endif
 }
-bool File::setxattr( const std::string& name, const std::string& value, int flags )
-{
-#ifdef YIELD_HAVE_XATTR_H
-  return FSETXATTR( fd, name.c_str(), value.c_str(), value.size(), flags ) != -1;
-#else
-  return false;
-#endif
-}
 bool File::seek( uint64_t offset )
 {
   return seek( offset, SEEK_SET );
@@ -518,6 +490,50 @@ bool File::seek( uint64_t offset, unsigned char whence )
     return false;
 #endif
 }
+bool File::setlk( bool exclusive, uint64_t offset, uint64_t length )
+{
+#ifdef _WIN32
+  return setlkw( exclusive, offset, length );
+#else
+  struct flock flock_;
+  flock_.l_type   = exclusive ? F_WRLCK : F_RDLCK;
+  flock_.l_whence = SEEK_SET;
+  flock_.l_start  = offset;
+  flock_.l_len    = length;
+  flock_.l_pid    = getpid();
+  return fcntl( fd, F_SETLK, &flock_ ) != -1;
+#endif
+}
+bool File::setlkw( bool exclusive, uint64_t offset, uint64_t length )
+{
+#ifdef _WIN32
+  if ( exclusive )
+  {
+    ULARGE_INTEGER uliOffset, uliLength;
+    uliOffset.QuadPart = offset;
+    uliLength.QuadPart = length;
+    return LockFile( fd, uliOffset.LowPart, uliOffset.HighPart, uliLength.LowPart, uliLength.HighPart ) == TRUE;
+  }
+  else
+    return false;
+#else
+  struct flock flock_;
+  flock_.l_type   = exclusive ? F_WRLCK : F_RDLCK;
+  flock_.l_whence = SEEK_SET;
+  flock_.l_start  = offset;
+  flock_.l_len    = length;
+  flock_.l_pid    = getpid();
+  return fcntl( fd, F_SETLKW, &flock_ ) != -1;
+#endif
+}
+bool File::setxattr( const std::string& name, const std::string& value, int flags )
+{
+#ifdef YIELD_HAVE_XATTR_H
+  return FSETXATTR( fd, name.c_str(), value.c_str(), value.size(), flags ) != -1;
+#else
+  return false;
+#endif
+}
 bool File::sync()
 {
 #ifdef _WIN32
@@ -539,21 +555,7 @@ bool File::truncate( uint64_t new_size )
   return ::ftruncate( fd, new_size ) != -1;
 #endif
 }
-bool File::try_lock( bool exclusive, uint64_t offset, uint64_t length )
-{
-#ifdef _WIN32
-  return lock( exclusive, offset, length );
-#else
-  struct flock flock_;
-  flock_.l_type   = exclusive ? F_WRLCK : F_RDLCK;
-  flock_.l_whence = SEEK_SET;
-  flock_.l_start  = offset;
-  flock_.l_len    = length;
-  flock_.l_pid    = getpid();
-  return fcntl( fd, F_SETLK, &flock_ ) != -1;
-#endif
-}
-bool File::unlock( uint64_t offset, uint64_t length )
+bool File::unlk( uint64_t offset, uint64_t length )
 {
 #ifdef _WIN32
   ULARGE_INTEGER uliOffset, uliLength;

@@ -128,6 +128,12 @@ YIELD::auto_Stat File::getattr()
   return parent_volume->getattr( path );
 }
 
+bool File::getlk( bool exclusive, uint64_t offset, uint64_t length )
+{
+  org::xtreemfs::interfaces::Lock lock = parent_volume->get_osd_proxy_mux()->xtreemfs_lock_check( file_credentials, YIELD::Socket::getfqdn(), yieldfs::FUSE::getpid(), file_credentials.get_xcap().get_file_id(), offset, length, exclusive );
+  return lock.get_client_pid() != yieldfs::FUSE::getpid();
+}
+
 uint64_t File::get_size()
 {
   if ( !latest_osd_write_response.get_new_file_size().empty() )  
@@ -141,34 +147,9 @@ bool File::getxattr( const std::string& name, std::string& out_value )
   return parent_volume->getxattr( path, name, out_value );
 }
 
-bool File::is_locked( bool exclusive, uint64_t offset, uint64_t length )
-{
-  org::xtreemfs::interfaces::Lock lock = parent_volume->get_osd_proxy_mux()->xtreemfs_lock_check( file_credentials, YIELD::Socket::getfqdn(), yieldfs::FUSE::getpid(), file_credentials.get_xcap().get_file_id(), offset, length, exclusive );
-  return lock.get_client_pid() != yieldfs::FUSE::getpid();
-}
-
 bool File::listxattr( std::vector<std::string>& out_names )
 {
   return parent_volume->listxattr( path, out_names );
-}
-
-bool File::lock( bool exclusive, uint64_t offset, uint64_t length )
-{
-  FILE_OPERATION_BEGIN;
-
-  for ( ;; )
-  {
-    try
-    {
-      org::xtreemfs::interfaces::Lock lock = parent_volume->get_osd_proxy_mux()->xtreemfs_lock_acquire( file_credentials, YIELD::Socket::getfqdn(), yieldfs::FUSE::getpid(), file_credentials.get_xcap().get_file_id(), offset, length, exclusive );
-      locks.push_back( lock );
-      return true;
-    }
-    catch ( ProxyExceptionResponse& )
-    { }
-  }
-
-  FILE_OPERATION_END;
 }
 
 ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
@@ -333,6 +314,36 @@ bool File::removexattr( const std::string& name )
   return parent_volume->removexattr( path, name );
 }
 
+bool File::setlk( bool exclusive, uint64_t offset, uint64_t length )
+{
+  FILE_OPERATION_BEGIN;
+
+  org::xtreemfs::interfaces::Lock lock = parent_volume->get_osd_proxy_mux()->xtreemfs_lock_acquire( file_credentials, YIELD::Socket::getfqdn(), yieldfs::FUSE::getpid(), file_credentials.get_xcap().get_file_id(), offset, length, exclusive );
+  locks.push_back( lock );
+  return true;
+
+  FILE_OPERATION_END;
+}
+
+bool File::setlkw( bool exclusive, uint64_t offset, uint64_t length )
+{
+  FILE_OPERATION_BEGIN;
+
+  for ( ;; )
+  {
+    try
+    {
+      org::xtreemfs::interfaces::Lock lock = parent_volume->get_osd_proxy_mux()->xtreemfs_lock_acquire( file_credentials, YIELD::Socket::getfqdn(), yieldfs::FUSE::getpid(), file_credentials.get_xcap().get_file_id(), offset, length, exclusive );
+      locks.push_back( lock );
+      return true;
+    }
+    catch ( ProxyExceptionResponse& )
+    { }
+  }
+
+  FILE_OPERATION_END;
+}
+
 bool File::setxattr( const std::string& name, const std::string& value, int flags )
 {
   return parent_volume->setxattr( path, name, value, flags );
@@ -362,18 +373,7 @@ bool File::truncate( uint64_t new_size )
   FILE_OPERATION_END;
 }
 
-bool File::try_lock( bool exclusive, uint64_t offset, uint64_t length )
-{
-  FILE_OPERATION_BEGIN;
-
-  org::xtreemfs::interfaces::Lock lock = parent_volume->get_osd_proxy_mux()->xtreemfs_lock_acquire( file_credentials, YIELD::Socket::getfqdn(), yieldfs::FUSE::getpid(), file_credentials.get_xcap().get_file_id(), offset, length, exclusive );
-  locks.push_back( lock );
-  return true;
-
-  FILE_OPERATION_END;
-}
-
-bool File::unlock( uint64_t offset, uint64_t length )
+bool File::unlk( uint64_t offset, uint64_t length )
 {
   FILE_OPERATION_BEGIN;
 

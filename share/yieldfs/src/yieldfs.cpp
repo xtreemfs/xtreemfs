@@ -1,3 +1,5 @@
+// Revision: 179
+
 #include "yield.h"
 #include "yieldfs.h"
 using namespace yieldfs;
@@ -357,7 +359,7 @@ namespace yieldfs
       {
         case F_GETLK:
         {
-          if ( !get_file( fi )->is_locked( exclusive, offset, length ) )
+          if ( !get_file( fi )->getlk( exclusive, offset, length ) )
             flock_->l_type = F_UNLCK;
 
           return 0;
@@ -374,12 +376,12 @@ namespace yieldfs
             {
               if ( cmd == F_SETLK )
               {
-                if ( get_file( fi )->try_lock( exclusive, offset, length ) )
+                if ( get_file( fi )->setlk( exclusive, offset, length ) )
                   return 0;
               }
               else
               {
-                if ( get_file( fi )->lock( exclusive, offset, length ) )
+                if ( get_file( fi )->setlkw( exclusive, offset, length ) )
                   return 0;
               }
             }
@@ -387,7 +389,7 @@ namespace yieldfs
 
             case F_UNLCK:
             {
-              if ( get_file( fi )->unlock( offset, length ) )
+              if ( get_file( fi )->unlk( offset, length ) )
                 return 0;
             }
             break;
@@ -996,7 +998,7 @@ namespace yieldfs
 	    LONGLONG			Length,
 	    PDOKAN_FILE_INFO	DokanFileInfo )
     {
-      if ( get_file( DokanFileInfo )->lock( true, ByteOffset, Length ) )
+      if ( get_file( DokanFileInfo )->setlkw( true, ByteOffset, Length ) )
         return ERROR_SUCCESS;
       else
         return -1 * ::GetLastError();
@@ -1135,7 +1137,7 @@ namespace yieldfs
 	    LONGLONG			Length,
 	    PDOKAN_FILE_INFO	DokanFileInfo )
     {
-      if ( get_file( DokanFileInfo )->unlock( ByteOffset, Length ) )
+      if ( get_file( DokanFileInfo )->unlk( ByteOffset, Length ) )
         return ERROR_SUCCESS;
       else
         return -1 * ::GetLastError();
@@ -1871,21 +1873,17 @@ YIELD::auto_Stat StackableFile::getattr()
 {
   return underlying_file->getattr();
 }
+bool StackableFile::getlk( bool exclusive, uint64_t offset, uint64_t length )
+{
+  return underlying_file->getlk( exclusive, offset, length );
+}
 bool StackableFile::getxattr( const std::string& name, std::string& out_value )
 {
   return underlying_file->getxattr( name, out_value );
 }
-bool StackableFile::is_locked( bool exclusive, uint64_t offset, uint64_t length )
-{
-  return underlying_file->is_locked( exclusive, offset, length );
-}
 bool StackableFile::listxattr( std::vector<std::string>& out_names )
 {
   return underlying_file->listxattr( out_names );
-}
-bool StackableFile::lock( bool exclusive, uint64_t offset, uint64_t length )
-{
-  return underlying_file->lock( exclusive, offset, length );
 }
 ssize_t StackableFile::read( void* buffer, size_t buffer_len, uint64_t offset )
 {
@@ -1894,6 +1892,14 @@ ssize_t StackableFile::read( void* buffer, size_t buffer_len, uint64_t offset )
 bool StackableFile::removexattr( const std::string& name )
 {
   return underlying_file->removexattr( name );
+}
+bool StackableFile::setlk( bool exclusive, uint64_t offset, uint64_t length )
+{
+  return underlying_file->setlk( exclusive, offset, length );
+}
+bool StackableFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
+{
+  return underlying_file->setlkw( exclusive, offset, length );
 }
 bool StackableFile::setxattr( const std::string& name, const std::string& value, int flags )
 {
@@ -1907,17 +1913,13 @@ bool StackableFile::truncate( uint64_t offset )
 {
   return underlying_file->truncate( offset );
 }
-bool StackableFile::try_lock( bool exclusive, uint64_t offset, uint64_t length )
+bool StackableFile::unlk( uint64_t offset, uint64_t length )
 {
-  return underlying_file->try_lock( exclusive, offset, length );
+  return underlying_file->unlk( offset, length );
 }
 ssize_t StackableFile::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
   return underlying_file->write( buffer, buffer_len, offset );
-}
-bool StackableFile::unlock( uint64_t offset, uint64_t length )
-{
-  return underlying_file->unlock( offset, length );
 }
 
 
@@ -2030,33 +2032,29 @@ bool TracingFile::close()
 }
 bool TracingFile::datasync()
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::fdatasync", path, underlying_file->datasync() );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::datasync", path, underlying_file->datasync() );
 }
 bool TracingFile::flush()
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::fflush", path, underlying_file->flush() );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::flush", path, underlying_file->flush() );
 }
 YIELD::auto_Stat TracingFile::getattr()
 {
   YIELD::auto_Stat stbuf = underlying_file->getattr();
-  TracingVolume::trace( log, "yieldfs::TracingFile::fgetattr", path, stbuf != NULL );
+  TracingVolume::trace( log, "yieldfs::TracingFile::getattr", path, stbuf != NULL );
   return stbuf;
+}
+bool TracingFile::getlk( bool exclusive, uint64_t offset, uint64_t length )
+{
+  return TracingVolume::trace( log, "yieldfs::TracingFile::getlk", path, offset, length, underlying_file->getlk( exclusive, offset, length ) );
 }
 bool TracingFile::getxattr( const std::string& name, std::string& out_value )
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::fgetxattr", path, name, underlying_file->getxattr( name, out_value ) );
-}
-bool TracingFile::is_locked( bool exclusive, uint64_t offset, uint64_t length )
-{
-  return TracingVolume::trace( log, "yieldfs::TracingFile::is_locked", path, offset, length, underlying_file->is_locked( exclusive, offset, length ) );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::getxattr", path, name, underlying_file->getxattr( name, out_value ) );
 }
 bool TracingFile::listxattr( std::vector<std::string>& out_names )
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::flistxattr", path, underlying_file->listxattr( out_names ) );
-}
-bool TracingFile::lock( bool exclusive, uint64_t offset, uint64_t length )
-{
-  return TracingVolume::trace( log, "yieldfs::TracingFile::flock", path, offset, length, underlying_file->lock( exclusive, offset, length ) );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::listxattr", path, underlying_file->listxattr( out_names ) );
 }
 ssize_t TracingFile::read( void* rbuf, size_t size, uint64_t offset )
 {
@@ -2066,27 +2064,31 @@ ssize_t TracingFile::read( void* rbuf, size_t size, uint64_t offset )
 }
 bool TracingFile::removexattr( const std::string& name )
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::fremovexattr", path, name, underlying_file->removexattr( name ) );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::removexattr", path, name, underlying_file->removexattr( name ) );
+}
+bool TracingFile::setlk( bool exclusive, uint64_t offset, uint64_t length )
+{
+  return TracingVolume::trace( log, "yieldfs::TracingFile::setlk", path, offset, length, underlying_file->setlk( exclusive, offset, length ) );
+}
+bool TracingFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
+{
+  return TracingVolume::trace( log, "yieldfs::TracingFile::setlkw", path, offset, length, underlying_file->setlkw( exclusive, offset, length ) );
 }
 bool TracingFile::setxattr( const std::string& name, const std::string& value, int flags )
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::fsetxattr", path, name, underlying_file->setxattr( name, value, flags ) );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::setxattr", path, name, underlying_file->setxattr( name, value, flags ) );
 }
 bool TracingFile::sync()
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::fsync", path, underlying_file->sync() );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::sync", path, underlying_file->sync() );
 }
 bool TracingFile::truncate( uint64_t new_size )
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::ftruncate", path, 0, new_size, underlying_file->truncate( new_size ) );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::truncate", path, 0, new_size, underlying_file->truncate( new_size ) );
 }
-bool TracingFile::try_lock( bool exclusive, uint64_t offset, uint64_t length )
+bool TracingFile::unlk( uint64_t offset, uint64_t length )
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::ftry_lock", path, offset, length, underlying_file->try_lock( exclusive, offset, length ) );
-}
-bool TracingFile::unlock( uint64_t offset, uint64_t length )
-{
-  return TracingVolume::trace( log, "yieldfs::TracingFile::funlock", path, offset, length, underlying_file->unlock( offset, length ) );
+  return TracingVolume::trace( log, "yieldfs::TracingFile::unlk", path, offset, length, underlying_file->unlk( offset, length ) );
 }
 ssize_t TracingFile::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
