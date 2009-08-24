@@ -125,7 +125,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
                 : child.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR
                     : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
             long size = linkTarget != null ? linkTarget.length() : child.isDirectory() ? 0 : child.getSize();
-            Stat stat = new Stat(file.getId(), mode, child.getLinkCount(), 1, 1, 0, size, (long) child.getAtime()
+            Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, child.getLinkCount(), 1, 1, 0, size, (long) child.getAtime()
                 * (long) 1e9, (long) child.getMtime() * (long) 1e9, (long) child.getCtime() * (long) 1e9,
                 child.getOwnerId(), child.getOwningGroupId(), volume.getId() + ":" + child.getId(),
                 linkTarget, child.getEpoch(), (int) child.getW32Attrs());
