@@ -75,37 +75,39 @@ namespace xtfs_mount
     // YIELD::Main
     int _main( int argc, char** argv )
     {
+      // Make sure the log level is set high enough for any --trace options to show up
+      if ( get_log_level() >= YIELD::Log::LOG_INFO )
+        trace_volume_operations = true;              
+      if ( get_log_level() >= YIELD::Log::LOG_DEBUG )
+      {
+        trace_data_cache = true;
+        trace_file_io = true;
+        trace_metadata_cache = true;
+      }
+
+      if ( get_log_level() < YIELD::Log::LOG_INFO &&
+           ( trace_data_cache || 
+             trace_file_io || 
+             trace_metadata_cache || 
+             get_proxy_flags() != 0 || 
+             trace_volume_operations ) )
+        get_log()->set_level( YIELD::Log::LOG_INFO );
+
+      // Fill volume_flags from options
+      uint32_t volume_flags = 0;
+      if ( cache_data )
+        volume_flags |= xtreemfs::Volume::VOLUME_FLAG_CACHE_FILES;
+      if ( cache_metadata )
+        volume_flags |= xtreemfs::Volume::VOLUME_FLAG_CACHE_METADATA;
+      if ( trace_file_io )
+        volume_flags |= xtreemfs::Volume::VOLUME_FLAG_TRACE_FILE_IO;
+
+      // Create the XtreemFS volume in the parent as well as the child process so that the parent will fail on most common errors (like failed connections) before the child is created
+      YIELD::auto_Volume volume = xtreemfs::Volume::create( *dir_uri, volume_name, volume_flags, get_log(), get_proxy_flags(), get_operation_timeout(), get_proxy_ssl_context() ).release();
+
       if ( foreground )
       {
-        uint32_t fuse_flags = 0, volume_flags = 0;
-
-        if ( get_log_level() >= YIELD::Log::LOG_INFO )
-          trace_volume_operations = true;              
-        if ( get_log_level() >= YIELD::Log::LOG_DEBUG )
-        {
-          trace_data_cache = true;
-          trace_file_io = true;
-          trace_metadata_cache = true;
-        }
-
-        if ( get_log_level() < YIELD::Log::LOG_INFO &&
-             ( trace_data_cache || 
-               trace_file_io || 
-               trace_metadata_cache || 
-               get_proxy_flags() != 0 || 
-               trace_volume_operations ) )
-          get_log()->set_level( YIELD::Log::LOG_INFO );
-
-        if ( cache_data )
-          volume_flags |= xtreemfs::Volume::VOLUME_FLAG_CACHE_FILES;
-        if ( cache_metadata )
-          volume_flags |= xtreemfs::Volume::VOLUME_FLAG_CACHE_METADATA;
-        if ( trace_file_io )
-          volume_flags |= xtreemfs::Volume::VOLUME_FLAG_TRACE_FILE_IO;
-
-        YIELD::auto_Volume volume = xtreemfs::Volume::create( *dir_uri, volume_name, volume_flags, get_log(), get_proxy_flags(), get_operation_timeout(), get_proxy_ssl_context() ).release();
-
-        // Stack volumes as indicated
+        // Stack volumes
         if ( cache_data )
         {
           volume = new yieldfs::DataCachingVolume( volume, trace_data_cache ? get_log() : NULL );
@@ -119,49 +121,40 @@ namespace xtfs_mount
         }
 
         if ( direct_io )
-        {
-          fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
           get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
-        }
 
         if ( trace_volume_operations && get_log_level() >= YIELD::Log::LOG_INFO )
         {
           volume = new yieldfs::TracingVolume( volume, get_log() );
-          fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
           get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": tracing volume operations.";
         }
 
-        // Create the FUSE object then run forever in its main()
+        uint32_t fuse_flags = 0;
+        if ( direct_io )
+          fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
+        if ( trace_volume_operations && get_log_level() >= YIELD::Log::LOG_INFO )
+          fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
+
         std::auto_ptr<yieldfs::FUSE> fuse( new yieldfs::FUSE( volume, fuse_flags ) );
+
 #ifdef _WIN32
         return fuse->main( mount_point.c_str() );
 #else
-        int ret;
-        if ( fuse_o_args.empty() && fuse_flags == 0 )
-          return fuse->main( argv[0], mount_point.c_str() );
-        else
-        {
-          std::vector<char*> argvv;
-          argvv.push_back( argv[0] );
+        std::vector<char*> fuse_argvv;
+        fuse_argvv.push_back( argv[0] );
+        if ( ( fuse_flags & yieldfs::FUSE::FUSE_FLAG_DEBUG ) == yieldfs::FUSE::FUSE_FLAG_DEBUG )
+          fuse_argvv.push_back( "-d" );
+        get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
+        fuse_argvv.push_back( "-o" );
+        if ( !fuse_o_args.empty() )
+          fuse_o_args.append( "," );
+        fuse_o_args.append( "use_ino" );            
+        fuse_argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
+        fuse_argvv.push_back( NULL );
+        struct fuse_args fuse_args_ = FUSE_ARGS_INIT( fuse_argvv.size() - 1 , &fuse_argvv[0] );
 
-          if ( ( fuse_flags & yieldfs::FUSE::FUSE_FLAG_DEBUG ) == yieldfs::FUSE::FUSE_FLAG_DEBUG )
-            argvv.push_back( "-d" );
-
-          argvv.push_back( "-o" );
-          if ( !fuse_o_args.empty() )
-            fuse_o_args.append( "," );
-          fuse_o_args.append( "use_ino" );            
-          argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
-          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
-
-          argvv.push_back( NULL );
-
-          struct fuse_args fuse_args_ = FUSE_ARGS_INIT( argvv.size() - 1 , &argvv[0] );
-          return fuse->main( fuse_args_, mount_point.c_str() );
-        }
+        return fuse->main( fuse_args_, mount_point.c_str() );
 #endif
-
-        return ret;
       }
       else // !foreground
       {
@@ -175,13 +168,10 @@ namespace xtfs_mount
 
         if ( child_process != NULL )
         { 
-          YIELD::Thread::sleep( 1 * NS_IN_S ); // Wait for the child process to start
-
+          YIELD::Thread::sleep( 100 * NS_IN_MS ); // Wait for the child process to start
           int child_ret = 0;
-          if ( !child_process->poll( &child_ret ) ) // Child process started successfully
-            return 0;
-          else // Child process failed and exited
-            return child_ret;
+          child_process->poll( &child_ret ); // Will set child_ret if the child failed and exited, otherwise child_ret will stay 0
+          return child_ret;
         }
         else 
         {
