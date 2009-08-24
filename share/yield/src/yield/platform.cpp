@@ -1,5 +1,3 @@
-// Revision: 1841
-
 #include "yield/platform.h"
 using namespace YIELD;
 
@@ -539,6 +537,20 @@ bool File::truncate( uint64_t new_size )
     return false;
 #else
   return ::ftruncate( fd, new_size ) != -1;
+#endif
+}
+bool File::try_lock( bool exclusive, uint64_t offset, uint64_t length )
+{
+#ifdef _WIN32
+  return lock( exclusive, offset, length );
+#else
+  struct flock flock_;
+  flock_.l_type   = exclusive ? F_WRLCK : F_RDLCK;
+  flock_.l_whence = SEEK_SET;
+  flock_.l_start  = offset;
+  flock_.l_len    = length;
+  flock_.l_pid    = getpid();
+  return fcntl( fd, F_SETLK, &flock_ ) != -1;
 #endif
 }
 bool File::unlock( uint64_t offset, uint64_t length )

@@ -1,5 +1,3 @@
-// Revision: 178
-
 #include "yield.h"
 #include "yieldfs.h"
 using namespace yieldfs;
@@ -1908,6 +1906,10 @@ bool StackableFile::sync()
 bool StackableFile::truncate( uint64_t offset )
 {
   return underlying_file->truncate( offset );
+}
+bool StackableFile::try_lock( bool exclusive, uint64_t offset, uint64_t length )
+{
+  return underlying_file->try_lock( exclusive, offset, length );
 }
 ssize_t StackableFile::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
