@@ -10,6 +10,7 @@ module org # 1000
     {
       struct Stat # 40
       {
+        uint64_t node;
         uint32_t mode;
         uint32_t nlink;
         uint32_t uid;
