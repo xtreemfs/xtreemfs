@@ -36,8 +36,6 @@ namespace xtfs_mount
 
       addOption( XTFS_MOUNT_OPTION_FUSE_OPTION, "-o", NULL, "<fuse_option>" );
 
-      addOption( XTFS_MOUNT_OPTION_PARENT_NAMED_PIPE_PATH, "--parent-named-pipe-path", NULL, "internal only" );
-
       addOption( XTFS_MOUNT_OPTION_TRACE_DATA_CACHE, "--trace-data-cache" );
       trace_data_cache = false;
 
@@ -59,7 +57,6 @@ namespace xtfs_mount
       XTFS_MOUNT_OPTION_DIRECT_IO = 22,
       XTFS_MOUNT_OPTION_FOREGROUND = 23,
       XTFS_MOUNT_OPTION_FUSE_OPTION = 24,
-      XTFS_MOUNT_OPTION_PARENT_NAMED_PIPE_PATH = 25,
       XTFS_MOUNT_OPTION_TRACE_DATA_CACHE = 26,
       XTFS_MOUNT_OPTION_TRACE_FILE_IO = 27,
       XTFS_MOUNT_OPTION_TRACE_METADATA_CACHE = 28,
@@ -72,7 +69,6 @@ namespace xtfs_mount
     bool foreground;
     std::string fuse_o_args;
     std::string mount_point, volume_name;
-    YIELD::Path parent_named_pipe_path;
     bool trace_data_cache, trace_file_io, trace_metadata_cache, trace_volume_operations;
 
 
@@ -135,25 +131,14 @@ namespace xtfs_mount
           get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": tracing volume operations.";
         }
 
-        YIELD::auto_NamedPipe parent_named_pipe; // Outside the if so it stays in scope (and open) while the client is running
-        if ( !parent_named_pipe_path.empty() )
-        {
-          parent_named_pipe = YIELD::NamedPipe::open( parent_named_pipe_path );
-          if ( parent_named_pipe != NULL )
-          {
-            int parent_ret = 0;
-            parent_named_pipe->write( &parent_ret, sizeof( parent_ret ) );
-          }
-        }
-
         // Create the FUSE object then run forever in its main()
         std::auto_ptr<yieldfs::FUSE> fuse( new yieldfs::FUSE( volume, fuse_flags ) );
 #ifdef _WIN32
-        int ret = fuse->main( mount_point.c_str() );
+        return fuse->main( mount_point.c_str() );
 #else
         int ret;
         if ( fuse_o_args.empty() && fuse_flags == 0 )
-          ret = fuse->main( argv[0], mount_point.c_str() );
+          return fuse->main( argv[0], mount_point.c_str() );
         else
         {
           std::vector<char*> argvv;
@@ -172,56 +157,31 @@ namespace xtfs_mount
           argvv.push_back( NULL );
 
           struct fuse_args fuse_args_ = FUSE_ARGS_INIT( argvv.size() - 1 , &argvv[0] );
-          ret = fuse->main( fuse_args_, mount_point.c_str() );
+          return fuse->main( fuse_args_, mount_point.c_str() );
         }
 #endif
-
-        // Assume the parent has already exited here and unlink the named pipe
-        if ( parent_named_pipe != NULL )
-        {
-          parent_named_pipe = NULL; // Close the pipe
-          YIELD::Volume().unlink( parent_named_pipe_path );
-        }
 
         return ret;
       }
       else // !foreground
       {
-        char named_pipe_path[128];
-        sprintf( named_pipe_path, ".xtfs_mount-%llu", YIELD::Time().as_unix_time_ns() );
-        yidl::auto_Object<YIELD::NamedPipe> server_named_pipe = YIELD::NamedPipe::open( named_pipe_path, O_CREAT|O_RDWR );
-
-        std::vector<char*> argvv;
-        argvv.push_back( const_cast<char*>( "--parent-named-pipe-path" ) );
-        argvv.push_back( named_pipe_path );
+        std::vector<char*> child_argvv;
         for ( int arg_i = 1; arg_i < argc; arg_i++ )
-        {
-          if ( strcmp( argv[arg_i], "-f" ) != 0 )
-            argvv.push_back( argv[arg_i] );
-        }
-        argvv.push_back( NULL );
+            child_argvv.push_back( argv[arg_i] );
+        child_argvv.push_back( "-f" );
+        child_argvv.push_back( NULL );
 
-        yidl::auto_Object<YIELD::Process> child_process = YIELD::Process::create( argv[0], ( const char** )&argvv[0] );
+        yidl::auto_Object<YIELD::Process> child_process = YIELD::Process::create( argv[0], ( const char** )&child_argvv[0] );
+
         if ( child_process != NULL )
         { 
-          YIELD::Thread::sleep( 100 * NS_IN_MS ); // Wait for the child process to start
+          YIELD::Thread::sleep( 1 * NS_IN_S ); // Wait for the child process to start
 
           int child_ret = 0;
           if ( !child_process->poll( &child_ret ) ) // Child process started successfully
-          {
-            if ( server_named_pipe->read( &child_ret, sizeof( child_ret ) ) == sizeof( child_ret ) ) // Child wrote a return code to the named pipe
-              return child_ret;
-            else
-            {
-              get_log()->getStream( YIELD::Log::LOG_ERR ) << get_program_name() << ": parent xtfs_mount could not read from named pipe to client, error: " << YIELD::Exception::strerror();
-              return 1;
-            }
-          }
+            return 0;
           else // Child process failed and exited
-          {
-            YIELD::Volume().unlink( named_pipe_path );
             return child_ret;
-          }
         }
         else 
         {
@@ -247,13 +207,6 @@ namespace xtfs_mount
 
           if ( strstr( arg, "direct_io" ) != NULL )
             direct_io = true;
-        }
-        break;
-
-        case XTFS_MOUNT_OPTION_PARENT_NAMED_PIPE_PATH:
-        {
-          parent_named_pipe_path = arg;
-          foreground = true;
         }
         break;
 
