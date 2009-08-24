@@ -1284,14 +1284,14 @@ namespace YIELD
     Stat( const WIN32_FIND_DATA& );
     Stat( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLastWriteTime, const FILETIME* ftCreationTime, const FILETIME* ftLastAccessTime, uint32_t dwFileAttributes ); // For doing FILETIME -> Unix conversions in Dokan; deduces mode from dwFileAttributes
 #else
-    Stat( mode_t mode, nlink_t nlink, uid_t tag, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime );
+    Stat( ino_t ino, mode_t mode, nlink_t nlink, uid_t uid, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime );
 #endif
     Stat( const struct stat& stbuf );
 
     mode_t get_mode() const { return mode; }
 #ifndef _WIN32
     nlink_t get_nlink() const { return nlink; }
-    uid_t get_uid() const { return tag; }
+    uid_t get_uid() const { return uid; }
     gid_t get_gid() const { return gid; }
 #endif
     uint64_t get_size() const { return size; }
@@ -1328,10 +1328,13 @@ namespace YIELD
     void init( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLastWriteTime, const FILETIME* ftCreationTime, const FILETIME* ftLastAccessTime, uint32_t dwFileAttributes );
 #endif
 
+#ifndef _WIN32
+    ino_t ino;
+#endif
     mode_t mode;
 #ifndef _WIN32
     nlink_t nlink;
-    uid_t tag;
+    uid_t uid;
     gid_t gid;
 #endif
     uint64_t size;

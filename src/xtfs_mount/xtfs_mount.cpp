@@ -162,12 +162,12 @@ namespace xtfs_mount
           if ( ( fuse_flags & yieldfs::FUSE::FUSE_FLAG_DEBUG ) == yieldfs::FUSE::FUSE_FLAG_DEBUG )
             argvv.push_back( "-d" );
 
+          argvv.push_back( "-o" );
           if ( !fuse_o_args.empty() )
-          {
-            argvv.push_back( "-o" );
-            argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
-            get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
-          }
+            fuse_o_args.append( "," );
+          fuse_o_args.append( "use_ino" );            
+          argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
+          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
 
           argvv.push_back( NULL );
 

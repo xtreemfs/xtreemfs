@@ -1,5 +1,3 @@
-// Revision: 1845
-
 #include "yield/platform.h"
 using namespace YIELD;
 
@@ -1779,12 +1777,15 @@ Stat::Stat( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLas
   init( nFileSizeHigh, nFileSizeLow, ftLastWriteTime, ftCreationTime, ftLastAccessTime, dwFileAttributes );
 }
 #else
-Stat::Stat( mode_t mode, nlink_t nlink, uid_t tag, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime )
-: mode( mode ), nlink( nlink ), tag( tag ), gid( gid ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime )
+Stat::Stat( ino_t ino, mode_t mode, nlink_t nlink, uid_t uid, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime )
+: ino( ino ), mode( mode ), nlink( nlink ), uid( uid ), gid( gid ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime )
 { }
 #endif
 Stat::Stat( const struct stat& stbuf )
 {
+#ifndef _WIN32
+  ino = stbuf.st_ino;
+#endif
   mode = stbuf.st_mode;
   size = stbuf.st_size;
   ctime = static_cast<uint32_t>( stbuf.st_ctime );
@@ -1841,6 +1842,7 @@ Stat::operator struct stat() const
 #ifdef _WIN32
   stbuf.st_mode = static_cast<unsigned short>( mode );
 #else
+  stbuf.st_ino = ino;
   stbuf.st_mode = mode;
 #endif
   stbuf.st_size = static_cast<off_t>( size );
@@ -1849,7 +1851,7 @@ Stat::operator struct stat() const
   stbuf.st_ctime = ctime.as_unix_time_s();
 #ifndef _WIN32
   stbuf.st_nlink = nlink;
-  stbuf.st_uid = tag;
+  stbuf.st_uid = uid;
   stbuf.st_gid = gid;
 #endif
   return stbuf;
