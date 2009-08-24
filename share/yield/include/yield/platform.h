@@ -1284,7 +1284,7 @@ namespace YIELD
     Stat( const WIN32_FIND_DATA& );
     Stat( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLastWriteTime, const FILETIME* ftCreationTime, const FILETIME* ftLastAccessTime, uint32_t dwFileAttributes ); // For doing FILETIME -> Unix conversions in Dokan; deduces mode from dwFileAttributes
 #else
-    Stat( ino_t ino, mode_t mode, nlink_t nlink, uid_t uid, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime );
+    Stat( dev_t dev, ino_t ino, mode_t mode, nlink_t nlink, uid_t uid, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime );
 #endif
     Stat( const struct stat& stbuf );
 
@@ -1329,6 +1329,7 @@ namespace YIELD
 #endif
 
 #ifndef _WIN32
+    dev_t dev;
     ino_t ino;
 #endif
     mode_t mode;

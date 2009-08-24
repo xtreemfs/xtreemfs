@@ -1777,13 +1777,14 @@ Stat::Stat( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLas
   init( nFileSizeHigh, nFileSizeLow, ftLastWriteTime, ftCreationTime, ftLastAccessTime, dwFileAttributes );
 }
 #else
-Stat::Stat( ino_t ino, mode_t mode, nlink_t nlink, uid_t uid, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime )
-: ino( ino ), mode( mode ), nlink( nlink ), uid( uid ), gid( gid ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime )
+Stat::Stat( dev_t dev, ino_t ino, mode_t mode, nlink_t nlink, uid_t uid, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime )
+: dev( dev ), ino( ino ), mode( mode ), nlink( nlink ), uid( uid ), gid( gid ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime )
 { }
 #endif
 Stat::Stat( const struct stat& stbuf )
 {
 #ifndef _WIN32
+  dev = stbuf.st_dev;
   ino = stbuf.st_ino;
 #endif
   mode = stbuf.st_mode;
@@ -1839,21 +1840,24 @@ Stat::operator struct stat() const
 {
   struct stat stbuf;
   memset( &stbuf, 0, sizeof( stbuf ) );
+#ifndef _WIN32
+  stbuf.st_dev = dev;
+  stbuf.st_ino = ino;
+#endif
 #ifdef _WIN32
   stbuf.st_mode = static_cast<unsigned short>( mode );
 #else
-  stbuf.st_ino = ino;
   stbuf.st_mode = mode;
 #endif
   stbuf.st_size = static_cast<off_t>( size );
-  stbuf.st_atime = atime.as_unix_time_s();
-  stbuf.st_mtime = mtime.as_unix_time_s();
-  stbuf.st_ctime = ctime.as_unix_time_s();
 #ifndef _WIN32
   stbuf.st_nlink = nlink;
   stbuf.st_uid = uid;
   stbuf.st_gid = gid;
 #endif
+  stbuf.st_atime = atime.as_unix_time_s();
+  stbuf.st_mtime = mtime.as_unix_time_s();
+  stbuf.st_ctime = ctime.as_unix_time_s();
   return stbuf;
 }
 #ifdef _WIN32

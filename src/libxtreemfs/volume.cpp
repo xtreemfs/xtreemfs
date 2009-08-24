@@ -121,7 +121,7 @@ YIELD::auto_Stat Volume::getattr( const Path& path )
 #ifdef _WIN32
   return new YIELD::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns(), stbuf.get_attributes() );
 #else
-  return new YIELD::Stat( static_cast<ino_t>( stbuf.get_ino() ), stbuf.get_mode(), stbuf.get_nlink(), stbuf.get_uid(), stbuf.get_gid(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns() );
+  return new YIELD::Stat( stbuf.get_dev(), stbuf.get_ino(), stbuf.get_mode(), stbuf.get_nlink(), stbuf.get_uid(), stbuf.get_gid(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns() );
 #endif
 }
 
@@ -278,7 +278,7 @@ bool Volume::readdir( const YIELD::Path& path, const YIELD::Path&, YIELD::Volume
 #ifdef _WIN32
       if ( !callback( ( *directory_entry_i ).get_name(), new YIELD::Stat( xtreemfs_stat.get_mode(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime_ns(), xtreemfs_stat.get_mtime_ns(), xtreemfs_stat.get_ctime_ns(), xtreemfs_stat.get_attributes() ) ) )
 #else
-      if ( !callback( ( *directory_entry_i ).get_name(), new YIELD::Stat( xtreemfs_stat.get_ino(), xtreemfs_stat.get_mode(), xtreemfs_stat.get_nlink(), xtreemfs_stat.get_uid(), xtreemfs_stat.get_gid(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime_ns(), xtreemfs_stat.get_mtime_ns(), xtreemfs_stat.get_ctime_ns() ) ) )
+      if ( !callback( ( *directory_entry_i ).get_name(), new YIELD::Stat( xtreemfs_stat.get_dev(), xtreemfs_stat.get_ino(), xtreemfs_stat.get_mode(), xtreemfs_stat.get_nlink(), xtreemfs_stat.get_uid(), xtreemfs_stat.get_gid(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime_ns(), xtreemfs_stat.get_mtime_ns(), xtreemfs_stat.get_ctime_ns() ) ) )
 #endif
         return false;
     }
