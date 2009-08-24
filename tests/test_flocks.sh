@@ -9,7 +9,8 @@ then
     echo "could not acquire log!"
     exit 1
 fi
-sleep 5
+sleep 10
+flock -u 10
 ) 10>testfile &
 
 sleep 1
@@ -22,6 +23,12 @@ then
     exit 1
 fi
 ) 11>testfile
+
+if [ $? -ne 0 ]
+then
+    echo "failed"
+    exit 1
+fi
 
 echo "locking works :)"
 exit 0
