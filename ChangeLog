@@ -1,0 +1,15 @@
+13-AUG-2009 version 1.0 release
+	* read-only replication working
+
+24-AUG-2009
+	* fcntl lock support (on OSD)
+	* switched to MRC supplied inode/dev numbers by default
+          Some applications (e.g. Dovecot) use the inode number to
+          identify fds pointing to the same file. This does not work
+          with "local" inode numbers assigned by fuse.
+	* updated the BabuDB release
+          fixed a problem with manual checkpoint creation
+	* hostname used by MRC can be set with hostname property in config file
+	  Necessary if the FQDN is not set/returned correctly on that host.
+	* OSDs run on Windows
+	
