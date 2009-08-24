@@ -156,9 +156,17 @@ bool File::lock( bool exclusive, uint64_t offset, uint64_t length )
 {
   FILE_OPERATION_BEGIN;
 
-  org::xtreemfs::interfaces::Lock lock = parent_volume->get_osd_proxy_mux()->xtreemfs_lock_acquire( file_credentials, YIELD::Socket::getfqdn(), yieldfs::FUSE::getpid(), file_credentials.get_xcap().get_file_id(), offset, length, exclusive );
-  locks.push_back( lock );
-  return true;
+  for ( ;; )
+  {
+    try
+    {
+      org::xtreemfs::interfaces::Lock lock = parent_volume->get_osd_proxy_mux()->xtreemfs_lock_acquire( file_credentials, YIELD::Socket::getfqdn(), yieldfs::FUSE::getpid(), file_credentials.get_xcap().get_file_id(), offset, length, exclusive );
+      locks.push_back( lock );
+      return true;
+    }
+    catch ( ProxyExceptionResponse& )
+    { }
+  }
 
   FILE_OPERATION_END;
 }
@@ -349,6 +357,17 @@ bool File::truncate( uint64_t new_size )
     latest_osd_write_response = osd_write_response;
   if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
     flush();
+  return true;
+
+  FILE_OPERATION_END;
+}
+
+bool File::try_lock( bool exclusive, uint64_t offset, uint64_t length )
+{
+  FILE_OPERATION_BEGIN;
+
+  org::xtreemfs::interfaces::Lock lock = parent_volume->get_osd_proxy_mux()->xtreemfs_lock_acquire( file_credentials, YIELD::Socket::getfqdn(), yieldfs::FUSE::getpid(), file_credentials.get_xcap().get_file_id(), offset, length, exclusive );
+  locks.push_back( lock );
   return true;
 
   FILE_OPERATION_END;

@@ -108,6 +108,7 @@ typedef int ssize_t;
   virtual bool setxattr( const std::string& name, const std::string& value, int flags ); \
   virtual bool sync(); \
   virtual bool truncate( uint64_t offset ); \
+  virtual bool try_lock( bool exclusive, uint64_t offset, uint64_t length ); \
   virtual bool unlock( uint64_t offset, uint64_t length ); \
   virtual ssize_t write( const void* buffer, size_t buffer_len, uint64_t offset ); \
 

@@ -1,4 +1,4 @@
-// Revision: 177
+// Revision: 178
 
 #include "yield.h"
 #include "yieldfs.h"
@@ -361,6 +361,7 @@ namespace yieldfs
         {
           if ( !get_file( fi )->is_locked( exclusive, offset, length ) )
             flock_->l_type = F_UNLCK;
+
           return 0;
         }
         break;
@@ -368,25 +369,40 @@ namespace yieldfs
         case F_SETLK:
         case F_SETLKW:
         {
-          if ( flock_->l_type == F_RDLCK || flock_->l_type == F_WRLCK )
+          switch ( flock_->l_type )
           {
-            if ( get_file( fi )->lock( exclusive, offset, length ) )
-              return 0;
-            else
-              return -1 * errno;
-          }
-          else
-          {
-            if ( get_file( fi )->unlock( offset, length ) )
-              return 0;
-            else
-              return -1 * errno;
+            case F_RDLCK:
+            case F_WRLCK:
+            {
+              if ( cmd == F_SETLK )
+              {
+                if ( get_file( fi )->try_lock( exclusive, offset, length ) )
+                  return 0;
+              }
+              else
+              {
+                if ( get_file( fi )->lock( exclusive, offset, length ) )
+                  return 0;
+              }
+            }
+            break;
+
+            case F_UNLCK:
+            {
+              if ( get_file( fi )->unlock( offset, length ) )
+                return 0;
+            }
+            break;
+
+            default: DebugBreak();
           }
         }
         break;
 
         default: DebugBreak();
       }
+
+      return -1 * errno;
     }
 
     static int mkdir( const char* path, mode_t mode )
@@ -2061,6 +2077,10 @@ bool TracingFile::sync()
 bool TracingFile::truncate( uint64_t new_size )
 {
   return TracingVolume::trace( log, "yieldfs::TracingFile::ftruncate", path, 0, new_size, underlying_file->truncate( new_size ) );
+}
+bool TracingFile::try_lock( bool exclusive, uint64_t offset, uint64_t length )
+{
+  return TracingVolume::trace( log, "yieldfs::TracingFile::ftry_lock", path, offset, length, underlying_file->try_lock( exclusive, offset, length ) );
 }
 bool TracingFile::unlock( uint64_t offset, uint64_t length )
 {
