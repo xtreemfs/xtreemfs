@@ -27,6 +27,8 @@ package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.Lock;
@@ -65,6 +67,10 @@ public class LockAcquireOperation extends OSDOperation {
     public void startRequest(final OSDRequest rq) {
         final xtreemfs_lock_acquireRequest args = (xtreemfs_lock_acquireRequest) rq
                 .getRequestArgs();
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG,Category.all,this,"lock_acquire for file %s by %010d%s (%d-%d)",args.getFile_id(),args.getClient_pid(),args.getClient_uuid(),
+                    args.getOffset(),args.getLength());
+        }
 
 //        System.out.println("rq: " + args);
 

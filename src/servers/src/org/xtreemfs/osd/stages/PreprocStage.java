@@ -217,7 +217,7 @@ public class PreprocStage extends Stage {
             }
 
             AdvisoryLock l = e.acquireLock(clientUuid, pid, offset, length, exclusive);
-            callback.parseComplete(new Lock(l.getClientUuid(), l.getClientPid()), null);
+            callback.parseComplete(new Lock(l.getClientUuid(), l.getClientPid(), l.getOffset(), l.getLength()), null);
 
         } catch (Exception ex) {
             callback.parseComplete(null,ex);
@@ -247,7 +247,7 @@ public class PreprocStage extends Stage {
             }
 
             AdvisoryLock l = e.checkLock(clientUuid, pid, offset, length, exclusive);
-            callback.parseComplete(new Lock(l.getClientUuid(), l.getClientPid()), null);
+            callback.parseComplete(new Lock(l.getClientUuid(), l.getClientPid(), l.getOffset(), l.getLength()), null);
 
         } catch (Exception ex) {
             callback.parseComplete(null,ex);

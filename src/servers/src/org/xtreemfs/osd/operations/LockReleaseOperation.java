@@ -27,6 +27,8 @@ package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.Lock;
@@ -69,6 +71,11 @@ public class LockReleaseOperation extends OSDOperation {
     public void startRequest(final OSDRequest rq) {
         final xtreemfs_lock_releaseRequest args = (xtreemfs_lock_releaseRequest) rq
                 .getRequestArgs();
+
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG,Category.all,this,"lock_release for file %s by %010d%s",args.getFile_id(),args.getLock().getClient_pid(),
+                    args.getLock().getClient_uuid());
+        }
 
 //        System.out.println("rq: " + args);
 
