@@ -59,12 +59,12 @@ public class Capability {
      * default validity for capabilities in seconds
      */
     public static final long DEFAULT_VALIDITY = 60 * 60 * 24 * 2;
-        //10 * 60;
-
-    private XCap             xcap;
-
-    private final String     sharedSecret;
     
+    // 10 * 60;
+    
+    private XCap             xcap;
+    
+    private final String     sharedSecret;
     
     /**
      * Creates a capability from a given set of data. A signature will be added
@@ -83,31 +83,33 @@ public class Capability {
      * @param sharedSecret
      *            the shared secret to be used to sign the capability
      */
-    public Capability(String fileId, int accessMode, long expires,
-            String clientIdentity, int epochNo, String sharedSecret) {
-
+    public Capability(String fileId, int accessMode, long expires, String clientIdentity, int epochNo,
+        boolean replicateOnClose, String sharedSecret) {
+        
         this.sharedSecret = sharedSecret;
-
-        xcap = new XCap(fileId, accessMode, expires, clientIdentity, epochNo, null);
+        
+        xcap = new XCap(fileId, accessMode, expires, clientIdentity, epochNo, replicateOnClose, null);
         
         final String sig = calcSignature();
         xcap.setServer_signature(sig);
     }
-
+    
     /**
      * Wrapper for XCap objects.
-     * @param xcap the parsed XCap object
-     * @param sharedSecret the shared secret (from configuration file)
+     * 
+     * @param xcap
+     *            the parsed XCap object
+     * @param sharedSecret
+     *            the shared secret (from configuration file)
      */
     public Capability(XCap xcap, String sharedSecret) {
         this.xcap = xcap;
         this.sharedSecret = sharedSecret;
     }
-
+    
     public XCap getXCap() {
         return this.xcap;
     }
-    
     
     public String getFileId() {
         return xcap.getFile_id();
@@ -119,6 +121,7 @@ public class Capability {
     
     /**
      * returns the absolute time, when the capability expires (in seconds)
+     * 
      * @return
      */
     public long getExpires() {
@@ -167,6 +170,10 @@ public class Capability {
         return xcap.getServer_signature().equals(calcSignature());
     }
     
+    public boolean isReplicateOnClose() {
+        return xcap.getReplicateOnClose();
+    }
+    
     /**
      * Returns a string representation of the capability.
      * 
@@ -183,9 +190,8 @@ public class Capability {
         // will be generated and checked by means of asymmetric encryption
         // techniques
         
-        String plainText = xcap.getFile_id() + Integer.toString(xcap.getAccess_mode()) +
-                Long.toString(xcap.getExpires_s()) + Long.toString(xcap.getTruncate_epoch()) +
-                sharedSecret;
+        String plainText = xcap.getFile_id() + Integer.toString(xcap.getAccess_mode())
+            + Long.toString(xcap.getExpires_s()) + Long.toString(xcap.getTruncate_epoch()) + sharedSecret;
         
         try {
             MessageDigest md5 = MessageDigest.getInstance("MD5");

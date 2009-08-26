@@ -81,7 +81,7 @@ public class TransferStrategiesTest extends TestCase {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         String file = "1:1";
-        cap = new Capability(fileID, 0, System.currentTimeMillis(), "", 0, "secretPassphrase");
+        cap = new Capability(fileID, 0, System.currentTimeMillis(), "", 0, false, "secretPassphrase");
 
         this.stripeSize = 128 * 1024; // byte
         osdNumber = 12;

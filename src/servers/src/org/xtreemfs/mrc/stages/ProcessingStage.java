@@ -36,6 +36,7 @@ import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.interfaces.MRCInterface.accessRequest;
 import org.xtreemfs.interfaces.MRCInterface.chmodRequest;
 import org.xtreemfs.interfaces.MRCInterface.chownRequest;
+import org.xtreemfs.interfaces.MRCInterface.closeRequest;
 import org.xtreemfs.interfaces.MRCInterface.creatRequest;
 import org.xtreemfs.interfaces.MRCInterface.ftruncateRequest;
 import org.xtreemfs.interfaces.MRCInterface.getattrRequest;
@@ -82,6 +83,7 @@ import org.xtreemfs.mrc.operations.ChangeOwnerOperation;
 import org.xtreemfs.mrc.operations.CheckAccessOperation;
 import org.xtreemfs.mrc.operations.CheckFileListOperation;
 import org.xtreemfs.mrc.operations.CheckpointOperation;
+import org.xtreemfs.mrc.operations.CloseOperation;
 import org.xtreemfs.mrc.operations.CreateDirOperation;
 import org.xtreemfs.mrc.operations.CreateFileOperation;
 import org.xtreemfs.mrc.operations.CreateLinkOperation;
@@ -187,6 +189,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(ftruncateRequest.TAG, new TruncateOperation(master));
         operations.put(xtreemfs_internal_debugRequest.TAG, new InternalDebugOperation(master));
         operations.put(xtreemfs_replica_listRequest.TAG, new GetXLocListOperation(master));
+        operations.put(closeRequest.TAG, new CloseOperation(master));
     }
     
     public Map<Integer, Integer> get_opCountMap() {

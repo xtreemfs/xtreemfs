@@ -78,7 +78,7 @@ public class OSDTruncateTest extends TestCase {
         serverID = SetupUtils.getOSD1UUID();
         
         fileId = "ABCDEF:1";
-        cap = new Capability(fileId, 0, System.currentTimeMillis(), "", 0, osdConfig.getCapabilitySecret());
+        cap = new Capability(fileId, 0, System.currentTimeMillis(), "", 0, false, osdConfig.getCapabilitySecret());
 
         ReplicaSet replicas = new ReplicaSet();
         StringSet osdset = new StringSet();

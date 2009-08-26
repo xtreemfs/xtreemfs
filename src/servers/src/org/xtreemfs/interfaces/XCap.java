@@ -13,10 +13,10 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
     public static final int TAG = 1022;
 
     
-    public XCap() { file_id = ""; access_mode = 0; expires_s = 0; client_identity = ""; truncate_epoch = 0; server_signature = ""; }
-    public XCap( String file_id, int access_mode, long expires_s, String client_identity, int truncate_epoch, String server_signature ) { this.file_id = file_id; this.access_mode = access_mode; this.expires_s = expires_s; this.client_identity = client_identity; this.truncate_epoch = truncate_epoch; this.server_signature = server_signature; }
-    public XCap( Object from_hash_map ) { file_id = ""; access_mode = 0; expires_s = 0; client_identity = ""; truncate_epoch = 0; server_signature = ""; this.deserialize( from_hash_map ); }
-    public XCap( Object[] from_array ) { file_id = ""; access_mode = 0; expires_s = 0; client_identity = ""; truncate_epoch = 0; server_signature = "";this.deserialize( from_array ); }
+    public XCap() { file_id = ""; access_mode = 0; expires_s = 0; client_identity = ""; truncate_epoch = 0; replicateOnClose = false; server_signature = ""; }
+    public XCap( String file_id, int access_mode, long expires_s, String client_identity, int truncate_epoch, boolean replicateOnClose, String server_signature ) { this.file_id = file_id; this.access_mode = access_mode; this.expires_s = expires_s; this.client_identity = client_identity; this.truncate_epoch = truncate_epoch; this.replicateOnClose = replicateOnClose; this.server_signature = server_signature; }
+    public XCap( Object from_hash_map ) { file_id = ""; access_mode = 0; expires_s = 0; client_identity = ""; truncate_epoch = 0; replicateOnClose = false; server_signature = ""; this.deserialize( from_hash_map ); }
+    public XCap( Object[] from_array ) { file_id = ""; access_mode = 0; expires_s = 0; client_identity = ""; truncate_epoch = 0; replicateOnClose = false; server_signature = "";this.deserialize( from_array ); }
 
     public String getFile_id() { return file_id; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
@@ -28,13 +28,15 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
     public void setClient_identity( String client_identity ) { this.client_identity = client_identity; }
     public int getTruncate_epoch() { return truncate_epoch; }
     public void setTruncate_epoch( int truncate_epoch ) { this.truncate_epoch = truncate_epoch; }
+    public boolean getReplicateOnClose() { return replicateOnClose; }
+    public void setReplicateOnClose( boolean replicateOnClose ) { this.replicateOnClose = replicateOnClose; }
     public String getServer_signature() { return server_signature; }
     public void setServer_signature( String server_signature ) { this.server_signature = server_signature; }
 
     // Object
     public String toString()
     {
-        return "XCap( " + "\"" + file_id + "\"" + ", " + Integer.toString( access_mode ) + ", " + Long.toString( expires_s ) + ", " + "\"" + client_identity + "\"" + ", " + Integer.toString( truncate_epoch ) + ", " + "\"" + server_signature + "\"" + " )";
+        return "XCap( " + "\"" + file_id + "\"" + ", " + Integer.toString( access_mode ) + ", " + Long.toString( expires_s ) + ", " + "\"" + client_identity + "\"" + ", " + Integer.toString( truncate_epoch ) + ", " + Boolean.toString( replicateOnClose ) + ", " + "\"" + server_signature + "\"" + " )";
     }
 
     // Serializable
@@ -53,6 +55,7 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
         this.expires_s = ( ( Long )from_hash_map.get( "expires_s" ) ).longValue();
         this.client_identity = ( String )from_hash_map.get( "client_identity" );
         this.truncate_epoch = ( ( Integer )from_hash_map.get( "truncate_epoch" ) ).intValue();
+        this.replicateOnClose = ( ( Boolean )from_hash_map.get( "replicateOnClose" ) ).booleanValue();
         this.server_signature = ( String )from_hash_map.get( "server_signature" );
     }
     
@@ -63,7 +66,8 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
         this.expires_s = ( ( Long )from_array[2] ).longValue();
         this.client_identity = ( String )from_array[3];
         this.truncate_epoch = ( ( Integer )from_array[4] ).intValue();
-        this.server_signature = ( String )from_array[5];        
+        this.replicateOnClose = ( ( Boolean )from_array[5] ).booleanValue();
+        this.server_signature = ( String )from_array[6];        
     }
 
     public void deserialize( ReusableBuffer buf )
@@ -73,6 +77,7 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
         expires_s = buf.getLong();
         client_identity = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
         truncate_epoch = buf.getInt();
+        replicateOnClose = buf.getInt() != 0;
         server_signature = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
     }
 
@@ -84,6 +89,7 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
         to_hash_map.put( "expires_s", new Long( expires_s ) );
         to_hash_map.put( "client_identity", client_identity );
         to_hash_map.put( "truncate_epoch", new Integer( truncate_epoch ) );
+        to_hash_map.put( "replicateOnClose", new Boolean( replicateOnClose ) );
         to_hash_map.put( "server_signature", server_signature );
         return to_hash_map;        
     }
@@ -95,6 +101,7 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
         writer.putLong( expires_s );
         org.xtreemfs.interfaces.utils.XDRUtils.serializeString( client_identity, writer );
         writer.putInt( truncate_epoch );
+        writer.putInt( replicateOnClose ? 1 : 0 );
         org.xtreemfs.interfaces.utils.XDRUtils.serializeString( server_signature, writer );
     }
     
@@ -106,6 +113,7 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
         my_size += ( Long.SIZE / 8 );
         my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(client_identity);
         my_size += ( Integer.SIZE / 8 );
+        my_size += 4;
         my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(server_signature);
         return my_size;
     }
@@ -116,6 +124,7 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
     private long expires_s;
     private String client_identity;
     private int truncate_epoch;
+    private boolean replicateOnClose;
     private String server_signature;    
 
 }

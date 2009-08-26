@@ -120,7 +120,7 @@ public class ReplicationTest extends TestCase {
 
         fileID = "1:1";
         objectNo = 0;
-        cap = new Capability(fileID, 0, System.currentTimeMillis(), "", 0, configs[0].getCapabilitySecret());
+        cap = new Capability(fileID, 0, System.currentTimeMillis(), "", 0, false, configs[0].getCapabilitySecret());
 
         xLoc = createLocations(4, 3);
     }
