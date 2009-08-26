@@ -35,7 +35,7 @@ namespace org
         bool operator==( const InternalGmax& other ) const { return epoch == other.epoch && last_object_id == other.last_object_id && file_size == other.file_size; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( InternalGmax, 1050 );
+        YIDL_OBJECT_PROTOTYPES( InternalGmax, 2009082668 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint64( "epoch", 0, epoch ); marshaller.writeUint64( "last_object_id", 0, last_object_id ); marshaller.writeUint64( "file_size", 0, file_size ); }
@@ -68,7 +68,7 @@ namespace org
         bool operator==( const Lock& other ) const { return client_uuid == other.client_uuid && client_pid == other.client_pid && offset == other.offset && length == other.length; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( Lock, 1054 );
+        YIDL_OBJECT_PROTOTYPES( Lock, 2009082672 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "client_uuid", 0, client_uuid ); marshaller.writeUint32( "client_pid", 0, client_pid ); marshaller.writeUint64( "offset", 0, offset ); marshaller.writeUint64( "length", 0, length ); }
@@ -100,7 +100,7 @@ namespace org
         bool operator==( const ObjectData& other ) const { return checksum == other.checksum && invalid_checksum_on_osd == other.invalid_checksum_on_osd && zero_padding == other.zero_padding && *data == *other.data; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( ObjectData, 1051 );
+        YIDL_OBJECT_PROTOTYPES( ObjectData, 2009082669 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint32( "checksum", 0, checksum ); marshaller.writeBoolean( "invalid_checksum_on_osd", 0, invalid_checksum_on_osd ); marshaller.writeUint32( "zero_padding", 0, zero_padding ); marshaller.writeBuffer( "data", 0, data ); }
@@ -130,7 +130,7 @@ namespace org
         bool operator==( const ObjectList& other ) const { return *set == *other.set && stripeWidth == other.stripeWidth && firstObjectNo == other.firstObjectNo; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( ObjectList, 1055 );
+        YIDL_OBJECT_PROTOTYPES( ObjectList, 2009082673 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeBuffer( "set", 0, set ); marshaller.writeUint32( "stripeWidth", 0, stripeWidth ); marshaller.writeUint32( "firstObjectNo", 0, firstObjectNo ); }
@@ -151,7 +151,7 @@ namespace org
         virtual ~ObjectListSet() { }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( ObjectListSet, 1056 );
+        YIDL_OBJECT_PROTOTYPES( ObjectListSet, 2009082674 );
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }
@@ -174,7 +174,7 @@ namespace org
         bool operator==( const InternalReadLocalResponse& other ) const { return data == other.data && object_set == other.object_set; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( InternalReadLocalResponse, 1052 );
+        YIDL_OBJECT_PROTOTYPES( InternalReadLocalResponse, 2009082670 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "data", 0, data ); marshaller.writeSequence( "object_set", 0, object_set ); }
@@ -202,7 +202,7 @@ namespace org
         bool operator==( const VivaldiCoordinates& other ) const { return x_coordinate == other.x_coordinate && y_coordinate == other.y_coordinate && local_error == other.local_error; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( VivaldiCoordinates, 1053 );
+        YIDL_OBJECT_PROTOTYPES( VivaldiCoordinates, 2009082671 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeDouble( "x_coordinate", 0, x_coordinate ); marshaller.writeDouble( "y_coordinate", 0, y_coordinate ); marshaller.writeDouble( "local_error", 0, local_error ); }
@@ -357,7 +357,7 @@ namespace org
           bool operator==( const readResponse& other ) const { return object_data == other.object_data; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( readResponse, 1310 );
+          YIDL_OBJECT_PROTOTYPES( readResponse, 2009082928 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "object_data", 0, object_data ); }
@@ -392,7 +392,7 @@ namespace org
           bool operator==( const readRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id && object_number == other.object_number && object_version == other.object_version && offset == other.offset && length == other.length; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( readRequest, 1310 );
+          YIDL_OBJECT_PROTOTYPES( readRequest, 2009082928 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "object_number", 0, object_number ); marshaller.writeUint64( "object_version", 0, object_version ); marshaller.writeUint32( "offset", 0, offset ); marshaller.writeUint32( "length", 0, length ); }
@@ -422,7 +422,7 @@ namespace org
           bool operator==( const truncateResponse& other ) const { return osd_write_response == other.osd_write_response; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( truncateResponse, 1311 );
+          YIDL_OBJECT_PROTOTYPES( truncateResponse, 2009082929 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "osd_write_response", 0, osd_write_response ); }
@@ -451,7 +451,7 @@ namespace org
           bool operator==( const truncateRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id && new_file_size == other.new_file_size; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( truncateRequest, 1311 );
+          YIDL_OBJECT_PROTOTYPES( truncateRequest, 2009082929 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "new_file_size", 0, new_file_size ); }
@@ -474,7 +474,7 @@ namespace org
           bool operator==( const unlinkResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( unlinkResponse, 1312 );
+          YIDL_OBJECT_PROTOTYPES( unlinkResponse, 2009082930 );
 
         };
 
@@ -495,7 +495,7 @@ namespace org
           bool operator==( const unlinkRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( unlinkRequest, 1312 );
+          YIDL_OBJECT_PROTOTYPES( unlinkRequest, 2009082930 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); }
@@ -521,7 +521,7 @@ namespace org
           bool operator==( const writeResponse& other ) const { return osd_write_response == other.osd_write_response; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( writeResponse, 1313 );
+          YIDL_OBJECT_PROTOTYPES( writeResponse, 2009082931 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "osd_write_response", 0, osd_write_response ); }
@@ -558,7 +558,7 @@ namespace org
           bool operator==( const writeRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id && object_number == other.object_number && object_version == other.object_version && offset == other.offset && lease_timeout == other.lease_timeout && object_data == other.object_data; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( writeRequest, 1313 );
+          YIDL_OBJECT_PROTOTYPES( writeRequest, 2009082931 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "object_number", 0, object_number ); marshaller.writeUint64( "object_version", 0, object_version ); marshaller.writeUint32( "offset", 0, offset ); marshaller.writeUint64( "lease_timeout", 0, lease_timeout ); marshaller.writeStruct( "object_data", 0, object_data ); }
@@ -585,7 +585,7 @@ namespace org
           bool operator==( const xtreemfs_broadcast_gmaxResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_broadcast_gmaxResponse, 1320 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_broadcast_gmaxResponse, 2009082938 );
 
         };
 
@@ -610,7 +610,7 @@ namespace org
           bool operator==( const xtreemfs_broadcast_gmaxRequest& other ) const { return file_id == other.file_id && truncateEpoch == other.truncateEpoch && lastObject == other.lastObject && fileSize == other.fileSize; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_broadcast_gmaxRequest, 1320 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_broadcast_gmaxRequest, 2009082938 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "truncateEpoch", 0, truncateEpoch ); marshaller.writeUint64( "lastObject", 0, lastObject ); marshaller.writeUint64( "fileSize", 0, fileSize ); }
@@ -638,7 +638,7 @@ namespace org
           bool operator==( const xtreemfs_check_objectResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_check_objectResponse, 1321 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_check_objectResponse, 2009082939 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "_return_value", 0, _return_value ); }
@@ -669,7 +669,7 @@ namespace org
           bool operator==( const xtreemfs_check_objectRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id && object_number == other.object_number && object_version == other.object_version; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_check_objectRequest, 1321 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_check_objectRequest, 2009082939 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "object_number", 0, object_number ); marshaller.writeUint64( "object_version", 0, object_version ); }
@@ -697,7 +697,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_get_resultsResponse& other ) const { return results == other.results; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_get_resultsResponse, 1330 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_get_resultsResponse, 2009082948 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "results", 0, results ); }
@@ -716,7 +716,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_get_resultsRequest& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_get_resultsRequest, 1330 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_get_resultsRequest, 2009082948 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_cleanup_get_resultsResponse; }
 
@@ -735,7 +735,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_is_runningResponse& other ) const { return is_running == other.is_running; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_is_runningResponse, 1331 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_is_runningResponse, 2009082949 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeBoolean( "is_running", 0, is_running ); }
@@ -754,7 +754,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_is_runningRequest& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_is_runningRequest, 1331 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_is_runningRequest, 2009082949 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_cleanup_is_runningResponse; }
 
@@ -769,7 +769,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_startResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_startResponse, 1332 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_startResponse, 2009082950 );
 
         };
 
@@ -790,7 +790,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_startRequest& other ) const { return remove_zombies == other.remove_zombies && remove_unavail_volume == other.remove_unavail_volume && lost_and_found == other.lost_and_found; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_startRequest, 1332 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_startRequest, 2009082950 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeBoolean( "remove_zombies", 0, remove_zombies ); marshaller.writeBoolean( "remove_unavail_volume", 0, remove_unavail_volume ); marshaller.writeBoolean( "lost_and_found", 0, lost_and_found ); }
@@ -819,7 +819,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_statusResponse& other ) const { return status == other.status; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_statusResponse, 1333 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_statusResponse, 2009082951 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "status", 0, status ); }
@@ -838,7 +838,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_statusRequest& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_statusRequest, 1333 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_statusRequest, 2009082951 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_cleanup_statusResponse; }
 
@@ -853,7 +853,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_stopResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_stopResponse, 1334 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_stopResponse, 2009082952 );
 
         };
 
@@ -866,7 +866,7 @@ namespace org
           bool operator==( const xtreemfs_cleanup_stopRequest& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_stopRequest, 1334 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_cleanup_stopRequest, 2009082952 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_cleanup_stopResponse; }
 
@@ -885,7 +885,7 @@ namespace org
           bool operator==( const xtreemfs_internal_get_gmaxResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_gmaxResponse, 1340 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_gmaxResponse, 2009082958 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "_return_value", 0, _return_value ); }
@@ -912,7 +912,7 @@ namespace org
           bool operator==( const xtreemfs_internal_get_gmaxRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_gmaxRequest, 1340 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_gmaxRequest, 2009082958 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); }
@@ -938,7 +938,7 @@ namespace org
           bool operator==( const xtreemfs_internal_truncateResponse& other ) const { return osd_write_response == other.osd_write_response; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_truncateResponse, 1341 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_truncateResponse, 2009082959 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "osd_write_response", 0, osd_write_response ); }
@@ -967,7 +967,7 @@ namespace org
           bool operator==( const xtreemfs_internal_truncateRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id && new_file_size == other.new_file_size; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_truncateRequest, 1341 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_truncateRequest, 2009082959 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "new_file_size", 0, new_file_size ); }
@@ -994,7 +994,7 @@ namespace org
           bool operator==( const xtreemfs_internal_get_file_sizeResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_file_sizeResponse, 1342 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_file_sizeResponse, 2009082960 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint64( "_return_value", 0, _return_value ); }
@@ -1021,7 +1021,7 @@ namespace org
           bool operator==( const xtreemfs_internal_get_file_sizeRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_file_sizeRequest, 1342 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_file_sizeRequest, 2009082960 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); }
@@ -1047,7 +1047,7 @@ namespace org
           bool operator==( const xtreemfs_internal_read_localResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_read_localResponse, 1343 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_read_localResponse, 2009082961 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "_return_value", 0, _return_value ); }
@@ -1086,7 +1086,7 @@ namespace org
           bool operator==( const xtreemfs_internal_read_localRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id && object_number == other.object_number && object_version == other.object_version && offset == other.offset && length == other.length && attachObjectList == other.attachObjectList && requiredObjects == other.requiredObjects; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_read_localRequest, 1343 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_read_localRequest, 2009082961 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "object_number", 0, object_number ); marshaller.writeUint64( "object_version", 0, object_version ); marshaller.writeUint64( "offset", 0, offset ); marshaller.writeUint64( "length", 0, length ); marshaller.writeBoolean( "attachObjectList", 0, attachObjectList ); marshaller.writeSequence( "requiredObjects", 0, requiredObjects ); }
@@ -1118,7 +1118,7 @@ namespace org
           bool operator==( const xtreemfs_internal_get_object_setResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_object_setResponse, 1344 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_object_setResponse, 2009082962 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "_return_value", 0, _return_value ); }
@@ -1145,7 +1145,7 @@ namespace org
           bool operator==( const xtreemfs_internal_get_object_setRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_object_setRequest, 1344 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_internal_get_object_setRequest, 2009082962 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); }
@@ -1171,7 +1171,7 @@ namespace org
           bool operator==( const xtreemfs_lock_acquireResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_acquireResponse, 1350 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_acquireResponse, 2009082968 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "_return_value", 0, _return_value ); }
@@ -1209,7 +1209,7 @@ namespace org
           bool operator==( const xtreemfs_lock_acquireRequest& other ) const { return file_credentials == other.file_credentials && client_uuid == other.client_uuid && client_pid == other.client_pid && file_id == other.file_id && offset == other.offset && length == other.length && exclusive == other.exclusive; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_acquireRequest, 1350 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_acquireRequest, 2009082968 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "client_uuid", 0, client_uuid ); marshaller.writeInt32( "client_pid", 0, client_pid ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "offset", 0, offset ); marshaller.writeUint64( "length", 0, length ); marshaller.writeBoolean( "exclusive", 0, exclusive ); }
@@ -1240,7 +1240,7 @@ namespace org
           bool operator==( const xtreemfs_lock_checkResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_checkResponse, 1351 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_checkResponse, 2009082969 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "_return_value", 0, _return_value ); }
@@ -1278,7 +1278,7 @@ namespace org
           bool operator==( const xtreemfs_lock_checkRequest& other ) const { return file_credentials == other.file_credentials && client_uuid == other.client_uuid && client_pid == other.client_pid && file_id == other.file_id && offset == other.offset && length == other.length && exclusive == other.exclusive; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_checkRequest, 1351 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_checkRequest, 2009082969 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "client_uuid", 0, client_uuid ); marshaller.writeInt32( "client_pid", 0, client_pid ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "offset", 0, offset ); marshaller.writeUint64( "length", 0, length ); marshaller.writeBoolean( "exclusive", 0, exclusive ); }
@@ -1305,7 +1305,7 @@ namespace org
           bool operator==( const xtreemfs_lock_releaseResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_releaseResponse, 1352 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_releaseResponse, 2009082970 );
 
         };
 
@@ -1328,7 +1328,7 @@ namespace org
           bool operator==( const xtreemfs_lock_releaseRequest& other ) const { return file_credentials == other.file_credentials && file_id == other.file_id && lock == other.lock; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_releaseRequest, 1352 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_lock_releaseRequest, 2009082970 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeStruct( "lock", 0, lock ); }
@@ -1355,7 +1355,7 @@ namespace org
           bool operator==( const xtreemfs_pingResponse& other ) const { return remote_coordinates == other.remote_coordinates; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_pingResponse, 1360 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_pingResponse, 2009082978 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "remote_coordinates", 0, remote_coordinates ); }
@@ -1378,7 +1378,7 @@ namespace org
           bool operator==( const xtreemfs_pingRequest& other ) const { return coordinates == other.coordinates; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_pingRequest, 1360 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_pingRequest, 2009082978 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "coordinates", 0, coordinates ); }
@@ -1399,7 +1399,7 @@ namespace org
           bool operator==( const xtreemfs_shutdownResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 1370 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 2009082988 );
 
         };
 
@@ -1412,7 +1412,7 @@ namespace org
           bool operator==( const xtreemfs_shutdownRequest& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 1370 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 2009082988 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_shutdownResponse; }
 
@@ -1585,7 +1585,7 @@ namespace org
 
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( OSDInterface, 1300 );
+        YIDL_OBJECT_PROTOTYPES( OSDInterface, 2009082918 );
 
         // YIELD::EventHandler
         virtual void handleEvent( ::YIELD::Event& ev )
@@ -1595,27 +1595,27 @@ namespace org
             // Switch on the event types that this interface handles, unwrap the corresponding requests and delegate to impl
             switch ( ev.get_type_id() )
             {
-              case 1310UL: handlereadRequest( static_cast<readRequest&>( ev ) ); return;
-              case 1311UL: handletruncateRequest( static_cast<truncateRequest&>( ev ) ); return;
-              case 1312UL: handleunlinkRequest( static_cast<unlinkRequest&>( ev ) ); return;
-              case 1313UL: handlewriteRequest( static_cast<writeRequest&>( ev ) ); return;
-              case 1320UL: handlextreemfs_broadcast_gmaxRequest( static_cast<xtreemfs_broadcast_gmaxRequest&>( ev ) ); return;
-              case 1321UL: handlextreemfs_check_objectRequest( static_cast<xtreemfs_check_objectRequest&>( ev ) ); return;
-              case 1330UL: handlextreemfs_cleanup_get_resultsRequest( static_cast<xtreemfs_cleanup_get_resultsRequest&>( ev ) ); return;
-              case 1331UL: handlextreemfs_cleanup_is_runningRequest( static_cast<xtreemfs_cleanup_is_runningRequest&>( ev ) ); return;
-              case 1332UL: handlextreemfs_cleanup_startRequest( static_cast<xtreemfs_cleanup_startRequest&>( ev ) ); return;
-              case 1333UL: handlextreemfs_cleanup_statusRequest( static_cast<xtreemfs_cleanup_statusRequest&>( ev ) ); return;
-              case 1334UL: handlextreemfs_cleanup_stopRequest( static_cast<xtreemfs_cleanup_stopRequest&>( ev ) ); return;
-              case 1340UL: handlextreemfs_internal_get_gmaxRequest( static_cast<xtreemfs_internal_get_gmaxRequest&>( ev ) ); return;
-              case 1341UL: handlextreemfs_internal_truncateRequest( static_cast<xtreemfs_internal_truncateRequest&>( ev ) ); return;
-              case 1342UL: handlextreemfs_internal_get_file_sizeRequest( static_cast<xtreemfs_internal_get_file_sizeRequest&>( ev ) ); return;
-              case 1343UL: handlextreemfs_internal_read_localRequest( static_cast<xtreemfs_internal_read_localRequest&>( ev ) ); return;
-              case 1344UL: handlextreemfs_internal_get_object_setRequest( static_cast<xtreemfs_internal_get_object_setRequest&>( ev ) ); return;
-              case 1350UL: handlextreemfs_lock_acquireRequest( static_cast<xtreemfs_lock_acquireRequest&>( ev ) ); return;
-              case 1351UL: handlextreemfs_lock_checkRequest( static_cast<xtreemfs_lock_checkRequest&>( ev ) ); return;
-              case 1352UL: handlextreemfs_lock_releaseRequest( static_cast<xtreemfs_lock_releaseRequest&>( ev ) ); return;
-              case 1360UL: handlextreemfs_pingRequest( static_cast<xtreemfs_pingRequest&>( ev ) ); return;
-              case 1370UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( ev ) ); return;
+              case 2009082928UL: handlereadRequest( static_cast<readRequest&>( ev ) ); return;
+              case 2009082929UL: handletruncateRequest( static_cast<truncateRequest&>( ev ) ); return;
+              case 2009082930UL: handleunlinkRequest( static_cast<unlinkRequest&>( ev ) ); return;
+              case 2009082931UL: handlewriteRequest( static_cast<writeRequest&>( ev ) ); return;
+              case 2009082938UL: handlextreemfs_broadcast_gmaxRequest( static_cast<xtreemfs_broadcast_gmaxRequest&>( ev ) ); return;
+              case 2009082939UL: handlextreemfs_check_objectRequest( static_cast<xtreemfs_check_objectRequest&>( ev ) ); return;
+              case 2009082948UL: handlextreemfs_cleanup_get_resultsRequest( static_cast<xtreemfs_cleanup_get_resultsRequest&>( ev ) ); return;
+              case 2009082949UL: handlextreemfs_cleanup_is_runningRequest( static_cast<xtreemfs_cleanup_is_runningRequest&>( ev ) ); return;
+              case 2009082950UL: handlextreemfs_cleanup_startRequest( static_cast<xtreemfs_cleanup_startRequest&>( ev ) ); return;
+              case 2009082951UL: handlextreemfs_cleanup_statusRequest( static_cast<xtreemfs_cleanup_statusRequest&>( ev ) ); return;
+              case 2009082952UL: handlextreemfs_cleanup_stopRequest( static_cast<xtreemfs_cleanup_stopRequest&>( ev ) ); return;
+              case 2009082958UL: handlextreemfs_internal_get_gmaxRequest( static_cast<xtreemfs_internal_get_gmaxRequest&>( ev ) ); return;
+              case 2009082959UL: handlextreemfs_internal_truncateRequest( static_cast<xtreemfs_internal_truncateRequest&>( ev ) ); return;
+              case 2009082960UL: handlextreemfs_internal_get_file_sizeRequest( static_cast<xtreemfs_internal_get_file_sizeRequest&>( ev ) ); return;
+              case 2009082961UL: handlextreemfs_internal_read_localRequest( static_cast<xtreemfs_internal_read_localRequest&>( ev ) ); return;
+              case 2009082962UL: handlextreemfs_internal_get_object_setRequest( static_cast<xtreemfs_internal_get_object_setRequest&>( ev ) ); return;
+              case 2009082968UL: handlextreemfs_lock_acquireRequest( static_cast<xtreemfs_lock_acquireRequest&>( ev ) ); return;
+              case 2009082969UL: handlextreemfs_lock_checkRequest( static_cast<xtreemfs_lock_checkRequest&>( ev ) ); return;
+              case 2009082970UL: handlextreemfs_lock_releaseRequest( static_cast<xtreemfs_lock_releaseRequest&>( ev ) ); return;
+              case 2009082978UL: handlextreemfs_pingRequest( static_cast<xtreemfs_pingRequest&>( ev ) ); return;
+              case 2009082988UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( ev ) ); return;
               default: handleUnknownEvent( ev ); return;
             }
           }
@@ -1641,27 +1641,27 @@ namespace org
           {
             switch ( request.get_type_id() )
             {
-              case 1310: return static_cast<readRequest*>( &request );
-              case 1311: return static_cast<truncateRequest*>( &request );
-              case 1312: return static_cast<unlinkRequest*>( &request );
-              case 1313: return static_cast<writeRequest*>( &request );
-              case 1320: return static_cast<xtreemfs_broadcast_gmaxRequest*>( &request );
-              case 1321: return static_cast<xtreemfs_check_objectRequest*>( &request );
-              case 1330: return static_cast<xtreemfs_cleanup_get_resultsRequest*>( &request );
-              case 1331: return static_cast<xtreemfs_cleanup_is_runningRequest*>( &request );
-              case 1332: return static_cast<xtreemfs_cleanup_startRequest*>( &request );
-              case 1333: return static_cast<xtreemfs_cleanup_statusRequest*>( &request );
-              case 1334: return static_cast<xtreemfs_cleanup_stopRequest*>( &request );
-              case 1340: return static_cast<xtreemfs_internal_get_gmaxRequest*>( &request );
-              case 1341: return static_cast<xtreemfs_internal_truncateRequest*>( &request );
-              case 1342: return static_cast<xtreemfs_internal_get_file_sizeRequest*>( &request );
-              case 1343: return static_cast<xtreemfs_internal_read_localRequest*>( &request );
-              case 1344: return static_cast<xtreemfs_internal_get_object_setRequest*>( &request );
-              case 1350: return static_cast<xtreemfs_lock_acquireRequest*>( &request );
-              case 1351: return static_cast<xtreemfs_lock_checkRequest*>( &request );
-              case 1352: return static_cast<xtreemfs_lock_releaseRequest*>( &request );
-              case 1360: return static_cast<xtreemfs_pingRequest*>( &request );
-              case 1370: return static_cast<xtreemfs_shutdownRequest*>( &request );
+              case 2009082928: return static_cast<readRequest*>( &request );
+              case 2009082929: return static_cast<truncateRequest*>( &request );
+              case 2009082930: return static_cast<unlinkRequest*>( &request );
+              case 2009082931: return static_cast<writeRequest*>( &request );
+              case 2009082938: return static_cast<xtreemfs_broadcast_gmaxRequest*>( &request );
+              case 2009082939: return static_cast<xtreemfs_check_objectRequest*>( &request );
+              case 2009082948: return static_cast<xtreemfs_cleanup_get_resultsRequest*>( &request );
+              case 2009082949: return static_cast<xtreemfs_cleanup_is_runningRequest*>( &request );
+              case 2009082950: return static_cast<xtreemfs_cleanup_startRequest*>( &request );
+              case 2009082951: return static_cast<xtreemfs_cleanup_statusRequest*>( &request );
+              case 2009082952: return static_cast<xtreemfs_cleanup_stopRequest*>( &request );
+              case 2009082958: return static_cast<xtreemfs_internal_get_gmaxRequest*>( &request );
+              case 2009082959: return static_cast<xtreemfs_internal_truncateRequest*>( &request );
+              case 2009082960: return static_cast<xtreemfs_internal_get_file_sizeRequest*>( &request );
+              case 2009082961: return static_cast<xtreemfs_internal_read_localRequest*>( &request );
+              case 2009082962: return static_cast<xtreemfs_internal_get_object_setRequest*>( &request );
+              case 2009082968: return static_cast<xtreemfs_lock_acquireRequest*>( &request );
+              case 2009082969: return static_cast<xtreemfs_lock_checkRequest*>( &request );
+              case 2009082970: return static_cast<xtreemfs_lock_releaseRequest*>( &request );
+              case 2009082978: return static_cast<xtreemfs_pingRequest*>( &request );
+              case 2009082988: return static_cast<xtreemfs_shutdownRequest*>( &request );
               default: return NULL;
             }
           }
@@ -1670,33 +1670,33 @@ namespace org
           {
             switch ( response.get_type_id() )
             {
-              case 1310: return static_cast<readResponse*>( &response );
-              case 1311: return static_cast<truncateResponse*>( &response );
-              case 1312: return static_cast<unlinkResponse*>( &response );
-              case 1313: return static_cast<writeResponse*>( &response );
-              case 1320: return static_cast<xtreemfs_broadcast_gmaxResponse*>( &response );
-              case 1321: return static_cast<xtreemfs_check_objectResponse*>( &response );
-              case 1330: return static_cast<xtreemfs_cleanup_get_resultsResponse*>( &response );
-              case 1331: return static_cast<xtreemfs_cleanup_is_runningResponse*>( &response );
-              case 1332: return static_cast<xtreemfs_cleanup_startResponse*>( &response );
-              case 1333: return static_cast<xtreemfs_cleanup_statusResponse*>( &response );
-              case 1334: return static_cast<xtreemfs_cleanup_stopResponse*>( &response );
-              case 1340: return static_cast<xtreemfs_internal_get_gmaxResponse*>( &response );
-              case 1341: return static_cast<xtreemfs_internal_truncateResponse*>( &response );
-              case 1342: return static_cast<xtreemfs_internal_get_file_sizeResponse*>( &response );
-              case 1343: return static_cast<xtreemfs_internal_read_localResponse*>( &response );
-              case 1344: return static_cast<xtreemfs_internal_get_object_setResponse*>( &response );
-              case 1350: return static_cast<xtreemfs_lock_acquireResponse*>( &response );
-              case 1351: return static_cast<xtreemfs_lock_checkResponse*>( &response );
-              case 1352: return static_cast<xtreemfs_lock_releaseResponse*>( &response );
-              case 1360: return static_cast<xtreemfs_pingResponse*>( &response );
-              case 1370: return static_cast<xtreemfs_shutdownResponse*>( &response );
-              case 1301: return static_cast<ConcurrentModificationException*>( &response );
-              case 1302: return static_cast<errnoException*>( &response );
-              case 1303: return static_cast<InvalidArgumentException*>( &response );
-              case 1304: return static_cast<OSDException*>( &response );
-              case 1305: return static_cast<ProtocolException*>( &response );
-              case 1306: return static_cast<RedirectException*>( &response );
+              case 2009082928: return static_cast<readResponse*>( &response );
+              case 2009082929: return static_cast<truncateResponse*>( &response );
+              case 2009082930: return static_cast<unlinkResponse*>( &response );
+              case 2009082931: return static_cast<writeResponse*>( &response );
+              case 2009082938: return static_cast<xtreemfs_broadcast_gmaxResponse*>( &response );
+              case 2009082939: return static_cast<xtreemfs_check_objectResponse*>( &response );
+              case 2009082948: return static_cast<xtreemfs_cleanup_get_resultsResponse*>( &response );
+              case 2009082949: return static_cast<xtreemfs_cleanup_is_runningResponse*>( &response );
+              case 2009082950: return static_cast<xtreemfs_cleanup_startResponse*>( &response );
+              case 2009082951: return static_cast<xtreemfs_cleanup_statusResponse*>( &response );
+              case 2009082952: return static_cast<xtreemfs_cleanup_stopResponse*>( &response );
+              case 2009082958: return static_cast<xtreemfs_internal_get_gmaxResponse*>( &response );
+              case 2009082959: return static_cast<xtreemfs_internal_truncateResponse*>( &response );
+              case 2009082960: return static_cast<xtreemfs_internal_get_file_sizeResponse*>( &response );
+              case 2009082961: return static_cast<xtreemfs_internal_read_localResponse*>( &response );
+              case 2009082962: return static_cast<xtreemfs_internal_get_object_setResponse*>( &response );
+              case 2009082968: return static_cast<xtreemfs_lock_acquireResponse*>( &response );
+              case 2009082969: return static_cast<xtreemfs_lock_checkResponse*>( &response );
+              case 2009082970: return static_cast<xtreemfs_lock_releaseResponse*>( &response );
+              case 2009082978: return static_cast<xtreemfs_pingResponse*>( &response );
+              case 2009082988: return static_cast<xtreemfs_shutdownResponse*>( &response );
+              case 2009082919: return static_cast<ConcurrentModificationException*>( &response );
+              case 2009082920: return static_cast<errnoException*>( &response );
+              case 2009082921: return static_cast<InvalidArgumentException*>( &response );
+              case 2009082922: return static_cast<OSDException*>( &response );
+              case 2009082923: return static_cast<ProtocolException*>( &response );
+              case 2009082924: return static_cast<RedirectException*>( &response );
               default: return NULL;
             }
           }
@@ -1705,27 +1705,27 @@ namespace org
           {
             switch ( tag )
             {
-              case 1310: return new readRequest;
-              case 1311: return new truncateRequest;
-              case 1312: return new unlinkRequest;
-              case 1313: return new writeRequest;
-              case 1320: return new xtreemfs_broadcast_gmaxRequest;
-              case 1321: return new xtreemfs_check_objectRequest;
-              case 1330: return new xtreemfs_cleanup_get_resultsRequest;
-              case 1331: return new xtreemfs_cleanup_is_runningRequest;
-              case 1332: return new xtreemfs_cleanup_startRequest;
-              case 1333: return new xtreemfs_cleanup_statusRequest;
-              case 1334: return new xtreemfs_cleanup_stopRequest;
-              case 1340: return new xtreemfs_internal_get_gmaxRequest;
-              case 1341: return new xtreemfs_internal_truncateRequest;
-              case 1342: return new xtreemfs_internal_get_file_sizeRequest;
-              case 1343: return new xtreemfs_internal_read_localRequest;
-              case 1344: return new xtreemfs_internal_get_object_setRequest;
-              case 1350: return new xtreemfs_lock_acquireRequest;
-              case 1351: return new xtreemfs_lock_checkRequest;
-              case 1352: return new xtreemfs_lock_releaseRequest;
-              case 1360: return new xtreemfs_pingRequest;
-              case 1370: return new xtreemfs_shutdownRequest;
+              case 2009082928: return new readRequest;
+              case 2009082929: return new truncateRequest;
+              case 2009082930: return new unlinkRequest;
+              case 2009082931: return new writeRequest;
+              case 2009082938: return new xtreemfs_broadcast_gmaxRequest;
+              case 2009082939: return new xtreemfs_check_objectRequest;
+              case 2009082948: return new xtreemfs_cleanup_get_resultsRequest;
+              case 2009082949: return new xtreemfs_cleanup_is_runningRequest;
+              case 2009082950: return new xtreemfs_cleanup_startRequest;
+              case 2009082951: return new xtreemfs_cleanup_statusRequest;
+              case 2009082952: return new xtreemfs_cleanup_stopRequest;
+              case 2009082958: return new xtreemfs_internal_get_gmaxRequest;
+              case 2009082959: return new xtreemfs_internal_truncateRequest;
+              case 2009082960: return new xtreemfs_internal_get_file_sizeRequest;
+              case 2009082961: return new xtreemfs_internal_read_localRequest;
+              case 2009082962: return new xtreemfs_internal_get_object_setRequest;
+              case 2009082968: return new xtreemfs_lock_acquireRequest;
+              case 2009082969: return new xtreemfs_lock_checkRequest;
+              case 2009082970: return new xtreemfs_lock_releaseRequest;
+              case 2009082978: return new xtreemfs_pingRequest;
+              case 2009082988: return new xtreemfs_shutdownRequest;
               default: return NULL;
             }
           }
@@ -1734,27 +1734,27 @@ namespace org
           {
             switch ( tag )
             {
-              case 1310: return new readResponse;
-              case 1311: return new truncateResponse;
-              case 1312: return new unlinkResponse;
-              case 1313: return new writeResponse;
-              case 1320: return new xtreemfs_broadcast_gmaxResponse;
-              case 1321: return new xtreemfs_check_objectResponse;
-              case 1330: return new xtreemfs_cleanup_get_resultsResponse;
-              case 1331: return new xtreemfs_cleanup_is_runningResponse;
-              case 1332: return new xtreemfs_cleanup_startResponse;
-              case 1333: return new xtreemfs_cleanup_statusResponse;
-              case 1334: return new xtreemfs_cleanup_stopResponse;
-              case 1340: return new xtreemfs_internal_get_gmaxResponse;
-              case 1341: return new xtreemfs_internal_truncateResponse;
-              case 1342: return new xtreemfs_internal_get_file_sizeResponse;
-              case 1343: return new xtreemfs_internal_read_localResponse;
-              case 1344: return new xtreemfs_internal_get_object_setResponse;
-              case 1350: return new xtreemfs_lock_acquireResponse;
-              case 1351: return new xtreemfs_lock_checkResponse;
-              case 1352: return new xtreemfs_lock_releaseResponse;
-              case 1360: return new xtreemfs_pingResponse;
-              case 1370: return new xtreemfs_shutdownResponse;
+              case 2009082928: return new readResponse;
+              case 2009082929: return new truncateResponse;
+              case 2009082930: return new unlinkResponse;
+              case 2009082931: return new writeResponse;
+              case 2009082938: return new xtreemfs_broadcast_gmaxResponse;
+              case 2009082939: return new xtreemfs_check_objectResponse;
+              case 2009082948: return new xtreemfs_cleanup_get_resultsResponse;
+              case 2009082949: return new xtreemfs_cleanup_is_runningResponse;
+              case 2009082950: return new xtreemfs_cleanup_startResponse;
+              case 2009082951: return new xtreemfs_cleanup_statusResponse;
+              case 2009082952: return new xtreemfs_cleanup_stopResponse;
+              case 2009082958: return new xtreemfs_internal_get_gmaxResponse;
+              case 2009082959: return new xtreemfs_internal_truncateResponse;
+              case 2009082960: return new xtreemfs_internal_get_file_sizeResponse;
+              case 2009082961: return new xtreemfs_internal_read_localResponse;
+              case 2009082962: return new xtreemfs_internal_get_object_setResponse;
+              case 2009082968: return new xtreemfs_lock_acquireResponse;
+              case 2009082969: return new xtreemfs_lock_checkResponse;
+              case 2009082970: return new xtreemfs_lock_releaseResponse;
+              case 2009082978: return new xtreemfs_pingResponse;
+              case 2009082988: return new xtreemfs_shutdownResponse;
               default: return NULL;
             }
           }
@@ -1763,12 +1763,12 @@ namespace org
           {
             switch ( tag )
             {
-              case 1301: return new ConcurrentModificationException;
-              case 1302: return new errnoException;
-              case 1303: return new InvalidArgumentException;
-              case 1304: return new OSDException;
-              case 1305: return new ProtocolException;
-              case 1306: return new RedirectException;
+              case 2009082919: return new ConcurrentModificationException;
+              case 2009082920: return new errnoException;
+              case 2009082921: return new InvalidArgumentException;
+              case 2009082922: return new OSDException;
+              case 2009082923: return new ProtocolException;
+              case 2009082924: return new RedirectException;
               default: return NULL;
             }
           }

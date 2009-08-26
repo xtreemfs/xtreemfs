@@ -1,9 +1,9 @@
 #include "types.idl"
 
 
-module org # 1000
+module org # 0
 {
-  module xtreemfs # 0
+  module xtreemfs # 2009082618
   {
     module interfaces # 0
     {

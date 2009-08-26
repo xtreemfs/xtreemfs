@@ -36,7 +36,7 @@ namespace org
         bool operator==( const NewFileSize& other ) const { return size_in_bytes == other.size_in_bytes && truncate_epoch == other.truncate_epoch; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( NewFileSize, 1011 );
+        YIDL_OBJECT_PROTOTYPES( NewFileSize, 2009082629 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint64( "size_in_bytes", 0, size_in_bytes ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); }
@@ -56,7 +56,7 @@ namespace org
         virtual ~NewFileSizeSet() { }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( NewFileSizeSet, 1012 );
+        YIDL_OBJECT_PROTOTYPES( NewFileSizeSet, 2009082630 );
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }
@@ -81,7 +81,7 @@ namespace org
         bool operator==( const OSDtoMRCData& other ) const { return caching_policy == other.caching_policy && data == other.data; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( OSDtoMRCData, 1013 );
+        YIDL_OBJECT_PROTOTYPES( OSDtoMRCData, 2009082631 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint8( "caching_policy", 0, caching_policy ); marshaller.writeString( "data", 0, data ); }
@@ -101,7 +101,7 @@ namespace org
         virtual ~OSDtoMRCDataSet() { }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( OSDtoMRCDataSet, 1014 );
+        YIDL_OBJECT_PROTOTYPES( OSDtoMRCDataSet, 2009082632 );
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }
@@ -124,7 +124,7 @@ namespace org
         bool operator==( const OSDWriteResponse& other ) const { return new_file_size == other.new_file_size && opaque_data == other.opaque_data; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( OSDWriteResponse, 1017 );
+        YIDL_OBJECT_PROTOTYPES( OSDWriteResponse, 2009082635 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "new_file_size", 0, new_file_size ); marshaller.writeSequence( "opaque_data", 0, opaque_data ); }
@@ -152,7 +152,7 @@ namespace org
         bool operator==( const StripingPolicy& other ) const { return type == other.type && stripe_size == other.stripe_size && width == other.width; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( StripingPolicy, 1019 );
+        YIDL_OBJECT_PROTOTYPES( StripingPolicy, 2009082637 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeInt32( "type", 0, static_cast<int32_t>( type ) ); marshaller.writeUint32( "stripe_size", 0, stripe_size ); marshaller.writeUint32( "width", 0, width ); }
@@ -181,7 +181,7 @@ namespace org
         bool operator==( const Replica& other ) const { return striping_policy == other.striping_policy && replication_flags == other.replication_flags && osd_uuids == other.osd_uuids; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( Replica, 1020 );
+        YIDL_OBJECT_PROTOTYPES( Replica, 2009082638 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "striping_policy", 0, striping_policy ); marshaller.writeUint32( "replication_flags", 0, replication_flags ); marshaller.writeSequence( "osd_uuids", 0, osd_uuids ); }
@@ -202,7 +202,7 @@ namespace org
         virtual ~ReplicaSet() { }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( ReplicaSet, 1021 );
+        YIDL_OBJECT_PROTOTYPES( ReplicaSet, 2009082639 );
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }
@@ -239,7 +239,7 @@ namespace org
         bool operator==( const XCap& other ) const { return file_id == other.file_id && access_mode == other.access_mode && expires_s == other.expires_s && client_identity == other.client_identity && truncate_epoch == other.truncate_epoch && replicateOnClose == other.replicateOnClose && server_signature == other.server_signature; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( XCap, 1022 );
+        YIDL_OBJECT_PROTOTYPES( XCap, 2009082640 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint32( "access_mode", 0, access_mode ); marshaller.writeUint64( "expires_s", 0, expires_s ); marshaller.writeString( "client_identity", 0, client_identity ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); marshaller.writeBoolean( "replicateOnClose", 0, replicateOnClose ); marshaller.writeString( "server_signature", 0, server_signature ); }
@@ -276,7 +276,7 @@ namespace org
         bool operator==( const XLocSet& other ) const { return replicas == other.replicas && version == other.version && repUpdatePolicy == other.repUpdatePolicy && read_only_file_size == other.read_only_file_size; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( XLocSet, 1023 );
+        YIDL_OBJECT_PROTOTYPES( XLocSet, 2009082641 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "replicas", 0, replicas ); marshaller.writeUint32( "version", 0, version ); marshaller.writeString( "repUpdatePolicy", 0, repUpdatePolicy ); marshaller.writeUint64( "read_only_file_size", 0, read_only_file_size ); }
@@ -304,7 +304,7 @@ namespace org
         bool operator==( const FileCredentials& other ) const { return xlocs == other.xlocs && xcap == other.xcap; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( FileCredentials, 1024 );
+        YIDL_OBJECT_PROTOTYPES( FileCredentials, 2009082642 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "xlocs", 0, xlocs ); marshaller.writeStruct( "xcap", 0, xcap ); }
@@ -324,7 +324,7 @@ namespace org
         virtual ~FileCredentialsSet() { }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( FileCredentialsSet, 1025 );
+        YIDL_OBJECT_PROTOTYPES( FileCredentialsSet, 2009082643 );
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }

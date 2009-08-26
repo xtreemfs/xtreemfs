@@ -25,7 +25,7 @@ namespace org
         virtual ~StringSet() { }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( StringSet, 1001 );
+        YIDL_OBJECT_PROTOTYPES( StringSet, 2009082619 );
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }
@@ -53,7 +53,7 @@ namespace org
         bool operator==( const UserCredentials& other ) const { return user_id == other.user_id && group_ids == other.group_ids && password == other.password; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( UserCredentials, 1002 );
+        YIDL_OBJECT_PROTOTYPES( UserCredentials, 2009082620 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "user_id", 0, user_id ); marshaller.writeSequence( "group_ids", 0, group_ids ); marshaller.writeString( "password", 0, password ); }

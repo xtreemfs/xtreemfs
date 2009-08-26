@@ -54,7 +54,7 @@ namespace org
         bool operator==( const AddressMapping& other ) const { return uuid == other.uuid && version == other.version && protocol == other.protocol && address == other.address && port == other.port && match_network == other.match_network && ttl_s == other.ttl_s && uri == other.uri; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( AddressMapping, 1030 );
+        YIDL_OBJECT_PROTOTYPES( AddressMapping, 2009082648 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "uuid", 0, uuid ); marshaller.writeUint64( "version", 0, version ); marshaller.writeString( "protocol", 0, protocol ); marshaller.writeString( "address", 0, address ); marshaller.writeUint16( "port", 0, port ); marshaller.writeString( "match_network", 0, match_network ); marshaller.writeUint32( "ttl_s", 0, ttl_s ); marshaller.writeString( "uri", 0, uri ); }
@@ -80,7 +80,7 @@ namespace org
         virtual ~AddressMappingSet() { }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( AddressMappingSet, 1031 );
+        YIDL_OBJECT_PROTOTYPES( AddressMappingSet, 2009082649 );
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }
@@ -94,7 +94,7 @@ namespace org
         virtual ~ServiceDataMap() { }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( ServiceDataMap, 1032 );
+        YIDL_OBJECT_PROTOTYPES( ServiceDataMap, 2009082650 );
 
         // YIELD::Map
         size_t get_size() const { return size(); }
@@ -128,7 +128,7 @@ namespace org
         bool operator==( const Service& other ) const { return type == other.type && uuid == other.uuid && version == other.version && name == other.name && last_updated_s == other.last_updated_s && data == other.data; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( Service, 1034 );
+        YIDL_OBJECT_PROTOTYPES( Service, 2009082652 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeInt32( "type", 0, static_cast<int32_t>( type ) ); marshaller.writeString( "uuid", 0, uuid ); marshaller.writeUint64( "version", 0, version ); marshaller.writeString( "name", 0, name ); marshaller.writeUint64( "last_updated_s", 0, last_updated_s ); marshaller.writeMap( "data", 0, data ); }
@@ -152,7 +152,7 @@ namespace org
         virtual ~ServiceSet() { }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( ServiceSet, 1035 );
+        YIDL_OBJECT_PROTOTYPES( ServiceSet, 2009082653 );
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }
@@ -182,7 +182,7 @@ namespace org
         bool operator==( const DirService& other ) const { return address == other.address && port == other.port && protocol == other.protocol && interface_version == other.interface_version; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( DirService, 1035 );
+        YIDL_OBJECT_PROTOTYPES( DirService, 2009082653 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "address", 0, address ); marshaller.writeUint16( "port", 0, port ); marshaller.writeString( "protocol", 0, protocol ); marshaller.writeUint32( "interface_version", 0, interface_version ); }
@@ -314,7 +314,7 @@ namespace org
           bool operator==( const xtreemfs_address_mappings_getResponse& other ) const { return address_mappings == other.address_mappings; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_address_mappings_getResponse, 1101 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_address_mappings_getResponse, 2009082719 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "address_mappings", 0, address_mappings ); }
@@ -339,7 +339,7 @@ namespace org
           bool operator==( const xtreemfs_address_mappings_getRequest& other ) const { return uuid == other.uuid; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_address_mappings_getRequest, 1101 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_address_mappings_getRequest, 2009082719 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "uuid", 0, uuid ); }
@@ -360,7 +360,7 @@ namespace org
           bool operator==( const xtreemfs_address_mappings_removeResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_address_mappings_removeResponse, 1102 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_address_mappings_removeResponse, 2009082720 );
 
         };
 
@@ -379,7 +379,7 @@ namespace org
           bool operator==( const xtreemfs_address_mappings_removeRequest& other ) const { return uuid == other.uuid; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_address_mappings_removeRequest, 1102 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_address_mappings_removeRequest, 2009082720 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "uuid", 0, uuid ); }
@@ -404,7 +404,7 @@ namespace org
           bool operator==( const xtreemfs_address_mappings_setResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_address_mappings_setResponse, 1103 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_address_mappings_setResponse, 2009082721 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint64( "_return_value", 0, _return_value ); }
@@ -427,7 +427,7 @@ namespace org
           bool operator==( const xtreemfs_address_mappings_setRequest& other ) const { return address_mappings == other.address_mappings; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_address_mappings_setRequest, 1103 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_address_mappings_setRequest, 2009082721 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "address_mappings", 0, address_mappings ); }
@@ -448,7 +448,7 @@ namespace org
           bool operator==( const xtreemfs_checkpointResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_checkpointResponse, 1104 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_checkpointResponse, 2009082722 );
 
         };
 
@@ -461,7 +461,7 @@ namespace org
           bool operator==( const xtreemfs_checkpointRequest& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_checkpointRequest, 1104 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_checkpointRequest, 2009082722 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_checkpointResponse; }
 
@@ -480,7 +480,7 @@ namespace org
           bool operator==( const xtreemfs_discover_dirResponse& other ) const { return dir_service == other.dir_service; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_discover_dirResponse, 1105 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_discover_dirResponse, 2009082723 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "dir_service", 0, dir_service ); }
@@ -499,7 +499,7 @@ namespace org
           bool operator==( const xtreemfs_discover_dirRequest& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_discover_dirRequest, 1105 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_discover_dirRequest, 2009082723 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_discover_dirResponse; }
 
@@ -518,7 +518,7 @@ namespace org
           bool operator==( const xtreemfs_global_time_s_getResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_global_time_s_getResponse, 1106 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_global_time_s_getResponse, 2009082724 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint64( "_return_value", 0, _return_value ); }
@@ -537,7 +537,7 @@ namespace org
           bool operator==( const xtreemfs_global_time_s_getRequest& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_global_time_s_getRequest, 1106 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_global_time_s_getRequest, 2009082724 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_global_time_s_getResponse; }
 
@@ -556,7 +556,7 @@ namespace org
           bool operator==( const xtreemfs_service_get_by_typeResponse& other ) const { return services == other.services; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_get_by_typeResponse, 1107 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_get_by_typeResponse, 2009082725 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "services", 0, services ); }
@@ -579,7 +579,7 @@ namespace org
           bool operator==( const xtreemfs_service_get_by_typeRequest& other ) const { return type == other.type; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_get_by_typeRequest, 1107 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_get_by_typeRequest, 2009082725 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeInt32( "type", 0, static_cast<int32_t>( type ) ); }
@@ -604,7 +604,7 @@ namespace org
           bool operator==( const xtreemfs_service_get_by_uuidResponse& other ) const { return services == other.services; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_get_by_uuidResponse, 1108 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_get_by_uuidResponse, 2009082726 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "services", 0, services ); }
@@ -629,7 +629,7 @@ namespace org
           bool operator==( const xtreemfs_service_get_by_uuidRequest& other ) const { return uuid == other.uuid; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_get_by_uuidRequest, 1108 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_get_by_uuidRequest, 2009082726 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "uuid", 0, uuid ); }
@@ -654,7 +654,7 @@ namespace org
           bool operator==( const xtreemfs_service_get_by_nameResponse& other ) const { return services == other.services; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_get_by_nameResponse, 1109 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_get_by_nameResponse, 2009082727 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "services", 0, services ); }
@@ -679,7 +679,7 @@ namespace org
           bool operator==( const xtreemfs_service_get_by_nameRequest& other ) const { return name == other.name; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_get_by_nameRequest, 1109 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_get_by_nameRequest, 2009082727 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "name", 0, name ); }
@@ -704,7 +704,7 @@ namespace org
           bool operator==( const xtreemfs_service_registerResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_registerResponse, 1110 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_registerResponse, 2009082728 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint64( "_return_value", 0, _return_value ); }
@@ -727,7 +727,7 @@ namespace org
           bool operator==( const xtreemfs_service_registerRequest& other ) const { return service == other.service; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_registerRequest, 1110 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_registerRequest, 2009082728 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "service", 0, service ); }
@@ -748,7 +748,7 @@ namespace org
           bool operator==( const xtreemfs_service_deregisterResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_deregisterResponse, 1111 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_deregisterResponse, 2009082729 );
 
         };
 
@@ -767,7 +767,7 @@ namespace org
           bool operator==( const xtreemfs_service_deregisterRequest& other ) const { return uuid == other.uuid; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_deregisterRequest, 1111 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_deregisterRequest, 2009082729 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "uuid", 0, uuid ); }
@@ -788,7 +788,7 @@ namespace org
           bool operator==( const xtreemfs_service_offlineResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_offlineResponse, 1112 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_offlineResponse, 2009082730 );
 
         };
 
@@ -807,7 +807,7 @@ namespace org
           bool operator==( const xtreemfs_service_offlineRequest& other ) const { return uuid == other.uuid; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_offlineRequest, 1112 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_service_offlineRequest, 2009082730 );
 
           // YIELD::Struct
           void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "uuid", 0, uuid ); }
@@ -828,7 +828,7 @@ namespace org
           bool operator==( const xtreemfs_shutdownResponse& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 1113 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 2009082731 );
 
         };
 
@@ -841,7 +841,7 @@ namespace org
           bool operator==( const xtreemfs_shutdownRequest& ) const { return true; }
 
           // yidl::Object
-          YIDL_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 1113 );
+          YIDL_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 2009082731 );
           // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new xtreemfs_shutdownResponse; }
 
@@ -928,7 +928,7 @@ namespace org
 
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( DIRInterface, 1100 );
+        YIDL_OBJECT_PROTOTYPES( DIRInterface, 2009082718 );
 
         // YIELD::EventHandler
         virtual void handleEvent( ::YIELD::Event& ev )
@@ -938,19 +938,19 @@ namespace org
             // Switch on the event types that this interface handles, unwrap the corresponding requests and delegate to impl
             switch ( ev.get_type_id() )
             {
-              case 1101UL: handlextreemfs_address_mappings_getRequest( static_cast<xtreemfs_address_mappings_getRequest&>( ev ) ); return;
-              case 1102UL: handlextreemfs_address_mappings_removeRequest( static_cast<xtreemfs_address_mappings_removeRequest&>( ev ) ); return;
-              case 1103UL: handlextreemfs_address_mappings_setRequest( static_cast<xtreemfs_address_mappings_setRequest&>( ev ) ); return;
-              case 1104UL: handlextreemfs_checkpointRequest( static_cast<xtreemfs_checkpointRequest&>( ev ) ); return;
-              case 1105UL: handlextreemfs_discover_dirRequest( static_cast<xtreemfs_discover_dirRequest&>( ev ) ); return;
-              case 1106UL: handlextreemfs_global_time_s_getRequest( static_cast<xtreemfs_global_time_s_getRequest&>( ev ) ); return;
-              case 1107UL: handlextreemfs_service_get_by_typeRequest( static_cast<xtreemfs_service_get_by_typeRequest&>( ev ) ); return;
-              case 1108UL: handlextreemfs_service_get_by_uuidRequest( static_cast<xtreemfs_service_get_by_uuidRequest&>( ev ) ); return;
-              case 1109UL: handlextreemfs_service_get_by_nameRequest( static_cast<xtreemfs_service_get_by_nameRequest&>( ev ) ); return;
-              case 1110UL: handlextreemfs_service_registerRequest( static_cast<xtreemfs_service_registerRequest&>( ev ) ); return;
-              case 1111UL: handlextreemfs_service_deregisterRequest( static_cast<xtreemfs_service_deregisterRequest&>( ev ) ); return;
-              case 1112UL: handlextreemfs_service_offlineRequest( static_cast<xtreemfs_service_offlineRequest&>( ev ) ); return;
-              case 1113UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( ev ) ); return;
+              case 2009082719UL: handlextreemfs_address_mappings_getRequest( static_cast<xtreemfs_address_mappings_getRequest&>( ev ) ); return;
+              case 2009082720UL: handlextreemfs_address_mappings_removeRequest( static_cast<xtreemfs_address_mappings_removeRequest&>( ev ) ); return;
+              case 2009082721UL: handlextreemfs_address_mappings_setRequest( static_cast<xtreemfs_address_mappings_setRequest&>( ev ) ); return;
+              case 2009082722UL: handlextreemfs_checkpointRequest( static_cast<xtreemfs_checkpointRequest&>( ev ) ); return;
+              case 2009082723UL: handlextreemfs_discover_dirRequest( static_cast<xtreemfs_discover_dirRequest&>( ev ) ); return;
+              case 2009082724UL: handlextreemfs_global_time_s_getRequest( static_cast<xtreemfs_global_time_s_getRequest&>( ev ) ); return;
+              case 2009082725UL: handlextreemfs_service_get_by_typeRequest( static_cast<xtreemfs_service_get_by_typeRequest&>( ev ) ); return;
+              case 2009082726UL: handlextreemfs_service_get_by_uuidRequest( static_cast<xtreemfs_service_get_by_uuidRequest&>( ev ) ); return;
+              case 2009082727UL: handlextreemfs_service_get_by_nameRequest( static_cast<xtreemfs_service_get_by_nameRequest&>( ev ) ); return;
+              case 2009082728UL: handlextreemfs_service_registerRequest( static_cast<xtreemfs_service_registerRequest&>( ev ) ); return;
+              case 2009082729UL: handlextreemfs_service_deregisterRequest( static_cast<xtreemfs_service_deregisterRequest&>( ev ) ); return;
+              case 2009082730UL: handlextreemfs_service_offlineRequest( static_cast<xtreemfs_service_offlineRequest&>( ev ) ); return;
+              case 2009082731UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( ev ) ); return;
               default: handleUnknownEvent( ev ); return;
             }
           }
@@ -976,19 +976,19 @@ namespace org
           {
             switch ( request.get_type_id() )
             {
-              case 1101: return static_cast<xtreemfs_address_mappings_getRequest*>( &request );
-              case 1102: return static_cast<xtreemfs_address_mappings_removeRequest*>( &request );
-              case 1103: return static_cast<xtreemfs_address_mappings_setRequest*>( &request );
-              case 1104: return static_cast<xtreemfs_checkpointRequest*>( &request );
-              case 1105: return static_cast<xtreemfs_discover_dirRequest*>( &request );
-              case 1106: return static_cast<xtreemfs_global_time_s_getRequest*>( &request );
-              case 1107: return static_cast<xtreemfs_service_get_by_typeRequest*>( &request );
-              case 1108: return static_cast<xtreemfs_service_get_by_uuidRequest*>( &request );
-              case 1109: return static_cast<xtreemfs_service_get_by_nameRequest*>( &request );
-              case 1110: return static_cast<xtreemfs_service_registerRequest*>( &request );
-              case 1111: return static_cast<xtreemfs_service_deregisterRequest*>( &request );
-              case 1112: return static_cast<xtreemfs_service_offlineRequest*>( &request );
-              case 1113: return static_cast<xtreemfs_shutdownRequest*>( &request );
+              case 2009082719: return static_cast<xtreemfs_address_mappings_getRequest*>( &request );
+              case 2009082720: return static_cast<xtreemfs_address_mappings_removeRequest*>( &request );
+              case 2009082721: return static_cast<xtreemfs_address_mappings_setRequest*>( &request );
+              case 2009082722: return static_cast<xtreemfs_checkpointRequest*>( &request );
+              case 2009082723: return static_cast<xtreemfs_discover_dirRequest*>( &request );
+              case 2009082724: return static_cast<xtreemfs_global_time_s_getRequest*>( &request );
+              case 2009082725: return static_cast<xtreemfs_service_get_by_typeRequest*>( &request );
+              case 2009082726: return static_cast<xtreemfs_service_get_by_uuidRequest*>( &request );
+              case 2009082727: return static_cast<xtreemfs_service_get_by_nameRequest*>( &request );
+              case 2009082728: return static_cast<xtreemfs_service_registerRequest*>( &request );
+              case 2009082729: return static_cast<xtreemfs_service_deregisterRequest*>( &request );
+              case 2009082730: return static_cast<xtreemfs_service_offlineRequest*>( &request );
+              case 2009082731: return static_cast<xtreemfs_shutdownRequest*>( &request );
               default: return NULL;
             }
           }
@@ -997,22 +997,22 @@ namespace org
           {
             switch ( response.get_type_id() )
             {
-              case 1101: return static_cast<xtreemfs_address_mappings_getResponse*>( &response );
-              case 1102: return static_cast<xtreemfs_address_mappings_removeResponse*>( &response );
-              case 1103: return static_cast<xtreemfs_address_mappings_setResponse*>( &response );
-              case 1104: return static_cast<xtreemfs_checkpointResponse*>( &response );
-              case 1105: return static_cast<xtreemfs_discover_dirResponse*>( &response );
-              case 1106: return static_cast<xtreemfs_global_time_s_getResponse*>( &response );
-              case 1107: return static_cast<xtreemfs_service_get_by_typeResponse*>( &response );
-              case 1108: return static_cast<xtreemfs_service_get_by_uuidResponse*>( &response );
-              case 1109: return static_cast<xtreemfs_service_get_by_nameResponse*>( &response );
-              case 1110: return static_cast<xtreemfs_service_registerResponse*>( &response );
-              case 1111: return static_cast<xtreemfs_service_deregisterResponse*>( &response );
-              case 1112: return static_cast<xtreemfs_service_offlineResponse*>( &response );
-              case 1113: return static_cast<xtreemfs_shutdownResponse*>( &response );
-              case 1120: return static_cast<ConcurrentModificationException*>( &response );
-              case 1121: return static_cast<InvalidArgumentException*>( &response );
-              case 1122: return static_cast<ProtocolException*>( &response );
+              case 2009082719: return static_cast<xtreemfs_address_mappings_getResponse*>( &response );
+              case 2009082720: return static_cast<xtreemfs_address_mappings_removeResponse*>( &response );
+              case 2009082721: return static_cast<xtreemfs_address_mappings_setResponse*>( &response );
+              case 2009082722: return static_cast<xtreemfs_checkpointResponse*>( &response );
+              case 2009082723: return static_cast<xtreemfs_discover_dirResponse*>( &response );
+              case 2009082724: return static_cast<xtreemfs_global_time_s_getResponse*>( &response );
+              case 2009082725: return static_cast<xtreemfs_service_get_by_typeResponse*>( &response );
+              case 2009082726: return static_cast<xtreemfs_service_get_by_uuidResponse*>( &response );
+              case 2009082727: return static_cast<xtreemfs_service_get_by_nameResponse*>( &response );
+              case 2009082728: return static_cast<xtreemfs_service_registerResponse*>( &response );
+              case 2009082729: return static_cast<xtreemfs_service_deregisterResponse*>( &response );
+              case 2009082730: return static_cast<xtreemfs_service_offlineResponse*>( &response );
+              case 2009082731: return static_cast<xtreemfs_shutdownResponse*>( &response );
+              case 2009082738: return static_cast<ConcurrentModificationException*>( &response );
+              case 2009082739: return static_cast<InvalidArgumentException*>( &response );
+              case 2009082740: return static_cast<ProtocolException*>( &response );
               default: return NULL;
             }
           }
@@ -1021,19 +1021,19 @@ namespace org
           {
             switch ( tag )
             {
-              case 1101: return new xtreemfs_address_mappings_getRequest;
-              case 1102: return new xtreemfs_address_mappings_removeRequest;
-              case 1103: return new xtreemfs_address_mappings_setRequest;
-              case 1104: return new xtreemfs_checkpointRequest;
-              case 1105: return new xtreemfs_discover_dirRequest;
-              case 1106: return new xtreemfs_global_time_s_getRequest;
-              case 1107: return new xtreemfs_service_get_by_typeRequest;
-              case 1108: return new xtreemfs_service_get_by_uuidRequest;
-              case 1109: return new xtreemfs_service_get_by_nameRequest;
-              case 1110: return new xtreemfs_service_registerRequest;
-              case 1111: return new xtreemfs_service_deregisterRequest;
-              case 1112: return new xtreemfs_service_offlineRequest;
-              case 1113: return new xtreemfs_shutdownRequest;
+              case 2009082719: return new xtreemfs_address_mappings_getRequest;
+              case 2009082720: return new xtreemfs_address_mappings_removeRequest;
+              case 2009082721: return new xtreemfs_address_mappings_setRequest;
+              case 2009082722: return new xtreemfs_checkpointRequest;
+              case 2009082723: return new xtreemfs_discover_dirRequest;
+              case 2009082724: return new xtreemfs_global_time_s_getRequest;
+              case 2009082725: return new xtreemfs_service_get_by_typeRequest;
+              case 2009082726: return new xtreemfs_service_get_by_uuidRequest;
+              case 2009082727: return new xtreemfs_service_get_by_nameRequest;
+              case 2009082728: return new xtreemfs_service_registerRequest;
+              case 2009082729: return new xtreemfs_service_deregisterRequest;
+              case 2009082730: return new xtreemfs_service_offlineRequest;
+              case 2009082731: return new xtreemfs_shutdownRequest;
               default: return NULL;
             }
           }
@@ -1042,19 +1042,19 @@ namespace org
           {
             switch ( tag )
             {
-              case 1101: return new xtreemfs_address_mappings_getResponse;
-              case 1102: return new xtreemfs_address_mappings_removeResponse;
-              case 1103: return new xtreemfs_address_mappings_setResponse;
-              case 1104: return new xtreemfs_checkpointResponse;
-              case 1105: return new xtreemfs_discover_dirResponse;
-              case 1106: return new xtreemfs_global_time_s_getResponse;
-              case 1107: return new xtreemfs_service_get_by_typeResponse;
-              case 1108: return new xtreemfs_service_get_by_uuidResponse;
-              case 1109: return new xtreemfs_service_get_by_nameResponse;
-              case 1110: return new xtreemfs_service_registerResponse;
-              case 1111: return new xtreemfs_service_deregisterResponse;
-              case 1112: return new xtreemfs_service_offlineResponse;
-              case 1113: return new xtreemfs_shutdownResponse;
+              case 2009082719: return new xtreemfs_address_mappings_getResponse;
+              case 2009082720: return new xtreemfs_address_mappings_removeResponse;
+              case 2009082721: return new xtreemfs_address_mappings_setResponse;
+              case 2009082722: return new xtreemfs_checkpointResponse;
+              case 2009082723: return new xtreemfs_discover_dirResponse;
+              case 2009082724: return new xtreemfs_global_time_s_getResponse;
+              case 2009082725: return new xtreemfs_service_get_by_typeResponse;
+              case 2009082726: return new xtreemfs_service_get_by_uuidResponse;
+              case 2009082727: return new xtreemfs_service_get_by_nameResponse;
+              case 2009082728: return new xtreemfs_service_registerResponse;
+              case 2009082729: return new xtreemfs_service_deregisterResponse;
+              case 2009082730: return new xtreemfs_service_offlineResponse;
+              case 2009082731: return new xtreemfs_shutdownResponse;
               default: return NULL;
             }
           }
@@ -1063,9 +1063,9 @@ namespace org
           {
             switch ( tag )
             {
-              case 1120: return new ConcurrentModificationException;
-              case 1121: return new InvalidArgumentException;
-              case 1122: return new ProtocolException;
+              case 2009082738: return new ConcurrentModificationException;
+              case 2009082739: return new InvalidArgumentException;
+              case 2009082740: return new ProtocolException;
               default: return NULL;
             }
           }
