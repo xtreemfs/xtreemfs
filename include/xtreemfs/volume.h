@@ -31,6 +31,7 @@ namespace xtreemfs
 
     uint32_t get_flags() const { return flags; }
     YIELD::auto_Log get_log() const { return log; }
+    yidl::auto_Object<MRCProxy> get_mrc_proxy() const { return mrc_proxy; }
     yidl::auto_Object<OSDProxyMux> get_osd_proxy_mux() const { return osd_proxy_mux; }
 
     // yidl::Object

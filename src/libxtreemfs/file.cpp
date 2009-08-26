@@ -94,6 +94,13 @@ File::File( yidl::auto_Object<Volume> parent_volume, yidl::auto_Object<MRCProxy>
 File::~File()
 {
   flush();
+
+  try
+  {
+    parent_volume->get_mrc_proxy()->close( file_credentials.get_xcap() );
+  }
+  catch ( std::exception& )
+  { }
 }
 
 bool File::datasync()
@@ -104,7 +111,6 @@ bool File::datasync()
 
 bool File::close()
 {
-  flush();
   return true;
 }
 

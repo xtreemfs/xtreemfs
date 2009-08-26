@@ -213,9 +213,9 @@ namespace org
       class XCap : public ::yidl::Struct
       {
       public:
-        XCap() : access_mode( 0 ), expires_s( 0 ), truncate_epoch( 0 ) { }
-        XCap( const std::string& file_id, uint32_t access_mode, uint64_t expires_s, const std::string& client_identity, uint32_t truncate_epoch, const std::string& server_signature ) : file_id( file_id ), access_mode( access_mode ), expires_s( expires_s ), client_identity( client_identity ), truncate_epoch( truncate_epoch ), server_signature( server_signature ) { }
-        XCap( const char* file_id, size_t file_id_len, uint32_t access_mode, uint64_t expires_s, const char* client_identity, size_t client_identity_len, uint32_t truncate_epoch, const char* server_signature, size_t server_signature_len ) : file_id( file_id, file_id_len ), access_mode( access_mode ), expires_s( expires_s ), client_identity( client_identity, client_identity_len ), truncate_epoch( truncate_epoch ), server_signature( server_signature, server_signature_len ) { }
+        XCap() : access_mode( 0 ), expires_s( 0 ), truncate_epoch( 0 ), replicateOnClose( false ) { }
+        XCap( const std::string& file_id, uint32_t access_mode, uint64_t expires_s, const std::string& client_identity, uint32_t truncate_epoch, bool replicateOnClose, const std::string& server_signature ) : file_id( file_id ), access_mode( access_mode ), expires_s( expires_s ), client_identity( client_identity ), truncate_epoch( truncate_epoch ), replicateOnClose( replicateOnClose ), server_signature( server_signature ) { }
+        XCap( const char* file_id, size_t file_id_len, uint32_t access_mode, uint64_t expires_s, const char* client_identity, size_t client_identity_len, uint32_t truncate_epoch, bool replicateOnClose, const char* server_signature, size_t server_signature_len ) : file_id( file_id, file_id_len ), access_mode( access_mode ), expires_s( expires_s ), client_identity( client_identity, client_identity_len ), truncate_epoch( truncate_epoch ), replicateOnClose( replicateOnClose ), server_signature( server_signature, server_signature_len ) { }
         virtual ~XCap() { }
 
         void set_file_id( const std::string& file_id ) { set_file_id( file_id.c_str(), file_id.size() ); }
@@ -230,18 +230,20 @@ namespace org
         const std::string& get_client_identity() const { return client_identity; }
         void set_truncate_epoch( uint32_t truncate_epoch ) { this->truncate_epoch = truncate_epoch; }
         uint32_t get_truncate_epoch() const { return truncate_epoch; }
+        void set_replicateOnClose( bool replicateOnClose ) { this->replicateOnClose = replicateOnClose; }
+        bool get_replicateOnClose() const { return replicateOnClose; }
         void set_server_signature( const std::string& server_signature ) { set_server_signature( server_signature.c_str(), server_signature.size() ); }
         void set_server_signature( const char* server_signature, size_t server_signature_len ) { this->server_signature.assign( server_signature, server_signature_len ); }
         const std::string& get_server_signature() const { return server_signature; }
 
-        bool operator==( const XCap& other ) const { return file_id == other.file_id && access_mode == other.access_mode && expires_s == other.expires_s && client_identity == other.client_identity && truncate_epoch == other.truncate_epoch && server_signature == other.server_signature; }
+        bool operator==( const XCap& other ) const { return file_id == other.file_id && access_mode == other.access_mode && expires_s == other.expires_s && client_identity == other.client_identity && truncate_epoch == other.truncate_epoch && replicateOnClose == other.replicateOnClose && server_signature == other.server_signature; }
 
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( XCap, 1022 );
 
         // YIELD::Struct
-        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint32( "access_mode", 0, access_mode ); marshaller.writeUint64( "expires_s", 0, expires_s ); marshaller.writeString( "client_identity", 0, client_identity ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); marshaller.writeString( "server_signature", 0, server_signature ); }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); access_mode = unmarshaller.readUint32( "access_mode", 0 ); expires_s = unmarshaller.readUint64( "expires_s", 0 ); unmarshaller.readString( "client_identity", 0, client_identity ); truncate_epoch = unmarshaller.readUint32( "truncate_epoch", 0 ); unmarshaller.readString( "server_signature", 0, server_signature ); }
+        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint32( "access_mode", 0, access_mode ); marshaller.writeUint64( "expires_s", 0, expires_s ); marshaller.writeString( "client_identity", 0, client_identity ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); marshaller.writeBoolean( "replicateOnClose", 0, replicateOnClose ); marshaller.writeString( "server_signature", 0, server_signature ); }
+        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); access_mode = unmarshaller.readUint32( "access_mode", 0 ); expires_s = unmarshaller.readUint64( "expires_s", 0 ); unmarshaller.readString( "client_identity", 0, client_identity ); truncate_epoch = unmarshaller.readUint32( "truncate_epoch", 0 ); replicateOnClose = unmarshaller.readBoolean( "replicateOnClose", 0 ); unmarshaller.readString( "server_signature", 0, server_signature ); }
 
       protected:
         std::string file_id;
@@ -249,6 +251,7 @@ namespace org
         uint64_t expires_s;
         std::string client_identity;
         uint32_t truncate_epoch;
+        bool replicateOnClose;
         std::string server_signature;
       };
 

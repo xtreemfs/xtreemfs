@@ -315,6 +315,9 @@ namespace org
         virtual void chown( const std::string& path, const std::string& user_id, const std::string& group_id ) { chown( path, user_id, group_id, static_cast<uint64_t>( -1 ) ); }
         virtual void chown( const std::string& path, const std::string& user_id, const std::string& group_id, uint64_t response_timeout_ns ) { ::yidl::auto_Object<chownRequest> __request( new chownRequest( path, user_id, group_id ) ); ::YIELD::auto_ResponseQueue<chownResponse> __response_queue( new ::YIELD::ResponseQueue<chownResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<chownResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
+        virtual void close( const org::xtreemfs::interfaces::XCap& write_xcap ) { close( write_xcap, static_cast<uint64_t>( -1 ) ); }
+        virtual void close( const org::xtreemfs::interfaces::XCap& write_xcap, uint64_t response_timeout_ns ) { ::yidl::auto_Object<closeRequest> __request( new closeRequest( write_xcap ) ); ::YIELD::auto_ResponseQueue<closeResponse> __response_queue( new ::YIELD::ResponseQueue<closeResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<closeResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
+
         virtual void creat( const std::string& path, uint32_t mode ) { creat( path, mode, static_cast<uint64_t>( -1 ) ); }
         virtual void creat( const std::string& path, uint32_t mode, uint64_t response_timeout_ns ) { ::yidl::auto_Object<creatRequest> __request( new creatRequest( path, mode ) ); ::YIELD::auto_ResponseQueue<creatResponse> __response_queue( new ::YIELD::ResponseQueue<creatResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<creatResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
@@ -565,6 +568,44 @@ namespace org
           std::string path;
           std::string user_id;
           std::string group_id;
+        };
+
+        class closeResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
+        {
+        public:
+          closeResponse() { }
+          virtual ~closeResponse() { }
+
+          bool operator==( const closeResponse& ) const { return true; }
+
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( closeResponse, 1222 );
+
+        };
+
+        class closeRequest : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS
+        {
+        public:
+          closeRequest() { }
+          closeRequest( const org::xtreemfs::interfaces::XCap& write_xcap ) : write_xcap( write_xcap ) { }
+          virtual ~closeRequest() { }
+
+          void set_write_xcap( const org::xtreemfs::interfaces::XCap&  write_xcap ) { this->write_xcap = write_xcap; }
+          const org::xtreemfs::interfaces::XCap& get_write_xcap() const { return write_xcap; }
+
+          bool operator==( const closeRequest& other ) const { return write_xcap == other.write_xcap; }
+
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( closeRequest, 1222 );
+
+          // YIELD::Struct
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "write_xcap", 0, write_xcap ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "write_xcap", 0, write_xcap ); }  // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new closeResponse; }
+
+
+        protected:
+          org::xtreemfs::interfaces::XCap write_xcap;
         };
 
         class creatResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2368,6 +2409,7 @@ namespace org
               case 1201UL: handleaccessRequest( static_cast<accessRequest&>( ev ) ); return;
               case 1202UL: handlechmodRequest( static_cast<chmodRequest&>( ev ) ); return;
               case 1203UL: handlechownRequest( static_cast<chownRequest&>( ev ) ); return;
+              case 1222UL: handlecloseRequest( static_cast<closeRequest&>( ev ) ); return;
               case 1204UL: handlecreatRequest( static_cast<creatRequest&>( ev ) ); return;
               case 1205UL: handleftruncateRequest( static_cast<ftruncateRequest&>( ev ) ); return;
               case 1206UL: handlegetattrRequest( static_cast<getattrRequest&>( ev ) ); return;
@@ -2431,6 +2473,7 @@ namespace org
               case 1201: return static_cast<accessRequest*>( &request );
               case 1202: return static_cast<chmodRequest*>( &request );
               case 1203: return static_cast<chownRequest*>( &request );
+              case 1222: return static_cast<closeRequest*>( &request );
               case 1204: return static_cast<creatRequest*>( &request );
               case 1205: return static_cast<ftruncateRequest*>( &request );
               case 1206: return static_cast<getattrRequest*>( &request );
@@ -2477,6 +2520,7 @@ namespace org
               case 1201: return static_cast<accessResponse*>( &response );
               case 1202: return static_cast<chmodResponse*>( &response );
               case 1203: return static_cast<chownResponse*>( &response );
+              case 1222: return static_cast<closeResponse*>( &response );
               case 1204: return static_cast<creatResponse*>( &response );
               case 1205: return static_cast<ftruncateResponse*>( &response );
               case 1206: return static_cast<getattrResponse*>( &response );
@@ -2529,6 +2573,7 @@ namespace org
               case 1201: return new accessRequest;
               case 1202: return new chmodRequest;
               case 1203: return new chownRequest;
+              case 1222: return new closeRequest;
               case 1204: return new creatRequest;
               case 1205: return new ftruncateRequest;
               case 1206: return new getattrRequest;
@@ -2575,6 +2620,7 @@ namespace org
               case 1201: return new accessResponse;
               case 1202: return new chmodResponse;
               case 1203: return new chownResponse;
+              case 1222: return new closeResponse;
               case 1204: return new creatResponse;
               case 1205: return new ftruncateResponse;
               case 1206: return new getattrResponse;
@@ -2634,6 +2680,7 @@ namespace org
         virtual void handleaccessRequest( accessRequest& req ) { ::yidl::auto_Object<accessResponse> resp( new accessResponse ); bool _return_value = _access( req.get_path(), req.get_mode() ); resp->set__return_value( _return_value ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlechmodRequest( chmodRequest& req ) { ::yidl::auto_Object<chmodResponse> resp( new chmodResponse ); _chmod( req.get_path(), req.get_mode() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlechownRequest( chownRequest& req ) { ::yidl::auto_Object<chownResponse> resp( new chownResponse ); _chown( req.get_path(), req.get_user_id(), req.get_group_id() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlecloseRequest( closeRequest& req ) { ::yidl::auto_Object<closeResponse> resp( new closeResponse ); _close( req.get_write_xcap() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlecreatRequest( creatRequest& req ) { ::yidl::auto_Object<creatResponse> resp( new creatResponse ); _creat( req.get_path(), req.get_mode() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handleftruncateRequest( ftruncateRequest& req ) { ::yidl::auto_Object<ftruncateResponse> resp( new ftruncateResponse ); org::xtreemfs::interfaces::XCap truncate_xcap; _ftruncate( req.get_write_xcap(), truncate_xcap ); resp->set_truncate_xcap( truncate_xcap ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlegetattrRequest( getattrRequest& req ) { ::yidl::auto_Object<getattrResponse> resp( new getattrResponse ); org::xtreemfs::interfaces::Stat stbuf; _getattr( req.get_path(), stbuf ); resp->set_stbuf( stbuf ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
@@ -2673,6 +2720,7 @@ namespace org
       virtual bool _access( const std::string& , uint32_t ) { return false; }
         virtual void _chmod( const std::string& , uint32_t ) { }
         virtual void _chown( const std::string& , const std::string& , const std::string&  ) { }
+        virtual void _close( const org::xtreemfs::interfaces::XCap&  ) { }
         virtual void _creat( const std::string& , uint32_t ) { }
         virtual void _ftruncate( const org::xtreemfs::interfaces::XCap& , org::xtreemfs::interfaces::XCap&  ) { }
         virtual void _getattr( const std::string& , org::xtreemfs::interfaces::Stat&  ) { }
@@ -2715,6 +2763,7 @@ namespace org
       virtual bool _access( const std::string& path, uint32_t mode );\
       virtual void _chmod( const std::string& path, uint32_t mode );\
       virtual void _chown( const std::string& path, const std::string& user_id, const std::string& group_id );\
+      virtual void _close( const org::xtreemfs::interfaces::XCap& write_xcap );\
       virtual void _creat( const std::string& path, uint32_t mode );\
       virtual void _ftruncate( const org::xtreemfs::interfaces::XCap& write_xcap, org::xtreemfs::interfaces::XCap& truncate_xcap );\
       virtual void _getattr( const std::string& path, org::xtreemfs::interfaces::Stat& stbuf );\
@@ -2755,6 +2804,7 @@ namespace org
       virtual void handleaccessRequest( accessRequest& req );\
       virtual void handlechmodRequest( chmodRequest& req );\
       virtual void handlechownRequest( chownRequest& req );\
+      virtual void handlecloseRequest( closeRequest& req );\
       virtual void handlecreatRequest( creatRequest& req );\
       virtual void handleftruncateRequest( ftruncateRequest& req );\
       virtual void handlegetattrRequest( getattrRequest& req );\
