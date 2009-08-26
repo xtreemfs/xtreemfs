@@ -39,7 +39,7 @@ import org.xtreemfs.mrc.UserException;
  */
 public class RenewOperation extends MRCOperation {
     
-    public final boolean    renewTimedOutCaps;
+    public final boolean renewTimedOutCaps;
     
     public RenewOperation(MRCRequestDispatcher master) {
         super(master);
@@ -64,8 +64,8 @@ public class RenewOperation extends MRCOperation {
             throw new UserException(ErrNo.EPERM, cap + " has expired");
         
         Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), TimeSync.getGlobalTime()
-            / 1000 + Capability.DEFAULT_VALIDITY, cap.getClientIdentity(), cap.getEpochNo(), master
-                .getConfig().getCapabilitySecret());
+            / 1000 + Capability.DEFAULT_VALIDITY, cap.getClientIdentity(), cap.getEpochNo(), cap
+                .isReplicateOnClose(), master.getConfig().getCapabilitySecret());
         
         // set the response
         rq.setResponse(new xtreemfs_renew_capabilityResponse(newCap.getXCap()));

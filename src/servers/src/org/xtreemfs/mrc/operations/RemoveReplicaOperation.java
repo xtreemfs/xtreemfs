@@ -52,7 +52,7 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class RemoveReplicaOperation extends MRCOperation {
-        
+    
     public RemoveReplicaOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -137,8 +137,8 @@ public class RemoveReplicaOperation extends MRCOperation {
         // create a deletion capability for the replica
         Capability deleteCap = new Capability(idRes.getVolumeId() + ":" + file.getId(),
             FileAccessManager.NON_POSIX_DELETE, Integer.MAX_VALUE, ((InetSocketAddress) rq.getRPCRequest()
-                    .getClientIdentity()).getAddress().getHostAddress(), file.getEpoch(), master.getConfig()
-                    .getCapabilitySecret());
+                    .getClientIdentity()).getAddress().getHostAddress(), file.getEpoch(), false, master
+                    .getConfig().getCapabilitySecret());
         
         // set the response
         rq.setResponse(new xtreemfs_replica_removeResponse(deleteCap.getXCap()));

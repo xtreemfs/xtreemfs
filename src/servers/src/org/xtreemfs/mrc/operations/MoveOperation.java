@@ -234,7 +234,7 @@ public class MoveOperation extends MRCOperation {
                     Capability cap = new Capability(volume.getId() + ":" + target.getId(),
                         FileAccessManager.NON_POSIX_DELETE, Integer.MAX_VALUE, ((InetSocketAddress) rq
                                 .getRPCRequest().getClientIdentity()).getAddress().getHostAddress(), target
-                                .getEpoch(), master.getConfig().getCapabilitySecret());
+                                .getEpoch(), false, master.getConfig().getCapabilitySecret());
                     
                     creds.add(new FileCredentials(Converter.xLocListToXLocSet(target.getXLocList()), cap
                             .getXCap()));

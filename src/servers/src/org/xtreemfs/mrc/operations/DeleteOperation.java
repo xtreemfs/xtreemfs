@@ -105,7 +105,7 @@ public class DeleteOperation extends MRCOperation {
             Capability cap = new Capability(volume.getId() + ":" + file.getId(),
                 FileAccessManager.NON_POSIX_DELETE, Integer.MAX_VALUE, ((InetSocketAddress) rq
                         .getRPCRequest().getClientIdentity()).getAddress().getHostAddress(), file.getEpoch(),
-                master.getConfig().getCapabilitySecret());
+                false, master.getConfig().getCapabilitySecret());
             
             // set the XCapability and XLocationsList headers
             XLocList xloc = file.getXLocList();

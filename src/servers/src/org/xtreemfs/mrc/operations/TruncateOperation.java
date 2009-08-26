@@ -90,7 +90,7 @@ public class TruncateOperation extends MRCOperation {
         Capability truncCap = new Capability(writeCap.getFileId(), writeCap.getAccessMode()
             | FileAccessManager.O_TRUNC, TimeSync.getGlobalTime() / 1000 + Capability.DEFAULT_VALIDITY,
             ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress().getHostAddress(),
-            newEpoch, master.getConfig().getCapabilitySecret());
+            newEpoch, false, master.getConfig().getCapabilitySecret());
         
         // set the response
         rq.setResponse(new ftruncateResponse(truncCap.getXCap()));

@@ -86,7 +86,7 @@ public class OpenOperation extends MRCOperation {
         
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
         FileMetadata file = null;
-
+        
         // analyze the flags
         boolean create = (rqArgs.getFlags() & FileAccessManager.O_CREAT) != 0;
         boolean excl = (rqArgs.getFlags() & FileAccessManager.O_EXCL) != 0;
@@ -214,6 +214,9 @@ public class OpenOperation extends MRCOperation {
                 xLocSet.setRead_only_file_size(file.getSize());
         }
         
+        // TODO: set 'readOnlyOnClose' according to the replication policy
+        boolean readOnlyOnClose = false;
+        
         // re-order the replica list, based on the replica selection policy
         ReplicaSelectionPolicy rsPol = master.getPolicyContainer().getReplicaSelectionPolicy(
             volume.getReplicaPolicyId());
@@ -225,7 +228,7 @@ public class OpenOperation extends MRCOperation {
                 .getGlobalTime()
             / 1000 + Capability.DEFAULT_VALIDITY,
             ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress().getHostAddress(),
-            trEpoch, master.getConfig().getCapabilitySecret());
+            trEpoch, readOnlyOnClose, master.getConfig().getCapabilitySecret());
         
         if (Logging.isDebug())
             Logging
