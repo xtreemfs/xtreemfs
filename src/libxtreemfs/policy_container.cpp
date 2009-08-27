@@ -23,9 +23,9 @@ void* PolicyContainer::getPolicyFunction( const char* name )
   std::vector<YIELD::Path> policy_dir_paths;
   policy_dir_paths.push_back( YIELD::Path() );
 #ifdef _WIN32
-  policy_dir_paths.push_back( "..\\policies\\lib" );
+  policy_dir_paths.push_back( "src\\policies\\lib" );
 #else
-  policy_dir_paths.push_back( "../policies/lib" );
+  policy_dir_paths.push_back( "src/policies/lib" );
   policy_dir_paths.push_back( "/lib/xtreemfs/policies/" );
 #endif
 

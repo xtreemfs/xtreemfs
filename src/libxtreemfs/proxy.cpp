@@ -30,8 +30,8 @@ Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, uint32_t
 {
 #ifndef _WIN32
   policy_container = new PolicyContainer;
-  get_user_credentials_from_passwd = ( get_user_credentials_from_passwd_t )policy_container->getPolicyFunction( "get_passwd_from_user_credentials" );
-  get_passwd_from_user_credentials = ( get_passwd_from_user_credentials_t )policy_container->getPolicyFunction( "get_user_credentials_from_passwd" );
+  get_user_credentials_from_passwd = ( get_user_credentials_from_passwd_t )policy_container->getPolicyFunction( "get_user_credentials_from_passwd" );
+  get_passwd_from_user_credentials = ( get_passwd_from_user_credentials_t )policy_container->getPolicyFunction( "get_passwd_from_user_credentials" );
 #endif
 }
 
@@ -226,6 +226,7 @@ bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
 #ifdef _DEBUG
       if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )
         log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: found UserCredentials in cache, " << uid << "=" << out_user_credentials.get_user_id() << ", " << gid << "=" << out_user_credentials.get_group_ids()[0] << ".";
+
 #endif
       return true;
     }
@@ -247,29 +248,36 @@ bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
         log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: calling get_user_credentials_from_passwd with uid=" << uid << ", gid=" << gid << " returned " << get_user_credentials_from_passwd_ret << ", allocating space for UserCredentials.";
 #endif
 
-      if ( user_id_len > 0 && group_ids_len > 0 )
+      if ( user_id_len > 0 ) // group_ids_len can be 0
       {
         char* user_id = new char[user_id_len];
-        char* group_ids = new char[group_ids_len];
+        char* group_ids = group_ids_len > 0 ? new char[group_ids_len] : NULL;
 
         get_user_credentials_from_passwd_ret = get_user_credentials_from_passwd( uid, gid, user_id, &user_id_len, group_ids, &group_ids_len );
         if ( get_user_credentials_from_passwd_ret >= 0 )
         {
+          out_user_credentials.set_user_id( user_id );
+
+          if ( group_ids_len > 0 )
+          {
+            char* group_ids_p = group_ids;
+            org::xtreemfs::interfaces::StringSet group_ids_ss;
+            while ( static_cast<size_t>( group_ids_p - group_ids ) < group_ids_len )
+            {
+              group_ids_ss.push_back( group_ids_p );
+              group_ids_p += group_ids_ss.back().size() + 1;
+            }
+          
+            out_user_credentials.set_group_ids( group_ids_ss );
+          }
+          else
+            out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( "" ) );
+
 #ifdef _DEBUG
           if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )
             log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: get_user_credentials_from_passwd succeeded, " << uid << "=" << out_user_credentials.get_user_id() << ", " << gid << "=" << out_user_credentials.get_group_ids()[0] << ".";
 #endif
 
-          out_user_credentials.set_user_id( user_id );
-
-          char* group_ids_p = group_ids;
-          org::xtreemfs::interfaces::StringSet group_ids_ss;
-          while ( static_cast<size_t>( group_ids_p - group_ids ) < group_ids_len )
-          {
-            group_ids_ss.push_back( group_ids_p );
-            group_ids_p += group_ids_ss.back().size() + 1;
-          }
-          out_user_credentials.set_group_ids( group_ids_ss );
           // Drop down to insert the credentials into the cache
         }
         else
@@ -293,11 +301,14 @@ bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
         if ( pwd_res != NULL && pwd_res->pw_name != NULL )
         {
           out_user_credentials.set_user_id( pwd_res->pw_name );
-        } else
+        } 
+        else
           return false;
-      } else
+      } 
+      else
         return false;
-    } else
+    } 
+    else
       out_user_credentials.set_user_id( "" );
 
     if ( gid != -1 )
@@ -309,9 +320,11 @@ bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
         // Drop down to insert the credentials into the cache
         else
           return false;
-      } else
+      } 
+      else
         return false;
-    } else
+    } 
+    else
       out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( "" ) );
       // Drop down to insert the credentials into the cache
   }
