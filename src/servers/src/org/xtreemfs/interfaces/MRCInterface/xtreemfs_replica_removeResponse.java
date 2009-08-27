@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_replica_removeResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1241;
+    public static final int TAG = 2009082859;
 
     
     public xtreemfs_replica_removeResponse() { delete_xcap = new XCap(); }
@@ -29,7 +29,7 @@ public class xtreemfs_replica_removeResponse implements org.xtreemfs.interfaces.
     }
 
     // Serializable
-    public int getTag() { return 1241; }
+    public int getTag() { return 2009082859; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeResponse"; }
 
     public void deserialize( Object from_hash_map )

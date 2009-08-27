@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class chownRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1203;
+    public static final int TAG = 2009082821;
 
     
     public chownRequest() { path = ""; user_id = ""; group_id = ""; }
@@ -33,7 +33,7 @@ public class chownRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Serializable
-    public int getTag() { return 1203; }
+    public int getTag() { return 2009082821; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chownRequest"; }
 
     public void deserialize( Object from_hash_map )

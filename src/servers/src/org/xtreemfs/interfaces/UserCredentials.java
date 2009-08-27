@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class UserCredentials implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1002;
+    public static final int TAG = 2009082620;
 
     
     public UserCredentials() { user_id = ""; group_ids = new StringSet(); password = ""; }
@@ -32,7 +32,7 @@ public class UserCredentials implements org.xtreemfs.interfaces.utils.Serializab
     }
 
     // Serializable
-    public int getTag() { return 1002; }
+    public int getTag() { return 2009082620; }
     public String getTypeName() { return "org::xtreemfs::interfaces::UserCredentials"; }
 
     public void deserialize( Object from_hash_map )

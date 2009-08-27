@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class XCap implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1022;
+    public static final int TAG = 2009082640;
 
     
     public XCap() { file_id = ""; access_mode = 0; expires_s = 0; client_identity = ""; truncate_epoch = 0; replicateOnClose = false; server_signature = ""; }
@@ -40,7 +40,7 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
     }
 
     // Serializable
-    public int getTag() { return 1022; }
+    public int getTag() { return 2009082640; }
     public String getTypeName() { return "org::xtreemfs::interfaces::XCap"; }
 
     public void deserialize( Object from_hash_map )

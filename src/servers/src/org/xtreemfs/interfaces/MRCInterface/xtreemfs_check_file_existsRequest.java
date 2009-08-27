@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1231;
+    public static final int TAG = 2009082849;
 
     
     public xtreemfs_check_file_existsRequest() { volume_id = ""; file_ids = new StringSet(); osd_uuid = ""; }
@@ -33,7 +33,7 @@ public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interface
     }
 
     // Serializable
-    public int getTag() { return 1231; }
+    public int getTag() { return 2009082849; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsRequest"; }
 
     public void deserialize( Object from_hash_map )

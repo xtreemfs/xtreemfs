@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_listdirRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1236;
+    public static final int TAG = 2009082854;
 
     
     public xtreemfs_listdirRequest() { path = ""; }
@@ -29,7 +29,7 @@ public class xtreemfs_listdirRequest implements org.xtreemfs.interfaces.utils.Re
     }
 
     // Serializable
-    public int getTag() { return 1236; }
+    public int getTag() { return 2009082854; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_listdirRequest"; }
 
     public void deserialize( Object from_hash_map )

@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class OSDWriteResponse implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1017;
+    public static final int TAG = 2009082635;
 
     
     public OSDWriteResponse() { new_file_size = new NewFileSizeSet(); opaque_data = new OSDtoMRCDataSet(); }
@@ -30,7 +30,7 @@ public class OSDWriteResponse implements org.xtreemfs.interfaces.utils.Serializa
     }
 
     // Serializable
-    public int getTag() { return 1017; }
+    public int getTag() { return 2009082635; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDWriteResponse"; }
 
     public void deserialize( Object from_hash_map )

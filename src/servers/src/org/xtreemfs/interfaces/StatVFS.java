@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class StatVFS implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1043;
+    public static final int TAG = 2009082661;
 
     
     public StatVFS() { bsize = 0; bavail = 0; blocks = 0; fsid = ""; namelen = 0; }
@@ -36,7 +36,7 @@ public class StatVFS implements org.xtreemfs.interfaces.utils.Serializable
     }
 
     // Serializable
-    public int getTag() { return 1043; }
+    public int getTag() { return 2009082661; }
     public String getTypeName() { return "org::xtreemfs::interfaces::StatVFS"; }
 
     public void deserialize( Object from_hash_map )

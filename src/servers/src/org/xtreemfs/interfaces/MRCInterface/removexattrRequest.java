@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class removexattrRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1213;
+    public static final int TAG = 2009082831;
 
     
     public removexattrRequest() { path = ""; name = ""; }
@@ -31,7 +31,7 @@ public class removexattrRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Serializable
-    public int getTag() { return 1213; }
+    public int getTag() { return 2009082831; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::removexattrRequest"; }
 
     public void deserialize( Object from_hash_map )

@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class InternalReadLocalResponse implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1052;
+    public static final int TAG = 2009082670;
 
     
     public InternalReadLocalResponse() { data = new ObjectData(); object_set = new ObjectListSet(); }
@@ -30,7 +30,7 @@ public class InternalReadLocalResponse implements org.xtreemfs.interfaces.utils.
     }
 
     // Serializable
-    public int getTag() { return 1052; }
+    public int getTag() { return 2009082670; }
     public String getTypeName() { return "org::xtreemfs::interfaces::InternalReadLocalResponse"; }
 
     public void deserialize( Object from_hash_map )

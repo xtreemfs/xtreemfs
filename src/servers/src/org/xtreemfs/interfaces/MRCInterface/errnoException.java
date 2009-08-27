@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class errnoException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 1251;
+    public static final int TAG = 2009082869;
 
     
     public errnoException() { error_code = 0; error_message = ""; stack_trace = ""; }
@@ -33,7 +33,7 @@ public class errnoException extends org.xtreemfs.interfaces.utils.ONCRPCExceptio
     }
 
     // Serializable
-    public int getTag() { return 1251; }
+    public int getTag() { return 2009082869; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::errnoException"; }
 
     public void deserialize( Object from_hash_map )

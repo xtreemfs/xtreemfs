@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class NewFileSize implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1011;
+    public static final int TAG = 2009082629;
 
     
     public NewFileSize() { size_in_bytes = 0; truncate_epoch = 0; }
@@ -30,7 +30,7 @@ public class NewFileSize implements org.xtreemfs.interfaces.utils.Serializable
     }
 
     // Serializable
-    public int getTag() { return 1011; }
+    public int getTag() { return 2009082629; }
     public String getTypeName() { return "org::xtreemfs::interfaces::NewFileSize"; }
 
     public void deserialize( Object from_hash_map )

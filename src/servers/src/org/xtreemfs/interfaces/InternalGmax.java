@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class InternalGmax implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1050;
+    public static final int TAG = 2009082668;
 
     
     public InternalGmax() { epoch = 0; last_object_id = 0; file_size = 0; }
@@ -32,7 +32,7 @@ public class InternalGmax implements org.xtreemfs.interfaces.utils.Serializable
     }
 
     // Serializable
-    public int getTag() { return 1050; }
+    public int getTag() { return 2009082668; }
     public String getTypeName() { return "org::xtreemfs::interfaces::InternalGmax"; }
 
     public void deserialize( Object from_hash_map )

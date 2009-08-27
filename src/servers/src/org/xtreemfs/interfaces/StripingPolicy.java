@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class StripingPolicy implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1019;
+    public static final int TAG = 2009082637;
 
     
     public StripingPolicy() { type = StripingPolicyType.STRIPING_POLICY_RAID0; stripe_size = 0; width = 0; }
@@ -32,7 +32,7 @@ public class StripingPolicy implements org.xtreemfs.interfaces.utils.Serializabl
     }
 
     // Serializable
-    public int getTag() { return 1019; }
+    public int getTag() { return 2009082637; }
     public String getTypeName() { return "org::xtreemfs::interfaces::StripingPolicy"; }
 
     public void deserialize( Object from_hash_map )

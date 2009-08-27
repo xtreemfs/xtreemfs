@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_internal_debugRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1234;
+    public static final int TAG = 2009082852;
 
     
     public xtreemfs_internal_debugRequest() { operation = ""; }
@@ -29,7 +29,7 @@ public class xtreemfs_internal_debugRequest implements org.xtreemfs.interfaces.u
     }
 
     // Serializable
-    public int getTag() { return 1234; }
+    public int getTag() { return 2009082852; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_internal_debugRequest"; }
 
     public void deserialize( Object from_hash_map )

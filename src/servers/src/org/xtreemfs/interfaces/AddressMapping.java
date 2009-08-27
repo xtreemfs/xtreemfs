@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1030;
+    public static final int TAG = 2009082648;
 
     
     public AddressMapping() { uuid = ""; version = 0; protocol = ""; address = ""; port = 0; match_network = ""; ttl_s = 0; uri = ""; }
@@ -42,7 +42,7 @@ public class AddressMapping implements org.xtreemfs.interfaces.utils.Serializabl
     }
 
     // Serializable
-    public int getTag() { return 1030; }
+    public int getTag() { return 2009082648; }
     public String getTypeName() { return "org::xtreemfs::interfaces::AddressMapping"; }
 
     public void deserialize( Object from_hash_map )

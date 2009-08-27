@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_address_mappings_getRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1101;
+    public static final int TAG = 2009082719;
 
     
     public xtreemfs_address_mappings_getRequest() { uuid = ""; }
@@ -29,7 +29,7 @@ public class xtreemfs_address_mappings_getRequest implements org.xtreemfs.interf
     }
 
     // Serializable
-    public int getTag() { return 1101; }
+    public int getTag() { return 2009082719; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_getRequest"; }
 
     public void deserialize( Object from_hash_map )

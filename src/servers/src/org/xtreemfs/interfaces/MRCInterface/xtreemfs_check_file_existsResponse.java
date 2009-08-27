@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_check_file_existsResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1231;
+    public static final int TAG = 2009082849;
 
     
     public xtreemfs_check_file_existsResponse() { bitmap = ""; }
@@ -29,7 +29,7 @@ public class xtreemfs_check_file_existsResponse implements org.xtreemfs.interfac
     }
 
     // Serializable
-    public int getTag() { return 1231; }
+    public int getTag() { return 2009082849; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsResponse"; }
 
     public void deserialize( Object from_hash_map )

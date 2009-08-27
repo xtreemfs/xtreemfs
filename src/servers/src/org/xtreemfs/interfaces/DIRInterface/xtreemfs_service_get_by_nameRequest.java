@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_service_get_by_nameRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1109;
+    public static final int TAG = 2009082727;
 
     
     public xtreemfs_service_get_by_nameRequest() { name = ""; }
@@ -29,7 +29,7 @@ public class xtreemfs_service_get_by_nameRequest implements org.xtreemfs.interfa
     }
 
     // Serializable
-    public int getTag() { return 1109; }
+    public int getTag() { return 2009082727; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_nameRequest"; }
 
     public void deserialize( Object from_hash_map )

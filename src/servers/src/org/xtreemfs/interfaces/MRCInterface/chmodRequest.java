@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class chmodRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1202;
+    public static final int TAG = 2009082820;
 
     
     public chmodRequest() { path = ""; mode = 0; }
@@ -31,7 +31,7 @@ public class chmodRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Serializable
-    public int getTag() { return 1202; }
+    public int getTag() { return 2009082820; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chmodRequest"; }
 
     public void deserialize( Object from_hash_map )

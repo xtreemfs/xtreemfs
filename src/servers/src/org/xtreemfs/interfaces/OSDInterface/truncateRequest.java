@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class truncateRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1311;
+    public static final int TAG = 2009082929;
 
     
     public truncateRequest() { file_credentials = new FileCredentials(); file_id = ""; new_file_size = 0; }
@@ -33,7 +33,7 @@ public class truncateRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Serializable
-    public int getTag() { return 1311; }
+    public int getTag() { return 2009082929; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::truncateRequest"; }
 
     public void deserialize( Object from_hash_map )

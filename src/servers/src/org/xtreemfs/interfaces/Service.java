@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class Service implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1034;
+    public static final int TAG = 2009082652;
 
     
     public Service() { type = ServiceType.SERVICE_TYPE_MIXED; uuid = ""; version = 0; name = ""; last_updated_s = 0; data = new ServiceDataMap(); }
@@ -38,7 +38,7 @@ public class Service implements org.xtreemfs.interfaces.utils.Serializable
     }
 
     // Serializable
-    public int getTag() { return 1034; }
+    public int getTag() { return 2009082652; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Service"; }
 
     public void deserialize( Object from_hash_map )

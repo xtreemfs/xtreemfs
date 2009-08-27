@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class DirService implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1035;
+    public static final int TAG = 2009082653;
 
     
     public DirService() { address = ""; port = 0; protocol = ""; interface_version = 0; }
@@ -34,7 +34,7 @@ public class DirService implements org.xtreemfs.interfaces.utils.Serializable
     }
 
     // Serializable
-    public int getTag() { return 1035; }
+    public int getTag() { return 2009082653; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DirService"; }
 
     public void deserialize( Object from_hash_map )

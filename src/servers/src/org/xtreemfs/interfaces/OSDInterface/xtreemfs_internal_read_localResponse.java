@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_internal_read_localResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1343;
+    public static final int TAG = 2009082961;
 
     
     public xtreemfs_internal_read_localResponse() { returnValue = new InternalReadLocalResponse(); }
@@ -29,7 +29,7 @@ public class xtreemfs_internal_read_localResponse implements org.xtreemfs.interf
     }
 
     // Serializable
-    public int getTag() { return 1343; }
+    public int getTag() { return 2009082961; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_read_localResponse"; }
 
     public void deserialize( Object from_hash_map )

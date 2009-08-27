@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_broadcast_gmaxRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1320;
+    public static final int TAG = 2009082938;
 
     
     public xtreemfs_broadcast_gmaxRequest() { file_id = ""; truncateEpoch = 0; lastObject = 0; fileSize = 0; }
@@ -35,7 +35,7 @@ public class xtreemfs_broadcast_gmaxRequest implements org.xtreemfs.interfaces.u
     }
 
     // Serializable
-    public int getTag() { return 1320; }
+    public int getTag() { return 2009082938; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_broadcast_gmaxRequest"; }
 
     public void deserialize( Object from_hash_map )

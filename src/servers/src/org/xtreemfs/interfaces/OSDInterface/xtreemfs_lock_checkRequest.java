@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_lock_checkRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1351;
+    public static final int TAG = 2009082969;
 
     
     public xtreemfs_lock_checkRequest() { file_credentials = new FileCredentials(); client_uuid = ""; client_pid = 0; file_id = ""; offset = 0; length = 0; exclusive = false; }
@@ -41,7 +41,7 @@ public class xtreemfs_lock_checkRequest implements org.xtreemfs.interfaces.utils
     }
 
     // Serializable
-    public int getTag() { return 1351; }
+    public int getTag() { return 2009082969; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_lock_checkRequest"; }
 
     public void deserialize( Object from_hash_map )

@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_check_objectRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1321;
+    public static final int TAG = 2009082939;
 
     
     public xtreemfs_check_objectRequest() { file_credentials = new FileCredentials(); file_id = ""; object_number = 0; object_version = 0; }
@@ -35,7 +35,7 @@ public class xtreemfs_check_objectRequest implements org.xtreemfs.interfaces.uti
     }
 
     // Serializable
-    public int getTag() { return 1321; }
+    public int getTag() { return 2009082939; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_check_objectRequest"; }
 
     public void deserialize( Object from_hash_map )

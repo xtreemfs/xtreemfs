@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class Volume implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1044;
+    public static final int TAG = 2009082662;
 
     
     public Volume() { name = ""; mode = 0; osd_selection_policy = OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE; default_striping_policy = new StripingPolicy(); access_control_policy = AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL; id = ""; owner_user_id = ""; owner_group_id = ""; }
@@ -42,7 +42,7 @@ public class Volume implements org.xtreemfs.interfaces.utils.Serializable
     }
 
     // Serializable
-    public int getTag() { return 1044; }
+    public int getTag() { return 2009082662; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Volume"; }
 
     public void deserialize( Object from_hash_map )

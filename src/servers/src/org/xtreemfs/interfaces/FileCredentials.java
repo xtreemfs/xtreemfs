@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class FileCredentials implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1024;
+    public static final int TAG = 2009082642;
 
     
     public FileCredentials() { xlocs = new XLocSet(); xcap = new XCap(); }
@@ -30,7 +30,7 @@ public class FileCredentials implements org.xtreemfs.interfaces.utils.Serializab
     }
 
     // Serializable
-    public int getTag() { return 1024; }
+    public int getTag() { return 2009082642; }
     public String getTypeName() { return "org::xtreemfs::interfaces::FileCredentials"; }
 
     public void deserialize( Object from_hash_map )

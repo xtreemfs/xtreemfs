@@ -14,18 +14,18 @@ public class OSDInterface
     public static final int DEFAULT_HTTP_PORT = 30640;
 
 
-    public static int getVersion() { return 1300; }
+    public static int getVersion() { return 2009082918; }
 
     public static ONCRPCException createException( int accept_stat ) throws Exception
     {
         switch( accept_stat )
         {
-            case 1301: return new ConcurrentModificationException();
-            case 1302: return new errnoException();
-            case 1303: return new InvalidArgumentException();
-            case 1304: return new OSDException();
-            case 1305: return new ProtocolException();
-            case 1306: return new RedirectException();
+            case 2009082919: return new ConcurrentModificationException();
+            case 2009082920: return new errnoException();
+            case 2009082921: return new InvalidArgumentException();
+            case 2009082922: return new OSDException();
+            case 2009082923: return new ProtocolException();
+            case 2009082924: return new RedirectException();
 
             default: throw new Exception( "unknown accept_stat " + Integer.toString( accept_stat ) );
         }
@@ -35,27 +35,27 @@ public class OSDInterface
     {
         switch( header.getProcedure() )
         {
-            case 1310: return new readRequest();
-            case 1311: return new truncateRequest();
-            case 1312: return new unlinkRequest();
-            case 1313: return new writeRequest();
-            case 1320: return new xtreemfs_broadcast_gmaxRequest();
-            case 1321: return new xtreemfs_check_objectRequest();
-            case 1330: return new xtreemfs_cleanup_get_resultsRequest();
-            case 1331: return new xtreemfs_cleanup_is_runningRequest();
-            case 1332: return new xtreemfs_cleanup_startRequest();
-            case 1333: return new xtreemfs_cleanup_statusRequest();
-            case 1334: return new xtreemfs_cleanup_stopRequest();
-            case 1340: return new xtreemfs_internal_get_gmaxRequest();
-            case 1341: return new xtreemfs_internal_truncateRequest();
-            case 1342: return new xtreemfs_internal_get_file_sizeRequest();
-            case 1343: return new xtreemfs_internal_read_localRequest();
-            case 1344: return new xtreemfs_internal_get_object_setRequest();
-            case 1350: return new xtreemfs_lock_acquireRequest();
-            case 1351: return new xtreemfs_lock_checkRequest();
-            case 1352: return new xtreemfs_lock_releaseRequest();
-            case 1360: return new xtreemfs_pingRequest();
-            case 1370: return new xtreemfs_shutdownRequest();
+            case 2009082928: return new readRequest();
+            case 2009082929: return new truncateRequest();
+            case 2009082930: return new unlinkRequest();
+            case 2009082931: return new writeRequest();
+            case 2009082938: return new xtreemfs_broadcast_gmaxRequest();
+            case 2009082939: return new xtreemfs_check_objectRequest();
+            case 2009082948: return new xtreemfs_cleanup_get_resultsRequest();
+            case 2009082949: return new xtreemfs_cleanup_is_runningRequest();
+            case 2009082950: return new xtreemfs_cleanup_startRequest();
+            case 2009082951: return new xtreemfs_cleanup_statusRequest();
+            case 2009082952: return new xtreemfs_cleanup_stopRequest();
+            case 2009082958: return new xtreemfs_internal_get_gmaxRequest();
+            case 2009082959: return new xtreemfs_internal_truncateRequest();
+            case 2009082960: return new xtreemfs_internal_get_file_sizeRequest();
+            case 2009082961: return new xtreemfs_internal_read_localRequest();
+            case 2009082962: return new xtreemfs_internal_get_object_setRequest();
+            case 2009082968: return new xtreemfs_lock_acquireRequest();
+            case 2009082969: return new xtreemfs_lock_checkRequest();
+            case 2009082970: return new xtreemfs_lock_releaseRequest();
+            case 2009082978: return new xtreemfs_pingRequest();
+            case 2009082988: return new xtreemfs_shutdownRequest();
 
             default: throw new Exception( "unknown request tag " + Integer.toString( header.getProcedure() ) );
         }
@@ -65,7 +65,7 @@ public class OSDInterface
     {
         switch( header.getXID() )
         {
-            case 1310: return new readResponse();            case 1311: return new truncateResponse();            case 1312: return new unlinkResponse();            case 1313: return new writeResponse();            case 1320: return new xtreemfs_broadcast_gmaxResponse();            case 1321: return new xtreemfs_check_objectResponse();            case 1330: return new xtreemfs_cleanup_get_resultsResponse();            case 1331: return new xtreemfs_cleanup_is_runningResponse();            case 1332: return new xtreemfs_cleanup_startResponse();            case 1333: return new xtreemfs_cleanup_statusResponse();            case 1334: return new xtreemfs_cleanup_stopResponse();            case 1340: return new xtreemfs_internal_get_gmaxResponse();            case 1341: return new xtreemfs_internal_truncateResponse();            case 1342: return new xtreemfs_internal_get_file_sizeResponse();            case 1343: return new xtreemfs_internal_read_localResponse();            case 1344: return new xtreemfs_internal_get_object_setResponse();            case 1350: return new xtreemfs_lock_acquireResponse();            case 1351: return new xtreemfs_lock_checkResponse();            case 1352: return new xtreemfs_lock_releaseResponse();            case 1360: return new xtreemfs_pingResponse();            case 1370: return new xtreemfs_shutdownResponse();
+            case 2009082928: return new readResponse();            case 2009082929: return new truncateResponse();            case 2009082930: return new unlinkResponse();            case 2009082931: return new writeResponse();            case 2009082938: return new xtreemfs_broadcast_gmaxResponse();            case 2009082939: return new xtreemfs_check_objectResponse();            case 2009082948: return new xtreemfs_cleanup_get_resultsResponse();            case 2009082949: return new xtreemfs_cleanup_is_runningResponse();            case 2009082950: return new xtreemfs_cleanup_startResponse();            case 2009082951: return new xtreemfs_cleanup_statusResponse();            case 2009082952: return new xtreemfs_cleanup_stopResponse();            case 2009082958: return new xtreemfs_internal_get_gmaxResponse();            case 2009082959: return new xtreemfs_internal_truncateResponse();            case 2009082960: return new xtreemfs_internal_get_file_sizeResponse();            case 2009082961: return new xtreemfs_internal_read_localResponse();            case 2009082962: return new xtreemfs_internal_get_object_setResponse();            case 2009082968: return new xtreemfs_lock_acquireResponse();            case 2009082969: return new xtreemfs_lock_checkResponse();            case 2009082970: return new xtreemfs_lock_releaseResponse();            case 2009082978: return new xtreemfs_pingResponse();            case 2009082988: return new xtreemfs_shutdownResponse();
             default: throw new Exception( "unknown response XID " + Integer.toString( header.getXID() ) );
         }
     }    

@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class VivaldiCoordinates implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1053;
+    public static final int TAG = 2009082671;
 
     
     public VivaldiCoordinates() { x_coordinate = 0; y_coordinate = 0; local_error = 0; }
@@ -32,7 +32,7 @@ public class VivaldiCoordinates implements org.xtreemfs.interfaces.utils.Seriali
     }
 
     // Serializable
-    public int getTag() { return 1053; }
+    public int getTag() { return 2009082671; }
     public String getTypeName() { return "org::xtreemfs::interfaces::VivaldiCoordinates"; }
 
     public void deserialize( Object from_hash_map )

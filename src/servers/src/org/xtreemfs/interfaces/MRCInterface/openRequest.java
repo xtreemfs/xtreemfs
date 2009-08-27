@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class openRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1211;
+    public static final int TAG = 2009082829;
 
     
     public openRequest() { path = ""; flags = 0; mode = 0; attributes = 0; }
@@ -35,7 +35,7 @@ public class openRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Serializable
-    public int getTag() { return 1211; }
+    public int getTag() { return 2009082829; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::openRequest"; }
 
     public void deserialize( Object from_hash_map )

@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class ObjectData implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1051;
+    public static final int TAG = 2009082669;
 
     
     public ObjectData() { checksum = 0; invalid_checksum_on_osd = false; zero_padding = 0; data = null; }
@@ -34,7 +34,7 @@ public class ObjectData implements org.xtreemfs.interfaces.utils.Serializable
     }
 
     // Serializable
-    public int getTag() { return 1051; }
+    public int getTag() { return 2009082669; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ObjectData"; }
 
     public void deserialize( Object from_hash_map )

@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_get_suitable_osdsResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1233;
+    public static final int TAG = 2009082851;
 
     
     public xtreemfs_get_suitable_osdsResponse() { osd_uuids = new StringSet(); }
@@ -29,7 +29,7 @@ public class xtreemfs_get_suitable_osdsResponse implements org.xtreemfs.interfac
     }
 
     // Serializable
-    public int getTag() { return 1233; }
+    public int getTag() { return 2009082851; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsResponse"; }
 
     public void deserialize( Object from_hash_map )

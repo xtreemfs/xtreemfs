@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class chownResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1203;
+    public static final int TAG = 2009082821;
 
     
     public chownResponse() {  }
@@ -25,7 +25,7 @@ public class chownResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Serializable
-    public int getTag() { return 1203; }
+    public int getTag() { return 2009082821; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chownResponse"; }
 
     public void deserialize( Object from_hash_map )

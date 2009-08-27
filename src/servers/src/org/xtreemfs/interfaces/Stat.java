@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class Stat implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1040;
+    public static final int TAG = 2009082658;
 
     
     public Stat() { dev = 0; ino = 0; mode = 0; nlink = 0; uid = 0; gid = 0; unused_dev = 0; size = 0; atime_ns = 0; mtime_ns = 0; ctime_ns = 0; user_id = ""; group_id = ""; file_id = ""; link_target = ""; truncate_epoch = 0; attributes = 0; }
@@ -60,7 +60,7 @@ public class Stat implements org.xtreemfs.interfaces.utils.Serializable
     }
 
     // Serializable
-    public int getTag() { return 1040; }
+    public int getTag() { return 2009082658; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Stat"; }
 
     public void deserialize( Object from_hash_map )

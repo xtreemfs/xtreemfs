@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_internal_get_gmaxResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1340;
+    public static final int TAG = 2009082958;
 
     
     public xtreemfs_internal_get_gmaxResponse() { returnValue = new InternalGmax(); }
@@ -29,7 +29,7 @@ public class xtreemfs_internal_get_gmaxResponse implements org.xtreemfs.interfac
     }
 
     // Serializable
-    public int getTag() { return 1340; }
+    public int getTag() { return 2009082958; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_gmaxResponse"; }
 
     public void deserialize( Object from_hash_map )

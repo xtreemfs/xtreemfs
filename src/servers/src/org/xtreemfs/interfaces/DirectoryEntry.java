@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class DirectoryEntry implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1041;
+    public static final int TAG = 2009082659;
 
     
     public DirectoryEntry() { name = ""; stbuf = new Stat(); }
@@ -30,7 +30,7 @@ public class DirectoryEntry implements org.xtreemfs.interfaces.utils.Serializabl
     }
 
     // Serializable
-    public int getTag() { return 1041; }
+    public int getTag() { return 2009082659; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DirectoryEntry"; }
 
     public void deserialize( Object from_hash_map )

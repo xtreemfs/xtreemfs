@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 1252;
+    public static final int TAG = 2009082870;
 
     
     public InvalidArgumentException() { error_message = ""; }
@@ -29,7 +29,7 @@ public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCR
     }
 
     // Serializable
-    public int getTag() { return 1252; }
+    public int getTag() { return 2009082870; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::InvalidArgumentException"; }
 
     public void deserialize( Object from_hash_map )

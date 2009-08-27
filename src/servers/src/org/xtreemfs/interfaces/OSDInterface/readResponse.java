@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class readResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1310;
+    public static final int TAG = 2009082928;
 
     
     public readResponse() { object_data = new ObjectData(); }
@@ -29,7 +29,7 @@ public class readResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Serializable
-    public int getTag() { return 1310; }
+    public int getTag() { return 2009082928; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::readResponse"; }
 
     public void deserialize( Object from_hash_map )

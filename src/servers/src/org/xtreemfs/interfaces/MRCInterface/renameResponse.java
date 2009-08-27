@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class renameResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1214;
+    public static final int TAG = 2009082832;
 
     
     public renameResponse() { file_credentials = new FileCredentialsSet(); }
@@ -29,7 +29,7 @@ public class renameResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Serializable
-    public int getTag() { return 1214; }
+    public int getTag() { return 2009082832; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::renameResponse"; }
 
     public void deserialize( Object from_hash_map )

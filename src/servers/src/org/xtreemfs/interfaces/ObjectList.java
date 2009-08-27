@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class ObjectList implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1055;
+    public static final int TAG = 2009082673;
 
     
     public ObjectList() { set = null; stripeWidth = 0; firstObjectNo = 0; }
@@ -32,7 +32,7 @@ public class ObjectList implements org.xtreemfs.interfaces.utils.Serializable
     }
 
     // Serializable
-    public int getTag() { return 1055; }
+    public int getTag() { return 2009082673; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ObjectList"; }
 
     public void deserialize( Object from_hash_map )

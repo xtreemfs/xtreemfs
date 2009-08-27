@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class Replica implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1020;
+    public static final int TAG = 2009082638;
 
     
     public Replica() { striping_policy = new StripingPolicy(); replication_flags = 0; osd_uuids = new StringSet(); }
@@ -32,7 +32,7 @@ public class Replica implements org.xtreemfs.interfaces.utils.Serializable
     }
 
     // Serializable
-    public int getTag() { return 1020; }
+    public int getTag() { return 2009082638; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Replica"; }
 
     public void deserialize( Object from_hash_map )

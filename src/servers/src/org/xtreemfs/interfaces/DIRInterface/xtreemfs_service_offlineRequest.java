@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_service_offlineRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1112;
+    public static final int TAG = 2009082730;
 
     
     public xtreemfs_service_offlineRequest() { uuid = ""; }
@@ -29,7 +29,7 @@ public class xtreemfs_service_offlineRequest implements org.xtreemfs.interfaces.
     }
 
     // Serializable
-    public int getTag() { return 1112; }
+    public int getTag() { return 2009082730; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_offlineRequest"; }
 
     public void deserialize( Object from_hash_map )

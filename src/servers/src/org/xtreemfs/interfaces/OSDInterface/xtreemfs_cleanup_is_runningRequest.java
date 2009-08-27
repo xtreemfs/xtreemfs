@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_cleanup_is_runningRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1331;
+    public static final int TAG = 2009082949;
 
     
     public xtreemfs_cleanup_is_runningRequest() {  }
@@ -25,7 +25,7 @@ public class xtreemfs_cleanup_is_runningRequest implements org.xtreemfs.interfac
     }
 
     // Serializable
-    public int getTag() { return 1331; }
+    public int getTag() { return 2009082949; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_is_runningRequest"; }
 
     public void deserialize( Object from_hash_map )

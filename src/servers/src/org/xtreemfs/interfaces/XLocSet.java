@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class XLocSet implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1023;
+    public static final int TAG = 2009082641;
 
     
     public XLocSet() { replicas = new ReplicaSet(); version = 0; repUpdatePolicy = ""; read_only_file_size = 0; }
@@ -34,7 +34,7 @@ public class XLocSet implements org.xtreemfs.interfaces.utils.Serializable
     }
 
     // Serializable
-    public int getTag() { return 1023; }
+    public int getTag() { return 2009082641; }
     public String getTypeName() { return "org::xtreemfs::interfaces::XLocSet"; }
 
     public void deserialize( Object from_hash_map )

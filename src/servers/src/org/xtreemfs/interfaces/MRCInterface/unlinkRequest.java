@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1220;
+    public static final int TAG = 2009082838;
 
     
     public unlinkRequest() { path = ""; }
@@ -29,7 +29,7 @@ public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Serializable
-    public int getTag() { return 1220; }
+    public int getTag() { return 2009082838; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::unlinkRequest"; }
 
     public void deserialize( Object from_hash_map )

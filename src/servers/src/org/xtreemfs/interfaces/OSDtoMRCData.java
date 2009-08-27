@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class OSDtoMRCData implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1013;
+    public static final int TAG = 2009082631;
 
     
     public OSDtoMRCData() { caching_policy = 0; data = ""; }
@@ -30,7 +30,7 @@ public class OSDtoMRCData implements org.xtreemfs.interfaces.utils.Serializable
     }
 
     // Serializable
-    public int getTag() { return 1013; }
+    public int getTag() { return 2009082631; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDtoMRCData"; }
 
     public void deserialize( Object from_hash_map )

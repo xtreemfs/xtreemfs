@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_discover_dirRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1105;
+    public static final int TAG = 2009082723;
 
     
     public xtreemfs_discover_dirRequest() {  }
@@ -25,7 +25,7 @@ public class xtreemfs_discover_dirRequest implements org.xtreemfs.interfaces.uti
     }
 
     // Serializable
-    public int getTag() { return 1105; }
+    public int getTag() { return 2009082723; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_discover_dirRequest"; }
 
     public void deserialize( Object from_hash_map )

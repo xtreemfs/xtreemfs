@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class chmodResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1202;
+    public static final int TAG = 2009082820;
 
     
     public chmodResponse() {  }
@@ -25,7 +25,7 @@ public class chmodResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Serializable
-    public int getTag() { return 1202; }
+    public int getTag() { return 2009082820; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chmodResponse"; }
 
     public void deserialize( Object from_hash_map )

@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_replica_addResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1239;
+    public static final int TAG = 2009082857;
 
     
     public xtreemfs_replica_addResponse() {  }
@@ -25,7 +25,7 @@ public class xtreemfs_replica_addResponse implements org.xtreemfs.interfaces.uti
     }
 
     // Serializable
-    public int getTag() { return 1239; }
+    public int getTag() { return 2009082857; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addResponse"; }
 
     public void deserialize( Object from_hash_map )

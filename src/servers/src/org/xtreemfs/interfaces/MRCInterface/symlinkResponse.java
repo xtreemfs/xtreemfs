@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class symlinkResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1219;
+    public static final int TAG = 2009082837;
 
     
     public symlinkResponse() {  }
@@ -25,7 +25,7 @@ public class symlinkResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Serializable
-    public int getTag() { return 1219; }
+    public int getTag() { return 2009082837; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::symlinkResponse"; }
 
     public void deserialize( Object from_hash_map )

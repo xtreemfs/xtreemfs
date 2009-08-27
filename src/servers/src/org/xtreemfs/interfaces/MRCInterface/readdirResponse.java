@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class readdirResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1212;
+    public static final int TAG = 2009082830;
 
     
     public readdirResponse() { directory_entries = new DirectoryEntrySet(); }
@@ -29,7 +29,7 @@ public class readdirResponse implements org.xtreemfs.interfaces.utils.Response
     }
 
     // Serializable
-    public int getTag() { return 1212; }
+    public int getTag() { return 2009082830; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirResponse"; }
 
     public void deserialize( Object from_hash_map )

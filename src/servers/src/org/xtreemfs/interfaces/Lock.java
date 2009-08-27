@@ -10,7 +10,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class Lock implements org.xtreemfs.interfaces.utils.Serializable
 {
-    public static final int TAG = 1054;
+    public static final int TAG = 2009082672;
 
     
     public Lock() { client_uuid = ""; client_pid = 0; offset = 0; length = 0; }
@@ -34,7 +34,7 @@ public class Lock implements org.xtreemfs.interfaces.utils.Serializable
     }
 
     // Serializable
-    public int getTag() { return 1054; }
+    public int getTag() { return 2009082672; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Lock"; }
 
     public void deserialize( Object from_hash_map )

@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class xtreemfs_lock_acquireResponse implements org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 1350;
+    public static final int TAG = 2009082968;
 
     
     public xtreemfs_lock_acquireResponse() { returnValue = new Lock(); }
@@ -29,7 +29,7 @@ public class xtreemfs_lock_acquireResponse implements org.xtreemfs.interfaces.ut
     }
 
     // Serializable
-    public int getTag() { return 1350; }
+    public int getTag() { return 2009082968; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_lock_acquireResponse"; }
 
     public void deserialize( Object from_hash_map )

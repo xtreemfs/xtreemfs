@@ -11,7 +11,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 
 public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 1312;
+    public static final int TAG = 2009082930;
 
     
     public unlinkRequest() { file_credentials = new FileCredentials(); file_id = ""; }
@@ -31,7 +31,7 @@ public class unlinkRequest implements org.xtreemfs.interfaces.utils.Request
     }
 
     // Serializable
-    public int getTag() { return 1312; }
+    public int getTag() { return 2009082930; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::unlinkRequest"; }
 
     public void deserialize( Object from_hash_map )
