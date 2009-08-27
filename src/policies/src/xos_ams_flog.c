@@ -1,4 +1,4 @@
-#include "org/xtreemfs/client/policy.h"
+#include "xtreemfs/policy.h"
 
 #include <string.h>
 

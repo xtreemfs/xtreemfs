@@ -1,4 +1,4 @@
-#include "org/xtreemfs/client/policy.h"
+#include "xtreemfs/policy.h"
 
 
 DLLEXPORT int get_osd_ping_interval_s( const char* osd_uuid )

@@ -2,7 +2,7 @@ import os.path
 
 
 build_env = Environment()
-build_env["CPPPATH"] = [os.path.abspath( "../client/include" )]
+build_env["CPPPATH"] = [os.path.abspath( "../../include" )]
 build_conf = build_env.Configure()
 Export( "build_env", "build_conf" )
 
