@@ -17,6 +17,7 @@ namespace xtreemfs
   {
   public:
     YIELD_FILE_PROTOTYPES;
+    virtual size_t getpagesize();
     virtual uint64_t get_size();
 
   private:

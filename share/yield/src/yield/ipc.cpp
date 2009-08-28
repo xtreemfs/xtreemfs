@@ -115,8 +115,8 @@ public:
   {
     if ( request_lock.try_acquire() )
     {
-      if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( Log::LOG_INFO ) << "yield::Client: connect() to " << client.absolute_uri->get_host() << ":" << client.absolute_uri->get_port() << " failed, errno=" << error_code << ", strerror=" << Exception::strerror( error_code ) << ".";
+      if ( client.log != NULL )
+        client.log->getStream( Log::LOG_ERR ) << "yield::Client: connect() to " << client.absolute_uri->get_host() << ":" << client.absolute_uri->get_port() << " failed, errno=" << error_code << ", strerror=" << Exception::strerror( error_code ) << ".";
       request->respond( *( new ExceptionResponse( error_code ) ) );
       request = NULL;
     }
@@ -167,8 +167,8 @@ public:
         }
         else
         {
-          if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-            client.log->getStream( Log::LOG_INFO ) << "yield::Client: error deserializing " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
+          if ( client.log != NULL )
+            client.log->getStream( Log::LOG_ERR ) << "yield::Client: error deserializing " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
           request->respond( *( new ExceptionResponse( ECONNABORTED ) ) );
           get_socket()->shutdown();
           get_socket()->close();
@@ -176,8 +176,8 @@ public:
       }
       else
       {
-        if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-          client.log->getStream( Log::LOG_INFO ) << "yield::Client: lost connection trying " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
+        if ( client.log != NULL )
+          client.log->getStream( Log::LOG_ERR ) << "yield::Client: lost connection trying " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
         request->respond( *( new ExceptionResponse( ECONNABORTED ) ) );
         get_socket()->shutdown();
         get_socket()->close();
@@ -192,8 +192,8 @@ public:
   {
     if ( request_lock.try_acquire() )
     {
-      if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( Log::LOG_INFO ) << "yield::Client: error reading " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
+      if ( client.log != NULL )
+        client.log->getStream( Log::LOG_ERR ) << "yield::Client: error reading " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       request->respond( *( new ExceptionResponse( error_code ) ) );
       get_socket()->shutdown();
       get_socket()->close();
@@ -238,8 +238,8 @@ public:
   {
     if ( request_lock.try_acquire() )
     {
-      if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( Log::LOG_INFO ) << "yield::Client: error writing " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
+      if ( client.log != NULL )
+        client.log->getStream( Log::LOG_ERR ) << "yield::Client: error writing " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       request->respond( *( new ExceptionResponse( error_code ) ) );
       request = NULL;
       unlink_buffer();
@@ -430,11 +430,16 @@ YIELD::auto_HTTPResponse YIELD::HTTPClient::PUT( const URI& absolute_uri, yidl::
 }
 YIELD::auto_HTTPResponse YIELD::HTTPClient::PUT( const URI& absolute_uri, const Path& body_file_path, auto_Log log )
 {
-  auto_File file( File::open( body_file_path ) );
-  size_t file_size = static_cast<size_t>( file->getattr()->get_size() );
-  yidl::auto_Object<yidl::HeapBuffer> body( new yidl::HeapBuffer( file_size ) );
-  file->read( *body, file_size );
-  return sendHTTPRequest( "PUT", absolute_uri, body.release(), log );
+  auto_File file( Volume().open( body_file_path ) );
+  if ( file != NULL )
+  {
+    size_t file_size = static_cast<size_t>( file->getattr()->get_size() );
+    yidl::auto_Object<yidl::HeapBuffer> body( new yidl::HeapBuffer( file_size ) );
+    file->read( *body, file_size );
+    return sendHTTPRequest( "PUT", absolute_uri, body.release(), log );
+  }
+  else
+    throw YIELD::Exception();
 }
 YIELD::auto_HTTPResponse YIELD::HTTPClient::sendHTTPRequest( const char* method, const URI& absolute_uri, yidl::auto_Buffer body, auto_Log log )
 {
@@ -1495,7 +1500,7 @@ YIELD::auto_NamedPipe YIELD::NamedPipe::open( const Path& path, uint32_t flags, 
   }
   else // Client
   {
-    auto_File underlying_file = File::open( named_pipe_path, flags );
+    auto_File underlying_file( Volume().open( named_pipe_path, flags ) );
     if ( underlying_file != NULL )
       return new NamedPipe( underlying_file, true );
   }
@@ -1507,7 +1512,7 @@ YIELD::auto_NamedPipe YIELD::NamedPipe::open( const Path& path, uint32_t flags, 
     else
       return NULL;
   }
-  auto_File underlying_file = File::open( path, flags );
+  auto_File underlying_file = Volume().open( path, flags );
   if ( underlying_file != NULL )
     return new NamedPipe( underlying_file );
 #endif
@@ -1620,7 +1625,6 @@ ssize_t YIELD::ONCRPCMessage<ONCRPCMessageType>::deserialize( yidl::auto_Buffer 
     // Drop down
     case DESERIALIZE_DONE: return 0;
   }
-  DebugBreak();
   return -1;
 }
 template <class ONCRPCMessageType>
@@ -1670,12 +1674,7 @@ ssize_t YIELD::ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment( yidl
     return record_fragment_length - record_fragment_buffer->size();
   }
   else
-  {
-#ifdef _DEBUG
-    DebugBreak();
-#endif
     return -1;
-  }
 }
 template <class ONCRPCMessageType>
 ssize_t YIELD::ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment( yidl::auto_Buffer buffer )
@@ -1697,12 +1696,7 @@ ssize_t YIELD::ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment( 
     return 0;
   }
   else // The buffer is larger than we need to fill the record fragment, logic error somewhere
-  {
-#ifdef _DEBUG
-    DebugBreak();
-#endif
     return -1;
-  }
 }
 template <class ONCRPCMessageType>
 void YIELD::ONCRPCMessage<ONCRPCMessageType>::marshal( yidl::Marshaller& marshaller )

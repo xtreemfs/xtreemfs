@@ -1,3 +1,5 @@
+// Revision: 1850
+
 #include "yield/platform.h"
 using namespace YIELD;
 
@@ -319,6 +321,16 @@ uint64_t File::get_size()
   else
     return 0;
 }
+size_t File::getpagesize()
+{
+#ifdef _WIN32
+  SYSTEM_INFO system_info;
+  GetSystemInfo( &system_info );
+  return system_info.dwPageSize;
+#else
+  return ::getpagesize();
+#endif
+}
 bool File::getxattr( const std::string& name, std::string& out_value )
 {
 #ifdef YIELD_HAVE_XATTR_H
@@ -376,60 +388,6 @@ bool File::listxattr( std::vector<std::string>& out_names )
 #else
   return false;
 #endif
-}
-auto_File File::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
-{
-#ifdef _WIN32
-  DWORD file_access_flags = 0,
-        file_create_flags = 0,
-        file_open_flags = attributes|FILE_FLAG_SEQUENTIAL_SCAN;
-  if ( ( flags & O_RDWR ) == O_RDWR )
-    file_access_flags |= GENERIC_READ|GENERIC_WRITE;
-  else if ( ( flags & O_WRONLY ) == O_WRONLY )
-  {
-    file_access_flags |= GENERIC_WRITE;
-    if ( ( flags & O_APPEND ) == O_APPEND )
-      file_access_flags |= FILE_APPEND_DATA;
-  }
-  else if ( ( flags & O_APPEND ) == O_APPEND )
-      file_access_flags |= GENERIC_WRITE|FILE_APPEND_DATA;
-  else
-    file_access_flags |= GENERIC_READ;
-  if ( ( flags & O_CREAT ) == O_CREAT )
-  {
-    if ( ( flags & O_TRUNC ) == O_TRUNC )
-      file_create_flags = CREATE_ALWAYS;
-    else
-      file_create_flags = OPEN_ALWAYS;
-  }
-  else
-    file_create_flags = OPEN_EXISTING;
-//  if ( ( flags & O_SPARSE ) == O_SPARSE )
-//    file_open_flags |= FILE_ATTRIBUTE_SPARSE_FILE;
-  if ( ( flags & O_SYNC ) == O_SYNC )
-    file_open_flags |= FILE_FLAG_WRITE_THROUGH;
-  if ( ( flags & O_DIRECT ) == O_DIRECT )
-    file_open_flags |= FILE_FLAG_NO_BUFFERING;
-  if ( ( flags & O_ASYNC ) == O_ASYNC )
-    file_open_flags |= FILE_FLAG_OVERLAPPED;
-  if ( ( flags & O_HIDDEN ) == O_HIDDEN )
-    file_open_flags = FILE_ATTRIBUTE_HIDDEN;
-  HANDLE fd = CreateFileW( path, file_access_flags, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, file_create_flags, file_open_flags, NULL );
-  if ( fd != INVALID_HANDLE_VALUE )
-  {
-    if ( ( flags & O_TRUNC ) == O_TRUNC && ( flags & O_CREAT ) != O_CREAT )
-    {
-      SetFilePointer( fd, 0, NULL, FILE_BEGIN );
-      SetEndOfFile( fd );
-    }
-    return new File( fd );
-  }
-#else
-  int fd = ::open( path, flags, mode );
-  if ( fd != -1 )
-    return new File( fd );
-#endif
-  return NULL;
 }
 ssize_t File::read( yidl::auto_Buffer buffer )
 {
@@ -671,7 +629,7 @@ auto_Log Log::open( std::ostream& underlying_ostream, Level level )
 }
 auto_Log Log::open( const Path& file_path, Level level )
 {
-  auto_File file = File::open( file_path, O_CREAT|O_WRONLY|O_APPEND );
+  auto_File file = Volume().open( file_path, O_CREAT|O_WRONLY|O_APPEND );
   if ( file != NULL )
     return new FileLog( file, level );
   else
@@ -809,7 +767,7 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
 #endif
 auto_MemoryMappedFile MemoryMappedFile::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes, size_t minimum_size )
 {
-  auto_File file = File::open( path, flags, mode, attributes );
+  auto_File file( Volume().open( path, flags, mode, attributes ) );
   if ( file != NULL )
   {
     size_t current_file_size;
@@ -1554,7 +1512,7 @@ void RRD::append( double value )
 {
   XDRMarshaller xdr_marshaller;
   Record( value ).marshal( xdr_marshaller );
-  auto_File current_file( File::open( current_file_path, O_CREAT|O_WRONLY|O_APPEND ) );
+  auto_File current_file( Volume().open( current_file_path, O_CREAT|O_WRONLY|O_APPEND ) );
   if ( current_file != NULL )
     current_file->write( xdr_marshaller.get_buffer().release() );
 }
@@ -1568,7 +1526,7 @@ auto_RRD RRD::creat( const Path& file_path )
 }
 void RRD::fetch_all( RecordSet& out_records )
 {
-  auto_File current_file( File::open( current_file_path ) );
+  auto_File current_file( Volume().open( current_file_path ) );
   if ( current_file != NULL )
   {
     for ( ;; )
@@ -1735,23 +1693,6 @@ void* SharedLibrary::getFunction( const char* function_name, void* missing_funct
 #pragma warning( push )
 #pragma warning( disable: 4100 )
 #endif
-auto_Stat Stat::stat( const Path& path )
-{
-#ifdef _WIN32
-  WIN32_FIND_DATA find_data;
-  HANDLE hFindFirstFile = FindFirstFile( path, &find_data );
-  if ( hFindFirstFile != INVALID_HANDLE_VALUE )
-  {
-    FindClose( hFindFirstFile );
-    return new Stat( find_data );
-  }
-#else
-  struct stat stbuf;
-  if ( ::stat( path, &stbuf ) != -1 )
-    return new Stat( stbuf );
-#endif
-  return NULL;
-}
 #ifdef _WIN32
 Stat::Stat( mode_t mode, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime, uint32_t attributes )
 : mode( mode ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime ), attributes( attributes )
@@ -2572,6 +2513,24 @@ namespace YIELD
   private:
     Volume::listdirCallback& listdir_callback;
   };
+  class rmtree_readdirCallback : public Volume::readdirCallback
+  {
+  public:
+    rmtree_readdirCallback( const Path& base_dir_path, Volume& volume )
+      : base_dir_path( base_dir_path ), volume( volume )
+    { }
+    rmtree_readdirCallback& operator=( const rmtree_readdirCallback& ) { return *this; }
+    virtual bool operator()( const Path& path, auto_Stat stbuf )
+    {
+      if ( stbuf->ISDIR() )
+        return volume.rmtree( base_dir_path + path );
+      else
+        return volume.unlink( base_dir_path + path );
+    }
+  private:
+    const YIELD::Path& base_dir_path;
+    Volume& volume;
+  };
   class SynclistdirCallback : public Volume::listdirCallback
   {
   public:
@@ -2647,7 +2606,20 @@ bool Volume::isfile( const Path& path )
 }
 yidl::auto_Object<YIELD::Stat> Volume::getattr( const Path& path )
 {
-  return Stat::stat( path );
+#ifdef _WIN32
+  WIN32_FIND_DATA find_data;
+  HANDLE hFindFirstFile = FindFirstFile( path, &find_data );
+  if ( hFindFirstFile != INVALID_HANDLE_VALUE )
+  {
+    FindClose( hFindFirstFile );
+    return new Stat( find_data );
+  }
+#else
+  struct stat stbuf;
+  if ( ::stat( path, &stbuf ) != -1 )
+    return new Stat( stbuf );
+#endif
+  return NULL;
 }
 bool Volume::getxattr( const Path& path, const std::string& name, std::string& out_value )
 {
@@ -2732,7 +2704,57 @@ bool Volume::mktree( const Path& path, mode_t mode )
 }
 auto_File Volume::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
-  return File::open( path, flags, mode, attributes );
+#ifdef _WIN32
+  DWORD file_access_flags = 0,
+        file_create_flags = 0,
+        file_open_flags = attributes|FILE_FLAG_SEQUENTIAL_SCAN;
+  if ( ( flags & O_RDWR ) == O_RDWR )
+    file_access_flags |= GENERIC_READ|GENERIC_WRITE;
+  else if ( ( flags & O_WRONLY ) == O_WRONLY )
+  {
+    file_access_flags |= GENERIC_WRITE;
+    if ( ( flags & O_APPEND ) == O_APPEND )
+      file_access_flags |= FILE_APPEND_DATA;
+  }
+  else if ( ( flags & O_APPEND ) == O_APPEND )
+      file_access_flags |= GENERIC_WRITE|FILE_APPEND_DATA;
+  else
+    file_access_flags |= GENERIC_READ;
+  if ( ( flags & O_CREAT ) == O_CREAT )
+  {
+    if ( ( flags & O_TRUNC ) == O_TRUNC )
+      file_create_flags = CREATE_ALWAYS;
+    else
+      file_create_flags = OPEN_ALWAYS;
+  }
+  else
+    file_create_flags = OPEN_EXISTING;
+//  if ( ( flags & O_SPARSE ) == O_SPARSE )
+//    file_open_flags |= FILE_ATTRIBUTE_SPARSE_FILE;
+  if ( ( flags & O_SYNC ) == O_SYNC )
+    file_open_flags |= FILE_FLAG_WRITE_THROUGH;
+  if ( ( flags & O_DIRECT ) == O_DIRECT )
+    file_open_flags |= FILE_FLAG_NO_BUFFERING;
+  if ( ( flags & O_ASYNC ) == O_ASYNC )
+    file_open_flags |= FILE_FLAG_OVERLAPPED;
+  if ( ( flags & O_HIDDEN ) == O_HIDDEN )
+    file_open_flags = FILE_ATTRIBUTE_HIDDEN;
+  HANDLE fd = CreateFileW( path, file_access_flags, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, file_create_flags, file_open_flags, NULL );
+  if ( fd != INVALID_HANDLE_VALUE )
+  {
+    if ( ( flags & O_TRUNC ) == O_TRUNC && ( flags & O_CREAT ) != O_CREAT )
+    {
+      SetFilePointer( fd, 0, NULL, FILE_BEGIN );
+      SetEndOfFile( fd );
+    }
+    return new File( fd );
+  }
+#else
+  int fd = ::open( path, flags, mode );
+  if ( fd != -1 )
+    return new File( fd );
+#endif
+  return NULL;
 }
 bool Volume::readdir( const Path& path, const YIELD::Path& match_file_name_prefix, readdirCallback& callback )
 {
@@ -2835,31 +2857,12 @@ bool Volume::rmdir( const Path& path )
   return ::rmdir( path ) != -1;
 #endif
 }
-namespace YIELD
-{
-  class rmtree_readdirCallback : public Volume::readdirCallback
-  {
-  public:
-    rmtree_readdirCallback( Volume& volume ) : volume( volume )
-    { }
-    rmtree_readdirCallback& operator=( const rmtree_readdirCallback& ) { return *this; }
-    virtual bool operator()( const Path& path, auto_Stat stbuf )
-    {
-      if ( stbuf->ISDIR() )
-        return volume.rmtree( path );
-      else
-        return volume.unlink( path );
-    }
-  private:
-    Volume& volume;
-  };
-};
 bool Volume::rmtree( const Path& path )
 {
-  auto_Stat path_stat = Stat::stat( path );
+  auto_Stat path_stat = stat( path );
   if ( path_stat != NULL && path_stat->ISDIR() )
   {
-    rmtree_readdirCallback readdir_callback( *this );
+    rmtree_readdirCallback readdir_callback( path, *this );
     if ( readdir( path, readdir_callback ) )
       return rmdir( path );
     else

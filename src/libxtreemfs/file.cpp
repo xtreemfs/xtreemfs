@@ -140,6 +140,11 @@ bool File::getlk( bool exclusive, uint64_t offset, uint64_t length )
   return lock.get_client_pid() != yieldfs::FUSE::getpid();
 }
 
+size_t File::getpagesize()
+{
+  return file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;
+}
+
 uint64_t File::get_size()
 {
   if ( !latest_osd_write_response.get_new_file_size().empty() )  

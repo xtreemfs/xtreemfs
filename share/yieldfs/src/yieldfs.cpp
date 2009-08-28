@@ -1,4 +1,4 @@
-// Revision: 179
+// Revision: 181
 
 #include "yield.h"
 #include "yieldfs.h"
@@ -10,31 +10,23 @@ using namespace yieldfs;
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 
 
-#define YIELDFS_CACHED_PAGE_SIZE 4096
-
 
 namespace yieldfs
 {
-  class CachedPage
+  class CachedPage : public yidl::HeapBuffer
   {
   public:
-    CachedPage()
+    CachedPage( size_t capacity )
+      : yidl::HeapBuffer( capacity )
     {
-      memset( data, 0, sizeof( data ) );
-      data_len = 0;
       dirty_bit = false;
     }
 
-    inline char* get_data() { return data; }
-    inline uint16_t get_data_len() const{ return data_len; }
     inline bool get_dirty_bit() const { return dirty_bit; }
-    inline void set_data_len( uint16_t data_len ) { this->data_len = data_len; }
     inline void set_dirty_bit() { this->dirty_bit = true; }
 
   private:
     bool dirty_bit;
-    char data[YIELDFS_CACHED_PAGE_SIZE];
-    uint16_t data_len;
   };
 };
 
@@ -87,9 +79,7 @@ namespace yieldfs
   class DataCachingFile : public StackableFile
   {
   public:
-    DataCachingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log = NULL )
-      : StackableFile( path, underlying_file, log )
-    { }
+    DataCachingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log = NULL );
 
     bool close();
     bool datasync();
@@ -102,6 +92,7 @@ namespace yieldfs
   private:
     ~DataCachingFile();
 
+    size_t pagesize;
     typedef std::map<uint64_t, CachedPage*> CachedPageMap;
     CachedPageMap cached_pages;
   };
@@ -1218,6 +1209,7 @@ namespace yieldfs
   class MetadataCachingFile : public StackableFile
   {
   public:
+    bool truncate( uint64_t offset );
     ssize_t write( const void* buffer, size_t buffer_len, uint64_t offset );
 
   private:
@@ -1259,6 +1251,11 @@ namespace yieldfs
 // data_caching_file.cpp
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
+DataCachingFile::DataCachingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log )
+  : StackableFile( path, underlying_file, log )
+{
+  pagesize = underlying_file->getpagesize();
+}
 DataCachingFile::~DataCachingFile()
 {
   flush();
@@ -1284,7 +1281,7 @@ bool DataCachingFile::flush()
   {
     if ( cached_page_i->second->get_dirty_bit() )
     {
-      underlying_file->write( cached_page_i->second->get_data(), cached_page_i->second->get_data_len(), cached_page_i->first * YIELDFS_CACHED_PAGE_SIZE );
+      underlying_file->write( *cached_page_i->second, cached_page_i->second->size(), cached_page_i->first * cached_page_i->second->capacity() );
 #ifdef _DEBUG
       if ( log != NULL )
         log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: flushing page " << cached_page_i->first << ".";
@@ -1298,21 +1295,21 @@ bool DataCachingFile::flush()
 }
 ssize_t DataCachingFile::read( void* buffer, size_t buffer_len, uint64_t offset )
 {
-  if ( offset % YIELDFS_CACHED_PAGE_SIZE != 0 )
+  if ( offset % pagesize != 0 )
     DebugBreak();
   char* read_to_buffer_p = static_cast<char*>( buffer );
   size_t remaining_buffer_len = buffer_len;
   while ( remaining_buffer_len > 0 )
   {
     CachedPage* cached_page;
-    uint64_t cached_page_number = offset / YIELDFS_CACHED_PAGE_SIZE;
-    CachedPageMap::iterator cached_page_i = cached_pages.find( static_cast<uint32_t>( offset / YIELDFS_CACHED_PAGE_SIZE ) );
+    uint64_t cached_page_number = offset / pagesize;
+    CachedPageMap::iterator cached_page_i = cached_pages.find( static_cast<uint32_t>( offset / pagesize ) );
     if ( cached_page_i != cached_pages.end() )
     {
       cached_page = cached_page_i->second;
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read hit on page " << cached_page_number << " with length " << cached_page->get_data_len() << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read hit on page " << cached_page_number << " with length " << cached_page->size() << ".";
 #endif
     }
     else
@@ -1321,15 +1318,15 @@ ssize_t DataCachingFile::read( void* buffer, size_t buffer_len, uint64_t offset 
       if ( log != NULL )
         log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read miss on page " << cached_page_number << ".";
 #endif
-      cached_page = new CachedPage;
-      ssize_t read_ret = underlying_file->read( cached_page->get_data(), YIELDFS_CACHED_PAGE_SIZE, offset );
+      cached_page = new CachedPage( pagesize );
+      ssize_t read_ret = underlying_file->read( *cached_page, cached_page->capacity(), offset );
       if ( read_ret >= 0 )
       {
 #ifdef _DEBUG
         if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read " << cached_page->get_data_len() << " bytes into page " << cached_page_number << ".";
+          log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read " << cached_page->size() << " bytes into page " << cached_page_number << ".";
 #endif
-        cached_page->set_data_len( static_cast<uint16_t>( read_ret ) );
+        cached_page->put( NULL, static_cast<uint16_t>( read_ret ) );
         cached_pages[cached_page_number] = cached_page;
       }
       else
@@ -1342,21 +1339,21 @@ ssize_t DataCachingFile::read( void* buffer, size_t buffer_len, uint64_t offset 
         return read_ret;
       }
     }
-    if ( remaining_buffer_len > cached_page->get_data_len() )
+    if ( remaining_buffer_len > cached_page->size() )
     {
-      memcpy_s( read_to_buffer_p, remaining_buffer_len, cached_page->get_data(), cached_page->get_data_len() );
-      read_to_buffer_p += cached_page->get_data_len();
-      if ( cached_page->get_data_len() == YIELDFS_CACHED_PAGE_SIZE )
+      memcpy_s( read_to_buffer_p, remaining_buffer_len, *cached_page, cached_page->size() );
+      read_to_buffer_p += cached_page->size();
+      if ( cached_page->size() == pagesize )
       {
-        remaining_buffer_len -= cached_page->get_data_len();
-        offset += YIELDFS_CACHED_PAGE_SIZE;
+        remaining_buffer_len -= cached_page->size();
+        offset += pagesize;
       }
       else
         break;
     }
     else
     {
-      memcpy_s( read_to_buffer_p, remaining_buffer_len, cached_page->get_data(), remaining_buffer_len );
+      memcpy_s( read_to_buffer_p, remaining_buffer_len, *cached_page, remaining_buffer_len );
       read_to_buffer_p += remaining_buffer_len;
       break;
     }
@@ -1376,7 +1373,7 @@ bool DataCachingFile::truncate( uint64_t offset )
 }
 ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
-  if ( offset % YIELDFS_CACHED_PAGE_SIZE != 0 )
+  if ( offset % pagesize != 0 )
     DebugBreak();
   const char* wrote_to_buffer_p = reinterpret_cast<const char*>( buffer );
   size_t remaining_buffer_len = buffer_len;
@@ -1384,7 +1381,7 @@ ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t 
   while ( remaining_buffer_len > 0 )
   {
     CachedPage* cached_page;
-    uint64_t cached_page_number = offset / YIELDFS_CACHED_PAGE_SIZE;
+    uint64_t cached_page_number = offset / pagesize;
     CachedPageMap::iterator cached_page_i = cached_pages.find( cached_page_number );
     if ( cached_page_i != cached_pages.end() )
     {
@@ -1400,16 +1397,16 @@ ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t 
       if ( log != NULL )
         log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: write miss on page " << cached_page_number << ".";
 #endif
-      cached_page = new CachedPage;
-      if ( remaining_buffer_len < YIELDFS_CACHED_PAGE_SIZE ) // The buffer is smaller than a page, so we have to read the whole page and then overwrite part of it
+      cached_page = new CachedPage( pagesize );
+      if ( remaining_buffer_len < cached_page->capacity() ) // The buffer is smaller than a page, so we have to read the whole page and then overwrite part of it
       {
 #ifdef _DEBUG
         if ( log != NULL )
           log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: writing partial page " << cached_page_number << ", must read from underlying file system.";
 #endif
-        ssize_t read_ret = underlying_file->read( cached_page->get_data(), YIELDFS_CACHED_PAGE_SIZE, offset );
+        ssize_t read_ret = underlying_file->read( *cached_page, cached_page->capacity(), offset );
         if ( read_ret >= 0 )
-          cached_page->set_data_len( static_cast<uint16_t>( read_ret ) );
+          cached_page->put( NULL, static_cast<uint16_t>( read_ret ) );
         else
         {
 #ifdef _DEBUG
@@ -1423,19 +1420,19 @@ ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t 
       cached_pages[cached_page_number] = cached_page;
     }
     cached_page->set_dirty_bit();
-    if ( remaining_buffer_len > YIELDFS_CACHED_PAGE_SIZE )
+    if ( remaining_buffer_len > pagesize )
     {
 #ifdef _DEBUG
       if ( log != NULL )
         log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: filling page " << cached_page_number << ".";
 #endif
-      memcpy_s( cached_page->get_data(), YIELDFS_CACHED_PAGE_SIZE, wrote_to_buffer_p, YIELDFS_CACHED_PAGE_SIZE );
-      cached_page->set_data_len( YIELDFS_CACHED_PAGE_SIZE );
+      memcpy_s( *cached_page, cached_page->capacity(), wrote_to_buffer_p, cached_page->capacity() );
+      cached_page->put( NULL, cached_page->capacity() );
       cached_pages[cached_page_number] = cached_page;
-      wrote_to_buffer_p += YIELDFS_CACHED_PAGE_SIZE;
-      remaining_buffer_len -= YIELDFS_CACHED_PAGE_SIZE;
-      offset += YIELDFS_CACHED_PAGE_SIZE;
-      ret += YIELDFS_CACHED_PAGE_SIZE;
+      wrote_to_buffer_p += pagesize;
+      remaining_buffer_len -= pagesize;
+      offset += pagesize;
+      ret += pagesize;
     }
     else
     {
@@ -1443,9 +1440,9 @@ ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t 
       if ( log != NULL )
         log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: partially filling page " << cached_page_number << ".";
 #endif
-      memcpy_s( cached_page->get_data(), YIELDFS_CACHED_PAGE_SIZE, wrote_to_buffer_p, remaining_buffer_len );
-      if ( remaining_buffer_len > cached_page->get_data_len() )
-        cached_page->set_data_len( static_cast<uint16_t>( remaining_buffer_len ) );
+      memcpy_s( *cached_page, cached_page->capacity(), wrote_to_buffer_p, remaining_buffer_len );
+      if ( remaining_buffer_len > cached_page->size() )
+        cached_page->put( NULL, static_cast<uint16_t>( remaining_buffer_len ) );
       ret += remaining_buffer_len;
       break;
     }
@@ -1557,6 +1554,16 @@ int FUSE::main( struct fuse_args& fuse_args_, const char* mount_point )
 // metadata_caching_file.cpp
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
+bool MetadataCachingFile::truncate( uint64_t offset )
+{
+  if ( underlying_file->truncate( offset ) )
+  {
+    parent_volume->updateCachedFileSize( get_path(), underlying_file->get_size() );
+    return true;
+  }
+  else
+    return false;
+}
 ssize_t MetadataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
   ssize_t write_ret = underlying_file->write( buffer, buffer_len, offset );

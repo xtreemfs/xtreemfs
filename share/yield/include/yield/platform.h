@@ -373,11 +373,7 @@ namespace YIELD
     File( int fd );
 #endif
 
-    static yidl::auto_Object<File> open( const Path& path ) { return open( path, DEFAULT_FLAGS, DEFAULT_MODE ); }
-    static yidl::auto_Object<File> open( const Path& path, uint32_t flags ) { return open( path, flags, DEFAULT_MODE ); }
-    static yidl::auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode ) { return open( path, flags, mode, DEFAULT_ATTRIBUTES ); }
-    static yidl::auto_Object<File> open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
-
+    virtual size_t getpagesize();
     virtual uint64_t get_size();
 #ifdef _WIN32
     operator void*() const { return fd; }
@@ -1275,9 +1271,7 @@ namespace YIELD
 
   class Stat : public yidl::Object
   {
-  public:   
-    static yidl::auto_Object<Stat> stat( const Path& path );
-
+  public:
 #ifdef _WIN32
     Stat( mode_t mode, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime, uint32_t attributes );
     Stat( const BY_HANDLE_FILE_INFORMATION& );
