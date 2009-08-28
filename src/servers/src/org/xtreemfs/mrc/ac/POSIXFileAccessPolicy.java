@@ -229,7 +229,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
                     if (checkIfAllowed(sMan, accessMode, entry.getRights(), file, parentId, userId)) {
                         return;
                     } else
-                        accessDenied(sMan.getVolumeId(), file, accessMode);
+                        accessDenied(sMan.getVolumeId(), file, accessMode, userId);
                     
                 }
                 
@@ -241,7 +241,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
                         parentId, userId)))
                     return;
                 else
-                    accessDenied(sMan.getVolumeId(), file, accessMode);
+                    accessDenied(sMan.getVolumeId(), file, accessMode, userId);
                 
             }
 
@@ -251,7 +251,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
                     userId, groupIds), file, parentId, userId))
                     return;
                 else
-                    accessDenied(sMan.getVolumeId(), file, accessMode);
+                    accessDenied(sMan.getVolumeId(), file, accessMode, userId);
             }
             
         } catch (UserException exc) {
@@ -581,7 +581,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         // if there was a matching entry but access was not granted, access
         // is denied
         if (groupFound)
-            accessDenied(sMan.getVolumeId(), file, accessMode);
+            accessDenied(sMan.getVolumeId(), file, accessMode, userId);
         
         entry = sMan.getACLEntry(file.getId(), OTHER);
         assert (entry != null);
@@ -626,11 +626,12 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         }
     }
     
-    private static void accessDenied(String volumeId, FileMetadata file, String accessMode)
+    private static void accessDenied(String volumeId, FileMetadata file, String accessMode, String userId)
         throws UserException {
         
         throw new UserException(ErrNo.EACCES, "access denied, volumeId = " + volumeId + ", file = "
-            + file.getId() + " (" + file.getFileName() + "), accessMode = \"" + accessMode + "\"");
+            + file.getId() + " (" + file.getFileName() + "), accessMode = \"" + accessMode
+            + "\", requestor's uid = \"" + userId + "\", owner = \"" + file.getOwnerId() + "\"");
     }
     
 }
