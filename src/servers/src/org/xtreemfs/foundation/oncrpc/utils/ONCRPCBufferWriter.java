@@ -56,7 +56,8 @@ public class ONCRPCBufferWriter {
             return currentBuf;
         } else {
             currentBuffer++;
-            final ReusableBuffer buf = BufferPool.allocate(bufSize);
+            final int newBufSize = (bufSize >= requiredSpace) ? bufSize : requiredSpace;
+            final ReusableBuffer buf = BufferPool.allocate(newBufSize);
             buffers.add(buf);
             return buf;
         }

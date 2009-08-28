@@ -264,6 +264,26 @@ public class MRCTest extends TestCase {
         creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/repl", FileAccessManager.O_CREAT, 0, 0));
         assertEquals(Constants.REPL_UPDATE_PC_RONLY, creds.getXlocs().getRepUpdatePolicy());
     }
+
+     public void testLargeXAttrs() throws Exception {
+
+        final String uid = "userXY";
+        final List<String> gids = createGIDs("groupZ");
+        final String volumeName = "testVolume";
+        final UserCredentials uc = MRCClient.getCredentials(uid, gids);
+
+        invokeSync(client.mkvol(mrcAddress, uc, volumeName, 1, getDefaultStripingPolicy(),
+            YesToAnyoneFileAccessPolicy.POLICY_ID, 0));
+
+        // create a file and add some user attributes
+        invokeSync(client.create(mrcAddress, uc, volumeName + "/test.txt", 0));
+        byte[] largeAttr = new byte[9000];
+        invokeSync(client.setxattr(mrcAddress, uc, volumeName + "/test.txt", "key1", new String(largeAttr), 0));
+
+        String val = invokeSync(client.getxattr(mrcAddress, uc, volumeName + "/test.txt", "key1"));
+        assertEquals(9000, val.length());
+
+     }
     
     public void testSymlink() throws Exception {
         
