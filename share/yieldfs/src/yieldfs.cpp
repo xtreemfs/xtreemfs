@@ -1,5 +1,3 @@
-// Revision: 181
-
 #include "yield.h"
 #include "yieldfs.h"
 using namespace yieldfs;
@@ -1275,7 +1273,7 @@ bool DataCachingFile::flush()
 {
 #ifdef _DEBUG
   if ( log != NULL )
-    log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: flush().";
+    log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: flush().";
 #endif
   for ( CachedPageMap::iterator cached_page_i = cached_pages.begin(); cached_page_i != cached_pages.end(); cached_page_i++ )
   {
@@ -1284,7 +1282,7 @@ bool DataCachingFile::flush()
       underlying_file->write( *cached_page_i->second, cached_page_i->second->size(), cached_page_i->first * cached_page_i->second->capacity() );
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: flushing page " << cached_page_i->first << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: flushing page " << cached_page_i->first << ".";
 #endif
     }
     delete cached_page_i->second;
@@ -1293,72 +1291,80 @@ bool DataCachingFile::flush()
   underlying_file->flush();
   return true;
 }
-ssize_t DataCachingFile::read( void* buffer, size_t buffer_len, uint64_t offset )
+ssize_t DataCachingFile::read( void* rbuf, size_t size, uint64_t offset )
 {
-  if ( offset % pagesize != 0 )
-    DebugBreak();
-  char* read_to_buffer_p = static_cast<char*>( buffer );
-  size_t remaining_buffer_len = buffer_len;
-  while ( remaining_buffer_len > 0 )
+#ifdef _DEBUG
+  if ( log != NULL )
+     log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read( rbuf, size=" << size << ", offset=" << offset << " )";
+#endif
+  char *rbuf_p = static_cast<char*>( rbuf ), *rbuf_end = static_cast<char*>( rbuf ) + size;
+  while ( rbuf_p < rbuf_end )
   {
-    CachedPage* cached_page;
     uint64_t cached_page_number = offset / pagesize;
-    CachedPageMap::iterator cached_page_i = cached_pages.find( static_cast<uint32_t>( offset / pagesize ) );
+    uint32_t cached_page_offset = offset % pagesize;
+    size_t copy_size = static_cast<size_t>( rbuf_end - rbuf_p );
+    if ( cached_page_offset + copy_size > pagesize )
+      copy_size = pagesize - cached_page_offset;
+#ifdef _DEBUG
+    if ( log != NULL )
+       log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: looking up cached page " << cached_page_number << " (offset=" << cached_page_offset << ", copy_size=" << copy_size << ").";
+#endif
+    CachedPage* cached_page;
+    CachedPageMap::iterator cached_page_i = cached_pages.find( cached_page_number );
     if ( cached_page_i != cached_pages.end() )
     {
       cached_page = cached_page_i->second;
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read hit on page " << cached_page_number << " with length " << cached_page->size() << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read hit on page " << cached_page_number << " with length " << cached_page->size() << ".";
 #endif
     }
     else
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read miss on page " << cached_page_number << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read miss on page " << cached_page_number << ".";
 #endif
       cached_page = new CachedPage( pagesize );
-      ssize_t read_ret = underlying_file->read( *cached_page, cached_page->capacity(), offset );
+      ssize_t read_ret = underlying_file->read( *cached_page, cached_page->capacity(), ( offset / pagesize ) * pagesize );
       if ( read_ret >= 0 )
       {
 #ifdef _DEBUG
         if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read " << cached_page->size() << " bytes into page " << cached_page_number << ".";
+          log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read " << read_ret << " bytes into page " << cached_page_number << ".";
 #endif
-        cached_page->put( NULL, static_cast<uint16_t>( read_ret ) );
+        cached_page->put( NULL, static_cast<size_t>( read_ret ) );
         cached_pages[cached_page_number] = cached_page;
       }
       else
       {
 #ifdef _DEBUG
         if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read on page " << cached_page_number << " failed";
+          log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read on page " << cached_page_number << " failed.";
 #endif
         delete cached_page;
         return read_ret;
       }
     }
-    if ( remaining_buffer_len > cached_page->size() )
+    if ( copy_size <= cached_page->size() )
     {
-      memcpy_s( read_to_buffer_p, remaining_buffer_len, *cached_page, cached_page->size() );
-      read_to_buffer_p += cached_page->size();
-      if ( cached_page->size() == pagesize )
-      {
-        remaining_buffer_len -= cached_page->size();
-        offset += pagesize;
-      }
-      else
-        break;
+      memcpy_s( rbuf_p, rbuf_end - rbuf_p, static_cast<char*>( *cached_page ) + cached_page_offset, copy_size );
+      rbuf_p += copy_size;
+      offset += copy_size;
     }
     else
     {
-      memcpy_s( read_to_buffer_p, remaining_buffer_len, *cached_page, remaining_buffer_len );
-      read_to_buffer_p += remaining_buffer_len;
+      memcpy_s( rbuf_p, rbuf_end - rbuf_p, static_cast<char*>( *cached_page ) + cached_page_offset, cached_page->size() );
+      rbuf_p += cached_page->size();
       break;
     }
   }
-  return static_cast<ssize_t>( read_to_buffer_p - static_cast<char*>( buffer ) );
+  ssize_t ret = static_cast<ssize_t>( rbuf_p - static_cast<char*>( rbuf ) );
+#ifdef _DEBUG
+  if ( log != NULL )
+     log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read( rbuf, " << size << ", offset ) => " << ret << ".";
+#endif
+  return ret;
 }
 bool DataCachingFile::sync()
 {
@@ -1373,8 +1379,6 @@ bool DataCachingFile::truncate( uint64_t offset )
 }
 ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
-  if ( offset % pagesize != 0 )
-    DebugBreak();
   const char* wrote_to_buffer_p = reinterpret_cast<const char*>( buffer );
   size_t remaining_buffer_len = buffer_len;
   ssize_t ret = 0;
@@ -1387,7 +1391,7 @@ ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t 
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: write hit on page " << cached_page_number << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: write hit on page " << cached_page_number << ".";
 #endif
       cached_page = cached_page_i->second;
     }
@@ -1395,23 +1399,29 @@ ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t 
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: write miss on page " << cached_page_number << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: write miss on page " << cached_page_number << ".";
 #endif
       cached_page = new CachedPage( pagesize );
       if ( remaining_buffer_len < cached_page->capacity() ) // The buffer is smaller than a page, so we have to read the whole page and then overwrite part of it
       {
 #ifdef _DEBUG
         if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: writing partial page " << cached_page_number << ", must read from underlying file system.";
+          log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: writing partial page " << cached_page_number << ", must read from underlying file system.";
 #endif
         ssize_t read_ret = underlying_file->read( *cached_page, cached_page->capacity(), offset );
         if ( read_ret >= 0 )
+        {
+#ifdef _DEBUG
+        if ( log != NULL )
+          log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read " << read_ret << " bytes into page " << cached_page_number << ".";
+#endif
           cached_page->put( NULL, static_cast<uint16_t>( read_ret ) );
+        }
         else
         {
 #ifdef _DEBUG
           if ( log != NULL )
-            log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: read on page " << cached_page_number << " failed";
+            log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read on page " << cached_page_number << " failed.";
 #endif
           delete cached_page;
           return read_ret;
@@ -1424,7 +1434,7 @@ ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t 
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: filling page " << cached_page_number << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: filling page " << cached_page_number << ".";
 #endif
       memcpy_s( *cached_page, cached_page->capacity(), wrote_to_buffer_p, cached_page->capacity() );
       cached_page->put( NULL, cached_page->capacity() );
@@ -1438,7 +1448,7 @@ ssize_t DataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t 
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "DataCachingFile: partially filling page " << cached_page_number << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: partially filling page " << cached_page_number << ".";
 #endif
       memcpy_s( *cached_page, cached_page->capacity(), wrote_to_buffer_p, remaining_buffer_len );
       if ( remaining_buffer_len > cached_page->size() )
