@@ -63,29 +63,43 @@ public class CloseOperation extends MRCOperation {
         if (cap.hasExpired())
             throw new UserException(ErrNo.EPERM, cap + " has expired");
         
-        // parse volume and file ID from global file ID
-        GlobalFileIdResolver idRes = new GlobalFileIdResolver(cap.getFileId());
-        StorageManager sMan = master.getVolumeManager().getStorageManager(idRes.getVolumeId());
-        
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-        
-        FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
-        if (file == null)
-            throw new UserException(ErrNo.ENOENT, "file '" + cap.getFileId() + "' does not exist");
-        
-        file.setReadOnly(true);
-        sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
-        
-        Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "file closed and set to readOnly");
-        
-        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "initiating file replication...");
-        // TODO: invoke replication policy
-        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "replication initiated");
-        
-        // set the response
-        rq.setResponse(new closeResponse());
-        
-        update.execute();
+        if (cap.getXCap().getReplicateOnClose()) {
+            
+            // parse volume and file ID from global file ID
+            GlobalFileIdResolver idRes = new GlobalFileIdResolver(cap.getFileId());
+            StorageManager sMan = master.getVolumeManager().getStorageManager(idRes.getVolumeId());
+            
+            AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+            
+            FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
+            if (file == null)
+                throw new UserException(ErrNo.ENOENT, "file '" + cap.getFileId() + "' does not exist");
+            
+            file.setReadOnly(true);
+            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
+            
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "file closed and set to readOnly");
+            
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                "initiating file replication...");
+            // TODO: invoke replication policy
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "replication initiated");
+            
+            // set the response
+            rq.setResponse(new closeResponse());
+            
+            update.execute();
+        }
+
+        else {
+            
+            // set the response
+            rq.setResponse(new closeResponse());
+            
+            Logging.logMessage(Logging.LEVEL_WARN, this,
+                "got close() request for non-replicate-on-close file, cap=%s, ignoring it", cap.toString());
+            
+        }
         
     }
 }
