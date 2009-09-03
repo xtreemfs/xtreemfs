@@ -20,9 +20,6 @@ namespace xtfs_mkvol
 
       addOption( XTFS_MKVOL_OPTION_OWNER_GROUP_ID, "-g", "--owner-group-id", "group id of owner" );
 
-      addOption( XTFS_MKVOL_OPTION_OSD_SELECTION_POLICY, "-o", "--osd-selection-policy", "SIMPLE" );
-      osd_selection_policy = org::xtreemfs::interfaces::OSD_SELECTION_POLICY_SIMPLE;
-
       addOption( XTFS_MKVOL_OPTION_PASSWORD, "--password", NULL, "password for volume" );
 
       addOption( XTFS_MKVOL_OPTION_STRIPING_POLICY, "-p", "--striping-policy", "NONE|RAID0" );
@@ -44,18 +41,16 @@ namespace xtfs_mkvol
       XTFS_MKVOL_OPTION_MODE = 21,
       XTFS_MKVOL_OPTION_OWNER_GROUP_ID = 22,
       XTFS_MKVOL_OPTION_OWNER_USER_ID = 23,      
-      XTFS_MKVOL_OPTION_OSD_SELECTION_POLICY = 24,
-      XTFS_MKVOL_OPTION_PASSWORD = 25,
-      XTFS_MKVOL_OPTION_STRIPING_POLICY = 26,
-      XTFS_MKVOL_OPTION_STRIPING_POLICY_STRIPE_SIZE = 27,
-      XTFS_MKVOL_OPTION_STRIPING_POLICY_WIDTH = 28
+      XTFS_MKVOL_OPTION_PASSWORD = 24,
+      XTFS_MKVOL_OPTION_STRIPING_POLICY = 25,
+      XTFS_MKVOL_OPTION_STRIPING_POLICY_STRIPE_SIZE = 26,
+      XTFS_MKVOL_OPTION_STRIPING_POLICY_WIDTH = 27
     };
 
     org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy;
     uint32_t mode;
     YIELD::auto_URI mrc_uri;
     std::string owner_group_id, owner_user_id;
-    org::xtreemfs::interfaces::OSDSelectionPolicyType osd_selection_policy;
     std::string password;
     org::xtreemfs::interfaces::StripingPolicyType striping_policy;
     uint32_t striping_policy_stripe_size;
@@ -65,7 +60,7 @@ namespace xtfs_mkvol
     // YIELD::Main
     int _main( int, char** )
     {
-      createMRCProxy( *mrc_uri, password.c_str() )->xtreemfs_mkvol( org::xtreemfs::interfaces::Volume( volume_name, mode, osd_selection_policy, org::xtreemfs::interfaces::StripingPolicy( striping_policy, striping_policy_stripe_size, striping_policy_width ), access_control_policy, std::string(), owner_user_id, owner_group_id ) );
+      createMRCProxy( *mrc_uri, password.c_str() )->xtreemfs_mkvol( org::xtreemfs::interfaces::Volume( volume_name, mode, org::xtreemfs::interfaces::StripingPolicy( striping_policy, striping_policy_stripe_size, striping_policy_width ), access_control_policy, std::string(), owner_user_id, owner_group_id ) );
       return 0;
     }
 
@@ -96,19 +91,7 @@ namespace xtfs_mkvol
 
           case XTFS_MKVOL_OPTION_OWNER_GROUP_ID: owner_group_id = arg; break;
           case XTFS_MKVOL_OPTION_OWNER_USER_ID: owner_user_id = arg; break;
-
-          case XTFS_MKVOL_OPTION_OSD_SELECTION_POLICY:
-          {
-            if ( strcmp( arg, "SIMPLE" ) == 0 )
-              osd_selection_policy = org::xtreemfs::interfaces::OSD_SELECTION_POLICY_SIMPLE;
-          }
-          break;
-
-          case XTFS_MKVOL_OPTION_PASSWORD:
-          {
-            password = arg;
-          }
-          break;
+          case XTFS_MKVOL_OPTION_PASSWORD: password = arg; break;
 
           case XTFS_MKVOL_OPTION_STRIPING_POLICY:
           {

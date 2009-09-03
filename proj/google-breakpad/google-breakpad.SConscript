@@ -54,7 +54,7 @@ except:
     build_env = Environment( **build_env )
 
     build_conf = build_env.Configure()
-    if not sys.platform.startswith( "win" ) and not sys.platform.startswith( "sunos" ) and        platform.architecture()[0] == "32bit":
+    if sys.platform.startswith( "linux" ) and platform.machine() == "i686": 
         build_env["CCFLAGS"] += "-march=i686 "
 
     Export( "build_env", "build_conf" )
