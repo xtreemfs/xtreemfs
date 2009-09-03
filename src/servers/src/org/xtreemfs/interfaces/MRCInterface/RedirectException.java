@@ -11,7 +11,7 @@ import yidl.Unmarshaller;
 
 
 
-public class RedirectException extends Struct
+public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
     public static final int TAG = 2009090464;
     

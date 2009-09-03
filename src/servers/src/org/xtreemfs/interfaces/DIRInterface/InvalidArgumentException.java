@@ -11,7 +11,7 @@ import yidl.Unmarshaller;
 
 
 
-public class InvalidArgumentException extends Struct
+public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
     public static final int TAG = 2009082739;
     

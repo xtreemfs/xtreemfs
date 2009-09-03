@@ -11,7 +11,7 @@ import yidl.Unmarshaller;
 
 
 
-public class MRCException extends Struct
+public class MRCException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
     public static final int TAG = 2009090462;
     

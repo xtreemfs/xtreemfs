@@ -11,7 +11,7 @@ import yidl.Unmarshaller;
 
 
 
-public class errnoException extends Struct
+public class errnoException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
     public static final int TAG = 2009090460;
     

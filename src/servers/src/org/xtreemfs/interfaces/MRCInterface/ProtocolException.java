@@ -11,7 +11,7 @@ import yidl.Unmarshaller;
 
 
 
-public class ProtocolException extends Struct
+public class ProtocolException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
     public static final int TAG = 2009090463;
     

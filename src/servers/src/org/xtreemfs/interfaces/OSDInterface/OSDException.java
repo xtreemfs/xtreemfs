@@ -11,7 +11,7 @@ import yidl.Unmarshaller;
 
 
 
-public class OSDException extends Struct
+public class OSDException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
     public static final int TAG = 2009082922;
     

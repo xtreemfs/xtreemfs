@@ -11,7 +11,7 @@ import yidl.Unmarshaller;
 
 
 
-public class ConcurrentModificationException extends Struct
+public class ConcurrentModificationException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
     public static final int TAG = 2009090459;
     
