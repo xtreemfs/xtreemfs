@@ -65,8 +65,8 @@ import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_file_sizeReque
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_file_sizeResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_gmaxRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_gmaxResponse;
-import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_object_listRequest;
-import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_object_listResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_object_setRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_object_setResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_read_localRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_read_localResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_truncateRequest;
@@ -357,14 +357,14 @@ public class OSDClient extends ONCRPCClient {
 
     public RPCResponse<ObjectList> internal_getObjectList(InetSocketAddress server,
             String file_id, FileCredentials credentials) {
-        xtreemfs_internal_get_object_listRequest rq = new xtreemfs_internal_get_object_listRequest(credentials,
+        xtreemfs_internal_get_object_setRequest rq = new xtreemfs_internal_get_object_setRequest(credentials,
                 file_id);
 
         RPCResponse<ObjectList> r = sendRequest(server, rq.getTag(), rq,
                 new RPCResponseDecoder<ObjectList>() {
                     @Override
                     public ObjectList getResult(ReusableBuffer data) {
-                        xtreemfs_internal_get_object_listResponse resp = new xtreemfs_internal_get_object_listResponse();
+                        xtreemfs_internal_get_object_setResponse resp = new xtreemfs_internal_get_object_setResponse();
                         resp.deserialize(data);
                         return resp.getReturnValue();
                     }

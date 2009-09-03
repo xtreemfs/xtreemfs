@@ -31,8 +31,8 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.ObjectList;
-import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_object_listRequest;
-import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_object_listResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_object_setRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_object_setResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.OSDRequest;
@@ -53,8 +53,8 @@ public class GetObjectSetOperation extends OSDOperation {
 
     public GetObjectSetOperation(OSDRequestDispatcher master) {
         super(master);
-        xtreemfs_internal_get_object_listRequest rq = new xtreemfs_internal_get_object_listRequest();
-        procId = xtreemfs_internal_get_object_listRequest.TAG;
+        xtreemfs_internal_get_object_setRequest rq = new xtreemfs_internal_get_object_setRequest();
+        procId = xtreemfs_internal_get_object_setRequest.TAG;
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }
@@ -66,7 +66,7 @@ public class GetObjectSetOperation extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        final xtreemfs_internal_get_object_listRequest args = (xtreemfs_internal_get_object_listRequest) rq
+        final xtreemfs_internal_get_object_setRequest args = (xtreemfs_internal_get_object_setRequest) rq
                 .getRequestArgs();
 
 //        System.out.println("rq: " + args);
@@ -80,7 +80,7 @@ public class GetObjectSetOperation extends OSDOperation {
                 });
     }
 
-    public void postReadObjectList(final OSDRequest rq, xtreemfs_internal_get_object_listRequest args,
+    public void postReadObjectList(final OSDRequest rq, xtreemfs_internal_get_object_setRequest args,
             ObjectSet result, Exception error) {
         if (error != null) {
             if (error instanceof ONCRPCException) {
@@ -106,13 +106,13 @@ public class GetObjectSetOperation extends OSDOperation {
     }
 
     public void sendResponse(OSDRequest rq, ObjectList objectList) {
-        xtreemfs_internal_get_object_listResponse response = new xtreemfs_internal_get_object_listResponse(objectList);
+        xtreemfs_internal_get_object_setResponse response = new xtreemfs_internal_get_object_setResponse(objectList);
         rq.sendSuccess(response);
     }
 
     @Override
     public Serializable parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
-        xtreemfs_internal_get_object_listRequest rpcrq = new xtreemfs_internal_get_object_listRequest();
+        xtreemfs_internal_get_object_setRequest rpcrq = new xtreemfs_internal_get_object_setRequest();
         rpcrq.deserialize(data);
 
         rq.setFileId(rpcrq.getFile_id());
