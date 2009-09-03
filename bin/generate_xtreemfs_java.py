@@ -17,6 +17,7 @@ XTREEMFS_IMPORTS = [
 
 class XtreemFSJavaBufferType(JavaBufferType):
     def getDeclarationTypeName( self ): return "ReusableBuffer"
+    def getUnmarshalCall( self, decl_identifier, value_identifier ): return value_identifier + """ = ( ReusableBuffer )unmarshaller.readBuffer( %(decl_identifier)s );""" % locals()
     
 
 class XtreemFSJavaExceptionType(JavaExceptionType):
