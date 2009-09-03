@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class xtreemfs_replica_removeRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009082859;
+    public static final int TAG = 2009090450;
     
     public xtreemfs_replica_removeRequest() {  }
     public xtreemfs_replica_removeRequest( String file_id, String osd_uuid ) { this.file_id = file_id; this.osd_uuid = osd_uuid; }
@@ -28,10 +28,10 @@ public class xtreemfs_replica_removeRequest extends org.xtreemfs.interfaces.util
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082859;    
+    public static final long serialVersionUID = 2009090450;    
 
     // yidl.Object
-    public int getTag() { return 2009082859; }
+    public int getTag() { return 2009090450; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeRequest"; }
     
     public int getXDRSize()

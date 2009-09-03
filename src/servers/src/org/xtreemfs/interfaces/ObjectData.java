@@ -56,7 +56,7 @@ public class ObjectData extends Struct
         checksum = unmarshaller.readUint32( "checksum" );
         invalid_checksum_on_osd = unmarshaller.readBoolean( "invalid_checksum_on_osd" );
         zero_padding = unmarshaller.readUint32( "zero_padding" );
-        data = unmarshaller.readBuffer( "data" );    
+        data = ( ReusableBuffer )unmarshaller.readBuffer( "data" );    
     }
         
     

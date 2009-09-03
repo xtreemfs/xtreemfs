@@ -17,7 +17,7 @@ public class OSDtoMRCDataSet extends Sequence<OSDtoMRCData>
     public OSDtoMRCDataSet() { }
 
     // yidl.Object
-    public int getTag() { return 2009082632; }
+    public int getTag() { return 2009090223; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDtoMRCDataSet"; }
 
     public int getXDRSize() {

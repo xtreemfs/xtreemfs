@@ -49,7 +49,7 @@ public class ObjectList extends Struct
     
     public void unmarshal( Unmarshaller unmarshaller ) 
     {
-        set = unmarshaller.readBuffer( "set" );
+        set = ( ReusableBuffer )unmarshaller.readBuffer( "set" );
         stripeWidth = unmarshaller.readUint32( "stripeWidth" );
         firstObjectNo = unmarshaller.readUint32( "firstObjectNo" );    
     }
