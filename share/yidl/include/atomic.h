@@ -1,3 +1,4 @@
+
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
@@ -117,9 +118,9 @@ static inline int32_t atomic_dec( volatile int32_t* current_value )
   do
   {
     old_value = *current_value;
-#ifdef _DEBUG
-    if ( old_value == 0 )  { *((int*)0) = 0xabadcafe; }
-#endif
+//#ifdef _DEBUG
+//    if ( old_value == 0 )  { *((int*)0) = 0xabadcafe; }
+//#endif
     new_value = old_value - 1;
   }
   while ( atomic_cas( current_value, new_value, old_value ) != old_value );

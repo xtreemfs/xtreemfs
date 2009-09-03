@@ -1158,6 +1158,8 @@ namespace YIELD
       // yidl::Object
       YIDL_OBJECT_PROTOTYPES( UDPSocket::AIORecvFromControlBlock, 0 );
 
+      struct sockaddr_storage* peer_sockaddr;
+
     protected:
       ~AIORecvFromControlBlock();
 
@@ -1166,7 +1168,6 @@ namespace YIELD
 
       friend class Socket;
       friend class UDPSocket;
-      struct sockaddr_storage* peer_sockaddr;
     };
 
 
