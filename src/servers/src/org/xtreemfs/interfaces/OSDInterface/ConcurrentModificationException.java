@@ -31,7 +31,7 @@ public class ConcurrentModificationException extends org.xtreemfs.interfaces.uti
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( ( stack_trace.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( stack_trace.getBytes().length + Integer.SIZE/8 ) : ( stack_trace.getBytes().length + Integer.SIZE/8 + 4 - ( stack_trace.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += stack_trace != null ? ( ( stack_trace.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( stack_trace.getBytes().length + Integer.SIZE/8 ) : ( stack_trace.getBytes().length + Integer.SIZE/8 + 4 - ( stack_trace.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         return my_size;
     }    
     

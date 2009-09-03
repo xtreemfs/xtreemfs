@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class xtreemfs_replica_addRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009082857;
+    public static final int TAG = 2009090448;
     
     public xtreemfs_replica_addRequest() { new_replica = new Replica();  }
     public xtreemfs_replica_addRequest( String file_id, Replica new_replica ) { this.file_id = file_id; this.new_replica = new_replica; }
@@ -28,16 +28,16 @@ public class xtreemfs_replica_addRequest extends org.xtreemfs.interfaces.utils.R
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082857;    
+    public static final long serialVersionUID = 2009090448;    
 
     // yidl.Object
-    public int getTag() { return 2009082857; }
+    public int getTag() { return 2009090448; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addRequest"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( file_id.getBytes().length + Integer.SIZE/8 ) : ( file_id.getBytes().length + Integer.SIZE/8 + 4 - ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += file_id != null ? ( ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( file_id.getBytes().length + Integer.SIZE/8 ) : ( file_id.getBytes().length + Integer.SIZE/8 + 4 - ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         my_size += new_replica.getXDRSize();
         return my_size;
     }    

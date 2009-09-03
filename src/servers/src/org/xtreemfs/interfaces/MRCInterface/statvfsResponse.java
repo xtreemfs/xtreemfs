@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class statvfsResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009082836;
+    public static final int TAG = 2009090427;
     
     public statvfsResponse() { stbuf = new StatVFS();  }
     public statvfsResponse( StatVFS stbuf ) { this.stbuf = stbuf; }
@@ -22,10 +22,10 @@ public class statvfsResponse extends org.xtreemfs.interfaces.utils.Response
     public void setStbuf( StatVFS stbuf ) { this.stbuf = stbuf; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082836;    
+    public static final long serialVersionUID = 2009090427;    
 
     // yidl.Object
-    public int getTag() { return 2009082836; }
+    public int getTag() { return 2009090427; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::statvfsResponse"; }
     
     public int getXDRSize()

@@ -12,7 +12,7 @@ import yidl.Unmarshaller;
 
 public class XCap extends Struct
 {
-    public static final int TAG = 2009082640;
+    public static final int TAG = 2009090231;
     
     public XCap() {  }
     public XCap( String file_id, int access_mode, long expires_s, String client_identity, int truncate_epoch, boolean replicateOnClose, String server_signature ) { this.file_id = file_id; this.access_mode = access_mode; this.expires_s = expires_s; this.client_identity = client_identity; this.truncate_epoch = truncate_epoch; this.replicateOnClose = replicateOnClose; this.server_signature = server_signature; }
@@ -33,22 +33,22 @@ public class XCap extends Struct
     public void setServer_signature( String server_signature ) { this.server_signature = server_signature; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082640;    
+    public static final long serialVersionUID = 2009090231;    
 
     // yidl.Object
-    public int getTag() { return 2009082640; }
+    public int getTag() { return 2009090231; }
     public String getTypeName() { return "org::xtreemfs::interfaces::XCap"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( file_id.getBytes().length + Integer.SIZE/8 ) : ( file_id.getBytes().length + Integer.SIZE/8 + 4 - ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += file_id != null ? ( ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( file_id.getBytes().length + Integer.SIZE/8 ) : ( file_id.getBytes().length + Integer.SIZE/8 + 4 - ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
-        my_size += ( ( client_identity.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( client_identity.getBytes().length + Integer.SIZE/8 ) : ( client_identity.getBytes().length + Integer.SIZE/8 + 4 - ( client_identity.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += client_identity != null ? ( ( client_identity.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( client_identity.getBytes().length + Integer.SIZE/8 ) : ( client_identity.getBytes().length + Integer.SIZE/8 + 4 - ( client_identity.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         my_size += ( Integer.SIZE / 8 );
         my_size += 4;
-        my_size += ( ( server_signature.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( server_signature.getBytes().length + Integer.SIZE/8 ) : ( server_signature.getBytes().length + Integer.SIZE/8 + 4 - ( server_signature.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += server_signature != null ? ( ( server_signature.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( server_signature.getBytes().length + Integer.SIZE/8 ) : ( server_signature.getBytes().length + Integer.SIZE/8 + 4 - ( server_signature.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         return my_size;
     }    
     

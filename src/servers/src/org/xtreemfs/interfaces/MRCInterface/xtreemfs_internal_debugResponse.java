@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class xtreemfs_internal_debugResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009082852;
+    public static final int TAG = 2009090443;
     
     public xtreemfs_internal_debugResponse() {  }
     public xtreemfs_internal_debugResponse( String result ) { this.result = result; }
@@ -22,16 +22,16 @@ public class xtreemfs_internal_debugResponse extends org.xtreemfs.interfaces.uti
     public void setResult( String result ) { this.result = result; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082852;    
+    public static final long serialVersionUID = 2009090443;    
 
     // yidl.Object
-    public int getTag() { return 2009082852; }
+    public int getTag() { return 2009090443; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_internal_debugResponse"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( ( result.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( result.getBytes().length + Integer.SIZE/8 ) : ( result.getBytes().length + Integer.SIZE/8 + 4 - ( result.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += result != null ? ( ( result.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( result.getBytes().length + Integer.SIZE/8 ) : ( result.getBytes().length + Integer.SIZE/8 + 4 - ( result.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         return my_size;
     }    
     

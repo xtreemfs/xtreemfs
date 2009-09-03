@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class openRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009082829;
+    public static final int TAG = 2009090420;
     
     public openRequest() {  }
     public openRequest( String path, int flags, int mode, int attributes ) { this.path = path; this.flags = flags; this.mode = mode; this.attributes = attributes; }
@@ -32,16 +32,16 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082829;    
+    public static final long serialVersionUID = 2009090420;    
 
     // yidl.Object
-    public int getTag() { return 2009082829; }
+    public int getTag() { return 2009090420; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::openRequest"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( ( path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( path.getBytes().length + Integer.SIZE/8 ) : ( path.getBytes().length + Integer.SIZE/8 + 4 - ( path.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += path != null ? ( ( path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( path.getBytes().length + Integer.SIZE/8 ) : ( path.getBytes().length + Integer.SIZE/8 + 4 - ( path.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Integer.SIZE / 8 );

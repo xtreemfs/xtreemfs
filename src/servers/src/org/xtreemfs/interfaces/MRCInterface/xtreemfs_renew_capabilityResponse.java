@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class xtreemfs_renew_capabilityResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009082856;
+    public static final int TAG = 2009090447;
     
     public xtreemfs_renew_capabilityResponse() { renewed_xcap = new XCap();  }
     public xtreemfs_renew_capabilityResponse( XCap renewed_xcap ) { this.renewed_xcap = renewed_xcap; }
@@ -22,10 +22,10 @@ public class xtreemfs_renew_capabilityResponse extends org.xtreemfs.interfaces.u
     public void setRenewed_xcap( XCap renewed_xcap ) { this.renewed_xcap = renewed_xcap; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082856;    
+    public static final long serialVersionUID = 2009090447;    
 
     // yidl.Object
-    public int getTag() { return 2009082856; }
+    public int getTag() { return 2009090447; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityResponse"; }
     
     public int getXDRSize()

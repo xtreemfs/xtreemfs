@@ -37,7 +37,7 @@ public class ProtocolException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
         int my_size = 0;
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Integer.SIZE / 8 );
-        my_size += ( ( stack_trace.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( stack_trace.getBytes().length + Integer.SIZE/8 ) : ( stack_trace.getBytes().length + Integer.SIZE/8 + 4 - ( stack_trace.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += stack_trace != null ? ( ( stack_trace.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( stack_trace.getBytes().length + Integer.SIZE/8 ) : ( stack_trace.getBytes().length + Integer.SIZE/8 + 4 - ( stack_trace.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         return my_size;
     }    
     

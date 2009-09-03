@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class getxattrRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009082825;
+    public static final int TAG = 2009090416;
     
     public getxattrRequest() {  }
     public getxattrRequest( String path, String name ) { this.path = path; this.name = name; }
@@ -28,17 +28,17 @@ public class getxattrRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082825;    
+    public static final long serialVersionUID = 2009090416;    
 
     // yidl.Object
-    public int getTag() { return 2009082825; }
+    public int getTag() { return 2009090416; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getxattrRequest"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( ( path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( path.getBytes().length + Integer.SIZE/8 ) : ( path.getBytes().length + Integer.SIZE/8 + 4 - ( path.getBytes().length + Integer.SIZE/8 ) % 4 );
-        my_size += ( ( name.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( name.getBytes().length + Integer.SIZE/8 ) : ( name.getBytes().length + Integer.SIZE/8 + 4 - ( name.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += path != null ? ( ( path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( path.getBytes().length + Integer.SIZE/8 ) : ( path.getBytes().length + Integer.SIZE/8 + 4 - ( path.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += name != null ? ( ( name.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( name.getBytes().length + Integer.SIZE/8 ) : ( name.getBytes().length + Integer.SIZE/8 + 4 - ( name.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         return my_size;
     }    
     

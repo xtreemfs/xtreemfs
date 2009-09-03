@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class MRCException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 2009082871;
+    public static final int TAG = 2009090462;
     
     public MRCException() {  }
     public MRCException( int error_code, String error_message, String stack_trace ) { this.error_code = error_code; this.error_message = error_message; this.stack_trace = stack_trace; }
@@ -26,18 +26,18 @@ public class MRCException extends org.xtreemfs.interfaces.utils.ONCRPCException
     public void setStack_trace( String stack_trace ) { this.stack_trace = stack_trace; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082871;    
+    public static final long serialVersionUID = 2009090462;    
 
     // yidl.Object
-    public int getTag() { return 2009082871; }
+    public int getTag() { return 2009090462; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::MRCException"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += ( Integer.SIZE / 8 );
-        my_size += ( ( error_message.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( error_message.getBytes().length + Integer.SIZE/8 ) : ( error_message.getBytes().length + Integer.SIZE/8 + 4 - ( error_message.getBytes().length + Integer.SIZE/8 ) % 4 );
-        my_size += ( ( stack_trace.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( stack_trace.getBytes().length + Integer.SIZE/8 ) : ( stack_trace.getBytes().length + Integer.SIZE/8 + 4 - ( stack_trace.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += error_message != null ? ( ( error_message.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( error_message.getBytes().length + Integer.SIZE/8 ) : ( error_message.getBytes().length + Integer.SIZE/8 + 4 - ( error_message.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += stack_trace != null ? ( ( stack_trace.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( stack_trace.getBytes().length + Integer.SIZE/8 ) : ( stack_trace.getBytes().length + Integer.SIZE/8 + 4 - ( stack_trace.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         return my_size;
     }    
     

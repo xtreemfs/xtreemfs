@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class setxattrRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009082835;
+    public static final int TAG = 2009090426;
     
     public setxattrRequest() {  }
     public setxattrRequest( String path, String name, String value, int flags ) { this.path = path; this.name = name; this.value = value; this.flags = flags; }
@@ -32,18 +32,18 @@ public class setxattrRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082835;    
+    public static final long serialVersionUID = 2009090426;    
 
     // yidl.Object
-    public int getTag() { return 2009082835; }
+    public int getTag() { return 2009090426; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrRequest"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( ( path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( path.getBytes().length + Integer.SIZE/8 ) : ( path.getBytes().length + Integer.SIZE/8 + 4 - ( path.getBytes().length + Integer.SIZE/8 ) % 4 );
-        my_size += ( ( name.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( name.getBytes().length + Integer.SIZE/8 ) : ( name.getBytes().length + Integer.SIZE/8 + 4 - ( name.getBytes().length + Integer.SIZE/8 ) % 4 );
-        my_size += ( ( value.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( value.getBytes().length + Integer.SIZE/8 ) : ( value.getBytes().length + Integer.SIZE/8 + 4 - ( value.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += path != null ? ( ( path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( path.getBytes().length + Integer.SIZE/8 ) : ( path.getBytes().length + Integer.SIZE/8 + 4 - ( path.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += name != null ? ( ( name.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( name.getBytes().length + Integer.SIZE/8 ) : ( name.getBytes().length + Integer.SIZE/8 + 4 - ( name.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += value != null ? ( ( value.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( value.getBytes().length + Integer.SIZE/8 ) : ( value.getBytes().length + Integer.SIZE/8 + 4 - ( value.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         my_size += ( Integer.SIZE / 8 );
         return my_size;
     }    

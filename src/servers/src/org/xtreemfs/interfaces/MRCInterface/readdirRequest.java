@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class readdirRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009082830;
+    public static final int TAG = 2009090421;
     
     public readdirRequest() {  }
     public readdirRequest( String path ) { this.path = path; }
@@ -26,16 +26,16 @@ public class readdirRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082830;    
+    public static final long serialVersionUID = 2009090421;    
 
     // yidl.Object
-    public int getTag() { return 2009082830; }
+    public int getTag() { return 2009090421; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirRequest"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( ( path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( path.getBytes().length + Integer.SIZE/8 ) : ( path.getBytes().length + Integer.SIZE/8 + 4 - ( path.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += path != null ? ( ( path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( path.getBytes().length + Integer.SIZE/8 ) : ( path.getBytes().length + Integer.SIZE/8 + 4 - ( path.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         return my_size;
     }    
     

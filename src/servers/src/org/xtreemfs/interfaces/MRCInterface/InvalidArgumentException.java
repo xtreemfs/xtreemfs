@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 2009082870;
+    public static final int TAG = 2009090461;
     
     public InvalidArgumentException() {  }
     public InvalidArgumentException( String error_message ) { this.error_message = error_message; }
@@ -22,16 +22,16 @@ public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCR
     public void setError_message( String error_message ) { this.error_message = error_message; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082870;    
+    public static final long serialVersionUID = 2009090461;    
 
     // yidl.Object
-    public int getTag() { return 2009082870; }
+    public int getTag() { return 2009090461; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::InvalidArgumentException"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( ( error_message.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( error_message.getBytes().length + Integer.SIZE/8 ) : ( error_message.getBytes().length + Integer.SIZE/8 + 4 - ( error_message.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += error_message != null ? ( ( error_message.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( error_message.getBytes().length + Integer.SIZE/8 ) : ( error_message.getBytes().length + Integer.SIZE/8 + 4 - ( error_message.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         return my_size;
     }    
     

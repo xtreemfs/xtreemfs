@@ -36,7 +36,7 @@ public class Lock extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( ( client_uuid.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( client_uuid.getBytes().length + Integer.SIZE/8 ) : ( client_uuid.getBytes().length + Integer.SIZE/8 + 4 - ( client_uuid.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += client_uuid != null ? ( ( client_uuid.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( client_uuid.getBytes().length + Integer.SIZE/8 ) : ( client_uuid.getBytes().length + Integer.SIZE/8 + 4 - ( client_uuid.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );

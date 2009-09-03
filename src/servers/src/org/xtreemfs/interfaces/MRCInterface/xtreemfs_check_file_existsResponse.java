@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class xtreemfs_check_file_existsResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009082849;
+    public static final int TAG = 2009090440;
     
     public xtreemfs_check_file_existsResponse() {  }
     public xtreemfs_check_file_existsResponse( String bitmap ) { this.bitmap = bitmap; }
@@ -22,16 +22,16 @@ public class xtreemfs_check_file_existsResponse extends org.xtreemfs.interfaces.
     public void setBitmap( String bitmap ) { this.bitmap = bitmap; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082849;    
+    public static final long serialVersionUID = 2009090440;    
 
     // yidl.Object
-    public int getTag() { return 2009082849; }
+    public int getTag() { return 2009090440; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsResponse"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( ( bitmap.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( bitmap.getBytes().length + Integer.SIZE/8 ) : ( bitmap.getBytes().length + Integer.SIZE/8 + 4 - ( bitmap.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += bitmap != null ? ( ( bitmap.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( bitmap.getBytes().length + Integer.SIZE/8 ) : ( bitmap.getBytes().length + Integer.SIZE/8 + 4 - ( bitmap.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         return my_size;
     }    
     

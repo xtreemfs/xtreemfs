@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class creatRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009082822;
+    public static final int TAG = 2009090413;
     
     public creatRequest() {  }
     public creatRequest( String path, int mode ) { this.path = path; this.mode = mode; }
@@ -28,16 +28,16 @@ public class creatRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082822;    
+    public static final long serialVersionUID = 2009090413;    
 
     // yidl.Object
-    public int getTag() { return 2009082822; }
+    public int getTag() { return 2009090413; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::creatRequest"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( ( path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( path.getBytes().length + Integer.SIZE/8 ) : ( path.getBytes().length + Integer.SIZE/8 + 4 - ( path.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += path != null ? ( ( path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( path.getBytes().length + Integer.SIZE/8 ) : ( path.getBytes().length + Integer.SIZE/8 + 4 - ( path.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         my_size += ( Integer.SIZE / 8 );
         return my_size;
     }    

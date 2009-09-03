@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class renameRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009082832;
+    public static final int TAG = 2009090423;
     
     public renameRequest() {  }
     public renameRequest( String source_path, String target_path ) { this.source_path = source_path; this.target_path = target_path; }
@@ -28,17 +28,17 @@ public class renameRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082832;    
+    public static final long serialVersionUID = 2009090423;    
 
     // yidl.Object
-    public int getTag() { return 2009082832; }
+    public int getTag() { return 2009090423; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::renameRequest"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( ( source_path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( source_path.getBytes().length + Integer.SIZE/8 ) : ( source_path.getBytes().length + Integer.SIZE/8 + 4 - ( source_path.getBytes().length + Integer.SIZE/8 ) % 4 );
-        my_size += ( ( target_path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( target_path.getBytes().length + Integer.SIZE/8 ) : ( target_path.getBytes().length + Integer.SIZE/8 + 4 - ( target_path.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += source_path != null ? ( ( source_path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( source_path.getBytes().length + Integer.SIZE/8 ) : ( source_path.getBytes().length + Integer.SIZE/8 + 4 - ( source_path.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += target_path != null ? ( ( target_path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( target_path.getBytes().length + Integer.SIZE/8 ) : ( target_path.getBytes().length + Integer.SIZE/8 + 4 - ( target_path.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         return my_size;
     }    
     

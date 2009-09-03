@@ -12,7 +12,7 @@ import yidl.Unmarshaller;
 
 public class StatVFS extends Struct
 {
-    public static final int TAG = 2009082661;
+    public static final int TAG = 2009090252;
     
     public StatVFS() {  }
     public StatVFS( int bsize, long bavail, long blocks, String fsid, int namelen ) { this.bsize = bsize; this.bavail = bavail; this.blocks = blocks; this.fsid = fsid; this.namelen = namelen; }
@@ -29,10 +29,10 @@ public class StatVFS extends Struct
     public void setNamelen( int namelen ) { this.namelen = namelen; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082661;    
+    public static final long serialVersionUID = 2009090252;    
 
     // yidl.Object
-    public int getTag() { return 2009082661; }
+    public int getTag() { return 2009090252; }
     public String getTypeName() { return "org::xtreemfs::interfaces::StatVFS"; }
     
     public int getXDRSize()
@@ -41,7 +41,7 @@ public class StatVFS extends Struct
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
-        my_size += ( ( fsid.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( fsid.getBytes().length + Integer.SIZE/8 ) : ( fsid.getBytes().length + Integer.SIZE/8 + 4 - ( fsid.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += fsid != null ? ( ( fsid.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( fsid.getBytes().length + Integer.SIZE/8 ) : ( fsid.getBytes().length + Integer.SIZE/8 + 4 - ( fsid.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         my_size += ( Integer.SIZE / 8 );
         return my_size;
     }    

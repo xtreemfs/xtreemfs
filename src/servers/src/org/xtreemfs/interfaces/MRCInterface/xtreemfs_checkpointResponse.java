@@ -13,15 +13,15 @@ import yidl.Unmarshaller;
 
 public class xtreemfs_checkpointResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009082848;
+    public static final int TAG = 2009090439;
     
     public xtreemfs_checkpointResponse() {  }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082848;    
+    public static final long serialVersionUID = 2009090439;    
 
     // yidl.Object
-    public int getTag() { return 2009082848; }
+    public int getTag() { return 2009090439; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_checkpointResponse"; }
     
     public int getXDRSize()

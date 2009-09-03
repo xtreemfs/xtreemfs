@@ -12,7 +12,7 @@ import yidl.Unmarshaller;
 
 public class DirectoryEntry extends Struct
 {
-    public static final int TAG = 2009082659;
+    public static final int TAG = 2009090250;
     
     public DirectoryEntry() { stbuf = new Stat();  }
     public DirectoryEntry( String name, Stat stbuf ) { this.name = name; this.stbuf = stbuf; }
@@ -23,16 +23,16 @@ public class DirectoryEntry extends Struct
     public void setStbuf( Stat stbuf ) { this.stbuf = stbuf; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082659;    
+    public static final long serialVersionUID = 2009090250;    
 
     // yidl.Object
-    public int getTag() { return 2009082659; }
+    public int getTag() { return 2009090250; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DirectoryEntry"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( ( name.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( name.getBytes().length + Integer.SIZE/8 ) : ( name.getBytes().length + Integer.SIZE/8 + 4 - ( name.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += name != null ? ( ( name.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( name.getBytes().length + Integer.SIZE/8 ) : ( name.getBytes().length + Integer.SIZE/8 + 4 - ( name.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
         my_size += stbuf.getXDRSize();
         return my_size;
     }    
