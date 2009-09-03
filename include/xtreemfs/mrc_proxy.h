@@ -28,15 +28,22 @@ namespace xtreemfs
                                                 uint32_t flags = 0,
                                                 YIELD::auto_Log log = NULL,
                                                 const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::OPERATION_TIMEOUT_DEFAULT,
+                                                const char* password = "",
                                                 YIELD::auto_SSLContext ssl_context = NULL )
     {
-      return YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::create<MRCProxy>( absolute_uri, flags, log, operation_timeout, ssl_context );
+      yidl::auto_Object<MRCProxy> mrc_proxy = YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::create<MRCProxy>( absolute_uri, flags, log, operation_timeout, ssl_context );
+      if ( mrc_proxy != NULL )
+        mrc_proxy->password = password;
+      return mrc_proxy;
     }
 
     // org::xtreemfs::interfaces::MRCInterface
     void chown( const Path& path, int uid, int gid );
     void getattr( const Path& path, org::xtreemfs::interfaces::Stat& stbuf );
     void readdir( const Path& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries );
+
+    // Proxy
+    virtual void getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials );
 
   private:
     friend class YIELD::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>;
@@ -46,6 +53,8 @@ namespace xtreemfs
     { }
 
     ~MRCProxy() { }
+
+    std::string password;
   };
 
   typedef yidl::auto_Object<MRCProxy> auto_MRCProxy;

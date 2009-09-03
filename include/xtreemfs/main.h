@@ -98,14 +98,17 @@ namespace xtreemfs
     virtual ~Main()
     { }
 
-    yidl::auto_Object<DIRProxy> createDIRProxy( const YIELD::URI& uri )
+    yidl::auto_Object<MRCProxy> createMRCProxy( const YIELD::URI& uri, const char* password = "" )
     {
-      return createProxy<DIRProxy>( uri, org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT );
-    }
+      YIELD::URI checked_uri( uri );
+      if ( checked_uri.get_port() == 0 )
+        checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT );
 
-    yidl::auto_Object<MRCProxy> createMRCProxy( const YIELD::URI& uri )
-    {
-      return createProxy<MRCProxy>( uri, org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT );
+      yidl::auto_Object<MRCProxy> proxy = MRCProxy::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, password, get_proxy_ssl_context() );
+      if ( proxy != NULL )
+        return proxy;
+      else
+        throw YIELD::Exception( "invalid proxy URI" );
     }
 
     YIELD::auto_Log get_log()
@@ -211,21 +214,6 @@ namespace xtreemfs
 
     YIELD::auto_Log log;
     YIELD::auto_SSLContext ssl_context;
-
-
-    template <class ProxyType>
-    yidl::auto_Object<ProxyType> createProxy( const YIELD::URI& uri, uint16_t default_port )
-    {
-      YIELD::URI checked_uri( uri );
-      if ( checked_uri.get_port() == 0 )
-        checked_uri.set_port( default_port );
-
-      yidl::auto_Object<ProxyType> proxy = ProxyType::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, get_proxy_ssl_context() );
-      if ( proxy != NULL )
-        return proxy;
-      else
-        throw YIELD::Exception( "invalid proxy URI" );
-    }
 
 #ifdef XTREEMFS_HAVE_GOOGLE_BREAKPAD
 #if defined(_WIN32)

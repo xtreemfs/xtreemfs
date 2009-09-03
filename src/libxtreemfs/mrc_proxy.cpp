@@ -30,6 +30,12 @@ void MRCProxy::getattr( const Path& path, org::xtreemfs::interfaces::Stat& stbuf
 #endif
 }
 
+void MRCProxy::getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials )
+{
+  Proxy<MRCProxy, org::xtreemfs::interfaces::MRCInterface>::getCurrentUserCredentials( out_user_credentials );
+  out_user_credentials.set_password( password );
+}
+
 void MRCProxy::readdir( const Path& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries )
 {
   org::xtreemfs::interfaces::MRCInterface::readdir( path, directory_entries );

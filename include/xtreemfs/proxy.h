@@ -33,7 +33,7 @@ namespace xtreemfs
     Proxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::Socket::auto_Address peer_sockaddr, YIELD::auto_SSLContext ssl_context );
     virtual ~Proxy();
 
-    void getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials );
+    virtual void getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials );
 #ifndef _WIN32
     void getpasswdFromUserCredentials( const std::string& user_id, const std::string& group_id, int& out_uid, int& out_gid );
     bool getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials );

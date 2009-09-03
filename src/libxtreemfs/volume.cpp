@@ -38,7 +38,7 @@ auto_Volume Volume::create( const YIELD::URI& dir_uri, const std::string& name, 
     YIELD::auto_URI mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
     if ( mrc_uri != NULL )
     {
-      auto_MRCProxy mrc_proxy = MRCProxy::create( *mrc_uri, proxy_flags, log, proxy_operation_timeout, proxy_ssl_context );
+      auto_MRCProxy mrc_proxy = MRCProxy::create( *mrc_uri, proxy_flags, log, proxy_operation_timeout, "", proxy_ssl_context );
       if ( mrc_proxy != NULL )
       {
         org::xtreemfs::interfaces::Stat stbuf;

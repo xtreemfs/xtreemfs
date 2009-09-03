@@ -14,8 +14,11 @@ yidl::auto_Object<OSDProxy> OSDProxy::create( const YIELD::URI& absolute_uri,
                                                YIELD::auto_SSLContext ssl_context )
 {
   yidl::auto_Object<OSDProxy> osd_proxy = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::create<OSDProxy>( absolute_uri, flags, log, operation_timeout, ssl_context );
-  osd_proxy->set_ping_interval( ping_interval );
-  osd_proxy->uuid = uuid;
+  if ( osd_proxy != NULL )
+  {
+    osd_proxy->set_ping_interval( ping_interval );
+    osd_proxy->uuid = uuid;
+  }
   return osd_proxy;
 }
 
