@@ -2,11 +2,11 @@
 #include "types.idl"
 
 
-module org # 0
+module org
 {
   module xtreemfs # 2009082618
   {
-    module interfaces # 0
+    module interfaces
     {
       // Types
       struct AddressMapping # 30
