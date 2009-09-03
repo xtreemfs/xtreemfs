@@ -31,7 +31,7 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += to_uuid != null ? ( ( to_uuid.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( to_uuid.getBytes().length + Integer.SIZE/8 ) : ( to_uuid.getBytes().length + Integer.SIZE/8 + 4 - ( to_uuid.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( to_uuid != null ? ( ( to_uuid.getBytes().length % 4 == 0 ) ? to_uuid.getBytes().length : ( to_uuid.getBytes().length + 4 - to_uuid.getBytes().length % 4 ) ) : 0 );
         return my_size;
     }    
     

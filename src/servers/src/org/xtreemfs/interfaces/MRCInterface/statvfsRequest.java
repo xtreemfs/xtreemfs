@@ -35,7 +35,7 @@ public class statvfsRequest extends org.xtreemfs.interfaces.utils.Request
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += volume_name != null ? ( ( volume_name.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( volume_name.getBytes().length + Integer.SIZE/8 ) : ( volume_name.getBytes().length + Integer.SIZE/8 + 4 - ( volume_name.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( volume_name != null ? ( ( volume_name.getBytes().length % 4 == 0 ) ? volume_name.getBytes().length : ( volume_name.getBytes().length + 4 - volume_name.getBytes().length % 4 ) ) : 0 );
         return my_size;
     }    
     

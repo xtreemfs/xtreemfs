@@ -31,7 +31,7 @@ public class xtreemfs_internal_debugResponse extends org.xtreemfs.interfaces.uti
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += result != null ? ( ( result.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( result.getBytes().length + Integer.SIZE/8 ) : ( result.getBytes().length + Integer.SIZE/8 + 4 - ( result.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( result != null ? ( ( result.getBytes().length % 4 == 0 ) ? result.getBytes().length : ( result.getBytes().length + 4 - result.getBytes().length % 4 ) ) : 0 );
         return my_size;
     }    
     

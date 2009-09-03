@@ -26,8 +26,8 @@ public class ServiceDataMap extends Map<String, String>
         {
             String key = key_i.next();
             String value = get( key );
-            my_size += value != null ? ( ( value.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( value.getBytes().length + Integer.SIZE/8 ) : ( value.getBytes().length + Integer.SIZE/8 + 4 - ( value.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
-        my_size += key != null ? ( ( key.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( key.getBytes().length + Integer.SIZE/8 ) : ( key.getBytes().length + Integer.SIZE/8 + 4 - ( key.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+            my_size += Integer.SIZE/8 + ( value != null ? ( ( value.getBytes().length % 4 == 0 ) ? value.getBytes().length : ( value.getBytes().length + 4 - value.getBytes().length % 4 ) ) : 0 );
+        my_size += Integer.SIZE/8 + ( key != null ? ( ( key.getBytes().length % 4 == 0 ) ? key.getBytes().length : ( key.getBytes().length + 4 - key.getBytes().length % 4 ) ) : 0 );
         }
         return my_size;
     }

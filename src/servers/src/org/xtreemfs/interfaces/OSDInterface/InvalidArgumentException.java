@@ -31,7 +31,7 @@ public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCR
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += error_message != null ? ( ( error_message.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( error_message.getBytes().length + Integer.SIZE/8 ) : ( error_message.getBytes().length + Integer.SIZE/8 + 4 - ( error_message.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( error_message != null ? ( ( error_message.getBytes().length % 4 == 0 ) ? error_message.getBytes().length : ( error_message.getBytes().length + 4 - error_message.getBytes().length % 4 ) ) : 0 );
         return my_size;
     }    
     

@@ -34,7 +34,7 @@ public class ObjectList extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += set != null ? ( ( set.remaining() + Integer.SIZE/8 ) % 4 == 0 ) ? ( set.remaining() + Integer.SIZE/8 ) : ( set.remaining() + Integer.SIZE/8 + 4 - ( set.remaining() + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( set != null ? ( ( set.remaining() % 4 == 0 ) ? set.remaining() : ( set.remaining() + 4 - set.remaining() % 4 ) ) : 0 );
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Integer.SIZE / 8 );
         return my_size;

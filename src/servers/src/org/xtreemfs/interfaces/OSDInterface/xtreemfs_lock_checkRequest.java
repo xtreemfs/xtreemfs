@@ -48,9 +48,9 @@ public class xtreemfs_lock_checkRequest extends org.xtreemfs.interfaces.utils.Re
     {
         int my_size = 0;
         my_size += file_credentials.getXDRSize();
-        my_size += client_uuid != null ? ( ( client_uuid.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( client_uuid.getBytes().length + Integer.SIZE/8 ) : ( client_uuid.getBytes().length + Integer.SIZE/8 + 4 - ( client_uuid.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( client_uuid != null ? ( ( client_uuid.getBytes().length % 4 == 0 ) ? client_uuid.getBytes().length : ( client_uuid.getBytes().length + 4 - client_uuid.getBytes().length % 4 ) ) : 0 );
         my_size += ( Integer.SIZE / 8 );
-        my_size += file_id != null ? ( ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( file_id.getBytes().length + Integer.SIZE/8 ) : ( file_id.getBytes().length + Integer.SIZE/8 + 4 - ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 );
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
         my_size += 4;

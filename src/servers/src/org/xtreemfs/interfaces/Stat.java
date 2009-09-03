@@ -73,10 +73,10 @@ public class Stat extends Struct
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
-        my_size += user_id != null ? ( ( user_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( user_id.getBytes().length + Integer.SIZE/8 ) : ( user_id.getBytes().length + Integer.SIZE/8 + 4 - ( user_id.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
-        my_size += group_id != null ? ( ( group_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( group_id.getBytes().length + Integer.SIZE/8 ) : ( group_id.getBytes().length + Integer.SIZE/8 + 4 - ( group_id.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
-        my_size += file_id != null ? ( ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( file_id.getBytes().length + Integer.SIZE/8 ) : ( file_id.getBytes().length + Integer.SIZE/8 + 4 - ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
-        my_size += link_target != null ? ( ( link_target.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( link_target.getBytes().length + Integer.SIZE/8 ) : ( link_target.getBytes().length + Integer.SIZE/8 + 4 - ( link_target.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( user_id != null ? ( ( user_id.getBytes().length % 4 == 0 ) ? user_id.getBytes().length : ( user_id.getBytes().length + 4 - user_id.getBytes().length % 4 ) ) : 0 );
+        my_size += Integer.SIZE/8 + ( group_id != null ? ( ( group_id.getBytes().length % 4 == 0 ) ? group_id.getBytes().length : ( group_id.getBytes().length + 4 - group_id.getBytes().length % 4 ) ) : 0 );
+        my_size += Integer.SIZE/8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 );
+        my_size += Integer.SIZE/8 + ( link_target != null ? ( ( link_target.getBytes().length % 4 == 0 ) ? link_target.getBytes().length : ( link_target.getBytes().length + 4 - link_target.getBytes().length % 4 ) ) : 0 );
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Integer.SIZE / 8 );
         return my_size;

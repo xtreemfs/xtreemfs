@@ -33,7 +33,7 @@ public class OSDtoMRCData extends Struct
     {
         int my_size = 0;
         my_size += ( Integer.SIZE / 8 );
-        my_size += data != null ? ( ( data.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( data.getBytes().length + Integer.SIZE/8 ) : ( data.getBytes().length + Integer.SIZE/8 + 4 - ( data.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( data != null ? ( ( data.getBytes().length % 4 == 0 ) ? data.getBytes().length : ( data.getBytes().length + 4 - data.getBytes().length % 4 ) ) : 0 );
         return my_size;
     }    
     

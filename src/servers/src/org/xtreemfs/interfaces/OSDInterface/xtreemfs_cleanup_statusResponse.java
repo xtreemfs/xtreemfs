@@ -31,7 +31,7 @@ public class xtreemfs_cleanup_statusResponse extends org.xtreemfs.interfaces.uti
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += status != null ? ( ( status.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( status.getBytes().length + Integer.SIZE/8 ) : ( status.getBytes().length + Integer.SIZE/8 + 4 - ( status.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( status != null ? ( ( status.getBytes().length % 4 == 0 ) ? status.getBytes().length : ( status.getBytes().length + 4 - status.getBytes().length % 4 ) ) : 0 );
         return my_size;
     }    
     

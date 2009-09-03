@@ -42,7 +42,7 @@ public class xtreemfs_check_objectRequest extends org.xtreemfs.interfaces.utils.
     {
         int my_size = 0;
         my_size += file_credentials.getXDRSize();
-        my_size += file_id != null ? ( ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( file_id.getBytes().length + Integer.SIZE/8 ) : ( file_id.getBytes().length + Integer.SIZE/8 + 4 - ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 );
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
         return my_size;

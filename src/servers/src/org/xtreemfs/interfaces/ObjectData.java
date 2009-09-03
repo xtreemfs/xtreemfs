@@ -39,7 +39,7 @@ public class ObjectData extends Struct
         my_size += ( Integer.SIZE / 8 );
         my_size += 4;
         my_size += ( Integer.SIZE / 8 );
-        my_size += data != null ? ( ( data.remaining() + Integer.SIZE/8 ) % 4 == 0 ) ? ( data.remaining() + Integer.SIZE/8 ) : ( data.remaining() + Integer.SIZE/8 + 4 - ( data.remaining() + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( data != null ? ( ( data.remaining() % 4 == 0 ) ? data.remaining() : ( data.remaining() + 4 - data.remaining() % 4 ) ) : 0 );
         return my_size;
     }    
     

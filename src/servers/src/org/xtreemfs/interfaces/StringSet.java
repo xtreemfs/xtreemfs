@@ -23,7 +23,7 @@ public class StringSet extends Sequence<String>
         int my_size = Integer.SIZE/8;
         for ( Iterator<String> i = iterator(); i.hasNext(); ) {
             String value = i.next();
-            my_size += value != null ? ( ( value.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( value.getBytes().length + Integer.SIZE/8 ) : ( value.getBytes().length + Integer.SIZE/8 + 4 - ( value.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+            my_size += Integer.SIZE/8 + ( value != null ? ( ( value.getBytes().length % 4 == 0 ) ? value.getBytes().length : ( value.getBytes().length + 4 - value.getBytes().length % 4 ) ) : 0 );
         }
         return my_size;
     }

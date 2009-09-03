@@ -39,9 +39,9 @@ public class xtreemfs_check_file_existsRequest extends org.xtreemfs.interfaces.u
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += volume_id != null ? ( ( volume_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( volume_id.getBytes().length + Integer.SIZE/8 ) : ( volume_id.getBytes().length + Integer.SIZE/8 + 4 - ( volume_id.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( volume_id != null ? ( ( volume_id.getBytes().length % 4 == 0 ) ? volume_id.getBytes().length : ( volume_id.getBytes().length + 4 - volume_id.getBytes().length % 4 ) ) : 0 );
         my_size += file_ids.getXDRSize();
-        my_size += osd_uuid != null ? ( ( osd_uuid.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( osd_uuid.getBytes().length + Integer.SIZE/8 ) : ( osd_uuid.getBytes().length + Integer.SIZE/8 + 4 - ( osd_uuid.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( osd_uuid != null ? ( ( osd_uuid.getBytes().length % 4 == 0 ) ? osd_uuid.getBytes().length : ( osd_uuid.getBytes().length + 4 - osd_uuid.getBytes().length % 4 ) ) : 0 );
         return my_size;
     }    
     

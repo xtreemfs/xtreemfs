@@ -43,10 +43,10 @@ public class xtreemfs_restore_fileRequest extends org.xtreemfs.interfaces.utils.
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += file_path != null ? ( ( file_path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( file_path.getBytes().length + Integer.SIZE/8 ) : ( file_path.getBytes().length + Integer.SIZE/8 + 4 - ( file_path.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
-        my_size += file_id != null ? ( ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( file_id.getBytes().length + Integer.SIZE/8 ) : ( file_id.getBytes().length + Integer.SIZE/8 + 4 - ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( file_path != null ? ( ( file_path.getBytes().length % 4 == 0 ) ? file_path.getBytes().length : ( file_path.getBytes().length + 4 - file_path.getBytes().length % 4 ) ) : 0 );
+        my_size += Integer.SIZE/8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 );
         my_size += ( Long.SIZE / 8 );
-        my_size += osd_uuid != null ? ( ( osd_uuid.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( osd_uuid.getBytes().length + Integer.SIZE/8 ) : ( osd_uuid.getBytes().length + Integer.SIZE/8 + 4 - ( osd_uuid.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( osd_uuid != null ? ( ( osd_uuid.getBytes().length % 4 == 0 ) ? osd_uuid.getBytes().length : ( osd_uuid.getBytes().length + 4 - osd_uuid.getBytes().length % 4 ) ) : 0 );
         my_size += ( Integer.SIZE / 8 );
         return my_size;
     }    

@@ -41,7 +41,7 @@ public class StatVFS extends Struct
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
-        my_size += fsid != null ? ( ( fsid.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( fsid.getBytes().length + Integer.SIZE/8 ) : ( fsid.getBytes().length + Integer.SIZE/8 + 4 - ( fsid.getBytes().length + Integer.SIZE/8 ) % 4 ) : 0;
+        my_size += Integer.SIZE/8 + ( fsid != null ? ( ( fsid.getBytes().length % 4 == 0 ) ? fsid.getBytes().length : ( fsid.getBytes().length + 4 - fsid.getBytes().length % 4 ) ) : 0 );
         my_size += ( Integer.SIZE / 8 );
         return my_size;
     }    
