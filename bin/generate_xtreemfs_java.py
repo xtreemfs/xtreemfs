@@ -79,7 +79,10 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
 
         for operation in self.getOperations():
             operation.generate()
-
+            
+        for exception_type in self.getExceptionTypes():
+            exception_type.generate()
+            
     def getImports( self ): 
         return JavaClass.getImports( self ) + XTREEMFS_IMPORTS
 
