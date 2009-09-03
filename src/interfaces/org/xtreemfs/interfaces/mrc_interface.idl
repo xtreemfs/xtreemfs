@@ -4,7 +4,7 @@
 
 module org
 {
-  module xtreemfs # 2009082618
+  module xtreemfs # 2009090209
   {
     module interfaces
     {
@@ -57,7 +57,6 @@ module org
       {
         string name;
         uint32_t mode;
-        OSDSelectionPolicyType osd_selection_policy;
         StripingPolicy default_striping_policy;
         AccessControlPolicyType access_control_policy;
         string id;
@@ -103,7 +102,7 @@ module org
         void xtreemfs_checkpoint() # 30;
         void xtreemfs_check_file_exists( string volume_id, StringSet file_ids, string osd_uuid, out string bitmap ) # 31;
         void xtreemfs_dump_database( string dump_file ) # 32;
-        void xtreemfs_get_suitable_osds( string file_id, out StringSet osd_uuids ) # 33;
+        void xtreemfs_get_suitable_osds( string file_id, uint32_t numOSDs, out StringSet osd_uuids ) # 33;
         void xtreemfs_internal_debug( string operation, out string result ) # 34;
         void xtreemfs_lsvol( out VolumeSet volumes ) # 35;
         void xtreemfs_listdir( string path, out StringSet names ) # 36;
