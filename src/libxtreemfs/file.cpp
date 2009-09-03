@@ -95,12 +95,15 @@ File::~File()
 {
   flush();
 
-  try
+  if ( file_credentials.get_xcap().get_replicateOnClose() )
   {
-    parent_volume->get_mrc_proxy()->close( file_credentials.get_xcap() );
+    try
+    {
+      parent_volume->get_mrc_proxy()->close( file_credentials.get_xcap() );
+    }
+    catch ( std::exception& )
+    { }
   }
-  catch ( std::exception& )
-  { }
 }
 
 bool File::datasync()
