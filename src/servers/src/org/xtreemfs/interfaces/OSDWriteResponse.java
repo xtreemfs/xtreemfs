@@ -12,7 +12,7 @@ import yidl.Unmarshaller;
 
 public class OSDWriteResponse extends Struct
 {
-    public static final int TAG = 2009090226;
+    public static final int TAG = 2009082635;
     
     public OSDWriteResponse() { new_file_size = new NewFileSizeSet(); opaque_data = new OSDtoMRCDataSet();  }
     public OSDWriteResponse( NewFileSizeSet new_file_size, OSDtoMRCDataSet opaque_data ) { this.new_file_size = new_file_size; this.opaque_data = opaque_data; }
@@ -23,10 +23,10 @@ public class OSDWriteResponse extends Struct
     public void setOpaque_data( OSDtoMRCDataSet opaque_data ) { this.opaque_data = opaque_data; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090226;    
+    public static final long serialVersionUID = 2009082635;    
 
     // yidl.Object
-    public int getTag() { return 2009090226; }
+    public int getTag() { return 2009082635; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDWriteResponse"; }
     
     public int getXDRSize()

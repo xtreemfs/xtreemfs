@@ -34,7 +34,6 @@ import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.ProtocolException;
 import org.xtreemfs.interfaces.OSDInterface.errnoException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
-import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.storage.CowPolicy;
 
@@ -47,7 +46,7 @@ public final class OSDRequest {
 
     private final ONCRPCRequest rpcRequest;
     
-    private Serializable        requestArgs;
+    private yidl.Object         requestArgs;
     
     /**
      * Request operation which contains state machine.
@@ -88,7 +87,7 @@ public final class OSDRequest {
         getRpcRequest().sendException(protocolException);
     }
 
-    public void sendSuccess(Serializable response) {
+    public void sendSuccess(yidl.Object response) {
         getRpcRequest().sendResponse(response);
     }
 
@@ -134,14 +133,14 @@ public final class OSDRequest {
     /**
      * @return the requestArgs
      */
-    public Serializable getRequestArgs() {
+    public yidl.Object getRequestArgs() {
         return requestArgs;
     }
 
     /**
      * @param requestArgs the requestArgs to set
      */
-    public void setRequestArgs(Serializable requestArgs) {
+    public void setRequestArgs(yidl.Object requestArgs) {
         this.requestArgs = requestArgs;
     }
 

@@ -28,12 +28,17 @@ import java.util.ArrayList;
 import java.util.List;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.utils.XDRUtils;
+import yidl.Map;
+import yidl.Marshaller;
+import yidl.Sequence;
+import yidl.Struct;
 
 /**
  *
  * @author bjko
  */
-public class ONCRPCBufferWriter {
+public class ONCRPCBufferWriter extends Marshaller {
 
     public static final int BUFF_SIZE = 1024*8;
 
@@ -84,22 +89,6 @@ public class ONCRPCBufferWriter {
         checkAndGetBuffer(Byte.SIZE/8*data.length).put(data);
     }
 
-    public void putShort(short data) {
-        checkAndGetBuffer(Short.SIZE/8).putShort(data);
-    }
-
-    public void putInt(int data) {
-        checkAndGetBuffer(Integer.SIZE/8).putInt(data);
-    }
-
-    public void putLong(long data) {
-        checkAndGetBuffer(Long.SIZE/8).putLong(data);
-    }
-
-    public void putDouble(double d) {
-        checkAndGetBuffer(Double.SIZE/8).putDouble(d);
-    }
-
     public void put(ReusableBuffer otherBuffer) {
         currentBuffer++;
         /*final ReusableBuffer vb = otherBuffer.createViewBuffer();
@@ -120,6 +109,52 @@ public class ONCRPCBufferWriter {
             sb.append("buffer position="+buffer.position()+" limit="+buffer.limit()+"\n");
         }
         return sb.toString();
+    }
+
+    @Override
+    public void writeBoolean(Object key, boolean value) {
+        checkAndGetBuffer(4).putInt(value ?  1 : 0);
+    }
+
+    @Override
+    public void writeDouble(Object key, double value) {
+        checkAndGetBuffer(8).putDouble(value);
+    }
+
+    @Override
+    public void writeInt64(Object key, long value) {
+        checkAndGetBuffer(8).putLong(value);
+    }
+
+    @Override
+    public void writeInt32(Object key, int value) {
+        checkAndGetBuffer(4).putInt(value);
+    }
+
+    @Override
+    public void writeMap(Object key, Map value) {
+        checkAndGetBuffer(4).putInt(value.size());
+        for (int i = 0; i < value.size(); i++) {
+            value.marshal(this);
+        }
+    }
+
+    @Override
+    public void writeSequence(Object key, Sequence value) {
+        checkAndGetBuffer(4).putInt(value.size());
+        for (int i = 0; i < value.size(); i++) {
+            value.marshal(this);
+        }
+    }
+
+    @Override
+    public void writeString(Object key, String value) {
+        XDRUtils.serializeString(value, this);
+    }
+
+    @Override
+    public void writeStruct(Object key, Struct value) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
 
 

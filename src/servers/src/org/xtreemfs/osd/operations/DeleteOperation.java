@@ -32,10 +32,10 @@ import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.OSDInterface.unlinkRequest;
 import org.xtreemfs.interfaces.OSDInterface.unlinkResponse;
-import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.DeletionStage.DeleteObjectsCallback;
@@ -150,9 +150,9 @@ public final class DeleteOperation extends OSDOperation {
     }
 
     @Override
-    public Serializable parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         unlinkRequest rpcrq = new unlinkRequest();
-        rpcrq.deserialize(data);
+        rpcrq.unmarshal(new XDRUnmarshaller(data));
 
         rq.setFileId(rpcrq.getFile_id());
         rq.setCapability(new Capability(rpcrq.getFile_credentials().getXcap(), sharedSecret));

@@ -35,6 +35,7 @@ import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.ObjectData;
@@ -42,7 +43,6 @@ import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.readRequest;
 import org.xtreemfs.interfaces.OSDInterface.readResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
-import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -297,9 +297,9 @@ public final class ReadOperation extends OSDOperation {
     }
 
     @Override
-    public Serializable parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         readRequest rpcrq = new readRequest();
-        rpcrq.deserialize(data);
+        rpcrq.unmarshal(new XDRUnmarshaller(data));
 
         rq.setFileId(rpcrq.getFile_id());
         rq.setCapability(new Capability(rpcrq.getFile_credentials().getXcap(), sharedSecret));

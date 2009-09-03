@@ -32,6 +32,7 @@ import org.xtreemfs.foundation.oncrpc.client.ONCRPCClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseDecoder;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.FileCredentials;
@@ -141,7 +142,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final xtreemfs_shutdownResponse resp = new xtreemfs_shutdownResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -156,7 +157,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final xtreemfs_checkpointResponse resp = new xtreemfs_checkpointResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -172,7 +173,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final xtreemfs_dump_databaseResponse resp = new xtreemfs_dump_databaseResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -188,7 +189,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final xtreemfs_restore_databaseResponse resp = new xtreemfs_restore_databaseResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -206,7 +207,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Boolean getResult(ReusableBuffer data) {
                 final accessResponse resp = new accessResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getReturnValue();
             }
         }, credentials);
@@ -221,7 +222,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final chmodResponse resp = new chmodResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -237,7 +238,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final chownResponse resp = new chownResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -252,7 +253,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final creatResponse resp = new creatResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -267,7 +268,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public XCap getResult(ReusableBuffer data) {
                 final ftruncateResponse resp = new ftruncateResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getTruncate_xcap();
             }
         });
@@ -282,7 +283,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Stat getResult(ReusableBuffer data) {
                 final getattrResponse resp = new getattrResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getStbuf();
             }
         }, credentials);
@@ -298,7 +299,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public String getResult(ReusableBuffer data) {
                 final getxattrResponse resp = new getxattrResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getValue();
             }
         }, credentials);
@@ -314,7 +315,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final linkResponse resp = new linkResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -329,7 +330,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public StringSet getResult(ReusableBuffer data) {
                 final listxattrResponse resp = new listxattrResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getNames();
             }
         }, credentials);
@@ -344,7 +345,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public VolumeSet getResult(ReusableBuffer data) {
                 final xtreemfs_lsvolResponse resp = new xtreemfs_lsvolResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getVolumes();
             }
         }, credentials);
@@ -360,7 +361,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final mkdirResponse resp = new mkdirResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -378,7 +379,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final xtreemfs_mkvolResponse resp = new xtreemfs_mkvolResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -395,7 +396,7 @@ public class MRCClient extends ONCRPCClient {
                 @Override
                 public FileCredentials getResult(ReusableBuffer data) {
                     final openResponse resp = new openResponse();
-                    resp.deserialize(data);
+                    resp.unmarshal(new XDRUnmarshaller(data));
                     return resp.getFile_credentials();
                 }
             }, credentials);
@@ -412,7 +413,7 @@ public class MRCClient extends ONCRPCClient {
                 @Override
                 public DirectoryEntrySet getResult(ReusableBuffer data) {
                     final readdirResponse resp = new readdirResponse();
-                    resp.deserialize(data);
+                    resp.unmarshal(new XDRUnmarshaller(data));
                     return resp.getDirectory_entries();
                 }
             }, credentials);
@@ -428,7 +429,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final removexattrResponse resp = new removexattrResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -445,7 +446,7 @@ public class MRCClient extends ONCRPCClient {
                 @Override
                 public FileCredentialsSet getResult(ReusableBuffer data) {
                     final renameResponse resp = new renameResponse();
-                    resp.deserialize(data);
+                    resp.unmarshal(new XDRUnmarshaller(data));
                     return resp.getFile_credentials();
                 }
             }, credentials);
@@ -460,7 +461,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final rmdirResponse resp = new rmdirResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -475,7 +476,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final xtreemfs_rmvolResponse resp = new xtreemfs_rmvolResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -491,7 +492,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final setattrResponse resp = new setattrResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -507,7 +508,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final setxattrResponse resp = new setxattrResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -523,7 +524,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public StatVFS getResult(ReusableBuffer data) {
                 final statvfsResponse resp = new statvfsResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getStbuf();
             }
         }, credentials);
@@ -539,7 +540,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final symlinkResponse resp = new symlinkResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -556,7 +557,7 @@ public class MRCClient extends ONCRPCClient {
                 @Override
                 public FileCredentialsSet getResult(ReusableBuffer data) {
                     final unlinkResponse resp = new unlinkResponse();
-                    resp.deserialize(data);
+                    resp.unmarshal(new XDRUnmarshaller(data));
                     return resp.getFile_credentials();
                 }
             }, credentials);
@@ -572,7 +573,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final utimensResponse resp = new utimensResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -590,7 +591,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public String getResult(ReusableBuffer data) {
                 final xtreemfs_check_file_existsResponse resp = new xtreemfs_check_file_existsResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getBitmap();
             }
         });
@@ -606,7 +607,7 @@ public class MRCClient extends ONCRPCClient {
                 @Override
                 public String getResult(ReusableBuffer data) {
                     final xtreemfs_internal_debugResponse resp = new xtreemfs_internal_debugResponse();
-                    resp.deserialize(data);
+                    resp.unmarshal(new XDRUnmarshaller(data));
                     return resp.getResult();
                 }
             },creds);
@@ -621,7 +622,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public StringSet getResult(ReusableBuffer data) {
                 final xtreemfs_get_suitable_osdsResponse resp = new xtreemfs_get_suitable_osdsResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getOsd_uuids();
             }
         });
@@ -636,7 +637,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public XCap getResult(ReusableBuffer data) {
                 final xtreemfs_renew_capabilityResponse resp = new xtreemfs_renew_capabilityResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getRenewed_xcap();
             }
         });
@@ -652,7 +653,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final xtreemfs_replica_addResponse resp = new xtreemfs_replica_addResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -668,7 +669,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final xtreemfs_replica_removeResponse resp = new xtreemfs_replica_removeResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getDelete_xcap();
             }
         }, credentials);
@@ -685,7 +686,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final xtreemfs_restore_fileResponse resp = new xtreemfs_restore_fileResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         }, credentials);
@@ -701,7 +702,7 @@ public class MRCClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final xtreemfs_update_file_sizeResponse resp = new xtreemfs_update_file_sizeResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         });

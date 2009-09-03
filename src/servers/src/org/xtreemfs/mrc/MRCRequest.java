@@ -26,7 +26,6 @@ package org.xtreemfs.mrc;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
-import org.xtreemfs.interfaces.utils.Serializable;
 
 /**
  * 
@@ -38,7 +37,7 @@ public class MRCRequest {
     
     private ErrorRecord         error;
     
-    private Serializable        response;
+    private yidl.Object         response;
     
     private Object              requestArgs;
     
@@ -65,11 +64,11 @@ public class MRCRequest {
         this.error = error;
     }
     
-    public Serializable getResponse() {
+    public yidl.Object getResponse() {
         return response;
     }
     
-    public void setResponse(Serializable response) {
+    public void setResponse(yidl.Object response) {
         this.response = response;
     }
     

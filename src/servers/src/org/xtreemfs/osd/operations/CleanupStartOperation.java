@@ -25,10 +25,10 @@
 package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_startRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_cleanup_startResponse;
-import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -62,9 +62,9 @@ public final class CleanupStartOperation extends OSDOperation {
     }
 
     @Override
-    public Serializable parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         xtreemfs_cleanup_startRequest rpcrq = new xtreemfs_cleanup_startRequest();
-        rpcrq.deserialize(data);
+        rpcrq.unmarshal(new XDRUnmarshaller(data));
 
         rq.setFileId("");
 

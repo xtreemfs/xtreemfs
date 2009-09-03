@@ -24,6 +24,10 @@
 
 package org.xtreemfs.mrc.operations;
 
+import java.io.BufferedOutputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
@@ -61,9 +65,16 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
  * @author stender
  */
 public class OpenOperation extends MRCOperation {
-    
+
+    private PrintWriter logfile;
+
     public OpenOperation(MRCRequestDispatcher master) {
         super(master);
+        /*try {
+            logfile = new PrintWriter(new FileOutputStream("/var/lib/xtreemfs/open.log",true));
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }*/
     }
     
     @Override
@@ -261,6 +272,16 @@ public class OpenOperation extends MRCOperation {
         rq.setResponse(new openResponse(new FileCredentials(xLocSet, cap.getXCap())));
         
         update.execute();
+
+        //enable only for test servers that should log each file create/write/trunc
+        /*if (create || write || truncate) {
+            try {
+                logfile.print(System.currentTimeMillis()+";"+rq.getRPCRequest().getClientIdentity()+";"+rqArgs.getPath()+"\n");
+                logfile.flush();
+            } catch (Exception ex) {
+
+            }
+        }*/
     }
     
 }

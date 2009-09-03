@@ -44,7 +44,6 @@ import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.OSDInterface.ProtocolException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
-import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.AdvisoryLock;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.LocationsCache;
@@ -403,7 +402,7 @@ public class PreprocStage extends Stage {
         rq.setOperation(op);
         
         try {
-            final Serializable requestArgs = op.parseRPCMessage(rpcRq.getRequestFragment(), rq);
+            final yidl.Object requestArgs = op.parseRPCMessage(rpcRq.getRequestFragment(), rq);
             rq.setRequestArgs(requestArgs);
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "received request of type %s",requestArgs.getTypeName());

@@ -24,6 +24,7 @@
 
 package org.xtreemfs.dir.operations;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -33,6 +34,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_typeRequest;
@@ -73,20 +75,22 @@ public class GetServicesByTypeOperation extends DIROperation {
             long now = System.currentTimeMillis() / 1000l;
             
             while (iter.hasNext()) {
-                final Entry<byte[], byte[]> e = iter.next();
-                final Service servEntry = new Service();
-                ReusableBuffer buf = ReusableBuffer.wrap(e.getValue());
-                servEntry.deserialize(buf);
-                if ((request.getType().intValue() == 0) || (servEntry.getType() == request.getType()))
-                    services.add(servEntry);
-                
-                long secondsSinceLastUpdate = now - servEntry.getLast_updated_s();
-                servEntry.getData().put("seconds_since_last_update", Long.toString(secondsSinceLastUpdate));
+                final Entry<byte[],byte[]> e = iter.next();
+                final ServiceRecord servEntry = new ServiceRecord(ReusableBuffer.wrap(e.getValue()));
+                if ((request.getType().intValue() == 0) || (servEntry.getType() == request.getType())) {
+                    long secondsSinceLastUpdate = now - servEntry.getLast_updated_s();
+                    servEntry.getData().put("seconds_since_last_update", Long.toString(secondsSinceLastUpdate));
+                    services.add(servEntry.getService());
+                }
                 
             }
+
             
             xtreemfs_service_get_by_typeResponse response = new xtreemfs_service_get_by_typeResponse(services);
             rq.sendSuccess(response);
+        } catch (IOException ex) {
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
+            rq.sendInternalServerError(ex);
         } catch (BabuDBException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
             rq.sendInternalServerError(ex);

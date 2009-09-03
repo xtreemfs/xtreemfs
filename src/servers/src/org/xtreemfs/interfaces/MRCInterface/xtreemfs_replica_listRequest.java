@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class xtreemfs_replica_listRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009090449;
+    public static final int TAG = 2009082858;
     
     public xtreemfs_replica_listRequest() {  }
     public xtreemfs_replica_listRequest( String file_id ) { this.file_id = file_id; }
@@ -26,10 +26,10 @@ public class xtreemfs_replica_listRequest extends org.xtreemfs.interfaces.utils.
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090449;    
+    public static final long serialVersionUID = 2009082858;    
 
     // yidl.Object
-    public int getTag() { return 2009090449; }
+    public int getTag() { return 2009082858; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listRequest"; }
     
     public int getXDRSize()

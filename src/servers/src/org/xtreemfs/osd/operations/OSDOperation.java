@@ -28,7 +28,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
-import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 
@@ -58,7 +57,7 @@ public abstract class OSDOperation {
      * @param rq the request
      * @return null if successful, error message otherwise
      */
-    public abstract Serializable parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception;
+    public abstract yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception;
 
     public abstract boolean requiresCapability();
 

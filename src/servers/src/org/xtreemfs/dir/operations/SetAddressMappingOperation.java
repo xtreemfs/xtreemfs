@@ -24,6 +24,7 @@
 
 package org.xtreemfs.dir.operations;
 
+import java.io.IOException;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.lsmdb.Database;
@@ -31,6 +32,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.dir.data.AddressMappingRecords;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
@@ -84,7 +86,7 @@ public class SetAddressMappingOperation extends DIROperation {
             assert (uuid != null);
             assert (database != null);
             
-            AddressMappingSet dbData = new AddressMappingSet();
+            /*AddressMappingSet dbData = new AddressMappingSet();
             byte[] data = database.directLookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes());
             long currentVersion = 0;
             if (data != null) {
@@ -98,23 +100,48 @@ public class SetAddressMappingOperation extends DIROperation {
             if (mappings.get(0).getVersion() != currentVersion) {
                 rq.sendException(new ConcurrentModificationException());
                 return;
+            }*/
+            byte[] data = database.directLookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes());
+            long currentVersion = 0;
+            if (data != null) {
+                ReusableBuffer buf = ReusableBuffer.wrap(data);
+                AddressMappingRecords dbData = new AddressMappingRecords(buf);
+                if (dbData.size() > 0) {
+                    currentVersion = dbData.getRecord(0).getVersion();
+                    System.out.println("loaded version: "+currentVersion);
+                } else {
+                    System.out.println("no data on disk");
+                }
+            }
+
+            if (mappings.get(0).getVersion() != currentVersion) {
+                rq.sendException(new ConcurrentModificationException());
+                return;
             }
             
             currentVersion++;
-            
-            mappings.get(0).setVersion(currentVersion);
-            
-            ONCRPCBufferWriter writer = new ONCRPCBufferWriter(mappings.calculateSize());
-            mappings.serialize(writer);
-            byte[] newData = writer.getBuffers().get(0).array();
-            writer.freeBuffers();
+
+            for (int i = 0; i < mappings.size(); i++)
+                mappings.get(i).setVersion(currentVersion);
+
+
+            AddressMappingRecords newData = new AddressMappingRecords(mappings);
+            System.out.println("saved version: "+newData.getRecord(0).getVersion());
+            final int size = newData.getSize();
+            byte[] newBytes = new byte[size];
+            ReusableBuffer buf = ReusableBuffer.wrap(newBytes);
+            newData.serialize(buf);
             BabuDBInsertGroup ig = database.createInsertGroup();
-            ig.addInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes(), newData);
+            ig.addInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes(), newBytes);
             database.directInsert(ig);
+            
             
             xtreemfs_address_mappings_setResponse response = new xtreemfs_address_mappings_setResponse(
                 currentVersion);
             rq.sendSuccess(response);
+        } catch (IOException ex) {
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
+            rq.sendInternalServerError(ex);
         } catch (BabuDBException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
             rq.sendInternalServerError(ex);

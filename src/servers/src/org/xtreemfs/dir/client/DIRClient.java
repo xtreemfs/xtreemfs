@@ -31,6 +31,7 @@ import org.xtreemfs.foundation.oncrpc.client.ONCRPCClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseDecoder;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
@@ -74,7 +75,7 @@ public class DIRClient extends ONCRPCClient {
             @Override
             public Long getResult(ReusableBuffer data) {
                 final xtreemfs_global_time_s_getResponse resp = new xtreemfs_global_time_s_getResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getReturnValue();
             }
         });
@@ -89,7 +90,7 @@ public class DIRClient extends ONCRPCClient {
             @Override
             public AddressMappingSet getResult(ReusableBuffer data) {
                 final xtreemfs_address_mappings_getResponse resp = new xtreemfs_address_mappings_getResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getAddress_mappings();
             }
         });
@@ -103,7 +104,7 @@ public class DIRClient extends ONCRPCClient {
             @Override
             public Long getResult(ReusableBuffer data) {
                 xtreemfs_address_mappings_setResponse resp = new xtreemfs_address_mappings_setResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getReturnValue();
             }
         });
@@ -117,7 +118,7 @@ public class DIRClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final xtreemfs_address_mappings_removeResponse resp = new xtreemfs_address_mappings_removeResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         });
@@ -132,7 +133,7 @@ public class DIRClient extends ONCRPCClient {
             @Override
             public Long getResult(ReusableBuffer data) {
                 final xtreemfs_service_registerResponse resp = new xtreemfs_service_registerResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getReturnValue();
             }
         });
@@ -147,7 +148,7 @@ public class DIRClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final xtreemfs_service_deregisterResponse resp = new xtreemfs_service_deregisterResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         });
@@ -162,7 +163,7 @@ public class DIRClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 final xtreemfs_service_offlineResponse resp = new xtreemfs_service_offlineResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         });
@@ -177,7 +178,7 @@ public class DIRClient extends ONCRPCClient {
             @Override
             public ServiceSet getResult(ReusableBuffer data) {
                 final xtreemfs_service_get_by_nameResponse resp = new xtreemfs_service_get_by_nameResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getServices();
             }
         });
@@ -192,7 +193,7 @@ public class DIRClient extends ONCRPCClient {
             @Override
             public ServiceSet getResult(ReusableBuffer data) {
                 final xtreemfs_service_get_by_typeResponse resp = new xtreemfs_service_get_by_typeResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getServices();
             }
         });
@@ -207,7 +208,7 @@ public class DIRClient extends ONCRPCClient {
             @Override
             public ServiceSet getResult(ReusableBuffer data) {
                 final xtreemfs_service_get_by_uuidResponse resp = new xtreemfs_service_get_by_uuidResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getServices();
             }
         });

@@ -30,11 +30,11 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_object_setRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_object_setResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
-import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.replication.ObjectSet;
@@ -111,9 +111,9 @@ public class GetObjectSetOperation extends OSDOperation {
     }
 
     @Override
-    public Serializable parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         xtreemfs_internal_get_object_setRequest rpcrq = new xtreemfs_internal_get_object_setRequest();
-        rpcrq.deserialize(data);
+        rpcrq.unmarshal(new XDRUnmarshaller(data));
 
         rq.setFileId(rpcrq.getFile_id());
         rq.setCapability(new Capability(rpcrq.getFile_credentials().getXcap(), sharedSecret));

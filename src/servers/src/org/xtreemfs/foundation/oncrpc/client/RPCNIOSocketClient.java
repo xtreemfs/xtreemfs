@@ -50,6 +50,7 @@ import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
 import org.xtreemfs.foundation.oncrpc.channels.SSLChannelIO;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
@@ -59,8 +60,6 @@ import org.xtreemfs.interfaces.utils.ONCRPCError;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
-import org.xtreemfs.interfaces.utils.Serializable;
-
 /**
  * 
  * @author bjko
@@ -117,17 +116,17 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     }
     
     public void sendRequest(RPCResponseListener listener, InetSocketAddress server, int programId,
-        int versionId, int procedureId, Serializable message) {
+        int versionId, int procedureId, yidl.Object message) {
         sendRequest(listener, server, programId, versionId, procedureId, message, null);
     }
     
     public void sendRequest(RPCResponseListener listener, InetSocketAddress server, int programId,
-        int versionId, int procedureId, Serializable message, Object attachment) {
+        int versionId, int procedureId, yidl.Object message, Object attachment) {
         sendRequest(listener, server, programId, versionId, procedureId, message, attachment, null);
     }
     
     public void sendRequest(RPCResponseListener listener, InetSocketAddress server, int programId,
-        int versionId, int procedureId, Serializable message, Object attachment, UserCredentials credentials) {
+        int versionId, int procedureId, yidl.Object message, Object attachment, UserCredentials credentials) {
         ONCRPCRequest rec = new ONCRPCRequest(listener, this.transactionId.getAndIncrement(), programId,
             versionId, procedureId, message, attachment, credentials);
         sendRequest(server, rec);
@@ -383,7 +382,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             firstFragment = con.getResponseFragments().get(0);
             firstFragment.position(0);
             hdr = new ONCRPCResponseHeader();
-            hdr.deserialize(firstFragment);
+            hdr.unmarshal(new XDRUnmarshaller(firstFragment));
             
         } catch (Exception ex) {
             if (Logging.isDebug()) {
@@ -441,7 +440,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 }
                 assert(exception != null);
                 try {
-                    exception.deserialize(firstFragment);
+                    exception.unmarshal(new XDRUnmarshaller(firstFragment));
                 } catch (Throwable ex) {
                     rec.getListener().requestFailed(rec, new IOException("invalid exception data received"));
                     return;

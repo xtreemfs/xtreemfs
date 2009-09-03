@@ -24,8 +24,8 @@
 
 package org.xtreemfs.interfaces.utils;
 
-import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import yidl.Marshaller;
+import yidl.Unmarshaller;
 
 public class ONCRPCResponseHeader implements yidl.Object {
 
@@ -78,36 +78,36 @@ public class ONCRPCResponseHeader implements yidl.Object {
     // Serializable    
     public String getTypeName() { return "xtreemfs::interfaces::ONCRPCResponseHeader"; }
     
-    public void serialize(ONCRPCBufferWriter writer) {
-        writer.putInt(xid);
+    public void marshal(Marshaller writer) {
+        writer.writeInt32(null,xid);
         //message type is REPLY = 1
-        writer.putInt(1);
-        writer.putInt(reply_stat);
+        writer.writeInt32(null,1);
+        writer.writeInt32(null,reply_stat);
         //auth information, unused for xtreemfs
-        writer.putInt(0); // AUTH_NONE
-        writer.putInt(0); // zero opaque auth data
-        writer.putInt(accept_stat);
+        writer.writeInt32(null,0); // AUTH_NONE
+        writer.writeInt32(null,0); // zero opaque auth data
+        writer.writeInt32(null,accept_stat);
     }
 
-    public void deserialize(ReusableBuffer buf) {
-        xid = buf.getInt();
-        int msgType = buf.getInt();
+    public void unmarshal(Unmarshaller buf) {
+        xid = buf.readInt32(null);
+        int msgType = buf.readInt32(null);
         if (msgType != 1)
             throw new IllegalArgumentException("message type must be ANSWER, but is "+msgType);
-        reply_stat = buf.getInt();
+        reply_stat = buf.readInt32(null);
         if (reply_stat != REPLY_STAT_MSG_ACCEPTED)
             throw new IllegalArgumentException("message type must be ANSWER, but is "+msgType);
 
-        final int authType = buf.getInt();
+        final int authType = buf.readInt32(null);
         assert authType == 0;
 
-        final int opaqueAuthData = buf.getInt();
+        final int opaqueAuthData = buf.readInt32(null);
         assert opaqueAuthData == 0;
         
-        accept_stat = buf.getInt();
+        accept_stat = buf.readInt32(null);
     }
 
-    public int calculateSize() {
+    public int getXDRSize() {
         return 6 * Integer.SIZE / 8;
     }
     private int xid;

@@ -30,9 +30,9 @@ import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
-import org.xtreemfs.interfaces.utils.Serializable;
 
 
 /**
@@ -60,12 +60,12 @@ public class ONCRPCRequest {
 
     long startT, endT;
 
-    ONCRPCRequest(RPCResponseListener listener, int xid, int programId, int versionId, int procedureId, Serializable response, Object attachment,
+    ONCRPCRequest(RPCResponseListener listener, int xid, int programId, int versionId, int procedureId, yidl.Object response, Object attachment,
             UserCredentials credentials) {
         ONCRPCRequestHeader hdr = new ONCRPCRequestHeader(xid, programId, versionId,procedureId,credentials);
         ONCRPCBufferWriter writer = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
-        hdr.serialize(writer);
-        response.serialize(writer);
+        hdr.marshal(writer);
+        response.marshal(writer);
         writer.flip();
 
         this.requestBuffers = writer.getBuffers();
@@ -138,8 +138,8 @@ public class ONCRPCRequest {
         this.responseFragments = responseFragments;
     }
 
-    public void deserializeResponse(Serializable msg) {
-        msg.deserialize(responseFragments.get(0));
+    public void deserializeResponse(yidl.Object msg) {
+        msg.unmarshal(new XDRUnmarshaller(responseFragments.get(0)));
     }
 
     public void freeBuffers() {

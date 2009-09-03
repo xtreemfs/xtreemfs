@@ -78,7 +78,11 @@ public final class TimeSync extends LifeCycleThread {
     /**
      * timestamp of last resync operation
      */
-    private long             lastSync;
+    private volatile long    lastSync;
+
+    private volatile int     syncRTT;
+
+    private volatile boolean syncSuccess;
     
     private static TimeSync  theInstance;
     
@@ -94,6 +98,7 @@ public final class TimeSync extends LifeCycleThread {
         this.localTimeRenew = localTimeRenew;
         this.timeSyncInterval = timeSyncInterval;
         this.dir = dir;
+        this.syncSuccess = false;
     }
     
     /**
@@ -124,6 +129,7 @@ public final class TimeSync extends LifeCycleThread {
         }
         
         notifyStopped();
+        syncSuccess = false;
         theInstance = null;
     }
     
@@ -209,7 +215,24 @@ public final class TimeSync extends LifeCycleThread {
     public static int getTimeSyncInterval() {
         return getInstance().timeSyncInterval;
     }
+
+    public static int getSyncRTT() {
+        return getInstance().syncRTT;
+    }
+
+    public static boolean lastSyncWasSuccessful() {
+        return getInstance().syncSuccess;
+    }
+
     
+    /**
+     *
+     * @return the timestamp (local time) when the drift
+     * was calculated
+     */
+    public static long getLastSyncTimestamp() {
+        return getInstance().lastSync;
+    }
     /**
      * returns the current clock drift.
      */
@@ -232,7 +255,10 @@ public final class TimeSync extends LifeCycleThread {
             r.freeBuffers();
             long tEnd = System.currentTimeMillis();
             // add half a roundtrip to estimate the delay
-            globalTime += (tEnd - tStart) / 2;
+            syncRTT = (int)(tEnd - tStart);
+            globalTime += syncRTT / 2;
+            syncSuccess = true;
+
             
             currentDrift = globalTime - tEnd;
             lastSync = tEnd;
@@ -243,6 +269,7 @@ public final class TimeSync extends LifeCycleThread {
             }
             
         } catch (Exception ex) {
+            syncSuccess = false;
             ex.printStackTrace();
             lastSync = System.currentTimeMillis();
         }

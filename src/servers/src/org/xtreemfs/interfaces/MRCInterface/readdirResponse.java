@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class readdirResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009090421;
+    public static final int TAG = 2009082830;
     
     public readdirResponse() { directory_entries = new DirectoryEntrySet();  }
     public readdirResponse( DirectoryEntrySet directory_entries ) { this.directory_entries = directory_entries; }
@@ -22,10 +22,10 @@ public class readdirResponse extends org.xtreemfs.interfaces.utils.Response
     public void setDirectory_entries( DirectoryEntrySet directory_entries ) { this.directory_entries = directory_entries; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090421;    
+    public static final long serialVersionUID = 2009082830;    
 
     // yidl.Object
-    public int getTag() { return 2009090421; }
+    public int getTag() { return 2009082830; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirResponse"; }
     
     public int getXDRSize()

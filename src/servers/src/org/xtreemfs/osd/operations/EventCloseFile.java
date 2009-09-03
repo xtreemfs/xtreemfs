@@ -25,7 +25,6 @@ package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.DeletionStage.DeleteObjectsCallback;
@@ -53,7 +52,7 @@ public class EventCloseFile extends OSDOperation {
     }
 
     @Override
-    public Serializable parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

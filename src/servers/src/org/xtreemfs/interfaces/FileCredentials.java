@@ -12,7 +12,7 @@ import yidl.Unmarshaller;
 
 public class FileCredentials extends Struct
 {
-    public static final int TAG = 2009090233;
+    public static final int TAG = 2009082642;
     
     public FileCredentials() { xlocs = new XLocSet(); xcap = new XCap();  }
     public FileCredentials( XLocSet xlocs, XCap xcap ) { this.xlocs = xlocs; this.xcap = xcap; }
@@ -23,10 +23,10 @@ public class FileCredentials extends Struct
     public void setXcap( XCap xcap ) { this.xcap = xcap; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090233;    
+    public static final long serialVersionUID = 2009082642;    
 
     // yidl.Object
-    public int getTag() { return 2009090233; }
+    public int getTag() { return 2009082642; }
     public String getTypeName() { return "org::xtreemfs::interfaces::FileCredentials"; }
     
     public int getXDRSize()

@@ -29,5 +29,5 @@ import yidl.Struct;
 
 public abstract class Request extends Struct
 {
-    public abstract Struct createDefaultResponse();
+    public abstract Response createDefaultResponse();
 };   

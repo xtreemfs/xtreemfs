@@ -14,6 +14,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingResponse;
 import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -52,7 +53,7 @@ public class VivaldiStage extends Stage {
             //skip request type byte
             data.position(1);
             VivaldiCoordinates vc = new VivaldiCoordinates();
-            vc.deserialize(data);
+            vc.unmarshal(new XDRUnmarshaller(data));
             BufferPool.free(data);
 
 
@@ -97,7 +98,7 @@ public class VivaldiStage extends Stage {
     }
 
     private void sendVivaldiCoordinates(UDPMessage request, VivaldiCoordinates myCoordinates) {
-        final int payloadSize = myCoordinates.calculateSize();
+        final int payloadSize = myCoordinates.getXDRSize();
         //add one byte for UDP message type identifier
         xtreemfs_pingResponse resp = new xtreemfs_pingResponse(myCoordinates);
         UDPMessage msg = request.createResponse(resp);

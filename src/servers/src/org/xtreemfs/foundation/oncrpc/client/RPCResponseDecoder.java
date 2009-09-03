@@ -6,7 +6,6 @@
 package org.xtreemfs.foundation.oncrpc.client;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.interfaces.utils.Serializable;
 
 /**
  *

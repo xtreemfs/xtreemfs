@@ -24,12 +24,14 @@
 
 package org.xtreemfs.dir.operations;
 
+import java.io.IOException;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_uuidRequest;
@@ -67,14 +69,15 @@ public class GetServiceByUuidOperation extends DIROperation {
             
             ServiceSet services = new ServiceSet();
             if (data != null) {
-                Service dbData = new Service();
-                ReusableBuffer buf = ReusableBuffer.wrap(data);
-                dbData.deserialize(buf);
-                services.add(dbData);
+                ServiceRecord dbData = new ServiceRecord(ReusableBuffer.wrap(data));
+                services.add(dbData.getService());
             }
             
             xtreemfs_service_get_by_uuidResponse response = new xtreemfs_service_get_by_uuidResponse(services);
             rq.sendSuccess(response);
+        } catch (IOException ex) {
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
+            rq.sendInternalServerError(ex);
         } catch (BabuDBException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
             rq.sendInternalServerError(ex);

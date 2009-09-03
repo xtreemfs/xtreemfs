@@ -31,6 +31,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_offlineRequest;
@@ -67,19 +68,14 @@ public class ServiceOfflineOperation extends DIROperation {
                     .getBytes());
             long currentVersion = 0;
             if (data != null) {
-                final Service dbData = new Service();
                 ReusableBuffer buf = ReusableBuffer.wrap(data);
-                dbData.deserialize(buf);
+                ServiceRecord dbData = new ServiceRecord(buf);
                 
                 dbData.setLast_updated_s(0);
+                dbData.setVersion(dbData.getVersion()+1);
                 
-                final int dataSize = dbData.calculateSize();
-                ONCRPCBufferWriter writer = new ONCRPCBufferWriter(dataSize);
-                dbData.serialize(writer);
-                writer.flip();
-                assert (writer.getBuffers().size() == 1);
-                byte[] newData = writer.getBuffers().get(0).array();
-                writer.freeBuffers();
+                byte[] newData = new byte[dbData.getSize()];
+                dbData.serialize(ReusableBuffer.wrap(newData));
                 BabuDBInsertGroup ig = database.createInsertGroup();
                 ig.addInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes(), newData);
                 database.directInsert(ig);

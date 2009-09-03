@@ -24,6 +24,7 @@
 
 package org.xtreemfs.dir.operations;
 
+import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
@@ -33,6 +34,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.dir.data.AddressMappingRecords;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest;
@@ -71,26 +73,26 @@ public class GetAddressMappingOperation extends DIROperation {
                     xtreemfs_address_mappings_getResponse response = new xtreemfs_address_mappings_getResponse();
                     rq.sendSuccess(response);
                 } else {
-                    AddressMappingSet set = new AddressMappingSet();
-                    set.deserialize(ReusableBuffer.wrap(result));
-                    xtreemfs_address_mappings_getResponse response = new xtreemfs_address_mappings_getResponse(set);
+                    AddressMappingRecords set = new AddressMappingRecords(ReusableBuffer.wrap(result));
+                    xtreemfs_address_mappings_getResponse response = new xtreemfs_address_mappings_getResponse(set.getAddressMappingSet());
                     rq.sendSuccess(response);
                 }
             } else {
                 //full list requested
-                AddressMappingSet list = new AddressMappingSet();
+                AddressMappingRecords list = new AddressMappingRecords();
                 Iterator<Entry<byte[],byte[]>> iter = database.directPrefixLookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, new byte[0]);
                 while (iter.hasNext()) {
                     Entry<byte[],byte[]> e = iter.next();
-                    AddressMappingSet set = new AddressMappingSet();
-                    set.deserialize(ReusableBuffer.wrap(e.getValue()));
-                    for (AddressMapping m : set)
-                        list.add(m);
+                    AddressMappingRecords recs = new AddressMappingRecords(ReusableBuffer.wrap(e.getValue()));
+                    list.add(recs);
                 }
-                xtreemfs_address_mappings_getResponse response = new xtreemfs_address_mappings_getResponse(list);
+                xtreemfs_address_mappings_getResponse response = new xtreemfs_address_mappings_getResponse(list.getAddressMappingSet());
                 rq.sendSuccess(response);
 
             }
+        } catch (IOException ex) {
+            Logging.logError(Logging.LEVEL_ERROR, this, ex);
+            rq.sendInternalServerError(ex);
         } catch (BabuDBException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
             rq.sendInternalServerError(ex);

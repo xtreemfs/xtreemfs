@@ -28,12 +28,12 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_truncateRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_truncateResponse;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
-import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
@@ -98,9 +98,9 @@ public final class InternalTruncateOperation extends OSDOperation {
     }
 
     @Override
-    public Serializable parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         xtreemfs_internal_truncateRequest rpcrq = new xtreemfs_internal_truncateRequest();
-        rpcrq.deserialize(data);
+        rpcrq.unmarshal(new XDRUnmarshaller(data));
 
         rq.setFileId(rpcrq.getFile_id());
         rq.setCapability(new Capability(rpcrq.getFile_credentials().getXcap(),sharedSecret));

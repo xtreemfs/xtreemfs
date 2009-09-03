@@ -27,6 +27,7 @@ package org.xtreemfs.mrc.operations;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.utils.Request;
@@ -71,7 +72,7 @@ public abstract class MRCOperation {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "parsing request arguments");
             
             Request req = MRCInterface.createRequest(rq.getRPCRequest().getRequestHeader());
-            req.deserialize(rq.getRPCRequest().getRequestFragment());
+            req.unmarshal(new XDRUnmarshaller(rq.getRPCRequest().getRequestFragment()));
             rq.setRequestArgs(req);
             
             if (Logging.isDebug()) {

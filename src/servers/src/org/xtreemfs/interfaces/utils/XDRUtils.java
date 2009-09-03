@@ -69,10 +69,10 @@ public class XDRUtils {
 
     public static void serializeSerializableBuffer(ReusableBuffer data, ONCRPCBufferWriter writer) {
         if (data == null) {
-            writer.putInt(0);
+            writer.writeInt32(null,0);
         } else {
             final int len = data.remaining();
-            writer.putInt(len);
+            writer.writeInt32(null,len);
             writer.put(data);
             if (len % 4 > 0) {
                 for (int k = 0; k < (4 - (len % 4)); k++) {
@@ -124,7 +124,7 @@ public class XDRUtils {
 
     public static void serializeString(String str, ONCRPCBufferWriter writer) {
         if (str == null) {
-            writer.putInt(0);
+            writer.writeInt32(null,0);
             return;
         }
         final byte[] bytes = str.getBytes();
@@ -135,7 +135,7 @@ public class XDRUtils {
         final int strlen = bytes.length;
         if (strlen > MAX_STRLEN)
             throw new IllegalArgumentException("string is too large ("+strlen+"), maximum allowed is "+MAX_STRLEN+" bytes");
-        writer.putInt(strlen);
+        writer.writeInt32(null,strlen);
         writer.put(bytes);
         if (strlen% 4 > 0) {
             for (int k = 0; k < (4 - (strlen % 4)); k++) {

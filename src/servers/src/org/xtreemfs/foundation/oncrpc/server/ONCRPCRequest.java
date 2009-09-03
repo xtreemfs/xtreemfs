@@ -32,12 +32,12 @@ import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
-import org.xtreemfs.interfaces.utils.Serializable;
 
 /**
  *
@@ -58,14 +58,14 @@ public class ONCRPCRequest {
 
         final ReusableBuffer firstFragment = record.getRequestFragments().get(0);
         firstFragment.position(0);
-        requestHeader.deserialize(firstFragment);
+        requestHeader.unmarshal(new XDRUnmarshaller(firstFragment));
     }
 
     public ReusableBuffer getRequestFragment() {
         return record.getRequestFragments().get(0);
     }
 
-    public void sendResponse(Serializable response) {
+    public void sendResponse(yidl.Object response) {
         assert (responseHeader == null) : "response already sent";
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS);
@@ -152,13 +152,13 @@ public class ONCRPCRequest {
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS);
 
-        final int fragmentSize = serializedResponse.capacity()+responseHeader.calculateSize();
+        final int fragmentSize = serializedResponse.capacity()+responseHeader.getXDRSize();
         assert (fragmentSize >= 0) : "fragment has invalid size: "+fragmentSize;
         final boolean isLastFragment = true;
         final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(fragmentSize, isLastFragment);
 
-        writer.putInt(fragHdr);
-        responseHeader.serialize(writer);
+        writer.writeInt32(null,fragHdr);
+        responseHeader.marshal(writer);
         writer.put(serializedResponse);
         writer.flip();
         record.setResponseBuffers(writer.getBuffers());
@@ -171,12 +171,12 @@ public class ONCRPCRequest {
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
             errorCode);
 
-        final int fragmentSize =  responseHeader.calculateSize();
+        final int fragmentSize =  responseHeader.getXDRSize();
         assert (fragmentSize >= 0) : "fragment has invalid size: "+fragmentSize;
         final boolean isLastFragment = true;
         final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(fragmentSize, isLastFragment);
-        writer.putInt(fragHdr);
-        responseHeader.serialize(writer);;
+        writer.writeInt32(null,fragHdr);
+        responseHeader.marshal(writer);;
         //make ready for sending
         writer.flip();
         record.setResponseBuffers(writer.getBuffers());
@@ -185,7 +185,7 @@ public class ONCRPCRequest {
     }
     
 
-    void wrapAndSendException(Serializable exception) {
+    void wrapAndSendException(yidl.Object exception) {
         assert(exception != null);
         assert (responseHeader == null) : "response already sent";
         ONCRPCBufferWriter writer = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
@@ -193,13 +193,13 @@ public class ONCRPCRequest {
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
             exception.getTag());
 
-        final int fragmentSize =  responseHeader.calculateSize()+exception.calculateSize();
+        final int fragmentSize =  responseHeader.getXDRSize()+exception.getXDRSize();
         assert (fragmentSize >= 0) : "fragment has invalid size: "+fragmentSize;
         final boolean isLastFragment = true;
         final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(fragmentSize, isLastFragment);
-        writer.putInt(fragHdr);
-        responseHeader.serialize(writer);
-        exception.serialize(writer);
+        writer.writeInt32(null,fragHdr);
+        responseHeader.marshal(writer);
+        exception.marshal(writer);
         //make ready for sending
         writer.flip();
         record.setResponseBuffers(writer.getBuffers());
@@ -207,16 +207,16 @@ public class ONCRPCRequest {
         record.sendResponse();
     }
 
-    void serializeAndSendRespondse(Serializable response) {
-        final int fragmentSize = response.calculateSize()+responseHeader.calculateSize();
+    void serializeAndSendRespondse(yidl.Object response) {
+        final int fragmentSize = response.getXDRSize()+responseHeader.getXDRSize();
         final boolean isLastFragment = true;
         assert (fragmentSize >= 0) : "fragment has invalid size: "+fragmentSize;
         final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(fragmentSize, isLastFragment);
         ONCRPCBufferWriter writer = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
-        writer.putInt(fragHdr);
-        responseHeader.serialize(writer);
+        writer.writeInt32(null,fragHdr);
+        responseHeader.marshal(writer);
         if (response != null)
-            response.serialize(writer);
+            response.marshal(writer);
         //make ready for sending
         writer.flip();
         record.setResponseBuffers(writer.getBuffers());

@@ -27,13 +27,13 @@ package org.xtreemfs.osd.striping;
 import java.net.InetSocketAddress;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.OSDInterface.OSDInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.interfaces.utils.Request;
 import org.xtreemfs.interfaces.utils.Response;
-import org.xtreemfs.interfaces.utils.Serializable;
 import org.xtreemfs.interfaces.utils.XDRUtils;
 
 public class UDPMessage {
@@ -67,12 +67,12 @@ public class UDPMessage {
     public UDPMessage(InetSocketAddress address, int xid, int proc, Request payload) {
         requestHeader = new ONCRPCRequestHeader(payload.getTag(),  0 , OSDInterface.getVersion(), payload.getTag());
         responseHeader = null;
-        int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(requestHeader.calculateSize()+payload.calculateSize(), true);
+        int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(requestHeader.getXDRSize()+payload.getXDRSize(), true);
         this.address = address;
         ONCRPCBufferWriter wr = new ONCRPCBufferWriter(1024);
-        wr.putInt(fragHdr);
-        requestHeader.serialize(wr);
-        payload.serialize(wr);
+        wr.writeInt32(null,fragHdr);
+        requestHeader.marshal(wr);
+        payload.marshal(wr);
         wr.flip();
         this.payload = wr.getBuffers().get(0);
         requestData = null;
@@ -85,12 +85,12 @@ public class UDPMessage {
                 ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS);
 
-        int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(responseHeader.calculateSize()+payload.calculateSize(), true);
+        int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(responseHeader.getXDRSize()+payload.getXDRSize(), true);
         this.address = request.getAddress();
         ONCRPCBufferWriter wr = new ONCRPCBufferWriter(1024);
-        wr.putInt(fragHdr);
-        responseHeader.serialize(wr);
-        payload.serialize(wr);
+        wr.writeInt32(null,fragHdr);
+        responseHeader.marshal(wr);
+        payload.marshal(wr);
         wr.flip();
         this.payload = wr.getBuffers().get(0);
         requestData = null;
@@ -105,7 +105,7 @@ public class UDPMessage {
         payload.position(Integer.SIZE/8);
         if (callType == XDRUtils.TYPE_CALL) {
             requestHeader = new ONCRPCRequestHeader();
-            requestHeader.deserialize(payload);
+            requestHeader.unmarshal(new XDRUnmarshaller(payload));
             responseHeader = null;
 
             requestData = OSDInterface.createRequest(requestHeader);
@@ -114,7 +114,7 @@ public class UDPMessage {
 
         } else {
             responseHeader = new ONCRPCResponseHeader();
-            responseHeader.deserialize(payload);
+            responseHeader.unmarshal(new XDRUnmarshaller(payload));
             requestHeader = null;
 
             responseData = OSDInterface.createResponse(responseHeader);

@@ -28,9 +28,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
-import org.xtreemfs.interfaces.utils.Serializable;
 
 /**
  * 
@@ -40,23 +40,23 @@ public class DIRRequest {
     
     private final ONCRPCRequest rpcRequest;
     
-    private Serializable        requestMessage;
+    private yidl.Object        requestMessage;
     
     public DIRRequest(ONCRPCRequest rpcRequest) {
         this.rpcRequest = rpcRequest;
     }
     
-    public void deserializeMessage(Serializable message) {
+    public void deserializeMessage(yidl.Object message) {
         final ReusableBuffer payload = rpcRequest.getRequestFragment();
-        message.deserialize(payload);
+        message.unmarshal(new XDRUnmarshaller(payload));
         requestMessage = message;
     }
     
-    public Serializable getRequestMessage() {
+    public yidl.Object getRequestMessage() {
         return requestMessage;
     }
     
-    public void sendSuccess(Serializable response) {
+    public void sendSuccess(yidl.Object response) {
         rpcRequest.sendResponse(response);
     }
     

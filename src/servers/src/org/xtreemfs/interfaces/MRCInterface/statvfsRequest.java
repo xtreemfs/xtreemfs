@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class statvfsRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009090427;
+    public static final int TAG = 2009082836;
     
     public statvfsRequest() {  }
     public statvfsRequest( String volume_name ) { this.volume_name = volume_name; }
@@ -26,10 +26,10 @@ public class statvfsRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090427;    
+    public static final long serialVersionUID = 2009082836;    
 
     // yidl.Object
-    public int getTag() { return 2009090427; }
+    public int getTag() { return 2009082836; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::statvfsRequest"; }
     
     public int getXDRSize()

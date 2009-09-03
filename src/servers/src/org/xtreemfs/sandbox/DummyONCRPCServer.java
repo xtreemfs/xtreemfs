@@ -15,6 +15,7 @@ import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest;
@@ -43,14 +44,14 @@ public class DummyONCRPCServer {
                             ReusableBuffer buf = rq.getRequestFragment();
 
                             xtreemfs_address_mappings_getRequest rpcRequest = new xtreemfs_address_mappings_getRequest();
-                            rpcRequest.deserialize(buf);
+                            rpcRequest.unmarshal(new XDRUnmarshaller(buf));
 
                             xtreemfs_address_mappings_getResponse rpcResponse = new xtreemfs_address_mappings_getResponse();
 
                             if (rpcRequest.getUuid().equalsIgnoreCase("Yagga")) {
                                 rpcResponse.getAddress_mappings().add(new AddressMapping("Yagga", 1, "rpc", "localhost", 12345, "*", 3600,
                                         "rpc://localhost:12345"));
-                                System.out.println("response size is " + rpcResponse.calculateSize());
+                                System.out.println("response size is " + rpcResponse.getXDRSize());
                                 rq.sendResponse(rpcResponse);
                             } else {
                                 rq.sendGarbageArgs(null,new ProtocolException());
@@ -77,13 +78,13 @@ public class DummyONCRPCServer {
 
                 xtreemfs_address_mappings_getRequest rq = new xtreemfs_address_mappings_getRequest("Yagga");
 
-                final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(rqHdr.calculateSize() + rq.calculateSize(), true);
-                System.out.println("fragment size is " + fragHdr + "/" + (rqHdr.calculateSize() + rq.calculateSize()));
+                final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(rqHdr.getXDRSize() + rq.getXDRSize(), true);
+                System.out.println("fragment size is " + fragHdr + "/" + (rqHdr.getXDRSize() + rq.getXDRSize()));
                 System.out.println("fragment size is " + (fragHdr ^ (1 << 31)));
-                writer.putInt(fragHdr);
-                rqHdr.serialize(writer);
+                writer.writeInt32(null,fragHdr);
+                rqHdr.marshal(writer);
 
-                rq.serialize(writer);
+                rq.marshal(writer);
                 writer.flip();
                 System.out.println(writer);
                 Iterator<ReusableBuffer> bufs = writer.getBuffers().iterator();
@@ -120,13 +121,13 @@ public class DummyONCRPCServer {
                 }
                 buf.position(0);
 
-                rhdr.deserialize(buf);
+                rhdr.unmarshal(new XDRUnmarshaller(buf));
 
                 System.out.println("bytes left: " + buf.remaining());
 
 
                 xtreemfs_address_mappings_getResponse resp = new xtreemfs_address_mappings_getResponse();
-                resp.deserialize(buf);
+                resp.unmarshal(new XDRUnmarshaller(buf));
 
                 System.out.println("everything ok!");
 

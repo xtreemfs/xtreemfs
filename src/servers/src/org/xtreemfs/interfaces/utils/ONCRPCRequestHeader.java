@@ -28,6 +28,8 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.UserCredentials;
+import yidl.Marshaller;
+import yidl.Unmarshaller;
 
 public class ONCRPCRequestHeader implements yidl.Object {
 
@@ -80,54 +82,54 @@ public class ONCRPCRequestHeader implements yidl.Object {
     public int getTag() { return getProcedure(); }
     public String getTypeName() { return "xtreemfs::interfaces::ONCRPCRequestHeader"; }    
     
-    public void serialize(ONCRPCBufferWriter writer) {
-        writer.putInt(xid);
-        writer.putInt(0); // CALL
-        writer.putInt(2); // RPC version 2
-        writer.putInt(prog);
-        writer.putInt(vers);
-        writer.putInt(proc);
+    public void marshal(Marshaller writer) {
+        writer.writeInt32(null,xid);
+        writer.writeInt32(null,0); // CALL
+        writer.writeInt32(null,2); // RPC version 2
+        writer.writeInt32(null,prog);
+        writer.writeInt32(null,vers);
+        writer.writeInt32(null,proc);
         if (user_credentials != null) {
-            writer.putInt(Constants.ONCRPC_AUTH_FLAVOR);
-            final int dataLength = user_credentials.calculateSize();
-            writer.putInt(dataLength);
-            user_credentials.serialize(writer);
+            writer.writeInt32(null,Constants.ONCRPC_AUTH_FLAVOR);
+            final int dataLength = user_credentials.getXDRSize();
+            writer.writeInt32(null,dataLength);
+            user_credentials.marshal(writer);
         } else {
-            writer.putInt(0); // cred_auth_flavor
-            writer.putInt(0); // cred auth opaque data
+            writer.writeInt32(null,0); // cred_auth_flavor
+            writer.writeInt32(null,0); // cred auth opaque data
         }
 
         
-        writer.putInt(0); // verf_auth_flavor
-        writer.putInt(0); // verf auth opaque data
+        writer.writeInt32(null,0); // verf_auth_flavor
+        writer.writeInt32(null,0); // verf auth opaque data
     }
 
-    public void deserialize(ReusableBuffer buf) {
-        xid = buf.getInt();
+    public void unmarshal(Unmarshaller um) {
+        xid = um.readInt32(null);
 //        System.out.println( "XID " + Integer.toString( xid ) );
-        msg_type = buf.getInt();
-        rpcvers = buf.getInt();
+        msg_type = um.readInt32(null);
+        rpcvers = um.readInt32(null);
 //        System.out.println( "RPC version " + Integer.toString( rpcvers ) );
-        prog = buf.getInt();
+        prog = um.readInt32(null);
         //       System.out.println( "Prog " + Integer.toString( prog ) );
-        vers = buf.getInt();
+        vers = um.readInt32(null);
 //        System.out.println( "Vers " + Integer.toString( vers ) );        
-        proc = buf.getInt();
+        proc = um.readInt32(null);
 //        System.out.println( "proc " + Integer.toString( proc ) );        
-        auth_flavor = buf.getInt(); // cred_auth_flavor
+        auth_flavor = um.readInt32(null); // cred_auth_flavor
         if (getAuth_flavor() == Constants.ONCRPC_AUTH_FLAVOR) {
-            int size = buf.getInt();
+            int size = um.readInt32(null);
             user_credentials = new UserCredentials();
-            user_credentials.deserialize(buf);
+            user_credentials.unmarshal(um);
         } else {
-            buf.getInt(); // cred auth opaque data
+            um.readInt32(null); // cred auth opaque data
         }
-        buf.getInt(); // verf_auth_flavor
-        buf.getInt(); // verf auth opaque data
+        um.readInt32(null); // verf_auth_flavor
+        um.readInt32(null); // verf auth opaque data
     }
 
-    public int calculateSize() {
-        final int authSize = (getUser_credentials() != null) ? getUser_credentials().calculateSize() : 0;
+    public int getXDRSize() {
+        final int authSize = (getUser_credentials() != null) ? getUser_credentials().getXDRSize() : 0;
         return 10 * Integer.SIZE/8 + authSize;
     }
     private int xid;

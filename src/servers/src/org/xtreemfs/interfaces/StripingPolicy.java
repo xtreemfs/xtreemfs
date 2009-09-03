@@ -12,7 +12,7 @@ import yidl.Unmarshaller;
 
 public class StripingPolicy extends Struct
 {
-    public static final int TAG = 2009090228;
+    public static final int TAG = 2009082637;
     
     public StripingPolicy() { type = StripingPolicyType.STRIPING_POLICY_RAID0;  }
     public StripingPolicy( StripingPolicyType type, int stripe_size, int width ) { this.type = type; this.stripe_size = stripe_size; this.width = width; }
@@ -25,10 +25,10 @@ public class StripingPolicy extends Struct
     public void setWidth( int width ) { this.width = width; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090228;    
+    public static final long serialVersionUID = 2009082637;    
 
     // yidl.Object
-    public int getTag() { return 2009090228; }
+    public int getTag() { return 2009082637; }
     public String getTypeName() { return "org::xtreemfs::interfaces::StripingPolicy"; }
     
     public int getXDRSize()

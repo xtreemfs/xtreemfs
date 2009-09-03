@@ -7,6 +7,8 @@ package org.xtreemfs.interfaces.utils;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import yidl.Marshaller;
+import yidl.Unmarshaller;
 
 /**
  *
@@ -35,17 +37,17 @@ public class ONCRPCError extends ONCRPCException {
     }
 
     @Override
-    public void serialize(ONCRPCBufferWriter writer) {
+    public void marshal(Marshaller writer) {
         throw new RuntimeException("this exception must not be serialized");
     }
 
     @Override
-    public void deserialize(ReusableBuffer buf) {
+    public void unmarshal(Unmarshaller buf) {
         throw new RuntimeException("this exception must not be serialized");
     }
 
     @Override
-    public int calculateSize() {
+    public int getXDRSize() {
         throw new RuntimeException("this exception must not be serialized");
     }
 

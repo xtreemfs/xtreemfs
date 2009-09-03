@@ -31,6 +31,7 @@ import org.xtreemfs.foundation.oncrpc.client.ONCRPCClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseDecoder;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.InternalReadLocalResponse;
@@ -100,7 +101,7 @@ public class OSDClient extends ONCRPCClient {
             @Override
             public ObjectData getResult(ReusableBuffer data) {
                 readResponse resp = new readResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getObject_data();
             }
         });
@@ -116,7 +117,7 @@ public class OSDClient extends ONCRPCClient {
             @Override
             public OSDWriteResponse getResult(ReusableBuffer data) {
                 truncateResponse resp = new truncateResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getOsd_write_response();
             }
         });
@@ -132,7 +133,7 @@ public class OSDClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 unlinkResponse resp = new unlinkResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         });
@@ -150,7 +151,7 @@ public class OSDClient extends ONCRPCClient {
             @Override
             public OSDWriteResponse getResult(ReusableBuffer data) {
                 truncateResponse resp = new truncateResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getOsd_write_response();
             }
         });
@@ -168,7 +169,7 @@ public class OSDClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 xtreemfs_internal_truncateResponse resp = new xtreemfs_internal_truncateResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         });
@@ -184,7 +185,7 @@ public class OSDClient extends ONCRPCClient {
             @Override
             public InternalGmax getResult(ReusableBuffer data) {
                 xtreemfs_internal_get_gmaxResponse resp = new xtreemfs_internal_get_gmaxResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getReturnValue();
             }
         });
@@ -200,7 +201,7 @@ public class OSDClient extends ONCRPCClient {
             @Override
             public Long getResult(ReusableBuffer data) {
                 xtreemfs_internal_get_file_sizeResponse resp = new xtreemfs_internal_get_file_sizeResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getReturnValue();
             }
         });
@@ -222,7 +223,7 @@ public class OSDClient extends ONCRPCClient {
                     @Override
                     public InternalReadLocalResponse getResult(ReusableBuffer data) {
                         xtreemfs_internal_read_localResponse resp = new xtreemfs_internal_read_localResponse();
-                        resp.deserialize(data);
+                        resp.unmarshal(new XDRUnmarshaller(data));
                         return resp.getReturnValue();
                     }
                 });
@@ -239,7 +240,7 @@ public class OSDClient extends ONCRPCClient {
             @Override
             public ObjectData getResult(ReusableBuffer data) {
                 xtreemfs_check_objectResponse resp = new xtreemfs_check_objectResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getReturnValue();
             }
         });
@@ -257,7 +258,7 @@ public class OSDClient extends ONCRPCClient {
             @Override
             public Object getResult(ReusableBuffer data) {
                 xtreemfs_shutdownResponse resp = new xtreemfs_shutdownResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         },creds);
@@ -269,14 +270,16 @@ public class OSDClient extends ONCRPCClient {
 
         xtreemfs_cleanup_startRequest rq = new xtreemfs_cleanup_startRequest(removeZombies, removeDeadVolumes, lostAndFound);
 
-        UserCredentials creds = new UserCredentials("", new StringSet(new String[]{"cleanUp"}), password);
+        StringSet s = new StringSet();
+        s.add("cleanUp");
+        UserCredentials creds = new UserCredentials("", s, password);
 
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
                 xtreemfs_cleanup_startResponse resp = new xtreemfs_cleanup_startResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         },creds);
@@ -287,14 +290,16 @@ public class OSDClient extends ONCRPCClient {
 
         xtreemfs_cleanup_stopRequest rq = new xtreemfs_cleanup_stopRequest();
 
-        UserCredentials creds = new UserCredentials("", new StringSet(new String[]{"cleanUp"}), password);
+        StringSet s = new StringSet();
+        s.add("cleanUp");
+        UserCredentials creds = new UserCredentials("", s, password);
 
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
                 xtreemfs_cleanup_stopResponse resp = new xtreemfs_cleanup_stopResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
         },creds);
@@ -305,14 +310,16 @@ public class OSDClient extends ONCRPCClient {
 
         xtreemfs_cleanup_is_runningRequest rq = new xtreemfs_cleanup_is_runningRequest();
 
-        UserCredentials creds = new UserCredentials("", new StringSet(new String[]{"cleanUp"}), password);
+        StringSet s = new StringSet();
+        s.add("cleanUp");
+        UserCredentials creds = new UserCredentials("", s, password);
 
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
                 xtreemfs_cleanup_is_runningResponse resp = new xtreemfs_cleanup_is_runningResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getIs_running();
             }
         },creds);
@@ -323,14 +330,16 @@ public class OSDClient extends ONCRPCClient {
 
         xtreemfs_cleanup_statusRequest rq = new xtreemfs_cleanup_statusRequest();
 
-        UserCredentials creds = new UserCredentials("", new StringSet(new String[]{"cleanUp"}), password);
+        StringSet s = new StringSet();
+        s.add("cleanUp");
+        UserCredentials creds = new UserCredentials("", s, password);
 
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
                 xtreemfs_cleanup_statusResponse resp = new xtreemfs_cleanup_statusResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getStatus();
             }
         },creds);
@@ -341,14 +350,16 @@ public class OSDClient extends ONCRPCClient {
 
         xtreemfs_cleanup_get_resultsRequest rq = new xtreemfs_cleanup_get_resultsRequest();
 
-        UserCredentials creds = new UserCredentials("", new StringSet(new String[]{"cleanUp"}), password);
+        StringSet s = new StringSet();
+        s.add("cleanUp");
+        UserCredentials creds = new UserCredentials("", s, password);
 
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
                 xtreemfs_cleanup_get_resultsResponse resp = new xtreemfs_cleanup_get_resultsResponse();
-                resp.deserialize(data);
+                resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getResults();
             }
         },creds);
@@ -365,7 +376,7 @@ public class OSDClient extends ONCRPCClient {
                     @Override
                     public ObjectList getResult(ReusableBuffer data) {
                         xtreemfs_internal_get_object_setResponse resp = new xtreemfs_internal_get_object_setResponse();
-                        resp.deserialize(data);
+                        resp.unmarshal(new XDRUnmarshaller(data));
                         return resp.getReturnValue();
                     }
                 });
@@ -382,7 +393,7 @@ public class OSDClient extends ONCRPCClient {
                     @Override
                     public Lock getResult(ReusableBuffer data) {
                         xtreemfs_lock_acquireResponse resp = new xtreemfs_lock_acquireResponse();
-                        resp.deserialize(data);
+                        resp.unmarshal(new XDRUnmarshaller(data));
                         return resp.getReturnValue();
                     }
                 });
@@ -399,7 +410,7 @@ public class OSDClient extends ONCRPCClient {
                     @Override
                     public Lock getResult(ReusableBuffer data) {
                         xtreemfs_lock_checkResponse resp = new xtreemfs_lock_checkResponse();
-                        resp.deserialize(data);
+                        resp.unmarshal(new XDRUnmarshaller(data));
                         return resp.getReturnValue();
                     }
                 });
@@ -415,7 +426,7 @@ public class OSDClient extends ONCRPCClient {
                     @Override
                     public Lock getResult(ReusableBuffer data) {
                         xtreemfs_lock_releaseResponse resp = new xtreemfs_lock_releaseResponse();
-                        resp.deserialize(data);
+                        resp.unmarshal(new XDRUnmarshaller(data));
                         return null;
                     }
                 });

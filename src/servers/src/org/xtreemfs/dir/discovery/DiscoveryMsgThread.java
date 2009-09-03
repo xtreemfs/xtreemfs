@@ -15,6 +15,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_discover_dirRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_discover_dirResponse;
@@ -62,9 +63,9 @@ public class DiscoveryMsgThread extends LifeCycleThread {
                 try {
                     data.position(Integer.SIZE / 8);
                     ONCRPCRequestHeader hdr = new ONCRPCRequestHeader();
-                    hdr.deserialize(data);
+                    hdr.unmarshal(new XDRUnmarshaller(data));
                     xtreemfs_discover_dirRequest rq = new xtreemfs_discover_dirRequest();
-                    rq.deserialize(data);
+                    rq.unmarshal(new XDRUnmarshaller(data));
 
 
                     xtreemfs_discover_dirResponse resp = new xtreemfs_discover_dirResponse(me);
@@ -73,9 +74,9 @@ public class DiscoveryMsgThread extends LifeCycleThread {
                             ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS);
                 
                     ONCRPCBufferWriter wr = new ONCRPCBufferWriter(2048);
-                    wr.putInt(ONCRPCRecordFragmentHeader.getFragmentHeader(respHdr.calculateSize()+resp.calculateSize(), true));
-                    respHdr.serialize(wr);
-                    resp.serialize(wr);
+                    wr.writeInt32(null,ONCRPCRecordFragmentHeader.getFragmentHeader(respHdr.getXDRSize()+resp.getXDRSize(), true));
+                    respHdr.marshal(wr);
+                    resp.marshal(wr);
                     wr.flip();
 
                     channel.send(wr.getBuffers().get(0).getBuffer(), sender);

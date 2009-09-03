@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_discover_dirRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_discover_dirResponse;
@@ -66,9 +67,9 @@ public class DiscoveryUtils {
                     ONCRPCRequestHeader rqHdr = new ONCRPCRequestHeader(1, 1, DIRInterface.getVersion(), rq.TAG);
 
                     ONCRPCBufferWriter wr = new ONCRPCBufferWriter(2048);
-                    wr.putInt(ONCRPCRecordFragmentHeader.getFragmentHeader(rqHdr.calculateSize()+rq.calculateSize(), true));
-                    rqHdr.serialize(wr);
-                    rq.serialize(wr);
+                    wr.writeInt32(null,ONCRPCRecordFragmentHeader.getFragmentHeader(rqHdr.getXDRSize()+rq.getXDRSize(), true));
+                    rqHdr.marshal(wr);
+                    rq.marshal(wr);
                     wr.flip();
                     byte[] rdata = wr.getBuffers().get(0).array();
                     wr.freeBuffers();
@@ -89,9 +90,9 @@ public class DiscoveryUtils {
                     ReusableBuffer b = ReusableBuffer.wrap(data, 0, p.getLength());
                     b.position(Integer.SIZE / 8);
                     ONCRPCResponseHeader respHdr = new ONCRPCResponseHeader();
-                    respHdr.deserialize(b);
+                    respHdr.unmarshal(new XDRUnmarshaller(b));
                     xtreemfs_discover_dirResponse resp = new xtreemfs_discover_dirResponse();
-                    resp.deserialize(b);
+                    resp.unmarshal(new XDRUnmarshaller(b));
 
                     return resp.getDir_service();
 

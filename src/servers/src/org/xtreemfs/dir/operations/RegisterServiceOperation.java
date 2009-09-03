@@ -31,6 +31,7 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.DIRInterface.ConcurrentModificationException;
@@ -70,9 +71,8 @@ public class RegisterServiceOperation extends DIROperation {
                     .getBytes());
             long currentVersion = 0;
             if (data != null) {
-                Service dbData = new Service();
                 ReusableBuffer buf = ReusableBuffer.wrap(data);
-                dbData.deserialize(buf);
+                ServiceRecord dbData = new ServiceRecord(buf);
                 currentVersion = dbData.getVersion();
             }
             
@@ -86,13 +86,17 @@ public class RegisterServiceOperation extends DIROperation {
             reg.setVersion(currentVersion);
             reg.setLast_updated_s(System.currentTimeMillis() / 1000l);
             
-            final int dataSize = reg.calculateSize();
+            /*final int dataSize = reg.calculateSize();
             ONCRPCBufferWriter writer = new ONCRPCBufferWriter(dataSize);
             reg.serialize(writer);
             writer.flip();
             assert (writer.getBuffers().size() == 1);
             byte[] newData = writer.getBuffers().get(0).array();
             writer.freeBuffers();
+             */
+            ServiceRecord newRec = new ServiceRecord(reg);
+            byte[] newData = new byte[newRec.getSize()];
+            newRec.serialize(ReusableBuffer.wrap(newData));
             BabuDBInsertGroup ig = database.createInsertGroup();
             ig.addInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes(), newData);
             database.directInsert(ig);

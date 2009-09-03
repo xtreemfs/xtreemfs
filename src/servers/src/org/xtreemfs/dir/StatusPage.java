@@ -5,6 +5,7 @@
 package org.xtreemfs.dir;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.Date;
@@ -19,6 +20,9 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.OutputUtils;
+import org.xtreemfs.dir.data.AddressMappingRecord;
+import org.xtreemfs.dir.data.AddressMappingRecords;
+import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.Service;
@@ -86,7 +90,7 @@ public class StatusPage {
         }
     }
     
-    public static String getStatusPage(DIRRequestDispatcher master, DIRConfig config) throws BabuDBException {
+    public static String getStatusPage(DIRRequestDispatcher master, DIRConfig config) throws BabuDBException, IOException {
         
         final Database database = master.getDirDatabase();
         
@@ -103,8 +107,7 @@ public class StatusPage {
         dump.append("<tr><td class=\"dumpTitle\">UUID</td><td class=\"dumpTitle\">mapping</td></tr>");
         while (iter.hasNext()) {
             Entry<byte[], byte[]> e = iter.next();
-            AddressMappingSet ams = new AddressMappingSet();
-            ams.deserialize(ReusableBuffer.wrap(e.getValue()));
+            AddressMappingRecords ams = new AddressMappingRecords(ReusableBuffer.wrap(e.getValue()));
             
             final String uuid = new String(e.getKey());
             
@@ -113,7 +116,7 @@ public class StatusPage {
             dump.append("</td><td class=\"dump\"><table width=\"100%\"><tr>");
             dump.append("<tr><td><table width=\"100%\">");
             long version = 0;
-            for (AddressMapping am : ams) {
+            for (AddressMappingRecord am : ams.getRecords()) {
                 dump.append("<tr><td class=\"mapping\">");
                 String endpoint = am.getUri() + " (" + am.getProtocol() + "," + am.getAddress() + ","
                     + am.getPort() + ")";
@@ -140,8 +143,7 @@ public class StatusPage {
         while (iter.hasNext()) {
             Entry<byte[], byte[]> e = iter.next();
             final String uuid = new String(e.getKey());
-            final Service sreg = new Service();
-            sreg.deserialize(ReusableBuffer.wrap(e.getValue()));
+            final ServiceRecord sreg = new ServiceRecord(ReusableBuffer.wrap(e.getValue()));
             
             dump.append("<tr><td class=\"uuid\">");
             dump.append(uuid);
