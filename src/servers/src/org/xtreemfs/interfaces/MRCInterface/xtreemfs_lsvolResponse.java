@@ -1,76 +1,51 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class xtreemfs_lsvolResponse implements org.xtreemfs.interfaces.utils.Response
+public class xtreemfs_lsvolResponse extends org.xtreemfs.interfaces.utils.Response
 {
     public static final int TAG = 2009082853;
-
     
-    public xtreemfs_lsvolResponse() { volumes = new VolumeSet(); }
+    public xtreemfs_lsvolResponse() { volumes = new VolumeSet();  }
     public xtreemfs_lsvolResponse( VolumeSet volumes ) { this.volumes = volumes; }
-    public xtreemfs_lsvolResponse( Object from_hash_map ) { volumes = new VolumeSet(); this.deserialize( from_hash_map ); }
-    public xtreemfs_lsvolResponse( Object[] from_array ) { volumes = new VolumeSet();this.deserialize( from_array ); }
 
     public VolumeSet getVolumes() { return volumes; }
     public void setVolumes( VolumeSet volumes ) { this.volumes = volumes; }
 
-    // Object
-    public String toString()
-    {
-        return "xtreemfs_lsvolResponse( " + volumes.toString() + " )";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082853;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082853; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_lsvolResponse"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.volumes.deserialize( ( Object[] )from_hash_map.get( "volumes" ) );
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.volumes.deserialize( ( Object[] )from_array[0] );        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        volumes = new VolumeSet(); volumes.deserialize( buf );
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "volumes", volumes.serialize() );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        volumes.serialize( writer );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += volumes.calculateSize();
+        my_size += volumes.getXDRSize();
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeSequence( "volumes", volumes );
     }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        volumes = new VolumeSet(); unmarshaller.readSequence( "volumes", volumes );    
+    }
+        
+    
 
     private VolumeSet volumes;    
 

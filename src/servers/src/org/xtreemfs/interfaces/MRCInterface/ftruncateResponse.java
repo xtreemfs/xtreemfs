@@ -1,76 +1,51 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class ftruncateResponse implements org.xtreemfs.interfaces.utils.Response
+public class ftruncateResponse extends org.xtreemfs.interfaces.utils.Response
 {
     public static final int TAG = 2009082823;
-
     
-    public ftruncateResponse() { truncate_xcap = new XCap(); }
+    public ftruncateResponse() { truncate_xcap = new XCap();  }
     public ftruncateResponse( XCap truncate_xcap ) { this.truncate_xcap = truncate_xcap; }
-    public ftruncateResponse( Object from_hash_map ) { truncate_xcap = new XCap(); this.deserialize( from_hash_map ); }
-    public ftruncateResponse( Object[] from_array ) { truncate_xcap = new XCap();this.deserialize( from_array ); }
 
     public XCap getTruncate_xcap() { return truncate_xcap; }
     public void setTruncate_xcap( XCap truncate_xcap ) { this.truncate_xcap = truncate_xcap; }
 
-    // Object
-    public String toString()
-    {
-        return "ftruncateResponse( " + truncate_xcap.toString() + " )";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082823;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082823; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::ftruncateResponse"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.truncate_xcap.deserialize( from_hash_map.get( "truncate_xcap" ) );
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.truncate_xcap.deserialize( from_array[0] );        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        truncate_xcap = new XCap(); truncate_xcap.deserialize( buf );
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "truncate_xcap", truncate_xcap.serialize() );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        truncate_xcap.serialize( writer );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += truncate_xcap.calculateSize();
+        my_size += truncate_xcap.getXDRSize();
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeStruct( "truncate_xcap", truncate_xcap );
     }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        truncate_xcap = new XCap(); unmarshaller.readStruct( "truncate_xcap", truncate_xcap );    
+    }
+        
+    
 
     private XCap truncate_xcap;    
 

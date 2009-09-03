@@ -1,79 +1,55 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class xtreemfs_mkvolRequest implements org.xtreemfs.interfaces.utils.Request
+public class xtreemfs_mkvolRequest extends org.xtreemfs.interfaces.utils.Request
 {
     public static final int TAG = 2009082855;
-
     
-    public xtreemfs_mkvolRequest() { volume = new Volume(); }
+    public xtreemfs_mkvolRequest() { volume = new Volume();  }
     public xtreemfs_mkvolRequest( Volume volume ) { this.volume = volume; }
-    public xtreemfs_mkvolRequest( Object from_hash_map ) { volume = new Volume(); this.deserialize( from_hash_map ); }
-    public xtreemfs_mkvolRequest( Object[] from_array ) { volume = new Volume();this.deserialize( from_array ); }
 
     public Volume getVolume() { return volume; }
     public void setVolume( Volume volume ) { this.volume = volume; }
 
-    // Object
-    public String toString()
-    {
-        return "xtreemfs_mkvolRequest( " + volume.toString() + " )";
-    }
-
-    // Serializable
-    public int getTag() { return 2009082855; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_mkvolRequest"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.volume.deserialize( from_hash_map.get( "volume" ) );
-    }
-    
-    public void deserialize( Object[] from_array )
-    {
-        this.volume.deserialize( from_array[0] );        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        volume = new Volume(); volume.deserialize( buf );
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "volume", volume.serialize() );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        volume.serialize( writer );
-    }
-    
-    public int calculateSize()
-    {
-        int my_size = 0;
-        my_size += volume.calculateSize();
-        return my_size;
-    }
-
     // Request
     public Response createDefaultResponse() { return new xtreemfs_mkvolResponse(); }
 
+
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082855;    
+
+    // yidl.Object
+    public int getTag() { return 2009082855; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_mkvolRequest"; }
+    
+    public int getXDRSize()
+    {
+        int my_size = 0;
+        my_size += volume.getXDRSize();
+        return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeStruct( "volume", volume );
+    }
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        volume = new Volume(); unmarshaller.readStruct( "volume", volume );    
+    }
+        
+    
 
     private Volume volume;    
 

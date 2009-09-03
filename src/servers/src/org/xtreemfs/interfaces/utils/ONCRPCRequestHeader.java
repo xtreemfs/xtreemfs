@@ -29,7 +29,7 @@ import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.UserCredentials;
 
-public class ONCRPCRequestHeader implements Serializable {
+public class ONCRPCRequestHeader implements yidl.Object {
 
     public ONCRPCRequestHeader() {
         xid = prog = vers = proc = 0;

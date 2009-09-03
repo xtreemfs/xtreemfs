@@ -24,14 +24,10 @@
 
 package org.xtreemfs.interfaces.utils;
 
-import java.nio.ByteBuffer;
-import java.util.List;
-import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
-import org.xtreemfs.interfaces.Constants;
 
-public class ONCRPCResponseHeader implements Serializable {
+public class ONCRPCResponseHeader implements yidl.Object {
 
     public static final int REPLY_STAT_MSG_ACCEPTED = 0;
 

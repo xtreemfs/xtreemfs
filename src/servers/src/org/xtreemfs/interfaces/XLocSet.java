@@ -1,22 +1,21 @@
 package org.xtreemfs.interfaces;
 
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class XLocSet implements org.xtreemfs.interfaces.utils.Serializable
+public class XLocSet extends Struct
 {
     public static final int TAG = 2009082641;
-
     
-    public XLocSet() { replicas = new ReplicaSet(); version = 0; repUpdatePolicy = ""; read_only_file_size = 0; }
+    public XLocSet() { replicas = new ReplicaSet();  }
     public XLocSet( ReplicaSet replicas, int version, String repUpdatePolicy, long read_only_file_size ) { this.replicas = replicas; this.version = version; this.repUpdatePolicy = repUpdatePolicy; this.read_only_file_size = read_only_file_size; }
-    public XLocSet( Object from_hash_map ) { replicas = new ReplicaSet(); version = 0; repUpdatePolicy = ""; read_only_file_size = 0; this.deserialize( from_hash_map ); }
-    public XLocSet( Object[] from_array ) { replicas = new ReplicaSet(); version = 0; repUpdatePolicy = ""; read_only_file_size = 0;this.deserialize( from_array ); }
 
     public ReplicaSet getReplicas() { return replicas; }
     public void setReplicas( ReplicaSet replicas ) { this.replicas = replicas; }
@@ -27,73 +26,40 @@ public class XLocSet implements org.xtreemfs.interfaces.utils.Serializable
     public long getRead_only_file_size() { return read_only_file_size; }
     public void setRead_only_file_size( long read_only_file_size ) { this.read_only_file_size = read_only_file_size; }
 
-    // Object
-    public String toString()
-    {
-        return "XLocSet( " + replicas.toString() + ", " + Integer.toString( version ) + ", " + "\"" + repUpdatePolicy + "\"" + ", " + Long.toString( read_only_file_size ) + " )";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082641;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082641; }
     public String getTypeName() { return "org::xtreemfs::interfaces::XLocSet"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.replicas.deserialize( ( Object[] )from_hash_map.get( "replicas" ) );
-        this.version = ( ( Integer )from_hash_map.get( "version" ) ).intValue();
-        this.repUpdatePolicy = ( String )from_hash_map.get( "repUpdatePolicy" );
-        this.read_only_file_size = ( ( Long )from_hash_map.get( "read_only_file_size" ) ).longValue();
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.replicas.deserialize( ( Object[] )from_array[0] );
-        this.version = ( ( Integer )from_array[1] ).intValue();
-        this.repUpdatePolicy = ( String )from_array[2];
-        this.read_only_file_size = ( ( Long )from_array[3] ).longValue();        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        replicas = new ReplicaSet(); replicas.deserialize( buf );
-        version = buf.getInt();
-        repUpdatePolicy = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        read_only_file_size = buf.getLong();
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "replicas", replicas.serialize() );
-        to_hash_map.put( "version", new Integer( version ) );
-        to_hash_map.put( "repUpdatePolicy", repUpdatePolicy );
-        to_hash_map.put( "read_only_file_size", new Long( read_only_file_size ) );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        replicas.serialize( writer );
-        writer.putInt( version );
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( repUpdatePolicy, writer );
-        writer.putLong( read_only_file_size );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += replicas.calculateSize();
+        my_size += replicas.getXDRSize();
         my_size += ( Integer.SIZE / 8 );
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(repUpdatePolicy);
+        my_size += ( ( repUpdatePolicy.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( repUpdatePolicy.getBytes().length + Integer.SIZE/8 ) : ( repUpdatePolicy.getBytes().length + Integer.SIZE/8 + 4 - ( repUpdatePolicy.getBytes().length + Integer.SIZE/8 ) % 4 );
         my_size += ( Long.SIZE / 8 );
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeSequence( "replicas", replicas );
+        marshaller.writeUint32( "version", version );
+        marshaller.writeString( "repUpdatePolicy", repUpdatePolicy );
+        marshaller.writeUint64( "read_only_file_size", read_only_file_size );
     }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        replicas = new ReplicaSet(); unmarshaller.readSequence( "replicas", replicas );
+        version = unmarshaller.readUint32( "version" );
+        repUpdatePolicy = unmarshaller.readString( "repUpdatePolicy" );
+        read_only_file_size = unmarshaller.readUint64( "read_only_file_size" );    
+    }
+        
+    
 
     private ReplicaSet replicas;
     private int version;

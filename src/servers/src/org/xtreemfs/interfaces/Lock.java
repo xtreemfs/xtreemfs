@@ -1,22 +1,21 @@
 package org.xtreemfs.interfaces;
 
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class Lock implements org.xtreemfs.interfaces.utils.Serializable
+public class Lock extends Struct
 {
     public static final int TAG = 2009082672;
-
     
-    public Lock() { client_uuid = ""; client_pid = 0; offset = 0; length = 0; }
+    public Lock() {  }
     public Lock( String client_uuid, int client_pid, long offset, long length ) { this.client_uuid = client_uuid; this.client_pid = client_pid; this.offset = offset; this.length = length; }
-    public Lock( Object from_hash_map ) { client_uuid = ""; client_pid = 0; offset = 0; length = 0; this.deserialize( from_hash_map ); }
-    public Lock( Object[] from_array ) { client_uuid = ""; client_pid = 0; offset = 0; length = 0;this.deserialize( from_array ); }
 
     public String getClient_uuid() { return client_uuid; }
     public void setClient_uuid( String client_uuid ) { this.client_uuid = client_uuid; }
@@ -27,73 +26,40 @@ public class Lock implements org.xtreemfs.interfaces.utils.Serializable
     public long getLength() { return length; }
     public void setLength( long length ) { this.length = length; }
 
-    // Object
-    public String toString()
-    {
-        return "Lock( " + "\"" + client_uuid + "\"" + ", " + Integer.toString( client_pid ) + ", " + Long.toString( offset ) + ", " + Long.toString( length ) + " )";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082672;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082672; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Lock"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.client_uuid = ( String )from_hash_map.get( "client_uuid" );
-        this.client_pid = ( ( Integer )from_hash_map.get( "client_pid" ) ).intValue();
-        this.offset = ( ( Long )from_hash_map.get( "offset" ) ).longValue();
-        this.length = ( ( Long )from_hash_map.get( "length" ) ).longValue();
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.client_uuid = ( String )from_array[0];
-        this.client_pid = ( ( Integer )from_array[1] ).intValue();
-        this.offset = ( ( Long )from_array[2] ).longValue();
-        this.length = ( ( Long )from_array[3] ).longValue();        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        client_uuid = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        client_pid = buf.getInt();
-        offset = buf.getLong();
-        length = buf.getLong();
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "client_uuid", client_uuid );
-        to_hash_map.put( "client_pid", new Integer( client_pid ) );
-        to_hash_map.put( "offset", new Long( offset ) );
-        to_hash_map.put( "length", new Long( length ) );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( client_uuid, writer );
-        writer.putInt( client_pid );
-        writer.putLong( offset );
-        writer.putLong( length );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(client_uuid);
+        my_size += ( ( client_uuid.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( client_uuid.getBytes().length + Integer.SIZE/8 ) : ( client_uuid.getBytes().length + Integer.SIZE/8 + 4 - ( client_uuid.getBytes().length + Integer.SIZE/8 ) % 4 );
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeString( "client_uuid", client_uuid );
+        marshaller.writeUint32( "client_pid", client_pid );
+        marshaller.writeUint64( "offset", offset );
+        marshaller.writeUint64( "length", length );
     }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        client_uuid = unmarshaller.readString( "client_uuid" );
+        client_pid = unmarshaller.readUint32( "client_pid" );
+        offset = unmarshaller.readUint64( "offset" );
+        length = unmarshaller.readUint64( "length" );    
+    }
+        
+    
 
     private String client_uuid;
     private int client_pid;

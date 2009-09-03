@@ -1,22 +1,21 @@
 package org.xtreemfs.interfaces;
 
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class XCap implements org.xtreemfs.interfaces.utils.Serializable
+public class XCap extends Struct
 {
     public static final int TAG = 2009082640;
-
     
-    public XCap() { file_id = ""; access_mode = 0; expires_s = 0; client_identity = ""; truncate_epoch = 0; replicateOnClose = false; server_signature = ""; }
+    public XCap() {  }
     public XCap( String file_id, int access_mode, long expires_s, String client_identity, int truncate_epoch, boolean replicateOnClose, String server_signature ) { this.file_id = file_id; this.access_mode = access_mode; this.expires_s = expires_s; this.client_identity = client_identity; this.truncate_epoch = truncate_epoch; this.replicateOnClose = replicateOnClose; this.server_signature = server_signature; }
-    public XCap( Object from_hash_map ) { file_id = ""; access_mode = 0; expires_s = 0; client_identity = ""; truncate_epoch = 0; replicateOnClose = false; server_signature = ""; this.deserialize( from_hash_map ); }
-    public XCap( Object[] from_array ) { file_id = ""; access_mode = 0; expires_s = 0; client_identity = ""; truncate_epoch = 0; replicateOnClose = false; server_signature = "";this.deserialize( from_array ); }
 
     public String getFile_id() { return file_id; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
@@ -33,91 +32,49 @@ public class XCap implements org.xtreemfs.interfaces.utils.Serializable
     public String getServer_signature() { return server_signature; }
     public void setServer_signature( String server_signature ) { this.server_signature = server_signature; }
 
-    // Object
-    public String toString()
-    {
-        return "XCap( " + "\"" + file_id + "\"" + ", " + Integer.toString( access_mode ) + ", " + Long.toString( expires_s ) + ", " + "\"" + client_identity + "\"" + ", " + Integer.toString( truncate_epoch ) + ", " + Boolean.toString( replicateOnClose ) + ", " + "\"" + server_signature + "\"" + " )";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082640;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082640; }
     public String getTypeName() { return "org::xtreemfs::interfaces::XCap"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.file_id = ( String )from_hash_map.get( "file_id" );
-        this.access_mode = ( ( Integer )from_hash_map.get( "access_mode" ) ).intValue();
-        this.expires_s = ( ( Long )from_hash_map.get( "expires_s" ) ).longValue();
-        this.client_identity = ( String )from_hash_map.get( "client_identity" );
-        this.truncate_epoch = ( ( Integer )from_hash_map.get( "truncate_epoch" ) ).intValue();
-        this.replicateOnClose = ( ( Boolean )from_hash_map.get( "replicateOnClose" ) ).booleanValue();
-        this.server_signature = ( String )from_hash_map.get( "server_signature" );
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.file_id = ( String )from_array[0];
-        this.access_mode = ( ( Integer )from_array[1] ).intValue();
-        this.expires_s = ( ( Long )from_array[2] ).longValue();
-        this.client_identity = ( String )from_array[3];
-        this.truncate_epoch = ( ( Integer )from_array[4] ).intValue();
-        this.replicateOnClose = ( ( Boolean )from_array[5] ).booleanValue();
-        this.server_signature = ( String )from_array[6];        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        file_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        access_mode = buf.getInt();
-        expires_s = buf.getLong();
-        client_identity = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        truncate_epoch = buf.getInt();
-        replicateOnClose = buf.getInt() != 0;
-        server_signature = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "file_id", file_id );
-        to_hash_map.put( "access_mode", new Integer( access_mode ) );
-        to_hash_map.put( "expires_s", new Long( expires_s ) );
-        to_hash_map.put( "client_identity", client_identity );
-        to_hash_map.put( "truncate_epoch", new Integer( truncate_epoch ) );
-        to_hash_map.put( "replicateOnClose", new Boolean( replicateOnClose ) );
-        to_hash_map.put( "server_signature", server_signature );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( file_id, writer );
-        writer.putInt( access_mode );
-        writer.putLong( expires_s );
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( client_identity, writer );
-        writer.putInt( truncate_epoch );
-        writer.putInt( replicateOnClose ? 1 : 0 );
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( server_signature, writer );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(file_id);
+        my_size += ( ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( file_id.getBytes().length + Integer.SIZE/8 ) : ( file_id.getBytes().length + Integer.SIZE/8 + 4 - ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 );
         my_size += ( Integer.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(client_identity);
+        my_size += ( ( client_identity.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( client_identity.getBytes().length + Integer.SIZE/8 ) : ( client_identity.getBytes().length + Integer.SIZE/8 + 4 - ( client_identity.getBytes().length + Integer.SIZE/8 ) % 4 );
         my_size += ( Integer.SIZE / 8 );
         my_size += 4;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(server_signature);
+        my_size += ( ( server_signature.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( server_signature.getBytes().length + Integer.SIZE/8 ) : ( server_signature.getBytes().length + Integer.SIZE/8 + 4 - ( server_signature.getBytes().length + Integer.SIZE/8 ) % 4 );
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeString( "file_id", file_id );
+        marshaller.writeUint32( "access_mode", access_mode );
+        marshaller.writeUint64( "expires_s", expires_s );
+        marshaller.writeString( "client_identity", client_identity );
+        marshaller.writeUint32( "truncate_epoch", truncate_epoch );
+        marshaller.writeBoolean( "replicateOnClose", replicateOnClose );
+        marshaller.writeString( "server_signature", server_signature );
     }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        file_id = unmarshaller.readString( "file_id" );
+        access_mode = unmarshaller.readUint32( "access_mode" );
+        expires_s = unmarshaller.readUint64( "expires_s" );
+        client_identity = unmarshaller.readString( "client_identity" );
+        truncate_epoch = unmarshaller.readUint32( "truncate_epoch" );
+        replicateOnClose = unmarshaller.readBoolean( "replicateOnClose" );
+        server_signature = unmarshaller.readString( "server_signature" );    
+    }
+        
+    
 
     private String file_id;
     private int access_mode;

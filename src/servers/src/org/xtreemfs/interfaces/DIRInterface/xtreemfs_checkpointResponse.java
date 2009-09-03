@@ -1,71 +1,47 @@
 package org.xtreemfs.interfaces.DIRInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class xtreemfs_checkpointResponse implements org.xtreemfs.interfaces.utils.Response
+public class xtreemfs_checkpointResponse extends org.xtreemfs.interfaces.utils.Response
 {
     public static final int TAG = 2009082722;
-
     
     public xtreemfs_checkpointResponse() {  }
-    public xtreemfs_checkpointResponse( Object from_hash_map ) {  this.deserialize( from_hash_map ); }
-    public xtreemfs_checkpointResponse( Object[] from_array ) { this.deserialize( from_array ); }
 
-    // Object
-    public String toString()
-    {
-        return "xtreemfs_checkpointResponse()";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082722;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082722; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_checkpointResponse"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
 
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+
     }
     
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+    
+    }
+        
+        
 
 }
 

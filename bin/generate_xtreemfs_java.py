@@ -15,6 +15,15 @@ XTREEMFS_IMPORTS = [
                    ]
 
 
+class XtreemFSJavaBufferType(JavaBufferType):
+    def getDeclarationTypeName( self ): return "ReusableBuffer"
+    
+
+class XtreemFSJavaExceptionType(JavaExceptionType):
+    def generate( self ): XtreemFSJavaStructType( self.getScope(), self.getQualifiedName(), self.getTag(), ( "org.xtreemfs.interfaces.utils.ONCRPCException", ), self.getMembers() ).generate()
+    def getExceptionFactory( self ): return ( INDENT_SPACES * 3 ) + "case %i: return new %s();\n" % ( self.getTag(), self.getName() )
+
+
 class XtreemFSJavaInterface(JavaInterface, JavaClass):    
     def generate( self ):                            
         class_header = self.getClassHeader()        
@@ -68,13 +77,18 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
                 
         writeGeneratedFile( self.getFilePath(), out )            
 
+        for operation in self.getOperations():
+            operation.generate()
+
     def getImports( self ): 
         return JavaClass.getImports( self ) + XTREEMFS_IMPORTS
 
+    def getPackageDirPath( self ):                
+        return os.sep.join( self.getQualifiedName() )
+    
+    def getPackageName( self ): 
+        return ".".join( self.getQualifiedName() )
 
-class XtreemFSJavaExceptionType(JavaExceptionType):
-    def generate( self ): XtreemFSJavaStructType( self.getScope(), self.getQualifiedName(), self.getTag(), ( "org.xtreemfs.interfaces.utils.ONCRPCException", ), self.getMembers() ).generate()
-    def getExceptionFactory( self ): return ( INDENT_SPACES * 3 ) + "case %i: return new %s();\n" % ( self.getTag(), self.getName() )
 
 
 class XtreemFSJavaMapType(JavaMapType):
@@ -109,9 +123,11 @@ class XtreemFSJavaRequestType(XtreemFSJavaStructType):
 """ % locals()
 
     def getParentTypeNames( self ):
-        return ( None, "org.xtreemfs.interfaces.utils.Request" )            
+        return ( "org.xtreemfs.interfaces.utils.Request", )            
 
-class XtreemFSJavaResponseType(XtreemFSJavaStructType): pass    
+class XtreemFSJavaResponseType(XtreemFSJavaStructType):
+    def getParentTypeNames( self ):
+        return ( "org.xtreemfs.interfaces.utils.Response", )            
 
 
 class XtreemFSJavaTarget(JavaTarget): pass

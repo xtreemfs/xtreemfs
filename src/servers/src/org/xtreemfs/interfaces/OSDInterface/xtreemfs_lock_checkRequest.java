@@ -1,23 +1,22 @@
 package org.xtreemfs.interfaces.OSDInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class xtreemfs_lock_checkRequest implements org.xtreemfs.interfaces.utils.Request
+public class xtreemfs_lock_checkRequest extends org.xtreemfs.interfaces.utils.Request
 {
     public static final int TAG = 2009082969;
-
     
-    public xtreemfs_lock_checkRequest() { file_credentials = new FileCredentials(); client_uuid = ""; client_pid = 0; file_id = ""; offset = 0; length = 0; exclusive = false; }
+    public xtreemfs_lock_checkRequest() { file_credentials = new FileCredentials();  }
     public xtreemfs_lock_checkRequest( FileCredentials file_credentials, String client_uuid, int client_pid, String file_id, long offset, long length, boolean exclusive ) { this.file_credentials = file_credentials; this.client_uuid = client_uuid; this.client_pid = client_pid; this.file_id = file_id; this.offset = offset; this.length = length; this.exclusive = exclusive; }
-    public xtreemfs_lock_checkRequest( Object from_hash_map ) { file_credentials = new FileCredentials(); client_uuid = ""; client_pid = 0; file_id = ""; offset = 0; length = 0; exclusive = false; this.deserialize( from_hash_map ); }
-    public xtreemfs_lock_checkRequest( Object[] from_array ) { file_credentials = new FileCredentials(); client_uuid = ""; client_pid = 0; file_id = ""; offset = 0; length = 0; exclusive = false;this.deserialize( from_array ); }
 
     public FileCredentials getFile_credentials() { return file_credentials; }
     public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
@@ -34,94 +33,53 @@ public class xtreemfs_lock_checkRequest implements org.xtreemfs.interfaces.utils
     public boolean getExclusive() { return exclusive; }
     public void setExclusive( boolean exclusive ) { this.exclusive = exclusive; }
 
-    // Object
-    public String toString()
-    {
-        return "xtreemfs_lock_checkRequest( " + file_credentials.toString() + ", " + "\"" + client_uuid + "\"" + ", " + Integer.toString( client_pid ) + ", " + "\"" + file_id + "\"" + ", " + Long.toString( offset ) + ", " + Long.toString( length ) + ", " + Boolean.toString( exclusive ) + " )";
-    }
+    // Request
+    public Response createDefaultResponse() { return new xtreemfs_lock_checkResponse(); }
 
-    // Serializable
+
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082969;    
+
+    // yidl.Object
     public int getTag() { return 2009082969; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_lock_checkRequest"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.file_credentials.deserialize( from_hash_map.get( "file_credentials" ) );
-        this.client_uuid = ( String )from_hash_map.get( "client_uuid" );
-        this.client_pid = ( ( Integer )from_hash_map.get( "client_pid" ) ).intValue();
-        this.file_id = ( String )from_hash_map.get( "file_id" );
-        this.offset = ( ( Long )from_hash_map.get( "offset" ) ).longValue();
-        this.length = ( ( Long )from_hash_map.get( "length" ) ).longValue();
-        this.exclusive = ( ( Boolean )from_hash_map.get( "exclusive" ) ).booleanValue();
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.file_credentials.deserialize( from_array[0] );
-        this.client_uuid = ( String )from_array[1];
-        this.client_pid = ( ( Integer )from_array[2] ).intValue();
-        this.file_id = ( String )from_array[3];
-        this.offset = ( ( Long )from_array[4] ).longValue();
-        this.length = ( ( Long )from_array[5] ).longValue();
-        this.exclusive = ( ( Boolean )from_array[6] ).booleanValue();        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        file_credentials = new FileCredentials(); file_credentials.deserialize( buf );
-        client_uuid = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        client_pid = buf.getInt();
-        file_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        offset = buf.getLong();
-        length = buf.getLong();
-        exclusive = buf.getInt() != 0;
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "file_credentials", file_credentials.serialize() );
-        to_hash_map.put( "client_uuid", client_uuid );
-        to_hash_map.put( "client_pid", new Integer( client_pid ) );
-        to_hash_map.put( "file_id", file_id );
-        to_hash_map.put( "offset", new Long( offset ) );
-        to_hash_map.put( "length", new Long( length ) );
-        to_hash_map.put( "exclusive", new Boolean( exclusive ) );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        file_credentials.serialize( writer );
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( client_uuid, writer );
-        writer.putInt( client_pid );
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( file_id, writer );
-        writer.putLong( offset );
-        writer.putLong( length );
-        writer.putInt( exclusive ? 1 : 0 );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += file_credentials.calculateSize();
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(client_uuid);
+        my_size += file_credentials.getXDRSize();
+        my_size += ( ( client_uuid.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( client_uuid.getBytes().length + Integer.SIZE/8 ) : ( client_uuid.getBytes().length + Integer.SIZE/8 + 4 - ( client_uuid.getBytes().length + Integer.SIZE/8 ) % 4 );
         my_size += ( Integer.SIZE / 8 );
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(file_id);
+        my_size += ( ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( file_id.getBytes().length + Integer.SIZE/8 ) : ( file_id.getBytes().length + Integer.SIZE/8 + 4 - ( file_id.getBytes().length + Integer.SIZE/8 ) % 4 );
         my_size += ( Long.SIZE / 8 );
         my_size += ( Long.SIZE / 8 );
         my_size += 4;
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeStruct( "file_credentials", file_credentials );
+        marshaller.writeString( "client_uuid", client_uuid );
+        marshaller.writeInt32( "client_pid", client_pid );
+        marshaller.writeString( "file_id", file_id );
+        marshaller.writeUint64( "offset", offset );
+        marshaller.writeUint64( "length", length );
+        marshaller.writeBoolean( "exclusive", exclusive );
     }
-
-    // Request
-    public Response createDefaultResponse() { return new xtreemfs_lock_checkResponse(); }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        file_credentials = new FileCredentials(); unmarshaller.readStruct( "file_credentials", file_credentials );
+        client_uuid = unmarshaller.readString( "client_uuid" );
+        client_pid = unmarshaller.readInt32( "client_pid" );
+        file_id = unmarshaller.readString( "file_id" );
+        offset = unmarshaller.readUint64( "offset" );
+        length = unmarshaller.readUint64( "length" );
+        exclusive = unmarshaller.readBoolean( "exclusive" );    
+    }
+        
+    
 
     private FileCredentials file_credentials;
     private String client_uuid;

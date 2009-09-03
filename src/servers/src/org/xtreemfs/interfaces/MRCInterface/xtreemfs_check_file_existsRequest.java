@@ -1,23 +1,22 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interfaces.utils.Request
+public class xtreemfs_check_file_existsRequest extends org.xtreemfs.interfaces.utils.Request
 {
     public static final int TAG = 2009082849;
-
     
-    public xtreemfs_check_file_existsRequest() { volume_id = ""; file_ids = new StringSet(); osd_uuid = ""; }
+    public xtreemfs_check_file_existsRequest() { file_ids = new StringSet();  }
     public xtreemfs_check_file_existsRequest( String volume_id, StringSet file_ids, String osd_uuid ) { this.volume_id = volume_id; this.file_ids = file_ids; this.osd_uuid = osd_uuid; }
-    public xtreemfs_check_file_existsRequest( Object from_hash_map ) { volume_id = ""; file_ids = new StringSet(); osd_uuid = ""; this.deserialize( from_hash_map ); }
-    public xtreemfs_check_file_existsRequest( Object[] from_array ) { volume_id = ""; file_ids = new StringSet(); osd_uuid = "";this.deserialize( from_array ); }
 
     public String getVolume_id() { return volume_id; }
     public void setVolume_id( String volume_id ) { this.volume_id = volume_id; }
@@ -26,70 +25,41 @@ public class xtreemfs_check_file_existsRequest implements org.xtreemfs.interface
     public String getOsd_uuid() { return osd_uuid; }
     public void setOsd_uuid( String osd_uuid ) { this.osd_uuid = osd_uuid; }
 
-    // Object
-    public String toString()
-    {
-        return "xtreemfs_check_file_existsRequest( " + "\"" + volume_id + "\"" + ", " + file_ids.toString() + ", " + "\"" + osd_uuid + "\"" + " )";
-    }
-
-    // Serializable
-    public int getTag() { return 2009082849; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsRequest"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.volume_id = ( String )from_hash_map.get( "volume_id" );
-        this.file_ids.deserialize( ( Object[] )from_hash_map.get( "file_ids" ) );
-        this.osd_uuid = ( String )from_hash_map.get( "osd_uuid" );
-    }
-    
-    public void deserialize( Object[] from_array )
-    {
-        this.volume_id = ( String )from_array[0];
-        this.file_ids.deserialize( ( Object[] )from_array[1] );
-        this.osd_uuid = ( String )from_array[2];        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        volume_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        file_ids = new StringSet(); file_ids.deserialize( buf );
-        osd_uuid = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "volume_id", volume_id );
-        to_hash_map.put( "file_ids", file_ids.serialize() );
-        to_hash_map.put( "osd_uuid", osd_uuid );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( volume_id, writer );
-        file_ids.serialize( writer );
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( osd_uuid, writer );
-    }
-    
-    public int calculateSize()
-    {
-        int my_size = 0;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(volume_id);
-        my_size += file_ids.calculateSize();
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(osd_uuid);
-        return my_size;
-    }
-
     // Request
     public Response createDefaultResponse() { return new xtreemfs_check_file_existsResponse(); }
 
+
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082849;    
+
+    // yidl.Object
+    public int getTag() { return 2009082849; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsRequest"; }
+    
+    public int getXDRSize()
+    {
+        int my_size = 0;
+        my_size += ( ( volume_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( volume_id.getBytes().length + Integer.SIZE/8 ) : ( volume_id.getBytes().length + Integer.SIZE/8 + 4 - ( volume_id.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += file_ids.getXDRSize();
+        my_size += ( ( osd_uuid.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( osd_uuid.getBytes().length + Integer.SIZE/8 ) : ( osd_uuid.getBytes().length + Integer.SIZE/8 + 4 - ( osd_uuid.getBytes().length + Integer.SIZE/8 ) % 4 );
+        return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeString( "volume_id", volume_id );
+        marshaller.writeSequence( "file_ids", file_ids );
+        marshaller.writeString( "osd_uuid", osd_uuid );
+    }
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        volume_id = unmarshaller.readString( "volume_id" );
+        file_ids = new StringSet(); unmarshaller.readSequence( "file_ids", file_ids );
+        osd_uuid = unmarshaller.readString( "osd_uuid" );    
+    }
+        
+    
 
     private String volume_id;
     private StringSet file_ids;

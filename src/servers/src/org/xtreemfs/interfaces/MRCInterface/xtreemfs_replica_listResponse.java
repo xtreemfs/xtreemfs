@@ -1,76 +1,51 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class xtreemfs_replica_listResponse implements org.xtreemfs.interfaces.utils.Response
+public class xtreemfs_replica_listResponse extends org.xtreemfs.interfaces.utils.Response
 {
     public static final int TAG = 2009082858;
-
     
-    public xtreemfs_replica_listResponse() { replicas = new ReplicaSet(); }
+    public xtreemfs_replica_listResponse() { replicas = new ReplicaSet();  }
     public xtreemfs_replica_listResponse( ReplicaSet replicas ) { this.replicas = replicas; }
-    public xtreemfs_replica_listResponse( Object from_hash_map ) { replicas = new ReplicaSet(); this.deserialize( from_hash_map ); }
-    public xtreemfs_replica_listResponse( Object[] from_array ) { replicas = new ReplicaSet();this.deserialize( from_array ); }
 
     public ReplicaSet getReplicas() { return replicas; }
     public void setReplicas( ReplicaSet replicas ) { this.replicas = replicas; }
 
-    // Object
-    public String toString()
-    {
-        return "xtreemfs_replica_listResponse( " + replicas.toString() + " )";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082858;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082858; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listResponse"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.replicas.deserialize( ( Object[] )from_hash_map.get( "replicas" ) );
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.replicas.deserialize( ( Object[] )from_array[0] );        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        replicas = new ReplicaSet(); replicas.deserialize( buf );
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "replicas", replicas.serialize() );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        replicas.serialize( writer );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += replicas.calculateSize();
+        my_size += replicas.getXDRSize();
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeSequence( "replicas", replicas );
     }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        replicas = new ReplicaSet(); unmarshaller.readSequence( "replicas", replicas );    
+    }
+        
+    
 
     private ReplicaSet replicas;    
 

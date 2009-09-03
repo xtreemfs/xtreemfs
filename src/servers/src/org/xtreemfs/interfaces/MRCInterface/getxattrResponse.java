@@ -1,76 +1,51 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class getxattrResponse implements org.xtreemfs.interfaces.utils.Response
+public class getxattrResponse extends org.xtreemfs.interfaces.utils.Response
 {
     public static final int TAG = 2009082825;
-
     
-    public getxattrResponse() { value = ""; }
+    public getxattrResponse() {  }
     public getxattrResponse( String value ) { this.value = value; }
-    public getxattrResponse( Object from_hash_map ) { value = ""; this.deserialize( from_hash_map ); }
-    public getxattrResponse( Object[] from_array ) { value = "";this.deserialize( from_array ); }
 
     public String getValue() { return value; }
     public void setValue( String value ) { this.value = value; }
 
-    // Object
-    public String toString()
-    {
-        return "getxattrResponse( " + "\"" + value + "\"" + " )";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082825;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082825; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getxattrResponse"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.value = ( String )from_hash_map.get( "value" );
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.value = ( String )from_array[0];        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        value = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "value", value );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( value, writer );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(value);
+        my_size += ( ( value.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( value.getBytes().length + Integer.SIZE/8 ) : ( value.getBytes().length + Integer.SIZE/8 + 4 - ( value.getBytes().length + Integer.SIZE/8 ) % 4 );
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeString( "value", value );
     }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        value = unmarshaller.readString( "value" );    
+    }
+        
+    
 
     private String value;    
 

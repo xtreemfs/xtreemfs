@@ -1,76 +1,51 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class readdirResponse implements org.xtreemfs.interfaces.utils.Response
+public class readdirResponse extends org.xtreemfs.interfaces.utils.Response
 {
     public static final int TAG = 2009082830;
-
     
-    public readdirResponse() { directory_entries = new DirectoryEntrySet(); }
+    public readdirResponse() { directory_entries = new DirectoryEntrySet();  }
     public readdirResponse( DirectoryEntrySet directory_entries ) { this.directory_entries = directory_entries; }
-    public readdirResponse( Object from_hash_map ) { directory_entries = new DirectoryEntrySet(); this.deserialize( from_hash_map ); }
-    public readdirResponse( Object[] from_array ) { directory_entries = new DirectoryEntrySet();this.deserialize( from_array ); }
 
     public DirectoryEntrySet getDirectory_entries() { return directory_entries; }
     public void setDirectory_entries( DirectoryEntrySet directory_entries ) { this.directory_entries = directory_entries; }
 
-    // Object
-    public String toString()
-    {
-        return "readdirResponse( " + directory_entries.toString() + " )";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082830;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082830; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirResponse"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.directory_entries.deserialize( ( Object[] )from_hash_map.get( "directory_entries" ) );
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.directory_entries.deserialize( ( Object[] )from_array[0] );        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        directory_entries = new DirectoryEntrySet(); directory_entries.deserialize( buf );
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "directory_entries", directory_entries.serialize() );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        directory_entries.serialize( writer );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += directory_entries.calculateSize();
+        my_size += directory_entries.getXDRSize();
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeSequence( "directory_entries", directory_entries );
     }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        directory_entries = new DirectoryEntrySet(); unmarshaller.readSequence( "directory_entries", directory_entries );    
+    }
+        
+    
 
     private DirectoryEntrySet directory_entries;    
 

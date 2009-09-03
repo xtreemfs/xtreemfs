@@ -1,22 +1,21 @@
 package org.xtreemfs.interfaces;
 
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class Volume implements org.xtreemfs.interfaces.utils.Serializable
+public class Volume extends Struct
 {
     public static final int TAG = 2009082662;
-
     
-    public Volume() { name = ""; mode = 0; osd_selection_policy = OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE; default_striping_policy = new StripingPolicy(); access_control_policy = AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL; id = ""; owner_user_id = ""; owner_group_id = ""; }
+    public Volume() { osd_selection_policy = OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE; default_striping_policy = new StripingPolicy(); access_control_policy = AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL;  }
     public Volume( String name, int mode, OSDSelectionPolicyType osd_selection_policy, StripingPolicy default_striping_policy, AccessControlPolicyType access_control_policy, String id, String owner_user_id, String owner_group_id ) { this.name = name; this.mode = mode; this.osd_selection_policy = osd_selection_policy; this.default_striping_policy = default_striping_policy; this.access_control_policy = access_control_policy; this.id = id; this.owner_user_id = owner_user_id; this.owner_group_id = owner_group_id; }
-    public Volume( Object from_hash_map ) { name = ""; mode = 0; osd_selection_policy = OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE; default_striping_policy = new StripingPolicy(); access_control_policy = AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL; id = ""; owner_user_id = ""; owner_group_id = ""; this.deserialize( from_hash_map ); }
-    public Volume( Object[] from_array ) { name = ""; mode = 0; osd_selection_policy = OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE; default_striping_policy = new StripingPolicy(); access_control_policy = AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL; id = ""; owner_user_id = ""; owner_group_id = "";this.deserialize( from_array ); }
 
     public String getName() { return name; }
     public void setName( String name ) { this.name = name; }
@@ -35,97 +34,52 @@ public class Volume implements org.xtreemfs.interfaces.utils.Serializable
     public String getOwner_group_id() { return owner_group_id; }
     public void setOwner_group_id( String owner_group_id ) { this.owner_group_id = owner_group_id; }
 
-    // Object
-    public String toString()
-    {
-        return "Volume( " + "\"" + name + "\"" + ", " + Integer.toString( mode ) + ", " + osd_selection_policy.toString() + ", " + default_striping_policy.toString() + ", " + access_control_policy.toString() + ", " + "\"" + id + "\"" + ", " + "\"" + owner_user_id + "\"" + ", " + "\"" + owner_group_id + "\"" + " )";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082662;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082662; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Volume"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.name = ( String )from_hash_map.get( "name" );
-        this.mode = ( ( Integer )from_hash_map.get( "mode" ) ).intValue();
-        
-        this.default_striping_policy.deserialize( from_hash_map.get( "default_striping_policy" ) );
-        
-        this.id = ( String )from_hash_map.get( "id" );
-        this.owner_user_id = ( String )from_hash_map.get( "owner_user_id" );
-        this.owner_group_id = ( String )from_hash_map.get( "owner_group_id" );
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.name = ( String )from_array[0];
-        this.mode = ( ( Integer )from_array[1] ).intValue();
-        
-        this.default_striping_policy.deserialize( from_array[3] );
-        
-        this.id = ( String )from_array[5];
-        this.owner_user_id = ( String )from_array[6];
-        this.owner_group_id = ( String )from_array[7];        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        name = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        mode = buf.getInt();
-        osd_selection_policy = OSDSelectionPolicyType.parseInt( buf.getInt() );
-        default_striping_policy = new StripingPolicy(); default_striping_policy.deserialize( buf );
-        access_control_policy = AccessControlPolicyType.parseInt( buf.getInt() );
-        id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        owner_user_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        owner_group_id = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "name", name );
-        to_hash_map.put( "mode", new Integer( mode ) );
-        to_hash_map.put( "osd_selection_policy", osd_selection_policy );
-        to_hash_map.put( "default_striping_policy", default_striping_policy.serialize() );
-        to_hash_map.put( "access_control_policy", access_control_policy );
-        to_hash_map.put( "id", id );
-        to_hash_map.put( "owner_user_id", owner_user_id );
-        to_hash_map.put( "owner_group_id", owner_group_id );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( name, writer );
-        writer.putInt( mode );
-        writer.putInt( osd_selection_policy.intValue() );
-        default_striping_policy.serialize( writer );
-        writer.putInt( access_control_policy.intValue() );
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( id, writer );
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( owner_user_id, writer );
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( owner_group_id, writer );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(name);
+        my_size += ( ( name.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( name.getBytes().length + Integer.SIZE/8 ) : ( name.getBytes().length + Integer.SIZE/8 + 4 - ( name.getBytes().length + Integer.SIZE/8 ) % 4 );
         my_size += ( Integer.SIZE / 8 );
         my_size += 4;
-        my_size += default_striping_policy.calculateSize();
+        my_size += default_striping_policy.getXDRSize();
         my_size += 4;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(id);
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(owner_user_id);
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(owner_group_id);
+        my_size += ( ( id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( id.getBytes().length + Integer.SIZE/8 ) : ( id.getBytes().length + Integer.SIZE/8 + 4 - ( id.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += ( ( owner_user_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( owner_user_id.getBytes().length + Integer.SIZE/8 ) : ( owner_user_id.getBytes().length + Integer.SIZE/8 + 4 - ( owner_user_id.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += ( ( owner_group_id.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( owner_group_id.getBytes().length + Integer.SIZE/8 ) : ( owner_group_id.getBytes().length + Integer.SIZE/8 + 4 - ( owner_group_id.getBytes().length + Integer.SIZE/8 ) % 4 );
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeString( "name", name );
+        marshaller.writeUint32( "mode", mode );
+        marshaller.writeInt32( osd_selection_policy, osd_selection_policy.intValue() );
+        marshaller.writeStruct( "default_striping_policy", default_striping_policy );
+        marshaller.writeInt32( access_control_policy, access_control_policy.intValue() );
+        marshaller.writeString( "id", id );
+        marshaller.writeString( "owner_user_id", owner_user_id );
+        marshaller.writeString( "owner_group_id", owner_group_id );
     }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        name = unmarshaller.readString( "name" );
+        mode = unmarshaller.readUint32( "mode" );
+        osd_selection_policy = OSDSelectionPolicyType.parseInt( unmarshaller.readInt32( "osd_selection_policy" ) );
+        default_striping_policy = new StripingPolicy(); unmarshaller.readStruct( "default_striping_policy", default_striping_policy );
+        access_control_policy = AccessControlPolicyType.parseInt( unmarshaller.readInt32( "access_control_policy" ) );
+        id = unmarshaller.readString( "id" );
+        owner_user_id = unmarshaller.readString( "owner_user_id" );
+        owner_group_id = unmarshaller.readString( "owner_group_id" );    
+    }
+        
+    
 
     private String name;
     private int mode;

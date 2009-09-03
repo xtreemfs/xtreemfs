@@ -1,94 +1,47 @@
 package org.xtreemfs.interfaces;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Sequence;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class NewFileSizeSet extends ArrayList<NewFileSize>
+public class NewFileSizeSet extends Sequence<NewFileSize>
 {
+    public NewFileSizeSet() { }
 
-    public NewFileSizeSet()
-    { }
+    // yidl.Object
+    public int getTag() { return 2009082630; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::NewFileSizeSet"; }
 
-    public NewFileSizeSet( Object from_array )
-    {
-        this.deserialize( from_array );
-    }
-
-    public NewFileSizeSet( Object[] from_array )
-    {
-        this.deserialize( from_array );
-    }        
-
-    public String toString()
-    {
-        String to_string = new String();
-        for ( Iterator<NewFileSize> i = iterator(); i.hasNext(); )
-            to_string += i.next().toString() + ", ";
-        return to_string;
-    }
-
-    
-    public Object serialize() 
-    {
-        Object[] to_array = new Object[size()];        
-        for ( int value_i = 0; value_i < size(); value_i++ )
-        {
-            NewFileSize next_value = get( value_i );                    
-            to_array[value_i] = next_value.serialize();
-        }
-        return to_array;
-    }
-
-    public void serialize(ONCRPCBufferWriter writer) {
-        if (this.size() > org.xtreemfs.interfaces.utils.XDRUtils.MAX_ARRAY_ELEMS)
-        throw new IllegalArgumentException("array is too large ("+this.size()+")");
-        writer.putInt( size() );
-        for ( Iterator<NewFileSize> i = iterator(); i.hasNext(); )
-        {
-            NewFileSize next_value = i.next();        
-            next_value.serialize( writer );;
-        }
-    }        
-
-
-    public void deserialize( Object from_array )
-    {
-        this.deserialize( ( Object[] )from_array );
-    }
-        
-    public void deserialize( Object[] from_array )
-    {
-        for ( int from_array_i = 0; from_array_i < from_array.length; from_array_i++ )
-            this.add( new NewFileSize( from_array[from_array_i] ) );
-    }        
-
-    public void deserialize( ReusableBuffer buf ) {
-        int new_size = buf.getInt();
-    if (new_size > org.xtreemfs.interfaces.utils.XDRUtils.MAX_ARRAY_ELEMS)
-        throw new IllegalArgumentException("array is too large ("+this.size()+")");
-        for ( int i = 0; i < new_size; i++ )
-        {
-            NewFileSize new_value; new_value = new NewFileSize(); new_value.deserialize( buf );;
-            this.add( new_value );
-        }
-    } 
-
-
-    public int calculateSize() {
+    public int getXDRSize() {
         int my_size = Integer.SIZE/8;
         for ( Iterator<NewFileSize> i = iterator(); i.hasNext(); ) {
             NewFileSize value = i.next();
-            my_size += value.calculateSize();
+            my_size += value.getXDRSize();
         }
         return my_size;
     }
-
+    
+    public void marshal( Marshaller marshaller )
+    {
+        for ( Iterator<NewFileSize> i = iterator(); i.hasNext(); )
+            marshaller.writeStruct( "value", i.next() );;
+    }
+    
+    public void unmarshal( Unmarshaller unmarshaller )
+    {
+        NewFileSize value; 
+        value = new NewFileSize(); unmarshaller.readStruct( "value", value );
+        this.add( value );    
+    }
+        
 
 }
 

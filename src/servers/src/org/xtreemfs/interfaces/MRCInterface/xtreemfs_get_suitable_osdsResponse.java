@@ -1,76 +1,51 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class xtreemfs_get_suitable_osdsResponse implements org.xtreemfs.interfaces.utils.Response
+public class xtreemfs_get_suitable_osdsResponse extends org.xtreemfs.interfaces.utils.Response
 {
     public static final int TAG = 2009082851;
-
     
-    public xtreemfs_get_suitable_osdsResponse() { osd_uuids = new StringSet(); }
+    public xtreemfs_get_suitable_osdsResponse() { osd_uuids = new StringSet();  }
     public xtreemfs_get_suitable_osdsResponse( StringSet osd_uuids ) { this.osd_uuids = osd_uuids; }
-    public xtreemfs_get_suitable_osdsResponse( Object from_hash_map ) { osd_uuids = new StringSet(); this.deserialize( from_hash_map ); }
-    public xtreemfs_get_suitable_osdsResponse( Object[] from_array ) { osd_uuids = new StringSet();this.deserialize( from_array ); }
 
     public StringSet getOsd_uuids() { return osd_uuids; }
     public void setOsd_uuids( StringSet osd_uuids ) { this.osd_uuids = osd_uuids; }
 
-    // Object
-    public String toString()
-    {
-        return "xtreemfs_get_suitable_osdsResponse( " + osd_uuids.toString() + " )";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082851;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082851; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsResponse"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.osd_uuids.deserialize( ( Object[] )from_hash_map.get( "osd_uuids" ) );
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.osd_uuids.deserialize( ( Object[] )from_array[0] );        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        osd_uuids = new StringSet(); osd_uuids.deserialize( buf );
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "osd_uuids", osd_uuids.serialize() );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        osd_uuids.serialize( writer );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += osd_uuids.calculateSize();
+        my_size += osd_uuids.getXDRSize();
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeSequence( "osd_uuids", osd_uuids );
     }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        osd_uuids = new StringSet(); unmarshaller.readSequence( "osd_uuids", osd_uuids );    
+    }
+        
+    
 
     private StringSet osd_uuids;    
 

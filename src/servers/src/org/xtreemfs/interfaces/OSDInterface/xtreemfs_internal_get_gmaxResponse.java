@@ -1,76 +1,51 @@
 package org.xtreemfs.interfaces.OSDInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class xtreemfs_internal_get_gmaxResponse implements org.xtreemfs.interfaces.utils.Response
+public class xtreemfs_internal_get_gmaxResponse extends org.xtreemfs.interfaces.utils.Response
 {
     public static final int TAG = 2009082958;
-
     
-    public xtreemfs_internal_get_gmaxResponse() { returnValue = new InternalGmax(); }
+    public xtreemfs_internal_get_gmaxResponse() { returnValue = new InternalGmax();  }
     public xtreemfs_internal_get_gmaxResponse( InternalGmax returnValue ) { this.returnValue = returnValue; }
-    public xtreemfs_internal_get_gmaxResponse( Object from_hash_map ) { returnValue = new InternalGmax(); this.deserialize( from_hash_map ); }
-    public xtreemfs_internal_get_gmaxResponse( Object[] from_array ) { returnValue = new InternalGmax();this.deserialize( from_array ); }
 
     public InternalGmax getReturnValue() { return returnValue; }
     public void setReturnValue( InternalGmax returnValue ) { this.returnValue = returnValue; }
 
-    // Object
-    public String toString()
-    {
-        return "xtreemfs_internal_get_gmaxResponse( " + returnValue.toString() + " )";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082958;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082958; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_gmaxResponse"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.returnValue.deserialize( from_hash_map.get( "returnValue" ) );
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.returnValue.deserialize( from_array[0] );        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        returnValue = new InternalGmax(); returnValue.deserialize( buf );
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "returnValue", returnValue.serialize() );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        returnValue.serialize( writer );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += returnValue.calculateSize();
+        my_size += returnValue.getXDRSize();
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeStruct( "returnValue", returnValue );
     }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        returnValue = new InternalGmax(); unmarshaller.readStruct( "returnValue", returnValue );    
+    }
+        
+    
 
     private InternalGmax returnValue;    
 

@@ -24,8 +24,10 @@
 
 package org.xtreemfs.interfaces.utils;
 
+import yidl.Struct;
 
-public interface Request extends Serializable
+
+public abstract class Request extends Struct
 {
-    Response createDefaultResponse();
+    public abstract Struct createDefaultResponse();
 };   

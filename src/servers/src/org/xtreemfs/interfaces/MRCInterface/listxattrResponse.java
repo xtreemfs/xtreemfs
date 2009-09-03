@@ -1,76 +1,51 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class listxattrResponse implements org.xtreemfs.interfaces.utils.Response
+public class listxattrResponse extends org.xtreemfs.interfaces.utils.Response
 {
     public static final int TAG = 2009082827;
-
     
-    public listxattrResponse() { names = new StringSet(); }
+    public listxattrResponse() { names = new StringSet();  }
     public listxattrResponse( StringSet names ) { this.names = names; }
-    public listxattrResponse( Object from_hash_map ) { names = new StringSet(); this.deserialize( from_hash_map ); }
-    public listxattrResponse( Object[] from_array ) { names = new StringSet();this.deserialize( from_array ); }
 
     public StringSet getNames() { return names; }
     public void setNames( StringSet names ) { this.names = names; }
 
-    // Object
-    public String toString()
-    {
-        return "listxattrResponse( " + names.toString() + " )";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082827;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082827; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::listxattrResponse"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.names.deserialize( ( Object[] )from_hash_map.get( "names" ) );
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.names.deserialize( ( Object[] )from_array[0] );        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        names = new StringSet(); names.deserialize( buf );
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "names", names.serialize() );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        names.serialize( writer );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += names.calculateSize();
+        my_size += names.getXDRSize();
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeSequence( "names", names );
     }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        names = new StringSet(); unmarshaller.readSequence( "names", names );    
+    }
+        
+    
 
     private StringSet names;    
 

@@ -1,76 +1,51 @@
 package org.xtreemfs.interfaces.OSDInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class writeResponse implements org.xtreemfs.interfaces.utils.Response
+public class writeResponse extends org.xtreemfs.interfaces.utils.Response
 {
     public static final int TAG = 2009082931;
-
     
-    public writeResponse() { osd_write_response = new OSDWriteResponse(); }
+    public writeResponse() { osd_write_response = new OSDWriteResponse();  }
     public writeResponse( OSDWriteResponse osd_write_response ) { this.osd_write_response = osd_write_response; }
-    public writeResponse( Object from_hash_map ) { osd_write_response = new OSDWriteResponse(); this.deserialize( from_hash_map ); }
-    public writeResponse( Object[] from_array ) { osd_write_response = new OSDWriteResponse();this.deserialize( from_array ); }
 
     public OSDWriteResponse getOsd_write_response() { return osd_write_response; }
     public void setOsd_write_response( OSDWriteResponse osd_write_response ) { this.osd_write_response = osd_write_response; }
 
-    // Object
-    public String toString()
-    {
-        return "writeResponse( " + osd_write_response.toString() + " )";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082931;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082931; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::writeResponse"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.osd_write_response.deserialize( from_hash_map.get( "osd_write_response" ) );
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.osd_write_response.deserialize( from_array[0] );        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        osd_write_response = new OSDWriteResponse(); osd_write_response.deserialize( buf );
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "osd_write_response", osd_write_response.serialize() );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        osd_write_response.serialize( writer );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += osd_write_response.calculateSize();
+        my_size += osd_write_response.getXDRSize();
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeStruct( "osd_write_response", osd_write_response );
     }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        osd_write_response = new OSDWriteResponse(); unmarshaller.readStruct( "osd_write_response", osd_write_response );    
+    }
+        
+    
 
     private OSDWriteResponse osd_write_response;    
 

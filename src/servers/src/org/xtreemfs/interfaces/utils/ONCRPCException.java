@@ -24,11 +24,12 @@
 
 package org.xtreemfs.interfaces.utils;
 
+
 /**
  *
  * @author bjko
  */
-public abstract class ONCRPCException extends Exception implements Serializable {
+public abstract class ONCRPCException extends Exception implements yidl.Object {
 
     public ONCRPCException() {
         super();

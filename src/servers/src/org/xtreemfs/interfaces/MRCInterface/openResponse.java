@@ -1,76 +1,51 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class openResponse implements org.xtreemfs.interfaces.utils.Response
+public class openResponse extends org.xtreemfs.interfaces.utils.Response
 {
     public static final int TAG = 2009082829;
-
     
-    public openResponse() { file_credentials = new FileCredentials(); }
+    public openResponse() { file_credentials = new FileCredentials();  }
     public openResponse( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
-    public openResponse( Object from_hash_map ) { file_credentials = new FileCredentials(); this.deserialize( from_hash_map ); }
-    public openResponse( Object[] from_array ) { file_credentials = new FileCredentials();this.deserialize( from_array ); }
 
     public FileCredentials getFile_credentials() { return file_credentials; }
     public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
 
-    // Object
-    public String toString()
-    {
-        return "openResponse( " + file_credentials.toString() + " )";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082829;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082829; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::openResponse"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.file_credentials.deserialize( from_hash_map.get( "file_credentials" ) );
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.file_credentials.deserialize( from_array[0] );        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        file_credentials = new FileCredentials(); file_credentials.deserialize( buf );
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "file_credentials", file_credentials.serialize() );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        file_credentials.serialize( writer );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += file_credentials.calculateSize();
+        my_size += file_credentials.getXDRSize();
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeStruct( "file_credentials", file_credentials );
     }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        file_credentials = new FileCredentials(); unmarshaller.readStruct( "file_credentials", file_credentials );    
+    }
+        
+    
 
     private FileCredentials file_credentials;    
 

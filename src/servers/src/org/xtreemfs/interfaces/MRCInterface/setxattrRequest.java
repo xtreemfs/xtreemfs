@@ -1,23 +1,22 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class setxattrRequest implements org.xtreemfs.interfaces.utils.Request
+public class setxattrRequest extends org.xtreemfs.interfaces.utils.Request
 {
     public static final int TAG = 2009082835;
-
     
-    public setxattrRequest() { path = ""; name = ""; value = ""; flags = 0; }
+    public setxattrRequest() {  }
     public setxattrRequest( String path, String name, String value, int flags ) { this.path = path; this.name = name; this.value = value; this.flags = flags; }
-    public setxattrRequest( Object from_hash_map ) { path = ""; name = ""; value = ""; flags = 0; this.deserialize( from_hash_map ); }
-    public setxattrRequest( Object[] from_array ) { path = ""; name = ""; value = ""; flags = 0;this.deserialize( from_array ); }
 
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
@@ -28,76 +27,44 @@ public class setxattrRequest implements org.xtreemfs.interfaces.utils.Request
     public int getFlags() { return flags; }
     public void setFlags( int flags ) { this.flags = flags; }
 
-    // Object
-    public String toString()
-    {
-        return "setxattrRequest( " + "\"" + path + "\"" + ", " + "\"" + name + "\"" + ", " + "\"" + value + "\"" + ", " + Integer.toString( flags ) + " )";
-    }
-
-    // Serializable
-    public int getTag() { return 2009082835; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrRequest"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.path = ( String )from_hash_map.get( "path" );
-        this.name = ( String )from_hash_map.get( "name" );
-        this.value = ( String )from_hash_map.get( "value" );
-        this.flags = ( ( Integer )from_hash_map.get( "flags" ) ).intValue();
-    }
-    
-    public void deserialize( Object[] from_array )
-    {
-        this.path = ( String )from_array[0];
-        this.name = ( String )from_array[1];
-        this.value = ( String )from_array[2];
-        this.flags = ( ( Integer )from_array[3] ).intValue();        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        path = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        name = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        value = org.xtreemfs.interfaces.utils.XDRUtils.deserializeString( buf );
-        flags = buf.getInt();
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "path", path );
-        to_hash_map.put( "name", name );
-        to_hash_map.put( "value", value );
-        to_hash_map.put( "flags", new Integer( flags ) );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( path, writer );
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( name, writer );
-        org.xtreemfs.interfaces.utils.XDRUtils.serializeString( value, writer );
-        writer.putInt( flags );
-    }
-    
-    public int calculateSize()
-    {
-        int my_size = 0;
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(path);
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(name);
-        my_size += org.xtreemfs.interfaces.utils.XDRUtils.stringLengthPadded(value);
-        my_size += ( Integer.SIZE / 8 );
-        return my_size;
-    }
-
     // Request
     public Response createDefaultResponse() { return new setxattrResponse(); }
 
+
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082835;    
+
+    // yidl.Object
+    public int getTag() { return 2009082835; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrRequest"; }
+    
+    public int getXDRSize()
+    {
+        int my_size = 0;
+        my_size += ( ( path.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( path.getBytes().length + Integer.SIZE/8 ) : ( path.getBytes().length + Integer.SIZE/8 + 4 - ( path.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += ( ( name.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( name.getBytes().length + Integer.SIZE/8 ) : ( name.getBytes().length + Integer.SIZE/8 + 4 - ( name.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += ( ( value.getBytes().length + Integer.SIZE/8 ) % 4 == 0 ) ? ( value.getBytes().length + Integer.SIZE/8 ) : ( value.getBytes().length + Integer.SIZE/8 + 4 - ( value.getBytes().length + Integer.SIZE/8 ) % 4 );
+        my_size += ( Integer.SIZE / 8 );
+        return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeString( "path", path );
+        marshaller.writeString( "name", name );
+        marshaller.writeString( "value", value );
+        marshaller.writeInt32( "flags", flags );
+    }
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        path = unmarshaller.readString( "path" );
+        name = unmarshaller.readString( "name" );
+        value = unmarshaller.readString( "value" );
+        flags = unmarshaller.readInt32( "flags" );    
+    }
+        
+    
 
     private String path;
     private String name;

@@ -1,76 +1,51 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
-import org.xtreemfs.interfaces.*;
-import java.util.HashMap;
-import org.xtreemfs.interfaces.utils.*;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.interfaces.*;
+import org.xtreemfs.interfaces.utils.*;
+import yidl.Marshaller;
+import yidl.Struct;
+import yidl.Unmarshaller;
 
 
 
 
-public class xtreemfs_replica_removeResponse implements org.xtreemfs.interfaces.utils.Response
+public class xtreemfs_replica_removeResponse extends org.xtreemfs.interfaces.utils.Response
 {
     public static final int TAG = 2009082859;
-
     
-    public xtreemfs_replica_removeResponse() { delete_xcap = new XCap(); }
+    public xtreemfs_replica_removeResponse() { delete_xcap = new XCap();  }
     public xtreemfs_replica_removeResponse( XCap delete_xcap ) { this.delete_xcap = delete_xcap; }
-    public xtreemfs_replica_removeResponse( Object from_hash_map ) { delete_xcap = new XCap(); this.deserialize( from_hash_map ); }
-    public xtreemfs_replica_removeResponse( Object[] from_array ) { delete_xcap = new XCap();this.deserialize( from_array ); }
 
     public XCap getDelete_xcap() { return delete_xcap; }
     public void setDelete_xcap( XCap delete_xcap ) { this.delete_xcap = delete_xcap; }
 
-    // Object
-    public String toString()
-    {
-        return "xtreemfs_replica_removeResponse( " + delete_xcap.toString() + " )";
-    }
+    // java.io.Serializable
+    public static final long serialVersionUID = 2009082859;    
 
-    // Serializable
+    // yidl.Object
     public int getTag() { return 2009082859; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeResponse"; }
-
-    public void deserialize( Object from_hash_map )
-    {
-        this.deserialize( ( HashMap<String, Object> )from_hash_map );
-    }
-        
-    public void deserialize( HashMap<String, Object> from_hash_map )
-    {
-        this.delete_xcap.deserialize( from_hash_map.get( "delete_xcap" ) );
-    }
     
-    public void deserialize( Object[] from_array )
-    {
-        this.delete_xcap.deserialize( from_array[0] );        
-    }
-
-    public void deserialize( ReusableBuffer buf )
-    {
-        delete_xcap = new XCap(); delete_xcap.deserialize( buf );
-    }
-
-    public Object serialize()
-    {
-        HashMap<String, Object> to_hash_map = new HashMap<String, Object>();
-        to_hash_map.put( "delete_xcap", delete_xcap.serialize() );
-        return to_hash_map;        
-    }
-
-    public void serialize( ONCRPCBufferWriter writer ) 
-    {
-        delete_xcap.serialize( writer );
-    }
-    
-    public int calculateSize()
+    public int getXDRSize()
     {
         int my_size = 0;
-        my_size += delete_xcap.calculateSize();
+        my_size += delete_xcap.getXDRSize();
         return my_size;
+    }    
+    
+    public void marshal( Marshaller marshaller )
+    {
+        marshaller.writeStruct( "delete_xcap", delete_xcap );
     }
-
+    
+    public void unmarshal( Unmarshaller unmarshaller ) 
+    {
+        delete_xcap = new XCap(); unmarshaller.readStruct( "delete_xcap", delete_xcap );    
+    }
+        
+    
 
     private XCap delete_xcap;    
 
