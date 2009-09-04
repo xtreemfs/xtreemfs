@@ -2,47 +2,23 @@ This document describes how XtreemFS metadata in the MRC is mapped to BabuDB
 database indices.
 
 
-1  VOLUME MANAGEMENT METADATA
+1  VERSIONING
 ==============================================================================
 
-Volume metadata is stored in a database called 'V'. It is arranged in the
-following indices:
+The current version of the MRC is stored in a database named 'V'. There is
+only one index containing a single key-value pair (numbers indicate entry
+sizes in bytes):
 
-VOL_INDEX                  VOL_NAME_INDEX (#1)
-------------------         --------------
-fileAccessPolicyId         volIDs
-osdPolicyId                (volume name mapping)
-volumeId
-volumeName
-osdPolicyArgs
+VERSION (BabuDB index #0)
 
-
-Indices are structured as follows (numbers indicate entry sizes in bytes):
-
-VOL_INDEX (BabuDB index #0)
-
- The volume index maps a volume ID to an immutable set of volume metadata.
+ The version index only contains one key-value pair that indicates the current
+ version of the database.
 |----------------------------------------------------------------------------|
-|key   | volumeId                                                            |
-|      | var                                                                 |
+|key   | version                                                             |
+|      | 1 ('v')                                                             |
 |----------------------------------------------------------------------------|
-|value | fileAccessPolicyId    osdPolicyId    replPolicyId    volNameOffset  |
-|      | 2                     2              2               4              |
-|      |                                                                     |
-|      | osdPolArgsOffset   volumeId   volumeName   osdPolicyArgs            |
-|      | 4                  var        var          var                      |
-|----------------------------------------------------------------------------|
-
-
-VOL_NAME_INDEX (BabuDB index #1)
-
- The volume name index maps volume names to volume IDs.
-|----------------------------------------------------------------------------|
-|key   | volumeName                                                          |
-|      | var                                                                 |
-|----------------------------------------------------------------------------|
-|value | volumeId                                                            |
-|      | var                                                                 |
+|value | currentVersionNumber                                                |
+|      | 4                                                                   |
 |----------------------------------------------------------------------------|
 
 
