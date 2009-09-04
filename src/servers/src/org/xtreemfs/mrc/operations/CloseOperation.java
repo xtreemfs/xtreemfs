@@ -25,6 +25,7 @@
 package org.xtreemfs.mrc.operations;
 
 import java.net.InetSocketAddress;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -44,6 +45,7 @@ import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 
@@ -121,6 +123,8 @@ public class CloseOperation extends MRCOperation {
                     .getAutoReplFactor() - 1);
             
             // trigger the replication
+            rq.getDetails().context = new HashMap<String, Object>();
+            rq.getDetails().context.put("xLocList", Converter.xLocListToXLocSet(xLocList));
             master.getOnCloseReplicationThread().enqueueRequest(rq);
             
             // set the response

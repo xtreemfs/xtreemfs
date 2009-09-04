@@ -19,7 +19,7 @@
  along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * AUTHORS: Björn Kolbeck (ZIB)
+ * AUTHORS: Jan Stender, Björn Kolbeck (ZIB)
  */
 
 package org.xtreemfs.mrc.stages;
@@ -28,14 +28,13 @@ import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
-import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.include.common.logging.Logging;
-import org.xtreemfs.include.common.logging.Logging.Category;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.Replica;
@@ -47,7 +46,7 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
 
 /**
  * 
- * @author bjko
+ * @author stender
  */
 public class OnCloseReplicationThread extends LifeCycleThread {
     
@@ -77,62 +76,62 @@ public class OnCloseReplicationThread extends LifeCycleThread {
     public void run() {
         
         notifyStarted();
-//        try {
-//            if (Logging.isDebug())
-//                Logging.logMessage(Logging.LEVEL_DEBUG, Category.lifecycle, this,
-//                    "OnCloseReplicationThread started");
-//                        
-//            do {
-//                final MRCRequest req = requests.take();
-//                final XCap xcap = ((closeRequest) req.getRequestArgs()).getWrite_xcap();
-//                final XLocSet xlocSet = (XLocSet) req.getDetails().context.get("xLocList");
-//                final FileCredentials creds = new FileCredentials(xlocSet, xcap);
-//                
-//                try {
-//                    if (Logging.isDebug())
-//                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-//                            "triggering replication for %s", xlocSet.toString());
-//                    
-//                    for (int i = 1; i < xlocSet.getReplicas().size(); i++) {
-//                        
-//                        Replica repl = xlocSet.getReplicas().get(i);
-//                        StripingPolicyImpl spol = StripingPolicyImpl.getPolicy(repl);
-//                        
-//                        for (int j = 0; j < repl.getOsd_uuids().size(); j++) {
-//                            
-//                            Iterator<Long> objs = spol.getObjectsOfOSD(j, 0, Long.MAX_VALUE);
-//                            long obj = objs.next();
-//                            
-//                            RPCResponse<ObjectData> resp = null;
-//                            try {
-//                                
-//                                InetSocketAddress osd = new ServiceUUID(repl.getOsd_uuids().get(j))
-//                                        .getAddress();
-//                                
-//                                // read one byte from each OSD in each replica
-//                                // to trigger the replication
-//                                resp = master.getOSDClient()
-//                                        .read(osd, xcap.getFile_id(), creds, obj, 0, 0, 1);
-//                                resp.get();
-//                                
-//                            } catch (UnknownUUIDException e) {
-//                                Logging.logMessage(Logging.LEVEL_WARN, Category.proc, this, OutputUtils
-//                                        .stackTraceToString(e));
-//                            } finally {
-//                                if (resp != null)
-//                                    resp.freeBuffers();
-//                            }
-//                            
-//                        }
-//                    }
-//                    
-//                } catch (Exception ex) {
-//                    Logging.logError(Logging.LEVEL_ERROR, this, ex);
-//                }
-//            } while (!quit);
-//        } catch (InterruptedException ex) {
-//            // idontcare
-//        }
+        try {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.lifecycle, this,
+                    "OnCloseReplicationThread started");
+            
+            do {
+                final MRCRequest req = requests.take();
+                final XCap xcap = ((closeRequest) req.getRequestArgs()).getWrite_xcap();
+                final XLocSet xlocSet = (XLocSet) req.getDetails().context.get("xLocList");
+                final FileCredentials creds = new FileCredentials(xlocSet, xcap);
+                
+                try {
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                            "triggering replication for %s", xlocSet.toString());
+                    
+                    for (int i = 1; i < xlocSet.getReplicas().size(); i++) {
+                        
+                        Replica repl = xlocSet.getReplicas().get(i);
+                        StripingPolicyImpl spol = StripingPolicyImpl.getPolicy(repl);
+                        
+                        for (int j = 0; j < repl.getOsd_uuids().size(); j++) {
+                            
+                            Iterator<Long> objs = spol.getObjectsOfOSD(j, 0, Long.MAX_VALUE);
+                            long obj = objs.next();
+                            
+                            RPCResponse<ObjectData> resp = null;
+                            try {
+                                
+                                InetSocketAddress osd = new ServiceUUID(repl.getOsd_uuids().get(j))
+                                        .getAddress();
+                                
+                                // read one byte from each OSD in each replica
+                                // to trigger the replication
+                                resp = master.getOSDClient()
+                                        .read(osd, xcap.getFile_id(), creds, obj, 0, 0, 1);
+                                resp.get();
+                                
+                            } catch (Exception e) {
+                                Logging.logMessage(Logging.LEVEL_WARN, Category.proc, this, OutputUtils
+                                        .stackTraceToString(e));
+                            } finally {
+                                if (resp != null)
+                                    resp.freeBuffers();
+                            }
+                            
+                        }
+                    }
+                    
+                } catch (Exception ex) {
+                    Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                }
+            } while (!quit);
+        } catch (InterruptedException ex) {
+            // idontcare
+        }
         
         notifyStopped();
         
