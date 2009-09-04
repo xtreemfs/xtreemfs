@@ -1,4 +1,4 @@
-.TH xtfs_mkvol 1 "July 2009" "The XtreemFS Distributed File System" "XtreemFS client"
+.TH xtfs_mkvol 1 "September 2009" "The XtreemFS Distributed File System" "XtreemFS client"
 .SH NAME
 xtfs_mkvol \- create a new XtreemFS volume
 .SH SYNOPSIS
@@ -31,11 +31,11 @@ print help and exit
 \fB\-m/\-\-mode=n
 initial POSIX access mode for the root directory
 .TP
-\fB\-o/\-\-osd\-selection\-policy=\fISIMPLE|PROXIMITY
-policy that defines how OSDs are assigned to new files
-.TP
 \fB\-p/\-\-striping\-policy=\fINONE|RAID0
 default striping policy for the volume
+.TP
+\fB\-\-password=\fIpassword
+MRC administrator password (if required)
 .TP
 \fB\-s/\-\-striping\-policy\-stripe\-size=\fIn
 stripe size for the volume's default striping policy
