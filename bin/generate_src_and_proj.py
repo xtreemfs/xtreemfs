@@ -69,7 +69,6 @@ format_src( "XtreemFS", src_dir_paths=(
                                         os.path.join( XTREEMFS_DIR_PATH, "src", "xtfs_mkvol" ),
                                         os.path.join( XTREEMFS_DIR_PATH, "src", "xtfs_mount" ),
                                         os.path.join( XTREEMFS_DIR_PATH, "src", "xtfs_rmvol" ),
-                                        os.path.join( XTREEMFS_DIR_PATH, "src", "xtfs_stat" ),                                       
                                        ) )
 
 # Generate project files
@@ -91,7 +90,7 @@ generate_proj(
                              )
             )
                      
-for binary_name in ( "xtfs_lsvol", "xtfs_mkvol", "xtfs_mount", "xtfs_rmvol", "xtfs_stat" ):
+for binary_name in ( "xtfs_lsvol", "xtfs_mkvol", "xtfs_mount", "xtfs_rmvol" ):
     os.chdir( os.path.join( XTREEMFS_DIR_PATH, "proj", binary_name ) )
     generate_proj( 
                    binary_name, 

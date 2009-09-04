@@ -17,9 +17,8 @@ namespace xtreemfs
   class Volume : public YIELD::Volume
   {
   public:
-    const static uint32_t VOLUME_FLAG_CACHE_FILES = 1;
-    const static uint32_t VOLUME_FLAG_CACHE_METADATA = 2;
-    const static uint32_t VOLUME_FLAG_TRACE_FILE_IO = 4;
+    const static uint32_t VOLUME_FLAG_CACHE_METADATA = 1;
+    const static uint32_t VOLUME_FLAG_TRACE_FILE_IO = 2;
 
     static yidl::auto_Object<Volume> create( const YIELD::URI& dir_uri,
                                              const std::string& name,

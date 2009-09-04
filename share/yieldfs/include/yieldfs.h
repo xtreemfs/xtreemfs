@@ -79,28 +79,6 @@ namespace yieldfs
   };
 
 
-  class DataCachingVolume : public StackableVolume
-  {
-  public:
-    DataCachingVolume() // For testing
-    { }
-
-    DataCachingVolume( YIELD::auto_Volume underlying_volume )
-      : StackableVolume( underlying_volume )
-    { }
-
-    DataCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log )
-      : StackableVolume( underlying_volume, log )
-    { }
-
-    // YIELD::Volume
-    YIELD::auto_File open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
-
-  private:
-    virtual ~DataCachingVolume() { }
-  };
-
-
   class FUSE
   {
   public:
@@ -177,6 +155,28 @@ namespace yieldfs
   };
 
 
+  class ReadCachingVolume : public StackableVolume
+  {
+  public:
+    ReadCachingVolume() // For testing
+    { }
+
+    ReadCachingVolume( YIELD::auto_Volume underlying_volume )
+      : StackableVolume( underlying_volume )
+    { }
+
+    ReadCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log )
+      : StackableVolume( underlying_volume, log )
+    { }
+
+    // YIELD::Volume
+    YIELD::auto_File open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
+
+  private:
+    virtual ~ReadCachingVolume() { }
+  };
+
+
   class TracingVolume : public StackableVolume
   {
   public:
@@ -202,6 +202,28 @@ namespace yieldfs
     static bool trace( YIELD::auto_Log log, const char* operation_name, const YIELD::Path& path, const std::string& xattr_name, bool operation_result );
     static bool trace( YIELD::auto_Log log, const char* operation_name, const YIELD::Path& path, uint64_t size, uint64_t offset, bool operation_result );
     static bool trace( YIELD::Log::Stream& log_stream, bool operation_result );
+  };
+
+
+  class WritebackCachingVolume : public StackableVolume
+  {
+  public:
+    WritebackCachingVolume() // For testing
+    { }
+
+    WritebackCachingVolume( YIELD::auto_Volume underlying_volume )
+      : StackableVolume( underlying_volume )
+    { }
+
+    WritebackCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log )
+      : StackableVolume( underlying_volume, log )
+    { }
+
+    // YIELD::Volume
+    YIELD::auto_File open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
+
+  private:
+    virtual ~WritebackCachingVolume() { }
   };
 };
 
