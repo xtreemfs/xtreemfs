@@ -489,7 +489,7 @@ public class RandomAccessFile implements ObjectStore {
             OSDWriteResponse owr = response.get();
             this.updateWriteResponse(owr);
         } catch (ONCRPCException ex) {
-            throw new IOException("cannot write object", ex);
+            throw new IOException("cannot write object: "+ex.getMessage(), ex);
         } catch (InterruptedException ex) {
             throw new IOException("cannot write object", ex);
         } finally {

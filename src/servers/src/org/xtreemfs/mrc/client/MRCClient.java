@@ -372,7 +372,7 @@ public class MRCClient extends ONCRPCClient {
         int osdSelectionPolicy, StripingPolicy defaultStripingPolicy, int accessControlPolicy, int accessMode) {
         
         xtreemfs_mkvolRequest rq = new xtreemfs_mkvolRequest(new Volume(volumeName, accessMode,
-            OSDSelectionPolicyType.parseInt(osdSelectionPolicy), defaultStripingPolicy,
+            defaultStripingPolicy,
             AccessControlPolicyType.parseInt(accessControlPolicy), "", "", ""));
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
@@ -616,7 +616,7 @@ public class MRCClient extends ONCRPCClient {
     
     public RPCResponse<StringSet> xtreemfs_get_suitable_osds(InetSocketAddress server, String fileId) {
         
-        xtreemfs_get_suitable_osdsRequest rq = new xtreemfs_get_suitable_osdsRequest(fileId);
+        xtreemfs_get_suitable_osdsRequest rq = new xtreemfs_get_suitable_osdsRequest(fileId,0);
         RPCResponse<StringSet> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<StringSet>() {
             
             @Override

@@ -675,33 +675,38 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     @Override
     public void receiveUDP(UDPMessage msg) {
         assert (msg.isRequest() || msg.isResponse());
+
+        try {
         
-        if (msg.isRequest()) {
-            if (msg.getRequestData() instanceof xtreemfs_broadcast_gmaxRequest) {
-                xtreemfs_broadcast_gmaxRequest rq = (xtreemfs_broadcast_gmaxRequest) msg.getRequestData();
-                if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
-                        "received GMAX packet for: %s from %s", rq.getFile_id(), msg.getAddress());
-                
-                BufferPool.free(msg.getPayload());
-                stStage.receivedGMAX_ASYNC(rq.getFile_id(), rq.getTruncateEpoch(), rq.getLastObject());
-            } else if (msg.getRequestData() instanceof xtreemfs_pingRequest) {
-                xtreemfs_pingRequest rq = (xtreemfs_pingRequest) msg.getRequestData();
-                if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
-                        "received ping request from: %s", msg.getAddress());
-                
-                vStage.receiveVivaldiMessage(msg);
+            if (msg.isRequest()) {
+                if (msg.getRequestData() instanceof xtreemfs_broadcast_gmaxRequest) {
+                    xtreemfs_broadcast_gmaxRequest rq = (xtreemfs_broadcast_gmaxRequest) msg.getRequestData();
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                            "received GMAX packet for: %s from %s", rq.getFile_id(), msg.getAddress());
+
+                    BufferPool.free(msg.getPayload());
+                    stStage.receivedGMAX_ASYNC(rq.getFile_id(), rq.getTruncateEpoch(), rq.getLastObject());
+                } else if (msg.getRequestData() instanceof xtreemfs_pingRequest) {
+                    xtreemfs_pingRequest rq = (xtreemfs_pingRequest) msg.getRequestData();
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                            "received ping request from: %s", msg.getAddress());
+
+                    vStage.receiveVivaldiMessage(msg);
+                }
+            } else {
+                if (msg.getResponseData() instanceof xtreemfs_pingResponse) {
+                    xtreemfs_pingResponse resp = (xtreemfs_pingResponse) msg.getResponseData();
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
+                            "received ping response from: %s", msg.getAddress());
+
+                    vStage.receiveVivaldiMessage(msg);
+                }
             }
-        } else {
-            if (msg.getResponseData() instanceof xtreemfs_pingResponse) {
-                xtreemfs_pingResponse resp = (xtreemfs_pingResponse) msg.getResponseData();
-                if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
-                        "received ping response from: %s", msg.getAddress());
-                
-                vStage.receiveVivaldiMessage(msg);
-            }
+        } catch (Exception ex) {
+            Logging.logError(Logging.LEVEL_DEBUG, this,ex);
         }
     }
     

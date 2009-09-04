@@ -103,12 +103,14 @@ public class UDPMessage {
         payload.position(Integer.SIZE/8*2);
         int callType = payload.getInt();
         payload.position(Integer.SIZE/8);
+        XDRUnmarshaller um = new XDRUnmarshaller(payload);
         if (callType == XDRUtils.TYPE_CALL) {
             requestHeader = new ONCRPCRequestHeader();
-            requestHeader.unmarshal(new XDRUnmarshaller(payload));
+            requestHeader.unmarshal(um);
             responseHeader = null;
 
             requestData = OSDInterface.createRequest(requestHeader);
+            requestData.unmarshal(um);
             responseData = null;
 
 
@@ -118,6 +120,7 @@ public class UDPMessage {
             requestHeader = null;
 
             responseData = OSDInterface.createResponse(responseHeader);
+            responseData.unmarshal(um);
             requestData = null;
         }
     }

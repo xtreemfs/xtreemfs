@@ -17,6 +17,7 @@ import org.junit.Test;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingResponse;
 import org.xtreemfs.interfaces.VivaldiCoordinates;
@@ -62,12 +63,12 @@ public class SimpleVivaldiStageTest extends TestCase {
         xtreemfs_pingRequest payload = new xtreemfs_pingRequest(new VivaldiCoordinates());
          
         ONCRPCRequestHeader rq = new ONCRPCRequestHeader(1, 1, 1, payload.getTag());
-        final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(rq.calculateSize(), true);
+        final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(rq.getXDRSize(), true);
 
         ONCRPCBufferWriter wr = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
-        wr.putInt(fragHdr);
-        rq.serialize(wr);
-        payload.serialize(wr);
+        wr.writeInt32(null,fragHdr);
+        rq.marshal(wr);
+        payload.marshal(wr);
         wr.flip();
 
         DatagramSocket dsock = new DatagramSocket();
@@ -83,10 +84,10 @@ public class SimpleVivaldiStageTest extends TestCase {
 
         rb.position(Integer.SIZE/8);
         ONCRPCResponseHeader rhdr = new ONCRPCResponseHeader();
-        rhdr.deserialize(rb);
+        rhdr.unmarshal(new XDRUnmarshaller(rb));
 
         xtreemfs_pingResponse resp = new xtreemfs_pingResponse();
-        resp.deserialize(rb);
+        resp.unmarshal(new XDRUnmarshaller(rb));
 
         dsock.close();
     }

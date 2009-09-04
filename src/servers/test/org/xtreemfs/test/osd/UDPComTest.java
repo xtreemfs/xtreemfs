@@ -81,8 +81,8 @@ public class UDPComTest extends TestCase {
         ONCRPCRequestHeader rq = new ONCRPCRequestHeader(1, 1, 1, payload.getTag());
 
         ONCRPCBufferWriter wr = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
-        rq.serialize(wr);
-        payload.serialize(wr);
+        rq.marshal(wr);
+        payload.marshal(wr);
         wr.flip();
 
         DatagramSocket dsock = new DatagramSocket();
@@ -119,8 +119,8 @@ public class UDPComTest extends TestCase {
                 ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS);
 
         ONCRPCBufferWriter wr = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
-        rq.serialize(wr);
-        payload.serialize(wr);
+        rq.marshal(wr);
+        payload.marshal(wr);
         wr.flip();
 
         DatagramSocket dsock = new DatagramSocket();

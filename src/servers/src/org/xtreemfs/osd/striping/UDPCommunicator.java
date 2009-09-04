@@ -180,6 +180,7 @@ public class UDPCommunicator extends LifeCycleThread {
                             try {
                                 receiver.receiveUDP(new UDPMessage(sender, data));
                             } catch (Throwable ex) {
+                                ex.printStackTrace();
                                 Logging.logMessage(Logging.LEVEL_WARN, Category.net, this,
                                 "received invalid UPD message: "+ex);
                                 BufferPool.free(data);

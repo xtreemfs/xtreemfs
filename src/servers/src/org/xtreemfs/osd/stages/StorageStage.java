@@ -190,6 +190,7 @@ public class StorageStage extends Stage {
 
         // calculate a hash value from the file ID and return the responsible
         // thread
+        assert(fileId != null);
         int key = Math.abs(fileId.hashCode());
         int index = (key % storageThreads.length);
 

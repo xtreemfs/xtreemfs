@@ -26,7 +26,7 @@ public final class XDRUnmarshaller extends Unmarshaller {
 
     @Override
     public boolean readBoolean(Object key) {
-        return buffer.getBoolean();
+        return buffer.getInt() == 1;
     }
 
     @Override
@@ -66,10 +66,12 @@ public final class XDRUnmarshaller extends Unmarshaller {
 
     @Override
     public Struct readStruct(Object key, Struct value) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        value.unmarshal(this);
+        return value;
     }
 
-    public java.lang.Object readBuffer() {
+    @Override
+    public java.lang.Object readBuffer(Object key) {
         return XDRUtils.deserializeSerializableBuffer(buffer);
     }
 

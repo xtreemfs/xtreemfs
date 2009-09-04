@@ -23,6 +23,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseListener;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.DIRInterface.ConcurrentModificationException;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
@@ -84,13 +85,13 @@ public class SSLRPCClientServerTest extends TestCase {
                     ReusableBuffer buf = rq.getRequestFragment();
 
                     xtreemfs_address_mappings_getRequest rpcRequest = new xtreemfs_address_mappings_getRequest();
-                    rpcRequest.deserialize(buf);
+                    rpcRequest.unmarshal(new XDRUnmarshaller(buf));
 
                     xtreemfs_address_mappings_getResponse rpcResponse = new xtreemfs_address_mappings_getResponse();
 
                     if (rpcRequest.getUuid().equalsIgnoreCase("Yagga")) {
                         rpcResponse.getAddress_mappings().add(new AddressMapping("Yagga", 1, "rpc", "localhost", 12345, "*", 3600,""));
-                        System.out.println("response size is "+rpcResponse.calculateSize());
+                        System.out.println("response size is "+rpcResponse.getXDRSize());
                         rq.sendResponse(rpcResponse);
                     } else {
                         rq.sendGarbageArgs(null, new ProtocolException());
@@ -330,7 +331,7 @@ public class SSLRPCClientServerTest extends TestCase {
                     ReusableBuffer buf = rq.getRequestFragment();
 
                     ObjectData od = new ObjectData();
-                    od.deserialize(buf);
+                    od.unmarshal(new XDRUnmarshaller(buf));
                     BufferPool.free(od.getData());
 
                     ReusableBuffer buf2 = BufferPool.allocate(1024*128);

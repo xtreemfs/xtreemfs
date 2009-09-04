@@ -48,11 +48,14 @@ public class ONCRPCBufferWriter extends Marshaller {
 
     private int   currentBuffer;
 
+    private boolean inMap;
+
     public ONCRPCBufferWriter(int bufSize) {
         this.bufSize = bufSize;
         buffers = new ArrayList(15);
         buffers.add(BufferPool.allocate(bufSize));
         currentBuffer = 0;
+        inMap = false;
     }
 
     private ReusableBuffer checkAndGetBuffer(int requiredSpace) {
@@ -134,27 +137,36 @@ public class ONCRPCBufferWriter extends Marshaller {
     @Override
     public void writeMap(Object key, Map value) {
         checkAndGetBuffer(4).putInt(value.size());
-        for (int i = 0; i < value.size(); i++) {
-            value.marshal(this);
-        }
+        inMap = true;
+        value.marshal(this);
+        inMap = false;
     }
 
     @Override
     public void writeSequence(Object key, Sequence value) {
         checkAndGetBuffer(4).putInt(value.size());
-        for (int i = 0; i < value.size(); i++) {
-            value.marshal(this);
-        }
+        value.marshal(this);
     }
 
     @Override
     public void writeString(Object key, String value) {
+        if (inMap)
+            XDRUtils.serializeString((String)key, this);
         XDRUtils.serializeString(value, this);
     }
 
     @Override
     public void writeStruct(Object key, Struct value) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        value.marshal(this);
+    }
+
+    public void writeBuffer(Object key, Object value) {
+        if (value != null) {
+            ReusableBuffer rb = (ReusableBuffer)value;
+            XDRUtils.serializeSerializableBuffer(rb, this);
+        } else {
+            checkAndGetBuffer(4).putInt(0);
+        }
     }
 
 

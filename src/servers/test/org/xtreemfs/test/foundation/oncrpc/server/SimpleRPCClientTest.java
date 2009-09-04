@@ -21,6 +21,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseListener;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.AddressMapping;
 import org.xtreemfs.interfaces.DIRInterface.ConcurrentModificationException;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
@@ -31,6 +32,7 @@ import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.test.TestEnvironment;
+import yidl.Unmarshaller;
 
 /**
  *
@@ -70,13 +72,13 @@ public class SimpleRPCClientTest extends TestCase {
                     ReusableBuffer buf = rq.getRequestFragment();
 
                     xtreemfs_address_mappings_getRequest rpcRequest = new xtreemfs_address_mappings_getRequest();
-                    rpcRequest.deserialize(buf);
+                    rpcRequest.unmarshal(new XDRUnmarshaller(buf));
 
                     xtreemfs_address_mappings_getResponse rpcResponse = new xtreemfs_address_mappings_getResponse();
 
                     if (rpcRequest.getUuid().equalsIgnoreCase("Yagga")) {
                         rpcResponse.getAddress_mappings().add(new AddressMapping("Yagga", 1, "rpc", "localhost", 12345, "*", 3600,""));
-                        System.out.println("response size is "+rpcResponse.calculateSize());
+                        System.out.println("response size is "+rpcResponse.getXDRSize());
                         rq.sendResponse(rpcResponse);
                     } else {
                         rq.sendGarbageArgs(null, new ProtocolException());
@@ -168,7 +170,7 @@ public class SimpleRPCClientTest extends TestCase {
                     assertEquals("password", uc.getPassword());
 
                     xtreemfs_address_mappings_getRequest rpcRequest = new xtreemfs_address_mappings_getRequest();
-                    rpcRequest.deserialize(buf);
+                    rpcRequest.unmarshal(new XDRUnmarshaller(buf));
 
                     xtreemfs_address_mappings_getResponse rpcResponse = new xtreemfs_address_mappings_getResponse();
                     rpcResponse.getAddress_mappings().add(new AddressMapping("Yagga", 1, "rpc", "localhost", 12345, "*", 3600, ""));

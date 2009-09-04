@@ -442,7 +442,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 try {
                     exception.unmarshal(new XDRUnmarshaller(firstFragment));
                 } catch (Throwable ex) {
-                    rec.getListener().requestFailed(rec, new IOException("invalid exception data received"));
+                    rec.getListener().requestFailed(rec, new IOException("invalid exception data received: "+ex));
                     return;
                 }
             }

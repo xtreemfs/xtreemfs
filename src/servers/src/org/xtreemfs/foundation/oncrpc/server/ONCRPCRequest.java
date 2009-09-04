@@ -156,7 +156,6 @@ public class ONCRPCRequest {
         assert (fragmentSize >= 0) : "fragment has invalid size: "+fragmentSize;
         final boolean isLastFragment = true;
         final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(fragmentSize, isLastFragment);
-
         writer.writeInt32(null,fragHdr);
         responseHeader.marshal(writer);
         writer.put(serializedResponse);
@@ -220,7 +219,7 @@ public class ONCRPCRequest {
         //make ready for sending
         writer.flip();
         record.setResponseBuffers(writer.getBuffers());
-        assert (record.getResponseSize() == fragmentSize+4) : "wrong fragSize: "+record.getResponseSize() +" vs. "+ fragmentSize;
+        assert (record.getResponseSize() == fragmentSize+4) : "wrong fragSize: "+record.getResponseSize() +" vs. "+ fragmentSize+", response is: "+response;
         record.sendResponse();
     }
 
