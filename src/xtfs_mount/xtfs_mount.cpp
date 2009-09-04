@@ -23,21 +23,15 @@ namespace xtfs_mount
     Main()
       : xtreemfs::Main( "xtfs_mount", "mount an XtreemFS volume", "[oncrpc[s]://]<dir host>[:dir port]/<volume name> <mount point>" )
     {
-      addOption( XTFS_MOUNT_OPTION_CACHE_FILE_READS, "--cache-file-reads" );
-      cache_file_reads = false;
-
-      addOption( XTFS_MOUNT_OPTION_CACHE_FILE_WRITES, "--cache-file-writes" );
-      cache_file_writes = false;
-
-      addOption( XTFS_MOUNT_OPTION_CACHE_METADATA, "--cache-metadata" );
-      cache_metadata = false;
-
       direct_io = false;
 
       addOption( XTFS_MOUNT_OPTION_FOREGROUND, "-f", "--foreground" );
       foreground = false;
 
       addOption( XTFS_MOUNT_OPTION_FUSE_OPTION, "-o", NULL, "<fuse_option>" );
+
+      addOption( XTFS_MOUNT_OPTION_METADATA_CACHE, "--metadata-cache" );
+      metadata_cache = false;
 
       addOption( XTFS_MOUNT_OPTION_TRACE_DATA_CACHE, "--trace-data-cache" );
       trace_data_cache = false;
@@ -50,30 +44,37 @@ namespace xtfs_mount
 
       addOption( XTFS_MOUNT_OPTION_TRACE_VOLUME_OPERATIONS, "--trace-volume-operations" );
       trace_volume_operations = false;
+
+      addOption( XTFS_MOUNT_OPTION_WRITE_BACK_CACHE, "--write-back-cache" );
+      write_back_cache = false;
+
+      addOption( XTFS_MOUNT_OPTION_WRITE_THROUGH_CACHE, "--write-through-cache" );
+      write_through_cache = false;
     }
 
   private:
     enum
     {
-      XTFS_MOUNT_OPTION_CACHE_FILE_READS = 20,
-      XTFS_MOUNT_OPTION_CACHE_FILE_WRITES = 21,
-      XTFS_MOUNT_OPTION_CACHE_METADATA = 22,
-      XTFS_MOUNT_OPTION_DIRECT_IO = 23,
-      XTFS_MOUNT_OPTION_FOREGROUND = 24,
-      XTFS_MOUNT_OPTION_FUSE_OPTION = 25,
-      XTFS_MOUNT_OPTION_TRACE_DATA_CACHE = 26,
-      XTFS_MOUNT_OPTION_TRACE_FILE_IO = 27,
-      XTFS_MOUNT_OPTION_TRACE_METADATA_CACHE = 28,
-      XTFS_MOUNT_OPTION_TRACE_VOLUME_OPERATIONS = 29
+      XTFS_MOUNT_OPTION_DIRECT_IO = 20,
+      XTFS_MOUNT_OPTION_FOREGROUND = 21,
+      XTFS_MOUNT_OPTION_FUSE_OPTION = 22,
+      XTFS_MOUNT_OPTION_METADATA_CACHE = 23,
+      XTFS_MOUNT_OPTION_TRACE_DATA_CACHE = 24,
+      XTFS_MOUNT_OPTION_TRACE_FILE_IO = 25,
+      XTFS_MOUNT_OPTION_TRACE_METADATA_CACHE = 26,
+      XTFS_MOUNT_OPTION_TRACE_VOLUME_OPERATIONS = 27,
+      XTFS_MOUNT_OPTION_WRITE_BACK_CACHE = 28,
+      XTFS_MOUNT_OPTION_WRITE_THROUGH_CACHE = 29
     };
 
-    bool cache_file_reads, cache_file_writes, cache_metadata;
     bool direct_io;
     YIELD::auto_URI dir_uri;
     bool foreground;
     std::string fuse_o_args;
+    bool metadata_cache;
     std::string mount_point, volume_name;
     bool trace_data_cache, trace_file_io, trace_metadata_cache, trace_volume_operations;
+    bool write_back_cache, write_through_cache;
 
 
     // YIELD::Main
@@ -99,7 +100,7 @@ namespace xtfs_mount
 
       // Fill volume_flags from options
       uint32_t volume_flags = 0;
-      if ( cache_metadata )
+      if ( metadata_cache )
         volume_flags |= xtreemfs::Volume::VOLUME_FLAG_CACHE_METADATA;
       if ( trace_file_io )
         volume_flags |= xtreemfs::Volume::VOLUME_FLAG_TRACE_FILE_IO;
@@ -109,27 +110,26 @@ namespace xtfs_mount
 
       if ( foreground )
       {
+        if ( direct_io )
+          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
+
         // Stack volumes
-        if ( cache_file_reads )
-        {
-          volume = new yieldfs::ReadCachingVolume( volume, trace_data_cache ? get_log() : NULL );
-          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching file reads.";
-        }
-
-        if ( cache_file_writes )
-        {
-          volume = new yieldfs::WritebackCachingVolume( volume, trace_data_cache ? get_log() : NULL );
-          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching file writes.";
-        }
-
-        if ( cache_metadata )
+        if ( metadata_cache )
         {
           volume = new yieldfs::MetadataCachingVolume( volume, trace_metadata_cache ? get_log() : NULL, 5 );
           get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching metadata.";
         }
 
-        if ( direct_io )
-          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
+        if ( write_back_cache )
+        {
+          volume = new yieldfs::WriteBackCachingVolume( volume, trace_data_cache ? get_log() : NULL );
+          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching file reads.";
+        }
+        else if ( write_through_cache )
+        {
+          volume = new yieldfs::WriteThroughCachingVolume( volume, trace_data_cache ? get_log() : NULL );
+          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching file writes.";
+        }
 
         if ( trace_volume_operations && get_log_level() >= YIELD::Log::LOG_INFO )
         {
@@ -193,9 +193,6 @@ namespace xtfs_mount
     {
       switch ( id )
       {
-        case XTFS_MOUNT_OPTION_CACHE_FILE_READS: cache_file_reads = true; break;
-        case XTFS_MOUNT_OPTION_CACHE_FILE_WRITES: cache_file_writes = true; break;
-        case XTFS_MOUNT_OPTION_CACHE_METADATA: cache_metadata = true; break;
         case XTFS_MOUNT_OPTION_FOREGROUND: foreground = true; break;
 
         case XTFS_MOUNT_OPTION_FUSE_OPTION:
@@ -209,11 +206,13 @@ namespace xtfs_mount
         }
         break;
 
+        case XTFS_MOUNT_OPTION_METADATA_CACHE: metadata_cache = true; break;
         case XTFS_MOUNT_OPTION_TRACE_DATA_CACHE: trace_data_cache = true; break;
         case XTFS_MOUNT_OPTION_TRACE_FILE_IO: trace_file_io = true; break;
         case XTFS_MOUNT_OPTION_TRACE_METADATA_CACHE: trace_metadata_cache = true; break;
         case XTFS_MOUNT_OPTION_TRACE_VOLUME_OPERATIONS: trace_volume_operations = true; break;
-        
+        case XTFS_MOUNT_OPTION_WRITE_BACK_CACHE: write_back_cache = true; break;
+        case XTFS_MOUNT_OPTION_WRITE_THROUGH_CACHE: write_through_cache = true; break;
         default: xtreemfs::Main::parseOption( id, arg ); break;
       }
     }

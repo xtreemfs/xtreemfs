@@ -155,28 +155,6 @@ namespace yieldfs
   };
 
 
-  class ReadCachingVolume : public StackableVolume
-  {
-  public:
-    ReadCachingVolume() // For testing
-    { }
-
-    ReadCachingVolume( YIELD::auto_Volume underlying_volume )
-      : StackableVolume( underlying_volume )
-    { }
-
-    ReadCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log )
-      : StackableVolume( underlying_volume, log )
-    { }
-
-    // YIELD::Volume
-    YIELD::auto_File open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
-
-  private:
-    virtual ~ReadCachingVolume() { }
-  };
-
-
   class TracingVolume : public StackableVolume
   {
   public:
@@ -205,17 +183,17 @@ namespace yieldfs
   };
 
 
-  class WritebackCachingVolume : public StackableVolume
+  class WriteBackCachingVolume : public StackableVolume
   {
   public:
-    WritebackCachingVolume() // For testing
+    WriteBackCachingVolume() // For testing
     { }
 
-    WritebackCachingVolume( YIELD::auto_Volume underlying_volume )
+    WriteBackCachingVolume( YIELD::auto_Volume underlying_volume )
       : StackableVolume( underlying_volume )
     { }
 
-    WritebackCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log )
+    WriteBackCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log )
       : StackableVolume( underlying_volume, log )
     { }
 
@@ -223,7 +201,29 @@ namespace yieldfs
     YIELD::auto_File open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
 
   private:
-    virtual ~WritebackCachingVolume() { }
+    virtual ~WriteBackCachingVolume() { }
+  };
+
+
+  class WriteThroughCachingVolume : public StackableVolume
+  {
+  public:
+    WriteThroughCachingVolume() // For testing
+    { }
+
+    WriteThroughCachingVolume( YIELD::auto_Volume underlying_volume )
+      : StackableVolume( underlying_volume )
+    { }
+
+    WriteThroughCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log )
+      : StackableVolume( underlying_volume, log )
+    { }
+
+    // YIELD::Volume
+    YIELD::auto_File open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
+
+  private:
+    virtual ~WriteThroughCachingVolume() { }
   };
 };
 
