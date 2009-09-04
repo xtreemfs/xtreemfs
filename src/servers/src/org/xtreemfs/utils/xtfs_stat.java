@@ -26,12 +26,16 @@ package org.xtreemfs.utils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.xtreemfs.common.util.OutputUtils;
+import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
+import org.xtreemfs.mrc.utils.MRCHelper;
 
 /**
  * 
@@ -74,7 +78,7 @@ public class xtfs_stat {
             final String format = "%-25s  %s\n";
             
             // fetch all XtreemFS-related extended attributes
-            Map<String, String> attrs = utils.getxattrs(fileName);
+            final Map<String, String> attrs = utils.getxattrs(fileName);
             if (attrs == null) {
                 System.err.println("file not found: " + fileName);
                 return;
@@ -116,51 +120,47 @@ public class xtfs_stat {
             
             // if the file refers to a directory, render directory attributes
             if (ftype == DIR) {
-                String defSP = attrs.get("xtreemfs.default_sp");
-                if (defSP == null)
-                    defSP = "none";
-                System.out.format(format, "default striping policy", defSP);
+                printDefaultStripingPolicy(format, attrs);
             }
             
             // render other known XtreemFS attributes
             if (attrs.containsKey("xtreemfs.ac_policy_id"))
                 System.out.format(format, "access control policy ID", attrs.get("xtreemfs.ac_policy_id"));
             
-            if (attrs.containsKey("xtreemfs.osdsel_policy_id"))
-                System.out.format(format, "OSD selection policy ID", attrs.get("xtreemfs.osdsel_policy_id"));
+            if (attrs.containsKey("xtreemfs.osdsel_policy"))
+                System.out.format(format, "OSD selection policy", attrs.get("xtreemfs.osdsel_policy"));
+            
+            if (attrs.containsKey("xtreemfs.repl_policy"))
+                System.out.format(format, "replica selection policy", attrs.get("xtreemfs.repl_policy"));
+            
+            if (attrs.containsKey("xtreemfs.repl_factor"))
+                System.out.format(format, "on-close repl. factor", attrs.get("xtreemfs.repl_factor"));
             
             if (attrs.containsKey("xtreemfs.free_space"))
                 System.out.format(format, "free usable disk space", OutputUtils.formatBytes(Long
                         .valueOf(attrs.get("xtreemfs.free_space"))));
             
+            if (attrs.containsKey("xtreemfs.used_space"))
+                System.out.format(format, "used disk space", OutputUtils.formatBytes(Long.valueOf(attrs
+                        .get("xtreemfs.used_space"))));
+            
+            if (attrs.containsKey("xtreemfs.num_files"))
+                System.out.format(format, "total number of files", Long.valueOf(attrs
+                        .get("xtreemfs.num_files")));
+            
+            if (attrs.containsKey("xtreemfs.num_dirs"))
+                System.out.format(format, "total number of dirs", Long
+                        .valueOf(attrs.get("xtreemfs.num_dirs")));
+            
+            printPolicySpecificAttributes(format, attrs);
+            
+            if (attrs.containsKey("xtreemfs.usable_osds"))
+                printUsableOSDs(format, attrs);
+            
             // if the file does not refer to a directory, render the
             // X-Locations list
             if (ftype != DIR) {
-                
-                // because of escape characters, the X-Locations list needs to
-                // be parsed in two steps: first, parse the string,
-                // then, parse a list from the parsed string
-                String s = (String) JSONParser.parseJSON(new JSONString("\""
-                    + attrs.get("xtreemfs.locations") + "\""));
-                Map<String, Object> l = (Map<String, Object>) JSONParser.parseJSON(new JSONString(s));
-                
-                System.out.println("\nXtreemFS replica list");
-                if (l == null) {
-                    System.out.println("   This file does not have any replicas yet.");
-                } else {
-                    System.out.format(format, "   list version ", l.get("version"));
-                    List<Map<String, Object>> replicas = (List<Map<String, Object>>) l.get("replicas");
-                    int i = 0;
-                    for (Map<String, Object> replica : replicas) {
-                        final Map<String, Object> policy = (Map) replica.get("striping-policy");
-                        final String pStr = policy.get("pattern") + ", " + policy.get("size") + "kb, "
-                            + policy.get("width");
-                        System.out.format(format, "   replica " + (i + 1) + " policy", pStr);
-                        System.out.format(format, "   replica " + (i + 1) + " OSDs", replica.get("osds"));
-                        i++;
-                    }
-                }
-                
+                printXLocList(format, attrs);
                 System.out.println();
             }
             
@@ -171,6 +171,81 @@ public class xtfs_stat {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+    }
+    
+    private static void printXLocList(String format, Map<String, String> attrs) throws JSONException {
+        
+        // because of escape characters, the X-Locations list needs to
+        // be parsed in two steps: first, parse the string,
+        // then, parse a list from the parsed string
+        String s = (String) JSONParser
+                .parseJSON(new JSONString("\"" + attrs.get("xtreemfs.locations") + "\""));
+        Map<String, Object> l = (Map<String, Object>) JSONParser.parseJSON(new JSONString(s));
+        
+        System.out.println("\nXtreemFS replica list");
+        if (l == null) {
+            System.out.println("   no replicas available");
+        } else {
+            System.out.format(format, "   list version ", l.get("version"));
+            List<Map<String, Object>> replicas = (List<Map<String, Object>>) l.get("replicas");
+            int i = 0;
+            for (Map<String, Object> replica : replicas) {
+                final Map<String, Object> policy = (Map) replica.get("striping-policy");
+                final String pStr = toString(policy);
+                System.out.format(format, "   replica " + (i + 1) + " policy", pStr);
+                System.out.format(format, "   replica " + (i + 1) + " OSDs", replica.get("osds"));
+                i++;
+            }
+        }
+    }
+    
+    private static void printDefaultStripingPolicy(String format, Map<String, String> attrs)
+        throws JSONException {
+        
+        String s = (String) JSONParser.parseJSON(new JSONString("\"" + attrs.get("xtreemfs.default_sp")
+            + "\""));
+        Map<String, Object> map = (Map<String, Object>) JSONParser.parseJSON(new JSONString(s));
+        
+        if (map == null)
+            s = "none";
+        else
+            s = toString(map);
+        
+        System.out.format(format, "default striping policy", s);
+    }
+    
+    private static void printUsableOSDs(String format, Map<String, String> attrs) throws JSONException {
+        
+        System.out.println("\nusable OSDs");
+        
+        String s = (String) JSONParser.parseJSON(new JSONString("\"" + attrs.get("xtreemfs.usable_osds")
+            + "\""));
+        Map<String, Object> map = (Map<String, Object>) JSONParser.parseJSON(new JSONString(s));
+        
+        int i = 0;
+        for (Entry<String, Object> osd : map.entrySet()) {
+            System.out.format(format, "   osd " + i, osd.getKey() + "=" + osd.getValue());
+            i++;
+        }
+    }
+    
+    private static void printPolicySpecificAttributes(String format, Map<String, String> attrs) {
+        
+        Map<String, String> polAttrs = new HashMap<String, String>();
+        for (Entry<String, String> entry : attrs.entrySet()) {
+            if (entry.getKey().startsWith("xtreemfs." + MRCHelper.POLICY_ATTR_PREFIX))
+                polAttrs.put(entry.getKey(), entry.getValue());
+        }
+        
+        if (polAttrs.size() > 0)
+            System.out.println("\npolicy-related attributes");
+        for (Entry<String, String> entry : polAttrs.entrySet())
+            System.out.format(format, "   " + entry.getKey(), entry.getValue());
+        
+    }
+    
+    private static String toString(Map<String, Object> policy) {
+        return policy.get("pattern") + ", " + policy.get("size") + "kb, " + policy.get("width");
     }
     
     private static String translatePermissions(Object perms) {

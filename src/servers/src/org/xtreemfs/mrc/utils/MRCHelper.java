@@ -254,8 +254,8 @@ public class MRCHelper {
     }
     
     public static String getSysAttrValue(MRCConfig config, StorageManager sMan, OSDStatusManager osdMan,
-        String path, FileMetadata file, String keyString) throws DatabaseException, JSONException,
-        UnknownUUIDException {
+        String path, FileMetadata file, String keyString) throws DatabaseException, UserException,
+        JSONException, UnknownUUIDException {
         
         if (keyString.startsWith(POLICY_ATTR_PREFIX.toString() + "."))
             return getPolicyValue(sMan, keyString);
@@ -264,7 +264,7 @@ public class MRCHelper {
         try {
             key = SysAttrs.valueOf(keyString);
         } catch (IllegalArgumentException exc) {
-            // ignore, will be handled by the 'default' case
+            throw new UserException(ErrNo.EINVAL, "system attribute '" + keyString + "' is immutable");
         }
         
         if (key != null) {
@@ -301,9 +301,11 @@ public class MRCHelper {
             case ac_policy_id:
                 return file.getId() == 1 ? sMan.getVolumeInfo().getAcPolicyId() + "" : "";
             case osdsel_policy:
-                return file.getId() == 1 ? Converter.shortArrayToString(sMan.getVolumeInfo().getOsdPolicy()) : "";
+                return file.getId() == 1 ? Converter.shortArrayToString(sMan.getVolumeInfo().getOsdPolicy())
+                    : "";
             case repl_policy:
-                return file.getId() == 1 ? Converter.shortArrayToString(sMan.getVolumeInfo().getReplicaPolicy()) : "";
+                return file.getId() == 1 ? Converter.shortArrayToString(sMan.getVolumeInfo()
+                        .getReplicaPolicy()) : "";
             case read_only:
                 if (file.isDirectory())
                     return "";
@@ -342,14 +344,16 @@ public class MRCHelper {
         DatabaseException {
         
         // handle policy-specific values
-        if (keyString.startsWith(POLICY_ATTR_PREFIX.toString() + "."))
+        if (keyString.startsWith(POLICY_ATTR_PREFIX.toString() + ".")) {
             setPolicyValue(sMan, keyString, value, update);
+            return;
+        }
         
         SysAttrs key = null;
         try {
             key = SysAttrs.valueOf(keyString);
         } catch (IllegalArgumentException exc) {
-            // ignore, will be handled by the 'default' case
+            throw new UserException(ErrNo.EINVAL, "unknown system attribute '" + key + "'");
         }
         
         switch (key) {
@@ -464,14 +468,16 @@ public class MRCHelper {
             break;
         
         default:
-            throw new UserException(ErrNo.EINVAL, "system attribute '" + key + "' unknown or immutable");
+            throw new UserException(ErrNo.EINVAL, "system attribute '" + key + "' is immutable");
         }
     }
     
-    public static List<String> getPolicyAttrNames(StorageManager sMan) throws DatabaseException {
+    public static List<String> getPolicyAttrNames(StorageManager sMan, long fileId) throws DatabaseException {
         
         final String prefix = "xtreemfs." + POLICY_ATTR_PREFIX;
         final List<String> result = new LinkedList<String>();
+        if (fileId != 1)
+            return result;
         
         Iterator<XAttr> it = sMan.getXAttrs(1, StorageManager.SYSTEM_UID);
         while (it.hasNext()) {

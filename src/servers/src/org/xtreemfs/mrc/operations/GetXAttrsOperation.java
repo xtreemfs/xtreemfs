@@ -101,9 +101,9 @@ public class GetXAttrsOperation extends MRCOperation {
         }
         
         // include policy attributes
-        List<String> policyAttrNames = MRCHelper.getPolicyAttrNames(sMan);
+        List<String> policyAttrNames = MRCHelper.getPolicyAttrNames(sMan, file.getId());
         for (String attr : policyAttrNames)
-            attrNames.add("xtreemfs." + MRCHelper.POLICY_ATTR_PREFIX + "." + attr);
+            attrNames.add(attr);
         
         StringSet names = new StringSet();
         Iterator<String> it = attrNames.iterator();
