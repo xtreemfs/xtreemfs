@@ -184,7 +184,7 @@ ssl.enabled = false
 """            
 
 
-def mount_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, mnt_dir_path=MNT_DIR_PATH_DEFAULT, num_osds=NUM_OSDS_DEFAULT, service_host="localhost", cache_metadata=CACHE_METADATA_DEFAULT ):
+def mount_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, mnt_dir_path=MNT_DIR_PATH_DEFAULT, num_osds=NUM_OSDS_DEFAULT, service_host="localhost", cache_metadata=CACHE_METADATA_DEFAULT, cache_data=CACHE_DATA_DEFAULT ):
     assert os.getcwd() == original_cwd
     try: os.mkdir( mnt_dir_path )
     except: pass
@@ -421,7 +421,7 @@ if __name__ == "__main__":
         
         try:
             create_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host )
-            mount_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host, cache_metadata=options.cache_metadata )
+            mount_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host, cache_metadata=options.cache_metadata, cache_data=options.cache_data )
         except KeyboardInterrupt:
             sys.exit( 1 )
         except:
