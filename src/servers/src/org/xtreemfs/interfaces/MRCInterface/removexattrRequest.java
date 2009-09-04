@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class removexattrRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009090422;
+    public static final int TAG = 2009082831;
     
     public removexattrRequest() {  }
     public removexattrRequest( String path, String name ) { this.path = path; this.name = name; }
@@ -28,10 +28,10 @@ public class removexattrRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090422;    
+    public static final long serialVersionUID = 2009082831;    
 
     // yidl.Object
-    public int getTag() { return 2009090422; }
+    public int getTag() { return 2009082831; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::removexattrRequest"; }
     
     public int getXDRSize()

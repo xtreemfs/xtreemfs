@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class symlinkRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009090428;
+    public static final int TAG = 2009082837;
     
     public symlinkRequest() {  }
     public symlinkRequest( String target_path, String link_path ) { this.target_path = target_path; this.link_path = link_path; }
@@ -28,10 +28,10 @@ public class symlinkRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090428;    
+    public static final long serialVersionUID = 2009082837;    
 
     // yidl.Object
-    public int getTag() { return 2009090428; }
+    public int getTag() { return 2009082837; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::symlinkRequest"; }
     
     public int getXDRSize()

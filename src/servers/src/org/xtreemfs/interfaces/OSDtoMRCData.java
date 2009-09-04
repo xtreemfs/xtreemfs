@@ -12,7 +12,7 @@ import yidl.Unmarshaller;
 
 public class OSDtoMRCData extends Struct
 {
-    public static final int TAG = 2009090222;
+    public static final int TAG = 2009082631;
     
     public OSDtoMRCData() {  }
     public OSDtoMRCData( int caching_policy, String data ) { this.caching_policy = caching_policy; this.data = data; }
@@ -23,10 +23,10 @@ public class OSDtoMRCData extends Struct
     public void setData( String data ) { this.data = data; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090222;    
+    public static final long serialVersionUID = 2009082631;    
 
     // yidl.Object
-    public int getTag() { return 2009090222; }
+    public int getTag() { return 2009082631; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDtoMRCData"; }
     
     public int getXDRSize()

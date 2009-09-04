@@ -13,15 +13,15 @@ import yidl.Unmarshaller;
 
 public class xtreemfs_update_file_sizeResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009090455;
+    public static final int TAG = 2009082864;
     
     public xtreemfs_update_file_sizeResponse() {  }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090455;    
+    public static final long serialVersionUID = 2009082864;    
 
     // yidl.Object
-    public int getTag() { return 2009090455; }
+    public int getTag() { return 2009082864; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_update_file_sizeResponse"; }
     
     public int getXDRSize()

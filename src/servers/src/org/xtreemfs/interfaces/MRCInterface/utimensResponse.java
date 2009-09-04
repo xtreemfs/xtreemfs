@@ -13,15 +13,15 @@ import yidl.Unmarshaller;
 
 public class utimensResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009090430;
+    public static final int TAG = 2009082839;
     
     public utimensResponse() {  }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090430;    
+    public static final long serialVersionUID = 2009082839;    
 
     // yidl.Object
-    public int getTag() { return 2009090430; }
+    public int getTag() { return 2009082839; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::utimensResponse"; }
     
     public int getXDRSize()
