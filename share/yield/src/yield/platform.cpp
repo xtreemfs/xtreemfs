@@ -1,4 +1,4 @@
-// Revision: 1850
+// Revision: 1852
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -3100,6 +3100,11 @@ void XDRUnmarshaller::readBuffer( const char* key, uint32_t tag, yidl::auto_Buff
   if ( value->capacity() - value->size() < size ) DebugBreak();
   read( static_cast<void*>( *value ), size );
   value->put( NULL, size );
+  if ( size % 4 != 0 )
+  {
+    char zeros[3];
+    read( zeros, 4 - ( size % 4 ) );
+  }
 }
 double XDRUnmarshaller::readDouble( const char*, uint32_t )
 {
