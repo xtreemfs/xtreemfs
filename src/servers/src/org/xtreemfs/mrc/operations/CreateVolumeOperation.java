@@ -70,17 +70,6 @@ public class CreateVolumeOperation extends MRCOperation {
         validateContext(rq);
         Volume volData = rqArgs.getVolume();
         
-        // check whether the given policies are supported
-        
-        try {
-            master.getPolicyContainer().getOSDSelectionPolicy(
-                (short) volData.getOsd_selection_policy().intValue());
-            
-        } catch (Exception exc) {
-            throw new UserException(ErrNo.EINVAL, "invalid OSD selection policy ID: "
-                + volData.getOsd_selection_policy());
-        }
-        
         try {
             master.getFileAccessManager().getFileAccessPolicy(
                 (short) volData.getAccess_control_policy().intValue());
@@ -146,8 +135,7 @@ public class CreateVolumeOperation extends MRCOperation {
             
             // create the volume locally
             master.getVolumeManager().createVolume(master.getFileAccessManager(), volumeId,
-                volData.getName(), (short) volData.getAccess_control_policy().intValue(),
-                (short) volData.getOsd_selection_policy().intValue(), null, uid, gid,
+                volData.getName(), (short) volData.getAccess_control_policy().intValue(), uid, gid,
                 volData.getDefault_striping_policy(), volData.getMode());
             
             // register the volume at the Directory Service

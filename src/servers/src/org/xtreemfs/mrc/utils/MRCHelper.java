@@ -27,6 +27,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -51,18 +53,18 @@ import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCException;
-import org.xtreemfs.mrc.PolicyContainer;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeInfo;
+import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
+import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.osdselection.OSDStatusManager;
-import org.xtreemfs.mrc.volumes.VolumeManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 public class MRCHelper {
     
@@ -93,6 +95,8 @@ public class MRCHelper {
         }
     }
     
+    public static final String POLICY_ATTR_PREFIX = "policies";
+    
     public enum SysAttrs {
             locations,
             file_id,
@@ -102,16 +106,15 @@ public class MRCHelper {
             group,
             default_sp,
             ac_policy_id,
-            repl_policy_id,
-            osdsel_policy_id,
-            osdsel_policy_args,
+            repl_policy,
+            osdsel_policy,
             usable_osds,
             read_only,
-            add_replica,
             free_space,
             used_space,
             num_files,
-            num_dirs
+            num_dirs,
+            repl_factor
     }
     
     public enum FileType {
@@ -124,7 +127,7 @@ public class MRCHelper {
         String free = String.valueOf(osdMan.getFreeSpace(vol.getId()));
         String volSize = null;
         try {
-            volSize = String.valueOf(sMan.getVolumeSize());
+            volSize = String.valueOf(sMan.getVolumeInfo().getVolumeSize());
         } catch (DatabaseException e) {
             Logging.logMessage(Logging.LEVEL_ERROR, Category.db, null, OutputUtils.stackTraceToString(e),
                 new Object[0]);
@@ -158,8 +161,8 @@ public class MRCHelper {
     }
     
     public static Replica createReplica(StripingPolicy stripingPolicy, StorageManager sMan,
-        OSDStatusManager osdMan, PolicyContainer policyContainer, VolumeInfo volume, long parentDirId,
-        String path, InetAddress clientAddress) throws DatabaseException, UserException, MRCException {
+        OSDStatusManager osdMan, VolumeInfo volume, long parentDirId, String path, InetAddress clientAddress,
+        XLocList currentXLoc) throws DatabaseException, UserException, MRCException {
         
         // if no striping policy is provided, try to retrieve it from the parent
         // directory
@@ -181,29 +184,21 @@ public class MRCHelper {
         
         StringSet osds = new StringSet();
         
-        ServiceSet osdMaps = osdMan.getUsableOSDs(volume.getId());
+        ServiceSet usableOSDs = osdMan.getUsableOSDs(volume.getId(), clientAddress, currentXLoc,
+            stripingPolicy.getStripeSize());
         
-        if (osdMaps == null || osdMaps.size() == 0)
+        if (usableOSDs == null || usableOSDs.size() == 0)
             throw new UserException(ErrNo.EIO, "could not open file " + path + ": no feasible OSDs available");
         
         // determine the actual striping width; if not enough OSDs are
         // available, the width will be limited to the amount of available OSDs
-        int width = Math.min((int) stripingPolicy.getWidth(), osdMaps.size());
+        int width = Math.min((int) stripingPolicy.getWidth(), usableOSDs.size());
         stripingPolicy = sMan.createStripingPolicy(stripingPolicy.getPattern(), stripingPolicy
                 .getStripeSize(), width);
         sp.setWidth(width);
         
-        // add the OSDs to the X-Locations list, according to the OSD selection
-        // policy
-        try {
-            for (String osd : policyContainer.getOSDSelectionPolicy(volume.getOsdPolicyId())
-                    .getOSDsForNewFile(osdMaps, clientAddress, width, volume.getOsdPolicyArgs()))
-                osds.add(osd);
-        } catch (MRCException exc) {
-            throw exc;
-        } catch (Exception exc) {
-            throw new MRCException(exc);
-        }
+        for (int i = 0; i < width; i++)
+            osds.add(usableOSDs.get(i).getUuid());
         
         return new Replica(sp, 0, osds);
     }
@@ -259,8 +254,11 @@ public class MRCHelper {
     }
     
     public static String getSysAttrValue(MRCConfig config, StorageManager sMan, OSDStatusManager osdMan,
-        VolumeInfo volume, String path, FileMetadata file, String keyString) throws DatabaseException,
-        JSONException, UnknownUUIDException {
+        String path, FileMetadata file, String keyString) throws DatabaseException, JSONException,
+        UnknownUUIDException {
+        
+        if (keyString.startsWith(POLICY_ATTR_PREFIX.toString() + "."))
+            return getPolicyValue(sMan, keyString);
         
         SysAttrs key = null;
         try {
@@ -281,7 +279,7 @@ public class MRCHelper {
                     return xLocList == null ? "" : Converter.xLocListToJSON(xLocList);
                 }
             case file_id:
-                return volume.getId() + ":" + file.getId();
+                return sMan.getVolumeInfo().getId() + ":" + file.getId();
             case object_type:
                 String ref = sMan.getSoftlinkTarget(file.getId());
                 return ref != null ? "3" : file.isDirectory() ? "2" : "1";
@@ -301,14 +299,11 @@ public class MRCHelper {
                     return "";
                 return Converter.stripingPolicyToJSONString(sp);
             case ac_policy_id:
-                return file.getId() == 1 ? volume.getAcPolicyId() + "" : "";
-            case osdsel_policy_id:
-                return file.getId() == 1 ? volume.getOsdPolicyId() + "" : "";
-            case osdsel_policy_args:
-                return file.getId() == 1 ? (volume.getOsdPolicyArgs() == null ? "" : volume
-                        .getOsdPolicyArgs()) : "";
-            case repl_policy_id:
-                return file.getId() == 1 ? volume.getReplicaPolicyId() + "" : "";
+                return file.getId() == 1 ? sMan.getVolumeInfo().getAcPolicyId() + "" : "";
+            case osdsel_policy:
+                return file.getId() == 1 ? Converter.shortArrayToString(sMan.getVolumeInfo().getOsdPolicy()) : "";
+            case repl_policy:
+                return file.getId() == 1 ? Converter.shortArrayToString(sMan.getVolumeInfo().getReplicaPolicy()) : "";
             case read_only:
                 if (file.isDirectory())
                     return "";
@@ -316,8 +311,8 @@ public class MRCHelper {
                 return String.valueOf(file.isReadOnly());
                 
             case usable_osds: {
-                ServiceSet srvs = osdMan.getUsableOSDs(volume.getId());
-                Map<String, String> osds = new HashMap();
+                ServiceSet srvs = osdMan.getUsableOSDs(sMan.getVolumeInfo().getId());
+                Map<String, String> osds = new HashMap<String, String>();
                 for (Service srv : srvs) {
                     ServiceUUID uuid = new ServiceUUID(srv.getUuid());
                     InetAddress ia = uuid.getMappings()[0].resolvedAddr.getAddress();
@@ -326,22 +321,29 @@ public class MRCHelper {
                 return JSONParser.writeJSON(osds);
             }
             case free_space:
-                return file.getId() == 1 ? String.valueOf(osdMan.getFreeSpace(volume.getId())) : "";
+                return file.getId() == 1 ? String.valueOf(osdMan.getFreeSpace(sMan.getVolumeInfo().getId()))
+                    : "";
             case used_space:
-                return file.getId() == 1 ? String.valueOf(sMan.getVolumeSize()) : "";
+                return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getVolumeSize()) : "";
             case num_files:
-                return file.getId() == 1 ? String.valueOf(sMan.getNumFiles()) : "";
+                return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getNumFiles()) : "";
             case num_dirs:
-                return file.getId() == 1 ? String.valueOf(sMan.getNumDirs()) : "";
+                return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getNumDirs()) : "";
+            case repl_factor:
+                return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getAutoReplFactor()) : "";
             }
         }
         
         return "";
     }
     
-    public static void setSysAttrValue(StorageManager sMan, VolumeManager vMan, VolumeInfo volume,
-        long parentId, FileMetadata file, String keyString, String value, AtomicDBUpdate update)
-        throws UserException, DatabaseException {
+    public static void setSysAttrValue(StorageManager sMan, VolumeManager vMan, long parentId,
+        FileMetadata file, String keyString, String value, AtomicDBUpdate update) throws UserException,
+        DatabaseException {
+        
+        // handle policy-specific values
+        if (keyString.startsWith(POLICY_ATTR_PREFIX.toString() + "."))
+            setPolicyValue(sMan, keyString, value, update);
         
         SysAttrs key = null;
         try {
@@ -380,16 +382,14 @@ public class MRCHelper {
             
             break;
         
-        case osdsel_policy_id:
+        case osdsel_policy:
 
             if (file.getId() != 1)
                 throw new UserException(ErrNo.EINVAL, "OSD selection policies can only be set on volumes");
             
             try {
-                short newPol = Short.parseShort(value);
-                
-                volume.setOsdPolicyId(newPol);
-                vMan.updateVolume(volume);
+                short[] newPol = Converter.stringToShortArray(value);
+                sMan.getVolumeInfo().setOsdPolicy(newPol, update);
                 
             } catch (NumberFormatException exc) {
                 throw new UserException(ErrNo.EINVAL, "invalid OSD selection policy: " + value);
@@ -397,28 +397,15 @@ public class MRCHelper {
             
             break;
         
-        case osdsel_policy_args:
-
-            if (file.getId() != 1)
-                throw new UserException(ErrNo.EINVAL,
-                    "OSD selection policies can only be set and configured on volumes");
-            
-            volume.setOsdPolicyArgs(value);
-            vMan.updateVolume(volume);
-            
-            break;
-        
-        case repl_policy_id:
+        case repl_policy:
 
             if (file.getId() != 1)
                 throw new UserException(ErrNo.EINVAL,
                     "replica selection policies can only be set and configured on volumes");
             
             try {
-                short newPol = Short.parseShort(value);
-                
-                volume.setReplicaPolicyId(newPol);
-                vMan.updateVolume(volume);
+                short[] newPol = Converter.stringToShortArray(value);
+                sMan.getVolumeInfo().setReplicaPolicy(newPol, update);
                 
             } catch (NumberFormatException exc) {
                 throw new UserException(ErrNo.EINVAL, "invalid replica selection policy: " + value);
@@ -426,22 +413,6 @@ public class MRCHelper {
             
             break;
         
-        case add_replica: {
-            try {
-                Replica newReplica = Converter.replicaFromJSON(value);
-                // FIXME: execute add replica here!
-            } catch (JSONException exc) {
-                throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
-            } catch (ClassCastException exc) {
-                throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
-            } catch (NullPointerException exc) {
-                throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
-            } catch (IllegalArgumentException exc) {
-                throw new UserException(ErrNo.EINVAL, "invalid default striping policy: " + value);
-            }
-            break;
-        }
-            
         case read_only:
 
             if (file.isDirectory())
@@ -461,7 +432,8 @@ public class MRCHelper {
                 for (int i = 0; i < replicas.length; i++)
                     replicas[i] = xLoc.getReplica(i);
                 
-                replicas[0].setReplicationFlags(ReplicationFlags.setReplicaIsComplete(replicas[0].getReplicationFlags()));
+                replicas[0].setReplicationFlags(ReplicationFlags.setReplicaIsComplete(replicas[0]
+                        .getReplicationFlags()));
                 
                 XLocList newXLoc = sMan.createXLocList(replicas, readOnly ? Constants.REPL_UPDATE_PC_RONLY
                     : Constants.REPL_UPDATE_PC_NONE, xLoc.getVersion());
@@ -475,8 +447,50 @@ public class MRCHelper {
             
             break;
         
+        case repl_factor:
+
+            if (file.getId() != 1)
+                throw new UserException(ErrNo.EINVAL,
+                    "on-close replication factors can only be set on volumes");
+            
+            try {
+                int newReplFactor = Integer.parseInt(value);
+                sMan.getVolumeInfo().setAutoReplFactor(newReplFactor, update);
+                
+            } catch (NumberFormatException exc) {
+                throw new UserException(ErrNo.EINVAL, "invalid replication factor (int required): " + value);
+            }
+            
+            break;
+        
         default:
             throw new UserException(ErrNo.EINVAL, "system attribute '" + key + "' unknown or immutable");
         }
+    }
+    
+    public static List<String> getPolicyAttrNames(StorageManager sMan) throws DatabaseException {
+        
+        final String prefix = "xtreemfs." + POLICY_ATTR_PREFIX;
+        final List<String> result = new LinkedList<String>();
+        
+        Iterator<XAttr> it = sMan.getXAttrs(1, StorageManager.SYSTEM_UID);
+        while (it.hasNext()) {
+            XAttr attr = it.next();
+            if (attr.getKey().startsWith(prefix))
+                result.add(attr.getKey());
+        }
+        
+        return result;
+    }
+    
+    private static String getPolicyValue(StorageManager sMan, String keyString) throws DatabaseException {
+        return sMan.getXAttr(1, StorageManager.SYSTEM_UID, "xtreemfs." + keyString);
+    }
+    
+    private static void setPolicyValue(StorageManager sMan, String keyString, String value,
+        AtomicDBUpdate update) throws DatabaseException {
+        
+        // set the value in the database
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, "xtreemfs." + keyString, value, update);
     }
 }

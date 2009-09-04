@@ -24,10 +24,15 @@
 
 package org.xtreemfs.mrc.operations;
 
+import java.net.InetSocketAddress;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.MRCInterface.closeRequest;
 import org.xtreemfs.interfaces.MRCInterface.closeResponse;
 import org.xtreemfs.mrc.MRCRequest;
@@ -35,7 +40,11 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.XLoc;
+import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 
 /**
@@ -68,6 +77,7 @@ public class CloseOperation extends MRCOperation {
             // parse volume and file ID from global file ID
             GlobalFileIdResolver idRes = new GlobalFileIdResolver(cap.getFileId());
             StorageManager sMan = master.getVolumeManager().getStorageManager(idRes.getVolumeId());
+            VolumeInfo vol = sMan.getVolumeInfo();
             
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
             
@@ -76,14 +86,42 @@ public class CloseOperation extends MRCOperation {
                 throw new UserException(ErrNo.ENOENT, "file '" + cap.getFileId() + "' does not exist");
             
             file.setReadOnly(true);
-            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "file closed and set to readOnly");
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "replicating file");
             
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                "initiating file replication...");
-            // TODO: invoke replication policy
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "replication initiated");
+            XLocList xLocList = file.getXLocList();
+            
+            // replicate
+            int replFactor = vol.getAutoReplFactor();
+            List<XLoc> repls = new LinkedList<XLoc>();
+            for (int i = 0; i < xLocList.getReplicaCount(); i++)
+                repls.add(xLocList.getReplica(i));
+            
+            int newVer = xLocList.getVersion() + 1;
+            for (int i = 0; i < replFactor - 1; i++) {
+                
+                Replica newRepl = MRCHelper.createReplica(file.getXLocList().getReplica(0)
+                        .getStripingPolicy(), sMan, master.getOSDStatusManager(), vol, -1, cap.getFileId(),
+                    ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress(), xLocList);
+                
+                String[] osds = newRepl.getOsd_uuids().toArray(new String[newRepl.getOsd_uuids().size()]);
+                repls.add(sMan.createXLoc(xLocList.getReplica(0).getStripingPolicy(), osds, newRepl
+                        .getReplication_flags()));
+                
+                xLocList = sMan.createXLocList(repls.toArray(new XLoc[repls.size()]), xLocList
+                        .getReplUpdatePolicy(), newVer);
+            }
+            
+            file.setXLocList(xLocList);
+            
+            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
+            
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "added %d replicas", vol
+                    .getAutoReplFactor() - 1);
+            
+            // trigger the replication
+            master.getOnCloseReplicationThread().enqueueRequest(rq);
             
             // set the response
             rq.setResponse(new closeResponse());
@@ -99,6 +137,7 @@ public class CloseOperation extends MRCOperation {
             Logging.logMessage(Logging.LEVEL_WARN, this,
                 "got close() request for non-replicate-on-close file, cap=%s, ignoring it", cap.toString());
             
+            finishRequest(rq);
         }
         
     }

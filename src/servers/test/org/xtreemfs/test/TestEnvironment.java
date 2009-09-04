@@ -93,6 +93,8 @@ public class TestEnvironment {
             DIR_SERVICE, // Directory Service
             MRC, // MRC
             MOCKUP_OSD, // mock-up OSD: registers a non-existing OSD at the DIR
+            MOCKUP_OSD2, // mock-up OSD: registers a non-existing OSD at the DIR
+            MOCKUP_OSD3, // mock-up OSD: registers a non-existing OSD at the DIR
             OSD
         // an OSD
     };
@@ -165,6 +167,38 @@ public class TestEnvironment {
             response.freeBuffers();
             
             UUIDResolver.addLocalMapping("mockUpOSD", 11111, Constants.ONCRPC_SCHEME);
+        }
+        
+        if (enabledServs.contains(Services.MOCKUP_OSD2)) {
+            ServiceDataMap dmap = new ServiceDataMap();
+            dmap.put("free", "1000000000");
+            dmap.put("total", "1000000000");
+            dmap.put("load", "0");
+            dmap.put("totalRAM", "1000000000");
+            dmap.put("usedRAM", "0");
+            dmap.put("proto_version", "" + OSDInterface.getVersion());
+            Service reg = new Service(ServiceType.SERVICE_TYPE_OSD, "mockUpOSD2", 0, "mockUpOSD2", 0, dmap);
+            RPCResponse<Long> response = dirClient.xtreemfs_service_register(null, reg);
+            response.get();
+            response.freeBuffers();
+            
+            UUIDResolver.addLocalMapping("mockUpOSD2", 11111, Constants.ONCRPC_SCHEME);
+        }
+        
+        if (enabledServs.contains(Services.MOCKUP_OSD3)) {
+            ServiceDataMap dmap = new ServiceDataMap();
+            dmap.put("free", "1000000000");
+            dmap.put("total", "1000000000");
+            dmap.put("load", "0");
+            dmap.put("totalRAM", "1000000000");
+            dmap.put("usedRAM", "0");
+            dmap.put("proto_version", "" + OSDInterface.getVersion());
+            Service reg = new Service(ServiceType.SERVICE_TYPE_OSD, "mockUpOSD3", 0, "mockUpOSD3", 0, dmap);
+            RPCResponse<Long> response = dirClient.xtreemfs_service_register(null, reg);
+            response.get();
+            response.freeBuffers();
+            
+            UUIDResolver.addLocalMapping("mockUpOSD3", 11111, Constants.ONCRPC_SCHEME);
         }
         
         if (enabledServs.contains(Services.OSD)) {

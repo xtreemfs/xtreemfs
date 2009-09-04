@@ -1,4 +1,4 @@
-/*  Copyright (c) 2008 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+/*  Copyright (c) 2009 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
     This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
     Grid Operating System, see <http://www.xtreemos.eu> for more details.
@@ -25,42 +25,36 @@
 package org.xtreemfs.mrc.osdselection;
 
 import java.net.InetAddress;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Collections;
 
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
-import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.mrc.metadata.XLocList;
 
 /**
- * A very simple policy that accepts all osds!
+ * Randomly shuffles the list of OSDs.
  * 
- * @author bjko
+ * @author stender
  */
-public class RandomSelectionPolicy extends AbstractSelectionPolicy {
+public class SortRandomPolicy implements OSDSelectionPolicy {
     
-    public static final short POLICY_ID = (short) OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE
+    public static final short POLICY_ID = (short) OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_RANDOM
                                                 .intValue();
     
-    /** Creates a new instance of SimpleSelectionPolicy */
-    public RandomSelectionPolicy() {
+    @Override
+    public ServiceSet getOSDs(ServiceSet allOSDs, InetAddress clientIP, XLocList currentXLoc, int numOSDs) {
+        return getOSDs(allOSDs);
     }
     
-    public String[] getOSDsForNewFile(ServiceSet osdMap, InetAddress clientAddress, int amount, String args) {
-        
-        // first, sort out all OSDs with insufficient free capacity
-        String[] osds = new String[amount];
-        List<String> list = new LinkedList<String>();
-        for (Service osd : osdMap) {
-            if (hasFreeCapacity(osd))
-                list.add(osd.getUuid());
-        }
-        
-        // from the remaining set, take a random subset of OSDs
-        for (int i = 0; i < amount; i++)
-            osds[i] = list.remove((int) (Math.random() * list.size()));
-        
-        return osds;
+    @Override
+    public ServiceSet getOSDs(ServiceSet allOSDs) {
+        Collections.shuffle(allOSDs);
+        return allOSDs;
+    }
+    
+    @Override
+    public void setAttribute(String key, String value) {
+        // don't accept any attributes
     }
     
 }

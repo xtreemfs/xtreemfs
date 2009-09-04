@@ -24,12 +24,8 @@
 
 package org.xtreemfs.mrc.utils;
 
-import java.net.Inet4Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -41,7 +37,6 @@ import java.util.Map.Entry;
 
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
-import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
@@ -52,9 +47,6 @@ import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.metadata.ACLEntry;
-import org.xtreemfs.mrc.metadata.BufferBackedStripingPolicy;
-import org.xtreemfs.mrc.metadata.BufferBackedXLoc;
-import org.xtreemfs.mrc.metadata.BufferBackedXLocList;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
@@ -390,6 +382,29 @@ public class Converter {
                 (String) attr.get("value")));
         
         return list;
+    }
+    
+    public static short[] stringToShortArray(String shortList) {
+        
+        StringTokenizer st = new StringTokenizer(shortList, " \t,;");
+        short[] result = new short[st.countTokens()];
+        
+        for (int i = 0; st.hasMoreTokens(); i++)
+            result[i] = Short.parseShort(st.nextToken());
+        
+        return result;
+    }
+    
+    public static String shortArrayToString(short[] shorts) {
+        
+        String result = "";
+        for (int i = 0; i < shorts.length; i++) {
+            result += shorts[i];
+            if (i < shorts.length - 1)
+                result += ",";
+        }
+        
+        return result;
     }
     
 }

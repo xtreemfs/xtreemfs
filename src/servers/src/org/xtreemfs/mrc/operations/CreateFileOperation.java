@@ -34,10 +34,9 @@ import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.mrc.volumes.VolumeManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
@@ -61,8 +60,7 @@ public class CreateFileOperation extends MRCOperation {
         
         final Path p = new Path(rqArgs.getPath());
         
-        final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-        final StorageManager sMan = vMan.getStorageManager(volume.getId());
+        final StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
         final PathResolver res = new PathResolver(sMan, p);
         
         // check if file == volume

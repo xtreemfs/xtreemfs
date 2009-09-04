@@ -3,7 +3,7 @@
  * and open the template in the editor.
  */
 
-package org.xtreemfs.mrc.replication.dcmap;
+package org.xtreemfs.mrc.osdselection;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;

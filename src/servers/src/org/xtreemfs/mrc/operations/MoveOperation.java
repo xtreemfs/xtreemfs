@@ -40,14 +40,14 @@ import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeInfo;
+import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
 import org.xtreemfs.mrc.utils.MRCHelper.FileType;
-import org.xtreemfs.mrc.volumes.VolumeManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
@@ -71,9 +71,9 @@ public class MoveOperation extends MRCOperation {
         
         final Path sp = new Path(rqArgs.getSource_path());
         
-        final VolumeInfo volume = vMan.getVolumeByName(sp.getComp(0));
-        final StorageManager sMan = vMan.getStorageManager(volume.getId());
+        final StorageManager sMan = vMan.getStorageManagerByName(sp.getComp(0));
         final PathResolver sRes = new PathResolver(sMan, sp);
+        final VolumeInfo volume = sMan.getVolumeInfo();
         
         // check whether the path prefix is searchable
         faMan.checkSearchPermission(sMan, sRes, rq.getDetails().userId, rq.getDetails().superUser, rq

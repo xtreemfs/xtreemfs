@@ -26,23 +26,30 @@ package org.xtreemfs.mrc.database.babudb;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.index.DefaultByteRangeComparator;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.lsmdb.DatabaseManager;
+import org.xtreemfs.babudb.snapshots.DefaultSnapshotConfig;
+import org.xtreemfs.babudb.snapshots.SnapshotConfig;
+import org.xtreemfs.babudb.snapshots.SnapshotManager;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeChangeListener;
+import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.ACLIterator;
-import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.ChildrenIterator;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.XAttrIterator;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedACLEntry;
@@ -62,55 +69,143 @@ import org.xtreemfs.mrc.utils.Path;
 
 public class BabuDBStorageManager implements StorageManager {
     
-    public static final int     FILE_INDEX            = 0;
+    public static final int                  FILE_INDEX                 = 0;
     
-    public static final int     XATTRS_INDEX          = 1;
+    public static final int                  XATTRS_INDEX               = 1;
     
-    public static final int     ACL_INDEX             = 2;
+    public static final int                  ACL_INDEX                  = 2;
     
-    public static final int     FILE_ID_INDEX         = 3;
+    public static final int                  FILE_ID_INDEX              = 3;
     
-    public static final int     VOLUME_INDEX          = 4;
+    public static final int                  VOLUME_INDEX               = 4;
     
-    public static final byte[]  LAST_ID_KEY           = { 'i' };
+    public static final byte[]               LAST_ID_KEY                = { 'i' };
     
-    public static final byte[]  VOL_SIZE_KEY          = { 's' };
+    public static final byte[]               VOL_SIZE_KEY               = { 's' };
     
-    public static final byte[]  NUM_FILES_KEY         = { 'f' };
+    public static final byte[]               NUM_FILES_KEY              = { 'f' };
     
-    public static final byte[]  NUM_DIRS_KEY          = { 'd' };
+    public static final byte[]               NUM_DIRS_KEY               = { 'd' };
     
-    private static final String DEFAULT_SP_ATTR_NAME  = "sp";
+    private static final String              DEFAULT_SP_ATTR_NAME       = "sp";
     
-    private static final String LINK_TARGET_ATTR_NAME = "lt";
+    private static final String              LINK_TARGET_ATTR_NAME      = "lt";
     
-    private DatabaseManager     dbMan;
+    protected static final String            OSD_POL_ATTR_NAME          = "osdPol";
     
-    private Database            database;
+    protected static final String            REPL_POL_ATTR_NAME         = "replPol";
     
-    private final String        volumeName;
+    protected static final String            AC_POL_ATTR_NAME           = "acPol";
     
-    public BabuDBStorageManager(BabuDB db, String volumeName, String volumeId) {
+    protected static final String            AUTO_REPL_FACTOR_ATTR_NAME = "replFactor";
+    
+    protected static final String            VOL_ID_ATTR_NAME           = "volId";
+    
+    protected static final int[]             ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX,
+        ACL_INDEX, FILE_ID_INDEX, VOLUME_INDEX                         };
+    
+    private final DatabaseManager            dbMan;
+    
+    private final SnapshotManager            snapMan;
+    
+    private final Database                   database;
+    
+    private final List<VolumeChangeListener> vcListeners;
+    
+    private final BabuDBVolumeInfo           volume;
+    
+    /**
+     * Instantiates a storage manager by loading an existing volume database.
+     * 
+     * @param dbs
+     *            the database system
+     * @param db
+     *            the database
+     */
+    public BabuDBStorageManager(BabuDB dbs, Database db) throws DatabaseException {
         
-        this.dbMan = db.getDatabaseManager();
-        this.volumeName = volumeName;
+        this.dbMan = dbs.getDatabaseManager();
+        this.snapMan = dbs.getSnapshotManager();
+        this.database = db;
+        this.vcListeners = new LinkedList<VolumeChangeListener>();
         
+        volume = new BabuDBVolumeInfo();
+        volume.init(this);
+    }
+    
+    /**
+     * Instantiates a storage manager by creating a new database.
+     * 
+     * @param dbs
+     *            the database system
+     * @param volumeId
+     *            the volume ID
+     */
+    public BabuDBStorageManager(BabuDB dbs, String volumeId) throws DatabaseException {
+        
+        this.dbMan = dbs.getDatabaseManager();
+        this.snapMan = dbs.getSnapshotManager();
+        this.vcListeners = new LinkedList<VolumeChangeListener>();
+        
+        Database database = null;
         try {
-            // first, try to create a new database; if it already exists, an
-            // exception will be thrown
-            this.database = dbMan.createDatabase(volumeId, 5);
+            // create the database
+            database = dbMan.createDatabase(volumeId, 5);
             
         } catch (BabuDBException e) {
-            // database already exists
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this, "database '%s' loaded", volumeId);
-            
-            try {
-                this.database = dbMan.getDatabase(volumeId);
-            } catch (BabuDBException e1) {
-                Logging.logError(Logging.LEVEL_ERROR, this, e1);
-            }
+            // database already exists; should never occur!
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
         }
+        
+        this.database = database;
+        this.volume = new BabuDBVolumeInfo();
+        
+    }
+    
+    public void init(String volumeName, short fileAccessPolicyId, short[] osdPolicy, short[] replPolicy,
+        int autoReplFactor, String ownerId, String owningGroupId, int perms, ACLEntry[] acl,
+        org.xtreemfs.interfaces.StripingPolicy rootDirDefSp, AtomicDBUpdate update) throws DatabaseException {
+        
+        // atime, ctime, mtime
+        int time = (int) (TimeSync.getGlobalTime() / 1000);
+        
+        // create the root directory; the name is the database name
+        createDir(1, 0, volumeName, time, time, time, ownerId, owningGroupId, perms, 0, update);
+        setLastFileId(1, update);
+        
+        volume.init(this, database.getName(), volumeName, osdPolicy, replPolicy, fileAccessPolicyId,
+            autoReplFactor, update);
+        
+        // set the default striping policy
+        if (rootDirDefSp != null)
+            setDefaultStripingPolicy(1, rootDirDefSp, update);
+        
+        if (acl != null)
+            for (ACLEntry entry : acl)
+                setACLEntry(1L, entry.getEntity(), entry.getRights(), update);
+        
+        notifyVolumeChange(volume);
+    }
+    
+    @Override
+    public VolumeInfo getVolumeInfo() {
+        return volume;
+    }
+    
+    @Override
+    public void deleteDatabase() throws DatabaseException {
+        try {
+            dbMan.deleteDatabase(database.getName());
+            notifyVolumeDelete(volume.getId());
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+    
+    @Override
+    public void addVolumeChangeListener(VolumeChangeListener listener) {
+        vcListeners.add(listener);
+        notifyVolumeChange(volume);
     }
     
     @Override
@@ -151,26 +246,6 @@ public class BabuDBStorageManager implements StorageManager {
     @Override
     public XAttr createXAttr(long fileId, String owner, String key, String value) {
         return new BufferBackedXAttr(fileId, owner, key, value, (short) 0);
-    }
-    
-    @Override
-    public void init(String ownerId, String owningGroupId, int perms, ACLEntry[] acl,
-        org.xtreemfs.interfaces.StripingPolicy rootDirDefSp, AtomicDBUpdate update) throws DatabaseException {
-        
-        // atime, ctime, mtime
-        int time = (int) (TimeSync.getGlobalTime() / 1000);
-        
-        // create the root directory; the name is the database name
-        createDir(1, 0, volumeName, time, time, time, ownerId, owningGroupId, perms, 0, update);
-        setLastFileId(1, update);
-        
-        // set the default striping policy
-        if (rootDirDefSp != null)
-            setDefaultStripingPolicy(1, rootDirDefSp, update);
-        
-        if (acl != null)
-            for (ACLEntry entry : acl)
-                setACLEntry(1L, entry.getEntity(), entry.getRights(), update);
     }
     
     @Override
@@ -241,7 +316,7 @@ public class BabuDBStorageManager implements StorageManager {
         update.addUpdate(FILE_ID_INDEX, BabuDBStorageHelper.createFileIdIndexKey(fileId, (byte) 3),
             BabuDBStorageHelper.createFileIdIndexValue(parentId, fileName));
         
-        setVolumeSize(getVolumeSize() + size, update);
+        volume.updateVolumeSize(size, update);
         updateCount(NUM_FILES_KEY, true, update);
         
         return fileMetadata;
@@ -367,7 +442,7 @@ public class BabuDBStorageManager implements StorageManager {
                 if (file.isDirectory())
                     updateCount(NUM_DIRS_KEY, false, update);
                 else {
-                    setVolumeSize(getVolumeSize() - file.getSize(), update);
+                    updateVolumeSize(-file.getSize(), update);
                     updateCount(NUM_FILES_KEY, false, update);
                 }
                 
@@ -414,12 +489,7 @@ public class BabuDBStorageManager implements StorageManager {
     public Iterator<FileMetadata> getChildren(long parentId) throws DatabaseException {
         
         try {
-            
-            byte[] prefix = BabuDBStorageHelper.createFilePrefixKey(parentId);
-            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(FILE_INDEX, prefix);
-            
-            return new ChildrenIterator(database, it);
-            
+            return BabuDBStorageHelper.getChildren(database, parentId);
         } catch (Exception exc) {
             throw new DatabaseException(exc);
         }
@@ -441,16 +511,6 @@ public class BabuDBStorageManager implements StorageManager {
         } catch (Exception exc) {
             throw new DatabaseException(exc);
         }
-    }
-    
-    @Override
-    public String getVolumeId() {
-        return database.getName();
-    }
-    
-    @Override
-    public String getVolumeName() {
-        return this.volumeName;
     }
     
     @Override
@@ -701,70 +761,78 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public void setVolumeSize(long newSize, AtomicDBUpdate update) throws DatabaseException {
-        
-        byte[] sizeBytes = new byte[8];
-        ByteBuffer.wrap(sizeBytes).putLong(0, newSize);
-        
-        update.addUpdate(VOLUME_INDEX, VOL_SIZE_KEY, sizeBytes);
-    }
-    
-    @Override
-    public long getVolumeSize() throws DatabaseException {
+    public void snapshot(String snapName, long parentId, String dirName, boolean recursive)
+        throws DatabaseException {
         
         try {
-            byte[] sizeBytes = BabuDBStorageHelper.getVolumeMetadata(database, VOL_SIZE_KEY);
-            return ByteBuffer.wrap(sizeBytes).getLong(0);
+            
+            // determine the prefixes for the snapshot
+            byte[][][] prefixes = null;
+            byte[][][] excludedKeys = null;
+            
+            FileMetadata snapDir = getMetadata(parentId, dirName);
+            
+            // for a full volume snapshot, simply use a 'null' prefix (full:
+            // dirID == 1 && recursive)
+            if (snapDir.getId() != 1 || !recursive) {
+                
+                // get the IDs of all files and directories contained in the
+                // given directory; if recursive == true, include subdirectories
+                List<FileMetadata> nestedFiles = new LinkedList<FileMetadata>();
+                BabuDBStorageHelper.getNestedFiles(nestedFiles, database, parentId, recursive);
+                
+                List<byte[]> fileIndexPrefixes = new ArrayList<byte[]>(nestedFiles.size());
+                List<byte[]> filePrefixes = new ArrayList<byte[]>(nestedFiles.size());
+                List<byte[]> exclPrefixes = new ArrayList<byte[]>(nestedFiles.size());
+                
+                // determine the key prefixes to include and exclude
+                for (FileMetadata file : nestedFiles) {
+                    
+                    byte[] prefixKey = BabuDBStorageHelper.createFilePrefixKey(file.getId());
+                    
+                    if (file.isDirectory()) {
+                        if (!recursive)
+                            exclPrefixes.add(prefixKey);
+                        else {
+                            fileIndexPrefixes.add(prefixKey);
+                            filePrefixes.add(prefixKey);
+                        }
+                    } else
+                        filePrefixes.add(prefixKey);
+                }
+                
+                byte[] prefixKey = BabuDBStorageHelper.createFilePrefixKey(snapDir.getId());
+                fileIndexPrefixes.add(prefixKey);
+                filePrefixes.add(prefixKey);
+                
+                byte[][] idxPrefixes = fileIndexPrefixes.toArray(new byte[fileIndexPrefixes.size()][]);
+                byte[][] fPrefixes = filePrefixes.toArray(new byte[filePrefixes.size()][]);
+                byte[][] xPrefixes = exclPrefixes.toArray(new byte[exclPrefixes.size()][]);
+                
+                Arrays.sort(idxPrefixes, DefaultByteRangeComparator.getInstance());
+                Arrays.sort(fPrefixes, DefaultByteRangeComparator.getInstance());
+                
+                // FILE_INDEX, XATTRS_INDEX, ACL_INDEX, FILE_ID_INDEX,
+                // VOLUME_INDEX
+                prefixes = new byte[][][] { idxPrefixes, fPrefixes, fPrefixes, fPrefixes, null };
+                
+                if (!recursive)
+                    excludedKeys = new byte[][][] { null, xPrefixes, xPrefixes, xPrefixes, null };
+            }
+            
+            // create the snapshot
+            SnapshotConfig snap = new DefaultSnapshotConfig(snapName, ALL_INDICES, prefixes, excludedKeys);
+            snapMan.createPersistentSnapshot(database.getName(), snap);
             
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
-    }
-    
-    private void updateCount(byte[] key, boolean increment, AtomicDBUpdate update) throws DatabaseException {
         
-        try {
-            byte[] countBytes = BabuDBStorageHelper.getVolumeMetadata(database, key);
-            ByteBuffer countBuf = ByteBuffer.wrap(countBytes);
-            countBuf.putLong(0, countBuf.getLong() + (increment ? 1 : -1));
-            
-            update.addUpdate(VOLUME_INDEX, key, countBytes);
-        } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
-        }
     }
     
     @Override
-    public long getNumFiles() throws DatabaseException {
-        
-        try {
-            byte[] sizeBytes = BabuDBStorageHelper.getVolumeMetadata(database, NUM_FILES_KEY);
-            return ByteBuffer.wrap(sizeBytes).getLong(0);
-            
-        } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
-        }
-    }
-    
-    @Override
-    public long getNumDirs() throws DatabaseException {
-        
-        try {
-            byte[] sizeBytes = BabuDBStorageHelper.getVolumeMetadata(database, NUM_DIRS_KEY);
-            return ByteBuffer.wrap(sizeBytes).getLong(0);
-            
-        } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
-        }
-    }
-    
-    @Override
-    public void delete() throws DatabaseException {
-        try {
-            dbMan.deleteDatabase(database.getName());
-        } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
-        }
+    public String[] getAllSnapshots() {
+        return snapMan.getAllSnapshots(volume.getId());
     }
     
     public void dump() throws BabuDBException {
@@ -788,6 +856,69 @@ public class BabuDBStorageManager implements StorageManager {
     
     public void dumpDB(BufferedWriter xmlWriter) throws DatabaseException, IOException {
         DBAdminHelper.dumpVolume(xmlWriter, this);
+    }
+    
+    protected void updateVolumeSize(long diff, AtomicDBUpdate update) throws DatabaseException {
+        
+        long newSize = getVolumeSize() + diff;
+        
+        byte[] sizeBytes = new byte[8];
+        ByteBuffer.wrap(sizeBytes).putLong(0, newSize);
+        
+        update.addUpdate(VOLUME_INDEX, VOL_SIZE_KEY, sizeBytes);
+    }
+    
+    protected long getVolumeSize() throws DatabaseException {
+        try {
+            byte[] sizeBytes = BabuDBStorageHelper.getVolumeMetadata(database, VOL_SIZE_KEY);
+            return ByteBuffer.wrap(sizeBytes).getLong(0);
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+    
+    protected long getNumFiles() throws DatabaseException {
+        try {
+            byte[] sizeBytes = BabuDBStorageHelper.getVolumeMetadata(database, NUM_FILES_KEY);
+            return ByteBuffer.wrap(sizeBytes).getLong(0);
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+    
+    protected long getNumDirs() throws DatabaseException {
+        try {
+            byte[] sizeBytes = BabuDBStorageHelper.getVolumeMetadata(database, NUM_DIRS_KEY);
+            return ByteBuffer.wrap(sizeBytes).getLong(0);
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
+    }
+    
+    protected void notifyVolumeChange(VolumeInfo vol) {
+        for (VolumeChangeListener listener : vcListeners)
+            listener.volumeChanged(vol);
+    }
+    
+    protected void notifyVolumeDelete(String volId) {
+        for (VolumeChangeListener listener : vcListeners)
+            listener.volumeDeleted(volId);
+    }
+    
+    private void updateCount(byte[] key, boolean increment, AtomicDBUpdate update) throws DatabaseException {
+        
+        try {
+            byte[] countBytes = BabuDBStorageHelper.getVolumeMetadata(database, key);
+            ByteBuffer countBuf = ByteBuffer.wrap(countBytes);
+            countBuf.putLong(0, countBuf.getLong() + (increment ? 1 : -1));
+            
+            update.addUpdate(VOLUME_INDEX, key, countBytes);
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
     }
     
 }

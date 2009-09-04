@@ -37,8 +37,8 @@ import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.metadata.FileMetadata;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
@@ -60,8 +60,8 @@ public class DeleteVolumeOperation extends MRCOperation {
             && !master.getConfig().getAdminPassword().equals(rq.getDetails().password))
             throw new UserException(ErrNo.EPERM, "invalid password");
         
-        final VolumeInfo volume = master.getVolumeManager().getVolumeByName(rqArgs.getVolume_name());
-        final StorageManager sMan = master.getVolumeManager().getStorageManager(volume.getId());
+        final StorageManager sMan = master.getVolumeManager().getStorageManagerByName(rqArgs.getVolume_name());
+        final VolumeInfo volume = sMan.getVolumeInfo();
         
         // get the volume's root directory
         FileMetadata file = sMan.getMetadata(0, volume.getName());

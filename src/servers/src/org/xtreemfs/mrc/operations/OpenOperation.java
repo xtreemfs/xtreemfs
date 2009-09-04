@@ -50,15 +50,14 @@ import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeInfo;
+import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLocList;
-import org.xtreemfs.mrc.replication.ReplicaSelectionPolicy;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.mrc.volumes.VolumeManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
@@ -87,9 +86,9 @@ public class OpenOperation extends MRCOperation {
         
         Path p = new Path(rqArgs.getPath());
         
-        VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-        StorageManager sMan = vMan.getStorageManager(volume.getId());
+        StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
         PathResolver res = new PathResolver(sMan, p);
+        VolumeInfo volume = sMan.getVolumeInfo();
         
         // check whether the path prefix is searchable
         faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
@@ -130,8 +129,8 @@ public class OpenOperation extends MRCOperation {
                     return;
                 }
                 
-                volume = vMan.getVolumeByName(p.getComp(0));
-                sMan = vMan.getStorageManager(volume.getId());
+                sMan = vMan.getStorageManagerByName(p.getComp(0));
+                volume = sMan.getVolumeInfo();
                 res = new PathResolver(sMan, p);
                 file = res.getFile();
             }
@@ -200,17 +199,18 @@ public class OpenOperation extends MRCOperation {
             
             // create a replica with the default striping policy together
             // with a set of feasible OSDs from the OSD status manager
-            Replica replica = MRCHelper.createReplica(null, sMan, master.getOSDStatusManager(), master
-                    .getPolicyContainer(), volume, res.getParentDirId(), rqArgs.getPath(),
-                ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress());
+            Replica replica = MRCHelper.createReplica(null, sMan, master.getOSDStatusManager(), volume, res
+                    .getParentDirId(), rqArgs.getPath(), ((InetSocketAddress) rq.getRPCRequest()
+                    .getClientIdentity()).getAddress(), xLocList);
             
             ReplicaSet replicas = new ReplicaSet();
             replicas.add(replica);
             
             xLocSet = new XLocSet(replicas, 0, file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY
                 : Constants.REPL_UPDATE_PC_NONE, 0);
+            xLocList = Converter.xLocSetToXLocList(sMan, xLocSet);
             
-            file.setXLocList(Converter.xLocSetToXLocList(sMan, xLocSet));
+            file.setXLocList(xLocList);
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
             if (Logging.isDebug())
@@ -225,21 +225,19 @@ public class OpenOperation extends MRCOperation {
                 xLocSet.setRead_only_file_size(file.getSize());
         }
         
-        // TODO: set 'readOnlyOnClose' according to the replication policy
-        boolean readOnlyOnClose = false;
+        // set 'replicateOnClose' if the policy is set accordingly
+        boolean replicateOnClose = volume.getAutoReplFactor() > 1;
         
         // re-order the replica list, based on the replica selection policy
-        ReplicaSelectionPolicy rsPol = master.getPolicyContainer().getReplicaSelectionPolicy(
-            volume.getReplicaPolicyId());
-        xLocSet.setReplicas(rsPol.getSortedReplicaList(xLocSet.getReplicas(), ((InetSocketAddress) rq
-                .getRPCRequest().getClientIdentity()).getAddress()));
+        xLocSet.setReplicas(master.getOSDStatusManager().getSortedReplicaList(volume.getId(),
+            ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress(), xLocList));
         
         // issue a new capability
         Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), TimeSync
                 .getGlobalTime()
             / 1000 + Capability.DEFAULT_VALIDITY,
             ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress().getHostAddress(),
-            trEpoch, readOnlyOnClose, master.getConfig().getCapabilitySecret());
+            trEpoch, replicateOnClose, master.getConfig().getCapabilitySecret());
         
         if (Logging.isDebug())
             Logging
@@ -283,5 +281,4 @@ public class OpenOperation extends MRCOperation {
             }
         }*/
     }
-    
 }

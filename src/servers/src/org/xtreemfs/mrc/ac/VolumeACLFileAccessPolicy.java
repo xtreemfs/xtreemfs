@@ -134,7 +134,7 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
             throw new MRCException(exc);
         }
         
-        throw new UserException(ErrNo.EACCES, "access denied, volumeId = " + sMan.getVolumeId()
+        throw new UserException(ErrNo.EACCES, "access denied, volumeId = " + sMan.getVolumeInfo().getId()
             + ", fileId = " + file.getId() + ", accessMode = \"" + accessMode + "\"");
     }
     
@@ -143,7 +143,7 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
         List<String> groupIds) throws UserException, MRCException {
         
         try {
-            FileMetadata rootDir = sMan.getMetadata(0, sMan.getVolumeName());
+            FileMetadata rootDir = sMan.getMetadata(0, sMan.getVolumeInfo().getName());
             checkPermission(sMan, rootDir, 0, userId, groupIds, AM_READ);
         } catch (Exception exc) {
             throw new MRCException(exc);
@@ -156,7 +156,7 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
         
         try {
             
-            if (!sMan.getMetadata(0, sMan.getVolumeName()).getOwnerId().equals(userId))
+            if (!sMan.getMetadata(0, sMan.getVolumeInfo().getName()).getOwnerId().equals(userId))
                 throw new UserException(ErrNo.EPERM, "no privileged permissions granted");
             
         } catch (UserException exc) {

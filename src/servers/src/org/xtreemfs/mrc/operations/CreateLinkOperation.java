@@ -33,12 +33,11 @@ import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.mrc.volumes.VolumeManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
@@ -66,8 +65,7 @@ public class CreateLinkOperation extends MRCOperation {
         if (!lp.getComp(0).equals(tp.getComp(0)))
             throw new UserException(ErrNo.EXDEV, "cannot create hard links across volume boundaries");
         
-        final VolumeInfo volume = vMan.getVolumeByName(lp.getComp(0));
-        final StorageManager sMan = vMan.getStorageManager(volume.getId());
+        final StorageManager sMan = vMan.getStorageManagerByName(lp.getComp(0));
         final PathResolver lRes = new PathResolver(sMan, lp);
         final PathResolver tRes = new PathResolver(sMan, tp);
         

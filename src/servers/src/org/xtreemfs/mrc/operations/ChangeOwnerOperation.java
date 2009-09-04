@@ -35,12 +35,11 @@ import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.mrc.volumes.VolumeManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
@@ -64,8 +63,7 @@ public class ChangeOwnerOperation extends MRCOperation {
         
         Path p = new Path(rqArgs.getPath());
         
-        VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-        StorageManager sMan = vMan.getStorageManager(volume.getId());
+        StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
         PathResolver res = new PathResolver(sMan, p);
         
         // check whether the path prefix is searchable
@@ -90,8 +88,7 @@ public class ChangeOwnerOperation extends MRCOperation {
                 return;
             }
             
-            volume = vMan.getVolumeByName(p.getComp(0));
-            sMan = vMan.getStorageManager(volume.getId());
+            sMan = vMan.getStorageManagerByName(p.getComp(0));
             res = new PathResolver(sMan, p);
             file = res.getFile();
         }

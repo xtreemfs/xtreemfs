@@ -35,6 +35,7 @@ import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
@@ -42,7 +43,6 @@ import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
-import org.xtreemfs.mrc.volumes.VolumeManager;
 
 /**
  * 
@@ -69,7 +69,7 @@ public class RestoreFileOperation extends MRCOperation {
         // parse volume and file ID from global file ID
         GlobalFileIdResolver idRes = new GlobalFileIdResolver(rqArgs.getFile_id());
         
-        final Path p = new Path(vMan.getVolumeById(idRes.getVolumeId()).getName() + "/"
+        final Path p = new Path(vMan.getStorageManager(idRes.getVolumeId()).getVolumeInfo().getName() + "/"
             + rqArgs.getFile_path());
         final StorageManager sMan = vMan.getStorageManager(idRes.getVolumeId());
         

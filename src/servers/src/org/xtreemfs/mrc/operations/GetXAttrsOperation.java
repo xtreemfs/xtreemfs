@@ -26,6 +26,7 @@ package org.xtreemfs.mrc.operations;
 
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.MRCInterface.listxattrRequest;
@@ -34,21 +35,20 @@ import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
 import org.xtreemfs.mrc.utils.MRCHelper.SysAttrs;
-import org.xtreemfs.mrc.volumes.VolumeManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
  * @author stender
  */
 public class GetXAttrsOperation extends MRCOperation {
-        
+    
     public GetXAttrsOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -65,8 +65,7 @@ public class GetXAttrsOperation extends MRCOperation {
         
         final Path p = new Path(rqArgs.getPath());
         
-        final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-        final StorageManager sMan = vMan.getStorageManager(volume.getId());
+        final StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
         final PathResolver res = new PathResolver(sMan, p);
         
         // check whether the path prefix is searchable
@@ -96,10 +95,15 @@ public class GetXAttrsOperation extends MRCOperation {
         for (SysAttrs attr : SysAttrs.values()) {
             String key = "xtreemfs." + attr.toString();
             Object value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(),
-                volume, res.toString(), file, attr.toString());
+                res.toString(), file, attr.toString());
             if (!value.equals(""))
                 attrNames.add(key);
         }
+        
+        // include policy attributes
+        List<String> policyAttrNames = MRCHelper.getPolicyAttrNames(sMan);
+        for (String attr : policyAttrNames)
+            attrNames.add("xtreemfs." + MRCHelper.POLICY_ATTR_PREFIX + "." + attr);
         
         StringSet names = new StringSet();
         Iterator<String> it = attrNames.iterator();

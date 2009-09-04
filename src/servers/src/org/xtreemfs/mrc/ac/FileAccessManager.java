@@ -37,9 +37,9 @@ import org.xtreemfs.mrc.PolicyContainer;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.mrc.volumes.VolumeManager;
 
 /**
  * This class is responsible for checking policy-based file access.
@@ -89,7 +89,8 @@ public class FileAccessManager {
         if (superUser)
             return;
         
-        getVolumeFileAccessPolicy(sMan.getVolumeId()).checkSearchPermission(sMan, path, userId, groupIds);
+        getVolumeFileAccessPolicy(sMan.getVolumeInfo().getId()).checkSearchPermission(sMan, path, userId,
+            groupIds);
     }
     
     public void checkPrivilegedPermissions(StorageManager sMan, FileMetadata file, String userId,
@@ -98,15 +99,15 @@ public class FileAccessManager {
         if (superUser)
             return;
         
-        getVolumeFileAccessPolicy(sMan.getVolumeId())
-                .checkPrivilegedPermissions(sMan, file, userId, groupIds);
+        getVolumeFileAccessPolicy(sMan.getVolumeInfo().getId()).checkPrivilegedPermissions(sMan, file,
+            userId, groupIds);
     }
     
     public void checkPermission(int flags, StorageManager sMan, FileMetadata file, long parentDirId,
         String userId, boolean superUser, List<String> groupIds) throws UserException, MRCException {
         
-        checkPermission(translateAccessFlags(sMan.getVolumeId(), flags), sMan, file, parentDirId, userId,
-            superUser, groupIds);
+        checkPermission(translateAccessFlags(sMan.getVolumeInfo().getId(), flags), sMan, file, parentDirId,
+            userId, superUser, groupIds);
     }
     
     public void checkPermission(String accessMode, StorageManager sMan, FileMetadata file, long parentDirId,
@@ -115,8 +116,8 @@ public class FileAccessManager {
         if (superUser)
             return;
         
-        getVolumeFileAccessPolicy(sMan.getVolumeId()).checkPermission(sMan, file, parentDirId, userId,
-            groupIds, accessMode);
+        getVolumeFileAccessPolicy(sMan.getVolumeInfo().getId()).checkPermission(sMan, file, parentDirId,
+            userId, groupIds, accessMode);
     }
     
     public String translateAccessFlags(String volumeId, int accessMode) throws MRCException {
@@ -125,32 +126,32 @@ public class FileAccessManager {
     
     public int getPosixAccessMode(StorageManager sMan, FileMetadata file, String userId, List<String> groupIds)
         throws MRCException {
-        return getVolumeFileAccessPolicy(sMan.getVolumeId()).getPosixAccessRights(sMan, file, userId,
-            groupIds);
+        return getVolumeFileAccessPolicy(sMan.getVolumeInfo().getId()).getPosixAccessRights(sMan, file,
+            userId, groupIds);
     }
     
     public void setPosixAccessMode(StorageManager sMan, FileMetadata file, long parentId, String userId,
         List<String> groupIds, int posixRights, AtomicDBUpdate update) throws MRCException, UserException {
-        getVolumeFileAccessPolicy(sMan.getVolumeId()).setPosixAccessRights(sMan, file, parentId, userId,
-            groupIds, posixRights, update);
+        getVolumeFileAccessPolicy(sMan.getVolumeInfo().getId()).setPosixAccessRights(sMan, file, parentId,
+            userId, groupIds, posixRights, update);
     }
     
     public Map<String, Object> getACLEntries(StorageManager sMan, FileMetadata file) throws MRCException {
-        return getVolumeFileAccessPolicy(sMan.getVolumeId()).getACLEntries(sMan, file);
+        return getVolumeFileAccessPolicy(sMan.getVolumeInfo().getId()).getACLEntries(sMan, file);
     }
     
     public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
         List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update) throws MRCException,
         UserException {
-        getVolumeFileAccessPolicy(sMan.getVolumeId()).setACLEntries(sMan, file, parentId, userId, groupIds,
-            entries, update);
+        getVolumeFileAccessPolicy(sMan.getVolumeInfo().getId()).setACLEntries(sMan, file, parentId, userId,
+            groupIds, entries, update);
     }
     
     public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
         List<String> groupIds, List<Object> entities, AtomicDBUpdate update) throws MRCException,
         UserException {
-        getVolumeFileAccessPolicy(sMan.getVolumeId()).removeACLEntries(sMan, file, parentId, userId,
-            groupIds, entities, update);
+        getVolumeFileAccessPolicy(sMan.getVolumeInfo().getId()).removeACLEntries(sMan, file, parentId,
+            userId, groupIds, entities, update);
     }
     
     public FileAccessPolicy getFileAccessPolicy(short policyId) {
@@ -177,8 +178,8 @@ public class FileAccessManager {
     protected FileAccessPolicy getVolumeFileAccessPolicy(String volumeId) throws MRCException {
         
         try {
-            short policyId = volMan.getVolumeById(volumeId).getAcPolicyId();
             
+            short policyId = volMan.getStorageManager(volumeId).getVolumeInfo().getAcPolicyId();
             FileAccessPolicy policy = getFileAccessPolicy(policyId);
             
             if (policy == null)

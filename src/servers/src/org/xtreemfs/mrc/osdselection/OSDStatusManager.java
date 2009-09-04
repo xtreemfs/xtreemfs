@@ -25,22 +25,24 @@
 package org.xtreemfs.mrc.osdselection;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.OutputUtils;
-import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
-import org.xtreemfs.mrc.MRCConfig;
-import org.xtreemfs.mrc.PolicyContainer;
-import org.xtreemfs.mrc.volumes.VolumeChangeListener;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
+import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.VolumeChangeListener;
+import org.xtreemfs.mrc.database.VolumeInfo;
+import org.xtreemfs.mrc.metadata.XLocList;
 
 /**
  * Checks regularly for suitable OSDs for each volume.
@@ -50,151 +52,80 @@ import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 public class OSDStatusManager extends LifeCycleThread implements VolumeChangeListener {
     
     /**
-     * Volume and policy record.
-     */
-    public static class VolumeOSDs {
-        /**
-         * volume ID
-         */
-        public String     volID;
-        
-        /**
-         * policyID used by the volume.
-         */
-        public short      selectionPolicyID;
-        
-        /**
-         * OSD policy arguments used by the volume
-         */
-        public String     selectionPolicyArgs;
-        
-        /**
-         * Map of suitable OSDs for that volume. Can be empty.
-         */
-        public ServiceSet usableOSDs;
-    }
-    
-    /**
-     * Policies available in the system.
-     */
-    private static final Map<Short, OSDSelectionPolicy> policies            = new HashMap<Short, OSDSelectionPolicy>();
-    
-    /**
      * Interval in ms to wait between two checks.
      */
-    private int                                         checkIntervalMillis = 1000 * 5;
+    private int                                checkIntervalMillis = 1000 * 5;
     
     /**
      * A list of volumes registered with the thread.
      */
-    private final Map<String, VolumeOSDs>               volumeMap;
+    private final Map<String, VolumeOSDFilter> volumeMap;
     
     /**
      * The latest set of all known OSDs fetched from the Directory Service.
      */
-    private ServiceSet                                  knownOSDs;
+    private ServiceSet                         knownOSDs;
     
     /**
-     * An client used to send requests to the Directory Service.
+     * A map containing all known OSDs sorted by their UUIDs.
      */
-    private final DIRClient                             client;
+    private Map<String, Service>               knownOSDMap;
     
     /**
      * Thread shuts down if true.
      */
-    private boolean                                     quit                = false;
+    private boolean                            quit                = false;
     
     /**
-     * Enables debugging output.
+     * Reference to the MRCRequestDispatcher.
      */
-    private boolean                                     debug               = false;
+    private MRCRequestDispatcher               master;
     
-    /**
-     * The configuration for the component.
-     */
-    private MRCConfig                                   config;
-    
-    private final PolicyContainer                       policyContainer;
-    
-    static {
-        policies.put(RandomSelectionPolicy.POLICY_ID, new RandomSelectionPolicy());
-        policies.put(ProximitySelectionPolicy.POLICY_ID, new ProximitySelectionPolicy());
-    }
-    
-    /**
-     * Creates a new instance of OSDStatusManager
-     * 
-     * @param client
-     *            a DIRClient used for contacting the direcotory service
-     */
-    public OSDStatusManager(MRCConfig config, DIRClient client, PolicyContainer policyContainer)
-        throws IOException {
+    public OSDStatusManager(MRCRequestDispatcher master) throws IOException {
         
         super("OSDStatusManager");
         
-        this.policyContainer = policyContainer;
-        this.config = config;
+        this.master = master;
         
-        volumeMap = new HashMap<String, VolumeOSDs>();
+        volumeMap = new HashMap<String, VolumeOSDFilter>();
         knownOSDs = new ServiceSet();
+        knownOSDMap = new HashMap<String, Service>();
         
-        this.client = client;
-        
-        int interval = config.getOsdCheckInterval();
+        int interval = master.getConfig().getOsdCheckInterval();
         checkIntervalMillis = 1000 * interval;
     }
     
-    public void volumeChanged(int mod, VolumeInfo volume) {
+    public synchronized void volumeChanged(VolumeInfo volume) {
         
-        switch (mod) {
+        final String volId = volume.getId();
+        VolumeOSDFilter vol = volumeMap.get(volId);
         
-        case VolumeChangeListener.MOD_CHANGED:
-
-            synchronized (this) {
-                
-                final String volId = volume.getId();
-                VolumeOSDs vol = volumeMap.get(volId);
-                
-                if (vol == null) {
-                    
-                    vol = new VolumeOSDs();
-                    vol.volID = volume.getId();
-                    vol.selectionPolicyID = volume.getOsdPolicyId();
-                    vol.selectionPolicyArgs = volume.getOsdPolicyArgs();
-                    vol.usableOSDs = new ServiceSet();
-                    
-                    volumeMap.put(volId, vol);
-                    
-                } else {
-                    vol.selectionPolicyID = volume.getOsdPolicyId();
-                    vol.selectionPolicyArgs = volume.getOsdPolicyArgs();
-                    vol.usableOSDs.clear();
-                }
-                
-                this.notifyAll();
-            }
-            
-            break;
-        
-        case VolumeChangeListener.MOD_DELETED:
-
-            synchronized (this) {
-                volumeMap.remove(volume.getId());
-            }
-            
-            break;
+        if (vol == null) {
+            vol = new VolumeOSDFilter(master, knownOSDMap);
+            volumeMap.put(volId, vol);
         }
+        
+        try {
+            vol.init(volume);
+        } catch (DatabaseException e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+        }
+        
+        this.notifyAll();
+    }
+    
+    public synchronized void volumeDeleted(String volumeId) {
+        volumeMap.remove(volumeId);
+        
     }
     
     /**
      * Shuts down the thread.
      */
-    public void shutdown() {
-        synchronized (this) {
-            quit = true;
-            this.interrupt();
-            this.notifyAll();
-        }
+    public synchronized void shutdown() {
+        quit = true;
+        this.interrupt();
+        this.notifyAll();
     }
     
     /**
@@ -205,7 +136,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         // initially fetch the list of OSDs from the Directory Service
         RPCResponse<ServiceSet> r = null;
         try {
-            r = client.xtreemfs_service_get_by_type(null, ServiceType.SERVICE_TYPE_OSD);
+            r = master.getDirClient().xtreemfs_service_get_by_type(null, ServiceType.SERVICE_TYPE_OSD);
             knownOSDs = r.get();
         } catch (Exception exc) {
             this.notifyCrashed(exc);
@@ -217,7 +148,8 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         notifyStarted();
         if (Logging.isInfo())
             Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this,
-                "OSD status manager operational, using DIR %s", config.getDirectoryService().toString());
+                "OSD status manager operational, using DIR %s", master.getConfig().getDirectoryService()
+                        .toString());
         
         while (!quit) {
             
@@ -236,7 +168,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
             try {
                 // request list of registered OSDs from Directory
                 // Service
-                r = client.xtreemfs_service_get_by_type(null, ServiceType.SERVICE_TYPE_OSD);
+                r = master.getDirClient().xtreemfs_service_get_by_type(null, ServiceType.SERVICE_TYPE_OSD);
                 knownOSDs = r.get();
                 
                 Logging
@@ -265,58 +197,54 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
      * 
      * @param volumeId
      *            the volume id
-     * @return a list of feasible OSDs. Each list entry contains a mapping from
-     *         keys to values which describes a certain OSD
+     * @param clientIP
+     *            the client's IP address
+     * @param currentXLoc
+     *            the file's current XLoc list
+     * @param numOSDs
+     *            the number of requested OSDs
+     * @return a list of feasible OSDs
      */
-    public synchronized ServiceSet getUsableOSDs(String volumeId) {
+    public synchronized ServiceSet getUsableOSDs(String volumeId, InetAddress clientIP, XLocList currentXLoc,
+        int numOSDs) {
         
-        VolumeOSDs vol = volumeMap.get(volumeId);
+        VolumeOSDFilter vol = volumeMap.get(volumeId);
         if (vol == null) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
                 "no volume registered at OSDStatusManager with ID '%s'", volumeId);
             return null;
         }
         
-        // if no OSDs are assigned to the current volume, re-calculate the set
-        // of feasible OSDs from the last set of OSDs received from the
-        // Directory Service
-        if (vol.usableOSDs.size() == 0) {
-            
-            try {
-                OSDSelectionPolicy policy = policyContainer.getOSDSelectionPolicy(vol.selectionPolicyID);
-                
-                if (knownOSDs != null)
-                    vol.usableOSDs = policy.getUsableOSDs(knownOSDs, vol.selectionPolicyArgs);
-                else
-                    Logging
-                            .logMessage(
-                                Logging.LEVEL_WARN,
-                                Category.misc,
-                                this,
-                                "could not determine set of feasible OSDs for volume '%s': haven't yet received an OSD list from Directory Service!",
-                                vol.volID);
-                
-            } catch (Exception exc) {
-                Logging
-                        .logMessage(
-                            Logging.LEVEL_WARN,
-                            Category.misc,
-                            this,
-                            "could not determine set of feasible OSDs for volume '%s': no assignment policy available!",
-                            vol.volID);
-            }
-        }
-        
-        return vol.usableOSDs;
-        
+        // return a set of OSDs
+        return vol.filterByOSDSelectionPolicy(knownOSDs, clientIP, currentXLoc, numOSDs);
     }
     
-    public Map<String, Object> getCurrentStatus() {
-        Map<String, Object> map = new HashMap();
-        for (String volID : volumeMap.keySet()) {
-            map.put(volID, volumeMap.get(volID).usableOSDs);
+    public synchronized ServiceSet getUsableOSDs(String volumeId) {
+        
+        VolumeOSDFilter vol = volumeMap.get(volumeId);
+        if (vol == null) {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                "no volume registered at OSDStatusManager with ID '%s'", volumeId);
+            return null;
         }
-        return map;
+        
+        // return a set of OSDs
+        return vol.filterByOSDSelectionPolicy(knownOSDs);
+    }
+    
+    public synchronized ReplicaSet getSortedReplicaList(String volumeId, InetAddress clientIP,
+        XLocList currentXLoc) {
+        
+        VolumeOSDFilter vol = volumeMap.get(volumeId);
+        if (vol == null) {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
+                "no volume registered at OSDStatusManager with ID '%s'", volumeId);
+            return null;
+        }
+        
+        // return a sorted set of replicas
+        return vol.sortByReplicaSelectionPolicy(clientIP, currentXLoc);
+        
     }
     
     public synchronized void evaluateResponse(ServiceSet knownOSDs) {
@@ -336,28 +264,11 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "%s", osd.getUuid());
             }
         
-        for (VolumeOSDs vol : volumeMap.values()) {
-            
-            try {
-                
-                OSDSelectionPolicy policy = policyContainer.getOSDSelectionPolicy(vol.selectionPolicyID);
-                vol.usableOSDs = policy.getUsableOSDs(knownOSDs, vol.selectionPolicyArgs);
-                
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "OSDs for %s", vol.volID);
-                    if (vol.usableOSDs != null)
-                        for (Service osd : vol.usableOSDs) {
-                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this, "       %s", osd
-                                    .getUuid());
-                        }
-                }
-                
-            } catch (Exception exc) {
-                Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
-                    "policy ID %d selected for volume ID %s does not exist!", vol.selectionPolicyID,
-                    vol.volID);
-            }
-        }
+        // update the list of known OSDs
+        this.knownOSDs = knownOSDs;
+        knownOSDMap.clear();
+        for (Service osd : knownOSDs)
+            knownOSDMap.put(osd.getUuid(), osd);
     }
     
     /**
@@ -384,25 +295,5 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         }
         return free;
     }
-
-    public OSDSelectionPolicy getOSDSelectionPolicy(short policyId) {
-
-        OSDSelectionPolicy policy = policies.get(policyId);
-
-        // if the policy is not built-in, try to load it from the plug-in
-        // directory
-        if (policy == null) {
-            try {
-                policy = policyContainer.getOSDSelectionPolicy(policyId);
-                policies.put(policyId, policy);
-            } catch (Exception exc) {
-                Logging.logMessage(Logging.LEVEL_WARN, this,
-                    "could not load OSDSelectionPolicy with ID " + policyId);
-                Logging.logError(Logging.LEVEL_WARN, this, exc);
-            }
-        }
-
-        return policy;
-    }
-
+    
 }

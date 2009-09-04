@@ -30,78 +30,80 @@ import org.xtreemfs.osd.storage.CleanupThread;
 import org.xtreemfs.test.TestEnvironment;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class CleanupTest extends TestCase {
-
+    
     private TestEnvironment env;
-
+    
     public CleanupTest() {
         super();
         Logging.start(Logging.LEVEL_ERROR);
     }
-
+    
     @BeforeClass
     public static void setUpClass() throws Exception {
     }
-
+    
     @AfterClass
     public static void tearDownClass() throws Exception {
     }
-
+    
     @Before
     public void setUp() throws Exception {
-        env = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.DIR_SERVICE,
-        TestEnvironment.Services.MRC, TestEnvironment.Services.DIR_CLIENT, TestEnvironment.Services.MRC_CLIENT,
-                    TestEnvironment.Services.OSD, TestEnvironment.Services.OSD_CLIENT,
-        });
+        env = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
+            TestEnvironment.Services.MRC, TestEnvironment.Services.DIR_CLIENT,
+            TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD,
+            TestEnvironment.Services.OSD_CLIENT, });
         env.start();
     }
-
+    
     @After
     public void tearDown() {
         env.shutdown();
     }
-
+    
     /**
      * Test the Cleanup function without any files on the OSD.
+     * 
      * @throws Exception
      */
     @Test
-    public void testCleanUpEmpty() throws Exception{
+    public void testCleanUpEmpty() throws Exception {
         // start the cleanUp Operation
         StringSet results = makeCleanup(false, false, false);
-         
-        for (String res : results){
+        
+        for (String res : results) {
             Pattern p = Pattern.compile(CleanupThread.getRegex(CleanupThread.VOLUME_RESULT_FORMAT));
             Matcher m = p.matcher(res);
             int zombies = Integer.parseInt(m.group(2).trim());
-            assertEquals(0,zombies);
+            assertEquals(0, zombies);
             int files = Integer.parseInt(m.group(3).trim());
-            assertEquals(0,files);
+            assertEquals(0, files);
         }
     }
     
     /**
      * Test the Cleanup function with files without zombies on the OSD.
+     * 
      * @throws Exception
      */
     @Test
-    public void testCleanUpFilesWithoutZombies() throws Exception{      
+    public void testCleanUpFilesWithoutZombies() throws Exception {
         setupTestVolume();
         
         // start the cleanUp Operation
         StringSet results = makeCleanup(false, false, false);
-         
-        for (String res : results){ 
+        
+        for (String res : results) {
             Pattern p = Pattern.compile(CleanupThread.getRegex(CleanupThread.VOLUME_RESULT_FORMAT));
             Matcher m = p.matcher(res);
             assertTrue(m.matches());
             int zombies = Integer.parseInt(m.group(2).trim());
-            assertEquals(0,zombies);
+            assertEquals(0, zombies);
             int files = Integer.parseInt(m.group(3).trim());
-            assertEquals(3,files);
+            assertEquals(3, files);
         }
     }
     
@@ -119,27 +121,28 @@ public class CleanupTest extends TestCase {
         RPCResponse<?> r = null;
         
         setupTestVolume();
-
+        
         // test/test1 --> zombie
         r = env.getMrcClient().unlink(env.getMRCAddress(), uc, "test/test1");
         r.get();
         r.freeBuffers();
-
+        
         StringSet results = makeCleanup(false, false, false);
         
-        for (String res : results){ 
+        for (String res : results) {
             Pattern p = Pattern.compile(CleanupThread.getRegex(CleanupThread.VOLUME_RESULT_FORMAT));
             Matcher m = p.matcher(res);
             assertTrue(m.matches());
             int zombies = Integer.parseInt(m.group(2).trim());
-            assertEquals(1,zombies);
+            assertEquals(1, zombies);
             int files = Integer.parseInt(m.group(3).trim());
-            assertEquals(3,files);
+            assertEquals(3, files);
         }
     }
     
     /**
-     * Test the Cleanup function with files with 1 zombie on the OSD, deleting it.
+     * Test the Cleanup function with files with 1 zombie on the OSD, deleting
+     * it.
      * 
      * @throws Exception
      */
@@ -152,15 +155,15 @@ public class CleanupTest extends TestCase {
         RPCResponse<?> r = null;
         
         setupTestVolume();
-
+        
         // test/test1 --> zombie
         r = env.getMrcClient().unlink(env.getMRCAddress(), uc, "test/test1");
         r.get();
         r.freeBuffers();
-
+        
         StringSet results = makeCleanup(false, false, true);
         
-        for (String res : results){ 
+        for (String res : results) {
             Pattern p = Pattern.compile(CleanupThread.getRegex(CleanupThread.VOLUME_RESULT_FORMAT));
             Pattern pd = Pattern.compile(CleanupThread.getRegex(CleanupThread.ZOMBIES_DELETED_FORMAT));
             Matcher m = p.matcher(res);
@@ -169,33 +172,34 @@ public class CleanupTest extends TestCase {
                 m = pd.matcher(res);
                 assertTrue(m.matches());
                 int zombies = Integer.parseInt(m.group(1).trim());
-                assertEquals(1,zombies);
+                assertEquals(1, zombies);
                 String volState = m.group(2);
-                assertEquals("existing",volState);
+                assertEquals("existing", volState);
             } else {
                 int zombies = Integer.parseInt(m.group(2).trim());
-                assertEquals(1,zombies);
+                assertEquals(1, zombies);
                 int files = Integer.parseInt(m.group(3).trim());
-                assertEquals(3,files);
+                assertEquals(3, files);
             }
         }
         
         // restart the cleanUp Operation on clean volume
         results = makeCleanup(false, false, false);
-         
-        for (String res : results){ 
+        
+        for (String res : results) {
             Pattern p = Pattern.compile(CleanupThread.getRegex(CleanupThread.VOLUME_RESULT_FORMAT));
             Matcher m = p.matcher(res);
             assertTrue(m.matches());
             int zombies = Integer.parseInt(m.group(2).trim());
-            assertEquals(0,zombies);
+            assertEquals(0, zombies);
             int files = Integer.parseInt(m.group(3).trim());
-            assertEquals(2,files);
+            assertEquals(2, files);
         }
     }
     
     /**
-     * Test the Cleanup function with files with 1 zombie on the OSD, restoring it.
+     * Test the Cleanup function with files with 1 zombie on the OSD, restoring
+     * it.
      * 
      * @throws Exception
      */
@@ -208,15 +212,15 @@ public class CleanupTest extends TestCase {
         RPCResponse<?> r = null;
         
         setupTestVolume();
-
+        
         // test/test1 --> zombie
         r = env.getMrcClient().unlink(env.getMRCAddress(), uc, "test/test1");
         r.get();
         r.freeBuffers();
-
+        
         StringSet results = makeCleanup(true, false, false);
         
-        for (String res : results){ 
+        for (String res : results) {
             Pattern p = Pattern.compile(CleanupThread.getRegex(CleanupThread.VOLUME_RESULT_FORMAT));
             Pattern pr = Pattern.compile(CleanupThread.getRegex(CleanupThread.ZOMBIES_RESTORED_FORMAT));
             Matcher m = p.matcher(res);
@@ -225,26 +229,26 @@ public class CleanupTest extends TestCase {
                 m = pr.matcher(res);
                 assertTrue(m.matches());
                 int zombies = Integer.parseInt(m.group(1).trim());
-                assertEquals(1,zombies);
+                assertEquals(1, zombies);
             } else {
                 int zombies = Integer.parseInt(m.group(2).trim());
-                assertEquals(1,zombies);
+                assertEquals(1, zombies);
                 int files = Integer.parseInt(m.group(3).trim());
-                assertEquals(3,files);
+                assertEquals(3, files);
             }
         }
         
         // restart the cleanUp Operation on clean volume
         results = makeCleanup(false, false, false);
-         
-        for (String res : results){ 
+        
+        for (String res : results) {
             Pattern p = Pattern.compile(CleanupThread.getRegex(CleanupThread.VOLUME_RESULT_FORMAT));
             Matcher m = p.matcher(res);
             assertTrue(m.matches());
             int zombies = Integer.parseInt(m.group(2).trim());
-            assertEquals(0,zombies);
+            assertEquals(0, zombies);
             int files = Integer.parseInt(m.group(3).trim());
-            assertEquals(3,files);
+            assertEquals(3, files);
         }
     }
     
@@ -260,7 +264,8 @@ public class CleanupTest extends TestCase {
      * @throws ONCRPCException
      * @throws IOException
      */
-    private StringSet makeCleanup(boolean restore, boolean deleteVolumes, boolean killZombies) throws InterruptedException, ONCRPCException, IOException{
+    private StringSet makeCleanup(boolean restore, boolean deleteVolumes, boolean killZombies)
+        throws InterruptedException, ONCRPCException, IOException {
         String statF = CleanupThread.getRegex(CleanupThread.STATUS_FORMAT);
         String stopF = CleanupThread.getRegex(CleanupThread.STOPPED_FORMAT);
         assertNotNull(statF);
@@ -269,7 +274,8 @@ public class CleanupTest extends TestCase {
         RPCResponse<?> r = null;
         
         // start the cleanUp Operation
-        r = env.getOSDClient().internal_cleanup_start(env.getOSDAddress(), killZombies, deleteVolumes, restore, "");
+        r = env.getOSDClient().internal_cleanup_start(env.getOSDAddress(), killZombies, deleteVolumes,
+            restore, "");
         r.get();
         r.freeBuffers();
         
@@ -293,7 +299,7 @@ public class CleanupTest extends TestCase {
         } while (isRunning);
         
         r = env.getOSDClient().internal_cleanup_get_result(env.getOSDAddress(), "");
-        StringSet results = (StringSet)r.get();
+        StringSet results = (StringSet) r.get();
         r.freeBuffers();
         
         return results;
@@ -309,28 +315,29 @@ public class CleanupTest extends TestCase {
      * 
      * @throws Exception
      */
-    private void setupTestVolume() throws Exception{
+    private void setupTestVolume() throws Exception {
         StringSet group = new StringSet();
         group.add("test");
         UserCredentials uc = new UserCredentials("user", group, "");
-
+        
         StripingPolicy sp = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 4, 1);
-
-        RPCResponse<?> r = env.getMrcClient().mkvol(env.getMRCAddress(), uc, "test", OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE.intValue(),
-                sp, AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX.intValue(), 511);
+        
+        RPCResponse<?> r = env.getMrcClient().mkvol(env.getMRCAddress(), uc, "test", sp,
+            AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX.intValue(), 511);
         r.get();
         r.freeBuffers();
         
-        RandomAccessFile raf = new RandomAccessFile("rw", env.getMRCAddress(), "test/test1", env.getRpcClient(), uc);
-        raf.write(new byte[1024*10], 0, 1024*10);
+        RandomAccessFile raf = new RandomAccessFile("rw", env.getMRCAddress(), "test/test1", env
+                .getRpcClient(), uc);
+        raf.write(new byte[1024 * 10], 0, 1024 * 10);
         raf.close();
-
+        
         raf = new RandomAccessFile("rw", env.getMRCAddress(), "test/test2", env.getRpcClient(), uc);
-        raf.write(new byte[1024*10], 0, 1024*10);
+        raf.write(new byte[1024 * 10], 0, 1024 * 10);
         raf.close();
         
         raf = new RandomAccessFile("rw", env.getMRCAddress(), "test/test3", env.getRpcClient(), uc);
-        raf.write(new byte[1024*10], 0, 1024*10);
+        raf.write(new byte[1024 * 10], 0, 1024 * 10);
         raf.close();
     }
 }

@@ -25,12 +25,14 @@ package org.xtreemfs.mrc.database.babudb;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedACLEntry;
 import org.xtreemfs.mrc.metadata.BufferBackedFileMetadata;
@@ -507,4 +509,28 @@ public class BabuDBStorageHelper {
         return new BufferBackedFileMetadata(keyBufs, valBufs, BabuDBStorageManager.FILE_ID_INDEX);
     }
     
+    public static Iterator<FileMetadata> getChildren(Database database, long parentId) throws BabuDBException {
+        
+        byte[] prefix = BabuDBStorageHelper.createFilePrefixKey(parentId);
+        Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(BabuDBStorageManager.FILE_INDEX,
+            prefix);
+        
+        return new ChildrenIterator(database, it);
+    }
+    
+    public static void getNestedFiles(List<FileMetadata> files, Database database, long dirId,
+        boolean recursive) throws BabuDBException {
+        
+        Iterator<FileMetadata> children = getChildren(database, dirId);
+        while (children.hasNext()) {
+            
+            FileMetadata metadata = children.next();
+            files.add(metadata);
+            
+            if (recursive && metadata.isDirectory())
+                getNestedFiles(files, database, metadata.getId(), recursive);
+            
+        }
+    }
+
 }

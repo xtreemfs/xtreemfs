@@ -1,4 +1,4 @@
-/*  Copyright (c) 2008 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+/*  Copyright (c) 2009 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
     This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
     Grid Operating System, see <http://www.xtreemos.eu> for more details.
@@ -25,34 +25,53 @@
 package org.xtreemfs.mrc.osdselection;
 
 import java.net.InetAddress;
+
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.mrc.metadata.XLocList;
 
 /**
  * Interface for policies implementing a selection mechanism for OSDs.
- *
- * @author bjko, stender
+ * 
+ * @author stender
  */
 public interface OSDSelectionPolicy {
-
+    
     /**
-     * Returns the subset of all registered OSDs that match the policy.
-     *
-     * @param osds
-     *            osds is a map containing osd info registered with the
-     *            directory service
-     * @return the filtered list
+     * Selects a list of OSDs.
+     * 
+     * @param allOSDs
+     *            a list of all available OSDs
+     * @param clientIP
+     *            the client's IP address
+     * @param currentXLoc
+     *            the current X-Locations list
+     * @param numOSDs
+     *            the number of OSDs to select
+     * @return a list of selected OSDs
      */
-    public ServiceSet getUsableOSDs(
-        ServiceSet osds, String args);
-
+    public ServiceSet getOSDs(ServiceSet allOSDs, InetAddress clientIP, XLocList currentXLoc, int numOSDs);
+    
     /**
-     * Returns a list of OSDs to be allocated to a newly created file.
-     *
-     * @param osdMap
-     *            list of osds that match the policy
-     * @return a list of osds that can be used to create a new file
+     * Simplified version of
+     * <code>getOSDs(ServiceSet allOSDs, InetAddress clientIP, XLocList currentXLoc, int numOSDs)</code>
+     * . This method will be invoked by the framework if no context is
+     * available.
+     * 
+     * @param allOSDs
+     *            a list of all available OSDs
+     * @return a list of selected OSDs
      */
-    public String[] getOSDsForNewFile(ServiceSet osds,
-        InetAddress clientAddr, int amount, String args);
-
+    public ServiceSet getOSDs(ServiceSet allOSDs);
+    
+    /**
+     * Sets a new policy attribute. This method is invoked each time a
+     * policy-related extended attribute is set.
+     * 
+     * @param key
+     *            the attribute key
+     * @param value
+     *            the attribute value
+     */
+    public void setAttribute(String key, String value);
+    
 }

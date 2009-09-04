@@ -26,7 +26,6 @@ package org.xtreemfs.common.util;
 import java.io.IOException;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
@@ -167,6 +166,11 @@ public class NetUtils {
 
         return protocol+"://"+hostAddr+":"+port;
 
+    }
+    
+    public static String getDomain(String hostName) {
+        int i = hostName.indexOf('.');
+        return i == -1? "": hostName.substring(i + 1);
     }
     
     private static String getSubnetMaskString(short prefixLength) {

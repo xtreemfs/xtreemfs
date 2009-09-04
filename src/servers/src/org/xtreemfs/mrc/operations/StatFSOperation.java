@@ -30,8 +30,8 @@ import org.xtreemfs.interfaces.MRCInterface.statvfsResponse;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.volumes.VolumeManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
+import org.xtreemfs.mrc.database.VolumeInfo;
+import org.xtreemfs.mrc.database.VolumeManager;
 
 /**
  * 
@@ -49,12 +49,12 @@ public class StatFSOperation extends MRCOperation {
         final statvfsRequest rqArgs = (statvfsRequest) rq.getRequestArgs();
         
         final VolumeManager vMan = master.getVolumeManager();
-        final VolumeInfo volume = vMan.getVolumeByName(rqArgs.getVolume_name());
-        final StorageManager sMan = vMan.getStorageManager(volume.getId());
+        final StorageManager sMan = vMan.getStorageManagerByName(rqArgs.getVolume_name());
+        final VolumeInfo volume = sMan.getVolumeInfo();
         
         int blockSize = sMan.getDefaultStripingPolicy(1).getStripeSize() * 1024;
         long bavail = master.getOSDStatusManager().getFreeSpace(volume.getId()) / blockSize;
-        long used_blocks = sMan.getVolumeSize() / blockSize;
+        long used_blocks = volume.getVolumeSize() / blockSize;
         long blocks = bavail + used_blocks;
         
         StatVFS statfs = new StatVFS(blockSize, bavail, blocks, volume.getId(), 1024);

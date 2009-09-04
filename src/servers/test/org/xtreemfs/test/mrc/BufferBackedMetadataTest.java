@@ -41,7 +41,6 @@ import org.xtreemfs.mrc.metadata.BufferBackedXLocList;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XLoc;
-import org.xtreemfs.mrc.volumes.metadata.BufferBackedVolumeInfo;
 import org.xtreemfs.test.SetupUtils;
 
 public class BufferBackedMetadataTest extends TestCase {
@@ -55,36 +54,6 @@ public class BufferBackedMetadataTest extends TestCase {
     }
     
     protected void tearDown() throws Exception {
-    }
-    
-    public void testVolumeObject() throws Exception {
-        
-        final String id = "ThisIsSomeVolumeID";
-        final String name = "XtreemFS";
-        final short faPol = 34;
-        final short osdPol = 44;
-        final String osdPolArgs = "osdPolicyArgs";
-        
-        BufferBackedVolumeInfo vol = new BufferBackedVolumeInfo(id, name, faPol, osdPol, osdPolArgs);
-        assertEquals(id, vol.getId());
-        assertEquals(name, vol.getName());
-        assertEquals(faPol, vol.getAcPolicyId());
-        assertEquals(osdPol, vol.getOsdPolicyId());
-        assertEquals(osdPolArgs, vol.getOsdPolicyArgs());
-        
-        final String newArgs = "blubber";
-        final short replPol = 4;
-        final short newOsdPol = 2;
-        vol.setOsdPolicyArgs(newArgs);
-        vol.setReplicaPolicyId(replPol);
-        vol.setOsdPolicyId(newOsdPol);
-        
-        assertEquals(id, vol.getId());
-        assertEquals(name, vol.getName());
-        assertEquals(faPol, vol.getAcPolicyId());
-        assertEquals(newOsdPol, vol.getOsdPolicyId());
-        assertEquals(newArgs, vol.getOsdPolicyArgs());
-        assertEquals(replPol, vol.getReplicaPolicyId());
     }
     
     public void testBufferBackedACLEntry() throws Exception {
@@ -418,6 +387,12 @@ public class BufferBackedMetadataTest extends TestCase {
     
     private BufferBackedXLoc[] toArray(List<BufferBackedXLoc> list) {
         return list.toArray(new BufferBackedXLoc[list.size()]);
+    }
+    
+    private void assertEquals(short[] s1, short[] s2) {
+        assertEquals(s1.length, s2.length);
+        for (int i = 0; i < s1.length; i++)
+            assertEquals(s1[i], s2[i]);
     }
     
 }

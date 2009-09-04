@@ -22,16 +22,13 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  * AUTHORS: Jan Stender (ZIB), Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.mrc.volumes;
+package org.xtreemfs.mrc.database;
 
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 public interface VolumeChangeListener {
+        
+    public void volumeChanged(VolumeInfo vol);
     
-    public static final int MOD_CHANGED = 1;
-    
-    public static final int MOD_DELETED = 2;
-    
-    public void volumeChanged(int mod, VolumeInfo vol);
+    public void volumeDeleted(String volumeId);
     
 }

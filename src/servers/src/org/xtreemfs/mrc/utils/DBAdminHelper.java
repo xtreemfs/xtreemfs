@@ -42,20 +42,23 @@ import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.ACLEntry;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
-import org.xtreemfs.mrc.volumes.VolumeManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 public class DBAdminHelper {
     
     public static class DBRestoreState {
         
-        public VolumeInfo          currentVolume;
+        public String              currentVolumeId;
+        
+        public String              currentVolumeName;
+        
+        public short               currentVolumeACPolicy;
         
         public List<Long>          parentIds;
         
@@ -87,28 +90,6 @@ public class DBAdminHelper {
         
     }
     
-    /**
-     * Creates an XML dump from a volume. The dump contains all files and
-     * directories of the volume, including their attributes and ACLs.
-     * 
-     * @param xmlWriter
-     *            the XML writer creating the dump
-     * @param sMan
-     *            the volume's storage manager
-     * @throws IOException
-     *             if an I/O error occurs
-     * @throws DatabaseException
-     *             if an error occurs while accessing the database
-     */
-    public static void dumpVolume(BufferedWriter xmlWriter, StorageManager sMan) throws IOException,
-        DatabaseException {
-        try {
-            dumpDir(xmlWriter, sMan, 1);
-        } catch (JSONException exc) {
-            throw new DatabaseException(exc);
-        }
-    }
-    
     public static void restoreDir(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
         DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException, UserException {
         
@@ -132,11 +113,10 @@ public class DBAdminHelper {
             
             // if the directory is the root directory, restore the volume
             if (id == 1) {
-                vMan.createVolume(faMan, state.currentVolume.getId(), state.currentVolume.getName(),
-                    state.currentVolume.getAcPolicyId(), state.currentVolume.getOsdPolicyId(),
-                    state.currentVolume.getOsdPolicyArgs(), owner, owningGroup, null, rights);
+                vMan.createVolume(faMan, state.currentVolumeId, state.currentVolumeName,
+                    state.currentVolumeACPolicy, owner, owningGroup, null, rights);
                 
-                StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
+                StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
                 state.currentEntity = sMan.getMetadata(1);
             }
 
@@ -146,7 +126,7 @@ public class DBAdminHelper {
                 // there must not be hard links to directories, so it is not
                 // necessary to check if the directory exists already
                 
-                StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
+                StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
                 AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
                 FileMetadata dir = sMan.createDir(id, state.parentIds.get(0), name, atime, ctime, mtime,
                     owner, owningGroup, rights, w32Attrs, update);
@@ -165,7 +145,7 @@ public class DBAdminHelper {
     }
     
     public static void restoreFile(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
-        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException {
+        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException, UserException {
         
         if (!openTag)
             return;
@@ -173,7 +153,7 @@ public class DBAdminHelper {
         long id = Long.parseLong(attrs.getValue(attrs.getIndex("id")));
         String name = OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("name")));
         
-        StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
+        StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
         
         FileMetadata file = sMan.getMetadata(id);
         
@@ -229,9 +209,9 @@ public class DBAdminHelper {
     }
     
     public static void restoreXLocList(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
-        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException {
+        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException, UserException {
         
-        StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
+        StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
         
         if (openTag) {
             state.currentXLocVersion = Integer.parseInt(attrs.getValue(attrs.getIndex("version")));
@@ -255,9 +235,9 @@ public class DBAdminHelper {
     }
     
     public static void restoreXLoc(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
-        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException {
+        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException, UserException {
         
-        StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
+        StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
         
         if (openTag) {
             state.currentXLocSp = Converter.stringToStripingPolicy(sMan, attrs.getValue(attrs
@@ -281,7 +261,7 @@ public class DBAdminHelper {
     }
     
     public static void restoreACL(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
-        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException {
+        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException, UserException {
         
         // convert old ACLs to POSIX access rights
         if (!openTag) {
@@ -290,7 +270,7 @@ public class DBAdminHelper {
             List<String> groups = new ArrayList<String>(1);
             groups.add(state.currentEntity.getOwningGroupId());
             
-            StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
+            StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
             try {
                 faMan.setACLEntries(sMan, state.currentEntity, state.parentIds.get(0), owner, groups,
@@ -321,7 +301,7 @@ public class DBAdminHelper {
     }
     
     public static void restoreAttr(VolumeManager vMan, FileAccessManager faMan, Attributes attrs,
-        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException {
+        DBRestoreState state, int dbVersion, boolean openTag) throws DatabaseException, UserException {
         
         if (openTag) {
             
@@ -330,7 +310,7 @@ public class DBAdminHelper {
             String key = OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("key")));
             String value = OutputUtils.unescapeFromXML(attrs.getValue(attrs.getIndex("value")));
             
-            StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
+            StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
             
             // if the value refers to a read-only flag, set it directly
             if (key.equals("ro")) {
@@ -351,6 +331,28 @@ public class DBAdminHelper {
                 sMan.setXAttr(state.currentEntity.getId(), owner, key, value, update);
                 update.execute();
             }
+        }
+    }
+    
+    /**
+     * Creates an XML dump from a volume. The dump contains all files and
+     * directories of the volume, including their attributes and ACLs.
+     * 
+     * @param xmlWriter
+     *            the XML writer creating the dump
+     * @param sMan
+     *            the volume's storage manager
+     * @throws IOException
+     *             if an I/O error occurs
+     * @throws DatabaseException
+     *             if an error occurs while accessing the database
+     */
+    public static void dumpVolume(BufferedWriter xmlWriter, StorageManager sMan) throws IOException,
+        DatabaseException {
+        try {
+            dumpDir(xmlWriter, sMan, 1);
+        } catch (JSONException exc) {
+            throw new DatabaseException(exc);
         }
     }
     

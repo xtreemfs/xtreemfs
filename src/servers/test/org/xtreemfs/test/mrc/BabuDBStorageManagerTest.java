@@ -45,7 +45,6 @@ import org.xtreemfs.include.common.config.BabuDBConfig;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultAdapter;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
-import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Path;
@@ -56,7 +55,7 @@ public class BabuDBStorageManagerTest extends TestCase {
     
     public static final String     DB_DIRECTORY = "/tmp/xtreemfs-test";
     
-    private StorageManager         mngr;
+    private BabuDBStorageManager   mngr;
     
     private DIRRequestDispatcher   dir;
     
@@ -112,11 +111,12 @@ public class BabuDBStorageManagerTest extends TestCase {
         dbDir.mkdirs();
         database = BabuDBFactory.createBabuDB(new BabuDBConfig(DB_DIRECTORY, DB_DIRECTORY, 2,
             1024 * 1024 * 16, 5 * 60, SyncMode.FDATASYNC, 300, 1000));
-        mngr = new BabuDBStorageManager(database, "volume", "volId");
+        mngr = new BabuDBStorageManager(database, "volId");
         
         exc = null;
         AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
-        mngr.init("me", "myGrp", (short) 511, null, null, update);
+        mngr.init("volume", (short) 1, new short[] { 1 }, new short[0], 1, "me", "myGrp", 511, null, null,
+            update);
         update.execute();
         waitForResponse();
         

@@ -22,7 +22,7 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  * AUTHORS: Jan Stender (ZIB)
  */
 
-package org.xtreemfs.mrc.volumes.metadata;
+package org.xtreemfs.mrc.database;
 
 /**
  * This interface defines how volume-related metadata is accessed.
@@ -56,55 +56,85 @@ public interface VolumeInfo {
     public String getName();
     
     /**
-     * Returns the volume's OSD selection policy ID.
+     * Returns the volume's OSD selection policy.
      * 
-     * @return the volume's OSD selection policy ID.
+     * @return the volume's OSD selection policy
      */
-    public short getOsdPolicyId();
+    public short[] getOsdPolicy();
     
     /**
-     * Returns the volume's OSD selection policy arguments.
+     * Returns the volume's replica selection policy.
      * 
-     * @return the volume's OSD selection policy arguments.
+     * @return the volume's replica selection policy
      */
-    public String getOsdPolicyArgs();
+    public short[] getReplicaPolicy();
     
     /**
-     * Returns the volume's replica selection policy ID.
+     * Returns the preferred replication factor for automatic on-close
+     * replication.
      * 
-     * @return the volume's replica selection policy ID.
+     * @return the replication factor
      */
-    public short getReplicaPolicyId();
+    public int getAutoReplFactor();
     
     /**
      * Returns the volume's access control policy ID.
      * 
-     * @return the volume#s access control policy ID.
+     * @return the volume's access control policy ID.
      */
     public short getAcPolicyId();
     
     /**
-     * Sets the volume's OSD selection policy ID.
+     * Returns the current approximate size of all files in the volume in bytes.
      * 
-     * @param osdPolicyId
-     *            the new OSD selection policy ID for the volume
+     * @return the volume's approximate size
      */
-    public void setOsdPolicyId(short osdPolicyId);
+    public long getVolumeSize() throws DatabaseException;
     
     /**
-     * Sets the volume's OSD selection policy arguments.
+     * Returns the number of files currently stored in the volume.
      * 
-     * @param osdPolicyArgs
-     *            the new OSD selection policy ID for the volume
+     * @return the number of files
      */
-    public void setOsdPolicyArgs(String osdPolicyArgs);
+    public long getNumFiles() throws DatabaseException;
     
     /**
-     * Sets the volume's replica selection policy ID.
+     * Returns the number of directories currently stored in the volume.
      * 
-     * @param replicaPolicyId
-     *            the new replica selection policy ID for the volume
+     * @return the number of directories
      */
-    public void setReplicaPolicyId(short replicaPolicyId);
+    public long getNumDirs() throws DatabaseException;
+    
+    /**
+     * Sets the volume's OSD selection policy.
+     * 
+     * @param osdPolicy
+     *            the new OSD selection policy for the volume
+     */
+    public void setOsdPolicy(short[] osdPolicy, AtomicDBUpdate update) throws DatabaseException;
+    
+    /**
+     * Sets the volume's replica selection policy.
+     * 
+     * @param replicaPolicy
+     *            the new replica selection policy for the volume
+     */
+    public void setReplicaPolicy(short[] replicaPolicy, AtomicDBUpdate update) throws DatabaseException;
+    
+    /**
+     * Sets the preferred replication factor for automatic on-close replication.
+     * 
+     * @param replFactor
+     *            the replication factor
+     */
+    public void setAutoReplFactor(int replFactor, AtomicDBUpdate update) throws DatabaseException;
+    
+    /**
+     * Adds <code>diff</code> to the current volume size.
+     * 
+     * @param diff
+     *            the difference between the new and the old volume size
+     */
+    public void updateVolumeSize(long diff, AtomicDBUpdate update) throws DatabaseException;
     
 }

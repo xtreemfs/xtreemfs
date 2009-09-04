@@ -22,20 +22,23 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  * AUTHORS: Jan Stender (ZIB)
  */
 
-package org.xtreemfs.mrc.volumes;
+package org.xtreemfs.mrc.database;
 
-import java.io.IOException;
 import java.util.Collection;
 
+import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
-import org.xtreemfs.mrc.database.DBAccessResultListener;
-import org.xtreemfs.mrc.database.DatabaseException;
-import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 public interface VolumeManager {
+    
+    public static final short[] DEFAULT_OSD_POLICY       = { (short) OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT
+                                                                 .intValue() };
+    
+    public static final short[] DEFAULT_REPL_POLICY      = {};
+    
+    public static final int     DEFAULT_AUTO_REPL_FACTOR = 1;
     
     /**
      * Initializes the volume manager, including all volume databases.
@@ -60,10 +63,6 @@ public interface VolumeManager {
      *            the volume name
      * @param fileAccessPolicyId
      *            the access policy
-     * @param osdPolicyId
-     *            the OSD selection policy
-     * @param osdPolicyArgs
-     *            the OSD selection policy arguments
      * @param ownerId
      *            the owner ID
      * @param owningGroupId
@@ -77,16 +76,16 @@ public interface VolumeManager {
      * @throws DatabaseException
      */
     public VolumeInfo createVolume(FileAccessManager faMan, String volumeId, String volumeName,
-        short fileAccessPolicyId, short osdPolicyId, String osdPolicyArgs, String ownerId,
-        String owningGroupId, StripingPolicy defaultStripingPolicy, int initialAccessMode)
-        throws UserException, DatabaseException;
+        short fileAccessPolicyId, String ownerId, String owningGroupId, StripingPolicy defaultStripingPolicy,
+        int initialAccessMode) throws UserException, DatabaseException;
     
     /**
      * Checks whether a volume with the given name is known locally.
      * 
      * @param volumeName
      *            the volume name
-     * @return
+     * @return <code>true</code>, if the volume is known locally,
+     *         <code>false</code>, otherwise
      */
     public boolean hasVolume(String volumeName) throws DatabaseException;
     
@@ -95,45 +94,10 @@ public interface VolumeManager {
      * 
      * @param volumeId
      *            the volume ID
-     * @return
+     * @return <code>true</code>, if the volume is known locally,
+     *         <code>false</code>, otherwise
      */
     public boolean hasVolumeWithId(String volumeId) throws DatabaseException;
-    
-    /**
-     * Returns the metadata for the volume with the given name, if such a volume
-     * exists locally.
-     * 
-     * @param volumeName
-     *            the volume name
-     * @return
-     */
-    public VolumeInfo getVolumeByName(String volumeName) throws DatabaseException, UserException;
-    
-    /**
-     * Returns the metadata for the volume with the given ID, if such a volume
-     * exists locally.
-     * 
-     * @param volumeId
-     *            the volume name
-     * @return
-     */
-    public VolumeInfo getVolumeById(String volumeId) throws DatabaseException, UserException;
-    
-    /**
-     * Returns a collection of all locally known volumes.
-     * 
-     * @return a collection of all locally known volumes
-     */
-    public Collection<VolumeInfo> getVolumes() throws DatabaseException;
-    
-    /**
-     * Updates mutable volume metadata.
-     * 
-     * @param volume
-     * @param update
-     * @throws DatabaseException
-     */
-    public void updateVolume(VolumeInfo volume) throws DatabaseException;
     
     /**
      * Deletes a volume.
@@ -141,15 +105,43 @@ public interface VolumeManager {
      * @param volumeName
      *            the volume name
      * @throws UserException
-     * @throws IOException
+     * @throws DatabaseException
      */
     public void deleteVolume(String volumeName, DBAccessResultListener listener, Object context)
         throws DatabaseException, UserException;
     
-    public StorageManager getStorageManager(String volumeId);
+    /**
+     * Returns the storage manager for a given volume.
+     * 
+     * @param volumeId
+     *            the volume ID
+     * @return the storage manager
+     * @throws UserException
+     *             if the volume does not exist
+     */
+    public StorageManager getStorageManager(String volumeId) throws UserException;
     
     /**
-     * Enforces a database checkpoint.
+     * Returns the storage manager for a given volume.
+     * 
+     * @param volumeName
+     *            the volume name
+     * @return the storage manager
+     * @throws UserException
+     *             if the volume does not exist
+     */
+    public StorageManager getStorageManagerByName(String volumeName) throws UserException;
+    
+    /**
+     * Returns a collection of all storage managers.
+     * 
+     * @return a collection of all storage managers
+     */
+    public Collection<StorageManager> getStorageManagers();
+    
+    /**
+     * Enforces a database checkpoint and blocks until the checkpoint is
+     * complete.
      */
     public void checkpointDB() throws DatabaseException;
     
@@ -161,12 +153,10 @@ public interface VolumeManager {
     public String newVolumeId();
     
     /**
-     * Adds a new listener that is notified in response to volume changes.
+     * Adds a new listener to all volumes that responds to volume changes.
      * 
-     * @param listener
-     * @throws IOException
-     * @throws BackendException
+     * @param listener the listener to add
      */
-    public void addVolumeChangeListener(VolumeChangeListener listener) throws IOException, DatabaseException;
+    public void addVolumeChangeListener(VolumeChangeListener listener);
     
 }

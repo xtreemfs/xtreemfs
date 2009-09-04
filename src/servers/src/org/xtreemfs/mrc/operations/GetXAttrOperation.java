@@ -34,19 +34,18 @@ import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.mrc.volumes.VolumeManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
  * @author stender
  */
 public class GetXAttrOperation extends MRCOperation {
-        
+    
     public GetXAttrOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -63,8 +62,7 @@ public class GetXAttrOperation extends MRCOperation {
         
         Path p = new Path(rqArgs.getPath());
         
-        VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-        StorageManager sMan = vMan.getStorageManager(volume.getId());
+        StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
         PathResolver res = new PathResolver(sMan, p);
         
         // check whether the path prefix is searchable
@@ -90,16 +88,15 @@ public class GetXAttrOperation extends MRCOperation {
                 return;
             }
             
-            volume = vMan.getVolumeByName(p.getComp(0));
-            sMan = vMan.getStorageManager(volume.getId());
+            sMan = vMan.getStorageManagerByName(p.getComp(0));
             res = new PathResolver(sMan, p);
             file = res.getFile();
         }
         
         String value = null;
         if (rqArgs.getName().startsWith("xtreemfs."))
-            value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(), volume,
-                res.toString(), file, rqArgs.getName().substring(9));
+            value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(), res
+                    .toString(), file, rqArgs.getName().substring(9));
         else {
             
             // first, try to fetch an individual user attribute

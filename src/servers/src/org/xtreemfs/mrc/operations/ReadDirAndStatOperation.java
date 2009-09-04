@@ -40,19 +40,19 @@ import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeInfo;
+import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.mrc.volumes.VolumeManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
  * @author stender
  */
 public class ReadDirAndStatOperation extends MRCOperation {
-        
+    
     public ReadDirAndStatOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -69,9 +69,9 @@ public class ReadDirAndStatOperation extends MRCOperation {
         
         Path p = new Path(rqArgs.getPath());
         
-        VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-        StorageManager sMan = vMan.getStorageManager(volume.getId());
+        StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
         PathResolver res = new PathResolver(sMan, p);
+        VolumeInfo volume = sMan.getVolumeInfo();
         
         // check whether the path prefix is searchable
         faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
@@ -95,8 +95,8 @@ public class ReadDirAndStatOperation extends MRCOperation {
                 return;
             }
             
-            volume = vMan.getVolumeByName(p.getComp(0));
-            sMan = vMan.getStorageManager(volume.getId());
+            sMan = vMan.getStorageManagerByName(p.getComp(0));
+            volume = sMan.getVolumeInfo();
             res = new PathResolver(sMan, p);
             file = res.getFile();
         }
@@ -125,11 +125,12 @@ public class ReadDirAndStatOperation extends MRCOperation {
                 : child.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR
                     : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
             long size = linkTarget != null ? linkTarget.length() : child.isDirectory() ? 0 : child.getSize();
-            Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, child.getLinkCount(), 1, 1, 0, size, (long) child.getAtime()
-                * (long) 1e9, (long) child.getMtime() * (long) 1e9, (long) child.getCtime() * (long) 1e9,
-                child.getOwnerId(), child.getOwningGroupId(), volume.getId() + ":" + child.getId(),
-                linkTarget, child.getEpoch(), (int) child.getW32Attrs());
-
+            Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, child.getLinkCount(), 1, 1,
+                0, size, (long) child.getAtime() * (long) 1e9, (long) child.getMtime() * (long) 1e9,
+                (long) child.getCtime() * (long) 1e9, child.getOwnerId(), child.getOwningGroupId(), volume
+                        .getId()
+                    + ":" + child.getId(), linkTarget, child.getEpoch(), (int) child.getW32Attrs());
+            
             dirContent.add(new DirectoryEntry(child.getFileName(), stat));
         }
         

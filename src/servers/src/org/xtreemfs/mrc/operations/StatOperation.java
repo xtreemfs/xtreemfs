@@ -32,11 +32,11 @@ import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeInfo;
+import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
-import org.xtreemfs.mrc.volumes.VolumeManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
@@ -60,9 +60,9 @@ public class StatOperation extends MRCOperation {
         
         final Path p = new Path(rqArgs.getPath());
         
-        final VolumeInfo volume = vMan.getVolumeByName(p.getComp(0));
-        final StorageManager sMan = vMan.getStorageManager(volume.getId());
+        final StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
         final PathResolver res = new PathResolver(sMan, p);
+        final VolumeInfo volume = sMan.getVolumeInfo();
         
         // check whether the path prefix is searchable
         faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
@@ -79,10 +79,12 @@ public class StatOperation extends MRCOperation {
         mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_H_S_IFLNK
             : file.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
         long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : file.getSize();
-        Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, file.getLinkCount(), 1, 1, 0, size, (long) file.getAtime() * (long) 1e9,
-            (long) file.getMtime() * (long) 1e9, (long) file.getCtime() * (long) 1e9, file.getOwnerId(), file
-                    .getOwningGroupId(), volume.getId() + ":" + file.getId(), linkTarget,
-            file.isDirectory() ? 0: file.getEpoch(), (int) file.getW32Attrs());
+        Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, file.getLinkCount(), 1, 1, 0,
+            size, (long) file.getAtime() * (long) 1e9, (long) file.getMtime() * (long) 1e9, (long) file
+                    .getCtime()
+                * (long) 1e9, file.getOwnerId(), file.getOwningGroupId(),
+            volume.getId() + ":" + file.getId(), linkTarget, file.isDirectory() ? 0 : file.getEpoch(),
+            (int) file.getW32Attrs());
         
         // set the response
         rq.setResponse(new getattrResponse(stat));

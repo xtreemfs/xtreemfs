@@ -37,7 +37,6 @@ import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
-import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
@@ -50,198 +49,189 @@ import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
 public class ScrubberTest extends TestCase {
-
-    private MRCRequestDispatcher                  mrc1;
-
-
-    private MRCConfig                          mrcCfg1;
-
-    private OSDConfig                          osdConfig1, osdConfig2;
-
-    private DIRConfig                          dsCfg;
-
-    private OSD                                osd1, osd2;
-
-    private InetSocketAddress                  mrc1Address;
-
-    private InetSocketAddress                  dirAddress;
-
-    private MRCClient                          client;
-
-
-    private long                               accessMode;
-
-    private String                             volumeName;
-
-    private Scrubber                           scrubber;
-    private TestEnvironment testEnv;
-
+    
+    private MRCRequestDispatcher mrc1;
+    
+    private MRCConfig            mrcCfg1;
+    
+    private OSDConfig            osdConfig1, osdConfig2;
+    
+    private DIRConfig            dsCfg;
+    
+    private OSD                  osd1, osd2;
+    
+    private InetSocketAddress    mrc1Address;
+    
+    private InetSocketAddress    dirAddress;
+    
+    private MRCClient            client;
+    
+    private long                 accessMode;
+    
+    private String               volumeName;
+    
+    private Scrubber             scrubber;
+    
+    private TestEnvironment      testEnv;
+    
     public ScrubberTest() {
         Logging.start(Logging.LEVEL_WARN);
     }
-
+    
     public void setUp() throws Exception {
-
+        
         System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
-
+        
         accessMode = 511; // rwxrwxrwx
-
+        
         dsCfg = SetupUtils.createDIRConfig();
         dirAddress = SetupUtils.getDIRAddr();
-
+        
         mrcCfg1 = SetupUtils.createMRC1Config();
         mrc1Address = SetupUtils.getMRC1Addr();
-
+        
         osdConfig1 = SetupUtils.createOSD1Config();
         osdConfig2 = SetupUtils.createOSD2Config();
         // cleanup
         File testDir = new File(SetupUtils.TEST_DIR);
-
+        
         FSUtils.delTree(testDir);
         testDir.mkdirs();
-
+        
         // startup: DIR
-        testEnv = new TestEnvironment(new TestEnvironment.Services[]{
-                    TestEnvironment.Services.DIR_SERVICE,TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
-                    TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT
-        });
+        testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
+            TestEnvironment.Services.TIME_SYNC, TestEnvironment.Services.UUID_RESOLVER,
+            TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD_CLIENT });
         testEnv.start();
-
+        
         // start the OSD
         osd1 = new OSD(osdConfig1);
         osd2 = new OSD(osdConfig2);
         // start MRC
         mrc1 = new MRCRequestDispatcher(mrcCfg1);
         mrc1.startup();
-
-
+        
         client = testEnv.getMrcClient();
-
+        
         volumeName = "testVolume";
-
-
+        
         // create a volume (no access control)
-        RPCResponse r = testEnv.getMrcClient().mkvol(mrc1Address, Scrubber.credentials,volumeName,
-                OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE.intValue(),
-                new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1),
-                AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL.intValue(), 0);
+        RPCResponse r = testEnv.getMrcClient().mkvol(mrc1Address, Scrubber.credentials, volumeName,
+            new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1),
+            AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL.intValue(), 0);
         r.get();
         r.freeBuffers();
-
+        
         // create some files and directories
-        //testEnv.getMrcClient().createDir(mrc1Address, volumeName + "/myDir", authString);
+        // testEnv.getMrcClient().createDir(mrc1Address, volumeName + "/myDir",
+        // authString);
         r = testEnv.getMrcClient().mkdir(mrc1Address, Scrubber.credentials, volumeName + "/myDir", 0);
         r.get();
         r.freeBuffers();
-
+        
         r = testEnv.getMrcClient().mkdir(mrc1Address, Scrubber.credentials, volumeName + "/anotherDir", 0);
         r.get();
         r.freeBuffers();
-
+        
         r = testEnv.getMrcClient().mkdir(mrc1Address, Scrubber.credentials, volumeName + "/yetAnotherDir", 0);
         r.get();
         
         for (int i = 0; i < 2; i++) {
-            r = testEnv.getMrcClient().create(mrc1Address, Scrubber.credentials, volumeName + "/myDir/test" + i + ".txt", 0);
+            r = testEnv.getMrcClient().create(mrc1Address, Scrubber.credentials,
+                volumeName + "/myDir/test" + i + ".txt", 0);
             r.get();
             r.freeBuffers();
         }
-
+        
         r = testEnv.getMrcClient().create(mrc1Address, Scrubber.credentials, volumeName + "/test10.txt", 0);
         r.get();
         r.freeBuffers();
-
-        r = testEnv.getMrcClient().create(mrc1Address, Scrubber.credentials, volumeName + "/anotherDir/test11.txt", 0);
+        
+        r = testEnv.getMrcClient().create(mrc1Address, Scrubber.credentials,
+            volumeName + "/anotherDir/test11.txt", 0);
         r.get();
         r.freeBuffers();
-
         
         RandomAccessFile randomAccessFile1 = new RandomAccessFile("r", mrc1Address, volumeName
             + "/anotherDir/test11.txt", testEnv.getRpcClient(), Scrubber.credentials);
         RandomAccessFile randomAccessFile2 = new RandomAccessFile("r", mrc1Address, volumeName
             + "/test10.txt", testEnv.getRpcClient(), Scrubber.credentials);
         randomAccessFile2.forceFileSize(10);
-
-        RandomAccessFile randomAccessFile3 = new RandomAccessFile("r", mrc1Address, volumeName
-            + "/test0.txt", testEnv.getRpcClient(), Scrubber.credentials);
+        
+        RandomAccessFile randomAccessFile3 = new RandomAccessFile("r", mrc1Address,
+            volumeName + "/test0.txt", testEnv.getRpcClient(), Scrubber.credentials);
         randomAccessFile3.forceFileSize(10);
-
-
-
+        
         String content = "";
         for (int i = 0; i < 6000; i++)
             content = content.concat("Hello World ");
         byte[] bytesIn = content.getBytes();
         assertEquals(bytesIn.length, 72000);
-
+        
         int length = bytesIn.length;
-
+        
         randomAccessFile1.write(bytesIn, 0, length);
         randomAccessFile1.close();
-
+        
         randomAccessFile2.write(bytesIn, 0, 65536);
     }
-
+    
     public void tearDown() throws Exception {
         mrc1.shutdown();
         osd1.shutdown();
         osd2.shutdown();
-
+        
         testEnv.shutdown();
-
+        
         Logging.logMessage(Logging.LEVEL_DEBUG, this, BufferPool.getStatus());
     }
-
+    
     public void testScrubber() throws Exception {
-
-        scrubber = new Scrubber(testEnv.getRpcClient(), testEnv.getDirClient(), new MRCClient(testEnv.getRpcClient(),mrc1Address)
-                , volumeName, false, 3);
+        
+        scrubber = new Scrubber(testEnv.getRpcClient(), testEnv.getDirClient(), new MRCClient(testEnv
+                .getRpcClient(), mrc1Address), volumeName, false, 3);
         scrubber.scrub();
-
-
+        
         // file size corrected from 10 to 0
         RPCResponse r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/myDir/test0.txt");
         Stat s = (Stat) r.get();
         r.freeBuffers();
-
+        
         assertEquals(0, s.getSize());
-
-
+        
         // file size same as before
         r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/myDir/test1.txt");
         s = (Stat) r.get();
         r.freeBuffers();
-
+        
         assertEquals(0, s.getSize());
-
-        r = client.getxattr(mrc1Address, Scrubber.credentials,
-                volumeName, Scrubber.latestScrubAttr);
-        String result = (String)r.get();
+        
+        r = client.getxattr(mrc1Address, Scrubber.credentials, volumeName, Scrubber.latestScrubAttr);
+        String result = (String) r.get();
         r.freeBuffers();
         assertNotNull(result);
         assertTrue(result.length() > 0);
-
-
+        
         // file size corrected from 0 to 72000 (this file is stored in two
         // objects)
         r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/anotherDir/test11.txt");
         s = (Stat) r.get();
         r.freeBuffers();
-
+        
         assertEquals(72000, s.getSize());
-
+        
         // file size corrected from 0 to 65536, which is the stripe size.
-
+        
         r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/test10.txt");
         s = (Stat) r.get();
         r.freeBuffers();
-
+        
         assertEquals(65536, s.getSize());
-
+        
     }
-
+    
     public static void main(String[] args) {
         TestRunner.run(ScrubberTest.class);
     }
-
+    
 }

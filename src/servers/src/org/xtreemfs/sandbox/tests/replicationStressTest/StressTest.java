@@ -47,7 +47,6 @@ import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
-import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StripingPolicy;
@@ -155,8 +154,7 @@ public class StressTest {
             int stripeWidth) throws ONCRPCException, IOException, InterruptedException {
 
         // create a volume (no access control)
-        RPCResponse r2 = mrcClient.mkvol(null, TestFile.userCredentials, volumeName,
-                OSDSelectionPolicyType.OSD_SELECTION_POLICY_SIMPLE.intValue(), new StripingPolicy(
+        RPCResponse r2 = mrcClient.mkvol(null, TestFile.userCredentials, volumeName, new StripingPolicy(
                         StripingPolicyType.STRIPING_POLICY_RAID0, STRIPE_SIZE, stripeWidth),
                 AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL.intValue(), 0);
         r2.get();

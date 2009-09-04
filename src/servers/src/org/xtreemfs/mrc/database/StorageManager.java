@@ -51,11 +51,6 @@ public interface StorageManager {
      */
     public static final String GLOBAL_ID  = "*";
     
-    // initialization
-    
-    public void init(String ownerId, String owningGroupId, int perms, ACLEntry[] acl,
-        org.xtreemfs.interfaces.StripingPolicy rootDirDefSp, AtomicDBUpdate update) throws DatabaseException;
-    
     // file ID counter operations
     
     public long getNextFileId() throws DatabaseException;
@@ -79,7 +74,15 @@ public interface StorageManager {
     
     public void dumpDB(BufferedWriter xmlWriter) throws DatabaseException, IOException;
     
-    // XAttrs
+    // handling volumes
+    
+    public VolumeInfo getVolumeInfo();
+    
+    public void addVolumeChangeListener(VolumeChangeListener listener);
+    
+    public void deleteDatabase() throws DatabaseException;
+    
+    // handling XAttrs
     
     public void setXAttr(long fileId, String uid, String key, String value, AtomicDBUpdate update)
         throws DatabaseException;
@@ -90,7 +93,7 @@ public interface StorageManager {
     
     public Iterator<XAttr> getXAttrs(long fileId, String uid) throws DatabaseException;
     
-    // ACLs
+    // handling ACLs
     
     public void setACLEntry(long fileId, String entity, Short rights, AtomicDBUpdate update)
         throws DatabaseException;
@@ -117,8 +120,6 @@ public interface StorageManager {
     
     public void setMetadata(FileMetadata metadata, byte type, AtomicDBUpdate update) throws DatabaseException;
     
-    public void setVolumeSize(long newSize, AtomicDBUpdate update) throws DatabaseException;
-    
     public void setDefaultStripingPolicy(long fileId, org.xtreemfs.interfaces.StripingPolicy defaultSp,
         AtomicDBUpdate update) throws DatabaseException;
     
@@ -126,30 +127,25 @@ public interface StorageManager {
     
     public short delete(long parentId, String fileName, AtomicDBUpdate update) throws DatabaseException;
     
-    public void delete() throws DatabaseException;
-    
-    // getting metadata
+    // retrieving metadata
     
     public FileMetadata[] resolvePath(Path path) throws DatabaseException;
-    
-    public String getVolumeId();
-    
-    public String getVolumeName();
     
     public FileMetadata getMetadata(long fileId) throws DatabaseException;
     
     public FileMetadata getMetadata(long parentId, String fileName) throws DatabaseException;
-    
-    public long getVolumeSize() throws DatabaseException;
-    
-    public long getNumFiles() throws DatabaseException;
-    
-    public long getNumDirs() throws DatabaseException;
     
     public StripingPolicy getDefaultStripingPolicy(long fileId) throws DatabaseException;
     
     public String getSoftlinkTarget(long fileId) throws DatabaseException;
     
     public Iterator<FileMetadata> getChildren(long parentId) throws DatabaseException;
+    
+    // handling snapshots
+    
+    public void snapshot(String snapName, long parentId, String dirName, boolean recursive)
+        throws DatabaseException;
+    
+    public String[] getAllSnapshots() throws DatabaseException;
     
 }

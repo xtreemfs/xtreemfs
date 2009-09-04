@@ -37,7 +37,6 @@ import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.FileCredentialsSet;
-import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.Stat;
@@ -55,6 +54,8 @@ import org.xtreemfs.interfaces.MRCInterface.chmodRequest;
 import org.xtreemfs.interfaces.MRCInterface.chmodResponse;
 import org.xtreemfs.interfaces.MRCInterface.chownRequest;
 import org.xtreemfs.interfaces.MRCInterface.chownResponse;
+import org.xtreemfs.interfaces.MRCInterface.closeRequest;
+import org.xtreemfs.interfaces.MRCInterface.closeResponse;
 import org.xtreemfs.interfaces.MRCInterface.creatRequest;
 import org.xtreemfs.interfaces.MRCInterface.creatResponse;
 import org.xtreemfs.interfaces.MRCInterface.ftruncateRequest;
@@ -245,6 +246,21 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
+    public RPCResponse close(InetSocketAddress server, XCap capability) {
+        
+        closeRequest rq = new closeRequest(capability);
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
+            
+            @Override
+            public Object getResult(ReusableBuffer data) {
+                final closeResponse resp = new closeResponse();
+                resp.unmarshal(new XDRUnmarshaller(data));
+                return null;
+            }
+        });
+        return r;
+    }
+    
     public RPCResponse create(InetSocketAddress server, UserCredentials credentials, String path, int mode) {
         
         creatRequest rq = new creatRequest(path, mode);
@@ -369,11 +385,10 @@ public class MRCClient extends ONCRPCClient {
     }
     
     public RPCResponse mkvol(InetSocketAddress server, UserCredentials credentials, String volumeName,
-        int osdSelectionPolicy, StripingPolicy defaultStripingPolicy, int accessControlPolicy, int accessMode) {
+        StripingPolicy defaultStripingPolicy, int accessControlPolicy, int accessMode) {
         
         xtreemfs_mkvolRequest rq = new xtreemfs_mkvolRequest(new Volume(volumeName, accessMode,
-            defaultStripingPolicy,
-            AccessControlPolicyType.parseInt(accessControlPolicy), "", "", ""));
+            defaultStripingPolicy, AccessControlPolicyType.parseInt(accessControlPolicy), "", "", ""));
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -585,7 +600,8 @@ public class MRCClient extends ONCRPCClient {
     public RPCResponse<String> xtreemfs_checkFileExists(InetSocketAddress server, String volumeId,
         StringSet fileIds, String osdUUID) {
         
-        xtreemfs_check_file_existsRequest rq = new xtreemfs_check_file_existsRequest(volumeId, fileIds, osdUUID);
+        xtreemfs_check_file_existsRequest rq = new xtreemfs_check_file_existsRequest(volumeId, fileIds,
+            osdUUID);
         RPCResponse<String> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<String>() {
             
             @Override
@@ -598,25 +614,26 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
-    public RPCResponse<String> xtreemfs_internal_debug(InetSocketAddress server, UserCredentials creds, String cmd) {
+    public RPCResponse<String> xtreemfs_internal_debug(InetSocketAddress server, UserCredentials creds,
+        String cmd) {
         
         xtreemfs_internal_debugRequest rq = new xtreemfs_internal_debugRequest(cmd);
-        RPCResponse<String> r = sendRequest(server, rq.getTag(), rq,
-            new RPCResponseDecoder<String>() {
-                
-                @Override
-                public String getResult(ReusableBuffer data) {
-                    final xtreemfs_internal_debugResponse resp = new xtreemfs_internal_debugResponse();
-                    resp.unmarshal(new XDRUnmarshaller(data));
-                    return resp.getResult();
-                }
-            },creds);
+        RPCResponse<String> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<String>() {
+            
+            @Override
+            public String getResult(ReusableBuffer data) {
+                final xtreemfs_internal_debugResponse resp = new xtreemfs_internal_debugResponse();
+                resp.unmarshal(new XDRUnmarshaller(data));
+                return resp.getResult();
+            }
+        }, creds);
         return r;
     }
     
-    public RPCResponse<StringSet> xtreemfs_get_suitable_osds(InetSocketAddress server, String fileId) {
+    public RPCResponse<StringSet> xtreemfs_get_suitable_osds(InetSocketAddress server, String fileId,
+        int numOSDs) {
         
-        xtreemfs_get_suitable_osdsRequest rq = new xtreemfs_get_suitable_osdsRequest(fileId,0);
+        xtreemfs_get_suitable_osdsRequest rq = new xtreemfs_get_suitable_osdsRequest(fileId, numOSDs);
         RPCResponse<StringSet> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<StringSet>() {
             
             @Override

@@ -229,7 +229,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
                     if (checkIfAllowed(sMan, accessMode, entry.getRights(), file, parentId, userId)) {
                         return;
                     } else
-                        accessDenied(sMan.getVolumeId(), file, accessMode, userId);
+                        accessDenied(sMan.getVolumeInfo().getId(), file, accessMode, userId);
                     
                 }
                 
@@ -241,7 +241,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
                         parentId, userId)))
                     return;
                 else
-                    accessDenied(sMan.getVolumeId(), file, accessMode, userId);
+                    accessDenied(sMan.getVolumeInfo().getId(), file, accessMode, userId);
                 
             }
 
@@ -251,7 +251,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
                     userId, groupIds), file, parentId, userId))
                     return;
                 else
-                    accessDenied(sMan.getVolumeId(), file, accessMode, userId);
+                    accessDenied(sMan.getVolumeInfo().getId(), file, accessMode, userId);
             }
             
         } catch (UserException exc) {
@@ -581,7 +581,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         // if there was a matching entry but access was not granted, access
         // is denied
         if (groupFound)
-            accessDenied(sMan.getVolumeId(), file, accessMode, userId);
+            accessDenied(sMan.getVolumeInfo().getId(), file, accessMode, userId);
         
         entry = sMan.getACLEntry(file.getId(), OTHER);
         assert (entry != null);

@@ -35,15 +35,15 @@ import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.volumes.VolumeManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
+import org.xtreemfs.mrc.database.VolumeInfo;
+import org.xtreemfs.mrc.database.VolumeManager;
 
 /**
  * 
  * @author stender
  */
 public class DumpDBOperation extends MRCOperation {
-        
+    
     public DumpDBOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -64,24 +64,11 @@ public class DumpDBOperation extends MRCOperation {
         xmlWriter.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         xmlWriter.write("<filesystem dbversion=\"" + VersionManagement.getMrcDataVersion() + "\">\n");
         
-        for (VolumeInfo volume : vMan.getVolumes()) {
+        for (StorageManager sMan : vMan.getStorageManagers()) {
+            VolumeInfo vol = sMan.getVolumeInfo();
             xmlWriter
-                    .write("<volume id=\""
-                        + volume.getId()
-                        + "\" name=\""
-                        + volume.getName()
-                        + "\" acPolicy=\""
-                        + volume.getAcPolicyId()
-                        + "\" replPolicy=\""
-                        + volume.getReplicaPolicyId()
-                        + "\" osdPolicy=\""
-                        + volume.getOsdPolicyId()
-                        + (volume.getOsdPolicyArgs() != null ? "\" osdPolicyArgs=\""
-                            + volume.getOsdPolicyArgs() : "") + "\">\n");
-            
-            StorageManager sMan = vMan.getStorageManager(volume.getId());
+                    .write("<volume name=\"" + vol.getName() + "\" acPolicy=\"" + vol.getAcPolicyId() + "\">\n");
             sMan.dumpDB(xmlWriter);
-            
             xmlWriter.write("</volume>\n");
         }
         
@@ -92,4 +79,5 @@ public class DumpDBOperation extends MRCOperation {
         rq.setResponse(new xtreemfs_dump_databaseResponse());
         finishRequest(rq);
     }
+    
 }

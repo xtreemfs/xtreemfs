@@ -107,7 +107,7 @@ public class UpdateFileSizeOperation extends MRCOperation {
                 sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
                 
                 // update the volume size
-                sMan.setVolumeSize(sMan.getVolumeSize() + newFileSize - oldFileSize, update);
+                sMan.getVolumeInfo().updateVolumeSize(newFileSize - oldFileSize, update);
             }
 
             else if (Logging.isDebug())

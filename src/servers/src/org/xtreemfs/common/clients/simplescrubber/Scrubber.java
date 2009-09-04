@@ -26,7 +26,6 @@ package org.xtreemfs.common.clients.simplescrubber;
 
 import java.io.FileInputStream;
 import java.net.InetSocketAddress;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.EmptyStackException;
 import java.util.HashMap;
@@ -36,6 +35,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
@@ -54,13 +54,12 @@ import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
-import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.mrc.client.MRCClient;
-import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.utils.CLIParser;
-import org.xtreemfs.utils.CLIParser.CliOption;
 import org.xtreemfs.utils.DefaultDirConfig;
+import org.xtreemfs.utils.CLIParser.CliOption;
 
 /**
  *

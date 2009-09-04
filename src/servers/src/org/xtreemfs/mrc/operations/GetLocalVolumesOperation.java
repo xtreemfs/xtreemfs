@@ -27,23 +27,22 @@ package org.xtreemfs.mrc.operations;
 import java.util.Collection;
 
 import org.xtreemfs.interfaces.AccessControlPolicyType;
-import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.Volume;
 import org.xtreemfs.interfaces.VolumeSet;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_lsvolResponse;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.Converter;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
  * @author stender
  */
 public class GetLocalVolumesOperation extends MRCOperation {
-        
+    
     public GetLocalVolumesOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -51,17 +50,17 @@ public class GetLocalVolumesOperation extends MRCOperation {
     @Override
     public void startRequest(MRCRequest rq) throws Throwable {
         
-        Collection<VolumeInfo> volumes = master.getVolumeManager().getVolumes();
+        Collection<StorageManager> sMans = master.getVolumeManager().getStorageManagers();
         
         VolumeSet vSet = new VolumeSet();
-        for (VolumeInfo data : volumes) {
+        for (StorageManager sMan : sMans) {
             
-            StorageManager sMan = master.getVolumeManager().getStorageManager(data.getId());
+            VolumeInfo vol = sMan.getVolumeInfo();
             FileMetadata md = sMan.getMetadata(1);
-            vSet.add(new Volume(data.getName(), sMan.getMetadata(1).getPerms(), OSDSelectionPolicyType
-                    .parseInt(data.getOsdPolicyId()), Converter.stripingPolicyToStripingPolicy(sMan
-                    .getDefaultStripingPolicy(1)), AccessControlPolicyType.parseInt(data.getAcPolicyId()),
-                data.getId(), md.getOwnerId(), md.getOwningGroupId()));
+            vSet.add(new Volume(vol.getName(), sMan.getMetadata(1).getPerms(), Converter
+                    .stripingPolicyToStripingPolicy(sMan.getDefaultStripingPolicy(1)),
+                AccessControlPolicyType.parseInt(vol.getAcPolicyId()), vol.getId(), md.getOwnerId(), md
+                        .getOwningGroupId()));
         }
         
         rq.setResponse(new xtreemfs_lsvolResponse(vSet));

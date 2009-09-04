@@ -51,31 +51,33 @@ import org.xtreemfs.mrc.ac.FileAccessPolicy;
 import org.xtreemfs.mrc.ac.POSIXFileAccessPolicy;
 import org.xtreemfs.mrc.ac.VolumeACLFileAccessPolicy;
 import org.xtreemfs.mrc.ac.YesToAnyoneFileAccessPolicy;
-import org.xtreemfs.mrc.osdselection.DNSSelectionPolicy;
+import org.xtreemfs.mrc.database.VolumeManager;
+import org.xtreemfs.mrc.osdselection.FilterDefaultPolicy;
+import org.xtreemfs.mrc.osdselection.FilterFQDNPolicy;
+import org.xtreemfs.mrc.osdselection.GroupDCMapPolicy;
+import org.xtreemfs.mrc.osdselection.GroupFQDNPolicy;
 import org.xtreemfs.mrc.osdselection.OSDSelectionPolicy;
-import org.xtreemfs.mrc.osdselection.ProximitySelectionPolicy;
-import org.xtreemfs.mrc.osdselection.RandomSelectionPolicy;
-import org.xtreemfs.mrc.replication.FQDNReplicaSelectionPolicy;
-import org.xtreemfs.mrc.replication.ReplicaSelectionPolicy;
-import org.xtreemfs.mrc.replication.SimpleReplicaSelectionPolicy;
-import org.xtreemfs.mrc.volumes.VolumeManager;
+import org.xtreemfs.mrc.osdselection.SortDCMapPolicy;
+import org.xtreemfs.mrc.osdselection.SortFQDNPolicy;
+import org.xtreemfs.mrc.osdselection.SortRandomPolicy;
 
 public class PolicyContainer {
     
     static class PolicyClassLoader extends ClassLoader {
         
         private static final Class[]         POLICY_INTERFACES = { FileAccessPolicy.class,
-                                                                   OSDSelectionPolicy.class,
-                                                                   ReplicaSelectionPolicy.class };
+                                                                   OSDSelectionPolicy.class, };
         
         private static final Class[]         BUILT_IN_POLICIES = { POSIXFileAccessPolicy.class,
                                                                    VolumeACLFileAccessPolicy.class,
                                                                    YesToAnyoneFileAccessPolicy.class,
-                                                                   RandomSelectionPolicy.class,
-                                                                   ProximitySelectionPolicy.class,
-                                                                   DNSSelectionPolicy.class,
-                                                                   SimpleReplicaSelectionPolicy.class,
-                                                                   FQDNReplicaSelectionPolicy.class };
+                                                                   FilterDefaultPolicy.class,
+                                                                   FilterFQDNPolicy.class,
+                                                                   GroupDCMapPolicy.class,
+                                                                   GroupFQDNPolicy.class,
+                                                                   SortDCMapPolicy.class,
+                                                                   SortFQDNPolicy.class,
+                                                                   SortRandomPolicy.class };
         
         private Map<String, Class>           cache;
         
@@ -438,23 +440,6 @@ public class PolicyContainer {
             Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this, OutputUtils.stackTraceToString(exc));
             throw exc;
         }
-    }
-    
-    public ReplicaSelectionPolicy getReplicaSelectionPolicy(short id) throws Exception {
-        
-        try {
-            Class policyClass = policyClassLoader.loadClass(id, ReplicaSelectionPolicy.class);
-            if (policyClass == null)
-                throw new MRCException("policy not found (id="+id+")");
-            return (ReplicaSelectionPolicy) policyClass.newInstance();
-            
-        } catch (Exception exc) {
-            Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this,
-                "could not load ReplicaSelectionPolicy with ID %d", id);
-            Logging.logMessage(Logging.LEVEL_WARN, Category.misc, this, OutputUtils.stackTraceToString(exc));
-            throw exc;
-        }
-        
     }
     
     // public static void main(String[] args) throws Exception {

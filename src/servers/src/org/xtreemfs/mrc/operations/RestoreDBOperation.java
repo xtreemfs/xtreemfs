@@ -45,10 +45,9 @@ import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
+import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.utils.DBAdminHelper;
 import org.xtreemfs.mrc.utils.DBAdminHelper.DBRestoreState;
-import org.xtreemfs.mrc.volumes.VolumeManager;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
@@ -77,7 +76,7 @@ public class RestoreDBOperation extends MRCOperation {
             
             // First, check if any volume exists already. If so, deny the
             // operation for security reasons.
-            if (vMan.getVolumes().size() != 0)
+            if (vMan.getStorageManagers().size() != 0)
                 throw new UserException(
                     ErrNo.EPERM,
                     "Restoring from a dump is only possible on an MRC with no database. Please delete the existing MRC database on the server and restart the MRC!");
@@ -97,54 +96,10 @@ public class RestoreDBOperation extends MRCOperation {
                         
                         if (qName.equals("volume")) {
                             
-                            final String id = attributes.getValue(attributes.getIndex("id"));
-                            final String name = attributes.getValue(attributes.getIndex("name"));
-                            final short acPol = Short.parseShort(attributes.getValue(attributes
+                            state.currentVolumeId = attributes.getValue(attributes.getIndex("id"));
+                            state.currentVolumeName = attributes.getValue(attributes.getIndex("name"));
+                            state.currentVolumeACPolicy = Short.parseShort(attributes.getValue(attributes
                                     .getIndex("acPolicy")));
-                            final short osdPol = Short.parseShort(attributes.getValue(attributes
-                                    .getIndex("osdPolicy")));
-                            final short replPol = attributes.getIndex("replPolicy") == -1 ? 0 : Short
-                                    .parseShort(attributes.getValue(attributes.getIndex("replPolicy")));
-                            final String osdPolArgs = attributes.getIndex("osdPolicyArgs") == -1 ? null
-                                : attributes.getValue(attributes.getIndex("osdPolicyArgs"));
-                            
-                            state = new DBRestoreState();
-                            state.currentVolume = new VolumeInfo() {
-                                
-                                public short getAcPolicyId() {
-                                    return acPol;
-                                }
-                                
-                                public String getId() {
-                                    return id;
-                                }
-                                
-                                public String getName() {
-                                    return name;
-                                }
-                                
-                                public String getOsdPolicyArgs() {
-                                    return osdPolArgs;
-                                }
-                                
-                                public short getOsdPolicyId() {
-                                    return osdPol;
-                                }
-                                
-                                public short getReplicaPolicyId() {
-                                    return replPol;
-                                }
-                                
-                                public void setOsdPolicyArgs(String osdPolicyArgs) {
-                                }
-                                
-                                public void setOsdPolicyId(short osdPolicyId) {
-                                }
-                                
-                                public void setReplicaPolicyId(short replicaPolicyId) {
-                                }
-                                
-                            };
                             
                         }
 
@@ -190,7 +145,7 @@ public class RestoreDBOperation extends MRCOperation {
                     if (qName.equals("volume")) {
                         
                         // set the largest file ID
-                        StorageManager sMan = vMan.getStorageManager(state.currentVolume.getId());
+                        StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
                         AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
                         sMan.setLastFileId(state.largestFileId, update);
                         update.execute();

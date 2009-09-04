@@ -32,9 +32,8 @@ import org.xtreemfs.interfaces.MRCInterface.xtreemfs_get_suitable_osdsRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_get_suitable_osdsResponse;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
-import org.xtreemfs.mrc.replication.ReplicaSelectionPolicy;
+import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
-import org.xtreemfs.mrc.volumes.metadata.VolumeInfo;
 
 /**
  * 
@@ -54,18 +53,18 @@ public class GetSuitableOSDsOperation extends MRCOperation {
         
         // parse volume and file ID from global file ID
         GlobalFileIdResolver idRes = new GlobalFileIdResolver(rqArgs.getFile_id());
+        FileMetadata file = master.getVolumeManager().getStorageManager(idRes.getVolumeId()).getMetadata(
+            idRes.getLocalFileId());
         
-        VolumeInfo vol = master.getVolumeManager().getVolumeById(idRes.getVolumeId());
-        ReplicaSelectionPolicy rsPolicy = master.getPolicyContainer().getReplicaSelectionPolicy(
-            vol.getReplicaPolicyId());
+        // retrieve the set of OSDs for the new replica
+        ServiceSet usableOSDs = master.getOSDStatusManager()
+                .getUsableOSDs(idRes.getVolumeId(),
+                    ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress(),
+                    file.getXLocList(), rqArgs.getNumOSDs());
         
-        ServiceSet usableOSDs = master.getOSDStatusManager().getUsableOSDs(idRes.getVolumeId());
         StringSet uuids = new StringSet();
         for (int i = 0; i < usableOSDs.size(); i++)
             uuids.add(usableOSDs.get(i).getUuid());
-        
-        uuids = rsPolicy.getSortedOSDList(uuids, ((InetSocketAddress) rq.getRPCRequest().getClientIdentity())
-                .getAddress());
         
         // set the response
         rq.setResponse(new xtreemfs_get_suitable_osdsResponse(uuids));
