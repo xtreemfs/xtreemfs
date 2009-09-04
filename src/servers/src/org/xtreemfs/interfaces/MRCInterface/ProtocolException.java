@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class ProtocolException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 2009082872;
+    public static final int TAG = 2009090463;
     
     public ProtocolException() {  }
     public ProtocolException( int accept_stat, int error_code, String stack_trace ) { this.accept_stat = accept_stat; this.error_code = error_code; this.stack_trace = stack_trace; }
@@ -26,10 +26,10 @@ public class ProtocolException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     public void setStack_trace( String stack_trace ) { this.stack_trace = stack_trace; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082872;    
+    public static final long serialVersionUID = 2009090463;    
 
     // yidl.Object
-    public int getTag() { return 2009082872; }
+    public int getTag() { return 2009090463; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::ProtocolException"; }
     
     public int getXDRSize()

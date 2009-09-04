@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class renameRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009082832;
+    public static final int TAG = 2009090423;
     
     public renameRequest() {  }
     public renameRequest( String source_path, String target_path ) { this.source_path = source_path; this.target_path = target_path; }
@@ -28,10 +28,10 @@ public class renameRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082832;    
+    public static final long serialVersionUID = 2009090423;    
 
     // yidl.Object
-    public int getTag() { return 2009082832; }
+    public int getTag() { return 2009090423; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::renameRequest"; }
     
     public int getXDRSize()

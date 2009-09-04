@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class xtreemfs_check_file_existsRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009082849;
+    public static final int TAG = 2009090440;
     
     public xtreemfs_check_file_existsRequest() { file_ids = new StringSet();  }
     public xtreemfs_check_file_existsRequest( String volume_id, StringSet file_ids, String osd_uuid ) { this.volume_id = volume_id; this.file_ids = file_ids; this.osd_uuid = osd_uuid; }
@@ -30,10 +30,10 @@ public class xtreemfs_check_file_existsRequest extends org.xtreemfs.interfaces.u
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082849;    
+    public static final long serialVersionUID = 2009090440;    
 
     // yidl.Object
-    public int getTag() { return 2009082849; }
+    public int getTag() { return 2009090440; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsRequest"; }
     
     public int getXDRSize()

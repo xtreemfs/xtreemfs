@@ -12,7 +12,7 @@ import yidl.Unmarshaller;
 
 public class Stat extends Struct
 {
-    public static final int TAG = 2009082658;
+    public static final int TAG = 2009090249;
     
     public Stat() {  }
     public Stat( long dev, long ino, int mode, int nlink, int uid, int gid, int unused_dev, long size, long atime_ns, long mtime_ns, long ctime_ns, String user_id, String group_id, String file_id, String link_target, int truncate_epoch, int attributes ) { this.dev = dev; this.ino = ino; this.mode = mode; this.nlink = nlink; this.uid = uid; this.gid = gid; this.unused_dev = unused_dev; this.size = size; this.atime_ns = atime_ns; this.mtime_ns = mtime_ns; this.ctime_ns = ctime_ns; this.user_id = user_id; this.group_id = group_id; this.file_id = file_id; this.link_target = link_target; this.truncate_epoch = truncate_epoch; this.attributes = attributes; }
@@ -53,10 +53,10 @@ public class Stat extends Struct
     public void setAttributes( int attributes ) { this.attributes = attributes; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082658;    
+    public static final long serialVersionUID = 2009090249;    
 
     // yidl.Object
-    public int getTag() { return 2009082658; }
+    public int getTag() { return 2009090249; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Stat"; }
     
     public int getXDRSize()

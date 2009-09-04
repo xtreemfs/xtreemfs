@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class accessRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009082819;
+    public static final int TAG = 2009090410;
     
     public accessRequest() {  }
     public accessRequest( String path, int mode ) { this.path = path; this.mode = mode; }
@@ -28,10 +28,10 @@ public class accessRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082819;    
+    public static final long serialVersionUID = 2009090410;    
 
     // yidl.Object
-    public int getTag() { return 2009082819; }
+    public int getTag() { return 2009090410; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::accessRequest"; }
     
     public int getXDRSize()

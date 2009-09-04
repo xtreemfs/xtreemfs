@@ -12,7 +12,7 @@ import yidl.Unmarshaller;
 
 public class Replica extends Struct
 {
-    public static final int TAG = 2009082638;
+    public static final int TAG = 2009090229;
     
     public Replica() { striping_policy = new StripingPolicy(); osd_uuids = new StringSet();  }
     public Replica( StripingPolicy striping_policy, int replication_flags, StringSet osd_uuids ) { this.striping_policy = striping_policy; this.replication_flags = replication_flags; this.osd_uuids = osd_uuids; }
@@ -25,10 +25,10 @@ public class Replica extends Struct
     public void setOsd_uuids( StringSet osd_uuids ) { this.osd_uuids = osd_uuids; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082638;    
+    public static final long serialVersionUID = 2009090229;    
 
     // yidl.Object
-    public int getTag() { return 2009082638; }
+    public int getTag() { return 2009090229; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Replica"; }
     
     public int getXDRSize()

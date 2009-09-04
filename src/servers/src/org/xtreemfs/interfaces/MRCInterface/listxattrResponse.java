@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class listxattrResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009082827;
+    public static final int TAG = 2009090418;
     
     public listxattrResponse() { names = new StringSet();  }
     public listxattrResponse( StringSet names ) { this.names = names; }
@@ -22,10 +22,10 @@ public class listxattrResponse extends org.xtreemfs.interfaces.utils.Response
     public void setNames( StringSet names ) { this.names = names; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082827;    
+    public static final long serialVersionUID = 2009090418;    
 
     // yidl.Object
-    public int getTag() { return 2009082827; }
+    public int getTag() { return 2009090418; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::listxattrResponse"; }
     
     public int getXDRSize()

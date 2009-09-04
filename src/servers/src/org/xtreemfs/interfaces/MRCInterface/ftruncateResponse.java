@@ -13,7 +13,7 @@ import yidl.Unmarshaller;
 
 public class ftruncateResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009082823;
+    public static final int TAG = 2009090414;
     
     public ftruncateResponse() { truncate_xcap = new XCap();  }
     public ftruncateResponse( XCap truncate_xcap ) { this.truncate_xcap = truncate_xcap; }
@@ -22,10 +22,10 @@ public class ftruncateResponse extends org.xtreemfs.interfaces.utils.Response
     public void setTruncate_xcap( XCap truncate_xcap ) { this.truncate_xcap = truncate_xcap; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082823;    
+    public static final long serialVersionUID = 2009090414;    
 
     // yidl.Object
-    public int getTag() { return 2009082823; }
+    public int getTag() { return 2009090414; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::ftruncateResponse"; }
     
     public int getXDRSize()
