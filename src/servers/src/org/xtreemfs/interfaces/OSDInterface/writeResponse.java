@@ -31,7 +31,7 @@ public class writeResponse extends org.xtreemfs.interfaces.utils.Response
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += osd_write_response.getXDRSize();
+        my_size += osd_write_response.getXDRSize(); // osd_write_response
         return my_size;
     }    
     

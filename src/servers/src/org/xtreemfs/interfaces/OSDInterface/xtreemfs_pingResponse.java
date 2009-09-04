@@ -31,7 +31,7 @@ public class xtreemfs_pingResponse extends org.xtreemfs.interfaces.utils.Respons
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += remote_coordinates.getXDRSize();
+        my_size += remote_coordinates.getXDRSize(); // remote_coordinates
         return my_size;
     }    
     

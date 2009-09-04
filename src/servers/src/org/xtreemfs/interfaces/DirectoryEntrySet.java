@@ -20,12 +20,16 @@ public class DirectoryEntrySet extends Sequence<DirectoryEntry>
     public int getTag() { return 2009090251; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DirectoryEntrySet"; }
 
-    public int getXDRSize() {
-        int my_size = Integer.SIZE/8;
-        for ( Iterator<DirectoryEntry> i = iterator(); i.hasNext(); ) {
+    public int getXDRSize() 
+    {
+        int my_size = 4; // Length of the sequence
+        
+        for ( Iterator<DirectoryEntry> i = iterator(); i.hasNext(); ) 
+        {
             DirectoryEntry value = i.next();
-            my_size += value.getXDRSize();
+            my_size += value.getXDRSize(); // Size of value
         }
+        
         return my_size;
     }
     

@@ -31,7 +31,7 @@ public class xtreemfs_service_registerResponse extends org.xtreemfs.interfaces.u
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( Long.SIZE / 8 );
+        my_size += Long.SIZE / 8; // returnValue
         return my_size;
     }    
     

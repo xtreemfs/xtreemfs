@@ -31,7 +31,7 @@ public class xtreemfs_replica_listResponse extends org.xtreemfs.interfaces.utils
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += replicas.getXDRSize();
+        my_size += replicas.getXDRSize(); // replicas
         return my_size;
     }    
     

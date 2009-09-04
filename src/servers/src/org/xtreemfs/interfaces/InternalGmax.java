@@ -34,9 +34,9 @@ public class InternalGmax extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( Long.SIZE / 8 );
-        my_size += ( Long.SIZE / 8 );
-        my_size += ( Long.SIZE / 8 );
+        my_size += Long.SIZE / 8; // epoch
+        my_size += Long.SIZE / 8; // last_object_id
+        my_size += Long.SIZE / 8; // file_size
         return my_size;
     }    
     

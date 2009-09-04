@@ -42,13 +42,13 @@ public class XCap extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE/8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 );
-        my_size += ( Integer.SIZE / 8 );
-        my_size += ( Long.SIZE / 8 );
-        my_size += Integer.SIZE/8 + ( client_identity != null ? ( ( client_identity.getBytes().length % 4 == 0 ) ? client_identity.getBytes().length : ( client_identity.getBytes().length + 4 - client_identity.getBytes().length % 4 ) ) : 0 );
-        my_size += ( Integer.SIZE / 8 );
-        my_size += 4;
-        my_size += Integer.SIZE/8 + ( server_signature != null ? ( ( server_signature.getBytes().length % 4 == 0 ) ? server_signature.getBytes().length : ( server_signature.getBytes().length + 4 - server_signature.getBytes().length % 4 ) ) : 0 );
+        my_size += Integer.SIZE / 8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 ); // file_id
+        my_size += Integer.SIZE / 8; // access_mode
+        my_size += Long.SIZE / 8; // expires_s
+        my_size += Integer.SIZE / 8 + ( client_identity != null ? ( ( client_identity.getBytes().length % 4 == 0 ) ? client_identity.getBytes().length : ( client_identity.getBytes().length + 4 - client_identity.getBytes().length % 4 ) ) : 0 ); // client_identity
+        my_size += Integer.SIZE / 8; // truncate_epoch
+        my_size += Integer.SIZE / 8; // replicateOnClose
+        my_size += Integer.SIZE / 8 + ( server_signature != null ? ( ( server_signature.getBytes().length % 4 == 0 ) ? server_signature.getBytes().length : ( server_signature.getBytes().length + 4 - server_signature.getBytes().length % 4 ) ) : 0 ); // server_signature
         return my_size;
     }    
     

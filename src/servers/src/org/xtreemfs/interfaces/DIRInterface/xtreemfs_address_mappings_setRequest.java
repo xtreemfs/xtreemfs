@@ -35,7 +35,7 @@ public class xtreemfs_address_mappings_setRequest extends org.xtreemfs.interface
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += address_mappings.getXDRSize();
+        my_size += address_mappings.getXDRSize(); // address_mappings
         return my_size;
     }    
     

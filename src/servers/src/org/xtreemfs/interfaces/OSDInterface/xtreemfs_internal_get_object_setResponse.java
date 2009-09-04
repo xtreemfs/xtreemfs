@@ -31,7 +31,7 @@ public class xtreemfs_internal_get_object_setResponse extends org.xtreemfs.inter
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += returnValue.getXDRSize();
+        my_size += returnValue.getXDRSize(); // returnValue
         return my_size;
     }    
     

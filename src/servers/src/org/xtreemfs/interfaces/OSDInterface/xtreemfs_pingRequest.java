@@ -35,7 +35,7 @@ public class xtreemfs_pingRequest extends org.xtreemfs.interfaces.utils.Request
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += coordinates.getXDRSize();
+        my_size += coordinates.getXDRSize(); // coordinates
         return my_size;
     }    
     

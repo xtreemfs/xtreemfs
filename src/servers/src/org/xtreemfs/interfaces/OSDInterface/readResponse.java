@@ -31,7 +31,7 @@ public class readResponse extends org.xtreemfs.interfaces.utils.Response
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += object_data.getXDRSize();
+        my_size += object_data.getXDRSize(); // object_data
         return my_size;
     }    
     

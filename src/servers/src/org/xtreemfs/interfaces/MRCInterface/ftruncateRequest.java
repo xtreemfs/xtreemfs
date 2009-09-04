@@ -35,7 +35,7 @@ public class ftruncateRequest extends org.xtreemfs.interfaces.utils.Request
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += write_xcap.getXDRSize();
+        my_size += write_xcap.getXDRSize(); // write_xcap
         return my_size;
     }    
     

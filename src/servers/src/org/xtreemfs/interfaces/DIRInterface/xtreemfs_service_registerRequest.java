@@ -35,7 +35,7 @@ public class xtreemfs_service_registerRequest extends org.xtreemfs.interfaces.ut
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += service.getXDRSize();
+        my_size += service.getXDRSize(); // service
         return my_size;
     }    
     

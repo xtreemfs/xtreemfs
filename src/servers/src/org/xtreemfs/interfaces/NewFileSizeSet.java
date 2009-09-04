@@ -20,12 +20,16 @@ public class NewFileSizeSet extends Sequence<NewFileSize>
     public int getTag() { return 2009090221; }
     public String getTypeName() { return "org::xtreemfs::interfaces::NewFileSizeSet"; }
 
-    public int getXDRSize() {
-        int my_size = Integer.SIZE/8;
-        for ( Iterator<NewFileSize> i = iterator(); i.hasNext(); ) {
+    public int getXDRSize() 
+    {
+        int my_size = 4; // Length of the sequence
+        
+        for ( Iterator<NewFileSize> i = iterator(); i.hasNext(); ) 
+        {
             NewFileSize value = i.next();
-            my_size += value.getXDRSize();
+            my_size += value.getXDRSize(); // Size of value
         }
+        
         return my_size;
     }
     

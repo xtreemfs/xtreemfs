@@ -38,11 +38,11 @@ public class StatVFS extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( Integer.SIZE / 8 );
-        my_size += ( Long.SIZE / 8 );
-        my_size += ( Long.SIZE / 8 );
-        my_size += Integer.SIZE/8 + ( fsid != null ? ( ( fsid.getBytes().length % 4 == 0 ) ? fsid.getBytes().length : ( fsid.getBytes().length + 4 - fsid.getBytes().length % 4 ) ) : 0 );
-        my_size += ( Integer.SIZE / 8 );
+        my_size += Integer.SIZE / 8; // bsize
+        my_size += Long.SIZE / 8; // bavail
+        my_size += Long.SIZE / 8; // blocks
+        my_size += Integer.SIZE / 8 + ( fsid != null ? ( ( fsid.getBytes().length % 4 == 0 ) ? fsid.getBytes().length : ( fsid.getBytes().length + 4 - fsid.getBytes().length % 4 ) ) : 0 ); // fsid
+        my_size += Integer.SIZE / 8; // namelen
         return my_size;
     }    
     

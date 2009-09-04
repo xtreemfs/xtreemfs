@@ -34,9 +34,9 @@ public class UserCredentials extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE/8 + ( user_id != null ? ( ( user_id.getBytes().length % 4 == 0 ) ? user_id.getBytes().length : ( user_id.getBytes().length + 4 - user_id.getBytes().length % 4 ) ) : 0 );
-        my_size += group_ids.getXDRSize();
-        my_size += Integer.SIZE/8 + ( password != null ? ( ( password.getBytes().length % 4 == 0 ) ? password.getBytes().length : ( password.getBytes().length + 4 - password.getBytes().length % 4 ) ) : 0 );
+        my_size += Integer.SIZE / 8 + ( user_id != null ? ( ( user_id.getBytes().length % 4 == 0 ) ? user_id.getBytes().length : ( user_id.getBytes().length + 4 - user_id.getBytes().length % 4 ) ) : 0 ); // user_id
+        my_size += group_ids.getXDRSize(); // group_ids
+        my_size += Integer.SIZE / 8 + ( password != null ? ( ( password.getBytes().length % 4 == 0 ) ? password.getBytes().length : ( password.getBytes().length + 4 - password.getBytes().length % 4 ) ) : 0 ); // password
         return my_size;
     }    
     

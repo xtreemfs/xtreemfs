@@ -19,12 +19,16 @@ public class StringSet extends Sequence<String>
     public int getTag() { return 2009082619; }
     public String getTypeName() { return "org::xtreemfs::interfaces::StringSet"; }
 
-    public int getXDRSize() {
-        int my_size = Integer.SIZE/8;
-        for ( Iterator<String> i = iterator(); i.hasNext(); ) {
+    public int getXDRSize() 
+    {
+        int my_size = 4; // Length of the sequence
+        
+        for ( Iterator<String> i = iterator(); i.hasNext(); ) 
+        {
             String value = i.next();
-            my_size += Integer.SIZE/8 + ( value != null ? ( ( value.getBytes().length % 4 == 0 ) ? value.getBytes().length : ( value.getBytes().length + 4 - value.getBytes().length % 4 ) ) : 0 );
+            my_size += Integer.SIZE / 8 + ( value != null ? ( ( value.getBytes().length % 4 == 0 ) ? value.getBytes().length : ( value.getBytes().length + 4 - value.getBytes().length % 4 ) ) : 0 ); // Size of value
         }
+        
         return my_size;
     }
     

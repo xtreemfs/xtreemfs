@@ -35,7 +35,7 @@ public class xtreemfs_mkvolRequest extends org.xtreemfs.interfaces.utils.Request
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += volume.getXDRSize();
+        my_size += volume.getXDRSize(); // volume
         return my_size;
     }    
     

@@ -35,7 +35,7 @@ public class xtreemfs_service_get_by_nameRequest extends org.xtreemfs.interfaces
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE/8 + ( name != null ? ( ( name.getBytes().length % 4 == 0 ) ? name.getBytes().length : ( name.getBytes().length + 4 - name.getBytes().length % 4 ) ) : 0 );
+        my_size += Integer.SIZE / 8 + ( name != null ? ( ( name.getBytes().length % 4 == 0 ) ? name.getBytes().length : ( name.getBytes().length + 4 - name.getBytes().length % 4 ) ) : 0 ); // name
         return my_size;
     }    
     

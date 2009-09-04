@@ -44,14 +44,14 @@ public class AddressMapping extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE/8 + ( uuid != null ? ( ( uuid.getBytes().length % 4 == 0 ) ? uuid.getBytes().length : ( uuid.getBytes().length + 4 - uuid.getBytes().length % 4 ) ) : 0 );
-        my_size += ( Long.SIZE / 8 );
-        my_size += Integer.SIZE/8 + ( protocol != null ? ( ( protocol.getBytes().length % 4 == 0 ) ? protocol.getBytes().length : ( protocol.getBytes().length + 4 - protocol.getBytes().length % 4 ) ) : 0 );
-        my_size += Integer.SIZE/8 + ( address != null ? ( ( address.getBytes().length % 4 == 0 ) ? address.getBytes().length : ( address.getBytes().length + 4 - address.getBytes().length % 4 ) ) : 0 );
-        my_size += ( Integer.SIZE / 8 );
-        my_size += Integer.SIZE/8 + ( match_network != null ? ( ( match_network.getBytes().length % 4 == 0 ) ? match_network.getBytes().length : ( match_network.getBytes().length + 4 - match_network.getBytes().length % 4 ) ) : 0 );
-        my_size += ( Integer.SIZE / 8 );
-        my_size += Integer.SIZE/8 + ( uri != null ? ( ( uri.getBytes().length % 4 == 0 ) ? uri.getBytes().length : ( uri.getBytes().length + 4 - uri.getBytes().length % 4 ) ) : 0 );
+        my_size += Integer.SIZE / 8 + ( uuid != null ? ( ( uuid.getBytes().length % 4 == 0 ) ? uuid.getBytes().length : ( uuid.getBytes().length + 4 - uuid.getBytes().length % 4 ) ) : 0 ); // uuid
+        my_size += Long.SIZE / 8; // version
+        my_size += Integer.SIZE / 8 + ( protocol != null ? ( ( protocol.getBytes().length % 4 == 0 ) ? protocol.getBytes().length : ( protocol.getBytes().length + 4 - protocol.getBytes().length % 4 ) ) : 0 ); // protocol
+        my_size += Integer.SIZE / 8 + ( address != null ? ( ( address.getBytes().length % 4 == 0 ) ? address.getBytes().length : ( address.getBytes().length + 4 - address.getBytes().length % 4 ) ) : 0 ); // address
+        my_size += Integer.SIZE / 8; // port
+        my_size += Integer.SIZE / 8 + ( match_network != null ? ( ( match_network.getBytes().length % 4 == 0 ) ? match_network.getBytes().length : ( match_network.getBytes().length + 4 - match_network.getBytes().length % 4 ) ) : 0 ); // match_network
+        my_size += Integer.SIZE / 8; // ttl_s
+        my_size += Integer.SIZE / 8 + ( uri != null ? ( ( uri.getBytes().length % 4 == 0 ) ? uri.getBytes().length : ( uri.getBytes().length + 4 - uri.getBytes().length % 4 ) ) : 0 ); // uri
         return my_size;
     }    
     

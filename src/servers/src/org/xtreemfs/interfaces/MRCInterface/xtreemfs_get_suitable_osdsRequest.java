@@ -37,8 +37,8 @@ public class xtreemfs_get_suitable_osdsRequest extends org.xtreemfs.interfaces.u
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE/8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 );
-        my_size += ( Integer.SIZE / 8 );
+        my_size += Integer.SIZE / 8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 ); // file_id
+        my_size += Integer.SIZE / 8; // numOSDs
         return my_size;
     }    
     

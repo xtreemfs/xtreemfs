@@ -31,7 +31,7 @@ public class xtreemfs_service_get_by_typeResponse extends org.xtreemfs.interface
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += services.getXDRSize();
+        my_size += services.getXDRSize(); // services
         return my_size;
     }    
     

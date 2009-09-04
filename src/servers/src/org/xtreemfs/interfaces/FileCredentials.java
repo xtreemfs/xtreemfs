@@ -32,8 +32,8 @@ public class FileCredentials extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += xlocs.getXDRSize();
-        my_size += xcap.getXDRSize();
+        my_size += xlocs.getXDRSize(); // xlocs
+        my_size += xcap.getXDRSize(); // xcap
         return my_size;
     }    
     

@@ -32,8 +32,8 @@ public class OSDWriteResponse extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += new_file_size.getXDRSize();
-        my_size += opaque_data.getXDRSize();
+        my_size += new_file_size.getXDRSize(); // new_file_size
+        my_size += opaque_data.getXDRSize(); // opaque_data
         return my_size;
     }    
     

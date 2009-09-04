@@ -31,7 +31,7 @@ public class xtreemfs_lsvolResponse extends org.xtreemfs.interfaces.utils.Respon
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += volumes.getXDRSize();
+        my_size += volumes.getXDRSize(); // volumes
         return my_size;
     }    
     

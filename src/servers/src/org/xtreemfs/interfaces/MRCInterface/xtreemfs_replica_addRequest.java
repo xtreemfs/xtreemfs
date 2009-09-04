@@ -37,8 +37,8 @@ public class xtreemfs_replica_addRequest extends org.xtreemfs.interfaces.utils.R
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE/8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 );
-        my_size += new_replica.getXDRSize();
+        my_size += Integer.SIZE / 8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 ); // file_id
+        my_size += new_replica.getXDRSize(); // new_replica
         return my_size;
     }    
     

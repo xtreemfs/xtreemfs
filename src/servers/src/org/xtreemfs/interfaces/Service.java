@@ -40,12 +40,12 @@ public class Service extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += 4;
-        my_size += Integer.SIZE/8 + ( uuid != null ? ( ( uuid.getBytes().length % 4 == 0 ) ? uuid.getBytes().length : ( uuid.getBytes().length + 4 - uuid.getBytes().length % 4 ) ) : 0 );
-        my_size += ( Long.SIZE / 8 );
-        my_size += Integer.SIZE/8 + ( name != null ? ( ( name.getBytes().length % 4 == 0 ) ? name.getBytes().length : ( name.getBytes().length + 4 - name.getBytes().length % 4 ) ) : 0 );
-        my_size += ( Long.SIZE / 8 );
-        my_size += data.getXDRSize();
+        my_size += Integer.SIZE / 8; // type
+        my_size += Integer.SIZE / 8 + ( uuid != null ? ( ( uuid.getBytes().length % 4 == 0 ) ? uuid.getBytes().length : ( uuid.getBytes().length + 4 - uuid.getBytes().length % 4 ) ) : 0 ); // uuid
+        my_size += Long.SIZE / 8; // version
+        my_size += Integer.SIZE / 8 + ( name != null ? ( ( name.getBytes().length % 4 == 0 ) ? name.getBytes().length : ( name.getBytes().length + 4 - name.getBytes().length % 4 ) ) : 0 ); // name
+        my_size += Long.SIZE / 8; // last_updated_s
+        my_size += data.getXDRSize(); // data
         return my_size;
     }    
     

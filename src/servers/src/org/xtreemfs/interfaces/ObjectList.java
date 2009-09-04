@@ -34,9 +34,9 @@ public class ObjectList extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE/8 + ( set != null ? ( ( set.remaining() % 4 == 0 ) ? set.remaining() : ( set.remaining() + 4 - set.remaining() % 4 ) ) : 0 );
-        my_size += ( Integer.SIZE / 8 );
-        my_size += ( Integer.SIZE / 8 );
+        my_size += Integer.SIZE / 8 + ( set != null ? ( ( set.remaining() % 4 == 0 ) ? set.remaining() : ( set.remaining() + 4 - set.remaining() % 4 ) ) : 0 ); // set
+        my_size += Integer.SIZE / 8; // stripeWidth
+        my_size += Integer.SIZE / 8; // firstObjectNo
         return my_size;
     }    
     

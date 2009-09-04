@@ -34,9 +34,9 @@ public class VivaldiCoordinates extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( Double.SIZE / 8 );
-        my_size += ( Double.SIZE / 8 );
-        my_size += ( Double.SIZE / 8 );
+        my_size += Double.SIZE / 8; // x_coordinate
+        my_size += Double.SIZE / 8; // y_coordinate
+        my_size += Double.SIZE / 8; // local_error
         return my_size;
     }    
     

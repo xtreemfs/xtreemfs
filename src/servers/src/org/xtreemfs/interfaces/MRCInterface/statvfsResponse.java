@@ -31,7 +31,7 @@ public class statvfsResponse extends org.xtreemfs.interfaces.utils.Response
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += stbuf.getXDRSize();
+        my_size += stbuf.getXDRSize(); // stbuf
         return my_size;
     }    
     

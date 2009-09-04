@@ -31,7 +31,7 @@ public class ftruncateResponse extends org.xtreemfs.interfaces.utils.Response
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += truncate_xcap.getXDRSize();
+        my_size += truncate_xcap.getXDRSize(); // truncate_xcap
         return my_size;
     }    
     

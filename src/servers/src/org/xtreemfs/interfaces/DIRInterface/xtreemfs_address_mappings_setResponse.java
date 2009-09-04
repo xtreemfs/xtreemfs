@@ -31,7 +31,7 @@ public class xtreemfs_address_mappings_setResponse extends org.xtreemfs.interfac
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( Long.SIZE / 8 );
+        my_size += Long.SIZE / 8; // returnValue
         return my_size;
     }    
     

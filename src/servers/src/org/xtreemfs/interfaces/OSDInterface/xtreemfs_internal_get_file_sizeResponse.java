@@ -31,7 +31,7 @@ public class xtreemfs_internal_get_file_sizeResponse extends org.xtreemfs.interf
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( Long.SIZE / 8 );
+        my_size += Long.SIZE / 8; // returnValue
         return my_size;
     }    
     

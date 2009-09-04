@@ -31,7 +31,7 @@ public class xtreemfs_cleanup_get_resultsResponse extends org.xtreemfs.interface
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += results.getXDRSize();
+        my_size += results.getXDRSize(); // results
         return my_size;
     }    
     

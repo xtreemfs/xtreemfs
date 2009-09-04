@@ -32,8 +32,8 @@ public class NewFileSize extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( Long.SIZE / 8 );
-        my_size += ( Integer.SIZE / 8 );
+        my_size += Long.SIZE / 8; // size_in_bytes
+        my_size += Integer.SIZE / 8; // truncate_epoch
         return my_size;
     }    
     

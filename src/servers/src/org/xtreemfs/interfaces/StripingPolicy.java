@@ -34,9 +34,9 @@ public class StripingPolicy extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += 4;
-        my_size += ( Integer.SIZE / 8 );
-        my_size += ( Integer.SIZE / 8 );
+        my_size += Integer.SIZE / 8; // type
+        my_size += Integer.SIZE / 8; // stripe_size
+        my_size += Integer.SIZE / 8; // width
         return my_size;
     }    
     

@@ -31,7 +31,7 @@ public class accessResponse extends org.xtreemfs.interfaces.utils.Response
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += 4;
+        my_size += Integer.SIZE / 8; // returnValue
         return my_size;
     }    
     

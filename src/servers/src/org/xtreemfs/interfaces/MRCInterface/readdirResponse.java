@@ -31,7 +31,7 @@ public class readdirResponse extends org.xtreemfs.interfaces.utils.Response
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += directory_entries.getXDRSize();
+        my_size += directory_entries.getXDRSize(); // directory_entries
         return my_size;
     }    
     

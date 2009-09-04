@@ -31,7 +31,7 @@ public class xtreemfs_internal_read_localResponse extends org.xtreemfs.interface
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += returnValue.getXDRSize();
+        my_size += returnValue.getXDRSize(); // returnValue
         return my_size;
     }    
     

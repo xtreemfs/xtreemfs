@@ -20,12 +20,16 @@ public class ServiceSet extends Sequence<Service>
     public int getTag() { return 2009082653; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ServiceSet"; }
 
-    public int getXDRSize() {
-        int my_size = Integer.SIZE/8;
-        for ( Iterator<Service> i = iterator(); i.hasNext(); ) {
+    public int getXDRSize() 
+    {
+        int my_size = 4; // Length of the sequence
+        
+        for ( Iterator<Service> i = iterator(); i.hasNext(); ) 
+        {
             Service value = i.next();
-            my_size += value.getXDRSize();
+            my_size += value.getXDRSize(); // Size of value
         }
+        
         return my_size;
     }
     

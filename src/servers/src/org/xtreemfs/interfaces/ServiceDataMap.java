@@ -21,14 +21,17 @@ public class ServiceDataMap extends Map<String, String>
 
     public int getXDRSize() 
     {
-        int my_size = Integer.SIZE / 8;
+        int my_size = 4; // The number of keys
+        
         for ( Iterator<String> key_i = keySet().iterator(); key_i.hasNext(); ) 
         {
             String key = key_i.next();
+            my_size += Integer.SIZE / 8 + ( key != null ? ( ( key.getBytes().length % 4 == 0 ) ? key.getBytes().length : ( key.getBytes().length + 4 - key.getBytes().length % 4 ) ) : 0 ); // Size of the key
+            
             String value = get( key );
-            my_size += Integer.SIZE/8 + ( value != null ? ( ( value.getBytes().length % 4 == 0 ) ? value.getBytes().length : ( value.getBytes().length + 4 - value.getBytes().length % 4 ) ) : 0 );
-        my_size += Integer.SIZE/8 + ( key != null ? ( ( key.getBytes().length % 4 == 0 ) ? key.getBytes().length : ( key.getBytes().length + 4 - key.getBytes().length % 4 ) ) : 0 );
+            my_size += Integer.SIZE / 8 + ( value != null ? ( ( value.getBytes().length % 4 == 0 ) ? value.getBytes().length : ( value.getBytes().length + 4 - value.getBytes().length % 4 ) ) : 0 ); // Size of the value
         }
+        
         return my_size;
     }
 

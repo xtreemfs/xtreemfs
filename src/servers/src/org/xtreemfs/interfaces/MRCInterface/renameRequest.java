@@ -37,8 +37,8 @@ public class renameRequest extends org.xtreemfs.interfaces.utils.Request
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE/8 + ( source_path != null ? ( ( source_path.getBytes().length % 4 == 0 ) ? source_path.getBytes().length : ( source_path.getBytes().length + 4 - source_path.getBytes().length % 4 ) ) : 0 );
-        my_size += Integer.SIZE/8 + ( target_path != null ? ( ( target_path.getBytes().length % 4 == 0 ) ? target_path.getBytes().length : ( target_path.getBytes().length + 4 - target_path.getBytes().length % 4 ) ) : 0 );
+        my_size += Integer.SIZE / 8 + ( source_path != null ? ( ( source_path.getBytes().length % 4 == 0 ) ? source_path.getBytes().length : ( source_path.getBytes().length + 4 - source_path.getBytes().length % 4 ) ) : 0 ); // source_path
+        my_size += Integer.SIZE / 8 + ( target_path != null ? ( ( target_path.getBytes().length % 4 == 0 ) ? target_path.getBytes().length : ( target_path.getBytes().length + 4 - target_path.getBytes().length % 4 ) ) : 0 ); // target_path
         return my_size;
     }    
     

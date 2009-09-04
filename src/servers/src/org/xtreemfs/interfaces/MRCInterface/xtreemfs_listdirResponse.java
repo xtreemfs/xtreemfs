@@ -31,7 +31,7 @@ public class xtreemfs_listdirResponse extends org.xtreemfs.interfaces.utils.Resp
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += names.getXDRSize();
+        my_size += names.getXDRSize(); // names
         return my_size;
     }    
     

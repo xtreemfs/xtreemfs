@@ -31,7 +31,7 @@ public class xtreemfs_replica_removeResponse extends org.xtreemfs.interfaces.uti
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += delete_xcap.getXDRSize();
+        my_size += delete_xcap.getXDRSize(); // delete_xcap
         return my_size;
     }    
     

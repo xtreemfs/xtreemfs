@@ -41,10 +41,10 @@ public class utimensRequest extends org.xtreemfs.interfaces.utils.Request
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE/8 + ( path != null ? ( ( path.getBytes().length % 4 == 0 ) ? path.getBytes().length : ( path.getBytes().length + 4 - path.getBytes().length % 4 ) ) : 0 );
-        my_size += ( Long.SIZE / 8 );
-        my_size += ( Long.SIZE / 8 );
-        my_size += ( Long.SIZE / 8 );
+        my_size += Integer.SIZE / 8 + ( path != null ? ( ( path.getBytes().length % 4 == 0 ) ? path.getBytes().length : ( path.getBytes().length + 4 - path.getBytes().length % 4 ) ) : 0 ); // path
+        my_size += Long.SIZE / 8; // atime_ns
+        my_size += Long.SIZE / 8; // mtime_ns
+        my_size += Long.SIZE / 8; // ctime_ns
         return my_size;
     }    
     

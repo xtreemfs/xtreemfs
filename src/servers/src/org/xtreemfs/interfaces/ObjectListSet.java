@@ -20,12 +20,16 @@ public class ObjectListSet extends Sequence<ObjectList>
     public int getTag() { return 2009082674; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ObjectListSet"; }
 
-    public int getXDRSize() {
-        int my_size = Integer.SIZE/8;
-        for ( Iterator<ObjectList> i = iterator(); i.hasNext(); ) {
+    public int getXDRSize() 
+    {
+        int my_size = 4; // Length of the sequence
+        
+        for ( Iterator<ObjectList> i = iterator(); i.hasNext(); ) 
+        {
             ObjectList value = i.next();
-            my_size += value.getXDRSize();
+            my_size += value.getXDRSize(); // Size of value
         }
+        
         return my_size;
     }
     

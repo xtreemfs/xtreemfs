@@ -36,10 +36,10 @@ public class DirService extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE/8 + ( address != null ? ( ( address.getBytes().length % 4 == 0 ) ? address.getBytes().length : ( address.getBytes().length + 4 - address.getBytes().length % 4 ) ) : 0 );
-        my_size += ( Integer.SIZE / 8 );
-        my_size += Integer.SIZE/8 + ( protocol != null ? ( ( protocol.getBytes().length % 4 == 0 ) ? protocol.getBytes().length : ( protocol.getBytes().length + 4 - protocol.getBytes().length % 4 ) ) : 0 );
-        my_size += ( Integer.SIZE / 8 );
+        my_size += Integer.SIZE / 8 + ( address != null ? ( ( address.getBytes().length % 4 == 0 ) ? address.getBytes().length : ( address.getBytes().length + 4 - address.getBytes().length % 4 ) ) : 0 ); // address
+        my_size += Integer.SIZE / 8; // port
+        my_size += Integer.SIZE / 8 + ( protocol != null ? ( ( protocol.getBytes().length % 4 == 0 ) ? protocol.getBytes().length : ( protocol.getBytes().length + 4 - protocol.getBytes().length % 4 ) ) : 0 ); // protocol
+        my_size += Integer.SIZE / 8; // interface_version
         return my_size;
     }    
     

@@ -35,7 +35,7 @@ public class xtreemfs_restore_databaseRequest extends org.xtreemfs.interfaces.ut
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE/8 + ( dump_file != null ? ( ( dump_file.getBytes().length % 4 == 0 ) ? dump_file.getBytes().length : ( dump_file.getBytes().length + 4 - dump_file.getBytes().length % 4 ) ) : 0 );
+        my_size += Integer.SIZE / 8 + ( dump_file != null ? ( ( dump_file.getBytes().length % 4 == 0 ) ? dump_file.getBytes().length : ( dump_file.getBytes().length + 4 - dump_file.getBytes().length % 4 ) ) : 0 ); // dump_file
         return my_size;
     }    
     

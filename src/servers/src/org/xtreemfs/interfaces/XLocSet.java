@@ -36,10 +36,10 @@ public class XLocSet extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += replicas.getXDRSize();
-        my_size += ( Integer.SIZE / 8 );
-        my_size += Integer.SIZE/8 + ( repUpdatePolicy != null ? ( ( repUpdatePolicy.getBytes().length % 4 == 0 ) ? repUpdatePolicy.getBytes().length : ( repUpdatePolicy.getBytes().length + 4 - repUpdatePolicy.getBytes().length % 4 ) ) : 0 );
-        my_size += ( Long.SIZE / 8 );
+        my_size += replicas.getXDRSize(); // replicas
+        my_size += Integer.SIZE / 8; // version
+        my_size += Integer.SIZE / 8 + ( repUpdatePolicy != null ? ( ( repUpdatePolicy.getBytes().length % 4 == 0 ) ? repUpdatePolicy.getBytes().length : ( repUpdatePolicy.getBytes().length + 4 - repUpdatePolicy.getBytes().length % 4 ) ) : 0 ); // repUpdatePolicy
+        my_size += Long.SIZE / 8; // read_only_file_size
         return my_size;
     }    
     

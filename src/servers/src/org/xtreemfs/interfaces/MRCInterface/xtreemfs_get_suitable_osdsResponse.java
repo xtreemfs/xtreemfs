@@ -31,7 +31,7 @@ public class xtreemfs_get_suitable_osdsResponse extends org.xtreemfs.interfaces.
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += osd_uuids.getXDRSize();
+        my_size += osd_uuids.getXDRSize(); // osd_uuids
         return my_size;
     }    
     

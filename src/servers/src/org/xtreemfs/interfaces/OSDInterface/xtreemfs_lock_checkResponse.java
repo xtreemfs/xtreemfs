@@ -31,7 +31,7 @@ public class xtreemfs_lock_checkResponse extends org.xtreemfs.interfaces.utils.R
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += returnValue.getXDRSize();
+        my_size += returnValue.getXDRSize(); // returnValue
         return my_size;
     }    
     

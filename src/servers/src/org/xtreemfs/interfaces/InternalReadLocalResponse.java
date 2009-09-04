@@ -32,8 +32,8 @@ public class InternalReadLocalResponse extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += data.getXDRSize();
-        my_size += object_set.getXDRSize();
+        my_size += data.getXDRSize(); // data
+        my_size += object_set.getXDRSize(); // object_set
         return my_size;
     }    
     

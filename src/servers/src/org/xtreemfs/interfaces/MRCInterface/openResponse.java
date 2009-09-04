@@ -31,7 +31,7 @@ public class openResponse extends org.xtreemfs.interfaces.utils.Response
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += file_credentials.getXDRSize();
+        my_size += file_credentials.getXDRSize(); // file_credentials
         return my_size;
     }    
     

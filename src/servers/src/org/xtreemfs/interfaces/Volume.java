@@ -42,13 +42,13 @@ public class Volume extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE/8 + ( name != null ? ( ( name.getBytes().length % 4 == 0 ) ? name.getBytes().length : ( name.getBytes().length + 4 - name.getBytes().length % 4 ) ) : 0 );
-        my_size += ( Integer.SIZE / 8 );
-        my_size += default_striping_policy.getXDRSize();
-        my_size += 4;
-        my_size += Integer.SIZE/8 + ( id != null ? ( ( id.getBytes().length % 4 == 0 ) ? id.getBytes().length : ( id.getBytes().length + 4 - id.getBytes().length % 4 ) ) : 0 );
-        my_size += Integer.SIZE/8 + ( owner_user_id != null ? ( ( owner_user_id.getBytes().length % 4 == 0 ) ? owner_user_id.getBytes().length : ( owner_user_id.getBytes().length + 4 - owner_user_id.getBytes().length % 4 ) ) : 0 );
-        my_size += Integer.SIZE/8 + ( owner_group_id != null ? ( ( owner_group_id.getBytes().length % 4 == 0 ) ? owner_group_id.getBytes().length : ( owner_group_id.getBytes().length + 4 - owner_group_id.getBytes().length % 4 ) ) : 0 );
+        my_size += Integer.SIZE / 8 + ( name != null ? ( ( name.getBytes().length % 4 == 0 ) ? name.getBytes().length : ( name.getBytes().length + 4 - name.getBytes().length % 4 ) ) : 0 ); // name
+        my_size += Integer.SIZE / 8; // mode
+        my_size += default_striping_policy.getXDRSize(); // default_striping_policy
+        my_size += Integer.SIZE / 8; // access_control_policy
+        my_size += Integer.SIZE / 8 + ( id != null ? ( ( id.getBytes().length % 4 == 0 ) ? id.getBytes().length : ( id.getBytes().length + 4 - id.getBytes().length % 4 ) ) : 0 ); // id
+        my_size += Integer.SIZE / 8 + ( owner_user_id != null ? ( ( owner_user_id.getBytes().length % 4 == 0 ) ? owner_user_id.getBytes().length : ( owner_user_id.getBytes().length + 4 - owner_user_id.getBytes().length % 4 ) ) : 0 ); // owner_user_id
+        my_size += Integer.SIZE / 8 + ( owner_group_id != null ? ( ( owner_group_id.getBytes().length % 4 == 0 ) ? owner_group_id.getBytes().length : ( owner_group_id.getBytes().length + 4 - owner_group_id.getBytes().length % 4 ) ) : 0 ); // owner_group_id
         return my_size;
     }    
     

@@ -35,7 +35,7 @@ public class xtreemfs_renew_capabilityRequest extends org.xtreemfs.interfaces.ut
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += old_xcap.getXDRSize();
+        my_size += old_xcap.getXDRSize(); // old_xcap
         return my_size;
     }    
     

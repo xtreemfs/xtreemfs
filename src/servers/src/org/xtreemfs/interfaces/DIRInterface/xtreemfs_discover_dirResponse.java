@@ -31,7 +31,7 @@ public class xtreemfs_discover_dirResponse extends org.xtreemfs.interfaces.utils
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += dir_service.getXDRSize();
+        my_size += dir_service.getXDRSize(); // dir_service
         return my_size;
     }    
     

@@ -31,7 +31,7 @@ public class xtreemfs_cleanup_is_runningResponse extends org.xtreemfs.interfaces
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += 4;
+        my_size += Integer.SIZE / 8; // is_running
         return my_size;
     }    
     

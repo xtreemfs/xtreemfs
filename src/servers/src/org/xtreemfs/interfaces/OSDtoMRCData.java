@@ -32,8 +32,8 @@ public class OSDtoMRCData extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( Integer.SIZE / 8 );
-        my_size += Integer.SIZE/8 + ( data != null ? ( ( data.getBytes().length % 4 == 0 ) ? data.getBytes().length : ( data.getBytes().length + 4 - data.getBytes().length % 4 ) ) : 0 );
+        my_size += Integer.SIZE / 8; // caching_policy
+        my_size += Integer.SIZE / 8 + ( data != null ? ( ( data.getBytes().length % 4 == 0 ) ? data.getBytes().length : ( data.getBytes().length + 4 - data.getBytes().length % 4 ) ) : 0 ); // data
         return my_size;
     }    
     

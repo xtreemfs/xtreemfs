@@ -31,7 +31,7 @@ public class xtreemfs_check_file_existsResponse extends org.xtreemfs.interfaces.
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE/8 + ( bitmap != null ? ( ( bitmap.getBytes().length % 4 == 0 ) ? bitmap.getBytes().length : ( bitmap.getBytes().length + 4 - bitmap.getBytes().length % 4 ) ) : 0 );
+        my_size += Integer.SIZE / 8 + ( bitmap != null ? ( ( bitmap.getBytes().length % 4 == 0 ) ? bitmap.getBytes().length : ( bitmap.getBytes().length + 4 - bitmap.getBytes().length % 4 ) ) : 0 ); // bitmap
         return my_size;
     }    
     

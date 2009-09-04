@@ -37,8 +37,8 @@ public class xtreemfs_internal_get_file_sizeRequest extends org.xtreemfs.interfa
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += file_credentials.getXDRSize();
-        my_size += Integer.SIZE/8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 );
+        my_size += file_credentials.getXDRSize(); // file_credentials
+        my_size += Integer.SIZE / 8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 ); // file_id
         return my_size;
     }    
     

@@ -36,10 +36,10 @@ public class ObjectData extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += ( Integer.SIZE / 8 );
-        my_size += 4;
-        my_size += ( Integer.SIZE / 8 );
-        my_size += Integer.SIZE/8 + ( data != null ? ( ( data.remaining() % 4 == 0 ) ? data.remaining() : ( data.remaining() + 4 - data.remaining() % 4 ) ) : 0 );
+        my_size += Integer.SIZE / 8; // checksum
+        my_size += Integer.SIZE / 8; // invalid_checksum_on_osd
+        my_size += Integer.SIZE / 8; // zero_padding
+        my_size += Integer.SIZE / 8 + ( data != null ? ( ( data.remaining() % 4 == 0 ) ? data.remaining() : ( data.remaining() + 4 - data.remaining() % 4 ) ) : 0 ); // data
         return my_size;
     }    
     

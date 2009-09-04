@@ -34,9 +34,9 @@ public class Replica extends Struct
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += striping_policy.getXDRSize();
-        my_size += ( Integer.SIZE / 8 );
-        my_size += osd_uuids.getXDRSize();
+        my_size += striping_policy.getXDRSize(); // striping_policy
+        my_size += Integer.SIZE / 8; // replication_flags
+        my_size += osd_uuids.getXDRSize(); // osd_uuids
         return my_size;
     }    
     

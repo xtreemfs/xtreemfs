@@ -39,9 +39,9 @@ public class chownRequest extends org.xtreemfs.interfaces.utils.Request
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE/8 + ( path != null ? ( ( path.getBytes().length % 4 == 0 ) ? path.getBytes().length : ( path.getBytes().length + 4 - path.getBytes().length % 4 ) ) : 0 );
-        my_size += Integer.SIZE/8 + ( user_id != null ? ( ( user_id.getBytes().length % 4 == 0 ) ? user_id.getBytes().length : ( user_id.getBytes().length + 4 - user_id.getBytes().length % 4 ) ) : 0 );
-        my_size += Integer.SIZE/8 + ( group_id != null ? ( ( group_id.getBytes().length % 4 == 0 ) ? group_id.getBytes().length : ( group_id.getBytes().length + 4 - group_id.getBytes().length % 4 ) ) : 0 );
+        my_size += Integer.SIZE / 8 + ( path != null ? ( ( path.getBytes().length % 4 == 0 ) ? path.getBytes().length : ( path.getBytes().length + 4 - path.getBytes().length % 4 ) ) : 0 ); // path
+        my_size += Integer.SIZE / 8 + ( user_id != null ? ( ( user_id.getBytes().length % 4 == 0 ) ? user_id.getBytes().length : ( user_id.getBytes().length + 4 - user_id.getBytes().length % 4 ) ) : 0 ); // user_id
+        my_size += Integer.SIZE / 8 + ( group_id != null ? ( ( group_id.getBytes().length % 4 == 0 ) ? group_id.getBytes().length : ( group_id.getBytes().length + 4 - group_id.getBytes().length % 4 ) ) : 0 ); // group_id
         return my_size;
     }    
     

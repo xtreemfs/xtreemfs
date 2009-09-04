@@ -45,12 +45,12 @@ public class readRequest extends org.xtreemfs.interfaces.utils.Request
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += file_credentials.getXDRSize();
-        my_size += Integer.SIZE/8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 );
-        my_size += ( Long.SIZE / 8 );
-        my_size += ( Long.SIZE / 8 );
-        my_size += ( Integer.SIZE / 8 );
-        my_size += ( Integer.SIZE / 8 );
+        my_size += file_credentials.getXDRSize(); // file_credentials
+        my_size += Integer.SIZE / 8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 ); // file_id
+        my_size += Long.SIZE / 8; // object_number
+        my_size += Long.SIZE / 8; // object_version
+        my_size += Integer.SIZE / 8; // offset
+        my_size += Integer.SIZE / 8; // length
         return my_size;
     }    
     

@@ -20,12 +20,16 @@ public class VolumeSet extends Sequence<Volume>
     public int getTag() { return 2009090254; }
     public String getTypeName() { return "org::xtreemfs::interfaces::VolumeSet"; }
 
-    public int getXDRSize() {
-        int my_size = Integer.SIZE/8;
-        for ( Iterator<Volume> i = iterator(); i.hasNext(); ) {
+    public int getXDRSize() 
+    {
+        int my_size = 4; // Length of the sequence
+        
+        for ( Iterator<Volume> i = iterator(); i.hasNext(); ) 
+        {
             Volume value = i.next();
-            my_size += value.getXDRSize();
+            my_size += value.getXDRSize(); // Size of value
         }
+        
         return my_size;
     }
     
