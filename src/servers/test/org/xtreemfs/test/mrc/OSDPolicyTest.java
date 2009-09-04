@@ -26,6 +26,7 @@ import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.mrc.osdselection.FilterDefaultPolicy;
 import org.xtreemfs.mrc.osdselection.FilterFQDNPolicy;
 import org.xtreemfs.mrc.osdselection.GroupDCMapPolicy;
+import org.xtreemfs.mrc.osdselection.GroupFQDNPolicy;
 import org.xtreemfs.mrc.osdselection.Inet4AddressMatcher;
 import org.xtreemfs.mrc.osdselection.SortDCMapPolicy;
 import org.xtreemfs.mrc.osdselection.SortFQDNPolicy;
@@ -307,48 +308,43 @@ public class OSDPolicyTest extends TestCase {
         assertEquals("osd2", sortedList.get(0).getUuid());
     }
     
-//    @Test
-//    public void testGroupDCMapPolicy() throws Exception {
-//        
-//        Properties p = new Properties();
-//        p.setProperty("datacenters", "A,B,C");
-//        p.setProperty("distance.A-B", "10");
-//        p.setProperty("distance.A-C", "100");
-//        p.setProperty("distance.B-C", "50");
-//        p.setProperty("A.addresses", "192.168.1.1,192.168.2.0/24");
-//        p.setProperty("B.addresses", "192.168.1.2,192.168.3.0/24");
-//        p.setProperty("C.addresses", "192.168.1.3,192.168.4.0/24,192.168.10.10");
-//        GroupDCMapPolicy policy = new GroupDCMapPolicy(p);
-//        
-//        ServiceSet osds = new ServiceSet();
-//        osds.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd1", 1, "osd1", 0, new ServiceDataMap()));
-//        osds.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd2", 1, "osd2", 0, new ServiceDataMap()));
-//        osds.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd3", 1, "osd3", 0, new ServiceDataMap()));
-//        osds.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd4", 1, "osd4", 0, new ServiceDataMap()));
-//        
-//        UUIDResolver.addTestMapping("osd1", "192.168.2.10", 2222, false);
-//        UUIDResolver.addTestMapping("osd2", "192.168.3.11", 2222, false);
-//        UUIDResolver.addTestMapping("osd3", "192.168.4.100", 2222, false);
-//        UUIDResolver.addTestMapping("osd4", "192.168.1.1", 2222, false);
-//        
-//        // get two OSDs from one data center
-//        InetAddress clientAddr = InetAddress.getByName("192.168.2.100");
-//        ServiceSet sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, 2);
-//        assertEquals(2, sortedList.size());
-//        assertEquals("osd1", sortedList.get(0).getUuid());
-//        assertEquals("osd4", sortedList.get(1).getUuid());
-//        
-//        // request too many OSDs
-//        clientAddr = InetAddress.getByName("192.168.2.100");
-//        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, 3);
-//        assertEquals(0, sortedList.size());
-//        
-//        clientAddr = InetAddress.getByName("192.168.3.100");
-//        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, 1);
-//        assertEquals(1, sortedList.size());
-//        assertEquals("osd2", sortedList.get(0).getUuid());
-//        
-//    }
+    @Test
+    public void testGroupFQDNPolicy() throws Exception {
+        
+        GroupFQDNPolicy policy = new GroupFQDNPolicy();
+        
+        ServiceSet osds = new ServiceSet();
+        osds.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd1", 1, "osd1", 0, new ServiceDataMap()));
+        osds.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd2", 1, "osd2", 0, new ServiceDataMap()));
+        osds.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd3", 1, "osd3", 0, new ServiceDataMap()));
+        osds.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd4", 1, "osd4", 0, new ServiceDataMap()));
+        osds.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd5", 1, "osd5", 0, new ServiceDataMap()));
+        
+        UUIDResolver.addTestMapping("osd1", "bla.xtreemfs.zib.de", 2222, false);
+        UUIDResolver.addTestMapping("osd2", "www.heise.de", 2222, false);
+        UUIDResolver.addTestMapping("osd3", "blub.xtreemfs.zib.de", 2222, false);
+        UUIDResolver.addTestMapping("osd4", "csr-pc29.zib.de", 2222, false);
+        UUIDResolver.addTestMapping("osd5", "download.xtreemfs.com", 2222, false);
+        
+        InetAddress clientAddr = InetAddress.getByName("xtreemfs.zib.de");
+        ServiceSet sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, 1);
+        assertEquals(1, sortedList.size());
+        assertEquals("osd1", sortedList.get(0).getUuid());
+        
+        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, 2);
+        assertEquals(2, sortedList.size());
+        assertEquals("osd1", sortedList.get(0).getUuid());
+        assertEquals("osd3", sortedList.get(1).getUuid());
+        
+        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, 4);
+        assertEquals(0, sortedList.size());
+        
+        clientAddr = InetAddress.getByName("www.heise.de");
+        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, 1);
+        assertEquals(1, sortedList.size());
+        assertEquals("osd2", sortedList.get(0).getUuid());
+        
+    }
     
     public static void main(String[] args) {
         TestRunner.run(OSDPolicyTest.class);

@@ -24,7 +24,6 @@
 
 package org.xtreemfs.mrc.osdselection;
 
-import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.util.Collections;
 import java.util.Comparator;
@@ -52,33 +51,48 @@ public class GroupFQDNPolicy extends FQDNPolicyBase {
                                                 .intValue();
     
     @Override
-    public ServiceSet getOSDs(ServiceSet allOSDs, InetAddress clientIP, XLocList currentXLoc, int numOSDs) {
+    public ServiceSet getOSDs(ServiceSet allOSDs, final InetAddress clientIP, XLocList currentXLoc,
+        int numOSDs) {
         
-        // second, sort the remaining list by their FQDNs
-        allOSDs = getOSDs(allOSDs);
+        // sort the list by their FQDN distance to the client
+        Collections.sort(allOSDs, new Comparator<Service>() {
+            public int compare(Service o1, Service o2) {
+                
+                try {
+                    final String host1 = new ServiceUUID(o1.getUuid()).getAddress().getHostName();
+                    final String host2 = new ServiceUUID(o2.getUuid()).getAddress().getHostName();
+                    
+                    return getMatch(host2, clientIP.getHostName()) - getMatch(host1, clientIP.getHostName());
+                    
+                } catch (UnknownUUIDException exc) {
+                    Logging.logError(Logging.LEVEL_ERROR, this, exc);
+                    return 0;
+                }
+            }
+        });
         
-        // third, find the closest group to the client that is large enough
+        // find the closest group to the client that is large enough
         String currentDomain = "";
         int currentDomainSize = 0;
         int currentIndex = 0;
         
-        int bestClientDist = Integer.MAX_VALUE;
+        int bestClientMatch = 0;
         int bestIndex = -1;
         
         for (int i = 0; i < allOSDs.size(); i++) {
             
             try {
                 Service s = allOSDs.get(i);
-                Inet4Address addr = (Inet4Address) new ServiceUUID(s.getUuid()).getAddress().getAddress();
-                String domain = NetUtils.getDomain(addr.getHostName());
+                String hostName = new ServiceUUID(s.getUuid()).getAddress().getHostName();
+                String domain = NetUtils.getDomain(hostName);
                 
                 if (domain.equals(currentDomain)) {
                     
                     currentDomainSize++;
                     if (currentDomainSize == numOSDs) {
-                        int cd = getMatch(addr.getCanonicalHostName(), clientIP.getCanonicalHostName());
-                        if (cd < bestClientDist) {
-                            bestClientDist = cd;
+                        int cd = getMatch(hostName, clientIP.getCanonicalHostName());
+                        if (cd > bestClientMatch) {
+                            bestClientMatch = cd;
                             bestIndex = currentIndex;
                         }
                     }
@@ -88,6 +102,14 @@ public class GroupFQDNPolicy extends FQDNPolicyBase {
                     currentDomainSize = 1;
                     currentDomain = domain;
                     currentIndex = i;
+                    
+                    if (currentDomainSize == numOSDs) {
+                        int cd = getMatch(hostName, clientIP.getCanonicalHostName());
+                        if (cd > bestClientMatch) {
+                            bestClientMatch = cd;
+                            bestIndex = currentIndex;
+                        }
+                    }
                 }
                 
             } catch (UnknownUUIDException exc) {
@@ -101,7 +123,7 @@ public class GroupFQDNPolicy extends FQDNPolicyBase {
         
         if (bestIndex != -1)
             for (int i = 0; i < numOSDs; i++)
-                result.add(allOSDs.get(bestIndex + numOSDs));
+                result.add(allOSDs.get(bestIndex + i));
         
         return result;
         
@@ -109,25 +131,6 @@ public class GroupFQDNPolicy extends FQDNPolicyBase {
     
     @Override
     public ServiceSet getOSDs(ServiceSet allOSDs) {
-        
-        Collections.sort(allOSDs, new Comparator<Service>() {
-            public int compare(Service o1, Service o2) {
-                
-                try {
-                    final String host1 = new ServiceUUID(o1.getUuid()).getAddress().getAddress()
-                            .getCanonicalHostName();
-                    final String host2 = new ServiceUUID(o2.getUuid()).getAddress().getAddress()
-                            .getCanonicalHostName();
-                    
-                    return host1.compareTo(host2);
-                    
-                } catch (UnknownUUIDException exc) {
-                    Logging.logError(Logging.LEVEL_ERROR, this, exc);
-                    return 0;
-                }
-            }
-        });
-        
         return allOSDs;
     }
     
