@@ -197,7 +197,7 @@ def mount_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAUL
             xtfs_mount_args.append( "-f" ) # So we can redirect stdout and stderr
             if enable_ssl: xtfs_mount_args.extend( CLIENT_SSL_ARGS )
             if cache_metadata: xtfs_mount_args.append( "--cache-metadata" )
-	    if cache_data: xtfs_mount_args.append( "--cache-file-reads --cache-file-writes" )
+	    if cache_data: xtfs_mount_args.append( "--write-back-cache" )
             if direct_io: xtfs_mount_args.extend( ( "-o", "direct_io" ) )
             DIR_ONCRPC_PORT = globals()["DIR_ONCRPC_PORT"]
             xtfs_mount_args.append( "%(service_host)s:%(DIR_ONCRPC_PORT)s/test_%(osdnum)u" % locals() )                
