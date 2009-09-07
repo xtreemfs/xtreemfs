@@ -1,4 +1,4 @@
-// Revision: 1855
+// Revision: 1856
 
 #include "yield/ipc.h"
 
@@ -3220,6 +3220,7 @@ bool YIELD::Socket::want_connect() const
 #ifdef _WIN32
   switch ( ::WSAGetLastError() )
   {
+    case WSAEALREADY:
     case WSAEINPROGRESS:
     case WSAEINVAL:
     case WSAEWOULDBLOCK: return true;
@@ -4230,6 +4231,10 @@ void YIELD::SSLSocket::aio_accept( yidl::auto_Object<AIOAcceptControlBlock> aio_
 {
   aio_accept_nbio( aio_accept_control_block );
 }
+void YIELD::SSLSocket::aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block )
+{
+  aio_connect_nbio( aio_connect_control_block );
+}
 void YIELD::SSLSocket::aio_read( yidl::auto_Object<AIOReadControlBlock> aio_read_control_block )
 {
   aio_read_nbio( aio_read_control_block );
@@ -4599,18 +4604,6 @@ bool YIELD::TracingSocket::connect( Socket::auto_Address to_sockaddr )
     log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: connecting socket #" << ( int )*this << " to " << to_hostname << ".";
   return underlying_socket->connect( to_sockaddr );
 }
-bool YIELD::TracingSocket::get_blocking_mode() const
-{
-  return underlying_socket->get_blocking_mode();
-}
-YIELD::Socket::auto_Address YIELD::TracingSocket::getpeername()
-{
-  return underlying_socket->getpeername();
-}
-YIELD::Socket::auto_Address YIELD::TracingSocket::getsockname()
-{
-  return underlying_socket->getsockname();
-}
 YIELD::TracingSocket::operator int() const
 {
   return underlying_socket->operator int();
@@ -4629,15 +4622,12 @@ ssize_t YIELD::TracingSocket::read( void* buffer, size_t buffer_len )
     log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: lost connection while trying to read socket #" <<  ( int )*this << ".";
   return read_ret;
 }
-bool YIELD::TracingSocket::set_blocking_mode( bool blocking )
+bool YIELD::TracingSocket::want_connect() const
 {
-//  log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: setting socket #" << ( int )*this << " to " << ( ( blocking ) ? "blocking mode." : "non-blocking mode." );
-  return underlying_socket->set_blocking_mode( blocking );
-}
-bool YIELD::TracingSocket::shutdown()
-{
-//  log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: shutting down socket #" << ( int )*this << ".";
-  return underlying_socket->shutdown();
+  bool want_connect_ret = underlying_socket->want_connect();
+  if ( want_connect_ret )
+    log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: would block on connect on socket #" << ( int )*this << ".";
+  return want_connect_ret;
 }
 bool YIELD::TracingSocket::want_read() const
 {
@@ -4645,13 +4635,6 @@ bool YIELD::TracingSocket::want_read() const
   if ( want_read_ret )
     log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: would block on read on socket #" << ( int )*this << ".";
   return want_read_ret;
-}
-bool YIELD::TracingSocket::want_connect() const
-{
-  bool want_connect_ret = underlying_socket->want_connect();
-  if ( want_connect_ret )
-    log->getStream( Log::LOG_DEBUG ) << "yield::TracingSocket: would block on connect on socket #" << ( int )*this << ".";
-  return want_connect_ret;
 }
 bool YIELD::TracingSocket::want_write() const
 {
