@@ -108,9 +108,6 @@ public class SetAddressMappingOperation extends DIROperation {
                 AddressMappingRecords dbData = new AddressMappingRecords(buf);
                 if (dbData.size() > 0) {
                     currentVersion = dbData.getRecord(0).getVersion();
-                    System.out.println("loaded version: "+currentVersion);
-                } else {
-                    System.out.println("no data on disk");
                 }
             }
 
@@ -126,7 +123,6 @@ public class SetAddressMappingOperation extends DIROperation {
 
 
             AddressMappingRecords newData = new AddressMappingRecords(mappings);
-            System.out.println("saved version: "+newData.getRecord(0).getVersion());
             final int size = newData.getSize();
             byte[] newBytes = new byte[size];
             ReusableBuffer buf = ReusableBuffer.wrap(newBytes);
