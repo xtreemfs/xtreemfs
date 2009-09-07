@@ -62,6 +62,7 @@ install-server:
 	@mkdir -p $(XTREEMFS_JAR_DIR)
 	@cp src/servers/dist/XtreemFS.jar $(XTREEMFS_JAR_DIR)
 	@cp src/servers/lib/BabuDB*.jar $(XTREEMFS_JAR_DIR)
+	@cp src/servers/lib/yidl.jar $(XTREEMFS_JAR_DIR)
 
 	@mkdir -p $(XTREEMFS_CONFIG_DIR)
 	@cp etc/xos/xtreemfs/*config.properties $(XTREEMFS_CONFIG_DIR)
@@ -85,6 +86,7 @@ uninstall:
 
 	@rm -f $(XTREEMFS_JAR_DIR)/XtreemFS.jar
 	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB*.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/yidl.jar
 
 	@rm -rf $(XTREEMFS_CONFIG_PARENT_DIR)
 	@rm -f $(XTREEMFS_INIT_DIR)/xtreemfs-*
