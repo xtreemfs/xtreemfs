@@ -1,3 +1,5 @@
+// Revision: 1855
+
 #include "yield/ipc.h"
 
 
@@ -2759,6 +2761,25 @@ void YIELD::RFC822Headers::set_next_iovec( const struct iovec& iovec )
 #include <unistd.h>
 #endif
 YIELD::Socket::AIOQueue* YIELD::Socket::aio_queue = NULL;
+bool YIELD::Socket::AIOReadControlBlock::execute()
+{
+  ssize_t read_ret = get_socket()->read( buffer );
+  if ( read_ret > 0 )
+    onCompletion( static_cast<size_t>( read_ret ) );
+  else if ( read_ret == 0 )
+#ifdef _WIN32
+    onError( WSAECONNABORTED );
+#else
+    onError( ECONNABORTED );
+#endif
+  else if ( get_socket()->want_read() )
+    return false;
+  else if ( get_socket()->want_write() )
+    return false;
+  else
+    onError( Exception::get_errno() );
+  return true;
+}
 YIELD::Socket::Socket( int domain, int type, int protocol, int socket_ )
   : domain( domain ), socket_( socket_ ), type( type ), protocol( protocol )
 {
@@ -3853,109 +3874,64 @@ private:
   bool processAIOControlBlock( AIOControlBlock* aio_control_block )
   {
     int fd = static_cast<int>( *aio_control_block->get_socket() );
-    switch ( aio_control_block->get_type_id() )
+    if ( aio_control_block->execute() )
     {
-      case YIDL_OBJECT_TYPE_ID( Socket::AIOConnectControlBlock ):
-      {
-        Socket::AIOConnectControlBlock* aio_connect_control_block = static_cast<Socket::AIOConnectControlBlock*>( aio_control_block );
-        if ( aio_connect_control_block->get_socket()->connect( aio_connect_control_block->get_peername() ) )
-          aio_connect_control_block->onCompletion( 0 );
-        else if ( aio_connect_control_block->get_socket()->want_connect() )
-        {
-          toggle( fd, false, true );
-          return false;
-        }
-        else
-          aio_connect_control_block->onError( Exception::get_errno() );
-      }
-      break;
-      case YIDL_OBJECT_TYPE_ID( Socket::AIOReadControlBlock ):
-      {
-        Socket::AIOReadControlBlock* aio_read_control_block = static_cast<Socket::AIOReadControlBlock*>( aio_control_block );
-        ssize_t read_ret = aio_read_control_block->get_socket()->read( aio_read_control_block->get_buffer() );
-        if ( read_ret > 0 )
-          aio_read_control_block->onCompletion( static_cast<size_t>( read_ret ) );
-        else if ( read_ret == 0 )
-#ifdef _WIN32
-          aio_read_control_block->onError( WSAECONNABORTED );
-#else
-          aio_read_control_block->onError( ECONNABORTED );
-#endif
-        else if ( aio_read_control_block->get_socket()->want_read() )
-        {
-          toggle( fd, true, false );
-          return false;
-        }
-        else if ( aio_read_control_block->get_socket()->want_write() )
-        {
-          toggle( fd, false, true );
-          return false;
-        }
-        else
-          aio_read_control_block->onError( Exception::get_errno() );
-      }
-      break;
-      case YIDL_OBJECT_TYPE_ID( Socket::AIOWriteControlBlock ):
-      {
-        Socket::AIOWriteControlBlock* aio_write_control_block = static_cast<Socket::AIOWriteControlBlock*>( aio_control_block );
-        ssize_t write_ret = aio_write_control_block->get_socket()->write( aio_write_control_block->get_buffer() );
-        if ( write_ret >= 0 )
-          aio_write_control_block->onCompletion( static_cast<size_t>( write_ret ) );
-        else if ( aio_write_control_block->get_socket()->want_write() )
-        {
-          toggle( fd, false, true );
-          return false;
-        }
-        else if ( aio_write_control_block->get_socket()->want_read() )
-        {
-          toggle( fd, true, false );
-          return false;
-        }
-        else
-          aio_write_control_block->onError( Exception::get_errno() );
-      }
-      break;
-      case YIDL_OBJECT_TYPE_ID( TCPSocket::AIOAcceptControlBlock ):
-      {
-        TCPSocket::AIOAcceptControlBlock* aio_accept_control_block = static_cast<TCPSocket::AIOAcceptControlBlock*>( aio_control_block );
-        aio_accept_control_block->accepted_tcp_socket = static_cast<TCPSocket*>( aio_accept_control_block->get_socket().get() )->accept();
-        if ( aio_accept_control_block->accepted_tcp_socket != NULL )
-          aio_accept_control_block->onCompletion( 0 );
-#ifdef _WIN32
-        else if ( ::WSAGetLastError() == WSAEWOULDBLOCK )
-#else
-        else if ( errno == EWOULDBLOCK )
-#endif
-        {
-          toggle( fd, true, false );
-          return false;
-        }
-        else
-          aio_accept_control_block->onError( Exception::get_errno() );
-      }
-      break;
-      case YIDL_OBJECT_TYPE_ID( UDPSocket::AIORecvFromControlBlock ):
-      {
-        UDPSocket::AIORecvFromControlBlock* aio_recvfrom_control_block = static_cast<UDPSocket::AIORecvFromControlBlock*>( aio_control_block );
-        ssize_t recvfrom_ret = static_cast<UDPSocket*>( aio_recvfrom_control_block->get_socket().get() )->recvfrom( aio_recvfrom_control_block->get_buffer(), *aio_recvfrom_control_block->peer_sockaddr );
-        if ( recvfrom_ret > 0 )
-          aio_recvfrom_control_block->onCompletion( static_cast<size_t>( recvfrom_ret ) );
-        else if ( recvfrom_ret == 0 )
-          DebugBreak();
-        else if ( aio_recvfrom_control_block->get_socket()->want_read() )
-        {
-          toggle( fd, true, false );
-          return false;
-        }
-        else
-          aio_recvfrom_control_block->onError( Exception::get_errno() );
-      }
-      break;
-      default: DebugBreak();
+      dissociate( fd );
+      Object::decRef( *aio_control_block );
+      return true;
     }
-    dissociate( fd );
-    Object::decRef( *aio_control_block );
-    return true;
+    else
+    {
+      switch ( aio_control_block->get_type_id() )
+      {
+        case YIDL_OBJECT_TYPE_ID( Socket::AIOConnectControlBlock ):
+        {
+          if ( aio_control_block->get_socket()->want_connect() )
+            toggle( fd, false, true );
+          else
+            DebugBreak();
+        }
+        break;
+        case YIDL_OBJECT_TYPE_ID( Socket::AIOReadControlBlock ):
+        {
+          if ( aio_control_block->get_socket()->want_read() )
+            toggle( fd, true, false );
+          else if ( aio_control_block->get_socket()->want_write() )
+            toggle( fd, false, true );
+          else
+            DebugBreak();
+        }
+        break;
+        case YIDL_OBJECT_TYPE_ID( Socket::AIOWriteControlBlock ):
+        {
+          if ( aio_control_block->get_socket()->want_write() )
+            toggle( fd, true, false );
+          else if ( aio_control_block->get_socket()->want_read() )
+            toggle( fd, false, true );
+          else
+            DebugBreak();
+        }
+        break;
+        case YIDL_OBJECT_TYPE_ID( TCPSocket::AIOAcceptControlBlock ):
+        {
+          if ( aio_control_block->get_socket()->want_read() )
+            toggle( fd, true, false );
+          else
+            DebugBreak();
+        }
+        break;
+        case YIDL_OBJECT_TYPE_ID( UDPSocket::AIORecvFromControlBlock ):
+        {
+          if ( aio_control_block->get_socket()->want_read() )
+            toggle( fd, true, false );
+          else
+            DebugBreak();
+        }
+        break;
+        default: DebugBreak();
+      }
+      return false;
+    }
   }
   bool toggle( int fd, bool enable_read, bool enable_write )
   {

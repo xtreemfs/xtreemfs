@@ -164,6 +164,8 @@ namespace YIELD
     public:
       virtual ~AIOControlBlock() { }
 
+      virtual bool execute() = 0;
+
       yidl::auto_Object<Socket> get_socket() const { return socket_; }
 
       void set_socket( Socket& socket_ ) 
@@ -195,6 +197,23 @@ namespace YIELD
       // yidl::Object
       YIDL_OBJECT_PROTOTYPES( AIOConnectControlBlock, 223 );
 
+      // Socket::AIOControlBlock
+      bool execute()
+      {
+        if ( get_socket()->connect( get_peername() ) )
+        {
+          onCompletion( 0 );
+          return true;
+        }
+        else if ( get_socket()->want_connect() )
+          return false;
+        else
+        {
+          onError( Exception::get_errno() );
+          return true;
+        }
+      }
+
     private:
       auto_Address peername;
     };
@@ -218,6 +237,9 @@ namespace YIELD
       // yidl::Object
       YIDL_OBJECT_PROTOTYPES( AIOReadControlBlock, 227 );
 
+      // Socket::AIOControlBlock
+      bool execute();
+
     private:
       yidl::auto_Buffer buffer;
     };
@@ -240,6 +262,22 @@ namespace YIELD
 
       // yidl::Object
       YIDL_OBJECT_PROTOTYPES( AIOWriteControlBlock, 228 );
+
+      // Socket::AIOControlBlock
+      bool execute()
+      {
+        ssize_t write_ret = get_socket()->write( get_buffer() );
+        if ( write_ret >= 0 )
+          onCompletion( static_cast<size_t>( write_ret ) );
+        else if ( get_socket()->want_write() )
+          return false;
+        else if ( get_socket()->want_read() )
+          return false;
+        else
+          onError( Exception::get_errno() );
+
+        return true;
+      }
 
     private:
       yidl::auto_Buffer buffer;
@@ -373,9 +411,24 @@ namespace YIELD
       // yidl::Object
       YIDL_OBJECT_PROTOTYPES( AIOAcceptControlBlock, 222 );
 
-      yidl::auto_Object<TCPSocket> accepted_tcp_socket;      
+      // Socket::AIOControlBlock
+      bool execute()
+      {
+        accepted_tcp_socket = static_cast<TCPSocket*>( get_socket().get() )->accept();
+
+        if ( accepted_tcp_socket != NULL )
+          onCompletion( 0 );
+        else if ( get_socket()->want_read() )
+          return false;
+        else
+          onError( Exception::get_errno() );
+
+        return true;
+      }
 
     private:
+      yidl::auto_Object<TCPSocket> accepted_tcp_socket;      
+
 #ifdef _WIN32
       friend class TCPSocket;
       char peer_sockaddr[88];
@@ -1158,14 +1211,30 @@ namespace YIELD
       // yidl::Object
       YIDL_OBJECT_PROTOTYPES( UDPSocket::AIORecvFromControlBlock, 0 );
 
+      // Socket::AIOControlBlock
+      bool execute()
+      {
+        ssize_t recvfrom_ret = static_cast<UDPSocket*>( get_socket().get() )->recvfrom( buffer, *peer_sockaddr );
+
+        if ( recvfrom_ret > 0 )
+          onCompletion( static_cast<size_t>( recvfrom_ret ) );
+        else if ( recvfrom_ret == 0 )
+          DebugBreak();
+        else if ( get_socket()->want_read() )
+          return false;
+        else
+          onError( Exception::get_errno() );          
+
+        return true;
+      }
+
     protected:
       ~AIORecvFromControlBlock();
 
     private:
-      yidl::auto_Buffer buffer;
-
-      friend class Socket;
       friend class UDPSocket;
+
+      yidl::auto_Buffer buffer;
       struct sockaddr_storage* peer_sockaddr;
     };
 
