@@ -28,30 +28,22 @@ namespace xtreemfs
     // yidl::Object
     OSDProxyMux& incRef() { return yidl::Object::incRef( *this ); }
 
-    // YIELD::EventHandler
-     void handleEvent( YIELD::Event& );
-
   private:
     OSDProxyMux( yidl::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SSLContext ssl_context );
     ~OSDProxyMux();
 
-    yidl::auto_Object<DIRProxy> dir_proxy;
+    auto_DIRProxy dir_proxy;
     uint32_t flags;
     YIELD::auto_Log log;
     YIELD::Time operation_timeout;
     YIELD::auto_SSLContext ssl_context;
 
-    typedef std::map< std::string, std::pair<OSDProxy*, OSDProxy*> > OSDProxyMap;
+    typedef std::map<std::string, OSDProxy*> OSDProxyMap;
     OSDProxyMap osd_proxies;
     YIELD::auto_StageGroup osd_proxy_stage_group;
 
-    // Policies callbacks
-    get_osd_ping_interval_s_t get_osd_ping_interval_s;
-    select_file_replica_t select_file_replica;
-    PolicyContainer* policy_container;
-
-    yidl::auto_Object<OSDProxy> getTCPOSDProxy( OSDProxyRequest& osd_proxy_request, const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t object_number );
-    yidl::auto_Object<OSDProxy> getTCPOSDProxy( const std::string& osd_uuid );
+    auto_OSDProxy getOSDProxy( OSDProxyRequest& osd_proxy_request, const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t object_number );
+    auto_OSDProxy getOSDProxy( const std::string& osd_uuid );
 
     // org::xtreemfs::interfaces::OSDInterface
     void handlereadRequest( readRequest& req );
@@ -62,10 +54,6 @@ namespace xtreemfs
     void handlextreemfs_lock_checkRequest( xtreemfs_lock_checkRequest& req );
     void handlextreemfs_lock_releaseRequest( xtreemfs_lock_releaseRequest& req );
 
-    class PingRequest;
-    class PingResponse;
-    class PingResponseTarget;
-    class PingTimer;
     class ReadResponseTarget;
     class TruncateResponseTarget;
   };

@@ -30,7 +30,7 @@ using namespace xtreemfs;
   } \
 
 
-auto_Volume Volume::create( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Log log, uint32_t proxy_flags, const YIELD::Time& proxy_operation_timeout, YIELD::auto_SSLContext proxy_ssl_context )
+auto_Volume Volume::create( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Log log, uint32_t proxy_flags, const YIELD::Time& proxy_operation_timeout, YIELD::auto_SSLContext proxy_ssl_context, const YIELD::Path& vivaldi_coordinates_file_path )
 {
   auto_DIRProxy dir_proxy = DIRProxy::create( dir_uri, proxy_flags, log, proxy_operation_timeout, proxy_ssl_context );
   if ( dir_proxy != NULL )
@@ -51,7 +51,7 @@ auto_Volume Volume::create( const YIELD::URI& dir_uri, const std::string& name, 
           stage_group->createStage( dir_proxy );
           stage_group->createStage( mrc_proxy );
           stage_group->createStage( osd_proxy_mux );
-          return new Volume( dir_proxy, flags, log, mrc_proxy, name, osd_proxy_mux, stage_group );
+          return new Volume( dir_proxy, flags, log, mrc_proxy, name, osd_proxy_mux, stage_group, vivaldi_coordinates_file_path );
         }
         else
           throw YIELD::Exception( "could not create OSD proxy multiplexer" );
@@ -66,8 +66,8 @@ auto_Volume Volume::create( const YIELD::URI& dir_uri, const std::string& name, 
     throw YIELD::Exception( "DIR host does not exist" );  
 }
 
-Volume::Volume( yidl::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, yidl::auto_Object<MRCProxy> mrc_proxy, const std::string& name, yidl::auto_Object<OSDProxyMux> osd_proxy_mux, YIELD::auto_StageGroup stage_group )
-  : dir_proxy( dir_proxy ), flags( flags ), log( log ), mrc_proxy( mrc_proxy ), name( name ), osd_proxy_mux( osd_proxy_mux ), stage_group( stage_group )
+Volume::Volume( yidl::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, yidl::auto_Object<MRCProxy> mrc_proxy, const std::string& name, yidl::auto_Object<OSDProxyMux> osd_proxy_mux, YIELD::auto_StageGroup stage_group, const YIELD::Path& vivaldi_coordinates_file_path )
+  : dir_proxy( dir_proxy ), flags( flags ), log( log ), mrc_proxy( mrc_proxy ), name( name ), osd_proxy_mux( osd_proxy_mux ), stage_group( stage_group ), vivaldi_coordinates_file_path( vivaldi_coordinates_file_path )
 { }
 
 bool Volume::access( const YIELD::Path&, int )
@@ -247,8 +247,18 @@ YIELD::auto_File Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t 
     system_v_flags |= flags;
 #endif
 
+    org::xtreemfs::interfaces::VivaldiCoordinates my_vivaldi_coordinates;
+    if ( !vivaldi_coordinates_file_path.empty() )
+    {
+      YIELD::auto_File vivaldi_coordinates_file = YIELD::Volume().open( vivaldi_coordinates_file_path );
+      yidl::StackBuffer<sizeof( org::xtreemfs::interfaces::VivaldiCoordinates)> my_vivaldi_coordinates_buffer;
+      vivaldi_coordinates_file->read( my_vivaldi_coordinates_buffer );
+      YIELD::XDRUnmarshaller xdr_unmarshaller( my_vivaldi_coordinates_buffer );
+      my_vivaldi_coordinates.unmarshal( xdr_unmarshaller );
+    }
+
     org::xtreemfs::interfaces::FileCredentials file_credentials;
-    mrc_proxy->open( path, system_v_flags, mode, attributes, file_credentials );
+    mrc_proxy->open( path, system_v_flags, mode, attributes, my_vivaldi_coordinates, file_credentials );
 
     return new File( incRef(), mrc_proxy, path, file_credentials );
   }

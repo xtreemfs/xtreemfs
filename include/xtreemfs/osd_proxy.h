@@ -23,24 +23,14 @@ namespace xtreemfs
   class OSDProxy : public Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>
   {
   public:
-    const static uint64_t PING_INTERVAL_DEFAULT = 0; // No pings
-
-
     static yidl::auto_Object<OSDProxy> create( const YIELD::URI& absolute_uri,
-                                                const std::string& uuid,
-                                                uint32_t flags = 0,
-                                                YIELD::auto_Log log = NULL,
-                                                const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
-                                                const YIELD::Time& ping_interval = PING_INTERVAL_DEFAULT,
-                                                YIELD::auto_SSLContext ssl_context = NULL );
-
-    const YIELD::Time& get_ping_interval() const { return ping_interval; }
-    const YIELD::Time& get_rtt() const { return rtt; }
-    const std::string& get_uuid() const { return uuid; }
-    const org::xtreemfs::interfaces::VivaldiCoordinates& get_vivaldi_coordinates() const { return vivaldi_coordinates; }
-    void set_ping_interval( const YIELD::Time& ping_interval ) { this->ping_interval = ping_interval; }
-    void set_rtt( const YIELD::Time& rtt ) { this->rtt = rtt; }
-    void set_vivaldi_coordinates( const org::xtreemfs::interfaces::VivaldiCoordinates& vivaldi_coordinates ) { this->vivaldi_coordinates = vivaldi_coordinates; }
+                                               uint32_t flags = 0,
+                                               YIELD::auto_Log log = NULL,
+                                               const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
+                                               YIELD::auto_SSLContext ssl_context = NULL )
+    {
+      return YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::create<OSDProxy>( absolute_uri, flags, log, operation_timeout, ssl_context );
+    }
 
     // yidl::Object
     OSDProxy& incRef() { return yidl::Object::incRef( *this ); }
@@ -60,10 +50,6 @@ namespace xtreemfs
     { }
 
     ~OSDProxy() { }
-
-    YIELD::Time ping_interval, rtt;
-    std::string uuid;
-    org::xtreemfs::interfaces::VivaldiCoordinates vivaldi_coordinates;
   };
 
   typedef yidl::auto_Object<OSDProxy> auto_OSDProxy;

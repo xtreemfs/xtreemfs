@@ -210,6 +210,35 @@ namespace org
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::Replica value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
       };
 
+      class VivaldiCoordinates : public ::yidl::Struct
+      {
+      public:
+        VivaldiCoordinates() : x_coordinate( 0 ), y_coordinate( 0 ), local_error( 0 ) { }
+        VivaldiCoordinates( double x_coordinate, double y_coordinate, double local_error ) : x_coordinate( x_coordinate ), y_coordinate( y_coordinate ), local_error( local_error ) { }
+        virtual ~VivaldiCoordinates() { }
+
+        void set_x_coordinate( double x_coordinate ) { this->x_coordinate = x_coordinate; }
+        double get_x_coordinate() const { return x_coordinate; }
+        void set_y_coordinate( double y_coordinate ) { this->y_coordinate = y_coordinate; }
+        double get_y_coordinate() const { return y_coordinate; }
+        void set_local_error( double local_error ) { this->local_error = local_error; }
+        double get_local_error() const { return local_error; }
+
+        bool operator==( const VivaldiCoordinates& other ) const { return x_coordinate == other.x_coordinate && y_coordinate == other.y_coordinate && local_error == other.local_error; }
+
+        // yidl::Object
+        YIDL_OBJECT_PROTOTYPES( VivaldiCoordinates, 2009090231 );
+
+        // YIELD::Struct
+        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeDouble( "x_coordinate", 0, x_coordinate ); marshaller.writeDouble( "y_coordinate", 0, y_coordinate ); marshaller.writeDouble( "local_error", 0, local_error ); }
+        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { x_coordinate = unmarshaller.readDouble( "x_coordinate", 0 ); y_coordinate = unmarshaller.readDouble( "y_coordinate", 0 ); local_error = unmarshaller.readDouble( "local_error", 0 ); }
+
+      protected:
+        double x_coordinate;
+        double y_coordinate;
+        double local_error;
+      };
+
       class XCap : public ::yidl::Struct
       {
       public:
@@ -239,7 +268,7 @@ namespace org
         bool operator==( const XCap& other ) const { return file_id == other.file_id && access_mode == other.access_mode && expires_s == other.expires_s && client_identity == other.client_identity && truncate_epoch == other.truncate_epoch && replicateOnClose == other.replicateOnClose && server_signature == other.server_signature; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( XCap, 2009090231 );
+        YIDL_OBJECT_PROTOTYPES( XCap, 2009090232 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint32( "access_mode", 0, access_mode ); marshaller.writeUint64( "expires_s", 0, expires_s ); marshaller.writeString( "client_identity", 0, client_identity ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); marshaller.writeBoolean( "replicateOnClose", 0, replicateOnClose ); marshaller.writeString( "server_signature", 0, server_signature ); }
@@ -276,7 +305,7 @@ namespace org
         bool operator==( const XLocSet& other ) const { return replicas == other.replicas && version == other.version && repUpdatePolicy == other.repUpdatePolicy && read_only_file_size == other.read_only_file_size; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( XLocSet, 2009090232 );
+        YIDL_OBJECT_PROTOTYPES( XLocSet, 2009090233 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "replicas", 0, replicas ); marshaller.writeUint32( "version", 0, version ); marshaller.writeString( "repUpdatePolicy", 0, repUpdatePolicy ); marshaller.writeUint64( "read_only_file_size", 0, read_only_file_size ); }
@@ -304,7 +333,7 @@ namespace org
         bool operator==( const FileCredentials& other ) const { return xlocs == other.xlocs && xcap == other.xcap; }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( FileCredentials, 2009090233 );
+        YIDL_OBJECT_PROTOTYPES( FileCredentials, 2009090234 );
 
         // YIELD::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "xlocs", 0, xlocs ); marshaller.writeStruct( "xcap", 0, xcap ); }
@@ -324,7 +353,7 @@ namespace org
         virtual ~FileCredentialsSet() { }
 
         // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( FileCredentialsSet, 2009090234 );
+        YIDL_OBJECT_PROTOTYPES( FileCredentialsSet, 2009090235 );
 
         // YIELD::Sequence
         size_t get_size() const { return size(); }

@@ -336,8 +336,8 @@ namespace org
         virtual void mkdir( const std::string& path, uint32_t mode ) { mkdir( path, mode, static_cast<uint64_t>( -1 ) ); }
         virtual void mkdir( const std::string& path, uint32_t mode, uint64_t response_timeout_ns ) { ::yidl::auto_Object<mkdirRequest> __request( new mkdirRequest( path, mode ) ); ::YIELD::auto_ResponseQueue<mkdirResponse> __response_queue( new ::YIELD::ResponseQueue<mkdirResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<mkdirResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); }
 
-        virtual void open( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, org::xtreemfs::interfaces::FileCredentials& file_credentials ) { open( path, flags, mode, attributes, file_credentials, static_cast<uint64_t>( -1 ) ); }
-        virtual void open( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t response_timeout_ns ) { ::yidl::auto_Object<openRequest> __request( new openRequest( path, flags, mode, attributes ) ); ::YIELD::auto_ResponseQueue<openResponse> __response_queue( new ::YIELD::ResponseQueue<openResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<openResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); file_credentials = __response->get_file_credentials(); }
+        virtual void open( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, const org::xtreemfs::interfaces::VivaldiCoordinates& client_vivaldi_coordinates, org::xtreemfs::interfaces::FileCredentials& file_credentials ) { open( path, flags, mode, attributes, client_vivaldi_coordinates, file_credentials, static_cast<uint64_t>( -1 ) ); }
+        virtual void open( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, const org::xtreemfs::interfaces::VivaldiCoordinates& client_vivaldi_coordinates, org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t response_timeout_ns ) { ::yidl::auto_Object<openRequest> __request( new openRequest( path, flags, mode, attributes, client_vivaldi_coordinates ) ); ::YIELD::auto_ResponseQueue<openResponse> __response_queue( new ::YIELD::ResponseQueue<openResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<openResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); file_credentials = __response->get_file_credentials(); }
 
         virtual void readdir( const std::string& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries ) { readdir( path, directory_entries, static_cast<uint64_t>( -1 ) ); }
         virtual void readdir( const std::string& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries, uint64_t response_timeout_ns ) { ::yidl::auto_Object<readdirRequest> __request( new readdirRequest( path ) ); ::YIELD::auto_ResponseQueue<readdirResponse> __response_queue( new ::YIELD::ResponseQueue<readdirResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<readdirResponse> __response = __response_queue->timed_dequeue( response_timeout_ns ); directory_entries = __response->get_directory_entries(); }
@@ -966,8 +966,8 @@ namespace org
         {
         public:
           openRequest() : flags( 0 ), mode( 0 ), attributes( 0 ) { }
-          openRequest( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes ) : path( path ), flags( flags ), mode( mode ), attributes( attributes ) { }
-          openRequest( const char* path, size_t path_len, uint32_t flags, uint32_t mode, uint32_t attributes ) : path( path, path_len ), flags( flags ), mode( mode ), attributes( attributes ) { }
+          openRequest( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, const org::xtreemfs::interfaces::VivaldiCoordinates& client_vivaldi_coordinates ) : path( path ), flags( flags ), mode( mode ), attributes( attributes ), client_vivaldi_coordinates( client_vivaldi_coordinates ) { }
+          openRequest( const char* path, size_t path_len, uint32_t flags, uint32_t mode, uint32_t attributes, const org::xtreemfs::interfaces::VivaldiCoordinates& client_vivaldi_coordinates ) : path( path, path_len ), flags( flags ), mode( mode ), attributes( attributes ), client_vivaldi_coordinates( client_vivaldi_coordinates ) { }
           virtual ~openRequest() { }
 
           void set_path( const std::string& path ) { set_path( path.c_str(), path.size() ); }
@@ -979,15 +979,17 @@ namespace org
           uint32_t get_mode() const { return mode; }
           void set_attributes( uint32_t attributes ) { this->attributes = attributes; }
           uint32_t get_attributes() const { return attributes; }
+          void set_client_vivaldi_coordinates( const org::xtreemfs::interfaces::VivaldiCoordinates&  client_vivaldi_coordinates ) { this->client_vivaldi_coordinates = client_vivaldi_coordinates; }
+          const org::xtreemfs::interfaces::VivaldiCoordinates& get_client_vivaldi_coordinates() const { return client_vivaldi_coordinates; }
 
-          bool operator==( const openRequest& other ) const { return path == other.path && flags == other.flags && mode == other.mode && attributes == other.attributes; }
+          bool operator==( const openRequest& other ) const { return path == other.path && flags == other.flags && mode == other.mode && attributes == other.attributes && client_vivaldi_coordinates == other.client_vivaldi_coordinates; }
 
           // yidl::Object
           YIDL_OBJECT_PROTOTYPES( openRequest, 2009090420 );
 
           // YIELD::Struct
-          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "flags", 0, flags ); marshaller.writeUint32( "mode", 0, mode ); marshaller.writeUint32( "attributes", 0, attributes ); }
-          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); flags = unmarshaller.readUint32( "flags", 0 ); mode = unmarshaller.readUint32( "mode", 0 ); attributes = unmarshaller.readUint32( "attributes", 0 ); }  // YIELD::Request
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "flags", 0, flags ); marshaller.writeUint32( "mode", 0, mode ); marshaller.writeUint32( "attributes", 0, attributes ); marshaller.writeStruct( "client_vivaldi_coordinates", 0, client_vivaldi_coordinates ); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "path", 0, path ); flags = unmarshaller.readUint32( "flags", 0 ); mode = unmarshaller.readUint32( "mode", 0 ); attributes = unmarshaller.readUint32( "attributes", 0 ); unmarshaller.readStruct( "client_vivaldi_coordinates", 0, client_vivaldi_coordinates ); }  // YIELD::Request
           virtual ::YIELD::auto_Response createResponse() { return new openResponse; }
 
 
@@ -996,6 +998,7 @@ namespace org
           uint32_t flags;
           uint32_t mode;
           uint32_t attributes;
+          org::xtreemfs::interfaces::VivaldiCoordinates client_vivaldi_coordinates;
         };
 
         class readdirResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -2688,7 +2691,7 @@ namespace org
         virtual void handlelinkRequest( linkRequest& req ) { ::yidl::auto_Object<linkResponse> resp( new linkResponse ); _link( req.get_target_path(), req.get_link_path() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlelistxattrRequest( listxattrRequest& req ) { ::yidl::auto_Object<listxattrResponse> resp( new listxattrResponse ); org::xtreemfs::interfaces::StringSet names; _listxattr( req.get_path(), names ); resp->set_names( names ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlemkdirRequest( mkdirRequest& req ) { ::yidl::auto_Object<mkdirResponse> resp( new mkdirResponse ); _mkdir( req.get_path(), req.get_mode() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
-        virtual void handleopenRequest( openRequest& req ) { ::yidl::auto_Object<openResponse> resp( new openResponse ); org::xtreemfs::interfaces::FileCredentials file_credentials; _open( req.get_path(), req.get_flags(), req.get_mode(), req.get_attributes(), file_credentials ); resp->set_file_credentials( file_credentials ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handleopenRequest( openRequest& req ) { ::yidl::auto_Object<openResponse> resp( new openResponse ); org::xtreemfs::interfaces::FileCredentials file_credentials; _open( req.get_path(), req.get_flags(), req.get_mode(), req.get_attributes(), req.get_client_vivaldi_coordinates(), file_credentials ); resp->set_file_credentials( file_credentials ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlereaddirRequest( readdirRequest& req ) { ::yidl::auto_Object<readdirResponse> resp( new readdirResponse ); org::xtreemfs::interfaces::DirectoryEntrySet directory_entries; _readdir( req.get_path(), directory_entries ); resp->set_directory_entries( directory_entries ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handleremovexattrRequest( removexattrRequest& req ) { ::yidl::auto_Object<removexattrResponse> resp( new removexattrResponse ); _removexattr( req.get_path(), req.get_name() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlerenameRequest( renameRequest& req ) { ::yidl::auto_Object<renameResponse> resp( new renameResponse ); org::xtreemfs::interfaces::FileCredentialsSet file_credentials; _rename( req.get_source_path(), req.get_target_path(), file_credentials ); resp->set_file_credentials( file_credentials ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
@@ -2728,7 +2731,7 @@ namespace org
         virtual void _link( const std::string& , const std::string&  ) { }
         virtual void _listxattr( const std::string& , org::xtreemfs::interfaces::StringSet&  ) { }
         virtual void _mkdir( const std::string& , uint32_t ) { }
-        virtual void _open( const std::string& , uint32_t, uint32_t, uint32_t, org::xtreemfs::interfaces::FileCredentials&  ) { }
+        virtual void _open( const std::string& , uint32_t, uint32_t, uint32_t, const org::xtreemfs::interfaces::VivaldiCoordinates& , org::xtreemfs::interfaces::FileCredentials&  ) { }
         virtual void _readdir( const std::string& , org::xtreemfs::interfaces::DirectoryEntrySet&  ) { }
         virtual void _removexattr( const std::string& , const std::string&  ) { }
         virtual void _rename( const std::string& , const std::string& , org::xtreemfs::interfaces::FileCredentialsSet&  ) { }
@@ -2771,7 +2774,7 @@ namespace org
       virtual void _link( const std::string& target_path, const std::string& link_path );\
       virtual void _listxattr( const std::string& path, org::xtreemfs::interfaces::StringSet& names );\
       virtual void _mkdir( const std::string& path, uint32_t mode );\
-      virtual void _open( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, org::xtreemfs::interfaces::FileCredentials& file_credentials );\
+      virtual void _open( const std::string& path, uint32_t flags, uint32_t mode, uint32_t attributes, const org::xtreemfs::interfaces::VivaldiCoordinates& client_vivaldi_coordinates, org::xtreemfs::interfaces::FileCredentials& file_credentials );\
       virtual void _readdir( const std::string& path, org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries );\
       virtual void _removexattr( const std::string& path, const std::string& name );\
       virtual void _rename( const std::string& source_path, const std::string& target_path, org::xtreemfs::interfaces::FileCredentialsSet& file_credentials );\

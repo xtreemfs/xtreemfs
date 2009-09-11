@@ -29,6 +29,12 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_rmvol", "proj\xtfs_rmv
 		{FFA69254-B8BC-4E99-B60C-F4B96511124A} = {FFA69254-B8BC-4E99-B60C-F4B96511124A}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xtfs_vivaldi", "proj\xtfs_vivaldi\xtfs_vivaldi.vcproj", "{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}"
+	ProjectSection(ProjectDependencies) = postProject
+		{AF7AE548-AC85-424F-87CD-417ECBC12291} = {AF7AE548-AC85-424F-87CD-417ECBC12291}
+		{FFA69254-B8BC-4E99-B60C-F4B96511124A} = {FFA69254-B8BC-4E99-B60C-F4B96511124A}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -59,6 +65,10 @@ Global
 		{F7BCFCF3-E465-4557-A8D4-C23CE23B2400}.Debug|Win32.Build.0 = Debug|Win32
 		{F7BCFCF3-E465-4557-A8D4-C23CE23B2400}.Release|Win32.ActiveCfg = Release|Win32
 		{F7BCFCF3-E465-4557-A8D4-C23CE23B2400}.Release|Win32.Build.0 = Release|Win32
+		{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}.Debug|Win32.ActiveCfg = Debug|Win32
+		{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}.Debug|Win32.Build.0 = Debug|Win32
+		{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}.Release|Win32.ActiveCfg = Release|Win32
+		{AD5E56F4-A47B-40F3-8CC0-4BEB841D4D02}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

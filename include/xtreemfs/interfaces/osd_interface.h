@@ -185,35 +185,6 @@ namespace org
         org::xtreemfs::interfaces::ObjectListSet object_set;
       };
 
-      class VivaldiCoordinates : public ::yidl::Struct
-      {
-      public:
-        VivaldiCoordinates() : x_coordinate( 0 ), y_coordinate( 0 ), local_error( 0 ) { }
-        VivaldiCoordinates( double x_coordinate, double y_coordinate, double local_error ) : x_coordinate( x_coordinate ), y_coordinate( y_coordinate ), local_error( local_error ) { }
-        virtual ~VivaldiCoordinates() { }
-
-        void set_x_coordinate( double x_coordinate ) { this->x_coordinate = x_coordinate; }
-        double get_x_coordinate() const { return x_coordinate; }
-        void set_y_coordinate( double y_coordinate ) { this->y_coordinate = y_coordinate; }
-        double get_y_coordinate() const { return y_coordinate; }
-        void set_local_error( double local_error ) { this->local_error = local_error; }
-        double get_local_error() const { return local_error; }
-
-        bool operator==( const VivaldiCoordinates& other ) const { return x_coordinate == other.x_coordinate && y_coordinate == other.y_coordinate && local_error == other.local_error; }
-
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( VivaldiCoordinates, 2009082671 );
-
-        // YIELD::Struct
-        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeDouble( "x_coordinate", 0, x_coordinate ); marshaller.writeDouble( "y_coordinate", 0, y_coordinate ); marshaller.writeDouble( "local_error", 0, local_error ); }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { x_coordinate = unmarshaller.readDouble( "x_coordinate", 0 ); y_coordinate = unmarshaller.readDouble( "y_coordinate", 0 ); local_error = unmarshaller.readDouble( "local_error", 0 ); }
-
-      protected:
-        double x_coordinate;
-        double y_coordinate;
-        double local_error;
-      };
-
 
 
       #ifndef ORG_XTREEMFS_INTERFACES_OSDINTERFACE_INTERFACE_PARENT_CLASS

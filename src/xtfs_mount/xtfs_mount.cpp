@@ -45,6 +45,8 @@ namespace xtfs_mount
       addOption( XTFS_MOUNT_OPTION_TRACE_VOLUME_OPERATIONS, "--trace-volume-operations" );
       trace_volume_operations = false;
 
+      addOption( XTFS_MOUNT_OPTION_VIVALDI_COORDINATES_FILE_PATH, "--vivaldi-coordinates-file-path", NULL, "path to Vivaldi coordinates file produced by xtfs_vivaldi" );
+
       addOption( XTFS_MOUNT_OPTION_WRITE_BACK_CACHE, "--write-back-cache" );
       write_back_cache = false;
 
@@ -63,8 +65,9 @@ namespace xtfs_mount
       XTFS_MOUNT_OPTION_TRACE_FILE_IO = 25,
       XTFS_MOUNT_OPTION_TRACE_METADATA_CACHE = 26,
       XTFS_MOUNT_OPTION_TRACE_VOLUME_OPERATIONS = 27,
-      XTFS_MOUNT_OPTION_WRITE_BACK_CACHE = 28,
-      XTFS_MOUNT_OPTION_WRITE_THROUGH_CACHE = 29
+      XTFS_MOUNT_OPTION_VIVALDI_COORDINATES_FILE_PATH = 28,
+      XTFS_MOUNT_OPTION_WRITE_BACK_CACHE = 29,
+      XTFS_MOUNT_OPTION_WRITE_THROUGH_CACHE = 30
     };
 
     bool direct_io;
@@ -74,6 +77,7 @@ namespace xtfs_mount
     bool metadata_cache;
     std::string mount_point, volume_name;
     bool trace_data_cache, trace_file_io, trace_metadata_cache, trace_volume_operations;
+    YIELD::Path vivaldi_coordinates_file_path;
     bool write_back_cache, write_through_cache;
 
 
@@ -106,7 +110,7 @@ namespace xtfs_mount
         volume_flags |= xtreemfs::Volume::VOLUME_FLAG_TRACE_FILE_IO;
 
       // Create the XtreemFS volume in the parent as well as the child process so that the parent will fail on most common errors (like failed connections) before the child is created
-      YIELD::auto_Volume volume = xtreemfs::Volume::create( *dir_uri, volume_name, volume_flags, get_log(), get_proxy_flags(), get_operation_timeout(), get_proxy_ssl_context() ).release();
+      YIELD::auto_Volume volume = xtreemfs::Volume::create( *dir_uri, volume_name, volume_flags, get_log(), get_proxy_flags(), get_operation_timeout(), get_proxy_ssl_context(), vivaldi_coordinates_file_path ).release();
 
       if ( foreground )
       {
@@ -211,6 +215,7 @@ namespace xtfs_mount
         case XTFS_MOUNT_OPTION_TRACE_FILE_IO: trace_file_io = true; break;
         case XTFS_MOUNT_OPTION_TRACE_METADATA_CACHE: trace_metadata_cache = true; break;
         case XTFS_MOUNT_OPTION_TRACE_VOLUME_OPERATIONS: trace_volume_operations = true; break;
+        case XTFS_MOUNT_OPTION_VIVALDI_COORDINATES_FILE_PATH: vivaldi_coordinates_file_path = arg; break;
         case XTFS_MOUNT_OPTION_WRITE_BACK_CACHE: write_back_cache = true; break;
         case XTFS_MOUNT_OPTION_WRITE_THROUGH_CACHE: write_through_cache = true; break;
         default: xtreemfs::Main::parseOption( id, arg ); break;

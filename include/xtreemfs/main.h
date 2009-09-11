@@ -98,13 +98,26 @@ namespace xtreemfs
     virtual ~Main()
     { }
 
-    yidl::auto_Object<MRCProxy> createMRCProxy( const YIELD::URI& uri, const char* password = "" )
+    auto_DIRProxy createDIRProxy( const YIELD::URI& uri )
+    {
+      YIELD::URI checked_uri( uri );
+      if ( checked_uri.get_port() == 0 )
+        checked_uri.set_port( org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT );
+
+      auto_DIRProxy proxy = DIRProxy::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, get_proxy_ssl_context() );
+      if ( proxy != NULL )
+        return proxy;
+      else
+        throw YIELD::Exception( "invalid proxy URI" );
+    }    
+
+    auto_MRCProxy createMRCProxy( const YIELD::URI& uri, const char* password = "" )
     {
       YIELD::URI checked_uri( uri );
       if ( checked_uri.get_port() == 0 )
         checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT );
 
-      yidl::auto_Object<MRCProxy> proxy = MRCProxy::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, password, get_proxy_ssl_context() );
+      auto_MRCProxy proxy = MRCProxy::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, password, get_proxy_ssl_context() );
       if ( proxy != NULL )
         return proxy;
       else

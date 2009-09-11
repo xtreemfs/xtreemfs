@@ -30,6 +30,25 @@ typedef struct yajl_gen_t* yajl_gen;
 #define YIELD_RFC822_HEADERS_STACK_IOVECS_LENGTH 32
 
 
+#define YIELD_SOCKET_PROTOTYPES \
+virtual void aio_read( yidl::auto_Object<AIOReadControlBlock> aio_read_control_block ); \
+virtual void aio_write( yidl::auto_Object<AIOWriteControlBlock> aio_write_control_block ); \
+virtual bool bind( auto_Address to_sockaddr ); \
+virtual bool close(); \
+virtual bool connect( auto_Address to_sockaddr ); \
+virtual bool get_blocking_mode() const; \
+virtual auto_Address getpeername(); \
+virtual auto_Address getsockname(); \
+virtual operator int() const; \
+virtual ssize_t read( void* buffer, size_t buffer_len ); \
+virtual bool set_blocking_mode( bool blocking ); \
+virtual bool shutdown(); \
+virtual bool want_connect() const; \
+virtual bool want_read() const; \
+virtual bool want_write() const; \
+virtual ssize_t writev( const struct iovec* buffers, uint32_t buffers_count );
+
+
 namespace YIELD
 {
   class HTTPRequest;
@@ -270,33 +289,18 @@ namespace YIELD
     Socket( int domain, int type, int protocol, int socket_ );
 
     virtual void aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block );
-    virtual void aio_read( yidl::auto_Object<AIOReadControlBlock> aio_read_control_block );
-    virtual void aio_write( yidl::auto_Object<AIOWriteControlBlock> aio_write_control_block );
-    virtual bool bind( auto_Address to_sockaddr );
-    virtual bool close();
-    virtual bool connect( auto_Address to_sockaddr );
     static void destroy();
-    bool get_blocking_mode() const;
     int get_domain() const { return domain; }
     static std::string getfqdn();
     static std::string gethostname();
-    auto_Address getpeername();
     int get_protocol() const { return protocol; }
-    auto_Address getsockname();
     int get_type() const { return type; }
     static void init();
     bool operator==( const Socket& other ) const { return static_cast<int>( *this ) == static_cast<int>( other ); } \
-    virtual operator int() const;
     virtual ssize_t read( yidl::auto_Buffer buffer );
-    virtual ssize_t read( void* buffer, size_t buffer_len );
-    bool set_blocking_mode( bool blocking );
-    virtual bool shutdown();
-    virtual bool want_connect() const;
-    virtual bool want_read() const;
-    virtual bool want_write() const;
     virtual ssize_t write( yidl::auto_Buffer buffer );
-    virtual ssize_t write( const void* buffer, size_t buffer_len );    
-    virtual ssize_t writev( const struct iovec* buffers, uint32_t buffers_count );
+    virtual ssize_t write( const void* buffer, size_t buffer_len );
+    YIELD_SOCKET_PROTOTYPES;
 
     // yidl::Object
     YIDL_OBJECT_PROTOTYPES( Socket, 211 );
@@ -434,7 +438,7 @@ namespace YIELD
 
     TCPSocket( int domain, int socket_ );
 
-    virtual void aio_accept( yidl::auto_Object<AIOAcceptControlBlock> aio_accept_control_block );    
+    virtual void aio_accept( yidl::auto_Object<AIOAcceptControlBlock> aio_accept_control_block );
     virtual void aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block );
     static yidl::auto_Object<TCPSocket> create(); // Defaults to domain = AF_INET6
     static yidl::auto_Object<TCPSocket> create( int domain );
@@ -1145,10 +1149,8 @@ namespace YIELD
     YIDL_OBJECT_PROTOTYPES( SSLSocket, 216 );
 
     // Socket
-    void aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block );
     void aio_read( yidl::auto_Object<AIOReadControlBlock> aio_read_control_block );
     void aio_write( yidl::auto_Object<AIOWriteControlBlock> aio_write_control_block );
-    bool connect( auto_Address peername );
     ssize_t read( void* buffer, size_t buffer_len );
     bool want_read() const;
     bool want_write() const;
@@ -1157,7 +1159,8 @@ namespace YIELD
 
     // TCPSocket
     auto_TCPSocket accept();
-    void aio_accept( yidl::auto_Object<AIOAcceptControlBlock> aio_accept_control_block );    
+    void aio_accept( yidl::auto_Object<AIOAcceptControlBlock> aio_accept_control_block );
+    bool connect( auto_Address peername );
     bool shutdown();
 
   private:
@@ -1184,17 +1187,7 @@ namespace YIELD
 
     // Socket
     void aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block );
-    void aio_read( Socket::auto_AIOReadControlBlock aio_read_control_block );
-    void aio_write( Socket::auto_AIOWriteControlBlock aio_write_control_block );
-    bool bind( Socket::auto_Address to_sockaddr );
-    bool close();
-    bool connect( Socket::auto_Address to_sockaddr );
-    operator int() const;
-    ssize_t read( void* buffer, size_t buffer_len );
-    bool want_connect() const;
-    bool want_read() const;
-    bool want_write() const;
-    ssize_t writev( const struct iovec* buffers, uint32_t buffers_count );
+    YIELD_SOCKET_PROTOTYPES;
 
   private:
     ~TracingSocket() { }
