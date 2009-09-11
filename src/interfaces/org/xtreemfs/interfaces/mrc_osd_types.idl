@@ -73,7 +73,14 @@ module org
 
       typedef sequence<Replica> ReplicaSet # 21;
 
-      struct XCap # 22
+      struct VivaldiCoordinates # 22
+      {
+         double x_coordinate;
+         double y_coordinate;
+         double local_error;
+      };
+
+      struct XCap # 23
       {
         string file_id;
         uint32_t access_mode;
@@ -84,7 +91,7 @@ module org
         string server_signature;
       };
 
-      struct XLocSet # 23
+      struct XLocSet # 24
       {
         ReplicaSet replicas;
         uint32_t   version;
@@ -93,13 +100,13 @@ module org
         uint64_t   read_only_file_size;
       };
 
-      struct FileCredentials # 24
+      struct FileCredentials # 25
       {
         XLocSet xlocs;
         XCap    xcap;
       };
 
-      typedef sequence<FileCredentials> FileCredentialsSet # 25;
+      typedef sequence<FileCredentials> FileCredentialsSet # 26;
     };
   };
 };

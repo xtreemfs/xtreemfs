@@ -86,7 +86,7 @@ module org
         void link( string target_path, string link_path ) # 8;
         void listxattr( string path, out StringSet names ) # 9;
         void mkdir( string path, uint32_t mode ) # 10;
-        void open( string path, uint32_t flags, uint32_t mode, uint32_t attributes, out FileCredentials file_credentials ) # 11;
+        void open( string path, uint32_t flags, uint32_t mode, uint32_t attributes, VivaldiCoordinates client_vivaldi_coordinates, out FileCredentials file_credentials ) # 11;
         void readdir( string path, out DirectoryEntrySet directory_entries ) # 12;
         void removexattr( string path, string name ) # 13;
         void rename( string source_path, string target_path, out FileCredentialsSet file_credentials ) # 14;       
