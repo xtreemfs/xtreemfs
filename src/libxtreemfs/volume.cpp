@@ -251,7 +251,7 @@ YIELD::auto_File Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t 
     if ( !vivaldi_coordinates_file_path.empty() )
     {
       YIELD::auto_File vivaldi_coordinates_file = YIELD::Volume().open( vivaldi_coordinates_file_path );
-      yidl::StackBuffer<sizeof( org::xtreemfs::interfaces::VivaldiCoordinates)> my_vivaldi_coordinates_buffer;
+      yidl::auto_Buffer my_vivaldi_coordinates_buffer( new yidl::StackBuffer<sizeof( org::xtreemfs::interfaces::VivaldiCoordinates)> );
       vivaldi_coordinates_file->read( my_vivaldi_coordinates_buffer );
       YIELD::XDRUnmarshaller xdr_unmarshaller( my_vivaldi_coordinates_buffer );
       my_vivaldi_coordinates.unmarshal( xdr_unmarshaller );
