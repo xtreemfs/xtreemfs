@@ -2773,12 +2773,12 @@ bool YIELD::Socket::AIOReadControlBlock::execute()
     onError( ECONNABORTED );
 #endif
   else if ( get_socket()->want_read() )
-    return false;
+    return EXECUTE_STATUS_WANT_READ;
   else if ( get_socket()->want_write() )
-    return false;
+    return EXECUTE_STATUS_WANT_WRITE;
   else
     onError( Exception::get_errno() );
-  return true;
+  return EXECUTE_STATUS_DONE;
 }
 YIELD::Socket::Socket( int domain, int type, int protocol, int socket_ )
   : domain( domain ), socket_( socket_ ), type( type ), protocol( protocol )
@@ -3875,63 +3875,18 @@ private:
   bool processAIOControlBlock( AIOControlBlock* aio_control_block )
   {
     int fd = static_cast<int>( *aio_control_block->get_socket() );
-    if ( aio_control_block->execute() )
+    switch ( aio_control_block->execute() )
     {
-      dissociate( fd );
-      Object::decRef( *aio_control_block );
-      return true;
-    }
-    else
-    {
-      switch ( aio_control_block->get_type_id() )
+      case Socket::AIOControlBlock::EXECUTE_STATUS_DONE:
       {
-        case YIDL_OBJECT_TYPE_ID( Socket::AIOConnectControlBlock ):
-        {
-          if ( aio_control_block->get_socket()->want_connect() )
-            toggle( fd, false, true );
-          else
-            DebugBreak();
-        }
-        break;
-        case YIDL_OBJECT_TYPE_ID( Socket::AIOReadControlBlock ):
-        {
-          if ( aio_control_block->get_socket()->want_read() )
-            toggle( fd, true, false );
-          else if ( aio_control_block->get_socket()->want_write() )
-            toggle( fd, false, true );
-          else
-            DebugBreak();
-        }
-        break;
-        case YIDL_OBJECT_TYPE_ID( Socket::AIOWriteControlBlock ):
-        {
-          if ( aio_control_block->get_socket()->want_write() )
-            toggle( fd, false, true );
-          else if ( aio_control_block->get_socket()->want_read() )
-            toggle( fd, true, false );
-          else
-            DebugBreak();
-        }
-        break;
-        case YIDL_OBJECT_TYPE_ID( TCPSocket::AIOAcceptControlBlock ):
-        {
-          if ( aio_control_block->get_socket()->want_read() )
-            toggle( fd, true, false );
-          else
-            DebugBreak();
-        }
-        break;
-        case YIDL_OBJECT_TYPE_ID( UDPSocket::AIORecvFromControlBlock ):
-        {
-          if ( aio_control_block->get_socket()->want_read() )
-            toggle( fd, true, false );
-          else
-            DebugBreak();
-        }
-        break;
-        default: DebugBreak();
+        dissociate( fd );
+        Object::decRef( *aio_control_block );
+        return true;
       }
-      return false;
+      break;
+      case Socket::AIOControlBlock::EXECUTE_STATUS_WANT_READ: toggle( fd, true, false ); return false;
+      case Socket::AIOControlBlock::EXECUTE_STATUS_WANT_WRITE: toggle( fd, false, true ); return false;
+      default: DebugBreak(); return false;
     }
   }
   bool toggle( int fd, bool enable_read, bool enable_write )

@@ -145,7 +145,8 @@ namespace YIELD
     public:
       virtual ~AIOControlBlock() { }
 
-      virtual bool execute() = 0;
+      enum ExecuteStatus { EXECUTE_STATUS_DONE = 0, EXECUTE_STATUS_WANT_READ, EXECUTE_STATUS_WANT_WRITE };
+      virtual ExecuteStatus execute() = 0;
 
       yidl::auto_Object<Socket> get_socket() const { return socket_; }
 
@@ -179,20 +180,16 @@ namespace YIELD
       YIDL_OBJECT_PROTOTYPES( AIOConnectControlBlock, 223 );
 
       // Socket::AIOControlBlock
-      bool execute()
+      ExecuteStatus execute()
       {
         if ( get_socket()->connect( get_peername() ) )
-        {
           onCompletion( 0 );
-          return true;
-        }
         else if ( get_socket()->want_connect() )
-          return false;
+          return EXECUTE_STATUS_WANT_WRITE;
         else
-        {
           onError( Exception::get_errno() );
-          return true;
-        }
+
+        return EXECUTE_STATUS_DONE;
       }
 
     private:
@@ -219,7 +216,7 @@ namespace YIELD
       YIDL_OBJECT_PROTOTYPES( AIOReadControlBlock, 227 );
 
       // Socket::AIOControlBlock
-      bool execute();
+      ExecuteStatus execute();
 
     private:
       yidl::auto_Buffer buffer;
@@ -245,19 +242,20 @@ namespace YIELD
       YIDL_OBJECT_PROTOTYPES( AIOWriteControlBlock, 228 );
 
       // Socket::AIOControlBlock
-      bool execute()
+      ExecuteStatus execute()
       {
         ssize_t write_ret = get_socket()->write( get_buffer() );
+
         if ( write_ret >= 0 )
           onCompletion( static_cast<size_t>( write_ret ) );
         else if ( get_socket()->want_write() )
-          return false;
+          return EXECUTE_STATUS_WANT_WRITE;
         else if ( get_socket()->want_read() )
-          return false;
+          return EXECUTE_STATUS_WANT_READ;
         else
           onError( Exception::get_errno() );
 
-        return true;
+        return EXECUTE_STATUS_DONE;        
       }
 
     private:
@@ -408,18 +406,18 @@ namespace YIELD
       YIDL_OBJECT_PROTOTYPES( AIOAcceptControlBlock, 222 );
 
       // Socket::AIOControlBlock
-      bool execute()
+      ExecuteStatus execute()
       {
         accepted_tcp_socket = static_cast<TCPSocket*>( get_socket().get() )->accept();
 
         if ( accepted_tcp_socket != NULL )
           onCompletion( 0 );
         else if ( get_socket()->want_read() )
-          return false;
+          return EXECUTE_STATUS_WANT_READ;
         else
           onError( Exception::get_errno() );
 
-        return true;
+        return EXECUTE_STATUS_DONE;
       }
 
     private:
@@ -1219,7 +1217,7 @@ namespace YIELD
       YIDL_OBJECT_PROTOTYPES( UDPSocket::AIORecvFromControlBlock, 0 );
 
       // Socket::AIOControlBlock
-      bool execute()
+      ExecuteStatus execute()
       {
         ssize_t recvfrom_ret = static_cast<UDPSocket*>( get_socket().get() )->recvfrom( buffer, *peer_sockaddr );
 
@@ -1228,11 +1226,11 @@ namespace YIELD
         else if ( recvfrom_ret == 0 )
           DebugBreak();
         else if ( get_socket()->want_read() )
-          return false;
+          return EXECUTE_STATUS_WANT_READ;
         else
           onError( Exception::get_errno() );          
 
-        return true;
+        return EXECUTE_STATUS_DONE;
       }
 
     protected:
