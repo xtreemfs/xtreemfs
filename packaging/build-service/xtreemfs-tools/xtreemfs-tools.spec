@@ -6,6 +6,8 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Group:          Networking
 Summary:        XtreemFS administration tools
 Source0:        %{name}-%{version}.tar.gz
+Requires:       python >= 2.4
+Requires:       attr
 
 %description
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
@@ -17,6 +19,7 @@ To run the tools, a SUN JAVA 6 RUNTIME ENVIROMENT IS REQUIRED! Make sure that Ja
 %setup
 
 %build
+#python share/scons.py bin/xtfs_stat
 
 %install
 XTREEMFS_JAR_DIR=$RPM_BUILD_ROOT/usr/share/java/
@@ -30,6 +33,7 @@ export NO_BRP_CHECK_BYTECODE_VERSION=true
 # copy jars
 mkdir -p $XTREEMFS_JAR_DIR
 cp dist/XtreemFS.jar $XTREEMFS_JAR_DIR/XtreemFS-tools.jar
+cp lib/yidl.jar $XTREEMFS_JAR_DIR/yidl.jar
 
 # copy config files
 #mkdir -p $XTREEMFS_CONFIG_DIR
@@ -55,7 +59,4 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/java/*.jar
 /usr/bin/xtfs_*
 /usr/share/man/man1/xtfs_*
-#/etc/xos/
-#/etc/xos/xtreemfs/
-/AUTHORS
-/COPYING
+/usr/share/doc/xtreemfs-tools/

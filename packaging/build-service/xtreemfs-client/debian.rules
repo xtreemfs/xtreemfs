@@ -26,9 +26,7 @@ build-stamp:
 	dh_testdir
 
 	# Add here commands to compile the package.
-	#./configure
-	#make all
-	python scons.py
+	python share/scons.py
 	# --- end custom part for compiling
 
 	touch build-stamp

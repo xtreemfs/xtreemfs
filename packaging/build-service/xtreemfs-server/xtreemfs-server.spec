@@ -6,8 +6,12 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Group:          Networking
 Summary:        XtreemFS server components (DIR, MRC, OSD)
 Source0:        %{name}-%{version}.tar.gz
-Requires:       grep
-Requires:       sudo
+Requires:       grep sudo
+
+# openSUSE >=10.2 
+%if 0%{?suse_version} >= 1020 
+BuildRequires:  pwdutils >= 3
+%endif
 
 %description
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
@@ -45,6 +49,7 @@ cp config/*.properties $XTREEMFS_CONFIG_DIR
 # copy generate_uuid script
 cp packaging/generate_uuid $XTREEMFS_CONFIG_DIR
 cp packaging/postinstall_setup.sh $XTREEMFS_CONFIG_DIR
+chmod a+x $XTREEMFS_CONFIG_DIR/postinstall_setup.sh
 
 # copy init.d files
 mkdir -p $XTREEMFS_INIT_DIR
@@ -74,5 +79,4 @@ rm -rf $RPM_BUILD_ROOT
 /etc/init.d/xtreemfs-*
 /etc/xos/
 /etc/xos/xtreemfs/*
-/AUTHORS
-/COPYING
+/usr/share/doc/xtreemfs-server/

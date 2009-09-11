@@ -27,22 +27,21 @@ SERVER_WHITE_LIST=(
 # white list for files/dirs which should be copied
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 CLIENT_WHITE_LIST=(
-	"src/client/generate_src_and_proj.bat" ""
-	"src/client/include" "include"
-	"src/client/proj" "proj"
-	"src/client/scons-local-1.2.0.d20090223" "scons-local-1.2.0.d20090223"
-	"src/client/scons.py" ""
-	"src/client/SConstruct" ""
-	"src/client/share" "share"
-	"src/client/src" "src"
+	"include" "include"
+	"proj" "proj"
+	"share" "share"
+	"SConstruct" ""
+	"src/xtfs_mount" "src/xtfs_mount"
+	"src/xtfs_lsvol" "src/xtfs_lsvol"
+	"src/xtfs_mkvol" "src/xtfs_mkvol"
+	"src/xtfs_rmvol" "src/xtfs_rmvol"
+	"src/libxtreemfs" "src/libxtreemfs"
+	"src/interfaces" "src/interfaces"
     "bin/xtfs_umount" "bin/xtfs_umount"
-    "bin/xtfs_sp" "bin/xtfs_sp"
 	"man/man1/xtfs_lsvol.1" "man/man1/xtfs_lsvol.1"
 	"man/man1/xtfs_mkvol.1" "man/man1/xtfs_mkvol.1"
 	"man/man1/xtfs_mount.1" "man/man1/xtfs_mount.1"
 	"man/man1/xtfs_rmvol.1" "man/man1/xtfs_rmvol.1"
-	"man/man1/xtfs_sp.1" "man/man1/xtfs_sp.1"
-	"man/man1/xtfs_stat.1" "man/man1/xtfs_stat.1"
 	"man/man1/xtfs_umount.1" "man/man1/xtfs_umount.1"
 	"etc/xos/xtreemfs/default_dir" "config/default_dir"
 	"AUTHORS" ""
@@ -52,20 +51,26 @@ CLIENT_WHITE_LIST=(
 # white list for files/dirs which should be copied
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 TOOLS_WHITE_LIST=(
+	"src/servers/lib" "lib"
+	"src/servers/dist" "dist"
 	"bin/xtfs_cleanup" "bin/xtfs_cleanup"
 	"bin/xtfs_mrcdbtool" "bin/xtfs_mrcdbtool"
 	"bin/xtfs_scrub" "bin/xtfs_scrub"
+	"bin/xtfs_sp" "bin/xtfs_sp"
 	"bin/xtfs_repl" "bin/xtfs_repl"
+	"bin/xtfs_stat" "bin/xtfs_stat"
 	"man/man1/xtfs_cleanup.1" "man/man1/xtfs_cleanup.1"
 	"man/man1/xtfs_mrcdbtool.1" "man/man1/xtfs_mrcdbtool.1"
 	"man/man1/xtfs_scrub.1" "man/man1/xtfs_scrub.1"
 	"man/man1/xtfs_repl.1" "man/man1/xtfs_repl.1"
+	"man/man1/xtfs_sp.1" "man/man1/xtfs_sp.1"
+	"man/man1/xtfs_stat.1" "man/man1/xtfs_stat.1"
 	"etc/xos/xtreemfs/default_dir" "config/default_dir"
-	"src/servers/dist" "dist"
 	"AUTHORS" ""
 	"COPYING" ""
 )
 
+# white list for files/dirs which should be copied
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 XOS_ADDONS_WHITE_LIST=(
 	"src/servers/xtreemos" "xtreemos"
@@ -235,8 +240,8 @@ build_xtreemos_addons() {
 	
 	# replace the scons.py softlink + dependencies
 	rm $PACKAGE_PATH_TMP/src/policies/scons.py
-	cp $PACKAGE_PATH_TMP/src/client/scons.py $PACKAGE_PATH_TMP/src/policies/scons.py
-	cp -r $PACKAGE_PATH_TMP/src/client/scons-local-* $PACKAGE_PATH_TMP/src/policies
+	cp $PACKAGE_PATH_TMP/share/scons.py $PACKAGE_PATH_TMP/src/policies/scons.py
+	cp -r $PACKAGE_PATH_TMP/share/scons-local-* $PACKAGE_PATH_TMP/src/policies
 
 	# delete all from black-list in temporary dir
 	delete_xos_addons_black_list $PACKAGE_PATH_TMP
@@ -430,7 +435,7 @@ else
 fi
 
 VERSION="$1"
-if [ ! -d "$XTREEMFS_HOME_DIR/src/servers" -o ! -d "$XTREEMFS_HOME_DIR/src/client" ] ;
+if [ ! -d "$XTREEMFS_HOME_DIR/src/servers" ] ;
 then
 	echo "directory is not the xtreemfs home directory"
 	usage

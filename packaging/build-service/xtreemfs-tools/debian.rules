@@ -16,9 +16,9 @@ CFLAGS += -O2
 endif
 
 DESTDIR=$(CURDIR)/debian/xtreemfs-tools
-XTREEMFS_JAR_DIR=$(DESTDIR)/usr/share/java/
+XTREEMFS_JAR_DIR=$(DESTDIR)/usr/share/java
 XTREEMFS_CONFIG_DIR=$(DESTDIR)/etc/xos/xtreemfs
-XTREEMFS_INIT_DIR=$(DESTDIR)/etc/init.d/
+XTREEMFS_INIT_DIR=$(DESTDIR)/etc/init.d
 BIN_DIR=$(DESTDIR)/usr/bin
 MAN_DIR=$(DESTDIR)/usr/share/man
 DOC_DIR=$(DESTDIR)/usr/share/doc/xtreemfs-tools
@@ -28,8 +28,6 @@ build-stamp:
 	dh_testdir
 
 	# Add here commands to compile the package.
-#	./configure
-#	make all
 	# --- end custom part for compiling
 
 	touch build-stamp

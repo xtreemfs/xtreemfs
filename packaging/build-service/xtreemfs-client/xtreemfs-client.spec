@@ -6,11 +6,11 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Group:          Networking
 Summary:        XtreemFS client
 Source0:        %{name}-%{version}.tar.gz
-Requires:       fuse >= 2.6 attr python >= 2.4
-
+Requires:       fuse >= 2.6
 
 #requires for different distributions
 BuildRequires:  python >= 2.4 gcc-c++ >= 4 fuse >= 2.6 fuse-devel >= 2.6
+
 # openSUSE >=10.2 
 %if 0%{?suse_version} >= 1020 
 BuildRequires:  libopenssl-devel >= 0.8
@@ -26,7 +26,6 @@ BuildRequires:  libopenssl-devel >= 0.8
 BuildRequires:  openssl-devel >= 0.8 kernel redhat-rpm-config >= 0
 %endif
 
-
 %description
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
 
@@ -37,13 +36,12 @@ This package contains the XtreemFS client module.
 
 
 %build
-python scons.py
-
+python share/scons.py
 
 %install
 BIN_DIR="$RPM_BUILD_ROOT/usr/bin"
 MAN_DIR="$RPM_BUILD_ROOT/usr/share/man"
-XTREEMFS_CONFIG_DIR=s$RPM_BUILD_ROOT/etc/xos/xtreemfs/
+XTREEMFS_CONFIG_DIR=$RPM_BUILD_ROOT/etc/xos/xtreemfs/
 DOC_DIR="$RPM_BUILD_ROOT/usr/share/doc/xtreemfs-client"
 
 # copy copyright notes
@@ -71,5 +69,4 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/man/man1/xtfs_*
 /etc/xos/
 /etc/xos/xtreemfs/*
-/AUTHORS
-/COPYING
+/usr/share/doc/xtreemfs-client/
