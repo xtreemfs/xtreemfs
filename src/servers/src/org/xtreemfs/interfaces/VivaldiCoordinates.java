@@ -12,7 +12,7 @@ import yidl.Unmarshaller;
 
 public class VivaldiCoordinates extends Struct
 {
-    public static final int TAG = 2009082671;
+    public static final int TAG = 2009090231;
     
     public VivaldiCoordinates() {  }
     public VivaldiCoordinates( double x_coordinate, double y_coordinate, double local_error ) { this.x_coordinate = x_coordinate; this.y_coordinate = y_coordinate; this.local_error = local_error; }
@@ -25,10 +25,10 @@ public class VivaldiCoordinates extends Struct
     public void setLocal_error( double local_error ) { this.local_error = local_error; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082671;    
+    public static final long serialVersionUID = 2009090231;    
 
     // yidl.Object
-    public int getTag() { return 2009082671; }
+    public int getTag() { return 2009090231; }
     public String getTypeName() { return "org::xtreemfs::interfaces::VivaldiCoordinates"; }
     
     public int getXDRSize()

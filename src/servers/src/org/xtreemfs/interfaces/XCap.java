@@ -12,7 +12,7 @@ import yidl.Unmarshaller;
 
 public class XCap extends Struct
 {
-    public static final int TAG = 2009090231;
+    public static final int TAG = 2009090232;
     
     public XCap() {  }
     public XCap( String file_id, int access_mode, long expires_s, String client_identity, int truncate_epoch, boolean replicateOnClose, String server_signature ) { this.file_id = file_id; this.access_mode = access_mode; this.expires_s = expires_s; this.client_identity = client_identity; this.truncate_epoch = truncate_epoch; this.replicateOnClose = replicateOnClose; this.server_signature = server_signature; }
@@ -33,10 +33,10 @@ public class XCap extends Struct
     public void setServer_signature( String server_signature ) { this.server_signature = server_signature; }
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090231;    
+    public static final long serialVersionUID = 2009090232;    
 
     // yidl.Object
-    public int getTag() { return 2009090231; }
+    public int getTag() { return 2009090232; }
     public String getTypeName() { return "org::xtreemfs::interfaces::XCap"; }
     
     public int getXDRSize()
