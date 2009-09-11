@@ -53,14 +53,54 @@ Adds a replica and automatically selects OSDs according to the chosen method. Th
 \fB--full
 if set, the replica will be a complete copy of the file; otherwise only requested data will be replicated
 .TP
+\fB--ocr_factor_set \fI<number>
+Adjusts the number of replicas assigned to a file when the file is closed after a write. A value of 1 indicates that no replicas will be added and the file remains writable.
+.TP
+\fB--ocr_factor_get
+shows the current on-close replication factor
+.TP
+\fB--ocr_full_set \fItrue | false
+sets whether full replicas will be created when on-close replication is in effect
+.TP
+\fB--ocr_full_get
+shows whether full replicas will be created by means of the on-close replication mechanism
+.TP
+\fB--pol_attrs_get
+shows all policy-specific attributes
+.TP
+\fB--pol_attr_set \fI<name=value>
+Sets a policy-specific attribute. Policy-specific attributes can be used to configure OSD and replica selection policies.
+
+The following attributes will be recognized by the predefined policies (policy IDs in brackets):
+  \fIdomains\fP (1001) - a list of comma or space-separated domain names, one of which an OSD must be in to be regarded as suitable for a new file or replica
+  \fIfree_capacity_bytes\fP (1000) - the minimum free capacity in bytes an OSD must have to be regarded as suitable for a new file or replica
+  \fIoffline_time_secs\fP (1000) - the maximum time in seconds an OSD may have failed to send a heartbeat signal in order to be regarded as suitable for a new file or replica
+.TP
+\fB--osp_get
+shows the volume's current list of OSD selection policies
+.TP
+\fB--osp_set \fIdefault | fqdn | dcmap | <policy_ID, [policy_ID, ...]>
+Sets a list of successively applied OSD selection policies. OSD selection policies are used to select subsets among all known OSDs that are assigned to newly created files and replicas. \fIdefault\fP, \fIfqdn\fP and \fIdcmap\fP are pre-packaged policies that select OSDs randomly, based on their host's FQDNs, and based on a data center map, accordingly.
+
+The following policies are available by default:
+  \fI1000\fP - filter out dead OSDs and OSDs that do not have sufficient space
+  \fI1001\fP - filter out OSDs with FQDNs that do not match a given set of domains
+  \fI2000\fP - select a group of OSDs according to a data center map
+  \fI2001\fP - select the group of OSDs that provides enough OSDs, is in the same domain, and is closest to the client
+.TP
 \fB--remove_auto
 removes a randomly selected replica from the given file
 .TP
 \fB--rsp_get
-shows the volume's current replica selection policy
+shows the volume's current list of replica selection policies
 .TP
-\fB--rsp_set \fIdefault | fqdn | dcmap | <policy id>
-sets the volume's replica selection policy
+\fB--rsp_set \fIdefault | fqdn | dcmap | <policy_ID, [policy_ID, ...]>
+Sets a list of successively applied replica selection policies. Replica selection policies are used to define the order in which the client will attempt to access the replicas of a file. The client will first try to access the first replica, and - in case of a failed attempt - the next one, and so on. Replica selection policies can e.g. be used to make sure that clients will always attempt to access local replicas first. \fIdefault\fP, \fIfqdn\fP and \fIdcmap\fP are pre-packaged policies that do not reorder the list at all, reorder it based on the distance between the client's and OSD host's FQDN, and based on a data center map, accordingly.
+
+The following policies are available by default:
+  \fI3000\fP - randomly shuffles the list of OSDs
+  \fI3001\fP - sorts the list of OSDs in the order of their distance to the client, according to the data center map
+  \fI3002\fP - sorts the list of OSDs in the order of their distances between the hosts' FQDNs and the client's FQDN
 .TP
 \fB--set_readonly
 Marks the file as read-only. Having marked the file as read-only will effect that any kind of write access to the file will be denied in the future. Marking a file as read-only is a prerequisite for adding new replicas to the file.

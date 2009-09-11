@@ -940,8 +940,11 @@ public class xtfs_repl {
             + " | " + SEL_POLICY_DCMAP + " | <policy_ID, [policy_ID, ...]> }"
             + ": sets a list of successively applied replica selection policies\n");
         out.append("\t-" + OPTION_RSEL_POLICY_GET + ": prints the list of replica selection policies\n");
-        out.append("\t-" + OPTION_POLICY_ATTR_SET + " <name=value>" + ": sets a policy-specific attribute\n");
+        out.append("\t-" + OPTION_POLICY_ATTR_SET + " <name=value>: sets a policy-specific attribute\n");
         out.append("\t-" + OPTION_POLICY_ATTRS_GET + ": prints all policy-specific attributes\n");
+        out.append("\n");
+        
+        out.append("\ton-close replication:\n");
         out
                 .append("\t-"
                     + OPTION_ON_CLOSE_REPL_FACTOR_SET
@@ -950,7 +953,7 @@ public class xtfs_repl {
         out.append("\t-" + OPTION_ON_CLOSE_REPL_FACTOR_GET
             + ": prints the current on-close replication factor\n");
         out.append("\t-" + OPTION_ON_CLOSE_REPL_FULL_SET + " {true | false}"
-            + ": if set to true, full replicas will be created when on-close replication is in effect.\n");
+            + ": sets whether full replicas will be created when on-close replication is in effect\n");
         out
                 .append("\t-"
                     + OPTION_ON_CLOSE_REPL_FULL_GET
