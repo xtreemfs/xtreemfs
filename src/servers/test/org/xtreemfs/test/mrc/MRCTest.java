@@ -51,6 +51,7 @@ import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.interfaces.MRCInterface.MRCException;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.ac.POSIXFileAccessPolicy;
@@ -255,13 +256,13 @@ public class MRCTest extends TestCase {
         
         // check read-only replication
         FileCredentials creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/repl",
-            FileAccessManager.O_CREAT, 0, 0));
+            FileAccessManager.O_CREAT, 0, 0, new VivaldiCoordinates()));
         assertEquals(Constants.REPL_UPDATE_PC_NONE, creds.getXlocs().getRepUpdatePolicy());
         
         invokeSync(client.setxattr(mrcAddress, uc, volumeName + "/repl", "xtreemfs.read_only", "true", 0));
         val = invokeSync(client.getxattr(mrcAddress, uc, volumeName + "/repl", "xtreemfs.read_only"));
         assertEquals("true", val);
-        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/repl", FileAccessManager.O_CREAT, 0, 0));
+        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/repl", FileAccessManager.O_CREAT, 0, 0, new VivaldiCoordinates()));
         assertEquals(Constants.REPL_UPDATE_PC_RONLY, creds.getXlocs().getRepUpdatePolicy());
     }
     
@@ -365,19 +366,19 @@ public class MRCTest extends TestCase {
         invokeSync(client.create(mrcAddress, uc, volumeName + "/test.txt", 0774));
         
         // open w/ O_RDONLY; should not fail
-        invokeSync(client.open(mrcAddress, uc, volumeName + "/test.txt", FileAccessManager.O_RDONLY, 0, 0));
+        invokeSync(client.open(mrcAddress, uc, volumeName + "/test.txt", FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()));
         
         // open w/ O_RDWR; should not fail
-        invokeSync(client.open(mrcAddress, uc, volumeName + "/test.txt", FileAccessManager.O_RDWR, 0, 0));
+        invokeSync(client.open(mrcAddress, uc, volumeName + "/test.txt", FileAccessManager.O_RDWR, 0, 0, new VivaldiCoordinates()));
         
         // create a new file w/ O_CREAT; should implicitly create a new file
-        invokeSync(client.open(mrcAddress, uc, volumeName + "/test2.txt", FileAccessManager.O_CREAT, 256, 0));
+        invokeSync(client.open(mrcAddress, uc, volumeName + "/test2.txt", FileAccessManager.O_CREAT, 256, 0, new VivaldiCoordinates()));
         invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test2.txt"));
         
         // open w/ O_WRONLY; should fail
         try {
             invokeSync(client.open(mrcAddress, uc, volumeName + "/test2.txt", FileAccessManager.O_WRONLY,
-                256, 0));
+                256, 0, new VivaldiCoordinates()));
             fail();
         } catch (MRCException exc) {
             assertEquals(ErrNo.EACCES, exc.getError_code());
@@ -385,7 +386,7 @@ public class MRCTest extends TestCase {
         
         // open a directory; should fail
         try {
-            invokeSync(client.open(mrcAddress, uc, volumeName + "/dir", FileAccessManager.O_RDONLY, 0, 0));
+            invokeSync(client.open(mrcAddress, uc, volumeName + "/dir", FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()));
             fail("opened directory");
         } catch (MRCException exc) {
         }
@@ -397,7 +398,7 @@ public class MRCTest extends TestCase {
         
         // open a symlink
         FileCredentials creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/link",
-            FileAccessManager.O_RDONLY, 0, 0));
+            FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()));
         
         // wait one second before renewing the capability
         Thread.sleep(1000);
@@ -408,7 +409,7 @@ public class MRCTest extends TestCase {
         
         // test redirect
         try {
-            invokeSync(client.open(mrcAddress, uc, volumeName + "/link2", FileAccessManager.O_RDONLY, 0, 0));
+            invokeSync(client.open(mrcAddress, uc, volumeName + "/link2", FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()));
             fail("should have been redirected");
         } catch (MRCException exc) {
         }
@@ -416,10 +417,10 @@ public class MRCTest extends TestCase {
         // open w/ truncate flag; check whether the epoch number is incremented
         invokeSync(client.create(mrcAddress, uc, volumeName + "/trunc", 0777));
         creds = invokeSync(client
-                .open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_TRUNC, 0, 0));
+                .open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_TRUNC, 0, 0, new VivaldiCoordinates()));
         assertEquals(1, creds.getXcap().getTruncate_epoch());
         creds = invokeSync(client
-                .open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_TRUNC, 0, 0));
+                .open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_TRUNC, 0, 0, new VivaldiCoordinates()));
         assertEquals(2, creds.getXcap().getTruncate_epoch());
         
         // TODO: check open w/ ACLs set
@@ -427,11 +428,11 @@ public class MRCTest extends TestCase {
         // test truncate
         
         // open w/ write cap and truncate
-        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_RDWR, 0, 0));
+        creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_RDWR, 0, 0, new VivaldiCoordinates()));
         invokeSync(client.ftruncate(mrcAddress, creds.getXcap()));
         
         creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/trunc", FileAccessManager.O_RDONLY, 0,
-            0));
+            0, new VivaldiCoordinates()));
         try {
             invokeSync(client.ftruncate(mrcAddress, creds.getXcap()));
             fail("truncated file w/o write permissions");
@@ -457,7 +458,7 @@ public class MRCTest extends TestCase {
         // open O_CREATE as uid2 should fail
         try {
             invokeSync(client.open(mrcAddress, uc2, volumeName + "/test2.txt",
-                (FileAccessManager.O_WRONLY | FileAccessManager.O_CREAT), 256, 0));
+                (FileAccessManager.O_WRONLY | FileAccessManager.O_CREAT), 256, 0, new VivaldiCoordinates()));
             fail();
         } catch (MRCException exc) {
             assertEquals(ErrNo.EACCES, exc.getError_code());
@@ -765,7 +766,7 @@ public class MRCTest extends TestCase {
         invokeSync(client.create(mrcAddress, uc, fileName, 0));
         
         // check and update file sizes repeatedly
-        XCap cap = invokeSync(client.open(mrcAddress, uc, fileName, FileAccessManager.O_RDONLY, 0, 0))
+        XCap cap = invokeSync(client.open(mrcAddress, uc, fileName, FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()))
                 .getXcap();
         Stat stat = invokeSync(client.getattr(mrcAddress, uc, fileName));
         assertEquals(0L, stat.getSize());
@@ -851,7 +852,7 @@ public class MRCTest extends TestCase {
         
         // check if the striping policy assigned to the file matches the default
         // striping policy
-        XLocSet xLoc = invokeSync(client.open(mrcAddress, uc, fileName1, FileAccessManager.O_RDONLY, 0, 0))
+        XLocSet xLoc = invokeSync(client.open(mrcAddress, uc, fileName1, FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()))
                 .getXlocs();
         
         StripingPolicy sp = xLoc.getReplicas().get(0).getStriping_policy();
@@ -864,7 +865,7 @@ public class MRCTest extends TestCase {
         invokeSync(client.setxattr(mrcAddress, uc, dirName, "xtreemfs.default_sp", Converter
                 .stripingPolicyToJSONString(new BufferBackedStripingPolicy(sp2.getType().name(), sp2
                         .getStripe_size(), sp2.getWidth())), 0));
-        xLoc = invokeSync(client.open(mrcAddress, uc, fileName2, FileAccessManager.O_RDONLY, 0, 0))
+        xLoc = invokeSync(client.open(mrcAddress, uc, fileName2, FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()))
                 .getXlocs();
         
         sp = xLoc.getReplicas().get(0).getStriping_policy();
@@ -892,7 +893,7 @@ public class MRCTest extends TestCase {
         
         // open the file
         FileCredentials creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/test.txt",
-            FileAccessManager.O_RDWR, 0, 0));
+            FileAccessManager.O_RDWR, 0, 0, new VivaldiCoordinates()));
         XCap xCap = creds.getXcap();
         
         // close the file
@@ -900,7 +901,7 @@ public class MRCTest extends TestCase {
         
         // open the file again
         creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/test.txt", FileAccessManager.O_RDONLY,
-            0, 0));
+            0, 0, new VivaldiCoordinates()));
         XLocSet xLoc = creds.getXlocs();
         
         // check whether there are three replicas now

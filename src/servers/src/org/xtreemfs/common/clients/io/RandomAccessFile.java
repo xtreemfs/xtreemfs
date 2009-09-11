@@ -59,6 +59,7 @@ import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.MRCInterface.setxattrResponse;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.client.MRCClient;
@@ -193,7 +194,7 @@ public class RandomAccessFile implements ObjectStore {
         
         // create a new file if necessary
         RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, pathName,
-            FileAccessManager.O_CREAT, this.mode, 0);
+            FileAccessManager.O_CREAT, this.mode, 0, new VivaldiCoordinates());
         fileCredentials = r.get();
         r.freeBuffers();
         
@@ -358,13 +359,19 @@ public class RandomAccessFile implements ObjectStore {
                 }
                 
                 break;
-            } catch (ONCRPCException ex) {
+            
+            } catch (OSDException ex) {
                 if (buffer != null)
                     BufferPool.free(buffer);
                 // all replicas had been tried or replication has been failed
                 if (!iterator.hasNext() || ((OSDException) ex).getError_code() == ErrorCodes.IO_ERROR) {
                     throw new IOException("cannot read object", ex);
                 }
+            } catch (ONCRPCException ex) {
+                if (buffer != null)
+                    BufferPool.free(buffer);
+                // all replicas had been tried or replication has been failed
+                throw new IOException("cannot read object: "+ex.getMessage(), ex);
             } catch (IOException ex) {
                 if (buffer != null)
                     BufferPool.free(buffer);
@@ -879,7 +886,7 @@ public class RandomAccessFile implements ObjectStore {
     private void forceFileCredentialsUpdate(int mode) throws ONCRPCException, IOException,
         InterruptedException {
         RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, pathName,
-            FileAccessManager.O_CREAT, mode, 0);
+            FileAccessManager.O_CREAT, mode, 0, new VivaldiCoordinates());
         fileCredentials = r.get();
         r.freeBuffers();
         

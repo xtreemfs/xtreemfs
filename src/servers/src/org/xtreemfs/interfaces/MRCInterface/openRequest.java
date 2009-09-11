@@ -15,8 +15,8 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
 {
     public static final int TAG = 2009090420;
     
-    public openRequest() {  }
-    public openRequest( String path, int flags, int mode, int attributes ) { this.path = path; this.flags = flags; this.mode = mode; this.attributes = attributes; }
+    public openRequest() { client_vivaldi_coordinates = new VivaldiCoordinates();  }
+    public openRequest( String path, int flags, int mode, int attributes, VivaldiCoordinates client_vivaldi_coordinates ) { this.path = path; this.flags = flags; this.mode = mode; this.attributes = attributes; this.client_vivaldi_coordinates = client_vivaldi_coordinates; }
 
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
@@ -26,6 +26,8 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
     public void setMode( int mode ) { this.mode = mode; }
     public int getAttributes() { return attributes; }
     public void setAttributes( int attributes ) { this.attributes = attributes; }
+    public VivaldiCoordinates getClient_vivaldi_coordinates() { return client_vivaldi_coordinates; }
+    public void setClient_vivaldi_coordinates( VivaldiCoordinates client_vivaldi_coordinates ) { this.client_vivaldi_coordinates = client_vivaldi_coordinates; }
 
     // Request
     public Response createDefaultResponse() { return new openResponse(); }
@@ -45,6 +47,7 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
         my_size += Integer.SIZE / 8; // flags
         my_size += Integer.SIZE / 8; // mode
         my_size += Integer.SIZE / 8; // attributes
+        my_size += client_vivaldi_coordinates.getXDRSize(); // client_vivaldi_coordinates
         return my_size;
     }    
     
@@ -54,6 +57,7 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
         marshaller.writeUint32( "flags", flags );
         marshaller.writeUint32( "mode", mode );
         marshaller.writeUint32( "attributes", attributes );
+        marshaller.writeStruct( "client_vivaldi_coordinates", client_vivaldi_coordinates );
     }
     
     public void unmarshal( Unmarshaller unmarshaller ) 
@@ -61,7 +65,8 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
         path = unmarshaller.readString( "path" );
         flags = unmarshaller.readUint32( "flags" );
         mode = unmarshaller.readUint32( "mode" );
-        attributes = unmarshaller.readUint32( "attributes" );    
+        attributes = unmarshaller.readUint32( "attributes" );
+        client_vivaldi_coordinates = new VivaldiCoordinates(); unmarshaller.readStruct( "client_vivaldi_coordinates", client_vivaldi_coordinates );    
     }
         
     
@@ -69,7 +74,8 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
     private String path;
     private int flags;
     private int mode;
-    private int attributes;    
+    private int attributes;
+    private VivaldiCoordinates client_vivaldi_coordinates;    
 
 }
 

@@ -122,6 +122,7 @@ import org.xtreemfs.interfaces.MRCInterface.xtreemfs_shutdownRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_shutdownResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_update_file_sizeRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_update_file_sizeResponse;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 
 /**
  * 
@@ -402,9 +403,9 @@ public class MRCClient extends ONCRPCClient {
     }
     
     public RPCResponse<FileCredentials> open(InetSocketAddress server, UserCredentials credentials,
-        String path, int flags, int mode, int w32attrs) {
+        String path, int flags, int mode, int w32attrs, VivaldiCoordinates coordinates) {
         
-        openRequest rq = new openRequest(path, flags, mode, w32attrs);
+        openRequest rq = new openRequest(path, flags, mode, w32attrs,coordinates);
         RPCResponse<FileCredentials> r = sendRequest(server, rq.getTag(), rq,
             new RPCResponseDecoder<FileCredentials>() {
                 
