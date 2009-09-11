@@ -24,9 +24,6 @@
 
 package org.xtreemfs.mrc.operations;
 
-import java.io.BufferedOutputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.InetSocketAddress;
 
@@ -201,7 +198,7 @@ public class OpenOperation extends MRCOperation {
             // with a set of feasible OSDs from the OSD status manager
             Replica replica = MRCHelper.createReplica(null, sMan, master.getOSDStatusManager(), volume, res
                     .getParentDirId(), rqArgs.getPath(), ((InetSocketAddress) rq.getRPCRequest()
-                    .getClientIdentity()).getAddress(), xLocList);
+                    .getClientIdentity()).getAddress(), xLocList, 0);
             
             ReplicaSet replicas = new ReplicaSet();
             replicas.add(replica);

@@ -78,6 +78,14 @@ public interface VolumeInfo {
     public int getAutoReplFactor();
     
     /**
+     * Returns the preferred replication mode for automatic on-close replication
+     * (full or non-full).
+     * 
+     * @return the preferred replication mode
+     */
+    public boolean getAutoReplFull();
+    
+    /**
      * Returns the volume's access control policy ID.
      * 
      * @return the volume's access control policy ID.
@@ -128,6 +136,15 @@ public interface VolumeInfo {
      *            the replication factor
      */
     public void setAutoReplFactor(int replFactor, AtomicDBUpdate update) throws DatabaseException;
+    
+    /**
+     * Sets the preferred replication mode (full or non-full) for automatic
+     * on-close replication.
+     * 
+     * @param full
+     *            the replication mode
+     */
+    public void setAutoReplFull(boolean full, AtomicDBUpdate update) throws DatabaseException;
     
     /**
      * Adds <code>diff</code> to the current volume size.

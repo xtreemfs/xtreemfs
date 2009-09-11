@@ -106,15 +106,16 @@ public class MRCHelper {
             group,
             default_sp,
             ac_policy_id,
-            repl_policy,
-            osdsel_policy,
+            rsel_policy,
+            osel_policy,
             usable_osds,
             read_only,
             free_space,
             used_space,
             num_files,
             num_dirs,
-            repl_factor
+            repl_factor,
+            repl_full
     }
     
     public enum FileType {
@@ -162,7 +163,7 @@ public class MRCHelper {
     
     public static Replica createReplica(StripingPolicy stripingPolicy, StorageManager sMan,
         OSDStatusManager osdMan, VolumeInfo volume, long parentDirId, String path, InetAddress clientAddress,
-        XLocList currentXLoc) throws DatabaseException, UserException, MRCException {
+        XLocList currentXLoc, int replFlags) throws DatabaseException, UserException, MRCException {
         
         // if no striping policy is provided, try to retrieve it from the parent
         // directory
@@ -188,7 +189,8 @@ public class MRCHelper {
             stripingPolicy.getStripeSize());
         
         if (usableOSDs == null || usableOSDs.size() == 0)
-            throw new UserException(ErrNo.EIO, "could not open file " + path + ": no feasible OSDs available");
+            throw new UserException(ErrNo.EIO, "could not assign OSDs to file " + path
+                + ": no feasible OSDs available");
         
         // determine the actual striping width; if not enough OSDs are
         // available, the width will be limited to the amount of available OSDs
@@ -200,7 +202,7 @@ public class MRCHelper {
         for (int i = 0; i < width; i++)
             osds.add(usableOSDs.get(i).getUuid());
         
-        return new Replica(sp, 0, osds);
+        return new Replica(sp, replFlags, osds);
     }
     
     /**
@@ -300,10 +302,10 @@ public class MRCHelper {
                 return Converter.stripingPolicyToJSONString(sp);
             case ac_policy_id:
                 return file.getId() == 1 ? sMan.getVolumeInfo().getAcPolicyId() + "" : "";
-            case osdsel_policy:
+            case osel_policy:
                 return file.getId() == 1 ? Converter.shortArrayToString(sMan.getVolumeInfo().getOsdPolicy())
                     : "";
-            case repl_policy:
+            case rsel_policy:
                 return file.getId() == 1 ? Converter.shortArrayToString(sMan.getVolumeInfo()
                         .getReplicaPolicy()) : "";
             case read_only:
@@ -333,6 +335,8 @@ public class MRCHelper {
                 return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getNumDirs()) : "";
             case repl_factor:
                 return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getAutoReplFactor()) : "";
+            case repl_full:
+                return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getAutoReplFull()) : "";
             }
         }
         
@@ -386,7 +390,7 @@ public class MRCHelper {
             
             break;
         
-        case osdsel_policy:
+        case osel_policy:
 
             if (file.getId() != 1)
                 throw new UserException(ErrNo.EINVAL, "OSD selection policies can only be set on volumes");
@@ -401,7 +405,7 @@ public class MRCHelper {
             
             break;
         
-        case repl_policy:
+        case rsel_policy:
 
             if (file.getId() != 1)
                 throw new UserException(ErrNo.EINVAL,
@@ -464,6 +468,16 @@ public class MRCHelper {
             } catch (NumberFormatException exc) {
                 throw new UserException(ErrNo.EINVAL, "invalid replication factor (int required): " + value);
             }
+            
+            break;
+        
+        case repl_full:
+
+            if (file.getId() != 1)
+                throw new UserException(ErrNo.EINVAL, "on-close replication modes can only be set on volumes");
+            
+            boolean full = Boolean.parseBoolean(value);
+            sMan.getVolumeInfo().setAutoReplFull(full, update);
             
             break;
         

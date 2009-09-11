@@ -25,14 +25,17 @@
 package org.xtreemfs.mrc.operations;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.util.OutputUtils;
+import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.MRCInterface.closeRequest;
 import org.xtreemfs.interfaces.MRCInterface.closeResponse;
@@ -94,28 +97,58 @@ public class CloseOperation extends MRCOperation {
             
             XLocList xLocList = file.getXLocList();
             
-            // replicate
             int replFactor = vol.getAutoReplFactor();
-            List<XLoc> repls = new LinkedList<XLoc>();
-            for (int i = 0; i < xLocList.getReplicaCount(); i++)
-                repls.add(xLocList.getReplica(i));
             
-            int newVer = xLocList.getVersion() + 1;
-            for (int i = 0; i < replFactor - 1; i++) {
+            // if replicas need to be created on close ...
+            if (replFactor > 1) {
                 
-                Replica newRepl = MRCHelper.createReplica(file.getXLocList().getReplica(0)
-                        .getStripingPolicy(), sMan, master.getOSDStatusManager(), vol, -1, cap.getFileId(),
-                    ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress(), xLocList);
+                List<XLoc> repls = new ArrayList<XLoc>();
+                for (int i = 0; i < xLocList.getReplicaCount(); i++)
+                    repls.add(xLocList.getReplica(i));
                 
-                String[] osds = newRepl.getOsd_uuids().toArray(new String[newRepl.getOsd_uuids().size()]);
-                repls.add(sMan.createXLoc(xLocList.getReplica(0).getStripingPolicy(), osds, newRepl
-                        .getReplication_flags()));
+                int newVer = xLocList.getVersion() + 1;
                 
-                xLocList = sMan.createXLocList(repls.toArray(new XLoc[repls.size()]), xLocList
-                        .getReplUpdatePolicy(), newVer);
+                XLoc firstRepl = repls.get(0);
+                firstRepl.setReplicationFlags(ReplicationFlags.setReplicaIsComplete(firstRepl
+                        .getReplicationFlags()));
+                
+                // try to replicate the file
+                try {
+                    for (int i = 0; i < replFactor - 1; i++) {
+                        
+                        // determine the replication flags for the new replica
+                        int replFlags = ReplicationFlags.setRandomStrategy(0);
+                        if (vol.getAutoReplFull())
+                            replFlags = ReplicationFlags.setFullReplica(replFlags);
+                        
+                        // create the new replica
+                        Replica newRepl = MRCHelper.createReplica(firstRepl.getStripingPolicy(), sMan, master
+                                .getOSDStatusManager(), vol, -1, cap.getFileId(), ((InetSocketAddress) rq
+                                .getRPCRequest().getClientIdentity()).getAddress(), xLocList, replFlags);
+                        
+                        String[] osds = newRepl.getOsd_uuids().toArray(
+                            new String[newRepl.getOsd_uuids().size()]);
+                        repls.add(sMan.createXLoc(firstRepl.getStripingPolicy(), osds, newRepl
+                                .getReplication_flags()));
+                        
+                        xLocList = sMan.createXLocList(repls.toArray(new XLoc[repls.size()]),
+                            Constants.REPL_UPDATE_PC_RONLY, newVer);
+                        
+                    }
+                    
+                } catch (Exception exc) {
+                    
+                    // if the attempt to replicate the file fails for whatever
+                    // reason, print a warning message and continue
+                    
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this,
+                        "could not replicate file '%d' on close", file.getId());
+                    Logging.logMessage(Logging.LEVEL_WARN, Category.replication, this, OutputUtils
+                            .stackTraceToString(exc));
+                }
+                
+                file.setXLocList(xLocList);
             }
-            
-            file.setXLocList(xLocList);
             
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             

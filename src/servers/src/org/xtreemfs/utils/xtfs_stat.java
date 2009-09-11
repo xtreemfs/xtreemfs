@@ -187,13 +187,18 @@ public class xtfs_stat {
             System.out.println("   no replicas available");
         } else {
             System.out.format(format, "   list version ", l.get("version"));
+            System.out.format(format, "   replica update policy ", l.get("update-policy"));
             List<Map<String, Object>> replicas = (List<Map<String, Object>>) l.get("replicas");
+            System.out.println("   -----------------------------");
             int i = 0;
             for (Map<String, Object> replica : replicas) {
                 final Map<String, Object> policy = (Map) replica.get("striping-policy");
                 final String pStr = toString(policy);
-                System.out.format(format, "   replica " + (i + 1) + " policy", pStr);
+                System.out.format(format, "   replica " + (i + 1) + " SP", pStr);
                 System.out.format(format, "   replica " + (i + 1) + " OSDs", replica.get("osds"));
+                System.out.format(format, "   replica " + (i + 1) + " repl. flags", "0x" + Long
+                        .toHexString((Long) replica.get("replication-flags")).toUpperCase());
+                System.out.println("   -----------------------------");
                 i++;
             }
         }

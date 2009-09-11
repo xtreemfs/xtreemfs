@@ -242,7 +242,7 @@ public class BabuDBVolumeManager implements VolumeManager {
         // initialize the storage manager for the new volume
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
         sMan.init(volumeName, fileAccessPolicyId, DEFAULT_OSD_POLICY, DEFAULT_REPL_POLICY,
-            DEFAULT_AUTO_REPL_FACTOR, ownerId, owningGroupId, initialAccessMode, acl, defaultStripingPolicy,
+            DEFAULT_AUTO_REPL_FACTOR, DEFAULT_AUTO_REPL_FULL, ownerId, owningGroupId, initialAccessMode, acl, defaultStripingPolicy,
             update);
         update.execute();
         

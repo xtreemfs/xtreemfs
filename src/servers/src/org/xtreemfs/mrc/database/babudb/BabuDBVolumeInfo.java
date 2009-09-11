@@ -54,8 +54,10 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     
     private int                  replFactor;
     
+    private boolean              replFull;
+    
     public void init(BabuDBStorageManager sMan, String id, String name, short[] osdPolicy,
-        short[] replicaPolicy, short acPolicy, int replFactor, AtomicDBUpdate update)
+        short[] replicaPolicy, short acPolicy, int replFactor, boolean replFull, AtomicDBUpdate update)
         throws DatabaseException {
         
         this.sMan = sMan;
@@ -65,6 +67,7 @@ public class BabuDBVolumeInfo implements VolumeInfo {
         this.replicaPolicy = replicaPolicy;
         this.acPolicy = acPolicy;
         this.replFactor = replFactor;
+        this.replFull = replFull;
         
         // set the policies
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.VOL_ID_ATTR_NAME, id, update);
@@ -76,6 +79,8 @@ public class BabuDBVolumeInfo implements VolumeInfo {
                 .valueOf(replFactor), update);
         sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.AC_POL_ATTR_NAME, String
                 .valueOf(acPolicy), update);
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.AUTO_REPL_FULL_ATTR_NAME, String
+                .valueOf(replFull), update);
     }
     
     public void init(BabuDBStorageManager sMan) throws DatabaseException {
@@ -92,7 +97,9 @@ public class BabuDBVolumeInfo implements VolumeInfo {
             acPolicy = Short.parseShort(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
                 BabuDBStorageManager.AC_POL_ATTR_NAME));
             replFactor = Integer.parseInt(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
-                BabuDBStorageManager.AC_POL_ATTR_NAME));
+                BabuDBStorageManager.AUTO_REPL_FACTOR_ATTR_NAME));
+            replFull = Boolean.getBoolean(sMan.getXAttr(1, StorageManager.SYSTEM_UID,
+                BabuDBStorageManager.AUTO_REPL_FULL_ATTR_NAME));
         } catch (NumberFormatException exc) {
             Logging.logError(Logging.LEVEL_ERROR, this, exc);
             throw new DatabaseException("currpted MRC database", ExceptionType.INTERNAL_DB_ERROR);
@@ -149,6 +156,14 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     }
     
     @Override
+    public void setAutoReplFull(boolean replFull, AtomicDBUpdate update) throws DatabaseException {
+        this.replFull = replFull;
+        sMan.setXAttr(1, StorageManager.SYSTEM_UID, BabuDBStorageManager.AUTO_REPL_FULL_ATTR_NAME, String
+                .valueOf(replFull), update);
+        sMan.notifyVolumeChange(this);
+    }
+    
+    @Override
     public void updateVolumeSize(long diff, AtomicDBUpdate update) throws DatabaseException {
         sMan.updateVolumeSize(diff, update);
     }
@@ -171,6 +186,11 @@ public class BabuDBVolumeInfo implements VolumeInfo {
     @Override
     public int getAutoReplFactor() {
         return replFactor;
+    }
+    
+    @Override
+    public boolean getAutoReplFull() {
+        return replFull;
     }
     
 }

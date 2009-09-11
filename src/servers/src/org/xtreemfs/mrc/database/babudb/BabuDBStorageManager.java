@@ -99,6 +99,8 @@ public class BabuDBStorageManager implements StorageManager {
     
     protected static final String            AUTO_REPL_FACTOR_ATTR_NAME = "replFactor";
     
+    protected static final String            AUTO_REPL_FULL_ATTR_NAME   = "replFull";
+    
     protected static final String            VOL_ID_ATTR_NAME           = "volId";
     
     protected static final int[]             ALL_INDICES                = { FILE_INDEX, XATTRS_INDEX,
@@ -163,8 +165,9 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     public void init(String volumeName, short fileAccessPolicyId, short[] osdPolicy, short[] replPolicy,
-        int autoReplFactor, String ownerId, String owningGroupId, int perms, ACLEntry[] acl,
-        org.xtreemfs.interfaces.StripingPolicy rootDirDefSp, AtomicDBUpdate update) throws DatabaseException {
+        int autoReplFactor, boolean autoReplFull, String ownerId, String owningGroupId, int perms,
+        ACLEntry[] acl, org.xtreemfs.interfaces.StripingPolicy rootDirDefSp, AtomicDBUpdate update)
+        throws DatabaseException {
         
         // atime, ctime, mtime
         int time = (int) (TimeSync.getGlobalTime() / 1000);
@@ -174,7 +177,7 @@ public class BabuDBStorageManager implements StorageManager {
         setLastFileId(1, update);
         
         volume.init(this, database.getName(), volumeName, osdPolicy, replPolicy, fileAccessPolicyId,
-            autoReplFactor, update);
+            autoReplFactor, autoReplFull, update);
         
         // set the default striping policy
         if (rootDirDefSp != null)

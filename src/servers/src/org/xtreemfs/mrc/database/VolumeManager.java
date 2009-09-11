@@ -40,6 +40,8 @@ public interface VolumeManager {
     
     public static final int     DEFAULT_AUTO_REPL_FACTOR = 1;
     
+    public static final boolean DEFAULT_AUTO_REPL_FULL   = false;
+    
     /**
      * Initializes the volume manager, including all volume databases.
      * 
@@ -155,7 +157,8 @@ public interface VolumeManager {
     /**
      * Adds a new listener to all volumes that responds to volume changes.
      * 
-     * @param listener the listener to add
+     * @param listener
+     *            the listener to add
      */
     public void addVolumeChangeListener(VolumeChangeListener listener);
     

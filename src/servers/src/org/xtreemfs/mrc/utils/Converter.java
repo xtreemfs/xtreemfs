@@ -149,7 +149,7 @@ public class Converter {
             XLoc l = iter.next();
             Map<String, Object> replica = new HashMap();
             replica.put("striping-policy", getStripingPolicyAsJSON(l.getStripingPolicy()));
-            replica.put("replication-flags", new Long(0));
+            replica.put("replication-flags", l.getReplicationFlags());
             List<Map<String, String>> osds = new ArrayList(l.getOSDCount());
             for (int i = 0; i < l.getOSDCount(); i++) {
                 Map<String, String> osd = new HashMap();
