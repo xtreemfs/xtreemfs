@@ -2761,7 +2761,7 @@ void YIELD::RFC822Headers::set_next_iovec( const struct iovec& iovec )
 #include <unistd.h>
 #endif
 YIELD::Socket::AIOQueue* YIELD::Socket::aio_queue = NULL;
-bool YIELD::Socket::AIOReadControlBlock::execute()
+YIELD::Socket::AIOControlBlock::ExecuteStatus YIELD::Socket::AIOReadControlBlock::execute()
 {
   ssize_t read_ret = get_socket()->read( buffer );
   if ( read_ret > 0 )
