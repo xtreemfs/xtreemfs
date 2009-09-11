@@ -161,4 +161,6 @@ DLLEXPORT int get_user_credentials_from_passwd( int uid, int gid, char* user_id,
       }        
     }
   }
+
+  return -1;
 }
