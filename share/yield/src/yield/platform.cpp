@@ -1,5 +1,3 @@
-// Revision: 1857
-
 #include "yield/platform.h"
 using namespace YIELD;
 
@@ -849,7 +847,7 @@ bool MemoryMappedFile::resize( size_t new_size )
         return false;
     }
 #endif
-    if ( size <= new_size || underlying_file->truncate( new_size ) )
+    if ( size == new_size || underlying_file->truncate( new_size ) )
     {
 #ifdef _WIN32
       unsigned long map_flags = PAGE_READONLY;
@@ -1102,6 +1100,18 @@ void Path::MultiByteToMultiByte( const char* fromcode, const std::string& frompa
 }
 #endif
 */
+Path Path::abspath() const
+{
+#ifdef _WIN32
+  wchar_t abspath_buffer[PATH_MAX];
+  DWORD abspath_buffer_len = GetFullPathNameW( wide_path.c_str(), PATH_MAX, abspath_buffer, NULL );
+  return Path( abspath_buffer, abspath_buffer_len );
+#else
+  char abspath_buffer[PATH_MAX];
+  realpath( host_charset_path.c_str(), abspath_buffer );
+  return Path( abspath_buffer );
+#endif
+}
 #ifdef _WIN32
 bool Path::operator==( const wchar_t* other ) const
 {
@@ -1178,9 +1188,7 @@ Path Path::join( const Path& other ) const
 std::pair<Path, Path> Path::split() const
 {
   std::string::size_type last_sep = host_charset_path.find_last_of( PATH_SEPARATOR );
-  if ( last_sep == host_charset_path.length() )
-    return std::make_pair( *this, Path() );
-  else if ( last_sep != std::string::npos )
+  if ( last_sep != std::string::npos )
     return std::make_pair( host_charset_path.substr( 0, last_sep ), host_charset_path.substr( last_sep + 1 ) );
   else
     return std::make_pair( Path(), *this );
@@ -1203,18 +1211,6 @@ std::pair<Path, Path> Path::splitext() const
     return std::make_pair( *this, Path() );
   else
     return std::make_pair( host_charset_path.substr( 0, last_dot ), host_charset_path.substr( last_dot ) );
-}
-Path Path::abspath() const
-{
-#ifdef _WIN32
-  wchar_t abspath_buffer[PATH_MAX];
-  DWORD abspath_buffer_len = GetFullPathNameW( wide_path.c_str(), PATH_MAX, abspath_buffer, NULL );
-  return Path( abspath_buffer, abspath_buffer_len );
-#else
-  char abspath_buffer[PATH_MAX];
-  realpath( host_charset_path.c_str(), abspath_buffer );
-  return Path( abspath_buffer );
-#endif
 }
 
 
@@ -1698,61 +1694,70 @@ Stat::Stat( mode_t mode, uint64_t size, const Time& atime, const Time& mtime, co
 : mode( mode ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime ), attributes( attributes )
 { }
 Stat::Stat( const BY_HANDLE_FILE_INFORMATION& by_handle_file_information )
+  : mode( ( by_handle_file_information.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ? S_IFDIR : S_IFREG ),
+    ctime( by_handle_file_information.ftCreationTime ),
+    atime( by_handle_file_information.ftLastAccessTime ),
+    mtime( by_handle_file_information.ftLastWriteTime ),
+    attributes( by_handle_file_information.dwFileAttributes )
 {
-  mode = ( by_handle_file_information.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ? S_IFDIR : S_IFREG;
   ULARGE_INTEGER size;
   size.LowPart = by_handle_file_information.nFileSizeLow;
   size.HighPart = by_handle_file_information.nFileSizeHigh;
   this->size = static_cast<size_t>( size.QuadPart );
-  ctime = by_handle_file_information.ftCreationTime;
-  atime = by_handle_file_information.ftLastAccessTime;
-  mtime = by_handle_file_information.ftLastWriteTime;
-  attributes = by_handle_file_information.dwFileAttributes;
 }
 Stat::Stat( const WIN32_FIND_DATA& find_data )
+  : mode( ( find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ? S_IFDIR : S_IFREG ),
+    atime( find_data.ftLastAccessTime ),
+    mtime( find_data.ftLastWriteTime ),
+    ctime( find_data.ftCreationTime ),
+    attributes( find_data.dwFileAttributes )
 {
-  init( find_data.nFileSizeHigh, find_data.nFileSizeLow, &find_data.ftLastWriteTime, &find_data.ftCreationTime, &find_data.ftLastAccessTime, find_data.dwFileAttributes );
+  ULARGE_INTEGER size;
+  size.LowPart = find_data.nFileSizeLow;
+  size.HighPart = find_data.nFileSizeHigh;
+  this->size = static_cast<size_t>( size.QuadPart );
 }
-Stat::Stat( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLastWriteTime, const FILETIME* ftCreationTime, const FILETIME* ftLastAccessTime, uint32_t dwFileAttributes )
-{
-  init( nFileSizeHigh, nFileSizeLow, ftLastWriteTime, ftCreationTime, ftLastAccessTime, dwFileAttributes );
-}
-#else
-Stat::Stat( dev_t dev, ino_t ino, mode_t mode, nlink_t nlink, uid_t uid, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime )
-: dev( dev ), ino( ino ), mode( mode ), nlink( nlink ), uid( uid ), gid( gid ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime )
-{ }
-#endif
 Stat::Stat( const struct stat& stbuf )
+  : mode( stbuf.st_mode ),
+    size( stbuf.st_size ),
+    atime( static_cast<uint32_t>( stbuf.st_atime ) ),
+    mtime( static_cast<uint32_t>( stbuf.st_mtime ) ),
+    ctime( static_cast<uint32_t>( stbuf.st_ctime ) ),
+    attributes( 0 )
+{ }
+Stat::Stat( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLastWriteTime, const FILETIME* ftCreationTime, const FILETIME* ftLastAccessTime, uint32_t dwFileAttributes )
+  : mode( ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ? S_IFDIR : S_IFREG ),
+    atime( ftLastAccessTime ),
+    mtime( ftLastWriteTime ),
+    ctime( ftCreationTime ),
+    attributes( dwFileAttributes )
 {
-#ifndef _WIN32
-  dev = stbuf.st_dev;
-  ino = stbuf.st_ino;
-#endif
-  mode = stbuf.st_mode;
-  size = stbuf.st_size;
-  ctime = static_cast<uint32_t>( stbuf.st_ctime );
-  atime = static_cast<uint32_t>( stbuf.st_atime );
-  mtime = static_cast<uint32_t>( stbuf.st_mtime );
-#ifndef _WIN32
-  nlink = stbuf.st_nlink;
-#endif
-}
-#ifdef _WIN32
-void Stat::init( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLastWriteTime, const FILETIME* ftCreationTime, const FILETIME* ftLastAccessTime, uint32_t dwFileAttributes )
-{
-  mode = ( ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) == FILE_ATTRIBUTE_DIRECTORY ) ? S_IFDIR : S_IFREG;
   ULARGE_INTEGER size;
   size.LowPart = nFileSizeLow;
   size.HighPart = nFileSizeHigh;
   this->size = static_cast<size_t>( size.QuadPart );
-  if ( ftLastWriteTime )
-    mtime = *ftLastWriteTime;
-  if ( ftCreationTime )
-    ctime = *ftCreationTime;
-  if ( ftLastAccessTime )
-    atime = *ftLastAccessTime;
-  attributes = dwFileAttributes;
 }
+#else
+Stat::Stat( const struct stat& stbuf )
+  : dev( stbuf.st_dev ),
+    ino( stbuf.st_ino ),
+    mode( stbuf.st_mode ),
+    nlink( stbuf.st_nlink ),
+    uid( stbuf.st_uid ),
+    gid( stbuf.st_gid ),
+    size( stbuf.st_size ),
+    atime( static_cast<uint32_t>( stbuf.st_atime ) ),
+    mtime( static_cast<uint32_t>( stbuf.st_mtime ) ),
+    ctime( static_cast<uint32_t>( stbuf.st_ctime ) )
+{ }
+Stat::Stat( dev_t dev, ino_t ino, mode_t mode, nlink_t nlink, uid_t uid, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime )
+: dev( dev ), ino( ino ), mode( mode ), nlink( nlink ),
+  uid( uid ), gid( gid ),
+  size( size ),
+  atime( atime ), mtime( mtime ), ctime( ctime )
+{ }
+#endif
+#ifdef _WIN32
 uint32_t Stat::get_attributes() const
 {
 #ifdef _WIN32
@@ -2437,22 +2442,22 @@ void TimerQueue::Thread::run()
       if ( timers.top().first <= current_unix_time_ns ) // Earliest timer has expired, fire it
       {
         TimerQueue::Timer* timer = timers.top().second;
+        Time elapsed_time( current_unix_time_ns - timer->last_fire_time );
         timers.pop();
 
-        bool keep_firing = timer->fire( Time() - timer->last_fire_time );
+        bool keep_firing = timer->fire( elapsed_time );
 
         if ( timer->get_period() != 0 && keep_firing )
         {
           timer->last_fire_time = Time();
-          timers.push( std::make_pair( Time() + timer->get_period(), timer ) );
+          timers.push( std::make_pair( timer->last_fire_time + timer->get_period(), timer ) );
         }
         else
           Object::decRef( *timer );
       }
       else // Wait on the new timers queue until a new timer arrives or it's time to fire the next timer
       {
-        uint64_t timeout_ns = timers.top().first - current_unix_time_ns;
-        TimerQueue::Timer* new_timer = new_timers_queue.timed_dequeue( timeout_ns );
+        TimerQueue::Timer* new_timer = new_timers_queue.timed_dequeue( timers.top().first - current_unix_time_ns );
         if ( new_timer != NULL )
           timers.push( std::make_pair( Time() + new_timer->get_timeout(), new_timer ) );
       }
@@ -2566,13 +2571,13 @@ bool Volume::chmod( const YIELD::Path& path, mode_t mode )
   return ::chmod( path, mode ) != -1;
 #endif
 }
-bool Volume::chown( const YIELD::Path& path, int32_t tag, int32_t gid )
+bool Volume::chown( const YIELD::Path& path, int32_t uid, int32_t gid )
 {
 #ifdef _WIN32
   ::SetLastError( ERROR_NOT_SUPPORTED );
   return false;
 #else
-  return ::chown( path, tag, gid ) != -1;
+  return ::chown( path, uid, gid ) != -1;
 #endif
 }
 bool Volume::exists( const Path& path )
@@ -2598,7 +2603,7 @@ bool Volume::isfile( const Path& path )
 {
 #ifdef _WIN32
   DWORD dwFileAttributes = GetFileAttributesW( path );
-  return dwFileAttributes != INVALID_FILE_ATTRIBUTES && ( dwFileAttributes & FILE_ATTRIBUTE_NORMAL ) == FILE_ATTRIBUTE_NORMAL;
+  return dwFileAttributes != INVALID_FILE_ATTRIBUTES && ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) != FILE_ATTRIBUTE_DIRECTORY;
 #else
   struct stat stbuf;
   return ::stat( path, &stbuf ) == 0 && S_ISREG( stbuf.st_mode );
@@ -2708,16 +2713,12 @@ auto_File Volume::open( const Path& path, uint32_t flags, mode_t mode, uint32_t 
   DWORD file_access_flags = 0,
         file_create_flags = 0,
         file_open_flags = attributes|FILE_FLAG_SEQUENTIAL_SCAN;
-  if ( ( flags & O_RDWR ) == O_RDWR )
+  if ( ( flags & O_APPEND ) == O_APPEND )
+    file_access_flags |= FILE_APPEND_DATA;
+  else if ( ( flags & O_RDWR ) == O_RDWR )
     file_access_flags |= GENERIC_READ|GENERIC_WRITE;
   else if ( ( flags & O_WRONLY ) == O_WRONLY )
-  {
     file_access_flags |= GENERIC_WRITE;
-    if ( ( flags & O_APPEND ) == O_APPEND )
-      file_access_flags |= FILE_APPEND_DATA;
-  }
-  else if ( ( flags & O_APPEND ) == O_APPEND )
-      file_access_flags |= GENERIC_WRITE|FILE_APPEND_DATA;
   else
     file_access_flags |= GENERIC_READ;
   if ( ( flags & O_CREAT ) == O_CREAT )

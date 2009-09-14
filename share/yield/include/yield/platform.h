@@ -1318,10 +1318,6 @@ namespace YIELD
   protected:
     virtual ~Stat() { }
 
-#ifdef _WIN32    
-    void init( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLastWriteTime, const FILETIME* ftCreationTime, const FILETIME* ftLastAccessTime, uint32_t dwFileAttributes );
-#endif
-
 #ifndef _WIN32
     dev_t dev;
     ino_t ino;
