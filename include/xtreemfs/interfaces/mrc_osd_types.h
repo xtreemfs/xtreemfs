@@ -38,7 +38,7 @@ namespace org
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( NewFileSize, 2009090220 );
 
-        // YIELD::Struct
+        // yidl::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint64( "size_in_bytes", 0, size_in_bytes ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); }
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { size_in_bytes = unmarshaller.readUint64( "size_in_bytes", 0 ); truncate_epoch = unmarshaller.readUint32( "truncate_epoch", 0 ); }
 
@@ -58,7 +58,7 @@ namespace org
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( NewFileSizeSet, 2009090221 );
 
-        // YIELD::Sequence
+        // yidl::Sequence
         size_t get_size() const { return size(); }
         void marshal( ::yidl::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::NewFileSize value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
@@ -83,7 +83,7 @@ namespace org
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( OSDtoMRCData, 2009090222 );
 
-        // YIELD::Struct
+        // yidl::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint8( "caching_policy", 0, caching_policy ); marshaller.writeString( "data", 0, data ); }
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { caching_policy = unmarshaller.readUint8( "caching_policy", 0 ); unmarshaller.readString( "data", 0, data ); }
 
@@ -103,7 +103,7 @@ namespace org
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( OSDtoMRCDataSet, 2009090223 );
 
-        // YIELD::Sequence
+        // yidl::Sequence
         size_t get_size() const { return size(); }
         void marshal( ::yidl::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::OSDtoMRCData value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
@@ -126,7 +126,7 @@ namespace org
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( OSDWriteResponse, 2009090226 );
 
-        // YIELD::Struct
+        // yidl::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "new_file_size", 0, new_file_size ); marshaller.writeSequence( "opaque_data", 0, opaque_data ); }
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "new_file_size", 0, new_file_size ); unmarshaller.readSequence( "opaque_data", 0, opaque_data ); }
 
@@ -154,7 +154,7 @@ namespace org
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( StripingPolicy, 2009090228 );
 
-        // YIELD::Struct
+        // yidl::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeInt32( "type", 0, static_cast<int32_t>( type ) ); marshaller.writeUint32( "stripe_size", 0, stripe_size ); marshaller.writeUint32( "width", 0, width ); }
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { type = ( org::xtreemfs::interfaces::StripingPolicyType )unmarshaller.readInt32( "type", 0 ); stripe_size = unmarshaller.readUint32( "stripe_size", 0 ); width = unmarshaller.readUint32( "width", 0 ); }
 
@@ -183,7 +183,7 @@ namespace org
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( Replica, 2009090229 );
 
-        // YIELD::Struct
+        // yidl::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "striping_policy", 0, striping_policy ); marshaller.writeUint32( "replication_flags", 0, replication_flags ); marshaller.writeSequence( "osd_uuids", 0, osd_uuids ); }
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "striping_policy", 0, striping_policy ); replication_flags = unmarshaller.readUint32( "replication_flags", 0 ); unmarshaller.readSequence( "osd_uuids", 0, osd_uuids ); }
 
@@ -204,7 +204,7 @@ namespace org
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( ReplicaSet, 2009090230 );
 
-        // YIELD::Sequence
+        // yidl::Sequence
         size_t get_size() const { return size(); }
         void marshal( ::yidl::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::Replica value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
@@ -229,7 +229,7 @@ namespace org
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( VivaldiCoordinates, 2009090231 );
 
-        // YIELD::Struct
+        // yidl::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeDouble( "x_coordinate", 0, x_coordinate ); marshaller.writeDouble( "y_coordinate", 0, y_coordinate ); marshaller.writeDouble( "local_error", 0, local_error ); }
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { x_coordinate = unmarshaller.readDouble( "x_coordinate", 0 ); y_coordinate = unmarshaller.readDouble( "y_coordinate", 0 ); local_error = unmarshaller.readDouble( "local_error", 0 ); }
 
@@ -270,7 +270,7 @@ namespace org
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( XCap, 2009090232 );
 
-        // YIELD::Struct
+        // yidl::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint32( "access_mode", 0, access_mode ); marshaller.writeUint64( "expires_s", 0, expires_s ); marshaller.writeString( "client_identity", 0, client_identity ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); marshaller.writeBoolean( "replicateOnClose", 0, replicateOnClose ); marshaller.writeString( "server_signature", 0, server_signature ); }
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); access_mode = unmarshaller.readUint32( "access_mode", 0 ); expires_s = unmarshaller.readUint64( "expires_s", 0 ); unmarshaller.readString( "client_identity", 0, client_identity ); truncate_epoch = unmarshaller.readUint32( "truncate_epoch", 0 ); replicateOnClose = unmarshaller.readBoolean( "replicateOnClose", 0 ); unmarshaller.readString( "server_signature", 0, server_signature ); }
 
@@ -307,7 +307,7 @@ namespace org
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( XLocSet, 2009090233 );
 
-        // YIELD::Struct
+        // yidl::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "replicas", 0, replicas ); marshaller.writeUint32( "version", 0, version ); marshaller.writeString( "repUpdatePolicy", 0, repUpdatePolicy ); marshaller.writeUint64( "read_only_file_size", 0, read_only_file_size ); }
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "replicas", 0, replicas ); version = unmarshaller.readUint32( "version", 0 ); unmarshaller.readString( "repUpdatePolicy", 0, repUpdatePolicy ); read_only_file_size = unmarshaller.readUint64( "read_only_file_size", 0 ); }
 
@@ -335,7 +335,7 @@ namespace org
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( FileCredentials, 2009090234 );
 
-        // YIELD::Struct
+        // yidl::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "xlocs", 0, xlocs ); marshaller.writeStruct( "xcap", 0, xcap ); }
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "xlocs", 0, xlocs ); unmarshaller.readStruct( "xcap", 0, xcap ); }
 
@@ -355,7 +355,7 @@ namespace org
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( FileCredentialsSet, 2009090235 );
 
-        // YIELD::Sequence
+        // yidl::Sequence
         size_t get_size() const { return size(); }
         void marshal( ::yidl::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::FileCredentials value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }

@@ -27,7 +27,7 @@ namespace org
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( StringSet, 2009082619 );
 
-        // YIELD::Sequence
+        // yidl::Sequence
         size_t get_size() const { return size(); }
         void marshal( ::yidl::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeString( "value", 0, ( *this )[value_i] ); } }
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { std::string value; unmarshaller.readString( "value", 0, value ); push_back( value ); }
@@ -55,7 +55,7 @@ namespace org
         // yidl::Object
         YIDL_OBJECT_PROTOTYPES( UserCredentials, 2009082620 );
 
-        // YIELD::Struct
+        // yidl::Struct
         void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "user_id", 0, user_id ); marshaller.writeSequence( "group_ids", 0, group_ids ); marshaller.writeString( "password", 0, password ); }
         void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "user_id", 0, user_id ); unmarshaller.readSequence( "group_ids", 0, group_ids ); unmarshaller.readString( "password", 0, password ); }
 
