@@ -315,6 +315,11 @@ public class MRCHelper {
                 return String.valueOf(file.isReadOnly());
                 
             case usable_osds: {
+                
+                // only return a value for the volume root
+                if(file.getId() != 1)
+                    return "";
+                
                 ServiceSet srvs = osdMan.getUsableOSDs(sMan.getVolumeInfo().getId());
                 Map<String, String> osds = new HashMap<String, String>();
                 for (Service srv : srvs) {

@@ -37,6 +37,7 @@ import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
+import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.interfaces.MRCInterface.closeRequest;
 import org.xtreemfs.interfaces.MRCInterface.closeResponse;
 import org.xtreemfs.mrc.MRCRequest;
@@ -156,8 +157,11 @@ public class CloseOperation extends MRCOperation {
                     .getAutoReplFactor() - 1);
             
             // trigger the replication
+            XLocSet xLocSet = Converter.xLocListToXLocSet(xLocList);
+            xLocSet.setRead_only_file_size(file.getSize());
+
             rq.getDetails().context = new HashMap<String, Object>();
-            rq.getDetails().context.put("xLocList", Converter.xLocListToXLocSet(xLocList));
+            rq.getDetails().context.put("xLocList", xLocSet);
             master.getOnCloseReplicationThread().enqueueRequest(rq);
             
             // set the response

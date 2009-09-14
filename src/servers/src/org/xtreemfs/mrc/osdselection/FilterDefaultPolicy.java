@@ -47,11 +47,11 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     
     private static final String FREE_CAPACITY_BYTES = "free_capacity_bytes";
     
-    // default: 32MB
-    private long                minFreeCapacity     = 32 * 1024 * 1024;
+    // default: 2GB
+    private long                minFreeCapacity     = 2 * 1024 * 1024 * 1024;
     
-    // default: 10 min
-    private long                maxOfflineTime      = 600;
+    // default: 5 min
+    private long                maxOfflineTime      = 300;
     
     @Override
     public ServiceSet getOSDs(ServiceSet allOSDs, InetAddress clientIP, XLocList currentXLoc, int numOSDs) {

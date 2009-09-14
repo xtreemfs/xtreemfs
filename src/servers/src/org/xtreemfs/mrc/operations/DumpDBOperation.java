@@ -66,8 +66,8 @@ public class DumpDBOperation extends MRCOperation {
         
         for (StorageManager sMan : vMan.getStorageManagers()) {
             VolumeInfo vol = sMan.getVolumeInfo();
-            xmlWriter
-                    .write("<volume name=\"" + vol.getName() + "\" acPolicy=\"" + vol.getAcPolicyId() + "\">\n");
+            xmlWriter.write("<volume id=\"" + vol.getId() + "\" name=\"" + vol.getName() + "\" acPolicy=\""
+                + vol.getAcPolicyId() + "\">\n");
             sMan.dumpDB(xmlWriter);
             xmlWriter.write("</volume>\n");
         }

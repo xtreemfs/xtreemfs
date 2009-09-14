@@ -96,6 +96,7 @@ public class RestoreDBOperation extends MRCOperation {
                         
                         if (qName.equals("volume")) {
                             
+                            state = new DBRestoreState();
                             state.currentVolumeId = attributes.getValue(attributes.getIndex("id"));
                             state.currentVolumeName = attributes.getValue(attributes.getIndex("name"));
                             state.currentVolumeACPolicy = Short.parseShort(attributes.getValue(attributes

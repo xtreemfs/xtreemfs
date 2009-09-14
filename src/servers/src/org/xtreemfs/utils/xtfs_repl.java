@@ -952,7 +952,7 @@ public class xtfs_repl {
                     + ": adjusts the number of replicas assigned to a file when the file is closed after a write. A value of 1 indicates that no replicas will be added and the file remains writable.\n");
         out.append("\t-" + OPTION_ON_CLOSE_REPL_FACTOR_GET
             + ": prints the current on-close replication factor\n");
-        out.append("\t-" + OPTION_ON_CLOSE_REPL_FULL_SET + " {true | false}"
+        out.append("\t-" + OPTION_ON_CLOSE_REPL_FULL_SET + " { true | false }"
             + ": sets whether full replicas will be created when on-close replication is in effect\n");
         out
                 .append("\t-"
