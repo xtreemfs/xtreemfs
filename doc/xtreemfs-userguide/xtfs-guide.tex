@@ -12,7 +12,7 @@
 
 \title{XtreemFS Installation and User Guide}
 
-\date{Version 1.0}
+\date{Version 1.1}
 
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
@@ -32,7 +32,7 @@
 \begin{flushleft}
 \sffamily \begin{LARGE}The XtreemFS Installation and User Guide\end{LARGE}
 
-Version 1.0
+Version 1.1
 \end{flushleft}
 
 
@@ -59,7 +59,7 @@ This is the very short version to help you set up a local installation of Xtreem
 	\begin{enumerate}
 		\item Download the RPMs or DEBs for your system from \href{http://www.XtreemFS.com}{the XtreemFS website}
 		\item open a root console (\texttt{su} or \texttt{sudo})
-		\item install with \texttt{rpm -Uhv xtreemfs-client-1.0.x.rpm xtreemfs-server-1.0.x.rpm}
+		\item install with \texttt{rpm -Uhv xtreemfs-client-1.1.x.rpm xtreemfs-server-1.1.x.rpm}
 	\end{enumerate}
 \item Start the Directory Service:\\
 	\texttt{/etc/init.d/xtreemfs-dir start}
@@ -105,7 +105,7 @@ You can also mount this volume on remote computers. First make sure that the por
 
 With XtreemFS you are about to install a modern \emph{distributed and replicated file system}. As a distributed file system, XtreemFS stores your file data on several servers and you can simply scale your file system by adding more hosts. XtreemFS is a full-featured file system that supports the full POSIX file interface, including \emph{extended attributes} (xattrs). In case of concurrent access by several distributed programs, XtreemFS provides you currently with NFS close-to-open consistency.
 
-With version 1.0 XtreemFS also supports replication of files. The so called read-only replication allows you to have multiple copies of immutable files. XtreemFS also supports partial replicas which helps you to save disk capacity and network bandwidth; only data that is requested by clients is stored in partial replicas.
+Since version 1.0, XtreemFS also supports replication of files. The so called read-only replication allows you to have multiple copies of immutable files. XtreemFS also supports partial replicas which helps you to save disk capacity and network bandwidth; only data that is requested by clients is stored in partial replicas.
 
 XtreemFS has been designed for deployment in \emph{wide-area environments} connected by the Internet. This means that it allows you to mount an XtreemFS volume from any location, given the right permissions; but it also implies that file system installations can span multiple locations or data centers.
 
@@ -160,31 +160,54 @@ By default, XtreemFS uses unauthenticated and unencrypted TCP connections. Howev
 
 Many facets of the behavior of XtreemFS can be configured by means of policies. A policy defines how a certain task is performed, e.g.\ how the MRC selects a set of OSDs for a new file, or how it distinguishes between an authorized and an unauthorized user when files are accessed. Various policies have been defined that cover different aspects.
 
-\subsection{OSD Selection Policies} \label{sec:osd_policies}
+\subsection{OSD and Replica Selection Policies} \label{sec:osd_policies}
 
-When a \emph{new file} is created, the MRC must decide which OSDs to use for storing the file content. Based on the required number of OSDs defined in the file's striping policy, an OSD Selection Policy\index{OSD Selection Policy}\index{Policy!OSD Selection Policy} is responsible for selecting the most suitable OSDs. OSD selection policies are assigned at volume granularity. Currently, there are the following policies:
+When a new file is created or a replica is automatically added to a file, the MRC must decide on a set of OSDs for storing the file content. OSD Selection Policies\index{OSD Selection Policy}\index{Policy!OSD Selection Policy} are used to select the most suitable subset among all known OSDs.
 
+Replica selection is a related problem. When a client opens a file with more than one replica, the MRC uses a replica selection policy to sort the list of replicas for the client. Clients will always use the first replica in the list. If a replica is not available, the client will automatically select the next replica from the list. Replica selection policies can be used to sort the replica lists, e.g. to ensure that clients use replicas which are close to them.
+
+Both OSD and replica selection policies share a common mechanism. Input parameters of a basic policy are a set of OSDs, the current replica locations list of the file, and the IP address of the client on behalf of whom the policy was called. The output parameter is a filtered and potentially sorted subset of OSDs. Since OSD lists returned by one basic policy can be used as input parameters by another one, basic policies can be chained to define more complex composite policies.
+
+OSD and replica selection policies are assigned at volume granularity. For further details on how to set such policies, please refer to Sec.\ \ref{sec:osd_select_policy}.
+
+\paragraph{Attributes.}
+
+The behavior of basic policies can be further refined by means of policy attributes. Policy attributes are extended attributes with a name starting with \texttt{xtreemfs.policies.}, such as \texttt{xtreemfs.policies.minFreeCapacity}. Each time a policy attribute is set, all policies will be notified about the change. How an attribute change affects the policy behavior depends on the policy implementation.
+
+\paragraph{Predefined Policies.}
+
+The following predefined policies exist:
+
+\emph{Filtering policies}:
 \begin{itemize}
- \item Random OSD Selection (policy id 1)\index{Random OSD Selection}\index{OSD Selection Policy!Random}\\
- Randomly selects OSDs from the list of all available OSDs that are alive and have more than 2GB of free space left.
- \item Proximity-based OSD Selection (policy id 2)\index{Proximity-based OSD Selection}\index{OSD Selection Policy!Proximity-based}\\
- Selects a group of OSDs that are close to each other. The distance is determined by the IP address, i.e. OSDs on the same subnet are preferred. This policy is particularly useful for striping, since it is desirable to have all OSDs at the same site.
- \item DNS based OSD Selection (policy id 3)\index{DNS based OSD Selection}\index{OSD Selection Policy!DNS based}\\
- The FQDN of the client and all OSDs is compared and the maximum match (from the end of the FQDN) is used to sort the OSDs. The policy selects the OSDs with the highest number of characters that match. This policy can be used to automatically select OSDs which are close to the client, if the length of the match between two DNS entries also indicate a low latency between two machines. The minimum match can be modified by setting the xattr '\texttt{xtreemfs.osdsel\_policy\_args}' to an integer value larger 0. OSDs with a match smaller than the minimum match are never used.
+
+ \item \textbf{Default OSD filter (policy ID 1000)}\\
+ Removes OSDs from the list that are either dead or do not have sufficient space. By default, the lower space limit for an OSD is 2GB, and the upper response time limit is 5 minutes.\\
+
+ Attributes:
+ \begin{itemize}
+ \item \emph{free\_capacity\_bytes}: the lower space limit in bytes
+ \item \emph{offline\_time\_secs}: the upper response time limit in
+ \end{itemize}
+
+ \item \textbf{FQDN-based filter (policy ID 1001)}\\
+ Removes OSDs from the list that do not match any of the domains in a given set. By default, the set of domains contains '*', which indicates that no domains are removed.\\
+
+ Attributes:
+ \begin{itemize}
+ \item \emph{domains}: a comma or space-separated list of domain names. The list may include leading and trailing '*'s, which will be regarded as wildcard characters.
 \end{itemize}
 
-\subsection{Replica Selection Policies}\label{sec:repl_policies}
-When a client opens a file with more than one replica, the MRC uses a replica selection policy to sort the list of replicas for the client. Clients will always use the first replica in the list. If a replica is not available, the client will automatically select the next replica from the list. Replica selection policies can be used to sort the replica lists, e.g. to ensure that clients use replicas which are close to them. By default, the MRC returns an unmodified list of replicas. Section \ref{sec:repl_select_policy} describes how to set and display the policy of a volume.
+\end{itemize}
+
+\emph{Grouping policies}:
 
 \begin{itemize}
- \item Default Replica Selection (policy id 1)\index{Default Replica Selection Policy}\index{Replica Selection Policy!default}\\
-       The MRC returns an unmodified list of replicas to the client. This is the default policy.
 
- \item DNS based Replica Selection  (policy id 3)\index{DNS based Replica Selection}\index{Replica Selection Policy!DNS based}\\
-       This policy is identical to the DNS based OSD Selection (see Sec. \ref{sec:osd_policies}). The list of replicas is sorted from the longest FQDN name match to the shortest.
+ \item \textbf{Data center map-based grouping (policy ID 2000)}\\
+ Removes all OSDs from the OSD set that have been used in the file's replica locations list already and selects the subset of OSDs that is closest to the client and provides enough OSDs for the new replica in a single data center.
 
- \item Datacenter Map Replica Selection  (policy id 4)\index{Datacenter Map Replica Selection}\index{Replica Selection Policy!datacenter map}\\
-       This policy uses a statically configured datacenter map that describes the distance between datacenters. It works only with IPv4 addresses at the moment. Each datacenter has a list of matching IP addresses and networks which is used to assign clients and replicas (OSDs) to datacenters. The replica list is sorted according to the distance between replica and client starting from the closest (smallest distance). Machines in the same datacenter have a distance of 0.
+ This policy uses a statically configured datacenter map that describes the distance between datacenters. It works only with IPv4 addresses at the moment. Each datacenter has a list of matching IP addresses and networks which is used to assign clients and OSDs to datacenters. Machines in the same datacenter have a distance of 0.
 
 	This policy requires a datacenter map configuration file in \texttt{/etc/xos/xtreemfs/datacentermap} on the MRC machine which is loaded at MRC startup. This config file must contain the following parameters:
 	\begin{itemize}
@@ -214,18 +237,33 @@ When a client opens a file with more than one replica, the MRC uses a replica se
 	max_cache_size=100
 	\end{verbatim}
 
+ \item \textbf{FQDN-based grouping (policy ID 2001)}\\
+ Removes all OSDs from the OSD set that have been used in the file's replica locations list already and selects the subset of OSDs that is closest to the client and provides enough OSDs for the new replica in a single domain.
+
+This policy uses domain names of clients and OSDs to determine the distance between a client and an OSD, as well as if OSDs are in the same domain.
 
 \end{itemize}
 
+\emph{Sorting policies}:
 
+\begin{itemize}
+
+ \item \textbf{Shuffling (policy ID 3000)}\\
+ Shuffles the given list of OSDs.
+
+ \item \textbf{Data center map-based sorting (policy ID 3001)}\\
+ Sorts the list of OSDs in ascending order of their distance to the client, according to the data center map.
+
+ \item \textbf{DNS based OSD Selection (policy ID 3002)}\\
+ The FQDN of the client and all OSDs is compared and the maximum match (from the end of the FQDN) is used to sort the OSDs. The policy sorts the list of OSDs in descending order by the number of characters that match. This policy can be used to automatically select OSDs which are close to the client, if the length of the match between two DNS entries also indicate a low latency between two machines.
+
+\end{itemize}
 
 \subsection{Striping Policies} \label{sec:striping_policies}
 
 XtreemFS allows the content of a file to be distributed among several storage devices (OSDs). This has the benefit, that the file can be read or written in parallel on multiple servers which increases the bandwidth\index{Striping}. The more OSDs are used, the higher the bandwidth available for reading or writing. The number of OSDs is called the striping width\index{Striping!Striping Width}\index{Width, Striping Width}.
 
 A striping policy\index{Striping Policy}\index{Policy!Striping Policy}\index{RAID0} is a rule that defines how the objects are distributed on the available OSDs. Currently, XtreemFS implements only the \texttt{RAID0} policy which simply stores the objects in a round robin fashion on the OSDs. The \texttt{RAID0} policy has two parameters. The striping width\index{Striping Width} defines to how many OSDs the file is distributed. The stripe size\index{Striping!Stripe Size}\index{Stripe Size} defines the size of each object.
-
-When using a striping width of 1, the files are not striped but each file is stored on a single OSD. In that case, you can use any OSD Selection Policy which suits your needs. For striped files (i.e. a striping width larger than 1) we recommend to use the Proximity-based OSD selection policy, because the OSDs onto the files are striped should reside on the same network for better performance and data availability.
 
 Striping over several OSDs enhances the read and write bandwidth of a file, the bandwidth increases the larger the striping width. Please note, that striping also increases the probability of data loss. A striped file will become corrupted even if a single OSDs it is stored on has a disk crash.
 
@@ -240,7 +278,7 @@ No authorization - everyone can do everything. This policy is useful if performa
  \item POSIX ACLs \& Permissions (policy Id 2)\index{Access Policy!POSIX Permissions}\index{POSIX Permissions Access Policy}\index{Access Policy!POSIX ACLs}\index{POSIX ACLs Access Policy}\\
 This access policy implements the traditional POSIX permissions commonly used on Linux, as well as POSIX ACLs, an extension that provides for access control at the granularity of single users and groups. POSIX permissions should be used as the default, as it guarantees maximum compatibility with other file systems.
 
-\item Volume ACLs (policy Id 3)\index{Access Policy!Volume ACLs}\index{Volume ACLs Access Policy}\\
+ \item Volume ACLs (policy Id 3)\index{Access Policy!Volume ACLs}\index{Volume ACLs Access Policy}\\
 Volume ACLs provide an access control model similar to POSIX ACLs \& Permissions, but only allow one ACL for the whole volume. This means that there is no recursive evaluation of access rights which yields a higher performance at the price of a very coarse-grained access control. 
 \end{itemize}
 
@@ -287,7 +325,7 @@ On RPM-based distributions (RedHat, Fedora, SuSE, Mandriva, XtreemOS) you can in
 
 
 \begin{verbatim}
-$> rpm -i xtreemfs-server-1.0.x.rpm
+$> rpm -i xtreemfs-server-1.1.x.rpm
 \end{verbatim}
 
 
@@ -295,7 +333,7 @@ For Debian-based distributions, please use the \texttt{.deb} package provided an
 
 
 \begin{verbatim}
-$> dpkg -i xtreemfs-server-1.0.x.deb
+$> dpkg -i xtreemfs-server-1.1.x.deb
 \end{verbatim}
 
 
@@ -305,11 +343,17 @@ Both packages will also install \texttt{init.d} scripts for an automatic start-u
 
 Extract the tarball with the sources. Change to the top level directory and execute
 
-
 \begin{verbatim}
 $> make server
 \end{verbatim}
 
+This will build the XtreemFS server and Java-based tools. When done, execute
+
+\begin{verbatim}
+$> sudo make install
+\end{verbatim}
+
+to complete the installation.
 
 \section{Configuration}
 \label{sec:service_config}
@@ -754,32 +798,31 @@ Users can easily set up their own CA (certificate authority)\index{Certificate A
 	\item Create a private key for the service.\\
 	      Use \texttt{XtreemFS-DEMO-\textit{service}} as the common name for the certificate.
 		\begin{Verbatim}[commandchars=\\\{\}]
-$> openssl req -new -newkey rsa:1024 -nodes \
-   -out \textit{service}.req \
+$> openssl req -new -newkey rsa:1024 -nodes \ \\
+   -out \textit{service}.req \ \\
    -keyout \textit{service}.key
 		\end{Verbatim}
 
 	\item Sign the certificate with your demo CA.\\
 		The certificate is valid for one year.
 		\begin{Verbatim}[commandchars=\\\{\}]
-$> openssl x509 -CA ca/ca.pem -CAkey ca/ca.key \
-   -CAserial ca/ca.srl -req \
-   -in \textit{service}.req \
+$> openssl x509 -CA ca/ca.pem -CAkey ca/ca.key \ \\
+   -CAserial ca/ca.srl -req \ \\
+   -in \textit{service}.req \ \\
    -out \textit{service}.pem -days 365
 		\end{Verbatim}
 
 	\item Export the service credentials (certificate and private key) as a PKCS\#12 file.\\
 		Use ``passphrase'' as export password. You can leave the export password empty for the XtreemFS Client to avoid being asked for the password on mount.
 		\begin{Verbatim}[commandchars=\\\{\}]
-$> openssl pkcs12 -export -in \textit{service}.pem -inkey \
-   \textit{service}.key \
+$> openssl pkcs12 -export -in \textit{service}.pem -inkey \textit{service}.key \ \\
    -out \textit{service}.p12 -name "\textit{service}"
 		\end{Verbatim}
 
 	\item Copy the PKCS\#12 file to the certificates directory.
 		\begin{Verbatim}[commandchars=\\\{\}]
-	$> mkdir -p /etc/xos/xtreemfs/truststore/certs
-    $> cp \textit{service}.p12 /etc/xos/xtreemfs/truststore/certs
+$> mkdir -p /etc/xos/xtreemfs/truststore/certs \\
+$> cp \textit{service}.p12 /etc/xos/xtreemfs/truststore/certs
 		\end{Verbatim}
 
 	\end{enumerate}
@@ -787,7 +830,7 @@ $> openssl pkcs12 -export -in \textit{service}.pem -inkey \
 	You should answer ``yes'' when asked ``Trust this certificate''.\\
 	Use ``passphrase'' as passphrase for the keystore.
 	\begin{verbatim}
-	$> keytool -import -alias ca -keystore trusted.jks\
+	$> keytool -import -alias ca -keystore trusted.jks \
 	   -trustcacerts -file ca/ca.pem
 	$> cp  trusted.jks /etc/xos/xtreemfs/truststore/certs
 	\end{verbatim}
@@ -905,7 +948,7 @@ On RPM-based distributions (RedHat, Fedora, SuSE, Mandriva, XtreemOS) you can in
 
 
 \begin{verbatim}
-$> rpm -i xtreemfs-client-1.0.x.rpm
+$> rpm -i xtreemfs-client-1.1.x.rpm
 \end{verbatim}
 
 
@@ -913,7 +956,7 @@ For Debian-based distributions, please use the \texttt{.deb} package provided an
 
 
 \begin{verbatim}
-$> dpkg -i xtreemfs-client-1.0.x.deb
+$> dpkg -i xtreemfs-client-1.1.x.deb
 \end{verbatim}
 
 
@@ -922,10 +965,17 @@ $> dpkg -i xtreemfs-client-1.0.x.deb
 
 Extract the tarball with the sources. Change to the top level directory and execute
 
-
 \begin{verbatim}
 $> make client
 \end{verbatim}
+
+This will build the XtreemFS client and non-Java-based tools. When done, execute
+
+\begin{verbatim}
+$> sudo make install
+\end{verbatim}
+
+to complete the installation.
 
 
 \section{Mounting and Un-mounting}
@@ -988,7 +1038,7 @@ On RPM-based distributions (RedHat, Fedora, SuSE, Mandriva, XtreemOS) you can in
 
 
 \begin{verbatim}
-$> rpm -i xtreemfs-tools-1.0.x.rpm
+$> rpm -i xtreemfs-tools-1.1.x.rpm
 \end{verbatim}
 
 
@@ -996,7 +1046,7 @@ For Debian-based distributions, please use the \texttt{.deb} package provided an
 
 
 \begin{verbatim}
-$> dpkg -i xtreemfs-tools-1.0.x.deb
+$> dpkg -i xtreemfs-tools-1.1.x.deb
 \end{verbatim}
 
 
@@ -1006,10 +1056,17 @@ All XtreemFS tools will be installed to \texttt{/usr/bin}.
 
 Extract the tarball with the sources. Change to the top level directory and execute
 
-
 \begin{verbatim}
 $> make
 \end{verbatim}
+
+When done, execute
+
+\begin{verbatim}
+$> sudo make install
+\end{verbatim}
+
+to complete the installation. Note that this will also install the XtreemFS client and servers.
 
 \section{Maintenance Tools}
 
@@ -1022,7 +1079,7 @@ The format in which the MRC stores its data on disk may change with future Xtree
 Such an XML representation can e.g.\ be created as follows:
 
 \begin{verbatim}
-$> xtfs_mrcdbtool -mrc my-mrc-host.com:32636 \
+$> xtfs_mrcdbtool -mrc oncrpc://my-mrc-host.com:32636 \
    dump /tmp/dump.xml
 \end{verbatim}
 
@@ -1031,7 +1088,7 @@ This call will create a file \texttt{dump.xml} containing the entire MRC databas
 To restore an MRC database from a dump, execute
 
 \begin{verbatim}
-$> xtfs_mrcdbtool -mrc my-mrc-host.com:32636 \
+$> xtfs_mrcdbtool -mrc oncrpc://my-mrc-host.com:32636 \
    restore /tmp/dump.xml
 \end{verbatim}
 
@@ -1081,17 +1138,22 @@ will produce output similar to the following:
 
 
 \begin{verbatim}
------
-  type           = directory
-  nlink          = 1
-  size           = 0
-  atime          = 2009-05-05T09:44:16.000Z
-  mtime          = 2009-05-05T10:10:06.000Z
-  ctime          = 2009-05-05T10:10:06.000Z
-  owner user id  = xtreemfs
-  owner group id = users
-  file_id        = 0fa6c684-4885-48b1-a678-babdfae8db37:1
-  truncate epoch = 2031654
+filename                   test.txt
+XtreemFS URI               oncrpc://localhost/test/test.txt
+XtreemFS fileID            41e9a04d-0b8b-467b-94ef-74ade02a2dc9:6
+object type                regular file
+owner                      stender
+group                      users
+read-only                  false
+
+XtreemFS replica list
+   list version            0
+   replica update policy
+   -----------------------------
+   replica 1 SP            STRIPING_POLICY_RAID0, 128kb, 1
+   replica 1 OSDs          [{address=127.0.0.1:32640, uuid=OSD1}]
+   replica 1 repl. flags   0x1
+   -----------------------------
 \end{verbatim}
 
 
@@ -1124,9 +1186,9 @@ width (kB):   256
 
 When creating a new file, XtreemFS will first check whether a default striping policy has been assigned to the parent directory. If this is not the case, the default striping policy for the volume will be used as the striping policy for the new file. Changing a volume's or directory's default striping policy requires superuser access rights or ownership of the directory or volume.
 
-\subsection{Changing Replica Selection Policy}\label{sec:repl_select_policy}
+\subsection{Changing OSD and Replica Selection Policies}\label{sec:osd_select_policy}
 
-The replica selection policy can only be set for the entire volume. The policies are described in Sec. \ref{sec:repl_policies}. To show and modify the policy for a volume, use the \texttt{xtfs\_repl} tool.
+The OSD and replica selection policy can only be set for the entire volume. The policies are described in Sec.\ \ref{sec:osd_policies}. To show and modify these policies for a volume, use the \texttt{xtfs\_repl} tool.
 
 \begin{verbatim}
  $> xtfs_repl --rsp_get /xtreemfs
@@ -1138,9 +1200,36 @@ displays the current replica selection policy used for the volume. To change the
  $> xtfs_repl --rsp_set dcmap /xtreemfs
 \end{verbatim}
 
-If you want to use a custom (i.e. plug-in) policy, pass the id instead of the name.
+Similarly, OSD selection policies are set and retrieved:
 
-\subsection{Read-Only Replication}\index{Replication}\index{Replication!read-only}\index{Read-only Replication}
+\begin{verbatim}
+ $> xtfs_repl --osp_get /xtreemfs
+\end{verbatim}
+
+retrieves the OSD selection policy, whereas it can be set via
+
+\begin{verbatim}
+ $> xtfs_repl --osp_set dcmap /xtreemfs
+\end{verbatim}
+
+If you want to use a custom (i.e. plug-in) policy, pass the ID instead of the name.
+
+\subsection{Setting and Listing Policy Attributes}
+
+OSD and replica selection policy behavior can be defined by means of policy attributes. Policy attributes can be set as follows:
+
+\begin{verbatim}
+ $> xtfs_repl --pol_attr_set domains "*.xtreemfs.org xtreemfs.de" /xtreemfs
+\end{verbatim}
+
+A list of all policy attributes that have been set can be shown as follows:
+
+\begin{verbatim}
+ $> xtfs_repl --pol_attrs_get /xtreemfs
+\end{verbatim}
+
+\subsection{Manual Read-Only Replication}\index{Replication}\index{Replication!read-only}\index{Read-only Replication}
+
 Read-only replication allows you to create copies of files on several OSDs. Since the files are immutable (read-only) there is no overhead for coordinating the replicas. XtreemFS supports partial and full replicas.
 A partial replica will only fetch the data requested by a client (on demand). A full replica does the same, but it also fetches the data in the background without client requests until all data of the file has been replicated (background replication).
 
@@ -1160,7 +1249,7 @@ By default, partial replicas will be created. To create a full replica the optio
 
 XtreemFS supports different transfer strategies which has an big impact on the speed of the replication and the order in which objects are fetched. A transfer strategy must be chosen for each replica.
 
-To create a full replica and usage of the random transfer strategy, the following command must be used. The OSDs are selected according to the volume's replica selection policy. See Sec. \ref{sec:repl_policies} for a description of the policies.
+To create a full replica and usage of the random transfer strategy, the following command must be used. The OSDs are selected according to the volume's replica selection policy. See Sec. \ref{sec:osd_policies} for a description of the policies.
 
 \begin{verbatim}
 $> xtfs_repl --add_auto --full --strategy random local-path-of-file
@@ -1182,6 +1271,34 @@ For further options see:
 
 \begin{verbatim}
 $> xtfs_repl -h
+\end{verbatim}
+
+\subsection{Automatic On-Close Replication}\index{Replication}\index{Replication!on-close}\index{On-close Replication}
+
+XtreemFS allows files to be automatically made read-only and replicated when being closed after having been written. On-close replication can e.g.\ be used to ensure that any file created on a volume is automatically replicated across multiple data centers. To configure the behavior of the on-close replication, \texttt{xtfs\_repl} is used.
+
+The number of replicas to be created when a file is closed can be set as follows:
+
+\begin{verbatim}
+$> xtfs_repl --ocr_factor_set 2
+\end{verbatim}
+
+This will create two replicas of a file when the file is closed. Note that by setting the replication factor to 1 (default value), on-close replication will be switched off, which means that the file won't be replicated and will remain writable after having been closed. The current replication factor of a volume can be retrieved as follows:
+
+\begin{verbatim}
+$> xtfs_repl --ocr_factor_get
+\end{verbatim}
+
+Moreover, it is possible to specify whether an automatically created replica will be filled immediately or on demand. By default, replicas will be filled on demand. This can be changed as follows:
+
+\begin{verbatim}
+$> xtfs_repl --ocr_full_set true
+\end{verbatim}
+
+Thus, replicas will be filled in the background when the file is closed after having been written. To show whether replicas are automatically filled or not, execute the following command:
+
+\begin{verbatim}
+$> xtfs_repl --ocr_full_get
 \end{verbatim}
 
 \chapter{Troubleshooting and Support}
