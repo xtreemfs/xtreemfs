@@ -1,4 +1,4 @@
-// Revision: 183
+// Revision: 186
 
 #include "yield.h"
 #include "yieldfs.h"
@@ -532,7 +532,10 @@ namespace yieldfs
 
     static int statfs( const char* path, struct statvfs* sbuf )
     {
-      return get_volume().statvfs( path, sbuf ) ? 0 : ( -1 * errno );
+      if ( sbuf )
+        return get_volume().statvfs( path, *sbuf ) ? 0 : ( -1 * errno );
+      else
+        return -1 * EFAULT;
     }
 
     static int symlink( const char* path, const char* linkpath )
@@ -918,7 +921,7 @@ namespace yieldfs
 	    PDOKAN_FILE_INFO DokanFileInfo )
     {
       struct statvfs stbuf;
-      if ( get_volume( DokanFileInfo ).statvfs( YIELD::Path(), &stbuf ) )
+      if ( get_volume( DokanFileInfo ).statvfs( YIELD::Path(), stbuf ) )
       {
         if ( FreeBytesAvailable )
           *FreeBytesAvailable = stbuf.f_bsize * stbuf.f_bavail;
@@ -962,7 +965,7 @@ namespace yieldfs
     {
       YIELD::Path name = get_volume( DokanFileInfo ).volname( YIELD::Path( PATH_SEPARATOR_STRING ) );
       struct statvfs stbuf;
-      if ( get_volume( DokanFileInfo ).statvfs( YIELD::Path(), &stbuf ) )
+      if ( get_volume( DokanFileInfo ).statvfs( YIELD::Path(), stbuf ) )
       {
         wcscpy( VolumeNameBuffer, name );
         if ( VolumeSerialNumber )
@@ -1997,7 +2000,7 @@ bool StackableVolume::setxattr( const YIELD::Path& path, const std::string& name
 {
   return underlying_volume->setxattr( path, name, value, flags );
 }
-bool StackableVolume::statvfs( const YIELD::Path& path, struct statvfs* stvfsbuf )
+bool StackableVolume::statvfs( const YIELD::Path& path, struct statvfs& stvfsbuf )
 {
   return underlying_volume->statvfs( path, stvfsbuf );
 }
@@ -2294,7 +2297,7 @@ bool TracingVolume::setxattr( const YIELD::Path& path, const std::string& name, 
   return trace( log, "yieldfs::TracingVolume::setxattr", path, name, underlying_volume->setxattr( path, name, value, flags ) );
 }
 
-bool TracingVolume::statvfs( const YIELD::Path& path, struct statvfs* buf )
+bool TracingVolume::statvfs( const YIELD::Path& path, struct statvfs& buf )
 {
   return trace( log, "yieldfs::TracingVolume::statvfs", path, underlying_volume->statvfs( path, buf ) );
 }

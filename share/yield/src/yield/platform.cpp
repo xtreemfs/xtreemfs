@@ -1,4 +1,4 @@
-// Revision: 1864
+// Revision: 1868
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -890,18 +890,14 @@ bool MemoryMappedFile::resize( size_t new_size )
 bool MemoryMappedFile::sync()
 {
 #ifdef _WIN32
-  return FlushViewOfFile( start, 0 ) == TRUE;
+  return sync( static_cast<size_t>( 0 ), static_cast<size_t>( 0 ) ); // length 0 = flush to end of mapping
 #else
-  return msync( start, size, MS_SYNC ) == 0;
+  return sync( static_cast<size_t>( 0 ), size );
 #endif
 }
 bool MemoryMappedFile::sync( size_t offset, size_t length )
 {
-#ifdef _WIN32
-  return FlushViewOfFile( start + offset, length ) == TRUE;
-#else
-  return msync( start + offset, length, MS_SYNC ) == 0;
-#endif
+  return sync( start + offset, length );
 }
 bool MemoryMappedFile::sync( void* ptr, size_t length )
 {
@@ -2893,31 +2889,25 @@ bool Volume::setxattr( const Path& path, const std::string& name, const std::str
 #endif
   return false;
 }
-bool Volume::statvfs( const Path& path, struct statvfs* buffer )
+bool Volume::statvfs( const Path& path, struct statvfs& buffer )
 {
-  if ( buffer )
-  {
-    memset( buffer, 0, sizeof( *buffer ) );
 #ifdef _WIN32
-    ULARGE_INTEGER uFreeBytesAvailableToCaller, uTotalNumberOfBytes, uTotalNumberOfFreeBytes;
-    if ( GetDiskFreeSpaceEx( path, &uFreeBytesAvailableToCaller, &uTotalNumberOfBytes, &uTotalNumberOfFreeBytes ) != 0 )
-    {
-      buffer->f_bsize = 4096;
-      buffer->f_frsize = 4096;
-      buffer->f_blocks = static_cast<fsblkcnt_t>( uTotalNumberOfBytes.QuadPart / 4096 );
-      buffer->f_bfree = static_cast<fsblkcnt_t>( uTotalNumberOfFreeBytes.QuadPart / 4096 );
-      buffer->f_bavail = static_cast<fsblkcnt_t>( uFreeBytesAvailableToCaller.QuadPart / 4096 );
-      buffer->f_namemax = PATH_MAX;
-      return true;
-    }
-    else
-      return false;
-#else
-    return ::statvfs( path, buffer ) == 0;
-#endif
+  ULARGE_INTEGER uFreeBytesAvailableToCaller, uTotalNumberOfBytes, uTotalNumberOfFreeBytes;
+  if ( GetDiskFreeSpaceEx( path, &uFreeBytesAvailableToCaller, &uTotalNumberOfBytes, &uTotalNumberOfFreeBytes ) != 0 )
+  {
+    buffer.f_bsize = 4096;
+    buffer.f_frsize = 4096;
+    buffer.f_blocks = static_cast<fsblkcnt_t>( uTotalNumberOfBytes.QuadPart / 4096 );
+    buffer.f_bfree = static_cast<fsblkcnt_t>( uTotalNumberOfFreeBytes.QuadPart / 4096 );
+    buffer.f_bavail = static_cast<fsblkcnt_t>( uFreeBytesAvailableToCaller.QuadPart / 4096 );
+    buffer.f_namemax = PATH_MAX;
+    return true;
   }
   else
     return false;
+#else
+  return ::statvfs( path, &buffer ) == 0;
+#endif
 }
 bool Volume::symlink( const Path& old_path, const Path& new_path )
 {

@@ -115,7 +115,7 @@ typedef int ssize_t;
 #define YIELD_VOLUME_PROTOTYPES \
     virtual bool access( const YIELD::Path& path, int amode ); \
     virtual bool chmod( const YIELD::Path& path, mode_t mode ); \
-    virtual bool chown( const YIELD::Path& path, int32_t tag, int32_t gid ); \
+    virtual bool chown( const YIELD::Path& path, int32_t uid, int32_t gid ); \
     virtual yidl::auto_Object<YIELD::Stat> getattr( const YIELD::Path& path ); \
     virtual bool getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value ); \
     virtual bool link( const YIELD::Path& old_path, const YIELD::Path& new_path ); \
@@ -129,7 +129,7 @@ typedef int ssize_t;
     virtual bool rmdir( const YIELD::Path& path ); \
     virtual bool setattr( const YIELD::Path& path, uint32_t file_attributes ); \
     virtual bool setxattr( const YIELD::Path& path, const std::string& name, const std::string& value, int flags ); \
-    virtual bool statvfs( const YIELD::Path& path, struct statvfs* ); \
+    virtual bool statvfs( const YIELD::Path& path, struct statvfs& ); \
     virtual bool symlink( const YIELD::Path& old_path, const YIELD::Path& new_path ); \
     virtual bool truncate( const YIELD::Path& path, uint64_t new_size ); \
     virtual bool unlink( const YIELD::Path& path ); \
