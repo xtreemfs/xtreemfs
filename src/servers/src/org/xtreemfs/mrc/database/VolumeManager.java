@@ -33,8 +33,9 @@ import org.xtreemfs.mrc.ac.FileAccessManager;
 
 public interface VolumeManager {
     
-    public static final short[] DEFAULT_OSD_POLICY       = { (short) OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT
-                                                                 .intValue() };
+    public static final short[] DEFAULT_OSD_POLICY       = {
+        (short) OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue(),
+        (short) OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_RANDOM.intValue() };
     
     public static final short[] DEFAULT_REPL_POLICY      = {};
     

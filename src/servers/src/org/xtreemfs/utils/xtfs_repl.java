@@ -366,8 +366,9 @@ public class xtfs_repl {
             String v = r.get();
             
             short[] policies = Converter.stringToShortArray(v);
-            if (policies.length == 1
-                && policies[0] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue()) {
+            if (policies.length == 2
+                && policies[0] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue()
+                && policies[1] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_RANDOM.intValue()) {
                 System.out.println("OSD selection policy: default");
             } else if (policies.length == 2
                 && policies[0] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue()
@@ -391,7 +392,8 @@ public class xtfs_repl {
             
             String pol = "";
             if (rsp.equalsIgnoreCase(SEL_POLICY_DEFAULT)) {
-                pol = String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue());
+                pol = String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue())
+                    + "," + String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_RANDOM.intValue());
             } else if (rsp.equalsIgnoreCase(SEL_POLICY_FQDN)) {
                 pol = String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue())
                     + "," + String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_GROUP_FQDN.intValue());
