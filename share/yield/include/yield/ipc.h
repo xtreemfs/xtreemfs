@@ -412,7 +412,11 @@ namespace YIELD
 
         if ( accepted_tcp_socket != NULL )
           onCompletion( 0 );
-        else if ( get_socket()->want_read() )
+#ifdef _WIN32
+        else if ( Exception::get_errno() == 10035 )
+#else
+        else if ( Exception::get_errno() == EWOULDBLOCK )
+#endif
           return EXECUTE_STATUS_WANT_READ;
         else
           onError( Exception::get_errno() );
@@ -507,9 +511,7 @@ namespace YIELD
   class GatherBuffer : public yidl::Buffer
   {
   public:
-    GatherBuffer( const struct iovec* iovecs, uint32_t iovecs_len )
-      : iovecs( iovecs ), iovecs_len( iovecs_len )
-    { }
+    GatherBuffer( const struct iovec* iovecs, uint32_t iovecs_len );
 
     const struct iovec* get_iovecs() const { return iovecs; }
     uint32_t get_iovecs_len() const { return iovecs_len; }
@@ -519,22 +521,17 @@ namespace YIELD
 
     // Buffer
     size_t capacity() const { return size(); }
-    size_t get( void*, size_t ) { return 0; }
+    size_t get( void* into_buffer, size_t into_buffer_len );
     size_t put( const void*, size_t ) { return 0; }
     operator void*() const { *((int*)0) = 0xabadcafe; return NULL; }
-
-    size_t size() const
-    {
-      size_t _size = 0;
-      for ( uint32_t iovec_i = 0; iovec_i < iovecs_len; iovec_i++ )
-        _size += iovecs[iovec_i].iov_len;
-      return _size;
-    }
+    size_t size() const;
 
   private:
     const struct iovec* iovecs;
     uint32_t iovecs_len;
   };
+
+  typedef yidl::auto_Object<GatherBuffer> auto_GatherBuffer;
 
 
   class RFC822Headers
@@ -1184,11 +1181,15 @@ namespace YIELD
     void aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block );
     void aio_read( Socket::auto_AIOReadControlBlock aio_read_control_block );
     void aio_write( Socket::auto_AIOWriteControlBlock aio_write_control_block );
-    bool bind( Socket::auto_Address to_sockaddr );
-    bool close();
+    bool bind( Socket::auto_Address to_sockaddr ) { return underlying_socket->bind( to_sockaddr ); }
+    bool close() { return underlying_socket->close(); }
     bool connect( Socket::auto_Address to_sockaddr );
-    operator int() const;
+    bool get_blocking_mode() const { return underlying_socket->get_blocking_mode(); }
+    auto_Address getpeername() { return underlying_socket->getpeername(); }
+    auto_Address getsockname() { return underlying_socket->getsockname(); }
+    operator int() const { return underlying_socket->operator int(); }
     ssize_t read( void* buffer, size_t buffer_len );
+    bool set_blocking_mode( bool blocking ) { return underlying_socket->set_blocking_mode( blocking ); }
     bool want_connect() const;
     bool want_read() const;
     bool want_write() const;

@@ -1,5 +1,3 @@
-// Revision: 1857
-
 #include "yield/ipc.h"
 
 
@@ -272,6 +270,58 @@ template class YIELD::Client<YIELD::HTTPRequest, YIELD::HTTPResponse>;
 template class YIELD::Client<YIELD::ONCRPCRequest, YIELD::ONCRPCResponse>;
 
 
+// gather_buffer.cpp
+// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+YIELD::GatherBuffer::GatherBuffer( const struct iovec* iovecs, uint32_t iovecs_len )
+  : iovecs( iovecs ), iovecs_len( iovecs_len )
+{ }
+size_t YIELD::GatherBuffer::get( void* into_buffer, size_t into_buffer_len )
+{
+  char* into_buffer_p = static_cast<char*>( into_buffer );
+  size_t iovec_offset = position();
+  uint32_t iovec_i = 0;
+  while ( iovec_offset >= iovecs[iovec_i].iov_len )
+  {
+    iovec_offset -= iovecs[iovec_i].iov_len;
+    if ( ++iovec_i >= iovecs_len )
+      return 0;
+  }
+  for ( ;; )
+  {
+    if ( iovecs[iovec_i].iov_len - iovec_offset < into_buffer_len ) // into_buffer_len in larger than the current iovec
+    {
+      size_t copy_len = iovecs[iovec_i].iov_len - iovec_offset;
+      memcpy_s( into_buffer_p, into_buffer_len, static_cast<char*>( iovecs[iovec_i].iov_base ) + iovec_offset, copy_len );
+      into_buffer_p += copy_len;
+      position( position() + copy_len );
+      if ( ++iovec_i < iovecs_len ) // Have more iovecs
+      {
+        into_buffer_len -= copy_len;
+        iovec_offset = 0;
+      }
+      else
+        break;
+    }
+    else // into_buffer_len is smaller than the current iovec
+    {
+      memcpy_s( into_buffer_p, into_buffer_len, static_cast<char*>( iovecs[iovec_i].iov_base ) + iovec_offset, into_buffer_len );
+      into_buffer_p += into_buffer_len;
+      position( position() + into_buffer_len );
+      break;
+    }
+  }
+  return into_buffer_p - static_cast<char*>( into_buffer );
+}
+size_t YIELD::GatherBuffer::size() const
+{
+  size_t _size = 0;
+  for ( uint32_t iovec_i = 0; iovec_i < iovecs_len; iovec_i++ )
+    _size += iovecs[iovec_i].iov_len;
+  return _size;
+}
+
+
 // http_benchmark_driver.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -478,7 +528,10 @@ ssize_t YIELD::HTTPMessage::deserialize( yidl::auto_Buffer buffer )
       if ( RFC822Headers_deserialize_ret == 0 )
       {
         if ( strcmp( get_header( "Transfer-Encoding" ), "chunked" ) == 0 )
+        {
+          DebugBreak();
           return 0;
+        }
         else
         {
           const char* content_length_header_value = get_header( "Content-Length", NULL ); // Most browsers
@@ -494,7 +547,10 @@ ssize_t YIELD::HTTPMessage::deserialize( yidl::auto_Buffer buffer )
           {
             deserialize_state = DESERIALIZING_BODY;
             if ( strcmp( get_header( "Expect" ), "100-continue" ) == 0 )
+            {
+              DebugBreak();
               return 0;
+            }
             // else fall through
           }
         }
@@ -1109,9 +1165,10 @@ public:
   JSONValue( yidl::auto_StringBuffer identifier, bool is_map )
     : identifier( identifier ), is_map( is_map )
   {
+    as_double = 0;
+    as_integer = 0;
     parent = child = prev = next = NULL;
     have_read = false;
-    as_integer = 0;
   }
   virtual ~JSONValue()
   {
@@ -1120,12 +1177,9 @@ public:
   }
   yidl::auto_StringBuffer identifier;
   bool is_map;
+  double as_double;
+  int64_t as_integer;
   yidl::auto_StringBuffer as_string;
-  union
-  {
-    double as_double;
-    int64_t as_integer;
-  };
   JSONValue *parent, *child, *prev, *next;
   bool have_read;
 protected:
@@ -1329,7 +1383,12 @@ double YIELD::JSONUnmarshaller::readDouble( const char* key, uint32_t )
   if ( json_value )
   {
     if ( key != NULL ) // Read the value
-      return json_value->as_double;
+    {
+      if ( json_value->as_double != 0 || json_value->as_integer == 0 )
+        return json_value->as_double;
+      else
+        return static_cast<double>( json_value->as_integer );
+    }
     else // Read the identifier
       return atof( json_value->identifier->c_str() );
   }
@@ -1509,7 +1568,8 @@ YIELD::auto_NamedPipe YIELD::NamedPipe::open( const Path& path, uint32_t flags, 
 #else
   if ( ( flags & O_CREAT ) == O_CREAT )
   {
-    if ( ::mkfifo( path, mode ) != -1 )
+    if ( ::mkfifo( path, mode ) != -1 ||
+         errno == EEXIST )
       flags ^= O_CREAT;
     else
       return NULL;
@@ -2610,12 +2670,15 @@ ssize_t YIELD::RFC822Headers::deserialize( yidl::auto_Buffer buffer )
 }
 char* YIELD::RFC822Headers::get_header( const char* header_name, const char* default_value )
 {
+  size_t header_name_len = strnlen( header_name, UINT16_MAX );
   struct iovec* iovecs = heap_iovecs != NULL ? heap_iovecs : stack_iovecs;
-  for ( uint8_t iovec_i = 0; iovec_i < iovecs_filled; iovec_i += 4 )
+  for ( uint16_t iovec_i = 0; iovec_i < iovecs_filled; iovec_i += 4 )
   {
-    if ( iovecs[iovec_i].iov_len > 0 &&
-         strncmp( static_cast<const char*>( iovecs[iovec_i].iov_base ), header_name, iovecs[iovec_i].iov_len ) == 0 )
-      return static_cast<char*>( iovecs[iovec_i+2].iov_base );
+    if ( iovecs[iovec_i].iov_len == header_name_len )
+    {
+      if ( strncmp( static_cast<const char*>( iovecs[iovec_i].iov_base ), header_name, header_name_len ) == 0 )
+        return static_cast<char*>( iovecs[iovec_i+2].iov_base );
+    }
   }
   return const_cast<char*>( default_value );
 }
@@ -2729,15 +2792,15 @@ void YIELD::RFC822Headers::set_next_iovec( const struct iovec& iovec )
       stack_iovecs[iovecs_filled] = iovec;
     else
     {
-      heap_iovecs = new struct iovec[UCHAR_MAX];
-      memcpy_s( heap_iovecs, sizeof( struct iovec ) * UCHAR_MAX, stack_iovecs, sizeof( stack_iovecs ) );
+      heap_iovecs = new struct iovec[UINT8_MAX];
+      memcpy_s( heap_iovecs, sizeof( struct iovec ) * UINT8_MAX, stack_iovecs, sizeof( stack_iovecs ) );
       heap_iovecs[iovecs_filled] = iovec;
     }
   }
-  else if ( iovecs_filled < UCHAR_MAX )
+  else if ( iovecs_filled < UINT8_MAX )
     heap_iovecs[iovecs_filled] = iovec;
   else
-    DebugBreak();
+    return;
   iovecs_filled++;
 }
 
@@ -4540,28 +4603,12 @@ void YIELD::TracingSocket::aio_write( Socket::auto_AIOWriteControlBlock aio_writ
 {
   aio_write_nbio( aio_write_control_block );
 }
-bool YIELD::TracingSocket::bind( Socket::auto_Address to_sockaddr )
-{
-  std::string to_hostname;
-  if ( to_sockaddr->getnameinfo( to_hostname ) )
-    log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: binding socket #" << ( int )*this << " to " << to_hostname << ".";
-  return underlying_socket->bind( to_sockaddr );
-}
-bool YIELD::TracingSocket::close()
-{
-  log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: closing socket #" << ( int )*this << ".";
-  return underlying_socket->close();
-}
 bool YIELD::TracingSocket::connect( Socket::auto_Address to_sockaddr )
 {
   std::string to_hostname;
   if ( to_sockaddr->getnameinfo( to_hostname ) )
     log->getStream( Log::LOG_INFO ) << "yield::TracingSocket: connecting socket #" << ( int )*this << " to " << to_hostname << ".";
   return underlying_socket->connect( to_sockaddr );
-}
-YIELD::TracingSocket::operator int() const
-{
-  return underlying_socket->operator int();
 }
 ssize_t YIELD::TracingSocket::read( void* buffer, size_t buffer_len )
 {
