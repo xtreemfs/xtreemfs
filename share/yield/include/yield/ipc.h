@@ -694,6 +694,7 @@ namespace YIELD
     HTTPRequest( const char* method, const char* relative_uri, const char* host, yidl::auto_Buffer body = NULL ); // Outgoing
     HTTPRequest( const char* method, const URI& absolute_uri, yidl::auto_Buffer body = NULL ); // Outgoing
 
+    uint8_t get_reconnect_tries() const { return reconnect_tries; }
     ssize_t deserialize( yidl::auto_Buffer );
     uint8_t get_http_version() const { return http_version; }
     const char* get_method() const { return method; }
@@ -702,6 +703,7 @@ namespace YIELD
     virtual void respond( uint16_t status_code, yidl::auto_Buffer body );
     virtual void respond( Response& response ) { Request::respond( response ); }
     yidl::auto_Buffer serialize();
+    void set_reconnect_tries( uint8_t reconnect_tries ) { this->reconnect_tries = reconnect_tries; }
 
     // yidl::Object
     YIDL_OBJECT_PROTOTYPES( HTTPRequest, 205 );
@@ -715,11 +717,14 @@ namespace YIELD
   private:
     HTTPRequest( const HTTPRequest& other ) // Prevent copying
       : HTTPMessage( other )
-    { }
+    {
+      reconnect_tries = 0;
+    }
 
     void init( const char* method, const char* relative_uri, const char* host, yidl::auto_Buffer body );
 
     char method[16];
+    uint8_t reconnect_tries;
     char* uri; size_t uri_len;
   };
 
@@ -945,7 +950,9 @@ namespace YIELD
     yidl::auto_Struct get_credential() const { return credential; }
     uint32_t get_prog() const { return prog; }
     uint32_t get_proc() const { return proc; }
+    uint8_t get_reconnect_tries() const { return reconnect_tries; }
     uint32_t get_vers() const { return vers; }
+    void set_reconnect_tries( uint8_t reconnect_tries ) { this->reconnect_tries = reconnect_tries; }
 
     // yidl::Object
     YIDL_OBJECT_PROTOTYPES( ONCRPCRequest, 213 );    
@@ -959,6 +966,7 @@ namespace YIELD
   private:
     uint32_t prog, proc, vers, credential_auth_flavor;
     yidl::auto_Struct credential;
+    uint8_t reconnect_tries;
   };
 
   typedef yidl::auto_Object<ONCRPCRequest> auto_ONCRPCRequest;

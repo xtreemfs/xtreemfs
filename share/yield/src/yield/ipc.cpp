@@ -1,3 +1,5 @@
+// Revision: 1873
+
 #include "yield/ipc.h"
 
 
@@ -63,8 +65,8 @@ void YIELD::Client<RequestType, ResponseType>::handleEvent( Event& ev )
                static_cast<int>( *socket_ ) != -1 )
             socket_ = new TracingSocket( socket_, log );
           if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-            log->getStream( Log::LOG_INFO ) << "yield::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " with socket #" << static_cast<int>( *socket_ ) << ".";
-          AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( *this, peername, request );
+            log->getStream( Log::LOG_INFO ) << "yield::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " with socket #" << static_cast<int>( *socket_ ) << " (try #" << request.get_reconnect_tries() << ")";
+          AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( *this, request );
           TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_connect_control_block->incRef(), operation_timeout ) );
           socket_->aio_connect( aio_connect_control_block );
         }
@@ -92,8 +94,8 @@ template <class RequestType, class ResponseType>
 class YIELD::Client<RequestType, ResponseType>::AIOConnectControlBlock : public Socket::AIOConnectControlBlock
 {
 public:
-  AIOConnectControlBlock( Client<RequestType,ResponseType>& client, Socket::auto_Address peername, yidl::auto_Object<RequestType> request )
-    : Socket::AIOConnectControlBlock( peername ),
+  AIOConnectControlBlock( Client<RequestType,ResponseType>& client, yidl::auto_Object<RequestType> request )
+    : Socket::AIOConnectControlBlock( client.peername ),
       client( client ),
       request( request )
   { }
@@ -117,7 +119,13 @@ public:
     {
       if ( client.log != NULL )
         client.log->getStream( Log::LOG_ERR ) << "yield::Client: connect() to " << client.absolute_uri->get_host() << ":" << client.absolute_uri->get_port() << " failed, errno=" << error_code << ", strerror=" << Exception::strerror( error_code ) << ".";
-      request->respond( *( new ExceptionResponse( error_code ) ) );
+      if ( request->get_reconnect_tries() < 3 )
+      {
+        request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
+        client.handleEvent( *request.release() );
+      }
+      else
+        request->respond( *( new ExceptionResponse( error_code ) ) );
       request = NULL;
     }
   }
@@ -139,40 +147,32 @@ public:
   // AIOControlBlock
   void onCompletion( size_t bytes_transferred )
   {
+#ifdef _DEBUG
+    if ( bytes_transferred <= 0 ) DebugBreak();
+#endif
     if ( request_lock.try_acquire() )
     {
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
         client.log->getStream( Log::LOG_INFO ) << "yield::Client: read " << bytes_transferred << " bytes from socket #" << static_cast<int>( *get_socket() ) << " for " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ".";
-      if ( bytes_transferred > 0 )
+      ssize_t deserialize_ret = response->deserialize( get_buffer() );
+      if ( deserialize_ret == 0 )
       {
-        ssize_t deserialize_ret = response->deserialize( get_buffer() );
-        if ( deserialize_ret == 0 )
-        {
-          if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-            client.log->getStream( Log::LOG_INFO ) << "yield::Client: successfully deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
-          request->respond( *response.release() );
-          client.idle_sockets.enqueue( get_socket().release() );
-        }
-        else if ( deserialize_ret > 0 )
-        {
-          yidl::auto_Buffer buffer( get_buffer() );
-          if ( buffer->capacity() - buffer->size() < static_cast<size_t>( deserialize_ret ) )
-            buffer = new yidl::HeapBuffer( deserialize_ret );
-          // else re-use the same buffer
-          if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-            client.log->getStream( Log::LOG_INFO ) << "yield::Client: partially deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", reading again with " << ( buffer->capacity() - buffer->size() ) << " byte buffer.";
-          AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( buffer, client, request.release(), response.release() );
-          TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
-          get_socket()->aio_read( aio_read_control_block );
-        }
-        else
-        {
-          if ( client.log != NULL )
-            client.log->getStream( Log::LOG_ERR ) << "yield::Client: error deserializing " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
-          request->respond( *( new ExceptionResponse( ECONNABORTED ) ) );
-          get_socket()->shutdown();
-          get_socket()->close();
-        }
+        if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
+          client.log->getStream( Log::LOG_INFO ) << "yield::Client: successfully deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
+        request->respond( *response.release() );
+        client.idle_sockets.enqueue( get_socket().release() );
+      }
+      else if ( deserialize_ret > 0 )
+      {
+        yidl::auto_Buffer buffer( get_buffer() );
+        if ( buffer->capacity() - buffer->size() < static_cast<size_t>( deserialize_ret ) )
+          buffer = new yidl::HeapBuffer( deserialize_ret );
+        // else re-use the same buffer
+        if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
+          client.log->getStream( Log::LOG_INFO ) << "yield::Client: partially deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", reading again with " << ( buffer->capacity() - buffer->size() ) << " byte buffer.";
+        AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( buffer, client, request.release(), response.release() );
+        TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
+        get_socket()->aio_read( aio_read_control_block );
       }
       else
       {
@@ -194,10 +194,18 @@ public:
     {
       if ( client.log != NULL )
         client.log->getStream( Log::LOG_ERR ) << "yield::Client: error reading " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
-      request->respond( *( new ExceptionResponse( error_code ) ) );
       get_socket()->shutdown();
       get_socket()->close();
-      request = NULL;
+      if ( request->get_reconnect_tries() < 3 )
+      {
+        request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
+        client.handleEvent( *request.release() );
+      }
+      else
+      {
+        request->respond( *( new ExceptionResponse( error_code ) ) );
+        request = NULL;
+      }
       unlink_buffer();
     }
   }
@@ -240,8 +248,18 @@ public:
     {
       if ( client.log != NULL )
         client.log->getStream( Log::LOG_ERR ) << "yield::Client: error writing " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
-      request->respond( *( new ExceptionResponse( error_code ) ) );
-      request = NULL;
+      get_socket()->shutdown();
+      get_socket()->close();
+      if ( request->get_reconnect_tries() < 3 )
+      {
+        request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
+        client.handleEvent( *request.release() );
+      }
+      else
+      {
+        request->respond( *( new ExceptionResponse( error_code ) ) );
+        request = NULL;
+      }
       unlink_buffer();
     }
   }
@@ -1796,7 +1814,9 @@ template class YIELD::ONCRPCMessage<YIELD::ONCRPCResponse>;
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 YIELD::ONCRPCRequest::ONCRPCRequest( auto_Interface interface_ )
   : ONCRPCMessage<ONCRPCRequest>( interface_ )
-{ }
+{
+  reconnect_tries = 0;
+}
 YIELD::ONCRPCRequest::ONCRPCRequest( auto_Interface interface_, yidl::auto_Struct body )
   : ONCRPCMessage<ONCRPCRequest>( interface_, static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body )
 {
@@ -1804,6 +1824,7 @@ YIELD::ONCRPCRequest::ONCRPCRequest( auto_Interface interface_, yidl::auto_Struc
   proc = body->get_type_id();
   vers = interface_->get_type_id();
   credential_auth_flavor = AUTH_NONE;
+  reconnect_tries = 0;
 }
 YIELD::ONCRPCRequest::ONCRPCRequest( auto_Interface interface_, uint32_t credential_auth_flavor, yidl::auto_Struct credential, yidl::auto_Struct body )
   : ONCRPCMessage<ONCRPCRequest>( interface_, static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
@@ -1812,18 +1833,22 @@ YIELD::ONCRPCRequest::ONCRPCRequest( auto_Interface interface_, uint32_t credent
   prog = 0x20000000 + interface_->get_type_id();
   proc = body->get_type_id();
   vers = interface_->get_type_id();
+  reconnect_tries = 0;
 }
 YIELD::ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, yidl::auto_Struct body )
   : ONCRPCMessage<ONCRPCRequest>( NULL, static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
     prog( prog ), proc( proc ), vers( vers )
 {
   credential_auth_flavor = AUTH_NONE;
+  reconnect_tries = 0;
 }
 YIELD::ONCRPCRequest::ONCRPCRequest( uint32_t prog, uint32_t proc, uint32_t vers, uint32_t credential_auth_flavor, yidl::auto_Struct credential, yidl::auto_Struct body )
   : ONCRPCMessage<ONCRPCRequest>( NULL, static_cast<uint32_t>( Time::getCurrentUnixTimeS() ), body ),
     prog( prog ), proc( proc ), vers( vers ),
     credential_auth_flavor( credential_auth_flavor ), credential( credential )
-{ }
+{
+  reconnect_tries = 0;
+}
 YIELD::auto_Response YIELD::ONCRPCRequest::createResponse()
 {
   return new ONCRPCResponse( get_interface(), get_xid(), static_cast<Request*>( get_body().get() )->createResponse().release() );
