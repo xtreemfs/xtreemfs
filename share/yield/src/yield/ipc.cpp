@@ -1,5 +1,3 @@
-// Revision: 1873
-
 #include "yield/ipc.h"
 
 
@@ -65,7 +63,7 @@ void YIELD::Client<RequestType, ResponseType>::handleEvent( Event& ev )
                static_cast<int>( *socket_ ) != -1 )
             socket_ = new TracingSocket( socket_, log );
           if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-            log->getStream( Log::LOG_INFO ) << "yield::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " with socket #" << static_cast<int>( *socket_ ) << " (try #" << request.get_reconnect_tries() << ")";
+            log->getStream( Log::LOG_INFO ) << "yield::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " with socket #" << static_cast<int>( *socket_ ) << " (try #" << static_cast<uint16_t>( request.get_reconnect_tries() + 1 ) << ").";
           AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( *this, request );
           TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_connect_control_block->incRef(), operation_timeout ) );
           socket_->aio_connect( aio_connect_control_block );
@@ -119,7 +117,7 @@ public:
     {
       if ( client.log != NULL )
         client.log->getStream( Log::LOG_ERR ) << "yield::Client: connect() to " << client.absolute_uri->get_host() << ":" << client.absolute_uri->get_port() << " failed, errno=" << error_code << ", strerror=" << Exception::strerror( error_code ) << ".";
-      if ( request->get_reconnect_tries() < 3 )
+      if ( request->get_reconnect_tries() < 2 )
       {
         request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
         client.handleEvent( *request.release() );
@@ -196,7 +194,7 @@ public:
         client.log->getStream( Log::LOG_ERR ) << "yield::Client: error reading " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       get_socket()->shutdown();
       get_socket()->close();
-      if ( request->get_reconnect_tries() < 3 )
+      if ( request->get_reconnect_tries() < 2 )
       {
         request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
         client.handleEvent( *request.release() );
@@ -250,7 +248,7 @@ public:
         client.log->getStream( Log::LOG_ERR ) << "yield::Client: error writing " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       get_socket()->shutdown();
       get_socket()->close();
-      if ( request->get_reconnect_tries() < 3 )
+      if ( request->get_reconnect_tries() < 2 )
       {
         request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
         client.handleEvent( *request.release() );
