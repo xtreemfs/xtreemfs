@@ -82,6 +82,8 @@ public class HeartbeatThread extends LifeCycleThread {
         
         super(name);
         
+        setPriority(Thread.MAX_PRIORITY);
+        
         this.client = client;
         this.uuid = uuid;
         this.serviceDataGen = serviceDataGen;
