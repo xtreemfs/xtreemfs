@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.BufferUnderflowException;
 import java.util.ArrayList;
+import java.util.List;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
@@ -57,12 +58,20 @@ public class ServiceRecords {
         records.addAll(otherList.records);
     }
 
+    public void add(ServiceRecord item) {
+        records.add(item);
+    }
+
     public int size() {
         return records.size();
     }
 
     public ServiceRecord getRecord(int index) {
         return records.get(index);
+    }
+
+    public List<ServiceRecord> getList() {
+        return records;
     }
 
     public int getSize() {

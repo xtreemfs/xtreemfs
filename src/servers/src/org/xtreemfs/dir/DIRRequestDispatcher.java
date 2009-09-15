@@ -72,6 +72,11 @@ import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import java.util.Iterator;
+import java.util.Map.Entry;
+import org.xtreemfs.dir.data.ServiceRecord;
+import org.xtreemfs.dir.data.ServiceRecords;
+import org.xtreemfs.interfaces.ServiceSet;
 
 /**
  * 
@@ -107,6 +112,8 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     private final DatabaseManager              dbMan;
     
     private final DiscoveryMsgThread           discoveryThr;
+
+    private final MonitoringThread             monThr;
     
     public static final String                 DB_NAME           = "dirdb";
     
@@ -169,6 +176,13 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         httpServ.start();
         
         numRequests = 0;
+
+        if (config.isMonitoringEnabled()) {
+            monThr = new MonitoringThread(config, this);
+            monThr.setLifeCycleListener(this);
+        } else {
+            monThr = null;
+        }
     }
     
     @Override
@@ -177,7 +191,9 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             notifyStarted();
             while (!quit) {
                 final ONCRPCRequest rq = queue.take();
-                processRequest(rq);
+                synchronized (database) {
+                    processRequest(rq);
+                }
             }
         } catch (InterruptedException ex) {
             quit = true;
@@ -185,6 +201,27 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             notifyCrashed(ex);
         }
         notifyStopped();
+    }
+
+    public ServiceRecords getServices() throws Exception {
+
+        synchronized (database) {
+            Database db = getDirDatabase();
+            Iterator<Entry<byte[], byte[]>> iter = db.directPrefixLookup(
+                DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
+
+            ServiceRecords services = new ServiceRecords();
+
+            long now = System.currentTimeMillis() / 1000l;
+
+            while (iter.hasNext()) {
+                final Entry<byte[],byte[]> e = iter.next();
+                final ServiceRecord servEntry = new ServiceRecord(ReusableBuffer.wrap(e.getValue()));
+                services.add(servEntry);
+            }
+            return services;
+        }
+
     }
     
     public void startup() throws Exception {
@@ -197,6 +234,11 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             discoveryThr.start();
             discoveryThr.waitForStartup();
         }
+
+        if (monThr != null) {
+            monThr.start();
+            monThr.waitForStartup();
+        }
     }
     
     public void shutdown() throws Exception {
@@ -208,6 +250,11 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         if (discoveryThr != null) {
             discoveryThr.shutdown();
             discoveryThr.waitForShutdown();
+        }
+
+        if (monThr != null) {
+            monThr.shutdown();
+            monThr.waitForShutdown();
         }
         
         this.quit = true;
