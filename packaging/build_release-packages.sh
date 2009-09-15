@@ -37,6 +37,7 @@ CLIENT_WHITE_LIST=(
 	"src/xtfs_rmvol" "src/xtfs_rmvol"
 	"src/libxtreemfs" "src/libxtreemfs"
 	"src/interfaces" "src/interfaces"
+	"src/policies/gridmap_flog.c" "src/policies/gridmap_flog.c"
     "bin/xtfs_umount" "bin/xtfs_umount"
 	"man/man1/xtfs_lsvol.1" "man/man1/xtfs_lsvol.1"
 	"man/man1/xtfs_mkvol.1" "man/man1/xtfs_mkvol.1"
@@ -408,6 +409,11 @@ function prepare_build_files() {
     cp -r $BUILD_FILES_DIR/xtreemfs-tools $TARGET_DIR/xtreemfs-tools
     cp -r $BUILD_FILES_DIR/xtreemfs-tools $TARGET_DIR/xtreemfs-tools-testing
     find $TARGET_DIR -type f -exec sed -i "s/_VERSION_/$VERSION/g" {} \;
+    
+    cp $BUILD_FILES_DIR/*-meta.xml $TARGET_DIR/
+    sed -i "s/_VERSION_/$VERSION/g" $TARGET_DIR/client-meta.xml
+    sed -i "s/_VERSION_/$VERSION/g" $TARGET_DIR/server-meta.xml
+    sed -i "s/_VERSION_/$VERSION/g" $TARGET_DIR/tools-meta.xml
 }
 
 function move_packages() {
@@ -419,6 +425,7 @@ function move_packages() {
     mv $TOOLS_PACKAGE_NAME.tar.gz $TARGET_DIR/xtreemfs-tools-testing
     mv $XOS_ADDONS_PACKAGE_NAME.tar.gz $TARGET_DIR
     mv $SOURCE_TARBALL_NAME.tar.gz $TARGET_DIR
+    echo $VERSION > $TARGET_DIR/VER
 }
 
 VERSION=

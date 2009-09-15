@@ -10,10 +10,6 @@ EOF
 	exit 0
 }
 
-
-VERSION=
-XTREEMFS_HOME_DIR=
-
 # parse command line options
 if [ -z "$2" ]; then
 	usage
@@ -21,6 +17,7 @@ fi
 
 DIR=$1
 CMD=$2
+VERSION=`cat $DIR/VER`
 
 TMP_DIR=/tmp/xtreemfs-upload
 
@@ -64,26 +61,28 @@ elif [ $CMD == "release" ]; then
   # create a tmp dir, check out current build files, delete all files
   mkdir -p $TMP_DIR
   cd $TMP_DIR
-  osc co home:xtreemfs xtreemfs-client
-  osc co home:xtreemfs xtreemfs-server
-  osc co home:xtreemfs xtreemfs-tools
-  osc delete $TMP_DIR/home:xtreemfs/xtreemfs-client/*
-  osc delete $TMP_DIR/home:xtreemfs/xtreemfs-server/*
-  osc delete $TMP_DIR/home:xtreemfs/xtreemfs-tools/*
-  cd -
-  cd $TMP_DIR/home:xtreemfs
-  osc ci -m " " xtreemfs-client xtreemfs-server xtreemfs-tools
-  cd -
   
-  # copy all new files, check in files
-  cp xtreemfs-client/* $TMP_DIR/home:xtreemfs/xtreemfs-client
-  cp xtreemfs-server/* $TMP_DIR/home:xtreemfs/xtreemfs-server
-  cp xtreemfs-tools/* $TMP_DIR/home:xtreemfs/xtreemfs-tools
-  osc add $TMP_DIR/home:xtreemfs/xtreemfs-client/*
-  osc add $TMP_DIR/home:xtreemfs/xtreemfs-server/*
-  osc add $TMP_DIR/home:xtreemfs/xtreemfs-tools/*
+  # create release packages on the server
+  osc meta pkg home:xtreemfs xtreemfs-client-$VERSION --file $DIR/client-meta.xml
+  osc meta pkg home:xtreemfs xtreemfs-server-$VERSION --file $DIR/server-meta.xml
+  osc meta pkg home:xtreemfs xtreemfs-tools-$VERSION --file $DIR/tools-meta.xml
+  
+  # copy the source packes to the new packages
+  osc co home:xtreemfs xtreemfs-client-$VERSION
+  osc co home:xtreemfs xtreemfs-server-$VERSION
+  osc co home:xtreemfs xtreemfs-tools-$VERSION
+  cp xtreemfs-client/* $TMP_DIR/home:xtreemfs/xtreemfs-client-$VERSION
+  cp xtreemfs-server/* $TMP_DIR/home:xtreemfs/xtreemfs-server-$VERSION
+  cp xtreemfs-tools/* $TMP_DIR/home:xtreemfs/xtreemfs-tools-$VERSION
+  
+  # add and commit the new files
+  osc add $TMP_DIR/home:xtreemfs/xtreemfs-client-$VERSION/*
+  osc add $TMP_DIR/home:xtreemfs/xtreemfs-server-$VERSION/*
+  osc add $TMP_DIR/home:xtreemfs/xtreemfs-tools-$VERSION/*
+  
+  cd -
   cd $TMP_DIR/home:xtreemfs
-  osc ci -m " " xtreemfs-client xtreemfs-server xtreemfs-tools
+  osc ci -m " " xtreemfs-client-$VERSION xtreemfs-server-$VERSION xtreemfs-tools-$VERSION
   cd -
   
   rm -rf $TMP_DIR
