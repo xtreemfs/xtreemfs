@@ -12,10 +12,24 @@
 	* hostname used by MRC can be set with hostname property in config file
 	  Necessary if the FQDN is not set/returned correctly on that host.
 	* OSDs run on Windows
-
+	
 03-SEP-2009
 	* DIR service uses new on-disk format which is independent of the
           protocol version.
 	* MRC database format changed (USE DUMP/RESTORE WHEN UPDATING FROM 1.0)
 	  compeletely redesigned the policies. There is now only one type of
 	  policies for OSD selection and replica creation/selection
+	
+15-SEP-2009 version 1.1 release
+    * added on-close replication support
+    	Replicas can now be automatically created when a file is closed
+    	after having been written the first time. This causes the file
+    	to become read-only. The behavior of on-close replication can
+    	be controlled via the xtfs_repl tool.
+	* fixed SSL problems on Windows
+    * added support for user authentication based on gridmap files
+	* improved client performance by eliminating unnecessary system calls
+	* data cache now uses stripe size instead of system page size
+	* fixed bugs #38, #41, #42, #43, #45, #49
+
+	
