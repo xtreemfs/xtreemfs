@@ -57,24 +57,27 @@ if [ $CMD == "test" ]; then
   rm -rf $TMP_DIR
   
 elif [ $CMD == "release" ]; then
-  
-  # create a tmp dir, check out current build files, delete all files
+    
+  # create release packages on the server
+  osc meta pkg home:xtreemfs xtreemfs-client-$VERSION --file client-meta.xml
+  osc meta pkg home:xtreemfs xtreemfs-server-$VERSION --file server-meta.xml
+  osc meta pkg home:xtreemfs xtreemfs-tools-$VERSION --file tools-meta.xml
+      
+  # create a tmp dir, check out current build files
   mkdir -p $TMP_DIR
   cd $TMP_DIR
-  
-  # create release packages on the server
-  osc meta pkg home:xtreemfs xtreemfs-client-$VERSION --file $DIR/client-meta.xml
-  osc meta pkg home:xtreemfs xtreemfs-server-$VERSION --file $DIR/server-meta.xml
-  osc meta pkg home:xtreemfs xtreemfs-tools-$VERSION --file $DIR/tools-meta.xml
   
   # copy the source packes to the new packages
   osc co home:xtreemfs xtreemfs-client-$VERSION
   osc co home:xtreemfs xtreemfs-server-$VERSION
   osc co home:xtreemfs xtreemfs-tools-$VERSION
+  
+  cd -
+  
   cp xtreemfs-client/* $TMP_DIR/home:xtreemfs/xtreemfs-client-$VERSION
   cp xtreemfs-server/* $TMP_DIR/home:xtreemfs/xtreemfs-server-$VERSION
   cp xtreemfs-tools/* $TMP_DIR/home:xtreemfs/xtreemfs-tools-$VERSION
-  
+    
   # add and commit the new files
   osc add $TMP_DIR/home:xtreemfs/xtreemfs-client-$VERSION/*
   osc add $TMP_DIR/home:xtreemfs/xtreemfs-server-$VERSION/*
