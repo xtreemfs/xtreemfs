@@ -12,4 +12,10 @@
 	* hostname used by MRC can be set with hostname property in config file
 	  Necessary if the FQDN is not set/returned correctly on that host.
 	* OSDs run on Windows
-	
+
+03-SEP-2009
+	* DIR service uses new on-disk format which is independent of the
+          protocol version.
+	* MRC database format changed (USE DUMP/RESTORE WHEN UPDATING FROM 1.0)
+	  compeletely redesigned the policies. There is now only one type of
+	  policies for OSD selection and replica creation/selection
