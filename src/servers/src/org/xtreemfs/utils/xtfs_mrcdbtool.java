@@ -51,7 +51,12 @@ public class xtfs_mrcdbtool {
     public static void main(String[] args) {
         
         Logging.start(Logging.LEVEL_ERROR);
-        TimeSync.initialize(null, 60000, 50);
+        try {
+            TimeSync.initialize(null, 60000, 50);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            System.exit(1);
+        }
         
         Map<String, CliOption> options = new HashMap<String, CliOption>();
         List<String> arguments = new ArrayList<String>(3);

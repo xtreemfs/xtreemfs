@@ -24,33 +24,29 @@
 
 package org.xtreemfs.dir.operations;
 
-import org.xtreemfs.babudb.BabuDBException;
-import org.xtreemfs.babudb.BabuDBException.ErrorCode;
-import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
-import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_removeRequest;
-import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_removeResponse;
+import org.xtreemfs.dir.ErrorCodes;
+import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.interfaces.DIRInterface.replication_toMasterRequest;
+import org.xtreemfs.interfaces.DIRInterface.replication_toMasterResponse;
 
 /**
  *
- * @author bjko
+ * @author flangner
+ * @since 09/16/2009
  */
-public class DeleteAddressMappingOperation extends DIROperation {
+public class ReplicationToMasterOperation extends DIROperation {
 
     private final int operationNumber;
-
-    private final Database database;
     
     private final ReplicationManager dbsReplicationManager;
 
-    public DeleteAddressMappingOperation(DIRRequestDispatcher master) {
+    public ReplicationToMasterOperation(DIRRequestDispatcher master) {
         super(master);
-        operationNumber = xtreemfs_address_mappings_removeRequest.TAG;
-        database = master.getDirDatabase();
+        operationNumber = replication_toMasterRequest.TAG;
         dbsReplicationManager = master.getDBSReplicationService();
     }
 
@@ -62,32 +58,31 @@ public class DeleteAddressMappingOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            final xtreemfs_address_mappings_removeRequest request = (xtreemfs_address_mappings_removeRequest)rq.getRequestMessage();
             
-            BabuDBInsertGroup ig = database.createInsertGroup();
-            ig.addDelete(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
-            database.directInsert(ig);
+            // check password to ensure that user is authorized
+            UserCredentials uc = rq.getRPCRequest().getUserCredentials();
+            if ((uc == null) || (!uc.getPassword().equals(master.getConfig().getAdminPassword()))) {
+                rq.sendDIRException(ErrorCodes.AUTH_FAILED, "this operation requires an admin password");
+                return;
+            }
             
-            xtreemfs_address_mappings_removeResponse response = new xtreemfs_address_mappings_removeResponse();
+            dbsReplicationManager.declareToMaster();
+            replication_toMasterResponse response = new replication_toMasterResponse();
             rq.sendSuccess(response);
-            
-        } catch (BabuDBException ex) {
+        } catch (Exception ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            if (ex.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
-                rq.sendRedirectException(dbsReplicationManager.getMaster());
-            else
-                rq.sendInternalServerError(ex);
+            rq.sendInternalServerError(ex);
         }
     }
 
     @Override
     public boolean isAuthRequired() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return false;
     }
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        xtreemfs_address_mappings_removeRequest amr = new xtreemfs_address_mappings_removeRequest();
+        replication_toMasterRequest amr = new replication_toMasterRequest();
         rq.deserializeMessage(amr);
     }
 

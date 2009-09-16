@@ -57,7 +57,7 @@ if [ $CMD == "test" ]; then
   rm -rf $TMP_DIR
   
 elif [ $CMD == "release" ]; then
-  
+    
   # create release packages on the server
   osc meta pkg home:xtreemfs xtreemfs-client-$VERSION --file client-meta.xml
   osc meta pkg home:xtreemfs xtreemfs-server-$VERSION --file server-meta.xml

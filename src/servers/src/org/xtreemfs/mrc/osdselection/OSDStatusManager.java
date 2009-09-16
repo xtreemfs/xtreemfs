@@ -216,7 +216,16 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         }
         
         // return a set of OSDs
-        return vol.filterByOSDSelectionPolicy(knownOSDs, clientIP, currentXLoc, numOSDs);
+        ServiceSet result = vol.filterByOSDSelectionPolicy(knownOSDs, clientIP, currentXLoc, numOSDs);
+        
+        if (result.size() == 0) {
+            String osds = "";
+            for (Service s : knownOSDs)
+                osds += s.getUuid() + ", " + s.getData() + " ";
+            Logging.logMessage(Logging.LEVEL_WARN, this, "all OSDs: %s", osds);
+        }
+        
+        return result;
     }
     
     public synchronized ServiceSet getUsableOSDs(String volumeId) {

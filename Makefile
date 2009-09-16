@@ -12,6 +12,8 @@ endif
 
 WHICH_GPP = $(shell which g++)
 
+SHELL=/bin/bash
+
 XTREEMFS_JAR_DIR=/usr/share/java
 XTREEMFS_CONFIG_PARENT_DIR=/etc/xos
 XTREEMFS_CONFIG_DIR=$(XTREEMFS_CONFIG_PARENT_DIR)/xtreemfs

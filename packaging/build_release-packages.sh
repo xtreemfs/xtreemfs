@@ -99,7 +99,6 @@ XOS_ADDONS_BLACK_LIST=(
 
 # black list for files/dirs which should NEVER be copied
 SOURCE_BLACK_LIST=(
-	"packaging"
 	"doc"
 )
 

@@ -27,6 +27,7 @@ package org.xtreemfs.dir;
 import java.io.IOException;
 import java.util.Properties;
 
+import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.config.ServiceConfig;
 
 /**
@@ -38,6 +39,18 @@ public class DIRConfig extends ServiceConfig {
     private String dbDir;
 
     private boolean autodiscoverEnabled;
+
+    private boolean monitoringEnabled;
+
+    private String  adminEmail;
+
+    private String  senderAddress;
+
+    private int     maxWarnings;
+
+    private int     timeoutSeconds;
+
+    private String  sendmailBin;
     
     /** Creates a new instance of OSDConfig */
     public DIRConfig(String filename) throws IOException {
@@ -56,6 +69,18 @@ public class DIRConfig extends ServiceConfig {
         this.dbDir = this.readRequiredString("database.dir");
 
         this.autodiscoverEnabled = this.readOptionalBoolean("discover", true);
+
+        this.monitoringEnabled = this.readOptionalBoolean("monitoring", false);
+
+        this.adminEmail = this.readOptionalString("email.receiver", "");
+
+        this.senderAddress = this.readOptionalString("email.sender", "XtreemFS DIR monitoring <dir@localhost>");
+
+        this.maxWarnings = this.readOptionalInt("max_warnings", 1);
+
+        this.timeoutSeconds = this.readOptionalInt("service_timeout_s", 5*60);
+
+        this.sendmailBin = this.readOptionalString("email.programm", "/usr/sbin/sendmail");
     }
     
     public String getDbDir() {
@@ -67,6 +92,48 @@ public class DIRConfig extends ServiceConfig {
      */
     public boolean isAutodiscoverEnabled() {
         return autodiscoverEnabled;
+    }
+
+    /**
+     * @return the monitoringEnabled
+     */
+    public boolean isMonitoringEnabled() {
+        return monitoringEnabled;
+    }
+
+    /**
+     * @return the adminEmail
+     */
+    public String getAdminEmail() {
+        return adminEmail;
+    }
+
+    /**
+     * @return the senderAddress
+     */
+    public String getSenderAddress() {
+        return senderAddress;
+    }
+
+    /**
+     * @return the maxWarnings
+     */
+    public int getMaxWarnings() {
+        return maxWarnings;
+    }
+
+    /**
+     * @return the timeoutSeconds
+     */
+    public int getTimeoutSeconds() {
+        return timeoutSeconds;
+    }
+
+    /**
+     * @return the sendmailBin
+     */
+    public String getSendmailBin() {
+        return sendmailBin;
     }
     
 }

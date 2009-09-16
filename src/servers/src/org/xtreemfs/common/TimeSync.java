@@ -142,7 +142,8 @@ public final class TimeSync extends LifeCycleThread {
      * @param localTimeRenew
      * @param dirAuthStr
      */
-    public static TimeSync initialize(DIRClient dir, int timeSyncInterval, int localTimeRenew) {
+    public static TimeSync initialize(DIRClient dir, int timeSyncInterval, int localTimeRenew)
+            throws Exception {
         
         if (theInstance != null) {
             Logging.logMessage(Logging.LEVEL_WARN, Category.lifecycle, null, "time sync already running",
@@ -152,6 +153,7 @@ public final class TimeSync extends LifeCycleThread {
         
         TimeSync s = new TimeSync(dir, timeSyncInterval, localTimeRenew);
         s.start();
+        s.waitForStartup();
         return s;
     }
     

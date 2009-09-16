@@ -3078,9 +3078,9 @@ XDRUnmarshaller::XDRUnmarshaller( yidl::auto_Buffer buffer )
 { }
 void XDRUnmarshaller::read( void* buffer, size_t buffer_len )
 {
-#ifdef _DEBUG
-  if ( this->buffer->size() - this->buffer->position() < buffer_len ) DebugBreak();
-#endif
+//#ifdef _DEBUG
+//  if ( this->buffer->size() - this->buffer->position() < buffer_len ) DebugBreak();
+//#endif
   this->buffer->get( buffer, buffer_len );
 }
 bool XDRUnmarshaller::readBoolean( const char* key, uint32_t tag )

@@ -25,14 +25,16 @@
 package org.xtreemfs.dir.operations;
 
 import java.io.IOException;
+
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.lsmdb.Database;
+import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
-import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_uuidRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_uuidResponse;
@@ -47,10 +49,13 @@ public class GetServiceByUuidOperation extends DIROperation {
     
     private final Database database;
     
+    private final ReplicationManager dbsReplicationManager;
+    
     public GetServiceByUuidOperation(DIRRequestDispatcher master) {
         super(master);
         operationNumber = xtreemfs_service_get_by_uuidRequest.TAG;
         database = master.getDirDatabase();
+        dbsReplicationManager = master.getDBSReplicationService();
     }
     
     @Override
@@ -80,7 +85,10 @@ public class GetServiceByUuidOperation extends DIROperation {
             rq.sendInternalServerError(ex);
         } catch (BabuDBException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            rq.sendInternalServerError(ex);
+            if (ex.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
+                rq.sendRedirectException(dbsReplicationManager.getMaster());
+            else
+                rq.sendInternalServerError(ex);
         }
     }
     

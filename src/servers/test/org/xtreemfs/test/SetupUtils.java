@@ -280,7 +280,7 @@ public class SetupUtils {
         return new ServiceUUID("UUID:" + listenAddress + ":" + port);
     }
     
-    public static void setupLocalResolver() throws IOException {
+    public static void setupLocalResolver() throws Exception {
         TimeSync.initialize(null, 100000, 50);
         UUIDResolver.shutdown();
         

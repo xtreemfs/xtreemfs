@@ -29,14 +29,14 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.lsmdb.Database;
+import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.AddressMappingRecords;
-import org.xtreemfs.interfaces.AddressMapping;
-import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getResponse;
 
@@ -49,11 +49,14 @@ public class GetAddressMappingOperation extends DIROperation {
     private final int operationNumber;
 
     private final Database database;
+    
+    private final ReplicationManager dbsReplicationManager;
 
     public GetAddressMappingOperation(DIRRequestDispatcher master) {
         super(master);
         operationNumber = xtreemfs_address_mappings_getRequest.TAG;
         database = master.getDirDatabase();
+        dbsReplicationManager = master.getDBSReplicationService();
     }
 
     @Override
@@ -95,7 +98,10 @@ public class GetAddressMappingOperation extends DIROperation {
             rq.sendInternalServerError(ex);
         } catch (BabuDBException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            rq.sendInternalServerError(ex);
+            if (ex.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
+                rq.sendRedirectException(dbsReplicationManager.getMaster());
+            else
+                rq.sendInternalServerError(ex);
         }
     }
 
