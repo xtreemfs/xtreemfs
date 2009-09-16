@@ -24,7 +24,8 @@ public class DIRInterface
             case 2009082738: return new ConcurrentModificationException();
             case 2009082739: return new InvalidArgumentException();
             case 2009082740: return new ProtocolException();
-            case 2009082741: return new RedirectException();
+            case 2009082741: return new DIRException();
+            case 2009082742: return new RedirectException();
 
             default: throw new Exception( "unknown accept_stat " + Integer.toString( accept_stat ) );
         }

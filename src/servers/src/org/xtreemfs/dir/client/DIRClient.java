@@ -36,7 +36,10 @@ import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
+import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
+import org.xtreemfs.interfaces.DIRInterface.replication_toMasterRequest;
+import org.xtreemfs.interfaces.DIRInterface.replication_toMasterResponse;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getResponse;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_removeRequest;
@@ -215,4 +218,19 @@ public class DIRClient extends ONCRPCClient {
         return r;
     }
 
+    public RPCResponse<Object> replication_toMaster(InetSocketAddress server, 
+            UserCredentials credentials) {
+        
+        replication_toMasterRequest rq = new replication_toMasterRequest();
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Object>() {
+
+            @Override
+            public Object getResult(ReusableBuffer data) {
+                final replication_toMasterResponse resp = new replication_toMasterResponse();
+                resp.unmarshal(new XDRUnmarshaller(data));
+                return null;
+            }
+        }, credentials);
+        return r;
+    }
 }

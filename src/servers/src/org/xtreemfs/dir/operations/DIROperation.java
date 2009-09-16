@@ -26,6 +26,7 @@ package org.xtreemfs.dir.operations;
 
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
+import org.xtreemfs.interfaces.UserCredentials;
 
 /**
  * 
@@ -66,6 +67,17 @@ public abstract class DIROperation {
      * @throws java.lang.Exception
      */
     public abstract void parseRPCMessage(DIRRequest rq) throws Exception;
-    
-    
+   
+    /**
+     * Returns the context associated with a request. If the request is not
+     * bound to a context, <code>null</code> is returned.
+     * 
+     * @param rq
+     *            the DIR request
+     * @return the context, or <code>null</code>, if not available
+     */
+    public UserCredentials getUserCredentials(DIRRequest rq) {
+        UserCredentials cred = rq.getRPCRequest().getUserCredentials();
+        return cred;
+    }
 }

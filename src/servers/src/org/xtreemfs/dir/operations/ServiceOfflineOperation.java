@@ -25,15 +25,15 @@
 package org.xtreemfs.dir.operations;
 
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.lsmdb.Database;
+import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
-import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
-import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_offlineRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_offlineResponse;
 
@@ -47,10 +47,13 @@ public class ServiceOfflineOperation extends DIROperation {
     
     private final Database database;
     
+    private final ReplicationManager dbsReplicationManager;
+    
     public ServiceOfflineOperation(DIRRequestDispatcher master) {
         super(master);
         operationNumber = xtreemfs_service_offlineRequest.TAG;
         database = master.getDirDatabase();
+        dbsReplicationManager = master.getDBSReplicationService();
     }
     
     @Override
@@ -85,7 +88,10 @@ public class ServiceOfflineOperation extends DIROperation {
             rq.sendSuccess(response);
         } catch (BabuDBException ex) {
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            rq.sendInternalServerError(ex);
+            if (ex.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
+                rq.sendRedirectException(dbsReplicationManager.getMaster());
+            else
+                rq.sendInternalServerError(ex);
         } catch (Throwable th) {
             Logging.logError(Logging.LEVEL_ERROR, this, th);
             rq.sendInternalServerError(th);

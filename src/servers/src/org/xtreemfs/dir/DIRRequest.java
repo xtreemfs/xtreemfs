@@ -24,13 +24,18 @@
 
 package org.xtreemfs.dir;
 
+import java.net.InetSocketAddress;
+
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
+import org.xtreemfs.interfaces.DIRInterface.DIRException;
+import org.xtreemfs.interfaces.DIRInterface.RedirectException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.mrc.RequestDetails;
 
 /**
  * 
@@ -42,8 +47,11 @@ public class DIRRequest {
     
     private yidl.Object        requestMessage;
     
+    private RequestDetails      details;
+    
     public DIRRequest(ONCRPCRequest rpcRequest) {
         this.rpcRequest = rpcRequest;
+        details = new RequestDetails();
     }
     
     public void deserializeMessage(yidl.Object message) {
@@ -64,6 +72,16 @@ public class DIRRequest {
         rpcRequest.sendErrorCode(ONCRPCResponseHeader.ACCEPT_STAT_SYSTEM_ERR);
     }
     
+    public void sendRedirectException(InetSocketAddress address) {
+        String addr = null;
+        int port = 0;
+        if (address != null) {
+            addr = address.getHostName();
+            port = address.getPort();
+        }
+        rpcRequest.sendException(new RedirectException(addr,port));
+    }
+    
     public void sendException(ONCRPCException exception) {
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "sending exception return value");
@@ -72,4 +90,24 @@ public class DIRRequest {
         rpcRequest.sendException(exception);
     }
     
+    public void sendDIRException(int errno, String message) {
+        DIRException ex = new DIRException(errno, message, "");
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this, "sending errno exception %s", ex
+                    .toString());
+        }
+        getRPCRequest().sendException(ex);
+    }
+    
+    public RequestDetails getDetails() {
+        return details;
+    }
+    
+    public void setDetails(RequestDetails details) {
+        this.details = details;
+    }
+
+    public ONCRPCRequest getRPCRequest() {
+        return rpcRequest;
+    }
 }

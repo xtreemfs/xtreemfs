@@ -28,7 +28,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -39,10 +41,13 @@ import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.lsmdb.DatabaseManager;
+import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.dir.data.ServiceRecord;
+import org.xtreemfs.dir.data.ServiceRecords;
 import org.xtreemfs.dir.discovery.DiscoveryMsgThread;
 import org.xtreemfs.dir.operations.DIROperation;
 import org.xtreemfs.dir.operations.DeleteAddressMappingOperation;
@@ -53,6 +58,7 @@ import org.xtreemfs.dir.operations.GetServiceByNameOperation;
 import org.xtreemfs.dir.operations.GetServiceByUuidOperation;
 import org.xtreemfs.dir.operations.GetServicesByTypeOperation;
 import org.xtreemfs.dir.operations.RegisterServiceOperation;
+import org.xtreemfs.dir.operations.ReplicationToMasterOperation;
 import org.xtreemfs.dir.operations.ServiceOfflineOperation;
 import org.xtreemfs.dir.operations.SetAddressMappingOperation;
 import org.xtreemfs.foundation.CrashReporter;
@@ -72,11 +78,6 @@ import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import java.util.Iterator;
-import java.util.Map.Entry;
-import org.xtreemfs.dir.data.ServiceRecord;
-import org.xtreemfs.dir.data.ServiceRecords;
-import org.xtreemfs.interfaces.ServiceSet;
 
 /**
  * 
@@ -115,10 +116,13 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
 
     private final MonitoringThread             monThr;
     
+    private final DIRConfig                    config;
+    
     public static final String                 DB_NAME           = "dirdb";
     
     public DIRRequestDispatcher(final DIRConfig config) throws IOException, BabuDBException {
         super("DIR RqDisp");
+        this.config = config;
         
         Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS Direcory Service version "
             + VersionManagement.RELEASE_VERSION);
@@ -354,6 +358,9 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         
         op = new ServiceOfflineOperation(this);
         registry.put(op.getProcedureId(), op);
+        
+        op = new ReplicationToMasterOperation(this);
+        registry.put(op.getProcedureId(), op);
     }
     
     public Database getDirDatabase() {
@@ -363,6 +370,10 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             Logging.logError(Logging.LEVEL_ERROR, this, e);
             return null;
         }
+    }
+    
+    public ReplicationManager getDBSReplicationService() {
+        return database.getReplicationManager();
     }
     
     @Override
@@ -398,6 +409,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
             rq.sendGarbageArgs(ex.toString(), new ProtocolException());
             return;
         }
+        
         try {
             numRequests++;
             op.startRequest(dirRq);
@@ -434,4 +446,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         return server.getNumConnections();
     }
     
+    public DIRConfig getConfig() {
+        return config;
+    }
 }
