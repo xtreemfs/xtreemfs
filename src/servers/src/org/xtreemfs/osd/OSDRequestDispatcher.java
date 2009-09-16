@@ -166,7 +166,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
      */
     private final ServiceAvailability                   serviceAvailability;
     
-    public OSDRequestDispatcher(OSDConfig config) throws IOException {
+    public OSDRequestDispatcher(OSDConfig config) throws Exception {
         
         Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS OSD version "
             + VersionManagement.RELEASE_VERSION);
