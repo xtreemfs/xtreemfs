@@ -20,7 +20,7 @@
 	  compeletely redesigned the policies. There is now only one type of
 	  policies for OSD selection and replica creation/selection
 	
-15-SEP-2009 version 1.1 release
+15-SEP-2009
     * added on-close replication support
     	Replicas can now be automatically created when a file is closed
     	after having been written the first time. This causes the file
@@ -31,5 +31,10 @@
 	* improved client performance by eliminating unnecessary system calls
 	* data cache now uses stripe size instead of system page size
 	* fixed bugs #38, #41, #42, #43, #45, #49
+	
+16-SEP-2009 version 1.1 release
+	* fixed bugs #51, #52, #53
+	* added notification mechanism to DIR that sends notification mails to
+	  an admin if an OSD or MRC has failed
 
 	
