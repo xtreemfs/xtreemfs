@@ -81,7 +81,8 @@ module org
         exception ConcurrentModificationException # 20 { string stack_trace; };
         exception InvalidArgumentException # 21 { string error_message; };
         exception ProtocolException # 22 { uint32_t accept_stat; uint32_t error_code; string stack_trace; };
-	exception RedirectException # 23 { string address; uint16_t port; };
+		exception DIRException # 23 { uint32_t error_code; string error_message; string stack_trace; };
+		exception RedirectException # 24 { string address; uint16_t port; };
       };
     };
   };
