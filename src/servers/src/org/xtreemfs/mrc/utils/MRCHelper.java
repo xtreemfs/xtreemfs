@@ -188,15 +188,18 @@ public class MRCHelper {
         ServiceSet usableOSDs = osdMan.getUsableOSDs(volume.getId(), clientAddress, currentXLoc,
             stripingPolicy.getStripeSize());
         
-        if (usableOSDs == null || usableOSDs.size() == 0)
+        if (usableOSDs == null || usableOSDs.size() == 0) {
+            
+            Logging.logMessage(Logging.LEVEL_WARN, Category.all, (Object) null,
+                "no suitable OSDs available for file %s", path);
+            
             throw new UserException(ErrNo.EIO, "could not assign OSDs to file " + path
                 + ": no feasible OSDs available");
+        }
         
         // determine the actual striping width; if not enough OSDs are
         // available, the width will be limited to the amount of available OSDs
         int width = Math.min((int) stripingPolicy.getWidth(), usableOSDs.size());
-        stripingPolicy = sMan.createStripingPolicy(stripingPolicy.getPattern(), stripingPolicy
-                .getStripeSize(), width);
         sp.setWidth(width);
         
         for (int i = 0; i < width; i++)
@@ -317,7 +320,7 @@ public class MRCHelper {
             case usable_osds: {
                 
                 // only return a value for the volume root
-                if(file.getId() != 1)
+                if (file.getId() != 1)
                     return "";
                 
                 ServiceSet srvs = osdMan.getUsableOSDs(sMan.getVolumeInfo().getId());

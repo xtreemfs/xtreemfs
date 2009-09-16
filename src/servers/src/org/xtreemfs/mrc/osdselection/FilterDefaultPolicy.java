@@ -70,6 +70,24 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
         for (Service osd : allOSDs)
             if (!hasTimedOut(osd) && hasFreeCapacity(osd))
                 filteredOSDs.add(osd);
+//            else {
+//                System.out.println("service: " + osd.getUuid());
+//                System.out.println("has timed out: " + hasTimedOut(osd));
+//                System.out.println("has free cap: " + hasFreeCapacity(osd));
+//                
+//                if (hasTimedOut(osd)) {
+//                    System.out.println("last update: " + osd.getData().get("seconds_since_last_update"));
+//                    System.out.println("max offline time: " + maxOfflineTime);
+//                }
+//
+//                else {
+//                    String freeStr = osd.getData().get("free");
+//                    long free = Long.parseLong(freeStr);
+//                    System.out.println("free capacity: " + free);
+//                    System.out.println("min free cap: " + minFreeCapacity);
+//                }
+//                
+//            }
         
         return filteredOSDs;
     }
@@ -83,9 +101,8 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     }
     
     private boolean hasTimedOut(Service osd) {
-        long updateTimestamp = osd.getLast_updated_s();
-        long currentTime = TimeSync.getGlobalTime() / 1000;
-        return currentTime - updateTimestamp > maxOfflineTime;
+        long lastUpdate = Long.parseLong(osd.getData().get("seconds_since_last_update"));
+        return lastUpdate > maxOfflineTime;
     }
     
     private boolean hasFreeCapacity(Service osd) {
