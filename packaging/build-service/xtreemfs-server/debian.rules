@@ -71,6 +71,7 @@ install: build
 	# copy generate_uuid script  
 	cp packaging/generate_uuid $(XTREEMFS_CONFIG_DIR)/
 	cp packaging/postinstall_setup.sh $(XTREEMFS_CONFIG_DIR)/
+	chmod a+x $(XTREEMFS_CONFIG_DIR)/postinstall_setup.sh
 
 	# copy init.d files
 	mkdir -p $(XTREEMFS_INIT_DIR)
