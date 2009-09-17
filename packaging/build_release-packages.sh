@@ -124,6 +124,14 @@ build_source_tarball() {
 
 	# delete all from black-list in temporary dir
 	delete_source_black_list $PACKAGE_PATH
+	
+	# wipe all files and directories from the 'packaging' directory, except
+	# for the post install and uuid gen scripts
+	mkdir $PACKAGE_PATH/tmp
+	mv $PACKAGE_PATH/packaging/generate_uuid $PACKAGE_PATH/tmp
+	mv $PACKAGE_PATH/packaging/postinstall_setup.sh $PACKAGE_PATH/tmp
+	rm -rf $PACKAGE_PATH/packaging
+	mv $PACKAGE_PATH/tmp $PACKAGE_PATH/packaging
 
 	# delete all .svn directories
 	delete_svn $PACKAGE_PATH
