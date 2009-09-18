@@ -40,6 +40,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.MRCInterface.MRCException;
+import org.xtreemfs.interfaces.MRCInterface.errnoException;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser.CliOption;
 
@@ -155,9 +156,11 @@ public class xtfs_mrcdbtool {
             
         } catch (MRCException exc) {
             if (exc.getError_code() == ErrNo.EPERM)
-                System.out.println("permission denied: invalid administrator password");
+                System.out.println("permission denied: admin password invalid or volumes exist already");
             else
                 exc.printStackTrace();
+        } catch (errnoException exc) {
+            System.err.println(exc.getError_message() + ", errno=" + exc.getError_code());
         } catch (Exception exc) {
             exc.printStackTrace();
         } finally {

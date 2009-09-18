@@ -61,16 +61,16 @@ import org.xtreemfs.mrc.utils.PathResolver;
  * @author stender
  */
 public class OpenOperation extends MRCOperation {
-
+    
     private PrintWriter logfile;
-
+    
     public OpenOperation(MRCRequestDispatcher master) {
         super(master);
-        /*try {
-            logfile = new PrintWriter(new FileOutputStream("/var/lib/xtreemfs/open.log",true));
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }*/
+        /*
+         * try { logfile = new PrintWriter(new
+         * FileOutputStream("/var/lib/xtreemfs/open.log",true)); } catch
+         * (IOException ex) { ex.printStackTrace(); }
+         */
     }
     
     @Override
@@ -192,7 +192,7 @@ public class OpenOperation extends MRCOperation {
         XLocSet xLocSet = null;
         
         // if no replicas have been assigned yet, assign a new replica
-        if (xLocList == null || xLocList.getReplicaCount() == 0) {
+        if ((xLocList == null || xLocList.getReplicaCount() == 0) && (create || write)) {
             
             // create a replica with the default striping policy together
             // with a set of feasible OSDs from the OSD status manager
@@ -267,15 +267,17 @@ public class OpenOperation extends MRCOperation {
         rq.setResponse(new openResponse(new FileCredentials(xLocSet, cap.getXCap())));
         
         update.execute();
-
-        //enable only for test servers that should log each file create/write/trunc
-        /*if (create || write || truncate) {
-            try {
-                logfile.print(System.currentTimeMillis()+";"+rq.getRPCRequest().getClientIdentity()+";"+rqArgs.getPath()+"\n");
-                logfile.flush();
-            } catch (Exception ex) {
-
-            }
-        }*/
+        
+        // enable only for test servers that should log each file
+        // create/write/trunc
+        /*
+         * if (create || write || truncate) { try {
+         * logfile.print(System.currentTimeMillis
+         * ()+";"+rq.getRPCRequest().getClientIdentity
+         * ()+";"+rqArgs.getPath()+"\n"); logfile.flush(); } catch (Exception
+         * ex) {
+         * 
+         * } }
+         */
     }
 }
