@@ -68,7 +68,9 @@ auto_Volume Volume::create( const YIELD::URI& dir_uri, const std::string& name, 
 
 Volume::Volume( yidl::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, yidl::auto_Object<MRCProxy> mrc_proxy, const std::string& name, yidl::auto_Object<OSDProxyMux> osd_proxy_mux, YIELD::auto_StageGroup stage_group, const YIELD::Path& vivaldi_coordinates_file_path )
   : dir_proxy( dir_proxy ), flags( flags ), log( log ), mrc_proxy( mrc_proxy ), name( name ), osd_proxy_mux( osd_proxy_mux ), stage_group( stage_group ), vivaldi_coordinates_file_path( vivaldi_coordinates_file_path )
-{ }
+{
+  uuid = YIELD::UUID();
+}
 
 bool Volume::access( const YIELD::Path&, int )
 {

@@ -1,3 +1,5 @@
+// Revision: 1881
+
 #include "yield/ipc.h"
 
 
@@ -4199,9 +4201,9 @@ YIELD::auto_SSLContext YIELD::SSLContext::create( SSL_METHOD* method, const Path
   return NULL;
 }
 #else
-SSLContext::SSLContext()
+YIELD::SSLContext::SSLContext()
 { }
-auto_SSLContext SSLContext::create()
+YIELD::auto_SSLContext YIELD::SSLContext::create()
 {
   return new SSLContext;
 }
@@ -4911,7 +4913,7 @@ std::multimap<std::string, std::string>::const_iterator YIELD::URI::get_query_va
 
 
 // uuid.cpp
-#ifdef _WIN32
+#if defined(_WIN32)
 #include <Rpc.h>
 #pragma comment( lib, "Rpcrt4.lib" )
 #endif
@@ -4927,55 +4929,74 @@ std::multimap<std::string, std::string>::const_iterator YIELD::URI::get_query_va
 
 YIELD::UUID::UUID()
 {
-#ifdef _WIN32
+#if defined(_WIN32)
   win32_uuid = new ::UUID;
   UuidCreate( static_cast<::UUID*>( win32_uuid ) );
+#elif defined(YIELD_HAVE_LIBUUID)
+  uuid_generate( libuuid_uuid );
 #else
-  std::strncpy( unix_uuid, Socket::getfqdn().c_str(), 256 );
+  std::strncpy( generic_uuid, Socket::getfqdn().c_str(), 256 );
 #ifdef YIELD_HAVE_OPENSSL
   SHA_CTX ctx; SHA1_Init( &ctx );
-  SHA1_Update( &ctx, unix_uuid, strlen( unix_uuid ) );
-  memset( unix_uuid, 0, sizeof( unix_uuid ) );
+  SHA1_Update( &ctx, generic_uuid, strlen( generic_uuid ) );
+  memset( generic_uuid, 0, sizeof( generic_uuid ) );
   unsigned char sha1sum[SHA_DIGEST_LENGTH]; SHA1_Final( sha1sum, &ctx );
   static char hex_array[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
-  unsigned int sha1sum_i = 0, unix_uuid_i = 0;
-  for ( ; sha1sum_i < SHA_DIGEST_LENGTH; sha1sum_i++, unix_uuid_i += 2 )
+  unsigned int sha1sum_i = 0, generic_uuid_i = 0;
+  for ( ; sha1sum_i < SHA_DIGEST_LENGTH; sha1sum_i++, generic_uuid_i += 2 )
   {
-   unix_uuid[unix_uuid_i] = hex_array[( sha1sum[sha1sum_i] & 0xf0 ) >> 4];
-   unix_uuid[unix_uuid_i+1] = hex_array[( sha1sum[sha1sum_i] & 0x0f )];
+   generic_uuid[generic_uuid_i] = hex_array[( sha1sum[sha1sum_i] & 0xf0 ) >> 4];
+   generic_uuid[generic_uuid_i+1] = hex_array[( sha1sum[sha1sum_i] & 0x0f )];
   }
-  unix_uuid[unix_uuid_i] = 0;
+  generic_uuid[generic_uuid_i] = 0;
 #endif
 #endif
 }
 
 YIELD::UUID::UUID( const std::string& from_string )
 {
-#ifdef _WIN32
+#if defined(_WIN32)
   win32_uuid = new ::UUID;
   UuidFromStringA( reinterpret_cast<RPC_CSTR>( const_cast<char*>( from_string.c_str() ) ), static_cast<::UUID*>( win32_uuid ) );
+#elif defined(YIELD_HAVE_LIBUUID)
+  uuid_parse( from_string.c_str(), libuuid_uuid );
 #else
-  std::strncpy( unix_uuid, from_string.c_str(), 256 );
+  std::strncpy( generic_uuid, from_string.c_str(), 256 );
 #endif
 }
 
 YIELD::UUID::~UUID()
 {
-#ifdef _WIN32
+#if defined(_WIN32)
   delete static_cast<::UUID*>( win32_uuid );
+#endif
+}
+
+bool YIELD::UUID::operator==( const YIELD::UUID& other ) const
+{
+#ifdef _WIN32
+  return memcmp( win32_uuid, other.win32_uuid, sizeof( ::UUID ) ) == 0;
+#elif defined(YIELD_HAVE_LIBUUID)
+  return uuid_compare( libuuid_uuid, other.libuuid_uuid ) == 0;
+#else
+  return strncmp( generic_uuid, other.generic_uuid, 256 );
 #endif
 }
 
 YIELD::UUID::operator std::string() const
 {
-#ifdef _WIN32
+#if defined(_WIN32)
   RPC_CSTR temp_to_string;
   UuidToStringA( static_cast<::UUID*>( win32_uuid ), &temp_to_string );
   std::string to_string( reinterpret_cast<char*>( temp_to_string ) );
   RpcStringFreeA( &temp_to_string );
   return to_string;
+#elif defined(YIELD_HAVE_LIBUUID)
+  char out[37];
+  uuid_unparse( libuuid_uuid, out );
+  return out;
 #else
-  return unix_uuid;
+  return generic_uuid;
 #endif
 }
 

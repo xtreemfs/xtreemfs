@@ -1,4 +1,4 @@
-// Revision: 1868
+// Revision: 1880
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -286,16 +286,10 @@ bool File::close()
 }
 bool File::datasync()
 {
-#if defined(__linux__) || defined(__sun)
-  return fdatasync( fd ) != -1;
-#else
-  return true;
-#endif
-}
-bool File::flush()
-{
-#ifdef _WIN32
+#if defined(_WIN32)
   return FlushFileBuffers( fd ) != 0;
+#elif defined(__linux__) || defined(__sun)
+  return fdatasync( fd ) != -1;
 #else
   return true;
 #endif
@@ -493,7 +487,7 @@ bool File::setxattr( const std::string& name, const std::string& value, int flag
 bool File::sync()
 {
 #ifdef _WIN32
-  return true;
+  return FlushFileBuffers( fd ) != 0;
 #else
   return fsync( fd ) != -1;
 #endif
@@ -1021,6 +1015,8 @@ Path::Path( const std::string& host_charset_path )
 }
 void Path::init_from_host_charset_path()
 {
+  if ( host_charset_path.size() > 1 && host_charset_path[host_charset_path.size()-1] == PATH_SEPARATOR )
+    host_charset_path = host_charset_path.substr( 0, host_charset_path.size() - 1 );
 #ifdef _WIN32
   wchar_t _wide_path[PATH_MAX];
   wide_path.assign( _wide_path, MultiByteToWideChar( GetACP(), 0, host_charset_path.c_str(), static_cast<int>( host_charset_path.size() ), _wide_path, PATH_MAX ) );
@@ -1044,9 +1040,11 @@ Path::Path( const std::wstring& wide_path )
 }
 void Path::init_from_wide_path()
 {
-  char _host_charset_path[PATH_MAX];
-  int _host_charset_path_len = WideCharToMultiByte( GetACP(), 0, this->wide_path.c_str(), ( int )this->wide_path.size(), _host_charset_path, PATH_MAX, 0, 0 );
-  host_charset_path.assign( _host_charset_path, _host_charset_path_len );
+  if ( wide_path.size() > 1 && wide_path[wide_path.size()-1] == PATH_SEPARATOR )
+    wide_path = wide_path.substr( 0, wide_path.size() - 1 );
+  char host_charset_path[PATH_MAX];
+  int host_charset_path_len = WideCharToMultiByte( GetACP(), 0, wide_path.c_str(), ( int )wide_path.size(), host_charset_path, PATH_MAX, 0, 0 );
+  this->host_charset_path.assign( host_charset_path, host_charset_path_len );
 }
 #endif
 Path::Path( const Path &other )
@@ -1222,7 +1220,7 @@ std::pair<Path, Path> Path::splitext() const
 #include <papi.h>
 #include <pthread.h>
 #endif
-auto_Object<PerformanceCounterSet> PerformanceCounterSet::create()
+auto_PerformanceCounterSet PerformanceCounterSet::create()
 {
 #if defined(__sun)
   cpc_t* cpc = cpc_open( CPC_VER_CURRENT );
@@ -2738,7 +2736,7 @@ auto_File Volume::open( const Path& path, uint32_t flags, mode_t mode, uint32_t 
     file_open_flags |= FILE_FLAG_OVERLAPPED;
   if ( ( flags & O_HIDDEN ) == O_HIDDEN )
     file_open_flags = FILE_ATTRIBUTE_HIDDEN;
-  HANDLE fd = CreateFileW( path, file_access_flags, FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, file_create_flags, file_open_flags, NULL );
+  HANDLE fd = CreateFileW( path, file_access_flags, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, file_create_flags, file_open_flags, NULL );
   if ( fd != INVALID_HANDLE_VALUE )
   {
     if ( ( flags & O_TRUNC ) == O_TRUNC && ( flags & O_CREAT ) != O_CREAT )
@@ -2767,7 +2765,8 @@ bool Volume::readdir( const Path& path, const YIELD::Path& match_file_name_prefi
   {
     do
     {
-      if ( find_data.cFileName[0] != '.' )
+      if ( wcscmp( find_data.cFileName, L"." ) != 0 &&
+           wcscmp( find_data.cFileName, L".." ) != 0 )
       {
         if ( !callback( find_data.cFileName, new Stat( find_data ) ) )
         {

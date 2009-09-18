@@ -97,7 +97,6 @@ typedef int ssize_t;
 #define YIELD_FILE_PROTOTYPES \
   virtual bool close(); \
   virtual bool datasync(); \
-  virtual bool flush(); \
   virtual yidl::auto_Object<YIELD::Stat> getattr(); \
   virtual bool getxattr( const std::string& name, std::string& out_value ); \
   virtual bool getlk( bool exclusive, uint64_t offset, uint64_t length ); \

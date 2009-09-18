@@ -126,7 +126,7 @@ namespace xtfs_mount
 
         if ( write_back_cache )
         {
-          volume = new yieldfs::WriteBackCachingVolume( volume, trace_data_cache ? get_log() : NULL );
+          volume = new yieldfs::WriteBackCachingVolume( 256 * 1024 * 1024, 5000, volume, trace_data_cache ? get_log() : NULL );
           get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching file reads.";
         }
         else if ( write_through_cache )

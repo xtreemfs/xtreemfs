@@ -35,6 +35,7 @@ namespace xtreemfs
     YIELD::auto_Log get_log() const { return log; }
     yidl::auto_Object<MRCProxy> get_mrc_proxy() const { return mrc_proxy; }
     yidl::auto_Object<OSDProxyMux> get_osd_proxy_mux() const { return osd_proxy_mux; }
+    const std::string& get_uuid() const { return uuid; }
 
     // yidl::Object
     YIDL_OBJECT_PROTOTYPES( Volume, 0 );
@@ -56,6 +57,7 @@ namespace xtreemfs
     std::string name;
     yidl::auto_Object<OSDProxyMux> osd_proxy_mux;
     YIELD::auto_StageGroup stage_group;
+    std::string uuid;
     YIELD::Path vivaldi_coordinates_file_path;
 
     void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );

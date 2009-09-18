@@ -26,6 +26,7 @@ namespace yieldfs
 #else
   class FUSEUnix;
 #endif
+  class PageCache;
 
 
   class StackableFile : public YIELD::File
@@ -186,44 +187,34 @@ namespace yieldfs
   class WriteBackCachingVolume : public StackableVolume
   {
   public:
-    WriteBackCachingVolume() // For testing
-    { }
-
-    WriteBackCachingVolume( YIELD::auto_Volume underlying_volume )
-      : StackableVolume( underlying_volume )
-    { }
-
-    WriteBackCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log )
-      : StackableVolume( underlying_volume, log )
-    { }
+    WriteBackCachingVolume(); // For testing
+    WriteBackCachingVolume( size_t cache_capacity_bytes, uint32_t cache_flush_timeout_ms, YIELD::auto_Volume underlying_volume );
+    WriteBackCachingVolume( size_t cache_capacity_bytes, uint32_t cache_flush_timeout_ms, YIELD::auto_Volume underlying_volume, YIELD::auto_Log log );
 
     // YIELD::Volume
     YIELD::auto_File open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
 
   private:
-    virtual ~WriteBackCachingVolume() { }
+    virtual ~WriteBackCachingVolume();
+
+    PageCache* page_cache;
   };
 
 
   class WriteThroughCachingVolume : public StackableVolume
   {
   public:
-    WriteThroughCachingVolume() // For testing
-    { }
-
-    WriteThroughCachingVolume( YIELD::auto_Volume underlying_volume )
-      : StackableVolume( underlying_volume )
-    { }
-
-    WriteThroughCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log )
-      : StackableVolume( underlying_volume, log )
-    { }
+    WriteThroughCachingVolume(); // For testing
+    WriteThroughCachingVolume( YIELD::auto_Volume underlying_volume );
+    WriteThroughCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log );
 
     // YIELD::Volume
     YIELD::auto_File open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
 
   private:
-    virtual ~WriteThroughCachingVolume() { }
+    virtual ~WriteThroughCachingVolume();
+
+    PageCache* page_cache;
   };
 };
 

@@ -1,4 +1,4 @@
-// Revision: 186
+// Revision: 193
 
 #include "yield.h"
 #include "yieldfs.h"
@@ -11,29 +11,43 @@ using namespace yieldfs;
 
 
 
+
 namespace yieldfs
 {
   class CachedPage : public yidl::HeapBuffer
   {
   public:
-    CachedPage( size_t capacity )
-      : yidl::HeapBuffer( capacity )
+    CachedPage( const YIELD::Path& file_path, size_t number, size_t size )
+      : yidl::HeapBuffer( size ), file_path( file_path ), number( number )
     {
       dirty_bit = false;
     }
 
-    inline bool get_dirty_bit() const { return dirty_bit; }
-    inline void set_dirty_bit() { this->dirty_bit = true; }
+    void clear_dirty_bit() { dirty_bit = false; }
+    const YIELD::Path& get_file_path() const { return file_path; }
+    bool get_dirty_bit() const { return dirty_bit; }
+    size_t get_number() const { return number; }
+    bool operator==( const CachedPage& other ) const { return file_path == other.file_path && number == other.number; }
+    void set_dirty_bit() { dirty_bit = true; }
+
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( CachedPage, 0 );
 
   private:
+    YIELD::Path file_path;
+    size_t number;
+
     bool dirty_bit;
   };
+
+  typedef yidl::auto_Object<CachedPage> auto_CachedPage;
 };
 
 
 // cached_stat.h
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
+
 
 
 
@@ -73,22 +87,26 @@ namespace yieldfs
 
 namespace yieldfs
 {
-  class CachedPage;
+  class PageCache;
 
 
   class DataCachingFile : public StackableFile
   {
   public:
+    DataCachingFile& operator=( const DataCachingFile& ) { return *this; }
+
     // YIELD::File
+    bool datasync();
     virtual ssize_t read( void* buffer, size_t buffer_len, uint64_t offset );
+    bool sync();
+    bool truncate( uint64_t offset );
     virtual ssize_t write( const void* buffer, size_t buffer_len, uint64_t offset );
 
   protected:
-    DataCachingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log = NULL );
+    DataCachingFile( PageCache& page_cache, const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log = NULL );
     ~DataCachingFile();
 
-    typedef std::map<uint64_t, CachedPage*> CachedPageMap;
-    CachedPageMap cached_pages;
+    PageCache& page_cache;
 
   private:
     size_t pagesize;
@@ -150,7 +168,7 @@ namespace yieldfs
           read,
           write,
           statfs,
-          flush,
+          NULL, // flush
           release,
           fsync,
           setxattr,
@@ -168,7 +186,7 @@ namespace yieldfs
           ftruncate,
           fgetattr,
           lock,
-          utimens, // utimens
+          utimens,
           NULL // bmap
         };
 
@@ -231,11 +249,6 @@ namespace yieldfs
       }
       else
         return -1 * errno;
-    }
-
-    static int flush( const char* path, struct fuse_file_info* fi )
-    {
-      return get_file( fi )->flush() ? 0 : ( -1 * errno );
     }
 
     static int fsync( const char* path, int isdatasync, struct fuse_file_info* fi )
@@ -907,7 +920,7 @@ namespace yieldfs
 	    LPCWSTR		FileName,
 	    PDOKAN_FILE_INFO	DokanFileInfo )
     {
-      if ( get_file( DokanFileInfo )->flush() )
+      if ( get_file( DokanFileInfo )->datasync() )
         return ERROR_SUCCESS;
       else
         return -1 * ::GetLastError();
@@ -1226,6 +1239,46 @@ namespace yieldfs
 };
 
 
+// page_cache.h
+#include <list>
+#include <vector>
+
+
+namespace yieldfs
+{
+  class CachedPage;
+
+
+  class PageCache
+  {
+  public:
+    PageCache( uint64_t capacity_bytes, uint32_t flush_timeout_ms, YIELD::auto_Volume underlying_volume );
+    ~PageCache();
+
+    void dirty( CachedPage& page );
+    yidl::auto_Object<CachedPage> find( const YIELD::Path& file_path, size_t page_number );
+    void flush( const YIELD::Path& file_path );
+    void flush( yidl::auto_Object<CachedPage> dirty_page );
+    void insert( yidl::auto_Object<CachedPage> page );
+
+  private:
+    uint64_t capacity_bytes;
+    uint32_t flush_timeout_ms;
+    YIELD::auto_Volume underlying_volume;
+
+    std::vector<CachedPage*> dirty_pages;
+    std::map< std::string, std::vector<CachedPage*> > in_use_pages;
+    YIELD::Mutex lock;
+    std::list<CachedPage*> lru_pages;
+    uint64_t size_bytes;
+
+    class OldDirtyPageTimer;
+
+    void flush( CachedPage& dirty_page );
+  };
+};
+
+
 // tracing_file.h
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
@@ -1260,13 +1313,7 @@ namespace yieldfs
   class WriteBackCachingFile : public DataCachingFile
   {
   public:
-    WriteBackCachingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log = NULL );
-
-    bool close();
-    bool datasync();
-    bool flush();
-    bool sync();
-    bool truncate( uint64_t offset );
+    WriteBackCachingFile( PageCache& page_cache, const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log = NULL );
 
   private:
     ~WriteBackCachingFile();
@@ -1283,38 +1330,32 @@ namespace yieldfs
 
 namespace yieldfs
 {
-  class CachedPage;
-
-
   class WriteThroughCachingFile : public DataCachingFile
   {
   public:
-    WriteThroughCachingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log = NULL );
+    WriteThroughCachingFile( PageCache& page_cache, const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log = NULL );
 
     // YIELD::File
-    bool truncate( uint64_t offset );
     ssize_t write( const void* buffer, size_t buffer_len, uint64_t offset );
 
   private:
     ~WriteThroughCachingFile() { }
-
-    size_t pagesize;
-    typedef std::map<uint64_t, CachedPage*> CachedPageMap;
-    CachedPageMap cached_pages;
   };
 };
 
 
 // data_caching_file.cpp
-DataCachingFile::DataCachingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log )
-  : StackableFile( path, underlying_file, log )
+DataCachingFile::DataCachingFile( PageCache& page_cache, const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log )
+  : StackableFile( path, underlying_file, log ), page_cache( page_cache )
 {
   pagesize = underlying_file->getpagesize();
 }
 DataCachingFile::~DataCachingFile()
+{ }
+bool DataCachingFile::datasync()
 {
-  for ( CachedPageMap::iterator cached_page_i = cached_pages.begin(); cached_page_i != cached_pages.end(); cached_page_i++ )
-    delete cached_page_i->second;
+  page_cache.flush( get_path() );
+  return underlying_file->datasync();
 }
 ssize_t DataCachingFile::read( void* rbuf, size_t size, uint64_t offset )
 {
@@ -1325,64 +1366,66 @@ ssize_t DataCachingFile::read( void* rbuf, size_t size, uint64_t offset )
   char *rbuf_p = static_cast<char*>( rbuf ), *rbuf_end = static_cast<char*>( rbuf ) + size;
   while ( rbuf_p < rbuf_end )
   {
-    uint64_t cached_page_number = offset / pagesize;
-    uint32_t cached_page_offset = offset % pagesize;
+    size_t page_number = static_cast<size_t>( offset / pagesize );
+    size_t page_offset = offset % pagesize;
     size_t copy_size = static_cast<size_t>( rbuf_end - rbuf_p );
-    if ( cached_page_offset + copy_size > pagesize )
-      copy_size = pagesize - cached_page_offset;
+    if ( page_offset + copy_size > pagesize )
+      copy_size = pagesize - page_offset;
 #ifdef _DEBUG
     if ( log != NULL )
-       log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: looking up cached page " << cached_page_number << " (offset=" << cached_page_offset << ", copy_size=" << copy_size << ").";
+       log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: looking up cached page " << page_number << " (offset=" << page_offset << ", copy_size=" << copy_size << ").";
 #endif
-    CachedPage* cached_page;
-    CachedPageMap::iterator cached_page_i = cached_pages.find( cached_page_number );
-    if ( cached_page_i != cached_pages.end() )
+    auto_CachedPage page = page_cache.find( get_path(), page_number );
+    if ( page != NULL )
     {
-      cached_page = cached_page_i->second;
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read hit on page " << cached_page_number << " with length " << cached_page->size() << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read hit on page " << page_number << " with length " << page->size() << ".";
 #endif
     }
     else
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read miss on page " << cached_page_number << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read miss on page " << page_number << ".";
 #endif
-      cached_page = new CachedPage( pagesize );
-      ssize_t read_ret = underlying_file->read( *cached_page, cached_page->capacity(), ( offset / pagesize ) * pagesize );
+      page = new CachedPage( get_path(), page_number, pagesize );
+      ssize_t read_ret = underlying_file->read( *page, page->capacity(), ( offset / pagesize ) * pagesize );
       if ( read_ret >= 0 )
       {
 #ifdef _DEBUG
         if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read " << read_ret << " bytes into page " << cached_page_number << ".";
+          log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read " << read_ret << " bytes into page " << page_number << ".";
 #endif
-        cached_page->put( NULL, static_cast<size_t>( read_ret ) );
-        cached_pages[cached_page_number] = cached_page;
+        page->put( NULL, static_cast<size_t>( read_ret ) );
+        page_cache.insert( page );
       }
       else
       {
 #ifdef _DEBUG
         if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read on page " << cached_page_number << " failed.";
+          log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read on page " << page_number << " failed.";
 #endif
-        delete cached_page;
         return read_ret;
       }
     }
-    if ( copy_size <= cached_page->size() )
+    if ( page_offset < page->size() )
     {
-      memcpy_s( rbuf_p, rbuf_end - rbuf_p, static_cast<char*>( *cached_page ) + cached_page_offset, copy_size );
-      rbuf_p += copy_size;
-      offset += copy_size;
+      if ( copy_size <= page->size() )
+      {
+        memcpy_s( rbuf_p, rbuf_end - rbuf_p, static_cast<char*>( *page ) + page_offset, copy_size );
+        rbuf_p += copy_size;
+        offset += copy_size;
+      }
+      else
+      {
+        memcpy_s( rbuf_p, rbuf_end - rbuf_p, static_cast<char*>( *page ) + page_offset, page->size() );
+        rbuf_p += page->size();
+        break;
+      }
     }
     else
-    {
-      memcpy_s( rbuf_p, rbuf_end - rbuf_p, static_cast<char*>( *cached_page ) + cached_page_offset, cached_page->size() );
-      rbuf_p += cached_page->size();
       break;
-    }
   }
   ssize_t ret = static_cast<ssize_t>( rbuf_p - static_cast<char*>( rbuf ) );
 #ifdef _DEBUG
@@ -1391,77 +1434,84 @@ ssize_t DataCachingFile::read( void* rbuf, size_t size, uint64_t offset )
 #endif
   return ret;
 }
+bool DataCachingFile::sync()
+{
+  page_cache.flush( get_path() );
+  return underlying_file->sync();
+}
+bool DataCachingFile::truncate( uint64_t offset )
+{
+  page_cache.flush( get_path() );
+  return underlying_file->truncate( offset );
+}
 ssize_t DataCachingFile::write( const void* wbuf, size_t size, uint64_t offset )
 {
 #ifdef _DEBUG
   if ( log != NULL )
-     log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::WriteBackCachingFile: write( wbuf, size=" << size << ", offset=" << offset << " )";
+     log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: write( wbuf, size=" << size << ", offset=" << offset << " )";
 #endif
   const char *wbuf_p = static_cast<const char*>( wbuf ), *wbuf_end = static_cast<const char*>( wbuf ) + size;
   while ( wbuf_p < wbuf_end )
   {
-    uint64_t cached_page_number = offset / pagesize;
-    uint32_t cached_page_offset = offset % pagesize;
+    size_t page_number = static_cast<size_t>( offset / pagesize );
+    size_t page_offset = offset % pagesize;
     size_t copy_size = static_cast<size_t>( wbuf_end - wbuf_p );
-    if ( cached_page_offset + copy_size > pagesize )
-      copy_size = pagesize - cached_page_offset;
+    if ( page_offset + copy_size > pagesize )
+      copy_size = pagesize - page_offset;
 #ifdef _DEBUG
     if ( log != NULL )
-       log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::WriteBackCachingFile: looking up cached page " << cached_page_number << " (offset=" << cached_page_offset << ", copy_size=" << copy_size << ").";
+       log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: looking up cached page " << page_number << " (offset=" << page_offset << ", copy_size=" << copy_size << ").";
 #endif
-    CachedPage* cached_page;
-    CachedPageMap::iterator cached_page_i = cached_pages.find( cached_page_number );
-    if ( cached_page_i != cached_pages.end() ) // Replace part of a cached page
+    auto_CachedPage page = page_cache.find( path, page_number );
+    if ( page != NULL ) // Replace part of a cached page
     {
-      cached_page = cached_page_i->second;
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::WriteBackCachingFile: write hit on page " << cached_page_number << " with length " << cached_page->size() << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: write hit on page " << page_number << " with length " << page->size() << ".";
 #endif
     }
     else if ( copy_size == pagesize ) // Write a whole new page
     {
-      cached_page = new CachedPage( pagesize );
-      cached_pages[cached_page_number] = cached_page;
+      page = new CachedPage( get_path(), page_number, pagesize );
+      page_cache.insert( page );
     }
     else // Write part of a new page
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::WriteBackCachingFile: write miss on page " << cached_page_number << ".";
+        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: write miss on page " << page_number << ".";
 #endif
-      cached_page = new CachedPage( pagesize );
-      ssize_t read_ret = underlying_file->read( *cached_page, cached_page->capacity(), ( offset / pagesize ) * pagesize );
+      page = new CachedPage( get_path(), page_number, pagesize );
+      ssize_t read_ret = underlying_file->read( *page, page->capacity(), ( offset / pagesize ) * pagesize );
       if ( read_ret >= 0 )
       {
 #ifdef _DEBUG
         if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::WriteBackCachingFile: read " << read_ret << " bytes into page " << cached_page_number << ".";
+          log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read " << read_ret << " bytes into page " << page_number << ".";
 #endif
-        cached_page->put( NULL, static_cast<size_t>( read_ret ) );
-        cached_pages[cached_page_number] = cached_page;
+        page->put( NULL, static_cast<size_t>( read_ret ) );
+        page_cache.insert( page );
       }
-      else
-      {
-#ifdef _DEBUG
-        if ( log != NULL )
-          log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::WriteBackCachingFile: read on page " << cached_page_number << " failed.";
-#endif
-        delete cached_page;
-        return read_ret;
-      }
+//      else
+//      {
+//#ifdef _DEBUG
+//        if ( log != NULL )
+//          log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read on page " << page_number << " failed.";
+//#endif
+//        return read_ret;
+//      }
     }
-    memcpy_s( static_cast<char*>( *cached_page ) + cached_page_offset, cached_page->capacity() - cached_page_offset, wbuf_p, copy_size );
-    if ( cached_page->size() < cached_page_offset + copy_size )
-      cached_page->put( NULL, cached_page_offset + copy_size - cached_page->size() );
-    cached_page->set_dirty_bit();
+    memcpy_s( static_cast<char*>( *page ) + page_offset, page->capacity() - page_offset, wbuf_p, copy_size );
+    if ( page->size() < page_offset + copy_size )
+      page->put( NULL, page_offset + copy_size - page->size() );
+    page_cache.dirty( *page );
     wbuf_p += copy_size;
     offset += copy_size;
   }
   ssize_t ret = static_cast<ssize_t>( wbuf_p - static_cast<const char*>( wbuf ) );
 #ifdef _DEBUG
   if ( log != NULL )
-     log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::WriteBackCachingFile: write( wbuf, " << size << ", offset ) => " << ret << ".";
+     log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::DataCachingFile: write( wbuf, " << size << ", offset ) => " << ret << ".";
 #endif
   return ret;
 }
@@ -1864,6 +1914,168 @@ bool MetadataCachingVolume::utimens( const YIELD::Path& path, const YIELD::Time&
 }
 
 
+// page_cache.cpp
+class PageCache::OldDirtyPageTimer : public YIELD::TimerQueue::Timer
+{
+public:
+  OldDirtyPageTimer( const YIELD::Time& timeout, auto_CachedPage dirty_page, PageCache& page_cache )
+    : YIELD::TimerQueue::Timer( timeout ),
+      dirty_page( dirty_page ), page_cache( page_cache )
+  { }
+  OldDirtyPageTimer& operator=( const OldDirtyPageTimer& ) { return *this; }
+  bool fire( const YIELD::Time& )
+  {
+    page_cache.flush( dirty_page );
+    return true;
+  }
+private:
+  auto_CachedPage dirty_page;
+  PageCache& page_cache;
+};
+PageCache::PageCache( uint64_t capacity_bytes, uint32_t flush_timeout_ms, YIELD::auto_Volume underlying_volume )
+  : capacity_bytes( capacity_bytes ), flush_timeout_ms( flush_timeout_ms ), underlying_volume( underlying_volume )
+{
+  size_bytes = 0;
+}
+PageCache::~PageCache()
+{
+  lock.acquire();
+  // Flush any dirty pages
+  for ( std::vector<CachedPage*>::iterator dirty_page_i = dirty_pages.begin(); dirty_page_i != dirty_pages.end(); ++dirty_page_i )
+    flush( **dirty_page_i );
+  // Release the references held in in_use_pages
+  for ( std::map< std::string, std::vector<CachedPage*> >::iterator in_use_pages_i = in_use_pages.begin(); in_use_pages_i != in_use_pages.end(); ++in_use_pages_i )
+    for ( std::vector<CachedPage*>::iterator page_i = in_use_pages_i->second.begin(); page_i != in_use_pages_i->second.end(); page_i++ )
+      yidl::Object::decRef( *page_i );
+  lock.release();
+}
+void PageCache::dirty( CachedPage& page )
+{
+  lock.acquire();
+  if ( !page.get_dirty_bit() )
+  {
+    page.set_dirty_bit();
+    dirty_pages.push_back( &page.incRef() );
+    YIELD::TimerQueue::getDefaultTimerQueue().addTimer( new OldDirtyPageTimer( flush_timeout_ms * NS_IN_MS, page.incRef(), *this ) );
+  }
+  lock.release();
+}
+auto_CachedPage PageCache::find( const YIELD::Path& file_path, size_t page_number )
+{
+  lock.acquire();
+  CachedPage* page;
+  std::map<std::string, std::vector<CachedPage*> >::iterator file_in_use_pages = in_use_pages.find( file_path );
+  if ( file_in_use_pages != in_use_pages.end() )
+  {
+    if ( page_number < file_in_use_pages->second.size() )
+    {
+      page = file_in_use_pages->second[page_number];
+      if ( page != NULL )
+      {
+        for ( std::list<CachedPage*>::iterator lru_page_i = lru_pages.begin(); lru_page_i != lru_pages.end(); ++lru_page_i )
+        {
+          if ( **lru_page_i == *page )
+          {
+            lru_pages.erase( lru_page_i );
+            lru_pages.insert( lru_pages.end(), page );
+            break;
+          }
+        }
+      }
+    }
+    else
+      page = NULL;
+  }
+  else
+    page = NULL;
+  lock.release();
+  return yidl::Object::incRef( page );
+}
+void PageCache::flush( const YIELD::Path& file_path )
+{
+  lock.acquire();
+  for ( std::vector<CachedPage*>::iterator dirty_page_i = dirty_pages.begin(); dirty_page_i != dirty_pages.end(); )
+  {
+    if ( ( *dirty_page_i )->get_file_path() == file_path )
+    {
+      flush( **dirty_page_i );
+      dirty_page_i = dirty_pages.erase( dirty_page_i );
+    }
+    else
+       ++dirty_page_i;
+  }
+  lock.release();
+}
+void PageCache::flush( auto_CachedPage dirty_page )
+{
+  lock.acquire();
+  if ( dirty_page->get_dirty_bit() )
+  {
+    for ( std::vector<CachedPage*>::iterator dirty_page_i = dirty_pages.begin(); dirty_page_i != dirty_pages.end(); ++dirty_page_i )
+    {
+      if ( **dirty_page_i == *dirty_page )
+      {
+        dirty_pages.erase( dirty_page_i );
+        flush( *dirty_page );
+        break;
+      }
+    }
+    // Leave the page in in_use_pages and lru_pages
+  }
+  lock.release();
+}
+void PageCache::flush( CachedPage& dirty_page )
+{
+  if ( dirty_page.get_dirty_bit() )
+  {
+    YIELD::auto_File file = underlying_volume->open( dirty_page.get_file_path(), O_CREAT|O_WRONLY );
+    if ( file != NULL )
+    {
+      ssize_t write_ret = file->write( dirty_page, dirty_page.size(), dirty_page.get_number() * dirty_page.capacity() );
+      if ( write_ret < 0 )
+        DebugBreak();
+    }
+    else
+      DebugBreak();
+    dirty_page.clear_dirty_bit();
+  }
+}
+void PageCache::insert( auto_CachedPage page )
+{
+  lock.acquire();
+#ifdef _DEBUG
+  if ( page->capacity() > capacity_bytes ) DebugBreak();
+#endif
+  while ( size_bytes + page->capacity() > capacity_bytes )
+  {
+    CachedPage* evict_page = *lru_pages.begin();
+    lru_pages.erase( lru_pages.begin() );
+    if ( evict_page->get_dirty_bit() )
+      flush( *evict_page );
+    in_use_pages.find( evict_page->get_file_path() )->second[evict_page->get_number()] = NULL;
+    size_bytes -= evict_page->capacity();
+    yidl::Object::decRef( *evict_page );
+  }
+  std::map< std::string, std::vector<CachedPage*> >::iterator in_use_pages_i = in_use_pages.find( page->get_file_path() );
+  if ( in_use_pages_i != in_use_pages.end() )
+  {
+    std::vector<CachedPage*>& file_in_use_pages = in_use_pages_i->second;
+    if ( file_in_use_pages.size() <= page->get_number() )
+      file_in_use_pages.resize( page->get_number() + 1 );
+    file_in_use_pages[page->get_number()] = &page->incRef();
+  }
+  else
+  {
+    std::vector<CachedPage*> file_in_use_pages( page->get_number() + 1 );
+    file_in_use_pages[page->get_number()] = &page->incRef();
+    in_use_pages[page->get_file_path()] = file_in_use_pages;
+  }
+  lru_pages.insert( lru_pages.end(), page.get() );
+  size_bytes += page->capacity();
+  lock.release();
+}
+
+
 // stackable_file.cpp
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
@@ -1874,10 +2086,6 @@ bool StackableFile::close()
 bool StackableFile::datasync()
 {
   return underlying_file->datasync();
-}
-bool StackableFile::flush()
-{
-  return underlying_file->flush();
 }
 YIELD::auto_Stat StackableFile::getattr()
 {
@@ -2043,10 +2251,6 @@ bool TracingFile::close()
 bool TracingFile::datasync()
 {
   return TracingVolume::trace( log, "yieldfs::TracingFile::datasync", path, underlying_file->datasync() );
-}
-bool TracingFile::flush()
-{
-  return TracingVolume::trace( log, "yieldfs::TracingFile::flush", path, underlying_file->flush() );
 }
 YIELD::auto_Stat TracingFile::getattr()
 {
@@ -2379,67 +2583,48 @@ YIELD::Path TracingVolume::volname( const YIELD::Path& path )
 // write_back_caching_file.cpp
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
-WriteBackCachingFile::WriteBackCachingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log )
-  : DataCachingFile( path, underlying_file, log )
+WriteBackCachingFile::WriteBackCachingFile( PageCache& page_cache, const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log )
+  : DataCachingFile( page_cache, path, underlying_file, log )
 { }
 WriteBackCachingFile::~WriteBackCachingFile()
-{
-  flush();
-}
-bool WriteBackCachingFile::close()
-{
-  flush();
-  return underlying_file->close();
-}
-bool WriteBackCachingFile::datasync()
-{
-  flush();
-  underlying_file->datasync();
-  return true;
-}
-bool WriteBackCachingFile::flush()
-{
-#ifdef _DEBUG
-  if ( log != NULL )
-    log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::WriteBackCachingFile: flush().";
-#endif
-  for ( CachedPageMap::iterator cached_page_i = cached_pages.begin(); cached_page_i != cached_pages.end(); cached_page_i++ )
-  {
-    if ( cached_page_i->second->get_dirty_bit() )
-    {
-      underlying_file->write( *cached_page_i->second, cached_page_i->second->size(), cached_page_i->first * cached_page_i->second->capacity() );
-#ifdef _DEBUG
-      if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_INFO ) << "yieldfs::WriteBackCachingFile: flushing page " << cached_page_i->first << ".";
-#endif
-    }
-    delete cached_page_i->second;
-  }
-  cached_pages.clear();
-  underlying_file->flush();
-  return true;
-}
-bool WriteBackCachingFile::sync()
-{
-  flush();
-  underlying_file->sync();
-  return true;
-}
-bool WriteBackCachingFile::truncate( uint64_t offset )
-{
-  flush();
-  return underlying_file->truncate( offset );
-}
+{ }
 
 
 // write_back_caching_volume.cpp
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
+WriteBackCachingVolume::WriteBackCachingVolume() // For testing
+{
+  page_cache = new PageCache( 1 * 1024 * 1024, 5 * MS_IN_S, underlying_volume );
+}
+WriteBackCachingVolume::WriteBackCachingVolume( size_t cache_capacity_bytes, uint32_t cache_flush_timeout_ms, YIELD::auto_Volume underlying_volume )
+  : StackableVolume( underlying_volume )
+{
+  page_cache = new PageCache( cache_capacity_bytes, cache_flush_timeout_ms, underlying_volume );
+}
+WriteBackCachingVolume::WriteBackCachingVolume( size_t cache_capacity_bytes, uint32_t cache_flush_timeout_ms, YIELD::auto_Volume underlying_volume, YIELD::auto_Log log )
+  : StackableVolume( underlying_volume, log )
+{
+  page_cache = new PageCache( cache_capacity_bytes, cache_flush_timeout_ms, underlying_volume );
+}
+WriteBackCachingVolume::~WriteBackCachingVolume()
+{
+  delete page_cache;
+}
 YIELD::auto_File WriteBackCachingVolume::open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
+#ifdef __linux__
+  if ( ( flags & O_DIRECT ) == O_DIRECT )
+    flags ^= O_DIRECT;
+#endif
+  if ( ( flags & O_WRONLY ) == O_WRONLY )
+  {
+    flags ^= O_WRONLY;
+    flags |= O_RDWR;
+  }
   YIELD::auto_File file = underlying_volume->open( path, flags, mode, attributes );
   if ( file != NULL )
-    return new WriteBackCachingFile( path, file, log );
+    return new WriteBackCachingFile( *page_cache, path, file, log );
   else
     return NULL;
 }
@@ -2448,39 +2633,43 @@ YIELD::auto_File WriteBackCachingVolume::open( const YIELD::Path& path, uint32_t
 // write_through_caching_file.cpp
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
-WriteThroughCachingFile::WriteThroughCachingFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log )
-  : DataCachingFile( path, underlying_file, log )
+WriteThroughCachingFile::WriteThroughCachingFile( PageCache& page_cache, const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log )
+  : DataCachingFile( page_cache, path, underlying_file, log )
 { }
-bool WriteThroughCachingFile::truncate( uint64_t offset )
-{
-  if ( underlying_file->truncate( offset ) )
-  {
-    for ( CachedPageMap::iterator cached_page_i = cached_pages.begin(); cached_page_i != cached_pages.end(); cached_page_i++ )
-      delete cached_page_i->second;
-    cached_pages.clear();
-    return true;
-  }
-  else
-    return false;
-}
 ssize_t WriteThroughCachingFile::write( const void* wbuf, size_t size, uint64_t offset )
 {
-  ssize_t write_ret = underlying_file->write( wbuf, size, offset );
-  if ( write_ret > 0 )
-    return DataCachingFile::write( wbuf, size, offset ); // Keep written pages
-  else
-    return write_ret;
+  ssize_t write_ret = DataCachingFile::write( wbuf, size, offset ); // Keep written pages
+  page_cache.flush( get_path() );
+  return write_ret;
 }
 
 
 // write_through_caching_volume.cpp
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
+WriteThroughCachingVolume::WriteThroughCachingVolume() // For testing
+{
+  page_cache = new PageCache( 1 * 1024 * 1024 * 1024, 5 * MS_IN_S, underlying_volume );
+}
+WriteThroughCachingVolume::WriteThroughCachingVolume( YIELD::auto_Volume underlying_volume )
+  : StackableVolume( underlying_volume )
+{
+  page_cache = new PageCache( 1 * 1024 * 1024 * 1024, 5 * MS_IN_S, underlying_volume );
+}
+WriteThroughCachingVolume::WriteThroughCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log )
+  : StackableVolume( underlying_volume, log )
+{
+  page_cache = new PageCache( 1 * 1024 * 1024 * 1024, 5 * MS_IN_S, underlying_volume );
+}
+WriteThroughCachingVolume::~WriteThroughCachingVolume()
+{
+  delete page_cache;
+}
 YIELD::auto_File WriteThroughCachingVolume::open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
   YIELD::auto_File file = underlying_volume->open( path, flags, mode, attributes );
   if ( file != NULL )
-    return new WriteThroughCachingFile( path, file, log );
+    return new WriteThroughCachingFile( *page_cache, path, file, log );
   else
     return NULL;
 }

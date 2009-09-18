@@ -6,6 +6,9 @@
 
 #include "yield/concurrency.h"
 
+#ifdef YIELD_HAVE_LIBUUID
+#include <uuid/uuid.h>
+#endif
 #ifdef YIELD_HAVE_OPENSSL
 #include <openssl/ssl.h>
 #endif
@@ -1333,20 +1336,26 @@ namespace YIELD
   typedef yidl::auto_Object<URI> auto_URI;
 
 
-  class UUID 
+  class UUID : public yidl::Object
   {
   public:
-    UUID(); // Creates a new UUID
+    UUID();
     UUID( const std::string& uuid_from_string );
     ~UUID();
 
+    bool operator==( const UUID& ) const;
     operator std::string() const;
 
+    // yidl::Object
+    YIDL_OBJECT_PROTOTYPES( UUID, 222 );
+
   private:
-#ifdef _WIN32
+#if defined(_WIN32)
     void* win32_uuid;
+#elif defined(YIELD_HAVE_LIBUUID)
+    uuid_t libuuid_uuid;
 #else
-    char unix_uuid[256];
+    char generic_uuid[256];
 #endif
   };
 };

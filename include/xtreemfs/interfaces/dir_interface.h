@@ -298,6 +298,9 @@ namespace org
         virtual void xtreemfs_shutdown() { xtreemfs_shutdown( static_cast<uint64_t>( -1 ) ); }
         virtual void xtreemfs_shutdown( uint64_t response_timeout_ns ) { ::yidl::auto_Object<xtreemfs_shutdownRequest> __request( new xtreemfs_shutdownRequest() ); ::YIELD::auto_ResponseQueue<xtreemfs_shutdownResponse> __response_queue( new ::YIELD::ResponseQueue<xtreemfs_shutdownResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<xtreemfs_shutdownResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); }
 
+        virtual void replication_toMaster() { replication_toMaster( static_cast<uint64_t>( -1 ) ); }
+        virtual void replication_toMaster( uint64_t response_timeout_ns ) { ::yidl::auto_Object<replication_toMasterRequest> __request( new replication_toMasterRequest() ); ::YIELD::auto_ResponseQueue<replication_toMasterResponse> __response_queue( new ::YIELD::ResponseQueue<replication_toMasterResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::auto_Object<replication_toMasterResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); }
+
 
         // Request/response pair definitions for the operations in DIRInterface
 
@@ -847,6 +850,34 @@ namespace org
 
         };
 
+        class replication_toMasterResponse : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_RESPONSE_PARENT_CLASS
+        {
+        public:
+          replication_toMasterResponse() { }
+          virtual ~replication_toMasterResponse() { }
+
+          bool operator==( const replication_toMasterResponse& ) const { return true; }
+
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( replication_toMasterResponse, 2009082732 );
+
+        };
+
+        class replication_toMasterRequest : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_REQUEST_PARENT_CLASS
+        {
+        public:
+          replication_toMasterRequest() { }
+          virtual ~replication_toMasterRequest() { }
+
+          bool operator==( const replication_toMasterRequest& ) const { return true; }
+
+          // yidl::Object
+          YIDL_OBJECT_PROTOTYPES( replication_toMasterRequest, 2009082732 );
+          // YIELD::Request
+          virtual ::YIELD::auto_Response createResponse() { return new replication_toMasterResponse; }
+
+        };
+
           class ConcurrentModificationException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
           {
           public:
@@ -925,6 +956,64 @@ namespace org
           std::string stack_trace;
           };
 
+          class DIRException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
+          {
+          public:
+            DIRException() : error_code( 0 ) { }
+          DIRException( uint32_t error_code, const std::string& error_message, const std::string& stack_trace ) : error_code( error_code ), error_message( error_message ), stack_trace( stack_trace ) { }
+          DIRException( uint32_t error_code, const char* error_message, size_t error_message_len, const char* stack_trace, size_t stack_trace_len ) : error_code( error_code ), error_message( error_message, error_message_len ), stack_trace( stack_trace, stack_trace_len ) { }
+            DIRException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
+            virtual ~DIRException() throw() { }
+
+          void set_error_code( uint32_t error_code ) { this->error_code = error_code; }
+          uint32_t get_error_code() const { return error_code; }
+          void set_error_message( const std::string& error_message ) { set_error_message( error_message.c_str(), error_message.size() ); }
+          void set_error_message( const char* error_message, size_t error_message_len ) { this->error_message.assign( error_message, error_message_len ); }
+          const std::string& get_error_message() const { return error_message; }
+          void set_stack_trace( const std::string& stack_trace ) { set_stack_trace( stack_trace.c_str(), stack_trace.size() ); }
+          void set_stack_trace( const char* stack_trace, size_t stack_trace_len ) { this->stack_trace.assign( stack_trace, stack_trace_len ); }
+          const std::string& get_stack_trace() const { return stack_trace; }
+
+            // YIELD::ExceptionResponse
+            virtual ExceptionResponse* clone() const { return new DIRException( error_code, error_message, stack_trace); }
+            virtual void throwStackClone() const { throw DIRException( error_code, error_message, stack_trace); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { error_code = unmarshaller.readUint32( "error_code", 0 ); unmarshaller.readString( "error_message", 0, error_message ); unmarshaller.readString( "stack_trace", 0, stack_trace ); }
+          // yidl::Struct
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint32( "error_code", 0, error_code ); marshaller.writeString( "error_message", 0, error_message ); marshaller.writeString( "stack_trace", 0, stack_trace ); }
+
+        protected:
+          uint32_t error_code;
+          std::string error_message;
+          std::string stack_trace;
+          };
+
+          class RedirectException : public ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
+          {
+          public:
+            RedirectException() : port( 0 ) { }
+          RedirectException( const std::string& address, uint16_t port ) : address( address ), port( port ) { }
+          RedirectException( const char* address, size_t address_len, uint16_t port ) : address( address, address_len ), port( port ) { }
+            RedirectException( const char* what ) : ORG_XTREEMFS_INTERFACES_DIRINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
+            virtual ~RedirectException() throw() { }
+
+          void set_address( const std::string& address ) { set_address( address.c_str(), address.size() ); }
+          void set_address( const char* address, size_t address_len ) { this->address.assign( address, address_len ); }
+          const std::string& get_address() const { return address; }
+          void set_port( uint16_t port ) { this->port = port; }
+          uint16_t get_port() const { return port; }
+
+            // YIELD::ExceptionResponse
+            virtual ExceptionResponse* clone() const { return new RedirectException( address, port); }
+            virtual void throwStackClone() const { throw RedirectException( address, port); }
+          void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "address", 0, address ); port = unmarshaller.readUint16( "port", 0 ); }
+          // yidl::Struct
+          void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "address", 0, address ); marshaller.writeUint16( "port", 0, port ); }
+
+        protected:
+          std::string address;
+          uint16_t port;
+          };
+
 
 
         // yidl::Object
@@ -951,6 +1040,7 @@ namespace org
               case 2009082729UL: handlextreemfs_service_deregisterRequest( static_cast<xtreemfs_service_deregisterRequest&>( ev ) ); return;
               case 2009082730UL: handlextreemfs_service_offlineRequest( static_cast<xtreemfs_service_offlineRequest&>( ev ) ); return;
               case 2009082731UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( ev ) ); return;
+              case 2009082732UL: handlereplication_toMasterRequest( static_cast<replication_toMasterRequest&>( ev ) ); return;
               default: handleUnknownEvent( ev ); return;
             }
           }
@@ -989,6 +1079,7 @@ namespace org
               case 2009082729: return static_cast<xtreemfs_service_deregisterRequest*>( &request );
               case 2009082730: return static_cast<xtreemfs_service_offlineRequest*>( &request );
               case 2009082731: return static_cast<xtreemfs_shutdownRequest*>( &request );
+              case 2009082732: return static_cast<replication_toMasterRequest*>( &request );
               default: return NULL;
             }
           }
@@ -1010,9 +1101,12 @@ namespace org
               case 2009082729: return static_cast<xtreemfs_service_deregisterResponse*>( &response );
               case 2009082730: return static_cast<xtreemfs_service_offlineResponse*>( &response );
               case 2009082731: return static_cast<xtreemfs_shutdownResponse*>( &response );
+              case 2009082732: return static_cast<replication_toMasterResponse*>( &response );
               case 2009082738: return static_cast<ConcurrentModificationException*>( &response );
               case 2009082739: return static_cast<InvalidArgumentException*>( &response );
               case 2009082740: return static_cast<ProtocolException*>( &response );
+              case 2009082741: return static_cast<DIRException*>( &response );
+              case 2009082742: return static_cast<RedirectException*>( &response );
               default: return NULL;
             }
           }
@@ -1034,6 +1128,7 @@ namespace org
               case 2009082729: return new xtreemfs_service_deregisterRequest;
               case 2009082730: return new xtreemfs_service_offlineRequest;
               case 2009082731: return new xtreemfs_shutdownRequest;
+              case 2009082732: return new replication_toMasterRequest;
               default: return NULL;
             }
           }
@@ -1055,6 +1150,7 @@ namespace org
               case 2009082729: return new xtreemfs_service_deregisterResponse;
               case 2009082730: return new xtreemfs_service_offlineResponse;
               case 2009082731: return new xtreemfs_shutdownResponse;
+              case 2009082732: return new replication_toMasterResponse;
               default: return NULL;
             }
           }
@@ -1066,6 +1162,8 @@ namespace org
               case 2009082738: return new ConcurrentModificationException;
               case 2009082739: return new InvalidArgumentException;
               case 2009082740: return new ProtocolException;
+              case 2009082741: return new DIRException;
+              case 2009082742: return new RedirectException;
               default: return NULL;
             }
           }
@@ -1086,6 +1184,7 @@ namespace org
         virtual void handlextreemfs_service_deregisterRequest( xtreemfs_service_deregisterRequest& req ) { ::yidl::auto_Object<xtreemfs_service_deregisterResponse> resp( new xtreemfs_service_deregisterResponse ); _xtreemfs_service_deregister( req.get_uuid() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlextreemfs_service_offlineRequest( xtreemfs_service_offlineRequest& req ) { ::yidl::auto_Object<xtreemfs_service_offlineResponse> resp( new xtreemfs_service_offlineResponse ); _xtreemfs_service_offline( req.get_uuid() ); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
         virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req ) { ::yidl::auto_Object<xtreemfs_shutdownResponse> resp( new xtreemfs_shutdownResponse ); _xtreemfs_shutdown(); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
+        virtual void handlereplication_toMasterRequest( replication_toMasterRequest& req ) { ::yidl::auto_Object<replication_toMasterResponse> resp( new replication_toMasterResponse ); _replication_toMaster(); req.respond( *resp.release() ); ::yidl::Object::decRef( req ); }
 
       virtual void _xtreemfs_address_mappings_get( const std::string& , org::xtreemfs::interfaces::AddressMappingSet&  ) { }
         virtual void _xtreemfs_address_mappings_remove( const std::string&  ) { }
@@ -1100,6 +1199,7 @@ namespace org
         virtual void _xtreemfs_service_deregister( const std::string&  ) { }
         virtual void _xtreemfs_service_offline( const std::string&  ) { }
         virtual void _xtreemfs_shutdown() { }
+        virtual void _replication_toMaster() { }
       };
 
       // Use this macro in an implementation class to get all of the prototypes for the operations in DIRInterface
@@ -1116,7 +1216,8 @@ namespace org
       virtual uint64_t _xtreemfs_service_register( const org::xtreemfs::interfaces::Service& service );\
       virtual void _xtreemfs_service_deregister( const std::string& uuid );\
       virtual void _xtreemfs_service_offline( const std::string& uuid );\
-      virtual void _xtreemfs_shutdown();
+      virtual void _xtreemfs_shutdown();\
+      virtual void _replication_toMaster();
 
       #define ORG_XTREEMFS_INTERFACES_DIRINTERFACE_HANDLEEVENT_PROTOTYPES \
       virtual void handlextreemfs_address_mappings_getRequest( xtreemfs_address_mappings_getRequest& req );\
@@ -1131,7 +1232,8 @@ namespace org
       virtual void handlextreemfs_service_registerRequest( xtreemfs_service_registerRequest& req );\
       virtual void handlextreemfs_service_deregisterRequest( xtreemfs_service_deregisterRequest& req );\
       virtual void handlextreemfs_service_offlineRequest( xtreemfs_service_offlineRequest& req );\
-      virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req );
+      virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req );\
+      virtual void handlereplication_toMasterRequest( replication_toMasterRequest& req );
 
     };
 
