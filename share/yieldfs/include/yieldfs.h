@@ -122,7 +122,6 @@ namespace yieldfs
     // YIELD::Volume
     bool chmod( const YIELD::Path& path, mode_t mode );
     bool chown( const YIELD::Path& path, int32_t uid, int32_t gid );
-    YIELD::auto_Stat getattr( const YIELD::Path& path );
     bool link( const YIELD::Path& old_path, const YIELD::Path& new_path );
     bool mkdir( const YIELD::Path& path, mode_t mode );
     YIELD::auto_File open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
@@ -132,6 +131,7 @@ namespace yieldfs
     bool rmdir( const YIELD::Path& path );
     bool setattr( const YIELD::Path& path, uint32_t file_attributes );
     bool setxattr( const YIELD::Path& path, const std::string& name, const std::string& value, int32_t flags );
+    YIELD::auto_Stat stat( const YIELD::Path& path );
     bool symlink( const YIELD::Path& to_path, const YIELD::Path& from_path );
     bool truncate( const YIELD::Path& path, uint64_t new_size );
     bool unlink( const YIELD::Path& path );

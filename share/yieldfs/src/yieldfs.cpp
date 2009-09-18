@@ -241,7 +241,7 @@ namespace yieldfs
 
     static int fgetattr( const char* path, struct stat *stbuf, struct fuse_file_info* fi )
     {
-      YIELD::auto_Stat yield_stbuf = get_file( fi )->getattr();
+      YIELD::auto_Stat yield_stbuf = get_file( fi )->stat();
       if ( yield_stbuf != NULL )
       {
         *stbuf = *yield_stbuf;
@@ -282,7 +282,7 @@ namespace yieldfs
 
     static int getattr( const char* path, struct stat *stbuf )
     {
-      YIELD::auto_Stat yield_stbuf = get_volume().getattr( path );
+      YIELD::auto_Stat yield_stbuf = get_volume().stat( path );
       if ( yield_stbuf != NULL )
       {
         *stbuf = *yield_stbuf;
@@ -470,7 +470,7 @@ namespace yieldfs
     {
       YIELD::Volume& volume = get_volume();
 
-      YIELD::auto_Stat yield_stbuf = volume.getattr( path );
+      YIELD::auto_Stat yield_stbuf = volume.stat( path );
       if ( yield_stbuf != NULL )
       {
         struct stat stbuf = *yield_stbuf;
@@ -478,7 +478,7 @@ namespace yieldfs
 
         if ( strcmp( path, "/" ) != 0 )
         {
-          yield_stbuf = volume.getattr( YIELD::Path( path ).split().first );
+          yield_stbuf = volume.stat( YIELD::Path( path ).split().first );
           if ( yield_stbuf != NULL )
           {
             stbuf = *yield_stbuf;
@@ -781,7 +781,7 @@ namespace yieldfs
           }
           else
           {
-            YIELD::auto_Stat stbuf = volume.getattr( FileName );
+            YIELD::auto_Stat stbuf = volume.stat( FileName );
             if ( stbuf!= NULL )
             {
               if ( stbuf->ISDIR() )
@@ -955,7 +955,7 @@ namespace yieldfs
 	    LPBY_HANDLE_FILE_INFORMATION	HandleFileInformation,
 	    PDOKAN_FILE_INFO				DokanFileInfo )
     {
-      YIELD::auto_Stat stbuf = get_volume( DokanFileInfo ).getattr( FileName );
+      YIELD::auto_Stat stbuf = get_volume( DokanFileInfo ).stat( FileName );
       if ( stbuf != NULL )
       {
         *HandleFileInformation = *stbuf;
@@ -1033,7 +1033,7 @@ namespace yieldfs
       }
       else
       {
-        YIELD::auto_Stat stbuf = get_volume( DokanFileInfo ).getattr( FileName );
+        YIELD::auto_Stat stbuf = get_volume( DokanFileInfo ).stat( FileName );
         if ( stbuf!= NULL )
         {
           if ( stbuf->ISDIR() )
@@ -1760,23 +1760,6 @@ yidl::auto_Object<CachedStat> MetadataCachingVolume::find( const YIELD::Path& pa
     return NULL;
   }
 }
-YIELD::auto_Stat MetadataCachingVolume::getattr( const YIELD::Path& path )
-{
-  yidl::auto_Object<CachedStat> cached_stat = find( path );
-  if ( cached_stat != NULL )
-    return static_cast<CachedStat*>( cached_stat.get() )->get_stat();
-  else
-  {
-    YIELD::auto_Stat stbuf = underlying_volume->getattr( path );
-    if ( stbuf != NULL )
-    {
-      insert( new CachedStat( path, stbuf ) );
-      return stbuf;
-    }
-    else
-      return NULL;
-  }
-}
 YIELD::Path MetadataCachingVolume::getParentDirectoryPath( const YIELD::Path& path )
 {
   if ( path != PATH_SEPARATOR_STRING )
@@ -1878,6 +1861,23 @@ bool MetadataCachingVolume::setxattr( const YIELD::Path& path, const std::string
 {
   evict( path );
   return underlying_volume->setxattr( path, name, value, flags );
+}
+YIELD::auto_Stat MetadataCachingVolume::stat( const YIELD::Path& path )
+{
+  yidl::auto_Object<CachedStat> cached_stat = find( path );
+  if ( cached_stat != NULL )
+    return static_cast<CachedStat*>( cached_stat.get() )->get_stat();
+  else
+  {
+    YIELD::auto_Stat stbuf = underlying_volume->stat( path );
+    if ( stbuf != NULL )
+    {
+      insert( new CachedStat( path, stbuf ) );
+      return stbuf;
+    }
+    else
+      return NULL;
+  }
 }
 bool MetadataCachingVolume::symlink( const YIELD::Path& to_path, const YIELD::Path& from_path )
 {
@@ -2087,10 +2087,6 @@ bool StackableFile::datasync()
 {
   return underlying_file->datasync();
 }
-YIELD::auto_Stat StackableFile::getattr()
-{
-  return underlying_file->getattr();
-}
 bool StackableFile::getlk( bool exclusive, uint64_t offset, uint64_t length )
 {
   return underlying_file->getlk( exclusive, offset, length );
@@ -2122,6 +2118,10 @@ bool StackableFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
 bool StackableFile::setxattr( const std::string& name, const std::string& value, int flags )
 {
   return underlying_file->setxattr( name, value, flags );
+}
+YIELD::auto_Stat StackableFile::stat()
+{
+  return underlying_file->stat();
 }
 bool StackableFile::sync()
 {
@@ -2155,10 +2155,6 @@ bool StackableVolume::chmod( const YIELD::Path& path, mode_t mode )
 bool StackableVolume::chown( const YIELD::Path& path, int32_t uid, int32_t gid )
 {
   return underlying_volume->chown( path, uid, gid );
-}
-YIELD::auto_Stat StackableVolume::getattr( const YIELD::Path& path )
-{
-  return underlying_volume->getattr( path );
 }
 bool StackableVolume::getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value )
 {
@@ -2208,6 +2204,10 @@ bool StackableVolume::setxattr( const YIELD::Path& path, const std::string& name
 {
   return underlying_volume->setxattr( path, name, value, flags );
 }
+YIELD::auto_Stat StackableVolume::stat( const YIELD::Path& path )
+{
+  return underlying_volume->stat( path );
+}
 bool StackableVolume::statvfs( const YIELD::Path& path, struct statvfs& stvfsbuf )
 {
   return underlying_volume->statvfs( path, stvfsbuf );
@@ -2252,12 +2252,6 @@ bool TracingFile::datasync()
 {
   return TracingVolume::trace( log, "yieldfs::TracingFile::datasync", path, underlying_file->datasync() );
 }
-YIELD::auto_Stat TracingFile::getattr()
-{
-  YIELD::auto_Stat stbuf = underlying_file->getattr();
-  TracingVolume::trace( log, "yieldfs::TracingFile::getattr", path, stbuf != NULL );
-  return stbuf;
-}
 bool TracingFile::getlk( bool exclusive, uint64_t offset, uint64_t length )
 {
   return TracingVolume::trace( log, "yieldfs::TracingFile::getlk", path, offset, length, underlying_file->getlk( exclusive, offset, length ) );
@@ -2291,6 +2285,12 @@ bool TracingFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
 bool TracingFile::setxattr( const std::string& name, const std::string& value, int flags )
 {
   return TracingVolume::trace( log, "yieldfs::TracingFile::setxattr", path, name, underlying_file->setxattr( name, value, flags ) );
+}
+YIELD::auto_Stat TracingFile::stat()
+{
+  YIELD::auto_Stat stbuf = underlying_file->stat();
+  TracingVolume::trace( log, "yieldfs::TracingFile::stat", path, stbuf != NULL );
+  return stbuf;
 }
 bool TracingFile::sync()
 {
@@ -2404,15 +2404,6 @@ bool TracingVolume::exists( const YIELD::Path& path )
   return trace( log, "yieldfs::TracingVolume::exists", path, underlying_volume->exists( path ) );
 }
 
-YIELD::auto_Stat TracingVolume::getattr( const YIELD::Path& path )
-{
-  YIELD::auto_Stat stbuf = underlying_volume->getattr( path );
-  trace( log, "yieldfs::TracingVolume::getattr", path, stbuf != NULL );
-  if ( stbuf != NULL )
-    log->getStream( YIELD::Log::LOG_DEBUG ) << "yieldfs::TracingVolume::getattr returning Stat " << static_cast<std::string>( *stbuf ) << ".";
-  return stbuf;
-}
-
 bool TracingVolume::getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value )
 {
   return trace( log, "yieldfs::TracingVolume::getxattr", path, name, underlying_volume->getxattr( path, name, out_value ) );
@@ -2499,6 +2490,15 @@ bool TracingVolume::setattr( const YIELD::Path& path, uint32_t file_attributes )
 bool TracingVolume::setxattr( const YIELD::Path& path, const std::string& name, const std::string& value, int32_t flags )
 {
   return trace( log, "yieldfs::TracingVolume::setxattr", path, name, underlying_volume->setxattr( path, name, value, flags ) );
+}
+
+YIELD::auto_Stat TracingVolume::stat( const YIELD::Path& path )
+{
+  YIELD::auto_Stat stbuf = underlying_volume->stat( path );
+  trace( log, "yieldfs::TracingVolume::stat", path, stbuf != NULL );
+  if ( stbuf != NULL )
+    log->getStream( YIELD::Log::LOG_DEBUG ) << "yieldfs::TracingVolume::stat returning Stat " << static_cast<std::string>( *stbuf ) << ".";
+  return stbuf;
 }
 
 bool TracingVolume::statvfs( const YIELD::Path& path, struct statvfs& buf )

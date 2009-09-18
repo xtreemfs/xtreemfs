@@ -97,7 +97,6 @@ typedef int ssize_t;
 #define YIELD_FILE_PROTOTYPES \
   virtual bool close(); \
   virtual bool datasync(); \
-  virtual yidl::auto_Object<YIELD::Stat> getattr(); \
   virtual bool getxattr( const std::string& name, std::string& out_value ); \
   virtual bool getlk( bool exclusive, uint64_t offset, uint64_t length ); \
   virtual bool listxattr( std::vector<std::string>& out_names ); \
@@ -106,6 +105,7 @@ typedef int ssize_t;
   virtual bool setlk( bool exclusive, uint64_t offset, uint64_t length ); \
   virtual bool setlkw( bool exclusive, uint64_t offset, uint64_t length ); \
   virtual bool setxattr( const std::string& name, const std::string& value, int flags ); \
+  virtual yidl::auto_Object<YIELD::Stat> stat(); \
   virtual bool sync(); \
   virtual bool truncate( uint64_t offset ); \
   virtual bool unlk( uint64_t offset, uint64_t length ); \
@@ -115,7 +115,6 @@ typedef int ssize_t;
     virtual bool access( const YIELD::Path& path, int amode ); \
     virtual bool chmod( const YIELD::Path& path, mode_t mode ); \
     virtual bool chown( const YIELD::Path& path, int32_t uid, int32_t gid ); \
-    virtual yidl::auto_Object<YIELD::Stat> getattr( const YIELD::Path& path ); \
     virtual bool getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value ); \
     virtual bool link( const YIELD::Path& old_path, const YIELD::Path& new_path ); \
     virtual bool listxattr( const YIELD::Path& path, std::vector<std::string>& out_names ); \
@@ -128,6 +127,7 @@ typedef int ssize_t;
     virtual bool rmdir( const YIELD::Path& path ); \
     virtual bool setattr( const YIELD::Path& path, uint32_t file_attributes ); \
     virtual bool setxattr( const YIELD::Path& path, const std::string& name, const std::string& value, int flags ); \
+    virtual yidl::auto_Object<YIELD::Stat> stat( const YIELD::Path& path ); \
     virtual bool statvfs( const YIELD::Path& path, struct statvfs& ); \
     virtual bool symlink( const YIELD::Path& old_path, const YIELD::Path& new_path ); \
     virtual bool truncate( const YIELD::Path& path, uint64_t new_size ); \
@@ -383,7 +383,6 @@ namespace YIELD
     virtual ssize_t read( void* buffer, size_t buffer_len ); // Reads from the current file pointer
     virtual bool seek( uint64_t offset ); // Seeks from the beginning of the file
     virtual bool seek( uint64_t offset, unsigned char whence );
-    virtual yidl::auto_Object<Stat> stat() { return getattr(); }
     virtual ssize_t write( yidl::auto_Buffer buffer );
     virtual ssize_t write( const void* buffer, size_t buffer_len ); // Writes from the current position
     YIELD_FILE_PROTOTYPES;
@@ -1555,7 +1554,6 @@ namespace YIELD
     virtual auto_File open( const Path& path, uint32_t flags, mode_t mode ) { return open( path, flags, mode, 0 ); }
     virtual bool readdir( const Path& path, readdirCallback& callback ) { return readdir( path, Path(), callback ); }
     virtual bool rmtree( const Path& path );
-    virtual auto_Stat stat( const Path& path ) { return getattr( path ); }
     virtual bool touch( const Path& path ) { return touch( path, File::DEFAULT_MODE ); }
     virtual bool touch( const Path& path, mode_t mode );
 

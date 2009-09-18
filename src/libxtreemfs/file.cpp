@@ -115,11 +115,6 @@ bool File::close()
   return true;
 }
 
-YIELD::auto_Stat File::getattr()
-{
-  return parent_volume->getattr( path );
-}
-
 bool File::getlk( bool exclusive, uint64_t offset, uint64_t length )
 {
   org::xtreemfs::interfaces::Lock lock = parent_volume->get_osd_proxy_mux()->xtreemfs_lock_check( file_credentials, parent_volume->get_uuid(), yieldfs::FUSE::getpid(), file_credentials.get_xcap().get_file_id(), offset, length, exclusive );
@@ -344,6 +339,11 @@ bool File::setlkw( bool exclusive, uint64_t offset, uint64_t length )
 bool File::setxattr( const std::string& name, const std::string& value, int flags )
 {
   return parent_volume->setxattr( path, name, value, flags );
+}
+
+YIELD::auto_Stat File::stat()
+{
+  return parent_volume->stat( path );
 }
 
 bool File::sync()

@@ -42,9 +42,9 @@ namespace xtreemfs
 
     // YIELD::Volume
     YIELD_VOLUME_PROTOTYPES;
-    YIELD::auto_Stat getattr( const Path& path );
     bool listdir( const YIELD::Path& path, listdirCallback& callback ) { return listdir( path, YIELD::Path(), callback ); }
     bool listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback );
+    YIELD::auto_Stat stat( const Path& path );
 
   private:
     Volume( yidl::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, yidl::auto_Object<MRCProxy> mrc_proxy, const std::string& name, yidl::auto_Object<OSDProxyMux> osd_proxy_mux, YIELD::auto_StageGroup stage_group, const YIELD::Path& vivaldi_coordinates_file_path );

@@ -1,4 +1,4 @@
-// Revision: 1880
+// Revision: 1883
 
 #include "yield/platform.h"
 using namespace YIELD;
@@ -294,22 +294,9 @@ bool File::datasync()
   return true;
 #endif
 }
-auto_Stat File::getattr()
-{
-#ifdef _WIN32
-  BY_HANDLE_FILE_INFORMATION by_handle_file_information;
-  if ( GetFileInformationByHandle( fd, &by_handle_file_information ) != 0 )
-    return new Stat( by_handle_file_information );
-#else
-  struct stat stbuf;
-  if ( fstat( fd, &stbuf ) != -1 )
-    return new Stat( stbuf );
-#endif
-  return NULL;
-}
 uint64_t File::get_size()
 {
-  auto_Stat stbuf = getattr();
+  auto_Stat stbuf = stat();
   if ( stbuf != NULL )
     return stbuf->get_size();
   else
@@ -483,6 +470,19 @@ bool File::setxattr( const std::string& name, const std::string& value, int flag
 #else
   return false;
 #endif
+}
+auto_Stat File::stat()
+{
+#ifdef _WIN32
+  BY_HANDLE_FILE_INFORMATION by_handle_file_information;
+  if ( GetFileInformationByHandle( fd, &by_handle_file_information ) != 0 )
+    return new Stat( by_handle_file_information );
+#else
+  struct stat stbuf;
+  if ( fstat( fd, &stbuf ) != -1 )
+    return new Stat( stbuf );
+#endif
+  return NULL;
 }
 bool File::sync()
 {
@@ -2605,23 +2605,6 @@ bool Volume::isfile( const Path& path )
   return ::stat( path, &stbuf ) == 0 && S_ISREG( stbuf.st_mode );
 #endif
 }
-yidl::auto_Object<YIELD::Stat> Volume::getattr( const Path& path )
-{
-#ifdef _WIN32
-  WIN32_FIND_DATA find_data;
-  HANDLE hFindFirstFile = FindFirstFile( path, &find_data );
-  if ( hFindFirstFile != INVALID_HANDLE_VALUE )
-  {
-    FindClose( hFindFirstFile );
-    return new Stat( find_data );
-  }
-#else
-  struct stat stbuf;
-  if ( ::stat( path, &stbuf ) != -1 )
-    return new Stat( stbuf );
-#endif
-  return NULL;
-}
 bool Volume::getxattr( const Path& path, const std::string& name, std::string& out_value )
 {
 #if defined(YIELD_HAVE_XATTR_H)
@@ -2887,6 +2870,23 @@ bool Volume::setxattr( const Path& path, const std::string& name, const std::str
   errno = ENOTSUP;
 #endif
   return false;
+}
+yidl::auto_Object<YIELD::Stat> Volume::stat( const Path& path )
+{
+#ifdef _WIN32
+  WIN32_FIND_DATA find_data;
+  HANDLE hFindFirstFile = FindFirstFile( path, &find_data );
+  if ( hFindFirstFile != INVALID_HANDLE_VALUE )
+  {
+    FindClose( hFindFirstFile );
+    return new Stat( find_data );
+  }
+#else
+  struct stat stbuf;
+  if ( ::stat( path, &stbuf ) != -1 )
+    return new Stat( stbuf );
+#endif
+  return NULL;
 }
 bool Volume::statvfs( const Path& path, struct statvfs& buffer )
 {

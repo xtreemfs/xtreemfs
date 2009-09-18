@@ -106,27 +106,6 @@ bool Volume::chown( const YIELD::Path& path, int uid, int gid )
   return false;
 }
 
-YIELD::auto_Stat Volume::getattr( const YIELD::Path& path )
-{
-  VOLUME_OPERATION_BEGIN( getattr )
-  {
-    return getattr( Path( this->name, path ) );
-  }
-  VOLUME_OPERATION_END( getattr );
-  return NULL;
-}
-
-YIELD::auto_Stat Volume::getattr( const Path& path )
-{
-  org::xtreemfs::interfaces::Stat stbuf;
-  mrc_proxy->getattr( path, stbuf );
-#ifdef _WIN32
-  return new YIELD::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns(), stbuf.get_attributes() );
-#else
-  return new YIELD::Stat( stbuf.get_dev(), stbuf.get_ino(), stbuf.get_mode(), stbuf.get_nlink(), stbuf.get_uid(), stbuf.get_gid(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns() );
-#endif
-}
-
 bool Volume::getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value )
 {
   VOLUME_OPERATION_BEGIN( getxattr )
@@ -394,6 +373,27 @@ bool Volume::setxattr( const YIELD::Path& path, const std::string& name, const s
   }
   VOLUME_OPERATION_END( setxattr );
   return false;
+}
+
+YIELD::auto_Stat Volume::stat( const YIELD::Path& path )
+{
+  VOLUME_OPERATION_BEGIN( getattr )
+  {
+    return stat( Path( this->name, path ) );
+  }
+  VOLUME_OPERATION_END( getattr );
+  return NULL;
+}
+
+YIELD::auto_Stat Volume::stat( const Path& path )
+{
+  org::xtreemfs::interfaces::Stat stbuf;
+  mrc_proxy->getattr( path, stbuf );
+#ifdef _WIN32
+  return new YIELD::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns(), stbuf.get_attributes() );
+#else
+  return new YIELD::Stat( stbuf.get_dev(), stbuf.get_ino(), stbuf.get_mode(), stbuf.get_nlink(), stbuf.get_uid(), stbuf.get_gid(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns() );
+#endif
 }
 
 bool Volume::statvfs( const YIELD::Path&, struct statvfs& statvfsbuf )

@@ -503,7 +503,7 @@ YIELD::auto_HTTPResponse YIELD::HTTPClient::PUT( const URI& absolute_uri, const 
   auto_File file( Volume().open( body_file_path ) );
   if ( file != NULL )
   {
-    size_t file_size = static_cast<size_t>( file->getattr()->get_size() );
+    size_t file_size = static_cast<size_t>( file->stat()->get_size() );
     yidl::auto_Object<yidl::HeapBuffer> body( new yidl::HeapBuffer( file_size ) );
     file->read( *body, file_size );
     return sendHTTPRequest( "PUT", absolute_uri, body.release(), log );
