@@ -143,7 +143,7 @@ public class RestoreDBOperation extends MRCOperation {
                 private void handleNestedElement(String qName, Attributes attributes, boolean openTag)
                     throws UserException, DatabaseException {
                     
-                    if (qName.equals("volume")) {
+                    if (qName.equalsIgnoreCase("volume")) {
                         
                         // set the largest file ID
                         StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
@@ -152,28 +152,28 @@ public class RestoreDBOperation extends MRCOperation {
                         update.execute();
                         state.largestFileId = 0;
                         
-                    } else if (qName.equals("dir"))
+                    } else if (qName.equalsIgnoreCase("dir"))
                         DBAdminHelper.restoreDir(vMan, master.getFileAccessManager(), attributes, state,
                             dbVersion, openTag);
-                    else if (qName.equals("file"))
+                    else if (qName.equalsIgnoreCase("file"))
                         DBAdminHelper.restoreFile(vMan, master.getFileAccessManager(), attributes, state,
                             dbVersion, openTag);
-                    else if (qName.equals("xLocList"))
+                    else if (qName.equalsIgnoreCase("xLocList"))
                         DBAdminHelper.restoreXLocList(vMan, master.getFileAccessManager(), attributes, state,
                             dbVersion, openTag);
-                    else if (qName.equals("xLoc"))
+                    else if (qName.equalsIgnoreCase("xLoc"))
                         DBAdminHelper.restoreXLoc(vMan, master.getFileAccessManager(), attributes, state,
                             dbVersion, openTag);
-                    else if (qName.equals("osd"))
+                    else if (qName.equalsIgnoreCase("osd"))
                         DBAdminHelper.restoreOSD(vMan, master.getFileAccessManager(), attributes, state,
                             dbVersion, openTag);
-                    else if (qName.equals("acl"))
+                    else if (qName.equalsIgnoreCase("acl"))
                         DBAdminHelper.restoreACL(vMan, master.getFileAccessManager(), attributes, state,
                             dbVersion, openTag);
-                    else if (qName.equals("entry"))
+                    else if (qName.equalsIgnoreCase("entry"))
                         DBAdminHelper.restoreEntry(vMan, master.getFileAccessManager(), attributes, state,
                             dbVersion, openTag);
-                    else if (qName.equals("attr"))
+                    else if (qName.equalsIgnoreCase("attr"))
                         DBAdminHelper.restoreAttr(vMan, master.getFileAccessManager(), attributes, state,
                             dbVersion, openTag);
                 }
