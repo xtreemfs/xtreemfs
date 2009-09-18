@@ -27,6 +27,8 @@ public class xtreemfs_service_get_by_nameResponse extends org.xtreemfs.interface
     public String toString() 
     { 
         StringWriter string_writer = new StringWriter();
+	string_writer.append(this.getClass().getCanonicalName());
+	string_writer.append(" ");
         PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();

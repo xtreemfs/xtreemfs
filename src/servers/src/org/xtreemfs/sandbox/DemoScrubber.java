@@ -361,7 +361,7 @@ public class DemoScrubber implements DemoScrubberFileInfo.FileScrubbedListener {
             else
                 System.out.println("\n\nscrubbing volume '"+volume+"' FAILED!");
 
-            System.exit(exitCode);
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -380,6 +380,8 @@ public class DemoScrubber implements DemoScrubberFileInfo.FileScrubbedListener {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
+
+        System.exit(exitCode);
 
         TimeSync.close();
         UUIDResolver.shutdown();

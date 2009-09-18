@@ -30,6 +30,8 @@ public class StripingPolicy implements Struct
     public String toString() 
     { 
         StringWriter string_writer = new StringWriter();
+	string_writer.append(this.getClass().getCanonicalName());
+	string_writer.append(" ");
         PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
