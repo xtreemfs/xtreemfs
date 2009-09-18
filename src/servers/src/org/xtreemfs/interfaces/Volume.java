@@ -1,16 +1,18 @@
 package org.xtreemfs.interfaces;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
 
 
 
-public class Volume extends Struct
+public class Volume implements Struct
 {
     public static final int TAG = 2009090253;
     
@@ -31,6 +33,16 @@ public class Volume extends Struct
     public void setOwner_user_id( String owner_user_id ) { this.owner_user_id = owner_user_id; }
     public String getOwner_group_id() { return owner_group_id; }
     public void setOwner_group_id( String owner_group_id ) { this.owner_group_id = owner_group_id; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
+
 
     // java.io.Serializable
     public static final long serialVersionUID = 2009090253;    

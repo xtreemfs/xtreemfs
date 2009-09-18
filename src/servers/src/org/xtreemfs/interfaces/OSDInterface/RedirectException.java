@@ -1,10 +1,12 @@
 package org.xtreemfs.interfaces.OSDInterface;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
@@ -20,6 +22,16 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
 
     public String getTo_uuid() { return to_uuid; }
     public void setTo_uuid( String to_uuid ) { this.to_uuid = to_uuid; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
+
 
     // java.io.Serializable
     public static final long serialVersionUID = 2009082924;    

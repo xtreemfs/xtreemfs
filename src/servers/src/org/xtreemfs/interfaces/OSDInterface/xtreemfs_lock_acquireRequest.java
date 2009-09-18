@@ -1,10 +1,12 @@
 package org.xtreemfs.interfaces.OSDInterface;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
@@ -32,6 +34,15 @@ public class xtreemfs_lock_acquireRequest extends org.xtreemfs.interfaces.utils.
     public void setLength( long length ) { this.length = length; }
     public boolean getExclusive() { return exclusive; }
     public void setExclusive( boolean exclusive ) { this.exclusive = exclusive; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_lock_acquireResponse(); }

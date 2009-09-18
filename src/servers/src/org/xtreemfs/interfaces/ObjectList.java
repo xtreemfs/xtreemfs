@@ -1,16 +1,18 @@
 package org.xtreemfs.interfaces;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
 
 
 
-public class ObjectList extends Struct
+public class ObjectList implements Struct
 {
     public static final int TAG = 2009082673;
     
@@ -23,6 +25,16 @@ public class ObjectList extends Struct
     public void setStripeWidth( int stripeWidth ) { this.stripeWidth = stripeWidth; }
     public int getFirstObjectNo() { return firstObjectNo; }
     public void setFirstObjectNo( int firstObjectNo ) { this.firstObjectNo = firstObjectNo; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
+
 
     // java.io.Serializable
     public static final long serialVersionUID = 2009082673;    

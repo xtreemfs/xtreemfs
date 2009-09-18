@@ -1,10 +1,12 @@
 package org.xtreemfs.interfaces.DIRInterface;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
@@ -20,6 +22,15 @@ public class xtreemfs_service_get_by_typeRequest extends org.xtreemfs.interfaces
 
     public ServiceType getType() { return type; }
     public void setType( ServiceType type ) { this.type = type; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_service_get_by_typeResponse(); }

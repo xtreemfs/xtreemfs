@@ -1,10 +1,12 @@
 package org.xtreemfs.interfaces.OSDInterface;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
@@ -20,6 +22,16 @@ public class xtreemfs_cleanup_is_runningResponse extends org.xtreemfs.interfaces
 
     public boolean getIs_running() { return is_running; }
     public void setIs_running( boolean is_running ) { this.is_running = is_running; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
+
 
     // java.io.Serializable
     public static final long serialVersionUID = 2009082949;    

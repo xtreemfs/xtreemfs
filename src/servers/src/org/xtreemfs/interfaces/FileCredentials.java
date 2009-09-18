@@ -1,16 +1,18 @@
 package org.xtreemfs.interfaces;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
 
 
 
-public class FileCredentials extends Struct
+public class FileCredentials implements Struct
 {
     public static final int TAG = 2009090234;
     
@@ -21,6 +23,16 @@ public class FileCredentials extends Struct
     public void setXlocs( XLocSet xlocs ) { this.xlocs = xlocs; }
     public XCap getXcap() { return xcap; }
     public void setXcap( XCap xcap ) { this.xcap = xcap; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
+
 
     // java.io.Serializable
     public static final long serialVersionUID = 2009090234;    

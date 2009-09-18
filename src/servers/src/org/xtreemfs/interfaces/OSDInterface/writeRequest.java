@@ -1,10 +1,12 @@
 package org.xtreemfs.interfaces.OSDInterface;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
@@ -32,6 +34,15 @@ public class writeRequest extends org.xtreemfs.interfaces.utils.Request
     public void setLease_timeout( long lease_timeout ) { this.lease_timeout = lease_timeout; }
     public ObjectData getObject_data() { return object_data; }
     public void setObject_data( ObjectData object_data ) { this.object_data = object_data; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
 
     // Request
     public Response createDefaultResponse() { return new writeResponse(); }

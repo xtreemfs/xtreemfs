@@ -1,10 +1,12 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
@@ -22,6 +24,15 @@ public class xtreemfs_replica_addRequest extends org.xtreemfs.interfaces.utils.R
     public void setFile_id( String file_id ) { this.file_id = file_id; }
     public Replica getNew_replica() { return new_replica; }
     public void setNew_replica( Replica new_replica ) { this.new_replica = new_replica; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_replica_addResponse(); }

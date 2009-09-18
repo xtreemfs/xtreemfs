@@ -1,16 +1,18 @@
 package org.xtreemfs.interfaces;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
 
 
 
-public class DirectoryEntry extends Struct
+public class DirectoryEntry implements Struct
 {
     public static final int TAG = 2009090250;
     
@@ -21,6 +23,16 @@ public class DirectoryEntry extends Struct
     public void setName( String name ) { this.name = name; }
     public Stat getStbuf() { return stbuf; }
     public void setStbuf( Stat stbuf ) { this.stbuf = stbuf; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
+
 
     // java.io.Serializable
     public static final long serialVersionUID = 2009090250;    

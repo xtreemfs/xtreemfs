@@ -1,10 +1,12 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
@@ -20,6 +22,15 @@ public class closeRequest extends org.xtreemfs.interfaces.utils.Request
 
     public XCap getWrite_xcap() { return write_xcap; }
     public void setWrite_xcap( XCap write_xcap ) { this.write_xcap = write_xcap; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
 
     // Request
     public Response createDefaultResponse() { return new closeResponse(); }

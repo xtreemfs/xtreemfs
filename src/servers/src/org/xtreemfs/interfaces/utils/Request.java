@@ -27,7 +27,7 @@ package org.xtreemfs.interfaces.utils;
 import yidl.Struct;
 
 
-public abstract class Request extends Struct
+public abstract class Request implements Struct
 {
     public abstract Response createDefaultResponse();
 };   

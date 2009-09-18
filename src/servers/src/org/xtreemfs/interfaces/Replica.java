@@ -1,16 +1,18 @@
 package org.xtreemfs.interfaces;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
 
 
 
-public class Replica extends Struct
+public class Replica implements Struct
 {
     public static final int TAG = 2009090229;
     
@@ -23,6 +25,16 @@ public class Replica extends Struct
     public void setReplication_flags( int replication_flags ) { this.replication_flags = replication_flags; }
     public StringSet getOsd_uuids() { return osd_uuids; }
     public void setOsd_uuids( StringSet osd_uuids ) { this.osd_uuids = osd_uuids; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
+
 
     // java.io.Serializable
     public static final long serialVersionUID = 2009090229;    

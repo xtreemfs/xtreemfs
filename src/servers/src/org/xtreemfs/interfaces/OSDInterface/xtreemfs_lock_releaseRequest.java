@@ -1,10 +1,12 @@
 package org.xtreemfs.interfaces.OSDInterface;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
@@ -24,6 +26,15 @@ public class xtreemfs_lock_releaseRequest extends org.xtreemfs.interfaces.utils.
     public void setFile_id( String file_id ) { this.file_id = file_id; }
     public Lock getLock() { return lock; }
     public void setLock( Lock lock ) { this.lock = lock; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_lock_releaseResponse(); }

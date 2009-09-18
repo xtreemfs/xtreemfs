@@ -1,11 +1,13 @@
 package org.xtreemfs.interfaces;
 
+import java.io.StringWriter;
 import java.util.Iterator;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Map;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Unmarshaller;
 
 
@@ -14,6 +16,15 @@ import yidl.Unmarshaller;
 public class ServiceDataMap extends Map<String, String>
 {
     public ServiceDataMap() { }
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeMap( "", this );
+        return string_writer.toString();
+    }
+
 
     // yidl.Object
     public int getTag() { return 2009082650; }

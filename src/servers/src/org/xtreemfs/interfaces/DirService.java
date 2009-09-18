@@ -1,16 +1,18 @@
 package org.xtreemfs.interfaces;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
 
 
 
-public class DirService extends Struct
+public class DirService implements Struct
 {
     public static final int TAG = 2009082653;
     
@@ -25,6 +27,16 @@ public class DirService extends Struct
     public void setProtocol( String protocol ) { this.protocol = protocol; }
     public int getInterface_version() { return interface_version; }
     public void setInterface_version( int interface_version ) { this.interface_version = interface_version; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
+
 
     // java.io.Serializable
     public static final long serialVersionUID = 2009082653;    

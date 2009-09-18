@@ -1,16 +1,18 @@
 package org.xtreemfs.interfaces;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
 
 
 
-public class OSDWriteResponse extends Struct
+public class OSDWriteResponse implements Struct
 {
     public static final int TAG = 2009090226;
     
@@ -21,6 +23,16 @@ public class OSDWriteResponse extends Struct
     public void setNew_file_size( NewFileSizeSet new_file_size ) { this.new_file_size = new_file_size; }
     public OSDtoMRCDataSet getOpaque_data() { return opaque_data; }
     public void setOpaque_data( OSDtoMRCDataSet opaque_data ) { this.opaque_data = opaque_data; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
+
 
     // java.io.Serializable
     public static final long serialVersionUID = 2009090226;    

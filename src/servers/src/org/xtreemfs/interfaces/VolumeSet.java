@@ -1,10 +1,12 @@
 package org.xtreemfs.interfaces;
 
+import java.io.StringWriter;
 import java.util.Iterator;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Sequence;
 import yidl.Struct;
 import yidl.Unmarshaller;
@@ -15,6 +17,16 @@ import yidl.Unmarshaller;
 public class VolumeSet extends Sequence<Volume>
 {
     public VolumeSet() { }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeSequence( "", this );
+        return string_writer.toString();
+    }
+
 
     // yidl.Object
     public int getTag() { return 2009090254; }

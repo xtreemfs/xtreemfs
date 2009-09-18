@@ -1,10 +1,12 @@
 package org.xtreemfs.interfaces.OSDInterface;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
@@ -24,6 +26,15 @@ public class xtreemfs_cleanup_startRequest extends org.xtreemfs.interfaces.utils
     public void setRemove_unavail_volume( boolean remove_unavail_volume ) { this.remove_unavail_volume = remove_unavail_volume; }
     public boolean getLost_and_found() { return lost_and_found; }
     public void setLost_and_found( boolean lost_and_found ) { this.lost_and_found = lost_and_found; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
 
     // Request
     public Response createDefaultResponse() { return new xtreemfs_cleanup_startResponse(); }

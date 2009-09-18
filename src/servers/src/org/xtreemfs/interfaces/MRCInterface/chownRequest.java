@@ -1,10 +1,12 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
@@ -24,6 +26,15 @@ public class chownRequest extends org.xtreemfs.interfaces.utils.Request
     public void setUser_id( String user_id ) { this.user_id = user_id; }
     public String getGroup_id() { return group_id; }
     public void setGroup_id( String group_id ) { this.group_id = group_id; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
 
     // Request
     public Response createDefaultResponse() { return new chownResponse(); }

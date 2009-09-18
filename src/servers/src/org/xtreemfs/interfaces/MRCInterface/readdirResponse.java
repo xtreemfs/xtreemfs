@@ -1,10 +1,12 @@
 package org.xtreemfs.interfaces.MRCInterface;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
@@ -20,6 +22,16 @@ public class readdirResponse extends org.xtreemfs.interfaces.utils.Response
 
     public DirectoryEntrySet getDirectory_entries() { return directory_entries; }
     public void setDirectory_entries( DirectoryEntrySet directory_entries ) { this.directory_entries = directory_entries; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
+
 
     // java.io.Serializable
     public static final long serialVersionUID = 2009090421;    

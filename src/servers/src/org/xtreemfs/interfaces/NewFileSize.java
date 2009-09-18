@@ -1,16 +1,18 @@
 package org.xtreemfs.interfaces;
 
+import java.io.StringWriter;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.Marshaller;
+import yidl.PrettyPrinter;
 import yidl.Struct;
 import yidl.Unmarshaller;
 
 
 
 
-public class NewFileSize extends Struct
+public class NewFileSize implements Struct
 {
     public static final int TAG = 2009090220;
     
@@ -21,6 +23,16 @@ public class NewFileSize extends Struct
     public void setSize_in_bytes( long size_in_bytes ) { this.size_in_bytes = size_in_bytes; }
     public int getTruncate_epoch() { return truncate_epoch; }
     public void setTruncate_epoch( int truncate_epoch ) { this.truncate_epoch = truncate_epoch; }
+
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
+
 
     // java.io.Serializable
     public static final long serialVersionUID = 2009090220;    

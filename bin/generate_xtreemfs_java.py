@@ -10,8 +10,10 @@ __all__ = []
 
 # Constants
 XTREEMFS_IMPORTS = [
+                    "import java.io.StringWriter;",
                     "import org.xtreemfs.interfaces.utils.*;",
                     "import org.xtreemfs.common.buffer.ReusableBuffer;",
+                    "import yidl.PrettyPrinter;",
                    ]
 
 
@@ -94,21 +96,55 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
         return ".".join( self.getQualifiedName() )
 
 
-
 class XtreemFSJavaMapType(JavaMapType):
     def getImports( self ): 
         return JavaMapType.getImports( self ) + XTREEMFS_IMPORTS
+
+    def getOtherMethods( self ):
+        return """
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeMap( "", this );
+        return string_writer.toString();
+    }
+"""
 
                     
 class XtreemFSJavaSequenceType(JavaSequenceType):
     def getImports( self ): 
         return JavaSequenceType.getImports( self ) + XTREEMFS_IMPORTS
     
+    def getOtherMethods( self ):
+        return """
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeSequence( "", this );
+        return string_writer.toString();
+    }
+"""
+
 
 class XtreemFSJavaStructType(JavaStructType):        
     def getImports( self ):
         return JavaStructType.getImports( self ) + XTREEMFS_IMPORTS    
-                                
+
+    def getOtherMethods( self ):
+        return """
+    // java.lang.Object
+    public String toString() 
+    { 
+        StringWriter string_writer = new StringWriter();
+        PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
+        pretty_printer.writeStruct( "", this );
+        return string_writer.toString();
+    }
+"""
     
 class XtreemFSJavaOperation(JavaOperation):        
     def generate( self ):
