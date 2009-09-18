@@ -262,7 +262,7 @@ YIELD::auto_File Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t 
     org::xtreemfs::interfaces::FileCredentials file_credentials;
     mrc_proxy->open( path, system_v_flags, mode, attributes, my_vivaldi_coordinates, file_credentials );
 
-    return new File( incRef(), mrc_proxy, path, file_credentials );
+    return new File( incRef(), path, file_credentials );
   }
   VOLUME_OPERATION_END( open );
   return NULL;

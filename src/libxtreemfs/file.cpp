@@ -85,8 +85,8 @@ namespace xtreemfs
 };
 
 
-File::File( yidl::auto_Object<Volume> parent_volume, yidl::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
-: parent_volume( parent_volume ), mrc_proxy( mrc_proxy ), path( path ), file_credentials( file_credentials )
+File::File( yidl::auto_Object<Volume> parent_volume, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
+: parent_volume( parent_volume ), path( path ), file_credentials( file_credentials )
 {
   selected_file_replica = 0;
 }
@@ -96,7 +96,7 @@ File::~File()
   try
   {
     if ( !latest_osd_write_response.get_new_file_size().empty() )  
-      mrc_proxy->xtreemfs_update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
+      parent_volume->get_mrc_proxy()->xtreemfs_update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
 
     if ( file_credentials.get_xcap().get_replicateOnClose() )
       parent_volume->get_mrc_proxy()->close( file_credentials.get_xcap() );
@@ -352,7 +352,7 @@ bool File::sync()
 
   if ( !latest_osd_write_response.get_new_file_size().empty() )  
   {
-    mrc_proxy->xtreemfs_update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
+    parent_volume->get_mrc_proxy()->xtreemfs_update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
     latest_osd_write_response.set_new_file_size( org::xtreemfs::interfaces::NewFileSize() );
   }  
 
@@ -366,14 +366,14 @@ bool File::truncate( uint64_t new_size )
   FILE_OPERATION_BEGIN;
 
   org::xtreemfs::interfaces::XCap truncate_xcap;
-  mrc_proxy->ftruncate( file_credentials.get_xcap(), truncate_xcap );
+  parent_volume->get_mrc_proxy()->ftruncate( file_credentials.get_xcap(), truncate_xcap );
   file_credentials.set_xcap( truncate_xcap );
   org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
 
   parent_volume->get_osd_proxy_mux()->truncate( file_credentials, file_credentials.get_xcap().get_file_id(), new_size, osd_write_response );
 
   if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
-    mrc_proxy->xtreemfs_update_file_size( file_credentials.get_xcap(), osd_write_response );
+    parent_volume->get_mrc_proxy()->xtreemfs_update_file_size( file_credentials.get_xcap(), osd_write_response );
   else if ( osd_write_response > latest_osd_write_response )
     latest_osd_write_response = osd_write_response;
 
@@ -476,14 +476,15 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
       write_responses.push_back( &write_response );
     }
 
-    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
+    if ( !latest_osd_write_response.get_new_file_size().empty() &&
+         ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
     {
 #ifdef _DEBUG
       if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
         log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::File: flushing file size updates.";
 #endif
 
-      mrc_proxy->xtreemfs_update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
+      parent_volume->get_mrc_proxy()->xtreemfs_update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
       latest_osd_write_response.set_new_file_size( org::xtreemfs::interfaces::NewFileSize() );
     }
 

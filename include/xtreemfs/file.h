@@ -23,11 +23,10 @@ namespace xtreemfs
   private:
     friend class Volume;
 
-    File( yidl::auto_Object<Volume> parent_volume, yidl::auto_Object<MRCProxy> mrc_proxy, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials );
+    File( yidl::auto_Object<Volume> parent_volume, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials );
     ~File();
 
     yidl::auto_Object<Volume> parent_volume;
-    yidl::auto_Object<MRCProxy> mrc_proxy;
     YIELD::Path path;
     org::xtreemfs::interfaces::FileCredentials file_credentials;
 
