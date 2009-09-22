@@ -19,18 +19,18 @@ namespace xtreemfs
 
 
   template <class ProxyType, class InterfaceType>
-  class Proxy : public YIELD::ONCRPCClient<InterfaceType>
+  class Proxy : public YIELD::ipc::ONCRPCClient<InterfaceType>
   {
   public:
-    const static uint32_t PROXY_FLAG_TRACE_IO = YIELD::Client<YIELD::ONCRPCRequest, YIELD::ONCRPCResponse>::CLIENT_FLAG_TRACE_IO;
-    const static uint32_t PROXY_FLAG_TRACE_OPERATIONS = YIELD::Client<YIELD::ONCRPCRequest, YIELD::ONCRPCResponse>::CLIENT_FLAG_TRACE_OPERATIONS;
+    const static uint32_t PROXY_FLAG_TRACE_IO = YIELD::ipc::Client<YIELD::ipc::ONCRPCRequest, YIELD::ipc::ONCRPCResponse>::CLIENT_FLAG_TRACE_IO;
+    const static uint32_t PROXY_FLAG_TRACE_OPERATIONS = YIELD::ipc::Client<YIELD::ipc::ONCRPCRequest, YIELD::ipc::ONCRPCResponse>::CLIENT_FLAG_TRACE_OPERATIONS;
     const static uint32_t PROXY_FLAG_TRACE_AUTH = 8;
 
-    // YIELD::EventTarget
-    virtual void send( YIELD::Event& ev );
+    // YIELD::concurrency::EventTarget
+    virtual void send( YIELD::concurrency::Event& ev );
 
   protected:
-    Proxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::Socket::auto_Address peer_sockaddr, YIELD::auto_SSLContext ssl_context );
+    Proxy( const YIELD::ipc::URI& absolute_uri, uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::Socket::auto_Address peer_sockaddr, YIELD::ipc::auto_SSLContext ssl_context );
     virtual ~Proxy();
 
     virtual void getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials );
@@ -40,7 +40,7 @@ namespace xtreemfs
 #endif
 
   private:
-    YIELD::auto_Log log;
+    YIELD::platform::auto_Log log;
 
 #ifndef _WIN32
     PolicyContainer* policy_container;
@@ -52,15 +52,15 @@ namespace xtreemfs
     std::map<int,std::map<int,org::xtreemfs::interfaces::UserCredentials*>*> passwd_to_user_credentials_cache;
 #endif
 
-    std::vector<YIELD::SharedLibrary*> policy_shared_libraries;
+    std::vector<YIELD::platform::SharedLibrary*> policy_shared_libraries;
 
     template <typename PolicyFunctionType>
-    bool getPolicyFunction( const YIELD::Path& policy_shared_library_path, yidl::auto_Object<YIELD::SharedLibrary> policy_shared_library, const char* policy_function_name, PolicyFunctionType& out_policy_function )
+    bool getPolicyFunction( const YIELD::platform::Path& policy_shared_library_path, YIELD::platform::auto_SharedLibrary policy_shared_library, const char* policy_function_name, PolicyFunctionType& out_policy_function )
     {
       PolicyFunctionType policy_function = policy_shared_library->getFunction<PolicyFunctionType>( policy_function_name );
       if ( policy_function != NULL )
       {
-        log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::Proxy: using " << policy_function_name << " from " << policy_shared_library_path << ".";
+        log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::Proxy: using " << policy_function_name << " from " << policy_shared_library_path << ".";
         out_policy_function = policy_function;
         return true;
       }

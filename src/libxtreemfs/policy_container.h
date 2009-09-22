@@ -17,7 +17,7 @@ namespace xtreemfs
     void* getPolicyFunction( const char* name );
 
   private:
-    std::vector<YIELD::SharedLibrary*> policy_shared_libraries;
+    std::vector<YIELD::platform::SharedLibrary*> policy_shared_libraries;
   };
 };
 

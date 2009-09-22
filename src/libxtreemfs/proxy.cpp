@@ -25,8 +25,8 @@ using namespace xtreemfs;
 
 
 template <class ProxyType, class InterfaceType>
-Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::Socket::auto_Address peer_sockaddr, YIELD::auto_SSLContext ssl_context )
-  : YIELD::ONCRPCClient<InterfaceType>( absolute_uri, flags, log, operation_timeout, peer_sockaddr, ssl_context ), log( log )
+Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::ipc::URI& absolute_uri, uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::Socket::auto_Address peer_sockaddr, YIELD::ipc::auto_SSLContext ssl_context )
+  : YIELD::ipc::ONCRPCClient<InterfaceType>( absolute_uri, flags, log, operation_timeout, peer_sockaddr, ssl_context ), log( log )
 {
 #ifndef _WIN32
   policy_container = new PolicyContainer;
@@ -58,17 +58,17 @@ Proxy<ProxyType, InterfaceType>::~Proxy()
 }
 
 template <class ProxyType, class InterfaceType>
-void Proxy<ProxyType, InterfaceType>::send( YIELD::Event& ev )
+void Proxy<ProxyType, InterfaceType>::send( YIELD::concurrency::Event& ev )
 {
   if ( InterfaceType::checkRequest( ev ) != NULL )
   {
-    yidl::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
+    yidl::runtime::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
     getCurrentUserCredentials( *user_credentials.get() );
-    yidl::auto_Object<YIELD::ONCRPCRequest> oncrpc_request = new YIELD::ONCRPCRequest( this->incRef(), org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release(), ev );
-    YIELD::ONCRPCClient<InterfaceType>::send( *oncrpc_request.release() );
+    yidl::runtime::auto_Object<YIELD::ipc::ONCRPCRequest> oncrpc_request = new YIELD::ipc::ONCRPCRequest( this->incRef(), org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release(), ev );
+    YIELD::ipc::ONCRPCClient<InterfaceType>::send( *oncrpc_request.release() );
   }
   else
-    YIELD::ONCRPCClient<InterfaceType>::send( ev );
+    YIELD::ipc::ONCRPCClient<InterfaceType>::send( ev );
 }
 
 template <class ProxyType, class InterfaceType>
@@ -76,7 +76,7 @@ void Proxy<ProxyType, InterfaceType>::getCurrentUserCredentials( org::xtreemfs::
 {
 #ifdef _DEBUG
   if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )  
-    log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: getting current user credentials.";
+    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtreemfs::Proxy: getting current user credentials.";
 #endif
 
 #ifdef _WIN32
@@ -108,7 +108,7 @@ void Proxy<ProxyType, InterfaceType>::getCurrentUserCredentials( org::xtreemfs::
       return;
     }
 
-    throw YIELD::Exception( "could not retrieve user_id and group_id" );
+    throw YIELD::platform::Exception( "could not retrieve user_id and group_id" );
   }
 #else
   uid_t caller_uid = yieldfs::FUSE::geteuid();
@@ -123,7 +123,7 @@ void Proxy<ProxyType, InterfaceType>::getCurrentUserCredentials( org::xtreemfs::
     if ( getUserCredentialsFrompasswd( caller_uid, caller_gid, out_user_credentials )  )
       return;
     else
-      throw YIELD::Exception();
+      throw YIELD::platform::Exception();
   }
 #endif
 }
@@ -134,7 +134,7 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
 {
 #ifdef _DEBUG
   if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )
-    log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: getting passwd from UserCredentials (user_id=" << user_id << ", group_id=" << group_id << ").";
+    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtreemfs::Proxy: getting passwd from UserCredentials (user_id=" << user_id << ", group_id=" << group_id << ").";
 #endif
 
   std::map<std::string,std::map<std::string,std::pair<int, int>*>*>::iterator group_i = user_credentials_to_passwd_cache.find( group_id );
@@ -147,7 +147,7 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
       out_gid = user_i->second->second;
 #ifdef _DEBUG
       if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )
-        log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: found user and group IDs in cache, " << user_id << "=" << out_uid << ", " << group_id << "=" << out_gid << ".";
+        log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtreemfs::Proxy: found user and group IDs in cache, " << user_id << "=" << out_uid << ", " << group_id << "=" << out_gid << ".";
 #endif
       return;
     }
@@ -158,20 +158,20 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
   {
 #ifdef _DEBUG
     if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )
-      log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: calling get_passwd_from_user_credentials_ret with user_id=" << user_id << ", group_id=" << group_id << ".";
+      log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtreemfs::Proxy: calling get_passwd_from_user_credentials_ret with user_id=" << user_id << ", group_id=" << group_id << ".";
 #endif
     int get_passwd_from_user_credentials_ret = get_passwd_from_user_credentials( user_id.c_str(), group_id.c_str(), &out_uid, &out_gid );
     if ( get_passwd_from_user_credentials_ret >= 0 )
       have_passwd = true;
     else if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )
-      log->getStream( YIELD::Log::LOG_ERR ) << "xtreemfs::Proxy: get_passwd_from_user_credentials_ret with user_id=" << user_id << ", group_id=" << group_id << " failed with errno=" << ( get_passwd_from_user_credentials_ret * -1 );
+      log->getStream( YIELD::platform::Log::LOG_ERR ) << "xtreemfs::Proxy: get_passwd_from_user_credentials_ret with user_id=" << user_id << ", group_id=" << group_id << " failed with errno=" << ( get_passwd_from_user_credentials_ret * -1 );
   }
 
   if ( !have_passwd )
   {
 #ifdef _DEBUG
     if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )
-      log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: calling getpwnam_r and getgrnam_r with user_id=" << user_id << ", group_id=" << group_id << ".";
+      log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtreemfs::Proxy: calling getpwnam_r and getgrnam_r with user_id=" << user_id << ", group_id=" << group_id << ".";
 #endif
 
     struct passwd pwd, *pwd_res;
@@ -190,13 +190,13 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
       out_uid = 0;
       out_gid = 0;
       if ( log != NULL )
-        log->getStream( YIELD::Log::LOG_WARNING ) << "xtreemfs::Proxy: getpwnam_r and getgrnam_r with user_id=" << user_id << ", group_id=" << group_id << " failed, errno=" << errno << ", setting user/group to root.";
+        log->getStream( YIELD::platform::Log::LOG_WARNING ) << "xtreemfs::Proxy: getpwnam_r and getgrnam_r with user_id=" << user_id << ", group_id=" << group_id << " failed, errno=" << errno << ", setting user/group to root.";
     }
   }
 
 #ifdef _DEBUG
   if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )
-    log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: " << user_id << "=" << out_uid << ", " << group_id << "=" << out_gid << ", storing in cache.";
+    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtreemfs::Proxy: " << user_id << "=" << out_uid << ", " << group_id << "=" << out_gid << ", storing in cache.";
 #endif
 
   if ( group_i != user_credentials_to_passwd_cache.end() )
@@ -213,7 +213,7 @@ bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
 {
 #ifdef _DEBUG
   if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )
-    log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: getting UserCredentials from passwd (uid=" << uid << ", gid=" << gid << ").";
+    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtreemfs::Proxy: getting UserCredentials from passwd (uid=" << uid << ", gid=" << gid << ").";
 #endif
 
   std::map<int,std::map<int,org::xtreemfs::interfaces::UserCredentials*>*>::iterator group_i = passwd_to_user_credentials_cache.find( gid );
@@ -225,7 +225,7 @@ bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
       out_user_credentials = *user_i->second;
 #ifdef _DEBUG
       if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )
-        log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: found UserCredentials in cache, " << uid << "=" << out_user_credentials.get_user_id() << ", " << gid << "=" << out_user_credentials.get_group_ids()[0] << ".";
+        log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtreemfs::Proxy: found UserCredentials in cache, " << uid << "=" << out_user_credentials.get_user_id() << ", " << gid << "=" << out_user_credentials.get_group_ids()[0] << ".";
 
 #endif
       return true;
@@ -236,7 +236,7 @@ bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
   {
 #ifdef _DEBUG
     if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )
-      log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: calling get_user_credentials_from_passwd with uid=" << uid << ", gid=" << gid << ".";
+      log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtreemfs::Proxy: calling get_user_credentials_from_passwd with uid=" << uid << ", gid=" << gid << ".";
 #endif
 
     size_t user_id_len = 0, group_ids_len = 0;
@@ -245,7 +245,7 @@ bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
     {
 #ifdef _DEBUG
       if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )
-        log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: calling get_user_credentials_from_passwd with uid=" << uid << ", gid=" << gid << " returned " << get_user_credentials_from_passwd_ret << ", allocating space for UserCredentials.";
+        log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtreemfs::Proxy: calling get_user_credentials_from_passwd with uid=" << uid << ", gid=" << gid << " returned " << get_user_credentials_from_passwd_ret << ", allocating space for UserCredentials.";
 #endif
 
       if ( user_id_len > 0 ) // group_ids_len can be 0
@@ -275,7 +275,7 @@ bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
 
 #ifdef _DEBUG
           if ( ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH && log != NULL )
-            log->getStream( YIELD::Log::LOG_DEBUG ) << "xtreemfs::Proxy: get_user_credentials_from_passwd succeeded, " << uid << "=" << out_user_credentials.get_user_id() << ", " << gid << "=" << out_user_credentials.get_group_ids()[0] << ".";
+            log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtreemfs::Proxy: get_user_credentials_from_passwd succeeded, " << uid << "=" << out_user_credentials.get_user_id() << ", " << gid << "=" << out_user_credentials.get_group_ids()[0] << ".";
 #endif
 
           // Drop down to insert the credentials into the cache

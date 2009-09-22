@@ -26,7 +26,7 @@ namespace xtfs_lsvol
     };
 
     bool long_listing;
-    YIELD::auto_URI mrc_uri;
+    YIELD::ipc::auto_URI mrc_uri;
     std::string volume_name;
 
     // YIELD::Main
@@ -79,7 +79,7 @@ namespace xtfs_lsvol
           volume_name = mrc_uri->get_resource().c_str() + 1;
       }
       else
-        throw YIELD::Exception( "must specify an MRC URI" );
+        throw YIELD::platform::Exception( "must specify an MRC URI" );
     }
   };
 };

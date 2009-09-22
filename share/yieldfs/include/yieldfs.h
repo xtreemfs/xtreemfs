@@ -29,17 +29,17 @@ namespace yieldfs
   class PageCache;
 
 
-  class StackableFile : public YIELD::File
+  class StackableFile : public YIELD::platform::File
   {
   public:
-    const YIELD::Path& get_path() const { return path; }
+    const YIELD::platform::Path& get_path() const { return path; }
 
-    // YIELD::File
-    // virtual YIELD::File methods that delegate to underlying_file
-    YIELD_FILE_PROTOTYPES;
+    // YIELD::platform::File
+    // virtual YIELD::platform::File methods that delegate to underlying_file
+    YIELD_PLATFORM_FILE_PROTOTYPES;
 
   protected:
-    StackableFile( const YIELD::Path& path, YIELD::auto_File underlying_file, YIELD::auto_Log log )
+    StackableFile( const YIELD::platform::Path& path, YIELD::platform::auto_File underlying_file, YIELD::platform::auto_Log log )
       : path( path ), underlying_file( underlying_file ), log( log )
     { }
 
@@ -47,36 +47,36 @@ namespace yieldfs
     { }
 
 
-    YIELD::Path path;
-    YIELD::auto_File underlying_file;
-    YIELD::auto_Log log;
+    YIELD::platform::Path path;
+    YIELD::platform::auto_File underlying_file;
+    YIELD::platform::auto_Log log;
   };
 
 
-  class StackableVolume : public YIELD::Volume
+  class StackableVolume : public YIELD::platform::Volume
   {
   public:
-    // YIELD::Volume
-    // virtual YIELD::Volume methods that delegate to underlying_volume
-    YIELD_VOLUME_PROTOTYPES;
+    // YIELD::platform::Volume
+    // virtual YIELD::platform::Volume methods that delegate to underlying_volume
+    YIELD_PLATFORM_VOLUME_PROTOTYPES;
 
   protected:
     StackableVolume()
     {
-      underlying_volume = new YIELD::Volume;
+      underlying_volume = new YIELD::platform::Volume;
     }
 
-    StackableVolume( YIELD::auto_Volume underlying_volume )
+    StackableVolume( YIELD::platform::auto_Volume underlying_volume )
       : underlying_volume( underlying_volume )
     { }
 
-    StackableVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log )
+    StackableVolume( YIELD::platform::auto_Volume underlying_volume, YIELD::platform::auto_Log log )
       : underlying_volume( underlying_volume ), log( log )
     { }
 
 
-    YIELD::auto_Volume underlying_volume;
-    YIELD::auto_Log log;
+    YIELD::platform::auto_Volume underlying_volume;
+    YIELD::platform::auto_Log log;
   };
 
 
@@ -86,7 +86,7 @@ namespace yieldfs
     const static uint32_t FUSE_FLAG_DEBUG = 1;
     const static uint32_t FUSE_FLAG_DIRECT_IO = 2;
 
-    FUSE( YIELD::auto_Volume volume, uint32_t flags = 0 );
+    FUSE( YIELD::platform::auto_Volume volume, uint32_t flags = 0 );
     ~FUSE();
 
     static uint32_t getpid();
@@ -113,29 +113,29 @@ namespace yieldfs
   {
   public:
     MetadataCachingVolume(); // For testing
-    MetadataCachingVolume( YIELD::auto_Volume underlying_volume, double ttl_s );
-    MetadataCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log, double ttl_s );
+    MetadataCachingVolume( YIELD::platform::auto_Volume underlying_volume, double ttl_s );
+    MetadataCachingVolume( YIELD::platform::auto_Volume underlying_volume, YIELD::platform::auto_Log log, double ttl_s );
 
-    // yidl::Object
-    YIDL_OBJECT_PROTOTYPES( MetadataCachingVolume, 0 );
+    // yidl::runtime::Object
+    YIDL_RUNTIME_OBJECT_PROTOTYPES( MetadataCachingVolume, 0 );
 
-    // YIELD::Volume
-    bool chmod( const YIELD::Path& path, mode_t mode );
-    bool chown( const YIELD::Path& path, int32_t uid, int32_t gid );
-    bool link( const YIELD::Path& old_path, const YIELD::Path& new_path );
-    bool mkdir( const YIELD::Path& path, mode_t mode );
-    YIELD::auto_File open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
-    bool readdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, YIELD::Volume::readdirCallback& callback );
-    bool removexattr( const YIELD::Path& path, const std::string& name );
-    bool rename( const YIELD::Path& from_path, const YIELD::Path& to_path );
-    bool rmdir( const YIELD::Path& path );
-    bool setattr( const YIELD::Path& path, uint32_t file_attributes );
-    bool setxattr( const YIELD::Path& path, const std::string& name, const std::string& value, int32_t flags );
-    YIELD::auto_Stat stat( const YIELD::Path& path );
-    bool symlink( const YIELD::Path& to_path, const YIELD::Path& from_path );
-    bool truncate( const YIELD::Path& path, uint64_t new_size );
-    bool unlink( const YIELD::Path& path );
-    bool utimens( const YIELD::Path& path, const YIELD::Time& atime, const YIELD::Time& mtime, const YIELD::Time& ctime );
+    // YIELD::platform::Volume
+    bool chmod( const YIELD::platform::Path& path, mode_t mode );
+    bool chown( const YIELD::platform::Path& path, int32_t uid, int32_t gid );
+    bool link( const YIELD::platform::Path& old_path, const YIELD::platform::Path& new_path );
+    bool mkdir( const YIELD::platform::Path& path, mode_t mode );
+    YIELD::platform::auto_File open( const YIELD::platform::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
+    bool readdir( const YIELD::platform::Path& path, const YIELD::platform::Path& match_file_name_prefix, YIELD::platform::Volume::readdirCallback& callback );
+    bool removexattr( const YIELD::platform::Path& path, const std::string& name );
+    bool rename( const YIELD::platform::Path& from_path, const YIELD::platform::Path& to_path );
+    bool rmdir( const YIELD::platform::Path& path );
+    bool setattr( const YIELD::platform::Path& path, uint32_t file_attributes );
+    bool setxattr( const YIELD::platform::Path& path, const std::string& name, const std::string& value, int32_t flags );
+    YIELD::platform::auto_Stat stat( const YIELD::platform::Path& path );
+    bool symlink( const YIELD::platform::Path& to_path, const YIELD::platform::Path& from_path );
+    bool truncate( const YIELD::platform::Path& path, uint64_t new_size );
+    bool unlink( const YIELD::platform::Path& path );
+    bool utimens( const YIELD::platform::Path& path, const YIELD::platform::Time& atime, const YIELD::platform::Time& mtime, const YIELD::platform::Time& ctime );
 
   private:
     friend class MetadataCachingFile;
@@ -146,13 +146,13 @@ namespace yieldfs
 
     double ttl_s;
 
-    YIELD::Mutex lock;
+    YIELD::platform::Mutex lock;
 
-    yidl::auto_Object<CachedStat> evict( const YIELD::Path& path );
-    yidl::auto_Object<CachedStat> find( const YIELD::Path& path );
-    YIELD::Path getParentDirectoryPath( const YIELD::Path& );
+    yidl::runtime::auto_Object<CachedStat> evict( const YIELD::platform::Path& path );
+    yidl::runtime::auto_Object<CachedStat> find( const YIELD::platform::Path& path );
+    YIELD::platform::Path getParentDirectoryPath( const YIELD::platform::Path& );
     void insert( CachedStat* cached_stat );
-    void updateCachedFileSize( const YIELD::Path& path, uint64_t new_file_size );
+    void updateCachedFileSize( const YIELD::platform::Path& path, uint64_t new_file_size );
   };
 
 
@@ -160,27 +160,27 @@ namespace yieldfs
   {
   public:
     TracingVolume(); // For testing
-    TracingVolume( YIELD::auto_Volume underlying_volume ); // Log to std::cout
-    TracingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log ); // Steals a reference to log
+    TracingVolume( YIELD::platform::auto_Volume underlying_volume ); // Log to std::cout
+    TracingVolume( YIELD::platform::auto_Volume underlying_volume, YIELD::platform::auto_Log log ); // Steals a reference to log
 
-    // YIELD::Volume
-    YIELD_VOLUME_PROTOTYPES;
-    virtual bool exists( const YIELD::Path& path );
-    virtual bool listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback );
-    virtual bool mktree( const YIELD::Path& path, mode_t mode );
-    virtual bool rmtree( const YIELD::Path& path );
+    // YIELD::platform::Volume
+    YIELD_PLATFORM_VOLUME_PROTOTYPES;
+    virtual bool exists( const YIELD::platform::Path& path );
+    virtual bool listdir( const YIELD::platform::Path& path, const YIELD::platform::Path& match_file_name_prefix, listdirCallback& callback );
+    virtual bool mktree( const YIELD::platform::Path& path, mode_t mode );
+    virtual bool rmtree( const YIELD::platform::Path& path );
 
   private:
     friend class TracingFile;
 
     ~TracingVolume() { }
 
-    static bool trace( YIELD::auto_Log log, const char* operation_name, const YIELD::Path& path, bool operation_result );
-    static bool trace( YIELD::auto_Log log, const char* operation_name, const YIELD::Path& path, mode_t mode, bool operation_result );
-    static bool trace( YIELD::auto_Log log, const char* operation_name, const YIELD::Path& old_path, const YIELD::Path& new_path, bool operation_result );
-    static bool trace( YIELD::auto_Log log, const char* operation_name, const YIELD::Path& path, const std::string& xattr_name, bool operation_result );
-    static bool trace( YIELD::auto_Log log, const char* operation_name, const YIELD::Path& path, uint64_t size, uint64_t offset, bool operation_result );
-    static bool trace( YIELD::Log::Stream& log_stream, bool operation_result );
+    static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, bool operation_result );
+    static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, mode_t mode, bool operation_result );
+    static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& old_path, const YIELD::platform::Path& new_path, bool operation_result );
+    static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, const std::string& xattr_name, bool operation_result );
+    static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, uint64_t size, uint64_t offset, bool operation_result );
+    static bool trace( YIELD::platform::Log::Stream& log_stream, bool operation_result );
   };
 
 
@@ -188,11 +188,11 @@ namespace yieldfs
   {
   public:
     WriteBackCachingVolume(); // For testing
-    WriteBackCachingVolume( size_t cache_capacity_bytes, uint32_t cache_flush_timeout_ms, YIELD::auto_Volume underlying_volume );
-    WriteBackCachingVolume( size_t cache_capacity_bytes, uint32_t cache_flush_timeout_ms, YIELD::auto_Volume underlying_volume, YIELD::auto_Log log );
+    WriteBackCachingVolume( size_t cache_capacity_bytes, uint32_t cache_flush_timeout_ms, YIELD::platform::auto_Volume underlying_volume );
+    WriteBackCachingVolume( size_t cache_capacity_bytes, uint32_t cache_flush_timeout_ms, YIELD::platform::auto_Volume underlying_volume, YIELD::platform::auto_Log log );
 
-    // YIELD::Volume
-    YIELD::auto_File open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
+    // YIELD::platform::Volume
+    YIELD::platform::auto_File open( const YIELD::platform::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
 
   private:
     virtual ~WriteBackCachingVolume();
@@ -205,11 +205,11 @@ namespace yieldfs
   {
   public:
     WriteThroughCachingVolume(); // For testing
-    WriteThroughCachingVolume( YIELD::auto_Volume underlying_volume );
-    WriteThroughCachingVolume( YIELD::auto_Volume underlying_volume, YIELD::auto_Log log );
+    WriteThroughCachingVolume( YIELD::platform::auto_Volume underlying_volume );
+    WriteThroughCachingVolume( YIELD::platform::auto_Volume underlying_volume, YIELD::platform::auto_Log log );
 
-    // YIELD::Volume
-    YIELD::auto_File open( const YIELD::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
+    // YIELD::platform::Volume
+    YIELD::platform::auto_File open( const YIELD::platform::Path& path, uint32_t flags, mode_t mode, uint32_t attributes );
 
   private:
     virtual ~WriteThroughCachingVolume();

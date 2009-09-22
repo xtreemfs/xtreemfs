@@ -23,36 +23,36 @@ namespace xtreemfs
   class OSDProxy : public Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>
   {
   public:
-    static yidl::auto_Object<OSDProxy> create( const YIELD::URI& absolute_uri,
+    static yidl::runtime::auto_Object<OSDProxy> create( const YIELD::ipc::URI& absolute_uri,
                                                uint32_t flags = 0,
-                                               YIELD::auto_Log log = NULL,
-                                               const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
-                                               YIELD::auto_SSLContext ssl_context = NULL )
+                                               YIELD::platform::auto_Log log = NULL,
+                                               const YIELD::platform::Time& operation_timeout = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
+                                               YIELD::ipc::auto_SSLContext ssl_context = NULL )
     {
-      return YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::create<OSDProxy>( absolute_uri, flags, log, operation_timeout, ssl_context );
+      return YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::create<OSDProxy>( absolute_uri, flags, log, operation_timeout, ssl_context );
     }
 
-    // yidl::Object
-    OSDProxy& incRef() { return yidl::Object::incRef( *this ); }
+    // yidl::runtime::Object
+    OSDProxy& incRef() { return yidl::runtime::Object::incRef( *this ); }
 
-    // YIELD::EventTarget
-    void send( YIELD::Event& ev )
+    // YIELD::concurrency::EventTarget
+    void send( YIELD::concurrency::Event& ev )
     {
       // Bypass Proxy so no credentials are attached; the credentials for OSD operations are in FileCredentials passed explicitly to the operation
-      YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::send( ev );
+      YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::send( ev );
     }
 
   private:
-    friend class YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>;
+    friend class YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>;
 
-    OSDProxy( const YIELD::URI& absolute_uri, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::Socket::auto_Address peer_sockaddr, YIELD::auto_SSLContext ssl_context )
+    OSDProxy( const YIELD::ipc::URI& absolute_uri, uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::Socket::auto_Address peer_sockaddr, YIELD::ipc::auto_SSLContext ssl_context )
       : Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>( absolute_uri, flags, log, operation_timeout, peer_sockaddr, ssl_context )
     { }
 
     ~OSDProxy() { }
   };
 
-  typedef yidl::auto_Object<OSDProxy> auto_OSDProxy;
+  typedef yidl::runtime::auto_Object<OSDProxy> auto_OSDProxy;
 };
 
 

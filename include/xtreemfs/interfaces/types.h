@@ -16,7 +16,7 @@ namespace org
     namespace interfaces
     {
 
-      class StringSet : public ::yidl::Sequence, public std::vector<std::string>
+      class StringSet : public ::yidl::runtime::Sequence, public std::vector<std::string>
       {
       public:
         StringSet() { }
@@ -24,16 +24,16 @@ namespace org
         StringSet( size_type size ) : std::vector<std::string>( size ) { }
         virtual ~StringSet() { }
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( StringSet, 2009082619 );
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( StringSet, 2009082619 );
 
         // yidl::Sequence
         size_t get_size() const { return size(); }
-        void marshal( ::yidl::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeString( "value", 0, ( *this )[value_i] ); } }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { std::string value; unmarshaller.readString( "value", 0, value ); push_back( value ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeString( "value", 0, ( *this )[value_i] ); } }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { std::string value; unmarshaller.readString( "value", 0, value ); push_back( value ); }
       };
 
-      class UserCredentials : public ::yidl::Struct
+      class UserCredentials : public ::yidl::runtime::Struct
       {
       public:
         UserCredentials() { }
@@ -52,12 +52,12 @@ namespace org
 
         bool operator==( const UserCredentials& other ) const { return user_id == other.user_id && group_ids == other.group_ids && password == other.password; }
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( UserCredentials, 2009082620 );
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( UserCredentials, 2009082620 );
 
         // yidl::Struct
-        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "user_id", 0, user_id ); marshaller.writeSequence( "group_ids", 0, group_ids ); marshaller.writeString( "password", 0, password ); }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "user_id", 0, user_id ); unmarshaller.readSequence( "group_ids", 0, group_ids ); unmarshaller.readString( "password", 0, password ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "user_id", 0, user_id ); marshaller.writeSequence( "group_ids", 0, group_ids ); marshaller.writeString( "password", 0, password ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readString( "user_id", 0, user_id ); unmarshaller.readSequence( "group_ids", 0, group_ids ); unmarshaller.readString( "password", 0, password ); }
 
       protected:
         std::string user_id;

@@ -16,31 +16,31 @@ namespace xtreemfs
   class OSDProxyMux : public org::xtreemfs::interfaces::OSDInterface
   {
   public:
-    static yidl::auto_Object<OSDProxyMux> create( yidl::auto_Object<DIRProxy> dir_proxy,
+    static yidl::runtime::auto_Object<OSDProxyMux> create( yidl::runtime::auto_Object<DIRProxy> dir_proxy,
                                                    uint32_t flags = 0,
-                                                   YIELD::auto_Log log = NULL,
-                                                   const YIELD::Time& operation_timeout = YIELD::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
-                                                   YIELD::auto_SSLContext ssl_context = NULL )
+                                                   YIELD::platform::auto_Log log = NULL,
+                                                   const YIELD::platform::Time& operation_timeout = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
+                                                   YIELD::ipc::auto_SSLContext ssl_context = NULL )
     {
       return new OSDProxyMux( dir_proxy, flags, log, operation_timeout, ssl_context );
     }
 
-    // yidl::Object
-    OSDProxyMux& incRef() { return yidl::Object::incRef( *this ); }
+    // yidl::runtime::Object
+    OSDProxyMux& incRef() { return yidl::runtime::Object::incRef( *this ); }
 
   private:
-    OSDProxyMux( yidl::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, const YIELD::Time& operation_timeout, YIELD::auto_SSLContext ssl_context );
+    OSDProxyMux( yidl::runtime::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::auto_SSLContext ssl_context );
     ~OSDProxyMux();
 
     auto_DIRProxy dir_proxy;
     uint32_t flags;
-    YIELD::auto_Log log;
-    YIELD::Time operation_timeout;
-    YIELD::auto_SSLContext ssl_context;
+    YIELD::platform::auto_Log log;
+    YIELD::platform::Time operation_timeout;
+    YIELD::ipc::auto_SSLContext ssl_context;
 
     typedef std::map<std::string, OSDProxy*> OSDProxyMap;
     OSDProxyMap osd_proxies;
-    YIELD::auto_StageGroup osd_proxy_stage_group;
+    YIELD::concurrency::auto_StageGroup osd_proxy_stage_group;
 
     auto_OSDProxy getOSDProxy( OSDProxyRequest& osd_proxy_request, const org::xtreemfs::interfaces::FileCredentials& file_credentials, uint64_t object_number );
     auto_OSDProxy getOSDProxy( const std::string& osd_uuid );
@@ -58,7 +58,7 @@ namespace xtreemfs
     class TruncateResponseTarget;
   };
 
-  typedef yidl::auto_Object<OSDProxyMux> auto_OSDProxyMux;
+  typedef yidl::runtime::auto_Object<OSDProxyMux> auto_OSDProxyMux;
 };
 
 #endif

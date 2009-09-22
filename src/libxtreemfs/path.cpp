@@ -5,7 +5,7 @@
 using namespace xtreemfs;
 
 
-Path::Path( const std::string& volume_name, const YIELD::Path& local_path )
+Path::Path( const std::string& volume_name, const YIELD::platform::Path& local_path )
 : volume_name( volume_name ), local_path( local_path ), global_path( volume_name )
 {
   if ( !local_path.empty() )
@@ -58,11 +58,11 @@ Path::Path( const std::string& global_path )
       temp_local_path[next_slash] = PATH_SEPARATOR;
       next_slash = temp_local_path.find( '/', next_slash );
     }
-    local_path = YIELD::Path( temp_local_path );
+    local_path = YIELD::platform::Path( temp_local_path );
 #else
     // TODO: decode the UTF-8 here? or Path::fromUTF8?
-    // local_path = YIELD::Path( global_path.substr( first_slash + 1 ), false );
-    local_path = YIELD::Path( global_path.substr( first_slash + 1 ) );
+    // local_path = YIELD::platform::Path( global_path.substr( first_slash + 1 ), false );
+    local_path = YIELD::platform::Path( global_path.substr( first_slash + 1 ) );
 #endif
   }
   else

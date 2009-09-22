@@ -13,21 +13,21 @@ namespace xtreemfs
   class Volume;
 
 
-  class File : public YIELD::File
+  class File : public YIELD::platform::File
   {
   public:
-    YIELD_FILE_PROTOTYPES;
+    YIELD_PLATFORM_FILE_PROTOTYPES;
     virtual size_t getpagesize();
     virtual uint64_t get_size();
 
   private:
     friend class Volume;
 
-    File( yidl::auto_Object<Volume> parent_volume, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials );
+    File( yidl::runtime::auto_Object<Volume> parent_volume, const YIELD::platform::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials );
     ~File();
 
-    yidl::auto_Object<Volume> parent_volume;
-    YIELD::Path path;
+    yidl::runtime::auto_Object<Volume> parent_volume;
+    YIELD::platform::Path path;
     org::xtreemfs::interfaces::FileCredentials file_credentials;
 
     org::xtreemfs::interfaces::OSDWriteResponse latest_osd_write_response;
@@ -35,7 +35,7 @@ namespace xtreemfs
     ssize_t selected_file_replica;
   };
 
-  typedef yidl::auto_Object<File> auto_File;
+  typedef yidl::runtime::auto_Object<File> auto_File;
 };
 
 #endif

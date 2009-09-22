@@ -10,13 +10,13 @@ using namespace xtreemfs;
 
 
 #ifdef _WIN32
-YIELD::CountingSemaphore YIELD::Main::pause_semaphore;
+YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
 #endif
 
 
 namespace xtfs_vivaldi
 {
-  class Main : public xtreemfs::Main, public YIELD::Thread
+  class Main : public xtreemfs::Main, public YIELD::platform::Thread
   {
   public:
     Main()
@@ -27,12 +27,12 @@ namespace xtfs_vivaldi
 
   private:
     auto_DIRProxy dir_proxy;
-    YIELD::Path vivaldi_coordinates_file_path;
+    YIELD::platform::Path vivaldi_coordinates_file_path;
 
     // YIELD::Main
     int _main( int, char** )
     {
-      YIELD::Thread::start();
+      YIELD::platform::Thread::start();
 
       YIELD::Main::pause();
 
@@ -43,14 +43,14 @@ namespace xtfs_vivaldi
     {
       if ( file_count >= 2 )
       {
-        YIELD::auto_URI dir_uri = parseURI( files[0] );
+        YIELD::ipc::auto_URI dir_uri = parseURI( files[0] );
         if ( dir_uri->get_port() == 0 )
           dir_uri->set_port( org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT );
         dir_proxy = createDIRProxy( *dir_uri );
         vivaldi_coordinates_file_path = files[1];
       }
       else
-        throw YIELD::Exception( "must specify dir_host and a Vivaldi coordinates output file path" );
+        throw YIELD::platform::Exception( "must specify dir_host and a Vivaldi coordinates output file path" );
     }
 
     // YIELD::Thread
@@ -68,16 +68,16 @@ namespace xtfs_vivaldi
           if ( !osd_services.empty() )
           {
             const org::xtreemfs::interfaces::Service& random_osd_service = osd_services[std::rand() % osd_services.size()];
-            yidl::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> random_osd_address_mappings = dir_proxy->getAddressMappingsFromUUID( random_osd_service.get_uuid() );
+            yidl::runtime::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> random_osd_address_mappings = dir_proxy->getAddressMappingsFromUUID( random_osd_service.get_uuid() );
             for ( org::xtreemfs::interfaces::AddressMappingSet::iterator random_osd_address_mapping_i = random_osd_address_mappings->begin(); random_osd_address_mapping_i != random_osd_address_mappings->end(); random_osd_address_mapping_i++ )
             {
               if ( ( *random_osd_address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
               {
                 auto_OSDProxy osd_proxy = OSDProxy::create( ( *random_osd_address_mapping_i ).get_uri(), get_proxy_flags(), get_log(), get_operation_timeout() );              
                 org::xtreemfs::interfaces::VivaldiCoordinates random_osd_vivaldi_coordinates;
-                YIELD::Time start_time;
+                YIELD::platform::Time start_time;
                 osd_proxy->xtreemfs_ping( org::xtreemfs::interfaces::VivaldiCoordinates(), random_osd_vivaldi_coordinates );
-                YIELD::Time rtt( YIELD::Time() - start_time );
+                YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
 
                 // TODO: calculate my_vivaldi_coordinates here
               }
@@ -86,19 +86,19 @@ namespace xtfs_vivaldi
         }
         catch ( std::exception& exc )
         {
-          get_log()->getStream( YIELD::Log::LOG_ERR ) << "xtfs_vivaldi: error pinging OSDs: " << exc.what() << ".";
+          get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "xtfs_vivaldi: error pinging OSDs: " << exc.what() << ".";
           continue;
         }
 
-        YIELD::auto_File vivaldi_coordinates_file = YIELD::Volume().open( vivaldi_coordinates_file_path, O_CREAT|O_TRUNC|O_WRONLY );
+        YIELD::platform::auto_File vivaldi_coordinates_file = YIELD::platform::Volume().open( vivaldi_coordinates_file_path, O_CREAT|O_TRUNC|O_WRONLY );
         if ( vivaldi_coordinates_file != NULL )
         {
-          YIELD::XDRMarshaller xdr_marshaller;
+          YIELD::platform::XDRMarshaller xdr_marshaller;
           my_vivaldi_coordinates.marshal( xdr_marshaller );
           vivaldi_coordinates_file->write( xdr_marshaller.get_buffer().release() );
         }
   
-        YIELD::Thread::sleep( 5 * NS_IN_S );
+        YIELD::platform::Thread::sleep( 5 * NS_IN_S );
       }
     }
   };

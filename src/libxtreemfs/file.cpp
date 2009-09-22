@@ -27,19 +27,19 @@ using namespace xtreemfs;
   } \
   catch ( ProxyExceptionResponse& proxy_exception_response ) \
   { \
-    YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() ); \
+    YIELD::platform::Exception::set_errno( proxy_exception_response.get_platform_error_code() ); \
     return false; \
   } \
   catch ( std::exception& ) \
   { \
-    YIELD::Exception::set_errno( EIO ); \
+    YIELD::platform::Exception::set_errno( EIO ); \
     return false; \
   }
 
 
 namespace xtreemfs
 {
-  class FileReadBuffer : public yidl::FixedBuffer
+  class FileReadBuffer : public yidl::runtime::FixedBuffer
   {
   public:
     FileReadBuffer( void* buf, size_t len )
@@ -52,7 +52,7 @@ namespace xtreemfs
   class FileReadResponse : public org::xtreemfs::interfaces::OSDInterface::readResponse
   {
   public:
-    FileReadResponse( yidl::auto_Buffer buffer )
+    FileReadResponse( yidl::runtime::auto_Buffer buffer )
       : org::xtreemfs::interfaces::OSDInterface::readResponse( org::xtreemfs::interfaces::ObjectData( 0, false, 0, buffer ) )
     { }
   };
@@ -60,19 +60,19 @@ namespace xtreemfs
   class FileReadRequest : public org::xtreemfs::interfaces::OSDInterface::readRequest
   {
   public:
-    FileReadRequest( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, yidl::auto_Buffer buffer ) 
+    FileReadRequest( const org::xtreemfs::interfaces::FileCredentials& file_credentials, const std::string& file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, yidl::runtime::auto_Buffer buffer ) 
       : org::xtreemfs::interfaces::OSDInterface::readRequest( file_credentials, file_id, object_number, object_version, offset, length ), 
       buffer( buffer )
     { }
 
-    YIELD::auto_Response createResponse() { return new FileReadResponse( buffer ); }
+    YIELD::concurrency::auto_Response createResponse() { return new FileReadResponse( buffer ); }
 
   private:
-    yidl::auto_Buffer buffer;
+    yidl::runtime::auto_Buffer buffer;
   };
 
 
-  class FileWriteBuffer : public yidl::FixedBuffer
+  class FileWriteBuffer : public yidl::runtime::FixedBuffer
   {
   public:
     FileWriteBuffer( const void* buf, size_t len )
@@ -85,7 +85,7 @@ namespace xtreemfs
 };
 
 
-File::File( yidl::auto_Object<Volume> parent_volume, const YIELD::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
+File::File( yidl::runtime::auto_Object<Volume> parent_volume, const YIELD::platform::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials )
 : parent_volume( parent_volume ), path( path ), file_credentials( file_credentials )
 {
   selected_file_replica = 0;
@@ -131,7 +131,7 @@ uint64_t File::get_size()
   if ( !latest_osd_write_response.get_new_file_size().empty() )  
     return latest_osd_write_response.get_new_file_size()[0].get_size_in_bytes();
   else
-    return YIELD::File::get_size();
+    return YIELD::platform::File::get_size();
 }
 
 bool File::getxattr( const std::string& name, std::string& out_value )
@@ -147,21 +147,21 @@ bool File::listxattr( std::vector<std::string>& out_names )
 ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 {
   std::vector<org::xtreemfs::interfaces::OSDInterface::readResponse*> read_responses;
-  YIELD::auto_Log log( parent_volume->get_log() );
+  YIELD::platform::auto_Log log( parent_volume->get_log() );
   ssize_t ret = 0;
 
   try
   {
 #ifdef _DEBUG
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
-      log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::File::read( rbuf, size=" << size << ", offset=" << offset << " )";
+      log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::File::read( rbuf, size=" << size << ", offset=" << offset << " )";
 #endif
 
     char *rbuf_start = static_cast<char*>( rbuf ), *rbuf_p = static_cast<char*>( rbuf ), *rbuf_end = static_cast<char*>( rbuf ) + size;
     uint64_t current_file_offset = offset;
     uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;    
 
-    YIELD::auto_ResponseQueue<org::xtreemfs::interfaces::OSDInterface::readResponse> read_response_queue( new YIELD::ResponseQueue<org::xtreemfs::interfaces::OSDInterface::readResponse> );
+    YIELD::concurrency::auto_ResponseQueue<org::xtreemfs::interfaces::OSDInterface::readResponse> read_response_queue( new YIELD::concurrency::ResponseQueue<org::xtreemfs::interfaces::OSDInterface::readResponse> );
     size_t expected_read_response_count = 0;
 
     while ( rbuf_p < rbuf_end )
@@ -175,7 +175,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 #ifdef _DEBUG
       if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
       {
-        log->getStream( YIELD::Log::LOG_INFO ) << 
+        log->getStream( YIELD::platform::Log::LOG_INFO ) << 
           "xtreemfs::File: issuing read # " << ( expected_read_response_count + 1 ) <<
           " for " << object_size << 
           " bytes from object number " << object_number <<
@@ -200,7 +200,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 
 #ifdef _DEBUG
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
-      log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::File: issued " << expected_read_response_count << " parallel reads.";
+      log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::File: issued " << expected_read_response_count << " parallel reads.";
 #endif
 
     for ( size_t read_response_i = 0; read_response_i < expected_read_response_count; read_response_i++ )
@@ -209,7 +209,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
       // Object::decRef( read_response );
       read_responses.push_back( &read_response );
 
-      yidl::auto_Buffer data( read_response.get_object_data().get_data() );
+      yidl::runtime::auto_Buffer data( read_response.get_object_data().get_data() );
       rbuf_p = static_cast<char*>( static_cast<void*>( *data ) );
       uint32_t zero_padding = read_response.get_object_data().get_zero_padding();
       if ( read_response.get_selected_file_replica() != 0 )
@@ -218,7 +218,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 #ifdef _DEBUG
       if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
       {
-        log->getStream( YIELD::Log::LOG_INFO ) << 
+        log->getStream( YIELD::platform::Log::LOG_INFO ) << 
           "xtreemfs::File: read " << data->size() <<
           " bytes from file " << file_credentials.get_xcap().get_file_id() <<            
           " with " << zero_padding << " bytes of zero padding" <<
@@ -241,8 +241,8 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         }
         else
         {
-          log->getStream( YIELD::Log::LOG_ERR ) << "xtreemfs::File: received zero_padding (data size=" << data->size() << ", zero_padding=" << zero_padding << ") larger than available buffer space (" << static_cast<size_t>( rbuf_end - rbuf_p ) << ")";
-          YIELD::ExceptionResponse::set_errno( EIO );
+          log->getStream( YIELD::platform::Log::LOG_ERR ) << "xtreemfs::File: received zero_padding (data size=" << data->size() << ", zero_padding=" << zero_padding << ") larger than available buffer space (" << static_cast<size_t>( rbuf_end - rbuf_p ) << ")";
+          YIELD::concurrency::ExceptionResponse::set_errno( EIO );
           ret = -1;
           break;
         }
@@ -255,7 +255,7 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
     {
-      log->getStream( YIELD::Log::LOG_INFO ) << 
+      log->getStream( YIELD::platform::Log::LOG_INFO ) << 
         "xtreemfs::File: read " << ret <<
         " bytes from file " << file_credentials.get_xcap().get_file_id() <<
         " in total, returning from read().";           
@@ -267,14 +267,14 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 #ifdef _DEBUG
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
     {
-      log->getStream( YIELD::Log::LOG_INFO ) <<
+      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
       "xtreemfs::File: read threw ProxyExceptionResponse " <<
       "(errno=" << proxy_exception_response.get_platform_error_code() <<
-      ", strerror=" << YIELD::Exception::strerror( proxy_exception_response.get_platform_error_code() ) << ").";
+      ", strerror=" << YIELD::platform::Exception::strerror( proxy_exception_response.get_platform_error_code() ) << ").";
     }
 #endif
 
-    YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
+    YIELD::platform::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
 
     ret = -1;
   }
@@ -283,20 +283,20 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
 #ifdef _DEBUG
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
     {
-      log->getStream( YIELD::Log::LOG_INFO ) <<
+      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
       "xtreemfs::File: read threw std::exception " <<
       "(what=" << exc.what() << ")" <<
       ", setting errno to EIO.";
     }
 #endif
 
-    YIELD::Exception::set_errno( EIO );
+    YIELD::platform::Exception::set_errno( EIO );
 
     ret = -1;
   }
 
   for ( std::vector<org::xtreemfs::interfaces::OSDInterface::readResponse*>::iterator file_read_oncrpc_response_i = read_responses.begin(); file_read_oncrpc_response_i != read_responses.end(); file_read_oncrpc_response_i++ )
-    yidl::Object::decRef( **file_read_oncrpc_response_i );
+    yidl::runtime::Object::decRef( **file_read_oncrpc_response_i );
 
   return ret;
 }
@@ -341,7 +341,7 @@ bool File::setxattr( const std::string& name, const std::string& value, int flag
   return parent_volume->setxattr( path, name, value, flags );
 }
 
-YIELD::auto_Stat File::stat()
+YIELD::platform::auto_Stat File::stat()
 {
   return parent_volume->stat( path );
 }
@@ -400,13 +400,13 @@ bool File::unlk( uint64_t offset, uint64_t length )
 
 ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 {
-  YIELD::auto_Log log( parent_volume->get_log() );
+  YIELD::platform::auto_Log log( parent_volume->get_log() );
   ssize_t ret;
   std::vector<org::xtreemfs::interfaces::OSDInterface::writeResponse*> write_responses;
 
 #ifdef _DEBUG
   if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
-    log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::File::write( wbuf, size=" << size << ", offset=" << offset << " )";
+    log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::File::write( wbuf, size=" << size << ", offset=" << offset << " )";
 #endif
 
   try
@@ -415,7 +415,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
     uint64_t current_file_offset = offset;
     uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0].get_striping_policy().get_stripe_size() * 1024;
 
-    YIELD::auto_ResponseQueue<org::xtreemfs::interfaces::OSDInterface::writeResponse> write_response_queue( new YIELD::ResponseQueue<org::xtreemfs::interfaces::OSDInterface::writeResponse> );
+    YIELD::concurrency::auto_ResponseQueue<org::xtreemfs::interfaces::OSDInterface::writeResponse> write_response_queue( new YIELD::concurrency::ResponseQueue<org::xtreemfs::interfaces::OSDInterface::writeResponse> );
     size_t expected_write_response_count = 0;
 
     while ( wbuf_p < wbuf_end )
@@ -432,7 +432,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 #ifdef _DEBUG
       if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
       {
-        log->getStream( YIELD::Log::LOG_INFO ) << 
+        log->getStream( YIELD::platform::Log::LOG_INFO ) << 
           "xtreemfs::File: issuing write # " << ( expected_write_response_count + 1 ) <<
           " of " << object_size << 
           " bytes to object number " << object_number <<
@@ -459,20 +459,20 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 
 #ifdef _DEBUG
       if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
-        log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::File: write received response # " << ( write_response_i + 1 ) << " of " << expected_write_response_count << ".";
+        log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::File: write received response # " << ( write_response_i + 1 ) << " of " << expected_write_response_count << ".";
 #endif
 
       if ( write_response.get_osd_write_response() > latest_osd_write_response )
       {
 #ifdef _DEBUG
         if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
-          log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::File: OSD write response is newer than latest known.";
+          log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::File: OSD write response is newer than latest known.";
 #endif
 
         latest_osd_write_response = write_response.get_osd_write_response();
       }
 
-      // yidl::Object::decRef( write_response );
+      // yidl::runtime::Object::decRef( write_response );
       write_responses.push_back( &write_response );
     }
 
@@ -481,7 +481,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
     {
 #ifdef _DEBUG
       if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
-        log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::File: flushing file size updates.";
+        log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::File: flushing file size updates.";
 #endif
 
       parent_volume->get_mrc_proxy()->xtreemfs_update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
@@ -495,17 +495,17 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 #ifdef _DEBUG
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
     {
-      log->getStream( YIELD::Log::LOG_INFO ) <<
+      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
       "xtreemfs::File: write threw ProxyExceptionResponse " <<
       "(errno= " << proxy_exception_response.get_platform_error_code() <<
-      ", strerror=" << YIELD::Exception::strerror( proxy_exception_response.get_platform_error_code() ) << ").";
+      ", strerror=" << YIELD::platform::Exception::strerror( proxy_exception_response.get_platform_error_code() ) << ").";
     }
 #endif
 
     for ( std::vector<org::xtreemfs::interfaces::OSDInterface::writeResponse*>::iterator write_response_i = write_responses.begin(); write_response_i != write_responses.end(); write_response_i++ )
-      yidl::Object::decRef( **write_response_i );    
+      yidl::runtime::Object::decRef( **write_response_i );    
 
-    YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
+    YIELD::platform::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
 
     ret = -1;
   }
@@ -514,20 +514,20 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 #ifdef _DEBUG
     if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
     {
-      log->getStream( YIELD::Log::LOG_INFO ) <<
+      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
       "xtreemfs::File: write threw std::exception " <<
       "(what=" << exc.what() << ")" <<
       ", setting errno to EIO.";
     }
 #endif
 
-    YIELD::Exception::set_errno( EIO );
+    YIELD::platform::Exception::set_errno( EIO );
 
     ret = -1;
   }
 
   for ( std::vector<org::xtreemfs::interfaces::OSDInterface::writeResponse*>::iterator write_response_i = write_responses.begin(); write_response_i != write_responses.end(); write_response_i++ )
-    yidl::Object::decRef( **write_response_i );    
+    yidl::runtime::Object::decRef( **write_response_i );    
 
   return ret;
 }

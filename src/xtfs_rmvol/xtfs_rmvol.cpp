@@ -22,7 +22,7 @@ namespace xtfs_rmvol
     };
 
 
-    YIELD::auto_URI mrc_uri;
+    YIELD::ipc::auto_URI mrc_uri;
     std::string password;
     std::string volume_name;
 
@@ -39,7 +39,7 @@ namespace xtfs_rmvol
       if ( files_count >= 1 )
         mrc_uri = parseVolumeURI( files[0], volume_name );
       else
-        throw YIELD::Exception( "must specify the MRC and volume name as a URI" );
+        throw YIELD::platform::Exception( "must specify the MRC and volume name as a URI" );
     }
 
     void parseOption( int id, char* arg )

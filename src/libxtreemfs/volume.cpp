@@ -30,12 +30,12 @@ using namespace xtreemfs;
   } \
 
 
-auto_Volume Volume::create( const YIELD::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::auto_Log log, uint32_t proxy_flags, const YIELD::Time& proxy_operation_timeout, YIELD::auto_SSLContext proxy_ssl_context, const YIELD::Path& vivaldi_coordinates_file_path )
+auto_Volume Volume::create( const YIELD::ipc::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::platform::auto_Log log, uint32_t proxy_flags, const YIELD::platform::Time& proxy_operation_timeout, YIELD::ipc::auto_SSLContext proxy_ssl_context, const YIELD::platform::Path& vivaldi_coordinates_file_path )
 {
   auto_DIRProxy dir_proxy = DIRProxy::create( dir_uri, proxy_flags, log, proxy_operation_timeout, proxy_ssl_context );
   if ( dir_proxy != NULL )
   {
-    YIELD::auto_URI mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
+    YIELD::ipc::auto_URI mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
     if ( mrc_uri != NULL )
     {
       auto_MRCProxy mrc_proxy = MRCProxy::create( *mrc_uri, proxy_flags, log, proxy_operation_timeout, "", proxy_ssl_context );
@@ -47,32 +47,32 @@ auto_Volume Volume::create( const YIELD::URI& dir_uri, const std::string& name, 
         auto_OSDProxyMux osd_proxy_mux = OSDProxyMux::create( dir_proxy, proxy_flags, log, proxy_operation_timeout, proxy_ssl_context );
         if ( osd_proxy_mux != NULL )
         {
-          YIELD::auto_StageGroup stage_group = new YIELD::SEDAStageGroup;
+          YIELD::concurrency::auto_StageGroup stage_group = new YIELD::concurrency::SEDAStageGroup;
           stage_group->createStage( dir_proxy );
           stage_group->createStage( mrc_proxy );
           stage_group->createStage( osd_proxy_mux );
           return new Volume( dir_proxy, flags, log, mrc_proxy, name, osd_proxy_mux, stage_group, vivaldi_coordinates_file_path );
         }
         else
-          throw YIELD::Exception( "could not create OSD proxy multiplexer" );
+          throw YIELD::platform::Exception( "could not create OSD proxy multiplexer" );
       }
       else
-        throw YIELD::Exception( "received invalid MRC URI from the directory service" );
+        throw YIELD::platform::Exception( "received invalid MRC URI from the directory service" );
     }
     else
-      throw YIELD::Exception( "received invalid MRC URI from the directory service" );
+      throw YIELD::platform::Exception( "received invalid MRC URI from the directory service" );
   }
   else
-    throw YIELD::Exception( "DIR host does not exist" );  
+    throw YIELD::platform::Exception( "DIR host does not exist" );  
 }
 
-Volume::Volume( yidl::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::auto_Log log, yidl::auto_Object<MRCProxy> mrc_proxy, const std::string& name, yidl::auto_Object<OSDProxyMux> osd_proxy_mux, YIELD::auto_StageGroup stage_group, const YIELD::Path& vivaldi_coordinates_file_path )
+Volume::Volume( yidl::runtime::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::platform::auto_Log log, yidl::runtime::auto_Object<MRCProxy> mrc_proxy, const std::string& name, yidl::runtime::auto_Object<OSDProxyMux> osd_proxy_mux, YIELD::concurrency::auto_StageGroup stage_group, const YIELD::platform::Path& vivaldi_coordinates_file_path )
   : dir_proxy( dir_proxy ), flags( flags ), log( log ), mrc_proxy( mrc_proxy ), name( name ), osd_proxy_mux( osd_proxy_mux ), stage_group( stage_group ), vivaldi_coordinates_file_path( vivaldi_coordinates_file_path )
 {
-  uuid = YIELD::UUID();
+  uuid = YIELD::ipc::UUID();
 }
 
-bool Volume::access( const YIELD::Path&, int )
+bool Volume::access( const YIELD::platform::Path&, int )
 {
   return true;
 
@@ -84,7 +84,7 @@ bool Volume::access( const YIELD::Path&, int )
   //return false;
 }
 
-bool Volume::chmod( const YIELD::Path& path, mode_t mode )
+bool Volume::chmod( const YIELD::platform::Path& path, mode_t mode )
 {
   VOLUME_OPERATION_BEGIN( chmod )
   {
@@ -95,7 +95,7 @@ bool Volume::chmod( const YIELD::Path& path, mode_t mode )
   return false;
 }
 
-bool Volume::chown( const YIELD::Path& path, int uid, int gid )
+bool Volume::chown( const YIELD::platform::Path& path, int uid, int gid )
 {
   VOLUME_OPERATION_BEGIN( chown )
   {
@@ -106,7 +106,7 @@ bool Volume::chown( const YIELD::Path& path, int uid, int gid )
   return false;
 }
 
-bool Volume::getxattr( const YIELD::Path& path, const std::string& name, std::string& out_value )
+bool Volume::getxattr( const YIELD::platform::Path& path, const std::string& name, std::string& out_value )
 {
   VOLUME_OPERATION_BEGIN( getxattr )
   {
@@ -117,7 +117,7 @@ bool Volume::getxattr( const YIELD::Path& path, const std::string& name, std::st
   return false;
 }
 
-bool Volume::link( const YIELD::Path& old_path, const YIELD::Path& new_path )
+bool Volume::link( const YIELD::platform::Path& old_path, const YIELD::platform::Path& new_path )
 {
   VOLUME_OPERATION_BEGIN( link )
   {
@@ -128,7 +128,7 @@ bool Volume::link( const YIELD::Path& old_path, const YIELD::Path& new_path )
   return false;
 }
 
-bool Volume::listdir( const YIELD::Path& path, const YIELD::Path&, listdirCallback& callback )
+bool Volume::listdir( const YIELD::platform::Path& path, const YIELD::platform::Path&, listdirCallback& callback )
 {
   VOLUME_OPERATION_BEGIN( listdir )
   {
@@ -145,7 +145,7 @@ bool Volume::listdir( const YIELD::Path& path, const YIELD::Path&, listdirCallba
   return false;
 }
 
-bool Volume::listxattr( const YIELD::Path& path, std::vector<std::string>& out_names )
+bool Volume::listxattr( const YIELD::platform::Path& path, std::vector<std::string>& out_names )
 {
   VOLUME_OPERATION_BEGIN( listxattr )
   {
@@ -158,7 +158,7 @@ bool Volume::listxattr( const YIELD::Path& path, std::vector<std::string>& out_n
   return false;
 }
 
-bool Volume::mkdir( const YIELD::Path& path, mode_t mode )
+bool Volume::mkdir( const YIELD::platform::Path& path, mode_t mode )
 {
   VOLUME_OPERATION_BEGIN( mkdir )
   {
@@ -169,7 +169,7 @@ bool Volume::mkdir( const YIELD::Path& path, mode_t mode )
   return false;
 }
 
-YIELD::auto_File Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t mode, uint32_t attributes )
+YIELD::platform::auto_File Volume::open( const YIELD::platform::Path& _path, uint32_t flags, mode_t mode, uint32_t attributes )
 {
   VOLUME_OPERATION_BEGIN( open )
   {
@@ -231,10 +231,10 @@ YIELD::auto_File Volume::open( const YIELD::Path& _path, uint32_t flags, mode_t 
     org::xtreemfs::interfaces::VivaldiCoordinates my_vivaldi_coordinates;
     if ( !vivaldi_coordinates_file_path.empty() )
     {
-      YIELD::auto_File vivaldi_coordinates_file = YIELD::Volume().open( vivaldi_coordinates_file_path );
-      yidl::auto_Buffer my_vivaldi_coordinates_buffer( new yidl::StackBuffer<sizeof( org::xtreemfs::interfaces::VivaldiCoordinates)> );
+      YIELD::platform::auto_File vivaldi_coordinates_file = YIELD::platform::Volume().open( vivaldi_coordinates_file_path );
+      yidl::runtime::auto_Buffer my_vivaldi_coordinates_buffer( new yidl::runtime::StackBuffer<sizeof( org::xtreemfs::interfaces::VivaldiCoordinates)> );
       vivaldi_coordinates_file->read( my_vivaldi_coordinates_buffer );
-      YIELD::XDRUnmarshaller xdr_unmarshaller( my_vivaldi_coordinates_buffer );
+      YIELD::platform::XDRUnmarshaller xdr_unmarshaller( my_vivaldi_coordinates_buffer );
       my_vivaldi_coordinates.unmarshal( xdr_unmarshaller );
     }
 
@@ -257,7 +257,7 @@ void Volume::osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& fi
   }
 }
 
-bool Volume::readdir( const YIELD::Path& path, const YIELD::Path&, YIELD::Volume::readdirCallback& callback )
+bool Volume::readdir( const YIELD::platform::Path& path, const YIELD::platform::Path&, YIELD::platform::Volume::readdirCallback& callback )
 {
   VOLUME_OPERATION_BEGIN( readdir )
   {
@@ -267,9 +267,9 @@ bool Volume::readdir( const YIELD::Path& path, const YIELD::Path&, YIELD::Volume
     {
       const org::xtreemfs::interfaces::Stat& xtreemfs_stat = ( *directory_entry_i ).get_stbuf();
 #ifdef _WIN32
-      if ( !callback( ( *directory_entry_i ).get_name(), new YIELD::Stat( xtreemfs_stat.get_mode(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime_ns(), xtreemfs_stat.get_mtime_ns(), xtreemfs_stat.get_ctime_ns(), xtreemfs_stat.get_attributes() ) ) )
+      if ( !callback( ( *directory_entry_i ).get_name(), new YIELD::platform::Stat( xtreemfs_stat.get_mode(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime_ns(), xtreemfs_stat.get_mtime_ns(), xtreemfs_stat.get_ctime_ns(), xtreemfs_stat.get_attributes() ) ) )
 #else
-      if ( !callback( ( *directory_entry_i ).get_name(), new YIELD::Stat( xtreemfs_stat.get_dev(), xtreemfs_stat.get_ino(), xtreemfs_stat.get_mode(), xtreemfs_stat.get_nlink(), xtreemfs_stat.get_uid(), xtreemfs_stat.get_gid(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime_ns(), xtreemfs_stat.get_mtime_ns(), xtreemfs_stat.get_ctime_ns() ) ) )
+      if ( !callback( ( *directory_entry_i ).get_name(), new YIELD::platform::Stat( xtreemfs_stat.get_dev(), xtreemfs_stat.get_ino(), xtreemfs_stat.get_mode(), xtreemfs_stat.get_nlink(), xtreemfs_stat.get_uid(), xtreemfs_stat.get_gid(), xtreemfs_stat.get_size(), xtreemfs_stat.get_atime_ns(), xtreemfs_stat.get_mtime_ns(), xtreemfs_stat.get_ctime_ns() ) ) )
 #endif
         return false;
     }
@@ -279,19 +279,19 @@ bool Volume::readdir( const YIELD::Path& path, const YIELD::Path&, YIELD::Volume
   return false;
 }
 
-yidl::auto_Object<YIELD::Path> Volume::readlink( const YIELD::Path& path )
+yidl::runtime::auto_Object<YIELD::platform::Path> Volume::readlink( const YIELD::platform::Path& path )
 {
   VOLUME_OPERATION_BEGIN( readlink )
   {
     org::xtreemfs::interfaces::Stat stbuf;
     mrc_proxy->getattr( Path( this->name, path ), stbuf );
-    return new YIELD::Path( stbuf.get_link_target() );
+    return new YIELD::platform::Path( stbuf.get_link_target() );
   }
   VOLUME_OPERATION_END( readlink );
   return NULL;
 }
 
-bool Volume::rename( const YIELD::Path& from_path, const YIELD::Path& to_path )
+bool Volume::rename( const YIELD::platform::Path& from_path, const YIELD::platform::Path& to_path )
 {
   VOLUME_OPERATION_BEGIN( rename )
   {
@@ -305,7 +305,7 @@ bool Volume::rename( const YIELD::Path& from_path, const YIELD::Path& to_path )
   return false;
 }
 
-bool Volume::rmdir( const YIELD::Path& path )
+bool Volume::rmdir( const YIELD::platform::Path& path )
 {
   VOLUME_OPERATION_BEGIN( rmdir )
   {
@@ -316,7 +316,7 @@ bool Volume::rmdir( const YIELD::Path& path )
   return false;
 }
 
-bool Volume::removexattr( const YIELD::Path& path, const std::string& name )
+bool Volume::removexattr( const YIELD::platform::Path& path, const std::string& name )
 {
   VOLUME_OPERATION_BEGIN( removexattr )
   {
@@ -327,7 +327,7 @@ bool Volume::removexattr( const YIELD::Path& path, const std::string& name )
   return false;
 }
 
-bool Volume::setattr( const YIELD::Path& path, uint32_t file_attributes )
+bool Volume::setattr( const YIELD::platform::Path& path, uint32_t file_attributes )
 {
   VOLUME_OPERATION_BEGIN( setattr )
   {
@@ -344,27 +344,27 @@ void Volume::set_errno( const char* operation_name, ProxyExceptionResponse& prox
 {
 #ifdef _DEBUG
   if ( log != NULL )
-    log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::Volume: caught exception on " << operation_name << ": " << proxy_exception_response.what();
+    log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::Volume: caught exception on " << operation_name << ": " << proxy_exception_response.what();
 #endif
 
-  YIELD::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
+  YIELD::platform::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
 }
 
 void Volume::set_errno( const char* operation_name, std::exception& exc )
 {
 #ifdef _DEBUG
   if ( log != NULL )
-    log->getStream( YIELD::Log::LOG_INFO ) << "xtreemfs::Volume: caught exception on " << operation_name << ": " << exc.what();
+    log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::Volume: caught exception on " << operation_name << ": " << exc.what();
 #endif
 
 #ifdef _WIN32
-  YIELD::Exception::set_errno( ERROR_ACCESS_DENIED );
+  YIELD::platform::Exception::set_errno( ERROR_ACCESS_DENIED );
 #else
-  YIELD::Exception::set_errno( EIO );
+  YIELD::platform::Exception::set_errno( EIO );
 #endif  
 }
 
-bool Volume::setxattr( const YIELD::Path& path, const std::string& name, const std::string& value, int flags )
+bool Volume::setxattr( const YIELD::platform::Path& path, const std::string& name, const std::string& value, int flags )
 {
   VOLUME_OPERATION_BEGIN( setxattr )
   {
@@ -375,7 +375,7 @@ bool Volume::setxattr( const YIELD::Path& path, const std::string& name, const s
   return false;
 }
 
-YIELD::auto_Stat Volume::stat( const YIELD::Path& path )
+YIELD::platform::auto_Stat Volume::stat( const YIELD::platform::Path& path )
 {
   VOLUME_OPERATION_BEGIN( getattr )
   {
@@ -385,18 +385,18 @@ YIELD::auto_Stat Volume::stat( const YIELD::Path& path )
   return NULL;
 }
 
-YIELD::auto_Stat Volume::stat( const Path& path )
+YIELD::platform::auto_Stat Volume::stat( const Path& path )
 {
   org::xtreemfs::interfaces::Stat stbuf;
   mrc_proxy->getattr( path, stbuf );
 #ifdef _WIN32
-  return new YIELD::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns(), stbuf.get_attributes() );
+  return new YIELD::platform::Stat( stbuf.get_mode(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns(), stbuf.get_attributes() );
 #else
-  return new YIELD::Stat( stbuf.get_dev(), stbuf.get_ino(), stbuf.get_mode(), stbuf.get_nlink(), stbuf.get_uid(), stbuf.get_gid(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns() );
+  return new YIELD::platform::Stat( stbuf.get_dev(), stbuf.get_ino(), stbuf.get_mode(), stbuf.get_nlink(), stbuf.get_uid(), stbuf.get_gid(), stbuf.get_size(), stbuf.get_atime_ns(), stbuf.get_mtime_ns(), stbuf.get_ctime_ns() );
 #endif
 }
 
-bool Volume::statvfs( const YIELD::Path&, struct statvfs& statvfsbuf )
+bool Volume::statvfs( const YIELD::platform::Path&, struct statvfs& statvfsbuf )
 {
   VOLUME_OPERATION_BEGIN( statvfs )
   {
@@ -414,7 +414,7 @@ bool Volume::statvfs( const YIELD::Path&, struct statvfs& statvfsbuf )
   return false;
 }
 
-bool Volume::symlink( const YIELD::Path& to_path, const YIELD::Path& from_path )
+bool Volume::symlink( const YIELD::platform::Path& to_path, const YIELD::platform::Path& from_path )
 {
   VOLUME_OPERATION_BEGIN( symlink )
   {
@@ -425,11 +425,11 @@ bool Volume::symlink( const YIELD::Path& to_path, const YIELD::Path& from_path )
   return false;
 }
 
-bool Volume::truncate( const YIELD::Path& path, uint64_t new_size )
+bool Volume::truncate( const YIELD::platform::Path& path, uint64_t new_size )
 {
   VOLUME_OPERATION_BEGIN( truncate )
   {
-    YIELD::auto_File file = YIELD::Volume::open( path, O_TRUNC );
+    YIELD::platform::auto_File file = YIELD::platform::Volume::open( path, O_TRUNC );
     if ( file != NULL )
       return file->truncate( new_size );
     else
@@ -439,7 +439,7 @@ bool Volume::truncate( const YIELD::Path& path, uint64_t new_size )
   return false;
 }
 
-bool Volume::unlink( const YIELD::Path& path )
+bool Volume::unlink( const YIELD::platform::Path& path )
 {
   VOLUME_OPERATION_BEGIN( unlink )
   {
@@ -452,7 +452,7 @@ bool Volume::unlink( const YIELD::Path& path )
   return false;
 }
 
-bool Volume::utimens( const YIELD::Path& path, const YIELD::Time& atime, const YIELD::Time& mtime, const YIELD::Time& ctime )
+bool Volume::utimens( const YIELD::platform::Path& path, const YIELD::platform::Time& atime, const YIELD::platform::Time& mtime, const YIELD::platform::Time& ctime )
 {
   VOLUME_OPERATION_BEGIN( utimens )
   {
@@ -463,7 +463,7 @@ bool Volume::utimens( const YIELD::Path& path, const YIELD::Time& atime, const Y
   return false;
 }
 
-YIELD::Path Volume::volname( const YIELD::Path& )
+YIELD::platform::Path Volume::volname( const YIELD::platform::Path& )
 {
   return name;
 }

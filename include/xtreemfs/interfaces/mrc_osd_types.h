@@ -21,7 +21,7 @@ namespace org
       enum StripingPolicyType { STRIPING_POLICY_RAID0 = 0 };
 
 
-      class NewFileSize : public ::yidl::Struct
+      class NewFileSize : public ::yidl::runtime::Struct
       {
       public:
         NewFileSize() : size_in_bytes( 0 ), truncate_epoch( 0 ) { }
@@ -35,19 +35,19 @@ namespace org
 
         bool operator==( const NewFileSize& other ) const { return size_in_bytes == other.size_in_bytes && truncate_epoch == other.truncate_epoch; }
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( NewFileSize, 2009090220 );
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( NewFileSize, 2009090220 );
 
         // yidl::Struct
-        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint64( "size_in_bytes", 0, size_in_bytes ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { size_in_bytes = unmarshaller.readUint64( "size_in_bytes", 0 ); truncate_epoch = unmarshaller.readUint32( "truncate_epoch", 0 ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeUint64( "size_in_bytes", 0, size_in_bytes ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { size_in_bytes = unmarshaller.readUint64( "size_in_bytes", 0 ); truncate_epoch = unmarshaller.readUint32( "truncate_epoch", 0 ); }
 
       protected:
         uint64_t size_in_bytes;
         uint32_t truncate_epoch;
       };
 
-      class NewFileSizeSet : public ::yidl::Sequence, public std::vector<org::xtreemfs::interfaces::NewFileSize>
+      class NewFileSizeSet : public ::yidl::runtime::Sequence, public std::vector<org::xtreemfs::interfaces::NewFileSize>
       {
       public:
         NewFileSizeSet() { }
@@ -55,16 +55,16 @@ namespace org
         NewFileSizeSet( size_type size ) : std::vector<org::xtreemfs::interfaces::NewFileSize>( size ) { }
         virtual ~NewFileSizeSet() { }
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( NewFileSizeSet, 2009090221 );
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( NewFileSizeSet, 2009090221 );
 
         // yidl::Sequence
         size_t get_size() const { return size(); }
-        void marshal( ::yidl::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::NewFileSize value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::NewFileSize value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
       };
 
-      class OSDtoMRCData : public ::yidl::Struct
+      class OSDtoMRCData : public ::yidl::runtime::Struct
       {
       public:
         OSDtoMRCData() : caching_policy( 0 ) { }
@@ -80,19 +80,19 @@ namespace org
 
         bool operator==( const OSDtoMRCData& other ) const { return caching_policy == other.caching_policy && data == other.data; }
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( OSDtoMRCData, 2009090222 );
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( OSDtoMRCData, 2009090222 );
 
         // yidl::Struct
-        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeUint8( "caching_policy", 0, caching_policy ); marshaller.writeString( "data", 0, data ); }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { caching_policy = unmarshaller.readUint8( "caching_policy", 0 ); unmarshaller.readString( "data", 0, data ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeUint8( "caching_policy", 0, caching_policy ); marshaller.writeString( "data", 0, data ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { caching_policy = unmarshaller.readUint8( "caching_policy", 0 ); unmarshaller.readString( "data", 0, data ); }
 
       protected:
         uint8_t caching_policy;
         std::string data;
       };
 
-      class OSDtoMRCDataSet : public ::yidl::Sequence, public std::vector<org::xtreemfs::interfaces::OSDtoMRCData>
+      class OSDtoMRCDataSet : public ::yidl::runtime::Sequence, public std::vector<org::xtreemfs::interfaces::OSDtoMRCData>
       {
       public:
         OSDtoMRCDataSet() { }
@@ -100,16 +100,16 @@ namespace org
         OSDtoMRCDataSet( size_type size ) : std::vector<org::xtreemfs::interfaces::OSDtoMRCData>( size ) { }
         virtual ~OSDtoMRCDataSet() { }
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( OSDtoMRCDataSet, 2009090223 );
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( OSDtoMRCDataSet, 2009090223 );
 
         // yidl::Sequence
         size_t get_size() const { return size(); }
-        void marshal( ::yidl::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::OSDtoMRCData value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::OSDtoMRCData value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
       };
 
-      class OSDWriteResponse : public ::yidl::Struct
+      class OSDWriteResponse : public ::yidl::runtime::Struct
       {
       public:
         OSDWriteResponse() { }
@@ -123,19 +123,19 @@ namespace org
 
         bool operator==( const OSDWriteResponse& other ) const { return new_file_size == other.new_file_size && opaque_data == other.opaque_data; }
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( OSDWriteResponse, 2009090226 );
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( OSDWriteResponse, 2009090226 );
 
         // yidl::Struct
-        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "new_file_size", 0, new_file_size ); marshaller.writeSequence( "opaque_data", 0, opaque_data ); }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "new_file_size", 0, new_file_size ); unmarshaller.readSequence( "opaque_data", 0, opaque_data ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "new_file_size", 0, new_file_size ); marshaller.writeSequence( "opaque_data", 0, opaque_data ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "new_file_size", 0, new_file_size ); unmarshaller.readSequence( "opaque_data", 0, opaque_data ); }
 
       protected:
         org::xtreemfs::interfaces::NewFileSizeSet new_file_size;
         org::xtreemfs::interfaces::OSDtoMRCDataSet opaque_data;
       };
 
-      class StripingPolicy : public ::yidl::Struct
+      class StripingPolicy : public ::yidl::runtime::Struct
       {
       public:
         StripingPolicy() : type( STRIPING_POLICY_RAID0 ), stripe_size( 0 ), width( 0 ) { }
@@ -151,12 +151,12 @@ namespace org
 
         bool operator==( const StripingPolicy& other ) const { return type == other.type && stripe_size == other.stripe_size && width == other.width; }
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( StripingPolicy, 2009090228 );
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( StripingPolicy, 2009090228 );
 
         // yidl::Struct
-        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeInt32( "type", 0, static_cast<int32_t>( type ) ); marshaller.writeUint32( "stripe_size", 0, stripe_size ); marshaller.writeUint32( "width", 0, width ); }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { type = ( org::xtreemfs::interfaces::StripingPolicyType )unmarshaller.readInt32( "type", 0 ); stripe_size = unmarshaller.readUint32( "stripe_size", 0 ); width = unmarshaller.readUint32( "width", 0 ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeInt32( "type", 0, static_cast<int32_t>( type ) ); marshaller.writeUint32( "stripe_size", 0, stripe_size ); marshaller.writeUint32( "width", 0, width ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { type = ( org::xtreemfs::interfaces::StripingPolicyType )unmarshaller.readInt32( "type", 0 ); stripe_size = unmarshaller.readUint32( "stripe_size", 0 ); width = unmarshaller.readUint32( "width", 0 ); }
 
       protected:
         org::xtreemfs::interfaces::StripingPolicyType type;
@@ -164,7 +164,7 @@ namespace org
         uint32_t width;
       };
 
-      class Replica : public ::yidl::Struct
+      class Replica : public ::yidl::runtime::Struct
       {
       public:
         Replica() : replication_flags( 0 ) { }
@@ -180,12 +180,12 @@ namespace org
 
         bool operator==( const Replica& other ) const { return striping_policy == other.striping_policy && replication_flags == other.replication_flags && osd_uuids == other.osd_uuids; }
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( Replica, 2009090229 );
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( Replica, 2009090229 );
 
         // yidl::Struct
-        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "striping_policy", 0, striping_policy ); marshaller.writeUint32( "replication_flags", 0, replication_flags ); marshaller.writeSequence( "osd_uuids", 0, osd_uuids ); }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "striping_policy", 0, striping_policy ); replication_flags = unmarshaller.readUint32( "replication_flags", 0 ); unmarshaller.readSequence( "osd_uuids", 0, osd_uuids ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "striping_policy", 0, striping_policy ); marshaller.writeUint32( "replication_flags", 0, replication_flags ); marshaller.writeSequence( "osd_uuids", 0, osd_uuids ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "striping_policy", 0, striping_policy ); replication_flags = unmarshaller.readUint32( "replication_flags", 0 ); unmarshaller.readSequence( "osd_uuids", 0, osd_uuids ); }
 
       protected:
         org::xtreemfs::interfaces::StripingPolicy striping_policy;
@@ -193,7 +193,7 @@ namespace org
         org::xtreemfs::interfaces::StringSet osd_uuids;
       };
 
-      class ReplicaSet : public ::yidl::Sequence, public std::vector<org::xtreemfs::interfaces::Replica>
+      class ReplicaSet : public ::yidl::runtime::Sequence, public std::vector<org::xtreemfs::interfaces::Replica>
       {
       public:
         ReplicaSet() { }
@@ -201,16 +201,16 @@ namespace org
         ReplicaSet( size_type size ) : std::vector<org::xtreemfs::interfaces::Replica>( size ) { }
         virtual ~ReplicaSet() { }
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( ReplicaSet, 2009090230 );
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( ReplicaSet, 2009090230 );
 
         // yidl::Sequence
         size_t get_size() const { return size(); }
-        void marshal( ::yidl::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::Replica value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::Replica value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
       };
 
-      class VivaldiCoordinates : public ::yidl::Struct
+      class VivaldiCoordinates : public ::yidl::runtime::Struct
       {
       public:
         VivaldiCoordinates() : x_coordinate( 0 ), y_coordinate( 0 ), local_error( 0 ) { }
@@ -226,12 +226,12 @@ namespace org
 
         bool operator==( const VivaldiCoordinates& other ) const { return x_coordinate == other.x_coordinate && y_coordinate == other.y_coordinate && local_error == other.local_error; }
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( VivaldiCoordinates, 2009090231 );
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( VivaldiCoordinates, 2009090231 );
 
         // yidl::Struct
-        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeDouble( "x_coordinate", 0, x_coordinate ); marshaller.writeDouble( "y_coordinate", 0, y_coordinate ); marshaller.writeDouble( "local_error", 0, local_error ); }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { x_coordinate = unmarshaller.readDouble( "x_coordinate", 0 ); y_coordinate = unmarshaller.readDouble( "y_coordinate", 0 ); local_error = unmarshaller.readDouble( "local_error", 0 ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeDouble( "x_coordinate", 0, x_coordinate ); marshaller.writeDouble( "y_coordinate", 0, y_coordinate ); marshaller.writeDouble( "local_error", 0, local_error ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { x_coordinate = unmarshaller.readDouble( "x_coordinate", 0 ); y_coordinate = unmarshaller.readDouble( "y_coordinate", 0 ); local_error = unmarshaller.readDouble( "local_error", 0 ); }
 
       protected:
         double x_coordinate;
@@ -239,7 +239,7 @@ namespace org
         double local_error;
       };
 
-      class XCap : public ::yidl::Struct
+      class XCap : public ::yidl::runtime::Struct
       {
       public:
         XCap() : access_mode( 0 ), expires_s( 0 ), truncate_epoch( 0 ), replicateOnClose( false ) { }
@@ -267,12 +267,12 @@ namespace org
 
         bool operator==( const XCap& other ) const { return file_id == other.file_id && access_mode == other.access_mode && expires_s == other.expires_s && client_identity == other.client_identity && truncate_epoch == other.truncate_epoch && replicateOnClose == other.replicateOnClose && server_signature == other.server_signature; }
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( XCap, 2009090232 );
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( XCap, 2009090232 );
 
         // yidl::Struct
-        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint32( "access_mode", 0, access_mode ); marshaller.writeUint64( "expires_s", 0, expires_s ); marshaller.writeString( "client_identity", 0, client_identity ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); marshaller.writeBoolean( "replicateOnClose", 0, replicateOnClose ); marshaller.writeString( "server_signature", 0, server_signature ); }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); access_mode = unmarshaller.readUint32( "access_mode", 0 ); expires_s = unmarshaller.readUint64( "expires_s", 0 ); unmarshaller.readString( "client_identity", 0, client_identity ); truncate_epoch = unmarshaller.readUint32( "truncate_epoch", 0 ); replicateOnClose = unmarshaller.readBoolean( "replicateOnClose", 0 ); unmarshaller.readString( "server_signature", 0, server_signature ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint32( "access_mode", 0, access_mode ); marshaller.writeUint64( "expires_s", 0, expires_s ); marshaller.writeString( "client_identity", 0, client_identity ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); marshaller.writeBoolean( "replicateOnClose", 0, replicateOnClose ); marshaller.writeString( "server_signature", 0, server_signature ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); access_mode = unmarshaller.readUint32( "access_mode", 0 ); expires_s = unmarshaller.readUint64( "expires_s", 0 ); unmarshaller.readString( "client_identity", 0, client_identity ); truncate_epoch = unmarshaller.readUint32( "truncate_epoch", 0 ); replicateOnClose = unmarshaller.readBoolean( "replicateOnClose", 0 ); unmarshaller.readString( "server_signature", 0, server_signature ); }
 
       protected:
         std::string file_id;
@@ -284,7 +284,7 @@ namespace org
         std::string server_signature;
       };
 
-      class XLocSet : public ::yidl::Struct
+      class XLocSet : public ::yidl::runtime::Struct
       {
       public:
         XLocSet() : version( 0 ), read_only_file_size( 0 ) { }
@@ -304,12 +304,12 @@ namespace org
 
         bool operator==( const XLocSet& other ) const { return replicas == other.replicas && version == other.version && repUpdatePolicy == other.repUpdatePolicy && read_only_file_size == other.read_only_file_size; }
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( XLocSet, 2009090233 );
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( XLocSet, 2009090233 );
 
         // yidl::Struct
-        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeSequence( "replicas", 0, replicas ); marshaller.writeUint32( "version", 0, version ); marshaller.writeString( "repUpdatePolicy", 0, repUpdatePolicy ); marshaller.writeUint64( "read_only_file_size", 0, read_only_file_size ); }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "replicas", 0, replicas ); version = unmarshaller.readUint32( "version", 0 ); unmarshaller.readString( "repUpdatePolicy", 0, repUpdatePolicy ); read_only_file_size = unmarshaller.readUint64( "read_only_file_size", 0 ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "replicas", 0, replicas ); marshaller.writeUint32( "version", 0, version ); marshaller.writeString( "repUpdatePolicy", 0, repUpdatePolicy ); marshaller.writeUint64( "read_only_file_size", 0, read_only_file_size ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "replicas", 0, replicas ); version = unmarshaller.readUint32( "version", 0 ); unmarshaller.readString( "repUpdatePolicy", 0, repUpdatePolicy ); read_only_file_size = unmarshaller.readUint64( "read_only_file_size", 0 ); }
 
       protected:
         org::xtreemfs::interfaces::ReplicaSet replicas;
@@ -318,7 +318,7 @@ namespace org
         uint64_t read_only_file_size;
       };
 
-      class FileCredentials : public ::yidl::Struct
+      class FileCredentials : public ::yidl::runtime::Struct
       {
       public:
         FileCredentials() { }
@@ -332,19 +332,19 @@ namespace org
 
         bool operator==( const FileCredentials& other ) const { return xlocs == other.xlocs && xcap == other.xcap; }
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( FileCredentials, 2009090234 );
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( FileCredentials, 2009090234 );
 
         // yidl::Struct
-        void marshal( ::yidl::Marshaller& marshaller ) const { marshaller.writeStruct( "xlocs", 0, xlocs ); marshaller.writeStruct( "xcap", 0, xcap ); }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "xlocs", 0, xlocs ); unmarshaller.readStruct( "xcap", 0, xcap ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "xlocs", 0, xlocs ); marshaller.writeStruct( "xcap", 0, xcap ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "xlocs", 0, xlocs ); unmarshaller.readStruct( "xcap", 0, xcap ); }
 
       protected:
         org::xtreemfs::interfaces::XLocSet xlocs;
         org::xtreemfs::interfaces::XCap xcap;
       };
 
-      class FileCredentialsSet : public ::yidl::Sequence, public std::vector<org::xtreemfs::interfaces::FileCredentials>
+      class FileCredentialsSet : public ::yidl::runtime::Sequence, public std::vector<org::xtreemfs::interfaces::FileCredentials>
       {
       public:
         FileCredentialsSet() { }
@@ -352,13 +352,13 @@ namespace org
         FileCredentialsSet( size_type size ) : std::vector<org::xtreemfs::interfaces::FileCredentials>( size ) { }
         virtual ~FileCredentialsSet() { }
 
-        // yidl::Object
-        YIDL_OBJECT_PROTOTYPES( FileCredentialsSet, 2009090235 );
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( FileCredentialsSet, 2009090235 );
 
         // yidl::Sequence
         size_t get_size() const { return size(); }
-        void marshal( ::yidl::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
-        void unmarshal( ::yidl::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::FileCredentials value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeStruct( "value", 0, ( *this )[value_i] ); } }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { org::xtreemfs::interfaces::FileCredentials value; unmarshaller.readStruct( "value", 0, value ); push_back( value ); }
       };
 
 

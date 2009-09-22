@@ -9,7 +9,7 @@
 
 namespace xtreemfs
 {
-  class OSDProxyResponse : public YIELD::Response
+  class OSDProxyResponse : public YIELD::concurrency::Response
   {
   public:
     ssize_t get_selected_file_replica() const { return selected_file_replica; }

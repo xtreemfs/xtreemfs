@@ -16,7 +16,7 @@ namespace xtfs_mkvol
       access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;
 
       addOption( XTFS_MKVOL_OPTION_MODE, "-m", "--mode", "n" );
-      mode = YIELD::Volume::DEFAULT_DIRECTORY_MODE;
+      mode = YIELD::platform::Volume::DEFAULT_DIRECTORY_MODE;
 
       addOption( XTFS_MKVOL_OPTION_OWNER_GROUP_ID, "-g", "--owner-group-id", "group id of owner" );
 
@@ -49,7 +49,7 @@ namespace xtfs_mkvol
 
     org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy;
     uint32_t mode;
-    YIELD::auto_URI mrc_uri;
+    YIELD::ipc::auto_URI mrc_uri;
     std::string owner_group_id, owner_user_id;
     std::string password;
     org::xtreemfs::interfaces::StripingPolicyType striping_policy;
@@ -85,7 +85,7 @@ namespace xtfs_mkvol
           {
             mode = strtol( arg, NULL, 0 );
             if ( mode == 0 )
-              mode = YIELD::Volume::DEFAULT_DIRECTORY_MODE;
+              mode = YIELD::platform::Volume::DEFAULT_DIRECTORY_MODE;
           }
           break;
 
@@ -126,7 +126,7 @@ namespace xtfs_mkvol
       if ( files_count >= 1 )
         mrc_uri = parseVolumeURI( files[0], volume_name );
       else
-        throw YIELD::Exception( "must specify the MRC and volume name as a URI" );
+        throw YIELD::platform::Exception( "must specify the MRC and volume name as a URI" );
     }
   };
 };

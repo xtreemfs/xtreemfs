@@ -1,13 +1,13 @@
-// Revision: 1880
+// Revision: 1884
 
 #include "yield/concurrency.h"
-using namespace YIELD;
+using namespace YIELD::concurrency;
 
 
 // color_stage_group.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-class ColorStageGroup::Thread : public ::YIELD::Thread
+class ColorStageGroup::Thread : public ::YIELD::platform::Thread
 {
 public:
   Thread( auto_STLEventQueue event_queue, uint16_t logical_processor_i, const char* name )
@@ -19,7 +19,7 @@ public:
   void stop()
   {
     should_run = false;
-    yidl::auto_Object<Stage::ShutdownEvent> stage_shutdown_event( new Stage::ShutdownEvent );
+    yidl::runtime::auto_Object<Stage::ShutdownEvent> stage_shutdown_event( new Stage::ShutdownEvent );
     while ( is_running )
     {
       event_queue->enqueue( stage_shutdown_event->incRef() );
@@ -52,7 +52,7 @@ private:
 ColorStageGroup::ColorStageGroup( const char* name, uint16_t start_logical_processor_i, int16_t thread_count )
 {
   event_queue = new STLEventQueue;
-  uint16_t online_logical_processor_count = Machine::getOnlineLogicalProcessorCount();
+  uint16_t online_logical_processor_count = YIELD::platform::Machine::getOnlineLogicalProcessorCount();
   if ( thread_count == -1 )
     thread_count = static_cast<int16_t>( online_logical_processor_count );
   for ( uint16_t logical_processor_i = start_logical_processor_i; logical_processor_i < start_logical_processor_i + thread_count; logical_processor_i++ )
@@ -67,7 +67,7 @@ ColorStageGroup::~ColorStageGroup()
   for ( std::vector<Thread*>::iterator thread_i = threads.begin(); thread_i != threads.end(); thread_i++ )
   {
     ( *thread_i )->stop();
-    yidl::Object::decRef( **thread_i );
+    yidl::runtime::Object::decRef( **thread_i );
   }
 }
 
@@ -82,8 +82,8 @@ void EventHandler::handleUnknownEvent( Event& ev )
 {
   switch ( ev.get_type_id() )
   {
-    case YIDL_OBJECT_TYPE_ID( Stage::StartupEvent ):
-    case YIDL_OBJECT_TYPE_ID( Stage::ShutdownEvent ): Object::decRef( ev ); break;
+    case YIDL_RUNTIME_OBJECT_TYPE_ID( Stage::StartupEvent ):
+    case YIDL_RUNTIME_OBJECT_TYPE_ID( Stage::ShutdownEvent ): Object::decRef( ev ); break;
     default:
     {
       std::cerr << get_type_name() << " dropping unknown event: " << ev.get_type_name() << std::endl;
@@ -278,7 +278,7 @@ bool MG1VisitPolicy::populatePollingTable()
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 template <class VisitPolicyType>
-class PollingStageGroup<VisitPolicyType>::Thread : public ::YIELD::Thread
+class PollingStageGroup<VisitPolicyType>::Thread : public ::YIELD::platform::Thread
 {
 public:
   Thread( uint16_t logical_processor_i, const char* name, Stage** stages )
@@ -301,7 +301,7 @@ public:
     is_running = true;
     this->set_name( name.c_str() );
     if ( !this->set_processor_affinity( logical_processor_i ) )
-      std::cerr << "yield::PollingStageGroup::Thread: error on set_processor_affinity( " << logical_processor_i << " ): " << Exception::strerror() << std::endl;
+      std::cerr << "yield::concurrency::PollingStageGroup::Thread: error on set_processor_affinity( " << logical_processor_i << " ): " << YIELD::platform::Exception::strerror() << std::endl;
     uint64_t visit_timeout_ns = 1 * NS_IN_MS;
     uint64_t successful_visits = 0, total_visits = 0;
     while ( should_run )
@@ -319,7 +319,7 @@ public:
           visit_timeout_ns += 1;
       }
     }
-    std::cout << "yield::PollingStageGroup::Thread: visit efficiency = " << static_cast<double>( successful_visits ) / static_cast<double>( total_visits ) << std::endl;
+    std::cout << "yield::concurrency::PollingStageGroup::Thread: visit efficiency = " << static_cast<double>( successful_visits ) / static_cast<double>( total_visits ) << std::endl;
     is_running = false;
   }
 private:
@@ -332,7 +332,7 @@ template <class VisitPolicyType>
 PollingStageGroup<VisitPolicyType>::PollingStageGroup( const char* name, uint16_t start_logical_processor_i, int16_t thread_count, bool use_thread_local_event_queues )
   : use_thread_local_event_queues( use_thread_local_event_queues )
 {
-  uint16_t online_logical_processor_count = Machine::getOnlineLogicalProcessorCount();
+  uint16_t online_logical_processor_count = YIELD::platform::Machine::getOnlineLogicalProcessorCount();
   if ( thread_count == -1 )
     thread_count = static_cast<int16_t>( online_logical_processor_count );
   for ( uint16_t logical_processor_i = start_logical_processor_i; logical_processor_i < start_logical_processor_i + thread_count; logical_processor_i++ )
@@ -348,7 +348,7 @@ PollingStageGroup<VisitPolicyType>::~PollingStageGroup()
   for ( typename std::vector<Thread*>::iterator thread_i = threads.begin(); thread_i != threads.end(); thread_i++ )
   {
     ( *thread_i )->stop();
-    yidl::Object::decRef( **thread_i );
+    yidl::runtime::Object::decRef( **thread_i );
   }
 }
 template class PollingStageGroup<DBRVisitPolicy>;
@@ -377,7 +377,7 @@ void Request::set_response_target( auto_EventTarget response_target )
 // seda_stage_group.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-class SEDAStageGroup::Thread : public ::YIELD::Thread
+class SEDAStageGroup::Thread : public ::YIELD::platform::Thread
 {
 public:
   Thread( auto_Stage stage )
@@ -390,7 +390,7 @@ public:
   void stop()
   {
     should_run = false;
-    yidl::auto_Object<Stage::ShutdownEvent> stage_shutdown_event = new Stage::ShutdownEvent;
+    yidl::runtime::auto_Object<Stage::ShutdownEvent> stage_shutdown_event = new Stage::ShutdownEvent;
     for ( ;; )
     {
       stage->send( stage_shutdown_event->incRef() );
@@ -411,12 +411,12 @@ public:
   }
   void start()
   {
-    ::YIELD::Thread::start();
+    ::YIELD::platform::Thread::start();
     while ( !is_running )
-      Thread::yield();
+      YIELD::platform::Thread::yield();
   }
-  // yidl::Object
-  YIDL_OBJECT_PROTOTYPES( SEDAStageGroup::Thread, 0 );
+  // yidl::runtime::Object
+  YIDL_RUNTIME_OBJECT_PROTOTYPES( SEDAStageGroup::Thread, 0 );
 private:
   ~Thread() { }
   auto_Stage stage;
@@ -443,14 +443,14 @@ void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
 // stage.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-class Stage::StatisticsTimer : public TimerQueue::Timer
+class Stage::StatisticsTimer : public YIELD::platform::TimerQueue::Timer
 {
 public:
-  StatisticsTimer( yidl::auto_Object<Stage> stage )
+  StatisticsTimer( yidl::runtime::auto_Object<Stage> stage )
     : Timer( 5 * NS_IN_S, 5 * NS_IN_S ), stage( stage )
   { }
   // Timer
-  bool fire( const Time& elapsed_time )
+  bool fire( const YIELD::platform::Time& elapsed_time )
   {
     if ( stage->event_queue_arrival_count > 0 )
     {
@@ -514,7 +514,7 @@ Stage::Stage( const char* name )
   performance_counters->addEvent( PerformanceCounterSet::EVENT_L2_ICM );
   std::memset( performance_counter_totals, 0, sizeof( performance_counter_totals ) );
 #endif
-  TimerQueue::getDefaultTimerQueue().addTimer( new StatisticsTimer( this ) );
+  YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new StatisticsTimer( this ) );
 }
 Stage::~Stage()
 {
@@ -587,7 +587,7 @@ public:
 };
 ThreadLocalEventQueue::ThreadLocalEventQueue()
 {
-  tls_key = Thread::createTLSKey();
+  tls_key = YIELD::platform::Thread::createTLSKey();
 }
 ThreadLocalEventQueue::~ThreadLocalEventQueue()
 {
@@ -604,7 +604,7 @@ Event* ThreadLocalEventQueue::dequeue()
 }
 bool ThreadLocalEventQueue::enqueue( Event& ev )
 {
-  EventStack* event_stack = static_cast<EventStack*>( Thread::getTLS( tls_key ) );
+  EventStack* event_stack = static_cast<EventStack*>( YIELD::platform::Thread::getTLS( tls_key ) );
   if ( event_stack != NULL )
   {
     event_stack->push( ev );
@@ -615,11 +615,11 @@ bool ThreadLocalEventQueue::enqueue( Event& ev )
 }
 ThreadLocalEventQueue::EventStack* ThreadLocalEventQueue::getEventStack()
 {
-  EventStack* event_stack = static_cast<EventStack*>( Thread::getTLS( tls_key ) );
+  EventStack* event_stack = static_cast<EventStack*>( YIELD::platform::Thread::getTLS( tls_key ) );
   if ( event_stack == NULL )
   {
     event_stack = new EventStack;
-    Thread::setTLS( tls_key, event_stack );
+    YIELD::platform::Thread::setTLS( tls_key, event_stack );
     event_stacks.push_back( event_stack );
   }
   return event_stack;

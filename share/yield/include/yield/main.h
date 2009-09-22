@@ -31,7 +31,7 @@ namespace YIELD
   class Main
   {
   public:
-    Log::Level get_log_level() const { return log_level; }
+    YIELD::platform::Log::Level get_log_level() const { return log_level; }
     const char* get_program_name() const { return program_name; }
 
 #ifdef _WIN32
@@ -114,28 +114,28 @@ namespace YIELD
                 {
                   std::string arg( args.OptionArg() );
                   if ( arg == "LOG_EMERG" || arg == "EMERG" || arg == "EMERGENCY" || arg == "FATAL" || arg == "FAIL" )
-                    log_level = Log::LOG_EMERG;
+                    log_level = YIELD::platform::Log::LOG_EMERG;
                   else if ( arg == "LOG_ALERT" || arg == "ALERT" )
-                    log_level = Log::LOG_ALERT;
+                    log_level = YIELD::platform::Log::LOG_ALERT;
                   else if ( arg == "LOG_CRIT" || arg == "CRIT" || arg == "CRITICAL" )
-                    log_level = Log::LOG_CRIT;
+                    log_level = YIELD::platform::Log::LOG_CRIT;
                   else if ( arg == "LOG_ERR" || arg == "ERR" || arg == "ERROR" )
-                    log_level = Log::LOG_ERR;
+                    log_level = YIELD::platform::Log::LOG_ERR;
                   else if ( arg == "LOG_WARNING" || arg == "WARNING" || arg == "WARN" )
-                    log_level = Log::LOG_WARNING;
+                    log_level = YIELD::platform::Log::LOG_WARNING;
                   else if ( arg == "LOG_NOTICE" || arg == "NOTICE" )
-                    log_level = Log::LOG_NOTICE;
+                    log_level = YIELD::platform::Log::LOG_NOTICE;
                   else if ( arg == "LOG_INFO" || arg == "INFO" )
-                    log_level = Log::LOG_INFO;
+                    log_level = YIELD::platform::Log::LOG_INFO;
                   else if ( arg == "LOG_DEBUG" || arg == "DEBUG" || arg == "TRACE" )
-                    log_level = Log::LOG_DEBUG;
+                    log_level = YIELD::platform::Log::LOG_DEBUG;
                   else
-                    log_level = Log::LOG_EMERG;
+                    log_level = YIELD::platform::Log::LOG_EMERG;
                 }
-                else if ( log_level_uint8 <= Log::LOG_DEBUG )
-                  log_level = static_cast<Log::Level>( log_level_uint8 );
+                else if ( log_level_uint8 <= YIELD::platform::Log::LOG_DEBUG )
+                  log_level = static_cast<YIELD::platform::Log::Level>( log_level_uint8 );
                 else
-                  log_level = Log::LOG_DEBUG;
+                  log_level = YIELD::platform::Log::LOG_DEBUG;
               }
               break;
 
@@ -210,7 +210,7 @@ namespace YIELD
         // Pass the original argv to _main instead of the copies SimpleOpt punched holes in
         ret = _main( static_cast<int>( argvv.size() ), &argvv[0] );
       }
-      catch ( YIELD::Exception& exc ) // Don't catch std::exceptions like bad_alloc
+      catch ( YIELD::platform::Exception& exc ) // Don't catch std::exceptions like bad_alloc
       {
         std::cerr << exc.what() << std::endl;
         ret = 1;
@@ -236,7 +236,7 @@ namespace YIELD
       log_level_default_ss << static_cast<uint16_t>( 0 );
       log_level_default_str = log_level_default_ss.str();
       addOption( OPTION_LOG_LEVEL, "-d", "--debug", log_level_default_str.c_str() );
-      log_level = Log::LOG_EMERG;
+      log_level = YIELD::platform::Log::LOG_EMERG;
 
       addOption( OPTION_HELP, "-h", "--help" );
     }
@@ -296,7 +296,8 @@ namespace YIELD
     const char *program_name, *program_description, *files_usage;
 
     // Built-in options
-    Log::Level log_level;std::string log_level_default_str;
+    YIELD::platform::Log::Level log_level;
+    std::string log_level_default_str;
 
 
     class Option
@@ -324,7 +325,7 @@ namespace YIELD
     std::vector<Option> options;
 
 #ifdef _WIN32
-    static CountingSemaphore pause_semaphore;
+    static YIELD::platform::CountingSemaphore pause_semaphore;
 
     static BOOL WINAPI ConsoleCtrlHandler( DWORD fdwCtrlType )
     {

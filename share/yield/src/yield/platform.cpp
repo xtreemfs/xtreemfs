@@ -1,7 +1,7 @@
-// Revision: 1883
+// Revision: 1884
 
 #include "yield/platform.h"
-using namespace YIELD;
+using namespace YIELD::platform;
 
 
 // counting_semaphore.cpp
@@ -120,8 +120,8 @@ std::string Exception::strerror( uint32_t error_code )
 }
 void Exception::strerror( uint32_t error_code, std::string& out_str )
 {
-  char strerror_buffer[YIELD_EXCEPTION_WHAT_BUFFER_LENGTH];
-  strerror( error_code, strerror_buffer, YIELD_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
+  char strerror_buffer[YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH];
+  strerror( error_code, strerror_buffer, YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
   out_str.assign( strerror_buffer );
 }
 void Exception::strerror( uint32_t error_code, char* out_str, size_t out_str_len )
@@ -190,11 +190,11 @@ void Exception::strerror( uint32_t error_code, char* out_str, size_t out_str_len
 }
 Exception::Exception()
 {
-  strerror( get_errno(), what_buffer, YIELD_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
+  strerror( get_errno(), what_buffer, YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
 }
 Exception::Exception( uint32_t error_code )
 {
-  strerror( error_code, what_buffer, YIELD_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
+  strerror( error_code, what_buffer, YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
 }
 void Exception::init( const char* what )
 {
@@ -203,7 +203,7 @@ void Exception::init( const char* what )
 #else
   strncpy(
 #endif
-     what_buffer, what, YIELD_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
+     what_buffer, what, YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
 }
 
 
@@ -370,7 +370,7 @@ bool File::listxattr( std::vector<std::string>& out_names )
   return false;
 #endif
 }
-ssize_t File::read( yidl::auto_Buffer buffer )
+ssize_t File::read( yidl::runtime::auto_Buffer buffer )
 {
   ssize_t read_ret = read( static_cast<void*>( *buffer ), buffer->capacity() );
   buffer->put( NULL, read_ret );
@@ -522,7 +522,7 @@ bool File::unlk( uint64_t offset, uint64_t length )
   return fcntl( fd, F_SETLK, &flock_ ) != -1;
 #endif
 }
-ssize_t File::write( yidl::auto_Buffer buffer )
+ssize_t File::write( yidl::runtime::auto_Buffer buffer )
 {
   return write( static_cast<void*>( *buffer ), buffer->size() );
 }
@@ -781,7 +781,7 @@ auto_MemoryMappedFile MemoryMappedFile::open( const Path& path, uint32_t flags, 
     }
     else
       current_file_size = 0;
-    yidl::auto_Object<MemoryMappedFile> memory_mapped_file = new MemoryMappedFile( file, flags );
+    yidl::runtime::auto_Object<MemoryMappedFile> memory_mapped_file = new MemoryMappedFile( file, flags );
     if ( memory_mapped_file->resize( std::max( minimum_size, current_file_size ) ) )
       return memory_mapped_file;
     else
@@ -1480,12 +1480,12 @@ RRD::Record::Record( double value )
 RRD::Record::Record( const Time& time, double value )
   : time( time ), value( value )
 { }
-void RRD::Record::marshal( yidl::Marshaller& marshaller )
+void RRD::Record::marshal( yidl::runtime::Marshaller& marshaller )
 {
   marshaller.writeUint64( "time", 0, time );
   marshaller.writeDouble( "value", 0, value );
 }
-void RRD::Record::unmarshal( yidl::Unmarshaller& unmarshaller )
+void RRD::Record::unmarshal( yidl::runtime::Unmarshaller& unmarshaller )
 {
   time = unmarshaller.readUint64( "time", 0 );
   value = unmarshaller.readDouble( "time", 0 );
@@ -1523,7 +1523,7 @@ void RRD::fetch_all( RecordSet& out_records )
   {
     for ( ;; )
     {
-      yidl::StackBuffer<16> xdr_buffer;
+      yidl::runtime::StackBuffer<16> xdr_buffer;
       if ( current_file->read( xdr_buffer.incRef() ) == 16 )
       {
         XDRUnmarshaller xdr_unmarshaller( xdr_buffer.incRef() );
@@ -2337,7 +2337,7 @@ TimerQueue::~TimerQueue()
 #endif
 }
 
-void TimerQueue::addTimer( yidl::auto_Object<Timer> timer )
+void TimerQueue::addTimer( yidl::runtime::auto_Object<Timer> timer )
 {
 #ifdef _WIN32
   timer->hTimerQueue = hTimerQueue;
@@ -2529,7 +2529,7 @@ namespace YIELD
         return volume.unlink( base_dir_path + path );
     }
   private:
-    const YIELD::Path& base_dir_path;
+    const YIELD::platform::Path& base_dir_path;
     Volume& volume;
   };
   class SynclistdirCallback : public Volume::listdirCallback
@@ -2549,7 +2549,7 @@ namespace YIELD
     std::vector<Path>& out_names;
   };
 };
-bool Volume::access( const YIELD::Path& path, int amode )
+bool Volume::access( const YIELD::platform::Path& path, int amode )
 {
 #ifdef _WIN32
   ::SetLastError( ERROR_NOT_SUPPORTED );
@@ -2558,7 +2558,7 @@ bool Volume::access( const YIELD::Path& path, int amode )
   return ::access( path, amode ) >= 0;
 #endif
 }
-bool Volume::chmod( const YIELD::Path& path, mode_t mode )
+bool Volume::chmod( const YIELD::platform::Path& path, mode_t mode )
 {
 #ifdef _WIN32
   ::SetLastError( ERROR_NOT_SUPPORTED );
@@ -2567,7 +2567,7 @@ bool Volume::chmod( const YIELD::Path& path, mode_t mode )
   return ::chmod( path, mode ) != -1;
 #endif
 }
-bool Volume::chown( const YIELD::Path& path, int32_t uid, int32_t gid )
+bool Volume::chown( const YIELD::platform::Path& path, int32_t uid, int32_t gid )
 {
 #ifdef _WIN32
   ::SetLastError( ERROR_NOT_SUPPORTED );
@@ -2632,7 +2632,7 @@ bool Volume::link( const Path& old_path, const Path& new_path )
   return ::symlink( old_path, new_path ) != -1;
 #endif
 }
-bool Volume::listdir( const YIELD::Path& path, const YIELD::Path& match_file_name_prefix, listdirCallback& callback )
+bool Volume::listdir( const YIELD::platform::Path& path, const YIELD::platform::Path& match_file_name_prefix, listdirCallback& callback )
 {
   readdir_to_listdirCallback readdir_callback( callback );
   return readdir( path, match_file_name_prefix, readdir_callback );
@@ -2736,7 +2736,7 @@ auto_File Volume::open( const Path& path, uint32_t flags, mode_t mode, uint32_t 
 #endif
   return NULL;
 }
-bool Volume::readdir( const Path& path, const YIELD::Path& match_file_name_prefix, readdirCallback& callback )
+bool Volume::readdir( const Path& path, const YIELD::platform::Path& match_file_name_prefix, readdirCallback& callback )
 {
 #ifdef _WIN32
   std::wstring search_pattern( path );
@@ -2871,7 +2871,7 @@ bool Volume::setxattr( const Path& path, const std::string& name, const std::str
 #endif
   return false;
 }
-yidl::auto_Object<YIELD::Stat> Volume::stat( const Path& path )
+yidl::runtime::auto_Object<YIELD::platform::Stat> Volume::stat( const Path& path )
 {
 #ifdef _WIN32
   WIN32_FIND_DATA find_data;
@@ -2945,7 +2945,7 @@ bool Volume::unlink( const Path& path )
   return ::unlink( path ) >= 0;
 #endif
 }
-bool Volume::utimens( const Path& path, const YIELD::Time& atime, const YIELD::Time& mtime, const YIELD::Time& ctime )
+bool Volume::utimens( const Path& path, const YIELD::platform::Time& atime, const YIELD::platform::Time& mtime, const YIELD::platform::Time& ctime )
 {
 #ifdef _WIN32
   auto_File file = open( path, O_WRONLY );
@@ -2993,7 +2993,7 @@ Path Volume::volname( const Path& path )
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 XDRMarshaller::XDRMarshaller()
 {
-  buffer = new yidl::StringBuffer;
+  buffer = new yidl::runtime::StringBuffer;
 }
 void XDRMarshaller::writeKey( const char* key )
 {
@@ -3004,7 +3004,7 @@ void XDRMarshaller::writeBoolean( const char* key, uint32_t tag, bool value )
 {
   writeInt32( key, tag, value ? 1 : 0 );
 }
-void XDRMarshaller::writeBuffer( const char* key, uint32_t tag, yidl::auto_Buffer value )
+void XDRMarshaller::writeBuffer( const char* key, uint32_t tag, yidl::runtime::auto_Buffer value )
 {
   writeInt32( key, tag, static_cast<int32_t>( value->size() ) );
   buffer->put( static_cast<void*>( *value ), value->size() );
@@ -3040,14 +3040,14 @@ void XDRMarshaller::writeInt64( const char* key, uint32_t, int64_t value )
   value = Machine::htonll( value );
   buffer->put( &value, sizeof( value ) );
 }
-void XDRMarshaller::writeMap( const char* key, uint32_t tag, const yidl::Map& value )
+void XDRMarshaller::writeMap( const char* key, uint32_t tag, const yidl::runtime::Map& value )
 {
   writeInt32( key, tag, static_cast<int32_t>( value.get_size() ) );
   in_map_stack.push_back( true );
   value.marshal( *this );
   in_map_stack.pop_back();
 }
-void XDRMarshaller::writeSequence( const char* key, uint32_t tag, const yidl::Sequence& value )
+void XDRMarshaller::writeSequence( const char* key, uint32_t tag, const yidl::runtime::Sequence& value )
 {
   writeInt32( key, tag, static_cast<int32_t>( value.get_size() ) );
   value.marshal( *this );
@@ -3062,7 +3062,7 @@ void XDRMarshaller::writeString( const char* key, uint32_t tag, const char* valu
     buffer->put( static_cast<const void*>( zeros ), 4 - ( value_len % 4 ) );
   }
 }
-void XDRMarshaller::writeStruct( const char* key, uint32_t, const yidl::Struct& value )
+void XDRMarshaller::writeStruct( const char* key, uint32_t, const yidl::runtime::Struct& value )
 {
   writeKey( key );
   value.marshal( *this );
@@ -3072,7 +3072,7 @@ void XDRMarshaller::writeStruct( const char* key, uint32_t, const yidl::Struct& 
 // xdr_unmarshaller.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-XDRUnmarshaller::XDRUnmarshaller( yidl::auto_Buffer buffer )
+XDRUnmarshaller::XDRUnmarshaller( yidl::runtime::auto_Buffer buffer )
   : buffer( buffer )
 { }
 void XDRUnmarshaller::read( void* buffer, size_t buffer_len )
@@ -3086,7 +3086,7 @@ bool XDRUnmarshaller::readBoolean( const char* key, uint32_t tag )
 {
   return readInt32( key, tag ) == 1;
 }
-void XDRUnmarshaller::readBuffer( const char* key, uint32_t tag, yidl::auto_Buffer value )
+void XDRUnmarshaller::readBuffer( const char* key, uint32_t tag, yidl::runtime::auto_Buffer value )
 {
   size_t size = readInt32( key, tag );
   if ( value->capacity() - value->size() < size ) DebugBreak();
@@ -3126,13 +3126,13 @@ int64_t XDRUnmarshaller::readInt64( const char*, uint32_t )
   read( &value, sizeof( value ) );
   return Machine::ntohll( value );
 }
-void XDRUnmarshaller::readMap( const char* key, uint32_t tag, yidl::Map& value )
+void XDRUnmarshaller::readMap( const char* key, uint32_t tag, yidl::runtime::Map& value )
 {
   size_t size = readInt32( key, tag );
   for ( size_t i = 0; i < size; i++ )
     value.unmarshal( *this );
 }
-void XDRUnmarshaller::readSequence( const char* key, uint32_t tag, yidl::Sequence& value )
+void XDRUnmarshaller::readSequence( const char* key, uint32_t tag, yidl::runtime::Sequence& value )
 {
   size_t size = readInt32( key, tag );
   if ( size <= UINT16_MAX )
@@ -3159,7 +3159,7 @@ void XDRUnmarshaller::readString( const char* key, uint32_t tag, std::string& va
     }
   }
 }
-void XDRUnmarshaller::readStruct( const char*, uint32_t, yidl::Struct& value )
+void XDRUnmarshaller::readStruct( const char*, uint32_t, yidl::runtime::Struct& value )
 {
   value.unmarshal( *this );
 }

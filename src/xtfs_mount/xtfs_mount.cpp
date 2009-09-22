@@ -71,13 +71,13 @@ namespace xtfs_mount
     };
 
     bool direct_io;
-    YIELD::auto_URI dir_uri;
+    YIELD::ipc::auto_URI dir_uri;
     bool foreground;
     std::string fuse_o_args;
     bool metadata_cache;
     std::string mount_point, volume_name;
     bool trace_data_cache, trace_file_io, trace_metadata_cache, trace_volume_operations;
-    YIELD::Path vivaldi_coordinates_file_path;
+    YIELD::platform::Path vivaldi_coordinates_file_path;
     bool write_back_cache, write_through_cache;
 
 
@@ -85,22 +85,22 @@ namespace xtfs_mount
     int _main( int argc, char** argv )
     {
       // Make sure the log level is set high enough for any --trace options to show up
-      if ( get_log_level() >= YIELD::Log::LOG_INFO )
+      if ( get_log_level() >= YIELD::platform::Log::LOG_INFO )
         trace_volume_operations = true;              
-      if ( get_log_level() >= YIELD::Log::LOG_DEBUG )
+      if ( get_log_level() >= YIELD::platform::Log::LOG_DEBUG )
       {
         trace_data_cache = true;
         trace_file_io = true;
         trace_metadata_cache = true;
       }
 
-      if ( get_log_level() < YIELD::Log::LOG_INFO &&
+      if ( get_log_level() < YIELD::platform::Log::LOG_INFO &&
            ( trace_data_cache || 
              trace_file_io || 
              trace_metadata_cache || 
              get_proxy_flags() != 0 || 
              trace_volume_operations ) )
-        get_log()->set_level( YIELD::Log::LOG_INFO );
+        get_log()->set_level( YIELD::platform::Log::LOG_INFO );
 
       // Fill volume_flags from options
       uint32_t volume_flags = 0;
@@ -110,41 +110,41 @@ namespace xtfs_mount
         volume_flags |= xtreemfs::Volume::VOLUME_FLAG_TRACE_FILE_IO;
 
       // Create the XtreemFS volume in the parent as well as the child process so that the parent will fail on most common errors (like failed connections) before the child is created
-      YIELD::auto_Volume volume = xtreemfs::Volume::create( *dir_uri, volume_name, volume_flags, get_log(), get_proxy_flags(), get_operation_timeout(), get_proxy_ssl_context(), vivaldi_coordinates_file_path ).release();
+      YIELD::platform::auto_Volume volume = xtreemfs::Volume::create( *dir_uri, volume_name, volume_flags, get_log(), get_proxy_flags(), get_operation_timeout(), get_proxy_ssl_context(), vivaldi_coordinates_file_path ).release();
 
       if ( foreground )
       {
         if ( direct_io )
-          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
+          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << get_program_name() << ": enabling FUSE direct I/O.";
 
         // Stack volumes
         if ( metadata_cache )
         {
           volume = new yieldfs::MetadataCachingVolume( volume, trace_metadata_cache ? get_log() : NULL, 5 );
-          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching metadata.";
+          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << get_program_name() << ": caching metadata.";
         }
 
         if ( write_back_cache )
         {
           volume = new yieldfs::WriteBackCachingVolume( 256 * 1024 * 1024, 5000, volume, trace_data_cache ? get_log() : NULL );
-          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching file reads.";
+          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << get_program_name() << ": caching file reads.";
         }
         else if ( write_through_cache )
         {
           volume = new yieldfs::WriteThroughCachingVolume( volume, trace_data_cache ? get_log() : NULL );
-          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": caching file writes.";
+          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << get_program_name() << ": caching file writes.";
         }
 
-        if ( trace_volume_operations && get_log_level() >= YIELD::Log::LOG_INFO )
+        if ( trace_volume_operations && get_log_level() >= YIELD::platform::Log::LOG_INFO )
         {
           volume = new yieldfs::TracingVolume( volume, get_log() );
-          get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": tracing volume operations.";
+          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << get_program_name() << ": tracing volume operations.";
         }
 
         uint32_t fuse_flags = 0;
         if ( direct_io )
           fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
-        if ( trace_volume_operations && get_log_level() >= YIELD::Log::LOG_INFO )
+        if ( trace_volume_operations && get_log_level() >= YIELD::platform::Log::LOG_INFO )
           fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
 
         std::auto_ptr<yieldfs::FUSE> fuse( new yieldfs::FUSE( volume, fuse_flags ) );
@@ -161,7 +161,7 @@ namespace xtfs_mount
           fuse_o_args.append( "," );
         fuse_o_args.append( "use_ino" );            
         fuse_argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
-        get_log()->getStream( YIELD::Log::LOG_INFO ) << get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
+        get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
         fuse_argvv.push_back( NULL );
         struct fuse_args fuse_args_ = FUSE_ARGS_INIT( fuse_argvv.size() - 1 , &fuse_argvv[0] );
 
@@ -176,18 +176,18 @@ namespace xtfs_mount
         child_argvv.push_back( "-f" );
         child_argvv.push_back( NULL );
 
-        yidl::auto_Object<YIELD::Process> child_process = YIELD::Process::create( argv[0], ( const char** )&child_argvv[0] );
+        YIELD::ipc::auto_Process child_process = YIELD::ipc::Process::create( argv[0], ( const char** )&child_argvv[0] );
 
         if ( child_process != NULL )
         { 
-          YIELD::Thread::sleep( 100 * NS_IN_MS ); // Wait for the child process to start
+          YIELD::platform::Thread::sleep( 100 * NS_IN_MS ); // Wait for the child process to start
           int child_ret = 0;
           child_process->poll( &child_ret ); // Will set child_ret if the child failed and exited, otherwise child_ret will stay 0
           return child_ret;
         }
         else 
         {
-          get_log()->getStream( YIELD::Log::LOG_ERR ) << get_program_name() << ": error creating child process: " << YIELD::Exception::strerror() << ".";
+          get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << get_program_name() << ": error creating child process: " << YIELD::platform::Exception::strerror() << ".";
           return 1;
         }
       }
@@ -233,7 +233,7 @@ namespace xtfs_mount
         return;
       }
 
-      throw YIELD::Exception( "must specify dir_host/volume name and mount point" );
+      throw YIELD::platform::Exception( "must specify dir_host/volume name and mount point" );
     }
   };
 };

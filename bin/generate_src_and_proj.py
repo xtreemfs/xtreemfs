@@ -23,19 +23,14 @@ LIB_DIR_PATHS = (
                    os.path.join( XTREEMFS_DIR_PATH, "lib" ),
                 )
                     
-                    
-sys.path.append( os.path.join( YIDL_DIR_PATH, "bin" ) )
-sys.path.append( os.path.join( YIDL_DIR_PATH, "src", "py" ) )
+try:
+    import yidl
+except ImportError:
+    sys.path.append( os.path.join( YIDL_DIR_PATH, "src", "py" ) )
 
-from format_src import format_src
+from yidl.generators import generate_cpp, generate_proj, generate_SConscript, generate_vcproj
+from yidl.utilities import format_src    
 
-from generate_proj import generate_proj
-from generate_SConscript import generate_SConscript
-from generate_vcproj import generate_vcproj
-
-from yidl.generator import writeGeneratedFile
-from yidl.idl_parser import parseIDL
-from yidl.targets.cpp_target import *
 
 # Copy yidl source and headers into share/
 copyfile( os.path.join( YIDL_DIR_PATH, "include", "yidl.h" ), os.path.join( XTREEMFS_DIR_PATH, "share", "yidl", "include", "yidl.h" ) )
@@ -54,14 +49,10 @@ copyfile( os.path.join( YIELDFS_DIR_PATH, "src", "yieldfs.cpp" ), os.path.join( 
 # Generate .h interface definitions from .idl
 interfaces_dir_path = os.path.join( XTREEMFS_DIR_PATH, "src", "interfaces", "org", "xtreemfs", "interfaces" )
 for interface_idl_file_name in os.listdir( interfaces_dir_path ):
-  if interface_idl_file_name.endswith( ".idl" ):  
-    cpp_target = CPPTarget()
-    parseIDL( os.path.join( interfaces_dir_path, interface_idl_file_name ), cpp_target )
-    cpp = repr( cpp_target )
-    interface_h_file_path = os.path.join( XTREEMFS_DIR_PATH, "include", "xtreemfs", "interfaces", os.path.splitext( interface_idl_file_name )[0] + ".h" )
-    writeGeneratedFile( interface_h_file_path, cpp )
+    if interface_idl_file_name.endswith( ".idl" ):
+        generate_cpp( os.path.join( interfaces_dir_path, interface_idl_file_name ), os.path.join( XTREEMFS_DIR_PATH, "include", "xtreemfs", "interfaces", os.path.splitext( interface_idl_file_name )[0] + ".h" ) ) 
 
-
+        
 format_src( "XtreemFS", src_dir_paths=( 
                                         os.path.join( XTREEMFS_DIR_PATH, "include" ), 
                                         os.path.join( XTREEMFS_DIR_PATH, "src", "libxtreemfs" ), 
