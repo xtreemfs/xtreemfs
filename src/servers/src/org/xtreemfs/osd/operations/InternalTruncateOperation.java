@@ -98,7 +98,7 @@ public final class InternalTruncateOperation extends OSDOperation {
     }
 
     @Override
-    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         xtreemfs_internal_truncateRequest rpcrq = new xtreemfs_internal_truncateRequest();
         rpcrq.unmarshal(new XDRUnmarshaller(data));
 

@@ -46,7 +46,7 @@ public final class OSDRequest {
 
     private final ONCRPCRequest rpcRequest;
     
-    private yidl.Object         requestArgs;
+    private yidl.runtime.Object         requestArgs;
     
     /**
      * Request operation which contains state machine.
@@ -87,7 +87,7 @@ public final class OSDRequest {
         getRpcRequest().sendException(protocolException);
     }
 
-    public void sendSuccess(yidl.Object response) {
+    public void sendSuccess(yidl.runtime.Object response) {
         getRpcRequest().sendResponse(response);
     }
 
@@ -133,14 +133,14 @@ public final class OSDRequest {
     /**
      * @return the requestArgs
      */
-    public yidl.Object getRequestArgs() {
+    public yidl.runtime.Object getRequestArgs() {
         return requestArgs;
     }
 
     /**
      * @param requestArgs the requestArgs to set
      */
-    public void setRequestArgs(yidl.Object requestArgs) {
+    public void setRequestArgs(yidl.runtime.Object requestArgs) {
         this.requestArgs = requestArgs;
     }
 

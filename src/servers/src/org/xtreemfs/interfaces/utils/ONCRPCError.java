@@ -7,8 +7,8 @@ package org.xtreemfs.interfaces.utils;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
-import yidl.Marshaller;
-import yidl.Unmarshaller;
+import yidl.runtime.Marshaller;
+import yidl.runtime.Unmarshaller;
 
 /**
  *

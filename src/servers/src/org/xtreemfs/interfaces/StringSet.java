@@ -5,10 +5,10 @@ import java.util.Iterator;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.utils.*;
-import yidl.Marshaller;
-import yidl.PrettyPrinter;
-import yidl.Sequence;
-import yidl.Unmarshaller;
+import yidl.runtime.Marshaller;
+import yidl.runtime.PrettyPrinter;
+import yidl.runtime.Sequence;
+import yidl.runtime.Unmarshaller;
 
 
 
@@ -21,13 +21,15 @@ public class StringSet extends Sequence<String>
     public String toString() 
     { 
         StringWriter string_writer = new StringWriter();
+        string_writer.append(this.getClass().getCanonicalName());
+        string_writer.append(" ");
         PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
         pretty_printer.writeSequence( "", this );
         return string_writer.toString();
     }
 
 
-    // yidl.Object
+    // yidl.runtime.Object
     public int getTag() { return 2009082619; }
     public String getTypeName() { return "org::xtreemfs::interfaces::StringSet"; }
 

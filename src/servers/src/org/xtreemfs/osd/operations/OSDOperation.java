@@ -57,7 +57,7 @@ public abstract class OSDOperation {
      * @param rq the request
      * @return null if successful, error message otherwise
      */
-    public abstract yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception;
+    public abstract yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception;
 
     public abstract boolean requiresCapability();
 

@@ -24,7 +24,7 @@
 
 package org.xtreemfs.interfaces.utils;
 
-import yidl.Struct;
+import yidl.runtime.Struct;
 
 
 public abstract class Request implements Struct

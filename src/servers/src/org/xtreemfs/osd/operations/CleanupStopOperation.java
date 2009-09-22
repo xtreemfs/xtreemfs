@@ -64,7 +64,7 @@ public final class CleanupStopOperation extends OSDOperation {
     }
 
     @Override
-    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         xtreemfs_cleanup_stopRequest rpcrq = new xtreemfs_cleanup_stopRequest();
         rpcrq.unmarshal(new XDRUnmarshaller(data));
 

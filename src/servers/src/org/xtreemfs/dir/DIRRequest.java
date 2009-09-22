@@ -45,7 +45,7 @@ public class DIRRequest {
     
     private final ONCRPCRequest rpcRequest;
     
-    private yidl.Object        requestMessage;
+    private yidl.runtime.Object        requestMessage;
     
     private RequestDetails      details;
     
@@ -54,17 +54,17 @@ public class DIRRequest {
         details = new RequestDetails();
     }
     
-    public void deserializeMessage(yidl.Object message) {
+    public void deserializeMessage(yidl.runtime.Object message) {
         final ReusableBuffer payload = rpcRequest.getRequestFragment();
         message.unmarshal(new XDRUnmarshaller(payload));
         requestMessage = message;
     }
     
-    public yidl.Object getRequestMessage() {
+    public yidl.runtime.Object getRequestMessage() {
         return requestMessage;
     }
     
-    public void sendSuccess(yidl.Object response) {
+    public void sendSuccess(yidl.runtime.Object response) {
         rpcRequest.sendResponse(response);
     }
     

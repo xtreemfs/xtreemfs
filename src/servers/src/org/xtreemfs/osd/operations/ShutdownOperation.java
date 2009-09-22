@@ -62,7 +62,7 @@ public class ShutdownOperation extends OSDOperation {
     }
 
     @Override
-    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         xtreemfs_shutdownRequest rpcrq = new xtreemfs_shutdownRequest();
         rpcrq.unmarshal(new XDRUnmarshaller(data));
 

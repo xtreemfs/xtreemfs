@@ -37,7 +37,7 @@ public class MRCRequest {
     
     private ErrorRecord         error;
     
-    private yidl.Object         response;
+    private yidl.runtime.Object         response;
     
     private Object              requestArgs;
     
@@ -64,11 +64,11 @@ public class MRCRequest {
         this.error = error;
     }
     
-    public yidl.Object getResponse() {
+    public yidl.runtime.Object getResponse() {
         return response;
     }
     
-    public void setResponse(yidl.Object response) {
+    public void setResponse(yidl.runtime.Object response) {
         this.response = response;
     }
     

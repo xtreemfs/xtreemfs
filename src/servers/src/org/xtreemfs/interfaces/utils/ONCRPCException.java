@@ -29,7 +29,7 @@ package org.xtreemfs.interfaces.utils;
  *
  * @author bjko
  */
-public abstract class ONCRPCException extends Exception implements yidl.Struct {
+public abstract class ONCRPCException extends Exception implements yidl.runtime.Struct {
 
     public ONCRPCException() {
         super();

@@ -1,19 +1,23 @@
 #!/usr/bin/env python
 
-from yidl.generator import *
-from yidl.string_utils import *
-from yidl.targets.java_target import *
+import os.path, sys
+
+from yidl.compiler.idl_parser import parseIDL
+from yidl.compiler.targets.java_target import *
+from yidl.utilities import pad, writeGeneratedFile 
 
 
 __all__ = []
 
 
 # Constants
+MY_DIR_PATH = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
+
 XTREEMFS_IMPORTS = [
                     "import java.io.StringWriter;",
                     "import org.xtreemfs.interfaces.utils.*;",
                     "import org.xtreemfs.common.buffer.ReusableBuffer;",
-                    "import yidl.PrettyPrinter;",
+                    "import yidl.runtime.PrettyPrinter;",
                    ]
 
 
@@ -180,12 +184,11 @@ class XtreemFSJavaTarget(JavaTarget): pass
                                 
            
 if __name__ == "__main__":
-    import sys, os.path
-         
-    if len( sys.argv ) == 1:    
-        my_dir_path = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
-        os.chdir( os.path.join( my_dir_path, "..", "src", "servers" ) )
-        sys.argv.extend( ( "-i", os.path.abspath( os.path.join( my_dir_path, "..", "src", "interfaces" ) ), 
-                           "-o", os.path.abspath( os.path.join( my_dir_path, "..", "src", "servers", "src" ) ) ) )
+    os.chdir( os.path.join( MY_DIR_PATH, "..", "src", "servers", "src" ) )        
         
-    generator_main( XtreemFSJavaTarget )
+    interfaces_dir_path = os.path.join( MY_DIR_PATH, "..", "src", "interfaces", "org", "xtreemfs", "interfaces" )  
+    for interface_idl_file_name in os.listdir( interfaces_dir_path ):
+        if interface_idl_file_name.endswith( ".idl" ):
+            target = XtreemFSJavaTarget()
+            parseIDL( os.path.join( interfaces_dir_path, interface_idl_file_name ), target )
+            target.generate()

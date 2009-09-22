@@ -7,10 +7,11 @@ package org.xtreemfs.foundation.oncrpc.utils;
 
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.utils.XDRUtils;
-import yidl.Map;
-import yidl.Sequence;
-import yidl.Struct;
-import yidl.Unmarshaller;
+
+import yidl.runtime.Map;
+import yidl.runtime.Sequence;
+import yidl.runtime.Struct;
+import yidl.runtime.Unmarshaller;
 
 /**
  *

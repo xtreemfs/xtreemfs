@@ -28,10 +28,10 @@ import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.UserCredentials;
-import yidl.Marshaller;
-import yidl.Unmarshaller;
+import yidl.runtime.Marshaller;
+import yidl.runtime.Unmarshaller;
 
-public class ONCRPCRequestHeader implements yidl.Object {
+public class ONCRPCRequestHeader implements yidl.runtime.Object {
 
     public ONCRPCRequestHeader() {
         xid = prog = vers = proc = 0;

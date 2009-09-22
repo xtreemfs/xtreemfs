@@ -60,7 +60,7 @@ public class ONCRPCRequest {
 
     long startT, endT;
 
-    ONCRPCRequest(RPCResponseListener listener, int xid, int programId, int versionId, int procedureId, yidl.Object response, Object attachment,
+    ONCRPCRequest(RPCResponseListener listener, int xid, int programId, int versionId, int procedureId, yidl.runtime.Object response, Object attachment,
             UserCredentials credentials) {
         ONCRPCRequestHeader hdr = new ONCRPCRequestHeader(xid, programId, versionId,procedureId,credentials);
         ONCRPCBufferWriter writer = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
@@ -138,7 +138,7 @@ public class ONCRPCRequest {
         this.responseFragments = responseFragments;
     }
 
-    public void deserializeResponse(yidl.Object msg) {
+    public void deserializeResponse(yidl.runtime.Object msg) {
         msg.unmarshal(new XDRUnmarshaller(responseFragments.get(0)));
     }
 

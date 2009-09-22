@@ -94,7 +94,7 @@ public class LockCheckOperation extends OSDOperation {
 
 
     @Override
-    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         xtreemfs_lock_checkRequest rpcrq = new xtreemfs_lock_checkRequest();
         rpcrq.unmarshal(new XDRUnmarshaller(data));
 

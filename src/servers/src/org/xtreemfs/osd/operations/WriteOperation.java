@@ -122,7 +122,7 @@ public final class WriteOperation extends OSDOperation {
     }
 
     @Override
-    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         writeRequest rpcrq = new writeRequest();
         rpcrq.unmarshal(new XDRUnmarshaller(data));
 

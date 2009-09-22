@@ -24,10 +24,10 @@
 
 package org.xtreemfs.interfaces.utils;
 
-import yidl.Marshaller;
-import yidl.Unmarshaller;
+import yidl.runtime.Marshaller;
+import yidl.runtime.Unmarshaller;
 
-public class ONCRPCResponseHeader implements yidl.Object {
+public class ONCRPCResponseHeader implements yidl.runtime.Object {
 
     public static final int REPLY_STAT_MSG_ACCEPTED = 0;
 

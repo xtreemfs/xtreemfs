@@ -116,17 +116,17 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     }
     
     public void sendRequest(RPCResponseListener listener, InetSocketAddress server, int programId,
-        int versionId, int procedureId, yidl.Object message) {
+        int versionId, int procedureId, yidl.runtime.Object message) {
         sendRequest(listener, server, programId, versionId, procedureId, message, null);
     }
     
     public void sendRequest(RPCResponseListener listener, InetSocketAddress server, int programId,
-        int versionId, int procedureId, yidl.Object message, Object attachment) {
+        int versionId, int procedureId, yidl.runtime.Object message, Object attachment) {
         sendRequest(listener, server, programId, versionId, procedureId, message, attachment, null);
     }
     
     public void sendRequest(RPCResponseListener listener, InetSocketAddress server, int programId,
-        int versionId, int procedureId, yidl.Object message, Object attachment, UserCredentials credentials) {
+        int versionId, int procedureId, yidl.runtime.Object message, Object attachment, UserCredentials credentials) {
         ONCRPCRequest rec = new ONCRPCRequest(listener, this.transactionId.getAndIncrement(), programId,
             versionId, procedureId, message, attachment, credentials);
         sendRequest(server, rec);

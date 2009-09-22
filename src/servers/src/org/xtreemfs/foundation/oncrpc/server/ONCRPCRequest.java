@@ -65,7 +65,7 @@ public class ONCRPCRequest {
         return record.getRequestFragments().get(0);
     }
 
-    public void sendResponse(yidl.Object response) {
+    public void sendResponse(yidl.runtime.Object response) {
         assert (responseHeader == null) : "response already sent";
         responseHeader = new ONCRPCResponseHeader(requestHeader.getXID(), ONCRPCResponseHeader.REPLY_STAT_MSG_ACCEPTED,
                 ONCRPCResponseHeader.ACCEPT_STAT_SUCCESS);
@@ -184,7 +184,7 @@ public class ONCRPCRequest {
     }
     
 
-    void wrapAndSendException(yidl.Object exception) {
+    void wrapAndSendException(yidl.runtime.Object exception) {
         assert(exception != null);
         assert (responseHeader == null) : "response already sent";
         ONCRPCBufferWriter writer = new ONCRPCBufferWriter(ONCRPCBufferWriter.BUFF_SIZE);
@@ -206,7 +206,7 @@ public class ONCRPCRequest {
         record.sendResponse();
     }
 
-    void serializeAndSendRespondse(yidl.Object response) {
+    void serializeAndSendRespondse(yidl.runtime.Object response) {
         final int fragmentSize = response.getXDRSize()+responseHeader.getXDRSize();
         final boolean isLastFragment = true;
         assert (fragmentSize >= 0) : "fragment has invalid size: "+fragmentSize;

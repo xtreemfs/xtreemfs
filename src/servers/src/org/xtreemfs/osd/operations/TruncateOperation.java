@@ -159,7 +159,7 @@ public final class TruncateOperation extends OSDOperation {
     }
 
     @Override
-    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         truncateRequest rpcrq = new truncateRequest();
         rpcrq.unmarshal(new XDRUnmarshaller(data));
 

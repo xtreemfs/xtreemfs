@@ -111,7 +111,7 @@ public class GetObjectSetOperation extends OSDOperation {
     }
 
     @Override
-    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         xtreemfs_internal_get_object_setRequest rpcrq = new xtreemfs_internal_get_object_setRequest();
         rpcrq.unmarshal(new XDRUnmarshaller(data));
 

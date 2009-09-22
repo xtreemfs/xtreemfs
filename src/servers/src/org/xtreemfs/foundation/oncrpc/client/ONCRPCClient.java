@@ -73,11 +73,11 @@ public abstract class ONCRPCClient {
     public ONCRPCClient(RPCNIOSocketClient client, int programId, int versionNumber) {
         this(client, null, programId, versionNumber);
     }
-    protected RPCResponse sendRequest(InetSocketAddress server, int procId, yidl.Object request, RPCResponseDecoder decoder) {
+    protected RPCResponse sendRequest(InetSocketAddress server, int procId, yidl.runtime.Object request, RPCResponseDecoder decoder) {
         return sendRequest(server, procId, request, decoder, null);
     }
 
-    protected RPCResponse sendRequest(InetSocketAddress server, int procId, yidl.Object request, RPCResponseDecoder decoder, UserCredentials credentials) {
+    protected RPCResponse sendRequest(InetSocketAddress server, int procId, yidl.runtime.Object request, RPCResponseDecoder decoder, UserCredentials credentials) {
         RPCResponse rpcresp = new RPCResponse(decoder);
         if ((server == null) && (defaultServer == null))
             throw new IllegalArgumentException("must specify a server address if no default server is defined");

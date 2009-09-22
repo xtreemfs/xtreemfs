@@ -402,7 +402,7 @@ public class PreprocStage extends Stage {
         rq.setOperation(op);
         
         try {
-            final yidl.Object requestArgs = op.parseRPCMessage(rpcRq.getRequestFragment(), rq);
+            final yidl.runtime.Object requestArgs = op.parseRPCMessage(rpcRq.getRequestFragment(), rq);
             rq.setRequestArgs(requestArgs);
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.net, this, "received request of type %s",requestArgs.getTypeName());

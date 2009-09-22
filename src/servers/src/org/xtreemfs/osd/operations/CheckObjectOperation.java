@@ -187,7 +187,7 @@ public final class CheckObjectOperation extends OSDOperation {
     }
 
     @Override
-    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         xtreemfs_check_objectRequest rpcrq = new xtreemfs_check_objectRequest();
         rpcrq.unmarshal(new XDRUnmarshaller(data));
 

@@ -148,7 +148,7 @@ public final class InternalGetFileSizeOperation extends OSDOperation {
     }
 
     @Override
-    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         xtreemfs_internal_get_file_sizeRequest rpcrq = new xtreemfs_internal_get_file_sizeRequest();
         rpcrq.unmarshal(new XDRUnmarshaller(data));
 

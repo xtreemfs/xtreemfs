@@ -297,7 +297,7 @@ public final class ReadOperation extends OSDOperation {
     }
 
     @Override
-    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         readRequest rpcrq = new readRequest();
         rpcrq.unmarshal(new XDRUnmarshaller(data));
 

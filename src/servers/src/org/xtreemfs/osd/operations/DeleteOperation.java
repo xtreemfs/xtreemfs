@@ -150,7 +150,7 @@ public final class DeleteOperation extends OSDOperation {
     }
 
     @Override
-    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         unlinkRequest rpcrq = new unlinkRequest();
         rpcrq.unmarshal(new XDRUnmarshaller(data));
 

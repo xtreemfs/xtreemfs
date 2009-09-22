@@ -32,7 +32,7 @@ import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.test.TestEnvironment;
-import yidl.Unmarshaller;
+import yidl.runtime.Unmarshaller;
 
 /**
  *

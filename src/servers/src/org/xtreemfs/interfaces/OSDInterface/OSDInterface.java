@@ -5,7 +5,7 @@ import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.utils.*;
-import yidl.PrettyPrinter;
+import yidl.runtime.PrettyPrinter;
 
 
 

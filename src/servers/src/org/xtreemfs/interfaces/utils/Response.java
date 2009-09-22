@@ -25,5 +25,5 @@
 package org.xtreemfs.interfaces.utils;
 
 
-public abstract class Response implements yidl.Struct
+public abstract class Response implements yidl.runtime.Struct
 { };   

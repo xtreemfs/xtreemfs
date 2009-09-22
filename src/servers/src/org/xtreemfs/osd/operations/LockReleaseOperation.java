@@ -100,7 +100,7 @@ public class LockReleaseOperation extends OSDOperation {
 
 
     @Override
-    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         xtreemfs_lock_releaseRequest rpcrq = new xtreemfs_lock_releaseRequest();
         rpcrq.unmarshal(new XDRUnmarshaller(data));
 

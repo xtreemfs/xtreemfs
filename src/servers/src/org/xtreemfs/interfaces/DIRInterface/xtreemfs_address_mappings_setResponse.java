@@ -5,10 +5,10 @@ import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.utils.*;
-import yidl.Marshaller;
-import yidl.PrettyPrinter;
-import yidl.Struct;
-import yidl.Unmarshaller;
+import yidl.runtime.Marshaller;
+import yidl.runtime.PrettyPrinter;
+import yidl.runtime.Struct;
+import yidl.runtime.Unmarshaller;
 
 
 
@@ -27,8 +27,8 @@ public class xtreemfs_address_mappings_setResponse extends org.xtreemfs.interfac
     public String toString() 
     { 
         StringWriter string_writer = new StringWriter();
-	string_writer.append(this.getClass().getCanonicalName());
-	string_writer.append(" ");
+        string_writer.append(this.getClass().getCanonicalName());
+        string_writer.append(" ");
         PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
         pretty_printer.writeStruct( "", this );
         return string_writer.toString();
@@ -38,7 +38,7 @@ public class xtreemfs_address_mappings_setResponse extends org.xtreemfs.interfac
     // java.io.Serializable
     public static final long serialVersionUID = 2009082721;    
 
-    // yidl.Object
+    // yidl.runtime.Object
     public int getTag() { return 2009082721; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_setResponse"; }
     

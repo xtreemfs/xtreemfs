@@ -26,13 +26,15 @@ package org.xtreemfs.foundation.oncrpc.utils;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.interfaces.utils.XDRUtils;
-import yidl.Map;
-import yidl.Marshaller;
-import yidl.Sequence;
-import yidl.Struct;
+
+import yidl.runtime.Map;
+import yidl.runtime.Marshaller;
+import yidl.runtime.Sequence;
+import yidl.runtime.Struct;
 
 /**
  *

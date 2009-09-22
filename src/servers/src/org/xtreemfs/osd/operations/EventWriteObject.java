@@ -55,7 +55,7 @@ public class EventWriteObject extends OSDOperation {
     }
 
     @Override
-    public yidl.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
+    public yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
