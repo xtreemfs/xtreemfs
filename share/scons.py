@@ -24,15 +24,15 @@
 # WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #
 
-__revision__ = "src/script/scons.py 4043 2009/02/23 09:06:45 scons"
+__revision__ = "src/script/scons.py 4369 2009/09/19 16:58:54 scons"
 
-__version__ = "1.2.0.d20090223"
+__version__ = "1.2.0.d20090919"
 
-__build__ = "r4043"
+__build__ = "r4369[MODIFIED]"
 
 __buildsys__ = "scons-dev"
 
-__date__ = "2009/02/23 09:06:45"
+__date__ = "2009/09/19 16:58:54"
 
 __developer__ = "scons"
 
