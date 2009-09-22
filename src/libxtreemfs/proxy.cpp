@@ -18,9 +18,7 @@ using namespace xtreemfs;
 #include <errno.h>
 #include <unistd.h>
 #include <pwd.h>
-#define PWD_BUF_LEN 256
 #include <grp.h>
-#define GRP_BUF_LEN 1024
 #endif
 
 
@@ -175,10 +173,15 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
 #endif
 
     struct passwd pwd, *pwd_res;
-    char pwd_buf[PWD_BUF_LEN]; int pwd_buf_len = sizeof( pwd_buf );
-    struct group grp, *grp_res;
-    char grp_buf[GRP_BUF_LEN]; int grp_buf_len = sizeof( grp_buf );
+    int pwd_buf_len = sysconf( _SC_GETPW_R_SIZE_MAX );
+    if ( pwd_buf_len <= 0 ) pwd_buf_len = 1024;
+    char* pwd_buf = new char[pwd_buf_len];
 
+    struct group grp, *grp_res;
+    int grp_buf_len = sysconf( _SC_GETGR_R_SIZE_MAX );
+    if ( grp_buf_len <= 0 ) grp_buf_len = 1024;
+    char* grp_buf = new char[grp_buf_len];
+ 
     if ( getpwnam_r( user_id.c_str(), &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 && pwd_res != NULL &&
          getgrnam_r( group_id.c_str(), &grp, grp_buf, grp_buf_len, &grp_res ) == 0 && grp_res != NULL )
     {
@@ -192,6 +195,9 @@ void Proxy<ProxyType, InterfaceType>::getpasswdFromUserCredentials( const std::s
       if ( log != NULL )
         log->getStream( YIELD::platform::Log::LOG_WARNING ) << "xtreemfs::Proxy: getpwnam_r and getgrnam_r with user_id=" << user_id << ", group_id=" << group_id << " failed, errno=" << errno << ", setting user/group to root.";
     }
+
+    delete [] pwd_buf;
+    delete [] grp_buf;
   }
 
 #ifdef _DEBUG
@@ -289,40 +295,61 @@ bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
   }
   else
   {
-    struct passwd pwd, *pwd_res;
-    char pwd_buf[PWD_BUF_LEN]; int pwd_buf_len = sizeof( pwd_buf );
-    struct group grp, *grp_res;
-    char grp_buf[GRP_BUF_LEN]; int grp_buf_len = sizeof( grp_buf );
-
     if ( uid != -1 )
     {
+      struct passwd pwd, *pwd_res;
+      int pwd_buf_len = sysconf( _SC_GETPW_R_SIZE_MAX );
+      if ( pwd_buf_len <= 0 ) pwd_buf_len = 1024;
+      char* pwd_buf = new char[pwd_buf_len];
+
       if ( getpwuid_r( uid, &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 )
       {
         if ( pwd_res != NULL && pwd_res->pw_name != NULL )
         {
           out_user_credentials.set_user_id( pwd_res->pw_name );
+          delete [] pwd_buf;
         } 
         else
+        {
+          delete [] pwd_buf;
           return false;
+        }
       } 
       else
+      {
+        delete [] pwd_buf;
         return false;
+      }
     } 
     else
       out_user_credentials.set_user_id( "" );
 
     if ( gid != -1 )
     {
+      struct group grp, *grp_res;
+      int grp_buf_len = sysconf( _SC_GETGR_R_SIZE_MAX );
+      if ( grp_buf_len <= 0 ) grp_buf_len = 1024;
+      char* grp_buf = new char[grp_buf_len];
+
       if ( getgrgid_r( gid, &grp, grp_buf, grp_buf_len, &grp_res ) == 0 )
       {
         if ( grp_res != NULL && grp_res->gr_name != NULL )
+        {
           out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( grp_res->gr_name ) );
-        // Drop down to insert the credentials into the cache
+          delete [] grp_buf;
+          // Drop down to insert the credentials into the cache
+        }
         else
+        {
+          delete [] grp_buf;
           return false;
+        }
       } 
       else
+      {
+        delete [] grp_buf;
         return false;
+      }
     } 
     else
       out_user_credentials.set_group_ids( org::xtreemfs::interfaces::StringSet( "" ) );
