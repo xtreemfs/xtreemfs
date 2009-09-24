@@ -90,12 +90,29 @@ uninstall:
 	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB*.jar
 	@rm -f $(XTREEMFS_JAR_DIR)/yidl.jar
 
-	@rm -rf $(XTREEMFS_CONFIG_PARENT_DIR)
 	@rm -f $(XTREEMFS_INIT_DIR)/xtreemfs-*
 	
 	@rm -rf $(MAN_DIR)/man1/xtfs_*
 
 	@echo "uninstall complete"
+	
+purge:
+
+	@rm -rf $(DOC_DIR_SERVER)
+	@rm -rf $(DOC_DIR_CLIENT)
+	
+	@rm -rf $(BIN_DIR)/xtfs_*
+
+	@rm -f $(XTREEMFS_JAR_DIR)/XtreemFS.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/BabuDB*.jar
+	@rm -f $(XTREEMFS_JAR_DIR)/yidl.jar
+
+	@rm -rf $(XTREEMFS_CONFIG_DIR)
+	@rm -f $(XTREEMFS_INIT_DIR)/xtreemfs-*
+	
+	@rm -rf $(MAN_DIR)/man1/xtfs_*
+
+	@echo "purge complete"
 
 check_server:
 	@if [ ! -e $(JAVAC_BIN) ]; then echo "javac not found! Make sure a JDK is installed and set JAVA_HOME."; exit 1; fi;
