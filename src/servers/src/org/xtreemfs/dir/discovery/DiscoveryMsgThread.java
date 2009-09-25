@@ -46,7 +46,7 @@ public class DiscoveryMsgThread extends LifeCycleThread {
         try {
 
             final DatagramChannel channel = DatagramChannel.open();
-            channel.socket().bind(new InetSocketAddress(DIRInterface.DEFAULT_ONCRPC_PORT));
+            channel.socket().bind(new InetSocketAddress(me.getPort()));
             channel.configureBlocking(true);
 
             Logging.logMessage(Logging.LEVEL_INFO, Logging.Category.lifecycle, me, "DiscoveryMessageThread started");
