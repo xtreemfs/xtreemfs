@@ -1,7 +1,7 @@
 #!/bin/bash
 # a simple wrapper around fusermount -u
 
-if [ $# -ne 1 ]
+if [ $# -ne 1 -o $1 == "--help" -o $1 == "-h" ]
 then
 	echo "usage: xtfs_umount <mount_point>"
 	echo ""
