@@ -265,7 +265,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
 
         CLIParser.parseCLI(args, options, arguments);
 
-        if (arguments.size() != 1 || options.get("h").switchValue == true || options.get("--help").switchValue == true) {
+        if (arguments.size() != 1 || options.get("h").switchValue == true || options.get("-help").switchValue == true) {
             usage();
             return;
         }
