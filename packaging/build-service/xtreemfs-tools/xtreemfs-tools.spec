@@ -6,7 +6,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 Group:          Networking
 Summary:        XtreemFS administration tools
 Source0:        %{name}-%{version}.tar.gz
-Requires:       python >= 2.4
+Requires:       python >= 2.6
 Requires:       attr
 
 %description
