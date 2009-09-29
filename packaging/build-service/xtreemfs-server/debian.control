@@ -1,5 +1,5 @@
 Source: xtreemfs-server
-Section: unknown
+Section: utils
 Priority: optional
 Maintainer: xtreemfs <xtreemfs-users@googlegroups.com>
 Build-Depends: debhelper (>= 5)
