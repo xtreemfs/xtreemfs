@@ -151,7 +151,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
         queue = new LinkedBlockingQueue();
         quit = false;
         
-        server = new RPCNIOSocketServer(config.getPort(), null, this, sslOptions);
+        server = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions);
         
         if (config.isAutodiscoverEnabled()) {
             discoveryThr = new DiscoveryMsgThread(InetAddress.getLocalHost().getCanonicalHostName(), config
