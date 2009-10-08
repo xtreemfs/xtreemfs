@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Properties;
 import java.util.Random;
 
+import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -41,6 +42,7 @@ import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
+import org.xtreemfs.include.common.config.BabuDBConfig;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.osd.OSDConfig;
@@ -125,7 +127,6 @@ public class SetupUtils {
     
     public static org.xtreemfs.dir.DIRConfig createDIRConfig() throws IOException {
         Properties props = new Properties();
-        props.setProperty("database.dir", TEST_DIR);
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("debug.categories", ""
             + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
@@ -141,6 +142,24 @@ public class SetupUtils {
         props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
         
         return new org.xtreemfs.dir.DIRConfig(props);
+    }
+    
+    public static BabuDBConfig createDIRdbsConfig() throws IOException {
+        Properties props = new Properties();
+        props.setProperty("debug.level", "" + DEBUG_LEVEL);
+        props.setProperty("debug.categories", ""
+                + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
+        props.setProperty("db.cfgFile", "config.db");
+        props.setProperty("db.baseDir", TEST_DIR);
+        props.setProperty("db.logDir", TEST_DIR);
+        props.setProperty("db.sync", "" + SyncMode.FSYNC);
+        props.setProperty("worker.maxQueueLength", "250");
+        props.setProperty("worker.numThreads", "0");
+        props.setProperty("db.maxLogfileSize", "16777216");
+        props.setProperty("db.checkInterval", "300");
+        props.setProperty("db.pseudoSyncWait", "200");
+        
+        return new BabuDBConfig(props);
     }
     
     public static MRCConfig createMRC1Config() throws IOException {

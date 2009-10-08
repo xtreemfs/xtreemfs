@@ -7,7 +7,9 @@ package org.xtreemfs.test.common.uuid;
 
 import java.io.File;
 import java.net.InetSocketAddress;
+
 import junit.framework.TestCase;
+
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.util.NetUtils;
@@ -18,6 +20,7 @@ import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.include.common.config.BabuDBConfig;
 import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.test.SetupUtils;
@@ -58,10 +61,11 @@ public class UUIDResolverTest extends TestCase {
         testDir.mkdirs();
 
         DIRConfig conf = SetupUtils.createDIRConfig();
-
+        BabuDBConfig dbConf = SetupUtils.createDIRdbsConfig();
+        
         localhost = new InetSocketAddress("localhost", conf.getPort());
 
-        dirCtrl = new DIRRequestDispatcher(conf);
+        dirCtrl = new DIRRequestDispatcher(conf,dbConf);
         dirCtrl.startup();
         
         testEnv = new TestEnvironment(new TestEnvironment.Services[]{TestEnvironment.Services.DIR_CLIENT,

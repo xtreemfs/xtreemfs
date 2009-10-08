@@ -103,7 +103,7 @@ public class RegisterServiceOperation extends DIROperation {
             newRec.serialize(ReusableBuffer.wrap(newData));
             BabuDBInsertGroup ig = database.createInsertGroup();
             ig.addInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes(), newData);
-            database.directInsert(ig);
+            database.directInsert(ig, master, true);
             
             xtreemfs_service_registerResponse response = new xtreemfs_service_registerResponse(currentVersion);
             rq.sendSuccess(response);

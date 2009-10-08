@@ -12,6 +12,7 @@ TMP_PATH="/tmp/fsdRLgT24fDM7YqmfFlg85gLVf6aLGA6G"
 SERVER_WHITE_LIST=(
 	"etc/xos/xtreemfs/default_dir" "config/default_dir"
 	"etc/xos/xtreemfs/dirconfig.properties" "config/dirconfig.properties"
+	"etc/xos/xtreemfs/dirdbconfig.properties" "config/dirdbconfig.properties"
 	"etc/xos/xtreemfs/mrcconfig.properties" "config/mrcconfig.properties"
 	"etc/xos/xtreemfs/osdconfig.properties" "config/osdconfig.properties"
 	"etc/xos/xtreemfs/datacentermap.example" "config/datacentermap.example"

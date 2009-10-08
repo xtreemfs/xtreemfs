@@ -25,22 +25,25 @@
 package org.xtreemfs.test.new_dir;
 
 import java.io.IOException;
+
 import junit.framework.TestCase;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.interfaces.AddressMapping;
-import org.xtreemfs.interfaces.AddressMappingSet;
-import org.xtreemfs.interfaces.Service;
-import org.xtreemfs.interfaces.ServiceSet;
-import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.client.DIRClient;
-import org.xtreemfs.interfaces.DIRInterface.ConcurrentModificationException;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.include.common.config.BabuDBConfig;
+import org.xtreemfs.interfaces.AddressMapping;
+import org.xtreemfs.interfaces.AddressMappingSet;
+import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
+import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.ServiceType;
+import org.xtreemfs.interfaces.DIRInterface.ConcurrentModificationException;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
@@ -53,11 +56,14 @@ public class DIRTest extends TestCase {
     DIRRequestDispatcher dir;
 
     DIRConfig            config;
+    
+    BabuDBConfig         dbsConfig;
 
     TestEnvironment      testEnv;
 
     public DIRTest() throws IOException {
         config = SetupUtils.createDIRConfig();
+        dbsConfig = SetupUtils.createDIRdbsConfig();
         Logging.start(Logging.LEVEL_DEBUG);
     }
 
@@ -69,7 +75,7 @@ public class DIRTest extends TestCase {
         });
         testEnv.start();
 
-        dir = new DIRRequestDispatcher(config);
+        dir = new DIRRequestDispatcher(config, dbsConfig);
         dir.startup();
         dir.waitForStartup();
 

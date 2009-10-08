@@ -98,7 +98,8 @@ public class BabuDBStorageManagerTest extends TestCase {
         
         // initialize Directory Service (for synchronized clocks...)
         DIRConfig config = SetupUtils.createDIRConfig();
-        dir = new DIRRequestDispatcher(config);
+        BabuDBConfig dbsConfig = SetupUtils.createDIRdbsConfig();
+        dir = new DIRRequestDispatcher(config, dbsConfig);
         dir.startup();
         
         testEnv = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_CLIENT,
@@ -110,7 +111,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         FSUtils.delTree(dbDir);
         dbDir.mkdirs();
         database = BabuDBFactory.createBabuDB(new BabuDBConfig(DB_DIRECTORY, DB_DIRECTORY, 2,
-            1024 * 1024 * 16, 5 * 60, SyncMode.FDATASYNC, 300, 1000));
+            1024 * 1024 * 16, 5 * 60, SyncMode.FDATASYNC, 300, 1000, false));
         mngr = new BabuDBStorageManager(database, "volId");
         
         exc = null;

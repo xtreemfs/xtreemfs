@@ -35,5 +35,9 @@ public final class ErrorCodes {
      * authentication failed.
      */
     public static final int AUTH_FAILED = 1;
+    /**
+     * not enough participants to perform the operation.
+     */
+    public static final int NOT_ENOUGH_PARTICIPANTS = 2;
 
 }

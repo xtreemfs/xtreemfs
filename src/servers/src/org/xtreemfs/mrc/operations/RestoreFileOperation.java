@@ -27,6 +27,7 @@ package org.xtreemfs.mrc.operations;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_fileRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_fileResponse;
 import org.xtreemfs.mrc.MRCRequest;
@@ -110,7 +111,7 @@ public class RestoreFileOperation extends MRCOperation {
                 .getStripe_size() / 1024 + 1 : rqArgs.getStripe_size() / 1024);
         
         // create and assign the new XLocList
-        StripingPolicy sp = sMan.createStripingPolicy("RAID0", size, 1);
+        StripingPolicy sp = sMan.createStripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0.name(), size, 1);
         XLoc replica = sMan.createXLoc(sp, new String[] { rqArgs.getOsd_uuid() }, 0);
         XLocList xLocList = sMan.createXLocList(new XLoc[] { replica }, Constants.REPL_UPDATE_PC_NONE, 0);
         

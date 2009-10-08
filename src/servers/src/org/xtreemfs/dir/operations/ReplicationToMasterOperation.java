@@ -25,6 +25,7 @@
 package org.xtreemfs.dir.operations;
 
 import org.xtreemfs.babudb.replication.ReplicationManager;
+import org.xtreemfs.babudb.replication.SlavesStates.NotEnoughAvailableSlavesException;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
@@ -69,10 +70,12 @@ public class ReplicationToMasterOperation extends DIROperation {
             dbsReplicationManager.declareToMaster();
             replication_toMasterResponse response = new replication_toMasterResponse();
             rq.sendSuccess(response);
-        } catch (Exception ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            rq.sendInternalServerError(ex);
-        }
+        } catch (NotEnoughAvailableSlavesException e) {
+            rq.sendDIRException(ErrorCodes.NOT_ENOUGH_PARTICIPANTS, e.getMessage());
+        } catch (Exception e) {
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+            rq.sendInternalServerError(e);
+        } 
     }
 
     @Override

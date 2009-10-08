@@ -27,6 +27,8 @@ import java.io.IOException;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.include.common.config.BabuDBConfig;
+import org.xtreemfs.include.common.config.ReplicationConfig;
 
 /**
  * This class can be used to start a new instance of the Directory Service.
@@ -43,12 +45,21 @@ public class DIR {
     public static void main(String[] args) {
         
         String configFileName = "../../etc/xos/xtreemfs/dirconfig.test";
+        String dbsConfigFileName = "../../etc/xos/xtreemfs/dirdbconfig.test";
         
-        if (args.length != 1) {
+        if (args.length < 1 || args.length > 2) {
             System.out.println("using default config file " + configFileName);
+            System.out.println("using default BabuDB config file " 
+                    + dbsConfigFileName);
         } else {
             configFileName = args[0];
-        }
+            
+            if (args.length == 2)
+                dbsConfigFileName = args[1];
+            else
+                System.out.println("using default BabuDB config file " 
+                        + dbsConfigFileName);
+        } 
         
         DIRConfig config = null;
         try {
@@ -58,14 +69,26 @@ public class DIR {
             return;
         }
         
-        Logging.start(config.getDebugLevel(), config.getDebugCategories());
+        BabuDBConfig dbsConfig = null;
+        try {
+            dbsConfig = new ReplicationConfig(dbsConfigFileName);
+        } catch (IOException e) {
+            try {
+                dbsConfig = new BabuDBConfig(dbsConfigFileName);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                return;
+            }
+        }
         
+        Logging.start(config.getDebugLevel(), config.getDebugCategories());
+
         if (Logging.isInfo())
             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "JAVA_HOME=%s", System
                     .getProperty("java.home"));
         
         try {
-            final DIRRequestDispatcher rq = new DIRRequestDispatcher(config);
+            final DIRRequestDispatcher rq = new DIRRequestDispatcher(config, dbsConfig);
             rq.startup();
             
             Runtime.getRuntime().addShutdownHook(new Thread() {

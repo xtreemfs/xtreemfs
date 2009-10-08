@@ -66,7 +66,7 @@ public class DeregisterServiceOperation extends DIROperation {
 
             BabuDBInsertGroup ig = database.createInsertGroup();
             ig.addDelete(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes());
-            database.directInsert(ig);
+            database.directInsert(ig, master, true);
             
             xtreemfs_service_deregisterResponse response = new xtreemfs_service_deregisterResponse();
             rq.sendSuccess(response);

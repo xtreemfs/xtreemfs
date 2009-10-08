@@ -1,0 +1,54 @@
+#####################################################################
+# BabuDB configuration												#
+#####################################################################
+
+# optional debug level (
+# 0 = emergency, 
+# 1 = alert, 
+# 2 = critical, 
+# 3 = error, 
+# 4 = warning, 
+# 5 = notice, 
+# 6 = info, 
+# 7 = debug)
+debug.level = 4
+
+# optional debug category
+#debug.category = all
+
+# name for the database configuration file
+#db.cfgFile = config.db
+
+# base directory to store database index snapshots in
+db.baseDir = /tmp/xtreemfs-test/dir/database
+
+# directory in which the database logs are stored
+db.logDir = /tmp/xtreemfs-test/dir/database
+
+# SyncMode the synchronization mode to use for the logFile
+# ASYNC - asynchronously write log entries (data is lost when system crashes).
+# FSYNC - executes an fsync on the logfile before acknowledging the operation.
+# FDATASYNC
+# SYNC_WRITE - synchronously writes the log entry to disk before ack. Does not
+#			   update the metadata.
+# SYNC_WRITE_METADATA - synchronously writes the log entry to disk and updates
+#			   			the metadata before ack.
+db.sync = FSYNC
+
+# max queue length: if > 0, the queue for each worker is limited to maxQ
+worker.maxQueueLength = 250
+
+# number of worker threads to use
+worker.numThreads = 0
+
+# a checkpoint is generated ,if maxLogfileSize is exceeded
+db.maxLogfileSize = 16777216
+
+# interval between two checks in seconds, 0 disables auto checkPointing
+db.checkInterval = 300
+
+# if set to a value > 0, operations are acknowledged immediately before
+# they are written to the disk log. The disk logger will do batch writes
+# and call fSync... every pseudoSyncWait seconds. This can be used to
+# increase performance and emulate PostgreSQL behavior.
+db.pseudoSyncWait = 200

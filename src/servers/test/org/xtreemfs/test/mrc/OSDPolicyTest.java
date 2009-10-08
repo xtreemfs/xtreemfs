@@ -130,11 +130,11 @@ public class OSDPolicyTest extends TestCase {
         
         ServiceSet services = new ServiceSet();
         services.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd1", 1, "osd1",
-            System.currentTimeMillis() / 1000 - 1000, sdm1));
+            (System.currentTimeMillis() - 5000) / 1000l, sdm1));
         services.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd2", 1, "osd2",
-            System.currentTimeMillis() / 1000 - 5000, sdm2));
+            (System.currentTimeMillis() - 5000) / 1000l, sdm2));
         services.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd3", 1, "osd3",
-            System.currentTimeMillis() / 1000 - 1000, sdm3));
+            System.currentTimeMillis() / 1000l, sdm3));
         
         FilterDefaultPolicy pol = new FilterDefaultPolicy();
         pol.setAttribute("offline_time_secs", "2");

@@ -37,11 +37,15 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBFactory;
-import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
+import org.xtreemfs.babudb.log.LogEntry;
+import org.xtreemfs.babudb.log.SyncListener;
 import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.lsmdb.DatabaseManager;
 import org.xtreemfs.babudb.replication.ReplicationManager;
+import org.xtreemfs.babudb.replication.ReplicationManagerImpl;
+import org.xtreemfs.babudb.replication.RequestDispatcher.DispatcherState;
+import org.xtreemfs.babudb.replication.stages.StageRequest;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -70,6 +74,7 @@ import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
 import org.xtreemfs.include.common.config.BabuDBConfig;
+import org.xtreemfs.include.common.config.ReplicationConfig;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
@@ -83,8 +88,8 @@ import com.sun.net.httpserver.HttpServer;
  * 
  * @author bjko
  */
-public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRequestListener,
-    LifeCycleListener {
+public class DIRRequestDispatcher extends LifeCycleThread 
+    implements RPCServerRequestListener, LifeCycleListener, SyncListener {
     
     /**
      * index for address mappings, stores uuid -> AddressMappingSet
@@ -117,24 +122,31 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     private final MonitoringThread             monThr;
     
     private final DIRConfig                    config;
-    
+        
     public static final String                 DB_NAME           = "dirdb";
     
-    public DIRRequestDispatcher(final DIRConfig config) throws IOException, BabuDBException {
+    public DIRRequestDispatcher(final DIRConfig config, 
+            final BabuDBConfig dbsConfig) throws IOException, BabuDBException {
         super("DIR RqDisp");
         this.config = config;
         
         Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS Direcory Service version "
             + VersionManagement.RELEASE_VERSION);
         
-        registry = new HashMap();
+        registry = new HashMap<Integer, DIROperation>();
         
         // start up babudb
-        database = BabuDBFactory.createBabuDB(new BabuDBConfig(config.getDbDir(), config.getDbDir(), 0,
-            1024 * 1024 * 16, 60 * 5, SyncMode.FSYNC, 200, 500));
+        if (dbsConfig instanceof ReplicationConfig)
+            database = BabuDBFactory
+                        .createReplicatedBabuDB((ReplicationConfig) dbsConfig);
+        else
+            database = BabuDBFactory.createBabuDB(dbsConfig);
+            
         dbMan = database.getDatabaseManager();
         
+        database.disableSlaveCheck();
         initializeDatabase();
+        database.enableSlaveCheck();
         
         registerOperations();
         
@@ -148,7 +160,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
                     .getTrustedCertsContainer(), false);
         }
         
-        queue = new LinkedBlockingQueue();
+        queue = new LinkedBlockingQueue<ONCRPCRequest>();
         quit = false;
         
         server = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions);
@@ -216,7 +228,7 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
 
             ServiceRecords services = new ServiceRecords();
 
-            long now = System.currentTimeMillis() / 1000l;
+            // long now = System.currentTimeMillis() / 1000l;
 
             while (iter.hasNext()) {
                 final Entry<byte[],byte[]> e = iter.next();
@@ -448,5 +460,40 @@ public class DIRRequestDispatcher extends LifeCycleThread implements RPCServerRe
     
     public DIRConfig getConfig() {
         return config;
+    }
+
+    /* (non-Javadoc)
+     * @see org.xtreemfs.babudb.log.SyncListener#failed(org.xtreemfs.babudb.log.LogEntry, java.lang.Exception)
+     */
+    @Override
+    public void failed(LogEntry entry, Exception ex) {
+        entry.free();
+        
+        if (getDBSReplicationService() != null) {
+            // get some rest until the fail-over-mechanism starts
+            try {
+                
+                DispatcherState state = ((ReplicationManagerImpl) getDBSReplicationService()).stop();
+            
+                if (state.requestQueue != null) 
+                    for (StageRequest rq : state.requestQueue)
+                        rq.free();
+                
+                Logging.logError(Logging.LEVEL_WARN, this, ex);
+            } catch (InterruptedException e) {
+                Logging.logError(Logging.LEVEL_WARN, this, e);
+            }
+        } else {
+            // not a consistent state!
+            crashPerformed(ex);
+        }
+    }
+
+    /* (non-Javadoc)
+     * @see org.xtreemfs.babudb.log.SyncListener#synced(org.xtreemfs.babudb.log.LogEntry)
+     */
+    @Override
+    public void synced(LogEntry entry) {
+        entry.free();
     }
 }

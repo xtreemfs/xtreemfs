@@ -1,0 +1,97 @@
+#####################################################################
+# BabuDB configuration                                              #
+#####################################################################
+
+# optional debug level (
+# 0 = emergency, 
+# 1 = alert, 
+# 2 = critical, 
+# 3 = error, 
+# 4 = warning (default), 
+# 5 = notice, 
+# 6 = info, 
+# 7 = debug)
+debug.level = 6
+
+# optional debug category
+#debug.category = all
+
+# name for the database configuration file
+#db.cfgFile = config.db
+
+# base directory to store database index snapshots in
+db.baseDir = /tmp/xtreemfs-test/dir/database
+
+# directory in which the database logs are stored
+db.logDir = /tmp/xtreemfs-test/dir/database
+
+# SyncMode the synchronization mode to use for the logFile
+# ASYNC - asynchronously write log entries (data is lost when system crashes).
+# FSYNC - executes an fsync on the logfile before acknowledging the operation.
+# FDATASYNC
+# SYNC_WRITE - synchronously writes the log entry to disk before ack. Does not
+#              update the metadata.
+# SYNC_WRITE_METADATA - synchronously writes the log entry to disk and updates
+#                       the metadata before ack.
+db.sync = FSYNC
+
+# max queue length: if > 0, the queue for each worker is limited to maxQ
+worker.maxQueueLength = 250
+
+# number of worker threads to use
+worker.numThreads = 0
+
+# a checkpoint is generated ,if maxLogfileSize is exceeded
+db.maxLogfileSize = 16777216
+
+# interval between two checks in seconds, 0 disables auto checkPointing
+db.checkInterval = 300
+
+# if set to a value > 0, operations are acknowledged immediately before
+# they are written to the disk log. The disk logger will do batch writes
+# and call fSync... every pseudoSyncWait seconds. This can be used to
+# increase performance and emulate PostgreSQL behavior.
+db.pseudoSyncWait = 200
+
+#####################################################################
+# BabuDB replication configuration                                  #
+#####################################################################
+
+# local time renew in milliseconds
+#localTimeRenew = 3000
+
+# specify whether SSL is required
+ssl.enabled = false
+
+# server credentials for SSL handshakes
+#ssl.service_creds = /etc/xos/xtreemfs/truststore/certs/osd.p12
+#ssl.service_creds.pw = xtreemfs
+#ssl.service_creds.container = pkcs12
+
+# trusted certificates for SSL handshakes
+#ssl.trusted_certs = /etc/xos/xtreemfs/truststore/certs/xosrootca.jks
+#ssl.trusted_certs.pw = xtreemfs
+#ssl.trusted_certs.container = jks
+
+#ssl.authenticationWithoutEncryption = false
+
+# number of slaves that at least have to be up to date
+sync.n = 2
+
+# participants of the replication including the local address
+participant.0 = planetlab2.csg.uzh.ch
+participant.0.port = 35667
+participant.1 = planetlab3.cs.st-andrews.ac.uk
+participant.1.port = 35667
+participant.2 = plab-2.sinp.msu.ru
+participant.2.port = 35667
+participant.3 = planetlab3.cse.nd.edu
+participant.3.port = 35667
+participant.4 = planetlab1.comp.nus.edu.sg
+participant.4.port = 35667
+
+# chunk size, for initial load of file chunks
+#chunkSize = 5242880
+
+# DB backup directory - needed for the initial loading of the BabuDB from the master.
+db.backupDir = /tmp/xtreemfs-test/dir/backup/

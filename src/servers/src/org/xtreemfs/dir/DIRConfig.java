@@ -36,8 +36,6 @@ import org.xtreemfs.common.config.ServiceConfig;
  */
 public class DIRConfig extends ServiceConfig {
     
-    private String dbDir;
-
     private boolean autodiscoverEnabled;
 
     private boolean monitoringEnabled;
@@ -65,8 +63,6 @@ public class DIRConfig extends ServiceConfig {
     
     public void read() throws IOException {
         super.read();
-        
-        this.dbDir = this.readRequiredString("database.dir");
 
         this.autodiscoverEnabled = this.readOptionalBoolean("discover", true);
 
@@ -81,10 +77,6 @@ public class DIRConfig extends ServiceConfig {
         this.timeoutSeconds = this.readOptionalInt("service_timeout_s", 5*60);
 
         this.sendmailBin = this.readOptionalString("email.programm", "/usr/sbin/sendmail");
-    }
-    
-    public String getDbDir() {
-        return dbDir;
     }
 
     /**

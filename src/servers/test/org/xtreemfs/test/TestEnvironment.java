@@ -137,7 +137,8 @@ public class TestEnvironment {
         dirClient = SetupUtils.createDIRClient(getRpcClient());
         
         if (enabledServs.contains(Services.DIR_SERVICE)) {
-            dirService = new DIRRequestDispatcher(SetupUtils.createDIRConfig());
+            dirService = new DIRRequestDispatcher(SetupUtils.createDIRConfig(), 
+                    SetupUtils.createDIRdbsConfig());
             dirService.startup();
             dirService.waitForStartup();
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "DIR running");

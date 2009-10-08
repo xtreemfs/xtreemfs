@@ -26,6 +26,8 @@ PID_DS=/var/run/xtreemfs_dir.pid
 
 CONFIG_DS=/etc/xos/xtreemfs/dirconfig.properties
 
+CONFIG_DB=/etc/xos/xtreemfs/dirdbconfig.properties
+
 LOG_DS=/var/log/xtreemfs/dir.log
 
 if [ -z $JAVA_HOME ]; then
@@ -65,7 +67,7 @@ start() {
 
     rm $PID_DS
     echo -n "starting XtreemFS Directory Service (DIR)..."
-    sudo -u $XTREEMFS_USER $JAVA_CALL org.xtreemfs.dir.DIR $CONFIG_DS >> $LOG_DS 2>&1 &
+    sudo -u $XTREEMFS_USER $JAVA_CALL org.xtreemfs.dir.DIR $CONFIG_DS $CONFIG_DB >> $LOG_DS 2>&1 &
     PROCPID=$!
     echo $PROCPID > $PID_DS
     sleep 1s

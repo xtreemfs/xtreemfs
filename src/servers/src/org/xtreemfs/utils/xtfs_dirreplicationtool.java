@@ -148,6 +148,9 @@ public class xtfs_dirreplicationtool {
         } catch (DIRException exc) {
             if (exc.getError_code() == ErrorCodes.AUTH_FAILED)
                 System.out.println("permission denied: invalid administrator password");
+            else if (exc.getError_code() == ErrorCodes.NOT_ENOUGH_PARTICIPANTS)
+                System.out.println("there where not enough participants to perform" +
+                		" this operation");
             else
                 exc.printStackTrace();
         } catch (Exception exc) {
