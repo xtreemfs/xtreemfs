@@ -29,6 +29,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -41,7 +42,7 @@ import java.util.zip.InflaterInputStream;
  * Stores the objects in a Java BitSet. <br>
  * 29.06.2009
  */
-public class ObjectSet implements Iterable<Long> {
+public class ObjectSet implements /*Serializable,*/ Iterable<Long> { // FIXME
     public static final int DEFAULT_INITIAL_SIZE = 1024;
 
     /**
@@ -115,6 +116,13 @@ public class ObjectSet implements Iterable<Long> {
 
         this.stripeWidth = stripeWidth;
         this.firstObjectNo = firstObjectNo;
+    }
+
+    public ObjectSet(ObjectSet objectSet) {
+        this.stripeWidth = objectSet.stripeWidth;
+        this.firstObjectNo = objectSet.firstObjectNo;
+        this.objects = new BitSet(objectSet.objects.size());
+        this.objects.or(objectSet.objects);
     }
 
     /**
@@ -206,7 +214,7 @@ public class ObjectSet implements Iterable<Long> {
      * @see java.util.Set#isEmpty()
      */
     public boolean isEmpty() {
-        return size() == 0;
+        return objects.isEmpty(); // O(1)
     }
 
     /**
@@ -214,7 +222,7 @@ public class ObjectSet implements Iterable<Long> {
      * @see java.util.Set#size()
      */
     public int size() {
-        return objects.cardinality();
+        return objects.cardinality(); // O(n)
     }
 
     /**
@@ -269,8 +277,8 @@ public class ObjectSet implements Iterable<Long> {
         return (objects.cardinality() != previousLength) ? true : false;
     }
 
-    public boolean complement(Long lastObject) {
-        int indexOfLastObject = (int) (lastObject / stripeWidth);
+    public boolean complement(int lastObject) {
+        int indexOfLastObject = lastObject / stripeWidth;
         int previousLength = objects.size();
 
         if (objects.size() - 1 < indexOfLastObject)
@@ -286,6 +294,13 @@ public class ObjectSet implements Iterable<Long> {
                 + objects.toString();
     }
 
+    @Override
+    public ObjectSet clone() throws CloneNotSupportedException {
+        ObjectSet clone = new ObjectSet(this.stripeWidth, this.firstObjectNo, this.objects.size());
+        clone.objects.or(this.objects);
+        return clone;
+    }
+
     /*
      * serialization
      */
@@ -293,6 +308,12 @@ public class ObjectSet implements Iterable<Long> {
         return stripeWidth;
     }
 
+    /**
+     * Returns NOT the first element of the set, but returns the internal value of the field
+     * <code>firstObjectNo</code>.
+     * 
+     * @return
+     */
     public int getFirstObjectNo() {
         return firstObjectNo;
     }

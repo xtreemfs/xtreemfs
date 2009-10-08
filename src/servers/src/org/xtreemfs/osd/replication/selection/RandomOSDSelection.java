@@ -38,6 +38,8 @@ public class RandomOSDSelection {
     private Random random = new Random();
 
     public ServiceUUID selectNextOSD(List<ServiceUUID> osds) throws TransferStrategyException {
+        // at least one osd must be available
+        assert (osds.size() > 0);
         return osds.get(random.nextInt(osds.size()));
     }
 }

@@ -141,8 +141,7 @@ class FullReplicaReader extends Reader {
             // monitoring: time (latency/throughput)
             NumberMonitoring monitoringInfo = raf.getMonitoringInfo();
             // monitor throughput
-            super.monitoring.putAverageLong(MONITORING_KEY_THROUGHPUT, monitoringInfo
-                    .getLong(RandomAccessFile.MONITORING_KEY_THROUGHPUT)); // KB/s
+            super.monitoring.putAverageLong(MONITORING_KEY_THROUGHPUT, 0l); // KB/s
         } finally {
             if (originalFile != null)
                 originalFile.close();

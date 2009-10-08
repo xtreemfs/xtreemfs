@@ -53,7 +53,6 @@ import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.client.MRCClient;
-import org.xtreemfs.osd.replication.transferStrategies.RandomStrategy;
 import org.xtreemfs.utils.CLIParser;
 import org.xtreemfs.utils.CLIParser.CliOption;
 
@@ -94,6 +93,10 @@ public class StressTest {
 
     public static final String        TRANSFER_STRATEGY_SEQUENTIAL = "sequential";
 
+    public static final String        TRANSFER_STRATEGY_SEQUENTIAL_PREFETCHING = "sequential_prefetching";
+
+    public static final String        TRANSFER_STRATEGY_RAREST_FIRST = "rarest_first";
+
     public static final String        READER_TYPE_ONDEMAND         = "ondemand";
 
     public static final String        READER_TYPE_FULL             = "full";
@@ -107,8 +110,6 @@ public class StressTest {
     public static final int           DEFAULT_RANDOM_SEED          = 123;
 
     public static final String        DEFAULT_REPLICA_TYPE         = "ondemand";
-
-    public static final int           DEFAULT_TRANSFER_STRATEGY    = RandomStrategy.REPLICATION_FLAG;
 
     /**
      * biggest generated data in RAM (piecewise write of file)
@@ -292,7 +293,7 @@ public class StressTest {
                 readersOnly = e.getValue().switchValue;
             }
             if (e.getKey().equals(FULL_REPLICA) && e.getValue().switchValue) {
-                replicationFlags = 0; // default
+                replicationFlags = ReplicationFlags.setFullReplica(replicationFlags);
             }
             if (e.getKey().equals(TIME_TILL_NEW_FILE) && e.getValue().numValue != null) {
                 timeTillNewFile = e.getValue().numValue.intValue();
@@ -302,8 +303,12 @@ public class StressTest {
                     replicationFlags = ReplicationFlags.setRandomStrategy(replicationFlags);
                 else if (e.getValue().stringValue.equals(TRANSFER_STRATEGY_SEQUENTIAL))
                     replicationFlags = ReplicationFlags.setSequentialStrategy(replicationFlags);
+                else if (e.getValue().stringValue.equals(TRANSFER_STRATEGY_SEQUENTIAL_PREFETCHING))
+                    replicationFlags = ReplicationFlags.setSequentialPrefetchingStrategy(replicationFlags);
+                else if (e.getValue().stringValue.equals(TRANSFER_STRATEGY_RAREST_FIRST))
+                    replicationFlags = ReplicationFlags.setRarestFirstStrategy(replicationFlags);
             } else {
-                replicationFlags = replicationFlags | DEFAULT_TRANSFER_STRATEGY;
+                replicationFlags = ReplicationFlags.setRandomStrategy(replicationFlags); // default
             }
         }
 

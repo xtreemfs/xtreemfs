@@ -20,7 +20,6 @@ import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
-import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
@@ -49,16 +48,16 @@ public class CleanupTest extends TestCase {
     @AfterClass
     public static void tearDownClass() throws Exception {
     }
-    
+
     @Before
     public void setUp() throws Exception {
-        env = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.DIR_SERVICE,
-            TestEnvironment.Services.MRC, TestEnvironment.Services.DIR_CLIENT,
-            TestEnvironment.Services.MRC_CLIENT, TestEnvironment.Services.OSD,
-            TestEnvironment.Services.OSD_CLIENT, });
+        env = new TestEnvironment(new TestEnvironment.Services[] { TestEnvironment.Services.TIME_SYNC,
+                TestEnvironment.Services.DIR_SERVICE, TestEnvironment.Services.MRC,
+                TestEnvironment.Services.DIR_CLIENT, TestEnvironment.Services.MRC_CLIENT,
+                TestEnvironment.Services.OSD, TestEnvironment.Services.OSD_CLIENT, });
         env.start();
     }
-    
+
     @After
     public void tearDown() {
         env.shutdown();

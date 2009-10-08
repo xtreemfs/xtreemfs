@@ -43,7 +43,6 @@ import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.monitoring.Monitoring;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
@@ -69,13 +68,12 @@ import org.xtreemfs.test.TestEnvironment;
  * 12.05.2009
  */
 public class ReplicationRAFTest extends TestCase {
-    public static final int    STRIPE_SIZE      = 1024 * 10;      // 10kb in
-    
-    // byte
+    public static final int    STRIPE_SIZE      = 1024 * 10;      // 10kb in byte
     
     public static final String VOLUME_NAME      = "test";
     
-    public static int          HOLE_PROBABILITY = 30;             // 30% chance
+    // FIXME:
+    public static int          HOLE_PROBABILITY = -1;             // 30% chance
                                                                    
     private ReusableBuffer     data;
     
@@ -92,9 +90,9 @@ public class ReplicationRAFTest extends TestCase {
     private static Random      random           = new Random(843);
     
     public ReplicationRAFTest() {
-        // TODO Auto-generated constructor stub
+        // Auto-generated constructor stub
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
-        Monitoring.enable();
+//        Monitoring.enable();
     }
     
     /**
@@ -126,7 +124,9 @@ public class ReplicationRAFTest extends TestCase {
         
         // wait a bit so the MRC could notice the OSDs
         Thread.sleep(1000);
-        
+
+//        data = ReusableBuffer.wrap("fadsljfalskjdflaskjdfölkjsalödfkjaslsfijal".getBytes());
+//        holes = new TreeSet<Integer>();
         generateData(1000 * 1000 * 3); // ca. 3 MB
         initializeVolume(2);
     }
@@ -174,53 +174,32 @@ public class ReplicationRAFTest extends TestCase {
     }
     
     @Test
-    public void testReplicasWithDifferentStripingPolicies() throws Exception {
-        RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/testfile",
-            testEnv.getRpcClient(), userCredentials);
-        raf.setReplicaSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
+    public void testSimpleWithDifferentStrategies() throws Exception {
+        // partial replicas
+        System.out.println("\n### random strategy on partial replica ###");
+        simpleTest("file0", ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0)));
+        System.out.println("\n### sequential strategy on partial replica ###");
+        simpleTest("file1", ReplicationFlags.setPartialReplica(ReplicationFlags.setSequentialStrategy(0)));
+        System.out.println("\n### rarest first strategy on partial replica ###");
+        simpleTest("file2", ReplicationFlags.setPartialReplica(ReplicationFlags.setRarestFirstStrategy(0)));
+        System.out.println("\n### sequential prefetching strategy on partial replica ###");
+        simpleTest("file3", ReplicationFlags.setPartialReplica(ReplicationFlags.setSequentialPrefetchingStrategy(0)));
         
-        // check if original replica hast a stripe width of 2
-        assertEquals(2, raf.getStripingPolicy().getWidth());
-        writeData(raf);
-        
-        // set read-only
-        raf.setReadOnly(true);
-        
-        // add replica
-        List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
-        assertEquals(6, replicas.size());
-        
-        // add replica with stripe width of 1
-        StripingPolicy sp = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, (int) raf
-                .getStripeSize(), 1);
-        raf.addReplica(replicas.subList(0, 1), sp, ReplicationFlags.setPartialReplica(ReplicationFlags
-                .setSequentialStrategy(0)));
-        assertEquals(2, raf.getXLoc().getNumReplicas());
-        assertEquals(1, raf.getXLoc().getReplica(1).getStripingPolicy().getWidth());
-        
-        // add replica with stripe width of 3
-        sp = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, (int) raf.getStripeSize(), 3);
-        raf.addReplica(replicas.subList(1, 4), sp, ReplicationFlags.setPartialReplica(ReplicationFlags
-                .setRandomStrategy(0)));
-        assertEquals(3, raf.getXLoc().getNumReplicas());
-        assertEquals(3, raf.getXLoc().getReplica(2).getStripingPolicy().getWidth());
-        
-        // read 3 times (each replica will be read)
-        for (int i = 0; i < 3; i++) {
-            raf.seek(0);
-            byte[] resultBuffer = new byte[data.limit()];
-            raf.read(resultBuffer, 0, resultBuffer.length);
-            
-            // change used replica
-            raf.changeReplicaOrder();
-        }
+        // full replicas
+        System.out.println("\n### random strategy on full replica ###");
+        fullReplicasTest("file4", ReplicationFlags.setFullReplica(ReplicationFlags.setRandomStrategy(0)));
+        System.out.println("\n### sequential strategy on full replica ###");
+        fullReplicasTest("file5", ReplicationFlags.setFullReplica(ReplicationFlags.setSequentialStrategy(0)));
+        System.out.println("\n### rarest first strategy on full replica ###");
+        fullReplicasTest("file6", ReplicationFlags.setRarestFirstStrategy(ReplicationFlags.setFullReplica(0)));
+        System.out.println("\n### sequential prefetching strategy on full replica ###");
+        fullReplicasTest("file7", ReplicationFlags.setFullReplica(ReplicationFlags.setSequentialPrefetchingStrategy(0)));
     }
+
+    private void simpleTest(String filename, int replicationFlags) throws Exception {
+        RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/" + filename,
+                testEnv.getRpcClient(), userCredentials);
     
-    @Test
-    public void testSimple() throws Exception {
-        RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/testfile",
-            testEnv.getRpcClient(), userCredentials);
-        
         // test needs a stripe width of 2 OSDs
         assertEquals(2, raf.getStripingPolicy().getWidth());
         
@@ -236,24 +215,32 @@ public class ReplicationRAFTest extends TestCase {
         // add replicas
         List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
         assertEquals(6, replicas.size());
-        raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy(), ReplicationFlags
-                .setPartialReplica(ReplicationFlags.setRandomStrategy(0)));
-        raf.addReplica(replicas.subList(2, 4), raf.getStripingPolicy(), ReplicationFlags
-                .setPartialReplica(ReplicationFlags.setRandomStrategy(0)));
-        raf.addReplica(replicas.subList(4, 6), raf.getStripingPolicy(), ReplicationFlags
-                .setPartialReplica(ReplicationFlags.setRandomStrategy(0)));
-        
+        raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy(), replicationFlags);
+        raf.addReplica(replicas.subList(2, 4), raf.getStripingPolicy(), replicationFlags);
+        raf.addReplica(replicas.subList(4, 6), raf.getStripingPolicy(), replicationFlags);
+    
         // assert 4 replicas
         assertEquals(4, raf.getXLoc().getNumReplicas());
-        
+    
+        raf.changeReplicaOrder();
         // read data
         for (int reads = 0; reads < 4; reads++) {
             // read and check data => replication
             byte[] resultBuffer = new byte[data.limit()];
             raf.seek(0);
             raf.read(resultBuffer, 0, resultBuffer.length);
+
+            // count zeros
+            int zeros = 0;
+            for (int i = 0; i < resultBuffer.length; i++)
+                if (resultBuffer[i] == (byte) 0)
+                    zeros++;
+
+            // FIXME: debug stuff
+//            System.out.println("filesize: " + data.array().length + "\t zeros: " + zeros);
+
             assertTrue(Arrays.equals(data.array(), resultBuffer));
-            
+
             raf.changeReplicaOrder();
         }
         // read EOF
@@ -264,7 +251,7 @@ public class ReplicationRAFTest extends TestCase {
             byte[] expected = new byte[STRIPE_SIZE];
             Arrays.fill(expected, (byte) 0);
             assertTrue(Arrays.equals(expected, resultBuffer));
-            
+    
             // read EOF with data
             resultBuffer = new byte[STRIPE_SIZE * 3];
             raf.seek(data.limit() - STRIPE_SIZE * 2);
@@ -280,15 +267,16 @@ public class ReplicationRAFTest extends TestCase {
             
             raf.changeReplicaOrder();
         }
+        
+        raf.close();
     }
-    
-    @Test
-    public void testFullReplicas() throws Exception {
+
+    private void fullReplicasTest(String filename, int replicationFlags) throws Exception {
         generateData(1000 * 1000); // ca. 1 MB
-        
-        RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/testfile",
-            testEnv.getRpcClient(), userCredentials);
-        
+    
+        RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/" + filename,
+                testEnv.getRpcClient(), userCredentials);
+    
         // test needs a stripe width of 2 OSDs
         assertEquals(2, raf.getStripingPolicy().getWidth());
         
@@ -301,13 +289,10 @@ public class ReplicationRAFTest extends TestCase {
         // add replicas
         List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
         assertEquals(6, replicas.size());
-        raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy(), ReplicationFlags
-                .setFullReplica(ReplicationFlags.setRandomStrategy(0)));
-        raf.addReplica(replicas.subList(2, 4), raf.getStripingPolicy(), ReplicationFlags
-                .setFullReplica(ReplicationFlags.setRandomStrategy(0)));
-        raf.addReplica(replicas.subList(4, 6), raf.getStripingPolicy(), ReplicationFlags
-                .setFullReplica(ReplicationFlags.setRandomStrategy(0)));
-        
+        raf.addReplica(replicas.subList(0, 2), raf.getStripingPolicy(), replicationFlags);
+        raf.addReplica(replicas.subList(2, 4), raf.getStripingPolicy(), replicationFlags);
+        raf.addReplica(replicas.subList(4, 6), raf.getStripingPolicy(), replicationFlags);
+    
         raf.setReplicaSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
         
         // read a few bytes from every replica
@@ -356,6 +341,49 @@ public class ReplicationRAFTest extends TestCase {
         }
     }
     
+    @Test
+    public void testReplicasWithDifferentStripingPolicies() throws Exception {
+        RandomAccessFile raf = new RandomAccessFile("rw", testEnv.getMRCAddress(), VOLUME_NAME + "/testfile",
+                testEnv.getRpcClient(), userCredentials);
+        raf.setReplicaSelectionPolicy(raf.SEQUENTIAL_REPLICA_SELECTION_POLICY);
+
+        // check if original replica hast a stripe width of 2
+        assertEquals(2, raf.getStripingPolicy().getWidth());
+        writeData(raf);
+
+        // set read-only
+        raf.setReadOnly(true);
+
+        // add replica
+        List<ServiceUUID> replicas = raf.getSuitableOSDsForAReplica();
+        assertEquals(6, replicas.size());
+
+        // add replica with stripe width of 1
+        StripingPolicy sp = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, (int) raf
+                .getStripeSize(), 1);
+        raf.addReplica(replicas.subList(0, 1), sp, ReplicationFlags.setPartialReplica(ReplicationFlags
+                .setSequentialStrategy(0)));
+        assertEquals(2, raf.getXLoc().getNumReplicas());
+        assertEquals(1, raf.getXLoc().getReplica(1).getStripingPolicy().getWidth());
+
+        // add replica with stripe width of 3
+        sp = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, (int) raf.getStripeSize(), 3);
+        raf.addReplica(replicas.subList(1, 4), sp, ReplicationFlags.setPartialReplica(ReplicationFlags
+                .setRandomStrategy(0)));
+        assertEquals(3, raf.getXLoc().getNumReplicas());
+        assertEquals(3, raf.getXLoc().getReplica(2).getStripingPolicy().getWidth());
+
+        // read 3 times (each replica will be read)
+        for (int i = 0; i < 3; i++) {
+            raf.seek(0);
+            byte[] resultBuffer = new byte[data.limit()];
+            raf.read(resultBuffer, 0, resultBuffer.length);
+
+            // change used replica
+            raf.changeReplicaOrder();
+        }
+    }
+
     @Test
     public void testBackgroundReplication() throws Exception {
         HOLE_PROBABILITY = 0;

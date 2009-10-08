@@ -36,7 +36,7 @@ import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy.Transfer
  * replicas will be never used, which could cause in an infinite loop.<br>
  * 29.06.2009
  */
-public class SequentialOSDSelection {
+public class RoundRobinOSDSelection {
     /**
      * contains the position (replica) in xLoc list of the next OSD which should be used for this stripe<br>
      * key: stripe<br>
@@ -52,7 +52,7 @@ public class SequentialOSDSelection {
      * Creates a new instance. Sets an initial value for the number of replicas.
      * @param maxStripeWidth
      */
-    public SequentialOSDSelection(int maxStripeWidth) {
+    public RoundRobinOSDSelection(int maxStripeWidth) {
         this.maxStripeWidth = maxStripeWidth;
         this.nextOSDforObject = new HashMap<Integer, Integer>(maxStripeWidth);
         this.lastKnownNumberOfReplicas = 0;
@@ -70,6 +70,9 @@ public class SequentialOSDSelection {
      * @throws TransferStrategyException
      */
     public ServiceUUID selectNextOSD(List<ServiceUUID> osds, long objectNo) throws TransferStrategyException {
+        // at least one osd must be available
+        assert (osds.size() > 0);
+
         // update number of replicas
         if (lastKnownNumberOfReplicas != osds.size())
             lastKnownNumberOfReplicas = osds.size();
@@ -99,6 +102,6 @@ public class SequentialOSDSelection {
     protected void increasePositionOfOSD(long objectNo) {
         int oldPosition = nextOSDforObject.get((int) (objectNo % maxStripeWidth));
         // do not count local replica
-        nextOSDforObject.put((int) (objectNo % maxStripeWidth), ++oldPosition % (lastKnownNumberOfReplicas - 1));
+        nextOSDforObject.put((int) (objectNo % maxStripeWidth), ++oldPosition % lastKnownNumberOfReplicas);
     }
 }

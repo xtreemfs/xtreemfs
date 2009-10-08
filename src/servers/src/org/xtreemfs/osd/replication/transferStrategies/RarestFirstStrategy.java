@@ -1,4 +1,4 @@
-/*  Copyright (c) 2008 Barcelona Supercomputing Center - Centro Nacional
+/*  Copyright (c) 2009 Barcelona Supercomputing Center - Centro Nacional
     de Supercomputacion and Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
     This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
@@ -24,67 +24,66 @@
  */
 package org.xtreemfs.osd.replication.transferStrategies;
 
-import java.util.List;
-
 import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.osd.replication.ObjectSet;
-import org.xtreemfs.osd.replication.selection.ObjectSetOSDSelection;
-import org.xtreemfs.osd.replication.selection.RandomOSDSelection;
-import org.xtreemfs.osd.replication.selection.RandomObjectSelection;
+import org.xtreemfs.osd.replication.selection.RarestFirstObjectSelection;
 
 /**
- * A simple strategy, which selects objects and replicas randomly. <br>
- * 08.12.2008
+ * 
+ * <br>
+ * 27.08.2009
  */
-public class RandomStrategy extends MasqueradingTransferStrategy {
+public class RarestFirstStrategy extends RandomStrategy {
     /**
      * identifies the random strategy in replication flags
      */
-    public static final int         REPLICATION_FLAG = Constants.REPL_FLAG_STRATEGY_RANDOM;
+    public static final int              REPLICATION_FLAG = Constants.REPL_FLAG_STRATEGY_RAREST_FIRST;
 
-    protected RandomObjectSelection objectSelection;
-    protected RandomOSDSelection    randomOSDselection;
-    protected ObjectSetOSDSelection objectSetOSDselection;
+    protected RarestFirstObjectSelection objectSelection;
 
     /**
      * @param rqDetails
      */
-    public RandomStrategy(String fileId, XLocations xLoc, ServiceAvailability osdAvailability) {
-        super(fileId, xLoc, osdAvailability, true);
-        this.objectSelection = new RandomObjectSelection();
-        this.randomOSDselection = new RandomOSDSelection();
-        this.objectSetOSDselection = new ObjectSetOSDSelection();
+    public RarestFirstStrategy(String fileId, XLocations xLoc, ServiceAvailability osdAvailability) {
+        super(fileId, xLoc, osdAvailability);
+        this.objectSelection = new RarestFirstObjectSelection();
     }
 
-    /**
-     * @return
-     * @throws TransferStrategyException
-     */
     @Override
     protected long selectObject(ObjectSet preferredObjects, ObjectSet requiredObjects)
             throws TransferStrategyException {
         long objectNo;
         // first fetch a preferred object
         if (!preferredObjects.isEmpty()) {
-            objectNo = objectSelection.selectNextObject(preferredObjects);
+            // preferred objects will not be saved in the queue
+            objectNo = super.objectSelection.selectNextObject(preferredObjects);
         } else { // fetch any object
-            objectNo = objectSelection.selectNextObject(requiredObjects);
+            objectNo = objectSelection.selectNextObject(requiredObjects, super.objectsOnOSDs);
         }
         return objectNo;
     }
 
     @Override
-    protected ServiceUUID selectOSD(List<ServiceUUID> availableOSDsForObject, long objectNo,
-            boolean timeForNewObjectSet) throws TransferStrategyException {
-        ServiceUUID osd;
-        if (timeForNewObjectSet) {
-            osd = randomOSDselection.selectNextOSD(availableOSDsForObject);
-        } else {
-            osd = objectSetOSDselection.selectNextOSD(availableOSDsForObject, objectsOnOSDs, objectNo);
-        }
-        return osd;
+    public boolean addObject(long objectNo, boolean preferred) {
+        boolean returnValue = super.addObject(objectNo, preferred);
+        if (!preferred) // if not preferred object => update queue
+            objectSelection.addObject(objectNo, super.objectsOnOSDs);
+        return returnValue;
+    }
+
+    @Override
+    public void setOSDsObjectSet(ObjectSet set, ServiceUUID osd) {
+//        objectSelection.newObjectSetArrived(requiredObjects, objectsOnOSDs.get(osd).set, set);
+        objectSelection.invalidateQueue();
+        super.setOSDsObjectSet(set, osd);
+    }
+    
+    @Override
+    protected boolean removeObjectFromList(long objectNo) {
+        objectSelection.removeObject(objectNo);
+        return super.removeObjectFromList(objectNo);
     }
 }

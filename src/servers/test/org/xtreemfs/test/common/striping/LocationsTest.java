@@ -106,46 +106,72 @@ public class LocationsTest extends TestCase {
         }
         StripingPolicy stripingPolicy = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 4);
         org.xtreemfs.common.xloc.Replica r;
-        int replicationFlags = 0;
+        int flags = 0;
         
         // set none
-        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, flags, osdList));
         assertFalse(r.isComplete());
         assertTrue(r.isPartialReplica());
         assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
         assertFalse(ReplicationFlags.isSequentialStrategy(r.getTransferStrategyFlags()));
 
         // set complete
-        replicationFlags = ReplicationFlags.setReplicaIsComplete(0);
-        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
+        flags = ReplicationFlags.setReplicaIsComplete(0);
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, flags, osdList));
         assertTrue(r.isComplete());
         assertTrue(r.isPartialReplica());
         assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
         assertFalse(ReplicationFlags.isSequentialStrategy(r.getTransferStrategyFlags()));
 
         // set partial replica and RandomStrategy
-        replicationFlags = ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0));
-        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
+        flags = ReplicationFlags.setPartialReplica(ReplicationFlags.setSequentialPrefetchingStrategy(0));
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, flags, osdList));
         assertFalse(r.isComplete());
         assertTrue(r.isPartialReplica());
-        assertTrue(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
-        assertFalse(ReplicationFlags.isSequentialStrategy(r.getTransferStrategyFlags()));
+        assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
+        assertTrue(ReplicationFlags.isSequentialPrefetchingStrategy(r.getTransferStrategyFlags()));
 
         // set full replica and RandomStrategy
-        replicationFlags = ReplicationFlags.setFullReplica(ReplicationFlags.setRandomStrategy(0));
-        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, replicationFlags, osdList));
+        flags = ReplicationFlags.setRandomStrategy(ReplicationFlags.setFullReplica(0));
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, flags, osdList));
         assertFalse(r.isComplete());
         assertFalse(r.isPartialReplica());
         assertTrue(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
         assertFalse(ReplicationFlags.isSequentialStrategy(r.getTransferStrategyFlags()));
 
         // set full replica and RandomStrategy
-        replicationFlags = ReplicationFlags.setFullReplica(ReplicationFlags.setRandomStrategy(0));
-        assertTrue(ReplicationFlags.isFullReplica(replicationFlags));
-        assertTrue(ReplicationFlags.isRandomStrategy(replicationFlags));
-        replicationFlags = ReplicationFlags.setSequentialStrategy(replicationFlags);
-        assertTrue(ReplicationFlags.isSequentialStrategy(replicationFlags));
-        assertTrue(ReplicationFlags.isFullReplica(replicationFlags));
+        flags = ReplicationFlags.setFullReplica(ReplicationFlags.setRandomStrategy(0));
+        assertTrue(ReplicationFlags.isFullReplica(flags));
+        assertTrue(ReplicationFlags.isRandomStrategy(flags));
+        flags = ReplicationFlags.setSequentialStrategy(flags);
+        assertTrue(ReplicationFlags.isSequentialStrategy(flags));
+        assertTrue(ReplicationFlags.isFullReplica(flags));
+        
+        // test correct set of strategies
+        // random
+        flags = ReplicationFlags.setRandomStrategy(0);
+        assertTrue(ReplicationFlags.isRandomStrategy(flags));
+        assertFalse(ReplicationFlags.isSequentialStrategy(flags));
+        assertFalse(ReplicationFlags.isSequentialPrefetchingStrategy(flags));
+        assertFalse(ReplicationFlags.isRarestFirstStrategy(flags));
+        // sequential
+        flags = ReplicationFlags.setSequentialStrategy(0);
+        assertFalse(ReplicationFlags.isRandomStrategy(flags));
+        assertTrue(ReplicationFlags.isSequentialStrategy(flags));
+        assertFalse(ReplicationFlags.isSequentialPrefetchingStrategy(flags));
+        assertFalse(ReplicationFlags.isRarestFirstStrategy(flags));
+        // sequential prefetching
+        flags = ReplicationFlags.setSequentialPrefetchingStrategy(0);
+        assertFalse(ReplicationFlags.isRandomStrategy(flags));
+        assertFalse(ReplicationFlags.isSequentialStrategy(flags));
+        assertTrue(ReplicationFlags.isSequentialPrefetchingStrategy(flags));
+        assertFalse(ReplicationFlags.isRarestFirstStrategy(flags));
+        // rarest first
+        flags = ReplicationFlags.setRarestFirstStrategy(0);
+        assertFalse(ReplicationFlags.isRandomStrategy(flags));
+        assertFalse(ReplicationFlags.isSequentialStrategy(flags));
+        assertFalse(ReplicationFlags.isSequentialPrefetchingStrategy(flags));
+        assertTrue(ReplicationFlags.isRarestFirstStrategy(flags));
     }
 
     public static void main(String[] args) {

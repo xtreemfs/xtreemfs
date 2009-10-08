@@ -1,4 +1,5 @@
-/*  Copyright (c) 2008 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+/*  Copyright (c) 2008 Barcelona Supercomputing Center - Centro Nacional
+    de Supercomputacion and Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
     This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
     Grid Operating System, see <http://www.xtreemos.eu> for more details.
@@ -23,7 +24,6 @@
  */
 package org.xtreemfs.osd.replication.transferStrategies;
 
-import java.util.Iterator;
 import java.util.List;
 
 import org.xtreemfs.common.ServiceAvailability;
@@ -31,37 +31,43 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.osd.replication.ObjectSet;
+import org.xtreemfs.osd.replication.selection.ObjectSetOSDSelection;
 import org.xtreemfs.osd.replication.selection.RandomOSDSelection;
-import org.xtreemfs.osd.replication.selection.SequentialObjectSelection;
+import org.xtreemfs.osd.replication.selection.RandomObjectSelection;
 
 /**
- * A simple transfer strategy, which fetches the objects in ascending order. The OSD will be a member of a
- * randomly selected completed replica. <br>
- * 13.10.2008
+ * A simple strategy, which selects objects and replicas randomly. <br>
+ * 08.12.2008
  */
-public class SequentialStrategy extends MasqueradingTransferStrategy {
+public class RandomStrategyWithoutObjectSets extends MasqueradingTransferStrategy {
     /**
-     * identifies the sequential strategy in replication flags
+     * identifies the random strategy in replication flags
      */
-    public static final int             REPLICATION_FLAG = Constants.REPL_FLAG_STRATEGY_SEQUENTIAL;
+    public static final int         REPLICATION_FLAG = Constants.REPL_FLAG_STRATEGY_RANDOM;
 
-    protected SequentialObjectSelection objectSelection;
-    protected RandomOSDSelection        osdSelection;
+    protected RandomObjectSelection objectSelection;
+    protected RandomOSDSelection    randomOSDselection;
+//    protected ObjectSetOSDSelection objectSetOSDselection;
 
     /**
      * @param rqDetails
      */
-    public SequentialStrategy(String fileId, XLocations xLoc, ServiceAvailability osdAvailability) {
+    public RandomStrategyWithoutObjectSets(String fileId, XLocations xLoc, ServiceAvailability osdAvailability) {
         super(fileId, xLoc, osdAvailability, false);
-        this.objectSelection = new SequentialObjectSelection();
-        this.osdSelection = new RandomOSDSelection();
+        this.objectSelection = new RandomObjectSelection();
+        this.randomOSDselection = new RandomOSDSelection();
+//        this.objectSetOSDselection = new ObjectSetOSDSelection();
     }
 
+    /**
+     * @return
+     * @throws TransferStrategyException
+     */
     @Override
     protected long selectObject(ObjectSet preferredObjects, ObjectSet requiredObjects)
             throws TransferStrategyException {
         long objectNo;
-        // first try to fetch a preferred object
+        // first fetch a preferred object
         if (!preferredObjects.isEmpty()) {
             objectNo = objectSelection.selectNextObject(preferredObjects);
         } else { // fetch any object
@@ -73,28 +79,12 @@ public class SequentialStrategy extends MasqueradingTransferStrategy {
     @Override
     protected ServiceUUID selectOSD(List<ServiceUUID> availableOSDsForObject, long objectNo,
             boolean timeForNewObjectSet) throws TransferStrategyException {
-        return osdSelection.selectNextOSD(availableOSDsForObject);
-    }
-
-    @Override
-    protected List<ServiceUUID> getAvailableOSDsForObject(long objectNo) {
-        assert (requiredObjects.contains(objectNo) || preferredObjects.contains(objectNo));
-
-        List<ServiceUUID> list = availableOSDsForObject.get(objectNo);
-        if (list == null) {
-            // add existing OSDs containing the object
-            list = xLoc.getOSDsForObject(objectNo, xLoc.getLocalReplica());
-
-            // remove all not complete replicas
-            Iterator<ServiceUUID> iterator = list.iterator();
-            while (iterator.hasNext()) {
-                ServiceUUID osd = iterator.next();
-                if (!xLoc.getReplica(osd).isComplete())
-                    iterator.remove();
-            }
-
-            availableOSDsForObject.put(objectNo, list);
-        }
-        return list;
+        ServiceUUID osd;
+//        if (timeForNewObjectSet) {
+            osd = randomOSDselection.selectNextOSD(availableOSDsForObject);
+//        } else {
+//            osd = objectSetOSDselection.selectNextOSD(availableOSDsForObject, objectsOnOSDs, objectNo);
+//        }
+        return osd;
     }
 }

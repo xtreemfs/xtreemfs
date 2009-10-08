@@ -61,12 +61,21 @@ public class ReplicationStage extends Stage {
     private OSDRequestDispatcher master;
 
     private ObjectDissemination disseminationLayer;
-
+    
     public ReplicationStage(OSDRequestDispatcher master) {
         super("OSD Replication Stage");
 
+        // FIXME: test stuff
+//        Monitoring.enable();
+
         this.master = master;
         this.disseminationLayer = new ObjectDissemination(master);
+    }
+
+    @Override
+    public void shutdown() {
+        disseminationLayer.shutdown();
+        super.shutdown();
     }
 
     /**
@@ -86,7 +95,7 @@ public class ReplicationStage extends Stage {
      * Checks the response from a requested replica.
      * Only for internal use. 
      * @param usedOSD
-     * @param objectList TODO
+     * @param objectList
      * @param error
      */
     public void internalObjectFetched(String fileId, long objectNo, ServiceUUID usedOSD, ObjectData data,
@@ -163,17 +172,21 @@ public class ReplicationStage extends Stage {
                 disseminationLayer.sendError(fileId, error);
         } else {
             // decode object list, if attached
-            if(objectList != null){
+            if (objectList != null) {
                 try {
-                    ObjectSet objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet().array());
-                    disseminationLayer.objectSetFetched(fileId, usedOSD, objectSet);
+                    ObjectSet objectSet = new ObjectSet(objectList.getStripeWidth(), objectList
+                            .getFirstObjectNo(), objectList.getSet().array());
+                    disseminationLayer.objectSetFetched(fileId, usedOSD, objectSet, objectList.getSet()
+                            .array().length);
                 } catch (IOException e) {
                     Logging.logError(Logging.LEVEL_ERROR, this, e);
                 } catch (ClassNotFoundException e) {
                     Logging.logError(Logging.LEVEL_ERROR, this, e);
+                } finally {
+                    BufferPool.free(objectList.getSet());
                 }
             }
-            
+
             if (data != null && data.getData().limit() != 0)
                 disseminationLayer.objectFetched(fileId, objectNo, usedOSD, data);
             else {

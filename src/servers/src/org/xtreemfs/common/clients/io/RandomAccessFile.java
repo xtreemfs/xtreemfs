@@ -56,10 +56,10 @@ import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.MRCInterface.setxattrResponse;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
-import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.client.MRCClient;
@@ -146,7 +146,10 @@ public class RandomAccessFile implements ObjectStore {
     private final UserCredentials       credentials;
     
     private ReplicaSelectionPolicy      replicaSelectionPolicy;
-    
+
+    /*
+     * monitoring stuff
+     */
     private AtomicLong                  monitoringReadDataSizeInLastXs;
     
     private Thread                      monitoringThread                            = null;
@@ -184,8 +187,6 @@ public class RandomAccessFile implements ObjectStore {
         // use the shared speedy to create an MRC and OSD client
         mrcClient = new MRCClient(rpcClient, mrcAddress);
         osdClient = new OSDClient(rpcClient);
-        // enable statistics
-        RPCNIOSocketClient.ENABLE_STATISTICS = true;
         
         this.credentials = credentials;
         
@@ -220,22 +221,29 @@ public class RandomAccessFile implements ObjectStore {
         monitoring = new NumberMonitoring();
         monitoringReadDataSizeInLastXs = new AtomicLong(0);
         if (Monitoring.isEnabled()) {
+            // enable statistics in client
+            RPCNIOSocketClient.ENABLE_STATISTICS = true;
+
             monitoringThread = new Thread(new Runnable() {
                 @Override
                 public void run() {
                     try {
                         while (true) {
+                            if (Thread.interrupted())
+                                break;
                             Thread.sleep(MONITORING_INTERVAL); // sleep
                             
                             long sizeInLastXs = monitoringReadDataSizeInLastXs.getAndSet(0);
-                            monitoring.put(MONITORING_KEY_THROUGHPUT_OF_LAST_X_SECONDS,
-                                (sizeInLastXs / 1024d) / (MONITORING_INTERVAL / 1000d));
+                            if (sizeInLastXs > 0) // log only interesting values
+                                monitoring.put(MONITORING_KEY_THROUGHPUT_OF_LAST_X_SECONDS,
+                                        (sizeInLastXs / 1024d) / (MONITORING_INTERVAL / 1000d));
                         }
                     } catch (InterruptedException e) {
                         // shutdown
                     }
                 }
             });
+            monitoringThread.setDaemon(true);
             monitoringThread.start();
         }
     }
@@ -317,7 +325,7 @@ public class RandomAccessFile implements ObjectStore {
             try {
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.tool, this,
-                        "%d:%s - read object from OSD %s", objectNo, fileId, osd);
+                        "%s:%d - read object from OSD %s", fileId, objectNo, osd);
                 
                 response = osdClient.read(osd.getAddress(), fileId, fileCredentials, objectNo, 0, offset,
                     length);
@@ -364,9 +372,10 @@ public class RandomAccessFile implements ObjectStore {
                 if (buffer != null)
                     BufferPool.free(buffer);
                 // all replicas had been tried or replication has been failed
-                if (!iterator.hasNext() || ((OSDException) ex).getError_code() == ErrorCodes.IO_ERROR) {
-                    throw new IOException("cannot read object", ex);
-                }
+                if (ex instanceof OSDException)
+                    if (iterator.hasNext() || ((OSDException) ex).getError_code() != ErrorCodes.IO_ERROR)
+                        continue;
+                throw new IOException("cannot read object", ex);
             } catch (ONCRPCException ex) {
                 if (buffer != null)
                     BufferPool.free(buffer);
@@ -625,9 +634,6 @@ public class RandomAccessFile implements ObjectStore {
                 // set filesize on mrc
                 forceFileSize(filesize);
                 
-                // TODO: maybe request all OSDs to inform them that the file is
-                // read-only now???
-                
                 forceFileCredentialsUpdate(translateMode("r"));
             } else {
                 if (fileCredentials.getXlocs().getReplicas().size() > 1)
@@ -823,7 +829,7 @@ public class RandomAccessFile implements ObjectStore {
     public long noOfObjects() throws Exception {
         // all replicas have the same striping policy (more precisely the same
         // stripesize) at the moment
-        return (length() / stripingPolicy.getStripeSizeForObject(0)) + 1;
+        return stripingPolicy.getObjectNoForOffset(length() - 1);
     }
     
     public String getFileId() {

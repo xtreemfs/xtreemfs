@@ -34,36 +34,36 @@ import org.xtreemfs.osd.replication.ObjectSet;
 
 /**
  * This class provides the basic functionality needed by the different transfer strategies. One
- * TransferStrategy manages a whole file (all objects of this file).
- * <br>warning: this class is NOT thread-safe
- * <br>09.09.2008
+ * TransferStrategy manages a whole file (all objects of this file). <br>
+ * warning: this class is NOT thread-safe <br>
+ * 09.09.2008
  */
 public abstract class TransferStrategy {
     /**
-     * Encapsulates the "returned"/chosen values.
-     * <br>12.02.2009
+     * Encapsulates the "returned"/chosen values. <br>
+     * 12.02.2009
      */
     public class NextRequest {
-        public ServiceUUID osd = null;
-        public long objectNo = -1;
+        public ServiceUUID osd             = null;
+        public long        objectNo        = -1;
         /**
          * if true, the OSD must return a list of all local available objects
          */
-        public boolean attachObjectSet = false;
-        
+        public boolean     attachObjectSet = false;
+
         boolean isAllSet() {
             return (osd != null) && (objectNo != -1);
         }
     }
-    
+
     public static class TransferStrategyException extends Exception {
         public enum ErrorCode {
-            NO_OSD_REACHABLE,
-            NO_OSD_FOUND,
-//            OBJECT_MUST_BE_HOLE            
+            NO_OSD_REACHABLE, NO_OSD_FOUND,
+            // OBJECT_MUST_BE_HOLE
         }
- 
+
         private final ErrorCode errorCode;
+
         /**
          * 
          */
@@ -71,39 +71,44 @@ public abstract class TransferStrategy {
             super(message);
             this.errorCode = errorCode;
         }
-        
+
         public ErrorCode getErrorCode() {
             return errorCode;
         }
     }
 
-    protected String fileID;
-    protected XLocations xLoc;
-
+    protected String                    fileID;
+    protected XLocations                xLoc;
     /**
      * contains the chosen values for the next replication request
      */
-    private NextRequest next;
+    private NextRequest                 next;
 
     /**
      * contains all not preferred objects which must be replicated (e.g. background-replication)
      */
-    protected ObjectSet requiredObjects;
+    protected ObjectSet                 requiredObjects;
 
     /**
      * contains all objects which must be replicated first (e.g. client-request)
      */
-    protected ObjectSet preferredObjects; // requested objects
+    protected ObjectSet                 preferredObjects; // requested objects
 
     /**
      * checks if the OSD is available (e.g. network interrupt)
      */
     protected final ServiceAvailability osdAvailability;
-    
+
+    public static class ObjectSetInfo {
+        public ObjectSet set                       = null;
+        public int       lastRequestSinceXrequests = 0;
+        public boolean   complete                  = false;
+    }
+
     /**
      * contains the collected object sets from other OSDs (if collected)
      */
-    protected Map<ServiceUUID, ObjectSet> objectsOnOSDs;
+    protected Map<ServiceUUID, ObjectSetInfo> objectsOnOSDs;
 
     /**
      * @param rqDetails
@@ -115,11 +120,11 @@ public abstract class TransferStrategy {
         // TODO use correct stripe width for less memory usage
         this.requiredObjects = new ObjectSet();
         this.preferredObjects = new ObjectSet();
-        this.objectsOnOSDs = new HashMap<ServiceUUID, ObjectSet>();
+        this.objectsOnOSDs = new HashMap<ServiceUUID, ObjectSetInfo>();
         this.osdAvailability = osdAvailability;
         this.next = null;
     }
-    
+
     public void updateXLoc(XLocations xLoc) {
         this.xLoc = xLoc;
     }
@@ -131,7 +136,7 @@ public abstract class TransferStrategy {
         this.next = null;
 
         if (this.getObjectsCount() > 0) {
-            assert (this.preferredObjects.size() > 0 || this.requiredObjects.size() > 0);
+            assert (!this.preferredObjects.isEmpty() || !this.requiredObjects.isEmpty());
 
             NextRequest next = selectNextHook();
             if (next != null && next.isAllSet())
@@ -141,13 +146,14 @@ public abstract class TransferStrategy {
 
     /**
      * Masquerades if an object could not be used at the moment as it is using another object
+     * 
      * @return
      * @throws TransferStrategyException
      */
-    protected abstract NextRequest selectNextHook() throws TransferStrategyException ;
+    protected abstract NextRequest selectNextHook() throws TransferStrategyException;
 
     /**
-     * 
+     * chooses the next OSD for the given object
      */
     public void selectNextOSD(long objectNo) throws TransferStrategyException {
         this.next = null;
@@ -156,12 +162,19 @@ public abstract class TransferStrategy {
             this.next = next;
     }
 
+    /**
+     * Masquerades if an OSD could not be used at the moment as it is using another OSD
+     * 
+     * @return
+     * @throws TransferStrategyException
+     */
     protected abstract NextRequest selectNextOSDHook(long objectNo) throws TransferStrategyException;
 
     /**
      * Returns the "result" from selectNext().
      * 
-     * @return null, if selectNext() has not been executed before (since getNext() was called last time) or no object to fetch exists
+     * @return null, if selectNext() has not been executed before (since getNext() was called last time) or no
+     *         object to fetch exists
      * @see java.util.ArrayList#add(java.lang.Object)
      */
     public NextRequest getNext() {
@@ -221,8 +234,17 @@ public abstract class TransferStrategy {
      * 
      * @return
      */
-    public int getObjectsCount() {
+    public long getObjectsCount() {
         return preferredObjects.size() + requiredObjects.size();
+    }
+
+    /**
+     * Returns if more objects will be replicated.
+     * 
+     * @return
+     */
+    public boolean isObjectListEmpty() {
+        return preferredObjects.isEmpty() && requiredObjects.isEmpty();
     }
 
     /**
@@ -232,6 +254,11 @@ public abstract class TransferStrategy {
      * @param osd
      */
     public void setOSDsObjectSet(ObjectSet set, ServiceUUID osd) {
-        objectsOnOSDs.put(osd, set);
+        ObjectSetInfo objectSetInfo = objectsOnOSDs.get(osd);
+        if (objectSetInfo == null) { // new
+            objectSetInfo = new ObjectSetInfo();
+            objectsOnOSDs.put(osd, objectSetInfo);
+        }
+        objectSetInfo.set = set;
     }
 }

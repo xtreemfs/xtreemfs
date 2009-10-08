@@ -38,6 +38,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.TimeSync;
+import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.HeartbeatThread.ServiceDataGenerator;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.checksums.ChecksumFactory;
@@ -87,6 +88,9 @@ import org.xtreemfs.osd.operations.InternalGetFileSizeOperation;
 import org.xtreemfs.osd.operations.InternalGetGmaxOperation;
 import org.xtreemfs.osd.operations.InternalTruncateOperation;
 import org.xtreemfs.osd.operations.LocalReadOperation;
+import org.xtreemfs.osd.operations.LockAcquireOperation;
+import org.xtreemfs.osd.operations.LockCheckOperation;
+import org.xtreemfs.osd.operations.LockReleaseOperation;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.operations.ReadOperation;
 import org.xtreemfs.osd.operations.ShutdownOperation;
@@ -108,10 +112,6 @@ import org.xtreemfs.osd.striping.UDPReceiverInterface;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.xtreemfs.common.VersionManagement;
-import org.xtreemfs.osd.operations.LockAcquireOperation;
-import org.xtreemfs.osd.operations.LockCheckOperation;
-import org.xtreemfs.osd.operations.LockReleaseOperation;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     UDPReceiverInterface {
@@ -123,23 +123,27 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final HeartbeatThread                     heartbeatThread;
     
     protected final OSDConfig                           config;
-    
+
     protected final DIRClient                           dirClient;
-    
+
     protected final MRCClient                           mrcClient;
-    
+
     protected final OSDClient                           osdClient;
-    
+
+    protected final OSDClient                           osdClientForReplication;
+
+    protected final RPCNIOSocketClient                  rpcClientForReplication;
+
     protected final RPCNIOSocketClient                  rpcClient;
-    
+
     protected final RPCNIOSocketServer                  rpcServer;
-    
+
     protected long                                      requestId;
-    
+
     protected String                                    authString;
-    
+
     protected final PreprocStage                        preprocStage;
-    
+
     protected final StorageStage                        stStage;
     
     protected final DeletionStage                       delStage;
@@ -227,7 +231,12 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         rpcClient = new RPCNIOSocketClient(clientSSLopts, 5000, 5 * 60 * 1000);
         rpcClient.setLifeCycleListener(this);
-        
+
+        // replication uses its own RPCClient with a much higher timeout
+        rpcClientForReplication = new RPCNIOSocketClient(clientSSLopts, 30000,
+                5 * 60 * 1000);
+        rpcClientForReplication.setLifeCycleListener(this);
+
         // initialize ServiceAvailability
         this.serviceAvailability = new ServiceAvailability();
         
@@ -260,7 +269,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         dirClient = new DIRClient(rpcClient, config.getDirectoryService());
         mrcClient = new MRCClient(rpcClient, null);
         osdClient = new OSDClient(rpcClient);
-        
+        osdClientForReplication = new OSDClient(rpcClientForReplication);
+
         TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew());
         UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
         UUIDResolver.addLocalMapping(config.getUUID(), config.getPort(),
@@ -369,6 +379,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             
             rpcServer.start();
             rpcClient.start();
+            rpcClientForReplication.start();
             
             rpcServer.waitForStartup();
             rpcClient.waitForStartup();
@@ -415,10 +426,11 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             
             rpcServer.shutdown();
             rpcClient.shutdown();
+            rpcClientForReplication.shutdown();
             
             rpcServer.waitForShutdown();
-            
             rpcClient.waitForShutdown();
+            rpcClientForReplication.waitForShutdown();
             
             serviceAvailability.shutdown();
             
@@ -459,6 +471,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             
             rpcServer.shutdown();
             rpcClient.shutdown();
+            rpcClientForReplication.shutdown();
             
             udpCom.shutdown();
             preprocStage.shutdown();
@@ -501,6 +514,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     public OSDClient getOSDClient() {
         return osdClient;
+    }
+    
+    public OSDClient getOSDClientForReplication() {
+        return osdClientForReplication;
     }
     
     public RPCNIOSocketClient getRPCClient() {

@@ -62,6 +62,7 @@ import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.osd.operations.EventWriteObject;
 import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.replication.transferStrategies.RandomStrategy;
+import org.xtreemfs.osd.replication.transferStrategies.RarestFirstStrategy;
 import org.xtreemfs.osd.replication.transferStrategies.SequentialPrefetchingStrategy;
 import org.xtreemfs.osd.replication.transferStrategies.SequentialStrategy;
 import org.xtreemfs.osd.replication.transferStrategies.TransferStrategy;
@@ -208,7 +209,7 @@ class ReplicatingFile {
                 } else {
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                                "%s:%d - OBJECT COULD NOT BE FETCHED FROM A FULL REPLICA; MUST BE A HOLE.", fileID, objectNo);
+                                "%s:%d - OBJECT COULD NOT BE FETCHED FROM A COMPLETE REPLICA; MUST BE A HOLE.", fileID, objectNo);
 
                     if (hasWaitingRequests())
                         sendResponses(null, ObjectStatus.PADDING_OBJECT);
@@ -304,7 +305,8 @@ class ReplicatingFile {
     /**
      * marks THIS replica as to be a full replica (enables background replication)
      */
-    private boolean                          isFullReplica;
+    // FIXME: private
+    public boolean                           isFullReplica;
 
     /**
      * manages the OSD availability
@@ -344,12 +346,22 @@ class ReplicatingFile {
         // create a new strategy
         if (ReplicationFlags.isRandomStrategy(xLoc.getLocalReplica().getTransferStrategyFlags()))
             strategy = new RandomStrategy(fileID, xLoc, osdAvailability);
+        // FIXME: test stuff
+//      strategy = new RandomStrategyWithoutObjectSets(fileID, xLoc, osdAvailability);
         else if (ReplicationFlags.isSequentialStrategy(xLoc.getLocalReplica().getTransferStrategyFlags()))
             strategy = new SequentialStrategy(fileID, xLoc, osdAvailability);
-        else if (ReplicationFlags.isSequentialPrefetchingStrategy(xLoc.getLocalReplica().getTransferStrategyFlags()))
-            strategy = new SequentialPrefetchingStrategy(fileID, xLoc, osdAvailability, lastObject);
+        else if (ReplicationFlags.isSequentialPrefetchingStrategy(xLoc.getLocalReplica()
+                .getTransferStrategyFlags()))
+            strategy = new SequentialPrefetchingStrategy(fileID, xLoc, osdAvailability);
+        else if (ReplicationFlags.isRarestFirstStrategy(xLoc.getLocalReplica().getTransferStrategyFlags()))
+            strategy = new RarestFirstStrategy(fileID, xLoc, osdAvailability);
         else
-            throw new IllegalArgumentException("Set Replication Strategy not known.");
+            throw new IllegalArgumentException("Set Replication Strategy not known ("
+                    + xLoc.getLocalReplica().getTransferStrategyFlags() + ").");
+        
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this, "%s - using strategy: %s",
+                    fileID, strategy.getClass().getName());
 
         // check if background replication is required
         isFullReplica = !xLoc.getLocalReplica().isPartialReplica();
@@ -362,10 +374,14 @@ class ReplicatingFile {
                 strategy.addObject(objectsIt.next(), false);
             }
         }
+
+//        monitoring = new NumberMonitoring();
+//        startMonitoringStuff();
     }
-    
+
     /**
      * updates the capability and XLocations-list, if they are newer
+     * 
      * @return true, if something has changed
      */
     public boolean update(Capability cap, XLocations xLoc, CowPolicy cow) {
@@ -398,7 +414,7 @@ class ReplicatingFile {
      * 
      * @see java.util.ArrayList#add(java.lang.Object)
      */
-    public boolean addObjectForReplicating(Long objectNo, StageRequest rq) {
+    public boolean addObjectForReplication(Long objectNo, StageRequest rq) {
         assert (rq != null);
 
         ReplicatingObject info = objectsInProgress.get(objectNo);
@@ -480,8 +496,13 @@ class ReplicatingFile {
                 processObject(next.objectNo);
 
                 if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                            "%s:%d - fetch object from OSD %s", fileID, next.objectNo, next.osd);
+                    if (next.attachObjectSet)
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                                "%s:%d - fetch object from OSD %s with object set", fileID, next.objectNo,
+                                next.osd);
+                    else
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                                "%s:%d - fetch object from OSD %s", fileID, next.objectNo, next.osd);
 
                 try {
                     sendFetchObjectRequest(next.objectNo, next.osd, next.attachObjectSet);
@@ -502,20 +523,20 @@ class ReplicatingFile {
      */
     public void objectFetched(long objectNo, final ServiceUUID usedOSD, ObjectData data) {
         ReplicatingObject object = objectsInProgress.get(objectNo);
-        assert (object != null);
+        assert (object != null) : objectNo + ", " + usedOSD.toString();
 
         try {
             boolean objectCompleted = object.objectFetched(data, usedOSD);
             if (objectCompleted) {
                 objectReplicationCompleted(objectNo);
 
-                if (strategy.getObjectsCount() > 0) { // there are still objects to fetch
+                if (!strategy.isObjectListEmpty()) { // there are still objects to fetch
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                                 "background replication: replicate next object for file %s", fileID);
                     replicate(); // background replication
                 }
-      }
+            }
         } catch (TransferStrategyException e) {
             // TODO: differ between ErrorCodes
             object.sendError(new OSDException(ErrorCodes.IO_ERROR, e.getMessage(), e.getStackTrace()
@@ -540,7 +561,7 @@ class ReplicatingFile {
             if (objectCompleted) {
                 objectReplicationCompleted(objectNo);
 
-                if (strategy.getObjectsCount() > 0) { // there are still objects to fetch
+                if (!strategy.isObjectListEmpty()) { // there are still objects to fetch
                     if (Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
                                 "background replication: replicate next object for file %s", fileID);
@@ -585,8 +606,6 @@ class ReplicatingFile {
      * Sends a RPC for reading the object on another OSD.
      * 
      * @param attachObjectSet
-     *            TODO
-     * 
      * @throws UnknownUUIDException
      */
     private void sendFetchObjectRequest(final long objectNo, final ServiceUUID osd, boolean attachObjectSet)
@@ -604,7 +623,7 @@ class ReplicatingFile {
                     fileID);
         }
 
-        OSDClient client = master.getOSDClient();
+        OSDClient client = master.getOSDClientForReplication();
         // IMPORTANT: stripe size must be the same in all striping policies
         RPCResponse<InternalReadLocalResponse> response = client.internal_read_local(osd.getAddress(),
                 fileID, new FileCredentials(xLoc.getXLocSet(), cap.getXCap()), objectNo, 0, 0, xLoc
@@ -618,16 +637,19 @@ class ReplicatingFile {
                     InternalReadLocalResponse internalReadLocalResponse = r.get();
                     ObjectData data = internalReadLocalResponse.getData();
                     ObjectList objectList = null;
-                    if(internalReadLocalResponse.getObject_set().size() == 1)
+                    if (internalReadLocalResponse.getObject_set().size() == 1)
                         objectList = internalReadLocalResponse.getObject_set().get(0);
-                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, data, objectList, null);
+                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, data,
+                            objectList, null);
                 } catch (ONCRPCException e) {
-//                    osdAvailability.setServiceWasNotAvailable(osd);
-                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null, (OSDException) e);
+                    // osdAvailability.setServiceWasNotAvailable(osd);
+                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null,
+                            (OSDException) e);
                     e.printStackTrace();
                 } catch (IOException e) {
                     osdAvailability.setServiceWasNotAvailable(osd);
-                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null, null);
+                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null,
+                            null);
                     e.printStackTrace();
                 } catch (InterruptedException e) {
                     // ignore
@@ -713,7 +735,7 @@ class ReplicatingFile {
         else
             ReplicatingFile.maxObjectsInProgress = 1;
     }
-
+    
     /*
      * additional test if asserts are enabled
      */
@@ -725,4 +747,53 @@ class ReplicatingFile {
                 allEqual = false;
         return allEqual;
     }
+
+    /*
+     * monitoring for HighestThroughputOSDSelection
+     */
+//    ConcurrentHashMap<ServiceUUID, Integer> requestsSentToOSDs        = new ConcurrentHashMap<ServiceUUID, Integer>();
+//    ConcurrentHashMap<ServiceUUID, Integer> requestsReceivedFromOSDs  = new ConcurrentHashMap<ServiceUUID, Integer>();
+//
+//    private Thread                          monitoringThread          = null;
+//    private NumberMonitoring                monitoring;
+//    public static final String              MONITORING_KEY_THROUGHPUT = "requests (sent/received) for OSD ";
+//
+//    public void startMonitoringStuff() {
+//        if (Monitoring.isEnabled()) {
+//            monitoringThread = new Thread(new Runnable() {
+//                public static final int MONITORING_INTERVAL = 10000; // 10s
+//
+//                @Override
+//                public void run() {
+//                    try {
+//                        while (true) {
+//                            if (Thread.interrupted())
+//                                break;
+//                            Thread.sleep(MONITORING_INTERVAL); // sleep
+//
+//                            for (Entry<ServiceUUID, Integer> e : requestsSentToOSDs.entrySet()) {
+//                                Integer requestsReceived = requestsReceivedFromOSDs.remove(e.getKey());
+//                                Integer requestsSent = e.getValue();
+//                                monitoring.put(MONITORING_KEY_THROUGHPUT + e.getKey(),
+//                                        (requestsSent / requestsReceived) / (MONITORING_INTERVAL / 1000d));
+//                            }
+//                            for (Entry<ServiceUUID, Integer> e : requestsReceivedFromOSDs.entrySet()) {
+//                                Integer requestsSent = requestsSentToOSDs.remove(e.getKey());
+//                                Integer requestsReceived = e.getValue();
+//                                monitoring.put(MONITORING_KEY_THROUGHPUT + e.getKey(),
+//                                        (requestsSent / requestsReceived) / (MONITORING_INTERVAL / 1000d));
+//                            }
+//                            // remove all
+//                            requestsReceivedFromOSDs.clear();
+//                            requestsSentToOSDs.clear();
+//                        }
+//                    } catch (InterruptedException e) {
+//                        // shutdown
+//                    }
+//                }
+//            });
+//            monitoringThread.setDaemon(true);
+//            monitoringThread.start();
+//        }
+//    }
 }

@@ -23,14 +23,20 @@
  */
 package org.xtreemfs.osd.replication;
 
-import java.util.HashMap;
+import java.io.IOException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.LRUCache;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.common.monitoring.Monitoring;
+import org.xtreemfs.common.monitoring.MonitoringLog;
+import org.xtreemfs.common.monitoring.NumberMonitoring;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
+import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.osd.ErrorCodes;
@@ -44,31 +50,98 @@ import org.xtreemfs.osd.storage.CowPolicy;
  * 15.09.2008
  */
 public class ObjectDissemination {
-    private OSDRequestDispatcher             master;
+    private OSDRequestDispatcher                       master;
 
     /**
      * controls how many fetch-object-requests will be allowed to sent overall by all files (used for
      * load-balancing)
      */
-    private static final int                 MAX_OBJECTS_IN_PROGRESS_OVERALL = 20;
+    private static final int                           MAX_OBJECTS_IN_PROGRESS_OVERALL                          = 20;
 
     /**
      * objects of these files are downloading currently or in future <br>
      * key: fileID
      */
-    private HashMap<String, ReplicatingFile> filesInProgress;
+    private ConcurrentHashMap<String, ReplicatingFile> filesInProgress;
 
     /**
      * Simple LRU-cache for last completed files.<br>
      * NOTE: contains only NOT canceled files
      */
-    LRUCache<String, ReplicatingFile>        lastCompletedFilesCache;
+    LRUCache<String, ReplicatingFile>                  lastCompletedFilesCache;
+
+    /*
+     * monitoring stuff
+     */
+    private Thread                                     monitoringThread                                         = null;
+
+    private NumberMonitoring                           monitoring;
+
+    private AtomicLong                                 monitoringReadDataSizeInLastXs;
+
+    /**
+     * Measures the throughput of the last 1 second.
+     */
+    public static final String                         MONITORING_KEY_THROUGHPUT_OF_LAST_X_SECONDS              = "REPLICATION: average throughput over all files of last X seconds (KB/s)";
+
+    public static final String                         MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA      = "REPLICATION: time (ms) required for completing file ";
+
+    /*
+     * if the data contains holes this metric will be falsified
+     */
+    public static final String                         MONITORING_KEY_UNNECESSARY_REQUESTS                 = "REPLICATION: number of unnecessary requests";
+
+    public static final String                         MONITORING_KEY_OBJECT_LIST_OVERHEAD                 = "REPLICATION: overhead of object lists transfer (bytes)";
+
+    public static final int                            MONITORING_THROUGHPUT_INTERVAL                      = 1000;                                                                     // 10s
+
+    // FIXME: change output file
+    public static final String                         MONITORING_OUTPUT_FILE                              = "/tmp/monitoringLog.txt";
 
     public ObjectDissemination(OSDRequestDispatcher master) {
         this.master = master;
 
-        this.filesInProgress = new HashMap<String, ReplicatingFile>();
+        this.filesInProgress = new ConcurrentHashMap<String, ReplicatingFile>();
         this.lastCompletedFilesCache = new LRUCache<String, ReplicatingFile>(20);
+        
+        // monitoring
+        this.monitoring = new NumberMonitoring();
+        this.monitoringReadDataSizeInLastXs = new AtomicLong(0);
+        if (Monitoring.isEnabled()) {
+            // enable stats on client (maybe stats is already enabled)
+            RPCNIOSocketClient.ENABLE_STATISTICS = true;
+            
+            try {
+                MonitoringLog.initialize(MONITORING_OUTPUT_FILE);
+            } catch (IOException e1) {
+                // Auto-generated catch block
+                e1.printStackTrace();
+            }
+            MonitoringLog.registerFor(monitoring, MONITORING_KEY_THROUGHPUT_OF_LAST_X_SECONDS);
+
+            // create new thread which monitors the average throughput of all active files in a given interval
+            monitoringThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        while (true) {
+                            if (Thread.interrupted())
+                                break;
+                            Thread.sleep(MONITORING_THROUGHPUT_INTERVAL); // sleep
+
+                            long sizeInLastXs = monitoringReadDataSizeInLastXs.getAndSet(0);
+                            if (sizeInLastXs > 0) // log only interesting values
+                                monitoring.put(MONITORING_KEY_THROUGHPUT_OF_LAST_X_SECONDS,
+                                        (sizeInLastXs / 1024d) / (MONITORING_THROUGHPUT_INTERVAL / 1000d));
+                        }
+                    } catch (InterruptedException e) {
+                        // shutdown
+                    }
+                }
+            });
+            monitoringThread.setDaemon(true);
+            monitoringThread.start();
+        }
     }
 
     /**
@@ -84,8 +157,13 @@ public class ObjectDissemination {
              * guaranteed, that the informations in the ReplicatingFile instance are correct (up-to-date).
              */
             file = this.lastCompletedFilesCache.get(fileID);
-            if (file == null || (file != null && file.hasXLocChanged(xLoc))) // create new one
+            if (file == null || (file != null && file.hasXLocChanged(xLoc))) { // create new one
                 file = new ReplicatingFile(fileID, xLoc, capability, cow, master);
+            }
+            // FIXME: test stuff
+            if (Monitoring.isEnabled() && file.isFullReplica)
+                monitoring.putLong(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID, System
+                        .currentTimeMillis());
 
             // add file to filesInProgress
             this.filesInProgress.put(fileID, file);
@@ -104,9 +182,9 @@ public class ObjectDissemination {
         // keep in mind current request
         if (file.isObjectInProgress(objectNo)) {
             // propably another request is already fetching this object
-            file.addObjectForReplicating(objectNo, rq);
+            file.addObjectForReplication(objectNo, rq);
         } else {
-            file.addObjectForReplicating(objectNo, rq);
+            file.addObjectForReplication(objectNo, rq);
 
             // start replication
             try {
@@ -133,6 +211,9 @@ public class ObjectDissemination {
     public void objectFetched(String fileID, long objectNo, final ServiceUUID usedOSD, ObjectData data) {
         ReplicatingFile file = filesInProgress.get(fileID);
         assert (file != null);
+        
+        // monitoring
+        monitoringReadDataSizeInLastXs.addAndGet(data.getData().limit());
 
         file.objectFetched(objectNo, usedOSD, data);
 
@@ -148,6 +229,10 @@ public class ObjectDissemination {
     public void objectNotFetched(String fileID, final ServiceUUID usedOSD, long objectNo) {
         ReplicatingFile file = filesInProgress.get(fileID);
         assert (file != null);
+        
+        // monitoring
+        if (Monitoring.isEnabled())
+            monitoring.putIncreaseForLong(MONITORING_KEY_UNNECESSARY_REQUESTS, 1l);
 
         file.objectNotFetched(objectNo, usedOSD);
 
@@ -164,6 +249,27 @@ public class ObjectDissemination {
         // if the last requested object was fetched for this file => remove from map
         ReplicatingFile completedFile = filesInProgress.remove(fileID);
         assert (completedFile != null);
+
+        // monitoring
+        if (Monitoring.isEnabled() && completedFile.isFullReplica) {
+            long requiredTime = System.currentTimeMillis()
+                    - monitoring.getLong(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID);
+            monitoring.putLong(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID,
+                    requiredTime);
+            // FIXME: test stuff
+            MonitoringLog.monitor(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID, Long
+                    .toString(requiredTime));
+            // all monitoring keys who are not overwritten (+fileID) must be removed from map, otherwise it
+            // will overflow
+            monitoring.remove(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID);
+        }
+        // FIXME: test stuff
+        Long overhead = monitoring.getLong(MONITORING_KEY_OBJECT_LIST_OVERHEAD);
+        if (overhead != null)
+            MonitoringLog.monitor(MONITORING_KEY_OBJECT_LIST_OVERHEAD, overhead.toString());
+        Long unnecessaryRequests = monitoring.getLong(MONITORING_KEY_UNNECESSARY_REQUESTS);
+        if (unnecessaryRequests != null)
+            MonitoringLog.monitor(MONITORING_KEY_UNNECESSARY_REQUESTS, unnecessaryRequests.toString());
 
         /*
          * Optimization: Canceled files will be never reused. Because in most cases they are canceled due to
@@ -206,12 +312,19 @@ public class ObjectDissemination {
     }
 
     /**
+     * @param objectSetBytes
      * 
      */
-    public void objectSetFetched(String fileID, ServiceUUID osd, ObjectSet objectSet) {
+    public void objectSetFetched(String fileID, ServiceUUID osd, ObjectSet objectSet, long objectSetBytes) {
+        // TODO: find more handsome way for notifying about list-size
         ReplicatingFile file = filesInProgress.get(fileID);
-        if (file != null)
+        if (file != null) {
             file.objectSetFetched(osd, objectSet);
+            
+            // monitoring
+            if(Monitoring.isEnabled())
+                monitoring.putIncreaseForLong(MONITORING_KEY_OBJECT_LIST_OVERHEAD, objectSetBytes);
+        }
     }
 
     /**
@@ -222,5 +335,12 @@ public class ObjectDissemination {
         assert (file != null);
 
         file.reportError(e);
+    }
+
+    public void shutdown() {
+        if (Monitoring.isEnabled()) {
+            if (monitoringThread != null)
+                monitoringThread.interrupt();
+        }
     }
 }

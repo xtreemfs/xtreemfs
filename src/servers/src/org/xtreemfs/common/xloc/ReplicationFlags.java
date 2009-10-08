@@ -26,6 +26,7 @@ package org.xtreemfs.common.xloc;
 
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.osd.replication.transferStrategies.RandomStrategy;
+import org.xtreemfs.osd.replication.transferStrategies.RarestFirstStrategy;
 import org.xtreemfs.osd.replication.transferStrategies.SequentialPrefetchingStrategy;
 import org.xtreemfs.osd.replication.transferStrategies.SequentialStrategy;
 
@@ -35,6 +36,14 @@ import org.xtreemfs.osd.replication.transferStrategies.SequentialStrategy;
  * 14.07.2009
  */
 public class ReplicationFlags {
+    private static final int STRATEGY_BITS = SequentialStrategy.REPLICATION_FLAG
+                                                   | RandomStrategy.REPLICATION_FLAG
+                                                   | SequentialPrefetchingStrategy.REPLICATION_FLAG
+                                                   | RarestFirstStrategy.REPLICATION_FLAG;
+
+    private static final int OTHER_BITS    = Constants.REPL_FLAG_IS_COMPLETE
+                                                   | Constants.REPL_FLAG_FULL_REPLICA;
+
     public static int setReplicaIsComplete(int flags) {
         return flags | Constants.REPL_FLAG_IS_COMPLETE;
     }
@@ -64,18 +73,7 @@ public class ReplicationFlags {
     }
 
     public static int setRarestFirstStrategy(int flags) {
-        // TODO: when strategy is implemented: use correct flag
-        return resetStrategy(flags) | RandomStrategy.REPLICATION_FLAG;
-    }
-
-    /**
-     * resets the bits used for strategies to zero
-     */
-    private static int resetStrategy(int flags) {
-        // TODO: when rarest first strategy is implemented: use correct flag
-        int strategyBits = SequentialStrategy.REPLICATION_FLAG | RandomStrategy.REPLICATION_FLAG
-                | SequentialPrefetchingStrategy.REPLICATION_FLAG;
-        return (flags | strategyBits) ^ strategyBits;
+        return resetStrategy(flags) | RarestFirstStrategy.REPLICATION_FLAG;
     }
 
     public static boolean isReplicaComplete(int flags) {
@@ -91,19 +89,32 @@ public class ReplicationFlags {
     }
 
     public static boolean isRandomStrategy(int flags) {
-        return (flags & RandomStrategy.REPLICATION_FLAG) == RandomStrategy.REPLICATION_FLAG;
+        return resetOther(flags) == RandomStrategy.REPLICATION_FLAG;
     }
 
     public static boolean isSequentialStrategy(int flags) {
-        return (flags & SequentialStrategy.REPLICATION_FLAG) == SequentialStrategy.REPLICATION_FLAG;
+        return resetOther(flags) == SequentialStrategy.REPLICATION_FLAG;
     }
 
     public static boolean isSequentialPrefetchingStrategy(int flags) {
-        return (flags & SequentialPrefetchingStrategy.REPLICATION_FLAG) == SequentialPrefetchingStrategy.REPLICATION_FLAG;
+        return resetOther(flags) == SequentialPrefetchingStrategy.REPLICATION_FLAG;
     }
 
     public static boolean isRarestFirstStrategy(int flags) {
-        // TODO: when strategy is implemented: use correct flag
-        return (flags & Constants.REPL_FLAG_STRATEGY_RANDOM) == Constants.REPL_FLAG_STRATEGY_RANDOM;
+        return resetOther(flags) == RarestFirstStrategy.REPLICATION_FLAG;
+    }
+
+    /**
+     * resets the bits used for strategies to zero
+     */
+    private static int resetStrategy(int flags) {
+        return (flags | STRATEGY_BITS) ^ STRATEGY_BITS;
+    }
+
+    /**
+     * resets the bits NOT used for strategies to zero
+     */
+    private static int resetOther(int flags) {
+        return (flags | OTHER_BITS) ^ OTHER_BITS;
     }
 }

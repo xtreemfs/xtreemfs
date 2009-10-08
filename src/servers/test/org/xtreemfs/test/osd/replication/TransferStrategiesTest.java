@@ -25,7 +25,6 @@
 package org.xtreemfs.test.osd.replication;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -37,6 +36,7 @@ import org.xtreemfs.common.ServiceAvailability;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.InvalidXLocationsException;
+import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
@@ -44,6 +44,7 @@ import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
+import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.osd.replication.transferStrategies.RandomStrategy;
 import org.xtreemfs.osd.replication.transferStrategies.SequentialPrefetchingStrategy;
 import org.xtreemfs.osd.replication.transferStrategies.SequentialStrategy;
@@ -77,7 +78,6 @@ public class TransferStrategiesTest extends TestCase {
      * 
      */
     public TransferStrategiesTest() throws InvalidXLocationsException {
-        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         String file = "1:1";
@@ -107,21 +107,29 @@ public class TransferStrategiesTest extends TestCase {
                 // add available osds
                 osdset.add(new ServiceUUID("UUID:localhost:" + (port++)).toString());
             }
+            int flags;
+            if (replica == 1)
+                flags = ReplicationFlags.setReplicaIsComplete(0);
+            else
+                flags = ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0));
+
             Replica r = new Replica(new org.xtreemfs.interfaces.StripingPolicy(
-                    StripingPolicyType.STRIPING_POLICY_RAID0, stripeSize / 1024, osdset.size()), 0, osdset);
+                    StripingPolicyType.STRIPING_POLICY_RAID0, stripeSize / 1024, osdset.size()), flags,
+                    osdset);
             replicas.add(r);
         }
-        XLocSet locSet = new XLocSet(replicas, 1, Constants.REPL_UPDATE_PC_NONE, 0);
+        XLocSet locSet = new XLocSet(replicas, 1, Constants.REPL_UPDATE_PC_NONE, 1024 * 1024 * 100);
         // set the first replica as current replica
-        XLocations locations = new XLocations(new XLocSet(replicas, 1, Constants.REPL_UPDATE_PC_NONE, 0),
-                new ServiceUUID(locSet.getReplicas().get(0).getOsd_uuids().get(0)));
+        XLocations locations = new XLocations(locSet, new ServiceUUID(locSet.getReplicas().get(0)
+                .getOsd_uuids().get(0)));
         localReplica = locations.getLocalReplica();
         return locations;
     }
 
     @Before
     public void setUp() throws Exception {
-        this.strategy = new SequentialStrategy(fileID, xLoc, new ServiceAvailability());
+        System.out.println("TEST: " + getClass().getSimpleName() + "." + getName());
+        this.strategy = new RandomStrategy(fileID, xLoc, new ServiceAvailability());
     }
 
     @After
@@ -166,6 +174,53 @@ public class TransferStrategiesTest extends TestCase {
     }
 
     /**
+     * No assert in this test possible due to information hiding. Check debug output for correctness. Test
+     * method for
+     * {@link org.xtreemfs.osd.replication.transferStrategies.TransferStrategy#setOSDsObjectSet(set, osd)} .
+     */
+    @Test
+    public void testSetOSDsObjectSet() {
+        this.strategy.addObject(0, false);
+        this.strategy.addObject(1, true);
+        this.strategy.addObject(2, false);
+        this.strategy.addObject(3, false);
+        this.strategy.addObject(4, false);
+        this.strategy.addObject(2, true);
+
+        // replica 1
+        ObjectSet set = fillObjectSet(0);
+        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(0).getOSDs().get(0));
+        set = fillObjectSet(1);
+        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(0).getOSDs().get(1));
+        set = fillObjectSet(2);
+        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(0).getOSDs().get(2));
+        // replica 2 (complete replica)
+        set = fillObjectSet(0, 3, 6, 9);
+        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(1).getOSDs().get(0));
+        set = fillObjectSet(1, 4, 7, 10);
+        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(1).getOSDs().get(1));
+        set = fillObjectSet(2, 5, 8, 11);
+        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(1).getOSDs().get(2));
+        // replica 3
+        set = fillObjectSet(9);
+        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(2).getOSDs().get(0));
+        set = fillObjectSet(10);
+        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(2).getOSDs().get(1));
+        set = fillObjectSet(11);
+        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(2).getOSDs().get(2));
+
+        try {
+            while (strategy.getObjectsCount() > 0) {
+                this.strategy.selectNext();
+                NextRequest next = this.strategy.getNext();
+                assert (next != null);
+            }
+        } catch (TransferStrategyException e) {
+            fail();
+        }
+    }
+
+    /**
      * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.SequentialStrategy#selectNext()}.
      */
     @Test
@@ -178,49 +233,40 @@ public class TransferStrategiesTest extends TestCase {
         this.strategy.addObject(4, false);
         this.strategy.addObject(2, true);
 
-        int replicaForStripe1 = 0;
-        int replicaForStripe2 = 0;
-        int replicaForStripe3 = 0;
-
         try {
             // stripe 2 (preferred)
             this.strategy.selectNext();
             NextRequest next = this.strategy.getNext();
             assertEquals(1, next.objectNo);
-            List<ServiceUUID> osds = xLoc.getOSDsForObject(next.objectNo, localReplica);
-            assertEquals(osds.get(replicaForStripe2++ % osds.size()), next.osd);
+            assertEquals(xLoc.getReplica(1).getOSDForObject(next.objectNo), next.osd);
             assertFalse(next.attachObjectSet);
 
             // stripe 3 (preferred)
             this.strategy.selectNext();
             next = this.strategy.getNext();
             assertEquals(2, next.objectNo);
-            osds = xLoc.getOSDsForObject(next.objectNo, localReplica);
-            assertEquals(osds.get(replicaForStripe3++ % osds.size()), next.osd);
+            assertEquals(xLoc.getReplica(1).getOSDForObject(next.objectNo), next.osd);
             assertFalse(next.attachObjectSet);
 
             // stripe 1
             this.strategy.selectNext();
             next = this.strategy.getNext();
             assertEquals(0, next.objectNo);
-            osds = xLoc.getOSDsForObject(next.objectNo, localReplica);
-            assertEquals(osds.get(replicaForStripe1++ % osds.size()), next.osd);
+            assertEquals(xLoc.getReplica(1).getOSDForObject(next.objectNo), next.osd);
             assertFalse(next.attachObjectSet);
 
             // stripe 1
             this.strategy.selectNext();
             next = this.strategy.getNext();
             assertEquals(3, next.objectNo);
-            osds = xLoc.getOSDsForObject(next.objectNo, localReplica);
-            assertEquals(osds.get(replicaForStripe1++ % osds.size()), next.osd);
+            assertEquals(xLoc.getReplica(1).getOSDForObject(next.objectNo), next.osd);
             assertFalse(next.attachObjectSet);
 
             // stripe 2
             this.strategy.selectNext();
             next = this.strategy.getNext();
             assertEquals(4, next.objectNo);
-            osds = xLoc.getOSDsForObject(next.objectNo, localReplica);
-            assertEquals(osds.get(replicaForStripe2++ % osds.size()), next.osd);
+            assertEquals(xLoc.getReplica(1).getOSDForObject(next.objectNo), next.osd);
             assertFalse(next.attachObjectSet);
 
             // no more requests possible
@@ -264,7 +310,6 @@ public class TransferStrategiesTest extends TestCase {
                         contained = true;
                 }
                 assertTrue(contained);
-                assertFalse(next.attachObjectSet);
             }
 
             for (int i = 0; i < objectsToRequest.size(); i++)
@@ -284,7 +329,7 @@ public class TransferStrategiesTest extends TestCase {
      */
     @Test
     public void testSelectNextForSequentialPrefetchingTransfer() {
-        this.strategy = new SequentialPrefetchingStrategy(fileID, xLoc, new ServiceAvailability(), Long.MAX_VALUE);
+        this.strategy = new SequentialPrefetchingStrategy(fileID, xLoc, new ServiceAvailability());
         this.strategy.addObject(0, true);
         this.strategy.addObject(60, true);
         this.strategy.addObject(72, true);
@@ -305,6 +350,7 @@ public class TransferStrategiesTest extends TestCase {
             next = this.strategy.getNext();
             assertEquals(60, next.objectNo);
             // check, if objects are added by prefetching
+            // default + preferred objects - number 72 is preferred, so don't prefetch
             objectsToPrefetch += SequentialPrefetchingStrategy.DEFAULT_PREFETCHING_COUNT + 2 - 1;
             assertEquals(1 + objectsToPrefetch, strategy.getObjectsCount());
 
@@ -312,7 +358,7 @@ public class TransferStrategiesTest extends TestCase {
             next = this.strategy.getNext();
             assertEquals(72, next.objectNo);
             // check, if objects are added by prefetching
-            objectsToPrefetch += SequentialPrefetchingStrategy.DEFAULT_PREFETCHING_COUNT + 1 - 3;
+            objectsToPrefetch += SequentialPrefetchingStrategy.DEFAULT_PREFETCHING_COUNT + 1 - 8;
             assertEquals(0 + objectsToPrefetch, strategy.getObjectsCount());
 
             // prefetched objects
@@ -324,5 +370,75 @@ public class TransferStrategiesTest extends TestCase {
         } catch (TransferStrategyException e) {
             fail(e.getLocalizedMessage());
         }
+    }
+    
+//    /**
+//     * Test method for {@link org.xtreemfs.osd.replication.transferStrategies.RarestFirstStrategy#selectNext()}.
+//     */
+//    @Test
+//    public void testSelectNextForRarestFirstTransfer() {
+//        this.strategy = new RarestFirstStrategy(fileID, xLoc, new ServiceAvailability());
+//
+//        // prepare objects to fetch
+//        long[] objectsToRequest = { 0, 1, 2, 3, 4, 5, 6, 7, 8,9,10,11,12,13 };
+//        this.strategy.addObject(0, false);
+//        this.strategy.addObject(1, true);
+//        this.strategy.addObject(2, true);
+//        for(int i=3; i< objectsToRequest.length-1; i++)
+//            this.strategy.addObject(i, false);
+//
+//        // prepare object sets of OSDs
+//        ObjectSet set = fillObjectSet(0, 2, 4);
+//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(0).getOSDs().get(0));
+//        set = fillObjectSet(1, 3);
+//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(0).getOSDs().get(1));
+//        set = fillObjectSet(0, 2, 10);
+//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(2).getOSDs().get(0));
+//        set = fillObjectSet(1, 7, 9);
+//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(2).getOSDs().get(1));
+//        set = fillObjectSet(0, 4, 6, 10, 12);
+//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(3).getOSDs().get(0));
+//        set = fillObjectSet(1, 7, 9, 11);
+//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(3).getOSDs().get(1));
+//
+//        // set complete replica set later
+//        set = fillObjectSet(0, 2, 4, 6, 8, 10, 12);
+//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(1).getOSDs().get(0)); // complete replica
+//        set = fillObjectSet(1, 3, 5, 7, 9, 11, 13);
+//        this.strategy.setOSDsObjectSet(set, xLoc.getReplica(1).getOSDs().get(1)); // complete replica
+//
+//        ArrayList<Long> requestedObjects = new ArrayList<Long>();
+//
+//        try {
+//            NextRequest next;
+//            for (int i = 0; i < objectsToRequest.length; i++) {
+//                this.strategy.selectNext();
+//                next = this.strategy.getNext();
+//                requestedObjects.add(Long.valueOf(next.objectNo));
+//                boolean contained = false;
+//                for (org.xtreemfs.common.xloc.Replica r : xLoc.getReplicas()) {
+//                    if (r.getOSDs().contains(next.osd))
+//                        contained = true;
+//                }
+//                assertTrue(contained);
+//            }
+//
+////            for (int i = 0; i < objectsToRequest.length; i++)
+////                assertTrue(requestedObjects.contains(objectsToRequest.get(i)));
+//
+//            // no more requests possible
+//            this.strategy.selectNext();
+//            next = this.strategy.getNext();
+//            assertNull(next);
+//        } catch (TransferStrategyException e) {
+//            fail(e.getLocalizedMessage());
+//        }
+//    }
+
+    private ObjectSet fillObjectSet(long...objects) {
+        ObjectSet set = new ObjectSet(objects.length);
+        for (long object : objects)
+            set.add(object);
+        return set;
     }
 }

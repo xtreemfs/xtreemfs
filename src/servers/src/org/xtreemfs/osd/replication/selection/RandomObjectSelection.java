@@ -37,6 +37,9 @@ public class RandomObjectSelection {
     private Random random = new Random();
 
     public long selectNextObject(ObjectSet objects) throws TransferStrategyException {
+        // at least one object must be wanted
+        assert (!objects.isEmpty());
+
         return objects.getRandom();
     }
 }
