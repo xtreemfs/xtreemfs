@@ -106,7 +106,7 @@ public class BabuDBVolumeManager implements VolumeManager {
             
             // try to create a new database
             database = BabuDBFactory.createBabuDB(new BabuDBConfig(dbDir, dbLogDir, 2, 1024 * 1024 * 16,
-                5 * 60, SyncMode.ASYNC, 0, 1000));
+                5 * 60, SyncMode.ASYNC, 0, 1000, false));
             
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
