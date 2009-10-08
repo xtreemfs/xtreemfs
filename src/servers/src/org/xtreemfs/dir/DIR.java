@@ -72,7 +72,7 @@ public class DIR {
         BabuDBConfig dbsConfig = null;
         try {
             dbsConfig = new ReplicationConfig(dbsConfigFileName);
-        } catch (IOException e) {
+        } catch (Throwable e) {
             try {
                 dbsConfig = new BabuDBConfig(dbsConfigFileName);
             } catch (IOException ex) {
