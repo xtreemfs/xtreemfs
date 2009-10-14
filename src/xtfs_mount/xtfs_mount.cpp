@@ -235,6 +235,14 @@ namespace xtfs_mount
 
       throw YIELD::platform::Exception( "must specify dir_host/volume name and mount point" );
     }
+
+    // xtreemfs::Main
+    virtual YIELD::platform::auto_Log get_log()
+    {
+      if ( log == NULL && !foreground && log_file_path.empty() )
+        log_file_path = "xtfs_mount.log";
+      return xtreemfs::Main::get_log();        
+    }
   };
 };
 

@@ -35,7 +35,13 @@ auto_Volume Volume::create( const YIELD::ipc::URI& dir_uri, const std::string& n
   auto_DIRProxy dir_proxy = DIRProxy::create( dir_uri, proxy_flags, log, proxy_operation_timeout, proxy_ssl_context );
   if ( dir_proxy != NULL )
   {
-    YIELD::ipc::auto_URI mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
+    YIELD::ipc::auto_URI mrc_uri; 
+    std::string::size_type at_pos = name.find( '@' );
+    if ( at_pos != std::string::npos )
+      mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name.substr( 0, at_pos ) );
+    else
+      mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
+
     if ( mrc_uri != NULL )
     {
       auto_MRCProxy mrc_proxy = MRCProxy::create( *mrc_uri, proxy_flags, log, proxy_operation_timeout, "", proxy_ssl_context );
@@ -342,20 +348,32 @@ bool Volume::setattr( const YIELD::platform::Path& path, uint32_t file_attribute
 
 void Volume::set_errno( const char* operation_name, ProxyExceptionResponse& proxy_exception_response )
 {
-#ifdef _DEBUG
   if ( log != NULL )
-    log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::Volume: caught exception on " << operation_name << ": " << proxy_exception_response.what();
+  {
+    switch ( proxy_exception_response.get_platform_error_code() )
+    {
+#ifdef _WIN32
+      case ERROR_FILE_NOT_FOUND:
+      case ERROR_FILE_EXISTS: break;
+#else
+      case ENOENT:
+      case EEXISTS: break;
 #endif
-
+      default:
+      {
+        log->getStream( YIELD::platform::Log::LOG_ERR ) << "xtreemfs::Volume: caught exception on " << operation_name << ": " << proxy_exception_response.what();
+      }
+      break;
+    }
+  }
+    
   YIELD::platform::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
 }
 
 void Volume::set_errno( const char* operation_name, std::exception& exc )
 {
-#ifdef _DEBUG
   if ( log != NULL )
-    log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::Volume: caught exception on " << operation_name << ": " << exc.what();
-#endif
+    log->getStream( YIELD::platform::Log::LOG_ERR ) << "xtreemfs::Volume: caught exception on " << operation_name << ": " << exc.what();
 
 #ifdef _WIN32
   YIELD::platform::Exception::set_errno( ERROR_ACCESS_DENIED );

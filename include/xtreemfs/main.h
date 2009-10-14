@@ -117,7 +117,7 @@ namespace xtreemfs
       return MRCProxy::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, password, get_proxy_ssl_context() );
     }
 
-    YIELD::platform::auto_Log get_log()
+    virtual YIELD::platform::auto_Log get_log()
     {
       if ( log == NULL )
       {
@@ -220,14 +220,16 @@ namespace xtreemfs
       }
     }
 
-  private:
+  protected:
+    YIELD::platform::auto_Log log;
     std::string log_file_path;
+
+  private:
     YIELD::platform::Time operation_timeout;
     std::string pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase;
     std::string pkcs12_file_path, pkcs12_passphrase;
     bool trace_auth, trace_network_io, trace_network_operations;
 
-    YIELD::platform::auto_Log log;
     YIELD::ipc::auto_SSLContext ssl_context;
 
 #ifdef XTREEMFS_HAVE_GOOGLE_BREAKPAD
