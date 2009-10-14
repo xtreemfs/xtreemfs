@@ -115,7 +115,8 @@ public class MRCHelper {
             num_files,
             num_dirs,
             repl_factor,
-            repl_full
+            repl_full,
+            snapshots
     }
     
     public enum FileType {
@@ -345,6 +346,28 @@ public class MRCHelper {
                 return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getAutoReplFactor()) : "";
             case repl_full:
                 return file.getId() == 1 ? String.valueOf(sMan.getVolumeInfo().getAutoReplFull()) : "";
+                
+            case snapshots: {
+                
+                if (file.getId() != 1)
+                    return "";
+                
+                StringBuilder sb = new StringBuilder();
+                                
+                String[] snaps = sMan.getAllSnapshots();
+                int i = 0;
+                for (String snap : snaps) {
+                    
+                    sb.append(snap);
+                    if (i < snaps.length - 1)
+                        sb.append(", ");
+                    
+                    i++;
+                }
+                
+                return sb.toString();
+            }
+                
             }
         }
         
@@ -486,6 +509,33 @@ public class MRCHelper {
             
             boolean full = Boolean.parseBoolean(value);
             sMan.getVolumeInfo().setAutoReplFull(full, update);
+            
+            break;
+        
+        case snapshots:
+
+            if (!file.isDirectory())
+                throw new UserException(ErrNo.ENOTDIR, "snapshots of single files are not allowed so far");
+            
+            // value format: "c|cr|d| name"
+            
+            // TODO: restrict to admin users
+            
+            int index = value.indexOf(" ");
+            
+            String command = value.substring(0, index);
+            String name = value.substring(index + 1);
+            
+            // create snapshot
+            if (command.charAt(0) == 'c')
+                vMan.createSnapshot(sMan.getVolumeInfo().getId(), name, parentId, file, command.equals("cr"));
+            
+            // delete snapshot
+            else if (command.equals("d"))
+                vMan.deleteSnapshot(sMan.getVolumeInfo().getId(), file, name);
+            
+            else
+                throw new UserException(ErrNo.EINVAL, "invalid snapshot command: " + value);
             
             break;
         

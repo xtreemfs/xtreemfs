@@ -61,12 +61,22 @@ public class BufferBackedFileMetadata implements FileMetadata {
         assert (keyBufs.length == NUM_BUFFERS);
         assert (valBufs.length == NUM_BUFFERS);
         
+        byte[][] keyBufsCopy = new byte[keyBufs.length][];
+        byte[][] valBufsCopy = new byte[valBufs.length][];
+        for (int i = 0; i < keyBufs.length; i++) {
+            keyBufsCopy[i] = keyBufs[i] == null ? null : new byte[keyBufs[i].length];
+            valBufsCopy[i] = new byte[valBufs[i].length];
+            if (keyBufsCopy[i] != null)
+                System.arraycopy(keyBufs[i], 0, keyBufsCopy[i], 0, keyBufs[i].length);
+            System.arraycopy(valBufs[i], 0, valBufsCopy[i], 0, valBufs[i].length);
+        }
+        
         // frequently changed metadata
-        fcKeyBuf = keyBufs[FC_METADATA] == null ? null : ByteBuffer.wrap(keyBufs[FC_METADATA]);
-        fcValBuf = ByteBuffer.wrap(valBufs[FC_METADATA]);
+        fcKeyBuf = keyBufsCopy[FC_METADATA] == null ? null : ByteBuffer.wrap(keyBufsCopy[FC_METADATA]);
+        fcValBuf = ByteBuffer.wrap(valBufsCopy[FC_METADATA]);
         
         // rarely changed metadata
-        rcMetadata = new BufferBackedRCMetadata(keyBufs[RC_METADATA], valBufs[RC_METADATA]);
+        rcMetadata = new BufferBackedRCMetadata(keyBufsCopy[RC_METADATA], valBufsCopy[RC_METADATA]);
         
         this.indexId = indexId;
     }

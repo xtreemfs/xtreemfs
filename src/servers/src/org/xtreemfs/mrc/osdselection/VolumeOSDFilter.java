@@ -28,6 +28,8 @@ import org.xtreemfs.mrc.utils.MRCHelper;
  */
 public class VolumeOSDFilter {
     
+    private static final String            ATTR_PREFIX = "xtreemfs." + MRCHelper.POLICY_ATTR_PREFIX + ".";
+    
     private MRCRequestDispatcher           master;
     
     /**
@@ -91,7 +93,6 @@ public class VolumeOSDFilter {
         }
         
         // get all policy attributes
-        final String prefix = "xtreemfs." + MRCHelper.POLICY_ATTR_PREFIX + ".";
         
         try {
             Iterator<XAttr> xattrs = master.getVolumeManager().getStorageManager(volId).getXAttrs(1,
@@ -100,9 +101,8 @@ public class VolumeOSDFilter {
             // set the
             while (xattrs.hasNext()) {
                 XAttr xattr = xattrs.next();
-                if (xattr.getKey().startsWith(prefix))
-                    for (OSDSelectionPolicy pol : policyMap.values())
-                        pol.setAttribute(xattr.getKey().substring(prefix.length()), xattr.getValue());
+                if (xattr.getKey().startsWith(ATTR_PREFIX))
+                    setAttribute(xattr.getKey(), xattr.getValue());
             }
             
         } catch (Exception exc) {
@@ -110,6 +110,14 @@ public class VolumeOSDFilter {
             Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, OutputUtils.stackTraceToString(exc));
         }
         
+    }
+    
+    public void setAttribute(String key, String value) {
+        
+        assert(key.startsWith(ATTR_PREFIX));
+        
+        for (OSDSelectionPolicy pol : policyMap.values())
+            pol.setAttribute(key.substring(ATTR_PREFIX.length()), value);
     }
     
     public ServiceSet filterByOSDSelectionPolicy(ServiceSet knownOSDs, InetAddress clientIP,

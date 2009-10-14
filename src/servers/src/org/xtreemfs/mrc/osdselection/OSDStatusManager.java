@@ -116,6 +116,19 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
     
     public synchronized void volumeDeleted(String volumeId) {
         volumeMap.remove(volumeId);
+    }
+    
+    public synchronized void attributeSet(String volumeId, String key, String value) {
+        
+        VolumeOSDFilter vol = volumeMap.get(volumeId);
+        
+        if (vol == null) {
+            Logging.logError(Logging.LEVEL_ERROR, this, new Exception("no volume OSD filter found for volume "
+                + volumeId));
+            return;
+        }
+        
+        vol.setAttribute(key, value);
         
     }
     

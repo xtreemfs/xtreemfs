@@ -95,11 +95,33 @@ public class utils {
             new String[] { "setfattr", "-n", attrname, "-v", attrvalue, f.getAbsolutePath() });
         p.waitFor();
         if (p.exitValue() != 0)
-            throw new IOException("a problem occurred when setting '" + attrname + "'");
+            throw new IOException("a problem occurred when setting '" + attrname + "': " + p.exitValue());
     }
     
     public static String expandPath(String path) {
         File f = new File(path);
         return f.getAbsolutePath();
     }
+    
+    public static boolean isXtreemFSDir(String path) throws IOException, InterruptedException {
+        String url = getxattr(path, "xtreemfs.url");
+        return url != null;
+    }
+    
+    public static String findXtreemFSRootDir(String path) throws IOException, InterruptedException {
+        
+        path = expandPath(path);
+        
+        String url = getxattr(path, "xtreemfs.url");
+        if (url == null)
+            return null;
+        
+        String parentDir = path.substring(0, path.lastIndexOf(File.separator));
+        String xtfsParent = findXtreemFSRootDir(parentDir);
+        if (xtfsParent == null)
+            return path;
+        else
+            return xtfsParent;
+    }
+    
 }

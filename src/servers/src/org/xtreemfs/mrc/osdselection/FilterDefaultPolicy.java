@@ -69,24 +69,24 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
         for (Service osd : allOSDs)
             if (!hasTimedOut(osd) && hasFreeCapacity(osd))
                 filteredOSDs.add(osd);
-            else {
-                System.out.println("service: " + osd.getUuid());
-                System.out.println("has timed out: " + hasTimedOut(osd));
-                System.out.println("has free cap: " + hasFreeCapacity(osd));
-                
-                if (hasTimedOut(osd)) {
-                    System.out.println("last update: " + osd.getLast_updated_s());
-                    System.out.println("max offline time: " + maxOfflineTime);
-                }
-
-                else {
-                    String freeStr = osd.getData().get("free");
-                    long free = Long.parseLong(freeStr);
-                    System.out.println("free capacity: " + free);
-                    System.out.println("min free cap: " + minFreeCapacity);
-                }
-                
-            }
+//            else {
+//                System.out.println("service: " + osd.getUuid());
+//                System.out.println("has timed out: " + hasTimedOut(osd));
+//                System.out.println("has free cap: " + hasFreeCapacity(osd));
+//                
+//                if (hasTimedOut(osd)) {
+//                    System.out.println("last update: " + osd.getData().get("seconds_since_last_update"));
+//                    System.out.println("max offline time: " + maxOfflineTime);
+//                }
+//
+//                else {
+//                    String freeStr = osd.getData().get("free");
+//                    long free = Long.parseLong(freeStr);
+//                    System.out.println("free capacity: " + free);
+//                    System.out.println("min free cap: " + minFreeCapacity);
+//                }
+//                
+//            }
         
         return filteredOSDs;
     }
@@ -94,13 +94,13 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     @Override
     public void setAttribute(String key, String value) {
         if (OFFLINE_TIME_SECS.equals(key))
-            maxOfflineTime = Long.parseLong(value);
+            maxOfflineTime = Long.parseLong(value) * 1000;
         else if (FREE_CAPACITY_BYTES.equals(key))
             minFreeCapacity = Long.parseLong(value);
     }
     
     private boolean hasTimedOut(Service osd) {
-        long lastUpdate = (System.currentTimeMillis() / 1000l) - osd.getLast_updated_s();
+        long lastUpdate = Long.parseLong(osd.getData().get("seconds_since_last_update"));
         return lastUpdate > maxOfflineTime;
     }
     

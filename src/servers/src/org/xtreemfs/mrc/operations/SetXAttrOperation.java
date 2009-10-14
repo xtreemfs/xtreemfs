@@ -46,8 +46,6 @@ import org.xtreemfs.mrc.utils.PathResolver;
  */
 public class SetXAttrOperation extends MRCOperation {
     
-    private static final String SYS_ATTR_KEY_PREFIX = "xtreemfs.";
-    
     public SetXAttrOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -103,7 +101,7 @@ public class SetXAttrOperation extends MRCOperation {
         final String attrVal = rqArgs.getValue();
         
         // set a system attribute
-        if (attrKey.startsWith(SYS_ATTR_KEY_PREFIX)) {
+        if (attrKey.startsWith(StorageManager.SYS_ATTR_KEY_PREFIX)) {
             
             // check whether the user has privileged permissions to set
             // system attributes
@@ -111,7 +109,7 @@ public class SetXAttrOperation extends MRCOperation {
                 rq.getDetails().groupIds);
             
             MRCHelper.setSysAttrValue(sMan, vMan, res.getParentDirId(), file, attrKey
-                    .substring(SYS_ATTR_KEY_PREFIX.length()), attrVal, update);
+                    .substring(StorageManager.SYS_ATTR_KEY_PREFIX.length()), attrVal, update);
         }
 
         // set a user attribute

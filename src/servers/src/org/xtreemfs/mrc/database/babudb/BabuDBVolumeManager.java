@@ -25,12 +25,12 @@
 package org.xtreemfs.mrc.database.babudb;
 
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.Map.Entry;
 
@@ -42,6 +42,7 @@ import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.lsmdb.DatabaseManager;
+import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
@@ -61,41 +62,38 @@ import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.metadata.ACLEntry;
+import org.xtreemfs.mrc.metadata.FileMetadata;
 
 public class BabuDBVolumeManager implements VolumeManager {
     
-    private static final String               VERSION_DB_NAME = "V";
+    private static final String                    VERSION_DB_NAME = "V";
     
-    private static final int                  VERSION_INDEX   = 0;
+    private static final int                       VERSION_INDEX   = 0;
     
-    private static final String               VERSION_KEY     = "v";
+    private static final String                    VERSION_KEY     = "v";
     
     /** the volume database */
-    private BabuDB                            database;
+    private BabuDB                                 database;
     
     /** the database directory */
-    private final String                      dbDir;
+    private final String                           dbDir;
     
     /** the database log directory */
-    private final String                      dbLogDir;
+    private final String                           dbLogDir;
     
     /** maps the IDs of all locally known volumes to their managers */
-    private final Map<String, StorageManager> volsById;
+    private final Map<String, StorageManager>      volsById;
     
     /** maps the names of all locally known volumes to their managers */
-    private final Map<String, StorageManager> volsByName;
+    private final Map<String, StorageManager>      volsByName;
     
     private final Collection<VolumeChangeListener> listeners;
-    
-    /** contains all snapshots */
-    private final Set<String>                 snapshots;
     
     public BabuDBVolumeManager(MRCRequestDispatcher master) {
         dbDir = master.getConfig().getDbDir();
         dbLogDir = master.getConfig().getDbLogDir();
         volsById = new HashMap<String, StorageManager>();
         volsByName = new HashMap<String, StorageManager>();
-        snapshots = new HashSet<String>();
         listeners = new LinkedList<VolumeChangeListener>();
     }
     
@@ -184,8 +182,11 @@ public class BabuDBVolumeManager implements VolumeManager {
                         
                         volsById.put(vol.getId(), sMan);
                         volsByName.put(vol.getName(), sMan);
-                        for (String snapName : sMan.getAllSnapshots())
-                            registerSnapshot(vol.getId(), snapName);
+                        for (String snapName : sMan.getAllSnapshots()) {
+                            String snapVolName = vol.getName() + SNAPSHOT_SEPARATOR + snapName;
+                            volsByName.put(snapVolName, new BabuDBSnapshotStorageManager(database, vol
+                                    .getName(), vol.getId(), snapName));
+                        }
                         
                     }
                     
@@ -217,8 +218,10 @@ public class BabuDBVolumeManager implements VolumeManager {
         
         final DatabaseManager dbMan = database.getDatabaseManager();
         
-        if (volumeName.indexOf('/') != -1 || volumeName.indexOf('\\') != -1)
-            throw new UserException(ErrNo.EINVAL, "volume name must not contain '/' or '\\'");
+        if (volumeName.indexOf(SNAPSHOT_SEPARATOR) != -1 || volumeName.indexOf('/') != -1
+            || volumeName.indexOf('\\') != -1)
+            throw new UserException(ErrNo.EINVAL, "volume name must not contain '" + SNAPSHOT_SEPARATOR
+                + "', '/' or '\\'");
         
         if (hasVolume(volumeName))
             throw new UserException(ErrNo.EEXIST, "volume ' " + volumeName + "' already exists locally");
@@ -242,11 +245,11 @@ public class BabuDBVolumeManager implements VolumeManager {
         // initialize the storage manager for the new volume
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
         sMan.init(volumeName, fileAccessPolicyId, DEFAULT_OSD_POLICY, DEFAULT_REPL_POLICY,
-            DEFAULT_AUTO_REPL_FACTOR, DEFAULT_AUTO_REPL_FULL, ownerId, owningGroupId, initialAccessMode, acl, defaultStripingPolicy,
-            update);
+            DEFAULT_AUTO_REPL_FACTOR, DEFAULT_AUTO_REPL_FULL, ownerId, owningGroupId, initialAccessMode, acl,
+            defaultStripingPolicy, update);
         update.execute();
         
-        for(VolumeChangeListener l: listeners)
+        for (VolumeChangeListener l : listeners)
             sMan.addVolumeChangeListener(l);
         
         return sMan.getVolumeInfo();
@@ -275,8 +278,6 @@ public class BabuDBVolumeManager implements VolumeManager {
         
         // delete the volume's database
         sMan.deleteDatabase();
-        
-        // TODO: delete snapshots
     }
     
     @Override
@@ -315,28 +316,65 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     @Override
     public Collection<StorageManager> getStorageManagers() {
-        return volsByName.values();
+        return volsById.values();
     }
     
     @Override
     public void addVolumeChangeListener(VolumeChangeListener listener) {
         this.listeners.add(listener);
-        for(StorageManager sMan: volsById.values())
+        for (StorageManager sMan : volsById.values())
             sMan.addVolumeChangeListener(listener);
     }
     
-    public void createSnapshot(String volumeId, String snapName, long parentId, String dirName,
+    @Override
+    public void createSnapshot(String volumeId, String snapName, long parentId, FileMetadata dir,
         boolean recursive) throws UserException, DatabaseException {
         
-        // create a snapshot
-        volsById.get(volumeId).snapshot(snapName, parentId, dirName, recursive);
+        try {
+            // check if the volume exists
+            StorageManager sMan = getStorageManager(volumeId);
+            
+            // if no snapshot name was passed, use the current timestamp as the
+            // name
+            if ("".equals(snapName))
+                snapName = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date(TimeSync
+                        .getGlobalTime()))
+                    + "";
+            
+            // create the snapshot
+            sMan.createSnapshot(snapName, parentId, dir.getFileName(), recursive);
+            String snapVolName = sMan.getVolumeInfo().getName() + SNAPSHOT_SEPARATOR + snapName;
+            volsByName.put(snapVolName, new BabuDBSnapshotStorageManager(database, sMan.getVolumeInfo()
+                    .getName(), volumeId, snapName));
+            
+        } catch (DatabaseException exc) {
+            
+            if (((BabuDBException) exc.getCause()).getErrorCode() == ErrorCode.SNAP_EXISTS)
+                throw new UserException(ErrNo.EPERM, exc.getMessage());
+            else
+                throw exc;
+        }
+    }
+    
+    @Override
+    public void deleteSnapshot(String volumeId, FileMetadata dir, String snapName) throws UserException,
+        DatabaseException {
         
-        // register the new snapshot
-        registerSnapshot(volumeId, snapName);
+        try {
+            
+            // check if the volume exists
+            StorageManager sMan = getStorageManager(volumeId);
+            
+            // delete the snapshot
+            volsByName.remove(sMan.getVolumeInfo().getName() + SNAPSHOT_SEPARATOR + snapName);
+            sMan.deleteSnapshot(snapName);
+            
+        } catch (DatabaseException exc) {
+            
+            if (((BabuDBException) exc.getCause()).getErrorCode() == ErrorCode.NO_SUCH_SNAPSHOT)
+                throw new UserException(ErrNo.ENODEV, exc.getMessage());
+            else
+                throw exc;
+        }
     }
-    
-    private void registerSnapshot(String volumeId, String snapName) {
-        snapshots.add(volumeId + "*" + snapName);
-    }
-    
 }

@@ -50,6 +50,11 @@ public interface StorageManager {
      * user
      */
     public static final String GLOBAL_ID  = "*";
+
+    /**
+     * key prefix for XtreemFS system attributes
+     */
+    public static final String SYS_ATTR_KEY_PREFIX = "xtreemfs.";
     
     // file ID counter operations
     
@@ -143,8 +148,10 @@ public interface StorageManager {
     
     // handling snapshots
     
-    public void snapshot(String snapName, long parentId, String dirName, boolean recursive)
+    public void createSnapshot(String snapName, long parentId, String dirName, boolean recursive)
         throws DatabaseException;
+    
+    public void deleteSnapshot(String snapName) throws DatabaseException;
     
     public String[] getAllSnapshots() throws DatabaseException;
     

@@ -65,6 +65,7 @@ import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.utils.Converter;
 import org.xtreemfs.mrc.utils.DBAdminHelper;
+import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 
 public class BabuDBStorageManager implements StorageManager {
@@ -445,7 +446,7 @@ public class BabuDBStorageManager implements StorageManager {
                 if (file.isDirectory())
                     updateCount(NUM_DIRS_KEY, false, update);
                 else {
-                    updateVolumeSize(-file.getSize(), update);
+                    volume.updateVolumeSize(-file.getSize(), update);
                     updateCount(NUM_FILES_KEY, false, update);
                 }
                 
@@ -757,6 +758,9 @@ public class BabuDBStorageManager implements StorageManager {
             BufferBackedXAttr xattr = new BufferBackedXAttr(fileId, uid, key, value, collNumber);
             update.addUpdate(XATTRS_INDEX, xattr.getKeyBuf(), value == null ? null : xattr.getValBuf());
             
+            if (key.startsWith(SYS_ATTR_KEY_PREFIX + MRCHelper.POLICY_ATTR_PREFIX))
+                notifyAttributeSet(volume.getId(), key, value);
+            
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
@@ -764,7 +768,7 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public void snapshot(String snapName, long parentId, String dirName, boolean recursive)
+    public void createSnapshot(String snapName, long parentId, String dirName, boolean recursive)
         throws DatabaseException {
         
         try {
@@ -782,31 +786,53 @@ public class BabuDBStorageManager implements StorageManager {
                 // get the IDs of all files and directories contained in the
                 // given directory; if recursive == true, include subdirectories
                 List<FileMetadata> nestedFiles = new LinkedList<FileMetadata>();
-                BabuDBStorageHelper.getNestedFiles(nestedFiles, database, parentId, recursive);
+                BabuDBStorageHelper.getNestedFiles(nestedFiles, database, snapDir.getId(), recursive);
                 
                 List<byte[]> fileIndexPrefixes = new ArrayList<byte[]>(nestedFiles.size());
                 List<byte[]> filePrefixes = new ArrayList<byte[]>(nestedFiles.size());
                 List<byte[]> exclPrefixes = new ArrayList<byte[]>(nestedFiles.size());
                 
-                // determine the key prefixes to include and exclude
+                // include the extended attributes of the volume's root
+                // directory if it's not the snapshot directory - they are
+                // needed to access volume-wide parameters in the snapshot, such
+                // as the access control policy
+                if (snapDir.getId() != 1)
+                    filePrefixes.add(ByteBuffer.wrap(new byte[8]).putLong(1).array());
+                
+                // include all metadata of the snapshot (i.e. top level) dir
+                byte[] idxKey = BabuDBStorageHelper.createFileKey(parentId, dirName, (byte) -1);
+                byte[] fileKey = BabuDBStorageHelper.createFilePrefixKey(snapDir.getId());
+                fileIndexPrefixes.add(idxKey);
+                filePrefixes.add(fileKey);
+                
+                // include the snapshot directory content
+                idxKey = BabuDBStorageHelper.createFilePrefixKey(snapDir.getId());
+                fileIndexPrefixes.add(idxKey);
+                
+                // determine the key prefixes of all nested files to include and
+                // exclude
                 for (FileMetadata file : nestedFiles) {
                     
-                    byte[] prefixKey = BabuDBStorageHelper.createFilePrefixKey(file.getId());
+                    BufferBackedFileMetadata f = (BufferBackedFileMetadata) file;
+                    if (f.getIndexId() != FILE_INDEX)
+                        continue;
+                    // ignore hard links here
+                    
+                    byte[] key = BabuDBStorageHelper.createFilePrefixKey(file.getId());
+                    byte[] buf = f.getKeyBuffer(FILE_INDEX);
+                    byte[] exclKey = new byte[buf.length - 1];
+                    System.arraycopy(buf, 0, exclKey, 0, exclKey.length);
                     
                     if (file.isDirectory()) {
                         if (!recursive)
-                            exclPrefixes.add(prefixKey);
+                            exclPrefixes.add(exclKey);
                         else {
-                            fileIndexPrefixes.add(prefixKey);
-                            filePrefixes.add(prefixKey);
+                            fileIndexPrefixes.add(key);
+                            filePrefixes.add(key);
                         }
                     } else
-                        filePrefixes.add(prefixKey);
+                        filePrefixes.add(key);
                 }
-                
-                byte[] prefixKey = BabuDBStorageHelper.createFilePrefixKey(snapDir.getId());
-                fileIndexPrefixes.add(prefixKey);
-                filePrefixes.add(prefixKey);
                 
                 byte[][] idxPrefixes = fileIndexPrefixes.toArray(new byte[fileIndexPrefixes.size()][]);
                 byte[][] fPrefixes = filePrefixes.toArray(new byte[filePrefixes.size()][]);
@@ -820,7 +846,7 @@ public class BabuDBStorageManager implements StorageManager {
                 prefixes = new byte[][][] { idxPrefixes, fPrefixes, fPrefixes, fPrefixes, null };
                 
                 if (!recursive)
-                    excludedKeys = new byte[][][] { null, xPrefixes, xPrefixes, xPrefixes, null };
+                    excludedKeys = new byte[][][] { xPrefixes, xPrefixes, xPrefixes, xPrefixes, null };
             }
             
             // create the snapshot
@@ -831,6 +857,22 @@ public class BabuDBStorageManager implements StorageManager {
             throw new DatabaseException(exc);
         }
         
+    }
+    
+    @Override
+    public void deleteSnapshot(String snapName) throws DatabaseException {
+        
+        try {
+            
+            // check if the snapshot exists; if not, throw an exception
+            snapMan.getSnapshotDB(database.getName(), snapName);
+            
+            // delete the snapshot
+            snapMan.deletePersistentSnapshot(database.getName(), snapName);
+            
+        } catch (BabuDBException exc) {
+            throw new DatabaseException(exc);
+        }
     }
     
     @Override
@@ -909,6 +951,11 @@ public class BabuDBStorageManager implements StorageManager {
     protected void notifyVolumeDelete(String volId) {
         for (VolumeChangeListener listener : vcListeners)
             listener.volumeDeleted(volId);
+    }
+    
+    protected void notifyAttributeSet(String volId, String key, String value) {
+        for (VolumeChangeListener listener : vcListeners)
+            listener.attributeSet(volId, key, value);
     }
     
     private void updateCount(byte[] key, boolean increment, AtomicDBUpdate update) throws DatabaseException {

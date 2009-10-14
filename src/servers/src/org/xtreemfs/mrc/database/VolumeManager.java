@@ -30,6 +30,7 @@ import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
+import org.xtreemfs.mrc.metadata.FileMetadata;
 
 public interface VolumeManager {
     
@@ -42,6 +43,8 @@ public interface VolumeManager {
     public static final int     DEFAULT_AUTO_REPL_FACTOR = 1;
     
     public static final boolean DEFAULT_AUTO_REPL_FULL   = false;
+    
+    public static final char    SNAPSHOT_SEPARATOR       = '@';
     
     /**
      * Initializes the volume manager, including all volume databases.
@@ -162,5 +165,45 @@ public interface VolumeManager {
      *            the listener to add
      */
     public void addVolumeChangeListener(VolumeChangeListener listener);
+    
+    /**
+     * Creates a new snapshot of the given directory in the given volume.
+     * 
+     * @param volumeId
+     *            the volume ID
+     * @param snapName
+     *            the name to be assigned to the new snapshot
+     * @param parentId
+     *            the directory's parent directory ID
+     * @param dir
+     *            the directory
+     * @param recursive
+     *            specifies whether the snapshot will only contain the nested
+     *            files in the directory, or the whole tree with all
+     *            subdirectories
+     * @throws UserException
+     *             if the volume does not exist, or the snapshot exists already
+     * @throws DatabaseException
+     *             if a database error occurs
+     */
+    public void createSnapshot(String volumeId, String snapName, long parentId, FileMetadata dir,
+        boolean recursive) throws UserException, DatabaseException;
+    
+    /**
+     * Deletes the snapshot with the given name in the given directory.
+     * 
+     * @param volumeId
+     *            the volume ID
+     * @param dir
+     *            the directory
+     * @param snapName
+     *            the name of the snapshot to delete
+     * @throws UserException
+     *             if the volume does not exist, or the snapshot does not exist
+     * @throws DatabaseException
+     *             if a database error occurs
+     */
+    public void deleteSnapshot(String volumeId, FileMetadata dir, String snapName) throws UserException,
+        DatabaseException;
     
 }

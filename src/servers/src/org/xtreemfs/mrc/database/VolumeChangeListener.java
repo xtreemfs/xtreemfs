@@ -31,4 +31,6 @@ public interface VolumeChangeListener {
     
     public void volumeDeleted(String volumeId);
     
+    public void attributeSet(String volumeId, String key, String value);
+    
 }
