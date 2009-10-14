@@ -59,13 +59,14 @@ namespace xtreemfs
   protected:
     enum
     {
-      OPTION_OPERATION_TIMEOUT_MS = 3,
-      OPTION_PKCS12_FILE_PATH = 4,
-      OPTION_PKCS12_PASSPHRASE = 5,
-      OPTION_PEM_CERTIFICATE_FILE_PATH = 6,
-      OPTION_PEM_PRIVATE_KEY_FILE_PATH = 7,
-      OPTION_PEM_PRIVATE_KEY_PASSPHRASE = 8,
-      OPTION_TRACE_AUTH = 9,
+      OPTION_LOG_FILE_PATH = 3,
+      OPTION_OPERATION_TIMEOUT_MS = 4,
+      OPTION_PKCS12_FILE_PATH = 5,
+      OPTION_PKCS12_PASSPHRASE = 6,
+      OPTION_PEM_CERTIFICATE_FILE_PATH = 7,
+      OPTION_PEM_PRIVATE_KEY_FILE_PATH = 8,
+      OPTION_PEM_PRIVATE_KEY_PASSPHRASE = 9,
+      OPTION_TRACE_AUTH = 10,
       OPTION_TRACE_NETWORK_IO = 11,
       OPTION_TRACE_NETWORK_OPERATIONS = 12
     };
@@ -74,6 +75,8 @@ namespace xtreemfs
     Main( const char* program_name, const char* program_description, const char* files_usage = NULL )
       : YIELD::Main( program_name, program_description, files_usage )
     {
+      addOption( OPTION_LOG_FILE_PATH, "-l", "--log-file-path", "<path>" );
+
       addOption( OPTION_OPERATION_TIMEOUT_MS, "-t", "--operation-timeout-ms", "n" );
       operation_timeout = static_cast<uint64_t>( DIRProxy::OPERATION_TIMEOUT_DEFAULT );
 
@@ -103,12 +106,7 @@ namespace xtreemfs
       YIELD::ipc::URI checked_uri( uri );
       if ( checked_uri.get_port() == 0 )
         checked_uri.set_port( org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT );
-
-      auto_DIRProxy proxy = DIRProxy::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, get_proxy_ssl_context() );
-      if ( proxy != NULL )
-        return proxy;
-      else
-        throw YIELD::platform::Exception( "invalid proxy URI" );
+      return DIRProxy::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, get_proxy_ssl_context() );
     }    
 
     auto_MRCProxy createMRCProxy( const YIELD::ipc::URI& uri, const char* password = "" )
@@ -116,18 +114,19 @@ namespace xtreemfs
       YIELD::ipc::URI checked_uri( uri );
       if ( checked_uri.get_port() == 0 )
         checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT );
-
-      auto_MRCProxy proxy = MRCProxy::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, password, get_proxy_ssl_context() );
-      if ( proxy != NULL )
-        return proxy;
-      else
-        throw YIELD::platform::Exception( "invalid proxy URI" );
+      return MRCProxy::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, password, get_proxy_ssl_context() );
     }
 
     YIELD::platform::auto_Log get_log()
     {
       if ( log == NULL )
-        log = YIELD::platform::Log::open( std::cout, get_log_level() );
+      {
+        if ( log_file_path.empty() || log_file_path == "-" )
+          log = YIELD::platform::Log::open( std::cerr, get_log_level() );
+        else 
+          log = YIELD::platform::Log::open( log_file_path, get_log_level(), true ); // true = lazy open
+      }
+
       return log;
     }
 
@@ -198,6 +197,8 @@ namespace xtreemfs
     {
       switch ( id )
       {
+        case OPTION_LOG_FILE_PATH: log_file_path = arg; break;
+
         case OPTION_OPERATION_TIMEOUT_MS:
         {
           double operation_timeout_ms = atof( arg );
@@ -220,6 +221,7 @@ namespace xtreemfs
     }
 
   private:
+    std::string log_file_path;
     YIELD::platform::Time operation_timeout;
     std::string pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase;
     std::string pkcs12_file_path, pkcs12_passphrase;

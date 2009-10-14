@@ -236,7 +236,7 @@ namespace YIELD
       log_level_default_ss << static_cast<uint16_t>( 0 );
       log_level_default_str = log_level_default_ss.str();
       addOption( OPTION_LOG_LEVEL, "-d", "--debug", log_level_default_str.c_str() );
-      log_level = YIELD::platform::Log::LOG_EMERG;
+      log_level = YIELD::platform::Log::LOG_WARNING;
 
       addOption( OPTION_HELP, "-h", "--help" );
     }

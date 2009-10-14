@@ -114,6 +114,7 @@ namespace YIELD
         Address( struct addrinfo& addrinfo_list ); // Takes ownership of addrinfo_list
         Address( const struct sockaddr_storage& _sockaddr_storage ); // Copies _sockaddr_storage
 
+        // create( ... ) factory methods return NULL instead of throwing exceptions
         static yidl::runtime::auto_Object<Address> create( const char* hostname ) { return create( hostname, 0 ); }
         static yidl::runtime::auto_Object<Address> create( const char* hostname, uint16_t port ); // hostname can be NULL for INADDR_ANY
         static yidl::runtime::auto_Object<Address> create( const URI& );
@@ -364,6 +365,7 @@ namespace YIELD
     {
     public:
 #ifdef YIELD_HAVE_OPENSSL
+      // create( ... ) factory methods throw exceptions
       static yidl::runtime::auto_Object<SSLContext> create( SSL_METHOD* method = SSLv23_client_method() ); // No certificate
       static yidl::runtime::auto_Object<SSLContext> create( SSL_METHOD* method, const YIELD::platform::Path& pem_certificate_file_path, const YIELD::platform::Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase );
       static yidl::runtime::auto_Object<SSLContext> create( SSL_METHOD* method, const std::string& pem_certificate_str, const std::string& pem_private_key_str, const std::string& pem_private_key_passphrase );
@@ -443,8 +445,8 @@ namespace YIELD
 
       virtual void aio_accept( yidl::runtime::auto_Object<AIOAcceptControlBlock> aio_accept_control_block );    
       virtual void aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block );
-      static yidl::runtime::auto_Object<TCPSocket> create(); // Defaults to domain = AF_INET6
-      static yidl::runtime::auto_Object<TCPSocket> create( int domain );
+      static yidl::runtime::auto_Object<TCPSocket> create(); // Defaults to domain = AF_INET6; returns NULL instead of throwing exceptions, since it's on the critical path of clients and servers
+      static yidl::runtime::auto_Object<TCPSocket> create( int domain ); // returns NULL instead of throwing Exceptions
       virtual yidl::runtime::auto_Object<TCPSocket> accept();
       virtual bool listen();
       virtual bool shutdown();
@@ -740,10 +742,10 @@ namespace YIELD
     {
     public:
       static yidl::runtime::auto_Object<HTTPClient> create( const URI& absolute_uri, 
-                                             uint32_t flags = 0,
-                                             YIELD::platform::auto_Log log = NULL, 
-                                             const YIELD::platform::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
-                                             auto_SSLContext ssl_context = NULL );
+                                                            uint32_t flags = 0,
+                                                            YIELD::platform::auto_Log log = NULL, 
+                                                            const YIELD::platform::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
+                                                            auto_SSLContext ssl_context = NULL ); // Throws an exception instead of returning NULL
 
       static auto_HTTPResponse GET( const URI& absolute_uri, YIELD::platform::auto_Log log = NULL );
       static auto_HTTPResponse PUT( const URI& absolute_uri, yidl::runtime::auto_Buffer body, YIELD::platform::auto_Log log = NULL );
@@ -854,7 +856,7 @@ namespace YIELD
     class NamedPipe : public yidl::runtime::Object
     {
     public:
-      static yidl::runtime::auto_Object<NamedPipe> open( const YIELD::platform::Path& path, uint32_t flags = O_RDWR, mode_t mode = YIELD::platform::File::DEFAULT_MODE );            
+      static yidl::runtime::auto_Object<NamedPipe> open( const YIELD::platform::Path& path, uint32_t flags = O_RDWR, mode_t mode = YIELD::platform::File::DEFAULT_MODE ); // returns NULL instead of throwing exceptions
 
       virtual ssize_t read( void* buffer, size_t buffer_len );
       virtual ssize_t write( const void* buffer, size_t buffer_len );
@@ -992,7 +994,7 @@ namespace YIELD
         if ( peername != NULL && peername->get_port() != 0 )
           return new ONCRPCClientType( absolute_uri, flags, log, operation_timeout, peername, ssl_context );        
         else
-          return NULL;
+          throw YIELD::platform::Exception();
       }
 
       // YIELD::concurrency::EventHandler
@@ -1038,9 +1040,9 @@ namespace YIELD
     {
     public:
       static yidl::runtime::auto_Object<ONCRPCServer> create( const URI& absolute_uri,
-                                               YIELD::concurrency::auto_Interface interface_,
-                                               YIELD::platform::auto_Log log = NULL, 
-                                               auto_SSLContext ssl_context = NULL );
+                                                              YIELD::concurrency::auto_Interface interface_,
+                                                              YIELD::platform::auto_Log log = NULL, 
+                                                              auto_SSLContext ssl_context = NULL ); // Throws exceptions
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( ONCRPCServer, 0 );
@@ -1066,7 +1068,7 @@ namespace YIELD
     class Pipe : public yidl::runtime::Object
     {
     public:
-      static yidl::runtime::auto_Object<Pipe> create();
+      static yidl::runtime::auto_Object<Pipe> create(); // Throws exceptions
 
       void close();
 #ifdef _WIN32
@@ -1104,9 +1106,10 @@ namespace YIELD
     class Process : public yidl::runtime::Object
     {
     public:
-      static yidl::runtime::auto_Object<Process> create( const YIELD::platform::Path& executable_file_path ); // No arguments
-      static yidl::runtime::auto_Object<Process> create( int argc, char** argv );    
-      static yidl::runtime::auto_Object<Process> create( const YIELD::platform::Path& executable_file_path, const char** null_terminated_argv ); // execv style
+      // create( ... ) factory methods throw exceptions
+      static yidl::runtime::auto_Object<Process> create( const YIELD::platform::Path& executable_file_path ); // No arguments; throws exceptions
+      static yidl::runtime::auto_Object<Process> create( int argc, char** argv ); // Throws exceptions
+      static yidl::runtime::auto_Object<Process> create( const YIELD::platform::Path& executable_file_path, const char** null_terminated_argv ); // execv style; throws exceptions
 
       auto_Pipe get_stdin() const { return child_stdin; }
       auto_Pipe get_stdout() const { return child_stdout; }
@@ -1145,8 +1148,8 @@ namespace YIELD
     class SSLSocket : public TCPSocket
     {
     public:
-      static yidl::runtime::auto_Object<SSLSocket> create( auto_SSLContext ctx ); // Defaults to domain = AF_INET6
-      static yidl::runtime::auto_Object<SSLSocket> create( int domain, auto_SSLContext ctx );
+      static yidl::runtime::auto_Object<SSLSocket> create( auto_SSLContext ctx ); // Defaults to domain = AF_INET6; returns NULL instead of throwing exceptions
+      static yidl::runtime::auto_Object<SSLSocket> create( int domain, auto_SSLContext ctx ); // returns NULL instead of throwing exceptions
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( SSLSocket, 216 );
@@ -1257,7 +1260,7 @@ namespace YIELD
 
 
       void aio_recvfrom( yidl::runtime::auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block );
-      static yidl::runtime::auto_Object<UDPSocket> create();    
+      static yidl::runtime::auto_Object<UDPSocket> create(); // returns NULL instead of throwing exceptions
       ssize_t recvfrom( yidl::runtime::auto_Buffer buffer, struct sockaddr_storage& peer_sockaddr );
       ssize_t recvfrom( void* buffer, size_t buffer_len, struct sockaddr_storage& peer_sockaddr );
       ssize_t sendto( yidl::runtime::auto_Buffer buffer, auto_Address peer_sockaddr );
@@ -1283,7 +1286,7 @@ namespace YIELD
     class URI : public yidl::runtime::Object
     {
     public:
-      // Factory methods return NULL instead of throwing exceptions
+      // parse( ... ) factory methods return NULL instead of throwing exceptions
       static yidl::runtime::auto_Object<URI> parse( const char* uri ) { return parse( uri, strnlen( uri, UINT16_MAX ) ); }
       static yidl::runtime::auto_Object<URI> parse( const std::string& uri ) { return parse( uri.c_str(), uri.size() ); }
       static yidl::runtime::auto_Object<URI> parse( const char* uri, size_t uri_len );

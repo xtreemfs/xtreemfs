@@ -32,8 +32,7 @@ namespace xtreemfs
                                                 YIELD::ipc::auto_SSLContext ssl_context = NULL )
     {
       yidl::runtime::auto_Object<MRCProxy> mrc_proxy = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::create<MRCProxy>( absolute_uri, flags, log, operation_timeout, ssl_context );
-      if ( mrc_proxy != NULL )
-        mrc_proxy->password = password;
+      mrc_proxy->password = password;
       return mrc_proxy;
     }
 

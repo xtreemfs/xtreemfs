@@ -453,7 +453,7 @@ namespace YIELD
 
 
       static yidl::runtime::auto_Object<Log> open( std::ostream&, Level level );
-      static yidl::runtime::auto_Object<Log> open( const Path& file_path, Level level );
+      static yidl::runtime::auto_Object<Log> open( const Path& file_path, Level level, bool lazy = false );
 
       inline Level get_level() const { return level; }
       Stream getStream() { return Stream( incRef(), level ); }

@@ -1,3 +1,5 @@
+// Revision: 1888
+
 #include "yield/ipc.h"
 
 
@@ -482,11 +484,16 @@ YIELD::ipc::auto_HTTPClient YIELD::ipc::HTTPClient::create( const URI& absolute_
   {
 #ifdef YIELD_HAVE_OPENSSL
     if ( absolute_uri.get_scheme() == "https" && ssl_context == NULL )
+    {
       ssl_context = SSLContext::create( SSLv23_client_method() );
+      if ( ssl_context == NULL )
+        throw YIELD::platform::Exception();
+    }
 #endif
     return new HTTPClient( absolute_uri, flags, log, operation_timeout, peername, ssl_context );
   }
-  return NULL;
+  else
+    throw YIELD::platform::Exception();
 }
 YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::GET( const URI& absolute_uri, YIELD::platform::auto_Log log )
 {
@@ -545,15 +552,15 @@ ssize_t YIELD::ipc::HTTPMessage::deserialize( yidl::runtime::auto_Buffer buffer 
       {
         if ( strcmp( get_header( "Transfer-Encoding" ), "chunked" ) == 0 )
         {
-          DebugBreak();
-          return 0;
+          // DebugBreak();
+          return -1;
         }
         else
         {
-          const char* content_length_header_value = get_header( "Content-Length", NULL ); // Most browsers
-          if ( content_length_header_value == NULL )
-            content_length_header_value = get_header( "Content-length" ); // httperf
-          size_t content_length = atoi( content_length_header_value );
+          const char* content_length_str = get_header( "Content-Length", NULL ); // Most browsers
+          if ( content_length_str == NULL )
+            content_length_str = get_header( "Content-length" ); // httperf
+          size_t content_length = atoi( content_length_str );
           if ( content_length == 0 )
           {
             deserialize_state = DESERIALIZE_DONE;
@@ -564,8 +571,8 @@ ssize_t YIELD::ipc::HTTPMessage::deserialize( yidl::runtime::auto_Buffer buffer 
             deserialize_state = DESERIALIZING_BODY;
             if ( strcmp( get_header( "Expect" ), "100-continue" ) == 0 )
             {
-              DebugBreak();
-              return 0;
+              // DebugBreak();
+              return -1;
             }
             // else fall through
           }
@@ -576,11 +583,30 @@ ssize_t YIELD::ipc::HTTPMessage::deserialize( yidl::runtime::auto_Buffer buffer 
     }
     case DESERIALIZING_BODY:
     {
-      if ( body == NULL )
-        body = buffer;
-      else
-        DebugBreak(); // Concatenate buffers
-      deserialize_state = DESERIALIZE_DONE;
+      if ( buffer->size() - buffer->position() > 0 )
+      {
+        if ( body == NULL )
+        {
+          if ( buffer->position() == 0 )
+            body = buffer;
+          else
+            body = new yidl::runtime::StringBuffer( static_cast<char*>( *buffer ) + buffer->position(), buffer->size() - buffer->position() );
+        }
+        else if ( body->get_type_id() == YIDL_RUNTIME_OBJECT_TYPE_ID( yidl::runtime::StringBuffer ) )
+          static_cast<yidl::runtime::StringBuffer*>( body.get() )->put( static_cast<char*>( *buffer ) + buffer->position(), buffer->size() - buffer->position() );
+        else
+        {
+          yidl::runtime::auto_StringBuffer concatenated_body( new yidl::runtime::StringBuffer );
+          concatenated_body->put( *body, body->size() );
+          concatenated_body->put( static_cast<char*>( *buffer ) + buffer->position(), buffer->size() - buffer->position() );
+          body = concatenated_body.release();
+        }
+        const char* content_length_str = get_header( "Content-Length", NULL ); // Most browsers
+        if ( content_length_str == NULL )
+          content_length_str = get_header( "Content-length" ); // httperf
+        if ( body->size() >= static_cast<size_t>( atoi( content_length_str ) ) )
+          deserialize_state = DESERIALIZE_DONE;
+      }
     }
     case DESERIALIZE_DONE: return 0;
     default: DebugBreak(); return -1;
@@ -1047,11 +1073,12 @@ YIELD::ipc::auto_HTTPServer YIELD::ipc::HTTPServer::create( const URI& absolute_
     else
 #endif
       listen_tcp_socket = TCPSocket::create();
-    if ( listen_tcp_socket->bind( sockname ) &&
+    if ( listen_tcp_socket != NULL &&
+         listen_tcp_socket->bind( sockname ) &&
          listen_tcp_socket->listen() )
       return new HTTPServer( http_request_target, listen_tcp_socket, log );
   }
-  return NULL;
+  throw YIELD::platform::Exception();
 }
 
 
@@ -2200,7 +2227,7 @@ YIELD::ipc::auto_ONCRPCServer YIELD::ipc::ONCRPCServer::create( const URI& absol
       }
     }
   }
-  return NULL;
+  throw YIELD::platform::Exception();
 }
 
 
@@ -2252,7 +2279,7 @@ YIELD::ipc::auto_Pipe YIELD::ipc::Pipe::create()
   if ( ::pipe( ends ) != -1 )
     return new Pipe( ends );
 #endif
-  return NULL;
+  throw YIELD::platform::Exception();
 }
 #ifdef _WIN32
 YIELD::ipc::Pipe::Pipe( void* ends[2] )
@@ -2340,7 +2367,7 @@ YIELD::ipc::auto_Process YIELD::ipc::Process::create( const YIELD::platform::Pat
   if ( CreateProcess( NULL, const_cast<wchar_t*>( command_line.get_wide_path().c_str() ) , NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startup_info, &proc_info ) )
     return new Process( proc_info.hProcess, proc_info.hThread, child_stdin, child_stdout, child_stderr );
   else
-    return NULL;
+    throw YIELD::platform::Exception();
 #else
   const char* argv[] = { static_cast<const char*>( NULL ) };
   return create( command_line, argv );
@@ -2382,7 +2409,7 @@ YIELD::ipc::auto_Process YIELD::ipc::Process::create( const YIELD::platform::Pat
   //                  child_stderr = Pipe::create();
   pid_t child_pid = fork();
   if ( child_pid == -1 )
-    return NULL;
+    throw YIELD::platform::Exception();
   else if ( child_pid == 0 ) // Child
   {
     //close( STDIN_FILENO );
@@ -2401,7 +2428,7 @@ YIELD::ipc::auto_Process YIELD::ipc::Process::create( const YIELD::platform::Pat
     }
     argv_with_executable_file_path.push_back( NULL );
     execv( executable_file_path, &argv_with_executable_file_path[0] );
-    return NULL;
+    return NULL; // Should never be reached
   }
   else // Parent
     return new Process( child_pid, child_stdin, child_stdout, child_stderr );
@@ -4120,7 +4147,7 @@ YIELD::ipc::auto_SSLContext YIELD::ipc::SSLContext::create( SSL_METHOD* method )
   if ( ctx != NULL )
     return new SSLContext( ctx );
   else
-    return NULL;
+    throw YIELD::platform::Exception();
 }
 YIELD::ipc::auto_SSLContext YIELD::ipc::SSLContext::create( SSL_METHOD* method, const YIELD::platform::Path& pem_certificate_file_path, const YIELD::platform::Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase )
 {

@@ -1,4 +1,4 @@
-// Revision: 1884
+// Revision: 1888
 
 #include "yield/platform.h"
 using namespace YIELD::platform;
@@ -561,13 +561,23 @@ namespace YIELD
     FileLog( auto_File file, Level level )
       : Log( level ), file( file )
     { }
+    FileLog( const Path& file_path, Level level ) // Lazy open
+      : Log( level ), file_path( file_path )
+    { }
     // Log
     void write( const char* str, size_t str_len )
     {
-      file->write( str, str_len );
+      if ( file == NULL ) // Lazy open
+      {
+        file = Volume().open( file_path, O_CREAT|O_WRONLY|O_APPEND );
+        if ( file == NULL )
+          return;
+      }
+     file->write( str, str_len );
     }
   private:
     auto_File file;
+    Path file_path;
   };
   class ostreamLog : public Log
   {
@@ -621,13 +631,18 @@ auto_Log Log::open( std::ostream& underlying_ostream, Level level )
 {
   return new ostreamLog( underlying_ostream, level );
 }
-auto_Log Log::open( const Path& file_path, Level level )
+auto_Log Log::open( const Path& file_path, Level level, bool lazy )
 {
-  auto_File file = Volume().open( file_path, O_CREAT|O_WRONLY|O_APPEND );
-  if ( file != NULL )
-    return new FileLog( file, level );
+  if ( lazy )
+    return new FileLog( file_path, level );
   else
-    return NULL;
+  {
+    auto_File file = Volume().open( file_path, O_CREAT|O_WRONLY|O_APPEND );
+    if ( file != NULL )
+      return new FileLog( file, level );
+    else
+      return NULL;
+  }
 }
 void Log::write( const unsigned char* str, size_t str_len, Level level )
 {
