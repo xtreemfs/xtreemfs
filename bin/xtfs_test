@@ -107,7 +107,22 @@ def create_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAU
 #                print "FAILED: cannot create volume test_%(osdnum)u" % locals()
 #                stop_services( num_osds )
 #                sys.exit( 1 )
-    
+
+def generate_db_config( debug_level=DEBUG_LEVEL_DEFAULT ):
+	locals().update( globals() )
+	database_log = os.path.join( "data", "dir" )
+	database_dir = os.path.join( "data", "dir" )
+	open( os.path.join( "config", "db.config" ), "w+" ).write( """\
+debug.level = %(debug_level)s
+db.logDir = %(database_log)s
+db.baseDir = %(database_dir)s
+db.sync = FSYNC
+worker.maxQueueLength = 250
+worker.numThreads = 0
+db.maxLogfileSize = 16777216
+db.checkInterval = 300
+db.pseudoSyncWait = 200
+""" % locals() )
 
 def generate_dir_config( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT ):
     locals().update( globals() )
@@ -273,6 +288,7 @@ def start_services( debug_level=DEBUG_LEVEL_DEFAULT_SERVICES, num_osds=NUM_OSDS_
         if not os.path.exists( subdir_name ):
             os.mkdir( subdir_name )
     
+    generate_db_config( debug_level )
     generate_dir_config( debug_level, enable_ssl )
     generate_mrc_config( debug_level, enable_ssl )
     for osdnum in xrange( num_osds ):
@@ -300,6 +316,8 @@ def _start_service( service_name, service_num="" ):
     args.extend( ( "-cp", "" + ( sys.platform.startswith( "win" ) and ";".join( CLASSPATH ) or ":".join( CLASSPATH ) ) + "", ) )
     args.append( "org.xtreemfs." + service_name + "." + service_name.upper() ) # Class name
     args.append( os.path.join( "config", service_name + service_num + ".config" ) ) # Configuration file
+    if service_name == "dir":
+    	args.append( os.path.join( "config", "db.config" ) ) # DB configuration file
     args = " ".join( args )
     log_file_path = os.path.join( "log", service_name + service_num + ".log" )
     stderr = stdout = open( log_file_path, "a" )
