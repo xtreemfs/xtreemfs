@@ -103,4 +103,6 @@ build_env.Library( "../../lib/xtreemfs", (
     r"../../src/libxtreemfs/policy_container.cpp",
     r"../../src/libxtreemfs/proxy.cpp",
     r"../../src/libxtreemfs/proxy_exception_response.cpp",
-    r"../../src/libxtreemfs/volume.cpp" ) )
+    r"../../src/libxtreemfs/volume.cpp",
+#Modified 09/25/09 (jgonz)
+    r"../../src/libxtreemfs/vivaldi_node.cpp") )

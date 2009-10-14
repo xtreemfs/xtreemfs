@@ -43,7 +43,7 @@ public class DIR {
      *            the command line arguments
      */
     public static void main(String[] args) {
-        
+
         String configFileName = "../../etc/xos/xtreemfs/dirconfig.test";
         String dbsConfigFileName = "../../etc/xos/xtreemfs/dirdbconfig.test";
         
@@ -53,7 +53,7 @@ public class DIR {
                     + dbsConfigFileName);
         } else {
             configFileName = args[0];
-            
+
             if (args.length == 2)
                 dbsConfigFileName = args[1];
             else

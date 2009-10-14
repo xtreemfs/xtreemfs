@@ -8,5 +8,8 @@
 #include "xtreemfs/osd_proxy_mux.h"
 #include "xtreemfs/path.h"
 #include "xtreemfs/volume.h"
+//Modified 09/25/09 (jgonz)
+#include "xtreemfs/vivaldi_node.h"
+
 
 #endif
