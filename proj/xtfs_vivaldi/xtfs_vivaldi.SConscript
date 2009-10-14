@@ -83,4 +83,5 @@ for lib in ["xtreemfs"]:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
 build_env.Program( "../../bin/xtfs_vivaldi", (
+    r"../../src/xtfs_vivaldi/vivaldi_node.cpp",
     r"../../src/xtfs_vivaldi/xtfs_vivaldi.cpp" ) )

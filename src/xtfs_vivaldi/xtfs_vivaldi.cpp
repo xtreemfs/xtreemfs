@@ -1,8 +1,10 @@
-// Copyright 2009 Minor Gordon.
+// Copyright 2009 Juan González de Benito.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/main.h"
 using namespace xtreemfs;
+
+#include "vivaldi_node.h"
 
 #include <cstdio>
 #include <cstdlib>
