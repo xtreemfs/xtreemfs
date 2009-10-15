@@ -105,20 +105,20 @@ You can also mount this volume on remote computers. First make sure that the por
 
 With XtreemFS you are about to install a modern \emph{distributed and replicated file system}. As a distributed file system, XtreemFS stores your file data on several servers and you can simply scale your file system by adding more hosts. XtreemFS is a full-featured file system that supports the full POSIX file interface, including \emph{extended attributes} (xattrs). In case of concurrent access by several distributed programs, XtreemFS provides you currently with NFS close-to-open consistency.
 
-Since version 1.0, XtreemFS also supports replication of files. The so called read-only replication allows you to have multiple copies of immutable files. XtreemFS also supports partial replicas which helps you to save disk capacity and network bandwidth; only data that is requested by clients is stored in partial replicas.
+Since version 1.0, XtreemFS also supports replication of files. The so called \emph{read-only replication} allows you to have multiple copies of immutable files. XtreemFS also supports partial replicas which helps you to save disk capacity and network bandwidth; only data that is requested by clients is stored in partial replicas.
 
 XtreemFS has been designed for deployment in \emph{wide-area environments} connected by the Internet. This means that it allows you to mount an XtreemFS volume from any location, given the right permissions; but it also implies that file system installations can span multiple locations or data centers.
 
-In a normal UNIX environment, XtreemFS has full permission and \emph{POSIX ACL} support. XtreemFS can also be integrated into \emph{X.509-based security architectures}. Access policies (as well several other policies) are pluggable and can be easily extended. If you deploy XtreemFS as part of an \emph{XtreemOS} installation, you will benefit from its transparent integration with the XtreemOS \emph{Virtual Organization (VO)} infrastructure in the form of dynamic user mappings and automatic mounting of home volumes.
+To enforce access control, XtreemFS supports a normal UNIX permission model, which can combined with \emph{X.509-based security architectures} to ensure a secure authentication of users. Access policies are pluggable, which means that they can be freely defined and easily extended. When using XtreemFS as part of an \emph{XtreemOS} installation, users can benefit from a transparent integration with the XtreemOS \emph{Virtual Organization (VO)} infrastructure in the form of dynamic user mappings and automatic mounting of home volumes.
 
-If you need \emph{high-performance} access to your files, XtreemFS can help you with support for \emph{file striping}: XtreemFS can store a file across several storage servers and \emph{access} the parts \emph{in parallel}. The size of an individual stripe and the number of storage servers used can be configured on a per-file or per-directory basis.
+If you need \emph{high performance} access to your files, XtreemFS can help you with support for \emph{file striping}: XtreemFS can store a file across several storage servers and \emph{access} the parts \emph{in parallel}. The size of an individual stripe and the number of storage servers used can be configured on a per-file or per-directory basis.
 
 
 \section{XtreemFS Architecture}
 
-XtreemFS implements an \emph{object-based file system architecture}\index{Object-base File System}\index{Architecture} (Fig. \ref{fig:architecture}). The name of this architecture comes from the fact that an object-based file system splits file content into a series of fixed-size \emph{objects}\index{Object} and stores them on its storage servers. In contrast to block-based file systems, the size of such an object can vary from file to file.
+XtreemFS implements an \emph{object-based file system architecture}\index{Object-based File System}\index{Architecture} (Fig. \ref{fig:architecture}): file content is split into a series of fixed-size \emph{objects}\index{Object} and stored across storage servers, while \emph{metadata}\index{Metadata} is stored on a separate metadata server. The metadata server organizes file system metadata as a set of \emph{volumes}\index{Volume}, each of which implements a separate file system namespace in form of a directory tree.
 
-The \emph{metadata}\index{Metadata} of a file (such as the file name or file size) is stored separate from the file content on a Metadata server. This metadata server organizes file system metadata as a set of \emph{volumes}\index{Volume}, each of which implements a separate file system namespace in form of a directory tree.
+In contrast to block-based file systems, the management of available and used storage space is offloaded from the metadata server to the storage servers. Rather than inode lists with block addresses, file metadata contains lists of storage servers responsible for the objects, together with striping policies\index{Striping Policy}\index{Policy!Striping Policy} that define how to translate between byte offsets and object IDs. This implies that object sizes may vary from file to file.
 
 %The advantage of this architecture is that the read and write operations, which make up 80 to 90 \% of all requests, can be spread across a large number of storage servers.
 
@@ -162,11 +162,11 @@ Many facets of the behavior of XtreemFS can be configured by means of policies. 
 
 \subsection{OSD and Replica Selection Policies} \label{sec:osd_policies}
 
-When a new file is created or a replica is automatically added to a file, the MRC must decide on a set of OSDs for storing the file content. OSD Selection Policies\index{OSD Selection Policy}\index{Policy!OSD Selection Policy} are used to select the most suitable subset among all known OSDs.
+When a new file is created or a replica is automatically added to a file, the MRC must decide on a set of OSDs for storing the file content. To select the most suitable subset among all known OSDs, OSD Selection Policies\index{OSD Selection Policy}\index{Policy!OSD Selection Policy} are used.
 
-Replica selection is a related problem. When a client opens a file with more than one replica, the MRC uses a replica selection policy to sort the list of replicas for the client. Clients will always use the first replica in the list. If a replica is not available, the client will automatically select the next replica from the list. Replica selection policies can be used to sort the replica lists, e.g. to ensure that clients use replicas which are close to them.
+Replica selection is a related problem. When a client opens a file with more than one replica, the MRC uses a replica selection policy to sort the list of replicas for the client. Initially, a client will always attempt to access the first replica in the list received from the MRC. If a replica is not available, it will automatically attempt to access the next replica from the list, and restart with the first replica if all attempts have failed. Replica selection policies can be used to sort the replica lists, e.g. to ensure that clients first try to access replicas that are close to them.
 
-Both OSD and replica selection policies share a common mechanism. Input parameters of a basic policy are a set of OSDs, the current replica locations list of the file, and the IP address of the client on behalf of whom the policy was called. The output parameter is a filtered and potentially sorted subset of OSDs. Since OSD lists returned by one basic policy can be used as input parameters by another one, basic policies can be chained to define more complex composite policies.
+Both OSD and replica selection policies share a common mechanism, in that they consist of \emph{basic policies} that can be arbitrarily combined. Input parameters of a basic policy are a set of OSDs, the current replica locations list of the file, and the IP address of the client on behalf of whom the policy was called. The output parameter is a filtered and potentially sorted subset of OSDs. Since OSD lists returned by one basic policy can be used as input parameters by another one, basic policies can be chained to define more complex composite policies.
 
 OSD and replica selection policies are assigned at volume granularity. For further details on how to set such policies, please refer to Sec.\ \ref{sec:osd_select_policy}.
 
@@ -293,7 +293,7 @@ Administrators may extend the set of existing policies by defining \textit{plug-
  \item \texttt{org.xtreemfs.mrc.ac.FileAccessPolicy}\\
    can be used to implement an individual access control model on files, directories and volumes
  \item \texttt{org.xtreemfs.mrc.osdselection.OSDSelectionPolicy}\\
-   can be used to implement an individual policy for allocating OSDs to newly created files
+   can be used to implement an individual basic policies for allocating OSDs to newly created files or replicas, and to sort replica lists
 \end{itemize}
 
 Note that there may only be one authentication provider per MRC, while file access policies and OSD selection policies may differ for each volume. The former one is identified by means of its class name (property \texttt{authentication\_provider}, see Sec.\ \ref{sec:config}), while volume-related policies are identified by ID numbers. It is therefore necessary to add a member field
@@ -308,6 +308,8 @@ Plug-in policies have to be deployed in the directory specified by the MRC confi
 
 
 \chapter{XtreemFS Services}
+
+This chapter describes how to install and set up the server side of an XtreemFS installation.
 
 \section{Installation}
 
@@ -353,27 +355,34 @@ This will build the XtreemFS server and Java-based tools. When done, execute
 $> sudo make install
 \end{verbatim}
 
+to install the server components. Finally, you will be asked to execute a post-installation script
+
+\begin{verbatim}
+$> sudo /etc/xos/xtreemfs/postinstall_setup.sh
+\end{verbatim}
+
 to complete the installation.
 
 \section{Configuration}
 \label{sec:service_config}
 
-Generally, the configuration files of XtreemFS are located in \texttt{/etc/xos/xtreemfs/} if you installed from packages.
+After having installed the XtreemFS server components, it is recommendable to configure the different services. This section describes the different configuration options.
 
+XtreemFS services are configured via Java properties files that can be modified with a normal text editor. Default configuration files for a Directory Service, MRC and OSD are located in \texttt{/etc/xos/xtreemfs/}.
 
 \subsection{A Word about UUIDs}
 
-XtreemFS uses UUIDs\index{UUID} (Universally Unique Identifiers) to be able to identify services and their associated state independently from the machine they are installed on. This implies that you cannot change the \texttt{uuid} of a MRC or OSD after it has been used for the first time!
+XtreemFS uses UUIDs\index{UUID} (Universally Unique Identifiers) to be able to identify services and their associated state independently from the machine they are installed on. This implies that you cannot change the UUID of an MRC or OSD after it has been used for the first time!
 
-The Directory Service keeps a mapping from UUID to a port number and IP address or hostname. Currently, each UUID can only be assigned to a single endpoint; the netmask must be ``*'' which means that this mapping is valid in all networks. Upon first start-up, OSDs and MRCs will create the mapping if it does not exist. They will use the first available network device with a public address.
+The Directory Service resolves UUIDs to service endpoints, where each service endpoint consists of an IP address or hostname and port number. Each endpoint is associated with a netmask that indicates the subnet in which the mapping is valid. In theory, multiple endpoints can be assigned to a single UUID if endpoints are associated with different netmasks. However, it is currently only possible to assign a single endpoint to each UUID; the netmask must be ``*'', which means that the mapping is valid in all networks. Upon first start-up, OSDs and MRCs will auto-generate the mapping if it does not exist, by using the first available network device with a public address.
 
-Changing the IP address, hostname or port is possible at any time. Due to the caching of UUIDs in all components it can take some time until the new UUID mapping is used by all OSDs, MRCs and clients. The TTL defines how long an XtreemFS component is allowed to keep entries cached. The default value is 3600 seconds (1 hour). It should be set to shorter durations if services change their IP address frequently.
+Changing the IP address, hostname or port is possible at any time. Due to the caching of UUIDs in all components, it can take some time until the new UUID mapping is used by all OSDs, MRCs and clients. The TTL (time-to-live) of a mapping defines how long an XtreemFS component is allowed to keep entries cached. The default value is 3600 seconds (1 hour). It should be set to shorter durations if services change their IP address frequently.
 
-To create a globally unique UUID you can use tools like \texttt{uuidgen}. During installation the post-install script will automatically create a UUID for each OSD and MRC if it does not have a UUID assigned.
+To create a globally unique UUID you can use tools like \texttt{uuidgen}. During installation, the post-install script will automatically create a UUID for each OSD and MRC if it does not have a UUID assigned.
 
 \subsection{Automatic DIR Service Discovery}
 \label{sec:autodiscover}
-The OSD and MRC discover the DIR service automatically by default. On startup they will broadcast requests to the local LAN and wait up to 10s for a response from a DIR. This works only in a local LAN environment as broadcast messages are not routed to other networks. Local firewalls on the computers on which the services are running can also prevent the automatic discovery from working. The services will select the first DIR which responded which can lead to non-deterministic behavior if multiple DIR services are present.
+OSDs and MRCs are capable of automatically discovering a Directory Service. If automatic DIR discovery is switched on, the service will broadcast requests to the local LAN and wait up to 10s for a response from a DIR. The services will select the first DIR which responded, which can lead to non-deterministic behavior if multiple DIR services are present. Note that the feature works only in a local LAN environment, as broadcast messages are not routed to other networks. Local firewalls on the computers on which the services are running can also prevent the automatic discovery from working.
 
 \textbf{Security:} The automatic discovery is a potential security risk when used in untrusted environments as any user can start-up DIR services.
 
@@ -381,7 +390,7 @@ A statically configured DIR address and port can be used to disable DIR discover
 
 \subsection{Authentication}
 \label{sec:AuthProvider}
-XtreemFS has an interface which allows MRC administrators to choose the way of authenticating users\index{Authentication Provider}. Basically, an MRC has two sources of information on users. The first one is the user id and group ids sent by the client along with each request. In addition, the MRC can use information included in the certificates if SSL is enabled. The Authentication Providers are modules that implement different methods for retrieving the user and group IDs to use.
+XtreemFS has an interface which allows MRC administrators to choose the way of authenticating users\index{Authentication Provider}. Basically, an MRC has two sources of information on users. The first one is the user ID and group IDs sent by the client along with each request. In addition, the MRC can use information included in the certificates if SSL is enabled. The Authentication Providers are modules that implement different methods for retrieving the user and group IDs to use.
 
 \subsubsection{UNIX uid/gid - NullAuthProvider}
 
@@ -393,7 +402,7 @@ The superuser is identified by the user ID \texttt{root} and is allowed to do ev
 
 \subsubsection{Plain SSL Certificates - SimpleX509AuthProvider}
 
-XtreemFS supports two X.509 certificate ``types'' which can be used by the client.\index{Authentication Provider!SimpleX509AuthProvider}\index{SimpleX509AuthProvider} When mounted with a service/host certificate the XtreemFS client is regarded as a trusted system component. The MRC will accept any user ID and groups sent by the client and use them for authorization as with the NullAuthProvider. This setup is useful for volumes which are used by multiple users.
+XtreemFS supports two kinds of X.509 certificates which can be used by the client.\index{Authentication Provider!SimpleX509AuthProvider}\index{SimpleX509AuthProvider} When mounted with a service/host certificate the XtreemFS client is regarded as a trusted system component. The MRC will accept any user ID and groups sent by the client and use them for authorization as with the NullAuthProvider. This setup is useful for volumes which are used by multiple users.
 
 The second certificate type are regular user certificates. The MRC will only accept the user name and group from the certificate and ignore the user ID and groups sent by the client. Such a setup is useful if users are allowed to mount XtreemFS from untrusted machines.
 
@@ -560,7 +569,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & DIR, MRC, OSD\\
  Values   & 1 .. 65535 \\
  Default  & 30636 (MRC), 30638 (DIR), 30640 (OSD)\\
- Description & Specifies the geographic coordinates which are registered with the directory service. Used e.g. by the web console.
+ Description & Specifies the listen port for the HTTP service that returns the status page.
 \end{tabular}
 
 \subsubsection{\texttt{listen.address} \textit{optional}}
@@ -578,7 +587,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Default  & DIR: 32638,\\
  & MRC: 32636,\\
  & OSD: 32640 \\
- Description & The port to listen on for incoming connections (TCP). The OSD uses TCP and UDP on the specified port. Make sure to configure your firewall to allow incoming TCP and UDP traffic on the specified port.
+ Description & The port to listen on for incoming ONC-RPC connections (TCP). The OSD uses the specified port for both TCP and UDP. Please make sure to configure your firewall to allow incoming TCP traffic (plus UDP traffic, in case of an OSD) on the specified port.
 \end{tabular}
 
 \subsubsection{\texttt{local\_clock\_renewal}}
@@ -602,7 +611,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & MRC\\
  Values   & true, false \\
  Default  & false\\
- Description & By default, the MRC will write all file-modifying operations (such as create file, delete etc.) to disk followed by a \texttt{fsync} to ensure data is written to the hard disk. While this ensures maximum data safety in case of crash of the MRC server, it also reduces the performance of the MRC. Set this to true, if you want much higher performance at the risk of losing some recent file operations in case of a server crash.
+ Description & By default, the MRC will write all file-modifying operations (such as create file, delete etc.) to disk followed by a \texttt{fsync} to ensure data is written to the hard disk. While this ensures maximum data safety in case of crash of the MRC server, it also reduces the performance of the MRC. Set this to true, if you want much higher performance at the risk of losing uncommitted file operations in case of a server crash.
 \end{tabular}
 
 \subsubsection{\texttt{object\_dir}}
@@ -711,7 +720,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 
 In order to enable certificate-based authentication in an XtreemFS installation, services need to be equipped with X.509\index{X.509}\index{Certificate}\index{Credentials} certificates. Certificates are used to establish a mutual trust relationship among XtreemFS services and between the XtreemFS client and XtreemFS services.
 
-It is not possible to mix SSL-enabled and non-SSL services in an XtreemFS installation!
+Note that it is not possible to mix SSL-enabled and non-SSL services in an XtreemFS installation!
 
 Each XtreemFS service needs a certificate and a private key in order to be run. Once they have been created and signed, the credentials may need to be converted into the correct file format. XtreemFS services also need a \textit{trust store} that contains all trusted Certification Authority certificates.
 
@@ -756,7 +765,7 @@ This will create a new Java Keystore \texttt{trusted.jks} with the CA certificat
 
 Note: If you get the following error
 \begin{verbatim}
-$> keytool error: java.lang.Exception: Input not an X.509 certificate
+keytool error: java.lang.Exception: Input not an X.509 certificate
 \end{verbatim}
 you should remove any text from the beginning of the certificate (until the \texttt{-----BEGIN CERTIFICATE-----} line).
 
@@ -860,8 +869,8 @@ $> cp \textit{service}.p12 /etc/xos/xtreemfs/truststore/certs
 \end{enumerate}
 
 
-\section{Management}
-This section covers all tools and functionality for XtreemFS management and tracing. In general, the use of management tools is restricted to superusers.
+\section{Execution and Monitoring}
+This section describes how to execute and monitor XtreemFS services.
 
 \subsection{Starting and Stopping the XtreemFS services}
 \label{sec:startstopservice}
@@ -880,59 +889,34 @@ or
 	\end{verbatim}
 
 
-\textbf{Note} that the Directory Service should be started first, in order to allow other services an immediate registration. Once a Directory Service and at least one OSD and MRC are running, XtreemFS is operational.
+To run init.d scripts, root permissions are required. \textbf{Note} that the Directory Service must be started first, since a running Directory Service is required when starting an MRC or OSD. Once a Directory Service as well as at least one OSD and MRC are running, XtreemFS is operational.
 
 \subsection{Web-based Status Page}
 
-The XtreemFS services all have a HTML status page\index{Status Page} which can be used to check if the service is working correctly (Fig. \ref{fig:screenshot_status}). It can be displayed by opening the service URL in your favorite web browser, e.g.\\ \texttt{http://my-mrc-host.com:30636/}. Make sure to use the right port, see \texttt{http\_port} in the service config file.
-
 \begin{figure}[h]
  \centering
- \resizebox{0.7\linewidth}{!}{\includegraphics{images/screenshot_status.png}}
+ \resizebox{0.65\linewidth}{!}{\includegraphics{images/screenshot_status.png}}
  % screenshot_status.png: 817x847 pixel, 72dpi, 28.82x29.88 cm, bb=0 0 817 847
  \caption{OSD status web page}
  \label{fig:screenshot_status}
 \end{figure}
 
+Each XtreemFS service can generate an HTML status page\index{Status Page}, which displays runtime information about the service (Fig. \ref{fig:screenshot_status}). The HTTP server that generates the status page runs on the port defined by the configuration property \texttt{http\_port}; default values are 30636 for MRCs, 30638 for Directory Services, and 30640 for OSDs.
 
-\subsection{Creating Volumes}
-\label{sec:create_volume}
+The status page of an MRC can e.g.\ be shown by opening
 
-Volumes can be created with the \texttt{xtfs\_mkvol} command line utility. Please see \texttt{man xtfs\_mkvol} for a full list of options and usage\index{Create Volume}\index{Volume!Create}\index{xtfs\_mkvol}.
+\texttt{http://my-mrc-host.com:30636/}
 
-When creating a volume, it is recommended to specify the access policy (see Sec. \ref{sec:access_policies}). If not specified, POSIX permissions/ACLs will be chosen by default. Access policies cannot be changed afterwards.
-
-An OSD selection policy (see Sec. \ref{sec:osd_policies}) can also be specified per volume, but can be changed anytime. By default, a random selection of available OSDs is assigned to newly created files.
-
-In addition, it is recommended to set a default striping policy (see Sec. \ref{sec:striping_policies}). If no per-file or per-directory default striping policy overrides the volume's default striping policy, the volume's policy is used for new files and directories. If no volume policy is explicitly defined, a RAID0 policy with a stripe size of 128kB and a width of 1 will be assigned to the volume.
-
-An example call to \texttt{xtfs\_mkvol} for creating a volume with POSIX ACLs, 256kB stripe size and a stripe width of 1 (which means no striping):
+with a common web browser.
 
 
-\begin{verbatim}
-$> xtfs_mkvol -a POSIX -p RAID0 -s 256 -w 1 \
-   my-mrc-host.com:32636/myVolume
-\end{verbatim}
+\chapter{XtreemFS Client}
 
-\subsection{Deleting Volumes}
-
-The \texttt{xtfs\_rmvol} tool can be used to delete a volume. This also \emph{deletes all files and data on that volume}! Please see \texttt{man xtfs\_rmvol} for a full list of options and usage\index{Delete Volume}\index{Volume!Delete}\index{xtfs\_rmvol}.
-
-Example call to \texttt{xtfs\_rmvol} to delete \texttt{myVolume}:
-
-
-\begin{verbatim}
-$> xtfs_rmvol my-mrc-host.com:32636/myVolume
-\end{verbatim}
-
-Volume deletion is restricted to volume owners and privileged users.
-
-
-\chapter{The XtreemFS Client}
+The XtreemFS client is needed to access an XtreemFS installation from a remote machine. This chapter describes how to use the XtreemFS client in order to work with XtreemFS like a local file system.
 
 \section{Installation}
 
-As for the XtreemFS Services, there are two different installation sources for the XtreemFS Client: \emph{pre-packaged releases} and \emph{source tarballs}.
+There are two different installation sources for the XtreemFS Client: \emph{pre-packaged releases} and \emph{source tarballs}.
 
 \subsection{Prerequisites}
 
@@ -969,19 +953,79 @@ Extract the tarball with the sources. Change to the top level directory and exec
 $> make client
 \end{verbatim}
 
-This will build the XtreemFS client and non-Java-based tools. When done, execute
+This will build the XtreemFS client and non-Java-based tools. Note that the following third-party packages are required:
+
+\begin{verbatim}
+python >= 2.4
+gcc-c++ >= 4
+fuse >= 2.6
+fuse-devel >= 2.6 (RPM-based distros)
+libfuse-dev >= 2.6 (DEB-based distros)
+libopenssl-devel >= 0.8 (RPM-based distros)
+libssl-dev >= 0.9 (DEB-based distros)
+\end{verbatim}
+
+When done, execute
 
 \begin{verbatim}
 $> sudo make install
 \end{verbatim}
 
-to complete the installation.
+to complete the installation of XtreemFS.
+
+
+\section{Volume Management}
+
+Like many other file systems, XtreemFS supports the concept of volumes. A volume can be seen as a container for files and directories with its own policy settings, e.g.\ for access control and replication. Before being able to access an XtreemFS installation, at least one volume needs to be set up. This section describes how to deal with volumes in XtreemFS.
+
+\subsection{Creating Volumes}
+\label{sec:create_volume}
+
+Volumes can be created with the \texttt{xtfs\_mkvol} command line utility. Please see \texttt{man xtfs\_mkvol} for a full list of options and usage\index{Create Volume}\index{Volume!Create}\index{xtfs\_mkvol}.
+
+When creating a volume, it is recommended to specify the access control policy (see Sec. \ref{sec:access_policies}). If not specified, POSIX permissions/ACLs will be chosen by default. Unlike most other policies, access control policies cannot be changed afterwards.
+
+In addition, it is recommended to set a default striping policy (see Sec. \ref{sec:striping_policies}). If no per-file or per-directory default striping policy overrides the volume's default striping policy, the volume's policy is used as the policy for new files and directories. If no volume policy is explicitly defined, a RAID0 policy with a stripe size of 128kB and a width of 1 will be assigned to the volume.
+
+A volume with a POSIX permission model, a stripe size of 256kB and a stripe width of 1 (i.e.\ all stripes will reside on the same OSD) can be created as follows:
+
+
+\begin{verbatim}
+$> xtfs_mkvol -a POSIX -p RAID0 -s 256 -w 1 \
+   my-mrc-host.com:32636/myVolume
+\end{verbatim}
+
+Creating a volume may require privileged access, which depends on whether an administrator password required by the MRC. To pass an administrator password, add \texttt{----password <password>} to the \texttt{xtfs\_mkvol} command.
+
+\subsection{Deleting Volumes}
+
+Volumes can be deleted with the \texttt{xtfs\_rmvol} tool. Note that deleting a volume implies that \emph{any data, i.e.\ all files and directories on the volume are deleted}! Please see \texttt{man xtfs\_rmvol} for a full list of options and usage\index{Delete Volume}\index{Volume!Delete}\index{xtfs\_rmvol}.
+
+The volume \texttt{myVolume} residing on the MRC \texttt{my-mrc-host.com:32636} can e.g.\ be deleted as follows:
+
+\begin{verbatim}
+$> xtfs_rmvol my-mrc-host.com:32636/myVolume
+\end{verbatim}
+
+Volume deletion is restricted to volume owners and privileged users. Similar to \texttt{xtfs\_mkvol}, an administrator password can be specified if required.
+
+\subsection{Listing all Volumes}
+
+A list of all volumes can be displayed with the \texttt{xtfs\_lsvol} tool. All volumes hosted by the MRC \texttt{my-mrc-host.com:32636} can be listed as follows:
+
+\begin{verbatim}
+$> xtfs_lsvol my-mrc-host.com:32636
+\end{verbatim}
+
+Adding the \texttt{--l} flag will result in more details being shown.
 
 
 \section{Mounting and Un-mounting}
 \label{sec:mount_vol}
 
-Before mounting XtreemFS volumes, please ensure that the FUSE kernel module is loaded.\index{Volume!Mount}\index{Mount}\index{xtfs\_mount} Please check your distribution's manual to see, if users must be in a special group (e.g. \texttt{trusted} in openSUSE) to be allowed to mount FUSE.
+Once a volume has been created, it needs to be mounted in order to be accessed.
+
+Before mounting XtreemFS volumes on a Linux machine, please ensure that the FUSE kernel module is loaded.\index{Volume!Mount}\index{Mount}\index{xtfs\_mount} Please check your distribution's manual to see if users must be in a special group (e.g. \texttt{trusted} in openSUSE) to be allowed to mount FUSE.
 
 
 \begin{verbatim}
@@ -992,7 +1036,7 @@ Password:
 \end{verbatim}
 
 
-To mount an XtreemFS volume use the \texttt{xtfs\_mount} tool.
+Volumes are mounted with the \texttt{xtfs\_mount} command:
 
 
 \begin{verbatim}
@@ -1000,20 +1044,21 @@ $> xtfs_mount remote.dir.machine/myVolume /xtreemfs
 \end{verbatim}
 
 
-\texttt{remote.dir.machine} describes the host with the Directory Service at which the volume is registered; \texttt{myVolume} is the name of the volume name to be mounted. \texttt{/xtreemfs} is the directory on the local file system to which the XtreemFS volume will be mounted. For more options, please refer to \texttt{man xtfs\_mount}.
+\texttt{remote.dir.machine} describes the host with the Directory Service at which the volume is registered; \texttt{myVolume} is the name of the volume to be mounted. \texttt{/xtreemfs} is the directory on the local file system to which the XtreemFS volume will be mounted. For more options, please refer to \texttt{man xtfs\_mount}.
 
-The client will immediately go into background and won't display any error messages. Use the \texttt{-f} option to prevent the mount process from going into background and get all error messages printed to the console.
+Please be aware that the Directory Service URL needs to be provided when mounting a volume, while MRC URLs are used to create volumes.
+
+When mounting a volume, the client will immediately go into background and won't display any error messages. Use the \texttt{-f} option to prevent the mount process from going into background and get all error messages printed to the console.
 
 Access to a FUSE mount is usually restricted to the user who mounted the volume. To allow the root user or any other user on the system to access the mounted volume, the FUSE options \texttt{-o allow\_root} and \texttt{-o allow\_other} can be used with \texttt{xtfs\_mount}. They are, however, mutually exclusive. In order to use these options, the system administrator must create a FUSE configuration file \texttt{/etc/fuse.conf} and add a line\index{allow\_others option}\index{allow\_root option}\index{user\_allow\_other option} \texttt{user\_allow\_other}.
 
-To check that a volume is mounted use the \texttt{mount} command. It ouputs a list of all mounts in the system. XtreemFS volumes are listed as \texttt{type fuse}:
+To check that a volume is mounted, use the \texttt{mount} command. It outputs a list of all mounts in the system. XtreemFS volumes are listed as \texttt{type fuse}:
 
 \begin{verbatim}
 /dev/fuse on /xtreemfs type fuse (rw,nosuid,nodev,user=userA)
 \end{verbatim}
 
-Volumes are unmounted using the \texttt{xtfs\_umount} tool\index{Volume!Un-mount}\index{Unmount}\index{xtfs\_umount}.
-
+Volumes are unmounted with the \texttt{xtfs\_umount} tool\index{Volume!Un-mount}\index{Unmount}\index{xtfs\_umount}:
 
 \begin{verbatim}
 $> xtfs_umount /xtreemfs
@@ -1022,9 +1067,11 @@ $> xtfs_umount /xtreemfs
 
 \chapter{XtreemFS Tools}
 
+To make use of most of the advanced XtreemFS features, XtreemFS offers a variety of different tools. There are tools that support administrators with the maintenance of an XtreemFS installation, as well as tools for controlling features like replication and striping. An overview of the different tools with descriptions of how to use them are provided in the following.
+
 \section{Installation}
 
-When installing XtreemFS tools, you can choose from two different installation sources: you can download one of the \emph{pre-packaged releases} that we create for most Linux distributions or you can install directly from the \emph{source tarball}. In the pre-packaged release, the server and the client parts are split into separate packages.
+When installing the XtreemFS tool suite, you can choose from two different installation sources: you can download one of the \emph{pre-packaged releases} that we create for most Linux distributions or you can install directly from the \emph{source tarball}. In the pre-packaged release, the server and the client parts are split into separate packages.
 
 \subsection{Prerequisites}
 
@@ -1070,22 +1117,29 @@ to complete the installation. Note that this will also install the XtreemFS clie
 
 \section{Maintenance Tools}
 
-Tools for the maintenance of an XtreemFS installation will be described in the following.
+This section describes the tools that support administrators in maintaining an XtreemFS installation.
 
 \subsection{MRC Database Conversion}
 
-The format in which the MRC stores its data on disk may change with future XtreemFS versions. In order that XtreemFS server components may be updated without losing the whole content of the file system, it is possible to create a version-independent XML representation of the metadata stored in MRC database.
+The database format in which the MRC stores its file system metadata on disk may change with future XtreemFS versions, even though we attempt to keep it as stable as possible. To ensure that XtreemFS server components may be updated without having to create and restore a backup of the entire installation, it is possible convert an MRC database to a newer version by means of a version-independent XML representation.
 
-Such an XML representation can e.g.\ be created as follows:
+This is done as follows:
+\begin{enumerate}
+  \item Create an XML representation of the old database with the old MRC version.
+  \item Update the MRC to the new version.
+  \item Restore the database from the XML representation.
+\end{enumerate}
+
+\texttt{xtfs\_mrcdbtool} is a tool that is capable of doing this. It can create an XML dump of an MRC database as follows:
 
 \begin{verbatim}
 $> xtfs_mrcdbtool -mrc oncrpc://my-mrc-host.com:32636 \
    dump /tmp/dump.xml
 \end{verbatim}
 
-This call will create a file \texttt{dump.xml} containing the entire MRC database content in the \texttt{/tmp} directory at \texttt{my-mrc-host.com}.
+A file \texttt{dump.xml} containing the entire database content of the MRC running on \texttt{my-mrc-host.com:32636} is written to \texttt{/tmp/dump.xml}. For security reasons, the dump file will be created locally on the MRC host. To make sure that sufficient write permissions are granted to create the dump file, we therefore recommend to specify an absolute dump file path like \texttt{/tmp/dump.xml}.
 
-To restore an MRC database from a dump, execute
+A database dump can be restored from a dump file as follows:
 
 \begin{verbatim}
 $> xtfs_mrcdbtool -mrc oncrpc://my-mrc-host.com:32636 \
@@ -1094,6 +1148,8 @@ $> xtfs_mrcdbtool -mrc oncrpc://my-mrc-host.com:32636 \
 
 This will restore the database stored in \texttt{/tmp/dump.xml} at \texttt{my-mrc-host.com}. Note that for safety reasons, it is only possible to restore a database from a dump if the database of the running MRC does not have any content. To restore an MRC database, it is thus necessary to delete all MRC database files before starting the MRC.
 
+Please be aware that dumping and restoring databases may both require privileged access rights if the MRC requires an administrator password. The password can be specified via \texttt{--p}; for further details, check the \texttt{xtfs\_mrcdbtool} man page.
+
 \subsection{Scrubbing and Cleanup}
 
 In real-world environments, errors occur in the course of creating, modifying or deleting files. This can cause corruptions of file data or metadata. Such things happen e.g.\ if the client is suddenly terminated, or loses connection with a server component. There are several such scenarios: if a client writes to a file but does not report file sizes received from the OSD back to the MRC, inconsistencies between the file size stored in the MRC and the actual size of all objects in the OSD will occur. If a client deletes a file from the directory tree, but cannot reach the OSD, orphaned objects will remain on the OSD. If an OSD is terminated during an ongoing write operation, file content will become corrupted.
@@ -1101,7 +1157,7 @@ In real-world environments, errors occur in the course of creating, modifying or
 In order to detect and, if possible, resolve such inconsistencies, tools for scrubbing and OSD cleanup exist. To check the consistency of file sizes and checksums, the following command can be executed:
 
 \begin{verbatim}
-$> xtfs_scrub -dir oncrpc://my-dir-host.com:32638 xtreemfsVolume
+$> xtfs_scrub -dir oncrpc://my-dir-host.com:32638 myVolume
 \end{verbatim}
 
 This will scrub each file in the volume \texttt{myVolume}, i.e.\ check file size consistency and set the correct file size on the MRC, if necessary, and check whether an invalid checksum in the OSD indicates a corrupted file content. The \texttt{-dir} argument specifies the directory service that will be used to resolve service UUIDs. Please see \texttt{man xtfs\_scrub} for further details.
@@ -1120,9 +1176,9 @@ interactive mode. For further information see \texttt{man xtfs\_cleanup}.
 
 \section{User Tools}
 
-There is a range of tools for the specific features of XtreemFS, which will be described in the following.
+Besides administrator tools, a variety of tools exist that make advanced XtreemFS features accessible to users. These tools will be described in this section.
 
-\subsection{Reading XtreemFS-specific File Info}
+\subsection{Showing XtreemFS-specific File Info}
 
 In addition to the regular file system information provided by the \texttt{stat} Linux utility, XtreemFS provides the \texttt{xtfs\_stat}\index{xtfs\_stat}\index{XtreemFS stat} tool which displays XtreemFS specific information for a file or directory.
 
@@ -1157,25 +1213,29 @@ XtreemFS replica list
 \end{verbatim}
 
 
-The fileID \index{fileID} is the unique identifier of the file used on the OSDs to identify the file's objects. The owner/group fields are shown as reported by the MRC, you may see other names on your local system if there is no mapping (i.e. the file owner does not exist as a user on your local machine).
+The fileID \index{fileID} is the unique identifier of the file used on the OSDs to identify the file's objects. The owner/group fields are shown as reported by the MRC, you may see other names on your local system if there is no mapping (i.e.\ the file owner does not exist as a user on your local machine).
 Finally, the XtreemFS replica list shows the striping policy of the file, the number of replicas and for each replica, the OSDs used to store the objects.
 
 
 \subsection{Changing Striping Policies}
 
-It is not (yet) possible to change the striping policy of an existing file, as this would require moving and reformatting data among OSDs. However, individual striping policies can be assigned to new files (i.e. empty files) by changing the default striping policy of the parent directory or volume. For this purpose, XtreemFS provides the \texttt{xtfs\_sp}\index{xtfs\_sp}\index{XtreemFS striping policy tool} tool. The tool can be used to change the striping policy that will be assigned to newly created files.
+It is not (yet) possible to change the striping policy of an existing file, as this would require rearranging and transferring data between OSDs. However, it is possible to define individual striping policies for files that will be created in the future. This can be done by changing the default striping policy of the parent directory or volume. 
+
+XtreemFS provides the \texttt{xtfs\_sp}\index{xtfs\_sp}\index{XtreemFS striping policy tool} tool. The tool can be used to change the striping policy that will be assigned to newly created files as follows:
 
 \begin{verbatim}
-$> xtfs_sp --set -p RAID0 -w 4 -s 256 /xtreemfs
+$> xtfs_sp --set -p RAID0 -w 4 -s 256 /xtreemfs/dir
 \end{verbatim}
 
-In addition, the tool can be used to retrieve the default striping policy of a volume or directory.
+This will cause a RAID0 striping policy with 256kB stripe size and four OSDs to be assigned to all newly created files in \texttt{/xtreemfs/dir}.
+
+The tool can display the default striping policy of a volume or directory as follows:
 
 \begin{verbatim}
 $> xtfs_sp --get /xtreemfs
 \end{verbatim}
 
-The output will be similar to the following:
+This will result in output similar to the following:
 
 \begin{verbatim}
 file:         /xtreemfs
@@ -1184,121 +1244,143 @@ stripe-size:  4
 width (kB):   256
 \end{verbatim}
 
-When creating a new file, XtreemFS will first check whether a default striping policy has been assigned to the parent directory. If this is not the case, the default striping policy for the volume will be used as the striping policy for the new file. Changing a volume's or directory's default striping policy requires superuser access rights or ownership of the directory or volume.
+When creating a new file, XtreemFS will first check whether a default striping policy has been assigned to the parent directory. If this is not the case, the default striping policy for the volume will be used as the striping policy for the new file. Changing a volume's or directory's default striping policy requires superuser access rights, or ownership of the volume or directory.
+
+
+\subsection{Read-Only Replication}\index{Replication}\index{Replication!read-only}\index{Read-only Replication}
+
+Replication is one of core features of XtreemFS. A replica can be seen as a (not essentially complete) copy of a file's content on a remote (set of) OSD(s). Replication is handled among the XtreemFS OSDs, which makes it completely transparent to client applications.
+
+So far, XtreemFS only supports \emph{read-only replication}. Read-only replication requires files to be immutable (i.e.\ 'read-only'), which implies that once a file has been replicated, it can no longer be modified. The benefit of read-only replicas is that XtreemFS can guarantee sequential replica consistency without at a low cost; since files are no longer modified when replicated, no overhead is caused to rule out inconsistent replicas.
+
+When replicating a file, the first step is to make the file read-only, which can be done as follows:
+
+\begin{verbatim}
+$> xtfs_repl --set_readonly local-path-of-file
+\end{verbatim}
+
+Once a file has been marked as read-only, replicas can be added. The tool supports differend replica creation modes. The automatic mode retrieves a list of OSDs from the MRC and chooses the best OSD according to the current replica selection policy. You can also select a specific OSD by specifying its UUID on the command line.
+
+Newly created replicas are initially empty, which means that no file content has been copied from other non-empty replicas. Yet, they can be immediately used by applications. If a replica does not have the requested data, it fetches the data from a remote replica and saves it locally for future requests (on-demand replication). Such partial replicas help to save network bandwidth and disk usage. Alternatively, replicas can be triggered to fetch the whole data from remote replicas in the background, regardless of client requests (background replication).
+
+Moreover, XtreemFS supports different transfer strategies which has an big impact on the speed of the replication and the order in which objects are fetched. A transfer strategy must be chosen for each replica.
+
+A replica can e.g.\ created as follows:
+
+\begin{verbatim}
+$> xtfs_repl --add_auto --full --strategy random \
+   /xtreemfs/file.txt
+\end{verbatim}
+
+This command creates a new replica with an automatically-selected set of OSDs (for details, see Sec.\ \ref{sec:osd_policies}, \ref{sec:osd_select_policy}). The switch \texttt{----full} indicates that background replication is desired; otherwise, replicas are filled on demand, which means that they remain partial replicas until all objects have been fetched by the client.
+
+To list all replicas and OSDs of the file use:
+
+\begin{verbatim}
+$> xtfs_repl -l /xtreemfs/file.txt
+\end{verbatim}
+
+Besides adding replicas, replicas can also be removed. To remove a specific replica, the head OSD (i.e.\ first OSD in the OSD list) of this replica must be given as an argument. To ensure that at least one complete replica remains, complete replicas can only be removed if another complete replica exists.
+
+A replica can be removed as follows:
+
+\begin{verbatim}
+$> xtfs_repl -r 7309a9f6-78af-4078-b8d8-8cd3a46e5b07 \
+   /xtreemfs/file.txt
+\end{verbatim}
+
+\texttt{7309a9f6-78af-4078-b8d8-8cd3a46e5b07} refers to the UUID of the head OSD in the replica to remove.
+
+
+\subsection{Automatic On-Close Replication}\index{Replication}\index{Replication!on-close}\index{On-close Replication}
+
+In addition to manually adding and removing replicas, XtreemFS supports an automatic creation of new replicas when files are closed after having been initially written. This feature can e.g.\ be used to automatically replicate volumes that only contain write-once files, such as archival data.
+
+To configure the behavior of the on-close replication, the \texttt{xtfs\_repl} tool is used.
+
+The number of replicas to be created when a file is closed can be specified as a volume-wide parameter, which can be set as follows:
+
+\begin{verbatim}
+$> xtfs_repl --ocr_factor_set 2
+\end{verbatim}
+
+This will automatically create a second replica the file is closed. Note that by setting the replication factor to 1 (default value), on-close replication will be switched off, which means that the file won't be replicated and will remain writable after having been closed.
+
+The current replication factor of a volume can be retrieved as follows:
+
+\begin{verbatim}
+$> xtfs_repl --ocr_factor_get
+\end{verbatim}
+
+Moreover, it is possible to specify whether an automatically created replica will be synchronized in the background or on demand. By default, replicas will be synced on demand. This can be changed as follows:
+
+\begin{verbatim}
+$> xtfs_repl --ocr_full_set true
+\end{verbatim}
+
+Depending on whether \texttt{----ocr\_full\_set} is \texttt{true} or \texttt{false}, background replication of newly created files is switched on or off.
+
+To show whether replicas are automatically filled or not, execute the following command:
+
+\begin{verbatim}
+$> xtfs_repl --ocr_full_get
+\end{verbatim}
 
 \subsection{Changing OSD and Replica Selection Policies}\label{sec:osd_select_policy}
 
-The OSD and replica selection policy can only be set for the entire volume. The policies are described in Sec.\ \ref{sec:osd_policies}. To show and modify these policies for a volume, use the \texttt{xtfs\_repl} tool.
+When creating a new file, OSDs have to be selected on which to store the file content. Likewise, OSDs have to be selected for a newly added replica, as well as the order in which replicas are contacted when accessing a file. How these selections are done can be controlled by the user.
 
-\begin{verbatim}
- $> xtfs_repl --rsp_get /xtreemfs
-\end{verbatim}
+OSD and replica selection policies can only be set for the entire volume. Further details about the policies are described in Sec.\ \ref{sec:osd_policies}.
 
-displays the current replica selection policy used for the volume. To change the policy to use the datacenter map for  a volume, use
+The policies are set and modified with the \texttt{xtfs\_repl} tool. A policy that controls the selection of a replica is set as follows:
 
 \begin{verbatim}
  $> xtfs_repl --rsp_set dcmap /xtreemfs
 \end{verbatim}
 
-Similarly, OSD selection policies are set and retrieved:
+This will change the current replica selection policy to a policy based on a data center map. The current replica selection policy is shown as follows:
 
 \begin{verbatim}
- $> xtfs_repl --osp_get /xtreemfs
+ $> xtfs_repl --rsp_get /xtreemfs
 \end{verbatim}
 
-retrieves the OSD selection policy, whereas it can be set via
+Note that by default, there is no replica selection policy, which means that the client will attempt to access replicas in their natural order, i.e.\ the order in which the replicas have been created.
+
+Similar to replica selection policies, OSD selection policies are set and retrieved:
 
 \begin{verbatim}
  $> xtfs_repl --osp_set dcmap /xtreemfs
 \end{verbatim}
 
-If you want to use a custom (i.e. plug-in) policy, pass the ID instead of the name.
+sets a data center map-based OSD selection policy, which is invoked each time a new file or replica is created. The following predefined policies exist (see Sec.\ \ref{sec:osd_policies} and \texttt{man xtfs\_repl} for details):
+
+\begin{itemize}
+ \item \texttt{default}
+ \item \texttt{fqdn}
+ \item \texttt{dcmap}
+\end{itemize}
+
+The default OSD selection policy selects a random subset of OSDs that are responsive and have sufficient free disk space, whereas the \texttt{fqdn} and \texttt{dcmap} policies select those subsets of responsive OSDs with enough space that are closest according to fully qualified domain names and a data center map, accordingly. Besides, custom policies can be set by passing a list of basic policy IDs to be successively applied instead of a predefined policy name.
+
+The OSD selection policy can be retrieved as follows:
+
+\begin{verbatim}
+ $> xtfs_repl --osp_get /xtreemfs
+\end{verbatim}
 
 \subsection{Setting and Listing Policy Attributes}
 
-OSD and replica selection policy behavior can be defined by means of policy attributes. Policy attributes can be set as follows:
+OSD and replica selection policy behavior can be further specified by means of policy attributes. For a list of predefined attributes, see \texttt{man xtfs\_repl}. Policy attributes can be set as follows:
 
 \begin{verbatim}
- $> xtfs_repl --pol_attr_set domains "*.xtreemfs.org xtreemfs.de" /xtreemfs
+ $> xtfs_repl --pol_attr_set domains "*.xtreemfs.org bla.com" \
+    /xtreemfs
 \end{verbatim}
 
 A list of all policy attributes that have been set can be shown as follows:
 
 \begin{verbatim}
  $> xtfs_repl --pol_attrs_get /xtreemfs
-\end{verbatim}
-
-\subsection{Manual Read-Only Replication}\index{Replication}\index{Replication!read-only}\index{Read-only Replication}
-
-Read-only replication allows you to create copies of files on several OSDs. Since the files are immutable (read-only) there is no overhead for coordinating the replicas. XtreemFS supports partial and full replicas.
-A partial replica will only fetch the data requested by a client (on demand). A full replica does the same, but it also fetches the data in the background without client requests until all data of the file has been replicated (background replication).
-
-With XtreemFS all replicas are initially empty and can be used immediately by applications. If a replica does not have the requested data, it fetches it from another replica and saves it locally for future requests. This helps you to reduce start-up times, and saves network bandwidth and disk usage.
-
-The XtreemFS client gets a list of replicas from the MRC when opening a file. This list is sorted according to the volume's replica selection policy, i.e. the first replica in the list is the ``best'' replica for the client. The client will use the first replica in the list and automatically switches to the next one if it is not reachable.
-
-So far XtreemFS only supports to manage replicas manually. Before the replication can be used the file must be marked as read-only with the following command:\index{xtfs\_repl}
-
-\begin{verbatim}
-$> xtfs_repl --set_readonly local-path-of-file
-\end{verbatim}
-
-After a file is marked as read-only replicas can be added. The tool supports differend replica creation modes. The automatic mode retrieves a list of OSDs from the MRC and chooses the best OSD according to the current replica selection policy. You can also select an OSD by specifying its UUID on the command line.
-
-By default, partial replicas will be created. To create a full replica the option \texttt{--full} must be set.
-
-XtreemFS supports different transfer strategies which has an big impact on the speed of the replication and the order in which objects are fetched. A transfer strategy must be chosen for each replica.
-
-To create a full replica and usage of the random transfer strategy, the following command must be used. The OSDs are selected according to the volume's replica selection policy. See Sec. \ref{sec:osd_policies} for a description of the policies.
-
-\begin{verbatim}
-$> xtfs_repl --add_auto --full --strategy random local-path-of-file
-\end{verbatim}
-
-To list all replicas and OSDs of the file use:
-
-\begin{verbatim}
-$> xtfs_repl -l local-path-of-file
-\end{verbatim}
-
-Removing also supports multiple modes. Again there is a mode which is choosing the replica randomly. To remove a specific replica, the head-OSD (first OSD) of this replica must be given as an argument. At least one complete replica must exist, so the tool will not remove a complete replica, if no others exists. To remove the just created replica use the following command and change head-osd to the one listed by \texttt{xtfs\_repl -l}:
-
-\begin{verbatim}
-$> xtfs_repl -r head-OSD local-path-of-file
-\end{verbatim}
-
-For further options see:
-
-\begin{verbatim}
-$> xtfs_repl -h
-\end{verbatim}
-
-\subsection{Automatic On-Close Replication}\index{Replication}\index{Replication!on-close}\index{On-close Replication}
-
-XtreemFS allows files to be automatically made read-only and replicated when being closed after having been written. On-close replication can e.g.\ be used to ensure that any file created on a volume is automatically replicated across multiple data centers. To configure the behavior of the on-close replication, \texttt{xtfs\_repl} is used.
-
-The number of replicas to be created when a file is closed can be set as follows:
-
-\begin{verbatim}
-$> xtfs_repl --ocr_factor_set 2
-\end{verbatim}
-
-This will create two replicas of a file when the file is closed. Note that by setting the replication factor to 1 (default value), on-close replication will be switched off, which means that the file won't be replicated and will remain writable after having been closed. The current replication factor of a volume can be retrieved as follows:
-
-\begin{verbatim}
-$> xtfs_repl --ocr_factor_get
-\end{verbatim}
-
-Moreover, it is possible to specify whether an automatically created replica will be filled immediately or on demand. By default, replicas will be filled on demand. This can be changed as follows:
-
-\begin{verbatim}
-$> xtfs_repl --ocr_full_set true
-\end{verbatim}
-
-Thus, replicas will be filled in the background when the file is closed after having been written. To show whether replicas are automatically filled or not, execute the following command:
-
-\begin{verbatim}
-$> xtfs_repl --ocr_full_get
 \end{verbatim}
 
 \chapter{Troubleshooting and Support}
@@ -1396,18 +1478,19 @@ ssl.trusted_certs.container = jks
 \chapter{Command Line Utilities}
 
 \begin{description}
- \item[xtfs\_cleanup] Deletes orphaned objects on an OSD or creates new metadata objects for orphaned files.
+ \item[xtfs\_cleanup] Deletes orphaned objects on an OSD and restores orphaned files.
  \item[xtfs\_lsvol] Lists the volumes on an MRC.
  \item[xtfs\_mkvol] Creates a new volume on an MRC.
  \item[xtfs\_mount] The XtreemFS client which mounts an XtreemFS volume locally on a machine.
- \item[xtfs\_mrcdbtool] Dumps an XML representation of the MRC database to a given directory in the MRC's local file system.
- \item[xtfs\_repl] Displays and controls the replication of files and the replication policies.
- \item[xtfs\_rmvol] Deletes a volume and all files on that volume from the MRC and the OSDs.
- \item[xtfs\_stat] Displays XtreemFS specific file information such as the striping policy and the OSDs.
- \item[xtfs\_sp] Displays and modifies the striping policy for a file, or the default striping policy for directories and volumes.
- \item[xtfs\_scrub] Examines all files in a volume for incorrect file sizes and checksums. In case of incorrect file sizes, file sizes are corrected at the MRC.
+ \item[xtfs\_mrcdbtool] Dumps and restores an XML representation of the MRC database.
+ \item[xtfs\_repl] Controls file replication in XtreemFS.
+ \item[xtfs\_rmvol] Deletes a volume.
+ \item[xtfs\_sp] Displays and modifies default striping policies for directories and volumes.
+ \item[xtfs\_scrub] Examines all files in a volume for wrong file sizes and checksums and corrects wrong file sizes in the MRC.
+ \item[xtfs\_stat] Displays XtreemFS-specific file information, such as OSD lists and striping policies.
+ \item[xtfs\_test] Automatically sets up an XtreemFS testing environment and runs the automatic XtreemFS test suite.
  \item[xtfs\_umount] Un-mounts a mounted XtreemFS volume.
- \end{description}
+\end{description}
 
 \printindex
 
