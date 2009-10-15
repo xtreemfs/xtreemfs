@@ -16,6 +16,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingRequest;
@@ -49,7 +50,7 @@ public class SimpleVivaldiStageTest extends TestCase {
 
     @Before
     public void setUp() throws Exception {
-        env = new TestEnvironment(new TestEnvironment.Services[]{Services.DIR_SERVICE,Services.OSD});
+        env = new TestEnvironment(new TestEnvironment.Services[]{Services.DIR_SERVICE,Services.OSD, Services.OSD_CLIENT});
         env.start();
     }
 
@@ -60,7 +61,7 @@ public class SimpleVivaldiStageTest extends TestCase {
 
     @Test
     public void testVivaldiPing() throws Exception {
-        xtreemfs_pingRequest payload = new xtreemfs_pingRequest(new VivaldiCoordinates());
+        xtreemfs_pingRequest payload = new xtreemfs_pingRequest(new VivaldiCoordinates(1.1, 1.2, 0.5));
          
         ONCRPCRequestHeader rq = new ONCRPCRequestHeader(1, 1, 1, payload.getTag());
         final int fragHdr = ONCRPCRecordFragmentHeader.getFragmentHeader(rq.getXDRSize(), true);
@@ -90,6 +91,15 @@ public class SimpleVivaldiStageTest extends TestCase {
         resp.unmarshal(new XDRUnmarshaller(rb));
 
         dsock.close();
+    }
+
+    @Test
+    public void testVivaldiPingTCP() throws Exception {
+        RPCResponse<VivaldiCoordinates> vc = env.getOSDClient().internal_vivaldi_ping(env.getOSDAddress(), new VivaldiCoordinates(1.1, 1.2, 0.5));
+        VivaldiCoordinates rv = vc.get();
+        vc.freeBuffers();
+        
+
     }
     // public void hello() {}
 

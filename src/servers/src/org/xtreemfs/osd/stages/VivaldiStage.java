@@ -15,8 +15,10 @@ import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingResponse;
 import org.xtreemfs.interfaces.VivaldiCoordinates;
+import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.striping.UDPMessage;
 
@@ -27,6 +29,8 @@ import org.xtreemfs.osd.striping.UDPMessage;
 public class VivaldiStage extends Stage {
 
     private static final int STAGEOP_COORD_XCHG_REQUEST = 1;
+
+    private static final int STAGEOP_TCP_VIVALID_PING = 2;
 
     private static final int TIMER_INTERVAL_IN_MS = 1000 * 60;
 
@@ -44,27 +48,41 @@ public class VivaldiStage extends Stage {
         this.dirClient = master.getDIRClient();
     }
 
+    public void getVivaldiCoordinates(VivaldiCoordinates coordinates, OSDRequest request, VivaldiPingCallback listener) {
+        this.enqueueOperation(STAGEOP_TCP_VIVALID_PING, new Object[]{coordinates}, request, listener);
+    }
+
+    public static interface VivaldiPingCallback {
+
+        public void coordinatesCallback(VivaldiCoordinates myCoordinates, Exception error);
+    }
+
     @Override
     protected void processMethod(StageRequest method) {
         if (method.getStageMethod() == STAGEOP_COORD_XCHG_REQUEST) {
 
             UDPMessage msg = (UDPMessage)method.getArgs()[0];
-            final ReusableBuffer data = msg.getPayload();
+            /*final ReusableBuffer data = msg.getPayload();
             //skip request type byte
-            data.position(1);
+            //data.position(1);
             VivaldiCoordinates vc = new VivaldiCoordinates();
             vc.unmarshal(new XDRUnmarshaller(data));
-            BufferPool.free(data);
+            BufferPool.free(data);*/
+            xtreemfs_pingRequest prq = (xtreemfs_pingRequest) msg.getRequestData();
 
 
             //do something...
 
             if (msg.isRequest()) {
+                System.out.println("coordinates are ="+prq.getCoordinates().getX_coordinate()+","+prq.getCoordinates().getY_coordinate());
                 //send response if it was a request
                 //FIXME: replace vc with your coordinates
-                sendVivaldiCoordinates(msg, vc);
+                sendVivaldiCoordinates(msg, prq.getCoordinates());
             }
-
+        } else if (method.getStageMethod() == STAGEOP_TCP_VIVALID_PING) {
+            VivaldiPingCallback cb = (VivaldiPingCallback)method.getCallback();
+            VivaldiCoordinates remoteCoordinates = (VivaldiCoordinates) method.getArgs()[0];
+            cb.coordinatesCallback(remoteCoordinates, null);
         } else {
             throw new RuntimeException("programmatic error, unknown stage operation");
         }

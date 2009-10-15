@@ -112,6 +112,7 @@ import org.xtreemfs.osd.striping.UDPReceiverInterface;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.osd.operations.VivaldiPingOperation;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     UDPReceiverInterface {
@@ -659,6 +660,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         op = new LockReleaseOperation(this);
         operations.put(op.getProcedureId(), op);
+
+        op = new VivaldiPingOperation(this);
+        operations.put(op.getProcedureId(), op);
         
         // --internal events here--
         
@@ -687,6 +691,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     public UDPCommunicator getUdpComStage() {
         return udpCom;
+    }
+
+    public VivaldiStage getVivaldiStage() {
+        return this.vStage;
     }
     
     @Override

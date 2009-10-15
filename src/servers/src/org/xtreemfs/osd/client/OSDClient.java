@@ -78,8 +78,11 @@ import org.xtreemfs.interfaces.OSDInterface.xtreemfs_lock_checkRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_lock_checkResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_lock_releaseRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_lock_releaseResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_shutdownRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_shutdownResponse;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 
 /**
  *
@@ -428,6 +431,22 @@ public class OSDClient extends ONCRPCClient {
                         xtreemfs_lock_releaseResponse resp = new xtreemfs_lock_releaseResponse();
                         resp.unmarshal(new XDRUnmarshaller(data));
                         return null;
+                    }
+                });
+        return r;
+    }
+
+    public RPCResponse<VivaldiCoordinates> internal_vivaldi_ping(InetSocketAddress server,
+            VivaldiCoordinates coordinates) {
+        xtreemfs_pingRequest rq = new xtreemfs_pingRequest(coordinates);
+
+        RPCResponse r = sendRequest(server, rq.getTag(), rq,
+                new RPCResponseDecoder() {
+                    @Override
+                    public VivaldiCoordinates getResult(ReusableBuffer data) {
+                        xtreemfs_pingResponse resp = new xtreemfs_pingResponse();
+                        resp.unmarshal(new XDRUnmarshaller(data));
+                        return resp.getRemote_coordinates();
                     }
                 });
         return r;
