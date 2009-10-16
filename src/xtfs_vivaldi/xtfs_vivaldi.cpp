@@ -1,4 +1,4 @@
-// Copyright 2009 Juan González de Benito.
+// Copyright 2009 Juan Gonzï¿½lez de Benito.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/main.h"
@@ -78,12 +78,13 @@ namespace xtfs_vivaldi
     
       org::xtreemfs::interfaces::VivaldiCoordinates my_vivaldi_coordinates( 0, 0, 0 );
       
-    //TODO:Read and initialize our own coordinates -> own VivaldiNode
+    //TODO:Read and initialize our own coordinates (-> own VivaldiNode) from a file
       YIELD::platform::auto_File vivaldi_coordinates_file = YIELD::platform::Volume().open( vivaldi_coordinates_file_path, O_RDONLY );
   		if ( vivaldi_coordinates_file != NULL )
   		{
         for ( ;; )
         {
+          //x,y,local_error => 3 doubles
           yidl::runtime::StackBuffer<3*sizeof(double)> xdr_buffer;
           if ( vivaldi_coordinates_file->read( xdr_buffer.incRef() ) == 3*sizeof(double) )
           {
@@ -91,7 +92,7 @@ namespace xtfs_vivaldi
             YIELD::platform::XDRUnmarshaller xdr_unmarshaller( xdr_buffer.incRef() );
             my_vivaldi_coordinates.unmarshal( xdr_unmarshaller );
             
-            get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "Coordinates readed:("<<my_vivaldi_coordinates.get_x_coordinate()<<","<<my_vivaldi_coordinates.get_y_coordinate()<<")";
+            get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "coordinates readed from file:("<<my_vivaldi_coordinates.get_x_coordinate()<<","<<my_vivaldi_coordinates.get_y_coordinate()<<")";
                         
           }else
           {
@@ -99,7 +100,7 @@ namespace xtfs_vivaldi
           }          
         }
   		}else{
-        get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "Impossible to read coordinates";
+        get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "impossible to read coordinates";
       }
   
       VivaldiNode own_node(my_vivaldi_coordinates);
@@ -132,8 +133,7 @@ namespace xtfs_vivaldi
   							osd_proxy->xtreemfs_ping( org::xtreemfs::interfaces::VivaldiCoordinates(), random_osd_vivaldi_coordinates );
   							YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
   							
-  							// TODO: calculate my_vivaldi_coordinates here
-                
+  							// Recalculate coordinates here
                 std::cout << "Received: (" << random_osd_vivaldi_coordinates.get_x_coordinate() << "," << random_osd_vivaldi_coordinates.get_y_coordinate() << ") Own:(" << own_node.getCoordinates()->get_x_coordinate() << "," << own_node.getCoordinates()->get_y_coordinate() << ")\n";
   							own_node.recalculatePosition(random_osd_vivaldi_coordinates,rtt.as_unix_time_ms(),true);
                 std::cout << "New own coordinates:(" << own_node.getCoordinates()->get_x_coordinate() << "," << own_node.getCoordinates()->get_x_coordinate() << ") ";
@@ -168,7 +168,7 @@ namespace xtfs_vivaldi
     }
     
     /********************************************
-     * Only to evaluate the results
+     * Only to evaluate the results. This method will be removed
      */
     void executeEvaluation(org::xtreemfs::interfaces::ServiceSet osds,VivaldiNode &own_node){
   
@@ -238,7 +238,7 @@ namespace xtfs_vivaldi
           if(rtts[i]>0)
           {
             double distance = own_node.caltulateDistance((*localCoords),remoteCoordinates[i]);
-            sprintf(auxStr,"%ld\t%.3f\t%.3f,%.3f\n", rtts[i],distance,remoteCoordinates[i].get_x_coordinate(),remoteCoordinates[i].get_y_coordinate());
+            sprintf(auxStr,"%lld\t%.3f\t%.3f,%.3f\n", rtts[i],distance,remoteCoordinates[i].get_x_coordinate(),remoteCoordinates[i].get_y_coordinate());
             strWr += auxStr;
           }
         }

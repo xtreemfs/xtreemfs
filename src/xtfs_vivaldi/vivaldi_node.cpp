@@ -35,7 +35,6 @@ void VivaldiNode::addCoordinates(org::xtreemfs::interfaces::VivaldiCoordinates &
 
 	coordA.set_x_coordinate( coordA.get_x_coordinate() + coordB.get_x_coordinate() );
 	coordA.set_y_coordinate( coordA.get_y_coordinate() + coordB.get_y_coordinate() );
-//  std::cout << "Resultado "<<coordA.get_x_coordinate()<<"\n";
 }
 
 /**
@@ -80,7 +79,6 @@ double VivaldiNode::scalarProductCoordinates(	org::xtreemfs::interfaces::Vivaldi
 double VivaldiNode::magnitudeCoordinates(org::xtreemfs::interfaces::VivaldiCoordinates coordA){
   // ||A|| = sqrt( Ax² + Ay² )
   double sProd = scalarProductCoordinates(coordA,coordA);
-  std::cout <<" sProd:"<<sProd<<"\n"; 
   return sqrt( sProd );
 }
 
@@ -138,8 +136,6 @@ bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordina
   
   // ||SUBTRACTION|| should be ~= RTT
   double subtractionMagnitude = magnitudeCoordinates(subtractionVector);
-  std::cout << "MAGNITUDE:(" << subtractionVector.get_x_coordinate() << "," << subtractionVector.get_y_coordinate() << ") MAGN:" << subtractionMagnitude << "\n";
-  
   
   //Sample weight balances local and remote error
   //If it's close to 1, J knows more than me: _localError > errorJ
@@ -167,7 +163,7 @@ bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordina
   //Calculate proposed movement
   double delta;
   delta = CONSTANT_C * weight;
-  std::cout << "Measured:"<<static_cast<double>(measuredRTT)<<"sub:"<<subtractionMagnitude<<"delta:"<<delta<<"\n";
+
   double estimatedMovement = (static_cast<double>(measuredRTT)-subtractionMagnitude) * delta;        
   
   //Is the proposed movement too big?
@@ -175,7 +171,6 @@ bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordina
       (subtractionMagnitude<=0.0) || //They both are in the same position
       ( abs(estimatedMovement) < subtractionMagnitude * MAX_MOVEMENT_RATIO) ){
   
-    std::cout << "Forcing\n";
     //Update local error
     if( localError <= 0 ){
       //We initialize the local error with the first absolute error measured
@@ -187,21 +182,18 @@ bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordina
   
       																
     if( subtractionMagnitude > 0.0 ){ 
-    std::cout << "-subtraction > 0:"<<subtractionMagnitude<<"\n";  	
+  	
       //Xi = Xi + delta * (rtt - || Xi - Xj ||) * u(Xi - Xj)
       org::xtreemfs::interfaces::VivaldiCoordinates additionVector(subtractionVector);
       if( getUnitaryCoordinates(additionVector) ){
-        std::cout << "-Calculando addition:("<<additionVector.get_x_coordinate()<<","<<additionVector.get_y_coordinate()<<")\n";
-        std::cout << "estimated:"<<estimatedMovement<<"\n";
+
     	  multiplyValueCoordinates( additionVector , estimatedMovement);
-        std::cout << "-Despues addition:("<<additionVector.get_x_coordinate()<<","<<additionVector.get_y_coordinate()<<")\n";
         //Move the node according to the calculated addition vector
         addCoordinates( ownCoordinates, additionVector);
-        std::cout << "-Added:("<<ownCoordinates.get_x_coordinate()<<","<<ownCoordinates.get_y_coordinate()<<")\n";
         ownCoordinates.set_local_error(localError);
       }
     }else{ //subtractionMagnitude == 0.0
-    std::cout << "+Subtraction <= 0\n";      	 
+      	 
       //Both points have the same Coordinates, so we just pull them apart in a random direction
       org::xtreemfs::interfaces::VivaldiCoordinates randomCoords;
       modifyCoordinatesRandomly(randomCoords);
@@ -209,7 +201,7 @@ bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordina
           
       //Xi = Xi + delta * (rtt - || Xi - Xj ||) * u(randomVector)
       if( getUnitaryCoordinates(additionVector) ){
-        std::cout << "+Calculando addition\n";
+
     		multiplyValueCoordinates( additionVector , estimatedMovement);
    
         //Move the node according to the calculated addition vector
