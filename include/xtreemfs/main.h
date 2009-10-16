@@ -117,7 +117,7 @@ namespace xtreemfs
       return MRCProxy::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, password, get_proxy_ssl_context() );
     }
 
-    virtual YIELD::platform::auto_Log get_log()
+    YIELD::platform::auto_Log get_log()
     {
       if ( log == NULL )
       {

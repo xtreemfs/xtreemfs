@@ -174,10 +174,11 @@ namespace xtfs_mount
         for ( int arg_i = 1; arg_i < argc; arg_i++ )
           child_argvv.push_back( argv[arg_i] );
         child_argvv.push_back( "-f" );
-        if ( log_file_path.empty() )
-          log_file_path = "xtfs_mount.log";
         child_argvv.push_back( "--log-file-path" );
-        child_argvv.push_back( const_cast<char*>( log_file_path.c_str() ) );            
+        if ( !log_file_path.empty() )
+          child_argvv.push_back( const_cast<char*>( log_file_path.c_str() ) );
+        else          
+          child_argvv.push_back( "xtfs_mount.log" );
         child_argvv.push_back( NULL );
 
         YIELD::ipc::auto_Process child_process = YIELD::ipc::Process::create( argv[0], ( const char** )&child_argvv[0] );
@@ -238,14 +239,6 @@ namespace xtfs_mount
       }
 
       throw YIELD::platform::Exception( "must specify dir_host/volume name and mount point" );
-    }
-
-    // xtreemfs::Main
-    virtual YIELD::platform::auto_Log get_log()
-    {
-      if ( log == NULL && !foreground && log_file_path.empty() )
-        log_file_path = "xtfs_mount.log";
-      return xtreemfs::Main::get_log();        
     }
   };
 };

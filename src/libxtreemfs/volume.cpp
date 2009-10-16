@@ -356,6 +356,7 @@ void Volume::set_errno( const char* operation_name, ProxyExceptionResponse& prox
       case ERROR_FILE_NOT_FOUND:
       case ERROR_FILE_EXISTS: break;
 #else
+      case ENODATA:
       case ENOENT:
       case EEXIST: break;
 #endif
