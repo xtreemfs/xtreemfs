@@ -910,6 +910,20 @@ The status page of an MRC can e.g.\ be shown by opening
 with a common web browser.
 
 
+\section{Troubleshooting}
+
+Various issues may occur when attempting to set up an XtreemFS server component. If a service fails to start, the log file often reveals useful information. Server log files are located in \texttt{/var/log/xtreemfs}. Note that you can restrict granularity and categories of log messages via the configuration properties \texttt{debug.level} and \texttt{debug.categories} (see Sec.\ \ref{sec:config}).
+
+If an error occurs, please check if one of the following requirements is not met:
+\begin{itemize}
+ \item You have root permissions when starting the service. Running the \texttt{init.d} scripts requires root permissions. However, the services themselves are started on behalf of a user \textit{xtreemfs}.
+ \item DIR has been started before MRC and OSD. Problems may occur if a script starts multiple services as background processes.
+ \item There are no firewall restrictions that keep XtreemFS services from communicating with each other. The default ports that need to be open are: 32636 (MRC, TCP), 32638 (DIR, TCP), and 32640 (OSD, TCP \& UDP).
+ \item The MRC database version is correct. In case of an outdated database version, the \texttt{xtfs\_mrcdbtool} commands of the old and new XtreemFS version can dump and restore the database, respectively.
+ \item A network interface is available on the host. It may be either bound to an IPv4 or IPv6 address.
+\end{itemize}
+
+
 \chapter{XtreemFS Client}
 
 The XtreemFS client is needed to access an XtreemFS installation from a remote machine. This chapter describes how to use the XtreemFS client in order to work with XtreemFS like a local file system.
@@ -1063,6 +1077,62 @@ Volumes are unmounted with the \texttt{xtfs\_umount} tool\index{Volume!Un-mount}
 \begin{verbatim}
 $> xtfs_umount /xtreemfs
 \end{verbatim}
+
+
+\section{Troubleshooting}
+
+Different kinds of problems may occur when trying to create, mount or access files in a volume. In case no useful error message printed on the console, it may help to enable client-side log output. This can be done as follows:
+
+\begin{verbatim}
+$> xtfs_mount -f -d INFO /xtreemfs
+\end{verbatim}
+
+The following list contains the most common problems and the solutions.
+
+\begin{tabular}{lp{10cm}}
+ \textbf{Problem}  & \textbf{A volume cannot be created or mounted.} \\
+ \textbf{Solution} & Please check your firewall settings on the server side. Are all ports accessible? The default ports are 32636 (MRC), 32638 (DIR), and 32640 (OSD).
+
+ In case the XtreemFS installation has been set up behind a NAT, it is possible that services registered their NAT-internal network interfaces at the DIR. In this case, clients cannot properly resolve server addresses, even if port forwarding is enabled. Please check the \emph{Address Mappings} section on the DIR status page to ensure that externally reachable network interfaces have been registered for the your servers' UUIDs. If this is not the case, it is possible to explicitly specify the network interfaces to register via the \texttt{hostname} property (see Sec.\ \ref{sec:config}).
+\end{tabular}
+
+\begin{tabular}{lp{10cm}}
+ \textbf{Problem} & \textbf{When trying to mount a volume, \texttt{ONC-RPC exception: system error} appears on the console.}\\
+ \textbf{Solution} & The most common reason are incompatible protocol versions in client and server. Please make sure that client and server have the same release version numbers. They can be determined as follows:
+   \begin{itemize}
+    \item[Server:] check the status pages. Alternatively, execute \texttt{rpm -qa | grep XtreemFS-server} on RPM-based distributions, or \texttt{dpkg -l | grep xtreemfs-server} on DEB-based distributions.
+    \item[Client:] execute \texttt{rpm -qa | grep XtreemFS-client} on RPM-based distributions, or \texttt{dpkg -l | grep xtreemfs-client} on DEB-based distributions.
+   \end{itemize}
+\end{tabular}
+
+\begin{tabular}{lp{10cm}}
+ \textbf{Problem}  & \textbf{An error occurs when trying to access a mounted volume.} \\
+ \textbf{Solution} & Please make sure that you have sufficient access rights to the volume root. Superusers and volume owners can change these rights via \texttt{chmod <mode> <mountpoint>}. If you try to access a mount point that belongs to a different user, please make sure that the volume is mounted with \texttt{xtfs\_mount -o allow\_other \dots}.
+\end{tabular}
+
+\begin{tabular}{lp{10cm}}
+ \textbf{Problem}  & \textbf{An I/O error occurs when trying to create new files.} \\
+ \textbf{Solution} & A common reason for this problem is that no OSD could be assigned to the new file. Please check if suitable OSDs are available for the volume. There are two alternative ways to do this:
+   \begin{itemize}
+     \item Open the MRC status page. It can be accessed via \texttt{http://<MRC-host>:30636} in the default case. For each volume, a list of suitable OSDs is shown there.
+     \item Execute \texttt{getfattr -n xtreemfs.usable\_osds ----only-values <mountpoint>}.
+   \end{itemize}
+ There may be different reasons for missing suitable OSDs:
+   \begin{itemize}
+    \item One or more OSDs failed to start up. Please check the log files and status pages of all OSDs to ensure that they are running.
+    \item One or more OSDs failed to register or regularly report activity at the DIR. Please check the DIR status page to ensure that all OSDs are registered and active.
+    \item There are no more OSDs with a sufficient amount of free disk space. Please check the OSD status page to obtain information about free disk space.
+   \end{itemize}
+\end{tabular}
+
+\begin{tabular}{lp{10cm}}
+ \textbf{Problem}  & \textbf{An I/O error occurs when trying to access an existing file.}\\
+ \textbf{Solution} & Please check whether all OSDs assigned to the file are running and reachable. This can be done as follows:
+    \begin{enumerate}
+     \item Get the list of all OSDs for the file: \texttt{getfattr -n xtreemfs.locations ----only-values <file>}.
+     \item Check whether the OSDs in (one of) all replicas in the list are running and reachable, e.g.\ by opening the status pages or via \texttt{telnet <host> <port>}.
+    \end{enumerate}
+\end{tabular}
 
 
 \chapter{XtreemFS Tools}
@@ -1383,26 +1453,10 @@ A list of all policy attributes that have been set can be shown as follows:
  $> xtfs_repl --pol_attrs_get /xtreemfs
 \end{verbatim}
 
-\chapter{Troubleshooting and Support}
-
-\section{Logfiles}
-
-The logfiles for the XtreemFS services are located in \texttt{/var/log/xtreemfs}. The client generates no output, unless the \texttt{-f} and \texttt{-d INFO} options are specified.
-
-\section{Support}
-Please visit the \href{http://www.XtreemFS.org}{XtreemFS website at www.XtreemFS.org} for links to the user mailing list and IRC channel.
-
-\section{Troubleshooting}
-
-\textbf{Problem: }The client hangs when opening/copying/creating a file but operations like \texttt{ls} or \texttt{mkdir} work.
-
-\textbf{Solution: }This problem can occur when an OSD uses a UUID which resolves to an address that the client cannot (correctly) resolve. If you use e.g. \texttt{localhost:32640} as the UUID for the OSD, the client will try to contact the local machine instead of the machine on which the OSD runs. Check the status page of your Directory Service and check the UUID of the OSDs.
-
-\textbf{Problem: } \texttt{xtfs\_mount} does not print an error message but the volume is not mounted (i.e. not listed in the output of \texttt{mount}).
-
-\textbf{Solution: } The client \texttt{xtfs\_mount} automatically goes into background and does not print any error messages or warnings. Use the \texttt{-f} flag when mounting to prevent the client from going into background. All error messages will be printed to the console.
-
 \appendix
+
+\chapter{Support}
+Please visit the \href{http://www.xtreemfs.org}{XtreemFS website at www.xtreemfs.org} for links to the user mailing list, bug tracker and IRC channel.
 
 \chapter{XtreemOS Integration}
 
