@@ -13,7 +13,7 @@ namespace xtfs_lsvol
   {
   public:
     Main()
-      : xtreemfs::Main( "xtfs_lsvol", "list volumes on a specified MRC", "[oncrpc[s]://]<mrc host>[:port][/<volume name>]" )
+      : xtreemfs::Main( "xtfs_lsvol", "list volumes on a specified MRC", "<mrc host>[:port][/<volume name>]" )
     {
       addOption( XTFS_LSVOL_OPTION_LONG_LISTING, "-l" );
       long_listing = false;

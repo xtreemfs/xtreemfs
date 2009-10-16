@@ -21,7 +21,7 @@ namespace xtfs_mount
   {
   public:
     Main()
-      : xtreemfs::Main( "xtfs_mount", "mount an XtreemFS volume", "[oncrpc[s]://]<dir host>[:dir port]/<volume name> <mount point>" )
+      : xtreemfs::Main( "xtfs_mount", "mount an XtreemFS volume", "<dir host>[:port]/<volume name> <mount point>" )
     {
       direct_io = false;
 
@@ -175,8 +175,8 @@ namespace xtfs_mount
           child_argvv.push_back( argv[arg_i] );
         child_argvv.push_back( "-f" );
         child_argvv.push_back( "--log-file-path" );
-        if ( !log_file_path.empty() )
-          child_argvv.push_back( const_cast<char*>( log_file_path.c_str() ) );
+        if ( !get_log_file_path().empty() )
+          child_argvv.push_back( const_cast<char*>( get_log_file_path().c_str() ) );
         else          
           child_argvv.push_back( "xtfs_mount.log" );
         child_argvv.push_back( NULL );

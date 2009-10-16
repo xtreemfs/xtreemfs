@@ -10,7 +10,7 @@ namespace xtfs_mkvol
   {
   public:
     Main()
-      : xtreemfs::Main( "xtfs_mkvol", "create a new volume on a specified MRC", "[oncrpc[s]://]<mrc host>[:port]/<volume name>" )
+      : xtreemfs::Main( "xtfs_mkvol", "create a new volume on a specified MRC", "<mrc host>[:port]/<volume name>" )
     {
       addOption( XTFS_MKVOL_OPTION_ACCESS_CONTROL_POLICY, "-a", "--access-control-policy", "NULL|POSIX|VOLUME" );
       access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;
@@ -20,7 +20,7 @@ namespace xtfs_mkvol
 
       addOption( XTFS_MKVOL_OPTION_OWNER_GROUP_ID, "-g", "--owner-group-id", "group id of owner" );
 
-      addOption( XTFS_MKVOL_OPTION_PASSWORD, "--password", NULL, "password for volume" );
+      addOption( XTFS_MKVOL_OPTION_PASSWORD, "--password", NULL, "MRC's administrator password" );
 
       addOption( XTFS_MKVOL_OPTION_STRIPING_POLICY, "-p", "--striping-policy", "NONE|RAID0" );
       striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;

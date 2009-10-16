@@ -1,4 +1,4 @@
-// Revision: 1888
+// Revision: 1891
 
 #include "yield/platform.h"
 using namespace YIELD::platform;
@@ -555,44 +555,47 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 namespace YIELD
 {
-  class FileLog : public Log
+  namespace platform
   {
-  public:
-    FileLog( auto_File file, Level level )
-      : Log( level ), file( file )
-    { }
-    FileLog( const Path& file_path, Level level ) // Lazy open
-      : Log( level ), file_path( file_path )
-    { }
-    // Log
-    void write( const char* str, size_t str_len )
+    class FileLog : public Log
     {
-      if ( file == NULL ) // Lazy open
+    public:
+      FileLog( auto_File file, Level level )
+        : Log( level ), file( file )
+      { }
+      FileLog( const Path& file_path, Level level ) // Lazy open
+        : Log( level ), file_path( file_path )
+      { }
+      // Log
+      void write( const char* str, size_t str_len )
       {
-        file = Volume().open( file_path, O_CREAT|O_WRONLY|O_APPEND );
-        if ( file == NULL )
-          return;
+        if ( file == NULL ) // Lazy open
+        {
+          file = Volume().open( file_path, O_CREAT|O_WRONLY|O_APPEND );
+          if ( file == NULL )
+            return;
+        }
+       file->write( str, str_len );
       }
-     file->write( str, str_len );
-    }
-  private:
-    auto_File file;
-    Path file_path;
-  };
-  class ostreamLog : public Log
-  {
-  public:
-    ostreamLog( std::ostream& underlying_ostream, Level level )
-      : Log( level ), underlying_ostream( underlying_ostream )
-    { }
-    ostreamLog& operator=( const ostreamLog& ) { return *this; }
-    // Log
-    void write( const char* str, size_t str_len )
+    private:
+      auto_File file;
+      Path file_path;
+    };
+    class ostreamLog : public Log
     {
-      underlying_ostream.write( str, str_len );
-    }
-  private:
-    std::ostream& underlying_ostream;
+    public:
+      ostreamLog( std::ostream& underlying_ostream, Level level )
+        : Log( level ), underlying_ostream( underlying_ostream )
+      { }
+      ostreamLog& operator=( const ostreamLog& ) { return *this; }
+      // Log
+      void write( const char* str, size_t str_len )
+      {
+        underlying_ostream.write( str, str_len );
+      }
+    private:
+      std::ostream& underlying_ostream;
+    };
   };
 };
 Log::Stream::Stream( auto_Log log, Log::Level level )

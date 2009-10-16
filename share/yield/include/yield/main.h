@@ -31,7 +31,6 @@ namespace YIELD
   class Main
   {
   public:
-    YIELD::platform::Log::Level get_log_level() const { return log_level; }
     const char* get_program_name() const { return program_name; }
 
 #ifdef _WIN32
@@ -99,59 +98,33 @@ namespace YIELD
           argvv.push_back( arg ); 
         }
 
-        CSimpleOpt args( argc, &argvv[0], &simpleopt_options[0] );
-
-        while ( args.Next() )
+        // Check for the -h option first; if found print usage information and exit
+        // Parsing options may cause side effects, but the program should do nothing if -h is specified
         {
-          if ( args.LastError() == SO_SUCCESS )
+          CSimpleOpt args( argc, &argvv[0], &simpleopt_options[0] );
+
+          while ( args.Next() )
           {
-            switch ( args.OptionId() )
+            if ( args.LastError() == SO_SUCCESS && args.OptionId() == 0 )
             {
-              case OPTION_LOG_LEVEL:
-              {
-                uint8_t log_level_uint8 = static_cast<uint8_t>( atoi( args.OptionArg() ) );
-                if ( log_level_uint8 == 0 )
-                {
-                  std::string arg( args.OptionArg() );
-                  if ( arg == "LOG_EMERG" || arg == "EMERG" || arg == "EMERGENCY" || arg == "FATAL" || arg == "FAIL" )
-                    log_level = YIELD::platform::Log::LOG_EMERG;
-                  else if ( arg == "LOG_ALERT" || arg == "ALERT" )
-                    log_level = YIELD::platform::Log::LOG_ALERT;
-                  else if ( arg == "LOG_CRIT" || arg == "CRIT" || arg == "CRITICAL" )
-                    log_level = YIELD::platform::Log::LOG_CRIT;
-                  else if ( arg == "LOG_ERR" || arg == "ERR" || arg == "ERROR" )
-                    log_level = YIELD::platform::Log::LOG_ERR;
-                  else if ( arg == "LOG_WARNING" || arg == "WARNING" || arg == "WARN" )
-                    log_level = YIELD::platform::Log::LOG_WARNING;
-                  else if ( arg == "LOG_NOTICE" || arg == "NOTICE" )
-                    log_level = YIELD::platform::Log::LOG_NOTICE;
-                  else if ( arg == "LOG_INFO" || arg == "INFO" )
-                    log_level = YIELD::platform::Log::LOG_INFO;
-                  else if ( arg == "LOG_DEBUG" || arg == "DEBUG" || arg == "TRACE" )
-                    log_level = YIELD::platform::Log::LOG_DEBUG;
-                  else
-                    log_level = YIELD::platform::Log::LOG_EMERG;
-                }
-                else if ( log_level_uint8 <= YIELD::platform::Log::LOG_DEBUG )
-                  log_level = static_cast<YIELD::platform::Log::Level>( log_level_uint8 );
-                else
-                  log_level = YIELD::platform::Log::LOG_DEBUG;
-              }
-              break;
-
-              case OPTION_HELP:
-              {
-                printUsage();
-                return 0;
-              }
-              break;
+              printUsage();
+              return 0;
             }
-
-            parseOption( args.OptionId(), args.OptionArg() );
           }
         }
 
-        parseFiles( args.FileCount(), args.Files() );
+        // Now parse options
+        {
+          CSimpleOpt args( argc, &argvv[0], &simpleopt_options[0] );
+
+          while ( args.Next() )
+          {
+            if ( args.LastError() == SO_SUCCESS && args.OptionId() > 0 )
+              parseOption( args.OptionId(), args.OptionArg() );
+          }
+
+          parseFiles( args.FileCount(), args.Files() );
+        }
 
         for ( std::vector<char*>::iterator arg_i = argvv.begin(); arg_i != argvv.end(); arg_i++ )
           delete [] *arg_i;
@@ -222,23 +195,10 @@ namespace YIELD
     }
 
   protected:
-    enum
-    {
-      OPTION_LOG_LEVEL = 1,
-      OPTION_HELP = 2,
-    };
-
-
     Main( const char* program_name, const char* program_description = NULL, const char* files_usage = NULL )
       : program_name( program_name ), program_description( program_description ), files_usage( files_usage )
     {
-      std::ostringstream log_level_default_ss;
-      log_level_default_ss << static_cast<uint16_t>( 0 );
-      log_level_default_str = log_level_default_ss.str();
-      addOption( OPTION_LOG_LEVEL, "-d", "--debug", log_level_default_str.c_str() );
-      log_level = YIELD::platform::Log::LOG_WARNING;
-
-      addOption( OPTION_HELP, "-h", "--help" );
+      addOption( 0, "-h", "--help" );
     }
 
     virtual ~Main() { }
@@ -295,9 +255,6 @@ namespace YIELD
   private:
     const char *program_name, *program_description, *files_usage;
 
-    // Built-in options
-    YIELD::platform::Log::Level log_level;
-    std::string log_level_default_str;
 
 
     class Option

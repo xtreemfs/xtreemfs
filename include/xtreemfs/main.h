@@ -59,16 +59,17 @@ namespace xtreemfs
   protected:
     enum
     {
-      OPTION_LOG_FILE_PATH = 3,
-      OPTION_OPERATION_TIMEOUT_MS = 4,
-      OPTION_PKCS12_FILE_PATH = 5,
-      OPTION_PKCS12_PASSPHRASE = 6,
-      OPTION_PEM_CERTIFICATE_FILE_PATH = 7,
-      OPTION_PEM_PRIVATE_KEY_FILE_PATH = 8,
-      OPTION_PEM_PRIVATE_KEY_PASSPHRASE = 9,
-      OPTION_TRACE_AUTH = 10,
-      OPTION_TRACE_NETWORK_IO = 11,
-      OPTION_TRACE_NETWORK_OPERATIONS = 12
+      OPTION_LOG_FILE_PATH = 1,
+      OPTION_LOG_LEVEL = 2,
+      OPTION_OPERATION_TIMEOUT_MS = 3,
+      OPTION_PKCS12_FILE_PATH = 4,
+      OPTION_PKCS12_PASSPHRASE = 5,
+      OPTION_PEM_CERTIFICATE_FILE_PATH = 6,
+      OPTION_PEM_PRIVATE_KEY_FILE_PATH = 7,
+      OPTION_PEM_PRIVATE_KEY_PASSPHRASE = 8,
+      OPTION_TRACE_AUTH = 9,
+      OPTION_TRACE_NETWORK_IO = 10,
+      OPTION_TRACE_NETWORK_OPERATIONS = 11
     };
 
 
@@ -76,6 +77,9 @@ namespace xtreemfs
       : YIELD::Main( program_name, program_description, files_usage )
     {
       addOption( OPTION_LOG_FILE_PATH, "-l", "--log-file-path", "<path>" );
+
+      addOption( OPTION_LOG_LEVEL, "-d", "--log-level", "EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG" );
+      log_level = YIELD::platform::Log::LOG_WARNING;
 
       addOption( OPTION_OPERATION_TIMEOUT_MS, "-t", "--operation-timeout-ms", "n" );
       operation_timeout = static_cast<uint64_t>( DIRProxy::OPERATION_TIMEOUT_DEFAULT );
@@ -128,6 +132,16 @@ namespace xtreemfs
       }
 
       return log;
+    }
+
+    const std::string& get_log_file_path() const 
+    {
+      return log_file_path;
+    }
+
+    YIELD::platform::Log::Level get_log_level() const 
+    {
+      return log_level;
     }
 
     const YIELD::platform::Time& get_operation_timeout() const
@@ -199,6 +213,37 @@ namespace xtreemfs
       {
         case OPTION_LOG_FILE_PATH: log_file_path = arg; break;
 
+        case OPTION_LOG_LEVEL:
+        {
+          uint8_t log_level_uint8 = static_cast<uint8_t>( atoi( arg ) );
+          if ( log_level_uint8 == 0 )
+          {
+            if ( strcmp( arg, "LOG_EMERG" ) == 0 || strcmp( arg, "EMERG" ) == 0 || strcmp( arg, "EMERGENCY" ) == 0 || strcmp( arg, "FATAL" ) == 0 || strcmp( arg, "FAIL" ) == 0 )
+              log_level = YIELD::platform::Log::LOG_EMERG;
+            else if ( strcmp( arg, "LOG_ALERT" ) == 0 || strcmp( arg, "ALERT" ) == 0 )
+              log_level = YIELD::platform::Log::LOG_ALERT;
+            else if ( strcmp( arg, "LOG_CRIT" ) == 0 || strcmp( arg, "CRIT" ) == 0 || strcmp( arg, "CRITICAL" ) == 0 )
+              log_level = YIELD::platform::Log::LOG_CRIT;
+            else if ( strcmp( arg, "LOG_ERR" ) == 0 || strcmp( arg, "ERR" ) == 0 || strcmp( arg, "ERROR" ) == 0 )
+              log_level = YIELD::platform::Log::LOG_ERR;
+            else if ( strcmp( arg, "LOG_WARNING" ) == 0 || strcmp( arg, "WARNING" ) == 0 || strcmp( arg, "WARN" ) == 0 )
+              log_level = YIELD::platform::Log::LOG_WARNING;
+            else if ( strcmp( arg, "LOG_NOTICE" ) == 0 || strcmp( arg, "NOTICE" ) == 0 )
+              log_level = YIELD::platform::Log::LOG_NOTICE;
+            else if ( strcmp( arg, "LOG_INFO" ) == 0 || strcmp( arg, "INFO" ) == 0 )
+              log_level = YIELD::platform::Log::LOG_INFO;
+            else if ( strcmp( arg, "LOG_DEBUG" ) == 0 || strcmp( arg, "DEBUG" ) == 0 || strcmp( arg, "TRACE" ) == 0 )
+              log_level = YIELD::platform::Log::LOG_DEBUG;
+            else
+              log_level = YIELD::platform::Log::LOG_EMERG;
+          }
+          else if ( log_level_uint8 <= YIELD::platform::Log::LOG_DEBUG )
+            log_level = static_cast<YIELD::platform::Log::Level>( log_level_uint8 );
+          else
+            log_level = YIELD::platform::Log::LOG_DEBUG;
+        }
+        break;
+
         case OPTION_OPERATION_TIMEOUT_MS:
         {
           double operation_timeout_ms = atof( arg );
@@ -220,16 +265,16 @@ namespace xtreemfs
       }
     }
 
-  protected:
-    YIELD::platform::auto_Log log;
-    std::string log_file_path;
-
   private:
+    std::string log_file_path;
+    YIELD::platform::Log::Level log_level;
+    std::string log_level_default_str;
     YIELD::platform::Time operation_timeout;
     std::string pem_certificate_file_path, pem_private_key_file_path, pem_private_key_passphrase;
     std::string pkcs12_file_path, pkcs12_passphrase;
     bool trace_auth, trace_network_io, trace_network_operations;
 
+    YIELD::platform::auto_Log log;
     YIELD::ipc::auto_SSLContext ssl_context;
 
 #ifdef XTREEMFS_HAVE_GOOGLE_BREAKPAD

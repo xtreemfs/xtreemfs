@@ -39,7 +39,7 @@ namespace xtfs_vivaldi
   {
   public:
     Main()
-      : xtreemfs::Main( "xtfs_vivaldi", "start the XtreemFS Vivaldi service", "[oncrpc[s]://]<dir host>[:dir port]/<volume name> <path to Vivaldi coordinates output file>" )
+      : xtreemfs::Main( "xtfs_vivaldi", "start the XtreemFS Vivaldi service", "<dir host>[:port]/<volume name> <path to Vivaldi coordinates output file>" )
     {
       std::srand( static_cast<unsigned int>( std::time( NULL ) ) );
     }
