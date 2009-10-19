@@ -1,4 +1,4 @@
-// Copyright 2009 Juan González de Benito.
+// Copyright 2009 Juan Gonzï¿½lez de Benito.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #ifndef _XTFS_VIVALDI_VIVALDI_NODE_H_
@@ -26,7 +26,7 @@ namespace xtfs_vivaldi
 										bool forceRecalculation);
 
       //TOFIX:This method is just included to test the final results
-      double caltulateDistance(org::xtreemfs::interfaces::VivaldiCoordinates coordA,org::xtreemfs::interfaces::VivaldiCoordinates coordB);
+      double calculateDistance(org::xtreemfs::interfaces::VivaldiCoordinates coordA,org::xtreemfs::interfaces::VivaldiCoordinates coordB);
 
 		private:
 

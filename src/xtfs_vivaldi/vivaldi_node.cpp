@@ -220,7 +220,7 @@ bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordina
 }
 
 //TOFIX:This method is just intended to test the final results
-double VivaldiNode::caltulateDistance(org::xtreemfs::interfaces::VivaldiCoordinates coordA,org::xtreemfs::interfaces::VivaldiCoordinates coordB){
+double VivaldiNode::calculateDistance(org::xtreemfs::interfaces::VivaldiCoordinates coordA,org::xtreemfs::interfaces::VivaldiCoordinates coordB){
   subtractCoordinates(coordA,coordB);
   return magnitudeCoordinates( coordA );
 }
