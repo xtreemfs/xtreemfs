@@ -252,7 +252,7 @@ public class VivaldiNode {
             //The proposed movement is too big according to the current distance btw nodes
             ret = false;
         }
-            
+        
         return ret;
     }
 }

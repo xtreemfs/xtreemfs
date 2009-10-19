@@ -76,13 +76,14 @@ public class VivaldiPingOperation extends OSDOperation {
         }
 
 
-        master.getVivaldiStage().getVivaldiCoordinates(args.getCoordinates(), rq, new VivaldiStage.VivaldiPingCallback() {
+/*        master.getVivaldiStage().getVivaldiCoordinates(args.getCoordinates(), rq, new VivaldiStage.VivaldiPingCallback() {
 
             @Override
             public void coordinatesCallback(VivaldiCoordinates myCoordinates, Exception error) {
                 postGetCoordinates(rq, args, myCoordinates, error);
             }
         });
+*/
     }
 
     public void postGetCoordinates(final OSDRequest rq, xtreemfs_pingRequest args,
