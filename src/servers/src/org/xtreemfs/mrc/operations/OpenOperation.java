@@ -225,7 +225,7 @@ public class OpenOperation extends MRCOperation {
         }
         
         // set 'replicateOnClose' if the policy is set accordingly
-        boolean replicateOnClose = volume.getAutoReplFactor() > 1;
+        boolean replicateOnClose = (create || write) && volume.getAutoReplFactor() > 1;
         
         // re-order the replica list, based on the replica selection policy
         xLocSet.setReplicas(master.getOSDStatusManager().getSortedReplicaList(volume.getId(),

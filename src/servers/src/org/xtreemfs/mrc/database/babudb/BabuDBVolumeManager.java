@@ -377,4 +377,9 @@ public class BabuDBVolumeManager implements VolumeManager {
                 throw exc;
         }
     }
+    
+    @Override
+    public String getDBVersion() {
+        return BabuDB.BABUDB_VERSION;
+    }
 }

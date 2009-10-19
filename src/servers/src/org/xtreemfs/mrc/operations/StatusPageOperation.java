@@ -61,7 +61,8 @@ public class StatusPageOperation extends MRCOperation {
             UUIDCACHE("<!-- $UUIDCACHE -->"),
             DISKFREE("<!-- $DISKFREE -->"),
             PROTOVERSION("<!-- $PROTOVERSION -->"),
-            VERSION("<!-- $VERSION -->");
+            VERSION("<!-- $VERSION -->"),
+            DBVERSION("<!-- $DBVERSION -->");
         
         private String template;
         

@@ -444,6 +444,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         data.put(Vars.UUIDCACHE, UUIDResolver.getCache());
         data.put(Vars.PROTOVERSION, Integer.toString(MRCInterface.getVersion()));
         data.put(Vars.VERSION, VersionManagement.RELEASE_VERSION);
+        data.put(Vars.DBVERSION, volumeManager.getDBVersion());
         
         data.put(Vars.PINKYQ, Long.toString(this.serverStage.getPendingRequests()));
         data.put(Vars.NUMCON, Integer.toString(this.serverStage.getNumConnections()));

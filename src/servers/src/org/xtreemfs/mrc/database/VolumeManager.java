@@ -206,4 +206,11 @@ public interface VolumeManager {
     public void deleteSnapshot(String volumeId, FileMetadata dir, String snapName) throws UserException,
         DatabaseException;
     
+    /**
+     * Returns a version string for the database backend.
+     * 
+     * @return the database version of the backend
+     */
+    public String getDBVersion();
+    
 }

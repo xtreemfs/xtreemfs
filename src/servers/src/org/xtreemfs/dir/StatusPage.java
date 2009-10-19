@@ -12,6 +12,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
+import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.common.VersionManagement;
@@ -23,9 +24,6 @@ import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.dir.data.AddressMappingRecord;
 import org.xtreemfs.dir.data.AddressMappingRecords;
 import org.xtreemfs.dir.data.ServiceRecord;
-import org.xtreemfs.interfaces.AddressMapping;
-import org.xtreemfs.interfaces.AddressMappingSet;
-import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 
 /**
@@ -50,7 +48,8 @@ public class StatusPage {
             TIME("<!-- $TIME -->"),
             TABLEDUMP("<!-- $TABLEDUMP -->"),
             PROTOVERSION("<!-- $PROTOVERSION -->"),
-            VERSION("<!-- $VERSION -->");
+            VERSION("<!-- $VERSION -->"),
+            DBVERSION("<!-- $DBVERSION -->");
         
         private String template;
         
@@ -228,6 +227,7 @@ public class StatusPage {
         
         tmp = tmp.replace(Vars.VERSION.toString(), VersionManagement.RELEASE_VERSION);
         tmp = tmp.replace(Vars.PROTOVERSION.toString(), Integer.toString(DIRInterface.getVersion()));
+        tmp = tmp.replace(Vars.DBVERSION.toString(), BabuDB.BABUDB_VERSION);
         
         return tmp;
         
