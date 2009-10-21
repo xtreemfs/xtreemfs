@@ -353,7 +353,7 @@ public class MRCHelper {
                     return "";
                 
                 StringBuilder sb = new StringBuilder();
-                                
+                
                 String[] snaps = sMan.getAllSnapshots();
                 int i = 0;
                 for (String snap : snaps) {
@@ -523,8 +523,14 @@ public class MRCHelper {
             
             int index = value.indexOf(" ");
             
-            String command = value.substring(0, index);
-            String name = value.substring(index + 1);
+            String command = null;
+            String name = null;
+            try {
+                command = value.substring(0, index);
+                name = value.substring(index + 1);
+            } catch (Exception exc) {
+                throw new UserException(ErrNo.EINVAL, "malformed snapshot configuration");
+            }
             
             // create snapshot
             if (command.charAt(0) == 'c')

@@ -788,7 +788,7 @@ public class BabuDBStorageManager implements StorageManager {
                 List<FileMetadata> nestedFiles = new LinkedList<FileMetadata>();
                 BabuDBStorageHelper.getNestedFiles(nestedFiles, database, snapDir.getId(), recursive);
                 
-                List<byte[]> fileIndexPrefixes = new ArrayList<byte[]>(nestedFiles.size());
+                List<byte[]> dirEntryPrefixes = new ArrayList<byte[]>(nestedFiles.size());
                 List<byte[]> filePrefixes = new ArrayList<byte[]>(nestedFiles.size());
                 List<byte[]> exclPrefixes = new ArrayList<byte[]>(nestedFiles.size());
                 
@@ -802,51 +802,63 @@ public class BabuDBStorageManager implements StorageManager {
                 // include all metadata of the snapshot (i.e. top level) dir
                 byte[] idxKey = BabuDBStorageHelper.createFileKey(parentId, dirName, (byte) -1);
                 byte[] fileKey = BabuDBStorageHelper.createFilePrefixKey(snapDir.getId());
-                fileIndexPrefixes.add(idxKey);
+                dirEntryPrefixes.add(idxKey);
                 filePrefixes.add(fileKey);
                 
                 // include the snapshot directory content
                 idxKey = BabuDBStorageHelper.createFilePrefixKey(snapDir.getId());
-                fileIndexPrefixes.add(idxKey);
+                dirEntryPrefixes.add(idxKey);
                 
                 // determine the key prefixes of all nested files to include and
                 // exclude
                 for (FileMetadata file : nestedFiles) {
                     
                     BufferBackedFileMetadata f = (BufferBackedFileMetadata) file;
-                    if (f.getIndexId() != FILE_INDEX)
-                        continue;
-                    // ignore hard links here
                     
+                    // create a prefix key for the nested file
                     byte[] key = BabuDBStorageHelper.createFilePrefixKey(file.getId());
-                    byte[] buf = f.getKeyBuffer(FILE_INDEX);
-                    byte[] exclKey = new byte[buf.length - 1];
-                    System.arraycopy(buf, 0, exclKey, 0, exclKey.length);
                     
+                    // if the nested file is a directory, ...
                     if (file.isDirectory()) {
-                        if (!recursive)
+                        
+                        // if the snapshot is recursive, exclude the directory
+                        if (!recursive) {
+                            
+                            byte[] buf = f.getKeyBuffer(BufferBackedFileMetadata.RC_METADATA);
+                            byte[] exclKey = new byte[buf.length - 1];
+                            System.arraycopy(buf, 0, exclKey, 0, exclKey.length);
+                            
                             exclPrefixes.add(exclKey);
-                        else {
-                            fileIndexPrefixes.add(key);
-                            filePrefixes.add(key);
                         }
-                    } else
+
+                        // otherwise, include the directory in the file prefixes
+                        // and the directory prefix in the dir entry prefixes
+                        else {
+                            filePrefixes.add(key);
+                            dirEntryPrefixes.add(key);
+                        }
+                    }
+
+                    // if the nested file is a file, ...
+                    else
                         filePrefixes.add(key);
                 }
                 
-                byte[][] idxPrefixes = fileIndexPrefixes.toArray(new byte[fileIndexPrefixes.size()][]);
-                byte[][] fPrefixes = filePrefixes.toArray(new byte[filePrefixes.size()][]);
-                byte[][] xPrefixes = exclPrefixes.toArray(new byte[exclPrefixes.size()][]);
+                byte[][] dirEntryPrefixesA = dirEntryPrefixes.toArray(new byte[dirEntryPrefixes.size()][]);
+                byte[][] filePrefixesA = filePrefixes.toArray(new byte[filePrefixes.size()][]);
+                byte[][] exclPrefixesA = exclPrefixes.toArray(new byte[exclPrefixes.size()][]);
                 
-                Arrays.sort(idxPrefixes, DefaultByteRangeComparator.getInstance());
-                Arrays.sort(fPrefixes, DefaultByteRangeComparator.getInstance());
+                Arrays.sort(dirEntryPrefixesA, DefaultByteRangeComparator.getInstance());
+                Arrays.sort(filePrefixesA, DefaultByteRangeComparator.getInstance());
                 
                 // FILE_INDEX, XATTRS_INDEX, ACL_INDEX, FILE_ID_INDEX,
                 // VOLUME_INDEX
-                prefixes = new byte[][][] { idxPrefixes, fPrefixes, fPrefixes, fPrefixes, null };
+                prefixes = new byte[][][] { dirEntryPrefixesA, filePrefixesA, filePrefixesA, filePrefixesA,
+                    null };
                 
                 if (!recursive)
-                    excludedKeys = new byte[][][] { xPrefixes, xPrefixes, xPrefixes, xPrefixes, null };
+                    excludedKeys = new byte[][][] { exclPrefixesA, exclPrefixesA, exclPrefixesA,
+                        exclPrefixesA, null };
             }
             
             // create the snapshot

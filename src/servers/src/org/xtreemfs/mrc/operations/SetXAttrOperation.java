@@ -30,6 +30,7 @@ import org.xtreemfs.interfaces.MRCInterface.setxattrResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
@@ -45,6 +46,10 @@ import org.xtreemfs.mrc.utils.PathResolver;
  * @author stender
  */
 public class SetXAttrOperation extends MRCOperation {
+    
+    private static final int XATTR_CREATE  = 1;
+    
+    private static final int XATTR_REPLACE = 2;
     
     public SetXAttrOperation(MRCRequestDispatcher master) {
         super(master);
@@ -114,6 +119,14 @@ public class SetXAttrOperation extends MRCOperation {
 
         // set a user attribute
         else {
+            
+            // first, check the flags to ensure that the op can be executed
+            
+            boolean exists = sMan.getXAttr(file.getId(), rq.getDetails().userId, attrKey) != null;
+            if (exists && rqArgs.getFlags() == XATTR_CREATE)
+                throw new UserException(ErrNo.EEXIST, "attribte exists already");
+            if (!exists && rqArgs.getFlags() == XATTR_REPLACE)
+                throw new UserException(ErrNo.ENODATA, "attribte does not exist");
             
             sMan.setXAttr(file.getId(), rq.getDetails().userId, attrKey, attrVal.length() == 0 ? null
                 : attrVal, update);

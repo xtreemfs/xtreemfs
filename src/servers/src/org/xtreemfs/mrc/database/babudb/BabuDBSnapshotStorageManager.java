@@ -529,8 +529,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     }
     
     protected void throwException() throws DatabaseException {
-        throw new DatabaseException("cannot invoke this operation on a snapshot",
-            ExceptionType.INTERNAL_DB_ERROR);
+        throw new DatabaseException("cannot invoke this operation on a snapshot", ExceptionType.NOT_ALLOWED);
     }
     
 }

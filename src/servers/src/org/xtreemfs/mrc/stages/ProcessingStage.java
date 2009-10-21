@@ -73,10 +73,13 @@ import org.xtreemfs.interfaces.MRCInterface.xtreemfs_rmvolRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_shutdownRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_update_file_sizeRequest;
 import org.xtreemfs.mrc.ErrorRecord;
+import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
+import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.operations.AddReplicaOperation;
 import org.xtreemfs.mrc.operations.ChangeAccessModeOperation;
 import org.xtreemfs.mrc.operations.ChangeOwnerOperation;
@@ -274,14 +277,39 @@ public class ProcessingStage extends MRCStage {
         
         try {
             op.startRequest(rq);
+            
         } catch (UserException exc) {
-            if (Logging.isDebug())
-                Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
-            op.finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, exc.getErrno(), exc.getMessage(),
-                exc));
+            reportUserError(op, rq, exc, exc.getErrno());
+            
+        } catch (MRCException exc) {
+            Throwable cause = exc.getCause();
+            if (cause instanceof DatabaseException
+                && ((DatabaseException) cause).getType() == ExceptionType.NOT_ALLOWED)
+                reportUserError(op, rq, exc, ErrNo.EPERM);
+            else
+                reportServerError(op, rq, exc);
+            
+        } catch (DatabaseException exc) {
+            if (exc.getType() == ExceptionType.NOT_ALLOWED) {
+                reportUserError(op, rq, exc, ErrNo.EPERM);
+            } else
+                reportServerError(op, rq, exc);
+            
         } catch (Throwable exc) {
-            op.finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred",
-                exc));
+            reportServerError(op, rq, exc);
         }
     }
+    
+    private void reportUserError(MRCOperation op, MRCRequest rq, Throwable exc, int errno) {
+        if (Logging.isDebug())
+            Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
+        op.finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, errno, exc.getMessage(), exc));
+    }
+    
+    private void reportServerError(MRCOperation op, MRCRequest rq, Throwable exc) {
+        if (Logging.isDebug())
+            Logging.logUserError(Logging.LEVEL_DEBUG, Category.proc, this, exc);
+        op.finishRequest(rq, new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, "an error has occurred", exc));
+    }
+    
 }
