@@ -21,7 +21,7 @@ org::xtreemfs::interfaces::VivaldiCoordinates *VivaldiNode::getCoordinates(){
  * @param coordA the coordinates to be multiplied.
  * @param value the real number to multiply by.
  */
-void VivaldiNode::multiplyValueCoordinates(org::xtreemfs::interfaces::VivaldiCoordinates &coord,double value){
+void VivaldiNode::multiplyValueCoordinates(org::xtreemfs::interfaces::VivaldiCoordinates& coord,double value){
     
   coord.set_x_coordinate( coord.get_x_coordinate() * value );
   coord.set_y_coordinate( coord.get_y_coordinate() * value );
@@ -123,7 +123,7 @@ void VivaldiNode::modifyCoordinatesRandomly(org::xtreemfs::interfaces::VivaldiCo
  * Modifies the position of the node according to the current distance to a
  * given point in the coordinate space and the real RTT measured against it.
  */
-bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordinates coordinatesJ,
+bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordinates& coordinatesJ,
                   										long measuredRTT,
                   										bool forceRecalculation){
   bool retval = true;
@@ -220,7 +220,7 @@ bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordina
 }
 
 //TOFIX:This method is just intended to test the final results
-double VivaldiNode::calculateDistance(org::xtreemfs::interfaces::VivaldiCoordinates coordA,org::xtreemfs::interfaces::VivaldiCoordinates coordB){
+double VivaldiNode::calculateDistance(org::xtreemfs::interfaces::VivaldiCoordinates coordA,org::xtreemfs::interfaces::VivaldiCoordinates& coordB){
   subtractCoordinates(coordA,coordB);
   return magnitudeCoordinates( coordA );
 }

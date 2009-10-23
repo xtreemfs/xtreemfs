@@ -24,7 +24,7 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
  * The recalculation period is randomly determined and is always included between
  * the minimum and the maximum period.
  */
-#define MIN_RECALCULATION_IN_MS 1000 * 5
+#define MIN_RECALCULATION_IN_MS 1000 * 25
 
 /*
  * Maximum recalculation period.
@@ -32,7 +32,7 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
  * The recalculation period is randomly determined and is always included between
  * the minimum and the maximum period.
  */
-#define MAX_RECALCULATION_IN_MS 1000 * 10
+#define MAX_RECALCULATION_IN_MS 1000 * 35
 
 /*
  * Number of times the node recalculates its position before updating
@@ -46,8 +46,8 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
  * REMOVE AFTER EVALUATING
  */
 #define EVALUATION_ENABLED  true
-#define NUMBER_OF_FILES     2
-#define REPLICAS_PER_FILE   4
+#define NUMBER_OF_FILES     1
+#define REPLICAS_PER_FILE   40
 #define CHECK_EVERY_ITERATIONS 5
 
 
@@ -93,13 +93,14 @@ namespace xtfs_vivaldi
     // YIELD::Thread
     void run()
     {
-    
+      
       //Initialized to (0,0) by default
       org::xtreemfs::interfaces::VivaldiCoordinates my_vivaldi_coordinates( 0, 0, 0 );
-      
+
+      //Try to read coordinates from local file      
       YIELD::platform::auto_File vivaldi_coordinates_file = YIELD::platform::Volume().open( vivaldi_coordinates_file_path, O_RDONLY );
-  		if ( vivaldi_coordinates_file != NULL )
-  		{
+      if ( vivaldi_coordinates_file != NULL )
+      {
         for ( ;; )
         {
           //x,y,local_error => 3 doubles
@@ -117,9 +118,21 @@ namespace xtfs_vivaldi
             break;
           }          
         }
-  		}else{
+        vivaldi_coordinates_file->close();
+      }else{
         get_log()->getStream( YIELD::platform::Log::LOG_WARNING ) << "impossible to read coordinates from file.Initializing them by default...";
       }
+
+      VivaldiNode own_node(my_vivaldi_coordinates);
+      
+      long vivaldiIterations = 0;
+      
+      org::xtreemfs::interfaces::ServiceSet osd_services;
+      
+      int currentRetries = 0;
+      
+      org::xtreemfs::interfaces::Service *random_osd_service;
+    
       
       //TODO:Remove this code after evaluating the system
       org::xtreemfs::interfaces::ServiceSet testingSets[NUMBER_OF_FILES];
@@ -130,6 +143,8 @@ namespace xtfs_vivaldi
         if(!knownOSDs.empty()){
           
           for(int i=0;i<NUMBER_OF_FILES;i++){
+            
+            //Create testing set for file i
             composeTestingSet(testingSets[i],knownOSDs,REPLICAS_PER_FILE);
             get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "testing set created:" << testingSets[i].size();
             
@@ -137,22 +152,21 @@ namespace xtfs_vivaldi
               get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << (*iter).get_uuid();              
             }
             get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "-------";
+            
+            // Create/truncate results file i
+            char filename[128];
+            memset(filename,0,128);
+            const char *fPath=vivaldi_coordinates_file_path;
+            snprintf(filename,128,"results-%s-%d",fPath,i);
+            YIELD::platform::auto_File truncatedFile = YIELD::platform::Volume().open( filename, O_CREAT|O_TRUNC|O_WRONLY );
+            truncatedFile->close(); 
+
           }
-                    
-              
+
         }
       }
       //-------------
   
-      VivaldiNode own_node(my_vivaldi_coordinates);
-      
-      long vivaldiIterations = 0;
-      
-      org::xtreemfs::interfaces::ServiceSet osd_services;
-      
-      int currentRetries = 0;
-      
-      org::xtreemfs::interfaces::Service *random_osd_service;
       
   		for ( ;; )
   		{
@@ -228,7 +242,8 @@ namespace xtfs_vivaldi
             get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "no OSD available";
           }
   			
-/*          
+/*      
+        //TODO: Control the timeouts     
         }catch( errnoException& excR ){
           
           std::cout << "errnoException\n";
@@ -236,26 +251,28 @@ namespace xtfs_vivaldi
           
         }catch( YIELD::concurrency::ExceptionResponse& er ){
           std::cout<<"ExceptionResponse:"<< er.what() <<":::" << er.get_errno()<<"--->"<< er.get_type_name()<<":"<<"\n";
-  */        
+          continue;
+*/
         }catch ( std::exception& exc ){
   				get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "xtfs_vivaldi: error pinging OSDs: " << exc.what() << ".";
-  				continue;
+  				//continue;
   			}
   
         //Store the new coordinates in a local file
         //TOFIX:Uncomment once finished
         //get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "storing coordinates in file:("<<own_node.getCoordinates()->get_x_coordinate()<<","<<own_node.getCoordinates()->get_y_coordinate()<<")";
         
-  			YIELD::platform::auto_File vivaldi_coordinates_file = YIELD::platform::Volume().open( vivaldi_coordinates_file_path, O_CREAT|O_TRUNC|O_WRONLY );
+  			vivaldi_coordinates_file = YIELD::platform::Volume().open( vivaldi_coordinates_file_path, O_CREAT|O_TRUNC|O_WRONLY );
   			if ( vivaldi_coordinates_file != NULL )
   			{
   				YIELD::platform::XDRMarshaller xdr_marshaller;
   				own_node.getCoordinates()->marshal( xdr_marshaller );
   				vivaldi_coordinates_file->write( xdr_marshaller.get_buffer().release() );
+          vivaldi_coordinates_file->close();
   			}
     
         //Sleep until the next iteration
-        uint64_t sleep_in_ms = MIN_RECALCULATION_IN_MS + ( (static_cast<double>(std::rand())/RAND_MAX) * (MAX_RECALCULATION_IN_MS - MIN_RECALCULATION_IN_MS) );
+        uint64_t sleep_in_ms = MIN_RECALCULATION_IN_MS + ( (static_cast<double>(std::rand())/(RAND_MAX-1)) * (MAX_RECALCULATION_IN_MS - MIN_RECALCULATION_IN_MS) );
         get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "sleeping during "<<sleep_in_ms<<" ms.";
       	YIELD::platform::Thread::sleep( sleep_in_ms * NS_IN_MS );
         
@@ -264,9 +281,14 @@ namespace xtfs_vivaldi
         }
         
         //Remove this code after evaluating the results
-        if( EVALUATION_ENABLED && (vivaldiIterations%CHECK_EVERY_ITERATIONS) == 0){
+        if( EVALUATION_ENABLED && (currentRetries<=0) && (vivaldiIterations%CHECK_EVERY_ITERATIONS) == 0){
+          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "**EVALUATING(its.:"<<vivaldiIterations<<")**";
           for(int i=0;i<NUMBER_OF_FILES;i++){
-            executeOneEvaluation( testingSets[i], own_node);
+            char filename[128];
+            memset(filename,0,128);
+            const char *fPath=vivaldi_coordinates_file_path;
+            snprintf(filename,128,"results-%s-%d",fPath,i);
+            executeOneEvaluation( testingSets[i], own_node,filename);
           }
         }
         //------------------
@@ -299,7 +321,7 @@ namespace xtfs_vivaldi
       org::xtreemfs::interfaces::ServiceSet::iterator it;
       for(int i=0;i<replicas_per_file;i++){
 
-        int chosenIndex = static_cast<int>( (static_cast<double>(std::rand())/RAND_MAX)*knownOSDs.size());
+        int chosenIndex = static_cast<int>( (static_cast<double>(std::rand())/(RAND_MAX-1))*knownOSDs.size());
         it = knownOSDs.begin() + chosenIndex;
         
         testingSet.push_back(*it);
@@ -316,23 +338,22 @@ namespace xtfs_vivaldi
      * Evaluates the position of the node according to the RTTs measured against a set of OSDs and
      * its vivaldi distances to them.Moreover, it stores the results in a local file.
      */ 
-    void executeOneEvaluation(org::xtreemfs::interfaces::ServiceSet &osds,VivaldiNode &own_node){
+    void executeOneEvaluation(const org::xtreemfs::interfaces::ServiceSet &osds,VivaldiNode &own_node,const char *fileName){
   
       if ( !osds.empty() )
       {
         //Create arrays
-        uint64_t *rtts = new uint64_t[osds.get_size()];
-        for(size_t i=0;i<osds.get_size();i++)
-        {
-          rtts[i]=-1;
-        }
-         
-        org::xtreemfs::interfaces::VivaldiCoordinates *remoteCoordinates = new org::xtreemfs::interfaces::VivaldiCoordinates[osds.get_size()];
-        
+        uint64_t rtts[osds.get_size()];
+        std::string uuids[osds.get_size()];
+
+        org::xtreemfs::interfaces::VivaldiCoordinates remoteCoordinates[osds.get_size()];
+
         for(size_t i=0;i<osds.get_size();i++){
-          
+
           const org::xtreemfs::interfaces::Service& one_osd = osds[i];
           
+          uuids[i] = one_osd.get_uuid();
+                    
           yidl::runtime::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> one_osd_address_mappings = dir_proxy->getAddressMappingsFromUUID( one_osd.get_uuid() );
         
           //Several mappings for the same UUID
@@ -341,14 +362,22 @@ namespace xtfs_vivaldi
             if ( ( *one_osd_address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
             {
               auto_OSDProxy osd_proxy = OSDProxy::create( ( *one_osd_address_mapping_i ).get_uri(), get_proxy_flags(), get_log(), get_operation_timeout() );
-              
-              //The sent coordinates are irrelevant
-              org::xtreemfs::interfaces::VivaldiCoordinates ownCoords;
-              YIELD::platform::Time start_time;
-              osd_proxy->xtreemfs_ping(ownCoords , remoteCoordinates[i]);
-              YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
-              
-              rtts[i] = rtt.as_unix_time_ms();
+
+              try{
+                //The sent coordinates are irrelevant
+                org::xtreemfs::interfaces::VivaldiCoordinates ownCoords;
+                YIELD::platform::Time start_time;
+                osd_proxy->xtreemfs_ping(ownCoords , remoteCoordinates[i]);
+                YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
+                
+                rtts[i] = rtt.as_unix_time_ms();
+                if(rtts[i]==0) rtts[i]=1;
+                
+              }catch( YIELD::concurrency::ExceptionResponse& er ){
+                rtts[i] = 0;
+                //std::cout<<"ExceptionResponse:"<< er.what() <<":::" << er.get_errno()<<"--->"<< er.get_type_name()<<":"<<"\n";
+                //continue;
+              }
             }
           }
         }
@@ -363,20 +392,20 @@ namespace xtfs_vivaldi
         int rightMeasures = 0;
         for(size_t i=0;i<osds.get_size();i++)
         {
-          if(rtts[i]>0) rightMeasures++;
+          if(rtts[i]>0){ rightMeasures++; }
         }
         
-        char auxStr[64];
+        char auxStr[256];
         
         
         std::string strWr("");
         strWr += "CLIENT";
-        sprintf(auxStr," %d",rightMeasures);
+        snprintf(auxStr,256," %d",rightMeasures);
         strWr += auxStr;
-        sprintf(auxStr," %d/%d/%d-%d:%d:%d", tmStruct->tm_mday,tmStruct->tm_mon,tmStruct->tm_year, tmStruct->tm_hour, tmStruct->tm_min,tmStruct->tm_sec);
+        snprintf(auxStr,256," %d/%d/%d-%d:%d:%d", tmStruct->tm_mday,tmStruct->tm_mon,tmStruct->tm_year, tmStruct->tm_hour, tmStruct->tm_min,tmStruct->tm_sec);
         strWr += auxStr;
         org::xtreemfs::interfaces::VivaldiCoordinates *localCoords = own_node.getCoordinates();
-        sprintf(auxStr," Coordinates:%.3f,%.3f\n",localCoords->get_x_coordinate(),localCoords->get_y_coordinate());
+        snprintf(auxStr,256," Coordinates:%.3f/%.3f-%.3f\n",localCoords->get_x_coordinate(),localCoords->get_y_coordinate(),localCoords->get_local_error());
         strWr += auxStr;
         
         for(size_t i=0;i<osds.get_size();i++)
@@ -384,23 +413,20 @@ namespace xtfs_vivaldi
           if(rtts[i]>0)
           {
             double distance = own_node.calculateDistance((*localCoords),remoteCoordinates[i]);
-            sprintf(auxStr,"%lld\t%.3f\t%.3f,%.3f\n", rtts[i],distance,remoteCoordinates[i].get_x_coordinate(),remoteCoordinates[i].get_y_coordinate());
+            snprintf(auxStr,256,"%s %lld\t%.3f\t%.3f/%.3f-%.3f\n",uuids[i].data(), rtts[i],distance,remoteCoordinates[i].get_x_coordinate(),remoteCoordinates[i].get_y_coordinate(),remoteCoordinates[i].get_local_error());
             strWr += auxStr;
           }
         }
         
-        
         std::cout << strWr;
 
-        YIELD::platform::auto_File results_file = YIELD::platform::Volume().open( "results", O_APPEND|O_WRONLY );
+        YIELD::platform::auto_File results_file = YIELD::platform::Volume().open( fileName, O_CREAT|O_APPEND|O_WRONLY );
         if ( results_file != NULL )
         {
           results_file->write( strWr.data(),strWr.length());
+          results_file->close();
         }
 
-        
-        delete[] rtts;
-        delete[] remoteCoordinates;
       }
     }
     

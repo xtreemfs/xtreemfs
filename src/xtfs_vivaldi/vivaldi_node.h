@@ -21,12 +21,12 @@ namespace xtfs_vivaldi
 
       VivaldiNode(org::xtreemfs::interfaces::VivaldiCoordinates nodeCoordinates): ownCoordinates(nodeCoordinates) {}
 			org::xtreemfs::interfaces::VivaldiCoordinates *getCoordinates();
-			bool recalculatePosition(	org::xtreemfs::interfaces::VivaldiCoordinates coordinatesJ,
+			bool recalculatePosition(	org::xtreemfs::interfaces::VivaldiCoordinates& coordinatesJ,
 										long measuredRTT,
 										bool forceRecalculation);
 
       //TOFIX:This method is just included to test the final results
-      double calculateDistance(org::xtreemfs::interfaces::VivaldiCoordinates coordA,org::xtreemfs::interfaces::VivaldiCoordinates coordB);
+      double calculateDistance(org::xtreemfs::interfaces::VivaldiCoordinates coordA,org::xtreemfs::interfaces::VivaldiCoordinates& coordB);
 
 		private:
 

@@ -126,7 +126,7 @@ public class VivaldiStage extends Stage {
      * The recalculation period is randomly determined and is always included between
      * the minimum and the maximum period.
      */
-    private static final int MIN_RECALCULATION_IN_MS = 1000 * 4;
+    private static final int MIN_RECALCULATION_IN_MS = 1000 * 50;
     
     /**
      * Maximum recalculation period.
@@ -134,7 +134,7 @@ public class VivaldiStage extends Stage {
      * The recalculation period is randomly determined and is always included between
      * the minimum and the maximum period.
      */
-    private static final int MAX_RECALCULATION_IN_MS = 1000 * 15;
+    private static final int MAX_RECALCULATION_IN_MS = 1000 * 70;
     
     /**
      * Number of times the node recalculates its position before updating
@@ -447,11 +447,12 @@ public class VivaldiStage extends Stage {
             knownOSDs = newOSDs;
             
             if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "Updating list of known OSDs");
+                Logging.logMessage(Logging.LEVEL_INFO, this, "Updating list of known OSDs");
             
         } catch (Exception exc) {
-            Logging.logError(Logging.LEVEL_ERROR, this, exc);
-            this.notifyCrashed(exc);
+            Logging.logMessage(Logging.LEVEL_ERROR, this, "Error while updating known OSDs:"+exc);
+            //Logging.logError(Logging.LEVEL_ERROR, this, exc);
+            //this.notifyCrashed(exc);
         } finally {
             if (r != null){
                 r.freeBuffers();
