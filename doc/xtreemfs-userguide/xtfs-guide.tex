@@ -97,25 +97,68 @@ This is the very short version to help you set up a local installation of Xtreem
 
 You can also mount this volume on remote computers. First make sure that the ports 32636, 32638 and 32640 are open for incoming TCP connections. You must also specify a hostname that can be resolved by the remote machine! This hostname has to be used instead of \texttt{localhost} when mounting.
 
-\chapter{What is XtreemFS}
+\chapter{About XtreemFS}
 \pagenumbering{arabic}
 \setcounter{page}{1}
 
-\section{About XtreemFS}
+Since you decided to take a look at this user guide, you probably read or heard about XtreemFS and want to find out more. This chapter contains basic information about the characteristics and the architecture of XtreemFS.
 
-With XtreemFS you are about to install a modern \emph{distributed and replicated file system}. As a distributed file system, XtreemFS stores your file data on several servers and you can simply scale your file system by adding more hosts. XtreemFS is a full-featured file system that supports the full POSIX file interface, including \emph{extended attributes} (xattrs). In case of concurrent access by several distributed programs, XtreemFS provides you currently with NFS close-to-open consistency.
+\section{What is XtreemFS?}
+XtreemFS is a file system for a variety of different use cases and purposes. Since it is impossible to categorize or explain XtreemFS in a single sentence, we introduce XtreemFS by means of its two most significant properties: \emph{XtreemFS is a globally distributed and replicated file system.}
 
-Since version 1.0, XtreemFS also supports replication of files. The so called \emph{read-only replication} allows you to have multiple copies of immutable files. XtreemFS also supports partial replicas which helps you to save disk capacity and network bandwidth; only data that is requested by clients is stored in partial replicas.
+\paragraph{What makes XtreemFS a distributed file system?} We consider a file system as \emph{distributed} if files are stored across a number of servers rather than a single server or local machine. Unlike local or network file systems, a distributed file system aggregates the capacity of multiple servers. As a \emph{globally distributed} file system, XtreemFS servers may be dispersed all over the world. The capacity can be increased and decreased by adding and removing servers, but from a user's perspective, the file system appears to reside on a single machine.
 
-XtreemFS has been designed for deployment in \emph{wide-area environments} connected by the Internet. This means that it allows you to mount an XtreemFS volume from any location, given the right permissions; but it also implies that file system installations can span multiple locations or data centers.
+\paragraph{What makes XtreemFS a replicated file system?} We call it a \emph{replicated} file system because replication is one of its most prominent features. XtreemFS is capable of maintaining replicas of files on different servers. Thus, files remain accessible even if single servers, hard disks or network connections fail. Besides, replication yields benefits in terms of data rates and access times. Different replicas of a file can be accessed simultaneously on different servers, which may lead to a better performance compared to simultaneous accesses on a single server. By placing file replicas close the consuming users and applications in a globally distributed installation, the effects of network latency and bandwidth reduction in wide area networks can be mitigated. However, replication is transparent to users and applications that work with XtreemFS; the file system is capable of controlling the life cycle and access of replicas without the need for human intervention or modifications of existing applications.
 
-To enforce access control, XtreemFS supports a normal UNIX permission model, which can combined with \emph{X.509-based security architectures} to ensure a secure authentication of users. Access policies are pluggable, which means that they can be freely defined and easily extended. When using XtreemFS as part of an \emph{XtreemOS} installation, users can benefit from a transparent integration with the XtreemOS \emph{Virtual Organization (VO)} infrastructure in the form of dynamic user mappings and automatic mounting of home volumes.
+\section{Is XtreemFS suitable for me?}
+If you consider using XtreemFS, you may be a system administrator in search of a better and more flexible alternative to your current data management solution. Or you may be a private user in need of a file system that can be easily set up and accessed from any machine in the world. You might also be someone looking for an open-source solution to manage large amounts of data distributed across multiple sites. In any case, you will wonder if XtreemFS fulfills your requirements. As a basis for your decision, the following two paragraphs point out the characteristics of XtreemFS.
 
-If you need \emph{high performance} access to your files, XtreemFS can help you with support for \emph{file striping}: XtreemFS can store a file across several storage servers and \emph{access} the parts \emph{in parallel}. The size of an individual stripe and the number of storage servers used can be configured on a per-file or per-directory basis.
+\paragraph{XtreemFS is ...}
+\begin{itemize}
+ \item [...] an open source file system. It is distributed freely and can be used by anyone without limitations.
+ \item [...] a POSIX file system. Users can mount and access XtreemFS like any other common file system. Application can access XtreemFS via the standard file system interface, i.e.\ without having to be rebuilt against a specialized API. XtreemFS supports a POSIX-compliant access control model.
+ \item [...] a multi-platform file system. Server and client modules can be installed and run on different platforms, including most Linux distributions, Solaris, Mac OS X and Windows.
+ \item [...] a globally distributed file system. Unlike cluster file systems, an XtreemFS installation is not restricted to a single administrative domain or cluster. It can span the globe and may comprise servers in different administrative domains.
+ \item [...] a failure-tolerant file system. As stated in the previous section, replication can keep the system alive and the data safe. In this respect, XtreemFS differs from most other open-source file systems.
+ \item [...] a secure file system. To ensure security in an untrusted, worldwide network, all network traffic can be encrypted with SSL connections, and users can be authenticated with X.509 certificates.
+ \item [...] a customizable file system. Since XtreemFS can be used in different environments, we consider it necessary to give administrators the possibility of adapting XtreemFS to the specific needs of their users. Customizable policies make it possible change the behavior of XtreemFS in terms of authentication, access control, striping, replica placement, replica selection and others. Such policies can be selected from a set of predefined policies, or implemented by administrators and plugged in the system.
+\end{itemize}
 
+\paragraph{XtreemFS is not ...}
+\begin{itemize}
+ \item [...] a high-performance cluster file system. Even though XtreemFS reaches acceptable throughput rates in a local cluster, it cannot compete with specialized cluster file systems in terms of raw performance numbers. Most such file systems have an optimized network stack and protocols, and a substantially larger development team. If you have huge amounts of data in a local cluster with little requirements but high throughput rates to them, a cluster file system is probably the better alternative.
+ \item [...] a replacement for a local file system. Even though XtreemFS can be set up and mounted on a single machine, the additional software stack degrades the performance, which makes XtreemFS a bad alternative.
+ %\item [...] a commercially supported product, so far. XtreemFS is being developed as part of the XtreemOS project, a research project funded by the European commission. Even though we do not want to rule out the possibility of providing commercial support for XtreemFS in the future, we currently see ourselves as researchers rather than professional file system developers.
+\end{itemize}
 
-\section{XtreemFS Architecture}
+\section{Core Features}
+The core functionality of XtreemFS is characterized by a small set of features, which are explained in the following.
 
+\paragraph{Distribution.}
+An XtreemFS installation comprises multiple servers that may run on different nodes connected in a local cluster or via the Internet. Provided that the servers are reachable, a client module installed on any machine in the world can access the installation. A binary communication protocol based on Sun's ONC-RPC ensures an efficient communication with little overhead between clients and servers. XtreemFS ensures that the file system remains in a consistent state even if multiple clients access a common set of files and directories. Similar to NFS, it offers a close-to-open consistency model in the event of concurrent file accesses.
+
+\paragraph{Replication.}
+Since version 1.0, XtreemFS supports \emph{read-only replication}. A file may have multiple replicas, provided that the it was explicitly made read-only before, which means that its content cannot be changed anymore. This kind of replication can be used to make write-once files available to many consumers, or to protect them from losses due to hardware failures. Besides complete replicas that are immediately synchronized after having been created, XtreemFS also supports partial replicas that are only filled with content on demand. They can e.g.\ be used to make large files accessible to many clients, of which only parts need to be accessed.
+
+Currently, XtreemFS does not support replication of mutable files. From a technical perspective, this is more challenging than read-only replication, since XtreemFS has to ensure that all replicas of a file remain consistent despite attempts to concurrently write different replicas, as well as network and component failures. However, we are planning on supporting full read-write replication with future XtreemFS releases.
+
+\paragraph{Striping.}
+To ensure acceptable I/O throughput rates when accessing large files, XtreemFS supports \emph{striping}. A striped file is split into multiple chunks (``\emph{stripes}''), which are stored on different storage servers. Since different stripes can be accessed in parallel, the whole file can be read or written with the aggregated network and storage bandwidth of multiple servers. XtreemFS currently supports the \texttt{RAID0}\index{RAID0} striping pattern, which splits a file up in a set of stripes of a fixed size, and distributes them across a set of storage servers in a round-robin fashion. The size of an individual stripe as well as the number of storage servers used can be configured on a per-file or per-directory basis.
+
+\paragraph{Security.}
+To enforce security, XtreemFS offers mechanisms for user authentication and authorization, as well as the possibility to encrypt network traffic.
+
+\emph{Authentication} \index{Authentication} describes the process of verifying a user's or client's identity. By default, authentication in XtreemFS is based on local user names and depends on the trustworthiness of clients and networks. In case a more secure solution is needed, X.509 certificates can be used.
+
+\emph{Authorization}\index{Authorization} describes the process of checking user permissions to execute an operation. XtreemFS supports the standard UNIX permission model, which allows for assigning individual access rights to file owners, owning groups and other users.
+
+Authentication and authorization are policy-based, which means that different models and mechanisms can be used to authenticate and authorize users. Besides, the policies are pluggable, i.e.\ they can be freely defined and easily extended.
+
+XtreemFS uses unauthenticated and unencrypted TCP connections by default. To encrypt all network traffic, services and clients can establish \emph{SSL}\index{SSL} connections. However, using SSL requires that all users and services have valid X.509\index{X.509}\index{Certificate} certificates.
+
+%When using XtreemFS as part of an \emph{XtreemOS} installation, users can benefit from a transparent integration with the XtreemOS \emph{Virtual Organization (VO)} infrastructure in the form of dynamic user mappings and automatic mounting of home volumes.
+
+\section{Architecture}
 XtreemFS implements an \emph{object-based file system architecture}\index{Object-based File System}\index{Architecture} (Fig. \ref{fig:architecture}): file content is split into a series of fixed-size \emph{objects}\index{Object} and stored across storage servers, while \emph{metadata}\index{Metadata} is stored on a separate metadata server. The metadata server organizes file system metadata as a set of \emph{volumes}\index{Volume}, each of which implements a separate file system namespace in form of a directory tree.
 
 In contrast to block-based file systems, the management of available and used storage space is offloaded from the metadata server to the storage servers. Rather than inode lists with block addresses, file metadata contains lists of storage servers responsible for the objects, together with striping policies\index{Striping Policy}\index{Policy!Striping Policy} that define how to translate between byte offsets and object IDs. This implies that object sizes may vary from file to file.
@@ -131,8 +174,7 @@ In contrast to block-based file systems, the management of available and used st
 \end{figure}
 
 
-\subsection{The Components of XtreemFS}
-
+\paragraph{XtreemFS Components.}
 An XtreemFS installation contains three types of servers that can run on one or several machines (Fig. \ref{fig:architecture}):
 
 \begin{itemize}
@@ -147,164 +189,6 @@ An XtreemFS installation contains three types of servers that can run on one or 
 These servers are connected by the \emph{client}\index{Client} to a file system. A client \emph{mounts}\index{Mounting} one of the volumes\index{Volume} of the MRC in a local directory. It translates file system calls into RPCs sent to the respective servers.
 
 The client is implemented as a \emph{FUSE user-level driver} that runs as a normal process. FUSE\index{FUSE} itself is a kernel-userland hybrid that connects the user-land driver to Linux' \emph{Virtual File System (VFS)}\index{VFS} layer where file system drivers usually live.
-
-
-\subsection{Security}
-
-As usual, XtreemFS security differentiates between authentication and authorization. \emph{Authentication} \index{Authentication} is the process of verifying a user's or client's identity, e.g. validating and reading an X.509 certificate. In contrast, \emph{authorization}\index{Authorization} is the process of checking if a user has the permission to execute a certain operation, e.g. write access to a file.
-
-By default, XtreemFS uses unauthenticated and unencrypted TCP connections. However, \emph{SSL}\index{SSL} can be enabled in all XtreemFS services and the client. Using SSL requires that all users and services provide valid X.509\index{X.509}\index{Certificate} certificates. Any data sent over a SSL connection is encrypted. Using SSL, however, will increase the resource consumption of all components, especially for connection setup (SSL handshake).
-
-
-\section{Policies}
-
-Many facets of the behavior of XtreemFS can be configured by means of policies. A policy defines how a certain task is performed, e.g.\ how the MRC selects a set of OSDs for a new file, or how it distinguishes between an authorized and an unauthorized user when files are accessed. Various policies have been defined that cover different aspects.
-
-\subsection{OSD and Replica Selection Policies} \label{sec:osd_policies}
-
-When a new file is created or a replica is automatically added to a file, the MRC must decide on a set of OSDs for storing the file content. To select the most suitable subset among all known OSDs, OSD Selection Policies\index{OSD Selection Policy}\index{Policy!OSD Selection Policy} are used.
-
-Replica selection is a related problem. When a client opens a file with more than one replica, the MRC uses a replica selection policy to sort the list of replicas for the client. Initially, a client will always attempt to access the first replica in the list received from the MRC. If a replica is not available, it will automatically attempt to access the next replica from the list, and restart with the first replica if all attempts have failed. Replica selection policies can be used to sort the replica lists, e.g. to ensure that clients first try to access replicas that are close to them.
-
-Both OSD and replica selection policies share a common mechanism, in that they consist of \emph{basic policies} that can be arbitrarily combined. Input parameters of a basic policy are a set of OSDs, the current replica locations list of the file, and the IP address of the client on behalf of whom the policy was called. The output parameter is a filtered and potentially sorted subset of OSDs. Since OSD lists returned by one basic policy can be used as input parameters by another one, basic policies can be chained to define more complex composite policies.
-
-OSD and replica selection policies are assigned at volume granularity. For further details on how to set such policies, please refer to Sec.\ \ref{sec:osd_select_policy}.
-
-\paragraph{Attributes.}
-
-The behavior of basic policies can be further refined by means of policy attributes. Policy attributes are extended attributes with a name starting with \texttt{xtreemfs.policies.}, such as \texttt{xtreemfs.policies.minFreeCapacity}. Each time a policy attribute is set, all policies will be notified about the change. How an attribute change affects the policy behavior depends on the policy implementation.
-
-\paragraph{Predefined Policies.}
-
-The following predefined policies exist:
-
-\emph{Filtering policies}:
-\begin{itemize}
-
- \item \textbf{Default OSD filter (policy ID 1000)}\\
- Removes OSDs from the list that are either dead or do not have sufficient space. By default, the lower space limit for an OSD is 2GB, and the upper response time limit is 5 minutes.\\
-
- Attributes:
- \begin{itemize}
- \item \emph{free\_capacity\_bytes}: the lower space limit in bytes
- \item \emph{offline\_time\_secs}: the upper response time limit in
- \end{itemize}
-
- \item \textbf{FQDN-based filter (policy ID 1001)}\\
- Removes OSDs from the list that do not match any of the domains in a given set. By default, the set of domains contains '*', which indicates that no domains are removed.\\
-
- Attributes:
- \begin{itemize}
- \item \emph{domains}: a comma or space-separated list of domain names. The list may include leading and trailing '*'s, which will be regarded as wildcard characters.
-\end{itemize}
-
-\end{itemize}
-
-\emph{Grouping policies}:
-
-\begin{itemize}
-
- \item \textbf{Data center map-based grouping (policy ID 2000)}\\
- Removes all OSDs from the OSD set that have been used in the file's replica locations list already and selects the subset of OSDs that is closest to the client and provides enough OSDs for the new replica in a single data center.
-
- This policy uses a statically configured datacenter map that describes the distance between datacenters. It works only with IPv4 addresses at the moment. Each datacenter has a list of matching IP addresses and networks which is used to assign clients and OSDs to datacenters. Machines in the same datacenter have a distance of 0.
-
-	This policy requires a datacenter map configuration file in \texttt{/etc/xos/xtreemfs/datacentermap} on the MRC machine which is loaded at MRC startup. This config file must contain the following parameters:
-	\begin{itemize}
-		\item \texttt{datacenters=A,B,C}\\
-			A comma separated list of datacenters. Datacenter names may only contain a-z, A-Z, 0-9 and \_.
-
-		\item \texttt{distance.A-B=100}\\
-			For each pair of datacenters, the distance must be specified. As distances are symmetric, it is sufficient to specify A to B.
-
-		\item \texttt{addresses.A=192.168.1.1,192.168.2.0/24}\\
-			For each datacenter a list of matching IP addresses or networks must be specified.
-
-		\item \texttt{max\_cache\_size=1000}\\
-			Sets the size of the address cache that is used to lookup IP-to-datacenter matches.
-	\end{itemize}
-	
-	A sample datacenter map could look like this:
-
-	\begin{verbatim}
-	datacenters=BERLIN,LONDON,NEW_YORK
-	distance.BERLIN-LONDON=10
-	distance.BERLIN-NEW_YORK=140
-	distance.LONDON-NEW_YORK=110
-	addresses.BERLIN=192.168.1.0/24
-	addresses.LONDON=192.168.2.0/24
-	addresses.NEW_YORK=192.168.3.0/24,192.168.100.0/25
-	max_cache_size=100
-	\end{verbatim}
-
- \item \textbf{FQDN-based grouping (policy ID 2001)}\\
- Removes all OSDs from the OSD set that have been used in the file's replica locations list already and selects the subset of OSDs that is closest to the client and provides enough OSDs for the new replica in a single domain.
-
-This policy uses domain names of clients and OSDs to determine the distance between a client and an OSD, as well as if OSDs are in the same domain.
-
-\end{itemize}
-
-\emph{Sorting policies}:
-
-\begin{itemize}
-
- \item \textbf{Shuffling (policy ID 3000)}\\
- Shuffles the given list of OSDs.
-
- \item \textbf{Data center map-based sorting (policy ID 3001)}\\
- Sorts the list of OSDs in ascending order of their distance to the client, according to the data center map.
-
- \item \textbf{DNS based OSD Selection (policy ID 3002)}\\
- The FQDN of the client and all OSDs is compared and the maximum match (from the end of the FQDN) is used to sort the OSDs. The policy sorts the list of OSDs in descending order by the number of characters that match. This policy can be used to automatically select OSDs which are close to the client, if the length of the match between two DNS entries also indicate a low latency between two machines.
-
-\end{itemize}
-
-\subsection{Striping Policies} \label{sec:striping_policies}
-
-XtreemFS allows the content of a file to be distributed among several storage devices (OSDs). This has the benefit, that the file can be read or written in parallel on multiple servers which increases the bandwidth\index{Striping}. The more OSDs are used, the higher the bandwidth available for reading or writing. The number of OSDs is called the striping width\index{Striping!Striping Width}\index{Width, Striping Width}.
-
-A striping policy\index{Striping Policy}\index{Policy!Striping Policy}\index{RAID0} is a rule that defines how the objects are distributed on the available OSDs. Currently, XtreemFS implements only the \texttt{RAID0} policy which simply stores the objects in a round robin fashion on the OSDs. The \texttt{RAID0} policy has two parameters. The striping width\index{Striping Width} defines to how many OSDs the file is distributed. The stripe size\index{Striping!Stripe Size}\index{Stripe Size} defines the size of each object.
-
-Striping over several OSDs enhances the read and write bandwidth of a file, the bandwidth increases the larger the striping width. Please note, that striping also increases the probability of data loss. A striped file will become corrupted even if a single OSDs it is stored on has a disk crash.
-
-\subsection{Authorization - Access Policies} \label{sec:access_policies}
-
-User authorization is managed by means of Access Policies. An access policy defines the access rights for any user on any file or directory contained in a volume. When creating a new volume, the access policy has to be chosen, which cannot be changed in the future. Various access policies can be used: \index{Access Policy}\index{Policy!Access Policy}
-
-\begin{itemize}
- \item Authorize All Policy (policy Id 1)\index{Access Policy!Authorize All}\index{Authorize All Access Policy}\\
-No authorization - everyone can do everything. This policy is useful if performance of metadata operations matters more than security, since no recursive evaluation of access policies is done.
-
- \item POSIX ACLs \& Permissions (policy Id 2)\index{Access Policy!POSIX Permissions}\index{POSIX Permissions Access Policy}\index{Access Policy!POSIX ACLs}\index{POSIX ACLs Access Policy}\\
-This access policy implements the traditional POSIX permissions commonly used on Linux, as well as POSIX ACLs, an extension that provides for access control at the granularity of single users and groups. POSIX permissions should be used as the default, as it guarantees maximum compatibility with other file systems.
-
- \item Volume ACLs (policy Id 3)\index{Access Policy!Volume ACLs}\index{Volume ACLs Access Policy}\\
-Volume ACLs provide an access control model similar to POSIX ACLs \& Permissions, but only allow one ACL for the whole volume. This means that there is no recursive evaluation of access rights which yields a higher performance at the price of a very coarse-grained access control. 
-\end{itemize}
-
-
-\subsection{Pluggable Policies}
-
-Administrators may extend the set of existing policies by defining \textit{plug-in policies}. Such policies are Java classes that implement a predefined policy interface. Currently, the following policy interfaces exist:
-
-\begin{itemize}
- \item \texttt{org.xtreemfs.common.auth.AuthenticationProvider}\\
-   can be used to implement an individual mechanism to authenticate users and groups
- \item \texttt{org.xtreemfs.mrc.ac.FileAccessPolicy}\\
-   can be used to implement an individual access control model on files, directories and volumes
- \item \texttt{org.xtreemfs.mrc.osdselection.OSDSelectionPolicy}\\
-   can be used to implement an individual basic policies for allocating OSDs to newly created files or replicas, and to sort replica lists
-\end{itemize}
-
-Note that there may only be one authentication provider per MRC, while file access policies and OSD selection policies may differ for each volume. The former one is identified by means of its class name (property \texttt{authentication\_provider}, see Sec.\ \ref{sec:config}), while volume-related policies are identified by ID numbers. It is therefore necessary to add a member field
-
-\begin{verbatim}
- public static final long POLICY_ID = 4711;
-\end{verbatim}
-
-to all such policy implementations, where \texttt{4711} represents the individual ID number. Administrators have to ensure that such ID numbers neither clash with ID numbers of built-in policies (1-9), nor with ID numbers of other plug-in policies. When creating a new volume, IDs of plug-in policies may be used just like built-in policy IDs.
-
-Plug-in policies have to be deployed in the directory specified by the MRC configuration property \texttt{policy\_dir}. The property is optional; it may be omitted if no plug-in policies are supposed to be used. An implementation of a plug-in policy can be deployed as a Java source or class file located in a directory that corresponds to the package of the class. Library dependencies may be added in the form of source, class or JAR files. JAR files have to be deployed in the top-level directory. All source files in all subdirectories are compiled at MRC start-up time and loaded on demand.
 
 
 \chapter{XtreemFS Services}
@@ -380,7 +264,7 @@ Changing the IP address, hostname or port is possible at any time. Due to the ca
 
 To create a globally unique UUID you can use tools like \texttt{uuidgen}. During installation, the post-install script will automatically create a UUID for each OSD and MRC if it does not have a UUID assigned.
 
-\subsection{Automatic DIR Service Discovery}
+\subsection{Automatic DIR Discovery}
 \label{sec:autodiscover}
 OSDs and MRCs are capable of automatically discovering a Directory Service. If automatic DIR discovery is switched on, the service will broadcast requests to the local LAN and wait up to 10s for a response from a DIR. The services will select the first DIR which responded, which can lead to non-deterministic behavior if multiple DIR services are present. Note that the feature works only in a local LAN environment, as broadcast messages are not routed to other networks. Local firewalls on the computers on which the services are running can also prevent the automatic discovery from working.
 
@@ -388,35 +272,180 @@ OSDs and MRCs are capable of automatically discovering a Directory Service. If a
 
 A statically configured DIR address and port can be used to disable DIR discovery in the OSD and MRC (see Sec. \ref{sec:config}, \texttt{dir\_service}). By default. the DIR responds to UDP broadcasts. To disable this feature, set  \texttt{discover = false} in the DIR service config file.
 
+
 \subsection{Authentication}
 \label{sec:AuthProvider}
-XtreemFS has an interface which allows MRC administrators to choose the way of authenticating users\index{Authentication Provider}. Basically, an MRC has two sources of information on users. The first one is the user ID and group IDs sent by the client along with each request. In addition, the MRC can use information included in the certificates if SSL is enabled. The Authentication Providers are modules that implement different methods for retrieving the user and group IDs to use.
+Administrators may choose the way of authenticating users in XtreemFS. \emph{Authentication Providers}\index{Authentication Provider} are pluggable modules that determine how users are authenticated. For further details, see Sec.\ \ref{sec:authentication_policies}.
 
-\subsubsection{UNIX uid/gid - NullAuthProvider}
+To set the authentication provider, it is necessary to set the following property in the MRC configuration file:
 
-The NullAuthProvider\index{Authentication Provider!NullAuthProvider}\index{NullAuthProvider} is the default Authentication Provider. It simply uses the user ID and group IDs sent by the XtreemFS client. This means that the client is trusted to send the correct user/group IDs.
+\begin{verbatim}
+authentication_provider = <classname>
+\end{verbatim}
 
-The XtreemFS Client will send the user ID and group IDs of the process which executed the file system operation, not of the user who mounted the volume!
+By default, the following class names can be used:
 
-The superuser is identified by the user ID \texttt{root} and is allowed to do everything on the MRC. This behavior is similar to NFS with \texttt{no\_root\_squash}.
+\begin{itemize}
+ \item \texttt{org.xtreemfs.common.auth.NullAuthProvider}\\
+uses local user and group IDs
+ \item \texttt{org.xtreemfs.common.auth.SimpleX509AuthProvider}\\
+uses X.509 certificates; user and group IDs are extracted from the distinguished names of the certificates
+ \item \texttt{org.xtreemos.XtreemOSAuthProvider}\\
+uses XOSCerts
+\end{itemize}
 
-\subsubsection{Plain SSL Certificates - SimpleX509AuthProvider}
 
-XtreemFS supports two kinds of X.509 certificates which can be used by the client.\index{Authentication Provider!SimpleX509AuthProvider}\index{SimpleX509AuthProvider} When mounted with a service/host certificate the XtreemFS client is regarded as a trusted system component. The MRC will accept any user ID and groups sent by the client and use them for authorization as with the NullAuthProvider. This setup is useful for volumes which are used by multiple users.
+\subsection{Configuring SSL Support}
 
-The second certificate type are regular user certificates. The MRC will only accept the user name and group from the certificate and ignore the user ID and groups sent by the client. Such a setup is useful if users are allowed to mount XtreemFS from untrusted machines.
+In order to enable certificate-based authentication in an XtreemFS installation, services need to be equipped with X.509\index{X.509}\index{Certificate}\index{Credentials} certificates. Certificates are used to establish a mutual trust relationship among XtreemFS services and between the XtreemFS client and XtreemFS services.
 
-Both certificates are regular X.509 certificates. Service and host certificates are identified by a Common Name (\texttt{CN}) starting with \texttt{host/} or \texttt{xtreemfs-service/}, which can easily be used in existing security infrastructures. All other certificates are assumed to be user certificates.
+Note that it is not possible to mix SSL-enabled and non-SSL services in an XtreemFS installation!
 
-If a user certificate is used, XtreemFS will take the Distinguished Name (\texttt{DN}) as the user ID and the Organizational Unit (\texttt{OU}) as the group ID.
+Each XtreemFS service needs a certificate and a private key in order to be run. Once they have been created and signed, the credentials may need to be converted into the correct file format. XtreemFS services also need a \textit{trust store} that contains all trusted Certification Authority certificates.
 
-Superusers must have \texttt{xtreemfs-admin} as part of their Organizational Unit (\texttt{OU}).
+By default, certificates and credentials for XtreemFS services are stored in
+\begin{verbatim}
+/etc/xos/xtreemfs/truststore/certs
+\end{verbatim}
 
-\subsubsection{XtreemOS Certificates - XOSAuthProvider}
 
-In contrast to plain X.509 certificates, XtreemOS embeds additional user information as extensions in XtreemOS-User-Certificates.\index{Authentication Provider!XOSAuthProvider}\index{XOSAuthProvider}\index{XtreemOS!XtreemOS Certificates} This authentication provider uses this information (global UID and global GIDs), but the behavior is similar to the SimpleX509AuthProvider.
+\subsubsection{Converting PEM files to PKCS\#12}
+The simplest way to provide the credentials to the services is by converting your signed certificate and private key into a PKCS\#12\index{PKCS\#12} file using \texttt{openssl}:
 
-The superuser is identified by being member of the \texttt{VOAdmin} group.
+
+\begin{verbatim}
+$> openssl pkcs12 -export -in ds.pem -inkey ds.key \
+   -out ds.p12 -name "DS"
+$> openssl pkcs12 -export -in mrc.pem -inkey mrc.key \
+   -out mrc.p12 -name "MRC"
+$> openssl pkcs12 -export -in osd.pem -inkey osd.key \
+   -out osd.p12 -name "OSD"
+\end{verbatim}
+
+
+This will create three PKCS12 files (\texttt{ds.p12}, \texttt{mrc.p12} and \texttt{osd.p12}), each containing the private key and certificate for the respective service. The passwords chosen when asked must be set as a property in the corresponding service configuration file.
+
+
+\subsubsection{Importing trusted certificates from PEM into a JKS}
+
+The certificate (or multiple certificates) from your CA (or CAs) can be imported into a Java Keystore (JKS) \index{JKS}\index{Java KeyStore} using the Java keytool which comes with the Java JDK or JRE.
+
+Execute the following steps for each CA certificate using the same keystore file.
+
+
+\begin{verbatim}
+$> keytool -import -alias rootca -keystore trusted.jks \
+   -trustcacerts -file ca-cert.pem
+\end{verbatim}
+
+
+This will create a new Java Keystore \texttt{trusted.jks} with the CA certificate in the current working directory. The password chosen when asked must be set as a property in the service configuration files.
+
+Note: If you get the following error
+\begin{verbatim}
+keytool error: java.lang.Exception: Input not an X.509 certificate
+\end{verbatim}
+you should remove any text from the beginning of the certificate (until the \texttt{-----BEGIN CERTIFICATE-----} line).
+
+
+\subsubsection{Sample Setup}
+
+Users can easily set up their own CA (certificate authority)\index{Certificate Authority}\index{CA!Certificate Authority} and create and sign certificates using \texttt{openssl} for a test setup.
+
+\begin{enumerate}
+ \item Set up your test CA.
+	\begin{enumerate}
+	\item Create a directory for your CA files
+		\begin{verbatim}
+		$> mkdir ca
+		\end{verbatim}
+
+	\item Create a private key and certificate request for your CA.
+		\begin{verbatim}
+		$> openssl req -new -newkey rsa:1024 -nodes -out ca/ca.csr \
+		   -keyout ca/ca.key
+		\end{verbatim}
+
+		Enter something like XtreemFS-DEMO-CA as the common name (or something else, but make sure the name is different from the server and client name!).
+	\item Create a self-signed certificate for your CA which is valid for one year.
+		\begin{verbatim}
+		$> openssl x509 -trustout -signkey ca/ca.key -days 365 -req \
+		   -in ca/ca.csr -out ca/ca.pem
+		\end{verbatim}
+
+	\item Create a file with the CA's serial number
+		\begin{verbatim}
+		$> echo "02" > ca/ca.srl
+		\end{verbatim}
+
+ \end{enumerate}
+ \item Set up the certificates for the services and the XtreemFS Client.\\
+	Replace \texttt{\textit{service}} with \texttt{dir}, \texttt{mrc}, \texttt{osd} and \texttt{client}.
+	\begin{enumerate}
+	\item Create a private key for the service.\\
+	      Use \texttt{XtreemFS-DEMO-\textit{service}} as the common name for the certificate.
+		\begin{Verbatim}[commandchars=\\\{\}]
+$> openssl req -new -newkey rsa:1024 -nodes \ \\
+   -out \textit{service}.req \ \\
+   -keyout \textit{service}.key
+		\end{Verbatim}
+
+	\item Sign the certificate with your demo CA.\\
+		The certificate is valid for one year.
+		\begin{Verbatim}[commandchars=\\\{\}]
+$> openssl x509 -CA ca/ca.pem -CAkey ca/ca.key \ \\
+   -CAserial ca/ca.srl -req \ \\
+   -in \textit{service}.req \ \\
+   -out \textit{service}.pem -days 365
+		\end{Verbatim}
+
+	\item Export the service credentials (certificate and private key) as a PKCS\#12 file.\\
+		Use ``passphrase'' as export password. You can leave the export password empty for the XtreemFS Client to avoid being asked for the password on mount.
+		\begin{Verbatim}[commandchars=\\\{\}]
+$> openssl pkcs12 -export -in \textit{service}.pem -inkey \textit{service}.key \ \\
+   -out \textit{service}.p12 -name "\textit{service}"
+		\end{Verbatim}
+
+	\item Copy the PKCS\#12 file to the certificates directory.
+		\begin{Verbatim}[commandchars=\\\{\}]
+$> mkdir -p /etc/xos/xtreemfs/truststore/certs \\
+$> cp \textit{service}.p12 /etc/xos/xtreemfs/truststore/certs
+		\end{Verbatim}
+
+	\end{enumerate}
+ \item Export your CA's certificate to the trust store and copy it to the certificate dir.\\
+	You should answer ``yes'' when asked ``Trust this certificate''.\\
+	Use ``passphrase'' as passphrase for the keystore.
+	\begin{verbatim}
+	$> keytool -import -alias ca -keystore trusted.jks \
+	   -trustcacerts -file ca/ca.pem
+	$> cp  trusted.jks /etc/xos/xtreemfs/truststore/certs
+	\end{verbatim}
+
+ \item Configure the services.
+	Edit the configuration file for all your services. Set the following configuration options (see Sec. \ref{sec:service_config} for details).\\
+	\texttt{ssl.enabled = true}\\
+	\texttt{ssl.service\_creds.pw = passphrase}\\
+	\texttt{ssl.service\_creds.container = pkcs12}\\
+	\texttt{ssl.service\_creds = /etc/xos/xtreemfs/truststore/certs/\textit{service}.p12}\\
+	\texttt{ssl.trusted\_certs = /etc/xos/xtreemfs/truststore/certs/trusted.jks}\\
+	\texttt{ssl.trusted\_certs.pw = passphrase}\\
+	\texttt{ssl.trusted\_certs.container = jks}
+ \item Start up the XtreemFS services (see Sec. \ref{sec:startstopservice}).
+ \item Create a new volume (see Sec. \ref{sec:create_volume} for details).
+	\begin{verbatim}
+	$> xtfs_mkvol --pkcs12-file-path=\
+	   /etc/xos/xtreemfs/truststore/certs/client.p12 localhost/test
+	\end{verbatim}
+
+ \item Mount the volume (see Sec. \ref{sec:mount_vol} for details).
+	\begin{verbatim}
+	$> xtfs_mount --pkcs12-file-path=\
+	   /etc/xos/xtreemfs/truststore/certs/client.p12 localhost/test /mnt
+	\end{verbatim}
+
+\end{enumerate}
+
 
 \subsection{List of Configuration Options}
 \label{sec:config}
@@ -704,7 +733,6 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & Must be specified if \texttt{ssl.enabled} is enabled. Specifies the password which protects the trusted certificates file \texttt{ssl.trusted\_certs}.
 \end{tabular}
 
-
 \subsubsection{\texttt{uuid}}
 \begin{tabular}{lp{10cm}}
  Services & MRC, OSD\\
@@ -712,162 +740,6 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Default  & - \\
  Description & Must be set to a unique identifier, preferably a UUID according to RFC 4122. UUIDs can be generated with \texttt{uuidgen}. Example: \texttt{eacb6bab-f444-4ebf-a06a-3f72d7465e40}.
 \end{tabular}
-
-
-
-
-\subsection{Configuring SSL Support}
-
-In order to enable certificate-based authentication in an XtreemFS installation, services need to be equipped with X.509\index{X.509}\index{Certificate}\index{Credentials} certificates. Certificates are used to establish a mutual trust relationship among XtreemFS services and between the XtreemFS client and XtreemFS services.
-
-Note that it is not possible to mix SSL-enabled and non-SSL services in an XtreemFS installation!
-
-Each XtreemFS service needs a certificate and a private key in order to be run. Once they have been created and signed, the credentials may need to be converted into the correct file format. XtreemFS services also need a \textit{trust store} that contains all trusted Certification Authority certificates.
-
-By default, certificates and credentials for XtreemFS services are stored in
-\begin{verbatim}
-/etc/xos/xtreemfs/truststore/certs
-\end{verbatim}
-
-
-\subsubsection{Converting PEM files to PKCS\#12}
-The simplest way to provide the credentials to the services is by converting your signed certificate and private key into a PKCS\#12\index{PKCS\#12} file using \texttt{openssl}:
-
-
-\begin{verbatim}
-$> openssl pkcs12 -export -in ds.pem -inkey ds.key \
-   -out ds.p12 -name "DS"
-$> openssl pkcs12 -export -in mrc.pem -inkey mrc.key \
-   -out mrc.p12 -name "MRC"
-$> openssl pkcs12 -export -in osd.pem -inkey osd.key \
-   -out osd.p12 -name "OSD"
-\end{verbatim}
-
-
-This will create three PKCS12 files (\texttt{ds.p12}, \texttt{mrc.p12} and \texttt{osd.p12}), each containing the private key and certificate for the respective service. The passwords chosen when asked must be set as a property in the corresponding service configuration file.
-
-
-
-\subsubsection{Importing trusted certificates from PEM into a JKS}
-
-The certificate (or multiple certificates) from your CA (or CAs) can be imported into a Java Keystore (JKS) \index{JKS}\index{Java KeyStore} using the Java keytool which comes with the Java JDK or JRE.
-
-Execute the following steps for each CA certificate using the same keystore file.
-
-
-\begin{verbatim}
-$> keytool -import -alias rootca -keystore trusted.jks \
-   -trustcacerts -file ca-cert.pem
-\end{verbatim}
-
-
-This will create a new Java Keystore \texttt{trusted.jks} with the CA certificate in the current working directory. The password chosen when asked must be set as a property in the service configuration files.
-
-Note: If you get the following error
-\begin{verbatim}
-keytool error: java.lang.Exception: Input not an X.509 certificate
-\end{verbatim}
-you should remove any text from the beginning of the certificate (until the \texttt{-----BEGIN CERTIFICATE-----} line).
-
-
-\subsubsection{Sample Setup}
-
-Users can easily set up their own CA (certificate authority)\index{Certificate Authority}\index{CA!Certificate Authority} and create and sign certificates using \texttt{openssl} for a test setup.
-
-\begin{enumerate}
- \item Set up your test CA.
-	\begin{enumerate}
-	\item Create a directory for your CA files
-		\begin{verbatim}
-		$> mkdir ca
-		\end{verbatim}
-
-	\item Create a private key and certificate request for your CA.
-		\begin{verbatim}
-		$> openssl req -new -newkey rsa:1024 -nodes -out ca/ca.csr \
-		   -keyout ca/ca.key
-		\end{verbatim}
-
-		Enter something like XtreemFS-DEMO-CA as the common name (or something else, but make sure the name is different from the server and client name!).
-	\item Create a self-signed certificate for your CA which is valid for one year.
-		\begin{verbatim}
-		$> openssl x509 -trustout -signkey ca/ca.key -days 365 -req \
-		   -in ca/ca.csr -out ca/ca.pem
-		\end{verbatim}
-
-	\item Create a file with the CA's serial number
-		\begin{verbatim}
-		$> echo "02" > ca/ca.srl
-		\end{verbatim}
-
- \end{enumerate}
- \item Set up the certificates for the services and the XtreemFS Client.\\
-	Replace \texttt{\textit{service}} with \texttt{dir}, \texttt{mrc}, \texttt{osd} and \texttt{client}.
-	\begin{enumerate}
-	\item Create a private key for the service.\\
-	      Use \texttt{XtreemFS-DEMO-\textit{service}} as the common name for the certificate.
-		\begin{Verbatim}[commandchars=\\\{\}]
-$> openssl req -new -newkey rsa:1024 -nodes \ \\
-   -out \textit{service}.req \ \\
-   -keyout \textit{service}.key
-		\end{Verbatim}
-
-	\item Sign the certificate with your demo CA.\\
-		The certificate is valid for one year.
-		\begin{Verbatim}[commandchars=\\\{\}]
-$> openssl x509 -CA ca/ca.pem -CAkey ca/ca.key \ \\
-   -CAserial ca/ca.srl -req \ \\
-   -in \textit{service}.req \ \\
-   -out \textit{service}.pem -days 365
-		\end{Verbatim}
-
-	\item Export the service credentials (certificate and private key) as a PKCS\#12 file.\\
-		Use ``passphrase'' as export password. You can leave the export password empty for the XtreemFS Client to avoid being asked for the password on mount.
-		\begin{Verbatim}[commandchars=\\\{\}]
-$> openssl pkcs12 -export -in \textit{service}.pem -inkey \textit{service}.key \ \\
-   -out \textit{service}.p12 -name "\textit{service}"
-		\end{Verbatim}
-
-	\item Copy the PKCS\#12 file to the certificates directory.
-		\begin{Verbatim}[commandchars=\\\{\}]
-$> mkdir -p /etc/xos/xtreemfs/truststore/certs \\
-$> cp \textit{service}.p12 /etc/xos/xtreemfs/truststore/certs
-		\end{Verbatim}
-
-	\end{enumerate}
- \item Export your CA's certificate to the trust store and copy it to the certificate dir.\\
-	You should answer ``yes'' when asked ``Trust this certificate''.\\
-	Use ``passphrase'' as passphrase for the keystore.
-	\begin{verbatim}
-	$> keytool -import -alias ca -keystore trusted.jks \
-	   -trustcacerts -file ca/ca.pem
-	$> cp  trusted.jks /etc/xos/xtreemfs/truststore/certs
-	\end{verbatim}
-
- \item Configure the services.
-	Edit the configuration file for all your services. Set the following configuration options (see Sec. \ref{sec:service_config} for details).\\
-	\texttt{ssl.enabled = true}\\
-	\texttt{ssl.service\_creds.pw = passphrase}\\
-	\texttt{ssl.service\_creds.container = pkcs12}\\
-	\texttt{ssl.service\_creds = /etc/xos/xtreemfs/truststore/certs/\textit{service}.p12}\\
-	\texttt{ssl.trusted\_certs = /etc/xos/xtreemfs/truststore/certs/trusted.jks}\\
-	\texttt{ssl.trusted\_certs.pw = passphrase}\\
-	\texttt{ssl.trusted\_certs.container = jks}
- \item Start up the XtreemFS services (see Sec. \ref{sec:startstopservice}).
- \item Create a new volume (see Sec. \ref{sec:create_volume} for details).
-	\begin{verbatim}
-	$> xtfs_mkvol --pkcs12-file-path=\
-	   /etc/xos/xtreemfs/truststore/certs/client.p12 localhost/test
-	\end{verbatim}
-
- \item Mount the volume (see Sec. \ref{sec:mount_vol} for details).
-	\begin{verbatim}
-	$> xtfs_mount --pkcs12-file-path=\
-	   /etc/xos/xtreemfs/truststore/certs/client.p12 localhost/test /mnt
-	\end{verbatim}
-
-\end{enumerate}
-
 
 \section{Execution and Monitoring}
 This section describes how to execute and monitor XtreemFS services.
@@ -1453,14 +1325,196 @@ A list of all policy attributes that have been set can be shown as follows:
  $> xtfs_repl --pol_attrs_get /xtreemfs
 \end{verbatim}
 
+\chapter{Policies}
+Many facets of the behavior of XtreemFS can be configured by means of policies. A policy defines how a certain task is performed, e.g.\ how the MRC selects a set of OSDs for a new file, or how it distinguishes between an authorized and an unauthorized user when files are accessed. Policies are a means to customize an XtreemFS installation.
+
+XtreemFS supports a range of predefined policies for different tasks. Alternatively, administrators may define their own policies in order to adapt XtreemFS to customer demands. This chapter contains information about predefined policies, as well as mechanisms to implement and plug in custom policies.
+
+\section{Authentication Policies} \label{sec:authentication_policies}
+Any operation on a file system is executed on behalf of a user. The process of determining the user bound to a request is generally referred to as \emph{user authentication}. To render user authentication customizable, the MRC allows administrators to specify an authentication policy by means of an \emph{Authentication Provider}\index{Authentication Provider}. Authentication Providers are modules that implement different methods for retrieving user and group IDs from requests.
+
+The following predefined authentication providers exist:
+
+\subsection{UNIX uid/gid - NullAuthProvider}
+
+The NullAuthProvider\index{Authentication Provider!NullAuthProvider}\index{NullAuthProvider} is the default Authentication Provider. It simply uses the user ID and group IDs sent by the XtreemFS client. This means that the client is trusted to send the correct user/group IDs.
+
+The XtreemFS Client will send the user ID and group IDs of the process which executed the file system operation, not of the user who mounted the volume!
+
+The superuser is identified by the user ID \texttt{root} and is allowed to do everything on the MRC. This behavior is similar to NFS with \texttt{no\_root\_squash}.
+
+\subsection{Plain SSL Certificates - SimpleX509AuthProvider}
+
+XtreemFS supports two kinds of X.509 certificates which can be used by the client.\index{Authentication Provider!SimpleX509AuthProvider}\index{SimpleX509AuthProvider} When mounted with a service/host certificate the XtreemFS client is regarded as a trusted system component. The MRC will accept any user ID and groups sent by the client and use them for authorization as with the NullAuthProvider. This setup is useful for volumes which are used by multiple users.
+
+The second certificate type are regular user certificates. The MRC will only accept the user name and group from the certificate and ignore the user ID and groups sent by the client. Such a setup is useful if users are allowed to mount XtreemFS from untrusted machines.
+
+Both certificates are regular X.509 certificates. Service and host certificates are identified by a Common Name (\texttt{CN}) starting with \texttt{host/} or \texttt{xtreemfs-service/}, which can easily be used in existing security infrastructures. All other certificates are assumed to be user certificates.
+
+If a user certificate is used, XtreemFS will take the Distinguished Name (\texttt{DN}) as the user ID and the Organizational Unit (\texttt{OU}) as the group ID.
+
+Superusers must have \texttt{xtreemfs-admin} as part of their Organizational Unit (\texttt{OU}).
+
+\subsection{XtreemOS Certificates - XOSAuthProvider}
+
+In contrast to plain X.509 certificates, XtreemOS embeds additional user information as extensions in XtreemOS-User-Certificates.\index{Authentication Provider!XOSAuthProvider}\index{XOSAuthProvider}\index{XtreemOS!XtreemOS Certificates} This authentication provider uses this information (global UID and global GIDs), but the behavior is similar to the SimpleX509AuthProvider.
+
+The superuser is identified by being member of the \texttt{VOAdmin} group.
+
+
+\section{Authorization Policies} \label{sec:access_policies}
+Before executing an operation, a file system needs to check whether the user bound to the operation is sufficiently authorized, i.e.\ is allowed to execute the operation. User authorization is managed by means of \emph{access policies}, which reside on the MRC. Unlike authentication policies which are bound to an MRC, access policies can be defined for each volume. This has to be done when the volume is created (see \texttt{man xtfs\_mkvol}). Various access policies can be used: \index{Access Policy}\index{Policy!Access Policy}
+
+\begin{itemize}
+ \item Authorize All Policy (policy Id 1)\index{Access Policy!Authorize All}\index{Authorize All Access Policy}\\
+No authorization - everyone can do everything. This policy is useful if performance of metadata operations matters more than security, since no evaluation of access rights is needed.
+
+ \item POSIX ACLs \& Permissions (policy Id 2)\index{Access Policy!POSIX Permissions}\index{POSIX Permissions Access Policy}\index{Access Policy!POSIX ACLs}\index{POSIX ACLs Access Policy}\\
+This access policy implements the traditional POSIX permissions commonly used on Linux, as well as POSIX ACLs, an extension that provides for access control at the granularity of single users and groups. POSIX permissions should be used as the default, as it guarantees maximum compatibility with other file systems.
+
+ \item Volume ACLs (policy Id 3)\index{Access Policy!Volume ACLs}\index{Volume ACLs Access Policy}\\
+Volume ACLs provide an access control model similar to POSIX ACLs \& Permissions, but only allow one ACL for the whole volume. This means that there is no recursive evaluation of access rights which yields a higher performance at the price of a very coarse-grained access control. 
+\end{itemize}
+
+
+\section{OSD and Replica Selection Policies} \label{sec:osd_policies}
+When a new file is created or a replica is automatically added to a file, the MRC must decide on a set of OSDs for storing the file content. To select the most suitable subset among all known OSDs, OSD Selection Policies\index{OSD Selection Policy}\index{Policy!OSD Selection Policy} are used.
+
+Replica selection is a related problem. When a client opens a file with more than one replica, the MRC uses a replica selection policy to sort the list of replicas for the client. Initially, a client will always attempt to access the first replica in the list received from the MRC. If a replica is not available, it will automatically attempt to access the next replica from the list, and restart with the first replica if all attempts have failed. Replica selection policies can be used to sort the replica lists, e.g. to ensure that clients first try to access replicas that are close to them.
+
+Both OSD and replica selection policies share a common mechanism, in that they consist of \emph{basic policies} that can be arbitrarily combined. Input parameters of a basic policy are a set of OSDs, the current replica locations list of the file, and the IP address of the client on behalf of whom the policy was called. The output parameter is a filtered and potentially sorted subset of OSDs. Since OSD lists returned by one basic policy can be used as input parameters by another one, basic policies can be chained to define more complex composite policies.
+
+OSD and replica selection policies are assigned at volume granularity. For further details on how to set such policies, please refer to Sec.\ \ref{sec:osd_select_policy}.
+
+\subsection{Attributes}
+
+The behavior of basic policies can be further refined by means of policy attributes. Policy attributes are extended attributes with a name starting with \texttt{xtreemfs.policies.}, such as \texttt{xtreemfs.policies.minFreeCapacity}. Each time a policy attribute is set, all policies will be notified about the change. How an attribute change affects the policy behavior depends on the policy implementation.
+
+\subsection{Predefined Policies}
+
+The following predefined policies exist:
+
+\subsubsection{Filtering Policies}
+\begin{itemize}
+
+ \item \textbf{Default OSD filter (policy ID 1000)}\\
+ Removes OSDs from the list that are either dead or do not have sufficient space. By default, the lower space limit for an OSD is 2GB, and the upper response time limit is 5 minutes.\\
+
+ Attributes:
+ \begin{itemize}
+ \item \emph{free\_capacity\_bytes}: the lower space limit in bytes
+ \item \emph{offline\_time\_secs}: the upper response time limit in
+ \end{itemize}
+
+ \item \textbf{FQDN-based filter (policy ID 1001)}\\
+ Removes OSDs from the list that do not match any of the domains in a given set. By default, the set of domains contains '*', which indicates that no domains are removed.\\
+
+ Attributes:
+ \begin{itemize}
+ \item \emph{domains}: a comma or space-separated list of domain names. The list may include leading and trailing '*'s, which will be regarded as wildcard characters.
+\end{itemize}
+
+\end{itemize}
+
+\subsubsection{Grouping Policies}
+
+\begin{itemize}
+
+ \item \textbf{Data center map-based grouping (policy ID 2000)}\\
+ Removes all OSDs from the OSD set that have been used in the file's replica locations list already and selects the subset of OSDs that is closest to the client and provides enough OSDs for the new replica in a single data center.
+
+ This policy uses a statically configured datacenter map that describes the distance between datacenters. It works only with IPv4 addresses at the moment. Each datacenter has a list of matching IP addresses and networks which is used to assign clients and OSDs to datacenters. Machines in the same datacenter have a distance of 0.
+
+	This policy requires a datacenter map configuration file in \texttt{/etc/xos/xtreemfs/datacentermap} on the MRC machine which is loaded at MRC startup. This config file must contain the following parameters:
+	\begin{itemize}
+		\item \texttt{datacenters=A,B,C}\\
+			A comma separated list of datacenters. Datacenter names may only contain a-z, A-Z, 0-9 and \_.
+
+		\item \texttt{distance.A-B=100}\\
+			For each pair of datacenters, the distance must be specified. As distances are symmetric, it is sufficient to specify A to B.
+
+		\item \texttt{addresses.A=192.168.1.1,192.168.2.0/24}\\
+			For each datacenter a list of matching IP addresses or networks must be specified.
+
+		\item \texttt{max\_cache\_size=1000}\\
+			Sets the size of the address cache that is used to lookup IP-to-datacenter matches.
+	\end{itemize}
+	
+	A sample datacenter map could look like this:
+
+	\begin{verbatim}
+	datacenters=BERLIN,LONDON,NEW_YORK
+	distance.BERLIN-LONDON=10
+	distance.BERLIN-NEW_YORK=140
+	distance.LONDON-NEW_YORK=110
+	addresses.BERLIN=192.168.1.0/24
+	addresses.LONDON=192.168.2.0/24
+	addresses.NEW_YORK=192.168.3.0/24,192.168.100.0/25
+	max_cache_size=100
+	\end{verbatim}
+
+ \item \textbf{FQDN-based grouping (policy ID 2001)}\\
+ Removes all OSDs from the OSD set that have been used in the file's replica locations list already and selects the subset of OSDs that is closest to the client and provides enough OSDs for the new replica in a single domain.
+
+This policy uses domain names of clients and OSDs to determine the distance between a client and an OSD, as well as if OSDs are in the same domain.
+
+\end{itemize}
+
+\subsubsection{Sorting Policies}
+
+\begin{itemize}
+
+ \item \textbf{Shuffling (policy ID 3000)}\\
+ Shuffles the given list of OSDs.
+
+ \item \textbf{Data center map-based sorting (policy ID 3001)}\\
+ Sorts the list of OSDs in ascending order of their distance to the client, according to the data center map.
+
+ \item \textbf{DNS based OSD Selection (policy ID 3002)}\\
+ The FQDN of the client and all OSDs is compared and the maximum match (from the end of the FQDN) is used to sort the OSDs. The policy sorts the list of OSDs in descending order by the number of characters that match. This policy can be used to automatically select OSDs which are close to the client, if the length of the match between two DNS entries also indicate a low latency between two machines.
+
+\end{itemize}
+
+\section{Striping Policies} \label{sec:striping_policies}
+
+XtreemFS allows the content, i.e.\ the objects of a file to be distributed among several storage devices (OSDs). This has the benefit that the file can be read or written in parallel on multiple OSDs in order to increase throughput\index{Striping}. To configure how files are striped, XtreemFS supports \emph{striping policies}.
+
+A striping policy\index{Striping Policy}\index{Policy!Striping Policy}\index{RAID0} is a rule that defines how the objects are distributed on the available OSDs. Currently, XtreemFS implements only the \texttt{RAID0} policy which simply stores the objects in a round robin fashion on the OSDs. The \texttt{RAID0} policy has two parameters. The striping width\index{Striping Width} defines to how many OSDs the file is distributed. The stripe size\index{Striping!Stripe Size}\index{Stripe Size} defines the size of each object.
+
+Striping over several OSDs enhances the read and write throughput to a file. The maximum throughput depends on the striping width. However, using \texttt{RAID0} also increases the probability of data loss. If a single OSD fails, parts of the file are no longer accessible, which generally renders the entire file useless.
+
+
+\section{Plug-in Policies}
+
+To further customize XtreemFS, the set of existing policies can be extended by defining \textit{plug-in policies}. Such policies are Java classes that implement a predefined policy interface. Currently, the following policy interfaces exist:
+
+\begin{itemize}
+ \item \texttt{org.xtreemfs.common.auth.AuthenticationProvider}\\
+   interface for authentication policies
+ \item \texttt{org.xtreemfs.mrc.ac.FileAccessPolicy}\\
+   interface for file access policies
+ \item \texttt{org.xtreemfs.mrc.osdselection.OSDSelectionPolicy}\\
+   interface for OSD and replica selection policies
+\end{itemize}
+
+Note that there may only be one authentication provider per MRC, while file access policies and OSD selection policies may differ for each volume. The former one is identified by means of its class name (property \texttt{authentication\_provider}, see Sec.\ \ref{sec:AuthProvider}, \ref{sec:config}), while volume-related policies are identified by ID numbers. It is therefore necessary to add a member field
+
+\begin{verbatim}
+ public static final long POLICY_ID = 4711;
+\end{verbatim}
+
+to all such policy implementations, where \texttt{4711} represents the individual ID number. Administrators have to ensure that such ID numbers neither clash with ID numbers of built-in policies (1-9), nor with ID numbers of other plug-in policies. When creating a new volume, IDs of plug-in policies may be used just like built-in policy IDs.
+
+Plug-in policies have to be deployed in the directory specified by the MRC configuration property \texttt{policy\_dir}. The property is optional; it may be omitted if no plug-in policies are supposed to be used. An implementation of a plug-in policy can be deployed as a Java source or class file located in a directory that corresponds to the package of the class. Library dependencies may be added in the form of source, class or JAR files. JAR files have to be deployed in the top-level directory. All source files in all subdirectories are compiled at MRC start-up time and loaded on demand.
+
 \appendix
 
 \chapter{Support}
-Please visit the \href{http://www.xtreemfs.org}{XtreemFS website at www.xtreemfs.org} for links to the user mailing list, bug tracker and IRC channel.
+Please visit the \href{http://www.xtreemfs.org}{XtreemFS website at www.xtreemfs.org} for links to the user mailing list, bug tracker and further information.
 
 \chapter{XtreemOS Integration}
 
-\subsubsection{XtreemFS Security Preparations}
+\section{XtreemFS Security Preparations}
 \label{installconf-xfs-security}
 
 XtreemFS\index{XtreemOS!Integration} can be integrated in an existing XtreemOS VO security infrastructure. XtreemOS uses X.509 certificates to authenticate users in a Grid system, so the general setup is similar to a normal SSL-based configuration.
