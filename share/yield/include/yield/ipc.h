@@ -280,7 +280,7 @@ namespace YIELD
       virtual bool close();
       virtual bool connect( auto_Address to_sockaddr );
       static void destroy();
-      virtual bool get_blocking_mode() const;
+      bool get_blocking_mode() const;
       int get_domain() const { return domain; }
       static std::string getfqdn();
       static std::string gethostname();
@@ -293,7 +293,7 @@ namespace YIELD
       virtual operator int() const;
       virtual ssize_t read( yidl::runtime::auto_Buffer buffer );
       virtual ssize_t read( void* buffer, size_t buffer_len );
-      virtual bool set_blocking_mode( bool blocking );
+      bool set_blocking_mode( bool blocking );
       virtual bool shutdown();
       virtual bool want_connect() const;
       virtual bool want_read() const;

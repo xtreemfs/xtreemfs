@@ -82,5 +82,5 @@ for lib_dir_path in lib_dir_paths:
 for lib in ["xtreemfs"]:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
 
-build_env.Program( "../../bin/xtfs_mkvol", (
-    r"../../src/xtfs_mkvol/xtfs_mkvol.cpp" ) )
+build_env.Program( "../../bin/mount.xtreemfs", (
+    r"../../src/mount.xtreemfs/mount.xtreemfs.cpp" ) )

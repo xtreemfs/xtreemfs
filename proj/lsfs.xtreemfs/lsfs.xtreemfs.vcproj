@@ -2,9 +2,9 @@
 <VisualStudioProject
     ProjectType="Visual C++"
     Version="9.00"
-    Name="xtfs_lsvol"
+    Name="lsfs.xtreemfs"
     ProjectGUID="{02C4D457-D09C-4097-B3B4-13F1086EA10F}"
-    RootNamespace="xtfs_lsvol"
+    RootNamespace="lsfs.xtreemfs"
     Keyword="Win32Proj"
     TargetFrameworkVersion="131072"
     >
@@ -43,7 +43,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs_d.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_lsvol.exe"
+                OutputFile="$(ProjectDir)..\..\bin\lsfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="true"
                 RandomizedBaseAddress="1"
@@ -54,7 +54,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs_d.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_lsvol.exe"
+                OutputFile="$(ProjectDir)..\..\bin\lsfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="true"
                 RandomizedBaseAddress="2"
@@ -87,7 +87,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs_d.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_lsvol.exe"
+                OutputFile="$(ProjectDir)..\..\bin\lsfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -98,7 +98,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_lsvol.exe"
+                OutputFile="$(ProjectDir)..\..\bin\lsfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -131,7 +131,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs_d.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_lsvol.exe"
+                OutputFile="$(ProjectDir)..\..\bin\lsfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -142,7 +142,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_lsvol.exe"
+                OutputFile="$(ProjectDir)..\..\bin\lsfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -161,7 +161,7 @@
             UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
             >
             <File
-    RelativePath="..\..\src\xtfs_lsvol\xtfs_lsvol.cpp"
+    RelativePath="..\..\src\lsfs.xtreemfs\lsfs.xtreemfs.cpp"
     >
 </File>
 

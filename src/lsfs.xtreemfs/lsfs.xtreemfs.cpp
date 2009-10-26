@@ -7,22 +7,22 @@
 #include <sstream>
 
 
-namespace xtfs_lsvol
+namespace lsfs_xtreemfs
 {
   class Main : public xtreemfs::Main
   {
   public:
     Main()
-      : xtreemfs::Main( "xtfs_lsvol", "list volumes on a specified MRC", "<mrc host>[:port][/<volume name>]" )
+      : xtreemfs::Main( "lsfs_xtreemfs", "list volumes on a specified MRC", "<mrc host>[:port][/<volume name>]" )
     {
-      addOption( XTFS_LSVOL_OPTION_LONG_LISTING, "-l" );
+      addOption( LSFS_XTREEMFS_OPTION_LONG_LISTING, "-l" );
       long_listing = false;
     }
 
   private:
     enum
     {
-      XTFS_LSVOL_OPTION_LONG_LISTING = 20
+      LSFS_XTREEMFS_OPTION_LONG_LISTING = 20
     };
 
     bool long_listing;
@@ -65,7 +65,7 @@ namespace xtfs_lsvol
     {
       switch ( id )
       {
-        case XTFS_LSVOL_OPTION_LONG_LISTING: long_listing = true; break;
+        case LSFS_XTREEMFS_OPTION_LONG_LISTING: long_listing = true; break;
         default: xtreemfs::Main::parseOption( id, arg ); break;
       }
     }
@@ -86,5 +86,5 @@ namespace xtfs_lsvol
 
 int main( int argc, char** argv )
 {
-  return xtfs_lsvol::Main().main( argc, argv );
+  return lsfs_xtreemfs::Main().main( argc, argv );
 }

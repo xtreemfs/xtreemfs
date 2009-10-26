@@ -2,9 +2,9 @@
 <VisualStudioProject
     ProjectType="Visual C++"
     Version="9.00"
-    Name="xtfs_mount"
-    ProjectGUID="{9323E77E-EE3C-4B13-A763-921F6A7F52A5}"
-    RootNamespace="xtfs_mount"
+    Name="rmfs.xtreemfs"
+    ProjectGUID="{F7BCFCF3-E465-4557-A8D4-C23CE23B2400}"
+    RootNamespace="rmfs.xtreemfs"
     Keyword="Win32Proj"
     TargetFrameworkVersion="131072"
     >
@@ -43,7 +43,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs_d.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_mount.exe"
+                OutputFile="$(ProjectDir)..\..\bin\rmfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="true"
                 RandomizedBaseAddress="1"
@@ -54,7 +54,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs_d.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_mount.exe"
+                OutputFile="$(ProjectDir)..\..\bin\rmfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="true"
                 RandomizedBaseAddress="2"
@@ -87,7 +87,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs_d.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_mount.exe"
+                OutputFile="$(ProjectDir)..\..\bin\rmfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -98,7 +98,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_mount.exe"
+                OutputFile="$(ProjectDir)..\..\bin\rmfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -131,7 +131,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs_d.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_mount.exe"
+                OutputFile="$(ProjectDir)..\..\bin\rmfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -142,7 +142,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_mount.exe"
+                OutputFile="$(ProjectDir)..\..\bin\rmfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -161,7 +161,7 @@
             UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
             >
             <File
-    RelativePath="..\..\src\xtfs_mount\xtfs_mount.cpp"
+    RelativePath="..\..\src\rmfs.xtreemfs\rmfs.xtreemfs.cpp"
     >
 </File>
 

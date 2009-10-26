@@ -4,7 +4,7 @@
 #include "xtreemfs/main.h"
 
 
-namespace xtfs_rmvol
+namespace rmfs_xtreemfs
 {
   class Main : public xtreemfs::Main
   {
@@ -12,13 +12,13 @@ namespace xtfs_rmvol
     Main()
       : xtreemfs::Main( "xtfs_rmvol", "remove a volume from a specified MRC", "<mrc host>[:port]/<volume name>" )
     {
-      addOption( XTFS_RMVOL_OPTION_PASSWORD, "--password", NULL, "password for volume" );
+      addOption( RMFS_XTREEMFS_OPTION_PASSWORD, "--password", NULL, "password for volume" );
     }
 
   private:
     enum
     {
-      XTFS_RMVOL_OPTION_PASSWORD = 20
+      RMFS_XTREEMFS_OPTION_PASSWORD = 20
     };
 
 
@@ -44,7 +44,7 @@ namespace xtfs_rmvol
 
     void parseOption( int id, char* arg )
     {
-      if ( arg && id == XTFS_RMVOL_OPTION_PASSWORD )
+      if ( arg && id == RMFS_XTREEMFS_OPTION_PASSWORD )
         password = arg;
       else
         xtreemfs::Main::parseOption( id, arg );
@@ -54,5 +54,5 @@ namespace xtfs_rmvol
 
 int main( int argc, char** argv )
 {
-  return xtfs_rmvol::Main().main( argc, argv );
+  return rmfs_xtreemfs::Main().main( argc, argv );
 }

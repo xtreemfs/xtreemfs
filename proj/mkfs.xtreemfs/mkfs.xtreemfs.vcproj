@@ -2,9 +2,9 @@
 <VisualStudioProject
     ProjectType="Visual C++"
     Version="9.00"
-    Name="xtfs_rmvol"
-    ProjectGUID="{F7BCFCF3-E465-4557-A8D4-C23CE23B2400}"
-    RootNamespace="xtfs_rmvol"
+    Name="mkfs.xtreemfs"
+    ProjectGUID="{45FC9A01-4BBB-4D27-A9DE-F3B165DD932B}"
+    RootNamespace="mkfs.xtreemfs"
     Keyword="Win32Proj"
     TargetFrameworkVersion="131072"
     >
@@ -43,7 +43,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs_d.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_rmvol.exe"
+                OutputFile="$(ProjectDir)..\..\bin\mkfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="true"
                 RandomizedBaseAddress="1"
@@ -54,7 +54,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs_d.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_rmvol.exe"
+                OutputFile="$(ProjectDir)..\..\bin\mkfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="true"
                 RandomizedBaseAddress="2"
@@ -87,7 +87,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs_d.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_rmvol.exe"
+                OutputFile="$(ProjectDir)..\..\bin\mkfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -98,7 +98,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_rmvol.exe"
+                OutputFile="$(ProjectDir)..\..\bin\mkfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -131,7 +131,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs_d.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_rmvol.exe"
+                OutputFile="$(ProjectDir)..\..\bin\mkfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -142,7 +142,7 @@
                 UseLibraryDependencyInputs="true"
                 AdditionalDependencies="xtreemfs.lib"
                 AdditionalLibraryDirectories="$(ProjectDir)..\..\lib"
-                OutputFile="$(ProjectDir)..\..\bin\xtfs_rmvol.exe"
+                OutputFile="$(ProjectDir)..\..\bin\mkfs.xtreemfs"
                 IgnoreAllDefaultLibraries="false"
                 GenerateDebugInformation="false"
                 RandomizedBaseAddress="1"
@@ -161,7 +161,7 @@
             UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
             >
             <File
-    RelativePath="..\..\src\xtfs_rmvol\xtfs_rmvol.cpp"
+    RelativePath="..\..\src\mkfs.xtreemfs\mkfs.xtreemfs.cpp"
     >
 </File>
 

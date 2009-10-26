@@ -56,10 +56,10 @@ for interface_idl_file_name in os.listdir( interfaces_dir_path ):
 format_src( "XtreemFS", src_dir_paths=( 
                                         os.path.join( XTREEMFS_DIR_PATH, "include" ), 
                                         os.path.join( XTREEMFS_DIR_PATH, "src", "libxtreemfs" ), 
-                                        os.path.join( XTREEMFS_DIR_PATH, "src", "xtfs_lsvol" ),
-                                        os.path.join( XTREEMFS_DIR_PATH, "src", "xtfs_mkvol" ),
-                                        os.path.join( XTREEMFS_DIR_PATH, "src", "xtfs_mount" ),
-                                        os.path.join( XTREEMFS_DIR_PATH, "src", "xtfs_rmvol" ),
+                                        os.path.join( XTREEMFS_DIR_PATH, "src", "lsfs.xtreemfs" ),
+                                        os.path.join( XTREEMFS_DIR_PATH, "src", "mkfs.xtreemfs" ),
+                                        os.path.join( XTREEMFS_DIR_PATH, "src", "mount.xtreemfs" ),
+                                        os.path.join( XTREEMFS_DIR_PATH, "src", "rmfs.xtreemfs" ),
                                         os.path.join( XTREEMFS_DIR_PATH, "src", "xtfs_vivaldi" ),
                                        ) )
 
@@ -82,7 +82,7 @@ generate_proj(
                              )
             )
                      
-for binary_name in ( "xtfs_lsvol", "xtfs_mkvol", "xtfs_mount", "xtfs_rmvol", "xtfs_vivaldi" ):
+for binary_name in ( "lsfs.xtreemfs", "mkfs.xtreemfs", "mount.xtreemfs", "rmfs.xtreemfs", "xtfs_vivaldi" ):
     os.chdir( os.path.join( XTREEMFS_DIR_PATH, "proj", binary_name ) )
     generate_proj( 
                    binary_name, 

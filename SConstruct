@@ -1,7 +1,7 @@
-SConscript( "proj/xtfs_lsvol/xtfs_lsvol.SConscript" )
-SConscript( "proj/xtfs_mkvol/xtfs_mkvol.SConscript" )
-SConscript( "proj/xtfs_mount/xtfs_mount.SConscript" )
-SConscript( "proj/xtfs_rmvol/xtfs_rmvol.SConscript" )
+SConscript( "proj/lsfs.xtreemfs/lsfs.xtreemfs.SConscript" )
+SConscript( "proj/mkfs.xtreemfs/mkfs.xtreemfs.SConscript" )
+SConscript( "proj/mount.xtreemfs/mount.xtreemfs.SConscript" )
+SConscript( "proj/rmfs.xtreemfs/rmfs.xtreemfs.SConscript" )
 SConscript( "proj/xtfs_vivaldi/xtfs_vivaldi.SConscript" )
 
 Import( "build_env", "build_conf" )
