@@ -50,7 +50,7 @@ cp COPYING $DOC_DIR
 
 # copy bins
 mkdir -p $BIN_DIR
-cp bin/xtfs_* $BIN_DIR
+cp bin/*.xtreemfs $BIN_DIR
 
 # copy config files
 mkdir -p $XTREEMFS_CONFIG_DIR
@@ -65,8 +65,8 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root)
-/usr/bin/xtfs_*
-/usr/share/man/man1/xtfs_*
+/usr/bin/*.xtreemfs
+/usr/share/man/man1/*.xtreemfs
 /etc/xos/
 /etc/xos/xtreemfs/*
 /usr/share/doc/xtreemfs-client/

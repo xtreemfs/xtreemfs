@@ -36,8 +36,8 @@ CLASSPATH = ( os.path.join( XTREEMFS_DIR_PATH, "src", "servers", "dist", "Xtreem
 
 CLIENT_SSL_ARGS = ( "--pkcs12-file-path=%(CLIENT_PKCS12_FILE_PATH)s" % globals(), "--pkcs12-passphrase=%(CLIENT_PKCS12_PASSPHRASE)s" % globals() )
 MNT_DIR_PATH_DEFAULT = os.path.abspath( os.path.join( original_cwd, "mnt" ) )
-XTFS_MKVOL_FILE_PATH = os.path.join( XTREEMFS_DIR_PATH, "bin", "xtfs_mkvol" + ( sys.platform.startswith( "win" ) and ".exe" or "" ) )
-XTFS_MOUNT_FILE_PATH = os.path.join( XTREEMFS_DIR_PATH, "bin", "xtfs_mount" + ( sys.platform.startswith( "win" ) and ".exe" or "" ) )
+XTFS_MKVOL_FILE_PATH = os.path.join( XTREEMFS_DIR_PATH, "bin", "mkfs.xtreemfs" + ( sys.platform.startswith( "win" ) and ".exe" or "" ) )
+XTFS_MOUNT_FILE_PATH = os.path.join( XTREEMFS_DIR_PATH, "bin", "mount.xtreemfs" + ( sys.platform.startswith( "win" ) and ".exe" or "" ) )
 
               
 # Ports

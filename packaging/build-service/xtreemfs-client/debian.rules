@@ -48,7 +48,7 @@ install: build
 	dh_testroot
 	dh_clean -k
 	dh_installdirs
-
+	
 	# Add here commands to install the package
 	# The DESTDIR Has To Be Exactly /usr/src/packages/BUILD/debian/debian/<nameOfPackage>
 	#make install DESTDIR=/usr/src/packages/BUILD/debian/ace
@@ -60,10 +60,7 @@ install: build
 	
 	# copy bins
 	mkdir -p $(BIN_DIR)
-	#cp tools/xtfs_* $(BIN_DIR)
-	#cp src/xtfs_* $(BIN_DIR)
-	
-	cp bin/xtfs_* $(BIN_DIR)
+	cp bin/*.xtreemfs $(BIN_DIR)
 	
 	# copy config files
 	mkdir -p $(XTREEMFS_CONFIG_DIR)

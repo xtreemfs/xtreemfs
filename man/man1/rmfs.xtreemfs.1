@@ -1,18 +1,16 @@
-.TH xtfs_lsvol 1 "July 2009" "The XtreemFS Distributed File System" "XtreemFS client"
+.TH rmfs.xtreemfs 1 "October 2009" "The XtreemFS Distributed File System" "XtreemFS client"
 .SH NAME
-xtfs_lsvol \- list all XtreemFS volumes on an MRC
+rmfs.xtreemfs \- delete a volume including all files on an XtreemFS MRC
 .SH SYNOPSIS
-\fBxtfs_lsvol [\fIoptions\fB] [oncrpc[s]://]\fImrchost\fR[:\fIport\fR]
+\fBrmfs.xtreemfs [\fIoptions\fB] [oncrpc[s]://]\fImrchost\fR[:\fIport\fR]/\fIvolume
 .br
 
 .SH DESCRIPTION
-.I xtfs_lsvol
-lists all volumes located on the XtreemFS MRC running at \fImrchost\fR:\fIport\fR.
+.I rmfs.xtreemfs
+deletes the volume named \fIvolume\fR from the XtreemFS MRC running at \fImrchost\fR:\fIport\fR. Be careful, this command will delete the volume and all files on it!
 
 .SH EXAMPLE USAGE
-.B "xtfs_lsvol remote.mrc.machine
-.br
-.B "xtfs_lsvol -l oncrpc://remote.mrc.machine:11111
+.B "rmfs.xtreemfs remote.mrc.machine/myVolume"
 
 .SH OPTIONS
 .TP
@@ -21,9 +19,6 @@ debug level
 .TP
 \fB\-h/\-\-help
 print help and exit
-.TP
-\fB\-l
-print complete information on volumes
 .TP
 \fB\-t/\-\-timeout\-ms=\fImillis
 request timeout in milliseconds
@@ -44,17 +39,17 @@ PKCS#12 file passphrase (for SSL installations only)
 PEM private key file path
 
 .SH "SEE ALSO"
+.BR lsfs.xtreemfs (1),
+.BR mkfs.xtreemfs (1),
+.BR mount.xtreemfs (1),
+.BR umount.xtreemfs (1),
 .BR xtfs_cleanup (1),
-.BR xtfs_mkvol (1),
-.BR xtfs_mount (1),
 .BR xtfs_mrcdbtool (1),
 .BR xtfs_repl (1),
-.BR xtfs_rmvol (1),
 .BR xtfs_scrub (1),
 .BR xtfs_sp (1),
-.BR xtfs_stat (1),
-.BR xtfs_umount (1)
+.BR xtfs_stat (1)
 .BR
 
 .SH AVAILABILITY
-The xtfs_lsvol command is part of the XtreemFS-client package and is available from http://www.xtreemfs.org
+The rmfs.xtreemfs command is part of the XtreemFS-client package and is available from http://www.xtreemfs.org
