@@ -49,6 +49,12 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
 #define NUMBER_OF_FILES     1
 #define REPLICAS_PER_FILE   40
 #define CHECK_EVERY_ITERATIONS 5
+#define RES_FILE_NAME "res-%s-%d"
+#ifndef _WIN32
+  #define SPRINTF_VIV(buff,size,format,arguments...) snprintf(buff,size,format,arguments)
+#else
+  #define SPRINTF_VIV(buff,size,format,arguments...) sprintf_s(buff,size,format,arguments)
+#endif
 
 
 namespace xtfs_vivaldi
@@ -157,7 +163,7 @@ namespace xtfs_vivaldi
             char filename[128];
             memset(filename,0,128);
             const char *fPath=vivaldi_coordinates_file_path;
-            snprintf(filename,128,"results-%s-%d",fPath,i);
+            SPRINTF_VIV(filename,128,RES_FILE_NAME,fPath,i);
             YIELD::platform::auto_File truncatedFile = YIELD::platform::Volume().open( filename, O_CREAT|O_TRUNC|O_WRONLY );
             truncatedFile->close(); 
 
@@ -221,7 +227,7 @@ namespace xtfs_vivaldi
                 
                 //Print trace
                 char auxStr[128];
-                snprintf( auxStr,
+                SPRINTF_VIV( auxStr,
                           128,
                           "RTT:%lld(Viv:%.3f) Own:(%.3f,%.3f) lE=%.3f Rem:(%.3f,%.3f) rE=%.3f %s",
                             rtt.as_unix_time_ms(),
@@ -287,7 +293,7 @@ namespace xtfs_vivaldi
             char filename[128];
             memset(filename,0,128);
             const char *fPath=vivaldi_coordinates_file_path;
-            snprintf(filename,128,"results-%s-%d",fPath,i);
+            SPRINTF_VIV(filename,128,RES_FILE_NAME,fPath,i);
             executeOneEvaluation( testingSets[i], own_node,filename);
           }
         }
@@ -343,10 +349,10 @@ namespace xtfs_vivaldi
       if ( !osds.empty() )
       {
         //Create arrays
-        uint64_t rtts[osds.get_size()];
-        std::string uuids[osds.get_size()];
+        std::vector<uint64_t> rtts(osds.get_size());
+        std::vector<std::string> uuids(osds.get_size());
 
-        org::xtreemfs::interfaces::VivaldiCoordinates remoteCoordinates[osds.get_size()];
+        std::vector<org::xtreemfs::interfaces::VivaldiCoordinates> remoteCoordinates(osds.get_size());
 
         for(size_t i=0;i<osds.get_size();i++){
 
@@ -400,12 +406,12 @@ namespace xtfs_vivaldi
         
         std::string strWr("");
         strWr += "CLIENT";
-        snprintf(auxStr,256," %d",rightMeasures);
+        SPRINTF_VIV(auxStr,256," %d",rightMeasures);
         strWr += auxStr;
-        snprintf(auxStr,256," %d/%d/%d-%d:%d:%d", tmStruct->tm_mday,tmStruct->tm_mon,tmStruct->tm_year, tmStruct->tm_hour, tmStruct->tm_min,tmStruct->tm_sec);
+        SPRINTF_VIV(auxStr,256," %d/%d/%d-%d:%d:%d", tmStruct->tm_mday,tmStruct->tm_mon,tmStruct->tm_year, tmStruct->tm_hour, tmStruct->tm_min,tmStruct->tm_sec);
         strWr += auxStr;
         org::xtreemfs::interfaces::VivaldiCoordinates *localCoords = own_node.getCoordinates();
-        snprintf(auxStr,256," Coordinates:%.3f/%.3f-%.3f\n",localCoords->get_x_coordinate(),localCoords->get_y_coordinate(),localCoords->get_local_error());
+        SPRINTF_VIV(auxStr,256," Coordinates:%.3f/%.3f/%.3f\n",localCoords->get_x_coordinate(),localCoords->get_y_coordinate(),localCoords->get_local_error());
         strWr += auxStr;
         
         for(size_t i=0;i<osds.get_size();i++)
@@ -413,7 +419,7 @@ namespace xtfs_vivaldi
           if(rtts[i]>0)
           {
             double distance = own_node.calculateDistance((*localCoords),remoteCoordinates[i]);
-            snprintf(auxStr,256,"%s %lld\t%.3f\t%.3f/%.3f-%.3f\n",uuids[i].data(), rtts[i],distance,remoteCoordinates[i].get_x_coordinate(),remoteCoordinates[i].get_y_coordinate(),remoteCoordinates[i].get_local_error());
+            SPRINTF_VIV(auxStr,256,"%s %lld\t%.3f\t%.3f/%.3f-%.3f\n",uuids[i].data(), rtts[i],distance,remoteCoordinates[i].get_x_coordinate(),remoteCoordinates[i].get_y_coordinate(),remoteCoordinates[i].get_local_error());
             strWr += auxStr;
           }
         }
