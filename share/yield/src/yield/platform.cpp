@@ -1,4 +1,4 @@
-// Revision: 1891
+// Revision: 1892
 
 #include "yield/platform.h"
 using namespace YIELD::platform;
@@ -3035,12 +3035,22 @@ void XDRMarshaller::writeBuffer( const char* key, uint32_t tag, yidl::runtime::a
 void XDRMarshaller::writeDouble( const char* key, uint32_t, double value )
 {
   writeKey( key );
-  buffer->put( &value, sizeof( value ) );
+  uint64_t uint64_value;
+  memcpy_s( &uint64_value, sizeof( uint64_value ), &value, sizeof( value ) );
+  uint64_value = Machine::htonll( uint64_value );
+  buffer->put( &uint64_value, sizeof( uint64_value ) );
 }
 void XDRMarshaller::writeFloat( const char* key, uint32_t, float value )
 {
   writeKey( key );
-  buffer->put( &value, sizeof( value ) );
+  uint32_t uint32_value;
+  memcpy_s( &uint32_value, sizeof( uint32_value ), &value, sizeof( value ) );
+#ifdef __MACH__
+  uint32_value = htonl( uint32_value );
+#else
+  uint32_value = Machine::htonl( uint32_value );
+#endif
+  buffer->put( &uint32_value, sizeof( uint32_value ) );
 }
 void XDRMarshaller::writeInt32( const char* key, uint32_t, int32_t value )
 {
@@ -3118,15 +3128,25 @@ void XDRUnmarshaller::readBuffer( const char* key, uint32_t tag, yidl::runtime::
 }
 double XDRUnmarshaller::readDouble( const char*, uint32_t )
 {
-  double value;
-  read( &value, sizeof( value ) );
-  return value;
+  uint64_t uint64_value;
+  read( &uint64_value, sizeof( uint64_value ) );
+  uint64_value = Machine::ntohll( uint64_value );
+  double double_value;
+  memcpy_s( &double_value, sizeof( double_value ), &uint64_value, sizeof( uint64_value ) );
+  return double_value;
 }
 float XDRUnmarshaller::readFloat( const char*, uint32_t )
 {
-  float value;
-  read( &value, sizeof( value ) );
-  return value;
+  uint32_t uint32_value;
+  read( &uint32_value, sizeof( uint32_value ) );
+#ifdef __MACH__
+  uint32_value = ntohl( uint32_value );
+#else
+  uint32_value = Machine::ntohl( uint32_value );
+#endif
+  float float_value;
+  memcpy_s( &float_value, sizeof( float_value ), &uint32_value, sizeof( uint32_value ) );
+  return float_value;
 }
 int32_t XDRUnmarshaller::readInt32( const char*, uint32_t )
 {

@@ -1,5 +1,3 @@
-// Revision: 1888
-
 #include "yield/ipc.h"
 
 
@@ -2476,9 +2474,15 @@ bool YIELD::ipc::Process::poll( int* out_return_code )
 #else
   if ( waitpid( child_pid, out_return_code, WNOHANG ) > 0 ) // waitpid() was successful. The value returned indicates the process ID of the child process whose status information was recorded in the storage pointed to by stat_loc.
   {
+#ifdef __FreeBSD__
+    if ( WIFEXITED( *out_return_code ) ) // Child exited normally
+    {
+      *out_return_code = WEXITSTATUS( *out_return_code );
+#else
     if ( WIFEXITED( out_return_code ) ) // Child exited normally
     {
       *out_return_code = WEXITSTATUS( out_return_code );
+#endif
       return true;
     }
     else

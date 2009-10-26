@@ -178,7 +178,7 @@ namespace yieldfs
     static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, bool operation_result );
     static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, mode_t mode, bool operation_result );
     static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& old_path, const YIELD::platform::Path& new_path, bool operation_result );
-    static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, const std::string& xattr_name, bool operation_result );
+    static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, const std::string& xattr_name, const std::string& xattr_value, bool operation_result );
     static bool trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, uint64_t size, uint64_t offset, bool operation_result );
     static bool trace( YIELD::platform::Log::Stream& log_stream, bool operation_result );
   };

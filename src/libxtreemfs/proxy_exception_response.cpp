@@ -17,12 +17,16 @@ uint32_t ProxyExceptionResponse::get_platform_error_code() const
 
   switch ( error_code )
   {
-#ifdef _WIN32
+#if defined(_WIN32)
     case EACCES: return ERROR_ACCESS_DENIED;
     case EEXIST: return ERROR_ALREADY_EXISTS;
     case EINVAL: return ERROR_INVALID_PARAMETER;
     case ENOENT: return ERROR_FILE_NOT_FOUND;
     case WSAETIMEDOUT: return ERROR_NETWORK_BUSY;
+#elif defined(__FreeBSD__)
+    case 11: return EAGAIN; // Not sure why they renumbered this one.
+    case 39: return ENOTEMPTY; // 39 is EDESTADDRREQ on FreeBSD
+    case 61: return ENOATTR; // 61 is ENODATA on Linux, returned when an xattr is not present
 #endif
     case 0: DebugBreak(); return 0;
     default: return error_code;

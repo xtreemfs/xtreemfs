@@ -194,7 +194,8 @@ YIELD::platform::auto_File Volume::open( const YIELD::platform::Path& _path, uin
       flags ^= O_SYNC;
     }
 
-#if defined(__linux__) || defined(__MACH__)
+    // Solaris and Windows have System V O_* constants; on other systems we have to translate from the local constants to System V
+#if defined(__FreeBSD__) || defined(__linux__) || defined(__MACH__)
     if ( ( flags & O_WRONLY ) == O_WRONLY )
     {
 	    system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_WRONLY;
@@ -356,7 +357,11 @@ void Volume::set_errno( const char* operation_name, ProxyExceptionResponse& prox
       case ERROR_FILE_NOT_FOUND:
       case ERROR_FILE_EXISTS: break;
 #else
+#ifdef __FreeBSD__
+      case ENOATTR:
+#else
       case ENODATA:
+#endif
       case ENOENT:
       case EEXIST: break;
 #endif
