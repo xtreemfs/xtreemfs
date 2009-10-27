@@ -26,6 +26,8 @@ package org.xtreemfs.osd;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import org.xtreemfs.common.config.ServiceConfig;
@@ -66,6 +68,8 @@ public class OSDConfig extends ServiceConfig {
     private String            capabilitySecret;
 
     private boolean           ignoreCaps;
+
+    private Map<String,String> customParams;
     
     /** Creates a new instance of OSDConfig */
     public OSDConfig(String filename) throws IOException {
@@ -105,6 +109,13 @@ public class OSDConfig extends ServiceConfig {
         this.capabilitySecret = this.readRequiredString("capability_secret");
 
         this.ignoreCaps = this.readOptionalBoolean("ignore_capabilities", false);
+
+        this.customParams = new HashMap();
+        for (String propName : this.props.stringPropertyNames()) {
+            if (propName.startsWith("config.")) {
+                customParams.put(propName,this.props.getProperty(propName));
+            }
+        }
     }
     
     public InetSocketAddress getDirectoryService() {
@@ -172,6 +183,13 @@ public class OSDConfig extends ServiceConfig {
      */
     public boolean isIgnoreCaps() {
         return ignoreCaps;
+    }
+
+    /**
+     * @return the customParams
+     */
+    public Map<String, String> getCustomParams() {
+        return customParams;
     }
     
 }

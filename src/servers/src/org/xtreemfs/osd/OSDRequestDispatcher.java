@@ -320,6 +320,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 if (coord != null) {
                     dmap.put("vivaldi_coordinates", VivaldiStage.coordinatesToString(coord));
                 }
+                dmap.putAll(config.getCustomParams());
+
                 
                 try {
                     final String address = "".equals(config.getHostName()) ? config.getAddress() == null ? config
