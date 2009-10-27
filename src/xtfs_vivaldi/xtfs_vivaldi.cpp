@@ -51,9 +51,9 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
 #define CHECK_EVERY_ITERATIONS 5
 #define RES_FILE_NAME "res-%s-%d"
 #ifndef _WIN32
-  #define SPRINTF_VIV(buff,size,format,arguments...) snprintf(buff,size,format,arguments)
+  #define SPRINTF_VIV(buff,size,format,...) snprintf(buff,size,format,__VA_ARGS__)
 #else
-  #define SPRINTF_VIV(buff,size,format,arguments...) sprintf_s(buff,size,format,arguments)
+  #define SPRINTF_VIV(buff,size,format,...) sprintf_s(buff,size,format,__VA_ARGS__)
 #endif
 
 
