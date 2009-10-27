@@ -1,3 +1,5 @@
+// Revision: 1895
+
 #include "yield/ipc.h"
 
 
@@ -21,9 +23,13 @@ YIELD::ipc::Client<RequestType, ResponseType>::Client( const URI& absolute_uri, 
 template <class RequestType, class ResponseType>
 YIELD::ipc::Client<RequestType, ResponseType>::~Client()
 {
-  // yidl::runtime::Object::decRef( *this->absolute_uri );
-//  for ( typename std::vector<Socket*>::iterator idle_socket_i = idle_sockets.begin(); idle_socket_i != idle_sockets.end(); idle_socket_i++ )
-//    Object::decRef( **idle_socket_i );
+  Socket* idle_socket = idle_sockets.try_dequeue();
+  while ( idle_socket != NULL )
+  {
+    idle_socket->shutdown();
+    yidl::runtime::Object::decRef( *idle_socket );
+    idle_socket = idle_sockets.try_dequeue();
+  }
 }
 template <class RequestType, class ResponseType>
 void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent( YIELD::concurrency::Event& ev )
