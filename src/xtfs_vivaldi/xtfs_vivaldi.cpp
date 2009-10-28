@@ -419,7 +419,7 @@ namespace xtfs_vivaldi
           if(rtts[i]>0)
           {
             double distance = own_node.calculateDistance((*localCoords),remoteCoordinates[i]);
-            SPRINTF_VIV(auxStr,256,"%s %lld\t%.3f\t%.3f/%.3f-%.3f\n",uuids[i].data(), rtts[i],distance,remoteCoordinates[i].get_x_coordinate(),remoteCoordinates[i].get_y_coordinate(),remoteCoordinates[i].get_local_error());
+            SPRINTF_VIV(auxStr,256,"%s %lld\t%.3f\t%.3f/%.3f/%.3f\n",uuids[i].data(), rtts[i],distance,remoteCoordinates[i].get_x_coordinate(),remoteCoordinates[i].get_y_coordinate(),remoteCoordinates[i].get_local_error());
             strWr += auxStr;
           }
         }
@@ -431,6 +431,8 @@ namespace xtfs_vivaldi
         {
           results_file->write( strWr.data(),strWr.length());
           results_file->close();
+        }else{
+          get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "Impossible to open results file";
         }
 
       }

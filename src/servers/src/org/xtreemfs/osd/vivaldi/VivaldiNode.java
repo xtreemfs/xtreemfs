@@ -24,6 +24,7 @@
  */
 package org.xtreemfs.osd.vivaldi;
 
+import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.interfaces.VivaldiCoordinates;
 
 /**
@@ -164,9 +165,27 @@ public class VivaldiNode {
         coordA.setY_coordinate( (Math.random()*2) - 1 );
     }
     
-    public double calculateDistance(VivaldiCoordinates pointA,VivaldiCoordinates pointB){
-        return this.magnitudeCoordinates( this.subtractCoordinates(pointA, pointB) );
+    public static double calculateDistance(VivaldiCoordinates pointA,VivaldiCoordinates pointB){
+        VivaldiNode auxNode = new VivaldiNode();
+        return auxNode.magnitudeCoordinates( auxNode.subtractCoordinates(pointA, pointB) );
         
+    }
+    public static String coordinatesToString(VivaldiCoordinates vc) {
+
+        StringBuffer sb = new StringBuffer(3*Long.SIZE/8);
+        OutputUtils.writeHexLong(sb, Double.doubleToRawLongBits(vc.getX_coordinate()));
+        OutputUtils.writeHexLong(sb, Double.doubleToRawLongBits(vc.getY_coordinate()));
+        OutputUtils.writeHexLong(sb, Double.doubleToRawLongBits(vc.getLocal_error()));
+
+        return sb.toString();
+    }
+
+    public static VivaldiCoordinates stringToCoordinates(String coordinates) {
+        VivaldiCoordinates vc = new VivaldiCoordinates();
+        vc.setX_coordinate(OutputUtils.readHexLong(coordinates, 0));
+        vc.setY_coordinate(OutputUtils.readHexLong(coordinates, 8));
+        vc.setLocal_error(OutputUtils.readHexLong(coordinates, 16));
+        return vc;
     }
     
     /**

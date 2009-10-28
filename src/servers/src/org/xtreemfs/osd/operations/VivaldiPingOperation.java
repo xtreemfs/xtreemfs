@@ -43,6 +43,7 @@ import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.PreprocStage.LockOperationCompleteCallback;
 import org.xtreemfs.osd.stages.VivaldiStage;
+import org.xtreemfs.osd.vivaldi.VivaldiNode;
 
 /**
  *
@@ -72,7 +73,7 @@ public class VivaldiPingOperation extends OSDOperation {
         final xtreemfs_pingRequest args = (xtreemfs_pingRequest) rq
                 .getRequestArgs();
         if (Logging.isDebug()) {
-            Logging.logMessage(Logging.LEVEL_DEBUG,Category.all,this,"vivaldi ping with coordinates %s",VivaldiStage.coordinatesToString(args.getCoordinates()));
+            Logging.logMessage(Logging.LEVEL_DEBUG,Category.all,this,"vivaldi ping with coordinates %s",VivaldiNode.coordinatesToString(args.getCoordinates()));
         }
 
 

@@ -432,6 +432,9 @@ public class xtfs_repl {
             } else if (policies.length == 1
                 && policies[0] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_DCMAP.intValue()) {
                 System.out.println("replica selection policy: DCMap");
+//            } else if(policies.length == 1
+//                    && policies[0] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_VIVALDI.intValue()){
+//                System.out.println("replica selection policy: Vivaldi");
             } else {
                 System.out.println("replica selection policy: custom (" + v + ")");
             }

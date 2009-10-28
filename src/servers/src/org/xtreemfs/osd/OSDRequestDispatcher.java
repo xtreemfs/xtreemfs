@@ -101,6 +101,7 @@ import org.xtreemfs.osd.stages.PreprocStage;
 import org.xtreemfs.osd.stages.ReplicationStage;
 import org.xtreemfs.osd.stages.StorageStage;
 import org.xtreemfs.osd.stages.VivaldiStage;
+import org.xtreemfs.osd.vivaldi.VivaldiNode;
 import org.xtreemfs.osd.storage.CleanupThread;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
@@ -318,7 +319,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 dmap.put("proto_version", Integer.toString(OSDInterface.getVersion()));
                 VivaldiCoordinates coord = myCoordinates.get();
                 if (coord != null) {
-                    dmap.put("vivaldi_coordinates", VivaldiStage.coordinatesToString(coord));
+                    dmap.put("vivaldi_coordinates", VivaldiNode.coordinatesToString(coord));
                 }
                 dmap.putAll(config.getCustomParams());
 

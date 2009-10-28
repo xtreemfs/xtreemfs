@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingResponse;
@@ -272,7 +271,7 @@ public class VivaldiStage extends Stage {
                                                     this,
                                                     String.format("RTT:%d(Viv:%.3f) Own:(%.3f,%.3f) lE=%.3f Rem:(%.3f,%.3f) rE=%.3f %s", 
                                                             estimatedRTT,
-                                                            vNode.calculateDistance(vNode.getCoordinates(), coordinatesJ),
+                                                            VivaldiNode.calculateDistance(vNode.getCoordinates(), coordinatesJ),
                                                             vNode.getCoordinates().getX_coordinate(),
                                                             vNode.getCoordinates().getY_coordinate(),
                                                             vNode.getCoordinates().getLocal_error(),
@@ -398,22 +397,6 @@ public class VivaldiStage extends Stage {
     }
 
     
-    public static String coordinatesToString(VivaldiCoordinates vc) {
-        StringBuffer sb = new StringBuffer(3*Long.SIZE/8);
-        OutputUtils.writeHexLong(sb, Double.doubleToRawLongBits(vc.getX_coordinate()));
-        OutputUtils.writeHexLong(sb, Double.doubleToRawLongBits(vc.getY_coordinate()));
-        OutputUtils.writeHexLong(sb, Double.doubleToRawLongBits(vc.getLocal_error()));
-        return sb.toString();
-    }
-
-    public static VivaldiCoordinates stringToCoordinates(String coordinates) {
-        VivaldiCoordinates vc = new VivaldiCoordinates();
-        vc.setX_coordinate(OutputUtils.readHexLong(coordinates, 0));
-        vc.setY_coordinate(OutputUtils.readHexLong(coordinates, 8));
-        vc.setLocal_error(OutputUtils.readHexLong(coordinates, 16));
-        return vc;
-    }
-
     public void receiveVivaldiMessage(UDPMessage msg) {
         enqueueOperation(STAGEOP_COORD_XCHG_REQUEST, new Object[]{msg}, null, null);
     }
