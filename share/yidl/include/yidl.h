@@ -26,9 +26,11 @@ extern "C"
   __declspec( dllimport ) void __stdcall DebugBreak();
 }
 
-struct iovec
+struct iovec // a WSABUF on 32-bit systems
 {
-  size_t iov_len;
+  size_t iov_len; // the WSABUF .len is actually a ULONG, which is != size_t on Win64
+                  // That means that we have to copy and truncate an iovec to a WSABUF on Win64.
+                  // That's easier (in terms of warnings, use of sizeof, etc.) than making this a uint32_t, however.
   void* iov_base;
 };
 
@@ -130,7 +132,7 @@ namespace yidl
       { }
 
     private:
-      volatile int32_t refcnt;
+      volatile atomic_t refcnt;
     };
 
 

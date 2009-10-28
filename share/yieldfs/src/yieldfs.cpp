@@ -666,10 +666,11 @@ namespace yieldfs
 	      Unmount
       };
 
-      if ( DokanMain( &options, &operations ) )
-        return 0;
-      else
-        return ( int )GetLastError();
+      //if ( DokanMain( &options, &operations ) )
+      //  return 0;
+      //else
+      //  return ( int )GetLastError();
+	  return 0;
     }
 
     static int DOKAN_CALLBACK

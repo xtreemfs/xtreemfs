@@ -54,7 +54,7 @@ namespace YIELD
       if ( deflateInit( &zstream, level ) == Z_OK )
       {
         zstream.next_in = static_cast<Bytef*>( *buffer );
-        zstream.avail_in = buffer->size();
+        zstream.avail_in = static_cast<uInt>( buffer->size() );
 
         Bytef zstream_out[4096];
         zstream.next_out = zstream_out;

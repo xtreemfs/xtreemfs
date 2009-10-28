@@ -1,4 +1,4 @@
-// Revision: 1892
+// Revision: 1895
 
 #include "yield/platform.h"
 using namespace YIELD::platform;
@@ -530,7 +530,7 @@ ssize_t File::write( const void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
   DWORD dwBytesWritten;
-  if ( WriteFile( fd, buffer, buffer_len, &dwBytesWritten, NULL ) )
+  if ( WriteFile( fd, buffer, static_cast<DWORD>( buffer_len ), &dwBytesWritten, NULL ) )
     return static_cast<ssize_t>( dwBytesWritten );
   else
     return -1;
@@ -1922,7 +1922,7 @@ void Thread::setThreadName( unsigned long id, const char* thread_name )
   info.dwFlags = 0;
   __try
   {
-      RaiseException( 0x406D1388, 0, sizeof( info ) / sizeof( DWORD ), reinterpret_cast<DWORD*>( &info ) );
+      RaiseException( 0x406D1388, 0, sizeof( info ) / sizeof( DWORD ), reinterpret_cast<const ULONG_PTR*>( &info ) );
   }
   __except( EXCEPTION_CONTINUE_EXECUTION )
   {}

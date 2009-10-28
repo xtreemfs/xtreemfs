@@ -11,8 +11,12 @@
 #pragma warning( disable: 4995 )
 #include <ws2tcpip.h>
 #pragma warning( pop )
+#ifndef ECONNABORTED
 #define ECONNABORTED WSAECONNABORTED
+#endif
+#ifndef ETIMEDOUT
 #define ETIMEDOUT WSAETIMEDOUT
+#endif
 #endif
 template <class RequestType, class ResponseType>
 YIELD::ipc::Client<RequestType, ResponseType>::Client( const URI& absolute_uri, uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, Socket::auto_Address peername, auto_SSLContext ssl_context )
@@ -1780,7 +1784,7 @@ ssize_t YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment(
     record_fragment_buffer = new yidl::runtime::HeapBuffer( record_fragment_length );
     buffer->get( static_cast<void*>( *record_fragment_buffer ), gettable_buffer_size );
     record_fragment_buffer->put( NULL, gettable_buffer_size );
-    return record_fragment_length - record_fragment_buffer->size();
+    return static_cast<ssize_t>( record_fragment_length - record_fragment_buffer->size() );
   }
   else
     return -1;
@@ -1794,7 +1798,7 @@ ssize_t YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragm
   {
     buffer->get( static_cast<char*>( *record_fragment_buffer ) + record_fragment_buffer->size(), gettable_buffer_size );
     record_fragment_buffer->put( NULL, gettable_buffer_size );
-    return record_fragment_length - record_fragment_buffer->size();
+    return static_cast<ssize_t>( record_fragment_length - record_fragment_buffer->size() );
   }
   else if ( gettable_buffer_size == remaining_record_fragment_length )
   {
@@ -1819,7 +1823,7 @@ yidl::runtime::auto_Buffer YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::seriali
   xdr_marshaller.writeUint32( "record_fragment_marker", 0, 0 );
   static_cast<ONCRPCMessageType*>( this )->marshal( xdr_marshaller );
   yidl::runtime::auto_StringBuffer xdr_buffer = xdr_marshaller.get_buffer();
-  uint32_t record_fragment_length = xdr_buffer->size() - sizeof( uint32_t );
+  uint32_t record_fragment_length = static_cast<uint32_t>( xdr_buffer->size() - sizeof( uint32_t ) );
   uint32_t record_fragment_marker = record_fragment_length | ( 1 << 31 ); // Indicate that this is the last fragment
 #ifdef __MACH__
   record_fragment_marker = htonl( record_fragment_marker );
@@ -2302,7 +2306,7 @@ ssize_t YIELD::ipc::Pipe::read( void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
   DWORD dwBytesRead;
-  if ( ::ReadFile( ends[0], buffer, buffer_len, &dwBytesRead, NULL ) )
+  if ( ::ReadFile( ends[0], buffer, static_cast<DWORD>( buffer_len ), &dwBytesRead, NULL ) )
     return static_cast<ssize_t>( dwBytesRead );
   else
     return -1;
@@ -2333,7 +2337,7 @@ ssize_t YIELD::ipc::Pipe::write( const void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
   DWORD dwBytesWritten;
-  if ( ::WriteFile( ends[1], buffer, buffer_len, &dwBytesWritten, NULL ) )
+  if ( ::WriteFile( ends[1], buffer, static_cast<DWORD>( buffer_len ), &dwBytesWritten, NULL ) )
     return static_cast<ssize_t>( dwBytesWritten );
   else
     return -1;
@@ -2943,7 +2947,7 @@ void YIELD::ipc::Socket::aio_read_iocp( yidl::runtime::auto_Object<AIOReadContro
   yidl::runtime::auto_Buffer buffer( aio_read_control_block->get_buffer() );
   WSABUF wsabuf[1];
   wsabuf[0].buf = static_cast<char*>( *buffer ) + buffer->size();
-  wsabuf[0].len = buffer->capacity() - buffer->size();
+  wsabuf[0].len = static_cast<ULONG>( buffer->capacity() - buffer->size() );
   DWORD dwNumberOfBytesReceived, dwFlags = 0;
   if ( ::WSARecv( socket_, wsabuf, 1, &dwNumberOfBytesReceived, &dwFlags, *aio_read_control_block, NULL ) == 0 ||
        ::WSAGetLastError() == WSA_IO_PENDING )
@@ -2987,8 +2991,21 @@ void YIELD::ipc::Socket::aio_write_iocp( yidl::runtime::auto_Object<AIOWriteCont
   if ( buffer->get_type_id() == YIDL_RUNTIME_OBJECT_TYPE_ID( GatherBuffer ) )
   {
     DWORD dwNumberOfBytesSent;
+#ifdef _WIN64
+	// See note in writev re: the logic behind this
+	const struct iovec* iovecs = static_cast<GatherBuffer*>( buffer.get() )->get_iovecs();
+	uint32_t iovecs_len = static_cast<GatherBuffer*>( buffer.get() )->get_iovecs_len();
+	std::vector<WSABUF> wsabufs( iovecs_len );
+	for ( uint32_t iovec_i = 0; iovec_i < iovecs_len; iovec_i++ )
+	{
+		wsabufs[iovec_i].len = static_cast<ULONG>( iovecs[iovec_i].iov_len );
+		wsabufs[iovec_i].buf = static_cast<char*>( iovecs[iovec_i].iov_base );
+	}
+	if ( ::WSASend( socket_, &wsabufs[0], iovecs_len,  &dwNumberOfBytesSent, 0, *aio_write_control_block, NULL ) == 0 ||
+#else
     if ( ::WSASend( socket_, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( static_cast<GatherBuffer*>( buffer.get() )->get_iovecs() ) ), static_cast<GatherBuffer*>( buffer.get() )->get_iovecs_len(), &dwNumberOfBytesSent, 0, *aio_write_control_block, NULL ) == 0 ||
-         ::WSAGetLastError() == WSA_IO_PENDING )
+#endif
+		::WSAGetLastError() == WSA_IO_PENDING )
       aio_write_control_block.release();
     else
       aio_write_control_block->onError( ::WSAGetLastError() );
@@ -2997,7 +3014,7 @@ void YIELD::ipc::Socket::aio_write_iocp( yidl::runtime::auto_Object<AIOWriteCont
   {
     WSABUF wsabuf[1];
     wsabuf[0].buf = static_cast<char*>( *buffer );
-    wsabuf[0].len = buffer->size();
+    wsabuf[0].len = static_cast<ULONG>( buffer->size() );
     DWORD dwNumberOfBytesSent;
     if ( ::WSASend( socket_, wsabuf, 1, &dwNumberOfBytesSent, 0, *aio_write_control_block, NULL ) == 0 ||
          ::WSAGetLastError() == WSA_IO_PENDING )
@@ -3394,7 +3411,19 @@ ssize_t YIELD::ipc::Socket::writev( const struct iovec* buffers, uint32_t buffer
 {
 #if defined(_WIN32)
   DWORD dwWrittenLength;
+#ifdef _WIN64
+  // The WSABUF .len is a ULONG, which is != size_t on Win64, so we have to truncate it here.
+  // This is easier (compiler warnings, using sizeof, etc.) than changing the struct iovec definition to use uint32_t.
+  std::vector<WSABUF> wsabufs( buffers_count );
+  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+  {
+  	wsabufs[buffer_i].len = static_cast<ULONG>( buffers[buffer_i].iov_len );
+	wsabufs[buffer_i].buf = static_cast<char*>( buffers[buffer_i].iov_base );
+  }
+  ssize_t write_ret = ::WSASend( socket_, &wsabufs[0], buffers_count, &dwWrittenLength, 0, NULL, NULL );
+#else
   ssize_t write_ret = ::WSASend( socket_, reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ), buffers_count, &dwWrittenLength, 0, NULL, NULL );
+#endif
   if ( write_ret >= 0 )
     return static_cast<ssize_t>( dwWrittenLength );
   else
@@ -3472,7 +3501,7 @@ bool YIELD::ipc::Socket::Address::as_struct_sockaddr( int family, struct sockadd
       if ( addrinfo_p->ai_family == family )
       {
         out_sockaddr = addrinfo_p->ai_addr;
-        out_sockaddrlen = addrinfo_p->ai_addrlen;
+        out_sockaddrlen = static_cast<socklen_t>( addrinfo_p->ai_addrlen );
         return true;
       }
       else
@@ -3553,7 +3582,7 @@ bool YIELD::ipc::Socket::Address::getnameinfo( char* out_hostname, uint32_t out_
     struct addrinfo* addrinfo_p = addrinfo_list;
     while ( addrinfo_p != NULL )
     {
-      if ( ::getnameinfo( addrinfo_p->ai_addr, addrinfo_p->ai_addrlen, out_hostname, out_hostname_len, NULL, 0, numeric ? NI_NUMERICHOST : 0 ) == 0 )
+      if ( ::getnameinfo( addrinfo_p->ai_addr, static_cast<socklen_t>( addrinfo_p->ai_addrlen ), out_hostname, out_hostname_len, NULL, 0, numeric ? NI_NUMERICHOST : 0 ) == 0 )
         return true;
       else
         addrinfo_p = addrinfo_p->ai_next;
@@ -4481,7 +4510,7 @@ void YIELD::ipc::TCPSocket::aio_accept_iocp( yidl::runtime::auto_Object<AIOAccep
     WSAIoctl( *this, SIO_GET_EXTENSION_FUNCTION_POINTER, &GuidAcceptEx, sizeof( GuidAcceptEx ), &lpfnAcceptEx, sizeof( lpfnAcceptEx ), &dwBytes, NULL, NULL );
   }
   aio_accept_control_block->accepted_tcp_socket = TCPSocket::create( get_domain() );
-  size_t sizeof_peer_sockaddr = ( get_domain() == AF_INET6 ) ? sizeof( sockaddr_in6 ) : sizeof( sockaddr_in );
+  DWORD sizeof_peer_sockaddr = ( get_domain() == AF_INET6 ) ? sizeof( sockaddr_in6 ) : sizeof( sockaddr_in );
   DWORD dwBytesReceived;
   if ( static_cast<LPFN_ACCEPTEX>( lpfnAcceptEx )( *this, *aio_accept_control_block->accepted_tcp_socket, aio_accept_control_block->peer_sockaddr, 0, sizeof_peer_sockaddr + 16, sizeof_peer_sockaddr + 16, &dwBytesReceived, ( LPOVERLAPPED )*aio_accept_control_block ) ||
        ::WSAGetLastError() == WSA_IO_PENDING )
@@ -4768,7 +4797,7 @@ void YIELD::ipc::UDPSocket::aio_recvfrom_iocp( yidl::runtime::auto_Object<AIORec
   yidl::runtime::auto_Buffer buffer( aio_recvfrom_control_block->get_buffer() );
   WSABUF wsabuf[1];
   wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) );
-  wsabuf[0].len = buffer->capacity() - buffer->size();
+  wsabuf[0].len = static_cast<ULONG>( buffer->capacity() - buffer->size() );
   DWORD dwNumberOfBytesReceived, dwFlags = 0;
   socklen_t peer_sockaddr_len = sizeof( *aio_recvfrom_control_block->peer_sockaddr );
   if ( ::WSARecvFrom( *this, wsabuf, 1, &dwNumberOfBytesReceived, &dwFlags, reinterpret_cast<struct sockaddr*>( aio_recvfrom_control_block->peer_sockaddr ), &peer_sockaddr_len, *aio_recvfrom_control_block, NULL ) == 0 ||

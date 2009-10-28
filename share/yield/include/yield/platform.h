@@ -660,7 +660,7 @@ namespace YIELD
 
       ElementType dequeue()
       {
-        int32_t copied_head, try_pos;
+        atomic_t copied_head, try_pos;
         ElementType try_element;
 
         for ( ;; )
@@ -697,17 +697,17 @@ namespace YIELD
 
           if ( 
                atomic_cas( 
-                           reinterpret_cast<volatile uint_ptr*>( &elements[try_pos] ), 
-                           ( reinterpret_cast<uint_ptr>( try_element ) & PTR_HIGH_BIT ) ? 1 : 0, 
-                           reinterpret_cast<uint_ptr>( try_element )
+                           reinterpret_cast<volatile atomic_t*>( &elements[try_pos] ), 
+                           ( reinterpret_cast<atomic_t>( try_element ) & POINTER_HIGH_BIT ) ? 1 : 0, 
+                           reinterpret_cast<atomic_t>( try_element )
                          ) 
-               == reinterpret_cast<uint_ptr>( try_element ) 
+               == reinterpret_cast<atomic_t>( try_element ) 
              )
           {
             if ( try_pos % 2 == 0 )
               atomic_cas( &head, try_pos, copied_head );
 
-            return reinterpret_cast<ElementType>( ( reinterpret_cast<uint_ptr>( try_element ) & PTR_LOW_BITS ) << 1 );
+            return reinterpret_cast<ElementType>( ( reinterpret_cast<atomic_t>( try_element ) & POINTER_LOW_BITS ) << 1 );
           }
         }
       }
@@ -715,16 +715,16 @@ namespace YIELD
       bool enqueue( ElementType element )
       {
 #ifdef _DEBUG
-        if ( reinterpret_cast<uint_ptr>( element ) & 0x1 ) DebugBreak();
+        if ( reinterpret_cast<atomic_t>( element ) & 0x1 ) DebugBreak();
 #endif
 
-        element = reinterpret_cast<ElementType>( reinterpret_cast<uint_ptr>( element ) >> 1 );
+        element = reinterpret_cast<ElementType>( reinterpret_cast<atomic_t>( element ) >> 1 );
 
 #ifdef _DEBUG
-        if ( reinterpret_cast<uint_ptr>( element ) & PTR_HIGH_BIT ) DebugBreak();
+        if ( reinterpret_cast<atomic_t>( element ) & POINTER_HIGH_BIT ) DebugBreak();
 #endif
 
-        int32_t copied_tail, last_try_pos, try_pos; // te, ate, temp
+        atomic_t copied_tail, last_try_pos, try_pos; // te, ate, temp
         ElementType try_element;
 
         for ( ;; )
@@ -771,11 +771,11 @@ namespace YIELD
           // diff next line
           if ( 
                atomic_cas( 
-                           reinterpret_cast<volatile uint_ptr*>( &elements[last_try_pos] ), 
-                           try_element == reinterpret_cast<ElementType>( 1 ) ? ( reinterpret_cast<uint_ptr>( element ) | PTR_HIGH_BIT ) : reinterpret_cast<uint_ptr>( element ),
-                           reinterpret_cast<uint_ptr>( try_element )
+                           reinterpret_cast<volatile atomic_t*>( &elements[last_try_pos] ), 
+                           try_element == reinterpret_cast<ElementType>( 1 ) ? ( reinterpret_cast<atomic_t>( element ) | POINTER_HIGH_BIT ) : reinterpret_cast<atomic_t>( element ),
+                           reinterpret_cast<atomic_t>( try_element )
                          ) 
-               == reinterpret_cast<uint_ptr>( try_element ) 
+               == reinterpret_cast<atomic_t>( try_element ) 
              )
           {
             if ( try_pos % 2 == 0 )
@@ -788,16 +788,14 @@ namespace YIELD
 
     private:
       volatile ElementType elements[QueueLength+2]; // extra 2 for sentinels
-      volatile int32_t head, tail;
+      volatile atomic_t head, tail;
 
 #if defined(__LLP64__) || defined(__LP64__)
-      typedef int64_t uint_ptr;
-      const static uint_ptr PTR_HIGH_BIT = 0x8000000000000000;
-      const static uint_ptr PTR_LOW_BITS = 0x7fffffffffffffff;
+      const static atomic_t POINTER_HIGH_BIT = 0x8000000000000000;
+      const static atomic_t POINTER_LOW_BITS = 0x7fffffffffffffff;
 #else
-      typedef int32_t uint_ptr;
-      const static uint_ptr PTR_HIGH_BIT = 0x80000000;
-      const static uint_ptr PTR_LOW_BITS = 0x7fffffff;
+      const static atomic_t POINTER_HIGH_BIT = 0x80000000;
+      const static atomic_t POINTER_LOW_BITS = 0x7fffffff;
 #endif
     };
 
