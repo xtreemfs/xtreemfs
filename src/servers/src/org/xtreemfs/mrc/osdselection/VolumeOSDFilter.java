@@ -13,6 +13,7 @@ import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
@@ -114,18 +115,29 @@ public class VolumeOSDFilter {
     
     public void setAttribute(String key, String value) {
         
-        assert(key.startsWith(ATTR_PREFIX));
+        assert (key.startsWith(ATTR_PREFIX));
+        key = key.substring(ATTR_PREFIX.length());
         
-        for (OSDSelectionPolicy pol : policyMap.values())
-            pol.setAttribute(key.substring(ATTR_PREFIX.length()), value);
+        int index = key.indexOf('.');
+        
+        if (index == -1)
+            for (OSDSelectionPolicy pol : policyMap.values())
+                pol.setAttribute(key, value);
+        else {
+            short policyId = Short.parseShort(key.substring(0, index));
+            OSDSelectionPolicy pol = policyMap.get(policyId);
+            if (pol != null)
+                pol.setAttribute(key.substring(index + 1), value);
+        }
+        
     }
     
     public ServiceSet filterByOSDSelectionPolicy(ServiceSet knownOSDs, InetAddress clientIP,
-        XLocList currentXLoc, int numOSDs) {
+        VivaldiCoordinates clientCoords, XLocList currentXLoc, int numOSDs) {
         
         ServiceSet result = (ServiceSet) knownOSDs.clone();
         for (short id : osdPolicy)
-            result = policyMap.get(id).getOSDs(result, clientIP, currentXLoc, numOSDs);
+            result = policyMap.get(id).getOSDs(result, clientIP, clientCoords, currentXLoc, numOSDs);
         
         return result;
     }
@@ -139,7 +151,8 @@ public class VolumeOSDFilter {
         return result;
     }
     
-    public ReplicaSet sortByReplicaSelectionPolicy(InetAddress clientIP, XLocList xLocList) {
+    public ReplicaSet sortByReplicaSelectionPolicy(InetAddress clientIP, VivaldiCoordinates clientCoords,
+        XLocList xLocList) {
         
         ReplicaSet repls = new ReplicaSet();
         
@@ -163,7 +176,7 @@ public class VolumeOSDFilter {
         
         // sort the list of head OSDs according to the policy
         for (short id : replPolicy)
-            headOSDs = policyMap.get(id).getOSDs(headOSDs, clientIP, xLocList, headOSDs.size());
+            headOSDs = policyMap.get(id).getOSDs(headOSDs, clientIP, clientCoords, xLocList, headOSDs.size());
         
         // sort the list of replicas in the same order as the head OSDs
         ReplicaSet newRepls = new ReplicaSet();

@@ -35,6 +35,7 @@ import org.xtreemfs.include.common.logging.Logging;
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.mrc.metadata.XLocList;
 
 /**
@@ -51,8 +52,8 @@ public class GroupFQDNPolicy extends FQDNPolicyBase {
                                                 .intValue();
     
     @Override
-    public ServiceSet getOSDs(ServiceSet allOSDs, final InetAddress clientIP, XLocList currentXLoc,
-        int numOSDs) {
+    public ServiceSet getOSDs(ServiceSet allOSDs, final InetAddress clientIP,
+        VivaldiCoordinates clientCoords, XLocList currentXLoc, int numOSDs) {
         
         // sort the list by their FQDN distance to the client
         Collections.sort(allOSDs, new Comparator<Service>() {

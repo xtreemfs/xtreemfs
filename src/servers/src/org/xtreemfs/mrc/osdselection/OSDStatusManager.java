@@ -38,6 +38,7 @@ import org.xtreemfs.interfaces.ReplicaSet;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.VolumeChangeListener;
@@ -123,8 +124,8 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         VolumeOSDFilter vol = volumeMap.get(volumeId);
         
         if (vol == null) {
-            Logging.logError(Logging.LEVEL_ERROR, this, new Exception("no volume OSD filter found for volume "
-                + volumeId));
+            Logging.logError(Logging.LEVEL_ERROR, this, new Exception(
+                "no volume OSD filter found for volume " + volumeId));
             return;
         }
         
@@ -218,8 +219,8 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
      *            the number of requested OSDs
      * @return a list of feasible OSDs
      */
-    public synchronized ServiceSet getUsableOSDs(String volumeId, InetAddress clientIP, XLocList currentXLoc,
-        int numOSDs) {
+    public synchronized ServiceSet getUsableOSDs(String volumeId, InetAddress clientIP,
+        VivaldiCoordinates clientCoords, XLocList currentXLoc, int numOSDs) {
         
         VolumeOSDFilter vol = volumeMap.get(volumeId);
         if (vol == null) {
@@ -229,7 +230,8 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         }
         
         // return a set of OSDs
-        ServiceSet result = vol.filterByOSDSelectionPolicy(knownOSDs, clientIP, currentXLoc, numOSDs);
+        ServiceSet result = vol.filterByOSDSelectionPolicy(knownOSDs, clientIP, clientCoords, currentXLoc,
+            numOSDs);
         
         if (result.size() == 0) {
             String osds = "";
@@ -255,7 +257,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
     }
     
     public synchronized ReplicaSet getSortedReplicaList(String volumeId, InetAddress clientIP,
-        XLocList currentXLoc) {
+        VivaldiCoordinates clientCoords, XLocList currentXLoc) {
         
         VolumeOSDFilter vol = volumeMap.get(volumeId);
         if (vol == null) {
@@ -265,7 +267,7 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
         }
         
         // return a sorted set of replicas
-        return vol.sortByReplicaSelectionPolicy(clientIP, currentXLoc);
+        return vol.sortByReplicaSelectionPolicy(clientIP, clientCoords, currentXLoc);
         
     }
     

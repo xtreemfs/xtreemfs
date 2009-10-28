@@ -123,18 +123,18 @@ public class OSDPolicyTest extends TestCase {
         
         ServiceDataMap sdm1 = new ServiceDataMap();
         sdm1.put("free", "1000");
+        sdm1.put("seconds_since_last_update", "5");
         ServiceDataMap sdm2 = new ServiceDataMap();
         sdm2.put("free", "5000");
+        sdm2.put("seconds_since_last_update", "5");
         ServiceDataMap sdm3 = new ServiceDataMap();
         sdm3.put("free", "5000");
+        sdm3.put("seconds_since_last_update", "0");
         
         ServiceSet services = new ServiceSet();
-        services.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd1", 1, "osd1",
-            (System.currentTimeMillis() - 5000) / 1000l, sdm1));
-        services.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd2", 1, "osd2",
-            (System.currentTimeMillis() - 5000) / 1000l, sdm2));
-        services.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd3", 1, "osd3",
-            System.currentTimeMillis() / 1000l, sdm3));
+        services.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd1", 1, "osd1", 0, sdm1));
+        services.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd2", 1, "osd2", 0, sdm2));
+        services.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd3", 1, "osd3", 0, sdm3));
         
         FilterDefaultPolicy pol = new FilterDefaultPolicy();
         pol.setAttribute("offline_time_secs", "2");
@@ -217,14 +217,14 @@ public class OSDPolicyTest extends TestCase {
         UUIDResolver.addTestMapping("osd4", "192.168.1.1", 2222, false);
         
         InetAddress clientAddr = InetAddress.getByName("192.168.2.100");
-        ServiceSet sortedList = policy.getOSDs(osds, clientAddr, null, Integer.MAX_VALUE);
+        ServiceSet sortedList = policy.getOSDs(osds, clientAddr, null, null, Integer.MAX_VALUE);
         assertEquals("osd1", sortedList.get(0).getUuid());
         assertEquals("osd4", sortedList.get(1).getUuid());
         assertEquals("osd2", sortedList.get(2).getUuid());
         assertEquals("osd3", sortedList.get(3).getUuid());
         
         clientAddr = InetAddress.getByName("192.168.3.100");
-        sortedList = policy.getOSDs(osds, clientAddr, null, Integer.MAX_VALUE);
+        sortedList = policy.getOSDs(osds, clientAddr, null, null, Integer.MAX_VALUE);
         assertEquals("osd2", sortedList.get(0).getUuid());
         assertEquals("osd1", sortedList.get(1).getUuid());
         assertEquals("osd4", sortedList.get(2).getUuid());
@@ -258,18 +258,18 @@ public class OSDPolicyTest extends TestCase {
         
         // get two OSDs from one data center
         InetAddress clientAddr = InetAddress.getByName("192.168.2.100");
-        ServiceSet sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, 2);
+        ServiceSet sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, null, 2);
         assertEquals(2, sortedList.size());
         assertEquals("osd1", sortedList.get(0).getUuid());
         assertEquals("osd4", sortedList.get(1).getUuid());
         
         // request too many OSDs
         clientAddr = InetAddress.getByName("192.168.2.100");
-        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, 3);
+        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, null, 3);
         assertEquals(0, sortedList.size());
         
         clientAddr = InetAddress.getByName("192.168.3.100");
-        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, 1);
+        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, null, 1);
         assertEquals(1, sortedList.size());
         assertEquals("osd2", sortedList.get(0).getUuid());
         
@@ -294,8 +294,8 @@ public class OSDPolicyTest extends TestCase {
         UUIDResolver.addTestMapping("osd5", "download.xtreemfs.com", 2222, false);
         
         InetAddress clientAddr = InetAddress.getByName("xtreemfs.zib.de");
-        ServiceSet sortedList = policy
-                .getOSDs((ServiceSet) osds.clone(), clientAddr, null, Integer.MAX_VALUE);
+        ServiceSet sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, null,
+            Integer.MAX_VALUE);
         assertEquals("osd3", sortedList.get(0).getUuid());
         assertEquals("osd1", sortedList.get(1).getUuid());
         assertEquals("osd4", sortedList.get(2).getUuid());
@@ -303,7 +303,7 @@ public class OSDPolicyTest extends TestCase {
         assertEquals("osd5", sortedList.get(4).getUuid());
         
         clientAddr = InetAddress.getByName("www.heise.de");
-        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, Integer.MAX_VALUE);
+        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, null, Integer.MAX_VALUE);
         
         assertEquals("osd2", sortedList.get(0).getUuid());
     }
@@ -327,20 +327,20 @@ public class OSDPolicyTest extends TestCase {
         UUIDResolver.addTestMapping("osd5", "download.xtreemfs.com", 2222, false);
         
         InetAddress clientAddr = InetAddress.getByName("xtreemfs.zib.de");
-        ServiceSet sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, 1);
+        ServiceSet sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, null, 1);
         assertEquals(1, sortedList.size());
         assertEquals("osd1", sortedList.get(0).getUuid());
         
-        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, 2);
+        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, null, 2);
         assertEquals(2, sortedList.size());
         assertEquals("osd1", sortedList.get(0).getUuid());
         assertEquals("osd3", sortedList.get(1).getUuid());
         
-        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, 4);
+        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, null, 4);
         assertEquals(0, sortedList.size());
         
         clientAddr = InetAddress.getByName("www.heise.de");
-        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, 1);
+        sortedList = policy.getOSDs((ServiceSet) osds.clone(), clientAddr, null, null, 1);
         assertEquals(1, sortedList.size());
         assertEquals("osd2", sortedList.get(0).getUuid());
         

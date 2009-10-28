@@ -29,6 +29,7 @@ import java.util.Collections;
 
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.mrc.metadata.XLocList;
 
 /**
@@ -42,7 +43,8 @@ public class SortRandomPolicy implements OSDSelectionPolicy {
                                                 .intValue();
     
     @Override
-    public ServiceSet getOSDs(ServiceSet allOSDs, InetAddress clientIP, XLocList currentXLoc, int numOSDs) {
+    public ServiceSet getOSDs(ServiceSet allOSDs, InetAddress clientIP, VivaldiCoordinates clientCoords,
+        XLocList currentXLoc, int numOSDs) {
         return getOSDs(allOSDs);
     }
     

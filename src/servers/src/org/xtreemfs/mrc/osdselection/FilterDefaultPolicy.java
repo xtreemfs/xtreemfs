@@ -29,6 +29,7 @@ import java.net.InetAddress;
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.mrc.metadata.XLocList;
 
 /**
@@ -53,7 +54,7 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     private long                maxOfflineTime      = 300;
     
     @Override
-    public ServiceSet getOSDs(ServiceSet allOSDs, InetAddress clientIP, XLocList currentXLoc, int numOSDs) {
+    public ServiceSet getOSDs(ServiceSet allOSDs, InetAddress clientIP, VivaldiCoordinates clientCoords, XLocList currentXLoc, int numOSDs) {
         
         // first, remove all OSDs from the set that have already been assigned
         // to the current XLoc list
@@ -69,24 +70,6 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
         for (Service osd : allOSDs)
             if (!hasTimedOut(osd) && hasFreeCapacity(osd))
                 filteredOSDs.add(osd);
-//            else {
-//                System.out.println("service: " + osd.getUuid());
-//                System.out.println("has timed out: " + hasTimedOut(osd));
-//                System.out.println("has free cap: " + hasFreeCapacity(osd));
-//                
-//                if (hasTimedOut(osd)) {
-//                    System.out.println("last update: " + osd.getData().get("seconds_since_last_update"));
-//                    System.out.println("max offline time: " + maxOfflineTime);
-//                }
-//
-//                else {
-//                    String freeStr = osd.getData().get("free");
-//                    long free = Long.parseLong(freeStr);
-//                    System.out.println("free capacity: " + free);
-//                    System.out.println("min free cap: " + minFreeCapacity);
-//                }
-//                
-//            }
         
         return filteredOSDs;
     }
@@ -94,7 +77,7 @@ public class FilterDefaultPolicy implements OSDSelectionPolicy {
     @Override
     public void setAttribute(String key, String value) {
         if (OFFLINE_TIME_SECS.equals(key))
-            maxOfflineTime = Long.parseLong(value) * 1000;
+            maxOfflineTime = Long.parseLong(value);
         else if (FREE_CAPACITY_BYTES.equals(key))
             minFreeCapacity = Long.parseLong(value);
     }

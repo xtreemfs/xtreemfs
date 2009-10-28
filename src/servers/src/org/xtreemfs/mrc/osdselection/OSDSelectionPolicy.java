@@ -27,6 +27,7 @@ package org.xtreemfs.mrc.osdselection;
 import java.net.InetAddress;
 
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.mrc.metadata.XLocList;
 
 /**
@@ -43,13 +44,16 @@ public interface OSDSelectionPolicy {
      *            a list of all available OSDs
      * @param clientIP
      *            the client's IP address
+     * @param clientCoords
+     *            the client's Vivaldi coordinates
      * @param currentXLoc
      *            the current X-Locations list
      * @param numOSDs
      *            the number of OSDs to select
      * @return a list of selected OSDs
      */
-    public ServiceSet getOSDs(ServiceSet allOSDs, InetAddress clientIP, XLocList currentXLoc, int numOSDs);
+    public ServiceSet getOSDs(ServiceSet allOSDs, InetAddress clientIP, VivaldiCoordinates clientCoords,
+        XLocList currentXLoc, int numOSDs);
     
     /**
      * Simplified version of

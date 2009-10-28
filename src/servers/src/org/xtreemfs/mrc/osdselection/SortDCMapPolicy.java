@@ -38,6 +38,7 @@ import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.mrc.metadata.XLocList;
 
 /**
@@ -59,7 +60,8 @@ public class SortDCMapPolicy extends DCMapPolicyBase {
     }
     
     @Override
-    public ServiceSet getOSDs(ServiceSet allOSDs, InetAddress clientIP, XLocList currentXLoc, int numOSDs) {
+    public ServiceSet getOSDs(ServiceSet allOSDs, InetAddress clientIP, VivaldiCoordinates clientCoords,
+        XLocList currentXLoc, int numOSDs) {
         
         final Inet4Address cAddr = (Inet4Address) clientIP;
         

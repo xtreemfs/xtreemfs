@@ -229,7 +229,8 @@ public class OpenOperation extends MRCOperation {
         
         // re-order the replica list, based on the replica selection policy
         xLocSet.setReplicas(master.getOSDStatusManager().getSortedReplicaList(volume.getId(),
-            ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress(), xLocList));
+            ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress(),
+            rqArgs.getClient_vivaldi_coordinates(), xLocList));
         
         // issue a new capability
         Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), TimeSync

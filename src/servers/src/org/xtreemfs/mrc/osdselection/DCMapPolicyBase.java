@@ -34,8 +34,6 @@ import java.util.Properties;
 import org.xtreemfs.common.LRUCache;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.interfaces.ServiceSet;
-import org.xtreemfs.mrc.metadata.XLocList;
 
 /**
  * Base class for policies that use datacenter maps.
@@ -72,12 +70,7 @@ public abstract class DCMapPolicyBase implements OSDSelectionPolicy {
         int maxCacheSize = Integer.valueOf(p.getProperty("max_cache_size", "1000"));
         matchingDCcache = new LRUCache<Inet4Address, Integer>(maxCacheSize);
     }
-    
-    public abstract ServiceSet getOSDs(ServiceSet allOSDs, InetAddress clientIP, XLocList currentXLoc,
-        int numOSDs);
-    
-    public abstract void setAttribute(String key, String value);
-    
+        
     private void readConfig(Properties p) {
         
         String tmp = p.getProperty("datacenters");
