@@ -101,7 +101,7 @@ public class CloseOperation extends MRCOperation {
             int replFactor = vol.getAutoReplFactor();
             
             // if replicas need to be created on close ...
-            if (replFactor > 1) {
+            if (replFactor > xLocList.getReplicaCount()) {
                 
                 List<XLoc> repls = new ArrayList<XLoc>();
                 for (int i = 0; i < xLocList.getReplicaCount(); i++)
@@ -115,7 +115,7 @@ public class CloseOperation extends MRCOperation {
                 
                 // try to replicate the file
                 try {
-                    for (int i = 0; i < replFactor - 1; i++) {
+                    for (int i = 0; i < replFactor - xLocList.getReplicaCount(); i++) {
                         
                         // determine the replication flags for the new replica
                         int replFlags = ReplicationFlags.setRandomStrategy(0);

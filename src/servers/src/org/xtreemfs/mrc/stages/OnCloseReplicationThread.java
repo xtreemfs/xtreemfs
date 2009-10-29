@@ -28,6 +28,7 @@ import java.net.InetSocketAddress;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.OutputUtils;
@@ -112,7 +113,8 @@ public class OnCloseReplicationThread extends LifeCycleThread {
                                 // to trigger the replication
                                 resp = master.getOSDClient()
                                         .read(osd, xcap.getFile_id(), creds, obj, 0, 0, 1);
-                                resp.get();
+                                ObjectData data = resp.get();
+                                BufferPool.free(data.getData());
                                 
                             } catch (Exception e) {
                                 Logging.logMessage(Logging.LEVEL_WARN, Category.proc, this, OutputUtils
