@@ -20,7 +20,7 @@
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * AUTHORS: John Doe (organisation)
+ * AUTHORS: Juan González de Benito (BSC)
  */
 package org.xtreemfs.mrc.osdselection;
 
@@ -40,8 +40,7 @@ import org.xtreemfs.osd.vivaldi.VivaldiNode;
 
 /**
  *
- * 28/10/2009
- * @author jgonz
+ * @author Juan González (BSC)
  */
 public class SortVivaldiPolicy implements OSDSelectionPolicy {
     
@@ -51,29 +50,61 @@ public class SortVivaldiPolicy implements OSDSelectionPolicy {
             XLocList currentXLoc, int numOSDs){
         
         //TOFIX:What's up with numOSDs?
-        //int numOSDs = allOSDs.size();
         
         //Calculate the distances from the client to all the OSDs
         Hashtable<String,Double> distances = new Hashtable<String,Double>();
         
         for(Service oneOSD:allOSDs){
+
             ServiceDataMap sdm = oneOSD.getData();
             String strCoords = sdm.get("vivaldi_coordinates");
-            System.out.println("OSD->"+oneOSD.getUuid());
-            if(strCoords!=null){
+
+            if( strCoords!=null ){
+                
                 VivaldiCoordinates osdCoords = VivaldiNode.stringToCoordinates(strCoords);
-                System.out.println("strCoords->"+strCoords+" coords:"+osdCoords);
-                if(osdCoords!=null){
+                if( osdCoords!=null ){
                     
                     double currentDistance = VivaldiNode.calculateDistance(clientCoords, osdCoords);
                     
                     distances.put(oneOSD.getUuid(), currentDistance);
-                    System.out.println("dist:"+currentDistance);
                 }
             }
         }
         
-        return allOSDs;
+        //Create a new ServiceSet and add the sorted services to it
+        ServiceSet retSet = new ServiceSet();
+        for(Service oneOSD:allOSDs){
+
+            Double oneOSDDistance = distances.get(oneOSD.getUuid());
+            if( oneOSDDistance!=null ){ //Does the DS contain the info for this service?
+                
+                boolean inserted = false;
+                int i = 0;
+                
+                while(!inserted){
+                    
+                    if( i>=retSet.size() ){
+                        
+                        retSet.add(oneOSD);
+                        inserted = true;
+                        
+                    }else{
+                        
+                        double iDistance = distances.get(retSet.get(i).getUuid());
+                        
+                        if( oneOSDDistance.doubleValue()<iDistance ){ 
+                            
+                            retSet.add(i,oneOSD);
+                            inserted = true;
+                        }else{
+                            i++;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return retSet;
     }
     public ServiceSet getOSDs(ServiceSet allOSDs){
         //It's not possible to calculate the most appropiate OSD without knowing the client's coordinates
