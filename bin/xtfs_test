@@ -55,6 +55,7 @@ NUM_OSDS_DEFAULT = 1
 ENABLE_SSL_DEFAULT = False
 CACHE_METADATA_DEFAULT = False
 CACHE_DATA_DEFAULT = False
+REPL_ON_CLOSE_DEFAULT = False
 STRIPE_SIZE_DEFAULT = 128
 STRIPING_POLICY_TYPE_DEFAULT = "RAID0"
 
@@ -91,14 +92,16 @@ def clean( num_osds=NUM_OSDS_DEFAULT ):
 	    shutil.rmtree( subdir_name, ignore_errors=True ) 
 
 
-def create_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, num_osds=NUM_OSDS_DEFAULT, service_host="localhost" ):
+def create_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, repl_on_close=REPL_ON_CLOSE_DEFAULT, num_osds=NUM_OSDS_DEFAULT, service_host="localhost" ):
+        
     for osdnum in xrange( num_osds ):
         xtfs_mkvol_args = [XTFS_MKVOL_FILE_PATH]
         xtfs_mkvol_args.extend( ( "-d", str( debug_level ) ) )
         if enable_ssl: xtfs_mkvol_args.extend( CLIENT_SSL_ARGS )                
         xtfs_mkvol_args.extend( ( "-p", str( STRIPING_POLICY_TYPE_DEFAULT ) ) )
         xtfs_mkvol_args.extend( ( "-s", str( STRIPE_SIZE_DEFAULT ) ) )
-        xtfs_mkvol_args.extend( ( "-w", str( osdnum + 1 ) ) ) # Stripe width
+        if not repl_on_close:
+            xtfs_mkvol_args.extend( ( "-w", str( osdnum + 1 ) ) ) # Stripe width
         xtfs_mkvol_args.append( "%(service_host)s/test_%(osdnum)u" % locals() )
         xtfs_mkvol_args = " ".join( xtfs_mkvol_args )                            
         print "Creating volume test_%(osdnum)s with command line" % locals(), xtfs_mkvol_args
@@ -199,7 +202,7 @@ ssl.enabled = false
 """            
 
 
-def mount_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, mnt_dir_path=MNT_DIR_PATH_DEFAULT, num_osds=NUM_OSDS_DEFAULT, service_host="localhost", cache_metadata=CACHE_METADATA_DEFAULT, cache_data=CACHE_DATA_DEFAULT ):
+def mount_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, mnt_dir_path=MNT_DIR_PATH_DEFAULT, num_osds=NUM_OSDS_DEFAULT, service_host="localhost", cache_metadata=CACHE_METADATA_DEFAULT, cache_data=CACHE_DATA_DEFAULT, repl_on_close=REPL_ON_CLOSE_DEFAULT ):
     assert os.getcwd() == original_cwd
     try: os.mkdir( mnt_dir_path )
     except: pass
@@ -224,7 +227,14 @@ def mount_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAUL
             log_file_path = os.path.join( "log", "client" + mount_dir_name + ".log" )
             stderr = stdout = open( log_file_path, "a" )
             xtfs_mount_process = Popen( xtfs_mount_args, shell=True, stdout=stdout, stderr=stderr )
-
+            time.sleep(2)
+            if repl_on_close:
+                mount_dir_name = str( osdnum ) + ( not direct_io and "_nondirect" or "" )
+                mount_dir_path = os.path.join( mnt_dir_path, mount_dir_name )
+                repl_attr_cmd = "/usr/bin/setfattr -n xtreemfs.repl_factor -v " + str( osdnum + 1 ) + " " + mount_dir_path 
+                print "\n" + repl_attr_cmd 
+                call ( repl_attr_cmd, shell=True, stdout=sys.stdout, stderr=sys.stderr )
+                call ( "/usr/bin/getfattr -n xtreemfs.repl_factor --only-values " + mount_dir_path, shell=True, stdout=sys.stdout, stderr=sys.stderr )
 
 def run_tests( mnt_dir_path=MNT_DIR_PATH_DEFAULT, num_osds=NUM_OSDS_DEFAULT, test_module_names=None, verbose=False ):
     if verbose:
@@ -383,7 +393,7 @@ def unmount_volumes( mnt_dir_path=os.path.abspath( os.path.join( original_cwd, "
        mounts_line_parts = mounts_line.split()
        device = mounts_line_parts[0]
        mount_point_dir_path = mounts_line_parts[1]
-       if device == "/dev/fuse" and mount_point_dir_path.startswith( mnt_dir_path ):
+       if device == "xtreemfs" and mount_point_dir_path.startswith( mnt_dir_path ):
            fusermount_args = " ".join( ["fusermount", "-u", mount_point_dir_path] )
            print "Unmounting volume with", fusermount_args
            call( fusermount_args, shell=True )
@@ -414,6 +424,7 @@ if __name__ == "__main__":
     option_parser.add_option( "--cache-data", action="store_true", dest="cache_data", default=CACHE_DATA_DEFAULT )
     option_parser.add_option( "-m", action="append", dest="test_module_names", help="name(s) of test module(s) to run" )
     option_parser.add_option( "-o", action="store", dest="num_osds", type="int", default=NUM_OSDS_DEFAULT, help="number of OSDs to start" )
+    option_parser.add_option( "--repl_on_close", action="store_true", dest="repl_on_close", default=REPL_ON_CLOSE_DEFAULT, help="enable automatic on-close replication" )
     option_parser.add_option( "--start", action="store_true", dest="start_services", help="start local servers" )
     option_parser.add_option( "--stop", action="store_true", dest="stop", help="unmount any XtreemFS volumes and stop local clients and servers" ) 
     options, positional_args = option_parser.parse_args()
@@ -438,8 +449,8 @@ if __name__ == "__main__":
                 start_services( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds )
         
         try:
-            create_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host )
-            mount_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host, cache_metadata=options.cache_metadata, cache_data=options.cache_data )
+            create_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host, repl_on_close=options.repl_on_close )
+            mount_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host, cache_metadata=options.cache_metadata, cache_data=options.cache_data, repl_on_close=options.repl_on_close )
         except KeyboardInterrupt:
             sys.exit( 1 )
         except:
