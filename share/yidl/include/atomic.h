@@ -33,13 +33,14 @@ typedef int64_t atomic_t;
 #else
 typedef int32_t atomic_t;
 #endif
-#if defined(__GNUC__) && ( ( __GNUC__ == 4 && __GNUC_MINOR__ >= 2 ) || __GNUC__ > 4 )
-#define __HAVE_GNUC_ATOMIC_OPS_INTRINSICS 1
-#elif defined(__sun)
+#if defined(__sun)
 #include <atomic.h>
+#elif defined(__arm__)
+// gcc atomic builtins are not defined on ARM
+#elif defined(__GNUC__) && ( ( __GNUC__ == 4 && __GNUC_MINOR__ >= 1 ) || __GNUC__ > 4 )
+#define __HAVE_GNUC_ATOMIC_BUILTINS 1
 #endif
 #endif
-
 
 static inline atomic_t atomic_cas( volatile atomic_t* current_value, atomic_t new_value, atomic_t old_value )
 {
@@ -47,23 +48,35 @@ static inline atomic_t atomic_cas( volatile atomic_t* current_value, atomic_t ne
   return _InterlockedCompareExchange64( current_value, new_value, old_value );
 #elif defined(_WIN32)
   return InterlockedCompareExchange( current_value, new_value, old_value );
-#elif defined(__HAVE_GNUC_ATOMIC_OPS_INTRINSICS)
-  return __sync_val_compare_and_swap( current_value, old_value, new_value );
 #elif defined(__sun)
   return atomic_cas_32( current_value, old_value, new_value );
+#elif defined(__HAVE_GNUC_ATOMIC_BUILTINS)
+  return __sync_val_compare_and_swap( current_value, old_value, new_value );
+#elif defined(__arm__)
+#if __ARM_ARCH__ >= 6
+  atomic_t prev;
+  asm volatile( "@ atomic_cmpxchg\n"
+                "ldrex  %1, [%2]\n"
+                "mov    %0, #0\n"
+                "teq    %1, %3\n"
+                "strexeq %0, %4, [%2]\n"
+                 : "=&r" ( prev), "=&r" ( old_value )
+                 : "r" ( current_value ), "Ir" ( old_value ), "r" ( new_value )
+                 : "cc" );
+  return prev;
+#else // ARM architectures < 6 are uniprocessor only
+  if ( *current_value == old_value )
+  {
+    *current_value = new_value;
+    return old_value;
+  }
+  else
+    return *current_value;  
+#endif  
 #elif defined(__i386__)
   atomic_t prev;
   asm volatile(	"lock\n"
           "cmpxchgl %1,%2\n"
-        : "=a" ( prev )
-              : "r" ( new_value ), "m" ( *current_value ) , "0" ( old_value )
-              : "memory"
-            );
-  return prev;
-#elif defined(__x86_64__)
-  atomic_t prev;
-  asm volatile(	"lock\n"
-          "cmpxchgq %1,%2\n"
         : "=a" ( prev )
               : "r" ( new_value ), "m" ( *current_value ) , "0" ( old_value )
               : "memory"
@@ -84,6 +97,15 @@ static inline atomic_t atomic_cas( volatile atomic_t* current_value, atomic_t ne
               : "cc", "memory"
             );
   return prev;
+#elif defined(__x86_64__)
+  atomic_t prev;
+  asm volatile(	"lock\n"
+          "cmpxchgq %1,%2\n"
+        : "=a" ( prev )
+              : "r" ( new_value ), "m" ( *current_value ) , "0" ( old_value )
+              : "memory"
+            );
+  return prev;
 #endif
 }
 
@@ -93,10 +115,10 @@ static inline atomic_t atomic_dec( volatile atomic_t* current_value )
   return _InterlockedDecrement64( current_value );
 #elif defined(_WIN32)
   return InterlockedDecrement( current_value );
-#elif defined(__HAVE_GNUC_ATOMIC_OPS_INTRINSICS)
-  return __sync_sub_and_fetch( current_value, 1 );
 #elif defined(__sun)
   return atomic_dec_32_nv( current_value );
+#elif defined(__HAVE_GNUC_ATOMIC_BUILTINS)
+  return __sync_sub_and_fetch( current_value, 1 );
 #else
   atomic_t old_value, new_value;
 
@@ -117,10 +139,10 @@ static inline atomic_t atomic_inc( volatile atomic_t* current_value )
 	return _InterlockedIncrement64( current_value );
 #elif defined(_WIN32)
   return InterlockedIncrement( current_value );
-#elif defined(__HAVE_GNUC_ATOMIC_OPS_INTRINSICS)
-  return __sync_add_and_fetch( current_value, 1 );
 #elif defined(__sun)
   return atomic_inc_32_nv( current_value );
+#elif defined(__HAVE_GNUC_ATOMIC_BUILTINS)
+  return __sync_add_and_fetch( current_value, 1 );
 #else
   atomic_t old_value, new_value;
 
