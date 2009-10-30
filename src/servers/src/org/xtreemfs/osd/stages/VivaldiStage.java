@@ -68,11 +68,10 @@ public class VivaldiStage extends Stage {
      * System time when the timer was last executed.
      */
     private long lastCheck;
-
-    //Added in r1249
+    
+    //  Added in r1249
     //TOFIX:Remove?
     private static final int STAGEOP_TCP_VIVALID_PING = 2;
-
 
     /**
      * The main OSDRequestDispatcher used by the OSD.
@@ -125,7 +124,7 @@ public class VivaldiStage extends Stage {
      * The recalculation period is randomly determined and is always included between
      * the minimum and the maximum period.
      */
-    private static final int MIN_RECALCULATION_IN_MS = 1000 * 50;
+    private static final int MIN_RECALCULATION_IN_MS = 1000 * 270;
     
     /**
      * Maximum recalculation period.
@@ -133,13 +132,13 @@ public class VivaldiStage extends Stage {
      * The recalculation period is randomly determined and is always included between
      * the minimum and the maximum period.
      */
-    private static final int MAX_RECALCULATION_IN_MS = 1000 * 70;
+    private static final int MAX_RECALCULATION_IN_MS = 1000 * 330;
     
     /**
      * Number of times the node recalculates its position before updating
      * its list of existent OSDs.
      */
-    private static final int ITERATIONS_BEFORE_UPDATING = 20;
+    private static final int ITERATIONS_BEFORE_UPDATING = 4;
     
     /**
      * Maximum number of milliseconds an OSD waits for a RESPONSE before discarding
@@ -192,6 +191,7 @@ public class VivaldiStage extends Stage {
             vNode.recalculatePosition(coordinatesJ, minRTT,true);
         }        
     }
+
     //Added in r1249
     //TOFIX:Remove?
     public void getVivaldiCoordinates(VivaldiCoordinates coordinates, OSDRequest request, VivaldiPingCallback listener) {
@@ -202,19 +202,21 @@ public class VivaldiStage extends Stage {
     //TOFIX:Remove?
     public static interface VivaldiPingCallback {
 
+
         public void coordinatesCallback(VivaldiCoordinates myCoordinates, Exception error);
     }
 
-
+    
     @Override
     protected void processMethod(StageRequest method) {
 
         if (method.getStageMethod() == STAGEOP_COORD_XCHG_REQUEST) {
-
+            
             UDPMessage msg = (UDPMessage)method.getArgs()[0];
             //This avoids ReusableBuffer finalized but not freed before errors
             final ReusableBuffer data = msg.getPayload();
             try{
+                
                 if (msg.isRequest()) {
     
                     //send a response if it was a request
@@ -430,7 +432,7 @@ public class VivaldiStage extends Stage {
             knownOSDs = newOSDs;
             
             if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, this, "Updating list of known OSDs");
+                Logging.logMessage(Logging.LEVEL_INFO, this, "Updating list of known OSDs (size:"+knownOSDs.size()+")");
             
         } catch (Exception exc) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "Error while updating known OSDs:"+exc);
@@ -466,6 +468,10 @@ public class VivaldiStage extends Stage {
                 for(InetSocketAddress addr:sentRetries.keySet()){
                     
                     if(!sentRetries.get(addr).hasBeenRetried()){
+                        
+                        if(Logging.isInfo())
+                            Logging.logMessage(Logging.LEVEL_INFO, this,"Retrying:"+addr.getHostName());
+                        
                         sendVivaldiRequest(addr, vNode.getCoordinates());
                         sentRetries.get(addr).setRetried(true);
                     }
@@ -535,7 +541,8 @@ public class VivaldiStage extends Stage {
             } catch (InterruptedException ex) {
                 break;
             } catch (Exception ex) {
-                Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                //Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                Logging.logMessage(Logging.LEVEL_ERROR, this, "Error detected:"+ex);
                 notifyCrashed(ex);
                 break;
             }
@@ -581,7 +588,6 @@ public class VivaldiStage extends Stage {
         }
         
         long nextCheck = nextTimerRunInMS > nextRecalculationInMS ? nextRecalculationInMS : nextTimerRunInMS;
-        
         return nextCheck;
     }
     

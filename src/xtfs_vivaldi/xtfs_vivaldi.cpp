@@ -24,7 +24,7 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
  * The recalculation period is randomly determined and is always included between
  * the minimum and the maximum period.
  */
-#define MIN_RECALCULATION_IN_MS 1000 * 25
+#define MIN_RECALCULATION_IN_MS 1000 * 270
 
 /*
  * Maximum recalculation period.
@@ -32,7 +32,7 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
  * The recalculation period is randomly determined and is always included between
  * the minimum and the maximum period.
  */
-#define MAX_RECALCULATION_IN_MS 1000 * 35
+#define MAX_RECALCULATION_IN_MS 1000 * 330
 
 /*
  * Number of times the node recalculates its position before updating
@@ -48,7 +48,7 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
 #define EVALUATION_ENABLED  true
 #define NUMBER_OF_FILES     1
 #define REPLICAS_PER_FILE   40
-#define CHECK_EVERY_ITERATIONS 5
+#define CHECK_EVERY_ITERATIONS 2
 #define RES_FILE_NAME "res-%s-%d"
 #ifndef _WIN32
   #define SPRINTF_VIV(buff,size,format,...) snprintf(buff,size,format,__VA_ARGS__)
@@ -142,10 +142,14 @@ namespace xtfs_vivaldi
       
       //TODO:Remove this code after evaluating the system
       org::xtreemfs::interfaces::ServiceSet testingSets[NUMBER_OF_FILES];
+      
       if(EVALUATION_ENABLED){
+        
         get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "evaluation is enabled";
+        
         org::xtreemfs::interfaces::ServiceSet knownOSDs;
         updateKnownOSDs(knownOSDs);
+        
         if(!knownOSDs.empty()){
           
           for(int i=0;i<NUMBER_OF_FILES;i++){
@@ -183,6 +187,7 @@ namespace xtfs_vivaldi
           if( (vivaldiIterations%ITERATIONS_BEFORE_UPDATING) == 1)
           {
             updateKnownOSDs(osd_services);
+            currentRetries = 0; //The pending retries are discarded, beacause the old OSDs might not be in the new list
           }
           
   				if ( !osd_services.empty() )
@@ -196,7 +201,9 @@ namespace xtfs_vivaldi
   					yidl::runtime::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> random_osd_address_mappings = dir_proxy->getAddressMappingsFromUUID( random_osd_service->get_uuid() );
   
   					//Several mappings for the same UUID
-  					for ( org::xtreemfs::interfaces::AddressMappingSet::iterator random_osd_address_mapping_i = random_osd_address_mappings->begin(); random_osd_address_mapping_i != random_osd_address_mappings->end(); random_osd_address_mapping_i++ )
+  					for ( org::xtreemfs::interfaces::AddressMappingSet::iterator random_osd_address_mapping_i = random_osd_address_mappings->begin();
+                  random_osd_address_mapping_i != random_osd_address_mappings->end();
+                  random_osd_address_mapping_i++ )
   					{
               	
   						if ( ( *random_osd_address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
@@ -206,6 +213,7 @@ namespace xtfs_vivaldi
   							org::xtreemfs::interfaces::VivaldiCoordinates random_osd_vivaldi_coordinates;
   							
   							//Send the request and measure the RTT
+                //TOFIX:Output must be LOG_DEBUG
                 get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "recalculating against " << random_osd_service->get_uuid();
 
   							YIELD::platform::Time start_time;
@@ -248,17 +256,6 @@ namespace xtfs_vivaldi
             get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "no OSD available";
           }
   			
-/*      
-        //TODO: Control the timeouts     
-        }catch( errnoException& excR ){
-          
-          std::cout << "errnoException\n";
-          continue;
-          
-        }catch( YIELD::concurrency::ExceptionResponse& er ){
-          std::cout<<"ExceptionResponse:"<< er.what() <<":::" << er.get_errno()<<"--->"<< er.get_type_name()<<":"<<"\n";
-          continue;
-*/
         }catch ( std::exception& exc ){
   				get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "xtfs_vivaldi: error pinging OSDs: " << exc.what() << ".";
   				//continue;
@@ -282,19 +279,19 @@ namespace xtfs_vivaldi
         get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "sleeping during "<<sleep_in_ms<<" ms.";
       	YIELD::platform::Thread::sleep( sleep_in_ms * NS_IN_MS );
         
-        if(currentRetries <= 0){ //Stop iterating if it's necessary to send some retry
-          vivaldiIterations = (vivaldiIterations+1)%LONG_MAX;
-        }
+        vivaldiIterations = (vivaldiIterations+1)%LONG_MAX;
         
         //Remove this code after evaluating the results
-        if( EVALUATION_ENABLED && (currentRetries<=0) && (vivaldiIterations%CHECK_EVERY_ITERATIONS) == 0){
+        if( EVALUATION_ENABLED && (vivaldiIterations%CHECK_EVERY_ITERATIONS) == 0){
+          
           get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "**EVALUATING(its.:"<<vivaldiIterations<<")**";
           for(int i=0;i<NUMBER_OF_FILES;i++){
             char filename[128];
             memset(filename,0,128);
             const char *fPath=vivaldi_coordinates_file_path;
             SPRINTF_VIV(filename,128,RES_FILE_NAME,fPath,i);
-            executeOneEvaluation( testingSets[i], own_node,filename);
+            //executeOneEvaluation( testingSets[i], own_node,filename); The test will run allways with the whole sample
+            executeOneEvaluation( osd_services, own_node,filename);
           }
         }
         //------------------

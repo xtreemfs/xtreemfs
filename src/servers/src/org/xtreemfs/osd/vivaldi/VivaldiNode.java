@@ -209,9 +209,9 @@ public class VivaldiNode {
         double subtractionMagnitude = magnitudeCoordinates(subtractionVector);
         
         //Sample weight balances local and remote error
-        //If it's close to 1, J knows more than me: _localError > errorJ
+        //If it's close to 1, J knows more than me: localError > errorJ
         //If it's close to 0.5, we both know the same: A/2A = 1/2
-        //If it's close to 0, I know more than it: _localError < errorJ
+        //If it's close to 0, I know more than it: localError < errorJ
         double weight = 0.0;
 
         //Two nodes shouldn't be in the same position

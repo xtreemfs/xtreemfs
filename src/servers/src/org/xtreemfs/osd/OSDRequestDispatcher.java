@@ -161,7 +161,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final AtomicLong                          numBytesTX, numBytesRX, numObjsTX, numObjsRX,
             numReplBytesRX, numReplObjsRX;
     
-    protected final VivaldiStage                        vStage;
+    //protected final VivaldiStage                        vStage;
     
     protected final AtomicReference<VivaldiCoordinates> myCoordinates;
     
@@ -362,8 +362,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         startupTime = System.currentTimeMillis();
         
-        vStage = new VivaldiStage(this);
-        vStage.setLifeCycleListener(this);
+        //vStage = new VivaldiStage(this);
+        //vStage.setLifeCycleListener(this);
         
         cThread = new CleanupThread(this, (HashStorageLayout) storageLayout);
         cThread.setLifeCycleListener(this);
@@ -393,14 +393,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             delStage.start();
             stStage.start();
             replStage.start();
-            vStage.start();
+            //vStage.start();
             cThread.start();
             
             udpCom.waitForStartup();
             preprocStage.waitForStartup();
             delStage.waitForStartup();
             stStage.waitForStartup();
-            vStage.waitForStartup();
+            //vStage.waitForStartup();
             cThread.waitForStartup();
             
             heartbeatThread.initialize();
@@ -443,7 +443,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             delStage.shutdown();
             stStage.shutdown();
             replStage.shutdown();
-            vStage.shutdown();
+            //vStage.shutdown();
             cThread.shutdown();
             
             udpCom.waitForShutdown();
@@ -451,7 +451,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             delStage.waitForShutdown();
             stStage.waitForShutdown();
             replStage.waitForShutdown();
-            vStage.waitForShutdown();
+            //vStage.waitForShutdown();
             cThread.waitForShutdown();
             
             httpServ.stop(0);
@@ -481,7 +481,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             preprocStage.shutdown();
             delStage.shutdown();
             stStage.shutdown();
-            vStage.shutdown();
+            //vStage.shutdown();
             cThread.cleanupStop();
             
             httpServ.stop(0);
@@ -697,7 +697,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     }
 
     public VivaldiStage getVivaldiStage() {
-        return this.vStage;
+        //return this.vStage;
+        return null;
     }
     
     @Override
@@ -721,7 +722,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
                             "received ping request from: %s", msg.getAddress());
 
-                    vStage.receiveVivaldiMessage(msg);
+                    //vStage.receiveVivaldiMessage(msg);
                 }
             } else {
                 if (msg.getResponseData() instanceof xtreemfs_pingResponse) {
@@ -730,7 +731,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.stage, this,
                             "received ping response from: %s", msg.getAddress());
 
-                    vStage.receiveVivaldiMessage(msg);
+                    //vStage.receiveVivaldiMessage(msg);
                 }
             }
         } catch (Exception ex) {
