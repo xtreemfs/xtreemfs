@@ -57,7 +57,7 @@ This is the very short version to help you set up a local installation of Xtreem
 \begin{enumerate}
  \item Download XtreemFS RPMs/DEBs and install
 	\begin{enumerate}
-		\item Download the RPMs or DEBs for your system from \href{http://www.XtreemFS.com}{the XtreemFS website}
+		\item Download the RPMs or DEBs for your system from the XtreemFS website (\href{http://www.xtreemfs.org}{http://www.xtreemfs.org})
 		\item open a root console (\texttt{su} or \texttt{sudo})
 		\item install with \texttt{rpm -Uhv xtreemfs-client-1.1.x.rpm xtreemfs-server-1.1.x.rpm}
 	\end{enumerate}
@@ -126,7 +126,7 @@ If you consider using XtreemFS, you may be a system administrator in search of a
 
 \paragraph{XtreemFS is not ...}
 \begin{itemize}
- \item [...] a high-performance cluster file system. Even though XtreemFS reaches acceptable throughput rates in a local cluster, it cannot compete with specialized cluster file systems in terms of raw performance numbers. Most such file systems have an optimized network stack and protocols, and a substantially larger development team. If you have huge amounts of data in a local cluster with little requirements but high throughput rates to them, a cluster file system is probably the better alternative.
+ \item [...] a high-performance cluster file system. Even though XtreemFS reaches acceptable throughput rates on a local cluster, it cannot compete with specialized cluster file systems in terms of raw performance numbers. Most such file systems have an optimized network stack and protocols, and a substantially larger development team. If you have huge amounts of data on a local cluster with little requirements but high throughput rates to them, a cluster file system is probably the better alternative.
  \item [...] a replacement for a local file system. Even though XtreemFS can be set up and mounted on a single machine, the additional software stack degrades the performance, which makes XtreemFS a bad alternative.
  %\item [...] a commercially supported product, so far. XtreemFS is being developed as part of the XtreemOS project, a research project funded by the European commission. Even though we do not want to rule out the possibility of providing commercial support for XtreemFS in the future, we currently see ourselves as researchers rather than professional file system developers.
 \end{itemize}
@@ -135,7 +135,7 @@ If you consider using XtreemFS, you may be a system administrator in search of a
 The core functionality of XtreemFS is characterized by a small set of features, which are explained in the following.
 
 \paragraph{Distribution.}
-An XtreemFS installation comprises multiple servers that may run on different nodes connected in a local cluster or via the Internet. Provided that the servers are reachable, a client module installed on any machine in the world can access the installation. A binary communication protocol based on Sun's ONC-RPC ensures an efficient communication with little overhead between clients and servers. XtreemFS ensures that the file system remains in a consistent state even if multiple clients access a common set of files and directories. Similar to NFS, it offers a close-to-open consistency model in the event of concurrent file accesses.
+An XtreemFS installation comprises multiple servers that may run on different nodes connected on a local cluster or via the Internet. Provided that the servers are reachable, a client module installed on any machine in the world can access the installation. A binary communication protocol based on Sun's ONC-RPC ensures an efficient communication with little overhead between clients and servers. XtreemFS ensures that the file system remains in a consistent state even if multiple clients access a common set of files and directories. Similar to NFS, it offers a close-to-open consistency model in the event of concurrent file accesses.
 
 \paragraph{Replication.}
 Since version 1.0, XtreemFS supports \emph{read-only replication}. A file may have multiple replicas, provided that the it was explicitly made read-only before, which means that its content cannot be changed anymore. This kind of replication can be used to make write-once files available to many consumers, or to protect them from losses due to hardware failures. Besides complete replicas that are immediately synchronized after having been created, XtreemFS also supports partial replicas that are only filled with content on demand. They can e.g.\ be used to make large files accessible to many clients, of which only parts need to be accessed.
@@ -197,7 +197,9 @@ This chapter describes how to install and set up the server side of an XtreemFS 
 
 \section{Installation}
 
-When installing XtreemFS server components, you can choose from two different installation sources: you can download one of the \emph{pre-packaged releases} that we create for most Linux distributions or you can install directly from the \emph{source tarball}. In the pre-packaged release, the server and the client parts are split into separate packages.
+When installing XtreemFS server components, you can choose from two different installation sources: you can download one of the \emph{pre-packaged releases} that we create for most Linux distributions or you can install directly from the \emph{source tarball}. 
+
+Note that the source tarball contains the complete distribution of XtreemFS, which also includes client and tools. Currently, binary distributions of the server are only available for Linux.
 
 \subsection{Prerequisites}
 
@@ -463,7 +465,7 @@ All configuration parameters that may be used to define the behavior of the diff
 \begin{tabular}{lp{10cm}}
  Services & DIR, MRC, OSD\\
  Values   & String \\
- Default  & empty\\
+ Default  & \\
  Description & Defines the admin password that must be sent to authorize requests like volume creation, deletion or shutdown.
 \end{tabular}
 
@@ -479,7 +481,7 @@ All configuration parameters that may be used to define the behavior of the diff
 \begin{tabular}{lp{10cm}}
  Services & MRC, OSD\\
  Values   & String \\
- Default  & - \\
+ Default  & \\
  Description & Defines a shared secret between the MRC and all OSDs. The secret is used by the MRC to sign capabilities, i.e. security tokens for data access at OSDs. In turn, an OSD uses the secret to verify that the capability has been issued by the MRC.
 \end{tabular}
 
@@ -558,7 +560,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & MRC, OSD\\
  Values   & hostname or IP address \\
  Default  & localhost \\
- Description & Specifies the hostname or IP address of the directory service (DIR) at which the MRC or OSD should register. The MRC also uses this directory service to find OSDs. If set to \texttt{.autodiscover} the service will use the automatic DIR discovery mechanism (see Sec. \ref{sec:autodiscover}).
+ Description & Specifies the hostname or IP address of the directory service (DIR) at which the MRC or OSD should register. The MRC also uses this Directory Service to find OSDs. If set to \texttt{.autodiscover} the service will use the automatic DIR discovery mechanism (see Sec. \ref{sec:autodiscover}). (Note that the initial `.' is used to avoid ambiguities with hosts called ``autodiscover''.)
 \end{tabular}
 
 \subsubsection{\texttt{dir\_service.port}}
@@ -581,7 +583,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 \begin{tabular}{lp{10cm}}
  Services & DIR, MRC, OSD\\
  Values   & String \\
- Default  & empty \\
+ Default  & \\
  Description & Specifies the geographic coordinates which are registered with the directory service. Used e.g. by the web console.
 \end{tabular}
 
@@ -589,7 +591,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 \begin{tabular}{lp{10cm}}
  Services & MRC, OSD\\
  Values   & String \\
- Default  & -\\
+ Default  & \\
  Description & If specified, it defines the host name that is used to register the service at the directory service. If not specified, the host address defined in \texttt{listen.address} will be used if specified. If neither \texttt{hostname} nor \texttt{listen.address} are specified, the service itself will search for externally reachable network interfaces and advertise their addresses.
 \end{tabular}
 
@@ -605,7 +607,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 \begin{tabular}{lp{10cm}}
  Services & OSD\\
  Values   & IP address \\
- Default  & -\\
+ Default  & \\
  Description & If specified, it defines the interface to listen on. If not specified, the service will listen on all interfaces (any).
 \end{tabular}
 
@@ -705,7 +707,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 \begin{tabular}{lp{10cm}}
  Services & DIR, MRC, OSD\\
  Values   & String\\
- Default  & -\\
+ Default  & \\
  Description & Must be specified if \texttt{ssl.enabled} is enabled. Specifies the password which protects the credentials file \texttt{ssl.service\_creds}.
 \end{tabular}
 
@@ -729,7 +731,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 \begin{tabular}{lp{10cm}}
  Services & DIR, MRC, OSD\\
  Values   & String\\
- Default  & -\\
+ Default  & \\
  Description & Must be specified if \texttt{ssl.enabled} is enabled. Specifies the password which protects the trusted certificates file \texttt{ssl.trusted\_certs}.
 \end{tabular}
 
@@ -737,7 +739,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
 \begin{tabular}{lp{10cm}}
  Services & MRC, OSD\\
  Values   & String, but limited to alphanumeric characters, - and . \\
- Default  & - \\
+ Default  & \\
  Description & Must be set to a unique identifier, preferably a UUID according to RFC 4122. UUIDs can be generated with \texttt{uuidgen}. Example: \texttt{eacb6bab-f444-4ebf-a06a-3f72d7465e40}.
 \end{tabular}
 
@@ -804,18 +806,17 @@ The XtreemFS client is needed to access an XtreemFS installation from a remote m
 
 There are two different installation sources for the XtreemFS Client: \emph{pre-packaged releases} and \emph{source tarballs}.
 
+Note that the source tarball contains the complete distribution of XtreemFS, which also includes server and tools. Currently, binary distributions of the client are only available for Linux and Windows.
+
 \subsection{Prerequisites}
 
-For both installations you need FUSE 2.6 or newer, openSSL 0.9.8 or newer and a Linux 2.6 kernel. For optimal performance we suggest to use FUSE 2.8 with a kernel version 2.6.26 or newer.
+To install XtreemFS on Linux, please make sure that FUSE 2.6 or newer, openSSL 0.9.8 or newer and a Linux 2.6 kernel are available on your system. For an optimal performance, we suggest to use FUSE 2.8 with a kernel version 2.6.26 or newer.
 
-To install the client tools, 
-
-To build the XtreemFS Client from sources, you need the openSSL headers (e.g. openssl-devel package), python $\geq$ 2.4, and gcc-c++ $\geq$ 4.2.
+To build the Linux XtreemFS Client from the source distribution, you also need the openSSL headers (e.g.\ openssl-devel package), python $\geq$ 2.4, and gcc-c++ $\geq$ 4.2.
 
 \subsection{Installing from Pre-Packaged Releases}
 
 On RPM-based distributions (RedHat, Fedora, SuSE, Mandriva, XtreemOS) you can install the package with
-
 
 \begin{verbatim}
 $> rpm -i xtreemfs-client-1.1.x.rpm
@@ -824,12 +825,12 @@ $> rpm -i xtreemfs-client-1.1.x.rpm
 
 For Debian-based distributions, please use the \texttt{.deb} package provided and install it with
 
-
 \begin{verbatim}
 $> dpkg -i xtreemfs-client-1.1.x.deb
 \end{verbatim}
 
 
+For Windows, please use the \emph{.msi} installer that will guide you through the installation process.
 
 \subsection{Installing from Sources}
 
@@ -839,7 +840,7 @@ Extract the tarball with the sources. Change to the top level directory and exec
 $> make client
 \end{verbatim}
 
-This will build the XtreemFS client and non-Java-based tools. Note that the following third-party packages are required:
+This will build the XtreemFS client and non-Java-based tools. Note that the following third-party packages are required on Linux:
 
 \begin{verbatim}
 python >= 2.4
@@ -1013,7 +1014,9 @@ To make use of most of the advanced XtreemFS features, XtreemFS offers a variety
 
 \section{Installation}
 
-When installing the XtreemFS tool suite, you can choose from two different installation sources: you can download one of the \emph{pre-packaged releases} that we create for most Linux distributions or you can install directly from the \emph{source tarball}. In the pre-packaged release, the server and the client parts are split into separate packages.
+When installing the XtreemFS tool suite, you can choose from two different installation sources: you can download one of the \emph{pre-packaged releases} that we create for most Linux distributions or you can install directly from the \emph{source tarball}. 
+
+Note that the source tarball contains the complete distribution of XtreemFS, which also includes client and server. Currently, binary distributions of the tools are only available for Linux.
 
 \subsection{Prerequisites}
 
@@ -1161,7 +1164,7 @@ Finally, the XtreemFS replica list shows the striping policy of the file, the nu
 
 \subsection{Changing Striping Policies}
 
-It is not (yet) possible to change the striping policy of an existing file, as this would require rearranging and transferring data between OSDs. However, it is possible to define individual striping policies for files that will be created in the future. This can be done by changing the default striping policy of the parent directory or volume. 
+Currently, it is not possible to change the striping policy of an existing file, as this would require rearrangements and transfers of data between OSDs. However, it is possible to define individual striping policies for files that will be created in the future. This can be done by changing the default striping policy of the parent directory or volume.
 
 XtreemFS provides the \texttt{xtfs\_sp}\index{xtfs\_sp}\index{XtreemFS striping policy tool} tool. The tool can be used to change the striping policy that will be assigned to newly created files as follows:
 
@@ -1174,13 +1177,13 @@ This will cause a RAID0 striping policy with 256kB stripe size and four OSDs to 
 The tool can display the default striping policy of a volume or directory as follows:
 
 \begin{verbatim}
-$> xtfs_sp --get /xtreemfs
+$> xtfs_sp --get /xtreemfs/dir
 \end{verbatim}
 
 This will result in output similar to the following:
 
 \begin{verbatim}
-file:         /xtreemfs
+file:         /xtreemfs/dir
 policy:       STRIPING_POLICY_RAID0
 stripe-size:  4
 width (kB):   256
@@ -1222,16 +1225,43 @@ To list all replicas and OSDs of the file use:
 $> xtfs_repl -l /xtreemfs/file.txt
 \end{verbatim}
 
-Besides adding replicas, replicas can also be removed. To remove a specific replica, the head OSD (i.e.\ first OSD in the OSD list) of this replica must be given as an argument. To ensure that at least one complete replica remains, complete replicas can only be removed if another complete replica exists.
+This generates output similar to this:
+
+\begin{verbatim}
+File is read-only.
+REPLICA 1:
+         Striping Policy: STRIPING_POLICY_RAID0
+         Stripe-Size: 128,00 kB
+         Stripe-Width: 1 (OSDs)
+         Replication Flags:
+                 Complete: false
+                 Replica Type: partial
+                 Transfer-Strategy: random
+         OSDs:
+                 [Head-OSD]     UUID: osd1, URL: /127.0.0.1:32641
+REPLICA 2:
+         Striping Policy: STRIPING_POLICY_RAID0
+         Stripe-Size: 128,00 kB
+         Stripe-Width: 1 (OSDs)
+         Replication Flags:
+                 Complete: true
+                 Replica Type: partial
+                 Transfer-Strategy: unknown
+         OSDs:
+                 [Head-OSD]     UUID: osd2, URL: /127.0.0.1:32640
+\end{verbatim}
+
+Besides adding replicas, replicas can also be removed. Since replicas of a file do not have a fixed order, we use a replica's first OSD to identify the replica to delete. The first OSD in the list of OSDs, also referred to as \emph{head OSD} is a unique identifier for a replica, as different replicas of a file may not share any OSDs.
+
+To remove a replica, the UUID of the head OSD must be given as an argument. It can be determined via \texttt{xtfs\_repl -l}. To ensure that at least one complete replica remains, i.e.\ a replica that stores the entire file content, complete replicas can only be removed if there is at least one more complete complete replica of the file.
 
 A replica can be removed as follows:
 
 \begin{verbatim}
-$> xtfs_repl -r 7309a9f6-78af-4078-b8d8-8cd3a46e5b07 \
-   /xtreemfs/file.txt
+$> xtfs_repl -r osd1 /xtreemfs/file.txt
 \end{verbatim}
 
-\texttt{7309a9f6-78af-4078-b8d8-8cd3a46e5b07} refers to the UUID of the head OSD in the replica to remove.
+\texttt{osd1} refers to the UUID of the head OSD in the replica to remove.
 
 
 \subsection{Automatic On-Close Replication}\index{Replication}\index{Replication!on-close}\index{On-close Replication}
