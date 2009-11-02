@@ -46,9 +46,7 @@ import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
-import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingRequest;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.logging.Logging.Category;
 
 import java.util.HashMap;
 import java.util.ArrayList;
@@ -436,6 +434,7 @@ public class VivaldiStage extends Stage {
             
         } catch (Exception exc) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "Error while updating known OSDs:"+exc);
+            knownOSDs = new ServiceSet();
             //Logging.logError(Logging.LEVEL_ERROR, this, exc);
             //this.notifyCrashed(exc);
         } finally {

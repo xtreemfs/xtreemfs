@@ -248,11 +248,12 @@ public final class TimeSync extends LifeCycleThread {
     private void resync() {
         if (dir == null)
             return;
+        RPCResponse<Long> r = null;
         try {
             long tStart = localSysTime;
             
             long oldDrift = currentDrift;
-            RPCResponse<Long> r = dir.xtreemfs_global_time_get(null);
+            r = dir.xtreemfs_global_time_get(null);
             Long globalTime = r.get();
             r.freeBuffers();
             long tEnd = System.currentTimeMillis();
@@ -271,6 +272,9 @@ public final class TimeSync extends LifeCycleThread {
             }
             
         } catch (Exception ex) {
+            if(r!=null){
+                r.freeBuffers();
+            }
             syncSuccess = false;
             ex.printStackTrace();
             lastSync = System.currentTimeMillis();

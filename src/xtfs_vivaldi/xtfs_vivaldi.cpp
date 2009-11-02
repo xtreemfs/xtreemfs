@@ -117,6 +117,7 @@ namespace xtfs_vivaldi
             YIELD::platform::XDRUnmarshaller xdr_unmarshaller( xdr_buffer.incRef() );
             my_vivaldi_coordinates.unmarshal( xdr_unmarshaller );
             
+            //TOFIX: All these messages will be redirected to LOG_DEBUG instead of LOG_INFO
             get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "coordinates readed from file:("<<my_vivaldi_coordinates.get_x_coordinate()<<","<<my_vivaldi_coordinates.get_y_coordinate()<<")";
                         
           }else
@@ -219,6 +220,7 @@ namespace xtfs_vivaldi
   							YIELD::platform::Time start_time;
   							osd_proxy->xtreemfs_ping( org::xtreemfs::interfaces::VivaldiCoordinates(), random_osd_vivaldi_coordinates );
   							YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
+                get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "Ping response received.";
                 
   							// Recalculate coordinates here
                 if(currentRetries<MAX_RETRIES_FOR_A_REQUEST){
@@ -301,18 +303,22 @@ namespace xtfs_vivaldi
     /* Retrieves a list of available OSDs from the DS
      */
     void updateKnownOSDs(org::xtreemfs::interfaces::ServiceSet &osds){
-      dir_proxy->xtreemfs_service_get_by_type( org::xtreemfs::interfaces::SERVICE_TYPE_OSD, osds );
-
-      org::xtreemfs::interfaces::ServiceSet::iterator ss_iterator = osds.begin();
-      while( ss_iterator != osds.end() ){
-        
-        if( (*ss_iterator).get_last_updated_s() == 0)
-        {
-          osds.erase(ss_iterator);
-        }else
-        {
-          ss_iterator++;
+      try{
+        dir_proxy->xtreemfs_service_get_by_type( org::xtreemfs::interfaces::SERVICE_TYPE_OSD, osds );
+  
+        org::xtreemfs::interfaces::ServiceSet::iterator ss_iterator = osds.begin();
+        while( ss_iterator != osds.end() ){
+          
+          if( (*ss_iterator).get_last_updated_s() == 0)
+          {
+            osds.erase(ss_iterator);
+          }else
+          {
+            ss_iterator++;
+          }
         }
+      }catch( std::exception ex ){
+        get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "Impossible to update known OSDs.";
       }
  
     }
@@ -356,35 +362,42 @@ namespace xtfs_vivaldi
           const org::xtreemfs::interfaces::Service& one_osd = osds[i];
           
           uuids[i] = one_osd.get_uuid();
-                    
-          yidl::runtime::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> one_osd_address_mappings = dir_proxy->getAddressMappingsFromUUID( one_osd.get_uuid() );
-        
-          //Several mappings for the same UUID
-          for ( org::xtreemfs::interfaces::AddressMappingSet::iterator one_osd_address_mapping_i = one_osd_address_mappings->begin(); one_osd_address_mapping_i != one_osd_address_mappings->end(); one_osd_address_mapping_i++ )
-          {
-            if ( ( *one_osd_address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
+          
+          try{                    
+          
+            yidl::runtime::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> one_osd_address_mappings = dir_proxy->getAddressMappingsFromUUID( one_osd.get_uuid() );
+          
+            //Several mappings for the same UUID
+            for ( org::xtreemfs::interfaces::AddressMappingSet::iterator one_osd_address_mapping_i = one_osd_address_mappings->begin(); one_osd_address_mapping_i != one_osd_address_mappings->end(); one_osd_address_mapping_i++ )
             {
-              auto_OSDProxy osd_proxy = OSDProxy::create( ( *one_osd_address_mapping_i ).get_uri(), get_proxy_flags(), get_log(), get_operation_timeout() );
-
-              try{
-                //The sent coordinates are irrelevant
-                org::xtreemfs::interfaces::VivaldiCoordinates ownCoords;
-                YIELD::platform::Time start_time;
-                osd_proxy->xtreemfs_ping(ownCoords , remoteCoordinates[i]);
-                YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
-                
-                rtts[i] = rtt.as_unix_time_ms();
-                if(rtts[i]==0) rtts[i]=1;
-                
-              }catch( YIELD::concurrency::ExceptionResponse& er ){
-                rtts[i] = 0;
-                //std::cout<<"ExceptionResponse:"<< er.what() <<":::" << er.get_errno()<<"--->"<< er.get_type_name()<<":"<<"\n";
-                //continue;
+              if ( ( *one_osd_address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
+              {
+                auto_OSDProxy osd_proxy = OSDProxy::create( ( *one_osd_address_mapping_i ).get_uri(), get_proxy_flags(), get_log(), get_operation_timeout() );
+  
+                try{
+                  //The sent coordinates are irrelevant
+                  org::xtreemfs::interfaces::VivaldiCoordinates ownCoords;
+                  YIELD::platform::Time start_time;
+                  //TOFIX:Is this getting blocked indefinitely?
+                  get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "Requesting:" << one_osd.get_uuid();
+                  osd_proxy->xtreemfs_ping(ownCoords , remoteCoordinates[i]);
+                  YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
+                  get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "Ping response received.";
+                  
+                  rtts[i] = rtt.as_unix_time_ms();
+                  if(rtts[i]==0) rtts[i]=1;
+                  
+                }catch( std::exception er ){
+                  rtts[i] = 0;
+                  //std::cout<<"ExceptionResponse:"<< er.what() <<":::" << er.get_errno()<<"--->"<< er.get_type_name()<<":"<<"\n";
+                  //continue;
+                }
               }
             }
+          }catch(std::exception ex){
+            get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "Impossible to determine addressMappings";
           }
-        }
-        
+        }        
         //Store and manage the observed results.
         time_t rawTime;
         time(&rawTime);
