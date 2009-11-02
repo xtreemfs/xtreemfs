@@ -84,8 +84,14 @@ public class EventWriteObject extends OSDOperation {
                         Logging.logMessage(Logging.LEVEL_ERROR, this, "exception in internal event: %s",
                             error.toString());
                         Logging.logError(Logging.LEVEL_ERROR, this, error);
-                    }
+                    } else
+                        triggerReplication(fileId);
                 }
             });
+    }
+    
+    public void triggerReplication(String fileId) {
+        // cancel replication of file
+        master.getReplicationStage().triggerReplicationForFile(fileId);
     }
 }

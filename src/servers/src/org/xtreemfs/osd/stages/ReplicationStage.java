@@ -58,6 +58,8 @@ public class ReplicationStage extends Stage {
 
     public static final int STAGEOP_CANCEL_REPLICATION_FOR_FILE = 3;
 
+    public static final int STAGEOP_START_NEW_REPLICATION_FOR_FILE = 4;
+
     private OSDRequestDispatcher master;
 
     private ObjectDissemination disseminationLayer;
@@ -99,7 +101,7 @@ public class ReplicationStage extends Stage {
      * @param error
      */
     public void internalObjectFetched(String fileId, long objectNo, ServiceUUID usedOSD, ObjectData data,
-            ObjectList objectList, OSDException error) {
+            ObjectList objectList, Exception error) {
         this.enqueueOperation(STAGEOP_INTERNAL_OBJECT_FETCHED, new Object[] { fileId, objectNo, usedOSD,
                 data, objectList, error }, null, null);
     }
@@ -110,6 +112,15 @@ public class ReplicationStage extends Stage {
      */
     public void cancelReplicationForFile(String fileId) {
         this.enqueueOperation(STAGEOP_CANCEL_REPLICATION_FOR_FILE, new Object[] { fileId }, null,
+                null);
+    }
+
+    /**
+     * Triggers replication for file.
+     * Only for internal use. 
+     */
+    public void triggerReplicationForFile(String fileId) {
+        this.enqueueOperation(STAGEOP_START_NEW_REPLICATION_FOR_FILE, new Object[] { fileId }, null,
                 null);
     }
 
@@ -127,6 +138,10 @@ public class ReplicationStage extends Stage {
             }
             case STAGEOP_CANCEL_REPLICATION_FOR_FILE: {
                 processInternalCancelFile(rq);
+                break;
+            }
+            case STAGEOP_START_NEW_REPLICATION_FOR_FILE: {
+                processInternalStartFile(rq);
                 break;
             }
             default:
@@ -162,14 +177,19 @@ public class ReplicationStage extends Stage {
         final ServiceUUID usedOSD = (ServiceUUID) rq.getArgs()[2];
         ObjectData data = (ObjectData) rq.getArgs()[3];
         ObjectList objectList = (ObjectList) rq.getArgs()[4];
-        final OSDException error = (OSDException) rq.getArgs()[5];
+        final Exception error = (Exception) rq.getArgs()[5];
 
         if (error != null) {
-            // it could happen the request is rejected, because the XLoc is outdated caused by removing the
-            // replica of this OSD
-            if (((OSDException) error).getError_code() == ErrorCodes.XLOC_OUTDATED)
+            if (error instanceof OSDException && ((OSDException) error).getError_code() == ErrorCodes.XLOC_OUTDATED) {
+                // it could happen the request is rejected, because the XLoc is outdated caused by removing
+                // the replica of this OSD
                 // send client error
                 disseminationLayer.sendError(fileId, error);
+            } else {
+                disseminationLayer.objectNotFetched(fileId, usedOSD, objectNo);
+                if (data != null)
+                    BufferPool.free(data.getData());
+            }
         } else {
             // decode object list, if attached
             if (objectList != null) {
@@ -201,5 +221,13 @@ public class ReplicationStage extends Stage {
     private void processInternalCancelFile(StageRequest rq) {
         String fileId = (String) rq.getArgs()[0];
         disseminationLayer.cancelFile(fileId);
+    }
+
+    /**
+     * @param rq
+     */
+    private void processInternalStartFile(StageRequest rq) {
+        String fileId = (String) rq.getArgs()[0];
+        disseminationLayer.startNewReplication(fileId);
     }
 }

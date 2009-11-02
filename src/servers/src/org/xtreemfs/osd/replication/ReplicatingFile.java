@@ -218,23 +218,34 @@ class ReplicatingFile {
                 }
                 return true;
             } else {
-                // if (!ReplicatingFile.cancelled) {
-                if (Logging.isDebug())
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                            "%s:%d - object could not be fetched from OSD => try next OSD", fileID, objectNo);
-
-                // try next replica
-                strategy.addObject(objectNo, hasWaitingRequests());
-                replicateObject();
-                // } else {
-                // sendError(ReplicatingFile, objectNo, new OSDException(ErrorCodes.IO_ERROR,
-                // "Object does not exist locally and replication was cancelled.", ""));
-                //                
-                // objectCompleted(ReplicatingFile, objectNo);
-                // }
-                return false;
+                return objectNotFetchedBecauseError(null, usedOSD);
             }
         }
+
+        public boolean objectNotFetchedBecauseError(final Exception error, final ServiceUUID usedOSD)
+                throws TransferStrategyException {
+            if (Logging.isDebug() && error != null)
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "%s:%d - an error occurred while fetching the object from OSD %s: %s", fileID,
+                        objectNo, usedOSD.toString(), error.getMessage());
+
+            // if (!ReplicatingFile.cancelled) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "%s:%d - object could not be fetched from OSD => try next OSD", fileID, objectNo);
+
+            // try next replica
+            strategy.addObject(objectNo, hasWaitingRequests());
+            replicateObject();
+            // } else {
+            // sendError(ReplicatingFile, objectNo, new OSDException(ErrorCodes.IO_ERROR,
+            // "Object does not exist locally and replication was cancelled.", ""));
+            //                
+            // objectCompleted(ReplicatingFile, objectNo);
+            // }
+            return false;
+        }
+
 
         /**
          * sends the responses to all belonging clients <br>
@@ -324,7 +335,7 @@ class ReplicatingFile {
      * key: objectNo
      */
     private HashMap<Long, ReplicatingObject> waitingRequests;
-
+    
     public ReplicatingFile(String fileID, XLocations xLoc, Capability cap, CowPolicy cow,
             OSDRequestDispatcher master) {
         this.master = master;
@@ -530,12 +541,12 @@ class ReplicatingFile {
             if (objectCompleted) {
                 objectReplicationCompleted(objectNo);
 
-                if (!strategy.isObjectListEmpty()) { // there are still objects to fetch
-                    if (Logging.isDebug())
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
-                                "background replication: replicate next object for file %s", fileID);
-                    replicate(); // background replication
-                }
+//                if (!strategy.isObjectListEmpty()) { // there are still objects to fetch
+//                    if (Logging.isDebug())
+//                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+//                                "background replication: replicate next object for file %s", fileID);
+//                    replicate(); // background replication
+//                }
             }
         } catch (TransferStrategyException e) {
             // TODO: differ between ErrorCodes
@@ -558,6 +569,40 @@ class ReplicatingFile {
 
         try {
             boolean objectCompleted = object.objectNotFetched(usedOSD);
+            if (objectCompleted) {
+                objectReplicationCompleted(objectNo);
+
+                if (!strategy.isObjectListEmpty()) { // there are still objects to fetch
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                                "background replication: replicate next object for file %s", fileID);
+                    replicate(); // background replication
+                }
+      }
+        } catch (TransferStrategyException e) {
+            // TODO: differ between ErrorCodes
+            object.sendError(new OSDException(ErrorCodes.IO_ERROR, e.getMessage(), e.getStackTrace()
+                    .toString()));
+            objectReplicationCompleted(objectNo);
+            // end replicating this file
+        }
+    }
+
+    /**
+     * Tries to use another OSD for fetching.
+     * 
+     * @param objectNo
+     * @param usedOSD
+     */
+    /*
+     * code copied from objectNotFetched(...)
+     */
+    public void objectNotFetchedBecauseError(long objectNo, final ServiceUUID usedOSD, final Exception error) {
+        ReplicatingObject object = objectsInProgress.get(objectNo);
+        assert (object != null);
+
+        try {
+            boolean objectCompleted = object.objectNotFetchedBecauseError(error, usedOSD);
             if (objectCompleted) {
                 objectReplicationCompleted(objectNo);
 
@@ -622,6 +667,9 @@ class ReplicatingFile {
                     "cannot update capability for file %s due to " + e1.getLocalizedMessage(),
                     fileID);
         }
+        
+        // check that the load-restriction works
+        assert (objectsInProgress.size() <= MAX_MAX_OBJECTS_IN_PROGRESS);        
 
         OSDClient client = master.getOSDClientForReplication();
         // IMPORTANT: stripe size must be the same in all striping policies
@@ -633,8 +681,9 @@ class ReplicatingFile {
         response.registerListener(new RPCResponseAvailableListener<InternalReadLocalResponse>() {
             @Override
             public void responseAvailable(RPCResponse<InternalReadLocalResponse> r) {
+                InternalReadLocalResponse internalReadLocalResponse = null;
                 try {
-                    InternalReadLocalResponse internalReadLocalResponse = r.get();
+                    internalReadLocalResponse = r.get();
                     ObjectData data = internalReadLocalResponse.getData();
                     ObjectList objectList = null;
                     if (internalReadLocalResponse.getObject_set().size() == 1)
@@ -643,14 +692,18 @@ class ReplicatingFile {
                             objectList, null);
                 } catch (ONCRPCException e) {
                     // osdAvailability.setServiceWasNotAvailable(osd);
-                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null,
-                            (OSDException) e);
-                    e.printStackTrace();
+                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null, e);
+//                    e.printStackTrace();
+
+                    if (internalReadLocalResponse != null)
+                        BufferPool.free(internalReadLocalResponse.getData().getData());
                 } catch (IOException e) {
                     osdAvailability.setServiceWasNotAvailable(osd);
-                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null,
-                            null);
-                    e.printStackTrace();
+                    master.getReplicationStage().internalObjectFetched(fileID, objectNo, osd, null, null, e);
+//                    e.printStackTrace();
+
+                    if (internalReadLocalResponse != null)
+                        BufferPool.free(internalReadLocalResponse.getData().getData());
                 } catch (InterruptedException e) {
                     // ignore
                 } finally {
@@ -664,13 +717,11 @@ class ReplicatingFile {
      * sends an error to all belonging clients (for all objects of the file)
      */
     public void reportError(Exception error) {
-        Logging.logMessage(Logging.LEVEL_ERROR, Category.replication, this, "%s", error.getMessage());
-        for (ReplicatingObject object : waitingRequests.values()) {
+        Logging.logError(Logging.LEVEL_ERROR, this, error);
+        for (ReplicatingObject object : waitingRequests.values())
             object.sendError(error);
-        }
-        for (ReplicatingObject object : objectsInProgress.values()) {
+        for (ReplicatingObject object : objectsInProgress.values())
             object.sendError(error);
-        }
     }
 
     /**
@@ -746,6 +797,15 @@ class ReplicatingFile {
             if (stripeSize != replica.getStripingPolicy().getStripeSizeForObject(0))
                 allEqual = false;
         return allEqual;
+    }
+    
+    public void startNewReplication() throws TransferStrategyException {
+        if (!strategy.isObjectListEmpty()) { // there are still objects to fetch
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.replication, this,
+                        "background replication: replicate next object for file %s", fileID);
+            replicate(); // background replication
+        }
     }
 
     /*

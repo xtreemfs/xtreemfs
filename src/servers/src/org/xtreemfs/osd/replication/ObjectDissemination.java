@@ -50,7 +50,7 @@ import org.xtreemfs.osd.storage.CowPolicy;
  * 15.09.2008
  */
 public class ObjectDissemination {
-    private OSDRequestDispatcher                       master;
+    private final OSDRequestDispatcher                 master;
 
     /**
      * controls how many fetch-object-requests will be allowed to sent overall by all files (used for
@@ -84,21 +84,21 @@ public class ObjectDissemination {
      */
     public static final String                         MONITORING_KEY_THROUGHPUT_OF_LAST_X_SECONDS              = "REPLICATION: average throughput over all files of last X seconds (KB/s)";
 
-    public static final String                         MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA      = "REPLICATION: time (ms) required for completing file ";
-
-    /*
-     * if the data contains holes this metric will be falsified
-     */
-    public static final String                         MONITORING_KEY_UNNECESSARY_REQUESTS                 = "REPLICATION: number of unnecessary requests";
-
-    public static final String                         MONITORING_KEY_OBJECT_LIST_OVERHEAD                 = "REPLICATION: overhead of object lists transfer (bytes)";
+//    public static final String                         MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA      = "REPLICATION: time (ms) required for completing file ";
+//
+//    /*
+//     * if the data contains holes this metric will be falsified
+//     */
+//    public static final String                         MONITORING_KEY_UNNECESSARY_REQUESTS                 = "REPLICATION: number of unnecessary requests";
+//
+//    public static final String                         MONITORING_KEY_OBJECT_LIST_OVERHEAD                 = "REPLICATION: overhead of object lists transfer (bytes)";
 
     public static final int                            MONITORING_THROUGHPUT_INTERVAL                      = 1000;                                                                     // 10s
 
-    // FIXME: change output file
-    public static final String                         MONITORING_OUTPUT_FILE                              = "/tmp/monitoringLog.txt";
+//    // FIXME: change output file
+//    public static final String                         MONITORING_OUTPUT_FILE                              = "/tmp/monitoringLog.txt";
 
-    public ObjectDissemination(OSDRequestDispatcher master) {
+    public ObjectDissemination(final OSDRequestDispatcher master) {
         this.master = master;
 
         this.filesInProgress = new ConcurrentHashMap<String, ReplicatingFile>();
@@ -112,13 +112,15 @@ public class ObjectDissemination {
             RPCNIOSocketClient.ENABLE_STATISTICS = true;
             
             try {
-                MonitoringLog.initialize(MONITORING_OUTPUT_FILE);
+                MonitoringLog.initialize("");
             } catch (IOException e1) {
                 // Auto-generated catch block
                 e1.printStackTrace();
             }
             MonitoringLog.registerFor(monitoring, MONITORING_KEY_THROUGHPUT_OF_LAST_X_SECONDS);
-
+            // FIXME: debug stuff
+//            MonitoringLog.registerFor(monitoring, "StorageStage Queue");
+            
             // create new thread which monitors the average throughput of all active files in a given interval
             monitoringThread = new Thread(new Runnable() {
                 @Override
@@ -160,10 +162,10 @@ public class ObjectDissemination {
             if (file == null || (file != null && file.hasXLocChanged(xLoc))) { // create new one
                 file = new ReplicatingFile(fileID, xLoc, capability, cow, master);
             }
-            // FIXME: test stuff
-            if (Monitoring.isEnabled() && file.isFullReplica)
-                monitoring.putLong(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID, System
-                        .currentTimeMillis());
+//            // FIXME: test stuff
+//            if (Monitoring.isEnabled() && file.isFullReplica)
+//                monitoring.putLong(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID, System
+//                        .currentTimeMillis());
 
             // add file to filesInProgress
             this.filesInProgress.put(fileID, file);
@@ -217,8 +219,8 @@ public class ObjectDissemination {
 
         file.objectFetched(objectNo, usedOSD, data);
 
-        if (!file.isReplicating())
-            fileCompleted(file.fileID);
+//        if (!file.isReplicating())
+//            fileCompleted(file.fileID);
     }
 
     /**
@@ -230,11 +232,25 @@ public class ObjectDissemination {
         ReplicatingFile file = filesInProgress.get(fileID);
         assert (file != null);
         
-        // monitoring
-        if (Monitoring.isEnabled())
-            monitoring.putIncreaseForLong(MONITORING_KEY_UNNECESSARY_REQUESTS, 1l);
+//        // monitoring
+//        if (Monitoring.isEnabled())
+//            monitoring.putIncreaseForLong(MONITORING_KEY_UNNECESSARY_REQUESTS, 1l);
 
         file.objectNotFetched(objectNo, usedOSD);
+
+        if (!file.isReplicating())
+            fileCompleted(file.fileID);
+    }
+
+    public void objectNotFetchedBecauseError(String fileID, final ServiceUUID usedOSD, long objectNo, final Exception error) {
+        ReplicatingFile file = filesInProgress.get(fileID);
+        assert (file != null);
+        
+//        // monitoring
+//        if (Monitoring.isEnabled())
+//            monitoring.putIncreaseForLong(MONITORING_KEY_UNNECESSARY_REQUESTS, 1l);
+
+        file.objectNotFetchedBecauseError(objectNo, usedOSD, error);
 
         if (!file.isReplicating())
             fileCompleted(file.fileID);
@@ -250,26 +266,26 @@ public class ObjectDissemination {
         ReplicatingFile completedFile = filesInProgress.remove(fileID);
         assert (completedFile != null);
 
-        // monitoring
-        if (Monitoring.isEnabled() && completedFile.isFullReplica) {
-            long requiredTime = System.currentTimeMillis()
-                    - monitoring.getLong(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID);
-            monitoring.putLong(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID,
-                    requiredTime);
-            // FIXME: test stuff
-            MonitoringLog.monitor(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID, Long
-                    .toString(requiredTime));
-            // all monitoring keys who are not overwritten (+fileID) must be removed from map, otherwise it
-            // will overflow
-            monitoring.remove(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID);
-        }
-        // FIXME: test stuff
-        Long overhead = monitoring.getLong(MONITORING_KEY_OBJECT_LIST_OVERHEAD);
-        if (overhead != null)
-            MonitoringLog.monitor(MONITORING_KEY_OBJECT_LIST_OVERHEAD, overhead.toString());
-        Long unnecessaryRequests = monitoring.getLong(MONITORING_KEY_UNNECESSARY_REQUESTS);
-        if (unnecessaryRequests != null)
-            MonitoringLog.monitor(MONITORING_KEY_UNNECESSARY_REQUESTS, unnecessaryRequests.toString());
+//        // monitoring
+//        if (Monitoring.isEnabled() && completedFile.isFullReplica) {
+//            long requiredTime = System.currentTimeMillis()
+//                    - monitoring.getLong(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID);
+//            monitoring.putLong(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID,
+//                    requiredTime);
+//            // FIXME: test stuff
+//            MonitoringLog.monitor(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID, Long
+//                    .toString(requiredTime));
+//            // all monitoring keys who are not overwritten (+fileID) must be removed from map, otherwise it
+//            // will overflow
+//            monitoring.remove(MONITORING_KEY_REQUIRED_TIME_FOR_COMPLETING_REPLICA + fileID);
+//        }
+//        // FIXME: test stuff
+//        Long overhead = monitoring.getLong(MONITORING_KEY_OBJECT_LIST_OVERHEAD);
+//        if (overhead != null)
+//            MonitoringLog.monitor(MONITORING_KEY_OBJECT_LIST_OVERHEAD, overhead.toString());
+//        Long unnecessaryRequests = monitoring.getLong(MONITORING_KEY_UNNECESSARY_REQUESTS);
+//        if (unnecessaryRequests != null)
+//            MonitoringLog.monitor(MONITORING_KEY_UNNECESSARY_REQUESTS, unnecessaryRequests.toString());
 
         /*
          * Optimization: Canceled files will be never reused. Because in most cases they are canceled due to
@@ -321,9 +337,9 @@ public class ObjectDissemination {
         if (file != null) {
             file.objectSetFetched(osd, objectSet);
             
-            // monitoring
-            if(Monitoring.isEnabled())
-                monitoring.putIncreaseForLong(MONITORING_KEY_OBJECT_LIST_OVERHEAD, objectSetBytes);
+//            // monitoring
+//            if(Monitoring.isEnabled())
+//                monitoring.putIncreaseForLong(MONITORING_KEY_OBJECT_LIST_OVERHEAD, objectSetBytes);
         }
     }
 
@@ -342,5 +358,21 @@ public class ObjectDissemination {
             if (monitoringThread != null)
                 monitoringThread.interrupt();
         }
+    }
+
+    /**
+     * @param fileId
+     */
+    public void startNewReplication(String fileID) {
+        ReplicatingFile file = filesInProgress.get(fileID);
+        if (file != null)
+            try {
+                file.startNewReplication();
+                if (!file.isReplicating())
+                    fileCompleted(file.fileID);
+            } catch (TransferStrategyException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
     }
 }

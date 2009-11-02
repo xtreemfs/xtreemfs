@@ -252,7 +252,7 @@ public final class ReadOperation extends OSDOperation {
             if (error instanceof ONCRPCException) {
                 rq.sendException((ONCRPCException) error);
             } else {
-                rq.sendInternalServerError(error);
+                rq.sendOSDException(ErrorCodes.IO_ERROR, error.getMessage());
             }
         } else {
             try {

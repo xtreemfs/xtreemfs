@@ -29,7 +29,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.BitSet;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
@@ -162,10 +161,12 @@ public class ObjectSet implements /*Serializable,*/ Iterable<Long> { // FIXME
         if (random == null)
             random = new Random();
 
-        int index;
-        do {
-            index = objects.nextSetBit(random.nextInt(objects.size()));
-        } while (index == -1);
+        int highestSetBit = objects.length(); // correct: objects.length() - 1, but then the highest bit would
+                                              // not be included
+        int randomIndex = random.nextInt(highestSetBit);
+        int index = objects.nextSetBit(randomIndex);
+        assert (index != -1);
+
         return (long) (firstObjectNo + (index * stripeWidth));
     }
 

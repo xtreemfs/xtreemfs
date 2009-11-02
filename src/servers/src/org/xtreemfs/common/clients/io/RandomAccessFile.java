@@ -161,11 +161,11 @@ public class RandomAccessFile implements ObjectStore {
      */
     public static final String          MONITORING_KEY_THROUGHPUT_OF_LAST_X_SECONDS = "RAF: throughput of last X seconds (KB/s)";
     
-    /**
-     * Measures the throughput of the read data so far. Just the time required
-     * for the real network-transfer will be used.
-     */
-    public static final String          MONITORING_KEY_THROUGHPUT                   = "RAF: throughput of all read data so far (KB/s)";
+//    /**
+//     * Measures the throughput of the read data so far. Just the time required
+//     * for the real network-transfer will be used.
+//     */
+//    public static final String          MONITORING_KEY_THROUGHPUT                   = "RAF: throughput of all read data so far (KB/s)";
     
     public static final int             MONITORING_INTERVAL                         = 1000;                                            // 10s
                                                                                                                                         
@@ -359,12 +359,12 @@ public class RandomAccessFile implements ObjectStore {
                     }
                 }
                 
-                // monitor data for throughput
-                if (Monitoring.isEnabled()) {
-                    monitoring.putAverage(MONITORING_KEY_THROUGHPUT, (buffer.limit() / 1024d)
-                        / (response.getDuration() / 1000000000d));
-                    monitoringReadDataSizeInLastXs.addAndGet(buffer.limit());
-                }
+//                // monitor data for throughput
+//                if (Monitoring.isEnabled()) {
+//                    monitoring.putAverage(MONITORING_KEY_THROUGHPUT, (buffer.limit() / 1024d)
+//                        / (response.getDuration() / 1000000000d));
+//                    monitoringReadDataSizeInLastXs.addAndGet(buffer.limit());
+//                }
                 
                 break;
             
