@@ -1273,7 +1273,7 @@ To configure the behavior of the on-close replication, the \texttt{xtfs\_repl} t
 The number of replicas to be created when a file is closed can be specified as a volume-wide parameter, which can be set as follows:
 
 \begin{verbatim}
-$> xtfs_repl --ocr_factor_set 2
+$> xtfs_repl --ocr_factor_set 2 /xtreemfs
 \end{verbatim}
 
 This will automatically create a second replica the file is closed. Note that by setting the replication factor to 1 (default value), on-close replication will be switched off, which means that the file won't be replicated and will remain writable after having been closed.
@@ -1281,13 +1281,13 @@ This will automatically create a second replica the file is closed. Note that by
 The current replication factor of a volume can be retrieved as follows:
 
 \begin{verbatim}
-$> xtfs_repl --ocr_factor_get
+$> xtfs_repl --ocr_factor_get /xtreemfs
 \end{verbatim}
 
 Moreover, it is possible to specify whether an automatically created replica will be synchronized in the background or on demand. By default, replicas will be synced on demand. This can be changed as follows:
 
 \begin{verbatim}
-$> xtfs_repl --ocr_full_set true
+$> xtfs_repl --ocr_full_set true /xtreemfs
 \end{verbatim}
 
 Depending on whether \texttt{----ocr\_full\_set} is \texttt{true} or \texttt{false}, background replication of newly created files is switched on or off.
@@ -1295,7 +1295,7 @@ Depending on whether \texttt{----ocr\_full\_set} is \texttt{true} or \texttt{fal
 To show whether replicas are automatically filled or not, execute the following command:
 
 \begin{verbatim}
-$> xtfs_repl --ocr_full_get
+$> xtfs_repl --ocr_full_get /xtreemfs
 \end{verbatim}
 
 \subsection{Changing OSD and Replica Selection Policies}\label{sec:osd_select_policy}
