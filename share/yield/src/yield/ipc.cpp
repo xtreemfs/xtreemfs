@@ -1,5 +1,3 @@
-// Revision: 1895
-
 #include "yield/ipc.h"
 
 
@@ -49,7 +47,7 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent( YIELD::concurre
       if ( socket_ != NULL )
       {
         if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-          log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: writing " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " on socket #" << static_cast<int>( *socket_ ) << ".";
+          log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: writing " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " on socket #" << static_cast<uint64_t>( *socket_ ) << ".";
         AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request.serialize(), *this, request );
         YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), operation_timeout ) );
         socket_->aio_write( aio_write_control_block );
@@ -69,11 +67,10 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent( YIELD::concurre
         if ( socket_ != NULL )
         {
           if ( ( this->flags & this->CLIENT_FLAG_TRACE_IO ) == this->CLIENT_FLAG_TRACE_IO &&
-               log != NULL && log->get_level() >= YIELD::platform::Log::LOG_INFO &&
-               static_cast<int>( *socket_ ) != -1 )
+               log != NULL && log->get_level() >= YIELD::platform::Log::LOG_INFO )
             socket_ = new TracingSocket( socket_, log );
           if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-            log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " with socket #" << static_cast<int>( *socket_ ) << " (try #" << static_cast<uint16_t>( request.get_reconnect_tries() + 1 ) << ").";
+            log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " with socket #" << static_cast<uint64_t>( *socket_ ) << " (try #" << static_cast<uint16_t>( request.get_reconnect_tries() + 1 ) << ").";
           AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( *this, request );
           YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_connect_control_block->incRef(), operation_timeout ) );
           socket_->aio_connect( aio_connect_control_block );
@@ -114,7 +111,7 @@ public:
     if ( request_lock.try_acquire() )
     {
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: successfully connected to " << client.absolute_uri->get_host() << ":" << client.absolute_uri->get_port() << " on socket #" << static_cast<int>( *get_socket() ) << ".";
+        client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: successfully connected to " << client.absolute_uri->get_host() << ":" << client.absolute_uri->get_port() << " on socket #" << static_cast<uint64_t>( *get_socket() ) << ".";
       AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request->serialize(), client, request );
       YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), client.operation_timeout ) );
       get_socket()->aio_write( aio_write_control_block );
@@ -161,7 +158,7 @@ public:
     if ( request_lock.try_acquire() )
     {
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: read " << bytes_transferred << " bytes from socket #" << static_cast<int>( *get_socket() ) << " for " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ".";
+        client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: read " << bytes_transferred << " bytes from socket #" << static_cast<uint64_t>( *get_socket() ) << " for " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ".";
       ssize_t deserialize_ret = response->deserialize( get_buffer() );
       if ( deserialize_ret == 0 )
       {
@@ -239,7 +236,7 @@ public:
     if ( request_lock.try_acquire() )
     {
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: wrote " << bytes_transferred << " bytes to socket #" << static_cast<int>( *get_socket() ) << " for " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
+        client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: wrote " << bytes_transferred << " bytes to socket #" << static_cast<uint64_t>( *get_socket() ) << " for " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
       yidl::runtime::auto_Object<ResponseType> response( static_cast<ResponseType*>( request->createResponse().release() ) );
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
         client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: created " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << " to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
@@ -2873,6 +2870,7 @@ void YIELD::ipc::RFC822Headers::set_next_iovec( const struct iovec& iovec )
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
+#pragma warning( 4 : 4365 ) // Enable signed/unsigned assignment warnings at warning level 4
 #pragma warning( push )
 #pragma warning( disable: 4995 )
 #include <ws2tcpip.h>
@@ -2907,8 +2905,14 @@ YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus YIELD::ipc::Socket::AIOReadCo
     onError( YIELD::platform::Exception::get_errno() );
   return EXECUTE_STATUS_DONE;
 }
+#if defined(_WIN64)
+YIELD::ipc::Socket::Socket( int domain, int type, int protocol, uint64_t socket_ )
+#elif defined(_WIN32)
+YIELD::ipc::Socket::Socket( int domain, int type, int protocol, uint32_t socket_ )
+#else
 YIELD::ipc::Socket::Socket( int domain, int type, int protocol, int socket_ )
-  : domain( domain ), socket_( socket_ ), type( type ), protocol( protocol )
+#endif
+: domain( domain ), type( type ), protocol( protocol ), socket_( socket_ )
 {
   blocking_mode = true;
 }
@@ -3053,11 +3057,10 @@ bool YIELD::ipc::Socket::bind( Socket::auto_Address to_sockaddr )
         errno == EAFNOSUPPORT )
 #endif
     {
-      close();
-      this->domain = AF_INET;
-      socket_ = ::socket( AF_INET, type, protocol );
-      if ( !blocking_mode )
-        set_blocking_mode( false );
+      if ( recreate( AF_INET ) )
+        continue;
+      else
+        return false;
     }
     else
       return false;
@@ -3124,7 +3127,11 @@ bool YIELD::ipc::Socket::connect( Socket::auto_Address to_sockaddr )
       return false;
   }
 }
+#ifdef _WIN32
+SOCKET YIELD::ipc::Socket::create( int& domain, int type, int protocol )
+#else
 int YIELD::ipc::Socket::create( int& domain, int type, int protocol )
+#endif
 {
 #ifdef _WIN32
   SOCKET socket_ = ::socket( domain, type, protocol );
@@ -3135,15 +3142,15 @@ int YIELD::ipc::Socket::create( int& domain, int type, int protocol )
       DWORD ipv6only = 0; // Allow dual-mode sockets
       setsockopt( socket_, IPPROTO_IPV6, IPV6_V6ONLY, ( char* )&ipv6only, sizeof( ipv6only ) );
     }
-    return ( int )socket_;
+    return socket_;
   }
   else if ( domain == AF_INET6 && ::WSAGetLastError() == WSAEAFNOSUPPORT )
   {
     domain = AF_INET;
-    return ( int )::socket( AF_INET, type, protocol );
+    return ::socket( AF_INET, type, protocol );
   }
   else
-    return false;
+    return INVALID_SOCKET;
 #else
   int socket_ = ::socket( AF_INET6, type, protocol );
   if ( socket_ != -1 )
@@ -3290,15 +3297,11 @@ void YIELD::ipc::Socket::init()
   signal( SIGPIPE, SIG_IGN );
 #endif
 }
-YIELD::ipc::Socket::operator int() const
-{
-  return socket_;
-}
 ssize_t YIELD::ipc::Socket::read( yidl::runtime::auto_Buffer buffer )
 {
   ssize_t read_ret = read( static_cast<char*>( *buffer ) + buffer->size(), buffer->capacity() - buffer->size() );
   if ( read_ret > 0 )
-    buffer->put( NULL, read_ret );
+    buffer->put( NULL, static_cast<size_t>( read_ret ) );
   return read_ret;
 }
 ssize_t YIELD::ipc::Socket::read( void* buffer, size_t buffer_len )
@@ -3310,6 +3313,25 @@ ssize_t YIELD::ipc::Socket::read( void* buffer, size_t buffer_len )
 #else
   return ::recv( socket_, buffer, buffer_len, 0 );
 #endif
+}
+bool YIELD::ipc::Socket::recreate( int domain )
+{
+  close();
+#ifdef _WIN32
+  socket_ = ::socket( domain, type, protocol );
+  if ( socket_ != INVALID_SOCKET )
+#else
+  socket_ = ::socket( AF_INET6, type, protocol );
+  if ( socket_ != -1 )
+#endif
+  {
+    if ( !blocking_mode )
+      set_blocking_mode( false );
+    this->domain = domain;
+    return true;
+  }
+  else
+    return false;
 }
 bool YIELD::ipc::Socket::set_blocking_mode( bool blocking )
 {
@@ -3450,6 +3472,7 @@ ssize_t YIELD::ipc::Socket::writev( const struct iovec* buffers, uint32_t buffer
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
+#pragma warning( 4 : 4365 ) // Enable signed/unsigned assignment warnings at warning level 4
 #pragma warning( push )
 #pragma warning( disable: 4995 )
 #include <ws2tcpip.h>
@@ -3657,6 +3680,7 @@ bool YIELD::ipc::Socket::Address::operator==( const Address& other ) const
 #ifndef FD_SETSIZE
 #define FD_SETSIZE 1024
 #endif
+#pragma warning( 4 : 4365 ) // Enable signed/unsigned assignment warnings at warning level 4
 #pragma warning( push )
 #pragma warning( disable: 4995 )
 #include <ws2tcpip.h>
@@ -3765,7 +3789,7 @@ public:
         submit_pipe_read_end = submit_listen_tcp_socket->accept();
         if ( submit_pipe_read_end != NULL &&
              submit_pipe_read_end->set_blocking_mode( false ) &&
-             associate( static_cast<int>( *submit_pipe_read_end ), true, false ) )
+             associate( *submit_pipe_read_end, true, false ) )
          return;
       }
     }
@@ -3776,7 +3800,7 @@ public:
       submit_pipe_read_end = new Socket( AF_UNIX, SOCK_STREAM, 0, socket_vector[0] );
       submit_pipe_write_end = new Socket( AF_UNIX, SOCK_STREAM, 0, socket_vector[1] );
       if ( submit_pipe_read_end->set_blocking_mode( false ) &&
-           associate( static_cast<int>( *submit_pipe_read_end ), true, false ) )
+           associate( *submit_pipe_read_end, true, false ) )
          return;
     }
 #else
@@ -3852,18 +3876,18 @@ public:
 #endif
       if ( active_fds > 0 && should_run )
       {
-        std::map<int, AIOControlBlock*>::iterator fd_to_aio_control_block_i;
-#if defined(_WIN32)
-        if ( FD_ISSET( ( SOCKET )static_cast<int>( *submit_pipe_read_end ), &read_fds_copy ) )
+#ifdef _WIN32
+        std::map<SOCKET, AIOControlBlock*>::iterator fd_to_aio_control_block_i;
+        if ( FD_ISSET( *submit_pipe_read_end, &read_fds_copy ) )
         {
           active_fds--;
-          FD_CLR( ( SOCKET )static_cast<int>( *submit_pipe_read_end ), &read_fds_copy );
+          FD_CLR( *submit_pipe_read_end, &read_fds_copy );
           dequeueSubmittedAIOControlBlocks();
         }
         fd_to_aio_control_block_i = fd_to_aio_control_block_map.begin();
         while ( active_fds > 0 && fd_to_aio_control_block_i != fd_to_aio_control_block_map.end() )
         {
-          int fd = fd_to_aio_control_block_i->first;
+          SOCKET fd = fd_to_aio_control_block_i->first;
           if ( FD_ISSET( fd, &read_fds_copy ) )
             FD_CLR( fd, &read_fds_copy );
           else if ( FD_ISSET( fd, &write_fds_copy ) )
@@ -3876,9 +3900,11 @@ public:
             continue;
           }
           active_fds--;
-#elif defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+#else
+        std::map<int, AIOControlBlock*>::iterator fd_to_aio_control_block_i;
         while ( active_fds > 0 )
         {
+#if defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
           active_fds--;
 #if defined(YIELD_HAVE_LINUX_EPOLL)
           int fd = returned_events[active_fds].data.fd;
@@ -3886,6 +3912,9 @@ public:
           int fd = returned_events[active_fds].ident;
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
           int fd = returned_events[active_fds].portev_object;
+#else
+          DebugBreak(); // Look through pollfds
+#endif
 #endif
 #ifdef __MACH__
           if ( fd == *submit_pipe_read_end )
@@ -3900,8 +3929,6 @@ public:
             continue;
           }
           fd_to_aio_control_block_i = fd_to_aio_control_block_map.find( fd );
-#else
-#error
 #endif
           if ( processAIOControlBlock( fd_to_aio_control_block_i->second ) )
 #ifdef _WIN32
@@ -3923,13 +3950,16 @@ public:
   }
 private:
   bool is_running, should_run;
-  std::map<int, AIOControlBlock*> fd_to_aio_control_block_map;
 #if defined(_WIN32)
+  std::map<SOCKET, AIOControlBlock*> fd_to_aio_control_block_map;
   fd_set read_fds, write_fds, except_fds;
-#elif defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+#else
+  std::map<int, AIOControlBlock*> fd_to_aio_control_block_map;
+#if defined(YIELD_HAVE_LINUX_EPOLL) || defined(YIELD_HAVE_FREEBSD_KQUEUE) || defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
   int poll_fd;
 #else
   std::vector<pollfd> pollfds;
+#endif
 #endif
 #if defined(_WIN32)
   auto_TCPSocket submit_pipe_read_end, submit_pipe_write_end;
@@ -3938,11 +3968,15 @@ private:
 #else
   auto_Pipe submit_pipe;
 #endif
+#ifdef _WIN32
+  bool associate( SOCKET fd, bool enable_read, bool enable_write )
+#else
   bool associate( int fd, bool enable_read, bool enable_write )
+#endif
   {
 #if defined(_WIN32)
-    if ( enable_read ) FD_SET( ( SOCKET )fd, &read_fds );
-    if ( enable_write ) { FD_SET( ( SOCKET )fd, &write_fds ); FD_SET( ( SOCKET )fd, &except_fds ); }
+    if ( enable_read ) FD_SET( fd, &read_fds );
+    if ( enable_write ) { FD_SET( fd, &write_fds ); FD_SET( fd, &except_fds ); }
     return true;
 #elif defined(YIELD_HAVE_LINUX_EPOLL)
     struct epoll_event change_event;
@@ -3989,7 +4023,11 @@ private:
       if ( submit_pipe->read( &aio_control_block, sizeof( aio_control_block ) ) == sizeof( aio_control_block ) )
 #endif
       {
-        int fd = static_cast<int>( *aio_control_block->get_socket() );
+#ifdef _WIN32
+        SOCKET fd = *aio_control_block->get_socket();
+#else
+        int fd = *aio_control_block->get_socket();
+#endif
         associate( fd, false, false );
         if ( !processAIOControlBlock( aio_control_block ) )
           fd_to_aio_control_block_map[fd] = aio_control_block;
@@ -3998,12 +4036,16 @@ private:
         break;
     }
   }
+#ifdef _WIN32
+  void dissociate( SOCKET fd )
+#else
   void dissociate( int fd )
+#endif
   {
 #if defined(_WIN32)
-    FD_CLR( ( SOCKET )fd, &read_fds );
-    FD_CLR( ( SOCKET )fd, &write_fds );
-    FD_CLR( ( SOCKET )fd, &except_fds );
+    FD_CLR( fd, &read_fds );
+    FD_CLR( fd, &write_fds );
+    FD_CLR( fd, &except_fds );
 #elif defined(YIELD_HAVE_LINUX_EPOLL)
     struct epoll_event change_event; // From the man page: In kernel versions before 2.6.9, the EPOLL_CTL_DEL operation required a non-NULL pointer in event, even though this argument is ignored. Since kernel 2.6.9, event can be specified as NULL when using EPOLL_CTL_DEL.
     epoll_ctl( poll_fd, EPOLL_CTL_DEL, fd, &change_event );
@@ -4026,7 +4068,11 @@ private:
   }
   bool processAIOControlBlock( AIOControlBlock* aio_control_block )
   {
-    int fd = static_cast<int>( *aio_control_block->get_socket() );
+#ifdef _WIN32
+    SOCKET fd = *aio_control_block->get_socket();
+#else
+    int fd = *aio_control_block->get_socket();
+#endif
     switch ( aio_control_block->execute() )
     {
       case Socket::AIOControlBlock::EXECUTE_STATUS_DONE:
@@ -4041,22 +4087,26 @@ private:
       default: DebugBreak(); return false;
     }
   }
+#ifdef _WIN32
+  bool toggle( SOCKET fd, bool enable_read, bool enable_write )
+#else
   bool toggle( int fd, bool enable_read, bool enable_write )
+#endif
   {
 #if defined(_WIN32)
     if ( enable_read )
-      FD_SET( ( SOCKET )fd, &read_fds );
+      FD_SET( fd, &read_fds );
     else
-      FD_CLR( ( SOCKET )fd, &read_fds );
+      FD_CLR( fd, &read_fds );
     if ( enable_write )
     {
-      FD_SET( ( SOCKET )fd, &write_fds );
-      FD_SET( ( SOCKET )fd, &except_fds );
+      FD_SET( fd, &write_fds );
+      FD_SET( fd, &except_fds );
     }
     else
     {
-      FD_CLR( ( SOCKET )fd, &write_fds );
-      FD_CLR( ( SOCKET )fd, &except_fds );
+      FD_CLR( fd, &write_fds );
+      FD_CLR( fd, &except_fds );
     }
     return true;
 #elif defined(YIELD_HAVE_LINUX_EPOLL)
@@ -4130,7 +4180,7 @@ YIELD::ipc::Socket::AIOQueue::~AIOQueue()
 #ifdef _WIN32
 void YIELD::ipc::Socket::AIOQueue::associate( Socket& socket_ )
 {
-  CreateIoCompletionPort( reinterpret_cast<HANDLE>( static_cast<int>( socket_ ) ), hIoCompletionPort, 0, 0 );
+  CreateIoCompletionPort( reinterpret_cast<HANDLE>( static_cast<SOCKET>( socket_ ) ), hIoCompletionPort, 0, 0 );
 }
 #endif
 void YIELD::ipc::Socket::AIOQueue::submit( yidl::runtime::auto_Object<AIOControlBlock> aio_control_block )
@@ -4305,6 +4355,7 @@ SSL_CTX* YIELD::ipc::SSLContext::createSSL_CTX( SSL_METHOD* method )
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef YIELD_HAVE_OPENSSL
 #ifdef _WIN32
+#pragma warning( 4 : 4365 ) // Enable signed/unsigned assignment warnings at warning level 4
 #pragma warning( push )
 #pragma warning( disable: 4995 )
 #include <ws2tcpip.h>
@@ -4313,7 +4364,11 @@ SSL_CTX* YIELD::ipc::SSLContext::createSSL_CTX( SSL_METHOD* method )
 #include <netinet/in.h> // For the IPPROTO_* constants
 #include <sys/socket.h>
 #endif
+#ifdef _WIN32
+YIELD::ipc::SSLSocket::SSLSocket( int domain, SOCKET socket_, auto_SSLContext ctx, SSL* ssl )
+#else
 YIELD::ipc::SSLSocket::SSLSocket( int domain, int socket_, auto_SSLContext ctx, SSL* ssl )
+#endif
   : TCPSocket( domain, socket_ ), ctx( ctx ), ssl( ssl )
 { }
 YIELD::ipc::SSLSocket::~SSLSocket()
@@ -4323,7 +4378,11 @@ YIELD::ipc::SSLSocket::~SSLSocket()
 YIELD::ipc::auto_TCPSocket YIELD::ipc::SSLSocket::accept()
 {
   SSL_set_fd( ssl, *this );
-  int peer_socket = static_cast<int>( TCPSocket::_accept() );
+#ifdef _WIN32
+  SOCKET peer_socket = TCPSocket::_accept();
+#else
+  int peer_socket = TCPSocket::_accept();
+#endif
   if ( peer_socket != -1 )
   {
     SSL* peer_ssl = SSL_new( ctx->get_ssl_ctx() );
@@ -4370,8 +4429,13 @@ YIELD::ipc::auto_SSLSocket YIELD::ipc::SSLSocket::create( int domain, auto_SSLCo
   SSL* ssl = SSL_new( ctx->get_ssl_ctx() );
   if ( ssl != NULL )
   {
+#ifdef _WIN32
+    SOCKET socket_ = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
+    if ( socket_ != INVALID_SOCKET )
+#else
     int socket_ = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
     if ( socket_ != -1 )
+#endif
       return new SSLSocket( domain, socket_, ctx, ssl );
     else
       return NULL;
@@ -4451,6 +4515,7 @@ ssize_t YIELD::ipc::SSLSocket::writev( const struct iovec* buffers, uint32_t buf
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #if defined(_WIN32)
+#pragma warning( 4 : 4365 ) // Enable signed/unsigned assignment warnings at warning level 4
 #pragma warning( push )
 #pragma warning( disable: 4995 )
 #include <ws2tcpip.h>
@@ -4466,7 +4531,11 @@ ssize_t YIELD::ipc::SSLSocket::writev( const struct iovec* buffers, uint32_t buf
 void* YIELD::ipc::TCPSocket::lpfnAcceptEx = NULL;
 void* YIELD::ipc::TCPSocket::lpfnConnectEx = NULL;
 #endif
+#ifdef _WIN32
+YIELD::ipc::TCPSocket::TCPSocket( int domain, SOCKET socket_ )
+#else
 YIELD::ipc::TCPSocket::TCPSocket( int domain, int socket_ )
+#endif
   : Socket( domain, SOCK_STREAM, IPPROTO_TCP, socket_ )
 {
   partial_write_len = 0;
@@ -4484,7 +4553,11 @@ YIELD::ipc::auto_TCPSocket YIELD::ipc::TCPSocket::accept()
   else
     return NULL;
 }
+#ifdef _WIN32
+SOCKET YIELD::ipc::TCPSocket::_accept()
+#else
 int YIELD::ipc::TCPSocket::_accept()
+#endif
 {
   sockaddr_storage peer_sockaddr_storage;
   socklen_t peer_sockaddr_storage_len = sizeof( peer_sockaddr_storage );
@@ -4566,11 +4639,13 @@ void YIELD::ipc::TCPSocket::aio_connect_iocp( Socket::auto_AIOConnectControlBloc
     }
     else if ( get_domain() == AF_INET6 )
     {
-      close();
-      domain = AF_INET; // Fall back to IPv4
-      socket_ = ::socket( domain, get_type(), get_protocol() );
-      get_aio_queue().associate( *this );
-      continue; // Try to connect again
+      if ( recreate( AF_INET ) )
+      {
+        get_aio_queue().associate( *this );
+        continue; // Try to connect again
+      }
+      else
+        break;
     }
     else
       break;
@@ -4584,8 +4659,13 @@ YIELD::ipc::auto_TCPSocket YIELD::ipc::TCPSocket::create()
 }
 YIELD::ipc::auto_TCPSocket YIELD::ipc::TCPSocket::create( int domain )
 {
-  int socket_ = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
+#ifdef _WIN32
+  SOCKET socket_ = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
+  if ( socket_ != INVALID_SOCKET )
+#else
+  int socket_ = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );;
   if ( socket_ != -1 )
+#endif
     return new TCPSocket( domain, socket_ );
   else
     return NULL;
@@ -4676,8 +4756,11 @@ ssize_t YIELD::ipc::TCPSocket::writev( const struct iovec* buffers, uint32_t buf
 // tracing_socket.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifdef _WIN32
+#pragma warning( 4 : 4365 ) // Enable signed/unsigned assignment warnings at warning level 4
+#endif
 YIELD::ipc::TracingSocket::TracingSocket( auto_Socket underlying_socket, YIELD::platform::auto_Log log )
-  : Socket( underlying_socket->get_domain(), underlying_socket->get_type(), underlying_socket->get_protocol(), -1 ),
+  : Socket( underlying_socket->get_domain(), underlying_socket->get_type(), underlying_socket->get_protocol(), *underlying_socket ),
     underlying_socket( underlying_socket ), log( log )
 { }
 void YIELD::ipc::TracingSocket::aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block )
@@ -4706,7 +4789,7 @@ ssize_t YIELD::ipc::TracingSocket::read( void* buffer, size_t buffer_len )
   if ( read_ret > 0 )
   {
     log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::TracingSocket: read " << read_ret << " bytes from socket #" << ( int )*this << ".";
-    log->write( buffer, read_ret, YIELD::platform::Log::LOG_DEBUG );
+    log->write( buffer, static_cast<size_t>( read_ret ), YIELD::platform::Log::LOG_DEBUG );
     log->write( "\n", YIELD::platform::Log::LOG_DEBUG );
   }
   else if ( read_ret == 0 || ( !underlying_socket->want_read() && !underlying_socket->want_write() ) )
@@ -4770,6 +4853,7 @@ ssize_t YIELD::ipc::TracingSocket::writev( const struct iovec* buffers, uint32_t
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #if defined(_WIN32)
+#pragma warning( 4 : 4365 ) // Enable signed/unsigned assignment warnings at warning level 4
 #pragma warning( push )
 #pragma warning( disable: 4995 )
 #include <ws2tcpip.h>
@@ -4778,7 +4862,11 @@ ssize_t YIELD::ipc::TracingSocket::writev( const struct iovec* buffers, uint32_t
 #include <netinet/in.h> // For the IPPROTO_* constants
 #include <sys/socket.h>
 #endif
+#ifdef _WIN32
+YIELD::ipc::UDPSocket::UDPSocket( int domain, SOCKET socket_ )
+#else
 YIELD::ipc::UDPSocket::UDPSocket( int domain, int socket_ )
+#endif
   : Socket( domain, SOCK_DGRAM, IPPROTO_UDP, socket_ )
 { }
 void YIELD::ipc::UDPSocket::aio_recvfrom( yidl::runtime::auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block )
@@ -4816,8 +4904,13 @@ void YIELD::ipc::UDPSocket::aio_recvfrom_nbio( yidl::runtime::auto_Object<AIORec
 YIELD::ipc::auto_UDPSocket YIELD::ipc::UDPSocket::create()
 {
   int domain = AF_INET6;
+#ifdef _WIN32
+  SOCKET socket_ = Socket::create( domain, SOCK_DGRAM, IPPROTO_UDP );
+  if ( socket_ != INVALID_SOCKET )
+#else
   int socket_ = Socket::create( domain, SOCK_DGRAM, IPPROTO_UDP );
   if ( socket_ != -1 )
+#endif
     return new UDPSocket( domain, socket_ );
   else
   {
@@ -4833,7 +4926,7 @@ ssize_t YIELD::ipc::UDPSocket::recvfrom( yidl::runtime::auto_Buffer buffer, stru
 {
   ssize_t recvfrom_ret = recvfrom( static_cast<char*>( *buffer ) + buffer->size(), buffer->capacity() - buffer->size(), peer_sockaddr );
   if ( recvfrom_ret > 0 )
-    buffer->put( NULL, recvfrom_ret );
+    buffer->put( NULL, static_cast<size_t>( recvfrom_ret ) );
   return recvfrom_ret;
 }
 ssize_t YIELD::ipc::UDPSocket::recvfrom( void* buffer, size_t buffer_len, struct sockaddr_storage& peer_sockaddr )

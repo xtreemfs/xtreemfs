@@ -270,8 +270,13 @@ namespace YIELD
 
       typedef yidl::runtime::auto_Object<AIOWriteControlBlock> auto_AIOWriteControlBlock;
 
-
+#if defined(_WIN64)
+      Socket( int domain, int type, int protocol, uint64_t socket_ );
+#elif defined(_WIN32)
+      Socket( int domain, int type, int protocol, uint32_t socket_ );
+#else
       Socket( int domain, int type, int protocol, int socket_ );
+#endif
 
       virtual void aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block );
       virtual void aio_read( yidl::runtime::auto_Object<AIOReadControlBlock> aio_read_control_block );
@@ -289,8 +294,14 @@ namespace YIELD
       auto_Address getsockname();
       int get_type() const { return type; }
       static void init();
-      bool operator==( const Socket& other ) const { return static_cast<int>( *this ) == static_cast<int>( other ); } \
-      virtual operator int() const;
+      bool operator==( const Socket& other ) const { return socket_ == other.socket_; }
+#if defined(_WIN64)
+      inline operator uint64_t() const { return socket_; }
+#elif defined(_WIN32)
+      inline operator uint32_t() const { return socket_; }
+#else
+      inline operator int() const { return socket_; }
+#endif
       virtual ssize_t read( yidl::runtime::auto_Buffer buffer );
       virtual ssize_t read( void* buffer, size_t buffer_len );
       virtual bool set_blocking_mode( bool blocking );
@@ -317,14 +328,28 @@ namespace YIELD
       void aio_connect_nbio( Socket::auto_AIOConnectControlBlock aio_connect_control_block );
       void aio_read_nbio( yidl::runtime::auto_Object<AIOReadControlBlock> aio_read_control_block );
       void aio_write_nbio( yidl::runtime::auto_Object<AIOWriteControlBlock> aio_write_control_block );
-      static int create( int& domain, int type, int protocol );
 
-      int domain, socket_;
+#if defined(_WIN64)
+      static uint64_t create( int& domain, int type, int protocol );
+#elif defined(_WIN32)
+      static uint32_t create( int& domain, int type, int protocol );
+#else
+      static int create( int& domain, int type, int protocol );
+#endif
+      bool recreate( int domain );
 
     private:
       Socket( const Socket& ) { DebugBreak(); } // Prevent copying
 
-      int type, protocol;
+      int domain, type, protocol;
+
+#if defined(_WIN64)
+      uint64_t socket_;
+#elif defined(_WIN32)
+      uint32_t socket_;
+#else
+      int socket_;
+#endif
 
       bool blocking_mode;
 
@@ -441,8 +466,6 @@ namespace YIELD
       };
 
 
-      TCPSocket( int domain, int socket_ );
-
       virtual void aio_accept( yidl::runtime::auto_Object<AIOAcceptControlBlock> aio_accept_control_block );    
       virtual void aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block );
       static yidl::runtime::auto_Object<TCPSocket> create(); // Defaults to domain = AF_INET6; returns NULL instead of throwing exceptions, since it's on the critical path of clients and servers
@@ -456,9 +479,23 @@ namespace YIELD
       YIDL_RUNTIME_OBJECT_PROTOTYPES( TCPSocket, 212 );
 
     protected:
+#if defined(_WIN64)
+      TCPSocket( int domain, uint64_t socket_ );
+#elif defined(_WIN32)
+      TCPSocket( int domain, uint32_t socket_ );      
+#else
+      TCPSocket( int domain, int socket_ );
+#endif
+
       virtual ~TCPSocket() { }
 
+#if defined(_WIN64)
+      uint64_t _accept();
+#elif defined(_WIN32)
+      uint32_t _accept();
+#else
       int _accept();
+#endif
 
       // Socket
 #ifdef _WIN32
@@ -1171,7 +1208,13 @@ namespace YIELD
       bool shutdown();
 
     private:
+#if defined(_WIN64)
+      SSLSocket( int domain, uint64_t socket_, auto_SSLContext ctx, SSL* ssl );
+#elif defined(_WIN32)
+      SSLSocket( int domain, uint32_t socket_, auto_SSLContext ctx, SSL* ssl );
+#else
       SSLSocket( int domain, int socket_, auto_SSLContext ctx, SSL* ssl );
+#endif
       ~SSLSocket();
 
       auto_SSLContext ctx;
@@ -1200,8 +1243,7 @@ namespace YIELD
       bool connect( Socket::auto_Address to_sockaddr );
       bool get_blocking_mode() const { return underlying_socket->get_blocking_mode(); }
       auto_Address getpeername() { return underlying_socket->getpeername(); }
-      auto_Address getsockname() { return underlying_socket->getsockname(); }
-      operator int() const { return underlying_socket->operator int(); }
+      auto_Address getsockname() { return underlying_socket->getsockname(); }      
       ssize_t read( void* buffer, size_t buffer_len );
       bool set_blocking_mode( bool blocking ) { return underlying_socket->set_blocking_mode( blocking ); }
       bool want_connect() const;
@@ -1276,7 +1318,13 @@ namespace YIELD
       void aio_recvfrom_nbio( yidl::runtime::auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block );
 
     private:
-      UDPSocket( int domain, int socket_ );    
+#if defined(_WIN64)
+      UDPSocket( int domain, uint64_t socket_ );    
+#elif defined(_WIN32)
+      UDPSocket( int domain, uint32_t socket_ );
+#else
+      UDPSocket( int domain, int socket_ );
+#endif
       ~UDPSocket() { }
     };
 
