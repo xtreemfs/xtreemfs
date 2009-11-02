@@ -108,14 +108,15 @@ public class CloseOperation extends MRCOperation {
                     repls.add(xLocList.getReplica(i));
                 
                 int newVer = xLocList.getVersion() + 1;
+                int initialReplCount = xLocList.getReplicaCount();
                 
                 XLoc firstRepl = repls.get(0);
                 firstRepl.setReplicationFlags(ReplicationFlags.setReplicaIsComplete(firstRepl
                         .getReplicationFlags()));
-                
+                                
                 // try to replicate the file
                 try {
-                    for (int i = 0; i < replFactor - xLocList.getReplicaCount(); i++) {
+                    for (int i = 0; i < replFactor - initialReplCount; i++) {
                         
                         // determine the replication flags for the new replica
                         int replFlags = ReplicationFlags.setRandomStrategy(0);
