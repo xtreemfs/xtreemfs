@@ -233,9 +233,12 @@ def mount_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAUL
                 time.sleep(2)
                 mount_dir_name = str( osdnum ) + ( not direct_io and "_nondirect" or "" )
                 mount_dir_path = os.path.join( mnt_dir_path, mount_dir_name )
-                repl_attr_cmd = "/usr/bin/setfattr -n xtreemfs.repl_factor -v " + str( osdnum + 1 ) + " " + mount_dir_path 
+                repl_attr_cmd = "/usr/bin/setfattr -n xtreemfs.repl_factor -v " + str( osdnum + 1 ) + " " + mount_dir_path
+                repl_attr2_cmd = "/usr/bin/setfattr -n xtreemfs.rsel_policy -v 3000 " + mount_dir_path
                 print repl_attr_cmd 
                 call ( repl_attr_cmd, shell=True, stdout=sys.stdout, stderr=sys.stderr )
+                print repl_attr2_cmd 
+                call ( repl_attr2_cmd, shell=True, stdout=sys.stdout, stderr=sys.stderr )
 
 def run_tests( mnt_dir_path=MNT_DIR_PATH_DEFAULT, num_osds=NUM_OSDS_DEFAULT, test_module_names=None, verbose=False ):
     if verbose:

@@ -94,7 +94,7 @@ removes a randomly selected replica from the given file
 \fB--rsp_get
 shows the volume's current list of replica selection policies
 .TP
-\fB--rsp_set \fIdefault | fqdn | dcmap | <policy_ID, [policy_ID, ...]>
+\fB--rsp_set \fIdefault | random | fqdn | dcmap | <policy_ID, [policy_ID, ...]>
 Sets a list of successively applied replica selection policies. Replica selection policies are used to define the order in which the client will attempt to access the replicas of a file. The client will first try to access the first replica, and - in case of a failed attempt - the next one, and so on. Replica selection policies can e.g. be used to make sure that clients will always attempt to access local replicas first. \fIdefault\fP, \fIfqdn\fP and \fIdcmap\fP are pre-packaged policies that do not reorder the list at all, reorder it based on the distance between the client's and OSD host's FQDN, and based on a data center map, accordingly.
 
 The following policies are available by default:

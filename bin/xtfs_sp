@@ -120,7 +120,7 @@ def main(argv):
     elif ( options.set == True ):
         return doSet(args[0],options);
     else:
-        parser.error("must either specify -g or -s")
+        parser.error("must either specify --get or --set")
         return 1
 
 

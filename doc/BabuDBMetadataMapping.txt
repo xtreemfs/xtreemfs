@@ -102,11 +102,11 @@ Indices are structured as follows (numbers indicate entry sizes in bytes):
  
  The file ID index is used to retrieve file metadata by means of its ID. It
  may either map a file ID to a key in the file index, or directly to the three
- different types of primary file metadata (i.e. types 0-2). The former kind of
+ different types of primary file metadata (i.e. types 0-1). The former kind of
  mapping is used to retrieve file metadata by means of file IDs, which is
  necessary with some operations that provide a file ID instead of a path. The
  latter sort of mapping is used to retrieve a file's metadata if the file is
- referenced by multiple hard links (type 3). In this case, the file's entries
+ referenced by multiple hard links (type 2). In this case, the file's entries
  in the file index map to the corresponding prefix key in the file ID index. 
 |----------------------------------------------------------------------------|
 |key   | fileID    type                                                      |
