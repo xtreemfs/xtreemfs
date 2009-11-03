@@ -98,7 +98,7 @@ public class ChangeOwnerOperation extends MRCOperation {
         if (!rqArgs.getUser_id().equals("")) {
             // if a UID is provided, restrict operation to root user
             if (!rq.getDetails().superUser)
-                throw new UserException(ErrNo.EACCES, "changing owners is restricted to superusers");
+                throw new UserException(ErrNo.EPERM, "changing owners is restricted to superusers");
             
         } else {
             // if only a GID is provided, restrict the op to a privileged user
@@ -108,7 +108,7 @@ public class ChangeOwnerOperation extends MRCOperation {
                 rq.getDetails().groupIds);
             if (!(rq.getDetails().superUser || rq.getDetails().groupIds.contains(rqArgs.getGroup_id())))
                 throw new UserException(
-                    ErrNo.EACCES,
+                    ErrNo.EPERM,
                     "changing owning groups is restricted to superusers or file owners who are in the group that is supposed to be assigned");
         }
         
