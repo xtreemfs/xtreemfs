@@ -24,6 +24,8 @@
 
 package org.xtreemfs.osd;
 
+import com.sun.net.httpserver.BasicAuthenticator;
+import com.sun.net.httpserver.HttpContext;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -172,7 +174,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
      */
     private final ServiceAvailability                   serviceAvailability;
     
-    public OSDRequestDispatcher(OSDConfig config) throws Exception {
+    public OSDRequestDispatcher(final OSDConfig config) throws Exception {
         
         Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS OSD version "
             + VersionManagement.RELEASE_VERSION);
@@ -343,7 +345,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         heartbeatThread = new HeartbeatThread("OSD HB Thr", dirClient, config.getUUID(), gen, config, true);
         
         httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
-        httpServ.createContext("/", new HttpHandler() {
+        final HttpContext ctx = httpServ.createContext("/", new HttpHandler() {
             public void handle(HttpExchange httpExchange) throws IOException {
                 byte[] content;
                 try {
@@ -358,6 +360,16 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 
             }
         });
+
+        if (config.getAdminPassword().length() > 0) {
+            ctx.setAuthenticator(new BasicAuthenticator("XtreemFS OSD "+config.getUUID()) {
+                @Override
+                public boolean checkCredentials(String arg0, String arg1) {
+                    return (arg0.equals("admin")&& arg1.equals(config.getAdminPassword()));
+                }
+            });
+        }
+
         httpServ.start();
         
         startupTime = System.currentTimeMillis();

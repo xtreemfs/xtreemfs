@@ -24,6 +24,8 @@
 
 package org.xtreemfs.mrc;
 
+import com.sun.net.httpserver.BasicAuthenticator;
+import com.sun.net.httpserver.HttpContext;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
@@ -233,7 +235,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         final StatusPageOperation status = new StatusPageOperation(this);
         
         httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
-        httpServ.createContext("/", new HttpHandler() {
+        final HttpContext ctx = httpServ.createContext("/", new HttpHandler() {
             public void handle(HttpExchange httpExchange) throws IOException {
                 byte[] content;
                 try {
@@ -249,6 +251,16 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 
             }
         });
+
+        if (config.getAdminPassword().length() > 0) {
+            ctx.setAuthenticator(new BasicAuthenticator("XtreemFS MRC "+config.getUUID()) {
+                @Override
+                public boolean checkCredentials(String arg0, String arg1) {
+                    return (arg0.equals("admin")&& arg1.equals(config.getAdminPassword()));
+                }
+            });
+        }
+
         httpServ.start();
         
         heartbeatThread = new HeartbeatThread("MRC Heartbeat Thread", dirClient, config.getUUID(), gen,

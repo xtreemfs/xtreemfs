@@ -23,6 +23,8 @@
  */
 package org.xtreemfs.dir;
 
+import com.sun.net.httpserver.BasicAuthenticator;
+import com.sun.net.httpserver.HttpContext;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -174,7 +176,7 @@ public class DIRRequestDispatcher extends LifeCycleThread
         }
         
         httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
-        httpServ.createContext("/", new HttpHandler() {
+        final HttpContext ctx = httpServ.createContext("/", new HttpHandler() {
             public void handle(HttpExchange httpExchange) throws IOException {
                 byte[] content;
                 try {
@@ -189,6 +191,16 @@ public class DIRRequestDispatcher extends LifeCycleThread
                 
             }
         });
+
+        if (config.getAdminPassword().length() > 0) {
+            ctx.setAuthenticator(new BasicAuthenticator("XtreemFS DIR") {
+                @Override
+                public boolean checkCredentials(String arg0, String arg1) {
+                    return (arg0.equals("admin")&& arg1.equals(config.getAdminPassword()));
+                }
+            });
+        }
+
         httpServ.start();
         
         numRequests = 0;
