@@ -220,6 +220,8 @@ public class OpenOperation extends MRCOperation {
             assert (xLocList != null) : "The requested file has no xLocList!";
             
             xLocSet = Converter.xLocListToXLocSet(xLocList);
+            xLocSet.setRepUpdatePolicy(file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY
+                : Constants.REPL_UPDATE_PC_NONE);
             if (file.isReadOnly())
                 xLocSet.setRead_only_file_size(file.getSize());
         }

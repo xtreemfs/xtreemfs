@@ -62,6 +62,8 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
     
     private static final String DEFAULT_ENTRY_NAME = "default";
     
+    private static final short  READ_ONLY_MASK     = (-1 & 365);
+    
     @Override
     public String translateAccessFlags(int accessMode) {
         switch (accessMode) {
@@ -177,7 +179,9 @@ public class VolumeACLFileAccessPolicy implements FileAccessPolicy {
             
             // rw - mask, x = r
             int rights = entry.getRights() & 3 | ((entry.getRights() & 1) << 2);
-            return rights * (1 << 6);
+            rights = rights * (1 << 6);
+            
+            return file.isReadOnly() ? rights & READ_ONLY_MASK : rights;
             
         } catch (Exception exc) {
             throw new MRCException(exc);

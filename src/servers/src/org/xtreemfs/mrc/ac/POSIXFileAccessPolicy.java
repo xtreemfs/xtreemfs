@@ -178,6 +178,8 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     
     private static final short  EXEC_MASK          = PERM_EXECUTE;
     
+    private static final short  READ_ONLY_MASK     = (-1 & 365);
+    
     public POSIXFileAccessPolicy() {
     }
     
@@ -185,14 +187,15 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     public String translateAccessFlags(int accessMode) {
         
         accessMode = accessMode
-            & (FileAccessManager.O_RDWR | FileAccessManager.O_WRONLY | FileAccessManager.O_APPEND
+            & (FileAccessManager.O_RDWR | FileAccessManager.O_WRONLY | FileAccessManager.O_APPEND | FileAccessManager.O_TRUNC
                 | FileAccessManager.NON_POSIX_SEARCH | FileAccessManager.NON_POSIX_DELETE | FileAccessManager.NON_POSIX_RM_MV_IN_DIR);
         
         if (accessMode == FileAccessManager.O_RDONLY)
             return AM_READ;
         if (((accessMode & FileAccessManager.O_RDWR) != 0)
             || ((accessMode & FileAccessManager.O_WRONLY) != 0)
-            || ((accessMode & FileAccessManager.O_APPEND) != 0))
+            || ((accessMode & FileAccessManager.O_APPEND) != 0)
+            || ((accessMode & FileAccessManager.O_TRUNC) != 0))
             return AM_WRITE;
         if ((accessMode & FileAccessManager.NON_POSIX_SEARCH) != 0)
             return AM_EXECUTE;
@@ -201,7 +204,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
         if ((accessMode & FileAccessManager.NON_POSIX_RM_MV_IN_DIR) != 0)
             return AM_MV_RM_IN_DIR;
         
-        assert (false) : "never ever! mode is " + accessMode;
+        assert (false) : "unknown access mode: " + accessMode;
         return null;
     }
     
@@ -428,7 +431,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     @Override
     public int getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) throws MRCException {
-        return file.getPerms();
+        return file.isReadOnly() ? file.getPerms() & READ_ONLY_MASK : file.getPerms();
     }
     
     @Override
