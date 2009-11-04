@@ -18,7 +18,7 @@ module org
         uint16_t port;
         string match_network;
         uint32_t ttl_s;
-	string uri;
+	      string uri;
       };
 
       typedef sequence<AddressMapping> AddressMappingSet # 31;
@@ -58,8 +58,9 @@ module org
       {
         // Constants
         const uint32_t DEFAULT_ONCRPC_PORT = 32638;
+	      const uint32_t DEFAULT_ONCRPCG_PORT = 32638;
         const uint32_t DEFAULT_ONCRPCS_PORT = 32638;
-	const uint32_t DEFAULT_ONCRPCG_PORT = 32638;
+        const uint32_t DEFAULT_ONCRPCU_PORT = 32638;
         const uint32_t DEFAULT_HTTP_PORT = 30638; 
          
         // Operations
@@ -76,14 +77,14 @@ module org
         void xtreemfs_service_deregister( string uuid ) # 11;
 	      void xtreemfs_service_offline( string uuid ) # 12;
         void xtreemfs_shutdown() # 13;
-	void replication_toMaster() # 14;
+	      void replication_toMaster() # 14;
 
         // Exceptions
         exception ConcurrentModificationException # 20 { string stack_trace; };
         exception InvalidArgumentException # 21 { string error_message; };
         exception ProtocolException # 22 { uint32_t accept_stat; uint32_t error_code; string stack_trace; };
-		exception DIRException # 23 { uint32_t error_code; string error_message; string stack_trace; };
-		exception RedirectException # 24 { string address; uint16_t port; };
+		    exception DIRException # 23 { uint32_t error_code; string error_message; string stack_trace; };
+		    exception RedirectException # 24 { string address; uint16_t port; };
       };
     };
   };

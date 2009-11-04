@@ -255,7 +255,9 @@ namespace org
 
 
       const static uint32_t DEFAULT_ONCRPC_PORT = 32638;
+      const static uint32_t DEFAULT_ONCRPCG_PORT = 32638;
       const static uint32_t DEFAULT_ONCRPCS_PORT = 32638;
+      const static uint32_t DEFAULT_ONCRPCU_PORT = 32638;
       const static uint32_t DEFAULT_HTTP_PORT = 30638;
 
 

@@ -14,6 +14,7 @@ namespace org
     namespace interfaces
     {
       const static char* ONCRPC_SCHEME = "oncrpc";
+      const static char* ONCRPCG_SCHEME = "oncrpcg";
       const static char* ONCRPCS_SCHEME = "oncrpcs";
       const static char* ONCRPCU_SCHEME = "oncrpcu";
       const static uint32_t ONCRPC_AUTH_FLAVOR = 1326;
