@@ -113,15 +113,18 @@ public class CloseOperation extends MRCOperation {
                 XLoc firstRepl = repls.get(0);
                 firstRepl.setReplicationFlags(ReplicationFlags.setReplicaIsComplete(firstRepl
                         .getReplicationFlags()));
-                                
+                
                 // try to replicate the file
                 try {
                     for (int i = 0; i < replFactor - initialReplCount; i++) {
                         
-                        // determine the replication flags for the new replica
-                        int replFlags = ReplicationFlags.setRandomStrategy(0);
-                        if (vol.getAutoReplFull())
-                            replFlags = ReplicationFlags.setFullReplica(replFlags);
+                        // determine the replication flags for the new replica:
+                        // full + 'rarest first' strategy for full replicas,
+                        // 'sequential prefetching' strategy for partial
+                        // replicas
+                        int replFlags = vol.getAutoReplFull() ? ReplicationFlags
+                                .setFullReplica(ReplicationFlags.setRarestFirstStrategy(0))
+                            : ReplicationFlags.setSequentialPrefetchingStrategy(0);
                         
                         // create the new replica
                         Replica newRepl = MRCHelper.createReplica(firstRepl.getStripingPolicy(), sMan, master
@@ -160,7 +163,7 @@ public class CloseOperation extends MRCOperation {
             // trigger the replication
             XLocSet xLocSet = Converter.xLocListToXLocSet(xLocList);
             xLocSet.setRead_only_file_size(file.getSize());
-
+            
             rq.getDetails().context = new HashMap<String, Object>();
             rq.getDetails().context.put("xLocList", xLocSet);
             master.getOnCloseReplicationThread().enqueueRequest(rq);
