@@ -92,6 +92,8 @@ public class SSLOptions {
      * knows the used certs and more
      */
     private final SSLContext   sslContext;
+
+    private final boolean     useFakeSSLMode;
     
     /**
      * creates a new SSLOptions object, which uses PKCS12 Container and
@@ -158,6 +160,15 @@ public class SSLOptions {
         String serverCredentialFileContainer, InputStream trustedCertificatesFile,
         String trustedCertificatesFilePassphrase, String trustedCertificatesFileContainer,
         boolean authenticationWithoutEncryption) throws IOException {
+        this(serverCredentialFile,serverCredentialFilePassphrase,serverCredentialFileContainer,
+             trustedCertificatesFile,trustedCertificatesFilePassphrase,trustedCertificatesFileContainer,
+             authenticationWithoutEncryption,false);
+    }
+
+    public SSLOptions(InputStream serverCredentialFile, String serverCredentialFilePassphrase,
+        String serverCredentialFileContainer, InputStream trustedCertificatesFile,
+        String trustedCertificatesFilePassphrase, String trustedCertificatesFileContainer,
+        boolean authenticationWithoutEncryption, boolean useFakeSSLMode) throws IOException {
         this.serverCredentialFile = serverCredentialFile;
         this.trustedCertificatesFile = trustedCertificatesFile;
         
@@ -175,6 +186,8 @@ public class SSLOptions {
         this.trustedCertificatesFileContainer = trustedCertificatesFileContainer;
         
         this.authenticationWithoutEncryption = authenticationWithoutEncryption;
+
+        this.useFakeSSLMode = useFakeSSLMode;
         
         sslContext = createSSLContext();
     }
@@ -252,5 +265,9 @@ public class SSLOptions {
     
     public SSLContext getSSLContext() {
         return this.sslContext;
+    }
+
+    public boolean isFakeSSLMode() {
+        return this.useFakeSSLMode;
     }
 }

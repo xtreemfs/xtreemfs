@@ -49,6 +49,7 @@ import org.xtreemfs.foundation.LifeCycleThread;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.channels.ChannelIO;
 import org.xtreemfs.foundation.oncrpc.channels.SSLChannelIO;
+import org.xtreemfs.foundation.oncrpc.channels.SSLHandshakeOnlyChannelIO;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.UserCredentials;
@@ -261,7 +262,11 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 if (sslOptions == null) { // no SSL
                     channel = new ChannelIO(SocketChannel.open());
                 } else {
-                    channel = new SSLChannelIO(SocketChannel.open(), sslOptions, true);
+                    if (sslOptions.isFakeSSLMode()) {
+                        channel = new SSLHandshakeOnlyChannelIO(SocketChannel.open(), sslOptions, true);
+                    } else {
+                        channel = new SSLChannelIO(SocketChannel.open(), sslOptions, true);
+                    }
                 }
                 channel.configureBlocking(false);
                 channel.socket().setTcpNoDelay(true);

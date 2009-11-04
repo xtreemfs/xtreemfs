@@ -158,7 +158,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         SSLOptions sslOptions = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
-                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false) : null;
+                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config.isGRIDSSLmode()) : null;
         
         clientStage = new RPCNIOSocketClient(sslOptions, RPC_TIMEOUT, CONNECTION_TIMEOUT);
         clientStage.setLifeCycleListener(this);

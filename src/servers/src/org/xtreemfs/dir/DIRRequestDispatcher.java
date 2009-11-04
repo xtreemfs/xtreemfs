@@ -157,7 +157,7 @@ public class DIRRequestDispatcher extends LifeCycleThread
             sslOptions = new SSLOptions(new FileInputStream(config.getServiceCredsFile()), config
                     .getServiceCredsPassphrase(), config.getServiceCredsContainer(), new FileInputStream(
                 config.getTrustedCertsFile()), config.getTrustedCertsPassphrase(), config
-                    .getTrustedCertsContainer(), false);
+                    .getTrustedCertsContainer(), false, config.isGRIDSSLmode());
         }
         
         queue = new LinkedBlockingQueue<ONCRPCRequest>();

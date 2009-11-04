@@ -65,6 +65,8 @@ public class ServiceConfig extends Config {
     protected String      adminPassword;
     
     protected String      hostname;
+
+    private boolean    useGRIDSSLmode;
     
     public ServiceConfig() {
         super();
@@ -109,6 +111,8 @@ public class ServiceConfig extends Config {
         this.debugCategories = this.readCategories("debug.categories");
         
         this.hostname = readOptionalString("hostname", "");
+
+        this.useGRIDSSLmode = this.readOptionalBoolean("ssl.grid_ssl", false);
     }
     
     protected int readDebugLevel() {
@@ -233,6 +237,13 @@ public class ServiceConfig extends Config {
     
     public String getHostName() {
         return hostname;
+    }
+
+    /**
+     * @return the useFakeSSLmode
+     */
+    public boolean isGRIDSSLmode() {
+        return useGRIDSSLmode;
     }
     
 }

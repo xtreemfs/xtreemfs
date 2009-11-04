@@ -221,7 +221,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         SSLOptions serverSSLopts = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
-                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false) : null;
+                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config.isGRIDSSLmode()) : null;
         
         rpcServer = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, serverSSLopts);
         rpcServer.setLifeCycleListener(this);
@@ -229,7 +229,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         final SSLOptions clientSSLopts = config.isUsingSSL() ? new SSLOptions(new FileInputStream(config
                 .getServiceCredsFile()), config.getServiceCredsPassphrase(), config
                 .getServiceCredsContainer(), new FileInputStream(config.getTrustedCertsFile()), config
-                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false) : null;
+                .getTrustedCertsPassphrase(), config.getTrustedCertsContainer(), false, config.isGRIDSSLmode()) : null;
         
         rpcClient = new RPCNIOSocketClient(clientSSLopts, 5000, 5 * 60 * 1000);
         rpcClient.setLifeCycleListener(this);
