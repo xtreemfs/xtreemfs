@@ -461,7 +461,7 @@ if __name__ == "__main__":
             service_host = scheme+"localhost"
             if options.autotest:
             	clean( num_osds=options.num_osds )
-                start_services( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds )
+                start_services( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, enable_grid_ssl=options.enable_grid_ssl )
         
         try:
             create_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host, repl_on_close=options.repl_on_close)
