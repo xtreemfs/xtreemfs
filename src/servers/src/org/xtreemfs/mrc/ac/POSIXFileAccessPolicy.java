@@ -431,7 +431,7 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     @Override
     public int getPosixAccessRights(StorageManager sMan, FileMetadata file, String userId,
         List<String> groupIds) throws MRCException {
-        return file.isReadOnly() ? file.getPerms() & READ_ONLY_MASK : file.getPerms();
+        return !file.isDirectory() && file.isReadOnly() ? file.getPerms() & READ_ONLY_MASK : file.getPerms();
     }
     
     @Override
