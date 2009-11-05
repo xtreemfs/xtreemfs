@@ -6,6 +6,7 @@ public interface Constants
     public static final String ONCRPC_SCHEME = "oncrpc";
     public static final String ONCRPCS_SCHEME = "oncrpcs";
     public static final String ONCRPCU_SCHEME = "oncrpcu";
+    public static final String ONCRPCG_SCHEME = "oncrpcg";
     public static final int ONCRPC_AUTH_FLAVOR = 1326;
     public static final String REPL_UPDATE_PC_NONE = "";
     public static final String REPL_UPDATE_PC_RONLY = "ronly";
