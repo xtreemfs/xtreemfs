@@ -25,13 +25,10 @@ namespace xtreemfs
   {
   public:
     static yidl::runtime::auto_Object<DIRProxy> create( const YIELD::ipc::URI& absolute_uri,
-                                                uint32_t flags = 0,
-                                                YIELD::platform::auto_Log log = NULL,
-                                                const YIELD::platform::Time& operation_timeout = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::OPERATION_TIMEOUT_DEFAULT,
-                                                YIELD::ipc::auto_SSLContext ssl_context = NULL )
-    {
-      return YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::create<DIRProxy>( absolute_uri, flags, log, operation_timeout, ssl_context );
-    }
+                                                        uint32_t flags = 0,
+                                                        YIELD::platform::auto_Log log = NULL,
+                                                        const YIELD::platform::Time& operation_timeout = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::OPERATION_TIMEOUT_DEFAULT,
+                                                        YIELD::ipc::auto_SSLContext ssl_context = NULL );
 
     yidl::runtime::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> getAddressMappingsFromUUID( const std::string& uuid );
     YIELD::ipc::auto_URI getVolumeURIFromVolumeName( const std::string& volume_name );
@@ -39,8 +36,8 @@ namespace xtreemfs
   private:
     friend class YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>;
 
-    DIRProxy( const YIELD::ipc::URI& absolute_uri, uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::Socket::auto_Address peer_sockaddr, YIELD::ipc::auto_SSLContext ssl_context )
-        : Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>( absolute_uri, flags, log, operation_timeout, peer_sockaddr, ssl_context )
+    DIRProxy( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::auto_SocketAddress peername, YIELD::ipc::auto_SocketFactory socket_factory )
+        : Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>( flags, log, operation_timeout, peername, socket_factory )
     { }
 
     ~DIRProxy();

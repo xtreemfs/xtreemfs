@@ -24,13 +24,10 @@ namespace xtreemfs
   {
   public:
     static yidl::runtime::auto_Object<OSDProxy> create( const YIELD::ipc::URI& absolute_uri,
-                                               uint32_t flags = 0,
-                                               YIELD::platform::auto_Log log = NULL,
-                                               const YIELD::platform::Time& operation_timeout = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
-                                               YIELD::ipc::auto_SSLContext ssl_context = NULL )
-    {
-      return YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::create<OSDProxy>( absolute_uri, flags, log, operation_timeout, ssl_context );
-    }
+                                                        uint32_t flags = 0,
+                                                        YIELD::platform::auto_Log log = NULL,
+                                                        const YIELD::platform::Time& operation_timeout = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
+                                                        YIELD::ipc::auto_SSLContext ssl_context = NULL );
 
     // yidl::runtime::Object
     OSDProxy& incRef() { return yidl::runtime::Object::incRef( *this ); }
@@ -45,8 +42,8 @@ namespace xtreemfs
   private:
     friend class YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>;
 
-    OSDProxy( const YIELD::ipc::URI& absolute_uri, uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::Socket::auto_Address peer_sockaddr, YIELD::ipc::auto_SSLContext ssl_context )
-      : Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>( absolute_uri, flags, log, operation_timeout, peer_sockaddr, ssl_context )
+    OSDProxy( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::auto_SocketAddress peername, YIELD::ipc::auto_SocketFactory socket_factory )
+      : Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>( flags, log, operation_timeout, peername, socket_factory )
     { }
 
     ~OSDProxy() { }

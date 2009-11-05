@@ -1,3 +1,5 @@
+// Revision: 1902
+
 #include "yield/ipc.h"
 
 
@@ -17,11 +19,9 @@
 #endif
 #endif
 template <class RequestType, class ResponseType>
-YIELD::ipc::Client<RequestType, ResponseType>::Client( const URI& absolute_uri, uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, Socket::auto_Address peername, auto_SSLContext ssl_context )
-  : flags( flags ), log( log ), operation_timeout( operation_timeout ), peername( peername ), ssl_context( ssl_context )
-{
-  this->absolute_uri = new URI( absolute_uri );
-}
+YIELD::ipc::Client<RequestType, ResponseType>::Client( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, auto_SocketAddress peername, auto_SocketFactory socket_factory )
+  : flags( flags ), log( log ), operation_timeout( operation_timeout ), peername( peername ), socket_factory( socket_factory )
+{ }
 template <class RequestType, class ResponseType>
 YIELD::ipc::Client<RequestType, ResponseType>::~Client()
 {
@@ -42,35 +42,26 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent( YIELD::concurre
     {
       RequestType& request = static_cast<RequestType&>( ev );
       if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-        log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client sending " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << ".";
+        log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client sending " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to <host>:" << this->peername->get_port() << ".";
       Socket* socket_ = idle_sockets.try_dequeue();
       if ( socket_ != NULL )
       {
         if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-          log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: writing " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " on socket #" << static_cast<uint64_t>( *socket_ ) << ".";
+          log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: writing " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to <host>:" << this->peername->get_port() << " on socket #" << static_cast<uint64_t>( *socket_ ) << ".";
         AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request.serialize(), *this, request );
         YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), operation_timeout ) );
         socket_->aio_write( aio_write_control_block );
       }
       else
       {
-#ifdef YIELD_HAVE_OPENSSL
-        if ( absolute_uri->get_scheme()[absolute_uri->get_scheme().size()-1] == 's' &&
-             ssl_context != NULL )
-          socket_ = SSLSocket::create( ssl_context ).release();
-        else
-#endif
-        if ( absolute_uri->get_scheme()[absolute_uri->get_scheme().size()-1] == 'u' )
-          socket_ = UDPSocket::create().release();
-        else
-          socket_ = TCPSocket::create().release();
+        socket_ = socket_factory->createSocket().release();
         if ( socket_ != NULL )
         {
           if ( ( this->flags & this->CLIENT_FLAG_TRACE_IO ) == this->CLIENT_FLAG_TRACE_IO &&
                log != NULL && log->get_level() >= YIELD::platform::Log::LOG_INFO )
             socket_ = new TracingSocket( socket_, log );
           if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-            log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: connecting to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << " with socket #" << static_cast<uint64_t>( *socket_ ) << " (try #" << static_cast<uint16_t>( request.get_reconnect_tries() + 1 ) << ").";
+            log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: connecting to <host>:" << this->peername->get_port() << " with socket #" << static_cast<uint64_t>( *socket_ ) << " (try #" << static_cast<uint16_t>( request.get_reconnect_tries() + 1 ) << ").";
           AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( *this, request );
           YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_connect_control_block->incRef(), operation_timeout ) );
           socket_->aio_connect( aio_connect_control_block );
@@ -79,7 +70,7 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent( YIELD::concurre
         {
           YIELD::concurrency::ExceptionResponse* exception_response = new YIELD::concurrency::ExceptionResponse;
           if ( log != NULL )
-            log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: could not create new socket to connect to " << this->absolute_uri->get_host() << ":" << this->absolute_uri->get_port() << ", error: " << YIELD::platform::Exception::strerror() << ".";
+            log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: could not create new socket to connect to <host>:" << this->peername->get_port() << ", error: " << YIELD::platform::Exception::strerror() << ".";
           request.respond( *exception_response );
           yidl::runtime::Object::decRef( request );
           return;
@@ -111,7 +102,7 @@ public:
     if ( request_lock.try_acquire() )
     {
       if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: successfully connected to " << client.absolute_uri->get_host() << ":" << client.absolute_uri->get_port() << " on socket #" << static_cast<uint64_t>( *get_socket() ) << ".";
+        client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: successfully connected to <host>:" << client.peername->get_port() << " on socket #" << static_cast<uint64_t>( *get_socket() ) << ".";
       AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request->serialize(), client, request );
       YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), client.operation_timeout ) );
       get_socket()->aio_write( aio_write_control_block );
@@ -123,7 +114,7 @@ public:
     if ( request_lock.try_acquire() )
     {
       if ( client.log != NULL )
-        client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: connect() to " << client.absolute_uri->get_host() << ":" << client.absolute_uri->get_port() << " failed, errno=" << error_code << ", strerror=" << YIELD::platform::Exception::strerror( error_code ) << ".";
+        client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: connect() to <host>:" << client.peername->get_port() << " failed, errno=" << error_code << ", strerror=" << YIELD::platform::Exception::strerror( error_code ) << ".";
       if ( request->get_reconnect_tries() < 2 )
       {
         request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
@@ -476,26 +467,36 @@ void YIELD::ipc::HTTPBenchmarkDriver::sendHTTPRequest()
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 YIELD::ipc::auto_HTTPClient YIELD::ipc::HTTPClient::create( const URI& absolute_uri,
-                                    uint32_t flags,
-                                    YIELD::platform::auto_Log log,
-                                    const YIELD::platform::Time& operation_timeout,
-                                    auto_SSLContext ssl_context )
-{
+                                                            uint32_t flags,
+                                                            YIELD::platform::auto_Log log,
+                                                            const YIELD::platform::Time& operation_timeout,
+                                                            auto_SSLContext ssl_context )
+                        {
   URI checked_absolute_uri( absolute_uri );
   if ( checked_absolute_uri.get_port() == 0 )
     checked_absolute_uri.set_port( 80 );
-  Socket::auto_Address peername = Socket::Address::create( absolute_uri );
+  auto_SocketAddress peername = SocketAddress::create( absolute_uri );
   if ( peername != NULL )
   {
+    auto_SocketFactory socket_factory;
 #ifdef YIELD_HAVE_OPENSSL
-    if ( absolute_uri.get_scheme() == "https" && ssl_context == NULL )
+    if ( absolute_uri.get_scheme() == "https" )
     {
-      ssl_context = SSLContext::create( SSLv23_client_method() );
-      if ( ssl_context == NULL )
-        throw YIELD::platform::Exception();
+      if ( ssl_context != NULL )
+        socket_factory = new SSLSocketFactory( ssl_context );
+      else
+      {
+        ssl_context = SSLContext::create( SSLv23_client_method() );
+        if ( ssl_context != NULL )
+          socket_factory = new SSLSocketFactory( ssl_context );
+        else
+          throw YIELD::platform::Exception();
+      }
     }
+    else
 #endif
-    return new HTTPClient( absolute_uri, flags, log, operation_timeout, peername, ssl_context );
+      socket_factory = new TCPSocketFactory;
+    return new HTTPClient( flags, log, operation_timeout, peername, socket_factory );
   }
   else
     throw YIELD::platform::Exception();
@@ -1068,7 +1069,7 @@ YIELD::ipc::auto_HTTPServer YIELD::ipc::HTTPServer::create( const URI& absolute_
                                     YIELD::platform::auto_Log log,
                                     auto_SSLContext ssl_context )
 {
-  Socket::auto_Address sockname = Socket::Address::create( absolute_uri );
+  auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
   if ( sockname != NULL )
   {
     auto_TCPSocket listen_tcp_socket;
@@ -2075,8 +2076,8 @@ public:
 class YIELD::ipc::ONCRPCServer::ONCRPCResponseTarget : public YIELD::concurrency::EventTarget
 {
 public:
-  ONCRPCResponseTarget( YIELD::concurrency::auto_Interface interface_, auto_ONCRPCRequest oncrpc_request, Socket::auto_Address peer_sockaddr, auto_Socket socket_ )
-    : interface_( interface_ ), oncrpc_request( oncrpc_request ), peer_sockaddr( peer_sockaddr ), socket_( socket_ )
+  ONCRPCResponseTarget( YIELD::concurrency::auto_Interface interface_, auto_ONCRPCRequest oncrpc_request, auto_SocketAddress peername, auto_Socket socket_ )
+    : interface_( interface_ ), oncrpc_request( oncrpc_request ), peername( peername ), socket_( socket_ )
   { }
   // yidl::runtime::Object
   YIDL_RUNTIME_OBJECT_PROTOTYPES( ONCRPCServer::ONCRPCResponseTarget, 0 );
@@ -2084,15 +2085,15 @@ public:
   void send( YIELD::concurrency::Event& ev )
   {
     ONCRPCResponse oncrpc_response( interface_, oncrpc_request->get_xid(), ev );
-    if ( peer_sockaddr != NULL )
-      static_cast<UDPSocket*>( socket_.get() )->sendto( oncrpc_response.serialize(), peer_sockaddr );
+    if ( peername != NULL )
+      static_cast<UDPSocket*>( socket_.get() )->sendto( oncrpc_response.serialize(), peername );
     else
       socket_->aio_write( new AIOWriteControlBlock( oncrpc_response.serialize() ) );
   }
 private:
   YIELD::concurrency::auto_Interface interface_;
   auto_ONCRPCRequest oncrpc_request;
-  Socket::auto_Address peer_sockaddr;
+  auto_SocketAddress peername;
   auto_Socket socket_;
 };
 class YIELD::ipc::ONCRPCServer::AIOReadControlBlock : public Socket::AIOReadControlBlock
@@ -2160,7 +2161,7 @@ public:
       if ( interface_request != NULL )
       {
         oncrpc_request_body.release();
-        interface_request->set_response_target( new ONCRPCResponseTarget( interface_, oncrpc_request, get_peer_sockaddr(), get_socket() ) );
+        interface_request->set_response_target( new ONCRPCResponseTarget( interface_, oncrpc_request, get_peername(), get_socket() ) );
         interface_->send( *interface_request );
       }
       static_cast<UDPSocket*>( get_socket().get() )->aio_recvfrom( new AIORecvFromControlBlock( interface_ ) );
@@ -2201,7 +2202,7 @@ YIELD::ipc::auto_ONCRPCServer YIELD::ipc::ONCRPCServer::create( const URI& absol
                                                                 YIELD::platform::auto_Log log,
                                                                 auto_SSLContext ssl_context )
 {
-  Socket::auto_Address sockname = Socket::Address::create( absolute_uri );
+  auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
   if ( sockname != NULL )
   {
     if ( absolute_uri.get_scheme() == "oncrpcu" )
@@ -3040,7 +3041,7 @@ void YIELD::ipc::Socket::aio_write_nbio( yidl::runtime::auto_Object<AIOWriteCont
   else
     aio_write_control_block->onError( YIELD::platform::Exception::get_errno() );
 }
-bool YIELD::ipc::Socket::bind( Socket::auto_Address to_sockaddr )
+bool YIELD::ipc::Socket::bind( auto_SocketAddress to_sockaddr )
 {
   for ( ;; )
   {
@@ -3074,7 +3075,7 @@ bool YIELD::ipc::Socket::close()
   return ::close( socket_ ) != -1;
 #endif
 }
-bool YIELD::ipc::Socket::connect( Socket::auto_Address to_sockaddr )
+bool YIELD::ipc::Socket::connect( auto_SocketAddress to_sockaddr )
 {
   for ( ;; )
   {
@@ -3267,23 +3268,23 @@ std::string YIELD::ipc::Socket::gethostname()
   return hostname;
 #endif
 }
-YIELD::ipc::Socket::auto_Address YIELD::ipc::Socket::getpeername()
+YIELD::ipc::auto_SocketAddress YIELD::ipc::Socket::getpeername()
 {
   struct sockaddr_storage peername_sockaddr_storage;
   memset( &peername_sockaddr_storage, 0, sizeof( peername_sockaddr_storage ) );
   socklen_t peername_sockaddr_storage_len = sizeof( peername_sockaddr_storage );
   if ( ::getpeername( *this, reinterpret_cast<struct sockaddr*>( &peername_sockaddr_storage ), &peername_sockaddr_storage_len ) != -1 )
-    return new Socket::Address( peername_sockaddr_storage );
+    return new SocketAddress( peername_sockaddr_storage );
   else
     return NULL;
 }
-YIELD::ipc::Socket::auto_Address YIELD::ipc::Socket::getsockname()
+YIELD::ipc::auto_SocketAddress YIELD::ipc::Socket::getsockname()
 {
   struct sockaddr_storage sockname_sockaddr_storage;
   memset( &sockname_sockaddr_storage, 0, sizeof( sockname_sockaddr_storage ) );
   socklen_t sockname_sockaddr_storage_len = sizeof( sockname_sockaddr_storage );
   if ( ::getsockname( *this, reinterpret_cast<struct sockaddr*>( &sockname_sockaddr_storage ), &sockname_sockaddr_storage_len ) != -1 )
-    return new Socket::Address( sockname_sockaddr_storage );
+    return new SocketAddress( sockname_sockaddr_storage );
   else
     return NULL;
 }
@@ -3483,38 +3484,38 @@ ssize_t YIELD::ipc::Socket::writev( const struct iovec* buffers, uint32_t buffer
 #include <netinet/in.h>
 #include <sys/socket.h>
 #endif
-YIELD::ipc::Socket::Address::Address( struct addrinfo& addrinfo_list )
+YIELD::ipc::SocketAddress::SocketAddress( struct addrinfo& addrinfo_list )
   : addrinfo_list( &addrinfo_list ), _sockaddr_storage( NULL )
 { }
-YIELD::ipc::Socket::Address::~Address()
+YIELD::ipc::SocketAddress::~SocketAddress()
 {
   if ( addrinfo_list != NULL )
     freeaddrinfo( addrinfo_list );
   else if ( _sockaddr_storage != NULL )
     delete _sockaddr_storage;
 }
-YIELD::ipc::Socket::Address::Address( const struct sockaddr_storage& _sockaddr_storage )
+YIELD::ipc::SocketAddress::SocketAddress( const struct sockaddr_storage& _sockaddr_storage )
 {
   addrinfo_list = NULL;
   this->_sockaddr_storage = new struct sockaddr_storage;
   memcpy_s( this->_sockaddr_storage, sizeof( *this->_sockaddr_storage ), &_sockaddr_storage, sizeof( _sockaddr_storage ) );
 }
-YIELD::ipc::Socket::auto_Address YIELD::ipc::Socket::Address::create( const URI& uri )
+YIELD::ipc::auto_SocketAddress YIELD::ipc::SocketAddress::create( const URI& uri )
 {
   if ( uri.get_host() == "*" )
     return create( NULL, uri.get_port() );
   else
     return create( uri.get_host().c_str(), uri.get_port() );
 }
-YIELD::ipc::Socket::auto_Address YIELD::ipc::Socket::Address::create( const char* hostname, uint16_t port )
+YIELD::ipc::auto_SocketAddress YIELD::ipc::SocketAddress::create( const char* hostname, uint16_t port )
 {
   struct addrinfo* addrinfo_list = getaddrinfo( hostname, port );
   if ( addrinfo_list != NULL )
-    return new Address( *addrinfo_list );
+    return new SocketAddress( *addrinfo_list );
   else
     return NULL;
 }
-bool YIELD::ipc::Socket::Address::as_struct_sockaddr( int family, struct sockaddr*& out_sockaddr, socklen_t& out_sockaddrlen )
+bool YIELD::ipc::SocketAddress::as_struct_sockaddr( int family, struct sockaddr*& out_sockaddr, socklen_t& out_sockaddrlen )
 {
   if ( addrinfo_list != NULL )
   {
@@ -3544,7 +3545,7 @@ bool YIELD::ipc::Socket::Address::as_struct_sockaddr( int family, struct sockadd
 #endif
   return false;
 }
-struct addrinfo* YIELD::ipc::Socket::Address::getaddrinfo( const char* hostname, uint16_t port )
+struct addrinfo* YIELD::ipc::SocketAddress::getaddrinfo( const char* hostname, uint16_t port )
 {
 #ifdef _WIN32
   Socket::init();
@@ -3587,7 +3588,7 @@ struct addrinfo* YIELD::ipc::Socket::Address::getaddrinfo( const char* hostname,
   else
     return NULL;
 }
-bool YIELD::ipc::Socket::Address::getnameinfo( std::string& out_hostname, bool numeric ) const
+bool YIELD::ipc::SocketAddress::getnameinfo( std::string& out_hostname, bool numeric ) const
 {
   char nameinfo[NI_MAXHOST];
   if ( this->getnameinfo( nameinfo, NI_MAXHOST, numeric ) )
@@ -3598,7 +3599,7 @@ bool YIELD::ipc::Socket::Address::getnameinfo( std::string& out_hostname, bool n
   else
     return false;
 }
-bool YIELD::ipc::Socket::Address::getnameinfo( char* out_hostname, uint32_t out_hostname_len, bool numeric ) const
+bool YIELD::ipc::SocketAddress::getnameinfo( char* out_hostname, uint32_t out_hostname_len, bool numeric ) const
 {
   if ( addrinfo_list != NULL )
   {
@@ -3615,7 +3616,7 @@ bool YIELD::ipc::Socket::Address::getnameinfo( char* out_hostname, uint32_t out_
   else
     return ::getnameinfo( reinterpret_cast<sockaddr*>( _sockaddr_storage ), static_cast<socklen_t>( sizeof( *_sockaddr_storage ) ), out_hostname, out_hostname_len, NULL, 0, numeric ? NI_NUMERICHOST : 0 ) == 0;
 }
-uint16_t YIELD::ipc::Socket::Address::get_port() const
+uint16_t YIELD::ipc::SocketAddress::get_port() const
 {
   if ( addrinfo_list != NULL )
   {
@@ -3636,7 +3637,7 @@ uint16_t YIELD::ipc::Socket::Address::get_port() const
     }
   }
 }
-bool YIELD::ipc::Socket::Address::operator==( const Address& other ) const
+bool YIELD::ipc::SocketAddress::operator==( const SocketAddress& other ) const
 {
   if ( addrinfo_list != NULL )
   {
@@ -3779,7 +3780,7 @@ public:
 #if defined(_WIN32)
     auto_TCPSocket submit_listen_tcp_socket = TCPSocket::create( AF_INET );
     if ( submit_listen_tcp_socket != NULL &&
-         submit_listen_tcp_socket->bind( Socket::Address::create( "localhost", 0 ) ) &&
+         submit_listen_tcp_socket->bind( SocketAddress::create( "localhost", 0 ) ) &&
          submit_listen_tcp_socket->listen() )
     {
       submit_pipe_write_end = TCPSocket::create( AF_INET );
@@ -4409,9 +4410,9 @@ void YIELD::ipc::SSLSocket::aio_write( yidl::runtime::auto_Object<AIOWriteContro
 {
   aio_write_nbio( aio_write_control_block );
 }
-bool YIELD::ipc::SSLSocket::connect( Socket::auto_Address peer_sockaddr )
+bool YIELD::ipc::SSLSocket::connect( auto_SocketAddress peername )
 {
-  if ( TCPSocket::connect( peer_sockaddr ) )
+  if ( TCPSocket::connect( peername ) )
   {
     SSL_set_fd( ssl, *this );
     SSL_set_connect_state( ssl );
@@ -4559,9 +4560,9 @@ SOCKET YIELD::ipc::TCPSocket::_accept()
 int YIELD::ipc::TCPSocket::_accept()
 #endif
 {
-  sockaddr_storage peer_sockaddr_storage;
-  socklen_t peer_sockaddr_storage_len = sizeof( peer_sockaddr_storage );
-  return ::accept( *this, ( struct sockaddr* )&peer_sockaddr_storage, &peer_sockaddr_storage_len );
+  sockaddr_storage peername_storage;
+  socklen_t peername_storage_len = sizeof( peername_storage );
+  return ::accept( *this, ( struct sockaddr* )&peername_storage, &peername_storage_len );
 }
 void YIELD::ipc::TCPSocket::aio_accept( yidl::runtime::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
 {
@@ -4583,9 +4584,9 @@ void YIELD::ipc::TCPSocket::aio_accept_iocp( yidl::runtime::auto_Object<AIOAccep
     WSAIoctl( *this, SIO_GET_EXTENSION_FUNCTION_POINTER, &GuidAcceptEx, sizeof( GuidAcceptEx ), &lpfnAcceptEx, sizeof( lpfnAcceptEx ), &dwBytes, NULL, NULL );
   }
   aio_accept_control_block->accepted_tcp_socket = TCPSocket::create( get_domain() );
-  DWORD sizeof_peer_sockaddr = ( get_domain() == AF_INET6 ) ? sizeof( sockaddr_in6 ) : sizeof( sockaddr_in );
+  DWORD sizeof_peername = ( get_domain() == AF_INET6 ) ? sizeof( sockaddr_in6 ) : sizeof( sockaddr_in );
   DWORD dwBytesReceived;
-  if ( static_cast<LPFN_ACCEPTEX>( lpfnAcceptEx )( *this, *aio_accept_control_block->accepted_tcp_socket, aio_accept_control_block->peer_sockaddr, 0, sizeof_peer_sockaddr + 16, sizeof_peer_sockaddr + 16, &dwBytesReceived, ( LPOVERLAPPED )*aio_accept_control_block ) ||
+  if ( static_cast<LPFN_ACCEPTEX>( lpfnAcceptEx )( *this, *aio_accept_control_block->accepted_tcp_socket, aio_accept_control_block->peername, 0, sizeof_peername + 16, sizeof_peername + 16, &dwBytesReceived, ( LPOVERLAPPED )*aio_accept_control_block ) ||
        ::WSAGetLastError() == WSA_IO_PENDING )
     aio_accept_control_block.release();
   else
@@ -4621,7 +4622,7 @@ void YIELD::ipc::TCPSocket::aio_connect_iocp( Socket::auto_AIOConnectControlBloc
     struct sockaddr* name; socklen_t namelen;
     if ( aio_connect_control_block->get_peername()->as_struct_sockaddr( get_domain(), name, namelen ) )
     {
-      if ( bind( Socket::Address::create( NULL, 0 ) ) )
+      if ( bind( SocketAddress::create( NULL, 0 ) ) )
       {
         get_aio_queue().associate( *this );
         DWORD dwBytesSent;
@@ -4775,7 +4776,7 @@ void YIELD::ipc::TracingSocket::aio_write( Socket::auto_AIOWriteControlBlock aio
 {
   aio_write_nbio( aio_write_control_block );
 }
-bool YIELD::ipc::TracingSocket::connect( Socket::auto_Address to_sockaddr )
+bool YIELD::ipc::TracingSocket::connect( auto_SocketAddress to_sockaddr )
 {
   std::string to_hostname;
   if ( to_sockaddr->getnameinfo( to_hostname ) )
@@ -4887,8 +4888,8 @@ void YIELD::ipc::UDPSocket::aio_recvfrom_iocp( yidl::runtime::auto_Object<AIORec
   wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) );
   wsabuf[0].len = static_cast<ULONG>( buffer->capacity() - buffer->size() );
   DWORD dwNumberOfBytesReceived, dwFlags = 0;
-  socklen_t peer_sockaddr_len = sizeof( *aio_recvfrom_control_block->peer_sockaddr );
-  if ( ::WSARecvFrom( *this, wsabuf, 1, &dwNumberOfBytesReceived, &dwFlags, reinterpret_cast<struct sockaddr*>( aio_recvfrom_control_block->peer_sockaddr ), &peer_sockaddr_len, *aio_recvfrom_control_block, NULL ) == 0 ||
+  socklen_t peername_len = sizeof( *aio_recvfrom_control_block->peername );
+  if ( ::WSARecvFrom( *this, wsabuf, 1, &dwNumberOfBytesReceived, &dwFlags, reinterpret_cast<struct sockaddr*>( aio_recvfrom_control_block->peername ), &peername_len, *aio_recvfrom_control_block, NULL ) == 0 ||
        ::WSAGetLastError() == WSA_IO_PENDING )
        aio_recvfrom_control_block.release();
   else
@@ -4922,42 +4923,42 @@ YIELD::ipc::auto_UDPSocket YIELD::ipc::UDPSocket::create()
       return NULL;
   }
 }
-ssize_t YIELD::ipc::UDPSocket::recvfrom( yidl::runtime::auto_Buffer buffer, struct sockaddr_storage& peer_sockaddr )
+ssize_t YIELD::ipc::UDPSocket::recvfrom( yidl::runtime::auto_Buffer buffer, struct sockaddr_storage& peername )
 {
-  ssize_t recvfrom_ret = recvfrom( static_cast<char*>( *buffer ) + buffer->size(), buffer->capacity() - buffer->size(), peer_sockaddr );
+  ssize_t recvfrom_ret = recvfrom( static_cast<char*>( *buffer ) + buffer->size(), buffer->capacity() - buffer->size(), peername );
   if ( recvfrom_ret > 0 )
     buffer->put( NULL, static_cast<size_t>( recvfrom_ret ) );
   return recvfrom_ret;
 }
-ssize_t YIELD::ipc::UDPSocket::recvfrom( void* buffer, size_t buffer_len, struct sockaddr_storage& peer_sockaddr )
+ssize_t YIELD::ipc::UDPSocket::recvfrom( void* buffer, size_t buffer_len, struct sockaddr_storage& peername )
 {
-  socklen_t peer_sockaddr_len = sizeof( peer_sockaddr );
-  return ::recvfrom( *this, static_cast<char*>( buffer ), buffer_len, 0, reinterpret_cast<struct sockaddr*>( &peer_sockaddr ), &peer_sockaddr_len );
+  socklen_t peername_len = sizeof( peername );
+  return ::recvfrom( *this, static_cast<char*>( buffer ), buffer_len, 0, reinterpret_cast<struct sockaddr*>( &peername ), &peername_len );
 }
-ssize_t YIELD::ipc::UDPSocket::sendto( yidl::runtime::auto_Buffer buffer, Socket::auto_Address peer_sockaddr )
+ssize_t YIELD::ipc::UDPSocket::sendto( yidl::runtime::auto_Buffer buffer, auto_SocketAddress peername )
 {
-  return sendto( static_cast<void*>( *buffer ), buffer->size(), peer_sockaddr );
+  return sendto( static_cast<void*>( *buffer ), buffer->size(), peername );
 }
-ssize_t YIELD::ipc::UDPSocket::sendto( const void* buffer, size_t buffer_len, Socket::auto_Address _peer_sockaddr )
+ssize_t YIELD::ipc::UDPSocket::sendto( const void* buffer, size_t buffer_len, auto_SocketAddress _peername )
 {
-  struct sockaddr* peer_sockaddr; socklen_t peer_sockaddr_len;
-  if ( _peer_sockaddr->as_struct_sockaddr( get_domain(), peer_sockaddr, peer_sockaddr_len ) )
-    return ::sendto( *this, static_cast<const char*>( buffer ), buffer_len, 0, peer_sockaddr, peer_sockaddr_len );
+  struct sockaddr* peername; socklen_t peername_len;
+  if ( _peername->as_struct_sockaddr( get_domain(), peername, peername_len ) )
+    return ::sendto( *this, static_cast<const char*>( buffer ), buffer_len, 0, peername, peername_len );
   else
     return -1;
 }
 YIELD::ipc::UDPSocket::AIORecvFromControlBlock::AIORecvFromControlBlock( yidl::runtime::auto_Buffer buffer )
 : buffer( buffer )
 {
-  peer_sockaddr = new sockaddr_storage;
+  peername = new sockaddr_storage;
 }
 YIELD::ipc::UDPSocket::AIORecvFromControlBlock::~AIORecvFromControlBlock()
 {
-  delete peer_sockaddr;
+  delete peername;
 }
-YIELD::ipc::Socket::auto_Address YIELD::ipc::UDPSocket::AIORecvFromControlBlock::get_peer_sockaddr() const
+YIELD::ipc::auto_SocketAddress YIELD::ipc::UDPSocket::AIORecvFromControlBlock::get_peername() const
 {
-  return new Socket::Address( *peer_sockaddr );
+  return new SocketAddress( *peername );
 }
 
 

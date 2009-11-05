@@ -105,47 +105,47 @@ namespace YIELD
 #endif
 
 
+    class SocketAddress : public yidl::runtime::Object
+    {
+    public:
+      SocketAddress( struct addrinfo& addrinfo_list ); // Takes ownership of addrinfo_list
+      SocketAddress( const struct sockaddr_storage& _sockaddr_storage ); // Copies _sockaddr_storage
+
+      // create( ... ) factory methods return NULL instead of throwing exceptions
+      static yidl::runtime::auto_Object<SocketAddress> create( const char* hostname ) { return create( hostname, 0 ); }
+      static yidl::runtime::auto_Object<SocketAddress> create( const char* hostname, uint16_t port ); // hostname can be NULL for INADDR_ANY
+      static yidl::runtime::auto_Object<SocketAddress> create( const URI& );
+
+#ifdef _WIN32
+      bool as_struct_sockaddr( int family, struct sockaddr*& out_sockaddr, int32_t& out_sockaddrlen );
+#else
+      bool as_struct_sockaddr( int family, struct sockaddr*& out_sockaddr, uint32_t& out_sockaddrlen );
+#endif
+      bool getnameinfo( std::string& out_hostname, bool numeric = true ) const;
+      bool getnameinfo( char* out_hostname, uint32_t out_hostname_len, bool numeric = true ) const;
+      uint16_t get_port() const;
+      bool operator==( const SocketAddress& ) const;
+      bool operator!=( const SocketAddress& other ) const { return !operator==( other ); }
+
+      // yidl::runtime::Object
+      YIDL_RUNTIME_OBJECT_PROTOTYPES( SocketAddress, 0 );
+
+    private:
+      SocketAddress( const SocketAddress& ) { DebugBreak(); } // Prevent copying
+      ~SocketAddress();
+
+      struct addrinfo* addrinfo_list; // Multiple sockaddr's obtained from getaddrinfo(3)
+      struct sockaddr_storage* _sockaddr_storage; // A single sockaddr passed in the constructor and copied
+
+      static struct addrinfo* getaddrinfo( const char* hostname, uint16_t port );
+    };
+
+    typedef yidl::runtime::auto_Object<SocketAddress> auto_SocketAddress;
+
+
     class Socket : public yidl::runtime::Object
     {
     public:
-      class Address : public yidl::runtime::Object
-      {
-      public:
-        Address( struct addrinfo& addrinfo_list ); // Takes ownership of addrinfo_list
-        Address( const struct sockaddr_storage& _sockaddr_storage ); // Copies _sockaddr_storage
-
-        // create( ... ) factory methods return NULL instead of throwing exceptions
-        static yidl::runtime::auto_Object<Address> create( const char* hostname ) { return create( hostname, 0 ); }
-        static yidl::runtime::auto_Object<Address> create( const char* hostname, uint16_t port ); // hostname can be NULL for INADDR_ANY
-        static yidl::runtime::auto_Object<Address> create( const URI& );
-
-  #ifdef _WIN32
-        bool as_struct_sockaddr( int family, struct sockaddr*& out_sockaddr, int32_t& out_sockaddrlen );
-  #else
-        bool as_struct_sockaddr( int family, struct sockaddr*& out_sockaddr, uint32_t& out_sockaddrlen );
-  #endif
-        bool getnameinfo( std::string& out_hostname, bool numeric = true ) const;
-        bool getnameinfo( char* out_hostname, uint32_t out_hostname_len, bool numeric = true ) const;
-        uint16_t get_port() const;
-        bool operator==( const Address& ) const;
-        bool operator!=( const Address& other ) const { return !operator==( other ); }
-
-        // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( Socket::Address, 0 );
-
-      private:
-        Address( const Address& ) { DebugBreak(); } // Prevent copying
-        ~Address();
-
-        struct addrinfo* addrinfo_list; // Multiple sockaddr's obtained from getaddrinfo(3)
-        struct sockaddr_storage* _sockaddr_storage; // A single sockaddr passed in the constructor and copied
-
-        static struct addrinfo* getaddrinfo( const char* hostname, uint16_t port );
-      };
-
-      typedef yidl::runtime::auto_Object<Address> auto_Address;
-
-
       class AIOControlBlock : public ::YIELD::platform::AIOControlBlock
       {
       public:
@@ -173,14 +173,14 @@ namespace YIELD
       class AIOConnectControlBlock : public AIOControlBlock
       {
       public:
-        AIOConnectControlBlock( auto_Address peername )
+        AIOConnectControlBlock( auto_SocketAddress peername )
           : peername( peername )
         { }
 
         virtual ~AIOConnectControlBlock()
         { }
 
-        auto_Address get_peername() const { return peername; }
+        auto_SocketAddress get_peername() const { return peername; }
 
         // yidl::runtime::Object
         YIDL_RUNTIME_OBJECT_PROTOTYPES( AIOConnectControlBlock, 223 );
@@ -199,7 +199,7 @@ namespace YIELD
         }
 
       private:
-        auto_Address peername;
+        auto_SocketAddress peername;
       };
 
       typedef yidl::runtime::auto_Object<AIOConnectControlBlock> auto_AIOConnectControlBlock;
@@ -281,17 +281,17 @@ namespace YIELD
       virtual void aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block );
       virtual void aio_read( yidl::runtime::auto_Object<AIOReadControlBlock> aio_read_control_block );
       virtual void aio_write( yidl::runtime::auto_Object<AIOWriteControlBlock> aio_write_control_block );
-      virtual bool bind( auto_Address to_sockaddr );
+      virtual bool bind( auto_SocketAddress to_sockaddr );
       virtual bool close();
-      virtual bool connect( auto_Address to_sockaddr );
+      virtual bool connect( auto_SocketAddress to_sockaddr );
       static void destroy();
       virtual bool get_blocking_mode() const;
       int get_domain() const { return domain; }
       static std::string getfqdn();
       static std::string gethostname();
-      auto_Address getpeername();
+      auto_SocketAddress getpeername();
       int get_protocol() const { return protocol; }
-      auto_Address getsockname();
+      auto_SocketAddress getsockname();
       int get_type() const { return type; }
       static void init();
       bool operator==( const Socket& other ) const { return socket_ == other.socket_; }
@@ -385,6 +385,15 @@ namespace YIELD
 
     typedef yidl::runtime::auto_Object<Socket> auto_Socket;
 
+  
+    class SocketFactory : public yidl::runtime::Object
+    {
+    public:
+      virtual auto_Socket createSocket() = 0;
+    };
+
+    typedef yidl::runtime::auto_Object<SocketFactory> auto_SocketFactory;
+
 
     class SSLContext : public yidl::runtime::Object
     {
@@ -461,7 +470,7 @@ namespace YIELD
 
 #ifdef _WIN32
         friend class TCPSocket;
-        char peer_sockaddr[88];
+        char peername[88];
 #endif
       };
 
@@ -528,19 +537,18 @@ namespace YIELD
       virtual void handleEvent( YIELD::concurrency::Event& );
 
     protected:
-      Client( const URI& absolute_uri, uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, Socket::auto_Address peername, auto_SSLContext ssl_context );
+      Client( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, auto_SocketAddress peername, auto_SocketFactory socket_factory );
       virtual ~Client();
 
       uint32_t get_flags() const { return flags; }
       YIELD::platform::auto_Log get_log() const { return log; }
 
     private:
-      yidl::runtime::auto_Object<URI> absolute_uri;
       uint32_t flags;
       YIELD::platform::auto_Log log;
       YIELD::platform::Time operation_timeout;
-      Socket::auto_Address peername;
-      auto_SSLContext ssl_context;
+      auto_SocketAddress peername;
+      auto_SocketFactory socket_factory;
       
       YIELD::platform::SynchronizedSTLQueue<Socket*> idle_sockets;
 
@@ -795,8 +803,8 @@ namespace YIELD
       virtual void handleEvent( YIELD::concurrency::Event& ev ) { Client<HTTPRequest, HTTPResponse>::handleEvent( ev ); }
 
     private:
-      HTTPClient( const URI& absolute_uri, uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, Socket::auto_Address peername, auto_SSLContext ssl_context )
-        : Client<HTTPRequest, HTTPResponse>( absolute_uri, flags, log, operation_timeout, peername, ssl_context )
+      HTTPClient( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, auto_SocketAddress peername, auto_SocketFactory socket_factory )
+        : Client<HTTPRequest, HTTPResponse>( flags, log, operation_timeout, peername, socket_factory )
       { }
 
       virtual ~HTTPClient() { }
@@ -811,9 +819,9 @@ namespace YIELD
     {
     public:
       static yidl::runtime::auto_Object<HTTPServer> create( const URI& absolute_uri,
-                                             YIELD::concurrency::auto_EventTarget http_request_target, 
-                                             YIELD::platform::auto_Log log = NULL, 
-                                             auto_SSLContext ssl_context = NULL );
+                                                            YIELD::concurrency::auto_EventTarget http_request_target, 
+                                                            YIELD::platform::auto_Log log = NULL, 
+                                                            auto_SSLContext ssl_context = NULL );
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( HTTPServer, 0 );
@@ -1020,19 +1028,9 @@ namespace YIELD
     class ONCRPCClient : public InterfaceType, public Client<ONCRPCRequest, ONCRPCResponse>
     {
     public:
-      template <class ONCRPCClientType>
-      static yidl::runtime::auto_Object<ONCRPCClientType> create( const URI& absolute_uri, 
-                                                   uint32_t flags = 0,
-                                                   YIELD::platform::auto_Log log = NULL, 
-                                                   const YIELD::platform::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
-                                                   auto_SSLContext ssl_context = NULL )
-      {           
-        Socket::auto_Address peername = Socket::Address::create( absolute_uri );
-        if ( peername != NULL && peername->get_port() != 0 )
-          return new ONCRPCClientType( absolute_uri, flags, log, operation_timeout, peername, ssl_context );        
-        else
-          throw YIELD::platform::Exception();
-      }
+      ONCRPCClient( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, auto_SocketAddress peername, auto_SocketFactory socket_factory )
+        : Client<ONCRPCRequest, ONCRPCResponse>( flags, log, operation_timeout, peername, socket_factory )
+      { }
 
       // YIELD::concurrency::EventHandler
       virtual void handleEvent( YIELD::concurrency::Event& ev )
@@ -1065,10 +1063,6 @@ namespace YIELD
       }
 
     protected:
-      ONCRPCClient( const URI& absolute_uri, uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, Socket::auto_Address peername, auto_SSLContext ssl_context )
-        : Client<ONCRPCRequest, ONCRPCResponse>( absolute_uri, flags, log, operation_timeout, peername, ssl_context )
-      { }
-
       virtual ~ONCRPCClient() { }
     };
 
@@ -1195,19 +1189,19 @@ namespace YIELD
       void aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block );
       void aio_read( yidl::runtime::auto_Object<AIOReadControlBlock> aio_read_control_block );
       void aio_write( yidl::runtime::auto_Object<AIOWriteControlBlock> aio_write_control_block );
-      bool connect( auto_Address peername );
-      ssize_t read( void* buffer, size_t buffer_len );
-      bool want_read() const;
-      bool want_write() const;
-      ssize_t write( const void* buffer, size_t buffer_len );
-      ssize_t writev( const struct iovec* buffers, uint32_t buffers_count );
+      bool connect( auto_SocketAddress peername );
+      virtual ssize_t read( void* buffer, size_t buffer_len );
+      virtual bool want_read() const;
+      virtual bool want_write() const;
+      virtual ssize_t write( const void* buffer, size_t buffer_len );
+      virtual ssize_t writev( const struct iovec* buffers, uint32_t buffers_count );
 
       // TCPSocket
       auto_TCPSocket accept();
       void aio_accept( yidl::runtime::auto_Object<AIOAcceptControlBlock> aio_accept_control_block );    
-      bool shutdown();
+      virtual bool shutdown();
 
-    private:
+    protected:
 #if defined(_WIN64)
       SSLSocket( int domain, uint64_t socket_, auto_SSLContext ctx, SSL* ssl );
 #elif defined(_WIN32)
@@ -1222,7 +1216,46 @@ namespace YIELD
     };
 
     typedef yidl::runtime::auto_Object<SSLSocket> auto_SSLSocket;
+
+    
+    class SSLSocketFactory : public SocketFactory
+    {
+    public:
+      SSLSocketFactory( auto_SSLContext ssl_context )
+        : ssl_context( ssl_context )
+      { }
+
+      // yidl::runtime::Object
+      YIDL_RUNTIME_OBJECT_PROTOTYPES( SSLSocketFactory, 0 );
+
+      // SocketFactory
+      auto_Socket createSocket()
+      {
+        return SSLSocket::create( ssl_context ).release();
+      }
+
+    private:
+      auto_SSLContext ssl_context;
+    };
+
+    typedef yidl::runtime::auto_Object<SSLSocketFactory> auto_SSLSocketFactory;
 #endif
+
+
+    class TCPSocketFactory : public SocketFactory
+    {
+    public:
+      // yidl::runtime::Object
+      YIDL_RUNTIME_OBJECT_PROTOTYPES( TCPSocketFactory, 0 );
+
+      // SocketFactory
+      auto_Socket createSocket()
+      {
+        return TCPSocket::create().release();
+      }
+    };
+
+    typedef yidl::runtime::auto_Object<TCPSocketFactory> auto_TCPSocketFactory;
 
 
     class TracingSocket : public Socket
@@ -1238,12 +1271,12 @@ namespace YIELD
       void aio_connect( Socket::auto_AIOConnectControlBlock aio_connect_control_block );
       void aio_read( Socket::auto_AIOReadControlBlock aio_read_control_block );
       void aio_write( Socket::auto_AIOWriteControlBlock aio_write_control_block );
-      bool bind( Socket::auto_Address to_sockaddr ) { return underlying_socket->bind( to_sockaddr ); }
+      bool bind( auto_SocketAddress to_sockaddr ) { return underlying_socket->bind( to_sockaddr ); }
       bool close() { return underlying_socket->close(); }
-      bool connect( Socket::auto_Address to_sockaddr );
+      bool connect( auto_SocketAddress to_sockaddr );
       bool get_blocking_mode() const { return underlying_socket->get_blocking_mode(); }
-      auto_Address getpeername() { return underlying_socket->getpeername(); }
-      auto_Address getsockname() { return underlying_socket->getsockname(); }      
+      auto_SocketAddress getpeername() { return underlying_socket->getpeername(); }
+      auto_SocketAddress getsockname() { return underlying_socket->getsockname(); }      
       ssize_t read( void* buffer, size_t buffer_len );
       bool set_blocking_mode( bool blocking ) { return underlying_socket->set_blocking_mode( blocking ); }
       bool want_connect() const;
@@ -1268,7 +1301,7 @@ namespace YIELD
         AIORecvFromControlBlock( yidl::runtime::auto_Buffer buffer );
 
         yidl::runtime::auto_Buffer get_buffer() const { return buffer; }
-        auto_Address get_peer_sockaddr() const;
+        auto_SocketAddress get_peername() const;
 
         // yidl::runtime::Object
         YIDL_RUNTIME_OBJECT_PROTOTYPES( UDPSocket::AIORecvFromControlBlock, 0 );
@@ -1276,7 +1309,7 @@ namespace YIELD
         // Socket::AIOControlBlock
         ExecuteStatus execute()
         {
-          ssize_t recvfrom_ret = static_cast<UDPSocket*>( get_socket().get() )->recvfrom( buffer, *peer_sockaddr );
+          ssize_t recvfrom_ret = static_cast<UDPSocket*>( get_socket().get() )->recvfrom( buffer, *peername );
 
           if ( recvfrom_ret > 0 )
             onCompletion( static_cast<size_t>( recvfrom_ret ) );
@@ -1297,16 +1330,16 @@ namespace YIELD
         friend class UDPSocket;
 
         yidl::runtime::auto_Buffer buffer;
-        struct sockaddr_storage* peer_sockaddr;
+        struct sockaddr_storage* peername;
       };
 
 
       void aio_recvfrom( yidl::runtime::auto_Object<AIORecvFromControlBlock> aio_recvfrom_control_block );
       static yidl::runtime::auto_Object<UDPSocket> create(); // returns NULL instead of throwing exceptions
-      ssize_t recvfrom( yidl::runtime::auto_Buffer buffer, struct sockaddr_storage& peer_sockaddr );
-      ssize_t recvfrom( void* buffer, size_t buffer_len, struct sockaddr_storage& peer_sockaddr );
-      ssize_t sendto( yidl::runtime::auto_Buffer buffer, auto_Address peer_sockaddr );
-      ssize_t sendto( const void* buffer, size_t buffer_len, auto_Address peer_sockaddr );
+      ssize_t recvfrom( yidl::runtime::auto_Buffer buffer, struct sockaddr_storage& peername );
+      ssize_t recvfrom( void* buffer, size_t buffer_len, struct sockaddr_storage& peername );
+      ssize_t sendto( yidl::runtime::auto_Buffer buffer, auto_SocketAddress peername );
+      ssize_t sendto( const void* buffer, size_t buffer_len, auto_SocketAddress peername );
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( UDPSocket, 219 );
@@ -1329,6 +1362,22 @@ namespace YIELD
     };
 
     typedef yidl::runtime::auto_Object<UDPSocket> auto_UDPSocket;
+
+
+    class UDPSocketFactory : public SocketFactory
+    {
+    public:
+      // yidl::runtime::Object
+      YIDL_RUNTIME_OBJECT_PROTOTYPES( UDPSocketFactory, 0 );
+
+      // SocketFactory
+      auto_Socket createSocket()
+      {
+        return UDPSocket::create().release();
+      }
+    };
+
+    typedef yidl::runtime::auto_Object<UDPSocketFactory> auto_UDPSocketFactory;
 
 
     class URI : public yidl::runtime::Object

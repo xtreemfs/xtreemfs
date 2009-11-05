@@ -10,7 +10,7 @@ namespace rmfs_xtreemfs
   {
   public:
     Main()
-      : xtreemfs::Main( "xtfs_rmvol", "remove a volume from a specified MRC", "<mrc host>[:port]/<volume name>" )
+      : xtreemfs::Main( "xtfs_rmvol", "remove a volume from a specified MRC", "[oncrpc://]<mrc host>[:port]/<volume name>" )
     {
       addOption( RMFS_XTREEMFS_OPTION_PASSWORD, "--password", NULL, "password for volume" );
     }

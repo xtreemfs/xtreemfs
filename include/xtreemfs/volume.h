@@ -21,15 +21,15 @@ namespace xtreemfs
     const static uint32_t VOLUME_FLAG_TRACE_FILE_IO = 2;
 
     static yidl::runtime::auto_Object<Volume> create( 
-                                             const YIELD::ipc::URI& dir_uri,
-                                             const std::string& name,
-                                             uint32_t flags = 0,
-                                             YIELD::platform::auto_Log log = NULL,
-                                             uint32_t proxy_flags = 0,
-                                             const YIELD::platform::Time& proxy_operation_timeout = DIRProxy::OPERATION_TIMEOUT_DEFAULT,
-                                             YIELD::ipc::auto_SSLContext proxy_ssl_context = NULL,
-                                             const YIELD::platform::Path& vivaldi_coordinates_file_path = YIELD::platform::Path()
-                                            );
+                                                      const YIELD::ipc::URI& dir_uri,
+                                                      const std::string& name,
+                                                      uint32_t flags = 0,
+                                                      YIELD::platform::auto_Log log = NULL,
+                                                      uint32_t proxy_flags = 0,
+                                                      const YIELD::platform::Time& proxy_operation_timeout = DIRProxy::OPERATION_TIMEOUT_DEFAULT,
+                                                      YIELD::ipc::auto_SSLContext proxy_ssl_context = NULL,
+                                                      const YIELD::platform::Path& vivaldi_coordinates_file_path = YIELD::platform::Path()
+                                                    );
 
     uint32_t get_flags() const { return flags; }
     YIELD::platform::auto_Log get_log() const { return log; }

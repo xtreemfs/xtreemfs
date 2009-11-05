@@ -25,16 +25,11 @@ namespace xtreemfs
   {
   public:
     static yidl::runtime::auto_Object<MRCProxy> create( const YIELD::ipc::URI& absolute_uri,
-                                                uint32_t flags = 0,
-                                                YIELD::platform::auto_Log log = NULL,
-                                                const YIELD::platform::Time& operation_timeout = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::OPERATION_TIMEOUT_DEFAULT,
-                                                const char* password = "",
-                                                YIELD::ipc::auto_SSLContext ssl_context = NULL )
-    {
-      yidl::runtime::auto_Object<MRCProxy> mrc_proxy = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::create<MRCProxy>( absolute_uri, flags, log, operation_timeout, ssl_context );
-      mrc_proxy->password = password;
-      return mrc_proxy;
-    }
+                                                        uint32_t flags = 0,
+                                                        YIELD::platform::auto_Log log = NULL,
+                                                        const YIELD::platform::Time& operation_timeout = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::OPERATION_TIMEOUT_DEFAULT,
+                                                        const char* password = "",
+                                                        YIELD::ipc::auto_SSLContext ssl_context = NULL );
 
     // org::xtreemfs::interfaces::MRCInterface
     void chown( const Path& path, int uid, int gid );
@@ -47,8 +42,8 @@ namespace xtreemfs
   private:
     friend class YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>;
 
-    MRCProxy( const YIELD::ipc::URI& absolute_uri, uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::Socket::auto_Address peer_sockaddr, YIELD::ipc::auto_SSLContext ssl_context )
-      : Proxy<MRCProxy, org::xtreemfs::interfaces::MRCInterface>( absolute_uri, flags, log, operation_timeout, peer_sockaddr, ssl_context )
+    MRCProxy( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, const std::string& password, YIELD::ipc::auto_SocketAddress peername, YIELD::ipc::auto_SocketFactory socket_factory )
+      : Proxy<MRCProxy, org::xtreemfs::interfaces::MRCInterface>( flags, log, operation_timeout, peername, socket_factory ), password( password )
     { }
 
     ~MRCProxy() { }

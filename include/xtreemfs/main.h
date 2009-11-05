@@ -105,20 +105,14 @@ namespace xtreemfs
     virtual ~Main()
     { }
 
-    auto_DIRProxy createDIRProxy( const YIELD::ipc::URI& uri )
-    {
-      YIELD::ipc::URI checked_uri( uri );
-      if ( checked_uri.get_port() == 0 )
-        checked_uri.set_port( org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT );
-      return DIRProxy::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, get_proxy_ssl_context() );
+    auto_DIRProxy createDIRProxy( const YIELD::ipc::URI& absolute_uri )
+    {       
+      return DIRProxy::create( absolute_uri, get_proxy_flags(), get_log(), operation_timeout, get_proxy_ssl_context() );
     }    
 
-    auto_MRCProxy createMRCProxy( const YIELD::ipc::URI& uri, const char* password = "" )
+    auto_MRCProxy createMRCProxy( const YIELD::ipc::URI& absolute_uri, const char* password = "" )
     {
-      YIELD::ipc::URI checked_uri( uri );
-      if ( checked_uri.get_port() == 0 )
-        checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT );
-      return MRCProxy::create( checked_uri, get_proxy_flags(), get_log(), operation_timeout, password, get_proxy_ssl_context() );
+      return MRCProxy::create( absolute_uri, get_proxy_flags(), get_log(), operation_timeout, password, get_proxy_ssl_context() );
     }
 
     YIELD::platform::auto_Log get_log()

@@ -10,7 +10,7 @@ namespace mkfs_xtreemfs
   {
   public:
     Main()
-      : xtreemfs::Main( "mkfs_xtreemfs", "create a new volume on a specified MRC", "<mrc host>[:port]/<volume name>" )
+      : xtreemfs::Main( "mkfs_xtreemfs", "create a new volume on a specified MRC", "[oncrpc://]<mrc host>[:port]/<volume name>" )
     {
       addOption( MKFS_XTREEMFS_OPTION_ACCESS_CONTROL_POLICY, "-a", "--access-control-policy", "NULL|POSIX|VOLUME" );
       access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;

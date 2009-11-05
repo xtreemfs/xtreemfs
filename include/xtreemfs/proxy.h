@@ -30,8 +30,10 @@ namespace xtreemfs
     virtual void send( YIELD::concurrency::Event& ev );
 
   protected:
-    Proxy( const YIELD::ipc::URI& absolute_uri, uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::Socket::auto_Address peer_sockaddr, YIELD::ipc::auto_SSLContext ssl_context );
+    Proxy( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::auto_SocketAddress peername, YIELD::ipc::auto_SocketFactory socket_factory );
     virtual ~Proxy();
+
+    static YIELD::ipc::auto_SocketFactory createSocketFactory( const YIELD::ipc::URI& absolute_uri, YIELD::ipc::auto_SSLContext ssl_context );
 
     virtual void getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials );
 #ifndef _WIN32

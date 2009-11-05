@@ -10,21 +10,154 @@ using namespace xtreemfs;
 
 
 #ifdef _WIN32
+#pragma warning( push )
+#pragma warning( disable: 4995 )
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#pragma warning( pop )
 #include <windows.h>
 #include <lm.h>
 #pragma comment( lib, "Netapi32.lib" )
 #else
 #include "yieldfs.h"
 #include <errno.h>
-#include <unistd.h>
-#include <pwd.h>
 #include <grp.h>
+#include <pwd.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #endif
 
 
+namespace xtreemfs
+{
+  class GridSSLSocket : public YIELD::ipc::SSLSocket
+  {
+  public:
+    static yidl::runtime::auto_Object<GridSSLSocket> create( YIELD::ipc::auto_SSLContext ctx )
+    {
+      return create( AF_INET6, ctx );
+    }
+
+    static yidl::runtime::auto_Object<GridSSLSocket> create( int domain, YIELD::ipc::auto_SSLContext ctx ) 
+    {
+      SSL* ssl = SSL_new( ctx->get_ssl_ctx() );
+      if ( ssl != NULL )
+      {
+    #ifdef _WIN32
+        SOCKET socket_ = YIELD::ipc::Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
+        if ( socket_ != INVALID_SOCKET )
+    #else
+        int socket_ = YIELD::ipc::Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
+        if ( socket_ != -1 )
+    #endif
+          return new GridSSLSocket( domain, socket_, ctx, ssl );
+        else
+          return NULL;
+      }
+      else
+        return NULL;
+    }
+
+    // YIELD::ipc::Socket
+    ssize_t read( void* buffer, size_t buffer_len )
+    {
+      if ( check_handshake() )
+        return YIELD::ipc::TCPSocket::read( buffer, buffer_len );             
+      else
+        return -1;
+    }
+
+    bool want_read() const
+    {
+      if ( !did_handshake )
+        return SSL_get_error( ssl, -1 ) == SSL_ERROR_WANT_READ;
+      else
+        return YIELD::ipc::TCPSocket::want_read();
+    }
+
+    bool want_write() const
+    {
+      if ( !did_handshake )
+        return SSL_get_error( ssl, -1 ) == SSL_ERROR_WANT_WRITE;
+      else
+        return YIELD::ipc::TCPSocket::want_write();
+    }
+
+    ssize_t write( const void* buffer, size_t buffer_len )
+    {
+      if ( check_handshake() )
+        return YIELD::ipc::TCPSocket::write( buffer, buffer_len );
+      else
+        return -1;
+    }
+
+    ssize_t writev( const struct iovec* buffers, uint32_t buffers_count )
+    {
+      if ( check_handshake() )
+        return YIELD::ipc::TCPSocket::writev( buffers, buffers_count );
+      else
+        return -1;
+    }
+
+  private:
+#ifdef _WIN32
+    GridSSLSocket( int domain, SOCKET socket_, YIELD::ipc::auto_SSLContext ctx, SSL* ssl )
+#else
+    GridSSLSocket( int domain, int socket_, YIELD::ipc::auto_SSLContext ctx, SSL* ssl )
+#endif
+      : YIELD::ipc::SSLSocket( domain, socket_, ctx, ssl )
+    {
+      did_handshake = false;
+    }
+
+    bool did_handshake;
+
+    inline bool check_handshake()
+    {
+      if ( did_handshake )
+        return true;
+      else
+      {
+        int SSL_do_handshake_ret = SSL_do_handshake( ssl );
+        if ( SSL_do_handshake_ret == 1 )
+        {
+          did_handshake = true;
+          return true;
+        }
+        else if ( SSL_do_handshake_ret == 0 )
+          return false;
+        else
+          return false;
+      }
+    }
+  };
+
+
+  class GridSSLSocketFactory : public YIELD::ipc::SocketFactory
+  {
+  public:
+    GridSSLSocketFactory( YIELD::ipc::auto_SSLContext ssl_context )
+      : ssl_context( ssl_context )
+    { }
+
+    // yidl::runtime::Object
+    YIDL_RUNTIME_OBJECT_PROTOTYPES( GridSSLSocketFactory, 0 );
+
+    // YIELD::ipc::SocketFactory
+    YIELD::ipc::auto_Socket createSocket()
+    {
+      return GridSSLSocket::create( ssl_context ).release();
+    }
+
+  private:
+    YIELD::ipc::auto_SSLContext ssl_context;
+  };
+};
+
+
 template <class ProxyType, class InterfaceType>
-Proxy<ProxyType, InterfaceType>::Proxy( const YIELD::ipc::URI& absolute_uri, uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::Socket::auto_Address peer_sockaddr, YIELD::ipc::auto_SSLContext ssl_context )
-  : YIELD::ipc::ONCRPCClient<InterfaceType>( absolute_uri, flags, log, operation_timeout, peer_sockaddr, ssl_context ), log( log )
+Proxy<ProxyType, InterfaceType>::Proxy( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::auto_SocketAddress peername, YIELD::ipc::auto_SocketFactory socket_factory )
+  : YIELD::ipc::ONCRPCClient<InterfaceType>( flags, log, operation_timeout, peername, socket_factory ), log( log )
 {
 #ifndef _WIN32
   policy_container = new PolicyContainer;
@@ -56,17 +189,16 @@ Proxy<ProxyType, InterfaceType>::~Proxy()
 }
 
 template <class ProxyType, class InterfaceType>
-void Proxy<ProxyType, InterfaceType>::send( YIELD::concurrency::Event& ev )
-{
-  if ( InterfaceType::checkRequest( ev ) != NULL )
-  {
-    yidl::runtime::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
-    getCurrentUserCredentials( *user_credentials.get() );
-    yidl::runtime::auto_Object<YIELD::ipc::ONCRPCRequest> oncrpc_request = new YIELD::ipc::ONCRPCRequest( this->incRef(), org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release(), ev );
-    YIELD::ipc::ONCRPCClient<InterfaceType>::send( *oncrpc_request.release() );
-  }
+YIELD::ipc::auto_SocketFactory Proxy<ProxyType, InterfaceType>::createSocketFactory( const YIELD::ipc::URI& absolute_uri, YIELD::ipc::auto_SSLContext ssl_context )
+{  
+  if ( absolute_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCG_SCHEME && ssl_context != NULL )
+    return new GridSSLSocketFactory( ssl_context );
+  else if ( absolute_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCS_SCHEME && ssl_context != NULL )      
+    return new YIELD::ipc::SSLSocketFactory( ssl_context );
+  else if ( absolute_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
+    return new YIELD::ipc::UDPSocketFactory;
   else
-    YIELD::ipc::ONCRPCClient<InterfaceType>::send( ev );
+    return new YIELD::ipc::TCPSocketFactory;
 }
 
 template <class ProxyType, class InterfaceType>
@@ -367,6 +499,20 @@ bool Proxy<ProxyType, InterfaceType>::getUserCredentialsFrompasswd( int uid, int
   return true;
 }
 #endif
+
+template <class ProxyType, class InterfaceType>
+void Proxy<ProxyType, InterfaceType>::send( YIELD::concurrency::Event& ev )
+{
+  if ( InterfaceType::checkRequest( ev ) != NULL )
+  {
+    yidl::runtime::auto_Object<org::xtreemfs::interfaces::UserCredentials> user_credentials = new org::xtreemfs::interfaces::UserCredentials;
+    getCurrentUserCredentials( *user_credentials.get() );
+    yidl::runtime::auto_Object<YIELD::ipc::ONCRPCRequest> oncrpc_request = new YIELD::ipc::ONCRPCRequest( this->incRef(), org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR, user_credentials.release(), ev );
+    YIELD::ipc::ONCRPCClient<InterfaceType>::send( *oncrpc_request.release() );
+  }
+  else
+    YIELD::ipc::ONCRPCClient<InterfaceType>::send( ev );
+}
 
 template class Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>;
 template class Proxy<MRCProxy, org::xtreemfs::interfaces::MRCInterface>;

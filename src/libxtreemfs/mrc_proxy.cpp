@@ -19,6 +19,34 @@ void MRCProxy::chown( const Path& path, int uid, int gid )
 #endif
 }
 
+auto_MRCProxy MRCProxy::create( const YIELD::ipc::URI& absolute_uri,
+                                uint32_t flags,
+                                YIELD::platform::auto_Log log,
+                                const YIELD::platform::Time& operation_timeout,
+                                const char* password,
+                                YIELD::ipc::auto_SSLContext ssl_context )
+{
+  YIELD::ipc::URI checked_uri( absolute_uri );
+
+  if ( checked_uri.get_port() == 0 )
+  {
+    if ( checked_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCG_SCHEME )
+      checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPCG_PORT );
+    else if ( checked_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCS_SCHEME )
+      checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPCS_PORT );
+    else if ( checked_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
+      checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPCU_PORT );
+    else
+      checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT );
+  }  
+
+  YIELD::ipc::auto_SocketAddress peername = YIELD::ipc::SocketAddress::create( checked_uri );
+  if ( peername != NULL )
+    return new MRCProxy( flags, log, operation_timeout, password, peername, createSocketFactory( checked_uri, ssl_context ) );
+  else
+    throw YIELD::platform::Exception();
+}
+
 void MRCProxy::getattr( const Path& path, org::xtreemfs::interfaces::Stat& stbuf )
 {
   org::xtreemfs::interfaces::MRCInterface::getattr( path, stbuf );
