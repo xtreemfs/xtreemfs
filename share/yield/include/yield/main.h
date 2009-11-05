@@ -97,40 +97,23 @@ namespace YIELD
           memcpy_s( argvv[arg_i], arg_len, argv[arg_i], arg_len );
         }
 
-        // Check for the -h option first; if found print usage information and exit
-        // Parsing options may cause side effects, but the program should do nothing if -h is specified
-        {
-          CSimpleOpt args( argc, &argvv[0], &simpleopt_options[0] );
+        CSimpleOpt args( argc, &argvv[0], &simpleopt_options[0] );
 
-          while ( args.Next() )
+        while ( args.Next() )
+        {
+          if ( args.LastError() == SO_SUCCESS )
           {
-            if ( args.LastError() == SO_SUCCESS && args.OptionId() == 0 )
+            if ( args.OptionId() == 0 )
             {
               printUsage();
               return 0;
             }
-          }
-        }
-
-        // Restore the underlying argv strings so that SimpleOpt can start fresh on the next pass
-        for ( int arg_i = 0; arg_i < argc; arg_i++ )
-        {
-          size_t arg_len = strnlen( argv[arg_i], SIZE_MAX ) + 1;
-          memcpy_s( argvv[arg_i], arg_len, argv[arg_i], arg_len );
-        }        
-
-        // Now parse options
-        {
-          CSimpleOpt args( argc, &argvv[0], &simpleopt_options[0] );
-
-          while ( args.Next() )
-          {
-            if ( args.LastError() == SO_SUCCESS && args.OptionId() > 0 )
+            else
               parseOption( args.OptionId(), args.OptionArg() );
           }
-
-          parseFiles( args.FileCount(), args.Files() );
         }
+
+        parseFiles( args.FileCount(), args.Files() );
 
         for ( std::vector<char*>::iterator arg_i = argvv.begin(); arg_i != argvv.end(); arg_i++ )
           delete [] *arg_i;

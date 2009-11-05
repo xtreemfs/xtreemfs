@@ -21,7 +21,7 @@ namespace mount_xtreemfs
   {
   public:
     Main()
-      : xtreemfs::Main( "mount_xtreemfs", "mount an XtreemFS volume", "[oncrpc://]<dir host>[:port]/<volume name> <mount point>" )
+      : xtreemfs::Main( "mount.xtreemfs", "mount an XtreemFS volume", "[oncrpc://]<dir host>[:port]/<volume name> <mount point>" )
     {
       direct_io = false;
 
