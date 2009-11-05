@@ -94,18 +94,28 @@ YIELD::ipc::auto_URI DIRProxy::getVolumeURIFromVolumeName( const std::string& vo
         {
           yidl::runtime::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> address_mappings = getAddressMappingsFromUUID( service_data_i->second );
 
+          // Prefer TCP URIs first
           for ( org::xtreemfs::interfaces::AddressMappingSet::const_iterator address_mapping_i = address_mappings->begin(); address_mapping_i != address_mappings->end(); address_mapping_i++ )
           {
             if ( ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPC_SCHEME )
               return new YIELD::ipc::URI( ( *address_mapping_i ).get_uri() );
           }
 
+          // Then GridSSL
+          for ( org::xtreemfs::interfaces::AddressMappingSet::const_iterator address_mapping_i = address_mappings->begin(); address_mapping_i != address_mappings->end(); address_mapping_i++ )
+          {
+            if ( ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCG_SCHEME )
+              return new YIELD::ipc::URI( ( *address_mapping_i ).get_uri() );
+          }
+
+          // Then SSL
           for ( org::xtreemfs::interfaces::AddressMappingSet::const_iterator address_mapping_i = address_mappings->begin(); address_mapping_i != address_mappings->end(); address_mapping_i++ )
           {
             if ( ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCS_SCHEME )
               return new YIELD::ipc::URI( ( *address_mapping_i ).get_uri() );
           }
 
+          // Then UDP
           for ( org::xtreemfs::interfaces::AddressMappingSet::const_iterator address_mapping_i = address_mappings->begin(); address_mapping_i != address_mappings->end(); address_mapping_i++ )
           {
             if ( ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
@@ -114,9 +124,7 @@ YIELD::ipc::auto_URI DIRProxy::getVolumeURIFromVolumeName( const std::string& vo
         }
       }
     }
-
-    throw YIELD::platform::Exception( "unknown volume" );
   }
-  else
-    throw YIELD::platform::Exception( "unknown volume" );
+
+  throw YIELD::platform::Exception( "unknown volume" );
 }
