@@ -66,7 +66,10 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root)
 /usr/bin/*.xtreemfs
-/usr/share/man/man1/*.xtreemfs
+/usr/share/man/man1/*.xtreemfs*
 /etc/xos/
-/etc/xos/xtreemfs/*
+%dir /etc/xos/xtreemfs/
+%config(noreplace) /etc/xos/xtreemfs/default_dir
 /usr/share/doc/xtreemfs-client/
+
+%changelog

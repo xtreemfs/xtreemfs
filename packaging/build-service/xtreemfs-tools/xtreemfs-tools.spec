@@ -60,3 +60,5 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/xtfs_*
 /usr/share/man/man1/xtfs_*
 /usr/share/doc/xtreemfs-tools/
+
+%changelog

@@ -36,6 +36,7 @@ CLIENT_WHITE_LIST=(
 	"src/lsfs.xtreemfs" "src/lsfs.xtreemfs"
 	"src/mkfs.xtreemfs" "src/mkfs.xtreemfs"
 	"src/rmfs.xtreemfs" "src/rmfs.xtreemfs"
+	"src/xtfs_vivaldi" "src/xtfs_vivaldi"
 	"src/libxtreemfs" "src/libxtreemfs"
 	"src/interfaces" "src/interfaces"
 	"src/policies/gridmap_flog.c" "src/policies/gridmap_flog.c"
@@ -179,7 +180,9 @@ compile_server() {
 	cp -a $XTREEMFS_HOME_DIR/* "$COMPILE_PATH"
 
 	# compile
-	ant jar -q -buildfile "$COMPILE_PATH/src/servers/build.xml"
+	cd "$COMPILE_PATH"
+    ant jar -q -buildfile "$COMPILE_PATH/src/servers/build.xml"
+    cd -
 }
 
 build_server_package() {
@@ -248,7 +251,6 @@ build_xtreemos_addons() {
 	cp -a $XTREEMFS_HOME_DIR/* $PACKAGE_PATH_TMP
 	
 	# replace the scons.py softlink + dependencies
-	rm $PACKAGE_PATH_TMP/src/policies/scons.py
 	cp $PACKAGE_PATH_TMP/share/scons.py $PACKAGE_PATH_TMP/src/policies/scons.py
 	cp -r $PACKAGE_PATH_TMP/share/scons-local-* $PACKAGE_PATH_TMP/src/policies
 
@@ -456,7 +458,7 @@ then
 	usage
 fi
 
-BUILD_FILES_DIR=build-service
+BUILD_FILES_DIR=$XTREEMFS_HOME_DIR/packaging/build-service
 CLIENT_PACKAGE_NAME="XtreemFS-client-$VERSION"
 SERVER_PACKAGE_NAME="XtreemFS-server-$VERSION"
 TOOLS_PACKAGE_NAME="XtreemFS-tools-$VERSION"

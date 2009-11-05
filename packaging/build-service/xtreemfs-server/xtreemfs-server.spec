@@ -57,7 +57,7 @@ cp init.d-scripts/xtreemfs-* $XTREEMFS_INIT_DIR
 chmod a+x $XTREEMFS_INIT_DIR/xtreemfs-*
 
 %post
-XTREEMFS_CONFIG_DIR=$RPM_BUILD_ROOT/etc/xos/xtreemfs/
+XTREEMFS_CONFIG_DIR=/etc/xos/xtreemfs/
 
 # generate UUIDs
 if [ -x $XTREEMFS_CONFIG_DIR/generate_uuid ]; then
@@ -78,5 +78,9 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/java/*.jar
 /etc/init.d/xtreemfs-*
 /etc/xos/
-/etc/xos/xtreemfs/*
+%config(noreplace) /etc/xos/xtreemfs/*.properties
+/etc/xos/xtreemfs/generate_uuid
+/etc/xos/xtreemfs/postinstall_setup.sh
 /usr/share/doc/xtreemfs-server/
+
+%changelog
