@@ -129,7 +129,7 @@ db.checkInterval = 300
 db.pseudoSyncWait = 200
 """ % locals() )
 
-def generate_dir_config( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT ):
+def generate_dir_config( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, enable_grid_ssl=ENABLE_SSL_DEFAULT ):
     locals().update( globals() )
     database_dir = os.path.join( "data", "dir" )
     open( os.path.join( "config", "dir.config" ), "w+" ).write( """\
@@ -139,9 +139,9 @@ listen.port = %(DIR_ONCRPC_PORT)u
 http_port = %(DIR_HTTP_PORT)u
 database.dir = %(database_dir)s
 authentication_provider = org.xtreemfs.common.auth.NullAuthProvider
-""" % locals() + _generate_ssl_config( enable_ssl, DIR_PKCS12_FILE_PATH, DIR_PKCS12_PASSPHRASE ) )
+""" % locals() + _generate_ssl_config( enable_ssl, DIR_PKCS12_FILE_PATH, DIR_PKCS12_PASSPHRASE, enable_grid_ssl ) )
  
-def generate_mrc_config( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT ):
+def generate_mrc_config( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, enable_grid_ssl=ENABLE_SSL_DEFAULT ):
     locals().update( globals() )
     database_log = os.path.join( "data", "mrc" )
     database_dir = os.path.join( "data", "mrc" )
@@ -164,9 +164,9 @@ database.checkpoint.idle_interval = 1000
 database.checkpoint.logfile_size = 16384
 authentication_provider = org.xtreemfs.common.auth.NullAuthProvider
 capability_secret = testsecret
-""" % locals() + _generate_ssl_config( enable_ssl, MRC_PKCS12_FILE_PATH, MRC_PKCS12_PASSPHRASE ) )
+""" % locals() + _generate_ssl_config( enable_ssl, MRC_PKCS12_FILE_PATH, MRC_PKCS12_PASSPHRASE, enable_grid_ssl ) )
 
-def generate_osd_config( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, osdnum=1 ):
+def generate_osd_config( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, osdnum=1, enable_grid_ssl=ENABLE_SSL_DEFAULT ):
     locals().update( globals() )
     listen_port = OSD_ONCRPC_PORT + int( osdnum )
     http_port = OSD_HTTP_PORT + int( osdnum )
@@ -184,10 +184,14 @@ remote_time_sync = 60000
 report_free_space = true
 checksums.enabled = false
 capability_secret = testsecret
-""" % locals() + _generate_ssl_config( enable_ssl, OSD_PKCS12_FILE_PATH, OSD_PKCS12_PASSPHRASE ) )
+""" % locals() + _generate_ssl_config( enable_ssl, OSD_PKCS12_FILE_PATH, OSD_PKCS12_PASSPHRASE, enable_grid_ssl ) )
 
-def _generate_ssl_config( enable_ssl, pkcs12_file_path, pkcs12_passphrase ):
+def _generate_ssl_config( enable_ssl, pkcs12_file_path, pkcs12_passphrase, enable_grid_ssl ):
     locals().update( globals() )
+    if enable_grid_ssl:
+        gridsslcfg = "ssl.grid_ssl = true\n"
+    else:
+        gridsslcfg = "ssl.grid_ssl = false\n"
     if enable_ssl:            
         return """\
 ssl.enabled = true
@@ -197,7 +201,7 @@ ssl.service_creds.container = PKCS12
 ssl.trusted_certs = %(TRUSTED_CERTS_JKS_FILE_PATH)s
 ssl.trusted_certs.pw = %(TRUSTED_CERTS_JKS_PASSPHRASE)s
 ssl.trusted_certs.container = JKS        
-""" % locals()
+""" % locals() + gridsslcfg
     else:        
         return """\
 ssl.enabled = false        
@@ -297,16 +301,16 @@ def run_tests( mnt_dir_path=MNT_DIR_PATH_DEFAULT, num_osds=NUM_OSDS_DEFAULT, tes
         return 1
     
     
-def start_services( debug_level=DEBUG_LEVEL_DEFAULT_SERVICES, num_osds=NUM_OSDS_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT ):
+def start_services( debug_level=DEBUG_LEVEL_DEFAULT_SERVICES, num_osds=NUM_OSDS_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, enable_grid_ssl=ENABLE_SSL_DEFAULT ):
     for subdir_name in ( "config", "data", "log", "run" ):
         if not os.path.exists( subdir_name ):
             os.mkdir( subdir_name )
     
     generate_db_config( debug_level )
-    generate_dir_config( debug_level, enable_ssl )
-    generate_mrc_config( debug_level, enable_ssl )
+    generate_dir_config( debug_level, enable_ssl, enable_grid_ssl )
+    generate_mrc_config( debug_level, enable_ssl, enable_grid_ssl )
     for osdnum in xrange( num_osds ):
-        generate_osd_config( debug_level, enable_ssl, osdnum )
+        generate_osd_config( debug_level, enable_ssl, osdnum, enable_grid_ssl )
 
     _start_service( "dir" )
     _start_service( "mrc" )    
@@ -424,6 +428,7 @@ if __name__ == "__main__":
     option_parser.add_option( "-p", "--status-pages", action="store_true", dest="spages", help="save the status pages of all services after all tests completed" )
     option_parser.add_option( "-d", action="store", dest="debug_level", default=DEBUG_LEVEL_DEFAULT, help="client and server syslog/debug levels (EMERG, NOTICE, INFO, etc.)" )
     option_parser.add_option( "--enable-ssl", action="store_true", dest="enable_ssl", default=ENABLE_SSL_DEFAULT )
+    option_parser.add_option( "--enable-grid-ssl", action="store_true", dest="enable_grid_ssl", default=ENABLE_SSL_DEFAULT, help="enables the GRID SSL mode (handshake only) requires --enable-ssl")
     option_parser.add_option( "--cache-metadata", action="store_true", dest="cache_metadata", default=CACHE_METADATA_DEFAULT )
     option_parser.add_option( "--cache-data", action="store_true", dest="cache_data", default=CACHE_DATA_DEFAULT )
     option_parser.add_option( "-m", action="append", dest="test_module_names", help="name(s) of test module(s) to run" )
@@ -432,12 +437,18 @@ if __name__ == "__main__":
     option_parser.add_option( "--start", action="store_true", dest="start_services", help="start local servers" )
     option_parser.add_option( "--stop", action="store_true", dest="stop", help="unmount any XtreemFS volumes and stop local clients and servers" ) 
     options, positional_args = option_parser.parse_args()
+    
+    scheme="oncrpc://"
+    if options.enable_grid_ssl:
+        scheme="oncrpcg://"
+    elif options.enable_ssl:
+        scheme="oncrpcs://"
       
     if options.clean:
     	clean()
         
     elif options.start_services:
-        start_services( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds )
+        start_services( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, enable_grid_ssl=options.enable_grid_ssl )
         
     elif options.stop:
         stop_services( num_osds=options.num_osds )
@@ -445,15 +456,15 @@ if __name__ == "__main__":
                                  
     else:            
         if len( positional_args ) > 1:        
-            service_host = positional_args[0]
+            service_host = scheme+positional_args[0]
         else:
-            service_host = "localhost"
+            service_host = scheme+"localhost"
             if options.autotest:
             	clean( num_osds=options.num_osds )
                 start_services( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds )
         
         try:
-            create_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host, repl_on_close=options.repl_on_close )
+            create_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host, repl_on_close=options.repl_on_close)
             mount_volumes( debug_level=options.debug_level, enable_ssl=options.enable_ssl, num_osds=options.num_osds, service_host=service_host, cache_metadata=options.cache_metadata, cache_data=options.cache_data, repl_on_close=options.repl_on_close )
         except KeyboardInterrupt:
             sys.exit( 1 )
