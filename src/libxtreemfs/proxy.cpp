@@ -22,6 +22,8 @@ using namespace xtreemfs;
 #include "yieldfs.h"
 #include <errno.h>
 #include <grp.h>
+#include <netinet/in.h>
+#include <netinet/tcp.h> 
 #include <pwd.h>
 #include <sys/socket.h>
 #include <unistd.h>
