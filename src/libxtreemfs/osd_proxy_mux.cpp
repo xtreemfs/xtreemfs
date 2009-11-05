@@ -194,7 +194,12 @@ yidl::runtime::auto_Object<OSDProxy> OSDProxyMux::getOSDProxy( const std::string
     for ( org::xtreemfs::interfaces::AddressMappingSet::iterator address_mapping_i = address_mappings->begin(); address_mapping_i != address_mappings->end(); address_mapping_i++ )
     {
 #ifdef YIELD_HAVE_OPENSSL
-      if ( ssl_context != NULL && ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCS_SCHEME )
+      if ( ssl_context != NULL && 
+           ( 
+             ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCS_SCHEME ||
+             ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCG_SCHEME
+           ) 
+         )
       {
         osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), flags, log, operation_timeout, ssl_context ).release();
         osd_proxy_stage_group->createStage( osd_proxy->incRef() );
