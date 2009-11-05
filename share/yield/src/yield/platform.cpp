@@ -1,4 +1,4 @@
-// Revision: 1895
+// Revision: 1902
 
 #include "yield/platform.h"
 using namespace YIELD::platform;
@@ -190,11 +190,17 @@ void Exception::strerror( uint32_t error_code, char* out_str, size_t out_str_len
 }
 Exception::Exception()
 {
-  strerror( get_errno(), what_buffer, YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
+  if ( get_errno() != 0 )
+    strerror( get_errno(), what_buffer, YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
+  else
+    what_buffer[0] = 0;
 }
 Exception::Exception( uint32_t error_code )
 {
-  strerror( error_code, what_buffer, YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
+  if ( error_code != 0 )
+    strerror( error_code, what_buffer, YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
+  else
+    what_buffer[0] = 0;
 }
 void Exception::init( const char* what )
 {

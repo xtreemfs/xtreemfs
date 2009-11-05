@@ -4220,6 +4220,22 @@ void YIELD::ipc::Socket::AIOQueue::submit( yidl::runtime::auto_Object<AIOControl
 #endif
 #endif
 #ifdef YIELD_HAVE_OPENSSL
+namespace YIELD
+{
+  namespace ipc
+  {
+    class SSLException : public YIELD::platform::Exception
+    {
+    public:
+      SSLException()
+        : YIELD::platform::Exception( static_cast<uint32_t>( 0 ) )
+      {
+        SSL_load_error_strings();
+        ERR_error_string_n( ERR_peek_error(), what_buffer, YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH );
+      }
+    };
+  };
+};
 static int pem_password_callback( char *buf, int size, int, void *userdata )
 {
   const std::string* pem_password = static_cast<const std::string*>( userdata );
@@ -4233,11 +4249,7 @@ YIELD::ipc::SSLContext::SSLContext( SSL_CTX* ctx )
 { }
 YIELD::ipc::auto_SSLContext YIELD::ipc::SSLContext::create( SSL_METHOD* method )
 {
-  SSL_CTX* ctx = createSSL_CTX( method );
-  if ( ctx != NULL )
-    return new SSLContext( ctx );
-  else
-    throw YIELD::platform::Exception();
+  return new SSLContext( createSSL_CTX( method ) );
 }
 YIELD::ipc::auto_SSLContext YIELD::ipc::SSLContext::create( SSL_METHOD* method, const YIELD::platform::Path& pem_certificate_file_path, const YIELD::platform::Path& pem_private_key_file_path, const std::string& pem_private_key_passphrase )
 {
@@ -4252,7 +4264,7 @@ YIELD::ipc::auto_SSLContext YIELD::ipc::SSLContext::create( SSL_METHOD* method, 
     if ( SSL_CTX_use_PrivateKey_file( ctx, pem_private_key_file_path, SSL_FILETYPE_PEM ) > 0 )
       return new SSLContext( ctx );
   }
-  return NULL;
+  throw SSLException();
 }
 YIELD::ipc::auto_SSLContext YIELD::ipc::SSLContext::create( SSL_METHOD* method, const std::string& pem_certificate_str, const std::string& pem_private_key_str, const std::string& pem_private_key_passphrase )
 {
@@ -4280,7 +4292,7 @@ YIELD::ipc::auto_SSLContext YIELD::ipc::SSLContext::create( SSL_METHOD* method, 
     }
     BIO_free( pem_certificate_bio );
   }
-  return NULL;
+  throw SSLException();
 }
 YIELD::ipc::auto_SSLContext YIELD::ipc::SSLContext::create( SSL_METHOD* method, const YIELD::platform::Path& pkcs12_file_path, const std::string& pkcs12_passphrase )
 {
@@ -4313,7 +4325,7 @@ YIELD::ipc::auto_SSLContext YIELD::ipc::SSLContext::create( SSL_METHOD* method, 
     }
     BIO_free( bio );
   }
-  return NULL;
+  throw SSLException();
 }
 #else
 YIELD::ipc::SSLContext::SSLContext()
@@ -4346,7 +4358,7 @@ SSL_CTX* YIELD::ipc::SSLContext::createSSL_CTX( SSL_METHOD* method )
     return ctx;
   }
   else
-    return NULL;
+    throw SSLException();
 }
 #endif
 
