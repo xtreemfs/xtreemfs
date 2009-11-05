@@ -76,6 +76,8 @@ public class HeartbeatThread extends LifeCycleThread {
     private final ServiceConfig  config;
     
     private final boolean        advertiseUDPEndpoints;
+
+    private final String          proto;
     
     public HeartbeatThread(String name, DIRClient client, ServiceUUID uuid,
         ServiceDataGenerator serviceDataGen, ServiceConfig config, boolean advertiseUDPEndpoints) {
@@ -89,6 +91,15 @@ public class HeartbeatThread extends LifeCycleThread {
         this.serviceDataGen = serviceDataGen;
         this.config = config;
         this.advertiseUDPEndpoints = advertiseUDPEndpoints;
+        if (!config.isUsingSSL()) {
+            proto = Constants.ONCRPC_SCHEME;
+        } else {
+            if (config.isGRIDSSLmode()) {
+                proto = Constants.ONCRPCG_SCHEME;
+            } else {
+                proto = Constants.ONCRPCS_SCHEME;
+            }
+        }
     }
     
     public synchronized void shutdown() {
@@ -153,7 +164,7 @@ public class HeartbeatThread extends LifeCycleThread {
             if ("".equals(config.getHostName()) && config.getAddress() == null) {
                 
                 endpoints = NetUtils.getReachableEndpoints(config.getPort(),
-                    config.isUsingSSL() ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME);
+                    proto);
                 
                 if (advertiseUDPEndpoints)
                     endpoints.addAll(NetUtils.getReachableEndpoints(config.getPort(),
@@ -173,11 +184,11 @@ public class HeartbeatThread extends LifeCycleThread {
                 if (host.startsWith("/"))
                     host = host.substring(1);
                 
-                final String prot = config.isUsingSSL() ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME;
+                
                 
                 // add an oncrpc/oncrpcs mapping
-                endpoints.add(new AddressMapping(uuid.toString(), 0, prot, host, config.getPort(), "*", 3600,
-                    prot + "://" + host + ":" + config.getPort()));
+                endpoints.add(new AddressMapping(uuid.toString(), 0, proto, host, config.getPort(), "*", 3600,
+                    proto + "://" + host + ":" + config.getPort()));
                 
                 if (advertiseUDPEndpoints)
                     endpoints.add(new AddressMapping(uuid.toString(), 0, Constants.ONCRPCU_SCHEME, host,
