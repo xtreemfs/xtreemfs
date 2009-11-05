@@ -471,7 +471,8 @@ if __name__ == "__main__":
         except:
             traceback.print_exc()
             sys.exit( 1 )
-            
+        
+        time.sleep(5)
         ret = run_tests( num_osds=options.num_osds, test_module_names=options.test_module_names, verbose=True )
         if options.spages:
             save_status_pages( num_osds=options.num_osds )
