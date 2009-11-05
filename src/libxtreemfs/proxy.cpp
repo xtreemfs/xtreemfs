@@ -69,6 +69,11 @@ namespace xtreemfs
         return -1;
     }
 
+    bool shutdown()
+    {
+      return YIELD::ipc::TCPSocket::shutdown();
+    }
+
     bool want_read() const
     {
       if ( !did_handshake )
