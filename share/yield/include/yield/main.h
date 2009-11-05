@@ -89,13 +89,12 @@ namespace YIELD
         simpleopt_options.push_back( sentinel_simpleopt_option );
 
         // Make copies of the strings in argv so that SimpleOpt can punch holes in them
-        std::vector<char*> argvv;
+        std::vector<char*> argvv( argc );
         for ( int arg_i = 0; arg_i < argc; arg_i++ )
         {
           size_t arg_len = strnlen( argv[arg_i], SIZE_MAX ) + 1;
-          char* arg = new char[arg_len];
-          memcpy_s( arg, arg_len, argv[arg_i], arg_len );
-          argvv.push_back( arg ); 
+          argvv[arg_i] = new char[arg_len];
+          memcpy_s( argvv[arg_i], arg_len, argv[arg_i], arg_len );
         }
 
         // Check for the -h option first; if found print usage information and exit
@@ -112,6 +111,13 @@ namespace YIELD
             }
           }
         }
+
+        // Restore the underlying argv strings so that SimpleOpt can start fresh on the next pass
+        for ( int arg_i = 0; arg_i < argc; arg_i++ )
+        {
+          size_t arg_len = strnlen( argv[arg_i], SIZE_MAX ) + 1;
+          memcpy_s( argvv[arg_i], arg_len, argv[arg_i], arg_len );
+        }        
 
         // Now parse options
         {
