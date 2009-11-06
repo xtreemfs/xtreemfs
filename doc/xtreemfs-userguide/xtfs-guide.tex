@@ -301,7 +301,7 @@ uses XOSCerts
 
 In order to enable certificate-based authentication in an XtreemFS installation, services need to be equipped with X.509\index{X.509}\index{Certificate}\index{Credentials} certificates. Certificates are used to establish a mutual trust relationship among XtreemFS services and between the XtreemFS client and XtreemFS services.
 
-Note that it is not possible to mix SSL-enabled and non-SSL services in an XtreemFS installation!
+Note that it is not possible to mix SSL-enabled and non-SSL services in an XtreemFS installation! If you only need authentication based on certiciates without SSL, you can use the ``grid SSL'' mode. In this mode XtreemFS will only do an SSL handshake and fall back to plain TCP for communication. This mode is insecure (not encrypted and records are not signed) but just as fast as the non-SSL mode.
 
 Each XtreemFS service needs a certificate and a private key in order to be run. Once they have been created and signed, the credentials may need to be converted into the correct file format. XtreemFS services also need a \textit{trust store} that contains all trusted Certification Authority certificates.
 
@@ -466,7 +466,7 @@ All configuration parameters that may be used to define the behavior of the diff
  Services & DIR, MRC, OSD\\
  Values   & String \\
  Default  & \\
- Description & Defines the admin password that must be sent to authorize requests like volume creation, deletion or shutdown.
+ Description & Defines the admin password that must be sent to authorize requests like volume creation, deletion or shutdown. The same password is also used to access the HTTP status page of the service (user name is \texttt{admin}).
 \end{tabular}
 
 \subsubsection{\texttt{authentication\_provider}}
@@ -579,6 +579,30 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & If set to true the DIR will received UDP broadcasts and advertise itself in response to XtreemFS components using the DIR automatic discovery mechanism. If set to false, the DIR will ignore all UDP traffic. For details see Sec. \ref{sec:autodiscover}.
 \end{tabular}
 
+\subsubsection{\texttt{email.programm}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR\\
+ Values   & path \\
+ Default  & \texttt{/usr/sbin/sendmail} \\
+ Description & Location of the \texttt{sendmail} binary to be used for sending alert mails. See \texttt{monitoring}.
+\end{tabular}
+
+\subsubsection{\texttt{email.receiver}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR\\
+ Values   & email address \\
+ Default  & - \\
+ Description & Email address of recipient of alert emails. See \texttt{monitoring}.
+\end{tabular}
+
+\subsubsection{\texttt{email.sender}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR\\
+ Values   & email address \\
+ Default  & ``XtreemFS DIR service <dir@localhost>''\\
+ Description & Email address and sender name to use for sending alert mails. See \texttt{monitoring}.
+\end{tabular}
+
 \subsubsection{\texttt{geographic\_coordinates}}
 \begin{tabular}{lp{10cm}}
  Services & DIR, MRC, OSD\\
@@ -629,6 +653,22 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & Reading the system clock is a slow operation on some systems (e.g. Linux) as it is a system call. To increase performance, XtreemFS services use a local variable which is only updated every \texttt{local\_clock\_renewal} milliseconds.
 \end{tabular}
 
+\subsubsection{\texttt{max\_warnings}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR\\
+ Values   & 0..N \\
+ Default  & 1\\
+ Description & Number of alert mails to send for a single service which has crashed/disconnected. Each alert mail contains a summary of all crashed/disconnected services. See \texttt{monitoring}.
+\end{tabular}
+
+\subsubsection{\texttt{monitoring}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR\\
+ Values   & true, false \\
+ Default  & false\\
+ Description & Enables the built-in monitoring tool in the directory service. If enabled, the DIR will send alerts via emails if services are crashed (i.e. do not send heartbeat messages). No alerts will be sent for services which signed-off at the DIR. To enable monitoring you also need to configure \texttt{email.receiver}, \texttt{email.program}. In addition, you may want to change the values for \texttt{email.sender}, \texttt{email.programm}, \texttt{service\_timeout\_s} and \texttt{max\_warnings}.
+\end{tabular}
+
 \subsubsection{\texttt{no\_atime}}
 \begin{tabular}{lp{10cm}}
  Services & MRC\\
@@ -677,12 +717,28 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & If set to true, the OSD will report its free space to the directory service. Otherwise, it will report zero, which will cause the OSD not to be used by the OSD Selection Policies (see Sec. \ref{sec:osd_policies}).
 \end{tabular}
 
+\subsubsection{\texttt{service\_timeout\_s}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR\\
+ Values   & 0..N seconds \\
+ Default  & 300 \\
+ Description & Time to wait for a heartbeat message before sending an alert email. See \texttt{monitoring}.
+\end{tabular}
+
 \subsubsection{\texttt{ssl.enabled}}
 \begin{tabular}{lp{10cm}}
  Services & DIR, MRC, OSD\\
  Values   & true, false \\
  Default  & false \\
  Description & If set to true, the service will use SSL to authenticate and encrypt connections. The service will not accept non-SSL connections if \texttt{ssl.enabled} is set to true.
+\end{tabular}
+
+\subsubsection{\texttt{ssl.grid\_ssl}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC, OSD\\
+ Values   & true, false \\
+ Default  & false \\
+ Description & In this mode the services and client will only use SSL for mutual authentication with X.509 certificates (SSL handshake). After successful authentication the communication is vai plain TCP. This means that there is no encryption and signing of records! This mode is comparable to HTTP connections with Digest authentication. It should be used when certificate based authentication is required but performance is more important than security, which is usually true in GRID installations.
 \end{tabular}
 
 \subsubsection{\texttt{ssl.service\_creds}}
@@ -781,7 +837,11 @@ The status page of an MRC can e.g.\ be shown by opening
 
 \texttt{http://my-mrc-host.com:30636/}
 
-with a common web browser.
+with a common web browser. If you set an admin password in the service's configuration, you will be asked for authentication when accessing the status page. Use \texttt{admin} as username.
+
+\subsection{DIR Service Monitoring}
+
+The directory service has a built-in notofication system that can send alert emails if a service fails to send heartbeat messages for some time. The monitoring can be enabled in the DIR configuration by setting \texttt{monitoring = true}.
 
 
 \section{Troubleshooting}
