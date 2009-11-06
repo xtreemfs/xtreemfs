@@ -125,7 +125,7 @@ public class xtfs_dirreplicationtool {
             
             SSLOptions sslOptions = protocol.startsWith("https") ? new SSLOptions(new FileInputStream(
                 c.stringValue), cp.stringValue, new FileInputStream(t.stringValue), tp.stringValue) : null;
-            rpcClient = new RPCNIOSocketClient(sslOptions, Integer.MAX_VALUE - 1000, Integer.MAX_VALUE);
+            rpcClient = new RPCNIOSocketClient(sslOptions, 2*60*1000, 5*60*1000);
             rpcClient.start();
             DIRClient client = new DIRClient(rpcClient, new InetSocketAddress(host, port));
             

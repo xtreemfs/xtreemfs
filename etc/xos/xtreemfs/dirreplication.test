@@ -60,6 +60,13 @@ db.pseudoSyncWait = 200
 # local time renew in milliseconds
 #localTimeRenew = 3000
 
+# specifies if the DBs should be modified optimistic.
+# if you want to use the replication with a pseudoSyncWait > 0 set
+# this flag true to increase performance and lose data safety.
+# if pseudoSyncWait is set to 0 it is highly recommended to leave this
+# flag false.
+optimistic = true
+
 # specify whether SSL is required
 ssl.enabled = false
 

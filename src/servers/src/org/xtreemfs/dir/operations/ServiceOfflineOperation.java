@@ -69,7 +69,6 @@ public class ServiceOfflineOperation extends DIROperation {
             
             byte[] data = database.directLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid()
                     .getBytes());
-            long currentVersion = 0;
             if (data != null) {
                 ReusableBuffer buf = ReusableBuffer.wrap(data);
                 ServiceRecord dbData = new ServiceRecord(buf);
@@ -81,7 +80,7 @@ public class ServiceOfflineOperation extends DIROperation {
                 dbData.serialize(ReusableBuffer.wrap(newData));
                 BabuDBInsertGroup ig = database.createInsertGroup();
                 ig.addInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes(), newData);
-                database.directInsert(ig, master, true);
+                database.directInsert(ig);
             }
             
             xtreemfs_service_offlineResponse response = new xtreemfs_service_offlineResponse();

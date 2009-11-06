@@ -66,7 +66,7 @@ public class DeleteAddressMappingOperation extends DIROperation {
             
             BabuDBInsertGroup ig = database.createInsertGroup();
             ig.addDelete(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
-            database.directInsert(ig, master, true);
+            database.directInsert(ig);
             
             xtreemfs_address_mappings_removeResponse response = new xtreemfs_address_mappings_removeResponse();
             rq.sendSuccess(response);

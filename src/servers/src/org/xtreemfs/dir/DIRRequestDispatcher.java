@@ -39,15 +39,10 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBFactory;
-import org.xtreemfs.babudb.log.LogEntry;
-import org.xtreemfs.babudb.log.SyncListener;
 import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.lsmdb.DatabaseManager;
 import org.xtreemfs.babudb.replication.ReplicationManager;
-import org.xtreemfs.babudb.replication.ReplicationManagerImpl;
-import org.xtreemfs.babudb.replication.RequestDispatcher.DispatcherState;
-import org.xtreemfs.babudb.replication.stages.StageRequest;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -91,7 +86,7 @@ import com.sun.net.httpserver.HttpServer;
  * @author bjko
  */
 public class DIRRequestDispatcher extends LifeCycleThread 
-    implements RPCServerRequestListener, LifeCycleListener, SyncListener {
+    implements RPCServerRequestListener, LifeCycleListener {
     
     /**
      * index for address mappings, stores uuid -> AddressMappingSet
@@ -472,40 +467,5 @@ public class DIRRequestDispatcher extends LifeCycleThread
     
     public DIRConfig getConfig() {
         return config;
-    }
-
-    /* (non-Javadoc)
-     * @see org.xtreemfs.babudb.log.SyncListener#failed(org.xtreemfs.babudb.log.LogEntry, java.lang.Exception)
-     */
-    @Override
-    public void failed(LogEntry entry, Exception ex) {
-        entry.free();
-        
-        if (getDBSReplicationService() != null) {
-            // get some rest until the fail-over-mechanism starts
-            try {
-                
-                DispatcherState state = ((ReplicationManagerImpl) getDBSReplicationService()).stop();
-            
-                if (state.requestQueue != null) 
-                    for (StageRequest rq : state.requestQueue)
-                        rq.free();
-                
-                Logging.logError(Logging.LEVEL_WARN, this, ex);
-            } catch (InterruptedException e) {
-                Logging.logError(Logging.LEVEL_WARN, this, e);
-            }
-        } else {
-            // not a consistent state!
-            crashPerformed(ex);
-        }
-    }
-
-    /* (non-Javadoc)
-     * @see org.xtreemfs.babudb.log.SyncListener#synced(org.xtreemfs.babudb.log.LogEntry)
-     */
-    @Override
-    public void synced(LogEntry entry) {
-        entry.free();
     }
 }

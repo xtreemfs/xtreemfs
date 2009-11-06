@@ -134,7 +134,7 @@ public class SetAddressMappingOperation extends DIROperation {
             newData.serialize(buf);
             BabuDBInsertGroup ig = database.createInsertGroup();
             ig.addInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes(), newBytes);
-            database.directInsert(ig, master, true);
+            database.directInsert(ig);
             
             xtreemfs_address_mappings_setResponse response = new xtreemfs_address_mappings_setResponse(
                 currentVersion);
