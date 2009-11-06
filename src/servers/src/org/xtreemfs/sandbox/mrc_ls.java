@@ -16,8 +16,11 @@ import org.xtreemfs.common.util.ONCRPCServiceURL;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.DirectoryEntry;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
+import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser;
@@ -44,7 +47,7 @@ public class mrc_ls {
             TimeSync.initialize(null, 60*1000, 50);
             Logging.start(Logging.LEVEL_WARN);
 
-            ONCRPCServiceURL mrcUrl = new ONCRPCServiceURL(arguments.get(0));
+            ONCRPCServiceURL mrcUrl = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,MRCInterface.DEFAULT_ONCRPC_PORT);
             String path = arguments.get(1);
 
             RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(null, 15*1000, 5*60*1000);

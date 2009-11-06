@@ -47,6 +47,8 @@ import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StripingPolicy;
@@ -255,7 +257,7 @@ public class StressTest {
         }
 
         // parse dir-address
-        final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0));
+        final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,DIRInterface.DEFAULT_ONCRPC_PORT);
         final InetSocketAddress dirAddress = new InetSocketAddress(dirURL.getHost(), dirURL.getPort());
 
         // parse tmp-dir

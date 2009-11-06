@@ -38,9 +38,11 @@ import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.DIRInterface.DIRException;
+import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.utils.CLIParser.CliOption;
 
 /**
@@ -67,7 +69,10 @@ public class xtfs_dirreplicationtool {
         
         Map<String, CliOption> options = new HashMap<String, CliOption>();
         List<String> arguments = new ArrayList<String>(3);
-        options.put("dir", new CliOption(CliOption.OPTIONTYPE.URL));
+        CliOption oDir = new CliOption(CliOption.OPTIONTYPE.URL);
+        oDir.urlDefaultPort = DIRInterface.DEFAULT_ONCRPC_PORT;
+        oDir.urlDefaultProtocol = Constants.ONCRPC_SCHEME;
+        options.put("dir", oDir);
         options.put("c", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("cpass", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("t", new CliOption(CliOption.OPTIONTYPE.STRING));

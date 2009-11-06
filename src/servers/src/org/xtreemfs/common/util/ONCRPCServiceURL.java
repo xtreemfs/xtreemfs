@@ -36,7 +36,7 @@ public class ONCRPCServiceURL {
 
     static {
 
-        urlPattern = Pattern.compile("(oncrpcs?):\\/\\/([^:]+):([0-9]+)/?");
+        urlPattern = Pattern.compile("((oncrpc[gs]?):\\/\\/)?([^:]+)(:([0-9]+))?/?");
     }
 
     private static final Pattern urlPattern;
@@ -47,17 +47,23 @@ public class ONCRPCServiceURL {
 
     private final int    port;
 
-    public ONCRPCServiceURL(String url) throws MalformedURLException {
+    public ONCRPCServiceURL(String url, String defaultProtocol, int defaultPort) throws MalformedURLException {
 
         //parse URL
         Matcher m = urlPattern.matcher(url);
         if (m.matches()) {
 
-            protocol = m.group(1);
+            if (m.group(2) != null)
+                protocol = m.group(2);
+            else
+                protocol = defaultProtocol;
 
-            host = m.group(2);
+            host = m.group(3);
 
-            port = Integer.valueOf(m.group(3));
+            if (m.group(4) != null)
+                port = Integer.valueOf(m.group(4).substring(1));
+            else
+                port = defaultPort;
 
         } else
             throw new MalformedURLException("'"+url+"' is not a valid XtreemFS service URL");

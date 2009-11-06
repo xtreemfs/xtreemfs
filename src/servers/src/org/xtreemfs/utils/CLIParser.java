@@ -25,6 +25,10 @@ public class CLIParser {
         public ONCRPCServiceURL urlValue;
         
         public File             fileValue;
+
+        public String           urlDefaultProtocol;
+        
+        public int              urlDefaultPort;
         
         public CliOption(OPTIONTYPE oType) {
             this.optType = oType;
@@ -80,7 +84,7 @@ public class CLIParser {
                     if (iter.hasNext()) {
                         final String value = iter.next();
                         try {
-                            final ONCRPCServiceURL tmp = new ONCRPCServiceURL(value);
+                            final ONCRPCServiceURL tmp = new ONCRPCServiceURL(value,option.urlDefaultProtocol,option.urlDefaultPort);
                             option.urlValue = tmp;
                         } catch (Exception ex) {
                             throw new IllegalArgumentException(ex);

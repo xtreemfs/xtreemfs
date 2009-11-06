@@ -37,9 +37,11 @@ import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.MRCInterface.MRCException;
+import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.MRCInterface.errnoException;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser.CliOption;
@@ -61,7 +63,10 @@ public class xtfs_mrcdbtool {
         
         Map<String, CliOption> options = new HashMap<String, CliOption>();
         List<String> arguments = new ArrayList<String>(3);
-        options.put("mrc", new CliOption(CliOption.OPTIONTYPE.URL));
+        CliOption oMrc = new CliOption(CliOption.OPTIONTYPE.URL);
+        oMrc.urlDefaultPort = MRCInterface.DEFAULT_ONCRPC_PORT;
+        oMrc.urlDefaultProtocol = Constants.ONCRPC_SCHEME;
+        options.put("mrc", oMrc);
         options.put("c", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("cpass", new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put("t", new CliOption(CliOption.OPTIONTYPE.STRING));

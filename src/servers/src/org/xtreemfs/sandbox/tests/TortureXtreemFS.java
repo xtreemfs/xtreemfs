@@ -42,6 +42,9 @@ import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
+import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.UserCredentials;
@@ -80,14 +83,14 @@ public class TortureXtreemFS {
                 return;
             }
             
-            final ONCRPCServiceURL mrcURL = new ONCRPCServiceURL(arguments.get(1));
+            final ONCRPCServiceURL mrcURL = new ONCRPCServiceURL(arguments.get(1),Constants.ONCRPC_SCHEME,MRCInterface.DEFAULT_ONCRPC_PORT);
             
             final String path = (options.get("p").stringValue != null) ? options.get("p").stringValue
                 : "/torture.data";
             final String volname = (options.get("v").stringValue != null) ? options.get("v").stringValue
                 : "test";
             
-            final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0));
+            final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,DIRInterface.DEFAULT_ONCRPC_PORT);
             
             boolean useSSL = false;
             

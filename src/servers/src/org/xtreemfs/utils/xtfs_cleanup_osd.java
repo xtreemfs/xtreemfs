@@ -41,6 +41,8 @@ import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.Constants;
+import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.utils.CLIParser.CliOption;
@@ -86,7 +88,10 @@ public class xtfs_cleanup_osd {
             options.put("i", new CliOption(CliOption.OPTIONTYPE.SWITCH));
             options.put("stop", new CliOption(CliOption.OPTIONTYPE.SWITCH));
             options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
-            options.put("dir", new CliOption(CliOption.OPTIONTYPE.URL));
+            CliOption oDir = new CliOption(CliOption.OPTIONTYPE.URL);
+            oDir.urlDefaultPort = DIRInterface.DEFAULT_ONCRPC_PORT;
+            oDir.urlDefaultProtocol = Constants.ONCRPC_SCHEME;
+            options.put("dir", oDir);
             // SSL options
             options.put("c", new CliOption(CliOption.OPTIONTYPE.STRING));
             options.put("cpass", new CliOption(CliOption.OPTIONTYPE.STRING));
