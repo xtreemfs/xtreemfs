@@ -185,10 +185,23 @@ namespace mount_xtreemfs
 
         if ( child_process != NULL )
         { 
-          YIELD::platform::Thread::sleep( 100 * NS_IN_MS ); // Wait for the child process to start
           int child_ret = 0;
-          child_process->poll( &child_ret ); // Will set child_ret if the child failed and exited, otherwise child_ret will stay 0
-          return child_ret;
+#ifndef _WIN32
+          std::string xtreemfs_url;
+#endif
+          for ( uint8_t poll_i = 0; poll_i < 10; poll_i++ )
+          {
+            if ( child_process->poll( &child_ret ) )
+              return child_ret; // Child failed 
+#ifndef _WIN32
+            else if ( YIELD::platform::Volume().getxattr( mount_point, "xtreemfs.url", xtreemfs_url ) )
+              return 0; // Child started successfully
+#endif
+            else
+             YIELD::platform::Thread::sleep( 100 * NS_IN_MS );
+          }
+
+          return 0; // Assume the child started successfully
         }
         else 
         {

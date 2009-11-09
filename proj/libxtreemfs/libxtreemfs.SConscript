@@ -75,6 +75,9 @@ lib_dir_paths = [os.path.abspath( '../../lib' )]
 for lib_dir_path in lib_dir_paths:
     if not lib_dir_path in build_env["LIBPATH"]: build_env["LIBPATH"].append( lib_dir_path )
 
+for custom_SConscript in ['libxtreemfs_custom.SConscript']:
+    SConscript( custom_SConscript )
+
 # Don't add libs until after custom and dependency SConscripts, to avoid failing build_conf checks because of missing -l libs
 for lib in []:
    if not lib in build_env["LIBS"]: build_env["LIBS"].insert( 0, lib )
