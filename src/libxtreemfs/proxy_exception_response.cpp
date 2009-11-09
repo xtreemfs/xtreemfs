@@ -23,7 +23,7 @@ uint32_t ProxyExceptionResponse::get_platform_error_code() const
     case EINVAL: return ERROR_INVALID_PARAMETER;
     case ENOENT: return ERROR_FILE_NOT_FOUND;
     case WSAETIMEDOUT: return ERROR_NETWORK_BUSY;
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__MACH__)
     case 11: return EAGAIN; // Not sure why they renumbered this one.
     case 39: return ENOTEMPTY; // 39 is EDESTADDRREQ on FreeBSD
     case 61: return ENOATTR; // 61 is ENODATA on Linux, returned when an xattr is not present
