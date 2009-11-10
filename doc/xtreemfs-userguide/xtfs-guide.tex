@@ -853,7 +853,7 @@ If an error occurs, please check if one of the following requirements is not met
  \item You have root permissions when starting the service. Running the \texttt{init.d} scripts requires root permissions. However, the services themselves are started on behalf of a user \textit{xtreemfs}.
  \item DIR has been started before MRC and OSD. Problems may occur if a script starts multiple services as background processes.
  \item There are no firewall restrictions that keep XtreemFS services from communicating with each other. The default ports that need to be open are: 32636 (MRC, TCP), 32638 (DIR, TCP), and 32640 (OSD, TCP \& UDP).
- \item The MRC database version is correct. In case of an outdated database version, the \texttt{xtfs\_mrcdbtool} commands of the old and new XtreemFS version can dump and restore the database, respectively.
+ \item The MRC database version is correct. In case of an outdated database version, the \texttt{xtfs\_mrcdbtool} commands of the old and new XtreemFS version can dump and restore the database, respectively (see Sec.\ \ref{sec:mrcdbtools}).
  \item A network interface is available on the host. It may be either bound to an IPv4 or IPv6 address.
 \end{itemize}
 
@@ -932,7 +932,7 @@ Volumes can be created with the \texttt{xtfs\_mkvol} command line utility. Pleas
 
 When creating a volume, it is recommended to specify the access control policy (see Sec. \ref{sec:access_policies}). If not specified, POSIX permissions/ACLs will be chosen by default. Unlike most other policies, access control policies cannot be changed afterwards.
 
-In addition, it is recommended to set a default striping policy (see Sec. \ref{sec:striping_policies}). If no per-file or per-directory default striping policy overrides the volume's default striping policy, the volume's policy is used as the policy for new files and directories. If no volume policy is explicitly defined, a RAID0 policy with a stripe size of 128kB and a width of 1 will be assigned to the volume.
+In addition, it is recommended to set a default striping policy (see Sec. \ref{sec:striping_policies}). If no per-file or per-directory default striping policy overrides the volume's default striping policy, the volume's policy is assigned to all newly created files. If no volume policy is explicitly defined when creating a volume, a RAID0 policy with a stripe size of 128kB and a width of 1 will be used as the default policy.
 
 A volume with a POSIX permission model, a stripe size of 256kB and a stripe width of 1 (i.e.\ all stripes will reside on the same OSD) can be created as follows:
 
@@ -943,6 +943,8 @@ $> xtfs_mkvol -a POSIX -p RAID0 -s 256 -w 1 \
 \end{verbatim}
 
 Creating a volume may require privileged access, which depends on whether an administrator password required by the MRC. To pass an administrator password, add \texttt{----password <password>} to the \texttt{xtfs\_mkvol} command.
+
+For a complete list of parameters, please refer to the \texttt{xtfs\_mkvol} man pages.
 
 \subsection{Deleting Volumes}
 
@@ -967,12 +969,14 @@ $> xtfs_lsvol my-mrc-host.com:32636
 Adding the \texttt{--l} flag will result in more details being shown.
 
 
-\section{Mounting and Un-mounting}
+\section{Accessing Volumes}
 \label{sec:mount_vol}
 
 Once a volume has been created, it needs to be mounted in order to be accessed.
 
-Before mounting XtreemFS volumes on a Linux machine, please ensure that the FUSE kernel module is loaded.\index{Volume!Mount}\index{Mount}\index{xtfs\_mount} Please check your distribution's manual to see if users must be in a special group (e.g. \texttt{trusted} in openSUSE) to be allowed to mount FUSE.
+\subsection{Mounting and Un-mounting}
+
+Before mounting XtreemFS volumes on a Linux machine, please ensure that the FUSE kernel module is loaded.\index{Volume!Mount}\index{Mount}\index{xtfs\_mount} Please check your distribution's manual to see if users must be in a special group (e.g. \texttt{trusted} in openSuSE) to be allowed to mount FUSE.
 
 
 \begin{verbatim}
@@ -997,8 +1001,6 @@ Please be aware that the Directory Service URL needs to be provided when mountin
 
 When mounting a volume, the client will immediately go into background and won't display any error messages. Use the \texttt{-f} option to prevent the mount process from going into background and get all error messages printed to the console.
 
-Access to a FUSE mount is usually restricted to the user who mounted the volume. To allow the root user or any other user on the system to access the mounted volume, the FUSE options \texttt{-o allow\_root} and \texttt{-o allow\_other} can be used with \texttt{xtfs\_mount}. They are, however, mutually exclusive. In order to use these options, the system administrator must create a FUSE configuration file \texttt{/etc/fuse.conf} and add a line\index{allow\_others option}\index{allow\_root option}\index{user\_allow\_other option} \texttt{user\_allow\_other}.
-
 To check that a volume is mounted, use the \texttt{mount} command. It outputs a list of all mounts in the system. XtreemFS volumes are listed as \texttt{type fuse}:
 
 \begin{verbatim}
@@ -1010,6 +1012,12 @@ Volumes are unmounted with the \texttt{xtfs\_umount} tool\index{Volume!Un-mount}
 \begin{verbatim}
 $> xtfs_umount /xtreemfs
 \end{verbatim}
+
+\subsection{Mount Options}
+
+Access to a FUSE mount is usually restricted to the user who mounted the volume. To allow the root user or any other user on the system to access the mounted volume, the FUSE options \texttt{-o allow\_root} and \texttt{-o allow\_other} can be used with \texttt{xtfs\_mount}. They are, however, mutually exclusive. In order to use these options, the system administrator must create a FUSE configuration file \texttt{/etc/fuse.conf} and add a line\index{allow\_others option}\index{allow\_root option}\index{user\_allow\_other option} \texttt{user\_allow\_other}.
+
+By default, the local system cache on the client machine will be used to speed up read access to XtreemFS. In particular, using the cache as a local buffer is necessary to support the \texttt{mmap} system call, which - amongst others - is required to execute applications on Linux. On the other hand, using buffered I/O may adversely affect throughput when writing large files, as FUSE $\leq$ 2.7 splits up large writes into multiple individual 4k (page size) writes. In addition, it limits the consistency model of client caches to ``close-to-open'', which is similar to the model provided by NFS. Buffered I/O can be switched off by adding the \texttt{-o direct\_io} parameter. The parameter effects that all read and write operations are directed to their OSDs instead of being served from local caches.
 
 
 \section{Troubleshooting}
@@ -1040,7 +1048,7 @@ The following list contains the most common problems and the solutions.
 
 \begin{tabular}{lp{10cm}}
  \textbf{Problem}  & \textbf{An error occurs when trying to access a mounted volume.} \\
- \textbf{Solution} & Please make sure that you have sufficient access rights to the volume root. Superusers and volume owners can change these rights via \texttt{chmod <mode> <mountpoint>}. If you try to access a mount point that belongs to a different user, please make sure that the volume is mounted with \texttt{xtfs\_mount -o allow\_other \dots}.
+ \textbf{Solution} & Please make sure that you have sufficient access rights to the volume root. Superusers and volume owners can change these rights via \texttt{chmod <mode> <mountpoint>}. If you try to access a mount point to which XtreemFS was mounted by a different user, please make sure that the volume is mounted with \texttt{xtfs\_mount -o allow\_other \dots}.
 \end{tabular}
 
 \begin{tabular}{lp{10cm}}
@@ -1054,7 +1062,7 @@ The following list contains the most common problems and the solutions.
    \begin{itemize}
     \item One or more OSDs failed to start up. Please check the log files and status pages of all OSDs to ensure that they are running.
     \item One or more OSDs failed to register or regularly report activity at the DIR. Please check the DIR status page to ensure that all OSDs are registered and active.
-    \item There are no more OSDs with a sufficient amount of free disk space. Please check the OSD status page to obtain information about free disk space.
+    \item There are no OSDs with a sufficient amount of free disk space. Please check the OSD status page to obtain information about free disk space.
    \end{itemize}
 \end{tabular}
 
@@ -1125,8 +1133,9 @@ to complete the installation. Note that this will also install the XtreemFS clie
 This section describes the tools that support administrators in maintaining an XtreemFS installation.
 
 \subsection{MRC Database Conversion}
+\label{sec:mrcdbtools}
 
-The database format in which the MRC stores its file system metadata on disk may change with future XtreemFS versions, even though we attempt to keep it as stable as possible. To ensure that XtreemFS server components may be updated without having to create and restore a backup of the entire installation, it is possible convert an MRC database to a newer version by means of a version-independent XML representation.
+The database format in which the MRC stores its file system metadata on disk may change with future XtreemFS versions, even though we attempt to keep it as stable as possible. To ensure that XtreemFS server components may be updated without having to create and restore a backup of the entire installation, it is possible to convert an MRC database to a newer version by means of a version-independent XML representation.
 
 This is done as follows:
 \begin{enumerate}
@@ -1249,14 +1258,15 @@ stripe-size:  4
 width (kB):   256
 \end{verbatim}
 
-When creating a new file, XtreemFS will first check whether a default striping policy has been assigned to the parent directory. If this is not the case, the default striping policy for the volume will be used as the striping policy for the new file. Changing a volume's or directory's default striping policy requires superuser access rights, or ownership of the volume or directory.
+When creating a new file, XtreemFS will first check whether a default striping policy has been assigned to the file's parent directory. If this is not the case, the default striping policy for the volume will be used as the striping policy for the new file. Changing a volume's or directory's default striping policy requires superuser access rights, or ownership of the volume or directory.
 
 
 \subsection{Read-Only Replication}\index{Replication}\index{Replication!read-only}\index{Read-only Replication}
+\label{sec:roreplication}
 
 Replication is one of core features of XtreemFS. A replica can be seen as a (not essentially complete) copy of a file's content on a remote (set of) OSD(s). Replication is handled among the XtreemFS OSDs, which makes it completely transparent to client applications.
 
-So far, XtreemFS only supports \emph{read-only replication}. Read-only replication requires files to be immutable (i.e.\ 'read-only'), which implies that once a file has been replicated, it can no longer be modified. The benefit of read-only replicas is that XtreemFS can guarantee sequential replica consistency without at a low cost; since files are no longer modified when replicated, no overhead is caused to rule out inconsistent replicas.
+So far, XtreemFS only supports \emph{read-only replication}. Read-only replication requires files to be immutable (i.e.\ 'read-only'), which implies that once a file has been replicated, it can no longer be modified. The benefit of read-only replicas is that XtreemFS can guarantee sequential replica consistency at a low cost; since files are no longer modified when replicated, no overhead is caused to ensure replica consistency.
 
 When replicating a file, the first step is to make the file read-only, which can be done as follows:
 
@@ -1264,7 +1274,7 @@ When replicating a file, the first step is to make the file read-only, which can
 $> xtfs_repl --set_readonly local-path-of-file
 \end{verbatim}
 
-Once a file has been marked as read-only, replicas can be added. The tool supports differend replica creation modes. The automatic mode retrieves a list of OSDs from the MRC and chooses the best OSD according to the current replica selection policy. You can also select a specific OSD by specifying its UUID on the command line.
+Once a file has been marked as read-only, replicas can be added. The tool supports different replica creation modes. The automatic mode retrieves a list of OSDs from the MRC and chooses the best OSD according to the current replica selection policy. You can also select a specific OSD by specifying its UUID on the command line.
 
 Newly created replicas are initially empty, which means that no file content has been copied from other non-empty replicas. Yet, they can be immediately used by applications. If a replica does not have the requested data, it fetches the data from a remote replica and saves it locally for future requests (on-demand replication). Such partial replicas help to save network bandwidth and disk usage. Alternatively, replicas can be triggered to fetch the whole data from remote replicas in the background, regardless of client requests (background replication).
 
@@ -1277,7 +1287,7 @@ $> xtfs_repl --add_auto --full --strategy random \
    /xtreemfs/file.txt
 \end{verbatim}
 
-This command creates a new replica with an automatically-selected set of OSDs (for details, see Sec.\ \ref{sec:osd_policies}, \ref{sec:osd_select_policy}). The switch \texttt{----full} indicates that background replication is desired; otherwise, replicas are filled on demand, which means that they remain partial replicas until all objects have been fetched by the client.
+This command creates a new replica with an automatically-selected set of OSDs (for details, see Sec.\ \ref{sec:osd_policies}, \ref{sec:osd_select_policy}). The switch \texttt{----full} indicates that background replication is desired; otherwise, replicas are filled on demand, which means that they remain partial replicas until the application accesses all the objects of the replica.
 
 To list all replicas and OSDs of the file use:
 
@@ -1311,7 +1321,7 @@ REPLICA 2:
                  [Head-OSD]     UUID: osd2, URL: /127.0.0.1:32640
 \end{verbatim}
 
-Besides adding replicas, replicas can also be removed. Since replicas of a file do not have a fixed order, we use a replica's first OSD to identify the replica to delete. The first OSD in the list of OSDs, also referred to as \emph{head OSD} is a unique identifier for a replica, as different replicas of a file may not share any OSDs.
+Besides adding replicas, replicas can also be removed. Since replicas of a file do not have a fixed order, we use a replica's first OSD to identify the replica to delete. The first OSD in a replica's list of OSDs, also referred to as \emph{head OSD} is a unique identifier for a replica, as different replicas of a file may not share any OSDs.
 
 To remove a replica, the UUID of the head OSD must be given as an argument. It can be determined via \texttt{xtfs\_repl -l}. To ensure that at least one complete replica remains, i.e.\ a replica that stores the entire file content, complete replicas can only be removed if there is at least one more complete complete replica of the file.
 
@@ -1336,7 +1346,7 @@ The number of replicas to be created when a file is closed can be specified as a
 $> xtfs_repl --ocr_factor_set 2 /xtreemfs
 \end{verbatim}
 
-This will automatically create a second replica the file is closed. Note that by setting the replication factor to 1 (default value), on-close replication will be switched off, which means that the file won't be replicated and will remain writable after having been closed.
+This will automatically create a second replica when the file is closed, which implies that the file will be made read-only. Note that by setting the replication factor to 1 (default value), on-close replication will be switched off, which means that the file won't be replicated and will remain writable after having been closed.
 
 The current replication factor of a volume can be retrieved as follows:
 
@@ -1392,7 +1402,7 @@ sets a data center map-based OSD selection policy, which is invoked each time a 
  \item \texttt{dcmap}
 \end{itemize}
 
-The default OSD selection policy selects a random subset of OSDs that are responsive and have sufficient free disk space, whereas the \texttt{fqdn} and \texttt{dcmap} policies select those subsets of responsive OSDs with enough space that are closest according to fully qualified domain names and a data center map, accordingly. Besides, custom policies can be set by passing a list of basic policy IDs to be successively applied instead of a predefined policy name.
+The default OSD selection policy selects a random subset of OSDs that are responsive and have more than 2GB of free disk space, whereas the \texttt{fqdn} and \texttt{dcmap} policies select those subsets of responsive OSDs with enough space that are closest according to fully qualified domain names and a data center map, accordingly. Besides, custom policies can be set by passing a list of basic policy IDs to be successively applied instead of a predefined policy name.
 
 The OSD selection policy can be retrieved as follows:
 
@@ -1472,7 +1482,7 @@ When a new file is created or a replica is automatically added to a file, the MR
 
 Replica selection is a related problem. When a client opens a file with more than one replica, the MRC uses a replica selection policy to sort the list of replicas for the client. Initially, a client will always attempt to access the first replica in the list received from the MRC. If a replica is not available, it will automatically attempt to access the next replica from the list, and restart with the first replica if all attempts have failed. Replica selection policies can be used to sort the replica lists, e.g. to ensure that clients first try to access replicas that are close to them.
 
-Both OSD and replica selection policies share a common mechanism, in that they consist of \emph{basic policies} that can be arbitrarily combined. Input parameters of a basic policy are a set of OSDs, the current replica locations list of the file, and the IP address of the client on behalf of whom the policy was called. The output parameter is a filtered and potentially sorted subset of OSDs. Since OSD lists returned by one basic policy can be used as input parameters by another one, basic policies can be chained to define more complex composite policies.
+Both OSD and replica selection policies share a common mechanism, in that they consist of \emph{basic policies} that can be arbitrarily combined. Input parameters of a basic policy are a set of OSDs, the list of the current replica locations of the file, and the IP address of the client on behalf of whom the policy was called. The output parameter is a filtered and potentially sorted subset of OSDs. Since OSD lists returned by one basic policy can be used as input parameters by another one, basic policies can be chained to define more complex composite policies.
 
 OSD and replica selection policies are assigned at volume granularity. For further details on how to set such policies, please refer to Sec.\ \ref{sec:osd_select_policy}.
 
@@ -1481,6 +1491,8 @@ OSD and replica selection policies are assigned at volume granularity. For furth
 The behavior of basic policies can be further refined by means of policy attributes. Policy attributes are extended attributes with a name starting with \texttt{xtreemfs.policies.}, such as \texttt{xtreemfs.policies.minFreeCapacity}. Each time a policy attribute is set, all policies will be notified about the change. How an attribute change affects the policy behavior depends on the policy implementation.
 
 \subsection{Predefined Policies}
+
+Each basic policy can be assigned to one of the three different categories called \emph{filtering}, \emph{grouping} and \emph{sorting}. \emph{Filtering policies} generate a sublist from a list of OSDs. The sublist only contains those OSDs from the original list that have a certain property. \emph{Grouping policies} are used to select a subgroup from a given list of OSDs. They basically work in a similar manner as filtering policies, but unlike filtering policies, they always return a list of a fixed size. \emph{Sorting policies} generate and return a reordered list from the input OSD list, without removing any OSDs.
 
 The following predefined policies exist:
 
@@ -1493,7 +1505,7 @@ The following predefined policies exist:
  Attributes:
  \begin{itemize}
  \item \emph{free\_capacity\_bytes}: the lower space limit in bytes
- \item \emph{offline\_time\_secs}: the upper response time limit in
+ \item \emph{offline\_time\_secs}: the upper response time limit in seconds
  \end{itemize}
 
  \item \textbf{FQDN-based filter (policy ID 1001)}\\
@@ -1515,7 +1527,8 @@ The following predefined policies exist:
 
  This policy uses a statically configured datacenter map that describes the distance between datacenters. It works only with IPv4 addresses at the moment. Each datacenter has a list of matching IP addresses and networks which is used to assign clients and OSDs to datacenters. Machines in the same datacenter have a distance of 0.
 
-	This policy requires a datacenter map configuration file in \texttt{/etc/xos/xtreemfs/datacentermap} on the MRC machine which is loaded at MRC startup. This config file must contain the following parameters:
+	This policy requires a datacenter map configuration file in\\
+	\texttt{/etc/xos/xtreemfs/datacentermap} on the MRC machine which is loaded at MRC startup. This config file must contain the following parameters:
 	\begin{itemize}
 		\item \texttt{datacenters=A,B,C}\\
 			A comma separated list of datacenters. Datacenter names may only contain a-z, A-Z, 0-9 and \_.
@@ -1569,9 +1582,9 @@ This policy uses domain names of clients and OSDs to determine the distance betw
 
 XtreemFS allows the content, i.e.\ the objects of a file to be distributed among several storage devices (OSDs). This has the benefit that the file can be read or written in parallel on multiple OSDs in order to increase throughput\index{Striping}. To configure how files are striped, XtreemFS supports \emph{striping policies}.
 
-A striping policy\index{Striping Policy}\index{Policy!Striping Policy}\index{RAID0} is a rule that defines how the objects are distributed on the available OSDs. Currently, XtreemFS implements only the \texttt{RAID0} policy which simply stores the objects in a round robin fashion on the OSDs. The \texttt{RAID0} policy has two parameters. The striping width\index{Striping Width} defines to how many OSDs the file is distributed. The stripe size\index{Striping!Stripe Size}\index{Stripe Size} defines the size of each object.
+A striping policy\index{Striping Policy}\index{Policy!Striping Policy}\index{RAID0} is a rule that defines how the objects are distributed on the available OSDs. Currently, XtreemFS implements only the \texttt{RAID0} policy which simply stores the objects in a round robin fashion on the OSDs. The \texttt{RAID0} policy has two parameters. The \emph{striping width}\index{Striping Width} defines to how many OSDs the file is distributed. If not enough OSDs are available when the file is created, the number of available OSDs will be used instead; if it is 0, an I/O error is reported to the client. The \emph{stripe size}\index{Striping!Stripe Size}\index{Stripe Size} defines the size of each object.
 
-Striping over several OSDs enhances the read and write throughput to a file. The maximum throughput depends on the striping width. However, using \texttt{RAID0} also increases the probability of data loss. If a single OSD fails, parts of the file are no longer accessible, which generally renders the entire file useless.
+Striping over several OSDs enhances the read and write throughput to a file. The maximum throughput depends on the striping width. However, using \texttt{RAID0} also increases the probability of data loss. If a single OSD fails, parts of the file are no longer accessible, which generally renders the entire file useless. Replication can mitigate the problem but has all the restrictions described in Sec.\ \ref{sec:roreplication}.
 
 
 \section{Plug-in Policies}
