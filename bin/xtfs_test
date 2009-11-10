@@ -113,27 +113,21 @@ def create_volumes( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAU
 #                stop_services( num_osds )
 #                sys.exit( 1 )
 
-def generate_db_config( debug_level=DEBUG_LEVEL_DEFAULT ):
-	locals().update( globals() )
-	database_log = os.path.join( "data", "dir" )
-	database_dir = os.path.join( "data", "dir" )
-	open( os.path.join( "config", "db.config" ), "w+" ).write( """\
-debug.level = %(debug_level)s
-db.logDir = %(database_log)s
-db.baseDir = %(database_dir)s
-db.sync = FSYNC
-worker.maxQueueLength = 250
-worker.numThreads = 0
-db.maxLogfileSize = 16777216
-db.checkInterval = 300
-db.pseudoSyncWait = 200
-""" % locals() )
-
 def generate_dir_config( debug_level=DEBUG_LEVEL_DEFAULT, enable_ssl=ENABLE_SSL_DEFAULT, enable_grid_ssl=ENABLE_SSL_DEFAULT ):
     locals().update( globals() )
     database_dir = os.path.join( "data", "dir" )
+    database_log = os.path.join( "data", "dir" )
     open( os.path.join( "config", "dir.config" ), "w+" ).write( """\
 uuid = test-env-DIR
+babudb.debug.level = %(debug_level)s
+babudb.logDir = %(database_log)s
+babudb.baseDir = %(database_dir)s
+babudb.sync = FSYNC
+babudb.worker.maxQueueLength = 250
+babudb.worker.numThreads = 0
+babudb.maxLogfileSize = 16777216
+babudb.checkInterval = 300
+babudb.pseudoSyncWait = 200
 debug.level = %(debug_level)s
 listen.port = %(DIR_ONCRPC_PORT)u
 http_port = %(DIR_HTTP_PORT)u
@@ -306,7 +300,6 @@ def start_services( debug_level=DEBUG_LEVEL_DEFAULT_SERVICES, num_osds=NUM_OSDS_
         if not os.path.exists( subdir_name ):
             os.mkdir( subdir_name )
     
-    generate_db_config( debug_level )
     generate_dir_config( debug_level, enable_ssl, enable_grid_ssl )
     generate_mrc_config( debug_level, enable_ssl, enable_grid_ssl )
     for osdnum in xrange( num_osds ):

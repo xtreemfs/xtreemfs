@@ -45,21 +45,11 @@ public class DIR {
     public static void main(String[] args) {
 
         String configFileName = "../../etc/xos/xtreemfs/dirconfig.test";
-        String dbsConfigFileName = "../../etc/xos/xtreemfs/dirdbconfig.test";
         
-        if (args.length < 1 || args.length > 2) {
+        if (args.length != 1) 
             System.out.println("using default config file " + configFileName);
-            System.out.println("using default BabuDB config file " 
-                    + dbsConfigFileName);
-        } else {
+        else 
             configFileName = args[0];
-
-            if (args.length == 2)
-                dbsConfigFileName = args[1];
-            else
-                System.out.println("using default BabuDB config file " 
-                        + dbsConfigFileName);
-        } 
         
         DIRConfig config = null;
         try {
@@ -71,10 +61,10 @@ public class DIR {
         
         BabuDBConfig dbsConfig = null;
         try {
-            dbsConfig = new ReplicationConfig(dbsConfigFileName);
+            dbsConfig = new ReplicationConfig(configFileName);
         } catch (Throwable e) {
             try {
-                dbsConfig = new BabuDBConfig(dbsConfigFileName);
+                dbsConfig = new BabuDBConfig(configFileName);
             } catch (IOException ex) {
                 ex.printStackTrace();
                 return;
