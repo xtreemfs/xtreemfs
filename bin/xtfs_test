@@ -327,8 +327,6 @@ def _start_service( service_name, service_num="" ):
     args.extend( ( "-cp", "" + ( sys.platform.startswith( "win" ) and ";".join( CLASSPATH ) or ":".join( CLASSPATH ) ) + "", ) )
     args.append( "org.xtreemfs." + service_name + "." + service_name.upper() ) # Class name
     args.append( os.path.join( "config", service_name + service_num + ".config" ) ) # Configuration file
-    if service_name == "dir":
-    	args.append( os.path.join( "config", "db.config" ) ) # DB configuration file
     args = " ".join( args )
     log_file_path = os.path.join( "log", service_name + service_num + ".log" )
     stderr = stdout = open( log_file_path, "a" )
