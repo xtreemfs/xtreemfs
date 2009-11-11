@@ -2,9 +2,10 @@
 
 ### BEGIN INIT INFO
 # Provides:          xtreemfs-osd
-# Required-Start:    $network xtreemfs-dir
+# Required-Start:    $network
 # Required-Stop:     $network
 # Default-Start:     3 4 5
+# Default-Stop:
 # Short-Description: XtreemFS OSD
 # Description:       XtreemFS OSD. http://www.xtreemfs.org/
 ### END INIT INFO

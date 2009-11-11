@@ -5,6 +5,7 @@
 # Required-Start:    $network
 # Required-Stop:     $network
 # Default-Start:     3 4 5
+# Default-Stop:
 # Short-Description: XtreemFS DIR
 # Description:       XtreemFS DIR. http://www.xtreemfs.org/
 ### END INIT INFO
