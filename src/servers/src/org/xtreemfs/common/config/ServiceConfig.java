@@ -113,6 +113,10 @@ public class ServiceConfig extends Config {
         this.hostname = readOptionalString("hostname", "");
 
         this.useGRIDSSLmode = this.readOptionalBoolean("ssl.grid_ssl", false);
+
+        if (!this.useSSL && this.useGRIDSSLmode) {
+            throw new RuntimeException("ssl must be enabled to use the grid_ssl mode. Please make sure to set ssl.enabled = true and to configure all SSL options.");
+        }
     }
     
     protected int readDebugLevel() {
