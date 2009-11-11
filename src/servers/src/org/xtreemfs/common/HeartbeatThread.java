@@ -259,23 +259,34 @@ public class HeartbeatThread extends LifeCycleThread {
                     // ... for each UUID, ...
                     for (Service reg : serviceDataGen.getServiceData()) {
                         
-                        // ... remove old DS entry if necessary
-                        RPCResponse<ServiceSet> r1 = client.xtreemfs_service_get_by_uuid(null, reg.getUuid());
-                        long currentVersion = 0;
-                        responses.add(r1);
-                        ServiceSet olset = r1.get();
-                        if (olset.size() > 0) {
-                            currentVersion = olset.get(0).getVersion();
+                        RPCResponse<ServiceSet> r1 = null;
+                        RPCResponse<Long> r2 = null;
+                        try{
+                            // ... remove old DS entry if necessary
+                            r1 = client.xtreemfs_service_get_by_uuid(null, reg.getUuid());
+                            long currentVersion = 0;
+                            responses.add(r1);
+                            ServiceSet olset = r1.get();
+                            if (olset.size() > 0) {
+                                currentVersion = olset.get(0).getVersion();
+                            }
+                            
+                            reg.setVersion(currentVersion);
+                            r2 = client.xtreemfs_service_register(null, reg);
+                            responses.add(r2);
+                            r2.get();
+                            
+                            if (Logging.isDebug())
+                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                                    "%s successfully updated at Directory Service", uuid);
+                        }finally{
+                            if(r1!=null){
+                                r1.freeBuffers();
+                            }
+                            if(r2!=null){
+                                r2.freeBuffers();
+                            }
                         }
-                        
-                        reg.setVersion(currentVersion);
-                        RPCResponse<Long> r2 = client.xtreemfs_service_register(null, reg);
-                        responses.add(r2);
-                        r2.get();
-                        
-                        if (Logging.isDebug())
-                            Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
-                                "%s successfully updated at Directory Service", uuid);
                     }
                     
                 } catch (IOException ex) {

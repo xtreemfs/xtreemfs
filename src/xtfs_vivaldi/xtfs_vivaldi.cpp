@@ -38,7 +38,7 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
  * Number of times the node recalculates its position before updating
  * its list of existent OSDs.
  */
-#define ITERATIONS_BEFORE_UPDATING 20
+#define ITERATIONS_BEFORE_UPDATING 10
 
 #define MAX_RETRIES_FOR_A_REQUEST 3
 
@@ -50,6 +50,7 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
 #define REPLICAS_PER_FILE   40
 #define CHECK_EVERY_ITERATIONS 2
 #define RES_FILE_NAME "res-%s-%d"
+#define RECAL_FILE_NAME "recal-%s"
 #ifndef _WIN32
   #define SPRINTF_VIV(buff,size,format,...) snprintf(buff,size,format,__VA_ARGS__)
 #else
@@ -169,8 +170,12 @@ namespace xtfs_vivaldi
             memset(filename,0,128);
             const char *fPath=vivaldi_coordinates_file_path;
             SPRINTF_VIV(filename,128,RES_FILE_NAME,fPath,i);
-            YIELD::platform::auto_File truncatedFile = YIELD::platform::Volume().open( filename, O_CREAT|O_TRUNC|O_WRONLY );
-            truncatedFile->close(); 
+            YIELD::platform::auto_File truncatedFile1 = YIELD::platform::Volume().open( filename, O_CREAT|O_TRUNC|O_WRONLY );
+            truncatedFile1->close();
+            // Create/truncate recals file i
+            SPRINTF_VIV(filename,128,RECAL_FILE_NAME,fPath);
+            YIELD::platform::auto_File truncatedFile2 = YIELD::platform::Volume().open( filename, O_CREAT|O_TRUNC|O_WRONLY );
+            truncatedFile2->close(); 
 
           }
 
@@ -222,10 +227,12 @@ namespace xtfs_vivaldi
   							YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
                 get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "Ping response received.";
                 
+                bool retried = false;
   							// Recalculate coordinates here
                 if(currentRetries<MAX_RETRIES_FOR_A_REQUEST){
                   if( !own_node.recalculatePosition(random_osd_vivaldi_coordinates,rtt.as_unix_time_ms(),false) ){
                     currentRetries++;
+                    retried = true;
                   }else{
                     currentRetries = 0;
                   }  
@@ -239,7 +246,8 @@ namespace xtfs_vivaldi
                 char auxStr[128];
                 SPRINTF_VIV( auxStr,
                           128,
-                          "RTT:%lld(Viv:%.3f) Own:(%.3f,%.3f) lE=%.3f Rem:(%.3f,%.3f) rE=%.3f %s",
+                          "%s:%lld(Viv:%.3f) Own:(%.3f,%.3f) lE=%.3f Rem:(%.3f,%.3f) rE=%.3f %s",
+                            retried?"RETRY":"RTT",
                             rtt.as_unix_time_ms(),
                             own_node.calculateDistance((*own_node.getCoordinates()),random_osd_vivaldi_coordinates),
                             own_node.getCoordinates()->get_x_coordinate(),
@@ -249,6 +257,19 @@ namespace xtfs_vivaldi
                             random_osd_vivaldi_coordinates.get_y_coordinate(),
                             random_osd_vivaldi_coordinates.get_local_error(),
                             random_osd_service->get_uuid().data());
+                
+                char filename[128];
+                memset(filename,0,128);
+                const char *fPath=vivaldi_coordinates_file_path;
+                SPRINTF_VIV(filename,128,RECAL_FILE_NAME,fPath);
+                YIELD::platform::auto_File recals_file = YIELD::platform::Volume().open( filename, O_CREAT|O_APPEND|O_WRONLY );
+                if ( recals_file != NULL )
+                {
+                  recals_file->write( auxStr,strlen(auxStr) );
+                  recals_file->close();
+                }else{
+                  get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "Impossible to open recals file";
+                }
                 
                 get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << auxStr;
   

@@ -136,7 +136,7 @@ public class VivaldiStage extends Stage {
      * Number of times the node recalculates its position before updating
      * its list of existent OSDs.
      */
-    private static final int ITERATIONS_BEFORE_UPDATING = 4;
+    private static final int ITERATIONS_BEFORE_UPDATING = 10;
     
     /**
      * Maximum number of milliseconds an OSD waits for a RESPONSE before discarding

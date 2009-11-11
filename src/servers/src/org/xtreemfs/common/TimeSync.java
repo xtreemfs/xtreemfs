@@ -255,7 +255,7 @@ public final class TimeSync extends LifeCycleThread {
             long oldDrift = currentDrift;
             r = dir.xtreemfs_global_time_get(null);
             Long globalTime = r.get();
-            r.freeBuffers();
+
             long tEnd = System.currentTimeMillis();
             // add half a roundtrip to estimate the delay
             syncRTT = (int)(tEnd - tStart);
@@ -272,12 +272,13 @@ public final class TimeSync extends LifeCycleThread {
             }
             
         } catch (Exception ex) {
-            if(r!=null){
-                r.freeBuffers();
-            }
             syncSuccess = false;
             ex.printStackTrace();
             lastSync = System.currentTimeMillis();
+        } finally{
+            if(r!=null){
+                r.freeBuffers();
+            }
         }
     }
     
