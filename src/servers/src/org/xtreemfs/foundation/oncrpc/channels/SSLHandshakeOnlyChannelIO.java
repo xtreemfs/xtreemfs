@@ -196,7 +196,7 @@ public class SSLHandshakeOnlyChannelIO extends ChannelIO {
                     while (dst.hasRemaining() && inNetBuffer.hasRemaining())
                         dst.put(inNetBuffer.get());
                 } else {*/
-                    channel.read(dst);
+                    returnValue = channel.read(dst);
                // }
             }
         }
