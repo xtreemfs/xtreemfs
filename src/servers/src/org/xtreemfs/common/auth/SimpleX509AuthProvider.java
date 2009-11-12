@@ -88,7 +88,7 @@ public class SimpleX509AuthProvider implements AuthenticationProvider {
                         Logging.logMessage(Logging.LEVEL_DEBUG, Category.auth, this,
                             "X.509-User cert present: %s, %s", globalUID, globalGID);
                     
-                    boolean isSuperUser = gids.contains("xtreemfs-admin");
+                    boolean isSuperUser = globalGID.contains("xtreemfs-admin");
                     final UserCredentials creds = new UserCredentials(globalUID, gids, isSuperUser);
                     channel.setAttachment(new Object[] { new Boolean(false), creds });
                     return creds;
