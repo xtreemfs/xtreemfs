@@ -3,6 +3,7 @@ Section: utils
 Priority: optional
 Maintainer: xtreemfs <xtreemfs-users@googlegroups.com>
 Build-Depends: debhelper (>= 5), build-essential (>=11), libssl-dev (>= 0.9), libfuse-dev (>= 2.6), python (>= 2.4), ant (>= 1.6.5), java6-sdk
+Homepage: http://www.xtreemfs.org/
 Standards-Version: 3.7.2
 
 Package: xtreemfs-client
