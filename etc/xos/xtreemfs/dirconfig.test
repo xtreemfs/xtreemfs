@@ -38,3 +38,52 @@ ssl.enabled = false
 #admin_password = blub
 
 uuid = test-localhost-DIR
+
+#####################################################################
+# BabuDB configuration                                              #
+#####################################################################
+
+# optional debug level (
+# 0 = emergency, 
+# 1 = alert, 
+# 2 = critical, 
+# 3 = error, 
+# 4 = warning, 
+# 5 = notice, 
+# 6 = info, 
+# 7 = debug)
+babudb.debug.level = 6
+
+# base directory to store database index snapshots in
+babudb.baseDir = /tmp/xtreemfs-test/dir/database
+
+# directory in which the database logs are stored
+babudb.logDir = /tmp/xtreemfs-test/dir/database
+
+# SyncMode the synchronization mode to use for the logFile
+# ASYNC - asynchronously write log entries (data is lost when system crashes).
+# FSYNC - executes an fsync on the logfile before acknowledging the operation.
+# FDATASYNC
+# SYNC_WRITE - synchronously writes the log entry to disk before ack. Does not
+#              update the metadata.
+# SYNC_WRITE_METADATA - synchronously writes the log entry to disk and updates
+#                       the metadata before ack.
+babudb.sync = FSYNC
+
+# max queue length: if > 0, the queue for each worker is limited to maxQ
+babudb.worker.maxQueueLength = 250
+
+# number of worker threads to use
+babudb.worker.numThreads = 0
+
+# a checkpoint is generated ,if maxLogfileSize is exceeded
+babudb.maxLogfileSize = 16777216
+
+# interval between two checks in seconds, 0 disables auto checkPointing
+babudb.checkInterval = 300
+
+# if set to a value > 0, operations are acknowledged immediately before
+# they are written to the disk log. The disk logger will do batch writes
+# and call fSync... every pseudoSyncWait seconds. This can be used to
+# increase performance and emulate PostgreSQL behavior.
+babudb.pseudoSyncWait = 200

@@ -145,7 +145,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
         try {
             
             byte[] prefix = BabuDBStorageHelper.createACLPrefixKey(fileId, null);
-            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(ACL_INDEX, prefix);
+            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(ACL_INDEX, prefix, null).get();
             
             return new ACLIterator(it);
             
@@ -160,7 +160,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
         try {
             
             byte[] key = BabuDBStorageHelper.createACLPrefixKey(fileId, entity);
-            byte[] value = database.directLookup(ACL_INDEX, key);
+            byte[] value = database.lookup(ACL_INDEX, key, null).get();
             
             return value == null ? null : new BufferBackedACLEntry(key, value);
             
@@ -209,8 +209,8 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
             byte[][] valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
             
             // retrieve the metadata from the link index
-            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(
-                BabuDBSnapshotStorageManager.FILE_ID_INDEX, key);
+            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(
+                BabuDBSnapshotStorageManager.FILE_ID_INDEX, key, null).get();
             
             while (it.hasNext()) {
                 
@@ -276,7 +276,8 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, uid, key);
-            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(XATTRS_INDEX, prefix);
+            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(
+                    XATTRS_INDEX, prefix, null).get();
             
             // check whether the entry is the correct one
             while (it.hasNext()) {
@@ -301,7 +302,8 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, null, null);
-            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(XATTRS_INDEX, prefix);
+            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(
+                    XATTRS_INDEX, prefix, null).get();
             
             return new XAttrIterator(it, null);
             
@@ -317,7 +319,8 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, uid, null);
-            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(XATTRS_INDEX, prefix);
+            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(
+                    XATTRS_INDEX, prefix, null).get();
             
             return new XAttrIterator(it, uid);
             
@@ -391,12 +394,12 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     }
     
     @Override
-    public AtomicDBUpdate createAtomicDBUpdate(DBAccessResultListener listener, Object context)
+    public AtomicDBUpdate createAtomicDBUpdate(DBAccessResultListener<Object> listener, Object context)
         throws DatabaseException {
         
         try {
-            return new AtomicBabuDBSnapshotUpdate(listener == null ? null : new BabuDBRequestListenerWrapper(
-                listener), context);
+            return new AtomicBabuDBSnapshotUpdate(listener == null ? null : 
+                new BabuDBRequestListenerWrapper<Object>(listener), context);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }

@@ -39,11 +39,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBFactory;
-import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.lsmdb.DatabaseManager;
 import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.common.VersionManagement;
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
@@ -190,6 +190,9 @@ public class DIRRequestDispatcher extends LifeCycleThread
                 } catch (BabuDBException ex) {
                     ex.printStackTrace();
                     httpExchange.sendResponseHeaders(500, 0);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    httpExchange.sendResponseHeaders(500, 0);
                 }
                 
             }
@@ -242,12 +245,10 @@ public class DIRRequestDispatcher extends LifeCycleThread
 
         synchronized (database) {
             Database db = getDirDatabase();
-            Iterator<Entry<byte[], byte[]>> iter = db.directPrefixLookup(
-                DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
+            Iterator<Entry<byte[], byte[]>> iter = db.prefixLookup(
+                DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0], null).get();
 
             ServiceRecords services = new ServiceRecords();
-
-            // long now = System.currentTimeMillis() / 1000l;
 
             while (iter.hasNext()) {
                 final Entry<byte[],byte[]> e = iter.next();
@@ -301,28 +302,30 @@ public class DIRRequestDispatcher extends LifeCycleThread
         final byte[] versionKey = "version".getBytes();
         try {
             Database db = dbMan.createDatabase("dirdbver", 1);
+            ReusableBuffer rb = null;
             try {
-                BabuDBInsertGroup ig = db.createInsertGroup();
                 byte[] keyData = new byte[4];
-                ReusableBuffer rb = ReusableBuffer.wrap(keyData);
+                rb = ReusableBuffer.wrap(keyData);
                 rb.putInt(DIRInterface.getVersion());
-                ig.addInsert(0, versionKey, keyData);
-                db.directInsert(ig);
-            } catch (BabuDBException ex) {
+                db.singleInsert(0, versionKey, keyData,null).get();
+            } catch (Exception ex) {
                 ex.printStackTrace();
                 System.err.println("cannot initialize database");
                 System.exit(1);
+            } finally {
+                if (rb != null) BufferPool.free(rb);
             }
         } catch (BabuDBException ex) {
             // database exists: check version
             if (ex.getErrorCode() == BabuDBException.ErrorCode.DB_EXISTS) {
+                ReusableBuffer rb = null;
                 try {
                     Database db = dbMan.getDatabase("dirdbver");
                     
-                    byte[] value = db.directLookup(0, versionKey);
+                    byte[] value = db.lookup(0, versionKey,null).get();
                     int ver = -1;
                     if ((value != null) && (value.length == 4)) {
-                        ReusableBuffer rb = ReusableBuffer.wrap(value);
+                        rb = ReusableBuffer.wrap(value);
                         ver = rb.getInt();
                     }
                     if (ver != DIRInterface.getVersion()) {
@@ -337,10 +340,12 @@ public class DIRRequestDispatcher extends LifeCycleThread
                             "please start an older version of the DIR or remove the old database");
                         System.exit(1);
                     }
-                } catch (BabuDBException ex2) {
+                } catch (Exception ex2) {
                     ex2.printStackTrace();
                     System.err.println("cannot initialize database");
                     System.exit(1);
+                } finally {
+                    if (rb != null) BufferPool.free(rb);
                 }
             } else {
                 ex.printStackTrace();

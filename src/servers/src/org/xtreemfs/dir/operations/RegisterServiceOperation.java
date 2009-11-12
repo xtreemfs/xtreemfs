@@ -24,9 +24,11 @@
 
 package org.xtreemfs.dir.operations;
 
+import java.io.IOException;
+
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.BabuDBRequestListener;
 import org.xtreemfs.babudb.BabuDBException.ErrorCode;
-import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.common.buffer.ReusableBuffer;
@@ -65,58 +67,78 @@ public class RegisterServiceOperation extends DIROperation {
     
     @Override
     public void startRequest(DIRRequest rq) {
-        try {
-            final xtreemfs_service_registerRequest request = (xtreemfs_service_registerRequest) rq
-                    .getRequestMessage();
+        final xtreemfs_service_registerRequest request = 
+            (xtreemfs_service_registerRequest) rq.getRequestMessage();
+        
+        final Service reg = request.getService();
             
-            final Service reg = request.getService();
-            
-            byte[] data = database.directLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid()
-                    .getBytes());
-            long currentVersion = 0;
-            if (data != null) {
-                ReusableBuffer buf = ReusableBuffer.wrap(data);
-                ServiceRecord dbData = new ServiceRecord(buf);
-                currentVersion = dbData.getVersion();
-            }
-            
-            if (reg.getVersion() != currentVersion) {
-                rq.sendException(new ConcurrentModificationException());
-                return;
-            }
-            
-            currentVersion++;
-            
-            reg.setVersion(currentVersion);
-            reg.setLast_updated_s(System.currentTimeMillis() / 1000l);
-            
-            /*final int dataSize = reg.calculateSize();
-            ONCRPCBufferWriter writer = new ONCRPCBufferWriter(dataSize);
-            reg.serialize(writer);
-            writer.flip();
-            assert (writer.getBuffers().size() == 1);
-            byte[] newData = writer.getBuffers().get(0).array();
-            writer.freeBuffers();
-             */
-            ServiceRecord newRec = new ServiceRecord(reg);
-            byte[] newData = new byte[newRec.getSize()];
-            newRec.serialize(ReusableBuffer.wrap(newData));
-            BabuDBInsertGroup ig = database.createInsertGroup();
-            ig.addInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, reg.getUuid().getBytes(), newData);
-            database.directInsert(ig);
-            
-            xtreemfs_service_registerResponse response = new xtreemfs_service_registerResponse(currentVersion);
-            rq.sendSuccess(response);
-        } catch (BabuDBException ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            if (ex.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
-                rq.sendRedirectException(dbsReplicationManager.getMaster());
-            else
-                rq.sendInternalServerError(ex);
-        } catch (Throwable th) {
-            Logging.logError(Logging.LEVEL_ERROR, this, th);
-            rq.sendInternalServerError(th);
-        }
+        database.lookup(DIRRequestDispatcher.INDEX_ID_SERVREG, 
+                reg.getUuid().getBytes(),rq).registerListener(
+                        new BabuDBRequestListener<byte[]>() {
+                    
+                    @Override
+                    public void finished(byte[] data, Object context) {
+                        try {
+                            long currentVersion = 0;
+                            if (data != null) {
+                                ReusableBuffer buf = ReusableBuffer.wrap(data);
+                                ServiceRecord dbData = new ServiceRecord(buf);
+                                currentVersion = dbData.getVersion();
+                            }
+                            
+                            if (reg.getVersion() != currentVersion) {
+                                ((DIRRequest) context).sendException(
+                                        new ConcurrentModificationException());
+                                return;
+                            }
+                            
+                            final long version = currentVersion++;
+                            
+                            reg.setVersion(currentVersion);
+                            reg.setLast_updated_s(System.currentTimeMillis() / 1000l);
+                            
+                            ServiceRecord newRec = new ServiceRecord(reg);
+                            byte[] newData = new byte[newRec.getSize()];
+                            newRec.serialize(ReusableBuffer.wrap(newData));
+                            database.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, 
+                                    reg.getUuid().getBytes(), newData, context)
+                                    .registerListener(new BabuDBRequestListener<Object>() {
+                                
+                                @Override
+                                public void finished(Object arg0, Object context) {
+                                    xtreemfs_service_registerResponse response = 
+                                        new xtreemfs_service_registerResponse(version);
+                                    ((DIRRequest) context).sendSuccess(response);
+                                }
+                                
+                                @Override
+                                public void failed(BabuDBException e, Object context) {
+                                    Logging.logError(Logging.LEVEL_ERROR, this, e);
+                                    if (e.getErrorCode() == ErrorCode.NO_ACCESS && 
+                                            dbsReplicationManager != null)
+                                        ((DIRRequest) context).sendRedirectException(
+                                                dbsReplicationManager.getMaster());
+                                    else
+                                        ((DIRRequest) context).sendInternalServerError(e);
+                                }
+                            });
+                        } catch (IOException e) {
+                            Logging.logError(Logging.LEVEL_ERROR, this, e);
+                            ((DIRRequest) context).sendInternalServerError(e);
+                        }
+                    }
+                    
+                    @Override
+                    public void failed(BabuDBException e, Object context) {
+                        Logging.logError(Logging.LEVEL_ERROR, this, e);
+                        if (e.getErrorCode() == ErrorCode.NO_ACCESS && 
+                                dbsReplicationManager != null)
+                            ((DIRRequest) context).sendRedirectException(
+                                    dbsReplicationManager.getMaster());
+                        else
+                            ((DIRRequest) context).sendInternalServerError(e);
+                    }
+                });
     }
     
     @Override

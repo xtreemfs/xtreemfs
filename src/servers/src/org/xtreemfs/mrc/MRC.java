@@ -24,8 +24,12 @@
 
 package org.xtreemfs.mrc;
 
+import java.io.IOException;
+
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.include.common.config.BabuDBConfig;
+import org.xtreemfs.include.common.config.ReplicationConfig;
 
 /**
  * 
@@ -39,7 +43,7 @@ public class MRC {
      * @param args
      *            the command line arguments
      */
-    public MRC(MRCConfig config, boolean useDirService) {
+    public MRC(MRCConfig config, BabuDBConfig dbConfig) {
         
         if (Logging.isInfo()) {
             Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "JAVA_HOME=%s", System
@@ -49,7 +53,7 @@ public class MRC {
         }
         
         try {
-            rc = new MRCRequestDispatcher(config);
+            rc = new MRCRequestDispatcher(config, dbConfig);
             rc.startup();
             
             Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -96,11 +100,26 @@ public class MRC {
         
         Thread.currentThread().setName("MRC");
         
-        String cfgFile = (args.length > 0) ? args[0] : "../../etc/xos/xtreemfs/mrcconfig.test";
-        MRCConfig config = new MRCConfig(cfgFile);
+        String configFileName = "../../etc/xos/xtreemfs/mrcconfig.test";
+        
+        configFileName = (args.length == 1) ? args[0] : configFileName;
+        
+        MRCConfig config = new MRCConfig(configFileName);
+        
+        BabuDBConfig dbsConfig = null;
+        try {
+            dbsConfig = new ReplicationConfig(configFileName);
+        } catch (Throwable e) {
+            try {
+                dbsConfig = new BabuDBConfig(configFileName);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+                return;
+            }
+        }
         
         Logging.start(config.getDebugLevel(), config.getDebugCategories());
-        new MRC(config, true);
+        new MRC(config, dbsConfig);
     };
     
 }

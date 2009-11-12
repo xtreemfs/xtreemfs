@@ -89,7 +89,7 @@ public class StatusPage {
         }
     }
     
-    public static String getStatusPage(DIRRequestDispatcher master, DIRConfig config) throws BabuDBException, IOException {
+    public static String getStatusPage(DIRRequestDispatcher master, DIRConfig config) throws BabuDBException, IOException, InterruptedException {
         
         final Database database = master.getDirDatabase();
         
@@ -97,8 +97,8 @@ public class StatusPage {
         
         long time = System.currentTimeMillis();
         
-        Iterator<Entry<byte[], byte[]>> iter = database.directPrefixLookup(
-            DIRRequestDispatcher.INDEX_ID_ADDRMAPS, new byte[0]);
+        Iterator<Entry<byte[], byte[]>> iter = database.prefixLookup(
+            DIRRequestDispatcher.INDEX_ID_ADDRMAPS, new byte[0],null).get();
         
         StringBuilder dump = new StringBuilder();
         dump
@@ -134,7 +134,7 @@ public class StatusPage {
         }
         dump.append("</td></tr></table>");
         
-        iter = database.directPrefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
+        iter = database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0],null).get();
         
         dump
                 .append("<br><table width=\"100%\" frame=\"box\"><td colspan=\"2\" class=\"heading\">Service Registry</td>");

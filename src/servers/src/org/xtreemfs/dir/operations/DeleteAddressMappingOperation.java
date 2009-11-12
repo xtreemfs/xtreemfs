@@ -25,6 +25,7 @@
 package org.xtreemfs.dir.operations;
 
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.BabuDBRequestListener;
 import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.lsmdb.Database;
@@ -33,7 +34,6 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_removeRequest;
-import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_removeResponse;
 
 /**
  *
@@ -61,23 +61,38 @@ public class DeleteAddressMappingOperation extends DIROperation {
 
     @Override
     public void startRequest(DIRRequest rq) {
+        final xtreemfs_address_mappings_removeRequest request = 
+            (xtreemfs_address_mappings_removeRequest)rq.getRequestMessage();
+        
+        BabuDBInsertGroup ig;
         try {
-            final xtreemfs_address_mappings_removeRequest request = (xtreemfs_address_mappings_removeRequest)rq.getRequestMessage();
-            
-            BabuDBInsertGroup ig = database.createInsertGroup();
-            ig.addDelete(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
-            database.directInsert(ig);
-            
-            xtreemfs_address_mappings_removeResponse response = new xtreemfs_address_mappings_removeResponse();
-            rq.sendSuccess(response);
-            
-        } catch (BabuDBException ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            if (ex.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
+            ig = database.createInsertGroup();
+        } catch (BabuDBException e) {
+            if (e.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
                 rq.sendRedirectException(dbsReplicationManager.getMaster());
             else
-                rq.sendInternalServerError(ex);
+                rq.sendInternalServerError(e);
+            
+            return;
         }
+        ig.addDelete(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, request.getUuid().getBytes());
+        database.insert(ig,rq).registerListener(new BabuDBRequestListener<Object>() {
+            
+            @Override
+            public void finished(Object arg0, Object context) {
+                ((DIRRequest) context).sendSuccess(request.createDefaultResponse());
+            }
+            
+            @Override
+            public void failed(BabuDBException ex, Object context) {
+                Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                if (ex.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
+                    ((DIRRequest) context).sendRedirectException(
+                            dbsReplicationManager.getMaster());
+                else
+                    ((DIRRequest) context).sendInternalServerError(ex);
+            }
+        });
     }
 
     @Override

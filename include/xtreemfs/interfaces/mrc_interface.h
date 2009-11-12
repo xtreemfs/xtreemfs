@@ -2377,25 +2377,28 @@ namespace org
           class RedirectException : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
           {
           public:
-            RedirectException() { }
-          RedirectException( const std::string& to_uuid ) : to_uuid( to_uuid ) { }
-          RedirectException( const char* to_uuid, size_t to_uuid_len ) : to_uuid( to_uuid, to_uuid_len ) { }
+            RedirectException() : port( 0 ) { }
+          RedirectException( const std::string& address, uint16_t port ) : address( address ), port( port ) { }
+          RedirectException( const char* address, size_t address_len, uint16_t port ) : address( address, address_len ), port( port ) { }
             RedirectException( const char* what ) : ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS( what ) { }
             virtual ~RedirectException() throw() { }
 
-          void set_to_uuid( const std::string& to_uuid ) { set_to_uuid( to_uuid.c_str(), to_uuid.size() ); }
-          void set_to_uuid( const char* to_uuid, size_t to_uuid_len ) { this->to_uuid.assign( to_uuid, to_uuid_len ); }
-          const std::string& get_to_uuid() const { return to_uuid; }
+          void set_address( const std::string& address ) { set_address( address.c_str(), address.size() ); }
+          void set_address( const char* address, size_t address_len ) { this->address.assign( address, address_len ); }
+          const std::string& get_address() const { return address; }
+          void set_port( uint16_t port ) { this->port = port; }
+          uint16_t get_port() const { return port; }
 
             // YIELD::concurrency::ExceptionResponse
-            virtual ExceptionResponse* clone() const { return new RedirectException( to_uuid); }
-            virtual void throwStackClone() const { throw RedirectException( to_uuid); }
-          void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readString( "to_uuid", 0, to_uuid ); }
+            virtual ExceptionResponse* clone() const { return new RedirectException( address, port); }
+            virtual void throwStackClone() const { throw RedirectException( address, port); }
+          void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readString( "address", 0, address ); port = unmarshaller.readUint16( "port", 0 ); }
           // yidl::Struct
-          void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "to_uuid", 0, to_uuid ); }
+          void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "address", 0, address ); marshaller.writeUint16( "port", 0, port ); }
 
         protected:
-          std::string to_uuid;
+          std::string address;
+          uint16_t port;
           };
 
 

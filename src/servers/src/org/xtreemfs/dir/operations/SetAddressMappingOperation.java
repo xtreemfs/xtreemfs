@@ -27,8 +27,8 @@ package org.xtreemfs.dir.operations;
 import java.io.IOException;
 
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.BabuDBRequestListener;
 import org.xtreemfs.babudb.BabuDBException.ErrorCode;
-import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.common.buffer.ReusableBuffer;
@@ -69,86 +69,101 @@ public class SetAddressMappingOperation extends DIROperation {
     
     @Override
     public void startRequest(DIRRequest rq) {
-        try {
-            final xtreemfs_address_mappings_setRequest request = (xtreemfs_address_mappings_setRequest) rq
-                    .getRequestMessage();
-            
-            final AddressMappingSet mappings = request.getAddress_mappings();
-            String uuid = null;
-            if (mappings.size() == 0) {
-                rq.sendException(new InvalidArgumentException("must send at least one mapping"));
-                return;
-            }
-            for (AddressMapping am : mappings) {
-                if (uuid == null)
-                    uuid = am.getUuid();
-                if (!am.getUuid().equals(uuid)) {
-                    rq.sendException(new InvalidArgumentException("all mappings must have the same UUID"));
-                    return;
-                }
-            }
-            
-            assert (uuid != null);
-            assert (database != null);
-            
-            /*AddressMappingSet dbData = new AddressMappingSet();
-            byte[] data = database.directLookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes());
-            long currentVersion = 0;
-            if (data != null) {
-                ReusableBuffer buf = ReusableBuffer.wrap(data);
-                dbData.deserialize(buf);
-                if (dbData.size() > 0) {
-                    currentVersion = dbData.get(0).getVersion();
-                }
-            }
-            
-            if (mappings.get(0).getVersion() != currentVersion) {
-                rq.sendException(new ConcurrentModificationException());
-                return;
-            }*/
-            byte[] data = database.directLookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes());
-            long currentVersion = 0;
-            if (data != null) {
-                ReusableBuffer buf = ReusableBuffer.wrap(data);
-                AddressMappingRecords dbData = new AddressMappingRecords(buf);
-                if (dbData.size() > 0) {
-                    currentVersion = dbData.getRecord(0).getVersion();
-                }
-            }
-
-            if (mappings.get(0).getVersion() != currentVersion) {
-                rq.sendException(new ConcurrentModificationException());
-                return;
-            }
-            
-            currentVersion++;
-
-            for (int i = 0; i < mappings.size(); i++)
-                mappings.get(i).setVersion(currentVersion);
-
-
-            AddressMappingRecords newData = new AddressMappingRecords(mappings);
-            final int size = newData.getSize();
-            byte[] newBytes = new byte[size];
-            ReusableBuffer buf = ReusableBuffer.wrap(newBytes);
-            newData.serialize(buf);
-            BabuDBInsertGroup ig = database.createInsertGroup();
-            ig.addInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, uuid.getBytes(), newBytes);
-            database.directInsert(ig);
-            
-            xtreemfs_address_mappings_setResponse response = new xtreemfs_address_mappings_setResponse(
-                currentVersion);
-            rq.sendSuccess(response);
-        } catch (IOException ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            rq.sendInternalServerError(ex);
-        } catch (BabuDBException ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            if (ex.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
-                rq.sendRedirectException(dbsReplicationManager.getMaster());
-            else
-                rq.sendInternalServerError(ex);
+        final xtreemfs_address_mappings_setRequest request = 
+            (xtreemfs_address_mappings_setRequest) rq.getRequestMessage();
+        
+        final AddressMappingSet mappings = request.getAddress_mappings();
+        String uuid = null;
+        if (mappings.size() == 0) {
+            rq.sendException(new InvalidArgumentException("must send at least one mapping"));
+            return;
         }
+        for (AddressMapping am : mappings) {
+            if (uuid == null)
+                uuid = am.getUuid();
+            if (!am.getUuid().equals(uuid)) {
+                rq.sendException(new InvalidArgumentException("all mappings must have the same UUID"));
+                return;
+            }
+        }
+        
+        assert (uuid != null);
+        assert (database != null);
+        
+        final String UUID = uuid;
+        
+        database.lookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, 
+                uuid.getBytes(), rq).registerListener(
+                        new BabuDBRequestListener<byte[]>() {
+            
+            @Override
+            public void finished(byte[] data, Object context) {
+                try {
+                    long currentVersion = 0;
+                    if (data != null) {
+                        ReusableBuffer buf = ReusableBuffer.wrap(data);
+                        AddressMappingRecords dbData = new AddressMappingRecords(buf);
+                        if (dbData.size() > 0) {
+                            currentVersion = dbData.getRecord(0).getVersion();
+                        }
+                    }
+    
+                    if (mappings.get(0).getVersion() != currentVersion) {
+                        ((DIRRequest) context).sendException(
+                                new ConcurrentModificationException());
+                        return;
+                    }
+                    
+                    final long version = currentVersion++;
+    
+                    for (int i = 0; i < mappings.size(); i++)
+                        mappings.get(i).setVersion(currentVersion);
+    
+    
+                    AddressMappingRecords newData = new AddressMappingRecords(mappings);
+                    final int size = newData.getSize();
+                    byte[] newBytes = new byte[size];
+                    ReusableBuffer buf = ReusableBuffer.wrap(newBytes);
+                    newData.serialize(buf);
+                    database.singleInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, 
+                            UUID.getBytes(), newBytes,context).registerListener(
+                                    new BabuDBRequestListener<Object>() {
+                        
+                        @Override
+                        public void finished(Object arg0, Object context) {
+                            xtreemfs_address_mappings_setResponse response = 
+                                new xtreemfs_address_mappings_setResponse(version);
+                            ((DIRRequest) context).sendSuccess(response);
+                        }
+                        
+                        @Override
+                        public void failed(BabuDBException e, Object context) {
+                            Logging.logError(Logging.LEVEL_ERROR, this, e);
+                            if (e.getErrorCode() == ErrorCode.NO_ACCESS && 
+                                    dbsReplicationManager != null)
+                                ((DIRRequest) context).sendRedirectException(
+                                        dbsReplicationManager.getMaster());
+                            else
+                                ((DIRRequest) context).sendInternalServerError(e);
+                        }
+                    });
+                } catch (IOException e) {
+                    Logging.logError(Logging.LEVEL_ERROR, this, e);
+                    ((DIRRequest) context).sendInternalServerError(e);
+                }
+            }
+            
+            @Override
+            public void failed(BabuDBException e, Object context) {
+                Logging.logError(Logging.LEVEL_ERROR, this, e);
+                if (e.getErrorCode() == ErrorCode.NO_ACCESS && 
+                        dbsReplicationManager != null)
+                    ((DIRRequest) context).sendRedirectException(
+                            dbsReplicationManager.getMaster());
+                else
+                    ((DIRRequest) context).sendInternalServerError(e);
+            }
+        });
     }
     
     @Override

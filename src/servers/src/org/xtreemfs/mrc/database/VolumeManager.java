@@ -113,7 +113,7 @@ public interface VolumeManager {
      * @throws UserException
      * @throws DatabaseException
      */
-    public void deleteVolume(String volumeName, DBAccessResultListener listener, Object context)
+    public void deleteVolume(String volumeName, DBAccessResultListener<Object> listener, Object context)
         throws DatabaseException, UserException;
     
     /**
@@ -213,4 +213,8 @@ public interface VolumeManager {
      */
     public String getDBVersion();
     
+    /**
+     * @return the replication manager of the DBS.
+     */
+    public ReplicationManager getReplicationManager();
 }

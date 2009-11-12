@@ -24,8 +24,10 @@
 
 package org.xtreemfs.mrc;
 
-import org.xtreemfs.common.buffer.ReusableBuffer;
+import java.net.InetSocketAddress;
+
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
+import org.xtreemfs.interfaces.MRCInterface.RedirectException;
 
 /**
  * 
@@ -86,6 +88,16 @@ public class MRCRequest {
     
     public void setDetails(RequestDetails details) {
         this.details = details;
+    }
+    
+    public void sendRedirectException(InetSocketAddress address) {
+        String addr = null;
+        int port = 0;
+        if (address != null) {
+            addr = address.getHostName();
+            port = address.getPort();
+        }
+        rpcRequest.sendException(new RedirectException(addr,port));
     }
     
     public String toString() {

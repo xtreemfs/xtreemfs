@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.BabuDBRequestListener;
 import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.replication.ReplicationManager;
@@ -67,41 +68,48 @@ public class GetServicesByTypeOperation extends DIROperation {
     
     @Override
     public void startRequest(DIRRequest rq) {
-        try {
-            final xtreemfs_service_get_by_typeRequest request = (xtreemfs_service_get_by_typeRequest) rq
-                    .getRequestMessage();
-            
-            Iterator<Entry<byte[], byte[]>> iter = database.directPrefixLookup(
-                DIRRequestDispatcher.INDEX_ID_SERVREG, new byte[0]);
-            
-            ServiceSet services = new ServiceSet();
-            
-            long now = System.currentTimeMillis() / 1000l;
-            
-            while (iter.hasNext()) {
-                final Entry<byte[],byte[]> e = iter.next();
-                final ServiceRecord servEntry = new ServiceRecord(ReusableBuffer.wrap(e.getValue()));
-                if ((request.getType().intValue() == 0) || (servEntry.getType() == request.getType())) {
-                    long secondsSinceLastUpdate = now - servEntry.getLast_updated_s();
-                    servEntry.getData().put("seconds_since_last_update", Long.toString(secondsSinceLastUpdate));
-                    services.add(servEntry.getService());
+        final xtreemfs_service_get_by_typeRequest request = (xtreemfs_service_get_by_typeRequest) rq
+                .getRequestMessage();
+        
+        database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, 
+                new byte[0],rq).registerListener(
+                        new BabuDBRequestListener<Iterator<Entry<byte[],byte[]>>>() {
+                
+                @Override
+                public void finished(Iterator<Entry<byte[], byte[]>> iter, Object context) {
+                    try {
+                        ServiceSet services = new ServiceSet();
+                        
+                        long now = System.currentTimeMillis() / 1000l;
+                        
+                        while (iter.hasNext()) {
+                            final Entry<byte[],byte[]> e = iter.next();
+                            final ServiceRecord servEntry = new ServiceRecord(ReusableBuffer.wrap(e.getValue()));
+                            if ((request.getType().intValue() == 0) || (servEntry.getType() == request.getType())) {
+                                long secondsSinceLastUpdate = now - servEntry.getLast_updated_s();
+                                servEntry.getData().put("seconds_since_last_update", Long.toString(secondsSinceLastUpdate));
+                                services.add(servEntry.getService());
+                            }
+                            
+                        }
+                        
+                        xtreemfs_service_get_by_typeResponse response = new xtreemfs_service_get_by_typeResponse(services);
+                        ((DIRRequest) context).sendSuccess(response);
+                    } catch (IOException e) {
+                        Logging.logError(Logging.LEVEL_ERROR, this, e);
+                        ((DIRRequest) context).sendInternalServerError(e);
+                    }
                 }
                 
-            }
-
-            
-            xtreemfs_service_get_by_typeResponse response = new xtreemfs_service_get_by_typeResponse(services);
-            rq.sendSuccess(response);
-        } catch (IOException ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            rq.sendInternalServerError(ex);
-        } catch (BabuDBException ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            if (ex.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
-                rq.sendRedirectException(dbsReplicationManager.getMaster());
-            else
-                rq.sendInternalServerError(ex);
-        }
+                @Override
+                public void failed(BabuDBException e, Object context) {
+                    Logging.logError(Logging.LEVEL_ERROR, this, e);
+                    if (e.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
+                        ((DIRRequest) context).sendRedirectException(dbsReplicationManager.getMaster());
+                    else
+                        ((DIRRequest) context).sendInternalServerError(e);
+                }
+        });
     }
     
     @Override

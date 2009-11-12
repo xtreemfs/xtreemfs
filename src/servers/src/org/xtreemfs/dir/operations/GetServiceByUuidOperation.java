@@ -27,6 +27,7 @@ package org.xtreemfs.dir.operations;
 import java.io.IOException;
 
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.BabuDBRequestListener;
 import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.replication.ReplicationManager;
@@ -65,31 +66,43 @@ public class GetServiceByUuidOperation extends DIROperation {
     
     @Override
     public void startRequest(DIRRequest rq) {
-        try {
-            final xtreemfs_service_get_by_uuidRequest request = (xtreemfs_service_get_by_uuidRequest) rq
-                    .getRequestMessage();
+        final xtreemfs_service_get_by_uuidRequest request = 
+            (xtreemfs_service_get_by_uuidRequest) rq.getRequestMessage();
             
-            byte[] data = database.directLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid()
-                    .getBytes());
-            
-            ServiceSet services = new ServiceSet();
-            if (data != null) {
-                ServiceRecord dbData = new ServiceRecord(ReusableBuffer.wrap(data));
-                services.add(dbData.getService());
+        database.lookup(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid()
+                .getBytes(),rq).registerListener(
+                        new BabuDBRequestListener<byte[]>() {
+                    
+            @Override
+            public void finished(byte[] data, Object context) {
+                try {
+                    ServiceSet services = new ServiceSet();
+                    if (data != null) {
+                        ServiceRecord dbData = new ServiceRecord(
+                                ReusableBuffer.wrap(data));
+                        services.add(dbData.getService());
+                    }
+                    
+                    xtreemfs_service_get_by_uuidResponse response = 
+                        new xtreemfs_service_get_by_uuidResponse(services);
+                    ((DIRRequest) context).sendSuccess(response);
+                } catch (IOException e) {
+                    Logging.logError(Logging.LEVEL_ERROR, this, e);
+                    ((DIRRequest) context).sendInternalServerError(e);
+                }
             }
             
-            xtreemfs_service_get_by_uuidResponse response = new xtreemfs_service_get_by_uuidResponse(services);
-            rq.sendSuccess(response);
-        } catch (IOException ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            rq.sendInternalServerError(ex);
-        } catch (BabuDBException ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            if (ex.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
-                rq.sendRedirectException(dbsReplicationManager.getMaster());
-            else
-                rq.sendInternalServerError(ex);
-        }
+            @Override
+            public void failed(BabuDBException e, Object context) {
+                Logging.logError(Logging.LEVEL_ERROR, this, e);
+                if (e.getErrorCode() == ErrorCode.NO_ACCESS && 
+                        dbsReplicationManager != null)
+                    ((DIRRequest) context).sendRedirectException(
+                            dbsReplicationManager.getMaster());
+                else
+                    ((DIRRequest) context).sendInternalServerError(e);
+            }
+        });
     }
     
     @Override

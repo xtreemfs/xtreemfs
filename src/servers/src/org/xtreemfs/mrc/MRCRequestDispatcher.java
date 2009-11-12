@@ -38,6 +38,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.xtreemfs.mrc.database.ReplicationManager;
 import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.VersionManagement;
@@ -60,6 +61,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
 import org.xtreemfs.foundation.oncrpc.server.RPCNIOSocketServer;
 import org.xtreemfs.foundation.oncrpc.server.RPCServerRequestListener;
+import org.xtreemfs.include.common.config.BabuDBConfig;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.DirService;
 import org.xtreemfs.interfaces.Service;
@@ -72,6 +74,7 @@ import org.xtreemfs.interfaces.MRCInterface.ProtocolException;
 import org.xtreemfs.interfaces.MRCInterface.errnoException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
@@ -97,8 +100,7 @@ import com.sun.net.httpserver.HttpServer;
  * 
  * @author bjko
  */
-public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
-    DBAccessResultListener {
+public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycleListener, DBAccessResultListener<Object> {
     
     private static final int               RPC_TIMEOUT        = 10000;
     
@@ -132,7 +134,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     private final OSDClient                osdClient;
     
-    public MRCRequestDispatcher(final MRCConfig config) throws IOException, ClassNotFoundException,
+    public MRCRequestDispatcher(final MRCConfig config, BabuDBConfig dbConfig) throws IOException, ClassNotFoundException,
         IllegalAccessException, InstantiationException, DatabaseException {
         
         Logging.logMessage(Logging.LEVEL_INFO, this, "XtreemFS Metadata Service version "
@@ -183,7 +185,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         procStage = new ProcessingStage(this);
         
-        volumeManager = new BabuDBVolumeManager(this);
+        volumeManager = new BabuDBVolumeManager(this, dbConfig);
         fileAccessManager = new FileAccessManager(volumeManager, policyContainer);
         
         ServiceDataGenerator gen = new ServiceDataGenerator() {
@@ -608,32 +610,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             System.exit(1);
         }
     }
-    
-    @Override
-    public void insertFinished(Object context) {
-        requestFinished((MRCRequest) context);
-    }
-    
-    @Override
-    public void lookupFinished(Object context, byte[] value) {
         
-    }
-    
-    @Override
-    public void prefixLookupFinished(Object context, Iterator<Entry<byte[], byte[]>> iterator) {
-        
-    }
-    
-    @Override
-    public void userDefinedLookupFinished(Object context, Object result) {
-        
-    }
-    
-    @Override
-    public void requestFailed(Object context, Throwable error) {
-        
-    }
-    
     @Override
     public void receiveRecord(ONCRPCRequest rq) {
         
@@ -653,5 +630,26 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         // no callback, special stage which executes the operatios
         procStage.enqueueOperation(new MRCRequest(rq), ProcessingStage.STAGEOP_PARSE_AND_EXECUTE, null);
     }
-    
+
+    public ReplicationManager getDBSReplicationService() {
+        return volumeManager.getReplicationManager();
+    }
+
+    @Override
+    public void failed(Throwable error, Object context) {
+        MRCRequest request = (MRCRequest) context;
+        assert (request != null);
+        
+        final ONCRPCRequest rpcRequest = request.getRPCRequest();
+        assert (rpcRequest != null);
+        
+        if (request.getError() == null) request.setError(
+                new ErrorRecord(ErrorClass.INTERNAL_SERVER_ERROR, error.getMessage()));
+        requestFinished(request);
+    }
+
+    @Override
+    public void finished(Object result, Object context) {
+        requestFinished((MRCRequest) context);
+    }
 }

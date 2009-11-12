@@ -35,9 +35,11 @@ import java.util.Map.Entry;
 
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.index.DefaultByteRangeComparator;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.lsmdb.DatabaseManager;
+import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.babudb.snapshots.DefaultSnapshotConfig;
 import org.xtreemfs.babudb.snapshots.SnapshotConfig;
 import org.xtreemfs.babudb.snapshots.SnapshotManager;
@@ -49,6 +51,7 @@ import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeChangeListener;
 import org.xtreemfs.mrc.database.VolumeInfo;
+import org.xtreemfs.mrc.database.DatabaseException.ExceptionType;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.ACLIterator;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageHelper.XAttrIterator;
 import org.xtreemfs.mrc.metadata.ACLEntry;
@@ -117,6 +120,8 @@ public class BabuDBStorageManager implements StorageManager {
     
     private final BabuDBVolumeInfo           volume;
     
+    private final ReplicationManager         replMan;
+    
     /**
      * Instantiates a storage manager by loading an existing volume database.
      * 
@@ -129,6 +134,7 @@ public class BabuDBStorageManager implements StorageManager {
         
         this.dbMan = dbs.getDatabaseManager();
         this.snapMan = dbs.getSnapshotManager();
+        this.replMan = dbs.getReplicationManager();
         this.database = db;
         this.vcListeners = new LinkedList<VolumeChangeListener>();
         
@@ -149,15 +155,20 @@ public class BabuDBStorageManager implements StorageManager {
         this.dbMan = dbs.getDatabaseManager();
         this.snapMan = dbs.getSnapshotManager();
         this.vcListeners = new LinkedList<VolumeChangeListener>();
+        this.replMan = dbs.getReplicationManager();
         
         Database database = null;
         try {
             // create the database
             database = dbMan.createDatabase(volumeId, 5);
             
-        } catch (BabuDBException e) {
-            // database already exists; should never occur!
-            Logging.logError(Logging.LEVEL_ERROR, this, e);
+        } catch (BabuDBException e) {       
+            if (e.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                // database already exists; should never occur!
+                Logging.logError(Logging.LEVEL_ERROR, this, e); 
         }
         
         this.database = database;
@@ -202,7 +213,11 @@ public class BabuDBStorageManager implements StorageManager {
             dbMan.deleteDatabase(database.getName());
             notifyVolumeDelete(volume.getId());
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
     }
     
@@ -213,13 +228,17 @@ public class BabuDBStorageManager implements StorageManager {
     }
     
     @Override
-    public AtomicDBUpdate createAtomicDBUpdate(DBAccessResultListener listener, Object context)
+    public AtomicDBUpdate createAtomicDBUpdate(DBAccessResultListener<Object> listener, Object context)
         throws DatabaseException {
         try {
             return new AtomicBabuDBUpdate(database, listener == null ? null
-                : new BabuDBRequestListenerWrapper(listener), context);
+                : new BabuDBRequestListenerWrapper<Object>(listener), context);
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
     }
     
@@ -266,7 +285,11 @@ public class BabuDBStorageManager implements StorageManager {
             
             return id;
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
     }
     
@@ -380,7 +403,11 @@ public class BabuDBStorageManager implements StorageManager {
             return newLinkCount;
             
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
         
     }
@@ -433,13 +460,13 @@ public class BabuDBStorageManager implements StorageManager {
                 ByteBuffer.wrap(idBytes).putLong(file.getId());
                 
                 // remove all ACLs
-                Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(
-                    BabuDBStorageManager.ACL_INDEX, idBytes);
+                Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(
+                    BabuDBStorageManager.ACL_INDEX, idBytes, null).get();
                 while (it.hasNext())
                     update.addUpdate(BabuDBStorageManager.ACL_INDEX, it.next().getKey(), null);
                 
                 // remove all extended attributes
-                it = database.directPrefixLookup(BabuDBStorageManager.XATTRS_INDEX, idBytes);
+                it = database.prefixLookup(BabuDBStorageManager.XATTRS_INDEX, idBytes, null).get();
                 while (it.hasNext())
                     update.addUpdate(BabuDBStorageManager.XATTRS_INDEX, it.next().getKey(), null);
                 
@@ -455,7 +482,11 @@ public class BabuDBStorageManager implements StorageManager {
             return file.getLinkCount();
             
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
     }
     
@@ -465,7 +496,7 @@ public class BabuDBStorageManager implements StorageManager {
         try {
             
             byte[] prefix = BabuDBStorageHelper.createACLPrefixKey(fileId, null);
-            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(ACL_INDEX, prefix);
+            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(ACL_INDEX, prefix, null).get();
             
             return new ACLIterator(it);
             
@@ -480,7 +511,7 @@ public class BabuDBStorageManager implements StorageManager {
         try {
             
             byte[] key = BabuDBStorageHelper.createACLPrefixKey(fileId, entity);
-            byte[] value = database.directLookup(ACL_INDEX, key);
+            byte[] value = database.lookup(ACL_INDEX, key, null).get();
             
             return value == null ? null : new BufferBackedACLEntry(key, value);
             
@@ -529,8 +560,8 @@ public class BabuDBStorageManager implements StorageManager {
             byte[][] valBufs = new byte[BufferBackedFileMetadata.NUM_BUFFERS][];
             
             // retrieve the metadata from the link index
-            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(
-                BabuDBStorageManager.FILE_ID_INDEX, key);
+            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(
+                BabuDBStorageManager.FILE_ID_INDEX, key, null).get();
             
             while (it.hasNext()) {
                 
@@ -562,7 +593,11 @@ public class BabuDBStorageManager implements StorageManager {
             return new BufferBackedFileMetadata(keyBufs, valBufs, BabuDBStorageManager.FILE_ID_INDEX);
             
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
     }
     
@@ -572,7 +607,11 @@ public class BabuDBStorageManager implements StorageManager {
         try {
             return BabuDBStorageHelper.getMetadata(database, parentId, fileName);
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
     }
     
@@ -595,7 +634,7 @@ public class BabuDBStorageManager implements StorageManager {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, uid, key);
-            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(XATTRS_INDEX, prefix);
+            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(XATTRS_INDEX, prefix, null).get();
             
             // check whether the entry is the correct one
             while (it.hasNext()) {
@@ -609,7 +648,11 @@ public class BabuDBStorageManager implements StorageManager {
             return null;
             
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
     }
     
@@ -620,12 +663,16 @@ public class BabuDBStorageManager implements StorageManager {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, null, null);
-            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(XATTRS_INDEX, prefix);
+            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(XATTRS_INDEX, prefix, null).get();
             
             return new XAttrIterator(it, null);
             
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
     }
     
@@ -636,12 +683,16 @@ public class BabuDBStorageManager implements StorageManager {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, uid, null);
-            Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(XATTRS_INDEX, prefix);
+            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(XATTRS_INDEX, prefix, null).get();
             
             return new XAttrIterator(it, uid);
             
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
         
     }
@@ -705,7 +756,11 @@ public class BabuDBStorageManager implements StorageManager {
             return md;
             
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
     }
     
@@ -762,7 +817,11 @@ public class BabuDBStorageManager implements StorageManager {
                 notifyAttributeSet(volume.getId(), key, value);
             
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
         
     }
@@ -866,7 +925,11 @@ public class BabuDBStorageManager implements StorageManager {
             snapMan.createPersistentSnapshot(database.getName(), snap);
             
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
         
     }
@@ -883,7 +946,11 @@ public class BabuDBStorageManager implements StorageManager {
             snapMan.deletePersistentSnapshot(database.getName(), snapName);
             
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
     }
     
@@ -896,7 +963,7 @@ public class BabuDBStorageManager implements StorageManager {
         
         System.out.println("FILE_ID_INDEX");
         
-        Iterator<Entry<byte[], byte[]>> it = database.directPrefixLookup(FILE_ID_INDEX, new byte[0]);
+        Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(FILE_ID_INDEX, new byte[0], null).get();
         while (it.hasNext()) {
             Entry<byte[], byte[]> next = it.next();
             System.out.println(Arrays.toString(next.getKey()) + " = " + Arrays.toString(next.getValue()));
@@ -904,7 +971,7 @@ public class BabuDBStorageManager implements StorageManager {
         
         System.out.println("\nFILE_INDEX");
         
-        it = database.directPrefixLookup(FILE_INDEX, new byte[0]);
+        it = database.prefixLookup(FILE_INDEX, new byte[0], null).get();
         while (it.hasNext()) {
             Entry<byte[], byte[]> next = it.next();
             System.out.println(Arrays.toString(next.getKey()) + " = " + Arrays.toString(next.getValue()));
@@ -931,7 +998,11 @@ public class BabuDBStorageManager implements StorageManager {
             return ByteBuffer.wrap(sizeBytes).getLong(0);
             
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
     }
     
@@ -941,7 +1012,11 @@ public class BabuDBStorageManager implements StorageManager {
             return ByteBuffer.wrap(sizeBytes).getLong(0);
             
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
     }
     
@@ -951,7 +1026,11 @@ public class BabuDBStorageManager implements StorageManager {
             return ByteBuffer.wrap(sizeBytes).getLong(0);
             
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
     }
     
@@ -979,7 +1058,11 @@ public class BabuDBStorageManager implements StorageManager {
             
             update.addUpdate(VOLUME_INDEX, key, countBytes);
         } catch (BabuDBException exc) {
-            throw new DatabaseException(exc);
+            if (exc.getErrorCode().equals(ErrorCode.NO_ACCESS))
+                throw new DatabaseException(ExceptionType.REDIRECT,
+                        this.replMan.getMaster());
+            else
+                throw new DatabaseException(exc);
         }
     }
     

@@ -42,6 +42,7 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.include.common.config.BabuDBConfig;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.StripingPolicy;
@@ -61,6 +62,8 @@ public class RandomAccessFileTest extends TestCase {
     private MRCRequestDispatcher  mrc1;
     
     private MRCConfig             mrcCfg1;
+    
+    private BabuDBConfig          mrcDB1;
     
     private OSDConfig             osdConfig1, osdConfig2, osdConfig3, osdConfig4;
     
@@ -101,6 +104,7 @@ public class RandomAccessFileTest extends TestCase {
         dsCfg = SetupUtils.createDIRConfig();
         
         mrcCfg1 = SetupUtils.createMRC1Config();
+        mrcDB1  = SetupUtils.createMRC1dbsConfig();
         mrc1Address = SetupUtils.getMRC1Addr();
         
         osdConfig1 = SetupUtils.createOSD1Config();
@@ -120,7 +124,7 @@ public class RandomAccessFileTest extends TestCase {
         osd4 = new OSD(osdConfig4);
         
         // start MRC
-        mrc1 = new MRCRequestDispatcher(mrcCfg1);
+        mrc1 = new MRCRequestDispatcher(mrcCfg1,mrcDB1);
         mrc1.startup();
         
         volumeName = "testVolume";

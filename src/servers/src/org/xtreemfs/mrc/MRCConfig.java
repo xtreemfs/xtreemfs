@@ -45,10 +45,6 @@ public class MRCConfig extends ServiceConfig {
     
     private int               remoteTimeSync;
     
-    private String            dbDir;
-    
-    private String            dbLogDir;
-    
     private int               osdCheckInterval;
     
     private boolean           noatime;
@@ -81,10 +77,6 @@ public class MRCConfig extends ServiceConfig {
         
         this.directoryService = this.readRequiredInetAddr("dir_service.host", "dir_service.port");
         
-        this.dbLogDir = this.readRequiredString("database.log");
-        
-        this.dbDir = this.readRequiredString("database.dir");
-        
         this.noatime = this.readRequiredBoolean("no_atime");
         
         this.localClockRenew = this.readRequiredInt("local_clock_renewal");
@@ -114,14 +106,6 @@ public class MRCConfig extends ServiceConfig {
     
     public void setDirectoryService(InetSocketAddress addr) {
         this.directoryService = addr;
-    }
-    
-    public String getDbLogDir() {
-        return dbLogDir;
-    }
-    
-    public String getDbDir() {
-        return dbDir;
     }
     
     public boolean isNoAtime() {

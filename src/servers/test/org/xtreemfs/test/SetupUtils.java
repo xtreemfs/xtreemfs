@@ -146,18 +146,18 @@ public class SetupUtils {
     
     public static BabuDBConfig createDIRdbsConfig() throws IOException {
         Properties props = new Properties();
-        props.setProperty("debug.level", "" + DEBUG_LEVEL);
-        props.setProperty("debug.categories", ""
+        props.setProperty("babudb.debug.level", "" + DEBUG_LEVEL);
+        props.setProperty("babudb.debug.categories", ""
                 + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
-        props.setProperty("db.cfgFile", "config.db");
-        props.setProperty("db.baseDir", TEST_DIR);
-        props.setProperty("db.logDir", TEST_DIR);
-        props.setProperty("db.sync", "" + SyncMode.FSYNC);
-        props.setProperty("worker.maxQueueLength", "250");
-        props.setProperty("worker.numThreads", "0");
-        props.setProperty("db.maxLogfileSize", "16777216");
-        props.setProperty("db.checkInterval", "300");
-        props.setProperty("db.pseudoSyncWait", "200");
+        props.setProperty("babudb.cfgFile", "config.db");
+        props.setProperty("babudb.baseDir", TEST_DIR);
+        props.setProperty("babudb.logDir", TEST_DIR);
+        props.setProperty("babudb.sync", "" + SyncMode.FSYNC);
+        props.setProperty("babudb.worker.maxQueueLength", "250");
+        props.setProperty("babudb.worker.numThreads", "0");
+        props.setProperty("babudb.maxLogfileSize", "16777216");
+        props.setProperty("babudb.checkInterval", "300");
+        props.setProperty("babudb.pseudoSyncWait", "200");
         
         return new BabuDBConfig(props);
     }
@@ -166,8 +166,6 @@ public class SetupUtils {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
         props.setProperty("dir_service.port", "33638");
-        props.setProperty("database.dir", TEST_DIR + "/mrc0");
-        props.setProperty("database.log", TEST_DIR + "/test-brain0.log");
         props.setProperty("osd_check_interval", "10");
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("debug.categories", ""
@@ -185,9 +183,6 @@ public class SetupUtils {
         props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
         props.setProperty("ssl.trusted_certs.pw", "passphrase");
         props.setProperty("ssl.trusted_certs.container", "jks");
-        props.setProperty("database.checkpoint.interval", "1800000");
-        props.setProperty("database.checkpoint.idle_interval", "1000");
-        props.setProperty("database.checkpoint.logfile_size", "16384");
         props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getMRC1UUID().toString());
@@ -195,12 +190,28 @@ public class SetupUtils {
         return new MRCConfig(props);
     }
     
+    public static BabuDBConfig createMRC1dbsConfig() throws IOException {
+        Properties props = new Properties();
+        props.setProperty("babudb.debug.level", "" + DEBUG_LEVEL);
+        props.setProperty("debug.categories", ""
+                + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
+        props.setProperty("babudb.cfgFile", "config.db");
+        props.setProperty("babudb.baseDir", TEST_DIR + "/mrc0");
+        props.setProperty("babudb.logDir", TEST_DIR + "/test-brain0.log");
+        props.setProperty("babudb.sync", "" + SyncMode.ASYNC);
+        props.setProperty("babudb.worker.maxQueueLength", "500");
+        props.setProperty("babudb.worker.numThreads", "2");
+        props.setProperty("babudb.maxLogfileSize", "16777216");
+        props.setProperty("babudb.checkInterval", "300");
+        props.setProperty("babudb.pseudoSyncWait", "0");
+        
+        return new BabuDBConfig(props);
+    }
+    
     public static MRCConfig createMRC2Config() throws IOException {
         Properties props = new Properties();
         props.setProperty("dir_service.host", "localhost");
         props.setProperty("dir_service.port", "33638");
-        props.setProperty("database.dir", TEST_DIR + "/mrc1");
-        props.setProperty("database.log", TEST_DIR + "/test-brain1.log");
         props.setProperty("osd_check_interval", "10");
         props.setProperty("debug.level", "" + DEBUG_LEVEL);
         props.setProperty("debug.categories", ""
@@ -218,14 +229,29 @@ public class SetupUtils {
         props.setProperty("ssl.trusted_certs", CERT_DIR + "trusted.jks");
         props.setProperty("ssl.trusted_certs.pw", "passphrase");
         props.setProperty("ssl.trusted_certs.container", "jks");
-        props.setProperty("database.checkpoint.interval", "1800000");
-        props.setProperty("database.checkpoint.idle_interval", "1000");
-        props.setProperty("database.checkpoint.logfile_size", "16384");
         props.setProperty("authentication_provider", "org.xtreemfs.common.auth.NullAuthProvider");
         props.setProperty("capability_secret", "secretPassphrase");
         props.setProperty("uuid", getMRC2UUID().toString());
         
         return new MRCConfig(props);
+    }
+    
+    public static BabuDBConfig createMRC2dbsConfig() throws IOException {
+        Properties props = new Properties();
+        props.setProperty("babudb.debug.level", "" + DEBUG_LEVEL);
+        props.setProperty("babudb.debug.categories", ""
+                + Arrays.toString(DEBUG_CATEGORIES).substring(1, Arrays.toString(DEBUG_CATEGORIES).length() - 1));
+        props.setProperty("babudb.cfgFile", "config.db");
+        props.setProperty("babudb.baseDir", TEST_DIR + "/mrc1");
+        props.setProperty("babudb.logDir", TEST_DIR + "/test-brain1.log");
+        props.setProperty("babudb.sync", "" + SyncMode.ASYNC);
+        props.setProperty("babudb.worker.maxQueueLength", "500");
+        props.setProperty("babudb.worker.numThreads", "2");
+        props.setProperty("babudb.maxLogfileSize", "16777216");
+        props.setProperty("babudb.checkInterval", "300");
+        props.setProperty("babudb.pseudoSyncWait", "0");
+        
+        return new BabuDBConfig(props);
     }
     
     public static InetSocketAddress getMRC1Addr() {

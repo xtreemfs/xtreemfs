@@ -43,7 +43,6 @@ import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.include.common.config.BabuDBConfig;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
-import org.xtreemfs.mrc.database.DBAccessResultAdapter;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
@@ -69,10 +68,10 @@ public class BabuDBStorageManagerTest extends TestCase {
     
     private TestEnvironment        testEnv;
     
-    private DBAccessResultListener listener     = new DBAccessResultAdapter() {
+    private DBAccessResultListener<Object> listener     = new DBAccessResultListener<Object>() {
                                                     
                                                     @Override
-                                                    public void insertFinished(Object context) {
+                                                    public void finished(Object o, Object context) {
                                                         synchronized (lock) {
                                                             cont = true;
                                                             lock.notify();
@@ -80,7 +79,7 @@ public class BabuDBStorageManagerTest extends TestCase {
                                                     }
                                                     
                                                     @Override
-                                                    public void requestFailed(Object context, Throwable error) {
+                                                    public void failed(Throwable error, Object context) {
                                                         exc = (Exception) error;
                                                         synchronized (lock) {
                                                             lock.notify();

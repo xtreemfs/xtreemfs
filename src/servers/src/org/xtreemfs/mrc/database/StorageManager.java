@@ -64,7 +64,7 @@ public interface StorageManager {
     
     // entity generators
     
-    public AtomicDBUpdate createAtomicDBUpdate(DBAccessResultListener listener, Object context)
+    public AtomicDBUpdate createAtomicDBUpdate(DBAccessResultListener<Object> listener, Object context)
         throws DatabaseException;
     
     public ACLEntry createACLEntry(long fileId, String entity, short rights);

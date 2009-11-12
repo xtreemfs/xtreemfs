@@ -118,6 +118,7 @@ module org
         void xtreemfs_rmvol( string volume_name ) # 44;
         void xtreemfs_shutdown() # 45;
         void xtreemfs_update_file_size( XCap xcap, OSDWriteResponse osd_write_response ) # 46;
+        void replication_toMaster() # 47;
 
         // Exceptions
         exception ConcurrentModificationException # 50 { string stack_trace; };
@@ -125,7 +126,7 @@ module org
         exception InvalidArgumentException # 52 { string error_message; };
         exception MRCException # 53 { uint32_t error_code; string error_message; string stack_trace; };
         exception ProtocolException # 54 { uint32_t accept_stat; uint32_t error_code; string stack_trace; };
-        exception RedirectException # 55 { string to_uuid; };
+        exception RedirectException # 55 { string address; uint16_t port; };
       };
     };
   };

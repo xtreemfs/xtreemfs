@@ -44,6 +44,7 @@ import org.xtreemfs.interfaces.StatVFS;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.interfaces.Volume;
 import org.xtreemfs.interfaces.VolumeSet;
 import org.xtreemfs.interfaces.XCap;
@@ -78,6 +79,8 @@ import org.xtreemfs.interfaces.MRCInterface.removexattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.removexattrResponse;
 import org.xtreemfs.interfaces.MRCInterface.renameRequest;
 import org.xtreemfs.interfaces.MRCInterface.renameResponse;
+import org.xtreemfs.interfaces.MRCInterface.replication_toMasterRequest;
+import org.xtreemfs.interfaces.MRCInterface.replication_toMasterResponse;
 import org.xtreemfs.interfaces.MRCInterface.rmdirRequest;
 import org.xtreemfs.interfaces.MRCInterface.rmdirResponse;
 import org.xtreemfs.interfaces.MRCInterface.setattrRequest;
@@ -122,7 +125,6 @@ import org.xtreemfs.interfaces.MRCInterface.xtreemfs_shutdownRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_shutdownResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_update_file_sizeRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_update_file_sizeResponse;
-import org.xtreemfs.interfaces.VivaldiCoordinates;
 
 /**
  * 
@@ -734,6 +736,22 @@ public class MRCClient extends ONCRPCClient {
             gidsAsSet.add(gid);
         
         return new UserCredentials(uid, gidsAsSet, "");
+    }
+    
+    public RPCResponse<Object> replication_toMaster(InetSocketAddress server, 
+            UserCredentials credentials) {
+        
+        replication_toMasterRequest rq = new replication_toMasterRequest();
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Object>() {
+
+            @Override
+            public Object getResult(ReusableBuffer data) {
+                final replication_toMasterResponse resp = new replication_toMasterResponse();
+                resp.unmarshal(new XDRUnmarshaller(data));
+                return null;
+            }
+        }, credentials);
+        return r;
     }
     
 }

@@ -23,19 +23,9 @@
  */
 package org.xtreemfs.mrc.database;
 
-import java.util.Iterator;
-import java.util.Map.Entry;
+public interface DBAccessResultListener<T> {
+    
+    public void finished(T result, Object context);
 
-public interface DBAccessResultListener {
-    
-    public void insertFinished(Object context);
-    
-    public void lookupFinished(Object context, byte[] value);
-    
-    public void prefixLookupFinished(Object context, Iterator<Entry<byte[], byte[]>> iterator);
-    
-    public void requestFailed(Object context, Throwable error);
-    
-    public void userDefinedLookupFinished(Object context, Object result);
-    
+    public void failed(Throwable error, Object context);
 }

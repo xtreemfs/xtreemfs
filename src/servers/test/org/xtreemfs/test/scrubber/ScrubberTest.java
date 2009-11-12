@@ -36,6 +36,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.include.common.config.BabuDBConfig;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.StripingPolicy;
@@ -53,6 +54,8 @@ public class ScrubberTest extends TestCase {
     private MRCRequestDispatcher mrc1;
     
     private MRCConfig            mrcCfg1;
+    
+    private BabuDBConfig         mrcDBCfg1;
     
     private OSDConfig            osdConfig1, osdConfig2;
     
@@ -88,6 +91,7 @@ public class ScrubberTest extends TestCase {
         dirAddress = SetupUtils.getDIRAddr();
         
         mrcCfg1 = SetupUtils.createMRC1Config();
+        mrcDBCfg1 = SetupUtils.createMRC1dbsConfig();
         mrc1Address = SetupUtils.getMRC1Addr();
         
         osdConfig1 = SetupUtils.createOSD1Config();
@@ -108,7 +112,7 @@ public class ScrubberTest extends TestCase {
         osd1 = new OSD(osdConfig1);
         osd2 = new OSD(osdConfig2);
         // start MRC
-        mrc1 = new MRCRequestDispatcher(mrcCfg1);
+        mrc1 = new MRCRequestDispatcher(mrcCfg1,mrcDBCfg1);
         mrc1.startup();
         
         client = testEnv.getMrcClient();

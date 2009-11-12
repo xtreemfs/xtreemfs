@@ -48,7 +48,11 @@ public final class ErrorRecord {
         /**
          * invalid argument list
          */
-        INVALID_ARGS
+        INVALID_ARGS,
+        /**
+         * replication operation failed
+         */
+        REPLICATION
     }
     
     /**

@@ -24,6 +24,7 @@
 
 package org.xtreemfs.mrc.stages;
 
+import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -193,6 +194,7 @@ public class ProcessingStage extends MRCStage {
         operations.put(xtreemfs_internal_debugRequest.TAG, new InternalDebugOperation(master));
         operations.put(xtreemfs_replica_listRequest.TAG, new GetXLocListOperation(master));
         operations.put(closeRequest.TAG, new CloseOperation(master));
+      //TODO  operations.put(replication_toMasterRequest.TAG, new ReplicationToMasterOperation(master));
     }
     
     public Map<Integer, Integer> get_opCountMap() {
@@ -292,6 +294,8 @@ public class ProcessingStage extends MRCStage {
         } catch (DatabaseException exc) {
             if (exc.getType() == ExceptionType.NOT_ALLOWED) {
                 reportUserError(op, rq, exc, ErrNo.EPERM);
+            } else if (exc.getType() == ExceptionType.REDIRECT) {
+                rq.sendRedirectException((InetSocketAddress) exc.getAttachment());
             } else
                 reportServerError(op, rq, exc);
             

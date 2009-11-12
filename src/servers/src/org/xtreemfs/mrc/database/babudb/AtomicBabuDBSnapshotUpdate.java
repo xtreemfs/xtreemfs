@@ -30,11 +30,11 @@ import org.xtreemfs.mrc.database.DatabaseException;
 
 public class AtomicBabuDBSnapshotUpdate implements AtomicDBUpdate {
     
-    private BabuDBRequestListener listener;
+    private BabuDBRequestListener<Object> listener;
     
     private Object                context;
     
-    public AtomicBabuDBSnapshotUpdate(BabuDBRequestListener listener, Object context)
+    public AtomicBabuDBSnapshotUpdate(BabuDBRequestListener<Object> listener, Object context)
         throws BabuDBException {
         
         this.listener = listener;
@@ -48,7 +48,7 @@ public class AtomicBabuDBSnapshotUpdate implements AtomicDBUpdate {
     @Override
     public void execute() throws DatabaseException {
         if (listener != null)
-            listener.insertFinished(context);
+            listener.finished(null, context);
     }
     
 }

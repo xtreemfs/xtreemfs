@@ -38,7 +38,6 @@ import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBFactory;
 import org.xtreemfs.babudb.BabuDBException.ErrorCode;
-import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.lsmdb.DatabaseManager;
@@ -48,6 +47,7 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.include.common.config.BabuDBConfig;
+import org.xtreemfs.include.common.config.ReplicationConfig;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
@@ -56,6 +56,7 @@ import org.xtreemfs.mrc.ac.FileAccessPolicy;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.ReplicationManager;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeChangeListener;
 import org.xtreemfs.mrc.database.VolumeInfo;
@@ -73,14 +74,11 @@ public class BabuDBVolumeManager implements VolumeManager {
     private static final String                    VERSION_KEY     = "v";
     
     /** the volume database */
-    private BabuDB                                 database;
+    private BabuDB                            database;
     
-    /** the database directory */
-    private final String                           dbDir;
-    
-    /** the database log directory */
-    private final String                           dbLogDir;
-    
+    /** the DB replication manager*/
+    private ReplicationManager                replMan;
+        
     /** maps the IDs of all locally known volumes to their managers */
     private final Map<String, StorageManager>      volsById;
     
@@ -89,12 +87,13 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     private final Collection<VolumeChangeListener> listeners;
     
-    public BabuDBVolumeManager(MRCRequestDispatcher master) {
-        dbDir = master.getConfig().getDbDir();
-        dbLogDir = master.getConfig().getDbLogDir();
+    private final BabuDBConfig                config;
+    
+    public BabuDBVolumeManager(MRCRequestDispatcher master, BabuDBConfig dbconfig) {
         volsById = new HashMap<String, StorageManager>();
         volsByName = new HashMap<String, StorageManager>();
         listeners = new LinkedList<VolumeChangeListener>();
+        config = dbconfig;
     }
     
     @Override
@@ -103,14 +102,18 @@ public class BabuDBVolumeManager implements VolumeManager {
         try {
             
             // try to create a new database
-            database = BabuDBFactory.createBabuDB(new BabuDBConfig(dbDir, dbLogDir, 2, 1024 * 1024 * 16,
-                5 * 60, SyncMode.ASYNC, 0, 1000, false));
+            if (config instanceof ReplicationConfig) {
+                database = BabuDBFactory.createReplicatedBabuDB((ReplicationConfig) config);
+                replMan = new BabuDBReplicationManger(database);
+            } else
+                database = BabuDBFactory.createBabuDB(config);
             
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }
         
         try {
+            database.disableSlaveCheck();
             Database volDB = database.getDatabaseManager().createDatabase(VERSION_DB_NAME, 3);
             
             // if the creation succeeds, set the version number to the current
@@ -119,11 +122,11 @@ public class BabuDBVolumeManager implements VolumeManager {
                     .putInt((int) VersionManagement.getMrcDataVersion()).array();
             BabuDBInsertGroup ig = volDB.createInsertGroup();
             ig.addInsert(VERSION_INDEX, VERSION_KEY.getBytes(), verBytes);
-            volDB.directInsert(ig);
+            volDB.insert(ig,null).get();
             
-        } catch (BabuDBException e) {
+        } catch (Exception e) {
             
-            if (e.getErrorCode() == ErrorCode.DB_EXISTS) {
+            if (e instanceof BabuDBException && ((BabuDBException) e).getErrorCode() == ErrorCode.DB_EXISTS) {
                 
                 Database volDB = null;
                 try {
@@ -135,12 +138,12 @@ public class BabuDBVolumeManager implements VolumeManager {
                 // database already exists
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this, "database loaded from '%s'",
-                        dbDir);
+                        config.getBaseDir());
                 
                 try {
                     
                     // retrieve the database version number
-                    byte[] verBytes = volDB.directLookup(VERSION_INDEX, VERSION_KEY.getBytes());
+                    byte[] verBytes = volDB.lookup(VERSION_INDEX, VERSION_KEY.getBytes(), null).get();
                     int ver = ByteBuffer.wrap(verBytes).getInt();
                     
                     // check the database version number
@@ -160,7 +163,7 @@ public class BabuDBVolumeManager implements VolumeManager {
                         throw new DatabaseException(errMsg, ExceptionType.WRONG_DB_VERSION);
                     }
                     
-                } catch (BabuDBException exc) {
+                } catch (Exception exc) {
                     Logging.logMessage(Logging.LEVEL_CRIT, this,
                         "The MRC database is either corrupted or outdated. The expected database version for this server is "
                             + VersionManagement.getMrcDataVersion());
@@ -196,6 +199,8 @@ public class BabuDBVolumeManager implements VolumeManager {
                 
             } else
                 Logging.logError(Logging.LEVEL_ERROR, this, e);
+        } finally {
+            database.enableSlaveCheck();
         }
     }
     
@@ -266,8 +271,8 @@ public class BabuDBVolumeManager implements VolumeManager {
     }
     
     @Override
-    public void deleteVolume(String volumeId, DBAccessResultListener listener, Object context)
-        throws DatabaseException, UserException {
+    public void deleteVolume(String volumeId, DBAccessResultListener<Object> listener, 
+            Object context) throws DatabaseException, UserException {
         
         // check if the volume exists
         StorageManager sMan = getStorageManager(volumeId);
@@ -377,9 +382,18 @@ public class BabuDBVolumeManager implements VolumeManager {
                 throw exc;
         }
     }
-    
+     
     @Override
     public String getDBVersion() {
         return BabuDB.BABUDB_VERSION;
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.xtreemfs.mrc.database.VolumeManager#getReplicationManager()
+     */
+    @Override
+    public ReplicationManager getReplicationManager() {
+        return this.replMan;
     }
 }

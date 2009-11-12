@@ -214,7 +214,7 @@ public class TestEnvironment {
         }
         
         if (enabledServs.contains(Services.MRC)) {
-            mrc = new MRCRequestDispatcher(SetupUtils.createMRC1Config());
+            mrc = new MRCRequestDispatcher(SetupUtils.createMRC1Config(), SetupUtils.createMRC1dbsConfig());
             mrc.startup();
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "MRC running");
         }

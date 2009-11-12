@@ -24,9 +24,11 @@
 
 package org.xtreemfs.dir.operations;
 
+import java.io.IOException;
+
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.BabuDBRequestListener;
 import org.xtreemfs.babudb.BabuDBException.ErrorCode;
-import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.lsmdb.Database;
 import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.common.buffer.ReusableBuffer;
@@ -35,7 +37,6 @@ import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_offlineRequest;
-import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_offlineResponse;
 
 /**
  * 
@@ -63,38 +64,66 @@ public class ServiceOfflineOperation extends DIROperation {
     
     @Override
     public void startRequest(DIRRequest rq) {
-        try {
-            final xtreemfs_service_offlineRequest request = (xtreemfs_service_offlineRequest) rq
-                    .getRequestMessage();
-            
-            byte[] data = database.directLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid()
-                    .getBytes());
-            if (data != null) {
-                ReusableBuffer buf = ReusableBuffer.wrap(data);
-                ServiceRecord dbData = new ServiceRecord(buf);
-                
-                dbData.setLast_updated_s(0);
-                dbData.setVersion(dbData.getVersion()+1);
-                
-                byte[] newData = new byte[dbData.getSize()];
-                dbData.serialize(ReusableBuffer.wrap(newData));
-                BabuDBInsertGroup ig = database.createInsertGroup();
-                ig.addInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes(), newData);
-                database.directInsert(ig);
-            }
-            
-            xtreemfs_service_offlineResponse response = new xtreemfs_service_offlineResponse();
-            rq.sendSuccess(response);
-        } catch (BabuDBException ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
-            if (ex.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
-                rq.sendRedirectException(dbsReplicationManager.getMaster());
-            else
-                rq.sendInternalServerError(ex);
-        } catch (Throwable th) {
-            Logging.logError(Logging.LEVEL_ERROR, this, th);
-            rq.sendInternalServerError(th);
-        }
+        final xtreemfs_service_offlineRequest request = 
+            (xtreemfs_service_offlineRequest) rq.getRequestMessage();
+        
+        database.lookup(DIRRequestDispatcher.INDEX_ID_SERVREG, 
+                request.getUuid().getBytes(),rq).registerListener(
+                        new BabuDBRequestListener<byte[]>() {
+                    
+                    @Override
+                    public void finished(byte[] data, Object context) {
+                        try {
+                            if (data != null) {
+                                ReusableBuffer buf = ReusableBuffer.wrap(data);
+                                ServiceRecord dbData = new ServiceRecord(buf);
+                                
+                                dbData.setLast_updated_s(0);
+                                dbData.setVersion(dbData.getVersion()+1);
+                                
+                                byte[] newData = new byte[dbData.getSize()];
+                                dbData.serialize(ReusableBuffer.wrap(newData));
+                                database.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, 
+                                        request.getUuid().getBytes(), newData, context)
+                                        .registerListener(new BabuDBRequestListener<Object>() {
+                                    
+                                    @Override
+                                    public void finished(Object arg0, Object context) {
+                                        ((DIRRequest) context).sendSuccess(
+                                                request.createDefaultResponse());
+                                    }
+                                    
+                                    @Override
+                                    public void failed(BabuDBException e, Object context) {
+                                        Logging.logError(Logging.LEVEL_ERROR, this, e);
+                                        if (e.getErrorCode() == ErrorCode.NO_ACCESS && 
+                                                dbsReplicationManager != null)
+                                            ((DIRRequest) context).sendRedirectException(
+                                                    dbsReplicationManager.getMaster());
+                                        else
+                                            ((DIRRequest) context).sendInternalServerError(e);
+                                    }
+                                });
+                            } else {
+                                ((DIRRequest) context).sendSuccess(request.createDefaultResponse());
+                            }
+                        } catch (IOException e) {
+                            Logging.logError(Logging.LEVEL_ERROR, this, e);
+                            ((DIRRequest) context).sendInternalServerError(e);
+                        }
+                    }
+                    
+                    @Override
+                    public void failed(BabuDBException e, Object context) {
+                        Logging.logError(Logging.LEVEL_ERROR, this, e);
+                        if (e.getErrorCode() == ErrorCode.NO_ACCESS && 
+                                dbsReplicationManager != null)
+                            ((DIRRequest) context).sendRedirectException(
+                                    dbsReplicationManager.getMaster());
+                        else
+                            ((DIRRequest) context).sendInternalServerError(e);
+                    }
+                });
     }
     
     @Override

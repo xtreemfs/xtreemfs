@@ -23,48 +23,37 @@
  */
 package org.xtreemfs.mrc.database.babudb;
 
-import java.util.Iterator;
-import java.util.Map.Entry;
-
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.BabuDBRequestListener;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 
 /**
  * @author stender
- *
+ * @parma <T>
  */
-public class BabuDBRequestListenerWrapper implements BabuDBRequestListener {
+public class BabuDBRequestListenerWrapper<T> implements BabuDBRequestListener<T> {
     
-    private DBAccessResultListener listener;
+    private DBAccessResultListener<T> listener;
     
-    public BabuDBRequestListenerWrapper(DBAccessResultListener listener) {
+    public BabuDBRequestListenerWrapper(DBAccessResultListener<T> listener) {
         this.listener = listener;
     }
-    
+
+    /*
+     * (non-Javadoc)
+     * @see org.xtreemfs.babudb.BabuDBRequestListener#failed(org.xtreemfs.babudb.BabuDBException, java.lang.Object)
+     */
     @Override
-    public void insertFinished(Object context) {
-        listener.insertFinished(context);
-    }
-    
-    @Override
-    public void lookupFinished(Object context, byte[] value) {
-        listener.lookupFinished(context, value);
-    }
-    
-    @Override
-    public void prefixLookupFinished(Object context, Iterator<Entry<byte[], byte[]>> iterator) {
-        listener.prefixLookupFinished(context, iterator);
-    }
-    
-    @Override
-    public void requestFailed(Object context, BabuDBException error) {
-        listener.requestFailed(context, error);
+    public void failed(BabuDBException arg0, Object arg1) {
+        listener.failed(arg0,arg1);
     }
 
+    /*
+     * (non-Javadoc)
+     * @see org.xtreemfs.babudb.BabuDBRequestListener#finished(java.lang.Object, java.lang.Object)
+     */
     @Override
-    public void userDefinedLookupFinished(Object context, Object result) {
-        listener.userDefinedLookupFinished(context, result);
+    public void finished(T arg0, Object arg1) {
+        listener.finished(arg0, arg1);
     }
-    
 }

@@ -22,20 +22,24 @@
  * AUTHORS: Felix Langner (ZIB)
  */
 
-package org.xtreemfs.dir.client;
-
-import java.net.InetSocketAddress;
-
-import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
+package org.xtreemfs.mrc.database;
 
 /**
- *
+ * Interface to manipulate the replication-setup of the MRC DB.
+ * 
  * @author flangner
+ * @since 10/19/2009
  */
-public class DIRClient extends DIRClientBackend {
 
-    public DIRClient(RPCNIOSocketClient client, InetSocketAddress defaultServer) {
-        super(client, defaultServer);
-    }
+public interface ReplicationManager {
     
+    /**
+     * The MRC declares its underlying DB to master in master-slave-replication
+     * context.
+     * Other DBs of the replication-participant-pool will remotely be declared
+     * to slaves.
+     * 
+     * @throws DatabaseException
+     */
+    public void declareToMaster() throws DatabaseException;
 }

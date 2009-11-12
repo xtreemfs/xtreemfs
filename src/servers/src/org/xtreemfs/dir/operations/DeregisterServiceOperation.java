@@ -25,6 +25,7 @@
 package org.xtreemfs.dir.operations;
 
 import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.BabuDBRequestListener;
 import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.lsmdb.BabuDBInsertGroup;
 import org.xtreemfs.babudb.lsmdb.Database;
@@ -33,7 +34,6 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_deregisterRequest;
-import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_deregisterResponse;
 
 /**
  *
@@ -61,22 +61,37 @@ public class DeregisterServiceOperation extends DIROperation {
 
     @Override
     public void startRequest(DIRRequest rq) {
-        try {
-            final xtreemfs_service_deregisterRequest request = (xtreemfs_service_deregisterRequest)rq.getRequestMessage();
+        final xtreemfs_service_deregisterRequest request = 
+            (xtreemfs_service_deregisterRequest)rq.getRequestMessage();
 
-            BabuDBInsertGroup ig = database.createInsertGroup();
-            ig.addDelete(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes());
-            database.directInsert(ig);
-            
-            xtreemfs_service_deregisterResponse response = new xtreemfs_service_deregisterResponse();
-            rq.sendSuccess(response);
+        BabuDBInsertGroup ig;
+        try {  
+            ig = database.createInsertGroup();
         } catch (BabuDBException ex) {
-            Logging.logError(Logging.LEVEL_ERROR, this, ex);
             if (ex.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
                 rq.sendRedirectException(dbsReplicationManager.getMaster());
             else
                 rq.sendInternalServerError(ex);
+            
+            return;
         }
+        ig.addDelete(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid().getBytes());
+        database.insert(ig,rq).registerListener(new BabuDBRequestListener<Object>() {
+            
+            @Override
+            public void finished(Object arg0, Object context) {
+                ((DIRRequest) context).sendSuccess(request.createDefaultResponse());
+            }
+            
+            @Override
+            public void failed(BabuDBException e, Object context) {
+                Logging.logError(Logging.LEVEL_ERROR, this, e);
+                if (e.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
+                    ((DIRRequest) context).sendRedirectException(dbsReplicationManager.getMaster());
+                else
+                    ((DIRRequest) context).sendInternalServerError(e);
+            }
+        });
     }
 
     @Override

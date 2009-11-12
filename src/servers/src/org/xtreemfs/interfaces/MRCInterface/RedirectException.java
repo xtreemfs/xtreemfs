@@ -18,10 +18,12 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     public static final int TAG = 2009090464;
     
     public RedirectException() {  }
-    public RedirectException( String to_uuid ) { this.to_uuid = to_uuid; }
+    public RedirectException( String address, int port ) { this.address = address; this.port = port; }
 
-    public String getTo_uuid() { return to_uuid; }
-    public void setTo_uuid( String to_uuid ) { this.to_uuid = to_uuid; }
+    public String getAddress() { return address; }
+    public void setAddress( String address ) { this.address = address; }
+    public int getPort() { return port; }
+    public void setPort( int port ) { this.port = port; }
 
     // java.lang.Object
     public String toString() 
@@ -45,23 +47,27 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE / 8 + ( to_uuid != null ? ( ( to_uuid.getBytes().length % 4 == 0 ) ? to_uuid.getBytes().length : ( to_uuid.getBytes().length + 4 - to_uuid.getBytes().length % 4 ) ) : 0 ); // to_uuid
+        my_size += Integer.SIZE / 8 + ( address != null ? ( ( address.getBytes().length % 4 == 0 ) ? address.getBytes().length : ( address.getBytes().length + 4 - address.getBytes().length % 4 ) ) : 0 ); // address
+        my_size += Integer.SIZE / 8; // port
         return my_size;
     }    
     
     public void marshal( Marshaller marshaller )
     {
-        marshaller.writeString( "to_uuid", to_uuid );
+        marshaller.writeString( "address", address );
+        marshaller.writeUint16( "port", port );
     }
     
     public void unmarshal( Unmarshaller unmarshaller ) 
     {
-        to_uuid = unmarshaller.readString( "to_uuid" );    
+        address = unmarshaller.readString( "address" );
+        port = unmarshaller.readUint16( "port" );    
     }
         
     
 
-    private String to_uuid;    
+    private String address;
+    private int port;    
 
 }
 

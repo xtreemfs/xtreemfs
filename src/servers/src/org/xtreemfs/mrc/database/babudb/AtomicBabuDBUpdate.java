@@ -36,7 +36,7 @@ public class AtomicBabuDBUpdate implements AtomicDBUpdate {
     
     private Database              database;
     
-    private BabuDBRequestListener listener;
+    private BabuDBRequestListener<Object> listener;
     
     private Object                context;
     
@@ -44,7 +44,7 @@ public class AtomicBabuDBUpdate implements AtomicDBUpdate {
     //    
     // private String dbName;
     
-    public AtomicBabuDBUpdate(Database database, BabuDBRequestListener listener, Object context)
+    public AtomicBabuDBUpdate(Database database, BabuDBRequestListener<Object> listener, Object context)
         throws BabuDBException {
         
         ig = database.createInsertGroup();
@@ -70,12 +70,11 @@ public class AtomicBabuDBUpdate implements AtomicDBUpdate {
             // checkDBConsistency();
             
             if (listener != null) {
-                database.directInsert(ig);
-                listener.insertFinished(context);
+                database.insert(ig, context).registerListener(listener);
             } else
-                database.directInsert(ig);
+                database.insert(ig, context).get();
             
-        } catch (BabuDBException exc) {
+        } catch (Exception exc) {
             throw new DatabaseException(exc);
         }
     }
