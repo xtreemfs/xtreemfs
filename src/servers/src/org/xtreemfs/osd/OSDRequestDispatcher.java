@@ -549,7 +549,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     }
     
     public void crashPerformed(Throwable cause) {
-        CrashReporter.reportXtreemFSCrash("OSD", VersionManagement.RELEASE_VERSION, cause);
+        final String report = CrashReporter.createCrashReport("OSD", VersionManagement.RELEASE_VERSION, cause);
+        System.out.println(report);
+        CrashReporter.reportXtreemFSCrash(report);
         this.shutdown();
     }
     

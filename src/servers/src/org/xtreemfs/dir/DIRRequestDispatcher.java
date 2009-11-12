@@ -80,6 +80,7 @@ import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.interfaces.Constants;
 
 /**
  * 
@@ -163,8 +164,15 @@ public class DIRRequestDispatcher extends LifeCycleThread
         server = new RPCNIOSocketServer(config.getPort(), config.getAddress(), this, sslOptions);
         
         if (config.isAutodiscoverEnabled()) {
+            
+            String scheme = Constants.ONCRPC_SCHEME;
+            if (config.isGRIDSSLmode())
+                scheme = Constants.ONCRPCG_SCHEME;
+            else if (config.isUsingSSL())
+                scheme = Constants.ONCRPCS_SCHEME;
+
             discoveryThr = new DiscoveryMsgThread(InetAddress.getLocalHost().getCanonicalHostName(), config
-                    .getPort(), config.isUsingSSL() ? "oncrpcs" : "oncrpc");
+                    .getPort(), scheme);
             discoveryThr.setLifeCycleListener(this);
         } else {
             discoveryThr = null;
@@ -449,7 +457,9 @@ public class DIRRequestDispatcher extends LifeCycleThread
     
     @Override
     public void crashPerformed(Throwable cause) {
-        CrashReporter.reportXtreemFSCrash("DIR", VersionManagement.RELEASE_VERSION, cause);
+        final String report = CrashReporter.createCrashReport("DIR", VersionManagement.RELEASE_VERSION, cause);
+        System.out.println(report);
+        CrashReporter.reportXtreemFSCrash(report);
         try {
             shutdown();
         } catch (Exception e) {

@@ -241,71 +241,75 @@ public class HeartbeatThread extends LifeCycleThread {
     }
     
     public void run() {
+        try {
         
-        Map<String, Long> verMap = new HashMap<String, Long>();
-        
-        notifyStarted();
-        
-        // periodically, ...
-        while (!quit) {
-            
-            synchronized (this) {
-                
-                
-                try {
-                    
-                    // ... for each UUID, ...
-                    for (Service reg : serviceDataGen.getServiceData()) {
-                        
-                        RPCResponse<ServiceSet> r1 = null;
-                        RPCResponse<Long> r2 = null;
-                        try{
-                            // ... remove old DS entry if necessary
-                            r1 = client.xtreemfs_service_get_by_uuid(null, reg.getUuid());
-                            long currentVersion = 0;
-                            ServiceSet olset = r1.get();
-                            if (olset.size() > 0) {
-                                currentVersion = olset.get(0).getVersion();
-                            }
-                            
-                            reg.setVersion(currentVersion);
-                            r2 = client.xtreemfs_service_register(null, reg);
-                            r2.get();
-                            
-                            if (Logging.isDebug())
-                                Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
-                                    "%s successfully updated at Directory Service", uuid);
-                        }finally{
-                            if(r1!=null){
-                                r1.freeBuffers();
-                            }
-                            if(r2!=null){
-                                r2.freeBuffers();
+            Map<String, Long> verMap = new HashMap<String, Long>();
+
+            notifyStarted();
+
+            // periodically, ...
+            while (!quit) {
+
+                synchronized (this) {
+
+
+                    try {
+
+                        // ... for each UUID, ...
+                        for (Service reg : serviceDataGen.getServiceData()) {
+
+                            RPCResponse<ServiceSet> r1 = null;
+                            RPCResponse<Long> r2 = null;
+                            try{
+                                // ... remove old DS entry if necessary
+                                r1 = client.xtreemfs_service_get_by_uuid(null, reg.getUuid());
+                                long currentVersion = 0;
+                                ServiceSet olset = r1.get();
+                                if (olset.size() > 0) {
+                                    currentVersion = olset.get(0).getVersion();
+                                }
+
+                                reg.setVersion(currentVersion);
+                                r2 = client.xtreemfs_service_register(null, reg);
+                                r2.get();
+
+                                if (Logging.isDebug())
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                                        "%s successfully updated at Directory Service", uuid);
+                            }finally{
+                                if(r1!=null){
+                                    r1.freeBuffers();
+                                }
+                                if(r2!=null){
+                                    r2.freeBuffers();
+                                }
                             }
                         }
+
+                    } catch (IOException ex) {
+                        Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                    } catch (ONCRPCException ex) {
+                        Logging.logError(Logging.LEVEL_ERROR, this, ex);
+                    } catch (InterruptedException ex) {
+                        quit = true;
+                        break;
                     }
-                    
-                } catch (IOException ex) {
-                    Logging.logError(Logging.LEVEL_ERROR, this, ex);
-                } catch (ONCRPCException ex) {
-                    Logging.logError(Logging.LEVEL_ERROR, this, ex);
-                } catch (InterruptedException ex) {
-                    quit = true;
-                    break;
+
+                    if (quit)
+                        break;
+
                 }
-                
-                if (quit)
-                    break;
-                
+
+                try {
+                    Thread.sleep(UPDATE_INTERVAL);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
             }
-            
-            try {
-                Thread.sleep(UPDATE_INTERVAL);
-            } catch (InterruptedException e) {
-                // ignore
-            }
+
+            notifyStopped();
+        } catch (Exception ex) {
+            notifyCrashed(ex);
         }
-        
-        notifyStopped();
     }
 }

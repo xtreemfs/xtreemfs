@@ -598,7 +598,9 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     }
     
     public void crashPerformed(Throwable cause) {
-        CrashReporter.reportXtreemFSCrash("MRC", VersionManagement.RELEASE_VERSION, cause);
+        final String report = CrashReporter.createCrashReport("MRC", VersionManagement.RELEASE_VERSION, cause);
+        System.out.println(report);
+        CrashReporter.reportXtreemFSCrash(report);
         try {
             shutdown();
         } catch (Exception e) {
