@@ -9,89 +9,11 @@ TMP_PATH="/tmp/fsdRLgT24fDM7YqmfFlg85gLVf6aLGA6G"
 
 # white list for files/dirs which should be copied
 # source (relative from XTREEMFS_HOME_DIR) and destination (in package)
-SERVER_WHITE_LIST=(
-	"etc/xos/xtreemfs/default_dir" "config/default_dir"
-	"etc/xos/xtreemfs/dirconfig.properties" "config/dirconfig.properties"
-	"etc/xos/xtreemfs/mrcconfig.properties" "config/mrcconfig.properties"
-	"etc/xos/xtreemfs/osdconfig.properties" "config/osdconfig.properties"
-	"etc/xos/xtreemfs/datacentermap.example" "config/datacentermap.example"
-	"etc/init.d" "init.d-scripts"
-	"src/servers/lib" "lib"
-	"src/servers/dist" "dist"
-	"packaging/generate_uuid" "packaging"
-	"packaging/postinstall_setup.sh" "packaging"
-	"AUTHORS" ""
-	"COPYING" ""
-)
-
-# white list for files/dirs which should be copied
-# source (relative from XTREEMFS_HOME_DIR) and destination (in package)
-CLIENT_WHITE_LIST=(
-	"include" "include"
-	"proj" "proj"
-	"share" "share"
-	"SConstruct" ""
-	"src/mount.xtreemfs" "src/mount.xtreemfs"
-	"src/lsfs.xtreemfs" "src/lsfs.xtreemfs"
-	"src/mkfs.xtreemfs" "src/mkfs.xtreemfs"
-	"src/rmfs.xtreemfs" "src/rmfs.xtreemfs"
-	"src/xtfs_vivaldi" "src/xtfs_vivaldi"
-	"src/libxtreemfs" "src/libxtreemfs"
-	"src/interfaces" "src/interfaces"
-	"src/policies/gridmap_flog.c" "src/policies/gridmap_flog.c"
-    "bin/umount.xtreemfs" "bin/umount.xtreemfs"
-	"man/man1/mount.xtreemfs.1" "man/man1/mount.xtreemfs.1"
-	"man/man1/lsfs.xtreemfs.1" "man/man1/lsfs.xtreemfs.1"
-	"man/man1/mkfs.xtreemfs.1" "man/man1/mkfs.xtreemfs.1"
-	"man/man1/rmfs.xtreemfs.1" "man/man1/rmfs.xtreemfs.1"
-	"man/man1/umount.xtreemfs.1" "man/man1/umount.xtreemfs.1"
-	"etc/xos/xtreemfs/default_dir" "config/default_dir"
-	"AUTHORS" ""
-	"COPYING" ""
-)
-
-# white list for files/dirs which should be copied
-# source (relative from XTREEMFS_HOME_DIR) and destination (in package)
-TOOLS_WHITE_LIST=(
-	"src/servers/lib" "lib"
-	"src/servers/dist" "dist"
-	"bin/xtfs_cleanup" "bin/xtfs_cleanup"
-	"bin/xtfs_mrcdbtool" "bin/xtfs_mrcdbtool"
-	"bin/xtfs_scrub" "bin/xtfs_scrub"
-	"bin/xtfs_sp" "bin/xtfs_sp"
-	"bin/xtfs_repl" "bin/xtfs_repl"
-	"bin/xtfs_stat" "bin/xtfs_stat"
-	"man/man1/xtfs_cleanup.1" "man/man1/xtfs_cleanup.1"
-	"man/man1/xtfs_mrcdbtool.1" "man/man1/xtfs_mrcdbtool.1"
-	"man/man1/xtfs_scrub.1" "man/man1/xtfs_scrub.1"
-	"man/man1/xtfs_repl.1" "man/man1/xtfs_repl.1"
-	"man/man1/xtfs_sp.1" "man/man1/xtfs_sp.1"
-	"man/man1/xtfs_stat.1" "man/man1/xtfs_stat.1"
-	"etc/xos/xtreemfs/default_dir" "config/default_dir"
-	"AUTHORS" ""
-	"COPYING" ""
-)
-
-# white list for files/dirs which should be copied
-# source (relative from XTREEMFS_HOME_DIR) and destination (in package)
 XOS_ADDONS_WHITE_LIST=(
 	"src/servers/xtreemos" "xtreemos"
 	"src/policies" "policies"
 	"AUTHORS" ""
 	"COPYING" ""
-)
-
-# black list for files/dirs which should NEVER be copied
-SERVER_BLACK_LIST=(
-	"servers/lib/test"
-)
-
-# black list for files/dirs which should NEVER be copied
-CLIENT_BLACK_LIST=(
-)
-
-# black list for files/dirs which should NEVER be copied
-TOOLS_BLACK_LIST=(
 )
 
 # black list for files/dirs which should NEVER be copied
@@ -141,103 +63,6 @@ build_source_tarball() {
 	tar -czf "$SOURCE_TARBALL_NAME.tar.gz" -C $TMP_PATH $SOURCE_TARBALL_NAME
 }
 
-# client package
-
-build_client_package() {
-	PACKAGE_PATH="$TMP_PATH/$CLIENT_PACKAGE_NAME"
-	CLEANUP_PATH="$TMP_PATH/$CLIENT_PACKAGE_NAME""_compile"
-
-	echo "build client package"
-
-	cleanup_client $CLEANUP_PATH
-
-	# copy to temporary dir
-	create_dir $PACKAGE_PATH
-
-	# delete all from black-list in temporary dir
-	delete_client_black_list $CLEANUP_PATH
-
-	# copy white-list to temporary dir
-	copy_client_white_list $CLEANUP_PATH $PACKAGE_PATH
-
-	# delete all .svn directories
-	delete_svn $PACKAGE_PATH
-
-	# create archive
-	tar -czf "$CLIENT_PACKAGE_NAME.tar.gz" -C $TMP_PATH $CLIENT_PACKAGE_NAME
-}
-
-# server package
-compile_server() {
-	COMPILE_PATH=$1
-	
-	echo "compile server"
-
-	create_dir $COMPILE_PATH
-
-	# copy to temporary dir
-	cp -a $XTREEMFS_HOME_DIR/* "$COMPILE_PATH"
-
-	# compile
-	cd "$COMPILE_PATH"
-    ant jar -q -buildfile "$COMPILE_PATH/src/servers/build.xml"
-    cd -
-}
-
-build_server_package() {
-	PACKAGE_PATH="$TMP_PATH/$SERVER_PACKAGE_NAME"
-	COMPILE_PATH="$TMP_PATH/$SERVER_PACKAGE_NAME""_compile"
-
-	echo "build server package"
-
-	compile_server $COMPILE_PATH
-
-	create_dir $PACKAGE_PATH
-
-	# delete UUID from config-files
-	grep -v '^uuid\W*=\W*\w\+' $COMPILE_PATH/etc/xos/xtreemfs/dirconfig.properties > $COMPILE_PATH/etc/xos/xtreemfs/dirconfig.properties_new
-	grep -v '^uuid\W*=\W*\w\+' $COMPILE_PATH/etc/xos/xtreemfs/mrcconfig.properties > $COMPILE_PATH/etc/xos/xtreemfs/mrcconfig.properties_new
-	grep -v '^uuid\W*=\W*\w\+' $COMPILE_PATH/etc/xos/xtreemfs/osdconfig.properties > $COMPILE_PATH/etc/xos/xtreemfs/osdconfig.properties_new
-	mv $COMPILE_PATH/etc/xos/xtreemfs/dirconfig.properties_new $COMPILE_PATH/etc/xos/xtreemfs/dirconfig.properties
-	mv $COMPILE_PATH/etc/xos/xtreemfs/mrcconfig.properties_new $COMPILE_PATH/etc/xos/xtreemfs/mrcconfig.properties
-	mv $COMPILE_PATH/etc/xos/xtreemfs/osdconfig.properties_new $COMPILE_PATH/etc/xos/xtreemfs/osdconfig.properties
-
-	# delete all from black-list in temporary dir
-	delete_server_black_list $COMPILE_PATH
-
-	# copy white-list to temporary dir
-	copy_server_white_list $COMPILE_PATH $PACKAGE_PATH
-
-	# delete all .svn directories
-	delete_svn $PACKAGE_PATH
-
-	# create archiv
-	tar -czf "$SERVER_PACKAGE_NAME.tar.gz" -C $TMP_PATH $SERVER_PACKAGE_NAME
-}
-
-build_tools_package() {
-	PACKAGE_PATH="$TMP_PATH/$TOOLS_PACKAGE_NAME"
-	COMPILE_PATH="$TMP_PATH/$TOOLS_PACKAGE_NAME""_compile"
-
-	echo "build tools package"
-
-	compile_server $COMPILE_PATH
-
-	create_dir $PACKAGE_PATH
-
-	# delete all from black-list in temporary dir
-	delete_tools_black_list $COMPILE_PATH
-
-	# copy white-list to temporary dir
-	copy_tools_white_list $COMPILE_PATH $PACKAGE_PATH
-
-	# delete all .svn directories
-	delete_svn $PACKAGE_PATH
-
-	# create archiv
-	tar -czf "$TOOLS_PACKAGE_NAME.tar.gz" -C $TMP_PATH $TOOLS_PACKAGE_NAME
-}
-
 build_xtreemos_addons() {
 
 	PACKAGE_PATH="$TMP_PATH/$XOS_ADDONS_PACKAGE_NAME"
@@ -265,63 +90,6 @@ build_xtreemos_addons() {
 	tar czf "$XOS_ADDONS_PACKAGE_NAME.tar.gz" -C $PACKAGE_PATH .
 }
 
-function copy_server_white_list() {
-	SRC_PATH=$1
-	DEST_PATH=$2
-
-	for (( i = 0 ; i < ${#SERVER_WHITE_LIST[@]} ; i=i+2 ))
-	do
-		SRC="$SRC_PATH/${SERVER_WHITE_LIST[$i]}"
-		# if directory doesn't exist, create it for copying file
-		if [ -d $SRC_PATH/${SERVER_WHITE_LIST[i]} ]; then
-			mkdir -p "$DEST_PATH/${SERVER_WHITE_LIST[i+1]}"
-			SRC="$SRC/*"
-		else
-			TMP_DIRNAME=${SERVER_WHITE_LIST[i+1]%/*}
-			mkdir -p "$DEST_PATH/$TMP_DIRNAME"
-		fi
-		cp -a $SRC "$DEST_PATH/${SERVER_WHITE_LIST[$i+1]}"
-	done
-}
-
-function copy_client_white_list() {
-	SRC_PATH=$1
-	DEST_PATH=$2
-
-	for (( i = 0 ; i < ${#CLIENT_WHITE_LIST[@]} ; i=i+2 ))
-	do
-		SRC="$SRC_PATH/${CLIENT_WHITE_LIST[$i]}"
-		# if directory doesn't exist, create it for copying file
-		if [ -d $SRC_PATH/${CLIENT_WHITE_LIST[i]} ]; then
-			mkdir -p "$DEST_PATH/${CLIENT_WHITE_LIST[i+1]}"
-			SRC="$SRC/*"
-		else
-			TMP_DIRNAME=${CLIENT_WHITE_LIST[i+1]%/*}
-			mkdir -p "$DEST_PATH/$TMP_DIRNAME"
-		fi
-		cp -a $SRC "$DEST_PATH/${CLIENT_WHITE_LIST[$i+1]}"
-	done
-}
-
-function copy_tools_white_list() {
-	SRC_PATH=$1
-	DEST_PATH=$2
-
-	for (( i = 0 ; i < ${#TOOLS_WHITE_LIST[@]} ; i=i+2 ))
-	do
-		SRC="$SRC_PATH/${TOOLS_WHITE_LIST[$i]}"
-		# if directory doesn't exist, create it for copying file
-		if [ -d $SRC_PATH/${TOOLS_WHITE_LIST[i]} ]; then
-			mkdir -p "$DEST_PATH/${TOOLS_WHITE_LIST[i+1]}"
-			SRC="$SRC/*"
-		else
-			TMP_DIRNAME=${TOOLS_WHITE_LIST[i+1]%/*}
-			mkdir -p "$DEST_PATH/$TMP_DIRNAME"
-		fi
-		cp -a $SRC "$DEST_PATH/${TOOLS_WHITE_LIST[$i+1]}"
-	done
-}
-
 function copy_xos_addons_white_list() {
 	SRC_PATH=$1
 	DEST_PATH=$2
@@ -338,33 +106,6 @@ function copy_xos_addons_white_list() {
 			mkdir -p "$DEST_PATH/$TMP_DIRNAME"
 		fi
 		cp -a $SRC "$DEST_PATH/${XOS_ADDONS_WHITE_LIST[$i+1]}"
-	done
-}
-
-function delete_server_black_list() {
-	SRC_PATH=$1
-
-	for (( i = 0 ; i < ${#SERVER_BLACK_LIST[@]} ; i++ ))
-	do
-		rm -Rf "$SRC_PATH/${SERVER_BLACK_LIST[i]}"
-	done
-}
-
-function delete_client_black_list() {
-	SRC_PATH=$1
-
-	for (( i = 0 ; i < ${#CLIENT_BLACK_LIST[@]} ; i++ ))
-	do
-		rm -Rf "$SRC_PATH/${CLIENT_BLACK_LIST[i]}"
-	done
-}
-
-function delete_tools_black_list() {
-	SRC_PATH=$1
-
-	for (( i = 0 ; i < ${#TOOLS_BLACK_LIST[@]} ; i++ ))
-	do
-		rm -Rf "$SRC_PATH/${TOOLS_BLACK_LIST[i]}"
 	done
 }
 
@@ -411,27 +152,17 @@ function delete_svn() {
 }
 
 function prepare_build_files() {
-    cp -r $BUILD_FILES_DIR/xtreemfs-server $TARGET_DIR/xtreemfs-server
-    cp -r $BUILD_FILES_DIR/xtreemfs-server $TARGET_DIR/xtreemfs-server-testing
-    cp -r $BUILD_FILES_DIR/xtreemfs-client $TARGET_DIR/xtreemfs-client
-    cp -r $BUILD_FILES_DIR/xtreemfs-client $TARGET_DIR/xtreemfs-client-testing
-    cp -r $BUILD_FILES_DIR/xtreemfs-tools $TARGET_DIR/xtreemfs-tools
-    cp -r $BUILD_FILES_DIR/xtreemfs-tools $TARGET_DIR/xtreemfs-tools-testing
+    cp -r $BUILD_FILES_DIR/xtreemfs $TARGET_DIR/xtreemfs
+    cp -r $BUILD_FILES_DIR/xtreemfs $TARGET_DIR/xtreemfs-testing
     find $TARGET_DIR -type f -exec sed -i "s/_VERSION_/$VERSION/g" {} \;
     
-    cp $BUILD_FILES_DIR/*-meta.xml $TARGET_DIR/
-    sed -i "s/_VERSION_/$VERSION/g" $TARGET_DIR/client-meta.xml
-    sed -i "s/_VERSION_/$VERSION/g" $TARGET_DIR/server-meta.xml
-    sed -i "s/_VERSION_/$VERSION/g" $TARGET_DIR/tools-meta.xml
+    cp $BUILD_FILES_DIR/meta.xml $TARGET_DIR/
+    sed -i "s/_VERSION_/$VERSION/g" $TARGET_DIR/meta.xml
 }
 
 function move_packages() {
-    cp $CLIENT_PACKAGE_NAME.tar.gz $TARGET_DIR/xtreemfs-client
-    mv $CLIENT_PACKAGE_NAME.tar.gz $TARGET_DIR/xtreemfs-client-testing
-    cp $SERVER_PACKAGE_NAME.tar.gz $TARGET_DIR/xtreemfs-server
-    mv $SERVER_PACKAGE_NAME.tar.gz $TARGET_DIR/xtreemfs-server-testing
-    cp $TOOLS_PACKAGE_NAME.tar.gz $TARGET_DIR/xtreemfs-tools
-    mv $TOOLS_PACKAGE_NAME.tar.gz $TARGET_DIR/xtreemfs-tools-testing
+    cp $SOURCE_TARBALL_NAME.tar.gz $TARGET_DIR/xtreemfs
+    cp $SOURCE_TARBALL_NAME.tar.gz $TARGET_DIR/xtreemfs-testing
     mv $XOS_ADDONS_PACKAGE_NAME.tar.gz $TARGET_DIR
     mv $SOURCE_TARBALL_NAME.tar.gz $TARGET_DIR
     echo $VERSION > $TARGET_DIR/VER
@@ -458,9 +189,6 @@ then
 fi
 
 BUILD_FILES_DIR=$XTREEMFS_HOME_DIR/packaging/build-service
-CLIENT_PACKAGE_NAME="XtreemFS-client-$VERSION"
-SERVER_PACKAGE_NAME="XtreemFS-server-$VERSION"
-TOOLS_PACKAGE_NAME="XtreemFS-tools-$VERSION"
 XOS_ADDONS_PACKAGE_NAME="XtreemFS-XOS-addons-$VERSION"
 SOURCE_TARBALL_NAME="XtreemFS-$VERSION"
 
@@ -472,9 +200,6 @@ create_dir $TARGET_DIR
 
 # build packages
 prepare_build_files
-build_client_package
-build_server_package
-build_tools_package
 build_xtreemos_addons
 build_source_tarball
 move_packages

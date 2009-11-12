@@ -1,0 +1,154 @@
+#!/usr/bin/make -f
+# Sample debian/rules that uses debhelper.
+# GNU copyright 1997 to 1999 by Joey Hess.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# This is the debhelper compatibility version to use.
+export DH_COMPAT=4
+
+CFLAGS = -g
+ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
+CFLAGS += -O0
+else
+CFLAGS += -O2
+endif
+
+BUILD_DIR:=$(CURDIR)/debian/xtreemfs
+export ANT_OPTS=-D"file.encoding=UTF-8"
+
+build: build-stamp
+build-stamp:
+	dh_testdir
+
+	# Add here commands to compile the package.
+	make
+	# python share/scons.py
+	# --- end custom part for compiling
+
+	touch build-stamp
+
+clean:
+	dh_testdir
+	dh_testroot
+	rm -f build-stamp
+
+	# Add here commands to clean up after the build process.
+	#make clean
+	#make -C "." clean
+	# --- end custom part for cleaning up
+
+	dh_clean
+
+install: build
+	dh_testdir
+	dh_testroot
+	dh_clean -k
+	dh_installdirs
+	
+	# Add here commands to install the package
+	# The DESTDIR Has To Be Exactly /usr/src/packages/BUILD/debian/debian/<nameOfPackage>
+	make install DESTDIR=$(BUILD_DIR)
+	
+	# remove copyright notes (let the sections below handle that)
+	rm $(BUILD_DIR)/usr/share/doc/xtreemfs-client/COPYING
+	rm $(BUILD_DIR)/usr/share/doc/xtreemfs-server/COPYING
+	rm $(BUILD_DIR)/usr/share/doc/xtreemfs-tools/COPYING
+	rmdir $(BUILD_DIR)/usr/share/doc/xtreemfs-client
+	rmdir $(BUILD_DIR)/usr/share/doc/xtreemfs-server
+	rmdir $(BUILD_DIR)/usr/share/doc/xtreemfs-tools
+	
+	# remove test program
+	rm -f $(BUILD_DIR)/usr/bin/xtfs_test
+	
+	# --- end custom part for installing
+	
+	# move files of the xtreemfs-client package
+	mkdir -p $(BUILD_DIR)-client/usr/bin
+	mv    -t $(BUILD_DIR)-client/usr/bin \
+	         $(BUILD_DIR)/usr/bin/*.xtreemfs \
+	         $(BUILD_DIR)/usr/bin/xtfs_*mount \
+	         $(BUILD_DIR)/usr/bin/xtfs_vivaldi
+	mkdir -p $(BUILD_DIR)-client/usr/share/man/man1
+	mv    -t $(BUILD_DIR)-client/usr/share/man/man1 \
+	         $(BUILD_DIR)/usr/share/man/man1/*.xtreemfs*
+	mkdir -p $(BUILD_DIR)-client/etc/xos/xtreemfs
+	mv    -t $(BUILD_DIR)-client/etc/xos/xtreemfs \
+	         $(BUILD_DIR)/etc/xos/xtreemfs/default_dir
+	mkdir -p $(BUILD_DIR)-client/usr/share/doc/xtreemfs-client
+	cp    -t $(BUILD_DIR)-client/usr/share/doc/xtreemfs-client \
+	         $(CURDIR)/COPYING
+	
+	# move files of the xtreemfs-backend package
+	mkdir -p $(BUILD_DIR)-backend/usr/share/java
+	mv    -t $(BUILD_DIR)-backend/usr/share/java \
+	         $(BUILD_DIR)/usr/share/java/XtreemFS.jar \
+	         $(BUILD_DIR)/usr/share/java/yidl.jar \
+	         $(BUILD_DIR)/usr/share/java/BabuDB.jar
+	mkdir -p $(BUILD_DIR)-backend/usr/share/doc/xtreemfs-backend
+	cp    -t $(BUILD_DIR)-backend/usr/share/doc/xtreemfs-backend \
+	         $(CURDIR)/COPYING
+	
+	# move files of the xtreemfs-server package
+	mkdir -p $(BUILD_DIR)-server/etc/init.d
+	mv    -t $(BUILD_DIR)-server/etc/init.d \
+	         $(BUILD_DIR)/etc/init.d/xtreemfs-*
+	mkdir -p $(BUILD_DIR)-server/etc/xos/xtreemfs
+	mv    -t $(BUILD_DIR)-server/etc/xos/xtreemfs \
+	         $(BUILD_DIR)/etc/xos/xtreemfs/*.properties \
+	         $(BUILD_DIR)/etc/xos/xtreemfs/generate_uuid \
+	         $(BUILD_DIR)/etc/xos/xtreemfs/postinstall_setup.sh
+	mkdir -p $(BUILD_DIR)-server/usr/share/doc/xtreemfs-server
+	cp    -t $(BUILD_DIR)-server/usr/share/doc/xtreemfs-server \
+	         $(CURDIR)/COPYING
+	
+	# move files of the xtreemfs-tools package
+	# this file has already been moved and does not have to be explicitly excluded:
+	# %exclude /usr/bin/xtfs_*mount
+	mkdir -p $(BUILD_DIR)-tools/usr/bin
+	mv    -t $(BUILD_DIR)-tools/usr/bin \
+	         $(BUILD_DIR)/usr/bin/xtfs_*
+	mkdir -p $(BUILD_DIR)-tools/usr/share/man/man1
+	mv    -t $(BUILD_DIR)-tools/usr/share/man/man1 \
+	         $(BUILD_DIR)/usr/share/man/man1/xtfs_*
+	mkdir -p $(BUILD_DIR)-tools/usr/share/doc/xtreemfs-tools
+	cp    -t $(BUILD_DIR)-tools/usr/share/doc/xtreemfs-tools \
+	         $(CURDIR)/COPYING
+
+# Build architecture-independent files here.
+binary-indep: build install
+	# We have nothing to do by default.
+
+# Build architecture-dependent files here.
+binary-arch: build install
+	dh_testdir
+	dh_testroot
+	#dh_installdebconf
+	dh_installdocs
+	dh_installexamples
+	dh_installmenu
+	#dh_installlogrotate
+	#dh_installemacsen
+	#dh_installpam
+	#dh_installmime
+	#dh_installinit
+	dh_installcron
+	dh_installman
+	dh_installinfo
+	#dh_undocumented
+	dh_installchangelogs
+	dh_link
+	dh_strip
+	dh_compress
+	dh_fixperms
+	#dh_makeshlibs
+	dh_installdeb
+	#dh_perl
+	dh_shlibdeps
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+binary: binary-indep binary-arch
+.PHONY: build clean binary-indep binary-arch binary install

@@ -32,26 +32,18 @@ if [ $CMD == "test" ]; then
   # create a tmp dir, check out current build files, delete all files
   mkdir -p $TMP_DIR
   cd $TMP_DIR
-  osc co home:xtreemfs xtreemfs-client-testing
-  osc co home:xtreemfs xtreemfs-server-testing
-  osc co home:xtreemfs xtreemfs-tools-testing
-  osc delete $TMP_DIR/home:xtreemfs/xtreemfs-client-testing/*
-  osc delete $TMP_DIR/home:xtreemfs/xtreemfs-server-testing/*
-  osc delete $TMP_DIR/home:xtreemfs/xtreemfs-tools-testing/*
+  osc co home:xtreemfs xtreemfs-testing
+  osc delete $TMP_DIR/home:xtreemfs/xtreemfs-testing/*
   cd -
   cd $TMP_DIR/home:xtreemfs
-  osc ci -m " " xtreemfs-client-testing xtreemfs-server-testing xtreemfs-tools-testing
+  osc ci -m " " xtreemfs-testing
   cd -
   
   # copy all new files, check in files
-  cp xtreemfs-client-testing/* $TMP_DIR/home:xtreemfs/xtreemfs-client-testing
-  cp xtreemfs-server-testing/* $TMP_DIR/home:xtreemfs/xtreemfs-server-testing
-  cp xtreemfs-tools-testing/* $TMP_DIR/home:xtreemfs/xtreemfs-tools-testing
-  osc add $TMP_DIR/home:xtreemfs/xtreemfs-client-testing/*
-  osc add $TMP_DIR/home:xtreemfs/xtreemfs-server-testing/*
-  osc add $TMP_DIR/home:xtreemfs/xtreemfs-tools-testing/*
+  cp xtreemfs-testing/* $TMP_DIR/home:xtreemfs/xtreemfs-testing
+  osc add $TMP_DIR/home:xtreemfs/xtreemfs-testing/*
   cd $TMP_DIR/home:xtreemfs
-  osc ci -m " " xtreemfs-client-testing xtreemfs-server-testing xtreemfs-tools-testing
+  osc ci -m " " xtreemfs-testing
   cd -
   
   rm -rf $TMP_DIR
@@ -59,33 +51,25 @@ if [ $CMD == "test" ]; then
 elif [ $CMD == "release" ]; then
     
   # create release packages on the server
-  osc meta pkg home:xtreemfs xtreemfs-client-$VERSION --file client-meta.xml
-  osc meta pkg home:xtreemfs xtreemfs-server-$VERSION --file server-meta.xml
-  osc meta pkg home:xtreemfs xtreemfs-tools-$VERSION --file tools-meta.xml
+  osc meta pkg home:xtreemfs xtreemfs-$VERSION --file meta.xml
       
   # create a tmp dir, check out current build files
   mkdir -p $TMP_DIR
   cd $TMP_DIR
   
   # copy the source packes to the new packages
-  osc co home:xtreemfs xtreemfs-client-$VERSION
-  osc co home:xtreemfs xtreemfs-server-$VERSION
-  osc co home:xtreemfs xtreemfs-tools-$VERSION
+  osc co home:xtreemfs xtreemfs-$VERSION
   
   cd -
   
-  cp xtreemfs-client/* $TMP_DIR/home:xtreemfs/xtreemfs-client-$VERSION
-  cp xtreemfs-server/* $TMP_DIR/home:xtreemfs/xtreemfs-server-$VERSION
-  cp xtreemfs-tools/* $TMP_DIR/home:xtreemfs/xtreemfs-tools-$VERSION
+  cp xtreemfs/* $TMP_DIR/home:xtreemfs/xtreemfs-$VERSION
     
   # add and commit the new files
-  osc add $TMP_DIR/home:xtreemfs/xtreemfs-client-$VERSION/*
-  osc add $TMP_DIR/home:xtreemfs/xtreemfs-server-$VERSION/*
-  osc add $TMP_DIR/home:xtreemfs/xtreemfs-tools-$VERSION/*
+  osc add $TMP_DIR/home:xtreemfs/xtreemfs-$VERSION/*
   
   cd -
   cd $TMP_DIR/home:xtreemfs
-  osc ci -m " " xtreemfs-client-$VERSION xtreemfs-server-$VERSION xtreemfs-tools-$VERSION
+  osc ci -m " " xtreemfs-$VERSION
   cd -
   
   rm -rf $TMP_DIR

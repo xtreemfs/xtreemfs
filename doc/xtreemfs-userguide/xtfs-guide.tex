@@ -59,7 +59,7 @@ This is the very short version to help you set up a local installation of Xtreem
 	\begin{enumerate}
 		\item Download the RPMs or DEBs for your system from the XtreemFS website (\href{http://www.xtreemfs.org}{http://www.xtreemfs.org})
 		\item open a root console (\texttt{su} or \texttt{sudo})
-		\item install with \texttt{rpm -Uhv xtreemfs-client-1.1.x.rpm xtreemfs-server-1.1.x.rpm}
+		\item install with \texttt{rpm -Uhv xtreemfs*-1.1.x.rpm}
 	\end{enumerate}
 \item Start the Directory Service:\\
 	\texttt{/etc/init.d/xtreemfs-dir start}
@@ -197,7 +197,7 @@ This chapter describes how to install and set up the server side of an XtreemFS 
 
 \section{Installation}
 
-When installing XtreemFS server components, you can choose from two different installation sources: you can download one of the \emph{pre-packaged releases} that we create for most Linux distributions or you can install directly from the \emph{source tarball}. 
+When installing XtreemFS server components, you can choose from two different installation sources: you can download one of the \emph{pre-packaged releases} that we create for most Linux distributions or you can install directly from the \emph{source tarball}.
 
 Note that the source tarball contains the complete distribution of XtreemFS, which also includes client and tools. Currently, binary distributions of the server are only available for Linux.
 
@@ -213,7 +213,7 @@ On RPM-based distributions (RedHat, Fedora, SuSE, Mandriva, XtreemOS) you can in
 
 
 \begin{verbatim}
-$> rpm -i xtreemfs-server-1.1.x.rpm
+$> rpm -i xtreemfs-server-1.1.x.rpm xtreemfs-backend-1.1.x.rpm
 \end{verbatim}
 
 
@@ -221,7 +221,7 @@ For Debian-based distributions, please use the \texttt{.deb} package provided an
 
 
 \begin{verbatim}
-$> dpkg -i xtreemfs-server-1.1.x.deb
+$> dpkg -i xtreemfs-server-1.1.x.deb xtreemfs-backend-1.1.x.deb
 \end{verbatim}
 
 
@@ -238,7 +238,7 @@ $> make server
 This will build the XtreemFS server and Java-based tools. When done, execute
 
 \begin{verbatim}
-$> sudo make install
+$> sudo make install-server
 \end{verbatim}
 
 to install the server components. Finally, you will be asked to execute a post-installation script
@@ -915,7 +915,7 @@ libssl-dev >= 0.9 (DEB-based distros)
 When done, execute
 
 \begin{verbatim}
-$> sudo make install
+$> sudo make install-client
 \end{verbatim}
 
 to complete the installation of XtreemFS.
@@ -1041,8 +1041,8 @@ The following list contains the most common problems and the solutions.
  \textbf{Problem} & \textbf{When trying to mount a volume, \texttt{ONC-RPC exception: system error} appears on the console.}\\
  \textbf{Solution} & The most common reason are incompatible protocol versions in client and server. Please make sure that client and server have the same release version numbers. They can be determined as follows:
    \begin{itemize}
-    \item[Server:] check the status pages. Alternatively, execute \texttt{rpm -qa | grep XtreemFS-server} on RPM-based distributions, or \texttt{dpkg -l | grep xtreemfs-server} on DEB-based distributions.
-    \item[Client:] execute \texttt{rpm -qa | grep XtreemFS-client} on RPM-based distributions, or \texttt{dpkg -l | grep xtreemfs-client} on DEB-based distributions.
+    \item[Server:] check the status pages. Alternatively, execute \texttt{rpm -qa | grep xtreemfs-server} on RPM-based distributions, or \texttt{dpkg -l | grep xtreemfs-server} on DEB-based distributions.
+    \item[Client:] execute \texttt{rpm -qa | grep xtreemfs-client} on RPM-based distributions, or \texttt{dpkg -l | grep xtreemfs-client} on DEB-based distributions.
    \end{itemize}
 \end{tabular}
 
@@ -1082,7 +1082,7 @@ To make use of most of the advanced XtreemFS features, XtreemFS offers a variety
 
 \section{Installation}
 
-When installing the XtreemFS tool suite, you can choose from two different installation sources: you can download one of the \emph{pre-packaged releases} that we create for most Linux distributions or you can install directly from the \emph{source tarball}. 
+When installing the XtreemFS tool suite, you can choose from two different installation sources: you can download one of the \emph{pre-packaged releases} that we create for most Linux distributions or you can install directly from the \emph{source tarball}.
 
 Note that the source tarball contains the complete distribution of XtreemFS, which also includes client and server. Currently, binary distributions of the tools are only available for Linux.
 
@@ -1098,7 +1098,7 @@ On RPM-based distributions (RedHat, Fedora, SuSE, Mandriva, XtreemOS) you can in
 
 
 \begin{verbatim}
-$> rpm -i xtreemfs-tools-1.1.x.rpm
+$> rpm -i xtreemfs-tools-1.1.x.rpm xtreemfs-backend-1.1.x.rpm
 \end{verbatim}
 
 
@@ -1106,7 +1106,7 @@ For Debian-based distributions, please use the \texttt{.deb} package provided an
 
 
 \begin{verbatim}
-$> dpkg -i xtreemfs-tools-1.1.x.deb
+$> dpkg -i xtreemfs-tools-1.1.x.deb xtreemfs-backend-1.1.x.deb
 \end{verbatim}
 
 
@@ -1117,13 +1117,13 @@ All XtreemFS tools will be installed to \texttt{/usr/bin}.
 Extract the tarball with the sources. Change to the top level directory and execute
 
 \begin{verbatim}
-$> make
+$> make server
 \end{verbatim}
 
 When done, execute
 
 \begin{verbatim}
-$> sudo make install
+$> sudo make install-tools
 \end{verbatim}
 
 to complete the installation. Note that this will also install the XtreemFS client and servers.
@@ -1473,7 +1473,7 @@ No authorization - everyone can do everything. This policy is useful if performa
 This access policy implements the traditional POSIX permissions commonly used on Linux, as well as POSIX ACLs, an extension that provides for access control at the granularity of single users and groups. POSIX permissions should be used as the default, as it guarantees maximum compatibility with other file systems.
 
  \item Volume ACLs (policy Id 3)\index{Access Policy!Volume ACLs}\index{Volume ACLs Access Policy}\\
-Volume ACLs provide an access control model similar to POSIX ACLs \& Permissions, but only allow one ACL for the whole volume. This means that there is no recursive evaluation of access rights which yields a higher performance at the price of a very coarse-grained access control. 
+Volume ACLs provide an access control model similar to POSIX ACLs \& Permissions, but only allow one ACL for the whole volume. This means that there is no recursive evaluation of access rights which yields a higher performance at the price of a very coarse-grained access control.
 \end{itemize}
 
 
@@ -1542,7 +1542,7 @@ The following predefined policies exist:
 		\item \texttt{max\_cache\_size=1000}\\
 			Sets the size of the address cache that is used to lookup IP-to-datacenter matches.
 	\end{itemize}
-	
+
 	A sample datacenter map could look like this:
 
 	\begin{verbatim}
