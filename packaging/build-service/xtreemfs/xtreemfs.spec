@@ -47,8 +47,8 @@ Summary:    XtreemFS client
 Group:      Networking
 #Requires:   %{name} == %{version}-%{release}
 Requires:   fuse >= 2.6
-Provides:   XtreemFS-client
-Obsoletes:  XtreemFS-client
+Provides:   XtreemFS-client = %{version}
+Obsoletes:  XtreemFS-client < %{version}
 
 %description client
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
@@ -73,8 +73,8 @@ Group:      Networking
 Requires:   %{name}-backend == %{version}-%{release}
 Requires:   grep sudo
 Requires:   jre >= 1.6.0
-Provides:   XtreemFS-server
-Obsoletes:  XtreemFS-server
+Provides:   XtreemFS-server = %{version}
+Obsoletes:  XtreemFS-server < %{version}
 
 %description server
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
@@ -89,8 +89,8 @@ Requires:   %{name}-backend == %{version}-%{release}
 Requires:   python >= 2.6
 Requires:   attr
 Requires:   jre >= 1.6.0
-Provides:   XtreemFS-tools
-Obsoletes:  XtreemFS-tools
+Provides:   XtreemFS-tools = %{version}
+Obsoletes:  XtreemFS-tools < %{version}
 
 %description tools
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
@@ -136,6 +136,20 @@ rmdir $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-tools
 
 # remove test program
 rm -f $RPM_BUILD_ROOT/usr/bin/xtfs_test
+
+%post server
+XTREEMFS_CONFIG_DIR=/etc/xos/xtreemfs/
+
+# generate UUIDs
+if [ -x $XTREEMFS_CONFIG_DIR/generate_uuid ]; then
+  $XTREEMFS_CONFIG_DIR/generate_uuid $XTREEMFS_CONFIG_DIR/dirconfig.properties
+  $XTREEMFS_CONFIG_DIR/generate_uuid $XTREEMFS_CONFIG_DIR/mrcconfig.properties
+  $XTREEMFS_CONFIG_DIR/generate_uuid $XTREEMFS_CONFIG_DIR/osdconfig.properties
+else
+  echo "UUID can't be generated automatically. Please enter a correct UUID in each config file of a xtreemfs service."
+fi
+
+$XTREEMFS_CONFIG_DIR/postinstall_setup.sh
 
 %clean
 rm -rf $RPM_BUILD_ROOT

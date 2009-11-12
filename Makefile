@@ -71,7 +71,11 @@ install-server:
 	@cp src/servers/lib/yidl.jar $(XTREEMFS_JAR_DIR)
 
 	@mkdir -p $(XTREEMFS_CONFIG_DIR)
-	@cp etc/xos/xtreemfs/*config.properties $(XTREEMFS_CONFIG_DIR)
+#	@cp etc/xos/xtreemfs/*config.properties $(XTREEMFS_CONFIG_DIR)
+	# delete UUID from config-files
+	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/dirconfig.properties > $(XTREEMFS_CONFIG_DIR)/dirconfig.properties
+	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/mrcconfig.properties > $(XTREEMFS_CONFIG_DIR)/mrcconfig.properties
+	@grep -v '^uuid\W*=\W*\w\+' etc/xos/xtreemfs/osdconfig.properties > $(XTREEMFS_CONFIG_DIR)/osdconfig.properties
 
 	@cp packaging/generate_uuid $(XTREEMFS_CONFIG_DIR)
 	@cp packaging/postinstall_setup.sh $(XTREEMFS_CONFIG_DIR)
