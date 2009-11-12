@@ -242,7 +242,6 @@ public class HeartbeatThread extends LifeCycleThread {
     
     public void run() {
         
-        List<RPCResponse> responses = new LinkedList<RPCResponse>();
         Map<String, Long> verMap = new HashMap<String, Long>();
         
         notifyStarted();
@@ -252,7 +251,6 @@ public class HeartbeatThread extends LifeCycleThread {
             
             synchronized (this) {
                 
-                responses.clear();
                 
                 try {
                     
@@ -265,7 +263,6 @@ public class HeartbeatThread extends LifeCycleThread {
                             // ... remove old DS entry if necessary
                             r1 = client.xtreemfs_service_get_by_uuid(null, reg.getUuid());
                             long currentVersion = 0;
-                            responses.add(r1);
                             ServiceSet olset = r1.get();
                             if (olset.size() > 0) {
                                 currentVersion = olset.get(0).getVersion();
@@ -273,7 +270,6 @@ public class HeartbeatThread extends LifeCycleThread {
                             
                             reg.setVersion(currentVersion);
                             r2 = client.xtreemfs_service_register(null, reg);
-                            responses.add(r2);
                             r2.get();
                             
                             if (Logging.isDebug())
@@ -296,9 +292,6 @@ public class HeartbeatThread extends LifeCycleThread {
                 } catch (InterruptedException ex) {
                     quit = true;
                     break;
-                } finally {
-                    for (RPCResponse resp : responses)
-                        resp.freeBuffers();
                 }
                 
                 if (quit)
