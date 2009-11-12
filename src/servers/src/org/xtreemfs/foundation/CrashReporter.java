@@ -41,19 +41,22 @@ public class CrashReporter {
         try {
             StringBuilder report = new StringBuilder();
             report.append("----------------------------------------------------------------\n");
-            report.append("We are sorry, but your "+service+" has crashed. To report an bug\n");
+            report.append("We are sorry, but your "+service+" has crashed. To report this bug\n");
             report.append("please go to http://www.xtreemfs.org and file an issue and attach\n");
             report.append("this crash report.\n\n");
             report.append("service: ");
             report.append(service);
             report.append("    version: ");
             report.append(version);
+            report.append("\n");
             report.append("JVM version: ");
             report.append(System.getProperty("java.version"));
             report.append(" ");
             report.append(System.getProperty("java.vendor"));
             report.append(" on ");
             report.append(System.getProperty("os.name"));
+            report.append(" ");
+            report.append(System.getProperty("os.version"));
             report.append("\n");
             report.append("exception: ");
             report.append(cause.toString());
@@ -81,7 +84,9 @@ public class CrashReporter {
                     report.append(e.toString());
                     report.append("\n");
                 }
+                report.append("\n");
             }
+
             report.append("----------------------------------------------------------------\n");
             return report.toString();
         } catch (Exception ex) {

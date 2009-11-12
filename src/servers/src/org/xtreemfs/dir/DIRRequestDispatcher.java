@@ -229,7 +229,11 @@ public class DIRRequestDispatcher extends LifeCycleThread
         } catch (InterruptedException ex) {
             quit = true;
         } catch (Exception ex) {
+            final String report = CrashReporter.createCrashReport("DIR", VersionManagement.RELEASE_VERSION, ex);
+            System.out.println(report);
+            CrashReporter.reportXtreemFSCrash(report);
             notifyCrashed(ex);
+            System.exit(2);
         }
         notifyStopped();
     }
