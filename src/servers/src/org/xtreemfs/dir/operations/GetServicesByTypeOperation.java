@@ -81,7 +81,7 @@ public class GetServicesByTypeOperation extends DIROperation {
                         ServiceSet services = new ServiceSet();
                         
                         long now = System.currentTimeMillis() / 1000l;
-                        
+
                         while (iter.hasNext()) {
                             final Entry<byte[],byte[]> e = iter.next();
                             final ServiceRecord servEntry = new ServiceRecord(ReusableBuffer.wrap(e.getValue()));

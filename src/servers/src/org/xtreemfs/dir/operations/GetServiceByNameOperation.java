@@ -40,6 +40,7 @@ import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_nameRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_get_by_nameResponse;
 
 /**
  *
@@ -92,8 +93,8 @@ public class GetServiceByNameOperation extends DIROperation {
                                 Long.toString(secondsSinceLastUpdate));
 
                     }
-                    
-                    ((DIRRequest) context).sendSuccess(request.createDefaultResponse());
+                    xtreemfs_service_get_by_nameResponse response = new xtreemfs_service_get_by_nameResponse(services);
+                    ((DIRRequest) context).sendSuccess(response);
                 } catch (IOException e) {
                     Logging.logError(Logging.LEVEL_ERROR, this, e);
                     ((DIRRequest) context).sendInternalServerError(e);
