@@ -112,7 +112,7 @@ public class SSLOptions {
     public SSLOptions(InputStream serverCredentialFile, String serverCredentialFilePassphrase,
         InputStream trustedCertificatesFile, String trustedCertificatesFilePassphrase) throws IOException {
         this(serverCredentialFile, serverCredentialFilePassphrase, PKCS12_CONTAINER, trustedCertificatesFile,
-            trustedCertificatesFilePassphrase, PKCS12_CONTAINER, false);
+            trustedCertificatesFilePassphrase, JKS_CONTAINER, false);
     }
     
     /**
@@ -134,7 +134,7 @@ public class SSLOptions {
         InputStream trustedCertificatesFile, String trustedCertificatesFilePassphrase,
         boolean authenticationWithoutEncryption, boolean useGridSSL) throws IOException {
         this(serverCredentialFile, serverCredentialFilePassphrase, PKCS12_CONTAINER, trustedCertificatesFile,
-            trustedCertificatesFilePassphrase, PKCS12_CONTAINER, authenticationWithoutEncryption,useGridSSL);
+            trustedCertificatesFilePassphrase, JKS_CONTAINER, authenticationWithoutEncryption,useGridSSL);
     }
     
     /**
