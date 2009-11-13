@@ -132,9 +132,9 @@ public class SSLOptions {
      */
     public SSLOptions(InputStream serverCredentialFile, String serverCredentialFilePassphrase,
         InputStream trustedCertificatesFile, String trustedCertificatesFilePassphrase,
-        boolean authenticationWithoutEncryption) throws IOException {
+        boolean authenticationWithoutEncryption, boolean useGridSSL) throws IOException {
         this(serverCredentialFile, serverCredentialFilePassphrase, PKCS12_CONTAINER, trustedCertificatesFile,
-            trustedCertificatesFilePassphrase, PKCS12_CONTAINER, authenticationWithoutEncryption);
+            trustedCertificatesFilePassphrase, PKCS12_CONTAINER, authenticationWithoutEncryption,useGridSSL);
     }
     
     /**

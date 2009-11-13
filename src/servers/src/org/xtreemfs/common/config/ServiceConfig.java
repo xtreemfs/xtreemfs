@@ -33,6 +33,7 @@ import java.util.StringTokenizer;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
+import org.xtreemfs.interfaces.Constants;
 
 public class ServiceConfig extends Config {
     
@@ -248,6 +249,17 @@ public class ServiceConfig extends Config {
      */
     public boolean isGRIDSSLmode() {
         return useGRIDSSLmode;
+    }
+
+    public String getURLScheme() {
+        if (isUsingSSL()) {
+            if (isGRIDSSLmode()) {
+                return Constants.ONCRPCG_SCHEME;
+            } else {
+                return Constants.ONCRPCS_SCHEME;
+            }
+        }
+        return Constants.ONCRPC_SCHEME;
     }
     
 }

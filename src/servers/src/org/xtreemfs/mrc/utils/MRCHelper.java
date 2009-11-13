@@ -289,10 +289,12 @@ public class MRCHelper {
             case object_type:
                 String ref = sMan.getSoftlinkTarget(file.getId());
                 return ref != null ? "3" : file.isDirectory() ? "2" : "1";
-            case url:
+            case url: {
                 InetSocketAddress addr = config.getDirectoryService();
-                return (config.isUsingSSL() ? Constants.ONCRPCS_SCHEME : Constants.ONCRPC_SCHEME) + "://"
+
+                return config.getURLScheme() + "://"
                     + addr.getAddress().getCanonicalHostName() + ":" + addr.getPort() + "/" + path;
+            }
             case owner:
                 return file.getOwnerId();
             case group:

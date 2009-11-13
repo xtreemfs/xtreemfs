@@ -53,6 +53,7 @@ import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
 import org.xtreemfs.interfaces.ObjectData;
@@ -814,11 +815,12 @@ public class xtfs_repl {
                 && (options.get(OPTION_SSL_TRUSTED_CA_FILE).stringValue != null)
                 && (options.get(OPTION_SSL_TRUSTED_CA_PASSWORD).stringValue != null)) { // SSL
                 // set
+                final boolean gridSSL = url.startsWith(Constants.ONCRPCG_SCHEME);
                 sslOptions = new SSLOptions(new FileInputStream(
                     options.get(OPTION_SSL_CREDS_FILE).stringValue),
                     options.get(OPTION_SSL_CREDS_PASSWORD).stringValue, new FileInputStream(options
                             .get(OPTION_SSL_TRUSTED_CA_FILE).stringValue), options
-                            .get(OPTION_SSL_TRUSTED_CA_PASSWORD).stringValue);
+                            .get(OPTION_SSL_TRUSTED_CA_PASSWORD).stringValue,false,gridSSL);
             }
             
             system = new xtfs_repl(filePath, dirAddress, volume, volPath, sslOptions);
