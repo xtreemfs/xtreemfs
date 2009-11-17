@@ -36,10 +36,7 @@ import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
-import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
-import org.xtreemfs.interfaces.DIRInterface.replication_toMasterRequest;
-import org.xtreemfs.interfaces.DIRInterface.replication_toMasterResponse;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getRequest;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_getResponse;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_address_mappings_removeRequest;
@@ -64,13 +61,15 @@ import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_registerResponse;
 /**
 *
 * @author bjko
+* @since 13/11/2009
 */
-public class DIRClientBackend extends ONCRPCClient {
-    public DIRClientBackend(RPCNIOSocketClient client, InetSocketAddress defaultServer) {
+@SuppressWarnings("unchecked")
+class DIRClientBackend extends ONCRPCClient {
+    DIRClientBackend(RPCNIOSocketClient client, InetSocketAddress defaultServer) {
         super(client, defaultServer, 1, DIRInterface.getVersion());
     }
 
-    public RPCResponse<Long> xtreemfs_global_time_get(InetSocketAddress server) {
+    public RPCResponse<Long> _xtreemfs_global_time_get(InetSocketAddress server) {
         xtreemfs_global_time_s_getRequest rq = new xtreemfs_global_time_s_getRequest();
         
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Long>() {
@@ -84,7 +83,8 @@ public class DIRClientBackend extends ONCRPCClient {
         return r;
     }
 
-    public RPCResponse<AddressMappingSet> xtreemfs_address_mappings_get(InetSocketAddress server, String uuid) {
+    public RPCResponse<AddressMappingSet> _xtreemfs_address_mappings_get(InetSocketAddress server, Object[] args) {
+        String uuid = (String) args[0];
         xtreemfs_address_mappings_getRequest rq = new xtreemfs_address_mappings_getRequest(uuid);
         
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<AddressMappingSet>() {
@@ -99,7 +99,8 @@ public class DIRClientBackend extends ONCRPCClient {
         return r;
     }
 
-    public RPCResponse<Long> xtreemfs_address_mappings_set(InetSocketAddress server, AddressMappingSet addressMappings) {
+    public RPCResponse<Long> _xtreemfs_address_mappings_set(InetSocketAddress server, Object[] args) {
+        AddressMappingSet addressMappings = (AddressMappingSet) args[0];
         xtreemfs_address_mappings_setRequest rq = new xtreemfs_address_mappings_setRequest(addressMappings);
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Long>() {
 
@@ -113,7 +114,8 @@ public class DIRClientBackend extends ONCRPCClient {
         return r;
     }
 
-    public RPCResponse xtreemfs_address_mappings_remove(InetSocketAddress server, String uuid) {
+    public RPCResponse _xtreemfs_address_mappings_remove(InetSocketAddress server, Object[] args) {
+        String uuid = (String) args[0];
         xtreemfs_address_mappings_removeRequest rq = new xtreemfs_address_mappings_removeRequest(uuid);
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
 
@@ -127,7 +129,8 @@ public class DIRClientBackend extends ONCRPCClient {
         return r;
     }
 
-    public RPCResponse<Long> xtreemfs_service_register(InetSocketAddress server, Service registry) {
+    public RPCResponse<Long> _xtreemfs_service_register(InetSocketAddress server, Object[] args) {
+        Service registry = (Service) args[0];
         xtreemfs_service_registerRequest rq = new xtreemfs_service_registerRequest(registry);
         
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Long>() {
@@ -142,7 +145,8 @@ public class DIRClientBackend extends ONCRPCClient {
         return r;
     }
 
-    public RPCResponse xtreemfs_service_deregister(InetSocketAddress server, String uuid) {
+    public RPCResponse _xtreemfs_service_deregister(InetSocketAddress server, Object[] args) {
+        String uuid = (String) args[0];
         xtreemfs_service_deregisterRequest rq = new xtreemfs_service_deregisterRequest(uuid);
         
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
@@ -157,7 +161,8 @@ public class DIRClientBackend extends ONCRPCClient {
         return r;
     }
 
-    public RPCResponse xtreemfs_service_offline(InetSocketAddress server, String uuid) {
+    public RPCResponse _xtreemfs_service_offline(InetSocketAddress server, Object[] args) {
+        String uuid = (String) args[0];
         xtreemfs_service_offlineRequest rq = new xtreemfs_service_offlineRequest(uuid);
 
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
@@ -172,7 +177,8 @@ public class DIRClientBackend extends ONCRPCClient {
         return r;
     }
 
-    public RPCResponse<ServiceSet> xtreemfs_service_get_by_name(InetSocketAddress server, String volumeName) {
+    public RPCResponse<ServiceSet> _xtreemfs_service_get_by_name(InetSocketAddress server, Object[] args) {
+        String volumeName = (String) args[0];
         xtreemfs_service_get_by_nameRequest rq = new xtreemfs_service_get_by_nameRequest(volumeName);
         
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<ServiceSet>() {
@@ -187,7 +193,8 @@ public class DIRClientBackend extends ONCRPCClient {
         return r;
     }
 
-    public RPCResponse<ServiceSet> xtreemfs_service_get_by_type(InetSocketAddress server, ServiceType serviceType) {
+    public RPCResponse<ServiceSet> _xtreemfs_service_get_by_type(InetSocketAddress server, Object[] args) {
+        ServiceType serviceType = (ServiceType) args[0];
         xtreemfs_service_get_by_typeRequest rq = new xtreemfs_service_get_by_typeRequest(serviceType);
         
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<ServiceSet>() {
@@ -202,7 +209,8 @@ public class DIRClientBackend extends ONCRPCClient {
         return r;
     }
 
-    public RPCResponse<ServiceSet> xtreemfs_service_get_by_uuid(InetSocketAddress server, String uuid) {
+    public RPCResponse<ServiceSet> _xtreemfs_service_get_by_uuid(InetSocketAddress server, Object[] args) {
+        String uuid = (String) args[0];
         xtreemfs_service_get_by_uuidRequest rq = new xtreemfs_service_get_by_uuidRequest(uuid);
         
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<ServiceSet>() {
@@ -214,22 +222,6 @@ public class DIRClientBackend extends ONCRPCClient {
                 return resp.getServices();
             }
         });
-        return r;
-    }
-
-    public RPCResponse<Object> replication_toMaster(InetSocketAddress server, 
-            UserCredentials credentials) {
-        
-        replication_toMasterRequest rq = new replication_toMasterRequest();
-        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Object>() {
-
-            @Override
-            public Object getResult(ReusableBuffer data) {
-                final replication_toMasterResponse resp = new replication_toMasterResponse();
-                resp.unmarshal(new XDRUnmarshaller(data));
-                return null;
-            }
-        }, credentials);
         return r;
     }
 }
