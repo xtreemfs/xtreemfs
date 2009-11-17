@@ -230,14 +230,7 @@ public class TestEnvironment {
     }
     
     public void shutdown() {
-        
-        if (enabledServs.contains(Services.UUID_RESOLVER)) {
-            try {
-                UUIDResolver.shutdown();
-            } catch (Throwable th) {
-            }
-        }
-        
+                
         if (enabledServs.contains(Services.MRC)) {
             try {
                 mrc.shutdown();
@@ -245,13 +238,20 @@ public class TestEnvironment {
                 th.printStackTrace();
             }
         }
-        
+                
         if (enabledServs.contains(Services.OSD)) {
             try {
                 for (OSDRequestDispatcher osd : osds)
                     osd.shutdown();
             } catch (Throwable th) {
                 th.printStackTrace();
+            }
+        }
+        
+        if (enabledServs.contains(Services.UUID_RESOLVER)) {
+            try {
+                UUIDResolver.shutdown();
+            } catch (Throwable th) {
             }
         }
         

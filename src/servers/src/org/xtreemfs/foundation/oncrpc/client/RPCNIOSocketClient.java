@@ -108,7 +108,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         }
         this.requestTimeout = requestTimeout;
         this.connectionTimeout = connectionTimeout;
-        connections = new HashMap();
+        connections = new HashMap<InetSocketAddress, ServerConnection>();
         selector = Selector.open();
         this.sslOptions = sslOptions;
         quit = false;
@@ -130,7 +130,11 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         int versionId, int procedureId, yidl.runtime.Object message, Object attachment, UserCredentials credentials) {
         ONCRPCRequest rec = new ONCRPCRequest(listener, this.transactionId.getAndIncrement(), programId,
             versionId, procedureId, message, attachment, credentials);
-        sendRequest(server, rec);
+        try {
+            sendRequest(server, rec);
+        } catch (Throwable e) { // CancelledKeyException, RuntimeException (caused by missing TimeSyncThread)
+            listener.requestFailed(rec, new IOException(e));
+        } 
     }
     
     private void sendRequest(InetSocketAddress server, ONCRPCRequest request) {
@@ -583,7 +587,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
         final ServerConnection con = (ServerConnection) key.attachment();
         final ChannelIO channel = con.getChannel();
         
-        List<ONCRPCRequest> cancelRq = new LinkedList();
+        List<ONCRPCRequest> cancelRq = new LinkedList<ONCRPCRequest>();
         synchronized (con) {
             // remove the connection from the selector and close socket
             try {
@@ -631,7 +635,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                         }
                     } else {
                         // check for request timeout
-                        List<ONCRPCRequest> cancelRq = new LinkedList();
+                        List<ONCRPCRequest> cancelRq = new LinkedList<ONCRPCRequest>();
                         synchronized (con) {
                             Iterator<ONCRPCRequest> iter = con.getRequests().values().iterator();
                             while (iter.hasNext()) {

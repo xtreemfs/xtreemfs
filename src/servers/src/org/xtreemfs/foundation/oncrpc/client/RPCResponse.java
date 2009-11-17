@@ -143,4 +143,30 @@ public class RPCResponse<V extends Object> implements RPCResponseListener {
     public long getDuration() {
         return request.getDuration();
     }
+    
+    /**
+     * @return the decoder
+     */
+    public RPCResponseDecoder<V> getDecoder() {
+        return decoder;
+    }
+    
+    /**
+     * Fills the given information into this request. Respecting the
+     * changes for the listener or a synchronously waiting thread.
+     * @param rp
+     */
+    public synchronized void fill (RPCResponse<V> rp) {
+        synchronized (rp) {
+            this.attachment = rp.attachment;
+            this.ioError = rp.ioError;
+            this.remoteEx = rp.remoteEx;
+            if (rp.request != null) {
+                this.request = rp.request;
+                if (listener != null) 
+                    listener.responseAvailable(this);
+                this.notifyAll();
+            }   
+        }
+    }
 }

@@ -436,7 +436,7 @@ public class dir_replication_test {
         try {
             rp = masterClient.xtreemfs_service_register(null, service);
             long result = rp.get();
-            assert(result == 1) : "A previous entry was modified unexpectedly.";
+            assert(result == 1) : "A previous entry was modified unexpectedly.("+result+")";
             
             if (availableServices.size() == MAX_HISTORY_SIZE)
                 availableServices.remove(randomServiceKey());

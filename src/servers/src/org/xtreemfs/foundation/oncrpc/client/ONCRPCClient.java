@@ -36,22 +36,22 @@ public abstract class ONCRPCClient {
     /**
      * the rpc client
      */
-    private final RPCNIOSocketClient client;
+    private final RPCNIOSocketClient    client;
 
     /**
      * default server address
      */
-    private InetSocketAddress        defaultServer;
+    private volatile InetSocketAddress  defaultServer;
 
     /**
      * fixed program Id
      */
-    private final int programId;
+    private final int                   programId;
 
     /**
      * fixed protocol version number used
      */
-    private final int versionNumber;
+    private final int                   versionNumber;
 
     /**
      * Creates a new ONCRPC client
@@ -73,10 +73,13 @@ public abstract class ONCRPCClient {
     public ONCRPCClient(RPCNIOSocketClient client, int programId, int versionNumber) {
         this(client, null, programId, versionNumber);
     }
+    
+    @SuppressWarnings("unchecked")
     protected RPCResponse sendRequest(InetSocketAddress server, int procId, yidl.runtime.Object request, RPCResponseDecoder decoder) {
         return sendRequest(server, procId, request, decoder, null);
     }
 
+    @SuppressWarnings("unchecked")
     protected RPCResponse sendRequest(InetSocketAddress server, int procId, yidl.runtime.Object request, RPCResponseDecoder decoder, UserCredentials credentials) {
         RPCResponse rpcresp = new RPCResponse(decoder);
         if ((server == null) && (defaultServer == null))
@@ -94,4 +97,8 @@ public abstract class ONCRPCClient {
         return this.defaultServer;
     }
 
+    public void updateDefaultServerAddress(InetSocketAddress address) {
+        assert (address != null) : "New address must not be null!";
+        this.defaultServer = address;
+    }
 }
