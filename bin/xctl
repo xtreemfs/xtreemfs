@@ -5,10 +5,10 @@ from time import sleep
 
 
 # Constants
-DEBUG_LEVEL_DEFAULT = 0
+DEBUG_ME = True
+DEBUG_LEVEL_DEFAULT = "0"
 
 # Paths
-CLIENT_MOUNT_POINT_DIR_PATH_DEFAULT = "mnt"
 DIR_DATABASE_DIR_PATH_DEFAULT = os.path.join( "data", "dir" )
 DIR_DATABASE_LOG_PATH_DEFAULT = os.path.join( "data", "dir" )
 MRC_DATABASE_DIR_PATH_DEFAULT = os.path.join( "data", "mrc" )
@@ -16,8 +16,6 @@ MRC_DATABASE_LOG_PATH_DEFAULT = os.path.join( "data", "mrc" )
 MY_DIR_PATH = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
 OSD_DATABASE_DIR_PATH_DEFAULT = os.path.join( "data", "osd" )
 OSD_DATABASE_LOG_PATH_DEFAULT = os.path.join( "data", "osd" )
-SERVER_CONFIG_DIR_PATH_DEFAULT = "config"
-SERVER_LOG_DIR_PATH_DEFAULT = "log"
 SERVER_RUN_DIR_PATH_DEFAULT = "run"
 
 # Ports
@@ -41,104 +39,124 @@ STRIPING_POLICY_TYPE_DEFAULT = "RAID0"
       
 
 class Autotest:
-    def __init__( self, osd_count=1, server_uri="oncrpc://localhost" ):        
+    def __init__( 
+                  self, 
+                  osd_count=1, 
+                  server_uri="oncrpc://localhost" 
+                 ):
+        
         self.__osd_count = osd_count
         self.__server_uri = server_uri
 
-    def clean( 
-               self,
-               client_log_dir_path=CLIENT_LOG_DIR_PATH_DEFAULT,
-               client_mount_dir_path=CLIENT_MOUNT_POINT_DIR_PATH_DEFAULT,
-               server_config_dir_path=SERVER_CONFIG_DIR_PATH_DEFAULT,
-               server_log_dir_path=SERVER_LOG_DIR_PATH_DEFAULT,               
-             ):
-        
-        for dir_path in ( 
-                          client_log_dir_path, client_mount_dir_path,
-                          server_config_dir_path, server_log_dir_path
-                         ):
-            try: shutil.rmtree( dir_path )
-            except: pass
-    
-    def start_clients( 
-                       self,
-                       log_dir_path=CLIENT_LOG_DIR_PATH_DEFAULT,
-                       mount_point_dir_path=CLIENT_MOUNT_POINT_DIR_PATH_DEFAULT,                        
-                     ):
-        volumes = []        
+    def clean( self, ):        
+        for dir_name in ( "config", "data", "log", "mnt" ):  
+            try: shutil.rmtree( dir_name )
+            except: pass                  
 
-        try: os.mkdir( log_dir_path )
-        except: pass
-        
-        try: os.mkdir( CLIENT_MOUNT_POINT_DIR_PATH_DEFAULT )
-        except: pass                       
-                
+    def __get_servers( self ):
+        dir = DIR( config_file_path=os.path.join( "config", "dir.config" ) )
+        mrc = MRC( config_file_path=os.path.join( "config", "mrc.config" ) )
+        osds = [OSD( config_file_path=os.path.join( "config", "osd"+str( osd_i )+".config" ) )
+                for osd_i in xrange( self.__osd_count )]
+        return dir, mrc, osds
+                             
+    def __get_volumes( self ):
+        volumes = []
         for osd_i in xrange( self.__osd_count ):
             volume_name = "test_" + str( osd_i )
-            volume = Volume( name=volume_name, mount_point_dir_path=os.path.join( mount_point_dir_path, volume_name ) )
-            volume.create( mrc_uri=self.__server_uri )
-            volume.mount( dir_uri=self.__server_uri, log_file_path=os.path.join( log_dir_path, "client"+str( osd_i )+".log" ) )
-            volumes.append( volume )
-            
-        return volumes                            
+            for direct_io in ( False, True ):
+                mount_point_dir_path = os.path.join( "mnt", volume_name )
+                if not direct_io:
+                    mount_point_dir_path += "_nondirect"
+                volume = Volume( name=volume_name, mount_point_dir_path=mount_point_dir_path )
+                volumes.append( volume )
+        return volumes
     
+    def start_clients( 
+                       self, 
+                       debug_level=DEBUG_LEVEL_DEFAULT 
+                     ):
+        
+        for dir_name in ( "log", "mnt" ):
+            try: os.mkdir( dir_name )
+            except: pass
+
+        volumes = self.__get_volumes()
+
+        # Create volumes
+        for volume_i in xrange( 0, len( volumes ), 2 ):
+            volume = volumes[volume_i]
+            try: volume.create( mrc_uri=self.__server_uri )
+            except: pass
+            
+        # Mount volumes
+        try:
+            for volume_i in xrange( len( volumes ) ):
+                volume = volumes[volume_i]            
+                volume.mount( 
+                              direct_io=( volume_i % 2 == 1 ), # Or have volume.get_direct_io()?
+                              dir_uri=self.__server_uri,
+                              log_file_path=os.path.join( "log", "client"+str( volume_i )+".log" ) 
+                            )
+        except:
+            self.stop_clients()
+            raise
+                
     def start_servers( 
                        self,
-                       config_dir_path=SERVER_CONFIG_DIR_PATH_DEFAULT,
-                       log_dir_path=SERVER_LOG_DIR_PATH_DEFAULT,
-                      ):
-        servers = []        
-        
-        for subdir_name in ( config_dir_path, "data", log_dir_path ):
-            try: os.mkdir( subdir_name )
+                       debug_level=DEBUG_LEVEL_DEFAULT                        
+                     ):                
+        for dir_name in ( "config", "data", "log" ):
+            try: os.mkdir( dir_name )
             except: pass                
-            
-        dir = DIR( config_file_path=os.path.join( SERVER_CONFIG_DIR_PATH_DEFAULT, "dir.config" ) )
-        dir.configure( uuid="test-env-DIR" )                                
-        dir.start()
-        servers.append( dir )
-        
-        mrc = MRC( config_file_path=os.path.join( SERVER_CONFIG_DIR_PATH_DEFAULT, "mrc.config" ) )
-        mrc.configure( uuid="test-env-MRC" )
-        mrc.start()            
-        servers.append( mrc )
+
+        try:
+            dir, mrc, osds = self.__get_servers()
                         
-        for osd_i in xrange( self.__osd_count ):
-            osd = OSD( config_file_path=os.path.join( SERVER_CONFIG_DIR_PATH_DEFAULT, "osd"+str( osd_i)+".config" ) )
-            osd.configure( http_port=OSD_HTTP_PORT_DEFAULT+osd_i,
-                           oncrpc_port=OSD_ONCRPC_PORT_DEFAULT+osd_i,
-                           uuid="test-env-OSD" + str( osd_i ) )             
-            osd.start()
-            servers.append( osd )
+            dir.configure( 
+                           debug_level=debug_level,
+                           uuid="test-env-DIR" 
+                         )                                
+            dir.start( log_file_path=os.path.join( "log", "dir.log" ) )
             
-        return servers
+            
+            mrc.configure( 
+                           debug_level=debug_level,
+                           uuid="test-env-MRC" 
+                         )
+            mrc.start( log_file_path=os.path.join( "log", "mrc.log" ) )            
+
+
+            for osd_i in xrange( len( osds ) ):
+                osd = osds[osd_i]
+                osd.configure(
+                               debug_level=debug_level, 
+                               http_port=OSD_HTTP_PORT_DEFAULT+osd_i,
+                               oncrpc_port=OSD_ONCRPC_PORT_DEFAULT+osd_i,
+                               uuid="test-env-OSD" + str( osd_i ) 
+                             )             
+                osd.start( log_file_path=os.path.join( "log", "osd"+str( osd_i )+".log" ) )
+        except:
+            self.stop_servers()            
+            raise
                             
-    def run( self ):
-        volumes = self.start_clients()
-        servers = self.start_servers()
-        
+    def run( self ):               
         ret = 0
-        for volume in volumes:
+        for volume in self.__get_volumes():
             ret |= volume.test()
-        
-        for server in servers:
-            try: server.stop()
-            except: traceback.print_exc()
-            
-        for volume in volumes:
-            try: volume.unmount()
-            except: traceback.print_exc()
-    
+                                    
         return ret
     
     def stop_clients( self ):
-        for osd_i in xrange( self.__osd_count ):
-            volume_name = "test_" + str( osd_i )
-            volume = Volume( name=volume_name, mount_point_dir_path=os.path.join( CLIENT_MOUNT_POINT_DIR_PATH_DEFAULT, volume_name ) )
+        for volume in self.__get_volumes():
             volume.unmount()
     
     def stop_servers( self ):
-        raise NotImplementedError
+        dir, mrc, osds = self.__get_servers()
+        dir.stop()
+        mrc.stop()
+        for osd in osds: 
+            osd.stop()
 
 
 class Server:
@@ -187,22 +205,32 @@ ssl.enabled = false
             
         raise ValueError, key + " = not found in " + self.__config_file_path
 
-    def __get_run_file_path( run_dir_path ):
-        return os.path.join( run_dir_path, self.get_uuid() + ".run" )        
+    def __get_pid_file_path( self, run_dir_path ):
+        return os.path.join( run_dir_path, self.get_uuid() + ".pid" )        
 
     def get_http_port( self ):
         return int( self.__get_config_property( "http_port" ) )
+
+    def get_oncrpc_port( self ):
+        return int( self.__get_config_property( "listen.port" ) )
         
     def get_uuid( self ):
         return self.__get_config_property( "uuid" )
 
     def is_running( self, run_dir_path=SERVER_RUN_DIR_PATH_DEFAULT ):
-        run_file_path = self.__get_run_file_path( run_dir_path )
-        if os.path.exists( run_file_path ):
-            pid = int( open( run_file_path ).read().strip() )
+        pid_file_path = self.__get_pid_file_path( run_dir_path )
+        if os.path.exists( pid_file_path ):
+            pid = int( open( pid_file_path ).read().strip() )
+            
+            if DEBUG_ME:
+                print "xctl: checking if", self.__class__.__name__, "server is running with pid", pid
+                
             try:
-                procid, exitvalue = os.waitpid( pid, os.WNOHANG )
-                return procid == 0 and exitvalue == 0
+                pid, exitvalue = os.waitpid( pid, os.WNOHANG )
+                if pid != 0 and exitvalue != 0:
+                    return False
+                else:
+                    return True
             except OSError:
                 return False            
         else:
@@ -214,53 +242,93 @@ ssl.enabled = false
 
     def start( 
                self, 
-               log_dir_path=SERVER_LOG_DIR_PATH_DEFAULT, 
+               log_file_path=None, 
                run_dir_path=SERVER_RUN_DIR_PATH_DEFAULT 
              ):
-                
-        try: os.mkdir( log_dir_path )
-        except: pass
-        log_file_path = os.path.join( log_dir_path, self.get_uuid() + ".log" )
-        
-        try: os.mkdir( run_dir_path )
-        except: pass
-        run_file_path = self.__get_run_file_path( run_dir_path )
-                
-        args = [os.path.join( os.environ["JAVA_HOME"], "bin", "java" )] 
-        args.append( "-ea" ) # Enable assertions
-        args.extend( ( "-cp", "" + ( sys.platform.startswith( "win" ) and ";".join( CLASSPATH ) or ":".join( CLASSPATH ) ) + "", ) )
-        args.append( "org.xtreemfs." + self.__class__.__name__.lower() + "." + self.__class__.__name__.upper() )
-        args.append( self.get_config_file_path() )        
-        stderr = stdout = open( log_file_path, "a" )
-        
-        p = subprocess.Popen( args, shell=True, stdout=stdout, stderr=stderr )
-        
-        sleep( 1.0 )
-        
-        open( run_file_path, "w+" ).write( str( p.pid ) )
-                                
-        if not self.is_running( run_dir_path ):
-            raise RuntimeError, self.get_uuid() + " failed to start"
-        
-    def stop( self, run_dir_path=SERVER_RUN_DIR_PATH_DEFAULT ):
-        run_file_path = self.__get_run_file_path( run_dir_path )           
-        if os.path.exists( run_file_path ):
-            pid = int( open( run_file_path ).read().strip() )
-            if sys.platform.startswith( "win" ):
-                call( "TASKKILL /PID %(pid)u /F /T" % locals() )
+
+        if not self.is_running( run_dir_path ):        
+            try: os.mkdir( run_dir_path )
+            except: pass
+            pid_file_path = self.__get_pid_file_path( run_dir_path )
+                    
+            java_args = [os.path.join( os.environ["JAVA_HOME"], "bin", "java" )] 
+            java_args.append( "-ea" ) # Enable assertions
+    
+            # Construct the -cp classpath
+            XtreemFS_jar_file_path = os.path.abspath( os.path.join( MY_DIR_PATH, "..", "src", "servers", "dist", "XtreemFS.jar" ) )
+            if os.path.exists( XtreemFS_jar_file_path ):
+                classpath = ( 
+                              XtreemFS_jar_file_path,
+                              os.path.abspath( os.path.join( MY_DIR_PATH, "..", "src", "servers", "lib", "BabuDB.jar" ) ),
+                              os.path.abspath( os.path.join( MY_DIR_PATH, "..", "src", "servers", "lib", "yidl.jar" ) ),
+                            )
+                if sys.platform.startswith( "win" ):
+                    classpath = ";".join( classpath )
+                else:
+                    classpath = ":".join( classpath )                
+                java_args.extend( ( "-cp", classpath ) )
+    
+            # Name of the class to start
+            java_args.append( "org.xtreemfs." + self.__class__.__name__.lower() + "." + self.__class__.__name__.upper() )
+    
+            # .config file
+            java_args.append( self.get_config_file_path() )
+                              
+            # Don't .join java_args, since Popen wants a sequence when shell=False
+                               
+            if log_file_path is not None:
+                # Redirect stderr and stdout to a log file
+                stderr = stdout = open( log_file_path, "a" )
             else:
+                stderr = sys.stderr
+                stdout = sys.stdout       
+            
+            if DEBUG_ME:
+                print "xctl: starting", self.__class__.__name__, "server with UUID", self.get_uuid(), "on port", self.get_oncrpc_port(), "with", " ".join( java_args )
+            
+            p = subprocess.Popen( java_args, stdout=stdout, stderr=stderr ) # No shell=True: we only want one process (java), not two (/bin/sh and java)
+            open( pid_file_path, "w+" ).write( str( p.pid ) )
+    
+            if DEBUG_ME:
+                print "xctl: started", self.__class__.__name__, "server with UUID", self.get_uuid(), "on port", self.get_oncrpc_port(), "with pid", p.pid        
+            
+            sleep( 2.0 )
+                                            
+            if not self.is_running( run_dir_path ):
+                raise RuntimeError, self.get_uuid() + " failed to start"
+        else:
+            print "xctl:", self.__class__.__name__, "server with UUID", self.get_uuid(), "is already running"
+                    
+    def stop( self, run_dir_path=SERVER_RUN_DIR_PATH_DEFAULT ):
+        pid_file_path = self.__get_pid_file_path( run_dir_path )           
+        if os.path.exists( pid_file_path ):
+            pid = int( open( pid_file_path ).read().strip() )
+                        
+            if sys.platform.startswith( "win" ):
+                subprocess.call( "TASKKILL /PID %(pid)u /F /T" % locals() )
+            else:
+                if DEBUG_ME:
+                    print "xctl: stopping", self.__class__.__name__, "server with pid", pid, "with SIGTERM"
+                                                
                 try: os.kill( pid, signal.SIGTERM )
-                except: traceback.print_exc()
-                                   
-                sleep( 1 )
+                except: pass
                 
+                sleep( 1 )
+
                 try:
-                    if os.waitpid( pid,os.WNOHANG )[0] == 0:
-                        os.kill( pid, signal.SIGKILL )
+                    if os.waitpid( pid, os.WNOHANG )[0] == 0: # The process is still running
+                        if DEBUG_ME:
+                            print "xctl: stopping", self.__class__.__name__, "server with pid", pid, "with SIGKILL"
+        
+                        try: os.kill( pid, signal.SIGKILL )
+                        except: pass
                 except:
                     pass
                 
-            os.unlink( run_file_path )        
+            os.unlink( pid_file_path )
+               
+        elif DEBUG_ME:
+            print "xctl: no pid file for", self.__class__.__name__, "server"     
         
 
 class DIR(Server):
@@ -271,7 +339,7 @@ class DIR(Server):
                    database_log_dir_path=DIR_DATABASE_LOG_PATH_DEFAULT, 
                    debug_level=DEBUG_LEVEL_DEFAULT, 
                    http_port=DIR_HTTP_PORT_DEFAULT,
-                   oncrpc_port=DIR_ONCRPC_PORT_DEFAULT
+                   oncrpc_port=DIR_ONCRPC_PORT_DEFAULT,
                    **kwds 
                  ):
 
@@ -281,7 +349,7 @@ class DIR(Server):
         try: os.mkdir( database_log_dir_path )
         except: pass 
                     
-        open( self.get_config_file_path(),"""\
+        open( self.get_config_file_path(), "w+" ).write( """\
 uuid = %(uuid)s
 babudb.debug.level = %(debug_level)s
 babudb.logDir = %(database_log_dir_path)s
@@ -296,6 +364,7 @@ debug.level = %(debug_level)s
 listen.port = %(oncrpc_port)u
 http_port = %(http_port)u
 database.dir = %(database_dir_path)s
+database.log = %(database_log_dir_path)s
 authentication_provider = org.xtreemfs.common.auth.NullAuthProvider
 """ % locals() + self._get_ssl_config( **kwds ) )
          
@@ -309,7 +378,7 @@ class MRC(Server):
                    debug_level=DEBUG_LEVEL_DEFAULT,
                    dir_uri=DIR_URI_DEFAULT, 
                    http_port=MRC_HTTP_PORT_DEFAULT,
-                   oncrpc_port=MRC_ONCRPC_PORT_DEFAULT
+                   oncrpc_port=MRC_ONCRPC_PORT_DEFAULT,
                    **kwds 
                   ):        
         
@@ -343,12 +412,14 @@ no_atime = true
 no_fsync = true
 local_clock_renewal = 50
 remote_time_sync = 60000
+database.dir = %(database_dir_path)s
+database.log = %(database_log_dir_path)s
 database.checkpoint.interval = 1800000
 database.checkpoint.idle_interval = 1000
 database.checkpoint.logfile_size = 16384
 authentication_provider = org.xtreemfs.common.auth.NullAuthProvider
 capability_secret = testsecret
-""" % locals() )       
+""" % locals() + self._get_ssl_config( **kwds ) )       
 
 
 class OSD(Server):        
@@ -372,12 +443,14 @@ class OSD(Server):
         except: pass 
         
         if object_dir_path is None:     
-            object_dir_path = os.path.join( "data", self.get_uuid() )
+            object_dir_path = os.path.join( "data", uuid )
+            try: os.mkdir( object_dir_path )
+            except: pass
 
         dir_service_host = "localhost"
         dir_service_port = DIR_ONCRPC_PORT_DEFAULT            
-                            
-        open( self.get_config_file_path(), "w+" )( """\
+                                                        
+        open( self.get_config_file_path(), "w+" ).write( """\
 uuid = %(uuid)s
 debug.level = %(debug_level)s
 listen.port = %(oncrpc_port)u
@@ -394,8 +467,11 @@ capability_secret = testsecret
 
 
 class Volume:
-    def __init__( self, name, mount_point_dir_path=CLIENT_MOUNT_POINT_DIR_PATH_DEFAULT ):
-        self.__mount_point_dir_path = mount_point_dir_path
+    def __init__( self, name, mount_point_dir_path=None ):
+        if mount_point_dir_path is not None:
+            self.__mount_point_dir_path = os.path.abspath( mount_point_dir_path )
+        else:
+            self.__mount_point_dir_path = None
         self.__name = name        
     
     def create( 
@@ -404,13 +480,13 @@ class Volume:
                 mrc_uri=MRC_URI_DEFAULT,
               ):
         
-        mkfs_xtreemfs_file_path = os.path.abspath( MY_DIR_PATH, "mkfs.xtreemfs" )
+        mkfs_xtreemfs_file_path = os.path.abspath( os.path.join( MY_DIR_PATH, "mkfs.xtreemfs" ) )
         if not os.path.exists( mkfs_xtreemfs_file_path ):
             mkfs_xtreemfs_file_path = "mkfs.xtreemfs" # Assume it's in the global path
             
         mkfs_xtreemfs_args = [mkfs_xtreemfs_file_path]
         mkfs_xtreemfs_args.extend( ( "-d", str( debug_level ) ) )
-        if enable_ssl: mkfs_xtreemfs_args.extend( CLIENT_SSL_ARGS )                
+        # if enable_ssl: mkfs_xtreemfs_args.extend( CLIENT_SSL_ARGS )                
         mkfs_xtreemfs_args.extend( ( "-p", str( STRIPING_POLICY_TYPE_DEFAULT ) ) )
         mkfs_xtreemfs_args.extend( ( "-s", str( STRIPE_SIZE_DEFAULT ) ) )
 #        if not repl_on_close:
@@ -420,9 +496,20 @@ class Volume:
           
         if not mrc_uri.endswith( "/" ):
             mrc_uri += "/"          
-        mkfs_xtreemfs_args.append( mrc_uri + self.__name )
-                                            
+        mkfs_xtreemfs_args.append( mrc_uri + self.get_name() )
+
+        mkfs_xtreemfs_args = " ".join( mkfs_xtreemfs_args )
+        
+        if DEBUG_ME:
+            print "xctl: creating volume", self.get_name(), "with", mkfs_xtreemfs_args
+                               
         subprocess.call( mkfs_xtreemfs_args, shell=True )
+
+    def get_mount_point_dir_path( self ):
+        return self.__mount_point_dir_path
+
+    def get_name( self ):
+        return self.__name
     
     def mount( 
                self,
@@ -435,31 +522,35 @@ class Volume:
                write_back_cache=False
               ):
 
-        if not os.path.exists( self.__mount_point_dir_path ):
-            os.mkdir( self.__mount_point_dir_path )        
-        
-        mount_xtreemfs_file_path = os.path.abspath( MY_DIR_PATH, "mount.xtreemfs" )
+        try: os.mkdir( self.get_mount_point_dir_path() )
+        except: pass        
+                
+        mount_xtreemfs_file_path = os.path.abspath( os.path.join( MY_DIR_PATH, "mount.xtreemfs" ) )
         if not os.path.exists( mount_xtreemfs_file_path ):
             mount_xtreemfs_file_path = "mount.xtreemfs" # Assume it's in the global path
  
         mount_xtreemfs_args = [mount_xtreemfs_file_path]
         mount_xtreemfs_args.extend( ( "-d", str( debug_level ) ) )                
-        mount_xtreemfs_args.append( "-f" ) # So we can redirect stdout and stderr                
-        # if enable_ssl: mount_xtreemfs_args.extend( CLIENT_SSL_ARGS )        
+        # if enable_ssl: mount_xtreemfs_args.extend( CLIENT_SSL_ARGS )
+        if log_file_path is not None:   
+            mount_xtreemfs_args.extend( ( "--log-file-path", log_file_path ) )      
         if direct_io: mount_xtreemfs_args.extend( ( "-o", "direct_io" ) )
         if metadata_cache: mount_xtreemfs_args.append( "--metadata-cache" )
         if write_back_cache: mount_xtreemfs_args.append( "--write-back-cache" )        
         
-        mount_xtreemfs_args.append( dir_uri + self.__name )                
-        mount_xtreemfs_args.append( self.__mount_point_dir_path )
+        volume_uri = dir_uri
+        if not volume_uri.endswith( "/" ): volume_uri += "/"
+        volume_uri += self.get_name()        
+        mount_xtreemfs_args.append( volume_uri )      
+                          
+        mount_xtreemfs_args.append( self.get_mount_point_dir_path() )
 
-        if log_file_path is not None:                   
-            stderr = stdout = open( log_file_path, "a" )
-        else:           
-            stderr = sys.stderr
-            stdout = sys.stdout
-        
-        subprocess.Popen( mount_xtreemfs_args, shell=True, stdout=stdout, stderr=stderr )
+        if DEBUG_ME:
+            print "xctl: mounting volume", self.get_name(), "at", self.get_mount_point_dir_path(), "with", " ".join( mount_xtreemfs_args )
+                
+        subprocess.call( mount_xtreemfs_args )
+
+        sleep( 2.0 )
         
 #        if replicate_on_close:
 #            sleep(2)
@@ -474,16 +565,11 @@ class Volume:
               verbose=False
             ):
 
+        original_cwd = os.getcwd()
+
         tests_dir_path = os.path.abspath( os.path.join( MY_DIR_PATH, "..", "tests" ) )
         if not os.path.exists( tests_dir_path ):
             raise RuntimeError, "xtreemfs/tests directory does not exist!"
-
-        if verbose:
-            stdout = sys.stdout
-            stderr = sys.stderr
-        else:
-            stdout = subprocess.PIPE
-            stderr = subprocess.STDOUT        
 
         try:
             sys.path.append( tests_dir_path )
@@ -492,36 +578,38 @@ class Volume:
                 test_module_names = [os.path.splitext( file_name )[0] for file_name in os.listdir( tests_dir_path ) if file_name.endswith( ".py" )]
                 
             for test_module_name in test_module_names:
-                # print "Trying to import test", test_module_name
+                if DEBUG_ME:
+                    print "xctl: trying to import test", test_module_name
+                    
                 try:
                     test_module = __import__( test_module_name )
                 except ImportError:
-                    print "Could not import", test_module_name, "from tests"
-                    traceback.print_exc()
+                    if DEBUG_ME:
+                        print "xctl: could not import", test_module_name, "from tests"
+                        traceback.print_exc()
                     continue
     
                 try: 
                     test_suite_factories[test_module_name] = getattr( test_module, "createTestSuite" )
                 except AttributeError:
-                    print "Test module", test_module_name, "does not have a createTestSuite global function"                        
+                    if DEBUG_ME: 
+                        print "xctl: test module", test_module_name, "does not have a createTestSuite global function"                        
                             
             test_module_names = test_suite_factories.keys()
             test_module_names.sort()
             for test_module_name in test_module_names:
-                test_suite_factory = test_suite_factories[test_module_name]
-                for mount_point_dir_name in os.listdir( self.__mount_point_dir_path ):
-                    test_suite = test_suite_factory( direct_io=( not "nondirect" in mount_point_dir_name ), stdout=stdout, stderr=stderr )                
-                    if test_suite is not None:            
-                        mount_point_dir_path = os.path.join( mnt_dir_path, mount_point_dir_name )
-                        print "Running", test_module_name, "in", mount_point_dir_path
-                        test_run_dir_path = os.path.join( mount_point_dir_path, test_module_name )
-                        try: os.mkdir( test_run_dir_path )
-                        except: pass                                         
-                        os.chdir( test_run_dir_path )
-                        unittest.TextTestRunner( verbosity=( verbose and 2 or 1 ) ).run( test_suite )
-                        os.chdir( mount_point_dir_path )
-                        try: shutil.rmtree( test_run_dir_path )
-                        except: traceback.print_exc()
+                test_suite_factory = test_suite_factories[test_module_name]                
+                test_suite = test_suite_factory( direct_io=( not "nondirect" in self.get_mount_point_dir_path() ) )                
+                if test_suite is not None:            
+                    print "xctl: running", test_module_name, "in", self.get_mount_point_dir_path()
+                    test_run_dir_path = os.path.join( self.get_mount_point_dir_path(), test_module_name )
+                    try: os.mkdir( test_run_dir_path )
+                    except: pass                                         
+                    os.chdir( test_run_dir_path )
+                    unittest.TextTestRunner( verbosity=( verbose and 2 or 1 ) ).run( test_suite )
+                    os.chdir( self.get_mount_point_dir_path() )
+                    try: shutil.rmtree( test_run_dir_path )
+                    except: traceback.print_exc()
         
             os.chdir( original_cwd )
             return 0
@@ -535,48 +623,66 @@ class Volume:
         
     def unmount( self ):
         for mounts_line in open( "/proc/mounts" ).readlines():
-           mounts_line_parts = mounts_line.split()
-           test_device = mounts_line_parts[0]
-           test_mount_point_dir_path = mounts_line_parts[1]
-           if test_device == "xtreemfs" and test_mount_point_dir_path.startswith( self.__mount_point_dir_path ):
-               subprocess.call( " ".join( ["fusermount", "-u", self.__mount_point_dir_path] ), shell=True )        
+            mounts_line_parts = mounts_line.split()
+            test_device = mounts_line_parts[0]
+            test_mount_point_dir_path = mounts_line_parts[1]
+            if test_device == "xtreemfs" and test_mount_point_dir_path.endswith( self.get_mount_point_dir_path() ):
+                fusermount_args = " ".join( ["fusermount", "-u", self.get_mount_point_dir_path()] )
+                if DEBUG_ME:
+                    print "xctl: unmounting volume", self.get_name(), "with", fusermount_args
+                subprocess.call( fusermount_args, shell=True )        
                        
         
 if __name__ == "__main__":
     from optparse import OptionParser
-    option_parser = OptionParser( "usage: %prog [options] [oncrpc://]<server_host>[:server_port]" )
+    option_parser = OptionParser( "usage: %prog [options] [oncrpc://]<server_host=localhost>[:server_port]" )
     
-    option_parser.add_option( "--autotest", action="store_true" )
-    option_parser.add_option( "--autotest-osd-count", action="store", dest="autotest_osd_count", type="int" )
-    option_parser.add_optoin( "--clean-autotest", action="store_true", dest="clean_autotest" )    
+    option_parser.add_option( "--autotest", action="store_true", help="start autotest clients and servers, run autotests, stop clients and servers" )
+    option_parser.add_option( "--autotest-osd-count", action="store", dest="autotest_osd_count", type="int", default=1 )
+    option_parser.add_option( "--clean-autotest", action="store_true", dest="clean_autotest", help="delete autotest directories" )
+    option_parser.add_option( "-d", "--debug-level", action="store", dest="debug_level", default=DEBUG_LEVEL_DEFAULT )    
+    option_parser.add_option( "--run-autotest", action="store_true", dest="run_autotest", help="run autotests (assumes clients and servers are already started and will be stopped manually" )    
     option_parser.add_option( "--start-autotest-clients", action="store_true", dest="start_autotest_clients" )
     option_parser.add_option( "--start-autotest-servers", action="store_true", dest="start_autotest_servers" )
     option_parser.add_option( "--stop-autotest-clients", action="store_true", dest="stop_autotest_clients" )
     option_parser.add_option( "--stop-autotest-servers", action="store_true", dest="stop_autotest_servers" )
     
+    
     options, positional_args = option_parser.parse_args()
     
-    if len( positional_args ) > 1:
+    if len( positional_args ) > 0:
         server_uri = positional_args[0]
         if not "://" in server_uri:
             server_uri = "oncrpc://" + server_uri        
     else:
         server_uri = "oncrpc://localhost"
 
-    autotest_options = { 
-                         "osd_count": options.autotest_osd_count,
-                         "server_uri": options.server_uri 
-                        }
-
-    if options.autotest:
-        sys.exit( Autotest( **autotest_options ).run() )
-    elif options.clean_autotest:
-        Autotest( **autotest_options ).clean()
-    elif options.start_autotest_clients:
-        Autotest( **autotest_options ).start_clients()
-    elif options.start_autotest_servers:
-        Autotest( **autotest_options ).start_servers()
-    elif options.stop_autotest_clients:
-        Autotest( **autotest_options  ).stop_clients()
-    elif options.stop_autotest_servers:
-        Autotest( **autotest_options  ).stop_servers()
+    if options.autotest or \
+       options.clean_autotest or \
+       options.run_autotest or \
+       options.start_autotest_clients or \
+       options.start_autotest_servers or \
+       options.stop_autotest_clients or \
+       options.stop_autotest_servers:
+        
+        autotest = Autotest( osd_count=options.autotest_osd_count, server_uri=server_uri )
+       
+        if options.autotest:
+            autotest.start_servers( debug_level=options.debug_level )
+            autotest.start_clients( debug_level=options.debug_level )            
+            ret = autotest.run()            
+            autotest.stop_clients()
+            autotest.stop_servers()
+            sys.exit( ret )
+        elif options.clean_autotest:
+            autotest.clean()
+        elif options.run_autotest:
+            sys.exit( autotest.run() )
+        elif options.start_autotest_clients:
+            autotest.start_clients( debug_level=options.debug_level )
+        elif options.start_autotest_servers:
+            autotest.start_servers( debug_level=options.debug_level )
+        elif options.stop_autotest_clients:
+            autotest.stop_clients()
+        elif options.stop_autotest_servers:
+            autotest.stop_servers()
