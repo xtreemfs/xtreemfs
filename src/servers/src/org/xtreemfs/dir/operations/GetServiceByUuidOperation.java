@@ -24,15 +24,8 @@
 
 package org.xtreemfs.dir.operations;
 
-import java.io.IOException;
-
-import org.xtreemfs.babudb.BabuDBException;
-import org.xtreemfs.babudb.BabuDBRequestListener;
-import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.lsmdb.Database;
-import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
@@ -49,14 +42,11 @@ public class GetServiceByUuidOperation extends DIROperation {
     private final int      operationNumber;
     
     private final Database database;
-    
-    private final ReplicationManager dbsReplicationManager;
-    
+        
     public GetServiceByUuidOperation(DIRRequestDispatcher master) {
         super(master);
         operationNumber = xtreemfs_service_get_by_uuidRequest.TAG;
         database = master.getDirDatabase();
-        dbsReplicationManager = master.getDBSReplicationService();
     }
     
     @Override
@@ -66,43 +56,25 @@ public class GetServiceByUuidOperation extends DIROperation {
     
     @Override
     public void startRequest(DIRRequest rq) {
-        final xtreemfs_service_get_by_uuidRequest request = 
+        xtreemfs_service_get_by_uuidRequest request = 
             (xtreemfs_service_get_by_uuidRequest) rq.getRequestMessage();
-            
+
         database.lookup(DIRRequestDispatcher.INDEX_ID_SERVREG, request.getUuid()
-                .getBytes(),rq).registerListener(
-                        new BabuDBRequestListener<byte[]>() {
+                .getBytes(),rq).registerListener(new DBRequestListener<byte[], ServiceSet>(true) {
                     
-            @Override
-            public void finished(byte[] data, Object context) {
-                try {
-                    ServiceSet services = new ServiceSet();
-                    if (data != null) {
-                        ServiceRecord dbData = new ServiceRecord(
-                                ReusableBuffer.wrap(data));
-                        services.add(dbData.getService());
+                    @Override
+                    ServiceSet execute(byte[] result, DIRRequest rq) 
+                            throws Exception {
+                        
+                        ServiceSet services = new ServiceSet();
+                        if (result != null) {
+                            ServiceRecord dbData = new ServiceRecord(
+                                    ReusableBuffer.wrap(result));
+                            services.add(dbData.getService());
+                        }
+                        return services;
                     }
-                    
-                    xtreemfs_service_get_by_uuidResponse response = 
-                        new xtreemfs_service_get_by_uuidResponse(services);
-                    ((DIRRequest) context).sendSuccess(response);
-                } catch (IOException e) {
-                    Logging.logError(Logging.LEVEL_ERROR, this, e);
-                    ((DIRRequest) context).sendInternalServerError(e);
-                }
-            }
-            
-            @Override
-            public void failed(BabuDBException e, Object context) {
-                Logging.logError(Logging.LEVEL_ERROR, this, e);
-                if (e.getErrorCode() == ErrorCode.NO_ACCESS && 
-                        dbsReplicationManager != null)
-                    ((DIRRequest) context).sendRedirectException(
-                            dbsReplicationManager.getMaster());
-                else
-                    ((DIRRequest) context).sendInternalServerError(e);
-            }
-        });
+                });
     }
     
     @Override
@@ -114,6 +86,15 @@ public class GetServiceByUuidOperation extends DIROperation {
     public void parseRPCMessage(DIRRequest rq) throws Exception {
         xtreemfs_service_get_by_uuidRequest amr = new xtreemfs_service_get_by_uuidRequest();
         rq.deserializeMessage(amr);
+    }
+
+    /*
+     * (non-Javadoc)
+     * @see org.xtreemfs.dir.operations.DIROperation#requestFinished(java.lang.Object, org.xtreemfs.dir.DIRRequest)
+     */
+    @Override
+    void requestFinished(Object result, DIRRequest rq) {
+        rq.sendSuccess(new xtreemfs_service_get_by_uuidResponse((ServiceSet) result));
     }
     
 }

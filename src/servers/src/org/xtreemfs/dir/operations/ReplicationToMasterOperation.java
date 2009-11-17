@@ -24,13 +24,12 @@
 
 package org.xtreemfs.dir.operations;
 
-import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.babudb.replication.SlavesStates.NotEnoughAvailableSlavesException;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.ErrorCodes;
 import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.interfaces.DIRInterface.DIRException;
 import org.xtreemfs.interfaces.DIRInterface.replication_toMasterRequest;
 import org.xtreemfs.interfaces.DIRInterface.replication_toMasterResponse;
 
@@ -42,13 +41,10 @@ import org.xtreemfs.interfaces.DIRInterface.replication_toMasterResponse;
 public class ReplicationToMasterOperation extends DIROperation {
 
     private final int operationNumber;
-    
-    private final ReplicationManager dbsReplicationManager;
 
     public ReplicationToMasterOperation(DIRRequestDispatcher master) {
         super(master);
         operationNumber = replication_toMasterRequest.TAG;
-        dbsReplicationManager = master.getDBSReplicationService();
     }
 
     @Override
@@ -59,22 +55,19 @@ public class ReplicationToMasterOperation extends DIROperation {
     @Override
     public void startRequest(DIRRequest rq) {
         try {
-            
             // check password to ensure that user is authorized
             UserCredentials uc = rq.getRPCRequest().getUserCredentials();
-            if ((uc == null) || (!uc.getPassword().equals(master.getConfig().getAdminPassword()))) {
-                rq.sendDIRException(ErrorCodes.AUTH_FAILED, "this operation requires an admin password");
-                return;
-            }
+            if ((uc == null) || (!uc.getPassword().equals(master.getConfig().getAdminPassword())))
+                throw new DIRException(ErrorCodes.AUTH_FAILED, 
+                        "this operation requires an admin password", "");
             
             dbsReplicationManager.declareToMaster();
-            replication_toMasterResponse response = new replication_toMasterResponse();
-            rq.sendSuccess(response);
+            requestFinished(null, rq);
         } catch (NotEnoughAvailableSlavesException e) {
-            rq.sendDIRException(ErrorCodes.NOT_ENOUGH_PARTICIPANTS, e.getMessage());
+            requestFailed(new DIRException(ErrorCodes.NOT_ENOUGH_PARTICIPANTS, 
+                    e.getMessage(), ""), rq);
         } catch (Exception e) {
-            Logging.logError(Logging.LEVEL_ERROR, this, e);
-            rq.sendInternalServerError(e);
+            requestFailed(e,rq);
         } 
     }
 
@@ -89,4 +82,13 @@ public class ReplicationToMasterOperation extends DIROperation {
         rq.deserializeMessage(amr);
     }
 
+    /*
+     * (non-Javadoc)
+     * @see org.xtreemfs.dir.operations.DIROperation#requestFinished(java.lang.Object, org.xtreemfs.dir.DIRRequest)
+     */
+    @Override
+    void requestFinished(Object result, DIRRequest rq) {
+        rq.sendSuccess(new replication_toMasterResponse());
+        
+    }
 }

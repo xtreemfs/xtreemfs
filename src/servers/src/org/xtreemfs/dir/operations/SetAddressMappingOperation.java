@@ -24,15 +24,8 @@
 
 package org.xtreemfs.dir.operations;
 
-import java.io.IOException;
-
-import org.xtreemfs.babudb.BabuDBException;
-import org.xtreemfs.babudb.BabuDBRequestListener;
-import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.lsmdb.Database;
-import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.AddressMappingRecords;
@@ -52,14 +45,11 @@ public class SetAddressMappingOperation extends DIROperation {
     private final int      operationNumber;
     
     private final Database database;
-    
-    private final ReplicationManager dbsReplicationManager;
-    
+        
     public SetAddressMappingOperation(DIRRequestDispatcher master) {
         super(master);
         operationNumber = xtreemfs_address_mappings_setRequest.TAG;
         database = master.getDirDatabase();
-        dbsReplicationManager = master.getDBSReplicationService();
     }
     
     @Override
@@ -75,14 +65,16 @@ public class SetAddressMappingOperation extends DIROperation {
         final AddressMappingSet mappings = request.getAddress_mappings();
         String uuid = null;
         if (mappings.size() == 0) {
-            rq.sendException(new InvalidArgumentException("must send at least one mapping"));
+            requestFailed(new InvalidArgumentException(
+                    "must send at least one mapping"), rq);
             return;
         }
         for (AddressMapping am : mappings) {
             if (uuid == null)
                 uuid = am.getUuid();
             if (!am.getUuid().equals(uuid)) {
-                rq.sendException(new InvalidArgumentException("all mappings must have the same UUID"));
+                requestFailed(new InvalidArgumentException(
+                        "all mappings must have the same UUID"), rq);
                 return;
             }
         }
@@ -93,77 +85,45 @@ public class SetAddressMappingOperation extends DIROperation {
         final String UUID = uuid;
         
         database.lookup(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, 
-                uuid.getBytes(), rq).registerListener(
-                        new BabuDBRequestListener<byte[]>() {
-            
-            @Override
-            public void finished(byte[] data, Object context) {
-                try {
-                    long currentVersion = 0;
-                    if (data != null) {
-                        ReusableBuffer buf = ReusableBuffer.wrap(data);
-                        AddressMappingRecords dbData = new AddressMappingRecords(buf);
-                        if (dbData.size() > 0) {
-                            currentVersion = dbData.getRecord(0).getVersion();
-                        }
-                    }
-    
-                    if (mappings.get(0).getVersion() != currentVersion) {
-                        ((DIRRequest) context).sendException(
-                                new ConcurrentModificationException());
-                        return;
-                    }
+                uuid.getBytes(), rq).registerListener(new DBRequestListener<byte[], Long>(false) {
                     
-                    final long version = currentVersion++;
-    
-                    for (int i = 0; i < mappings.size(); i++)
-                        mappings.get(i).setVersion(currentVersion);
-    
-    
-                    AddressMappingRecords newData = new AddressMappingRecords(mappings);
-                    final int size = newData.getSize();
-                    byte[] newBytes = new byte[size];
-                    ReusableBuffer buf = ReusableBuffer.wrap(newBytes);
-                    newData.serialize(buf);
-                    database.singleInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, 
-                            UUID.getBytes(), newBytes,context).registerListener(
-                                    new BabuDBRequestListener<Object>() {
-                        
-                        @Override
-                        public void finished(Object arg0, Object context) {
-                            xtreemfs_address_mappings_setResponse response = 
-                                new xtreemfs_address_mappings_setResponse(version);
-                            ((DIRRequest) context).sendSuccess(response);
+                    @Override
+                    Long execute(byte[] result, DIRRequest rq) throws Exception {
+                        long currentVersion = 0;
+                        if (result != null) {
+                            ReusableBuffer buf = ReusableBuffer.wrap(result);
+                            AddressMappingRecords dbData = new AddressMappingRecords(buf);
+                            if (dbData.size() > 0) {
+                                currentVersion = dbData.getRecord(0).getVersion();
+                            }
                         }
+        
+                        if (mappings.get(0).getVersion() != currentVersion)
+                            throw new ConcurrentModificationException();
                         
-                        @Override
-                        public void failed(BabuDBException e, Object context) {
-                            Logging.logError(Logging.LEVEL_ERROR, this, e);
-                            if (e.getErrorCode() == ErrorCode.NO_ACCESS && 
-                                    dbsReplicationManager != null)
-                                ((DIRRequest) context).sendRedirectException(
-                                        dbsReplicationManager.getMaster());
-                            else
-                                ((DIRRequest) context).sendInternalServerError(e);
-                        }
-                    });
-                } catch (IOException e) {
-                    Logging.logError(Logging.LEVEL_ERROR, this, e);
-                    ((DIRRequest) context).sendInternalServerError(e);
-                }
-            }
-            
-            @Override
-            public void failed(BabuDBException e, Object context) {
-                Logging.logError(Logging.LEVEL_ERROR, this, e);
-                if (e.getErrorCode() == ErrorCode.NO_ACCESS && 
-                        dbsReplicationManager != null)
-                    ((DIRRequest) context).sendRedirectException(
-                            dbsReplicationManager.getMaster());
-                else
-                    ((DIRRequest) context).sendInternalServerError(e);
-            }
-        });
+                        final long version = ++currentVersion;
+        
+                        for (int i = 0; i < mappings.size(); i++)
+                            mappings.get(i).setVersion(currentVersion);
+        
+                        AddressMappingRecords newData = new AddressMappingRecords(mappings);
+                        final int size = newData.getSize();
+                        byte[] newBytes = new byte[size];
+                        ReusableBuffer buf = ReusableBuffer.wrap(newBytes);
+                        newData.serialize(buf);
+                        database.singleInsert(DIRRequestDispatcher.INDEX_ID_ADDRMAPS, 
+                                UUID.getBytes(), newBytes,rq).registerListener(
+                                        new DBRequestListener<Object, Long>(true) {
+                                    
+                                    @Override
+                                    Long execute(Object result, DIRRequest rq) 
+                                             throws Exception {
+                                        return version;
+                                    }
+                                });
+                        return null;
+                    }
+                });
     }
     
     @Override
@@ -176,5 +136,13 @@ public class SetAddressMappingOperation extends DIROperation {
         xtreemfs_address_mappings_setRequest amr = new xtreemfs_address_mappings_setRequest();
         rq.deserializeMessage(amr);
     }
-    
+
+    /*
+     * (non-Javadoc)
+     * @see org.xtreemfs.dir.operations.DIROperation#requestFinished(java.lang.Object, org.xtreemfs.dir.DIRRequest)
+     */
+    @Override
+    void requestFinished(Object result, DIRRequest rq) {
+        rq.sendSuccess(new xtreemfs_address_mappings_setResponse((Long) result));
+    }
 }

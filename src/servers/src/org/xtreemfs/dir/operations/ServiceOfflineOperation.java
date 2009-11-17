@@ -24,19 +24,13 @@
 
 package org.xtreemfs.dir.operations;
 
-import java.io.IOException;
-
-import org.xtreemfs.babudb.BabuDBException;
-import org.xtreemfs.babudb.BabuDBRequestListener;
-import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.lsmdb.Database;
-import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_offlineRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_service_offlineResponse;
 
 /**
  * 
@@ -48,13 +42,10 @@ public class ServiceOfflineOperation extends DIROperation {
     
     private final Database database;
     
-    private final ReplicationManager dbsReplicationManager;
-    
     public ServiceOfflineOperation(DIRRequestDispatcher master) {
         super(master);
         operationNumber = xtreemfs_service_offlineRequest.TAG;
         database = master.getDirDatabase();
-        dbsReplicationManager = master.getDBSReplicationService();
     }
     
     @Override
@@ -66,62 +57,38 @@ public class ServiceOfflineOperation extends DIROperation {
     public void startRequest(DIRRequest rq) {
         final xtreemfs_service_offlineRequest request = 
             (xtreemfs_service_offlineRequest) rq.getRequestMessage();
-        
+  
         database.lookup(DIRRequestDispatcher.INDEX_ID_SERVREG, 
                 request.getUuid().getBytes(),rq).registerListener(
-                        new BabuDBRequestListener<byte[]>() {
+                        new DBRequestListener<byte[], Object>(false) {
                     
                     @Override
-                    public void finished(byte[] data, Object context) {
-                        try {
-                            if (data != null) {
-                                ReusableBuffer buf = ReusableBuffer.wrap(data);
-                                ServiceRecord dbData = new ServiceRecord(buf);
-                                
-                                dbData.setLast_updated_s(0);
-                                dbData.setVersion(dbData.getVersion()+1);
-                                
-                                byte[] newData = new byte[dbData.getSize()];
-                                dbData.serialize(ReusableBuffer.wrap(newData));
-                                database.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, 
-                                        request.getUuid().getBytes(), newData, context)
-                                        .registerListener(new BabuDBRequestListener<Object>() {
-                                    
-                                    @Override
-                                    public void finished(Object arg0, Object context) {
-                                        ((DIRRequest) context).sendSuccess(
-                                                request.createDefaultResponse());
-                                    }
-                                    
-                                    @Override
-                                    public void failed(BabuDBException e, Object context) {
-                                        Logging.logError(Logging.LEVEL_ERROR, this, e);
-                                        if (e.getErrorCode() == ErrorCode.NO_ACCESS && 
-                                                dbsReplicationManager != null)
-                                            ((DIRRequest) context).sendRedirectException(
-                                                    dbsReplicationManager.getMaster());
-                                        else
-                                            ((DIRRequest) context).sendInternalServerError(e);
-                                    }
-                                });
-                            } else {
-                                ((DIRRequest) context).sendSuccess(request.createDefaultResponse());
-                            }
-                        } catch (IOException e) {
-                            Logging.logError(Logging.LEVEL_ERROR, this, e);
-                            ((DIRRequest) context).sendInternalServerError(e);
-                        }
-                    }
-                    
-                    @Override
-                    public void failed(BabuDBException e, Object context) {
-                        Logging.logError(Logging.LEVEL_ERROR, this, e);
-                        if (e.getErrorCode() == ErrorCode.NO_ACCESS && 
-                                dbsReplicationManager != null)
-                            ((DIRRequest) context).sendRedirectException(
-                                    dbsReplicationManager.getMaster());
-                        else
-                            ((DIRRequest) context).sendInternalServerError(e);
+                    Object execute(byte[] result, DIRRequest rq) 
+                            throws Exception {
+                        if (result != null) {
+                            ReusableBuffer buf = ReusableBuffer.wrap(result);
+                            ServiceRecord dbData = new ServiceRecord(buf);
+                            
+                            dbData.setLast_updated_s(0);
+                            dbData.setVersion(dbData.getVersion()+1);
+                            
+                            byte[] newData = new byte[dbData.getSize()];
+                            dbData.serialize(ReusableBuffer.wrap(newData));
+                            database.singleInsert(DIRRequestDispatcher.INDEX_ID_SERVREG, 
+                                    request.getUuid().getBytes(), newData, rq)
+                                    .registerListener(
+                                            new DBRequestListener<Object, Object>(true) {
+                                        
+                                        @Override
+                                        Object execute(Object result, DIRRequest rq) 
+                                                throws Exception {
+                                            return null;
+                                        }
+                                    });
+                        } else 
+                            requestFinished(null, rq);
+                        
+                        return null;
                     }
                 });
     }
@@ -136,5 +103,13 @@ public class ServiceOfflineOperation extends DIROperation {
         xtreemfs_service_offlineRequest amr = new xtreemfs_service_offlineRequest();
         rq.deserializeMessage(amr);
     }
-    
+
+    /*
+     * (non-Javadoc)
+     * @see org.xtreemfs.dir.operations.DIROperation#requestFinished(java.lang.Object, org.xtreemfs.dir.DIRRequest)
+     */
+    @Override
+    void requestFinished(Object result, DIRRequest rq) {
+        rq.sendSuccess(new xtreemfs_service_offlineResponse());
+    }
 }

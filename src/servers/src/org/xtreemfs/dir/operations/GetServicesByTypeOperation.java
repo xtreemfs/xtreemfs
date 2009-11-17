@@ -24,17 +24,11 @@
 
 package org.xtreemfs.dir.operations;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map.Entry;
 
-import org.xtreemfs.babudb.BabuDBException;
-import org.xtreemfs.babudb.BabuDBRequestListener;
-import org.xtreemfs.babudb.BabuDBException.ErrorCode;
 import org.xtreemfs.babudb.lsmdb.Database;
-import org.xtreemfs.babudb.replication.ReplicationManager;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.data.ServiceRecord;
@@ -52,13 +46,10 @@ public class GetServicesByTypeOperation extends DIROperation {
     
     private final Database database;
     
-    private final ReplicationManager dbsReplicationManager;
-    
     public GetServicesByTypeOperation(DIRRequestDispatcher master) {
         super(master);
         operationNumber = xtreemfs_service_get_by_typeRequest.TAG;
         database = master.getDirDatabase();
-        dbsReplicationManager = master.getDBSReplicationService();
     }
     
     @Override
@@ -68,48 +59,37 @@ public class GetServicesByTypeOperation extends DIROperation {
     
     @Override
     public void startRequest(DIRRequest rq) {
-        final xtreemfs_service_get_by_typeRequest request = (xtreemfs_service_get_by_typeRequest) rq
-                .getRequestMessage();
+        final xtreemfs_service_get_by_typeRequest request = 
+            (xtreemfs_service_get_by_typeRequest) rq.getRequestMessage();
         
         database.prefixLookup(DIRRequestDispatcher.INDEX_ID_SERVREG, 
                 new byte[0],rq).registerListener(
-                        new BabuDBRequestListener<Iterator<Entry<byte[],byte[]>>>() {
-                
-                @Override
-                public void finished(Iterator<Entry<byte[], byte[]>> iter, Object context) {
-                    try {
-                        ServiceSet services = new ServiceSet();
+                        new DBRequestListener<Iterator<Entry<byte[],byte[]>>, ServiceSet>(true) {
+                    
+                    @Override
+                    ServiceSet execute(Iterator<Entry<byte[], byte[]>> result, 
+                            DIRRequest rq) throws Exception {
                         
+                        ServiceSet services = new ServiceSet();
                         long now = System.currentTimeMillis() / 1000l;
 
-                        while (iter.hasNext()) {
-                            final Entry<byte[],byte[]> e = iter.next();
-                            final ServiceRecord servEntry = new ServiceRecord(ReusableBuffer.wrap(e.getValue()));
-                            if ((request.getType().intValue() == 0) || (servEntry.getType() == request.getType())) {
+                        while (result.hasNext()) {
+                            Entry<byte[],byte[]> e = result.next();
+                            ServiceRecord servEntry = new ServiceRecord(
+                                    ReusableBuffer.wrap(e.getValue()));
+                            
+                            if ((request.getType().intValue() == 0) || 
+                                    (servEntry.getType() == request.getType())) {
                                 long secondsSinceLastUpdate = now - servEntry.getLast_updated_s();
-                                servEntry.getData().put("seconds_since_last_update", Long.toString(secondsSinceLastUpdate));
+                                servEntry.getData().put("seconds_since_last_update", 
+                                        Long.toString(secondsSinceLastUpdate));
                                 services.add(servEntry.getService());
                             }
                             
                         }
-                        
-                        xtreemfs_service_get_by_typeResponse response = new xtreemfs_service_get_by_typeResponse(services);
-                        ((DIRRequest) context).sendSuccess(response);
-                    } catch (IOException e) {
-                        Logging.logError(Logging.LEVEL_ERROR, this, e);
-                        ((DIRRequest) context).sendInternalServerError(e);
+                        return services;
                     }
-                }
-                
-                @Override
-                public void failed(BabuDBException e, Object context) {
-                    Logging.logError(Logging.LEVEL_ERROR, this, e);
-                    if (e.getErrorCode() == ErrorCode.NO_ACCESS && dbsReplicationManager != null)
-                        ((DIRRequest) context).sendRedirectException(dbsReplicationManager.getMaster());
-                    else
-                        ((DIRRequest) context).sendInternalServerError(e);
-                }
-        });
+                });
     }
     
     @Override
@@ -122,5 +102,13 @@ public class GetServicesByTypeOperation extends DIROperation {
         xtreemfs_service_get_by_typeRequest amr = new xtreemfs_service_get_by_typeRequest();
         rq.deserializeMessage(amr);
     }
-    
+
+    /*
+     * (non-Javadoc)
+     * @see org.xtreemfs.dir.operations.DIROperation#requestFinished(java.lang.Object, org.xtreemfs.dir.DIRRequest)
+     */
+    @Override
+    void requestFinished(Object result, DIRRequest rq) {
+        rq.sendSuccess(new xtreemfs_service_get_by_typeResponse((ServiceSet) result));
+    }  
 }

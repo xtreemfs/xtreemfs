@@ -49,9 +49,7 @@ public class GetGlobalTimeOperation extends DIROperation {
 
     @Override
     public void startRequest(DIRRequest rq) {
-        xtreemfs_global_time_s_getResponse gtr = new xtreemfs_global_time_s_getResponse();
-        gtr.setReturnValue(System.currentTimeMillis());
-        rq.sendSuccess(gtr);
+        requestFinished(System.currentTimeMillis(), rq);
     }
 
     @Override
@@ -65,4 +63,12 @@ public class GetGlobalTimeOperation extends DIROperation {
         rq.deserializeMessage(gtr);
     }
 
+    /*
+     * (non-Javadoc)
+     * @see org.xtreemfs.dir.operations.DIROperation#requestFinished(java.lang.Object, org.xtreemfs.dir.DIRRequest)
+     */
+    @Override
+    void requestFinished(Object result, DIRRequest rq) {
+        rq.sendSuccess(new xtreemfs_global_time_s_getResponse((Long) result));
+    }
 }

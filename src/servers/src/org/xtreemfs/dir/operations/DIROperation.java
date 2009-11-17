@@ -24,9 +24,16 @@
 
 package org.xtreemfs.dir.operations;
 
+import org.xtreemfs.babudb.BabuDBException;
+import org.xtreemfs.babudb.BabuDBRequestListener;
+import org.xtreemfs.babudb.BabuDBException.ErrorCode;
+import org.xtreemfs.babudb.replication.ReplicationManager;
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRRequest;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.interfaces.DIRInterface.RedirectException;
+import org.xtreemfs.interfaces.utils.ONCRPCException;
 
 /**
  * 
@@ -36,8 +43,11 @@ public abstract class DIROperation {
     
     protected final DIRRequestDispatcher master;
     
+    protected final ReplicationManager dbsReplicationManager;
+    
     public DIROperation(DIRRequestDispatcher master) {
         this.master = master;
+        dbsReplicationManager = master.getDBSReplicationService();
     }
 
     public abstract int getProcedureId();
@@ -79,5 +89,77 @@ public abstract class DIROperation {
     public UserCredentials getUserCredentials(DIRRequest rq) {
         UserCredentials cred = rq.getRPCRequest().getUserCredentials();
         return cred;
+    }
+    
+    /**
+     * Operation to give a failure back to the client.
+     * Will decide, if a {@link RedirectException} should be returned.
+     * 
+     * @param error - Exception thrown.
+     * @param rq - original {@link DIRRequest}.
+     */
+    void requestFailed(Exception error, DIRRequest rq) {
+        Logging.logError(Logging.LEVEL_ERROR, this, error);
+        if (error != null && error instanceof BabuDBException && 
+                ((BabuDBException) error).getErrorCode() == ErrorCode.NO_ACCESS && 
+                dbsReplicationManager != null)
+            rq.sendRedirectException(dbsReplicationManager.getMaster());
+        else if (error != null && error instanceof ONCRPCException)
+            rq.sendException((ONCRPCException) error);
+        else
+            rq.sendInternalServerError(error);
+    }
+    
+    /**
+     * Method-interface for sending a response 
+     * 
+     * @param result - can be null, if not necessary.
+     * @param rq - original {@link DIRRequest}.
+     */
+    abstract void requestFinished(Object result, DIRRequest rq);
+    
+    /**
+     * Listener implementation for non-blocking BabuDB requests.
+     * 
+     * @author flangner
+     * @since 11/16/2009
+     * @param <I> - input type.
+     * @param <O> - output type.
+     */
+    abstract class DBRequestListener<I,O> implements BabuDBRequestListener<I> {
+
+        private final boolean finishRequest;
+        
+        DBRequestListener(boolean finishRequest) {
+            this.finishRequest = finishRequest;
+        }
+        
+        abstract O execute(I result, DIRRequest rq) throws Exception;
+        
+        /*
+         * (non-Javadoc)
+         * @see org.xtreemfs.babudb.BabuDBRequestListener#failed(org.xtreemfs.babudb.BabuDBException, java.lang.Object)
+         */
+        @Override
+        public void failed(BabuDBException error, Object request) {
+            requestFailed(error, (DIRRequest) request);
+        }
+
+        /*
+         * (non-Javadoc)
+         * @see org.xtreemfs.babudb.BabuDBRequestListener#finished(java.lang.Object, java.lang.Object)
+         */
+        @Override
+        public void finished(I data, Object context) {
+            try {
+                O result = execute(data, (DIRRequest) context);
+                if (finishRequest)
+                    requestFinished(result, (DIRRequest) context);
+                
+            } catch (Exception e) {
+                requestFailed(e, (DIRRequest) context);
+            }
+        }
+        
     }
 }
