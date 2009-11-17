@@ -74,20 +74,39 @@ class Autotest:
     
     def start_clients( 
                        self, 
-                       debug_level=DEBUG_LEVEL_DEFAULT 
+                       debug_level=DEBUG_LEVEL_DEFAULT,
+                       mount_options=None,
+                       replicate_on_close=False
                      ):
         
         for dir_name in ( "log", "mnt" ):
             try: os.mkdir( dir_name )
             except: pass
 
+        certs_dir_path = os.path.abspath( os.path.join( MY_DIR_PATH, "..", "tests", "certs" ) )        
+        if self.__server_uri.startswith( "oncrpcs://" ) or self.__server_uri.startswith( "oncrpcg://" ):
+            if os.path.exists( certs_dir_path ):
+                pkcs12_file_path = os.path.join( certs_dir_path, "Client.p12" )
+                pkcs12_passphrase = "passphrase"
+            else:
+                raise ValueError, "specified oncrpcs server URI, but cannot find certificate directory at " + certs_dir_path
+        else:
+            pkcs12_file_path = pkcs12_passphrase = None
+
         volumes = self.__get_volumes()
 
         # Create volumes
         for volume_i in xrange( 0, len( volumes ), 2 ):
             volume = volumes[volume_i]
-            try: volume.create( mrc_uri=self.__server_uri )
-            except: pass
+            try: 
+                volume.create( 
+                               mrc_uri=self.__server_uri, 
+                               pkcs12_file_path=pkcs12_file_path,
+                               pkcs12_passphrase=pkcs12_passphrase,
+                               stripe_width=( replicate_on_close and ( ( volume_i / 2 ) + 1 ) or 1 ),                                                            
+                              )
+            except: 
+                pass
             
         # Mount volumes
         try:
@@ -96,9 +115,17 @@ class Autotest:
                 volume.mount( 
                               direct_io=( volume_i % 2 == 1 ), # Or have volume.get_direct_io()?
                               dir_uri=self.__server_uri,
-                              log_file_path=os.path.join( "log", "client"+str( volume_i )+".log" ) 
+                              log_file_path=os.path.join( "log", "client"+str( volume_i )+".log" ),
+                              other_options=mount_options,
+                              pkcs12_file_path=pkcs12_file_path,
+                              pkcs12_passphrase=pkcs12_passphrase,
+                              replication_factor=( replicate_on_close and ( ( volume_i / 2 ) + 1 ) or 0 ),
                             )
         except:
+            if DEBUG_ME:
+                print "xctl: caught exception trying to start autotest clients:"
+                traceback.print_exc()            
+            
             self.stop_clients()
             raise
                 
@@ -108,13 +135,29 @@ class Autotest:
                      ):                
         for dir_name in ( "config", "data", "log" ):
             try: os.mkdir( dir_name )
-            except: pass                
+            except: pass                       
 
+        certs_dir_path = os.path.abspath( os.path.join( MY_DIR_PATH, "..", "tests", "certs" ) )        
+        if self.__server_uri.startswith( "oncrpcs://" ) or self.__server_uri.startswith( "oncrpcg://" ):
+            if os.path.exists( certs_dir_path ):
+                enable_ssl = True
+                enable_gridssl = self.__server_uri.startswith( "oncrpcg://" )
+            else:
+                raise ValueError, "specified oncrpcs server URI, but cannot find certificate directory at " + certs_dir_path
+        else:
+            enable_ssl = enable_gridssl = False
+        
         try:
             dir, mrc, osds = self.__get_servers()
                         
             dir.configure( 
                            debug_level=debug_level,
+                           enable_ssl=enable_ssl,
+                           enable_gridssl=enable_gridssl,
+                           pkcs12_file_path=os.path.join( certs_dir_path, "DIR.p12" ),
+                           pkcs12_passphrase="passphrase",                           
+                           trusted_certs_jks_file_path=os.path.join( certs_dir_path, "trusted.jks" ),
+                           trusted_certs_jks_passphrase="passphrase",
                            uuid="test-env-DIR" 
                          )                                
             dir.start( log_file_path=os.path.join( "log", "dir.log" ) )
@@ -122,22 +165,38 @@ class Autotest:
             
             mrc.configure( 
                            debug_level=debug_level,
+                           enable_ssl=enable_ssl,
+                           enable_gridssl=enable_gridssl,
+                           pkcs12_file_path=os.path.join(  certs_dir_path, "MRC.p12" ),
+                           pkcs12_passphrase="passphrase",
+                           trusted_certs_jks_file_path=os.path.join( certs_dir_path, "trusted.jks" ),
+                           trusted_certs_jks_passphrase="passphrase",
                            uuid="test-env-MRC" 
                          )
             mrc.start( log_file_path=os.path.join( "log", "mrc.log" ) )            
 
 
             for osd_i in xrange( len( osds ) ):
-                osd = osds[osd_i]
+                osd = osds[osd_i]                
                 osd.configure(
                                debug_level=debug_level, 
+                               enable_ssl=enable_ssl,
+                               enable_gridssl=enable_gridssl,
                                http_port=OSD_HTTP_PORT_DEFAULT+osd_i,
                                oncrpc_port=OSD_ONCRPC_PORT_DEFAULT+osd_i,
+                               pkcs12_file_path=os.path.join( certs_dir_path, "OSD.p12" ),
+                               pkcs12_passphrase="passphrase",                           
+                               trusted_certs_jks_file_path=os.path.join( certs_dir_path, "trusted.jks" ),
+                               trusted_certs_jks_passphrase="passphrase",
                                uuid="test-env-OSD" + str( osd_i ) 
-                             )             
+                             )                             
                 osd.start( log_file_path=os.path.join( "log", "osd"+str( osd_i )+".log" ) )
         except:
-            self.stop_servers()            
+            if DEBUG_ME:
+                print "xctl: caught exception trying to start autotest servers:"
+                traceback.print_exc()
+            
+            self.stop_servers()                    
             raise
                             
     def run( self ):               
@@ -147,11 +206,18 @@ class Autotest:
                                     
         return ret
     
+    def save_server_status_pages( self ):
+        dir, mrc, osds = self.__get_servers()
+        dir.save_status_page( "/tmp/dir_status.html" )
+        mrc.save_status_page( "/tmp/mrc_status.html" )
+        for osd_i in xrange( len( osds ) ):
+            osds[osd_i].save_status_page( "/tmp/osd" + str( osd_i ) + ".html" )
+    
     def stop_clients( self ):
         for volume in self.__get_volumes():
             volume.unmount()
     
-    def stop_servers( self ):
+    def stop_servers( self ):                    
         dir, mrc, osds = self.__get_servers()
         dir.stop()
         mrc.stop()
@@ -165,7 +231,7 @@ class Server:
 
     def _get_ssl_config( 
                          self, 
-                         enable_grid_ssl=False, 
+                         enable_gridssl=False, 
                          enable_ssl=False, 
                          pkcs12_file_path=None, 
                          pkcs12_passphrase=None, 
@@ -174,7 +240,7 @@ class Server:
                        ):  
                  
         if enable_ssl:            
-            if enable_grid_ssl:
+            if enable_gridssl:
                 gridsslcfg = "ssl.grid_ssl = true\n"
             else:
                 gridsslcfg = "ssl.grid_ssl = false\n"
@@ -444,8 +510,8 @@ class OSD(Server):
         
         if object_dir_path is None:     
             object_dir_path = os.path.join( "data", uuid )
-            try: os.mkdir( object_dir_path )
-            except: pass
+        try: os.mkdir( object_dir_path )
+        except: pass
 
         dir_service_host = "localhost"
         dir_service_port = DIR_ONCRPC_PORT_DEFAULT            
@@ -478,6 +544,9 @@ class Volume:
                 self, 
                 debug_level=DEBUG_LEVEL_DEFAULT,
                 mrc_uri=MRC_URI_DEFAULT,
+                pkcs12_file_path=None,
+                pkcs12_passphrase=None,
+                stripe_width=1,
               ):
         
         mkfs_xtreemfs_file_path = os.path.abspath( os.path.join( MY_DIR_PATH, "mkfs.xtreemfs" ) )
@@ -486,13 +555,11 @@ class Volume:
             
         mkfs_xtreemfs_args = [mkfs_xtreemfs_file_path]
         mkfs_xtreemfs_args.extend( ( "-d", str( debug_level ) ) )
-        # if enable_ssl: mkfs_xtreemfs_args.extend( CLIENT_SSL_ARGS )                
         mkfs_xtreemfs_args.extend( ( "-p", str( STRIPING_POLICY_TYPE_DEFAULT ) ) )
+        if pkcs12_file_path is not None: mount_xtreemfs_args.extend( ( "--pkcs12-file-path", pkcs12_file_path ) )
+        if pkcs12_passphrase is not None: mount_xtreemfs_args.extend( ( "--pkcs12-passphrase", pkcs12_passphrase ) )        
         mkfs_xtreemfs_args.extend( ( "-s", str( STRIPE_SIZE_DEFAULT ) ) )
-#        if not repl_on_close:
-#            mkfs_xtreemfs_args.extend( ( "-w", str( osdnum + 1 ) ) ) # Stripe width
-#        else:
-#            mkfs_xtreemfs_args.extend( ( "-w", "1" ) ) # Stripe width
+        mkfs_xtreemfs_args.extend( ( "-w", str( stripe_width ) ) )
           
         if not mrc_uri.endswith( "/" ):
             mrc_uri += "/"          
@@ -517,9 +584,10 @@ class Volume:
                dir_uri=DIR_URI_DEFAULT,
                direct_io=False,
                log_file_path=None,
-               metadata_cache=False,            
-#               replicate_on_close=False,
-               write_back_cache=False
+               other_options=None,
+               pkcs12_file_path=None,
+               pkcs12_passphrase=None,   
+               replication_factor=0,         
               ):
 
         try: os.mkdir( self.get_mount_point_dir_path() )
@@ -531,12 +599,15 @@ class Volume:
  
         mount_xtreemfs_args = [mount_xtreemfs_file_path]
         mount_xtreemfs_args.extend( ( "-d", str( debug_level ) ) )                
-        # if enable_ssl: mount_xtreemfs_args.extend( CLIENT_SSL_ARGS )
         if log_file_path is not None:   
             mount_xtreemfs_args.extend( ( "--log-file-path", log_file_path ) )      
         if direct_io: mount_xtreemfs_args.extend( ( "-o", "direct_io" ) )
-        if metadata_cache: mount_xtreemfs_args.append( "--metadata-cache" )
-        if write_back_cache: mount_xtreemfs_args.append( "--write-back-cache" )        
+        if other_options is not None:
+            assert isinstance( other_options, list )
+            for other_option in other_options:
+                mount_xtreemfs_args.append( other_option )
+        if pkcs12_file_path is not None: mount_xtreemfs_args.extend( ( "--pkcs12-file-path", pkcs12_file_path ) )
+        if pkcs12_passphrase is not None: mount_xtreemfs_args.extend( ( "--pkcs12-passphrase", pkcs12_passphrase ) )
         
         volume_uri = dir_uri
         if not volume_uri.endswith( "/" ): volume_uri += "/"
@@ -552,13 +623,18 @@ class Volume:
 
         sleep( 2.0 )
         
-#        if replicate_on_close:
-#            sleep(2)
-#            repl_attr_cmd = "/usr/bin/setfattr -n xtreemfs.repl_factor -v " + str( osdnum + 1 ) + " " + mount_point_dir_path
-#            repl_attr2_cmd = "/usr/bin/setfattr -n xtreemfs.rsel_policy -v 3000 " + mount_point_dir_path
-#            subprocess.call( repl_attr_cmd, shell=True )
-#            subprocess.call( repl_attr2_cmd, shell=True )
-
+        if replication_factor > 0:
+            for setfattr_command in \
+              ( 
+                "/usr/bin/setfattr -n xtreemfs.repl_factor -v " + 
+                    str( replication_factor ) + " " + self.get_mount_point_dir_path(),
+                "/usr/bin/setfattr -n xtreemfs.rsel_policy -v 3000 " + 
+                    self.get_mount_point_dir_path() 
+              ):
+                if DEBUG_ME:
+                    print "xctl: calling setfattr to enable replication:", setfattr_command
+                subprocess.call( setfattr_command, shell=True )
+                          
     def test( 
               self, 
               test_module_names=None,
@@ -641,12 +717,13 @@ if __name__ == "__main__":
     option_parser.add_option( "--autotest-osd-count", action="store", dest="autotest_osd_count", type="int", default=1 )
     option_parser.add_option( "--clean-autotest", action="store_true", dest="clean_autotest", help="delete autotest directories" )
     option_parser.add_option( "-d", "--debug-level", action="store", dest="debug_level", default=DEBUG_LEVEL_DEFAULT )    
-    option_parser.add_option( "--run-autotest", action="store_true", dest="run_autotest", help="run autotests (assumes clients and servers are already started and will be stopped manually" )    
+    option_parser.add_option( "-o", "--mount-option", action="append", dest="mount_options", help="pass options to mount.xtreemfs" )
+    option_parser.add_option( "--run-autotest", action="store_true", dest="run_autotest", help="run autotests (assumes clients and servers are already started and will be stopped manually" )
+    option_parser.add_option( "--replicate-on-close", action="store_true", dest="replicate_on_close" )
     option_parser.add_option( "--start-autotest-clients", action="store_true", dest="start_autotest_clients" )
     option_parser.add_option( "--start-autotest-servers", action="store_true", dest="start_autotest_servers" )
     option_parser.add_option( "--stop-autotest-clients", action="store_true", dest="stop_autotest_clients" )
-    option_parser.add_option( "--stop-autotest-servers", action="store_true", dest="stop_autotest_servers" )
-    
+    option_parser.add_option( "--stop-autotest-servers", action="store_true", dest="stop_autotest_servers" )    
     
     options, positional_args = option_parser.parse_args()
     
@@ -666,23 +743,32 @@ if __name__ == "__main__":
        options.stop_autotest_servers:
         
         autotest = Autotest( osd_count=options.autotest_osd_count, server_uri=server_uri )
-       
-        if options.autotest:
-            autotest.start_servers( debug_level=options.debug_level )
-            autotest.start_clients( debug_level=options.debug_level )            
-            ret = autotest.run()            
-            autotest.stop_clients()
-            autotest.stop_servers()
-            sys.exit( ret )
-        elif options.clean_autotest:
+
+        if options.clean_autotest:
             autotest.clean()
-        elif options.run_autotest:
-            sys.exit( autotest.run() )
-        elif options.start_autotest_clients:
-            autotest.start_clients( debug_level=options.debug_level )
-        elif options.start_autotest_servers:
-            autotest.start_servers( debug_level=options.debug_level )
-        elif options.stop_autotest_clients:
-            autotest.stop_clients()
-        elif options.stop_autotest_servers:
-            autotest.stop_servers()
+        else:
+            ret = 0
+                        
+            if options.start_autotest_servers or options.autotest:
+                autotest.start_servers( debug_level=options.debug_level )
+            
+            if options.start_autotest_clients or options.autotest:
+                autotest.start_clients( 
+                                        debug_level=options.debug_level,
+                                        mount_options=options.mount_options, 
+                                        replicate_on_close=options.replicate_on_close 
+                                       )            
+
+            if options.run_autotest or options.autotest:
+                ret = autotest.run()
+                
+            if options.stop_autotest_clients or options.autotest:
+                autotest.stop_clients()
+
+            if options.autotest:
+                autotest.save_server_status_pages()
+                
+            if options.stop_autotest_servers or options.autotest:
+                autotest.stop_servers()
+                
+            sys.exit( ret )
