@@ -10,7 +10,7 @@
 
 #define CONSTANT_E 0.10
 #define CONSTANT_C 0.25
-#define MAX_MOVEMENT_RATIO 0.50
+#define MAX_MOVEMENT_RATIO 0.10
 
 namespace xtfs_vivaldi
 {

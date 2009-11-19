@@ -54,7 +54,7 @@ public class VivaldiNode {
      * Ratio of the current distance between two nodes, used to set the difference
      * between what we consider "right moves" and "wrong moves".
      */
-    private final double MAX_MOVEMENT_RATIO = 0.50;
+    private final double MAX_MOVEMENT_RATIO = 0.10;
     
 
     public VivaldiNode(){

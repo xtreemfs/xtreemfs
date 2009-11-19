@@ -42,6 +42,8 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
 
 #define MAX_RETRIES_FOR_A_REQUEST 3
 
+#define MAX_REQUEST_TIMEOUT_IN_NS 1000000000 * 30
+
 /*
  * REMOVE AFTER EVALUATING
  */
@@ -137,7 +139,8 @@ namespace xtfs_vivaldi
       
       org::xtreemfs::interfaces::ServiceSet osd_services;
       
-      int currentRetries = 0;
+      std::vector<uint64_t> currentRetries;
+      int retriesInARow = 0;
       
       org::xtreemfs::interfaces::Service *random_osd_service;
     
@@ -171,6 +174,15 @@ namespace xtfs_vivaldi
             const char *fPath=vivaldi_coordinates_file_path;
             SPRINTF_VIV(filename,128,RES_FILE_NAME,fPath,i);
             YIELD::platform::auto_File truncatedFile1 = YIELD::platform::Volume().open( filename, O_CREAT|O_TRUNC|O_WRONLY );
+            
+            char resContent[256];
+            memset(resContent,0,256);
+            SPRINTF_VIV(resContent,256, "#MAX_MOV_RAT:%.3f\n#RETRIES:%d\n#MIN:%ld\n#CHECK_EVERY:%d\n",
+                                        MAX_MOVEMENT_RATIO,
+                                        MAX_RETRIES_FOR_A_REQUEST,
+                                        MIN_RECALCULATION_IN_MS,
+                                        CHECK_EVERY_ITERATIONS);
+            truncatedFile1->write(resContent,strlen(resContent));
             truncatedFile1->close();
             // Create/truncate recals file i
             SPRINTF_VIV(filename,128,RECAL_FILE_NAME,fPath);
@@ -193,13 +205,14 @@ namespace xtfs_vivaldi
           if( (vivaldiIterations%ITERATIONS_BEFORE_UPDATING) == 1)
           {
             updateKnownOSDs(osd_services);
-            currentRetries = 0; //The pending retries are discarded, beacause the old OSDs might not be in the new list
+            currentRetries.clear(); //The pending retries are discarded, beacause the old OSDs might not be in the new list
+            retriesInARow = 0;
           }
           
   				if ( !osd_services.empty() )
   				{
   					
-            if(currentRetries<=0){
+            if(retriesInARow==0){
               //Choose one OSD randomly, only if there's no pending retry
               random_osd_service = &osd_services[std::rand() % osd_services.size()];
             }
@@ -223,23 +236,50 @@ namespace xtfs_vivaldi
                 get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "recalculating against " << random_osd_service->get_uuid();
 
   							YIELD::platform::Time start_time;
-  							osd_proxy->xtreemfs_ping( org::xtreemfs::interfaces::VivaldiCoordinates(), random_osd_vivaldi_coordinates );
+  							osd_proxy->xtreemfs_ping( org::xtreemfs::interfaces::VivaldiCoordinates(), random_osd_vivaldi_coordinates,MAX_REQUEST_TIMEOUT_IN_NS );
   							YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
                 get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "Ping response received.";
                 
+                //Next code is not executed if the ping request times out
+                
+                uint64_t measuredRTT = rtt.as_unix_time_ms();
+                
+                //TOFIX:This bool is useless once the code is evaluated 
                 bool retried = false;
   							// Recalculate coordinates here
-                if(currentRetries<MAX_RETRIES_FOR_A_REQUEST){
-                  if( !own_node.recalculatePosition(random_osd_vivaldi_coordinates,rtt.as_unix_time_ms(),false) ){
-                    currentRetries++;
+                if( retriesInARow < MAX_RETRIES_FOR_A_REQUEST ){
+                  if( !own_node.recalculatePosition(random_osd_vivaldi_coordinates,measuredRTT,false) ){
+                    
+                    //The movement has been postponed because the measured RTT seems to be a peak
+                    currentRetries.push_back(measuredRTT);
+                    retriesInARow++;
                     retried = true;
+                    
                   }else{
-                    currentRetries = 0;
+                    
+                    //The movement has been accepted
+                    currentRetries.clear();
+                    retriesInARow = 0;
+                    
                   }  
                 }else{
-                  //Forcing recalculation
-                  own_node.recalculatePosition(random_osd_vivaldi_coordinates,rtt.as_unix_time_ms(),true);
-                  currentRetries = 0;
+                 
+                  //Choose the lowest RTT
+                  uint64_t lowestOne = measuredRTT;
+                  for(std::vector<uint64_t>::iterator it = currentRetries.begin(); it<currentRetries.end(); it++){
+                    if( (*it) < lowestOne ){
+                      lowestOne = (*it);
+                    }
+                  }
+                  
+                  //Forcing recalculation because we've retried too many times
+                  own_node.recalculatePosition(random_osd_vivaldi_coordinates,lowestOne,true);
+                  currentRetries.clear();
+                  retriesInARow = 0;
+                  
+                  //This is just to include in the trace the definitive RTT
+                  measuredRTT = lowestOne;
+
                 }
                 
                 //Print trace
@@ -248,7 +288,7 @@ namespace xtfs_vivaldi
                           128,
                           "%s:%lld(Viv:%.3f) Own:(%.3f,%.3f) lE=%.3f Rem:(%.3f,%.3f) rE=%.3f %s",
                             retried?"RETRY":"RTT",
-                            rtt.as_unix_time_ms(),
+                            measuredRTT,
                             own_node.calculateDistance((*own_node.getCoordinates()),random_osd_vivaldi_coordinates),
                             own_node.getCoordinates()->get_x_coordinate(),
                             own_node.getCoordinates()->get_y_coordinate(),
@@ -281,7 +321,11 @@ namespace xtfs_vivaldi
   			
         }catch ( std::exception& exc ){
   				get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "xtfs_vivaldi: error pinging OSDs: " << exc.what() << ".";
-  				//continue;
+          
+          //We must avoid to keep retrying indefinitely against an OSD which is not responding
+  				if(retriesInARow && (retriesInARow++ >= MAX_RETRIES_FOR_A_REQUEST) ){
+            retriesInARow = 0;
+          }
   			}
   
         //Store the new coordinates in a local file

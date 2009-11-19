@@ -173,20 +173,39 @@ public class VivaldiStage extends Stage {
     }
 
 
-    private void forceVivaldiRecalculation(VivaldiCoordinates coordinatesJ, ArrayList<Long> rtts){
+    private void forceVivaldiRecalculation(VivaldiCoordinates coordinatesJ, ArrayList<Long> availableRTTs){
 
         //TOFIX:In this version, the recalculation is discarded when the last retry times out: (coordinatesJ!=null)
-        if( (coordinatesJ!=null) && (rtts.size()>0) ){
-                                            
+        if( (coordinatesJ!=null) && (availableRTTs.size()>0) ){
+            
             //Determine the minimum RTT of the whole sample
-            long minRTT= rtts.get(0);
-            for(int i=1;i<rtts.size();i++){
-                if(rtts.get(i) < minRTT){
-                    minRTT = rtts.get(i);
+            long minRTT= availableRTTs.get(0);
+            
+            StringBuffer strbRTTs = new StringBuffer(Long.toString(minRTT));
+            
+            for(int i=1;i<availableRTTs.size();i++){
+                strbRTTs.append(",");    
+                strbRTTs.append(availableRTTs.get(i));
+                
+                if(availableRTTs.get(i) < minRTT){
+                    minRTT = availableRTTs.get(i);
                 }
             }
 
             vNode.recalculatePosition(coordinatesJ, minRTT,true);
+            
+            Logging.logMessage( Logging.LEVEL_INFO,
+                                this,
+                                String.format("Forced(%s):%ld(Viv:%.3f) Own:(%.3f,%.3f) lE=%.3f Rem:(%.3f,%.3f) rE=%.3f",
+                                        strbRTTs.toString(),
+                                        minRTT,
+                                        VivaldiNode.calculateDistance(vNode.getCoordinates(), coordinatesJ),
+                                        vNode.getCoordinates().getX_coordinate(),
+                                        vNode.getCoordinates().getY_coordinate(),
+                                        vNode.getCoordinates().getLocal_error(),
+                                        coordinatesJ.getX_coordinate(),
+                                        coordinatesJ.getY_coordinate(),
+                                        coordinatesJ.getLocal_error()));
         }        
     }
 
