@@ -90,8 +90,6 @@ namespace xtfs_vivaldi
       if ( file_count >= 2 )
       {
         YIELD::ipc::auto_URI dir_uri = parseURI( files[0] );
-        if ( dir_uri->get_port() == 0 )
-          dir_uri->set_port( org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT );
         dir_proxy = createDIRProxy( *dir_uri );
         vivaldi_coordinates_file_path = files[1];
       }

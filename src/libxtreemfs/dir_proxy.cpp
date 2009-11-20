@@ -22,13 +22,13 @@ auto_DIRProxy DIRProxy::create( const YIELD::ipc::URI& absolute_uri,
   if ( checked_uri.get_port() == 0 )
   {
     if ( checked_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCG_SCHEME )
-      checked_uri.set_port( org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPCG_PORT );
+      checked_uri.set_port( org::xtreemfs::interfaces::DIRInterface::ONCRPCG_PORT_DEFAULT );
     else if ( checked_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCS_SCHEME )
-      checked_uri.set_port( org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPCS_PORT );
+      checked_uri.set_port( org::xtreemfs::interfaces::DIRInterface::ONCRPCS_PORT_DEFAULT );
     else if ( checked_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
-      checked_uri.set_port( org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPCU_PORT );
+      checked_uri.set_port( org::xtreemfs::interfaces::DIRInterface::ONCRPCU_PORT_DEFAULT );
     else
-      checked_uri.set_port( org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT );
+      checked_uri.set_port( org::xtreemfs::interfaces::DIRInterface::ONCRPC_PORT_DEFAULT );
   }  
 
   YIELD::ipc::auto_SocketAddress peername = YIELD::ipc::SocketAddress::create( checked_uri );

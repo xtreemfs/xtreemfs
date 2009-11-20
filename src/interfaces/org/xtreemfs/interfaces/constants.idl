@@ -1,24 +1,26 @@
+// See doc/idl_conventions.txt before modifying this file.
+
 module org
 {
-  module xtreemfs # 2009082618
+  module xtreemfs # 2009112014
   {
     module interfaces
     {
+      const uint32_t ONCRPC_AUTH_FLAVOR = 1326;
       const string ONCRPC_SCHEME = "oncrpc";
       const string ONCRPCG_SCHEME = "oncrpcg";
       const string ONCRPCS_SCHEME = "oncrpcs";
       const string ONCRPCU_SCHEME = "oncrpcu";
-      const uint32_t ONCRPC_AUTH_FLAVOR = 1326;
 
       const string REPL_UPDATE_PC_NONE = "";
       const string REPL_UPDATE_PC_RONLY = "ronly";
       
-      const uint32_t REPL_FLAG_IS_COMPLETE = 0x0001;
-      const uint32_t REPL_FLAG_FULL_REPLICA = 0x0002;
-      const uint32_t REPL_FLAG_STRATEGY_SEQUENTIAL = 0x0004;
-      const uint32_t REPL_FLAG_STRATEGY_RANDOM = 0x0008;
-      const uint32_t REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING = 0x000C;
-      const uint32_t REPL_FLAG_STRATEGY_RAREST_FIRST = 0x0010;
+      const uint32_t REPL_FLAG_FULL_REPLICA = 1;
+      const uint32_t REPL_FLAG_IS_COMPLETE = 2;
+      const uint32_t REPL_FLAG_STRATEGY_RANDOM = 4;
+      const uint32_t REPL_FLAG_STRATEGY_RAREST_FIRST = 8;
+      const uint32_t REPL_FLAG_STRATEGY_SEQUENTIAL = 16;
+      const uint32_t REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING = 32;
 
       const uint32_t SYSTEM_V_FCNTL_H_O_RDONLY = 0x0000;
       const uint32_t SYSTEM_V_FCNTL_H_O_WRONLY = 0x0001;

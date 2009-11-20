@@ -31,13 +31,13 @@ auto_MRCProxy MRCProxy::create( const YIELD::ipc::URI& absolute_uri,
   if ( checked_uri.get_port() == 0 )
   {
     if ( checked_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCG_SCHEME )
-      checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPCG_PORT );
+      checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::ONCRPCG_PORT_DEFAULT );
     else if ( checked_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCS_SCHEME )
-      checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPCS_PORT );
+      checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::ONCRPCS_PORT_DEFAULT );
     else if ( checked_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
-      checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPCU_PORT );
+      checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::ONCRPCU_PORT_DEFAULT );
     else
-      checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::DEFAULT_ONCRPC_PORT );
+      checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::ONCRPC_PORT_DEFAULT );
   }  
 
   YIELD::ipc::auto_SocketAddress peername = YIELD::ipc::SocketAddress::create( checked_uri );

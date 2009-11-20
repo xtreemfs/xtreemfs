@@ -1,10 +1,12 @@
+// See doc/idl_conventions.txt before modifying this file.
+
 #include "constants.idl"
 #include "mrc_osd_types.idl"
 
 
 module org
 {
-  module xtreemfs # 2009090209
+  module xtreemfs # 2009112014
   {
     module interfaces
     {
@@ -55,13 +57,13 @@ module org
 
       struct Volume # 44
       {
-        string name;
-        uint32_t mode;
-        StripingPolicy default_striping_policy;
         AccessControlPolicyType access_control_policy;
+        StripingPolicy default_striping_policy;
         string id;
-        string owner_user_id;
+        uint32_t mode;
+        string name;
         string owner_group_id;
+        string owner_user_id;
       };
 
       typedef sequence<Volume> VolumeSet # 45;
@@ -70,11 +72,11 @@ module org
       interface MRCInterface # 200
       {
         // Constants
-        const uint32_t DEFAULT_ONCRPC_PORT = 32636;
-      	const uint32_t DEFAULT_ONCRPCG_PORT = 32636;
-        const uint32_t DEFAULT_ONCRPCS_PORT = 32636;
-        const uint32_t DEFAULT_ONCRPCU_PORT = 32636;
-        const uint32_t DEFAULT_HTTP_PORT = 30636;
+        const uint32_t HTTP_PORT_DEFAULT = 30636;
+        const uint32_t ONCRPC_PORT_DEFAULT = 32636;
+        const uint32_t ONCRPCG_PORT_DEFAULT = 32636;
+        const uint32_t ONCRPCS_PORT_DEFAULT = 32636;
+        const uint32_t ONCRPCU_PORT_DEFAULT = 32636;
 
         // POSIX/FUSE operations
         boolean access( string path, uint32_t mode ) # 1;
@@ -104,13 +106,13 @@ module org
         void xtreemfs_checkpoint() # 30;
         void xtreemfs_check_file_exists( string volume_id, StringSet file_ids, string osd_uuid, out string bitmap ) # 31;
         void xtreemfs_dump_database( string dump_file ) # 32;
-        void xtreemfs_get_suitable_osds( string file_id, uint32_t numOSDs, out StringSet osd_uuids ) # 33;
+        void xtreemfs_get_suitable_osds( string file_id, uint32_t num_osds, out StringSet osd_uuids ) # 33;
         void xtreemfs_internal_debug( string operation, out string result ) # 34;
-        void xtreemfs_lsvol( out VolumeSet volumes ) # 35;
         void xtreemfs_listdir( string path, out StringSet names ) # 36;
+        void xtreemfs_lsvol( out VolumeSet volumes ) # 35;
         void xtreemfs_mkvol( Volume volume ) # 37;
         void xtreemfs_renew_capability( in XCap old_xcap, out XCap renewed_xcap ) # 38;
-	void xtreemfs_replication_to_master() # 39;
+        void xtreemfs_replication_to_master() # 39;
         void xtreemfs_replica_add( string file_id, Replica new_replica ) # 40;
         void xtreemfs_replica_list( string file_id, out ReplicaSet replicas ) # 41;
         void xtreemfs_replica_remove( string file_id, string osd_uuid, out XCap delete_xcap ) # 42;

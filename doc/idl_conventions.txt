@@ -1,0 +1,66 @@
+Alphabetical order! for operation names within an interface, variable names within an operation,
+                    field names within a struct, constants within an enum, etc.
+  Exceptions: 
+- constructs taken from system headers (struct Stat, POSIX functions)
+- when there is a good reason to change order (e.g. putting the data buffer last in struct ObjectData)
+- when a type includes another type and thus must be declared after the first type (e.g. FileCredentials including XCap)
+- input parameters before output parameters 
+
+Capitalize constants:
+- ONCRPC_SCHEME
+
+Complex types should usually end with a suffix indicating their IDL type:
+- ServiceDataMap
+- sequences are "xSet" by earlier convention
+- Exception: when names are adapted from system types (struct Stat)
+
+Default constants should end with _DEFAULT
+- ONCRPC_PORT_DEFAULT
+- Similar: _MAX, _MIN (end with _MAX instead of starting with it, to distinguish variable names)
+
+Flag constants and enums:
+- Enum type names should end with "Type":
+- Should have a common prefix when they are defined by us: REPL_FLAG_IS_COMPLETE, REPL_FLAG_FULL_REPLICA
+- Decimal values are preferable to other bases, except where copying from a system header
+- Use system header values from the most common systems (typically System V derivatives, including Windows)
+- Exception: errno constants from Linux
+
+Operation names:
+- For operations used by the client (e.g. symlink, read), prefer POSIX names, then FUSE names.
+- All other operation names should be prefixed by xtreemfs_ (e.g. xtreemfs_shutdown).
+- Similar operations should be grouped with a prefix: xtreemfs_service_get_by_type, xtreemfs_service_get_by_uuid, etc.
+
+Operation parameters:
+- all input parameters before all input parameters
+- only a single output parameter; Java can't handle multiple output parameters
+- prefer output parameters with descriptive names (renewed_xcap) to return values
+
+Place types in the most fine-grained .idl they are used.
+- e.g. only types shared by all interfaces should be in types.idl.
+
+Spaces instead of tabs!
+- 2 space indentation after {
+- 1 space padding on function parameters func( int y, int z );
+
+Tag numbers:
+- Whenever types, operations, etc. are MODIFIED (not added or removed) you MUST change the tag number on module xtreemfs to the 
+  current date + hour: module xtreemfs # 2009082618
+- Interface tag numbers stay the same
+- When adding a construct use the highest tag number of [operations|types|...] + 1 instead of reusing numbers, even if there is a gap
+- Observe intentional gaps between tag number ranges, e.g. between exceptions and operations
+- Tag numbers must be unique within a given scope (module or interface), e.g. exception and operation tag numbers must not conflict
+  
+Time variables should have units as suffix:
+- atime_ns, last_update_s
+- xtreemfs_global_time_s_get()
+
+Use C++/Java naming conventions for types, interfaces:
+- DirService, DIRInterface
+
+Use C naming conventions for operations and variable names (vs. C++, Java, etc.):
+- all lower case, words separated by _
+- setattr instead of setAttr (Java) or SetAttr (C++)
+- file_id instead of fileId (Java)
+
+Use sized/stdint types instead of C types:
+- uint32_t instead of unsigned int, uint64_t instead of unsigned long long, etc.

@@ -1,6 +1,8 @@
+// See doc/idl_conventions.txt before modifying this file.
+
 module org
 {
-  module xtreemfs # 2009082618
+  module xtreemfs # 2009112014
   {
     module interfaces
     {

@@ -245,8 +245,6 @@ namespace mount_xtreemfs
       if ( file_count >= 2 )
       {
         dir_uri = parseVolumeURI( files[0], volume_name );
-        if ( dir_uri->get_port() == 0 )
-          dir_uri->set_port( org::xtreemfs::interfaces::DIRInterface::DEFAULT_ONCRPC_PORT );
         mount_point = files[1];
         return;
       }

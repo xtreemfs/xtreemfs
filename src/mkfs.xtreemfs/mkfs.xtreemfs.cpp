@@ -60,7 +60,17 @@ namespace mkfs_xtreemfs
     // YIELD::Main
     int _main( int, char** )
     {
-      createMRCProxy( *mrc_uri, password.c_str() )->xtreemfs_mkvol( org::xtreemfs::interfaces::Volume( volume_name, mode, org::xtreemfs::interfaces::StripingPolicy( striping_policy, striping_policy_stripe_size, striping_policy_width ), access_control_policy, std::string(), owner_user_id, owner_group_id ) );
+      createMRCProxy( *mrc_uri, password.c_str() )->xtreemfs_mkvol( 
+        org::xtreemfs::interfaces::Volume(
+          access_control_policy,
+          org::xtreemfs::interfaces::StripingPolicy( striping_policy, striping_policy_stripe_size, striping_policy_width ),
+          std::string(),
+          mode,
+          volume_name,
+          owner_group_id,
+          owner_user_id
+        )
+      );
       return 0;
     }
 

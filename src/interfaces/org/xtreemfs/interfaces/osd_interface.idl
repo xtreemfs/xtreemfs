@@ -1,26 +1,28 @@
+// See doc/idl_conventions.txt before modifying this file.
+
 #include "constants.idl"
 #include "mrc_osd_types.idl"
 
 
 module org
 {
-  module xtreemfs # 2009082618
+  module xtreemfs # 2009112014
   {
     module interfaces
     {
       struct InternalGmax # 50
       {
         uint64_t epoch;
-        uint64_t last_object_id;
         uint64_t file_size;
+        uint64_t last_object_id;
       };
 
       struct Lock # 54
       {
-        string client_uuid;
         uint32_t client_pid;
-        uint64_t offset;
+        string client_uuid;
         uint64_t length;
+        uint64_t offset;
       };
 
       struct ObjectData # 51
@@ -33,10 +35,10 @@ module org
 
       struct ObjectList # 55
       {
-        // serialized datatype
+        // serialized data type
         buffer set;
-        uint32_t stripeWidth;
-        uint32_t firstObjectNo;
+        uint32_t stripe_width;
+        uint32_t first_;
       };
 
       typedef sequence<ObjectList> ObjectListSet # 56;
@@ -44,7 +46,7 @@ module org
       struct InternalReadLocalResponse # 52
       {
         ObjectData data;
-        // serialized datatype
+        // serialized data type
         ObjectListSet object_set;
       };
 
@@ -52,19 +54,11 @@ module org
       interface OSDInterface # 300
       {
         // Constants
-        const uint32_t DEFAULT_ONCRPC_PORT = 32640;
-      	const uint32_t DEFAULT_ONCRPCG_PORT = 32640;
-        const uint32_t DEFAULT_ONCRPCS_PORT = 32640;
-        const uint32_t DEFAULT_ONCRPCU_PORT = 32640;
-        const uint32_t DEFAULT_HTTP_PORT = 30640; 
-
-        // Exceptions
-        exception ConcurrentModificationException # 1 { string stack_trace; };
-        exception errnoException # 2 { uint32_t error_code; string error_message; string stack_trace; };
-        exception InvalidArgumentException # 3 { string error_message; };
-        exception OSDException # 4 { uint32_t error_code; string error_message; string stack_trace; };
-        exception ProtocolException # 5 { uint32_t accept_stat; uint32_t error_code; string stack_trace; };
-        exception RedirectException # 6 { string to_uuid; };
+        const uint32_t HTTP_PORT_DEFAULT = 30640; 
+        const uint32_t ONCRPC_PORT_DEFAULT = 32640;
+      	const uint32_t ONCRPCG_PORT_DEFAULT = 32640;
+        const uint32_t ONCRPCS_PORT_DEFAULT = 32640;
+        const uint32_t ONCRPCU_PORT_DEFAULT = 32640;
 
         // FUSE/POSIX operations
         void read( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint32_t length, out ObjectData object_data ) # 10;
@@ -73,8 +67,8 @@ module org
         void write( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, uint64_t lease_timeout, ObjectData object_data, out OSDWriteResponse osd_write_response ) # 13;
 
         // XtreemFS-specific operations
-      	void xtreemfs_broadcast_gmax( string file_id, uint64_t truncateEpoch, uint64_t lastObject, uint64_t fileSize ) # 20;
-        ObjectData xtreemfs_check_object( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version) # 21;
+      	void xtreemfs_broadcast_gmax( string file_id, uint64_t truncate_epoch, uint64_t last_object, uint64_t file_size ) # 20;
+        ObjectData xtreemfs_check_object( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version ) # 21;
 
         void xtreemfs_cleanup_get_results( out StringSet results ) # 30;
         void xtreemfs_cleanup_is_running( out boolean is_running ) # 31;
@@ -85,7 +79,7 @@ module org
         InternalGmax xtreemfs_internal_get_gmax( FileCredentials file_credentials, string file_id ) # 40;
         void xtreemfs_internal_truncate( FileCredentials file_credentials, string file_id, uint64_t new_file_size, out OSDWriteResponse osd_write_response ) # 41;
         uint64_t xtreemfs_internal_get_file_size( FileCredentials file_credentials, string file_id ) # 42;
-        InternalReadLocalResponse xtreemfs_internal_read_local( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length, boolean attachObjectList, ObjectListSet requiredObjects) # 43;
+        InternalReadLocalResponse xtreemfs_internal_read_local( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint64_t offset, uint64_t length, boolean attach_object_list, ObjectListSet required_objects ) # 43;
         ObjectList xtreemfs_internal_get_object_set( FileCredentials file_credentials, string file_id) # 44;
 
         Lock xtreemfs_lock_acquire( FileCredentials file_credentials, string client_uuid, int32_t client_pid, string file_id, uint64_t offset, uint64_t length, boolean exclusive ) # 50;
@@ -95,6 +89,14 @@ module org
         void xtreemfs_ping( VivaldiCoordinates coordinates, out VivaldiCoordinates remote_coordinates ) # 60;
 
         void xtreemfs_shutdown() # 70;
+
+        // Exceptions
+        exception ConcurrentModificationException # 1 { string stack_trace; };
+        exception errnoException # 2 { uint32_t error_code; string error_message; string stack_trace; };
+        exception InvalidArgumentException # 3 { string error_message; };
+        exception OSDException # 4 { uint32_t error_code; string error_message; string stack_trace; };
+        exception ProtocolException # 5 { uint32_t accept_stat; uint32_t error_code; string stack_trace; };
+        exception RedirectException # 6 { string to_uuid; };
       };
     };
   };

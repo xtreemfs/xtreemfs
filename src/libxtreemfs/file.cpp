@@ -98,7 +98,7 @@ File::~File()
     if ( !latest_osd_write_response.get_new_file_size().empty() )  
       parent_volume->get_mrc_proxy()->xtreemfs_update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
 
-    if ( file_credentials.get_xcap().get_replicateOnClose() )
+    if ( file_credentials.get_xcap().get_replicate_on_close() )
       parent_volume->get_mrc_proxy()->close( file_credentials.get_xcap() );
   }
   catch ( std::exception& )

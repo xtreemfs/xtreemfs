@@ -68,7 +68,7 @@ namespace org
         bool operator==( const Stat& other ) const { return dev == other.dev && ino == other.ino && mode == other.mode && nlink == other.nlink && uid == other.uid && gid == other.gid && unused_dev == other.unused_dev && size == other.size && atime_ns == other.atime_ns && mtime_ns == other.mtime_ns && ctime_ns == other.ctime_ns && user_id == other.user_id && group_id == other.group_id && file_id == other.file_id && link_target == other.link_target && truncate_epoch == other.truncate_epoch && attributes == other.attributes; }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( Stat, 2009090249 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( Stat, 2009112054 );
 
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeUint64( "dev", 0, dev ); marshaller.writeUint64( "ino", 0, ino ); marshaller.writeUint32( "mode", 0, mode ); marshaller.writeUint32( "nlink", 0, nlink ); marshaller.writeUint32( "uid", 0, uid ); marshaller.writeUint32( "gid", 0, gid ); marshaller.writeInt16( "unused_dev", 0, unused_dev ); marshaller.writeUint64( "size", 0, size ); marshaller.writeUint64( "atime_ns", 0, atime_ns ); marshaller.writeUint64( "mtime_ns", 0, mtime_ns ); marshaller.writeUint64( "ctime_ns", 0, ctime_ns ); marshaller.writeString( "user_id", 0, user_id ); marshaller.writeString( "group_id", 0, group_id ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeString( "link_target", 0, link_target ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); marshaller.writeUint32( "attributes", 0, attributes ); }
@@ -111,7 +111,7 @@ namespace org
         bool operator==( const DirectoryEntry& other ) const { return name == other.name && stbuf == other.stbuf; }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( DirectoryEntry, 2009090250 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( DirectoryEntry, 2009112055 );
 
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "name", 0, name ); marshaller.writeStruct( "stbuf", 0, stbuf ); }
@@ -131,7 +131,7 @@ namespace org
         virtual ~DirectoryEntrySet() { }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( DirectoryEntrySet, 2009090251 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( DirectoryEntrySet, 2009112056 );
 
         // yidl::Sequence
         size_t get_size() const { return size(); }
@@ -162,7 +162,7 @@ namespace org
         bool operator==( const StatVFS& other ) const { return bsize == other.bsize && bavail == other.bavail && blocks == other.blocks && fsid == other.fsid && namelen == other.namelen; }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( StatVFS, 2009090252 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( StatVFS, 2009112057 );
 
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeUint32( "bsize", 0, bsize ); marshaller.writeUint64( "bavail", 0, bavail ); marshaller.writeUint64( "blocks", 0, blocks ); marshaller.writeString( "fsid", 0, fsid ); marshaller.writeUint32( "namelen", 0, namelen ); }
@@ -179,47 +179,47 @@ namespace org
       class Volume : public ::yidl::runtime::Struct
       {
       public:
-        Volume() : mode( 0 ), access_control_policy( ACCESS_CONTROL_POLICY_NULL ) { }
-        Volume( const std::string& name, uint32_t mode, const org::xtreemfs::interfaces::StripingPolicy& default_striping_policy, org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy, const std::string& id, const std::string& owner_user_id, const std::string& owner_group_id ) : name( name ), mode( mode ), default_striping_policy( default_striping_policy ), access_control_policy( access_control_policy ), id( id ), owner_user_id( owner_user_id ), owner_group_id( owner_group_id ) { }
-        Volume( const char* name, size_t name_len, uint32_t mode, const org::xtreemfs::interfaces::StripingPolicy& default_striping_policy, org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy, const char* id, size_t id_len, const char* owner_user_id, size_t owner_user_id_len, const char* owner_group_id, size_t owner_group_id_len ) : name( name, name_len ), mode( mode ), default_striping_policy( default_striping_policy ), access_control_policy( access_control_policy ), id( id, id_len ), owner_user_id( owner_user_id, owner_user_id_len ), owner_group_id( owner_group_id, owner_group_id_len ) { }
+        Volume() : access_control_policy( ACCESS_CONTROL_POLICY_NULL ), mode( 0 ) { }
+        Volume( org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy, const org::xtreemfs::interfaces::StripingPolicy& default_striping_policy, const std::string& id, uint32_t mode, const std::string& name, const std::string& owner_group_id, const std::string& owner_user_id ) : access_control_policy( access_control_policy ), default_striping_policy( default_striping_policy ), id( id ), mode( mode ), name( name ), owner_group_id( owner_group_id ), owner_user_id( owner_user_id ) { }
+        Volume( org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy, const org::xtreemfs::interfaces::StripingPolicy& default_striping_policy, const char* id, size_t id_len, uint32_t mode, const char* name, size_t name_len, const char* owner_group_id, size_t owner_group_id_len, const char* owner_user_id, size_t owner_user_id_len ) : access_control_policy( access_control_policy ), default_striping_policy( default_striping_policy ), id( id, id_len ), mode( mode ), name( name, name_len ), owner_group_id( owner_group_id, owner_group_id_len ), owner_user_id( owner_user_id, owner_user_id_len ) { }
         virtual ~Volume() { }
 
-        void set_name( const std::string& name ) { set_name( name.c_str(), name.size() ); }
-        void set_name( const char* name, size_t name_len ) { this->name.assign( name, name_len ); }
-        const std::string& get_name() const { return name; }
-        void set_mode( uint32_t mode ) { this->mode = mode; }
-        uint32_t get_mode() const { return mode; }
-        void set_default_striping_policy( const org::xtreemfs::interfaces::StripingPolicy&  default_striping_policy ) { this->default_striping_policy = default_striping_policy; }
-        const org::xtreemfs::interfaces::StripingPolicy& get_default_striping_policy() const { return default_striping_policy; }
         void set_access_control_policy( org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy ) { this->access_control_policy = access_control_policy; }
         org::xtreemfs::interfaces::AccessControlPolicyType get_access_control_policy() const { return access_control_policy; }
+        void set_default_striping_policy( const org::xtreemfs::interfaces::StripingPolicy&  default_striping_policy ) { this->default_striping_policy = default_striping_policy; }
+        const org::xtreemfs::interfaces::StripingPolicy& get_default_striping_policy() const { return default_striping_policy; }
         void set_id( const std::string& id ) { set_id( id.c_str(), id.size() ); }
         void set_id( const char* id, size_t id_len ) { this->id.assign( id, id_len ); }
         const std::string& get_id() const { return id; }
-        void set_owner_user_id( const std::string& owner_user_id ) { set_owner_user_id( owner_user_id.c_str(), owner_user_id.size() ); }
-        void set_owner_user_id( const char* owner_user_id, size_t owner_user_id_len ) { this->owner_user_id.assign( owner_user_id, owner_user_id_len ); }
-        const std::string& get_owner_user_id() const { return owner_user_id; }
+        void set_mode( uint32_t mode ) { this->mode = mode; }
+        uint32_t get_mode() const { return mode; }
+        void set_name( const std::string& name ) { set_name( name.c_str(), name.size() ); }
+        void set_name( const char* name, size_t name_len ) { this->name.assign( name, name_len ); }
+        const std::string& get_name() const { return name; }
         void set_owner_group_id( const std::string& owner_group_id ) { set_owner_group_id( owner_group_id.c_str(), owner_group_id.size() ); }
         void set_owner_group_id( const char* owner_group_id, size_t owner_group_id_len ) { this->owner_group_id.assign( owner_group_id, owner_group_id_len ); }
         const std::string& get_owner_group_id() const { return owner_group_id; }
+        void set_owner_user_id( const std::string& owner_user_id ) { set_owner_user_id( owner_user_id.c_str(), owner_user_id.size() ); }
+        void set_owner_user_id( const char* owner_user_id, size_t owner_user_id_len ) { this->owner_user_id.assign( owner_user_id, owner_user_id_len ); }
+        const std::string& get_owner_user_id() const { return owner_user_id; }
 
-        bool operator==( const Volume& other ) const { return name == other.name && mode == other.mode && default_striping_policy == other.default_striping_policy && access_control_policy == other.access_control_policy && id == other.id && owner_user_id == other.owner_user_id && owner_group_id == other.owner_group_id; }
+        bool operator==( const Volume& other ) const { return access_control_policy == other.access_control_policy && default_striping_policy == other.default_striping_policy && id == other.id && mode == other.mode && name == other.name && owner_group_id == other.owner_group_id && owner_user_id == other.owner_user_id; }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( Volume, 2009090253 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( Volume, 2009112058 );
 
         // yidl::Struct
-        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "name", 0, name ); marshaller.writeUint32( "mode", 0, mode ); marshaller.writeStruct( "default_striping_policy", 0, default_striping_policy ); marshaller.writeInt32( "access_control_policy", 0, static_cast<int32_t>( access_control_policy ) ); marshaller.writeString( "id", 0, id ); marshaller.writeString( "owner_user_id", 0, owner_user_id ); marshaller.writeString( "owner_group_id", 0, owner_group_id ); }
-        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readString( "name", 0, name ); mode = unmarshaller.readUint32( "mode", 0 ); unmarshaller.readStruct( "default_striping_policy", 0, default_striping_policy ); access_control_policy = ( org::xtreemfs::interfaces::AccessControlPolicyType )unmarshaller.readInt32( "access_control_policy", 0 ); unmarshaller.readString( "id", 0, id ); unmarshaller.readString( "owner_user_id", 0, owner_user_id ); unmarshaller.readString( "owner_group_id", 0, owner_group_id ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeInt32( "access_control_policy", 0, static_cast<int32_t>( access_control_policy ) ); marshaller.writeStruct( "default_striping_policy", 0, default_striping_policy ); marshaller.writeString( "id", 0, id ); marshaller.writeUint32( "mode", 0, mode ); marshaller.writeString( "name", 0, name ); marshaller.writeString( "owner_group_id", 0, owner_group_id ); marshaller.writeString( "owner_user_id", 0, owner_user_id ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { access_control_policy = ( org::xtreemfs::interfaces::AccessControlPolicyType )unmarshaller.readInt32( "access_control_policy", 0 ); unmarshaller.readStruct( "default_striping_policy", 0, default_striping_policy ); unmarshaller.readString( "id", 0, id ); mode = unmarshaller.readUint32( "mode", 0 ); unmarshaller.readString( "name", 0, name ); unmarshaller.readString( "owner_group_id", 0, owner_group_id ); unmarshaller.readString( "owner_user_id", 0, owner_user_id ); }
 
       protected:
-        std::string name;
-        uint32_t mode;
-        org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
         org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy;
+        org::xtreemfs::interfaces::StripingPolicy default_striping_policy;
         std::string id;
-        std::string owner_user_id;
+        uint32_t mode;
+        std::string name;
         std::string owner_group_id;
+        std::string owner_user_id;
       };
 
       class VolumeSet : public ::yidl::runtime::Sequence, public std::vector<org::xtreemfs::interfaces::Volume>
@@ -231,7 +231,7 @@ namespace org
         virtual ~VolumeSet() { }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( VolumeSet, 2009090254 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( VolumeSet, 2009112059 );
 
         // yidl::Sequence
         size_t get_size() const { return size(); }
@@ -298,11 +298,11 @@ namespace org
         virtual ~MRCInterface() { }
 
 
-      const static uint32_t DEFAULT_ONCRPC_PORT = 32636;
-      const static uint32_t DEFAULT_ONCRPCG_PORT = 32636;
-      const static uint32_t DEFAULT_ONCRPCS_PORT = 32636;
-      const static uint32_t DEFAULT_ONCRPCU_PORT = 32636;
-      const static uint32_t DEFAULT_HTTP_PORT = 30636;
+      const static uint32_t HTTP_PORT_DEFAULT = 30636;
+      const static uint32_t ONCRPC_PORT_DEFAULT = 32636;
+      const static uint32_t ONCRPCG_PORT_DEFAULT = 32636;
+      const static uint32_t ONCRPCS_PORT_DEFAULT = 32636;
+      const static uint32_t ONCRPCU_PORT_DEFAULT = 32636;
 
 
         virtual bool access( const std::string& path, uint32_t mode ) { return access( path, mode, static_cast<uint64_t>( -1 ) ); }
@@ -380,23 +380,26 @@ namespace org
         virtual void xtreemfs_dump_database( const std::string& dump_file ) { xtreemfs_dump_database( dump_file, static_cast<uint64_t>( -1 ) ); }
         virtual void xtreemfs_dump_database( const std::string& dump_file, uint64_t response_timeout_ns ) { ::yidl::runtime::auto_Object<xtreemfs_dump_databaseRequest> __request( new xtreemfs_dump_databaseRequest( dump_file ) ); ::YIELD::concurrency::auto_ResponseQueue<xtreemfs_dump_databaseResponse> __response_queue( new ::YIELD::concurrency::ResponseQueue<xtreemfs_dump_databaseResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::runtime::auto_Object<xtreemfs_dump_databaseResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); }
 
-        virtual void xtreemfs_get_suitable_osds( const std::string& file_id, uint32_t numOSDs, org::xtreemfs::interfaces::StringSet& osd_uuids ) { xtreemfs_get_suitable_osds( file_id, numOSDs, osd_uuids, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_get_suitable_osds( const std::string& file_id, uint32_t numOSDs, org::xtreemfs::interfaces::StringSet& osd_uuids, uint64_t response_timeout_ns ) { ::yidl::runtime::auto_Object<xtreemfs_get_suitable_osdsRequest> __request( new xtreemfs_get_suitable_osdsRequest( file_id, numOSDs ) ); ::YIELD::concurrency::auto_ResponseQueue<xtreemfs_get_suitable_osdsResponse> __response_queue( new ::YIELD::concurrency::ResponseQueue<xtreemfs_get_suitable_osdsResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::runtime::auto_Object<xtreemfs_get_suitable_osdsResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); osd_uuids = __response->get_osd_uuids(); }
+        virtual void xtreemfs_get_suitable_osds( const std::string& file_id, uint32_t num_osds, org::xtreemfs::interfaces::StringSet& osd_uuids ) { xtreemfs_get_suitable_osds( file_id, num_osds, osd_uuids, static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_get_suitable_osds( const std::string& file_id, uint32_t num_osds, org::xtreemfs::interfaces::StringSet& osd_uuids, uint64_t response_timeout_ns ) { ::yidl::runtime::auto_Object<xtreemfs_get_suitable_osdsRequest> __request( new xtreemfs_get_suitable_osdsRequest( file_id, num_osds ) ); ::YIELD::concurrency::auto_ResponseQueue<xtreemfs_get_suitable_osdsResponse> __response_queue( new ::YIELD::concurrency::ResponseQueue<xtreemfs_get_suitable_osdsResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::runtime::auto_Object<xtreemfs_get_suitable_osdsResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); osd_uuids = __response->get_osd_uuids(); }
 
         virtual void xtreemfs_internal_debug( const std::string& operation, std::string& result ) { xtreemfs_internal_debug( operation, result, static_cast<uint64_t>( -1 ) ); }
         virtual void xtreemfs_internal_debug( const std::string& operation, std::string& result, uint64_t response_timeout_ns ) { ::yidl::runtime::auto_Object<xtreemfs_internal_debugRequest> __request( new xtreemfs_internal_debugRequest( operation ) ); ::YIELD::concurrency::auto_ResponseQueue<xtreemfs_internal_debugResponse> __response_queue( new ::YIELD::concurrency::ResponseQueue<xtreemfs_internal_debugResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::runtime::auto_Object<xtreemfs_internal_debugResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); result = __response->get_result(); }
 
-        virtual void xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet& volumes ) { xtreemfs_lsvol( volumes, static_cast<uint64_t>( -1 ) ); }
-        virtual void xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet& volumes, uint64_t response_timeout_ns ) { ::yidl::runtime::auto_Object<xtreemfs_lsvolRequest> __request( new xtreemfs_lsvolRequest() ); ::YIELD::concurrency::auto_ResponseQueue<xtreemfs_lsvolResponse> __response_queue( new ::YIELD::concurrency::ResponseQueue<xtreemfs_lsvolResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::runtime::auto_Object<xtreemfs_lsvolResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); volumes = __response->get_volumes(); }
-
         virtual void xtreemfs_listdir( const std::string& path, org::xtreemfs::interfaces::StringSet& names ) { xtreemfs_listdir( path, names, static_cast<uint64_t>( -1 ) ); }
         virtual void xtreemfs_listdir( const std::string& path, org::xtreemfs::interfaces::StringSet& names, uint64_t response_timeout_ns ) { ::yidl::runtime::auto_Object<xtreemfs_listdirRequest> __request( new xtreemfs_listdirRequest( path ) ); ::YIELD::concurrency::auto_ResponseQueue<xtreemfs_listdirResponse> __response_queue( new ::YIELD::concurrency::ResponseQueue<xtreemfs_listdirResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::runtime::auto_Object<xtreemfs_listdirResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); names = __response->get_names(); }
+
+        virtual void xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet& volumes ) { xtreemfs_lsvol( volumes, static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet& volumes, uint64_t response_timeout_ns ) { ::yidl::runtime::auto_Object<xtreemfs_lsvolRequest> __request( new xtreemfs_lsvolRequest() ); ::YIELD::concurrency::auto_ResponseQueue<xtreemfs_lsvolResponse> __response_queue( new ::YIELD::concurrency::ResponseQueue<xtreemfs_lsvolResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::runtime::auto_Object<xtreemfs_lsvolResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); volumes = __response->get_volumes(); }
 
         virtual void xtreemfs_mkvol( const org::xtreemfs::interfaces::Volume& volume ) { xtreemfs_mkvol( volume, static_cast<uint64_t>( -1 ) ); }
         virtual void xtreemfs_mkvol( const org::xtreemfs::interfaces::Volume& volume, uint64_t response_timeout_ns ) { ::yidl::runtime::auto_Object<xtreemfs_mkvolRequest> __request( new xtreemfs_mkvolRequest( volume ) ); ::YIELD::concurrency::auto_ResponseQueue<xtreemfs_mkvolResponse> __response_queue( new ::YIELD::concurrency::ResponseQueue<xtreemfs_mkvolResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::runtime::auto_Object<xtreemfs_mkvolResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void xtreemfs_renew_capability( const org::xtreemfs::interfaces::XCap& old_xcap, org::xtreemfs::interfaces::XCap& renewed_xcap ) { xtreemfs_renew_capability( old_xcap, renewed_xcap, static_cast<uint64_t>( -1 ) ); }
         virtual void xtreemfs_renew_capability( const org::xtreemfs::interfaces::XCap& old_xcap, org::xtreemfs::interfaces::XCap& renewed_xcap, uint64_t response_timeout_ns ) { ::yidl::runtime::auto_Object<xtreemfs_renew_capabilityRequest> __request( new xtreemfs_renew_capabilityRequest( old_xcap ) ); ::YIELD::concurrency::auto_ResponseQueue<xtreemfs_renew_capabilityResponse> __response_queue( new ::YIELD::concurrency::ResponseQueue<xtreemfs_renew_capabilityResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::runtime::auto_Object<xtreemfs_renew_capabilityResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); renewed_xcap = __response->get_renewed_xcap(); }
+
+        virtual void xtreemfs_replication_to_master() { xtreemfs_replication_to_master( static_cast<uint64_t>( -1 ) ); }
+        virtual void xtreemfs_replication_to_master( uint64_t response_timeout_ns ) { ::yidl::runtime::auto_Object<xtreemfs_replication_to_masterRequest> __request( new xtreemfs_replication_to_masterRequest() ); ::YIELD::concurrency::auto_ResponseQueue<xtreemfs_replication_to_masterResponse> __response_queue( new ::YIELD::concurrency::ResponseQueue<xtreemfs_replication_to_masterResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::runtime::auto_Object<xtreemfs_replication_to_masterResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); }
 
         virtual void xtreemfs_replica_add( const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica ) { xtreemfs_replica_add( file_id, new_replica, static_cast<uint64_t>( -1 ) ); }
         virtual void xtreemfs_replica_add( const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica, uint64_t response_timeout_ns ) { ::yidl::runtime::auto_Object<xtreemfs_replica_addRequest> __request( new xtreemfs_replica_addRequest( file_id, new_replica ) ); ::YIELD::concurrency::auto_ResponseQueue<xtreemfs_replica_addResponse> __response_queue( new ::YIELD::concurrency::ResponseQueue<xtreemfs_replica_addResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::runtime::auto_Object<xtreemfs_replica_addResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); }
@@ -422,9 +425,6 @@ namespace org
         virtual void xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { xtreemfs_update_file_size( xcap, osd_write_response, static_cast<uint64_t>( -1 ) ); }
         virtual void xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, uint64_t response_timeout_ns ) { ::yidl::runtime::auto_Object<xtreemfs_update_file_sizeRequest> __request( new xtreemfs_update_file_sizeRequest( xcap, osd_write_response ) ); ::YIELD::concurrency::auto_ResponseQueue<xtreemfs_update_file_sizeResponse> __response_queue( new ::YIELD::concurrency::ResponseQueue<xtreemfs_update_file_sizeResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::runtime::auto_Object<xtreemfs_update_file_sizeResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); }
 
-        virtual void replication_toMaster() { replication_toMaster( static_cast<uint64_t>( -1 ) ); }
-        virtual void replication_toMaster( uint64_t response_timeout_ns ) { ::yidl::runtime::auto_Object<replication_toMasterRequest> __request( new replication_toMasterRequest() ); ::YIELD::concurrency::auto_ResponseQueue<replication_toMasterResponse> __response_queue( new ::YIELD::concurrency::ResponseQueue<replication_toMasterResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::runtime::auto_Object<replication_toMasterResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); }
-
 
         // Request/response pair definitions for the operations in MRCInterface
 
@@ -441,7 +441,7 @@ namespace org
           bool operator==( const accessResponse& other ) const { return _return_value == other._return_value; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( accessResponse, 2009090410 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( accessResponse, 2009112215 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeBoolean( "_return_value", 0, _return_value ); }
@@ -468,7 +468,7 @@ namespace org
           bool operator==( const accessRequest& other ) const { return path == other.path && mode == other.mode; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( accessRequest, 2009090410 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( accessRequest, 2009112215 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "mode", 0, mode ); }
@@ -490,7 +490,7 @@ namespace org
           bool operator==( const chmodResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( chmodResponse, 2009090411 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( chmodResponse, 2009112216 );
 
         };
 
@@ -511,7 +511,7 @@ namespace org
           bool operator==( const chmodRequest& other ) const { return path == other.path && mode == other.mode; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( chmodRequest, 2009090411 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( chmodRequest, 2009112216 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "mode", 0, mode ); }
@@ -533,7 +533,7 @@ namespace org
           bool operator==( const chownResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( chownResponse, 2009090412 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( chownResponse, 2009112217 );
 
         };
 
@@ -558,7 +558,7 @@ namespace org
           bool operator==( const chownRequest& other ) const { return path == other.path && user_id == other.user_id && group_id == other.group_id; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( chownRequest, 2009090412 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( chownRequest, 2009112217 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeString( "user_id", 0, user_id ); marshaller.writeString( "group_id", 0, group_id ); }
@@ -581,7 +581,7 @@ namespace org
           bool operator==( const closeResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( closeResponse, 2009090431 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( closeResponse, 2009112236 );
 
         };
 
@@ -598,7 +598,7 @@ namespace org
           bool operator==( const closeRequest& other ) const { return write_xcap == other.write_xcap; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( closeRequest, 2009090431 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( closeRequest, 2009112236 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "write_xcap", 0, write_xcap ); }
@@ -619,7 +619,7 @@ namespace org
           bool operator==( const creatResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( creatResponse, 2009090413 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( creatResponse, 2009112218 );
 
         };
 
@@ -640,7 +640,7 @@ namespace org
           bool operator==( const creatRequest& other ) const { return path == other.path && mode == other.mode; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( creatRequest, 2009090413 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( creatRequest, 2009112218 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "mode", 0, mode ); }
@@ -666,7 +666,7 @@ namespace org
           bool operator==( const ftruncateResponse& other ) const { return truncate_xcap == other.truncate_xcap; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( ftruncateResponse, 2009090414 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( ftruncateResponse, 2009112219 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "truncate_xcap", 0, truncate_xcap ); }
@@ -689,7 +689,7 @@ namespace org
           bool operator==( const ftruncateRequest& other ) const { return write_xcap == other.write_xcap; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( ftruncateRequest, 2009090414 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( ftruncateRequest, 2009112219 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "write_xcap", 0, write_xcap ); }
@@ -714,7 +714,7 @@ namespace org
           bool operator==( const getattrResponse& other ) const { return stbuf == other.stbuf; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( getattrResponse, 2009090415 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( getattrResponse, 2009112220 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "stbuf", 0, stbuf ); }
@@ -739,7 +739,7 @@ namespace org
           bool operator==( const getattrRequest& other ) const { return path == other.path; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( getattrRequest, 2009090415 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( getattrRequest, 2009112220 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
@@ -766,7 +766,7 @@ namespace org
           bool operator==( const getxattrResponse& other ) const { return value == other.value; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( getxattrResponse, 2009090416 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( getxattrResponse, 2009112221 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "value", 0, value ); }
@@ -794,7 +794,7 @@ namespace org
           bool operator==( const getxattrRequest& other ) const { return path == other.path && name == other.name; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( getxattrRequest, 2009090416 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( getxattrRequest, 2009112221 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeString( "name", 0, name ); }
@@ -816,7 +816,7 @@ namespace org
           bool operator==( const linkResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( linkResponse, 2009090417 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( linkResponse, 2009112222 );
 
         };
 
@@ -838,7 +838,7 @@ namespace org
           bool operator==( const linkRequest& other ) const { return target_path == other.target_path && link_path == other.link_path; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( linkRequest, 2009090417 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( linkRequest, 2009112222 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "target_path", 0, target_path ); marshaller.writeString( "link_path", 0, link_path ); }
@@ -864,7 +864,7 @@ namespace org
           bool operator==( const listxattrResponse& other ) const { return names == other.names; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( listxattrResponse, 2009090418 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( listxattrResponse, 2009112223 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "names", 0, names ); }
@@ -889,7 +889,7 @@ namespace org
           bool operator==( const listxattrRequest& other ) const { return path == other.path; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( listxattrRequest, 2009090418 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( listxattrRequest, 2009112223 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
@@ -910,7 +910,7 @@ namespace org
           bool operator==( const mkdirResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( mkdirResponse, 2009090419 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( mkdirResponse, 2009112224 );
 
         };
 
@@ -931,7 +931,7 @@ namespace org
           bool operator==( const mkdirRequest& other ) const { return path == other.path && mode == other.mode; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( mkdirRequest, 2009090419 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( mkdirRequest, 2009112224 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "mode", 0, mode ); }
@@ -957,7 +957,7 @@ namespace org
           bool operator==( const openResponse& other ) const { return file_credentials == other.file_credentials; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( openResponse, 2009090420 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( openResponse, 2009112225 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "file_credentials", 0, file_credentials ); }
@@ -990,7 +990,7 @@ namespace org
           bool operator==( const openRequest& other ) const { return path == other.path && flags == other.flags && mode == other.mode && attributes == other.attributes && client_vivaldi_coordinates == other.client_vivaldi_coordinates; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( openRequest, 2009090420 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( openRequest, 2009112225 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint32( "flags", 0, flags ); marshaller.writeUint32( "mode", 0, mode ); marshaller.writeUint32( "attributes", 0, attributes ); marshaller.writeStruct( "client_vivaldi_coordinates", 0, client_vivaldi_coordinates ); }
@@ -1019,7 +1019,7 @@ namespace org
           bool operator==( const readdirResponse& other ) const { return directory_entries == other.directory_entries; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( readdirResponse, 2009090421 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( readdirResponse, 2009112226 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "directory_entries", 0, directory_entries ); }
@@ -1044,7 +1044,7 @@ namespace org
           bool operator==( const readdirRequest& other ) const { return path == other.path; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( readdirRequest, 2009090421 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( readdirRequest, 2009112226 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
@@ -1065,7 +1065,7 @@ namespace org
           bool operator==( const removexattrResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( removexattrResponse, 2009090422 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( removexattrResponse, 2009112227 );
 
         };
 
@@ -1087,7 +1087,7 @@ namespace org
           bool operator==( const removexattrRequest& other ) const { return path == other.path && name == other.name; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( removexattrRequest, 2009090422 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( removexattrRequest, 2009112227 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeString( "name", 0, name ); }
@@ -1113,7 +1113,7 @@ namespace org
           bool operator==( const renameResponse& other ) const { return file_credentials == other.file_credentials; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( renameResponse, 2009090423 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( renameResponse, 2009112228 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "file_credentials", 0, file_credentials ); }
@@ -1141,7 +1141,7 @@ namespace org
           bool operator==( const renameRequest& other ) const { return source_path == other.source_path && target_path == other.target_path; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( renameRequest, 2009090423 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( renameRequest, 2009112228 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "source_path", 0, source_path ); marshaller.writeString( "target_path", 0, target_path ); }
@@ -1163,7 +1163,7 @@ namespace org
           bool operator==( const rmdirResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( rmdirResponse, 2009090424 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( rmdirResponse, 2009112229 );
 
         };
 
@@ -1182,7 +1182,7 @@ namespace org
           bool operator==( const rmdirRequest& other ) const { return path == other.path; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( rmdirRequest, 2009090424 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( rmdirRequest, 2009112229 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
@@ -1203,7 +1203,7 @@ namespace org
           bool operator==( const setattrResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( setattrResponse, 2009090425 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( setattrResponse, 2009112230 );
 
         };
 
@@ -1224,7 +1224,7 @@ namespace org
           bool operator==( const setattrRequest& other ) const { return path == other.path && stbuf == other.stbuf; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( setattrRequest, 2009090425 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( setattrRequest, 2009112230 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeStruct( "stbuf", 0, stbuf ); }
@@ -1246,7 +1246,7 @@ namespace org
           bool operator==( const setxattrResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( setxattrResponse, 2009090426 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( setxattrResponse, 2009112231 );
 
         };
 
@@ -1273,7 +1273,7 @@ namespace org
           bool operator==( const setxattrRequest& other ) const { return path == other.path && name == other.name && value == other.value && flags == other.flags; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( setxattrRequest, 2009090426 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( setxattrRequest, 2009112231 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeString( "name", 0, name ); marshaller.writeString( "value", 0, value ); marshaller.writeInt32( "flags", 0, flags ); }
@@ -1301,7 +1301,7 @@ namespace org
           bool operator==( const statvfsResponse& other ) const { return stbuf == other.stbuf; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( statvfsResponse, 2009090427 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( statvfsResponse, 2009112232 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "stbuf", 0, stbuf ); }
@@ -1326,7 +1326,7 @@ namespace org
           bool operator==( const statvfsRequest& other ) const { return volume_name == other.volume_name; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( statvfsRequest, 2009090427 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( statvfsRequest, 2009112232 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "volume_name", 0, volume_name ); }
@@ -1347,7 +1347,7 @@ namespace org
           bool operator==( const symlinkResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( symlinkResponse, 2009090428 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( symlinkResponse, 2009112233 );
 
         };
 
@@ -1369,7 +1369,7 @@ namespace org
           bool operator==( const symlinkRequest& other ) const { return target_path == other.target_path && link_path == other.link_path; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( symlinkRequest, 2009090428 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( symlinkRequest, 2009112233 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "target_path", 0, target_path ); marshaller.writeString( "link_path", 0, link_path ); }
@@ -1395,7 +1395,7 @@ namespace org
           bool operator==( const unlinkResponse& other ) const { return file_credentials == other.file_credentials; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( unlinkResponse, 2009090429 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( unlinkResponse, 2009112234 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "file_credentials", 0, file_credentials ); }
@@ -1420,7 +1420,7 @@ namespace org
           bool operator==( const unlinkRequest& other ) const { return path == other.path; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( unlinkRequest, 2009090429 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( unlinkRequest, 2009112234 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
@@ -1441,7 +1441,7 @@ namespace org
           bool operator==( const utimensResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( utimensResponse, 2009090430 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( utimensResponse, 2009112235 );
 
         };
 
@@ -1466,7 +1466,7 @@ namespace org
           bool operator==( const utimensRequest& other ) const { return path == other.path && atime_ns == other.atime_ns && mtime_ns == other.mtime_ns && ctime_ns == other.ctime_ns; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( utimensRequest, 2009090430 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( utimensRequest, 2009112235 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); marshaller.writeUint64( "atime_ns", 0, atime_ns ); marshaller.writeUint64( "mtime_ns", 0, mtime_ns ); marshaller.writeUint64( "ctime_ns", 0, ctime_ns ); }
@@ -1490,7 +1490,7 @@ namespace org
           bool operator==( const xtreemfs_checkpointResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_checkpointResponse, 2009090439 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_checkpointResponse, 2009112244 );
 
         };
 
@@ -1503,7 +1503,7 @@ namespace org
           bool operator==( const xtreemfs_checkpointRequest& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_checkpointRequest, 2009090439 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_checkpointRequest, 2009112244 );
           // YIELD::concurrency::Request
           virtual ::YIELD::concurrency::auto_Response createResponse() { return new xtreemfs_checkpointResponse; }
 
@@ -1524,7 +1524,7 @@ namespace org
           bool operator==( const xtreemfs_check_file_existsResponse& other ) const { return bitmap == other.bitmap; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_check_file_existsResponse, 2009090440 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_check_file_existsResponse, 2009112245 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "bitmap", 0, bitmap ); }
@@ -1554,7 +1554,7 @@ namespace org
           bool operator==( const xtreemfs_check_file_existsRequest& other ) const { return volume_id == other.volume_id && file_ids == other.file_ids && osd_uuid == other.osd_uuid; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_check_file_existsRequest, 2009090440 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_check_file_existsRequest, 2009112245 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "volume_id", 0, volume_id ); marshaller.writeSequence( "file_ids", 0, file_ids ); marshaller.writeString( "osd_uuid", 0, osd_uuid ); }
@@ -1577,7 +1577,7 @@ namespace org
           bool operator==( const xtreemfs_dump_databaseResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_dump_databaseResponse, 2009090441 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_dump_databaseResponse, 2009112246 );
 
         };
 
@@ -1596,7 +1596,7 @@ namespace org
           bool operator==( const xtreemfs_dump_databaseRequest& other ) const { return dump_file == other.dump_file; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_dump_databaseRequest, 2009090441 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_dump_databaseRequest, 2009112246 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "dump_file", 0, dump_file ); }
@@ -1621,7 +1621,7 @@ namespace org
           bool operator==( const xtreemfs_get_suitable_osdsResponse& other ) const { return osd_uuids == other.osd_uuids; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_get_suitable_osdsResponse, 2009090442 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_get_suitable_osdsResponse, 2009112247 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "osd_uuids", 0, osd_uuids ); }
@@ -1634,31 +1634,31 @@ namespace org
         class xtreemfs_get_suitable_osdsRequest : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS
         {
         public:
-          xtreemfs_get_suitable_osdsRequest() : numOSDs( 0 ) { }
-          xtreemfs_get_suitable_osdsRequest( const std::string& file_id, uint32_t numOSDs ) : file_id( file_id ), numOSDs( numOSDs ) { }
-          xtreemfs_get_suitable_osdsRequest( const char* file_id, size_t file_id_len, uint32_t numOSDs ) : file_id( file_id, file_id_len ), numOSDs( numOSDs ) { }
+          xtreemfs_get_suitable_osdsRequest() : num_osds( 0 ) { }
+          xtreemfs_get_suitable_osdsRequest( const std::string& file_id, uint32_t num_osds ) : file_id( file_id ), num_osds( num_osds ) { }
+          xtreemfs_get_suitable_osdsRequest( const char* file_id, size_t file_id_len, uint32_t num_osds ) : file_id( file_id, file_id_len ), num_osds( num_osds ) { }
           virtual ~xtreemfs_get_suitable_osdsRequest() { }
 
           void set_file_id( const std::string& file_id ) { set_file_id( file_id.c_str(), file_id.size() ); }
           void set_file_id( const char* file_id, size_t file_id_len ) { this->file_id.assign( file_id, file_id_len ); }
           const std::string& get_file_id() const { return file_id; }
-          void set_numOSDs( uint32_t numOSDs ) { this->numOSDs = numOSDs; }
-          uint32_t get_numOSDs() const { return numOSDs; }
+          void set_num_osds( uint32_t num_osds ) { this->num_osds = num_osds; }
+          uint32_t get_num_osds() const { return num_osds; }
 
-          bool operator==( const xtreemfs_get_suitable_osdsRequest& other ) const { return file_id == other.file_id && numOSDs == other.numOSDs; }
+          bool operator==( const xtreemfs_get_suitable_osdsRequest& other ) const { return file_id == other.file_id && num_osds == other.num_osds; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_get_suitable_osdsRequest, 2009090442 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_get_suitable_osdsRequest, 2009112247 );
 
           // yidl::Struct
-          void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint32( "numOSDs", 0, numOSDs ); }
-          void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); numOSDs = unmarshaller.readUint32( "numOSDs", 0 ); }  // YIELD::concurrency::Request
+          void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint32( "num_osds", 0, num_osds ); }
+          void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); num_osds = unmarshaller.readUint32( "num_osds", 0 ); }  // YIELD::concurrency::Request
           virtual ::YIELD::concurrency::auto_Response createResponse() { return new xtreemfs_get_suitable_osdsResponse; }
 
 
         protected:
           std::string file_id;
-          uint32_t numOSDs;
+          uint32_t num_osds;
         };
 
         class xtreemfs_internal_debugResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -1676,7 +1676,7 @@ namespace org
           bool operator==( const xtreemfs_internal_debugResponse& other ) const { return result == other.result; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_internal_debugResponse, 2009090443 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_internal_debugResponse, 2009112248 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "result", 0, result ); }
@@ -1701,7 +1701,7 @@ namespace org
           bool operator==( const xtreemfs_internal_debugRequest& other ) const { return operation == other.operation; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_internal_debugRequest, 2009090443 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_internal_debugRequest, 2009112248 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "operation", 0, operation ); }
@@ -1711,44 +1711,6 @@ namespace org
 
         protected:
           std::string operation;
-        };
-
-        class xtreemfs_lsvolResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
-        {
-        public:
-          xtreemfs_lsvolResponse() { }
-          xtreemfs_lsvolResponse( const org::xtreemfs::interfaces::VolumeSet& volumes ) : volumes( volumes ) { }
-          virtual ~xtreemfs_lsvolResponse() { }
-
-          void set_volumes( const org::xtreemfs::interfaces::VolumeSet&  volumes ) { this->volumes = volumes; }
-          const org::xtreemfs::interfaces::VolumeSet& get_volumes() const { return volumes; }
-
-          bool operator==( const xtreemfs_lsvolResponse& other ) const { return volumes == other.volumes; }
-
-          // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_lsvolResponse, 2009090444 );
-
-          // yidl::Struct
-          void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "volumes", 0, volumes ); }
-          void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "volumes", 0, volumes ); }
-
-        protected:
-          org::xtreemfs::interfaces::VolumeSet volumes;
-        };
-
-        class xtreemfs_lsvolRequest : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS
-        {
-        public:
-          xtreemfs_lsvolRequest() { }
-          virtual ~xtreemfs_lsvolRequest() { }
-
-          bool operator==( const xtreemfs_lsvolRequest& ) const { return true; }
-
-          // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_lsvolRequest, 2009090444 );
-          // YIELD::concurrency::Request
-          virtual ::YIELD::concurrency::auto_Response createResponse() { return new xtreemfs_lsvolResponse; }
-
         };
 
         class xtreemfs_listdirResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
@@ -1764,7 +1726,7 @@ namespace org
           bool operator==( const xtreemfs_listdirResponse& other ) const { return names == other.names; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_listdirResponse, 2009090445 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_listdirResponse, 2009112250 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "names", 0, names ); }
@@ -1789,7 +1751,7 @@ namespace org
           bool operator==( const xtreemfs_listdirRequest& other ) const { return path == other.path; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_listdirRequest, 2009090445 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_listdirRequest, 2009112250 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "path", 0, path ); }
@@ -1801,6 +1763,44 @@ namespace org
           std::string path;
         };
 
+        class xtreemfs_lsvolResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
+        {
+        public:
+          xtreemfs_lsvolResponse() { }
+          xtreemfs_lsvolResponse( const org::xtreemfs::interfaces::VolumeSet& volumes ) : volumes( volumes ) { }
+          virtual ~xtreemfs_lsvolResponse() { }
+
+          void set_volumes( const org::xtreemfs::interfaces::VolumeSet&  volumes ) { this->volumes = volumes; }
+          const org::xtreemfs::interfaces::VolumeSet& get_volumes() const { return volumes; }
+
+          bool operator==( const xtreemfs_lsvolResponse& other ) const { return volumes == other.volumes; }
+
+          // yidl::runtime::Object
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_lsvolResponse, 2009112249 );
+
+          // yidl::Struct
+          void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "volumes", 0, volumes ); }
+          void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "volumes", 0, volumes ); }
+
+        protected:
+          org::xtreemfs::interfaces::VolumeSet volumes;
+        };
+
+        class xtreemfs_lsvolRequest : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS
+        {
+        public:
+          xtreemfs_lsvolRequest() { }
+          virtual ~xtreemfs_lsvolRequest() { }
+
+          bool operator==( const xtreemfs_lsvolRequest& ) const { return true; }
+
+          // yidl::runtime::Object
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_lsvolRequest, 2009112249 );
+          // YIELD::concurrency::Request
+          virtual ::YIELD::concurrency::auto_Response createResponse() { return new xtreemfs_lsvolResponse; }
+
+        };
+
         class xtreemfs_mkvolResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
@@ -1810,7 +1810,7 @@ namespace org
           bool operator==( const xtreemfs_mkvolResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_mkvolResponse, 2009090446 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_mkvolResponse, 2009112251 );
 
         };
 
@@ -1827,7 +1827,7 @@ namespace org
           bool operator==( const xtreemfs_mkvolRequest& other ) const { return volume == other.volume; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_mkvolRequest, 2009090446 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_mkvolRequest, 2009112251 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "volume", 0, volume ); }
@@ -1852,7 +1852,7 @@ namespace org
           bool operator==( const xtreemfs_renew_capabilityResponse& other ) const { return renewed_xcap == other.renewed_xcap; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_renew_capabilityResponse, 2009090447 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_renew_capabilityResponse, 2009112252 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "renewed_xcap", 0, renewed_xcap ); }
@@ -1875,7 +1875,7 @@ namespace org
           bool operator==( const xtreemfs_renew_capabilityRequest& other ) const { return old_xcap == other.old_xcap; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_renew_capabilityRequest, 2009090447 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_renew_capabilityRequest, 2009112252 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "old_xcap", 0, old_xcap ); }
@@ -1887,6 +1887,34 @@ namespace org
           org::xtreemfs::interfaces::XCap old_xcap;
         };
 
+        class xtreemfs_replication_to_masterResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
+        {
+        public:
+          xtreemfs_replication_to_masterResponse() { }
+          virtual ~xtreemfs_replication_to_masterResponse() { }
+
+          bool operator==( const xtreemfs_replication_to_masterResponse& ) const { return true; }
+
+          // yidl::runtime::Object
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_replication_to_masterResponse, 2009112253 );
+
+        };
+
+        class xtreemfs_replication_to_masterRequest : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS
+        {
+        public:
+          xtreemfs_replication_to_masterRequest() { }
+          virtual ~xtreemfs_replication_to_masterRequest() { }
+
+          bool operator==( const xtreemfs_replication_to_masterRequest& ) const { return true; }
+
+          // yidl::runtime::Object
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_replication_to_masterRequest, 2009112253 );
+          // YIELD::concurrency::Request
+          virtual ::YIELD::concurrency::auto_Response createResponse() { return new xtreemfs_replication_to_masterResponse; }
+
+        };
+
         class xtreemfs_replica_addResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
         {
         public:
@@ -1896,7 +1924,7 @@ namespace org
           bool operator==( const xtreemfs_replica_addResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_replica_addResponse, 2009090448 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_replica_addResponse, 2009112254 );
 
         };
 
@@ -1917,7 +1945,7 @@ namespace org
           bool operator==( const xtreemfs_replica_addRequest& other ) const { return file_id == other.file_id && new_replica == other.new_replica; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_replica_addRequest, 2009090448 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_replica_addRequest, 2009112254 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeStruct( "new_replica", 0, new_replica ); }
@@ -1943,7 +1971,7 @@ namespace org
           bool operator==( const xtreemfs_replica_listResponse& other ) const { return replicas == other.replicas; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_replica_listResponse, 2009090449 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_replica_listResponse, 2009112255 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "replicas", 0, replicas ); }
@@ -1968,7 +1996,7 @@ namespace org
           bool operator==( const xtreemfs_replica_listRequest& other ) const { return file_id == other.file_id; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_replica_listRequest, 2009090449 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_replica_listRequest, 2009112255 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); }
@@ -1993,7 +2021,7 @@ namespace org
           bool operator==( const xtreemfs_replica_removeResponse& other ) const { return delete_xcap == other.delete_xcap; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_replica_removeResponse, 2009090450 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_replica_removeResponse, 2009112256 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "delete_xcap", 0, delete_xcap ); }
@@ -2021,7 +2049,7 @@ namespace org
           bool operator==( const xtreemfs_replica_removeRequest& other ) const { return file_id == other.file_id && osd_uuid == other.osd_uuid; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_replica_removeRequest, 2009090450 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_replica_removeRequest, 2009112256 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeString( "osd_uuid", 0, osd_uuid ); }
@@ -2043,7 +2071,7 @@ namespace org
           bool operator==( const xtreemfs_restore_databaseResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_restore_databaseResponse, 2009090451 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_restore_databaseResponse, 2009112257 );
 
         };
 
@@ -2062,7 +2090,7 @@ namespace org
           bool operator==( const xtreemfs_restore_databaseRequest& other ) const { return dump_file == other.dump_file; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_restore_databaseRequest, 2009090451 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_restore_databaseRequest, 2009112257 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "dump_file", 0, dump_file ); }
@@ -2083,7 +2111,7 @@ namespace org
           bool operator==( const xtreemfs_restore_fileResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_restore_fileResponse, 2009090452 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_restore_fileResponse, 2009112258 );
 
         };
 
@@ -2112,7 +2140,7 @@ namespace org
           bool operator==( const xtreemfs_restore_fileRequest& other ) const { return file_path == other.file_path && file_id == other.file_id && file_size == other.file_size && osd_uuid == other.osd_uuid && stripe_size == other.stripe_size; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_restore_fileRequest, 2009090452 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_restore_fileRequest, 2009112258 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "file_path", 0, file_path ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint64( "file_size", 0, file_size ); marshaller.writeString( "osd_uuid", 0, osd_uuid ); marshaller.writeInt32( "stripe_size", 0, stripe_size ); }
@@ -2137,7 +2165,7 @@ namespace org
           bool operator==( const xtreemfs_rmvolResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_rmvolResponse, 2009090453 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_rmvolResponse, 2009112259 );
 
         };
 
@@ -2156,7 +2184,7 @@ namespace org
           bool operator==( const xtreemfs_rmvolRequest& other ) const { return volume_name == other.volume_name; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_rmvolRequest, 2009090453 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_rmvolRequest, 2009112259 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "volume_name", 0, volume_name ); }
@@ -2177,7 +2205,7 @@ namespace org
           bool operator==( const xtreemfs_shutdownResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 2009090454 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_shutdownResponse, 2009112260 );
 
         };
 
@@ -2190,7 +2218,7 @@ namespace org
           bool operator==( const xtreemfs_shutdownRequest& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 2009090454 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_shutdownRequest, 2009112260 );
           // YIELD::concurrency::Request
           virtual ::YIELD::concurrency::auto_Response createResponse() { return new xtreemfs_shutdownResponse; }
 
@@ -2205,7 +2233,7 @@ namespace org
           bool operator==( const xtreemfs_update_file_sizeResponse& ) const { return true; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_update_file_sizeResponse, 2009090455 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_update_file_sizeResponse, 2009112261 );
 
         };
 
@@ -2224,7 +2252,7 @@ namespace org
           bool operator==( const xtreemfs_update_file_sizeRequest& other ) const { return xcap == other.xcap && osd_write_response == other.osd_write_response; }
 
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_update_file_sizeRequest, 2009090455 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( xtreemfs_update_file_sizeRequest, 2009112261 );
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "xcap", 0, xcap ); marshaller.writeStruct( "osd_write_response", 0, osd_write_response ); }
@@ -2235,34 +2263,6 @@ namespace org
         protected:
           org::xtreemfs::interfaces::XCap xcap;
           org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
-        };
-
-        class replication_toMasterResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
-        {
-        public:
-          replication_toMasterResponse() { }
-          virtual ~replication_toMasterResponse() { }
-
-          bool operator==( const replication_toMasterResponse& ) const { return true; }
-
-          // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( replication_toMasterResponse, 2009090456 );
-
-        };
-
-        class replication_toMasterRequest : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS
-        {
-        public:
-          replication_toMasterRequest() { }
-          virtual ~replication_toMasterRequest() { }
-
-          bool operator==( const replication_toMasterRequest& ) const { return true; }
-
-          // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( replication_toMasterRequest, 2009090456 );
-          // YIELD::concurrency::Request
-          virtual ::YIELD::concurrency::auto_Response createResponse() { return new replication_toMasterResponse; }
-
         };
 
           class ConcurrentModificationException : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
@@ -2435,7 +2435,7 @@ namespace org
 
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( MRCInterface, 2009090409 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( MRCInterface, 2009112214 );
 
         // YIELD::concurrency::EventHandler
         virtual void handleEvent( ::YIELD::concurrency::Event& ev )
@@ -2445,46 +2445,46 @@ namespace org
             // Switch on the event types that this interface handles, unwrap the corresponding requests and delegate to impl
             switch ( ev.get_type_id() )
             {
-              case 2009090410UL: handleaccessRequest( static_cast<accessRequest&>( ev ) ); return;
-              case 2009090411UL: handlechmodRequest( static_cast<chmodRequest&>( ev ) ); return;
-              case 2009090412UL: handlechownRequest( static_cast<chownRequest&>( ev ) ); return;
-              case 2009090431UL: handlecloseRequest( static_cast<closeRequest&>( ev ) ); return;
-              case 2009090413UL: handlecreatRequest( static_cast<creatRequest&>( ev ) ); return;
-              case 2009090414UL: handleftruncateRequest( static_cast<ftruncateRequest&>( ev ) ); return;
-              case 2009090415UL: handlegetattrRequest( static_cast<getattrRequest&>( ev ) ); return;
-              case 2009090416UL: handlegetxattrRequest( static_cast<getxattrRequest&>( ev ) ); return;
-              case 2009090417UL: handlelinkRequest( static_cast<linkRequest&>( ev ) ); return;
-              case 2009090418UL: handlelistxattrRequest( static_cast<listxattrRequest&>( ev ) ); return;
-              case 2009090419UL: handlemkdirRequest( static_cast<mkdirRequest&>( ev ) ); return;
-              case 2009090420UL: handleopenRequest( static_cast<openRequest&>( ev ) ); return;
-              case 2009090421UL: handlereaddirRequest( static_cast<readdirRequest&>( ev ) ); return;
-              case 2009090422UL: handleremovexattrRequest( static_cast<removexattrRequest&>( ev ) ); return;
-              case 2009090423UL: handlerenameRequest( static_cast<renameRequest&>( ev ) ); return;
-              case 2009090424UL: handlermdirRequest( static_cast<rmdirRequest&>( ev ) ); return;
-              case 2009090425UL: handlesetattrRequest( static_cast<setattrRequest&>( ev ) ); return;
-              case 2009090426UL: handlesetxattrRequest( static_cast<setxattrRequest&>( ev ) ); return;
-              case 2009090427UL: handlestatvfsRequest( static_cast<statvfsRequest&>( ev ) ); return;
-              case 2009090428UL: handlesymlinkRequest( static_cast<symlinkRequest&>( ev ) ); return;
-              case 2009090429UL: handleunlinkRequest( static_cast<unlinkRequest&>( ev ) ); return;
-              case 2009090430UL: handleutimensRequest( static_cast<utimensRequest&>( ev ) ); return;
-              case 2009090439UL: handlextreemfs_checkpointRequest( static_cast<xtreemfs_checkpointRequest&>( ev ) ); return;
-              case 2009090440UL: handlextreemfs_check_file_existsRequest( static_cast<xtreemfs_check_file_existsRequest&>( ev ) ); return;
-              case 2009090441UL: handlextreemfs_dump_databaseRequest( static_cast<xtreemfs_dump_databaseRequest&>( ev ) ); return;
-              case 2009090442UL: handlextreemfs_get_suitable_osdsRequest( static_cast<xtreemfs_get_suitable_osdsRequest&>( ev ) ); return;
-              case 2009090443UL: handlextreemfs_internal_debugRequest( static_cast<xtreemfs_internal_debugRequest&>( ev ) ); return;
-              case 2009090444UL: handlextreemfs_lsvolRequest( static_cast<xtreemfs_lsvolRequest&>( ev ) ); return;
-              case 2009090445UL: handlextreemfs_listdirRequest( static_cast<xtreemfs_listdirRequest&>( ev ) ); return;
-              case 2009090446UL: handlextreemfs_mkvolRequest( static_cast<xtreemfs_mkvolRequest&>( ev ) ); return;
-              case 2009090447UL: handlextreemfs_renew_capabilityRequest( static_cast<xtreemfs_renew_capabilityRequest&>( ev ) ); return;
-              case 2009090448UL: handlextreemfs_replica_addRequest( static_cast<xtreemfs_replica_addRequest&>( ev ) ); return;
-              case 2009090449UL: handlextreemfs_replica_listRequest( static_cast<xtreemfs_replica_listRequest&>( ev ) ); return;
-              case 2009090450UL: handlextreemfs_replica_removeRequest( static_cast<xtreemfs_replica_removeRequest&>( ev ) ); return;
-              case 2009090451UL: handlextreemfs_restore_databaseRequest( static_cast<xtreemfs_restore_databaseRequest&>( ev ) ); return;
-              case 2009090452UL: handlextreemfs_restore_fileRequest( static_cast<xtreemfs_restore_fileRequest&>( ev ) ); return;
-              case 2009090453UL: handlextreemfs_rmvolRequest( static_cast<xtreemfs_rmvolRequest&>( ev ) ); return;
-              case 2009090454UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( ev ) ); return;
-              case 2009090455UL: handlextreemfs_update_file_sizeRequest( static_cast<xtreemfs_update_file_sizeRequest&>( ev ) ); return;
-              case 2009090456UL: handlereplication_toMasterRequest( static_cast<replication_toMasterRequest&>( ev ) ); return;
+              case 2009112215UL: handleaccessRequest( static_cast<accessRequest&>( ev ) ); return;
+              case 2009112216UL: handlechmodRequest( static_cast<chmodRequest&>( ev ) ); return;
+              case 2009112217UL: handlechownRequest( static_cast<chownRequest&>( ev ) ); return;
+              case 2009112236UL: handlecloseRequest( static_cast<closeRequest&>( ev ) ); return;
+              case 2009112218UL: handlecreatRequest( static_cast<creatRequest&>( ev ) ); return;
+              case 2009112219UL: handleftruncateRequest( static_cast<ftruncateRequest&>( ev ) ); return;
+              case 2009112220UL: handlegetattrRequest( static_cast<getattrRequest&>( ev ) ); return;
+              case 2009112221UL: handlegetxattrRequest( static_cast<getxattrRequest&>( ev ) ); return;
+              case 2009112222UL: handlelinkRequest( static_cast<linkRequest&>( ev ) ); return;
+              case 2009112223UL: handlelistxattrRequest( static_cast<listxattrRequest&>( ev ) ); return;
+              case 2009112224UL: handlemkdirRequest( static_cast<mkdirRequest&>( ev ) ); return;
+              case 2009112225UL: handleopenRequest( static_cast<openRequest&>( ev ) ); return;
+              case 2009112226UL: handlereaddirRequest( static_cast<readdirRequest&>( ev ) ); return;
+              case 2009112227UL: handleremovexattrRequest( static_cast<removexattrRequest&>( ev ) ); return;
+              case 2009112228UL: handlerenameRequest( static_cast<renameRequest&>( ev ) ); return;
+              case 2009112229UL: handlermdirRequest( static_cast<rmdirRequest&>( ev ) ); return;
+              case 2009112230UL: handlesetattrRequest( static_cast<setattrRequest&>( ev ) ); return;
+              case 2009112231UL: handlesetxattrRequest( static_cast<setxattrRequest&>( ev ) ); return;
+              case 2009112232UL: handlestatvfsRequest( static_cast<statvfsRequest&>( ev ) ); return;
+              case 2009112233UL: handlesymlinkRequest( static_cast<symlinkRequest&>( ev ) ); return;
+              case 2009112234UL: handleunlinkRequest( static_cast<unlinkRequest&>( ev ) ); return;
+              case 2009112235UL: handleutimensRequest( static_cast<utimensRequest&>( ev ) ); return;
+              case 2009112244UL: handlextreemfs_checkpointRequest( static_cast<xtreemfs_checkpointRequest&>( ev ) ); return;
+              case 2009112245UL: handlextreemfs_check_file_existsRequest( static_cast<xtreemfs_check_file_existsRequest&>( ev ) ); return;
+              case 2009112246UL: handlextreemfs_dump_databaseRequest( static_cast<xtreemfs_dump_databaseRequest&>( ev ) ); return;
+              case 2009112247UL: handlextreemfs_get_suitable_osdsRequest( static_cast<xtreemfs_get_suitable_osdsRequest&>( ev ) ); return;
+              case 2009112248UL: handlextreemfs_internal_debugRequest( static_cast<xtreemfs_internal_debugRequest&>( ev ) ); return;
+              case 2009112250UL: handlextreemfs_listdirRequest( static_cast<xtreemfs_listdirRequest&>( ev ) ); return;
+              case 2009112249UL: handlextreemfs_lsvolRequest( static_cast<xtreemfs_lsvolRequest&>( ev ) ); return;
+              case 2009112251UL: handlextreemfs_mkvolRequest( static_cast<xtreemfs_mkvolRequest&>( ev ) ); return;
+              case 2009112252UL: handlextreemfs_renew_capabilityRequest( static_cast<xtreemfs_renew_capabilityRequest&>( ev ) ); return;
+              case 2009112253UL: handlextreemfs_replication_to_masterRequest( static_cast<xtreemfs_replication_to_masterRequest&>( ev ) ); return;
+              case 2009112254UL: handlextreemfs_replica_addRequest( static_cast<xtreemfs_replica_addRequest&>( ev ) ); return;
+              case 2009112255UL: handlextreemfs_replica_listRequest( static_cast<xtreemfs_replica_listRequest&>( ev ) ); return;
+              case 2009112256UL: handlextreemfs_replica_removeRequest( static_cast<xtreemfs_replica_removeRequest&>( ev ) ); return;
+              case 2009112257UL: handlextreemfs_restore_databaseRequest( static_cast<xtreemfs_restore_databaseRequest&>( ev ) ); return;
+              case 2009112258UL: handlextreemfs_restore_fileRequest( static_cast<xtreemfs_restore_fileRequest&>( ev ) ); return;
+              case 2009112259UL: handlextreemfs_rmvolRequest( static_cast<xtreemfs_rmvolRequest&>( ev ) ); return;
+              case 2009112260UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( ev ) ); return;
+              case 2009112261UL: handlextreemfs_update_file_sizeRequest( static_cast<xtreemfs_update_file_sizeRequest&>( ev ) ); return;
               default: handleUnknownEvent( ev ); return;
             }
           }
@@ -2510,46 +2510,46 @@ namespace org
           {
             switch ( request.get_type_id() )
             {
-              case 2009090410: return static_cast<accessRequest*>( &request );
-              case 2009090411: return static_cast<chmodRequest*>( &request );
-              case 2009090412: return static_cast<chownRequest*>( &request );
-              case 2009090431: return static_cast<closeRequest*>( &request );
-              case 2009090413: return static_cast<creatRequest*>( &request );
-              case 2009090414: return static_cast<ftruncateRequest*>( &request );
-              case 2009090415: return static_cast<getattrRequest*>( &request );
-              case 2009090416: return static_cast<getxattrRequest*>( &request );
-              case 2009090417: return static_cast<linkRequest*>( &request );
-              case 2009090418: return static_cast<listxattrRequest*>( &request );
-              case 2009090419: return static_cast<mkdirRequest*>( &request );
-              case 2009090420: return static_cast<openRequest*>( &request );
-              case 2009090421: return static_cast<readdirRequest*>( &request );
-              case 2009090422: return static_cast<removexattrRequest*>( &request );
-              case 2009090423: return static_cast<renameRequest*>( &request );
-              case 2009090424: return static_cast<rmdirRequest*>( &request );
-              case 2009090425: return static_cast<setattrRequest*>( &request );
-              case 2009090426: return static_cast<setxattrRequest*>( &request );
-              case 2009090427: return static_cast<statvfsRequest*>( &request );
-              case 2009090428: return static_cast<symlinkRequest*>( &request );
-              case 2009090429: return static_cast<unlinkRequest*>( &request );
-              case 2009090430: return static_cast<utimensRequest*>( &request );
-              case 2009090439: return static_cast<xtreemfs_checkpointRequest*>( &request );
-              case 2009090440: return static_cast<xtreemfs_check_file_existsRequest*>( &request );
-              case 2009090441: return static_cast<xtreemfs_dump_databaseRequest*>( &request );
-              case 2009090442: return static_cast<xtreemfs_get_suitable_osdsRequest*>( &request );
-              case 2009090443: return static_cast<xtreemfs_internal_debugRequest*>( &request );
-              case 2009090444: return static_cast<xtreemfs_lsvolRequest*>( &request );
-              case 2009090445: return static_cast<xtreemfs_listdirRequest*>( &request );
-              case 2009090446: return static_cast<xtreemfs_mkvolRequest*>( &request );
-              case 2009090447: return static_cast<xtreemfs_renew_capabilityRequest*>( &request );
-              case 2009090448: return static_cast<xtreemfs_replica_addRequest*>( &request );
-              case 2009090449: return static_cast<xtreemfs_replica_listRequest*>( &request );
-              case 2009090450: return static_cast<xtreemfs_replica_removeRequest*>( &request );
-              case 2009090451: return static_cast<xtreemfs_restore_databaseRequest*>( &request );
-              case 2009090452: return static_cast<xtreemfs_restore_fileRequest*>( &request );
-              case 2009090453: return static_cast<xtreemfs_rmvolRequest*>( &request );
-              case 2009090454: return static_cast<xtreemfs_shutdownRequest*>( &request );
-              case 2009090455: return static_cast<xtreemfs_update_file_sizeRequest*>( &request );
-              case 2009090456: return static_cast<replication_toMasterRequest*>( &request );
+              case 2009112215: return static_cast<accessRequest*>( &request );
+              case 2009112216: return static_cast<chmodRequest*>( &request );
+              case 2009112217: return static_cast<chownRequest*>( &request );
+              case 2009112236: return static_cast<closeRequest*>( &request );
+              case 2009112218: return static_cast<creatRequest*>( &request );
+              case 2009112219: return static_cast<ftruncateRequest*>( &request );
+              case 2009112220: return static_cast<getattrRequest*>( &request );
+              case 2009112221: return static_cast<getxattrRequest*>( &request );
+              case 2009112222: return static_cast<linkRequest*>( &request );
+              case 2009112223: return static_cast<listxattrRequest*>( &request );
+              case 2009112224: return static_cast<mkdirRequest*>( &request );
+              case 2009112225: return static_cast<openRequest*>( &request );
+              case 2009112226: return static_cast<readdirRequest*>( &request );
+              case 2009112227: return static_cast<removexattrRequest*>( &request );
+              case 2009112228: return static_cast<renameRequest*>( &request );
+              case 2009112229: return static_cast<rmdirRequest*>( &request );
+              case 2009112230: return static_cast<setattrRequest*>( &request );
+              case 2009112231: return static_cast<setxattrRequest*>( &request );
+              case 2009112232: return static_cast<statvfsRequest*>( &request );
+              case 2009112233: return static_cast<symlinkRequest*>( &request );
+              case 2009112234: return static_cast<unlinkRequest*>( &request );
+              case 2009112235: return static_cast<utimensRequest*>( &request );
+              case 2009112244: return static_cast<xtreemfs_checkpointRequest*>( &request );
+              case 2009112245: return static_cast<xtreemfs_check_file_existsRequest*>( &request );
+              case 2009112246: return static_cast<xtreemfs_dump_databaseRequest*>( &request );
+              case 2009112247: return static_cast<xtreemfs_get_suitable_osdsRequest*>( &request );
+              case 2009112248: return static_cast<xtreemfs_internal_debugRequest*>( &request );
+              case 2009112250: return static_cast<xtreemfs_listdirRequest*>( &request );
+              case 2009112249: return static_cast<xtreemfs_lsvolRequest*>( &request );
+              case 2009112251: return static_cast<xtreemfs_mkvolRequest*>( &request );
+              case 2009112252: return static_cast<xtreemfs_renew_capabilityRequest*>( &request );
+              case 2009112253: return static_cast<xtreemfs_replication_to_masterRequest*>( &request );
+              case 2009112254: return static_cast<xtreemfs_replica_addRequest*>( &request );
+              case 2009112255: return static_cast<xtreemfs_replica_listRequest*>( &request );
+              case 2009112256: return static_cast<xtreemfs_replica_removeRequest*>( &request );
+              case 2009112257: return static_cast<xtreemfs_restore_databaseRequest*>( &request );
+              case 2009112258: return static_cast<xtreemfs_restore_fileRequest*>( &request );
+              case 2009112259: return static_cast<xtreemfs_rmvolRequest*>( &request );
+              case 2009112260: return static_cast<xtreemfs_shutdownRequest*>( &request );
+              case 2009112261: return static_cast<xtreemfs_update_file_sizeRequest*>( &request );
               default: return NULL;
             }
           }
@@ -2558,52 +2558,52 @@ namespace org
           {
             switch ( response.get_type_id() )
             {
-              case 2009090410: return static_cast<accessResponse*>( &response );
-              case 2009090411: return static_cast<chmodResponse*>( &response );
-              case 2009090412: return static_cast<chownResponse*>( &response );
-              case 2009090431: return static_cast<closeResponse*>( &response );
-              case 2009090413: return static_cast<creatResponse*>( &response );
-              case 2009090414: return static_cast<ftruncateResponse*>( &response );
-              case 2009090415: return static_cast<getattrResponse*>( &response );
-              case 2009090416: return static_cast<getxattrResponse*>( &response );
-              case 2009090417: return static_cast<linkResponse*>( &response );
-              case 2009090418: return static_cast<listxattrResponse*>( &response );
-              case 2009090419: return static_cast<mkdirResponse*>( &response );
-              case 2009090420: return static_cast<openResponse*>( &response );
-              case 2009090421: return static_cast<readdirResponse*>( &response );
-              case 2009090422: return static_cast<removexattrResponse*>( &response );
-              case 2009090423: return static_cast<renameResponse*>( &response );
-              case 2009090424: return static_cast<rmdirResponse*>( &response );
-              case 2009090425: return static_cast<setattrResponse*>( &response );
-              case 2009090426: return static_cast<setxattrResponse*>( &response );
-              case 2009090427: return static_cast<statvfsResponse*>( &response );
-              case 2009090428: return static_cast<symlinkResponse*>( &response );
-              case 2009090429: return static_cast<unlinkResponse*>( &response );
-              case 2009090430: return static_cast<utimensResponse*>( &response );
-              case 2009090439: return static_cast<xtreemfs_checkpointResponse*>( &response );
-              case 2009090440: return static_cast<xtreemfs_check_file_existsResponse*>( &response );
-              case 2009090441: return static_cast<xtreemfs_dump_databaseResponse*>( &response );
-              case 2009090442: return static_cast<xtreemfs_get_suitable_osdsResponse*>( &response );
-              case 2009090443: return static_cast<xtreemfs_internal_debugResponse*>( &response );
-              case 2009090444: return static_cast<xtreemfs_lsvolResponse*>( &response );
-              case 2009090445: return static_cast<xtreemfs_listdirResponse*>( &response );
-              case 2009090446: return static_cast<xtreemfs_mkvolResponse*>( &response );
-              case 2009090447: return static_cast<xtreemfs_renew_capabilityResponse*>( &response );
-              case 2009090448: return static_cast<xtreemfs_replica_addResponse*>( &response );
-              case 2009090449: return static_cast<xtreemfs_replica_listResponse*>( &response );
-              case 2009090450: return static_cast<xtreemfs_replica_removeResponse*>( &response );
-              case 2009090451: return static_cast<xtreemfs_restore_databaseResponse*>( &response );
-              case 2009090452: return static_cast<xtreemfs_restore_fileResponse*>( &response );
-              case 2009090453: return static_cast<xtreemfs_rmvolResponse*>( &response );
-              case 2009090454: return static_cast<xtreemfs_shutdownResponse*>( &response );
-              case 2009090455: return static_cast<xtreemfs_update_file_sizeResponse*>( &response );
-              case 2009090456: return static_cast<replication_toMasterResponse*>( &response );
-              case 2009090459: return static_cast<ConcurrentModificationException*>( &response );
-              case 2009090460: return static_cast<errnoException*>( &response );
-              case 2009090461: return static_cast<InvalidArgumentException*>( &response );
-              case 2009090462: return static_cast<MRCException*>( &response );
-              case 2009090463: return static_cast<ProtocolException*>( &response );
-              case 2009090464: return static_cast<RedirectException*>( &response );
+              case 2009112215: return static_cast<accessResponse*>( &response );
+              case 2009112216: return static_cast<chmodResponse*>( &response );
+              case 2009112217: return static_cast<chownResponse*>( &response );
+              case 2009112236: return static_cast<closeResponse*>( &response );
+              case 2009112218: return static_cast<creatResponse*>( &response );
+              case 2009112219: return static_cast<ftruncateResponse*>( &response );
+              case 2009112220: return static_cast<getattrResponse*>( &response );
+              case 2009112221: return static_cast<getxattrResponse*>( &response );
+              case 2009112222: return static_cast<linkResponse*>( &response );
+              case 2009112223: return static_cast<listxattrResponse*>( &response );
+              case 2009112224: return static_cast<mkdirResponse*>( &response );
+              case 2009112225: return static_cast<openResponse*>( &response );
+              case 2009112226: return static_cast<readdirResponse*>( &response );
+              case 2009112227: return static_cast<removexattrResponse*>( &response );
+              case 2009112228: return static_cast<renameResponse*>( &response );
+              case 2009112229: return static_cast<rmdirResponse*>( &response );
+              case 2009112230: return static_cast<setattrResponse*>( &response );
+              case 2009112231: return static_cast<setxattrResponse*>( &response );
+              case 2009112232: return static_cast<statvfsResponse*>( &response );
+              case 2009112233: return static_cast<symlinkResponse*>( &response );
+              case 2009112234: return static_cast<unlinkResponse*>( &response );
+              case 2009112235: return static_cast<utimensResponse*>( &response );
+              case 2009112244: return static_cast<xtreemfs_checkpointResponse*>( &response );
+              case 2009112245: return static_cast<xtreemfs_check_file_existsResponse*>( &response );
+              case 2009112246: return static_cast<xtreemfs_dump_databaseResponse*>( &response );
+              case 2009112247: return static_cast<xtreemfs_get_suitable_osdsResponse*>( &response );
+              case 2009112248: return static_cast<xtreemfs_internal_debugResponse*>( &response );
+              case 2009112250: return static_cast<xtreemfs_listdirResponse*>( &response );
+              case 2009112249: return static_cast<xtreemfs_lsvolResponse*>( &response );
+              case 2009112251: return static_cast<xtreemfs_mkvolResponse*>( &response );
+              case 2009112252: return static_cast<xtreemfs_renew_capabilityResponse*>( &response );
+              case 2009112253: return static_cast<xtreemfs_replication_to_masterResponse*>( &response );
+              case 2009112254: return static_cast<xtreemfs_replica_addResponse*>( &response );
+              case 2009112255: return static_cast<xtreemfs_replica_listResponse*>( &response );
+              case 2009112256: return static_cast<xtreemfs_replica_removeResponse*>( &response );
+              case 2009112257: return static_cast<xtreemfs_restore_databaseResponse*>( &response );
+              case 2009112258: return static_cast<xtreemfs_restore_fileResponse*>( &response );
+              case 2009112259: return static_cast<xtreemfs_rmvolResponse*>( &response );
+              case 2009112260: return static_cast<xtreemfs_shutdownResponse*>( &response );
+              case 2009112261: return static_cast<xtreemfs_update_file_sizeResponse*>( &response );
+              case 2009112264: return static_cast<ConcurrentModificationException*>( &response );
+              case 2009112265: return static_cast<errnoException*>( &response );
+              case 2009112266: return static_cast<InvalidArgumentException*>( &response );
+              case 2009112267: return static_cast<MRCException*>( &response );
+              case 2009112268: return static_cast<ProtocolException*>( &response );
+              case 2009112269: return static_cast<RedirectException*>( &response );
               default: return NULL;
             }
           }
@@ -2612,46 +2612,46 @@ namespace org
           {
             switch ( tag )
             {
-              case 2009090410: return new accessRequest;
-              case 2009090411: return new chmodRequest;
-              case 2009090412: return new chownRequest;
-              case 2009090431: return new closeRequest;
-              case 2009090413: return new creatRequest;
-              case 2009090414: return new ftruncateRequest;
-              case 2009090415: return new getattrRequest;
-              case 2009090416: return new getxattrRequest;
-              case 2009090417: return new linkRequest;
-              case 2009090418: return new listxattrRequest;
-              case 2009090419: return new mkdirRequest;
-              case 2009090420: return new openRequest;
-              case 2009090421: return new readdirRequest;
-              case 2009090422: return new removexattrRequest;
-              case 2009090423: return new renameRequest;
-              case 2009090424: return new rmdirRequest;
-              case 2009090425: return new setattrRequest;
-              case 2009090426: return new setxattrRequest;
-              case 2009090427: return new statvfsRequest;
-              case 2009090428: return new symlinkRequest;
-              case 2009090429: return new unlinkRequest;
-              case 2009090430: return new utimensRequest;
-              case 2009090439: return new xtreemfs_checkpointRequest;
-              case 2009090440: return new xtreemfs_check_file_existsRequest;
-              case 2009090441: return new xtreemfs_dump_databaseRequest;
-              case 2009090442: return new xtreemfs_get_suitable_osdsRequest;
-              case 2009090443: return new xtreemfs_internal_debugRequest;
-              case 2009090444: return new xtreemfs_lsvolRequest;
-              case 2009090445: return new xtreemfs_listdirRequest;
-              case 2009090446: return new xtreemfs_mkvolRequest;
-              case 2009090447: return new xtreemfs_renew_capabilityRequest;
-              case 2009090448: return new xtreemfs_replica_addRequest;
-              case 2009090449: return new xtreemfs_replica_listRequest;
-              case 2009090450: return new xtreemfs_replica_removeRequest;
-              case 2009090451: return new xtreemfs_restore_databaseRequest;
-              case 2009090452: return new xtreemfs_restore_fileRequest;
-              case 2009090453: return new xtreemfs_rmvolRequest;
-              case 2009090454: return new xtreemfs_shutdownRequest;
-              case 2009090455: return new xtreemfs_update_file_sizeRequest;
-              case 2009090456: return new replication_toMasterRequest;
+              case 2009112215: return new accessRequest;
+              case 2009112216: return new chmodRequest;
+              case 2009112217: return new chownRequest;
+              case 2009112236: return new closeRequest;
+              case 2009112218: return new creatRequest;
+              case 2009112219: return new ftruncateRequest;
+              case 2009112220: return new getattrRequest;
+              case 2009112221: return new getxattrRequest;
+              case 2009112222: return new linkRequest;
+              case 2009112223: return new listxattrRequest;
+              case 2009112224: return new mkdirRequest;
+              case 2009112225: return new openRequest;
+              case 2009112226: return new readdirRequest;
+              case 2009112227: return new removexattrRequest;
+              case 2009112228: return new renameRequest;
+              case 2009112229: return new rmdirRequest;
+              case 2009112230: return new setattrRequest;
+              case 2009112231: return new setxattrRequest;
+              case 2009112232: return new statvfsRequest;
+              case 2009112233: return new symlinkRequest;
+              case 2009112234: return new unlinkRequest;
+              case 2009112235: return new utimensRequest;
+              case 2009112244: return new xtreemfs_checkpointRequest;
+              case 2009112245: return new xtreemfs_check_file_existsRequest;
+              case 2009112246: return new xtreemfs_dump_databaseRequest;
+              case 2009112247: return new xtreemfs_get_suitable_osdsRequest;
+              case 2009112248: return new xtreemfs_internal_debugRequest;
+              case 2009112250: return new xtreemfs_listdirRequest;
+              case 2009112249: return new xtreemfs_lsvolRequest;
+              case 2009112251: return new xtreemfs_mkvolRequest;
+              case 2009112252: return new xtreemfs_renew_capabilityRequest;
+              case 2009112253: return new xtreemfs_replication_to_masterRequest;
+              case 2009112254: return new xtreemfs_replica_addRequest;
+              case 2009112255: return new xtreemfs_replica_listRequest;
+              case 2009112256: return new xtreemfs_replica_removeRequest;
+              case 2009112257: return new xtreemfs_restore_databaseRequest;
+              case 2009112258: return new xtreemfs_restore_fileRequest;
+              case 2009112259: return new xtreemfs_rmvolRequest;
+              case 2009112260: return new xtreemfs_shutdownRequest;
+              case 2009112261: return new xtreemfs_update_file_sizeRequest;
               default: return NULL;
             }
           }
@@ -2660,46 +2660,46 @@ namespace org
           {
             switch ( tag )
             {
-              case 2009090410: return new accessResponse;
-              case 2009090411: return new chmodResponse;
-              case 2009090412: return new chownResponse;
-              case 2009090431: return new closeResponse;
-              case 2009090413: return new creatResponse;
-              case 2009090414: return new ftruncateResponse;
-              case 2009090415: return new getattrResponse;
-              case 2009090416: return new getxattrResponse;
-              case 2009090417: return new linkResponse;
-              case 2009090418: return new listxattrResponse;
-              case 2009090419: return new mkdirResponse;
-              case 2009090420: return new openResponse;
-              case 2009090421: return new readdirResponse;
-              case 2009090422: return new removexattrResponse;
-              case 2009090423: return new renameResponse;
-              case 2009090424: return new rmdirResponse;
-              case 2009090425: return new setattrResponse;
-              case 2009090426: return new setxattrResponse;
-              case 2009090427: return new statvfsResponse;
-              case 2009090428: return new symlinkResponse;
-              case 2009090429: return new unlinkResponse;
-              case 2009090430: return new utimensResponse;
-              case 2009090439: return new xtreemfs_checkpointResponse;
-              case 2009090440: return new xtreemfs_check_file_existsResponse;
-              case 2009090441: return new xtreemfs_dump_databaseResponse;
-              case 2009090442: return new xtreemfs_get_suitable_osdsResponse;
-              case 2009090443: return new xtreemfs_internal_debugResponse;
-              case 2009090444: return new xtreemfs_lsvolResponse;
-              case 2009090445: return new xtreemfs_listdirResponse;
-              case 2009090446: return new xtreemfs_mkvolResponse;
-              case 2009090447: return new xtreemfs_renew_capabilityResponse;
-              case 2009090448: return new xtreemfs_replica_addResponse;
-              case 2009090449: return new xtreemfs_replica_listResponse;
-              case 2009090450: return new xtreemfs_replica_removeResponse;
-              case 2009090451: return new xtreemfs_restore_databaseResponse;
-              case 2009090452: return new xtreemfs_restore_fileResponse;
-              case 2009090453: return new xtreemfs_rmvolResponse;
-              case 2009090454: return new xtreemfs_shutdownResponse;
-              case 2009090455: return new xtreemfs_update_file_sizeResponse;
-              case 2009090456: return new replication_toMasterResponse;
+              case 2009112215: return new accessResponse;
+              case 2009112216: return new chmodResponse;
+              case 2009112217: return new chownResponse;
+              case 2009112236: return new closeResponse;
+              case 2009112218: return new creatResponse;
+              case 2009112219: return new ftruncateResponse;
+              case 2009112220: return new getattrResponse;
+              case 2009112221: return new getxattrResponse;
+              case 2009112222: return new linkResponse;
+              case 2009112223: return new listxattrResponse;
+              case 2009112224: return new mkdirResponse;
+              case 2009112225: return new openResponse;
+              case 2009112226: return new readdirResponse;
+              case 2009112227: return new removexattrResponse;
+              case 2009112228: return new renameResponse;
+              case 2009112229: return new rmdirResponse;
+              case 2009112230: return new setattrResponse;
+              case 2009112231: return new setxattrResponse;
+              case 2009112232: return new statvfsResponse;
+              case 2009112233: return new symlinkResponse;
+              case 2009112234: return new unlinkResponse;
+              case 2009112235: return new utimensResponse;
+              case 2009112244: return new xtreemfs_checkpointResponse;
+              case 2009112245: return new xtreemfs_check_file_existsResponse;
+              case 2009112246: return new xtreemfs_dump_databaseResponse;
+              case 2009112247: return new xtreemfs_get_suitable_osdsResponse;
+              case 2009112248: return new xtreemfs_internal_debugResponse;
+              case 2009112250: return new xtreemfs_listdirResponse;
+              case 2009112249: return new xtreemfs_lsvolResponse;
+              case 2009112251: return new xtreemfs_mkvolResponse;
+              case 2009112252: return new xtreemfs_renew_capabilityResponse;
+              case 2009112253: return new xtreemfs_replication_to_masterResponse;
+              case 2009112254: return new xtreemfs_replica_addResponse;
+              case 2009112255: return new xtreemfs_replica_listResponse;
+              case 2009112256: return new xtreemfs_replica_removeResponse;
+              case 2009112257: return new xtreemfs_restore_databaseResponse;
+              case 2009112258: return new xtreemfs_restore_fileResponse;
+              case 2009112259: return new xtreemfs_rmvolResponse;
+              case 2009112260: return new xtreemfs_shutdownResponse;
+              case 2009112261: return new xtreemfs_update_file_sizeResponse;
               default: return NULL;
             }
           }
@@ -2708,12 +2708,12 @@ namespace org
           {
             switch ( tag )
             {
-              case 2009090459: return new ConcurrentModificationException;
-              case 2009090460: return new errnoException;
-              case 2009090461: return new InvalidArgumentException;
-              case 2009090462: return new MRCException;
-              case 2009090463: return new ProtocolException;
-              case 2009090464: return new RedirectException;
+              case 2009112264: return new ConcurrentModificationException;
+              case 2009112265: return new errnoException;
+              case 2009112266: return new InvalidArgumentException;
+              case 2009112267: return new MRCException;
+              case 2009112268: return new ProtocolException;
+              case 2009112269: return new RedirectException;
               default: return NULL;
             }
           }
@@ -2746,12 +2746,13 @@ namespace org
         virtual void handlextreemfs_checkpointRequest( xtreemfs_checkpointRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_checkpointResponse> resp( new xtreemfs_checkpointResponse ); _xtreemfs_checkpoint(); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
         virtual void handlextreemfs_check_file_existsRequest( xtreemfs_check_file_existsRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_check_file_existsResponse> resp( new xtreemfs_check_file_existsResponse ); std::string bitmap; _xtreemfs_check_file_exists( req.get_volume_id(), req.get_file_ids(), req.get_osd_uuid(), bitmap ); resp->set_bitmap( bitmap ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
         virtual void handlextreemfs_dump_databaseRequest( xtreemfs_dump_databaseRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_dump_databaseResponse> resp( new xtreemfs_dump_databaseResponse ); _xtreemfs_dump_database( req.get_dump_file() ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
-        virtual void handlextreemfs_get_suitable_osdsRequest( xtreemfs_get_suitable_osdsRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_get_suitable_osdsResponse> resp( new xtreemfs_get_suitable_osdsResponse ); org::xtreemfs::interfaces::StringSet osd_uuids; _xtreemfs_get_suitable_osds( req.get_file_id(), req.get_numOSDs(), osd_uuids ); resp->set_osd_uuids( osd_uuids ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
+        virtual void handlextreemfs_get_suitable_osdsRequest( xtreemfs_get_suitable_osdsRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_get_suitable_osdsResponse> resp( new xtreemfs_get_suitable_osdsResponse ); org::xtreemfs::interfaces::StringSet osd_uuids; _xtreemfs_get_suitable_osds( req.get_file_id(), req.get_num_osds(), osd_uuids ); resp->set_osd_uuids( osd_uuids ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
         virtual void handlextreemfs_internal_debugRequest( xtreemfs_internal_debugRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_internal_debugResponse> resp( new xtreemfs_internal_debugResponse ); std::string result; _xtreemfs_internal_debug( req.get_operation(), result ); resp->set_result( result ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
-        virtual void handlextreemfs_lsvolRequest( xtreemfs_lsvolRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_lsvolResponse> resp( new xtreemfs_lsvolResponse ); org::xtreemfs::interfaces::VolumeSet volumes; _xtreemfs_lsvol( volumes ); resp->set_volumes( volumes ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
         virtual void handlextreemfs_listdirRequest( xtreemfs_listdirRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_listdirResponse> resp( new xtreemfs_listdirResponse ); org::xtreemfs::interfaces::StringSet names; _xtreemfs_listdir( req.get_path(), names ); resp->set_names( names ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
+        virtual void handlextreemfs_lsvolRequest( xtreemfs_lsvolRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_lsvolResponse> resp( new xtreemfs_lsvolResponse ); org::xtreemfs::interfaces::VolumeSet volumes; _xtreemfs_lsvol( volumes ); resp->set_volumes( volumes ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
         virtual void handlextreemfs_mkvolRequest( xtreemfs_mkvolRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_mkvolResponse> resp( new xtreemfs_mkvolResponse ); _xtreemfs_mkvol( req.get_volume() ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
         virtual void handlextreemfs_renew_capabilityRequest( xtreemfs_renew_capabilityRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_renew_capabilityResponse> resp( new xtreemfs_renew_capabilityResponse ); org::xtreemfs::interfaces::XCap renewed_xcap; _xtreemfs_renew_capability( req.get_old_xcap(), renewed_xcap ); resp->set_renewed_xcap( renewed_xcap ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
+        virtual void handlextreemfs_replication_to_masterRequest( xtreemfs_replication_to_masterRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_replication_to_masterResponse> resp( new xtreemfs_replication_to_masterResponse ); _xtreemfs_replication_to_master(); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
         virtual void handlextreemfs_replica_addRequest( xtreemfs_replica_addRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_replica_addResponse> resp( new xtreemfs_replica_addResponse ); _xtreemfs_replica_add( req.get_file_id(), req.get_new_replica() ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
         virtual void handlextreemfs_replica_listRequest( xtreemfs_replica_listRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_replica_listResponse> resp( new xtreemfs_replica_listResponse ); org::xtreemfs::interfaces::ReplicaSet replicas; _xtreemfs_replica_list( req.get_file_id(), replicas ); resp->set_replicas( replicas ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
         virtual void handlextreemfs_replica_removeRequest( xtreemfs_replica_removeRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_replica_removeResponse> resp( new xtreemfs_replica_removeResponse ); org::xtreemfs::interfaces::XCap delete_xcap; _xtreemfs_replica_remove( req.get_file_id(), req.get_osd_uuid(), delete_xcap ); resp->set_delete_xcap( delete_xcap ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
@@ -2760,7 +2761,6 @@ namespace org
         virtual void handlextreemfs_rmvolRequest( xtreemfs_rmvolRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_rmvolResponse> resp( new xtreemfs_rmvolResponse ); _xtreemfs_rmvol( req.get_volume_name() ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
         virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_shutdownResponse> resp( new xtreemfs_shutdownResponse ); _xtreemfs_shutdown(); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
         virtual void handlextreemfs_update_file_sizeRequest( xtreemfs_update_file_sizeRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_update_file_sizeResponse> resp( new xtreemfs_update_file_sizeResponse ); _xtreemfs_update_file_size( req.get_xcap(), req.get_osd_write_response() ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
-        virtual void handlereplication_toMasterRequest( replication_toMasterRequest& req ) { ::yidl::runtime::auto_Object<replication_toMasterResponse> resp( new replication_toMasterResponse ); _replication_toMaster(); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
 
       virtual bool _access( const std::string& , uint32_t ) { return false; }
         virtual void _chmod( const std::string& , uint32_t ) { }
@@ -2789,10 +2789,11 @@ namespace org
         virtual void _xtreemfs_dump_database( const std::string&  ) { }
         virtual void _xtreemfs_get_suitable_osds( const std::string& , uint32_t, org::xtreemfs::interfaces::StringSet&  ) { }
         virtual void _xtreemfs_internal_debug( const std::string& , std::string&  ) { }
-        virtual void _xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet&  ) { }
         virtual void _xtreemfs_listdir( const std::string& , org::xtreemfs::interfaces::StringSet&  ) { }
+        virtual void _xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet&  ) { }
         virtual void _xtreemfs_mkvol( const org::xtreemfs::interfaces::Volume&  ) { }
         virtual void _xtreemfs_renew_capability( const org::xtreemfs::interfaces::XCap& , org::xtreemfs::interfaces::XCap&  ) { }
+        virtual void _xtreemfs_replication_to_master() { }
         virtual void _xtreemfs_replica_add( const std::string& , const org::xtreemfs::interfaces::Replica&  ) { }
         virtual void _xtreemfs_replica_list( const std::string& , org::xtreemfs::interfaces::ReplicaSet&  ) { }
         virtual void _xtreemfs_replica_remove( const std::string& , const std::string& , org::xtreemfs::interfaces::XCap&  ) { }
@@ -2801,7 +2802,6 @@ namespace org
         virtual void _xtreemfs_rmvol( const std::string&  ) { }
         virtual void _xtreemfs_shutdown() { }
         virtual void _xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& , const org::xtreemfs::interfaces::OSDWriteResponse&  ) { }
-        virtual void _replication_toMaster() { }
       };
 
       // Use this macro in an implementation class to get all of the prototypes for the operations in MRCInterface
@@ -2831,12 +2831,13 @@ namespace org
       virtual void _xtreemfs_checkpoint();\
       virtual void _xtreemfs_check_file_exists( const std::string& volume_id, const org::xtreemfs::interfaces::StringSet& file_ids, const std::string& osd_uuid, std::string& bitmap );\
       virtual void _xtreemfs_dump_database( const std::string& dump_file );\
-      virtual void _xtreemfs_get_suitable_osds( const std::string& file_id, uint32_t numOSDs, org::xtreemfs::interfaces::StringSet& osd_uuids );\
+      virtual void _xtreemfs_get_suitable_osds( const std::string& file_id, uint32_t num_osds, org::xtreemfs::interfaces::StringSet& osd_uuids );\
       virtual void _xtreemfs_internal_debug( const std::string& operation, std::string& result );\
-      virtual void _xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet& volumes );\
       virtual void _xtreemfs_listdir( const std::string& path, org::xtreemfs::interfaces::StringSet& names );\
+      virtual void _xtreemfs_lsvol( org::xtreemfs::interfaces::VolumeSet& volumes );\
       virtual void _xtreemfs_mkvol( const org::xtreemfs::interfaces::Volume& volume );\
       virtual void _xtreemfs_renew_capability( const org::xtreemfs::interfaces::XCap& old_xcap, org::xtreemfs::interfaces::XCap& renewed_xcap );\
+      virtual void _xtreemfs_replication_to_master();\
       virtual void _xtreemfs_replica_add( const std::string& file_id, const org::xtreemfs::interfaces::Replica& new_replica );\
       virtual void _xtreemfs_replica_list( const std::string& file_id, org::xtreemfs::interfaces::ReplicaSet& replicas );\
       virtual void _xtreemfs_replica_remove( const std::string& file_id, const std::string& osd_uuid, org::xtreemfs::interfaces::XCap& delete_xcap );\
@@ -2844,8 +2845,7 @@ namespace org
       virtual void _xtreemfs_restore_file( const std::string& file_path, const std::string& file_id, uint64_t file_size, const std::string& osd_uuid, int32_t stripe_size );\
       virtual void _xtreemfs_rmvol( const std::string& volume_name );\
       virtual void _xtreemfs_shutdown();\
-      virtual void _xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );\
-      virtual void _replication_toMaster();
+      virtual void _xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
 
       #define ORG_XTREEMFS_INTERFACES_MRCINTERFACE_HANDLEEVENT_PROTOTYPES \
       virtual void handleaccessRequest( accessRequest& req );\
@@ -2875,10 +2875,11 @@ namespace org
       virtual void handlextreemfs_dump_databaseRequest( xtreemfs_dump_databaseRequest& req );\
       virtual void handlextreemfs_get_suitable_osdsRequest( xtreemfs_get_suitable_osdsRequest& req );\
       virtual void handlextreemfs_internal_debugRequest( xtreemfs_internal_debugRequest& req );\
-      virtual void handlextreemfs_lsvolRequest( xtreemfs_lsvolRequest& req );\
       virtual void handlextreemfs_listdirRequest( xtreemfs_listdirRequest& req );\
+      virtual void handlextreemfs_lsvolRequest( xtreemfs_lsvolRequest& req );\
       virtual void handlextreemfs_mkvolRequest( xtreemfs_mkvolRequest& req );\
       virtual void handlextreemfs_renew_capabilityRequest( xtreemfs_renew_capabilityRequest& req );\
+      virtual void handlextreemfs_replication_to_masterRequest( xtreemfs_replication_to_masterRequest& req );\
       virtual void handlextreemfs_replica_addRequest( xtreemfs_replica_addRequest& req );\
       virtual void handlextreemfs_replica_listRequest( xtreemfs_replica_listRequest& req );\
       virtual void handlextreemfs_replica_removeRequest( xtreemfs_replica_removeRequest& req );\
@@ -2886,8 +2887,7 @@ namespace org
       virtual void handlextreemfs_restore_fileRequest( xtreemfs_restore_fileRequest& req );\
       virtual void handlextreemfs_rmvolRequest( xtreemfs_rmvolRequest& req );\
       virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req );\
-      virtual void handlextreemfs_update_file_sizeRequest( xtreemfs_update_file_sizeRequest& req );\
-      virtual void handlereplication_toMasterRequest( replication_toMasterRequest& req );
+      virtual void handlextreemfs_update_file_sizeRequest( xtreemfs_update_file_sizeRequest& req );
 
     };
 

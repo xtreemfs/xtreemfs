@@ -16,7 +16,7 @@ namespace org
     namespace interfaces
     {
       enum AccessControlPolicyType { ACCESS_CONTROL_POLICY_NULL = 1, ACCESS_CONTROL_POLICY_POSIX = 2, ACCESS_CONTROL_POLICY_VOLUME = 3 };
-      enum OSDSelectionPolicyType { OSD_SELECTION_POLICY_FILTER_DEFAULT = 1000, OSD_SELECTION_POLICY_FILTER_FQDN = 1001, OSD_SELECTION_POLICY_GROUP_DCMAP = 2000, OSD_SELECTION_POLICY_GROUP_FQDN = 2001, OSD_SELECTION_POLICY_SORT_RANDOM = 3000, OSD_SELECTION_POLICY_SORT_DCMAP = 3001, OSD_SELECTION_POLICY_SORT_FQDN = 3002, OSD_SELECTION_POLICY_SORT_VIVALDI = 3003 };
+      enum OSDSelectionPolicyType { OSD_SELECTION_POLICY_FILTER_DEFAULT = 1000, OSD_SELECTION_POLICY_FILTER_FQDN = 1001, OSD_SELECTION_POLICY_GROUP_DCMAP = 2000, OSD_SELECTION_POLICY_GROUP_FQDN = 2001, OSD_SELECTION_POLICY_SORT_DCMAP = 3000, OSD_SELECTION_POLICY_SORT_FQDN = 3001, OSD_SELECTION_POLICY_SORT_RANDOM = 3002, OSD_SELECTION_POLICY_SORT_VIVALDI = 3003 };
       enum ReplicaSelectionPolicyType { REPLICA_SELECTION_POLICY_SIMPLE = 1 };
       enum StripingPolicyType { STRIPING_POLICY_RAID0 = 0 };
 
@@ -36,7 +36,7 @@ namespace org
         bool operator==( const NewFileSize& other ) const { return size_in_bytes == other.size_in_bytes && truncate_epoch == other.truncate_epoch; }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( NewFileSize, 2009090220 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( NewFileSize, 2009112025 );
 
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeUint64( "size_in_bytes", 0, size_in_bytes ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); }
@@ -56,7 +56,7 @@ namespace org
         virtual ~NewFileSizeSet() { }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( NewFileSizeSet, 2009090221 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( NewFileSizeSet, 2009112026 );
 
         // yidl::Sequence
         size_t get_size() const { return size(); }
@@ -81,7 +81,7 @@ namespace org
         bool operator==( const OSDtoMRCData& other ) const { return caching_policy == other.caching_policy && data == other.data; }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( OSDtoMRCData, 2009090222 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( OSDtoMRCData, 2009112027 );
 
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeUint8( "caching_policy", 0, caching_policy ); marshaller.writeString( "data", 0, data ); }
@@ -101,7 +101,7 @@ namespace org
         virtual ~OSDtoMRCDataSet() { }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( OSDtoMRCDataSet, 2009090223 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( OSDtoMRCDataSet, 2009112028 );
 
         // yidl::Sequence
         size_t get_size() const { return size(); }
@@ -124,7 +124,7 @@ namespace org
         bool operator==( const OSDWriteResponse& other ) const { return new_file_size == other.new_file_size && opaque_data == other.opaque_data; }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( OSDWriteResponse, 2009090226 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( OSDWriteResponse, 2009112031 );
 
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "new_file_size", 0, new_file_size ); marshaller.writeSequence( "opaque_data", 0, opaque_data ); }
@@ -152,7 +152,7 @@ namespace org
         bool operator==( const StripingPolicy& other ) const { return type == other.type && stripe_size == other.stripe_size && width == other.width; }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( StripingPolicy, 2009090228 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( StripingPolicy, 2009112033 );
 
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeInt32( "type", 0, static_cast<int32_t>( type ) ); marshaller.writeUint32( "stripe_size", 0, stripe_size ); marshaller.writeUint32( "width", 0, width ); }
@@ -168,29 +168,29 @@ namespace org
       {
       public:
         Replica() : replication_flags( 0 ) { }
-        Replica( const org::xtreemfs::interfaces::StripingPolicy& striping_policy, uint32_t replication_flags, const org::xtreemfs::interfaces::StringSet& osd_uuids ) : striping_policy( striping_policy ), replication_flags( replication_flags ), osd_uuids( osd_uuids ) { }
+        Replica( const org::xtreemfs::interfaces::StringSet& osd_uuids, uint32_t replication_flags, const org::xtreemfs::interfaces::StripingPolicy& striping_policy ) : osd_uuids( osd_uuids ), replication_flags( replication_flags ), striping_policy( striping_policy ) { }
         virtual ~Replica() { }
 
-        void set_striping_policy( const org::xtreemfs::interfaces::StripingPolicy&  striping_policy ) { this->striping_policy = striping_policy; }
-        const org::xtreemfs::interfaces::StripingPolicy& get_striping_policy() const { return striping_policy; }
-        void set_replication_flags( uint32_t replication_flags ) { this->replication_flags = replication_flags; }
-        uint32_t get_replication_flags() const { return replication_flags; }
         void set_osd_uuids( const org::xtreemfs::interfaces::StringSet&  osd_uuids ) { this->osd_uuids = osd_uuids; }
         const org::xtreemfs::interfaces::StringSet& get_osd_uuids() const { return osd_uuids; }
+        void set_replication_flags( uint32_t replication_flags ) { this->replication_flags = replication_flags; }
+        uint32_t get_replication_flags() const { return replication_flags; }
+        void set_striping_policy( const org::xtreemfs::interfaces::StripingPolicy&  striping_policy ) { this->striping_policy = striping_policy; }
+        const org::xtreemfs::interfaces::StripingPolicy& get_striping_policy() const { return striping_policy; }
 
-        bool operator==( const Replica& other ) const { return striping_policy == other.striping_policy && replication_flags == other.replication_flags && osd_uuids == other.osd_uuids; }
+        bool operator==( const Replica& other ) const { return osd_uuids == other.osd_uuids && replication_flags == other.replication_flags && striping_policy == other.striping_policy; }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( Replica, 2009090229 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( Replica, 2009112034 );
 
         // yidl::Struct
-        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "striping_policy", 0, striping_policy ); marshaller.writeUint32( "replication_flags", 0, replication_flags ); marshaller.writeSequence( "osd_uuids", 0, osd_uuids ); }
-        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "striping_policy", 0, striping_policy ); replication_flags = unmarshaller.readUint32( "replication_flags", 0 ); unmarshaller.readSequence( "osd_uuids", 0, osd_uuids ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "osd_uuids", 0, osd_uuids ); marshaller.writeUint32( "replication_flags", 0, replication_flags ); marshaller.writeStruct( "striping_policy", 0, striping_policy ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "osd_uuids", 0, osd_uuids ); replication_flags = unmarshaller.readUint32( "replication_flags", 0 ); unmarshaller.readStruct( "striping_policy", 0, striping_policy ); }
 
       protected:
-        org::xtreemfs::interfaces::StripingPolicy striping_policy;
-        uint32_t replication_flags;
         org::xtreemfs::interfaces::StringSet osd_uuids;
+        uint32_t replication_flags;
+        org::xtreemfs::interfaces::StripingPolicy striping_policy;
       };
 
       class ReplicaSet : public ::yidl::runtime::Sequence, public std::vector<org::xtreemfs::interfaces::Replica>
@@ -202,7 +202,7 @@ namespace org
         virtual ~ReplicaSet() { }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( ReplicaSet, 2009090230 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( ReplicaSet, 2009112035 );
 
         // yidl::Sequence
         size_t get_size() const { return size(); }
@@ -227,7 +227,7 @@ namespace org
         bool operator==( const VivaldiCoordinates& other ) const { return x_coordinate == other.x_coordinate && y_coordinate == other.y_coordinate && local_error == other.local_error; }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( VivaldiCoordinates, 2009090231 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( VivaldiCoordinates, 2009112036 );
 
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeDouble( "x_coordinate", 0, x_coordinate ); marshaller.writeDouble( "y_coordinate", 0, y_coordinate ); marshaller.writeDouble( "local_error", 0, local_error ); }
@@ -242,106 +242,106 @@ namespace org
       class XCap : public ::yidl::runtime::Struct
       {
       public:
-        XCap() : access_mode( 0 ), expires_s( 0 ), truncate_epoch( 0 ), replicateOnClose( false ) { }
-        XCap( const std::string& file_id, uint32_t access_mode, uint64_t expires_s, const std::string& client_identity, uint32_t truncate_epoch, bool replicateOnClose, const std::string& server_signature ) : file_id( file_id ), access_mode( access_mode ), expires_s( expires_s ), client_identity( client_identity ), truncate_epoch( truncate_epoch ), replicateOnClose( replicateOnClose ), server_signature( server_signature ) { }
-        XCap( const char* file_id, size_t file_id_len, uint32_t access_mode, uint64_t expires_s, const char* client_identity, size_t client_identity_len, uint32_t truncate_epoch, bool replicateOnClose, const char* server_signature, size_t server_signature_len ) : file_id( file_id, file_id_len ), access_mode( access_mode ), expires_s( expires_s ), client_identity( client_identity, client_identity_len ), truncate_epoch( truncate_epoch ), replicateOnClose( replicateOnClose ), server_signature( server_signature, server_signature_len ) { }
+        XCap() : access_mode( 0 ), expires_s( 0 ), replicate_on_close( false ), truncate_epoch( 0 ) { }
+        XCap( uint32_t access_mode, const std::string& client_identity, uint64_t expires_s, const std::string& file_id, bool replicate_on_close, const std::string& server_signature, uint32_t truncate_epoch ) : access_mode( access_mode ), client_identity( client_identity ), expires_s( expires_s ), file_id( file_id ), replicate_on_close( replicate_on_close ), server_signature( server_signature ), truncate_epoch( truncate_epoch ) { }
+        XCap( uint32_t access_mode, const char* client_identity, size_t client_identity_len, uint64_t expires_s, const char* file_id, size_t file_id_len, bool replicate_on_close, const char* server_signature, size_t server_signature_len, uint32_t truncate_epoch ) : access_mode( access_mode ), client_identity( client_identity, client_identity_len ), expires_s( expires_s ), file_id( file_id, file_id_len ), replicate_on_close( replicate_on_close ), server_signature( server_signature, server_signature_len ), truncate_epoch( truncate_epoch ) { }
         virtual ~XCap() { }
 
-        void set_file_id( const std::string& file_id ) { set_file_id( file_id.c_str(), file_id.size() ); }
-        void set_file_id( const char* file_id, size_t file_id_len ) { this->file_id.assign( file_id, file_id_len ); }
-        const std::string& get_file_id() const { return file_id; }
         void set_access_mode( uint32_t access_mode ) { this->access_mode = access_mode; }
         uint32_t get_access_mode() const { return access_mode; }
-        void set_expires_s( uint64_t expires_s ) { this->expires_s = expires_s; }
-        uint64_t get_expires_s() const { return expires_s; }
         void set_client_identity( const std::string& client_identity ) { set_client_identity( client_identity.c_str(), client_identity.size() ); }
         void set_client_identity( const char* client_identity, size_t client_identity_len ) { this->client_identity.assign( client_identity, client_identity_len ); }
         const std::string& get_client_identity() const { return client_identity; }
-        void set_truncate_epoch( uint32_t truncate_epoch ) { this->truncate_epoch = truncate_epoch; }
-        uint32_t get_truncate_epoch() const { return truncate_epoch; }
-        void set_replicateOnClose( bool replicateOnClose ) { this->replicateOnClose = replicateOnClose; }
-        bool get_replicateOnClose() const { return replicateOnClose; }
+        void set_expires_s( uint64_t expires_s ) { this->expires_s = expires_s; }
+        uint64_t get_expires_s() const { return expires_s; }
+        void set_file_id( const std::string& file_id ) { set_file_id( file_id.c_str(), file_id.size() ); }
+        void set_file_id( const char* file_id, size_t file_id_len ) { this->file_id.assign( file_id, file_id_len ); }
+        const std::string& get_file_id() const { return file_id; }
+        void set_replicate_on_close( bool replicate_on_close ) { this->replicate_on_close = replicate_on_close; }
+        bool get_replicate_on_close() const { return replicate_on_close; }
         void set_server_signature( const std::string& server_signature ) { set_server_signature( server_signature.c_str(), server_signature.size() ); }
         void set_server_signature( const char* server_signature, size_t server_signature_len ) { this->server_signature.assign( server_signature, server_signature_len ); }
         const std::string& get_server_signature() const { return server_signature; }
+        void set_truncate_epoch( uint32_t truncate_epoch ) { this->truncate_epoch = truncate_epoch; }
+        uint32_t get_truncate_epoch() const { return truncate_epoch; }
 
-        bool operator==( const XCap& other ) const { return file_id == other.file_id && access_mode == other.access_mode && expires_s == other.expires_s && client_identity == other.client_identity && truncate_epoch == other.truncate_epoch && replicateOnClose == other.replicateOnClose && server_signature == other.server_signature; }
+        bool operator==( const XCap& other ) const { return access_mode == other.access_mode && client_identity == other.client_identity && expires_s == other.expires_s && file_id == other.file_id && replicate_on_close == other.replicate_on_close && server_signature == other.server_signature && truncate_epoch == other.truncate_epoch; }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( XCap, 2009090232 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( XCap, 2009112037 );
 
         // yidl::Struct
-        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "file_id", 0, file_id ); marshaller.writeUint32( "access_mode", 0, access_mode ); marshaller.writeUint64( "expires_s", 0, expires_s ); marshaller.writeString( "client_identity", 0, client_identity ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); marshaller.writeBoolean( "replicateOnClose", 0, replicateOnClose ); marshaller.writeString( "server_signature", 0, server_signature ); }
-        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readString( "file_id", 0, file_id ); access_mode = unmarshaller.readUint32( "access_mode", 0 ); expires_s = unmarshaller.readUint64( "expires_s", 0 ); unmarshaller.readString( "client_identity", 0, client_identity ); truncate_epoch = unmarshaller.readUint32( "truncate_epoch", 0 ); replicateOnClose = unmarshaller.readBoolean( "replicateOnClose", 0 ); unmarshaller.readString( "server_signature", 0, server_signature ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeUint32( "access_mode", 0, access_mode ); marshaller.writeString( "client_identity", 0, client_identity ); marshaller.writeUint64( "expires_s", 0, expires_s ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeBoolean( "replicate_on_close", 0, replicate_on_close ); marshaller.writeString( "server_signature", 0, server_signature ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { access_mode = unmarshaller.readUint32( "access_mode", 0 ); unmarshaller.readString( "client_identity", 0, client_identity ); expires_s = unmarshaller.readUint64( "expires_s", 0 ); unmarshaller.readString( "file_id", 0, file_id ); replicate_on_close = unmarshaller.readBoolean( "replicate_on_close", 0 ); unmarshaller.readString( "server_signature", 0, server_signature ); truncate_epoch = unmarshaller.readUint32( "truncate_epoch", 0 ); }
 
       protected:
-        std::string file_id;
         uint32_t access_mode;
-        uint64_t expires_s;
         std::string client_identity;
-        uint32_t truncate_epoch;
-        bool replicateOnClose;
+        uint64_t expires_s;
+        std::string file_id;
+        bool replicate_on_close;
         std::string server_signature;
+        uint32_t truncate_epoch;
       };
 
       class XLocSet : public ::yidl::runtime::Struct
       {
       public:
-        XLocSet() : version( 0 ), read_only_file_size( 0 ) { }
-        XLocSet( const org::xtreemfs::interfaces::ReplicaSet& replicas, uint32_t version, const std::string& repUpdatePolicy, uint64_t read_only_file_size ) : replicas( replicas ), version( version ), repUpdatePolicy( repUpdatePolicy ), read_only_file_size( read_only_file_size ) { }
-        XLocSet( const org::xtreemfs::interfaces::ReplicaSet& replicas, uint32_t version, const char* repUpdatePolicy, size_t repUpdatePolicy_len, uint64_t read_only_file_size ) : replicas( replicas ), version( version ), repUpdatePolicy( repUpdatePolicy, repUpdatePolicy_len ), read_only_file_size( read_only_file_size ) { }
+        XLocSet() : read_only_file_size( 0 ), version( 0 ) { }
+        XLocSet( uint64_t read_only_file_size, const org::xtreemfs::interfaces::ReplicaSet& replicas, const std::string& replica_update_policy, uint32_t version ) : read_only_file_size( read_only_file_size ), replicas( replicas ), replica_update_policy( replica_update_policy ), version( version ) { }
+        XLocSet( uint64_t read_only_file_size, const org::xtreemfs::interfaces::ReplicaSet& replicas, const char* replica_update_policy, size_t replica_update_policy_len, uint32_t version ) : read_only_file_size( read_only_file_size ), replicas( replicas ), replica_update_policy( replica_update_policy, replica_update_policy_len ), version( version ) { }
         virtual ~XLocSet() { }
 
-        void set_replicas( const org::xtreemfs::interfaces::ReplicaSet&  replicas ) { this->replicas = replicas; }
-        const org::xtreemfs::interfaces::ReplicaSet& get_replicas() const { return replicas; }
-        void set_version( uint32_t version ) { this->version = version; }
-        uint32_t get_version() const { return version; }
-        void set_repUpdatePolicy( const std::string& repUpdatePolicy ) { set_repUpdatePolicy( repUpdatePolicy.c_str(), repUpdatePolicy.size() ); }
-        void set_repUpdatePolicy( const char* repUpdatePolicy, size_t repUpdatePolicy_len ) { this->repUpdatePolicy.assign( repUpdatePolicy, repUpdatePolicy_len ); }
-        const std::string& get_repUpdatePolicy() const { return repUpdatePolicy; }
         void set_read_only_file_size( uint64_t read_only_file_size ) { this->read_only_file_size = read_only_file_size; }
         uint64_t get_read_only_file_size() const { return read_only_file_size; }
+        void set_replicas( const org::xtreemfs::interfaces::ReplicaSet&  replicas ) { this->replicas = replicas; }
+        const org::xtreemfs::interfaces::ReplicaSet& get_replicas() const { return replicas; }
+        void set_replica_update_policy( const std::string& replica_update_policy ) { set_replica_update_policy( replica_update_policy.c_str(), replica_update_policy.size() ); }
+        void set_replica_update_policy( const char* replica_update_policy, size_t replica_update_policy_len ) { this->replica_update_policy.assign( replica_update_policy, replica_update_policy_len ); }
+        const std::string& get_replica_update_policy() const { return replica_update_policy; }
+        void set_version( uint32_t version ) { this->version = version; }
+        uint32_t get_version() const { return version; }
 
-        bool operator==( const XLocSet& other ) const { return replicas == other.replicas && version == other.version && repUpdatePolicy == other.repUpdatePolicy && read_only_file_size == other.read_only_file_size; }
+        bool operator==( const XLocSet& other ) const { return read_only_file_size == other.read_only_file_size && replicas == other.replicas && replica_update_policy == other.replica_update_policy && version == other.version; }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( XLocSet, 2009090233 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( XLocSet, 2009112038 );
 
         // yidl::Struct
-        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "replicas", 0, replicas ); marshaller.writeUint32( "version", 0, version ); marshaller.writeString( "repUpdatePolicy", 0, repUpdatePolicy ); marshaller.writeUint64( "read_only_file_size", 0, read_only_file_size ); }
-        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readSequence( "replicas", 0, replicas ); version = unmarshaller.readUint32( "version", 0 ); unmarshaller.readString( "repUpdatePolicy", 0, repUpdatePolicy ); read_only_file_size = unmarshaller.readUint64( "read_only_file_size", 0 ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeUint64( "read_only_file_size", 0, read_only_file_size ); marshaller.writeSequence( "replicas", 0, replicas ); marshaller.writeString( "replica_update_policy", 0, replica_update_policy ); marshaller.writeUint32( "version", 0, version ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { read_only_file_size = unmarshaller.readUint64( "read_only_file_size", 0 ); unmarshaller.readSequence( "replicas", 0, replicas ); unmarshaller.readString( "replica_update_policy", 0, replica_update_policy ); version = unmarshaller.readUint32( "version", 0 ); }
 
       protected:
-        org::xtreemfs::interfaces::ReplicaSet replicas;
-        uint32_t version;
-        std::string repUpdatePolicy;
         uint64_t read_only_file_size;
+        org::xtreemfs::interfaces::ReplicaSet replicas;
+        std::string replica_update_policy;
+        uint32_t version;
       };
 
       class FileCredentials : public ::yidl::runtime::Struct
       {
       public:
         FileCredentials() { }
-        FileCredentials( const org::xtreemfs::interfaces::XLocSet& xlocs, const org::xtreemfs::interfaces::XCap& xcap ) : xlocs( xlocs ), xcap( xcap ) { }
+        FileCredentials( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::XLocSet& xlocs ) : xcap( xcap ), xlocs( xlocs ) { }
         virtual ~FileCredentials() { }
 
-        void set_xlocs( const org::xtreemfs::interfaces::XLocSet&  xlocs ) { this->xlocs = xlocs; }
-        const org::xtreemfs::interfaces::XLocSet& get_xlocs() const { return xlocs; }
         void set_xcap( const org::xtreemfs::interfaces::XCap&  xcap ) { this->xcap = xcap; }
         const org::xtreemfs::interfaces::XCap& get_xcap() const { return xcap; }
+        void set_xlocs( const org::xtreemfs::interfaces::XLocSet&  xlocs ) { this->xlocs = xlocs; }
+        const org::xtreemfs::interfaces::XLocSet& get_xlocs() const { return xlocs; }
 
-        bool operator==( const FileCredentials& other ) const { return xlocs == other.xlocs && xcap == other.xcap; }
+        bool operator==( const FileCredentials& other ) const { return xcap == other.xcap && xlocs == other.xlocs; }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( FileCredentials, 2009090234 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( FileCredentials, 2009112039 );
 
         // yidl::Struct
-        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "xlocs", 0, xlocs ); marshaller.writeStruct( "xcap", 0, xcap ); }
-        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "xlocs", 0, xlocs ); unmarshaller.readStruct( "xcap", 0, xcap ); }
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "xcap", 0, xcap ); marshaller.writeStruct( "xlocs", 0, xlocs ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readStruct( "xcap", 0, xcap ); unmarshaller.readStruct( "xlocs", 0, xlocs ); }
 
       protected:
-        org::xtreemfs::interfaces::XLocSet xlocs;
         org::xtreemfs::interfaces::XCap xcap;
+        org::xtreemfs::interfaces::XLocSet xlocs;
       };
 
       class FileCredentialsSet : public ::yidl::runtime::Sequence, public std::vector<org::xtreemfs::interfaces::FileCredentials>
@@ -353,7 +353,7 @@ namespace org
         virtual ~FileCredentialsSet() { }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( FileCredentialsSet, 2009090235 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( FileCredentialsSet, 2009112040 );
 
         // yidl::Sequence
         size_t get_size() const { return size(); }
