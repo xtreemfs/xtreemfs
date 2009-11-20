@@ -181,7 +181,7 @@ namespace mount_xtreemfs
           child_argvv.push_back( "mount.xtreemfs.log" );
         child_argvv.push_back( NULL );
 
-        YIELD::ipc::auto_Process child_process = YIELD::ipc::Process::create( argv[0], ( const char** )&child_argvv[0] );
+        YIELD::ipc::auto_Process child_process = YIELD::ipc::Process::create( argv[0], const_cast<const char**>( &child_argvv[0] ) );
 
         if ( child_process != NULL )
         { 

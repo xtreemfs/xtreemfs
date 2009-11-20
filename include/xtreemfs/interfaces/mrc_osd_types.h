@@ -156,7 +156,7 @@ namespace org
 
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeInt32( "type", 0, static_cast<int32_t>( type ) ); marshaller.writeUint32( "stripe_size", 0, stripe_size ); marshaller.writeUint32( "width", 0, width ); }
-        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { type = ( org::xtreemfs::interfaces::StripingPolicyType )unmarshaller.readInt32( "type", 0 ); stripe_size = unmarshaller.readUint32( "stripe_size", 0 ); width = unmarshaller.readUint32( "width", 0 ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { type = static_cast<org::xtreemfs::interfaces::StripingPolicyType>( unmarshaller.readInt32( "type", 0 ) ); stripe_size = unmarshaller.readUint32( "stripe_size", 0 ); width = unmarshaller.readUint32( "width", 0 ); }
 
       protected:
         org::xtreemfs::interfaces::StripingPolicyType type;

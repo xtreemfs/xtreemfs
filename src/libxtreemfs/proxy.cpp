@@ -168,8 +168,8 @@ Proxy<ProxyType, InterfaceType>::Proxy( uint32_t flags, YIELD::platform::auto_Lo
 {
 #ifndef _WIN32
   policy_container = new PolicyContainer;
-  get_user_credentials_from_passwd = ( get_user_credentials_from_passwd_t )policy_container->getPolicyFunction( "get_user_credentials_from_passwd" );
-  get_passwd_from_user_credentials = ( get_passwd_from_user_credentials_t )policy_container->getPolicyFunction( "get_passwd_from_user_credentials" );
+  get_user_credentials_from_passwd = reinterpret_cast<get_user_credentials_from_passwd_t>( policy_container->getPolicyFunction( "get_user_credentials_from_passwd" ) );
+  get_passwd_from_user_credentials = reinterpret_cast<get_passwd_from_user_credentials_t>( policy_container->getPolicyFunction( "get_passwd_from_user_credentials" ) );
 #endif
 }
 

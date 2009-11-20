@@ -210,7 +210,7 @@ namespace org
 
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeInt32( "access_control_policy", 0, static_cast<int32_t>( access_control_policy ) ); marshaller.writeStruct( "default_striping_policy", 0, default_striping_policy ); marshaller.writeString( "id", 0, id ); marshaller.writeUint32( "mode", 0, mode ); marshaller.writeString( "name", 0, name ); marshaller.writeString( "owner_group_id", 0, owner_group_id ); marshaller.writeString( "owner_user_id", 0, owner_user_id ); }
-        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { access_control_policy = ( org::xtreemfs::interfaces::AccessControlPolicyType )unmarshaller.readInt32( "access_control_policy", 0 ); unmarshaller.readStruct( "default_striping_policy", 0, default_striping_policy ); unmarshaller.readString( "id", 0, id ); mode = unmarshaller.readUint32( "mode", 0 ); unmarshaller.readString( "name", 0, name ); unmarshaller.readString( "owner_group_id", 0, owner_group_id ); unmarshaller.readString( "owner_user_id", 0, owner_user_id ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { access_control_policy = static_cast<org::xtreemfs::interfaces::AccessControlPolicyType>( unmarshaller.readInt32( "access_control_policy", 0 ) ); unmarshaller.readStruct( "default_striping_policy", 0, default_striping_policy ); unmarshaller.readString( "id", 0, id ); mode = unmarshaller.readUint32( "mode", 0 ); unmarshaller.readString( "name", 0, name ); unmarshaller.readString( "owner_group_id", 0, owner_group_id ); unmarshaller.readString( "owner_user_id", 0, owner_user_id ); }
 
       protected:
         org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy;

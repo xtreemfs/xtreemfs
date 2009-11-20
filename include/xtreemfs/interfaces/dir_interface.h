@@ -132,7 +132,7 @@ namespace org
 
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeInt32( "type", 0, static_cast<int32_t>( type ) ); marshaller.writeString( "uuid", 0, uuid ); marshaller.writeUint64( "version", 0, version ); marshaller.writeString( "name", 0, name ); marshaller.writeUint64( "last_updated_s", 0, last_updated_s ); marshaller.writeMap( "data", 0, data ); }
-        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { type = ( org::xtreemfs::interfaces::ServiceType )unmarshaller.readInt32( "type", 0 ); unmarshaller.readString( "uuid", 0, uuid ); version = unmarshaller.readUint64( "version", 0 ); unmarshaller.readString( "name", 0, name ); last_updated_s = unmarshaller.readUint64( "last_updated_s", 0 ); unmarshaller.readMap( "data", 0, data ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { type = static_cast<org::xtreemfs::interfaces::ServiceType>( unmarshaller.readInt32( "type", 0 ) ); unmarshaller.readString( "uuid", 0, uuid ); version = unmarshaller.readUint64( "version", 0 ); unmarshaller.readString( "name", 0, name ); last_updated_s = unmarshaller.readUint64( "last_updated_s", 0 ); unmarshaller.readMap( "data", 0, data ); }
 
       protected:
         org::xtreemfs::interfaces::ServiceType type;
@@ -706,7 +706,7 @@ namespace org
 
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeInt32( "type", 0, static_cast<int32_t>( type ) ); }
-          void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { type = ( org::xtreemfs::interfaces::ServiceType )unmarshaller.readInt32( "type", 0 ); }  // YIELD::concurrency::Request
+          void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { type = static_cast<org::xtreemfs::interfaces::ServiceType>( unmarshaller.readInt32( "type", 0 ) ); }  // YIELD::concurrency::Request
           virtual ::YIELD::concurrency::auto_Response createResponse() { return new xtreemfs_service_get_by_typeResponse; }
 
 
