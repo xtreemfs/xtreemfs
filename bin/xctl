@@ -9,13 +9,7 @@ DEBUG_ME = True
 DEBUG_LEVEL_DEFAULT = "0"
 
 # Paths
-DIR_DATABASE_DIR_PATH_DEFAULT = os.path.join( "data", "dir" )
-DIR_DATABASE_LOG_PATH_DEFAULT = os.path.join( "data", "dir" )
-MRC_DATABASE_DIR_PATH_DEFAULT = os.path.join( "data", "mrc" )
-MRC_DATABASE_LOG_PATH_DEFAULT = os.path.join( "data", "mrc" )
 MY_DIR_PATH = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
-OSD_DATABASE_DIR_PATH_DEFAULT = os.path.join( "data", "osd" )
-OSD_DATABASE_LOG_PATH_DEFAULT = os.path.join( "data", "osd" )
 SERVER_RUN_DIR_PATH_DEFAULT = "run"
 
 # Ports
@@ -41,7 +35,7 @@ STRIPING_POLICY_TYPE_DEFAULT = "RAID0"
 class Autotest:
     def __init__( 
                   self, 
-                  osd_count=1, 
+                  osd_count=3, 
                   server_uri="oncrpc://localhost" 
                  ):
         
@@ -100,19 +94,23 @@ class Autotest:
             volume = volumes[volume_i]
             try: 
                 volume.create( 
-                               mrc_uri=self.__server_uri, 
+                               debug_level=debug_level,                              
+                               mrc_uri=self.__server_uri,                                
                                pkcs12_file_path=pkcs12_file_path,
                                pkcs12_passphrase=pkcs12_passphrase,
                                stripe_width=( replicate_on_close and ( ( volume_i / 2 ) + 1 ) or 1 ),                                                            
                               )
             except: 
-                pass
+                if DEBUG_ME:
+                    print "xctl: error creating volume", volume.get_name()
+                    traceback.print_exc()
             
         # Mount volumes
         try:
             for volume_i in xrange( len( volumes ) ):
                 volume = volumes[volume_i]            
                 volume.mount( 
+                              debug_level=debug_level,
                               direct_io=( volume_i % 2 == 1 ), # Or have volume.get_direct_io()?
                               dir_uri=self.__server_uri,
                               log_file_path=os.path.join( "log", "client"+str( volume_i )+".log" ),
@@ -151,6 +149,7 @@ class Autotest:
             dir, mrc, osds = self.__get_servers()
                         
             dir.configure( 
+                           database_dir_path=os.path.join( "data", "dir" ),
                            debug_level=debug_level,
                            enable_ssl=enable_ssl,
                            enable_gridssl=enable_gridssl,
@@ -164,6 +163,7 @@ class Autotest:
             
             
             mrc.configure( 
+                           database_dir_path=os.path.join( "data", "mrc" ),
                            debug_level=debug_level,
                            enable_ssl=enable_ssl,
                            enable_gridssl=enable_gridssl,
@@ -183,6 +183,7 @@ class Autotest:
                                enable_ssl=enable_ssl,
                                enable_gridssl=enable_gridssl,
                                http_port=OSD_HTTP_PORT_DEFAULT+osd_i,
+                               object_dir_path=os.path.join( "data", "osd" + str( osd_i ) ),
                                oncrpc_port=OSD_ONCRPC_PORT_DEFAULT+osd_i,
                                pkcs12_file_path=os.path.join( certs_dir_path, "OSD.p12" ),
                                pkcs12_passphrase="passphrase",                           
@@ -342,12 +343,12 @@ ssl.enabled = false
                               
             # Don't .join java_args, since Popen wants a sequence when shell=False
                                
-            if log_file_path is not None:
-                # Redirect stderr and stdout to a log file
-                stderr = stdout = open( log_file_path, "a" )
-            else:
+            if log_file_path is None:
                 stderr = sys.stderr
                 stdout = sys.stdout       
+            else:
+                # Redirect stderr and stdout to a log file
+                stderr = stdout = open( log_file_path, "a" )
             
             if DEBUG_ME:
                 print "xctl: starting", self.__class__.__name__, "server with UUID", self.get_uuid(), "on port", self.get_oncrpc_port(), "with", " ".join( java_args )
@@ -400,9 +401,8 @@ ssl.enabled = false
 class DIR(Server):
     def configure( 
                    self,
+                   database_dir_path, 
                    uuid,
-                   database_dir_path=DIR_DATABASE_DIR_PATH_DEFAULT, 
-                   database_log_dir_path=DIR_DATABASE_LOG_PATH_DEFAULT, 
                    debug_level=DEBUG_LEVEL_DEFAULT, 
                    http_port=DIR_HTTP_PORT_DEFAULT,
                    oncrpc_port=DIR_ONCRPC_PORT_DEFAULT,
@@ -411,14 +411,11 @@ class DIR(Server):
 
         try: os.mkdir( database_dir_path )
         except: pass
-        
-        try: os.mkdir( database_log_dir_path )
-        except: pass 
                     
         open( self.get_config_file_path(), "w+" ).write( """\
 uuid = %(uuid)s
 babudb.debug.level = %(debug_level)s
-babudb.logDir = %(database_log_dir_path)s
+babudb.logDir = %(database_dir_path)s
 babudb.baseDir = %(database_dir_path)s
 babudb.sync = FSYNC
 babudb.worker.maxQueueLength = 250
@@ -430,7 +427,7 @@ debug.level = %(debug_level)s
 listen.port = %(oncrpc_port)u
 http_port = %(http_port)u
 database.dir = %(database_dir_path)s
-database.log = %(database_log_dir_path)s
+database.log = %(database_dir_path)s
 authentication_provider = org.xtreemfs.common.auth.NullAuthProvider
 """ % locals() + self._get_ssl_config( **kwds ) )
          
@@ -438,9 +435,8 @@ authentication_provider = org.xtreemfs.common.auth.NullAuthProvider
 class MRC(Server):    
     def configure( 
                    self,
+                   database_dir_path, 
                    uuid,
-                   database_dir_path=MRC_DATABASE_DIR_PATH_DEFAULT, 
-                   database_log_dir_path=MRC_DATABASE_LOG_PATH_DEFAULT, 
                    debug_level=DEBUG_LEVEL_DEFAULT,
                    dir_uri=DIR_URI_DEFAULT, 
                    http_port=MRC_HTTP_PORT_DEFAULT,
@@ -450,10 +446,7 @@ class MRC(Server):
         
         try: os.mkdir( database_dir_path )
         except: pass
-        
-        try: os.mkdir( database_log_dir_path )
-        except: pass 
-        
+                
         dir_service_host = "localhost"
         dir_service_port = DIR_ONCRPC_PORT_DEFAULT
                         
@@ -465,7 +458,7 @@ http_port = %(http_port)u
 dir_service.host = %(dir_service_host)s
 dir_service.port = %(dir_service_port)u
 babudb.debug.level = %(debug_level)s
-babudb.logDir = %(database_log_dir_path)s
+babudb.logDir = %(database_dir_path)s
 babudb.baseDir = %(database_dir_path)s
 babudb.sync = ASYNC
 babudb.worker.maxQueueLength = 250
@@ -479,7 +472,7 @@ no_fsync = true
 local_clock_renewal = 50
 remote_time_sync = 60000
 database.dir = %(database_dir_path)s
-database.log = %(database_log_dir_path)s
+database.log = %(database_dir_path)s
 database.checkpoint.interval = 1800000
 database.checkpoint.idle_interval = 1000
 database.checkpoint.logfile_size = 16384
@@ -491,25 +484,15 @@ capability_secret = testsecret
 class OSD(Server):        
     def configure( 
                    self,
+                   object_dir_path,
                    uuid,
-                   database_dir_path=OSD_DATABASE_DIR_PATH_DEFAULT, 
-                   database_log_dir_path=OSD_DATABASE_LOG_PATH_DEFAULT, 
                    debug_level=DEBUG_LEVEL_DEFAULT,
                    dir_uri=DIR_URI_DEFAULT, 
                    http_port=OSD_HTTP_PORT_DEFAULT,
-                   object_dir_path=None,
                    oncrpc_port=OSD_ONCRPC_PORT_DEFAULT,
                    **kwds 
                  ):               
-
-        try: os.mkdir( database_dir_path )
-        except: pass
-        
-        try: os.mkdir( database_log_dir_path )
-        except: pass 
-        
-        if object_dir_path is None:     
-            object_dir_path = os.path.join( "data", uuid )
+                
         try: os.mkdir( object_dir_path )
         except: pass
 
@@ -597,11 +580,10 @@ class Volume:
         if not os.path.exists( mount_xtreemfs_file_path ):
             mount_xtreemfs_file_path = "mount.xtreemfs" # Assume it's in the global path
  
-        mount_xtreemfs_args = [mount_xtreemfs_file_path]
-        mount_xtreemfs_args.extend( ( "-d", str( debug_level ) ) )                
-        if log_file_path is not None:   
-            mount_xtreemfs_args.extend( ( "--log-file-path", log_file_path ) )      
-        if direct_io: mount_xtreemfs_args.extend( ( "-o", "direct_io" ) )
+        mount_xtreemfs_args = [mount_xtreemfs_file_path]                
+        mount_xtreemfs_args.append( "-f" ) # So we can redirect stdout and stderr
+        mount_xtreemfs_args.extend( ( "-d", str( debug_level ) ) )                                                        
+        if direct_io: mount_xtreemfs_args.extend( ( "-o", "direct_io" ) )        
         if other_options is not None:
             assert isinstance( other_options, list )
             for other_option in other_options:
@@ -616,10 +598,17 @@ class Volume:
                           
         mount_xtreemfs_args.append( self.get_mount_point_dir_path() )
 
+        if log_file_path is None:
+            stdout = sys.stdout
+            stderr = sys.stderr
+        else:
+            stderr = stdout = open( log_file_path, "a" )
+
         if DEBUG_ME:
             print "xctl: mounting volume", self.get_name(), "at", self.get_mount_point_dir_path(), "with", " ".join( mount_xtreemfs_args )
                 
-        subprocess.call( mount_xtreemfs_args )
+        # Use subprocess.Popen instead of subprocess.call to run in the background
+        subprocess.Popen( mount_xtreemfs_args, stderr=stderr, stdout=stdout )
 
         sleep( 2.0 )
         
@@ -714,7 +703,7 @@ if __name__ == "__main__":
     option_parser = OptionParser( "usage: %prog [options] [oncrpc://]<server_host=localhost>[:server_port]" )
     
     option_parser.add_option( "--autotest", action="store_true", help="start autotest clients and servers, run autotests, stop clients and servers" )
-    option_parser.add_option( "--autotest-osd-count", action="store", dest="autotest_osd_count", type="int", default=1 )
+    option_parser.add_option( "--autotest-osd-count", action="store", dest="autotest_osd_count", type="int", default=3 )
     option_parser.add_option( "--clean-autotest", action="store_true", dest="clean_autotest", help="delete autotest directories" )
     option_parser.add_option( "-d", "--debug-level", action="store", dest="debug_level", default=DEBUG_LEVEL_DEFAULT )    
     option_parser.add_option( "-o", "--mount-option", action="append", dest="mount_options", help="pass options to mount.xtreemfs" )
