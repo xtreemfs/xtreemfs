@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class closeRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009090431;
+    public static final int TAG = 2009112236;
     
     public closeRequest() { write_xcap = new XCap();  }
     public closeRequest( XCap write_xcap ) { this.write_xcap = write_xcap; }
@@ -39,10 +39,10 @@ public class closeRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090431;    
+    public static final long serialVersionUID = 2009112236;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090431; }
+    public int getTag() { return 2009112236; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::closeRequest"; }
     
     public int getXDRSize()

@@ -88,7 +88,7 @@ public class Capability {
         
         this.sharedSecret = sharedSecret;
         
-        xcap = new XCap(fileId, accessMode, expires, clientIdentity, epochNo, replicateOnClose, null);
+        xcap = new XCap(accessMode, clientIdentity, expires, fileId, replicateOnClose, null, epochNo);
         
         final String sig = calcSignature();
         xcap.setServer_signature(sig);
@@ -171,7 +171,7 @@ public class Capability {
     }
     
     public boolean isReplicateOnClose() {
-        return xcap.getReplicateOnClose();
+        return xcap.getReplicate_on_close();
     }
     
     /**

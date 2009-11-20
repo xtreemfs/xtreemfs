@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_listdirRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009090445;
+    public static final int TAG = 2009112250;
     
     public xtreemfs_listdirRequest() {  }
     public xtreemfs_listdirRequest( String path ) { this.path = path; }
@@ -39,10 +39,10 @@ public class xtreemfs_listdirRequest extends org.xtreemfs.interfaces.utils.Reque
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090445;    
+    public static final long serialVersionUID = 2009112250;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090445; }
+    public int getTag() { return 2009112250; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_listdirRequest"; }
     
     public int getXDRSize()

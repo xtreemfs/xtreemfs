@@ -110,7 +110,7 @@ public class DeleteOperation extends MRCOperation {
             // set the XCapability and XLocationsList headers
             XLocList xloc = file.getXLocList();
             if (xloc != null && xloc.getReplicaCount() > 0)
-                creds.add(new FileCredentials(Converter.xLocListToXLocSet(xloc), cap.getXCap()));
+                creds.add(new FileCredentials(cap.getXCap(), Converter.xLocListToXLocSet(xloc)));
         }
         
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);

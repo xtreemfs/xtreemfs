@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class statvfsResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009090427;
+    public static final int TAG = 2009112232;
     
     public statvfsResponse() { stbuf = new StatVFS();  }
     public statvfsResponse( StatVFS stbuf ) { this.stbuf = stbuf; }
@@ -36,10 +36,10 @@ public class statvfsResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090427;    
+    public static final long serialVersionUID = 2009112232;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090427; }
+    public int getTag() { return 2009112232; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::statvfsResponse"; }
     
     public int getXDRSize()

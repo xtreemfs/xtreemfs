@@ -64,7 +64,7 @@ public class xtfs_mrcdbtool {
         Map<String, CliOption> options = new HashMap<String, CliOption>();
         List<String> arguments = new ArrayList<String>(3);
         CliOption oMrc = new CliOption(CliOption.OPTIONTYPE.URL);
-        oMrc.urlDefaultPort = MRCInterface.DEFAULT_ONCRPC_PORT;
+        oMrc.urlDefaultPort = MRCInterface.ONCRPC_PORT_DEFAULT;
         oMrc.urlDefaultProtocol = Constants.ONCRPC_SCHEME;
         options.put("mrc", oMrc);
         options.put("c", new CliOption(CliOption.OPTIONTYPE.STRING));

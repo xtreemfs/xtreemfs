@@ -75,7 +75,7 @@ public class DiscoveryUtils {
                     wr.freeBuffers();
 
                     for (InetAddress bc : broadcasts) {
-                        DatagramPacket rp = new DatagramPacket(rdata, rdata.length, bc, DIRInterface.DEFAULT_ONCRPC_PORT);
+                        DatagramPacket rp = new DatagramPacket(rdata, rdata.length, bc, DIRInterface.ONCRPC_PORT_DEFAULT);
                         dsock.send(rp);
                     }
 

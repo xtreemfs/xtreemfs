@@ -212,7 +212,7 @@ public class RandomAccessFile implements ObjectStore {
         
         capTime = System.currentTimeMillis();
         
-        isReadOnly = fileCredentials.getXlocs().getRepUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY);
+        isReadOnly = fileCredentials.getXlocs().getReplica_update_policy().equals(Constants.REPL_UPDATE_PC_RONLY);
         
         fileId = fileCredentials.getXcap().getFile_id();
         wresp = null;
@@ -684,8 +684,8 @@ public class RandomAccessFile implements ObjectStore {
                 osdSet.add(osd.toString());
             }
             
-            org.xtreemfs.interfaces.Replica newReplica = new org.xtreemfs.interfaces.Replica(spPolicy,
-                replicationFlags, osdSet);
+            org.xtreemfs.interfaces.Replica newReplica = 
+                new org.xtreemfs.interfaces.Replica(osdSet,replicationFlags, spPolicy);
             RPCResponse r = mrcClient.xtreemfs_replica_add(mrcAddress, credentials, fileId, newReplica);
             r.get();
             r.freeBuffers();
@@ -737,8 +737,8 @@ public class RandomAccessFile implements ObjectStore {
             XCap deleteCap = r.get();
             r.freeBuffers();
             
-            RPCResponse r2 = osdClient.unlink(osd.getAddress(), fileId, new FileCredentials(fileCredentials
-                    .getXlocs(), deleteCap));
+            RPCResponse r2 = osdClient.unlink(osd.getAddress(), fileId, 
+                    new FileCredentials(deleteCap, fileCredentials.getXlocs()));
             r2.get();
             r2.freeBuffers();
             
@@ -897,7 +897,7 @@ public class RandomAccessFile implements ObjectStore {
         r.freeBuffers();
         
         xLoc = new XLocations(fileCredentials.getXlocs());
-        isReadOnly = fileCredentials.getXlocs().getRepUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY);
+        isReadOnly = fileCredentials.getXlocs().getReplica_update_policy().equals(Constants.REPL_UPDATE_PC_RONLY);
     }
     
     public void forceFileSize(long newFileSize) throws IOException {

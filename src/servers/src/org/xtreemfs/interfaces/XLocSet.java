@@ -14,19 +14,19 @@ import yidl.runtime.Unmarshaller;
 
 public class XLocSet implements Struct
 {
-    public static final int TAG = 2009090233;
+    public static final int TAG = 2009112038;
     
     public XLocSet() { replicas = new ReplicaSet();  }
-    public XLocSet( ReplicaSet replicas, int version, String repUpdatePolicy, long read_only_file_size ) { this.replicas = replicas; this.version = version; this.repUpdatePolicy = repUpdatePolicy; this.read_only_file_size = read_only_file_size; }
+    public XLocSet( long read_only_file_size, ReplicaSet replicas, String replica_update_policy, int version ) { this.read_only_file_size = read_only_file_size; this.replicas = replicas; this.replica_update_policy = replica_update_policy; this.version = version; }
 
-    public ReplicaSet getReplicas() { return replicas; }
-    public void setReplicas( ReplicaSet replicas ) { this.replicas = replicas; }
-    public int getVersion() { return version; }
-    public void setVersion( int version ) { this.version = version; }
-    public String getRepUpdatePolicy() { return repUpdatePolicy; }
-    public void setRepUpdatePolicy( String repUpdatePolicy ) { this.repUpdatePolicy = repUpdatePolicy; }
     public long getRead_only_file_size() { return read_only_file_size; }
     public void setRead_only_file_size( long read_only_file_size ) { this.read_only_file_size = read_only_file_size; }
+    public ReplicaSet getReplicas() { return replicas; }
+    public void setReplicas( ReplicaSet replicas ) { this.replicas = replicas; }
+    public String getReplica_update_policy() { return replica_update_policy; }
+    public void setReplica_update_policy( String replica_update_policy ) { this.replica_update_policy = replica_update_policy; }
+    public int getVersion() { return version; }
+    public void setVersion( int version ) { this.version = version; }
 
     // java.lang.Object
     public String toString() 
@@ -41,44 +41,44 @@ public class XLocSet implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090233;    
+    public static final long serialVersionUID = 2009112038;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090233; }
+    public int getTag() { return 2009112038; }
     public String getTypeName() { return "org::xtreemfs::interfaces::XLocSet"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += replicas.getXDRSize(); // replicas
-        my_size += Integer.SIZE / 8; // version
-        my_size += Integer.SIZE / 8 + ( repUpdatePolicy != null ? ( ( repUpdatePolicy.getBytes().length % 4 == 0 ) ? repUpdatePolicy.getBytes().length : ( repUpdatePolicy.getBytes().length + 4 - repUpdatePolicy.getBytes().length % 4 ) ) : 0 ); // repUpdatePolicy
         my_size += Long.SIZE / 8; // read_only_file_size
+        my_size += replicas.getXDRSize(); // replicas
+        my_size += Integer.SIZE / 8 + ( replica_update_policy != null ? ( ( replica_update_policy.getBytes().length % 4 == 0 ) ? replica_update_policy.getBytes().length : ( replica_update_policy.getBytes().length + 4 - replica_update_policy.getBytes().length % 4 ) ) : 0 ); // replica_update_policy
+        my_size += Integer.SIZE / 8; // version
         return my_size;
     }    
     
     public void marshal( Marshaller marshaller )
     {
-        marshaller.writeSequence( "replicas", replicas );
-        marshaller.writeUint32( "version", version );
-        marshaller.writeString( "repUpdatePolicy", repUpdatePolicy );
         marshaller.writeUint64( "read_only_file_size", read_only_file_size );
+        marshaller.writeSequence( "replicas", replicas );
+        marshaller.writeString( "replica_update_policy", replica_update_policy );
+        marshaller.writeUint32( "version", version );
     }
     
     public void unmarshal( Unmarshaller unmarshaller ) 
     {
+        read_only_file_size = unmarshaller.readUint64( "read_only_file_size" );
         replicas = new ReplicaSet(); unmarshaller.readSequence( "replicas", replicas );
-        version = unmarshaller.readUint32( "version" );
-        repUpdatePolicy = unmarshaller.readString( "repUpdatePolicy" );
-        read_only_file_size = unmarshaller.readUint64( "read_only_file_size" );    
+        replica_update_policy = unmarshaller.readString( "replica_update_policy" );
+        version = unmarshaller.readUint32( "version" );    
     }
         
     
 
+    private long read_only_file_size;
     private ReplicaSet replicas;
-    private int version;
-    private String repUpdatePolicy;
-    private long read_only_file_size;    
+    private String replica_update_policy;
+    private int version;    
 
 }
 

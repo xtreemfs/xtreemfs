@@ -674,7 +674,7 @@ class ReplicatingFile {
         OSDClient client = master.getOSDClientForReplication();
         // IMPORTANT: stripe size must be the same in all striping policies
         RPCResponse<InternalReadLocalResponse> response = client.internal_read_local(osd.getAddress(),
-                fileID, new FileCredentials(xLoc.getXLocSet(), cap.getXCap()), objectNo, 0, 0, xLoc
+                fileID, new FileCredentials(cap.getXCap(), xLoc.getXLocSet()), objectNo, 0, 0, xLoc
                         .getLocalReplica().getStripingPolicy().getStripeSizeForObject(objectNo),
                 attachObjectSet, null);
 

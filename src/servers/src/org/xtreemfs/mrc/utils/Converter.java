@@ -201,7 +201,7 @@ public class Converter {
                 new String[repl.getOsd_uuids().size()]), repl.getReplication_flags());
         }
         
-        return sMan.createXLocList(replicas, xLocSet.getRepUpdatePolicy(), xLocSet.getVersion());
+        return sMan.createXLocList(replicas, xLocSet.getReplica_update_policy(), xLocSet.getVersion());
     }
     
     /**
@@ -230,13 +230,13 @@ public class Converter {
             org.xtreemfs.interfaces.StripingPolicy sp = new org.xtreemfs.interfaces.StripingPolicy(
                 StripingPolicyType.valueOf(xSP.getPattern()), xSP.getStripeSize(), xSP.getWidth());
             
-            Replica repl = new Replica(sp, xRepl.getReplicationFlags(), osds);
+            Replica repl = new Replica(osds, xRepl.getReplicationFlags(), sp);
             replicas.add(repl);
         }
         
         XLocSet xLocSet = new XLocSet();
         xLocSet.setReplicas(replicas);
-        xLocSet.setRepUpdatePolicy(xLocList.getReplUpdatePolicy());
+        xLocSet.setReplica_update_policy(xLocList.getReplUpdatePolicy());
         xLocSet.setVersion(xLocList.getVersion());
         
         return xLocSet;
@@ -336,7 +336,7 @@ public class Converter {
         StringSet osdUuids = new StringSet();
         for (String osd : osds)
             osdUuids.add(osd);
-        return new Replica(sp, (int) rf, osdUuids);
+        return new Replica(osdUuids, (int) rf, sp);
     }
     
     private static Map<String, Object> getStripingPolicyAsJSON(StripingPolicy sp) {

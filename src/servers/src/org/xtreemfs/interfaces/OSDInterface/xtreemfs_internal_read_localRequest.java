@@ -15,10 +15,10 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_internal_read_localRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009082961;
+    public static final int TAG = 2009112357;
     
-    public xtreemfs_internal_read_localRequest() { file_credentials = new FileCredentials(); requiredObjects = new ObjectListSet();  }
-    public xtreemfs_internal_read_localRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version, long offset, long length, boolean attachObjectList, ObjectListSet requiredObjects ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.length = length; this.attachObjectList = attachObjectList; this.requiredObjects = requiredObjects; }
+    public xtreemfs_internal_read_localRequest() { file_credentials = new FileCredentials(); required_objects = new ObjectListSet();  }
+    public xtreemfs_internal_read_localRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version, long offset, long length, boolean attach_object_list, ObjectListSet required_objects ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.length = length; this.attach_object_list = attach_object_list; this.required_objects = required_objects; }
 
     public FileCredentials getFile_credentials() { return file_credentials; }
     public void setFile_credentials( FileCredentials file_credentials ) { this.file_credentials = file_credentials; }
@@ -32,10 +32,10 @@ public class xtreemfs_internal_read_localRequest extends org.xtreemfs.interfaces
     public void setOffset( long offset ) { this.offset = offset; }
     public long getLength() { return length; }
     public void setLength( long length ) { this.length = length; }
-    public boolean getAttachObjectList() { return attachObjectList; }
-    public void setAttachObjectList( boolean attachObjectList ) { this.attachObjectList = attachObjectList; }
-    public ObjectListSet getRequiredObjects() { return requiredObjects; }
-    public void setRequiredObjects( ObjectListSet requiredObjects ) { this.requiredObjects = requiredObjects; }
+    public boolean getAttach_object_list() { return attach_object_list; }
+    public void setAttach_object_list( boolean attach_object_list ) { this.attach_object_list = attach_object_list; }
+    public ObjectListSet getRequired_objects() { return required_objects; }
+    public void setRequired_objects( ObjectListSet required_objects ) { this.required_objects = required_objects; }
 
     // java.lang.Object
     public String toString() 
@@ -53,10 +53,10 @@ public class xtreemfs_internal_read_localRequest extends org.xtreemfs.interfaces
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082961;    
+    public static final long serialVersionUID = 2009112357;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009082961; }
+    public int getTag() { return 2009112357; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_read_localRequest"; }
     
     public int getXDRSize()
@@ -68,8 +68,8 @@ public class xtreemfs_internal_read_localRequest extends org.xtreemfs.interfaces
         my_size += Long.SIZE / 8; // object_version
         my_size += Long.SIZE / 8; // offset
         my_size += Long.SIZE / 8; // length
-        my_size += Integer.SIZE / 8; // attachObjectList
-        my_size += requiredObjects.getXDRSize(); // requiredObjects
+        my_size += Integer.SIZE / 8; // attach_object_list
+        my_size += required_objects.getXDRSize(); // required_objects
         return my_size;
     }    
     
@@ -81,8 +81,8 @@ public class xtreemfs_internal_read_localRequest extends org.xtreemfs.interfaces
         marshaller.writeUint64( "object_version", object_version );
         marshaller.writeUint64( "offset", offset );
         marshaller.writeUint64( "length", length );
-        marshaller.writeBoolean( "attachObjectList", attachObjectList );
-        marshaller.writeSequence( "requiredObjects", requiredObjects );
+        marshaller.writeBoolean( "attach_object_list", attach_object_list );
+        marshaller.writeSequence( "required_objects", required_objects );
     }
     
     public void unmarshal( Unmarshaller unmarshaller ) 
@@ -93,8 +93,8 @@ public class xtreemfs_internal_read_localRequest extends org.xtreemfs.interfaces
         object_version = unmarshaller.readUint64( "object_version" );
         offset = unmarshaller.readUint64( "offset" );
         length = unmarshaller.readUint64( "length" );
-        attachObjectList = unmarshaller.readBoolean( "attachObjectList" );
-        requiredObjects = new ObjectListSet(); unmarshaller.readSequence( "requiredObjects", requiredObjects );    
+        attach_object_list = unmarshaller.readBoolean( "attach_object_list" );
+        required_objects = new ObjectListSet(); unmarshaller.readSequence( "required_objects", required_objects );    
     }
         
     
@@ -105,8 +105,8 @@ public class xtreemfs_internal_read_localRequest extends org.xtreemfs.interfaces
     private long object_version;
     private long offset;
     private long length;
-    private boolean attachObjectList;
-    private ObjectListSet requiredObjects;    
+    private boolean attach_object_list;
+    private ObjectListSet required_objects;    
 
 }
 

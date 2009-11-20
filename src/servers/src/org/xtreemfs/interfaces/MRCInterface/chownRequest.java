@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class chownRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009090412;
+    public static final int TAG = 2009112217;
     
     public chownRequest() {  }
     public chownRequest( String path, String user_id, String group_id ) { this.path = path; this.user_id = user_id; this.group_id = group_id; }
@@ -43,10 +43,10 @@ public class chownRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090412;    
+    public static final long serialVersionUID = 2009112217;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090412; }
+    public int getTag() { return 2009112217; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chownRequest"; }
     
     public int getXDRSize()

@@ -190,8 +190,7 @@ public class VolumeOSDFilter {
                     osds.add(r.getOSD(j));
                 
                 if (r.getOSD(0).equals(headOSD.getUuid()))
-                    newRepls.add(new Replica(Converter.stripingPolicyToStripingPolicy(r.getStripingPolicy()),
-                        r.getReplicationFlags(), osds));
+                    newRepls.add(new Replica(osds, r.getReplicationFlags(), Converter.stripingPolicyToStripingPolicy(r.getStripingPolicy())));
             }
         
         return newRepls;

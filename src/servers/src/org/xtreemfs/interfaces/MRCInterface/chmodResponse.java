@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class chmodResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009090411;
+    public static final int TAG = 2009112216;
     
     public chmodResponse() {  }
 
@@ -32,10 +32,10 @@ public class chmodResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090411;    
+    public static final long serialVersionUID = 2009112216;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090411; }
+    public int getTag() { return 2009112216; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chmodResponse"; }
     
     public int getXDRSize()

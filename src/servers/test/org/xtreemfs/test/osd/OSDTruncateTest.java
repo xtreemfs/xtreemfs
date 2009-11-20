@@ -83,11 +83,11 @@ public class OSDTruncateTest extends TestCase {
         ReplicaSet replicas = new ReplicaSet();
         StringSet osdset = new StringSet();
         osdset.add(serverID.toString());
-        Replica r = new Replica(new org.xtreemfs.interfaces.StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 2, 1), 0, osdset);
+        Replica r = new Replica(osdset, 0, new org.xtreemfs.interfaces.StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 2, 1));
         replicas.add(r);
-        XLocSet xloc = new XLocSet(replicas, 1, "",0);
+        XLocSet xloc = new XLocSet(0, replicas, "",1);
 
-        fcred = new FileCredentials(xloc, cap.getXCap());
+        fcred = new FileCredentials(cap.getXCap(), xloc);
     }
     
     protected void setUp() throws Exception {

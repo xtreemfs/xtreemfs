@@ -15,15 +15,15 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_get_suitable_osdsRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009090442;
+    public static final int TAG = 2009112247;
     
     public xtreemfs_get_suitable_osdsRequest() {  }
-    public xtreemfs_get_suitable_osdsRequest( String file_id, int numOSDs ) { this.file_id = file_id; this.numOSDs = numOSDs; }
+    public xtreemfs_get_suitable_osdsRequest( String file_id, int num_osds ) { this.file_id = file_id; this.num_osds = num_osds; }
 
     public String getFile_id() { return file_id; }
     public void setFile_id( String file_id ) { this.file_id = file_id; }
-    public int getNumOSDs() { return numOSDs; }
-    public void setNumOSDs( int numOSDs ) { this.numOSDs = numOSDs; }
+    public int getNum_osds() { return num_osds; }
+    public void setNum_osds( int num_osds ) { this.num_osds = num_osds; }
 
     // java.lang.Object
     public String toString() 
@@ -41,36 +41,36 @@ public class xtreemfs_get_suitable_osdsRequest extends org.xtreemfs.interfaces.u
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090442;    
+    public static final long serialVersionUID = 2009112247;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090442; }
+    public int getTag() { return 2009112247; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_get_suitable_osdsRequest"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 ); // file_id
-        my_size += Integer.SIZE / 8; // numOSDs
+        my_size += Integer.SIZE / 8; // num_osds
         return my_size;
     }    
     
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "file_id", file_id );
-        marshaller.writeUint32( "numOSDs", numOSDs );
+        marshaller.writeUint32( "num_osds", num_osds );
     }
     
     public void unmarshal( Unmarshaller unmarshaller ) 
     {
         file_id = unmarshaller.readString( "file_id" );
-        numOSDs = unmarshaller.readUint32( "numOSDs" );    
+        num_osds = unmarshaller.readUint32( "num_osds" );    
     }
         
     
 
     private String file_id;
-    private int numOSDs;    
+    private int num_osds;    
 
 }
 

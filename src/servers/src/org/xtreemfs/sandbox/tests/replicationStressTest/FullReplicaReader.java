@@ -117,7 +117,7 @@ class FullReplicaReader extends Reader {
                 ObjectList list = response.get();
                 response.freeBuffers();
 
-                ObjectSet objectList = new ObjectSet(list.getStripeWidth(), list.getFirstObjectNo(), list.getSet()
+                ObjectSet objectList = new ObjectSet(list.getStripe_width(), list.getFirst_(), list.getSet()
                                 .array());
                 objects += objectList.size();
             }

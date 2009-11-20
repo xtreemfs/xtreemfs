@@ -45,7 +45,7 @@ public class mrc_rm {
             TimeSync.initialize(null, 60*1000, 50);
             Logging.start(Logging.LEVEL_WARN);
 
-            ONCRPCServiceURL mrcUrl = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,MRCInterface.DEFAULT_ONCRPC_PORT);
+            ONCRPCServiceURL mrcUrl = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,MRCInterface.ONCRPC_PORT_DEFAULT);
             String path = arguments.get(1);
 
             RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(null, 15*1000, 5*60*1000);

@@ -236,8 +236,8 @@ public class MoveOperation extends MRCOperation {
                                 .getRPCRequest().getClientIdentity()).getAddress().getHostAddress(), target
                                 .getEpoch(), false, master.getConfig().getCapabilitySecret());
                     
-                    creds.add(new FileCredentials(Converter.xLocListToXLocSet(target.getXLocList()), cap
-                            .getXCap()));
+                    creds.add(new FileCredentials(cap
+                            .getXCap(), Converter.xLocListToXLocSet(target.getXLocList())));
                 }
                 
                 // delete the target

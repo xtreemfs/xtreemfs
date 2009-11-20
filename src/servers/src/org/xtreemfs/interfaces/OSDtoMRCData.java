@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class OSDtoMRCData implements Struct
 {
-    public static final int TAG = 2009090222;
+    public static final int TAG = 2009112027;
     
     public OSDtoMRCData() {  }
     public OSDtoMRCData( int caching_policy, String data ) { this.caching_policy = caching_policy; this.data = data; }
@@ -37,10 +37,10 @@ public class OSDtoMRCData implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090222;    
+    public static final long serialVersionUID = 2009112027;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090222; }
+    public int getTag() { return 2009112027; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDtoMRCData"; }
     
     public int getXDRSize()

@@ -59,7 +59,7 @@ public class GetSuitableOSDsOperation extends MRCOperation {
         // retrieve the set of OSDs for the new replica
         ServiceSet usableOSDs = master.getOSDStatusManager().getUsableOSDs(idRes.getVolumeId(),
             ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress(), null,
-            file.getXLocList(), rqArgs.getNumOSDs());
+            file.getXLocList(), rqArgs.getNum_osds());
         
         StringSet uuids = new StringSet();
         for (int i = 0; i < usableOSDs.size(); i++)

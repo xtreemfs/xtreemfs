@@ -83,14 +83,14 @@ public class TortureXtreemFS {
                 return;
             }
             
-            final ONCRPCServiceURL mrcURL = new ONCRPCServiceURL(arguments.get(1),Constants.ONCRPC_SCHEME,MRCInterface.DEFAULT_ONCRPC_PORT);
+            final ONCRPCServiceURL mrcURL = new ONCRPCServiceURL(arguments.get(1),Constants.ONCRPC_SCHEME,MRCInterface.ONCRPC_PORT_DEFAULT);
             
             final String path = (options.get("p").stringValue != null) ? options.get("p").stringValue
                 : "/torture.data";
             final String volname = (options.get("v").stringValue != null) ? options.get("v").stringValue
                 : "test";
             
-            final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,DIRInterface.DEFAULT_ONCRPC_PORT);
+            final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,DIRInterface.ONCRPC_PORT_DEFAULT);
             
             boolean useSSL = false;
             

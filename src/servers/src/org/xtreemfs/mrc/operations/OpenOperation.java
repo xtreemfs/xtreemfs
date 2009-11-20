@@ -203,7 +203,7 @@ public class OpenOperation extends MRCOperation {
             ReplicaSet replicas = new ReplicaSet();
             replicas.add(replica);
             
-            xLocSet = new XLocSet(replicas, 0, file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY
+            xLocSet = new XLocSet(0, replicas, file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY
                 : Constants.REPL_UPDATE_PC_NONE, 0);
             xLocList = Converter.xLocSetToXLocList(sMan, xLocSet);
             
@@ -220,7 +220,7 @@ public class OpenOperation extends MRCOperation {
             assert (xLocList != null) : "The requested file has no xLocList!";
             
             xLocSet = Converter.xLocListToXLocSet(xLocList);
-            xLocSet.setRepUpdatePolicy(file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY
+            xLocSet.setReplica_update_policy(file.isReadOnly() ? Constants.REPL_UPDATE_PC_RONLY
                 : Constants.REPL_UPDATE_PC_NONE);
             if (file.isReadOnly())
                 xLocSet.setRead_only_file_size(file.getSize());
@@ -269,7 +269,7 @@ public class OpenOperation extends MRCOperation {
                 update);
         
         // set the response
-        rq.setResponse(new openResponse(new FileCredentials(xLocSet, cap.getXCap())));
+        rq.setResponse(new openResponse(new FileCredentials(cap.getXCap(), xLocSet)));
         
         update.execute();
         

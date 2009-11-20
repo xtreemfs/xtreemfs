@@ -136,14 +136,13 @@ public class ReplicationTest extends TestCase {
                 // add available osds
                 osdset.add(configs[startOSD + stripe].getUUID().toString());
             }
-            Replica r = new Replica(new org.xtreemfs.interfaces.StripingPolicy(
-                    StripingPolicyType.STRIPING_POLICY_RAID0, stripeSize / 1024, osdset.size()),
-                    0, osdset);
+            Replica r = new Replica(osdset, 0, new org.xtreemfs.interfaces.StripingPolicy(
+                    StripingPolicyType.STRIPING_POLICY_RAID0, stripeSize / 1024, osdset.size()));
             replicas.add(r);
         }
-        XLocSet locSet = new XLocSet(replicas, 1, Constants.REPL_UPDATE_PC_NONE, 0);
+        XLocSet locSet = new XLocSet(0, replicas, Constants.REPL_UPDATE_PC_NONE, 1);
         // set the first replica as current replica
-        XLocations locations = new XLocations(new XLocSet(replicas, 1, Constants.REPL_UPDATE_PC_NONE, 0),
+        XLocations locations = new XLocations(new XLocSet(0, replicas, Constants.REPL_UPDATE_PC_NONE, 1),
                 new ServiceUUID(locSet.getReplicas().get(0).getOsd_uuids().get(0)));
         return locations;
     }
@@ -157,7 +156,7 @@ public class ReplicationTest extends TestCase {
                 ReplicationFlags.setReplicaIsComplete(xLoc.getXLocSet().getReplicas().get(indexOfFullReplica)
                         .getReplication_flags()));
         // set read-only and filesize
-        xLoc.getXLocSet().setRepUpdatePolicy(Constants.REPL_UPDATE_PC_RONLY);
+        xLoc.getXLocSet().setReplica_update_policy(Constants.REPL_UPDATE_PC_RONLY);
         xLoc.getXLocSet().setRead_only_file_size(filesize);
     }
 
@@ -181,7 +180,7 @@ public class ReplicationTest extends TestCase {
 
     @Test
     public void testStriped() throws Exception {
-        FileCredentials fcred = new FileCredentials(xLoc.getXLocSet(), cap.getXCap());
+        FileCredentials fcred = new FileCredentials(cap.getXCap(), xLoc.getXLocSet());
 
         // write object to replica 3
         RPCResponse<OSDWriteResponse> w = client.write(xLoc.getOSDsForObject(objectNo).get(2).getAddress(),
@@ -232,7 +231,7 @@ public class ReplicationTest extends TestCase {
 
     @Test
     public void testHoleAndEOF() throws Exception {
-        FileCredentials fcred = new FileCredentials(xLoc.getXLocSet(), cap.getXCap());
+        FileCredentials fcred = new FileCredentials(cap.getXCap(), xLoc.getXLocSet());
 
         // write object 1 to replica 1 => full object
         RPCResponse<OSDWriteResponse> w = client.write(xLoc.getOSDsForObject(objectNo).get(0).getAddress(),
@@ -338,7 +337,7 @@ public class ReplicationTest extends TestCase {
     @Test
     public void testObjectLocalAvailable() throws Exception {
         ServiceUUID serverID = xLoc.getOSDsForObject(objectNo).get(0);
-        FileCredentials fcred = new FileCredentials(xLoc.getXLocSet(), cap.getXCap());
+        FileCredentials fcred = new FileCredentials(cap.getXCap(), xLoc.getXLocSet());
 
         // write data
         RPCResponse<OSDWriteResponse> r = client.write(serverID.getAddress(), fileID, fcred, objectNo, 0, 0,
@@ -376,7 +375,7 @@ public class ReplicationTest extends TestCase {
         
         // check object list
         ObjectList objectList = resp2.getObject_set().get(0);
-        ObjectSet list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet().array());
+        ObjectSet list = new ObjectSet(objectList.getStripe_width(), objectList.getFirst_(), objectList.getSet().array());
         assertNotNull(list);
         assertEquals(1, list.size());
         assertTrue(list.contains(objectNo));
@@ -390,7 +389,7 @@ public class ReplicationTest extends TestCase {
      */
     @Test
     public void testObjectLocalNOTAvailable() throws Exception {
-        FileCredentials fcred = new FileCredentials(xLoc.getXLocSet(), cap.getXCap());
+        FileCredentials fcred = new FileCredentials(cap.getXCap(), xLoc.getXLocSet());
 
         // read object, before one has been written
         RPCResponse<InternalReadLocalResponse> r = client.internal_read_local(xLoc.getOSDsForObject(objectNo)
@@ -398,8 +397,8 @@ public class ReplicationTest extends TestCase {
         InternalReadLocalResponse resp = r.get();
         assertEquals(0, resp.getData().getData().limit());
         assertEquals(1, resp.getObject_set().size());
-        ObjectSet list = new ObjectSet(resp.getObject_set().get(0).getStripeWidth(), resp.getObject_set()
-                .get(0).getFirstObjectNo(), resp.getObject_set().get(0).getSet().array());
+        ObjectSet list = new ObjectSet(resp.getObject_set().get(0).getStripe_width(), resp.getObject_set()
+                .get(0).getFirst_(), resp.getObject_set().get(0).getSet().array());
         assertEquals(0, list.size());
         r.freeBuffers();
 
@@ -462,14 +461,14 @@ public class ReplicationTest extends TestCase {
     
     @Test
     public void testGetObjectList() throws Exception {
-        FileCredentials fcred = new FileCredentials(xLoc.getXLocSet(), cap.getXCap());
+        FileCredentials fcred = new FileCredentials(cap.getXCap(), xLoc.getXLocSet());
 
         // read data
         RPCResponse<ObjectList> r = client.internal_getObjectList(xLoc.getOSDsForObject(objectNo).get(0)
                 .getAddress(), fileID, fcred);
         ObjectList objectList = r.get();
         r.freeBuffers();
-        ObjectSet list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet().array());
+        ObjectSet list = new ObjectSet(objectList.getStripe_width(), objectList.getFirst_(), objectList.getSet().array());
         assertEquals(0, list.size());
 
         // write object to replica 1 : OSD 1
@@ -482,7 +481,7 @@ public class ReplicationTest extends TestCase {
         r = client.internal_getObjectList(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), fileID, fcred);
         objectList = r.get();
         r.freeBuffers();
-        list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet().array());
+        list = new ObjectSet(objectList.getStripe_width(), objectList.getFirst_(), objectList.getSet().array());
         assertEquals(1, list.size());
         assertTrue(list.contains(objectNo));
 
@@ -508,7 +507,7 @@ public class ReplicationTest extends TestCase {
         r = client.internal_getObjectList(xLoc.getOSDsForObject(objectNo).get(0).getAddress(), fileID, fcred);
         objectList = r.get();
         r.freeBuffers();
-        list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet().array());
+        list = new ObjectSet(objectList.getStripe_width(), objectList.getFirst_(), objectList.getSet().array());
         assertEquals(2, list.size());
         assertTrue(list.contains(objectNo));
         assertTrue(list.contains(objectNo + 3));
@@ -518,7 +517,7 @@ public class ReplicationTest extends TestCase {
                 fcred);
         objectList = r.get();
         r.freeBuffers();
-        list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet().array());
+        list = new ObjectSet(objectList.getStripe_width(), objectList.getFirst_(), objectList.getSet().array());
         assertEquals(1, list.size());
         assertTrue(list.contains(objectNo + 1));
 
@@ -527,7 +526,7 @@ public class ReplicationTest extends TestCase {
                 fcred);
         objectList = r.get();
         r.freeBuffers();
-        list = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList.getSet().array());
+        list = new ObjectSet(objectList.getStripe_width(), objectList.getFirst_(), objectList.getSet().array());
         assertEquals(1, list.size());
         assertTrue(list.contains(objectNo + 2));
     }

@@ -57,10 +57,10 @@ public class GetLocalVolumesOperation extends MRCOperation {
             
             VolumeInfo vol = sMan.getVolumeInfo();
             FileMetadata md = sMan.getMetadata(1);
-            vSet.add(new Volume(vol.getName(), sMan.getMetadata(1).getPerms(), Converter
-                    .stripingPolicyToStripingPolicy(sMan.getDefaultStripingPolicy(1)),
-                AccessControlPolicyType.parseInt(vol.getAcPolicyId()), vol.getId(), md.getOwnerId(), md
-                        .getOwningGroupId()));
+            vSet.add(new Volume(AccessControlPolicyType.parseInt(vol.getAcPolicyId()), Converter
+                    .stripingPolicyToStripingPolicy(sMan.getDefaultStripingPolicy(1)), 
+                    vol.getId(), sMan.getMetadata(1).getPerms(), vol.getName(), 
+                    md.getOwningGroupId(), md.getOwnerId()));
         }
         
         rq.setResponse(new xtreemfs_lsvolResponse(vSet));

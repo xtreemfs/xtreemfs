@@ -78,7 +78,7 @@ public class CloseOperation extends MRCOperation {
         if (cap.hasExpired())
             throw new UserException(ErrNo.EPERM, cap + " has expired");
         
-        if (cap.getXCap().getReplicateOnClose()) {
+        if (cap.getXCap().getReplicate_on_close()) {
             
             // parse volume and file ID from global file ID
             GlobalFileIdResolver idRes = new GlobalFileIdResolver(cap.getFileId());

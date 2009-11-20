@@ -113,12 +113,12 @@ public class TransferStrategiesTest extends TestCase {
             else
                 flags = ReplicationFlags.setPartialReplica(ReplicationFlags.setRandomStrategy(0));
 
-            Replica r = new Replica(new org.xtreemfs.interfaces.StripingPolicy(
-                    StripingPolicyType.STRIPING_POLICY_RAID0, stripeSize / 1024, osdset.size()), flags,
-                    osdset);
+            Replica r = new Replica(
+                    osdset, flags, new org.xtreemfs.interfaces.StripingPolicy(
+                    StripingPolicyType.STRIPING_POLICY_RAID0, stripeSize / 1024, osdset.size()));
             replicas.add(r);
         }
-        XLocSet locSet = new XLocSet(replicas, 1, Constants.REPL_UPDATE_PC_NONE, 1024 * 1024 * 100);
+        XLocSet locSet = new XLocSet(1024 * 1024 * 100, replicas, Constants.REPL_UPDATE_PC_NONE, 1);
         // set the first replica as current replica
         XLocations locations = new XLocations(locSet, new ServiceUUID(locSet.getReplicas().get(0)
                 .getOsd_uuids().get(0)));

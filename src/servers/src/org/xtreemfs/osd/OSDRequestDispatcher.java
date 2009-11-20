@@ -728,7 +728,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                             "received GMAX packet for: %s from %s", rq.getFile_id(), msg.getAddress());
 
                     BufferPool.free(msg.getPayload());
-                    stStage.receivedGMAX_ASYNC(rq.getFile_id(), rq.getTruncateEpoch(), rq.getLastObject());
+                    stStage.receivedGMAX_ASYNC(rq.getFile_id(), rq.getTruncate_epoch(), rq.getLast_object());
                 } else if (msg.getRequestData() instanceof xtreemfs_pingRequest) {
                     xtreemfs_pingRequest rq = (xtreemfs_pingRequest) msg.getRequestData();
                     if (Logging.isDebug())

@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class chownResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009090412;
+    public static final int TAG = 2009112217;
     
     public chownResponse() {  }
 
@@ -32,10 +32,10 @@ public class chownResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090412;    
+    public static final long serialVersionUID = 2009112217;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090412; }
+    public int getTag() { return 2009112217; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::chownResponse"; }
     
     public int getXDRSize()

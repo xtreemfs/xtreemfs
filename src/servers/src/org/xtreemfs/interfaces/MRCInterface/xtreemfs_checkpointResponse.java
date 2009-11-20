@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_checkpointResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009090439;
+    public static final int TAG = 2009112244;
     
     public xtreemfs_checkpointResponse() {  }
 
@@ -32,10 +32,10 @@ public class xtreemfs_checkpointResponse extends org.xtreemfs.interfaces.utils.R
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090439;    
+    public static final long serialVersionUID = 2009112244;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090439; }
+    public int getTag() { return 2009112244; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_checkpointResponse"; }
     
     public int getXDRSize()

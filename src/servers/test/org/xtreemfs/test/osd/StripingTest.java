@@ -157,7 +157,7 @@ public class StripingTest extends TestCase {
         
         capSecret = osdCfg1.getCapabilitySecret();
 
-        sp = StripingPolicyImpl.getPolicy(new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, KB, 3), 0, new StringSet()));
+        sp = StripingPolicyImpl.getPolicy(new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, KB, 3)));
         dirConfig = SetupUtils.createDIRConfig();
 
     }
@@ -192,9 +192,9 @@ public class StripingTest extends TestCase {
         osdset.add(SetupUtils.getOSD1UUID().toString());
         osdset.add(SetupUtils.getOSD2UUID().toString());
         osdset.add(SetupUtils.getOSD3UUID().toString());
-        Replica r = new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, KB, 3), 0, osdset);
+        Replica r = new Replica(osdset, 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, KB, 3));
         replicas.add(r);
-        xloc = new XLocSet(replicas, 1, "",0);
+        xloc = new XLocSet(0, replicas, "",1);
         
     }
 
@@ -224,7 +224,7 @@ public class StripingTest extends TestCase {
             ReusableBuffer data = SetupUtils.generateData(ts);
             data.flip();
             String file = "1:1" + ts;
-            final FileCredentials fcred = new FileCredentials(xloc, getCap(file).getXCap());
+            final FileCredentials fcred = new FileCredentials(getCap(file).getXCap(), xloc);
 
             for (int i = 0, osdIndex = 0; i < numObjs; i++, osdIndex = i % osdIDs.size()) {
 
@@ -252,7 +252,7 @@ public class StripingTest extends TestCase {
 
     public void testIntermediateHoles() throws Exception {
 
-        final FileCredentials fcred = new FileCredentials(xloc, getCap(FILE_ID).getXCap());
+        final FileCredentials fcred = new FileCredentials(getCap(FILE_ID).getXCap(), xloc);
 
         final ReusableBuffer data = SetupUtils.generateData(3);
 
@@ -304,7 +304,7 @@ public class StripingTest extends TestCase {
 
     public void testWriteExtend() throws Exception {
 
-        final FileCredentials fcred = new FileCredentials(xloc, getCap(FILE_ID).getXCap());
+        final FileCredentials fcred = new FileCredentials(getCap(FILE_ID).getXCap(), xloc);
 
         final ReusableBuffer data = SetupUtils.generateData(3);
         final byte[] paddedData = new byte[SIZE];
@@ -345,7 +345,7 @@ public class StripingTest extends TestCase {
 
         ReusableBuffer data = SetupUtils.generateData(SIZE);
 
-        final FileCredentials fcred = new FileCredentials(xloc, getCap(FILE_ID).getXCap());
+        final FileCredentials fcred = new FileCredentials(getCap(FILE_ID).getXCap(), xloc);
 
         // -------------------------------
         // create a file with five objects
@@ -599,7 +599,7 @@ public class StripingTest extends TestCase {
         
         final MRCDummy mrcDummy = new MRCDummy(capSecret);
 
-        final FileCredentials fcred = new FileCredentials(xloc, getCap(FILE_ID).getXCap());
+        final FileCredentials fcred = new FileCredentials(getCap(FILE_ID).getXCap(), xloc);
 
         final List<RPCResponse> responses = new LinkedList<RPCResponse>();
         

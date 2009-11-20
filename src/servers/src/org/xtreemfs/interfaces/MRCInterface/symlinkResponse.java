@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class symlinkResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009090428;
+    public static final int TAG = 2009112233;
     
     public symlinkResponse() {  }
 
@@ -32,10 +32,10 @@ public class symlinkResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090428;    
+    public static final long serialVersionUID = 2009112233;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090428; }
+    public int getTag() { return 2009112233; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::symlinkResponse"; }
     
     public int getXDRSize()

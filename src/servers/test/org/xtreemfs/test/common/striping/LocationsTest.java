@@ -86,9 +86,9 @@ public class LocationsTest extends TestCase {
         rep2List.add(osds.get(3).toString());
 
         ReplicaSet rset = new ReplicaSet();
-        rset.add(new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 4), 0, osdList));
-        rset.add(new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 4), 0, rep2List));
-        XLocSet xlocset = new XLocSet(rset, 1, "", 0);
+        rset.add(new Replica(osdList, 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 4)));
+        rset.add(new Replica(rep2List, 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 4)));
+        XLocSet xlocset = new XLocSet(0, rset, "", 1);
         XLocations loc = new XLocations(xlocset, osds.get(1));
 
         System.out.println(loc.getLocalReplica().toString());
@@ -109,7 +109,7 @@ public class LocationsTest extends TestCase {
         int flags = 0;
         
         // set none
-        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, flags, osdList));
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(osdList, flags, stripingPolicy));
         assertFalse(r.isComplete());
         assertTrue(r.isPartialReplica());
         assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
@@ -117,7 +117,7 @@ public class LocationsTest extends TestCase {
 
         // set complete
         flags = ReplicationFlags.setReplicaIsComplete(0);
-        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, flags, osdList));
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(osdList, flags, stripingPolicy));
         assertTrue(r.isComplete());
         assertTrue(r.isPartialReplica());
         assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
@@ -125,7 +125,7 @@ public class LocationsTest extends TestCase {
 
         // set partial replica and RandomStrategy
         flags = ReplicationFlags.setPartialReplica(ReplicationFlags.setSequentialPrefetchingStrategy(0));
-        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, flags, osdList));
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(osdList, flags, stripingPolicy));
         assertFalse(r.isComplete());
         assertTrue(r.isPartialReplica());
         assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
@@ -133,7 +133,7 @@ public class LocationsTest extends TestCase {
 
         // set full replica and RandomStrategy
         flags = ReplicationFlags.setRandomStrategy(ReplicationFlags.setFullReplica(0));
-        r = new org.xtreemfs.common.xloc.Replica(new Replica(stripingPolicy, flags, osdList));
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(osdList, flags, stripingPolicy));
         assertFalse(r.isComplete());
         assertFalse(r.isPartialReplica());
         assertTrue(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));

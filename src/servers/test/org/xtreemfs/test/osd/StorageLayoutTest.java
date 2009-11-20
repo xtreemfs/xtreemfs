@@ -88,7 +88,7 @@ public class StorageLayoutTest extends TestCase {
      */
     private void basicTests(StorageLayout layout) throws IOException {
         final String fileId = "ABCDEFG:0001";
-	    StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1), 0, new StringSet()));//new RAID0(64, 1);
+	    StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1)));//new RAID0(64, 1);
 
         assertFalse(layout.fileExists(fileId));
 
@@ -140,8 +140,8 @@ public class StorageLayoutTest extends TestCase {
 
     private void getObjectListTest(StorageLayout layout) throws IOException {
         final String fileId = "ABCDEFG:0001";
-        StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(new Replica(new StripingPolicy(
-                StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1), 0, new StringSet()));// new RAID0(64, 1);
+        StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(new Replica(new StringSet(), 0, new StripingPolicy(
+                StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1)));// new RAID0(64, 1);
 
         assertFalse(layout.fileExists(fileId));
         assertEquals(0, layout.getObjectSet(fileId).size());

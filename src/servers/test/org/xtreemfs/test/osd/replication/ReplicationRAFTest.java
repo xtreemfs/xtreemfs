@@ -329,7 +329,7 @@ public class ReplicationRAFTest extends TestCase {
                         .getFileId(), raf.getCredentials());
                 ObjectList objectList = r.get();
                 r.freeBuffers();
-                objectSets.add(new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(),
+                objectSets.add(new ObjectSet(objectList.getStripe_width(), objectList.getFirst_(),
                     objectList.getSet().array()));
             }
             
@@ -559,19 +559,19 @@ public class ReplicationRAFTest extends TestCase {
                 .getFileId(), credentials);
         ObjectList objectList = r.get();
         r.freeBuffers();
-        ObjectSet objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(),
+        ObjectSet objectSet = new ObjectSet(objectList.getStripe_width(), objectList.getFirst_(),
             objectList.getSet().array());
         assertEquals(0, objectSet.size());
         r = osdClient.internal_getObjectList(replicas.get(1).getAddress(), raf.getFileId(), credentials);
         objectList = r.get();
         r.freeBuffers();
-        objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList
+        objectSet = new ObjectSet(objectList.getStripe_width(), objectList.getFirst_(), objectList
                 .getSet().array());
         assertEquals(0, objectSet.size());
         r = osdClient.internal_getObjectList(replicas.get(1).getAddress(), raf.getFileId(), credentials);
         objectList = r.get();
         r.freeBuffers();
-        objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList
+        objectSet = new ObjectSet(objectList.getStripe_width(), objectList.getFirst_(), objectList
                 .getSet().array());
         assertEquals(0, objectSet.size());
         
@@ -639,7 +639,7 @@ public class ReplicationRAFTest extends TestCase {
                     .getFileId(), raf.getCredentials());
             ObjectList objectList = r.get();
             r.freeBuffers();
-            ObjectSet objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(),
+            ObjectSet objectSet = new ObjectSet(objectList.getStripe_width(), objectList.getFirst_(),
                 objectList.getSet().array());
             System.out.println("run " + i + ": " + objectSet);
             assertTrue(10 <= objectSet.size());
@@ -647,7 +647,7 @@ public class ReplicationRAFTest extends TestCase {
                     .getCredentials());
             objectList = r.get();
             r.freeBuffers();
-            objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList
+            objectSet = new ObjectSet(objectList.getStripe_width(), objectList.getFirst_(), objectList
                     .getSet().array());
             System.out.println("run " + i + ": " + objectSet);
             assertTrue(10 <= objectSet.size());
@@ -675,7 +675,7 @@ public class ReplicationRAFTest extends TestCase {
                     .getCredentials());
             objectList = r.get();
             r.freeBuffers();
-            objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList
+            objectSet = new ObjectSet(objectList.getStripe_width(), objectList.getFirst_(), objectList
                     .getSet().array());
             System.out.println("run " + i + ": " + objectSet);
             assertTrue(0 == objectSet.size());
@@ -683,7 +683,7 @@ public class ReplicationRAFTest extends TestCase {
                     .getCredentials());
             objectList = r.get();
             r.freeBuffers();
-            objectSet = new ObjectSet(objectList.getStripeWidth(), objectList.getFirstObjectNo(), objectList
+            objectSet = new ObjectSet(objectList.getStripe_width(), objectList.getFirst_(), objectList
                     .getSet().array());
             System.out.println("run " + i + ": " + objectSet);
             assertTrue(0 == objectSet.size());

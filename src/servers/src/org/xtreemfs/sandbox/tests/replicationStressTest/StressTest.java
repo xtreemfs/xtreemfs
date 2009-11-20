@@ -257,7 +257,7 @@ public class StressTest {
         }
 
         // parse dir-address
-        final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,DIRInterface.DEFAULT_ONCRPC_PORT);
+        final ONCRPCServiceURL dirURL = new ONCRPCServiceURL(arguments.get(0),Constants.ONCRPC_SCHEME,DIRInterface.ONCRPC_PORT_DEFAULT);
         final InetSocketAddress dirAddress = new InetSocketAddress(dirURL.getHost(), dirURL.getPort());
 
         // parse tmp-dir

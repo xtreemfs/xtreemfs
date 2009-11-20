@@ -14,15 +14,15 @@ import yidl.runtime.Unmarshaller;
 
 public class FileCredentials implements Struct
 {
-    public static final int TAG = 2009090234;
+    public static final int TAG = 2009112039;
     
-    public FileCredentials() { xlocs = new XLocSet(); xcap = new XCap();  }
-    public FileCredentials( XLocSet xlocs, XCap xcap ) { this.xlocs = xlocs; this.xcap = xcap; }
+    public FileCredentials() { xcap = new XCap(); xlocs = new XLocSet();  }
+    public FileCredentials( XCap xcap, XLocSet xlocs ) { this.xcap = xcap; this.xlocs = xlocs; }
 
-    public XLocSet getXlocs() { return xlocs; }
-    public void setXlocs( XLocSet xlocs ) { this.xlocs = xlocs; }
     public XCap getXcap() { return xcap; }
     public void setXcap( XCap xcap ) { this.xcap = xcap; }
+    public XLocSet getXlocs() { return xlocs; }
+    public void setXlocs( XLocSet xlocs ) { this.xlocs = xlocs; }
 
     // java.lang.Object
     public String toString() 
@@ -37,36 +37,36 @@ public class FileCredentials implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090234;    
+    public static final long serialVersionUID = 2009112039;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090234; }
+    public int getTag() { return 2009112039; }
     public String getTypeName() { return "org::xtreemfs::interfaces::FileCredentials"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += xlocs.getXDRSize(); // xlocs
         my_size += xcap.getXDRSize(); // xcap
+        my_size += xlocs.getXDRSize(); // xlocs
         return my_size;
     }    
     
     public void marshal( Marshaller marshaller )
     {
-        marshaller.writeStruct( "xlocs", xlocs );
         marshaller.writeStruct( "xcap", xcap );
+        marshaller.writeStruct( "xlocs", xlocs );
     }
     
     public void unmarshal( Unmarshaller unmarshaller ) 
     {
-        xlocs = new XLocSet(); unmarshaller.readStruct( "xlocs", xlocs );
-        xcap = new XCap(); unmarshaller.readStruct( "xcap", xcap );    
+        xcap = new XCap(); unmarshaller.readStruct( "xcap", xcap );
+        xlocs = new XLocSet(); unmarshaller.readStruct( "xlocs", xlocs );    
     }
         
     
 
-    private XLocSet xlocs;
-    private XCap xcap;    
+    private XCap xcap;
+    private XLocSet xlocs;    
 
 }
 

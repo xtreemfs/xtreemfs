@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_mkvolRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009090446;
+    public static final int TAG = 2009112251;
     
     public xtreemfs_mkvolRequest() { volume = new Volume();  }
     public xtreemfs_mkvolRequest( Volume volume ) { this.volume = volume; }
@@ -39,10 +39,10 @@ public class xtreemfs_mkvolRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090446;    
+    public static final long serialVersionUID = 2009112251;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090446; }
+    public int getTag() { return 2009112251; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_mkvolRequest"; }
     
     public int getXDRSize()

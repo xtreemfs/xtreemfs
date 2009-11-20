@@ -252,7 +252,7 @@ public class RandomAccessFileTest extends TestCase {
         assertTrue(randomAccessFile.isReadOnly());
         assertEquals(data.limit(), randomAccessFile.getXLoc().getXLocSet().getRead_only_file_size());
         assertEquals(Constants.REPL_UPDATE_PC_RONLY, randomAccessFile.getCredentials().getXlocs()
-                .getRepUpdatePolicy());
+                .getReplica_update_policy());
         
         // try to write something
         try {

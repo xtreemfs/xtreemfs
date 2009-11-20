@@ -31,7 +31,7 @@ public class ReplicaSet extends Sequence<Replica>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090230; }
+    public int getTag() { return 2009112035; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ReplicaSet"; }
 
     public int getXDRSize() 

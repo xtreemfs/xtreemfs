@@ -255,13 +255,13 @@ public class MRCTest extends TestCase {
         // check read-only replication
         FileCredentials creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/repl",
             FileAccessManager.O_CREAT, 0, 0, new VivaldiCoordinates()));
-        assertEquals(Constants.REPL_UPDATE_PC_NONE, creds.getXlocs().getRepUpdatePolicy());
+        assertEquals(Constants.REPL_UPDATE_PC_NONE, creds.getXlocs().getReplica_update_policy());
         
         invokeSync(client.setxattr(mrcAddress, uc, volumeName + "/repl", "xtreemfs.read_only", "true", 0));
         val = invokeSync(client.getxattr(mrcAddress, uc, volumeName + "/repl", "xtreemfs.read_only"));
         assertEquals("true", val);
         creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/repl", FileAccessManager.O_CREAT, 0, 0, new VivaldiCoordinates()));
-        assertEquals(Constants.REPL_UPDATE_PC_RONLY, creds.getXlocs().getRepUpdatePolicy());
+        assertEquals(Constants.REPL_UPDATE_PC_RONLY, creds.getXlocs().getReplica_update_policy());
     }
     
     public void testLargeXAttrs() throws Exception {

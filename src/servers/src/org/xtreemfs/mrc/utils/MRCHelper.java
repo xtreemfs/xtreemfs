@@ -206,7 +206,7 @@ public class MRCHelper {
         for (int i = 0; i < width; i++)
             osds.add(usableOSDs.get(i).getUuid());
         
-        return new Replica(sp, replFlags, osds);
+        return new Replica(osds, replFlags, sp);
     }
     
     /**

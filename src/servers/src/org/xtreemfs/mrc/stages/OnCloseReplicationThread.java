@@ -86,7 +86,7 @@ public class OnCloseReplicationThread extends LifeCycleThread {
                 final MRCRequest req = requests.take();
                 final XCap xcap = ((closeRequest) req.getRequestArgs()).getWrite_xcap();
                 final XLocSet xlocSet = (XLocSet) req.getDetails().context.get("xLocList");
-                final FileCredentials creds = new FileCredentials(xlocSet, xcap);
+                final FileCredentials creds = new FileCredentials(xcap, xlocSet);
                 
                 try {
                     if (Logging.isDebug())

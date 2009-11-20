@@ -80,7 +80,7 @@ public class XLocations {
     }
 
     public String getReplicaUpdatePolicy() {
-        return xloc.getRepUpdatePolicy();
+        return xloc.getReplica_update_policy();
     }
 
     public Replica getLocalReplica() {

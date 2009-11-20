@@ -422,7 +422,7 @@ public class OSDClient extends ONCRPCClient {
 
     public RPCResponse<Lock> lock_release(InetSocketAddress server,
             String file_id, FileCredentials credentials, String clientUuid, int pid) {
-        xtreemfs_lock_releaseRequest rq = new xtreemfs_lock_releaseRequest(credentials, file_id, new Lock(clientUuid, pid, 0, 0));
+        xtreemfs_lock_releaseRequest rq = new xtreemfs_lock_releaseRequest(credentials, file_id, new Lock(pid, clientUuid, 0, 0));
 
         RPCResponse r = sendRequest(server, rq.getTag(), rq,
                 new RPCResponseDecoder() {

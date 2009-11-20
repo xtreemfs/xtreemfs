@@ -89,7 +89,7 @@ public class xtfs_cleanup_osd {
             options.put("stop", new CliOption(CliOption.OPTIONTYPE.SWITCH));
             options.put("p", new CliOption(CliOption.OPTIONTYPE.STRING));
             CliOption oDir = new CliOption(CliOption.OPTIONTYPE.URL);
-            oDir.urlDefaultPort = DIRInterface.DEFAULT_ONCRPC_PORT;
+            oDir.urlDefaultPort = DIRInterface.ONCRPC_PORT_DEFAULT;
             oDir.urlDefaultProtocol = Constants.ONCRPC_SCHEME;
             options.put("dir", oDir);
             // SSL options

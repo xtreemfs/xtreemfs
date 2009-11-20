@@ -103,7 +103,7 @@ public final class LocalReadOperation extends OSDOperation {
                 rq.sendInternalServerError(error);
             }
         } else {
-            if (args.getAttachObjectList()) { // object list is requested
+            if (args.getAttach_object_list()) { // object list is requested
                 master.getStorageStage().getObjectSet(args.getFile_id(), rq,
                         new GetObjectListCallback() {
                             @Override

@@ -194,8 +194,8 @@ public class ReplicationStage extends Stage {
             // decode object list, if attached
             if (objectList != null) {
                 try {
-                    ObjectSet objectSet = new ObjectSet(objectList.getStripeWidth(), objectList
-                            .getFirstObjectNo(), objectList.getSet().array());
+                    ObjectSet objectSet = new ObjectSet(objectList.getStripe_width(), objectList
+                            .getFirst_(), objectList.getSet().array());
                     disseminationLayer.objectSetFetched(fileId, usedOSD, objectSet, objectList.getSet()
                             .array().length);
                 } catch (IOException e) {

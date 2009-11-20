@@ -14,17 +14,17 @@ import yidl.runtime.Unmarshaller;
 
 public class InternalGmax implements Struct
 {
-    public static final int TAG = 2009082668;
+    public static final int TAG = 2009112064;
     
     public InternalGmax() {  }
-    public InternalGmax( long epoch, long last_object_id, long file_size ) { this.epoch = epoch; this.last_object_id = last_object_id; this.file_size = file_size; }
+    public InternalGmax( long epoch, long file_size, long last_object_id ) { this.epoch = epoch; this.file_size = file_size; this.last_object_id = last_object_id; }
 
     public long getEpoch() { return epoch; }
     public void setEpoch( long epoch ) { this.epoch = epoch; }
-    public long getLast_object_id() { return last_object_id; }
-    public void setLast_object_id( long last_object_id ) { this.last_object_id = last_object_id; }
     public long getFile_size() { return file_size; }
     public void setFile_size( long file_size ) { this.file_size = file_size; }
+    public long getLast_object_id() { return last_object_id; }
+    public void setLast_object_id( long last_object_id ) { this.last_object_id = last_object_id; }
 
     // java.lang.Object
     public String toString() 
@@ -39,40 +39,40 @@ public class InternalGmax implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082668;    
+    public static final long serialVersionUID = 2009112064;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009082668; }
+    public int getTag() { return 2009112064; }
     public String getTypeName() { return "org::xtreemfs::interfaces::InternalGmax"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Long.SIZE / 8; // epoch
-        my_size += Long.SIZE / 8; // last_object_id
         my_size += Long.SIZE / 8; // file_size
+        my_size += Long.SIZE / 8; // last_object_id
         return my_size;
     }    
     
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeUint64( "epoch", epoch );
-        marshaller.writeUint64( "last_object_id", last_object_id );
         marshaller.writeUint64( "file_size", file_size );
+        marshaller.writeUint64( "last_object_id", last_object_id );
     }
     
     public void unmarshal( Unmarshaller unmarshaller ) 
     {
         epoch = unmarshaller.readUint64( "epoch" );
-        last_object_id = unmarshaller.readUint64( "last_object_id" );
-        file_size = unmarshaller.readUint64( "file_size" );    
+        file_size = unmarshaller.readUint64( "file_size" );
+        last_object_id = unmarshaller.readUint64( "last_object_id" );    
     }
         
     
 
     private long epoch;
-    private long last_object_id;
-    private long file_size;    
+    private long file_size;
+    private long last_object_id;    
 
 }
 

@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class accessResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009090410;
+    public static final int TAG = 2009112215;
     
     public accessResponse() {  }
     public accessResponse( boolean returnValue ) { this.returnValue = returnValue; }
@@ -36,10 +36,10 @@ public class accessResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090410;    
+    public static final long serialVersionUID = 2009112215;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090410; }
+    public int getTag() { return 2009112215; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::accessResponse"; }
     
     public int getXDRSize()

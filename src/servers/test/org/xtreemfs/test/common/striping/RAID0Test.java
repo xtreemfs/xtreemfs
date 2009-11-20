@@ -63,7 +63,7 @@ public class RAID0Test extends TestCase {
 
 
     public void testGetObjectsAndBytes() throws Exception {
-        Replica r = new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 3), 0, new StringSet());
+        Replica r = new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 3));
         StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r);
 
         long objectID, offset;
@@ -91,7 +91,7 @@ public class RAID0Test extends TestCase {
     }
 
     public void testGetOSDs() throws Exception {
-        Replica r = new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 8), 0, new StringSet());
+        Replica r = new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 8));
         StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r);
 
         int osd0 = policy.getOSDforObject(0);
@@ -126,13 +126,13 @@ public class RAID0Test extends TestCase {
     }
 
     public void testGetStripeSize() throws Exception {
-        Replica r = new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 256, 3), 0, new StringSet());
+        Replica r = new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 256, 3));
         StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r);
         assertEquals(256 * KILOBYTE, policy.getStripeSizeForObject(5));
     }
 
     public void testCalculateLastObject() throws Exception {
-        Replica r = new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 256, 3), 0, new StringSet());
+        Replica r = new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 256, 3));
         StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r);
         assertEquals(41, policy.getObjectNoForOffset(256L * KILOBYTE * 42-1)); // filesize
         // =
@@ -144,7 +144,7 @@ public class RAID0Test extends TestCase {
     }
 
     public void testGetObjectsOfOSDiterator() throws Exception {
-        Replica r = new Replica(new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 3), 0, new StringSet());
+        Replica r = new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 3));
         StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r);
 
         long startObject = 0, endObject = 12;
