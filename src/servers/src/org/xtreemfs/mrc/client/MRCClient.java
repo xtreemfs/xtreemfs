@@ -79,8 +79,6 @@ import org.xtreemfs.interfaces.MRCInterface.removexattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.removexattrResponse;
 import org.xtreemfs.interfaces.MRCInterface.renameRequest;
 import org.xtreemfs.interfaces.MRCInterface.renameResponse;
-import org.xtreemfs.interfaces.MRCInterface.replication_toMasterRequest;
-import org.xtreemfs.interfaces.MRCInterface.replication_toMasterResponse;
 import org.xtreemfs.interfaces.MRCInterface.rmdirRequest;
 import org.xtreemfs.interfaces.MRCInterface.rmdirResponse;
 import org.xtreemfs.interfaces.MRCInterface.setattrRequest;
@@ -115,6 +113,8 @@ import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_addRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_addResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeResponse;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replication_to_masterRequest;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replication_to_masterResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_databaseRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_databaseResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_restore_fileRequest;
@@ -741,12 +741,12 @@ public class MRCClient extends ONCRPCClient {
     public RPCResponse<Object> replication_toMaster(InetSocketAddress server, 
             UserCredentials credentials) {
         
-        replication_toMasterRequest rq = new replication_toMasterRequest();
+        xtreemfs_replication_to_masterRequest rq = new xtreemfs_replication_to_masterRequest();
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Object>() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
-                final replication_toMasterResponse resp = new replication_toMasterResponse();
+                final xtreemfs_replication_to_masterResponse resp = new xtreemfs_replication_to_masterResponse();
                 resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }

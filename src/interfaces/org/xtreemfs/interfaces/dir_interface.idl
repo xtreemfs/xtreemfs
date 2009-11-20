@@ -70,14 +70,14 @@ module org
         void xtreemfs_checkpoint() # 4;
       	void xtreemfs_discover_dir( out DirService dir_service) # 5;
         uint64_t xtreemfs_global_time_s_get() # 6;
-        void xtreemfs_service_get_by_type( ServiceType type, out ServiceSet services ) #7;
-        void xtreemfs_service_get_by_uuid( string uuid, out ServiceSet services ) # 8;
-	      void xtreemfs_service_get_by_name( string name, out ServiceSet services ) # 9;
-        uint64_t xtreemfs_service_register( Service service ) # 10;
-        void xtreemfs_service_deregister( string uuid ) # 11;
-	      void xtreemfs_service_offline( string uuid ) # 12;
-        void xtreemfs_shutdown() # 13;
-	      void replication_toMaster() # 14;
+	void xtreemfs_replication_to_master() # 7;
+        void xtreemfs_service_get_by_type( ServiceType type, out ServiceSet services ) #8;
+        void xtreemfs_service_get_by_uuid( string uuid, out ServiceSet services ) # 9;
+	void xtreemfs_service_get_by_name( string name, out ServiceSet services ) # 10;
+        uint64_t xtreemfs_service_register( Service service ) # 11;
+        void xtreemfs_service_deregister( string uuid ) # 12;
+	void xtreemfs_service_offline( string uuid ) # 13;
+        void xtreemfs_shutdown() # 14;
 
         // Exceptions
         exception ConcurrentModificationException # 20 { string stack_trace; };

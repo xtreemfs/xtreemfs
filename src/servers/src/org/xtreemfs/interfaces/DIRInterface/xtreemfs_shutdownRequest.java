@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_shutdownRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009082731;
+    public static final int TAG = 2009082732;
     
     public xtreemfs_shutdownRequest() {  }
 
@@ -35,10 +35,10 @@ public class xtreemfs_shutdownRequest extends org.xtreemfs.interfaces.utils.Requ
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082731;    
+    public static final long serialVersionUID = 2009082732;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009082731; }
+    public int getTag() { return 2009082732; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_shutdownRequest"; }
     
     public int getXDRSize()

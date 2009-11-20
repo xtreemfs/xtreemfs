@@ -41,8 +41,8 @@ import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.DIRInterface.RedirectException;
-import org.xtreemfs.interfaces.DIRInterface.replication_toMasterRequest;
-import org.xtreemfs.interfaces.DIRInterface.replication_toMasterResponse;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_replication_to_masterRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_replication_to_masterResponse;
 
 
 /**
@@ -71,14 +71,14 @@ public class DIRClient extends DIRClientBackend {
     public RPCResponse<Object> replication_toMaster(InetSocketAddress server, 
             UserCredentials credentials) {
         
-        replication_toMasterRequest rq = new replication_toMasterRequest();
+        xtreemfs_replication_to_masterRequest rq = new xtreemfs_replication_to_masterRequest();
         RPCResponse r = sendRequest(server, rq.getTag(), rq, 
                 new RPCResponseDecoder<Object>() {
 
             @Override
             public Object getResult(ReusableBuffer data) {
-                final replication_toMasterResponse resp = 
-                    new replication_toMasterResponse();
+                final xtreemfs_replication_to_masterResponse resp = 
+                    new xtreemfs_replication_to_masterResponse();
                 resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }

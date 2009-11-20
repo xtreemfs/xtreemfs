@@ -110,15 +110,15 @@ module org
         void xtreemfs_listdir( string path, out StringSet names ) # 36;
         void xtreemfs_mkvol( Volume volume ) # 37;
         void xtreemfs_renew_capability( in XCap old_xcap, out XCap renewed_xcap ) # 38;
-        void xtreemfs_replica_add( string file_id, Replica new_replica ) # 39;
-        void xtreemfs_replica_list( string file_id, out ReplicaSet replicas ) # 40;
-        void xtreemfs_replica_remove( string file_id, string osd_uuid, out XCap delete_xcap ) # 41;
-        void xtreemfs_restore_database( string dump_file ) # 42;
-        void xtreemfs_restore_file( string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size ) # 43;
-        void xtreemfs_rmvol( string volume_name ) # 44;
-        void xtreemfs_shutdown() # 45;
-        void xtreemfs_update_file_size( XCap xcap, OSDWriteResponse osd_write_response ) # 46;
-        void replication_toMaster() # 47;
+	void xtreemfs_replication_to_master() # 39;
+        void xtreemfs_replica_add( string file_id, Replica new_replica ) # 40;
+        void xtreemfs_replica_list( string file_id, out ReplicaSet replicas ) # 41;
+        void xtreemfs_replica_remove( string file_id, string osd_uuid, out XCap delete_xcap ) # 42;
+        void xtreemfs_restore_database( string dump_file ) # 43;
+        void xtreemfs_restore_file( string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size ) # 44;
+        void xtreemfs_rmvol( string volume_name ) # 45;
+        void xtreemfs_shutdown() # 46;
+        void xtreemfs_update_file_size( XCap xcap, OSDWriteResponse osd_write_response ) # 47;
 
         // Exceptions
         exception ConcurrentModificationException # 50 { string stack_trace; };

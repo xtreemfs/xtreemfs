@@ -24,15 +24,15 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.mrc.database.DatabaseException;
-import org.xtreemfs.mrc.database.ReplicationManager;
 import org.xtreemfs.foundation.ErrNo;
-import org.xtreemfs.interfaces.DIRInterface.replication_toMasterResponse;
+import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replication_to_masterResponse;
 import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
+import org.xtreemfs.mrc.database.DatabaseException;
+import org.xtreemfs.mrc.database.ReplicationManager;
 
 /**
  *
@@ -59,7 +59,7 @@ public class ReplicationToMasterOperation extends MRCOperation {
                     throw new UserException(ErrNo.EPERM, "invalid password");
             
             dbsReplicationManager.declareToMaster();
-            rq.setResponse(new replication_toMasterResponse());
+            rq.setResponse(new xtreemfs_replication_to_masterResponse());
             finishRequest(rq);
         } catch (DatabaseException e) {
             finishRequest(rq, new ErrorRecord(ErrorClass.REPLICATION, 

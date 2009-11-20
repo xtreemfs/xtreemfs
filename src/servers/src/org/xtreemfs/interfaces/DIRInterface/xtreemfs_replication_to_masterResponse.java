@@ -13,11 +13,11 @@ import yidl.runtime.Unmarshaller;
 
 
 
-public class replication_toMasterResponse extends org.xtreemfs.interfaces.utils.Response
+public class xtreemfs_replication_to_masterResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009082732;
+    public static final int TAG = 2009082725;
     
-    public replication_toMasterResponse() {  }
+    public xtreemfs_replication_to_masterResponse() {  }
 
     // java.lang.Object
     public String toString() 
@@ -32,11 +32,11 @@ public class replication_toMasterResponse extends org.xtreemfs.interfaces.utils.
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009082732;    
+    public static final long serialVersionUID = 2009082725;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009082732; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::replication_toMasterResponse"; }
+    public int getTag() { return 2009082725; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_replication_to_masterResponse"; }
     
     public int getXDRSize()
     {

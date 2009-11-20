@@ -30,8 +30,8 @@ import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.dir.ErrorCodes;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.DIRInterface.DIRException;
-import org.xtreemfs.interfaces.DIRInterface.replication_toMasterRequest;
-import org.xtreemfs.interfaces.DIRInterface.replication_toMasterResponse;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_replication_to_masterRequest;
+import org.xtreemfs.interfaces.DIRInterface.xtreemfs_replication_to_masterResponse;
 
 /**
  *
@@ -44,7 +44,7 @@ public class ReplicationToMasterOperation extends DIROperation {
 
     public ReplicationToMasterOperation(DIRRequestDispatcher master) {
         super(master);
-        operationNumber = replication_toMasterRequest.TAG;
+        operationNumber = xtreemfs_replication_to_masterRequest.TAG;
     }
 
     @Override
@@ -78,7 +78,7 @@ public class ReplicationToMasterOperation extends DIROperation {
 
     @Override
     public void parseRPCMessage(DIRRequest rq) throws Exception {
-        replication_toMasterRequest amr = new replication_toMasterRequest();
+        xtreemfs_replication_to_masterRequest amr = new xtreemfs_replication_to_masterRequest();
         rq.deserializeMessage(amr);
     }
 
@@ -88,7 +88,7 @@ public class ReplicationToMasterOperation extends DIROperation {
      */
     @Override
     void requestFinished(Object result, DIRRequest rq) {
-        rq.sendSuccess(new replication_toMasterResponse());
+        rq.sendSuccess(new xtreemfs_replication_to_masterResponse());
         
     }
 }

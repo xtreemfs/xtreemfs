@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_replica_removeResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009090450;
+    public static final int TAG = 2009090451;
     
     public xtreemfs_replica_removeResponse() { delete_xcap = new XCap();  }
     public xtreemfs_replica_removeResponse( XCap delete_xcap ) { this.delete_xcap = delete_xcap; }
@@ -36,10 +36,10 @@ public class xtreemfs_replica_removeResponse extends org.xtreemfs.interfaces.uti
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090450;    
+    public static final long serialVersionUID = 2009090451;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090450; }
+    public int getTag() { return 2009090451; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_removeResponse"; }
     
     public int getXDRSize()

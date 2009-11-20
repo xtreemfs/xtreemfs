@@ -13,11 +13,11 @@ import yidl.runtime.Unmarshaller;
 
 
 
-public class replication_toMasterRequest extends org.xtreemfs.interfaces.utils.Request
+public class xtreemfs_replication_to_masterResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009090456;
+    public static final int TAG = 2009090448;
     
-    public replication_toMasterRequest() {  }
+    public xtreemfs_replication_to_masterResponse() {  }
 
     // java.lang.Object
     public String toString() 
@@ -30,16 +30,13 @@ public class replication_toMasterRequest extends org.xtreemfs.interfaces.utils.R
         return string_writer.toString();
     }
 
-    // Request
-    public Response createDefaultResponse() { return new replication_toMasterResponse(); }
-
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009090456;    
+    public static final long serialVersionUID = 2009090448;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009090456; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::replication_toMasterRequest"; }
+    public int getTag() { return 2009090448; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replication_to_masterResponse"; }
     
     public int getXDRSize()
     {
