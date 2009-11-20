@@ -575,7 +575,7 @@ namespace YIELD
       size_t capacity() const { return size(); }
       size_t get( void* into_buffer, size_t into_buffer_len );
       size_t put( const void*, size_t ) { return 0; }
-      operator void*() const { *((int*)0) = 0xabadcafe; return NULL; }
+      operator void*() const { DebugBreak(); return NULL; }
       size_t size() const;
 
     private:
@@ -1032,6 +1032,11 @@ namespace YIELD
         : Client<ONCRPCRequest, ONCRPCResponse>( flags, log, operation_timeout, peername, socket_factory )
       { }
 
+      static yidl::runtime::auto_Object< ONCRPCClient<InterfaceType> > create( const URI& absolute_uri, 
+                                                                               uint32_t flags = 0,
+                                                                               YIELD::platform::auto_Log log = NULL, 
+                                                                               const YIELD::platform::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
+                                                                               auto_SSLContext ssl_context = NULL );
       // YIELD::concurrency::EventHandler
       virtual void handleEvent( YIELD::concurrency::Event& ev )
       {
@@ -1458,6 +1463,46 @@ namespace YIELD
       char generic_uuid[256];
 #endif
     };
+
+
+      template <class InterfaceType>
+      yidl::runtime::auto_Object< ONCRPCClient<InterfaceType> > ONCRPCClient<InterfaceType>::create( const URI& absolute_uri,
+                                                                                                     uint32_t flags,
+                                                                                                     YIELD::platform::auto_Log log, 
+                                                                                                     const YIELD::platform::Time& operation_timeout, 
+                                                                                                     auto_SSLContext ssl_context )
+      {
+        auto_SocketAddress peername = SocketAddress::create( absolute_uri );
+        if ( peername != NULL )
+        {
+          auto_SocketFactory socket_factory;
+
+#ifdef YIELD_HAVE_OPENSSL
+          if ( absolute_uri.get_scheme() == "oncrpcs" )
+          {
+            if ( ssl_context != NULL )
+              socket_factory = new SSLSocketFactory( ssl_context );
+            else
+            {
+              ssl_context = SSLContext::create( SSLv23_client_method() );
+              if ( ssl_context != NULL )
+                socket_factory = new SSLSocketFactory( ssl_context ); 
+              else
+                throw YIELD::platform::Exception();
+            }
+          }
+          else
+#endif
+          if ( absolute_uri.get_scheme() == "oncrpcu" )
+            socket_factory = new UDPSocketFactory;
+          else
+            socket_factory = new TCPSocketFactory;
+
+          return new ONCRPCClient<InterfaceType>( flags, log, operation_timeout, peername, socket_factory );
+        }
+        else
+          throw YIELD::platform::Exception();
+      }
   };
 };
 

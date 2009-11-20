@@ -28,7 +28,7 @@ except:
         if not "advapi32.lib" in build_env["LIBS"]: build_env["LIBS"].append( "advapi32.lib" )
         if not "gdi32.lib" in build_env["LIBS"]: build_env["LIBS"].append( "gdi32.lib" )
     else:
-        build_env["CCFLAGS"] += " -Wall -Wunused-macros "
+        build_env["CCFLAGS"] += " -Wall -Wold-style-cast -Wunused-macros "
         if sys.platform == "linux2":
             build_env["CCFLAGS"] += "-D_FILE_OFFSET_BITS=64 "
             build_env["LIBS"].extend( ( "pthread", "util", "dl", "rt", "stdc++" ) )

@@ -38,8 +38,9 @@ struct iovec // a WSABUF on 32-bit systems
 
 static inline void DebugBreak()
 {
-  *((int*)0) = 0xabadcafe;
+  *reinterpret_cast<int*>( 0 ) = 0xabadcafe;
 }
+
 inline void memcpy_s( void* dest, size_t dest_size, const void* src, size_t count )
 {
   memcpy( dest, src, count );

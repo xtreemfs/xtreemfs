@@ -422,6 +422,9 @@ namespace org
         virtual void xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response ) { xtreemfs_update_file_size( xcap, osd_write_response, static_cast<uint64_t>( -1 ) ); }
         virtual void xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response, uint64_t response_timeout_ns ) { ::yidl::runtime::auto_Object<xtreemfs_update_file_sizeRequest> __request( new xtreemfs_update_file_sizeRequest( xcap, osd_write_response ) ); ::YIELD::concurrency::auto_ResponseQueue<xtreemfs_update_file_sizeResponse> __response_queue( new ::YIELD::concurrency::ResponseQueue<xtreemfs_update_file_sizeResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::runtime::auto_Object<xtreemfs_update_file_sizeResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); }
 
+        virtual void replication_toMaster() { replication_toMaster( static_cast<uint64_t>( -1 ) ); }
+        virtual void replication_toMaster( uint64_t response_timeout_ns ) { ::yidl::runtime::auto_Object<replication_toMasterRequest> __request( new replication_toMasterRequest() ); ::YIELD::concurrency::auto_ResponseQueue<replication_toMasterResponse> __response_queue( new ::YIELD::concurrency::ResponseQueue<replication_toMasterResponse> ); __request->set_response_target( __response_queue->incRef() ); send( __request->incRef() ); ::yidl::runtime::auto_Object<replication_toMasterResponse> __response = response_timeout_ns == static_cast<uint64_t>( -1 ) ? __response_queue->dequeue() : __response_queue->timed_dequeue( response_timeout_ns ); }
+
 
         // Request/response pair definitions for the operations in MRCInterface
 
@@ -2234,6 +2237,34 @@ namespace org
           org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
         };
 
+        class replication_toMasterResponse : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_RESPONSE_PARENT_CLASS
+        {
+        public:
+          replication_toMasterResponse() { }
+          virtual ~replication_toMasterResponse() { }
+
+          bool operator==( const replication_toMasterResponse& ) const { return true; }
+
+          // yidl::runtime::Object
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( replication_toMasterResponse, 2009090456 );
+
+        };
+
+        class replication_toMasterRequest : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_REQUEST_PARENT_CLASS
+        {
+        public:
+          replication_toMasterRequest() { }
+          virtual ~replication_toMasterRequest() { }
+
+          bool operator==( const replication_toMasterRequest& ) const { return true; }
+
+          // yidl::runtime::Object
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( replication_toMasterRequest, 2009090456 );
+          // YIELD::concurrency::Request
+          virtual ::YIELD::concurrency::auto_Response createResponse() { return new replication_toMasterResponse; }
+
+        };
+
           class ConcurrentModificationException : public ORG_XTREEMFS_INTERFACES_MRCINTERFACE_EXCEPTION_RESPONSE_PARENT_CLASS
           {
           public:
@@ -2453,6 +2484,7 @@ namespace org
               case 2009090453UL: handlextreemfs_rmvolRequest( static_cast<xtreemfs_rmvolRequest&>( ev ) ); return;
               case 2009090454UL: handlextreemfs_shutdownRequest( static_cast<xtreemfs_shutdownRequest&>( ev ) ); return;
               case 2009090455UL: handlextreemfs_update_file_sizeRequest( static_cast<xtreemfs_update_file_sizeRequest&>( ev ) ); return;
+              case 2009090456UL: handlereplication_toMasterRequest( static_cast<replication_toMasterRequest&>( ev ) ); return;
               default: handleUnknownEvent( ev ); return;
             }
           }
@@ -2517,6 +2549,7 @@ namespace org
               case 2009090453: return static_cast<xtreemfs_rmvolRequest*>( &request );
               case 2009090454: return static_cast<xtreemfs_shutdownRequest*>( &request );
               case 2009090455: return static_cast<xtreemfs_update_file_sizeRequest*>( &request );
+              case 2009090456: return static_cast<replication_toMasterRequest*>( &request );
               default: return NULL;
             }
           }
@@ -2564,6 +2597,7 @@ namespace org
               case 2009090453: return static_cast<xtreemfs_rmvolResponse*>( &response );
               case 2009090454: return static_cast<xtreemfs_shutdownResponse*>( &response );
               case 2009090455: return static_cast<xtreemfs_update_file_sizeResponse*>( &response );
+              case 2009090456: return static_cast<replication_toMasterResponse*>( &response );
               case 2009090459: return static_cast<ConcurrentModificationException*>( &response );
               case 2009090460: return static_cast<errnoException*>( &response );
               case 2009090461: return static_cast<InvalidArgumentException*>( &response );
@@ -2617,6 +2651,7 @@ namespace org
               case 2009090453: return new xtreemfs_rmvolRequest;
               case 2009090454: return new xtreemfs_shutdownRequest;
               case 2009090455: return new xtreemfs_update_file_sizeRequest;
+              case 2009090456: return new replication_toMasterRequest;
               default: return NULL;
             }
           }
@@ -2664,6 +2699,7 @@ namespace org
               case 2009090453: return new xtreemfs_rmvolResponse;
               case 2009090454: return new xtreemfs_shutdownResponse;
               case 2009090455: return new xtreemfs_update_file_sizeResponse;
+              case 2009090456: return new replication_toMasterResponse;
               default: return NULL;
             }
           }
@@ -2724,6 +2760,7 @@ namespace org
         virtual void handlextreemfs_rmvolRequest( xtreemfs_rmvolRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_rmvolResponse> resp( new xtreemfs_rmvolResponse ); _xtreemfs_rmvol( req.get_volume_name() ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
         virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_shutdownResponse> resp( new xtreemfs_shutdownResponse ); _xtreemfs_shutdown(); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
         virtual void handlextreemfs_update_file_sizeRequest( xtreemfs_update_file_sizeRequest& req ) { ::yidl::runtime::auto_Object<xtreemfs_update_file_sizeResponse> resp( new xtreemfs_update_file_sizeResponse ); _xtreemfs_update_file_size( req.get_xcap(), req.get_osd_write_response() ); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
+        virtual void handlereplication_toMasterRequest( replication_toMasterRequest& req ) { ::yidl::runtime::auto_Object<replication_toMasterResponse> resp( new replication_toMasterResponse ); _replication_toMaster(); req.respond( *resp.release() ); ::yidl::runtime::Object::decRef( req ); }
 
       virtual bool _access( const std::string& , uint32_t ) { return false; }
         virtual void _chmod( const std::string& , uint32_t ) { }
@@ -2764,6 +2801,7 @@ namespace org
         virtual void _xtreemfs_rmvol( const std::string&  ) { }
         virtual void _xtreemfs_shutdown() { }
         virtual void _xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& , const org::xtreemfs::interfaces::OSDWriteResponse&  ) { }
+        virtual void _replication_toMaster() { }
       };
 
       // Use this macro in an implementation class to get all of the prototypes for the operations in MRCInterface
@@ -2806,7 +2844,8 @@ namespace org
       virtual void _xtreemfs_restore_file( const std::string& file_path, const std::string& file_id, uint64_t file_size, const std::string& osd_uuid, int32_t stripe_size );\
       virtual void _xtreemfs_rmvol( const std::string& volume_name );\
       virtual void _xtreemfs_shutdown();\
-      virtual void _xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );
+      virtual void _xtreemfs_update_file_size( const org::xtreemfs::interfaces::XCap& xcap, const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response );\
+      virtual void _replication_toMaster();
 
       #define ORG_XTREEMFS_INTERFACES_MRCINTERFACE_HANDLEEVENT_PROTOTYPES \
       virtual void handleaccessRequest( accessRequest& req );\
@@ -2847,7 +2886,8 @@ namespace org
       virtual void handlextreemfs_restore_fileRequest( xtreemfs_restore_fileRequest& req );\
       virtual void handlextreemfs_rmvolRequest( xtreemfs_rmvolRequest& req );\
       virtual void handlextreemfs_shutdownRequest( xtreemfs_shutdownRequest& req );\
-      virtual void handlextreemfs_update_file_sizeRequest( xtreemfs_update_file_sizeRequest& req );
+      virtual void handlextreemfs_update_file_sizeRequest( xtreemfs_update_file_sizeRequest& req );\
+      virtual void handlereplication_toMasterRequest( replication_toMasterRequest& req );
 
     };
 

@@ -1251,7 +1251,7 @@ namespace YIELD
       template <typename FunctionType>
       FunctionType getFunction( const char* function_name, FunctionType missing_function_return_value = NULL )
       {
-        return ( FunctionType )getFunction( function_name, ( void* )missing_function_return_value );
+        return static_cast<FunctionType>( getFunction( function_name, missing_function_return_value ) );
       }    
 
       // yidl::runtime::Object

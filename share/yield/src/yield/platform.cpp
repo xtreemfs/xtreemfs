@@ -1,5 +1,3 @@
-// Revision: 1902
-
 #include "yield/platform.h"
 using namespace YIELD::platform;
 
@@ -2019,7 +2017,7 @@ void Thread::start()
   pthread_attr_t attr;
   pthread_attr_init( &attr );
   pthread_attr_setdetachstate( &attr, PTHREAD_CREATE_DETACHED );
-  pthread_create( &handle, &attr, &thread_stub, ( void* )this );
+  pthread_create( &handle, &attr, &thread_stub, this );
   pthread_attr_destroy( &attr );
 #endif
 }
@@ -2154,20 +2152,20 @@ void Time::as_common_log_date_time( char* out_str, uint8_t out_str_len ) const
   _snprintf_s( out_str, out_str_len, _TRUNCATE,
           "%02d/%s/%04d:%02d:%02d:%02d %+0.4d",
             local_system_time.wDay,
-            ISOMonths[ local_system_time.wMonth-1 ],
+            ISOMonths[local_system_time.wMonth-1],
             local_system_time.wYear,
             local_system_time.wHour,
             local_system_time.wMinute,
             local_system_time.wSecond,
             ( win_tz.Bias / 60 ) * -100 );
 #else
-  time_t unix_time_s = ( time_t )( unix_time_ns / NS_IN_S );
+  time_t unix_time_s = static_cast<time_t>( unix_time_ns / NS_IN_S );
   struct tm unix_tm;
   localtime_r( &unix_time_s, &unix_tm );
   snprintf( out_str, out_str_len,
-          "%02d/%s/%04d:%02d:%02d:%02d %d",
+            "%02d/%s/%04d:%02d:%02d:%02d %d",
             unix_tm.tm_mday,
-            ISOMonths [ unix_tm.tm_mon ],
+            ISOMonths[unix_tm.tm_mon],
             unix_tm.tm_year + 1900,
             unix_tm.tm_hour,
             unix_tm.tm_min,
@@ -2181,22 +2179,22 @@ void Time::as_http_date_time( char* out_str, uint8_t out_str_len ) const
   SYSTEMTIME utc_system_time = UnixTimeNSToUTCSYSTEMTIME( unix_time_ns );
   _snprintf_s( out_str, out_str_len, _TRUNCATE,
           "%s, %02d %s %04d %02d:%02d:%02d GMT",
-            HTTPDaysOfWeek [ utc_system_time.wDayOfWeek ],
+            HTTPDaysOfWeek[utc_system_time.wDayOfWeek],
             utc_system_time.wDay,
-            ISOMonths [ utc_system_time.wMonth-1 ],
+            ISOMonths[utc_system_time.wMonth-1],
             utc_system_time.wYear,
             utc_system_time.wHour,
             utc_system_time.wMinute,
             utc_system_time.wSecond );
 #else
-  time_t unix_time_s = ( time_t )( unix_time_ns / NS_IN_S );
+  time_t unix_time_s = static_cast<time_t>( unix_time_ns / NS_IN_S );
   struct tm unix_tm;
   gmtime_r( &unix_time_s, &unix_tm );
   snprintf( out_str, out_str_len,
           "%s, %02d %s %04d %02d:%02d:%02d GMT",
-            HTTPDaysOfWeek [ unix_tm.tm_wday ],
+            HTTPDaysOfWeek[unix_tm.tm_wday],
             unix_tm.tm_mday,
-            ISOMonths [ unix_tm.tm_mon ],
+            ISOMonths[unix_tm.tm_mon],
             unix_tm.tm_year + 1900,
             unix_tm.tm_hour,
             unix_tm.tm_min,
@@ -2255,7 +2253,7 @@ void Time::as_iso_date( char* out_str, uint8_t out_str_len ) const
   SYSTEMTIME local_system_time = UnixTimeNSToLocalSYSTEMTIME( unix_time_ns );
   _snprintf_s( out_str, out_str_len, _TRUNCATE, "%04d-%02d-%02d", local_system_time.wYear, local_system_time.wMonth, local_system_time.wDay );
 #else
-  time_t unix_time_s = ( time_t )( unix_time_ns / NS_IN_S );
+  time_t unix_time_s = static_cast<time_t>( unix_time_ns / NS_IN_S );
   struct tm unix_tm;
   localtime_r( &unix_time_s, &unix_tm );
   snprintf( out_str, out_str_len, "%04d-%02d-%02d", unix_tm.tm_year + 1900, unix_tm.tm_mon + 1, unix_tm.tm_mday );
@@ -2274,7 +2272,7 @@ void Time::as_iso_date_time( char* out_str, uint8_t out_str_len ) const
         local_system_time.wMinute,
         local_system_time.wSecond );
 #else
-  time_t unix_time_s = ( time_t )( unix_time_ns / NS_IN_S );
+  time_t unix_time_s = static_cast<time_t>(  unix_time_ns / NS_IN_S );
   struct tm unix_tm;
   localtime_r( &unix_time_s, &unix_tm );
   snprintf( out_str, out_str_len,

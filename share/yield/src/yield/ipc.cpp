@@ -1,4 +1,4 @@
-// Revision: 1902
+// Revision: 1911
 
 #include "yield/ipc.h"
 
@@ -114,7 +114,8 @@ public:
     if ( request_lock.try_acquire() )
     {
       if ( client.log != NULL )
-        client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: connect() to <host>:" << client.peername->get_port() << " failed, errno=" << error_code << ", strerror=" << YIELD::platform::Exception::strerror( error_code ) << ".";
+        client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: connect() to <host>:" << client.peername->get_port() <<
+          " failed, errno=" << error_code << ", strerror=" << YIELD::platform::Exception::strerror( error_code ) << ".";
       if ( request->get_reconnect_tries() < 2 )
       {
         request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
@@ -189,7 +190,10 @@ public:
     if ( request_lock.try_acquire() )
     {
       if ( client.log != NULL )
-        client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: error reading " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
+        client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: error reading " <<
+          response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) <<
+          ", errno=" << error_code << ", strerror=" << YIELD::platform::Exception::strerror( error_code ) <<
+          ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       get_socket()->shutdown();
       get_socket()->close();
       if ( request->get_reconnect_tries() < 2 )
@@ -243,7 +247,10 @@ public:
     if ( request_lock.try_acquire() )
     {
       if ( client.log != NULL )
-        client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: error writing " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
+        client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: error writing " <<
+          request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) <<
+          ", errno=" << error_code << ", strerror=" << YIELD::platform::Exception::strerror( error_code ) <<
+          ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       get_socket()->shutdown();
       get_socket()->close();
       if ( request->get_reconnect_tries() < 2 )
@@ -471,7 +478,7 @@ YIELD::ipc::auto_HTTPClient YIELD::ipc::HTTPClient::create( const URI& absolute_
                                                             YIELD::platform::auto_Log log,
                                                             const YIELD::platform::Time& operation_timeout,
                                                             auto_SSLContext ssl_context )
-                        {
+{
   URI checked_absolute_uri( absolute_uri );
   if ( checked_absolute_uri.get_port() == 0 )
     checked_absolute_uri.set_port( 80 );
@@ -1124,7 +1131,7 @@ void YIELD::ipc::JSONMarshaller::flushYAJLBuffer()
 void YIELD::ipc::JSONMarshaller::writeBoolean( const char* key, uint32_t, bool value )
 {
   writeKey( key );
-  yajl_gen_bool( writer, ( int )value );
+  yajl_gen_bool( writer, static_cast<int>( value ) );
   flushYAJLBuffer();
 }
 void YIELD::ipc::JSONMarshaller::writeBuffer( const char*, uint32_t, yidl::runtime::auto_Buffer )
@@ -1145,7 +1152,7 @@ void YIELD::ipc::JSONMarshaller::writeDouble( const char* key, uint32_t, double 
 void YIELD::ipc::JSONMarshaller::writeInt64( const char* key, uint32_t, int64_t value )
 {
   writeKey( key );
-  yajl_gen_integer( writer, ( long )value );
+  yajl_gen_integer( writer, static_cast<long>( value ) );
   flushYAJLBuffer();
 }
 void YIELD::ipc::JSONMarshaller::writeMap( const char* key, uint32_t, const yidl::runtime::Map& value )
@@ -4574,7 +4581,7 @@ int YIELD::ipc::TCPSocket::_accept()
 {
   sockaddr_storage peername_storage;
   socklen_t peername_storage_len = sizeof( peername_storage );
-  return ::accept( *this, ( struct sockaddr* )&peername_storage, &peername_storage_len );
+  return ::accept( *this, reinterpret_cast<struct sockaddr*>( &peername_storage ), &peername_storage_len );
 }
 void YIELD::ipc::TCPSocket::aio_accept( yidl::runtime::auto_Object<AIOAcceptControlBlock> aio_accept_control_block )
 {
@@ -4692,7 +4699,7 @@ bool YIELD::ipc::TCPSocket::listen()
   linger lingeropt;
   lingeropt.l_onoff = 1;
   lingeropt.l_linger = 0;
-  setsockopt( *this, SOL_SOCKET, SO_LINGER, ( char* )&lingeropt, ( int )sizeof( lingeropt ) );
+  setsockopt( *this, SOL_SOCKET, SO_LINGER, reinterpret_cast<char*>( &lingeropt ), static_cast<int>( sizeof( lingeropt ) ) );
   return ::listen( *this, SOMAXCONN ) != -1;
 }
 bool YIELD::ipc::TCPSocket::shutdown()
@@ -4792,42 +4799,42 @@ bool YIELD::ipc::TracingSocket::connect( auto_SocketAddress to_sockaddr )
 {
   std::string to_hostname;
   if ( to_sockaddr->getnameinfo( to_hostname ) )
-    log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::TracingSocket: connecting socket #" << ( int )*this << " to " << to_hostname << ".";
+    log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::TracingSocket: connecting socket #" << static_cast<uint64_t>( *this ) << " to " << to_hostname << ".";
   return underlying_socket->connect( to_sockaddr );
 }
 ssize_t YIELD::ipc::TracingSocket::read( void* buffer, size_t buffer_len )
 {
-  log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: trying to read " << buffer_len << " bytes from socket #" << ( int )*this << ".";
+  log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: trying to read " << buffer_len << " bytes from socket #" << static_cast<uint64_t>( *this ) << ".";
   ssize_t read_ret = underlying_socket->read( buffer, buffer_len );
   if ( read_ret > 0 )
   {
-    log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::TracingSocket: read " << read_ret << " bytes from socket #" << ( int )*this << ".";
+    log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::TracingSocket: read " << read_ret << " bytes from socket #" << static_cast<uint64_t>( *this ) << ".";
     log->write( buffer, static_cast<size_t>( read_ret ), YIELD::platform::Log::LOG_DEBUG );
     log->write( "\n", YIELD::platform::Log::LOG_DEBUG );
   }
   else if ( read_ret == 0 || ( !underlying_socket->want_read() && !underlying_socket->want_write() ) )
-    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: lost connection while trying to read socket #" <<  ( int )*this << ".";
+    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: lost connection while trying to read socket #" <<  static_cast<uint64_t>( *this ) << ".";
   return read_ret;
 }
 bool YIELD::ipc::TracingSocket::want_connect() const
 {
   bool want_connect_ret = underlying_socket->want_connect();
   if ( want_connect_ret )
-    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: would block on connect on socket #" << ( int )*this << ".";
+    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: would block on connect on socket #" << static_cast<uint64_t>( *this ) << ".";
   return want_connect_ret;
 }
 bool YIELD::ipc::TracingSocket::want_read() const
 {
   bool want_read_ret = underlying_socket->want_read();
   if ( want_read_ret )
-    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: would block on read on socket #" << ( int )*this << ".";
+    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: would block on read on socket #" << static_cast<uint64_t>( *this ) << ".";
   return want_read_ret;
 }
 bool YIELD::ipc::TracingSocket::want_write() const
 {
   bool want_write_ret = underlying_socket->want_write();
   if ( want_write_ret )
-    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: would block on write on socket #" << ( int )*this << ".";
+    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: would block on write on socket #" << static_cast<uint64_t>( *this ) << ".";
   return want_write_ret;
 }
 ssize_t YIELD::ipc::TracingSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
@@ -4835,12 +4842,12 @@ ssize_t YIELD::ipc::TracingSocket::writev( const struct iovec* buffers, uint32_t
   size_t buffers_len = 0;
   for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
     buffers_len += buffers[buffer_i].iov_len;
-  log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: trying to write " << buffers_len << " bytes to socket #" << ( int )*this << ".";
+  log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: trying to write " << buffers_len << " bytes to socket #" << static_cast<uint64_t>( *this ) << ".";
   ssize_t writev_ret = underlying_socket->writev( buffers, buffers_count );
   if ( writev_ret >= 0 )
   {
     size_t temp_sendmsg_ret = static_cast<size_t>( writev_ret );
-    log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::TracingSocket: wrote " << writev_ret << " bytes to socket #" << ( int )*this << ".";
+    log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::TracingSocket: wrote " << writev_ret << " bytes to socket #" << static_cast<uint64_t>( *this ) << ".";
     for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
     {
       if ( buffers[buffer_i].iov_len <= temp_sendmsg_ret )
@@ -4857,7 +4864,7 @@ ssize_t YIELD::ipc::TracingSocket::writev( const struct iovec* buffers, uint32_t
     log->write( "\n", YIELD::platform::Log::LOG_DEBUG );
   }
   else if ( !underlying_socket->want_read() && !underlying_socket->want_write() )
-    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: lost connection while trying to write to socket #" <<  ( int )*this << ".";
+    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: lost connection while trying to write to socket #" <<  static_cast<uint64_t>( *this ) << ".";
   return writev_ret;
 }
 
