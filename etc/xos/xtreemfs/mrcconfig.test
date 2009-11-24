@@ -116,10 +116,10 @@ babudb.debug.level = 4
 #babudb.cfgFile = config.db
 
 # base directory to store database index snapshots in
-babudb.baseDir = /var/lib/xtreemfs/mrc/database
+babudb.baseDir = /tmp/xtreemfs-test/mrc/database
 
 # directory in which the database logs are stored
-babudb.logDir = /var/lib/xtreemfs/mrc/db-log
+babudb.logDir = /tmp/xtreemfs-test/mrc/db-log
 
 # SyncMode the synchronization mode to use for the logFile
 # ASYNC - asynchronously write log entries (data is lost when system crashes).
