@@ -98,6 +98,8 @@ public class DIRRequestDispatcher extends LifeCycleThread
      * index for service registries, stores uuid -> ServiceRegistry
      */
     public static final int                    INDEX_ID_SERVREG  = 1;
+
+    public static final int                    DB_VERSION = 2009082718;
     
     private final HttpServer                   httpServ;
     
@@ -306,7 +308,7 @@ public class DIRRequestDispatcher extends LifeCycleThread
             try {
                 byte[] keyData = new byte[4];
                 rb = ReusableBuffer.wrap(keyData);
-                rb.putInt(DIRInterface.getVersion());
+                rb.putInt(DB_VERSION);
                 db.singleInsert(0, versionKey, keyData,null).get();
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -328,7 +330,7 @@ public class DIRRequestDispatcher extends LifeCycleThread
                         rb = ReusableBuffer.wrap(value);
                         ver = rb.getInt();
                     }
-                    if (ver != DIRInterface.getVersion()) {
+                    if (ver != DB_VERSION) {
                         Logging.logMessage(Logging.LEVEL_ERROR, this, "OUTDATED DATABASE VERSION DETECTED!");
                         Logging
                                 .logMessage(
