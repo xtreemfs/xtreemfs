@@ -114,7 +114,7 @@ public class VivaldiStage extends Stage {
      */
     private long vivaldiIterations;
     
-    private static final int MAX_RETRIES_FOR_A_REQUEST = 3;
+    private static final int MAX_RETRIES_FOR_A_REQUEST = 2;
     
     /**
      * Minimum recalculation period.
@@ -196,7 +196,7 @@ public class VivaldiStage extends Stage {
             
             Logging.logMessage( Logging.LEVEL_INFO,
                                 this,
-                                String.format("Forced(%s):%ld(Viv:%.3f) Own:(%.3f,%.3f) lE=%.3f Rem:(%.3f,%.3f) rE=%.3f",
+                                String.format("Forced(%s):%d(Viv:%.3f) Own:(%.3f,%.3f) lE=%.3f Rem:(%.3f,%.3f) rE=%.3f",
                                         strbRTTs.toString(),
                                         minRTT,
                                         VivaldiNode.calculateDistance(vNode.getCoordinates(), coordinatesJ),
@@ -274,7 +274,7 @@ public class VivaldiStage extends Stage {
                                 prevRetry.addRTT(estimatedRTT);
                                 prevRetry.setRetried(false);
                                 
-                                if(prevRetry.numberOfRetries()>=MAX_RETRIES_FOR_A_REQUEST){
+                                if(prevRetry.numberOfRetries()>MAX_RETRIES_FOR_A_REQUEST){
                                     
                                     //Recalculate using the previous RTTs
                                     forceVivaldiRecalculation(coordinatesJ,prevRetry.getRTTs());
@@ -391,7 +391,7 @@ public class VivaldiStage extends Stage {
                 prevRetry.setRetried(false);
                 
                 //We've already retried too many times, so it's time to recalculate with the available info
-                if(prevRetry.numberOfRetries()>=MAX_RETRIES_FOR_A_REQUEST){
+                if(prevRetry.numberOfRetries()>MAX_RETRIES_FOR_A_REQUEST){
                     forceVivaldiRecalculation(null,prevRetry.getRTTs());
                     sentRetries.remove(removed);
                 }

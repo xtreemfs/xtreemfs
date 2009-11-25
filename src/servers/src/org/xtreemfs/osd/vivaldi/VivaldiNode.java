@@ -238,6 +238,7 @@ public class VivaldiNode {
         
         if( forceRecalculation ||                       //The recalculation must be done anyhow
             (subtractionMagnitude<=0.0) ||              //The nodes are in the same position
+            (estimatedMovement<0) ||                    //The nodes must get closer
             (Math.abs(estimatedMovement) < subtractionMagnitude * MAX_MOVEMENT_RATIO) ){ //The movement is not too big
 
             //Update local error

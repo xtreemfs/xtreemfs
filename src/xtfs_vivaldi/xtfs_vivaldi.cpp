@@ -24,7 +24,7 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
  * The recalculation period is randomly determined and is always included between
  * the minimum and the maximum period.
  */
-#define MIN_RECALCULATION_IN_MS 1000 * 27
+#define MIN_RECALCULATION_IN_MS 1000 * 50
 
 /*
  * Maximum recalculation period.
@@ -32,17 +32,18 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
  * The recalculation period is randomly determined and is always included between
  * the minimum and the maximum period.
  */
-#define MAX_RECALCULATION_IN_MS 1000 * 33
+#define MAX_RECALCULATION_IN_MS 1000 * 70
 
 /*
  * Number of times the node recalculates its position before updating
  * its list of existent OSDs.
  */
-#define ITERATIONS_BEFORE_UPDATING 10
+#define ITERATIONS_BEFORE_UPDATING 60
 
-#define MAX_RETRIES_FOR_A_REQUEST 3
+#define MAX_RETRIES_FOR_A_REQUEST 2
 
-#define MAX_REQUEST_TIMEOUT_IN_NS 1000000000ul * 30ul
+#define MAX_REQUEST_TIMEOUT_IN_NS 1000000000ul * 120ul
+
 
 /*
  * REMOVE AFTER EVALUATING
@@ -50,7 +51,8 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
 #define EVALUATION_ENABLED  true
 #define NUMBER_OF_FILES     1
 #define REPLICAS_PER_FILE   40
-#define CHECK_EVERY_ITERATIONS 2
+#define CHECK_EVERY_ITERATIONS 10
+
 #define RES_FILE_NAME "res-%s-%d"
 #define RECAL_FILE_NAME "recal-%s"
 #ifndef _WIN32
@@ -173,13 +175,15 @@ namespace xtfs_vivaldi
             SPRINTF_VIV(filename,128,RES_FILE_NAME,fPath,i);
             YIELD::platform::auto_File truncatedFile1 = YIELD::platform::Volume().open( filename, O_CREAT|O_TRUNC|O_WRONLY );
             
-            char resContent[256];
-            memset(resContent,0,256);
-            SPRINTF_VIV(resContent,256, "#MAX_MOV_RAT:%.3f\n#RETRIES:%d\n#MIN:%d\n#CHECK_EVERY:%d\n",
+            char resContent[512];
+            memset(resContent,0,512);
+            SPRINTF_VIV(resContent,512, "#MAX_MOV_RAT:%.3f\n#RETRIES:%d\n#RECAL:(%d,%d)\n#CHECK_EVERY:%d\n#UPDATE:%d\n",
                                         MAX_MOVEMENT_RATIO,
                                         MAX_RETRIES_FOR_A_REQUEST,
-                                        MIN_RECALCULATION_IN_MS,
-                                        CHECK_EVERY_ITERATIONS);
+                                        MIN_RECALCULATION_IN_MS/1000,
+                                        MAX_RECALCULATION_IN_MS/1000,
+                                        CHECK_EVERY_ITERATIONS,
+                                        ITERATIONS_BEFORE_UPDATING);
             truncatedFile1->write(resContent,strlen(resContent));
             truncatedFile1->close();
             // Create/truncate recals file i
@@ -235,6 +239,7 @@ namespace xtfs_vivaldi
 
   							YIELD::platform::Time start_time;
   							osd_proxy->xtreemfs_ping( org::xtreemfs::interfaces::VivaldiCoordinates(), random_osd_vivaldi_coordinates,static_cast<uint64_t>(MAX_REQUEST_TIMEOUT_IN_NS) );
+                //osd_proxy->xtreemfs_ping( org::xtreemfs::interfaces::VivaldiCoordinates(), random_osd_vivaldi_coordinates );
   							YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
                 get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "xtfs_vivaldi:Ping response received.";
                 
@@ -472,7 +477,7 @@ namespace xtfs_vivaldi
                   YIELD::platform::Time start_time;
                   //TOFIX:Is this getting blocked indefinitely?
                   get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "Requesting:" << one_osd.get_uuid();
-                  osd_proxy->xtreemfs_ping(ownCoords , remoteCoordinates[i]);
+                  osd_proxy->xtreemfs_ping(ownCoords , remoteCoordinates[i],static_cast<uint64_t>(MAX_REQUEST_TIMEOUT_IN_NS));
                   YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
                   get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "Ping response received.";
                   

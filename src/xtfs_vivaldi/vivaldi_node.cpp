@@ -167,8 +167,9 @@ bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordina
   double estimatedMovement = (static_cast<double>(measuredRTT)-subtractionMagnitude) * delta;        
   
   //Is the proposed movement too big?
-  if( forceRecalculation || //Movement must be made anyway
-      (subtractionMagnitude<=0.0) || //They both are in the same position
+  if( forceRecalculation ||           //Movement must be made anyway
+      (subtractionMagnitude<=0.0) ||  //They both are in the same position
+      (estimatedMovement<0.0) ||      //They must get closer
       ( abs(estimatedMovement) < subtractionMagnitude * MAX_MOVEMENT_RATIO) ){
   
     //Update local error
@@ -219,7 +220,6 @@ bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordina
   return retval;
 }
 
-//TOFIX:This method is just intended to test the final results
 double VivaldiNode::calculateDistance(org::xtreemfs::interfaces::VivaldiCoordinates coordA,org::xtreemfs::interfaces::VivaldiCoordinates& coordB){
   subtractCoordinates(coordA,coordB);
   return magnitudeCoordinates( coordA );
