@@ -82,10 +82,13 @@ public class VivaldiStage extends Stage {
     private final DIRClient            dirClient;
     
     /**
-     * List of already sent Vivaldi REQUESTS.
+     * List of already sent Vivaldi requests.
      */
     private HashMap<InetSocketAddress,SentRequest> sentRequests;
     
+    /**
+     * List of simultaneous VivaldiRetrys. Each of them keep track of the RTTs measured for the same node.
+     */
     private HashMap<InetSocketAddress,VivaldiRetry> sentRetries;
     
     /**
@@ -114,6 +117,9 @@ public class VivaldiStage extends Stage {
      */
     private long vivaldiIterations;
     
+    /**
+     * Number of retries to be sent before accepting 'suspiciously high' RTT
+     */
     private static final int MAX_RETRIES_FOR_A_REQUEST = 2;
     
     /**
@@ -163,16 +169,25 @@ public class VivaldiStage extends Stage {
         this.vNode = new VivaldiNode();
         
         //TOFIX: should  the coordinates be initialized from a file?
-        if(Logging.isInfo())
-            Logging.logMessage( Logging.LEVEL_INFO,this, String.format("Coordinates initialized:(%.3f,%.3f)", 
+        if(Logging.isInfo()){
+            Logging.logMessage( Logging.LEVEL_DEBUG,this, String.format("Coordinates initialized:(%.3f,%.3f)", 
                                                                         vNode.getCoordinates().getX_coordinate(),
                                                                         vNode.getCoordinates().getY_coordinate()) );
-
+        }
+        
         this.knownOSDs = null;
         this.lastCheck = 0;
     }
 
-
+    /**
+     * The position of the node is recalculated from a list of previously measured RTTs. Even if the
+     * resulting movement is too big, the node's coordinates will be modified.
+     * 
+     * @param coordinatesJ Coordinates of the node where recalculating against. If the operation 
+     * has been triggered by a timeout, this parameter is {@code null}.
+     * 
+     * @param availableRTTs List of RTTs measured after several retries.
+     */
     private void forceVivaldiRecalculation(VivaldiCoordinates coordinatesJ, ArrayList<Long> availableRTTs){
 
         //TOFIX:In this version, the recalculation is discarded when the last retry times out: (coordinatesJ!=null)
@@ -194,8 +209,9 @@ public class VivaldiStage extends Stage {
 
             vNode.recalculatePosition(coordinatesJ, minRTT,true);
             
-            Logging.logMessage( Logging.LEVEL_INFO,
+            Logging.logMessage( Logging.LEVEL_DEBUG,
                                 this,
+                                //Forced(list_of_rtts):measured_RTT(Viv:vivaldi_distance) Own:(own_coordinates) lE=local_error Rem:(remote_nodes_coordinates) rE=remote_nodes_error 
                                 String.format("Forced(%s):%d(Viv:%.3f) Own:(%.3f,%.3f) lE=%.3f Rem:(%.3f,%.3f) rE=%.3f",
                                         strbRTTs.toString(),
                                         minRTT,
@@ -286,8 +302,9 @@ public class VivaldiStage extends Stage {
                         }else{
                             if(Logging.isInfo()){
                                 //TOFIX: Printing getHostName() without any kind of control could be dangerous (?)
-                                Logging.logMessage( Logging.LEVEL_INFO,
+                                Logging.logMessage( Logging.LEVEL_DEBUG,
                                                     this,
+                                                    //RTT:measured_RTT(Viv:vivaldi_distance) Own:(own_coordinates) lE=local_error Rem:(remote_nodes_coordinates) rE=remote_nodes_error remote_nodes_hostname
                                                     String.format("RTT:%d(Viv:%.3f) Own:(%.3f,%.3f) lE=%.3f Rem:(%.3f,%.3f) rE=%.3f %s", 
                                                             estimatedRTT,
                                                             VivaldiNode.calculateDistance(vNode.getCoordinates(), coordinatesJ),
@@ -323,6 +340,12 @@ public class VivaldiStage extends Stage {
         }
     }
     
+    /**
+     * Creates and sends a response for a given request.
+     * 
+     * @param request The request we are responding to.
+     * @param myCoordinates Our own coordinates, to be included in the response.
+     */
     private void sendVivaldiResponse(UDPMessage request, VivaldiCoordinates myCoordinates) {
         
         xtreemfs_pingResponse resp = new xtreemfs_pingResponse(myCoordinates);
@@ -332,6 +355,12 @@ public class VivaldiStage extends Stage {
         master.getUdpComStage().send(msg);
     }
     
+    /**
+     * Sends a message to a OSD requesting its coordinates.
+     * 
+     * @param osd Address of the OSD we want to contact.
+     * @param myCoordinates Our own coordinates.
+     */
     private void sendVivaldiRequest(InetSocketAddress osd, VivaldiCoordinates myCoordinates) {
     
         xtreemfs_pingRequest req = new xtreemfs_pingRequest(myCoordinates);
@@ -355,7 +384,7 @@ public class VivaldiStage extends Stage {
     }
 
     /**
-     * Keeps the list of sent requests updated by eliminating those whose timeout
+     * Keeps the list of sent requests updated, by eliminating those whose timeout
      * has expired.
      */
     private void maintainSentRequests(){
@@ -369,7 +398,7 @@ public class VivaldiStage extends Stage {
             if( localNow >= sentRequests.get(reqKey).getLocalTime()+MAX_REQUEST_TIMEOUT_IN_MS ){
                 
                 if(Logging.isInfo())
-                    Logging.logMessage(Logging.LEVEL_INFO, this,"OSD times out:"+reqKey.getHostName());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"OSD times out:"+reqKey.getHostName());
                 
                 removedRequests.add(reqKey);
             }
@@ -448,14 +477,13 @@ public class VivaldiStage extends Stage {
             
             knownOSDs = newOSDs;
             
-            if (Logging.isInfo())
-                Logging.logMessage(Logging.LEVEL_INFO, this, "Updating list of known OSDs (size:"+knownOSDs.size()+")");
+            if (Logging.isInfo()){
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "Updating list of known OSDs (size:"+knownOSDs.size()+")");
+            }
             
         } catch (Exception exc) {
             Logging.logMessage(Logging.LEVEL_ERROR, this, "Error while updating known OSDs:"+exc);
             knownOSDs = new ServiceSet();
-            //Logging.logError(Logging.LEVEL_ERROR, this, exc);
-            //this.notifyCrashed(exc);
         } finally {
             if (r != null){
                 r.freeBuffers();
@@ -470,7 +498,7 @@ public class VivaldiStage extends Stage {
     /**
      * Executes one Vivaldi iteration. For each of these iterations, the algorithm
      * chooses one random node from the list of known OSDs and sends it a Vivaldi
-     * request, to recalculate then the position of the OSD using the received information
+     * request, to recalculate then the position of the OSD using the received information.
      */
     private void iterateVivaldi() {
         
@@ -488,7 +516,7 @@ public class VivaldiStage extends Stage {
                     if(!sentRetries.get(addr).hasBeenRetried()){
                         
                         if(Logging.isInfo())
-                            Logging.logMessage(Logging.LEVEL_INFO, this,"Retrying:"+addr.getHostName());
+                            Logging.logMessage(Logging.LEVEL_DEBUG, this,"Retrying:"+addr.getHostName());
                         
                         sendVivaldiRequest(addr, vNode.getCoordinates());
                         sentRetries.get(addr).setRetried(true);
@@ -498,7 +526,7 @@ public class VivaldiStage extends Stage {
                 
             }else{
             
-                //Choose a random OSD and send a new request
+                //Choose a random OSD and send it a new request
                 int chosenIndex = (int)(Math.random()*knownOSDs.size());
 
                 Service chosenService = knownOSDs.get(chosenIndex);
@@ -511,7 +539,7 @@ public class VivaldiStage extends Stage {
                     sUUID.resolve();
 
                     if(Logging.isInfo())
-                        Logging.logMessage(Logging.LEVEL_INFO, this,"Recalculating against:"+chosenService.getUuid());                        
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"Recalculating against:"+chosenService.getUuid());                        
                     
                     //After receiving the response, we will be able to recalculate
                     sendVivaldiRequest(sUUID.getAddress(), vNode.getCoordinates());
@@ -559,7 +587,6 @@ public class VivaldiStage extends Stage {
             } catch (InterruptedException ex) {
                 break;
             } catch (Exception ex) {
-                //Logging.logError(Logging.LEVEL_ERROR, this, ex);
                 Logging.logMessage(Logging.LEVEL_ERROR, this, "Error detected:"+ex);
                 notifyCrashed(ex);
                 break;

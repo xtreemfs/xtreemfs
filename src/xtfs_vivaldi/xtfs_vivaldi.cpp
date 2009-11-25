@@ -24,7 +24,7 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
  * The recalculation period is randomly determined and is always included between
  * the minimum and the maximum period.
  */
-#define MIN_RECALCULATION_IN_MS 1000 * 50
+#define MIN_RECALCULATION_IN_MS 1000 * 270
 
 /*
  * Maximum recalculation period.
@@ -32,29 +32,22 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
  * The recalculation period is randomly determined and is always included between
  * the minimum and the maximum period.
  */
-#define MAX_RECALCULATION_IN_MS 1000 * 70
+#define MAX_RECALCULATION_IN_MS 1000 * 330
 
 /*
  * Number of times the node recalculates its position before updating
  * its list of existent OSDs.
  */
-#define ITERATIONS_BEFORE_UPDATING 60
-
-#define MAX_RETRIES_FOR_A_REQUEST 2
-
-#define MAX_REQUEST_TIMEOUT_IN_NS 1000000000ul * 120ul
-
+#define ITERATIONS_BEFORE_UPDATING 24 //With iterations every 5min ~= Known OSDs are Updated every 2 hours
 
 /*
- * REMOVE AFTER EVALUATING
+ * Number of retries sent before accepting a high RTT.
  */
-#define EVALUATION_ENABLED  true
-#define NUMBER_OF_FILES     1
-#define REPLICAS_PER_FILE   40
-#define CHECK_EVERY_ITERATIONS 10
+#define MAX_RETRIES_FOR_A_REQUEST 2
 
-#define RES_FILE_NAME "res-%s-%d"
-#define RECAL_FILE_NAME "recal-%s"
+//#define MAX_REQUEST_TIMEOUT_IN_NS 1000000000ul * 120ul
+
+
 #ifndef _WIN32
   #define SPRINTF_VIV(buff,size,format,...) snprintf(buff,size,format,__VA_ARGS__)
 #else
@@ -120,8 +113,7 @@ namespace xtfs_vivaldi
             YIELD::platform::XDRUnmarshaller xdr_unmarshaller( xdr_buffer.incRef() );
             my_vivaldi_coordinates.unmarshal( xdr_unmarshaller );
             
-            //TOFIX: All these messages will be redirected to LOG_DEBUG instead of LOG_INFO
-            get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "xtfs_vivaldi:coordinates readed from file:("<<my_vivaldi_coordinates.get_x_coordinate()<<","<<my_vivaldi_coordinates.get_y_coordinate()<<")";
+            get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtfs_vivaldi:coordinates readed from file:("<<my_vivaldi_coordinates.get_x_coordinate()<<","<<my_vivaldi_coordinates.get_y_coordinate()<<")";
                         
           }else
           {
@@ -130,7 +122,7 @@ namespace xtfs_vivaldi
         }
         vivaldi_coordinates_file->close();
       }else{
-        get_log()->getStream( YIELD::platform::Log::LOG_WARNING ) << "xtfs_vivaldi:impossible to read coordinates from file.Initializing them by default...";
+        get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtfs_vivaldi:impossible to read coordinates from file.Initializing them by default...";
       }
 
       VivaldiNode own_node(my_vivaldi_coordinates);
@@ -143,60 +135,6 @@ namespace xtfs_vivaldi
       int retriesInARow = 0;
       
       org::xtreemfs::interfaces::Service *random_osd_service;
-    
-      
-      //TODO:Remove this code after evaluating the system
-      org::xtreemfs::interfaces::ServiceSet testingSets[NUMBER_OF_FILES];
-      
-      if(EVALUATION_ENABLED){
-        
-        get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "xtfs_vivaldi:evaluation is enabled";
-        
-        org::xtreemfs::interfaces::ServiceSet knownOSDs;
-        updateKnownOSDs(knownOSDs);
-        
-        if(!knownOSDs.empty()){
-          
-          for(int i=0;i<NUMBER_OF_FILES;i++){
-            
-            //Create testing set for file i
-            composeTestingSet(testingSets[i],knownOSDs,REPLICAS_PER_FILE);
-            get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "xtfs_vivaldi:testing set created:" << testingSets[i].size();
-            
-            for(org::xtreemfs::interfaces::ServiceSet::iterator iter=testingSets[i].begin();iter!=testingSets[i].end();iter++){
-              get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << (*iter).get_uuid();              
-            }
-            get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "-------";
-            
-            // Create/truncate results file i
-            char filename[128];
-            memset(filename,0,128);
-            const char *fPath=vivaldi_coordinates_file_path;
-            SPRINTF_VIV(filename,128,RES_FILE_NAME,fPath,i);
-            YIELD::platform::auto_File truncatedFile1 = YIELD::platform::Volume().open( filename, O_CREAT|O_TRUNC|O_WRONLY );
-            
-            char resContent[512];
-            memset(resContent,0,512);
-            SPRINTF_VIV(resContent,512, "#MAX_MOV_RAT:%.3f\n#RETRIES:%d\n#RECAL:(%d,%d)\n#CHECK_EVERY:%d\n#UPDATE:%d\n",
-                                        MAX_MOVEMENT_RATIO,
-                                        MAX_RETRIES_FOR_A_REQUEST,
-                                        MIN_RECALCULATION_IN_MS/1000,
-                                        MAX_RECALCULATION_IN_MS/1000,
-                                        CHECK_EVERY_ITERATIONS,
-                                        ITERATIONS_BEFORE_UPDATING);
-            truncatedFile1->write(resContent,strlen(resContent));
-            truncatedFile1->close();
-            // Create/truncate recals file i
-            SPRINTF_VIV(filename,128,RECAL_FILE_NAME,fPath);
-            YIELD::platform::auto_File truncatedFile2 = YIELD::platform::Volume().open( filename, O_CREAT|O_TRUNC|O_WRONLY );
-            truncatedFile2->close(); 
-
-          }
-
-        }
-      }
-      //-------------
-  
       
   		for ( ;; )
   		{
@@ -234,20 +172,18 @@ namespace xtfs_vivaldi
   							org::xtreemfs::interfaces::VivaldiCoordinates random_osd_vivaldi_coordinates;
   							
   							//Send the request and measure the RTT
-                //TOFIX:Output must be LOG_DEBUG
-                get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "xtfs_vivaldi:recalculating against " << random_osd_service->get_uuid();
+                get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtfs_vivaldi:recalculating against " << random_osd_service->get_uuid();
 
   							YIELD::platform::Time start_time;
-  							//osd_proxy->xtreemfs_ping( org::xtreemfs::interfaces::VivaldiCoordinates(), random_osd_vivaldi_coordinates,static_cast<uint64_t>(MAX_REQUEST_TIMEOUT_IN_NS) );
+
                 osd_proxy->xtreemfs_ping( org::xtreemfs::interfaces::VivaldiCoordinates(), random_osd_vivaldi_coordinates );
   							YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
-                get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "xtfs_vivaldi:Ping response received.";
+                get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtfs_vivaldi:ping response received";
                 
                 //Next code is not executed if the ping request times out
                 
                 uint64_t measuredRTT = rtt.as_unix_time_ms();
                 
-                //TOFIX:This bool is useless once the code is evaluated 
                 bool retried = false;
   							// Recalculate coordinates here
                 if( retriesInARow < MAX_RETRIES_FOR_A_REQUEST ){
@@ -286,40 +222,29 @@ namespace xtfs_vivaldi
                 }
                 
                 //Print trace
-                char auxStr[128];
-                SPRINTF_VIV( auxStr,
-                          128,
-                          "%s:%lld(Viv:%.3f) Own:(%.3f,%.3f) lE=%.3f Rem:(%.3f,%.3f) rE=%.3f %s",
-                            retried?"RETRY":"RTT",
-                            static_cast<long long int>(measuredRTT),
-                            own_node.calculateDistance((*own_node.getCoordinates()),random_osd_vivaldi_coordinates),
-                            own_node.getCoordinates()->get_x_coordinate(),
-                            own_node.getCoordinates()->get_y_coordinate(),
-                            own_node.getCoordinates()->get_local_error(),
-                            random_osd_vivaldi_coordinates.get_x_coordinate(),
-                            random_osd_vivaldi_coordinates.get_y_coordinate(),
-                            random_osd_vivaldi_coordinates.get_local_error(),
-                            random_osd_service->get_uuid().data());
+                char auxStr[256];
+                SPRINTF_VIV(  auxStr,
+                              256,
+                              //[RETRY|RTT]:measured_RTT(Viv:vivaldi_distance) Own:local_coordinates lE=local_error Rem:remote_nodes_coordinates rE=remote_nodes_error remote_nodes_uuid 
+                              "%s:%lld(Viv:%.3f) Own:(%.3f,%.3f) lE=%.3f Rem:(%.3f,%.3f) rE=%.3f %s",
+                                retried?"RETRY":"RTT",
+                                static_cast<long long int>(measuredRTT),
+                                own_node.calculateDistance((*own_node.getCoordinates()),random_osd_vivaldi_coordinates),
+                                own_node.getCoordinates()->get_x_coordinate(),
+                                own_node.getCoordinates()->get_y_coordinate(),
+                                own_node.getCoordinates()->get_local_error(),
+                                random_osd_vivaldi_coordinates.get_x_coordinate(),
+                                random_osd_vivaldi_coordinates.get_y_coordinate(),
+                                random_osd_vivaldi_coordinates.get_local_error(),
+                                random_osd_service->get_uuid().data());
                 
-                char filename[128];
-                memset(filename,0,128);
-                const char *fPath=vivaldi_coordinates_file_path;
-                SPRINTF_VIV(filename,128,RECAL_FILE_NAME,fPath);
-                YIELD::platform::auto_File recals_file = YIELD::platform::Volume().open( filename, O_CREAT|O_APPEND|O_WRONLY );
-                if ( recals_file != NULL )
-                {
-                  recals_file->write( auxStr,strlen(auxStr) );
-                  recals_file->close();
-                }else{
-                  get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "xtfs_vivaldi:Impossible to open recals file";
-                }
                 
-                get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << auxStr;
+                get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtfs_vivaldi:" << auxStr;
   
   						}
   					}
   				}else{
-            get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "xtfs_vivaldi:no OSD available";
+            get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtfs_vivaldi:no OSD available";
           }
   			
         }catch ( std::exception& exc ){
@@ -333,29 +258,10 @@ namespace xtfs_vivaldi
             currentRetries.clear();
             retriesInARow = 0;
           }
-          
-          //TOFIX:Remove it!
-          char filename[128];
-          memset(filename,0,128);
-          const char *fPath=vivaldi_coordinates_file_path;
-          SPRINTF_VIV(filename,128,RECAL_FILE_NAME,fPath);
-          YIELD::platform::auto_File recals_file = YIELD::platform::Volume().open( filename, O_CREAT|O_APPEND|O_WRONLY );
-          if ( recals_file != NULL )
-          {
-            char auxStr[128];
-            SPRINTF_VIV( auxStr,128,"TIMEOUT:%s\n",random_osd_service->get_uuid().data()  );
-            recals_file->write( auxStr,strlen(auxStr) );
-            recals_file->close();
-          }else{
-            get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "xtfs_vivaldi:Impossible to open recals file";
-          }
-          //----------------------------
-          
   			}
   
         //Store the new coordinates in a local file
-        //TOFIX:Uncomment once finished
-        //get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "storing coordinates in file:("<<own_node.getCoordinates()->get_x_coordinate()<<","<<own_node.getCoordinates()->get_y_coordinate()<<")";
+        get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtfs_vivaldi:storing coordinates in file:("<<own_node.getCoordinates()->get_x_coordinate()<<","<<own_node.getCoordinates()->get_y_coordinate()<<")";
         
   			vivaldi_coordinates_file = YIELD::platform::Volume().open( vivaldi_coordinates_file_path, O_CREAT|O_TRUNC|O_WRONLY );
   			if ( vivaldi_coordinates_file != NULL )
@@ -368,25 +274,11 @@ namespace xtfs_vivaldi
     
         //Sleep until the next iteration
         uint64_t sleep_in_ms = MIN_RECALCULATION_IN_MS + ( (static_cast<double>(std::rand())/(RAND_MAX-1)) * (MAX_RECALCULATION_IN_MS - MIN_RECALCULATION_IN_MS) );
-        get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "xtfs_vivaldi:sleeping during "<<sleep_in_ms<<" ms.";
+        get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtfs_vivaldi:sleeping during "<<sleep_in_ms<<" ms.";
       	YIELD::platform::Thread::sleep( sleep_in_ms * NS_IN_MS );
         
         vivaldiIterations = (vivaldiIterations+1)%LONG_MAX;
-        
-        //Remove this code after evaluating the results
-        if( EVALUATION_ENABLED && (vivaldiIterations%CHECK_EVERY_ITERATIONS) == 0){
-          
-          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "**EVALUATING(its.:"<<vivaldiIterations<<")**";
-          for(int i=0;i<NUMBER_OF_FILES;i++){
-            char filename[128];
-            memset(filename,0,128);
-            const char *fPath=vivaldi_coordinates_file_path;
-            SPRINTF_VIV(filename,128,RES_FILE_NAME,fPath,i);
-            //executeOneEvaluation( testingSets[i], own_node,filename); The test will run allways with the whole sample
-            executeOneEvaluation( osd_services, own_node,filename);
-          }
-        }
-        //------------------
+
   		}
     }
     
@@ -408,144 +300,10 @@ namespace xtfs_vivaldi
           }
         }
       }catch( std::exception ex ){
-        get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "Impossible to update known OSDs.";
+        get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "xtfs_vivaldi:Impossible to update known OSDs";
       }
  
     }
-    
-    
-    
-    
-    
-    /********************************************
-     * Only to evaluate the results. These methods will be removed
-     ********************************************/
-     
-     
-    void composeTestingSet(org::xtreemfs::interfaces::ServiceSet &testingSet,org::xtreemfs::interfaces::ServiceSet knownOSDs,int replicas_per_file){
-
-      org::xtreemfs::interfaces::ServiceSet::iterator it;
-      for(int i=0;i<replicas_per_file;i++){
-
-        int chosenIndex = static_cast<int>( (static_cast<double>(std::rand())/(RAND_MAX-1))*knownOSDs.size());
-        it = knownOSDs.begin() + chosenIndex;
-        
-        testingSet.push_back(*it);
-        
-        knownOSDs.erase(it);
-        
-        if(knownOSDs.empty()){
-          break;
-        }
-      }
-    }
-    
-    /*
-     * Evaluates the position of the node according to the RTTs measured against a set of OSDs and
-     * its vivaldi distances to them.Moreover, it stores the results in a local file.
-     */ 
-    void executeOneEvaluation(const org::xtreemfs::interfaces::ServiceSet &osds,VivaldiNode &own_node,const char *fileName){
-  
-      if ( !osds.empty() )
-      {
-        //Create arrays
-        std::vector<uint64_t> rtts(osds.get_size());
-        std::vector<std::string> uuids(osds.get_size());
-
-        std::vector<org::xtreemfs::interfaces::VivaldiCoordinates> remoteCoordinates(osds.get_size());
-
-        for(size_t i=0;i<osds.get_size();i++){
-
-          const org::xtreemfs::interfaces::Service& one_osd = osds[i];
-          
-          uuids[i] = one_osd.get_uuid();
-          
-          try{                    
-          
-            yidl::runtime::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> one_osd_address_mappings = dir_proxy->getAddressMappingsFromUUID( one_osd.get_uuid() );
-          
-            //Several mappings for the same UUID
-            for ( org::xtreemfs::interfaces::AddressMappingSet::iterator one_osd_address_mapping_i = one_osd_address_mappings->begin(); one_osd_address_mapping_i != one_osd_address_mappings->end(); one_osd_address_mapping_i++ )
-            {
-              if ( ( *one_osd_address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
-              {
-                auto_OSDProxy osd_proxy = OSDProxy::create( ( *one_osd_address_mapping_i ).get_uri(), get_proxy_flags(), get_log(), get_operation_timeout() );
-  
-                try{
-                  //The sent coordinates are irrelevant
-                  org::xtreemfs::interfaces::VivaldiCoordinates ownCoords;
-                  YIELD::platform::Time start_time;
-                  //TOFIX:Is this getting blocked indefinitely?
-                  get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "Requesting:" << one_osd.get_uuid();
-                  //osd_proxy->xtreemfs_ping(ownCoords , remoteCoordinates[i],static_cast<uint64_t>(MAX_REQUEST_TIMEOUT_IN_NS));
-                  osd_proxy->xtreemfs_ping(ownCoords , remoteCoordinates[i]);
-                  YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
-                  get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "Ping response received.";
-                  
-                  rtts[i] = rtt.as_unix_time_ms();
-                  if(rtts[i]==0) rtts[i]=1;
-                  
-                }catch( std::exception er ){
-                  rtts[i] = 0;
-                  //std::cout<<"ExceptionResponse:"<< er.what() <<":::" << er.get_errno()<<"--->"<< er.get_type_name()<<":"<<"\n";
-                  //continue;
-                }
-              }
-            }
-          }catch(std::exception ex){
-            get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "Impossible to determine addressMappings";
-          }
-        }        
-        //Store and manage the observed results.
-        time_t rawTime;
-        time(&rawTime);
-        struct tm *tmStruct = localtime(&rawTime);
-        tmStruct->tm_year += 1900;
-        tmStruct->tm_mon += 1;
-        
-        int rightMeasures = 0;
-        for(size_t i=0;i<osds.get_size();i++)
-        {
-          if(rtts[i]>0){ rightMeasures++; }
-        }
-        
-        char auxStr[256];
-        
-        
-        std::string strWr("");
-        strWr += "CLIENT";
-        SPRINTF_VIV(auxStr,256," %d",rightMeasures);
-        strWr += auxStr;
-        SPRINTF_VIV(auxStr,256," %d/%d/%d-%d:%d:%d", tmStruct->tm_mday,tmStruct->tm_mon,tmStruct->tm_year, tmStruct->tm_hour, tmStruct->tm_min,tmStruct->tm_sec);
-        strWr += auxStr;
-        org::xtreemfs::interfaces::VivaldiCoordinates *localCoords = own_node.getCoordinates();
-        SPRINTF_VIV(auxStr,256," Coordinates:%.3f/%.3f/%.3f\n",localCoords->get_x_coordinate(),localCoords->get_y_coordinate(),localCoords->get_local_error());
-        strWr += auxStr;
-        
-        for(size_t i=0;i<osds.get_size();i++)
-        {
-          if(rtts[i]>0)
-          {
-            double distance = own_node.calculateDistance((*localCoords),remoteCoordinates[i]);
-            SPRINTF_VIV(auxStr,256,"%s %lld\t%.3f\t%.3f/%.3f/%.3f\n",uuids[i].data(), static_cast<long long int>(rtts[i]),distance,remoteCoordinates[i].get_x_coordinate(),remoteCoordinates[i].get_y_coordinate(),remoteCoordinates[i].get_local_error());
-            strWr += auxStr;
-          }
-        }
-        
-        std::cout << strWr;
-
-        YIELD::platform::auto_File results_file = YIELD::platform::Volume().open( fileName, O_CREAT|O_APPEND|O_WRONLY );
-        if ( results_file != NULL )
-        {
-          results_file->write( strWr.data(),strWr.length());
-          results_file->close();
-        }else{
-          get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << "Impossible to open results file";
-        }
-
-      }
-    }
-    
   };
 };
 
