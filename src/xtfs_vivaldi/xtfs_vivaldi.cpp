@@ -238,8 +238,8 @@ namespace xtfs_vivaldi
                 get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "xtfs_vivaldi:recalculating against " << random_osd_service->get_uuid();
 
   							YIELD::platform::Time start_time;
-  							osd_proxy->xtreemfs_ping( org::xtreemfs::interfaces::VivaldiCoordinates(), random_osd_vivaldi_coordinates,static_cast<uint64_t>(MAX_REQUEST_TIMEOUT_IN_NS) );
-                //osd_proxy->xtreemfs_ping( org::xtreemfs::interfaces::VivaldiCoordinates(), random_osd_vivaldi_coordinates );
+  							//osd_proxy->xtreemfs_ping( org::xtreemfs::interfaces::VivaldiCoordinates(), random_osd_vivaldi_coordinates,static_cast<uint64_t>(MAX_REQUEST_TIMEOUT_IN_NS) );
+                osd_proxy->xtreemfs_ping( org::xtreemfs::interfaces::VivaldiCoordinates(), random_osd_vivaldi_coordinates );
   							YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
                 get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "xtfs_vivaldi:Ping response received.";
                 
@@ -477,7 +477,8 @@ namespace xtfs_vivaldi
                   YIELD::platform::Time start_time;
                   //TOFIX:Is this getting blocked indefinitely?
                   get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "Requesting:" << one_osd.get_uuid();
-                  osd_proxy->xtreemfs_ping(ownCoords , remoteCoordinates[i],static_cast<uint64_t>(MAX_REQUEST_TIMEOUT_IN_NS));
+                  //osd_proxy->xtreemfs_ping(ownCoords , remoteCoordinates[i],static_cast<uint64_t>(MAX_REQUEST_TIMEOUT_IN_NS));
+                  osd_proxy->xtreemfs_ping(ownCoords , remoteCoordinates[i]);
                   YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
                   get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << "Ping response received.";
                   
