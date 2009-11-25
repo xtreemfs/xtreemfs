@@ -113,6 +113,7 @@ public class xtfs_cleanup_osd {
             ONCRPCServiceURL dirURL = options.get("dir").urlValue;
             password = (options.get("p").stringValue != null) ? options.get("p").stringValue : ""; 
             boolean useSSL = false;
+            boolean gridSSL = false;
             String serviceCredsFile = null;
             String serviceCredsPass = null;
             String trustedCAsFile = null;
@@ -128,13 +129,17 @@ public class xtfs_cleanup_osd {
             }
             
             // parse security info if protocol is 'https'
-            if (dirURL != null && "oncrpcs".equals(dirURL.getProtocol())) {
+            if (dirURL != null && (Constants.ONCRPCS_SCHEME.equals(dirURL.getProtocol()) || Constants.ONCRPCG_SCHEME.equals(dirURL.getProtocol())) ) {
                 useSSL = true;
                 serviceCredsFile = options.get("c").stringValue;
                 serviceCredsPass = options.get("cpass").stringValue;
                 trustedCAsFile = options.get("t").stringValue;
                 trustedCAsPass = options.get("tpass").stringValue;
+                if (Constants.ONCRPCG_SCHEME.equals(dirURL.getProtocol())) {
+                    gridSSL = true;
+                }
             }
+
             
             // read default settings
             if (dirURL == null) {
@@ -156,7 +161,7 @@ public class xtfs_cleanup_osd {
 
             SSLOptions sslOptions = useSSL ? new SSLOptions(new FileInputStream(serviceCredsFile),
                     serviceCredsPass, SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile),
-                    trustedCAsPass, SSLOptions.JKS_CONTAINER, false) : null;
+                    trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL) : null;
             
             if (remove && restore) error("Zombies cannot be deleted and restored at the same time!");
             

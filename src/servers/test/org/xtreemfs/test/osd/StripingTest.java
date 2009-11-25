@@ -157,7 +157,7 @@ public class StripingTest extends TestCase {
         
         capSecret = osdCfg1.getCapabilitySecret();
 
-        sp = StripingPolicyImpl.getPolicy(new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, KB, 3)));
+        sp = StripingPolicyImpl.getPolicy(new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, KB, 3)),0);
         dirConfig = SetupUtils.createDIRConfig();
 
     }

@@ -288,7 +288,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                 }
                 con.connectFailed();
                 for (ONCRPCRequest rq : con.getSendQueue()) {
-                    rq.getListener().requestFailed(rq, new IOException("server not reachable", ex));
+                    rq.getListener().requestFailed(rq, new IOException("server '"+con.getEndpoint()+"' not reachable", ex));
                 }
                 con.getSendQueue().clear();
             }
@@ -299,7 +299,7 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             }
             synchronized (con) {
                 for (ONCRPCRequest rq : con.getSendQueue()) {
-                    rq.getListener().requestFailed(rq, new IOException("server not reachable"));
+                    rq.getListener().requestFailed(rq, new IOException("server '"+con.getEndpoint()+"' not reachable"));
                 }
                 con.getSendQueue().clear();
             }

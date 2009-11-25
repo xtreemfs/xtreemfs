@@ -31,6 +31,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
+import java.util.Map;
+import java.util.Stack;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -66,22 +68,21 @@ public abstract class StorageLayout {
 
         // check the data version
         File versionMetaFile = new File(storageDir, VERSION_FILENAME);
-
-        if (!versionMetaFile.exists()) {
-            FileWriter out = new FileWriter(versionMetaFile);
-            out.write(Long.toString(VersionManagement.getOsdDataVersion()));
-            out.close();
-        }
-
-        else {
-            BufferedReader in = new BufferedReader(new FileReader(versionMetaFile));
-            String version = in.readLine();
+        if (versionMetaFile.exists()) {
+            FileReader in = new FileReader(versionMetaFile);
+            char[] text = new char[(int)versionMetaFile.length()];
+            in.read(text);
             in.close();
-
-            if (!version.equals(Long.toString(VersionManagement.getOsdDataVersion())))
-                throw new IOException("wrong OSD data version: " + version
-                    + ", required version is: " + VersionManagement.getOsdDataVersion());
+            int versionOnDisk = Integer.valueOf(new String(text));
+            if (!isCompatibleVersion(versionOnDisk)) {
+                throw new IOException("the OSD storage layout used to create the data on disk ("+versionOnDisk+
+                        ") is not compatible with the storage layout loaded: "+this.getClass().getSimpleName());
+            }
         }
+
+        FileWriter out = new FileWriter(versionMetaFile);
+        out.write(Integer.toString(getLayoutVersionTag()));
+        out.close();
     }
 
     /**
@@ -146,11 +147,11 @@ public abstract class StorageLayout {
      * @return a buffer containing the object, or a <code>null</code> if the
      *         object does not exist
      */
-    public abstract ObjectInformation readObject(String fileId, long objNo, int version,
+    public abstract ObjectInformation readObject(String fileId, long objNo, long version,
 	    long checksum, StripingPolicyImpl sp)
 	    throws IOException;
 
-    public abstract ObjectInformation readObject(String fileId, long objNo, int objVer,
+    public abstract ObjectInformation readObject(String fileId, long objNo, long objVer,
             long objChksm, StripingPolicyImpl sp, int offset, int length) throws IOException;
 
     /**
@@ -188,7 +189,7 @@ public abstract class StorageLayout {
      * @throws java.io.IOException
      *             when the object cannot be written
      */
-    public abstract void writeObject(String fileId, long objNo, ReusableBuffer data, int version,
+    public abstract void writeObject(String fileId, long objNo, ReusableBuffer data, long version,
         int offset, long checksum, StripingPolicyImpl sp, boolean sync) throws IOException;
 
     /**
@@ -213,7 +214,7 @@ public abstract class StorageLayout {
      *             if an I/O error occured
      */
     public abstract long createChecksum(String fileId, long objNo, ReusableBuffer data,
-        int version, long currentChecksum) throws IOException;
+        long version, long currentChecksum) throws IOException;
 
     /**
      * Deletes all objects of a file.
@@ -247,7 +248,7 @@ public abstract class StorageLayout {
      * @throws IOException
      *             if an error occurred while deleting the object
      */
-    public abstract void deleteObject(String fileId, long objNo, int version) throws IOException;
+    public abstract void deleteObject(String fileId, long objNo, long version, StripingPolicyImpl sp) throws IOException;
 
     /**
      * Creates and stores a zero-padded object.
@@ -268,7 +269,7 @@ public abstract class StorageLayout {
      *             if an error occurred when storing the object
      */
     public abstract long createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp,
-        int version, long size) throws IOException;
+        long version, long size) throws IOException;
 
     /**
      * Persistently stores a new truncate epoch for a file.
@@ -300,4 +301,36 @@ public abstract class StorageLayout {
      * @return null, if file does not exist, otherwise objectList
      */
     public abstract ObjectSet getObjectSet(String fileId);
+
+    public abstract FileList getFileList(FileList l, int maxNumEntries);
+
+    public abstract int      getLayoutVersionTag();
+
+    public abstract boolean  isCompatibleVersion(int layoutVersionTag);
+
+    public static final class FileList {
+        // directories to scan
+        final Stack<String>         status;
+
+        // fileName->fileDetails
+        final Map<String, FileData> files;
+
+        boolean                     hasMore;
+
+        public FileList(Stack<String> status, Map<String, FileData> files) {
+            this.status = status;
+            this.files = files;
+        }
+    }
+
+    public static final class FileData {
+        final long size;
+
+        final int  objectSize;
+
+        FileData(long size, int objectSize) {
+            this.size = size;
+            this.objectSize = objectSize;
+        }
+    }
 }

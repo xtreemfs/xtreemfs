@@ -35,6 +35,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import org.xtreemfs.common.TimeSync;
@@ -45,6 +47,7 @@ import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
+import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -273,7 +276,11 @@ public class xtfs_repl {
                 System.exit(1);
             }
             this.file = new RandomAccessFile("r", mrcAddress, volume + volPath, client, credentials);
-            xLoc = new XLocations(file.getCredentials().getXlocs());
+            try {
+                xLoc = new XLocations(file.getCredentials().getXlocs(), null);
+            } catch (InvalidXLocationsException ex) {
+                throw new IOException(ex);
+            }
         } else {
             if (!f.exists()) {
                 System.err.println("'" + relPath + "' does not exist");

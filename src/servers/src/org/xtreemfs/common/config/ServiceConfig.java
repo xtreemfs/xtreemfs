@@ -67,7 +67,9 @@ public class ServiceConfig extends Config {
     
     protected String      hostname;
 
-    private boolean    useGRIDSSLmode;
+    protected boolean    useGRIDSSLmode;
+
+    protected int         waitForDIR;
     
     public ServiceConfig() {
         super();
@@ -118,6 +120,8 @@ public class ServiceConfig extends Config {
         if (!this.useSSL && this.useGRIDSSLmode) {
             throw new RuntimeException("ssl must be enabled to use the grid_ssl mode. Please make sure to set ssl.enabled = true and to configure all SSL options.");
         }
+
+        this.waitForDIR = this.readOptionalInt("startup.wait_for_dir", 30);
     }
     
     protected int readDebugLevel() {
@@ -249,6 +253,10 @@ public class ServiceConfig extends Config {
      */
     public boolean isGRIDSSLmode() {
         return useGRIDSSLmode;
+    }
+
+    public int getWaitForDIR() {
+        return waitForDIR;
     }
 
     public String getURLScheme() {

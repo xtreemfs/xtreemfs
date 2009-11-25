@@ -43,25 +43,24 @@ public class XLocations {
 
     private List<Replica> replicas;
 
-    public XLocations(XLocSet xloc) {
+    public XLocations(XLocSet xloc, ServiceUUID localOSD) throws InvalidXLocationsException {
         this.xloc = xloc;
         replicas = new ArrayList<Replica>(xloc.getReplicas().size());
         for (org.xtreemfs.interfaces.Replica r : xloc.getReplicas()) {
-            replicas.add(new Replica(r));
+            replicas.add(new Replica(r,null));
         }
-    }
-
-    public XLocations(XLocSet xloc, ServiceUUID localOSD) throws InvalidXLocationsException {
-        this(xloc);
-        for (Replica r : replicas) {
-            if (r.getOSDs().contains(localOSD)) {
-                localReplica = r;
-                break;
+        if (localOSD != null) {
+            for (Replica r : replicas) {
+                if (r.getOSDs().contains(localOSD)) {
+                    localReplica = r;
+                    break;
+                }
             }
+            if (localReplica == null)
+                throw new InvalidXLocationsException("local OSD (" + localOSD + ") is not in any replica in XLocations list: " + xloc);
         }
-        if (localReplica == null)
-            throw new InvalidXLocationsException("local OSD (" + localOSD + ") is not in any replica in XLocations list: " + xloc);
     }
+   
 
     public XLocSet getXLocSet() {
         return xloc;

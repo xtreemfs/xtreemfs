@@ -36,8 +36,8 @@ public class RAID0Impl extends StripingPolicyImpl {
 
     protected final int stripe_size_in_bytes;
 
-    RAID0Impl(Replica replica) {
-        super(replica);
+    RAID0Impl(Replica replica, int relOsdPosition) {
+        super(replica,relOsdPosition);
         stripe_size_in_bytes = policy.getStripe_size() * 1024;
         if (stripe_size_in_bytes <= 0)
             throw new IllegalArgumentException("size must be > 0");
@@ -113,5 +113,15 @@ public class RAID0Impl extends StripingPolicyImpl {
                 // nothing to do
             }
         };
+    }
+
+    @Override
+    public long getLocalObjectNumber(long objectNo) {
+        return getRow(objectNo);
+    }
+
+    @Override
+    public long getGloablObjectNumber(long osdLocalObjNo) {
+        return osdLocalObjNo*getWidth()+this.relOsdPosition;
     }
 }

@@ -116,6 +116,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.xtreemfs.osd.operations.VivaldiPingOperation;
+import org.xtreemfs.osd.storage.SingleFileStorageLayout;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     UDPReceiverInterface {
@@ -249,7 +250,14 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         // --------------------------
         
         MetadataCache metadataCache = new MetadataCache();
-        StorageLayout storageLayout = new HashStorageLayout(config, metadataCache);
+        StorageLayout storageLayout = null;
+        if (config.getStorageLayout().equalsIgnoreCase(HashStorageLayout.class.getSimpleName())) {
+            storageLayout = new HashStorageLayout(config, metadataCache);
+        } else if (config.getStorageLayout().equalsIgnoreCase(SingleFileStorageLayout.class.getSimpleName())) {
+            storageLayout = new SingleFileStorageLayout(config, metadataCache);
+        } else {
+            throw new RuntimeException("unknown storage layout in config file: "+config.getStorageLayout());
+        }
         
         udpCom = new UDPCommunicator(config.getPort(), this);
         udpCom.setLifeCycleListener(this);
@@ -274,6 +282,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         mrcClient = new MRCClient(rpcClient, null);
         osdClient = new OSDClient(rpcClient);
         osdClientForReplication = new OSDClient(rpcClientForReplication);
+
+        HeartbeatThread.waitForDIR(config.getDirectoryService(),config.getWaitForDIR());
 
         TimeSync.initialize(dirClient, config.getRemoteTimeSync(), config.getLocalClockRenew());
         UUIDResolver.start(dirClient, 10 * 1000, 600 * 1000);
@@ -377,7 +387,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         vStage = new VivaldiStage(this);
         vStage.setLifeCycleListener(this);
         
-        cThread = new CleanupThread(this, (HashStorageLayout) storageLayout);
+        cThread = new CleanupThread(this, storageLayout);
         cThread.setLifeCycleListener(this);
         
         if (Logging.isDebug())

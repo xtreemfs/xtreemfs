@@ -23,8 +23,8 @@ import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.DeletionStage;
 import org.xtreemfs.osd.stages.PreprocStage.DeleteOnCloseCallback;
-import org.xtreemfs.osd.storage.HashStorageLayout.FileData;
-import org.xtreemfs.osd.storage.HashStorageLayout.FileList;
+import org.xtreemfs.osd.storage.StorageLayout.FileData;
+import org.xtreemfs.osd.storage.StorageLayout.FileList;
 
 /**
  *
@@ -71,7 +71,7 @@ public class CleanupThread extends LifeCycleThread {
 
     private final StringSet results;
 
-    private final HashStorageLayout layout;
+    private final StorageLayout layout;
 
     private volatile long filesChecked;
 
@@ -83,7 +83,7 @@ public class CleanupThread extends LifeCycleThread {
     
     final ServiceUUID localUUID;
 
-    public CleanupThread(OSDRequestDispatcher master, HashStorageLayout layout) {
+    public CleanupThread(OSDRequestDispatcher master, StorageLayout layout) {
         super("CleanupThr");
         this.zombies = new AtomicLong(0L);
         this.master = master;

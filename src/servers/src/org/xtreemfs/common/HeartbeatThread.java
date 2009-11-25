@@ -28,11 +28,16 @@
 package org.xtreemfs.common;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
@@ -311,5 +316,41 @@ public class HeartbeatThread extends LifeCycleThread {
         } catch (Exception ex) {
             notifyCrashed(ex);
         }
+    }
+
+    public static void waitForDIR(InetSocketAddress dirAddress, int maxWait_s) throws IOException {
+        //check if we can connect to DIR and wait if necessary
+        final long tStart = System.currentTimeMillis();
+        final long maxWait = maxWait_s*1000;
+        int  wait = 1;
+
+        do {
+
+            try {
+                Socket s = new Socket();
+                s.connect(dirAddress,2000);
+                s.close();
+                break;
+            } catch (UnknownHostException ex) {
+                throw new IOException("Initialization failed: "+ex);
+            } catch (IOException ex) {
+                //wait for next try
+                Logging.logMessage(Logging.LEVEL_WARN, null,"cannot connect to DIR ("+ex+"), waiting "+wait+"s");
+            } catch (Exception ex) {
+                //abort
+                throw new IOException("Initialization failed: "+ex);
+            }
+            long now = System.currentTimeMillis();
+            if (now >= tStart+maxWait) {
+                throw new IOException("Initialization failed: XtreemFS DIR @ "+dirAddress+" does not respond.");
+            }
+            try {
+                Thread.sleep(wait * 1000);
+            } catch (InterruptedException ex) {
+                throw new IOException("Initialization failed: "+ex);
+            }
+            wait += 1;
+        } while (true);
+        Logging.logMessage(Logging.LEVEL_INFO, null,"XtreemFS DIR @ "+dirAddress+" ok");
     }
 }

@@ -64,7 +64,7 @@ public class LocationsCacheTest extends TestCase {
      */
     public void testUpdate() throws Exception {
 
-        XLocations loc = new XLocations(new XLocSet(0, new ReplicaSet(), "", 1));
+        XLocations loc = new XLocations(new XLocSet(0, new ReplicaSet(), "", 1),null);
 
         for (int i = 0; i < 3 * maximumSize; i++) {
             cache.update("F" + i, loc);
@@ -86,8 +86,8 @@ public class LocationsCacheTest extends TestCase {
      */
     public void testGetVersion() throws Exception {
 
-        XLocations loc0 = new XLocations(new XLocSet(0, new ReplicaSet(), "", 1));
-        XLocations loc1 = new XLocations(new XLocSet(0, new ReplicaSet(), "", 2));
+        XLocations loc0 = new XLocations(new XLocSet(0, new ReplicaSet(), "", 1),null);
+        XLocations loc1 = new XLocations(new XLocSet(0, new ReplicaSet(), "", 2),null);
         String fileId = "F0";
 
         // It asks the version number of an inexistent entry
@@ -107,7 +107,7 @@ public class LocationsCacheTest extends TestCase {
      */
     public void testGetLocations() throws Exception {
 
-        XLocations loc = new XLocations(new XLocSet(0, new ReplicaSet(), "", 1));
+        XLocations loc = new XLocations(new XLocSet(0, new ReplicaSet(), "", 1),null);
 
         // It fills the cache
         for (int i = 0; i < maximumSize; i++) {

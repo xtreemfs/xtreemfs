@@ -89,6 +89,7 @@ public class OSD {
                     Logging.logMessage(Logging.LEVEL_ERROR, config.getUUID(), "could not shutdown MRC: ");
                     Logging.logError(Logging.LEVEL_ERROR, config.getUUID(), e);
                 }
+            System.exit(1);
         }
     }
     

@@ -39,15 +39,20 @@ public class Replica {
 
     StripingPolicyImpl stripingPolicy;
 
+    ServiceUUID localOSD;
+
     org.xtreemfs.interfaces.Replica replica;
 
-    public Replica(org.xtreemfs.interfaces.Replica replica) {
+    public Replica(org.xtreemfs.interfaces.Replica replica, ServiceUUID localOSD) {
         this.replica = replica;
+        this.localOSD = localOSD;
     }
 
     public StripingPolicyImpl getStripingPolicy() {
-        if (stripingPolicy == null)
-            stripingPolicy = StripingPolicyImpl.getPolicy(replica);
+        if (stripingPolicy == null) {
+            int relOsdPosition = (localOSD == null) ? -1 : osds.indexOf(localOSD);
+            stripingPolicy = StripingPolicyImpl.getPolicy(replica,relOsdPosition);
+        }
         return stripingPolicy;
     }
 

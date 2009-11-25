@@ -109,7 +109,7 @@ public class LocationsTest extends TestCase {
         int flags = 0;
         
         // set none
-        r = new org.xtreemfs.common.xloc.Replica(new Replica(osdList, flags, stripingPolicy));
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(osdList, flags, stripingPolicy),null);
         assertFalse(r.isComplete());
         assertTrue(r.isPartialReplica());
         assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
@@ -117,7 +117,7 @@ public class LocationsTest extends TestCase {
 
         // set complete
         flags = ReplicationFlags.setReplicaIsComplete(0);
-        r = new org.xtreemfs.common.xloc.Replica(new Replica(osdList, flags, stripingPolicy));
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(osdList, flags, stripingPolicy),null);
         assertTrue(r.isComplete());
         assertTrue(r.isPartialReplica());
         assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
@@ -125,7 +125,7 @@ public class LocationsTest extends TestCase {
 
         // set partial replica and RandomStrategy
         flags = ReplicationFlags.setPartialReplica(ReplicationFlags.setSequentialPrefetchingStrategy(0));
-        r = new org.xtreemfs.common.xloc.Replica(new Replica(osdList, flags, stripingPolicy));
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(osdList, flags, stripingPolicy),null);
         assertFalse(r.isComplete());
         assertTrue(r.isPartialReplica());
         assertFalse(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));
@@ -133,7 +133,7 @@ public class LocationsTest extends TestCase {
 
         // set full replica and RandomStrategy
         flags = ReplicationFlags.setRandomStrategy(ReplicationFlags.setFullReplica(0));
-        r = new org.xtreemfs.common.xloc.Replica(new Replica(osdList, flags, stripingPolicy));
+        r = new org.xtreemfs.common.xloc.Replica(new Replica(osdList, flags, stripingPolicy),null);
         assertFalse(r.isComplete());
         assertFalse(r.isPartialReplica());
         assertTrue(ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()));

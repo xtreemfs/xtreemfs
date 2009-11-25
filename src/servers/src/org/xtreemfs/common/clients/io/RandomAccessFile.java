@@ -31,6 +31,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
@@ -39,6 +41,7 @@ import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.monitoring.Monitoring;
 import org.xtreemfs.common.monitoring.NumberMonitoring;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.xloc.InvalidXLocationsException;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
@@ -201,8 +204,12 @@ public class RandomAccessFile implements ObjectStore {
         
         // all replicas have the same striping policy (more precisely the same
         // stripesize) at the moment
-        stripingPolicy = StripingPolicyImpl.getPolicy(fileCredentials.getXlocs().getReplicas().get(0));
-        this.xLoc = new XLocations(fileCredentials.getXlocs());
+        stripingPolicy = StripingPolicyImpl.getPolicy(fileCredentials.getXlocs().getReplicas().get(0),0);
+        try {
+            this.xLoc = new XLocations(fileCredentials.getXlocs(), null);
+        } catch (InvalidXLocationsException ex) {
+            //ignore
+        }
         
         // always use first replica at beginning (original order)
         replicaOrder = this.replicaSelectionPolicy.getReplicaOrder(xLoc.getReplicas());
@@ -891,13 +898,15 @@ public class RandomAccessFile implements ObjectStore {
      */
     private void forceFileCredentialsUpdate(int mode) throws ONCRPCException, IOException,
         InterruptedException {
-        RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, pathName,
-            FileAccessManager.O_CREAT, mode, 0, new VivaldiCoordinates());
-        fileCredentials = r.get();
-        r.freeBuffers();
-        
-        xLoc = new XLocations(fileCredentials.getXlocs());
-        isReadOnly = fileCredentials.getXlocs().getReplica_update_policy().equals(Constants.REPL_UPDATE_PC_RONLY);
+        try {
+            RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, pathName, FileAccessManager.O_CREAT, mode, 0, new VivaldiCoordinates());
+            fileCredentials = r.get();
+            r.freeBuffers();
+            xLoc = new XLocations(fileCredentials.getXlocs(), null);
+            isReadOnly = fileCredentials.getXlocs().getReplica_update_policy().equals(Constants.REPL_UPDATE_PC_RONLY);
+        } catch (InvalidXLocationsException ex) {
+            throw new IOException(ex);
+        }
     }
     
     public void forceFileSize(long newFileSize) throws IOException {

@@ -297,6 +297,8 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public void startup() {
         
         try {
+            HeartbeatThread.waitForDIR(config.getDirectoryService(),config.getWaitForDIR());
+
             TimeSync.initializeLocal(config.getRemoteTimeSync(), config.getLocalClockRenew());
             
             clientStage.start();

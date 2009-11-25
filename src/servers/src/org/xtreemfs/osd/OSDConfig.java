@@ -70,6 +70,8 @@ public class OSDConfig extends ServiceConfig {
     private boolean           ignoreCaps;
 
     private Map<String,String> customParams;
+
+    private String            storageLayout;
     
     /** Creates a new instance of OSDConfig */
     public OSDConfig(String filename) throws IOException {
@@ -109,6 +111,8 @@ public class OSDConfig extends ServiceConfig {
         this.capabilitySecret = this.readRequiredString("capability_secret");
 
         this.ignoreCaps = this.readOptionalBoolean("ignore_capabilities", false);
+
+        this.storageLayout = this.readOptionalString("storage_layout", "HashStorageLayout");
 
         this.customParams = new HashMap();
         for (String propName : this.props.stringPropertyNames()) {
@@ -190,6 +194,13 @@ public class OSDConfig extends ServiceConfig {
      */
     public Map<String, String> getCustomParams() {
         return customParams;
+    }
+
+    /**
+     * @return the storageLayout
+     */
+    public String getStorageLayout() {
+        return storageLayout;
     }
     
 }

@@ -34,7 +34,7 @@ import java.util.Map;
  */
 public class FileInfo {
 
-    private Map<Long, Integer> objVersions;
+    private Map<Long, Long> objVersions;
 
     private Map<Long, Long>  objChecksums;
 
@@ -50,11 +50,11 @@ public class FileInfo {
 
     /** Creates a new instance of FileInfo */
     public FileInfo() {
-        objVersions = new HashMap<Long, Integer>();
+        objVersions = new HashMap<Long, Long>();
         objChecksums = new HashMap<Long, Long>();
     }
 
-    public Map<Long, Integer> getObjVersions() {
+    public Map<Long, Long> getObjVersions() {
         return objVersions;
     }
 
@@ -78,8 +78,8 @@ public class FileInfo {
         this.lastObjectNumber = lastObjectNumber;
     }
 
-    public int getObjectVersion(long objId) {
-        Integer v = objVersions.get(objId);
+    public long getObjectVersion(long objId) {
+        Long v = objVersions.get(objId);
         return (v == null) ? 0 : v;
     }
 

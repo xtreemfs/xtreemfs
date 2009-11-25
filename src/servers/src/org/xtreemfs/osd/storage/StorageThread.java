@@ -237,7 +237,7 @@ public class StorageThread extends Stage {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "READ: %s-%d offset=%d, length=%d", fileId, objNo, offset, length);
             }
             
-            int objVer = fi.getObjectVersion(objNo);
+            long objVer = fi.getObjectVersion(objNo);
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "getting objVer %d", objVer);
             }
@@ -339,11 +339,11 @@ public class StorageThread extends Stage {
             }
             
             // determine obj version to write
-            int currentV = fi.getObjectVersion(objNo);
+            long currentV = fi.getObjectVersion(objNo);
             if (currentV == 0) {
                 currentV++;
             }
-            int nextV = currentV;
+            long nextV = currentV;
             
             assert (data != null);
             
@@ -625,8 +625,8 @@ public class StorageThread extends Stage {
                 truncateObject(fileId, newLastObject, sp, newObjSize, relOsdId);
             } else if (rowObj > newLastObject) {
                 // delete objects
-                final int v = fi.getObjectVersion(rowObj);
-                layout.deleteObject(fileId, rowObj, v);
+                final long v = fi.getObjectVersion(rowObj);
+                layout.deleteObject(fileId, rowObj, v,sp);
                 fi.deleteObject(rowObj);
             }
         }
@@ -634,7 +634,7 @@ public class StorageThread extends Stage {
         // make sure that last objects exist
         for (long obj = newLastObject - 1; obj > newLastObject - sp.getWidth(); obj--) {
             if (obj > 0 && sp.isLocalObject(obj, relOsdId)) {
-                int v = fi.getObjectVersion(obj);
+                long v = fi.getObjectVersion(obj);
                 if (v == 0) {
                     // does not exist
                     createPaddingObject(fileId, obj, sp, 1, sp.getStripeSizeForObject(obj), fi);
@@ -674,7 +674,7 @@ public class StorageThread extends Stage {
             // make sure that last objects exist
             for (long obj = newLastObject - 1; obj > newLastObject - sp.getWidth(); obj--) {
                 if (obj > 0 && sp.isLocalObject(obj, relOsdId)) {
-                    int v = fi.getObjectVersion(obj);
+                    long v = fi.getObjectVersion(obj);
                     if (v == 0) {
                         // does not exist
                         createPaddingObject(fileId, obj, sp, 1, sp.getStripeSizeForObject(obj), fi);
@@ -698,7 +698,7 @@ public class StorageThread extends Stage {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "truncate object to %d", newSize);
         
         final FileInfo fi = layout.getFileInfo(sp, fileId);
-        final int version = fi.getObjectVersion(objNo);
+        final long version = fi.getObjectVersion(objNo);
         final long checksum = fi.getObjectChecksum(objNo);
         
         ObjectInformation obj = layout.readObject(fileId, objNo, version, checksum, sp);
@@ -752,7 +752,7 @@ public class StorageThread extends Stage {
         fi.getObjChecksums().put(objNo, newChecksum);
     }
     
-    private void createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, int version,
+    private void createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, long version,
         long size, FileInfo fi) throws IOException {
         long checksum = layout.createPaddingObject(fileId, objNo, sp, version, size);
         fi.getObjVersions().put(objNo, version);

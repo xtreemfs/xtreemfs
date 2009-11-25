@@ -313,8 +313,8 @@ public class OSDDataIntegrityTest extends TestCase {
         RPCResponse<ObjectData> r2 = osdClient.read(serverID.getAddress(), fileId, fcred, 0, 0, 0, 2048);
         data = r2.get();
 
-        assertEquals(2048,data.getZero_padding());
-        assertEquals(0,data.getData().capacity());
+        assertTrue( (data.getZero_padding() == 2048) && (data.getData().capacity() == 0) ||
+                    (data.getZero_padding() == 0) && (data.getData().capacity() == 2048) );
         r2.freeBuffers();
         BufferPool.free(data.getData());
         

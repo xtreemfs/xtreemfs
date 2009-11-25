@@ -64,7 +64,7 @@ public class RAID0Test extends TestCase {
 
     public void testGetObjectsAndBytes() throws Exception {
         Replica r = new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 3));
-        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r);
+        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r,0);
 
         long objectID, offset;
 
@@ -92,7 +92,7 @@ public class RAID0Test extends TestCase {
 
     public void testGetOSDs() throws Exception {
         Replica r = new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 8));
-        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r);
+        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r,0);
 
         int osd0 = policy.getOSDforObject(0);
         assertEquals(0, osd0);
@@ -127,13 +127,13 @@ public class RAID0Test extends TestCase {
 
     public void testGetStripeSize() throws Exception {
         Replica r = new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 256, 3));
-        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r);
+        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r,0);
         assertEquals(256 * KILOBYTE, policy.getStripeSizeForObject(5));
     }
 
     public void testCalculateLastObject() throws Exception {
         Replica r = new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 256, 3));
-        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r);
+        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r,0);
         assertEquals(41, policy.getObjectNoForOffset(256L * KILOBYTE * 42-1)); // filesize
         // =
         // offset
@@ -145,7 +145,7 @@ public class RAID0Test extends TestCase {
 
     public void testGetObjectsOfOSDiterator() throws Exception {
         Replica r = new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 128, 3));
-        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r);
+        StripingPolicyImpl policy = StripingPolicyImpl.getPolicy(r,0);
 
         long startObject = 0, endObject = 12;
         Iterator<Long> objectsIt = policy.getObjectsOfOSD(0, startObject, endObject);

@@ -19,13 +19,22 @@ public abstract class StripingPolicyImpl {
 
     protected final StripingPolicy policy;
 
-    StripingPolicyImpl(Replica replica) {
+    protected final int relOsdPosition;
+
+    StripingPolicyImpl(Replica replica, int relOsdPosition) {
         policy = replica.getStriping_policy();
+        this.relOsdPosition = relOsdPosition;
     }
 
-    public static StripingPolicyImpl getPolicy(Replica replica) {
+    /**
+     *
+     * @param replica replica to use
+     * @param relOsdPosition relative OSD position in replica (0..width-1)
+     * @return
+     */
+    public static StripingPolicyImpl getPolicy(Replica replica, int relOsdPosition) {
         if (replica.getStriping_policy().getType() == StripingPolicyType.STRIPING_POLICY_RAID0) {
-            return new RAID0Impl(replica);
+            return new RAID0Impl(replica,relOsdPosition);
         } else {
             throw new IllegalArgumentException("unknown striping polciy requested");
         }
@@ -93,6 +102,11 @@ public abstract class StripingPolicyImpl {
     public abstract int getStripeSizeForObject(long objectNo);
 
     public abstract boolean isLocalObject(long objNo, int relativeOsdNo);
+
+
+    public abstract long getLocalObjectNumber(long objectNo);
+
+    public abstract long getGloablObjectNumber(long osdLocalObjNo);
 
     /**
      * Returns a virtual iterator which iterates over all objects the given OSD should save. It starts with

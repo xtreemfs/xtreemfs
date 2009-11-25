@@ -94,7 +94,6 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
 
     private final ExecutorService    tPool;
 
-    private long  lastFileComplete;
 
     private long  lastBytesScrubbed;
 
@@ -276,6 +275,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
 
         InetSocketAddress dirAddr = null;
         boolean useSSL = false;
+        boolean gridSSL = false;
         String serviceCredsFile = null;
         String serviceCredsPass = null;
         String trustedCAsFile = null;
@@ -284,12 +284,15 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         ONCRPCServiceURL dirURL = options.get("dir").urlValue;
 
         // parse security info if protocol is 'https'
-        if (dirURL != null && "oncrpcs".equals(dirURL.getProtocol())) {
+        if (dirURL != null && (Constants.ONCRPCS_SCHEME.equals(dirURL.getProtocol()) || Constants.ONCRPCG_SCHEME.equals(dirURL.getProtocol())) ) {
             useSSL = true;
             serviceCredsFile = options.get("c").stringValue;
             serviceCredsPass = options.get("cpass").stringValue;
             trustedCAsFile = options.get("t").stringValue;
             trustedCAsPass = options.get("tpass").stringValue;
+            if (Constants.ONCRPCG_SCHEME.equals(dirURL.getProtocol())) {
+                gridSSL = true;
+            }
         }
 
         // read default settings
@@ -323,7 +326,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
 
         SSLOptions sslOptions = useSSL ? new SSLOptions(new FileInputStream(serviceCredsFile),
             serviceCredsPass, SSLOptions.PKCS12_CONTAINER, new FileInputStream(trustedCAsFile),
-            trustedCAsPass, SSLOptions.JKS_CONTAINER, false) : null;
+            trustedCAsPass, SSLOptions.JKS_CONTAINER, false, gridSSL) : null;
 
         // resolve volume MRC
         RPCNIOSocketClient rpcClient = new RPCNIOSocketClient(sslOptions, 30000, 5*60000);

@@ -195,9 +195,17 @@ public class RPCNIOSocketServer extends LifeCycleThread {
         
         notifyStarted();
         
-        if (Logging.isInfo())
-            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "ONCRPC Srv %d ready %s", bindPort,
-                sslOptions != null ? "SSL enabled" : "");
+        if (Logging.isInfo()) {
+            String sslMode = "";
+            if (sslOptions != null) {
+                if (sslOptions.isFakeSSLMode()) {
+                    sslMode = "GRID SSL mode enabled (SSL handshake only)";
+                } else {
+                    sslMode = "SSL enabled";
+                }
+            }
+            Logging.logMessage(Logging.LEVEL_INFO, Category.net, this, "ONCRPC Srv %d ready %s", bindPort,sslMode);
+        }
         
         try {
             while (!quit) {

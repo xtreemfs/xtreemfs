@@ -96,7 +96,7 @@ public class OnCloseReplicationThread extends LifeCycleThread {
                     for (int i = 1; i < xlocSet.getReplicas().size(); i++) {
                         
                         Replica repl = xlocSet.getReplicas().get(i);
-                        StripingPolicyImpl spol = StripingPolicyImpl.getPolicy(repl);
+                        StripingPolicyImpl spol = StripingPolicyImpl.getPolicy(repl,0);
                         
                         for (int j = 0; j < repl.getOsd_uuids().size(); j++) {
                             

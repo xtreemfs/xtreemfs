@@ -55,6 +55,8 @@ import org.xtreemfs.osd.replication.ObjectSet;
  * @author clorenz
  */
 public class HashStorageLayout extends StorageLayout {
+
+    public static final int   SL_TAG = 0x00000002;
     
     /** 32bit algorithm */
     public static final String JAVA_HASH             = "Java-Hash";
@@ -154,12 +156,12 @@ public class HashStorageLayout extends StorageLayout {
         _stat_fileInfoLoads = 0;
     }
     
-    public ObjectInformation readObject(String fileId, long objNo, int version, long checksum,
+    public ObjectInformation readObject(String fileId, long objNo, long version, long checksum,
         StripingPolicyImpl sp) throws IOException {
         return readObject(fileId, objNo, version, checksum, sp, 0, -1);
     }
     
-    public ObjectInformation readObject(String fileId, long objNo, int version, long checksum,
+    public ObjectInformation readObject(String fileId, long objNo, long version, long checksum,
         StripingPolicyImpl sp, int offset, int length) throws IOException {
         
         if (Logging.isDebug())
@@ -270,7 +272,7 @@ public class HashStorageLayout extends StorageLayout {
         return true;
     }
     
-    public void writeObject(String fileId, long objNo, ReusableBuffer data, int version, int offset,
+    public void writeObject(String fileId, long objNo, ReusableBuffer data, long version, int offset,
         long checksum, StripingPolicyImpl sp, boolean sync) throws IOException {
         
         // ignore empty writes
@@ -304,7 +306,7 @@ public class HashStorageLayout extends StorageLayout {
         }
     }
     
-    public long createChecksum(String fileId, long objNo, ReusableBuffer data, int version,
+    public long createChecksum(String fileId, long objNo, ReusableBuffer data, long version,
         long currentChecksum) throws IOException {
         
         String relPath = generateRelativeFilePath(fileId);
@@ -353,7 +355,7 @@ public class HashStorageLayout extends StorageLayout {
         return 0;
     }
     
-    public long createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, int version, long size)
+    public long createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, long version, long size)
         throws IOException {
         
         assert (size >= 0) : "size is " + size;
@@ -425,7 +427,7 @@ public class HashStorageLayout extends StorageLayout {
         }
     }
     
-    public void deleteObject(String fileId, final long objNo, final int version) throws IOException {
+    public void deleteObject(String fileId, final long objNo, final long version, StripingPolicyImpl sp) throws IOException {
         final String prefix = createFileName(objNo, 0, 0).substring(0, 8 + 4);
         File fileDir = new File(generateAbsoluteFilePath(fileId));
         File[] objs = fileDir.listFiles(new FileFilter() {
@@ -467,7 +469,7 @@ public class HashStorageLayout extends StorageLayout {
                     lastObjNum = ofd.objNo;
                 }
                 
-                Integer oldver = info.getObjVersions().get(ofd.objNo);
+                Long oldver = info.getObjVersions().get(ofd.objNo);
                 if ((oldver == null) || (oldver < ofd.objVersion)) {
                     info.getObjVersions().put((long) ofd.objNo, ofd.objVersion);
                     info.getObjChecksums().put((long) ofd.objNo, ofd.checksum);
@@ -551,13 +553,13 @@ public class HashStorageLayout extends StorageLayout {
         return this.storageDir + generateRelativeFilePath(fileId);
     }
     
-    private String generateAbsolutObjectPath(String fileId, long objNo, int version, long checksum) {
+    private String generateAbsolutObjectPath(String fileId, long objNo, long version, long checksum) {
         StringBuilder path = new StringBuilder(generateAbsoluteFilePath(fileId));
         path.append(createFileName(objNo, version, checksum));
         return path.toString();
     }
     
-    private String generateAbsoluteObjectPath(String relativeFilePath, long objNo, int version, long checksum) {
+    private String generateAbsoluteObjectPath(String relativeFilePath, long objNo, long version, long checksum) {
         StringBuilder path = new StringBuilder(this.storageDir);
         path.append(relativeFilePath);
         path.append(createFileName(objNo, version, checksum));
@@ -627,7 +629,7 @@ public class HashStorageLayout extends StorageLayout {
      * @return the VersionNo of the given File.
      * @throws NumberFormatException
      */
-    private int getVersion(File f) throws NumberFormatException {
+    private long getVersion(File f) throws NumberFormatException {
         final String name = f.getName();
         ObjFileData ofd = parseFileName(name);
         return ofd.objVersion;
@@ -645,29 +647,52 @@ public class HashStorageLayout extends StorageLayout {
         return (int) ofd.objNo;
     }
     
-    public static String createFileName(long objNo, int objVersion, long checksum) {
-        final StringBuffer sb = new StringBuffer(Integer.SIZE / 8 * 3 + Long.SIZE / 8);
+    public static String createFileName(long objNo, long objVersion, long checksum) {
+        final StringBuffer sb = new StringBuffer( 3*Long.SIZE / 8);
         OutputUtils.writeHexLong(sb, objNo);
-        OutputUtils.writeHexInt(sb, objVersion);
+        OutputUtils.writeHexLong(sb, objVersion);
         OutputUtils.writeHexLong(sb, checksum);
         return sb.toString();
     }
     
     public static ObjFileData parseFileName(String filename) {
-        final long objNo = OutputUtils.readHexLong(filename, 0);
-        final int objVersion = OutputUtils.readHexInt(filename, 16);
-        final long checksum = OutputUtils.readHexLong(filename, 24);
-        return new ObjFileData(objNo, objVersion, checksum);
+        if (filename.length() == 32) {
+            //compatability mode
+            final long objNo = OutputUtils.readHexLong(filename, 0);
+            final int objVersion = OutputUtils.readHexInt(filename, 16);
+            final long checksum = OutputUtils.readHexLong(filename, 24);
+            return new ObjFileData(objNo, objVersion, checksum);
+        } else {
+            final long objNo = OutputUtils.readHexLong(filename, 0);
+            final long objVersion = OutputUtils.readHexLong(filename, 16);
+            final long checksum = OutputUtils.readHexLong(filename, 28);
+            return new ObjFileData(objNo, objVersion, checksum);
+        }
+    }
+
+    @Override
+    public int getLayoutVersionTag() {
+        return SL_TAG;
+    }
+
+    @Override
+    public boolean isCompatibleVersion(int layoutVersionTag) {
+        if (layoutVersionTag == SL_TAG)
+            return true;
+        //we are compatible with the old layout (version was an int)
+        if (layoutVersionTag == 1)
+            return true;
+        return false;
     }
     
     public static final class ObjFileData {
         final long objNo;
         
-        final int  objVersion;
+        final long  objVersion;
         
         final long checksum;
         
-        public ObjFileData(long objNo, int objVersion, long checksum) {
+        public ObjFileData(long objNo, long objVersion, long checksum) {
             this.objNo = objNo;
             this.objVersion = objVersion;
             this.checksum = checksum;
@@ -757,29 +782,5 @@ public class HashStorageLayout extends StorageLayout {
         }
     }
     
-    public static final class FileList {
-        // directories to scan
-        final Stack<String>         status;
-        
-        // fileName->fileDetails
-        final Map<String, FileData> files;
-        
-        boolean                     hasMore;
-        
-        public FileList(Stack<String> status, Map<String, FileData> files) {
-            this.status = status;
-            this.files = files;
-        }
-    }
     
-    final class FileData {
-        final long size;
-        
-        final int  objectSize;
-        
-        FileData(long size, int objectSize) {
-            this.size = size;
-            this.objectSize = objectSize;
-        }
-    }
 }
