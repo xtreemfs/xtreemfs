@@ -337,7 +337,7 @@ public class DIRRequestDispatcher extends LifeCycleThread
                                     Logging.LEVEL_ERROR,
                                     this,
                                     "the database was created contains data with version no %d, this DIR uses version %d.",
-                                    ver, DIRInterface.getVersion());
+                                    ver, DB_VERSION);
                         Logging.logMessage(Logging.LEVEL_ERROR, this,
                             "please start an older version of the DIR or remove the old database");
                         System.exit(1);
