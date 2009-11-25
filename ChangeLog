@@ -37,4 +37,12 @@
 	* added notification mechanism to DIR that sends notification mails to
 	  an admin if an OSD or MRC has failed
 
+05-NOV-2009
+	* added GRID SSL mode
+	  When enabled (requires SSL to be enable too), XtreemFS will fall back to
+          plain TCP after a successful SSL handshake. Enabled in services with
+          "ssl.grid_ssl=true" in the config file. Client requires certificates
+          and oncrpcg:// scheme when mounting.
+
+
 	
