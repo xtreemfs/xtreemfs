@@ -33,18 +33,13 @@ if [ $CMD == "test" ]; then
   mkdir -p $TMP_DIR
   cd $TMP_DIR
   osc co home:xtreemfs xtreemfs-testing
-  osc delete $TMP_DIR/home:xtreemfs/xtreemfs-testing/*
-  cd -
-  cd $TMP_DIR/home:xtreemfs
-  osc ci -m " " xtreemfs-testing
+  rm $TMP_DIR/home:xtreemfs/xtreemfs-testing/*
   cd -
   
-  # copy all new files, check in files
+  # copy all new files, add new and delete old files, check in project
   cp xtreemfs-testing/* $TMP_DIR/home:xtreemfs/xtreemfs-testing
-  osc add $TMP_DIR/home:xtreemfs/xtreemfs-testing/*
-  cd $TMP_DIR/home:xtreemfs
-  osc ci -m " " xtreemfs-testing
-  cd -
+  osc addremove $TMP_DIR/home:xtreemfs/xtreemfs-testing/
+  osc ci -m "update" $TMP_DIR/home:xtreemfs/xtreemfs-testing/
   
   rm -rf $TMP_DIR
   
@@ -69,7 +64,7 @@ elif [ $CMD == "release" ]; then
   
   cd -
   cd $TMP_DIR/home:xtreemfs
-  osc ci -m " " xtreemfs-$VERSION
+  osc ci -m "imported xtreemfs $VERSION" xtreemfs-$VERSION
   cd -
   
   rm -rf $TMP_DIR
