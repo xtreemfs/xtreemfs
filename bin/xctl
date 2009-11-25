@@ -6,7 +6,9 @@ from time import sleep
 
 # Constants
 DEBUG_ME = True
-DEBUG_LEVEL_DEFAULT = "0"
+CLIENT_DEBUG_LEVEL_DEFAULT = "ERR"
+SERVER_DEBUG_LEVEL_DEFAULT = "6"
+SERVER_STOP_TRIES = 3
 
 # Paths
 MY_DIR_PATH = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
@@ -50,8 +52,7 @@ class Autotest:
     def __get_servers( self ):
         dir = DIR( config_file_path=os.path.join( "config", "dir.config" ) )
         mrc = MRC( config_file_path=os.path.join( "config", "mrc.config" ) )
-        osds = [OSD( config_file_path=os.path.join( "config", "osd"+str( osd_i )+".config" ) )
-                for osd_i in xrange( self.__osd_count )]
+        osds = [OSD( config_file_path=os.path.join( "config", "osd"+str( osd_i )+".config" ) ) for osd_i in xrange( self.__osd_count )]
         return dir, mrc, osds
                              
     def __get_volumes( self ):
@@ -68,7 +69,7 @@ class Autotest:
     
     def start_clients( 
                        self, 
-                       debug_level=DEBUG_LEVEL_DEFAULT,
+                       debug_level=CLIENT_DEBUG_LEVEL_DEFAULT,
                        mount_options=None,
                        replicate_on_close=False
                      ):
@@ -129,7 +130,7 @@ class Autotest:
                 
     def start_servers( 
                        self,
-                       debug_level=DEBUG_LEVEL_DEFAULT                        
+                       debug_level=SERVER_DEBUG_LEVEL_DEFAULT                        
                      ):                
         for dir_name in ( "config", "data", "log" ):
             try: os.mkdir( dir_name )
@@ -370,29 +371,38 @@ ssl.enabled = false
         pid_file_path = self.__get_pid_file_path( run_dir_path )           
         if os.path.exists( pid_file_path ):
             pid = int( open( pid_file_path ).read().strip() )
-                        
+
             if sys.platform.startswith( "win" ):
                 subprocess.call( "TASKKILL /PID %(pid)u /F /T" % locals() )
+                killed = True
             else:
-                if DEBUG_ME:
-                    print "xctl: stopping", self.__class__.__name__, "server with pid", pid, "with SIGTERM"
-                                                
-                try: os.kill( pid, signal.SIGTERM )
-                except: pass
-                
-                sleep( 1 )
-
-                try:
-                    if os.waitpid( pid, os.WNOHANG )[0] == 0: # The process is still running
+                killed = False
+                for signo in ( signal.SIGTERM, signal.SIGKILL ):
+                    for try_i in xrange( SERVER_STOP_TRIES ):
                         if DEBUG_ME:
-                            print "xctl: stopping", self.__class__.__name__, "server with pid", pid, "with SIGKILL"
-        
-                        try: os.kill( pid, signal.SIGKILL )
+                            print "xctl: stopping", self.__class__.__name__, "server with pid", pid, "with signal", str( signo ) + ", try", try_i
+                                                
+                        try: os.kill( pid, signo )
                         except: pass
-                except:
-                    pass
                 
-            os.unlink( pid_file_path )
+                        sleep( 1 )
+
+                        try:
+                            if os.waitpid( pid, os.WNOHANG )[0] != 0: 
+                               killed = True
+                               break
+                        except OSError:
+                             killed = True
+                             break
+                        except:
+                            if DEBUG_ME:
+                                traceback.print_exc()
+
+                    if killed:
+                        break
+
+            if killed:                
+                os.unlink( pid_file_path )
                
         elif DEBUG_ME:
             print "xctl: no pid file for", self.__class__.__name__, "server"     
@@ -403,7 +413,7 @@ class DIR(Server):
                    self,
                    database_dir_path, 
                    uuid,
-                   debug_level=DEBUG_LEVEL_DEFAULT, 
+                   debug_level=SERVER_DEBUG_LEVEL_DEFAULT, 
                    http_port=DIR_HTTP_PORT_DEFAULT,
                    oncrpc_port=DIR_ONCRPC_PORT_DEFAULT,
                    **kwds 
@@ -437,7 +447,7 @@ class MRC(Server):
                    self,
                    database_dir_path, 
                    uuid,
-                   debug_level=DEBUG_LEVEL_DEFAULT,
+                   debug_level=SERVER_DEBUG_LEVEL_DEFAULT,
                    dir_uri=DIR_URI_DEFAULT, 
                    http_port=MRC_HTTP_PORT_DEFAULT,
                    oncrpc_port=MRC_ONCRPC_PORT_DEFAULT,
@@ -486,7 +496,7 @@ class OSD(Server):
                    self,
                    object_dir_path,
                    uuid,
-                   debug_level=DEBUG_LEVEL_DEFAULT,
+                   debug_level=SERVER_DEBUG_LEVEL_DEFAULT,
                    dir_uri=DIR_URI_DEFAULT, 
                    http_port=OSD_HTTP_PORT_DEFAULT,
                    oncrpc_port=OSD_ONCRPC_PORT_DEFAULT,
@@ -525,7 +535,7 @@ class Volume:
     
     def create( 
                 self, 
-                debug_level=DEBUG_LEVEL_DEFAULT,
+                debug_level=CLIENT_DEBUG_LEVEL_DEFAULT,
                 mrc_uri=MRC_URI_DEFAULT,
                 pkcs12_file_path=None,
                 pkcs12_passphrase=None,
@@ -563,7 +573,7 @@ class Volume:
     
     def mount( 
                self,
-               debug_level=DEBUG_LEVEL_DEFAULT,
+               debug_level=CLIENT_DEBUG_LEVEL_DEFAULT,
                dir_uri=DIR_URI_DEFAULT,
                direct_io=False,
                log_file_path=None,
@@ -692,7 +702,7 @@ class Volume:
             test_device = mounts_line_parts[0]
             test_mount_point_dir_path = mounts_line_parts[1]
             if test_device == "xtreemfs" and test_mount_point_dir_path.endswith( self.get_mount_point_dir_path() ):
-                fusermount_args = " ".join( ["fusermount", "-u", self.get_mount_point_dir_path()] )
+                fusermount_args = " ".join( ["fusermount", "-u", "-z", self.get_mount_point_dir_path()] )
                 if DEBUG_ME:
                     print "xctl: unmounting volume", self.get_name(), "with", fusermount_args
                 subprocess.call( fusermount_args, shell=True )        
@@ -705,16 +715,32 @@ if __name__ == "__main__":
     option_parser.add_option( "--autotest", action="store_true", help="start autotest clients and servers, run autotests, stop clients and servers" )
     option_parser.add_option( "--autotest-osd-count", action="store", dest="autotest_osd_count", type="int", default=3 )
     option_parser.add_option( "--clean-autotest", action="store_true", dest="clean_autotest", help="delete autotest directories" )
-    option_parser.add_option( "-d", "--debug-level", action="store", dest="debug_level", default=DEBUG_LEVEL_DEFAULT )    
+    option_parser.add_option( "--client-debug-level", action="store", dest="client_debug_level", default=None )
+    option_parser.add_option( "-d", "--debug-level", action="store", dest="debug_level", default=None )
     option_parser.add_option( "-o", "--mount-option", action="append", dest="mount_options", help="pass options to mount.xtreemfs" )
     option_parser.add_option( "--run-autotest", action="store_true", dest="run_autotest", help="run autotests (assumes clients and servers are already started and will be stopped manually" )
     option_parser.add_option( "--replicate-on-close", action="store_true", dest="replicate_on_close" )
+    option_parser.add_option( "--server-debug-level", action="store", dest="server_debug_level", default=None )
     option_parser.add_option( "--start-autotest-clients", action="store_true", dest="start_autotest_clients" )
     option_parser.add_option( "--start-autotest-servers", action="store_true", dest="start_autotest_servers" )
     option_parser.add_option( "--stop-autotest-clients", action="store_true", dest="stop_autotest_clients" )
     option_parser.add_option( "--stop-autotest-servers", action="store_true", dest="stop_autotest_servers" )    
     
     options, positional_args = option_parser.parse_args()
+
+    if options.client_debug_level is not None:
+        client_debug_level = options.client_debug_level
+    elif options.debug_level is not None:
+        client_debug_level = options.debug_level 
+    else:
+        client_debug_level = CLIENT_DEBUG_LEVEL_DEFAULT
+
+    if options.server_debug_level is not None:
+        server_debug_level = options.server_debug_level
+    elif options.debug_level is not None:
+        server_debug_level = options.debug_level 
+    else:
+        server_debug_level = SERVER_DEBUG_LEVEL_DEFAULT
     
     if len( positional_args ) > 0:
         server_uri = positional_args[0]
@@ -739,11 +765,11 @@ if __name__ == "__main__":
             ret = 0
                         
             if options.start_autotest_servers or options.autotest:
-                autotest.start_servers( debug_level=options.debug_level )
+                autotest.start_servers( debug_level=server_debug_level )
             
             if options.start_autotest_clients or options.autotest:
                 autotest.start_clients( 
-                                        debug_level=options.debug_level,
+                                        debug_level=client_debug_level,
                                         mount_options=options.mount_options, 
                                         replicate_on_close=options.replicate_on_close 
                                        )            
