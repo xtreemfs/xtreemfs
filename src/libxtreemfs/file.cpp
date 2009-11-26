@@ -372,9 +372,10 @@ bool File::truncate( uint64_t new_size )
 
   parent_volume->get_osd_proxy_mux()->truncate( file_credentials, file_credentials.get_xcap().get_file_id(), new_size, osd_write_response );
 
-  if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
-    parent_volume->get_mrc_proxy()->xtreemfs_update_file_size( file_credentials.get_xcap(), osd_write_response );
-  else if ( osd_write_response > latest_osd_write_response )
+  //if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
+  //  parent_volume->get_mrc_proxy()->xtreemfs_update_file_size( file_credentials.get_xcap(), osd_write_response );
+  //else 
+  if ( osd_write_response > latest_osd_write_response )
     latest_osd_write_response = osd_write_response;
 
   return true;
@@ -476,16 +477,16 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
       write_responses.push_back( &write_response );
     }
 
-    if ( !latest_osd_write_response.get_new_file_size().empty() &&
-         ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
-    {
-#ifdef _DEBUG
-      if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
-        log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::File: flushing file size updates.";
-#endif
-
-      parent_volume->get_mrc_proxy()->xtreemfs_update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
-      latest_osd_write_response.set_new_file_size( org::xtreemfs::interfaces::NewFileSize() );
+//    if ( !latest_osd_write_response.get_new_file_size().empty() &&
+//         ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != Volume::VOLUME_FLAG_CACHE_METADATA )
+//    {
+//#ifdef _DEBUG
+//      if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == Volume::VOLUME_FLAG_TRACE_FILE_IO )
+//        log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::File: flushing file size updates.";
+//#endif
+//
+//      parent_volume->get_mrc_proxy()->xtreemfs_update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
+//      latest_osd_write_response.set_new_file_size( org::xtreemfs::interfaces::NewFileSize() );
     }
 
     ret = static_cast<ssize_t>( current_file_offset - offset );
