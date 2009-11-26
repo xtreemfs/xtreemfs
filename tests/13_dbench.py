@@ -1,4 +1,5 @@
 import unittest, os.path, sys, subprocess, gzip
+from datetime import datetime
 
 
 # Constants
@@ -21,7 +22,8 @@ class dbenchTest(unittest.TestCase):
            assert os.stat( "dbench-client.txt" ).st_size > 0
         
            args = "dbench -c dbench-client.txt -D . 5"
-           stdout = open( "dbench-stdout.txt", "a+" )
+           isodatetime = datetime.today().isoformat()[:-7].replace( '-', '' ).replace( ':', '' )
+           stdout = open( "/tmp/dbench-stdout-"+isodatetime+".txt", "a+" )
            p = subprocess.Popen( args, shell=True, stdout=stdout, stderr=subprocess.STDOUT )
            retcode = p.wait()
            self.assertEqual( retcode, 0 )
