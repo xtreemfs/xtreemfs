@@ -44,5 +44,14 @@
           "ssl.grid_ssl=true" in the config file. Client requires certificates
           and oncrpcg:// scheme when mounting.
 
+25-NOV-2009
+	* MRC and OSD wait up to 30s (or as long as defined in startup.wait_for_dir)
+          for the DIR during start-up.
+	* added xctl: a script to start and stop the XtreemFS services
+	* mount.xtreemfs checks for successfull mount before going into background
+        * fixed the return value for xattr calls which caused problems with the
+          Mac OS X Finder
 
-	
+27-NOV-2009
+	* client caches file size updates by default (flushed on close, fsync)
+	* OSD and MRC status pages can be used to get full stack traces (/strace)	
