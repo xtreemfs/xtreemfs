@@ -180,4 +180,4 @@ server_distclean: check_server
 	$(ANT_BIN) -f src/servers/build.xml clean || exit 1;
 
 test: check_test client server
-	$(XTFS_BINDIR)/xtfs_test --autotest
+	$(XTFS_BINDIR)/xctl --autotest
