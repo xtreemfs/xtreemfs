@@ -23,7 +23,13 @@ namespace xtreemfs
   private:
     friend class Volume;
 
-    File( yidl::runtime::auto_Object<Volume> parent_volume, const YIELD::platform::Path& path, const org::xtreemfs::interfaces::FileCredentials& file_credentials );
+    File
+    ( 
+      yidl::runtime::auto_Object<Volume> parent_volume, 
+      const YIELD::platform::Path& path, 
+      const org::xtreemfs::interfaces::FileCredentials& file_credentials 
+    );
+
     ~File();
 
     yidl::runtime::auto_Object<Volume> parent_volume;

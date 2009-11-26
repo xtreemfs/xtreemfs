@@ -119,8 +119,18 @@ private:
 };
 
 
-OSDProxyMux::OSDProxyMux( yidl::runtime::auto_Object<DIRProxy> dir_proxy, uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::auto_SSLContext ssl_context )
-  : dir_proxy( dir_proxy ), flags( flags ), log( log ), operation_timeout( operation_timeout ), ssl_context( ssl_context )
+OSDProxyMux::OSDProxyMux
+( 
+  yidl::runtime::auto_Object<DIRProxy> dir_proxy, 
+  uint32_t flags, 
+  YIELD::platform::auto_Log log, 
+  const YIELD::platform::Time& operation_timeout, 
+  uint8_t reconnect_tries_max,
+  YIELD::ipc::auto_SSLContext ssl_context 
+)
+  : dir_proxy( dir_proxy ), flags( flags ), log( log ), 
+  operation_timeout( operation_timeout ), reconnect_tries_max( reconnect_tries_max ),
+  ssl_context( ssl_context )
 {
   osd_proxy_stage_group = new YIELD::concurrency::SEDAStageGroup;
 }
@@ -201,14 +211,14 @@ yidl::runtime::auto_Object<OSDProxy> OSDProxyMux::getOSDProxy( const std::string
            ) 
          )
       {
-        osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), flags, log, operation_timeout, ssl_context ).release();
+        osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), flags, log, operation_timeout, reconnect_tries_max, ssl_context ).release();
         osd_proxy_stage_group->createStage( osd_proxy->incRef() );
       }
       else
 #endif
       if ( ( *address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPC_SCHEME )
       {
-        osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), flags, log, operation_timeout, ssl_context ).release();
+        osd_proxy = OSDProxy::create( ( *address_mapping_i ).get_uri(), flags, log, operation_timeout, reconnect_tries_max, ssl_context ).release();
         osd_proxy_stage_group->createStage( osd_proxy->incRef() );
       }
     }

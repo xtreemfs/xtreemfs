@@ -30,15 +30,46 @@ namespace xtreemfs
     virtual void send( YIELD::concurrency::Event& ev );
 
   protected:
-    Proxy( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::auto_SocketAddress peername, YIELD::ipc::auto_SocketFactory socket_factory );
+    Proxy
+    ( 
+      uint32_t flags, 
+      YIELD::platform::auto_Log log, 
+      const YIELD::platform::Time& operation_timeout, 
+      YIELD::ipc::auto_SocketAddress peername, 
+      uint8_t reconnect_tries_max,
+      YIELD::ipc::auto_SocketFactory socket_factory 
+    );
+
     virtual ~Proxy();
 
-    static YIELD::ipc::auto_SocketFactory createSocketFactory( const YIELD::ipc::URI& absolute_uri, YIELD::ipc::auto_SSLContext ssl_context );
+    static YIELD::ipc::auto_SocketFactory 
+      createSocketFactory
+      ( 
+        const YIELD::ipc::URI& absolute_uri, 
+        YIELD::ipc::auto_SSLContext ssl_context 
+      );
 
-    virtual void getCurrentUserCredentials( org::xtreemfs::interfaces::UserCredentials& out_user_credentials );
-#ifndef _WIN32
-    void getpasswdFromUserCredentials( const std::string& user_id, const std::string& group_id, int& out_uid, int& out_gid );
-    bool getUserCredentialsFrompasswd( int uid, int gid, org::xtreemfs::interfaces::UserCredentials& out_user_credentials );
+    virtual void 
+      getCurrentUserCredentials
+      ( 
+        org::xtreemfs::interfaces::UserCredentials& out_user_credentials 
+      );
+
+#ifndef _WIN32    
+    void getpasswdFromUserCredentials
+    ( 
+      const std::string& user_id,
+      const std::string& group_id, 
+      int& out_uid, 
+      int& out_gid 
+    );
+
+    bool getUserCredentialsFrompasswd
+    ( 
+      int uid, 
+      int gid, 
+      org::xtreemfs::interfaces::UserCredentials& out_user_credentials 
+    );
 #endif
 
   private:
@@ -48,21 +79,33 @@ namespace xtreemfs
     PolicyContainer* policy_container;
 
     get_passwd_from_user_credentials_t get_passwd_from_user_credentials;
-    std::map<std::string,std::map<std::string,std::pair<int, int>*>*> user_credentials_to_passwd_cache;
+    std::map<std::string,std::map<std::string,std::pair<int, int>*>*> 
+      user_credentials_to_passwd_cache;
 
     get_user_credentials_from_passwd_t get_user_credentials_from_passwd;
-    std::map<int,std::map<int,org::xtreemfs::interfaces::UserCredentials*>*> passwd_to_user_credentials_cache;
+    std::map<int,std::map<int,org::xtreemfs::interfaces::UserCredentials*>*> 
+      passwd_to_user_credentials_cache;
 #endif
 
     std::vector<YIELD::platform::SharedLibrary*> policy_shared_libraries;
 
     template <typename PolicyFunctionType>
-    bool getPolicyFunction( const YIELD::platform::Path& policy_shared_library_path, YIELD::platform::auto_SharedLibrary policy_shared_library, const char* policy_function_name, PolicyFunctionType& out_policy_function )
+    bool getPolicyFunction
+    ( 
+      const YIELD::platform::Path& policy_shared_library_path, 
+      YIELD::platform::auto_SharedLibrary policy_shared_library, 
+      const char* policy_function_name, 
+      PolicyFunctionType& out_policy_function 
+    )
     {
-      PolicyFunctionType policy_function = policy_shared_library->getFunction<PolicyFunctionType>( policy_function_name );
+      PolicyFunctionType policy_function = 
+        policy_shared_library->getFunction<PolicyFunctionType>( policy_function_name );
       if ( policy_function != NULL )
       {
-        log->getStream( YIELD::platform::Log::LOG_INFO ) << "xtreemfs::Proxy: using " << policy_function_name << " from " << policy_shared_library_path << ".";
+        log->getStream( YIELD::platform::Log::LOG_INFO ) << 
+          "xtreemfs::Proxy: using " << policy_function_name << 
+          " from " << policy_shared_library_path << ".";
+
         out_policy_function = policy_function;
         return true;
       }

@@ -41,9 +41,25 @@ namespace xtreemfs
         void* MinidumpCallback_context = this;
 #if defined(_WIN32)
 //            if ( !IsDebuggerPresent() )            {
-          exception_handler = new google_breakpad::ExceptionHandler( YIELD::platform::Path( "." ) + PATH_SEPARATOR_STRING, NULL, MinidumpCallback, MinidumpCallback_context, google_breakpad::ExceptionHandler::HANDLER_ALL );
+          exception_handler = 
+            new google_breakpad::ExceptionHandler
+            ( 
+              YIELD::platform::Path( "." ) + PATH_SEPARATOR_STRING, 
+              NULL, 
+              MinidumpCallback, 
+              MinidumpCallback_context, 
+              google_breakpad::ExceptionHandler::HANDLER_ALL 
+            );
 #elif defined(__linux)
-        exception_handler = new google_breakpad::ExceptionHandler( YIELD::platform::Path( "." ) + PATH_SEPARATOR_STRING, NULL, MinidumpCallback, MinidumpCallback_context, true );
+        exception_handler = 
+          new google_breakpad::ExceptionHandler
+          ( 
+            YIELD::platform::Path( "." ) + PATH_SEPARATOR_STRING, 
+            NULL, 
+            MinidumpCallback, 
+            MinidumpCallback_context, 
+            true 
+          );
 #else
 #error
 #endif
@@ -73,7 +89,12 @@ namespace xtreemfs
     };
 
 
-    Main( const char* program_name, const char* program_description, const char* files_usage = NULL )
+    Main
+    ( 
+      const char* program_name, 
+      const char* program_description, 
+      const char* files_usage = NULL 
+    )
       : YIELD::Main( program_name, program_description, files_usage )
     {
       addOption( OPTION_LOG_FILE_PATH, "-l", "--log-file-path", "<path>" );
@@ -107,12 +128,12 @@ namespace xtreemfs
 
     auto_DIRProxy createDIRProxy( const YIELD::ipc::URI& absolute_uri )
     {       
-      return DIRProxy::create( absolute_uri, get_proxy_flags(), get_log(), operation_timeout, get_proxy_ssl_context() );
+      return DIRProxy::create( absolute_uri, get_proxy_flags(), get_log(), operation_timeout, DIRProxy::RECONNECT_TRIES_MAX_DEFAULT, get_proxy_ssl_context() );
     }    
 
     auto_MRCProxy createMRCProxy( const YIELD::ipc::URI& absolute_uri, const char* password = "" )
     {
-      return MRCProxy::create( absolute_uri, get_proxy_flags(), get_log(), operation_timeout, password, get_proxy_ssl_context() );
+      return MRCProxy::create( absolute_uri, get_proxy_flags(), get_log(), operation_timeout, password, MRCProxy::RECONNECT_TRIES_MAX_DEFAULT, get_proxy_ssl_context() );
     }
 
     YIELD::platform::auto_Log get_log()

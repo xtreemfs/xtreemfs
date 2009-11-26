@@ -163,8 +163,21 @@ namespace xtreemfs
 
 
 template <class ProxyType, class InterfaceType>
-Proxy<ProxyType, InterfaceType>::Proxy( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::auto_SocketAddress peername, YIELD::ipc::auto_SocketFactory socket_factory )
-  : YIELD::ipc::ONCRPCClient<InterfaceType>( flags, log, operation_timeout, peername, socket_factory ), log( log )
+Proxy<ProxyType, InterfaceType>::Proxy
+( 
+  uint32_t flags, 
+  YIELD::platform::auto_Log log, 
+  const YIELD::platform::Time& operation_timeout, 
+  YIELD::ipc::auto_SocketAddress peername, 
+  uint8_t reconnect_tries_max,
+  YIELD::ipc::auto_SocketFactory socket_factory 
+)
+  : YIELD::ipc::ONCRPCClient<InterfaceType>
+    ( 
+      flags, log, operation_timeout, peername, 
+      reconnect_tries_max, socket_factory
+    ), 
+    log( log )
 {
 #ifndef _WIN32
   policy_container = new PolicyContainer;

@@ -21,33 +21,60 @@
 
 namespace xtreemfs
 {
-  class DIRProxy : public Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>
+  class DIRProxy 
+    : public Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>
   {
   public:
-    static yidl::runtime::auto_Object<DIRProxy> create( const YIELD::ipc::URI& absolute_uri,
-                                                        uint32_t flags = 0,
-                                                        YIELD::platform::auto_Log log = NULL,
-                                                        const YIELD::platform::Time& operation_timeout = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::OPERATION_TIMEOUT_DEFAULT,
-                                                        YIELD::ipc::auto_SSLContext ssl_context = NULL );
+    static yidl::runtime::auto_Object<DIRProxy> 
+      create
+      ( 
+        const YIELD::ipc::URI& absolute_uri,
+        uint32_t flags = 0,
+        YIELD::platform::auto_Log log = NULL,
+        const YIELD::platform::Time& operation_timeout = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::OPERATION_TIMEOUT_DEFAULT,
+        uint8_t reconnect_tries_max = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::RECONNECT_TRIES_MAX_DEFAULT,
+        YIELD::ipc::auto_SSLContext ssl_context = NULL 
+      );
 
-    yidl::runtime::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> getAddressMappingsFromUUID( const std::string& uuid );
-    YIELD::ipc::auto_URI getVolumeURIFromVolumeName( const std::string& volume_name );
+    yidl::runtime::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> 
+      getAddressMappingsFromUUID( const std::string& uuid );
+
+    YIELD::ipc::auto_URI 
+      getVolumeURIFromVolumeName( const std::string& volume_name );
 
   private:
     friend class YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>;
 
-    DIRProxy( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::auto_SocketAddress peername, YIELD::ipc::auto_SocketFactory socket_factory )
-        : Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>( flags, log, operation_timeout, peername, socket_factory )
+    DIRProxy
+    ( 
+      uint32_t flags, 
+      YIELD::platform::auto_Log log, 
+      const YIELD::platform::Time& operation_timeout, 
+      YIELD::ipc::auto_SocketAddress peername,
+      uint8_t reconnect_tries_max,
+      YIELD::ipc::auto_SocketFactory socket_factory 
+    )
+    : Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>
+      ( 
+        flags, log, operation_timeout, peername, 
+        reconnect_tries_max, socket_factory 
+      )
     { }
 
     ~DIRProxy();
 
 
-    class CachedAddressMappings : public org::xtreemfs::interfaces::AddressMappingSet
+    class CachedAddressMappings 
+      : public org::xtreemfs::interfaces::AddressMappingSet
     {
     public:
-      CachedAddressMappings( const org::xtreemfs::interfaces::AddressMappingSet& address_mappings, uint32_t ttl_s )
-        : org::xtreemfs::interfaces::AddressMappingSet( address_mappings ), ttl_s( ttl_s )
+      CachedAddressMappings
+      ( 
+        const org::xtreemfs::interfaces::AddressMappingSet& address_mappings,
+        uint32_t ttl_s        
+      )
+      : org::xtreemfs::interfaces::AddressMappingSet( address_mappings ),
+        ttl_s( ttl_s )
       { }
 
       const YIELD::platform::Time& get_creation_time() const { return creation_time; }

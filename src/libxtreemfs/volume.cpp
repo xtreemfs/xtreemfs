@@ -30,9 +30,20 @@ using namespace xtreemfs;
   } \
 
 
-auto_Volume Volume::create( const YIELD::ipc::URI& dir_uri, const std::string& name, uint32_t flags, YIELD::platform::auto_Log log, uint32_t proxy_flags, const YIELD::platform::Time& proxy_operation_timeout, YIELD::ipc::auto_SSLContext proxy_ssl_context, const YIELD::platform::Path& vivaldi_coordinates_file_path )
+auto_Volume Volume::create
+( 
+  const YIELD::ipc::URI& dir_uri, 
+  const std::string& name, 
+  uint32_t flags, 
+  YIELD::platform::auto_Log log, 
+  uint32_t proxy_flags, 
+  const YIELD::platform::Time& proxy_operation_timeout, 
+  uint8_t proxy_reconnect_tries_max,
+  YIELD::ipc::auto_SSLContext proxy_ssl_context, 
+  const YIELD::platform::Path& vivaldi_coordinates_file_path 
+)
 {
-  auto_DIRProxy dir_proxy = DIRProxy::create( dir_uri, proxy_flags, log, proxy_operation_timeout, proxy_ssl_context );
+  auto_DIRProxy dir_proxy = DIRProxy::create( dir_uri, proxy_flags, log, proxy_operation_timeout, proxy_reconnect_tries_max, proxy_ssl_context );
   if ( dir_proxy != NULL )
   {
     YIELD::ipc::auto_URI mrc_uri; 
@@ -44,13 +55,13 @@ auto_Volume Volume::create( const YIELD::ipc::URI& dir_uri, const std::string& n
 
     if ( mrc_uri != NULL )
     {
-      auto_MRCProxy mrc_proxy = MRCProxy::create( *mrc_uri, proxy_flags, log, proxy_operation_timeout, "", proxy_ssl_context );
+      auto_MRCProxy mrc_proxy = MRCProxy::create( *mrc_uri, proxy_flags, log, proxy_operation_timeout, "", proxy_reconnect_tries_max, proxy_ssl_context );
       if ( mrc_proxy != NULL )
       {
         org::xtreemfs::interfaces::Stat stbuf;
         mrc_proxy->getattr( name + "/", stbuf );
 
-        auto_OSDProxyMux osd_proxy_mux = OSDProxyMux::create( dir_proxy, proxy_flags, log, proxy_operation_timeout, proxy_ssl_context );
+        auto_OSDProxyMux osd_proxy_mux = OSDProxyMux::create( dir_proxy, proxy_flags, log, proxy_operation_timeout, proxy_reconnect_tries_max, proxy_ssl_context );
         if ( osd_proxy_mux != NULL )
         {
           YIELD::concurrency::auto_StageGroup stage_group = new YIELD::concurrency::SEDAStageGroup;

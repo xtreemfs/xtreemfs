@@ -110,7 +110,19 @@ namespace mount_xtreemfs
         volume_flags |= xtreemfs::Volume::VOLUME_FLAG_TRACE_FILE_IO;
 
       // Create the XtreemFS volume in the parent as well as the child process so that the parent will fail on most common errors (like failed connections) before the child is created
-      YIELD::platform::auto_Volume volume = xtreemfs::Volume::create( *dir_uri, volume_name, volume_flags, get_log(), get_proxy_flags(), get_operation_timeout(), get_proxy_ssl_context(), vivaldi_coordinates_file_path ).release();
+      YIELD::platform::auto_Volume volume = 
+        xtreemfs::Volume::create
+        ( 
+          *dir_uri, 
+          volume_name, 
+          volume_flags, 
+          get_log(), 
+          get_proxy_flags(), 
+          get_operation_timeout(), 
+          xtreemfs::DIRProxy::RECONNECT_TRIES_MAX_DEFAULT, 
+          get_proxy_ssl_context(), 
+          vivaldi_coordinates_file_path 
+        ).release();
 
       if ( foreground )
       {

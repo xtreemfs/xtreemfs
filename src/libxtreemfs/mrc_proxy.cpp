@@ -19,12 +19,16 @@ void MRCProxy::chown( const Path& path, int uid, int gid )
 #endif
 }
 
-auto_MRCProxy MRCProxy::create( const YIELD::ipc::URI& absolute_uri,
-                                uint32_t flags,
-                                YIELD::platform::auto_Log log,
-                                const YIELD::platform::Time& operation_timeout,
-                                const char* password,
-                                YIELD::ipc::auto_SSLContext ssl_context )
+auto_MRCProxy MRCProxy::create
+( 
+  const YIELD::ipc::URI& absolute_uri,
+  uint32_t flags,
+  YIELD::platform::auto_Log log,
+  const YIELD::platform::Time& operation_timeout,
+  const char* password,
+  uint8_t reconnect_tries_max,
+  YIELD::ipc::auto_SSLContext ssl_context 
+)
 {
   YIELD::ipc::URI checked_uri( absolute_uri );
 
@@ -42,7 +46,7 @@ auto_MRCProxy MRCProxy::create( const YIELD::ipc::URI& absolute_uri,
 
   YIELD::ipc::auto_SocketAddress peername = YIELD::ipc::SocketAddress::create( checked_uri );
   if ( peername != NULL )
-    return new MRCProxy( flags, log, operation_timeout, password, peername, createSocketFactory( checked_uri, ssl_context ) );
+    return new MRCProxy( flags, log, operation_timeout, password, peername, reconnect_tries_max, createSocketFactory( checked_uri, ssl_context ) );
   else
     throw YIELD::platform::Exception();
 }

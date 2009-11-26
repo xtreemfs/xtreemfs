@@ -26,7 +26,7 @@ namespace xtreemfs
     {
       if ( what_str.empty() )
       {
-        std::ostringstream what_oss; // This is dangerous, but we want to include stack traces
+        std::ostringstream what_oss;
         what_oss << "errno = " << get_error_code();
         what_oss << ", strerror = " << get_error_message();
         if ( !get_stack_trace().empty() )

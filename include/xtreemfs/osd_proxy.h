@@ -23,11 +23,16 @@ namespace xtreemfs
   class OSDProxy : public Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>
   {
   public:
-    static yidl::runtime::auto_Object<OSDProxy> create( const YIELD::ipc::URI& absolute_uri,
-                                                        uint32_t flags = 0,
-                                                        YIELD::platform::auto_Log log = NULL,
-                                                        const YIELD::platform::Time& operation_timeout = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
-                                                        YIELD::ipc::auto_SSLContext ssl_context = NULL );
+    static yidl::runtime::auto_Object<OSDProxy> 
+      create
+      ( 
+        const YIELD::ipc::URI& absolute_uri,
+        uint32_t flags = 0,
+        YIELD::platform::auto_Log log = NULL,
+        const YIELD::platform::Time& operation_timeout = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
+        uint8_t reconnect_tries_max = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::RECONNECT_TRIES_MAX_DEFAULT,
+        YIELD::ipc::auto_SSLContext ssl_context = NULL 
+      );
 
     // yidl::runtime::Object
     OSDProxy& incRef() { return yidl::runtime::Object::incRef( *this ); }
@@ -35,15 +40,29 @@ namespace xtreemfs
     // YIELD::concurrency::EventTarget
     void send( YIELD::concurrency::Event& ev )
     {
-      // Bypass Proxy so no credentials are attached; the credentials for OSD operations are in FileCredentials passed explicitly to the operation
+      // Bypass Proxy so no credentials are attached; 
+      // the credentials for OSD operations are in FileCredentials passed 
+      // explicitly to the operation
       YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::send( ev );
     }
 
   private:
     friend class YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>;
 
-    OSDProxy( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, YIELD::ipc::auto_SocketAddress peername, YIELD::ipc::auto_SocketFactory socket_factory )
-      : Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>( flags, log, operation_timeout, peername, socket_factory )
+    OSDProxy
+    ( 
+      uint32_t flags, 
+      YIELD::platform::auto_Log log, 
+      const YIELD::platform::Time& operation_timeout, 
+      YIELD::ipc::auto_SocketAddress peername,
+      uint8_t reconnect_tries_max,
+      YIELD::ipc::auto_SocketFactory socket_factory 
+    )
+      : Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>
+      ( 
+        flags, log, operation_timeout, peername, 
+        reconnect_tries_max, socket_factory 
+      )
     { }
 
     ~OSDProxy() { }
@@ -53,6 +72,10 @@ namespace xtreemfs
 };
 
 
-bool operator>( const org::xtreemfs::interfaces::OSDWriteResponse& left, const org::xtreemfs::interfaces::OSDWriteResponse& right );
+bool operator>
+( 
+  const org::xtreemfs::interfaces::OSDWriteResponse& left, 
+  const org::xtreemfs::interfaces::OSDWriteResponse& right 
+);
 
 #endif

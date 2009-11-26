@@ -1,4 +1,4 @@
-// Revision: 1911
+// Revision: 1912
 
 #include "yield/ipc.h"
 
@@ -19,8 +19,8 @@
 #endif
 #endif
 template <class RequestType, class ResponseType>
-YIELD::ipc::Client<RequestType, ResponseType>::Client( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, auto_SocketAddress peername, auto_SocketFactory socket_factory )
-  : flags( flags ), log( log ), operation_timeout( operation_timeout ), peername( peername ), socket_factory( socket_factory )
+YIELD::ipc::Client<RequestType, ResponseType>::Client( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, auto_SocketAddress peername, uint8_t reconnect_tries_max, auto_SocketFactory socket_factory )
+  : flags( flags ), log( log ), operation_timeout( operation_timeout ), peername( peername ), reconnect_tries_max( reconnect_tries_max ), socket_factory( socket_factory )
 { }
 template <class RequestType, class ResponseType>
 YIELD::ipc::Client<RequestType, ResponseType>::~Client()
@@ -116,7 +116,7 @@ public:
       if ( client.log != NULL )
         client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: connect() to <host>:" << client.peername->get_port() <<
           " failed, errno=" << error_code << ", strerror=" << YIELD::platform::Exception::strerror( error_code ) << ".";
-      if ( request->get_reconnect_tries() < 2 )
+      if ( request->get_reconnect_tries() < client.reconnect_tries_max )
       {
         request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
         client.handleEvent( *request.release() );
@@ -196,7 +196,7 @@ public:
           ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       get_socket()->shutdown();
       get_socket()->close();
-      if ( request->get_reconnect_tries() < 2 )
+      if ( request->get_reconnect_tries() < client.reconnect_tries_max )
       {
         request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
         client.handleEvent( *request.release() );
@@ -253,7 +253,7 @@ public:
           ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       get_socket()->shutdown();
       get_socket()->close();
-      if ( request->get_reconnect_tries() < 2 )
+      if ( request->get_reconnect_tries() < client.reconnect_tries_max )
       {
         request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
         client.handleEvent( *request.release() );
@@ -473,11 +473,16 @@ void YIELD::ipc::HTTPBenchmarkDriver::sendHTTPRequest()
 // http_client.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-YIELD::ipc::auto_HTTPClient YIELD::ipc::HTTPClient::create( const URI& absolute_uri,
-                                                            uint32_t flags,
-                                                            YIELD::platform::auto_Log log,
-                                                            const YIELD::platform::Time& operation_timeout,
-                                                            auto_SSLContext ssl_context )
+YIELD::ipc::auto_HTTPClient
+  YIELD::ipc::HTTPClient::create
+  (
+    const URI& absolute_uri,
+    uint32_t flags,
+    YIELD::platform::auto_Log log,
+    const YIELD::platform::Time& operation_timeout,
+    uint8_t reconnect_tries_max,
+    auto_SSLContext ssl_context
+  )
 {
   URI checked_absolute_uri( absolute_uri );
   if ( checked_absolute_uri.get_port() == 0 )
@@ -503,7 +508,7 @@ YIELD::ipc::auto_HTTPClient YIELD::ipc::HTTPClient::create( const URI& absolute_
     else
 #endif
       socket_factory = new TCPSocketFactory;
-    return new HTTPClient( flags, log, operation_timeout, peername, socket_factory );
+    return new HTTPClient( flags, log, operation_timeout, peername, reconnect_tries_max, socket_factory );
   }
   else
     throw YIELD::platform::Exception();
@@ -790,6 +795,10 @@ void YIELD::ipc::HTTPRequest::respond( uint16_t status_code, yidl::runtime::auto
 {
   respond( *( new HTTPResponse( status_code, body ) ) );
 }
+void YIELD::ipc::HTTPRequest::respond( YIELD::concurrency::Response& response )
+{
+  YIELD::concurrency::Request::respond( response );
+}
 yidl::runtime::auto_Buffer YIELD::ipc::HTTPRequest::serialize()
 {
   RFC822Headers::set_iovec( 0, method, strnlen( method, 16 ) );
@@ -797,6 +806,10 @@ yidl::runtime::auto_Buffer YIELD::ipc::HTTPRequest::serialize()
   RFC822Headers::set_iovec( 2, uri, uri_len );
   RFC822Headers::set_iovec( 3, " HTTP/1.1\r\n", 11 );
   return HTTPMessage::serialize();
+}
+void YIELD::ipc::HTTPRequest::set_reconnect_tries( uint8_t reconnect_tries )
+{
+  this->reconnect_tries = reconnect_tries;
 }
 
 
@@ -1942,6 +1955,10 @@ void YIELD::ipc::ONCRPCRequest::respond( YIELD::concurrency::Response& response 
     }
   }
   return Request::respond( response );
+}
+void YIELD::ipc::ONCRPCRequest::set_reconnect_tries( uint8_t reconnect_tries )
+{
+  this->reconnect_tries = reconnect_tries;
 }
 void YIELD::ipc::ONCRPCRequest::unmarshal( yidl::runtime::Unmarshaller& unmarshaller )
 {
@@ -3304,6 +3321,10 @@ void YIELD::ipc::Socket::init()
 #else
   signal( SIGPIPE, SIG_IGN );
 #endif
+}
+bool YIELD::ipc::Socket::operator==( const Socket& other ) const
+{
+  return socket_ == other.socket_;
 }
 ssize_t YIELD::ipc::Socket::read( yidl::runtime::auto_Buffer buffer )
 {
@@ -4988,10 +5009,36 @@ extern "C"
 {
   #include <uriparser.h>
 };
+YIELD::ipc::URI::URI( const char* uri )
+{
+  init( uri, strnlen( uri, UINT16_MAX ) );
+}
+YIELD::ipc::URI::URI( const std::string& uri )
+{
+  init( uri.c_str(), uri.size() );
+}
+YIELD::ipc::URI::URI( const char* uri, size_t uri_len )
+{
+  init( uri, uri_len );
+}
+YIELD::ipc::URI::URI( const char* scheme, const char* host, uint16_t port )
+  : scheme( scheme ), host( host ), port( port ), resource( "/" )
+{ }
+YIELD::ipc::URI::URI( const char* scheme, const char* host, uint16_t port, const char* resource )
+  : scheme( scheme ), host( host ), port( port ), resource( resource )
+{ }
 YIELD::ipc::URI::URI( const URI& other )
 : scheme( other.scheme ), user( other.user ), password( other.password ),
   host( other.host ), port( other.port ), resource( other.resource )
 { }
+YIELD::ipc::auto_URI YIELD::ipc::URI::parse( const char* uri )
+{
+  return parse( uri, strnlen( uri, UINT16_MAX ) );
+}
+YIELD::ipc::auto_URI YIELD::ipc::URI::parse( const std::string& uri )
+{
+  return parse( uri.c_str(), uri.size() );
+}
 YIELD::ipc::auto_URI YIELD::ipc::URI::parse( const char* uri, size_t uri_len )
 {
   UriParserStateA parser_state;
