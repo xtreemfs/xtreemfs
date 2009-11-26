@@ -241,8 +241,25 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
             public void handle(HttpExchange httpExchange) throws IOException {
                 byte[] content;
                 try {
-                    
-                    content = status.getStatusPage().getBytes("ascii");
+                    if (httpExchange.getRequestURI().getPath().contains("strace")) {
+                        StringBuilder sb = new StringBuilder();
+                        sb.append("<HTML><BODY><H1>THREAD STATES</H1><PRE>");
+                        final Map<Thread,StackTraceElement[]> traces =  Thread.getAllStackTraces();
+                        for (Thread t : traces.keySet()) {
+                            sb.append("thread: ");
+                            sb.append(t.getName());
+                            sb.append("<BR>\n");
+                            for (StackTraceElement e : traces.get(t)) {
+                                sb.append(e.toString());
+                                sb.append("<BR>\n");
+                            }
+                            sb.append("<BR>\n");
+                        }
+                        sb.append("</PRE></BODY></HTML>");
+                        content = sb.toString().getBytes("ascii");
+                    } else {
+                        content = status.getStatusPage().getBytes("ascii");
+                    }
                     httpExchange.sendResponseHeaders(200, content.length);
                     httpExchange.getResponseBody().write(content);
                     httpExchange.getResponseBody().close();
