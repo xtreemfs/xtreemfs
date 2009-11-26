@@ -487,7 +487,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 //
 //      parent_volume->get_mrc_proxy()->xtreemfs_update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
 //      latest_osd_write_response.set_new_file_size( org::xtreemfs::interfaces::NewFileSize() );
-    }
+//    }
 
     ret = static_cast<ssize_t>( current_file_offset - offset );
   }
