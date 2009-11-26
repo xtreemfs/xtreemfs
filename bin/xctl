@@ -201,11 +201,10 @@ class Autotest:
             raise
                             
     def run( self ):               
-        ret = 0
+        failed_test_count = 0
         for volume in self.__get_volumes():
-            ret |= volume.test()
-                                    
-        return ret
+            failed_test_count += volume.test()
+        return failed_test_count
     
     def save_server_status_pages( self ):
         dir, mrc, osds = self.__get_servers()
@@ -638,11 +637,13 @@ class Volume:
               verbose=False
             ):
 
+        failed_test_count = 0 # The return value
         original_cwd = os.getcwd()
 
         tests_dir_path = os.path.abspath( os.path.join( MY_DIR_PATH, "..", "tests" ) )
         assert os.path.exists( tests_dir_path ), "xtreemfs/tests directory does not exist!"
         sys.path.append( tests_dir_path )
+
 
         try:
             test_suite_factories = {}
@@ -650,13 +651,13 @@ class Volume:
             test_module_names.sort()
             for test_module_name in test_module_names:
                 if DEBUG_ME:
-                    print "xctl: trying to import test", test_module_name
+                    print "xctl: trying to import test module", test_module_name
                     
                 try:
                     test_module = __import__( test_module_name )
                 except ImportError:
                     if DEBUG_ME:
-                        print "xctl: could not import", test_module_name, "from tests"
+                        print "xctl: could not import test module", test_module_name, "from tests"
                         traceback.print_exc()
                     continue
     
@@ -670,27 +671,39 @@ class Volume:
             test_module_names.sort()
             for test_module_name in test_module_names:
                 test_suite_factory = test_suite_factories[test_module_name]                
-                test_suite = test_suite_factory( direct_io=( not "nondirect" in self.get_mount_point_dir_path() ) )                
+                test_suite = test_suite_factory( direct_io=( not "nondirect" in self.get_mount_point_dir_path() ) )
                 if test_suite is not None:            
-                    print "xctl: running", test_module_name, "in", self.get_mount_point_dir_path()
                     test_run_dir_path = os.path.join( self.get_mount_point_dir_path(), test_module_name )
-                    try: os.mkdir( test_run_dir_path )
-                    except: pass                                         
+                    try: 
+                        os.mkdir( test_run_dir_path )
+                    except KeyboardInterrupt:
+                        raise
+                    except:
+                        pass # The directory may already exist because of direct/nondirect volume sharing
                     os.chdir( test_run_dir_path )
-                    unittest.TextTestRunner( verbosity=( verbose and 2 or 1 ) ).run( test_suite )
-                    os.chdir( self.get_mount_point_dir_path() )
-                    try: shutil.rmtree( test_run_dir_path )
-                    except: traceback.print_exc()
-        
-            os.chdir( original_cwd )
-            return 0
+                    print "xctl: running", test_module_name, "in", test_run_dir_path
+
+                    result = unittest.TextTestRunner( verbosity=( verbose and 2 or 1 ) ).run( test_suite )
+                    if not result.wasSuccessful(): failed_test_count += 1
+
+                    os.chdir( original_cwd ) # Change back so we can rmtree test_run_dir_path
+                    try: 
+                        shutil.rmtree( test_run_dir_path )
+                    except KeyboardInterrupt:
+                        raise
+                    except:
+                        if DEBUG_ME:
+                            print "xctl: error cleaning up test directory", test_run_dir_path
+                            traceback.print_exc()        
+
         except KeyboardInterrupt:
             os.chdir( original_cwd )
-            return 1
+            raise
         except:
             traceback.print_exc()
-            os.chdir( original_cwd )
-            return 1
+
+        os.chdir( original_cwd )
+        return failed_test_count
         
     def unmount( self ):
         for mounts_line in open( "/proc/mounts" ).readlines():
@@ -761,6 +774,7 @@ if __name__ == "__main__":
             autotest.clean()
         else:
             ret = 0
+            interrupted = False
                         
             if options.start_autotest_servers or options.autotest:
                 autotest.start_servers( debug_level=server_debug_level )
@@ -773,12 +787,15 @@ if __name__ == "__main__":
                                        )            
 
             if options.run_autotest or options.autotest:
-                ret = autotest.run()
+                try:
+                    ret = autotest.run()
+                except KeyboardInterrupt:
+                    interrupted = True
                 
             if options.stop_autotest_clients or options.autotest:
                 autotest.stop_clients()
 
-            if options.autotest:
+            if options.autotest and not interrupted:
                 autotest.save_server_status_pages()
                 
             if options.stop_autotest_servers or options.autotest:
