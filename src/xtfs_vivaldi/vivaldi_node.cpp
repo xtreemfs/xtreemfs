@@ -157,7 +157,10 @@ bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordina
   }else{
     if( coordinatesJ.get_local_error() > 0.0 ){
       weight = localError/ ( localError + static_cast<double>(abs(coordinatesJ.get_local_error())) );
-    } //else weight is 0.0
+    }else{
+      //The OSD has not determined its position yet (it has not even started), so we just modify limitly ours. (To allow "One client-One OSD" situations).
+      weight = WEIGHT_IF_OSD_UNINITIALIZED;
+    }
   }
   
   //Calculate proposed movement

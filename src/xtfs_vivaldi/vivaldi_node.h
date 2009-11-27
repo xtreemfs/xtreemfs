@@ -11,6 +11,12 @@
 #define CONSTANT_E 0.10
 #define CONSTANT_C 0.25
 #define MAX_MOVEMENT_RATIO 0.10
+/*
+ * If the client contacts an OSD which has not started recalculating its position yet (and therefore
+ * has no information about the space) it just trusts it partially. Next value is used to reduce the
+ * magnitude of the proposed movement.
+ */ 
+#define WEIGHT_IF_OSD_UNINITIALIZED 0.1
 
 namespace xtfs_vivaldi
 {
