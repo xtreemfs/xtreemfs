@@ -25,6 +25,7 @@ import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.interfaces.utils.ONCRPCRecordFragmentHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.osd.vivaldi.VivaldiNode;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
 
@@ -100,6 +101,17 @@ public class SimpleVivaldiStageTest extends TestCase {
         vc.freeBuffers();
         
 
+    }
+
+    @Test
+    public void testVivaldiCoordinates() throws Exception {
+        final VivaldiCoordinates c1 = new VivaldiCoordinates(1.1, 2.2, 0.1);
+        final String c1s = VivaldiNode.coordinatesToString(c1);
+        final VivaldiCoordinates c2 = VivaldiNode.stringToCoordinates(c1s);
+
+        assertEquals(c1.getX_coordinate(),c2.getX_coordinate());
+        assertEquals(c1.getY_coordinate(),c2.getY_coordinate());
+        assertEquals(c1.getLocal_error(),c2.getLocal_error());
     }
     // public void hello() {}
 

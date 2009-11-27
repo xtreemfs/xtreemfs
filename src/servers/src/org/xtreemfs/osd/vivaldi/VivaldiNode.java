@@ -182,9 +182,9 @@ public class VivaldiNode {
 
     public static VivaldiCoordinates stringToCoordinates(String coordinates) {
         VivaldiCoordinates vc = new VivaldiCoordinates();
-        vc.setX_coordinate(OutputUtils.readHexLong(coordinates, 0));
-        vc.setY_coordinate(OutputUtils.readHexLong(coordinates, 8));
-        vc.setLocal_error(OutputUtils.readHexLong(coordinates, 16));
+        vc.setX_coordinate(Double.longBitsToDouble(OutputUtils.readHexLong(coordinates, 0)));
+        vc.setY_coordinate(Double.longBitsToDouble(OutputUtils.readHexLong(coordinates, 16)));
+        vc.setLocal_error(Double.longBitsToDouble(OutputUtils.readHexLong(coordinates, 32)));
         return vc;
     }
     
