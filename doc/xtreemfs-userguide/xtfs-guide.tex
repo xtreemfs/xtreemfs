@@ -32,7 +32,7 @@
 \begin{flushleft}
 \sffamily \begin{LARGE}The XtreemFS Installation and User Guide\end{LARGE}
 
-Version 1.1
+Version 1.2
 \end{flushleft}
 
 
@@ -49,6 +49,26 @@ This document is \copyright{} 2009 by Bj\"orn Kolbeck, Jan Stender, Minor Gordon
 
 \setcounter{tocdepth}{10}
 \tableofcontents
+
+\chapter*{Changes}
+
+This is a summary of the most important changes in release 1.2.
+
+\begin{itemize}
+ \item \textbf{renamed binaries}\\
+ We renamed most binaries to conform with Linux naming conventions, e.g. \texttt{xtfs\_mount} is now \texttt{mount.xtreemfs}. However, we added links with the old names for compatibility. For a full list see Sec. \ref{sec:cli_utils}. 
+
+ \item \textbf{``Grid SSL'' mode}\\
+ In this mode, SSL is only used for authentication (handshake) and regular TCP is used for communication afterwards. For more details see Sec. \ref{sec:cfg_ssl}.
+
+ \item \textbf{the \texttt{xctl} utility}\\
+ The new release includes a command line utility \texttt{xctl} for starting and stopping the services. This tool is useful if you don't want a package based installation or if you don't have root privileges.
+
+ \item \textbf{vivaldi}\\
+ XtreemFS now includes modules for calculating Vivaldi network coordinates to reflect the latency between OSDs and clients. An OSD and replica selection policy for vivaldi is also available. For details, see Sec. \ref{sec:vivaldi}.
+
+\end{itemize}
+
 
 \chapter{Quick Start}
 
@@ -78,21 +98,21 @@ This is the very short version to help you set up a local installation of Xtreem
 \item Wait a few seconds for the services to register at the directory service. You can check the registry by opening the DIR status page in your favorite web browser \href{http://localhost:30638}{http://localhost:30638}.
 
 \item Create a new volume with the default settings:\\
-	\texttt{xtfs\_mkvol localhost/myVolume}
+	\texttt{mkfs.xtreemfs localhost/myVolume}
 
 \item Create a mount point:\\
 	\texttt{mkdir \~{}/xtreemfs}
 
 \item Mount XtreemFS on your computer:
 	\begin{verbatim}
-	xtfs_mount localhost/myVolume ~/xtreemfs
+	mount.xtreemfs localhost/myVolume ~/xtreemfs
 	\end{verbatim}
 
 
 \item Have fun ;-)
 
 \item To un-mount XtreemFS:\\
-	\texttt{xtfs\_umount \~{}/xtreemfs}
+	\texttt{umount.xtreemfs \~{}/xtreemfs}
 \end{enumerate}
 
 You can also mount this volume on remote computers. First make sure that the ports 32636, 32638 and 32640 are open for incoming TCP connections. You must also specify a hostname that can be resolved by the remote machine! This hostname has to be used instead of \texttt{localhost} when mounting.
@@ -298,10 +318,11 @@ uses XOSCerts
 
 
 \subsection{Configuring SSL Support}
+\label{sec:cfg_ssl}
 
 In order to enable certificate-based authentication in an XtreemFS installation, services need to be equipped with X.509\index{X.509}\index{Certificate}\index{Credentials} certificates. Certificates are used to establish a mutual trust relationship among XtreemFS services and between the XtreemFS client and XtreemFS services.
 
-Note that it is not possible to mix SSL-enabled and non-SSL services in an XtreemFS installation! If you only need authentication based on certiciates without SSL, you can use the ``grid SSL'' mode. In this mode XtreemFS will only do an SSL handshake and fall back to plain TCP for communication. This mode is insecure (not encrypted and records are not signed) but just as fast as the non-SSL mode.
+Note that it is not possible to mix SSL-enabled and non-SSL services in an XtreemFS installation! If you only need authentication based on certiciates without SSL, you can use the ``grid SSL'' mode. In this mode XtreemFS will only do an SSL handshake and fall back to plain TCP for communication. This mode is insecure (not encrypted and records are not signed) but just as fast as the non-SSL mode. If this mode is enabled, all client tools must be used with the \texttt{oncrpcg://} scheme prefix.
 
 Each XtreemFS service needs a certificate and a private key in order to be run. Once they have been created and signed, the credentials may need to be converted into the correct file format. XtreemFS services also need a \textit{trust store} that contains all trusted Certification Authority certificates.
 
@@ -436,13 +457,13 @@ $> cp \textit{service}.p12 /etc/xos/xtreemfs/truststore/certs
  \item Start up the XtreemFS services (see Sec. \ref{sec:startstopservice}).
  \item Create a new volume (see Sec. \ref{sec:create_volume} for details).
 	\begin{verbatim}
-	$> xtfs_mkvol --pkcs12-file-path=\
+	$> mkfs.xtreemfs --pkcs12-file-path=\
 	   /etc/xos/xtreemfs/truststore/certs/client.p12 localhost/test
 	\end{verbatim}
 
  \item Mount the volume (see Sec. \ref{sec:mount_vol} for details).
 	\begin{verbatim}
-	$> xtfs_mount --pkcs12-file-path=\
+	$> mount.xtreemfs --pkcs12-file-path=\
 	   /etc/xos/xtreemfs/truststore/certs/client.p12 localhost/test /mnt
 	\end{verbatim}
 
@@ -738,7 +759,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Services & DIR, MRC, OSD\\
  Values   & true, false \\
  Default  & false \\
- Description & In this mode the services and client will only use SSL for mutual authentication with X.509 certificates (SSL handshake). After successful authentication the communication is vai plain TCP. This means that there is no encryption and signing of records! This mode is comparable to HTTP connections with Digest authentication. It should be used when certificate based authentication is required but performance is more important than security, which is usually true in GRID installations.
+ Description & In this mode the services and client will only use SSL for mutual authentication with X.509 certificates (SSL handshake). After successful authentication the communication is via plain TCP. This means that there is no encryption and signing of records! This mode is comparable to HTTP connections with Digest authentication. It should be used when certificate based authentication is required but performance is more important than security, which is usually true in GRID installations. If this mode is enabled, all client tools must be used with the \texttt{oncrpcg://} scheme prefix.
 \end{tabular}
 
 \subsubsection{\texttt{ssl.service\_creds}}
@@ -791,6 +812,14 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & Must be specified if \texttt{ssl.enabled} is enabled. Specifies the password which protects the trusted certificates file \texttt{ssl.trusted\_certs}.
 \end{tabular}
 
+\subsubsection{\texttt{startup.wait\_for\_dir}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC, OSD\\
+ Values   & 0..N seconds\\
+ Default  & 30 \\
+ Description & Time to wait for the DIR to become available during start up of the MRC and OSD. If the DIR does not respond within this time the MRC or OSD will abort startup.
+\end{tabular}
+
 \subsubsection{\texttt{uuid}}
 \begin{tabular}{lp{10cm}}
  Services & MRC, OSD\\
@@ -821,6 +850,22 @@ or
 
 To run init.d scripts, root permissions are required. \textbf{Note} that the Directory Service must be started first, since a running Directory Service is required when starting an MRC or OSD. Once a Directory Service as well as at least one OSD and MRC are running, XtreemFS is operational.
 
+Alternatively, you can use the \texttt{xctl} tool to start and stop the services. Config files are read from \texttt{./etc/xos/xtreemfs} unless another path is specified with \texttt{-c <path>}.
+
+	\begin{verbatim}
+	$> bin/xctl --start-dir
+	$> bin/xctl --start-mrc
+	$> bin/xctl --start-osd
+	\end{verbatim}
+or
+	\begin{verbatim}
+	$> bin/xctl --stop-osd
+	$> bin/xctl --stop-mrc
+	$> bin/xctl --stop-dir
+	\end{verbatim}
+
+The servers will be executed under the user ID of the user who called the xctl script.
+
 \subsection{Web-based Status Page}
 
 \begin{figure}[h]
@@ -841,7 +886,7 @@ with a common web browser. If you set an admin password in the service's configu
 
 \subsection{DIR Service Monitoring}
 
-The directory service has a built-in notofication system that can send alert emails if a service fails to send heartbeat messages for some time. The monitoring can be enabled in the DIR configuration by setting \texttt{monitoring = true}.
+The directory service has a built-in notification system that can send alert emails if a service fails to send heartbeat messages for some time. The monitoring can be enabled in the DIR configuration by setting \texttt{monitoring = true}.
 
 
 \section{Troubleshooting}
@@ -928,7 +973,7 @@ Like many other file systems, XtreemFS supports the concept of volumes. A volume
 \subsection{Creating Volumes}
 \label{sec:create_volume}
 
-Volumes can be created with the \texttt{xtfs\_mkvol} command line utility. Please see \texttt{man xtfs\_mkvol} for a full list of options and usage\index{Create Volume}\index{Volume!Create}\index{xtfs\_mkvol}.
+Volumes can be created with the \texttt{mkfs.xtreemfs} command line utility. Please see \texttt{man mkfs.xtreemfs} for a full list of options and usage\index{Create Volume}\index{Volume!Create}\index{xtfs\_mkvol}\index{mkfs.xtreemfs}.
 
 When creating a volume, it is recommended to specify the access control policy (see Sec. \ref{sec:access_policies}). If not specified, POSIX permissions/ACLs will be chosen by default. Unlike most other policies, access control policies cannot be changed afterwards.
 
@@ -938,32 +983,32 @@ A volume with a POSIX permission model, a stripe size of 256kB and a stripe widt
 
 
 \begin{verbatim}
-$> xtfs_mkvol -a POSIX -p RAID0 -s 256 -w 1 \
+$> mkfs.xtreemfs -a POSIX -p RAID0 -s 256 -w 1 \
    my-mrc-host.com:32636/myVolume
 \end{verbatim}
 
-Creating a volume may require privileged access, which depends on whether an administrator password required by the MRC. To pass an administrator password, add \texttt{----password <password>} to the \texttt{xtfs\_mkvol} command.
+Creating a volume may require privileged access, which depends on whether an administrator password required by the MRC. To pass an administrator password, add \texttt{----password <password>} to the \texttt{mkfs.xtreemfs} command.
 
-For a complete list of parameters, please refer to the \texttt{xtfs\_mkvol} man pages.
+For a complete list of parameters, please refer to the \texttt{mkfs.xtreemfs} man pages.
 
 \subsection{Deleting Volumes}
 
-Volumes can be deleted with the \texttt{xtfs\_rmvol} tool. Note that deleting a volume implies that \emph{any data, i.e.\ all files and directories on the volume are deleted}! Please see \texttt{man xtfs\_rmvol} for a full list of options and usage\index{Delete Volume}\index{Volume!Delete}\index{xtfs\_rmvol}.
+Volumes can be deleted with the \texttt{rmfs.xtreemfs} tool. Note that deleting a volume implies that \emph{any data, i.e.\ all files and directories on the volume are deleted}! Please see \texttt{man rmfs.xtreemfs} for a full list of options and usage\index{Delete Volume}\index{Volume!Delete}\index{xtfs\_rmvol}\index{rmfs.xtreemfs}.
 
 The volume \texttt{myVolume} residing on the MRC \texttt{my-mrc-host.com:32636} can e.g.\ be deleted as follows:
 
 \begin{verbatim}
-$> xtfs_rmvol my-mrc-host.com:32636/myVolume
+$> rmfs.xtreemfs my-mrc-host.com:32636/myVolume
 \end{verbatim}
 
 Volume deletion is restricted to volume owners and privileged users. Similar to \texttt{xtfs\_mkvol}, an administrator password can be specified if required.
 
 \subsection{Listing all Volumes}
 
-A list of all volumes can be displayed with the \texttt{xtfs\_lsvol} tool. All volumes hosted by the MRC \texttt{my-mrc-host.com:32636} can be listed as follows:
+A list of all volumes can be displayed with the \texttt{lsfs.xtreemfs} tool. All volumes hosted by the MRC \texttt{my-mrc-host.com:32636} can be listed as follows:
 
 \begin{verbatim}
-$> xtfs_lsvol my-mrc-host.com:32636
+$> lsfs.xtreemfs my-mrc-host.com:32636
 \end{verbatim}
 
 Adding the \texttt{--l} flag will result in more details being shown.
@@ -976,7 +1021,7 @@ Once a volume has been created, it needs to be mounted in order to be accessed.
 
 \subsection{Mounting and Un-mounting}
 
-Before mounting XtreemFS volumes on a Linux machine, please ensure that the FUSE kernel module is loaded.\index{Volume!Mount}\index{Mount}\index{xtfs\_mount} Please check your distribution's manual to see if users must be in a special group (e.g. \texttt{trusted} in openSuSE) to be allowed to mount FUSE.
+Before mounting XtreemFS volumes on a Linux machine, please ensure that the FUSE kernel module is loaded.\index{Volume!Mount}\index{Mount}\index{xtfs\_mount}\index{mount.xtreemfs} Please check your distribution's manual to see if users must be in a special group (e.g. \texttt{trusted} in openSuSE) to be allowed to mount FUSE.
 
 
 \begin{verbatim}
@@ -991,11 +1036,11 @@ Volumes are mounted with the \texttt{xtfs\_mount} command:
 
 
 \begin{verbatim}
-$> xtfs_mount remote.dir.machine/myVolume /xtreemfs
+$> mount.xtreemfs remote.dir.machine/myVolume /xtreemfs
 \end{verbatim}
 
 
-\texttt{remote.dir.machine} describes the host with the Directory Service at which the volume is registered; \texttt{myVolume} is the name of the volume to be mounted. \texttt{/xtreemfs} is the directory on the local file system to which the XtreemFS volume will be mounted. For more options, please refer to \texttt{man xtfs\_mount}.
+\texttt{remote.dir.machine} describes the host with the Directory Service at which the volume is registered; \texttt{myVolume} is the name of the volume to be mounted. \texttt{/xtreemfs} is the directory on the local file system to which the XtreemFS volume will be mounted. For more options, please refer to \texttt{man mount.xtreemfs}.
 
 Please be aware that the Directory Service URL needs to be provided when mounting a volume, while MRC URLs are used to create volumes.
 
@@ -1004,13 +1049,13 @@ When mounting a volume, the client will immediately go into background and won't
 To check that a volume is mounted, use the \texttt{mount} command. It outputs a list of all mounts in the system. XtreemFS volumes are listed as \texttt{type fuse}:
 
 \begin{verbatim}
-/dev/fuse on /xtreemfs type fuse (rw,nosuid,nodev,user=userA)
+xtreemfs on /xtreemfs type fuse (rw,nosuid,nodev,user=userA)
 \end{verbatim}
 
-Volumes are unmounted with the \texttt{xtfs\_umount} tool\index{Volume!Un-mount}\index{Unmount}\index{xtfs\_umount}:
+Volumes are unmounted with the \texttt{umount.xtreemfs} tool\index{Volume!Un-mount}\index{Unmount}\index{xtfs\_umount}\index{umount.xtreemfs}:
 
 \begin{verbatim}
-$> xtfs_umount /xtreemfs
+$> umount.xtreemfs /xtreemfs
 \end{verbatim}
 
 \subsection{Mount Options}
@@ -1022,10 +1067,10 @@ By default, the local system cache on the client machine will be used to speed u
 
 \section{Troubleshooting}
 
-Different kinds of problems may occur when trying to create, mount or access files in a volume. In case no useful error message printed on the console, it may help to enable client-side log output. This can be done as follows:
+Different kinds of problems may occur when trying to create, mount or access files in a volume. If no log file was specified, the client will create a logfile called \texttt{mount.xtreemfs.log} in the current working direcory. This logile is only created in case of an error message. In case no useful error message printed on the console or in the logfile, it may help to enable client-side log output. This can be done as follows:
 
 \begin{verbatim}
-$> xtfs_mount -f -d INFO /xtreemfs
+$> mount.xtreemfs -f -d INFO remote.dir.machine/myVolume /xtreemfs
 \end{verbatim}
 
 The following list contains the most common problems and the solutions.
@@ -1053,7 +1098,7 @@ The following list contains the most common problems and the solutions.
 
 \begin{tabular}{lp{10cm}}
  \textbf{Problem}  & \textbf{An I/O error occurs when trying to create new files.} \\
- \textbf{Solution} & A common reason for this problem is that no OSD could be assigned to the new file. Please check if suitable OSDs are available for the volume. There are two alternative ways to do this:
+ \textbf{Solution} & In general, you can check the contents of the client log file to see the error which caused the I/O error. A common reason for this problem is that no OSD could be assigned to the new file. Please check if suitable OSDs are available for the volume. There are two alternative ways to do this:
    \begin{itemize}
      \item Open the MRC status page. It can be accessed via \texttt{http://<MRC-host>:30636} in the default case. For each volume, a list of suitable OSDs is shown there.
      \item Execute \texttt{getfattr -n xtreemfs.usable\_osds ----only-values <mountpoint>}.
@@ -1400,9 +1445,10 @@ sets a data center map-based OSD selection policy, which is invoked each time a 
  \item \texttt{default}
  \item \texttt{fqdn}
  \item \texttt{dcmap}
+ \item \texttt{vivaldi}
 \end{itemize}
 
-The default OSD selection policy selects a random subset of OSDs that are responsive and have more than 2GB of free disk space, whereas the \texttt{fqdn} and \texttt{dcmap} policies select those subsets of responsive OSDs with enough space that are closest according to fully qualified domain names and a data center map, accordingly. Besides, custom policies can be set by passing a list of basic policy IDs to be successively applied instead of a predefined policy name.
+The default OSD selection policy selects a random subset of OSDs that are responsive and have more than 2GB of free disk space, whereas the \texttt{fqdn} and \texttt{dcmap} policies select those subsets of responsive OSDs with enough space that are closest according to fully qualified domain names and a data center map, accordingly. The \texttt{vivaldi} policy uses the vivaldi coordinates of OSDs and clients for selecting the closest replica. Besides, custom policies can be set by passing a list of basic policy IDs to be successively applied instead of a predefined policy name.
 
 The OSD selection policy can be retrieved as follows:
 
@@ -1424,6 +1470,25 @@ A list of all policy attributes that have been set can be shown as follows:
 \begin{verbatim}
  $> xtfs_repl --pol_attrs_get /xtreemfs
 \end{verbatim}
+
+\section{Vivaldi}
+\label{sec:vivaldi}
+Client machines that want to use vivaldi network coordinates for replica and OSD selection must calculate their own coordinates relative to the OSDs. This is done by the \texttt{xtfs\_vivaldi} utility which must be started on each client machine. Ideally, this process is started during boot with the \texttt{xtreemfs-vivaldi} init.d scripts provided. The utility must be started with the directory service address and the path to a file in which the coordinates are stored.
+
+\begin{verbatim}
+ $> xtfs_vivaldi remote.dir.machine /var/lib/xtreemfs/vivaldi_coordinates
+\end{verbatim}
+
+If started with the init.d script, the utility will get the DIR address from \texttt{/etc/xos/xtreemfs/default\_dir} and will store the coordinates in \texttt{/var/lib/xtreemfs/vivaldi\_coordinates}.
+
+The coordinate file must be passed as an argument when mounting a volume:
+
+\begin{verbatim}
+$> mount.xtreemfs -c /var/lib/xtreemfs/vivaldi_coordinates \
+   remote.dir.machine/myVolume /xtreemfs
+\end{verbatim}
+
+Finally, the vivaldi replica and OSD selection policies must be set at the MRC for the volume(s). See Sec. \ref{sec:osd_select_policy} for details.
 
 \chapter{Policies}
 Many facets of the behavior of XtreemFS can be configured by means of policies. A policy defines how a certain task is performed, e.g.\ how the MRC selects a set of OSDs for a new file, or how it distinguishes between an authorized and an unauthorized user when files are accessed. Policies are a means to customize an XtreemFS installation.
@@ -1573,6 +1638,9 @@ This policy uses domain names of clients and OSDs to determine the distance betw
  \item \textbf{Data center map-based sorting (policy ID 3001)}\\
  Sorts the list of OSDs in ascending order of their distance to the client, according to the data center map.
 
+ \item \textbf{Vivaldi network coordinates based sorting (policy ID 3003)}\\
+ Sorts the list of OSDs in ascending order of their distance to the client, according to the vivaldi coordinates of the client and OSDs. This policy requires the clients to run the \texttt{xtfs\_vivaldi} service.
+
  \item \textbf{DNS based OSD Selection (policy ID 3002)}\\
  The FQDN of the client and all OSDs is compared and the maximum match (from the end of the FQDN) is used to sort the OSDs. The policy sorts the list of OSDs in descending order by the number of characters that match. This policy can be used to automatically select OSDs which are close to the client, if the length of the match between two DNS entries also indicate a low latency between two machines.
 
@@ -1687,20 +1755,22 @@ ssl.trusted_certs.container = jks
 
 
 \chapter{Command Line Utilities}
+\label{sec:cli_utils}
 
 \begin{description}
  \item[xtfs\_cleanup] Deletes orphaned objects on an OSD and restores orphaned files.
- \item[xtfs\_lsvol] Lists the volumes on an MRC.
- \item[xtfs\_mkvol] Creates a new volume on an MRC.
- \item[xtfs\_mount] The XtreemFS client which mounts an XtreemFS volume locally on a machine.
+ \item[lsfs.xtreemfs (was xtfs\_lsvol)] Lists the volumes on an MRC.
+ \item[mkfs.xtreemfs (was xtfs\_mkvol)] Creates a new volume on an MRC.
+ \item[mount.xtreemfs (was xtfs\_mount)] The XtreemFS client which mounts an XtreemFS volume locally on a machine.
  \item[xtfs\_mrcdbtool] Dumps and restores an XML representation of the MRC database.
  \item[xtfs\_repl] Controls file replication in XtreemFS.
- \item[xtfs\_rmvol] Deletes a volume.
+ \item[rmfs.xtreemfs (was xtfs\_rmvol)] Deletes a volume.
  \item[xtfs\_sp] Displays and modifies default striping policies for directories and volumes.
  \item[xtfs\_scrub] Examines all files in a volume for wrong file sizes and checksums and corrects wrong file sizes in the MRC.
  \item[xtfs\_stat] Displays XtreemFS-specific file information, such as OSD lists and striping policies.
  \item[xtfs\_test] Automatically sets up an XtreemFS testing environment and runs the automatic XtreemFS test suite.
- \item[xtfs\_umount] Un-mounts a mounted XtreemFS volume.
+ \item[umount.xtreemfs (was xtfs\_umount)] Un-mounts a mounted XtreemFS volume.
+ \item[xtfs\_vivaldi] client service to calculate vivaldi coordinates.
 \end{description}
 
 \printindex
