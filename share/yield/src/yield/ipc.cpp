@@ -1,4 +1,4 @@
-// Revision: 1912
+// Revision: 1914
 
 #include "yield/ipc.h"
 
@@ -192,12 +192,16 @@ public:
       if ( client.log != NULL )
         client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: error reading " <<
           response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) <<
+          " from socket #" << static_cast<uint64_t>( *get_socket() ) <<
           ", errno=" << error_code << ", strerror=" << YIELD::platform::Exception::strerror( error_code ) <<
           ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       get_socket()->shutdown();
       get_socket()->close();
       if ( request->get_reconnect_tries() < client.reconnect_tries_max )
       {
+        // Hack: if the read timed out, increase the timeout for the next try
+        if ( error_code == ETIMEDOUT )
+          client.operation_timeout = client.operation_timeout * 2;
         request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
         client.handleEvent( *request.release() );
       }
@@ -249,6 +253,7 @@ public:
       if ( client.log != NULL )
         client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: error writing " <<
           request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) <<
+          " to socket #" << static_cast<uint64_t>( *get_socket() ) <<
           ", errno=" << error_code << ", strerror=" << YIELD::platform::Exception::strerror( error_code ) <<
           ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       get_socket()->shutdown();
@@ -3167,15 +3172,19 @@ int YIELD::ipc::Socket::create( int& domain, int type, int protocol )
       DWORD ipv6only = 0; // Allow dual-mode sockets
       setsockopt( socket_, IPPROTO_IPV6, IPV6_V6ONLY, ( char* )&ipv6only, sizeof( ipv6only ) );
     }
-    return socket_;
   }
   else if ( domain == AF_INET6 && ::WSAGetLastError() == WSAEAFNOSUPPORT )
   {
     domain = AF_INET;
-    return ::socket( AF_INET, type, protocol );
+    socket_ = ::socket( AF_INET, type, protocol );
+    if ( socket_ == INVALID_SOCKET )
+      return INVALID_SOCKET;
   }
   else
     return INVALID_SOCKET;
+  //int so_sndbuf = 65600; // 64k is the default block size in Dokan + ONC-RPC headers
+  //setsockopt( socket_, SOL_SOCKET, SO_SNDBUF, reinterpret_cast<char*>( so_sndbuf ), sizeof( so_sndbuf ) );
+  return socket_;
 #else
   int socket_ = ::socket( AF_INET6, type, protocol );
   if ( socket_ != -1 )
@@ -4046,11 +4055,13 @@ private:
     AIOControlBlock* aio_control_block;
     for ( ;; )
     {
+      ssize_t read_ret;
 #if defined(_WIN32) || defined(__MACH__)
-      if ( submit_pipe_read_end->read( &aio_control_block, sizeof( aio_control_block ) ) == sizeof( aio_control_block ) )
+      read_ret = submit_pipe_read_end->read( &aio_control_block, sizeof( aio_control_block ) );
 #else
-      if ( submit_pipe->read( &aio_control_block, sizeof( aio_control_block ) ) == sizeof( aio_control_block ) )
+      read_ret = submit_pipe->read( &aio_control_block, sizeof( aio_control_block ) );
 #endif
+      if ( read_ret == sizeof( aio_control_block ) )
       {
 #ifdef _WIN32
         SOCKET fd = *aio_control_block->get_socket();
@@ -4061,8 +4072,10 @@ private:
         if ( !processAIOControlBlock( aio_control_block ) )
           fd_to_aio_control_block_map[fd] = aio_control_block;
       }
-      else
+      else if ( read_ret <= 0 )
         break;
+      else
+        DebugBreak();
     }
   }
 #ifdef _WIN32
@@ -4825,7 +4838,7 @@ bool YIELD::ipc::TracingSocket::connect( auto_SocketAddress to_sockaddr )
 }
 ssize_t YIELD::ipc::TracingSocket::read( void* buffer, size_t buffer_len )
 {
-  log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: trying to read " << buffer_len << " bytes from socket #" << static_cast<uint64_t>( *this ) << ".";
+  log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::TracingSocket: trying to read " << buffer_len << " bytes from socket #" << static_cast<uint64_t>( *this ) << ".";
   ssize_t read_ret = underlying_socket->read( buffer, buffer_len );
   if ( read_ret > 0 )
   {
@@ -4834,28 +4847,28 @@ ssize_t YIELD::ipc::TracingSocket::read( void* buffer, size_t buffer_len )
     log->write( "\n", YIELD::platform::Log::LOG_DEBUG );
   }
   else if ( read_ret == 0 || ( !underlying_socket->want_read() && !underlying_socket->want_write() ) )
-    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: lost connection while trying to read socket #" <<  static_cast<uint64_t>( *this ) << ".";
+    log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::TracingSocket: lost connection while trying to read socket #" <<  static_cast<uint64_t>( *this ) << ".";
   return read_ret;
 }
 bool YIELD::ipc::TracingSocket::want_connect() const
 {
   bool want_connect_ret = underlying_socket->want_connect();
   if ( want_connect_ret )
-    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: would block on connect on socket #" << static_cast<uint64_t>( *this ) << ".";
+    log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::TracingSocket: would block on connect on socket #" << static_cast<uint64_t>( *this ) << ".";
   return want_connect_ret;
 }
 bool YIELD::ipc::TracingSocket::want_read() const
 {
   bool want_read_ret = underlying_socket->want_read();
   if ( want_read_ret )
-    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: would block on read on socket #" << static_cast<uint64_t>( *this ) << ".";
+    log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::TracingSocket: would block on read on socket #" << static_cast<uint64_t>( *this ) << ".";
   return want_read_ret;
 }
 bool YIELD::ipc::TracingSocket::want_write() const
 {
   bool want_write_ret = underlying_socket->want_write();
   if ( want_write_ret )
-    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: would block on write on socket #" << static_cast<uint64_t>( *this ) << ".";
+    log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::TracingSocket: would block on write on socket #" << static_cast<uint64_t>( *this ) << ".";
   return want_write_ret;
 }
 ssize_t YIELD::ipc::TracingSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
@@ -4863,7 +4876,7 @@ ssize_t YIELD::ipc::TracingSocket::writev( const struct iovec* buffers, uint32_t
   size_t buffers_len = 0;
   for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
     buffers_len += buffers[buffer_i].iov_len;
-  log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yield::ipc::TracingSocket: trying to write " << buffers_len << " bytes to socket #" << static_cast<uint64_t>( *this ) << ".";
+  log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::TracingSocket: trying to write " << buffers_len << " bytes to socket #" << static_cast<uint64_t>( *this ) << ".";
   ssize_t writev_ret = underlying_socket->writev( buffers, buffers_count );
   if ( writev_ret >= 0 )
   {
