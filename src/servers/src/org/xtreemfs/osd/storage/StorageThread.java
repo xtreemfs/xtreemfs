@@ -83,7 +83,7 @@ public class StorageThread extends Stage {
     
     public StorageThread(int id, OSDRequestDispatcher dispatcher, MetadataCache cache, StorageLayout layout) {
         
-        super("OSD Storage Thread " + id);
+        super("OSD StThr " + id);
         
         this.cache = cache;
         this.layout = layout;
@@ -308,7 +308,7 @@ public class StorageThread extends Stage {
     private void processWrite(StageRequest rq) {
         final WriteObjectCallback cback = (WriteObjectCallback) rq.getCallback();
         try {
-            final String fileId = (String) rq.getArgs()[0];
+           final String fileId = (String) rq.getArgs()[0];
             final long objNo = (Long) rq.getArgs()[1];
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[2];
             int offset = (Integer) rq.getArgs()[3];

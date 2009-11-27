@@ -25,6 +25,10 @@
 package org.xtreemfs.common.logging;
 
 import java.io.PrintStream;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
 
 /**
  * 
@@ -109,7 +113,7 @@ public class Logging {
     
     public static final int          LEVEL_DEBUG        = 7;
     
-    public static final String       FORMAT_PATTERN     = "[ %c | %-20s | %-15s | %3d | %9s] %s";
+    public static final String       FORMAT_PATTERN     = "[ %c | %-20s | %-15s | %3d | %15s ] %s";
     
     private static final PrintStream out                = System.out;
     
@@ -122,6 +126,8 @@ public class Logging {
     private final int                catMask;
     
     private long                     startTime;
+
+    private static final SimpleDateFormat dateFormat = new SimpleDateFormat("MMM dd HH:mm:ss");
     
     /**
      * Creates a new instance of Logging
@@ -259,11 +265,12 @@ public class Logging {
     }
     
     private static String getTimeStamp() {
-        long seconds = (System.currentTimeMillis() - instance.startTime) / 1000;
+        /*long seconds = (System.currentTimeMillis() - instance.startTime) / 1000;
         long hours = seconds / 3600;
         long mins = (seconds % 3600) / 60;
         long secs = seconds % 60;
-        return hours + ":" + (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;
+        return hours + ":" + (mins < 10 ? "0" : "") + mins + ":" + (secs < 10 ? "0" : "") + secs;*/
+        return dateFormat.format(new Date());
     }
     
 }

@@ -53,7 +53,7 @@ public class DeletionStage extends Stage {
     public DeletionStage(OSDRequestDispatcher master, MetadataCache cache,
         StorageLayout layout) {
 
-        super("OSD Deletion Stage");
+        super("OSD DelSt");
 
         this.master = master;
         this.cache = cache;

@@ -65,7 +65,7 @@ public class ReplicationStage extends Stage {
     private ObjectDissemination disseminationLayer;
     
     public ReplicationStage(OSDRequestDispatcher master) {
-        super("OSD Replication Stage");
+        super("OSD ReplSt");
 
         // FIXME: test stuff
 //        Monitoring.enable();

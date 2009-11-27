@@ -80,6 +80,9 @@ public class ClientConnection {
             getReceive().freeBuffers();
         if (getSend() != null)
             getSend().freeBuffers();
+        for (ONCRPCRecord r : pendingResponses) {
+            r.freeBuffers();
+        }
     }
 
     /**

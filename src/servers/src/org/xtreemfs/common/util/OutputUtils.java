@@ -27,6 +27,7 @@ package org.xtreemfs.common.util;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.Map;
 
 /**
  * 
@@ -221,6 +222,25 @@ public final class OutputUtils {
         // append the lower 32 bit
         long value = ((long) high) << 32 | (((long) low) & 4294967295L);
         return value;
+    }
+
+    public static String getThreadDump() throws Exception {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<HTML><BODY><H1>THREAD STATES</H1><PRE>");
+        final Map<Thread,StackTraceElement[]> traces =  Thread.getAllStackTraces();
+        for (Thread t : traces.keySet()) {
+            sb.append("<B>thread: ");
+            sb.append(t.getName());
+            sb.append("</B>\n");
+            final StackTraceElement[] elems = traces.get(t);
+            for (int i = elems.length-1; i >= 0; i--) {
+                sb.append(elems[i].toString());
+                sb.append("\n");
+            }
+            sb.append("\n");
+        }
+        sb.append("</PRE></BODY></HTML>");
+        return sb.toString();
     }
 
 }

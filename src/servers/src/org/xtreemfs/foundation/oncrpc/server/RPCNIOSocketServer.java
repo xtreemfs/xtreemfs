@@ -659,6 +659,12 @@ public class RPCNIOSocketServer extends LifeCycleThread {
             ONCRPCRequest rq = new ONCRPCRequest(record);
             
             final ONCRPCRequestHeader hdr = rq.getRequestHeader();
+
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"received RPC xid=%d type=%d proc=%d",hdr.getXID(),
+                        hdr.getMessageType(),hdr.getProcedure());
+            }
+
             if (hdr.getRpcVersion() != 2) {
                 Logging.logMessage(Logging.LEVEL_INFO, Category.net, this,
                     "Invalid RPC version: %d, expected 2", hdr.getRpcVersion());
