@@ -126,6 +126,8 @@ public class xtfs_repl {
     public final static String      SEL_POLICY_DCMAP                          = "dcmap";
     
     public final static String      SEL_POLICY_RANDOM                         = "random";
+
+    public final static String      SEL_POLICY_VIVALDI                        = "vivaldi";
     
     public final static String      OPTION_REPLICATION_FLAG_FULL_REPLICA      = "-full";
     
@@ -388,6 +390,10 @@ public class xtfs_repl {
                 && policies[0] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue()
                 && policies[1] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_GROUP_DCMAP.intValue()) {
                 System.out.println("OSD selection policy: DCMap");
+            } else if (policies.length == 2
+                && policies[0] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue()
+                && policies[1] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_VIVALDI.intValue()) {
+                System.out.println("OSD selection policy: vivaldi");
             } else {
                 System.out.println("OSD selection policy: custom (" + v + ")");
             }
@@ -412,6 +418,10 @@ public class xtfs_repl {
                 pol = String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue())
                     + ","
                     + String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_GROUP_DCMAP.intValue());
+            } else if (rsp.equalsIgnoreCase(SEL_POLICY_VIVALDI)) {
+                pol = String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue())
+                    + ","
+                    + String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_VIVALDI.intValue());
             } else {
                 pol = rsp;
             }
@@ -448,6 +458,10 @@ public class xtfs_repl {
                 // && policies[0] ==
                 // OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_VIVALDI.intValue()){
                 // System.out.println("replica selection policy: Vivaldi");
+            } else if (policies.length == 2
+                && policies[0] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue()
+                && policies[1] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_VIVALDI.intValue()) {
+                System.out.println("replica selection policy: vivaldi");
             } else {
                 System.out.println("replica selection policy: custom (" + v + ")");
             }
@@ -469,6 +483,8 @@ public class xtfs_repl {
                 pol = String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_FQDN.intValue());
             } else if (rsp.equalsIgnoreCase(SEL_POLICY_DCMAP)) {
                 pol = String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_DCMAP.intValue());
+            } else if (rsp.equalsIgnoreCase(SEL_POLICY_VIVALDI)) {
+                pol = String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_VIVALDI.intValue());
             } else {
                 pol = rsp;
             }
@@ -958,7 +974,7 @@ public class xtfs_repl {
             + ": sets a list of successively applied OSD selection policies\n");
         out.append("\t-" + OPTION_OSEL_POLICY_GET + ": prints the list of OSD selection policies\n");
         out.append("\t-" + OPTION_RSEL_POLICY_SET + " { " + SEL_POLICY_DEFAULT + " | " + SEL_POLICY_RANDOM + " | " + SEL_POLICY_FQDN
-            + " | " + SEL_POLICY_DCMAP + " | <policy_ID, [policy_ID, ...]> }"
+            + " | " + SEL_POLICY_DCMAP + " | " + SEL_POLICY_VIVALDI + " | <policy_ID, [policy_ID, ...]> }"
             + ": sets a list of successively applied replica selection policies\n");
         out.append("\t-" + OPTION_RSEL_POLICY_GET + ": prints the list of replica selection policies\n");
         out.append("\t-" + OPTION_POLICY_ATTR_SET + " <name=value>: sets a policy-specific attribute\n");
