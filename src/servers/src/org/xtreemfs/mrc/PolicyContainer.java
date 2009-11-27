@@ -60,6 +60,7 @@ import org.xtreemfs.mrc.osdselection.OSDSelectionPolicy;
 import org.xtreemfs.mrc.osdselection.SortDCMapPolicy;
 import org.xtreemfs.mrc.osdselection.SortFQDNPolicy;
 import org.xtreemfs.mrc.osdselection.SortRandomPolicy;
+import org.xtreemfs.mrc.osdselection.SortVivaldiPolicy;
 
 public class PolicyContainer {
     
@@ -77,7 +78,8 @@ public class PolicyContainer {
                                                                    GroupFQDNPolicy.class,
                                                                    SortDCMapPolicy.class,
                                                                    SortFQDNPolicy.class,
-                                                                   SortRandomPolicy.class };
+                                                                   SortRandomPolicy.class,
+                                                                   SortVivaldiPolicy.class};
         
         private Map<String, Class>           cache;
         

@@ -136,8 +136,15 @@ public class VolumeOSDFilter {
         VivaldiCoordinates clientCoords, XLocList currentXLoc, int numOSDs) {
         
         ServiceSet result = (ServiceSet) knownOSDs.clone();
-        for (short id : osdPolicy)
-            result = policyMap.get(id).getOSDs(result, clientIP, clientCoords, currentXLoc, numOSDs);
+        for (short id : osdPolicy) {
+            OSDSelectionPolicy policy = policyMap.get(id);
+            if (policy == null) {
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.proc, this,
+                    "could not find OSD selection policy with ID=%d", id);
+                return result;
+            }
+            result = policy.getOSDs(result, clientIP, clientCoords, currentXLoc, numOSDs);
+        }
         
         return result;
     }
@@ -190,7 +197,8 @@ public class VolumeOSDFilter {
                     osds.add(r.getOSD(j));
                 
                 if (r.getOSD(0).equals(headOSD.getUuid()))
-                    newRepls.add(new Replica(osds, r.getReplicationFlags(), Converter.stripingPolicyToStripingPolicy(r.getStripingPolicy())));
+                    newRepls.add(new Replica(osds, r.getReplicationFlags(), Converter
+                            .stripingPolicyToStripingPolicy(r.getStripingPolicy())));
             }
         
         return newRepls;
