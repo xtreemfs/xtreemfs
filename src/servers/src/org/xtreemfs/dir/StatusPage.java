@@ -25,6 +25,8 @@ import org.xtreemfs.dir.data.AddressMappingRecord;
 import org.xtreemfs.dir.data.AddressMappingRecords;
 import org.xtreemfs.dir.data.ServiceRecord;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
+import org.xtreemfs.osd.vivaldi.VivaldiNode;
 
 /**
  * 
@@ -184,6 +186,15 @@ public class StatusPage {
                     dump.append(")");
                 } else if (dataEntry.getKey().equals("load")) {
                     dump.append("%");
+                } else if (dataEntry.getKey().equals("vivaldi_coordinates")) {
+                    final VivaldiCoordinates coord = VivaldiNode.stringToCoordinates(dataEntry.getValue());
+                    dump.append(" (");
+                    dump.append(coord.getX_coordinate());
+                    dump.append(",");
+                    dump.append(coord.getY_coordinate());
+                    dump.append(" err ");
+                    dump.append(coord.getLocal_error());
+                    dump.append(")");
                 }
                 dump.append("</b></td></tr>");
             }

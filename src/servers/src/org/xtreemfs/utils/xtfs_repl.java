@@ -458,8 +458,7 @@ public class xtfs_repl {
                 // && policies[0] ==
                 // OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_VIVALDI.intValue()){
                 // System.out.println("replica selection policy: Vivaldi");
-            } else if (policies.length == 2
-                && policies[0] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue()
+            } else if (policies.length == 1
                 && policies[1] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_SORT_VIVALDI.intValue()) {
                 System.out.println("replica selection policy: vivaldi");
             } else {
