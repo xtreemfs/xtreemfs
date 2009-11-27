@@ -51,6 +51,7 @@ import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.UserException;
@@ -164,7 +165,8 @@ public class MRCHelper {
     
     public static Replica createReplica(StripingPolicy stripingPolicy, StorageManager sMan,
         OSDStatusManager osdMan, VolumeInfo volume, long parentDirId, String path, InetAddress clientAddress,
-        XLocList currentXLoc, int replFlags) throws DatabaseException, UserException, MRCException {
+        VivaldiCoordinates clientCoordinates, XLocList currentXLoc, int replFlags) throws DatabaseException,
+        UserException, MRCException {
         
         // if no striping policy is provided, try to retrieve it from the parent
         // directory
@@ -186,8 +188,8 @@ public class MRCHelper {
         
         StringSet osds = new StringSet();
         
-        ServiceSet usableOSDs = osdMan.getUsableOSDs(volume.getId(), clientAddress, null, currentXLoc,
-            stripingPolicy.getStripeSize());
+        ServiceSet usableOSDs = osdMan.getUsableOSDs(volume.getId(), clientAddress, clientCoordinates,
+            currentXLoc, stripingPolicy.getStripeSize());
         
         if (usableOSDs == null || usableOSDs.size() == 0) {
             
@@ -292,9 +294,9 @@ public class MRCHelper {
             case url: {
                 InetSocketAddress addr = config.getDirectoryService();
                 final String hostname = (config.getHostName().length() > 0) ? config.getHostName() : addr.getAddress().getCanonicalHostName();
-
-                return config.getURLScheme() + "://"
-                    + hostname + ":" + addr.getPort() + "/" + path;
+                
+                return config.getURLScheme() + "://" + hostname + ":"
+                    + addr.getPort() + "/" + path;
             }
             case owner:
                 return file.getOwnerId();

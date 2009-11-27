@@ -198,7 +198,7 @@ public class OpenOperation extends MRCOperation {
             // with a set of feasible OSDs from the OSD status manager
             Replica replica = MRCHelper.createReplica(null, sMan, master.getOSDStatusManager(), volume, res
                     .getParentDirId(), rqArgs.getPath(), ((InetSocketAddress) rq.getRPCRequest()
-                    .getClientIdentity()).getAddress(), xLocList, 0);
+                    .getClientIdentity()).getAddress(), rqArgs.getClient_vivaldi_coordinates(), xLocList, 0);
             
             ReplicaSet replicas = new ReplicaSet();
             replicas.add(replica);

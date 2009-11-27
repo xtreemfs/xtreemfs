@@ -37,6 +37,7 @@ import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.interfaces.MRCInterface.closeRequest;
 import org.xtreemfs.interfaces.MRCInterface.closeResponse;
@@ -126,10 +127,13 @@ public class CloseOperation extends MRCOperation {
                                 .setFullReplica(ReplicationFlags.setRarestFirstStrategy(0))
                             : ReplicationFlags.setSequentialPrefetchingStrategy(0);
                         
+                        // FIXME: use proper vivaldi coordinates
+                        
                         // create the new replica
                         Replica newRepl = MRCHelper.createReplica(firstRepl.getStripingPolicy(), sMan, master
                                 .getOSDStatusManager(), vol, -1, cap.getFileId(), ((InetSocketAddress) rq
-                                .getRPCRequest().getClientIdentity()).getAddress(), xLocList, replFlags);
+                                .getRPCRequest().getClientIdentity()).getAddress(), new VivaldiCoordinates(0,
+                            0, 0), xLocList, replFlags);
                         
                         String[] osds = newRepl.getOsd_uuids().toArray(
                             new String[newRepl.getOsd_uuids().size()]);
