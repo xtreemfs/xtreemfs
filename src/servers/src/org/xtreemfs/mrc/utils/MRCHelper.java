@@ -291,9 +291,10 @@ public class MRCHelper {
                 return ref != null ? "3" : file.isDirectory() ? "2" : "1";
             case url: {
                 InetSocketAddress addr = config.getDirectoryService();
+                final String hostname = (config.getHostName().length() > 0) ? config.getHostName() : addr.getAddress().getCanonicalHostName();
 
                 return config.getURLScheme() + "://"
-                    + addr.getAddress().getCanonicalHostName() + ":" + addr.getPort() + "/" + path;
+                    + hostname + ":" + addr.getPort() + "/" + path;
             }
             case owner:
                 return file.getOwnerId();
