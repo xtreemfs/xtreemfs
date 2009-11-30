@@ -34,6 +34,10 @@ import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 import org.xtreemfs.test.TestEnvironment.Services;
 
+import org.xtreemfs.interfaces.VivaldiCoordinates;
+import org.xtreemfs.osd.vivaldi.VivaldiNode;
+import org.xtreemfs.mrc.osdselection.SortVivaldiPolicy;
+
 /**
  * 
  * @author bjko
@@ -345,6 +349,57 @@ public class OSDPolicyTest extends TestCase {
         assertEquals("osd2", sortedList.get(0).getUuid());
         
     }
+    
+    @Test
+    public void testSortVivaldiPolicy() throws Exception {
+        
+        SortVivaldiPolicy policy = new SortVivaldiPolicy();
+        
+        //VivaldiCoordinates coords1 = new VivaldiCoordinates(1.0,1.0,0.1);
+        VivaldiCoordinates coords2 = new VivaldiCoordinates(5.0,5.0,0.1);
+        VivaldiCoordinates coords3 = new VivaldiCoordinates(2.0,2.0,0.1);
+        VivaldiCoordinates coords4 = new VivaldiCoordinates(20.0,20.0,0.1);
+        VivaldiCoordinates coords5 = new VivaldiCoordinates(10.0,10.0,0.1);
+        
+        ServiceSet osds = new ServiceSet();
+        ServiceDataMap sdm = new ServiceDataMap();
+        //sdm.put("vivaldi_coordinates", VivaldiNode.coordinatesToString(coords1));
+        osds.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd1", 1, "osd1", 0, sdm));
+
+        sdm = new ServiceDataMap();
+        sdm.put("vivaldi_coordinates", VivaldiNode.coordinatesToString(coords2));
+        osds.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd2", 1, "osd2", 0, sdm));
+
+        sdm = new ServiceDataMap();
+        sdm.put("vivaldi_coordinates", VivaldiNode.coordinatesToString(coords3));
+        osds.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd3", 1, "osd3", 0, sdm));
+        
+        sdm = new ServiceDataMap();
+        sdm.put("vivaldi_coordinates", VivaldiNode.coordinatesToString(coords4));
+        osds.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd4", 1, "osd4", 0, sdm));
+        
+        sdm = new ServiceDataMap();
+        sdm.put("vivaldi_coordinates", VivaldiNode.coordinatesToString(coords5));
+        osds.add(new Service(ServiceType.SERVICE_TYPE_OSD, "osd5", 1, "osd5", 0, sdm));
+        
+        UUIDResolver.addTestMapping("osd1", "bla.xtreemfs.zib.de", 2222, false);
+        UUIDResolver.addTestMapping("osd2", "www.heise.de", 2222, false);
+        UUIDResolver.addTestMapping("osd3", "blub.xtreemfs.zib.de", 2222, false);
+        UUIDResolver.addTestMapping("osd4", "csr-pc29.zib.de", 2222, false);
+        UUIDResolver.addTestMapping("osd5", "download.xtreemfs.com", 2222, false);
+        
+        InetAddress clientAddr = InetAddress.getByName("xtreemfs.zib.de");
+        VivaldiCoordinates clientCoordinates = new VivaldiCoordinates(0.0,0.0,0.1);
+        
+        ServiceSet sortedList = policy.getOSDs(osds, clientAddr, clientCoordinates, null, 0);
+        
+        assertEquals("osd3", sortedList.get(0).getUuid());
+        assertEquals("osd2", sortedList.get(1).getUuid());
+        assertEquals("osd5", sortedList.get(2).getUuid());
+        assertEquals("osd4", sortedList.get(3).getUuid());
+        assertEquals("osd1",sortedList.get(4).getUuid());
+    }
+    
     
     public static void main(String[] args) {
         TestRunner.run(OSDPolicyTest.class);

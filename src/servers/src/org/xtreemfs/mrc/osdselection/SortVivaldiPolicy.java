@@ -90,17 +90,22 @@ public class SortVivaldiPolicy implements OSDSelectionPolicy {
                         
                     }else{
                         
-                        double iDistance = distances.get(retSet.get(i).getUuid());
-                        
-                        if( oneOSDDistance.doubleValue()<iDistance ){ 
+                        Double iDistance = distances.get(retSet.get(i).getUuid());
+
+                        if(     (iDistance==null) || //The OSDs without coordinates must be left at the end of the list 
+                                (oneOSDDistance.doubleValue()<iDistance.doubleValue()) ){
                             
                             retSet.add(i,oneOSD);
                             inserted = true;
+
                         }else{
                             i++;
                         }
                     }
                 }
+            }else{
+                //If the OSD cannot be sorted because the DS does not provide all its information, we append it to the end of the list
+                retSet.add(oneOSD);
             }
         }
         
