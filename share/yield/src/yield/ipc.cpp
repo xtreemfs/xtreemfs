@@ -1,4 +1,4 @@
-// Revision: 1914
+// Revision: 1915
 
 #include "yield/ipc.h"
 
@@ -21,16 +21,23 @@
 template <class RequestType, class ResponseType>
 YIELD::ipc::Client<RequestType, ResponseType>::Client( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, auto_SocketAddress peername, uint8_t reconnect_tries_max, auto_SocketFactory socket_factory )
   : flags( flags ), log( log ), operation_timeout( operation_timeout ), peername( peername ), reconnect_tries_max( reconnect_tries_max ), socket_factory( socket_factory )
-{ }
+{
+  for ( uint16_t socket_i = 0; socket_i < 16; socket_i++ )
+    sockets.enqueue( NULL ); // Enqueue a placeholder for each socket; the sockets will be created on demand
+}
 template <class RequestType, class ResponseType>
 YIELD::ipc::Client<RequestType, ResponseType>::~Client()
 {
-  Socket* idle_socket = idle_sockets.try_dequeue();
-  while ( idle_socket != NULL )
+  for ( uint16_t socket_i = 0; socket_i < 16; socket_i++ )
   {
-    idle_socket->shutdown();
-    yidl::runtime::Object::decRef( *idle_socket );
-    idle_socket = idle_sockets.try_dequeue();
+    Socket* socket_ = sockets.try_dequeue();
+    if ( socket_ != NULL )
+    {
+      socket_->shutdown();
+      socket_->close();
+      yidl::runtime::Object::decRef( *socket_ );
+      socket_ = sockets.try_dequeue();
+    }
   }
 }
 template <class RequestType, class ResponseType>
@@ -43,40 +50,44 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent( YIELD::concurre
       RequestType& request = static_cast<RequestType&>( ev );
       if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
         log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client sending " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to <host>:" << this->peername->get_port() << ".";
-      Socket* socket_ = idle_sockets.try_dequeue();
-      if ( socket_ != NULL )
+      for ( ;; )
       {
-        if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-          log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: writing " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to <host>:" << this->peername->get_port() << " on socket #" << static_cast<uint64_t>( *socket_ ) << ".";
-        AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request.serialize(), *this, request );
-        YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), operation_timeout ) );
-        socket_->aio_write( aio_write_control_block );
-      }
-      else
-      {
-        socket_ = socket_factory->createSocket().release();
-        if ( socket_ != NULL )
+        Socket* socket_ = sockets.dequeue(); // Blocking dequeue
+        if ( socket_ == NULL ) // We dequeued a placeholder; try to create the socket on demand
         {
-          if ( ( this->flags & this->CLIENT_FLAG_TRACE_IO ) == this->CLIENT_FLAG_TRACE_IO &&
-               log != NULL && log->get_level() >= YIELD::platform::Log::LOG_INFO )
-            socket_ = new TracingSocket( socket_, log );
+          socket_ = socket_factory->createSocket().release();
+          if ( socket_ != NULL )
+          {
+            if ( ( this->flags & this->CLIENT_FLAG_TRACE_IO ) == this->CLIENT_FLAG_TRACE_IO &&
+                 log != NULL && log->get_level() >= YIELD::platform::Log::LOG_INFO )
+              socket_ = new TracingSocket( socket_, log );
+          }
+          else
+          {
+            if ( log != NULL )
+              log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: could not create new socket to connect to <host>:" << this->peername->get_port() << ", error: " << YIELD::platform::Exception::strerror() << ".";
+            continue; // Try to dequeue another existing socket
+          }
+        }
+        if ( socket_->is_connected() )
+        {
+          if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
+            log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: writing " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to <host>:" << this->peername->get_port() << " on socket #" << static_cast<uint64_t>( *socket_ ) << ".";
+          AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request.serialize(), *this, request );
+          YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), operation_timeout ) );
+          socket_->aio_write( aio_write_control_block );
+        }
+        else
+        {
           if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
             log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: connecting to <host>:" << this->peername->get_port() << " with socket #" << static_cast<uint64_t>( *socket_ ) << " (try #" << static_cast<uint16_t>( request.get_reconnect_tries() + 1 ) << ").";
           AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( *this, request );
           YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_connect_control_block->incRef(), operation_timeout ) );
           socket_->aio_connect( aio_connect_control_block );
         }
-        else
-        {
-          YIELD::concurrency::ExceptionResponse* exception_response = new YIELD::concurrency::ExceptionResponse;
-          if ( log != NULL )
-            log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: could not create new socket to connect to <host>:" << this->peername->get_port() << ", error: " << YIELD::platform::Exception::strerror() << ".";
-          request.respond( *exception_response );
-          yidl::runtime::Object::decRef( request );
-          return;
-        }
+        yidl::runtime::Object::decRef( *socket_ );
+        break;
       }
-      yidl::runtime::Object::decRef( *socket_ );
     }
     break;
     default:
@@ -116,6 +127,11 @@ public:
       if ( client.log != NULL )
         client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: connect() to <host>:" << client.peername->get_port() <<
           " failed, errno=" << error_code << ", strerror=" << YIELD::platform::Exception::strerror( error_code ) << ".";
+      get_socket()->close();
+      if ( get_socket()->recreate() )
+        client.sockets.enqueue( get_socket().release() );
+      else
+        client.sockets.enqueue( NULL );
       if ( request->get_reconnect_tries() < client.reconnect_tries_max )
       {
         request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
@@ -145,7 +161,8 @@ public:
   void onCompletion( size_t bytes_transferred )
   {
 #ifdef _DEBUG
-    if ( bytes_transferred <= 0 ) DebugBreak();
+    if ( bytes_transferred <= 0 )
+      DebugBreak();
 #endif
     if ( request_lock.try_acquire() )
     {
@@ -157,7 +174,7 @@ public:
         if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
           client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: successfully deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
         request->respond( *response.release() );
-        client.idle_sockets.enqueue( get_socket().release() );
+        client.sockets.enqueue( get_socket().release() );
       }
       else if ( deserialize_ret > 0 )
       {
@@ -178,6 +195,7 @@ public:
         request->respond( *( new YIELD::concurrency::ExceptionResponse( ECONNABORTED ) ) );
         get_socket()->shutdown();
         get_socket()->close();
+        client.sockets.enqueue( get_socket().release() );
       }
       // Clear references so their objects will be deleted now instead of when the timeout occurs (the timeout has the last reference to this control block)
       request = NULL;
@@ -197,6 +215,10 @@ public:
           ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       get_socket()->shutdown();
       get_socket()->close();
+      if ( get_socket()->recreate() )
+        client.sockets.enqueue( get_socket().release() );
+      else
+        client.sockets.enqueue( NULL );
       if ( request->get_reconnect_tries() < client.reconnect_tries_max )
       {
         // Hack: if the read timed out, increase the timeout for the next try
@@ -258,6 +280,10 @@ public:
           ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       get_socket()->shutdown();
       get_socket()->close();
+      if ( get_socket()->recreate() )
+        client.sockets.enqueue( get_socket().release() );
+      else
+        client.sockets.enqueue( NULL );
       if ( request->get_reconnect_tries() < client.reconnect_tries_max )
       {
         request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
@@ -2945,6 +2971,7 @@ YIELD::ipc::Socket::Socket( int domain, int type, int protocol, int socket_ )
 : domain( domain ), type( type ), protocol( protocol ), socket_( socket_ )
 {
   blocking_mode = true;
+  connected = false;
 }
 YIELD::ipc::Socket::~Socket()
 {
@@ -3099,63 +3126,81 @@ bool YIELD::ipc::Socket::bind( auto_SocketAddress to_sockaddr )
 bool YIELD::ipc::Socket::close()
 {
 #ifdef _WIN32
-  return ::closesocket( socket_ ) != SOCKET_ERROR;
-#else
-  return ::close( socket_ ) != -1;
-#endif
-}
-bool YIELD::ipc::Socket::connect( auto_SocketAddress to_sockaddr )
-{
-  for ( ;; )
+  if ( socket_ != INVALID_SOCKET )
   {
-    struct sockaddr* name; socklen_t namelen;
-    if ( to_sockaddr->as_struct_sockaddr( domain, name, namelen ) )
+    if ( ::closesocket( socket_ ) != SOCKET_ERROR )
     {
-      if ( ::connect( *this, name, namelen ) != -1 )
-        return true;
-      else
-      {
-#ifdef _WIN32
-        switch ( ::WSAGetLastError() )
-        {
-          case WSAEISCONN: return true;
-          case WSAEAFNOSUPPORT:
-#else
-        switch ( errno )
-        {
-          case EISCONN: return true;
-          case EAFNOSUPPORT:
-#endif
-          {
-            if ( domain == AF_INET6 )
-            {
-              close();
-              domain = AF_INET; // Fall back to IPv4
-              socket_ = ::socket( domain, type, protocol );
-              if ( !blocking_mode )
-                set_blocking_mode( false );
-              continue; // Try to connect again
-            }
-            else
-              return false;
-          }
-          break;
-          default: return false;
-        }
-      }
-    }
-    else if ( domain == AF_INET6 )
-    {
-      close();
-      domain = AF_INET; // Fall back to IPv4
-      socket_ = ::socket( domain, type, protocol );
-      if ( !blocking_mode )
-        set_blocking_mode( false );
-      continue; // Try to connect again
+      connected = false;
+      socket_ = INVALID_SOCKET;
+      return true;
     }
     else
       return false;
   }
+#else
+  if ( socket_ != -1 )
+  {
+    if ( ::close( socket_ ) != -1 )
+    {
+      connected = false;
+      socket_ = -1;
+      return true;
+    }
+    else
+      return false;
+  }
+#endif
+  else
+    return true;
+}
+bool YIELD::ipc::Socket::connect( auto_SocketAddress to_sockaddr )
+{
+  if ( !connected )
+  {
+    for ( ;; )
+    {
+      struct sockaddr* name; socklen_t namelen;
+      if ( to_sockaddr->as_struct_sockaddr( domain, name, namelen ) )
+      {
+        if ( ::connect( *this, name, namelen ) != -1 )
+        {
+          connected = true;
+          return true;
+        }
+        else
+        {
+#ifdef _WIN32
+          switch ( ::WSAGetLastError() )
+          {
+            case WSAEISCONN: connected = true; return true;
+            case WSAEAFNOSUPPORT:
+#else
+          switch ( errno )
+          {
+            case EISCONN: connected = true; return true;
+            case EAFNOSUPPORT:
+#endif
+            {
+              if ( domain == AF_INET6 &&
+                   recreate( AF_INET ) )
+                continue;
+              else
+                return false;
+            }
+            break;
+            default: return false;
+          }
+        }
+      }
+      else if ( domain == AF_INET6 &&
+                recreate( AF_INET ) )
+        continue;
+      else
+        return false;
+    }
+  }
+  else
+    return true;
 }
 #ifdef _WIN32
 SOCKET YIELD::ipc::Socket::create( int& domain, int type, int protocol )
@@ -3331,6 +3376,14 @@ void YIELD::ipc::Socket::init()
   signal( SIGPIPE, SIG_IGN );
 #endif
 }
+bool YIELD::ipc::Socket::is_closed() const
+{
+#ifdef _WIN32
+  return socket_ == INVALID_SOCKET;
+#else
+  return socket_ == -1;
+#endif
+}
 bool YIELD::ipc::Socket::operator==( const Socket& other ) const
 {
   return socket_ == other.socket_;
@@ -3351,6 +3404,10 @@ ssize_t YIELD::ipc::Socket::read( void* buffer, size_t buffer_len )
 #else
   return ::recv( socket_, buffer, buffer_len, 0 );
 #endif
+}
+bool YIELD::ipc::Socket::recreate()
+{
+  return recreate( AF_INET6 );
 }
 bool YIELD::ipc::Socket::recreate( int domain )
 {
@@ -3413,6 +3470,7 @@ bool YIELD::ipc::Socket::set_blocking_mode( bool blocking )
 }
 bool YIELD::ipc::Socket::shutdown()
 {
+  connected = false;
   return true;
 }
 bool YIELD::ipc::Socket::want_connect() const
@@ -3774,10 +3832,33 @@ public:
         YIELD::platform::AIOControlBlock* aio_control_block = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
         switch ( aio_control_block->get_type_id() )
         {
-          case YIDL_RUNTIME_OBJECT_TYPE_ID( Socket::AIOReadControlBlock ): static_cast<Socket::AIOReadControlBlock*>( aio_control_block )->get_buffer()->put( NULL, dwBytesTransferred ); break;
-          case YIDL_RUNTIME_OBJECT_TYPE_ID( UDPSocket::AIORecvFromControlBlock ): static_cast<UDPSocket::AIORecvFromControlBlock*>( aio_control_block )->get_buffer()->put( NULL, dwBytesTransferred ); break;
+          case YIDL_RUNTIME_OBJECT_TYPE_ID( Socket::AIOConnectControlBlock ):
+          {
+            static_cast<Socket::AIOConnectControlBlock*>( aio_control_block )->get_socket()->connected = true;
+            aio_control_block->onCompletion( dwBytesTransferred );
+          }
+          break;
+          case YIDL_RUNTIME_OBJECT_TYPE_ID( Socket::AIOReadControlBlock ):
+          {
+            static_cast<Socket::AIOReadControlBlock*>( aio_control_block )->get_buffer()->put( NULL, dwBytesTransferred );
+            if ( dwBytesTransferred > 0 )
+              aio_control_block->onCompletion( dwBytesTransferred );
+            else
+              aio_control_block->onError( WSAECONNRESET );
+          }
+          break;
+          case YIDL_RUNTIME_OBJECT_TYPE_ID( UDPSocket::AIORecvFromControlBlock ):
+          {
+            static_cast<UDPSocket::AIORecvFromControlBlock*>( aio_control_block )->get_buffer()->put( NULL, dwBytesTransferred );
+            aio_control_block->onCompletion( dwBytesTransferred );
+          }
+          break;
+          default:
+          {
+            aio_control_block->onCompletion( dwBytesTransferred );
+          }
+          break;
         }
-        aio_control_block->onCompletion( dwBytesTransferred );
         Object::decRef( *aio_control_block );
       }
       else if ( lpOverlapped != NULL )
@@ -4739,10 +4820,13 @@ bool YIELD::ipc::TCPSocket::listen()
 bool YIELD::ipc::TCPSocket::shutdown()
 {
 #ifdef _WIN32
-  return ::shutdown( *this, SD_BOTH ) == 0;
+  if ( ::shutdown( *this, SD_BOTH ) == 0 )
 #else
-  return ::shutdown( *this, SHUT_RDWR ) != -1;
+  if ( ::shutdown( *this, SHUT_RDWR ) != -1 )
 #endif
+    return YIELD::ipc::Socket::shutdown();
+  else
+    return false;
 }
 ssize_t YIELD::ipc::TCPSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
 {
