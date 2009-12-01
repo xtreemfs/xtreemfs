@@ -6,7 +6,7 @@
 
 module org
 {
-  module xtreemfs # 2009112014
+  module xtreemfs # 2009120111
   {
     module interfaces
     {
@@ -82,7 +82,7 @@ module org
         boolean access( string path, uint32_t mode ) # 1;
         void chmod( string path, uint32_t mode ) # 2;
         void chown( string path, string user_id, string group_id ) # 3;
-        void close( XCap write_xcap ) #22;
+        void close( VivaldiCoordinates client_vivaldi_coordinates, XCap write_xcap ) #22;
         void creat( string path, uint32_t mode ) # 4;
         void ftruncate( XCap write_xcap, out XCap truncate_xcap ) # 5;
         void getattr( string path, out Stat stbuf ) # 6;
