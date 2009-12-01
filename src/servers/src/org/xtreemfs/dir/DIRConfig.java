@@ -68,15 +68,15 @@ public class DIRConfig extends ServiceConfig {
 
         this.monitoringEnabled = this.readOptionalBoolean("monitoring", false);
 
-        this.adminEmail = this.readOptionalString("email.receiver", "");
+        this.adminEmail = this.readOptionalString("monitoring.email.receiver", "");
 
-        this.senderAddress = this.readOptionalString("email.sender", "XtreemFS DIR monitoring <dir@localhost>");
+        this.senderAddress = this.readOptionalString("monitoring.email.sender", "XtreemFS DIR monitoring <dir@localhost>");
 
-        this.maxWarnings = this.readOptionalInt("max_warnings", 1);
+        this.maxWarnings = this.readOptionalInt("monitoring.max_warnings", 1);
 
         this.timeoutSeconds = this.readOptionalInt("service_timeout_s", 5*60);
 
-        this.sendmailBin = this.readOptionalString("email.programm", "/usr/sbin/sendmail");
+        this.sendmailBin = this.readOptionalString("monitoring.email.programm", "/usr/sbin/sendmail");
     }
 
     /**

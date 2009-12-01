@@ -498,6 +498,24 @@ All configuration parameters that may be used to define the behavior of the diff
  Description & Defines the Authentication Provider to use to retrieve the user identity (user ID and group IDs). See Sec. \ref{sec:AuthProvider} for details.
 \end{tabular}
 
+\subsubsection{\texttt{babudb.baseDir}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & absolute file system path to a directory\\
+ Default  & DIR: \texttt{/var/lib/xtreemfs/dir/database}\\
+          & MRC: \texttt{/var/lib/xtreemfs/mrc/database}\\
+ Description & The directory in which the Directory Service or MRC will store their databases. This directory should never be on the same partition as any OSD data, if both services reside on the same machine. Otherwise, deadlocks may occur if the partition runs out of free disk space!
+\end{tabular}
+
+\subsubsection{\texttt{babudb.logDir}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & absolute file system path\\
+ Default  & DIR: \texttt{/var/lib/xtreemfs/dir/db-log}\\
+          & MRC: \texttt{/var/lib/xtreemfs/mrc/db-log}\\
+ Description & The directory the MRC uses to store database logs. This directory should never be on the same partition as any OSD data, if both services reside on the same machine. Otherwise, deadlocks may occur if the partition runs out of free disk space!
+\end{tabular}
+
 \subsubsection{\texttt{capability\_secret}}
 \begin{tabular}{lp{10cm}}
  Services & MRC, OSD\\
@@ -520,23 +538,6 @@ All configuration parameters that may be used to define the behavior of the diff
  Values   & Adler32, CRC32 \\
  Default  & Adler32 \\
  Description & Must be specified if \texttt{checksums.enabled} is enabled. This property defines the algorithm used to create OSD checksums.
-\end{tabular}
-
-\subsubsection{\texttt{database.dir}}
-\begin{tabular}{lp{10cm}}
- Services & DIR, MRC\\
- Values   & absolute file system path to a directory\\
- Default  & DIR: \texttt{/var/lib/xtreemfs/dir/database},\\
- & MRC: \texttt{/var/lib/xtreemfs/mrc/database}\\
- Description & The directory in which the Directory Service or MRC will store their databases. This directory should never be on the same partition as any OSD data, if both services reside on the same machine. Otherwise, deadlocks may occur if the partition runs out of free disk space!
-\end{tabular}
-
-\subsubsection{\texttt{database.log}}
-\begin{tabular}{lp{10cm}}
- Services & MRC\\
- Values   & absolute file system path\\
- Default  & MRC: \texttt{/var/lib/xtreemfs/mrc/dblog}\\
- Description & The directory the MRC uses to store database logs. This directory should never be on the same partition as any OSD data, if both services reside on the same machine. Otherwise, deadlocks may occur if the partition runs out of free disk space!
 \end{tabular}
 
 \subsubsection{\texttt{debug.level} \textit{optional}}
@@ -600,30 +601,6 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & If set to true the DIR will received UDP broadcasts and advertise itself in response to XtreemFS components using the DIR automatic discovery mechanism. If set to false, the DIR will ignore all UDP traffic. For details see Sec. \ref{sec:autodiscover}.
 \end{tabular}
 
-\subsubsection{\texttt{email.programm}}
-\begin{tabular}{lp{10cm}}
- Services & DIR\\
- Values   & path \\
- Default  & \texttt{/usr/sbin/sendmail} \\
- Description & Location of the \texttt{sendmail} binary to be used for sending alert mails. See \texttt{monitoring}.
-\end{tabular}
-
-\subsubsection{\texttt{email.receiver}}
-\begin{tabular}{lp{10cm}}
- Services & DIR\\
- Values   & email address \\
- Default  & - \\
- Description & Email address of recipient of alert emails. See \texttt{monitoring}.
-\end{tabular}
-
-\subsubsection{\texttt{email.sender}}
-\begin{tabular}{lp{10cm}}
- Services & DIR\\
- Values   & email address \\
- Default  & ``XtreemFS DIR service <dir@localhost>''\\
- Description & Email address and sender name to use for sending alert mails. See \texttt{monitoring}.
-\end{tabular}
-
 \subsubsection{\texttt{geographic\_coordinates}}
 \begin{tabular}{lp{10cm}}
  Services & DIR, MRC, OSD\\
@@ -674,14 +651,6 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & Reading the system clock is a slow operation on some systems (e.g. Linux) as it is a system call. To increase performance, XtreemFS services use a local variable which is only updated every \texttt{local\_clock\_renewal} milliseconds.
 \end{tabular}
 
-\subsubsection{\texttt{max\_warnings}}
-\begin{tabular}{lp{10cm}}
- Services & DIR\\
- Values   & 0..N \\
- Default  & 1\\
- Description & Number of alert mails to send for a single service which has crashed/disconnected. Each alert mail contains a summary of all crashed/disconnected services. See \texttt{monitoring}.
-\end{tabular}
-
 \subsubsection{\texttt{monitoring}}
 \begin{tabular}{lp{10cm}}
  Services & DIR\\
@@ -690,20 +659,44 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & Enables the built-in monitoring tool in the directory service. If enabled, the DIR will send alerts via emails if services are crashed (i.e. do not send heartbeat messages). No alerts will be sent for services which signed-off at the DIR. To enable monitoring you also need to configure \texttt{email.receiver}, \texttt{email.program}. In addition, you may want to change the values for \texttt{email.sender}, \texttt{email.programm}, \texttt{service\_timeout\_s} and \texttt{max\_warnings}.
 \end{tabular}
 
+\subsubsection{\texttt{monitoring.email.programm}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR\\
+ Values   & path \\
+ Default  & \texttt{/usr/sbin/sendmail} \\
+ Description & Location of the \texttt{sendmail} binary to be used for sending alert mails. See \texttt{monitoring}.
+\end{tabular}
+
+\subsubsection{\texttt{monitoring.email.receiver}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR\\
+ Values   & email address \\
+ Default  & - \\
+ Description & Email address of recipient of alert emails. See \texttt{monitoring}.
+\end{tabular}
+
+\subsubsection{\texttt{monitoring.email.sender}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR\\
+ Values   & email address \\
+ Default  & ``XtreemFS DIR service <dir@localhost>''\\
+ Description & Email address and sender name to use for sending alert mails. See \texttt{monitoring}.
+\end{tabular}
+
+\subsubsection{\texttt{monitoring.max\_warnings}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR\\
+ Values   & 0..N \\
+ Default  & 1\\
+ Description & Number of alert mails to send for a single service which has crashed/disconnected. Each alert mail contains a summary of all crashed/disconnected services. See \texttt{monitoring}.
+\end{tabular}
+
 \subsubsection{\texttt{no\_atime}}
 \begin{tabular}{lp{10cm}}
  Services & MRC\\
  Values   & true, false \\
  Default  & true\\
  Description & The POSIX standard defines that the atime (timestamp of last file access) is updated each time a file is opened, even for read. This means that there is a write to the database and hard disk on the MRC each time a file is read. To reduce the load, many file systems (e.g. ext3) including XtreemFS can be configured to skip those updates for performance. It is strongly suggested to disable atime updates by setting this parameter to true.
-\end{tabular}
-
-\subsubsection{\texttt{no\_fsync} \textit{optional}}
-\begin{tabular}{lp{10cm}}
- Services & MRC\\
- Values   & true, false \\
- Default  & false\\
- Description & By default, the MRC will write all file-modifying operations (such as create file, delete etc.) to disk followed by a \texttt{fsync} to ensure data is written to the hard disk. While this ensures maximum data safety in case of crash of the MRC server, it also reduces the performance of the MRC. Set this to true, if you want much higher performance at the risk of losing uncommitted file operations in case of a server crash.
 \end{tabular}
 
 \subsubsection{\texttt{object\_dir}}
