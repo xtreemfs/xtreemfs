@@ -1,5 +1,3 @@
-// Revision: 1915
-
 #include "yield/ipc.h"
 
 
@@ -3416,7 +3414,7 @@ bool YIELD::ipc::Socket::recreate( int domain )
   socket_ = ::socket( domain, type, protocol );
   if ( socket_ != INVALID_SOCKET )
 #else
-  socket_ = ::socket( AF_INET6, type, protocol );
+  socket_ = ::socket( domain, type, protocol );
   if ( socket_ != -1 )
 #endif
   {
