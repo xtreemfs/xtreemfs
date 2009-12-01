@@ -10,6 +10,7 @@ import java.net.InetSocketAddress;
 
 import junit.framework.TestCase;
 
+import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.util.NetUtils;
@@ -20,7 +21,6 @@ import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.include.common.config.BabuDBConfig;
 import org.xtreemfs.interfaces.AddressMappingSet;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.test.SetupUtils;

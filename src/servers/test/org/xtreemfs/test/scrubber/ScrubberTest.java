@@ -29,6 +29,7 @@ import java.net.InetSocketAddress;
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
+import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.clients.simplescrubber.Scrubber;
@@ -36,7 +37,6 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
-import org.xtreemfs.include.common.config.BabuDBConfig;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.StripingPolicy;

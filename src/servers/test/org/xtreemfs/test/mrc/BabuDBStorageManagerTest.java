@@ -36,12 +36,12 @@ import junit.textui.TestRunner;
 
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBFactory;
+import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.babudb.log.DiskLogger.SyncMode;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
-import org.xtreemfs.include.common.config.BabuDBConfig;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.DBAccessResultListener;
 import org.xtreemfs.mrc.database.babudb.BabuDBStorageManager;
@@ -52,40 +52,40 @@ import org.xtreemfs.test.TestEnvironment;
 
 public class BabuDBStorageManagerTest extends TestCase {
     
-    public static final String     DB_DIRECTORY = "/tmp/xtreemfs-test";
+    public static final String             DB_DIRECTORY = "/tmp/xtreemfs-test";
     
-    private BabuDBStorageManager   mngr;
+    private BabuDBStorageManager           mngr;
     
-    private DIRRequestDispatcher   dir;
+    private DIRRequestDispatcher           dir;
     
-    private BabuDB                 database;
+    private BabuDB                         database;
     
-    private Exception              exc;
+    private Exception                      exc;
     
-    private Object                 lock         = "";
+    private Object                         lock         = "";
     
-    private boolean                cont;
+    private boolean                        cont;
     
-    private TestEnvironment        testEnv;
+    private TestEnvironment                testEnv;
     
     private DBAccessResultListener<Object> listener     = new DBAccessResultListener<Object>() {
-                                                    
-                                                    @Override
-                                                    public void finished(Object o, Object context) {
-                                                        synchronized (lock) {
-                                                            cont = true;
-                                                            lock.notify();
-                                                        }
-                                                    }
-                                                    
-                                                    @Override
-                                                    public void failed(Throwable error, Object context) {
-                                                        exc = (Exception) error;
-                                                        synchronized (lock) {
-                                                            lock.notify();
-                                                        }
-                                                    }
-                                                };
+                                                            
+                                                            @Override
+                                                            public void finished(Object o, Object context) {
+                                                                synchronized (lock) {
+                                                                    cont = true;
+                                                                    lock.notify();
+                                                                }
+                                                            }
+                                                            
+                                                            @Override
+                                                            public void failed(Throwable error, Object context) {
+                                                                exc = (Exception) error;
+                                                                synchronized (lock) {
+                                                                    lock.notify();
+                                                                }
+                                                            }
+                                                        };
     
     public BabuDBStorageManagerTest() {
         Logging.start(SetupUtils.DEBUG_LEVEL);
@@ -110,7 +110,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         FSUtils.delTree(dbDir);
         dbDir.mkdirs();
         database = BabuDBFactory.createBabuDB(new BabuDBConfig(DB_DIRECTORY, DB_DIRECTORY, 2,
-            1024 * 1024 * 16, 5 * 60, SyncMode.FDATASYNC, 300, 1000, false));
+            1024 * 1024 * 16, 5 * 60, SyncMode.FDATASYNC, 300, 1000, false, 16, 1024 * 1024 * 512));
         mngr = new BabuDBStorageManager(database, "volId");
         
         exc = null;

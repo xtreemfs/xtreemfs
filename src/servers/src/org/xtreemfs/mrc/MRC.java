@@ -26,10 +26,10 @@ package org.xtreemfs.mrc;
 
 import java.io.IOException;
 
+import org.xtreemfs.babudb.config.BabuDBConfig;
+import org.xtreemfs.babudb.config.ReplicationConfig;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
-import org.xtreemfs.include.common.config.BabuDBConfig;
-import org.xtreemfs.include.common.config.ReplicationConfig;
 
 /**
  * 
