@@ -152,10 +152,10 @@ namespace xtfs_vivaldi
       
       org::xtreemfs::interfaces::Service *random_osd_service;
       
-  		for ( ;; )
-  		{
-  			try
-  			{
+      for ( ;; )
+      {
+        try
+        {
 
           //Get a list of OSDs from the DS
           if( (vivaldiIterations%ITERATIONS_BEFORE_UPDATING) == 1)
@@ -166,28 +166,28 @@ namespace xtfs_vivaldi
             retriesInARow = 0;
           }
           
-  				if ( !osd_services.empty() )
-  				{
-  					
+          if ( !osd_services.empty() )
+          {
+            
             if(retriesInARow==0){
               //Choose one OSD randomly, only if there's no pending retry
               random_osd_service = &osd_services[std::rand() % osd_services.size()];
             }
 
-  					yidl::runtime::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> \
+            yidl::runtime::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> \
               random_osd_address_mappings = 
                 dir_proxy->getAddressMappingsFromUUID(random_osd_service->get_uuid());
   
-  					//Several mappings for the same UUID
-  					for ( org::xtreemfs::interfaces::AddressMappingSet::iterator \
-                    random_osd_address_mapping_i = random_osd_address_mappings->begin();
+            //Several mappings for the same UUID
+            for ( org::xtreemfs::interfaces::AddressMappingSet::iterator \
+                  random_osd_address_mapping_i = random_osd_address_mappings->begin();
                   random_osd_address_mapping_i != random_osd_address_mappings->end();
                   random_osd_address_mapping_i++ )
-  					{
-              	
-  						if (  (*random_osd_address_mapping_i).get_protocol() == 
+              {
+
+              if (  (*random_osd_address_mapping_i).get_protocol() == 
                     org::xtreemfs::interfaces::ONCRPCU_SCHEME )
-  						{
+              {
                 auto_OSDProxy osd_proxy = 
                   OSDProxy::create( ( *random_osd_address_mapping_i ).get_uri(), 
                                     OSDProxy::CONCURRENCY_LEVEL_DEFAULT, 
@@ -195,18 +195,18 @@ namespace xtfs_vivaldi
                                     get_log(), 
                                     get_operation_timeout() );
                                                   
-  							org::xtreemfs::interfaces::VivaldiCoordinates random_osd_vivaldi_coordinates;
-  							
-  							//Send the request and measure the RTT
+                org::xtreemfs::interfaces::VivaldiCoordinates random_osd_vivaldi_coordinates;
+                
+                //Send the request and measure the RTT
                 get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << 
                     "xtfs_vivaldi:recalculating against " << 
                     random_osd_service->get_uuid();
 
-  							YIELD::platform::Time start_time;
+                YIELD::platform::Time start_time;
 
                 osd_proxy->xtreemfs_ping( org::xtreemfs::interfaces::VivaldiCoordinates(),
                                           random_osd_vivaldi_coordinates );
-  							
+                
                 YIELD::platform::Time rtt( YIELD::platform::Time() - start_time );
                 
                 get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << 
@@ -217,7 +217,7 @@ namespace xtfs_vivaldi
                 uint64_t measuredRTT = rtt.as_unix_time_ms();
                 
                 bool retried = false;
-  							// Recalculate coordinates here
+                // Recalculate coordinates here
                 if( retriesInARow < MAX_RETRIES_FOR_A_REQUEST ){
                   if( !own_node.recalculatePosition(random_osd_vivaldi_coordinates,
                                                     measuredRTT,
@@ -285,26 +285,28 @@ namespace xtfs_vivaldi
                 get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << 
                     "xtfs_vivaldi:" << auxStr;
   
-  						}
-  					}
-  				}else{
-            get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << 
-                "xtfs_vivaldi:no OSD available";
+                }
+              }
+            
+            }else{
+            
+              get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << 
+                  "xtfs_vivaldi:no OSD available";
           }
-  			
+        
         }catch ( std::exception& exc ){
-  				get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << 
+          get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << 
               "xtfs_vivaldi: error pinging OSDs: " << exc.what() << ".";
           
           //TOFIX:This must be done only for timeout exceptions
           
           //We must avoid to keep retrying indefinitely against an OSD which is not responding
-  				if(retriesInARow && (++retriesInARow >= MAX_RETRIES_FOR_A_REQUEST) ){
+          if(retriesInARow && (++retriesInARow >= MAX_RETRIES_FOR_A_REQUEST) ){
             //If the last retry times out all the previous retries are discarded
             currentRetries.clear();
             retriesInARow = 0;
           }
-  			}
+        }
   
         //Store the new coordinates in a local file
         get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << 
@@ -312,19 +314,19 @@ namespace xtfs_vivaldi
             own_node.getCoordinates()->get_x_coordinate() << 
             "," << own_node.getCoordinates()->get_y_coordinate() << ")";
         
-  			vivaldi_coordinates_file = \
+        vivaldi_coordinates_file = \
           YIELD::platform::Volume().open( vivaldi_coordinates_file_path, 
                                           O_CREAT|O_TRUNC|O_WRONLY );
                                           
-  			if ( vivaldi_coordinates_file != NULL )
-  			{
+        if ( vivaldi_coordinates_file != NULL )
+        {
           
-  				YIELD::platform::XDRMarshaller xdr_marshaller;
-  				own_node.getCoordinates()->marshal( xdr_marshaller );
-  				vivaldi_coordinates_file->write( xdr_marshaller.get_buffer().release() );
+          YIELD::platform::XDRMarshaller xdr_marshaller;
+          own_node.getCoordinates()->marshal( xdr_marshaller );
+              vivaldi_coordinates_file->write( xdr_marshaller.get_buffer().release() );
           vivaldi_coordinates_file->close();
           
-  			}
+        }
     
         //Sleep until the next iteration
         uint64_t sleep_in_ms = 
@@ -334,12 +336,12 @@ namespace xtfs_vivaldi
                 
         get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << 
             "xtfs_vivaldi:sleeping during " << sleep_in_ms << " ms.";
-      	
+        
         YIELD::platform::Thread::sleep( sleep_in_ms * NS_IN_MS );
         
         vivaldiIterations = (vivaldiIterations+1)%LONG_MAX;
 
-  		}
+      }
     }
     
     /* Retrieves a list of available OSDs from the DS
