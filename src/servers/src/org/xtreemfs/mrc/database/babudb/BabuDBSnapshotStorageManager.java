@@ -51,6 +51,7 @@ import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.utils.Converter;
+import org.xtreemfs.mrc.utils.DBAdminHelper;
 import org.xtreemfs.mrc.utils.Path;
 
 public class BabuDBSnapshotStorageManager implements StorageManager {
@@ -472,7 +473,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
     
     @Override
     public void dumpDB(BufferedWriter xmlWriter) throws DatabaseException, IOException {
-        throwException();
+        DBAdminHelper.dumpVolume(xmlWriter, this);
     }
     
     @Override
