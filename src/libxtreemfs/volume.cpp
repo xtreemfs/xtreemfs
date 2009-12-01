@@ -43,7 +43,17 @@ auto_Volume Volume::create
   const YIELD::platform::Path& vivaldi_coordinates_file_path 
 )
 {
-  auto_DIRProxy dir_proxy = DIRProxy::create( dir_uri, proxy_flags, log, proxy_operation_timeout, proxy_reconnect_tries_max, proxy_ssl_context );
+  auto_DIRProxy dir_proxy = DIRProxy::create
+  ( 
+    dir_uri,
+    DIRProxy::CONCURRENCY_LEVEL_DEFAULT,
+    proxy_flags, 
+    log, 
+    proxy_operation_timeout, 
+    proxy_reconnect_tries_max, 
+    proxy_ssl_context 
+  );
+
   if ( dir_proxy != NULL )
   {
     YIELD::ipc::auto_URI mrc_uri; 
@@ -55,13 +65,34 @@ auto_Volume Volume::create
 
     if ( mrc_uri != NULL )
     {
-      auto_MRCProxy mrc_proxy = MRCProxy::create( *mrc_uri, proxy_flags, log, proxy_operation_timeout, "", proxy_reconnect_tries_max, proxy_ssl_context );
+      auto_MRCProxy mrc_proxy = MRCProxy::create
+      ( 
+        *mrc_uri, 
+        MRCProxy::CONCURRENCY_LEVEL_DEFAULT,
+        proxy_flags, 
+        log, 
+        proxy_operation_timeout, 
+        "", 
+        proxy_reconnect_tries_max, 
+        proxy_ssl_context 
+      );
+
       if ( mrc_proxy != NULL )
       {
         org::xtreemfs::interfaces::Stat stbuf;
         mrc_proxy->getattr( name + "/", stbuf );
 
-        auto_OSDProxyMux osd_proxy_mux = OSDProxyMux::create( dir_proxy, proxy_flags, log, proxy_operation_timeout, proxy_reconnect_tries_max, proxy_ssl_context );
+        auto_OSDProxyMux osd_proxy_mux = OSDProxyMux::create
+        ( 
+          dir_proxy, 
+          OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
+          proxy_flags, 
+          log, 
+          proxy_operation_timeout, 
+          proxy_reconnect_tries_max, 
+          proxy_ssl_context 
+        );
+
         if ( osd_proxy_mux != NULL )
         {
           YIELD::concurrency::auto_StageGroup stage_group = new YIELD::concurrency::SEDAStageGroup;

@@ -129,8 +129,9 @@ namespace YIELD
       const static uint32_t CLIENT_FLAG_TRACE_IO = 1;
       const static uint32_t CLIENT_FLAG_TRACE_OPERATIONS = 2;
 
+      const static uint16_t CONCURRENCY_LEVEL_DEFAULT = 4;
       const static uint64_t OPERATION_TIMEOUT_DEFAULT = 5 * NS_IN_S;
-      const static uint8_t RECONNECT_TRIES_MAX_DEFAULT = 3;      
+      const static uint8_t RECONNECT_TRIES_MAX_DEFAULT = 3;
       
       // YIELD::concurrency::EventHandler
       virtual void handleEvent( YIELD::concurrency::Event& );
@@ -138,6 +139,7 @@ namespace YIELD
     protected:
       Client
       ( 
+        uint16_t concurrency_level, // e.g. the # of simultaneous conns for TCP
         uint32_t flags, 
         YIELD::platform::auto_Log log, 
         const YIELD::platform::Time& operation_timeout, 
@@ -151,6 +153,7 @@ namespace YIELD
       YIELD::platform::auto_Log get_log() const { return log; }
 
     private:
+      uint16_t concurrency_level;
       uint32_t flags;
       YIELD::platform::auto_Log log;
       YIELD::platform::Time operation_timeout;
@@ -444,6 +447,7 @@ namespace YIELD
         create
         ( 
           const URI& absolute_uri, 
+          uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
           uint32_t flags = 0,
           YIELD::platform::auto_Log log = NULL,                                                             
           const YIELD::platform::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
@@ -482,6 +486,7 @@ namespace YIELD
     private:
       HTTPClient
       (
+        uint16_t concurrency_level,
         uint32_t flags, 
         YIELD::platform::auto_Log log, 
         const YIELD::platform::Time& operation_timeout, 
@@ -491,8 +496,8 @@ namespace YIELD
       )
         : Client<HTTPRequest, HTTPResponse>
           ( 
-            flags, log, operation_timeout, peername, 
-            reconnect_tries_max, socket_factory 
+            concurrency_level, flags, log, operation_timeout, 
+            peername, reconnect_tries_max, socket_factory 
           )
       { }
 
@@ -783,26 +788,11 @@ namespace YIELD
     class ONCRPCClient : public InterfaceType, public Client<ONCRPCRequest, ONCRPCResponse>
     {
     public:
-      ONCRPCClient
-      ( 
-        uint32_t flags, 
-        YIELD::platform::auto_Log log, 
-        const YIELD::platform::Time& operation_timeout, 
-        auto_SocketAddress peername, 
-        uint8_t reconnect_tries_max, 
-        auto_SocketFactory socket_factory 
-      )
-        : Client<ONCRPCRequest, ONCRPCResponse>
-          ( 
-            flags, log, operation_timeout, peername, 
-            reconnect_tries_max, socket_factory 
-          )
-      { }
-
       static yidl::runtime::auto_Object< ONCRPCClient<InterfaceType> > 
         create
         ( 
           const URI& absolute_uri, 
+          uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
           uint32_t flags = 0,
           YIELD::platform::auto_Log log = NULL, 
           const YIELD::platform::Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT, 
@@ -862,6 +852,23 @@ namespace YIELD
       }
 
     protected:
+      ONCRPCClient
+      ( 
+        uint16_t concurrency_level,
+        uint32_t flags, 
+        YIELD::platform::auto_Log log, 
+        const YIELD::platform::Time& operation_timeout, 
+        auto_SocketAddress peername, 
+        uint8_t reconnect_tries_max, 
+        auto_SocketFactory socket_factory 
+      )
+        : Client<ONCRPCRequest, ONCRPCResponse>
+          ( 
+            concurrency_level, flags, log, operation_timeout, 
+            peername, reconnect_tries_max, socket_factory 
+          )
+      { }
+
       virtual ~ONCRPCClient() { }
     };
 
@@ -1722,8 +1729,10 @@ namespace YIELD
 
       template <class InterfaceType>
       yidl::runtime::auto_Object< ONCRPCClient<InterfaceType> > 
-        ONCRPCClient<InterfaceType>::create( 
+        ONCRPCClient<InterfaceType>::create
+        (           
           const URI& absolute_uri,
+          uint16_t concurrency_level,
           uint32_t flags,
           YIELD::platform::auto_Log log, 
           const YIELD::platform::Time& operation_timeout,
@@ -1759,8 +1768,8 @@ namespace YIELD
 
           return new ONCRPCClient<InterfaceType>
           ( 
-            flags, log, operation_timeout, peername, 
-            reconnect_tries_max, socket_factory 
+            concurrency_level, flags, log, operation_timeout, 
+            peername, reconnect_tries_max, socket_factory 
           );
         }
         else

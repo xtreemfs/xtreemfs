@@ -32,6 +32,7 @@ namespace xtreemfs
   protected:
     Proxy
     ( 
+      uint16_t concurrency_level,
       uint32_t flags, 
       YIELD::platform::auto_Log log, 
       const YIELD::platform::Time& operation_timeout, 

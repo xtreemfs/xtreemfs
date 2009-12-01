@@ -128,12 +128,31 @@ namespace xtreemfs
 
     auto_DIRProxy createDIRProxy( const YIELD::ipc::URI& absolute_uri )
     {       
-      return DIRProxy::create( absolute_uri, get_proxy_flags(), get_log(), operation_timeout, DIRProxy::RECONNECT_TRIES_MAX_DEFAULT, get_proxy_ssl_context() );
+      return DIRProxy::create
+      ( 
+        absolute_uri, 
+        DIRProxy::CONCURRENCY_LEVEL_DEFAULT,
+        get_proxy_flags(), 
+        get_log(), 
+        operation_timeout, 
+        DIRProxy::RECONNECT_TRIES_MAX_DEFAULT, 
+        get_proxy_ssl_context() 
+      );
     }    
 
     auto_MRCProxy createMRCProxy( const YIELD::ipc::URI& absolute_uri, const char* password = "" )
     {
-      return MRCProxy::create( absolute_uri, get_proxy_flags(), get_log(), operation_timeout, password, MRCProxy::RECONNECT_TRIES_MAX_DEFAULT, get_proxy_ssl_context() );
+      return MRCProxy::create
+      ( 
+        absolute_uri, 
+        MRCProxy::CONCURRENCY_LEVEL_DEFAULT,
+        get_proxy_flags(), 
+        get_log(), 
+        operation_timeout, 
+        password, 
+        MRCProxy::RECONNECT_TRIES_MAX_DEFAULT, 
+        get_proxy_ssl_context() 
+      );
     }
 
     YIELD::platform::auto_Log get_log()

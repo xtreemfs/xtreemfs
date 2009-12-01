@@ -1,3 +1,5 @@
+// Revision: 1917
+
 #include "yield/ipc.h"
 
 
@@ -17,16 +19,28 @@
 #endif
 #endif
 template <class RequestType, class ResponseType>
-YIELD::ipc::Client<RequestType, ResponseType>::Client( uint32_t flags, YIELD::platform::auto_Log log, const YIELD::platform::Time& operation_timeout, auto_SocketAddress peername, uint8_t reconnect_tries_max, auto_SocketFactory socket_factory )
-  : flags( flags ), log( log ), operation_timeout( operation_timeout ), peername( peername ), reconnect_tries_max( reconnect_tries_max ), socket_factory( socket_factory )
+YIELD::ipc::Client<RequestType, ResponseType>::Client
+(
+  uint16_t concurrency_level,
+  uint32_t flags,
+  YIELD::platform::auto_Log log,
+  const YIELD::platform::Time& operation_timeout,
+  auto_SocketAddress peername,
+  uint8_t reconnect_tries_max,
+  auto_SocketFactory socket_factory
+)
+  : concurrency_level( concurrency_level ), flags( flags ), log( log ),
+    operation_timeout( operation_timeout ), peername( peername ),
+    reconnect_tries_max( reconnect_tries_max ), socket_factory( socket_factory )
 {
-  for ( uint16_t socket_i = 0; socket_i < 16; socket_i++ )
-    sockets.enqueue( NULL ); // Enqueue a placeholder for each socket; the sockets will be created on demand
+  for ( uint16_t socket_i = 0; socket_i < concurrency_level; socket_i++ )
+    sockets.enqueue( NULL ); // Enqueue a placeholder for each socket;
+                             // the sockets will be created on demand
 }
 template <class RequestType, class ResponseType>
 YIELD::ipc::Client<RequestType, ResponseType>::~Client()
 {
-  for ( uint16_t socket_i = 0; socket_i < 16; socket_i++ )
+  for ( uint16_t socket_i = 0; socket_i < concurrency_level; socket_i++ )
   {
     Socket* socket_ = sockets.try_dequeue();
     if ( socket_ != NULL )
@@ -39,15 +53,22 @@ YIELD::ipc::Client<RequestType, ResponseType>::~Client()
   }
 }
 template <class RequestType, class ResponseType>
-void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent( YIELD::concurrency::Event& ev )
+void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
+(
+  YIELD::concurrency::Event& ev
+)
 {
   switch ( ev.get_type_id() )
   {
     case YIDL_RUNTIME_OBJECT_TYPE_ID( RequestType ):
     {
       RequestType& request = static_cast<RequestType&>( ev );
-      if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-        log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client sending " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to <host>:" << this->peername->get_port() << ".";
+      if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) ==
+           this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
+        log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        "yield::ipc::Client sending " << request.get_type_name() << "/" <<
+        reinterpret_cast<uint64_t>( &request ) << " to <host>:" <<
+        this->peername->get_port() << ".";
       for ( ;; )
       {
         Socket* socket_ = sockets.dequeue(); // Blocking dequeue
@@ -56,31 +77,53 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent( YIELD::concurre
           socket_ = socket_factory->createSocket().release();
           if ( socket_ != NULL )
           {
-            if ( ( this->flags & this->CLIENT_FLAG_TRACE_IO ) == this->CLIENT_FLAG_TRACE_IO &&
+            if ( ( this->flags & this->CLIENT_FLAG_TRACE_IO ) ==
+                   this->CLIENT_FLAG_TRACE_IO &&
                  log != NULL && log->get_level() >= YIELD::platform::Log::LOG_INFO )
               socket_ = new TracingSocket( socket_, log );
           }
           else
           {
             if ( log != NULL )
-              log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: could not create new socket to connect to <host>:" << this->peername->get_port() << ", error: " << YIELD::platform::Exception::strerror() << ".";
+              log->getStream( YIELD::platform::Log::LOG_ERR ) <<
+              "yield::ipc::Client: could not create new socket to connect to <host>:"
+              << this->peername->get_port() << ", error: " << YIELD::platform::Exception::strerror() << ".";
             continue; // Try to dequeue another existing socket
           }
         }
         if ( socket_->is_connected() )
         {
-          if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-            log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: writing " << request.get_type_name() << "/" << reinterpret_cast<uint64_t>( &request ) << " to <host>:" << this->peername->get_port() << " on socket #" << static_cast<uint64_t>( *socket_ ) << ".";
-          AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request.serialize(), *this, request );
-          YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), operation_timeout ) );
+          if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) ==
+            this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
+            log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+            "yield::ipc::Client: writing " << request.get_type_name()
+            << "/" << reinterpret_cast<uint64_t>( &request ) <<
+            " to <host>:" << this->peername->get_port() <<
+            " on socket #" << static_cast<uint64_t>( *socket_ ) << ".";
+          AIOWriteControlBlock* aio_write_control_block =
+            new AIOWriteControlBlock( request.serialize(), *this, request );
+          YIELD::platform::TimerQueue::getDefaultTimerQueue().
+            addTimer
+            (
+              new OperationTimer( aio_write_control_block->incRef(), operation_timeout )
+            );
           socket_->aio_write( aio_write_control_block );
         }
         else
         {
-          if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) == this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
-            log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: connecting to <host>:" << this->peername->get_port() << " with socket #" << static_cast<uint64_t>( *socket_ ) << " (try #" << static_cast<uint16_t>( request.get_reconnect_tries() + 1 ) << ").";
-          AIOConnectControlBlock* aio_connect_control_block = new AIOConnectControlBlock( *this, request );
-          YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_connect_control_block->incRef(), operation_timeout ) );
+          if ( ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) ==
+                 this->CLIENT_FLAG_TRACE_OPERATIONS && log != NULL )
+            log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+            "yield::ipc::Client: connecting to <host>:" << this->peername->get_port() <<
+            " with socket #" << static_cast<uint64_t>( *socket_ ) <<
+            " (try #" << static_cast<uint16_t>( request.get_reconnect_tries() + 1 ) << ").";
+          AIOConnectControlBlock* aio_connect_control_block =
+            new AIOConnectControlBlock( *this, request );
+          YIELD::platform::TimerQueue::getDefaultTimerQueue().
+            addTimer
+            (
+              new OperationTimer( aio_connect_control_block->incRef(), operation_timeout )
+            );
           socket_->aio_connect( aio_connect_control_block );
         }
         yidl::runtime::Object::decRef( *socket_ );
@@ -96,24 +139,41 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent( YIELD::concurre
   }
 }
 template <class RequestType, class ResponseType>
-class YIELD::ipc::Client<RequestType, ResponseType>::AIOConnectControlBlock : public Socket::AIOConnectControlBlock
+class YIELD::ipc::Client<RequestType, ResponseType>::AIOConnectControlBlock
+  : public Socket::AIOConnectControlBlock
 {
 public:
-  AIOConnectControlBlock( Client<RequestType,ResponseType>& client, yidl::runtime::auto_Object<RequestType> request )
+  AIOConnectControlBlock
+  (
+    Client<RequestType,ResponseType>& client,
+    yidl::runtime::auto_Object<RequestType> request
+  )
     : Socket::AIOConnectControlBlock( client.peername ),
       client( client ),
       request( request )
   { }
-  AIOConnectControlBlock& operator=( const AIOConnectControlBlock& ) { return *this; }
+  AIOConnectControlBlock& operator=( const AIOConnectControlBlock& )
+  {
+    return *this;
+  }
   // AIOControlBlock
   void onCompletion( size_t )
   {
     if ( request_lock.try_acquire() )
     {
-      if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: successfully connected to <host>:" << client.peername->get_port() << " on socket #" << static_cast<uint64_t>( *get_socket() ) << ".";
-      AIOWriteControlBlock* aio_write_control_block = new AIOWriteControlBlock( request->serialize(), client, request );
-      YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_write_control_block->incRef(), client.operation_timeout ) );
+      if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) ==
+             client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
+        client.log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        "yield::ipc::Client: successfully connected to <host>:" <<
+        client.peername->get_port() << " on socket #" <<
+        static_cast<uint64_t>( *get_socket() ) << ".";
+      AIOWriteControlBlock* aio_write_control_block =
+        new AIOWriteControlBlock( request->serialize(), client, request );
+      YIELD::platform::TimerQueue::getDefaultTimerQueue().
+        addTimer
+        (
+          new OperationTimer( aio_write_control_block->incRef(), client.operation_timeout )
+        );
       get_socket()->aio_write( aio_write_control_block );
       request = NULL;
     }
@@ -123,8 +183,11 @@ public:
     if ( request_lock.try_acquire() )
     {
       if ( client.log != NULL )
-        client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: connect() to <host>:" << client.peername->get_port() <<
-          " failed, errno=" << error_code << ", strerror=" << YIELD::platform::Exception::strerror( error_code ) << ".";
+        client.log->getStream( YIELD::platform::Log::LOG_ERR ) <<
+        "yield::ipc::Client: connect() to <host>:" <<
+        client.peername->get_port() <<
+        " failed, errno=" << error_code << ", strerror=" <<
+        YIELD::platform::Exception::strerror( error_code ) << ".";
       get_socket()->close();
       if ( get_socket()->recreate() )
         client.sockets.enqueue( get_socket().release() );
@@ -136,7 +199,10 @@ public:
         client.handleEvent( *request.release() );
       }
       else
-        request->respond( *( new YIELD::concurrency::ExceptionResponse( error_code ) ) );
+        request->respond
+        (
+          *( new YIELD::concurrency::ExceptionResponse( error_code ) )
+        );
       request = NULL;
     }
   }
@@ -146,15 +212,25 @@ private:
   YIELD::platform::Mutex request_lock;
 };
 template <class RequestType, class ResponseType>
-class YIELD::ipc::Client<RequestType, ResponseType>::AIOReadControlBlock : public Socket::AIOReadControlBlock
+class YIELD::ipc::Client<RequestType, ResponseType>::AIOReadControlBlock
+  : public Socket::AIOReadControlBlock
 {
 public:
-  AIOReadControlBlock( yidl::runtime::auto_Buffer buffer, Client<RequestType,ResponseType>& client, yidl::runtime::auto_Object<RequestType> request, yidl::runtime::auto_Object<ResponseType> response )
+  AIOReadControlBlock
+  (
+    yidl::runtime::auto_Buffer buffer,
+    Client<RequestType,ResponseType>& client,
+    yidl::runtime::auto_Object<RequestType> request,
+    yidl::runtime::auto_Object<ResponseType> response
+  )
     : Socket::AIOReadControlBlock( buffer ),
       client( client ),
       request( request ), response( response )
   { }
-  AIOReadControlBlock& operator=( const AIOReadControlBlock& ) { return *this; }
+  AIOReadControlBlock& operator=( const AIOReadControlBlock& )
+  {
+    return *this;
+  }
   // AIOControlBlock
   void onCompletion( size_t bytes_transferred )
   {
@@ -164,38 +240,65 @@ public:
 #endif
     if ( request_lock.try_acquire() )
     {
-      if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: read " << bytes_transferred << " bytes from socket #" << static_cast<uint64_t>( *get_socket() ) << " for " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ".";
+      if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) ==
+             client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
+        client.log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        "yield::ipc::Client: read " << bytes_transferred <<
+        " bytes from socket #" << static_cast<uint64_t>( *get_socket() ) <<
+        " for " << response->get_type_name() << "/" <<
+        reinterpret_cast<uint64_t>( response.get() ) << ".";
       ssize_t deserialize_ret = response->deserialize( get_buffer() );
       if ( deserialize_ret == 0 )
       {
-        if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-          client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: successfully deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
+        if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) ==
+               client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
+          client.log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+          "yield::ipc::Client: successfully deserialized " <<
+          response->get_type_name() <<
+            "/" << reinterpret_cast<uint64_t>( response.get() ) <<
+          ", responding to " << request->get_type_name() <<
+            "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
         request->respond( *response.release() );
         client.sockets.enqueue( get_socket().release() );
       }
       else if ( deserialize_ret > 0 )
       {
         yidl::runtime::auto_Buffer buffer( get_buffer() );
-        if ( buffer->capacity() - buffer->size() < static_cast<size_t>( deserialize_ret ) )
+        if ( buffer->capacity() - buffer->size() <
+             static_cast<size_t>( deserialize_ret ) )
           buffer = new yidl::runtime::HeapBuffer( deserialize_ret );
         // else re-use the same buffer
-        if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-          client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: partially deserialized " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", reading again with " << ( buffer->capacity() - buffer->size() ) << " byte buffer.";
-        AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( buffer, client, request.release(), response.release() );
-        YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
+        if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) ==
+               client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
+          client.log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+          "yield::ipc::Client: partially deserialized " <<
+          response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) <<
+          ", reading again with " << ( buffer->capacity() - buffer->size() ) <<
+          " byte buffer.";
+        AIOReadControlBlock* aio_read_control_block =
+          new AIOReadControlBlock( buffer, client, request.release(), response.release() );
+        YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer
+        (
+          new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout )
+        );
         get_socket()->aio_read( aio_read_control_block );
       }
       else
       {
         if ( client.log != NULL )
-          client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: lost connection trying " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
+          client.log->getStream( YIELD::platform::Log::LOG_ERR ) <<
+          "yield::ipc::Client: lost connection trying " << response->get_type_name() <<
+            "/" << reinterpret_cast<uint64_t>( response.get() ) <<
+          ", responding to " << request->get_type_name() <<
+            "/" << reinterpret_cast<uint64_t>( request.get() ) <<
+          " with ExceptionResponse.";
         request->respond( *( new YIELD::concurrency::ExceptionResponse( ECONNABORTED ) ) );
         get_socket()->shutdown();
         get_socket()->close();
         client.sockets.enqueue( get_socket().release() );
       }
-      // Clear references so their objects will be deleted now instead of when the timeout occurs (the timeout has the last reference to this control block)
+      // Clear references so their objects will be deleted now instead of when
+      // the timeout occurs (the timeout has the last reference to this control block).
       request = NULL;
       response = NULL;
       unlink_buffer();
@@ -206,11 +309,14 @@ public:
     if ( request_lock.try_acquire() )
     {
       if ( client.log != NULL )
-        client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: error reading " <<
-          response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) <<
-          " from socket #" << static_cast<uint64_t>( *get_socket() ) <<
-          ", errno=" << error_code << ", strerror=" << YIELD::platform::Exception::strerror( error_code ) <<
-          ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
+        client.log->getStream( YIELD::platform::Log::LOG_ERR ) <<
+        "yield::ipc::Client: error reading " << response->get_type_name() <<
+          "/" << reinterpret_cast<uint64_t>( response.get() ) <<
+        " from socket #" << static_cast<uint64_t>( *get_socket() ) <<
+        ", errno=" << error_code << ", strerror=" <<
+          YIELD::platform::Exception::strerror( error_code ) <<
+        ", responding to " << request->get_type_name() <<
+          "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       get_socket()->shutdown();
       get_socket()->close();
       if ( get_socket()->recreate() )
@@ -240,27 +346,56 @@ private:
   yidl::runtime::auto_Object<ResponseType> response;
 };
 template <class RequestType, class ResponseType>
-class YIELD::ipc::Client<RequestType, ResponseType>::AIOWriteControlBlock : public Socket::AIOWriteControlBlock
+class YIELD::ipc::Client<RequestType, ResponseType>::AIOWriteControlBlock
+  : public Socket::AIOWriteControlBlock
 {
 public:
-  AIOWriteControlBlock( yidl::runtime::auto_Buffer buffer, Client<RequestType,ResponseType>& client, yidl::runtime::auto_Object<RequestType> request )
+  AIOWriteControlBlock
+  (
+    yidl::runtime::auto_Buffer buffer,
+    Client<RequestType,ResponseType>& client,
+    yidl::runtime::auto_Object<RequestType> request
+  )
     : Socket::AIOWriteControlBlock( buffer ),
       client( client ),
       request( request )
   { }
-  AIOWriteControlBlock& operator=( const AIOWriteControlBlock& ) { return *this; }
+  AIOWriteControlBlock& operator=( const AIOWriteControlBlock& )
+  {
+    return *this;
+  }
   // AIOControlBlock
   void onCompletion( size_t bytes_transferred )
   {
     if ( request_lock.try_acquire() )
     {
-      if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: wrote " << bytes_transferred << " bytes to socket #" << static_cast<uint64_t>( *get_socket() ) << " for " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
-      yidl::runtime::auto_Object<ResponseType> response( static_cast<ResponseType*>( request->createResponse().release() ) );
-      if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) == client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
-        client.log->getStream( YIELD::platform::Log::LOG_INFO ) << "yield::ipc::Client: created " << response->get_type_name() << "/" << reinterpret_cast<uint64_t>( response.get() ) << " to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
-      AIOReadControlBlock* aio_read_control_block = new AIOReadControlBlock( new yidl::runtime::HeapBuffer( 1024 ), client, request, response );
-      YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout ) );
+      if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) ==
+           client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
+        client.log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        "yield::ipc::Client: wrote " << bytes_transferred <<
+        " bytes to socket #" << static_cast<uint64_t>( *get_socket() ) <<
+        " for " << request->get_type_name() <<
+          "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
+      yidl::runtime::auto_Object<ResponseType> response
+      (
+        static_cast<ResponseType*>( request->createResponse().release() )
+      );
+      if ( ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) ==
+           client.CLIENT_FLAG_TRACE_OPERATIONS && client.log != NULL )
+        client.log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        "yield::ipc::Client: created " << response->get_type_name() <<
+          "/" << reinterpret_cast<uint64_t>( response.get() ) <<
+        " to " << request->get_type_name() <<
+          "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
+      AIOReadControlBlock* aio_read_control_block =
+        new AIOReadControlBlock
+        (
+          new yidl::runtime::HeapBuffer( 1024 ), client, request, response
+        );
+      YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer
+      (
+        new OperationTimer( aio_read_control_block->incRef(), client.operation_timeout )
+      );
       get_socket()->aio_read( aio_read_control_block );
       request = NULL;
       unlink_buffer();
@@ -271,11 +406,15 @@ public:
     if ( request_lock.try_acquire() )
     {
       if ( client.log != NULL )
-        client.log->getStream( YIELD::platform::Log::LOG_ERR ) << "yield::ipc::Client: error writing " <<
-          request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) <<
-          " to socket #" << static_cast<uint64_t>( *get_socket() ) <<
-          ", errno=" << error_code << ", strerror=" << YIELD::platform::Exception::strerror( error_code ) <<
-          ", responding to " << request->get_type_name() << "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
+        client.log->getStream( YIELD::platform::Log::LOG_ERR ) <<
+        "yield::ipc::Client: error writing " <<
+        request->get_type_name() <<
+          "/" << reinterpret_cast<uint64_t>( request.get() ) <<
+        " to socket #" << static_cast<uint64_t>( *get_socket() ) <<
+        ", errno=" << error_code << ", strerror=" <<
+          YIELD::platform::Exception::strerror( error_code ) <<
+        ", responding to " << request->get_type_name() <<
+          "/" << reinterpret_cast<uint64_t>( request.get() ) << " with ExceptionResponse.";
       get_socket()->shutdown();
       get_socket()->close();
       if ( get_socket()->recreate() )
@@ -289,7 +428,10 @@ public:
       }
       else
       {
-        request->respond( *( new YIELD::concurrency::ExceptionResponse( error_code ) ) );
+        request->respond
+        (
+          *( new YIELD::concurrency::ExceptionResponse( error_code ) )
+        );
         request = NULL;
       }
       unlink_buffer();
@@ -301,10 +443,15 @@ private:
   YIELD::platform::Mutex request_lock;
 };
 template <class RequestType, class ResponseType>
-class YIELD::ipc::Client<RequestType, ResponseType>::OperationTimer : public YIELD::platform::TimerQueue::Timer
+class YIELD::ipc::Client<RequestType, ResponseType>::OperationTimer
+  : public YIELD::platform::TimerQueue::Timer
 {
 public:
-  OperationTimer( YIELD::platform::auto_AIOControlBlock aio_control_block, const YIELD::platform::Time& operation_timeout )
+  OperationTimer
+  (
+    YIELD::platform::auto_AIOControlBlock aio_control_block,
+    const YIELD::platform::Time& operation_timeout
+  )
     : YIELD::platform::TimerQueue::Timer( operation_timeout ),
       aio_control_block( aio_control_block )
   { }
@@ -506,6 +653,7 @@ YIELD::ipc::auto_HTTPClient
   YIELD::ipc::HTTPClient::create
   (
     const URI& absolute_uri,
+    uint16_t concurrency_level,
     uint32_t flags,
     YIELD::platform::auto_Log log,
     const YIELD::platform::Time& operation_timeout,
@@ -537,20 +685,39 @@ YIELD::ipc::auto_HTTPClient
     else
 #endif
       socket_factory = new TCPSocketFactory;
-    return new HTTPClient( flags, log, operation_timeout, peername, reconnect_tries_max, socket_factory );
+    return new HTTPClient
+    (
+      concurrency_level, flags, log, operation_timeout,
+      peername, reconnect_tries_max, socket_factory
+    );
   }
   else
     throw YIELD::platform::Exception();
 }
-YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::GET( const URI& absolute_uri, YIELD::platform::auto_Log log )
+YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::GET
+(
+  const URI& absolute_uri,
+  YIELD::platform::auto_Log log
+)
 {
   return sendHTTPRequest( "GET", absolute_uri, NULL, log );
 }
-YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::PUT( const URI& absolute_uri, yidl::runtime::auto_Buffer body, YIELD::platform::auto_Log log )
+YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::PUT
+(
+  const URI& absolute_uri,
+  yidl::runtime::auto_Buffer body,
+  YIELD::platform::auto_Log log
+)
 {
   return sendHTTPRequest( "PUT", absolute_uri, body, log );
 }
-YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::PUT( const URI& absolute_uri, const YIELD::platform::Path& body_file_path, YIELD::platform::auto_Log log )
+YIELD::ipc::auto_HTTPResponse
+  YIELD::ipc::HTTPClient::PUT
+  (
+    const URI& absolute_uri,
+    const YIELD::platform::Path& body_file_path,
+    YIELD::platform::auto_Log log
+  )
 {
   YIELD::platform::auto_File file( YIELD::platform::Volume().open( body_file_path ) );
   if ( file != NULL )
@@ -563,12 +730,25 @@ YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::PUT( const URI& absolute_u
   else
     throw YIELD::platform::Exception();
 }
-YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::sendHTTPRequest( const char* method, const URI& absolute_uri, yidl::runtime::auto_Buffer body, YIELD::platform::auto_Log log )
+YIELD::ipc::auto_HTTPResponse
+  YIELD::ipc::HTTPClient::sendHTTPRequest
+  (
+    const char* method,
+    const URI& absolute_uri,
+    yidl::runtime::auto_Buffer body,
+    YIELD::platform::auto_Log log
+  )
 {
-  auto_HTTPClient http_client( HTTPClient::create( absolute_uri, 0, log ) );
+  auto_HTTPClient http_client
+  (
+    HTTPClient::create( absolute_uri, HTTPClient::CONCURRENCY_LEVEL_DEFAULT, 0, log )
+  );
   auto_HTTPRequest http_request( new HTTPRequest( method, absolute_uri, body ) );
   http_request->set_header( "User-Agent", "Flog 0.99" );
-  YIELD::concurrency::auto_ResponseQueue<HTTPResponse> http_response_queue( new YIELD::concurrency::ResponseQueue<HTTPResponse> );
+  YIELD::concurrency::auto_ResponseQueue<HTTPResponse> http_response_queue
+  (
+    new YIELD::concurrency::ResponseQueue<HTTPResponse>
+  );
   http_request->set_response_target( http_response_queue->incRef() );
   http_client->send( http_request->incRef() );
   return http_response_queue->dequeue();

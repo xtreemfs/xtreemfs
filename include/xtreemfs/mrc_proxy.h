@@ -28,6 +28,7 @@ namespace xtreemfs
       create
       ( 
         const YIELD::ipc::URI& absolute_uri,
+        uint16_t concurrency_level = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::CONCURRENCY_LEVEL_DEFAULT,
         uint32_t flags = 0,
         YIELD::platform::auto_Log log = NULL,
         const YIELD::platform::Time& operation_timeout = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::MRCInterface>::OPERATION_TIMEOUT_DEFAULT,
@@ -55,6 +56,7 @@ namespace xtreemfs
 
     MRCProxy
     ( 
+      uint16_t concurrency_level,
       uint32_t flags, 
       YIELD::platform::auto_Log log, 
       const YIELD::platform::Time& operation_timeout, 
@@ -65,8 +67,8 @@ namespace xtreemfs
     )
       : Proxy<MRCProxy, org::xtreemfs::interfaces::MRCInterface>
         ( 
-          flags, log, operation_timeout, peername, 
-          reconnect_tries_max, socket_factory 
+          concurrency_level, flags, log, operation_timeout, 
+          peername, reconnect_tries_max, socket_factory 
         ), 
         password( password )
     { }

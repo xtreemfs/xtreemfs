@@ -165,6 +165,7 @@ namespace xtreemfs
 template <class ProxyType, class InterfaceType>
 Proxy<ProxyType, InterfaceType>::Proxy
 ( 
+  uint16_t concurrency_level,
   uint32_t flags, 
   YIELD::platform::auto_Log log, 
   const YIELD::platform::Time& operation_timeout, 
@@ -174,8 +175,8 @@ Proxy<ProxyType, InterfaceType>::Proxy
 )
   : YIELD::ipc::ONCRPCClient<InterfaceType>
     ( 
-      flags, log, operation_timeout, peername, 
-      reconnect_tries_max, socket_factory
+      concurrency_level, flags, log, operation_timeout, 
+      peername, reconnect_tries_max, socket_factory
     ), 
     log( log )
 {

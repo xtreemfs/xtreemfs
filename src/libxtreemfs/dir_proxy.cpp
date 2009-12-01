@@ -14,6 +14,7 @@ DIRProxy::~DIRProxy()
 auto_DIRProxy DIRProxy::create
 ( 
   const YIELD::ipc::URI& absolute_uri,
+  uint16_t concurrency_level,
   uint32_t flags,
   YIELD::platform::auto_Log log,
   const YIELD::platform::Time& operation_timeout,
@@ -37,7 +38,16 @@ auto_DIRProxy DIRProxy::create
 
   YIELD::ipc::auto_SocketAddress peername = YIELD::ipc::SocketAddress::create( checked_uri );
   if ( peername != NULL )
-    return new DIRProxy( flags, log, operation_timeout, peername, reconnect_tries_max, createSocketFactory( checked_uri, ssl_context ) );
+    return new DIRProxy
+    ( 
+      concurrency_level,
+      flags, 
+      log, 
+      operation_timeout, 
+      peername, 
+      reconnect_tries_max,
+      createSocketFactory( checked_uri, ssl_context ) 
+    );
   else
     throw YIELD::platform::Exception();
 }

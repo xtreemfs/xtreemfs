@@ -167,8 +167,7 @@ namespace xtfs_vivaldi
               	
   						if ( ( *random_osd_address_mapping_i ).get_protocol() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
   						{
-  
-  							auto_OSDProxy osd_proxy = OSDProxy::create( ( *random_osd_address_mapping_i ).get_uri(), get_proxy_flags(), get_log(), get_operation_timeout() );              
+                auto_OSDProxy osd_proxy = OSDProxy::create( ( *random_osd_address_mapping_i ).get_uri(), OSDProxy::CONCURRENCY_LEVEL_DEFAULT, get_proxy_flags(), get_log(), get_operation_timeout() );              
   							org::xtreemfs::interfaces::VivaldiCoordinates random_osd_vivaldi_coordinates;
   							
   							//Send the request and measure the RTT

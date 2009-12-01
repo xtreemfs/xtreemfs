@@ -20,6 +20,7 @@ namespace xtreemfs
       create
       ( 
         yidl::runtime::auto_Object<DIRProxy> dir_proxy,
+        uint16_t concurrency_level = OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
         uint32_t flags = 0,
         YIELD::platform::auto_Log log = NULL,
         const YIELD::platform::Time& operation_timeout = OSDProxy::OPERATION_TIMEOUT_DEFAULT,
@@ -27,7 +28,16 @@ namespace xtreemfs
         YIELD::ipc::auto_SSLContext ssl_context = NULL 
       )
     {
-      return new OSDProxyMux( dir_proxy, flags, log, operation_timeout, reconnect_tries_max, ssl_context );
+      return new OSDProxyMux
+      ( 
+        concurrency_level,
+        dir_proxy, 
+        flags, 
+        log, 
+        operation_timeout, 
+        reconnect_tries_max, 
+        ssl_context 
+      );
     }
 
     // yidl::runtime::Object
@@ -36,6 +46,7 @@ namespace xtreemfs
   private:
     OSDProxyMux
     ( 
+      uint16_t concurrency_level,
       yidl::runtime::auto_Object<DIRProxy> dir_proxy, 
       uint32_t flags,
       YIELD::platform::auto_Log log, 
@@ -46,6 +57,7 @@ namespace xtreemfs
 
     ~OSDProxyMux();
 
+    uint16_t concurrency_level;
     auto_DIRProxy dir_proxy;
     uint32_t flags;
     YIELD::platform::auto_Log log;
