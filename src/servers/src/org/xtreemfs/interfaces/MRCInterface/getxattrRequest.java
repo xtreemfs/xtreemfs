@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class getxattrRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009112221;
+    public static final int TAG = 2009120318;
     
     public getxattrRequest() {  }
     public getxattrRequest( String path, String name ) { this.path = path; this.name = name; }
@@ -41,10 +41,10 @@ public class getxattrRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009112221;    
+    public static final long serialVersionUID = 2009120318;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009112221; }
+    public int getTag() { return 2009120318; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getxattrRequest"; }
     
     public int getXDRSize()

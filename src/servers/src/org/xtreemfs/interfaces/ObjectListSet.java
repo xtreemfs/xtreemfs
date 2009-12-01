@@ -31,7 +31,7 @@ public class ObjectListSet extends Sequence<ObjectList>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2009112070; }
+    public int getTag() { return 2009120167; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ObjectListSet"; }
 
     public int getXDRSize() 

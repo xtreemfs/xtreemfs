@@ -896,7 +896,7 @@ public class MRCTest extends TestCase {
         XCap xCap = creds.getXcap();
         
         // close the file
-        invokeSync(client.close(mrcAddress, xCap));
+        invokeSync(client.close(mrcAddress, new VivaldiCoordinates(), xCap));
         
         // open the file again
         creds = invokeSync(client.open(mrcAddress, uc, volumeName + "/test.txt", FileAccessManager.O_RDONLY,

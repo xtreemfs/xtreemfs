@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class utimensRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009112235;
+    public static final int TAG = 2009120332;
     
     public utimensRequest() {  }
     public utimensRequest( String path, long atime_ns, long mtime_ns, long ctime_ns ) { this.path = path; this.atime_ns = atime_ns; this.mtime_ns = mtime_ns; this.ctime_ns = ctime_ns; }
@@ -45,10 +45,10 @@ public class utimensRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009112235;    
+    public static final long serialVersionUID = 2009120332;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009112235; }
+    public int getTag() { return 2009120332; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::utimensRequest"; }
     
     public int getXDRSize()

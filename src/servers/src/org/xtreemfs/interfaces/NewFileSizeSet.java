@@ -31,7 +31,7 @@ public class NewFileSizeSet extends Sequence<NewFileSize>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2009112026; }
+    public int getTag() { return 2009120123; }
     public String getTypeName() { return "org::xtreemfs::interfaces::NewFileSizeSet"; }
 
     public int getXDRSize() 

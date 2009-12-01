@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class truncateResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009112325;
+    public static final int TAG = 2009120422;
     
     public truncateResponse() { osd_write_response = new OSDWriteResponse();  }
     public truncateResponse( OSDWriteResponse osd_write_response ) { this.osd_write_response = osd_write_response; }
@@ -36,10 +36,10 @@ public class truncateResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009112325;    
+    public static final long serialVersionUID = 2009120422;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009112325; }
+    public int getTag() { return 2009120422; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::truncateResponse"; }
     
     public int getXDRSize()

@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class StatVFS implements Struct
 {
-    public static final int TAG = 2009112057;
+    public static final int TAG = 2009120154;
     
     public StatVFS() {  }
     public StatVFS( int bsize, long bavail, long blocks, String fsid, int namelen ) { this.bsize = bsize; this.bavail = bavail; this.blocks = blocks; this.fsid = fsid; this.namelen = namelen; }
@@ -43,10 +43,10 @@ public class StatVFS implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009112057;    
+    public static final long serialVersionUID = 2009120154;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009112057; }
+    public int getTag() { return 2009120154; }
     public String getTypeName() { return "org::xtreemfs::interfaces::StatVFS"; }
     
     public int getXDRSize()

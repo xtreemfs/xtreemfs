@@ -249,9 +249,9 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
-    public RPCResponse close(InetSocketAddress server, XCap capability) {
+    public RPCResponse close(InetSocketAddress server, VivaldiCoordinates vivaldiCoords, XCap capability) {
         
-        closeRequest rq = new closeRequest(capability);
+        closeRequest rq = new closeRequest(vivaldiCoords, capability);
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -390,8 +390,8 @@ public class MRCClient extends ONCRPCClient {
     public RPCResponse mkvol(InetSocketAddress server, UserCredentials credentials, String volumeName,
         StripingPolicy defaultStripingPolicy, int accessControlPolicy, int accessMode) {
         
-        xtreemfs_mkvolRequest rq = new xtreemfs_mkvolRequest(new Volume(AccessControlPolicyType.parseInt(accessControlPolicy), 
-                defaultStripingPolicy, "", accessMode, volumeName, "", ""));
+        xtreemfs_mkvolRequest rq = new xtreemfs_mkvolRequest(new Volume(AccessControlPolicyType
+                .parseInt(accessControlPolicy), defaultStripingPolicy, "", accessMode, volumeName, "", ""));
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -407,7 +407,7 @@ public class MRCClient extends ONCRPCClient {
     public RPCResponse<FileCredentials> open(InetSocketAddress server, UserCredentials credentials,
         String path, int flags, int mode, int w32attrs, VivaldiCoordinates coordinates) {
         
-        openRequest rq = new openRequest(path, flags, mode, w32attrs,coordinates);
+        openRequest rq = new openRequest(path, flags, mode, w32attrs, coordinates);
         RPCResponse<FileCredentials> r = sendRequest(server, rq.getTag(), rq,
             new RPCResponseDecoder<FileCredentials>() {
                 
@@ -738,12 +738,11 @@ public class MRCClient extends ONCRPCClient {
         return new UserCredentials(uid, gidsAsSet, "");
     }
     
-    public RPCResponse<Object> replication_toMaster(InetSocketAddress server, 
-            UserCredentials credentials) {
+    public RPCResponse<Object> replication_toMaster(InetSocketAddress server, UserCredentials credentials) {
         
         xtreemfs_replication_to_masterRequest rq = new xtreemfs_replication_to_masterRequest();
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Object>() {
-
+            
             @Override
             public Object getResult(ReusableBuffer data) {
                 final xtreemfs_replication_to_masterResponse resp = new xtreemfs_replication_to_masterResponse();

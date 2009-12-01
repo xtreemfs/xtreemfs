@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class Lock implements Struct
 {
-    public static final int TAG = 2009112068;
+    public static final int TAG = 2009120165;
     
     public Lock() {  }
     public Lock( int client_pid, String client_uuid, long length, long offset ) { this.client_pid = client_pid; this.client_uuid = client_uuid; this.length = length; this.offset = offset; }
@@ -41,10 +41,10 @@ public class Lock implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009112068;    
+    public static final long serialVersionUID = 2009120165;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009112068; }
+    public int getTag() { return 2009120165; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Lock"; }
     
     public int getXDRSize()

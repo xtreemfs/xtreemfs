@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class Replica implements Struct
 {
-    public static final int TAG = 2009112034;
+    public static final int TAG = 2009120131;
     
     public Replica() { osd_uuids = new StringSet(); striping_policy = new StripingPolicy();  }
     public Replica( StringSet osd_uuids, int replication_flags, StripingPolicy striping_policy ) { this.osd_uuids = osd_uuids; this.replication_flags = replication_flags; this.striping_policy = striping_policy; }
@@ -39,10 +39,10 @@ public class Replica implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009112034;    
+    public static final long serialVersionUID = 2009120131;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009112034; }
+    public int getTag() { return 2009120131; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Replica"; }
     
     public int getXDRSize()
