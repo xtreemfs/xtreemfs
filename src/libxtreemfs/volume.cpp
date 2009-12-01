@@ -154,6 +154,23 @@ bool Volume::chown( const YIELD::platform::Path& path, int uid, int gid )
   return false;
 }
 
+const org::xtreemfs::interfaces::VivaldiCoordinates& 
+  Volume::get_vivaldi_coordinates() const
+{
+  org::xtreemfs::interfaces::VivaldiCoordinates vivaldi_coordinates;
+
+  if ( !vivaldi_coordinates_file_path.empty() )
+  {
+    YIELD::platform::auto_File vivaldi_coordinates_file = YIELD::platform::Volume().open( vivaldi_coordinates_file_path );
+    yidl::runtime::auto_Buffer vivaldi_coordinates_buffer( new yidl::runtime::StackBuffer<sizeof( org::xtreemfs::interfaces::VivaldiCoordinates)> );
+    vivaldi_coordinates_file->read( vivaldi_coordinates_buffer );
+    YIELD::platform::XDRUnmarshaller xdr_unmarshaller( vivaldi_coordinates_buffer );
+    vivaldi_coordinates.unmarshal( xdr_unmarshaller );
+  }
+
+  return vivaldi_coordinates;
+}
+
 bool Volume::getxattr( const YIELD::platform::Path& path, const std::string& name, std::string& out_value )
 {
   VOLUME_OPERATION_BEGIN( getxattr )
@@ -277,18 +294,8 @@ YIELD::platform::auto_File Volume::open( const YIELD::platform::Path& _path, uin
     system_v_flags |= flags;
 #endif
 
-    org::xtreemfs::interfaces::VivaldiCoordinates my_vivaldi_coordinates;
-    if ( !vivaldi_coordinates_file_path.empty() )
-    {
-      YIELD::platform::auto_File vivaldi_coordinates_file = YIELD::platform::Volume().open( vivaldi_coordinates_file_path );
-      yidl::runtime::auto_Buffer my_vivaldi_coordinates_buffer( new yidl::runtime::StackBuffer<sizeof( org::xtreemfs::interfaces::VivaldiCoordinates)> );
-      vivaldi_coordinates_file->read( my_vivaldi_coordinates_buffer );
-      YIELD::platform::XDRUnmarshaller xdr_unmarshaller( my_vivaldi_coordinates_buffer );
-      my_vivaldi_coordinates.unmarshal( xdr_unmarshaller );
-    }
-
     org::xtreemfs::interfaces::FileCredentials file_credentials;
-    mrc_proxy->open( path, system_v_flags, mode, attributes, my_vivaldi_coordinates, file_credentials );
+    mrc_proxy->open( path, system_v_flags, mode, attributes, get_vivaldi_coordinates(), file_credentials );
 
     return new File( incRef(), path, file_credentials );
   }

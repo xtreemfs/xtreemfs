@@ -39,6 +39,7 @@ namespace xtreemfs
     yidl::runtime::auto_Object<MRCProxy> get_mrc_proxy() const { return mrc_proxy; }
     yidl::runtime::auto_Object<OSDProxyMux> get_osd_proxy_mux() const { return osd_proxy_mux; }
     const std::string& get_uuid() const { return uuid; }
+    const org::xtreemfs::interfaces::VivaldiCoordinates& get_vivaldi_coordinates() const;
 
     // yidl::runtime::Object
     YIDL_RUNTIME_OBJECT_PROTOTYPES( Volume, 0 );

@@ -99,7 +99,7 @@ File::~File()
       parent_volume->get_mrc_proxy()->xtreemfs_update_file_size( file_credentials.get_xcap(), latest_osd_write_response );
 
     if ( file_credentials.get_xcap().get_replicate_on_close() )
-      parent_volume->get_mrc_proxy()->close( file_credentials.get_xcap() );
+      parent_volume->get_mrc_proxy()->close( parent_volume->get_vivaldi_coordinates(), file_credentials.get_xcap() );
   }
   catch ( std::exception& )
   { }
