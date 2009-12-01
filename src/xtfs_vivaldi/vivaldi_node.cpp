@@ -1,5 +1,7 @@
-// Copyright 2009 Juan González de Benito.
-// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+/* Copyright 2009 Juan González de Benito.
+ * This source comes from the XtreemFS project. It is licensed under the GPLv2 
+ * (see COPYING for terms and conditions).
+ */
 
 #include "vivaldi_node.h"
 using namespace xtfs_vivaldi;
@@ -21,7 +23,8 @@ org::xtreemfs::interfaces::VivaldiCoordinates *VivaldiNode::getCoordinates(){
  * @param coordA the coordinates to be multiplied.
  * @param value the real number to multiply by.
  */
-void VivaldiNode::multiplyValueCoordinates(org::xtreemfs::interfaces::VivaldiCoordinates& coord,double value){
+void VivaldiNode::multiplyValueCoordinates( org::xtreemfs::interfaces::VivaldiCoordinates& coord,
+                                            double value){
     
   coord.set_x_coordinate( coord.get_x_coordinate() * value );
   coord.set_y_coordinate( coord.get_y_coordinate() * value );
@@ -149,16 +152,19 @@ bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordina
   }
   
   //Compute relative error of this sample
-  double relativeError = static_cast<double>(abs(subtractionMagnitude - measuredRTT)) / static_cast<double>(measuredRTT);
+  double relativeError =  static_cast<double>(abs(subtractionMagnitude - measuredRTT)) / 
+                          static_cast<double>(measuredRTT);
   
   //Calculate weight
   if( localError <= 0.0 ){
     weight = 1;
   }else{
     if( coordinatesJ.get_local_error() > 0.0 ){
-      weight = localError/ ( localError + static_cast<double>(abs(coordinatesJ.get_local_error())) );
+      weight =  localError / 
+                ( localError + static_cast<double>(abs(coordinatesJ.get_local_error())) );
     }else{
-      //The OSD has not determined its position yet (it has not even started), so we just modify limitly ours. (To allow "One client-One OSD" situations).
+      /*The OSD has not determined its position yet (it has not even started), 
+        so we just modify limitly ours. (To allow "One client-One OSD" situations).*/
       weight = WEIGHT_IF_OSD_UNINITIALIZED;
     }
   }
@@ -178,10 +184,12 @@ bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordina
     //Update local error
     if( localError <= 0 ){
       //We initialize the local error with the first absolute error measured
-      localError = static_cast<double>(abs( subtractionMagnitude - static_cast<double>(measuredRTT) ));
+      localError = static_cast<double>( abs( subtractionMagnitude - \
+                                        static_cast<double>(measuredRTT) ));
     }else{
       //Compute relative weight moving average of local error
-      localError = (relativeError * CONSTANT_E * weight) + localError* (1-(CONSTANT_E*weight));
+      localError =  (relativeError * CONSTANT_E * weight) + 
+                    localError* (1-(CONSTANT_E*weight));
     }
   
       																
@@ -223,7 +231,8 @@ bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordina
   return retval;
 }
 
-double VivaldiNode::calculateDistance(org::xtreemfs::interfaces::VivaldiCoordinates coordA,org::xtreemfs::interfaces::VivaldiCoordinates& coordB){
+double VivaldiNode::calculateDistance(  org::xtreemfs::interfaces::VivaldiCoordinates coordA,
+                                        org::xtreemfs::interfaces::VivaldiCoordinates& coordB){
   subtractCoordinates(coordA,coordB);
   return magnitudeCoordinates( coordA );
 }
