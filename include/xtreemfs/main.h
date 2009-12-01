@@ -245,7 +245,20 @@ namespace xtreemfs
     {
       switch ( id )
       {
-        case OPTION_LOG_FILE_PATH: log_file_path = arg; break;
+        case OPTION_LOG_FILE_PATH: 
+        {
+          log_file_path = arg; 
+
+#ifndef _WIN32
+          if ( log_file_path != "-" )
+          {
+            ::close( STDIN_FILENO );
+            ::close( STDOUT_FILENO );
+            ::close( STDERR_FILENO );
+          }
+#endif
+        }
+        break;        
 
         case OPTION_LOG_LEVEL:
         {
