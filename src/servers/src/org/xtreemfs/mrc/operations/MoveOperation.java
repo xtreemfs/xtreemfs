@@ -54,7 +54,7 @@ import org.xtreemfs.mrc.utils.MRCHelper.FileType;
  * @author stender
  */
 public class MoveOperation extends MRCOperation {
-        
+    
     public MoveOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -232,12 +232,13 @@ public class MoveOperation extends MRCOperation {
                     
                     // create a deletion capability for the file
                     Capability cap = new Capability(volume.getId() + ":" + target.getId(),
-                        FileAccessManager.NON_POSIX_DELETE, Integer.MAX_VALUE, ((InetSocketAddress) rq
-                                .getRPCRequest().getClientIdentity()).getAddress().getHostAddress(), target
-                                .getEpoch(), false, master.getConfig().getCapabilitySecret());
+                        FileAccessManager.NON_POSIX_DELETE, master.getConfig().getCapabilityTimeout(),
+                        Integer.MAX_VALUE, ((InetSocketAddress) rq.getRPCRequest().getClientIdentity())
+                                .getAddress().getHostAddress(), target.getEpoch(), false, master.getConfig()
+                                .getCapabilitySecret());
                     
-                    creds.add(new FileCredentials(cap
-                            .getXCap(), Converter.xLocListToXLocSet(target.getXLocList())));
+                    creds.add(new FileCredentials(cap.getXCap(), Converter.xLocListToXLocSet(target
+                            .getXLocList())));
                 }
                 
                 // delete the target

@@ -88,7 +88,7 @@ public class RemoveReplicaOperation extends MRCOperation {
                     + target + " does not exist"));
                 return;
             }
-
+            
             sMan = vMan.getStorageManagerByName(p.getComp(0));
             PathResolver res = new PathResolver(sMan, p);
             file = res.getFile();
@@ -134,9 +134,9 @@ public class RemoveReplicaOperation extends MRCOperation {
         
         // create a deletion capability for the replica
         Capability deleteCap = new Capability(idRes.getVolumeId() + ":" + file.getId(),
-            FileAccessManager.NON_POSIX_DELETE, Integer.MAX_VALUE, ((InetSocketAddress) rq.getRPCRequest()
-                    .getClientIdentity()).getAddress().getHostAddress(), file.getEpoch(), false, master
-                    .getConfig().getCapabilitySecret());
+            FileAccessManager.NON_POSIX_DELETE, master.getConfig().getCapabilityTimeout(), Integer.MAX_VALUE,
+            ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress().getHostAddress(), file
+                    .getEpoch(), false, master.getConfig().getCapabilitySecret());
         
         // set the response
         rq.setResponse(new xtreemfs_replica_removeResponse(deleteCap.getXCap()));

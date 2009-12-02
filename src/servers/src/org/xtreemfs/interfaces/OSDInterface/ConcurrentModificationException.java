@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class ConcurrentModificationException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 2009120412;
+    public static final int TAG = 2009120515;
     
     public ConcurrentModificationException() {  }
     public ConcurrentModificationException( String stack_trace ) { this.stack_trace = stack_trace; }
@@ -36,10 +36,10 @@ public class ConcurrentModificationException extends org.xtreemfs.interfaces.uti
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009120412;    
+    public static final long serialVersionUID = 2009120515;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120412; }
+    public int getTag() { return 2009120515; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::ConcurrentModificationException"; }
     
     public int getXDRSize()

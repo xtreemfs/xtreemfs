@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_check_objectRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009120432;
+    public static final int TAG = 2009120535;
     
     public xtreemfs_check_objectRequest() { file_credentials = new FileCredentials();  }
     public xtreemfs_check_objectRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; }
@@ -45,10 +45,10 @@ public class xtreemfs_check_objectRequest extends org.xtreemfs.interfaces.utils.
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009120432;    
+    public static final long serialVersionUID = 2009120535;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120432; }
+    public int getTag() { return 2009120535; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_check_objectRequest"; }
     
     public int getXDRSize()

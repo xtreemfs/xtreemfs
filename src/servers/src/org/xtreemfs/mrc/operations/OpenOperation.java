@@ -235,9 +235,9 @@ public class OpenOperation extends MRCOperation {
             rqArgs.getClient_vivaldi_coordinates(), xLocList));
         
         // issue a new capability
-        Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), TimeSync
-                .getGlobalTime()
-            / 1000 + master.getConfig().getCapabilityTimeout(), ((InetSocketAddress) rq.getRPCRequest()
+        Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), master
+                .getConfig().getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000
+            + master.getConfig().getCapabilityTimeout(), ((InetSocketAddress) rq.getRPCRequest()
                 .getClientIdentity()).getAddress().getHostAddress(), trEpoch, replicateOnClose, master
                 .getConfig().getCapabilitySecret());
         

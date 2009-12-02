@@ -404,7 +404,7 @@ public class MRCTest extends TestCase {
         
         // test renewing a capability
         XCap newCap = invokeSync(client.xtreemfs_renew_capability(mrcAddress, creds.getXcap()));
-        assertTrue(creds.getXcap().getExpires_s() < newCap.getExpires_s());
+        assertTrue(creds.getXcap().getExpire_time_s() < newCap.getExpire_time_s());
         
         // test redirect
         try {

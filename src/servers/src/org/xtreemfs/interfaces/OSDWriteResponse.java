@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class OSDWriteResponse implements Struct
 {
-    public static final int TAG = 2009120128;
+    public static final int TAG = 2009120231;
     
     public OSDWriteResponse() { new_file_size = new NewFileSizeSet(); opaque_data = new OSDtoMRCDataSet();  }
     public OSDWriteResponse( NewFileSizeSet new_file_size, OSDtoMRCDataSet opaque_data ) { this.new_file_size = new_file_size; this.opaque_data = opaque_data; }
@@ -37,10 +37,10 @@ public class OSDWriteResponse implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009120128;    
+    public static final long serialVersionUID = 2009120231;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120128; }
+    public int getTag() { return 2009120231; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDWriteResponse"; }
     
     public int getXDRSize()

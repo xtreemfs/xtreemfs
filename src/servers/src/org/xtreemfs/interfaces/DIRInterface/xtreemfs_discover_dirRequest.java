@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_discover_dirRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009120216;
+    public static final int TAG = 2009120319;
     
     public xtreemfs_discover_dirRequest() {  }
 
@@ -35,10 +35,10 @@ public class xtreemfs_discover_dirRequest extends org.xtreemfs.interfaces.utils.
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009120216;    
+    public static final long serialVersionUID = 2009120319;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120216; }
+    public int getTag() { return 2009120319; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_discover_dirRequest"; }
     
     public int getXDRSize()

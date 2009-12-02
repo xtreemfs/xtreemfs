@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_cleanup_startRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009120443;
+    public static final int TAG = 2009120546;
     
     public xtreemfs_cleanup_startRequest() {  }
     public xtreemfs_cleanup_startRequest( boolean remove_zombies, boolean remove_unavail_volume, boolean lost_and_found ) { this.remove_zombies = remove_zombies; this.remove_unavail_volume = remove_unavail_volume; this.lost_and_found = lost_and_found; }
@@ -43,10 +43,10 @@ public class xtreemfs_cleanup_startRequest extends org.xtreemfs.interfaces.utils
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009120443;    
+    public static final long serialVersionUID = 2009120546;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120443; }
+    public int getTag() { return 2009120546; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_startRequest"; }
     
     public int getXDRSize()

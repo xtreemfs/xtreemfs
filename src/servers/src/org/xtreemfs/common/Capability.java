@@ -55,9 +55,9 @@ import org.xtreemfs.interfaces.XCap;
  */
 public class Capability {
     
-    private XCap             xcap;
+    private XCap         xcap;
     
-    private final String     sharedSecret;
+    private final String sharedSecret;
     
     /**
      * Creates a capability from a given set of data. A signature will be added
@@ -68,20 +68,23 @@ public class Capability {
      *            the file ID
      * @param accessMode
      *            the access mode
+     * @param validity
+     *            the relative validity time span in seconds
      * @param expires
-     *            the expiration time stamp
+     *            the absolute expiration time stamp (seconds since 1970)
      * @param epochNo
      *            the epoch number associated with the capability; epoch numbers
      *            are incremented each time the file is truncated or deleted
      * @param sharedSecret
      *            the shared secret to be used to sign the capability
      */
-    public Capability(String fileId, int accessMode, long expires, String clientIdentity, int epochNo,
-        boolean replicateOnClose, String sharedSecret) {
+    public Capability(String fileId, int accessMode, int validity, long expires, String clientIdentity,
+        int epochNo, boolean replicateOnClose, String sharedSecret) {
         
         this.sharedSecret = sharedSecret;
         
-        xcap = new XCap(accessMode, clientIdentity, expires, fileId, replicateOnClose, null, epochNo);
+        xcap = new XCap(accessMode, clientIdentity, expires, validity, fileId, replicateOnClose, null,
+            epochNo);
         
         final String sig = calcSignature();
         xcap.setServer_signature(sig);
@@ -118,7 +121,7 @@ public class Capability {
      * @return
      */
     public long getExpires() {
-        return xcap.getExpires_s();
+        return xcap.getExpire_time_s();
     }
     
     public String getClientIdentity() {
@@ -150,7 +153,7 @@ public class Capability {
      *         expiration time stamp <code>false</code>, otherwise
      */
     public boolean hasExpired() {
-        return TimeSync.getGlobalTime() / 1000 > xcap.getExpires_s();
+        return TimeSync.getGlobalTime() / 1000 > xcap.getExpire_time_s();
     }
     
     /**
@@ -184,7 +187,7 @@ public class Capability {
         // techniques
         
         String plainText = xcap.getFile_id() + Integer.toString(xcap.getAccess_mode())
-            + Long.toString(xcap.getExpires_s()) + Long.toString(xcap.getTruncate_epoch()) + sharedSecret;
+            + Long.toString(xcap.getExpire_time_s()) + Long.toString(xcap.getTruncate_epoch()) + sharedSecret;
         
         try {
             MessageDigest md5 = MessageDigest.getInstance("MD5");

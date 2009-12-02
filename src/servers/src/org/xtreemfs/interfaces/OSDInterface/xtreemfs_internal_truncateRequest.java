@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_internal_truncateRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009120452;
+    public static final int TAG = 2009120555;
     
     public xtreemfs_internal_truncateRequest() { file_credentials = new FileCredentials();  }
     public xtreemfs_internal_truncateRequest( FileCredentials file_credentials, String file_id, long new_file_size ) { this.file_credentials = file_credentials; this.file_id = file_id; this.new_file_size = new_file_size; }
@@ -43,10 +43,10 @@ public class xtreemfs_internal_truncateRequest extends org.xtreemfs.interfaces.u
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009120452;    
+    public static final long serialVersionUID = 2009120555;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120452; }
+    public int getTag() { return 2009120555; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_truncateRequest"; }
     
     public int getXDRSize()

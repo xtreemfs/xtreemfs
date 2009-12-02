@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class UserCredentials implements Struct
 {
-    public static final int TAG = 2009120113;
+    public static final int TAG = 2009120216;
     
     public UserCredentials() { group_ids = new StringSet();  }
     public UserCredentials( String user_id, StringSet group_ids, String password ) { this.user_id = user_id; this.group_ids = group_ids; this.password = password; }
@@ -39,10 +39,10 @@ public class UserCredentials implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009120113;    
+    public static final long serialVersionUID = 2009120216;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120113; }
+    public int getTag() { return 2009120216; }
     public String getTypeName() { return "org::xtreemfs::interfaces::UserCredentials"; }
     
     public int getXDRSize()

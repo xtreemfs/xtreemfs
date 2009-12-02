@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class DirService implements Struct
 {
-    public static final int TAG = 2009120146;
+    public static final int TAG = 2009120249;
     
     public DirService() {  }
     public DirService( String address, int port, String protocol, int interface_version ) { this.address = address; this.port = port; this.protocol = protocol; this.interface_version = interface_version; }
@@ -41,10 +41,10 @@ public class DirService implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009120146;    
+    public static final long serialVersionUID = 2009120249;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120146; }
+    public int getTag() { return 2009120249; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DirService"; }
     
     public int getXDRSize()

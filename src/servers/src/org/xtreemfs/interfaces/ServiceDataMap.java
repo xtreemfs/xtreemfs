@@ -29,7 +29,7 @@ public class ServiceDataMap extends Map<String, String>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120143; }
+    public int getTag() { return 2009120246; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ServiceDataMap"; }
 
     public int getXDRSize() 

@@ -79,7 +79,7 @@ public class StripingTest extends TestCase {
             if (mode == 't')
                 issuedEpoch++;
 
-            return new Capability(FILE_ID, 0, System.currentTimeMillis(), "", (int)issuedEpoch, false, capSecret);
+            return new Capability(FILE_ID, 0, 60, System.currentTimeMillis(), "", (int)issuedEpoch, false, capSecret);
         }
         
         synchronized long getFileSize() {
@@ -199,7 +199,7 @@ public class StripingTest extends TestCase {
     }
 
     private Capability getCap(String fname) {
-        return new Capability(fname, 0, System.currentTimeMillis(), "", 0, false, capSecret);
+        return new Capability(fname, 0, 60, System.currentTimeMillis(), "", 0, false, capSecret);
     }
     
     protected void tearDown() throws Exception {

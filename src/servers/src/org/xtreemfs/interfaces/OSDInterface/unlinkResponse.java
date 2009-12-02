@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class unlinkResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009120423;
+    public static final int TAG = 2009120526;
     
     public unlinkResponse() {  }
 
@@ -32,10 +32,10 @@ public class unlinkResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009120423;    
+    public static final long serialVersionUID = 2009120526;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120423; }
+    public int getTag() { return 2009120526; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::unlinkResponse"; }
     
     public int getXDRSize()

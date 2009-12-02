@@ -30,7 +30,7 @@ public class StringSet extends Sequence<String>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120112; }
+    public int getTag() { return 2009120215; }
     public String getTypeName() { return "org::xtreemfs::interfaces::StringSet"; }
 
     public int getXDRSize() 

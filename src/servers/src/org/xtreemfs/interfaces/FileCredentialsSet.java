@@ -31,7 +31,7 @@ public class FileCredentialsSet extends Sequence<FileCredentials>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120137; }
+    public int getTag() { return 2009120240; }
     public String getTypeName() { return "org::xtreemfs::interfaces::FileCredentialsSet"; }
 
     public int getXDRSize() 

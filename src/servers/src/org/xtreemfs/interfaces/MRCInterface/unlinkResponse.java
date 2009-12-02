@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class unlinkResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009120331;
+    public static final int TAG = 2009120434;
     
     public unlinkResponse() { file_credentials = new FileCredentialsSet();  }
     public unlinkResponse( FileCredentialsSet file_credentials ) { this.file_credentials = file_credentials; }
@@ -36,10 +36,10 @@ public class unlinkResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009120331;    
+    public static final long serialVersionUID = 2009120434;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120331; }
+    public int getTag() { return 2009120434; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::unlinkResponse"; }
     
     public int getXDRSize()

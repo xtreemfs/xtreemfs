@@ -103,7 +103,7 @@ public class DeleteOperation extends MRCOperation {
             
             // create a deletion capability for the file
             Capability cap = new Capability(volume.getId() + ":" + file.getId(),
-                FileAccessManager.NON_POSIX_DELETE, Integer.MAX_VALUE, ((InetSocketAddress) rq
+                FileAccessManager.NON_POSIX_DELETE, master.getConfig().getCapabilityTimeout(), Integer.MAX_VALUE, ((InetSocketAddress) rq
                         .getRPCRequest().getClientIdentity()).getAddress().getHostAddress(), file.getEpoch(),
                 false, master.getConfig().getCapabilitySecret());
             
