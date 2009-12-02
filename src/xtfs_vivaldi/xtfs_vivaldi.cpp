@@ -47,8 +47,6 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
  */
 #define MAX_RETRIES_FOR_A_REQUEST 2
 
-//#define MAX_REQUEST_TIMEOUT_IN_NS 1000000000ul * 120ul
-
 
 #ifndef _WIN32
   #define SPRINTF_VIV(buff,size,format,...) \
@@ -65,7 +63,8 @@ namespace xtfs_vivaldi
   {
   public:
     Main()
-      : xtreemfs::Main( "xtfs_vivaldi", "start the XtreemFS Vivaldi service ",
+      : xtreemfs::Main( "xtfs_vivaldi", 
+                        "start the XtreemFS Vivaldi service ",
                         "<dir host>[:port] <path to Vivaldi coordinates output file>" )
     {
       std::srand( static_cast<unsigned int>( std::time( NULL ) ) );
@@ -103,12 +102,11 @@ namespace xtfs_vivaldi
     {
       
       //Initialized to (0,0) by default
-      org::xtreemfs::interfaces::VivaldiCoordinates \
-                                my_vivaldi_coordinates( 0, 0, 0 );
+      org::xtreemfs::interfaces::VivaldiCoordinates my_vivaldi_coordinates( 0, 0, 0 );
 
       //Try to read coordinates from local file      
-      YIELD::platform::auto_File vivaldi_coordinates_file = 
-        YIELD::platform::Volume().open( vivaldi_coordinates_file_path, O_RDONLY );
+      YIELD::platform::auto_File vivaldi_coordinates_file = \
+          YIELD::platform::Volume().open( vivaldi_coordinates_file_path, O_RDONLY );
       
       if ( vivaldi_coordinates_file != NULL )
       {
@@ -135,7 +133,9 @@ namespace xtfs_vivaldi
           }          
         }
         vivaldi_coordinates_file->close();
-      }else{
+      }
+      else
+      {
         get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << 
             "xtfs_vivaldi:impossible to read coordinates from file."\
             "Initializing them by default...";
@@ -188,13 +188,13 @@ namespace xtfs_vivaldi
               if (  (*random_osd_address_mapping_i).get_protocol() == 
                     org::xtreemfs::interfaces::ONCRPCU_SCHEME )
               {
-                auto_OSDProxy osd_proxy = 
-                  OSDProxy::create( ( *random_osd_address_mapping_i ).get_uri(), 
-                                    OSDProxy::CONCURRENCY_LEVEL_DEFAULT, 
-                                    get_proxy_flags(), 
-                                    get_log(), 
-                                    get_operation_timeout() );
-                                                  
+                auto_OSDProxy osd_proxy = \
+                    OSDProxy::create( ( *random_osd_address_mapping_i ).get_uri(), 
+                                      OSDProxy::CONCURRENCY_LEVEL_DEFAULT, 
+                                      get_proxy_flags(), 
+                                      get_log(), 
+                                      get_operation_timeout() );
+
                 org::xtreemfs::interfaces::VivaldiCoordinates random_osd_vivaldi_coordinates;
                 
                 //Send the request and measure the RTT
@@ -218,10 +218,12 @@ namespace xtfs_vivaldi
                 
                 bool retried = false;
                 // Recalculate coordinates here
-                if( retriesInARow < MAX_RETRIES_FOR_A_REQUEST ){
+                if( retriesInARow < MAX_RETRIES_FOR_A_REQUEST )
+                {
                   if( !own_node.recalculatePosition(random_osd_vivaldi_coordinates,
                                                     measuredRTT,
-                                                    false) ){
+                                                    false) )
+                  {
                     
                     /*The movement has been postponed because the measured RTT
                     seems to be a peak*/
@@ -229,22 +231,28 @@ namespace xtfs_vivaldi
                     retriesInARow++;
                     retried = true;
                     
-                  }else{
+                  }
+                  else
+                  {
                     
                     //The movement has been accepted
                     currentRetries.clear();
                     retriesInARow = 0;
                     
                   }  
-                }else{
+                }
+                else
+                {
                  
                   //Choose the lowest RTT
                   uint64_t lowestOne = measuredRTT;
                   for(  std::vector<uint64_t>::iterator it = currentRetries.begin();
                         it<currentRetries.end();
-                        it++){
+                        it++)
+                  {
                           
-                    if( (*it) < lowestOne ){
+                    if( (*it) < lowestOne )
+                    {
                       lowestOne = (*it);
                     }
                     
@@ -269,39 +277,42 @@ namespace xtfs_vivaldi
  
                               "%s:%lld(Viv:%.3f) Own:(%.3f,%.3f) lE=%.3f "\
                                                 "Rem:(%.3f,%.3f) rE=%.3f %s",
-                                retried?"RETRY":"RTT",
-                                static_cast<long long int>(measuredRTT),
-                                own_node.calculateDistance((*own_node.getCoordinates()),
-                                                            random_osd_vivaldi_coordinates),
-                                own_node.getCoordinates()->get_x_coordinate(),
-                                own_node.getCoordinates()->get_y_coordinate(),
-                                own_node.getCoordinates()->get_local_error(),
-                                random_osd_vivaldi_coordinates.get_x_coordinate(),
-                                random_osd_vivaldi_coordinates.get_y_coordinate(),
-                                random_osd_vivaldi_coordinates.get_local_error(),
-                                random_osd_service->get_uuid().data());
+                              retried?"RETRY":"RTT",
+                              static_cast<long long int>(measuredRTT),
+                              own_node.calculateDistance((*own_node.getCoordinates()),
+                                                          random_osd_vivaldi_coordinates),
+                              own_node.getCoordinates()->get_x_coordinate(),
+                              own_node.getCoordinates()->get_y_coordinate(),
+                              own_node.getCoordinates()->get_local_error(),
+                              random_osd_vivaldi_coordinates.get_x_coordinate(),
+                              random_osd_vivaldi_coordinates.get_y_coordinate(),
+                              random_osd_vivaldi_coordinates.get_local_error(),
+                              random_osd_service->get_uuid().data());
                 
                 
                 get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << 
                     "xtfs_vivaldi:" << auxStr;
   
-                }
               }
-            
-            }else{
+            }
+          }
+          else
+          {
             
               get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << 
                   "xtfs_vivaldi:no OSD available";
           }
-        
-        }catch ( std::exception& exc ){
+        }
+        catch ( std::exception& exc )
+        {
           get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << 
               "xtfs_vivaldi: error pinging OSDs: " << exc.what() << ".";
           
           //TOFIX:This must be done only for timeout exceptions
           
           //We must avoid to keep retrying indefinitely against an OSD which is not responding
-          if(retriesInARow && (++retriesInARow >= MAX_RETRIES_FOR_A_REQUEST) ){
+          if(retriesInARow && (++retriesInARow >= MAX_RETRIES_FOR_A_REQUEST) )
+          {
             //If the last retry times out all the previous retries are discarded
             currentRetries.clear();
             retriesInARow = 0;
@@ -315,22 +326,22 @@ namespace xtfs_vivaldi
             "," << own_node.getCoordinates()->get_y_coordinate() << ")";
         
         vivaldi_coordinates_file = \
-          YIELD::platform::Volume().open( vivaldi_coordinates_file_path, 
-                                          O_CREAT|O_TRUNC|O_WRONLY );
+            YIELD::platform::Volume().open( vivaldi_coordinates_file_path, 
+                                            O_CREAT|O_TRUNC|O_WRONLY );
                                           
         if ( vivaldi_coordinates_file != NULL )
         {
           
           YIELD::platform::XDRMarshaller xdr_marshaller;
           own_node.getCoordinates()->marshal( xdr_marshaller );
-              vivaldi_coordinates_file->write( xdr_marshaller.get_buffer().release() );
+          vivaldi_coordinates_file->write( xdr_marshaller.get_buffer().release() );
           vivaldi_coordinates_file->close();
           
         }
     
         //Sleep until the next iteration
-        uint64_t sleep_in_ms = 
-            MIN_RECALCULATION_IN_MS + 
+        uint64_t sleep_in_ms = \
+                MIN_RECALCULATION_IN_MS + 
                 ( (static_cast<double>(std::rand())/(RAND_MAX-1)) * 
                 (MAX_RECALCULATION_IN_MS - MIN_RECALCULATION_IN_MS) );
                 
@@ -346,9 +357,11 @@ namespace xtfs_vivaldi
     
     /* Retrieves a list of available OSDs from the DS
      */
-    void updateKnownOSDs(org::xtreemfs::interfaces::ServiceSet &osds){
+    void updateKnownOSDs(org::xtreemfs::interfaces::ServiceSet &osds)
+    {
       
-      try{
+      try
+      {
         
         dir_proxy->xtreemfs_service_get_by_type( \
             org::xtreemfs::interfaces::SERVICE_TYPE_OSD, 
@@ -356,24 +369,27 @@ namespace xtfs_vivaldi
   
         org::xtreemfs::interfaces::ServiceSet::iterator ss_iterator = osds.begin();
         
-        while( ss_iterator != osds.end() ){
+        while( ss_iterator != osds.end() )
+        {
           
           if( (*ss_iterator).get_last_updated_s() == 0)
           {
             osds.erase(ss_iterator);
-          }else
+          }
+          else
           {
             ss_iterator++;
           }
           
         }
-      }catch( std::exception ex ){
+      }
+      catch( std::exception ex )
+      {
         
         get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << 
             "xtfs_vivaldi:Impossible to update known OSDs";
             
       }
- 
     }
   };
 };

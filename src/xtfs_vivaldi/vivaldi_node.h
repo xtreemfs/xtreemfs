@@ -22,39 +22,39 @@
 
 namespace xtfs_vivaldi
 {
-	class VivaldiNode
-	{
+  class VivaldiNode
+  {
 
-		public:
+    public:
 
       VivaldiNode( org::xtreemfs::interfaces::VivaldiCoordinates nodeCoordinates)\
                   : ownCoordinates(nodeCoordinates) {}
-			org::xtreemfs::interfaces::VivaldiCoordinates *getCoordinates();
-			bool recalculatePosition(	org::xtreemfs::interfaces::VivaldiCoordinates& coordinatesJ,
-            										long measuredRTT,
-            										bool forceRecalculation);
+      org::xtreemfs::interfaces::VivaldiCoordinates *getCoordinates();
+      bool recalculatePosition(  org::xtreemfs::interfaces::VivaldiCoordinates& coordinatesJ,
+                                long measuredRTT,
+                                bool forceRecalculation);
 
       double calculateDistance( org::xtreemfs::interfaces::VivaldiCoordinates coordA,
                                 org::xtreemfs::interfaces::VivaldiCoordinates& coordB);
 
-		private:
+    private:
 
-		  void multiplyValueCoordinates(  org::xtreemfs::interfaces::VivaldiCoordinates &coord,
+      void multiplyValueCoordinates(  org::xtreemfs::interfaces::VivaldiCoordinates &coord,
                                       double value);
-			void addCoordinates(org::xtreemfs::interfaces::VivaldiCoordinates &coordA,
+      void addCoordinates(org::xtreemfs::interfaces::VivaldiCoordinates &coordA,
                           org::xtreemfs::interfaces::VivaldiCoordinates coordB);
-			void subtractCoordinates( org::xtreemfs::interfaces::VivaldiCoordinates &coordA,
+      void subtractCoordinates( org::xtreemfs::interfaces::VivaldiCoordinates &coordA,
                                 org::xtreemfs::interfaces::VivaldiCoordinates coordB);
-			double scalarProductCoordinates( org::xtreemfs::interfaces::VivaldiCoordinates coordA,
+      double scalarProductCoordinates( org::xtreemfs::interfaces::VivaldiCoordinates coordA,
                                        org::xtreemfs::interfaces::VivaldiCoordinates coordB);
-   		double magnitudeCoordinates(org::xtreemfs::interfaces::VivaldiCoordinates coordA);
-  		bool getUnitaryCoordinates(org::xtreemfs::interfaces::VivaldiCoordinates &coord);
-			void modifyCoordinatesRandomly(org::xtreemfs::interfaces::VivaldiCoordinates &coord);
+      double magnitudeCoordinates(org::xtreemfs::interfaces::VivaldiCoordinates coordA);
+      bool getUnitaryCoordinates(org::xtreemfs::interfaces::VivaldiCoordinates &coord);
+      void modifyCoordinatesRandomly(org::xtreemfs::interfaces::VivaldiCoordinates &coord);
 
 
-			org::xtreemfs::interfaces::VivaldiCoordinates ownCoordinates;
+      org::xtreemfs::interfaces::VivaldiCoordinates ownCoordinates;
 
-	};
+  };
 };
 
 #endif

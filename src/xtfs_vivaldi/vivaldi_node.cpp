@@ -14,7 +14,7 @@ using namespace xtfs_vivaldi;
  * @return the current coordinates of the node.
  */
 org::xtreemfs::interfaces::VivaldiCoordinates *VivaldiNode::getCoordinates(){
-  return &this->ownCoordinates;	
+  return &this->ownCoordinates;  
 }
 
 /**
@@ -34,19 +34,19 @@ void VivaldiNode::multiplyValueCoordinates( org::xtreemfs::interfaces::VivaldiCo
  * Adds two pairs of coordinates and stores the result in coordA
  */
 void VivaldiNode::addCoordinates(org::xtreemfs::interfaces::VivaldiCoordinates &coordA,
-								                 org::xtreemfs::interfaces::VivaldiCoordinates coordB){
+                                 org::xtreemfs::interfaces::VivaldiCoordinates coordB){
 
-	coordA.set_x_coordinate( coordA.get_x_coordinate() + coordB.get_x_coordinate() );
-	coordA.set_y_coordinate( coordA.get_y_coordinate() + coordB.get_y_coordinate() );
+  coordA.set_x_coordinate( coordA.get_x_coordinate() + coordB.get_x_coordinate() );
+  coordA.set_y_coordinate( coordA.get_y_coordinate() + coordB.get_y_coordinate() );
 }
 
 /**
  * Subtracts two pairs of coordinates and stores the result in coordA
  */
-void VivaldiNode::subtractCoordinates(	org::xtreemfs::interfaces::VivaldiCoordinates &coordA,
-										                    org::xtreemfs::interfaces::VivaldiCoordinates coordB){
-	
-	multiplyValueCoordinates(coordB,-1.0);
+void VivaldiNode::subtractCoordinates(  org::xtreemfs::interfaces::VivaldiCoordinates &coordA,
+                                        org::xtreemfs::interfaces::VivaldiCoordinates coordB){
+  
+  multiplyValueCoordinates(coordB,-1.0);
   addCoordinates( coordA, coordB );
   
 }
@@ -59,7 +59,7 @@ void VivaldiNode::subtractCoordinates(	org::xtreemfs::interfaces::VivaldiCoordin
  * @param coordB a pair of coordinates.
  * @return the result of the scalar product.
  */
-double VivaldiNode::scalarProductCoordinates(	org::xtreemfs::interfaces::VivaldiCoordinates coordA,
+double VivaldiNode::scalarProductCoordinates(  org::xtreemfs::interfaces::VivaldiCoordinates coordA,
                                               org::xtreemfs::interfaces::VivaldiCoordinates coordB){
     
   double retval = 0.0;
@@ -99,10 +99,10 @@ bool VivaldiNode::getUnitaryCoordinates(org::xtreemfs::interfaces::VivaldiCoordi
   double magn = magnitudeCoordinates(coord);
     
   if( magn > 0){ //cannot be == 0
-    	
+      
     multiplyValueCoordinates( coord, 1.0/magn );
-  	
-  	retval = true;    	
+    
+    retval = true;      
   }
   
   return retval;
@@ -115,7 +115,7 @@ bool VivaldiNode::getUnitaryCoordinates(org::xtreemfs::interfaces::VivaldiCoordi
  * @param coord coordinates that must be modified.
  */
 void VivaldiNode::modifyCoordinatesRandomly(org::xtreemfs::interfaces::VivaldiCoordinates &coord){
-	
+  
   //static_cast<double>(rand()))/RAND_MAX) generates real values btw 0 and 1 
   coord.set_x_coordinate( ( (static_cast<double>(rand()) /RAND_MAX ) *2)- 1 );
   coord.set_y_coordinate( ( (static_cast<double>(rand()) /RAND_MAX ) *2)- 1 );
@@ -127,8 +127,8 @@ void VivaldiNode::modifyCoordinatesRandomly(org::xtreemfs::interfaces::VivaldiCo
  * given point in the coordinate space and the real RTT measured against it.
  */
 bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordinates& coordinatesJ,
-                  										long measuredRTT,
-                  										bool forceRecalculation){
+                                      long measuredRTT,
+                                      bool forceRecalculation){
   bool retval = true;
   
   double localError = ownCoordinates.get_local_error();
@@ -192,20 +192,20 @@ bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordina
                     localError* (1-(CONSTANT_E*weight));
     }
   
-      																
+                                      
     if( subtractionMagnitude > 0.0 ){ 
-  	
+    
       //Xi = Xi + delta * (rtt - || Xi - Xj ||) * u(Xi - Xj)
       org::xtreemfs::interfaces::VivaldiCoordinates additionVector(subtractionVector);
       if( getUnitaryCoordinates(additionVector) ){
 
-    	  multiplyValueCoordinates( additionVector , estimatedMovement);
+        multiplyValueCoordinates( additionVector , estimatedMovement);
         //Move the node according to the calculated addition vector
         addCoordinates( ownCoordinates, additionVector);
         ownCoordinates.set_local_error(localError);
       }
     }else{ //subtractionMagnitude == 0.0
-      	 
+         
       //Both points have the same Coordinates, so we just pull them apart in a random direction
       org::xtreemfs::interfaces::VivaldiCoordinates randomCoords;
       modifyCoordinatesRandomly(randomCoords);
@@ -214,7 +214,7 @@ bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordina
       //Xi = Xi + delta * (rtt - || Xi - Xj ||) * u(randomVector)
       if( getUnitaryCoordinates(additionVector) ){
 
-    		multiplyValueCoordinates( additionVector , estimatedMovement);
+        multiplyValueCoordinates( additionVector , estimatedMovement);
    
         //Move the node according to the calculated addition vector
         addCoordinates( ownCoordinates, additionVector);
