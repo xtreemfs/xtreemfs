@@ -1,4 +1,4 @@
-// Revision: 1884
+// Revision: 1919
 
 #include "yield/concurrency.h"
 using namespace YIELD::concurrency;
@@ -447,13 +447,16 @@ class Stage::StatisticsTimer : public YIELD::platform::TimerQueue::Timer
 {
 public:
   StatisticsTimer( yidl::runtime::auto_Object<Stage> stage )
-    : Timer( 5 * NS_IN_S, 5 * NS_IN_S ), stage( stage )
+    : Timer( 5 * NS_IN_S, 5 * NS_IN_S ),
+      stage( stage ),
+      last_fire_time( static_cast<uint64_t>( 0 ) )
   { }
-  // Timer
-  bool fire( const YIELD::platform::Time& elapsed_time )
+  // TimerQueue::Timer
+  void fire()
   {
     if ( stage->event_queue_arrival_count > 0 )
     {
+      YIELD::platform::Time elapsed_time( YIELD::platform::Time() - last_fire_time );
       stage->arrival_rate_s = static_cast<double>( stage->event_queue_arrival_count ) / elapsed_time.as_unix_time_s();
       stage->event_queue_arrival_count = 0;
       stage->service_rate_s = static_cast<double>( NS_IN_S ) / stage->event_processing_time_ns_sampler.get_percentile( 0.95 );
@@ -496,11 +499,12 @@ public:
       //  cout_line << std::endl;
       //  std::cout << cout_line.str();
       //}
+      last_fire_time = YIELD::platform::Time();
     }
-    return true;
   }
 private:
   auto_Stage stage;
+  YIELD::platform::Time last_fire_time;
 };
 Stage::Stage( const char* name )
   : name( name )

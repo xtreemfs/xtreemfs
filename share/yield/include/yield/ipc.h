@@ -258,60 +258,6 @@ namespace YIELD
     };
 
 
-    class HTTPBenchmarkDriver : public YIELD::concurrency::EventHandler
-    {
-    public:
-      static yidl::runtime::auto_Object<HTTPBenchmarkDriver> 
-        create
-        ( 
-          YIELD::concurrency::auto_EventTarget http_request_target, 
-          uint8_t in_flight_request_count, 
-          const YIELD::platform::Path& wlog_file_path, 
-          uint32_t wlog_uris_length_max = static_cast<uint32_t>( -1 ), 
-          uint8_t wlog_repetitions_count = 1 
-        );
-
-      virtual ~HTTPBenchmarkDriver();
-
-      void get_request_rates( std::vector<double>& out_request_rates );
-      void get_response_rates( std::vector<double>& out_response_rates );
-      void wait();
-
-      // yidl::runtime::Object
-      YIDL_RUNTIME_OBJECT_PROTOTYPES( HTTPBenchmarkDriver, 0 );
-
-      // YIELD::concurrency::EventHandler
-      void handleEvent( YIELD::concurrency::Event& );
-
-    private:
-      HTTPBenchmarkDriver
-      ( 
-        YIELD::concurrency::auto_EventTarget http_request_target, 
-        uint8_t in_flight_http_request_count, 
-        const std::vector<URI*>& wlog_uris 
-      );
-
-      YIELD::concurrency::auto_EventTarget http_request_target;
-      uint8_t in_flight_http_request_count;
-
-      std::vector<URI*> wlog_uris;
-      uint8_t wlog_repetitions_count;
-
-      YIELD::concurrency::auto_Stage my_stage;
-      YIELD::platform::Mutex wait_signal;
-
-      void sendHTTPRequest();
-
-      // Statistics
-      YIELD::platform::Mutex statistics_lock;
-      class StatisticsTimer;
-      uint32_t requests_sent_in_period, responses_received_in_period;
-      std::vector<double> request_rates, response_rates;
-
-      void calculateStatistics( const YIELD::platform::Time& elapsed_time );
-    };
-
-
     class HTTPMessage : public RFC822Headers
     {
     public:

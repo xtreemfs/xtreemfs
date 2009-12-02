@@ -1,3 +1,5 @@
+// Revision: 1919
+
 #include "yield/platform.h"
 using namespace YIELD::platform;
 
@@ -2363,13 +2365,16 @@ void TimerQueue::addTimer( yidl::runtime::auto_Object<Timer> timer )
 {
 #ifdef _WIN32
   timer->hTimerQueue = hTimerQueue;
-  CreateTimerQueueTimer( &timer->hTimer,
-                         hTimerQueue,
-                         WaitOrTimerCallback,
-                         &timer->incRef(),
-                         static_cast<DWORD>( timer->get_timeout().as_unix_time_ms() ),
-                         static_cast<DWORD>( timer->get_period().as_unix_time_ms() ),
-                         WT_EXECUTEDEFAULT );
+  CreateTimerQueueTimer
+  (
+    &timer->hTimer,
+    hTimerQueue,
+    Timer::WaitOrTimerCallback,
+    &timer->incRef(),
+    static_cast<DWORD>( timer->get_timeout().as_unix_time_ms() ),
+    static_cast<DWORD>( timer->get_period().as_unix_time_ms() ),
+    WT_EXECUTEDEFAULT
+  );
 #else
   thread.addTimer( timer.release() );
 #endif
@@ -2392,27 +2397,6 @@ TimerQueue& TimerQueue::getDefaultTimerQueue()
   return *default_timer_queue;
 }
 
-#ifdef _WIN32
-VOID CALLBACK TimerQueue::WaitOrTimerCallback( PVOID lpParameter, BOOLEAN )
-{
-  TimerQueue::Timer* timer = static_cast<TimerQueue::Timer*>( lpParameter );
-
-  Time elapsed_time( Time() - timer->last_fire_time );
-  if ( elapsed_time > 0 )
-  {
-    bool keep_firing = timer->fire( elapsed_time );
-
-    if ( timer->get_period() == 0 )
-      Object::decRef( *timer );
-    else if ( keep_firing )
-      timer->last_fire_time = Time();
-    else
-      CancelTimerQueueTimer( timer->hTimerQueue, timer->hTimer );
-  }
-  else
-    timer->last_fire_time = Time();
-}
-#endif
 
 TimerQueue::Timer::Timer( const Time& timeout )
   : period( static_cast<uint64_t>( 0 ) ), timeout( timeout )
@@ -2427,11 +2411,42 @@ TimerQueue::Timer::Timer( const Time& timeout, const Time& period )
 {
 #ifdef _WIN32
   hTimer = hTimerQueue = NULL;
+#else
+  deleted = false;
 #endif
 }
 
 TimerQueue::Timer::~Timer()
 { }
+
+void TimerQueue::Timer::delete_()
+{
+#ifdef _WIN32
+  CancelTimerQueueTimer( hTimerQueue, hTimer );
+#else
+  deleted = true;
+#endif
+}
+
+#ifdef _WIN32
+VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback( PVOID lpParameter, BOOLEAN )
+{
+  Timer* this_ = static_cast<Timer*>( lpParameter );
+
+  Time elapsed_time( Time() - this_->last_fire_time );
+  if ( elapsed_time > 0 )
+  {
+    this_->fire();
+
+    if ( this_->get_period() == 0 )
+      yidl::runtime::Object::decRef( *this_ );
+    else
+      this_->last_fire_time = Time();
+  }
+  else
+    this_->last_fire_time = Time();
+}
+#endif
 
 
 #ifndef _WIN32
@@ -2460,18 +2475,22 @@ void TimerQueue::Thread::run()
       if ( timers.top().first <= current_unix_time_ns ) // Earliest timer has expired, fire it
       {
         TimerQueue::Timer* timer = timers.top().second;
-        Time elapsed_time( current_unix_time_ns - timer->last_fire_time );
         timers.pop();
 
-        bool keep_firing = timer->fire( elapsed_time );
-
-        if ( timer->get_period() != 0 && keep_firing )
+        if ( !timer->deleted )
         {
-          timer->last_fire_time = Time();
-          timers.push( std::make_pair( timer->last_fire_time + timer->get_period(), timer ) );
+          timer->fire();
+
+          if ( timer->get_period() != 0 )
+          {
+            timer->last_fire_time = Time();
+            timers.push( std::make_pair( timer->last_fire_time + timer->get_period(), timer ) );
+          }
+          else
+            yidl::runtime::Object::decRef( *timer );
         }
         else
-          Object::decRef( *timer );
+          yidl::runtime::Object::decRef( *timer );
       }
       else // Wait on the new timers queue until a new timer arrives or it's time to fire the next timer
       {

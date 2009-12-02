@@ -1,4 +1,4 @@
-// Revision: 1917
+// Revision: 1919
 
 #include "yield/ipc.h"
 
@@ -455,10 +455,9 @@ public:
     : YIELD::platform::TimerQueue::Timer( operation_timeout ),
       aio_control_block( aio_control_block )
   { }
-  bool fire( const YIELD::platform::Time& )
+  void fire()
   {
     aio_control_block->onError( ETIMEDOUT );
-    return true;
   }
 private:
   YIELD::platform::auto_AIOControlBlock aio_control_block;
@@ -516,133 +515,6 @@ size_t YIELD::ipc::GatherBuffer::size() const
   for ( uint32_t iovec_i = 0; iovec_i < iovecs_len; iovec_i++ )
     _size += iovecs[iovec_i].iov_len;
   return _size;
-}
-
-
-// http_benchmark_driver.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-class YIELD::ipc::HTTPBenchmarkDriver::StatisticsTimer : public YIELD::platform::TimerQueue::Timer
-{
-public:
-  StatisticsTimer( yidl::runtime::auto_Object<HTTPBenchmarkDriver> http_benchmark_driver )
-    : Timer( 5 * NS_IN_S, 5 * NS_IN_S ), http_benchmark_driver( http_benchmark_driver )
-  { }
-  // Timer
-  bool fire( const YIELD::platform::Time& elapsed_time )
-  {
-    http_benchmark_driver->calculateStatistics( elapsed_time );
-    return true;
-  }
-private:
-  yidl::runtime::auto_Object<HTTPBenchmarkDriver> http_benchmark_driver;
-};
-YIELD::ipc::HTTPBenchmarkDriver::HTTPBenchmarkDriver( YIELD::concurrency::auto_EventTarget http_request_target, uint8_t in_flight_http_request_count, const std::vector<URI*>& wlog_uris )
-  : http_request_target( http_request_target ), in_flight_http_request_count( in_flight_http_request_count ), wlog_uris( wlog_uris )
-{
-  requests_sent_in_period = responses_received_in_period = 0;
-  YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new StatisticsTimer( incRef() ) );
-  wait_signal.acquire();
-}
-YIELD::ipc::HTTPBenchmarkDriver::~HTTPBenchmarkDriver()
-{
-  for ( std::vector<URI*>::iterator wlog_uri_i = wlog_uris.begin(); wlog_uri_i != wlog_uris.end(); wlog_uri_i++ )
-    delete *wlog_uri_i;
-}
-yidl::runtime::auto_Object<YIELD::ipc::HTTPBenchmarkDriver> YIELD::ipc::HTTPBenchmarkDriver::create( YIELD::concurrency::auto_EventTarget http_request_target, uint8_t in_flight_http_request_count, const YIELD::platform::Path& wlog_file_path, uint32_t wlog_uris_length_max, uint8_t wlog_repetitions_count )
-{
-  YIELD::platform::auto_MemoryMappedFile wlog = YIELD::platform::MemoryMappedFile::open( wlog_file_path );
-  if ( wlog != NULL )
-  {
-    char *wlog_p = static_cast<char*>( *wlog ), *wlog_end = wlog_p + wlog->get_size();
-    std::vector<URI*> wlog_uris;
-    while ( wlog_p < wlog_end && wlog_uris.size() < wlog_uris_length_max )
-    {
-      char* uri_str = wlog_p;
-      size_t uri_str_len = strnlen( uri_str, UINT16_MAX );
-      auto_URI uri( URI::parse( uri_str, uri_str_len ) );
-      if ( uri != NULL )
-        wlog_uris.push_back( uri.release() );
-      wlog_p += uri_str_len + 1;
-    }
-    std::reverse( wlog_uris.begin(), wlog_uris.end() ); // So we can pop them in the right order
-    std::vector<URI*> repeated_wlog_uris;
-    for ( uint8_t wlog_repetition_i = 0; wlog_repetition_i < wlog_repetitions_count; wlog_repetition_i++ )
-      repeated_wlog_uris.insert( repeated_wlog_uris.end(), wlog_uris.begin(), wlog_uris.end() );
-    return new HTTPBenchmarkDriver( http_request_target, in_flight_http_request_count, repeated_wlog_uris );
-  }
-  else
-    return NULL;
-}
-void YIELD::ipc::HTTPBenchmarkDriver::calculateStatistics( const YIELD::platform::Time& elapsed_time )
-{
-  if ( elapsed_time.as_unix_time_ns() >= 5 * NS_IN_S )
-  {
-    statistics_lock.acquire();
-    double request_rate = static_cast<double>( requests_sent_in_period ) / elapsed_time.as_unix_time_s();
-    request_rates.push_back( request_rate );
-    requests_sent_in_period = 0;
-    double response_rate = static_cast<double>( responses_received_in_period ) / elapsed_time.as_unix_time_s();
-    response_rates.push_back( response_rate );
-    responses_received_in_period = 0;
-    statistics_lock.release();
-  }
-}
-void YIELD::ipc::HTTPBenchmarkDriver::get_request_rates( std::vector<double>& out_request_rates )
-{
-  statistics_lock.acquire();
-  out_request_rates.insert( out_request_rates.end(), request_rates.begin(), request_rates.end() );
-  statistics_lock.release();
-}
-void YIELD::ipc::HTTPBenchmarkDriver::get_response_rates( std::vector<double>& out_response_rates )
-{
-  statistics_lock.acquire();
-  out_response_rates.insert( out_response_rates.end(), response_rates.begin(), response_rates.end() );
-  statistics_lock.release();
-}
-void YIELD::ipc::HTTPBenchmarkDriver::handleEvent( YIELD::concurrency::Event& ev )
-{
-  switch ( ev.get_type_id() )
-  {
-    case YIDL_RUNTIME_OBJECT_TYPE_ID( YIELD::concurrency::Stage::StartupEvent ):
-    {
-      my_stage = static_cast<YIELD::concurrency::Stage::StartupEvent&>( ev ).get_stage();
-      Object::decRef( ev );
-      uint8_t max_in_flight_http_request_count = in_flight_http_request_count;
-      in_flight_http_request_count = 0;
-      for ( uint8_t http_request_i = 0; http_request_i < max_in_flight_http_request_count; http_request_i++ )
-        sendHTTPRequest();
-    }
-    break;
-    case YIDL_RUNTIME_OBJECT_TYPE_ID( HTTPResponse ):
-    {
-      in_flight_http_request_count--;
-      responses_received_in_period++;
-      Object::decRef( ev );
-      sendHTTPRequest();
-    }
-    break;
-    default: handleUnknownEvent( ev );
-  }
-}
-void YIELD::ipc::HTTPBenchmarkDriver::wait()
-{
-  wait_signal.acquire();
-}
-void YIELD::ipc::HTTPBenchmarkDriver::sendHTTPRequest()
-{
-  if ( !wlog_uris.empty() )
-  {
-    URI* wlog_uri = wlog_uris.back();
-    wlog_uris.pop_back();
-    HTTPRequest* http_req = new HTTPRequest( "GET", wlog_uri->get_resource().c_str() );
-    http_req->set_response_target( my_stage->incRef() );
-    in_flight_http_request_count++;
-    requests_sent_in_period++;
-    http_request_target->send( *http_req );
-  }
-  else if ( in_flight_http_request_count == 0 )
-    wait_signal.release();
 }
 
 

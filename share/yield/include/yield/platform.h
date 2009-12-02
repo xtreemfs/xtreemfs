@@ -1444,8 +1444,6 @@ namespace YIELD
       TimerQueue( void* hTimerQueue );
 
       void* hTimerQueue;
-
-      static void __stdcall WaitOrTimerCallback( void*, unsigned char );
 #else
       class Thread : public YIELD::platform::Thread
       {
@@ -1477,11 +1475,10 @@ namespace YIELD
         Timer( const Time& timeout, const Time& period );
         virtual ~Timer();
         
+        void delete_();
         const Time& get_period() const { return period; }
         const Time& get_timeout() const { return timeout; }
-        virtual bool fire( const Time& elapsed_time ) = 0;
-        void set_period( const Time& period ) { this->period = period; }
-        void set_timeout( const Time& timeout ) { this->timeout = timeout; }
+        virtual void fire() = 0;
 
         // yidl::runtime::Object
         YIDL_RUNTIME_OBJECT_PROTOTYPES( Timer, 0 );
@@ -1496,6 +1493,9 @@ namespace YIELD
 
 #ifdef _WIN32
         void *hTimer, *hTimerQueue;
+        static void __stdcall WaitOrTimerCallback( void*, unsigned char );
+#else
+        bool deleted;
 #endif
         Time last_fire_time;
       };

@@ -16,12 +16,25 @@ namespace xtreemfs
   class File : public YIELD::platform::File
   {
   public:
+    // yidl::runtime::Object
+    YIDL_RUNTIME_OBJECT_PROTOTYPES( File, 0 );
+
+    // YIELD::platform::File
     YIELD_PLATFORM_FILE_PROTOTYPES;
+
     virtual size_t getpagesize();
     virtual uint64_t get_size();
 
   private:
     friend class Volume;
+    friend class XCapTimer;
+
+    class ReadBuffer;
+    class ReadRequest;
+    class ReadResponse;
+    class WriteBuffer;
+    class XCapTimer;
+
 
     File
     ( 
@@ -32,13 +45,18 @@ namespace xtreemfs
 
     ~File();
 
+
     yidl::runtime::auto_Object<Volume> parent_volume;
     YIELD::platform::Path path;
     org::xtreemfs::interfaces::FileCredentials file_credentials;
 
+    bool closed;
+
     org::xtreemfs::interfaces::OSDWriteResponse latest_osd_write_response;
     std::vector<org::xtreemfs::interfaces::Lock> locks;
     ssize_t selected_file_replica;
+
+    yidl::runtime::auto_Object<XCapTimer> xcap_timer;
   };
 
   typedef yidl::runtime::auto_Object<File> auto_File;

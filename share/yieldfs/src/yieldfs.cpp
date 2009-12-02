@@ -1,3 +1,5 @@
+// Revision: 198
+
 #include "yield.h"
 #include "yieldfs.h"
 using namespace yieldfs;
@@ -515,9 +517,20 @@ namespace yieldfs
 
     static int release( const char* path, struct fuse_file_info* fi )
     {
-      yidl::runtime::Object::decRef( get_file( fi ) );
-      fi->fh = 0;
-      return 0;
+      // close explicitly to trigger replication in XtreemFS
+      // there may be extra references to the File (e.g. timers) ->
+      // the decRef may not destroy the reference ->
+      // close() may not be called for a while if we don't call it here
+      YIELD::platform::File* file = get_file( fi );
+      if ( file != NULL )
+      {
+        fi->fh = 0;
+        int ret = file->close() ? 0 : -1 * errno;
+        yidl::runtime::Object::decRef( *file );
+        return ret;
+      }
+      else
+        return 0;
     }
 
     static int rename( const char* path, const char *topath )
@@ -837,9 +850,27 @@ namespace yieldfs
 	    LPCWSTR					FileName,
 	    PDOKAN_FILE_INFO		DokanFileInfo )
     {
-      yidl::runtime::Object::decRef( get_file( DokanFileInfo ) );
-      DokanFileInfo->Context = NULL;
-      return ERROR_SUCCESS;
+      // close() explicitly to trigger replication in XtreemFS
+      // there may be extra references to the File (e.g. timers) ->
+      // the decRef may not destroy the reference ->
+      // close() may not be called for a while if we don't call it here
+      YIELD::platform::File* file = get_file( DokanFileInfo );
+      if ( file != NULL )
+      {
+        DokanFileInfo->Context = NULL;
+
+        int ret;
+        if ( file->close() )
+          ret = ERROR_SUCCESS;
+        else
+          ret = -1 * ::GetLastError();
+
+        yidl::runtime::Object::decRef( *file );
+
+        return ret;
+      }
+      else
+        return ERROR_SUCCESS;
     }
 
     static int DOKAN_CALLBACK
@@ -1068,6 +1099,7 @@ namespace yieldfs
         if ( file != NULL )
         {
           read_ret = file->read( Buffer, BufferLength, Offset );
+          file->close(); // See note in CloseFile; assume this succeeds
           yidl::runtime::Object::decRef( *file );
         }
         else
@@ -1173,6 +1205,7 @@ namespace yieldfs
         if ( file != NULL )
         {
           write_ret = file->write( Buffer, NumberOfBytesToWrite, Offset );
+          file->close(); // See note in CloseFile; assume this succeeds
           yidl::runtime::Object::decRef( *file );
         }
         else
@@ -1921,10 +1954,9 @@ public:
       dirty_page( dirty_page ), page_cache( page_cache )
   { }
   OldDirtyPageTimer& operator=( const OldDirtyPageTimer& ) { return *this; }
-  bool fire( const YIELD::platform::Time& )
+  void fire()
   {
     page_cache.flush( dirty_page );
-    return true;
   }
 private:
   auto_CachedPage dirty_page;
