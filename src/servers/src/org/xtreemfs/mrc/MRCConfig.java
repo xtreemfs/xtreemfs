@@ -57,8 +57,10 @@ public class MRCConfig extends ServiceConfig {
     
     private String            capabilitySecret;
     
+    private int               capabilityTimeout;
+    
     private boolean           renewTimedOutCaps;
-        
+    
     /** Creates a new instance of MRCConfig */
     public MRCConfig(String filename) throws IOException {
         super(filename);
@@ -92,6 +94,8 @@ public class MRCConfig extends ServiceConfig {
         this.authenticationProvider = readRequiredString("authentication_provider");
         
         this.capabilitySecret = readRequiredString("capability_secret");
+        
+        this.capabilityTimeout = readOptionalInt("capability_timeout", 60);
         
         this.renewTimedOutCaps = readOptionalBoolean("renew_to_caps", false);
     }
@@ -138,6 +142,10 @@ public class MRCConfig extends ServiceConfig {
     
     public String getCapabilitySecret() {
         return capabilitySecret;
+    }
+    
+    public int getCapabilityTimeout() {
+        return capabilityTimeout;
     }
     
     /**

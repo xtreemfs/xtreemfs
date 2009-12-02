@@ -88,9 +88,10 @@ public class TruncateOperation extends MRCOperation {
         sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         
         Capability truncCap = new Capability(writeCap.getFileId(), writeCap.getAccessMode()
-            | FileAccessManager.O_TRUNC, TimeSync.getGlobalTime() / 1000 + Capability.DEFAULT_VALIDITY,
-            ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress().getHostAddress(),
-            newEpoch, false, master.getConfig().getCapabilitySecret());
+            | FileAccessManager.O_TRUNC, TimeSync.getGlobalTime() / 1000
+            + master.getConfig().getCapabilityTimeout(), ((InetSocketAddress) rq.getRPCRequest()
+                .getClientIdentity()).getAddress().getHostAddress(), newEpoch, false, master.getConfig()
+                .getCapabilitySecret());
         
         // set the response
         rq.setResponse(new ftruncateResponse(truncCap.getXCap()));

@@ -237,9 +237,9 @@ public class OpenOperation extends MRCOperation {
         // issue a new capability
         Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), TimeSync
                 .getGlobalTime()
-            / 1000 + Capability.DEFAULT_VALIDITY,
-            ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress().getHostAddress(),
-            trEpoch, replicateOnClose, master.getConfig().getCapabilitySecret());
+            / 1000 + master.getConfig().getCapabilityTimeout(), ((InetSocketAddress) rq.getRPCRequest()
+                .getClientIdentity()).getAddress().getHostAddress(), trEpoch, replicateOnClose, master
+                .getConfig().getCapabilitySecret());
         
         if (Logging.isDebug())
             Logging
