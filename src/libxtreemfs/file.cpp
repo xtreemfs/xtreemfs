@@ -150,6 +150,25 @@ public:
           file->file_credentials.get_xcap().get_file_id() << ".";
 
         file->file_credentials.set_xcap( renewed_xcap );
+
+        if ( renewed_xcap.get_expire_timeout_s() > 10 )
+        {
+          // Add another timer for the renewed xcap
+          // Don't use periods here on the pessimistic assumption that
+          // most xcaps will never be renewed
+          YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer
+          (
+            new XCapTimer
+            (
+              file,
+              ( renewed_xcap.get_expire_timeout_s() - 10 ) * NS_IN_S
+            )
+          );
+        }
+        else 
+          file->parent_volume->get_log()->getStream( YIELD::platform::Log::LOG_ERR ) <<
+            "xtreemfs::File: received xcap for file " << renewed_xcap.get_file_id() <<
+            "that expires in less than 10 seconds, will not try to renew.";
       }
       catch ( std::exception& exc )
       {
@@ -195,7 +214,7 @@ File::File
       new XCapTimer
       (
         incRef(), 
-        ( file_credentials.get_xcap().get_expire_timeout_s() - 10 )* NS_IN_S 
+        ( file_credentials.get_xcap().get_expire_timeout_s() - 10 ) * NS_IN_S 
       )
     );  
   }
