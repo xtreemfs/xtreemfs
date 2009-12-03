@@ -435,6 +435,10 @@ public class PreprocStage extends Stage {
     private void processAuthenticate(OSDRequest rq) throws OSDException {
         
         final Capability rqCap = rq.getCapability();
+
+        if (Logging.isDebug()) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,"capability: %s",rqCap.getXCap());
+        }
         
         // check capability args
         if (rqCap.getFileId().length() == 0) {
@@ -461,7 +465,7 @@ public class PreprocStage extends Stage {
             final Capability cap = cachedCaps.get(rqCap.getSignature());
             if (cap != null) {
                 if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"using cahed cap: %s %s",cap.getFileId(),cap.getSignature());
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"using cached cap: %s %s",cap.getFileId(),cap.getSignature());
                 }
                 isValid = !cap.hasExpired();
             }
@@ -483,7 +487,12 @@ public class PreprocStage extends Stage {
         
         // depending on the result the event listener is sent
         if (!isValid) {
-            throw new OSDException(ErrorCodes.AUTH_FAILED, "capability is not valid", "");
+            if (rqCap.hasExpired())
+                throw new OSDException(ErrorCodes.AUTH_FAILED, "capability is not valid (timed out)", "");
+            if (rqCap.hasValidSignature())
+                throw new OSDException(ErrorCodes.AUTH_FAILED, "capability is not valid (invalid signature)", "");
+
+            throw new OSDException(ErrorCodes.AUTH_FAILED, "capability is not valid (unknown cause)", "");
         }
     }
     
