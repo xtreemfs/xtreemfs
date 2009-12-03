@@ -524,6 +524,14 @@ All configuration parameters that may be used to define the behavior of the diff
  Description & Defines a shared secret between the MRC and all OSDs. The secret is used by the MRC to sign capabilities, i.e. security tokens for data access at OSDs. In turn, an OSD uses the secret to verify that the capability has been issued by the MRC.
 \end{tabular}
 
+\subsubsection{\texttt{capability\_timeout} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC\\
+ Values   & seconds\\
+ Default  & 600\\
+ Description & Defines the relative time span for which a capability is valid after having been issued.
+\end{tabular}
+
 \subsubsection{\texttt{checksums.enabled}}
 \begin{tabular}{lp{10cm}}
  Services & OSD\\
@@ -601,7 +609,7 @@ Note that it is possible to specify multiple categories by means of a comma or s
  Description & If set to true the DIR will received UDP broadcasts and advertise itself in response to XtreemFS components using the DIR automatic discovery mechanism. If set to false, the DIR will ignore all UDP traffic. For details see Sec. \ref{sec:autodiscover}.
 \end{tabular}
 
-\subsubsection{\texttt{geographic\_coordinates}}
+\subsubsection{\texttt{geographic\_coordinates} \textit{optional}}
 \begin{tabular}{lp{10cm}}
  Services & DIR, MRC, OSD\\
  Values   & String \\

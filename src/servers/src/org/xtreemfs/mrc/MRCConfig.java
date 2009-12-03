@@ -49,8 +49,6 @@ public class MRCConfig extends ServiceConfig {
     
     private boolean           noatime;
     
-    private boolean           noFsync;
-    
     private String            policyDir;
     
     private String            authenticationProvider;
@@ -85,17 +83,13 @@ public class MRCConfig extends ServiceConfig {
         
         this.remoteTimeSync = this.readRequiredInt("remote_time_sync");
         
-        this.noFsync = this.readOptionalBoolean("no_fsync", false);
-        
         this.uuid = new ServiceUUID(this.readRequiredString("uuid"));
-        
-        this.policyDir = this.readOptionalString("policy_dir", null);
         
         this.authenticationProvider = readRequiredString("authentication_provider");
         
         this.capabilitySecret = readRequiredString("capability_secret");
         
-        this.capabilityTimeout = readOptionalInt("capability_timeout", 60);
+        this.capabilityTimeout = readOptionalInt("capability_timeout", 600);
         
         this.renewTimedOutCaps = readOptionalBoolean("renew_to_caps", false);
     }
@@ -122,10 +116,6 @@ public class MRCConfig extends ServiceConfig {
     
     public int getRemoteTimeSync() {
         return remoteTimeSync;
-    }
-    
-    public boolean isNoFsync() {
-        return noFsync;
     }
     
     public ServiceUUID getUUID() {
