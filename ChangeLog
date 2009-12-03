@@ -54,4 +54,10 @@
 
 27-NOV-2009
 	* client caches file size updates by default (flushed on close, fsync)
-	* OSD and MRC status pages can be used to get full stack traces (/strace)	
+	* OSD and MRC status pages can be used to get full stack traces (/strace)
+
+03-DEC-2009
+	* capability timeout is now a config option for the MRC
+          (capability_timeout), deafult is 600s.
+	* MRC dump/restore are now asynchronous. Backups of the MRC can be done
+          without interrupting regular operations.
