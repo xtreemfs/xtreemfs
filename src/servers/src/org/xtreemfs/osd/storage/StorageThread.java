@@ -57,22 +57,22 @@ import org.xtreemfs.osd.striping.UDPMessage;
 
 public class StorageThread extends Stage {
     
-    public static final int      STAGEOP_READ_OBJECT     = 1;
-
-    public static final int      STAGEOP_WRITE_OBJECT    = 2;
-
-    public static final int      STAGEOP_TRUNCATE        = 3;
-
-    public static final int      STAGEOP_FLUSH_CACHES    = 4;
-
-    public static final int      STAGEOP_GMAX_RECEIVED   = 5;
-
-    public static final int      STAGEOP_GET_GMAX        = 6;
-
-    public static final int      STAGEOP_GET_FILE_SIZE   = 7;
-
+    public static final int      STAGEOP_READ_OBJECT    = 1;
+    
+    public static final int      STAGEOP_WRITE_OBJECT   = 2;
+    
+    public static final int      STAGEOP_TRUNCATE       = 3;
+    
+    public static final int      STAGEOP_FLUSH_CACHES   = 4;
+    
+    public static final int      STAGEOP_GMAX_RECEIVED  = 5;
+    
+    public static final int      STAGEOP_GET_GMAX       = 6;
+    
+    public static final int      STAGEOP_GET_FILE_SIZE  = 7;
+    
     public static final int      STAGEOP_GET_OBJECT_SET = 8;
-
+    
     private MetadataCache        cache;
     
     private StorageLayout        layout;
@@ -203,8 +203,8 @@ public class StorageThread extends Stage {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "GET GMAX: %s", fileId);
             }
             
-            InternalGmax gmax = new InternalGmax(fi.getTruncateEpoch(), fi.getLastObjectNumber(), fi
-                    .getFilesize());
+            InternalGmax gmax = new InternalGmax(fi.getTruncateEpoch(), fi.getFilesize(), fi
+                    .getLastObjectNumber());
             
             cback.gmaxComplete(gmax, null);
         } catch (IOException ex) {
@@ -234,7 +234,8 @@ public class StorageThread extends Stage {
             final boolean fullRead = (length == -1) || length == sp.getStripeSizeForObject(objNo);
             
             if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "READ: %s-%d offset=%d, length=%d", fileId, objNo, offset, length);
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
+                    "READ: %s-%d offset=%d, length=%d", fileId, objNo, offset, length);
             }
             
             long objVer = fi.getObjectVersion(objNo);
@@ -308,7 +309,7 @@ public class StorageThread extends Stage {
     private void processWrite(StageRequest rq) {
         final WriteObjectCallback cback = (WriteObjectCallback) rq.getCallback();
         try {
-           final String fileId = (String) rq.getArgs()[0];
+            final String fileId = (String) rq.getArgs()[0];
             final long objNo = (Long) rq.getArgs()[1];
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[2];
             int offset = (Integer) rq.getArgs()[3];
@@ -472,8 +473,8 @@ public class StorageThread extends Stage {
                         if (osds.size() > 1) {
                             for (ServiceUUID osd : osds) {
                                 if (!osd.equals(localUUID)) {
-                                    final xtreemfs_broadcast_gmaxRequest m = new xtreemfs_broadcast_gmaxRequest(fileId,
-                                            fi.getTruncateEpoch(), objNo, -1);
+                                    final xtreemfs_broadcast_gmaxRequest m = new xtreemfs_broadcast_gmaxRequest(
+                                        fileId, fi.getTruncateEpoch(), objNo, -1);
                                     final UDPMessage udpm = new UDPMessage(osd.getAddress(), 1, 0, m);
                                     master.getUdpComStage().send(udpm);
                                 }
@@ -576,10 +577,10 @@ public class StorageThread extends Stage {
         final String fileId = (String) rq.getArgs()[0];
         
         ObjectSet objectSet = layout.getObjectSet(fileId);
-
+        
         cback.getObjectSetComplete(objectSet, null);
     }
-
+    
     private ReusableBuffer padWithZeros(ReusableBuffer data, int stripeSize) {
         int oldSize = data.capacity();
         if (!data.enlarge(stripeSize)) {
@@ -626,7 +627,7 @@ public class StorageThread extends Stage {
             } else if (rowObj > newLastObject) {
                 // delete objects
                 final long v = fi.getObjectVersion(rowObj);
-                layout.deleteObject(fileId, rowObj, v,sp);
+                layout.deleteObject(fileId, rowObj, v, sp);
                 fi.deleteObject(rowObj);
             }
         }
