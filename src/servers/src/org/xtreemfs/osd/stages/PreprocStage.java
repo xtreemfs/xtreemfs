@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.LRUCache;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
@@ -77,7 +78,7 @@ public class PreprocStage extends Stage {
     
     private final static long              OFT_OPEN_EXTENSION         = 1000 * 30;
     
-    private final Map<String, Set<String>> capCache;
+    private final Map<String, LRUCache<String,Capability>> capCache;
     
     private final OpenFileTable            oft;
     
@@ -97,13 +98,15 @@ public class PreprocStage extends Stage {
     private final OSDRequestDispatcher     master;
     
     private final boolean                  ignoreCaps;
+
+    private static final int              MAX_CAP_CACHE = 20;
     
     /** Creates a new instance of AuthenticationStage */
     public PreprocStage(OSDRequestDispatcher master) {
         
         super("OSD PreProcSt");
         
-        capCache = new HashMap<String, Set<String>>();
+        capCache = new HashMap();
         oft = new OpenFileTable();
         xLocCache = new LocationsCache(10000);
         this.master = master;
@@ -453,10 +456,14 @@ public class PreprocStage extends Stage {
         
         boolean isValid = false;
         // look in capCache
-        Set<String> cachedCaps = capCache.get(rqCap.getFileId());
+        LRUCache<String,Capability> cachedCaps = capCache.get(rqCap.getFileId());
         if (cachedCaps != null) {
-            if (cachedCaps.contains(rqCap.getSignature())) {
-                isValid = true;
+            final Capability cap = cachedCaps.get(rqCap.getSignature());
+            if (cap != null) {
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"using cahed cap: %s %s",cap.getFileId(),cap.getSignature());
+                }
+                isValid = !cap.hasExpired();
             }
         }
         
@@ -467,10 +474,10 @@ public class PreprocStage extends Stage {
             if (isValid) {
                 // add to cache
                 if (cachedCaps == null) {
-                    cachedCaps = new HashSet<String>();
+                    cachedCaps = new LRUCache<String, Capability>(MAX_CAP_CACHE);
                     capCache.put(rqCap.getFileId(), cachedCaps);
                 }
-                cachedCaps.add(rqCap.getSignature());
+                cachedCaps.put(rqCap.getSignature(),rqCap);
             }
         }
         
