@@ -30,6 +30,7 @@ import java.util.Properties;
 
 import org.xtreemfs.common.config.ServiceConfig;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.interfaces.Constants;
 
 /**
  * 
@@ -90,6 +91,8 @@ public class MRCConfig extends ServiceConfig {
         this.capabilitySecret = readRequiredString("capability_secret");
         
         this.capabilityTimeout = readOptionalInt("capability_timeout", 600);
+        if (this.capabilityTimeout < Constants.XCAP_EXPIRE_TIMEOUT_S_MIN * 2)
+            this.capabilityTimeout = Constants.XCAP_EXPIRE_TIMEOUT_S_MIN * 2;
         
         this.renewTimedOutCaps = readOptionalBoolean("renew_to_caps", false);
     }
