@@ -37,6 +37,7 @@ namespace org
       const static uint32_t SYSTEM_V_FCNTL_H_S_IFREG = 0x8000;
       const static uint32_t SYSTEM_V_FCNTL_H_S_IFDIR = 0x4000;
       const static uint32_t SYSTEM_V_FCNTL_H_S_IFLNK = 0xA000;
+      const static uint32_t XCAP_EXPIRE_TIMEOUT_S_MIN = 30;
 
 
     };

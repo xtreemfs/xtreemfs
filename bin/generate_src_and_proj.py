@@ -61,7 +61,6 @@ format_src( "XtreemFS", src_dir_paths=(
                                         os.path.join( XTREEMFS_DIR_PATH, "src", "mkfs.xtreemfs" ),
                                         os.path.join( XTREEMFS_DIR_PATH, "src", "mount.xtreemfs" ),
                                         os.path.join( XTREEMFS_DIR_PATH, "src", "rmfs.xtreemfs" ),
-                                        os.path.join( XTREEMFS_DIR_PATH, "src", "xtfs_vivaldi" ),
                                        ) )
 
 # Generate project files

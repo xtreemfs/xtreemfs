@@ -151,7 +151,11 @@ public:
 
         file->file_credentials.set_xcap( renewed_xcap );
 
-        if ( renewed_xcap.get_expire_timeout_s() > 10 )
+        if 
+        ( 
+          renewed_xcap.get_expire_timeout_s() > 
+          org::xtreemfs::interfaces::XCAP_EXPIRE_TIMEOUT_S_MIN 
+        )
         {
           // Add another timer for the renewed xcap
           // Don't use periods here on the pessimistic assumption that
@@ -161,14 +165,18 @@ public:
             new XCapTimer
             (
               file,
-              ( renewed_xcap.get_expire_timeout_s() - 10 ) * NS_IN_S
+              ( renewed_xcap.get_expire_timeout_s() - 
+                org::xtreemfs::interfaces::XCAP_EXPIRE_TIMEOUT_S_MIN ) 
+              * NS_IN_S
             )
           );
         }
         else 
           file->parent_volume->get_log()->getStream( YIELD::platform::Log::LOG_ERR ) <<
             "xtreemfs::File: received xcap for file " << renewed_xcap.get_file_id() <<
-            "that expires in less than 10 seconds, will not try to renew.";
+            "that expires in less than " << 
+            org::xtreemfs::interfaces::XCAP_EXPIRE_TIMEOUT_S_MIN << 
+            " seconds, will not try to renew.";
       }
       catch ( std::exception& exc )
       {
@@ -200,7 +208,11 @@ File::File
 
   selected_file_replica = 0;
 
-  if ( file_credentials.get_xcap().get_expire_timeout_s() > 10 )
+  if 
+  (
+    file_credentials.get_xcap().get_expire_timeout_s() >
+    org::xtreemfs::interfaces::XCAP_EXPIRE_TIMEOUT_S_MIN
+  )
   {
     // Do not keep a reference to the xcap timer, since that would create
     // circular references with this object
@@ -214,14 +226,17 @@ File::File
       new XCapTimer
       (
         incRef(), 
-        ( file_credentials.get_xcap().get_expire_timeout_s() - 10 ) * NS_IN_S 
+        ( file_credentials.get_xcap().get_expire_timeout_s() - 
+          org::xtreemfs::interfaces::XCAP_EXPIRE_TIMEOUT_S_MIN ) 
+        * NS_IN_S 
       )
     );  
   }
   else 
     parent_volume->get_log()->getStream( YIELD::platform::Log::LOG_ERR ) <<
-      "xtreemfs::File: received xcap that expires in less than 10 seconds, " <<
-      "will not try to renew.";
+      "xtreemfs::File: received xcap that expires in less than " <<
+      org::xtreemfs::interfaces::XCAP_EXPIRE_TIMEOUT_S_MIN << 
+      " seconds, will not try to renew.";
 }
 
 File::~File()
