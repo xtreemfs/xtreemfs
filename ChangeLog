@@ -37,6 +37,10 @@
 	* added notification mechanism to DIR that sends notification mails to
 	  an admin if an OSD or MRC has failed
 
+26-OCT-2009
+	* Linux binaries for mounting, creating, removing and listing volumes have
+		been renamed, in order to be more consistent with Linux conventions
+
 05-NOV-2009
 	* added GRID SSL mode
 	  When enabled (requires SSL to be enable too), XtreemFS will fall back to
@@ -49,8 +53,8 @@
           for the DIR during start-up.
 	* added xctl: a script to start and stop the XtreemFS services
 	* mount.xtreemfs checks for successfull mount before going into background
-        * fixed the return value for xattr calls which caused problems with the
-          Mac OS X Finder
+	* fixed the return value for xattr calls which caused problems with the
+		Mac OS X Finder
 
 27-NOV-2009
 	* client caches file size updates by default (flushed on close, fsync)
@@ -58,6 +62,10 @@
 
 03-DEC-2009
 	* capability timeout is now a config option for the MRC
-          (capability_timeout), deafult is 600s.
+		(capability_timeout), default is 600s.
 	* MRC dump/restore are now asynchronous. Backups of the MRC can be done
-          without interrupting regular operations.
+		without interrupting regular operations.
+	* closest replicas of a file can now be selected based on Vivaldi
+		coordinates (see User Guide)
+	* fixed bugs #36, #54, #57, #58, #59, #60, #64, #66, #77, #78, #80, #81,
+		#82, #83 #96, #97
