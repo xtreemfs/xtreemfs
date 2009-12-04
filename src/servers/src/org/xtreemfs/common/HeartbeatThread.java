@@ -184,7 +184,7 @@ public class HeartbeatThread extends LifeCycleThread {
                 endpoints = new AddressMappingSet();
                 
                 // remove the leading '/' if necessary
-                String host = "".equals(config.getHostName()) ? config.getAddress().toString() : config
+                String host = "".equals(config.getHostName()) ? config.getAddress().getHostName() : config
                         .getHostName();
                 if (host.startsWith("/"))
                     host = host.substring(1);
