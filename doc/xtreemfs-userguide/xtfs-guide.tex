@@ -473,7 +473,7 @@ $> cp \textit{service}.p12 /etc/xos/xtreemfs/truststore/certs
 \subsection{List of Configuration Options}
 \label{sec:config}
 
-All configuration parameters that may be used to define the behavior of the different services are listed in this section. Unless marked as optional, a parameter has to occur (exactly once) in a configuration file.
+All configuration parameters that may be used to define the behavior of the different services are listed in this section. Unless marked as optional, a parameter has to occur (exactly once) in a configuration file. Parameters marked as experimental belong to the DIR and MRC replication feature, which is currently under development. It is not recommended to mess about with these options if you want to use XtreemFS in production. 
 
 %\makeatletter
 %\renewcommand\paragraph{\@startsection{paragraph}{4}{\z@}%
@@ -504,7 +504,61 @@ All configuration parameters that may be used to define the behavior of the diff
  Values   & absolute file system path to a directory\\
  Default  & DIR: \texttt{/var/lib/xtreemfs/dir/database}\\
           & MRC: \texttt{/var/lib/xtreemfs/mrc/database}\\
- Description & The directory in which the Directory Service or MRC will store their databases. This directory should never be on the same partition as any OSD data, if both services reside on the same machine. Otherwise, deadlocks may occur if the partition runs out of free disk space!
+ Description & The directory in which the Directory Service or MRC will store their databases. This directory should never be on the same partition as any OSD data, if both services reside on the same machine. Otherwise, deadlocks may occur if the partition runs out of free disk space.
+\end{tabular}
+
+\subsubsection{\texttt{babudb.cfgFile} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & a file name\\
+ Default  & DIR: \texttt{config.db}\\
+          & MRC: \texttt{config.db}\\
+ Description & Name for the database configuration file.
+\end{tabular}
+
+\subsubsection{\texttt{babudb.checkInterval} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & a positive integer value\\
+ Default  & DIR: \texttt{300}\\
+          & MRC: \texttt{300}\\
+ Description & The number of seconds between two checks of the disk log size for automatic checkpointing. Set this value to 0 to disable automatic checkpointing. 
+\end{tabular}
+
+\subsubsection{\texttt{babudb.compression} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & \texttt{true} or \texttt{false}\\
+ Default  & DIR: \texttt{false}\\
+          & MRC: \texttt{false}\\
+ Description & Flag that determines whether the indices shall be compressed or not.
+\end{tabular}
+
+\subsubsection{\texttt{babudb.debug.level} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & 0, 1, 2, 3, 4, 5, 6, 7 \\
+ Default  & DIR: \texttt{4}\\
+		  & MRC: \texttt{4}\\
+ Description & This is the debug level for BabuDB only. The debug level determines the amount and detail of information written to logfiles. Any debug level includes log messages from lower debug levels. The following log levels exist:
+\begin{enumerate}
+ \item[0 -] fatal errors
+ \item[1 -] alert messages
+ \item[2 -] critical errors
+ \item[3 -] normal errors
+ \item[4 -] warnings
+ \item[5 -] notices
+ \item[6 -] info messages
+ \item[7 -] debug messages
+\end{enumerate}
+\end{tabular}
+
+\subsubsection{\texttt{babudb.localTimeRenew} \textit{experimental, optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & a positive integer value\\
+ Default  & \\
+ Description & Intervall in milliseconds for synchronizing the ONCRPCServer and ONCRPCClient of the BabuDB replication with the local clock. 
 \end{tabular}
 
 \subsubsection{\texttt{babudb.logDir}}
@@ -513,7 +567,168 @@ All configuration parameters that may be used to define the behavior of the diff
  Values   & absolute file system path\\
  Default  & DIR: \texttt{/var/lib/xtreemfs/dir/db-log}\\
           & MRC: \texttt{/var/lib/xtreemfs/mrc/db-log}\\
- Description & The directory the MRC uses to store database logs. This directory should never be on the same partition as any OSD data, if both services reside on the same machine. Otherwise, deadlocks may occur if the partition runs out of free disk space!
+ Description & The directory the MRC uses to store database logs. This directory should never be on the same partition as any OSD data, if both services reside on the same machine. Otherwise, deadlocks may occur if the partition runs out of free disk space.
+\end{tabular}
+
+\subsubsection{\texttt{babudb.maxLogfileSize} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & a positive integer value\\
+ Default  & DIR: \texttt{16777216}\\
+          & MRC: \texttt{16777216}\\
+ Description & If automatic checkpointing is enabled, a checkpoint is created when the disk logfile exceedes maxLogfileSize bytes. The value should be reasonable large to keep the checkpointing-rate low. However, it should not be too large as a large disk log increases the recovery time after a crash.
+\end{tabular}
+
+\subsubsection{\texttt{babudb.pseudoSyncWait} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & a positive integer value\\
+ Default  & DIR: \texttt{200}\\
+          & MRC: \texttt{0}\\
+ Description & The BabuDB disk logger can batch multiple operations into a single write+fsync to increase the throughput. This does only work if there are operations executed in parallel by the worker threads. In turn, if you work on a single database it becomes less efficient. To circumvent this problem, BabuDB offers a pseudo-sync mode which is similar to the PostgreSQL write-ahead log (WAL). If pseduoSyncWait is set to a value larger then 0, this pseudo-sync mode is enabled. In this mode, insert operations are acknowledged as soon as they have been executed on the in-memory database index. The disk logger will execute a batch write of up to 500 operations followed by a single sync (see syncMode) every pseudoSyncWait ms. This mode is considerably faster than synchronous writes but you can lose data in case of a crash. In contrast to ASYNC mode the data loss is limited to the operations executed in the last pseudoSyncWait ms.
+\end{tabular}
+
+\subsubsection{\texttt{babudb.repl.backupDir} \textit{experimental, optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & a absolute file system path\\
+ Default  & \\
+ Description & DB backup directory needed for the initial loading of a slave BabuDB from the master BabuDB.
+\end{tabular}
+
+\subsubsection{\texttt{babudb.repl.chunkSize} \textit{experimental, optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & a positive integer greater 0\\
+ Default  & \\
+ Description & At the initial load mechanism the database files will be split into chunks. The size of this chunks in bytes can be defined here.
+\end{tabular}
+
+\subsubsection{\texttt{babudb.repl.participant} \textit{experimental, optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & see description\\
+ Default  & \\
+ Description & The addresses of the hosts running an instance of BabuDB and participating at the replication. The local address is also required in this list. BabuDB will find out on its own, which of the given addresses is the local one.\\
+& Field babudb.repl.participant.i defines the domain name or IP address.\\
+& Field babudb.repl.participant.i.port defines the port.\\
+& \\
+& babudb.repl.participant.0 \\
+& babudb.repl.participant.0.port \\
+& babudb.repl.participant.1 \\
+& babudb.repl.participant.1.port \\
+& ... \\
+& babudb.repl.participant.n \\
+& babudb.repl.participant.n.port \\
+& for n participants. \\
+\end{tabular} 
+
+\subsubsection{\texttt{babudb.repl.sync.n} \textit{experimental, optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & a positive integer value\\
+ Default  & \\
+ Description & The number of slaves that at least have to be synchronous to the master BabuDB application. To use asynchronous replication, this value has to be set to 0. Otherwise it has to be less or equal to the number of participants. 
+\end{tabular}
+
+\subsubsection{\texttt{babudb.ssl.authenticationWithoutEncryption} \textit{experimental, optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & \texttt{true} or \texttt{false}\\
+ Default  & \\
+ Description & Flag that determines if authentication should be used without encrypting the connection. For BabuDB replication only.
+\end{tabular}
+
+\subsubsection{\texttt{babudb.ssl.enabled} \textit{experimental, optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & \texttt{true} or \texttt{false}\\
+ Default  & \\
+ Description & Options to use a secure connection with SSL authenticaion and optionally encryption for the BabuDB replication. 
+\end{tabular}
+
+\subsubsection{\texttt{babudb.ssl.service\_creds} \textit{experimental, optional}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC, OSD\\
+ Values   & path to file\\
+ Default  & \\
+ Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file containing the service credentials (X.509 certificate and private key). PKCS\#12 and JKS format can be used, set \texttt{babudb.ssl.service\_creds.container} accordingly. This file is used during the SSL handshake to authenticate the service.
+\end{tabular}
+
+\subsubsection{\texttt{babudb.ssl.service\_creds.container } \textit{experimental, optional}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC, OSD\\
+ Values   & \texttt{pkcs12} or \texttt{JKS}\\
+ Default  & \\
+ Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file format of the \texttt{babudb.ssl.service\_creds} file.
+\end{tabular}
+
+\subsubsection{\texttt{babudb.ssl.service\_creds.pw} \textit{experimental, optional}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC, OSD\\
+ Values   & String\\
+ Default  & \\
+ Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the password which protects the credentials file \texttt{babudb.ssl.service\_creds}.
+\end{tabular}
+
+\subsubsection{\texttt{babudb.ssl.trusted\_certs} \textit{experimental, optional}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC, OSD\\
+ Values   & path to file\\
+ Default  & \\
+ Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file containing the trusted root certificates (e.g. CA certificates) used to authenticate clients.
+\end{tabular}
+
+\subsubsection{\texttt{babudb.ssl.trusted\_certs.container} \textit{experimental, optional}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC, OSD\\
+ Values   & \texttt{pkcs12} or \texttt{JKS}\\
+ Default  & \\
+ Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the file format of the \texttt{babudb.ssl.trusted\_certs} file.
+\end{tabular}
+
+\subsubsection{\texttt{babudb.ssl.trusted\_certs.pw} \textit{experimental, optional}}
+\begin{tabular}{lp{10cm}}
+ Services & MRC, OSD\\
+ Values   & String\\
+ Default  & \\
+ Description & Must be specified if \texttt{babudb.ssl.enabled} is \texttt{true}. Specifies the password which protects the trusted certificates file \texttt{babudb.ssl.trusted\_certs}.
+\end{tabular}
+
+\subsubsection{\texttt{babudb.sync}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & ASYNC, SYNC\_WRITE\_METADATA, SYNC\_WRITE,\\ 
+	      & FDATASYNC or FSYNC\\
+ Default  & DIR: \texttt{FSYNC}\\
+          & MRC: \texttt{ASYNC}\\
+ Description & The sync mode influences how operations are commited to the disk log before the operation is acknowledged to the caller.
+\begin{itemize}
+ \item[-]ASYNC mode the writes to the disk log are buffered in memory by the operating system. This is the fastest mode but will lead to data loss in case of a crash, kernel panic or power failure.
+ \item[-]SYNC\_WRITE\_METADATA opens the file with O\_SYNC, the system will not buffer any writes. The operation will be acknowledged when data has been safely written to disk. This mode is slow but offers maximum data safety. However, BabuDB cannot influence the disk drive caches, this depends on the OS and hard disk model.
+ \item[-]SYNC\_WRITE similar to SYNC\_WRITE\_METADATA but opens file with O\_DSYNC which means that only the data is commit to disk. This can lead to some data loss depending on the implementation of the underlying file system. Linux does not implement this mode.
+ \item[-]FDATASYNC is similar to SYNC\_WRITE but opens the file in asynchronous mode and calls fdatasync() after writing the data to disk.
+ \item[-]FSYNC is similar to SYNC\_WRITE\_METADATA but opens the file in asynchronous mode and calls fsync() after writing the data to disk.
+\end{itemize}
+For best throughput use ASYNC, for maximum data safety use FSYNC. 
+\end{tabular} 
+
+\subsubsection{\texttt{babudb.worker.maxQueueLength} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & a positiv integer value\\
+ Default  & DIR: \texttt{250}\\
+          & MRC: \texttt{250}\\
+ Description & If set to a value larger than 0, this is the maximum number of requests which can be in a worker's queue. This value should be used if you have pseudo-synchronous mode enabled to ensure that your queues don't grow until you get an out of memory exception. Can be set to 0 if pseudo-sync mode is disabled. 
+\end{tabular}
+
+\subsubsection{\texttt{babudb.worker.numThreads} \textit{optional}}
+\begin{tabular}{lp{10cm}}
+ Services & DIR, MRC\\
+ Values   & a positiv integer value\\
+ Default  & DIR: \texttt{0}\\
+          & MRC: \texttt{0}\\
+ Description & The number of worker threads to be used for database operations. As BabuDB does not use locking, each database is handled by only one worker thread. If there are more databases than worker threads, the databases are distributed onto the available threads. The number of threads should be set to a value smaller than the number of available cores to reduce overhead through context switches. You can also set the number of worker threads to 0. This will considerably reduce latency, but may also decrease throughput on a multicore system with more than one database.
 \end{tabular}
 
 \subsubsection{\texttt{capability\_secret}}
