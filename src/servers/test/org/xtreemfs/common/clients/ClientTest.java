@@ -34,7 +34,6 @@ import org.junit.Test;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
-import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.UserCredentials;
@@ -142,12 +141,23 @@ public class ClientTest {
         File f = v.getFile("/test");
 
         RandomAccessFile ra = f.open("rw");
+        ra.seek(2);
 
         byte[] data = new byte[2048];
-        ra.write(data, 0, data.length);
+        int wbytes = ra.write(data, 0, data.length);
+        assertEquals(2048, wbytes);
 
         ra.seek(0);
-        ra.read(data, 0, data.length);
+        int rbytes = ra.read(data, 0, data.length);
+        assertEquals(2048,rbytes);
+
+        ra.seek(2);
+        rbytes = ra.read(data, 0, data.length);
+        assertEquals(2048,rbytes);
+
+        ra.seek(4);
+        rbytes = ra.read(data, 0, data.length);
+        assertEquals(2048-2,rbytes);
 
         ra.close();
 

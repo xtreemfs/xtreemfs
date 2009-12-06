@@ -22,7 +22,7 @@
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.common.clients;
+package org.xtreemfs.common.clients.internal;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -41,7 +41,7 @@ import org.xtreemfs.mrc.client.MRCClient;
  *
  * @author bjko
  */
-class OpenFileList extends Thread {
+public class OpenFileList extends Thread {
 
     private final Map<String,CapEntry> capabilities;
 

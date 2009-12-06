@@ -25,6 +25,7 @@
 
 package org.xtreemfs.common.clients;
 
+import org.xtreemfs.common.clients.internal.OpenFileList;
 import java.io.IOException;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
