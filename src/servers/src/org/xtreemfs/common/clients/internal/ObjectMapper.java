@@ -58,9 +58,9 @@ public abstract class ObjectMapper {
         private final int offset;
         private final int length;
         private ReusableBuffer data;
-        private final ServiceUUID osdUUID;
+        private final String osdUUID;
 
-        public ObjectRequest(long objNo, int offset, int length, ServiceUUID osdUUID, ReusableBuffer data) {
+        public ObjectRequest(long objNo, int offset, int length, String osdUUID, ReusableBuffer data) {
             this.objNo = objNo;
             this.offset = offset;
             this.data = data;
@@ -99,7 +99,7 @@ public abstract class ObjectMapper {
         /**
          * @return the osdUUID
          */
-        public ServiceUUID getOsdUUID() {
+        public String getOsdUUID() {
             return osdUUID;
         }
 

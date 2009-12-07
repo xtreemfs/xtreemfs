@@ -84,59 +84,59 @@ public class RAID0ObjectMapperTest {
 
         RAID0ObjectMapper instance = new RAID0ObjectMapper(sp);
 
-        List<ObjectRequest> result = instance.readRequest(7, 0, r);
+        List<ObjectRequest> result = instance.readRequest(7*1024, 0, r);
         assertEquals(1, result.size());
         assertEquals(0, result.get(0).getObjNo());
         assertEquals(0, result.get(0).getOffset());
-        assertEquals(7, result.get(0).getLength());
+        assertEquals(7*1024, result.get(0).getLength());
         assertEquals("1", result.get(0).getOsdUUID().toString());
 
-        result = instance.readRequest(5, 2, r);
+        result = instance.readRequest(5*1024, 2*1024, r);
         assertEquals(1, result.size());
         assertEquals(0, result.get(0).getObjNo());
-        assertEquals(2, result.get(0).getOffset());
-        assertEquals(5, result.get(0).getLength());
+        assertEquals(2*1024, result.get(0).getOffset());
+        assertEquals(5*1024, result.get(0).getLength());
         assertEquals("1", result.get(0).getOsdUUID().toString());
 
-        result = instance.readRequest(8, 0, r);
+        result = instance.readRequest(8*1024, 0, r);
         assertEquals(2, result.size());
         assertEquals(0, result.get(0).getObjNo());
         assertEquals(0, result.get(0).getOffset());
-        assertEquals(7, result.get(0).getLength());
+        assertEquals(7*1024, result.get(0).getLength());
         assertEquals("1", result.get(0).getOsdUUID().toString());
 
         assertEquals(1, result.get(1).getObjNo());
         assertEquals(0, result.get(1).getOffset());
-        assertEquals(1, result.get(1).getLength());
+        assertEquals(1*1024, result.get(1).getLength());
         assertEquals("2", result.get(1).getOsdUUID().toString());
 
-        result = instance.readRequest(14, 0, r);
+        result = instance.readRequest(14*1024, 0, r);
         assertEquals(2, result.size());
         assertEquals(0, result.get(0).getObjNo());
         assertEquals(0, result.get(0).getOffset());
-        assertEquals(7, result.get(0).getLength());
+        assertEquals(7*1024, result.get(0).getLength());
         assertEquals("1", result.get(0).getOsdUUID().toString());
 
         assertEquals(1, result.get(1).getObjNo());
         assertEquals(0, result.get(1).getOffset());
-        assertEquals(7, result.get(1).getLength());
+        assertEquals(7*1024, result.get(1).getLength());
         assertEquals("2", result.get(1).getOsdUUID().toString());
 
-        result = instance.readRequest(14, 2, r);
+        result = instance.readRequest(14*1024, 2*1024, r);
         assertEquals(3, result.size());
         assertEquals(0, result.get(0).getObjNo());
-        assertEquals(2, result.get(0).getOffset());
-        assertEquals(5, result.get(0).getLength());
+        assertEquals(2*1024, result.get(0).getOffset());
+        assertEquals(5*1024, result.get(0).getLength());
         assertEquals("1", result.get(0).getOsdUUID().toString());
 
         assertEquals(1, result.get(1).getObjNo());
         assertEquals(0, result.get(1).getOffset());
-        assertEquals(7, result.get(1).getLength());
+        assertEquals(7*1024, result.get(1).getLength());
         assertEquals("2", result.get(1).getOsdUUID().toString());
 
         assertEquals(2, result.get(2).getObjNo());
         assertEquals(0, result.get(2).getOffset());
-        assertEquals(2, result.get(2).getLength());
+        assertEquals(2*1024, result.get(2).getLength());
         assertEquals("3", result.get(2).getOsdUUID().toString());
 
     }
@@ -162,32 +162,32 @@ public class RAID0ObjectMapperTest {
 
         RAID0ObjectMapper instance = new RAID0ObjectMapper(sp);
 
-        byte[] bytes = new byte[14];
-        for (int i = 0; i < 14; i++)
+        byte[] bytes = new byte[14*1024];
+        for (int i = 0; i < bytes.length; i++)
             bytes[i] = 'a';
         ReusableBuffer data = ReusableBuffer.wrap(bytes);
         data.position(0);
 
-        List<ObjectRequest> result = instance.writeRequest(data, 2, r);
+        List<ObjectRequest> result = instance.writeRequest(data, 2*1024, r);
         assertEquals(3, result.size());
         assertEquals(0, result.get(0).getObjNo());
-        assertEquals(2, result.get(0).getOffset());
-        assertEquals(5, result.get(0).getLength());
+        assertEquals(2*1024, result.get(0).getOffset());
+        assertEquals(5*1024, result.get(0).getLength());
         assertEquals("1", result.get(0).getOsdUUID().toString());
-        assertEquals(5, result.get(0).getData().capacity());
+        assertEquals(5*1024, result.get(0).getData().capacity());
 
         assertEquals(1, result.get(1).getObjNo());
         assertEquals(0, result.get(1).getOffset());
-        assertEquals(7, result.get(1).getLength());
+        assertEquals(7*1024, result.get(1).getLength());
         assertEquals("2", result.get(1).getOsdUUID().toString());
-        assertEquals(7, result.get(1).getData().capacity());
-        assertEquals(7, result.get(1).getData().remaining());
+        assertEquals(7*1024, result.get(1).getData().capacity());
+        assertEquals(7*1024, result.get(1).getData().remaining());
 
         assertEquals(2, result.get(2).getObjNo());
         assertEquals(0, result.get(2).getOffset());
-        assertEquals(2, result.get(2).getLength());
+        assertEquals(2*1024, result.get(2).getLength());
         assertEquals("3", result.get(2).getOsdUUID().toString());
-        assertEquals(2, result.get(2).getData().capacity());
+        assertEquals(2*1024, result.get(2).getData().capacity());
         
 
     }

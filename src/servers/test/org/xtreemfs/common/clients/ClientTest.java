@@ -52,6 +52,8 @@ public class ClientTest {
 
     private static final String  VOLUME_NAME = "testvol";
 
+    private UserCredentials uc;
+
     public ClientTest() {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
     }
@@ -68,7 +70,7 @@ public class ClientTest {
 
         List<String> groupIDs = new ArrayList(1);
         groupIDs.add("test");
-        UserCredentials uc = MRCClient.getCredentials("test", groupIDs);
+        uc = MRCClient.getCredentials("test", groupIDs);
 
         RPCResponse r = testEnv.getMrcClient().mkvol(testEnv.getMRCAddress(), uc, VOLUME_NAME,
             new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1),
@@ -88,14 +90,14 @@ public class ClientTest {
         final Client c = new Client(new InetSocketAddress[]{testEnv.getDirClient().getDefaultServerAddress()}, 15000, 300000, null);
         c.start();
 
-        Volume v = c.getVolume(VOLUME_NAME);
+        Volume v = c.getVolume(VOLUME_NAME,uc);
 
         long fspace = v.getFreeSpace();
         long uspace = v.getUsedSpace();
         System.out.println("free/used: "+fspace+"/"+uspace);
 
         File dir = v.getFile("dir");
-        dir.mkdir();
+        dir.mkdir(0777);
 
         String[] entries = v.list("/");
         assertEquals(1,entries.length);
@@ -136,11 +138,11 @@ public class ClientTest {
         final Client c = new Client(new InetSocketAddress[]{testEnv.getDirClient().getDefaultServerAddress()}, 15000, 300000, null);
         c.start();
 
-        Volume v = c.getVolume(VOLUME_NAME);
+        Volume v = c.getVolume(VOLUME_NAME,uc);
 
         File f = v.getFile("/test");
 
-        RandomAccessFile ra = f.open("rw");
+        RandomAccessFile ra = f.open("rw",0555);
         ra.seek(2);
 
         byte[] data = new byte[2048];

@@ -24,7 +24,9 @@
 
 package org.xtreemfs.common.clients;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.MRCInterface.MRCException;
@@ -88,12 +90,8 @@ public class File {
     public boolean exists() throws IOException {
         try {
             Stat stat = volume.stat(path);
-        } catch (IOException ex) {
-            if (ex.getCause() != null) {
-                MRCException mrcex = (MRCException) ex.getCause();
-                if (mrcex.getError_code() == ErrNo.ENOENT)
-                    return false;
-            }
+        } catch (FileNotFoundException ex) {
+            return false;
         }
         return true;
     }
@@ -111,8 +109,8 @@ public class File {
             return 0L;
     }
 
-    public void mkdir() throws IOException {
-        volume.mkdir(path);
+    public void mkdir(int permissions) throws IOException {
+        volume.mkdir(path, permissions);
     }
 
     public void createFile() throws IOException {
@@ -139,22 +137,25 @@ public class File {
         volume.setxattr(path, name, value);
     }
 
-    public RandomAccessFile open(String openMode) throws IOException {
+    public RandomAccessFile open(String openMode, int permissions) throws IOException {
         int flags = 0;
-        int mode = 0;
         if (openMode.equals("r")) {
-            mode = Constants.SYSTEM_V_FCNTL_H_O_RDONLY;
+            flags |= Constants.SYSTEM_V_FCNTL_H_O_RDONLY;
         } else if (openMode.equals("rw")) {
-            mode = Constants.SYSTEM_V_FCNTL_H_O_RDWR;
-            flags = Constants.SYSTEM_V_FCNTL_H_O_CREAT;
+            flags |= Constants.SYSTEM_V_FCNTL_H_O_RDWR;
+            flags |= Constants.SYSTEM_V_FCNTL_H_O_CREAT;
         }
         if (openMode.contains("t")) {
-            mode = Constants.SYSTEM_V_FCNTL_H_O_TRUNC;
+            flags |= Constants.SYSTEM_V_FCNTL_H_O_TRUNC;
         }
         if (openMode.contains("d") || openMode.contains("s")) {
             flags |= Constants.SYSTEM_V_FCNTL_H_O_SYNC;
         }
-        return volume.openFile(this, flags, mode);
+        return volume.openFile(this, flags, permissions);
+    }
+
+    public FileReplication getFileReplication() {
+        return new FileReplication(this, volume);
     }
 
 }

@@ -25,6 +25,7 @@
 
 package org.xtreemfs.common.clients;
 
+import java.io.FileNotFoundException;
 import org.xtreemfs.common.clients.internal.OpenFileList;
 import java.io.IOException;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -57,7 +58,7 @@ public class Volume {
 
     private final MRCClient    mrcClient;
 
-    private final UUIDResolver uuidResolver;
+    final UUIDResolver uuidResolver;
 
     private final String       volumeName;
 
@@ -300,10 +301,10 @@ public class Volume {
         }
     }
 
-    void mkdir(String path) throws IOException {
+    void mkdir(String path, int permissions) throws IOException {
         RPCResponse response = null;
         try {
-            response = mrcClient.mkdir(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path), 0700);
+            response = mrcClient.mkdir(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path), permissions);
             response.get();
         } catch (MRCException ex) {
            throw wrapException(ex);
@@ -439,10 +440,14 @@ public class Volume {
             response = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+parent.getPath()),flags,mode,0,new VivaldiCoordinates());
             FileCredentials cred = response.get();
             ofl.openFile(cred.getXcap());
-            boolean rdOnly = ( (mode == Constants.SYSTEM_V_FCNTL_H_O_RDONLY) ||
+
+            boolean syncMd = (flags & Constants.SYSTEM_V_FCNTL_H_O_SYNC) > 0;
+            boolean rdOnly = ( (flags == Constants.SYSTEM_V_FCNTL_H_O_RDONLY) ||
                  (cred.getXlocs().getReplica_update_policy().equals(Constants.REPL_UPDATE_PC_RONLY)) );
-            return new RandomAccessFile(parent, this, osdClient, cred, rdOnly);
+            return new RandomAccessFile(parent, this, osdClient, cred, rdOnly,syncMd);
         } catch (MRCException ex) {
+            if (ex.getError_code() == ErrNo.ENOENT)
+                throw new FileNotFoundException();
            throw wrapException(ex);
         } catch (ONCRPCException ex) {
             throw wrapException(ex);
@@ -455,6 +460,8 @@ public class Volume {
     }
 
     static IOException wrapException(MRCException ex) {
+        if (ex.getError_code() == ErrNo.ENOENT)
+            return new FileNotFoundException();
         return new IOException(ex.getError_message(),ex);
     }
 

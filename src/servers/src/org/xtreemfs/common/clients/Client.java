@@ -65,7 +65,7 @@ public class Client {
         uuidRes = UUIDResolver.startNonSingelton(dirClient, 3600, 1000);
     }
 
-    public Volume getVolume(String volumeName) throws IOException {
+    public Volume getVolume(String volumeName, UserCredentials credentials) throws IOException {
         RPCResponse<ServiceSet> r = null;
         try {
             r = dirClient.xtreemfs_service_get_by_name(null, volumeName);
@@ -77,9 +77,12 @@ public class Client {
             final String mrcUUIDstr = vol.getData().get("mrc");
             final ServiceUUID mrc = new ServiceUUID(mrcUUIDstr, uuidRes);
 
-            StringSet grps = new StringSet();
-            grps.add("test");
-            UserCredentials uc = new UserCredentials("test", grps, "");
+            UserCredentials uc = credentials;
+            if (uc == null) {
+                StringSet grps = new StringSet();
+                grps.add("test");
+                uc = new UserCredentials("test", grps, "");
+            }
 
             Logging.logMessage(Logging.LEVEL_DEBUG, this,"volume %s on MRC %s/%s",volumeName,mrcUUIDstr,mrc.getAddress());
 

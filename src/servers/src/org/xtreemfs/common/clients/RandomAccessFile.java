@@ -19,16 +19,19 @@ You should have received a copy of the GNU General Public License
 along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * AUTHORS: Björn Kolbeck (ZIB), Christian Lorenz (ZIB)
+ * AUTHORS: Björn Kolbeck (ZIB)
  */
 package org.xtreemfs.common.clients;
 
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.internal.ObjectMapper;
 import org.xtreemfs.common.clients.internal.ObjectMapper.ObjectRequest;
+import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
@@ -48,6 +51,7 @@ public class RandomAccessFile {
     private final OSDClient osdClient;
     private final Volume parentVolume;
     private final boolean readOnly;
+    private final boolean syncMetadata;
     private long position;
     private FileCredentials credentials;
     private Replica currentReplica;
@@ -57,12 +61,13 @@ public class RandomAccessFile {
     private ObjectMapper oMapper;
     private boolean closed;
 
-    RandomAccessFile(File parent, Volume parentVolume, OSDClient client, FileCredentials fc, boolean readOnly) {
+    RandomAccessFile(File parent, Volume parentVolume, OSDClient client, FileCredentials fc, boolean readOnly, boolean syncMetadata) {
         this.parent = parent;
         this.parentVolume = parentVolume;
         this.osdClient = client;
         this.credentials = fc;
         this.readOnly = readOnly;
+        this.syncMetadata = syncMetadata;
         position = 0;
         replCnt = 0;
         closed = false;
@@ -81,16 +86,22 @@ public class RandomAccessFile {
 
     public int read(byte[] data, int offset, int length) throws IOException {
         ReusableBuffer buf = ReusableBuffer.wrap(data, offset, length);
-        read(buf);
-        return buf.position();
+        return read(buf);
     }
 
-    public void read(ReusableBuffer data) throws IOException {
+    public int read(ReusableBuffer data) throws IOException {
+
+        if (closed) {
+            throw new IllegalStateException("file was closed");
+        }
 
         List<ObjectRequest> ors = oMapper.readRequest(data.remaining(), position, currentReplica);
 
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,"read from file %s: %d bytes from offset %d (= %d obj rqs)",fileId,data.remaining(),position,ors.size());
+
         if (ors.size() == 0) {
-            return;
+            return 0;
         }
 
         final AtomicInteger responseCnt = new AtomicInteger(ors.size());
@@ -114,7 +125,8 @@ public class RandomAccessFile {
 
             for (int i = 0; i < ors.size(); i++) {
                 ObjectRequest or = ors.get(i);
-                RPCResponse<ObjectData> r = osdClient.read(or.getOsdUUID().getAddress(),
+                ServiceUUID osd = new ServiceUUID(or.getOsdUUID(), parentVolume.uuidResolver);
+                RPCResponse<ObjectData> r = osdClient.read(osd.getAddress(),
                         fileId, credentials, or.getObjNo(), -1, or.getOffset(), or.getLength());
                 resps[i] = r;
                 r.registerListener(rl);
@@ -134,37 +146,74 @@ public class RandomAccessFile {
                 ods[i] = (ObjectData) resps[i].get();
             }
 
+            int numBytesRead = 0;
+
             for (ObjectData od : ods) {
-                if (od.getData() != null)
+                if (od.getData() != null) {
+                    numBytesRead += od.getData().remaining();
                     data.put(od.getData());
+                    BufferPool.free(od.getData());
+                }
                 if (od.getZero_padding() > 0) {
+                    numBytesRead += od.getZero_padding();
                     for (int i = 0; i < od.getZero_padding(); i++)
                         data.put((byte)0);
                 }
             }
 
+
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"read returned %d bytes",numBytesRead);
+
+            position += numBytesRead;
+
+            return numBytesRead;
+
         } catch (InterruptedException ex) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
             throw new IOException("operation aborted", ex);
         } catch (ONCRPCException ex) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
             throw new IOException("communication failure", ex);
+        } catch (Throwable th) {
+            th.printStackTrace();
+            throw new IOException("nasty!");
         } finally {
             for (RPCResponse r : resps)
                 r.freeBuffers();
         }
     }
 
+    /**
+     * Writes bytesToWrite bytes from the writeFromBuffer byte array starting at
+     * offset to this file.
+     *
+     * @param writeFromBuffer
+     * @param offset
+     * @param bytesToWrite
+     * @return the number of bytes written
+     * @throws Exception
+     */
     public int write(byte[] data, int offset, int length) throws IOException {
         ReusableBuffer buf = ReusableBuffer.wrap(data, offset, length);
-        write(buf);
-        return buf.capacity();
+        return write(buf);
     }
 
-    public void write(ReusableBuffer data) throws IOException {
+    public int write(ReusableBuffer data) throws IOException {
+
+        if (readOnly) {
+            throw new IOException("File is marked as read-only.");
+        }
+        if (closed) {
+            throw new IllegalStateException("file was closed");
+        }
 
         List<ObjectRequest> ors = oMapper.writeRequest(data, position, currentReplica);
 
         if (ors.size() == 0) {
-            return;
+            return 0;
         }
 
         final AtomicInteger responseCnt = new AtomicInteger(ors.size());
@@ -186,9 +235,12 @@ public class RandomAccessFile {
                 }
             };
 
+            int bytesWritten = 0;
             for (int i = 0; i < ors.size(); i++) {
                 ObjectRequest or = ors.get(i);
-                RPCResponse<OSDWriteResponse> r = osdClient.write(or.getOsdUUID().getAddress(),
+                bytesWritten += or.getData().capacity();
+                ServiceUUID osd = new ServiceUUID(or.getOsdUUID(), parentVolume.uuidResolver);
+                RPCResponse<OSDWriteResponse> r = osdClient.write(osd.getAddress(),
                         fileId, credentials, or.getObjNo(), -1, or.getOffset(), 0l,
                         new ObjectData(0, false, 0, or.getData()));
                 resps[i] = r;
@@ -209,8 +261,14 @@ public class RandomAccessFile {
                 owr = (OSDWriteResponse) resps[i].get();
             }
             parentVolume.storeFileSizeUpdate(fileId, owr);
+            if (syncMetadata) {
+                parentVolume.pushFileSizeUpdate(fileId);
+            }
             data.flip();
 
+            position += bytesWritten;
+
+            return bytesWritten;
 
         } catch (InterruptedException ex) {
             throw new IOException("operation aborted", ex);
@@ -221,158 +279,6 @@ public class RandomAccessFile {
                 r.freeBuffers();
         }
     }
-
-    /*public int read(byte[] resultBuffer, int offset, int bytesToRead) throws Exception {
-        if (closed) {
-            throw new IllegalStateException("file was closed");
-        }
-
-        int tmp = byteMapper.read(resultBuffer, offset, bytesToRead, position);
-        position += tmp;
-        return tmp;
-    }
-
-    /**
-     * Writes bytesToWrite bytes from the writeFromBuffer byte array starting at
-     * offset to this file.
-     *
-     * @param writeFromBuffer
-     * @param offset
-     * @param bytesToWrite
-     * @return the number of bytes written
-     * @throws Exception
-     */
-    /*public int write(byte[] writeFromBuffer, int offset, int bytesToWrite) throws Exception {
-
-        if (closed) {
-            throw new IllegalStateException("file was closed");
-        }
-
-        int tmp = byteMapper.write(writeFromBuffer, offset, bytesToWrite, position);
-        position += bytesToWrite;
-        return tmp;
-    }
-
-    @Override
-    public ReusableBuffer readObject(long objectNo, int offset, int length) throws IOException, InterruptedException, ONCRPCException {
-        RPCResponse<ObjectData> response = null;
-
-        int size = 0;
-        ObjectData data = null;
-        ReusableBuffer buffer = null;
-
-        int numTries = numReplicas;
-
-        while (numTries-- > 0) { // will be aborted, if object could be read
-            // get OSD
-            ServiceUUID osd = currentReplica.getOSDForObject(objectNo);
-            try {
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.tool, this,
-                            "%s:%d - read object from OSD %s", fileId, objectNo, osd);
-                }
-
-                response = osdClient.read(osd.getAddress(), fileId, credentials, objectNo, 0, offset,
-                        length);
-                data = response.get();
-
-                if (data.getInvalid_checksum_on_osd()) {
-                    // try next replica
-                    selectReplica();
-                    continue;
-                }
-
-                // fill up with padding zeros
-                if (data.getZero_padding() == 0) {
-                    buffer = data.getData();
-                } else {
-                    final int dataSize = data.getData().capacity();
-                    if (data.getData().enlarge(dataSize + data.getZero_padding())) {
-                        data.getData().position(dataSize);
-                        while (data.getData().hasRemaining()) {
-                            data.getData().put((byte) 0);
-                        }
-                        buffer = data.getData();
-                        buffer.position(0);
-                    } else {
-                        buffer = BufferPool.allocate(dataSize + data.getZero_padding());
-                        buffer.put(data.getData());
-                        while (buffer.hasRemaining()) {
-                            buffer.put((byte) 0);
-                        }
-                        buffer.position(0);
-                        BufferPool.free(data.getData());
-                    }
-                }
-
-                break;
-
-            } catch (OSDException ex) {
-                if (buffer != null) {
-                    BufferPool.free(buffer);
-                }
-                // all replicas had been tried or replication has been failed
-                if (ex.getError_code() != ErrorCodes.IO_ERROR) {
-                    selectReplica();
-                    continue;
-                }
-                throw new IOException("cannot read object", ex);
-            } catch (ONCRPCException ex) {
-                if (buffer != null) {
-                    BufferPool.free(buffer);
-                }
-                // all replicas had been tried or replication has been failed
-                throw new IOException("cannot read object: " + ex.getMessage(), ex);
-            } catch (IOException ex) {
-                if (buffer != null) {
-                    BufferPool.free(buffer);
-                }
-                // all replicas had been tried
-                selectReplica();
-                continue;
-            } catch (InterruptedException ex) {
-                // ignore
-            } finally {
-                if (response != null) {
-                    response.freeBuffers();
-                }
-            }
-        }
-        if (buffer == null) {
-            throw new IOException("read object failed, cannot contact any replica for file " + fileId);
-        }
-        return buffer;
-    }
-
-    @Override
-    public void writeObject(long firstByteInObject, long objectNo, ReusableBuffer data) throws IOException {
-
-
-        if (readOnly) {
-            throw new IOException("File is marked as read-only.");
-        }
-
-        RPCResponse<OSDWriteResponse> response = null;
-        try {
-            // uses always first replica
-            ServiceUUID osd = currentReplica.getOSDForObject(objectNo);
-            ObjectData odata = new ObjectData(0, false, 0, data);
-            response = osdClient.write(osd.getAddress(), fileId, credentials, objectNo, 0,
-                    (int) firstByteInObject, 0, odata);
-            OSDWriteResponse owr = response.get();
-            parentVolume.storeFileSizeUpdate(fileId, owr);
-        } catch (ONCRPCException ex) {
-            throw new IOException("cannot write object: " + ex.getMessage(), ex);
-        } catch (InterruptedException ex) {
-            throw new IOException("cannot write object", ex);
-        } finally {
-            if (response != null) {
-                response.freeBuffers();
-            }
-        }
-
-    }
-     * */
 
     public void seek(long position) {
         this.position = position;

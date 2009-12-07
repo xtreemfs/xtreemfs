@@ -27,7 +27,6 @@ package org.xtreemfs.common.clients.internal;
 import java.util.LinkedList;
 import java.util.List;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.interfaces.StripingPolicy;
 
@@ -41,7 +40,7 @@ public class RAID0ObjectMapper extends ObjectMapper {
 
     protected RAID0ObjectMapper(StripingPolicy fileSP) {
         super(fileSP);
-        stripeSize = fileSP.getStripe_size();
+        stripeSize = fileSP.getStripe_size()*1024;
     }
 
     @Override
@@ -95,8 +94,8 @@ public class RAID0ObjectMapper extends ObjectMapper {
         return reqs;
     }
 
-    protected ServiceUUID getOSDForObject(Replica replica, long objNo) {
-        return replica.getOSDForObject(objNo);
+    protected String getOSDForObject(Replica replica, long objNo) {
+        return replica.getOSDForObject(objNo).toString();
     }
 
 
