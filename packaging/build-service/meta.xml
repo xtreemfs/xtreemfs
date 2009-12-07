@@ -1,8 +1,7 @@
 <package project="home:xtreemfs" name="xtreemfs">
 	<title>XtreemFS _VERSION_</title>
-	<description>XtreemFS is a parallel, object-based file system, which is designed for deployment in federated IT infrastructures. It specifically addresses the challenges posed by high latencies and complex failure cases of a cross-site cross-organization environment.
-
-		The first release of XtreemFS provides high-performance file access with object-based striping of file data across storage servers. It comes with access control and authentication that seamlessly integrates with XtreemOS' Grid security infrastructure and implements Unix access control and POSIX ACLs. Pluggable access policies make it flexible enough to adapt it to other X.509-based security infrastructures.
-		
-		NOTE: REQUIRES SUN JAVA 6 RUNTIME ENVIRONMENT!</description>
+	<description>
+	XtreemFS is a parallel, object-based file system, which is designed for deployment in federated IT infrastructures. It specifically addresses the challenges posed by high latencies and complex failure cases of a cross-site cross-organization environment.
+	The first release of XtreemFS provides high-performance file access with object-based striping of file data across storage servers. It comes with access control and authentication that seamlessly integrates with XtreemOS' Grid security infrastructure and implements Unix access control and POSIX ACLs. Pluggable access policies make it flexible enough to adapt it to other X.509-based security infrastructures.
+	</description>
 </package>

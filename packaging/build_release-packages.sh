@@ -23,6 +23,8 @@ XOS_ADDONS_BLACK_LIST=(
 # black list for files/dirs which should NEVER be copied
 SOURCE_BLACK_LIST=(
 	"doc"
+	"bin/xtfs_snap"
+	"etc/xos/xtreemfs/*test"
 )
 
 # --------------------------
@@ -123,7 +125,7 @@ function delete_source_black_list() {
 
 	for (( i = 0 ; i < ${#SOURCE_BLACK_LIST[@]} ; i++ ))
 	do
-		rm -Rf "$SRC_PATH/${SOURCE_BLACK_LIST[i]}"
+		rm -Rf $SRC_PATH/${SOURCE_BLACK_LIST[i]}
 	done
 }
 
