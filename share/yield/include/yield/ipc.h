@@ -1209,6 +1209,7 @@ namespace YIELD
       auto_Pipe get_stdout() const { return child_stdout; }
       auto_Pipe get_stderr() const { return child_stderr; }
 
+      static unsigned long getpid(); // Get current pid
       bool kill(); // SIGKILL
       bool poll( int* out_return_code = 0 ); // Calls waitpid() but WNOHANG
       bool terminate(); // SIGTERM

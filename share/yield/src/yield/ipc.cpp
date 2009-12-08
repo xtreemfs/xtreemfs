@@ -1,4 +1,4 @@
-// Revision: 1919
+// Revision: 1920
 
 #include "yield/ipc.h"
 
@@ -2561,6 +2561,14 @@ YIELD::ipc::Process::~Process()
   CloseHandle( hChildThread );
 #endif
 }
+unsigned long YIELD::ipc::Process::getpid()
+{
+#ifdef _WIN32
+  return GetCurrentProcessId();
+#else
+  return getpid();
+#endif
+}
 bool YIELD::ipc::Process::kill()
 {
 #ifdef _WIN32
@@ -4369,7 +4377,7 @@ void YIELD::ipc::Socket::AIOQueue::submit( yidl::runtime::auto_Object<AIOControl
       nbio_worker_threads.push_back( nbio_worker_thread );
     }
   }
-  nbio_worker_threads[YIELD::platform::Thread::getCurrentThreadId() % nbio_worker_threads.size()]->submit( aio_control_block );
+  nbio_worker_threads[YIELD::platform::Thread::gettid() % nbio_worker_threads.size()]->submit( aio_control_block );
 }
 #ifdef _WIN32
 #pragma warning( pop )

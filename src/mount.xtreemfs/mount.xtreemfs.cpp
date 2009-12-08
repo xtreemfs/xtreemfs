@@ -183,17 +183,33 @@ namespace mount_xtreemfs
       else // !foreground
       {
         std::vector<char*> child_argvv;
+
         for ( int arg_i = 1; arg_i < argc; arg_i++ )
           child_argvv.push_back( argv[arg_i] );
+
         child_argvv.push_back( "-f" );
+
         child_argvv.push_back( "--log-file-path" );
-        if ( !get_log_file_path().empty() )
-          child_argvv.push_back( const_cast<char*>( get_log_file_path().c_str() ) );
-        else          
-          child_argvv.push_back( "mount.xtreemfs.log" );
+        std::string log_file_path( get_log_file_path() );
+        if ( log_file_path.empty() )
+        {
+          std::ostringstream log_file_path_oss;
+          log_file_path_oss << "mount.xtreemfs-";
+          log_file_path_oss << YIELD::ipc::Process::getpid();
+          log_file_path_oss << ".log";
+          log_file_path = log_file_path_oss.str();
+        }
+        child_argvv.push_back( const_cast<char*>( log_file_path.c_str() ) );
+
         child_argvv.push_back( NULL );
 
-        YIELD::ipc::auto_Process child_process = YIELD::ipc::Process::create( argv[0], const_cast<const char**>( &child_argvv[0] ) );
+
+        YIELD::ipc::auto_Process child_process = 
+          YIELD::ipc::Process::create
+          ( 
+            argv[0], 
+            const_cast<const char**>( &child_argvv[0] ) 
+          );
 
         if ( child_process != NULL )
         { 
@@ -210,7 +226,7 @@ namespace mount_xtreemfs
               return 0; // Child started successfully
 #endif
             else
-             YIELD::platform::Thread::sleep( 100 * NS_IN_MS );
+             YIELD::platform::Thread::nanosleep( 100 * NS_IN_MS );
           }
 
           return 0; // Assume the child started successfully

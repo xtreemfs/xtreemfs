@@ -1,4 +1,4 @@
-// Revision: 1919
+// Revision: 1920
 
 #include "yield/concurrency.h"
 using namespace YIELD::concurrency;
@@ -23,7 +23,7 @@ public:
     while ( is_running )
     {
       event_queue->enqueue( stage_shutdown_event->incRef() );
-      Thread::sleep( 5 * NS_IN_MS );
+      nanosleep( 5 * NS_IN_MS );
     }
   }
   // Thread
@@ -395,7 +395,7 @@ public:
     {
       stage->send( stage_shutdown_event->incRef() );
       if ( is_running )
-        Thread::sleep( 50 * NS_IN_MS );
+        nanosleep( 50 * NS_IN_MS );
       else
         break;
     }
@@ -591,7 +591,7 @@ public:
 };
 ThreadLocalEventQueue::ThreadLocalEventQueue()
 {
-  tls_key = YIELD::platform::Thread::createTLSKey();
+  tls_key = YIELD::platform::Thread::key_create();
 }
 ThreadLocalEventQueue::~ThreadLocalEventQueue()
 {
@@ -608,7 +608,7 @@ Event* ThreadLocalEventQueue::dequeue()
 }
 bool ThreadLocalEventQueue::enqueue( Event& ev )
 {
-  EventStack* event_stack = static_cast<EventStack*>( YIELD::platform::Thread::getTLS( tls_key ) );
+  EventStack* event_stack = static_cast<EventStack*>( YIELD::platform::Thread::getspecific( tls_key ) );
   if ( event_stack != NULL )
   {
     event_stack->push( ev );
@@ -619,11 +619,11 @@ bool ThreadLocalEventQueue::enqueue( Event& ev )
 }
 ThreadLocalEventQueue::EventStack* ThreadLocalEventQueue::getEventStack()
 {
-  EventStack* event_stack = static_cast<EventStack*>( YIELD::platform::Thread::getTLS( tls_key ) );
+  EventStack* event_stack = static_cast<EventStack*>( YIELD::platform::Thread::getspecific( tls_key ) );
   if ( event_stack == NULL )
   {
     event_stack = new EventStack;
-    YIELD::platform::Thread::setTLS( tls_key, event_stack );
+    YIELD::platform::Thread::setspecific( tls_key, event_stack );
     event_stacks.push_back( event_stack );
   }
   return event_stack;

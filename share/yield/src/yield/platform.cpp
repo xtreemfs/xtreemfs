@@ -1,4 +1,4 @@
-// Revision: 1919
+// Revision: 1920
 
 #include "yield/platform.h"
 using namespace YIELD::platform;
@@ -1874,17 +1874,26 @@ Stat::operator WIN32_FIND_DATA() const
 #include <sys/pset.h>
 #endif
 #endif
-unsigned long Thread::createTLSKey()
+Thread::Thread()
+{
+  handle = 0;
+  id = 0;
+}
+Thread::~Thread()
 {
 #ifdef _WIN32
-  return TlsAlloc();
-#else
-  unsigned long key;
-  pthread_key_create( reinterpret_cast<pthread_key_t*>( &key ), NULL );
-  return key;
+  if ( handle ) CloseHandle( handle );
 #endif
 }
-unsigned long Thread::getCurrentThreadId()
+void* Thread::getspecific( unsigned long key )
+{
+#ifdef _WIN32
+    return TlsGetValue( key );
+#else
+    return pthread_getspecific( key );
+#endif
+}
+unsigned long Thread::gettid()
 {
 #if defined(_WIN32)
   return GetCurrentThreadId();
@@ -1896,12 +1905,23 @@ unsigned long Thread::getCurrentThreadId()
   return 0;
 #endif
 }
-void* Thread::getTLS( unsigned long key )
+unsigned long Thread::key_create()
 {
 #ifdef _WIN32
-    return TlsGetValue( key );
+  return TlsAlloc();
 #else
-    return pthread_getspecific( key );
+  unsigned long key;
+  pthread_key_create( reinterpret_cast<pthread_key_t*>( &key ), NULL );
+  return key;
+#endif
+}
+void Thread::nanosleep( uint64_t timeout_ns )
+{
+#ifdef _WIN32
+  Sleep( static_cast<DWORD>( timeout_ns / NS_IN_MS ) );
+#else
+  struct timespec timeout_ts = Time( timeout_ns );
+  nanosleep( &timeout_ts, NULL );
 #endif
 }
 #ifdef _WIN32
@@ -1918,7 +1938,7 @@ typedef struct tagTHREADNAME_INFO
 }
 THREADNAME_INFO;
 #endif
-void Thread::setThreadName( unsigned long id, const char* thread_name )
+void Thread::set_name( const char* thread_name )
 {
 #ifdef _WIN32
   THREADNAME_INFO info;
@@ -1928,50 +1948,16 @@ void Thread::setThreadName( unsigned long id, const char* thread_name )
   info.dwFlags = 0;
   __try
   {
-      RaiseException( 0x406D1388, 0, sizeof( info ) / sizeof( DWORD ), reinterpret_cast<const ULONG_PTR*>( &info ) );
+      RaiseException
+      (
+        0x406D1388,
+        0,
+        sizeof( info ) / sizeof( DWORD ),
+        reinterpret_cast<const ULONG_PTR*>( &info )
+      );
   }
   __except( EXCEPTION_CONTINUE_EXECUTION )
   {}
-#endif
-}
-void Thread::setTLS( unsigned long key, void* value )
-{
-#ifdef _WIN32
-    TlsSetValue( key, value );
-#else
-  pthread_setspecific( key, value );
-#endif
-}
-void Thread::sleep( uint64_t timeout_ns )
-{
-#ifdef _WIN32
-  Sleep( static_cast<DWORD>( timeout_ns / NS_IN_MS ) );
-#else
-  struct timespec timeout_ts = Time( timeout_ns );
-  nanosleep( &timeout_ts, NULL );
-#endif
-}
-void Thread::yield()
-{
-#if defined(_WIN32)
-  SwitchToThread();
-#elif defined(__MACH__)
-  pthread_yield_np();
-#elif defined(__sun)
-  sleep( 0 );
-#else
-  pthread_yield();
-#endif
-}
-Thread::Thread()
-{
-  handle = 0;
-  id = 0;
-}
-Thread::~Thread()
-{
-#ifdef _WIN32
-  if ( handle ) CloseHandle( handle );
 #endif
 }
 bool Thread::set_processor_affinity( unsigned short logical_processor_i )
@@ -2001,7 +1987,12 @@ bool Thread::set_processor_affinity( const ProcessorSet& logical_processor_set )
 #if defined(_WIN32)
     return SetThreadAffinityMask( handle, logical_processor_set.mask ) != 0;
 #elif defined(__linux__)
-    return sched_setaffinity( 0, sizeof( cpu_set_t ), static_cast<cpu_set_t*>( logical_processor_set.cpu_set ) ) == 0;
+    return sched_setaffinity
+     (
+       0,
+       sizeof( cpu_set_t ),
+       static_cast<cpu_set_t*>( logical_processor_set.cpu_set )
+      ) == 0;
 #elif defined(__sun)
     return pset_bind( logical_processor_set.psetid, P_LWPID, id, NULL ) == 0;
 #else
@@ -2010,6 +2001,14 @@ bool Thread::set_processor_affinity( const ProcessorSet& logical_processor_set )
   }
   else
     return false;
+}
+void Thread::setspecific( unsigned long key, void* value )
+{
+#ifdef _WIN32
+    TlsSetValue( key, value );
+#else
+  pthread_setspecific( key, value );
+#endif
 }
 void Thread::start()
 {
@@ -2038,6 +2037,18 @@ void* Thread::thread_stub( void* this_ )
 #endif
   static_cast<Thread*>( this_ )->run();
   return 0;
+}
+void Thread::yield()
+{
+#if defined(_WIN32)
+  SwitchToThread();
+#elif defined(__MACH__)
+  pthread_yield_np();
+#elif defined(__sun)
+  sleep( 0 );
+#else
+  pthread_yield();
+#endif
 }
 
 

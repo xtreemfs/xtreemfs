@@ -348,7 +348,7 @@ namespace xtfs_vivaldi
         get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << 
             "xtfs_vivaldi:sleeping during " << sleep_in_ms << " ms.";
         
-        YIELD::platform::Thread::sleep( sleep_in_ms * NS_IN_MS );
+        YIELD::platform::Thread::nanosleep( sleep_in_ms * NS_IN_MS );
         
         vivaldiIterations = (vivaldiIterations+1)%LONG_MAX;
 

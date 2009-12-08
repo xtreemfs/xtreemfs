@@ -1384,25 +1384,21 @@ namespace YIELD
     class Thread : public yidl::runtime::Object
     {
     public:
-      static unsigned long createTLSKey();
-      static unsigned long getCurrentThreadId();
-      static void* getTLS( unsigned long key );
-      static void setCurrentThreadName( const char* thread_name ) { setThreadName( getCurrentThreadId(), thread_name ); }
-      static void setTLS( unsigned long key, void* value );
-      static void sleep( uint64_t timeout_ns );
-      static void yield();
-
-
       Thread();
       virtual ~Thread();
 
       unsigned long get_id() const { return id; }
-      void set_name( const char* name ) { setThreadName( get_id(), name ); }
+      static void* getspecific( unsigned long key ); // Get TLS
+      static unsigned long gettid(); // Get current thread ID
+      static unsigned long key_create(); // Create TLS key
+      static void nanosleep( uint64_t timeout_ns );
+      void set_name( const char* name );
       bool set_processor_affinity( unsigned short logical_processor_i );
       bool set_processor_affinity( const ProcessorSet& logical_processor_set );
-      virtual void start();
-
+      static void setspecific( unsigned long key, void* value ); // Set TLS
       virtual void run() = 0;
+      virtual void start();
+      static void yield();
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( Thread, 14 );
