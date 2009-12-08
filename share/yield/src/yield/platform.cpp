@@ -1,5 +1,3 @@
-// Revision: 1920
-
 #include "yield/platform.h"
 using namespace YIELD::platform;
 
@@ -1921,7 +1919,7 @@ void Thread::nanosleep( uint64_t timeout_ns )
   Sleep( static_cast<DWORD>( timeout_ns / NS_IN_MS ) );
 #else
   struct timespec timeout_ts = Time( timeout_ns );
-  nanosleep( &timeout_ts, NULL );
+  ::nanosleep( &timeout_ts, NULL );
 #endif
 }
 #ifdef _WIN32

@@ -1,5 +1,3 @@
-// Revision: 1920
-
 #include "yield/ipc.h"
 
 
@@ -2566,7 +2564,7 @@ unsigned long YIELD::ipc::Process::getpid()
 #ifdef _WIN32
   return GetCurrentProcessId();
 #else
-  return getpid();
+  return ::getpid();
 #endif
 }
 bool YIELD::ipc::Process::kill()
