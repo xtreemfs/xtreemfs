@@ -69,3 +69,10 @@
 		coordinates (see User Guide)
 	* fixed bugs #36, #54, #57, #58, #59, #60, #64, #66, #77, #78, #80, #81,
 		#82, #83 #96, #97
+
+07-DEC-2009
+	* java client for XtreemFS (interface is still unstable!) in package org.xtreemfs.common.clients
+	* experimental hadoop FileSystem driver for XtreemFS (in trunk/contrib/hadoop)
+
+08-DEC-2009
+	* added web-based admin console (in trunk/contrib/console)
