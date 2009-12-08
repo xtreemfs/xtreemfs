@@ -12,7 +12,7 @@
 
 \title{XtreemFS Installation and User Guide}
 
-\date{Version 1.1}
+\date{Version 1.2}
 
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
@@ -79,7 +79,7 @@ This is the very short version to help you set up a local installation of Xtreem
 	\begin{enumerate}
 		\item Download the RPMs or DEBs for your system from the XtreemFS website (\href{http://www.xtreemfs.org}{http://www.xtreemfs.org})
 		\item open a root console (\texttt{su} or \texttt{sudo})
-		\item install with \texttt{rpm -Uhv xtreemfs*-1.1.x.rpm}
+		\item install with \texttt{rpm -Uhv xtreemfs*-1.2.x.rpm}
 	\end{enumerate}
 \item Start the Directory Service:\\
 	\texttt{/etc/init.d/xtreemfs-dir start}
@@ -231,21 +231,42 @@ When building XtreemFS directly from the source, you need a Sun Java JDK 1.6.0 o
 
 On RPM-based distributions (RedHat, Fedora, SuSE, Mandriva, XtreemOS) you can install the package with
 
-
 \begin{verbatim}
-$> rpm -i xtreemfs-server-1.1.x.rpm xtreemfs-backend-1.1.x.rpm
+$> rpm -i xtreemfs-server-1.2.x.rpm xtreemfs-backend-1.2.x.rpm
 \end{verbatim}
 
 
 For Debian-based distributions, please use the \texttt{.deb} package provided and install it with
 
-
 \begin{verbatim}
-$> dpkg -i xtreemfs-server-1.1.x.deb xtreemfs-backend-1.1.x.deb
+$> dpkg -i xtreemfs-server-1.2.x.deb xtreemfs-backend-1.2.x.deb
 \end{verbatim}
 
 
-Both packages will also install \texttt{init.d} scripts for an automatic start-up of the services. Use \texttt{insserv xtreemfs-dir}, \texttt{insserv xtreemfs-mrc} and \texttt{insserv xtreemfs-osd}, respectively, to automatically start the services during boot.
+To install the server components, the following package is required: \texttt{jre} $\geq$ 1.6.0 for RPM-based releases, \texttt{java6-runtime} for Debian-based releases. If you already have a different distribution of \texttt{Java6} on your system, you can alternatively install the XtreemFS server packages as follows:
+
+\begin{verbatim}
+$> rpm -i --nodeps xtreemfs-server-1.2.x.rpm \
+   xtreemfs-backend-1.2.x.rpm
+\end{verbatim}
+
+on RPM-based distributions,
+
+\begin{verbatim}
+$> dpkg -i --ignore-depends java6-runtime \
+   xtreemfs-server-1.2.x.deb xtreemfs-backend-1.2.x.deb
+\end{verbatim}
+
+on Debian-based distributions.
+
+To ensure that your local \texttt{Java6} installation is used, is necessary to set the \texttt{JAVA\_HOME} environment variable to your \texttt{Java6} installation directory, e.g.\
+
+\begin{verbatim}
+$> export JAVA_HOME=/usr/java6
+\end{verbatim}
+
+
+Both RPM and Debian-based packages will install \texttt{init.d} scripts for an automatic start-up of the services. Use \texttt{insserv xtreemfs-dir}, \texttt{insserv xtreemfs-mrc} and \texttt{insserv xtreemfs-osd}, respectively, to automatically start the services during boot.
 
 \subsection{Installing from Sources}
 
@@ -1140,14 +1161,14 @@ To build the Linux XtreemFS Client from the source distribution, you also need t
 On RPM-based distributions (RedHat, Fedora, SuSE, Mandriva, XtreemOS) you can install the package with
 
 \begin{verbatim}
-$> rpm -i xtreemfs-client-1.1.x.rpm
+$> rpm -i xtreemfs-client-1.2.x.rpm
 \end{verbatim}
 
 
 For Debian-based distributions, please use the \texttt{.deb} package provided and install it with
 
 \begin{verbatim}
-$> dpkg -i xtreemfs-client-1.1.x.deb
+$> dpkg -i xtreemfs-client-1.2.x.deb
 \end{verbatim}
 
 
@@ -1357,17 +1378,37 @@ When building XtreemFS directly from the source, you need a Sun Java JDK 1.6.0 o
 
 On RPM-based distributions (RedHat, Fedora, SuSE, Mandriva, XtreemOS) you can install the package with
 
-
 \begin{verbatim}
-$> rpm -i xtreemfs-tools-1.1.x.rpm xtreemfs-backend-1.1.x.rpm
+$> rpm -i xtreemfs-tools-1.2.x.rpm xtreemfs-backend-1.2.x.rpm
 \end{verbatim}
 
 
 For Debian-based distributions, please use the \texttt{.deb} package provided and install it with
 
+\begin{verbatim}
+$> dpkg -i xtreemfs-tools-1.2.x.deb xtreemfs-backend-1.2.x.deb
+\end{verbatim}
+
+To install the tools, the following package is required: \texttt{jre} $\geq$ 1.6.0 for RPM-based releases, \texttt{java6-runtime} for Debian-based releases. If you already have a different distribution of \texttt{Java6} on your system, you can alternatively install the XtreemFS tools packages as follows:
 
 \begin{verbatim}
-$> dpkg -i xtreemfs-tools-1.1.x.deb xtreemfs-backend-1.1.x.deb
+$> rpm -i --nodeps xtreemfs-tools-1.2.x.rpm \
+   xtreemfs-backend-1.2.x.rpm
+\end{verbatim}
+
+on RPM-based distributions,
+
+\begin{verbatim}
+$> dpkg -i --ignore-depends java6-runtime \
+   xtreemfs-tools-1.2.x.deb xtreemfs-backend-1.2.x.deb
+\end{verbatim}
+
+on Debian-based distributions.
+
+To ensure that your local \texttt{Java6} installation is used, is necessary to set the \texttt{JAVA\_HOME} environment variable to your \texttt{Java6} installation directory, e.g.\
+
+\begin{verbatim}
+$> export JAVA_HOME=/usr/java6
 \end{verbatim}
 
 
@@ -1692,10 +1733,11 @@ A list of all policy attributes that have been set can be shown as follows:
 Client machines that want to use vivaldi network coordinates for replica and OSD selection must calculate their own coordinates relative to the OSDs. This is done by the \texttt{xtfs\_vivaldi} utility which must be started on each client machine. Ideally, this process is started during boot with the \texttt{xtreemfs-vivaldi} init.d scripts provided. The utility must be started with the directory service address and the path to a file in which the coordinates are stored.
 
 \begin{verbatim}
- $> xtfs_vivaldi remote.dir.machine /var/lib/xtreemfs/vivaldi_coordinates
+ $> xtfs_vivaldi remote.dir.machine \
+    /var/lib/xtreemfs/vivaldi_coordinates
 \end{verbatim}
 
-If started with the init.d script, the utility will get the DIR address from \texttt{/etc/xos/xtreemfs/default\_dir} and will store the coordinates in \texttt{/var/lib/xtreemfs/vivaldi\_coordinates}.
+If started with the init.d script, the utility will get the DIR address from\\ \texttt{/etc/xos/xtreemfs/default\_dir} and will store the coordinates in\\ \texttt{/var/lib/xtreemfs/vivaldi\_coordinates}.
 
 The coordinate file must be passed as an argument when mounting a volume:
 

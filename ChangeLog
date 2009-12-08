@@ -41,6 +41,9 @@
 	* Linux binaries for mounting, creating, removing and listing volumes have
 		been renamed, in order to be more consistent with Linux conventions
 
+04-NOV-2009
+	* If an admin password is set, server status pages are now password-protected.
+
 05-NOV-2009
 	* added GRID SSL mode
 	  When enabled (requires SSL to be enable too), XtreemFS will fall back to

@@ -1,6 +1,6 @@
 # norootforbuild
 
-%if 0%{?centos_version} == 501 || 0%{?mandriva_version} == 2007 || 0%{?mdkversion} == 200700 || 0%{?rhel_version} == 501 || 0%{?sles_version} == 10 
+%if 0%{?centos_version} == 501 || 0%{?mandriva_version} == 2007 || 0%{?mdkversion} == 200700 || 0%{?rhel_version} == 501 || 0%{?sles_version} == 10 || 0%{?fedora_version} == 12 
 %define client_subpackage 0
 %else
 %define client_subpackage 1
@@ -107,6 +107,10 @@ export ANT_OPTS=-D"file.encoding=UTF-8"
 export CFLAGS="$RPM_OPT_FLAGS -fno-strict-aliasing"
 export CXXFLAGS=$CFLAGS
 
+%if 0%{?mandriva_version} == 2008
+export CCFLAGS="$CCFLAGS -fPIC"
+%endif
+
 %if %{client_subpackage}
 make %{?jobs:-j%jobs}
 %else
@@ -189,7 +193,7 @@ rm -rf $RPM_BUILD_ROOT
 %files tools
 %defattr(-,root,root)
 %if %{client_subpackage}
-# these files only appear if the client package is build
+# these files only appear if the client package is built
 %exclude /usr/bin/xtfs_*mount
 %exclude /usr/bin/xtfs_vivaldi
 %endif
