@@ -110,17 +110,29 @@ void Exception::set_errno( uint32_t error_code )
   errno = static_cast<int>( error_code );
 #endif
 }
+std::string Exception::strerror()
+{
+  return strerror( get_errno() );
+}
 std::string Exception::strerror( uint32_t error_code )
 {
   std::string out_str;
   strerror( error_code, out_str );
   return out_str;
 }
+void Exception::strerror( std::string& out_str )
+{
+  strerror( get_errno(), out_str );
+}
 void Exception::strerror( uint32_t error_code, std::string& out_str )
 {
   char strerror_buffer[YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH];
   strerror( error_code, strerror_buffer, YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
   out_str.assign( strerror_buffer );
+}
+void Exception::strerror( char* out_str, size_t out_str_len )
+{
+  return strerror( get_errno(), out_str, out_str_len );
 }
 void Exception::strerror( uint32_t error_code, char* out_str, size_t out_str_len )
 {
@@ -707,6 +719,10 @@ void Log::write( const unsigned char* str, size_t str_len, Level level )
 #include <kstat.h> // For kstat
 #endif
 #endif
+uint16_t Machine::getLogicalProcessorsPerPhysicalProcessor()
+{
+  return getOnlineLogicalProcessorCount() / getOnlinePhysicalProcessorCount();
+}
 uint16_t Machine::getOnlineLogicalProcessorCount()
 {
   uint16_t online_logical_processor_count = 0;
@@ -781,7 +797,39 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
 #else
 #include <sys/mman.h>
 #endif
-auto_MemoryMappedFile MemoryMappedFile::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes, size_t minimum_size )
+auto_MemoryMappedFile
+  MemoryMappedFile::open( const Path& path )
+{
+  return open
+         (
+           path,
+           File::DEFAULT_FLAGS,
+           File::DEFAULT_MODE,
+           File::DEFAULT_ATTRIBUTES,
+           0
+          );
+}
+auto_MemoryMappedFile
+  MemoryMappedFile::open( const Path& path, uint32_t flags )
+{
+  return open
+         (
+           path,
+           flags,
+           File::DEFAULT_MODE,
+           File::DEFAULT_ATTRIBUTES,
+           0
+         );
+}
+auto_MemoryMappedFile
+  MemoryMappedFile::open
+(
+  const Path& path,
+  uint32_t flags,
+  mode_t mode,
+  uint32_t attributes,
+  size_t minimum_size
+)
 {
   auto_File file( Volume().open( path, flags, mode, attributes ) );
   if ( file != NULL )
@@ -803,7 +851,8 @@ auto_MemoryMappedFile MemoryMappedFile::open( const Path& path, uint32_t flags, 
     }
     else
       current_file_size = 0;
-    yidl::runtime::auto_Object<MemoryMappedFile> memory_mapped_file = new MemoryMappedFile( file, flags );
+    auto_MemoryMappedFile memory_mapped_file
+      = new MemoryMappedFile( file, flags );
     if ( memory_mapped_file->resize( std::max( minimum_size, current_file_size ) ) )
       return memory_mapped_file;
     else
@@ -812,8 +861,13 @@ auto_MemoryMappedFile MemoryMappedFile::open( const Path& path, uint32_t flags, 
   else
     return NULL;
 }
-MemoryMappedFile::MemoryMappedFile( auto_File underlying_file, uint32_t open_flags )
-  : underlying_file( underlying_file ), open_flags( open_flags )
+MemoryMappedFile::MemoryMappedFile
+(
+  auto_File underlying_file,
+  uint32_t open_flags
+)
+  : underlying_file( underlying_file ),
+    open_flags( open_flags )
 {
 #ifdef _WIN32
   mapping = NULL;
@@ -865,14 +919,23 @@ bool MemoryMappedFile::resize( size_t new_size )
         return false;
     }
 #endif
-    if ( size == new_size || underlying_file->truncate( new_size ) )
+    if ( size == new_size ||
+         underlying_file->truncate( new_size ) )
     {
 #ifdef _WIN32
       unsigned long map_flags = PAGE_READONLY;
-      if ( ( open_flags & O_RDWR ) == O_RDWR || ( open_flags & O_WRONLY ) == O_WRONLY )
+      if ( ( open_flags & O_RDWR ) == O_RDWR ||
+           ( open_flags & O_WRONLY ) == O_WRONLY )
         map_flags = PAGE_READWRITE;
       ULARGE_INTEGER uliNewSize; uliNewSize.QuadPart = new_size;
-      mapping = CreateFileMapping( *underlying_file, NULL, map_flags, uliNewSize.HighPart, uliNewSize.LowPart, NULL );
+      mapping = CreateFileMapping
+                (
+                  *underlying_file,
+                  NULL, map_flags,
+                  uliNewSize.HighPart,
+                  uliNewSize.LowPart,
+                  NULL
+                );
       if ( mapping != NULL )
       {
         map_flags = FILE_MAP_READ;
@@ -887,9 +950,18 @@ bool MemoryMappedFile::resize( size_t new_size )
       }
 #else
       unsigned long mmap_flags = PROT_READ;
-      if( ( open_flags & O_RDWR ) == O_RDWR || ( open_flags & O_WRONLY ) == O_WRONLY )
+      if( ( open_flags & O_RDWR ) == O_RDWR ||
+          ( open_flags & O_WRONLY ) == O_WRONLY )
         mmap_flags |= PROT_WRITE;
-      void* mmap_ret = mmap( 0, new_size, mmap_flags, MAP_SHARED, *underlying_file, 0 );
+      void* mmap_ret = mmap
+                      (
+                        0,
+                        new_size,
+                        mmap_flags,
+                        MAP_SHARED,
+                        *underlying_file,
+                        0
+                      );
       if ( mmap_ret != MAP_FAILED )
       {
         start = static_cast<char*>( mmap_ret );
@@ -906,7 +978,11 @@ bool MemoryMappedFile::resize( size_t new_size )
 bool MemoryMappedFile::sync()
 {
 #ifdef _WIN32
-  return sync( static_cast<size_t>( 0 ), static_cast<size_t>( 0 ) ); // length 0 = flush to end of mapping
+  return sync
+         (
+           static_cast<size_t>( 0 ),
+           static_cast<size_t>( 0 )
+         ); // length 0 = flush to end of mapping
 #else
   return sync( static_cast<size_t>( 0 ), size );
 #endif
@@ -1708,8 +1784,18 @@ void* SharedLibrary::getFunction( const char* function_name, void* missing_funct
 #pragma warning( disable: 4100 )
 #endif
 #ifdef _WIN32
-Stat::Stat( mode_t mode, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime, uint32_t attributes )
-: mode( mode ), size( size ), atime( atime ), mtime( mtime ), ctime( ctime ), attributes( attributes )
+Stat::Stat
+(
+  mode_t mode,
+  uint64_t size,
+  const Time& atime,
+  const Time& mtime,
+  const Time& ctime,
+  uint32_t attributes
+)
+  : mode( mode ), size( size ),
+    atime( atime ), mtime( mtime ), ctime( ctime ),
+    attributes( attributes )
 { }
 Stat::Stat( const BY_HANDLE_FILE_INFORMATION& by_handle_file_information )
   : mode( ( by_handle_file_information.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ? S_IFDIR : S_IFREG ),
@@ -1743,11 +1829,17 @@ Stat::Stat( const struct stat& stbuf )
     ctime( static_cast<uint32_t>( stbuf.st_ctime ) ),
     attributes( 0 )
 { }
-Stat::Stat( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLastWriteTime, const FILETIME* ftCreationTime, const FILETIME* ftLastAccessTime, uint32_t dwFileAttributes )
+Stat::Stat
+(
+  uint32_t nFileSizeHigh,
+  uint32_t nFileSizeLow,
+  const FILETIME* ftLastWriteTime,
+  const FILETIME* ftCreationTime,
+  const FILETIME* ftLastAccessTime,
+  uint32_t dwFileAttributes
+)
   : mode( ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ? S_IFDIR : S_IFREG ),
-    atime( ftLastAccessTime ),
-    mtime( ftLastWriteTime ),
-    ctime( ftCreationTime ),
+    atime( ftLastAccessTime ), mtime( ftLastWriteTime ), ctime( ftCreationTime ),
     attributes( dwFileAttributes )
 {
   ULARGE_INTEGER size;
@@ -1763,16 +1855,43 @@ Stat::Stat( const struct stat& stbuf )
     nlink( stbuf.st_nlink ),
     uid( stbuf.st_uid ),
     gid( stbuf.st_gid ),
+    rdev( stbuf.st_rdev ),
     size( stbuf.st_size ),
     atime( static_cast<uint32_t>( stbuf.st_atime ) ),
     mtime( static_cast<uint32_t>( stbuf.st_mtime ) ),
-    ctime( static_cast<uint32_t>( stbuf.st_ctime ) )
+    ctime( static_cast<uint32_t>( stbuf.st_ctime ) ),
+    blksize( stbuf.st_blksize ),
+    blocks( stbuf.st_blocks )
 { }
-Stat::Stat( dev_t dev, ino_t ino, mode_t mode, nlink_t nlink, uid_t uid, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime )
-: dev( dev ), ino( ino ), mode( mode ), nlink( nlink ),
-  uid( uid ), gid( gid ),
+Stat::Stat
+(
+  dev_t dev,
+  ino_t ino,
+  mode_t mode,
+  nlink_t nlink,
+  uid_t uid,
+  gid_t gid,
+  dev_t rdev,
+  uint64_t size,
+  const Time& atime,
+  const Time& mtime,
+  const Time& ctime,
+  blksize_t blksize,
+  blkcnt_t blocks
+)
+: dev( dev ),
+  ino( ino ),
+  mode( mode ),
+  nlink( nlink ),
+  uid( uid ),
+  gid( gid ),
+  rdev( rdev ),
   size( size ),
-  atime( atime ), mtime( mtime ), ctime( ctime )
+  atime( atime ),
+  mtime( mtime ),
+  ctime( ctime ),
+  blksize( blksize ),
+  blocks( blocks )
 { }
 #endif
 #ifdef _WIN32
@@ -1813,15 +1932,20 @@ Stat::operator struct stat() const
 #else
   stbuf.st_mode = mode;
 #endif
-  stbuf.st_size = static_cast<off_t>( size );
 #ifndef _WIN32
   stbuf.st_nlink = nlink;
   stbuf.st_uid = uid;
   stbuf.st_gid = gid;
+  stbuf.st_rdev = rdev;
 #endif
+  stbuf.st_size = static_cast<off_t>( size );
   stbuf.st_atime = atime.as_unix_time_s();
   stbuf.st_mtime = mtime.as_unix_time_s();
   stbuf.st_ctime = ctime.as_unix_time_s();
+#ifndef _WIN32
+  stbuf.st_blksize = blksize;
+  stbuf.st_blocks = blocks;
+#endif
   return stbuf;
 }
 #ifdef _WIN32
@@ -2117,6 +2241,10 @@ static inline SYSTEMTIME UnixTimeNSToLocalSYSTEMTIME( uint64_t unix_time_ns )
   return local_system_time;
 }
 #endif
+double Time::getCurrentUnixTimeMS()
+{
+  return static_cast<double>( getCurrentUnixTimeNS() ) / static_cast<double>( NS_IN_MS );
+}
 uint64_t Time::getCurrentUnixTimeNS()
 {
 #if defined(_WIN32)
@@ -2133,6 +2261,10 @@ uint64_t Time::getCurrentUnixTimeNS()
   clock_gettime( CLOCK_REALTIME, &ts );
   return ts.tv_sec * NS_IN_S + ts.tv_nsec;
 #endif
+}
+double Time::getCurrentUnixTimeS()
+{
+  return static_cast<double>( getCurrentUnixTimeNS() ) / static_cast<double>( NS_IN_S );
 }
 Time::Time( const struct timeval& tv )
 {
@@ -2555,7 +2687,10 @@ namespace YIELD
     readdir_to_listdirCallback( Volume::listdirCallback& listdir_callback )
       : listdir_callback( listdir_callback )
     { }
-    readdir_to_listdirCallback& operator=( const readdir_to_listdirCallback& ) { return *this; }
+    readdir_to_listdirCallback& operator=( const readdir_to_listdirCallback& )
+    {
+        return *this;
+    }
     // Volume::readdirCallback
     bool operator()( const Path& dirent_name, auto_Stat stbuf )
     {
@@ -2570,7 +2705,10 @@ namespace YIELD
     rmtree_readdirCallback( const Path& base_dir_path, Volume& volume )
       : base_dir_path( base_dir_path ), volume( volume )
     { }
-    rmtree_readdirCallback& operator=( const rmtree_readdirCallback& ) { return *this; }
+    rmtree_readdirCallback& operator=( const rmtree_readdirCallback& )
+    {
+      return *this;
+    }
     virtual bool operator()( const Path& path, auto_Stat stbuf )
     {
       if ( stbuf->ISDIR() )
@@ -2579,7 +2717,7 @@ namespace YIELD
         return volume.unlink( base_dir_path + path );
     }
   private:
-    const YIELD::platform::Path& base_dir_path;
+    const Path& base_dir_path;
     Volume& volume;
   };
   class SynclistdirCallback : public Volume::listdirCallback
@@ -2588,7 +2726,10 @@ namespace YIELD
     SynclistdirCallback( std::vector<Path>& out_names )
       : out_names( out_names )
     { }
-    SynclistdirCallback& operator=( const SynclistdirCallback& ) { return *this; }
+    SynclistdirCallback& operator=( const SynclistdirCallback& )
+    {
+      return *this;
+    }
     // Volume::listdirCallback
     bool operator()( const Path& name )
     {
@@ -2599,7 +2740,7 @@ namespace YIELD
     std::vector<Path>& out_names;
   };
 };
-bool Volume::access( const YIELD::platform::Path& path, int amode )
+bool Volume::access( const Path& path, int amode )
 {
 #ifdef _WIN32
   ::SetLastError( ERROR_NOT_SUPPORTED );
@@ -2608,7 +2749,7 @@ bool Volume::access( const YIELD::platform::Path& path, int amode )
   return ::access( path, amode ) >= 0;
 #endif
 }
-bool Volume::chmod( const YIELD::platform::Path& path, mode_t mode )
+bool Volume::chmod( const Path& path, mode_t mode )
 {
 #ifdef _WIN32
   ::SetLastError( ERROR_NOT_SUPPORTED );
@@ -2617,7 +2758,7 @@ bool Volume::chmod( const YIELD::platform::Path& path, mode_t mode )
   return ::chmod( path, mode ) != -1;
 #endif
 }
-bool Volume::chown( const YIELD::platform::Path& path, int32_t uid, int32_t gid )
+bool Volume::chown( const Path& path, int32_t uid, int32_t gid )
 {
 #ifdef _WIN32
   ::SetLastError( ERROR_NOT_SUPPORTED );
@@ -2625,6 +2766,14 @@ bool Volume::chown( const YIELD::platform::Path& path, int32_t uid, int32_t gid 
 #else
   return ::chown( path, uid, gid ) != -1;
 #endif
+}
+auto_File Volume::creat( const Path& path )
+{
+  return creat( path, File::DEFAULT_MODE );
+}
+auto_File Volume::creat( const Path& path, mode_t mode )
+{
+  return open( path, O_CREAT|O_WRONLY|O_TRUNC, mode );
 }
 bool Volume::exists( const Path& path )
 {
@@ -2639,7 +2788,8 @@ bool Volume::isdir( const Path& path )
 {
 #ifdef _WIN32
   DWORD dwFileAttributes = GetFileAttributesW( path );
-  return dwFileAttributes != INVALID_FILE_ATTRIBUTES && ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) == FILE_ATTRIBUTE_DIRECTORY;
+  return dwFileAttributes != INVALID_FILE_ATTRIBUTES &&
+        ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) == FILE_ATTRIBUTE_DIRECTORY;
 #else
   struct stat stbuf;
   return ::stat( path, &stbuf ) == 0 && S_ISDIR( stbuf.st_mode );
@@ -2649,13 +2799,19 @@ bool Volume::isfile( const Path& path )
 {
 #ifdef _WIN32
   DWORD dwFileAttributes = GetFileAttributesW( path );
-  return dwFileAttributes != INVALID_FILE_ATTRIBUTES && ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) != FILE_ATTRIBUTE_DIRECTORY;
+  return dwFileAttributes != INVALID_FILE_ATTRIBUTES &&
+         ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) != FILE_ATTRIBUTE_DIRECTORY;
 #else
   struct stat stbuf;
   return ::stat( path, &stbuf ) == 0 && S_ISREG( stbuf.st_mode );
 #endif
 }
-bool Volume::getxattr( const Path& path, const std::string& name, std::string& out_value )
+bool Volume::getxattr
+(
+  const Path& path,
+  const std::string& name,
+  std::string& out_value
+)
 {
 #if defined(YIELD_HAVE_XATTR_H)
   ssize_t value_len = GETXATTR( path, name.c_str(), NULL, 0 );
@@ -2682,12 +2838,30 @@ bool Volume::link( const Path& old_path, const Path& new_path )
   return ::symlink( old_path, new_path ) != -1;
 #endif
 }
-bool Volume::listdir( const YIELD::platform::Path& path, const YIELD::platform::Path& match_file_name_prefix, listdirCallback& callback )
+bool Volume::listdir( const Path& path, listdirCallback& callback )
+{
+  return listdir( path, Path(), callback );
+}
+bool Volume::listdir
+(
+  const Path& path,
+  const Path& match_file_name_prefix,
+  listdirCallback& callback
+)
 {
   readdir_to_listdirCallback readdir_callback( callback );
   return readdir( path, match_file_name_prefix, readdir_callback );
 }
-bool Volume::listdir( const Path& path, const Path& match_file_name_prefix, std::vector<Path>& out_names )
+bool Volume::listdir( const Path& path, std::vector<Path>& out_names )
+{
+  return listdir( path, Path(), out_names );
+}
+bool Volume::listdir
+(
+  const Path& path,
+  const Path& match_file_name_prefix,
+  std::vector<Path>& out_names
+)
 {
   SynclistdirCallback listdir_callback( out_names );
   return listdir( path, match_file_name_prefix, listdir_callback );
@@ -2718,6 +2892,18 @@ bool Volume::listxattr( const Path& path, std::vector<std::string>& out_names )
 #endif
   return false;
 }
+bool Volume::makedirs( const Path& path )
+{
+  return mktree( path, DEFAULT_DIRECTORY_MODE );
+}
+bool Volume::makedirs( const Path& path, mode_t mode )
+{
+  return mktree( path, mode );
+}
+bool Volume::mkdir( const Path& path )
+{
+  return mkdir( path, DEFAULT_DIRECTORY_MODE );
+}
 bool Volume::mkdir( const Path& path, mode_t mode )
 {
 #ifdef _WIN32
@@ -2725,6 +2911,10 @@ bool Volume::mkdir( const Path& path, mode_t mode )
 #else
   return ::mkdir( path, mode ) != -1;
 #endif
+}
+bool Volume::mktree( const Path& path )
+{
+  return mktree( path, DEFAULT_DIRECTORY_MODE );
 }
 bool Volume::mktree( const Path& path, mode_t mode )
 {
@@ -2736,7 +2926,25 @@ bool Volume::mktree( const Path& path, mode_t mode )
       return false;
   return ret;
 }
-auto_File Volume::open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
+auto_File Volume::open( const Path& path )
+{
+  return open( path, O_RDONLY, File::DEFAULT_MODE, 0 );
+}
+auto_File Volume::open( const Path& path, uint32_t flags )
+{
+  return open( path, flags, File::DEFAULT_MODE, 0 );
+}
+auto_File Volume::open( const Path& path, uint32_t flags, mode_t mode )
+{
+  return open( path, flags, mode, 0 );
+}
+auto_File Volume::open
+(
+  const Path& path,
+  uint32_t flags,
+  mode_t mode,
+  uint32_t attributes
+)
 {
 #ifdef _WIN32
   DWORD file_access_flags = 0,
@@ -2769,7 +2977,16 @@ auto_File Volume::open( const Path& path, uint32_t flags, mode_t mode, uint32_t 
     file_open_flags |= FILE_FLAG_OVERLAPPED;
   if ( ( flags & O_HIDDEN ) == O_HIDDEN )
     file_open_flags = FILE_ATTRIBUTE_HIDDEN;
-  HANDLE fd = CreateFileW( path, file_access_flags, FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE, NULL, file_create_flags, file_open_flags, NULL );
+  HANDLE fd = CreateFileW
+              (
+                path,
+                file_access_flags,
+                FILE_SHARE_DELETE|FILE_SHARE_READ|FILE_SHARE_WRITE,
+                NULL,
+                file_create_flags,
+                file_open_flags,
+                NULL
+              );
   if ( fd != INVALID_HANDLE_VALUE )
   {
     if ( ( flags & O_TRUNC ) == O_TRUNC && ( flags & O_CREAT ) != O_CREAT )
@@ -2786,12 +3003,26 @@ auto_File Volume::open( const Path& path, uint32_t flags, mode_t mode, uint32_t 
 #endif
   return NULL;
 }
-bool Volume::readdir( const Path& path, const YIELD::platform::Path& match_file_name_prefix, readdirCallback& callback )
+bool Volume::readdir( const Path& path, readdirCallback& callback )
+{
+  return readdir( path, Path(), callback );
+}
+bool Volume::readdir
+(
+  const Path& path,
+  const Path& match_file_name_prefix,
+  readdirCallback& callback
+)
 {
 #ifdef _WIN32
   std::wstring search_pattern( path );
-  if ( search_pattern.size() > 0 && search_pattern[search_pattern.size()-1] != L'\\' ) search_pattern.append( L"\\" );
-  search_pattern.append( static_cast<const std::wstring&>( match_file_name_prefix ) ).append( L"*" );
+  if ( search_pattern.size() > 0 &&
+       search_pattern[search_pattern.size()-1] != L'\\' )
+    search_pattern.append( L"\\" );
+  search_pattern.append
+  (
+    static_cast<const std::wstring&>( match_file_name_prefix )
+  ).append( L"*" );
   WIN32_FIND_DATA find_data;
   HANDLE dir_handle = FindFirstFileW( search_pattern.c_str(), &find_data );
   if ( dir_handle != INVALID_HANDLE_VALUE )
@@ -2820,10 +3051,12 @@ bool Volume::readdir( const Path& path, const YIELD::platform::Path& match_file_
     struct dirent* next_dirent = ::readdir( dir_handle );
     while ( next_dirent != NULL )
     {
-      if ( next_dirent->d_name[0] != '.' && ( next_dirent->d_type == DT_DIR || next_dirent->d_type == DT_REG ) )
+      if ( next_dirent->d_name[0] != '.' &&
+           ( next_dirent->d_type == DT_DIR || next_dirent->d_type == DT_REG ) )
       {
         if ( match_file_name_prefix.empty() ||
-             strstr( next_dirent->d_name, match_file_name_prefix ) == next_dirent->d_name )
+             strstr( next_dirent->d_name, match_file_name_prefix ) ==
+              next_dirent->d_name )
         {
           auto_Stat stbuf = stat( path + next_dirent->d_name );
           if ( stbuf != NULL )
@@ -2910,7 +3143,13 @@ bool Volume::setattr( const Path& path, uint32_t file_attributes )
   return false;
 #endif
 }
-bool Volume::setxattr( const Path& path, const std::string& name, const std::string& value, int flags )
+bool Volume::setxattr
+(
+  const Path& path,
+  const std::string& name,
+  const std::string& value,
+  int flags
+)
 {
 #if defined(YIELD_HAVE_XATTR_H)
   return SETXATTR( path, name.c_str(), value.c_str(), value.size(), flags ) != -1;
@@ -2921,7 +3160,7 @@ bool Volume::setxattr( const Path& path, const std::string& name, const std::str
 #endif
   return false;
 }
-yidl::runtime::auto_Object<YIELD::platform::Stat> Volume::stat( const Path& path )
+yidl::runtime::auto_Object<Stat> Volume::stat( const Path& path )
 {
 #ifdef _WIN32
   WIN32_FIND_DATA find_data;
@@ -2941,8 +3180,19 @@ yidl::runtime::auto_Object<YIELD::platform::Stat> Volume::stat( const Path& path
 bool Volume::statvfs( const Path& path, struct statvfs& buffer )
 {
 #ifdef _WIN32
-  ULARGE_INTEGER uFreeBytesAvailableToCaller, uTotalNumberOfBytes, uTotalNumberOfFreeBytes;
-  if ( GetDiskFreeSpaceEx( path, &uFreeBytesAvailableToCaller, &uTotalNumberOfBytes, &uTotalNumberOfFreeBytes ) != 0 )
+  ULARGE_INTEGER uFreeBytesAvailableToCaller,
+                 uTotalNumberOfBytes,
+                 uTotalNumberOfFreeBytes;
+  if
+  (
+    GetDiskFreeSpaceEx
+    (
+      path,
+      &uFreeBytesAvailableToCaller,
+      &uTotalNumberOfBytes,
+      &uTotalNumberOfFreeBytes
+    ) != 0
+  )
   {
     buffer.f_bsize = 4096;
     buffer.f_frsize = 4096;
@@ -2966,6 +3216,10 @@ bool Volume::symlink( const Path& old_path, const Path& new_path )
 #else
   return ::symlink( old_path, new_path ) != -1;
 #endif
+}
+bool Volume::touch( const Path& path )
+{
+  return touch( path, File::DEFAULT_MODE );
 }
 bool Volume::touch( const Path& path, mode_t mode )
 {
@@ -2995,14 +3249,28 @@ bool Volume::unlink( const Path& path )
   return ::unlink( path ) >= 0;
 #endif
 }
-bool Volume::utimens( const Path& path, const YIELD::platform::Time& atime, const YIELD::platform::Time& mtime, const YIELD::platform::Time& ctime )
+bool Volume::utimens
+(
+  const Path& path,
+  const Time& atime,
+  const Time& mtime,
+  const Time& ctime
+)
 {
 #ifdef _WIN32
   auto_File file = open( path, O_WRONLY );
   if ( file!= NULL )
   {
-    FILETIME ftCreationTime = ctime, ftLastAccessTime = atime, ftLastWriteTime = mtime;
-    return SetFileTime( *file, ctime != 0 ? &ftCreationTime : NULL, atime != 0 ? &ftLastAccessTime : NULL, mtime != 0 ? &ftLastWriteTime : NULL ) != 0;
+    FILETIME ftCreationTime = ctime,
+             ftLastAccessTime = atime,
+             ftLastWriteTime = mtime;
+    return SetFileTime
+           (
+             *file,
+             ctime != 0 ? &ftCreationTime : NULL,
+             atime != 0 ? &ftLastAccessTime : NULL,
+             mtime != 0 ? &ftLastWriteTime : NULL
+           ) != 0;
   }
   else
     return false;
@@ -3020,9 +3288,26 @@ Path Volume::volname( const Path& path )
   path.abspath().split_all( path_parts );
   if ( !path_parts.empty() )
   {
-    Path root_dir_path( static_cast<const std::string&>( path_parts[0] ) + PATH_SEPARATOR_STRING );
+    Path root_dir_path
+         (
+           static_cast<const std::string&>( path_parts[0] ) +
+           PATH_SEPARATOR_STRING
+         );
     wchar_t volume_name[PATH_MAX], file_system_name[PATH_MAX];
-    if ( GetVolumeInformation( root_dir_path, volume_name, PATH_MAX, NULL, NULL, NULL, file_system_name, PATH_MAX ) != 0 )
+    if
+    (
+      GetVolumeInformation
+      (
+        root_dir_path,
+        volume_name,
+        PATH_MAX,
+        NULL,
+        NULL,
+        NULL,
+        file_system_name,
+        PATH_MAX
+      ) != 0
+    )
     {
       if ( wcsnlen( volume_name, PATH_MAX ) > 0 )
         return Path( volume_name );

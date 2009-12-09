@@ -219,11 +219,12 @@ namespace YIELD
       static uint32_t get_errno();
       static void set_errno( uint32_t error_code );
 
-      static std::string strerror() { return strerror( get_errno() ); }
+      // strerror's that do not take error_code use the current errno
+      static std::string strerror();
       static std::string strerror( uint32_t error_code );
-      static void strerror( std::string& out_str ) { strerror( get_errno(), out_str ); }
+      static void strerror( std::string& out_str );
       static void strerror( uint32_t error_code, std::string& out_str );
-      static void strerror( char* out_str, size_t out_str_len ) { return strerror( get_errno(), out_str, out_str_len ); }
+      static void strerror( char* out_str, size_t out_str_len );
       static void strerror( uint32_t error_code, char* out_str, size_t out_str_len );
 
       Exception(); // Gets error_code from errno
@@ -249,8 +250,8 @@ namespace YIELD
     public:
       // Unix epoch times (from January 1, 1970)
       static uint64_t getCurrentUnixTimeNS();
-      static double getCurrentUnixTimeMS() { return static_cast<double>( getCurrentUnixTimeNS() ) / static_cast<double>( NS_IN_MS ); }
-      static double getCurrentUnixTimeS() { return static_cast<double>( getCurrentUnixTimeNS() ) / static_cast<double>( NS_IN_S ); }
+      static double getCurrentUnixTimeMS();
+      static double getCurrentUnixTimeS();
 
       Time() : unix_time_ns( getCurrentUnixTimeNS() ) { }
       Time( uint64_t unix_time_ns ) : unix_time_ns( unix_time_ns ) { }
@@ -312,7 +313,10 @@ namespace YIELD
       }
 
 #ifdef _WIN32
-      static AIOControlBlock* from_OVERLAPPED( OVERLAPPED* overlapped ) { return reinterpret_cast<struct aiocb*>( overlapped )->this_; }
+      static AIOControlBlock* from_OVERLAPPED( OVERLAPPED* overlapped ) 
+      { 
+        return reinterpret_cast<struct aiocb*>( overlapped )->this_; 
+      }
 #endif
       virtual void onCompletion( size_t bytes_transferred ) = 0;
       virtual void onError( uint32_t error_code ) = 0;
@@ -453,7 +457,13 @@ namespace YIELD
 
 
       static yidl::runtime::auto_Object<Log> open( std::ostream&, Level level );
-      static yidl::runtime::auto_Object<Log> open( const Path& file_path, Level level, bool lazy = false );
+
+      static yidl::runtime::auto_Object<Log> open
+      ( 
+        const Path& file_path, 
+        Level level, 
+        bool lazy = false 
+      );
 
       inline Level get_level() const { return level; }
       Stream getStream() { return Stream( incRef(), level ); }
@@ -505,11 +515,7 @@ namespace YIELD
     class Machine
     {
     public:
-      static uint16_t getLogicalProcessorsPerPhysicalProcessor()
-      {
-        return getOnlineLogicalProcessorCount() / getOnlinePhysicalProcessorCount();
-      }
-
+      static uint16_t getLogicalProcessorsPerPhysicalProcessor();
       static uint16_t getOnlineLogicalProcessorCount();
       static uint16_t getOnlinePhysicalProcessorCount();
 
@@ -529,7 +535,10 @@ namespace YIELD
 #ifdef __BIG_ENDIAN__
         return x;
 #else
-        return ( x >> 24 ) | ( ( x << 8 ) & 0x00FF0000 ) | ( ( x >> 8 ) & 0x0000FF00 ) | ( x << 24 );
+        return ( x >> 24 ) | 
+               ( ( x << 8 ) & 0x00FF0000 ) | 
+               ( ( x >> 8 ) & 0x0000FF00 ) | 
+               ( x << 24 );
 #endif
       }
 #endif
@@ -539,7 +548,14 @@ namespace YIELD
 #ifdef __BIG_ENDIAN__
         return x;
 #else
-        return ( x >> 56 ) | ( ( x << 40 ) & 0x00FF000000000000ULL ) | ( ( x << 24 ) & 0x0000FF0000000000ULL ) | ( ( x << 8 )  & 0x000000FF00000000ULL ) | ( ( x >> 8)  & 0x00000000FF000000ULL ) | ( ( x >> 24) & 0x0000000000FF0000ULL ) | ( ( x >> 40 ) & 0x000000000000FF00ULL ) | ( x << 56 );
+        return ( x >> 56 ) | 
+               ( ( x << 40 ) & 0x00FF000000000000ULL ) | 
+               ( ( x << 24 ) & 0x0000FF0000000000ULL ) | 
+               ( ( x << 8 )  & 0x000000FF00000000ULL ) | 
+               ( ( x >> 8)  & 0x00000000FF000000ULL ) | 
+               ( ( x >> 24) & 0x0000000000FF0000ULL ) | 
+               ( ( x >> 40 ) & 0x000000000000FF00ULL ) | 
+               ( x << 56 );
 #endif
       }
 
@@ -558,7 +574,10 @@ namespace YIELD
 #ifdef __BIG_ENDIAN__
         return x;
 #else
-        return ( x >> 24 ) | ( ( x << 8 ) & 0x00FF0000 ) | ( ( x >> 8 ) & 0x0000FF00 ) | ( x << 24 );
+        return ( x >> 24 ) | 
+               ( ( x << 8 ) & 0x00FF0000 ) | 
+               ( ( x >> 8 ) & 0x0000FF00 ) | 
+               ( x << 24 );
 #endif
       }
 #endif
@@ -568,7 +587,14 @@ namespace YIELD
 #ifdef __BIG_ENDIAN__
         return x;
 #else
-        return ( x >> 56 ) | ( ( x << 40 ) & 0x00FF000000000000ULL ) | ( ( x << 24 ) & 0x0000FF0000000000ULL ) | ( ( x << 8 )  & 0x000000FF00000000ULL ) | ( ( x >> 8)  & 0x00000000FF000000ULL ) | ( ( x >> 24) & 0x0000000000FF0000ULL ) | ( ( x >> 40 ) & 0x000000000000FF00ULL ) | ( x << 56 );
+        return ( x >> 56 ) | 
+               ( ( x << 40 ) & 0x00FF000000000000ULL ) | 
+               ( ( x << 24 ) & 0x0000FF0000000000ULL ) | 
+               ( ( x << 8 )  & 0x000000FF00000000ULL ) | 
+               ( ( x >> 8 )  & 0x00000000FF000000ULL ) | 
+               ( ( x >> 24) & 0x0000000000FF0000ULL ) | 
+               ( ( x >> 40 ) & 0x000000000000FF00ULL ) | 
+               ( x << 56 );
 #endif
       }
     };
@@ -577,9 +603,21 @@ namespace YIELD
     class MemoryMappedFile : public yidl::runtime::Object
     {
     public:
-      static yidl::runtime::auto_Object<MemoryMappedFile> open( const Path& path ) { return open( path, File::DEFAULT_FLAGS, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES, 0 ); }
-      static yidl::runtime::auto_Object<MemoryMappedFile> open( const Path& path, uint32_t flags ) { return open( path, flags, File::DEFAULT_MODE, File::DEFAULT_ATTRIBUTES, 0 ); }
-      static yidl::runtime::auto_Object<MemoryMappedFile> open( const Path& path, uint32_t flags, mode_t mode, uint32_t attributes, size_t minimum_size );
+      static yidl::runtime::auto_Object<MemoryMappedFile> 
+        open( const Path& path );
+
+      static yidl::runtime::auto_Object<MemoryMappedFile> 
+        open( const Path& path, uint32_t flags );
+
+      static yidl::runtime::auto_Object<MemoryMappedFile> 
+        open
+        ( 
+          const Path& path, 
+          uint32_t flags, 
+          mode_t mode, 
+          uint32_t attributes, 
+          size_t minimum_size 
+        );
 
       virtual bool close();
       inline size_t get_size() const { return size; }
@@ -594,7 +632,12 @@ namespace YIELD
       YIDL_RUNTIME_OBJECT_PROTOTYPES( MemoryMappedFile, 3 );
 
     protected:
-      MemoryMappedFile( yidl::runtime::auto_Object<File> underlying_file, uint32_t open_flags );
+      MemoryMappedFile
+      ( 
+        yidl::runtime::auto_Object<File> underlying_file, 
+        uint32_t open_flags 
+      );
+
       virtual ~MemoryMappedFile() { close(); }
 
     private:
@@ -618,7 +661,8 @@ namespace YIELD
       ~Mutex();
 
       // These calls are modeled after the pthread calls they delegate to
-      // Have a separate function for timeout_ns == 0 (never block) to avoid an if branch on a critical path
+      // Have a separate function for timeout_ns == 0 (never block) to 
+      // avoid an if branch on a critical path
       bool acquire(); // Blocking
       bool try_acquire(); // Never blocks
       bool timed_acquire( uint64_t timeout_ns ); // May block for timeout_ns
@@ -851,8 +895,6 @@ namespace YIELD
       std::string host_charset_path;
 #ifdef _WIN32
       std::wstring wide_path;
-#else
-      // void MultiByteToMultiByte( const char* fromcode, const std::string& frompath, const char* tocode, std::string& topath );
 #endif
     };
 
@@ -1022,7 +1064,8 @@ namespace YIELD
         SampleType mean;
 
         if ( samples_count > 0 )
-          mean = static_cast<SampleType>( static_cast<double>( total ) / static_cast<double>( samples_count ) );
+          mean = static_cast<SampleType>( static_cast<double>( total ) / 
+                 static_cast<double>( samples_count ) );
         else
           mean = 0;
 
@@ -1070,7 +1113,9 @@ namespace YIELD
         if ( samples_count > 0 )
         {
           std::sort( samples, samples + samples_count );
-          ninetieth_percentile = samples[static_cast<size_t>( percentile * static_cast<double>( samples_count ) )];
+          ninetieth_percentile = 
+            samples[static_cast<size_t>( percentile * 
+              static_cast<double>( samples_count ) )];
         }
         else
           ninetieth_percentile = 0;
@@ -1110,12 +1155,14 @@ namespace YIELD
 
 
     template <class ElementType, uint32_t QueueLength>
-    class SynchronizedNonBlockingFiniteQueue : private NonBlockingFiniteQueue<ElementType, QueueLength>
+    class SynchronizedNonBlockingFiniteQueue 
+      : private NonBlockingFiniteQueue<ElementType, QueueLength>
     {
     public:
       ElementType dequeue()
       {
-        ElementType element = NonBlockingFiniteQueue<ElementType, QueueLength>::dequeue();
+        ElementType element = 
+          NonBlockingFiniteQueue<ElementType, QueueLength>::dequeue();
 
         while ( element == 0 )
         {
@@ -1128,7 +1175,8 @@ namespace YIELD
 
       bool enqueue( ElementType element )
       {
-        bool enqueued = NonBlockingFiniteQueue<ElementType, QueueLength>::enqueue( element );
+        bool enqueued = 
+          NonBlockingFiniteQueue<ElementType, QueueLength>::enqueue( element );
         signal.release();
         return enqueued;
       }
@@ -1244,14 +1292,26 @@ namespace YIELD
     class SharedLibrary : public yidl::runtime::Object
     {
     public:
-      static yidl::runtime::auto_Object<SharedLibrary> open( const Path& file_prefix, const char* argv0 = 0 );
+      static yidl::runtime::auto_Object<SharedLibrary> 
+        open( const Path& file_prefix, const char* argv0 = 0 );
 
-      void* getFunction( const char* function_name, void* missing_function_return_value = NULL );
+      void* getFunction
+      ( 
+        const char* function_name, 
+        void* missing_function_return_value = NULL 
+      );
 
       template <typename FunctionType>
-      FunctionType getFunction( const char* function_name, FunctionType missing_function_return_value = NULL )
+      FunctionType getFunction
+      ( 
+        const char* function_name, 
+        FunctionType missing_function_return_value = NULL 
+      )
       {
-        return static_cast<FunctionType>( getFunction( function_name, missing_function_return_value ) );
+        return static_cast<FunctionType>
+        ( 
+          getFunction( function_name, missing_function_return_value ) 
+        );
       }    
 
       // yidl::runtime::Object
@@ -1271,12 +1331,47 @@ namespace YIELD
     {
     public:
 #ifdef _WIN32
-      Stat( mode_t mode, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime, uint32_t attributes );
+      Stat
+      ( 
+        mode_t mode, 
+        uint64_t size, 
+        const Time& atime, 
+        const Time& mtime, 
+        const Time& ctime, 
+        uint32_t attributes 
+      );
+
       Stat( const BY_HANDLE_FILE_INFORMATION& );
+
       Stat( const WIN32_FIND_DATA& );
-      Stat( uint32_t nFileSizeHigh, uint32_t nFileSizeLow, const FILETIME* ftLastWriteTime, const FILETIME* ftCreationTime, const FILETIME* ftLastAccessTime, uint32_t dwFileAttributes ); // For doing FILETIME -> Unix conversions in Dokan; deduces mode from dwFileAttributes
+
+      Stat
+      ( 
+        uint32_t nFileSizeHigh, 
+        uint32_t nFileSizeLow, 
+        const FILETIME* ftLastWriteTime, 
+        const FILETIME* ftCreationTime, 
+        const FILETIME* ftLastAccessTime, 
+        uint32_t dwFileAttributes 
+      );
 #else
-      Stat( dev_t dev, ino_t ino, mode_t mode, nlink_t nlink, uid_t uid, gid_t gid, uint64_t size, const Time& atime, const Time& mtime, const Time& ctime );
+      // POSIX field order; Linux, FreeBSD, et al. all have different orders
+      Stat
+      ( 
+        dev_t dev,
+        ino_t ino,
+        mode_t mode,
+        nlink_t nlink,
+        uid_t uid,
+        gid_t gid,
+        dev_t rdev,
+        uint64_t size,
+        const Time& atime,
+        const Time& mtime,
+        const Time& ctime,
+        blksize_t blksize,
+        blkcnt_t blocks
+      );
 #endif
       Stat( const struct stat& stbuf );
 
@@ -1316,6 +1411,7 @@ namespace YIELD
     protected:
       virtual ~Stat() { }
 
+      // POSIX field order; Linux, FreeBSD, et al. all have different orders
 #ifndef _WIN32
       dev_t dev;
       ino_t ino;
@@ -1325,11 +1421,17 @@ namespace YIELD
       nlink_t nlink;
       uid_t uid;
       gid_t gid;
+      dev_t rdev;
 #endif
       uint64_t size;
-      Time atime, mtime, ctime;
+      Time atime;
+      Time mtime;
+      Time ctime;
 #ifdef _WIN32
       uint32_t attributes;
+#else
+      blksize_t blksize;
+      blkcnt_t blocks;
 #endif
 
     private:
@@ -1370,7 +1472,9 @@ namespace YIELD
       YIELD_STAT_MODE_BIT_AS_STRING( S_ISVTX )
   #endif
       os << "0), st_size: " << stbuf.get_size();
-      os << ", st_mtime: " << stbuf.get_mtime() << ", st_ctime: " << stbuf.get_ctime() << ", st_atime: " << stbuf.get_atime();
+      os << ", st_mtime: " << stbuf.get_mtime() << 
+            ", st_ctime: " << stbuf.get_ctime() << 
+            ", st_atime: " << stbuf.get_atime();
 #ifdef _WIN32
       os << ", attributes: " << stbuf.get_attributes();
 #else
@@ -1455,7 +1559,12 @@ namespace YIELD
       private:
         SynchronizedSTLQueue<TimerQueue::Timer*> new_timers_queue;
         bool should_run;
-        std::priority_queue< std::pair<uint64_t, Timer*>, std::vector< std::pair<uint64_t, Timer*> >, std::greater< std::pair<uint64_t, Timer*> > > timers;
+        std::priority_queue
+        < 
+          std::pair<uint64_t, Timer*>, 
+          std::vector< std::pair<uint64_t, Timer*> >, 
+          std::greater< std::pair<uint64_t, Timer*> > 
+        > timers;
       }; 
 
       Thread thread;
@@ -1531,26 +1640,26 @@ namespace YIELD
       YIELD_PLATFORM_VOLUME_PROTOTYPES;
 
       // Convenience methods that don't make any system calls, so subclasses don't have to re-implement them
-      virtual auto_File creat( const Path& path ) { return creat( path, File::DEFAULT_MODE ); }
-      virtual auto_File creat( const Path& path, mode_t mode ) { return open( path, O_CREAT|O_WRONLY|O_TRUNC, mode ); }
+      virtual auto_File creat( const Path& path );
+      virtual auto_File creat( const Path& path, mode_t mode );
       virtual bool exists( const Path& path );
       virtual bool isdir( const Path& path );
       virtual bool isfile( const Path& path );
-      virtual bool listdir( const Path& path, listdirCallback& callback ) { return listdir( path, Path(), callback ); }
-      virtual bool listdir( const Path& path, const Path& match_file_name_prefix, listdirCallback& callback );
-      virtual bool listdir( const Path& path, std::vector<Path>& out_names ) { return listdir( path, Path(), out_names ); }
+      virtual bool listdir( const Path& path, listdirCallback& );
+      virtual bool listdir( const Path& path, const Path& match_file_name_prefix, listdirCallback& );
+      virtual bool listdir( const Path& path, std::vector<Path>& out_names );
       virtual bool listdir( const Path& path, const Path& match_file_name_prefix, std::vector<Path>& out_names );
-      virtual bool makedirs( const Path& path ) { return mktree( path, DEFAULT_DIRECTORY_MODE ); } // Python function name
-      virtual bool makedirs( const Path& path, mode_t mode ) { return mktree( path, mode ); }
-      virtual bool mkdir( const Path& path ) { return mkdir( path, DEFAULT_DIRECTORY_MODE ); }
-      virtual bool mktree( const Path& path ) { return mktree( path, DEFAULT_DIRECTORY_MODE ); }
+      virtual bool makedirs( const Path& path ); // Python function name
+      virtual bool makedirs( const Path& path, mode_t mode );
+      virtual bool mkdir( const Path& path );
+      virtual bool mktree( const Path& path );
       virtual bool mktree( const Path& path, mode_t mode );
-      virtual auto_File open( const Path& path ) { return open( path, O_RDONLY, File::DEFAULT_MODE, 0 ); }
-      virtual auto_File open( const Path& path, uint32_t flags ) { return open( path, flags, File::DEFAULT_MODE, 0 ); }
-      virtual auto_File open( const Path& path, uint32_t flags, mode_t mode ) { return open( path, flags, mode, 0 ); }
-      virtual bool readdir( const Path& path, readdirCallback& callback ) { return readdir( path, Path(), callback ); }
+      virtual auto_File open( const Path& path );
+      virtual auto_File open( const Path& path, uint32_t flags );
+      virtual auto_File open( const Path& path, uint32_t flags, mode_t mode );
+      virtual bool readdir( const Path& path, readdirCallback& );
       virtual bool rmtree( const Path& path );
-      virtual bool touch( const Path& path ) { return touch( path, File::DEFAULT_MODE ); }
+      virtual bool touch( const Path& path );
       virtual bool touch( const Path& path, mode_t mode );
 
       // yidl::runtime::Object
