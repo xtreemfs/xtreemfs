@@ -79,3 +79,7 @@
 
 08-DEC-2009
 	* added web-based admin console (in trunk/contrib/console)
+
+09-DEC-2009
+        * added per-file block size (st_blksize) to struct Stat;
+          used by cp to determine I/O buffer sizes on Linux
