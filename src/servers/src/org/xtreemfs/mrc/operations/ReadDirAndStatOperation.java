@@ -43,6 +43,7 @@ import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
@@ -125,11 +126,16 @@ public class ReadDirAndStatOperation extends MRCOperation {
                 : child.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR
                     : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
             long size = linkTarget != null ? linkTarget.length() : child.isDirectory() ? 0 : child.getSize();
+            int blkSize = 0;
+            if ( (linkTarget == null) && (!file.isDirectory()) ) {
+                XLocList xlocList = child.getXLocList();
+                if ((xlocList != null) && (xlocList.getReplicaCount() > 0))
+                    blkSize = xlocList.getReplica(0).getStripingPolicy().getStripeSize();
+            }
             Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, child.getLinkCount(), 1, 1,
-                0, size, (long) child.getAtime() * (long) 1e9, (long) child.getMtime() * (long) 1e9,
-                (long) child.getCtime() * (long) 1e9, child.getOwnerId(), child.getOwningGroupId(), volume
-                        .getId()
-                    + ":" + child.getId(), linkTarget, child.getEpoch(), (int) child.getW32Attrs());
+                0, size, blkSize, (long) child.getAtime() * (long) 1e9, (long) child.getMtime() * (long) 1e9,
+                (long) child.getCtime() * (long) 1e9, volume.getId()+ ":" + child.getId(),
+                    child.getOwnerId(), child.getOwningGroupId(), linkTarget, child.getEpoch(), (int) child.getW32Attrs());
             
             dirContent.add(new DirectoryEntry(child.getFileName(), stat));
         }

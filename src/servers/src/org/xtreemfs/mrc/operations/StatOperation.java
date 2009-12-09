@@ -35,6 +35,7 @@ import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
 
@@ -79,11 +80,17 @@ public class StatOperation extends MRCOperation {
         mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_H_S_IFLNK
             : file.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
         long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : file.getSize();
+        int blkSize = 0;
+        if ( (linkTarget == null) && (!file.isDirectory()) ) {
+            XLocList xlocList = file.getXLocList();
+            if ((xlocList != null) && (xlocList.getReplicaCount() > 0))
+                blkSize = xlocList.getReplica(0).getStripingPolicy().getStripeSize();
+        }
         Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, file.getLinkCount(), 1, 1, 0,
-            size, (long) file.getAtime() * (long) 1e9, (long) file.getMtime() * (long) 1e9, (long) file
+            size, blkSize, (long) file.getAtime() * (long) 1e9, (long) file.getMtime() * (long) 1e9, (long) file
                     .getCtime()
-                * (long) 1e9, file.getOwnerId(), file.getOwningGroupId(),
-            volume.getId() + ":" + file.getId(), linkTarget, file.isDirectory() ? 0 : file.getEpoch(),
+                * (long) 1e9, volume.getId() + ":" + file.getId(), file.getOwnerId(), file.getOwningGroupId(),
+            linkTarget, file.isDirectory() ? 0 : file.getEpoch(),
             (int) file.getW32Attrs());
         
         // set the response
