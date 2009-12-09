@@ -57,7 +57,7 @@ static YIELD::platform::auto_Stat xtreemfs_Stat_as_YIELD_platform_Stat
     xtreemfs_stat.get_atime_ns(), 
     xtreemfs_stat.get_mtime_ns(), 
     xtreemfs_stat.get_ctime_ns(),
-    xtreemfs_stat.get_blksize() * 1024, // The blksize returned by the server is in KB
+    xtreemfs_stat.get_blksize(),
     0 // blocks
 #endif
   );
