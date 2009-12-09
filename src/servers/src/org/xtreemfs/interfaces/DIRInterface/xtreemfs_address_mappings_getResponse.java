@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_address_mappings_getResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009120315;
+    public static final int TAG = 2009121011;
     
     public xtreemfs_address_mappings_getResponse() { address_mappings = new AddressMappingSet();  }
     public xtreemfs_address_mappings_getResponse( AddressMappingSet address_mappings ) { this.address_mappings = address_mappings; }
@@ -36,10 +36,10 @@ public class xtreemfs_address_mappings_getResponse extends org.xtreemfs.interfac
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009120315;    
+    public static final long serialVersionUID = 2009121011;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120315; }
+    public int getTag() { return 2009121011; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_getResponse"; }
     
     public int getXDRSize()

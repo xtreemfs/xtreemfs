@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_lock_releaseRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009120566;
+    public static final int TAG = 2009121262;
     
     public xtreemfs_lock_releaseRequest() { file_credentials = new FileCredentials(); lock = new Lock();  }
     public xtreemfs_lock_releaseRequest( FileCredentials file_credentials, String file_id, Lock lock ) { this.file_credentials = file_credentials; this.file_id = file_id; this.lock = lock; }
@@ -43,10 +43,10 @@ public class xtreemfs_lock_releaseRequest extends org.xtreemfs.interfaces.utils.
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009120566;    
+    public static final long serialVersionUID = 2009121262;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120566; }
+    public int getTag() { return 2009121262; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_lock_releaseRequest"; }
     
     public int getXDRSize()

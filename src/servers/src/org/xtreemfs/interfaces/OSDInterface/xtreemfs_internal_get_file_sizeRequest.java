@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_internal_get_file_sizeRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009120556;
+    public static final int TAG = 2009121252;
     
     public xtreemfs_internal_get_file_sizeRequest() { file_credentials = new FileCredentials();  }
     public xtreemfs_internal_get_file_sizeRequest( FileCredentials file_credentials, String file_id ) { this.file_credentials = file_credentials; this.file_id = file_id; }
@@ -41,10 +41,10 @@ public class xtreemfs_internal_get_file_sizeRequest extends org.xtreemfs.interfa
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009120556;    
+    public static final long serialVersionUID = 2009121252;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120556; }
+    public int getTag() { return 2009121252; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_file_sizeRequest"; }
     
     public int getXDRSize()
