@@ -858,6 +858,13 @@ public class MRCTest extends TestCase {
         assertEquals(sp1.getType().name(), sp.getType().name());
         assertEquals(sp1.getWidth(), sp.getWidth());
         assertEquals(sp1.getStripe_size(), sp.getStripe_size());
+
+        //check block size in Stat
+        Stat stat = invokeSync(client.getattr(mrcAddress, uc, fileName1));
+        assertEquals(sp1.getStripe_size(),stat.getBlksize());
+
+        stat = invokeSync(client.getattr(mrcAddress, uc, dirName));
+        assertEquals(0,stat.getBlksize());
         
         // TODO set the default striping policy of the parent directory via an
         // extended attribute (not working at the moment)
