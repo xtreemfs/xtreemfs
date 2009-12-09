@@ -150,7 +150,7 @@ namespace xtfs_vivaldi
       std::vector<uint64_t> currentRetries;
       int retriesInARow = 0;
       
-      org::xtreemfs::interfaces::Service *random_osd_service;
+      org::xtreemfs::interfaces::Service *random_osd_service = 0;
       
       for ( ;; )
       {
@@ -340,10 +340,10 @@ namespace xtfs_vivaldi
         }
     
         //Sleep until the next iteration
-        uint64_t sleep_in_ms = \
+        uint64_t sleep_in_ms = static_cast<uint64_t>( \
                 MIN_RECALCULATION_IN_MS + 
                 ( (static_cast<double>(std::rand())/(RAND_MAX-1)) * 
-                (MAX_RECALCULATION_IN_MS - MIN_RECALCULATION_IN_MS) );
+                (MAX_RECALCULATION_IN_MS - MIN_RECALCULATION_IN_MS) ));
                 
         get_log()->getStream( YIELD::platform::Log::LOG_DEBUG ) << 
             "xtfs_vivaldi:sleeping during " << sleep_in_ms << " ms.";

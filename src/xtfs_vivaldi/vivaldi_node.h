@@ -31,7 +31,7 @@ namespace xtfs_vivaldi
                   : ownCoordinates(nodeCoordinates) {}
       org::xtreemfs::interfaces::VivaldiCoordinates *getCoordinates();
       bool recalculatePosition(  org::xtreemfs::interfaces::VivaldiCoordinates& coordinatesJ,
-                                long measuredRTT,
+                                uint64_t measuredRTT,
                                 bool forceRecalculation);
 
       double calculateDistance( org::xtreemfs::interfaces::VivaldiCoordinates coordA,

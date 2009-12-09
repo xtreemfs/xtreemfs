@@ -127,7 +127,7 @@ void VivaldiNode::modifyCoordinatesRandomly(org::xtreemfs::interfaces::VivaldiCo
  * given point in the coordinate space and the real RTT measured against it.
  */
 bool VivaldiNode::recalculatePosition(org::xtreemfs::interfaces::VivaldiCoordinates& coordinatesJ,
-                                      long measuredRTT,
+                                      uint64_t measuredRTT,
                                       bool forceRecalculation){
   bool retval = true;
   
