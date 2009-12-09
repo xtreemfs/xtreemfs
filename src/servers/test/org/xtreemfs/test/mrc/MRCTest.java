@@ -861,7 +861,7 @@ public class MRCTest extends TestCase {
 
         //check block size in Stat
         Stat stat = invokeSync(client.getattr(mrcAddress, uc, fileName1));
-        assertEquals(sp1.getStripe_size(),stat.getBlksize());
+        assertEquals(sp1.getStripe_size()*1024,stat.getBlksize());
 
         stat = invokeSync(client.getattr(mrcAddress, uc, dirName));
         assertEquals(0,stat.getBlksize());

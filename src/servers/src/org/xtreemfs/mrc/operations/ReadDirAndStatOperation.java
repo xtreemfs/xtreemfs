@@ -130,7 +130,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
             if ( (linkTarget == null) && (!file.isDirectory()) ) {
                 XLocList xlocList = child.getXLocList();
                 if ((xlocList != null) && (xlocList.getReplicaCount() > 0))
-                    blkSize = xlocList.getReplica(0).getStripingPolicy().getStripeSize();
+                    blkSize = xlocList.getReplica(0).getStripingPolicy().getStripeSize()*1024;
             }
             Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, child.getLinkCount(), 1, 1,
                 0, size, blkSize, (long) child.getAtime() * (long) 1e9, (long) child.getMtime() * (long) 1e9,
