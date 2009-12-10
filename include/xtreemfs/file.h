@@ -21,7 +21,9 @@ namespace xtreemfs
 
     // YIELD::platform::File
     YIELD_PLATFORM_FILE_PROTOTYPES;
+
     virtual size_t getpagesize();
+    virtual uint64_t get_size();
 
   private:
     friend class Volume;
