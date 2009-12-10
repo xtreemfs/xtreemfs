@@ -170,7 +170,8 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
             
             synchronized (this) {
                 try {
-                    this.wait(checkIntervalMillis);
+                    this.wait(knownOSDs == null || knownOSDs.isEmpty() ? checkIntervalMillis / 2
+                        : checkIntervalMillis);
                 } catch (InterruptedException ex) {
                     break;
                 }
