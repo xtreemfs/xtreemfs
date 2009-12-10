@@ -427,7 +427,8 @@ public class DIRRequestDispatcher extends LifeCycleThread
         
         if (hdr.getInterfaceVersion() != DIRInterface.getVersion()) {
             rq.sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH,
-                ErrNo.EINVAL, "invalid version requested"));
+                ErrNo.EINVAL, "invalid version requested (requested: "+hdr.getInterfaceVersion()+" installed: "+
+                 DIRInterface.getVersion()+")"));
             return;
         }
         

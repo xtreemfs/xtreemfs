@@ -8,9 +8,11 @@ package org.xtreemfs.osd.storage;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
@@ -32,9 +34,12 @@ public class SingleFileStorageLayout extends StorageLayout {
 
     private static final String TEPOCH_SUFFIX = ".te";
 
+    private static final int    MDRECORD_SIZE = Long.SIZE/8 * 2;
+
     
     public SingleFileStorageLayout(OSDConfig config, MetadataCache cache) throws IOException {
         super(config, cache);
+        Logging.logMessage(Logging.LEVEL_ERROR, this,"this storage layout is still under development and should not be used except for testing!");
     }
     @Override
     protected FileInfo loadFileInfo(String fileId, StripingPolicyImpl sp) throws IOException {
@@ -119,6 +124,7 @@ public class SingleFileStorageLayout extends StorageLayout {
     @Override
     public void writeObject(String fileId, long objNo, ReusableBuffer data, long version, int offset, long checksum, StripingPolicyImpl sp, boolean sync) throws IOException {
         RandomAccessFile ofile = new RandomAccessFile(storageDir+fileId+DATA_SUFFIX, "rw");
+        RandomAccessFile mdfile = new RandomAccessFile(storageDir+fileId+MD_SUFFIX, "rw");
 
         try {
             final int stripeSize = sp.getStripeSizeForObject(objNo);
@@ -130,14 +136,27 @@ public class SingleFileStorageLayout extends StorageLayout {
             data.position(0);
             c.write(data.getBuffer());
 
+            writeMDRecord(mdfile, objNo, version, checksum);
+            
         } finally {
             ofile.close();
+            mdfile.close();
         }
     }
 
     @Override
     public long createChecksum(String fileId, long objNo, ReusableBuffer data, long version, long currentChecksum) throws IOException {
         return 0;
+    }
+
+    private void writeMDRecord(RandomAccessFile mdfile, long objNo, long version, long checksum) throws IOException {
+        final FileChannel mc = mdfile.getChannel();
+        mdfile.seek(objNo*MDRECORD_SIZE);
+        ByteBuffer mdata = ByteBuffer.allocate(MDRECORD_SIZE);
+        mdata.putLong(checksum);
+        mdata.putLong(version);
+        mdata.flip();
+        mc.write(mdata);
     }
 
     @Override
@@ -157,6 +176,7 @@ public class SingleFileStorageLayout extends StorageLayout {
     public void deleteObject(String fileId, long objNo, long version, StripingPolicyImpl sp) throws IOException {
         //can only pad with zeros or cut file length
         RandomAccessFile ofile = new RandomAccessFile(storageDir+fileId+DATA_SUFFIX, "w");
+        RandomAccessFile mdfile = new RandomAccessFile(storageDir+fileId+MD_SUFFIX, "w");
 
         try {
             final int stripeSize = sp.getStripeSizeForObject(objNo);
@@ -169,8 +189,10 @@ public class SingleFileStorageLayout extends StorageLayout {
                 if (lastObj == objNo) {
                     if (sp.getRow(objNo) == 0) {
                         ofile.setLength(0);
+                        mdfile.setLength(0);
                     } else {
                         ofile.setLength((sp.getRow(objNo)-1)*stripeSize);
+                        mdfile.setLength((lastObj+1)*MDRECORD_SIZE);
                     }
                 } else if (objNo < lastObj) {
                     //fill with 0s
@@ -181,18 +203,21 @@ public class SingleFileStorageLayout extends StorageLayout {
                     final FileChannel c = ofile.getChannel();
                     c.position(objFileOffset);
                     c.write(buf.getBuffer());
+
                 }
                 //no else here, if objNo > lastObj, it does not exist
             }
 
         } finally {
             ofile.close();
+            mdfile.close();
         }
     }
 
     @Override
     public long createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, long version, long size) throws IOException {
         RandomAccessFile ofile = new RandomAccessFile(storageDir+fileId+DATA_SUFFIX, "w");
+        RandomAccessFile mdfile = new RandomAccessFile(storageDir+fileId+MD_SUFFIX, "w");
 
         try {
             final int stripeSize = sp.getStripeSizeForObject(objNo);
@@ -203,6 +228,7 @@ public class SingleFileStorageLayout extends StorageLayout {
             if (fileSize < objFileOffset + size) {
                //we need to create the object
                 ofile.setLength(objFileOffset + size);
+                mdfile.setLength((objNo+1)*MDRECORD_SIZE);
             }
 
         } finally {

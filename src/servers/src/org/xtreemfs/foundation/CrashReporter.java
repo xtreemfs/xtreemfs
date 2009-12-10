@@ -18,7 +18,7 @@ import java.util.Map;
 public class CrashReporter {
 
     public static void reportXtreemFSCrash(String report) {
-        try {
+        /*try {
             URL u = new URL("http://www.xtreemfs.org/dump/dump.php?srv=server");
             HttpURLConnection con = (HttpURLConnection) u.openConnection();
             con.setRequestMethod("PUT");
@@ -34,7 +34,7 @@ public class CrashReporter {
             is.close();
         } catch (Throwable th) {
             System.out.println("cannot send crash report: "+th);
-        }
+        }*/
     }
 
     public static String createCrashReport(String service, String version, Throwable cause) {
