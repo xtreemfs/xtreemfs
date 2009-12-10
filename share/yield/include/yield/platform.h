@@ -876,7 +876,7 @@ namespace YIELD
       bool operator==( const char* ) const;
       bool operator!=( const char* ) const;
 
-      bool Path::operator<( const Path& other ) const // For sorting
+      bool operator<( const Path& other ) const // For sorting
       {
       #ifdef _WIN32
         return wide_path.compare( other.wide_path ) < 0;
