@@ -379,7 +379,6 @@ namespace YIELD
 #endif
 
       virtual size_t getpagesize();
-      virtual uint64_t get_size();
 #ifdef _WIN32
       operator void*() const { return fd; }
 #else
@@ -876,6 +875,15 @@ namespace YIELD
       bool operator!=( const Path& ) const;
       bool operator==( const char* ) const;
       bool operator!=( const char* ) const;
+
+      bool Path::operator<( const Path& other ) const // For sorting
+      {
+      #ifdef _WIN32
+        return wide_path.compare( other.wide_path ) < 0;
+      #else
+        return host_charset_path.compare( other.host_charset_path ) < 0;
+      #endif
+      }
 
       Path join( const Path& ) const;
       std::pair<Path, Path> split() const; // head, tail

@@ -1,3 +1,5 @@
+// Revision: 1925
+
 #include "yield/platform.h"
 using namespace YIELD::platform;
 
@@ -309,14 +311,6 @@ bool File::datasync()
 #else
   return true;
 #endif
-}
-uint64_t File::get_size()
-{
-  auto_Stat stbuf = stat();
-  if ( stbuf != NULL )
-    return stbuf->get_size();
-  else
-    return 0;
 }
 size_t File::getpagesize()
 {

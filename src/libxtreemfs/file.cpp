@@ -310,14 +310,6 @@ size_t File::getpagesize()
     .get_striping_policy().get_stripe_size() * 1024;
 }
 
-uint64_t File::get_size()
-{
-  if ( !latest_osd_write_response.get_new_file_size().empty() )  
-    return latest_osd_write_response.get_new_file_size()[0].get_size_in_bytes();
-  else
-    return YIELD::platform::File::get_size();
-}
-
 bool File::getxattr( const std::string& name, std::string& out_value )
 {
   return parent_volume->getxattr( path, name, out_value );
@@ -596,7 +588,14 @@ bool File::setxattr( const std::string& name, const std::string& value, int flag
 
 YIELD::platform::auto_Stat File::stat()
 {
-  return parent_volume->stat( path );
+  if ( !latest_osd_write_response.get_new_file_size().empty() )
+  {
+    YIELD::platform::auto_Stat stbuf = parent_volume->stat( path );
+    stbuf->set_size( latest_osd_write_response.get_new_file_size().get_size() );
+    return stbuf;
+  }
+  else
+    return parent_volume->stat( path );
 }
 
 bool File::sync()
