@@ -30,20 +30,16 @@ auto_OSDProxy OSDProxy::create
       checked_uri.set_port( org::xtreemfs::interfaces::OSDInterface::ONCRPC_PORT_DEFAULT );
   }  
 
-  YIELD::ipc::auto_SocketAddress peername = YIELD::ipc::SocketAddress::create( checked_uri );
-  if ( peername != NULL )
-    return new OSDProxy
-    ( 
-      concurrency_level,
-      flags, 
-      log, 
-      operation_timeout, 
-      peername, 
-      reconnect_tries_max, 
-      createSocketFactory( checked_uri, ssl_context ) 
-    );
-  else
-    throw YIELD::platform::Exception();
+  return new OSDProxy
+  ( 
+    concurrency_level,
+    flags, 
+    log, 
+    operation_timeout, 
+    YIELD::ipc::SocketAddress::create( checked_uri ), 
+    reconnect_tries_max, 
+    createSocketFactory( checked_uri, ssl_context ) 
+  );
 }
 
 bool operator>( const org::xtreemfs::interfaces::OSDWriteResponse& left, const org::xtreemfs::interfaces::OSDWriteResponse& right )

@@ -1446,9 +1446,6 @@ namespace YIELD
       Stat( const Stat& ) { DebugBreak(); } // Prevent copying
     };
 
-    typedef yidl::runtime::auto_Object<Stat> auto_Stat;
-
-
     static inline std::ostream& operator<<( std::ostream& os, const Stat& stbuf )
     {
       os << "{ ";
@@ -1491,6 +1488,8 @@ namespace YIELD
       os << " }";
       return os;
     }
+
+    typedef yidl::runtime::auto_Object<Stat> auto_Stat;
 
 
     class Thread : public yidl::runtime::Object
