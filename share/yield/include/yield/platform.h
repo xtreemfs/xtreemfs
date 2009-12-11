@@ -379,7 +379,6 @@ namespace YIELD
 #endif
 
       virtual size_t getpagesize();
-      virtual uint64_t get_size();
 #ifdef _WIN32
       operator void*() const { return fd; }
 #else
@@ -876,6 +875,15 @@ namespace YIELD
       bool operator!=( const Path& ) const;
       bool operator==( const char* ) const;
       bool operator!=( const char* ) const;
+
+      bool operator<( const Path& other ) const // For sorting
+      {
+      #ifdef _WIN32
+        return wide_path.compare( other.wide_path ) < 0;
+      #else
+        return host_charset_path.compare( other.host_charset_path ) < 0;
+      #endif
+      }
 
       Path join( const Path& ) const;
       std::pair<Path, Path> split() const; // head, tail
@@ -1438,9 +1446,6 @@ namespace YIELD
       Stat( const Stat& ) { DebugBreak(); } // Prevent copying
     };
 
-    typedef yidl::runtime::auto_Object<Stat> auto_Stat;
-
-
     static inline std::ostream& operator<<( std::ostream& os, const Stat& stbuf )
     {
       os << "{ ";
@@ -1483,6 +1488,8 @@ namespace YIELD
       os << " }";
       return os;
     }
+
+    typedef yidl::runtime::auto_Object<Stat> auto_Stat;
 
 
     class Thread : public yidl::runtime::Object

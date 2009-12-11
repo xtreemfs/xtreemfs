@@ -1,3 +1,5 @@
+// Revision: 1931
+
 #include "yield/ipc.h"
 
 
@@ -535,34 +537,29 @@ YIELD::ipc::auto_HTTPClient
   if ( checked_absolute_uri.get_port() == 0 )
     checked_absolute_uri.set_port( 80 );
   auto_SocketAddress peername = SocketAddress::create( absolute_uri );
-  if ( peername != NULL )
-  {
-    auto_SocketFactory socket_factory;
+  auto_SocketFactory socket_factory;
 #ifdef YIELD_HAVE_OPENSSL
-    if ( absolute_uri.get_scheme() == "https" )
+  if ( absolute_uri.get_scheme() == "https" )
+  {
+    if ( ssl_context != NULL )
+      socket_factory = new SSLSocketFactory( ssl_context );
+    else
     {
+      ssl_context = SSLContext::create( SSLv23_client_method() );
       if ( ssl_context != NULL )
         socket_factory = new SSLSocketFactory( ssl_context );
       else
-      {
-        ssl_context = SSLContext::create( SSLv23_client_method() );
-        if ( ssl_context != NULL )
-          socket_factory = new SSLSocketFactory( ssl_context );
-        else
-          throw YIELD::platform::Exception();
-      }
+        throw YIELD::platform::Exception();
     }
-    else
-#endif
-      socket_factory = new TCPSocketFactory;
-    return new HTTPClient
-    (
-      concurrency_level, flags, log, operation_timeout,
-      peername, reconnect_tries_max, socket_factory
-    );
   }
   else
-    throw YIELD::platform::Exception();
+#endif
+    socket_factory = new TCPSocketFactory;
+  return new HTTPClient
+  (
+    concurrency_level, flags, log, operation_timeout,
+    peername, reconnect_tries_max, socket_factory
+  );
 }
 YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::GET
 (
@@ -1169,21 +1166,17 @@ YIELD::ipc::auto_HTTPServer YIELD::ipc::HTTPServer::create( const URI& absolute_
                                     auto_SSLContext ssl_context )
 {
   auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
-  if ( sockname != NULL )
-  {
-    auto_TCPSocket listen_tcp_socket;
+  auto_TCPSocket listen_tcp_socket;
 #ifdef YIELD_HAVE_OPENSSL
-    if ( absolute_uri.get_scheme() == "https" && ssl_context != NULL )
-      listen_tcp_socket = SSLSocket::create( ssl_context ).release();
-    else
+  if ( absolute_uri.get_scheme() == "https" && ssl_context != NULL )
+    listen_tcp_socket = SSLSocket::create( ssl_context ).release();
+  else
 #endif
-      listen_tcp_socket = TCPSocket::create();
-    if ( listen_tcp_socket != NULL &&
-         listen_tcp_socket->bind( sockname ) &&
-         listen_tcp_socket->listen() )
-      return new HTTPServer( http_request_target, listen_tcp_socket, log );
-  }
-  throw YIELD::platform::Exception();
+    listen_tcp_socket = TCPSocket::create();
+  if ( listen_tcp_socket != NULL &&
+       listen_tcp_socket->bind( sockname ) &&
+       listen_tcp_socket->listen() )
+    return new HTTPServer( http_request_target, listen_tcp_socket, log );
 }
 
 
@@ -2306,34 +2299,31 @@ YIELD::ipc::auto_ONCRPCServer YIELD::ipc::ONCRPCServer::create( const URI& absol
                                                                 auto_SSLContext ssl_context )
 {
   auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
-  if ( sockname != NULL )
+  if ( absolute_uri.get_scheme() == "oncrpcu" )
   {
-    if ( absolute_uri.get_scheme() == "oncrpcu" )
+    auto_UDPSocket udp_socket( UDPSocket::create() );
+    if ( udp_socket != NULL &&
+         udp_socket->bind( sockname ) )
     {
-      auto_UDPSocket udp_socket( UDPSocket::create() );
-      if ( udp_socket != NULL &&
-           udp_socket->bind( sockname ) )
-      {
-        udp_socket->aio_recvfrom( new AIORecvFromControlBlock( interface_ ) );
-        return new ONCRPCServer( interface_, udp_socket.release() );
-      }
+      udp_socket->aio_recvfrom( new AIORecvFromControlBlock( interface_ ) );
+      return new ONCRPCServer( interface_, udp_socket.release() );
     }
-    else
-    {
-      auto_TCPSocket listen_tcp_socket;
+  }
+  else
+  {
+    auto_TCPSocket listen_tcp_socket;
 #ifdef YIELD_HAVE_OPENSSL
-      if ( absolute_uri.get_scheme() == "oncrpcs" && ssl_context != NULL )
-        listen_tcp_socket = SSLSocket::create( ssl_context ).release();
-      else
+    if ( absolute_uri.get_scheme() == "oncrpcs" && ssl_context != NULL )
+      listen_tcp_socket = SSLSocket::create( ssl_context ).release();
+    else
 #endif
-        listen_tcp_socket = TCPSocket::create();
-      if ( listen_tcp_socket != NULL &&
-           listen_tcp_socket->bind( sockname ) &&
-           listen_tcp_socket->listen() )
-      {
-        listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( interface_ ) );
-        return new ONCRPCServer( interface_, listen_tcp_socket.release() );
-      }
+      listen_tcp_socket = TCPSocket::create();
+    if ( listen_tcp_socket != NULL &&
+         listen_tcp_socket->bind( sockname ) &&
+         listen_tcp_socket->listen() )
+    {
+      listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( interface_ ) );
+      return new ONCRPCServer( interface_, listen_tcp_socket.release() );
     }
   }
   throw YIELD::platform::Exception();
@@ -3664,7 +3654,17 @@ YIELD::ipc::auto_SocketAddress YIELD::ipc::SocketAddress::create( const char* ho
   if ( addrinfo_list != NULL )
     return new SocketAddress( *addrinfo_list );
   else
-    return NULL;
+  {
+    std::ostringstream what;
+    what << "error resolving host \"";
+    if ( hostname != NULL )
+      what << hostname;
+    else
+      what << "*";
+    what << "\": ";
+    what << YIELD::platform::Exception::strerror();
+    throw YIELD::platform::Exception( what.str() );
+  }
 }
 bool YIELD::ipc::SocketAddress::as_struct_sockaddr( int family, struct sockaddr*& out_sockaddr, socklen_t& out_sockaddrlen )
 {

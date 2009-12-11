@@ -1,6 +1,6 @@
-// Revision: 198
+// Revision: 208
 
-#include "yield.h"
+#include "yield/platform.h"
 #include "yieldfs.h"
 using namespace yieldfs;
 
@@ -17,8 +17,15 @@ namespace yieldfs
   class CachedPage : public yidl::runtime::HeapBuffer
   {
   public:
-    CachedPage( const YIELD::platform::Path& file_path, size_t number, size_t size )
-      : yidl::runtime::HeapBuffer( size ), file_path( file_path ), number( number )
+    CachedPage
+    (
+      const YIELD::platform::Path& file_path,
+      size_t number,
+      size_t size
+    )
+      : yidl::runtime::HeapBuffer( size ),
+        file_path( file_path ),
+        number( number )
     {
       dirty_bit = false;
     }
@@ -27,7 +34,12 @@ namespace yieldfs
     const YIELD::platform::Path& get_file_path() const { return file_path; }
     bool get_dirty_bit() const { return dirty_bit; }
     size_t get_number() const { return number; }
-    bool operator==( const CachedPage& other ) const { return file_path == other.file_path && number == other.number; }
+
+    bool operator==( const CachedPage& other ) const
+    {
+        return file_path == other.file_path && number == other.number;
+    }
+
     void set_dirty_bit() { dirty_bit = true; }
 
     // yidl::runtime::Object
@@ -56,7 +68,11 @@ namespace yieldfs
   class CachedStat : public yidl::runtime::Object
   {
   public:
-    CachedStat( const YIELD::platform::Path& path, YIELD::platform::auto_Stat stbuf )
+    CachedStat
+    (
+      const YIELD::platform::Path& path,
+      YIELD::platform::auto_Stat stbuf
+    )
       : path( path ), stbuf( stbuf )
     {
       creation_epoch_time_s = YIELD::platform::Time::getCurrentUnixTimeS();
@@ -75,6 +91,8 @@ namespace yieldfs
 
     double creation_epoch_time_s;
   };
+
+  typedef yidl::runtime::auto_Object<CachedStat> auto_CachedStat;
 };
 
 
@@ -100,10 +118,19 @@ namespace yieldfs
     virtual ssize_t read( void* buffer, size_t buffer_len, uint64_t offset );
     bool sync();
     bool truncate( uint64_t offset );
-    virtual ssize_t write( const void* buffer, size_t buffer_len, uint64_t offset );
+
+    virtual ssize_t
+      write( const void* buffer, size_t buffer_len, uint64_t offset );
 
   protected:
-    DataCachingFile( PageCache& page_cache, const YIELD::platform::Path& path, YIELD::platform::auto_File underlying_file, YIELD::platform::auto_Log log = NULL );
+    DataCachingFile
+    (
+      YIELD::platform::auto_Log log,
+      PageCache& page_cache,
+      const YIELD::platform::Path& path,
+      YIELD::platform::auto_File underlying_file
+    );
+
     ~DataCachingFile();
 
     PageCache& page_cache;
@@ -190,7 +217,16 @@ namespace yieldfs
           NULL // bmap
         };
 
-        struct fuse* fuse_ = fuse_new( fuse_chan_, &fuse_args_, &operations, sizeof( operations ), this );
+        struct fuse* fuse_ =
+          fuse_new
+          (
+            fuse_chan_,
+            &fuse_args_,
+            &operations,
+            sizeof( operations ),
+            this
+          );
+
         if ( fuse_ )
         {
           fuse_set_signal_handlers( fuse_get_session( fuse_ ) );
@@ -204,33 +240,48 @@ namespace yieldfs
         return errno;
     }
 
-    static int access( const char* path, int mode )
+    static int
+    access( const char* path, int mode )
     {
       return get_volume().access( path, mode ) ? 0 : -EACCES;
     }
 
-    static int chmod( const char* path, mode_t mode )
+    static int
+    chmod( const char* path, mode_t mode )
     {
       return get_volume().chmod( path, mode ) ? 0 : ( -1 * errno );
     }
 
-    static int chown( const char* path, uid_t uid, gid_t gid )
+    static int
+    chown( const char* path, uid_t uid, gid_t gid )
     {
       return get_volume().chown( path, uid, gid ) ? 0 : ( -1 * errno );
     }
 
-    static int create( const char* path, mode_t mode, struct fuse_file_info* fi )
+    static int
+    create
+    (
+      const char* path,
+      mode_t mode,
+      struct fuse_file_info* fi
+    )
     {
       uint32_t flags = O_CREAT|O_WRONLY|O_TRUNC;
 #ifdef O_DIRECT
-      if ( ( get_flags() & FUSE::FUSE_FLAG_DIRECT_IO ) == FUSE::FUSE_FLAG_DIRECT_IO )
+      if ( ( get_flags() & FUSE::FUSE_FLAG_DIRECT_IO ) ==
+           FUSE::FUSE_FLAG_DIRECT_IO )
         flags |= O_DIRECT;
 #endif
 
-      fi->fh = reinterpret_cast<uint64_t>( get_volume().open( path, flags, mode ).release() );
+      fi->fh = reinterpret_cast<uint64_t>
+      (
+        get_volume().open( path, flags, mode ).release()
+      );
+
       if ( fi->fh != 0 )
       {
-        if ( ( get_flags() & FUSE::FUSE_FLAG_DIRECT_IO ) == FUSE::FUSE_FLAG_DIRECT_IO )
+        if ( ( get_flags() & FUSE::FUSE_FLAG_DIRECT_IO ) ==
+             FUSE::FUSE_FLAG_DIRECT_IO )
           fi->direct_io = 1;
 
         return 0;
@@ -239,7 +290,8 @@ namespace yieldfs
         return -1 * errno;
     }
 
-    static int fgetattr( const char* path, struct stat *stbuf, struct fuse_file_info* fi )
+    static int
+    fgetattr( const char* path, struct stat *stbuf, struct fuse_file_info* fi )
     {
       YIELD::platform::auto_Stat yield_stbuf = get_file( fi )->stat();
       if ( yield_stbuf != NULL )
@@ -251,7 +303,8 @@ namespace yieldfs
         return -1 * errno;
     }
 
-    static int fsync( const char* path, int isdatasync, struct fuse_file_info* fi )
+    static int
+    fsync( const char* path, int isdatasync, struct fuse_file_info* fi )
     {
       if ( isdatasync )
       {
@@ -267,7 +320,8 @@ namespace yieldfs
       return -1 * errno;
     }
 
-    static int ftruncate( const char* path, off_t size, struct fuse_file_info* fi )
+    static int
+    ftruncate( const char* path, off_t size, struct fuse_file_info* fi )
     {
       if ( get_file( fi ) )
       {
@@ -280,7 +334,8 @@ namespace yieldfs
       return -1 * errno;
     }
 
-    static int getattr( const char* path, struct stat *stbuf )
+    static int
+    getattr( const char* path, struct stat *stbuf )
     {
       YIELD::platform::auto_Stat yield_stbuf = get_volume().stat( path );
       if ( yield_stbuf != NULL )
@@ -292,7 +347,8 @@ namespace yieldfs
         return -1 * errno;
     }
 
-    static int getxattr( const char* path, const char* name, char *value, size_t size )
+    static int
+    getxattr( const char* path, const char* name, char *value, size_t size )
     {
       std::string value_str;
       if ( get_volume().getxattr( path, name, value_str ) )
@@ -311,12 +367,14 @@ namespace yieldfs
         return -1 * errno;
     }
 
-    static int link( const char* path, const char* linkpath )
+    static int
+    link( const char* path, const char* linkpath )
     {
       return get_volume().link( path, linkpath ) ? 0 : ( -1 * errno );
     }
 
-    static int listxattr( const char* path, char *list, size_t size )
+    static int
+    listxattr( const char* path, char *list, size_t size )
     {
       std::vector<std::string> xattr_names;
       if ( get_volume().listxattr( path, xattr_names ) )
@@ -324,12 +382,24 @@ namespace yieldfs
         if ( list != NULL && size > 0 )
         {
           size_t list_size_consumed = 0;
-          for ( std::vector<std::string>::const_iterator xattr_name_i = xattr_names.begin(); xattr_name_i != xattr_names.end(); xattr_name_i++ )
+          for
+          (
+            std::vector<std::string>::const_iterator
+              xattr_name_i = xattr_names.begin();
+            xattr_name_i != xattr_names.end();
+            xattr_name_i++
+          )
           {
             const std::string& xattr_name = *xattr_name_i;
             if ( xattr_name.size()+1 <= ( size - list_size_consumed ) )
             {
-              memcpy( list+list_size_consumed, xattr_name.c_str(), xattr_name.size()+1 ); // Include the trailing \0
+              memcpy
+              (
+                list+list_size_consumed,
+                xattr_name.c_str(),
+                xattr_name.size()+1
+              ); // Include the trailing \0
+
               list_size_consumed += xattr_name.size()+1;
             }
             else
@@ -341,8 +411,16 @@ namespace yieldfs
         else
         {
           size = 0;
-          for ( std::vector<std::string>::const_iterator xattr_name_i = xattr_names.begin(); xattr_name_i != xattr_names.end(); xattr_name_i++ )
+
+          for
+          (
+            std::vector<std::string>::const_iterator
+              xattr_name_i = xattr_names.begin();
+            xattr_name_i != xattr_names.end();
+            xattr_name_i++
+          )
             size += ( *xattr_name_i ).size()+1;
+
           return static_cast<int>( size );
         }
       }
@@ -350,7 +428,14 @@ namespace yieldfs
         return -1 * errno;
     }
 
-    static int lock( const char* path, struct fuse_file_info *fi, int cmd, struct flock* flock_ )
+    static int
+    lock
+    (
+      const char* path,
+      struct fuse_file_info *fi,
+      int cmd,
+      struct flock* flock_
+    )
     {
       bool exclusive = flock_->l_type == F_WRLCK;
       uint64_t offset = flock_->l_start;
@@ -406,12 +491,14 @@ namespace yieldfs
       return -1 * errno;
     }
 
-    static int mkdir( const char* path, mode_t mode )
+    static int
+    mkdir( const char* path, mode_t mode )
     {
       return get_volume().mkdir( path, mode ) ? 0 : ( -1 * errno );
     }
 
-    static int open( const char* path, struct fuse_file_info* fi )
+    static int
+    open( const char* path, struct fuse_file_info* fi )
     {
       uint32_t flags = fi->flags;
       if ( ( flags & S_IFREG ) == S_IFREG )
@@ -420,24 +507,38 @@ namespace yieldfs
 #ifdef O_DIRECT
       if ( ( flags & O_DIRECT ) == O_DIRECT )
         fi->direct_io = 1;
-      else if ( ( get_flags() & FUSE::FUSE_FLAG_DIRECT_IO ) == FUSE::FUSE_FLAG_DIRECT_IO )
+      else if ( ( get_flags() & FUSE::FUSE_FLAG_DIRECT_IO ) ==
+                FUSE::FUSE_FLAG_DIRECT_IO )
       {
         fi->direct_io = 1;
         flags |= O_DIRECT;
       }
 #else
-      if ( ( get_flags() & FUSE::FUSE_FLAG_DIRECT_IO ) == FUSE::FUSE_FLAG_DIRECT_IO )
+      if ( ( get_flags() & FUSE::FUSE_FLAG_DIRECT_IO ) ==
+           FUSE::FUSE_FLAG_DIRECT_IO )
         fi->direct_io = 1;
 #endif
 
-      fi->fh = reinterpret_cast<uint64_t>( get_volume().open( path, flags ).release() );
+      fi->fh = reinterpret_cast<uint64_t>
+               (
+                 get_volume().open( path, flags ).release()
+               );
+
       if ( fi->fh != 0 )
         return 0;
       else
         return -1 * errno;
     }
 
-    static int read( const char* path, char *rbuf, size_t size, off_t offset, struct fuse_file_info* fi )
+    static int
+    read
+    (
+      const char* path,
+      char *rbuf,
+      size_t size,
+      off_t offset,
+      struct fuse_file_info* fi
+     )
     {
       ssize_t read_ret = get_file( fi )->read( rbuf, size, offset );
       if ( read_ret >= 0 )
@@ -454,10 +555,21 @@ namespace yieldfs
       { }
 
       // YIELD::platform::Volume::readdirCallback
-      bool operator()( const YIELD::platform::Path& name, YIELD::platform::auto_Stat stbuf )
+      bool operator()
+      (
+        const YIELD::platform::Path& name,
+        YIELD::platform::auto_Stat stbuf
+      )
       {
         struct stat struct_stat_stbuf = *stbuf;
-        filler( buf, static_cast<const std::string&>( name ).c_str(), &struct_stat_stbuf, 0 );
+
+        filler
+        (
+          buf,
+          static_cast<const std::string&>( name ).c_str(),
+          &struct_stat_stbuf, 0
+        );
+
         return true;
       }
 
@@ -466,7 +578,15 @@ namespace yieldfs
       fuse_fill_dir_t filler;
     };
 
-    static int readdir( const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi )
+    static int
+    readdir
+    (
+      const char* path,
+      void* buf,
+      fuse_fill_dir_t filler,
+      off_t offset,
+      struct fuse_file_info* fi
+    )
     {
       YIELD::platform::Volume& volume = get_volume();
 
@@ -478,7 +598,9 @@ namespace yieldfs
 
         if ( strcmp( path, "/" ) != 0 )
         {
-          yield_stbuf = volume.stat( YIELD::platform::Path( path ).split().first );
+          yield_stbuf =
+            volume.stat( YIELD::platform::Path( path ).split().first );
+
           if ( yield_stbuf != NULL )
           {
             stbuf = *yield_stbuf;
@@ -500,22 +622,33 @@ namespace yieldfs
         return -1 * errno;
     }
 
-    static int readlink( const char* path, char *linkbuf, size_t size )
+    static int
+    readlink( const char* path, char *linkbuf, size_t size )
     {
       YIELD::platform::auto_Path linkpath = get_volume().readlink( path );
       if ( linkpath!= NULL )
       {
         if ( size > linkpath->size() + 1 )
-          size = linkpath->size() + 1; // FUSE wants the terminating \0, even though the readlink system call doesn't
-        memcpy( linkbuf, static_cast<const std::string&>( *linkpath ).c_str(), size );
-        // Don't return size here, FUSE disagrees with the system call about that, too
+          size = linkpath->size() + 1; // FUSE wants the terminating \0,
+                                       // even though the readlink
+                                       // system call doesn't
+        memcpy
+        (
+          linkbuf,
+          static_cast<const std::string&>( *linkpath ).c_str(),
+          size
+        );
+
+        // Don't return size here,
+        // FUSE disagrees with the system call about that, too
         return 0;
       }
       else
         return -1 * errno;
     }
 
-    static int release( const char* path, struct fuse_file_info* fi )
+    static int
+    release( const char* path, struct fuse_file_info* fi )
     {
       // close explicitly to trigger replication in XtreemFS
       // there may be extra references to the File (e.g. timers) ->
@@ -533,12 +666,14 @@ namespace yieldfs
         return 0;
     }
 
-    static int rename( const char* path, const char *topath )
+    static int
+    rename( const char* path, const char *topath )
     {
       return get_volume().rename( path, topath ) ? 0 : ( -1 * errno );
     }
 
-    static int removexattr( const char* path, const char* name )
+    static int
+    removexattr( const char* path, const char* name )
     {
       return get_volume().removexattr( path, name ) ? 0 : ( -1 * errno );
     }
@@ -548,13 +683,25 @@ namespace yieldfs
       return get_volume().rmdir( path ) ? 0 : ( -1 * errno );
     }
 
-    static int setxattr( const char* path, const char* name, const char *value, size_t size, int flags )
+    static int
+    setxattr
+    (
+      const char* path,
+      const char* name,
+      const char *value,
+      size_t size,
+      int flags
+    )
     {
       std::string value_str( value, size );
-      return get_volume().setxattr( path, name, value_str, flags ) ? 0 : ( -1 * errno );
+      if ( get_volume().setxattr( path, name, value_str, flags ) )
+        return 0;
+      else
+        return -1 * errno;
     }
 
-    static int statfs( const char* path, struct statvfs* sbuf )
+    static int
+    statfs( const char* path, struct statvfs* sbuf )
     {
       if ( sbuf )
         return get_volume().statvfs( path, *sbuf ) ? 0 : ( -1 * errno );
@@ -562,28 +709,45 @@ namespace yieldfs
         return -1 * EFAULT;
     }
 
-    static int symlink( const char* path, const char* linkpath )
+    static int
+    symlink( const char* path, const char* linkpath )
     {
       return get_volume().symlink( path, linkpath ) ? 0 : ( -1 * errno );
     }
 
-    static int truncate( const char* path, off_t size )
+    static int
+    truncate( const char* path, off_t size )
     {
       return get_volume().truncate( path, size ) ? 0 : ( -1 * errno );
     }
 
-    static int unlink( const char* path )
+    static int
+    unlink( const char* path )
     {
-      // TODO: need to do reference counting here: mark the file "to be deleted", then delete it when we see the last reference
       return get_volume().unlink( path ) ? 0 : ( -1 * errno );
     }
 
-    static int utimens( const char* path, const timespec tv[2] )
+    static int
+    utimens( const char* path, const timespec tv[2] )
     {
-      return get_volume().utimens( path, tv[0], tv[1], static_cast<uint64_t>( 0 ) ) ? 0 : ( -1 * errno );
+      return get_volume().utimens
+             (
+               path,
+               tv[0],
+               tv[1],
+               static_cast<uint64_t>( 0 )
+             ) ? 0 : ( -1 * errno );
     }
 
-    static int write( const char* path, const char *wbuf, size_t size, off_t offset, struct fuse_file_info* fi )
+    static int
+    write
+    (
+      const char* path,
+      const char *wbuf,
+      size_t size,
+      off_t offset,
+      struct fuse_file_info* fi
+    )
     {
       size_t write_ret = get_file( fi )->write( wbuf, size, offset );
       if ( write_ret >= 0 )
@@ -609,7 +773,10 @@ namespace yieldfs
 
     static inline YIELD::platform::Volume& get_volume()
     {
-      return *static_cast<FUSEUnix*>( fuse_get_context()->private_data )->volume;
+      return *static_cast<FUSEUnix*>
+             (
+               fuse_get_context()->private_data
+             )->volume;
     }
   };
 #endif
@@ -644,7 +811,8 @@ namespace yieldfs
     {
       DOKAN_OPTIONS options;
       memset( &options, 0, sizeof( options ) );
-      options.DriveLetter = static_cast<const wchar_t*>( YIELD::platform::Path( mount_point ) )[0];
+      options.DriveLetter =
+        static_cast<const wchar_t*>( YIELD::platform::Path( mount_point ) )[0];
       options.ThreadCount = 4;
       if ( ( flags & FUSE::FUSE_FLAG_DEBUG ) == FUSE::FUSE_FLAG_DEBUG )
       {
@@ -692,64 +860,101 @@ namespace yieldfs
       DWORD					ShareMode,
       DWORD					CreationDisposition,
       DWORD					FlagsAndAttributes,
-      PDOKAN_FILE_INFO		DokanFileInfo )
+      PDOKAN_FILE_INFO	 DokanFileInfo )
     {
       YIELD::platform::Volume& volume = get_volume( DokanFileInfo );
       YIELD::platform::File* file = NULL;
 
       unsigned long open_flags = 0;
-      //if ( ( DesiredAccess & FILE_ADD_FILE ) == FILE_ADD_FILE ) // Create a file in a directory
+
+      // Create a file in a directory
+      //if ( ( DesiredAccess & FILE_ADD_FILE ) == FILE_ADD_FILE )
       //  ;
-      //if ( ( DesiredAccess & FILE_ADD_SUBDIRECTORY ) == FILE_ADD_SUBDIRECTORY ) // Create a subdirectory
+
+      // Create a subdirectory
+      //if ( ( DesiredAccess & FILE_ADD_SUBDIRECTORY ) == FILE_ADD_SUBDIRECTORY )
       //  ;
+
       if ( ( DesiredAccess & FILE_APPEND_DATA ) == FILE_APPEND_DATA )
         open_flags |= O_APPEND;
-      //if ( ( DesiredAccess & FILE_DELETE_CHILD ) == FILE_DELETE_CHILD ) // For a directory, the right to delete a directory and all the files it contains
+
+      // For a directory, the right to delete a directory
+      // and all the files it contains
+      //if ( ( DesiredAccess & FILE_DELETE_CHILD ) == FILE_DELETE_CHILD )
       //  ;
+
       //if ( ( DesiredAccess & FILE_EXECUTE ) == FILE_EXECUTE )
       //  ;
+
       //if ( ( DesiredAccess & FILE_LIST_DIRECTORY ) == FILE_LIST_DIRECTORY )
       //  ;
+
       if ( ( DesiredAccess & FILE_READ_ATTRIBUTES ) == FILE_READ_ATTRIBUTES )
         open_flags |= O_RDONLY;
+
       if ( ( DesiredAccess & FILE_READ_DATA ) == FILE_READ_DATA )
         open_flags |= O_RDONLY;
+
       if ( ( DesiredAccess & FILE_READ_EA ) == FILE_READ_EA )
         open_flags |= O_RDONLY;
+
       //if ( ( DesiredAccess & FILE_TRAVERSE ) == FILE_TRAVERSE )
       //  ;
+
       if ( ( DesiredAccess & FILE_WRITE_ATTRIBUTES ) == FILE_WRITE_ATTRIBUTES )
         open_flags |= O_WRONLY;
+
       if ( ( DesiredAccess & FILE_WRITE_DATA ) == FILE_WRITE_DATA )
         open_flags |= O_WRONLY;
+
       if ( ( DesiredAccess & FILE_WRITE_EA ) == FILE_WRITE_EA )
         open_flags |= O_WRONLY;
 
-      if ( ( open_flags & O_RDONLY ) == O_RDONLY && ( open_flags & O_WRONLY ) == O_WRONLY )
+      if ( ( open_flags & O_RDONLY ) == O_RDONLY &&
+           ( open_flags & O_WRONLY ) == O_WRONLY )
       {
         open_flags ^= ( O_RDONLY|O_WRONLY );
         open_flags |= O_RDWR;
       }
 
+
       uint32_t file_attributes = 0;
-      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_ARCHIVE ) == FILE_ATTRIBUTE_ARCHIVE )
+
+      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_ARCHIVE ) ==
+           FILE_ATTRIBUTE_ARCHIVE )
         file_attributes |= FILE_ATTRIBUTE_ARCHIVE;
-      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_ENCRYPTED ) == FILE_ATTRIBUTE_ENCRYPTED )
+
+      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_ENCRYPTED ) ==
+           FILE_ATTRIBUTE_ENCRYPTED )
         file_attributes |= FILE_ATTRIBUTE_ENCRYPTED;
-      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_HIDDEN ) == FILE_ATTRIBUTE_HIDDEN )
+
+      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_HIDDEN ) ==
+           FILE_ATTRIBUTE_HIDDEN )
         file_attributes |= FILE_ATTRIBUTE_HIDDEN;
-      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_NORMAL ) == FILE_ATTRIBUTE_NORMAL )
+
+      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_NORMAL ) ==
+           FILE_ATTRIBUTE_NORMAL )
         file_attributes |= FILE_ATTRIBUTE_NORMAL;
-      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_OFFLINE ) == FILE_ATTRIBUTE_OFFLINE )
+
+      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_OFFLINE ) ==
+           FILE_ATTRIBUTE_OFFLINE )
         file_attributes |= FILE_ATTRIBUTE_OFFLINE;
-      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_READONLY ) == FILE_ATTRIBUTE_READONLY )
+
+      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_READONLY ) ==
+           FILE_ATTRIBUTE_READONLY )
         file_attributes |= FILE_ATTRIBUTE_READONLY;
-      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_SYSTEM ) == FILE_ATTRIBUTE_SYSTEM )
+
+      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_SYSTEM ) ==
+           FILE_ATTRIBUTE_SYSTEM )
         file_attributes |= FILE_ATTRIBUTE_SYSTEM;
-      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_TEMPORARY ) == FILE_ATTRIBUTE_TEMPORARY )
+
+      if ( ( FlagsAndAttributes & FILE_ATTRIBUTE_TEMPORARY ) ==
+           FILE_ATTRIBUTE_TEMPORARY )
         file_attributes |= FILE_ATTRIBUTE_TEMPORARY;
+
       if ( file_attributes == 0 )
         file_attributes = FILE_ATTRIBUTE_NORMAL;
+
 
       DokanFileInfo->IsDirectory = FALSE;
 
@@ -758,7 +963,13 @@ namespace yieldfs
       {
         case CREATE_NEW: // Create the file only if it does not exist already
         {
-          file = volume.open( FileName, open_flags|O_CREAT|O_EXCL, YIELD::platform::File::DEFAULT_MODE, file_attributes ).release();
+          file = volume.open
+                (
+                  FileName,
+                  open_flags|O_CREAT|O_EXCL,
+                  YIELD::platform::File::DEFAULT_MODE,
+                  file_attributes
+                ).release();
         }
         break;
 
@@ -773,19 +984,33 @@ namespace yieldfs
             }
           }
 
-          file = volume.open( FileName, open_flags|O_CREAT, YIELD::platform::File::DEFAULT_MODE, file_attributes ).release();
+          file = volume.open
+                 (
+                   FileName,
+                   open_flags|O_CREAT,
+                   YIELD::platform::File::DEFAULT_MODE,
+                   file_attributes
+                 ).release();
         }
         break;
 
-        case OPEN_ALWAYS: // Open an existing file or create it if it doesn't exist
+        case OPEN_ALWAYS: // Open an existing file; create if it doesn't exist
         {
-          file = volume.open( FileName, open_flags|O_CREAT, YIELD::platform::File::DEFAULT_MODE, file_attributes ).release();
+          file = volume.open
+                 (
+                   FileName,
+                   open_flags|O_CREAT,
+                   YIELD::platform::File::DEFAULT_MODE,
+                   file_attributes
+                 ).release();
         }
         break;
 
         case OPEN_EXISTING: // Only open an existing file
         {
-          if ( YIELD::platform::Path( FileName ) == PATH_SEPARATOR_WIDE_STRING )
+          if (
+               YIELD::platform::Path( FileName ) == PATH_SEPARATOR_WIDE_STRING
+             )
           {
             DokanFileInfo->IsDirectory = TRUE;
             return ERROR_SUCCESS;
@@ -801,7 +1026,13 @@ namespace yieldfs
                 return ERROR_SUCCESS;
               }
               else
-                file = volume.open( FileName, open_flags, YIELD::platform::File::DEFAULT_MODE, file_attributes ).release();
+                file = volume.open
+                       (
+                         FileName,
+                         open_flags,
+                         YIELD::platform::File::DEFAULT_MODE,
+                         file_attributes
+                       ).release();
             }
             else
               return -1 * ::GetLastError();
@@ -811,7 +1042,14 @@ namespace yieldfs
 
         case TRUNCATE_EXISTING: // Only open an existing file and truncate it
         {
-          file = volume.open( FileName, open_flags|O_TRUNC, YIELD::platform::File::DEFAULT_MODE, file_attributes ).release();
+          file = volume.open
+                 (
+                   FileName,
+                   open_flags|O_TRUNC,
+                   YIELD::platform::File::DEFAULT_MODE,
+                   file_attributes
+                 ).release();
+
           if ( file != NULL )
             file->truncate( 0 );
         }
@@ -832,7 +1070,7 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     CreateDirectory(
 	    LPCWSTR					FileName,
-	    PDOKAN_FILE_INFO		DokanFileInfo )
+	    PDOKAN_FILE_INFO	 DokanFileInfo )
     {
       if ( wcscmp( FileName, PATH_SEPARATOR_WIDE_STRING ) != 0 )
       {
@@ -848,7 +1086,7 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     CloseFile(
 	    LPCWSTR					FileName,
-	    PDOKAN_FILE_INFO		DokanFileInfo )
+	    PDOKAN_FILE_INFO	 DokanFileInfo )
     {
       // close() explicitly to trigger replication in XtreemFS
       // there may be extra references to the File (e.g. timers) ->
@@ -876,7 +1114,7 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     Cleanup(
 	    LPCWSTR					FileName,
-	    PDOKAN_FILE_INFO		DokanFileInfo )
+	    PDOKAN_FILE_INFO	 DokanFileInfo )
     {
       if ( DokanFileInfo->DeleteOnClose )
       {
@@ -892,7 +1130,7 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     DeleteDirectory(
 	    LPCWSTR				FileName,
-	    PDOKAN_FILE_INFO	DokanFileInfo )
+	    PDOKAN_FILE_INFO DokanFileInfo )
     {
       if ( get_volume( DokanFileInfo ).rmdir( FileName ) )
         return ERROR_SUCCESS;
@@ -903,9 +1141,10 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     DeleteFile(
 	    LPCWSTR				FileName,
-	    PDOKAN_FILE_INFO	DokanFileInfo )
+	    PDOKAN_FILE_INFO DokanFileInfo )
     {
-      // Don't actually unlink the file here, simply check whether we have access to delete it
+      // Don't actually unlink the file here,
+      // simply check whether we have access to delete it.
       // The unlink will be in cleanup, when DeleteOnClose is set
       return ERROR_SUCCESS;
     }
@@ -913,12 +1152,20 @@ namespace yieldfs
     class readdirCallback : public YIELD::platform::Volume::readdirCallback
     {
     public:
-      readdirCallback( PFillFindData FillFindData, PDOKAN_FILE_INFO	DokanFileInfo )
+      readdirCallback
+      (
+        PFillFindData FillFindData,
+        PDOKAN_FILE_INFO DokanFileInfo
+      )
         : FillFindData( FillFindData ), DokanFileInfo( DokanFileInfo )
       { }
 
       // YIELD::platform::Volume::readdirCallback
-      bool operator()( const YIELD::platform::Path& path, YIELD::platform::auto_Stat stbuf )
+      bool operator()
+      (
+        const YIELD::platform::Path& path,
+        YIELD::platform::auto_Stat stbuf
+      )
       {
         WIN32_FIND_DATA find_data = *stbuf;
         wcsncpy_s( find_data.cFileName, 260, path, path.size() );
@@ -932,10 +1179,12 @@ namespace yieldfs
     };
 
     static int DOKAN_CALLBACK
-    FindFiles(
-	    LPCWSTR				FileName,
-	    PFillFindData		FillFindData, // function pointer
-	    PDOKAN_FILE_INFO	DokanFileInfo )
+    FindFiles
+    (
+	    LPCWSTR FileName,
+	    PFillFindData FillFindData,
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       readdirCallback readdir_callback( FillFindData, DokanFileInfo );
       if ( get_volume( DokanFileInfo ).readdir( FileName, readdir_callback ) )
@@ -945,9 +1194,11 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    FlushFileBuffers(
+    FlushFileBuffers
+    (
 	    LPCWSTR		FileName,
-	    PDOKAN_FILE_INFO	DokanFileInfo )
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       if ( get_file( DokanFileInfo )->datasync() )
         return ERROR_SUCCESS;
@@ -956,14 +1207,19 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    GetDiskFreeSpace(
+    GetDiskFreeSpace
+    (
 	    PULONGLONG FreeBytesAvailable,
 	    PULONGLONG TotalNumberOfBytes,
 	    PULONGLONG TotalNumberOfFreeBytes,
-	    PDOKAN_FILE_INFO DokanFileInfo )
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       struct statvfs stbuf;
-      if ( get_volume( DokanFileInfo ).statvfs( YIELD::platform::Path(), stbuf ) )
+      if
+      (
+        get_volume( DokanFileInfo ).statvfs( YIELD::platform::Path(), stbuf )
+      )
       {
         if ( FreeBytesAvailable )
           *FreeBytesAvailable = stbuf.f_bsize * stbuf.f_bavail;
@@ -979,12 +1235,16 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    GetFileInformation(
-	    LPCWSTR							FileName,
-	    LPBY_HANDLE_FILE_INFORMATION	HandleFileInformation,
-	    PDOKAN_FILE_INFO				DokanFileInfo )
+    GetFileInformation
+    (
+	    LPCWSTR FileName,
+	    LPBY_HANDLE_FILE_INFORMATION HandleFileInformation,
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
-      YIELD::platform::auto_Stat stbuf = get_volume( DokanFileInfo ).stat( FileName );
+      YIELD::platform::auto_Stat stbuf =
+        get_volume( DokanFileInfo ).stat( FileName );
+
       if ( stbuf != NULL )
       {
         *HandleFileInformation = *stbuf;
@@ -995,8 +1255,9 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    GetVolumeInformation(
-	    LPWSTR  VolumeNameBuffer,
+    GetVolumeInformation
+    (
+	    LPWSTR VolumeNameBuffer,
 	    DWORD VolumeNameSize,
 	    LPDWORD VolumeSerialNumber,
 	    LPDWORD MaximumComponentLength,
@@ -1005,17 +1266,32 @@ namespace yieldfs
 	    DWORD FileSystemNameSize,
 	    PDOKAN_FILE_INFO DokanFileInfo )
     {
-      YIELD::platform::Path name = get_volume( DokanFileInfo ).volname( YIELD::platform::Path( PATH_SEPARATOR_STRING ) );
+      YIELD::platform::Path name =
+        get_volume( DokanFileInfo ).
+          volname( YIELD::platform::Path( PATH_SEPARATOR_STRING ) );
+
       struct statvfs stbuf;
-      if ( get_volume( DokanFileInfo ).statvfs( YIELD::platform::Path(), stbuf ) )
+      if
+      (
+        get_volume( DokanFileInfo ).statvfs
+        (
+          YIELD::platform::Path(), stbuf
+        )
+      )
       {
         wcscpy( VolumeNameBuffer, name );
+
         if ( VolumeSerialNumber )
           *VolumeSerialNumber = 0;
+
         if ( MaximumComponentLength )
           *MaximumComponentLength = stbuf.f_namemax;
+
         if ( FileSystemFlags )
-          *FileSystemFlags =  FILE_CASE_PRESERVED_NAMES|FILE_CASE_SENSITIVE_SEARCH|FILE_UNICODE_ON_DISK;
+          *FileSystemFlags = FILE_CASE_PRESERVED_NAMES|
+                             FILE_CASE_SENSITIVE_SEARCH|
+                             FILE_UNICODE_ON_DISK;
+
         wcscpy( FileSystemNameBuffer, L"yieldfs_FUSE" );
 
         return ERROR_SUCCESS;
@@ -1025,11 +1301,13 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    LockFile(
-	    LPCWSTR				FileName,
-	    LONGLONG			ByteOffset,
-	    LONGLONG			Length,
-	    PDOKAN_FILE_INFO	DokanFileInfo )
+    LockFile
+    (
+	    LPCWSTR FileName,
+	    LONGLONG ByteOffset,
+	    LONGLONG Length,
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       if ( get_file( DokanFileInfo )->setlkw( true, ByteOffset, Length ) )
         return ERROR_SUCCESS;
@@ -1038,11 +1316,13 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    MoveFile(
-	    LPCWSTR				FileName, // existing file name
-	    LPCWSTR				NewFileName,
-	    BOOL				ReplaceIfExisting,
-	    PDOKAN_FILE_INFO	DokanFileInfo )
+    MoveFile
+    (
+	    LPCWSTR FileName,
+	    LPCWSTR NewFileName,
+	    BOOL ReplaceIfExisting,
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       if ( get_volume( DokanFileInfo ).rename( FileName, NewFileName ) )
         return ERROR_SUCCESS;
@@ -1051,9 +1331,11 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    OpenDirectory(
-	    LPCWSTR					FileName,
-	    PDOKAN_FILE_INFO		DokanFileInfo )
+    OpenDirectory
+    (
+	    LPCWSTR FileName,
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       if ( wcscmp( FileName, PATH_SEPARATOR_WIDE_STRING ) == 0 )
       {
@@ -1062,7 +1344,9 @@ namespace yieldfs
       }
       else
       {
-        YIELD::platform::auto_Stat stbuf = get_volume( DokanFileInfo ).stat( FileName );
+        YIELD::platform::auto_Stat stbuf =
+            get_volume( DokanFileInfo ).stat( FileName );
+
         if ( stbuf!= NULL )
         {
           if ( stbuf->ISDIR() )
@@ -1079,13 +1363,15 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    ReadFile(
-	    LPCWSTR				FileName,
-	    LPVOID				Buffer,
-	    DWORD				BufferLength,
-	    LPDWORD				ReadLength,
-	    LONGLONG			Offset,
-	    PDOKAN_FILE_INFO	DokanFileInfo )
+    ReadFile
+    (
+	    LPCWSTR FileName,
+	    LPVOID Buffer,
+	    DWORD BufferLength,
+	    LPDWORD ReadLength,
+	    LONGLONG Offset,
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       YIELD::platform::File* file = get_file( DokanFileInfo );
 
@@ -1095,7 +1381,9 @@ namespace yieldfs
         read_ret = file->read( Buffer, BufferLength, Offset );
       else
       {
-        file = get_volume( DokanFileInfo ).open( FileName, O_RDONLY ).release();
+        file = get_volume( DokanFileInfo ).
+                open( FileName, O_RDONLY ).release();
+
         if ( file != NULL )
         {
           read_ret = file->read( Buffer, BufferLength, Offset );
@@ -1117,10 +1405,12 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    SetEndOfFile(
-	    LPCWSTR				FileName,
-	    LONGLONG			ByteOffset,
-	    PDOKAN_FILE_INFO	DokanFileInfo )
+    SetEndOfFile
+    (
+	    LPCWSTR FileName,
+	    LONGLONG ByteOffset,
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       YIELD::platform::File* file = get_file( DokanFileInfo );
 
@@ -1139,10 +1429,12 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    SetFileAttributes(
-	    LPCWSTR				FileName,
-	    DWORD				FileAttributes,
-	    PDOKAN_FILE_INFO	DokanFileInfo )
+    SetFileAttributes
+    (
+	    LPCWSTR FileName,
+	    DWORD FileAttributes,
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       if ( get_volume( DokanFileInfo ).setattr( FileName, FileAttributes ) )
         return ERROR_SUCCESS;
@@ -1151,25 +1443,38 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    SetFileTime(
-	    LPCWSTR				FileName,
-	    CONST FILETIME*		CreationTime,
-	    CONST FILETIME*		LastAccessTime,
-	    CONST FILETIME*		LastWriteTime,
-	    PDOKAN_FILE_INFO	DokanFileInfo )
+    SetFileTime
+    (
+	    LPCWSTR FileName,
+	    CONST FILETIME* CreationTime,
+	    CONST FILETIME*	LastAccessTime,
+	    CONST FILETIME*	LastWriteTime,
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
-      if ( get_volume( DokanFileInfo ).utimens( FileName, LastAccessTime, LastWriteTime, CreationTime ) )
+      if
+      (
+        get_volume( DokanFileInfo ).utimens
+        (
+          FileName,
+          LastAccessTime,
+          LastWriteTime,
+          CreationTime
+        )
+      )
         return ERROR_SUCCESS;
       else
         return -1 * ::GetLastError();
     }
 
     static int DOKAN_CALLBACK
-    UnlockFile(
-	    LPCWSTR				FileName,
-	    LONGLONG			ByteOffset,
-	    LONGLONG			Length,
-	    PDOKAN_FILE_INFO	DokanFileInfo )
+    UnlockFile
+    (
+	    LPCWSTR FileName,
+	    LONGLONG ByteOffset,
+	    LONGLONG Length,
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       if ( get_file( DokanFileInfo )->unlk( ByteOffset, Length ) )
         return ERROR_SUCCESS;
@@ -1178,20 +1483,24 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    Unmount(
-	    PDOKAN_FILE_INFO	DokanFileInfo )
+    Unmount
+    (
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
 	    return ERROR_SUCCESS;
     }
 
     static int DOKAN_CALLBACK
-    WriteFile(
-	    LPCWSTR		FileName,
-	    LPCVOID		Buffer,
-	    DWORD		NumberOfBytesToWrite,
-	    LPDWORD		NumberOfBytesWritten,
-	    LONGLONG			Offset,
-	    PDOKAN_FILE_INFO	DokanFileInfo )
+    WriteFile
+    (
+	    LPCWSTR FileName,
+	    LPCVOID Buffer,
+	    DWORD NumberOfBytesToWrite,
+	    LPDWORD NumberOfBytesWritten,
+	    LONGLONG Offset,
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       YIELD::platform::File* file = get_file( DokanFileInfo );
 
@@ -1201,7 +1510,9 @@ namespace yieldfs
         write_ret = file->write( Buffer, NumberOfBytesToWrite, Offset );
       else
       {
-        file = get_volume( DokanFileInfo ).open( FileName, O_CREAT|O_WRONLY ).release();
+        file = get_volume( DokanFileInfo ).
+                 open( FileName, O_CREAT|O_WRONLY ).release();
+
         if ( file != NULL )
         {
           write_ret = file->write( Buffer, NumberOfBytesToWrite, Offset );
@@ -1227,51 +1538,36 @@ namespace yieldfs
     uint32_t flags;
 
 
-    static inline YIELD::platform::File* get_file( PDOKAN_FILE_INFO DokanFileInfo )
+    static inline YIELD::platform::File*
+      get_file( PDOKAN_FILE_INFO DokanFileInfo )
     {
-      return reinterpret_cast<YIELD::platform::File*>( DokanFileInfo->Context );
+      return reinterpret_cast<YIELD::platform::File*>
+      (
+        DokanFileInfo->Context
+      );
     }
 
-    static inline YIELD::platform::Volume& get_volume( PDOKAN_FILE_INFO DokanFileInfo )
+    static inline YIELD::platform::Volume&
+      get_volume( PDOKAN_FILE_INFO DokanFileInfo )
     {
-      return *reinterpret_cast<FUSEWin32*>( DokanFileInfo->DokanOptions->GlobalContext )->volume;
+      return *reinterpret_cast<FUSEWin32*>
+      (
+        DokanFileInfo->DokanOptions->GlobalContext
+      )->volume;
     }
   };
 #endif
 };
 
 
-// metadata_caching_file.h
+// page_cache.h
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 
 
 
-
-namespace yieldfs
-{
-  class MetadataCachingFile : public StackableFile
-  {
-  public:
-    bool truncate( uint64_t offset );
-    ssize_t write( const void* buffer, size_t buffer_len, uint64_t offset );
-
-  private:
-    friend class MetadataCachingVolume;
-
-    MetadataCachingFile( yidl::runtime::auto_Object<MetadataCachingVolume> parent_volume, const YIELD::platform::Path& path, YIELD::platform::auto_File underlying_file, YIELD::platform::auto_Log log = NULL )
-      : StackableFile( path, underlying_file, log ), parent_volume( parent_volume )
-    { }
-
-    ~MetadataCachingFile() { }
-
-    yidl::runtime::auto_Object<MetadataCachingVolume> parent_volume;
-  };
-};
-
-
-// page_cache.h
 #include <list>
+#include <map>
 #include <vector>
 
 
@@ -1283,11 +1579,18 @@ namespace yieldfs
   class PageCache
   {
   public:
-    PageCache( uint64_t capacity_bytes, uint32_t flush_timeout_ms, YIELD::platform::auto_Volume underlying_volume );
+    PageCache
+    (
+      uint64_t capacity_bytes,
+      uint32_t flush_timeout_ms,
+      YIELD::platform::auto_Volume underlying_volume
+    );
+
     ~PageCache();
 
     void dirty( CachedPage& page );
-    yidl::runtime::auto_Object<CachedPage> find( const YIELD::platform::Path& file_path, size_t page_number );
+    yidl::runtime::auto_Object<CachedPage>
+      find( const YIELD::platform::Path& file_path, size_t page_number );
     void flush( const YIELD::platform::Path& file_path );
     void flush( yidl::runtime::auto_Object<CachedPage> dirty_page );
     void insert( yidl::runtime::auto_Object<CachedPage> page );
@@ -1310,6 +1613,37 @@ namespace yieldfs
 };
 
 
+// stat_cache.h
+// Copyright 2009 Minor Gordon.
+// This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
+
+
+
+#include <map>
+
+
+namespace yieldfs
+{
+  class StatCache : private std::map<YIELD::platform::Path, CachedStat*>
+  {
+  public:
+    StatCache( double ttl_s );
+    StatCache( YIELD::platform::auto_Log log, double ttl_s );
+    ~StatCache();
+
+    auto_CachedStat evict( const YIELD::platform::Path& path );
+    auto_CachedStat find( const YIELD::platform::Path& path );
+    void insert( CachedStat* cached_stat );
+
+  private:
+    YIELD::platform::auto_Log log;
+    double ttl_s;
+
+    YIELD::platform::Mutex lock;
+  };
+};
+
+
 // tracing_file.h
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
@@ -1322,7 +1656,12 @@ namespace yieldfs
   class TracingFile : public StackableFile
   {
   public:
-    TracingFile( const YIELD::platform::Path& path, YIELD::platform::auto_File underlying_file, YIELD::platform::auto_Log log );
+    TracingFile
+    (
+      YIELD::platform::auto_Log log,
+      const YIELD::platform::Path& path,
+      YIELD::platform::auto_File underlying_file
+    );
 
     YIELD_PLATFORM_FILE_PROTOTYPES;
 
@@ -1344,7 +1683,13 @@ namespace yieldfs
   class WriteBackCachingFile : public DataCachingFile
   {
   public:
-    WriteBackCachingFile( PageCache& page_cache, const YIELD::platform::Path& path, YIELD::platform::auto_File underlying_file, YIELD::platform::auto_Log log = NULL );
+    WriteBackCachingFile
+    (
+      YIELD::platform::auto_Log log,
+      PageCache& page_cache,
+      const YIELD::platform::Path& path,
+      YIELD::platform::auto_File underlying_file
+    );
 
   private:
     ~WriteBackCachingFile();
@@ -1364,7 +1709,13 @@ namespace yieldfs
   class WriteThroughCachingFile : public DataCachingFile
   {
   public:
-    WriteThroughCachingFile( PageCache& page_cache, const YIELD::platform::Path& path, YIELD::platform::auto_File underlying_file, YIELD::platform::auto_Log log = NULL );
+    WriteThroughCachingFile
+    (
+      YIELD::platform::auto_Log log,
+      PageCache& page_cache,
+      const YIELD::platform::Path& path,
+      YIELD::platform::auto_File underlying_file
+    );
 
     // YIELD::platform::File
     ssize_t write( const void* buffer, size_t buffer_len, uint64_t offset );
@@ -1376,8 +1727,17 @@ namespace yieldfs
 
 
 // data_caching_file.cpp
-DataCachingFile::DataCachingFile( PageCache& page_cache, const YIELD::platform::Path& path, YIELD::platform::auto_File underlying_file, YIELD::platform::auto_Log log )
-  : StackableFile( path, underlying_file, log ), page_cache( page_cache )
+// Copyright 2009 Minor Gordon.
+// This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
+DataCachingFile::DataCachingFile
+(
+  YIELD::platform::auto_Log log,
+  PageCache& page_cache,
+  const YIELD::platform::Path& path,
+  YIELD::platform::auto_File underlying_file
+)
+  : StackableFile( log, path, underlying_file ),
+    page_cache( page_cache )
 {
   pagesize = underlying_file->getpagesize();
 }
@@ -1392,9 +1752,12 @@ ssize_t DataCachingFile::read( void* rbuf, size_t size, uint64_t offset )
 {
 #ifdef _DEBUG
   if ( log != NULL )
-     log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read( rbuf, size=" << size << ", offset=" << offset << " )";
+     log->getStream( YIELD::platform::Log::LOG_INFO )
+      << "yieldfs::DataCachingFile: read( rbuf, size=" << size <<
+      ", offset=" << offset << " )";
 #endif
-  char *rbuf_p = static_cast<char*>( rbuf ), *rbuf_end = static_cast<char*>( rbuf ) + size;
+  char *rbuf_p = static_cast<char*>( rbuf ),
+       *rbuf_end = static_cast<char*>( rbuf ) + size;
   while ( rbuf_p < rbuf_end )
   {
     size_t page_number = static_cast<size_t>( offset / pagesize );
@@ -1404,29 +1767,41 @@ ssize_t DataCachingFile::read( void* rbuf, size_t size, uint64_t offset )
       copy_size = pagesize - page_offset;
 #ifdef _DEBUG
     if ( log != NULL )
-       log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::DataCachingFile: looking up cached page " << page_number << " (offset=" << page_offset << ", copy_size=" << copy_size << ").";
+       log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+         "yieldfs::DataCachingFile: looking up cached page " << page_number <<
+         " (offset=" << page_offset << ", copy_size=" << copy_size << ").";
 #endif
     auto_CachedPage page = page_cache.find( get_path(), page_number );
     if ( page != NULL )
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read hit on page " << page_number << " with length " << page->size() << ".";
+        log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+          "yieldfs::DataCachingFile: read hit on page " << page_number <<
+          " with length " << page->size() << ".";
 #endif
     }
     else
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read miss on page " << page_number << ".";
+        log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+          "yieldfs::DataCachingFile: read miss on page " << page_number << ".";
 #endif
       page = new CachedPage( get_path(), page_number, pagesize );
-      ssize_t read_ret = underlying_file->read( *page, page->capacity(), ( offset / pagesize ) * pagesize );
+      ssize_t read_ret = underlying_file->read
+      (
+        *page,
+        page->capacity(),
+        ( offset / pagesize ) * pagesize
+      );
       if ( read_ret >= 0 )
       {
 #ifdef _DEBUG
         if ( log != NULL )
-          log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read " << read_ret << " bytes into page " << page_number << ".";
+          log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+            "yieldfs::DataCachingFile: read " << read_ret <<
+            " bytes into page " << page_number << ".";
 #endif
         page->put( NULL, static_cast<size_t>( read_ret ) );
         page_cache.insert( page );
@@ -1435,7 +1810,9 @@ ssize_t DataCachingFile::read( void* rbuf, size_t size, uint64_t offset )
       {
 #ifdef _DEBUG
         if ( log != NULL )
-          log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read on page " << page_number << " failed.";
+          log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+            "yieldfs::DataCachingFile: read on page " << page_number <<
+            " failed.";
 #endif
         return read_ret;
       }
@@ -1444,13 +1821,25 @@ ssize_t DataCachingFile::read( void* rbuf, size_t size, uint64_t offset )
     {
       if ( copy_size <= page->size() )
       {
-        memcpy_s( rbuf_p, rbuf_end - rbuf_p, static_cast<char*>( *page ) + page_offset, copy_size );
+        memcpy_s
+        (
+          rbuf_p,
+          rbuf_end - rbuf_p,
+          static_cast<char*>( *page ) + page_offset,
+          copy_size
+        );
         rbuf_p += copy_size;
         offset += copy_size;
       }
       else
       {
-        memcpy_s( rbuf_p, rbuf_end - rbuf_p, static_cast<char*>( *page ) + page_offset, page->size() );
+        memcpy_s
+        (
+          rbuf_p,
+          rbuf_end - rbuf_p,
+          static_cast<char*>( *page ) + page_offset,
+          page->size()
+        );
         rbuf_p += page->size();
         break;
       }
@@ -1461,7 +1850,9 @@ ssize_t DataCachingFile::read( void* rbuf, size_t size, uint64_t offset )
   ssize_t ret = static_cast<ssize_t>( rbuf_p - static_cast<char*>( rbuf ) );
 #ifdef _DEBUG
   if ( log != NULL )
-     log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read( rbuf, " << size << ", offset ) => " << ret << ".";
+     log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+      "yieldfs::DataCachingFile: read( rbuf, " << size <<
+      ", offset ) => " << ret << ".";
 #endif
   return ret;
 }
@@ -1475,13 +1866,21 @@ bool DataCachingFile::truncate( uint64_t offset )
   page_cache.flush( get_path() );
   return underlying_file->truncate( offset );
 }
-ssize_t DataCachingFile::write( const void* wbuf, size_t size, uint64_t offset )
+ssize_t DataCachingFile::write
+(
+  const void* wbuf,
+  size_t size,
+  uint64_t offset
+)
 {
 #ifdef _DEBUG
   if ( log != NULL )
-     log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::DataCachingFile: write( wbuf, size=" << size << ", offset=" << offset << " )";
+     log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+      "yieldfs::DataCachingFile: write( wbuf, size=" << size <<
+      ", offset=" << offset << " )";
 #endif
-  const char *wbuf_p = static_cast<const char*>( wbuf ), *wbuf_end = static_cast<const char*>( wbuf ) + size;
+  const char *wbuf_p = static_cast<const char*>( wbuf ),
+             *wbuf_end = static_cast<const char*>( wbuf ) + size;
   while ( wbuf_p < wbuf_end )
   {
     size_t page_number = static_cast<size_t>( offset / pagesize );
@@ -1491,14 +1890,18 @@ ssize_t DataCachingFile::write( const void* wbuf, size_t size, uint64_t offset )
       copy_size = pagesize - page_offset;
 #ifdef _DEBUG
     if ( log != NULL )
-       log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::DataCachingFile: looking up cached page " << page_number << " (offset=" << page_offset << ", copy_size=" << copy_size << ").";
+       log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        "yieldfs::DataCachingFile: looking up cached page " << page_number <<
+        " (offset=" << page_offset << ", copy_size=" << copy_size << ").";
 #endif
     auto_CachedPage page = page_cache.find( path, page_number );
     if ( page != NULL ) // Replace part of a cached page
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::DataCachingFile: write hit on page " << page_number << " with length " << page->size() << ".";
+        log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        "yieldfs::DataCachingFile: write hit on page " << page_number <<
+        " with length " << page->size() << ".";
 #endif
     }
     else if ( copy_size == pagesize ) // Write a whole new page
@@ -1510,39 +1913,49 @@ ssize_t DataCachingFile::write( const void* wbuf, size_t size, uint64_t offset )
     {
 #ifdef _DEBUG
       if ( log != NULL )
-        log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::DataCachingFile: write miss on page " << page_number << ".";
+        log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        "yieldfs::DataCachingFile: write miss on page " << page_number << ".";
 #endif
       page = new CachedPage( get_path(), page_number, pagesize );
-      ssize_t read_ret = underlying_file->read( *page, page->capacity(), ( offset / pagesize ) * pagesize );
+      ssize_t read_ret =
+        underlying_file->read
+        (
+          *page,
+          page->capacity(),
+          ( offset / pagesize ) * pagesize
+        );
       if ( read_ret >= 0 )
       {
 #ifdef _DEBUG
         if ( log != NULL )
-          log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read " << read_ret << " bytes into page " << page_number << ".";
+          log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+            "yieldfs::DataCachingFile: read " << read_ret <<
+            " bytes into page " << page_number << ".";
 #endif
         page->put( NULL, static_cast<size_t>( read_ret ) );
         page_cache.insert( page );
       }
-//      else
-//      {
-//#ifdef _DEBUG
-//        if ( log != NULL )
-//          log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::DataCachingFile: read on page " << page_number << " failed.";
-//#endif
-//        return read_ret;
-//      }
     }
-    memcpy_s( static_cast<char*>( *page ) + page_offset, page->capacity() - page_offset, wbuf_p, copy_size );
+    memcpy_s
+    (
+      static_cast<char*>( *page ) + page_offset,
+      page->capacity() - page_offset,
+      wbuf_p,
+      copy_size
+    );
     if ( page->size() < page_offset + copy_size )
       page->put( NULL, page_offset + copy_size - page->size() );
     page_cache.dirty( *page );
     wbuf_p += copy_size;
     offset += copy_size;
   }
-  ssize_t ret = static_cast<ssize_t>( wbuf_p - static_cast<const char*>( wbuf ) );
+  ssize_t ret =
+    static_cast<ssize_t>( wbuf_p - static_cast<const char*>( wbuf ) );
 #ifdef _DEBUG
   if ( log != NULL )
-     log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::DataCachingFile: write( wbuf, " << size << ", offset ) => " << ret << ".";
+     log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+       "yieldfs::DataCachingFile: write( wbuf, " << size <<
+       ", offset ) => " << ret << ".";
 #endif
   return ret;
 }
@@ -1635,163 +2048,132 @@ int FUSE::main( struct fuse_args& fuse_args_, const char* mount_point )
 #endif
 
 
-// metadata_caching_file.cpp
-// Copyright 2009 Minor Gordon.
-// This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
-bool MetadataCachingFile::truncate( uint64_t offset )
-{
-  if ( underlying_file->truncate( offset ) )
-  {
-    parent_volume->updateCachedFileSize( get_path(), underlying_file->get_size() );
-    return true;
-  }
-  else
-    return false;
-}
-ssize_t MetadataCachingFile::write( const void* buffer, size_t buffer_len, uint64_t offset )
-{
-  ssize_t write_ret = underlying_file->write( buffer, buffer_len, offset );
-  if ( write_ret >= 0 )
-    parent_volume->updateCachedFileSize( get_path(), underlying_file->get_size() );
-  return write_ret;
-}
-
-
 // metadata_caching_volume.cpp
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
-namespace yieldfs
+class MetadataCachingVolume::readdirCallback
+  : public YIELD::platform::Volume::listdirCallback,
+    public YIELD::platform::Volume::readdirCallback
 {
-  class MetadataCachingVolumereaddirCallback : public YIELD::platform::Volume::listdirCallback, public YIELD::platform::Volume::readdirCallback
+public:
+  readdirCallback
+  (
+    StatCache& stat_cache,
+    YIELD::platform::Volume::readdirCallback& copy_to_readdir_callback
+  )
+    : stat_cache( stat_cache ),
+      copy_to_readdir_callback( copy_to_readdir_callback )
+  { }
+  ~readdirCallback()
   {
-  public:
-    MetadataCachingVolumereaddirCallback( MetadataCachingVolume& volume, YIELD::platform::Volume::readdirCallback& copy_to_readdir_callback )
-      : volume( volume ), copy_to_readdir_callback( copy_to_readdir_callback )
-    { }
-    ~MetadataCachingVolumereaddirCallback()
-    {
-      for ( std::vector<CachedStat*>::iterator cached_stat_i = cached_stats.begin(); cached_stat_i != cached_stats.end(); cached_stat_i++ )
-        yidl::runtime::Object::decRef( **cached_stat_i );
-    }
-    MetadataCachingVolumereaddirCallback& operator=( const MetadataCachingVolumereaddirCallback& ) { return *this; }
-    void flush()
-    {
-      for ( std::vector<CachedStat*>::iterator cached_stat_i = cached_stats.begin(); cached_stat_i != cached_stats.end(); cached_stat_i++ )
-        copy_to_readdir_callback( ( *cached_stat_i )->get_path(), ( *cached_stat_i )->get_stat() );
-    }
-    // YIELD::platform::Volume::listdirCallback
-    bool operator()( const YIELD::platform::Path& path )
-    {
-      CachedStat* cached_stat = static_cast<CachedStat*>( volume.find( path ).release() );
-      if ( cached_stat != NULL )
-      {
-        cached_stats.push_back( cached_stat );
-        return true;
-      }
-      else
-        return false;
-    }
-    // YIELD::platform::Volume::readdirCallback
-    bool operator()( const YIELD::platform::Path& path, YIELD::platform::auto_Stat stbuf )
-    {
-      CachedStat* cached_stat = static_cast<CachedStat*>( volume.find( path ).release() );
-      if ( cached_stat == NULL )
-        volume.insert( new CachedStat( path, stbuf ) );
-      return copy_to_readdir_callback( path, stbuf );
-    }
-  private:
-    MetadataCachingVolume& volume;
-    YIELD::platform::Volume::readdirCallback& copy_to_readdir_callback;
-    std::vector<CachedStat*> cached_stats;
-  };
-};
-MetadataCachingVolume::MetadataCachingVolume()
-: ttl_s( 5 )
-{ }
-MetadataCachingVolume::MetadataCachingVolume( YIELD::platform::auto_Volume underlying_volume, double ttl_s )
-: StackableVolume( underlying_volume ), ttl_s( ttl_s )
-{ }
-MetadataCachingVolume::MetadataCachingVolume( YIELD::platform::auto_Volume underlying_volume, YIELD::platform::auto_Log log, double ttl_s )
-: StackableVolume( underlying_volume, log ), ttl_s( ttl_s )
-{ }
-MetadataCachingVolume::~MetadataCachingVolume()
-{
-//  for ( YIELD::HashMap<CachedStat*>::iterator directory_entry_i = directory_entry_cache.begin(); directory_entry_i != directory_entry_cache.end(); directory_entry_i++ )
-//    yidl::runtime::Object::decRef( directory_entry_i->second );
-}
-bool MetadataCachingVolume::chmod( const YIELD::platform::Path& path, mode_t mode )
-{
-  evict( path );
-  return underlying_volume->chmod( path, mode );
-}
-bool MetadataCachingVolume::chown( const YIELD::platform::Path& path, int32_t uid, int32_t gid )
-{
-  evict( path );
-  return underlying_volume->chown( path, uid, gid );
-}
-yidl::runtime::auto_Object<CachedStat> MetadataCachingVolume::evict( const YIELD::platform::Path& path )
-{
-  lock.acquire();
-  CachedStat* cached_stat;
-  // cached_stat = YIELD::HATTrie<CachedStat*>::erase( static_cast<const std::string&>( path ) );
-  iterator cached_stat_i = std::map<std::string, CachedStat*>::find( static_cast<const std::string&>( path ) );
-  if ( cached_stat_i != end() )
-  {
-    cached_stat = cached_stat_i->second;
-    erase( cached_stat_i );
+    for
+    (
+      std::vector<CachedStat*>::iterator
+        cached_stat_i = cached_stats.begin();
+      cached_stat_i != cached_stats.end();
+      cached_stat_i++
+    )
+      yidl::runtime::Object::decRef( **cached_stat_i );
   }
-  else
-    cached_stat = NULL;
-  lock.release();
-#ifdef _DEBUG
-  if ( cached_stat && log != NULL )
-      log->getStream( YIELD::platform::Log::LOG_INFO ) << "MetadataCachingVolume: evicted " << path;
-#endif
-  return cached_stat;
-}
-yidl::runtime::auto_Object<CachedStat> MetadataCachingVolume::find( const YIELD::platform::Path& path )
-{
-  lock.acquire();
-  //CachedStat* cached_stat = YIELD::HATTrie<CachedStat*>::find( static_cast<const std::string&>( path ) );
-  //if ( cached_stat != NULL )
-  const_iterator cached_stat_i = std::map<std::string, CachedStat*>::find( static_cast<const std::string&>( path ) );
-  if ( cached_stat_i != end() )
+  void flush()
   {
-    CachedStat* cached_stat = cached_stat_i->second;
-    if ( YIELD::platform::Time::getCurrentUnixTimeS() - cached_stat->get_creation_epoch_time_s() < ttl_s )
+    for
+    (
+      std::vector<CachedStat*>::iterator
+        cached_stat_i = cached_stats.begin();
+      cached_stat_i != cached_stats.end();
+      cached_stat_i++
+    )
+      copy_to_readdir_callback
+      (
+        ( *cached_stat_i )->get_path(),
+        ( *cached_stat_i )->get_stat()
+      );
+  }
+  readdirCallback& operator=( const readdirCallback& )
+  {
+    return *this;
+  }
+  // YIELD::platform::Volume::listdirCallback
+  bool operator()( const YIELD::platform::Path& path )
+  {
+    CachedStat* cached_stat = stat_cache.find( path ).release();
+    if ( cached_stat != NULL )
     {
-      cached_stat->incRef(); // Must incRef before releasing the lock in case another thread wants to erase this entry
-      lock.release();
-#ifdef _DEBUG
-      if ( log != NULL )
-        log->getStream( YIELD::platform::Log::LOG_INFO ) << "MetadataCachingVolume: hit " << path << ".";
-#endif
-      return cached_stat;
+      cached_stats.push_back( cached_stat );
+      return true;
     }
     else
-    {
-      lock.release();
-      evict( path );
-      /*
-      if ( cached_stat->ISDIR() )
-        evicttree( path );
-      else
-        evict( path );
-        */
-      return NULL;
-    }
+      return false;
   }
-  else
+  // YIELD::platform::Volume::readdirCallback
+  bool operator()
+  (
+    const YIELD::platform::Path& path,
+    YIELD::platform::auto_Stat stbuf
+  )
   {
-    lock.release();
-#ifdef _DEBUG
-    if ( log != NULL )
-      log->getStream( YIELD::platform::Log::LOG_INFO ) << "MetadataCachingVolume: miss " << path << ".";
-#endif
-    return NULL;
+    CachedStat* cached_stat = stat_cache.find( path ).release();
+    if ( cached_stat == NULL )
+      stat_cache.insert( new CachedStat( path, stbuf ) );
+    return copy_to_readdir_callback( path, stbuf );
   }
+private:
+  StatCache& stat_cache;
+  YIELD::platform::Volume::readdirCallback& copy_to_readdir_callback;
+  std::vector<CachedStat*> cached_stats;
+};
+MetadataCachingVolume::MetadataCachingVolume()
+{
+  stat_cache = new StatCache( 5 );
 }
-YIELD::platform::Path MetadataCachingVolume::getParentDirectoryPath( const YIELD::platform::Path& path )
+MetadataCachingVolume::MetadataCachingVolume
+(
+  double ttl_s,
+  YIELD::platform::auto_Volume underlying_volume
+)
+: StackableVolume( underlying_volume )
+{
+  stat_cache = new StatCache( ttl_s );
+}
+MetadataCachingVolume::MetadataCachingVolume
+(
+  YIELD::platform::auto_Log log,
+  double ttl_s,
+  YIELD::platform::auto_Volume underlying_volume
+)
+: StackableVolume( log, underlying_volume )
+{
+  stat_cache = new StatCache( log, ttl_s );
+}
+MetadataCachingVolume::~MetadataCachingVolume()
+{
+  delete stat_cache;
+}
+bool MetadataCachingVolume::chmod
+(
+  const YIELD::platform::Path& path,
+  mode_t mode
+)
+{
+  stat_cache->evict( path );
+  return underlying_volume->chmod( path, mode );
+}
+bool MetadataCachingVolume::chown
+(
+  const YIELD::platform::Path& path,
+  int32_t uid,
+  int32_t gid
+)
+{
+  stat_cache->evict( path );
+  return underlying_volume->chown( path, uid, gid );
+}
+YIELD::platform::Path
+  MetadataCachingVolume::getParentDirectoryPath
+(
+  const YIELD::platform::Path& path
+)
 {
   if ( path != PATH_SEPARATOR_STRING )
   {
@@ -1805,97 +2187,132 @@ YIELD::platform::Path MetadataCachingVolume::getParentDirectoryPath( const YIELD
   else
     return YIELD::platform::Path( PATH_SEPARATOR_STRING );
 }
-void MetadataCachingVolume::insert( CachedStat* cached_stat )
+bool MetadataCachingVolume::link
+(
+  const YIELD::platform::Path& old_path,
+  const YIELD::platform::Path& new_path
+)
 {
-  lock.acquire();
-  // YIELD::HATTrie<CachedStat*>::insert( static_cast<const std::string&>( cached_stat->get_path() ), &cached_stat->incRef() );
-  const_iterator cached_stat_i = std::map<std::string, CachedStat*>::find( static_cast<const std::string&>( cached_stat->get_path() ) );
-  if ( cached_stat_i == end() )
-  {
-#ifdef _DEBUG
-    if ( log != NULL )
-      log->getStream( YIELD::platform::Log::LOG_INFO ) << "MetadataCachingVolume: caching " << cached_stat->get_path() << ".";
-#endif
-    std::map<std::string, CachedStat*>::insert( std::make_pair( static_cast<const std::string&>( cached_stat->get_path() ), &cached_stat->incRef() ) );
-  }
-  else
-  {
-    if ( log != NULL )
-      log->getStream( YIELD::platform::Log::LOG_WARNING ) << "MetadataCachingVolume::insert already have " << cached_stat->get_path() << " in cache. Race condition?";
-  }
-  lock.release();
-}
-bool MetadataCachingVolume::link( const YIELD::platform::Path& old_path, const YIELD::platform::Path& new_path )
-{
-  evict( new_path );
-  evict( old_path );
+  stat_cache->evict( new_path );
+  stat_cache->evict( old_path );
   return underlying_volume->link( old_path, new_path );
 }
-bool MetadataCachingVolume::mkdir( const YIELD::platform::Path& path, mode_t mode )
+bool MetadataCachingVolume::mkdir
+(
+  const YIELD::platform::Path& path,
+  mode_t mode
+)
 {
-  evict( getParentDirectoryPath( path ) );
+  stat_cache->evict( getParentDirectoryPath( path ) );
   return underlying_volume->mkdir( path, mode );
 }
-YIELD::platform::auto_File MetadataCachingVolume::open( const YIELD::platform::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
+YIELD::platform::auto_File
+MetadataCachingVolume::open
+(
+  const YIELD::platform::Path& path,
+  uint32_t flags,
+  mode_t mode,
+  uint32_t attributes
+)
 {
-  YIELD::platform::auto_File file = underlying_volume->open( path, flags, mode, attributes );
+  YIELD::platform::auto_File file =
+    underlying_volume->open( path, flags, mode, attributes );
   if ( file != NULL )
   {
     if ( ( flags & O_CREAT ) == O_CREAT )
-      evict( getParentDirectoryPath( path ) );
-    evict( path );
-    return new MetadataCachingFile( incRef(), path, file, log );
+      stat_cache->evict( getParentDirectoryPath( path ) );
+    stat_cache->evict( path );
+    return file;
   }
   else
     return NULL;
 }
-bool MetadataCachingVolume::readdir( const YIELD::platform::Path& path, const YIELD::platform::Path& match_file_name_prefix, YIELD::platform::Volume::readdirCallback& callback )
+bool MetadataCachingVolume::readdir
+(
+  const YIELD::platform::Path& path,
+  const YIELD::platform::Path& match_file_name_prefix,
+  YIELD::platform::Volume::readdirCallback& callback
+)
 {
-  MetadataCachingVolumereaddirCallback ttl_cached_readdir_callback( *this, callback );
+  readdirCallback wrapped_callback( *stat_cache, callback );
   // Do a listdir first to gather CachedStats for the directory
-  // This is an optimization for the common case of all of the children of a directory being in cache at once
-  if ( underlying_volume->listdir( path, match_file_name_prefix, ttl_cached_readdir_callback ) )
+  // This is an optimization for the common case of all of the
+  // children of a directory being in cache at once
+  if
+  (
+    underlying_volume->listdir
+    (
+      path,
+      match_file_name_prefix,
+      wrapped_callback
+    )
+  )
   {
     // All of the child directory entries were in the cache
-    ttl_cached_readdir_callback.flush(); // Copy them to the readdir callback
+    wrapped_callback.flush(); // Copy them to the readdir callback
     return true;
   }
-  else // One of the child directory entries wasn't in the cache; do a real readdir and cache everything it receives
-    return underlying_volume->readdir( path, match_file_name_prefix, ttl_cached_readdir_callback );
+  else // One of the child directory entries wasn't in the cache;
+       // do a real readdir and cache everything it receives
+    return underlying_volume->readdir
+      (
+        path,
+        match_file_name_prefix, wrapped_callback
+      );
 }
-bool MetadataCachingVolume::removexattr( const YIELD::platform::Path& path, const std::string& name )
+bool MetadataCachingVolume::removexattr
+(
+  const YIELD::platform::Path& path,
+  const std::string& name
+)
 {
-  evict( path );
+  stat_cache->evict( path );
   return underlying_volume->removexattr( path, name );
 }
-bool MetadataCachingVolume::rename( const YIELD::platform::Path& from_path, const YIELD::platform::Path& to_path )
+bool MetadataCachingVolume::rename
+(
+  const YIELD::platform::Path& from_path,
+  const YIELD::platform::Path& to_path
+)
 {
-//  evicttree( getParentDirectoryPath( from_path ) );
-//  evicttree( getParentDirectoryPath( to_path ) );
-  evict( from_path );
-  evict( getParentDirectoryPath( from_path ) );
-  evict( to_path );
-  evict( getParentDirectoryPath( to_path ) );
+//  stat_cache->evicttree( getParentDirectoryPath( from_path ) );
+//  stat_cache->evicttree( getParentDirectoryPath( to_path ) );
+  stat_cache->evict( from_path );
+  stat_cache->evict( getParentDirectoryPath( from_path ) );
+  stat_cache->evict( to_path );
+  stat_cache->evict( getParentDirectoryPath( to_path ) );
   return underlying_volume->rename( from_path, to_path );
 }
 bool MetadataCachingVolume::rmdir( const YIELD::platform::Path& path )
 {
-  evict( path );
+  stat_cache->evict( path );
   return underlying_volume->rmdir( path );
 }
-bool MetadataCachingVolume::setattr( const YIELD::platform::Path& path, uint32_t file_attributes )
+bool MetadataCachingVolume::setattr
+(
+  const YIELD::platform::Path& path,
+  uint32_t file_attributes
+)
 {
-  evict( path );
+  stat_cache->evict( path );
   return underlying_volume->setattr( path, file_attributes );
 }
-bool MetadataCachingVolume::setxattr( const YIELD::platform::Path& path, const std::string& name, const std::string& value, int32_t flags )
+bool MetadataCachingVolume::setxattr
+(
+  const YIELD::platform::Path& path,
+  const std::string& name,
+  const std::string& value,
+  int32_t flags
+)
 {
-  evict( path );
+  stat_cache->evict( path );
   return underlying_volume->setxattr( path, name, value, flags );
 }
-YIELD::platform::auto_Stat MetadataCachingVolume::stat( const YIELD::platform::Path& path )
+YIELD::platform::auto_Stat
+  MetadataCachingVolume::stat( const YIELD::platform::Path& path )
 {
-  yidl::runtime::auto_Object<CachedStat> cached_stat = find( path );
+  yidl::runtime::auto_Object<CachedStat> cached_stat
+    = stat_cache->find( path );
   if ( cached_stat != NULL )
     return static_cast<CachedStat*>( cached_stat.get() )->get_stat();
   else
@@ -1903,67 +2320,87 @@ YIELD::platform::auto_Stat MetadataCachingVolume::stat( const YIELD::platform::P
     YIELD::platform::auto_Stat stbuf = underlying_volume->stat( path );
     if ( stbuf != NULL )
     {
-      insert( new CachedStat( path, stbuf ) );
+      stat_cache->insert( new CachedStat( path, stbuf ) );
       return stbuf;
     }
     else
       return NULL;
   }
 }
-bool MetadataCachingVolume::symlink( const YIELD::platform::Path& to_path, const YIELD::platform::Path& from_path )
+bool MetadataCachingVolume::symlink
+(
+  const YIELD::platform::Path& to_path,
+  const YIELD::platform::Path& from_path
+)
 {
-  evict( from_path );
-  evict( getParentDirectoryPath( from_path ) );
+  stat_cache->evict( from_path );
+  stat_cache->evict( getParentDirectoryPath( from_path ) );
   return underlying_volume->symlink( to_path, from_path );
 }
-bool MetadataCachingVolume::truncate( const YIELD::platform::Path& path, uint64_t new_size )
+bool MetadataCachingVolume::truncate
+(
+  const YIELD::platform::Path& path,
+  uint64_t new_size
+)
 {
-  evict( path );
+  stat_cache->evict( path );
   return underlying_volume->truncate( path, new_size );
 }
 bool MetadataCachingVolume::unlink( const YIELD::platform::Path& path )
 {
-  evict( path );
-  evict( getParentDirectoryPath( path ) );
+  stat_cache->evict( path );
+  stat_cache->evict( getParentDirectoryPath( path ) );
   return underlying_volume->unlink( path );
 }
-void MetadataCachingVolume::updateCachedFileSize( const YIELD::platform::Path& path, uint64_t new_file_size )
+bool MetadataCachingVolume::utimens
+(
+  const YIELD::platform::Path& path,
+  const YIELD::platform::Time& atime,
+  const YIELD::platform::Time& mtime,
+  const YIELD::platform::Time& ctime
+)
 {
-  lock.acquire();
-//  CachedStat* cached_stat = YIELD::HATTrie<CachedStat*>::find( static_cast<const std::string&>( path ) );
-//  if ( cached_stat )
-//    cached_stat->get_stat()->set_size( new_file_size );
-  const_iterator cached_stat_i = std::map<std::string, CachedStat*>::find( static_cast<const std::string&>( path ) );
-  if ( cached_stat_i != end() )
-    cached_stat_i->second->get_stat()->set_size( new_file_size );
-  lock.release();
-}
-bool MetadataCachingVolume::utimens( const YIELD::platform::Path& path, const YIELD::platform::Time& atime, const YIELD::platform::Time& mtime, const YIELD::platform::Time& ctime )
-{
-  evict( path );
+  stat_cache->evict( path );
   return underlying_volume->utimens( path, atime, mtime, ctime );
 }
 
 
 // page_cache.cpp
+// Copyright 2009 Minor Gordon.
+// This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 class PageCache::OldDirtyPageTimer : public YIELD::platform::TimerQueue::Timer
 {
 public:
-  OldDirtyPageTimer( const YIELD::platform::Time& timeout, auto_CachedPage dirty_page, PageCache& page_cache )
+  OldDirtyPageTimer
+  (
+    const YIELD::platform::Time& timeout,
+    auto_CachedPage dirty_page,
+    PageCache& page_cache
+  )
     : YIELD::platform::TimerQueue::Timer( timeout ),
       dirty_page( dirty_page ), page_cache( page_cache )
   { }
-  OldDirtyPageTimer& operator=( const OldDirtyPageTimer& ) { return *this; }
   void fire()
   {
     page_cache.flush( dirty_page );
+  }
+  OldDirtyPageTimer& operator=( const OldDirtyPageTimer& )
+  {
+    return *this;
   }
 private:
   auto_CachedPage dirty_page;
   PageCache& page_cache;
 };
-PageCache::PageCache( uint64_t capacity_bytes, uint32_t flush_timeout_ms, YIELD::platform::auto_Volume underlying_volume )
-  : capacity_bytes( capacity_bytes ), flush_timeout_ms( flush_timeout_ms ), underlying_volume( underlying_volume )
+PageCache::PageCache
+(
+  uint64_t capacity_bytes,
+  uint32_t flush_timeout_ms,
+  YIELD::platform::auto_Volume underlying_volume
+)
+  : capacity_bytes( capacity_bytes ),
+    flush_timeout_ms( flush_timeout_ms ),
+    underlying_volume( underlying_volume )
 {
   size_bytes = 0;
 }
@@ -1971,11 +2408,28 @@ PageCache::~PageCache()
 {
   lock.acquire();
   // Flush any dirty pages
-  for ( std::vector<CachedPage*>::iterator dirty_page_i = dirty_pages.begin(); dirty_page_i != dirty_pages.end(); ++dirty_page_i )
+  for
+  (
+    std::vector<CachedPage*>::iterator dirty_page_i = dirty_pages.begin();
+    dirty_page_i != dirty_pages.end();
+    ++dirty_page_i
+  )
     flush( **dirty_page_i );
   // Release the references held in in_use_pages
-  for ( std::map< std::string, std::vector<CachedPage*> >::iterator in_use_pages_i = in_use_pages.begin(); in_use_pages_i != in_use_pages.end(); ++in_use_pages_i )
-    for ( std::vector<CachedPage*>::iterator page_i = in_use_pages_i->second.begin(); page_i != in_use_pages_i->second.end(); page_i++ )
+  for
+  (
+    std::map< std::string, std::vector<CachedPage*> >::iterator
+      in_use_pages_i = in_use_pages.begin();
+    in_use_pages_i != in_use_pages.end();
+    ++in_use_pages_i
+  )
+    for
+    (
+      std::vector<CachedPage*>::iterator
+        page_i = in_use_pages_i->second.begin();
+      page_i != in_use_pages_i->second.end();
+      page_i++
+    )
       yidl::runtime::Object::decRef( *page_i );
   lock.release();
 }
@@ -1986,15 +2440,28 @@ void PageCache::dirty( CachedPage& page )
   {
     page.set_dirty_bit();
     dirty_pages.push_back( &page.incRef() );
-    YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer( new OldDirtyPageTimer( flush_timeout_ms * NS_IN_MS, page.incRef(), *this ) );
+    YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer
+    (
+      new OldDirtyPageTimer
+      (
+        flush_timeout_ms * NS_IN_MS,
+        page.incRef(),
+        *this
+      )
+    );
   }
   lock.release();
 }
-auto_CachedPage PageCache::find( const YIELD::platform::Path& file_path, size_t page_number )
+auto_CachedPage PageCache::find
+(
+  const YIELD::platform::Path& file_path,
+  size_t page_number
+)
 {
   lock.acquire();
   CachedPage* page;
-  std::map<std::string, std::vector<CachedPage*> >::iterator file_in_use_pages = in_use_pages.find( file_path );
+  std::map<std::string, std::vector<CachedPage*> >::iterator
+    file_in_use_pages = in_use_pages.find( file_path );
   if ( file_in_use_pages != in_use_pages.end() )
   {
     if ( page_number < file_in_use_pages->second.size() )
@@ -2002,7 +2469,12 @@ auto_CachedPage PageCache::find( const YIELD::platform::Path& file_path, size_t 
       page = file_in_use_pages->second[page_number];
       if ( page != NULL )
       {
-        for ( std::list<CachedPage*>::iterator lru_page_i = lru_pages.begin(); lru_page_i != lru_pages.end(); ++lru_page_i )
+        for
+        (
+          std::list<CachedPage*>::iterator lru_page_i = lru_pages.begin();
+          lru_page_i != lru_pages.end();
+          ++lru_page_i
+        )
         {
           if ( **lru_page_i == *page )
           {
@@ -2024,7 +2496,11 @@ auto_CachedPage PageCache::find( const YIELD::platform::Path& file_path, size_t 
 void PageCache::flush( const YIELD::platform::Path& file_path )
 {
   lock.acquire();
-  for ( std::vector<CachedPage*>::iterator dirty_page_i = dirty_pages.begin(); dirty_page_i != dirty_pages.end(); )
+  for
+  (
+    std::vector<CachedPage*>::iterator dirty_page_i = dirty_pages.begin();
+    dirty_page_i != dirty_pages.end();
+  )
   {
     if ( ( *dirty_page_i )->get_file_path() == file_path )
     {
@@ -2041,7 +2517,12 @@ void PageCache::flush( auto_CachedPage dirty_page )
   lock.acquire();
   if ( dirty_page->get_dirty_bit() )
   {
-    for ( std::vector<CachedPage*>::iterator dirty_page_i = dirty_pages.begin(); dirty_page_i != dirty_pages.end(); ++dirty_page_i )
+    for
+    (
+      std::vector<CachedPage*>::iterator dirty_page_i = dirty_pages.begin();
+      dirty_page_i != dirty_pages.end();
+      ++dirty_page_i
+    )
     {
       if ( **dirty_page_i == *dirty_page )
       {
@@ -2058,10 +2539,17 @@ void PageCache::flush( CachedPage& dirty_page )
 {
   if ( dirty_page.get_dirty_bit() )
   {
-    YIELD::platform::auto_File file = underlying_volume->open( dirty_page.get_file_path(), O_CREAT|O_WRONLY );
+    YIELD::platform::auto_File file =
+      underlying_volume->open( dirty_page.get_file_path(), O_CREAT|O_WRONLY );
     if ( file != NULL )
     {
-      ssize_t write_ret = file->write( dirty_page, dirty_page.size(), dirty_page.get_number() * dirty_page.capacity() );
+      ssize_t write_ret =
+        file->write
+        (
+          dirty_page,
+          dirty_page.size(),
+          dirty_page.get_number() * dirty_page.capacity()
+        );
       if ( write_ret < 0 )
         DebugBreak();
     }
@@ -2082,11 +2570,13 @@ void PageCache::insert( auto_CachedPage page )
     lru_pages.erase( lru_pages.begin() );
     if ( evict_page->get_dirty_bit() )
       flush( *evict_page );
-    in_use_pages.find( evict_page->get_file_path() )->second[evict_page->get_number()] = NULL;
+    in_use_pages.find( evict_page->get_file_path() )->
+        second[evict_page->get_number()] = NULL;
     size_bytes -= evict_page->capacity();
     yidl::runtime::Object::decRef( *evict_page );
   }
-  std::map< std::string, std::vector<CachedPage*> >::iterator in_use_pages_i = in_use_pages.find( page->get_file_path() );
+  std::map< std::string, std::vector<CachedPage*> >::iterator
+      in_use_pages_i = in_use_pages.find( page->get_file_path() );
   if ( in_use_pages_i != in_use_pages.end() )
   {
     std::vector<CachedPage*>& file_in_use_pages = in_use_pages_i->second;
@@ -2145,7 +2635,12 @@ bool StackableFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
 {
   return underlying_file->setlkw( exclusive, offset, length );
 }
-bool StackableFile::setxattr( const std::string& name, const std::string& value, int flags )
+bool StackableFile::setxattr
+(
+  const std::string& name,
+  const std::string& value,
+  int flags
+)
 {
   return underlying_file->setxattr( name, value, flags );
 }
@@ -2165,7 +2660,12 @@ bool StackableFile::unlk( uint64_t offset, uint64_t length )
 {
   return underlying_file->unlk( offset, length );
 }
-ssize_t StackableFile::write( const void* buffer, size_t buffer_len, uint64_t offset )
+ssize_t StackableFile::write
+(
+  const void* buffer,
+  size_t buffer_len,
+  uint64_t offset
+)
 {
   return underlying_file->write( buffer, buffer_len, offset );
 }
@@ -2182,19 +2682,37 @@ bool StackableVolume::chmod( const YIELD::platform::Path& path, mode_t mode )
 {
   return underlying_volume->chmod( path, mode );
 }
-bool StackableVolume::chown( const YIELD::platform::Path& path, int32_t uid, int32_t gid )
+bool StackableVolume::chown
+(
+  const YIELD::platform::Path& path,
+  int32_t uid,
+  int32_t gid
+)
 {
   return underlying_volume->chown( path, uid, gid );
 }
-bool StackableVolume::getxattr( const YIELD::platform::Path& path, const std::string& name, std::string& out_value )
+bool StackableVolume::getxattr
+(
+  const YIELD::platform::Path& path,
+  const std::string& name,
+  std::string& out_value
+)
 {
   return underlying_volume->getxattr( path, name, out_value );
 }
-bool StackableVolume::link( const YIELD::platform::Path& old_path, const YIELD::platform::Path& new_path )
+bool StackableVolume::link
+(
+  const YIELD::platform::Path& old_path,
+  const YIELD::platform::Path& new_path
+)
 {
   return underlying_volume->link( old_path, new_path );
 }
-bool StackableVolume::listxattr( const YIELD::platform::Path& path, std::vector<std::string>& out_names )
+bool StackableVolume::listxattr
+(
+  const YIELD::platform::Path& path,
+  std::vector<std::string>& out_names
+)
 {
   return underlying_volume->listxattr( path, out_names );
 }
@@ -2202,23 +2720,44 @@ bool StackableVolume::mkdir( const YIELD::platform::Path& path, mode_t mode )
 {
   return underlying_volume->mkdir( path, mode );
 }
-YIELD::platform::auto_File StackableVolume::open( const YIELD::platform::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
+YIELD::platform::auto_File
+  StackableVolume::open
+(
+  const YIELD::platform::Path& path,
+  uint32_t flags,
+  mode_t mode,
+  uint32_t attributes
+)
 {
   return underlying_volume->open( path, flags, mode, attributes );
 }
-bool StackableVolume::readdir( const YIELD::platform::Path& path, const YIELD::platform::Path& match_file_name_prefix, YIELD::platform::Volume::readdirCallback& callback )
+bool StackableVolume::readdir
+(
+  const YIELD::platform::Path& path,
+  const YIELD::platform::Path& match_file_name_prefix,
+  YIELD::platform::Volume::readdirCallback& callback
+)
 {
   return underlying_volume->readdir( path, match_file_name_prefix, callback );
 }
-YIELD::platform::auto_Path StackableVolume::readlink( const YIELD::platform::Path& path )
+YIELD::platform::auto_Path
+  StackableVolume::readlink( const YIELD::platform::Path& path )
 {
   return underlying_volume->readlink( path );
 }
-bool StackableVolume::removexattr( const YIELD::platform::Path& path, const std::string& name )
+bool StackableVolume::removexattr
+(
+  const YIELD::platform::Path& path,
+  const std::string& name
+)
 {
   return underlying_volume->removexattr( path, name );
 }
-bool StackableVolume::rename( const YIELD::platform::Path& from_path, const YIELD::platform::Path& to_path )
+bool StackableVolume::rename
+(
+  const YIELD::platform::Path& from_path,
+  const YIELD::platform::Path& to_path
+)
 {
   return underlying_volume->rename( from_path, to_path );
 }
@@ -2226,27 +2765,50 @@ bool StackableVolume::rmdir( const YIELD::platform::Path& path )
 {
   return underlying_volume->rmdir( path );
 }
-bool StackableVolume::setattr( const YIELD::platform::Path& path, uint32_t file_attributes )
+bool StackableVolume::setattr
+(
+  const YIELD::platform::Path& path,
+  uint32_t file_attributes
+)
 {
   return underlying_volume->setattr( path, file_attributes );
 }
-bool StackableVolume::setxattr( const YIELD::platform::Path& path, const std::string& name, const std::string& value, int flags )
+bool StackableVolume::setxattr
+(
+  const YIELD::platform::Path& path,
+  const std::string& name,
+  const std::string& value,
+  int flags
+)
 {
   return underlying_volume->setxattr( path, name, value, flags );
 }
-YIELD::platform::auto_Stat StackableVolume::stat( const YIELD::platform::Path& path )
+YIELD::platform::auto_Stat
+  StackableVolume::stat( const YIELD::platform::Path& path )
 {
   return underlying_volume->stat( path );
 }
-bool StackableVolume::statvfs( const YIELD::platform::Path& path, struct statvfs& stvfsbuf )
+bool StackableVolume::statvfs
+(
+  const YIELD::platform::Path& path,
+  struct statvfs& stvfsbuf
+)
 {
   return underlying_volume->statvfs( path, stvfsbuf );
 }
-bool StackableVolume::symlink( const YIELD::platform::Path& old_path, const YIELD::platform::Path& new_path )
+bool StackableVolume::symlink
+(
+  const YIELD::platform::Path& old_path,
+  const YIELD::platform::Path& new_path
+)
 {
   return underlying_volume->symlink( old_path, new_path );
 }
-bool StackableVolume::truncate( const YIELD::platform::Path& path, uint64_t new_size )
+bool StackableVolume::truncate
+(
+  const YIELD::platform::Path& path,
+  uint64_t new_size
+)
 {
   return underlying_volume->truncate( path, new_size );
 }
@@ -2254,13 +2816,134 @@ bool StackableVolume::unlink( const YIELD::platform::Path& path )
 {
   return underlying_volume->unlink( path );
 }
-bool StackableVolume::utimens( const YIELD::platform::Path& path, const YIELD::platform::Time& atime, const YIELD::platform::Time& mtime, const YIELD::platform::Time& ctime )
+bool StackableVolume::utimens
+(
+  const YIELD::platform::Path& path,
+  const YIELD::platform::Time& atime,
+  const YIELD::platform::Time& mtime,
+  const YIELD::platform::Time& ctime
+)
 {
   return underlying_volume->utimens( path, atime, mtime, ctime );
 }
-YIELD::platform::Path StackableVolume::volname( const YIELD::platform::Path& path )
+YIELD::platform::Path
+  StackableVolume::volname( const YIELD::platform::Path& path )
 {
   return underlying_volume->volname( path );
+}
+
+
+// stat_cache.cpp
+// Copyright 2009 Minor Gordon.
+// This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
+StatCache::StatCache( double ttl_s )
+  : ttl_s( ttl_s )
+{ }
+StatCache::StatCache( YIELD::platform::auto_Log log, double ttl_s )
+  : log( log ), ttl_s( ttl_s )
+{ }
+StatCache::~StatCache()
+{
+  // TODO: go through the map and decRef everything
+}
+auto_CachedStat StatCache::evict( const YIELD::platform::Path& path )
+{
+  lock.acquire();
+  // cached_stat = YIELD::HATTrie<CachedStat*>::erase( static_cast<const std::string&>( path ) );
+  iterator cached_stat_i
+    = std::map<YIELD::platform::Path, CachedStat*>::find( path );
+  CachedStat* cached_stat;
+  if ( cached_stat_i != std::map<YIELD::platform::Path, CachedStat*>::end() )
+  {
+    cached_stat = cached_stat_i->second;
+    std::map<YIELD::platform::Path, CachedStat*>::erase( cached_stat_i );
+  }
+  else
+    cached_stat = NULL;
+  lock.release();
+#ifdef _DEBUG
+  if ( cached_stat && log != NULL )
+      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        "StatCache: evicted " << path;
+#endif
+  return cached_stat;
+}
+auto_CachedStat StatCache::find( const YIELD::platform::Path& path )
+{
+  lock.acquire();
+  //CachedStat* cached_stat = YIELD::HATTrie<CachedStat*>::find( static_cast<const std::string&>( path ) );
+  //if ( cached_stat != NULL )
+  const_iterator cached_stat_i =
+    std::map<YIELD::platform::Path, CachedStat*>::find( path );
+  if ( cached_stat_i != end() )
+  {
+    CachedStat* cached_stat = cached_stat_i->second;
+    if
+    (
+      YIELD::platform::Time::getCurrentUnixTimeS() -
+      cached_stat->get_creation_epoch_time_s() < ttl_s
+    )
+    {
+      cached_stat->incRef(); // Must incRef before releasing the lock
+                             // in case another thread wants to
+                             // erase this entry
+      lock.release();
+#ifdef _DEBUG
+      if ( log != NULL )
+        log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+          "StatCache: hit " << path << ".";
+#endif
+      return cached_stat;
+    }
+    else
+    {
+      lock.release();
+      evict( path );
+      /*
+      if ( cached_stat->ISDIR() )
+        evicttree( path );
+      else
+        evict( path );
+        */
+      return NULL;
+    }
+  }
+  else
+  {
+    lock.release();
+#ifdef _DEBUG
+    if ( log != NULL )
+      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        "StatCache: miss " << path << ".";
+#endif
+    return NULL;
+  }
+}
+void StatCache::insert( CachedStat* cached_stat )
+{
+  lock.acquire();
+  // YIELD::HATTrie<CachedStat*>::insert( static_cast<const std::string&>( cached_stat->get_path() ), &cached_stat->incRef() );
+  const_iterator cached_stat_i =
+    std::map<YIELD::platform::Path, CachedStat*>::
+      find( cached_stat->get_path() );
+  if ( cached_stat_i == end() )
+  {
+#ifdef _DEBUG
+    if ( log != NULL )
+      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        "StatCache: caching " << cached_stat->get_path() << ".";
+#endif
+    std::map<YIELD::platform::Path, CachedStat*>::insert
+      ( std::make_pair( cached_stat->get_path(), &cached_stat->incRef() ) );
+  }
+  else
+  {
+    if ( log != NULL )
+      log->getStream( YIELD::platform::Log::LOG_WARNING ) <<
+        "StatCache::insert already have " << cached_stat->get_path() <<
+        " in cache. Race condition?";
+  }
+  lock.release();
 }
 
 
@@ -2268,76 +2951,199 @@ YIELD::platform::Path StackableVolume::volname( const YIELD::platform::Path& pat
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 #include <iostream>
-TracingFile::TracingFile( const YIELD::platform::Path& path, YIELD::platform::auto_File underlying_file, YIELD::platform::auto_Log log )
-  : StackableFile( path, underlying_file, log )
+TracingFile::TracingFile
+(
+  YIELD::platform::auto_Log log,
+  const YIELD::platform::Path& path,
+  YIELD::platform::auto_File underlying_file
+)
+  : StackableFile( log, path, underlying_file )
 {
   if ( this->log == NULL )
-    this->log = YIELD::platform::Log::open( std::cout, YIELD::platform::Log::LOG_INFO );
+    this->log =
+    YIELD::platform::Log::open( std::cout, YIELD::platform::Log::LOG_INFO );
 }
 bool TracingFile::close()
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::close", path, underlying_file->close() );
+  return TracingVolume::trace
+  (
+    log,
+    "yieldfs::TracingFile::close",
+    path,
+    underlying_file->close()
+  );
 }
 bool TracingFile::datasync()
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::datasync", path, underlying_file->datasync() );
+  return TracingVolume::trace
+  (
+    log,
+    "yieldfs::TracingFile::datasync",
+    path,
+    underlying_file->datasync()
+  );
 }
 bool TracingFile::getlk( bool exclusive, uint64_t offset, uint64_t length )
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::getlk", path, offset, length, underlying_file->getlk( exclusive, offset, length ) );
+  return TracingVolume::trace
+  (
+    log,
+    "yieldfs::TracingFile::getlk",
+    path,
+    offset,
+    length,
+    underlying_file->getlk( exclusive, offset, length )
+  );
 }
 bool TracingFile::getxattr( const std::string& name, std::string& out_value )
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::getxattr", path, name, underlying_file->getxattr( name, out_value ) );
+  return TracingVolume::trace
+  (
+    log,
+    "yieldfs::TracingFile::getxattr",
+    path,
+    name,
+    underlying_file->getxattr( name, out_value )
+  );
 }
 bool TracingFile::listxattr( std::vector<std::string>& out_names )
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::listxattr", path, underlying_file->listxattr( out_names ) );
+  return TracingVolume::trace
+  (
+    log,
+    "yieldfs::TracingFile::listxattr",
+    path,
+    underlying_file->listxattr( out_names )
+  );
 }
 ssize_t TracingFile::read( void* rbuf, size_t size, uint64_t offset )
 {
   ssize_t read_ret = underlying_file->read( rbuf, size, offset );
-  TracingVolume::trace( log, "yieldfs::TracingFile::read", path, size, offset, read_ret >= 0 );
+  TracingVolume::trace
+  (
+    log,
+    "yieldfs::TracingFile::read",
+    path,
+    size,
+    offset,
+    read_ret >= 0
+  );
   return read_ret;
 }
 bool TracingFile::removexattr( const std::string& name )
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::removexattr", path, name, underlying_file->removexattr( name ) );
+  return TracingVolume::trace
+  (
+    log,
+    "yieldfs::TracingFile::removexattr",
+    path,
+    name,
+    underlying_file->removexattr( name )
+  );
 }
 bool TracingFile::setlk( bool exclusive, uint64_t offset, uint64_t length )
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::setlk", path, offset, length, underlying_file->setlk( exclusive, offset, length ) );
+  return TracingVolume::trace
+  (
+    log,
+    "yieldfs::TracingFile::setlk",
+    path,
+    offset,
+    length,
+    underlying_file->setlk( exclusive, offset, length )
+  );
 }
 bool TracingFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::setlkw", path, offset, length, underlying_file->setlkw( exclusive, offset, length ) );
+  return TracingVolume::trace
+  (
+    log,
+    "yieldfs::TracingFile::setlkw",
+    path,
+    offset,
+    length,
+    underlying_file->setlkw( exclusive, offset, length )
+  );
 }
-bool TracingFile::setxattr( const std::string& name, const std::string& value, int flags )
+bool TracingFile::setxattr
+(
+  const std::string& name,
+  const std::string& value,
+  int flags
+)
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::setxattr", path, name, underlying_file->setxattr( name, value, flags ) );
+  return TracingVolume::trace
+  (
+    log,
+    "yieldfs::TracingFile::setxattr",
+    path,
+    name,
+    underlying_file->setxattr( name, value, flags )
+  );
 }
 YIELD::platform::auto_Stat TracingFile::stat()
 {
   YIELD::platform::auto_Stat stbuf = underlying_file->stat();
-  TracingVolume::trace( log, "yieldfs::TracingFile::stat", path, stbuf != NULL );
+  TracingVolume::trace
+  (
+    log,
+    "yieldfs::TracingFile::stat",
+    path,
+    stbuf != NULL
+  );
   return stbuf;
 }
 bool TracingFile::sync()
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::sync", path, underlying_file->sync() );
+  return TracingVolume::trace
+  (
+    log,
+    "yieldfs::TracingFile::sync",
+    path,
+    underlying_file->sync()
+  );
 }
 bool TracingFile::truncate( uint64_t new_size )
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::truncate", path, 0, new_size, underlying_file->truncate( new_size ) );
+  return TracingVolume::trace
+  (
+    log,
+    "yieldfs::TracingFile::truncate",
+    path,
+    0,
+    new_size,
+    underlying_file->truncate( new_size )
+  );
 }
 bool TracingFile::unlk( uint64_t offset, uint64_t length )
 {
-  return TracingVolume::trace( log, "yieldfs::TracingFile::unlk", path, offset, length, underlying_file->unlk( offset, length ) );
+  return TracingVolume::trace
+  (
+    log,
+    "yieldfs::TracingFile::unlk",
+    path,
+    offset,
+    length,
+    underlying_file->unlk( offset, length )
+  );
 }
-ssize_t TracingFile::write( const void* buffer, size_t buffer_len, uint64_t offset )
+ssize_t TracingFile::write
+(
+  const void* buffer,
+  size_t buffer_len,
+  uint64_t offset
+)
 {
   ssize_t write_ret = underlying_file->write( buffer, buffer_len, offset );
-  TracingVolume::trace( log, "yieldfs::TracingFile::write", path, buffer_len, offset, write_ret == static_cast<ssize_t>( buffer_len ) );
+  TracingVolume::trace
+  (
+    log,
+    "yieldfs::TracingFile::write",
+    path,
+    buffer_len,
+    offset,
+    write_ret == static_cast<ssize_t>( buffer_len )
+  );
   return write_ret;
 }
 
@@ -2345,276 +3151,543 @@ ssize_t TracingFile::write( const void* buffer, size_t buffer_len, uint64_t offs
 // tracing_volume.cpp
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
-
-
 #include <iostream>
-
-
-namespace yieldfs
+class TracingVolume::listdirCallback
+  : public YIELD::platform::Volume::listdirCallback
 {
-  class TracingVolumelistdirCallback : public YIELD::platform::Volume::listdirCallback
+public:
+  listdirCallback
+  (
+    YIELD::platform::Volume::listdirCallback& user_listdir_callback,
+    YIELD::platform::auto_Log log
+  )
+    : user_listdir_callback( user_listdir_callback ), log( log )
+  { }
+  listdirCallback& operator=( const listdirCallback& )
   {
-  public:
-    TracingVolumelistdirCallback( YIELD::platform::Volume::listdirCallback& user_listdir_callback, YIELD::platform::auto_Log log )
-      : user_listdir_callback( user_listdir_callback ), log( log )
-    { }
-
-    TracingVolumelistdirCallback& operator=( const TracingVolumelistdirCallback& ) { return *this; }
-
-    // YIELD::platform::Volume::listdirCallback
-    bool operator()( const YIELD::platform::Path& path )
-    {
-      log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yieldfs::TracingVolume: listdir: returning path " << path << ".";
-      return user_listdir_callback( path );
-    }
-
-  private:
-    YIELD::platform::Volume::listdirCallback& user_listdir_callback;
-    YIELD::platform::auto_Log log;
-  };
-
-
-  class TracingVolumereaddirCallback : public YIELD::platform::Volume::readdirCallback
+    return *this;
+  }
+  // YIELD::platform::Volume::listdirCallback
+  bool operator()( const YIELD::platform::Path& path )
   {
-  public:
-    TracingVolumereaddirCallback( YIELD::platform::Volume::readdirCallback& user_readdir_callback, YIELD::platform::auto_Log log )
-      : user_readdir_callback( user_readdir_callback ), log( log )
-    { }
-
-    TracingVolumereaddirCallback& operator=( const TracingVolumereaddirCallback& ) { return *this; }
-
-    // YIELD::platform::Volume::readdirCallback
-    bool operator()( const YIELD::platform::Path& path, YIELD::platform::auto_Stat stbuf )
-    {
-      log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yieldfs::TracingVolume: readdir: returning directory entry " << path << ": " << static_cast<std::string>( *stbuf ) << ".";
-      return user_readdir_callback( path, stbuf );
-    }
-
-  private:
-    YIELD::platform::Volume::readdirCallback& user_readdir_callback;
-    YIELD::platform::auto_Log log;
-  };
+    log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
+      "yieldfs::TracingVolume::listdir: returning path " << path << ".";
+    return user_listdir_callback( path );
+  }
+private:
+  YIELD::platform::Volume::listdirCallback& user_listdir_callback;
+  YIELD::platform::auto_Log log;
 };
-
-
+class TracingVolume::readdirCallback
+  : public YIELD::platform::Volume::readdirCallback
+{
+public:
+  readdirCallback
+  (
+    YIELD::platform::Volume::readdirCallback& user_readdir_callback,
+    YIELD::platform::auto_Log log
+  )
+    : user_readdir_callback( user_readdir_callback ), log( log )
+  { }
+  readdirCallback& operator=( const readdirCallback& )
+  {
+    return *this;
+  }
+  // YIELD::platform::Volume::readdirCallback
+  bool operator()
+  (
+    const YIELD::platform::Path& path,
+    YIELD::platform::auto_Stat stbuf
+  )
+  {
+    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << \
+      "yieldfs::TracingVolume: readdir: returning directory entry " <<
+      path << ": " << static_cast<std::string>( *stbuf ) << ".";
+    return user_readdir_callback( path, stbuf );
+  }
+private:
+  YIELD::platform::Volume::readdirCallback& user_readdir_callback;
+  YIELD::platform::auto_Log log;
+};
 TracingVolume::TracingVolume()
 {
-  log = YIELD::platform::Log::open( std::cout, YIELD::platform::Log::LOG_INFO );
+  log =
+    YIELD::platform::Log::open( std::cout, YIELD::platform::Log::LOG_INFO );
 }
-
 TracingVolume::TracingVolume( YIELD::platform::auto_Volume underlying_volume )
   : StackableVolume( underlying_volume )
 {
-  log = YIELD::platform::Log::open( std::cout, YIELD::platform::Log::LOG_INFO );
+  log =
+    YIELD::platform::Log::open( std::cout, YIELD::platform::Log::LOG_INFO );
 }
-
-TracingVolume::TracingVolume( YIELD::platform::auto_Volume underlying_volume, YIELD::platform::auto_Log log )
-  : StackableVolume( underlying_volume, log )
+TracingVolume::TracingVolume
+(
+  YIELD::platform::auto_Log log,
+  YIELD::platform::auto_Volume underlying_volume
+)
+  : StackableVolume( log, underlying_volume )
 { }
-
 bool TracingVolume::access( const YIELD::platform::Path& path, int amode )
 {
-  return trace( log, "yieldfs::TracingVolume::access", path, amode, underlying_volume->access( path, amode ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::access",
+    path,
+    amode,
+    underlying_volume->access( path, amode )
+  );
 }
-
 bool TracingVolume::chmod( const YIELD::platform::Path& path, mode_t mode )
 {
-  return trace( log, "yieldfs::TracingVolume::chmod", path, mode, underlying_volume->chmod( path, mode ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::chmod",
+    path,
+    mode,
+    underlying_volume->chmod( path, mode )
+  );
 }
-
-bool TracingVolume::chown( const YIELD::platform::Path& path, int32_t uid, int32_t gid )
+bool TracingVolume::chown
+(
+  const YIELD::platform::Path& path,
+  int32_t uid,
+  int32_t gid
+)
 {
-  YIELD::platform::Log::Stream log_stream = log->getStream( YIELD::platform::Log::LOG_INFO );
-  log_stream << "yieldfs::TracingVolume::chown( " << path << ", " << uid << ", " << gid << " )";
+  YIELD::platform::Log::Stream log_stream =
+    log->getStream( YIELD::platform::Log::LOG_INFO );
+  log_stream << "yieldfs::TracingVolume::chown( " <<
+      path << ", " << uid << ", " << gid << " )";
   return trace( log_stream, underlying_volume->chown( path, uid, gid ) );
 }
-
 bool TracingVolume::exists( const YIELD::platform::Path& path )
 {
-  return trace( log, "yieldfs::TracingVolume::exists", path, underlying_volume->exists( path ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::exists",
+    path,
+    underlying_volume->exists( path )
+  );
 }
-
-bool TracingVolume::getxattr( const YIELD::platform::Path& path, const std::string& name, std::string& out_value )
+bool TracingVolume::getxattr
+(
+  const YIELD::platform::Path& path,
+  const std::string& name,
+  std::string& out_value
+)
 {
-  return trace( log, "yieldfs::TracingVolume::getxattr", path, name, out_value, underlying_volume->getxattr( path, name, out_value ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::getxattr",
+    path,
+    name,
+    out_value,
+    underlying_volume->getxattr( path, name, out_value )
+  );
 }
-
-bool TracingVolume::link( const YIELD::platform::Path& old_path, const YIELD::platform::Path& new_path )
+bool TracingVolume::link
+(
+  const YIELD::platform::Path& old_path,
+  const YIELD::platform::Path& new_path
+)
 {
-  return trace( log, "yieldfs::TracingVolume::link", old_path, new_path, underlying_volume->link( old_path, new_path ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::link",
+    old_path,
+    new_path,
+    underlying_volume->link( old_path, new_path )
+  );
 }
-
-bool TracingVolume::listdir( const YIELD::platform::Path& path, const YIELD::platform::Path& match_file_name_prefix, listdirCallback& callback )
+bool TracingVolume::listdir
+(
+  const YIELD::platform::Path& path,
+  const YIELD::platform::Path& match_file_name_prefix,
+  YIELD::platform::Volume::listdirCallback& callback
+)
 {
-  log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::TracingVolume: listdir( " << path << ", " << match_file_name_prefix << " )";
-  TracingVolumelistdirCallback tracing_volume_listdir_callback( callback, log );
-  return trace( log, "yieldfs::TracingVolume::listdir", path, underlying_volume->listdir( path, match_file_name_prefix, tracing_volume_listdir_callback ) );
+  log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+      "yieldfs::TracingVolume: listdir( " <<
+      path << ", " << match_file_name_prefix << " )";
+  listdirCallback wrapped_callback( callback, log );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::listdir",
+    path,
+    underlying_volume->listdir
+    (
+      path,
+      match_file_name_prefix,
+      wrapped_callback
+    )
+  );
 }
-
-bool TracingVolume::listxattr( const YIELD::platform::Path& path, std::vector<std::string>& out_names )
+bool TracingVolume::listxattr
+(
+  const YIELD::platform::Path& path,
+  std::vector<std::string>& out_names
+)
 {
-  if ( trace( log, "yieldfs::TracingVolume::listxattr", path, underlying_volume->listxattr( path, out_names ) ) )
+  if
+  (
+    trace
+    (
+      log,
+      "yieldfs::TracingVolume::listxattr",
+      path,
+      underlying_volume->listxattr( path, out_names )
+    )
+  )
   {
-    YIELD::platform::Log::Stream log_stream = log->getStream( YIELD::platform::Log::LOG_INFO );
+    YIELD::platform::Log::Stream log_stream =
+      log->getStream( YIELD::platform::Log::LOG_INFO );
     log_stream << "  yieldfs::TracingVolume: xattr names: ";
-    for ( std::vector<std::string>::const_iterator name_i = out_names.begin(); name_i != out_names.end(); name_i++ )
+    for
+    (
+      std::vector<std::string>::const_iterator name_i = out_names.begin();
+      name_i != out_names.end();
+      name_i++
+    )
       log_stream << *name_i << " ";
     return true;
   }
   else
     return false;
 }
-
 bool TracingVolume::mkdir( const YIELD::platform::Path& path, mode_t mode )
 {
-  return trace( log, "yieldfs::TracingVolume::mkdir", path, mode, underlying_volume->mkdir( path, mode ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::mkdir",
+    path,
+    mode,
+    underlying_volume->mkdir( path, mode )
+  );
 }
-
 bool TracingVolume::mktree( const YIELD::platform::Path& path, mode_t mode )
 {
-  return trace( log, "yieldfs::TracingVolume::mktree", path, mode, underlying_volume->mktree( path, mode ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::mktree",
+    path,
+    mode,
+    underlying_volume->mktree( path, mode )
+  );
 }
-
-YIELD::platform::auto_File TracingVolume::open( const YIELD::platform::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
+YIELD::platform::auto_File
+  TracingVolume::open
+(
+  const YIELD::platform::Path& path,
+  uint32_t flags,
+  mode_t mode,
+  uint32_t attributes
+)
 {
-  YIELD::platform::auto_File file = underlying_volume->open( path, flags, mode, attributes );
+  YIELD::platform::auto_File file =
+    underlying_volume->open( path, flags, mode, attributes );
   if( file != NULL )
-    file = new TracingFile( path, file, log );
-
-  YIELD::platform::Log::Stream log_stream = log->getStream( YIELD::platform::Log::LOG_INFO );
-  log_stream << "yieldfs::TracingVolume::open( " << path << ", " << flags << ", " << mode << ", " << attributes << " )";
+    file = new TracingFile( log, path, file );
+  YIELD::platform::Log::Stream log_stream =
+    log->getStream( YIELD::platform::Log::LOG_INFO );
+  log_stream << "yieldfs::TracingVolume::open( " << path <<
+    ", " << flags << ", " << mode << ", " << attributes << " )";
   trace( log_stream, file != NULL );
-
   return file;
 }
-
-bool TracingVolume::readdir( const YIELD::platform::Path& path, const YIELD::platform::Path& match_file_name_prefix, YIELD::platform::Volume::readdirCallback& callback )
+bool TracingVolume::readdir
+(
+  const YIELD::platform::Path& path,
+  const YIELD::platform::Path& match_file_name_prefix,
+  YIELD::platform::Volume::readdirCallback& callback
+)
 {
-  TracingVolumereaddirCallback tracing_volume_readdir_callback( callback, log );
-  return trace( log, "yieldfs::TracingVolume::readdir", path, underlying_volume->readdir( path, match_file_name_prefix, tracing_volume_readdir_callback ) );
+  readdirCallback wrapped_callback( callback, log );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::readdir",
+    path,
+    underlying_volume->readdir
+    (
+      path,
+      match_file_name_prefix,
+      wrapped_callback
+    )
+  );
 }
-
-YIELD::platform::auto_Path TracingVolume::readlink( const YIELD::platform::Path& path )
+YIELD::platform::auto_Path
+  TracingVolume::readlink( const YIELD::platform::Path& path )
 {
   YIELD::platform::auto_Path link_path = underlying_volume->readlink( path );
   trace( log, "yieldfs::TracingVolume::readlink", path, link_path != NULL );
   return link_path;
 }
-
-bool TracingVolume::removexattr( const YIELD::platform::Path& path, const std::string& name )
+bool TracingVolume::removexattr
+(
+  const YIELD::platform::Path& path,
+  const std::string& name
+)
 {
-  return trace( log, "yieldfs::TracingVolume::removexattr", path, name, underlying_volume->removexattr( path, name ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::removexattr",
+    path,
+    name,
+    underlying_volume->removexattr( path, name )
+  );
 }
-
-bool TracingVolume::rename( const YIELD::platform::Path& from_path, const YIELD::platform::Path& to_path )
+bool TracingVolume::rename
+(
+  const YIELD::platform::Path& from_path,
+  const YIELD::platform::Path& to_path
+)
 {
-  return trace( log, "yieldfs::TracingVolume::rename", from_path, to_path, underlying_volume->rename( from_path, to_path ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::rename",
+    from_path,
+    to_path,
+    underlying_volume->rename( from_path, to_path )
+  );
 }
-
 bool TracingVolume::rmdir( const YIELD::platform::Path& path )
 {
-  return trace( log, "yieldfs::TracingVolume::rmdir", path, underlying_volume->rmdir( path ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::rmdir",
+    path,
+    underlying_volume->rmdir( path )
+  );
 }
-
 bool TracingVolume::rmtree( const YIELD::platform::Path& path )
 {
-  return trace( log, "yieldfs::TracingVolume::rmdir", path, underlying_volume->rmtree( path ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::rmdir",
+    path,
+    underlying_volume->rmtree( path )
+  );
 }
-
-bool TracingVolume::setattr( const YIELD::platform::Path& path, uint32_t file_attributes )
+bool TracingVolume::setattr
+(
+  const YIELD::platform::Path& path,
+  uint32_t file_attributes
+)
 {
-  return trace( log, "yieldfs::TracingVolume::setattr", path, file_attributes, underlying_volume->setattr( path, file_attributes ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::setattr",
+    path,
+    file_attributes,
+    underlying_volume->setattr( path, file_attributes )
+  );
 }
-
-bool TracingVolume::setxattr( const YIELD::platform::Path& path, const std::string& name, const std::string& value, int32_t flags )
+bool TracingVolume::setxattr
+(
+  const YIELD::platform::Path& path,
+  const std::string& name,
+  const std::string& value,
+  int32_t flags
+)
 {
-  return trace( log, "yieldfs::TracingVolume::setxattr", path, name, value, underlying_volume->setxattr( path, name, value, flags ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::setxattr",
+    path,
+    name,
+    value,
+    underlying_volume->setxattr( path, name, value, flags )
+  );
 }
-
-YIELD::platform::auto_Stat TracingVolume::stat( const YIELD::platform::Path& path )
+YIELD::platform::auto_Stat
+  TracingVolume::stat( const YIELD::platform::Path& path )
 {
   YIELD::platform::auto_Stat stbuf = underlying_volume->stat( path );
   trace( log, "yieldfs::TracingVolume::stat", path, stbuf != NULL );
   if ( stbuf != NULL )
-    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "yieldfs::TracingVolume::stat returning Stat " << static_cast<std::string>( *stbuf ) << ".";
+    log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
+      "yieldfs::TracingVolume::stat returning Stat " <<
+      static_cast<std::string>( *stbuf ) << ".";
   return stbuf;
 }
-
-bool TracingVolume::statvfs( const YIELD::platform::Path& path, struct statvfs& buf )
+bool TracingVolume::statvfs
+(
+  const YIELD::platform::Path& path,
+  struct statvfs& buf
+)
 {
-  return trace( log, "yieldfs::TracingVolume::statvfs", path, underlying_volume->statvfs( path, buf ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::statvfs",
+    path,
+    underlying_volume->statvfs( path, buf )
+  );
 }
-
-bool TracingVolume::symlink( const YIELD::platform::Path& to_path, const YIELD::platform::Path& from_path )
+bool TracingVolume::symlink
+(
+  const YIELD::platform::Path& to_path,
+  const YIELD::platform::Path& from_path
+)
 {
-  return trace( log, "yieldfs::TracingVolume::symlink", to_path, from_path, underlying_volume->symlink( to_path, from_path ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::symlink",
+    to_path,
+    from_path,
+    underlying_volume->symlink( to_path, from_path )
+  );
 }
-
-bool TracingVolume::trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, bool operation_result )
+bool TracingVolume::trace
+(
+  YIELD::platform::auto_Log log,
+  const char* operation_name,
+  const YIELD::platform::Path& path,
+  bool operation_result
+)
 {
-  YIELD::platform::Log::Stream log_stream = log->getStream( YIELD::platform::Log::LOG_INFO );
+  YIELD::platform::Log::Stream log_stream =
+    log->getStream( YIELD::platform::Log::LOG_INFO );
   log_stream << operation_name << "( " << path << " )";
   return trace( log_stream, operation_result );
 }
-
-bool TracingVolume::trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, mode_t mode, bool operation_result )
+bool TracingVolume::trace
+(
+  YIELD::platform::auto_Log log,
+  const char* operation_name,
+  const YIELD::platform::Path& path,
+  mode_t mode,
+  bool operation_result
+)
 {
-  YIELD::platform::Log::Stream log_stream = log->getStream( YIELD::platform::Log::LOG_INFO );
+  YIELD::platform::Log::Stream log_stream =
+    log->getStream( YIELD::platform::Log::LOG_INFO );
   log_stream << operation_name << "( " << path << ", " << mode << " )";
   return trace( log_stream, operation_result );
 }
-
-bool TracingVolume::trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& old_path, const YIELD::platform::Path& new_path, bool operation_result )
+bool TracingVolume::trace
+(
+  YIELD::platform::auto_Log log,
+  const char* operation_name,
+  const YIELD::platform::Path& old_path,
+  const YIELD::platform::Path& new_path,
+  bool operation_result
+)
 {
-  YIELD::platform::Log::Stream log_stream = log->getStream( YIELD::platform::Log::LOG_INFO );
+  YIELD::platform::Log::Stream log_stream =
+    log->getStream( YIELD::platform::Log::LOG_INFO );
   log_stream << operation_name << "( " << old_path << ", " << new_path << " )";
   return trace( log_stream, operation_result );
 }
-
-bool TracingVolume::trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, const std::string& xattr_name, const std::string& xattr_value, bool operation_result )
+bool TracingVolume::trace
+(
+  YIELD::platform::auto_Log log,
+  const char* operation_name,
+  const YIELD::platform::Path& path,
+  const std::string& xattr_name,
+  const std::string& xattr_value,
+  bool operation_result
+)
 {
-  YIELD::platform::Log::Stream log_stream = log->getStream( YIELD::platform::Log::LOG_INFO );
-  log_stream << operation_name << "( " << path << ", " << xattr_name << ", " << xattr_value << " )";
+  YIELD::platform::Log::Stream log_stream =
+    log->getStream( YIELD::platform::Log::LOG_INFO );
+  log_stream << operation_name << "( " << path << ", "
+    << xattr_name << ", " << xattr_value << " )";
   return trace( log_stream, operation_result );
 }
-
-bool TracingVolume::trace( YIELD::platform::auto_Log log, const char* operation_name, const YIELD::platform::Path& path, uint64_t size, uint64_t offset, bool operation_result )
+bool TracingVolume::trace
+(
+  YIELD::platform::auto_Log log,
+  const char* operation_name,
+  const YIELD::platform::Path& path,
+  uint64_t size,
+  uint64_t offset,
+  bool operation_result
+)
 {
-  YIELD::platform::Log::Stream log_stream = log->getStream( YIELD::platform::Log::LOG_INFO );
-  log_stream << operation_name << "( " << path << ", " << size << ", " << offset << " )";
+  YIELD::platform::Log::Stream log_stream =
+    log->getStream( YIELD::platform::Log::LOG_INFO );
+  log_stream << operation_name << "( " << path << ", "
+    << size << ", " << offset << " )";
   return trace( log_stream, operation_result );
 }
-
-bool TracingVolume::trace( YIELD::platform::Log::Stream& log_stream, bool operation_result )
+bool TracingVolume::trace
+(
+  YIELD::platform::Log::Stream& log_stream,
+  bool operation_result
+)
 {
   if ( operation_result )
    log_stream << " -> success.";
   else
-   log_stream << " -> failed, errno = " << YIELD::platform::Exception::get_errno() << ", what = " << YIELD::platform::Exception::strerror();
-
+   log_stream << " -> failed, errno = " <<
+     YIELD::platform::Exception::get_errno() <<
+     ", what = " << YIELD::platform::Exception::strerror();
   return operation_result;
 }
-
-bool TracingVolume::truncate( const YIELD::platform::Path& path, uint64_t new_size )
+bool TracingVolume::truncate
+(
+  const YIELD::platform::Path& path,
+  uint64_t new_size
+)
 {
-  return trace( log, "yieldfs::TracingVolume::truncate", path, 0, new_size, underlying_volume->truncate( path, new_size ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::truncate",
+    path,
+    0,
+    new_size,
+    underlying_volume->truncate( path, new_size )
+  );
 }
-
 bool TracingVolume::unlink( const YIELD::platform::Path& path )
 {
-  return trace( log, "yieldfs::TracingVolume::unlink", path, underlying_volume->unlink( path ) );
+  return trace
+  (
+    log,
+    "yieldfs::TracingVolume::unlink",
+    path,
+    underlying_volume->unlink( path )
+  );
 }
-
-bool TracingVolume::utimens( const YIELD::platform::Path& path, const YIELD::platform::Time& atime, const YIELD::platform::Time& mtime, const YIELD::platform::Time& ctime )
+bool TracingVolume::utimens
+(
+  const YIELD::platform::Path& path,
+  const YIELD::platform::Time& atime,
+  const YIELD::platform::Time& mtime,
+  const YIELD::platform::Time& ctime
+)
 {
-  YIELD::platform::Log::Stream log_stream = log->getStream( YIELD::platform::Log::LOG_INFO );
-  log_stream << "yieldfs::TracingVolume::utimens( " << path << ", " << atime << ", " << mtime << ", " << ctime << " )";
-  return trace( log_stream, underlying_volume->utimens( path, atime, mtime, ctime ) );
+  YIELD::platform::Log::Stream log_stream =
+    log->getStream( YIELD::platform::Log::LOG_INFO );
+  log_stream << "yieldfs::TracingVolume::utimens( " << path << ", "
+    << atime << ", " << mtime << ", " << ctime << " )";
+  return trace
+  (
+    log_stream,
+    underlying_volume->utimens( path, atime, mtime, ctime )
+  );
 }
-
 YIELD::platform::Path TracingVolume::volname( const YIELD::platform::Path& path )
 {
-  log->getStream( YIELD::platform::Log::LOG_INFO ) << "yieldfs::TracingVolume::volname( " << path << " ) -> success.";
+  log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+    "yieldfs::TracingVolume::volname( " << path << " ) -> success.";
   return underlying_volume->volname( path );
 }
 
@@ -2622,8 +3695,14 @@ YIELD::platform::Path TracingVolume::volname( const YIELD::platform::Path& path 
 // write_back_caching_file.cpp
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
-WriteBackCachingFile::WriteBackCachingFile( PageCache& page_cache, const YIELD::platform::Path& path, YIELD::platform::auto_File underlying_file, YIELD::platform::auto_Log log )
-  : DataCachingFile( page_cache, path, underlying_file, log )
+WriteBackCachingFile::WriteBackCachingFile
+(
+  YIELD::platform::auto_Log log,
+  PageCache& page_cache,
+  const YIELD::platform::Path& path,
+  YIELD::platform::auto_File underlying_file
+)
+  : DataCachingFile( log, page_cache, path, underlying_file )
 { }
 WriteBackCachingFile::~WriteBackCachingFile()
 { }
@@ -2634,23 +3713,58 @@ WriteBackCachingFile::~WriteBackCachingFile()
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 WriteBackCachingVolume::WriteBackCachingVolume() // For testing
 {
-  page_cache = new PageCache( 1 * 1024 * 1024, 5 * MS_IN_S, underlying_volume );
+  page_cache =
+    new PageCache
+    (
+      1 * 1024 * 1024 * 1024,
+      5 * MS_IN_S,
+      underlying_volume
+    );
 }
-WriteBackCachingVolume::WriteBackCachingVolume( size_t cache_capacity_bytes, uint32_t cache_flush_timeout_ms, YIELD::platform::auto_Volume underlying_volume )
+WriteBackCachingVolume::WriteBackCachingVolume
+(
+  size_t cache_capacity_bytes,
+  uint32_t cache_flush_timeout_ms,
+  YIELD::platform::auto_Volume underlying_volume
+)
   : StackableVolume( underlying_volume )
 {
-  page_cache = new PageCache( cache_capacity_bytes, cache_flush_timeout_ms, underlying_volume );
+  page_cache =
+    new PageCache
+    (
+      cache_capacity_bytes,
+      cache_flush_timeout_ms,
+      underlying_volume
+    );
 }
-WriteBackCachingVolume::WriteBackCachingVolume( size_t cache_capacity_bytes, uint32_t cache_flush_timeout_ms, YIELD::platform::auto_Volume underlying_volume, YIELD::platform::auto_Log log )
-  : StackableVolume( underlying_volume, log )
+WriteBackCachingVolume::WriteBackCachingVolume
+(
+  size_t cache_capacity_bytes,
+  uint32_t cache_flush_timeout_ms,
+  YIELD::platform::auto_Log log,
+  YIELD::platform::auto_Volume underlying_volume
+)
+  : StackableVolume( log, underlying_volume )
 {
-  page_cache = new PageCache( cache_capacity_bytes, cache_flush_timeout_ms, underlying_volume );
+  page_cache =
+    new PageCache
+    (
+      cache_capacity_bytes,
+      cache_flush_timeout_ms,
+      underlying_volume
+    );
 }
 WriteBackCachingVolume::~WriteBackCachingVolume()
 {
   delete page_cache;
 }
-YIELD::platform::auto_File WriteBackCachingVolume::open( const YIELD::platform::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
+YIELD::platform::auto_File WriteBackCachingVolume::open
+(
+  const YIELD::platform::Path& path,
+  uint32_t flags,
+  mode_t mode,
+  uint32_t attributes
+)
 {
 #ifdef __linux__
   if ( ( flags & O_DIRECT ) == O_DIRECT )
@@ -2661,9 +3775,10 @@ YIELD::platform::auto_File WriteBackCachingVolume::open( const YIELD::platform::
     flags ^= O_WRONLY;
     flags |= O_RDWR;
   }
-  YIELD::platform::auto_File file = underlying_volume->open( path, flags, mode, attributes );
+  YIELD::platform::auto_File file =
+    underlying_volume->open( path, flags, mode, attributes );
   if ( file != NULL )
-    return new WriteBackCachingFile( *page_cache, path, file, log );
+    return new WriteBackCachingFile( log, *page_cache, path, file );
   else
     return NULL;
 }
@@ -2672,12 +3787,23 @@ YIELD::platform::auto_File WriteBackCachingVolume::open( const YIELD::platform::
 // write_through_caching_file.cpp
 // Copyright 2009 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
-WriteThroughCachingFile::WriteThroughCachingFile( PageCache& page_cache, const YIELD::platform::Path& path, YIELD::platform::auto_File underlying_file, YIELD::platform::auto_Log log )
-  : DataCachingFile( page_cache, path, underlying_file, log )
+WriteThroughCachingFile::WriteThroughCachingFile
+(
+  YIELD::platform::auto_Log log,
+  PageCache& page_cache,
+  const YIELD::platform::Path& path,
+  YIELD::platform::auto_File underlying_file
+)
+  : DataCachingFile( log, page_cache, path, underlying_file )
 { }
-ssize_t WriteThroughCachingFile::write( const void* wbuf, size_t size, uint64_t offset )
+ssize_t WriteThroughCachingFile::write
+(
+  const void* wbuf,
+  size_t size,
+  uint64_t offset
+)
 {
-  ssize_t write_ret = DataCachingFile::write( wbuf, size, offset ); // Keep written pages
+  ssize_t write_ret = DataCachingFile::write( wbuf, size, offset );
   page_cache.flush( get_path() );
   return write_ret;
 }
@@ -2688,27 +3814,59 @@ ssize_t WriteThroughCachingFile::write( const void* wbuf, size_t size, uint64_t 
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 WriteThroughCachingVolume::WriteThroughCachingVolume() // For testing
 {
-  page_cache = new PageCache( 1 * 1024 * 1024 * 1024, 5 * MS_IN_S, underlying_volume );
+  page_cache =
+    new PageCache
+    (
+      1 * 1024 * 1024 * 1024,
+      5 * MS_IN_S,
+      underlying_volume
+    );
 }
-WriteThroughCachingVolume::WriteThroughCachingVolume( YIELD::platform::auto_Volume underlying_volume )
+WriteThroughCachingVolume::WriteThroughCachingVolume
+(
+  YIELD::platform::auto_Volume underlying_volume
+)
   : StackableVolume( underlying_volume )
 {
-  page_cache = new PageCache( 1 * 1024 * 1024 * 1024, 5 * MS_IN_S, underlying_volume );
+  page_cache =
+    new PageCache
+    (
+      1 * 1024 * 1024 * 1024,
+      5 * MS_IN_S,
+      underlying_volume
+    );
 }
-WriteThroughCachingVolume::WriteThroughCachingVolume( YIELD::platform::auto_Volume underlying_volume, YIELD::platform::auto_Log log )
-  : StackableVolume( underlying_volume, log )
+WriteThroughCachingVolume::WriteThroughCachingVolume
+(
+  YIELD::platform::auto_Log log,
+  YIELD::platform::auto_Volume underlying_volume
+)
+  : StackableVolume( log, underlying_volume )
 {
-  page_cache = new PageCache( 1 * 1024 * 1024 * 1024, 5 * MS_IN_S, underlying_volume );
+  page_cache =
+    new PageCache
+    (
+      1 * 1024 * 1024 * 1024,
+      5 * MS_IN_S,
+      underlying_volume
+    );
 }
 WriteThroughCachingVolume::~WriteThroughCachingVolume()
 {
   delete page_cache;
 }
-YIELD::platform::auto_File WriteThroughCachingVolume::open( const YIELD::platform::Path& path, uint32_t flags, mode_t mode, uint32_t attributes )
+YIELD::platform::auto_File WriteThroughCachingVolume::open
+(
+  const YIELD::platform::Path& path,
+  uint32_t flags,
+  mode_t mode,
+  uint32_t attributes
+)
 {
-  YIELD::platform::auto_File file = underlying_volume->open( path, flags, mode, attributes );
+  YIELD::platform::auto_File file =
+    underlying_volume->open( path, flags, mode, attributes );
   if ( file != NULL )
-    return new WriteThroughCachingFile( *page_cache, path, file, log );
+    return new WriteThroughCachingFile( log, *page_cache, path, file );
   else
     return NULL;
 }

@@ -45,21 +45,17 @@ auto_MRCProxy MRCProxy::create
       checked_uri.set_port( org::xtreemfs::interfaces::MRCInterface::ONCRPC_PORT_DEFAULT );
   }  
 
-  YIELD::ipc::auto_SocketAddress peername = YIELD::ipc::SocketAddress::create( checked_uri );
-  if ( peername != NULL )
-    return new MRCProxy
-    ( 
-      concurrency_level,
-      flags, 
-      log, 
-      operation_timeout, 
-      password, 
-      peername, 
-      reconnect_tries_max, 
-      createSocketFactory( checked_uri, ssl_context ) 
-    );
-  else
-    throw YIELD::platform::Exception();
+  return new MRCProxy
+  ( 
+    concurrency_level,
+    flags, 
+    log, 
+    operation_timeout, 
+    password, 
+    YIELD::ipc::SocketAddress::create( checked_uri ), 
+    reconnect_tries_max, 
+    createSocketFactory( checked_uri, ssl_context ) 
+  );
 }
 
 void MRCProxy::getattr( const Path& path, org::xtreemfs::interfaces::Stat& stbuf )

@@ -1146,21 +1146,34 @@ namespace YIELD
       SocketAddress( struct addrinfo& addrinfo_list ); // Takes ownership
       SocketAddress( const struct sockaddr_storage& _sockaddr_storage ); // Copies
 
-      // create( ... ) factory methods return NULL instead of throwing exceptions
+      // create( ... ) factory methods throw exceptions
       // hostname can be NULL for INADDR_ANY
-      static yidl::runtime::auto_Object<SocketAddress> create( const char* hostname )
+      static yidl::runtime::auto_Object<SocketAddress> 
+        create( const char* hostname )
       { 
         return create( hostname, 0 ); 
       }
 
-      static yidl::runtime::auto_Object<SocketAddress> create( const char* hostname, uint16_t port ); 
+      static yidl::runtime::auto_Object<SocketAddress> 
+        create( const char* hostname, uint16_t port ); 
       static yidl::runtime::auto_Object<SocketAddress> create( const URI& );
 
 #ifdef _WIN32
-      bool as_struct_sockaddr( int family, struct sockaddr*& out_sockaddr, int32_t& out_sockaddrlen );
+      bool as_struct_sockaddr
+      ( 
+        int family, 
+        struct sockaddr*& out_sockaddr, 
+        int32_t& out_sockaddrlen 
+      );
 #else
-      bool as_struct_sockaddr( int family, struct sockaddr*& out_sockaddr, uint32_t& out_sockaddrlen );
+      bool as_struct_sockaddr
+      (
+        int family, 
+        struct sockaddr*& out_sockaddr, 
+        uint32_t& out_sockaddrlen 
+      );
 #endif
+
       bool getnameinfo( std::string& out_hostname, bool numeric = true ) const;
       bool getnameinfo( char* out_hostname, uint32_t out_hostname_len, bool numeric = true ) const;
       uint16_t get_port() const;
@@ -1688,39 +1701,28 @@ namespace YIELD
         )
       {
         auto_SocketAddress peername = SocketAddress::create( absolute_uri );
-        if ( peername != NULL )
-        {
-          auto_SocketFactory socket_factory;
 
+        auto_SocketFactory socket_factory;
 #ifdef YIELD_HAVE_OPENSSL
-          if ( absolute_uri.get_scheme() == "oncrpcs" )
-          {
-            if ( ssl_context != NULL )
-              socket_factory = new SSLSocketFactory( ssl_context );
-            else
-            {
-              ssl_context = SSLContext::create( SSLv23_client_method() );
-              if ( ssl_context != NULL )
-                socket_factory = new SSLSocketFactory( ssl_context ); 
-              else
-                throw YIELD::platform::Exception();
-            }
-          }
-          else
-#endif
-          if ( absolute_uri.get_scheme() == "oncrpcu" )
-            socket_factory = new UDPSocketFactory;
-          else
-            socket_factory = new TCPSocketFactory;
+        if ( absolute_uri.get_scheme() == "oncrpcs" )
+        {
+          if ( ssl_context == NULL )
+            ssl_context = SSLContext::create( SSLv23_client_method() );
 
-          return new ONCRPCClient<InterfaceType>
-          ( 
-            concurrency_level, flags, log, operation_timeout, 
-            peername, reconnect_tries_max, socket_factory 
-          );
+          socket_factory = new SSLSocketFactory( ssl_context );
         }
         else
-          throw YIELD::platform::Exception();
+#endif
+        if ( absolute_uri.get_scheme() == "oncrpcu" )
+          socket_factory = new UDPSocketFactory;
+        else
+          socket_factory = new TCPSocketFactory;
+
+        return new ONCRPCClient<InterfaceType>
+        ( 
+          concurrency_level, flags, log, operation_timeout, 
+          peername, reconnect_tries_max, socket_factory 
+        );
       }
   };
 };

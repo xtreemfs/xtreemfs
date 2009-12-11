@@ -2,11 +2,11 @@
 
 check_xtreemfs() {
     if [ -z "$XTREEMFS" ]; then
-        if [ -d AL -a -d java ]; then
-            echo "Looks like you are in an XtreemFS base directory..."
+        if [ -d src -a -d share ]; then
+            #echo "Looks like you are in an XtreemFS base directory..."
             XTREEMFS=`pwd`
-        elif [ -d ../AL -a -d ../java ]; then
-            echo "XTREEMFS base could be the parent directory..."
+        elif [ -d ../src -a -d ../share ]; then
+            #echo "XTREEMFS base could be the parent directory..."
             XTREEMFS=`pwd`/..
         fi
     fi

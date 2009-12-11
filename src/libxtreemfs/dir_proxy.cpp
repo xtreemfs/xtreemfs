@@ -36,20 +36,16 @@ auto_DIRProxy DIRProxy::create
       checked_uri.set_port( org::xtreemfs::interfaces::DIRInterface::ONCRPC_PORT_DEFAULT );
   }  
 
-  YIELD::ipc::auto_SocketAddress peername = YIELD::ipc::SocketAddress::create( checked_uri );
-  if ( peername != NULL )
-    return new DIRProxy
-    ( 
-      concurrency_level,
-      flags, 
-      log, 
-      operation_timeout, 
-      peername, 
-      reconnect_tries_max,
-      createSocketFactory( checked_uri, ssl_context ) 
-    );
-  else
-    throw YIELD::platform::Exception();
+  return new DIRProxy
+  ( 
+    concurrency_level,
+    flags, 
+    log, 
+    operation_timeout, 
+    YIELD::ipc::SocketAddress::create( checked_uri ), 
+    reconnect_tries_max,
+    createSocketFactory( checked_uri, ssl_context ) 
+  );
 }
 
 yidl::runtime::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> DIRProxy::getAddressMappingsFromUUID( const std::string& uuid )
