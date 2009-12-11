@@ -28,6 +28,7 @@
 package org.xtreemfs.common;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
@@ -188,8 +189,16 @@ public class HeartbeatThread extends LifeCycleThread {
                         .getHostName();
                 if (host.startsWith("/"))
                     host = host.substring(1);
-                
-                
+
+                try {
+                    //see if we can resolve the hostname
+                    InetAddress ia = InetAddress.getByName(host);
+                } catch (Exception ex) {
+                    Logging.logMessage(Logging.LEVEL_WARN, this,"WARNING! Could not resolve my "+
+                            "hostname (%s) locally! Please make sure that the hostname is set correctly "+
+                            "(either on your system or in the service config file). This will lead to "+
+                            "problems if clients and other OSDs cannot resolve this service's address!\n",host);
+                }
                 
                 // add an oncrpc/oncrpcs mapping
                 endpoints.add(new AddressMapping(uuid.toString(), 0, proto, host, config.getPort(), "*", 3600,
