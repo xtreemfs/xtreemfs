@@ -1,5 +1,3 @@
-// Revision: 1931
-
 #include "yield/ipc.h"
 
 
@@ -1177,6 +1175,8 @@ YIELD::ipc::auto_HTTPServer YIELD::ipc::HTTPServer::create( const URI& absolute_
        listen_tcp_socket->bind( sockname ) &&
        listen_tcp_socket->listen() )
     return new HTTPServer( http_request_target, listen_tcp_socket, log );
+  else
+    throw YIELD::platform::Exception();
 }
 
 
