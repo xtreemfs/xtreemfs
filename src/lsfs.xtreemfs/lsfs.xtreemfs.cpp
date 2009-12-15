@@ -13,7 +13,12 @@ namespace lsfs_xtreemfs
   {
   public:
     Main()
-      : xtreemfs::Main( "lsfs.xtreemfs", "list volumes on a specified MRC", "[oncrpc://]<mrc host>[:port][/<volume name>]" )
+      : xtreemfs::Main
+        ( 
+          "lsfs.xtreemfs", 
+          "list volumes on a specified MRC", 
+          "[oncrpc://]<mrc host>[:port][/<volume name>]" 
+        )
     {
       addOption( LSFS_XTREEMFS_OPTION_LONG_LISTING, "-l" );
       long_listing = false;
@@ -35,7 +40,13 @@ namespace lsfs_xtreemfs
       org::xtreemfs::interfaces::VolumeSet volumes;
       createMRCProxy( *mrc_uri )->xtreemfs_lsvol( volumes );
 
-      for ( org::xtreemfs::interfaces::VolumeSet::const_iterator volume_i = volumes.begin(); volume_i != volumes.end(); volume_i++ )
+      for 
+      ( 
+        org::xtreemfs::interfaces::VolumeSet::const_iterator 
+          volume_i = volumes.begin(); 
+        volume_i != volumes.end(); 
+        volume_i++ 
+      )
       {
         std::ostringstream volume_str;
 
@@ -45,15 +56,26 @@ namespace lsfs_xtreemfs
           size_t volume_str_len = volume_str.str().size();
           for ( size_t dash_i = 0; dash_i < volume_str_len; dash_i++ )
             volume_str << '-';
+
           volume_str << std::endl;
-          volume_str << "\tID:       " << ( *volume_i ).get_id() << std::endl;
-          volume_str << "\tOwner:    " << ( *volume_i ).get_owner_user_id() << std::endl;
-          volume_str << "\tGroup:    " << ( *volume_i ).get_owner_group_id() << std::endl;
-          volume_str << "\tAccess:   " << ( *volume_i ).get_mode() << std::endl;
+
+          volume_str << "\tID:       " << 
+            ( *volume_i ).get_id() << std::endl;
+
+          volume_str << "\tOwner:    " << 
+            ( *volume_i ).get_owner_user_id() << std::endl;
+
+          volume_str << "\tGroup:    " << 
+            ( *volume_i ).get_owner_group_id() << std::endl;
+
+          volume_str << "\tAccess:   " << 
+            ( *volume_i ).get_mode() << std::endl;
+
           volume_str << std::endl;
         }
         else
-          volume_str << ( *volume_i ).get_name() << "  ->  " << ( *volume_i ).get_id() << std::endl;
+          volume_str << ( *volume_i ).get_name() << 
+            "  ->  " << ( *volume_i ).get_id() << std::endl;
 
         std::cout << volume_str.str();
       }

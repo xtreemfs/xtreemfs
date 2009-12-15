@@ -257,7 +257,8 @@ namespace mount_xtreemfs
         fuse_o_args.append( "use_ino,fsname=xtreemfs" );            
         fuse_argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
         get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << 
-            get_program_name() << ": passing -o " << fuse_o_args << " to FUSE.";
+            get_program_name() << ": passing -o " << fuse_o_args << 
+            " to FUSE.";
         fuse_argvv.push_back( NULL );
         struct fuse_args fuse_args_ = 
           FUSE_ARGS_INIT( fuse_argvv.size() - 1 , &fuse_argvv[0] );

@@ -2,6 +2,7 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/osd_proxy.h"
+using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
 
@@ -20,14 +21,14 @@ auto_OSDProxy OSDProxy::create
 
   if ( checked_uri.get_port() == 0 )
   {
-    if ( checked_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCG_SCHEME )
-      checked_uri.set_port( org::xtreemfs::interfaces::OSDInterface::ONCRPCG_PORT_DEFAULT );
-    else if ( checked_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCS_SCHEME )
-      checked_uri.set_port( org::xtreemfs::interfaces::OSDInterface::ONCRPCS_PORT_DEFAULT );
-    else if ( checked_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
-      checked_uri.set_port( org::xtreemfs::interfaces::OSDInterface::ONCRPCU_PORT_DEFAULT );
+    if ( checked_uri.get_scheme() == ONCRPCG_SCHEME )
+      checked_uri.set_port( ONCRPCG_PORT_DEFAULT );
+    else if ( checked_uri.get_scheme() == ONCRPCS_SCHEME )
+      checked_uri.set_port( ONCRPCS_PORT_DEFAULT );
+    else if ( checked_uri.get_scheme() == ONCRPCU_SCHEME )
+      checked_uri.set_port( ONCRPCU_PORT_DEFAULT );
     else
-      checked_uri.set_port( org::xtreemfs::interfaces::OSDInterface::ONCRPC_PORT_DEFAULT );
+      checked_uri.set_port( ONCRPC_PORT_DEFAULT );
   }  
 
   return new OSDProxy
@@ -42,17 +43,36 @@ auto_OSDProxy OSDProxy::create
   );
 }
 
-bool operator>( const org::xtreemfs::interfaces::OSDWriteResponse& left, const org::xtreemfs::interfaces::OSDWriteResponse& right )
+
+bool operator>
+( 
+  const org::xtreemfs::interfaces::OSDWriteResponse& left, 
+  const org::xtreemfs::interfaces::OSDWriteResponse& right 
+)
 {
   if ( left.get_new_file_size().empty() )
     return false;
+
   else if ( right.get_new_file_size().empty() )
     return true;
-  else if ( left.get_new_file_size()[0].get_truncate_epoch() > right.get_new_file_size()[0].get_truncate_epoch() )
+
+  else if 
+  ( 
+    left.get_new_file_size()[0].get_truncate_epoch() > 
+    right.get_new_file_size()[0].get_truncate_epoch() 
+  )
     return true;
-  else if ( left.get_new_file_size()[0].get_truncate_epoch() == right.get_new_file_size()[0].get_truncate_epoch() &&
-            left.get_new_file_size()[0].get_size_in_bytes() > right.get_new_file_size()[0].get_size_in_bytes() )
+
+  else if 
+  ( 
+    left.get_new_file_size()[0].get_truncate_epoch() == 
+      right.get_new_file_size()[0].get_truncate_epoch() 
+    &&
+    left.get_new_file_size()[0].get_size_in_bytes() > 
+      right.get_new_file_size()[0].get_size_in_bytes() 
+  )
     return true;
+
   else
     return false;
 }

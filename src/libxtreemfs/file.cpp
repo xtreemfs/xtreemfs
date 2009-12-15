@@ -4,6 +4,7 @@
 #include "xtreemfs/file.h"
 #include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/volume.h"
+using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
 #include "yieldfs.h"
@@ -40,8 +41,7 @@ using namespace xtreemfs;
   }
 
 
-class File::ReadBuffer 
-  : public yidl::runtime::FixedBuffer
+class File::ReadBuffer : public yidl::runtime::FixedBuffer
 {
 public:
   ReadBuffer( void* buf, size_t len )
@@ -51,23 +51,21 @@ public:
   }
 };
 
-class File::ReadResponse 
-  : public org::xtreemfs::interfaces::OSDInterface::readResponse
+class File::ReadResponse : public OSDInterface::readResponse
 {
 public:
   ReadResponse( yidl::runtime::auto_Buffer buffer )
-    : org::xtreemfs::interfaces::OSDInterface::readResponse
-        ( org::xtreemfs::interfaces::ObjectData( 0, false, 0, buffer ) )
+    : OSDInterface::readResponse
+        ( ObjectData( 0, false, 0, buffer ) )
   { }
 };
 
-class File::ReadRequest 
-  : public org::xtreemfs::interfaces::OSDInterface::readRequest
+class File::ReadRequest : public OSDInterface::readRequest
 {
 public:
   ReadRequest
   ( 
-    const org::xtreemfs::interfaces::FileCredentials& file_credentials, 
+    const FileCredentials& file_credentials, 
     const std::string& file_id, 
     uint64_t object_number, 
     uint64_t object_version, 
@@ -75,7 +73,7 @@ public:
     uint32_t length, 
     yidl::runtime::auto_Buffer buffer 
   ) 
-    : org::xtreemfs::interfaces::OSDInterface::readRequest
+    : OSDInterface::readRequest
       ( 
         file_credentials, 
         file_id, 
@@ -97,8 +95,7 @@ private:
 };
 
 
-class File::WriteBuffer 
-  : public yidl::runtime::FixedBuffer
+class File::WriteBuffer : public yidl::runtime::FixedBuffer
 {
 public:
   WriteBuffer( const void* buf, size_t len )
@@ -110,8 +107,7 @@ public:
 };
 
 
-class File::XCapTimer 
-  : public YIELD::platform::TimerQueue::Timer
+class File::XCapTimer : public YIELD::platform::TimerQueue::Timer
 {
 public:
   XCapTimer( auto_File file, const YIELD::platform::Time& timeout )
@@ -131,7 +127,7 @@ public:
     {
       try
       {
-        org::xtreemfs::interfaces::XCap renewed_xcap;
+        XCap renewed_xcap;
 
         file->parent_volume->get_log()->
           getStream( YIELD::platform::Log::LOG_INFO ) << 
@@ -154,7 +150,7 @@ public:
         if 
         ( 
           renewed_xcap.get_expire_timeout_s() > 
-          org::xtreemfs::interfaces::XCAP_EXPIRE_TIMEOUT_S_MIN 
+          XCAP_EXPIRE_TIMEOUT_S_MIN 
         )
         {
           // Add another timer for the renewed xcap
@@ -166,17 +162,19 @@ public:
             (
               file,
               ( renewed_xcap.get_expire_timeout_s() - 
-                org::xtreemfs::interfaces::XCAP_EXPIRE_TIMEOUT_S_MIN ) 
+                XCAP_EXPIRE_TIMEOUT_S_MIN ) 
               * NS_IN_S
             )
           );
         }
         else 
-          file->parent_volume->get_log()->getStream( YIELD::platform::Log::LOG_ERR ) <<
-            "xtreemfs::File: received xcap for file " << renewed_xcap.get_file_id() <<
-            "that expires in less than " << 
-            org::xtreemfs::interfaces::XCAP_EXPIRE_TIMEOUT_S_MIN << 
-            " seconds, will not try to renew.";
+          file->parent_volume->get_log()->
+            getStream( YIELD::platform::Log::LOG_ERR ) <<
+              "xtreemfs::File: received xcap for file " << 
+              renewed_xcap.get_file_id() <<
+              "that expires in less than " << 
+              XCAP_EXPIRE_TIMEOUT_S_MIN << 
+              " seconds, will not try to renew.";
       }
       catch ( std::exception& exc )
       {
@@ -198,7 +196,7 @@ File::File
 ( 
   auto_Volume parent_volume, 
   const YIELD::platform::Path& path, 
-  const org::xtreemfs::interfaces::FileCredentials& file_credentials 
+  const FileCredentials& file_credentials 
 )
 : parent_volume( parent_volume ), 
   path( path ), 
@@ -211,7 +209,7 @@ File::File
   if 
   (
     file_credentials.get_xcap().get_expire_timeout_s() >
-    org::xtreemfs::interfaces::XCAP_EXPIRE_TIMEOUT_S_MIN
+    XCAP_EXPIRE_TIMEOUT_S_MIN
   )
   {
     // Do not keep a reference to the xcap timer, since that would create
@@ -227,7 +225,7 @@ File::File
       (
         incRef(), 
         ( file_credentials.get_xcap().get_expire_timeout_s() - 
-          org::xtreemfs::interfaces::XCAP_EXPIRE_TIMEOUT_S_MIN ) 
+          XCAP_EXPIRE_TIMEOUT_S_MIN ) 
         * NS_IN_S 
       )
     );  
@@ -235,7 +233,7 @@ File::File
   else 
     parent_volume->get_log()->getStream( YIELD::platform::Log::LOG_ERR ) <<
       "xtreemfs::File: received xcap that expires in less than " <<
-      org::xtreemfs::interfaces::XCAP_EXPIRE_TIMEOUT_S_MIN << 
+      XCAP_EXPIRE_TIMEOUT_S_MIN << 
       " seconds, will not try to renew.";
 }
 
@@ -258,10 +256,7 @@ bool File::close()
           latest_osd_write_response 
         );
 
-        latest_osd_write_response.set_new_file_size
-        ( 
-          org::xtreemfs::interfaces::NewFileSize() 
-        );
+        latest_osd_write_response.set_new_file_size( NewFileSize() );
       }
         
       if ( file_credentials.get_xcap().get_replicate_on_close() )
@@ -289,11 +284,11 @@ bool File::datasync()
 
 bool File::getlk( bool exclusive, uint64_t offset, uint64_t length )
 {
-  org::xtreemfs::interfaces::Lock lock = 
+  Lock lock = 
     parent_volume->get_osd_proxy_mux()->xtreemfs_lock_check
     ( 
-      file_credentials, 
-      parent_volume->get_uuid(), 
+      file_credentials,
+      parent_volume->get_uuid(),
       yieldfs::FUSE::getpid(), 
       file_credentials.get_xcap().get_file_id(), 
       offset, 
@@ -329,8 +324,11 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
   try
   {
 #ifdef _DEBUG
-    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-         Volume::VOLUME_FLAG_TRACE_FILE_IO )
+    if 
+    ( 
+      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+         Volume::VOLUME_FLAG_TRACE_FILE_IO 
+    )
       log->getStream( YIELD::platform::Log::LOG_INFO ) << 
         "xtreemfs::File::read( rbuf, size=" << size << 
         ", offset=" << offset << 
@@ -345,7 +343,10 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
                             .get_striping_policy().get_stripe_size() * 1024;    
 
     YIELD::concurrency::auto_ResponseQueue<ReadResponse> 
-      read_response_queue( new YIELD::concurrency::ResponseQueue<ReadResponse> );
+      read_response_queue
+      ( 
+        new YIELD::concurrency::ResponseQueue<ReadResponse> 
+      );
     size_t expected_read_response_count = 0;
 
     while ( rbuf_p < rbuf_end )
@@ -357,8 +358,11 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         object_size = stripe_size - object_offset;
 
 #ifdef _DEBUG
-      if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-           Volume::VOLUME_FLAG_TRACE_FILE_IO )
+      if 
+      ( 
+        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+        Volume::VOLUME_FLAG_TRACE_FILE_IO 
+      )
       {
         log->getStream( YIELD::platform::Log::LOG_INFO ) << 
           "xtreemfs::File: issuing read # " << 
@@ -395,8 +399,11 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     }
 
 #ifdef _DEBUG
-    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-          Volume::VOLUME_FLAG_TRACE_FILE_IO )
+    if 
+    ( 
+      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+      Volume::VOLUME_FLAG_TRACE_FILE_IO 
+    )
       log->getStream( YIELD::platform::Log::LOG_INFO ) << 
         "xtreemfs::File: issued " << expected_read_response_count << 
         " parallel reads.";
@@ -427,7 +434,8 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
           "xtreemfs::File: read " << data->size() <<
           " bytes from file " << file_credentials.get_xcap().get_file_id() <<            
           " with " << zero_padding << " bytes of zero padding" <<
-          ", starting from buffer offset " << static_cast<size_t>( rbuf_p - rbuf_start ) << 
+          ", starting from buffer offset " << 
+          static_cast<size_t>( rbuf_p - rbuf_start ) << 
           ", read # " << ( read_response_i + 1 ) << " of " << 
           expected_read_response_count << " parallel reads.";
       }
@@ -447,8 +455,8 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
         else
         {
           log->getStream( YIELD::platform::Log::LOG_ERR ) << 
-            "xtreemfs::File: received zero_padding (data size=" << data->size() << 
-            ", zero_padding=" << zero_padding << 
+            "xtreemfs::File: received zero_padding (data size=" << 
+            data->size() << ", zero_padding=" << zero_padding << 
             ") larger than available buffer space (" << 
             static_cast<size_t>( rbuf_end - rbuf_p ) << ")";
           YIELD::concurrency::ExceptionResponse::set_errno( EIO );
@@ -462,8 +470,11 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
     if ( static_cast<size_t>( ret ) > size ) 
       DebugBreak();
 
-    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-         Volume::VOLUME_FLAG_TRACE_FILE_IO )
+    if 
+    ( 
+      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+       Volume::VOLUME_FLAG_TRACE_FILE_IO 
+    )
     {
       log->getStream( YIELD::platform::Log::LOG_INFO ) << 
         "xtreemfs::File: read " << ret <<
@@ -475,8 +486,11 @@ ssize_t File::read( void* rbuf, size_t size, uint64_t offset )
   catch ( ProxyExceptionResponse& proxy_exception_response )
   {
 #ifdef _DEBUG
-    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-         Volume::VOLUME_FLAG_TRACE_FILE_IO )
+    if 
+    (   
+      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+       Volume::VOLUME_FLAG_TRACE_FILE_IO 
+    )
     {
       log->getStream( YIELD::platform::Log::LOG_INFO ) <<
         "xtreemfs::File: read threw ProxyExceptionResponse: " <<
@@ -523,7 +537,7 @@ bool File::setlk( bool exclusive, uint64_t offset, uint64_t length )
 {
   FILE_OPERATION_BEGIN;
 
-  org::xtreemfs::interfaces::Lock lock = 
+  Lock lock = 
     parent_volume->get_osd_proxy_mux()->xtreemfs_lock_acquire
     ( 
       file_credentials, 
@@ -549,7 +563,7 @@ bool File::setlkw( bool exclusive, uint64_t offset, uint64_t length )
   {
     try
     {
-      org::xtreemfs::interfaces::Lock lock = 
+       Lock lock = 
           parent_volume->get_osd_proxy_mux()->xtreemfs_lock_acquire
           ( 
             file_credentials, 
@@ -572,7 +586,12 @@ bool File::setlkw( bool exclusive, uint64_t offset, uint64_t length )
   FILE_OPERATION_END;
 }
 
-bool File::setxattr( const std::string& name, const std::string& value, int flags )
+bool File::setxattr
+( 
+  const std::string& name, 
+  const std::string& value, 
+  int flags 
+)
 {
   return parent_volume->setxattr( path, name, value, flags );
 }
@@ -601,10 +620,7 @@ bool File::sync()
       latest_osd_write_response 
     );
 
-    latest_osd_write_response.set_new_file_size
-    ( 
-      org::xtreemfs::interfaces::NewFileSize() 
-    );
+    latest_osd_write_response.set_new_file_size( NewFileSize() );
   }  
 
   return true;
@@ -616,10 +632,11 @@ bool File::truncate( uint64_t new_size )
 {
   FILE_OPERATION_BEGIN;
 
-  org::xtreemfs::interfaces::XCap truncate_xcap;
-  parent_volume->get_mrc_proxy()->ftruncate( file_credentials.get_xcap(), truncate_xcap );
+  XCap truncate_xcap;
+  parent_volume->get_mrc_proxy()->
+    ftruncate( file_credentials.get_xcap(), truncate_xcap );
   file_credentials.set_xcap( truncate_xcap );
-  org::xtreemfs::interfaces::OSDWriteResponse osd_write_response;
+  OSDWriteResponse osd_write_response;
 
   parent_volume->get_osd_proxy_mux()->truncate
   ( 
@@ -629,8 +646,11 @@ bool File::truncate( uint64_t new_size )
     osd_write_response 
   );
 
-  if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != 
-       Volume::VOLUME_FLAG_CACHE_METADATA )
+  if 
+  ( 
+    ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != 
+     Volume::VOLUME_FLAG_CACHE_METADATA 
+  )
   {
     parent_volume->get_mrc_proxy()->xtreemfs_update_file_size
     ( 
@@ -673,11 +693,14 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 {
   YIELD::platform::auto_Log log( parent_volume->get_log() );
   ssize_t ret;
-  std::vector<org::xtreemfs::interfaces::OSDInterface::writeResponse*> write_responses;
+  std::vector<OSDInterface::writeResponse*> write_responses;
 
 #ifdef _DEBUG
-  if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-    Volume::VOLUME_FLAG_TRACE_FILE_IO )
+  if 
+  ( 
+    ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+    Volume::VOLUME_FLAG_TRACE_FILE_IO 
+  )
     log->getStream( YIELD::platform::Log::LOG_INFO ) << 
       "xtreemfs::File::write( wbuf, size=" << size << 
       ", offset=" << offset << " )";
@@ -691,10 +714,10 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
     uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0]
                             .get_striping_policy().get_stripe_size() * 1024;
 
-    YIELD::concurrency::auto_ResponseQueue<org::xtreemfs::interfaces::OSDInterface::writeResponse> 
+    YIELD::concurrency::auto_ResponseQueue<OSDInterface::writeResponse>
       write_response_queue
-      ( 
-        new YIELD::concurrency::ResponseQueue<org::xtreemfs::interfaces::OSDInterface::writeResponse> 
+      (
+        new YIELD::concurrency::ResponseQueue<OSDInterface::writeResponse>
       );
     size_t expected_write_response_count = 0;
 
@@ -706,16 +729,16 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
       if ( object_offset + object_size > stripe_size )
         object_size = stripe_size - object_offset;
 
-      org::xtreemfs::interfaces::ObjectData object_data
+      ObjectData object_data
       ( 
-        0, 
-        false, 
-        0, 
-        new WriteBuffer( wbuf_p, static_cast<uint32_t>( object_size ) ) 
+        0,
+        false,
+        0,
+        new WriteBuffer( wbuf_p, static_cast<uint32_t>( object_size ) )
       );
 
-      org::xtreemfs::interfaces::OSDInterface::writeRequest* write_request = 
-        new org::xtreemfs::interfaces::OSDInterface::writeRequest
+      OSDInterface::writeRequest* write_request =
+        new OSDInterface::writeRequest
         ( 
           file_credentials, 
           file_credentials.get_xcap().get_file_id(), 
@@ -728,11 +751,15 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
       write_request->set_selected_file_replica( selected_file_replica );
 
 #ifdef _DEBUG
-      if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-           Volume::VOLUME_FLAG_TRACE_FILE_IO )
+      if 
+      ( 
+        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+           Volume::VOLUME_FLAG_TRACE_FILE_IO 
+      )
       {
         log->getStream( YIELD::platform::Log::LOG_INFO ) << 
-          "xtreemfs::File: issuing write # " << ( expected_write_response_count + 1 ) <<
+          "xtreemfs::File: issuing write # " << 
+          ( expected_write_response_count + 1 ) <<
           " of " << object_size << 
           " bytes to object number " << object_number <<
           " in file " << file_credentials.get_xcap().get_file_id() <<
@@ -757,25 +784,35 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
       write_response_i++ 
     )
     {
-      org::xtreemfs::interfaces::OSDInterface::writeResponse& write_response = 
+      OSDInterface::writeResponse& write_response = 
         write_response_queue->dequeue();
 
       if ( write_response.get_selected_file_replica() != 0 )
         selected_file_replica = write_response.get_selected_file_replica();
 
 #ifdef _DEBUG
-      if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-           Volume::VOLUME_FLAG_TRACE_FILE_IO )
+      if 
+      ( 
+        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+           Volume::VOLUME_FLAG_TRACE_FILE_IO 
+      )
         log->getStream( YIELD::platform::Log::LOG_INFO ) << 
-          "xtreemfs::File::write received response # " << ( write_response_i + 1 ) << 
-          " of " << expected_write_response_count << ".";
+          "xtreemfs::File::write received response # " << 
+          ( write_response_i + 1 ) << " of " << 
+          expected_write_response_count << ".";
 #endif
 
-      if ( write_response.get_osd_write_response() > latest_osd_write_response )
+      if 
+      ( 
+        write_response.get_osd_write_response() > latest_osd_write_response 
+      )
       {
 #ifdef _DEBUG
-        if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-              Volume::VOLUME_FLAG_TRACE_FILE_IO )
+        if 
+        ( 
+          ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+              Volume::VOLUME_FLAG_TRACE_FILE_IO 
+        )
           log->getStream( YIELD::platform::Log::LOG_INFO ) << 
             "xtreemfs::File: OSD write response is newer than latest known.";
 #endif
@@ -787,13 +824,19 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
       write_responses.push_back( &write_response );
     }
 
-    if ( !latest_osd_write_response.get_new_file_size().empty() &&
-         ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != 
-           Volume::VOLUME_FLAG_CACHE_METADATA )
+    if 
+    ( 
+      !latest_osd_write_response.get_new_file_size().empty() &&
+      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != 
+      Volume::VOLUME_FLAG_CACHE_METADATA 
+    )
     {
 #ifdef _DEBUG
-      if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-            Volume::VOLUME_FLAG_TRACE_FILE_IO )
+      if 
+      ( 
+        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+            Volume::VOLUME_FLAG_TRACE_FILE_IO 
+      )
         log->getStream( YIELD::platform::Log::LOG_INFO ) << 
             "xtreemfs::File: flushing file size updates.";
 #endif
@@ -804,7 +847,7 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
         latest_osd_write_response 
       );
 
-      latest_osd_write_response.set_new_file_size( org::xtreemfs::interfaces::NewFileSize() );
+      latest_osd_write_response.set_new_file_size( NewFileSize() );
     }
 
     ret = static_cast<ssize_t>( current_file_offset - offset );
@@ -812,8 +855,11 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
   catch ( ProxyExceptionResponse& proxy_exception_response )
   {
 #ifdef _DEBUG
-    if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-         Volume::VOLUME_FLAG_TRACE_FILE_IO )
+    if 
+    ( 
+      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+      Volume::VOLUME_FLAG_TRACE_FILE_IO 
+    )
     {
       log->getStream( YIELD::platform::Log::LOG_INFO ) <<
         "xtreemfs::File: write threw ProxyExceptionResponse: " <<
@@ -825,14 +871,17 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 
     for 
     ( 
-      std::vector<org::xtreemfs::interfaces::OSDInterface::writeResponse*>::iterator 
+      std::vector<OSDInterface::writeResponse*>::iterator 
         write_response_i = write_responses.begin(); 
       write_response_i != write_responses.end(); 
       write_response_i++ 
     )
       yidl::runtime::Object::decRef( **write_response_i );    
 
-    YIELD::platform::Exception::set_errno( proxy_exception_response.get_platform_error_code() );
+    YIELD::platform::Exception::set_errno
+    ( 
+      proxy_exception_response.get_platform_error_code() 
+    );
 
     ret = -1;
   }
@@ -848,12 +897,13 @@ ssize_t File::write( const void* wbuf, size_t size, uint64_t offset )
 
   for 
   ( 
-    std::vector<org::xtreemfs::interfaces::OSDInterface::writeResponse*>::iterator 
+    std::vector<OSDInterface::writeResponse*>::iterator 
       write_response_i = write_responses.begin(); 
     write_response_i != write_responses.end(); 
     write_response_i++ 
    )
-    yidl::runtime::Object::decRef( **write_response_i );    
+    yidl::runtime::Object::decRef( **write_response_i );
 
   return ret;
 }
+

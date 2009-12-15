@@ -20,11 +20,14 @@ namespace xtreemfs
       create
       ( 
         yidl::runtime::auto_Object<DIRProxy> dir_proxy,
-        uint16_t concurrency_level = OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
+        uint16_t concurrency_level 
+          = OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
         uint32_t flags = 0,
         YIELD::platform::auto_Log log = NULL,
-        const YIELD::platform::Time& operation_timeout = OSDProxy::OPERATION_TIMEOUT_DEFAULT,
-        uint8_t reconnect_tries_max = OSDProxy::RECONNECT_TRIES_MAX_DEFAULT,
+        const YIELD::platform::Time& operation_timeout 
+          = OSDProxy::OPERATION_TIMEOUT_DEFAULT,
+        uint8_t reconnect_tries_max 
+          = OSDProxy::RECONNECT_TRIES_MAX_DEFAULT,
         YIELD::ipc::auto_SSLContext ssl_context = NULL 
       )
     {

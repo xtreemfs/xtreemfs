@@ -10,27 +10,79 @@ namespace mkfs_xtreemfs
   {
   public:
     Main()
-      : xtreemfs::Main( "mkfs.xtreemfs", "create a new volume on a specified MRC", "[oncrpc://]<mrc host>[:port]/<volume name>" )
+      : xtreemfs::Main
+        ( 
+          "mkfs.xtreemfs", 
+          "create a new volume on a specified MRC", 
+          "[oncrpc://]<mrc host>[:port]/<volume name>" 
+        )
     {
-      addOption( MKFS_XTREEMFS_OPTION_ACCESS_CONTROL_POLICY, "-a", "--access-control-policy", "NULL|POSIX|VOLUME" );
+      addOption
+      ( 
+        MKFS_XTREEMFS_OPTION_ACCESS_CONTROL_POLICY, 
+        "-a", 
+        "--access-control-policy", 
+        "NULL|POSIX|VOLUME" 
+      );
       access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;
 
-      addOption( MKFS_XTREEMFS_OPTION_MODE, "-m", "--mode", "n" );
+      addOption
+      ( 
+        MKFS_XTREEMFS_OPTION_MODE, 
+        "-m", 
+        "--mode", 
+        "n" 
+      );
       mode = YIELD::platform::Volume::DEFAULT_DIRECTORY_MODE;
 
-      addOption( MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID, "-g", "--owner-group-id", "group id of owner" );
+      addOption
+      ( 
+        MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID, 
+        "-g", 
+        "--owner-group-id", 
+        "group id of owner" 
+      );
 
-      addOption( MKFS_XTREEMFS_OPTION_PASSWORD, "--password", NULL, "MRC's administrator password" );
+      addOption
+      ( 
+        MKFS_XTREEMFS_OPTION_PASSWORD, 
+        "--password", NULL, 
+        "MRC's administrator password" 
+      );
 
-      addOption( MKFS_XTREEMFS_OPTION_STRIPING_POLICY, "-p", "--striping-policy", "NONE|RAID0" );
+      addOption
+      ( 
+        MKFS_XTREEMFS_OPTION_STRIPING_POLICY, 
+        "-p", 
+        "--striping-policy", 
+        "NONE|RAID0" 
+      );
       striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
 
-      addOption( MKFS_XTREEMFS_OPTION_STRIPING_POLICY_STRIPE_SIZE, "-s", "--striping-policy-stripe-size", "n" );
+      addOption
+      ( 
+        MKFS_XTREEMFS_OPTION_STRIPING_POLICY_STRIPE_SIZE, 
+        "-s", 
+        "--striping-policy-stripe-size", 
+        "n" 
+      );
       striping_policy_stripe_size = 128;
 
-      addOption( MKFS_XTREEMFS_OPTION_OWNER_USER_ID, "-u", "--owner-user-id", "user id of owner" );
+      addOption
+      ( 
+        MKFS_XTREEMFS_OPTION_OWNER_USER_ID, 
+        "-u", 
+        "--owner-user-id", 
+        "user id of owner" 
+      );
 
-      addOption( MKFS_XTREEMFS_OPTION_STRIPING_POLICY_WIDTH, "-w", "--striping-policy-width", "n" );
+      addOption
+      ( 
+        MKFS_XTREEMFS_OPTION_STRIPING_POLICY_WIDTH, 
+        "-w", 
+        "--striping-policy-width", 
+        "n" 
+      );
       striping_policy_width = 1;
     }
 
@@ -60,10 +112,17 @@ namespace mkfs_xtreemfs
     // YIELD::Main
     int _main( int, char** )
     {
-      createMRCProxy( *mrc_uri, password.c_str() )->xtreemfs_mkvol( 
-        org::xtreemfs::interfaces::Volume(
+      createMRCProxy( *mrc_uri, password.c_str() )->xtreemfs_mkvol
+      ( 
+        org::xtreemfs::interfaces::Volume
+        (
           access_control_policy,
-          org::xtreemfs::interfaces::StripingPolicy( striping_policy, striping_policy_stripe_size, striping_policy_width ),
+          org::xtreemfs::interfaces::StripingPolicy
+          ( 
+            striping_policy, 
+            striping_policy_stripe_size, 
+            striping_policy_width 
+          ),
           std::string(),
           mode,
           volume_name,
@@ -83,11 +142,16 @@ namespace mkfs_xtreemfs
           case MKFS_XTREEMFS_OPTION_ACCESS_CONTROL_POLICY:
           {
             if ( strcmp( arg, "NULL" ) == 0 )
-              access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_NULL;
+              access_control_policy 
+                = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_NULL;
+
             else if ( strcmp( arg, "POSIX" ) == 0 )
-              access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;
+              access_control_policy 
+                = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;
+
             else if ( strcmp( arg, "VOLUME" ) == 0 )
-              access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_VOLUME;
+              access_control_policy 
+                = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_VOLUME;
           }
           break;
 
@@ -99,14 +163,29 @@ namespace mkfs_xtreemfs
           }
           break;
 
-          case MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID: owner_group_id = arg; break;
-          case MKFS_XTREEMFS_OPTION_OWNER_USER_ID: owner_user_id = arg; break;
-          case MKFS_XTREEMFS_OPTION_PASSWORD: password = arg; break;
+          case MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID: 
+          {
+            owner_group_id = arg; 
+          }
+          break;
+
+          case MKFS_XTREEMFS_OPTION_OWNER_USER_ID: 
+          {
+            owner_user_id = arg; 
+          }
+          break;
+
+          case MKFS_XTREEMFS_OPTION_PASSWORD:
+          {
+            password = arg; 
+          }
+          break;
 
           case MKFS_XTREEMFS_OPTION_STRIPING_POLICY:
           {
             if ( strcmp( arg, "RAID0" ) == 0 )
-              striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
+              striping_policy 
+                = org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
           }
           break;
 
@@ -120,7 +199,9 @@ namespace mkfs_xtreemfs
 
           case MKFS_XTREEMFS_OPTION_STRIPING_POLICY_WIDTH:
           {
-            uint32_t new_striping_policy_width = static_cast<uint16_t>( atoi( arg ) );
+            uint32_t new_striping_policy_width 
+              = static_cast<uint16_t>( atoi( arg ) );
+
             if ( new_striping_policy_width != 0 )
               striping_policy_width = new_striping_policy_width;
           }
@@ -136,7 +217,10 @@ namespace mkfs_xtreemfs
       if ( files_count >= 1 )
         mrc_uri = parseVolumeURI( files[0], volume_name );
       else
-        throw YIELD::platform::Exception( "must specify the MRC and volume name as a URI" );
+        throw YIELD::platform::Exception
+        ( 
+          "must specify the MRC and volume name as a URI" 
+        );
     }
   };
 };

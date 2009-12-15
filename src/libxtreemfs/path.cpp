@@ -5,28 +5,42 @@
 using namespace xtreemfs;
 
 
-Path::Path( const std::string& volume_name, const YIELD::platform::Path& local_path )
-: volume_name( volume_name ), local_path( local_path ), global_path( volume_name )
+Path::Path
+( 
+  const std::string& volume_name,
+  const YIELD::platform::Path& local_path 
+)
+: volume_name( volume_name ), 
+  local_path( local_path ), 
+  global_path( volume_name )
 {
   if ( !local_path.empty() )
   {
 #if PATH_SEPARATOR == '/'
     if ( static_cast<const char*>( local_path )[0] == PATH_SEPARATOR )
-      global_path.append( static_cast<const std::string&>( this->local_path ) ); //.get_utf8_path() );
+      global_path += static_cast<const std::string&>( this->local_path );
     else
     {
       global_path.append( "/", 1 );
 //      global_path.append( this->local_path.get_utf8_path() );
-      global_path.append( static_cast<const std::string&>( this->local_path ) );       
+      global_path += static_cast<const std::string&>( this->local_path );       
     }
 #else
     global_path.append( "/", 1 );
 
-    const std::string& local_path_str = static_cast<const std::string&>( this->local_path );
+    const std::string& 
+      local_path_str = static_cast<const std::string&>( this->local_path );
+
     if ( local_path_str.size() > 1 )
     {
       if ( local_path_str[0] == PATH_SEPARATOR )
-        global_path.append( local_path_str.c_str() + 1, local_path_str.size() - 1 );
+      {
+        global_path.append
+        ( 
+          local_path_str.c_str() + 1, 
+          local_path_str.size() - 1 
+        );
+      }
       else
         global_path.append( local_path_str );
 
@@ -61,8 +75,9 @@ Path::Path( const std::string& global_path )
     local_path = YIELD::platform::Path( temp_local_path );
 #else
     // TODO: decode the UTF-8 here? or Path::fromUTF8?
-    // local_path = YIELD::platform::Path( global_path.substr( first_slash + 1 ), false );
-    local_path = YIELD::platform::Path( global_path.substr( first_slash + 1 ) );
+    // YIELD::platform::Path( global_path.substr( first_slash + 1 ), false );
+    local_path = 
+      YIELD::platform::Path( global_path.substr( first_slash + 1 ) );
 #endif
   }
   else

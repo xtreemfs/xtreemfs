@@ -26,7 +26,8 @@ uint32_t ProxyExceptionResponse::get_platform_error_code() const
 #elif defined(__FreeBSD__) || defined(__MACH__)
     case 11: return EAGAIN; // Not sure why they renumbered this one.
     case 39: return ENOTEMPTY; // 39 is EDESTADDRREQ on FreeBSD
-    case 61: return ENOATTR; // 61 is ENODATA on Linux, returned when an xattr is not present
+    case 61: return ENOATTR; // 61 is ENODATA on Linux, 
+                             // returned when an xattr is not present
 #endif
     case 0: DebugBreak(); return 0;
     default: return error_code;

@@ -32,8 +32,10 @@ namespace xtreemfs
         uint16_t concurrency_level = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::CONCURRENCY_LEVEL_DEFAULT,
         uint32_t flags = 0,
         YIELD::platform::auto_Log log = NULL,
-        const YIELD::platform::Time& operation_timeout = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::OPERATION_TIMEOUT_DEFAULT,
-        uint8_t reconnect_tries_max = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::RECONNECT_TRIES_MAX_DEFAULT,
+        const YIELD::platform::Time& operation_timeout = 
+          OPERATION_TIMEOUT_DEFAULT,
+        uint8_t reconnect_tries_max = 
+          RECONNECT_TRIES_MAX_DEFAULT,
         YIELD::ipc::auto_SSLContext ssl_context = NULL 
       );
 
@@ -44,8 +46,6 @@ namespace xtreemfs
       getVolumeURIFromVolumeName( const std::string& volume_name );
 
   private:
-    friend class YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>;
-
     DIRProxy
     ( 
       uint16_t concurrency_level,
@@ -79,8 +79,15 @@ namespace xtreemfs
         ttl_s( ttl_s )
       { }
 
-      const YIELD::platform::Time& get_creation_time() const { return creation_time; }
-      uint32_t get_ttl_s() const { return ttl_s; }
+      const YIELD::platform::Time& get_creation_time() const 
+      { 
+        return creation_time; 
+      }
+
+      uint32_t get_ttl_s() const 
+      { 
+        return ttl_s; 
+      }
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( CachedAddressMappings, 0 );

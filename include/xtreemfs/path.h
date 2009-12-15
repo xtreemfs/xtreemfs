@@ -13,7 +13,13 @@ namespace xtreemfs
   {
   public:
     Path() { }
-    Path( const std::string& volume_name, const YIELD::platform::Path& local_path );
+
+    Path
+    ( 
+      const std::string& volume_name, 
+      const YIELD::platform::Path& local_path 
+    );
+
     Path( const std::string& global_path );
 
     operator const std::string&() const { return get_global_path(); }

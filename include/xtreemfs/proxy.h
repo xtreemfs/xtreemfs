@@ -22,8 +22,14 @@ namespace xtreemfs
   class Proxy : public YIELD::ipc::ONCRPCClient<InterfaceType>
   {
   public:
-    const static uint32_t PROXY_FLAG_TRACE_IO = YIELD::ipc::Client<YIELD::ipc::ONCRPCRequest, YIELD::ipc::ONCRPCResponse>::CLIENT_FLAG_TRACE_IO;
-    const static uint32_t PROXY_FLAG_TRACE_OPERATIONS = YIELD::ipc::Client<YIELD::ipc::ONCRPCRequest, YIELD::ipc::ONCRPCResponse>::CLIENT_FLAG_TRACE_OPERATIONS;
+    const static uint32_t PROXY_FLAG_TRACE_IO = 
+      YIELD::ipc::Client<YIELD::ipc::ONCRPCRequest, YIELD::ipc::ONCRPCResponse>::
+        CLIENT_FLAG_TRACE_IO;
+
+    const static uint32_t PROXY_FLAG_TRACE_OPERATIONS = 
+      YIELD::ipc::Client<YIELD::ipc::ONCRPCRequest, YIELD::ipc::ONCRPCResponse>::
+        CLIENT_FLAG_TRACE_OPERATIONS;
+
     const static uint32_t PROXY_FLAG_TRACE_AUTH = 8;
 
     // YIELD::concurrency::EventTarget
@@ -36,7 +42,7 @@ namespace xtreemfs
       uint32_t flags, 
       YIELD::platform::auto_Log log, 
       const YIELD::platform::Time& operation_timeout, 
-      YIELD::ipc::auto_SocketAddress peername, 
+      YIELD::ipc::auto_SocketAddress peername,
       uint8_t reconnect_tries_max,
       YIELD::ipc::auto_SocketFactory socket_factory 
     );
@@ -100,7 +106,9 @@ namespace xtreemfs
     )
     {
       PolicyFunctionType policy_function = 
-        policy_shared_library->getFunction<PolicyFunctionType>( policy_function_name );
+        policy_shared_library->
+          getFunction<PolicyFunctionType>( policy_function_name );
+
       if ( policy_function != NULL )
       {
         log->getStream( YIELD::platform::Log::LOG_INFO ) << 

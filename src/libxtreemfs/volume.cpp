@@ -6,6 +6,7 @@
 #include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/osd_proxy.h"
 #include "xtreemfs/path.h"
+// No using namespace org::xtreemfs::interfaces since Volume is a class there
 using namespace xtreemfs;
 
 #include <errno.h>
@@ -63,90 +64,6 @@ static YIELD::platform::auto_Stat xtreemfs_Stat_as_YIELD_platform_Stat
   );
 }
 
-auto_Volume Volume::create
-( 
-  const YIELD::ipc::URI& dir_uri, 
-  const std::string& name, 
-  uint32_t flags, 
-  YIELD::platform::auto_Log log, 
-  uint32_t proxy_flags, 
-  const YIELD::platform::Time& proxy_operation_timeout, 
-  uint8_t proxy_reconnect_tries_max,
-  YIELD::ipc::auto_SSLContext proxy_ssl_context, 
-  const YIELD::platform::Path& vivaldi_coordinates_file_path 
-)
-{
-  auto_DIRProxy dir_proxy = DIRProxy::create
-  ( 
-    dir_uri,
-    DIRProxy::CONCURRENCY_LEVEL_DEFAULT,
-    proxy_flags, 
-    log, 
-    proxy_operation_timeout, 
-    proxy_reconnect_tries_max, 
-    proxy_ssl_context 
-  );
-
-  if ( dir_proxy != NULL )
-  {
-    YIELD::ipc::auto_URI mrc_uri; 
-    std::string::size_type at_pos = name.find( '@' );
-    if ( at_pos != std::string::npos )
-      mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name.substr( 0, at_pos ) );
-    else
-      mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
-
-    if ( mrc_uri != NULL )
-    {
-      auto_MRCProxy mrc_proxy = MRCProxy::create
-      ( 
-        *mrc_uri, 
-        MRCProxy::CONCURRENCY_LEVEL_DEFAULT,
-        proxy_flags, 
-        log, 
-        proxy_operation_timeout, 
-        "", 
-        proxy_reconnect_tries_max, 
-        proxy_ssl_context 
-      );
-
-      if ( mrc_proxy != NULL )
-      {
-        org::xtreemfs::interfaces::Stat stbuf;
-        mrc_proxy->getattr( name + "/", stbuf );
-
-        auto_OSDProxyMux osd_proxy_mux = OSDProxyMux::create
-        ( 
-          dir_proxy, 
-          OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
-          proxy_flags, 
-          log, 
-          proxy_operation_timeout, 
-          proxy_reconnect_tries_max, 
-          proxy_ssl_context 
-        );
-
-        if ( osd_proxy_mux != NULL )
-        {
-          YIELD::concurrency::auto_StageGroup stage_group = 
-            new YIELD::concurrency::SEDAStageGroup;
-          stage_group->createStage( dir_proxy );
-          stage_group->createStage( mrc_proxy );
-          stage_group->createStage( osd_proxy_mux );
-          return new Volume( dir_proxy, flags, log, mrc_proxy, name, osd_proxy_mux, stage_group, vivaldi_coordinates_file_path );
-        }
-        else
-          throw YIELD::platform::Exception( "could not create OSD proxy multiplexer" );
-      }
-      else
-        throw YIELD::platform::Exception( "received invalid MRC URI from the directory service" );
-    }
-    else
-      throw YIELD::platform::Exception( "received invalid MRC URI from the directory service" );
-  }
-  else
-    throw YIELD::platform::Exception( "DIR host does not exist" );  
-}
 
 Volume::Volume
 ( 
@@ -205,6 +122,81 @@ bool Volume::chown( const YIELD::platform::Path& path, int uid, int gid )
   return false;
 }
 
+auto_Volume Volume::create
+( 
+  const YIELD::ipc::URI& dir_uri, 
+  const std::string& name, 
+  uint32_t flags, 
+  YIELD::platform::auto_Log log, 
+  uint32_t proxy_flags, 
+  const YIELD::platform::Time& proxy_operation_timeout, 
+  uint8_t proxy_reconnect_tries_max,
+  YIELD::ipc::auto_SSLContext proxy_ssl_context, 
+  const YIELD::platform::Path& vivaldi_coordinates_file_path 
+)
+{
+  auto_DIRProxy dir_proxy = DIRProxy::create
+  ( 
+    dir_uri,
+    DIRProxy::CONCURRENCY_LEVEL_DEFAULT,
+    proxy_flags, 
+    log, 
+    proxy_operation_timeout, 
+    proxy_reconnect_tries_max, 
+    proxy_ssl_context 
+  );
+
+  YIELD::ipc::auto_URI mrc_uri; 
+  std::string::size_type at_pos = name.find( '@' );
+  if ( at_pos != std::string::npos )
+    mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name.substr( 0, at_pos ) );
+  else
+    mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
+
+  auto_MRCProxy mrc_proxy = MRCProxy::create
+  ( 
+    *mrc_uri, 
+    MRCProxy::CONCURRENCY_LEVEL_DEFAULT,
+    proxy_flags, 
+    log, 
+    proxy_operation_timeout, 
+    "", 
+    proxy_reconnect_tries_max, 
+    proxy_ssl_context 
+  );
+
+  org::xtreemfs::interfaces::Stat stbuf;
+  mrc_proxy->getattr( name + "/", stbuf );
+
+  auto_OSDProxyMux osd_proxy_mux = OSDProxyMux::create
+  ( 
+    dir_proxy, 
+    OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
+    proxy_flags, 
+    log, 
+    proxy_operation_timeout, 
+    proxy_reconnect_tries_max, 
+    proxy_ssl_context 
+  );
+
+  YIELD::concurrency::auto_StageGroup stage_group = 
+    new YIELD::concurrency::SEDAStageGroup;
+  stage_group->createStage( dir_proxy );
+  stage_group->createStage( mrc_proxy );
+  stage_group->createStage( osd_proxy_mux );
+
+  return new Volume
+  ( 
+    dir_proxy, 
+    flags, log, 
+    mrc_proxy, 
+    name, 
+    osd_proxy_mux, 
+    stage_group, 
+    vivaldi_coordinates_file_path 
+  );
+}
+
 org::xtreemfs::interfaces::VivaldiCoordinates 
   Volume::get_vivaldi_coordinates() const
 {
@@ -215,7 +207,10 @@ org::xtreemfs::interfaces::VivaldiCoordinates
     YIELD::platform::auto_File vivaldi_coordinates_file = 
       YIELD::platform::Volume().open( vivaldi_coordinates_file_path );
     yidl::runtime::auto_Buffer vivaldi_coordinates_buffer
-      ( new yidl::runtime::StackBuffer<sizeof( org::xtreemfs::interfaces::VivaldiCoordinates)> );
+      ( 
+        new yidl::runtime::StackBuffer
+          <sizeof( org::xtreemfs::interfaces::VivaldiCoordinates)>
+      );
     vivaldi_coordinates_file->read( vivaldi_coordinates_buffer );
     YIELD::platform::XDRUnmarshaller xdr_unmarshaller( vivaldi_coordinates_buffer );
     vivaldi_coordinates.unmarshal( xdr_unmarshaller );
@@ -248,7 +243,12 @@ bool Volume::link
 {
   VOLUME_OPERATION_BEGIN( link )
   {
-    mrc_proxy->link( Path( this->name, old_path ), Path( this->name, new_path ) );
+    mrc_proxy->link
+    ( 
+      Path( this->name, old_path ), 
+      Path( this->name, new_path ) 
+    );
+
     return true;
   }
   VOLUME_OPERATION_END( link );
@@ -268,7 +268,8 @@ bool Volume::listdir
     mrc_proxy->xtreemfs_listdir( Path( this->name, path ), names );
     for 
     ( 
-      org::xtreemfs::interfaces::StringSet::const_iterator name_i = names.begin(); 
+      org::xtreemfs::interfaces::StringSet::const_iterator 
+        name_i = names.begin(); 
       name_i != names.end(); 
       name_i++ 
     )
@@ -400,8 +401,9 @@ void Volume::osd_unlink
   const org::xtreemfs::interfaces::FileCredentialsSet& file_credentials_set 
 )
 {
-  if ( !file_credentials_set.empty() ) // We have to delete files on replica OSDs
-  {
+  if ( !file_credentials_set.empty() ) 
+  { 
+    // We have to delete files on all replica OSDs
     const org::xtreemfs::interfaces::FileCredentials& file_credentials = 
       file_credentials_set[0];
     const std::string& file_id = file_credentials.get_xcap().get_file_id();
@@ -433,7 +435,10 @@ bool Volume::readdir
         !callback
         ( 
           ( *directory_entry_i ).get_name(),
-          xtreemfs_Stat_as_YIELD_platform_Stat( ( *directory_entry_i ).get_stbuf() )
+          xtreemfs_Stat_as_YIELD_platform_Stat
+          ( 
+            ( *directory_entry_i ).get_stbuf() 
+          )
         )            
       )
         return false;
@@ -444,7 +449,10 @@ bool Volume::readdir
   return false;
 }
 
-YIELD::platform::auto_Path Volume::readlink( const YIELD::platform::Path& path )
+YIELD::platform::auto_Path Volume::readlink
+( 
+  const YIELD::platform::Path& path 
+)
 {
   VOLUME_OPERATION_BEGIN( readlink )
   {
@@ -464,11 +472,17 @@ bool Volume::rename
 {
   VOLUME_OPERATION_BEGIN( rename )
   {
-    Path from_xtreemfs_path( this->name, from_path ), 
-         to_xtreemfs_path( this->name, to_path );
     org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
-    mrc_proxy->rename( from_xtreemfs_path, to_xtreemfs_path, file_credentials_set );
+
+    mrc_proxy->rename
+    ( 
+      Path( this->name, from_path ), 
+      Path( this->name, to_path ), 
+      file_credentials_set 
+    );
+
     osd_unlink( file_credentials_set );
+
     return true;
   }
   VOLUME_OPERATION_END( rename );
@@ -604,7 +618,11 @@ YIELD::platform::auto_Stat Volume::stat( const Path& path )
   return xtreemfs_Stat_as_YIELD_platform_Stat( xtreemfs_stat );
 }
 
-bool Volume::statvfs( const YIELD::platform::Path&, struct statvfs& statvfsbuf )
+bool Volume::statvfs
+( 
+  const YIELD::platform::Path&, 
+  struct statvfs& statvfsbuf 
+)
 {
   VOLUME_OPERATION_BEGIN( statvfs )
   {
@@ -686,3 +704,4 @@ YIELD::platform::Path Volume::volname( const YIELD::platform::Path& )
 {
   return name;
 }
+

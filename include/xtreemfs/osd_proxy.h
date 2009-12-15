@@ -20,18 +20,21 @@
 
 namespace xtreemfs
 {
-  class OSDProxy : public Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>
+  class OSDProxy 
+    : public Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>
   {
   public:
     static yidl::runtime::auto_Object<OSDProxy> 
       create
       ( 
         const YIELD::ipc::URI& absolute_uri,
-        uint16_t concurrency_level = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::CONCURRENCY_LEVEL_DEFAULT,
+        uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
         uint32_t flags = 0,
         YIELD::platform::auto_Log log = NULL,
-        const YIELD::platform::Time& operation_timeout = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::OPERATION_TIMEOUT_DEFAULT,
-        uint8_t reconnect_tries_max = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::RECONNECT_TRIES_MAX_DEFAULT,
+        const YIELD::platform::Time& operation_timeout = 
+          OPERATION_TIMEOUT_DEFAULT,
+        uint8_t reconnect_tries_max = 
+          RECONNECT_TRIES_MAX_DEFAULT,
         YIELD::ipc::auto_SSLContext ssl_context = NULL 
       );
 
@@ -44,12 +47,11 @@ namespace xtreemfs
       // Bypass Proxy so no credentials are attached; 
       // the credentials for OSD operations are in FileCredentials passed 
       // explicitly to the operation
-      YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::send( ev );
+      YIELD::ipc::
+        ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::send( ev );
     }
 
   private:
-    friend class YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>;
-
     OSDProxy
     ( 
       uint16_t concurrency_level,

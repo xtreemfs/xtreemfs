@@ -10,9 +10,20 @@ namespace rmfs_xtreemfs
   {
   public:
     Main()
-      : xtreemfs::Main( "rmfs.xtreemfs", "remove a volume from a specified MRC", "[oncrpc://]<mrc host>[:port]/<volume name>" )
+      : xtreemfs::Main
+        ( 
+          "rmfs.xtreemfs", 
+          "remove a volume from a specified MRC", 
+          "[oncrpc://]<mrc host>[:port]/<volume name>" 
+        )
     {
-      addOption( RMFS_XTREEMFS_OPTION_PASSWORD, "--password", NULL, "password for volume" );
+      addOption
+      ( 
+        RMFS_XTREEMFS_OPTION_PASSWORD, 
+        "--password", 
+        NULL, 
+        "password for volume" 
+      );
     }
 
   private:
@@ -30,7 +41,8 @@ namespace rmfs_xtreemfs
     // YIELD::Main
     int _main( int, char** )
     {
-      createMRCProxy( *mrc_uri, password.c_str() )->xtreemfs_rmvol( volume_name );
+      createMRCProxy( *mrc_uri, password.c_str() )
+        ->xtreemfs_rmvol( volume_name );
       return 0;
     }
 
@@ -39,7 +51,10 @@ namespace rmfs_xtreemfs
       if ( files_count >= 1 )
         mrc_uri = parseVolumeURI( files[0], volume_name );
       else
-        throw YIELD::platform::Exception( "must specify the MRC and volume name as a URI" );
+        throw YIELD::platform::Exception
+        ( 
+          "must specify the MRC and volume name as a URI" 
+        );
     }
 
     void parseOption( int id, char* arg )

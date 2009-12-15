@@ -14,7 +14,13 @@
 #endif
 
 
-int open_gridmap( int* out_fd, char** out_gridmap, char** out_gridmap_p, char** out_gridmap_end )
+int open_gridmap
+( 
+  int* out_fd, 
+  char** out_gridmap, 
+  char** out_gridmap_p, 
+  char** out_gridmap_end 
+)
 {
   struct stat stbuf;
 
@@ -23,7 +29,17 @@ int open_gridmap( int* out_fd, char** out_gridmap, char** out_gridmap_p, char** 
   {
     if ( fstat( *out_fd, &stbuf ) != -1 )
     {
-      *out_gridmap = ( char* )mmap( 0, stbuf.st_size, PROT_READ, MAP_PRIVATE, *out_fd, 0 );
+      *out_gridmap 
+        = ( char* )mmap
+          ( 
+            0, 
+            stbuf.st_size, 
+            PROT_READ, 
+            MAP_PRIVATE, 
+            *out_fd, 
+            0 
+          );
+
       if ( *out_gridmap != 0 )
       {
         *out_gridmap_p = *out_gridmap;
@@ -38,13 +54,22 @@ int open_gridmap( int* out_fd, char** out_gridmap, char** out_gridmap_p, char** 
   return -1; 
 }
 
-int get_next_gridmap_line( char** gridmap_p, char* gridmap_end, char** out_dn, size_t* out_dn_len, char** out_sn, size_t* out_sn_len )
+int get_next_gridmap_line
+( 
+  char** gridmap_p, 
+  char* gridmap_end, 
+  char** out_dn, 
+  size_t* out_dn_len, 
+  char** out_sn, 
+  size_t* out_sn_len 
+)
 {
   if ( **gridmap_p == '\"' ) /* Line starts with " */
   {
     *gridmap_p = *gridmap_p + 1; /* Past the start " */
     *out_dn = *gridmap_p; 
-    while ( **gridmap_p != '\"' && *gridmap_p < gridmap_end ) /* Advance the pointer until the closing " */
+    /* Advance the pointer until the closing " */
+    while ( **gridmap_p != '\"' && *gridmap_p < gridmap_end ) 
       *gridmap_p = *gridmap_p + 1;
     if ( **gridmap_p == '\"' )
     {
@@ -52,7 +77,8 @@ int get_next_gridmap_line( char** gridmap_p, char* gridmap_end, char** out_dn, s
       *gridmap_p += 2; /* Past the closing " and the space after it */
             
       *out_sn = *gridmap_p;
-      while ( **gridmap_p != '\n' && *gridmap_p < gridmap_end ) /* Advance the pointer until the \n at the end of the line */
+      /* Advance the pointer until the \n at the end of the line */
+      while ( **gridmap_p != '\n' && *gridmap_p < gridmap_end )
         *gridmap_p = *gridmap_p + 1;
       if ( **gridmap_p == '\n' )
       {
@@ -73,7 +99,13 @@ void close_gridmap( int fd, char* gridmap, char* gridmap_end )
 }
 
 
-DLLEXPORT int get_passwd_from_user_credentials( const char* user_id, const char* group_ids, int* uid, int* gid )
+DLLEXPORT int get_passwd_from_user_credentials
+( 
+  const char* user_id, 
+  const char* group_ids, 
+  int* uid, 
+  int* gid 
+)
 {
 #ifdef _WIN32
   *uid = *gid = 0;
@@ -90,14 +122,36 @@ DLLEXPORT int get_passwd_from_user_credentials( const char* user_id, const char*
 
   if ( open_gridmap( &fd, &gridmap, &gridmap_p, &gridmap_end ) == 0 )
   {
-    while ( get_next_gridmap_line( &gridmap_p, gridmap_end, &dn, &dn_len, &sn, &sn_len ) == 0 )
+    while 
+    ( 
+      get_next_gridmap_line
+      ( 
+        &gridmap_p, 
+        gridmap_end, 
+        &dn, 
+        &dn_len, 
+        &sn, 
+        &sn_len 
+      ) == 0 
+    )
     {
       if ( strncmp( user_id, dn, dn_len ) == 0 )
       {
         sn_copy = ( char* )malloc( sn_len + 1 );
         strncpy( sn_copy, sn, sn_len );
 
-        if ( getpwnam_r( sn_copy, &pwd, pwd_buf, pwd_buf_len, &pwd_res ) == 0 && pwd_res != NULL )
+        if 
+        ( 
+          getpwnam_r
+          ( 
+            sn_copy, 
+            &pwd, 
+            pwd_buf, 
+            pwd_buf_len, 
+            &pwd_res 
+          ) == 0 && 
+          pwd_res != NULL 
+        )
         {
           free( sn_copy );
           *uid = pwd_res->pw_uid;
@@ -117,7 +171,15 @@ DLLEXPORT int get_passwd_from_user_credentials( const char* user_id, const char*
 #endif
 }
 
-DLLEXPORT int get_user_credentials_from_passwd( int uid, int gid, char* user_id, size_t* user_id_len, char* group_ids, size_t* group_ids_len )
+DLLEXPORT int get_user_credentials_from_passwd
+( 
+  int uid, 
+  int gid, 
+  char* user_id, 
+  size_t* user_id_len, 
+  char* group_ids, 
+  size_t* group_ids_len 
+)
 {
   struct passwd pwd, *pwd_res;
   char pwd_buf[PWD_BUF_LEN]; int pwd_buf_len = sizeof( pwd_buf );
@@ -134,7 +196,16 @@ DLLEXPORT int get_user_credentials_from_passwd( int uid, int gid, char* user_id,
     {
       if ( open_gridmap( &fd, &gridmap, &gridmap_p, &gridmap_end ) == 0 )
       {
-        while ( get_next_gridmap_line( &gridmap_p, gridmap_end, &dn, &dn_len, &sn, &sn_len ) == 0 )
+        while 
+        ( 
+          get_next_gridmap_line
+          ( 
+            &gridmap_p, 
+            gridmap_end, 
+            &dn, &dn_len, 
+            &sn, &sn_len 
+          ) == 0
+        )
         {
           if ( strncmp( sn, pwd_res->pw_name, sn_len ) == 0 )
           {

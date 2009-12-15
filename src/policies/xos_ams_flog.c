@@ -9,7 +9,13 @@
 #endif
 
 
-DLLEXPORT int get_passwd_from_user_credentials( const char* user_id, const char* group_ids, int* uid, int* gid )
+DLLEXPORT int get_passwd_from_user_credentials
+( 
+  const char* user_id, 
+  const char* group_ids, 
+  int* uid, 
+  int* gid 
+)
 {
 #ifdef _WIN32
   uid = gid = 0;
@@ -22,7 +28,18 @@ DLLEXPORT int get_passwd_from_user_credentials( const char* user_id, const char*
   ams_fd = amsclient_connect_open();
   if ( ams_fd != -1 )
   {
-    if ( amsclient_mappinginfo_internal( ams_fd,user_id, group_ids, group_ids, &gpwd, &ggrp ) >= 0 )
+    if 
+    ( 
+      amsclient_mappinginfo_internal
+      ( 
+        ams_fd,
+        user_id, 
+        group_ids, 
+        group_ids, 
+        &gpwd, 
+        &ggrp 
+      ) >= 0 
+    )
     {
       *uid = gpwd.l_idtoken.g_mappeduid;
       *gid = gpwd.l_idtoken.g_mappedgid;
@@ -36,7 +53,15 @@ DLLEXPORT int get_passwd_from_user_credentials( const char* user_id, const char*
 #endif
 }
 
-DLLEXPORT int get_user_credentials_from_passwd( int uid, int gid, char* user_id, size_t* user_id_len, char* group_ids, size_t* group_ids_len )
+DLLEXPORT int get_user_credentials_from_passwd
+( 
+  int uid, 
+  int gid, 
+  char* user_id, 
+  size_t* user_id_len, 
+  char* group_ids, 
+  size_t* group_ids_len 
+)
 {
   const char *ams_user_id, *ams_group_id;
   size_t ams_user_id_len, ams_group_id_len;
@@ -52,7 +77,19 @@ DLLEXPORT int get_user_credentials_from_passwd( int uid, int gid, char* user_id,
   ams_fd = amsclient_connect_open();
   if ( ams_fd != -1 )
   {
-    if ( amsclient_invmappinginfo_internal( ams_fd, NULL, uid, NULL, gid, &gpwd, &ggrp ) == 0 )
+    if 
+    ( 
+      amsclient_invmappinginfo_internal
+      ( 
+        ams_fd, 
+        NULL, 
+        uid, 
+        NULL, 
+        gid, 
+        &gpwd, 
+        &ggrp 
+      ) == 0 
+    )
     {
       ams_user_id = gpwd.g_idtoken.g_dn;
       ams_group_id = ggrp.g_grptoken.g_vo;
