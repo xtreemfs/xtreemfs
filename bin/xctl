@@ -550,8 +550,8 @@ class Volume:
         mkfs_xtreemfs_args = [mkfs_xtreemfs_file_path]
         mkfs_xtreemfs_args.extend( ( "-d", str( debug_level ) ) )
         mkfs_xtreemfs_args.extend( ( "-p", str( STRIPING_POLICY_TYPE_DEFAULT ) ) )
-        if pkcs12_file_path is not None: mount_xtreemfs_args.extend( ( "--pkcs12-file-path", pkcs12_file_path ) )
-        if pkcs12_passphrase is not None: mount_xtreemfs_args.extend( ( "--pkcs12-passphrase", pkcs12_passphrase ) )        
+        if pkcs12_file_path is not None: mkfs_xtreemfs_args.extend( ( "--pkcs12-file-path", pkcs12_file_path ) )
+        if pkcs12_passphrase is not None: mkfs_xtreemfs_args.extend( ( "--pkcs12-passphrase", pkcs12_passphrase ) )
         mkfs_xtreemfs_args.extend( ( "-s", str( STRIPE_SIZE_DEFAULT ) ) )
         mkfs_xtreemfs_args.extend( ( "-w", str( stripe_width ) ) )
           
