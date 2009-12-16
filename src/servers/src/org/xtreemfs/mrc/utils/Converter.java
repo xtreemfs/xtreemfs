@@ -42,6 +42,7 @@ import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
+import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
@@ -51,6 +52,7 @@ import org.xtreemfs.mrc.metadata.StripingPolicy;
 import org.xtreemfs.mrc.metadata.XAttr;
 import org.xtreemfs.mrc.metadata.XLoc;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.osdselection.OSDStatusManager;
 
 /**
  * Contains static methods for converting Java objects to JSON-compliant data
@@ -138,7 +140,8 @@ public class Converter {
         return sb.toString();
     }
     
-    public static String xLocListToJSON(XLocList xLocList) throws JSONException, UnknownUUIDException {
+    public static String xLocListToJSON(XLocList xLocList, OSDStatusManager osdMan)
+        throws JSONException, UnknownUUIDException {
         
         Map<String, Object> list = new HashMap();
         list.put("update-policy", xLocList.getReplUpdatePolicy());
@@ -154,7 +157,10 @@ public class Converter {
             for (int i = 0; i < l.getOSDCount(); i++) {
                 Map<String, String> osd = new HashMap();
                 final ServiceUUID uuid = new ServiceUUID(l.getOSD(i));
+                final Service osdData = osdMan.getOSDService(uuid.toString());
+                final String coords = osdData == null? "": osdData.getData().get("vivaldi_coordinates"); 
                 osd.put("uuid", uuid.toString());
+                osd.put("vivaldi_coordinates", coords);
                 osd.put("address", uuid.getAddress().getHostName() + ":" + uuid.getAddress().getPort());
                 osds.add(osd);
             }
