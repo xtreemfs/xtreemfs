@@ -297,6 +297,10 @@ public class OSDStatusManager extends LifeCycleThread implements VolumeChangeLis
             knownOSDMap.put(osd.getUuid(), osd);
     }
     
+    public synchronized Service getOSDService(String uuid) {
+        return knownOSDMap.get(uuid);
+    }
+    
     /**
      * Returns the approximate amount of free space in the given volume.
      * 

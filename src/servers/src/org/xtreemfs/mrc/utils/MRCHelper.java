@@ -284,7 +284,7 @@ public class MRCHelper {
                     return "";
                 } else {
                     XLocList xLocList = file.getXLocList();
-                    return xLocList == null ? "" : Converter.xLocListToJSON(xLocList);
+                    return xLocList == null ? "" : Converter.xLocListToJSON(xLocList, osdMan);
                 }
             case file_id:
                 return sMan.getVolumeInfo().getId() + ":" + file.getId();

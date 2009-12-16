@@ -291,11 +291,13 @@ public class BufferBackedFileMetadata implements FileMetadata {
             rcMetadata.getId(), rcMetadata.getPerms(), rcMetadata.getW32Attrs(), rcMetadata.getLinkCount(),
             rcMetadata.getEpoch(), rcMetadata.getIssuedEpoch(), rcMetadata.isReadOnly());
         
+        BufferBackedRCMetadata oldRCMetadata = rcMetadata;
+        
         rcMetadata = new BufferBackedRCMetadata(rcMetadata == null ? null : rcMetadata.getKey(), tmp
                 .getValue());
         
         if (!rcMetadata.isDirectory())
-            rcMetadata.setXLocList(rcMetadata.getXLocList());
+            rcMetadata.setXLocList(oldRCMetadata.getXLocList());
     }
     
     public byte[] getFCMetadataKey() {
