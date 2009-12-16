@@ -1,3 +1,4 @@
+# -*- coding: utf-8  -*-
 import os.path, shutil, stat, unittest
 
 
@@ -10,6 +11,8 @@ TEST_DIR_NAME = "simple_metadata_dir"
 TEST_LINK_NAME = "simple_metadata_link"
 TEST_SUBDIR_NAME = "simple_metadata_subdir"
 TEST_SUBDIR_PATH = os.path.join( TEST_DIR_NAME, TEST_SUBDIR_NAME )
+TEST_SUBDIRNONASCII_NAME = "subdir_ÄöíŁ€"
+TEST_SUBDIRNONASCII_PATH = os.path.join( TEST_DIR_NAME, TEST_SUBDIRNONASCII_NAME )
 
 
 class SimpleMetadataTestCase(unittest.TestCase):
@@ -26,6 +29,12 @@ class chmodTest(SimpleMetadataTestCase):
     def runTest( self ):
         open( TEST_FILE_NAME, "w+" ).close()
         os.chmod( TEST_FILE_NAME, stat.S_IWRITE | stat.S_IREAD )
+        
+class chownTest(SimpleMetadataTestCase):
+    def runTest( self ):
+        open( TEST_FILE_NAME, "w+" ).close()
+        os.chown( TEST_FILE_NAME, 1001, 100 )
+        open( TEST_FILE_NAME, "r" ).close()
 
 
 class creatTest(SimpleMetadataTestCase):
@@ -51,6 +60,13 @@ class mkdirTest(SimpleMetadataTestCase):
         assert os.path.exists( TEST_DIR_NAME )
         os.mkdir( TEST_SUBDIR_PATH )
         assert os.path.exists( TEST_SUBDIR_PATH )
+        
+class mkdirNonASCIITest(SimpleMetadataTestCase):
+    def runTest( self ):
+        os.mkdir( TEST_DIR_NAME )
+        assert os.path.exists( TEST_DIR_NAME )
+        os.mkdir( TEST_SUBDIRNONASCII_PATH )
+        assert os.path.exists( TEST_SUBDIRNONASCII_PATH )
 
 
 class readdirTest(SimpleMetadataTestCase):
@@ -119,9 +135,11 @@ def createTestSuite( *args, **kwds ):
         globals()["have_called_createTestSuite"] = True        
         test_suite = unittest.TestSuite()
         test_suite.addTest( chmodTest() )
+        test_suite.addTest( chownTest() )
         test_suite.addTest( creatTest() )    
         if hasattr( os, "link" ): test_suite.addTest( linkTest() )
         test_suite.addTest( mkdirTest() )
+        test_suite.addTest( mkdirNonASCIITest() )
         test_suite.addTest( readdirTest() )
         test_suite.addTest( renamedirTest() )
         test_suite.addTest( renamefileTest() )
