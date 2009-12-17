@@ -169,7 +169,7 @@ public class VivaldiStage extends Stage {
         this.vNode = new VivaldiNode();
         
         //TOFIX: should  the coordinates be initialized from a file?
-        if(Logging.isInfo()){
+        if(Logging.isDebug()){
             Logging.logMessage( Logging.LEVEL_DEBUG,this, String.format("Coordinates initialized:(%.3f,%.3f)", 
                                                                         vNode.getCoordinates().getX_coordinate(),
                                                                         vNode.getCoordinates().getY_coordinate()) );
@@ -300,7 +300,7 @@ public class VivaldiStage extends Stage {
                             }
                             
                         }else{
-                            if(Logging.isInfo()){
+                            if(Logging.isDebug()){
                                 //TOFIX: Printing getHostName() without any kind of control could be dangerous (?)
                                 Logging.logMessage( Logging.LEVEL_DEBUG,
                                                     this,
@@ -397,7 +397,7 @@ public class VivaldiStage extends Stage {
         for( InetSocketAddress reqKey : sentRequests.keySet() ){
             if( localNow >= sentRequests.get(reqKey).getLocalTime()+MAX_REQUEST_TIMEOUT_IN_MS ){
                 
-                if(Logging.isInfo())
+                if(Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, this,"OSD times out:"+reqKey.getHostName());
                 
                 removedRequests.add(reqKey);
@@ -477,7 +477,7 @@ public class VivaldiStage extends Stage {
             
             knownOSDs = newOSDs;
             
-            if (Logging.isInfo()){
+            if (Logging.isDebug()){
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "Updating list of known OSDs (size:"+knownOSDs.size()+")");
             }
             
@@ -515,7 +515,7 @@ public class VivaldiStage extends Stage {
                     
                     if(!sentRetries.get(addr).hasBeenRetried()){
                         
-                        if(Logging.isInfo())
+                        if(Logging.isDebug())
                             Logging.logMessage(Logging.LEVEL_DEBUG, this,"Retrying:"+addr.getHostName());
                         
                         sendVivaldiRequest(addr, vNode.getCoordinates());
@@ -538,7 +538,7 @@ public class VivaldiStage extends Stage {
 
                     sUUID.resolve();
 
-                    if(Logging.isInfo())
+                    if(Logging.isDebug())
                         Logging.logMessage(Logging.LEVEL_DEBUG, this,"Recalculating against:"+chosenService.getUuid());                        
                     
                     //After receiving the response, we will be able to recalculate

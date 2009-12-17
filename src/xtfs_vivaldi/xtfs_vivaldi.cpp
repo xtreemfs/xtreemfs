@@ -387,7 +387,7 @@ namespace xtfs_vivaldi
       {
         
         get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << 
-            "xtfs_vivaldi:Impossible to update known OSDs";
+            "xtfs_vivaldi:Impossible to update known OSDs:" << ex.what();
             
       }
     }
