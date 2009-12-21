@@ -30,11 +30,14 @@ package org.xtreemfs.test.osd;
 import java.io.File;
 import java.io.IOException;
 
+import java.util.Properties;
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.checksums.ChecksumFactory;
+import org.xtreemfs.common.checksums.provider.JavaChecksumProvider;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.FSUtils;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
@@ -44,10 +47,10 @@ import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
+import org.xtreemfs.osd.storage.FileMetadata;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
 import org.xtreemfs.osd.storage.ObjectInformation;
-import org.xtreemfs.osd.storage.SingleFileStorageLayout;
 import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.test.SetupUtils;
 
@@ -74,19 +77,32 @@ public class StorageLayoutTest extends TestCase {
     }
 
     /*public void testHashStorageLayoutBasics() throws Exception {
+
         HashStorageLayout layout = new HashStorageLayout(config, new MetadataCache());
         basicTests(layout);
     }*/
 
-    public void testSingleFileLayout() throws Exception {
-        SingleFileStorageLayout layout = new SingleFileStorageLayout(config, new MetadataCache());
+    public void testHashStorageLayoutWithChecksumsBasics() throws Exception {
+
+        JavaChecksumProvider j = new JavaChecksumProvider();
+        ChecksumFactory.getInstance().addProvider(j);
+        SetupUtils.CHECKSUMS_ON = true;
+        OSDConfig configCSUM = SetupUtils.createOSD1Config();
+        SetupUtils.CHECKSUMS_ON = false;
+        HashStorageLayout layout = new HashStorageLayout(configCSUM, new MetadataCache());
         basicTests(layout);
     }
 
-    /*public void testHashStorageLayoutGetObjectList() throws Exception {
+    /*public void testSingleFileLayout() throws Exception {
+        SingleFileStorageLayout layout = new SingleFileStorageLayout(config, new MetadataCache());
+        basicTests(layout);
+    }*/
+
+    public void testHashStorageLayoutGetObjectList() throws Exception {
+
         HashStorageLayout layout = new HashStorageLayout(config, new MetadataCache());
         getObjectListTest(layout);
-    }*/
+    }
 
     /**
      * @param layout
@@ -97,28 +113,31 @@ public class StorageLayoutTest extends TestCase {
 
         StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1)),0);//new RAID0(64, 1);
 
+        FileMetadata md = new FileMetadata(sp);
+
         assertFalse(layout.fileExists(fileId));
 
         ReusableBuffer data = BufferPool.allocate(64);
         for (int i = 0; i < 64; i++) {
             data.put((byte) (48 + i));
         }
-        
-        layout.writeObject(fileId, 0l, data, 1, 0, 0, sp, false);
-        BufferPool.free(data);
+        //write 64 bytes
+        layout.writeObject(fileId, md, data, 0l, 0, 1l, false, false);
 
-        ObjectInformation oinfo = layout.readObject(fileId, 0l, 1, 0, sp);
+        //read full object
+        ObjectInformation oinfo = layout.readObject(fileId,md, 0l, 0, StorageLayout.FULL_OBJECT_LENGTH);
         assertEquals(64, oinfo.getData().capacity());
         for (int i = 0; i < 64; i++) {
             assertEquals((byte) (48 + i), oinfo.getData().get());
         }
         BufferPool.free(oinfo.getData());
 
-        oinfo = layout.readObject(fileId, 1l, 1, 0, sp);
+        //read object 1 (does not exist)
+        oinfo = layout.readObject(fileId,md, 1l, 0, StorageLayout.FULL_OBJECT_LENGTH);
         assertEquals(ObjectInformation.ObjectStatus.DOES_NOT_EXIST,oinfo.getStatus());
 
         //range test
-        oinfo = layout.readObject(fileId, 0l, 1, 0, sp, 32,32);
+        oinfo = layout.readObject(fileId,md, 0l, 32, 32);
         assertEquals(32, oinfo.getData().capacity());
         for (int i = 32; i < 64; i++) {
             assertEquals((byte) (48 + i), oinfo.getData().get());
@@ -126,23 +145,80 @@ public class StorageLayoutTest extends TestCase {
         BufferPool.free(oinfo.getData());
 
         //range test
-        oinfo = layout.readObject(fileId, 0l, 1, 0, sp, 32,1);
+        oinfo = layout.readObject(fileId,md, 0l, 32, 1);
         assertEquals(1, oinfo.getData().capacity());
         for (int i = 32; i < 33; i++) {
             assertEquals((byte) (48 + i), oinfo.getData().get());
         }
         BufferPool.free(oinfo.getData());
 
-        oinfo = layout.readObject(fileId, 0l, 1, 0, sp, 32,64);
+        oinfo = layout.readObject(fileId,md, 0l, 32, 64);
         assertEquals(32, oinfo.getData().capacity());
         for (int i = 32; i < 64; i++) {
             assertEquals((byte) (48 + i), oinfo.getData().get());
         }
         BufferPool.free(oinfo.getData());
 
-        /*oinfo = layout.readObject(fileId, 0l, 1, 0, sp, 64,1);
+        //truncate to 32 byte
+        layout.truncateObject(fileId, md, 0l, 32, 1, false);
+        oinfo = layout.readObject(fileId,md, 0l, 32, 64);
         assertEquals(0, oinfo.getData().capacity());
-        BufferPool.free(oinfo.getData());*/
+        BufferPool.free(oinfo.getData());
+
+        //read (non-existent) data from offset 32
+        oinfo = layout.readObject(fileId,md, 0l, 0, 32);
+        assertEquals(32, oinfo.getData().capacity());
+        for (int i = 0; i < 32; i++) {
+            assertEquals((byte) (48 + i), oinfo.getData().get());
+        }
+        BufferPool.free(oinfo.getData());
+
+        //truncate extend to 64 bytes
+        layout.truncateObject(fileId, md, 0l, 64, 2, false);
+        oinfo = layout.readObject(fileId,md, 0l, 32, 64);
+        assertEquals(32, oinfo.getData().capacity());
+        for (int i = 0; i < 32; i++) {
+            assertEquals((byte) 0, oinfo.getData().get());
+        }
+        BufferPool.free(oinfo.getData());
+
+
+        //write more objects...
+        //obj 1 = hole
+        //obj 2 = second half
+        //obj 3 = full
+
+        data = BufferPool.allocate(32);
+        for (int i = 0; i < 32; i++) {
+            data.put((byte) (48 + i));
+        }
+        //write 64 bytes
+        layout.writeObject(fileId, md, data, 2l, 0, 1l, false, false);
+
+        data = BufferPool.allocate(64);
+        for (int i = 0; i < 64; i++) {
+            data.put((byte) (48 + i));
+        }
+        //write 64 bytes
+        layout.writeObject(fileId, md, data, 3l, 0, 1l, false, false);
+
+        //read object 1... should be all zeros or zero padding
+        oinfo = layout.readObject(fileId,md, 1l, 0, 32);
+        if (oinfo.getStatus() == ObjectInformation.ObjectStatus.PADDING_OBJECT) {
+            //fine
+        } else if (oinfo.getStatus() == ObjectInformation.ObjectStatus.DOES_NOT_EXIST) {
+            //also fine
+        } else {
+            //we expect full stripe size of zeros
+            assertEquals(sp.getStripeSizeForObject(1),oinfo.getData().capacity());
+            for (int i = 0; i < sp.getStripeSizeForObject(1); i++) {
+                assertEquals((byte) 0, oinfo.getData().get());
+            }
+            BufferPool.free(oinfo.getData());
+        }
+
+
+
     }
 
     private void getObjectListTest(StorageLayout layout) throws IOException {
@@ -154,6 +230,8 @@ public class StorageLayoutTest extends TestCase {
         assertFalse(layout.fileExists(fileId));
         assertEquals(0, layout.getObjectSet(fileId).size());
 
+        FileMetadata md = new FileMetadata(sp);
+
         ReusableBuffer data = BufferPool.allocate(64);
         for (int i = 0; i < 64; i++) {
             data.put((byte) (48 + i));
@@ -164,7 +242,7 @@ public class StorageLayoutTest extends TestCase {
 
         // write objects
         for (long objNo : objectNos) {
-            layout.writeObject(fileId, objNo, data.createViewBuffer(), 1, 0, 0, sp, false);
+            layout.writeObject(fileId, md, data.createViewBuffer(), objNo, 0, 1, false, false);
         }
         BufferPool.free(data);
 

@@ -76,7 +76,7 @@ public class EventWriteObject extends OSDOperation {
         master.replicatedDataReceived(data.capacity());
 
         master.getStorageStage().writeObjectWithoutGMax(fileId, objectNo,
-            xloc.getLocalReplica().getStripingPolicy(), 0, data, cow, xloc, false, null,
+            xloc.getLocalReplica().getStripingPolicy(), 0, data, cow, xloc, false, null, null,
             new WriteObjectCallback() {
                 @Override
                 public void writeComplete(OSDWriteResponse result, Exception error) {

@@ -135,7 +135,7 @@ public class StorageThread extends Stage {
             final long epoch = (Long) rq.getArgs()[1];
             final long lastObject = (Long) rq.getArgs()[2];
             
-            FileInfo fi = cache.getFileInfo(fileId);
+            FileMetadata fi = cache.getFileInfo(fileId);
             
             if (fi == null) {
                 // file is not open, discard GMAX
@@ -195,7 +195,7 @@ public class StorageThread extends Stage {
             final String fileId = (String) rq.getArgs()[0];
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
             
-            final FileInfo fi = layout.getFileInfo(sp, fileId);
+            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
             // stripeSize);
             
@@ -227,11 +227,10 @@ public class StorageThread extends Stage {
             final int offset = (Integer) rq.getArgs()[3];
             final int length = (Integer) rq.getArgs()[4];
             
-            final FileInfo fi = layout.getFileInfo(sp, fileId);
+            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
             // stripeSize);
             
-            final boolean fullRead = (length == -1) || length == sp.getStripeSizeForObject(objNo);
             
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
@@ -248,32 +247,8 @@ public class StorageThread extends Stage {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "checksum is %d", objChksm);
             }
             
-            ObjectInformation obj = null;
-            if (fullRead || checksumsEnabled) {
-                obj = layout.readObject(fileId, objNo, objVer, objChksm, sp);
-                if (checksumsEnabled && obj.getData() != null) {
-                    obj.setChecksumInvalidOnOSD(!layout.checkObject(obj.getData(), objChksm));
-                    obj.getData().position(0);
-                }
-                if (!fullRead && obj.getData() != null) {
-                    // cut range from object data
-                    final int availData = obj.getData().remaining();
-                    if (availData - offset <= 0) {
-                        // offset is beyond available data
-                        BufferPool.free(obj.getData());
-                        obj.setData(BufferPool.allocate(0));
-                    } else {
-                        if (availData - offset >= length) {
-                            obj.getData().range(offset, length);
-                        } else {
-                            // less data than requested
-                            obj.getData().range(offset, availData - offset);
-                        }
-                    }
-                }
-            } else {
-                obj = layout.readObject(fileId, objNo, objVer, objChksm, sp, offset, length);
-            }
+            ObjectInformation obj =  layout.readObject(fileId, fi, objNo, offset, length);
+                
             obj.setLastLocalObjectNo(fi.getLastObjectNumber());
             obj.setGlobalLastObjectNo(fi.getGlobalLastObjectNumber());
             
@@ -295,7 +270,7 @@ public class StorageThread extends Stage {
             final String fileId = (String) rq.getArgs()[0];
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
             
-            final FileInfo fi = layout.getFileInfo(sp, fileId);
+            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
             // stripeSize);
             
@@ -318,12 +293,12 @@ public class StorageThread extends Stage {
             final XLocations xloc = (XLocations) rq.getArgs()[6];
             final boolean gMaxOff = (Boolean) rq.getArgs()[7];
             final boolean syncWrite = (Boolean) rq.getArgs()[8];
+            //use only if != null
+            final Long newVersionArg = (Long) rq.getArgs()[9];
             
             final int dataLength = data.remaining();
             final int stripeSize = sp.getStripeSizeForObject(objNo);
-            final FileInfo fi = layout.getFileInfo(sp, fileId);
-            final long oldChecksum = fi.getObjectChecksum(objNo);
-            final boolean rangeRequested = (offset > 0) || (data.capacity() < stripeSize);
+            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
@@ -340,88 +315,27 @@ public class StorageThread extends Stage {
             }
             
             // determine obj version to write
+            final boolean isCow = cow.isCOW((int)objNo);
             long currentV = fi.getObjectVersion(objNo);
             if (currentV == 0) {
                 currentV++;
             }
-            long nextV = currentV;
-            
-            assert (data != null);
-            
-            ReusableBuffer writeData = data;
-            if (cow.isCOW((int) objNo)) {
-                nextV++;
-                
-                if (Logging.isDebug()) {
-                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                        "incremented version: %s-%d.%d", fileId, objNo, nextV);
-                }
-                // increment version number and copy old object, if only a range
-                // is written
-                // otherwise simply write data to new object version
-                
-                if (rangeRequested) {
-                    ObjectInformation obj = layout.readObject(fileId, objNo, currentV, oldChecksum, sp);
-                    ObjectData oldObject = obj.getObjectData(fi.getLastObjectNumber() == objNo, 0, sp
-                            .getStripeSizeForObject(objNo));
-                    if (oldObject.getData() == null) {
-                        if (oldObject.getZero_padding() > 0) {
-                            // create a zero padded object
-                            writeData = BufferPool.allocate(stripeSize);
-                            for (int i = 0; i < stripeSize; i++) {
-                                writeData.put((byte) 0);
-                            }
-                            writeData.position(offset);
-                            writeData.put(data);
-                            writeData.position(0);
-                            BufferPool.free(data);
-                        } else {
-                            // write beyond EOF
-                            if (offset > 0) {
-                                writeData = BufferPool.allocate(offset + data.capacity());
-                                for (int i = 0; i < offset; i++) {
-                                    writeData.put((byte) 0);
-                                }
-                                writeData.put(data);
-                                writeData.position(0);
-                                BufferPool.free(data);
-                            } else {
-                                writeData = data;
-                            }
-                        }
-                    } else {
-                        // object data exists on disk
-                        if (oldObject.getData().capacity() >= offset + data.capacity()) {
-                            // old object is large enough
-                            writeData = oldObject.getData();
-                            writeData.position(offset);
-                            writeData.put(data);
-                            BufferPool.free(data);
-                        } else {
-                            // copy old data and then new data
-                            writeData = BufferPool.allocate(offset + data.capacity());
-                            writeData.put(oldObject.getData());
-                            BufferPool.free(oldObject.getData());
-                            writeData.position(offset);
-                            writeData.put(data);
-                            BufferPool.free(data);
-                        }
-                    }
-                    
-                }
-                // COW writes always start at offset 0
-                offset = 0;
-                cow.objectChanged((int) objNo);
+            long newVersion = (isCow || checksumsEnabled) ? currentV+1 : currentV;
+            if (newVersionArg != null) {
+                //new version passed via arg always prevails
+                newVersion = newVersionArg;
             }
-            
-            writeData.position(0);
-            
-            layout.writeObject(fileId, objNo, writeData, nextV, offset, oldChecksum, sp, syncWrite);
-            long newChecksum = layout.createChecksum(fileId, objNo, writeData.capacity() == sp
-                    .getStripeSizeForObject(objNo) ? writeData : null, nextV, oldChecksum);
-            
-            fi.getObjVersions().put(objNo, nextV);
-            fi.getObjChecksums().put(objNo, newChecksum);
+            assert (data != null);
+
+            //make sure last object is set correctly!
+            if (objNo > fi.getLastObjectNumber()) {
+               fi.setLastObjectNumber(objNo);
+            }
+
+            layout.writeObject(fileId, fi, data, objNo, offset, newVersion, syncWrite, isCow);
+
+            if (isCow)
+                cow.objectChanged((int)objNo);
             
             OSDWriteResponse response = new OSDWriteResponse();
             
@@ -464,8 +378,6 @@ public class StorageThread extends Stage {
                 // locally-known object of the file, send 'globalMax' messages
                 // to all other OSDs and update local globalMax
                 if (objNo > fi.getLastObjectNumber()) {
-                    fi.setLastObjectNumber(objNo);
-                    
                     if (objNo > fi.getGlobalLastObjectNumber()) {
                         // send UDP packets...
                         final List<ServiceUUID> osds = xloc.getLocalReplica().getOSDs();
@@ -486,7 +398,7 @@ public class StorageThread extends Stage {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "new last object=%d gmax=%d", fi
                         .getLastObjectNumber(), fi.getGlobalLastObjectNumber());
-            BufferPool.free(writeData);
+            //BufferPool.free(data);
             cback.writeComplete(response, null);
             
         } catch (IOException ex) {
@@ -505,7 +417,7 @@ public class StorageThread extends Stage {
             final Replica currentReplica = (Replica) rq.getArgs()[3];
             final long epochNumber = (Long) rq.getArgs()[4];
             
-            final FileInfo fi = layout.getFileInfo(sp, fileId);
+            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             
             if (fi.getTruncateEpoch() >= epochNumber) {
                 cback.truncateComplete(null, new OSDException(ErrorCodes.EPOCH_OUTDATED,
@@ -528,7 +440,7 @@ public class StorageThread extends Stage {
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "truncate to 0");
                 
-                layout.deleteAllObjects(fileId);
+                layout.deleteFile(fileId,false);
                 fi.getObjChecksums().clear();
                 fi.getObjVersions().clear();
             } else if (fi.getFilesize() > newFileSize) {
@@ -602,7 +514,7 @@ public class StorageThread extends Stage {
         }
     }
     
-    private long truncateShrink(String fileId, long fileSize, long epoch, StripingPolicyImpl sp, FileInfo fi,
+    private long truncateShrink(String fileId, long fileSize, long epoch, StripingPolicyImpl sp, FileMetadata fi,
         int relOsdId) throws IOException, OSDException {
         // first find out which is the new "last object"
         final long newLastObject = sp.getObjectNoForOffset(fileSize - 1);
@@ -622,12 +534,12 @@ public class StorageThread extends Stage {
             final long rowObj = r * sp.getWidth() + relOsdId;
             if (rowObj == newLastObject) {
                 // is local and needs to be shrunk
-                final long newObjSize = fileSize - sp.getObjectStartOffset(newLastObject);
+                final int newObjSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
                 truncateObject(fileId, newLastObject, sp, newObjSize, relOsdId);
             } else if (rowObj > newLastObject) {
                 // delete objects
                 final long v = fi.getObjectVersion(rowObj);
-                layout.deleteObject(fileId, rowObj, v, sp);
+                layout.deleteObject(fileId, fi, rowObj, v);
                 fi.deleteObject(rowObj);
             }
         }
@@ -646,7 +558,7 @@ public class StorageThread extends Stage {
         return newLastObject;
     }
     
-    private long truncateExtend(String fileId, long fileSize, long epoch, StripingPolicyImpl sp, FileInfo fi,
+    private long truncateExtend(String fileId, long fileSize, long epoch, StripingPolicyImpl sp, FileMetadata fi,
         int relOsdId) throws IOException, OSDException {
         // first find out which is the new "last object"
         final long newLastObject = sp.getObjectNoForOffset(fileSize - 1);
@@ -659,7 +571,7 @@ public class StorageThread extends Stage {
         
         if ((sp.getOSDforObject(newLastObject) == relOsdId) && newLastObject == oldLastObject) {
             // simply extend the old one
-            truncateObject(fileId, newLastObject, sp, fileSize - sp.getObjectStartOffset(newLastObject),
+            truncateObject(fileId, newLastObject, sp, (int)(fileSize - sp.getObjectStartOffset(newLastObject)),
                 relOsdId);
         } else {
             if ((oldLastObject > -1) && (sp.isLocalObject(oldLastObject, relOsdId))) {
@@ -668,7 +580,7 @@ public class StorageThread extends Stage {
             
             // create padding objects
             if (sp.isLocalObject(newLastObject, relOsdId)) {
-                long objSize = fileSize - sp.getObjectStartOffset(newLastObject);
+                int objSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
                 createPaddingObject(fileId, newLastObject, sp, 1, objSize, fi);
             }
             
@@ -687,7 +599,7 @@ public class StorageThread extends Stage {
         return newLastObject;
     }
     
-    private void truncateObject(String fileId, long objNo, StripingPolicyImpl sp, long newSize, long relOsdId)
+    private void truncateObject(String fileId, long objNo, StripingPolicyImpl sp, int newSize, long relOsdId)
         throws IOException, OSDException {
         
         assert (newSize > 0) : "new size is " + newSize + " but should be > 0";
@@ -698,65 +610,14 @@ public class StorageThread extends Stage {
         if (Logging.isDebug())
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "truncate object to %d", newSize);
         
-        final FileInfo fi = layout.getFileInfo(sp, fileId);
+        final FileMetadata fi = layout.getFileMetadata(sp, fileId);
         final long version = fi.getObjectVersion(objNo);
-        final long checksum = fi.getObjectChecksum(objNo);
         
-        ObjectInformation obj = layout.readObject(fileId, objNo, version, checksum, sp);
-        ReusableBuffer oldData = obj.getData();
-        if (obj.getStatus() == ObjectInformation.ObjectStatus.DOES_NOT_EXIST) {
-            // handles the POSIX behavior of read beyond EOF
-            oldData = BufferPool.allocate(0);
-            oldData.position(0);
-        }
-        
-        // test the checksum
-        if ((obj.getStatus() != ObjectInformation.ObjectStatus.DOES_NOT_EXIST)
-            && !layout.checkObject(oldData, checksum)) {
-            Logging.logMessage(Logging.LEVEL_WARN, Category.proc, this,
-                "invalid checksum: file=%s, objNo=%d", fileId, objNo);
-            BufferPool.free(oldData);
-            throw new OSDException(ErrorCodes.INVALID_CHECKSUM, "invalid checksum", "");
-        }
-        
-        // no extension necessary when size is correct
-        if (oldData.capacity() == newSize) {
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
-                    "truncate not necessary, object %d is %d", objNo, newSize);
-            BufferPool.free(oldData);
-            return;
-        }
-        
-        if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "truncate object %d to %d", objNo,
-                newSize);
-        
-        ReusableBuffer newData = BufferPool.allocate((int) newSize);
-        if (newSize < oldData.capacity()) {
-            oldData.shrink((int) newSize);
-        }
-        newData.put(oldData);
-        BufferPool.free(oldData);
-        
-        // fill the remaining buffer with zeros
-        while (newData.position() < newData.capacity()) {
-            newData.put((byte) 0);
-        }
-        
-        layout.writeObject(fileId, objNo, newData, version + 1, 0, checksum, sp, false);
-        long newChecksum = layout.createChecksum(fileId, objNo, newData, version + 1, checksum);
-        
-        BufferPool.free(newData);
-        
-        fi.getObjVersions().put(objNo, version + 1);
-        fi.getObjChecksums().put(objNo, newChecksum);
+        layout.truncateObject(fileId, fi, objNo, newSize, version+1, false);
     }
     
     private void createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, long version,
-        long size, FileInfo fi) throws IOException {
-        long checksum = layout.createPaddingObject(fileId, objNo, sp, version, size);
-        fi.getObjVersions().put(objNo, version);
-        fi.getObjChecksums().put(objNo, checksum);
+        int size, FileMetadata fi) throws IOException {
+        layout.createPaddingObject(fileId, fi, objNo, version, size);
     }
 }

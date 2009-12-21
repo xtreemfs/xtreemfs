@@ -268,8 +268,8 @@ public class OSDTruncateTest extends TestCase {
         r2.freeBuffers();
         BufferPool.free(data.getData());
     }
-    
-    
+
+
     public void testTruncateExtendInObject() throws Exception {
         // wirte first 1024 bytes to object 0
         ReusableBuffer buf = BufferPool.allocate(1024);

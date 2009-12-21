@@ -25,7 +25,6 @@
 
 package org.xtreemfs.osd.storage;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -33,9 +32,10 @@ import java.io.IOException;
 
 import java.util.Map;
 import java.util.Stack;
-import org.xtreemfs.common.VersionManagement;
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
+import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.osd.OSDConfig;
 import org.xtreemfs.osd.replication.ObjectSet;
 
@@ -46,12 +46,39 @@ import org.xtreemfs.osd.replication.ObjectSet;
  */
 public abstract class StorageLayout {
 
+    /**
+     * read the full object (all available data)
+     */
+    public static final int       FULL_OBJECT_LENGTH = -1;
+
+    /**
+     * read the full object (all available data)
+     */
+    public static final int       LATEST_VERSION = -1;
+
+    /**
+     * file to store the truncate epoch in (metadata)
+     */
     public static final String    TEPOCH_FILENAME  = ".tepoch";
 
+    /**
+     * file to store the layout and version used to create on disk data
+     */
     public static final String    VERSION_FILENAME = ".version";
 
+    /**
+     * true, if we are on a windows platform
+     */
+    public final static boolean WIN = System.getProperty("os.name").toLowerCase().contains("win");
+
+    /**
+     * base directory in which to store files
+     */
     protected final String        storageDir;
 
+    /**
+     * file metadata cache
+     */
     protected final MetadataCache cache;
 
     protected StorageLayout(OSDConfig config, MetadataCache cache) throws IOException {
@@ -93,16 +120,16 @@ public abstract class StorageLayout {
      * @return
      * @throws IOException
      */
-    public FileInfo getFileInfo(final StripingPolicyImpl sp, final String fileId) throws IOException {
+    public FileMetadata getFileMetadata(final StripingPolicyImpl sp, final String fileId) throws IOException {
 
         // try to retrieve metadata from cache
-        FileInfo fi = cache.getFileInfo(fileId);
+        FileMetadata fi = cache.getFileInfo(fileId);
 
         // if metadata is not cached ...
         if (fi == null) {
 
             // ... load metadata from disk
-            fi = loadFileInfo(fileId, sp);
+            fi = loadFileMetadata(fileId, sp);
 
             // ... cache metadata to speed up further accesses
             cache.setFileInfo(fileId, fi);
@@ -125,7 +152,7 @@ public abstract class StorageLayout {
      * @throws IOException
      *             if an error occurred while trying to read the metadata
      */
-    protected abstract FileInfo loadFileInfo(String fileId, StripingPolicyImpl sp) throws IOException;
+    protected abstract FileMetadata loadFileMetadata(String fileId, StripingPolicyImpl sp) throws IOException;
 
     /**
      * Reads a complete object from the storage device.
@@ -147,24 +174,10 @@ public abstract class StorageLayout {
      * @return a buffer containing the object, or a <code>null</code> if the
      *         object does not exist
      */
-    public abstract ObjectInformation readObject(String fileId, long objNo, long version,
-	    long checksum, StripingPolicyImpl sp)
-	    throws IOException;
 
-    public abstract ObjectInformation readObject(String fileId, long objNo, long objVer,
-            long objChksm, StripingPolicyImpl sp, int offset, int length) throws IOException;
+    public abstract ObjectInformation readObject(String fileId, FileMetadata md,
+            long objNo, int offset, int length) throws IOException;
 
-    /**
-     * Determines whether the given data has a correct checksum.
-     *
-     * @param obj
-     *            the object data
-     * @param checksum
-     *            the correct checksum
-     * @return <code>true</code>, if the given checksum matches the checksum
-     *         of the data, <code>false</code>, otherwise
-     */
-    public abstract boolean checkObject(ReusableBuffer obj, long checksum);
 
     /**
      * Writes a partial object to the storage device.
@@ -189,32 +202,14 @@ public abstract class StorageLayout {
      * @throws java.io.IOException
      *             when the object cannot be written
      */
-    public abstract void writeObject(String fileId, long objNo, ReusableBuffer data, long version,
-        int offset, long checksum, StripingPolicyImpl sp, boolean sync) throws IOException;
+    public abstract void writeObject(String fileId, FileMetadata md,
+            ReusableBuffer data, long objNo, int offset,
+            long newVersion, boolean sync, boolean cow) throws IOException;
 
-    /**
-     * Calculates and stores the checksum for an object.
-     *
-     * @param fileId
-     *            the file Id the object belongs to
-     * @param objNo
-     *            the object number
-     * @param data
-     *            a buffer to calculate the checksum from. If <code>null</code>
-     *            is provided, the object will be rad from the storage device
-     *            and checksummed.
-     * @param version
-     *            the version of the object
-     * @param currentChecksum
-     *            the checksum currently assigned to the object; if OSD
-     *            checksums are disabled, <code>null</code> can be used
-     * @return if OSD checksums are enabled, the newly calculated checksum;
-     *         <code>null</code>, otherwise
-     * @throws java.io.IOException
-     *             if an I/O error occured
-     */
-    public abstract long createChecksum(String fileId, long objNo, ReusableBuffer data,
-        long version, long currentChecksum) throws IOException;
+
+    public abstract void truncateObject(String fileId, FileMetadata md, long objNo, int newLength,
+            long newVersion, boolean cow) throws IOException;
+
 
     /**
      * Deletes all objects of a file.
@@ -224,17 +219,8 @@ public abstract class StorageLayout {
      * @throws IOException
      *             if an error occurred while deleting the objects
      */
-    public abstract void deleteFile(String fileId) throws IOException;
+    public abstract void deleteFile(String fileId, boolean deleteMetadata) throws IOException;
 
-    /**
-     * Deletes all objects of a file.
-     *
-     * @param fileId
-     *            the ID of the file
-     * @throws IOException
-     *             if an error occurred while deleting the objects
-     */
-    public abstract void deleteAllObjects(String fileId) throws IOException;
 
     /**
      * Deletes a single version of a single object of a file.
@@ -248,7 +234,7 @@ public abstract class StorageLayout {
      * @throws IOException
      *             if an error occurred while deleting the object
      */
-    public abstract void deleteObject(String fileId, long objNo, long version, StripingPolicyImpl sp) throws IOException;
+    public abstract void deleteObject(String fileId, FileMetadata md, long objNo, long version) throws IOException;
 
     /**
      * Creates and stores a zero-padded object.
@@ -268,8 +254,8 @@ public abstract class StorageLayout {
      * @throws IOException
      *             if an error occurred when storing the object
      */
-    public abstract long createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp,
-        long version, long size) throws IOException;
+    public abstract void createPaddingObject(String fileId, FileMetadata md,
+            long objNo, long version, int size) throws IOException;
 
     /**
      * Persistently stores a new truncate epoch for a file.
@@ -292,6 +278,89 @@ public abstract class StorageLayout {
      *         otherwise
      */
     public abstract boolean fileExists(String fileId);
+
+
+    protected ReusableBuffer unwrapObjectData(String fileId, FileMetadata md, long objNo) throws IOException {
+        ReusableBuffer data;
+        final int stripeSize = md.getStripingPolicy().getStripeSizeForObject(objNo);
+        ObjectInformation obj = readObject(fileId, md, objNo, 0, FULL_OBJECT_LENGTH);
+        ObjectData oldObject = obj.getObjectData(md.getLastObjectNumber() == objNo, 0,stripeSize);
+        if (oldObject.getData() == null) {
+            if (oldObject.getZero_padding() > 0) {
+                // create a zero padded object
+                data = BufferPool.allocate(oldObject.getZero_padding());
+                for (int i = 0; i < oldObject.getZero_padding(); i++) {
+                    data.put((byte) 0);
+                }
+                data.position(0);
+            } else {
+                data = BufferPool.allocate(0);
+            }
+        } else {
+            if (oldObject.getZero_padding() > 0) {
+                data = BufferPool.allocate(oldObject.getData().capacity()+oldObject.getZero_padding());
+                data.put(oldObject.getData());
+                for (int i = 0; i < oldObject.getZero_padding(); i++) {
+                    data.put((byte) 0);
+                }
+            } else {
+                data = oldObject.getData();
+            }
+        }
+        return data;
+    }
+
+    protected ReusableBuffer cow(String fileId, FileMetadata md, long objNo, ReusableBuffer data, int offset) throws IOException {
+        ReusableBuffer writeData = null;
+        final int stripeSize = md.getStripingPolicy().getStripeSizeForObject(objNo);
+        ObjectInformation obj = readObject(fileId, md, objNo, 0, FULL_OBJECT_LENGTH);
+        ObjectData oldObject = obj.getObjectData(md.getLastObjectNumber() == objNo, 0,stripeSize);
+        if (oldObject.getData() == null) {
+            if (oldObject.getZero_padding() > 0) {
+                // create a zero padded object
+                writeData = BufferPool.allocate(stripeSize);
+                for (int i = 0; i < stripeSize; i++) {
+                    writeData.put((byte) 0);
+                }
+                writeData.position(offset);
+                writeData.put(data);
+                writeData.position(0);
+                BufferPool.free(data);
+            } else {
+                // write beyond EOF
+                if (offset > 0) {
+                    writeData = BufferPool.allocate(offset + data.capacity());
+                    for (int i = 0; i < offset; i++) {
+                        writeData.put((byte) 0);
+                    }
+                    writeData.put(data);
+                    writeData.position(0);
+                    BufferPool.free(data);
+                } else {
+                    writeData = data;
+                }
+            }
+        } else {
+            // object data exists on disk
+            if (oldObject.getData().capacity() >= offset + data.capacity()) {
+                // old object is large enough
+                writeData = oldObject.getData();
+                writeData.position(offset);
+                writeData.put(data);
+                BufferPool.free(data);
+            } else {
+                // copy old data and then new data
+                writeData = BufferPool.allocate(offset + data.capacity());
+                writeData.put(oldObject.getData());
+                BufferPool.free(oldObject.getData());
+                writeData.position(offset);
+                writeData.put(data);
+                BufferPool.free(data);
+            }
+        }
+        return writeData;
+    }
+
 
     public abstract long getFileInfoLoadCount();
 

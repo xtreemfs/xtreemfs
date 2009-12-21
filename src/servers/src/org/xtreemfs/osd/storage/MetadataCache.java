@@ -32,19 +32,19 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 public class MetadataCache {
 
-    private Map<String, FileInfo> metadataMap;
+    private Map<String, FileMetadata> metadataMap;
 
     /** Creates a new instance of StorageCache */
     public MetadataCache() {
-        metadataMap = new ConcurrentSkipListMap<String, FileInfo>();
+        metadataMap = new ConcurrentSkipListMap<String, FileMetadata>();
     }
 
-    public FileInfo getFileInfo(String fileId) {
+    public FileMetadata getFileInfo(String fileId) {
         assert (fileId != null);
         return metadataMap.get(fileId);
     }
 
-    public void setFileInfo(String fileId, FileInfo info) {
+    public void setFileInfo(String fileId, FileMetadata info) {
         assert (info.getFilesize() != 0 || info.getLastObjectNumber() <= 0);
         metadataMap.put(fileId, info);
     }

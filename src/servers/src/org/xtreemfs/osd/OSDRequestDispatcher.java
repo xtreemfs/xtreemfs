@@ -117,7 +117,6 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.osd.operations.VivaldiPingOperation;
-import org.xtreemfs.osd.storage.SingleFileStorageLayout;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     UDPReceiverInterface {
@@ -254,8 +253,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         StorageLayout storageLayout = null;
         if (config.getStorageLayout().equalsIgnoreCase(HashStorageLayout.class.getSimpleName())) {
             storageLayout = new HashStorageLayout(config, metadataCache);
-        } else if (config.getStorageLayout().equalsIgnoreCase(SingleFileStorageLayout.class.getSimpleName())) {
-            storageLayout = new SingleFileStorageLayout(config, metadataCache);
+        /*} else if (config.getStorageLayout().equalsIgnoreCase(SingleFileStorageLayout.class.getSimpleName())) {
+            storageLayout = new SingleFileStorageLayout(config, metadataCache);*/
         } else {
             throw new RuntimeException("unknown storage layout in config file: "+config.getStorageLayout());
         }

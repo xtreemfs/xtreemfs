@@ -27,16 +27,17 @@ package org.xtreemfs.osd.storage;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.xtreemfs.common.xloc.StripingPolicyImpl;
 
 /**
  *
  * @author bjko
  */
-public class FileInfo {
+public class FileMetadata {
 
-    private Map<Long, Long> objVersions;
+    private Map<Long, Long>     objVersions;
 
-    private Map<Long, Long>  objChecksums;
+    private Map<Long, Long>     objChecksums;
 
     private long               filesize;
 
@@ -44,14 +45,15 @@ public class FileInfo {
 
     private long               globalLastObjectNumber;
 
-    private boolean            incVersionOnWrite;
-
     private long               truncateEpoch;
 
+    private final StripingPolicyImpl stripingPolicy;
+
     /** Creates a new instance of FileInfo */
-    public FileInfo() {
+    public FileMetadata(StripingPolicyImpl sp) {
         objVersions = new HashMap<Long, Long>();
         objChecksums = new HashMap<Long, Long>();
+        stripingPolicy = sp;
     }
 
     public Map<Long, Long> getObjVersions() {
@@ -88,22 +90,13 @@ public class FileInfo {
         return (c == null) ? 0 : c;
     }
 
-    public boolean isIncVersionOnWrite() {
-        return incVersionOnWrite;
-    }
-
-    public void setIncVersionOnWrite(boolean incVersionOnWrite) {
-        this.incVersionOnWrite = incVersionOnWrite;
-    }
-
     public void deleteObject(long objId) {
         objVersions.remove(objId);
         objChecksums.remove(objId);
     }
 
     public String toString() {
-        return "fileSize=" + filesize + ", lastObjNo=" + lastObjectNumber + ", incVersionOnWrite="
-            + incVersionOnWrite;
+        return "fileSize=" + filesize + ", lastObjNo=" + lastObjectNumber;
     }
 
     public long getTruncateEpoch() {
@@ -126,5 +119,12 @@ public class FileInfo {
      */
     public void setGlobalLastObjectNumber(long globalLastObjectNumber) {
         this.globalLastObjectNumber = globalLastObjectNumber;
+    }
+
+    /**
+     * @return the stripingPolicy
+     */
+    public StripingPolicyImpl getStripingPolicy() {
+        return stripingPolicy;
     }
 }

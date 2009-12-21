@@ -94,7 +94,7 @@ public final class WriteOperation extends OSDOperation {
 
             master.getStorageStage().writeObject(args.getFile_id(), args.getObject_number(), sp,
                     args.getOffset(), args.getObject_data().getData(), rq.getCowPolicy(),
-                    rq.getLocationList(), syncWrite, rq, new WriteObjectCallback() {
+                    rq.getLocationList(), syncWrite, null, rq, new WriteObjectCallback() {
 
                         @Override
                         public void writeComplete(OSDWriteResponse result, Exception error) {

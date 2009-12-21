@@ -161,7 +161,7 @@ public class DeletionStage extends Stage {
                     try {
                         if (Logging.isDebug())
                             Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "deleting objects for %s", fileID);
-                        layout.deleteFile(fileID);
+                        layout.deleteFile(fileID,true);
                         yield();
                     } catch (IOException ex) {
                         Logging.logError(Logging.LEVEL_ERROR, this, ex);
