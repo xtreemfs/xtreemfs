@@ -95,6 +95,8 @@ public class MRCConfig extends ServiceConfig {
             this.capabilityTimeout = Constants.XCAP_EXPIRE_TIMEOUT_S_MIN * 2;
         
         this.renewTimedOutCaps = readOptionalBoolean("renew_to_caps", false);
+
+        this.policyDir = readOptionalString("policy_dir", "/etc/xos/xtreemfs/policies/");
     }
     
     public int getOsdCheckInterval() {
