@@ -135,7 +135,6 @@ def createTestSuite( *args, **kwds ):
         globals()["have_called_createTestSuite"] = True        
         test_suite = unittest.TestSuite()
         test_suite.addTest( chmodTest() )
-        test_suite.addTest( chownTest() )
         test_suite.addTest( creatTest() )    
         if hasattr( os, "link" ): test_suite.addTest( linkTest() )
         test_suite.addTest( mkdirTest() )
