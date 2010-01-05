@@ -785,7 +785,7 @@ public class HashStorageLayout extends StorageLayout {
         } else {
             final long objNo = OutputUtils.readHexLong(filename, 0);
             final long objVersion = OutputUtils.readHexLong(filename, 16);
-            final long checksum = OutputUtils.readHexLong(filename, 28);
+            final long checksum = OutputUtils.readHexLong(filename, 32);
             return new ObjFileData(objNo, objVersion, checksum);
         }
     }
