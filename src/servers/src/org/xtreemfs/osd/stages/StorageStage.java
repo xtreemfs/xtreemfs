@@ -89,6 +89,12 @@ public class StorageStage extends Stage {
             Long newVersion, OSDRequest request, WriteObjectCallback listener) {
         this.enqueueOperation(fileId, StorageThread.STAGEOP_WRITE_OBJECT, new Object[]{fileId,objNo,sp,offset,data,cow,xloc,false,sync,newVersion}, request, listener);
     }
+    
+    public void insertPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, int size,
+        OSDRequest request, WriteObjectCallback listener) {
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_INSERT_PADDING_OBJECT, new Object[] { fileId,
+            objNo, sp, size }, request, listener);
+    }
 
     /*
      * currently only used for replication

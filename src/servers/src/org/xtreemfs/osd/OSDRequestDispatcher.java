@@ -24,8 +24,6 @@
 
 package org.xtreemfs.osd;
 
-import com.sun.net.httpserver.BasicAuthenticator;
-import com.sun.net.httpserver.HttpContext;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -48,6 +46,7 @@ import org.xtreemfs.common.checksums.provider.JavaChecksumProvider;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.FSUtils;
+import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
@@ -85,6 +84,7 @@ import org.xtreemfs.osd.operations.CleanupStopOperation;
 import org.xtreemfs.osd.operations.DeleteOperation;
 import org.xtreemfs.osd.operations.EventCloseFile;
 import org.xtreemfs.osd.operations.EventWriteObject;
+import org.xtreemfs.osd.operations.EventInsertPaddingObject;
 import org.xtreemfs.osd.operations.GetObjectSetOperation;
 import org.xtreemfs.osd.operations.InternalGetFileSizeOperation;
 import org.xtreemfs.osd.operations.InternalGetGmaxOperation;
@@ -97,13 +97,13 @@ import org.xtreemfs.osd.operations.OSDOperation;
 import org.xtreemfs.osd.operations.ReadOperation;
 import org.xtreemfs.osd.operations.ShutdownOperation;
 import org.xtreemfs.osd.operations.TruncateOperation;
+import org.xtreemfs.osd.operations.VivaldiPingOperation;
 import org.xtreemfs.osd.operations.WriteOperation;
 import org.xtreemfs.osd.stages.DeletionStage;
 import org.xtreemfs.osd.stages.PreprocStage;
 import org.xtreemfs.osd.stages.ReplicationStage;
 import org.xtreemfs.osd.stages.StorageStage;
 import org.xtreemfs.osd.stages.VivaldiStage;
-import org.xtreemfs.osd.vivaldi.VivaldiNode;
 import org.xtreemfs.osd.storage.CleanupThread;
 import org.xtreemfs.osd.storage.HashStorageLayout;
 import org.xtreemfs.osd.storage.MetadataCache;
@@ -111,12 +111,13 @@ import org.xtreemfs.osd.storage.StorageLayout;
 import org.xtreemfs.osd.striping.UDPCommunicator;
 import org.xtreemfs.osd.striping.UDPMessage;
 import org.xtreemfs.osd.striping.UDPReceiverInterface;
+import org.xtreemfs.osd.vivaldi.VivaldiNode;
 
+import com.sun.net.httpserver.BasicAuthenticator;
+import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import org.xtreemfs.common.util.OutputUtils;
-import org.xtreemfs.osd.operations.VivaldiPingOperation;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     UDPReceiverInterface {
@@ -702,6 +703,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         op = new EventWriteObject(this);
         internalEvents.put(EventWriteObject.class, op);
+        
+        op = new EventInsertPaddingObject(this);
+        internalEvents.put(EventInsertPaddingObject.class, op);
     }
     
     public StorageStage getStorageStage() {

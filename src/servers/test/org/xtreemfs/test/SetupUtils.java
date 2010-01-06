@@ -63,7 +63,7 @@ public class SetupUtils {
     
     public static final int        DEBUG_LEVEL      = Logging.LEVEL_DEBUG;
     
-    public static final Category[] DEBUG_CATEGORIES = new Category[] { Logging.Category.db, Logging.Category.net };
+    public static final Category[] DEBUG_CATEGORIES = new Category[] { Category.all };
     
     private static Properties createOSDProperties(int port, String dir) {
         Properties props = new Properties();

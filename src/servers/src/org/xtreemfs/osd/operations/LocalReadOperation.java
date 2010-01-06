@@ -49,13 +49,13 @@ import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.osd.storage.ObjectInformation.ObjectStatus;
 
 public final class LocalReadOperation extends OSDOperation {
-
-    final int procId;
-
-    final String sharedSecret;
-
+    
+    final int         procId;
+    
+    final String      sharedSecret;
+    
     final ServiceUUID localUUID;
-
+    
     public LocalReadOperation(OSDRequestDispatcher master) {
         super(master);
         xtreemfs_internal_read_localRequest rq = new xtreemfs_internal_read_localRequest();
@@ -63,39 +63,38 @@ public final class LocalReadOperation extends OSDOperation {
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }
-
+    
     @Override
     public int getProcedureId() {
         return procId;
     }
-
+    
     @Override
     public void startRequest(final OSDRequest rq) {
         final xtreemfs_internal_read_localRequest args = (xtreemfs_internal_read_localRequest) rq
                 .getRequestArgs();
-
-//        System.out.println("rq: " + args);
-
+        
+        // System.out.println("rq: " + args);
+        
         if (args.getObject_number() < 0) {
             rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "object number must be >= 0", ""));
             return;
         }
-
+        
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
-
-        master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), sp, (int)args.getOffset(),
-                (int)args.getLength(), rq,
-                new ReadObjectCallback() {
-
-                    @Override
-                    public void readComplete(ObjectInformation result, Exception error) {
-                        postRead(rq, args, result, error);
-                    }
-                });
+        
+        master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), sp,
+            (int) args.getOffset(), (int) args.getLength(), rq, new ReadObjectCallback() {
+                
+                @Override
+                public void readComplete(ObjectInformation result, Exception error) {
+                    postRead(rq, args, result, error);
+                }
+            });
     }
-
+    
     public void postRead(final OSDRequest rq, final xtreemfs_internal_read_localRequest args,
-            final ObjectInformation result, Exception error) {
+        final ObjectInformation result, Exception error) {
         if (error != null) {
             if (error instanceof ONCRPCException) {
                 rq.sendException((ONCRPCException) error);
@@ -104,20 +103,19 @@ public final class LocalReadOperation extends OSDOperation {
             }
         } else {
             if (args.getAttach_object_list()) { // object list is requested
-                master.getStorageStage().getObjectSet(args.getFile_id(), rq,
-                        new GetObjectListCallback() {
-                            @Override
-                            public void getObjectSetComplete(ObjectSet objectSet, Exception error) {
-                                postReadObjectSet(rq, args, result, objectSet, error);
-                            }
-                        });
+                master.getStorageStage().getObjectSet(args.getFile_id(), rq, new GetObjectListCallback() {
+                    @Override
+                    public void getObjectSetComplete(ObjectSet objectSet, Exception error) {
+                        postReadObjectSet(rq, args, result, objectSet, error);
+                    }
+                });
             } else
                 readFinish(rq, args, result, null);
         }
     }
-
+    
     public void postReadObjectSet(final OSDRequest rq, xtreemfs_internal_read_localRequest args,
-            ObjectInformation data, ObjectSet result, Exception error) {
+        ObjectInformation data, ObjectSet result, Exception error) {
         if (error != null) {
             if (error instanceof ONCRPCException) {
                 rq.sendException((ONCRPCException) error);
@@ -131,67 +129,79 @@ public final class LocalReadOperation extends OSDOperation {
             try {
                 serialized = result.getSerializedBitSet();
                 objectSetBuffer = ReusableBuffer.wrap(serialized);
-
-                ObjectList objList = new ObjectList(objectSetBuffer, result.getStripeWidth(),
-                        result.getFirstObjectNo());
+                
+                ObjectList objList = new ObjectList(objectSetBuffer, result.getStripeWidth(), result
+                        .getFirstObjectNo());
                 readFinish(rq, args, data, objList);
             } catch (IOException e) {
                 rq.sendInternalServerError(e);
             }
         }
     }
-
+    
     private void readFinish(OSDRequest rq, xtreemfs_internal_read_localRequest args,
-            ObjectInformation result, ObjectList objectList) {
+        ObjectInformation result, ObjectList objectList) {
         ObjectData data = null;
         // send raw data
         if (result.getStatus() == ObjectStatus.EXISTS) {
             final boolean isRangeRequested = (args.getOffset() > 0)
-                    || (args.getLength() < result.getStripeSize());
+                || (args.getLength() < result.getStripeSize());
             if (isRangeRequested) {
                 data = result.getObjectData(true, (int) args.getOffset(), (int) args.getLength());
             } else {
                 data = new ObjectData(0, result.isChecksumInvalidOnOSD(), 0, result.getData());
             }
-        } else
-            data = new ObjectData(0, result.isChecksumInvalidOnOSD(), 0, null);
+        }
 
+        else if (result.getStatus() == ObjectStatus.PADDING_OBJECT) {
+            final boolean isRangeRequested = (args.getOffset() > 0)
+                || (args.getLength() < result.getStripeSize());
+            if (isRangeRequested) {
+                data = result.getObjectData(true, (int) args.getOffset(), (int) args.getLength());
+            } else {
+                data = result.getObjectData(false, 0, (int) args.getLength());
+            }
+        }
+
+        else
+            data = new ObjectData(0, result.isChecksumInvalidOnOSD(), 0, null);
+        
         master.objectSent();
         if (data.getData() != null)
             master.dataSent(data.getData().capacity());
-
+        
         // System.out.println("resp: " + data);
         sendResponse(rq, data, objectList);
     }
-
+    
     public void sendResponse(OSDRequest rq, ObjectData result, ObjectList objectList) {
         ObjectListSet set = new ObjectListSet();
         if (objectList != null && objectList.getSet().limit() != 0)
             set.add(objectList);
-
+        
         InternalReadLocalResponse readLocalResponse = new InternalReadLocalResponse(result, set);
         xtreemfs_internal_read_localResponse response = new xtreemfs_internal_read_localResponse(
-                readLocalResponse);
+            readLocalResponse);
         rq.sendSuccess(response);
     }
-
+    
     @Override
     public yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         xtreemfs_internal_read_localRequest rpcrq = new xtreemfs_internal_read_localRequest();
         rpcrq.unmarshal(new XDRUnmarshaller(data));
-
+        
         rq.setFileId(rpcrq.getFile_id());
         rq.setCapability(new Capability(rpcrq.getFile_credentials().getXcap(), sharedSecret));
         rq.setLocationList(new XLocations(rpcrq.getFile_credentials().getXlocs(), localUUID));
-
+        
         return rpcrq;
     }
-
+    
     @Override
     public boolean requiresCapability() {
         return true;
     }
-
+    
     @Override
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");

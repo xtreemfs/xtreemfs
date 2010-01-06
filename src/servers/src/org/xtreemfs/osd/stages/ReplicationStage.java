@@ -186,7 +186,7 @@ public class ReplicationStage extends Stage {
                 // send client error
                 disseminationLayer.sendError(fileId, error);
             } else {
-                disseminationLayer.objectNotFetched(fileId, usedOSD, objectNo);
+                disseminationLayer.objectNotFetched(fileId, usedOSD, objectNo, data);
                 if (data != null)
                     BufferPool.free(data.getData());
             }
@@ -211,7 +211,8 @@ public class ReplicationStage extends Stage {
                 disseminationLayer.objectFetched(fileId, objectNo, usedOSD, data);
             else {
                 // data could not be fetched
-                disseminationLayer.objectNotFetched(fileId, usedOSD, objectNo);
+                disseminationLayer.objectNotFetched(fileId, usedOSD, objectNo, data);
+                
                 if (data != null)
                     BufferPool.free(data.getData());
             }

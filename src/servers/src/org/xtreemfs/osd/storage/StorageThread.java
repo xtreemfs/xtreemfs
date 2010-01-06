@@ -39,7 +39,6 @@ import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.OSDWriteResponse;
-import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_broadcast_gmaxRequest;
 import org.xtreemfs.osd.ErrorCodes;
@@ -57,21 +56,23 @@ import org.xtreemfs.osd.striping.UDPMessage;
 
 public class StorageThread extends Stage {
     
-    public static final int      STAGEOP_READ_OBJECT    = 1;
+    public static final int      STAGEOP_READ_OBJECT          = 1;
     
-    public static final int      STAGEOP_WRITE_OBJECT   = 2;
+    public static final int      STAGEOP_WRITE_OBJECT         = 2;
     
-    public static final int      STAGEOP_TRUNCATE       = 3;
+    public static final int      STAGEOP_TRUNCATE             = 3;
     
-    public static final int      STAGEOP_FLUSH_CACHES   = 4;
+    public static final int      STAGEOP_FLUSH_CACHES         = 4;
     
-    public static final int      STAGEOP_GMAX_RECEIVED  = 5;
+    public static final int      STAGEOP_GMAX_RECEIVED        = 5;
     
-    public static final int      STAGEOP_GET_GMAX       = 6;
+    public static final int      STAGEOP_GET_GMAX             = 6;
     
-    public static final int      STAGEOP_GET_FILE_SIZE  = 7;
+    public static final int      STAGEOP_GET_FILE_SIZE        = 7;
     
-    public static final int      STAGEOP_GET_OBJECT_SET = 8;
+    public static final int      STAGEOP_GET_OBJECT_SET       = 8;
+    
+    public static final int      STAGEOP_INSERT_PADDING_OBJECT = 9;
     
     private MetadataCache        cache;
     
@@ -120,6 +121,9 @@ public class StorageThread extends Stage {
                 break;
             case STAGEOP_GET_OBJECT_SET:
                 processGetObjectSet(method);
+                break;
+            case STAGEOP_INSERT_PADDING_OBJECT:
+                processInsertPaddingObject(method);
                 break;
             }
             
@@ -279,6 +283,26 @@ public class StorageThread extends Stage {
             cback.getFileSizeComplete(-1, ex);
         }
         
+    }
+    
+    private void processInsertPaddingObject(StageRequest rq) {
+        final WriteObjectCallback cback = (WriteObjectCallback) rq.getCallback();
+        try {
+            final String fileId = (String) rq.getArgs()[0];
+            final long objNo = (Long) rq.getArgs()[1];
+            final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[2];
+            final int size = (Integer) rq.getArgs()[3];
+            final FileMetadata fi = layout.getFileMetadata(sp, fileId);
+            
+            layout.createPaddingObject(fileId, fi, objNo, 1, size);
+            
+            OSDWriteResponse response = new OSDWriteResponse();
+            cback.writeComplete(response, null);
+            
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            cback.writeComplete(null, ex);
+        }
     }
     
     private void processWrite(StageRequest rq) {

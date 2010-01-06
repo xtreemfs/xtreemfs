@@ -228,7 +228,7 @@ public class ObjectDissemination {
      * 
      * @param usedOSD
      */
-    public void objectNotFetched(String fileID, final ServiceUUID usedOSD, long objectNo) {
+    public void objectNotFetched(String fileID, final ServiceUUID usedOSD, long objectNo, ObjectData data) {
         ReplicatingFile file = filesInProgress.get(fileID);
         assert (file != null);
         
@@ -236,7 +236,7 @@ public class ObjectDissemination {
 //        if (Monitoring.isEnabled())
 //            monitoring.putIncreaseForLong(MONITORING_KEY_UNNECESSARY_REQUESTS, 1l);
 
-        file.objectNotFetched(objectNo, usedOSD);
+        file.objectNotFetched(objectNo, usedOSD, data);
 
         if (!file.isReplicating())
             fileCompleted(file.fileID);

@@ -28,6 +28,7 @@ import java.io.File;
 import java.util.Arrays;
 
 import junit.framework.TestCase;
+import junit.textui.TestRunner;
 
 import org.junit.After;
 import org.junit.Before;
@@ -275,6 +276,13 @@ public class ReplicationTest extends TestCase {
         }
         r.freeBuffers();
         BufferPool.free(rResp.getData());
+        
+        // check whether a padding object for object 2 has been created on
+        // replica 2
+        RPCResponse<InternalReadLocalResponse> intRLRsp = client.internal_read_local(xLoc.getOSDsForObject(
+            objectNo + 1).get(1).getAddress(), fileID, fcred, objectNo + 1, 0, 0, stripeSize, false, null);
+        InternalReadLocalResponse intRL = intRLRsp.get();
+        assertEquals(stripeSize, intRL.getData().getZero_padding());
 
         // read EOF from replica 2
         r = client.read(xLoc.getOSDsForObject(objectNo + 4).get(1).getAddress(), fileID, fcred, objectNo + 4,
@@ -529,5 +537,9 @@ public class ReplicationTest extends TestCase {
         list = new ObjectSet(objectList.getStripe_width(), objectList.getFirst_(), objectList.getSet().array());
         assertEquals(1, list.size());
         assertTrue(list.contains(objectNo + 2));
+    }
+    
+    public static void main(String[] args) {
+        TestRunner.run(ReplicationTest.class);
     }
 }
