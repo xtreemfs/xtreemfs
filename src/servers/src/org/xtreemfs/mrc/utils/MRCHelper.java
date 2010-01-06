@@ -117,7 +117,8 @@ public class MRCHelper {
             num_dirs,
             repl_factor,
             repl_full,
-            snapshots
+            snapshots,
+            mark_replica_complete
     }
     
     public enum FileType {
@@ -293,10 +294,10 @@ public class MRCHelper {
                 return ref != null ? "3" : file.isDirectory() ? "2" : "1";
             case url: {
                 InetSocketAddress addr = config.getDirectoryService();
-                final String hostname = (config.getHostName().length() > 0) ? config.getHostName() : addr.getAddress().getCanonicalHostName();
+                final String hostname = (config.getHostName().length() > 0) ? config.getHostName() : addr
+                        .getAddress().getCanonicalHostName();
                 
-                return config.getURLScheme() + "://" + hostname + ":"
-                    + addr.getPort() + "/" + path;
+                return config.getURLScheme() + "://" + hostname + ":" + addr.getPort() + "/" + path;
             }
             case owner:
                 return file.getOwnerId();
@@ -547,6 +548,28 @@ public class MRCHelper {
             
             else
                 throw new UserException(ErrNo.EINVAL, "invalid snapshot command: " + value);
+            
+            break;
+        
+        case mark_replica_complete:
+
+            if (file.isDirectory())
+                throw new UserException(ErrNo.EISDIR, "file required");
+            
+            XLocList xlocs = file.getXLocList();
+            XLoc[] xlocArray = new XLoc[xlocs.getReplicaCount()];
+            Iterator<XLoc> it = xlocs.iterator();
+            for (int i = 0; it.hasNext(); i++) {
+                XLoc xloc = it.next();
+                if (value.equals(xloc.getOSD(0)))
+                    xloc.setReplicationFlags(ReplicationFlags
+                            .setReplicaIsComplete(xloc.getReplicationFlags()));
+                xlocArray[i] = xloc;
+            }
+            XLocList newXLocList = sMan.createXLocList(xlocArray, xlocs.getReplUpdatePolicy(), xlocs
+                    .getVersion());
+            file.setXLocList(newXLocList);
+            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
             break;
         
