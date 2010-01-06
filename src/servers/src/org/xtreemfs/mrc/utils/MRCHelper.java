@@ -261,7 +261,7 @@ public class MRCHelper {
         
         return true;
     }
-    
+
     public static String getSysAttrValue(MRCConfig config, StorageManager sMan, OSDStatusManager osdMan,
         String path, FileMetadata file, String keyString) throws DatabaseException, UserException,
         JSONException, UnknownUUIDException {
@@ -477,8 +477,8 @@ public class MRCHelper {
                 for (int i = 0; i < replicas.length; i++)
                     replicas[i] = xLoc.getReplica(i);
                 
-                replicas[0].setReplicationFlags(ReplicationFlags.setReplicaIsComplete(replicas[0]
-                        .getReplicationFlags()));
+                replicas[0].setReplicationFlags(ReplicationFlags.setFullReplica(ReplicationFlags
+                        .setReplicaIsComplete(replicas[0].getReplicationFlags())));
                 
                 XLocList newXLoc = sMan.createXLocList(replicas, readOnly ? Constants.REPL_UPDATE_PC_RONLY
                     : Constants.REPL_UPDATE_PC_NONE, xLoc.getVersion());
