@@ -125,11 +125,12 @@ public class CloseOperation extends MRCOperation {
                         int replFlags = vol.getAutoReplFull() ? ReplicationFlags
                                 .setFullReplica(ReplicationFlags.setRarestFirstStrategy(0))
                             : ReplicationFlags.setSequentialPrefetchingStrategy(0);
-                                                
+                        
                         // create the new replica
                         Replica newRepl = MRCHelper.createReplica(firstRepl.getStripingPolicy(), sMan, master
                                 .getOSDStatusManager(), vol, -1, cap.getFileId(), ((InetSocketAddress) rq
-                                .getRPCRequest().getClientIdentity()).getAddress(), rqArgs.getClient_vivaldi_coordinates(), xLocList, replFlags);
+                                .getRPCRequest().getClientIdentity()).getAddress(), rqArgs
+                                .getClient_vivaldi_coordinates(), xLocList, replFlags);
                         
                         String[] osds = newRepl.getOsd_uuids().toArray(
                             new String[newRepl.getOsd_uuids().size()]);
@@ -161,12 +162,15 @@ public class CloseOperation extends MRCOperation {
                     .getAutoReplFactor() - 1);
             
             // trigger the replication
-            XLocSet xLocSet = Converter.xLocListToXLocSet(xLocList);
-            xLocSet.setRead_only_file_size(file.getSize());
-            
-            rq.getDetails().context = new HashMap<String, Object>();
-            rq.getDetails().context.put("xLocList", xLocSet);
-            master.getOnCloseReplicationThread().enqueueRequest(rq);
+            if (file.getSize() > 0) {
+                
+                XLocSet xLocSet = Converter.xLocListToXLocSet(xLocList);
+                xLocSet.setRead_only_file_size(file.getSize());
+                
+                rq.getDetails().context = new HashMap<String, Object>();
+                rq.getDetails().context.put("xLocList", xLocSet);
+                master.getOnCloseReplicationThread().enqueueRequest(rq);
+            }
             
             // set the response
             rq.setResponse(new closeResponse());
