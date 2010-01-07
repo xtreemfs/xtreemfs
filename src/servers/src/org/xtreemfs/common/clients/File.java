@@ -26,11 +26,17 @@ package org.xtreemfs.common.clients;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.foundation.json.JSONException;
+import org.xtreemfs.foundation.json.JSONParser;
+import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.MRCInterface.MRCException;
 import org.xtreemfs.interfaces.Stat;
+import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 
 /**
@@ -154,8 +160,133 @@ public class File {
         return volume.openFile(this, flags, permissions);
     }
 
-    public FileReplication getFileReplication() {
-        return new FileReplication(this, volume);
+    public int getNumReplicas() throws IOException {
+        try {
+            Map<String,Object> xloc = getLocations();
+            List<Map<String,Object>> replicas = (List<Map<String, Object>>) xloc.get("replicas");
+            return replicas.size();
+        } catch (ClassCastException ex) {
+            throw new IOException("cannot parse file's location list: "+ex,ex);
+        }
     }
+
+    public Replica getReplica(int replicaNo) throws IOException {
+       try {
+            Map<String,Object> xloc = getLocations();
+            List<Map<String,Object>> replicas = (List<Map<String, Object>>) xloc.get("replicas");
+            if ((replicas.size() < replicaNo-1) ||  (replicaNo > 0))
+                throw new IllegalArgumentException("replicaNo is out of bounds");
+            return new Replica(this,replicas.get(replicaNo));
+       } catch (JSONException ex) {
+           throw new IOException("cannot parse file's location list: "+ex,ex);
+        } catch (ClassCastException ex) {
+            throw new IOException("cannot parse file's location list: "+ex,ex);
+        }
+    }
+
+    public Replica[] getReplicas() throws IOException {
+       try {
+            Map<String,Object> xloc = getLocations();
+            List<Map<String,Object>> replicas = (List<Map<String, Object>>) xloc.get("replicas");
+            Replica[] repls = new Replica[replicas.size()];
+            for (int i = 0; i < repls.length; i++)
+                repls[i] = new Replica(this,replicas.get(i));
+            return repls;
+       } catch (JSONException ex) {
+           throw new IOException("cannot parse file's location list",ex);
+        } catch (ClassCastException ex) {
+            throw new IOException("cannot parse file's location list",ex);
+        }
+    }
+
+    public boolean isReadOnlyReplicated() throws IOException {
+        try {
+            Map<String,Object> xloc = getLocations();
+            String uPolicy = (String) xloc.get("update-policy");
+            return uPolicy.equals(Constants.REPL_UPDATE_PC_RONLY);
+        } catch (ClassCastException ex) {
+            throw new IOException("cannot parse file's location list",ex);
+        }
+    }
+
+    public void setReadOnly(boolean mode) throws Exception {
+
+        boolean currentMode = Boolean.valueOf(getxattr("xtreemfs.read_only"));
+
+        if (currentMode == mode)
+            return;
+
+        if (mode) {
+            //make sure the file is not open!
+
+            //open file
+            RandomAccessFile raf = open("r", 0);
+            //fetch file sizes
+            long osd_file_size = raf.getFileSizeOnOSD();
+            long mrc_file_size = length();
+
+            //update file size if incorrect on MRC
+            if (osd_file_size != mrc_file_size) {
+                raf.forceFileSize(osd_file_size);
+            }
+
+            setxattr("xtreemfs.read_only", "true");
+        } else {
+            if (getNumReplicas() > 1)
+                throw new IOException("File has still replicas.");
+            else {
+                // set read only
+                setxattr("xtreemfs.read_only", "false");
+            }
+        }
+    }
+
+    public boolean isReadOnly() throws IOException {
+        return Boolean.valueOf(getxattr("xtreemfs.read_only"));
+    }
+
+    public String[] getSuitableOSDs(int numOSDs) throws IOException {
+        StringSet osds = volume.getSuitableOSDs(this, numOSDs);
+        return osds.toArray(new String[osds.size()]);
+    }
+
+    public void addReplica(int width, String[] osdUuids, int flags) throws IOException {
+        StringSet osdSet = new StringSet();
+        for (String osd : osdUuids) {
+            if (osdSet.size() == width)
+                break;
+            osdSet.add(osd);
+        }
+        if (osdSet.size() != width)
+            throw new IllegalArgumentException("number of OSDs must be equal to width!");
+        
+        volume.addReplica(this, width, osdSet, flags);
+    }
+
+
+
+    Map<String,Object> getLocations() throws IOException {
+        try {
+            String loc = this.volume.getxattr(this.getPath(), "xtreemfs.locations");
+            if ( (loc != null) && (loc.length() > 0) ) {
+                return (Map<String, Object>) JSONParser.parseJSON(new JSONString(loc));
+            } else {
+                throw new IOException("cannot retrieve file's location list (is empty)");
+            }
+        } catch (JSONException ex) {
+            throw new IOException("cannot parse file's location list",ex);
+        } catch (ClassCastException ex) {
+            throw new IOException("cannot parse file's location list",ex);
+        }
+    }
+
+    void removeReplica(String headOSDuuid) throws IOException {
+        if (!this.isFile())
+            throw new IOException("cannot remove replica from a non-file object");
+        
+        volume.removeReplica(this,headOSDuuid);
+    }
+
+
 
 }

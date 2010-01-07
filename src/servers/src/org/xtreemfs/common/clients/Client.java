@@ -36,6 +36,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
+import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
@@ -95,6 +96,22 @@ public class Client {
             if (r != null)
                 r.freeBuffers();
         }
+    }
+
+    public ServiceSet getRegistry() throws IOException {
+        RPCResponse<ServiceSet> r = null;
+        try {
+            r = dirClient._xtreemfs_service_get_by_type(null, new Object[]{ServiceType.SERVICE_TYPE_MIXED});
+            return r.get();
+        } catch (ONCRPCException ex) {
+            throw new IOException("communication failure", ex);
+        } catch (InterruptedException ex) {
+            throw new IOException("operation was interrupted", ex);
+        } finally {
+            if (r != null)
+                r.freeBuffers();
+        }
+
     }
 
     public void start() throws Exception {

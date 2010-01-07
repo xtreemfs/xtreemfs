@@ -31,6 +31,7 @@ import junit.textui.TestRunner;
 
 import org.xtreemfs.babudb.config.BabuDBConfig;
 import org.xtreemfs.common.buffer.BufferPool;
+import org.xtreemfs.common.clients.Client;
 import org.xtreemfs.common.clients.io.RandomAccessFile;
 import org.xtreemfs.common.clients.simplescrubber.Scrubber;
 import org.xtreemfs.common.logging.Logging;
@@ -76,6 +77,8 @@ public class ScrubberTest extends TestCase {
     private Scrubber             scrubber;
     
     private TestEnvironment      testEnv;
+
+    private Client               newClient;
     
     public ScrubberTest() {
         Logging.start(Logging.LEVEL_WARN);
@@ -178,12 +181,17 @@ public class ScrubberTest extends TestCase {
         randomAccessFile1.close();
         
         randomAccessFile2.write(bytesIn, 0, 65536);
+
+        newClient = new Client(new InetSocketAddress[]{testEnv.getDIRAddress()}, 15*1000, 5*60*1000, null);
+        newClient.start();
     }
     
     public void tearDown() throws Exception {
         mrc1.shutdown();
         osd1.shutdown();
         osd2.shutdown();
+
+        newClient.stop();
         
         testEnv.shutdown();
         
@@ -192,8 +200,7 @@ public class ScrubberTest extends TestCase {
     
     public void testScrubber() throws Exception {
         
-        scrubber = new Scrubber(testEnv.getRpcClient(), testEnv.getDirClient(), new MRCClient(testEnv
-                .getRpcClient(), mrc1Address), volumeName, false, 3);
+        scrubber = new Scrubber(newClient, volumeName, false, 3);
         scrubber.scrub();
         
         // file size corrected from 10 to 0

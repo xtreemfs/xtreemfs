@@ -659,6 +659,8 @@ public final class ReusableBuffer {
             if (this.viewParent != null) {
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.buffer, this, "view parent: %s",
                     this.viewParent.toString());
+                Logging.logMessage(Logging.LEVEL_ERROR, Category.buffer, this, "view parent stacktrace: %s",
+                    this.viewParent.allocStack);
                 Logging.logMessage(Logging.LEVEL_ERROR, Category.buffer, this, "ref count: %d",
                     this.viewParent.refCount.get());
             } else {

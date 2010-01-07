@@ -43,6 +43,7 @@ import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.storage.ObjectInformation;
+import org.xtreemfs.osd.storage.StorageLayout;
 
 public final class CheckObjectOperation extends OSDOperation {
 
@@ -74,7 +75,7 @@ public final class CheckObjectOperation extends OSDOperation {
         }
         
         master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                0,-1, rq, new ReadObjectCallback() {
+                0,StorageLayout.FULL_OBJECT_LENGTH, rq, new ReadObjectCallback() {
 
             @Override
             public void readComplete(ObjectInformation result, Exception error) {

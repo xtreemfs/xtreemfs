@@ -6,6 +6,7 @@
 package org.xtreemfs.test;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -39,6 +40,10 @@ public class TestEnvironment {
     
     public InetSocketAddress getMRCAddress() throws UnknownUUIDException {
         return mrc.getConfig().getUUID().getAddress();
+    }
+
+    public InetSocketAddress getDIRAddress() throws IOException {
+        return new InetSocketAddress("localhost", SetupUtils.createDIRConfig().getPort());
     }
     
     /**

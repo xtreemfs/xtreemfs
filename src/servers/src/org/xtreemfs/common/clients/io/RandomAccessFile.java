@@ -66,6 +66,9 @@ import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.client.OSDClient;
 
+/**
+ * @deprecated
+ */
 public class RandomAccessFile implements ObjectStore {
     /**
      * resorts the replicas <br>

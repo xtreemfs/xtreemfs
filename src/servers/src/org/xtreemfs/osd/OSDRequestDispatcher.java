@@ -323,6 +323,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 ServiceSet data = new ServiceSet();
                 
                 ServiceDataMap dmap = new ServiceDataMap();
+                dmap.put("status",Integer.toString(Constants.SERVICE_STATUS_AVAIL));
                 dmap.put("load", load);
                 dmap.put("total", totalSpace);
                 dmap.put("free", freeSpace);

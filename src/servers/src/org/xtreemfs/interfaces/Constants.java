@@ -28,4 +28,7 @@ public interface Constants
     public static final int SYSTEM_V_FCNTL_H_S_IFDIR = 0x4000;
     public static final int SYSTEM_V_FCNTL_H_S_IFLNK = 0xA000;
     public static final int XCAP_EXPIRE_TIMEOUT_S_MIN = 30;
+    public static final int SERVICE_STATUS_AVAIL = 0;
+    public static final int SERVICE_STATUS_TO_BE_REMOVED = 1;
+    public static final int SERVICE_STATUS_REMOVED = 2;
 };

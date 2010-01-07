@@ -25,8 +25,18 @@
 
 package org.xtreemfs.common;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
+import java.net.Socket;
+import java.text.DateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.dir.client.DIRClient;
@@ -44,6 +54,12 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
  * @author bjko
  */
 public final class TimeSync extends LifeCycleThread {
+
+    private enum extSyncSource {
+        XTREEMFS_DIR,
+        GPSD,
+        LOCAL_CLOCK
+    };
     
     /**
      * A dir client used to synchronize clocks
@@ -59,6 +75,10 @@ public final class TimeSync extends LifeCycleThread {
      * interval between updates of the local system clock.
      */
     private final int        localTimeRenew;
+
+    private final extSyncSource     syncSource;
+
+    private final InetSocketAddress gpsdAddr;
     
     /**
      * local sys time as of last update
@@ -85,6 +105,10 @@ public final class TimeSync extends LifeCycleThread {
     private volatile boolean syncSuccess;
     
     private static TimeSync  theInstance;
+
+    private final Pattern    gpsdDatePattern;
+
+    private Socket            gpsdSocket;
     
     /**
      * Creates a new instance of TimeSync
@@ -92,14 +116,32 @@ public final class TimeSync extends LifeCycleThread {
      * @dir a directory server to use for synchronizing clocks, can be null for
      *      test setups only
      */
-    private TimeSync(DIRClient dir, int timeSyncInterval, int localTimeRenew) {
-        super("TimeSync Thread");
+    private TimeSync(extSyncSource source, DIRClient dir, InetSocketAddress gpsd, int timeSyncInterval, int localTimeRenew) {
+        super("TSync Thr");
         setDaemon(true);
         this.localTimeRenew = localTimeRenew;
         this.timeSyncInterval = timeSyncInterval;
         this.dir = dir;
         this.syncSuccess = false;
+        this.syncSource = source;
+        this.gpsdAddr = gpsd;
+
+        gpsdDatePattern = Pattern.compile("GPSD,D=(....)-(..)-(..)T(..):(..):(..)\\.(.+)Z");
+
+        if (source == extSyncSource.GPSD) {
+            try {
+                gpsdSocket = new Socket();
+                gpsdSocket.setSoTimeout(2000);
+                gpsdSocket.setTcpNoDelay(true);
+                gpsdSocket.connect(gpsdAddr,2000);
+            } catch (IOException ex) {
+                Logging.logMessage(Logging.LEVEL_ERROR, this,"cannot connect to GPSd: "+ex);
+                gpsdSocket = null;
+            }
+        }
     }
+
+
     
     /**
      * main loop
@@ -151,7 +193,7 @@ public final class TimeSync extends LifeCycleThread {
             return theInstance;
         }
         
-        TimeSync s = new TimeSync(dir, timeSyncInterval, localTimeRenew);
+        TimeSync s = new TimeSync(extSyncSource.XTREEMFS_DIR, dir, null, timeSyncInterval, localTimeRenew);
         s.start();
         s.waitForStartup();
         return s;
@@ -164,7 +206,19 @@ public final class TimeSync extends LifeCycleThread {
             return theInstance;
         }
         
-        TimeSync s = new TimeSync(null, timeSyncInterval, localTimeRenew);
+        TimeSync s = new TimeSync(extSyncSource.LOCAL_CLOCK, null, null, timeSyncInterval, localTimeRenew);
+        s.start();
+        return s;
+    }
+
+    public static TimeSync initializeGPSD(InetSocketAddress gpsd, int timeSyncInterval, int localTimeRenew) {
+        if (theInstance != null) {
+            Logging.logMessage(Logging.LEVEL_WARN, Category.lifecycle, null, "time sync already running",
+                new Object[0]);
+            return theInstance;
+        }
+
+        TimeSync s = new TimeSync(extSyncSource.GPSD, null, gpsd, timeSyncInterval, localTimeRenew);
         s.start();
         return s;
     }
@@ -192,6 +246,12 @@ public final class TimeSync extends LifeCycleThread {
     public void shutdown() {
         quit = true;
         this.interrupt();
+        if (gpsdSocket != null) {
+            try {
+                gpsdSocket.close();
+            } catch (IOException ex) {
+            }
+        }
     }
     
     /**
@@ -246,38 +306,102 @@ public final class TimeSync extends LifeCycleThread {
      * resynchronizes with the global time obtained from the DIR
      */
     private void resync() {
-        if (dir == null)
-            return;
-        RPCResponse<Long> r = null;
-        try {
-            long tStart = localSysTime;
-            
-            long oldDrift = currentDrift;
-            r = dir.xtreemfs_global_time_get(null);
-            Long globalTime = r.get();
+        switch (syncSource) {
+            case LOCAL_CLOCK : return;
+            case XTREEMFS_DIR : {
+                RPCResponse<Long> r = null;
+                try {
+                    long tStart = localSysTime;
 
-            long tEnd = System.currentTimeMillis();
-            // add half a roundtrip to estimate the delay
-            syncRTT = (int)(tEnd - tStart);
-            globalTime += syncRTT / 2;
-            syncSuccess = true;
+                    long oldDrift = currentDrift;
+                    r = dir.xtreemfs_global_time_get(null);
+                    Long globalTime = r.get();
 
-            
-            currentDrift = globalTime - tEnd;
-            lastSync = tEnd;
-            
-            if (Math.abs(oldDrift - currentDrift) > 5000 && oldDrift != 0) {
-                Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this,
-                    "STRANGE DRIFT CHANGE from %d to %d", oldDrift, currentDrift);
+                    long tEnd = System.currentTimeMillis();
+                    // add half a roundtrip to estimate the delay
+                    syncRTT = (int)(tEnd - tStart);
+                    globalTime += syncRTT / 2;
+                    syncSuccess = true;
+
+
+                    currentDrift = globalTime - tEnd;
+                    lastSync = tEnd;
+
+                    if (Math.abs(oldDrift - currentDrift) > 5000 && oldDrift != 0) {
+                        Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this,
+                            "STRANGE DRIFT CHANGE from %d to %d", oldDrift, currentDrift);
+                    }
+
+                } catch (Exception ex) {
+                    syncSuccess = false;
+                    ex.printStackTrace();
+                    lastSync = System.currentTimeMillis();
+                } finally{
+                    if(r!=null){
+                        r.freeBuffers();
+                    }
+                }
+                break;
             }
-            
-        } catch (Exception ex) {
-            syncSuccess = false;
-            ex.printStackTrace();
-            lastSync = System.currentTimeMillis();
-        } finally{
-            if(r!=null){
-                r.freeBuffers();
+            case GPSD : {
+                try {
+                    
+                    BufferedReader br = new BufferedReader(new InputStreamReader(gpsdSocket.getInputStream()));
+                    OutputStream os = gpsdSocket.getOutputStream();
+                    long tStart = System.currentTimeMillis();
+                    
+                    os.write(new byte[]{'d','\n'});
+                    os.flush();
+
+                    long oldDrift = currentDrift;
+                    String response = br.readLine();
+                    long tEnd = System.currentTimeMillis();
+
+
+                    Matcher m = gpsdDatePattern.matcher(response);
+                    Calendar c = Calendar.getInstance();
+                    if (m.matches()) {
+                        c.set(Calendar.YEAR, Integer.parseInt(m.group(1)));
+                        c.set(Calendar.MONTH, Integer.parseInt(m.group(2))-1);
+                        c.set(Calendar.DAY_OF_MONTH, Integer.parseInt(m.group(3)));
+                        c.set(Calendar.HOUR_OF_DAY, Integer.parseInt(m.group(4)));
+                        c.set(Calendar.MINUTE, Integer.parseInt(m.group(5)));
+                        c.set(Calendar.SECOND, Integer.parseInt(m.group(6)));
+                        //c.set(Calendar.MILLISECOND, Integer.parseInt(m.group(7))*10);
+                    } else {
+                        Logging.logMessage(Logging.LEVEL_WARN, this,"cannot parse GPSd response: %s",response);
+                        syncSuccess = false;
+                        lastSync = tEnd;
+                        return;
+                    }
+
+                    long globalTime = c.getTimeInMillis();
+                    Date d = new Date(globalTime);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"global GPSd time: %d (%d:%d:%d)",c.getTimeInMillis(),d.getHours(),
+                            d.getMinutes(),d.getSeconds());
+                    
+                    // add half a roundtrip to estimate the delay
+                    syncRTT = (int)(tEnd - tStart);
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"sync RTT: %d ms",syncRTT);
+                    globalTime += syncRTT / 2;
+                    syncSuccess = true;
+
+
+                    currentDrift = globalTime - tEnd;
+                    lastSync = tEnd;
+
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.misc, this,
+                            "resync success, drift: %d ms", Math.abs(oldDrift-currentDrift));
+
+                    if (Math.abs(oldDrift - currentDrift) > 5000 && oldDrift != 0) {
+                        Logging.logMessage(Logging.LEVEL_ERROR, Category.misc, this,
+                            "STRANGE DRIFT CHANGE from %d to %d", oldDrift, currentDrift);
+                    }
+                } catch (Exception ex) {
+                    syncSuccess = false;
+                    ex.printStackTrace();
+                    lastSync = System.currentTimeMillis();
+                }
             }
         }
     }
@@ -296,12 +420,13 @@ public final class TimeSync extends LifeCycleThread {
             // simple test
             Logging.start(Logging.LEVEL_DEBUG);
             
-            RPCNIOSocketClient c = new RPCNIOSocketClient(null, 5000, 60000);
+            /*RPCNIOSocketClient c = new RPCNIOSocketClient(null, 5000, 60000);
             c.start();
             c.waitForStartup();
-            DIRClient dir = new DIRClient(c, new InetSocketAddress("xtreem.zib.de", 32638));
-            TimeSync ts = new TimeSync(dir, 1000, 50);
+            DIRClient dir = new DIRClient(c, new InetSocketAddress("xtreem.zib.de", 32638));*/
+            TimeSync ts = new TimeSync(extSyncSource.GPSD,null, new InetSocketAddress("localhost", 2947), 10000, 50);
             ts.start();
+            ts.waitForStartup();
             
             for (;;) {
                 Logging.logMessage(Logging.LEVEL_INFO, Category.misc, (Object) null, "local time  = %d", ts

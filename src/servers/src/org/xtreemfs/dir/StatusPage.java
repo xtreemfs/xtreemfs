@@ -24,6 +24,7 @@ import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.dir.data.AddressMappingRecord;
 import org.xtreemfs.dir.data.AddressMappingRecords;
 import org.xtreemfs.dir.data.ServiceRecord;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.osd.vivaldi.VivaldiNode;
@@ -178,7 +179,14 @@ public class StatusPage {
                 if (dataEntry.getKey().equals("status_page_url")) {
                     dump.append("</a>");
                 } else if (dataEntry.getKey().equals("last_updated")) {
-                    
+
+                } else if (dataEntry.getKey().equals("status")) {
+                    int status = Integer.valueOf(dataEntry.getValue());
+                    switch (status) {
+                        case Constants.SERVICE_STATUS_AVAIL : dump.append(" (online)"); break;
+                        case Constants.SERVICE_STATUS_TO_BE_REMOVED : dump.append(" (locked for removal)"); break;
+                        case Constants.SERVICE_STATUS_REMOVED : dump.append(" (removed, dead)"); break;
+                    }
                 } else if (dataEntry.getKey().equals("free") || dataEntry.getKey().equals("total")
                     || dataEntry.getKey().endsWith("RAM") || dataEntry.getKey().equals("used")) {
                     dump.append(" bytes (");

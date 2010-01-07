@@ -33,13 +33,21 @@ import org.xtreemfs.common.clients.internal.ObjectMapper.ObjectRequest;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.Replica;
+import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
+import org.xtreemfs.interfaces.NewFileSize;
+import org.xtreemfs.interfaces.NewFileSizeSet;
 import org.xtreemfs.interfaces.OSDWriteResponse;
+import org.xtreemfs.interfaces.OSDtoMRCDataSet;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.ObjectList;
+import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.osd.client.OSDClient;
+import org.xtreemfs.osd.replication.ObjectSet;
 
 /**
  *
@@ -55,7 +63,7 @@ public class RandomAccessFile {
     private long position;
     private FileCredentials credentials;
     private Replica currentReplica;
-    private int replCnt;
+    private int currentReplicaNo;
     private final int numReplicas;
     private final String fileId;
     private ObjectMapper oMapper;
@@ -69,19 +77,70 @@ public class RandomAccessFile {
         this.readOnly = readOnly;
         this.syncMetadata = syncMetadata;
         position = 0;
-        replCnt = 0;
+        currentReplicaNo = 0;
         closed = false;
 
         numReplicas = credentials.getXlocs().getReplicas().size();
         fileId = fc.getXcap().getFile_id();
 
-        selectReplica();
+        selectReplica(0);
     }
 
-    protected void selectReplica() {
-        replCnt = (replCnt + 1) % numReplicas;
-        currentReplica = new Replica(credentials.getXlocs().getReplicas().get(replCnt), null);
+    protected void switchToNextReplica() {
+        selectReplica((currentReplicaNo + 1) % numReplicas);
+        
+    }
+
+    protected void selectReplica(int replicaNo) {
+        currentReplicaNo = replicaNo;
+        currentReplica = new Replica(credentials.getXlocs().getReplicas().get(currentReplicaNo), null);
         oMapper = ObjectMapper.getMapper(currentReplica.getStripingPolicy().getPolicy());
+    }
+    
+    public XLocSet getLocationsList() {
+        return credentials.getXlocs();
+    }
+
+    public int getCurrentReplicaStripeSize() {
+        return currentReplica.getStripingPolicy().getStripeSizeForObject(0);
+    }
+
+    public int getCurrentReplicaStripeingWidth() {
+        return currentReplica.getStripingPolicy().getWidth();
+    }
+
+    public void forceReplica(int replicaNo) {
+        if ((replicaNo > numReplicas-1) || (replicaNo < 0))
+            throw new IllegalArgumentException("invalid replica number");
+        selectReplica(replicaNo);
+    }
+
+    public void forceReplica(String headOSDuuid) {
+
+        for (int i = 0; i < credentials.getXlocs().getReplicas().size(); i++) {
+            org.xtreemfs.interfaces.Replica r = credentials.getXlocs().getReplicas().get(i);
+            if (r.getOsd_uuids().get(0).equals(headOSDuuid)) {
+                selectReplica(i);
+                break;
+            }
+        }
+        throw new IllegalArgumentException("osd not in any of the replicas");
+    }
+
+    public int getCurrentReplica() {
+        return currentReplicaNo;
+    }
+
+    public String getFileId() {
+        return credentials.getXcap().getFile_id();
+    }
+
+    public File getFile() {
+        return parent;
+    }
+
+    public boolean isReadOnly() {
+        return this.readOnly;
     }
 
     public int read(byte[] data, int offset, int length) throws IOException {
@@ -182,6 +241,46 @@ public class RandomAccessFile {
             throw new IOException("nasty!");
         } finally {
             for (RPCResponse r : resps)
+                r.freeBuffers();
+        }
+    }
+
+
+    public int checkObject(long objectNo) throws IOException {
+
+        if (closed) {
+            throw new IllegalStateException("file was closed");
+        }
+
+
+        RPCResponse<ObjectData> r = null;
+        try {
+
+            ServiceUUID osd = new ServiceUUID(currentReplica.getOSDForObject(objectNo).toString(), parentVolume.uuidResolver);
+
+            r = osdClient.check_object(osd.getAddress(),
+                    fileId, credentials, objectNo, 0l);
+            ObjectData od = r.get();
+
+
+            if (od.getInvalid_checksum_on_osd()) {
+                // try next replica
+                throw new InvalidChecksumException("object " + objectNo + " has an invalid checksum");
+            }
+
+            return od.getZero_padding();
+
+
+        } catch (InterruptedException ex) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+            throw new IOException("operation aborted", ex);
+        } catch (ONCRPCException ex) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+            throw new IOException("communication failure", ex);
+        } finally {
+            if (r != null)
                 r.freeBuffers();
         }
     }
@@ -296,4 +395,125 @@ public class RandomAccessFile {
     public void fsync() throws IOException {
         parentVolume.pushFileSizeUpdate(fileId);
     }
+
+    public long length() throws IOException {
+        return parent.length();
+    }
+
+    public long getNumObjects() throws IOException {
+        long flength = length();
+        if (flength > 0)
+            return currentReplica.getStripingPolicy().getObjectNoForOffset(flength-1)+1;
+        else
+            return 0;
+    }
+
+    public void forceFileSize(long newFileSize) throws IOException {
+        NewFileSizeSet newfsset = new NewFileSizeSet();
+        newfsset.add(new NewFileSize(newFileSize, credentials.getXcap().getTruncate_epoch()));
+        OSDWriteResponse wr = new OSDWriteResponse(newfsset, new OSDtoMRCDataSet());
+        parentVolume.storeFileSizeUpdate(fileId, wr);
+        parentVolume.pushFileSizeUpdate(fileId);
+    }
+
+    long getFileSizeOnOSD() throws IOException {
+        if (closed) {
+            throw new IllegalStateException("file was closed");
+        }
+
+
+        RPCResponse<Long> r = null;
+        try {
+
+            ServiceUUID osd = new ServiceUUID(currentReplica.getHeadOsd().toString(), parentVolume.uuidResolver);
+
+            r = osdClient.internal_get_file_size(osd.getAddress(), fileId, credentials);
+
+            return r.get();
+
+        } catch (InterruptedException ex) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+            throw new IOException("operation aborted", ex);
+        } catch (ONCRPCException ex) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+            throw new IOException("communication failure", ex);
+        } finally {
+            if (r != null)
+                r.freeBuffers();
+        }
+    }
+
+    boolean isCompleteReplica(int replicaNo) throws IOException {
+        if (closed) {
+            throw new IllegalStateException("file was closed");
+        }
+
+
+        RPCResponse<ObjectList> r = null;
+        try {
+
+            org.xtreemfs.interfaces.Replica replica = this.credentials.getXlocs().getReplicas().get(replicaNo);
+            if ((replica.getReplication_flags() & Constants.REPL_FLAG_IS_COMPLETE) > 0) {
+                return true;
+            }
+            StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(replica, 0);
+            long lastObjectNo = sp.getObjectNoForOffset(this.credentials.getXlocs().getRead_only_file_size());
+            int osdRelPos = 0;
+            for (String osdUUID : replica.getOsd_uuids()) {
+                ServiceUUID osd = new ServiceUUID(osdUUID, parentVolume.uuidResolver);
+
+                r = osdClient.internal_getObjectList(osd.getAddress(), fileId, credentials);
+                ObjectList ol = r.get();
+                ReusableBuffer set = ol.getSet();
+                r.freeBuffers();
+                r = null;
+
+                byte[] serializedBitSet = new byte[set.capacity()];
+                set.position(0);
+                set.get(serializedBitSet);
+                BufferPool.free(set);
+                ObjectSet oset = null;
+                try {
+                     oset = new ObjectSet(replicaNo, replicaNo, serializedBitSet);
+                } catch (Exception ex) {
+                    throw new IOException("cannot deserialize object set: "+ex,ex);
+                }
+                for (long objNo = osdRelPos; objNo <= lastObjectNo; objNo += sp.getWidth()) {
+                    if (oset.contains(objNo) == false)
+                        return false;
+                }
+
+            }
+            //FIXME: mark replica as complete
+            try {
+                parent.setxattr("xtreemfs.mark_replica_complete", replica.getOsd_uuids().get(0));
+            } catch (Exception ex) {
+                //only an optimization, ignore errors
+            }
+            return true;
+        } catch (InterruptedException ex) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+            throw new IOException("operation aborted", ex);
+        } catch (ONCRPCException ex) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+            throw new IOException("communication failure", ex);
+        } finally {
+            if (r != null)
+                r.freeBuffers();
+        }
+    }
+
+    public int getReplicaNumber(String headOSDuuid) {
+        for (int i = 0; i < this.credentials.getXlocs().getReplicas().size(); i++) {
+            org.xtreemfs.interfaces.Replica replica = this.credentials.getXlocs().getReplicas().get(i);
+            if (replica.getOsd_uuids().contains(headOSDuuid))
+                return i;
+        }
+        throw new IllegalArgumentException("osd '"+headOSDuuid+"' is not in any replica of this file");
+    }
+
 }
