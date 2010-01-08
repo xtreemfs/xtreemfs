@@ -65,162 +65,164 @@ public class FileInfo implements Runnable {
     }
 
     public void run() {
-
-        if (file.isReadOnly()) {
-            System.out.println("read-only file");
-            //check replicas...
-            Replica[] replicas = null;
-            long numObjs = 0;
-            try {
-                replicas = file.getFile().getReplicas();
-                numObjs = file.getNumObjects();
-            } catch (IOException ex) {
-                printFileErrorMessage(file.getFile(), file.getFileId(), "cannot read file size from MRC: "+ex);
-                listener.fileScrubbed(file, byteCounter, ReturnStatus.UNREACHABLE);
-                return;
-            }
-            //read all replicas
-            int numFullReplRm = 0;
-            int numPartialReplRm = 0;
-            int numComplete = 0;
-            for (int r = 0; r < replicas.length; r++) {
-                System.out.println("check replica: "+r);
-                Replica replica = replicas[r];
-                //check if an OSD was removed
-                boolean replDeleted = false;
-                for (int o = 0; o < replica.getStripeWidth(); o++) {
-                    if (removedOSDs.contains(replica.getOSDUuid(o))) {
-                        //FIXME: remove
-                        if (repair) {
+        try {
+            if (file.isReadOnly()) {
+                //check replicas...
+                Replica[] replicas = null;
+                long numObjs = 0;
+                try {
+                    replicas = file.getFile().getReplicas();
+                    numObjs = file.getNumObjects();
+                } catch (IOException ex) {
+                    printFileErrorMessage(file.getFile(), file.getFileId(), "cannot read file size from MRC: "+ex);
+                    listener.fileScrubbed(file, byteCounter, ReturnStatus.UNREACHABLE);
+                    return;
+                }
+                //read all replicas
+                int numFullReplRm = 0;
+                int numPartialReplRm = 0;
+                int numComplete = 0;
+                for (int r = 0; r < replicas.length; r++) {
+                    Replica replica = replicas[r];
+                    //check if an OSD was removed
+                    boolean replDeleted = false;
+                    for (int o = 0; o < replica.getStripeWidth(); o++) {
+                        if (removedOSDs.contains(replica.getOSDUuid(o))) {
+                            //FIXME: remove
+                            if (repair) {
+                                try {
+                                    replica.removeReplica(false);
+                                    replDeleted = true;
+                                } catch (Exception ex) {
+                                }
+                            }
+                            if (replica.isFullReplica()) {
+                                numFullReplRm++;
+                            } else {
+                                numPartialReplRm++;
+                            }
+                            break;
+                        } else {
                             try {
-                                replica.removeReplica(false);
-                                replDeleted = true;
+                                if (replica.isFullReplica() && replica.isCompleteReplica())
+                                    numComplete++;
                             } catch (Exception ex) {
                             }
                         }
-                        if (replica.isFullReplica()) {
-                            numFullReplRm++;
-                        } else {
-                            numPartialReplRm++;
-                        }
-                        break;
-                    } else {
-                        try {
-                            if (replica.isFullReplica() && replica.isCompleteReplica())
-                                numComplete++;
-                        } catch (Exception ex) {
-                        }
                     }
-                }
-                if (numPartialReplRm > 0) {
-                    printFileErrorMessage(file.getFile(), file.getFileId(), "file has "+numPartialReplRm+" dead partial replicas (non recoverable)");
-                }
-                if (replDeleted)
-                    continue;
-                file.forceReplica(replica.getOSDUuid(0));
-                System.out.println("checking replica: "+file.getCurrentReplica());
-                
-                for (long o = 0; o < numObjs; o++) {
-                    try {
-                        int objSize = file.checkObject(o);
-                        byteCounter += objSize;
-                    } catch (InvalidChecksumException ex) {
-                        printFileErrorMessage(file.getFile(), file.getFileId(), "object #"+o+" has an invalid checksum on OSD: "+ex);
-                        listener.fileScrubbed(file, byteCounter, ReturnStatus.FILE_CORRUPT);
+                    if (numPartialReplRm > 0) {
+                        printFileErrorMessage(file.getFile(), file.getFileId(), "file has "+numPartialReplRm+" dead partial replicas (non recoverable)");
+                    }
+                    if (replDeleted)
                         continue;
-                    } catch (IOException ex) {
-                        printFileErrorMessage(file.getFile(), file.getFileId(), "unable to check object #"+o+": "+ex);
-                        listener.fileScrubbed(file, byteCounter, ReturnStatus.UNREACHABLE);
-                        return;
-                    }
-                }
-            }
-            if (numFullReplRm > 0) {
-                //FIXME: create new replicas
-                if (repair) {
-                    //add replicas
-                    int numNewReplicas = 0;
-                    while (numNewReplicas < numFullReplRm) {
+                    file.forceReplica(replica.getOSDUuid(0));
+
+                    for (long o = 0; o < numObjs; o++) {
                         try {
-                            String[] osds = file.getFile().getSuitableOSDs(1);
-                            if (osds.length == 0) {
-                                break;
-                            }
-                            file.getFile().addReplica(1, osds, Constants.REPL_FLAG_FULL_REPLICA);
-                            numNewReplicas++;
-                        } catch (Exception ex) {
+                            int objSize = file.checkObject(o);
+                            byteCounter += objSize;
+                        } catch (InvalidChecksumException ex) {
+                            printFileErrorMessage(file.getFile(), file.getFileId(), "object #"+o+" has an invalid checksum on OSD "+" of replica "+r+": "+ex);
+                            continue;
+                        } catch (IOException ex) {
+                            printFileErrorMessage(file.getFile(), file.getFileId(), "unable to check object #"+o+" of replica "+r+": "+ex);
                             break;
                         }
                     }
-                    if (numNewReplicas == numFullReplRm) {
-                        printFileErrorMessage(file.getFile(), file.getFileId(), "lost "+numFullReplRm+" replicas due to dead OSDs. Created "+numFullReplRm+" new replicas.");
-                    } else {
-                        printFileErrorMessage(file.getFile(), file.getFileId(), "lost "+numFullReplRm+" replicas due to dead OSDs. Could only create "+numNewReplicas+" due to a lack of suitable OSDs or communication errors.");
-                    }
-                } else {
-                    printFileErrorMessage(file.getFile(), file.getFileId(), "lost "+numFullReplRm+" replicas due to dead OSDs");
                 }
-            }
-
-
-        } else {
-            boolean eof = false;
-            do {
-                try {
-
-                    int objSize = file.checkObject(nextObjectToScrub++);
-                    if (objSize < file.getCurrentReplicaStripeSize()) {
-                        eof = true;
-                    }
-                    byteCounter += objSize;
-                } catch (InvalidChecksumException ex) {
-                    printFileErrorMessage(file.getFile(), file.getFileId(), "object #"+(nextObjectToScrub-1)+" has an invalid checksum on OSD: "+ex);
-                    listener.fileScrubbed(file, byteCounter, ReturnStatus.FILE_CORRUPT);
-                } catch (IOException ex) {
-                    //check if there is a dead OSD...
-                    boolean isDead = false;
-                    for (String uuid : file.getLocationsList().getReplicas().get(0).getOsd_uuids()) {
-                        if (removedOSDs.contains(uuid)) {
-                            isDead = true;
-                        }
-                    }
-                    if (isDead) {
-                        String errMsg = "file data was stored on removed OSD. File is lost.";
-                        if (delete) {
-                            errMsg = "file data was stored on removed OSD. File was deleted.";
+                if (numFullReplRm > 0) {
+                    //FIXME: create new replicas
+                    if (repair) {
+                        System.out.println("creating new replicas:");
+                        //add replicas
+                        int numNewReplicas = 0;
+                        while (numNewReplicas < numFullReplRm) {
                             try {
-                                file.getFile().delete();
-                            } catch (Exception ex2) {
+                                String[] osds = file.getFile().getSuitableOSDs(1);
+                                if (osds.length == 0) {
+                                    printFileErrorMessage(file.getFile(), file.getFileId(), "cannot create new replica, not enough OSDs available");
+                                    break;
+                                }
+                                file.getFile().addReplica(1, osds, Constants.REPL_FLAG_FULL_REPLICA);
+                                numNewReplicas++;
+                            } catch (Exception ex) {
+                                printFileErrorMessage(file.getFile(), file.getFileId(), "cannot create new replica: "+ex);
+                                break;
                             }
                         }
-                        printFileErrorMessage(file.getFile(), file.getFileId(), errMsg);
-                        listener.fileScrubbed(file, byteCounter, ReturnStatus.FILE_CORRUPT);
+                        if (numNewReplicas == numFullReplRm) {
+                            printFileErrorMessage(file.getFile(), file.getFileId(), "lost "+numFullReplRm+" replicas due to dead OSDs. Created "+numFullReplRm+" new replicas.");
+                        } else {
+                            printFileErrorMessage(file.getFile(), file.getFileId(), "lost "+numFullReplRm+" replicas due to dead OSDs. Could only create "+numNewReplicas+" due to a lack of suitable OSDs or communication errors.");
+                        }
                     } else {
-                        printFileErrorMessage(file.getFile(), file.getFileId(), "unable to check object #"+(nextObjectToScrub-1)+": "+ex);
-                        listener.fileScrubbed(file, byteCounter, ReturnStatus.UNREACHABLE);
+                        printFileErrorMessage(file.getFile(), file.getFileId(), "lost "+numFullReplRm+" replicas due to dead OSDs");
                     }
+                }
+
+
+            } else {
+                boolean eof = false;
+                do {
+                    try {
+
+                        int objSize = file.checkObject(nextObjectToScrub++);
+                        if (objSize < file.getCurrentReplicaStripeSize()) {
+                            eof = true;
+                        }
+                        byteCounter += objSize;
+                    } catch (InvalidChecksumException ex) {
+                        printFileErrorMessage(file.getFile(), file.getFileId(), "object #"+(nextObjectToScrub-1)+" has an invalid checksum on OSD: "+ex);
+                        listener.fileScrubbed(file, byteCounter, ReturnStatus.FILE_CORRUPT);
+                    } catch (IOException ex) {
+                        //check if there is a dead OSD...
+                        boolean isDead = false;
+                        for (String uuid : file.getLocationsList().getReplicas().get(0).getOsd_uuids()) {
+                            if (removedOSDs.contains(uuid)) {
+                                isDead = true;
+                            }
+                        }
+                        if (isDead) {
+                            String errMsg = "file data was stored on removed OSD. File is lost.";
+                            if (delete) {
+                                errMsg = "file data was stored on removed OSD. File was deleted.";
+                                try {
+                                    file.getFile().delete();
+                                } catch (Exception ex2) {
+                                }
+                            }
+                            printFileErrorMessage(file.getFile(), file.getFileId(), errMsg);
+                            listener.fileScrubbed(file, byteCounter, ReturnStatus.FILE_CORRUPT);
+                        } else {
+                            printFileErrorMessage(file.getFile(), file.getFileId(), "unable to check object #"+(nextObjectToScrub-1)+": "+ex);
+                            listener.fileScrubbed(file, byteCounter, ReturnStatus.UNREACHABLE);
+                        }
+                        return;
+                    }
+                } while (!eof);
+
+                try {
+                    long mrcFileSize = file.length();
+                    if (!file.isReadOnly()  && (byteCounter != mrcFileSize)) {
+                        if (repair) {
+                            file.forceFileSize(byteCounter);
+                            printFileErrorMessage(file.getFile(), file.getFileId(), "corrected file size from "+mrcFileSize+" to "+byteCounter+" bytes");
+                        } else {
+                            printFileErrorMessage(file.getFile(), file.getFileId(), "incorrect file size: is "+mrcFileSize+" but should be "+byteCounter+" bytes");
+                        }
+                    }
+
+                } catch (IOException ex) {
+                    printFileErrorMessage(file.getFile(), file.getFileId(), "unable to read file size from MRC: "+ex);
+                    listener.fileScrubbed(file, byteCounter, ReturnStatus.UNREACHABLE);
                     return;
                 }
-            } while (!eof);
-
-            try {
-                long mrcFileSize = file.length();
-                if (!file.isReadOnly()  && (byteCounter != mrcFileSize)) {
-                    if (repair) {
-                        file.forceFileSize(byteCounter);
-                        printFileErrorMessage(file.getFile(), file.getFileId(), "corrected file size from "+mrcFileSize+" to "+byteCounter+" bytes");
-                    } else {
-                        printFileErrorMessage(file.getFile(), file.getFileId(), "incorrect file size: is "+mrcFileSize+" but should be "+byteCounter+" bytes");
-                    }
-                }
-
-            } catch (IOException ex) {
-                printFileErrorMessage(file.getFile(), file.getFileId(), "unable to read file size from MRC: "+ex);
-                listener.fileScrubbed(file, byteCounter, ReturnStatus.UNREACHABLE);
-                return;
             }
+            listener.fileScrubbed(file, byteCounter, ReturnStatus.FILE_OK);
+        } catch (Throwable th) {
+            printFileErrorMessage(file.getFile(), file.getFileId(), "unable to check file due to unexpected error: "+th);
+            listener.fileScrubbed(file, byteCounter, ReturnStatus.UNREACHABLE);
         }
-        listener.fileScrubbed(file, byteCounter, ReturnStatus.FILE_OK);
     }
 
 

@@ -95,6 +95,8 @@ public class RandomAccessFile {
         currentReplicaNo = replicaNo;
         currentReplica = new Replica(credentials.getXlocs().getReplicas().get(currentReplicaNo), null);
         oMapper = ObjectMapper.getMapper(currentReplica.getStripingPolicy().getPolicy());
+        if (Logging.isDebug())
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,"now using replica %d (%s)",replicaNo,credentials.getXlocs().getReplicas());
     }
     
     public XLocSet getLocationsList() {
@@ -116,12 +118,12 @@ public class RandomAccessFile {
     }
 
     public void forceReplica(String headOSDuuid) {
-
-        for (int i = 0; i < credentials.getXlocs().getReplicas().size(); i++) {
+        final int numRepl = credentials.getXlocs().getReplicas().size();
+        for (int i = 0; i < numRepl; i++) {
             org.xtreemfs.interfaces.Replica r = credentials.getXlocs().getReplicas().get(i);
             if (r.getOsd_uuids().get(0).equals(headOSDuuid)) {
                 selectReplica(i);
-                break;
+                return;
             }
         }
         throw new IllegalArgumentException("osd not in any of the replicas");
@@ -154,95 +156,107 @@ public class RandomAccessFile {
             throw new IllegalStateException("file was closed");
         }
 
-        List<ObjectRequest> ors = oMapper.readRequest(data.remaining(), position, currentReplica);
+        int numTries = 0;
+        IOException cause = null;
+        do {
 
-        if (Logging.isDebug())
-            Logging.logMessage(Logging.LEVEL_DEBUG, this,"read from file %s: %d bytes from offset %d (= %d obj rqs)",fileId,data.remaining(),position,ors.size());
+            List<ObjectRequest> ors = oMapper.readRequest(data.remaining(), position, currentReplica);
 
-        if (ors.size() == 0) {
-            return 0;
-        }
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"read from file %s: %d bytes from offset %d (= %d obj rqs)",fileId,data.remaining(),position,ors.size());
 
-        final AtomicInteger responseCnt = new AtomicInteger(ors.size());
-        RPCResponse[] resps = new RPCResponse[ors.size()];
+            if (ors.size() == 0) {
+                return 0;
+            }
 
-        try {
+            final AtomicInteger responseCnt = new AtomicInteger(ors.size());
+            RPCResponse[] resps = new RPCResponse[ors.size()];
+
+            try {
 
 
-            final RPCResponseAvailableListener rl = new RPCResponseAvailableListener<ObjectData>() {
+                final RPCResponseAvailableListener rl = new RPCResponseAvailableListener<ObjectData>() {
 
-                @Override
-                public void responseAvailable(RPCResponse<ObjectData> r) {
-                    if (responseCnt.decrementAndGet() == 0) {
-                        //last response
-                        synchronized (responseCnt) {
-                            responseCnt.notify();
+                    @Override
+                    public void responseAvailable(RPCResponse<ObjectData> r) {
+                        if (responseCnt.decrementAndGet() == 0) {
+                            //last response
+                            synchronized (responseCnt) {
+                                responseCnt.notify();
+                            }
                         }
                     }
+                };
+
+                for (int i = 0; i < ors.size(); i++) {
+                    ObjectRequest or = ors.get(i);
+                    ServiceUUID osd = new ServiceUUID(or.getOsdUUID(), parentVolume.uuidResolver);
+                    RPCResponse<ObjectData> r = osdClient.read(osd.getAddress(),
+                            fileId, credentials, or.getObjNo(), -1, or.getOffset(), or.getLength());
+                    resps[i] = r;
+                    r.registerListener(rl);
                 }
-            };
-
-            for (int i = 0; i < ors.size(); i++) {
-                ObjectRequest or = ors.get(i);
-                ServiceUUID osd = new ServiceUUID(or.getOsdUUID(), parentVolume.uuidResolver);
-                RPCResponse<ObjectData> r = osdClient.read(osd.getAddress(),
-                        fileId, credentials, or.getObjNo(), -1, or.getOffset(), or.getLength());
-                resps[i] = r;
-                r.registerListener(rl);
-            }
 
 
-            synchronized (responseCnt) {
-                if (responseCnt.get() > 0) {
-                    responseCnt.wait();
+                synchronized (responseCnt) {
+                    if (responseCnt.get() > 0) {
+                        responseCnt.wait();
+                    }
                 }
-            }
-  
 
-            //assemble responses
-            ObjectData[] ods = new ObjectData[ors.size()];
-            for (int i = 0; i < ors.size(); i++) {
-                ods[i] = (ObjectData) resps[i].get();
-            }
 
-            int numBytesRead = 0;
-
-            for (ObjectData od : ods) {
-                if (od.getData() != null) {
-                    numBytesRead += od.getData().remaining();
-                    data.put(od.getData());
-                    BufferPool.free(od.getData());
+                //assemble responses
+                ObjectData[] ods = new ObjectData[ors.size()];
+                for (int i = 0; i < ors.size(); i++) {
+                    ods[i] = (ObjectData) resps[i].get();
                 }
-                if (od.getZero_padding() > 0) {
-                    numBytesRead += od.getZero_padding();
-                    for (int i = 0; i < od.getZero_padding(); i++)
-                        data.put((byte)0);
+
+                int numBytesRead = 0;
+
+                for (ObjectData od : ods) {
+                    if (od.getData() != null) {
+                        numBytesRead += od.getData().remaining();
+                        data.put(od.getData());
+                        BufferPool.free(od.getData());
+                    }
+                    if (od.getZero_padding() > 0) {
+                        numBytesRead += od.getZero_padding();
+                        for (int i = 0; i < od.getZero_padding(); i++)
+                            data.put((byte)0);
+                    }
                 }
+
+
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"read returned %d bytes",numBytesRead);
+
+                position += numBytesRead;
+
+                return numBytesRead;
+
+            } catch (InterruptedException ex) {
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                cause = new IOException("operation aborted", ex);
+            } catch (ONCRPCException ex) {
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                cause = new IOException("communication failure", ex);
+            } catch (IOException ex) {
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                cause = ex;
+            } catch (Throwable th) {
+                th.printStackTrace();
+                throw new IOException("nasty!");
+            } finally {
+                for (RPCResponse r : resps)
+                    r.freeBuffers();
             }
-
-
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"read returned %d bytes",numBytesRead);
-
-            position += numBytesRead;
-
-            return numBytesRead;
-
-        } catch (InterruptedException ex) {
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
-            throw new IOException("operation aborted", ex);
-        } catch (ONCRPCException ex) {
-            if (Logging.isDebug())
-                Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
-            throw new IOException("communication failure", ex);
-        } catch (Throwable th) {
-            th.printStackTrace();
-            throw new IOException("nasty!");
-        } finally {
-            for (RPCResponse r : resps)
-                r.freeBuffers();
-        }
+            numTries++;
+            switchToNextReplica();
+        } while (numTries < numReplicas);
+        throw cause;
     }
 
 

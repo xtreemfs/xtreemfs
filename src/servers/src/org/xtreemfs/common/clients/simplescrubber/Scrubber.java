@@ -194,7 +194,10 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         }
         tPool.shutdownNow();
 
-        System.out.println("\nsummary:");
+        if (!silent)
+                System.out.format("scrubbed %-42s      %15s - total %15s\n\u001b[100D\u001b[A", "all files", "", OutputUtils.formatBytes(lastBytesScrubbed));
+
+        System.out.println("\n\nsummary:");
         System.out.println("files checked                         : "+numFiles);
         System.out.println("  of which had failures (correctable) : "+numFailed);
         System.out.println("  of which are corrupt (lost)         : "+numDead);
@@ -254,6 +257,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
                 }
             }
         }
+        
     }
 
     public void fileScrubbed(RandomAccessFile file, long bytesScrubbed, ReturnStatus rs) {
@@ -261,6 +265,10 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         //update statistics
 
         long total = 0;
+        String fname = file.getFile().getPath();
+        if (fname.length() > 42) {
+            fname = "..."+fname.substring(fname.length()-39, fname.length());
+        }
         synchronized (directories) {
             lastBytesScrubbed += bytesScrubbed;
             numFiles++;
@@ -270,7 +278,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
                 case FILE_CORRUPT : numDead++; break;
             }
             if (!silent)
-                System.out.format("scrubbed %-42s with %15s - total %15s\n\u001b[100D\u001b[A", file.getFileId(), OutputUtils.formatBytes(bytesScrubbed), OutputUtils.formatBytes(lastBytesScrubbed));
+                System.out.format("scrubbed %-42s with %15s - total %15s\n\u001b[100D\u001b[A", fname, OutputUtils.formatBytes(bytesScrubbed), OutputUtils.formatBytes(lastBytesScrubbed));
             numInFlight--;
             fillQueue();
         }

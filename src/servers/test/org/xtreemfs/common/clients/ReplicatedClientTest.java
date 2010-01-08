@@ -114,6 +114,10 @@ public class ReplicatedClientTest {
             r.isCompleteReplica();
         }
 
+        raf = f.open("r", 0666);
+        raf.read(data, 0, data.length);
+        raf.close();
+
         System.out.println("locations: "+f.getLocations());
 
         for (Replica r : f.getReplicas()) {

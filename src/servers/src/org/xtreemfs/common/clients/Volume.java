@@ -445,8 +445,7 @@ public class Volume {
             ofl.openFile(cred.getXcap());
 
             boolean syncMd = (flags & Constants.SYSTEM_V_FCNTL_H_O_SYNC) > 0;
-            boolean rdOnly = ( (flags == Constants.SYSTEM_V_FCNTL_H_O_RDONLY) ||
-                 (cred.getXlocs().getReplica_update_policy().equals(Constants.REPL_UPDATE_PC_RONLY)) );
+            boolean rdOnly = cred.getXlocs().getReplica_update_policy().equals(Constants.REPL_UPDATE_PC_RONLY);
             return new RandomAccessFile(parent, this, osdClient, cred, rdOnly,syncMd);
         } catch (MRCException ex) {
             if (ex.getError_code() == ErrNo.ENOENT)
