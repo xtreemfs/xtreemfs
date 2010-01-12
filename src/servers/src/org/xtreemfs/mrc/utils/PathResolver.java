@@ -65,6 +65,11 @@ public class PathResolver {
         if (resolvedPath.length > 1 && resolvedPath[resolvedPath.length - 2] == null)
             throw new UserException(ErrNo.ENOENT, "path '" + path + "' does not exist");
     }
+        
+    public PathResolver(Path path, FileMetadata... files) {
+        this.path = path;
+        this.resolvedPath = files;
+    }
     
     public String getFileName() {
         if (fileName == null)

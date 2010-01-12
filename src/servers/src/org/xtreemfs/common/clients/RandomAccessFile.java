@@ -24,14 +24,17 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
 package org.xtreemfs.common.clients;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.clients.internal.ObjectMapper;
 import org.xtreemfs.common.clients.internal.ObjectMapper.ObjectRequest;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
@@ -528,6 +531,41 @@ public class RandomAccessFile {
                 return i;
         }
         throw new IllegalArgumentException("osd '"+headOSDuuid+"' is not in any replica of this file");
+    }
+    
+    /**
+     * Triggers the initial replication of the current replica by reading the
+     * first object on each OSD.
+     */
+    public void triggerInitialReplication() throws IOException {
+        
+        // send requests to all OSDs of this replica
+        try {
+            List<ServiceUUID> osdList = currentReplica.getOSDs();
+            List<ServiceUUID> osdListCopy = new ArrayList<ServiceUUID>(currentReplica.getOSDs());
+            // take lowest objects of file
+            for (int objectNo = 0; osdListCopy.size() != 0; objectNo++) {
+                // get index of OSD for this object
+                ServiceUUID osd = currentReplica.getOSDForObject(objectNo);
+                // remove OSD
+                osdListCopy.remove(osd);
+                // send request (read only 1 byte)
+                RPCResponse<ObjectData> r = osdClient.read(osd.getAddress(), fileId, credentials, objectNo,
+                    0, 0, 1);
+                r.get();
+                r.freeBuffers();
+            }
+        } catch (UnknownUUIDException e) {
+            // ignore; should not happen
+        } catch (IOException e) {
+            throw new IOException("At least one OSD could not be contacted to replicate the file.", e);
+        } catch (ONCRPCException ex) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "comm error: %s", ex.toString());
+            throw new IOException("communication failure", ex);
+        } catch (InterruptedException e) {
+            // ignore
+        }
     }
 
 }

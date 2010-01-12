@@ -285,6 +285,26 @@ public class Volume {
                 response.freeBuffers();
         }
     }
+    
+    String[] listxattr(String path) throws IOException {
+        RPCResponse<StringSet> response = null;
+        try {
+            response = mrcClient.listxattr(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path));
+            StringSet result = response.get();
+            return (String[]) result.toArray(new String[result.size()]);
+        } catch (MRCException ex) {
+            if (ex.getError_code() == ErrNo.ENODATA)
+                return null;
+            throw wrapException(ex);
+        } catch (ONCRPCException ex) {
+            throw wrapException(ex);
+        } catch (InterruptedException ex) {
+            throw wrapException(ex);
+        } finally {
+            if (response != null)
+                response.freeBuffers();
+        }
+    }
 
     void setxattr(String path, String name, String value) throws IOException {
         RPCResponse response = null;
@@ -590,11 +610,9 @@ public class Volume {
                 response3.freeBuffers();
         }
     }
-
-
-
-
-
-
+    
+    void shutdown() {
+        ofl.shutdown();
+    }
 
 }

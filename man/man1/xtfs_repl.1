@@ -1,6 +1,6 @@
 .TH xtfs_repl 1 "October 2009" "The XtreemFS Distributed File System" "XtreemFS tools"
 .SH NAME
-xtfs_repl \- tool for the management of file replicas.
+xtfs_repl \- tool for the management of file replicas and OSD selection.
 .SH SYNOPSIS
 \fBxtfs_repl [ \fIoptions\fB ] <file>
 .br
@@ -53,6 +53,9 @@ Adds a replica and automatically selects OSDs according to the chosen method. Th
 \fB--full
 if set, the replica will be a complete copy of the file; otherwise only requested data will be replicated
 .TP
+\fB--is_complete \fI<UUID_of_head-OSD>
+Checks if the given replica is complete, i.e. is a complete copy of the initial replica without any missing objects.
+.TP
 \fB--ocr_factor_set \fI<number>
 Adjusts the number of replicas assigned to a file when the file is closed after a write. A value of 1 indicates that no replicas will be added and the file remains writable.
 .TP
@@ -72,24 +75,23 @@ shows all policy-specific attributes
 Sets a policy-specific attribute. Policy-specific attributes can be used to configure OSD and replica selection policies.
 
 The following attributes will be recognized by the predefined policies (policy IDs in brackets):
-  \fIdomains\fP (1001) - a list of comma or space-separated domain names, one of which an OSD must be in to be regarded as suitable for a new file or replica
+  \fIdomains\fP (1001) - a list of comma or space-separated domain names, one of which an OSD must be in to be regarded as suitable for a new file or replica (leading and trailing '*'s are possible)
   \fIfree_capacity_bytes\fP (1000) - the minimum free capacity in bytes an OSD must have to be regarded as suitable for a new file or replica
   \fIoffline_time_secs\fP (1000) - the maximum time in seconds an OSD may have failed to send a heartbeat signal in order to be regarded as suitable for a new file or replica
+  \fIuuids\fP (1002) - a list of comma or space-separated UUIDs, one of which an OSD must have to be regarded as suitable for a new file or replica (leading and trailing '*'s are possible)
 .TP
 \fB--osp_get
 shows the volume's current list of OSD selection policies
 .TP
-\fB--osp_set \fIdefault | fqdn | dcmap | <policy_ID, [policy_ID, ...]>
+\fB--osp_set \fIdefault | fqdn | uuid | dcmap | <policy_ID, [policy_ID, ...]>
 Sets a list of successively applied OSD selection policies. OSD selection policies are used to select subsets among all known OSDs that are assigned to newly created files and replicas. \fIdefault\fP, \fIfqdn\fP and \fIdcmap\fP are pre-packaged policies that select OSDs randomly, based on their host's FQDNs, and based on a data center map, accordingly.
 
 The following policies are available by default:
   \fI1000\fP - filter out dead OSDs and OSDs that do not have sufficient space
   \fI1001\fP - filter out OSDs with FQDNs that do not match a given set of domains
+  \fI1002\fP - filter out OSDs with UUIDs that do not match a given set of UUIDs
   \fI2000\fP - select a group of OSDs according to a data center map
   \fI2001\fP - select the group of OSDs that provides enough OSDs, is in the same domain, and is closest to the client
-.TP
-\fB--remove_auto
-removes a randomly selected replica from the given file
 .TP
 \fB--rsp_get
 shows the volume's current list of replica selection policies

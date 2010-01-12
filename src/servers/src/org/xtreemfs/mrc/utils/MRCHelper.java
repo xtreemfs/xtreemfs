@@ -236,6 +236,26 @@ public class MRCHelper {
     }
     
     /**
+     * Checks whether all service UUIDs from the list can be resolved, i.e.
+     * refer to valid services.
+     * 
+     * @param newOSDs the list of OSDs
+     * @return <tt>true</tt>, if all OSDs are resolvable, <tt>false</tt>, otherwise
+     */
+    public static boolean isResolvable(List<String> newOSDs) {
+        if (newOSDs != null)
+            for (String osd : newOSDs) {
+                try {
+                    new ServiceUUID(osd).getAddress();
+                } catch (Exception exc) {
+                    return false;
+                }
+            }
+        
+        return true;
+    }
+    
+    /**
      * Checks whether the given X-Locations list is consistent. It is regarded
      * as consistent if no OSD in any replica occurs more than once.
      * 
@@ -261,7 +281,12 @@ public class MRCHelper {
         
         return true;
     }
-
+    
+    public static Path getFuseHiddenPath(Path path) {
+        return new Path(new String[] { path.getComp(0), ".fuse-hidden",
+            path.getComps(1, path.getCompCount() - 1) });
+    }
+    
     public static String getSysAttrValue(MRCConfig config, StorageManager sMan, OSDStatusManager osdMan,
         String path, FileMetadata file, String keyString) throws DatabaseException, UserException,
         JSONException, UnknownUUIDException {

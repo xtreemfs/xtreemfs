@@ -84,7 +84,7 @@ public class MoveOperation extends MRCOperation {
                 .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser,
             rq.getDetails().groupIds);
         
-        final Path tp = new Path(rqArgs.getTarget_path());
+        Path tp = new Path(rqArgs.getTarget_path());
         
         // check arguments
         if (sp.getCompCount() == 1)
@@ -107,7 +107,48 @@ public class MoveOperation extends MRCOperation {
         // find out what the source path refers to (1 = directory, 2 = file)
         FileType sourceType = source.isDirectory() ? FileType.dir : FileType.file;
         
-        final PathResolver tRes = new PathResolver(sMan, tp);
+        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
+        
+        PathResolver tRes = null;
+//        
+//        // check if the file is a fuse-hidden file; if so, move it to the
+//        // .fuse-hidden diretory
+//        if (tp.getLastComp(0).startsWith(".fuse_hidden")) {
+//            
+//            // generate the new path
+//            tp = MRCHelper.getFuseHiddenPath(tp);
+//            
+//            // check if the fuse-hidden directory exists
+//            try {
+//                tRes = new PathResolver(sMan, tp);
+//                
+//            } catch (UserException exc) {
+//                
+//                // if no fuse-hidden directory exists yet ...
+//                if (exc.getErrno() == ErrNo.ENOENT) {
+//                    
+//                    // get the next free file ID
+//                    long fileId = sMan.getNextFileId();
+//                    
+//                    // create fuse-hidden directory
+//                    FileMetadata dir = sMan.createDir(fileId, 1, tp.getComp(1), 0, 0, 0, "", "", 0777, 0, update);
+//                    
+//                    // set the file ID as the last one
+//                    sMan.setLastFileId(fileId, update);
+//
+//                    // re-initialize the path resolver
+//                    tRes = new PathResolver(tp, dir, null);
+//                } 
+//                
+//                else
+//                    throw exc;
+//            }
+//            
+//        }
+//
+//        // in the normal case, resolve the target directory
+//        else
+            tRes = new PathResolver(sMan, tp);
         
         FileMetadata targetParentDir = tRes.getParentDir();
         if (targetParentDir == null || !targetParentDir.isDirectory())
@@ -141,8 +182,6 @@ public class MoveOperation extends MRCOperation {
         faMan.checkPermission(FileAccessManager.O_WRONLY, sMan, tRes.getParentDir(), tRes
                 .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser,
             rq.getDetails().groupIds);
-        
-        AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
         
         switch (sourceType) {
         

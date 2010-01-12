@@ -24,51 +24,41 @@
  */
 package org.xtreemfs.utils;
 
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.StringTokenizer;
 import java.util.Map.Entry;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
-import org.xtreemfs.common.TimeSync;
-import org.xtreemfs.common.clients.io.RandomAccessFile;
+import org.xtreemfs.common.clients.Client;
+import org.xtreemfs.common.clients.File;
+import org.xtreemfs.common.clients.RandomAccessFile;
+import org.xtreemfs.common.clients.Replica;
+import org.xtreemfs.common.clients.Volume;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.common.uuids.UnknownUUIDException;
-import org.xtreemfs.common.xloc.InvalidXLocationsException;
-import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.ReplicationFlags;
-import org.xtreemfs.common.xloc.StripingPolicyImpl;
-import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
-import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.OSDSelectionPolicyType;
-import org.xtreemfs.interfaces.ObjectData;
-import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
-import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.mrc.utils.Converter;
-import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.utils.CLIParser.CliOption;
 
 /**
@@ -77,118 +67,119 @@ import org.xtreemfs.utils.CLIParser.CliOption;
  * 06.04.2009
  */
 public class xtfs_repl {
-    public final static String      OPTION_HELP                               = "h";
     
-    public final static String      OPTION_HELP_LONG                          = "-help";
+    public final static String  OPTION_HELP                               = "h";
     
-    public final static String      OPTION_ADD_REPLICA                        = "a";
+    public final static String  OPTION_HELP_LONG                          = "-help";
     
-    public final static String      OPTION_ADD_AUTOMATIC_REPLICA              = "-add_auto";
+    public final static String  OPTION_ADD_REPLICA                        = "a";
     
-    public final static String      OPTION_REMOVE_REPLICA                     = "r";
+    public final static String  OPTION_ADD_AUTOMATIC_REPLICA              = "-add_auto";
     
-    public final static String      OPTION_REMOVE_AUTOMATIC_REPLICA           = "-remove_auto";
+    public final static String  OPTION_REMOVE_REPLICA                     = "r";
     
-    public final static String      OPTION_SET_READ_ONLY                      = "-set_readonly";
+    public final static String  OPTION_SET_READ_ONLY                      = "-set_readonly";
     
-    public final static String      OPTION_SET_WRITABLE                       = "-set_writable";
+    public final static String  OPTION_SET_WRITABLE                       = "-set_writable";
     
-    public final static String      OPTION_LIST_REPLICAS                      = "l";
+    public final static String  OPTION_LIST_REPLICAS                      = "l";
     
-    public final static String      OPTION_LIST_SUITABLE_OSDS_FOR_A_REPLICA   = "o";
+    public final static String  OPTION_LIST_SUITABLE_OSDS_FOR_A_REPLICA   = "o";
     
-    public final static String      OPTION_STRIPE_WIDTH                       = "w";
+    public final static String  OPTION_STRIPE_WIDTH                       = "w";
     
-    public final static String      OPTION_RSEL_POLICY_GET                    = "-rsp_get";
+    public final static String  OPTION_RSEL_POLICY_GET                    = "-rsp_get";
     
-    public final static String      OPTION_RSEL_POLICY_SET                    = "-rsp_set";
+    public final static String  OPTION_RSEL_POLICY_SET                    = "-rsp_set";
     
-    public final static String      OPTION_OSEL_POLICY_GET                    = "-osp_get";
+    public final static String  OPTION_OSEL_POLICY_GET                    = "-osp_get";
     
-    public final static String      OPTION_OSEL_POLICY_SET                    = "-osp_set";
+    public final static String  OPTION_OSEL_POLICY_SET                    = "-osp_set";
     
-    public final static String      OPTION_POLICY_ATTR_SET                    = "-pol_attr_set";
+    public final static String  OPTION_POLICY_ATTR_SET                    = "-pol_attr_set";
     
-    public final static String      OPTION_POLICY_ATTRS_GET                   = "-pol_attrs_get";
+    public final static String  OPTION_POLICY_ATTRS_GET                   = "-pol_attrs_get";
     
-    public final static String      OPTION_ON_CLOSE_REPL_FACTOR_SET           = "-ocr_factor_set";
+    public final static String  OPTION_ON_CLOSE_REPL_FACTOR_SET           = "-ocr_factor_set";
     
-    public final static String      OPTION_ON_CLOSE_REPL_FACTOR_GET           = "-ocr_factor_get";
+    public final static String  OPTION_ON_CLOSE_REPL_FACTOR_GET           = "-ocr_factor_get";
     
-    public final static String      OPTION_ON_CLOSE_REPL_FULL_SET             = "-ocr_full_set";
+    public final static String  OPTION_ON_CLOSE_REPL_FULL_SET             = "-ocr_full_set";
     
-    public final static String      OPTION_ON_CLOSE_REPL_FULL_GET             = "-ocr_full_get";
+    public final static String  OPTION_ON_CLOSE_REPL_FULL_GET             = "-ocr_full_get";
     
-    public final static String      SEL_POLICY_DEFAULT                        = "default";
+    public final static String  OPTION_REPLICATION_FLAG_FULL_REPLICA      = "-full";
     
-    public final static String      SEL_POLICY_FQDN                           = "fqdn";
+    public final static String  OPTION_REPLICATION_FLAG_TRANSFER_STRATEGY = "-strategy";
     
-    public final static String      SEL_POLICY_DCMAP                          = "dcmap";
+    public final static String  OPTION_CHECK_IF_COMPLETE                  = "-is_complete";
     
-    public final static String      SEL_POLICY_RANDOM                         = "random";
-
-    public final static String      SEL_POLICY_VIVALDI                        = "vivaldi";
+    public final static String  SEL_POLICY_DEFAULT                        = "default";
     
-    public final static String      OPTION_REPLICATION_FLAG_FULL_REPLICA      = "-full";
+    public final static String  SEL_POLICY_UUID                           = "uuid";
     
-    public final static String      OPTION_REPLICATION_FLAG_TRANSFER_STRATEGY = "-strategy";
+    public final static String  SEL_POLICY_FQDN                           = "fqdn";
     
-    public final static String      TRANSFER_STRATEGY_RANDOM                  = "random";
+    public final static String  SEL_POLICY_DCMAP                          = "dcmap";
     
-    public final static String      TRANSFER_STRATEGY_SEQUENTIAL              = "sequential";
+    public final static String  SEL_POLICY_RANDOM                         = "random";
     
-    public final static String      OPTION_SSL_CREDS_FILE                     = "c";
+    public final static String  SEL_POLICY_VIVALDI                        = "vivaldi";
     
-    public final static String      OPTION_SSL_CREDS_PASSWORD                 = "cpass";
+    public final static String  TRANSFER_STRATEGY_RANDOM                  = "random";
     
-    public final static String      OPTION_SSL_TRUSTED_CA_FILE                = "t";
+    public final static String  TRANSFER_STRATEGY_SEQUENTIAL              = "sequential";
     
-    public final static String      OPTION_SSL_TRUSTED_CA_PASSWORD            = "tpass";
+    public final static String  OPTION_SSL_CREDS_FILE                     = "c";
     
-    public final static int         DEFAULT_REPLICATION_FLAGS                 = ReplicationFlags
-                                                                                      .setPartialReplica(ReplicationFlags
-                                                                                              .setRandomStrategy(0));
+    public final static String  OPTION_SSL_CREDS_PASSWORD                 = "cpass";
     
-    private final String            relPath;
+    public final static String  OPTION_SSL_TRUSTED_CA_FILE                = "t";
     
-    private final String            volPath;
+    public final static String  OPTION_SSL_TRUSTED_CA_PASSWORD            = "tpass";
     
-    private RandomAccessFile        file;
+    public final static int     DEFAULT_REPLICATION_FLAGS                 = ReplicationFlags
+                                                                                  .setPartialReplica(ReplicationFlags
+                                                                                          .setRandomStrategy(0));
     
-    private MRCClient               mrcClient;
+    private String              volName;
     
-    public final UserCredentials    credentials;
+    private String              volPath;
     
-    public final String             volume;
+    private String              localPath;
     
-    private final InetSocketAddress dirAddress;
+    private Client              client;
     
-    private final DIRClient         dirClient;
+    private File                file;
     
-    private InetSocketAddress       mrcAddress;
+    private RandomAccessFile    raFile;
     
-    private XLocations              xLoc;
+    private UserCredentials     credentials;
     
-    private RPCNIOSocketClient      client;
+    private InetSocketAddress[] dirAddrs;
     
-    private TimeSync                timeSync;
+    private SSLOptions          sslOptions;
     
-    public static final Pattern     IPV4_PATTERN                              = Pattern
-                                                                                      .compile("b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)"
-                                                                                          + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)b");
+    private UUIDResolver        resolver;
     
-    public static final Pattern     IPV6_PATTERN                              = Pattern
-                                                                                      .compile(
-                                                                                          "((([0-9a-f]{1,4}+:){7}+[0-9a-f]{1,4}+)|(:(:[0-9a-f]"
-                                                                                              + "{1,4}+){1,6}+)|(([0-9a-f]{1,4}+:){1,6}+:)|(::)|(([0-9a-f]"
-                                                                                              + "{1,4}+:)(:[0-9a-f]{1,4}+){1,5}+)|(([0-9a-f]{1,4}+:){1,2}"
-                                                                                              + "+(:[0-9a-f]{1,4}+){1,4}+)|(([0-9a-f]{1,4}+:){1,3}+(:[0-9a-f]{1,4}+)"
-                                                                                              + "{1,3}+)|(([0-9a-f]{1,4}+:){1,4}+(:[0-9a-f]{1,4}+){1,2}+)|(([0-9a-f]"
-                                                                                              + "{1,4}+:){1,5}+(:[0-9a-f]{1,4}+))|(((([0-9a-f]{1,4}+:)?([0-9a-f]"
-                                                                                              + "{1,4}+:)?([0-9a-f]{1,4}+:)?([0-9a-f]{1,4}+:)?)|:)(:(([0-9]{1,3}+\\.)"
-                                                                                              + "{3}+[0-9]{1,3}+)))|(:(:[0-9a-f]{1,4}+)*:([0-9]{1,3}+\\.){3}+[0-9]"
-                                                                                              + "{1,3}+))(/[0-9]+)?",
-                                                                                          Pattern.CASE_INSENSITIVE);
+    private RPCNIOSocketClient  resolverClient;
+    
+    public static final Pattern IPV4_PATTERN                              = Pattern
+                                                                                  .compile("b(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).)"
+                                                                                      + "{3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)b");
+    
+    public static final Pattern IPV6_PATTERN                              = Pattern
+                                                                                  .compile(
+                                                                                      "((([0-9a-f]{1,4}+:){7}+[0-9a-f]{1,4}+)|(:(:[0-9a-f]"
+                                                                                          + "{1,4}+){1,6}+)|(([0-9a-f]{1,4}+:){1,6}+:)|(::)|(([0-9a-f]"
+                                                                                          + "{1,4}+:)(:[0-9a-f]{1,4}+){1,5}+)|(([0-9a-f]{1,4}+:){1,2}"
+                                                                                          + "+(:[0-9a-f]{1,4}+){1,4}+)|(([0-9a-f]{1,4}+:){1,3}+(:[0-9a-f]{1,4}+)"
+                                                                                          + "{1,3}+)|(([0-9a-f]{1,4}+:){1,4}+(:[0-9a-f]{1,4}+){1,2}+)|(([0-9a-f]"
+                                                                                          + "{1,4}+:){1,5}+(:[0-9a-f]{1,4}+))|(((([0-9a-f]{1,4}+:)?([0-9a-f]"
+                                                                                          + "{1,4}+:)?([0-9a-f]{1,4}+:)?([0-9a-f]{1,4}+:)?)|:)(:(([0-9]{1,3}+\\.)"
+                                                                                          + "{3}+[0-9]{1,3}+)))|(:(:[0-9a-f]{1,4}+)*:([0-9]{1,3}+\\.){3}+[0-9]"
+                                                                                          + "{1,3}+))(/[0-9]+)?",
+                                                                                      Pattern.CASE_INSENSITIVE);
     
     /**
      * required for METHOD_DNS <br>
@@ -218,15 +209,18 @@ public class xtfs_repl {
      * @throws ONCRPCException
      * 
      */
-    public xtfs_repl(String relPath, InetSocketAddress dirAddress, String volume, String volPath,
+    public xtfs_repl(String localPath, InetSocketAddress dirAddress, String volName, String volPath,
         SSLOptions sslOptions) throws Exception {
         try {
             Logging.start(Logging.LEVEL_ERROR, Category.tool);
             
-            this.relPath = relPath;
+            this.sslOptions = sslOptions;
+            this.dirAddrs = new InetSocketAddress[] { dirAddress };
+            this.localPath = localPath;
+            
+            // this.volPath = volPath;
             this.volPath = volPath;
-            this.volume = volume;
-            this.dirAddress = dirAddress;
+            this.volName = volName;
             
             // TODO: use REAL user credentials (this is a SECURITY HOLE)
             StringSet groupIDs = new StringSet();
@@ -234,16 +228,12 @@ public class xtfs_repl {
             this.credentials = new UserCredentials("root", groupIDs, "");
             
             // client
-            client = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
-            client.start();
-            client.waitForStartup();
-            dirClient = new DIRClient(client, dirAddress);
+            resolverClient = new RPCNIOSocketClient(sslOptions, 10000, 5 * 60 * 1000);
+            resolverClient.start();
+            resolverClient.waitForStartup();
+            resolver = UUIDResolver.startNonSingelton(new DIRClient(resolverClient, dirAddress), 1000,
+                10 * 10 * 1000);
             
-            // start services
-            timeSync = TimeSync.initialize(dirClient, 60 * 1000, 50);
-            timeSync.waitForStartup();
-            
-            UUIDResolver.start(dirClient, 1000, 10 * 10 * 1000);
         } catch (Exception e) {
             shutdown();
             throw e;
@@ -255,37 +245,24 @@ public class xtfs_repl {
      * @throws IOException
      * @throws InterruptedException
      */
-    public void initialize(boolean fileRequired) throws ONCRPCException, IOException, InterruptedException {
-        ServiceSet sSet;
-        // get MRC address
-        RPCResponse<ServiceSet> r = dirClient.xtreemfs_service_get_by_name(dirAddress, volume);
-        sSet = r.get();
-        r.freeBuffers();
+    private void initialize(boolean fileRequired) throws Exception {
         
-        if (sSet.size() != 0)
-            mrcAddress = new ServiceUUID(sSet.get(0).getData().get("mrc")).getAddress();
-        else {
-            System.err.println("unknown volume");
-            System.exit(1);
-        }
+        client = new Client(dirAddrs, 10000, 30000, sslOptions);
+        client.start();
         
-        this.mrcClient = new MRCClient(client, mrcAddress);
+        Volume volume = client.getVolume(volName, credentials);
+        file = volume.getFile(volPath);
         
-        File f = new File(relPath);
         if (fileRequired) {
-            if (!f.isFile()) {
-                System.err.println("'" + relPath + "' is not a file");
+            if (!file.isFile()) {
+                System.err.println("'" + localPath + "' is not a file");
                 System.exit(1);
             }
-            this.file = new RandomAccessFile("r", mrcAddress, volume + volPath, client, credentials);
-            try {
-                xLoc = new XLocations(file.getCredentials().getXlocs(), null);
-            } catch (InvalidXLocationsException ex) {
-                throw new IOException(ex);
-            }
+            this.raFile = file.open("r", 0);
+            
         } else {
-            if (!f.exists()) {
-                System.err.println("'" + relPath + "' does not exist");
+            if (!file.exists()) {
+                System.err.println("'" + localPath + "' does not exist");
                 System.exit(1);
             }
         }
@@ -294,14 +271,22 @@ public class xtfs_repl {
     /*
      * add replica
      */
-    public void addReplica(List<ServiceUUID> osds, int replicationFlags, int stripeWidth) throws Exception {
+    private void addReplica(List<ServiceUUID> osds, int replicationFlags, int stripeWidth) throws Exception {
         if (file.isReadOnly()) {
             if (stripeWidth == 0) // not set => policy from replica 1
                 stripeWidth = osds.size();
             
-            StripingPolicy sp = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, (int) file
-                    .getStripeSize(), stripeWidth);
-            file.addReplica(osds, sp, replicationFlags);
+            StripingPolicy sp = new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, raFile
+                    .getCurrentReplicaStripeSize(), stripeWidth);
+            
+            String[] osdArray = new String[osds.size()];
+            int i = 0;
+            for (ServiceUUID osd : osds) {
+                osdArray[i] = osd.toString();
+                i++;
+            }
+            
+            file.addReplica(osdArray.length, osdArray, replicationFlags);
             
             // start replication of full replicas
             if (ReplicationFlags.isFullReplica(replicationFlags))
@@ -311,18 +296,26 @@ public class xtfs_repl {
     }
     
     // automatic
-    public void addReplicaAutomatically(int replicationFlags, int stripeWidth) throws Exception {
+    private void addReplicaAutomatically(int replicationFlags, int stripeWidth) throws Exception {
         if (file.isReadOnly()) {
             if (stripeWidth == 0) // not set => policy from replica 1
-                stripeWidth = file.getStripingPolicy().getWidth();
+                stripeWidth = raFile.getCurrentReplicaStripeingWidth();
             
-            List<ServiceUUID> suitableOSDs = file.getSuitableOSDsForAReplica();
-            if (suitableOSDs.size() < stripeWidth) {
+            String[] suitableOSDs = file.getSuitableOSDs(stripeWidth);
+            if (suitableOSDs.length < stripeWidth) {
                 System.err.println("could not create replica: not enough suitable OSDs available");
                 System.exit(1);
             }
             
-            addReplica(suitableOSDs.subList(0, stripeWidth), replicationFlags, stripeWidth);
+            String[] osdList = new String[stripeWidth];
+            System.arraycopy(suitableOSDs, 0, osdList, 0, stripeWidth);
+            
+            List<ServiceUUID> uuidList = new LinkedList<ServiceUUID>();
+            for (String osd : osdList)
+                uuidList.add(new ServiceUUID(osd, resolver));
+            
+            addReplica(uuidList, replicationFlags, stripeWidth);
+            
         } else
             System.err.println("File is not marked as read-only.");
     }
@@ -334,48 +327,14 @@ public class xtfs_repl {
      * @throws IOException
      */
     private void startReplicationOnOSDs(ServiceUUID addedOSD) throws IOException {
-        // get just added replica
-        Replica addedReplica = file.getXLoc().getReplica(addedOSD);
-        if (addedReplica.isPartialReplica()) // break, because replica should
-            // not be filled
-            return;
-        StripingPolicyImpl sp = addedReplica.getStripingPolicy();
-        String fileID = file.getFileId();
-        FileCredentials cred = file.getCredentials();
-        
-        OSDClient osdClient = new OSDClient(client);
-        // send requests to all OSDs of this replica
-        try {
-            List<ServiceUUID> osdList = addedReplica.getOSDs();
-            List<ServiceUUID> osdListCopy = new ArrayList<ServiceUUID>(addedReplica.getOSDs());
-            // take lowest objects of file
-            for (int objectNo = 0; osdListCopy.size() != 0; objectNo++) {
-                // get index of OSD for this object
-                int indexOfOSD = sp.getOSDforObject(objectNo);
-                // remove OSD
-                ServiceUUID osd = osdList.get(indexOfOSD);
-                osdListCopy.remove(osd);
-                // send request (read only 1 byte)
-                RPCResponse<ObjectData> r = osdClient.read(osd.getAddress(), fileID, cred, objectNo, 0, 0, 1);
-                r.get();
-                r.freeBuffers();
-            }
-        } catch (UnknownUUIDException e) {
-            // ignore; should not happen
-        } catch (ONCRPCException e) {
-            throw new IOException("At least one OSD could not be contacted to replicate the file.", e);
-        } catch (IOException e) {
-            throw new IOException("At least one OSD could not be contacted to replicate the file.", e);
-        } catch (InterruptedException e) {
-            // ignore
-        }
+        String uuid = addedOSD.toString();
+        raFile.forceReplica(uuid);
+        raFile.triggerInitialReplication();
     }
     
-    public void getOSDSelectionPolicy() {
+    private void getOSDSelectionPolicy() {
         try {
-            RPCResponse<String> r = mrcClient.getxattr(null, credentials, volume + "/",
-                "xtreemfs.osel_policy");
-            String v = r.get();
+            String v = file.getxattr("xtreemfs.osel_policy");
             
             short[] policies = Converter.stringToShortArray(v);
             if (policies.length == 2
@@ -386,6 +345,10 @@ public class xtfs_repl {
                 && policies[0] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue()
                 && policies[1] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_GROUP_FQDN.intValue()) {
                 System.out.println("OSD selection policy: FQDN");
+            } else if (policies.length == 2
+                && policies[0] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue()
+                && policies[1] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_UUID.intValue()) {
+                System.out.println("OSD selection policy: UUID");
             } else if (policies.length == 2
                 && policies[0] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue()
                 && policies[1] == OSDSelectionPolicyType.OSD_SELECTION_POLICY_GROUP_DCMAP.intValue()) {
@@ -403,7 +366,7 @@ public class xtfs_repl {
         }
     }
     
-    public void setOSDSelectionPolicy(String rsp) {
+    private void setOSDSelectionPolicy(String rsp) {
         try {
             
             String pol = "";
@@ -414,6 +377,10 @@ public class xtfs_repl {
             } else if (rsp.equalsIgnoreCase(SEL_POLICY_FQDN)) {
                 pol = String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue())
                     + "," + String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_GROUP_FQDN.intValue());
+            } else if (rsp.equalsIgnoreCase(SEL_POLICY_UUID)) {
+                pol = String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue())
+                    + ","
+                    + String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_UUID.intValue());
             } else if (rsp.equalsIgnoreCase(SEL_POLICY_DCMAP)) {
                 pol = String.valueOf(OSDSelectionPolicyType.OSD_SELECTION_POLICY_FILTER_DEFAULT.intValue())
                     + ","
@@ -426,9 +393,7 @@ public class xtfs_repl {
                 pol = rsp;
             }
             
-            RPCResponse r = mrcClient.setxattr(null, credentials, volume + "/", "xtreemfs.osel_policy", pol,
-                0);
-            r.get();
+            file.setxattr("xtreemfs.osel_policy", pol);
             System.out.println("OSD selection policy changed");
         } catch (Exception ex) {
             System.err.println("could not set OSD selection policy");
@@ -436,11 +401,9 @@ public class xtfs_repl {
         }
     }
     
-    public void getReplicaSelectionPolicy() {
+    private void getReplicaSelectionPolicy() {
         try {
-            RPCResponse<String> r = mrcClient.getxattr(null, credentials, volume + "/",
-                "xtreemfs.rsel_policy");
-            String v = r.get();
+            String v = file.getxattr("xtreemfs.rsel_policy");
             
             short[] policies = Converter.stringToShortArray(v);
             if (policies.length == 0) {
@@ -470,7 +433,7 @@ public class xtfs_repl {
         }
     }
     
-    public void setReplicaSelectionPolicy(String rsp) {
+    private void setReplicaSelectionPolicy(String rsp) {
         try {
             
             String pol = "";
@@ -488,9 +451,7 @@ public class xtfs_repl {
                 pol = rsp;
             }
             
-            RPCResponse r = mrcClient.setxattr(null, credentials, volume + "/", "xtreemfs.rsel_policy", pol,
-                0);
-            r.get();
+            file.setxattr("xtreemfs.rsel_policy", pol);
             System.out.println("replica selection policy changed");
         } catch (Exception ex) {
             System.err.println("could not set replica selection policy");
@@ -498,11 +459,9 @@ public class xtfs_repl {
         }
     }
     
-    public void getOnCloseReplFactor() {
+    private void getOnCloseReplFactor() {
         try {
-            RPCResponse<String> r = mrcClient.getxattr(null, credentials, volume + "/",
-                "xtreemfs.repl_factor");
-            String v = r.get();
+            String v = file.getxattr("xtreemfs.repl_factor");
             System.out.println("on-close replication factor: " + v);
         } catch (Exception ex) {
             System.err.println("could not retrieve on-close replication factor");
@@ -510,16 +469,14 @@ public class xtfs_repl {
         }
     }
     
-    public void setOnCloseReplFactor(String f) {
+    private void setOnCloseReplFactor(String f) {
         try {
             
             int factor = Integer.parseInt(f.trim());
             if (factor <= 0)
                 factor = 1;
             
-            RPCResponse r = mrcClient.setxattr(null, credentials, volume + "/", "xtreemfs.repl_factor",
-                String.valueOf(factor), 0);
-            r.get();
+            file.setxattr("xtreemfs.repl_factor", String.valueOf(factor));
             System.out.println("on-close replication factor changed");
         } catch (Exception ex) {
             System.err.println("could not set on-close replication factor");
@@ -527,15 +484,13 @@ public class xtfs_repl {
         }
     }
     
-    public void getPolicyAttrs() {
+    private void getPolicyAttrs() {
         try {
             System.out.println("policy attributes:");
-            RPCResponse<StringSet> r = mrcClient.listxattr(null, credentials, volume + "/");
-            StringSet resp = r.get();
-            for (String key : resp)
+            String[] keys = file.listXAttrs();
+            for (String key : keys)
                 if (key.startsWith("xtreemfs.policies."))
-                    System.out.println(key + " = "
-                        + mrcClient.getxattr(null, credentials, volume + "/", key).get());
+                    System.out.println(key + " = " + file.getxattr(key));
             
         } catch (Exception ex) {
             System.err.println("could not retrieve policy attributes");
@@ -543,19 +498,19 @@ public class xtfs_repl {
         }
     }
     
-    public void setPolicyAttr(String kvPair) {
+    private void setPolicyAttr(String kvPair) {
         try {
             
             StringTokenizer st = new StringTokenizer(kvPair, "=;,");
-            if (st.countTokens() != 2)
+            if (st.countTokens() != 2) {
                 System.err.println("invalid policy attribute: " + kvPair + ", key-value pair required");
+                return;
+            }
             
             String key = st.nextToken();
             String value = st.nextToken();
             
-            RPCResponse r = mrcClient.setxattr(null, credentials, volume + "/", "xtreemfs.policies." + key,
-                value, 0);
-            r.get();
+            file.setxattr("xtreemfs.policies." + key, value);
             System.out.println("policy attribute '" + key + "' changed");
         } catch (Exception ex) {
             System.err.println("could not change policy attribute");
@@ -563,21 +518,19 @@ public class xtfs_repl {
         }
     }
     
-    public void getOnCloseFull() {
+    private void getOnCloseFull() {
         try {
             System.out.print("create full replicas on close: ");
-            RPCResponse<String> r = mrcClient.getxattr(null, credentials, volume + "/", "xtreemfs.repl_full");
-            System.out.println(r.get());
+            String v = file.getxattr("xtreemfs.repl_full");
+            System.out.println(v);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
     
-    public void setOnCloseFull(boolean full) {
+    private void setOnCloseFull(boolean full) {
         try {
-            RPCResponse r = mrcClient.setxattr(null, credentials, volume + "/", "xtreemfs.repl_full", String
-                    .valueOf(full), 0);
-            r.get();
+            file.setxattr("xtreemfs.repl_full", String.valueOf(full));
             System.out.println("create full replicas on close was set to " + full);
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -587,33 +540,9 @@ public class xtfs_repl {
     /*
      * remove replica
      */
-    public void removeReplica(ServiceUUID osd) throws Exception {
+    private void removeReplica(ServiceUUID osd) throws Exception {
         if (file.isReadOnly()) {
-            file.removeReplica(osd);
-        } else
-            System.err.println("File is not marked as read-only.");
-    }
-    
-    // automatic
-    public void removeReplicaAutomatically() throws Exception {
-        if (file.isReadOnly()) {
-            if (file.getXLoc().getNumReplicas() <= 1) {
-                System.out.println("No replica exists for removing.");
-                return;
-            }
-            ServiceUUID osd = null;
-            Random random = new Random();
-            while (true) {
-                try {
-                    Replica replica = file.getXLoc().getReplicas().get(
-                        random.nextInt(file.getXLoc().getNumReplicas()));
-                    osd = replica.getHeadOsd();
-                    file.removeReplica(osd);
-                    break;
-                } catch (IOException e) {
-                    continue;
-                }
-            }
+            file.getReplica(raFile.getReplicaNumber(osd.toString())).removeReplica(true);
         } else
             System.err.println("File is not marked as read-only.");
     }
@@ -621,24 +550,23 @@ public class xtfs_repl {
     /*
      * other commands
      */
-    public void setReadOnly(boolean mode) throws Exception {
+    private void setReadOnly(boolean mode) throws Exception {
         file.setReadOnly(mode);
     }
     
-    public void listReplicas() throws UnknownUUIDException {
-        printListOfReplicas(xLoc.getReplicas());
+    private void listReplicas() throws UnknownUUIDException, IOException {
+        printListOfReplicas(file.getReplicas());
     }
     
-    private List<ServiceUUID> listSuitableOSDs() throws Exception {
-        List<ServiceUUID> osds = file.getSuitableOSDsForAReplica();
+    private void listSuitableOSDs() throws Exception {
+        String[] osds = file.getSuitableOSDs(1000);
         printListOfOSDs(osds);
-        return osds;
     }
     
     /*
      * outputs
      */
-    private void printListOfReplicas(List<Replica> replicas) throws UnknownUUIDException {
+    private void printListOfReplicas(Replica[] replicas) throws IOException, UnknownUUIDException {
         StringBuffer out = new StringBuffer();
         
         // read-only?
@@ -647,78 +575,78 @@ public class xtfs_repl {
         else
             out.append("File is writable. No replicas possible.\n");
         
-        int replicaNumber = 1;
+        int replicaNumber = 0;
         for (Replica r : replicas) {
             // head line
             out.append("REPLICA " + (replicaNumber++) + ":\n");
-            out
-                    .append("\t Striping Policy: " + r.getStripingPolicy().getPolicy().getType().toString()
-                        + "\n");
-            out.append("\t Stripe-Size: "
-                + OutputUtils.formatBytes(r.getStripingPolicy().getStripeSizeForObject(0)) + "\n");
-            out.append("\t Stripe-Width: " + r.getStripingPolicy().getWidth() + " (OSDs)\n");
+            out.append("\t striping policy: " + r.getStripingPolicy().toString() + "\n");
+            out.append("\t stripe size: " + OutputUtils.formatBytes(r.getStripeSize()) + "\n");
+            out.append("\t stripe width: " + r.getStripeWidth() + " (OSDs)\n");
             
             if (file.isReadOnly()) {
                 out.append("\t Replication Flags:\n");
-                out.append("\t\t Complete: " + r.isComplete() + "\n");
-                out.append("\t\t Replica Type: " + (r.isPartialReplica() ? "partial" : "full") + "\n");
+                out.append("\t\t Complete: " + r.isCompleteReplica() + "\n");
+                out.append("\t\t Replica Type: " + (r.isFullReplica() ? "full" : "partial") + "\n");
                 String transferStrategy = "unknown";
-                if (ReplicationFlags.isRandomStrategy(r.getTransferStrategyFlags()))
+                if (r.isRandomStrategy())
                     transferStrategy = "random";
-                else if (ReplicationFlags.isSequentialStrategy(r.getTransferStrategyFlags()))
+                else if (r.isSequentialStrategy())
                     transferStrategy = "sequential";
-                else if (ReplicationFlags.isSequentialPrefetchingStrategy(r.getTransferStrategyFlags()))
+                else if (r.isSequentialPrefetchingStrategy())
                     transferStrategy = "sequential prefetching";
-                else if (ReplicationFlags.isRarestFirstStrategy(r.getTransferStrategyFlags()))
+                else if (r.isRarestFirstStrategy())
                     transferStrategy = "rarest first";
                 out.append("\t\t Transfer-Strategy: " + transferStrategy + "\n");
             }
             
             out.append("\t OSDs:\n");
             
-            int osdNumber = 1;
             // OSDs of this replica
-            for (ServiceUUID osd : r.getOSDs()) {
-                if (osdNumber == 1) {
+            for (int osdNumber = 0; osdNumber < r.getStripeWidth(); osdNumber++) {
+                ServiceUUID osd = new ServiceUUID(r.getOSDUuid(osdNumber), resolver);
+                if (osdNumber == 0)
                     out.append("\t\t [Head-OSD]\t");
-                    osdNumber++;
-                } else
-                    out.append("\t\t [OSD " + (osdNumber++) + "]\t");
+                else
+                    out.append("\t\t [OSD " + (osdNumber + 1) + "]\t");
                 out.append("UUID: " + osd.toString() + ", URL: " + osd.getAddress().toString() + "\n");
             }
         }
         System.out.print(out.toString());
     }
     
-    private void printListOfOSDs(List<ServiceUUID> osds) throws UnknownUUIDException {
+    private void printListOfOSDs(String[] osds) throws UnknownUUIDException {
         StringBuffer out = new StringBuffer();
-        if (osds.size() != 0) {
+        if (osds.length > 0) {
             int number = 1;
-            for (ServiceUUID osd : osds) {
+            for (String osd : osds) {
                 out.append("[" + number++ + "] ");
-                out.append("UUID: " + osd.toString() + ", URL: " + osd.getAddress().toString() + "\n");
+                out.append("UUID: " + osd.toString() + ", URL: "
+                    + new ServiceUUID(osd, resolver).getAddress().toString() + "\n");
             }
         } else
             out.append("no suitable OSDs available\n");
         System.out.print(out.toString());
     }
     
+    private void checkIfComplete(String headOSD) throws UnknownUUIDException, ONCRPCException, IOException,
+        InterruptedException, ClassCastException, ClassNotFoundException {
+        System.out.println(file.getReplica(raFile.getReplicaNumber(headOSD)).isCompleteReplica());
+    }
+    
+    // }
+    
     /**
      * 
      */
     private void shutdown() {
         try {
-            if (client != null) {
-                client.shutdown();
-                client.waitForShutdown();
-            }
+            if (raFile != null)
+                raFile.close();
+            client.stop();
             
-            UUIDResolver.shutdown();
+            UUIDResolver.shutdown(resolver);
+            resolverClient.shutdown();
             
-            if (timeSync != null) {
-                timeSync.shutdown();
-                timeSync.waitForShutdown();
-            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -762,7 +690,6 @@ public class xtfs_repl {
         options.put(OPTION_ADD_REPLICA, new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put(OPTION_ADD_AUTOMATIC_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(OPTION_REMOVE_REPLICA, new CliOption(CliOption.OPTIONTYPE.STRING));
-        options.put(OPTION_REMOVE_AUTOMATIC_REPLICA, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(OPTION_SSL_CREDS_FILE, new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put(OPTION_SSL_CREDS_PASSWORD, new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put(OPTION_SSL_TRUSTED_CA_FILE, new CliOption(CliOption.OPTIONTYPE.STRING));
@@ -781,6 +708,7 @@ public class xtfs_repl {
         options.put(OPTION_ON_CLOSE_REPL_FULL_SET, new CliOption(CliOption.OPTIONTYPE.STRING));
         options.put(OPTION_POLICY_ATTRS_GET, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(OPTION_POLICY_ATTR_SET, new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(OPTION_CHECK_IF_COMPLETE, new CliOption(CliOption.OPTIONTYPE.STRING));
         
         try {
             CLIParser.parseCLI(args, options, arguments);
@@ -811,11 +739,11 @@ public class xtfs_repl {
         
         try {
             // resolve the path
-            final String filePath = utils.expandPath(arguments.get(0));
-            final String url = utils.getxattr(filePath, "xtreemfs.url");
+            final String localPath = utils.expandPath(arguments.get(0));
+            final String url = utils.getxattr(localPath, "xtreemfs.url");
             
             if (url == null) {
-                System.err.println("could not retrieve XtreemFS URL for file '" + filePath + "'");
+                System.err.println("could not retrieve XtreemFS URL for file '" + localPath + "'");
                 System.exit(1);
             }
             
@@ -826,7 +754,7 @@ public class xtfs_repl {
             
             final String dirURL = url.substring(i0 + 1, i1);
             final int dirPort = Integer.parseInt(url.substring(i1 + 1, i2));
-            final String volume = url.substring(i2 + 1, i3 == -1 ? url.length() : i3);
+            final String volName = url.substring(i2 + 1, i3 == -1 ? url.length() : i3);
             final String volPath = i3 == -1 ? "" : url.substring(i3);
             final InetSocketAddress dirAddress = new InetSocketAddress(dirURL, dirPort);
             
@@ -842,10 +770,10 @@ public class xtfs_repl {
                     options.get(OPTION_SSL_CREDS_FILE).stringValue),
                     options.get(OPTION_SSL_CREDS_PASSWORD).stringValue, new FileInputStream(options
                             .get(OPTION_SSL_TRUSTED_CA_FILE).stringValue), options
-                            .get(OPTION_SSL_TRUSTED_CA_PASSWORD).stringValue,false,gridSSL);
+                            .get(OPTION_SSL_TRUSTED_CA_PASSWORD).stringValue, false, gridSSL);
             }
             
-            system = new xtfs_repl(filePath, dirAddress, volume, volPath, sslOptions);
+            system = new xtfs_repl(localPath, dirAddress, volName, volPath, sslOptions);
             if ((options.get(OPTION_RSEL_POLICY_GET).switchValue)
                 || (options.get(OPTION_RSEL_POLICY_SET).stringValue != null)
                 || options.get(OPTION_OSEL_POLICY_GET).switchValue
@@ -877,7 +805,7 @@ public class xtfs_repl {
                     
                     if (st.countTokens() > 0) {
                         while (st.hasMoreTokens())
-                            osds.add(new ServiceUUID(st.nextToken()));
+                            osds.add(new ServiceUUID(st.nextToken(), system.resolver));
                         system.addReplica(osds, replicationFlags, stripeWidth);
                     } else
                         usage();
@@ -899,14 +827,10 @@ public class xtfs_repl {
                     String headOSD = e.getValue().stringValue.replace('\"', ' ').trim();
                     
                     if (headOSD.length() > 0) {
-                        ServiceUUID osd = new ServiceUUID(headOSD);
+                        ServiceUUID osd = new ServiceUUID(headOSD, system.resolver);
                         system.removeReplica(osd);
                     } else
                         usage();
-                    
-                } else if (e.getKey().equals(OPTION_REMOVE_AUTOMATIC_REPLICA) && e.getValue().switchValue) {
-                    
-                    system.removeReplicaAutomatically();
                     
                 } else if (e.getKey().equals(OPTION_SET_READ_ONLY) && e.getValue().switchValue) {
                     system.setReadOnly(true);
@@ -939,6 +863,8 @@ public class xtfs_repl {
                 } else if (e.getKey().equals(OPTION_ON_CLOSE_REPL_FULL_SET)
                     && e.getValue().stringValue != null) {
                     system.setOnCloseFull(Boolean.valueOf(e.getValue().stringValue.trim()));
+                } else if (e.getKey().equals(OPTION_CHECK_IF_COMPLETE) && e.getValue().stringValue != null) {
+                    system.checkIfComplete(e.getValue().stringValue.trim());
                 }
             }
         } catch (Exception e) {
@@ -965,15 +891,18 @@ public class xtfs_repl {
         out.append("\t-" + OPTION_LIST_REPLICAS + ": lists all replicas of this file\n");
         out.append("\t-" + OPTION_LIST_SUITABLE_OSDS_FOR_A_REPLICA
             + ": lists all suitable OSDs for this file, which can be used for a new replica\n");
+        out.append("\t-" + OPTION_CHECK_IF_COMPLETE
+            + " <UUID of head OSD>): checks if a replica is complete, i.e. has no more missing objects\n");
         out.append("\n");
         
         out.append("\tpolicy management:\n");
         out.append("\t-" + OPTION_OSEL_POLICY_SET + " { " + SEL_POLICY_DEFAULT + " | " + SEL_POLICY_FQDN
-            + " | " + SEL_POLICY_DCMAP + " | <policy_ID, [policy_ID, ...]> }"
+            + " | " + SEL_POLICY_UUID + " | " + SEL_POLICY_DCMAP + " | <policy_ID, [policy_ID, ...]> }"
             + ": sets a list of successively applied OSD selection policies\n");
         out.append("\t-" + OPTION_OSEL_POLICY_GET + ": prints the list of OSD selection policies\n");
-        out.append("\t-" + OPTION_RSEL_POLICY_SET + " { " + SEL_POLICY_DEFAULT + " | " + SEL_POLICY_RANDOM + " | " + SEL_POLICY_FQDN
-            + " | " + SEL_POLICY_DCMAP + " | " + SEL_POLICY_VIVALDI + " | <policy_ID, [policy_ID, ...]> }"
+        out.append("\t-" + OPTION_RSEL_POLICY_SET + " { " + SEL_POLICY_DEFAULT + " | " + SEL_POLICY_RANDOM
+            + " | " + SEL_POLICY_FQDN + " | " + SEL_POLICY_DCMAP + " | " + SEL_POLICY_VIVALDI
+            + " | <policy_ID, [policy_ID, ...]> }"
             + ": sets a list of successively applied replica selection policies\n");
         out.append("\t-" + OPTION_RSEL_POLICY_GET + ": prints the list of replica selection policies\n");
         out.append("\t-" + OPTION_POLICY_ATTR_SET + " <name=value>: sets a policy-specific attribute\n");
@@ -1007,7 +936,6 @@ public class xtfs_repl {
                 .append("\t-"
                     + OPTION_ADD_AUTOMATIC_REPLICA
                     + ": adds a replica and automatically selects the best OSDs (according to the volume's osd selection policy)\n");
-        out.append("\t-" + OPTION_REMOVE_AUTOMATIC_REPLICA + ": removes a randomly selected replica\n");
         out.append("\t-" + OPTION_STRIPE_WIDTH + " <number of OSDs>"
             + ": specifies how many OSDs will be used for this replica (stripe-width)\n");
         out

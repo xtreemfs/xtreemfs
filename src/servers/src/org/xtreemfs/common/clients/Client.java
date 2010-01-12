@@ -26,6 +26,9 @@ package org.xtreemfs.common.clients;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
@@ -56,6 +59,8 @@ public class Client {
     private DIRClient dirClient;
 
     private final UUIDResolver         uuidRes;
+    
+    private Map<String, Volume>       volumeMap;
 
     public Client(InetSocketAddress[] dirAddresses, int requestTimeout, int connectionTimeout, SSLOptions ssl) throws IOException {
         this.dirAddress = dirAddresses;
@@ -64,6 +69,7 @@ public class Client {
         dirClient = new DIRClient(mdClient, dirAddress[0]);
         TimeSync.initializeLocal(0,50);
         uuidRes = UUIDResolver.startNonSingelton(dirClient, 3600, 1000);
+        volumeMap = new HashMap<String, Volume>();
     }
 
     public Volume getVolume(String volumeName, UserCredentials credentials) throws IOException {
@@ -87,7 +93,14 @@ public class Client {
 
             Logging.logMessage(Logging.LEVEL_DEBUG, this,"volume %s on MRC %s/%s",volumeName,mrcUUIDstr,mrc.getAddress());
 
-            return new Volume(new OSDClient(osdClient), new MRCClient(mdClient, mrc.getAddress()), volumeName, uuidRes, uc);
+            Volume v = volumeMap.get(volumeName);
+            if (v == null) {
+                v = new Volume(new OSDClient(osdClient), new MRCClient(mdClient, mrc.getAddress()),
+                    volumeName, uuidRes, uc);
+                volumeMap.put(volumeName, v);
+            }
+            return v;
+            
         } catch (ONCRPCException ex) {
             throw new IOException("communication failure", ex);
         } catch (InterruptedException ex) {
@@ -128,6 +141,10 @@ public class Client {
                 osdClient.shutdown();
                 mdClient.waitForShutdown();
                 osdClient.waitForShutdown();
+                
+                for(Volume v: volumeMap.values())
+                    v.shutdown();
+                
             } catch (Exception ex) {
                 ex.printStackTrace();
             } finally {

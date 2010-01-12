@@ -119,6 +119,10 @@ public class ReadDirAndStatOperation extends MRCOperation {
             
             FileMetadata child = it.next();
             
+//            // ignore the .fuse-hidden directory
+//            if (res.getFile().getId() == 1 && child.getFileName().equals(".fuse-hidden"))
+//                continue;
+//            
             String linkTarget = sMan.getSoftlinkTarget(child.getId());
             int mode = faMan
                     .getPosixAccessMode(sMan, child, rq.getDetails().userId, rq.getDetails().groupIds);
@@ -127,15 +131,16 @@ public class ReadDirAndStatOperation extends MRCOperation {
                     : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
             long size = linkTarget != null ? linkTarget.length() : child.isDirectory() ? 0 : child.getSize();
             int blkSize = 0;
-            if ( (linkTarget == null) && (!file.isDirectory()) ) {
+            if ((linkTarget == null) && (!file.isDirectory())) {
                 XLocList xlocList = child.getXLocList();
                 if ((xlocList != null) && (xlocList.getReplicaCount() > 0))
-                    blkSize = xlocList.getReplica(0).getStripingPolicy().getStripeSize()*1024;
+                    blkSize = xlocList.getReplica(0).getStripingPolicy().getStripeSize() * 1024;
             }
             Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, child.getLinkCount(), 1, 1,
                 0, size, blkSize, (long) child.getAtime() * (long) 1e9, (long) child.getMtime() * (long) 1e9,
-                (long) child.getCtime() * (long) 1e9, volume.getId()+ ":" + child.getId(),
-                    child.getOwnerId(), child.getOwningGroupId(), linkTarget, child.getEpoch(), (int) child.getW32Attrs());
+                (long) child.getCtime() * (long) 1e9, volume.getId() + ":" + child.getId(), child
+                        .getOwnerId(), child.getOwningGroupId(), linkTarget, child.getEpoch(), (int) child
+                        .getW32Attrs());
             
             dirContent.add(new DirectoryEntry(child.getFileName(), stat));
         }

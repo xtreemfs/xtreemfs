@@ -48,7 +48,7 @@ import org.xtreemfs.mrc.utils.PathResolver;
  * @author stender
  */
 public class ReadDirOperation extends MRCOperation {
-        
+    
     public ReadDirOperation(MRCRequestDispatcher master) {
         super(master);
     }
@@ -108,8 +108,16 @@ public class ReadDirOperation extends MRCOperation {
         StringSet names = new StringSet();
         
         Iterator<FileMetadata> it = sMan.getChildren(res.getFile().getId());
-        while (it.hasNext())
-            names.add(it.next().getFileName());
+        while (it.hasNext()) {
+            
+            String next = it.next().getFileName();
+            
+//            // ignore the .fuse-hidden directory
+//            if (res.getFile().getId() == 1 && next.equals(".fuse-hidden"))
+//                continue;
+            
+            names.add(next);
+        }
         
         // set the response
         rq.setResponse(new xtreemfs_listdirResponse(names));

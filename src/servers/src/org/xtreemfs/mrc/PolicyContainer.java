@@ -54,6 +54,7 @@ import org.xtreemfs.mrc.ac.YesToAnyoneFileAccessPolicy;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.osdselection.FilterDefaultPolicy;
 import org.xtreemfs.mrc.osdselection.FilterFQDNPolicy;
+import org.xtreemfs.mrc.osdselection.FilterUUIDPolicy;
 import org.xtreemfs.mrc.osdselection.GroupDCMapPolicy;
 import org.xtreemfs.mrc.osdselection.GroupFQDNPolicy;
 import org.xtreemfs.mrc.osdselection.OSDSelectionPolicy;
@@ -74,6 +75,7 @@ public class PolicyContainer {
                                                                    YesToAnyoneFileAccessPolicy.class,
                                                                    FilterDefaultPolicy.class,
                                                                    FilterFQDNPolicy.class,
+                                                                   FilterUUIDPolicy.class,
                                                                    GroupDCMapPolicy.class,
                                                                    GroupFQDNPolicy.class,
                                                                    SortDCMapPolicy.class,

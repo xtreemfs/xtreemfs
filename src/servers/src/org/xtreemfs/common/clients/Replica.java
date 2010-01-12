@@ -5,11 +5,12 @@
 
 package org.xtreemfs.common.clients;
 
-import java.io.IOError;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Map;
+
+import org.xtreemfs.common.xloc.ReplicationFlags;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.StripingPolicyType;
@@ -111,6 +112,22 @@ public class Replica {
     public boolean isFullReplica() {
         return (replicationFlags & Constants.REPL_FLAG_FULL_REPLICA) != 0;
     }
+    
+    public boolean isRandomStrategy() {
+        return ReplicationFlags.isRandomStrategy(replicationFlags); 
+    }
+    
+    public boolean isSequentialStrategy() {
+        return ReplicationFlags.isSequentialStrategy(replicationFlags);
+    }
+    
+    public boolean isSequentialPrefetchingStrategy() {
+        return ReplicationFlags.isSequentialPrefetchingStrategy(replicationFlags);
+    }
+    
+    public boolean isRarestFirstStrategy() {
+        return ReplicationFlags.isRarestFirstStrategy(replicationFlags);
+    }
 
     /**
      * checks if the replica is complete (holds all objects of a file).
@@ -148,7 +165,7 @@ public class Replica {
                 }
             }
             if (!completeReplica) {
-                throw new IOException("not complete replicas left to remove this replica!");
+                throw new IOException("cannot remove last complete replica!");
             }
         }
 

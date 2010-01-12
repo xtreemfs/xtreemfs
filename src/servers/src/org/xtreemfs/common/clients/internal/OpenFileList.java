@@ -52,6 +52,7 @@ public class OpenFileList extends Thread {
     private volatile boolean quit;
 
     public OpenFileList(MRCClient client) {
+        super("XCapRNThr");
         capabilities = new HashMap();
         fsUpdateCache = new HashMap<String, OSDWriteResponse>();
         this.client = client;

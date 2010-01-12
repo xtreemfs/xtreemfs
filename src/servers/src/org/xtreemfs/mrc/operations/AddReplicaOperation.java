@@ -119,6 +119,10 @@ public class AddReplicaOperation extends MRCOperation {
         // hasn't been used yet
         XLocList xLocList = file.getXLocList();
         
+        if (!MRCHelper.isResolvable(newRepl.getOsd_uuids()))
+            throw new UserException(ErrNo.EINVAL, "replica contains unresolvable OSD UUIDs in '"
+                + newRepl.getOsd_uuids() + "'");
+        
         if (!MRCHelper.isAddable(xLocList, newRepl.getOsd_uuids()))
             throw new UserException(ErrNo.EINVAL,
                 "at least one OSD already used in current X-Locations list '"

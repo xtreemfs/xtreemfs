@@ -62,6 +62,22 @@ public class Path {
         
     }
     
+    public Path(String[] comps) {
+        
+        this.compIndices = new ArrayList<Integer>(15);
+        
+        StringBuilder sb = new StringBuilder();
+        int index = 0;
+        
+        for(String comp: comps) {
+            compIndices.add(index);
+            index += comp.length() + 1;
+            sb.append("/"+ comp);
+        }
+        
+        path = sb.toString();
+    }
+    
     public String getComp(int index) {
         
         if (index >= compIndices.size())

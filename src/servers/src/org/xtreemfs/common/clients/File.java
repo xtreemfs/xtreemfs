@@ -138,6 +138,10 @@ public class File {
     public String getxattr(String name) throws IOException {
         return volume.getxattr(path, name);
     }
+    
+    public String[] listXAttrs() throws IOException {
+        return volume.listxattr(path);
+    }
 
     public void setxattr(String name, String value) throws IOException {
         volume.setxattr(path, name, value);
@@ -174,7 +178,7 @@ public class File {
        try {
             Map<String,Object> xloc = getLocations();
             List<Map<String,Object>> replicas = (List<Map<String, Object>>) xloc.get("replicas");
-            if ((replicas.size() < replicaNo-1) ||  (replicaNo > 0))
+            if (replicas.size() <= replicaNo)
                 throw new IllegalArgumentException("replicaNo is out of bounds");
             return new Replica(this,replicas.get(replicaNo));
        } catch (JSONException ex) {

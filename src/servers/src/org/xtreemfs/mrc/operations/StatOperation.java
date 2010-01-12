@@ -36,6 +36,7 @@ import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
 import org.xtreemfs.mrc.metadata.XLocList;
+import org.xtreemfs.mrc.utils.MRCHelper;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
 
@@ -59,7 +60,10 @@ public class StatOperation extends MRCOperation {
         
         validateContext(rq);
         
-        final Path p = new Path(rqArgs.getPath());
+        Path p = new Path(rqArgs.getPath());
+        
+//        if(p.getLastComp(0).startsWith(".fuse_hidden"))
+//            p = MRCHelper.getFuseHiddenPath(p);
         
         final StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
         final PathResolver res = new PathResolver(sMan, p);
