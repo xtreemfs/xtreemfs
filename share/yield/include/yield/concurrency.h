@@ -376,6 +376,9 @@ namespace YIELD
             {
               static_cast<ExceptionResponse*>( dequeued_ev )
                 ->throwStackClone();
+
+              // Eliminate compiler warnings about control paths
+              return static_cast<ResponseType&>( *dequeued_ev ); 
             }
             catch ( ExceptionResponse& )
             {
