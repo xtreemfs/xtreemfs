@@ -35,6 +35,10 @@ module org
       const uint32_t SYSTEM_V_FCNTL_H_S_IFLNK = 0xA000;
 
       const uint32_t XCAP_EXPIRE_TIMEOUT_S_MIN = 30;
+      
+      const uint32_t SERVICE_STATUS_AVAIL = 0;
+      const uint32_t SERVICE_STATUS_TO_BE_REMOVED = 1;
+      const uint32_t SERVICE_STATUS_REMOVED = 2;
     };
   };
 };
