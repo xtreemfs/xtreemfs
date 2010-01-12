@@ -194,8 +194,9 @@ Proxy<ProxyType, InterfaceType>::Proxy
 #ifndef _WIN32
   policy_container = new PolicyContainer;
 
+  // Use a C-style cast instead of reinterpret_cast to appease gcc
   get_user_credentials_from_passwd 
-    = reinterpret_cast<get_user_credentials_from_passwd_t>
+    = ( get_user_credentials_from_passwd_t )
       ( 
         policy_container->getPolicyFunction
         ( 
@@ -204,7 +205,7 @@ Proxy<ProxyType, InterfaceType>::Proxy
       );
 
   get_passwd_from_user_credentials 
-    = reinterpret_cast<get_passwd_from_user_credentials_t>
+    = ( get_passwd_from_user_credentials_t )
       ( 
         policy_container->getPolicyFunction
         ( 
