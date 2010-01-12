@@ -15,6 +15,7 @@ import java.util.Map.Entry;
 import org.xtreemfs.babudb.BabuDB;
 import org.xtreemfs.babudb.BabuDBException;
 import org.xtreemfs.babudb.lsmdb.Database;
+import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
@@ -180,7 +181,7 @@ public class StatusPage {
                     dump.append("</a>");
                 } else if (dataEntry.getKey().equals("last_updated")) {
 
-                } else if (dataEntry.getKey().equals("status")) {
+                } else if (dataEntry.getKey().equals(HeartbeatThread.STATUS_ATTR)) {
                     int status = Integer.valueOf(dataEntry.getValue());
                     switch (status) {
                         case Constants.SERVICE_STATUS_AVAIL : dump.append(" (online)"); break;

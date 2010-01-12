@@ -200,7 +200,7 @@ public class ScrubberTest extends TestCase {
     
     public void testScrubber() throws Exception {
         
-        scrubber = new Scrubber(newClient, volumeName, false, 3);
+        scrubber = new Scrubber(newClient, volumeName, 3, true, true, true);
         scrubber.scrub();
         
         // file size corrected from 10 to 0

@@ -39,6 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import java.util.concurrent.atomic.AtomicLong;
+import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.clients.Client;
@@ -164,7 +165,7 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         ServiceSet servs = client.getRegistry();
         for (Service serv : servs) {
             if ( (serv.getType() == ServiceType.SERVICE_TYPE_OSD) &&
-                 serv.getData().get("status").equalsIgnoreCase(status_removed) ) {
+                 serv.getData().get(HeartbeatThread.STATUS_ATTR).equalsIgnoreCase(status_removed) ) {
                 removedOSDs.add(serv.getUuid());
             }
         }

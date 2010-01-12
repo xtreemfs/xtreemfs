@@ -203,7 +203,6 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 // get service data
                 ServiceSet sregs = new ServiceSet();
                 ServiceDataMap dmap = new ServiceDataMap();
-                dmap.put("status",Integer.toString(Constants.SERVICE_STATUS_AVAIL));
                 dmap.put("load", load);
                 dmap.put("proto_version", Integer.toString(MRCInterface.getVersion()));
                 dmap.put("totalRAM", Long.toString(totalRAM));

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.xtreemfs.common.HeartbeatThread;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.VersionManagement;
 import org.xtreemfs.common.logging.Logging;
@@ -121,9 +122,9 @@ public class xtfs_chstatus {
             }
 
             Service s = set.get(0);
-            if (s.getData().get("status") != null) {
+            if (s.getData().get(HeartbeatThread.STATUS_ATTR) != null) {
                 System.out.print("current status: ");
-                int status = Integer.valueOf(s.getData().get("status"));
+                int status = Integer.valueOf(s.getData().get(HeartbeatThread.STATUS_ATTR));
                 switch (status) {
                     case Constants.SERVICE_STATUS_AVAIL : System.out.println(status+" (online)"); break;
                     case Constants.SERVICE_STATUS_TO_BE_REMOVED : System.out.println(status+" (locked for removal)"); break;
@@ -143,7 +144,7 @@ public class xtfs_chstatus {
                 } else {
                     System.out.println("unknown status name: "+newStatus+". Must be 'online', ' locked' or 'removed'");
                 }
-                s.getData().put("status", newStatusInt);
+                s.getData().put(HeartbeatThread.STATUS_ATTR, newStatusInt);
                 RPCResponse r2 = dc.xtreemfs_service_register(dirAddr, s);
                 r2.get();
                 r2.freeBuffers();
