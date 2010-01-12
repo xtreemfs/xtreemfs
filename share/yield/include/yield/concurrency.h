@@ -11,8 +11,9 @@
 
 
 #define YIELD_STAGES_PER_GROUP_MAX 64
-// YIELD_MG1_POLLING_TABLE_SIZE should be a Fibonnaci number: 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584
-#define YIELD_MG1_POLLING_TABLE_SIZE 144
+// YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE should be a Fibonnaci number: 
+// 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584
+#define YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE 144
 
 
 namespace YIELD
@@ -32,8 +33,15 @@ namespace YIELD
         : next_stage( NULL )
       { }
 
-      Stage* get_next_stage() const { return next_stage; }
-      void set_next_stage( Stage* next_stage ) { this->next_stage = next_stage; }
+      Stage* get_next_stage() const 
+      { 
+          return next_stage; 
+      }
+
+      void set_next_stage( Stage* next_stage ) 
+      { 
+          this->next_stage = next_stage; 
+      }
 
       // yidl::runtime::Object
       Event& incRef() { return Object::incRef( *this ); }
@@ -136,7 +144,10 @@ namespace YIELD
     typedef yidl::runtime::auto_Object<EventQueue> auto_EventQueue;
 
 
-    class NonBlockingEventQueue : public EventQueue, private YIELD::platform::SynchronizedNonBlockingFiniteQueue<Event*, 1024>
+    class NonBlockingEventQueue 
+      : public EventQueue, 
+        private YIELD::platform::
+                  SynchronizedNonBlockingFiniteQueue<Event*, 1024>
     {
     public:
       // yidl::runtime::Object
@@ -145,29 +156,40 @@ namespace YIELD
       // EventQueue
       Event* dequeue()
       {
-        return YIELD::platform::SynchronizedNonBlockingFiniteQueue<Event*, 1024>::dequeue();
+        return YIELD::platform::
+                SynchronizedNonBlockingFiniteQueue<Event*, 1024>::
+                  dequeue();
       }
 
       bool enqueue( Event& ev )
       {
-        return YIELD::platform::SynchronizedNonBlockingFiniteQueue<Event*, 1024>::enqueue( &ev );        
+        return YIELD::platform::
+                SynchronizedNonBlockingFiniteQueue<Event*, 1024>::
+                  enqueue( &ev );
       }
 
       Event* timed_dequeue( uint64_t timeout_ns )
       {
-        return YIELD::platform::SynchronizedNonBlockingFiniteQueue<Event*, 1024>::timed_dequeue( timeout_ns );
+        return YIELD::platform::
+                SynchronizedNonBlockingFiniteQueue<Event*, 1024>::
+                  timed_dequeue( timeout_ns );
       }
 
       Event* try_dequeue()
       {
-        return YIELD::platform::SynchronizedNonBlockingFiniteQueue<Event*, 1024>::try_dequeue();
+        return YIELD::platform::
+                 SynchronizedNonBlockingFiniteQueue<Event*, 1024>::
+                   try_dequeue();
       }
     };
     
-    typedef yidl::runtime::auto_Object<NonBlockingEventQueue> auto_NonBlockingEventQueue;
+    typedef yidl::runtime::auto_Object<NonBlockingEventQueue> 
+      auto_NonBlockingEventQueue;
 
 
-    class STLEventQueue : public EventQueue, private YIELD::platform::SynchronizedSTLQueue<Event*>
+    class STLEventQueue 
+      : public EventQueue, 
+        private YIELD::platform::SynchronizedSTLQueue<Event*>
     {
     public:
       // yidl::runtime::Object
@@ -186,7 +208,9 @@ namespace YIELD
 
       Event* timed_dequeue( uint64_t timeout_ns )
       {
-        return YIELD::platform::SynchronizedSTLQueue<Event*>::timed_dequeue( timeout_ns );
+        return YIELD::platform::
+                 SynchronizedSTLQueue<Event*>::
+                   timed_dequeue( timeout_ns );
       }
 
       Event* try_dequeue()
@@ -220,17 +244,27 @@ namespace YIELD
       YIELD::platform::SynchronizedSTLQueue<Event*> all_processor_event_queue;
     };
 
-    typedef yidl::runtime::auto_Object<ThreadLocalEventQueue> auto_ThreadLocalEventQueue;
+    typedef yidl::runtime::auto_Object<ThreadLocalEventQueue> 
+      auto_ThreadLocalEventQueue;
 
 
     class Interface : public EventHandler
     {
     public:
-      virtual Request* checkRequest( yidl::runtime::Object& request ) = 0; // Casts an Object to a Request if the request belongs to the interface
-      virtual Response* checkResponse( yidl::runtime::Object& response ) = 0; // Casts an Object to a Response if the request belongs to the interface
-      virtual yidl::runtime::auto_Object<Request> createRequest( uint32_t tag ) = 0;
-      virtual yidl::runtime::auto_Object<Response> createResponse( uint32_t tag ) = 0;
-      virtual yidl::runtime::auto_Object<ExceptionResponse> createExceptionResponse( uint32_t tag ) = 0;
+      // Casts an Object to a Request if the request belongs to the interface
+      virtual Request* checkRequest( yidl::runtime::Object& request ) = 0;
+
+      // Casts an Object to a Response if the request belongs to the interface
+      virtual Response* checkResponse( yidl::runtime::Object& response ) = 0; 
+
+      virtual yidl::runtime::auto_Object<Request> 
+        createRequest( uint32_t tag ) = 0;
+
+      virtual yidl::runtime::auto_Object<Response> 
+        createResponse( uint32_t tag ) = 0;
+
+      virtual yidl::runtime::auto_Object<ExceptionResponse> 
+        createExceptionResponse( uint32_t tag ) = 0;
     };
 
     typedef yidl::runtime::auto_Object<Interface> auto_Interface;
@@ -273,33 +307,60 @@ namespace YIELD
     typedef yidl::runtime::auto_Object<Response> auto_Response;
 
 
-    class ExceptionResponse : public Response, public YIELD::platform::Exception
+    class ExceptionResponse 
+      : public Response, 
+        public YIELD::platform::Exception
     {
     public:
       ExceptionResponse() { }
-      ExceptionResponse( uint32_t error_code ) : Exception( error_code ) { }
-      ExceptionResponse( const char* what ) : Exception( what ) { }
-      ExceptionResponse( const Exception& other ) : Exception( other ) { }
-      ExceptionResponse( const ExceptionResponse& other ) : Exception( other ) { }
-      virtual ~ExceptionResponse() throw() { }
 
-      virtual ExceptionResponse* clone() const { return new ExceptionResponse( what() ); }
-      virtual void throwStackClone() const { throw ExceptionResponse( what() ); }
+      ExceptionResponse( uint32_t error_code ) 
+        : Exception( error_code ) 
+      { }
+
+      ExceptionResponse( const char* what ) 
+        : Exception( what ) 
+      { }
+
+      ExceptionResponse( const Exception& other ) 
+        : Exception( other ) 
+      { }
+
+      ExceptionResponse( const ExceptionResponse& other ) 
+        : Exception( other ) 
+      { }
+
+      virtual ~ExceptionResponse() throw() 
+      { }
+
+      virtual ExceptionResponse* clone() const 
+      { 
+        return new ExceptionResponse( what() ); 
+      }
+
+      virtual void throwStackClone() const 
+      { 
+        throw ExceptionResponse( what() ); 
+      }
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( ExceptionResponse, 102 );
     };
 
-    typedef yidl::runtime::auto_Object<ExceptionResponse> auto_ExceptionResponse;
+    typedef yidl::runtime::auto_Object<ExceptionResponse> 
+      auto_ExceptionResponse;
 
 
     template <class ResponseType>
-    class ResponseQueue : public EventTarget, private YIELD::platform::SynchronizedSTLQueue<Event*>
+    class ResponseQueue 
+      : public EventTarget, 
+        private YIELD::platform::SynchronizedSTLQueue<Event*>
     {
     public:
       ResponseType& dequeue()
       {
-        Event* dequeued_ev = YIELD::platform::SynchronizedSTLQueue<Event*>::dequeue();      
+        Event* dequeued_ev 
+          = YIELD::platform::SynchronizedSTLQueue<Event*>::dequeue();
 
         switch ( dequeued_ev->get_type_id() )
         {
@@ -313,7 +374,8 @@ namespace YIELD
           {
             try
             {
-              static_cast<ExceptionResponse*>( dequeued_ev )->throwStackClone();
+              static_cast<ExceptionResponse*>( dequeued_ev )
+                ->throwStackClone();
             }
             catch ( ExceptionResponse& )
             {
@@ -321,8 +383,17 @@ namespace YIELD
               throw;
             }
           }
+          break;
 
-          default: throw YIELD::platform::Exception( "ResponseQueue::dequeue: received unexpected, non-exception event type" );
+          default:
+          {
+            throw YIELD::platform::Exception
+                  ( 
+                    "ResponseQueue::dequeue: received unexpected, " \
+                    "non-exception event type"
+                  );
+          }
+          break;
         }
       }
 
@@ -333,7 +404,11 @@ namespace YIELD
 
       ResponseType& timed_dequeue( uint64_t timeout_ns )
       {
-        Event* dequeued_ev = YIELD::platform::SynchronizedSTLQueue<Event*>::timed_dequeue( timeout_ns );
+        Event* dequeued_ev 
+          = YIELD::platform::
+              SynchronizedSTLQueue<Event*>::
+                timed_dequeue( timeout_ns );
+
         if ( dequeued_ev != NULL )
         {
           switch ( dequeued_ev->get_type_id() )
@@ -348,7 +423,8 @@ namespace YIELD
             {
               try
               {
-                static_cast<ExceptionResponse*>( dequeued_ev )->throwStackClone();
+                static_cast<ExceptionResponse*>( dequeued_ev )
+                  ->throwStackClone();
               }
               catch ( ExceptionResponse& )
               {
@@ -358,8 +434,17 @@ namespace YIELD
 
               throw YIELD::platform::Exception( "should never reach this point" );
             }
+            break;
 
-            default: throw YIELD::platform::Exception( "ResponseQueue::dequeue: received unexpected, non-exception event type" );
+            default:
+            {
+              throw YIELD::platform::Exception
+                   ( 
+                     "ResponseQueue::dequeue: received unexpected, " \
+                     " non-exception event type"
+                   );
+            }
+            break;
           }
         }
         else
@@ -377,11 +462,15 @@ namespace YIELD
     };
 
     template <class ResponseType>
-    class auto_ResponseQueue : public yidl::runtime::auto_Object< ResponseQueue<ResponseType> >
+    class auto_ResponseQueue 
+      : public yidl::runtime::auto_Object< ResponseQueue<ResponseType> >
     { 
     public:
       auto_ResponseQueue( ResponseQueue<ResponseType>* response_queue )
-        : yidl::runtime::auto_Object< ResponseQueue<ResponseType> >( response_queue )
+        : yidl::runtime::auto_Object< ResponseQueue<ResponseType> >
+         ( 
+           response_queue 
+         )
       { }
     };
 
@@ -432,7 +521,8 @@ namespace YIELD
       Stage( const char* name );
       virtual ~Stage();
 
-      YIELD::platform::Sampler<uint64_t, 1024, YIELD::platform::Mutex> event_processing_time_ns_sampler;
+      YIELD::platform::Sampler<uint64_t, 1024, YIELD::platform::Mutex> 
+        event_processing_time_ns_sampler;
       // uint64_t event_processing_time_ns_total;
       uint32_t event_queue_length, event_queue_arrival_count;       
       // uint64_t events_processed_total;
@@ -459,23 +549,32 @@ namespace YIELD
     class StageImpl : public Stage
     {
     public:
-      StageImpl( yidl::runtime::auto_Object<EventHandlerType> event_handler, yidl::runtime::auto_Object<EventQueueType> event_queue )
-        : Stage( event_handler->get_type_name() ), event_handler( event_handler ), event_queue( event_queue )
+      StageImpl
+      ( 
+        yidl::runtime::auto_Object<EventHandlerType> event_handler, 
+        yidl::runtime::auto_Object<EventQueueType> event_queue 
+      )
+        : Stage( event_handler->get_type_name() ), 
+          event_handler( event_handler ), 
+          event_queue( event_queue )
       { }
       
       // EventTarget
       void send( Event& event )
       {
       /*
-        Stage* running_stage = static_cast<Stage*>( Thread::getTLS( running_stage_tls_key ) );
+        Stage* running_stage = static_cast<Stage*>
+          ( Thread::getTLS( running_stage_tls_key ) );
         if ( running_stage != NULL )
         {
           running_stage->send_counters_lock.acquire();
-          std::map<const char*, uint64_t>::iterator send_counter_i = running_stage->send_counters.find( this->get_stage_name() );
+          std::map<const char*, uint64_t>::iterator send_counter_i 
+            = running_stage->send_counters.find( this->get_stage_name() );
           if ( send_counter_i != running_stage->send_counters.end() )
             send_counter_i->second++;
           else
-            running_stage->send_counters.insert( std::make_pair( this->get_stage_name(), 1 ) );
+            running_stage->send_counters.insert
+              ( std::make_pair( this->get_stage_name(), 1 ) );
           running_stage->send_counters_lock.release();
         }
         */
@@ -495,8 +594,15 @@ namespace YIELD
       }
 
       // Stage
-      const char* get_stage_name() const { return event_handler->get_type_name(); }
-      auto_EventHandler get_event_handler() { return event_handler->incRef(); }    
+      const char* get_stage_name() const
+      { 
+          return event_handler->get_type_name(); 
+      }
+
+      auto_EventHandler get_event_handler()
+      { 
+        return event_handler->incRef(); 
+      }    
 
       bool visit()
       {
@@ -598,10 +704,12 @@ namespace YIELD
         performance_counter_totals[1] += performance_counter_counts[1];
   #endif
 
-        uint64_t event_processing_time_ns = YIELD::platform::Time::getCurrentUnixTimeNS() - start_time_ns;
+        uint64_t event_processing_time_ns 
+          = YIELD::platform::Time::getCurrentUnixTimeNS() - start_time_ns;
         if ( event_processing_time_ns < 10 * NS_IN_S )
         {
-          event_processing_time_ns_sampler.setNextSample( event_processing_time_ns );
+          event_processing_time_ns_sampler.
+            setNextSample( event_processing_time_ns );
   //        event_processing_time_ns_total += event_processing_time_ns;
         }
         // events_processed_total++;
@@ -613,18 +721,39 @@ namespace YIELD
     {
     public:
       template <class EventHandlerType>
-      auto_Stage createStage( yidl::runtime::auto_Object<EventHandlerType> event_handler )
+      auto_Stage createStage
+      ( 
+        yidl::runtime::auto_Object<EventHandlerType> event_handler 
+      )
       {
-        return createStage( static_cast<EventHandler*>( event_handler.release() ) );
+        return createStage
+        ( 
+          static_cast<EventHandler*>( event_handler.release() ) 
+        );
       }
 
       template <class EventHandlerType>
-      auto_Stage createStage( yidl::runtime::auto_Object<EventHandlerType> event_handler, int16_t thread_count )
+      auto_Stage createStage
+      ( 
+        yidl::runtime::auto_Object<EventHandlerType> event_handler, 
+        int16_t thread_count 
+      )
       {
-        return createStage( static_cast<EventHandler*>( event_handler.release() ), thread_count );
+        return createStage
+        ( 
+          static_cast<EventHandler*>
+          ( 
+            event_handler.release() 
+          ), 
+          thread_count 
+        );
       }
       
-      virtual auto_Stage createStage( yidl::runtime::auto_Object<EventHandler> event_handler, int16_t thread_count = 1 ) = 0;
+      virtual auto_Stage createStage
+      ( 
+        yidl::runtime::auto_Object<EventHandler> event_handler, 
+        int16_t thread_count = 1 
+      ) = 0;
 
       Stage** get_stages() { return &stages[0]; }
 
@@ -649,19 +778,32 @@ namespace YIELD
     {
     public:
       template <class EventHandlerType>
-      auto_Stage createStage( yidl::runtime::auto_Object<EventHandlerType> event_handler )
+      auto_Stage createStage
+      ( 
+        yidl::runtime::auto_Object<EventHandlerType> event_handler
+      )
       {
-        return static_cast<StageGroupType*>( this )->createStage<EventHandlerType, EventQueue>( event_handler, 1 );
+        return static_cast<StageGroupType*>( this )
+          ->createStage<EventHandlerType, EventQueue>( event_handler, 1 );
       }
 
       template <class EventHandlerType>
-      auto_Stage createStage( yidl::runtime::auto_Object<EventHandlerType> event_handler, int16_t thread_count )
+      auto_Stage createStage
+      ( 
+        yidl::runtime::auto_Object<EventHandlerType> event_handler, 
+        int16_t thread_count 
+      )
       {
-        return static_cast<StageGroupType*>( this )->createStage<EventHandlerType>( event_handler, thread_count );
+        return static_cast<StageGroupType*>( this )
+          ->createStage<EventHandlerType>( event_handler, thread_count );
       }
 
       // StageGroup
-      auto_Stage createStage( yidl::runtime::auto_Object<EventHandler> event_handler, int16_t thread_count = 1 )
+      auto_Stage createStage
+      ( 
+        yidl::runtime::auto_Object<EventHandler> event_handler, 
+        int16_t thread_count = 1 
+      )
       {
         return createStage<EventHandler>( event_handler, thread_count );
       }
@@ -675,17 +817,43 @@ namespace YIELD
     class ColorStageGroup : public StageGroupImpl<ColorStageGroup>
     {
     public:
-      ColorStageGroup( const char* name = "Main stage group", uint16_t start_logical_processor_i = 0, int16_t thread_count = -1 );
+      ColorStageGroup
+      (
+        const char* name = "Main stage group", 
+        uint16_t start_logical_processor_i = 0, 
+        int16_t thread_count = -1 
+      );
+
       ~ColorStageGroup();
 
       template <class EventHandlerType>
-      auto_Stage createStage( yidl::runtime::auto_Object<EventHandlerType> event_handler, int16_t )
+      auto_Stage createStage
+      ( 
+        yidl::runtime::auto_Object<EventHandlerType> event_handler, 
+        int16_t 
+      )
       {
         auto_Stage stage;
         if ( event_handler->isThreadSafe() )
-          stage = new StageImpl<EventHandlerType, STLEventQueue, YIELD::platform::NOPLock>( event_handler, event_queue );
+        {
+          stage 
+            = new StageImpl
+                  <
+                    EventHandlerType, 
+                    STLEventQueue, 
+                    YIELD::platform::NOPLock
+                  >( event_handler, event_queue );
+        }
         else
-          stage = new StageImpl<EventHandlerType, STLEventQueue, YIELD::platform::Mutex>( event_handler, event_queue );
+        {
+          stage 
+            = new StageImpl
+                  <
+                    EventHandlerType, 
+                    STLEventQueue, 
+                    YIELD::platform::Mutex
+                  >( event_handler, event_queue );
+        }
 
         event_handler->handleEvent( *( new Stage::StartupEvent( stage ) ) );
 
@@ -717,28 +885,71 @@ namespace YIELD
 
 
     template <class VisitPolicyType>
-    class PollingStageGroup : public StageGroupImpl< PollingStageGroup<VisitPolicyType> >
+    class PollingStageGroup 
+      : public StageGroupImpl< PollingStageGroup<VisitPolicyType> >
     {
     public:
-      PollingStageGroup( const char* name = "Main stage group", uint16_t start_logical_processor_i = 0, int16_t thread_count = -1, bool use_thread_local_event_queues = false );
+      PollingStageGroup
+      ( 
+        const char* name = "Main stage group", 
+        uint16_t start_logical_processor_i = 0, 
+        int16_t thread_count = -1, 
+        bool use_thread_local_event_queues = false 
+      );
 
       template <class EventHandlerType>
-      auto_Stage createStage( yidl::runtime::auto_Object<EventHandlerType> event_handler, int16_t )
+      auto_Stage createStage
+      (
+        yidl::runtime::auto_Object<EventHandlerType> event_handler, 
+        int16_t 
+      )
       {
         auto_Stage stage;
         if ( use_thread_local_event_queues )
         {
           if ( event_handler->isThreadSafe() )
-            stage = new StageImpl<EventHandlerType, ThreadLocalEventQueue, YIELD::platform::NOPLock>( event_handler, new ThreadLocalEventQueue );
+          {
+            stage 
+              = new StageImpl
+                    <
+                      EventHandlerType, 
+                      ThreadLocalEventQueue, 
+                      YIELD::platform::NOPLock
+                    >( event_handler, new ThreadLocalEventQueue );
+          }
           else
-            stage = new StageImpl<EventHandlerType, ThreadLocalEventQueue, YIELD::platform::Mutex>( event_handler, new ThreadLocalEventQueue );
+          {
+            stage 
+              = new StageImpl
+                    <
+                      EventHandlerType, 
+                      ThreadLocalEventQueue, 
+                      YIELD::platform::Mutex
+                    >( event_handler, new ThreadLocalEventQueue );
+          }
         }
         else
         {
           if ( event_handler->isThreadSafe() )
-            stage = new StageImpl<EventHandlerType, STLEventQueue, YIELD::platform::NOPLock>( event_handler, new STLEventQueue );
+          {
+            stage 
+              = new StageImpl
+                    <
+                      EventHandlerType, 
+                      STLEventQueue, 
+                      YIELD::platform::NOPLock
+                    >( event_handler, new STLEventQueue );
+          }
           else
-            stage = new StageImpl<EventHandlerType, STLEventQueue, YIELD::platform::Mutex>( event_handler, new STLEventQueue );
+          {
+            stage 
+              = new StageImpl
+                    <
+                      EventHandlerType, 
+                      STLEventQueue, 
+                      YIELD::platform::Mutex
+                    >( event_handler, new STLEventQueue );
+          }
         }
 
         event_handler->handleEvent( *( new Stage::StartupEvent( stage ) ) );
@@ -783,9 +994,23 @@ namespace YIELD
           return sorted_stages[next_stage_i++];
         else
         {    
-          memcpy_s( sorted_stages, sizeof( sorted_stages ), stages, sizeof( sorted_stages ) );
-          std::sort( &sorted_stages[0], &sorted_stages[YIELD_STAGES_PER_GROUP_MAX-1], compare_stages() );
+          memcpy_s
+          ( 
+            sorted_stages, 
+            sizeof( sorted_stages ), 
+            stages, 
+            sizeof( sorted_stages ) 
+          );
+
+          std::sort
+          ( 
+            &sorted_stages[0], 
+            &sorted_stages[YIELD_STAGES_PER_GROUP_MAX-1], 
+            compare_stages() 
+          );
+
           next_stage_i = 0;    
+
           return sorted_stages[0];
         }
       }
@@ -820,7 +1045,7 @@ namespace YIELD
       // VisitPolicy
       inline Stage* getNextStageToVisit( bool )
       {
-        if ( polling_table_pos < YIELD_MG1_POLLING_TABLE_SIZE )
+        if ( polling_table_pos < YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE )
           return stages[polling_table[polling_table_pos++]];
         else
         {
@@ -831,9 +1056,12 @@ namespace YIELD
       }
 
     private:
-      uint8_t polling_table[YIELD_MG1_POLLING_TABLE_SIZE]; uint32_t polling_table_pos;
-      uint32_t golden_ratio_circle[YIELD_MG1_POLLING_TABLE_SIZE];
-      double last_rhos[YIELD_STAGES_PER_GROUP_MAX]; // These are only used in populating the polling table, but we have to keep the values to use in smoothing
+      uint8_t polling_table[YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE]; 
+      uint32_t polling_table_pos;
+      uint32_t golden_ratio_circle[YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE];
+      // These are only used in populating the polling table, 
+      // but we have to keep the values to use in smoothing
+      double last_rhos[YIELD_STAGES_PER_GROUP_MAX]; 
 
       bool populatePollingTable();
     };
@@ -906,16 +1134,37 @@ namespace YIELD
       SEDAStageGroup() { }
 
       template <class EventHandlerType>
-      auto_Stage createStage( yidl::runtime::auto_Object<EventHandlerType> event_handler, int16_t thread_count )
+      auto_Stage createStage
+      ( 
+        yidl::runtime::auto_Object<EventHandlerType> event_handler, 
+        int16_t thread_count 
+      )
       {
         if ( thread_count <= 0 )
-          thread_count = YIELD::platform::Machine::getOnlinePhysicalProcessorCount();
+          thread_count 
+          = YIELD::platform::Machine::getOnlinePhysicalProcessorCount();
 
         auto_Stage stage;
         if ( event_handler->isThreadSafe() )
-          stage = new StageImpl<EventHandlerType, STLEventQueue, YIELD::platform::NOPLock>( event_handler, new STLEventQueue );
+        {
+          stage 
+            = new StageImpl
+                  <
+                    EventHandlerType, 
+                    STLEventQueue, 
+                    YIELD::platform::NOPLock
+                  >( event_handler, new STLEventQueue );
+        }
         else
-          stage = new StageImpl<EventHandlerType, STLEventQueue, YIELD::platform::Mutex>( event_handler, new STLEventQueue );
+        {
+          stage 
+            = new StageImpl
+                  <
+                    EventHandlerType, 
+                    STLEventQueue, 
+                    YIELD::platform::Mutex
+                  >( event_handler, new STLEventQueue );
+        }
 
         event_handler->handleEvent( *( new Stage::StartupEvent( stage ) ) );
 

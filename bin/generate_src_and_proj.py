@@ -33,7 +33,6 @@ from yidl.utilities import format_src
 
 
 # Copy yidl source and headers into share/
-copyfile( os.path.join( YIDL_DIR_PATH, "include", "atomic.h" ), os.path.join( XTREEMFS_DIR_PATH, "share", "yidl", "include", "atomic.h" ) )
 copyfile( os.path.join( YIDL_DIR_PATH, "include", "yidl.h" ), os.path.join( XTREEMFS_DIR_PATH, "share", "yidl", "include", "yidl.h" ) )
 
 # Copy Yield source and headers into share/

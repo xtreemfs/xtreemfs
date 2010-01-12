@@ -1,4 +1,4 @@
-// Copyright 2009 Minor Gordon.
+// Copyright 2010 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
     #ifndef _XTREEMFS_INTERFACES_MRC_OSD_TYPES_H_

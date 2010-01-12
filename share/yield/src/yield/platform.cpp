@@ -1,4 +1,4 @@
-// Revision: 1925
+// Revision: 1934
 
 #include "yield/platform.h"
 using namespace YIELD::platform;
@@ -56,7 +56,8 @@ bool CountingSemaphore::timed_acquire( uint64_t timeout_ns )
   DWORD dwRet = WaitForSingleObjectEx( hSemaphore, timeout_ms, TRUE );
   return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
 #elif defined(__MACH__)
-  mach_timespec_t timeout_m_ts = { timeout_ns / NS_IN_S, timeout_ns % NS_IN_S };
+  mach_timespec_t timeout_m_ts
+    = { timeout_ns / NS_IN_S, timeout_ns % NS_IN_S };
   return semaphore_timedwait( sem, timeout_m_ts ) == KERN_SUCCESS;
 #else
   struct timespec timeout_ts = ( Time() + Time( timeout_ns ) );
@@ -129,19 +130,38 @@ void Exception::strerror( std::string& out_str )
 void Exception::strerror( uint32_t error_code, std::string& out_str )
 {
   char strerror_buffer[YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH];
-  strerror( error_code, strerror_buffer, YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
+  strerror
+  (
+    error_code,
+    strerror_buffer,
+    YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1
+  );
   out_str.assign( strerror_buffer );
 }
 void Exception::strerror( char* out_str, size_t out_str_len )
 {
   return strerror( get_errno(), out_str, out_str_len );
 }
-void Exception::strerror( uint32_t error_code, char* out_str, size_t out_str_len )
+void Exception::strerror
+(
+  uint32_t error_code,
+  char* out_str,
+  size_t out_str_len
+)
 {
 #ifdef _WIN32
   if ( out_str_len > 0 )
   {
-    DWORD dwMessageLength = FormatMessageA( FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, NULL, error_code, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), out_str, static_cast<DWORD>( out_str_len ), NULL );
+    DWORD dwMessageLength
+      = FormatMessageA
+      (
+        FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL, error_code,
+        MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
+        out_str,
+        static_cast<DWORD>( out_str_len ),
+        NULL
+      );
     if ( dwMessageLength > 0 )
     {
       if ( dwMessageLength > 2 )
@@ -151,7 +171,18 @@ void Exception::strerror( uint32_t error_code, char* out_str, size_t out_str_len
     else if ( GetLastError() == ERROR_INSUFFICIENT_BUFFER )
     {
       LPSTR cMessage;
-      dwMessageLength = FormatMessageA( FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, NULL, error_code, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), ( LPSTR )&cMessage, 0, NULL );
+      dwMessageLength
+        = FormatMessageA
+        (
+          FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
+          FORMAT_MESSAGE_ALLOCATE_BUFFER,
+          NULL,
+          error_code,
+          MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
+          ( LPSTR )&cMessage,
+          0,
+          NULL
+        );
       if ( dwMessageLength > 0 )
       {
         if ( dwMessageLength > 2 )
@@ -164,10 +195,26 @@ void Exception::strerror( uint32_t error_code, char* out_str, size_t out_str_len
     }
     else if ( error_code >= NERR_BASE || error_code <= MAX_NERR )
     {
-      HMODULE hModule = LoadLibraryEx( TEXT( "netmsg.dll" ), NULL, LOAD_LIBRARY_AS_DATAFILE ); // Let's hope this is cheap..
+      HMODULE hModule
+        = LoadLibraryEx
+        (
+          TEXT( "netmsg.dll" ),
+          NULL,
+          LOAD_LIBRARY_AS_DATAFILE
+        ); // Let's hope this is cheap..
       if ( hModule != NULL )
       {
-        dwMessageLength = FormatMessageA( FORMAT_MESSAGE_FROM_HMODULE|FORMAT_MESSAGE_IGNORE_INSERTS, hModule, error_code, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), out_str, static_cast<DWORD>( out_str_len ), NULL );
+        dwMessageLength
+          = FormatMessageA
+          (
+            FORMAT_MESSAGE_FROM_HMODULE|FORMAT_MESSAGE_IGNORE_INSERTS,
+            hModule,
+            error_code,
+            MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
+            out_str,
+            static_cast<DWORD>( out_str_len ),
+            NULL
+          );
         if ( dwMessageLength > 0 )
         {
           if ( dwMessageLength > 2 )
@@ -178,7 +225,18 @@ void Exception::strerror( uint32_t error_code, char* out_str, size_t out_str_len
         else if ( GetLastError() == ERROR_INSUFFICIENT_BUFFER )
         {
           LPSTR cMessage;
-          dwMessageLength = FormatMessageA( FORMAT_MESSAGE_FROM_HMODULE|FORMAT_MESSAGE_ALLOCATE_BUFFER|FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS, NULL, error_code, MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ), ( LPSTR )&cMessage, 0, NULL );
+          dwMessageLength
+            = FormatMessageA
+            (
+              FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
+              FORMAT_MESSAGE_FROM_HMODULE|FORMAT_MESSAGE_ALLOCATE_BUFFER,
+              NULL,
+              error_code,
+              MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
+              ( LPSTR )&cMessage,
+              0,
+              NULL
+            );
           if ( dwMessageLength > 0 )
           {
             if ( dwMessageLength > 2 )
@@ -197,20 +255,41 @@ void Exception::strerror( uint32_t error_code, char* out_str, size_t out_str_len
     sprintf_s( out_str, out_str_len, "error_code = %u", error_code );
   }
 #else
-  snprintf( out_str, out_str_len, "errno = %u, strerror = %s", error_code, std::strerror( error_code ) );
+  snprintf
+  (
+    out_str,
+    out_str_len,
+    "errno = %u, strerror = %s",
+    error_code,
+    std::strerror( error_code )
+  );
 #endif
 }
 Exception::Exception()
 {
   if ( get_errno() != 0 )
-    strerror( get_errno(), what_buffer, YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
+  {
+    strerror
+    (
+      get_errno(),
+      what_buffer,
+      YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1
+    );
+  }
   else
     what_buffer[0] = 0;
 }
 Exception::Exception( uint32_t error_code )
 {
   if ( error_code != 0 )
-    strerror( error_code, what_buffer, YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
+  {
+    strerror
+    (
+      error_code,
+      what_buffer,
+      YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1
+    );
+  }
   else
     what_buffer[0] = 0;
 }
@@ -260,10 +339,14 @@ extern off64_t lseek64(int, off64_t, int);
 #define FREMOVEXATTR ::fremovexattr
 #elif defined(__MACH__)
 #include <sys/xattr.h>
-#define FLISTXATTR( fd, namebuf, size ) ::flistxattr( fd, namebuf, size, 0 )
-#define FGETXATTR( fd, name, value, size ) ::fgetxattr( fd, name, value, size, 0, 0 )
-#define FSETXATTR( fd, name, value, size, flags ) ::fsetxattr( fd, name, value, size, 0, flags )
-#define FREMOVEXATTR( fd, name ) ::fremovexattr( fd, name, 0 )
+#define FLISTXATTR( fd, namebuf, size ) \
+  ::flistxattr( fd, namebuf, size, 0 )
+#define FGETXATTR( fd, name, value, size ) \
+  ::fgetxattr( fd, name, value, size, 0, 0 )
+#define FSETXATTR( fd, name, value, size, flags ) \
+  ::fsetxattr( fd, name, value, size, 0, flags )
+#define FREMOVEXATTR( fd, name ) \
+  ::fremovexattr( fd, name, 0 )
 #endif
 #endif
 #endif
@@ -397,7 +480,17 @@ ssize_t File::read( void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
   DWORD dwBytesRead;
-  if ( ReadFile( fd, buffer, static_cast<DWORD>( buffer_len ), &dwBytesRead, NULL ) )
+  if
+  (
+    ReadFile
+    (
+      fd,
+      buffer,
+      static_cast<DWORD>( buffer_len ),
+      &dwBytesRead,
+      NULL
+    )
+  )
     return dwBytesRead;
   else
     return -1;
@@ -422,7 +515,16 @@ bool File::seek( uint64_t offset, unsigned char whence )
 #ifdef _WIN32
   ULARGE_INTEGER uliOffset;
   uliOffset.QuadPart = offset;
-  if ( SetFilePointer( fd, uliOffset.LowPart, ( PLONG )&uliOffset.HighPart, whence ) != INVALID_SET_FILE_POINTER )
+  if
+  (
+    SetFilePointer
+    (
+      fd,
+      uliOffset.LowPart,
+      ( PLONG )&uliOffset.HighPart,
+      whence
+    ) != INVALID_SET_FILE_POINTER
+  )
     return true;
   else
     return false;
@@ -459,24 +561,43 @@ bool File::setlkw( bool exclusive, uint64_t offset, uint64_t length )
     ULARGE_INTEGER uliOffset, uliLength;
     uliOffset.QuadPart = offset;
     uliLength.QuadPart = length;
-    return LockFile( fd, uliOffset.LowPart, uliOffset.HighPart, uliLength.LowPart, uliLength.HighPart ) == TRUE;
+    return LockFile
+    (
+      fd,
+      uliOffset.LowPart,
+      uliOffset.HighPart,
+      uliLength.LowPart,
+      uliLength.HighPart
+    ) == TRUE;
   }
   else
     return false;
 #else
   struct flock flock_;
-  flock_.l_type   = exclusive ? F_WRLCK : F_RDLCK;
+  flock_.l_type = exclusive ? F_WRLCK : F_RDLCK;
   flock_.l_whence = SEEK_SET;
-  flock_.l_start  = offset;
-  flock_.l_len    = length;
-  flock_.l_pid    = getpid();
+  flock_.l_start = offset;
+  flock_.l_len = length;
+  flock_.l_pid = getpid();
   return fcntl( fd, F_SETLKW, &flock_ ) != -1;
 #endif
 }
-bool File::setxattr( const std::string& name, const std::string& value, int flags )
+bool File::setxattr
+(
+  const std::string& name,
+  const std::string& value,
+  int flags
+)
 {
 #ifdef YIELD_HAVE_XATTR_H
-  return FSETXATTR( fd, name.c_str(), value.c_str(), value.size(), flags ) != -1;
+  return FSETXATTR
+  (
+    fd,
+    name.c_str(),
+    value.c_str(),
+    value.size(),
+    flags
+  ) != -1;
 #else
   return false;
 #endif
@@ -507,7 +628,16 @@ bool File::truncate( uint64_t new_size )
 #ifdef _WIN32
   ULARGE_INTEGER uliNewSize;
   uliNewSize.QuadPart = new_size;
-  if ( SetFilePointer( fd, uliNewSize.LowPart, ( PLONG )&uliNewSize.HighPart, SEEK_SET ) != INVALID_SET_FILE_POINTER )
+  if
+  (
+    SetFilePointer
+    (
+      fd,
+      uliNewSize.LowPart,
+      ( PLONG )&uliNewSize.HighPart,
+      SEEK_SET
+    ) != INVALID_SET_FILE_POINTER
+  )
     return SetEndOfFile( fd ) != 0;
   else
     return false;
@@ -521,7 +651,14 @@ bool File::unlk( uint64_t offset, uint64_t length )
   ULARGE_INTEGER uliOffset, uliLength;
   uliOffset.QuadPart = offset;
   uliLength.QuadPart = length;
-  return UnlockFile( fd, uliOffset.LowPart, uliOffset.HighPart, uliLength.LowPart, uliLength.HighPart ) == TRUE;
+  return UnlockFile
+  (
+    fd,
+    uliOffset.LowPart,
+    uliOffset.HighPart,
+    uliLength.LowPart,
+    uliLength.HighPart
+  ) == TRUE;
 #else
   struct flock flock_;
   flock_.l_type   = F_UNLCK;
@@ -540,7 +677,17 @@ ssize_t File::write( const void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
   DWORD dwBytesWritten;
-  if ( WriteFile( fd, buffer, static_cast<DWORD>( buffer_len ), &dwBytesWritten, NULL ) )
+  if
+  (
+    WriteFile
+    (
+      fd,
+      buffer,
+      static_cast<DWORD>( buffer_len ),
+      &dwBytesWritten,
+      NULL
+    )
+  )
     return static_cast<ssize_t>( dwBytesWritten );
   else
     return -1;
@@ -664,7 +811,12 @@ void Log::write( const unsigned char* str, size_t str_len, Level level )
     bool str_is_printable = true;
     for ( size_t str_i = 0; str_i < str_len; str_i++ )
     {
-      if ( str[str_i] == '\r' || str[str_i] == '\n' || ( str[str_i] >= 32 && str[str_i] <= 126 ) )
+      if
+      (
+        str[str_i] == '\r' ||
+        str[str_i] == '\n' ||
+        ( str[str_i] >= 32 && str[str_i] <= 126 )
+      )
         continue;
       else
       {
@@ -723,10 +875,12 @@ uint16_t Machine::getOnlineLogicalProcessorCount()
 #if defined(_WIN32)
   SYSTEM_INFO available_info;
   GetSystemInfo( &available_info );
-  online_logical_processor_count = static_cast<uint16_t>( available_info.dwNumberOfProcessors );
+  online_logical_processor_count
+    = static_cast<uint16_t>( available_info.dwNumberOfProcessors );
 #elif defined(__linux__)
   long _online_logical_processor_count = sysconf( _SC_NPROCESSORS_ONLN );
-  if ( _online_logical_processor_count != -1 ) online_logical_processor_count = _online_logical_processor_count;
+  if ( _online_logical_processor_count != -1 )
+    online_logical_processor_count = _online_logical_processor_count;
 #elif defined(__MACH__)
   host_basic_info_data_t basic_info;
   host_info_t info = (host_info_t)&basic_info;
@@ -791,8 +945,7 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
 #else
 #include <sys/mman.h>
 #endif
-auto_MemoryMappedFile
-  MemoryMappedFile::open( const Path& path )
+auto_MemoryMappedFile MemoryMappedFile::open( const Path& path )
 {
   return open
          (
@@ -804,7 +957,7 @@ auto_MemoryMappedFile
           );
 }
 auto_MemoryMappedFile
-  MemoryMappedFile::open( const Path& path, uint32_t flags )
+MemoryMappedFile::open( const Path& path, uint32_t flags )
 {
   return open
          (
@@ -815,8 +968,7 @@ auto_MemoryMappedFile
            0
          );
 }
-auto_MemoryMappedFile
-  MemoryMappedFile::open
+auto_MemoryMappedFile MemoryMappedFile::open
 (
   const Path& path,
   uint32_t flags,
@@ -847,7 +999,13 @@ auto_MemoryMappedFile
       current_file_size = 0;
     auto_MemoryMappedFile memory_mapped_file
       = new MemoryMappedFile( file, flags );
-    if ( memory_mapped_file->resize( std::max( minimum_size, current_file_size ) ) )
+    if
+    (
+      memory_mapped_file->resize
+      (
+        std::max( minimum_size, current_file_size )
+      )
+    )
       return memory_mapped_file;
     else
       return NULL;
@@ -1008,9 +1166,11 @@ bool MemoryMappedFile::sync( void* ptr, size_t length )
 Mutex::Mutex()
 {
 #ifdef _WIN32
-  if ( ( hMutex = CreateEvent( NULL, FALSE, TRUE, NULL ) ) == NULL ) DebugBreak();
+  if ( ( hMutex = CreateEvent( NULL, FALSE, TRUE, NULL ) ) == NULL )
+    DebugBreak();
 #else
-  if ( pthread_mutex_init( &pthread_mutex, NULL ) != 0 ) DebugBreak();
+  if ( pthread_mutex_init( &pthread_mutex, NULL ) != 0 )
+    DebugBreak();
 #endif
 }
 Mutex::~Mutex()
@@ -1107,11 +1267,28 @@ Path::Path( const std::string& host_charset_path )
 }
 void Path::init_from_host_charset_path()
 {
-  if ( host_charset_path.size() > 1 && host_charset_path[host_charset_path.size()-1] == PATH_SEPARATOR )
-    host_charset_path = host_charset_path.substr( 0, host_charset_path.size() - 1 );
+  if
+  (
+    host_charset_path.size() > 1 &&
+    host_charset_path[host_charset_path.size()-1] == PATH_SEPARATOR
+  )
+    host_charset_path
+      = host_charset_path.substr( 0, host_charset_path.size() - 1 );
 #ifdef _WIN32
   wchar_t _wide_path[PATH_MAX];
-  wide_path.assign( _wide_path, MultiByteToWideChar( GetACP(), 0, host_charset_path.c_str(), static_cast<int>( host_charset_path.size() ), _wide_path, PATH_MAX ) );
+  wide_path.assign
+  (
+    _wide_path,
+    MultiByteToWideChar
+    (
+      GetACP(),
+      0,
+      host_charset_path.c_str(),
+      static_cast<int>( host_charset_path.size() ),
+      _wide_path,
+      PATH_MAX
+    )
+  );
 #endif
 }
 #ifdef _WIN32
@@ -1135,7 +1312,18 @@ void Path::init_from_wide_path()
   if ( wide_path.size() > 1 && wide_path[wide_path.size()-1] == PATH_SEPARATOR )
     wide_path = wide_path.substr( 0, wide_path.size() - 1 );
   char host_charset_path[PATH_MAX];
-  int host_charset_path_len = WideCharToMultiByte( GetACP(), 0, wide_path.c_str(), ( int )wide_path.size(), host_charset_path, PATH_MAX, 0, 0 );
+  int host_charset_path_len
+    = WideCharToMultiByte
+    (
+      GetACP(),
+      0,
+      wide_path.c_str(),
+      ( int )wide_path.size(),
+      host_charset_path,
+      PATH_MAX,
+      0,
+      0
+    );
   this->host_charset_path.assign( host_charset_path, host_charset_path_len );
 }
 #endif
@@ -1154,33 +1342,62 @@ const std::string& Path::get_utf8_path()
     if ( !wide_path.empty() )
     {
       char _utf8_path[PATH_MAX];
-      int _utf8_path_len = WideCharToMultiByte( CP_UTF8, 0, wide_path.c_str(), ( int )wide_path.size(), _utf8_path, PATH_MAX, 0, 0 );
+      int _utf8_path_len
+        = WideCharToMultiByte
+          (
+            CP_UTF8,
+            0,
+            wide_path.c_str(),
+            ( int )wide_path.size(),
+            _utf8_path,
+            PATH_MAX,
+            0,
+            0
+          );
       utf8_path.assign( _utf8_path, _utf8_path_len );
     }
 #else
     if ( !host_charset_path.empty() )
-     MultiByteToMultiByte( "", host_charset_path, "UTF-8", utf8_path ); // "" = local host charset
+     MultiByteToMultiByte
+     (
+       "",
+       host_charset_path,
+       "UTF-8",
+       utf8_path
+     ); // "" = local host charset
 #endif
   }
   return utf8_path;
 }
 #ifndef _WIN32
-void Path::MultiByteToMultiByte( const char* fromcode, const std::string& frompath, const char* tocode, std::string& topath )
+void Path::MultiByteToMultiByte
+(
+  const char* fromcode,
+  const std::string& frompath,
+  const char* tocode,
+  std::string& topath
+)
 {
   iconv_t converter;
   if ( ( converter = iconv_open( fromcode, tocode ) ) != ( iconv_t )-1 )
   {
-    char* _frompath = const_cast<char*>( frompath.c_str() ); char _topath[PATH_MAX], *_topath_p = _topath;
+    char* _frompath = const_cast<char*>( frompath.c_str() );
+    char _topath[PATH_MAX], *_topath_p = _topath;
     size_t _frompath_size = frompath.size(), _topath_size = PATH_MAX;
 	//::iconv( converter, NULL, 0, NULL, 0 ) != -1 &&
-    size_t iconv_ret;
-    if ( ( iconv_ret = ::iconv( converter, ( ICONV_SOURCE_CAST )&_frompath, &_frompath_size, &_topath_p, &_topath_size ) ) != static_cast<size_t>( -1 ) )
+   size_t iconv_ret
+     = ::iconv
+       (
+         converter,
+         ( ICONV_SOURCE_CAST )&_frompath,
+         &_frompath_size,
+         &_topath_p,
+         &_topath_size
+       );
+    if ( iconv_ret != static_cast<size_t>( -1 ) )
       topath.assign( _topath, PATH_MAX - _topath_size );
     else
-    {
-//			cerr << "Path: iconv could not convert path " << frompath << " from code " << fromcode << " to code " << tocode;
       topath = frompath;
-    }
     iconv_close( converter );
   }
   else
@@ -1192,7 +1409,14 @@ Path Path::abspath() const
 {
 #ifdef _WIN32
   wchar_t abspath_buffer[PATH_MAX];
-  DWORD abspath_buffer_len = GetFullPathNameW( wide_path.c_str(), PATH_MAX, abspath_buffer, NULL );
+  DWORD abspath_buffer_len
+    = GetFullPathNameW
+      (
+        wide_path.c_str(),
+        PATH_MAX,
+        abspath_buffer,
+        NULL
+      );
   return Path( abspath_buffer, abspath_buffer_len );
 #else
   char abspath_buffer[PATH_MAX];
@@ -1244,8 +1468,11 @@ Path Path::join( const Path& other ) const
   else
   {
     std::wstring combined_wide_path( wide_path );
-    if ( combined_wide_path[combined_wide_path.size()-1] != PATH_SEPARATOR &&
-       other.wide_path[0] != PATH_SEPARATOR )
+    if
+    (
+      combined_wide_path[combined_wide_path.size()-1] != PATH_SEPARATOR &&
+      other.wide_path[0] != PATH_SEPARATOR
+    )
       combined_wide_path.append( PATH_SEPARATOR_WIDE_STRING, 1 );
     combined_wide_path.append( other.wide_path );
     return Path( combined_wide_path );
@@ -1255,8 +1482,11 @@ Path Path::join( const Path& other ) const
   if ( !utf8_path.empty() && !other.utf8_path.empty() )
   {
     std::string combined_utf8_path( utf8_path );
-    if ( combined_utf8_path[combined_utf8_path.size()-1] != PATH_SEPARATOR &&
-       other.utf8_path[0] != PATH_SEPARATOR )
+    if
+    (
+      combined_utf8_path[combined_utf8_path.size()-1] != PATH_SEPARATOR &&
+      other.utf8_path[0] != PATH_SEPARATOR
+    )
       combined_utf8_path.append( PATH_SEPARATOR_STRING, 1 );
     combined_utf8_path.append( other.utf8_path );
     return Path( combined_utf8_path );
@@ -1265,8 +1495,12 @@ Path Path::join( const Path& other ) const
   {
 */
     std::string combined_host_charset_path( host_charset_path );
-    if ( combined_host_charset_path[combined_host_charset_path.size()-1] != PATH_SEPARATOR &&
-       other.host_charset_path[0] != PATH_SEPARATOR )
+    if
+    (
+      combined_host_charset_path[combined_host_charset_path.size()-1]
+        != PATH_SEPARATOR &&
+      other.host_charset_path[0] != PATH_SEPARATOR
+    )
       combined_host_charset_path.append( PATH_SEPARATOR_STRING, 1 );
     combined_host_charset_path.append( other.host_charset_path );
     return Path( combined_host_charset_path );
@@ -1275,21 +1509,33 @@ Path Path::join( const Path& other ) const
 }
 std::pair<Path, Path> Path::split() const
 {
-  std::string::size_type last_sep = host_charset_path.find_last_of( PATH_SEPARATOR );
+  std::string::size_type last_sep
+    = host_charset_path.find_last_of( PATH_SEPARATOR );
   if ( last_sep != std::string::npos )
-    return std::make_pair( host_charset_path.substr( 0, last_sep ), host_charset_path.substr( last_sep + 1 ) );
+    return std::make_pair
+          (
+            host_charset_path.substr( 0, last_sep ),
+            host_charset_path.substr( last_sep + 1 )
+          );
   else
     return std::make_pair( Path(), *this );
 }
 void Path::split_all( std::vector<Path>& parts ) const
 {
-  std::string::size_type last_sep = host_charset_path.find_first_not_of( PATH_SEPARATOR, 0 );
-  std::string::size_type next_sep = host_charset_path.find_first_of( PATH_SEPARATOR, last_sep );
+  std::string::size_type last_sep
+    = host_charset_path.find_first_not_of( PATH_SEPARATOR, 0 );
+  std::string::size_type next_sep
+    = host_charset_path.find_first_of( PATH_SEPARATOR, last_sep );
   while ( next_sep != std::string::npos || last_sep != std::string::npos )
   {
-    parts.push_back( host_charset_path.substr( last_sep, next_sep - last_sep ) );
-    last_sep = host_charset_path.find_first_not_of( PATH_SEPARATOR, next_sep );
-    next_sep = host_charset_path.find_first_of( PATH_SEPARATOR, last_sep );
+    parts.push_back
+    (
+      host_charset_path.substr( last_sep, next_sep - last_sep )
+    );
+    last_sep
+      = host_charset_path.find_first_not_of( PATH_SEPARATOR, next_sep );
+    next_sep
+      = host_charset_path.find_first_of( PATH_SEPARATOR, last_sep );
   }
 }
 std::pair<Path, Path> Path::splitext() const
@@ -1298,7 +1544,11 @@ std::pair<Path, Path> Path::splitext() const
   if ( last_dot == 0 || last_dot == std::string::npos )
     return std::make_pair( *this, Path() );
   else
-    return std::make_pair( host_charset_path.substr( 0, last_dot ), host_charset_path.substr( last_dot ) );
+    return std::make_pair
+           (
+             host_charset_path.substr( 0, last_dot ),
+             host_charset_path.substr( last_dot )
+           );
 }
 
 
@@ -1381,7 +1631,8 @@ bool PerformanceCounterSet::addEvent( Event event )
 bool PerformanceCounterSet::addEvent( const char* name )
 {
 #if defined(__sun)
-  int event_index = cpc_set_add_request( cpc, cpc_set, name, 0, CPC_COUNT_USER, 0, NULL );
+  int event_index
+    = cpc_set_add_request( cpc, cpc_set, name, 0, CPC_COUNT_USER, 0, NULL );
   if ( event_index != -1 )
   {
     event_indices.push_back( event_index );
@@ -1389,7 +1640,14 @@ bool PerformanceCounterSet::addEvent( const char* name )
   }
 #elif defined(YIELD_HAVE_PAPI)
   int papi_event_code;
-  if ( PAPI_event_name_to_code( const_cast<char*>( name ), &papi_event_code ) == PAPI_OK )
+  if
+  (
+    PAPI_event_name_to_code
+    (
+      const_cast<char*>( name ),
+      &papi_event_code
+    ) == PAPI_OK
+  )
   {
      if ( PAPI_add_event( papi_eventset, papi_event_code ) == PAPI_OK )
        return true;
@@ -1415,8 +1673,21 @@ void PerformanceCounterSet::stopCounting( uint64_t* counts )
   cpc_set_sample( cpc, cpc_set, stop_cpc_buf );
   cpc_buf_t* diff_cpc_buf = cpc_buf_create( cpc, cpc_set );
   cpc_buf_sub( cpc, diff_cpc_buf, stop_cpc_buf, start_cpc_buf );
-  for ( std::vector<int>::size_type event_index_i = 0; event_index_i < event_indices.size(); event_index_i++ )
-    cpc_buf_get( cpc, diff_cpc_buf, event_indices[event_index_i], &counts[event_index_i] );
+  for
+  (
+    std::vector<int>::size_type event_index_i = 0;
+    event_index_i < event_indices.size();
+    event_index_i++
+  )
+  {
+    cpc_buf_get
+    (
+      cpc,
+      diff_cpc_buf,
+      event_indices[event_index_i],
+      &counts[event_index_i]
+    );
+  }
   cpc_unbind( cpc, cpc_set );
 #elif defined(YIELD_HAVE_PAPI)
   PAPI_stop( papi_eventset, reinterpret_cast<long long int*>( counts ) );
@@ -1443,7 +1714,8 @@ ProcessorSet::ProcessorSet()
   cpu_set = new cpu_set_t;
   CPU_ZERO( static_cast<cpu_set_t*>( cpu_set ) );
 #elif defined(__sun)
-  psetid = PS_NONE; // Don't pset_create until we actually use the set, to avoid leaving state in the system
+  psetid = PS_NONE; // Don't pset_create until we actually use the set,
+                    // to avoid leaving state in the system
 #else
   DebugBreak();
 #endif
@@ -1509,7 +1781,12 @@ void ProcessorSet::clear( uint16_t processor_i )
 uint16_t ProcessorSet::count() const
 {
   uint16_t count = 0;
-  for ( uint16_t processor_i = 0; processor_i < static_cast<uint16_t>( -1 ); processor_i++ )
+  for
+  (
+    uint16_t processor_i = 0;
+    processor_i < static_cast<uint16_t>( -1 );
+    processor_i++
+  )
   {
     if ( isset( processor_i ) )
       count++;
@@ -1538,7 +1815,13 @@ bool ProcessorSet::isset( uint16_t processor_i ) const
   if ( psetid != PS_NONE )
   {
     psetid_t check_psetid;
-    return pset_assign( PS_QUERY, processor_i, &check_psetid ) == 0 &&
+    return pset_assign
+           (
+             PS_QUERY,
+             processor_i,
+             &check_psetid
+           ) == 0
+           &&
            check_psetid == psetid;
   }
 #endif
@@ -1563,125 +1846,6 @@ bool ProcessorSet::set( uint16_t processor_i )
 }
 
 
-// rrd.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-RRD::Record::Record( double value )
-  : value( value )
-{ }
-RRD::Record::Record( const Time& time, double value )
-  : time( time ), value( value )
-{ }
-void RRD::Record::marshal( yidl::runtime::Marshaller& marshaller )
-{
-  marshaller.writeUint64( "time", 0, time );
-  marshaller.writeDouble( "value", 0, value );
-}
-void RRD::Record::unmarshal( yidl::runtime::Unmarshaller& unmarshaller )
-{
-  time = unmarshaller.readUint64( "time", 0 );
-  value = unmarshaller.readDouble( "time", 0 );
-}
-RRD::RecordSet::~RecordSet()
-{
-  for ( iterator record_i = begin(); record_i != end(); record_i++ )
-    Object::decRef( *record_i );
-}
-RRD::RRD( const Path& file_path )
-  : current_file_path( file_path )
-{ }
-RRD::~RRD()
-{ }
-void RRD::append( double value )
-{
-  XDRMarshaller xdr_marshaller;
-  Record( value ).marshal( xdr_marshaller );
-  auto_File current_file( Volume().open( current_file_path, O_CREAT|O_WRONLY|O_APPEND ) );
-  if ( current_file != NULL )
-    current_file->write( xdr_marshaller.get_buffer().release() );
-}
-auto_RRD RRD::creat( const Path& file_path )
-{
-  if ( !Volume().exists( file_path ) ||
-       Volume().unlink( file_path ) )
-    return new RRD( file_path );
-  else
-    return NULL;
-}
-void RRD::fetch_all( RecordSet& out_records )
-{
-  auto_File current_file( Volume().open( current_file_path ) );
-  if ( current_file != NULL )
-  {
-    for ( ;; )
-    {
-      yidl::runtime::StackBuffer<16> xdr_buffer;
-      if ( current_file->read( xdr_buffer.incRef() ) == 16 )
-      {
-        XDRUnmarshaller xdr_unmarshaller( xdr_buffer.incRef() );
-        Record* record = new Record( static_cast<uint64_t>( 0 ), 0 );
-        record->unmarshal( xdr_unmarshaller );
-        out_records.push_back( record );
-      }
-      else
-        break;
-    }
-  }
-}
-void RRD::fetch_from( const Time& start_time, RecordSet& out_records )
-{
-  RecordSet all_records;
-  fetch_all( all_records );
-  for ( RecordSet::iterator record_i = all_records.begin(); record_i != all_records.end(); )
-  {
-    if ( ( *record_i )->get_time() >= start_time )
-    {
-      out_records.push_back( *record_i );
-      record_i = all_records.erase( record_i );
-    }
-    else
-      ++record_i;
-  }
-}
-void RRD::fetch_range( const Time& start_time, const Time& end_time, RecordSet& out_records )
-{
-  RecordSet all_records;
-  fetch_all( all_records );
-  for ( RecordSet::iterator record_i = all_records.begin(); record_i != all_records.end(); )
-  {
-    if ( ( *record_i )->get_time() >= start_time && ( *record_i )->get_time() <= end_time )
-    {
-      out_records.push_back( *record_i );
-      record_i = all_records.erase( record_i );
-    }
-    else
-      ++record_i;
-  }
-}
-void RRD::fetch_until( const Time& end_time, RecordSet& out_records )
-{
-  RecordSet all_records;
-  fetch_all( all_records );
-  for ( RecordSet::iterator record_i = all_records.begin(); record_i != all_records.end(); )
-  {
-    if ( ( *record_i )->get_time() <= end_time )
-    {
-      out_records.push_back( *record_i );
-      record_i = all_records.erase( record_i );
-    }
-    else
-      ++record_i;
-  }
-}
-auto_RRD RRD::open( const Path& file_path )
-{
-  if ( Volume().isfile( file_path ) )
-    return new RRD( file_path );
-  else
-    return NULL;
-}
-
-
 // shared_library.cpp
 // Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
@@ -1693,11 +1857,16 @@ auto_RRD RRD::open( const Path& file_path )
 #include <cctype>
 #endif
 #ifdef _WIN32
-#define DLOPEN( file_path ) LoadLibraryExA( file_path, 0, LOAD_WITH_ALTERED_SEARCH_PATH )
+#define DLOPEN( file_path ) \
+    LoadLibraryExA( file_path, 0, LOAD_WITH_ALTERED_SEARCH_PATH )
 #else
 #define DLOPEN( file_path ) dlopen( file_path, RTLD_NOW|RTLD_GLOBAL )
 #endif
-auto_SharedLibrary SharedLibrary::open( const Path& file_prefix, const char* argv0 )
+auto_SharedLibrary SharedLibrary::open
+(
+  const Path& file_prefix,
+  const char* argv0
+)
 {
   char file_path[PATH_MAX];
   void* handle;
@@ -1705,12 +1874,27 @@ auto_SharedLibrary SharedLibrary::open( const Path& file_prefix, const char* arg
     return new SharedLibrary( handle );
   else
   {
-    snprintf( file_path, PATH_MAX, "lib%c%s.%s", PATH_SEPARATOR, static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
+    snprintf
+    (
+      file_path,
+      PATH_MAX,
+      "lib%c%s.%s",
+      PATH_SEPARATOR,
+      static_cast<const char*>( file_prefix ),
+      SHLIBSUFFIX
+    );
     if ( ( handle = DLOPEN( file_path ) ) != NULL )
       return new SharedLibrary( handle );
     else
     {
-      snprintf( file_path, PATH_MAX, "%s.%s", static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
+      snprintf
+      (
+        file_path,
+        PATH_MAX,
+        "%s.%s",
+        static_cast<const char*>( file_prefix ),
+        SHLIBSUFFIX
+      );
       if ( ( handle = DLOPEN( file_path ) ) != NULL )
         return new SharedLibrary( handle );
       else
@@ -1720,12 +1904,31 @@ auto_SharedLibrary SharedLibrary::open( const Path& file_prefix, const char* arg
           const char* last_slash = strrchr( argv0, PATH_SEPARATOR );
           while ( last_slash != NULL && last_slash != argv0 )
           {
-            snprintf( file_path, PATH_MAX, "%.*s%s.%s", static_cast<int>( last_slash - argv0 + 1 ), argv0, static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
+            snprintf
+            (
+              file_path,
+              PATH_MAX,
+              "%.*s%s.%s",
+              static_cast<int>( last_slash - argv0 + 1 ),
+              argv0,
+              static_cast<const char*>( file_prefix ),
+              SHLIBSUFFIX
+            );
             if ( ( handle = DLOPEN( file_path ) ) != NULL )
               return new SharedLibrary( handle );
             else
             {
-              snprintf( file_path, PATH_MAX, "%.*slib%c%s.%s", static_cast<int>( last_slash - argv0 + 1 ), argv0, PATH_SEPARATOR, static_cast<const char*>( file_prefix ), SHLIBSUFFIX );
+              snprintf
+              (
+                file_path,
+                PATH_MAX,
+                "%.*slib%c%s.%s",
+                static_cast<int>( last_slash - argv0 + 1 ),
+                argv0,
+                PATH_SEPARATOR,
+                static_cast<const char*>( file_prefix ),
+                SHLIBSUFFIX
+              );
               if ( ( handle = DLOPEN( file_path ) ) != NULL )
                 return new SharedLibrary( handle );
             }
@@ -1749,12 +1952,17 @@ SharedLibrary::~SharedLibrary()
     FreeLibrary( ( HMODULE )handle );
 #else
 #ifndef _DEBUG
-    dlclose( handle ); // Don't dlclose when debugging, because that causes valgrind to lose symbols
+    dlclose( handle ); // Don't dlclose when debugging,
+                       // because that causes valgrind to lose symbols
 #endif
 #endif
   }
 }
-void* SharedLibrary::getFunction( const char* function_name, void* missing_function_return_value )
+void* SharedLibrary::getFunction
+(
+  const char* function_name,
+  void* missing_function_return_value
+)
 {
   void* function_handle;
 #ifdef _WIN32
@@ -1791,20 +1999,30 @@ Stat::Stat
     atime( atime ), mtime( mtime ), ctime( ctime ),
     attributes( attributes )
 { }
-Stat::Stat( const BY_HANDLE_FILE_INFORMATION& by_handle_file_information )
-  : mode( ( by_handle_file_information.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ? S_IFDIR : S_IFREG ),
-    ctime( by_handle_file_information.ftCreationTime ),
-    atime( by_handle_file_information.ftLastAccessTime ),
-    mtime( by_handle_file_information.ftLastWriteTime ),
-    attributes( by_handle_file_information.dwFileAttributes )
+Stat::Stat( const BY_HANDLE_FILE_INFORMATION& bhfi )
+  : mode
+    (
+      ( bhfi.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ?
+      S_IFDIR :
+      S_IFREG
+    ),
+    ctime( bhfi.ftCreationTime ),
+    atime( bhfi.ftLastAccessTime ),
+    mtime( bhfi.ftLastWriteTime ),
+    attributes( bhfi.dwFileAttributes )
 {
   ULARGE_INTEGER size;
-  size.LowPart = by_handle_file_information.nFileSizeLow;
-  size.HighPart = by_handle_file_information.nFileSizeHigh;
+  size.LowPart = bhfi.nFileSizeLow;
+  size.HighPart = bhfi.nFileSizeHigh;
   this->size = static_cast<size_t>( size.QuadPart );
 }
 Stat::Stat( const WIN32_FIND_DATA& find_data )
-  : mode( ( find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ? S_IFDIR : S_IFREG ),
+  : mode
+    (
+      ( find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ?
+      S_IFDIR :
+      S_IFREG
+    ),
     atime( find_data.ftLastAccessTime ),
     mtime( find_data.ftLastWriteTime ),
     ctime( find_data.ftCreationTime ),
@@ -1832,8 +2050,13 @@ Stat::Stat
   const FILETIME* ftLastAccessTime,
   uint32_t dwFileAttributes
 )
-  : mode( ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ? S_IFDIR : S_IFREG ),
-    atime( ftLastAccessTime ), mtime( ftLastWriteTime ), ctime( ftCreationTime ),
+  : mode
+    (
+      ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ? S_IFDIR : S_IFREG
+    ),
+    atime( ftLastAccessTime ),
+    mtime( ftLastWriteTime ),
+    ctime( ftCreationTime ),
     attributes( dwFileAttributes )
 {
   ULARGE_INTEGER size;
@@ -2096,7 +2319,10 @@ bool Thread::set_processor_affinity( unsigned short logical_processor_i )
   else
     return false;
 }
-bool Thread::set_processor_affinity( const ProcessorSet& logical_processor_set )
+bool Thread::set_processor_affinity
+(
+  const ProcessorSet& logical_processor_set
+)
 {
   if ( id != 0 )
   {
@@ -2177,15 +2403,22 @@ void Thread::yield()
 #elif defined(__MACH__)
 #include <sys/time.h> // For gettimeofday
 #endif
-const char* HTTPDaysOfWeek[] = {  "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
-const char* ISOMonths[] = { "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
+const char* HTTPDaysOfWeek[]
+  = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+const char* ISOMonths[]
+  = {
+      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    };
 #ifdef _WIN32
 static inline ULONGLONG FILETIMEToUnixTimeNS( const FILETIME& file_time )
 {
   ULARGE_INTEGER file_time_combined;
   file_time_combined.LowPart = file_time.dwLowDateTime;
   file_time_combined.HighPart = file_time.dwHighDateTime;
-  file_time_combined.QuadPart -= 116444736000000000; // The number of 100-ns intervals between January 1, 1601 and January 1, 1970
+  // Subtract the number of 100-ns intervals between
+  // January 1, 1601 and January 1, 1970
+  file_time_combined.QuadPart -= 116444736000000000;
   file_time_combined.QuadPart *= 100; // Into nanoseconds
   return file_time_combined.QuadPart;
 }
@@ -2211,7 +2444,10 @@ static inline FILETIME UnixTimeSToFILETIME( uint32_t unix_time_s )
 }
 static inline FILETIME UnixTimeNSToFILETIME( uint64_t unix_time_ns )
 {
-  unix_time_ns += 11644473600000000000; // The difference in ns between January 1, 1601 (start of the Windows epoch) and January 1, 1970 (start of the Unix epoch)
+  // Add the difference in nanoseconds between
+  // January 1, 1601 (start of the Windows epoch) and
+  // January 1, 1970 (start of the Unix epoch)
+  unix_time_ns += 11644473600000000000;
   uint64_t unix_time_100_ns_intervals = unix_time_ns / 100;
   FILETIME file_time;
   file_time.dwLowDateTime = static_cast<DWORD>( unix_time_100_ns_intervals );
@@ -2231,13 +2467,19 @@ static inline SYSTEMTIME UnixTimeNSToLocalSYSTEMTIME( uint64_t unix_time_ns )
   TIME_ZONE_INFORMATION time_zone_information;
   GetTimeZoneInformation( &time_zone_information );
   SYSTEMTIME local_system_time;
-  SystemTimeToTzSpecificLocalTime( &time_zone_information, &utc_system_time, &local_system_time );
+  SystemTimeToTzSpecificLocalTime
+  (
+    &time_zone_information,
+    &utc_system_time,
+    &local_system_time
+  );
   return local_system_time;
 }
 #endif
 double Time::getCurrentUnixTimeMS()
 {
-  return static_cast<double>( getCurrentUnixTimeNS() ) / static_cast<double>( NS_IN_MS );
+  return static_cast<double>( getCurrentUnixTimeNS() ) /
+         static_cast<double>( NS_IN_MS );
 }
 uint64_t Time::getCurrentUnixTimeNS()
 {
@@ -2258,7 +2500,8 @@ uint64_t Time::getCurrentUnixTimeNS()
 }
 double Time::getCurrentUnixTimeS()
 {
-  return static_cast<double>( getCurrentUnixTimeNS() ) / static_cast<double>( NS_IN_S );
+  return static_cast<double>( getCurrentUnixTimeNS() ) /
+         static_cast<double>( NS_IN_S );
 }
 Time::Time( const struct timeval& tv )
 {
@@ -2307,35 +2550,45 @@ void Time::as_common_log_date_time( char* out_str, uint8_t out_str_len ) const
             unix_tm.tm_hour,
             unix_tm.tm_min,
             unix_tm.tm_sec,
-            0 ); // Could use the extern timezone, which is supposed to be secs west of GMT..
+            0 ); // Could use the extern timezone,
+                 // which is supposed to be secs west of GMT.
 #endif
 }
 void Time::as_http_date_time( char* out_str, uint8_t out_str_len ) const
 {
 #ifdef _WIN32
   SYSTEMTIME utc_system_time = UnixTimeNSToUTCSYSTEMTIME( unix_time_ns );
-  _snprintf_s( out_str, out_str_len, _TRUNCATE,
-          "%s, %02d %s %04d %02d:%02d:%02d GMT",
-            HTTPDaysOfWeek[utc_system_time.wDayOfWeek],
-            utc_system_time.wDay,
-            ISOMonths[utc_system_time.wMonth-1],
-            utc_system_time.wYear,
-            utc_system_time.wHour,
-            utc_system_time.wMinute,
-            utc_system_time.wSecond );
+  _snprintf_s
+  (
+    out_str,
+    out_str_len,
+    _TRUNCATE,
+    "%s, %02d %s %04d %02d:%02d:%02d GMT",
+    HTTPDaysOfWeek[utc_system_time.wDayOfWeek],
+    utc_system_time.wDay,
+    ISOMonths[utc_system_time.wMonth-1],
+    utc_system_time.wYear,
+    utc_system_time.wHour,
+    utc_system_time.wMinute,
+    utc_system_time.wSecond
+  );
 #else
   time_t unix_time_s = static_cast<time_t>( unix_time_ns / NS_IN_S );
   struct tm unix_tm;
   gmtime_r( &unix_time_s, &unix_tm );
-  snprintf( out_str, out_str_len,
-          "%s, %02d %s %04d %02d:%02d:%02d GMT",
-            HTTPDaysOfWeek[unix_tm.tm_wday],
-            unix_tm.tm_mday,
-            ISOMonths[unix_tm.tm_mon],
-            unix_tm.tm_year + 1900,
-            unix_tm.tm_hour,
-            unix_tm.tm_min,
-            unix_tm.tm_sec );
+  snprintf
+  (
+    out_str,
+    out_str_len,
+    "%s, %02d %s %04d %02d:%02d:%02d GMT",
+    HTTPDaysOfWeek[unix_tm.tm_wday],
+    unix_tm.tm_mday,
+    ISOMonths[unix_tm.tm_mon],
+    unix_tm.tm_year + 1900,
+    unix_tm.tm_hour,
+    unix_tm.tm_min,
+    unix_tm.tm_sec
+  );
 #endif
 }
 /*
@@ -2344,41 +2597,69 @@ uint64_t Time::parseHTTPDateTimeToUnixTimeNS( const char* date_str )
   char day[4], month[4];
 #ifdef _WIN32
   SYSTEMTIME utc_system_time;
-  int sf_ret = sscanf( date_str, "%03s, %02d %03s %04d %02d:%02d:%02d GMT",
-                       &day,
-                       &utc_system_time.wDay,
-                       &month,
-                       &utc_system_time.wYear,
-                       &utc_system_time.wHour,
-                       &utc_system_time.wMinute,
-                       &utc_system_time.wSecond );
+  int sf_ret
+    = sscanf
+      (
+        date_str,
+        "%03s, %02d %03s %04d %02d:%02d:%02d GMT",
+        &day,
+        &utc_system_time.wDay,
+        &month,
+        &utc_system_time.wYear,
+        &utc_system_time.wHour,
+        &utc_system_time.wMinute,
+        &utc_system_time.wSecond
+      );
   if ( sf_ret != 7 )
     return 0;
-  for ( utc_system_time.wDayOfWeek = 0; utc_system_time.wDayOfWeek < 7; utc_system_time.wDayOfWeek++ )
-    if ( strcmp( day, HTTPDaysOfWeek[utc_system_time.wDayOfWeek] ) == 0 ) break;
-  for ( utc_system_time.wMonth = 0; utc_system_time.wMonth < 12; utc_system_time.wMonth++ )
-    if ( strcmp( month, ISOMonths[utc_system_time.wMonth] ) == 0 ) break;
+  for
+  (
+    utc_system_time.wDayOfWeek = 0;
+    utc_system_time.wDayOfWeek < 7;
+    utc_system_time.wDayOfWeek++
+  )
+  {
+    if ( strcmp( day, HTTPDaysOfWeek[utc_system_time.wDayOfWeek] ) == 0 )
+      break;
+  }
+  for
+  (
+    utc_system_time.wMonth = 0;
+    utc_system_time.wMonth < 12;
+    utc_system_time.wMonth++
+  )
+  {
+    if ( strcmp( month, ISOMonths[utc_system_time.wMonth] ) == 0 )
+      break;
+  }
   utc_system_time.wMonth++; // Windows starts the months from 1
   FILETIME file_time;
   SystemTimeToFileTime( &utc_system_time, &file_time );
   return FILETIMEToUnixTimeNS( file_time );
 #else
   struct tm unix_tm;
-  int sf_ret = sscanf( date_str, "%03s, %02d %03s %04d %02d:%02d:%02d GMT",
-                       &day,
-                       &unix_tm.tm_mday,
-                       &month,
-                       &unix_tm.tm_year,
-                       &unix_tm.tm_hour,
-                       &unix_tm.tm_min,
-                       &unix_tm.tm_sec );
+  int sf_ret
+    = sscanf
+      (
+        date_str,
+        "%03s, %02d %03s %04d %02d:%02d:%02d GMT",
+        &day,
+        &unix_tm.tm_mday,
+        &month,
+        &unix_tm.tm_year,
+        &unix_tm.tm_hour,
+        &unix_tm.tm_min,
+        &unix_tm.tm_sec
+      );
   if ( sf_ret != 7 )
     return 0;
   unix_tm.tm_year -= 1900;
   for ( unix_tm.tm_wday = 0; unix_tm.tm_wday < 7; unix_tm.tm_wday++ )
-    if ( strcmp( day, HTTPDaysOfWeek[unix_tm.tm_wday] ) == 0 ) break;
+    if ( strcmp( day, HTTPDaysOfWeek[unix_tm.tm_wday] ) == 0 )
+      break;
   for ( unix_tm.tm_mon = 0; unix_tm.tm_mon < 12; unix_tm.tm_mon++ )
-    if ( strcmp( month, ISOMonths[unix_tm.tm_mon] ) == 0 ) break;
+    if ( strcmp( month, ISOMonths[unix_tm.tm_mon] ) == 0 )
+      break;
   time_t unix_time_s = mktime( &unix_tm ); // mktime is thread-safe
   return unix_time_s * NS_IN_S;
 #endif
@@ -2388,38 +2669,64 @@ void Time::as_iso_date( char* out_str, uint8_t out_str_len ) const
 {
 #ifdef _WIN32
   SYSTEMTIME local_system_time = UnixTimeNSToLocalSYSTEMTIME( unix_time_ns );
-  _snprintf_s( out_str, out_str_len, _TRUNCATE, "%04d-%02d-%02d", local_system_time.wYear, local_system_time.wMonth, local_system_time.wDay );
+  _snprintf_s
+  (
+    out_str,
+    out_str_len,
+    _TRUNCATE,
+    "%04d-%02d-%02d",
+    local_system_time.wYear,
+    local_system_time.wMonth,
+    local_system_time.wDay
+  );
 #else
   time_t unix_time_s = static_cast<time_t>( unix_time_ns / NS_IN_S );
   struct tm unix_tm;
   localtime_r( &unix_time_s, &unix_tm );
-  snprintf( out_str, out_str_len, "%04d-%02d-%02d", unix_tm.tm_year + 1900, unix_tm.tm_mon + 1, unix_tm.tm_mday );
+  snprintf
+  (
+    out_str,
+    out_str_len,
+    "%04d-%02d-%02d",
+    unix_tm.tm_year + 1900,
+    unix_tm.tm_mon + 1,
+    unix_tm.tm_mday
+  );
 #endif
 }
 void Time::as_iso_date_time( char* out_str, uint8_t out_str_len ) const
 {
 #ifdef _WIN32
   SYSTEMTIME local_system_time = UnixTimeNSToLocalSYSTEMTIME( unix_time_ns );
-  _snprintf_s( out_str, out_str_len, _TRUNCATE,
-          "%04d-%02d-%02dT%02d:%02d:%02d.000Z",
-        local_system_time.wYear,
-        local_system_time.wMonth,
-        local_system_time.wDay,
-        local_system_time.wHour,
-        local_system_time.wMinute,
-        local_system_time.wSecond );
+  _snprintf_s
+  (
+    out_str,
+    out_str_len,
+    _TRUNCATE,
+    "%04d-%02d-%02dT%02d:%02d:%02d.000Z",
+    local_system_time.wYear,
+    local_system_time.wMonth,
+    local_system_time.wDay,
+    local_system_time.wHour,
+    local_system_time.wMinute,
+    local_system_time.wSecond
+  );
 #else
   time_t unix_time_s = static_cast<time_t>(  unix_time_ns / NS_IN_S );
   struct tm unix_tm;
   localtime_r( &unix_time_s, &unix_tm );
-  snprintf( out_str, out_str_len,
-          "%04d-%02d-%02dT%02d:%02d:%02d.000Z",
-        unix_tm.tm_year + 1900,
-        unix_tm.tm_mon + 1,
-        unix_tm.tm_mday,
-        unix_tm.tm_hour,
-        unix_tm.tm_min,
-        unix_tm.tm_sec );
+  snprintf
+  (
+    out_str,
+    out_str_len,
+    "%04d-%02d-%02dT%02d:%02d:%02d.000Z",
+    unix_tm.tm_year + 1900,
+    unix_tm.tm_mon + 1,
+    unix_tm.tm_mday,
+    unix_tm.tm_hour,
+    unix_tm.tm_min,
+    unix_tm.tm_sec
+  );
 #endif
 }
 Time::operator struct timeval() const
@@ -2564,7 +2871,11 @@ void TimerQueue::Timer::delete_()
 }
 
 #ifdef _WIN32
-VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback( PVOID lpParameter, BOOLEAN )
+VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
+(
+  PVOID lpParameter,
+  BOOLEAN
+)
 {
   Timer* this_ = static_cast<Timer*>( lpParameter );
 
@@ -2600,14 +2911,24 @@ void TimerQueue::Thread::run()
     {
       TimerQueue::Timer* new_timer = new_timers_queue.dequeue();
       if ( new_timer != NULL )
-        timers.push( std::make_pair( Time() + new_timer->get_timeout(), new_timer ) );
+      {
+        timers.push
+        (
+          std::make_pair
+          (
+            Time() + new_timer->get_timeout(),
+            new_timer
+          )
+        );
+      }
       else
         break;
     }
     else
     {
       uint64_t current_unix_time_ns = Time::getCurrentUnixTimeNS();
-      if ( timers.top().first <= current_unix_time_ns ) // Earliest timer has expired, fire it
+      if ( timers.top().first <= current_unix_time_ns )
+      // Earliest timer has expired, fire it
       {
         TimerQueue::Timer* timer = timers.top().second;
         timers.pop();
@@ -2619,7 +2940,14 @@ void TimerQueue::Thread::run()
           if ( timer->get_period() != 0 )
           {
             timer->last_fire_time = Time();
-            timers.push( std::make_pair( timer->last_fire_time + timer->get_period(), timer ) );
+            timers.push
+            (
+              std::make_pair
+              (
+                timer->last_fire_time + timer->get_period(),
+                timer
+              )
+            );
           }
           else
             yidl::runtime::Object::decRef( *timer );
@@ -2627,11 +2955,26 @@ void TimerQueue::Thread::run()
         else
           yidl::runtime::Object::decRef( *timer );
       }
-      else // Wait on the new timers queue until a new timer arrives or it's time to fire the next timer
+      else // Wait on the new timers queue until a new timer arrives
+           // or it's time to fire the next timer
       {
-        TimerQueue::Timer* new_timer = new_timers_queue.timed_dequeue( timers.top().first - current_unix_time_ns );
+        TimerQueue::Timer* new_timer
+          = new_timers_queue.timed_dequeue
+            (
+              timers.top().first - current_unix_time_ns
+            );
+
         if ( new_timer != NULL )
-          timers.push( std::make_pair( Time() + new_timer->get_timeout(), new_timer ) );
+        {
+          timers.push
+          (
+            std::make_pair
+            (
+              Time() + new_timer->get_timeout(),
+              new_timer
+            )
+          );
+        }
       }
     }
   }
@@ -2666,10 +3009,14 @@ void TimerQueue::Thread::stop()
 #define REMOVEXATTR ::removexattr
 #elif defined(__MACH__)
 #include <sys/xattr.h>
-#define LISTXATTR( path, namebuf, size ) ::listxattr( path, namebuf, size, 0 )
-#define GETXATTR( path, name, value, size ) ::getxattr( path, name, value, size, 0, 0 )
-#define SETXATTR( path, name, value, size, flags ) ::setxattr( path, name, value, size, 0, flags )
-#define REMOVEXATTR( path, name ) ::removexattr( path, name, 0 )
+#define LISTXATTR( path, namebuf, size ) \
+  ::listxattr( path, namebuf, size, 0 )
+#define GETXATTR( path, name, value, size ) \
+  ::getxattr( path, name, value, size, 0, 0 )
+#define SETXATTR( path, name, value, size, flags ) \
+  ::setxattr( path, name, value, size, 0, flags )
+#define REMOVEXATTR( path, name ) \
+  ::removexattr( path, name, 0 )
 #endif
 #endif
 #endif
@@ -2783,7 +3130,8 @@ bool Volume::isdir( const Path& path )
 #ifdef _WIN32
   DWORD dwFileAttributes = GetFileAttributesW( path );
   return dwFileAttributes != INVALID_FILE_ATTRIBUTES &&
-        ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) == FILE_ATTRIBUTE_DIRECTORY;
+        ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
+          == FILE_ATTRIBUTE_DIRECTORY;
 #else
   struct stat stbuf;
   return ::stat( path, &stbuf ) == 0 && S_ISDIR( stbuf.st_mode );
@@ -2794,7 +3142,8 @@ bool Volume::isfile( const Path& path )
 #ifdef _WIN32
   DWORD dwFileAttributes = GetFileAttributesW( path );
   return dwFileAttributes != INVALID_FILE_ATTRIBUTES &&
-         ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) != FILE_ATTRIBUTE_DIRECTORY;
+         ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
+           != FILE_ATTRIBUTE_DIRECTORY;
 #else
   struct stat stbuf;
   return ::stat( path, &stbuf ) == 0 && S_ISREG( stbuf.st_mode );
@@ -3146,7 +3495,14 @@ bool Volume::setxattr
 )
 {
 #if defined(YIELD_HAVE_XATTR_H)
-  return SETXATTR( path, name.c_str(), value.c_str(), value.size(), flags ) != -1;
+  return SETXATTR
+         (
+           path,
+           name.c_str(),
+           value.c_str(),
+           value.size(),
+           flags
+         ) != -1;
 #elif defined(_WIN32)
   ::SetLastError( ERROR_NOT_SUPPORTED );
 #else
@@ -3190,9 +3546,12 @@ bool Volume::statvfs( const Path& path, struct statvfs& buffer )
   {
     buffer.f_bsize = 4096;
     buffer.f_frsize = 4096;
-    buffer.f_blocks = static_cast<fsblkcnt_t>( uTotalNumberOfBytes.QuadPart / 4096 );
-    buffer.f_bfree = static_cast<fsblkcnt_t>( uTotalNumberOfFreeBytes.QuadPart / 4096 );
-    buffer.f_bavail = static_cast<fsblkcnt_t>( uFreeBytesAvailableToCaller.QuadPart / 4096 );
+    buffer.f_blocks
+      = static_cast<fsblkcnt_t>( uTotalNumberOfBytes.QuadPart / 4096 );
+    buffer.f_bfree
+      = static_cast<fsblkcnt_t>( uTotalNumberOfFreeBytes.QuadPart / 4096 );
+    buffer.f_bavail
+      = static_cast<fsblkcnt_t>( uFreeBytesAvailableToCaller.QuadPart / 4096 );
     buffer.f_namemax = PATH_MAX;
     return true;
   }
@@ -3333,7 +3692,11 @@ void XDRMarshaller::writeBoolean( const char* key, uint32_t tag, bool value )
 {
   writeInt32( key, tag, value ? 1 : 0 );
 }
-void XDRMarshaller::writeBuffer( const char* key, uint32_t tag, yidl::runtime::auto_Buffer value )
+void XDRMarshaller::writeBuffer
+(
+  const char* key, uint32_t tag,
+  yidl::runtime::auto_Buffer value
+)
 {
   writeInt32( key, tag, static_cast<int32_t>( value->size() ) );
   buffer->put( static_cast<void*>( *value ), value->size() );
@@ -3379,19 +3742,35 @@ void XDRMarshaller::writeInt64( const char* key, uint32_t, int64_t value )
   value = Machine::htonll( value );
   buffer->put( &value, sizeof( value ) );
 }
-void XDRMarshaller::writeMap( const char* key, uint32_t tag, const yidl::runtime::Map& value )
+void XDRMarshaller::writeMap
+(
+  const char* key,
+  uint32_t tag,
+  const yidl::runtime::Map& value
+)
 {
   writeInt32( key, tag, static_cast<int32_t>( value.get_size() ) );
   in_map_stack.push_back( true );
   value.marshal( *this );
   in_map_stack.pop_back();
 }
-void XDRMarshaller::writeSequence( const char* key, uint32_t tag, const yidl::runtime::Sequence& value )
+void XDRMarshaller::writeSequence
+(
+  const char* key,
+  uint32_t tag,
+  const yidl::runtime::Sequence& value
+)
 {
   writeInt32( key, tag, static_cast<int32_t>( value.get_size() ) );
   value.marshal( *this );
 }
-void XDRMarshaller::writeString( const char* key, uint32_t tag, const char* value, size_t value_len )
+void XDRMarshaller::writeString
+(
+  const char* key,
+  uint32_t tag,
+  const char* value,
+  size_t value_len
+)
 {
   writeInt32( key, tag, static_cast<int32_t>( value_len ) );
   buffer->put( static_cast<const void*>( value ), value_len );
@@ -3401,7 +3780,12 @@ void XDRMarshaller::writeString( const char* key, uint32_t tag, const char* valu
     buffer->put( static_cast<const void*>( zeros ), 4 - ( value_len % 4 ) );
   }
 }
-void XDRMarshaller::writeStruct( const char* key, uint32_t, const yidl::runtime::Struct& value )
+void XDRMarshaller::writeStruct
+(
+  const char* key,
+  uint32_t,
+  const yidl::runtime::Struct& value
+)
 {
   writeKey( key );
   value.marshal( *this );
@@ -3417,7 +3801,8 @@ XDRUnmarshaller::XDRUnmarshaller( yidl::runtime::auto_Buffer buffer )
 void XDRUnmarshaller::read( void* buffer, size_t buffer_len )
 {
 //#ifdef _DEBUG
-//  if ( this->buffer->size() - this->buffer->position() < buffer_len ) DebugBreak();
+//  if ( this->buffer->size() - this->buffer->position() < buffer_len )
+//    DebugBreak();
 //#endif
   this->buffer->get( buffer, buffer_len );
 }
@@ -3425,7 +3810,12 @@ bool XDRUnmarshaller::readBoolean( const char* key, uint32_t tag )
 {
   return readInt32( key, tag ) == 1;
 }
-void XDRUnmarshaller::readBuffer( const char* key, uint32_t tag, yidl::runtime::auto_Buffer value )
+void XDRUnmarshaller::readBuffer
+(
+  const char* key,
+  uint32_t tag,
+  yidl::runtime::auto_Buffer value
+)
 {
   size_t size = readInt32( key, tag );
   if ( value->capacity() - value->size() < size ) DebugBreak();
@@ -3443,7 +3833,13 @@ double XDRUnmarshaller::readDouble( const char*, uint32_t )
   read( &uint64_value, sizeof( uint64_value ) );
   uint64_value = Machine::ntohll( uint64_value );
   double double_value;
-  memcpy_s( &double_value, sizeof( double_value ), &uint64_value, sizeof( uint64_value ) );
+  memcpy_s
+  (
+    &double_value,
+    sizeof( double_value ),
+    &uint64_value,
+    sizeof( uint64_value )
+  );
   return double_value;
 }
 float XDRUnmarshaller::readFloat( const char*, uint32_t )
@@ -3456,7 +3852,13 @@ float XDRUnmarshaller::readFloat( const char*, uint32_t )
   uint32_value = Machine::ntohl( uint32_value );
 #endif
   float float_value;
-  memcpy_s( &float_value, sizeof( float_value ), &uint32_value, sizeof( uint32_value ) );
+  memcpy_s
+  (
+    &float_value,
+    sizeof( float_value ),
+    &uint32_value,
+    sizeof( uint32_value )
+  );
   return float_value;
 }
 int32_t XDRUnmarshaller::readInt32( const char*, uint32_t )
@@ -3475,13 +3877,23 @@ int64_t XDRUnmarshaller::readInt64( const char*, uint32_t )
   read( &value, sizeof( value ) );
   return Machine::ntohll( value );
 }
-void XDRUnmarshaller::readMap( const char* key, uint32_t tag, yidl::runtime::Map& value )
+void XDRUnmarshaller::readMap
+(
+  const char* key,
+  uint32_t tag,
+  yidl::runtime::Map& value
+)
 {
   size_t size = readInt32( key, tag );
   for ( size_t i = 0; i < size; i++ )
     value.unmarshal( *this );
 }
-void XDRUnmarshaller::readSequence( const char* key, uint32_t tag, yidl::runtime::Sequence& value )
+void XDRUnmarshaller::readSequence
+(
+  const char* key,
+  uint32_t tag,
+  yidl::runtime::Sequence& value
+)
 {
   size_t size = readInt32( key, tag );
   if ( size <= UINT16_MAX )
@@ -3490,7 +3902,12 @@ void XDRUnmarshaller::readSequence( const char* key, uint32_t tag, yidl::runtime
       value.unmarshal( *this );
   }
 }
-void XDRUnmarshaller::readString( const char* key, uint32_t tag, std::string& value )
+void XDRUnmarshaller::readString
+(
+  const char* key,
+  uint32_t tag,
+  std::string& value
+)
 {
   size_t str_len = readInt32( key, tag );
   if ( str_len < UINT16_MAX )
@@ -3508,7 +3925,12 @@ void XDRUnmarshaller::readString( const char* key, uint32_t tag, std::string& va
     }
   }
 }
-void XDRUnmarshaller::readStruct( const char*, uint32_t, yidl::runtime::Struct& value )
+void XDRUnmarshaller::readStruct
+(
+  const char*,
+  uint32_t,
+  yidl::runtime::Struct& value
+)
 {
   value.unmarshal( *this );
 }

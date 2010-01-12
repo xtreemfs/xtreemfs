@@ -1,3 +1,5 @@
+// Revision: 1934
+
 #include "yield/ipc.h"
 
 
@@ -4734,7 +4736,7 @@ YIELD::ipc::TCPSocket::TCPSocket( int domain, int socket_ )
 YIELD::ipc::auto_TCPSocket YIELD::ipc::TCPSocket::accept()
 {
 #ifdef _WIN32
-  unsigned int peer_socket = _accept();
+  SOCKET peer_socket = _accept();
   if ( peer_socket != INVALID_SOCKET )
 #else
   int peer_socket = _accept();
