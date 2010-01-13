@@ -40,6 +40,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -97,6 +99,13 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     private final AtomicInteger                            transactionId;
     
     private final ConcurrentLinkedQueue<ServerConnection>  toBeEstablished;
+
+    /**
+     * on some platforms (e.g. FreeBSD 7.2 with openjdk6) Selector.select(int timeout)
+     * returns immediately. If this problem is detected, the thread waits 25ms after each
+     * invocation to avoid excessive CPU consumption. See also issue #75
+     */
+    private boolean                                        brokenSelect;
     
     public RPCNIOSocketClient(SSLOptions sslOptions, int requestTimeout, int connectionTimeout)
         throws IOException {
@@ -170,6 +179,19 @@ public class RPCNIOSocketClient extends LifeCycleThread {
     }
     
     public void run() {
+
+        brokenSelect = false;
+        try {
+            long now = System.currentTimeMillis();
+            selector.select(20);
+            long duration = System.currentTimeMillis()-now;
+            if (duration < 15) {
+                Logging.logMessage(Logging.LEVEL_WARN, this,"detected broken select(int timeout)!");
+                brokenSelect = true;
+            }
+        } catch (Throwable th) {
+            Logging.logMessage(Logging.LEVEL_DEBUG, this,"could not check Selector for broken select(int timeout): "+th);
+        }
         
         notifyStarted();
         lastCheck = System.currentTimeMillis();
@@ -181,7 +203,9 @@ public class RPCNIOSocketClient extends LifeCycleThread {
             try {
                 numKeys = selector.select(TIMEOUT_GRANULARITY);
             } catch (CancelledKeyException ex) {
-                // who cares
+                Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
+                    ex.toString());
+                continue;
             } catch (IOException ex) {
                 Logging.logMessage(Logging.LEVEL_WARN, Category.net, this, "Exception while selecting: %s",
                     ex.toString());
@@ -230,6 +254,15 @@ public class RPCNIOSocketClient extends LifeCycleThread {
                         continue;
                     }
                 }
+            } else {
+                if (brokenSelect) {
+                    try {
+                        this.sleep(25);
+                    } catch (InterruptedException ex) {
+                        break;
+                    }
+                }
+
             }
             checkForTimers();
         }
