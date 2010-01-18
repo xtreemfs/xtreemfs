@@ -52,17 +52,21 @@ for interface_idl_file_name in os.listdir( interfaces_dir_path ):
     if interface_idl_file_name.endswith( ".idl" ):
         generate_cpp( os.path.join( interfaces_dir_path, interface_idl_file_name ), os.path.join( XTREEMFS_DIR_PATH, "include", "xtreemfs", "interfaces", os.path.splitext( interface_idl_file_name )[0] + ".h" ) ) 
 
-        
-format_src( "XtreemFS", src_dir_paths=( 
-                                        os.path.join( XTREEMFS_DIR_PATH, "include" ), 
-                                        os.path.join( XTREEMFS_DIR_PATH, "src", "libxtreemfs" ), 
-                                        os.path.join( XTREEMFS_DIR_PATH, "src", "lsfs.xtreemfs" ),
-                                        os.path.join( XTREEMFS_DIR_PATH, "src", "mkfs.xtreemfs" ),
-                                        os.path.join( XTREEMFS_DIR_PATH, "src", "mount.xtreemfs" ),
-                                        os.path.join( XTREEMFS_DIR_PATH, "src", "rmfs.xtreemfs" ),
-                                       ) )
 
-# Generate project files
+# Add copyright notices to the source, strip white space on the right        
+format_src( "XtreemFS", 
+            src_dir_paths=( 
+                            os.path.join( XTREEMFS_DIR_PATH, "include" ),
+                            os.path.join( XTREEMFS_DIR_PATH, "src", "libxtreemfs" ), 
+                            os.path.join( XTREEMFS_DIR_PATH, "src", "lsfs.xtreemfs" ),
+                            os.path.join( XTREEMFS_DIR_PATH, "src", "mkfs.xtreemfs" ),
+                            os.path.join( XTREEMFS_DIR_PATH, "src", "mount.xtreemfs" ),
+                            os.path.join( XTREEMFS_DIR_PATH, "src", "rmfs.xtreemfs" ),
+                           ),
+            start_year=2009 )
+
+
+            # Generate project files
 os.chdir( os.path.join( XTREEMFS_DIR_PATH, "proj", "libxtreemfs" ) )
 generate_proj( 
                "libxtreemfs",      

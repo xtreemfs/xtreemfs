@@ -1,4 +1,4 @@
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #ifndef _YIELD_CONCURRENCY_H_
@@ -712,7 +712,7 @@ namespace YIELD
         if ( event_processing_time_ns < 10 * NS_IN_S )
         {
           event_processing_time_ns_sampler.
-            setNextSample( event_processing_time_ns );
+            set_next_sample( event_processing_time_ns );
   //        event_processing_time_ns_total += event_processing_time_ns;
         }
         // events_processed_total++;

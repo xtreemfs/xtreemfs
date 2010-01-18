@@ -1,4 +1,4 @@
-// Copyright 2003-2009 Minor Gordon.
+// Copyright 2003-2010 Minor Gordon.
 // This source comes from the yidl project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #ifndef _YIDL_H_

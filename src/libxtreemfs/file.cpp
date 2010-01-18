@@ -1,4 +1,4 @@
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/file.h"
@@ -598,13 +598,13 @@ bool File::setxattr
 
 YIELD::platform::auto_Stat File::stat()
 {
-  if ( !latest_osd_write_response.get_new_file_size().empty() )
-  {
-    YIELD::platform::auto_Stat stbuf = parent_volume->stat( path );
-    stbuf->set_size( latest_osd_write_response.get_new_file_size().get_size() );
-    return stbuf;
-  }
-  else
+  //if ( !latest_osd_write_response.get_new_file_size().empty() )
+  //{
+  //  YIELD::platform::auto_Stat stbuf = parent_volume->stat( path );
+  //  stbuf->set_size( latest_osd_write_response.get_new_file_size().get_size() );
+  //  return stbuf;
+  //}
+  //else
     return parent_volume->stat( path );
 }
 

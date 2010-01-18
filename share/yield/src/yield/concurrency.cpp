@@ -5,7 +5,7 @@ using namespace YIELD::concurrency;
 
 
 // color_stage_group.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 class ColorStageGroup::Thread : public ::YIELD::platform::Thread
 {
@@ -103,7 +103,7 @@ ColorStageGroup::~ColorStageGroup()
 
 
 // event_handler.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 EventHandler::EventHandler()
   : redirect_event_target( NULL )
@@ -153,7 +153,7 @@ void EventHandler::set_redirect_event_target
 
 
 // event_target_mux.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 EventTargetMux::EventTargetMux()
 {
@@ -197,7 +197,7 @@ void EventTargetMux::send( Event& ev )
 
 
 // mg1_visit_policy.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #include <cmath>
 #define YIELD_MG1_MIN_RO 0.005
@@ -364,7 +364,7 @@ bool MG1VisitPolicy::populatePollingTable()
 
 
 // polling_stage_group.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 template <class VisitPolicyType>
 class PollingStageGroup<VisitPolicyType>::Thread
@@ -481,7 +481,7 @@ template class PollingStageGroup<WavefrontVisitPolicy>;
 
 
 // request.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 auto_EventTarget Request::get_response_target() const
 {
@@ -498,7 +498,7 @@ void Request::set_response_target( auto_EventTarget response_target )
 
 
 // seda_stage_group.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 class SEDAStageGroup::Thread : public ::YIELD::platform::Thread
 {
@@ -575,7 +575,7 @@ void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
 
 
 // stage.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 class Stage::StatisticsTimer : public YIELD::platform::TimerQueue::Timer
 {
@@ -646,7 +646,7 @@ Stage::~Stage()
 
 
 // stage_group.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 
@@ -681,7 +681,7 @@ void StageGroup::addStage( auto_Stage stage )
 
 
 // thread_local_event_queue.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #include <stack>
 class ThreadLocalEventQueue::EventStack : private std::stack<Event*>

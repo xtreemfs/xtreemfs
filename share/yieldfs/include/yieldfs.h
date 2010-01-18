@@ -1,4 +1,4 @@
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 
 #ifndef _YIELDFS_H_

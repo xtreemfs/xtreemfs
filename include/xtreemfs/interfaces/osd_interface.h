@@ -1,10 +1,10 @@
-// Copyright 2010 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
-    #ifndef _XTREEMFS_INTERFACES_OSD_INTERFACE_H_
-    #define _XTREEMFS_INTERFACES_OSD_INTERFACE_H_
+#ifndef _XTREEMFS_INTERFACES_OSD_INTERFACE_H_
+#define _XTREEMFS_INTERFACES_OSD_INTERFACE_H_
 
-    #include "constants.h"
+#include "constants.h"
 #include "mrc_osd_types.h"
 #include "yidl.h"
 #include "yield/concurrency.h"

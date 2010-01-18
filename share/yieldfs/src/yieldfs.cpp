@@ -1,4 +1,4 @@
-// Revision: 208
+// Revision: 209
 
 #include "yield/platform.h"
 #include "yieldfs.h"
@@ -6,7 +6,7 @@ using namespace yieldfs;
 
 
 // cached_page.h
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 
 
@@ -57,7 +57,7 @@ namespace yieldfs
 
 
 // cached_stat.h
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 
 
@@ -97,7 +97,7 @@ namespace yieldfs
 
 
 // data_caching_file.h
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 
 
@@ -142,7 +142,7 @@ namespace yieldfs
 
 
 // fuse_unix.h
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 
 
@@ -785,7 +785,7 @@ namespace yieldfs
 
 
 // fuse_win32.h
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 
 
@@ -854,13 +854,15 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    CreateFile(
-      LPCWSTR					FileName,
-      DWORD					DesiredAccess,
-      DWORD					ShareMode,
-      DWORD					CreationDisposition,
-      DWORD					FlagsAndAttributes,
-      PDOKAN_FILE_INFO	 DokanFileInfo )
+    CreateFile
+    (
+      LPCWSTR FileName,
+      DWORD DesiredAccess,
+      DWORD, // ShareMode,
+      DWORD CreationDisposition,
+      DWORD FlagsAndAttributes,
+      PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       YIELD::platform::Volume& volume = get_volume( DokanFileInfo );
       YIELD::platform::File* file = NULL;
@@ -1068,9 +1070,11 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    CreateDirectory(
-	    LPCWSTR					FileName,
-	    PDOKAN_FILE_INFO	 DokanFileInfo )
+    CreateDirectory
+    (
+	    LPCWSTR FileName,
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       if ( wcscmp( FileName, PATH_SEPARATOR_WIDE_STRING ) != 0 )
       {
@@ -1084,9 +1088,11 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    CloseFile(
-	    LPCWSTR					FileName,
-	    PDOKAN_FILE_INFO	 DokanFileInfo )
+    CloseFile
+    (
+	    LPCWSTR, // FileName,
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       // close() explicitly to trigger replication in XtreemFS
       // there may be extra references to the File (e.g. timers) ->
@@ -1112,9 +1118,11 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    Cleanup(
-	    LPCWSTR					FileName,
-	    PDOKAN_FILE_INFO	 DokanFileInfo )
+    Cleanup
+    (
+	    LPCWSTR FileName,
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       if ( DokanFileInfo->DeleteOnClose )
       {
@@ -1128,9 +1136,11 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    DeleteDirectory(
-	    LPCWSTR				FileName,
-	    PDOKAN_FILE_INFO DokanFileInfo )
+    DeleteDirectory
+    (
+	    LPCWSTR FileName,
+	    PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       if ( get_volume( DokanFileInfo ).rmdir( FileName ) )
         return ERROR_SUCCESS;
@@ -1139,9 +1149,11 @@ namespace yieldfs
     }
 
     static int DOKAN_CALLBACK
-    DeleteFile(
-	    LPCWSTR				FileName,
-	    PDOKAN_FILE_INFO DokanFileInfo )
+    DeleteFile
+    (
+	    LPCWSTR, // FileName,
+	    PDOKAN_FILE_INFO
+    )
     {
       // Don't actually unlink the file here,
       // simply check whether we have access to delete it.
@@ -1196,7 +1208,7 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     FlushFileBuffers
     (
-	    LPCWSTR		FileName,
+	    LPCWSTR, // FileName,
 	    PDOKAN_FILE_INFO DokanFileInfo
     )
     {
@@ -1258,12 +1270,12 @@ namespace yieldfs
     GetVolumeInformation
     (
 	    LPWSTR VolumeNameBuffer,
-	    DWORD VolumeNameSize,
+	    DWORD, // VolumeNameSize,
 	    LPDWORD VolumeSerialNumber,
 	    LPDWORD MaximumComponentLength,
 	    LPDWORD FileSystemFlags,
 	    LPWSTR FileSystemNameBuffer,
-	    DWORD FileSystemNameSize,
+	    DWORD, // FileSystemNameSize,
 	    PDOKAN_FILE_INFO DokanFileInfo )
     {
       YIELD::platform::Path name =
@@ -1279,6 +1291,7 @@ namespace yieldfs
         )
       )
       {
+        // wcsncpy causes strange problems, so use wcscpy
         wcscpy( VolumeNameBuffer, name );
 
         if ( VolumeSerialNumber )
@@ -1288,10 +1301,13 @@ namespace yieldfs
           *MaximumComponentLength = stbuf.f_namemax;
 
         if ( FileSystemFlags )
-          *FileSystemFlags = FILE_CASE_PRESERVED_NAMES|
-                             FILE_CASE_SENSITIVE_SEARCH|
+        {
+          *FileSystemFlags = FILE_CASE_PRESERVED_NAMES |
+                             FILE_CASE_SENSITIVE_SEARCH |
                              FILE_UNICODE_ON_DISK;
+        }
 
+        // wcsncpy causes strange problems, so use wcscpy
         wcscpy( FileSystemNameBuffer, L"yieldfs_FUSE" );
 
         return ERROR_SUCCESS;
@@ -1303,7 +1319,7 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     LockFile
     (
-	    LPCWSTR FileName,
+	    LPCWSTR, // FileName,
 	    LONGLONG ByteOffset,
 	    LONGLONG Length,
 	    PDOKAN_FILE_INFO DokanFileInfo
@@ -1324,6 +1340,9 @@ namespace yieldfs
 	    PDOKAN_FILE_INFO DokanFileInfo
     )
     {
+      if ( ReplaceIfExisting )
+        DebugBreak(); // TODO: Implement ReplaceIfExisting.. atomically?
+
       if ( get_volume( DokanFileInfo ).rename( FileName, NewFileName ) )
         return ERROR_SUCCESS;
       else
@@ -1470,7 +1489,7 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     UnlockFile
     (
-	    LPCWSTR FileName,
+	    LPCWSTR, // FileName,
 	    LONGLONG ByteOffset,
 	    LONGLONG Length,
 	    PDOKAN_FILE_INFO DokanFileInfo
@@ -1485,7 +1504,7 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     Unmount
     (
-	    PDOKAN_FILE_INFO DokanFileInfo
+	    PDOKAN_FILE_INFO
     )
     {
 	    return ERROR_SUCCESS;
@@ -1539,7 +1558,10 @@ namespace yieldfs
 
 
     static inline YIELD::platform::File*
-      get_file( PDOKAN_FILE_INFO DokanFileInfo )
+    get_file
+    (
+      PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       return reinterpret_cast<YIELD::platform::File*>
       (
@@ -1548,7 +1570,10 @@ namespace yieldfs
     }
 
     static inline YIELD::platform::Volume&
-      get_volume( PDOKAN_FILE_INFO DokanFileInfo )
+    get_volume
+    (
+      PDOKAN_FILE_INFO DokanFileInfo
+    )
     {
       return *reinterpret_cast<FUSEWin32*>
       (
@@ -1561,7 +1586,7 @@ namespace yieldfs
 
 
 // page_cache.h
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 
 
@@ -1614,7 +1639,7 @@ namespace yieldfs
 
 
 // stat_cache.h
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 
 
@@ -1645,7 +1670,7 @@ namespace yieldfs
 
 
 // tracing_file.h
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 
 
@@ -1672,7 +1697,7 @@ namespace yieldfs
 
 
 // write_back_caching_file.h
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 
 
@@ -1698,7 +1723,7 @@ namespace yieldfs
 
 
 // write_through_caching_file.h
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 
 
@@ -1727,7 +1752,7 @@ namespace yieldfs
 
 
 // data_caching_file.cpp
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 DataCachingFile::DataCachingFile
 (
@@ -1962,7 +1987,7 @@ ssize_t DataCachingFile::write
 
 
 // fuse.cpp
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 #ifdef _WIN32
 #else
@@ -2049,7 +2074,7 @@ int FUSE::main( struct fuse_args& fuse_args_, const char* mount_point )
 
 
 // metadata_caching_volume.cpp
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 class MetadataCachingVolume::readdirCallback
   : public YIELD::platform::Volume::listdirCallback,
@@ -2366,7 +2391,7 @@ bool MetadataCachingVolume::utimens
 
 
 // page_cache.cpp
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 class PageCache::OldDirtyPageTimer : public YIELD::platform::TimerQueue::Timer
 {
@@ -2597,7 +2622,7 @@ void PageCache::insert( auto_CachedPage page )
 
 
 // stackable_file.cpp
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 bool StackableFile::close()
 {
@@ -2672,7 +2697,7 @@ ssize_t StackableFile::write
 
 
 // stackable_volume.cpp
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 bool StackableVolume::access( const YIELD::platform::Path& path, int amode )
 {
@@ -2834,7 +2859,7 @@ YIELD::platform::Path
 
 
 // stat_cache.cpp
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 StatCache::StatCache( double ttl_s )
   : ttl_s( ttl_s )
@@ -2948,7 +2973,7 @@ void StatCache::insert( CachedStat* cached_stat )
 
 
 // tracing_file.cpp
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 #include <iostream>
 TracingFile::TracingFile
@@ -3149,7 +3174,7 @@ ssize_t TracingFile::write
 
 
 // tracing_volume.cpp
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 #include <iostream>
 class TracingVolume::listdirCallback
@@ -3693,7 +3718,7 @@ YIELD::platform::Path TracingVolume::volname( const YIELD::platform::Path& path 
 
 
 // write_back_caching_file.cpp
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 WriteBackCachingFile::WriteBackCachingFile
 (
@@ -3709,7 +3734,7 @@ WriteBackCachingFile::~WriteBackCachingFile()
 
 
 // write_back_caching_volume.cpp
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 WriteBackCachingVolume::WriteBackCachingVolume() // For testing
 {
@@ -3785,7 +3810,7 @@ YIELD::platform::auto_File WriteBackCachingVolume::open
 
 
 // write_through_caching_file.cpp
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 WriteThroughCachingFile::WriteThroughCachingFile
 (
@@ -3810,7 +3835,7 @@ ssize_t WriteThroughCachingFile::write
 
 
 // write_through_caching_volume.cpp
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 WriteThroughCachingVolume::WriteThroughCachingVolume() // For testing
 {

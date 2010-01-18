@@ -1,11 +1,11 @@
-// Revision: 1934
+// Revision: 1944
 
 #include "yield/platform.h"
 using namespace YIELD::platform;
 
 
 // counting_semaphore.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #define NOMINMAX
@@ -89,7 +89,7 @@ void CountingSemaphore::release()
 
 
 // exception.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
@@ -305,7 +305,7 @@ void Exception::init( const char* what )
 
 
 // file.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
@@ -708,7 +708,7 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
 
 
 // log.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 namespace YIELD
 {
@@ -852,7 +852,7 @@ void Log::write( const unsigned char* str, size_t str_len, Level level )
 
 
 // machine.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
@@ -937,7 +937,7 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
 
 
 // memory_mapped_file.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #define NOMINMAX
@@ -945,7 +945,43 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
 #else
 #include <sys/mman.h>
 #endif
-auto_MemoryMappedFile MemoryMappedFile::open( const Path& path )
+MemoryMappedFile::MemoryMappedFile
+(
+  auto_File underlying_file,
+  uint32_t open_flags
+)
+  : underlying_file( underlying_file ),
+    open_flags( open_flags )
+{
+#ifdef _WIN32
+  mapping = NULL;
+#endif
+  size = 0;
+  start = NULL;
+}
+bool MemoryMappedFile::close()
+{
+  if ( start != NULL )
+  {
+    sync();
+#ifdef _WIN32
+    UnmapViewOfFile( start );
+#else
+    munmap( start, size );
+#endif
+    start = NULL;
+  }
+#ifdef _WIN32
+  if ( mapping != NULL )
+  {
+    CloseHandle( mapping );
+    mapping = NULL;
+  }
+#endif
+  return underlying_file->close();
+}
+auto_MemoryMappedFile
+MemoryMappedFile::open( const Path& path )
 {
   return open
          (
@@ -968,7 +1004,8 @@ MemoryMappedFile::open( const Path& path, uint32_t flags )
            0
          );
 }
-auto_MemoryMappedFile MemoryMappedFile::open
+auto_MemoryMappedFile
+MemoryMappedFile::open
 (
   const Path& path,
   uint32_t flags,
@@ -1012,41 +1049,6 @@ auto_MemoryMappedFile MemoryMappedFile::open
   }
   else
     return NULL;
-}
-MemoryMappedFile::MemoryMappedFile
-(
-  auto_File underlying_file,
-  uint32_t open_flags
-)
-  : underlying_file( underlying_file ),
-    open_flags( open_flags )
-{
-#ifdef _WIN32
-  mapping = NULL;
-#endif
-  size = 0;
-  start = NULL;
-}
-bool MemoryMappedFile::close()
-{
-  if ( start != NULL )
-  {
-    sync();
-#ifdef _WIN32
-    UnmapViewOfFile( start );
-#else
-    munmap( start, size );
-#endif
-    start = NULL;
-  }
-#ifdef _WIN32
-  if ( mapping != NULL )
-  {
-    CloseHandle( mapping );
-    mapping = NULL;
-  }
-#endif
-  return underlying_file->close();
 }
 bool MemoryMappedFile::resize( size_t new_size )
 {
@@ -1156,7 +1158,7 @@ bool MemoryMappedFile::sync( void* ptr, size_t length )
 
 
 // mutex.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #if defined(_WIN32)
 #include <windows.h>
@@ -1232,7 +1234,7 @@ void Mutex::release()
 
 
 // path.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
@@ -1553,7 +1555,7 @@ std::pair<Path, Path> Path::splitext() const
 
 
 // performance_counter_set.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
 #if defined(__sun)
@@ -1697,7 +1699,7 @@ void PerformanceCounterSet::stopCounting( uint64_t* counts )
 
 
 // processor_set.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #if defined(_WIN32)
 #include <windows.h>
@@ -1847,7 +1849,7 @@ bool ProcessorSet::set( uint16_t processor_i )
 
 
 // shared_library.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
@@ -1862,6 +1864,40 @@ bool ProcessorSet::set( uint16_t processor_i )
 #else
 #define DLOPEN( file_path ) dlopen( file_path, RTLD_NOW|RTLD_GLOBAL )
 #endif
+SharedLibrary::SharedLibrary( void* handle )
+  : handle( handle )
+{ }
+SharedLibrary::~SharedLibrary()
+{
+  if ( handle != NULL )
+  {
+#ifdef _WIN32
+    FreeLibrary( ( HMODULE )handle );
+#else
+#ifndef _DEBUG
+    dlclose( handle ); // Don't dlclose when debugging,
+                       // because that causes valgrind to lose symbols
+#endif
+#endif
+  }
+}
+void* SharedLibrary::getFunction
+(
+  const char* function_name,
+  void* missing_function_return_value
+)
+{
+  void* function_handle;
+#ifdef _WIN32
+  function_handle = GetProcAddress( ( HMODULE )handle, function_name );
+#else
+  function_handle = dlsym( handle, function_name );
+#endif
+  if ( function_handle )
+    return function_handle;
+  else
+    return missing_function_return_value;
+}
 auto_SharedLibrary SharedLibrary::open
 (
   const Path& file_prefix,
@@ -1941,44 +1977,10 @@ auto_SharedLibrary SharedLibrary::open
   }
   return NULL;
 }
-SharedLibrary::SharedLibrary( void* handle )
-  : handle( handle )
-{ }
-SharedLibrary::~SharedLibrary()
-{
-  if ( handle != NULL )
-  {
-#ifdef _WIN32
-    FreeLibrary( ( HMODULE )handle );
-#else
-#ifndef _DEBUG
-    dlclose( handle ); // Don't dlclose when debugging,
-                       // because that causes valgrind to lose symbols
-#endif
-#endif
-  }
-}
-void* SharedLibrary::getFunction
-(
-  const char* function_name,
-  void* missing_function_return_value
-)
-{
-  void* function_handle;
-#ifdef _WIN32
-  function_handle = GetProcAddress( ( HMODULE )handle, function_name );
-#else
-  function_handle = dlsym( handle, function_name );
-#endif
-  if ( function_handle )
-    return function_handle;
-  else
-    return missing_function_return_value;
-}
 
 
 // stat.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
@@ -2130,6 +2132,14 @@ uint32_t Stat::get_attributes() const
 #endif
 }
 #endif
+bool Stat::operator==( const Stat& other ) const
+{
+  return mode == other.mode &&
+         size == other.size &&
+         atime == other.atime &&
+         mtime == other.mtime &&
+         ctime == other.ctime;
+}
 Stat::operator std::string() const
 {
   std::ostringstream os;
@@ -2199,7 +2209,7 @@ Stat::operator WIN32_FIND_DATA() const
 
 
 // thread.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
@@ -2395,7 +2405,7 @@ void Thread::yield()
 
 
 // time.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #if defined(_WIN32)
 #include <windows.h> // For FILETIME
@@ -2763,21 +2773,14 @@ Time::operator std::string() const
 
 
 // timer_queue.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
 #ifdef _WIN32
 #include <windows.h>
 #endif
-
 #include <queue>
 #include <utility>
-
-
 TimerQueue* TimerQueue::default_timer_queue = NULL;
-
-
 TimerQueue::TimerQueue()
 {
 #ifdef _WIN32
@@ -2786,13 +2789,11 @@ TimerQueue::TimerQueue()
   thread.start();
 #endif
 }
-
 #ifdef _WIN32
 TimerQueue::TimerQueue( HANDLE hTimerQueue )
   : hTimerQueue( hTimerQueue )
 { }
 #endif
-
 TimerQueue::~TimerQueue()
 {
 #ifdef _WIN32
@@ -2802,7 +2803,6 @@ TimerQueue::~TimerQueue()
   thread.stop();
 #endif
 }
-
 void TimerQueue::addTimer( yidl::runtime::auto_Object<Timer> timer )
 {
 #ifdef _WIN32
@@ -2821,13 +2821,11 @@ void TimerQueue::addTimer( yidl::runtime::auto_Object<Timer> timer )
   thread.addTimer( timer.release() );
 #endif
 }
-
 void TimerQueue::destroyDefaultTimerQueue()
 {
   if ( default_timer_queue != NULL )
     delete default_timer_queue;
 }
-
 TimerQueue& TimerQueue::getDefaultTimerQueue()
 {
   if ( default_timer_queue == NULL )
@@ -2838,8 +2836,6 @@ TimerQueue& TimerQueue::getDefaultTimerQueue()
 #endif
   return *default_timer_queue;
 }
-
-
 TimerQueue::Timer::Timer( const Time& timeout )
   : period( static_cast<uint64_t>( 0 ) ), timeout( timeout )
 {
@@ -2847,7 +2843,6 @@ TimerQueue::Timer::Timer( const Time& timeout )
   hTimer = hTimerQueue = NULL;
 #endif
 }
-
 TimerQueue::Timer::Timer( const Time& timeout, const Time& period )
   : period( period ), timeout( timeout )
 {
@@ -2857,10 +2852,8 @@ TimerQueue::Timer::Timer( const Time& timeout, const Time& period )
   deleted = false;
 #endif
 }
-
 TimerQueue::Timer::~Timer()
 { }
-
 void TimerQueue::Timer::delete_()
 {
 #ifdef _WIN32
@@ -2869,42 +2862,14 @@ void TimerQueue::Timer::delete_()
   deleted = true;
 #endif
 }
-
-#ifdef _WIN32
-VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
-(
-  PVOID lpParameter,
-  BOOLEAN
-)
-{
-  Timer* this_ = static_cast<Timer*>( lpParameter );
-
-  Time elapsed_time( Time() - this_->last_fire_time );
-  if ( elapsed_time > 0 )
-  {
-    this_->fire();
-
-    if ( this_->get_period() == 0 )
-      yidl::runtime::Object::decRef( *this_ );
-    else
-      this_->last_fire_time = Time();
-  }
-  else
-    this_->last_fire_time = Time();
-}
-#endif
-
-
 #ifndef _WIN32
 TimerQueue::Thread::Thread()
 {
    should_run = true;
 }
-
 void TimerQueue::Thread::run()
 {
   set_name( "TimerQueueThread" );
-
   while ( should_run )
   {
     if ( timers.empty() )
@@ -2932,11 +2897,9 @@ void TimerQueue::Thread::run()
       {
         TimerQueue::Timer* timer = timers.top().second;
         timers.pop();
-
         if ( !timer->deleted )
         {
           timer->fire();
-
           if ( timer->get_period() != 0 )
           {
             timer->last_fire_time = Time();
@@ -2963,7 +2926,6 @@ void TimerQueue::Thread::run()
             (
               timers.top().first - current_unix_time_ns
             );
-
         if ( new_timer != NULL )
         {
           timers.push
@@ -2979,17 +2941,37 @@ void TimerQueue::Thread::run()
     }
   }
 }
-
 void TimerQueue::Thread::stop()
 {
   should_run = false;
   new_timers_queue.enqueue( NULL );
 }
 #endif
+#ifdef _WIN32
+VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
+(
+  PVOID lpParameter,
+  BOOLEAN
+)
+{
+  Timer* this_ = static_cast<Timer*>( lpParameter );
+  Time elapsed_time( Time() - this_->last_fire_time );
+  if ( elapsed_time > 0 )
+  {
+    this_->fire();
+    if ( this_->get_period() == 0 )
+      yidl::runtime::Object::decRef( *this_ );
+    else
+      this_->last_fire_time = Time();
+  }
+  else
+    this_->last_fire_time = Time();
+}
+#endif
 
 
 // volume.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
@@ -3281,7 +3263,8 @@ auto_File Volume::open( const Path& path, uint32_t flags, mode_t mode )
 {
   return open( path, flags, mode, 0 );
 }
-auto_File Volume::open
+auto_File
+Volume::open
 (
   const Path& path,
   uint32_t flags,
@@ -3350,7 +3333,8 @@ bool Volume::readdir( const Path& path, readdirCallback& callback )
 {
   return readdir( path, Path(), callback );
 }
-bool Volume::readdir
+bool
+Volume::readdir
 (
   const Path& path,
   const Path& match_file_name_prefix,
@@ -3486,7 +3470,8 @@ bool Volume::setattr( const Path& path, uint32_t file_attributes )
   return false;
 #endif
 }
-bool Volume::setxattr
+bool
+Volume::setxattr
 (
   const Path& path,
   const std::string& name,
@@ -3602,7 +3587,8 @@ bool Volume::unlink( const Path& path )
   return ::unlink( path ) >= 0;
 #endif
 }
-bool Volume::utimens
+bool
+Volume::utimens
 (
   const Path& path,
   const Time& atime,
@@ -3631,7 +3617,7 @@ bool Volume::utimens
   struct timeval tv[2];
   tv[0] = atime;
   tv[1] = mtime;
-  return ::utimes( path, tv ) != 0;
+  return ::utimes( path, tv ) != -1;
 #endif
 }
 Path Volume::volname( const Path& path )
@@ -3677,7 +3663,7 @@ Path Volume::volname( const Path& path )
 
 
 // xdr_marshaller.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 XDRMarshaller::XDRMarshaller()
 {
@@ -3692,7 +3678,8 @@ void XDRMarshaller::writeBoolean( const char* key, uint32_t tag, bool value )
 {
   writeInt32( key, tag, value ? 1 : 0 );
 }
-void XDRMarshaller::writeBuffer
+void
+XDRMarshaller::writeBuffer
 (
   const char* key, uint32_t tag,
   yidl::runtime::auto_Buffer value
@@ -3742,7 +3729,8 @@ void XDRMarshaller::writeInt64( const char* key, uint32_t, int64_t value )
   value = Machine::htonll( value );
   buffer->put( &value, sizeof( value ) );
 }
-void XDRMarshaller::writeMap
+void
+XDRMarshaller::writeMap
 (
   const char* key,
   uint32_t tag,
@@ -3754,7 +3742,8 @@ void XDRMarshaller::writeMap
   value.marshal( *this );
   in_map_stack.pop_back();
 }
-void XDRMarshaller::writeSequence
+void
+XDRMarshaller::writeSequence
 (
   const char* key,
   uint32_t tag,
@@ -3764,7 +3753,8 @@ void XDRMarshaller::writeSequence
   writeInt32( key, tag, static_cast<int32_t>( value.get_size() ) );
   value.marshal( *this );
 }
-void XDRMarshaller::writeString
+void
+XDRMarshaller::writeString
 (
   const char* key,
   uint32_t tag,
@@ -3780,7 +3770,8 @@ void XDRMarshaller::writeString
     buffer->put( static_cast<const void*>( zeros ), 4 - ( value_len % 4 ) );
   }
 }
-void XDRMarshaller::writeStruct
+void
+XDRMarshaller::writeStruct
 (
   const char* key,
   uint32_t,
@@ -3793,7 +3784,7 @@ void XDRMarshaller::writeStruct
 
 
 // xdr_unmarshaller.cpp
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
+// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
 // This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 XDRUnmarshaller::XDRUnmarshaller( yidl::runtime::auto_Buffer buffer )
   : buffer( buffer )
@@ -3810,7 +3801,8 @@ bool XDRUnmarshaller::readBoolean( const char* key, uint32_t tag )
 {
   return readInt32( key, tag ) == 1;
 }
-void XDRUnmarshaller::readBuffer
+void
+XDRUnmarshaller::readBuffer
 (
   const char* key,
   uint32_t tag,
@@ -3877,7 +3869,8 @@ int64_t XDRUnmarshaller::readInt64( const char*, uint32_t )
   read( &value, sizeof( value ) );
   return Machine::ntohll( value );
 }
-void XDRUnmarshaller::readMap
+void
+XDRUnmarshaller::readMap
 (
   const char* key,
   uint32_t tag,
@@ -3888,7 +3881,8 @@ void XDRUnmarshaller::readMap
   for ( size_t i = 0; i < size; i++ )
     value.unmarshal( *this );
 }
-void XDRUnmarshaller::readSequence
+void
+XDRUnmarshaller::readSequence
 (
   const char* key,
   uint32_t tag,
@@ -3902,7 +3896,8 @@ void XDRUnmarshaller::readSequence
       value.unmarshal( *this );
   }
 }
-void XDRUnmarshaller::readString
+void
+XDRUnmarshaller::readString
 (
   const char* key,
   uint32_t tag,
@@ -3925,7 +3920,8 @@ void XDRUnmarshaller::readString
     }
   }
 }
-void XDRUnmarshaller::readStruct
+void
+XDRUnmarshaller::readStruct
 (
   const char*,
   uint32_t,

@@ -1,4 +1,4 @@
-// Copyright 2009 Minor Gordon.
+// Copyright 2009-2010 Minor Gordon.
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/osd_proxy_mux.h"

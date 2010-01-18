@@ -104,7 +104,8 @@ typedef int ssize_t;
   virtual bool removexattr( const std::string& name ); \
   virtual bool setlk( bool exclusive, uint64_t offset, uint64_t length ); \
   virtual bool setlkw( bool exclusive, uint64_t offset, uint64_t length ); \
-  virtual bool setxattr \
+  virtual bool \
+  setxattr \
   ( \
     const std::string& name, \
     const std::string& value, \
@@ -114,7 +115,8 @@ typedef int ssize_t;
   virtual bool sync(); \
   virtual bool truncate( uint64_t offset ); \
   virtual bool unlk( uint64_t offset, uint64_t length ); \
-  virtual ssize_t write \
+  virtual ssize_t \
+  write \
   ( \
     const void* buffer, \
     size_t buffer_len, \
@@ -124,90 +126,106 @@ typedef int ssize_t;
 #define YIELD_PLATFORM_VOLUME_PROTOTYPES \
     virtual bool access( const YIELD::platform::Path& path, int amode ); \
     virtual bool chmod( const YIELD::platform::Path& path, mode_t mode ); \
-    virtual bool chown \
+    virtual bool \
+    chown \
     ( \
       const YIELD::platform::Path& path, \
       int32_t uid, \
       int32_t gid \
     ); \
-    virtual bool getxattr \
+    virtual bool \
+    getxattr \
     ( \
       const YIELD::platform::Path& path, \
       const std::string& name, \
       std::string& out_value \
     ); \
-    virtual bool link \
+    virtual bool \
+    link \
     ( \
       const YIELD::platform::Path& old_path, \
       const YIELD::platform::Path& new_path \
     ); \
-    virtual bool listxattr \
+    virtual bool \
+    listxattr \
     ( \
       const YIELD::platform::Path& path, \
       std::vector<std::string>& out_names \
     ); \
     virtual bool mkdir( const YIELD::platform::Path& path, mode_t mode ); \
-    virtual YIELD::platform::auto_File open \
+    virtual YIELD::platform::auto_File \
+    open \
     ( \
       const YIELD::platform::Path& path, \
       uint32_t flags, \
       mode_t mode, \
       uint32_t attributes \
     ); \
-    virtual bool readdir \
+    virtual bool \
+    readdir \
     ( \
       const YIELD::platform::Path& path, \
       const YIELD::platform::Path& match_file_name_prefix, \
       YIELD::platform::Volume::readdirCallback& callback \
     ); \
-    virtual YIELD::platform::auto_Path readlink \
+    virtual YIELD::platform::auto_Path \
+    readlink \
     ( \
       const YIELD::platform::Path& path \
     ); \
-    virtual bool removexattr \
+    virtual bool \
+    removexattr \
     ( \
       const YIELD::platform::Path& path, \
       const std::string& name \
     ); \
-    virtual bool rename \
+    virtual bool \
+    rename \
     ( \
       const YIELD::platform::Path& from_path, \
       const YIELD::platform::Path& to_path \
     ); \
     virtual bool rmdir( const YIELD::platform::Path& path ); \
-    virtual bool setattr \
+    virtual bool \
+    setattr \
     ( \
       const YIELD::platform::Path& path, \
       uint32_t file_attributes \
     ); \
-    virtual bool setxattr \
+    virtual bool \
+    setxattr \
     ( \
       const YIELD::platform::Path& path, \
       const std::string& name, \
       const std::string& value, \
       int flags \
     ); \
-    virtual yidl::runtime::auto_Object<YIELD::platform::Stat> stat \
+    virtual yidl::runtime::auto_Object<YIELD::platform::Stat> \
+    stat \
     ( \
       const YIELD::platform::Path& path \
     ); \
-    virtual bool statvfs \
+    virtual bool \
+    statvfs \
     ( \
       const YIELD::platform::Path& path, \
       struct statvfs& \
     ); \
-    virtual bool symlink \
+    virtual bool \
+    symlink \
     ( \
       const YIELD::platform::Path& old_path, \
       const YIELD::platform::Path& new_path \
     ); \
-    virtual bool truncate \
+    virtual bool \
+    truncate \
     ( \
       const YIELD::platform::Path& path, \
       uint64_t new_size \
     ); \
     virtual bool unlink( const YIELD::platform::Path& path ); \
-    virtual bool utimens \
+    virtual bool \
+    utimens \
     ( \
       const YIELD::platform::Path& path, \
       const YIELD::platform::Time& atime, \
@@ -607,29 +625,30 @@ namespace YIELD
 
       static yidl::runtime::auto_Object<Log> open( std::ostream&, Level );
 
-      static yidl::runtime::auto_Object<Log> open
+      static yidl::runtime::auto_Object<Log> 
+      open
       ( 
         const Path& file_path, 
         Level level, 
         bool lazy = false 
       );
 
-      inline Level get_level() const { return level; }
+      Level get_level() const { return level; }
       Stream getStream() { return Stream( incRef(), level ); }
       Stream getStream( Level level ) { return Stream( incRef(), level ); }
       void set_level( Level level ) { this->level = level; }
 
-      inline void write( const char* str, Level level )
+      void write( const char* str, Level level )
       {
         write( str, strnlen( str, UINT16_MAX ), level );
       }
 
-      inline void write( const std::string& str, Level level )
+      void write( const std::string& str, Level level )
       {
         write( str.c_str(), str.size(), level );
       }
 
-      inline void write( const void* str, size_t str_len, Level level )
+      void write( const void* str, size_t str_len, Level level )
       {
         return write
         ( 
@@ -641,7 +660,7 @@ namespace YIELD
 
       void write( const unsigned char* str, size_t str_len, Level level );
 
-      inline void write( const char* str, size_t str_len, Level level )
+      void write( const char* str, size_t str_len, Level level )
       {
         if ( level <= this->level )
           write( str, str_len );
@@ -758,25 +777,25 @@ namespace YIELD
     {
     public:
       static yidl::runtime::auto_Object<MemoryMappedFile> 
-        open( const Path& path );
+      open( const Path& path );
 
       static yidl::runtime::auto_Object<MemoryMappedFile> 
-        open( const Path& path, uint32_t flags );
+      open( const Path& path, uint32_t flags );
 
       static yidl::runtime::auto_Object<MemoryMappedFile> 
-        open
-        ( 
-          const Path& path, 
-          uint32_t flags, 
-          mode_t mode, 
-          uint32_t attributes, 
-          size_t minimum_size 
-        );
+      open
+      ( 
+        const Path& path, 
+        uint32_t flags, 
+        mode_t mode, 
+        uint32_t attributes, 
+        size_t minimum_size 
+      );
 
       virtual bool close();
-      inline size_t get_size() const { return size; }
-      inline operator char*() const { return start; }
-      inline operator void*() const { return start; }
+      size_t get_size() const { return size; }
+      operator char*() const { return start; }
+      operator void*() const { return start; }
       bool resize( size_t );
       virtual bool sync();
       virtual bool sync( size_t offset, size_t length );
@@ -867,8 +886,11 @@ namespace YIELD
           try_pos = ( copied_head + 1 ) % ( QueueLength + 2 );
           try_element = reinterpret_cast<ElementType>( elements[try_pos] );
 
-          while ( try_element == reinterpret_cast<ElementType>( 0 ) ||
-                  try_element == reinterpret_cast<ElementType>( 1 ) )
+          while 
+          ( 
+            try_element == reinterpret_cast<ElementType>( 0 ) ||
+            try_element == reinterpret_cast<ElementType>( 1 ) 
+          )
           {
             if ( copied_head != head )
               break;
@@ -1098,7 +1120,7 @@ namespace YIELD
       virtual ~Path() { }
 
       Path abspath() const;
-      inline bool empty() const { return host_charset_path.empty(); }
+      bool empty() const { return host_charset_path.empty(); }
   //    const std::string& get_utf8_path();
 #ifdef _WIN32
       const std::wstring& get_wide_path() const { return wide_path; }
@@ -1308,21 +1330,26 @@ namespace YIELD
 
       SampleType get_percentile( double percentile )
       {
-        lock.acquire();
-        SampleType ninetieth_percentile;
-
-        if ( samples_count > 0 )
+        if ( percentile > 0 && percentile < 100 )
         {
-          std::sort( samples, samples + samples_count );
-          ninetieth_percentile = 
-            samples[static_cast<size_t>( percentile * 
-              static_cast<double>( samples_count ) )];
+          lock.acquire();
+          SampleType value;
+
+          if ( samples_count > 0 )
+          {
+            std::sort( samples, samples + samples_count );
+            value = 
+              samples[static_cast<size_t>( percentile * 
+                static_cast<double>( samples_count ) )];
+          }
+          else
+            value = 0;
+
+          lock.release();
+          return value;
         }
         else
-          ninetieth_percentile = 0;
-
-        lock.release();
-        return ninetieth_percentile;
+          return 0;
       }
 
       uint32_t get_samples_count() const
@@ -1330,7 +1357,7 @@ namespace YIELD
         return samples_count; 
       }
 
-      void setNextSample( SampleType sample )
+      void set_next_sample( SampleType sample )
       {
         if ( lock.try_acquire() )
         {
@@ -1505,7 +1532,8 @@ namespace YIELD
       );
 
       template <typename FunctionType>
-      FunctionType getFunction
+      FunctionType 
+      getFunction
       ( 
         const char* function_name, 
         FunctionType missing_function_return_value = NULL 
@@ -1592,29 +1620,19 @@ namespace YIELD
       uint32_t get_attributes() const;
 #endif
 
-      inline bool ISDIR() const { return ( mode & S_IFDIR ) == S_IFDIR; }
-      inline bool ISREG() const { return ( mode & S_IFREG ) == S_IFREG; }
+      bool ISDIR() const { return ( mode & S_IFDIR ) == S_IFDIR; }
+      bool ISREG() const { return ( mode & S_IFREG ) == S_IFREG; }
 #ifndef _WIN32
-      inline bool ISLNK() const { return S_ISLNK( mode ); }
+      bool ISLNK() const { return S_ISLNK( mode ); }
 #endif
 
-      virtual const bool operator==( const Stat& other ) const 
-      { 
-        return mode == other.mode && 
-               size == other.size && 
-               atime == other.atime && 
-               mtime == other.mtime && 
-               ctime == other.ctime; 
-      }
-
+      virtual bool operator==( const Stat& ) const;
       virtual operator std::string() const;
       virtual operator struct stat() const;
 #ifdef _WIN32
       virtual operator BY_HANDLE_FILE_INFORMATION() const;
       virtual operator WIN32_FIND_DATA() const;
 #endif
-
-      void set_size( uint64_t size ) { this->size = size; }
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( Stat, 12 );
@@ -1858,14 +1876,19 @@ namespace YIELD
       virtual bool isfile( const Path& path );
 
       virtual bool listdir( const Path& path, listdirCallback& );
-      virtual bool listdir
+
+      virtual bool
+      listdir
       ( 
         const Path& path, 
         const Path& match_file_name_prefix, 
         listdirCallback& 
       );
+
       virtual bool listdir( const Path& path, std::vector<Path>& out_names );
-      virtual bool listdir
+
+      virtual bool
+      listdir
       ( 
         const Path& path, 
         const Path& match_file_name_prefix, 
