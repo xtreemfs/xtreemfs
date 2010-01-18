@@ -2,7 +2,7 @@ Source: xtreemfs
 Section: utils
 Priority: optional
 Maintainer: xtreemfs <xtreemfs-users@googlegroups.com>
-Build-Depends: debhelper (>= 5), build-essential (>=11), libssl-dev (>= 0.9), libfuse-dev (>= 2.6), python (>= 2.4), ant (>= 1.6.5), java6-sdk
+Build-Depends: debhelper (>= 5), build-essential (>=11), libssl-dev (>= 0.9), libfuse-dev (>= 2.6), python (>= 2.4) | python2.4 | python2.5 | python2.6, ant (>= 1.6.5), java6-sdk
 Homepage: http://www.xtreemfs.org/
 Standards-Version: 3.7.2
 
@@ -26,6 +26,6 @@ Description: XtreemFS server
 
 Package: xtreemfs-tools
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, xtreemfs-backend (= ${binary:Version}), attr (>=2), python (>= 2.6), java6-runtime
+Depends: ${shlibs:Depends}, ${misc:Depends}, xtreemfs-backend (= ${binary:Version}), attr (>=2), python (>= 2.6) | python2.6, java6-runtime
 Description: XtreemFS administration tools
  XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org. This package contains XtreemFS administration tools. To run the tools, a SUN JAVA 6 RUNTIME ENVIROMENT IS REQUIRED! Make sure that Java is installed in /usr/bin, or $JAVA_HOME is set.
