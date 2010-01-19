@@ -91,16 +91,16 @@ module org
         void mkdir( string path, uint32_t mode ) # 10;
         void open( string path, uint32_t flags, uint32_t mode, uint32_t attributes, VivaldiCoordinates client_vivaldi_coordinates, out FileCredentials file_credentials ) # 11;
         void readdir( string path, out DirectoryEntrySet directory_entries ) # 12;
-        void readlink( string path, out string link_target_path );
-        void removexattr( string path, string name ) # 13;
-        void rename( string source_path, string target_path, out FileCredentialsSet file_credentials ) # 14;       
-        void rmdir( string path ) # 15;
-        void setattr( string path, Stat stbuf ) # 16;
-        void setxattr( string path, string name, string value, int flags ) # 17;
-        void statvfs( string volume_name, out StatVFS stbuf ) # 18;
-        void symlink( string target_path, string link_path ) # 19;
-        void unlink( string path, out FileCredentialsSet file_credentials ) # 20;
-        void utimens( string path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns ) # 21;
+        void readlink( string path, out string link_target_path ) # 13;
+        void removexattr( string path, string name ) # 14;
+        void rename( string source_path, string target_path, out FileCredentialsSet file_credentials ) # 15;
+        void rmdir( string path ) # 16;
+        void setattr( string path, Stat stbuf ) # 17;
+        void setxattr( string path, string name, string value, int flags ) # 18;
+        void statvfs( string volume_name, out StatVFS stbuf ) # 19;
+        void symlink( string target_path, string link_path ) # 20;
+        void unlink( string path, out FileCredentialsSet file_credentials ) # 21;
+        void utimens( string path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns ) # 22;
 
         // XtreemFS-specific operations
         void xtreemfs_checkpoint() # 30;
