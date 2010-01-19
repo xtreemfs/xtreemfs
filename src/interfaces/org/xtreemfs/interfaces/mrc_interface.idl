@@ -6,30 +6,28 @@
 
 module org
 {
-  module xtreemfs # 2009120910
+  module xtreemfs # 2010011911
   {
     module interfaces
     {
       struct Stat # 40
       {
-        uint64_t dev;
-        uint64_t ino;
+        uint64_t dev; // A hash of the volume id
+        uint64_t ino; // The file id
         uint32_t mode;
         uint32_t nlink;
-        uint32_t uid;
-        uint32_t gid;
-        int16_t unused_dev;
+        uint32_t uid; // Placeholder, filled in on the client side
+        uint32_t gid; // Placeholder, filled in on the client side
+        // No integer rdev
         uint64_t size;
-        uint32_t blksize;
         uint64_t atime_ns;
         uint64_t mtime_ns;
         uint64_t ctime_ns;
+        uint32_t blksize;
 
         // XtreemFS-specific attributes
-        string file_id;
         string user_id;
         string group_id;
-        string link_target;
         uint32_t truncate_epoch;
 
         // Win32-specific attributes
@@ -93,6 +91,7 @@ module org
         void mkdir( string path, uint32_t mode ) # 10;
         void open( string path, uint32_t flags, uint32_t mode, uint32_t attributes, VivaldiCoordinates client_vivaldi_coordinates, out FileCredentials file_credentials ) # 11;
         void readdir( string path, out DirectoryEntrySet directory_entries ) # 12;
+        void readlink( string path, out string link_target_path );
         void removexattr( string path, string name ) # 13;
         void rename( string source_path, string target_path, out FileCredentialsSet file_credentials ) # 14;       
         void rmdir( string path ) # 15;
