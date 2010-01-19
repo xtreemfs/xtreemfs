@@ -50,9 +50,9 @@ static YIELD::platform::auto_Stat xtreemfs_Stat_as_YIELD_platform_Stat
     xtreemfs_stat.get_dev(), 
     xtreemfs_stat.get_ino(), 
     xtreemfs_stat.get_mode(), 
-    xtreemfs_stat.get_nlink(), 
-    xtreemfs_stat.get_uid(), 
-    xtreemfs_stat.get_gid(),
+    xtreemfs_stat.get_nlink(),
+    0, // uid
+    0, // gid
     0, // rdev
     xtreemfs_stat.get_size(), 
     xtreemfs_stat.get_atime_ns(), 
@@ -456,9 +456,9 @@ YIELD::platform::auto_Path Volume::readlink
 {
   VOLUME_OPERATION_BEGIN( readlink )
   {
-    org::xtreemfs::interfaces::Stat stbuf;
-    mrc_proxy->getattr( Path( this->name, path ), stbuf );
-    return new YIELD::platform::Path( stbuf.get_link_target() );
+    std::string link_target_path;
+    mrc_proxy->readlink( Path( this->name, path ), link_target_path ); 
+    return new YIELD::platform::Path( link_target_path );
   }
   VOLUME_OPERATION_END( readlink );
   return NULL;
