@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_check_objectResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009121231;
+    public static final int TAG = 2010012232;
     
     public xtreemfs_check_objectResponse() { returnValue = new ObjectData();  }
     public xtreemfs_check_objectResponse( ObjectData returnValue ) { this.returnValue = returnValue; }
@@ -36,10 +36,10 @@ public class xtreemfs_check_objectResponse extends org.xtreemfs.interfaces.utils
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009121231;    
+    public static final long serialVersionUID = 2010012232;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009121231; }
+    public int getTag() { return 2010012232; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_check_objectResponse"; }
     
     public int getXDRSize()

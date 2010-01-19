@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_internal_read_localRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009121253;
+    public static final int TAG = 2010012254;
     
     public xtreemfs_internal_read_localRequest() { file_credentials = new FileCredentials(); required_objects = new ObjectListSet();  }
     public xtreemfs_internal_read_localRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version, long offset, long length, boolean attach_object_list, ObjectListSet required_objects ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.length = length; this.attach_object_list = attach_object_list; this.required_objects = required_objects; }
@@ -53,10 +53,10 @@ public class xtreemfs_internal_read_localRequest extends org.xtreemfs.interfaces
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009121253;    
+    public static final long serialVersionUID = 2010012254;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009121253; }
+    public int getTag() { return 2010012254; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_read_localRequest"; }
     
     public int getXDRSize()

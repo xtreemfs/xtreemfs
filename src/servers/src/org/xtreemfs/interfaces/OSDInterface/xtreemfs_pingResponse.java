@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_pingResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2009121270;
+    public static final int TAG = 2010012271;
     
     public xtreemfs_pingResponse() { remote_coordinates = new VivaldiCoordinates();  }
     public xtreemfs_pingResponse( VivaldiCoordinates remote_coordinates ) { this.remote_coordinates = remote_coordinates; }
@@ -36,10 +36,10 @@ public class xtreemfs_pingResponse extends org.xtreemfs.interfaces.utils.Respons
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009121270;    
+    public static final long serialVersionUID = 2010012271;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009121270; }
+    public int getTag() { return 2010012271; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse"; }
     
     public int getXDRSize()

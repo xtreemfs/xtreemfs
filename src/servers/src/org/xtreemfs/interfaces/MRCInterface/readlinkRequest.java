@@ -1,4 +1,4 @@
-package org.xtreemfs.interfaces.DIRInterface;
+package org.xtreemfs.interfaces.MRCInterface;
 
 import java.io.StringWriter;
 import org.xtreemfs.*;
@@ -13,11 +13,15 @@ import yidl.runtime.Unmarshaller;
 
 
 
-public class xtreemfs_service_offlineResponse extends org.xtreemfs.interfaces.utils.Response
+public class readlinkRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012024;
+    public static final int TAG = 2010012125;
     
-    public xtreemfs_service_offlineResponse() {  }
+    public readlinkRequest() {  }
+    public readlinkRequest( String path ) { this.path = path; }
+
+    public String getPath() { return path; }
+    public void setPath( String path ) { this.path = path; }
 
     // java.lang.Object
     public String toString() 
@@ -30,32 +34,37 @@ public class xtreemfs_service_offlineResponse extends org.xtreemfs.interfaces.ut
         return string_writer.toString();
     }
 
+    // Request
+    public Response createDefaultResponse() { return new readlinkResponse(); }
+
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012024;    
+    public static final long serialVersionUID = 2010012125;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012024; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_offlineResponse"; }
+    public int getTag() { return 2010012125; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readlinkRequest"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-
+        my_size += Integer.SIZE / 8 + ( path != null ? ( ( path.getBytes().length % 4 == 0 ) ? path.getBytes().length : ( path.getBytes().length + 4 - path.getBytes().length % 4 ) ) : 0 ); // path
         return my_size;
     }    
     
     public void marshal( Marshaller marshaller )
     {
-
+        marshaller.writeString( "path", path );
     }
     
     public void unmarshal( Unmarshaller unmarshaller ) 
     {
-    
+        path = unmarshaller.readString( "path" );    
     }
         
-        
+    
+
+    private String path;    
 
 }
 

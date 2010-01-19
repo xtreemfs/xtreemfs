@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class DirectoryEntry implements Struct
 {
-    public static final int TAG = 2009120951;
+    public static final int TAG = 2010011952;
     
     public DirectoryEntry() { stbuf = new Stat();  }
     public DirectoryEntry( String name, Stat stbuf ) { this.name = name; this.stbuf = stbuf; }
@@ -37,10 +37,10 @@ public class DirectoryEntry implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009120951;    
+    public static final long serialVersionUID = 2010011952;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120951; }
+    public int getTag() { return 2010011952; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DirectoryEntry"; }
     
     public int getXDRSize()

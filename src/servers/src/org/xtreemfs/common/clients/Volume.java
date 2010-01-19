@@ -124,7 +124,7 @@ public class Volume {
             for (int i = 0; i < list.length; i++) {
                 list[i] = entries.get(i);
                 final Stat s = list[i].getStbuf();
-                OSDWriteResponse r = ofl.getLocalFS(s.getFile_id());
+                OSDWriteResponse r = ofl.getLocalFS(volumeName + s.getIno());
                 if (r != null) {
                     final NewFileSize fs = r.getNew_file_size().get(0);
                     //update with local file size, if cahced
@@ -243,7 +243,7 @@ public class Volume {
         try {
             response = mrcClient.getattr(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path));
             Stat s = response.get();
-            OSDWriteResponse r = ofl.getLocalFS(s.getFile_id());
+            OSDWriteResponse r = ofl.getLocalFS(volumeName + s.getIno());
             if (r != null) {
                 final NewFileSize fs = r.getNew_file_size().get(0);
                 //update with local file size, if cahced

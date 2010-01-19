@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class unlinkRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009121130;
+    public static final int TAG = 2010012133;
     
     public unlinkRequest() {  }
     public unlinkRequest( String path ) { this.path = path; }
@@ -39,10 +39,10 @@ public class unlinkRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009121130;    
+    public static final long serialVersionUID = 2010012133;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009121130; }
+    public int getTag() { return 2010012133; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::unlinkRequest"; }
     
     public int getXDRSize()

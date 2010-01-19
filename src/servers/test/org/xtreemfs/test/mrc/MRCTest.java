@@ -298,9 +298,8 @@ public class MRCTest extends TestCase {
         
         // create and test a symbolic link
         invokeSync(client.symlink(mrcAddress, uc, volumeName + "/test.txt", volumeName + "/testAlias.txt"));
-        Stat stat = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/testAlias.txt"));
-        assertEquals(volumeName + "/test.txt", stat.getLink_target());
-        assertTrue((stat.getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFLNK) != 0);
+        String target = invokeSync(client.readlink(mrcAddress, uc, volumeName + "/testAlias.txt"));
+        assertEquals(volumeName + "/test.txt", target);
     }
     
     public void testHardLink() throws Exception {
@@ -321,7 +320,7 @@ public class MRCTest extends TestCase {
         Stat stat1 = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test1.txt"));
         Stat stat2 = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test2.txt"));
         
-        assertEquals(stat1.getFile_id(), stat2.getFile_id());
+        assertEquals(stat1.getIno(), stat2.getIno());
         assertEquals(2, stat1.getNlink());
         
         // delete both files and check link count

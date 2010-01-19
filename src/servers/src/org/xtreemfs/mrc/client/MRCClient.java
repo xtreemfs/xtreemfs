@@ -75,6 +75,8 @@ import org.xtreemfs.interfaces.MRCInterface.openRequest;
 import org.xtreemfs.interfaces.MRCInterface.openResponse;
 import org.xtreemfs.interfaces.MRCInterface.readdirRequest;
 import org.xtreemfs.interfaces.MRCInterface.readdirResponse;
+import org.xtreemfs.interfaces.MRCInterface.readlinkRequest;
+import org.xtreemfs.interfaces.MRCInterface.readlinkResponse;
 import org.xtreemfs.interfaces.MRCInterface.removexattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.removexattrResponse;
 import org.xtreemfs.interfaces.MRCInterface.renameRequest;
@@ -435,6 +437,21 @@ public class MRCClient extends ONCRPCClient {
                     return resp.getDirectory_entries();
                 }
             }, credentials);
+        return r;
+    }
+    
+    public RPCResponse<String> readlink(InetSocketAddress server, UserCredentials credentials, String path) {
+        
+        readlinkRequest rq = new readlinkRequest(path);
+        RPCResponse<String> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<String>() {
+            
+            @Override
+            public String getResult(ReusableBuffer data) {
+                final readlinkResponse resp = new readlinkResponse();
+                resp.unmarshal(new XDRUnmarshaller(data));
+                return resp.getLink_target_path();
+            }
+        }, credentials);
         return r;
     }
     

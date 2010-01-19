@@ -31,7 +31,7 @@ public class VolumeSet extends Sequence<Volume>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2009120955; }
+    public int getTag() { return 2010011956; }
     public String getTypeName() { return "org::xtreemfs::interfaces::VolumeSet"; }
 
     public int getXDRSize() 

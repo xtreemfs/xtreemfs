@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_service_get_by_typeRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2009121018;
+    public static final int TAG = 2010012019;
     
     public xtreemfs_service_get_by_typeRequest() { type = ServiceType.SERVICE_TYPE_MIXED;  }
     public xtreemfs_service_get_by_typeRequest( ServiceType type ) { this.type = type; }
@@ -39,10 +39,10 @@ public class xtreemfs_service_get_by_typeRequest extends org.xtreemfs.interfaces
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009121018;    
+    public static final long serialVersionUID = 2010012019;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009121018; }
+    public int getTag() { return 2010012019; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_typeRequest"; }
     
     public int getXDRSize()

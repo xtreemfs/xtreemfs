@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 2009121216;
+    public static final int TAG = 2010012217;
     
     public RedirectException() {  }
     public RedirectException( String to_uuid ) { this.to_uuid = to_uuid; }
@@ -36,10 +36,10 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009121216;    
+    public static final long serialVersionUID = 2010012217;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009121216; }
+    public int getTag() { return 2010012217; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::RedirectException"; }
     
     public int getXDRSize()

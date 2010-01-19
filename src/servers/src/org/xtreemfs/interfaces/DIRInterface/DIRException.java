@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class DIRException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 2009121033;
+    public static final int TAG = 2010012034;
     
     public DIRException() {  }
     public DIRException( int error_code, String error_message, String stack_trace ) { this.error_code = error_code; this.error_message = error_message; this.stack_trace = stack_trace; }
@@ -40,10 +40,10 @@ public class DIRException extends org.xtreemfs.interfaces.utils.ONCRPCException
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2009121033;    
+    public static final long serialVersionUID = 2010012034;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2009121033; }
+    public int getTag() { return 2010012034; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::DIRException"; }
     
     public int getXDRSize()

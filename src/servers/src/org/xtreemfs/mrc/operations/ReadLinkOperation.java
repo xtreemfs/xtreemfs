@@ -24,18 +24,16 @@
 
 package org.xtreemfs.mrc.operations;
 
-import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.Stat;
-import org.xtreemfs.interfaces.MRCInterface.getattrRequest;
-import org.xtreemfs.interfaces.MRCInterface.getattrResponse;
+import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.interfaces.MRCInterface.readlinkRequest;
+import org.xtreemfs.interfaces.MRCInterface.readlinkResponse;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.UserException;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
-import org.xtreemfs.mrc.metadata.XLocList;
 import org.xtreemfs.mrc.utils.Path;
 import org.xtreemfs.mrc.utils.PathResolver;
 
@@ -43,16 +41,16 @@ import org.xtreemfs.mrc.utils.PathResolver;
  * 
  * @author stender
  */
-public class StatOperation extends MRCOperation {
+public class ReadLinkOperation extends MRCOperation {
     
-    public StatOperation(MRCRequestDispatcher master) {
+    public ReadLinkOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
     @Override
     public void startRequest(MRCRequest rq) throws Throwable {
         
-        final getattrRequest rqArgs = (getattrRequest) rq.getRequestArgs();
+        final readlinkRequest rqArgs = (readlinkRequest) rq.getRequestArgs();
         
         final VolumeManager vMan = master.getVolumeManager();
         final FileAccessManager faMan = master.getFileAccessManager();
@@ -61,12 +59,8 @@ public class StatOperation extends MRCOperation {
         
         Path p = new Path(rqArgs.getPath());
         
-        // if(p.getLastComp(0).startsWith(".fuse_hidden"))
-        // p = MRCHelper.getFuseHiddenPath(p);
-        
-        final StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
-        final PathResolver res = new PathResolver(sMan, p);
-        final VolumeInfo volume = sMan.getVolumeInfo();
+        StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
+        PathResolver res = new PathResolver(sMan, p);
         
         // check whether the path prefix is searchable
         faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
@@ -75,29 +69,16 @@ public class StatOperation extends MRCOperation {
         // check whether file exists
         res.checkIfFileDoesNotExist();
         
-        // retrieve and prepare the metadata to return
         FileMetadata file = res.getFile();
         
-        String linkTarget = sMan.getSoftlinkTarget(file.getId());
-        int mode = faMan.getPosixAccessMode(sMan, file, rq.getDetails().userId, rq.getDetails().groupIds);
-        mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_H_S_IFLNK
-            : file.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
-        long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : file.getSize();
-        int blkSize = 0;
-        if ((linkTarget == null) && (!file.isDirectory())) {
-            XLocList xlocList = file.getXLocList();
-            if ((xlocList != null) && (xlocList.getReplicaCount() > 0))
-                blkSize = xlocList.getReplica(0).getStripingPolicy().getStripeSize() * 1024;
-        }
-        Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, file.getLinkCount(), 1, 1, size,
-            (long) file.getAtime() * (long) 1e9, (long) file.getMtime() * (long) 1e9, (long) file.getCtime()
-                * (long) 1e9, blkSize, file.getOwnerId(), file.getOwningGroupId(), file.isDirectory() ? 0
-                : file.getEpoch(), (int) file.getW32Attrs());
+        // if the file refers to a symbolic link, resolve the link
+        String target = sMan.getSoftlinkTarget(file.getId());
+        if (target == null)
+            throw new UserException(ErrNo.EINVAL, rqArgs.getPath() + " is not a softlink");
         
         // set the response
-        rq.setResponse(new getattrResponse(stat));
+        rq.setResponse(new readlinkResponse(target));
         finishRequest(rq);
         
     }
-    
 }
