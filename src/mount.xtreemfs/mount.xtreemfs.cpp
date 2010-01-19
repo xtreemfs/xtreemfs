@@ -187,13 +187,13 @@ namespace mount_xtreemfs
         // Stack volumes
         if ( metadata_cache )
         {
-          volume = new yieldfs::MetadataCachingVolume
-          ( 
-            trace_metadata_cache ? get_log() : 
-            NULL, 
-            5, 
-            volume 
-          );
+          //volume = new yieldfs::MetadataCachingVolume
+          //( 
+          //  trace_metadata_cache ? get_log() : 
+          //  NULL, 
+          //  5, 
+          //  volume 
+          //);
 
           get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << 
             get_program_name() << ": caching metadata.";
@@ -201,24 +201,24 @@ namespace mount_xtreemfs
 
         if ( write_back_cache )
         {
-          volume = new yieldfs::WriteBackCachingVolume
-          ( 
-            256 * 1024 * 1024, 
-            5000, 
-            trace_data_cache ? get_log() : NULL,
-            volume
-          );
+          //volume = new yieldfs::WriteBackCachingVolume
+          //( 
+          //  256 * 1024 * 1024, 
+          //  5000, 
+          //  trace_data_cache ? get_log() : NULL,
+          //  volume
+          //);
 
           get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << 
             get_program_name() << ": caching file reads.";
         }
         else if ( write_through_cache )
         {
-          volume = new yieldfs::WriteThroughCachingVolume
-          ( 
-            trace_data_cache ? get_log() : NULL,
-            volume
-          );
+          //volume = new yieldfs::WriteThroughCachingVolume
+          //( 
+          //  trace_data_cache ? get_log() : NULL,
+          //  volume
+          //);
 
           get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << 
             get_program_name() << ": caching file writes.";
