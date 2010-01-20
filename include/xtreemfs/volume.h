@@ -11,12 +11,15 @@
 
 namespace xtreemfs
 {
+  class SharedFile;
+
 
   class Volume : public YIELD::platform::Volume
   {
   public:
     const static uint32_t VOLUME_FLAG_CACHE_METADATA = 1;
     const static uint32_t VOLUME_FLAG_TRACE_FILE_IO = 2;
+
 
     static yidl::runtime::auto_Object<Volume> 
       create
@@ -83,15 +86,26 @@ namespace xtreemfs
 
     ~Volume() { }
 
+
     auto_DIRProxy dir_proxy;
     uint32_t flags;
     YIELD::platform::auto_Log log;
     auto_MRCProxy mrc_proxy;
     std::string name;
     auto_OSDProxyMux osd_proxy_mux;
+    std::map<std::string, SharedFile*> shared_files;
+    YIELD::platform::Mutex shared_files_lock;
     YIELD::concurrency::auto_StageGroup stage_group;
     std::string uuid;
     YIELD::platform::Path vivaldi_coordinates_file_path;
+
+
+    yidl::runtime::auto_Object<SharedFile> 
+    get_shared_file
+    ( 
+      const YIELD::platform::Path& path,
+      bool create = false
+    );
 
     void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );
     void set_errno( const char* operation_name, ProxyExceptionResponse& );

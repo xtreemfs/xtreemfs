@@ -1606,24 +1606,27 @@ namespace YIELD
 #endif
       Stat( const struct stat& stbuf );
 
-      mode_t get_mode() const { return mode; }
+      virtual mode_t get_mode() const { return mode; }
 #ifndef _WIN32
-      nlink_t get_nlink() const { return nlink; }
-      uid_t get_uid() const { return uid; }
-      gid_t get_gid() const { return gid; }
+      virtual nlink_t get_nlink() const { return nlink; }
+      virtual uid_t get_uid() const { return uid; }
+      virtual gid_t get_gid() const { return gid; }
 #endif
-      uint64_t get_size() const { return size; }
-      const Time& get_atime() const { return atime; }
-      const Time& get_mtime() const { return mtime; }
-      const Time& get_ctime() const { return ctime; }
+      virtual uint64_t get_size() const { return size; }
+      virtual const Time& get_atime() const { return atime; }
+      virtual const Time& get_mtime() const { return mtime; }
+      virtual const Time& get_ctime() const { return ctime; }
 #ifdef _WIN32
-      uint32_t get_attributes() const;
+      virtual uint32_t get_attributes() const;
+#else
+      virtual blksize_t get_blksize() const { return blksize; }
+      virtual blkcnt_t get_blocks() const { return blocks; }
 #endif
 
-      bool ISDIR() const { return ( mode & S_IFDIR ) == S_IFDIR; }
-      bool ISREG() const { return ( mode & S_IFREG ) == S_IFREG; }
+      bool ISDIR() const { return ( get_mode() & S_IFDIR ) == S_IFDIR; }
+      bool ISREG() const { return ( get_mode() & S_IFREG ) == S_IFREG; }
 #ifndef _WIN32
-      bool ISLNK() const { return S_ISLNK( mode ); }
+      bool ISLNK() const { return S_ISLNK( get_mode() ); }
 #endif
 
       virtual bool operator==( const Stat& ) const;

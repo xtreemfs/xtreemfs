@@ -163,10 +163,6 @@
     RelativePath="..\..\include\xtreemfs\dir_proxy.h"
     >
 </File>
-<File
-    RelativePath="..\..\include\xtreemfs\file.h"
-    >
-</File>
 <Filter Name="interfaces">
 <File
     RelativePath="..\..\include\xtreemfs\interfaces\constants.h"
@@ -358,7 +354,19 @@
     >
 </File>
 <File
+    RelativePath="..\..\src\libxtreemfs\open_file.h"
+    >
+</File>
+<File
     RelativePath="..\..\src\libxtreemfs\policy_container.h"
+    >
+</File>
+<File
+    RelativePath="..\..\src\libxtreemfs\shared_file.h"
+    >
+</File>
+<File
+    RelativePath="..\..\src\libxtreemfs\stat.h"
     >
 </File>
 <File
@@ -366,11 +374,11 @@
     >
 </File>
 <File
-    RelativePath="..\..\src\libxtreemfs\file.cpp"
+    RelativePath="..\..\src\libxtreemfs\mrc_proxy.cpp"
     >
 </File>
 <File
-    RelativePath="..\..\src\libxtreemfs\mrc_proxy.cpp"
+    RelativePath="..\..\src\libxtreemfs\open_file.cpp"
     >
 </File>
 <File
@@ -395,6 +403,14 @@
 </File>
 <File
     RelativePath="..\..\src\libxtreemfs\proxy_exception_response.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\libxtreemfs\shared_file.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\libxtreemfs\stat.cpp"
     >
 </File>
 <File

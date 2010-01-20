@@ -1,4 +1,4 @@
-// Revision: 1944
+// Revision: 1945
 
 #include "yield/platform.h"
 using namespace YIELD::platform;
@@ -2118,9 +2118,9 @@ uint32_t Stat::get_attributes() const
 {
 #ifdef _WIN32
   DWORD dwFileAttributes = attributes;
-  if ( ( mode & S_IFREG ) == S_IFREG )
+  if ( ( get_mode() & S_IFREG ) == S_IFREG )
     dwFileAttributes |= FILE_ATTRIBUTE_NORMAL;
-  else if ( ( mode & S_IFDIR ) == S_IFDIR )
+  else if ( ( get_mode() & S_IFDIR ) == S_IFDIR )
     dwFileAttributes |= FILE_ATTRIBUTE_DIRECTORY;
 #ifdef _DEBUG
   if ( dwFileAttributes == 0 )
@@ -2134,11 +2134,11 @@ uint32_t Stat::get_attributes() const
 #endif
 bool Stat::operator==( const Stat& other ) const
 {
-  return mode == other.mode &&
-         size == other.size &&
-         atime == other.atime &&
-         mtime == other.mtime &&
-         ctime == other.ctime;
+  return get_mode() == other.get_mode() &&
+         get_size() == other.get_size() &&
+         get_atime() == other.get_atime() &&
+         get_mtime() == other.get_mtime() &&
+         get_ctime() == other.get_ctime();
 }
 Stat::operator std::string() const
 {
@@ -2151,27 +2151,27 @@ Stat::operator struct stat() const
   struct stat stbuf;
   memset( &stbuf, 0, sizeof( stbuf ) );
 #ifndef _WIN32
-  stbuf.st_dev = dev;
-  stbuf.st_ino = ino;
+  stbuf.st_dev = get_dev();
+  stbuf.st_ino = get_ino();
 #endif
 #ifdef _WIN32
-  stbuf.st_mode = static_cast<unsigned short>( mode );
+  stbuf.st_mode = static_cast<unsigned short>( get_mode() );
 #else
-  stbuf.st_mode = mode;
+  stbuf.st_mode = get_mode();
 #endif
 #ifndef _WIN32
-  stbuf.st_nlink = nlink;
-  stbuf.st_uid = uid;
-  stbuf.st_gid = gid;
-  stbuf.st_rdev = rdev;
+  stbuf.st_nlink = get_nlink();
+  stbuf.st_uid = get_uid();
+  stbuf.st_gid = get_gid();
+  stbuf.st_rdev = get_rdev();
 #endif
-  stbuf.st_size = static_cast<off_t>( size );
-  stbuf.st_atime = atime.as_unix_time_s();
-  stbuf.st_mtime = mtime.as_unix_time_s();
-  stbuf.st_ctime = ctime.as_unix_time_s();
+  stbuf.st_size = static_cast<off_t>( get_size() );
+  stbuf.st_atime = get_atime().as_unix_time_s();
+  stbuf.st_mtime = get_mtime().as_unix_time_s();
+  stbuf.st_ctime = get_ctime().as_unix_time_s();
 #ifndef _WIN32
-  stbuf.st_blksize = blksize;
-  stbuf.st_blocks = blocks;
+  stbuf.st_blksize = get_blksize();
+  stbuf.st_blocks = get_blocks();
 #endif
   return stbuf;
 }

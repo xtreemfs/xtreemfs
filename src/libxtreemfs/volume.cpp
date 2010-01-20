@@ -2,7 +2,9 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/volume.h"
-#include "xtreemfs/file.h"
+#include "open_file.h"
+#include "shared_file.h"
+#include "stat.h"
 #include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/osd_proxy.h"
 #include "xtreemfs/path.h"
@@ -29,40 +31,6 @@ using namespace xtreemfs;
   { \
     set_errno( #OperationName, exc ); \
   } \
-
-
-// Helper functions
-static YIELD::platform::auto_Stat xtreemfs_Stat_as_YIELD_platform_Stat
-( 
-  const org::xtreemfs::interfaces::Stat& xtreemfs_stat 
-)
-{
-  return new YIELD::platform::Stat
-  (
-#ifdef _WIN32
-    xtreemfs_stat.get_mode(), 
-    xtreemfs_stat.get_size(), 
-    xtreemfs_stat.get_atime_ns(), 
-    xtreemfs_stat.get_mtime_ns(), 
-    xtreemfs_stat.get_ctime_ns(), 
-    xtreemfs_stat.get_attributes() 
-#else
-    xtreemfs_stat.get_dev(), 
-    xtreemfs_stat.get_ino(), 
-    xtreemfs_stat.get_mode(), 
-    xtreemfs_stat.get_nlink(),
-    0, // uid
-    0, // gid
-    0, // rdev
-    xtreemfs_stat.get_size(), 
-    xtreemfs_stat.get_atime_ns(), 
-    xtreemfs_stat.get_mtime_ns(), 
-    xtreemfs_stat.get_ctime_ns(),
-    xtreemfs_stat.get_blksize(),
-    0 // blocks
-#endif
-  );
-}
 
 
 Volume::Volume
@@ -102,6 +70,9 @@ bool Volume::access( const YIELD::platform::Path&, int )
 
 bool Volume::chmod( const YIELD::platform::Path& path, mode_t mode )
 {
+  // If metadata caching enabled: look up stat; if exists, set_mode
+  // If disabled or not exists, write through
+
   VOLUME_OPERATION_BEGIN( chmod )
   {
     mrc_proxy->chmod( Path( this->name, path ), mode );
@@ -113,6 +84,9 @@ bool Volume::chmod( const YIELD::platform::Path& path, mode_t mode )
 
 bool Volume::chown( const YIELD::platform::Path& path, int uid, int gid )
 {
+  // If metadata caching enabled: look up stat; if exists, set_uid and set_gid
+  // If disabled or not exists, write through  
+
   VOLUME_OPERATION_BEGIN( chown )
   {
     mrc_proxy->chown( Path( this->name, path ), uid, gid );
@@ -197,6 +171,40 @@ auto_Volume Volume::create
   );
 }
 
+auto_SharedFile
+Volume::get_shared_file
+( 
+  const YIELD::platform::Path& path,
+  bool create
+)
+{
+  SharedFile* shared_file;
+
+  shared_files_lock.acquire();
+
+  std::map<std::string, SharedFile*>::const_iterator shared_file_i
+    = shared_files.find( path );
+
+  if ( shared_file_i != shared_files.end() )
+  {
+    shared_file = shared_file_i->second;
+    shared_file->incRef();
+  }
+  else if ( create )
+  {
+    // TODO: pass in a stat here if we have one cached
+    shared_file = new SharedFile( incRef(), path );
+    shared_file->incRef();
+    shared_files[path] = shared_file;
+  }
+  else
+    shared_file = NULL;
+
+  shared_files_lock.release();
+
+  return shared_file;
+}
+
 org::xtreemfs::interfaces::VivaldiCoordinates 
   Volume::get_vivaldi_coordinates() const
 {
@@ -226,6 +234,8 @@ bool Volume::getxattr
   std::string& out_value 
 )
 {
+  // Always pass through
+
   VOLUME_OPERATION_BEGIN( getxattr )
   {
     mrc_proxy->getxattr( Path( this->name, path ), name, out_value );
@@ -241,6 +251,11 @@ bool Volume::link
   const YIELD::platform::Path& new_path 
 )
 {
+  // If metadata caching enabled:
+//  stat_cache->evict( new_path );
+//  stat_cache->evict( old_path ); // Or modify nlink on old path
+  
+
   VOLUME_OPERATION_BEGIN( link )
   {
     mrc_proxy->link
@@ -289,6 +304,8 @@ bool Volume::listxattr
   std::vector<std::string>& out_names 
 )
 {
+  // Always pass through... xattr caching with writes is ugly
+
   VOLUME_OPERATION_BEGIN( listxattr )
   {
     org::xtreemfs::interfaces::StringSet names;
@@ -302,6 +319,9 @@ bool Volume::listxattr
 
 bool Volume::mkdir( const YIELD::platform::Path& path, mode_t mode )
 {
+  // If metadata caching enabled: look up stat, 
+  // stat_cache->evict( getParentDirectoryPath( path ) );
+
   VOLUME_OPERATION_BEGIN( mkdir )
   {
     mrc_proxy->mkdir( Path( this->name, path ), mode );
@@ -390,7 +410,7 @@ YIELD::platform::auto_File Volume::open
       file_credentials 
     );
 
-    return new File( incRef(), path, file_credentials );
+    return new OpenFile( file_credentials, get_shared_file( path, true ) );
   }
   VOLUME_OPERATION_END( open );
   return NULL;
@@ -435,10 +455,7 @@ bool Volume::readdir
         !callback
         ( 
           ( *directory_entry_i ).get_name(),
-          xtreemfs_Stat_as_YIELD_platform_Stat
-          ( 
-            ( *directory_entry_i ).get_stbuf() 
-          )
+          new Stat( ( *directory_entry_i ).get_stbuf() )
         )            
       )
         return false;
@@ -464,12 +481,35 @@ YIELD::platform::auto_Path Volume::readlink
   return NULL;
 }
 
+bool Volume::removexattr
+( 
+  const YIELD::platform::Path& path, 
+  const std::string& name 
+)
+{
+  // If metadata caching, always evict( path )
+
+  VOLUME_OPERATION_BEGIN( removexattr )
+  {
+    mrc_proxy->removexattr( Path( this->name, path ), name );
+    return true;
+  }
+  VOLUME_OPERATION_END( removexattr );
+  return false;
+}
+
 bool Volume::rename
 ( 
   const YIELD::platform::Path& from_path, 
   const YIELD::platform::Path& to_path 
 )
 {
+  // If metadata caching:
+  //stat_cache->evict( from_path );
+  //stat_cache->evict( getParentDirectoryPath( from_path ) ); // Change parent dir's mtime
+  //stat_cache->evict( to_path );
+  //stat_cache->evict( getParentDirectoryPath( to_path ) ); // Change parent dir's mtime
+
   VOLUME_OPERATION_BEGIN( rename )
   {
     org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
@@ -491,6 +531,9 @@ bool Volume::rename
 
 bool Volume::rmdir( const YIELD::platform::Path& path )
 {
+  // If metadata caching:
+  // stat_cache->evict( path );
+
   VOLUME_OPERATION_BEGIN( rmdir )
   {
     mrc_proxy->rmdir( Path( this->name, path ) );
@@ -500,27 +543,15 @@ bool Volume::rmdir( const YIELD::platform::Path& path )
   return false;
 }
 
-bool Volume::removexattr
-( 
-  const YIELD::platform::Path& path, 
-  const std::string& name 
-)
-{
-  VOLUME_OPERATION_BEGIN( removexattr )
-  {
-    mrc_proxy->removexattr( Path( this->name, path ), name );
-    return true;
-  }
-  VOLUME_OPERATION_END( removexattr );
-  return false;
-}
-
 bool Volume::setattr
 ( 
   const YIELD::platform::Path& path, 
   uint32_t file_attributes 
 )
 {
+  // If metadata caching: look up stat, set_attributes
+  // If disabled or lookup fails, pass through
+
   VOLUME_OPERATION_BEGIN( setattr )
   {
     org::xtreemfs::interfaces::Stat stbuf;
@@ -592,6 +623,9 @@ bool Volume::setxattr
   int flags 
 )
 {
+  // If metadata caching:
+  // stat_cache->evict( path );
+
   VOLUME_OPERATION_BEGIN( setxattr )
   {
     mrc_proxy->setxattr( Path( this->name, path ), name, value, flags );
@@ -603,19 +637,20 @@ bool Volume::setxattr
 
 YIELD::platform::auto_Stat Volume::stat( const YIELD::platform::Path& path )
 {
-  VOLUME_OPERATION_BEGIN( getattr )
+  VOLUME_OPERATION_BEGIN( stat )
   {
     return stat( Path( this->name, path ) );
   }
-  VOLUME_OPERATION_END( getattr );
+  VOLUME_OPERATION_END( stat );
   return NULL;
 }
 
 YIELD::platform::auto_Stat Volume::stat( const Path& path )
 {
-  org::xtreemfs::interfaces::Stat xtreemfs_stat;
-  mrc_proxy->getattr( path, xtreemfs_stat );
-  return xtreemfs_Stat_as_YIELD_platform_Stat( xtreemfs_stat );
+  // If metadata caching, look up
+  org::xtreemfs::interfaces::Stat stbuf;
+  mrc_proxy->getattr( path, stbuf );
+  return new Stat( stbuf );
 }
 
 bool Volume::statvfs
@@ -624,6 +659,8 @@ bool Volume::statvfs
   struct statvfs& statvfsbuf 
 )
 {
+  // TODO: cache the StatVFS for a given time
+
   VOLUME_OPERATION_BEGIN( statvfs )
   {
     org::xtreemfs::interfaces::StatVFS xtreemfs_statvfsbuf;
@@ -646,6 +683,10 @@ bool Volume::symlink
   const YIELD::platform::Path& from_path 
 )
 {
+  // If metadata caching:
+  //stat_cache->evict( from_path );
+  //stat_cache->evict( getParentDirectoryPath( from_path ) );
+
   VOLUME_OPERATION_BEGIN( symlink )
   {
     mrc_proxy->symlink( to_path, Path( this->name, from_path ) );
@@ -657,6 +698,8 @@ bool Volume::symlink
 
 bool Volume::truncate( const YIELD::platform::Path& path, uint64_t new_size )
 {
+  // If metadata caching: set_size on stat
+
   VOLUME_OPERATION_BEGIN( truncate )
   {
     YIELD::platform::auto_File file = 
@@ -671,7 +714,11 @@ bool Volume::truncate( const YIELD::platform::Path& path, uint64_t new_size )
 }
 
 bool Volume::unlink( const YIELD::platform::Path& path )
-{
+{  
+  // If metadata caching:
+  //stat_cache->evict( path );
+  // set_mtime on parent
+
   VOLUME_OPERATION_BEGIN( unlink )
   {
     org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
@@ -691,6 +738,9 @@ bool Volume::utimens
   const YIELD::platform::Time& ctime 
 )
 {
+  // If metadata caching: lookup stat, set atime, mtime, ctime
+  // If disabled or lookup fails, pass through
+
   VOLUME_OPERATION_BEGIN( utimens )
   {
     mrc_proxy->utimens( Path( this->name, path ), atime, mtime, ctime );
