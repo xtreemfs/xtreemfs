@@ -4,7 +4,9 @@
 # Provides:          xtreemfs-mrc
 # Required-Start:    $network
 # Required-Stop:     $network
-# Default-Start:     3 4 5
+# Should-Start:      xtreemfs-dir
+# Should-Stop:       
+# Default-Start:     2 3 4 5
 # Default-Stop:
 # Short-Description: XtreemFS MRC
 # Description:       XtreemFS MRC. http://www.xtreemfs.org/
