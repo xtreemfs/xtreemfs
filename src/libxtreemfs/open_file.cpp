@@ -180,6 +180,11 @@ bool OpenFile::datasync()
   return sync();
 }
 
+YIELD::platform::auto_Stat OpenFile::getattr()
+{
+  return parent_shared_file->getattr();
+}
+
 bool OpenFile::getlk( bool exclusive, uint64_t offset, uint64_t length )
 {
   return parent_shared_file->getlk
@@ -247,11 +252,6 @@ bool OpenFile::setxattr
 )
 {
   return parent_shared_file->setxattr( name, value, flags );
-}
-
-YIELD::platform::auto_Stat OpenFile::stat()
-{
-  return parent_shared_file->stat();
 }
 
 bool OpenFile::sync()

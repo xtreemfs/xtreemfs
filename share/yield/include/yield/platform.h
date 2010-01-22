@@ -97,8 +97,9 @@ typedef int ssize_t;
 #define YIELD_PLATFORM_FILE_PROTOTYPES \
   virtual bool close(); \
   virtual bool datasync(); \
-  virtual bool getxattr( const std::string& name, std::string& out_value ); \
+  virtual yidl::runtime::auto_Object<YIELD::platform::Stat> getattr(); \
   virtual bool getlk( bool exclusive, uint64_t offset, uint64_t length ); \
+  virtual bool getxattr( const std::string& name, std::string& out_value ); \
   virtual bool listxattr( std::vector<std::string>& out_names ); \
   virtual ssize_t read( void* buffer, size_t buffer_len, uint64_t offset ); \
   virtual bool removexattr( const std::string& name ); \
@@ -111,7 +112,6 @@ typedef int ssize_t;
     const std::string& value, \
     int flags \
   ); \
-  virtual yidl::runtime::auto_Object<YIELD::platform::Stat> stat(); \
   virtual bool sync(); \
   virtual bool truncate( uint64_t offset ); \
   virtual bool unlk( uint64_t offset, uint64_t length ); \
@@ -125,13 +125,10 @@ typedef int ssize_t;
 
 #define YIELD_PLATFORM_VOLUME_PROTOTYPES \
     virtual bool access( const YIELD::platform::Path& path, int amode ); \
-    virtual bool chmod( const YIELD::platform::Path& path, mode_t mode ); \
-    virtual bool \
-    chown \
+    virtual yidl::runtime::auto_Object<YIELD::platform::Stat> \
+    getattr \
     ( \
-      const YIELD::platform::Path& path, \
-      int32_t uid, \
-      int32_t gid \
+      const YIELD::platform::Path& path \
     ); \
     virtual bool \
     getxattr \
@@ -190,7 +187,8 @@ typedef int ssize_t;
     setattr \
     ( \
       const YIELD::platform::Path& path, \
-      uint32_t file_attributes \
+      yidl::runtime::auto_Object<YIELD::platform::Stat> stbuf, \
+      uint32_t to_set \
     ); \
     virtual bool \
     setxattr \
@@ -199,11 +197,6 @@ typedef int ssize_t;
       const std::string& name, \
       const std::string& value, \
       int flags \
-    ); \
-    virtual yidl::runtime::auto_Object<YIELD::platform::Stat> \
-    stat \
-    ( \
-      const YIELD::platform::Path& path \
     ); \
     virtual bool \
     statvfs \
@@ -224,14 +217,6 @@ typedef int ssize_t;
       uint64_t new_size \
     ); \
     virtual bool unlink( const YIELD::platform::Path& path ); \
-    virtual bool \
-    utimens \
-    ( \
-      const YIELD::platform::Path& path, \
-      const YIELD::platform::Time& atime, \
-      const YIELD::platform::Time& mtime, \
-      const YIELD::platform::Time& ctime \
-    ); \
     virtual YIELD::platform::Path volname( const YIELD::platform::Path& path );
 
 
@@ -521,9 +506,9 @@ namespace YIELD
     class File : public yidl::runtime::Object
     {
     public:
-      const static uint32_t DEFAULT_FLAGS = O_RDONLY;
-      const static mode_t DEFAULT_MODE = S_IREAD|S_IWRITE;
-      const static uint32_t DEFAULT_ATTRIBUTES = 0;
+      const static uint32_t ATTRIBUTES_DEFAULT = 0;
+      const static uint32_t FLAGS_DEFAULT = O_RDONLY;
+      const static mode_t MODE_DEFAULT = S_IREAD|S_IWRITE;
 
 
       // Construct from a platform file descriptor; 
@@ -533,6 +518,8 @@ namespace YIELD
 #else
       File( int fd );
 #endif
+
+      YIELD_PLATFORM_FILE_PROTOTYPES;
 
       virtual size_t getpagesize();
 
@@ -553,12 +540,13 @@ namespace YIELD
 
       virtual bool seek( uint64_t offset, unsigned char whence );
 
+      // Delegates to getattr
+      virtual yidl::runtime::auto_Object<Stat> stat();
+
       // Writes from the current position
       virtual ssize_t write( yidl::runtime::auto_Buffer buffer );
     
       virtual ssize_t write( const void* buffer, size_t buffer_len ); 
-
-      YIELD_PLATFORM_FILE_PROTOTYPES;
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( File, 1 );
@@ -1561,6 +1549,8 @@ namespace YIELD
     class Stat : public yidl::runtime::Object
     {
     public:
+      Stat(); // -> set each member individually, for setattr
+
 #ifdef _WIN32
       Stat
       ( 
@@ -1606,21 +1596,26 @@ namespace YIELD
 #endif
       Stat( const struct stat& stbuf );
 
-      virtual mode_t get_mode() const { return mode; }
 #ifndef _WIN32
-      virtual nlink_t get_nlink() const { return nlink; }
-      virtual uid_t get_uid() const { return uid; }
-      virtual gid_t get_gid() const { return gid; }
+      dev_t get_dev() const { return dev; }
+      ino_t get_ino() const { return ino; }
 #endif
-      virtual uint64_t get_size() const { return size; }
-      virtual const Time& get_atime() const { return atime; }
-      virtual const Time& get_mtime() const { return mtime; }
-      virtual const Time& get_ctime() const { return ctime; }
+      mode_t get_mode() const { return mode; }
+#ifndef _WIN32
+      nlink_t get_nlink() const { return nlink; }
+      uid_t get_uid() const { return uid; }
+      gid_t get_gid() const { return gid; }
+      dev_t get_rdev() const { return rdev; }
+#endif
+      uint64_t get_size() const { return size; }
+      const Time& get_atime() const { return atime; }
+      const Time& get_mtime() const { return mtime; }
+      const Time& get_ctime() const { return ctime; }
 #ifdef _WIN32
-      virtual uint32_t get_attributes() const;
+      uint32_t get_attributes() const;
 #else
-      virtual blksize_t get_blksize() const { return blksize; }
-      virtual blkcnt_t get_blocks() const { return blocks; }
+      blksize_t get_blksize() const { return blksize; }
+      blkcnt_t get_blocks() const { return blocks; }
 #endif
 
       bool ISDIR() const { return ( get_mode() & S_IFDIR ) == S_IFDIR; }
@@ -1629,12 +1624,35 @@ namespace YIELD
       bool ISLNK() const { return S_ISLNK( get_mode() ); }
 #endif
 
+      virtual Stat& operator=( const Stat& );
       virtual bool operator==( const Stat& ) const;
       virtual operator std::string() const;
-      virtual operator struct stat() const;
+      operator struct stat() const;
 #ifdef _WIN32
-      virtual operator BY_HANDLE_FILE_INFORMATION() const;
-      virtual operator WIN32_FIND_DATA() const;
+      operator BY_HANDLE_FILE_INFORMATION() const;
+      operator WIN32_FIND_DATA() const;
+#endif
+
+#ifndef _WIN32
+      void set_dev( dev_t dev );
+      void set_ino( ino_t ino );
+#endif
+      void set_mode( mode_t mode );
+#ifndef _WIN32
+      void set_nlink( nlink_t nlink );
+      void set_uid( uid_t uid );
+      void set_gid( gid_t gid );
+      void set_rdev( dev_t );
+#endif
+      void set_size( uint64_t size );
+      void set_atime( const Time& atime );
+      void set_mtime( const Time& mtime );
+      void set_ctime( const Time& ctime );
+#ifdef _WIN32
+      void set_attributes( uint32_t attributes );
+#else
+      void set_blksize( blksize_t blksize );
+      void set_blocks( blkcnt_t blocks );
 #endif
 
       // yidl::runtime::Object
@@ -1673,44 +1691,52 @@ namespace YIELD
     static inline std::ostream& operator<<( std::ostream& os, const Stat& stbuf )
     {
       os << "{ ";
-      mode_t mode = stbuf.get_mode();
-      os << "st_mode: " << mode << " (";
-#define YIELD_STAT_MODE_BIT_AS_STRING( mode_bit ) \
-        { if ( ( mode & mode_bit ) == mode_bit ) os << #mode_bit "|"; }
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IFDIR )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IFCHR )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IFREG )
-#ifdef _WIN32
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IREAD )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IWRITE )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IEXEC )
-#else
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IFIFO )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IFBLK )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IFLNK )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IRUSR )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IWUSR )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IXUSR )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IRGRP )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IWGRP )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IXGRP )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IROTH )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IWOTH )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_IXOTH )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_ISUID )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_ISGID )
-      YIELD_STAT_MODE_BIT_AS_STRING( S_ISVTX )
-  #endif
-      os << "0), st_size: " << stbuf.get_size();
-      os << ", st_mtime: " << stbuf.get_mtime() << 
-            ", st_ctime: " << stbuf.get_ctime() << 
-            ", st_atime: " << stbuf.get_atime();
-#ifdef _WIN32
-      os << ", attributes: " << stbuf.get_attributes();
-#else
-      os << ", nlink: " << stbuf.get_nlink();
+#ifndef _WIN32
+      os << "st_dev: " << stbuf.get_dev() << ", ";
+      os << "st_ino: " << stbuf.get_ino() << ", ";
 #endif
-      os << " }";
+      os << "st_mode: " << stbuf.get_mode() << " (";
+      if ( ( stbuf.get_mode() & S_IFDIR ) == S_IFDIR ) os << "S_IFDIR|";
+      if ( ( stbuf.get_mode() & S_IFCHR ) == S_IFCHR ) os << "S_IFCHR|";
+      if ( ( stbuf.get_mode() & S_IFREG ) == S_IFREG ) os << "S_IFREG|";
+#ifdef _WIN32
+      if ( ( stbuf.get_mode() & S_IREAD ) == S_IREAD ) os << "S_IREAD|";
+      if ( ( stbuf.get_mode() & S_IWRITE ) == S_IWRITE ) os << "S_IWRITE|";
+      if ( ( stbuf.get_mode() & S_IEXEC ) == S_IEXEC ) os << "S_IEXEC|";
+#else
+      if ( ( stbuf.get_mode() & S_IFBLK ) == S_IFBLK ) os << "S_IFBLK|";
+      if ( ( stbuf.get_mode() & S_IFLNK ) == S_IFLNK ) os << "S_IFLNK|";
+      if ( ( stbuf.get_mode() & S_IRUSR ) == S_IFDIR ) os << "S_IRUSR|";
+      if ( ( stbuf.get_mode() & S_IWUSR ) == S_IWUSR ) os << "S_IWUSR|";
+      if ( ( stbuf.get_mode() & S_IXUSR ) == S_IXUSR ) os << "S_IXUSR|";
+      if ( ( stbuf.get_mode() & S_IRGRP ) == S_IRGRP ) os << "S_IRGRP|";
+      if ( ( stbuf.get_mode() & S_IWGRP ) == S_IWGRP ) os << "S_IWGRP|";
+      if ( ( stbuf.get_mode() & S_IXGRP ) == S_IXGRP ) os << "S_IXGRP|";
+      if ( ( stbuf.get_mode() & S_IROTH ) == S_IROTH ) os << "S_IROTH|";
+      if ( ( stbuf.get_mode() & S_IWOTH ) == S_IWOTH ) os << "S_IWOTH|";
+      if ( ( stbuf.get_mode() & S_IXOTH ) == S_IXOTH ) os << "S_IXOTH|";
+      if ( ( stbuf.get_mode() & S_ISUID ) == S_ISUID ) os << "S_ISUID|";
+      if ( ( stbuf.get_mode() & S_ISGID ) == S_ISGID ) os << "S_ISGID|";
+      if ( ( stbuf.get_mode() & S_ISVTX ) == S_ISVTX ) os << "S_ISVTX|";
+#endif
+      os << "0), ";
+#ifndef _WIN32
+      os << "st_nlink: " << stbuf.get_nlink() << ", ";
+      os << "st_uid: " << stbuf.get_uid() << ", ";
+      os << "st_gid: " << stbuf.get_gid() << ", ";
+      os << "st_rdev: " << stbuf.get_rdev() << ", ";
+#endif
+      os << "st_size: " << stbuf.get_size() << ", ";
+      os << "st_atime: " << stbuf.get_atime() << ", ";
+      os << "st_mtime: " << stbuf.get_mtime() << ", ";
+      os << "st_ctime: " << stbuf.get_ctime() << ", ";
+#ifdef _WIN32
+      os << "attributes: " << stbuf.get_attributes() << ", ";
+#else
+      os << "st_blksize: " << stbuf.get_blksize() << ", ";
+      os << "st_blocks: " << stbuf.get_blocks() << ", ";
+#endif
+      os << " 0 }";
       return os;
     }
 
@@ -1844,7 +1870,20 @@ namespace YIELD
     class Volume : public yidl::runtime::Object
     {
     public:    
-      const static mode_t DEFAULT_DIRECTORY_MODE = S_IREAD|S_IWRITE|S_IEXEC;
+      const static mode_t FILE_MODE_DEFAULT = File::MODE_DEFAULT;
+      const static mode_t DIRECTORY_MODE_DEFAULT = S_IREAD|S_IWRITE|S_IEXEC;
+
+      // Flags for setattr's to_set
+      const static uint32_t SETATTR_MODE = 1;
+      const static uint32_t SETATTR_UID = 2;
+      const static uint32_t SETATTR_GID = 4;
+      const static uint32_t SETATTR_SIZE = 8;
+      const static uint32_t SETATTR_ATIME = 16;
+      const static uint32_t SETATTR_MTIME = 32;
+      const static uint32_t SETATTR_CTIME = 64;
+#ifdef _WIN32
+      const static uint32_t SETATTR_ATTRIBUTES = 128;
+#endif
 
 
       class listdirCallback
@@ -1871,15 +1910,34 @@ namespace YIELD
 
       YIELD_PLATFORM_VOLUME_PROTOTYPES;
 
-      // Convenience methods that don't make any system calls, so subclasses don't have to re-implement them
+      // Convenience methods that don't make any system calls but delegate to
+      // YIELD_PLATFORM_VOLUME_PROTOTYPES, 
+      // which should be implemented by subclasses
+
+#ifndef _WIN32
+      // Delegates to setattr
+      virtual bool chmod( const Path& path, mode_t mode );
+
+      // Delegates to setattr
+      virtual bool chown( const Path& path, uid_t uid, gid_t gid );
+#endif
+
+      // Delegate to open
       virtual auto_File creat( const Path& path );
       virtual auto_File creat( const Path& path, mode_t mode );
+
+      // Delegate to getattr
       virtual bool exists( const Path& path );
       virtual bool isdir( const Path& path );
       virtual bool isfile( const Path& path );
 
+      // Delegates to full listdir
       virtual bool listdir( const Path& path, listdirCallback& );
 
+      // Delegates to full listdir
+      virtual bool listdir( const Path& path, std::vector<Path>& out_names );
+
+      // Delegates to readdir
       virtual bool
       listdir
       ( 
@@ -1888,8 +1946,7 @@ namespace YIELD
         listdirCallback& 
       );
 
-      virtual bool listdir( const Path& path, std::vector<Path>& out_names );
-
+      // Delegates to readdir
       virtual bool
       listdir
       ( 
@@ -1898,18 +1955,49 @@ namespace YIELD
         std::vector<Path>& out_names 
       );
 
+      // Recursive mkdir
       virtual bool makedirs( const Path& path ); // Python function name
       virtual bool makedirs( const Path& path, mode_t mode );
       virtual bool mkdir( const Path& path );
       virtual bool mktree( const Path& path );
       virtual bool mktree( const Path& path, mode_t mode );
+
+      // Delegates to full open
       virtual auto_File open( const Path& path );
       virtual auto_File open( const Path& path, uint32_t flags );
       virtual auto_File open( const Path& path, uint32_t flags, mode_t mode );
+
+      // Delegates to full readdir
       virtual bool readdir( const Path& path, readdirCallback& );
+
+      // Recursive rmdir + unlink
       virtual bool rmtree( const Path& path );
+
+      // Delegates to getattr
+      virtual auto_Stat stat( const Path& path );
+
+      // Delegate to creat
       virtual bool touch( const Path& path );
       virtual bool touch( const Path& path, mode_t mode );
+
+      // Delegate to setattr
+      // Uses the most accurate system call available
+      virtual bool
+      utime
+      (
+        const YIELD::platform::Path& path,
+        const YIELD::platform::Time& atime,
+        const YIELD::platform::Time& mtime
+      );
+      
+      virtual bool
+      utime
+      (
+        const YIELD::platform::Path& path,
+        const YIELD::platform::Time& atime,
+        const YIELD::platform::Time& mtime,
+        const YIELD::platform::Time& ctime
+      );
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( Volume, 15 );

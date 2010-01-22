@@ -54,10 +54,11 @@ namespace YIELD
 
 #ifdef YIELD_HAVE_ZLIB
     static inline yidl::runtime::auto_Buffer 
-      deflate( 
-        yidl::runtime::auto_Buffer buffer, 
-        int level = Z_BEST_COMPRESSION 
-      )
+    deflate
+    ( 
+      yidl::runtime::auto_Buffer buffer, 
+      int level = Z_BEST_COMPRESSION 
+    )
     {
       z_stream zstream;
       zstream.zalloc = Z_NULL;
@@ -435,36 +436,40 @@ namespace YIELD
     public:
       // create( ... ) throws an exception instead of returning NULL
       static yidl::runtime::auto_Object<HTTPClient> 
-        create
-        ( 
-          const URI& absolute_uri, 
-          uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
-          uint32_t flags = 0,
-          YIELD::platform::auto_Log log = NULL,                                                             
-          const YIELD::platform::Time& operation_timeout 
-            = OPERATION_TIMEOUT_DEFAULT,
-          uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
-          yidl::runtime::auto_Object<SSLContext> ssl_context = NULL
-        );
+      create
+      ( 
+        const URI& absolute_uri, 
+        uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
+        uint32_t flags = 0,
+        YIELD::platform::auto_Log log = NULL,                                                             
+        const YIELD::platform::Time& operation_timeout 
+          = OPERATION_TIMEOUT_DEFAULT,
+        uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
+        yidl::runtime::auto_Object<SSLContext> ssl_context = NULL
+      );
 
       static auto_HTTPResponse 
-        GET( const URI& absolute_uri, YIELD::platform::auto_Log log = NULL );
+      GET
+      ( 
+        const URI& absolute_uri, 
+        YIELD::platform::auto_Log log = NULL 
+      );
 
       static auto_HTTPResponse 
-        PUT
-        (
-          const URI& absolute_uri, 
-          yidl::runtime::auto_Buffer body, 
-          YIELD::platform::auto_Log log = NULL 
-        );
+      PUT
+      (
+        const URI& absolute_uri, 
+        yidl::runtime::auto_Buffer body, 
+        YIELD::platform::auto_Log log = NULL 
+      );
 
       static auto_HTTPResponse 
-        PUT
-        ( 
-          const URI& absolute_uri, 
-          const YIELD::platform::Path& body_file_path, 
-          YIELD::platform::auto_Log log = NULL 
-        );
+      PUT
+      ( 
+        const URI& absolute_uri, 
+        const YIELD::platform::Path& body_file_path, 
+        YIELD::platform::auto_Log log = NULL 
+      );
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( HTTPClient, 207 );
@@ -501,13 +506,13 @@ namespace YIELD
       virtual ~HTTPClient() { }
 
       static auto_HTTPResponse 
-        sendHTTPRequest
-        ( 
-          const char* method, 
-          const URI& uri, 
-          yidl::runtime::auto_Buffer body, 
-          YIELD::platform::auto_Log log 
-        );
+      sendHTTPRequest
+      ( 
+        const char* method, 
+        const URI& uri, 
+        yidl::runtime::auto_Buffer body, 
+        YIELD::platform::auto_Log log 
+      );
     };
 
     typedef yidl::runtime::auto_Object<HTTPClient> auto_HTTPClient;
@@ -517,13 +522,13 @@ namespace YIELD
     {
     public:
       static yidl::runtime::auto_Object<HTTPServer> 
-        create
-        ( 
-          const URI& absolute_uri,
-          YIELD::concurrency::auto_EventTarget http_request_target, 
-          YIELD::platform::auto_Log log = NULL, 
-          auto_SSLContext ssl_context = NULL 
-        );
+      create
+      ( 
+        const URI& absolute_uri,
+        YIELD::concurrency::auto_EventTarget http_request_target, 
+        YIELD::platform::auto_Log log = NULL, 
+        auto_SSLContext ssl_context = NULL 
+      );
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( HTTPServer, 0 );
@@ -614,12 +619,12 @@ namespace YIELD
     public:
       // open returns NULL instead of throwing exceptions
       static yidl::runtime::auto_Object<NamedPipe> 
-        open
-        ( 
-          const YIELD::platform::Path& path, 
-          uint32_t flags = O_RDWR, 
-          mode_t mode = YIELD::platform::File::DEFAULT_MODE 
-        ); 
+      open
+      ( 
+        const YIELD::platform::Path& path, 
+        uint32_t flags = O_RDWR, 
+        mode_t mode = YIELD::platform::File::MODE_DEFAULT 
+      ); 
             
       virtual ssize_t read( void* buffer, size_t buffer_len );
       virtual ssize_t write( const void* buffer, size_t buffer_len );
@@ -811,17 +816,22 @@ namespace YIELD
     {
     public:
       static yidl::runtime::auto_Object< ONCRPCClient<InterfaceType> > 
-        create
-        ( 
-          const URI& absolute_uri, 
-          uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
-          uint32_t flags = 0,
-          YIELD::platform::auto_Log log = NULL, 
-          const YIELD::platform::Time& operation_timeout 
-            = OPERATION_TIMEOUT_DEFAULT, 
-          uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
-          auto_SSLContext ssl_context = NULL 
-        );
+      create
+      ( 
+        const URI& absolute_uri, 
+        uint16_t concurrency_level 
+          = CONCURRENCY_LEVEL_DEFAULT,
+        uint32_t flags 
+          = 0,
+        YIELD::platform::auto_Log log 
+          = NULL, 
+        const YIELD::platform::Time& operation_timeout 
+          = OPERATION_TIMEOUT_DEFAULT, 
+        uint8_t reconnect_tries_max 
+          = RECONNECT_TRIES_MAX_DEFAULT,
+        auto_SSLContext ssl_context 
+          = NULL 
+      );
 
       // YIELD::concurrency::EventHandler
       virtual void handleEvent( YIELD::concurrency::Event& ev )
@@ -911,13 +921,13 @@ namespace YIELD
     {
     public:
       static yidl::runtime::auto_Object<ONCRPCServer>         
-        create
-        ( 
-          const URI& absolute_uri,
-          YIELD::concurrency::auto_Interface interface_,
-          YIELD::platform::auto_Log log = NULL, 
-          auto_SSLContext ssl_context = NULL 
-        ); // Throws exceptions
+      create
+      ( 
+        const URI& absolute_uri,
+        YIELD::concurrency::auto_Interface interface_,
+        YIELD::platform::auto_Log log = NULL, 
+        auto_SSLContext ssl_context = NULL 
+      ); // Throws exceptions
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( ONCRPCServer, 0 );
@@ -1254,14 +1264,23 @@ namespace YIELD
       // create( ... ) factory methods throw exceptions
       // hostname can be NULL for INADDR_ANY
       static yidl::runtime::auto_Object<SocketAddress> 
-        create( const char* hostname )
+      create( const char* hostname )
       { 
         return create( hostname, 0 ); 
       }
 
       static yidl::runtime::auto_Object<SocketAddress> 
-        create( const char* hostname, uint16_t port ); 
-      static yidl::runtime::auto_Object<SocketAddress> create( const URI& );
+      create
+      ( 
+        const char* hostname, 
+        uint16_t port 
+      ); 
+
+      static yidl::runtime::auto_Object<SocketAddress>
+      create
+      ( 
+        const URI& uri
+      );
 
 #ifdef _WIN32
       bool as_struct_sockaddr
@@ -1279,7 +1298,12 @@ namespace YIELD
       );
 #endif
 
-      bool getnameinfo( std::string& out_hostname, bool numeric = true ) const;
+      bool 
+      getnameinfo
+      ( 
+        std::string& out_hostname, 
+        bool numeric = true 
+      ) const;
 
       bool getnameinfo
       ( 
@@ -1327,17 +1351,24 @@ namespace YIELD
     public:
       // create( ... ) factory methods throw exceptions
       static yidl::runtime::auto_Object<Process> 
-        create( const YIELD::platform::Path& executable_file_path );
+      create
+      ( 
+        const YIELD::platform::Path& executable_file_path 
+      );
 
       static yidl::runtime::auto_Object<Process> 
-        create( int argc, char** argv );
+      create
+      (
+        int argc, 
+        char** argv 
+      );
 
       static yidl::runtime::auto_Object<Process> 
-        create
-        ( 
-          const YIELD::platform::Path& executable_file_path, 
-          const char** null_terminated_argv 
-        );
+      create
+      ( 
+        const YIELD::platform::Path& executable_file_path, 
+        const char** null_terminated_argv 
+      );
 
       auto_Pipe get_stdin() const { return child_stdin; }
       auto_Pipe get_stdout() const { return child_stdout; }
@@ -1490,33 +1521,48 @@ namespace YIELD
       // create( ... ) factory methods throw exceptions
 
       static yidl::runtime::auto_Object<SSLContext> 
-        create( SSL_METHOD* method = SSLv23_client_method() );
+      create
+      (
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        const
+#endif
+        SSL_METHOD* method = SSLv23_client_method() 
+      );
 
       static yidl::runtime::auto_Object<SSLContext> 
-        create
-        ( 
-          SSL_METHOD* method, 
-          const YIELD::platform::Path& pem_certificate_file_path, 
-          const YIELD::platform::Path& pem_private_key_file_path, 
-          const std::string& pem_private_key_passphrase 
-        );
+      create
+      ( 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        const
+#endif
+        SSL_METHOD* method, 
+        const YIELD::platform::Path& pem_certificate_file_path, 
+        const YIELD::platform::Path& pem_private_key_file_path, 
+        const std::string& pem_private_key_passphrase 
+      );
 
       static yidl::runtime::auto_Object<SSLContext> 
-        create
-        ( 
-          SSL_METHOD* method, 
-          const std::string& pem_certificate_str, 
-          const std::string& pem_private_key_str, 
-          const std::string& pem_private_key_passphrase 
-        );
+      create
+      ( 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        const
+#endif
+        SSL_METHOD* method, 
+        const std::string& pem_certificate_str, 
+        const std::string& pem_private_key_str, 
+        const std::string& pem_private_key_passphrase 
+      );
 
       static yidl::runtime::auto_Object<SSLContext> 
-        create
-        ( 
-          SSL_METHOD* method, 
-          const YIELD::platform::Path& pkcs12_file_path, 
-          const std::string& pkcs12_passphrase 
-        );
+      create
+      ( 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        const
+#endif
+        SSL_METHOD* method, 
+        const YIELD::platform::Path& pkcs12_file_path, 
+        const std::string& pkcs12_passphrase 
+      );
 #else
       static yidl::runtime::auto_Object<SSLContext> create();
 #endif
@@ -1537,7 +1583,14 @@ namespace YIELD
       ~SSLContext();
 
 #ifdef YIELD_HAVE_OPENSSL    
-      static SSL_CTX* createSSL_CTX( SSL_METHOD* method );
+      static SSL_CTX* createSSL_CTX
+      ( 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        const
+#endif
+        SSL_METHOD* method 
+      );
+
       SSL_CTX* ctx;
 #endif
 	  };
@@ -1807,7 +1860,11 @@ namespace YIELD
       static yidl::runtime::auto_Object<URI> parse( const std::string& uri );
 
       static yidl::runtime::auto_Object<URI> 
-        parse( const char* uri, size_t uri_len );
+      parse
+      ( 
+        const char* uri, 
+        size_t uri_len 
+      );
 
       // Constructors throw exceptions
       URI( const char* uri );
@@ -1884,43 +1941,43 @@ namespace YIELD
     };
 
 
-      template <class InterfaceType>
-      yidl::runtime::auto_Object< ONCRPCClient<InterfaceType> > 
-        ONCRPCClient<InterfaceType>::create
-        (           
-          const URI& absolute_uri,
-          uint16_t concurrency_level,
-          uint32_t flags,
-          YIELD::platform::auto_Log log, 
-          const YIELD::platform::Time& operation_timeout,
-          uint8_t reconnect_tries_max,
-          auto_SSLContext ssl_context 
-        )
-      {
-        auto_SocketAddress peername = SocketAddress::create( absolute_uri );
+    template <class InterfaceType>
+    yidl::runtime::auto_Object< ONCRPCClient<InterfaceType> > 
+    ONCRPCClient<InterfaceType>::create
+    (           
+      const URI& absolute_uri,
+      uint16_t concurrency_level,
+      uint32_t flags,
+      YIELD::platform::auto_Log log, 
+      const YIELD::platform::Time& operation_timeout,
+      uint8_t reconnect_tries_max,
+      auto_SSLContext ssl_context 
+    )
+    {
+      auto_SocketAddress peername = SocketAddress::create( absolute_uri );
 
-        auto_SocketFactory socket_factory;
+      auto_SocketFactory socket_factory;
 #ifdef YIELD_HAVE_OPENSSL
-        if ( absolute_uri.get_scheme() == "oncrpcs" )
-        {
-          if ( ssl_context == NULL )
-            ssl_context = SSLContext::create( SSLv23_client_method() );
+      if ( absolute_uri.get_scheme() == "oncrpcs" )
+      {
+        if ( ssl_context == NULL )
+          ssl_context = SSLContext::create( SSLv23_client_method() );
 
-          socket_factory = new SSLSocketFactory( ssl_context );
-        }
-        else
-#endif
-        if ( absolute_uri.get_scheme() == "oncrpcu" )
-          socket_factory = new UDPSocketFactory;
-        else
-          socket_factory = new TCPSocketFactory;
-
-        return new ONCRPCClient<InterfaceType>
-        ( 
-          concurrency_level, flags, log, operation_timeout, 
-          peername, reconnect_tries_max, socket_factory 
-        );
+        socket_factory = new SSLSocketFactory( ssl_context );
       }
+      else
+#endif
+      if ( absolute_uri.get_scheme() == "oncrpcu" )
+        socket_factory = new UDPSocketFactory;
+      else
+        socket_factory = new TCPSocketFactory;
+
+      return new ONCRPCClient<InterfaceType>
+      ( 
+        concurrency_level, flags, log, operation_timeout, 
+        peername, reconnect_tries_max, socket_factory 
+      );
+    }
   };
 };
 

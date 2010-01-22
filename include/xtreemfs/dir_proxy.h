@@ -26,24 +26,27 @@ namespace xtreemfs
   {
   public:
     static yidl::runtime::auto_Object<DIRProxy> 
-      create
-      (         
-        const YIELD::ipc::URI& absolute_uri,
-        uint16_t concurrency_level = YIELD::ipc::ONCRPCClient<org::xtreemfs::interfaces::DIRInterface>::CONCURRENCY_LEVEL_DEFAULT,
-        uint32_t flags = 0,
-        YIELD::platform::auto_Log log = NULL,
-        const YIELD::platform::Time& operation_timeout = 
-          OPERATION_TIMEOUT_DEFAULT,
-        uint8_t reconnect_tries_max = 
-          RECONNECT_TRIES_MAX_DEFAULT,
-        YIELD::ipc::auto_SSLContext ssl_context = NULL 
-      );
+    create
+    (         
+      const YIELD::ipc::URI& absolute_uri,
+      uint16_t concurrency_level = 
+        CONCURRENCY_LEVEL_DEFAULT,
+      uint32_t flags = 0,
+      YIELD::platform::auto_Log log = NULL,
+      const YIELD::platform::Time& operation_timeout = 
+        OPERATION_TIMEOUT_DEFAULT,
+      uint8_t reconnect_tries_max = 
+        RECONNECT_TRIES_MAX_DEFAULT,
+      YIELD::ipc::auto_SSLContext ssl_context = NULL,
+      auto_UserCredentialsCache user_credentials_cache
+        = NULL
+    );
 
     yidl::runtime::auto_Object<org::xtreemfs::interfaces::AddressMappingSet> 
-      getAddressMappingsFromUUID( const std::string& uuid );
+    getAddressMappingsFromUUID( const std::string& uuid );
 
     YIELD::ipc::auto_URI 
-      getVolumeURIFromVolumeName( const std::string& volume_name );
+    getVolumeURIFromVolumeName( const std::string& volume_name );
 
   private:
     DIRProxy
@@ -54,12 +57,19 @@ namespace xtreemfs
       const YIELD::platform::Time& operation_timeout, 
       YIELD::ipc::auto_SocketAddress peername,
       uint8_t reconnect_tries_max,
-      YIELD::ipc::auto_SocketFactory socket_factory 
+      YIELD::ipc::auto_SocketFactory socket_factory,
+      auto_UserCredentialsCache user_credentials_cache
     )
     : Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>
       ( 
-        concurrency_level, flags, log, operation_timeout, 
-        peername, reconnect_tries_max, socket_factory 
+        concurrency_level, 
+        flags, 
+        log, 
+        operation_timeout, 
+        peername, 
+        reconnect_tries_max, 
+        socket_factory,
+        user_credentials_cache
       )
     { }
 

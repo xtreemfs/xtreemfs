@@ -133,7 +133,6 @@ namespace yieldfs
 
     // YIELD::platform::Volume
     YIELD_PLATFORM_VOLUME_PROTOTYPES;
-    bool exists( const YIELD::platform::Path& path );
 
     bool listdir
     ( 
@@ -141,9 +140,6 @@ namespace yieldfs
       const YIELD::platform::Path& match_file_name_prefix, 
       listdirCallback& callback 
     );
-
-    bool mktree( const YIELD::platform::Path& path, mode_t mode );
-    bool rmtree( const YIELD::platform::Path& path );
 
   private:
     class listdirCallback;

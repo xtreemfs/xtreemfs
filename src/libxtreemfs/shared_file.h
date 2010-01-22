@@ -9,15 +9,29 @@
 
 namespace xtreemfs
 {
+  class OpenFile;
+
+
   class SharedFile : public yidl::runtime::Object
   {
   public:
+    void close( OpenFile& open_file );
     auto_Volume get_parent_volume() const { return parent_volume; }
+    const YIELD::platform::Path& get_path() const { return path; }
+    
+
+    YIELD::platform::auto_File
+    open
+    ( 
+      org::xtreemfs::interfaces::FileCredentials& file_credentials 
+    );
 
     // yidl::runtime::Object
     YIDL_RUNTIME_OBJECT_PROTOTYPES( SharedFile, 0 );
 
     // YIELD::platform::File
+    yidl::runtime::auto_Object<YIELD::platform::Stat> getattr();
+
     bool
     getlk
     ( 
@@ -68,8 +82,6 @@ namespace xtreemfs
       int flags
     );
 
-    yidl::runtime::auto_Object<YIELD::platform::Stat> stat();
-
     bool 
     sync
     ( 
@@ -117,8 +129,8 @@ namespace xtreemfs
     );
 
 
-    org::xtreemfs::interfaces::OSDWriteResponse latest_osd_write_response;
     std::vector<org::xtreemfs::interfaces::Lock> locks;
+    uint32_t open_file_count;
     YIELD::platform::Path path;
     auto_Volume parent_volume;
     ssize_t selected_file_replica;

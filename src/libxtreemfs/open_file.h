@@ -20,11 +20,9 @@ namespace xtreemfs
     size_t getpagesize();
 
   private:
-    friend class Volume;
-    friend class XCapTimer;
-
+    friend class SharedFile;
     class XCapTimer;
-
+    friend class XCapTimer;      
 
     OpenFile
     (

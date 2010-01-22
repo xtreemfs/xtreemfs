@@ -1,4 +1,4 @@
-// Revision: 1945
+// Revision: 1953
 
 #include "yield/platform.h"
 using namespace YIELD::platform;
@@ -405,23 +405,18 @@ size_t File::getpagesize()
   return ::getpagesize();
 #endif
 }
-bool File::getxattr( const std::string& name, std::string& out_value )
+auto_Stat File::getattr()
 {
-#ifdef YIELD_HAVE_XATTR_H
-  ssize_t value_len = FGETXATTR( fd, name.c_str(), NULL, 0 );
-  if ( value_len != -1 )
-  {
-    char* value = new char[value_len];
-    FGETXATTR( fd, name.c_str(), value, value_len );
-    out_value.assign( value, value_len );
-    delete [] value;
-    return true;
-  }
-  else
-    return false;
+#ifdef _WIN32
+  BY_HANDLE_FILE_INFORMATION by_handle_file_information;
+  if ( GetFileInformationByHandle( fd, &by_handle_file_information ) != 0 )
+    return new Stat( by_handle_file_information );
 #else
-  return false;
+  struct stat stbuf;
+  if ( fstat( fd, &stbuf ) != -1 )
+    return new Stat( stbuf );
 #endif
+  return NULL;
 }
 bool File::getlk( bool exclusive, uint64_t offset, uint64_t length )
 {
@@ -438,6 +433,24 @@ bool File::getlk( bool exclusive, uint64_t offset, uint64_t length )
     return flock_.l_type != F_UNLCK;
   else
     return false;
+#endif
+}
+bool File::getxattr( const std::string& name, std::string& out_value )
+{
+#ifdef YIELD_HAVE_XATTR_H
+  ssize_t value_len = FGETXATTR( fd, name.c_str(), NULL, 0 );
+  if ( value_len != -1 )
+  {
+    char* value = new char[value_len];
+    FGETXATTR( fd, name.c_str(), value, value_len );
+    out_value.assign( value, value_len );
+    delete [] value;
+    return true;
+  }
+  else
+    return false;
+#else
+  return false;
 #endif
 }
 bool File::listxattr( std::vector<std::string>& out_names )
@@ -604,16 +617,7 @@ bool File::setxattr
 }
 auto_Stat File::stat()
 {
-#ifdef _WIN32
-  BY_HANDLE_FILE_INFORMATION by_handle_file_information;
-  if ( GetFileInformationByHandle( fd, &by_handle_file_information ) != 0 )
-    return new Stat( by_handle_file_information );
-#else
-  struct stat stbuf;
-  if ( fstat( fd, &stbuf ) != -1 )
-    return new Stat( stbuf );
-#endif
-  return NULL;
+  return getattr();
 }
 bool File::sync()
 {
@@ -986,9 +990,9 @@ MemoryMappedFile::open( const Path& path )
   return open
          (
            path,
-           File::DEFAULT_FLAGS,
-           File::DEFAULT_MODE,
-           File::DEFAULT_ATTRIBUTES,
+           File::FLAGS_DEFAULT,
+           File::MODE_DEFAULT,
+           File::ATTRIBUTES_DEFAULT,
            0
           );
 }
@@ -999,8 +1003,8 @@ MemoryMappedFile::open( const Path& path, uint32_t flags )
          (
            path,
            flags,
-           File::DEFAULT_MODE,
-           File::DEFAULT_ATTRIBUTES,
+           File::MODE_DEFAULT,
+           File::ATTRIBUTES_DEFAULT,
            0
          );
 }
@@ -1987,6 +1991,30 @@ auto_SharedLibrary SharedLibrary::open
 #pragma warning( push )
 #pragma warning( disable: 4100 )
 #endif
+Stat::Stat()
+:
+#ifndef _WIN32
+  dev( static_cast<dev_t>( -1 ) ),
+  ino( static_cast<ino_t>( -1 ) ),
+#endif
+  mode( static_cast<mode_t>( -1 ) ),
+#ifndef _WIN32
+  nlink( static_cast<nlink_t>( -1 ) ),
+  uid( static_cast<uid_t>( -1 ) ),
+  gid( static_cast<gid_t>( -1 ) ),
+  rdev( static_cast<dev_t>( -1 ) ),
+#endif
+  size( static_cast<uint64_t>( -1 ) ),
+  atime( static_cast<uint64_t>( 0 ) ),
+  mtime( static_cast<uint64_t>( 0 ) ),
+  ctime( static_cast<uint64_t>( 0 ) ),
+#ifdef _WIN32
+  attributes( static_cast<uint32_t>( -1 ) )
+#else
+  blksize( static_cast<blksize_t>( -1 ) ),
+  blocks( static_cast<blkcnt_t>( -1 ) )
+#endif
+{ }
 #ifdef _WIN32
 Stat::Stat
 (
@@ -2132,13 +2160,55 @@ uint32_t Stat::get_attributes() const
 #endif
 }
 #endif
+Stat& Stat::operator=( const Stat& other )
+{
+#ifndef _WIN32
+  set_dev( other.get_dev() );
+  set_ino( other.get_ino() );
+#endif
+  set_mode( other.get_mode() );
+#ifndef _WIN32
+  set_nlink( other.get_nlink() );
+  set_uid( other.get_uid() );
+  set_gid( other.get_gid() );
+  set_rdev( other.get_rdev() );
+#endif
+  set_size( other.get_size() );
+  set_atime( other.get_atime() );
+  set_mtime( other.get_mtime() );
+  set_ctime( other.get_ctime() );
+#ifdef _WIN32
+  set_attributes( other.get_attributes() );
+#else
+  set_blksize( other.get_blksize() );
+  set_blocks( other.get_blocks() );
+#endif
+  return *this;
+}
 bool Stat::operator==( const Stat& other ) const
 {
-  return get_mode() == other.get_mode() &&
+  return
+#ifndef _WIN32
+         get_dev() == other.get_dev() &&
+         get_ino() == other.get_ino() &&
+#endif
+         get_mode() == other.get_mode() &&
+#ifndef _WIN32
+         get_nlink() == other.get_nlink() &&
+         get_uid() == other.get_uid() &&
+         get_gid() == other.get_gid() &&
+         get_rdev() == other.get_rdev() &&
+#endif
          get_size() == other.get_size() &&
          get_atime() == other.get_atime() &&
          get_mtime() == other.get_mtime() &&
-         get_ctime() == other.get_ctime();
+         get_ctime() == other.get_ctime() &&
+#ifdef _WIN32
+         get_attributes() == other.get_attributes();
+#else
+         get_blksize() == other.get_blksize() &&
+         get_blocks() == other.get_blocks();
+#endif
 }
 Stat::operator std::string() const
 {
@@ -2201,6 +2271,69 @@ Stat::operator WIN32_FIND_DATA() const
   find_data.nFileSizeHigh = size.HighPart;
   find_data.dwFileAttributes = get_attributes();
   return find_data;
+}
+#endif
+#ifndef _WIN32
+void Stat::set_dev( dev_t dev )
+{
+  this->dev = dev;
+}
+void Stat::set_ino( ino_t ino )
+{
+  this->ino = ino;
+}
+#endif
+void Stat::set_mode( mode_t mode )
+{
+  this->mode = mode;
+}
+#ifndef _WIN32
+void Stat::set_nlink( nlink_t nlink )
+{
+  this->nlink = nlink;
+}
+void Stat::set_uid( uid_t uid )
+{
+  this->uid = uid;
+}
+void Stat::set_gid( gid_t gid )
+{
+  this->gid = gid;
+}
+void Stat::set_rdev( dev_t )
+{
+  this->rdev = rdev;
+}
+#endif
+void Stat::set_size( uint64_t size )
+{
+  this->size = size;
+}
+void Stat::set_atime( const Time& atime )
+{
+  this->atime = atime;
+}
+void Stat::set_mtime( const Time& mtime )
+{
+  this->mtime = mtime;
+}
+void Stat::set_ctime( const Time& ctime )
+{
+  this->ctime = ctime;
+}
+#ifdef _WIN32
+void Stat::set_attributes( uint32_t attributes )
+{
+  this->attributes = attributes;
+}
+#else
+void Stat::set_blksize( blksize_t blksize )
+{
+  this->blksize = blksize;
+}
+void Stat::set_blocks( blkcnt_t blocks )
+{
+  this->blocks = blocks;
 }
 #endif
 #ifdef _WIN32
@@ -3072,27 +3205,24 @@ bool Volume::access( const Path& path, int amode )
   return ::access( path, amode ) >= 0;
 #endif
 }
+#ifndef _WIN32
 bool Volume::chmod( const Path& path, mode_t mode )
 {
-#ifdef _WIN32
-  ::SetLastError( ERROR_NOT_SUPPORTED );
-  return false;
-#else
-  return ::chmod( path, mode ) != -1;
-#endif
+  auto_Stat stbuf( new Stat );
+  stbuf->set_mode( mode );
+  return setattr( path, stbuf, SETATTR_MODE );
 }
-bool Volume::chown( const Path& path, int32_t uid, int32_t gid )
+bool Volume::chown( const Path& path, uid_t uid, uid_t gid )
 {
-#ifdef _WIN32
-  ::SetLastError( ERROR_NOT_SUPPORTED );
-  return false;
-#else
-  return ::chown( path, uid, gid ) != -1;
-#endif
+  auto_Stat stbuf( new Stat );
+  stbuf->set_uid( uid );
+  stbuf->set_gid( gid );
+  return setattr( path, stbuf, SETATTR_UID|SETATTR_GID );
 }
+#endif
 auto_File Volume::creat( const Path& path )
 {
-  return creat( path, File::DEFAULT_MODE );
+  return creat( path, FILE_MODE_DEFAULT );
 }
 auto_File Volume::creat( const Path& path, mode_t mode )
 {
@@ -3100,36 +3230,34 @@ auto_File Volume::creat( const Path& path, mode_t mode )
 }
 bool Volume::exists( const Path& path )
 {
-#ifdef _WIN32
-  return GetFileAttributesW( path ) != INVALID_FILE_ATTRIBUTES;
-#else
-  struct stat stbuf;
-  return ::stat( path, &stbuf ) == 0;
-#endif
+  return getattr( path ) != NULL;
 }
 bool Volume::isdir( const Path& path )
 {
-#ifdef _WIN32
-  DWORD dwFileAttributes = GetFileAttributesW( path );
-  return dwFileAttributes != INVALID_FILE_ATTRIBUTES &&
-        ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
-          == FILE_ATTRIBUTE_DIRECTORY;
-#else
-  struct stat stbuf;
-  return ::stat( path, &stbuf ) == 0 && S_ISDIR( stbuf.st_mode );
-#endif
+  auto_Stat stbuf( getattr( path ) );
+  return stbuf != NULL && stbuf->ISDIR();
 }
 bool Volume::isfile( const Path& path )
 {
+  auto_Stat stbuf( getattr( path ) );
+  return stbuf != NULL && stbuf->ISREG();
+}
+auto_Stat Volume::getattr( const Path& path )
+{
 #ifdef _WIN32
-  DWORD dwFileAttributes = GetFileAttributesW( path );
-  return dwFileAttributes != INVALID_FILE_ATTRIBUTES &&
-         ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
-           != FILE_ATTRIBUTE_DIRECTORY;
+  WIN32_FIND_DATA find_data;
+  HANDLE hFindFirstFile = FindFirstFile( path, &find_data );
+  if ( hFindFirstFile != INVALID_HANDLE_VALUE )
+  {
+    FindClose( hFindFirstFile );
+    return new Stat( find_data );
+  }
 #else
   struct stat stbuf;
-  return ::stat( path, &stbuf ) == 0 && S_ISREG( stbuf.st_mode );
+  if ( ::stat( path, &stbuf ) != -1 )
+    return new Stat( stbuf );
 #endif
+  return NULL;
 }
 bool Volume::getxattr
 (
@@ -3219,7 +3347,7 @@ bool Volume::listxattr( const Path& path, std::vector<std::string>& out_names )
 }
 bool Volume::makedirs( const Path& path )
 {
-  return mktree( path, DEFAULT_DIRECTORY_MODE );
+  return mktree( path, DIRECTORY_MODE_DEFAULT );
 }
 bool Volume::makedirs( const Path& path, mode_t mode )
 {
@@ -3227,7 +3355,7 @@ bool Volume::makedirs( const Path& path, mode_t mode )
 }
 bool Volume::mkdir( const Path& path )
 {
-  return mkdir( path, DEFAULT_DIRECTORY_MODE );
+  return mkdir( path, DIRECTORY_MODE_DEFAULT );
 }
 bool Volume::mkdir( const Path& path, mode_t mode )
 {
@@ -3239,7 +3367,7 @@ bool Volume::mkdir( const Path& path, mode_t mode )
 }
 bool Volume::mktree( const Path& path )
 {
-  return mktree( path, DEFAULT_DIRECTORY_MODE );
+  return mktree( path, DIRECTORY_MODE_DEFAULT );
 }
 bool Volume::mktree( const Path& path, mode_t mode )
 {
@@ -3253,11 +3381,11 @@ bool Volume::mktree( const Path& path, mode_t mode )
 }
 auto_File Volume::open( const Path& path )
 {
-  return open( path, O_RDONLY, File::DEFAULT_MODE, 0 );
+  return open( path, O_RDONLY, FILE_MODE_DEFAULT, 0 );
 }
 auto_File Volume::open( const Path& path, uint32_t flags )
 {
-  return open( path, flags, File::DEFAULT_MODE, 0 );
+  return open( path, flags, FILE_MODE_DEFAULT, 0 );
 }
 auto_File Volume::open( const Path& path, uint32_t flags, mode_t mode )
 {
@@ -3462,13 +3590,79 @@ bool Volume::rmtree( const Path& path )
   else
     return unlink( path );
 }
-bool Volume::setattr( const Path& path, uint32_t file_attributes )
+bool Volume::setattr( const Path& path, auto_Stat stbuf, uint32_t to_set )
 {
 #ifdef _WIN32
-  return SetFileAttributes( path, file_attributes ) != 0;
+  if
+  (
+    ( to_set & SETATTR_ATIME ) == SETATTR_ATIME ||
+    ( to_set & SETATTR_MTIME ) == SETATTR_MTIME ||
+    ( to_set & SETATTR_CTIME ) == SETATTR_CTIME
+  )
+  {
+    auto_File file = open( path, O_WRONLY );
+    if ( file!= NULL )
+    {
+      FILETIME ftCreationTime = stbuf->get_ctime(),
+               ftLastAccessTime = stbuf->get_atime(),
+               ftLastWriteTime = stbuf->get_mtime();
+      return SetFileTime
+             (
+               *file,
+               ( to_set & SETATTR_CTIME ) == SETATTR_CTIME
+                 ? &ftCreationTime : NULL,
+               ( to_set & SETATTR_ATIME ) == SETATTR_ATIME
+                 ? &ftLastAccessTime : NULL,
+               ( to_set & SETATTR_MTIME ) == SETATTR_MTIME
+                 ? &ftLastWriteTime : NULL
+             ) != 0;
+    }
+    else
+      return false;
+  }
+  if ( ( to_set & SETATTR_ATTRIBUTES ) == SETATTR_ATTRIBUTES )
+  {
+    if ( SetFileAttributes( path, stbuf->get_attributes() ) == 0 )
+      return false;
+  }
 #else
-  return false;
+  if ( ( to_set & SETATTR_MODE ) == SETATTR_MODE )
+  {
+    if ( ::chmod( path, stbuf->get_mode() ) == -1 )
+      return false;
+  }
+  if ( ( to_set & SETATTR_UID ) == SETATTR_UID )
+  {
+    if ( ( to_set & SETATTR_GID ) == SETATTR_GID ) // Change both
+    {
+      if ( ::chown( path, stbuf->get_uid(), stbuf->get_gid() ) == -1 )
+        return false;
+    }
+    else // Only change the uid
+    {
+      if ( ::chown( path, stbuf->get_uid(), -1 ) == -1 )
+        return false;
+    }
+  }
+  else if ( ( to_set & SETATTR_GID ) == SETATTR_GID ) // Only change the gid
+  {
+    if ( ::chown( path, -1, stbuf->get_gid() ) == -1 )
+      return false;
+  }
+  if
+  (
+    ( to_set & SETATTR_ATIME ) == SETATTR_ATIME ||
+    ( to_set & SETATTR_MTIME ) == SETATTR_MTIME
+  )
+  {
+    struct timeval tv[2];
+    tv[0] = stbuf->get_atime();
+    tv[1] = stbuf->get_mtime();
+    if ( ::utimes( path, tv ) == -1 )
+      return false;
+  }
 #endif
+  return true;
 }
 bool
 Volume::setxattr
@@ -3495,22 +3689,9 @@ Volume::setxattr
 #endif
   return false;
 }
-yidl::runtime::auto_Object<Stat> Volume::stat( const Path& path )
+auto_Stat Volume::stat( const Path& path )
 {
-#ifdef _WIN32
-  WIN32_FIND_DATA find_data;
-  HANDLE hFindFirstFile = FindFirstFile( path, &find_data );
-  if ( hFindFirstFile != INVALID_HANDLE_VALUE )
-  {
-    FindClose( hFindFirstFile );
-    return new Stat( find_data );
-  }
-#else
-  struct stat stbuf;
-  if ( ::stat( path, &stbuf ) != -1 )
-    return new Stat( stbuf );
-#endif
-  return NULL;
+  return getattr( path );
 }
 bool Volume::statvfs( const Path& path, struct statvfs& buffer )
 {
@@ -3557,7 +3738,7 @@ bool Volume::symlink( const Path& old_path, const Path& new_path )
 }
 bool Volume::touch( const Path& path )
 {
-  return touch( path, File::DEFAULT_MODE );
+  return touch( path, FILE_MODE_DEFAULT );
 }
 bool Volume::touch( const Path& path, mode_t mode )
 {
@@ -3567,7 +3748,7 @@ bool Volume::touch( const Path& path, mode_t mode )
 bool Volume::truncate( const Path& path, uint64_t new_size )
 {
 #ifdef _WIN32
-  auto_File file = Volume::open( path, O_CREAT|O_WRONLY, File::DEFAULT_MODE );
+  auto_File file = Volume::open( path, O_CREAT|O_WRONLY, FILE_MODE_DEFAULT );
   if ( file!= NULL )
   {
     file->truncate( new_size );
@@ -3588,7 +3769,20 @@ bool Volume::unlink( const Path& path )
 #endif
 }
 bool
-Volume::utimens
+Volume::utime
+(
+  const Path& path,
+  const Time& atime,
+  const Time& mtime
+)
+{
+  auto_Stat stbuf = new Stat;
+  stbuf->set_atime( atime );
+  stbuf->set_mtime( mtime );
+  return setattr( path, stbuf, SETATTR_ATIME|SETATTR_MTIME );
+}
+bool
+Volume::utime
 (
   const Path& path,
   const Time& atime,
@@ -3596,29 +3790,11 @@ Volume::utimens
   const Time& ctime
 )
 {
-#ifdef _WIN32
-  auto_File file = open( path, O_WRONLY );
-  if ( file!= NULL )
-  {
-    FILETIME ftCreationTime = ctime,
-             ftLastAccessTime = atime,
-             ftLastWriteTime = mtime;
-    return SetFileTime
-           (
-             *file,
-             ctime != 0 ? &ftCreationTime : NULL,
-             atime != 0 ? &ftLastAccessTime : NULL,
-             mtime != 0 ? &ftLastWriteTime : NULL
-           ) != 0;
-  }
-  else
-    return false;
-#else
-  struct timeval tv[2];
-  tv[0] = atime;
-  tv[1] = mtime;
-  return ::utimes( path, tv ) != -1;
-#endif
+  auto_Stat stbuf = new Stat;
+  stbuf->set_atime( atime );
+  stbuf->set_mtime( mtime );
+  stbuf->set_ctime( ctime );
+  return setattr( path, stbuf, SETATTR_ATIME|SETATTR_MTIME|SETATTR_CTIME );
 }
 Path Volume::volname( const Path& path )
 {
@@ -3627,17 +3803,15 @@ Path Volume::volname( const Path& path )
   path.abspath().split_all( path_parts );
   if ( !path_parts.empty() )
   {
-    Path root_dir_path
-         (
-           static_cast<const std::string&>( path_parts[0] ) +
-           PATH_SEPARATOR_STRING
-         );
-    wchar_t volume_name[PATH_MAX], file_system_name[PATH_MAX];
+    std::string root_dir_path( path_parts[0] );
+    root_dir_path.append( PATH_SEPARATOR_STRING );
+    char volume_name[PATH_MAX],
+         file_system_name[PATH_MAX];
     if
     (
-      GetVolumeInformation
+      GetVolumeInformationA
       (
-        root_dir_path,
+        root_dir_path.c_str(),
         volume_name,
         PATH_MAX,
         NULL,
@@ -3646,13 +3820,11 @@ Path Volume::volname( const Path& path )
         file_system_name,
         PATH_MAX
       ) != 0
+      &&
+      strnlen( volume_name, PATH_MAX ) > 0
     )
-    {
-      if ( wcsnlen( volume_name, PATH_MAX ) > 0 )
-        return Path( volume_name );
-      else
-        return static_cast<const std::string&>( path_parts[0] );
-    }
+      return Path( volume_name );
+    return root_dir_path;
   }
 #endif
   return Path();

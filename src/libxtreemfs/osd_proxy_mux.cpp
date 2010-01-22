@@ -2,7 +2,6 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/osd_proxy_mux.h"
-#include "policy_container.h"
 using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
@@ -179,6 +178,35 @@ private:
 };
 
 
+auto_OSDProxyMux
+OSDProxyMux::create
+( 
+  auto_DIRProxy dir_proxy,
+  uint16_t concurrency_level,
+  uint32_t flags,
+  YIELD::platform::auto_Log log,
+  const YIELD::platform::Time& operation_timeout,
+  uint8_t reconnect_tries_max,
+  YIELD::ipc::auto_SSLContext ssl_context,
+  auto_UserCredentialsCache user_credentials_cache 
+)
+{
+  if ( user_credentials_cache == NULL )
+    user_credentials_cache = new UserCredentialsCache;
+
+  return new OSDProxyMux
+  ( 
+    concurrency_level,
+    dir_proxy, 
+    flags, 
+    log, 
+    operation_timeout, 
+    reconnect_tries_max, 
+    ssl_context,
+    user_credentials_cache
+  );
+}
+
 OSDProxyMux::OSDProxyMux
 ( 
   uint16_t concurrency_level,
@@ -187,7 +215,8 @@ OSDProxyMux::OSDProxyMux
   YIELD::platform::auto_Log log, 
   const YIELD::platform::Time& operation_timeout, 
   uint8_t reconnect_tries_max,
-  YIELD::ipc::auto_SSLContext ssl_context 
+  YIELD::ipc::auto_SSLContext ssl_context,
+  auto_UserCredentialsCache user_credentials_cache
 )
   : concurrency_level( concurrency_level ), 
     dir_proxy( dir_proxy ),     
@@ -195,7 +224,8 @@ OSDProxyMux::OSDProxyMux
     log( log ), 
     operation_timeout( operation_timeout ), 
     reconnect_tries_max( reconnect_tries_max ),
-    ssl_context( ssl_context )
+    ssl_context( ssl_context ),
+    user_credentials_cache( user_credentials_cache )
 {
   osd_proxy_stage_group = new YIELD::concurrency::SEDAStageGroup;
 }
@@ -320,7 +350,8 @@ auto_OSDProxy OSDProxyMux::getOSDProxy( const std::string& osd_uuid )
           log, 
           operation_timeout, 
           reconnect_tries_max, 
-          ssl_context 
+          ssl_context,
+          user_credentials_cache
         ).release();
 
         osd_proxy_stage_group->createStage( osd_proxy->incRef() );
@@ -337,7 +368,8 @@ auto_OSDProxy OSDProxyMux::getOSDProxy( const std::string& osd_uuid )
           log, 
           operation_timeout, 
           reconnect_tries_max, 
-          ssl_context 
+          ssl_context,
+          user_credentials_cache
         ).release();
 
         osd_proxy_stage_group->createStage( osd_proxy->incRef() );

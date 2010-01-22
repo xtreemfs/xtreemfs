@@ -103,9 +103,9 @@ build_env.Library( "../../lib/xtreemfs", (
     r"../../src/libxtreemfs/osd_proxy.cpp",
     r"../../src/libxtreemfs/osd_proxy_mux.cpp",
     r"../../src/libxtreemfs/path.cpp",
-    r"../../src/libxtreemfs/policy_container.cpp",
     r"../../src/libxtreemfs/proxy.cpp",
     r"../../src/libxtreemfs/proxy_exception_response.cpp",
     r"../../src/libxtreemfs/shared_file.cpp",
     r"../../src/libxtreemfs/stat.cpp",
+    r"../../src/libxtreemfs/user_credentials_cache.cpp",
     r"../../src/libxtreemfs/volume.cpp" ) )

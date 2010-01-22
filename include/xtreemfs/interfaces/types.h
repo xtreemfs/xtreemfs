@@ -25,7 +25,7 @@ namespace org
         virtual ~StringSet() { }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( StringSet, 2010011912 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( StringSet, 2010012114 );
 
         // yidl::Sequence
         size_t get_size() const { return size(); }
@@ -53,7 +53,7 @@ namespace org
         bool operator==( const UserCredentials& other ) const { return user_id == other.user_id && group_ids == other.group_ids && password == other.password; }
 
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( UserCredentials, 2010011913 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( UserCredentials, 2010012115 );
 
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "user_id", 0, user_id ); marshaller.writeSequence( "group_ids", 0, group_ids ); marshaller.writeString( "password", 0, password ); }

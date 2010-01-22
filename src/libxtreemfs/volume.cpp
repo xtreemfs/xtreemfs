@@ -41,7 +41,8 @@ Volume::Volume
   auto_MRCProxy mrc_proxy, 
   const std::string& name,
   auto_OSDProxyMux osd_proxy_mux, 
-  YIELD::concurrency::auto_StageGroup stage_group, 
+  YIELD::concurrency::auto_StageGroup stage_group,
+  auto_UserCredentialsCache user_credentials_cache,
   const YIELD::platform::Path& vivaldi_coordinates_file_path 
 )
   : dir_proxy( dir_proxy ), 
@@ -50,7 +51,8 @@ Volume::Volume
     mrc_proxy( mrc_proxy ), 
     name( name ), 
     osd_proxy_mux( osd_proxy_mux ),
-    stage_group( stage_group ), 
+    stage_group( stage_group ),
+    user_credentials_cache( user_credentials_cache ),
     vivaldi_coordinates_file_path( vivaldi_coordinates_file_path )
 {
   uuid = YIELD::ipc::UUID();
@@ -59,41 +61,6 @@ Volume::Volume
 bool Volume::access( const YIELD::platform::Path&, int )
 {
   return true;
-
-  //VOLUME_OPERATION_BEGIN( access )
-  //{
-  //  // return mrc_proxy->access( Path( this->name, path ), amode );
-  //}
-  //VOLUME_OPERATION_END( access );
-  //return false;
-}
-
-bool Volume::chmod( const YIELD::platform::Path& path, mode_t mode )
-{
-  // If metadata caching enabled: look up stat; if exists, set_mode
-  // If disabled or not exists, write through
-
-  VOLUME_OPERATION_BEGIN( chmod )
-  {
-    mrc_proxy->chmod( Path( this->name, path ), mode );
-    return true;
-  }
-  VOLUME_OPERATION_END( chmod )
-  return false;
-}
-
-bool Volume::chown( const YIELD::platform::Path& path, int uid, int gid )
-{
-  // If metadata caching enabled: look up stat; if exists, set_uid and set_gid
-  // If disabled or not exists, write through  
-
-  VOLUME_OPERATION_BEGIN( chown )
-  {
-    mrc_proxy->chown( Path( this->name, path ), uid, gid );
-    return true;
-  }
-  VOLUME_OPERATION_END( chown );
-  return false;
 }
 
 auto_Volume Volume::create
@@ -109,6 +76,8 @@ auto_Volume Volume::create
   const YIELD::platform::Path& vivaldi_coordinates_file_path 
 )
 {
+  auto_UserCredentialsCache user_credentials_cache( new UserCredentialsCache );
+
   auto_DIRProxy dir_proxy = DIRProxy::create
   ( 
     dir_uri,
@@ -117,7 +86,8 @@ auto_Volume Volume::create
     log, 
     proxy_operation_timeout, 
     proxy_reconnect_tries_max, 
-    proxy_ssl_context 
+    proxy_ssl_context,
+    user_credentials_cache
   );
 
   YIELD::ipc::auto_URI mrc_uri; 
@@ -136,7 +106,8 @@ auto_Volume Volume::create
     proxy_operation_timeout, 
     "", 
     proxy_reconnect_tries_max, 
-    proxy_ssl_context 
+    proxy_ssl_context,
+    user_credentials_cache
   );
 
   org::xtreemfs::interfaces::Stat stbuf;
@@ -150,7 +121,8 @@ auto_Volume Volume::create
     log, 
     proxy_operation_timeout, 
     proxy_reconnect_tries_max, 
-    proxy_ssl_context 
+    proxy_ssl_context,
+    user_credentials_cache
   );
 
   YIELD::concurrency::auto_StageGroup stage_group = 
@@ -167,15 +139,33 @@ auto_Volume Volume::create
     name, 
     osd_proxy_mux, 
     stage_group, 
-    vivaldi_coordinates_file_path 
+    user_credentials_cache,
+    vivaldi_coordinates_file_path
   );
+}
+
+YIELD::platform::auto_Stat Volume::getattr( const YIELD::platform::Path& path )
+{
+  VOLUME_OPERATION_BEGIN( stat )
+  {
+    return getattr( Path( this->name, path ) );
+  }
+  VOLUME_OPERATION_END( stat );
+  return NULL;
+}
+
+YIELD::platform::auto_Stat Volume::getattr( const Path& path )
+{
+  // If metadata caching, look up
+  org::xtreemfs::interfaces::Stat stbuf;
+  mrc_proxy->getattr( path, stbuf );
+  return new Stat( stbuf, *user_credentials_cache );
 }
 
 auto_SharedFile
 Volume::get_shared_file
 ( 
-  const YIELD::platform::Path& path,
-  bool create
+  const YIELD::platform::Path& path
 )
 {
   SharedFile* shared_file;
@@ -186,19 +176,14 @@ Volume::get_shared_file
     = shared_files.find( path );
 
   if ( shared_file_i != shared_files.end() )
-  {
     shared_file = shared_file_i->second;
-    shared_file->incRef();
-  }
-  else if ( create )
+  else  
   {
-    // TODO: pass in a stat here if we have one cached
     shared_file = new SharedFile( incRef(), path );
-    shared_file->incRef();
     shared_files[path] = shared_file;
   }
-  else
-    shared_file = NULL;
+
+  shared_file->incRef();
 
   shared_files_lock.release();
 
@@ -333,7 +318,7 @@ bool Volume::mkdir( const YIELD::platform::Path& path, mode_t mode )
 
 YIELD::platform::auto_File Volume::open
 ( 
-  const YIELD::platform::Path& _path, 
+  const YIELD::platform::Path& path, 
   uint32_t flags, 
   mode_t mode, 
   uint32_t attributes 
@@ -341,8 +326,6 @@ YIELD::platform::auto_File Volume::open
 {
   VOLUME_OPERATION_BEGIN( open )
   {
-    Path path( this->name, _path );
-
     uint32_t system_v_flags;
 
 #ifdef _WIN32
@@ -402,7 +385,7 @@ YIELD::platform::auto_File Volume::open
     org::xtreemfs::interfaces::FileCredentials file_credentials;
     mrc_proxy->open
     ( 
-      path, 
+      Path( this->name, path ), 
       system_v_flags, 
       mode, 
       attributes, 
@@ -410,7 +393,7 @@ YIELD::platform::auto_File Volume::open
       file_credentials 
     );
 
-    return new OpenFile( file_credentials, get_shared_file( path, true ) );
+    return get_shared_file( path )->open( file_credentials );
   }
   VOLUME_OPERATION_END( open );
   return NULL;
@@ -455,7 +438,11 @@ bool Volume::readdir
         !callback
         ( 
           ( *directory_entry_i ).get_name(),
-          new Stat( ( *directory_entry_i ).get_stbuf() )
+          new Stat
+          ( 
+            ( *directory_entry_i ).get_stbuf(), 
+            *user_credentials_cache
+          )
         )            
       )
         return false;
@@ -479,6 +466,18 @@ YIELD::platform::auto_Path Volume::readlink
   }
   VOLUME_OPERATION_END( readlink );
   return NULL;
+}
+
+void Volume::release( SharedFile& shared_file )
+{
+  shared_files_lock.acquire();
+  std::map<std::string, SharedFile*>::iterator shared_file_i 
+    = shared_files.find( shared_file.get_path() );
+  if ( shared_file_i == shared_files.end() ) 
+    DebugBreak();
+  shared_files.erase( shared_file_i );
+  shared_files_lock.release();
+  SharedFile::decRef( shared_file );
 }
 
 bool Volume::removexattr
@@ -546,17 +545,57 @@ bool Volume::rmdir( const YIELD::platform::Path& path )
 bool Volume::setattr
 ( 
   const YIELD::platform::Path& path, 
-  uint32_t file_attributes 
+  YIELD::platform::auto_Stat stbuf,
+  uint32_t to_set
 )
 {
   // If metadata caching: look up stat, set_attributes
   // If disabled or lookup fails, pass through
 
   VOLUME_OPERATION_BEGIN( setattr )
-  {
-    org::xtreemfs::interfaces::Stat stbuf;
-    stbuf.set_attributes( file_attributes );
-    mrc_proxy->setattr( Path( this->name, path ), stbuf );
+  {    
+    org::xtreemfs::interfaces::Stat xtreemfs_stbuf;
+
+    xtreemfs_stbuf.set_mode( stbuf->get_mode() );
+
+#ifdef _WIN32
+    xtreemfs_stbuf.set_attributes( stbuf->get_attributes() );
+#else
+    if 
+    ( 
+      ( to_set & YIELD::platform::Volume::SETATTR_UID ) 
+        == YIELD::platform::Volume::SETATTR_UID 
+      &&
+      ( to_set & YIELD::platform::Volume::SETATTR_GID ) 
+        == YIELD::platform::Volume::SETATTR_GID 
+    )
+    {
+      UserCredentials user_credentials;
+      user_credentials_cache->getUserCredentialsFrompasswd
+      ( 
+        stbuf->get_uid(),
+        stbuf->get_gid(),
+        user_credentials 
+      );
+
+      xtreemfs_stbuf.set_user_id( user_credentials.get_user_id() );
+      if ( !user_credentials.get_group_ids().empty() )
+        xtreemfs_stbuf.set_group_id( user_credentials.get_group_ids()[0] );
+    }
+#endif
+
+    xtreemfs_stbuf.set_size( stbuf->get_size() );
+    xtreemfs_stbuf.set_atime_ns( stbuf->get_atime() );
+    xtreemfs_stbuf.set_mtime_ns( stbuf->get_mtime() );
+    xtreemfs_stbuf.set_ctime_ns( stbuf->get_ctime() );
+
+    mrc_proxy->setattr
+    ( 
+      Path( this->name, path ), 
+      xtreemfs_stbuf,
+      to_set
+    );
+
     return true;
   }
   VOLUME_OPERATION_END( setattr );
@@ -633,24 +672,6 @@ bool Volume::setxattr
   }
   VOLUME_OPERATION_END( setxattr );
   return false;
-}
-
-YIELD::platform::auto_Stat Volume::stat( const YIELD::platform::Path& path )
-{
-  VOLUME_OPERATION_BEGIN( stat )
-  {
-    return stat( Path( this->name, path ) );
-  }
-  VOLUME_OPERATION_END( stat );
-  return NULL;
-}
-
-YIELD::platform::auto_Stat Volume::stat( const Path& path )
-{
-  // If metadata caching, look up
-  org::xtreemfs::interfaces::Stat stbuf;
-  mrc_proxy->getattr( path, stbuf );
-  return new Stat( stbuf );
 }
 
 bool Volume::statvfs
@@ -730,28 +751,7 @@ bool Volume::unlink( const YIELD::platform::Path& path )
   return false;
 }
 
-bool Volume::utimens
-( 
-  const YIELD::platform::Path& path, 
-  const YIELD::platform::Time& atime, 
-  const YIELD::platform::Time& mtime, 
-  const YIELD::platform::Time& ctime 
-)
-{
-  // If metadata caching: lookup stat, set atime, mtime, ctime
-  // If disabled or lookup fails, pass through
-
-  VOLUME_OPERATION_BEGIN( utimens )
-  {
-    mrc_proxy->utimens( Path( this->name, path ), atime, mtime, ctime );
-    return true;
-  }
-  VOLUME_OPERATION_END( utimens );
-  return false;
-}
-
 YIELD::platform::Path Volume::volname( const YIELD::platform::Path& )
 {
   return name;
 }
-

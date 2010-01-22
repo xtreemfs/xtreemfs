@@ -1,4 +1,5 @@
 #include "shared_file.h"
+#include "open_file.h"
 using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
@@ -107,9 +108,23 @@ SharedFile::SharedFile
 ) : parent_volume( parent_volume ),
     path( path )
 {
+  open_file_count = 0;
   selected_file_replica = 0;
 }
-      
+
+void SharedFile::close( xtreemfs::OpenFile& open_file )
+{
+  OpenFile::decRef( open_file );
+  --open_file_count;
+  if ( open_file_count == 0 )
+    parent_volume->release( *this );
+}
+
+YIELD::platform::auto_Stat SharedFile::getattr()
+{
+  return parent_volume->getattr( path );
+}
+
 bool
 SharedFile::getlk
 ( 
@@ -142,6 +157,16 @@ bool SharedFile::getxattr( const std::string& name, std::string& out_value )
 bool SharedFile::listxattr( std::vector<std::string>& out_names )
 {
   return parent_volume->listxattr( path, out_names );
+}
+
+YIELD::platform::auto_File
+SharedFile::open
+( 
+  org::xtreemfs::interfaces::FileCredentials& file_credentials 
+)
+{
+  ++open_file_count;
+  return new xtreemfs::OpenFile( file_credentials, incRef() );
 }
 
 ssize_t 
@@ -446,40 +471,28 @@ bool SharedFile::setxattr
   return parent_volume->setxattr( path, name, value, flags );
 }
 
-YIELD::platform::auto_Stat SharedFile::stat()
-{
-  //if ( !latest_osd_write_response.get_new_file_size().empty() )
-  //{
-  //  YIELD::platform::auto_Stat stbuf = parent_volume->stat( path );
-  //  stbuf->set_size( latest_osd_write_response.get_new_file_size().get_size() );
-  //  return stbuf;
-  //}
-  //else
-    return parent_volume->stat( path );
-}
-
 bool 
 SharedFile::sync
 ( 
   const org::xtreemfs::interfaces::FileCredentials& file_credentials 
 )
 {
-  SHARED_FILE_OPERATION_BEGIN;
+  //SHARED_FILE_OPERATION_BEGIN;
 
-  if ( !latest_osd_write_response.get_new_file_size().empty() )  
-  {
-    parent_volume->get_mrc_proxy()->xtreemfs_update_file_size
-    ( 
-      file_credentials.get_xcap(), 
-      latest_osd_write_response 
-    );
+  //if ( !latest_osd_write_response.get_new_file_size().empty() )
+  //{
+  //  parent_volume->get_mrc_proxy()->xtreemfs_update_file_size
+  //  ( 
+  //    file_credentials.get_xcap(), 
+  //    latest_osd_write_response 
+  //  );
 
-    latest_osd_write_response.set_new_file_size( NewFileSize() );
-  }  
+  //  latest_osd_write_response.set_new_file_size( NewFileSize() );
+  //}  
 
   return true;
 
-  SHARED_FILE_OPERATION_END;
+  //SHARED_FILE_OPERATION_END;
 }
 
 bool 
@@ -505,20 +518,20 @@ SharedFile::truncate
     osd_write_response 
   );
 
-  if 
-  ( 
-    ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != 
-     Volume::VOLUME_FLAG_CACHE_METADATA 
-  )
-  {
-    parent_volume->get_mrc_proxy()->xtreemfs_update_file_size
-    ( 
-      file_credentials.get_xcap(), 
-      osd_write_response 
-    );
-  }
-  else if ( osd_write_response > latest_osd_write_response )
-    latest_osd_write_response = osd_write_response;
+  //if 
+  //( 
+  //  ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != 
+  //   Volume::VOLUME_FLAG_CACHE_METADATA 
+  //)
+  //{
+  //  parent_volume->get_mrc_proxy()->xtreemfs_update_file_size
+  //  ( 
+  //    file_credentials.get_xcap(), 
+  //    osd_write_response 
+  //  );
+  //}
+  //else if ( osd_write_response > latest_osd_write_response )
+  //  latest_osd_write_response = osd_write_response;
 
   return true;
 
@@ -674,53 +687,53 @@ SharedFile::write
           expected_write_response_count << ".";
 #endif
 
-      if 
-      ( 
-        write_response.get_osd_write_response() > latest_osd_write_response 
-      )
-      {
-#ifdef _DEBUG
-        if 
-        ( 
-          ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-              Volume::VOLUME_FLAG_TRACE_FILE_IO 
-        )
-          log->getStream( YIELD::platform::Log::LOG_INFO ) << 
-            "xtreemfs::SharedFile: OSD write response is newer than latest known.";
-#endif
-
-        latest_osd_write_response = write_response.get_osd_write_response();
-      }
+//      if 
+//      ( 
+//        write_response.get_osd_write_response() > latest_osd_write_response 
+//      )
+//      {
+//#ifdef _DEBUG
+//        if 
+//        ( 
+//          ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+//              Volume::VOLUME_FLAG_TRACE_FILE_IO 
+//        )
+//          log->getStream( YIELD::platform::Log::LOG_INFO ) << 
+//            "xtreemfs::SharedFile: OSD write response is newer than latest known.";
+//#endif
+//
+//        latest_osd_write_response = write_response.get_osd_write_response();
+//      }
 
       // yidl::runtime::Object::decRef( write_response );
       write_responses.push_back( &write_response );
     }
 
-    if 
-    ( 
-      !latest_osd_write_response.get_new_file_size().empty() &&
-      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != 
-      Volume::VOLUME_FLAG_CACHE_METADATA 
-    )
-    {
-#ifdef _DEBUG
-      if 
-      ( 
-        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-            Volume::VOLUME_FLAG_TRACE_FILE_IO 
-      )
-        log->getStream( YIELD::platform::Log::LOG_INFO ) << 
-            "xtreemfs::SharedFile: flushing file size updates.";
-#endif
-
-      parent_volume->get_mrc_proxy()->xtreemfs_update_file_size
-      ( 
-        file_credentials.get_xcap(), 
-        latest_osd_write_response 
-      );
-
-      latest_osd_write_response.set_new_file_size( NewFileSize() );
-    }
+//    if 
+//    ( 
+//      !latest_osd_write_response.get_new_file_size().empty() &&
+//      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != 
+//      Volume::VOLUME_FLAG_CACHE_METADATA 
+//    )
+//    {
+//#ifdef _DEBUG
+//      if 
+//      ( 
+//        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+//            Volume::VOLUME_FLAG_TRACE_FILE_IO 
+//      )
+//        log->getStream( YIELD::platform::Log::LOG_INFO ) << 
+//            "xtreemfs::SharedFile: flushing file size updates.";
+//#endif
+//
+//      parent_volume->get_mrc_proxy()->xtreemfs_update_file_size
+//      ( 
+//        file_credentials.get_xcap(), 
+//        latest_osd_write_response 
+//      );
+//
+//      latest_osd_write_response.set_new_file_size( NewFileSize() );
+    //}
 
     ret = static_cast<ssize_t>( current_file_offset - offset );
   }

@@ -47,11 +47,15 @@ namespace xtreemfs
     org::xtreemfs::interfaces::VivaldiCoordinates 
       get_vivaldi_coordinates() const;
 
+    void release( SharedFile& );
+
     // yidl::runtime::Object
     YIDL_RUNTIME_OBJECT_PROTOTYPES( Volume, 0 );
 
     // YIELD::platform::Volume
     YIELD_PLATFORM_VOLUME_PROTOTYPES;
+
+    YIELD::platform::auto_Stat getattr( const Path& path );
 
     bool listdir
     ( 
@@ -69,8 +73,6 @@ namespace xtreemfs
       listdirCallback& callback 
     );
 
-    YIELD::platform::auto_Stat stat( const Path& path );
-
   private:
     Volume
     ( 
@@ -80,7 +82,8 @@ namespace xtreemfs
       auto_MRCProxy mrc_proxy, 
       const std::string& name, 
       auto_OSDProxyMux osd_proxy_mux, 
-      YIELD::concurrency::auto_StageGroup stage_group, 
+      YIELD::concurrency::auto_StageGroup stage_group,
+      auto_UserCredentialsCache user_credentials_cache,
       const YIELD::platform::Path& vivaldi_coordinates_file_path 
     );
 
@@ -97,14 +100,14 @@ namespace xtreemfs
     YIELD::platform::Mutex shared_files_lock;
     YIELD::concurrency::auto_StageGroup stage_group;
     std::string uuid;
+    auto_UserCredentialsCache user_credentials_cache;
     YIELD::platform::Path vivaldi_coordinates_file_path;
 
 
     yidl::runtime::auto_Object<SharedFile> 
     get_shared_file
     ( 
-      const YIELD::platform::Path& path,
-      bool create = false
+      const YIELD::platform::Path& path
     );
 
     void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );

@@ -1,5 +1,3 @@
-// Revision: 1944
-
 #include "yield/ipc.h"
 
 
@@ -5976,13 +5974,22 @@ YIELD::ipc::SSLContext::SSLContext( SSL_CTX* ctx )
   : ctx( ctx )
 { }
 YIELD::ipc::auto_SSLContext
-YIELD::ipc::SSLContext::create( SSL_METHOD* method )
+YIELD::ipc::SSLContext::create
+(
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+  const
+#endif
+  SSL_METHOD* method
+)
 {
   return new SSLContext( createSSL_CTX( method ) );
 }
 YIELD::ipc::auto_SSLContext
 YIELD::ipc::SSLContext::create
 (
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+  const
+#endif
   SSL_METHOD* method,
   const YIELD::platform::Path& pem_certificate_file_path,
   const YIELD::platform::Path& pem_private_key_file_path,
@@ -6025,6 +6032,9 @@ YIELD::ipc::SSLContext::create
 YIELD::ipc::auto_SSLContext
 YIELD::ipc::SSLContext::create
 (
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+  const
+#endif
   SSL_METHOD* method,
   const std::string& pem_certificate_str,
   const std::string& pem_private_key_str,
@@ -6090,6 +6100,9 @@ YIELD::ipc::SSLContext::create
 YIELD::ipc::auto_SSLContext
 YIELD::ipc::SSLContext::create
 (
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+  const
+#endif
   SSL_METHOD* method,
   const YIELD::platform::Path& pkcs12_file_path,
   const std::string& pkcs12_passphrase
@@ -6141,7 +6154,14 @@ YIELD::ipc::SSLContext::~SSLContext()
 #endif
 }
 #ifdef YIELD_HAVE_OPENSSL
-SSL_CTX* YIELD::ipc::SSLContext::createSSL_CTX( SSL_METHOD* method )
+SSL_CTX*
+YIELD::ipc::SSLContext::createSSL_CTX
+(
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+  const
+#endif
+  SSL_METHOD* method
+)
 {
   SSL_library_init();
   OpenSSL_add_all_algorithms();

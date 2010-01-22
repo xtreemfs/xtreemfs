@@ -26,32 +26,25 @@ namespace xtreemfs
   {
   public:
     static yidl::runtime::auto_Object<MRCProxy> 
-      create
-      ( 
-        const YIELD::ipc::URI& absolute_uri,
-        uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
-        uint32_t flags = 0,
-        YIELD::platform::auto_Log log = NULL,
-        const YIELD::platform::Time& operation_timeout = 
-          OPERATION_TIMEOUT_DEFAULT,
-        const char* password = "",
-        uint8_t reconnect_tries_max = 
-          RECONNECT_TRIES_MAX_DEFAULT,
-        YIELD::ipc::auto_SSLContext ssl_context = NULL 
-      );
-
-    // org::xtreemfs::interfaces::MRCInterface
-    void chown( const Path& path, int uid, int gid );
-    void getattr( const Path& path, org::xtreemfs::interfaces::Stat& stbuf );
-
-    void readdir
+    create
     ( 
-      const Path& path, 
-      org::xtreemfs::interfaces::DirectoryEntrySet& directory_entries 
+      const YIELD::ipc::URI& absolute_uri,
+      uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
+      uint32_t flags = 0,
+      YIELD::platform::auto_Log log = NULL,
+      const YIELD::platform::Time& operation_timeout = 
+        OPERATION_TIMEOUT_DEFAULT,
+      const char* password = "",
+      uint8_t reconnect_tries_max = 
+        RECONNECT_TRIES_MAX_DEFAULT,
+      YIELD::ipc::auto_SSLContext ssl_context = NULL,
+      auto_UserCredentialsCache 
+        user_credentials_cache = NULL
     );
 
     // Proxy
-    virtual void getCurrentUserCredentials
+    virtual void 
+    getCurrentUserCredentials
     ( 
       org::xtreemfs::interfaces::UserCredentials& out_user_credentials 
     );
@@ -66,12 +59,19 @@ namespace xtreemfs
       const std::string& password, 
       YIELD::ipc::auto_SocketAddress peername, 
       uint8_t reconnect_tries_max,
-      YIELD::ipc::auto_SocketFactory socket_factory 
+      YIELD::ipc::auto_SocketFactory socket_factory,
+      auto_UserCredentialsCache user_credentials_cache
     )
       : Proxy<MRCProxy, org::xtreemfs::interfaces::MRCInterface>
         ( 
-          concurrency_level, flags, log, operation_timeout, 
-          peername, reconnect_tries_max, socket_factory 
+          concurrency_level, 
+          flags, 
+          log, 
+          operation_timeout, 
+          peername, 
+          reconnect_tries_max, 
+          socket_factory,
+          user_credentials_cache
         ), 
         password( password )
     { }

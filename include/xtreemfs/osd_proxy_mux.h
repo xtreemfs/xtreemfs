@@ -17,31 +17,24 @@ namespace xtreemfs
   {
   public:
     static yidl::runtime::auto_Object<OSDProxyMux> 
-      create
-      ( 
-        yidl::runtime::auto_Object<DIRProxy> dir_proxy,
-        uint16_t concurrency_level 
-          = OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
-        uint32_t flags = 0,
-        YIELD::platform::auto_Log log = NULL,
-        const YIELD::platform::Time& operation_timeout 
-          = OSDProxy::OPERATION_TIMEOUT_DEFAULT,
-        uint8_t reconnect_tries_max 
-          = OSDProxy::RECONNECT_TRIES_MAX_DEFAULT,
-        YIELD::ipc::auto_SSLContext ssl_context = NULL 
-      )
-    {
-      return new OSDProxyMux
-      ( 
-        concurrency_level,
-        dir_proxy, 
-        flags, 
-        log, 
-        operation_timeout, 
-        reconnect_tries_max, 
-        ssl_context 
-      );
-    }
+    create
+    ( 
+      auto_DIRProxy dir_proxy,
+      uint16_t concurrency_level 
+        = OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
+      uint32_t flags 
+        = 0,
+      YIELD::platform::auto_Log log 
+        = NULL,
+      const YIELD::platform::Time& operation_timeout 
+        = OSDProxy::OPERATION_TIMEOUT_DEFAULT,
+      uint8_t reconnect_tries_max 
+        = OSDProxy::RECONNECT_TRIES_MAX_DEFAULT,
+      YIELD::ipc::auto_SSLContext ssl_context 
+        = NULL,
+      auto_UserCredentialsCache user_credentials_cache
+        = NULL
+    );
 
     // yidl::runtime::Object
     OSDProxyMux& incRef() { return yidl::runtime::Object::incRef( *this ); }
@@ -50,12 +43,13 @@ namespace xtreemfs
     OSDProxyMux
     ( 
       uint16_t concurrency_level,
-      yidl::runtime::auto_Object<DIRProxy> dir_proxy, 
+      auto_DIRProxy dir_proxy, 
       uint32_t flags,
       YIELD::platform::auto_Log log, 
       const YIELD::platform::Time& operation_timeout, 
       uint8_t reconnect_tries_max,
-      YIELD::ipc::auto_SSLContext ssl_context 
+      YIELD::ipc::auto_SSLContext ssl_context,
+      auto_UserCredentialsCache user_credentials_cache
     );
 
     ~OSDProxyMux();
@@ -67,6 +61,7 @@ namespace xtreemfs
     YIELD::platform::Time operation_timeout;
     uint8_t reconnect_tries_max;
     YIELD::ipc::auto_SSLContext ssl_context;
+    auto_UserCredentialsCache user_credentials_cache;
 
     typedef std::map<std::string, OSDProxy*> OSDProxyMap;
     OSDProxyMap osd_proxies;

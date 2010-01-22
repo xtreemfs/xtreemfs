@@ -18,7 +18,8 @@ DIRProxy::~DIRProxy()
     yidl::runtime::Object::decRef( *uuid_to_address_mappings_i->second );
 }
 
-auto_DIRProxy DIRProxy::create
+auto_DIRProxy 
+DIRProxy::create
 ( 
   const YIELD::ipc::URI& absolute_uri,
   uint16_t concurrency_level,
@@ -26,7 +27,8 @@ auto_DIRProxy DIRProxy::create
   YIELD::platform::auto_Log log,
   const YIELD::platform::Time& operation_timeout,
   uint8_t reconnect_tries_max,
-  YIELD::ipc::auto_SSLContext ssl_context 
+  YIELD::ipc::auto_SSLContext ssl_context,
+  auto_UserCredentialsCache user_credentials_cache
 )
 {
   YIELD::ipc::URI checked_uri( absolute_uri );
@@ -43,6 +45,9 @@ auto_DIRProxy DIRProxy::create
       checked_uri.set_port( ONCRPC_PORT_DEFAULT );
   }  
 
+  if ( user_credentials_cache == NULL )
+    user_credentials_cache = new UserCredentialsCache;
+
   return new DIRProxy
   ( 
     concurrency_level,
@@ -51,12 +56,16 @@ auto_DIRProxy DIRProxy::create
     operation_timeout, 
     YIELD::ipc::SocketAddress::create( checked_uri ), 
     reconnect_tries_max,
-    createSocketFactory( checked_uri, ssl_context ) 
+    createSocketFactory( checked_uri, ssl_context ),
+    user_credentials_cache
   );
 }
 
 yidl::runtime::auto_Object<AddressMappingSet> 
-  DIRProxy::getAddressMappingsFromUUID( const std::string& uuid )
+DIRProxy::getAddressMappingsFromUUID
+( 
+  const std::string& uuid 
+)
 {
   if ( uuid_to_address_mappings_cache_lock.try_acquire() )
   {
@@ -117,7 +126,10 @@ yidl::runtime::auto_Object<AddressMappingSet>
 
 
 YIELD::ipc::auto_URI 
-  DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_name )
+DIRProxy::getVolumeURIFromVolumeName
+( 
+  const std::string& volume_name 
+)
 {
   ServiceSet services;
   xtreemfs_service_get_by_name( volume_name, services );

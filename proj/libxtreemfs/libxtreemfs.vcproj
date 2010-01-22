@@ -230,6 +230,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\include\xtreemfs\user_credentials_cache.h"
+    >
+</File>
+<File
     RelativePath="..\..\include\xtreemfs\volume.h"
     >
 </File>
@@ -358,10 +362,6 @@
     >
 </File>
 <File
-    RelativePath="..\..\src\libxtreemfs\policy_container.h"
-    >
-</File>
-<File
     RelativePath="..\..\src\libxtreemfs\shared_file.h"
     >
 </File>
@@ -394,10 +394,6 @@
     >
 </File>
 <File
-    RelativePath="..\..\src\libxtreemfs\policy_container.cpp"
-    >
-</File>
-<File
     RelativePath="..\..\src\libxtreemfs\proxy.cpp"
     >
 </File>
@@ -411,6 +407,10 @@
 </File>
 <File
     RelativePath="..\..\src\libxtreemfs\stat.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\libxtreemfs\user_credentials_cache.cpp"
     >
 </File>
 <File
