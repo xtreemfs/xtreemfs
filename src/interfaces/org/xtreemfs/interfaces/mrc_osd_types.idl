@@ -5,7 +5,7 @@
 
 module org
 {
-  module xtreemfs # 2010011911
+  module xtreemfs # 2010012113
   {
     module interfaces
     {
@@ -24,14 +24,6 @@ module org
 
       typedef sequence<NewFileSize> NewFileSizeSet # 12;
 
-      struct OSDtoMRCData # 13
-      {
-        uint8_t caching_policy;
-        string data;
-      };
-
-      typedef sequence<OSDtoMRCData> OSDtoMRCDataSet # 14;
-
       enum OSDSelectionPolicyType
       {
         OSD_SELECTION_POLICY_FILTER_DEFAULT = 1000,
@@ -42,7 +34,7 @@ module org
         OSD_SELECTION_POLICY_SORT_DCMAP = 3000,
         OSD_SELECTION_POLICY_SORT_FQDN = 3001,
         OSD_SELECTION_POLICY_SORT_RANDOM = 3002,
-	    OSD_SELECTION_POLICY_SORT_VIVALDI = 3003
+	      OSD_SELECTION_POLICY_SORT_VIVALDI = 3003
       };
       
       enum ReplicaSelectionPolicyType
@@ -53,7 +45,6 @@ module org
       struct OSDWriteResponse # 17
       {
         NewFileSizeSet new_file_size;
-        OSDtoMRCDataSet opaque_data;
       };
 
       enum StripingPolicyType

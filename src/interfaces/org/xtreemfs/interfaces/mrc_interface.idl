@@ -6,7 +6,7 @@
 
 module org
 {
-  module xtreemfs # 2010011911
+  module xtreemfs # 2010012113
   {
     module interfaces
     {
@@ -16,8 +16,8 @@ module org
         uint64_t ino; // The file id
         uint32_t mode;
         uint32_t nlink;
-        uint32_t uid; // Placeholder, filled in on the client side
-        uint32_t gid; // Placeholder, filled in on the client side
+        string user_id;
+        string group_id;
         // No integer rdev
         uint64_t size;
         uint64_t atime_ns;
@@ -26,8 +26,6 @@ module org
         uint32_t blksize;
 
         // XtreemFS-specific attributes
-        string user_id;
-        string group_id;
         uint32_t truncate_epoch;
 
         // Win32-specific attributes
@@ -76,31 +74,36 @@ module org
         const uint32_t ONCRPCG_PORT_DEFAULT = 32636;
         const uint32_t ONCRPCS_PORT_DEFAULT = 32636;
         const uint32_t ONCRPCU_PORT_DEFAULT = 32636;
+        // Flags passed in setattr's to_set
+        const uint32_t SETATTR_MODE = 1;
+        const uint32_t SETATTR_UID = 2;
+        const uint32_t SETATTR_GID = 4;
+        const uint32_t SETATTR_SIZE = 8;
+        const uint32_t SETATTR_ATIME = 16;
+        const uint32_t SETATTR_MTIME = 32;
+        const uint32_t SETATTR_CTIME = 64;
+        const uint32_t SETATTR_ATTRIBUTES = 128;
 
         // POSIX/FUSE operations
-        boolean access( string path, uint32_t mode ) # 1;
-        void chmod( string path, uint32_t mode ) # 2;
-        void chown( string path, string user_id, string group_id ) # 3;
-        void close( VivaldiCoordinates client_vivaldi_coordinates, XCap write_xcap ) # 4;
-        void creat( string path, uint32_t mode ) # 5;
-        void ftruncate( XCap write_xcap, out XCap truncate_xcap ) # 6;
-        void getattr( string path, out Stat stbuf ) # 7;
-        void getxattr( string path, string name, out string value ) # 8;
-        void link( string target_path, string link_path ) # 9;
-        void listxattr( string path, out StringSet names ) # 10;
-        void mkdir( string path, uint32_t mode ) # 11;
-        void open( string path, uint32_t flags, uint32_t mode, uint32_t attributes, VivaldiCoordinates client_vivaldi_coordinates, out FileCredentials file_credentials ) # 12;
-        void readdir( string path, out DirectoryEntrySet directory_entries ) # 13;
-        void readlink( string path, out string link_target_path ) # 14;
-        void removexattr( string path, string name ) # 15;
-        void rename( string source_path, string target_path, out FileCredentialsSet file_credentials ) # 16;
-        void rmdir( string path ) # 17;
-        void setattr( string path, Stat stbuf ) # 18;
-        void setxattr( string path, string name, string value, int flags ) # 19;
-        void statvfs( string volume_name, out StatVFS stbuf ) # 20;
-        void symlink( string target_path, string link_path ) # 21;
-        void unlink( string path, out FileCredentialsSet file_credentials ) # 22;
-        void utimens( string path, uint64_t atime_ns, uint64_t mtime_ns, uint64_t ctime_ns ) # 23;
+        void close( VivaldiCoordinates client_vivaldi_coordinates, XCap write_xcap ) # 1;
+        void fsetattr( XCap xcap, Stat stbuf ) # 2;
+        void ftruncate( XCap write_xcap, out XCap truncate_xcap ) # 3;
+        void getattr( string path, out Stat stbuf ) # 4;
+        void getxattr( string path, string name, out string value ) # 5;
+        void link( string target_path, string link_path ) # 6;
+        void listxattr( string path, out StringSet names ) # 7;
+        void mkdir( string path, uint32_t mode ) # 8;
+        void open( string path, uint32_t flags, uint32_t mode, uint32_t attributes, VivaldiCoordinates client_vivaldi_coordinates, out FileCredentials file_credentials ) # 9;
+        void readdir( string path, out DirectoryEntrySet directory_entries ) # 10;
+        void readlink( string path, out string link_target_path ) # 11;
+        void removexattr( string path, string name ) # 12;
+        void rename( string source_path, string target_path, out FileCredentialsSet file_credentials ) # 13;
+        void rmdir( string path ) # 14;
+        void setattr( string path, Stat stbuf, uint32_t to_set ) # 15;
+        void setxattr( string path, string name, string value, int flags ) # 16;
+        void statvfs( string volume_name, out StatVFS stbuf ) # 17;
+        void symlink( string target_path, string link_path ) # 18;
+        void unlink( string path, out FileCredentialsSet file_credentials ) # 19;
 
         // XtreemFS-specific operations
         void xtreemfs_checkpoint() # 30;
@@ -108,7 +111,7 @@ module org
         void xtreemfs_dump_database( string dump_file ) # 32;
         void xtreemfs_get_suitable_osds( string file_id, uint32_t num_osds, out StringSet osd_uuids ) # 33;
         void xtreemfs_internal_debug( string operation, out string result ) # 34;
-        void xtreemfs_listdir( string path, out StringSet names ) # 36;
+        void xtreemfs_listdir( string path, out StringSet names ) # 36; // Optimization for metadata caching
         void xtreemfs_lsvol( out VolumeSet volumes ) # 35;
         void xtreemfs_mkvol( Volume volume ) # 37;
         void xtreemfs_renew_capability( in XCap old_xcap, out XCap renewed_xcap ) # 38;
@@ -120,7 +123,6 @@ module org
         void xtreemfs_restore_file( string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size ) # 44;
         void xtreemfs_rmvol( string volume_name ) # 45;
         void xtreemfs_shutdown() # 46;
-        void xtreemfs_update_file_size( XCap xcap, OSDWriteResponse osd_write_response ) # 47;
 
         // Exceptions
         exception ConcurrentModificationException # 50 { string stack_trace; };
