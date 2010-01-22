@@ -29,6 +29,7 @@ import java.security.NoSuchAlgorithmException;
 
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
+import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.XCap;
 
 /**
@@ -79,12 +80,12 @@ public class Capability {
      *            the shared secret to be used to sign the capability
      */
     public Capability(String fileId, int accessMode, int validity, long expires, String clientIdentity,
-        int epochNo, boolean replicateOnClose, String sharedSecret) {
+        int epochNo, boolean replicateOnClose, SnapConfig snapConfig, long snapTimestamp, String sharedSecret) {
         
         this.sharedSecret = sharedSecret;
         
         xcap = new XCap(accessMode, clientIdentity, expires, validity, fileId, replicateOnClose, null,
-            epochNo);
+            epochNo, snapConfig, snapTimestamp);
         
         final String sig = calcSignature();
         xcap.setServer_signature(sig);
@@ -170,6 +171,14 @@ public class Capability {
         return xcap.getReplicate_on_close();
     }
     
+    public SnapConfig getSnapConfig() {
+        return xcap.getSnap_config();
+    }
+    
+    public long getSnapTimestamp() {
+        return xcap.getSnap_timestamp();
+    }
+    
     /**
      * Returns a string representation of the capability.
      * 
@@ -187,7 +196,9 @@ public class Capability {
         // techniques
         
         String plainText = xcap.getFile_id() + Integer.toString(xcap.getAccess_mode())
-            + Long.toString(xcap.getExpire_time_s()) + Long.toString(xcap.getTruncate_epoch()) + sharedSecret;
+            + Long.toString(xcap.getExpire_time_s()) + Long.toString(xcap.getTruncate_epoch())
+            + Long.toString(xcap.getSnap_config().intValue()) + Long.toString(xcap.getSnap_timestamp())
+            + sharedSecret;
         
         try {
             MessageDigest md5 = MessageDigest.getInstance("MD5");

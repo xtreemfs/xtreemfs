@@ -67,18 +67,22 @@ import org.xtreemfs.mrc.metadata.FileMetadata;
 
 public class BabuDBVolumeManager implements VolumeManager {
     
-    private static final String                    VERSION_DB_NAME = "V";
+    private static final String                    VERSION_DB_NAME       = "V";
     
-    private static final int                       VERSION_INDEX   = 0;
+    private static final String                    SNAP_VERSIONS_DB_NAME = "snapVers";
     
-    private static final String                    VERSION_KEY     = "v";
+    private static final int                       VERSION_INDEX         = 0;
+    
+    private static final String                    VERSION_KEY           = "v";
     
     /** the volume database */
-    private BabuDB                            database;
+    private BabuDB                                 database;
     
-    /** the DB replication manager*/
-    private ReplicationManager                replMan;
-        
+    private Database                               snapVersionDB;
+    
+    /** the DB replication manager */
+    private ReplicationManager                     replMan;
+    
     /** maps the IDs of all locally known volumes to their managers */
     private final Map<String, StorageManager>      volsById;
     
@@ -87,7 +91,7 @@ public class BabuDBVolumeManager implements VolumeManager {
     
     private final Collection<VolumeChangeListener> listeners;
     
-    private final BabuDBConfig                config;
+    private final BabuDBConfig                     config;
     
     public BabuDBVolumeManager(MRCRequestDispatcher master, BabuDBConfig dbconfig) {
         volsById = new HashMap<String, StorageManager>();
@@ -112,6 +116,24 @@ public class BabuDBVolumeManager implements VolumeManager {
             throw new DatabaseException(exc);
         }
         
+        // check if the snapshot version DB exists; if not, make sure that it is
+        // created
+        if (snapVersionDB == null)
+            try {
+                snapVersionDB = database.getDatabaseManager().createDatabase(SNAP_VERSIONS_DB_NAME, 1);
+            } catch (BabuDBException exc) {
+                if (exc.getErrorCode() == ErrorCode.DB_EXISTS)
+                    try {
+                        snapVersionDB = database.getDatabaseManager().getDatabase(SNAP_VERSIONS_DB_NAME);
+                    } catch (BabuDBException exc2) {
+                        throw new DatabaseException(exc2);
+                    }
+                else
+                    throw new DatabaseException(exc);
+            }
+        
+        assert (snapVersionDB != null);
+        
         try {
             database.disableSlaveCheck();
             Database volDB = database.getDatabaseManager().createDatabase(VERSION_DB_NAME, 3);
@@ -122,7 +144,7 @@ public class BabuDBVolumeManager implements VolumeManager {
                     .putInt((int) VersionManagement.getMrcDataVersion()).array();
             BabuDBInsertGroup ig = volDB.createInsertGroup();
             ig.addInsert(VERSION_INDEX, VERSION_KEY.getBytes(), verBytes);
-            volDB.insert(ig,null).get();
+            volDB.insert(ig, null).get();
             
         } catch (Exception e) {
             
@@ -177,7 +199,8 @@ public class BabuDBVolumeManager implements VolumeManager {
                             .entrySet()) {
                         
                         // ignore the volume database
-                        if (dbEntry.getKey().equals("V"))
+                        if (dbEntry.getKey().equals(VERSION_DB_NAME)
+                            || dbEntry.getKey().equals(SNAP_VERSIONS_DB_NAME))
                             continue;
                         
                         BabuDBStorageManager sMan = new BabuDBStorageManager(database, dbEntry.getValue());
@@ -187,8 +210,22 @@ public class BabuDBVolumeManager implements VolumeManager {
                         volsByName.put(vol.getName(), sMan);
                         for (String snapName : sMan.getAllSnapshots()) {
                             String snapVolName = vol.getName() + SNAPSHOT_SEPARATOR + snapName;
+                            
+                            // retrieve the version time stamp from the snap
+                            // version database
+                            byte[] bytes = snapVersionDB.lookup(0, snapVolName.getBytes(), null).get();
+                            if (bytes == null)
+                                Logging
+                                        .logMessage(
+                                            Logging.LEVEL_ERROR,
+                                            Category.db,
+                                            this,
+                                            "no version mapping exists for snapshot %s; file contents may be corrupted",
+                                            snapVolName);
+                            long snaptime = bytes == null ? 0 : ByteBuffer.wrap(bytes).getLong();
+                            
                             volsByName.put(snapVolName, new BabuDBSnapshotStorageManager(database, vol
-                                    .getName(), vol.getId(), snapName));
+                                    .getName(), vol.getId(), snapName, snaptime));
                         }
                         
                     }
@@ -251,7 +288,7 @@ public class BabuDBVolumeManager implements VolumeManager {
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
         sMan.init(volumeName, fileAccessPolicyId, DEFAULT_OSD_POLICY, DEFAULT_REPL_POLICY,
             DEFAULT_AUTO_REPL_FACTOR, DEFAULT_AUTO_REPL_FULL, ownerId, owningGroupId, initialAccessMode, acl,
-            defaultStripingPolicy, update);
+            defaultStripingPolicy, DEFAULT_ALLOW_SNAPS, update);
         update.execute();
         
         for (VolumeChangeListener l : listeners)
@@ -271,8 +308,8 @@ public class BabuDBVolumeManager implements VolumeManager {
     }
     
     @Override
-    public void deleteVolume(String volumeId, DBAccessResultListener<Object> listener, 
-            Object context) throws DatabaseException, UserException {
+    public void deleteVolume(String volumeId, DBAccessResultListener<Object> listener, Object context)
+        throws DatabaseException, UserException {
         
         // check if the volume exists
         StorageManager sMan = getStorageManager(volumeId);
@@ -339,18 +376,33 @@ public class BabuDBVolumeManager implements VolumeManager {
             // check if the volume exists
             StorageManager sMan = getStorageManager(volumeId);
             
-            // if no snapshot name was passed, use the current timestamp as the
-            // name
+            if (!sMan.getVolumeInfo().isSnapshotsEnabled())
+                throw new UserException(ErrNo.EPERM, "snapshot operations are not allowed on this volume");
+            
+            // get the time for the snapshot; this will be needed to attach the
+            // snapshot to file content snapshots
+            long currentTime = TimeSync.getGlobalTime();
+            byte[] currentTimeAsBytes = ByteBuffer.wrap(new byte[Long.SIZE / 8]).putLong(currentTime).array();
+            
+            // if no snapshot name was passed, use the current time as the name
             if ("".equals(snapName))
-                snapName = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date(TimeSync
-                        .getGlobalTime()))
-                    + "";
+                snapName = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date(currentTime)) + "";
+            
+            // determine the unique identifier for the snapshot
+            String snapVolName = sMan.getVolumeInfo().getName() + SNAPSHOT_SEPARATOR + snapName;
+            
+            // update the snapshot version table in order to persistently store
+            // the snapshot time stamp
+            try {
+                snapVersionDB.singleInsert(0, snapVolName.getBytes(), currentTimeAsBytes, null).get();
+            } catch (BabuDBException exc2) {
+                throw new DatabaseException(exc2);
+            }
             
             // create the snapshot
             sMan.createSnapshot(snapName, parentId, dir.getFileName(), recursive);
-            String snapVolName = sMan.getVolumeInfo().getName() + SNAPSHOT_SEPARATOR + snapName;
             volsByName.put(snapVolName, new BabuDBSnapshotStorageManager(database, sMan.getVolumeInfo()
-                    .getName(), volumeId, snapName));
+                    .getName(), volumeId, snapName, currentTime));
             
         } catch (DatabaseException exc) {
             
@@ -370,9 +422,22 @@ public class BabuDBVolumeManager implements VolumeManager {
             // check if the volume exists
             StorageManager sMan = getStorageManager(volumeId);
             
+            if (!sMan.getVolumeInfo().isSnapshotsEnabled())
+                throw new UserException(ErrNo.EPERM, "snapshot operations are not allowed on this volume");
+            
+            // determine the unique identifier for the snapshot
+            String snapVolName = sMan.getVolumeInfo().getName() + SNAPSHOT_SEPARATOR + snapName;
+            
             // delete the snapshot
-            volsByName.remove(sMan.getVolumeInfo().getName() + SNAPSHOT_SEPARATOR + snapName);
+            volsByName.remove(snapVolName);
             sMan.deleteSnapshot(snapName);
+            
+            // update the snapshot version table
+            try {
+                snapVersionDB.singleInsert(0, snapVolName.getBytes(), null, null).get();
+            } catch (BabuDBException exc) {
+                throw new DatabaseException(exc);
+            }
             
         } catch (DatabaseException exc) {
             
@@ -382,14 +447,15 @@ public class BabuDBVolumeManager implements VolumeManager {
                 throw exc;
         }
     }
-     
+    
     @Override
     public String getDBVersion() {
         return BabuDB.BABUDB_VERSION;
     }
-
+    
     /*
      * (non-Javadoc)
+     * 
      * @see org.xtreemfs.mrc.database.VolumeManager#getReplicationManager()
      */
     @Override

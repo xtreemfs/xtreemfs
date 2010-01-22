@@ -114,6 +114,29 @@ public interface VolumeInfo {
     public long getNumDirs() throws DatabaseException;
     
     /**
+     * Checks whether this volume refers to a snapshot.
+     * 
+     * @return <code>true</code>, if the volume refers to a snapshot,
+     *         <code>false</code>, otherwise
+     */
+    public boolean isSnapVolume() throws DatabaseException;
+    
+    /**
+     * Checks whether snapshots are allowed for this volume.
+     * 
+     * @return <code>true</code>, if the volume allows snapshots,
+     *         <code>false</code>, otherwise
+     */
+    public boolean isSnapshotsEnabled() throws DatabaseException;
+    
+    /**
+     * Returns the time at which the volume was created in milliseconds since 1970
+     * 
+     * @return the creation time stamp in milliseconds since 1970
+     */
+    public long getCreationTime() throws DatabaseException;
+    
+    /**
      * Sets the volume's OSD selection policy.
      * 
      * @param osdPolicy
@@ -145,6 +168,14 @@ public interface VolumeInfo {
      *            the replication mode
      */
     public void setAutoReplFull(boolean full, AtomicDBUpdate update) throws DatabaseException;
+    
+    /**
+     * Specifies whether snapshots may be created on this volume.
+     * 
+     * @param allowSnaps
+     *            a flag specifying whether snapshots may be created
+     */
+    public void setAllowSnaps(boolean allowSnaps, AtomicDBUpdate update) throws DatabaseException;
     
     /**
      * Adds <code>diff</code> to the current volume size.

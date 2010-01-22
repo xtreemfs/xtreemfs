@@ -44,7 +44,6 @@ import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.NewFileSizeSet;
 import org.xtreemfs.interfaces.OSDWriteResponse;
-import org.xtreemfs.interfaces.OSDtoMRCDataSet;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.interfaces.XLocSet;
@@ -428,7 +427,7 @@ public class RandomAccessFile {
     public void forceFileSize(long newFileSize) throws IOException {
         NewFileSizeSet newfsset = new NewFileSizeSet();
         newfsset.add(new NewFileSize(newFileSize, credentials.getXcap().getTruncate_epoch()));
-        OSDWriteResponse wr = new OSDWriteResponse(newfsset, new OSDtoMRCDataSet());
+        OSDWriteResponse wr = new OSDWriteResponse(newfsset);
         parentVolume.storeFileSizeUpdate(fileId, wr);
         parentVolume.pushFileSizeUpdate(fileId);
     }

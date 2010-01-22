@@ -24,80 +24,56 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
-import org.xtreemfs.interfaces.MRCInterface.setattrRequest;
-import org.xtreemfs.interfaces.MRCInterface.setattrResponse;
-import org.xtreemfs.mrc.ErrorRecord;
+import org.xtreemfs.interfaces.MRCInterface.fsetattrRequest;
+import org.xtreemfs.interfaces.MRCInterface.fsetattrResponse;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.UserException;
-import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
-import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
 import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.database.VolumeManager;
 import org.xtreemfs.mrc.metadata.FileMetadata;
-import org.xtreemfs.mrc.utils.MRCHelper;
-import org.xtreemfs.mrc.utils.Path;
-import org.xtreemfs.mrc.utils.PathResolver;
+import org.xtreemfs.mrc.utils.MRCHelper.GlobalFileIdResolver;
 
 /**
  * Sets attributes of a file.
  * 
- * @author stender, bjko
+ * @author stender
  */
-public class SetattrOperation extends MRCOperation {
+public class FSetAttrOperation extends MRCOperation {
     
-    public SetattrOperation(MRCRequestDispatcher master) {
+    public FSetAttrOperation(MRCRequestDispatcher master) {
         super(master);
     }
     
     @Override
     public void startRequest(MRCRequest rq) throws Throwable {
         
-        final setattrRequest rqArgs = (setattrRequest) rq.getRequestArgs();
+        final fsetattrRequest rqArgs = (fsetattrRequest) rq.getRequestArgs();
         
-        final VolumeManager vMan = master.getVolumeManager();
-        final FileAccessManager faMan = master.getFileAccessManager();
+        Capability cap = new Capability(rqArgs.getXcap(), master.getConfig().getCapabilitySecret());
         
-        validateContext(rq);
+        // check whether the capability has a valid signature
+        if (!cap.hasValidSignature())
+            throw new UserException(ErrNo.EPERM, cap + " does not have a valid signature");
         
-        Path p = new Path(rqArgs.getPath());
+        // check whether the capability has expired
+        if (cap.hasExpired())
+            throw new UserException(ErrNo.EPERM, cap + " has expired");
         
-        StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
-        PathResolver res = new PathResolver(sMan, p);
+        // parse volume and file ID from global file ID
+        GlobalFileIdResolver idRes = new GlobalFileIdResolver(cap.getFileId());
         
-        // check whether the path prefix is searchable
-        faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
-                .getDetails().groupIds);
+        StorageManager sMan = master.getVolumeManager().getStorageManager(idRes.getVolumeId());
         
-        // check whether file exists
-        res.checkIfFileDoesNotExist();
-        
-        // retrieve and prepare the metadata to return
-        FileMetadata file = res.getFile();
-        
-        // if the file refers to a symbolic link, resolve the link
-        String target = sMan.getSoftlinkTarget(file.getId());
-        if (target != null) {
-            rqArgs.setPath(target);
-            p = new Path(target);
-            
-            // if the local MRC is not responsible, send a redirect
-            if (!vMan.hasVolume(p.getComp(0))) {
-                finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
-                    + target + " does not exist"));
-                return;
-            }
-            
-            sMan = vMan.getStorageManagerByName(p.getComp(0));
-            res = new PathResolver(sMan, p);
-            file = res.getFile();
-        }
+        FileMetadata file = sMan.getMetadata(idRes.getLocalFileId());
+        if (file == null)
+            throw new UserException(ErrNo.ENOENT, "file '" + cap.getFileId() + "' does not exist");        
         
         // determine which attributes to set
         boolean setMode = (rqArgs.getTo_set() & MRCInterface.SETATTR_MODE) == MRCInterface.SETATTR_MODE;
@@ -109,56 +85,10 @@ public class SetattrOperation extends MRCOperation {
         boolean setMtime = (rqArgs.getTo_set() & MRCInterface.SETATTR_MTIME) == MRCInterface.SETATTR_MTIME;
         boolean setAttributes = (rqArgs.getTo_set() & MRCInterface.SETATTR_ATTRIBUTES) == MRCInterface.SETATTR_ATTRIBUTES;
         
+        if (setMode || setUID || setGID || setAttributes)
+            throw new UserException(ErrNo.EINVAL, "setting modes, UIDs, GIDs and Win32 attributes not allowed");
+        
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
-        
-        // if MODE bit is set, peform 'chmod'
-        if (setMode) {
-            
-            // check whether the access mode may be changed
-            faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser,
-                rq.getDetails().groupIds);
-            
-            // change the access mode; only bits 0-11 may be changed
-            faMan.setPosixAccessMode(sMan, file, res.getParentDirId(), rq.getDetails().userId, rq
-                    .getDetails().groupIds, (file.getPerms() & 0xFFFFF800)
-                | (rqArgs.getStbuf().getMode() & 0x7FF), update);
-            
-            // update POSIX timestamps
-            MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, update);
-        }
-        
-        // if USER_ID or GROUP_ID are set, perform 'chown'
-        if (setUID || setGID) {
-            
-            // check whether the owner may be changed
-            
-            if (setUID) {
-                // if a UID is supposed to be set, restrict operation to root
-                // user
-                if (!rq.getDetails().superUser)
-                    throw new UserException(ErrNo.EPERM, "changing owners is restricted to superusers");
-                
-            } else {
-                // if only a GID is provided, restrict the op to a privileged
-                // user
-                // that is either root or in the group that is supposed to be
-                // assigned
-                faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId,
-                    rq.getDetails().superUser, rq.getDetails().groupIds);
-                if (!(rq.getDetails().superUser || rq.getDetails().groupIds.contains(rqArgs.getStbuf()
-                        .getGroup_id())))
-                    throw new UserException(
-                        ErrNo.EPERM,
-                        "changing owning groups is restricted to superusers or file owners who are in the group that is supposed to be assigned");
-            }
-            
-            // change owner and owning group
-            file.setOwnerAndGroup(setUID ? rqArgs.getStbuf().getUser_id() : file.getOwnerId(),
-                setGID ? rqArgs.getStbuf().getGroup_id() : file.getOwningGroupId());
-            
-            // update POSIX timestamps
-            MRCHelper.updateFileTimes(res.getParentDirId(), file, false, true, false, sMan, update);
-        }
         
         // if SIZE bit is set, peform 'xtreemfs_updateFileSize'
         if (setSize) {
@@ -220,18 +150,7 @@ public class SetattrOperation extends MRCOperation {
             if (setMtime)
                 file.setMtime((int) (rqArgs.getStbuf().getMtime_ns() / (long) 1e9));
         }
-        
-        // if ATTRIBUTES bit is set, peform 'setattr' for Win32 attributes
-        if (setAttributes) {
-            
-            // check whether write permissions are granted to the parent
-            // directory
-            faMan.checkPermission("w", sMan, file, res.getParentDirId(), rq.getDetails().userId, rq
-                    .getDetails().superUser, rq.getDetails().groupIds);
-            
-            file.setW32Attrs(rqArgs.getStbuf().getAttributes());
-        }
-        
+                
         if (setUID || setGID || setAttributes)
             sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
         
@@ -239,7 +158,7 @@ public class SetattrOperation extends MRCOperation {
             sMan.setMetadata(file, FileMetadata.FC_METADATA, update);
         
         // set the response
-        rq.setResponse(new setattrResponse());
+        rq.setResponse(new fsetattrResponse());
         
         update.execute();
         

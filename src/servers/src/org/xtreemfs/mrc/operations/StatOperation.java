@@ -89,10 +89,10 @@ public class StatOperation extends MRCOperation {
             if ((xlocList != null) && (xlocList.getReplicaCount() > 0))
                 blkSize = xlocList.getReplica(0).getStripingPolicy().getStripeSize() * 1024;
         }
-        Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, file.getLinkCount(), 1, 1, size,
-            (long) file.getAtime() * (long) 1e9, (long) file.getMtime() * (long) 1e9, (long) file.getCtime()
-                * (long) 1e9, blkSize, file.getOwnerId(), file.getOwningGroupId(), file.isDirectory() ? 0
-                : file.getEpoch(), (int) file.getW32Attrs());
+        Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, file.getLinkCount(), file
+                .getOwnerId(), file.getOwningGroupId(), size, (long) file.getAtime() * (long) 1e9,
+            (long) file.getMtime() * (long) 1e9, (long) file.getCtime() * (long) 1e9, blkSize, file
+                    .isDirectory() ? 0 : file.getEpoch(), (int) file.getW32Attrs());
         
         // set the response
         rq.setResponse(new getattrResponse(stat));

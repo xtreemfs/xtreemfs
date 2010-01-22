@@ -14,15 +14,13 @@ import yidl.runtime.Unmarshaller;
 
 public class OSDWriteResponse implements Struct
 {
-    public static final int TAG = 2010011928;
+    public static final int TAG = 2010012130;
     
-    public OSDWriteResponse() { new_file_size = new NewFileSizeSet(); opaque_data = new OSDtoMRCDataSet();  }
-    public OSDWriteResponse( NewFileSizeSet new_file_size, OSDtoMRCDataSet opaque_data ) { this.new_file_size = new_file_size; this.opaque_data = opaque_data; }
+    public OSDWriteResponse() { new_file_size = new NewFileSizeSet();  }
+    public OSDWriteResponse( NewFileSizeSet new_file_size ) { this.new_file_size = new_file_size; }
 
     public NewFileSizeSet getNew_file_size() { return new_file_size; }
     public void setNew_file_size( NewFileSizeSet new_file_size ) { this.new_file_size = new_file_size; }
-    public OSDtoMRCDataSet getOpaque_data() { return opaque_data; }
-    public void setOpaque_data( OSDtoMRCDataSet opaque_data ) { this.opaque_data = opaque_data; }
 
     // java.lang.Object
     public String toString() 
@@ -37,36 +35,32 @@ public class OSDWriteResponse implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010011928;    
+    public static final long serialVersionUID = 2010012130;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2010011928; }
+    public int getTag() { return 2010012130; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDWriteResponse"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += new_file_size.getXDRSize(); // new_file_size
-        my_size += opaque_data.getXDRSize(); // opaque_data
         return my_size;
     }    
     
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeSequence( "new_file_size", new_file_size );
-        marshaller.writeSequence( "opaque_data", opaque_data );
     }
     
     public void unmarshal( Unmarshaller unmarshaller ) 
     {
-        new_file_size = new NewFileSizeSet(); unmarshaller.readSequence( "new_file_size", new_file_size );
-        opaque_data = new OSDtoMRCDataSet(); unmarshaller.readSequence( "opaque_data", opaque_data );    
+        new_file_size = new NewFileSizeSet(); unmarshaller.readSequence( "new_file_size", new_file_size );    
     }
         
     
 
-    private NewFileSizeSet new_file_size;
-    private OSDtoMRCDataSet opaque_data;    
+    private NewFileSizeSet new_file_size;    
 
 }
 

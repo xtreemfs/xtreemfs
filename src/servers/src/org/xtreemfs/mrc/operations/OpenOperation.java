@@ -36,6 +36,7 @@ import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
+import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.XLocSet;
 import org.xtreemfs.interfaces.MRCInterface.openRequest;
 import org.xtreemfs.interfaces.MRCInterface.openResponse;
@@ -238,8 +239,10 @@ public class OpenOperation extends MRCOperation {
         Capability cap = new Capability(volume.getId() + ":" + file.getId(), rqArgs.getFlags(), master
                 .getConfig().getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000
             + master.getConfig().getCapabilityTimeout(), ((InetSocketAddress) rq.getRPCRequest()
-                .getClientIdentity()).getAddress().getHostAddress(), trEpoch, replicateOnClose, master
-                .getConfig().getCapabilitySecret());
+                .getClientIdentity()).getAddress().getHostAddress(), trEpoch, replicateOnClose, !volume
+                .isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
+            : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT,
+            volume.getCreationTime(), master.getConfig().getCapabilitySecret());
         
         if (Logging.isDebug())
             Logging

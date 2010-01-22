@@ -30,6 +30,7 @@ import org.xtreemfs.common.Capability;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.FileCredentialsSet;
+import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.MRCInterface.rmdirRequest;
 import org.xtreemfs.interfaces.MRCInterface.unlinkRequest;
 import org.xtreemfs.interfaces.MRCInterface.unlinkResponse;
@@ -103,9 +104,13 @@ public class DeleteOperation extends MRCOperation {
             
             // create a deletion capability for the file
             Capability cap = new Capability(volume.getId() + ":" + file.getId(),
-                FileAccessManager.NON_POSIX_DELETE, master.getConfig().getCapabilityTimeout(), Integer.MAX_VALUE, ((InetSocketAddress) rq
-                        .getRPCRequest().getClientIdentity()).getAddress().getHostAddress(), file.getEpoch(),
-                false, master.getConfig().getCapabilitySecret());
+                FileAccessManager.NON_POSIX_DELETE, master.getConfig().getCapabilityTimeout(),
+                Integer.MAX_VALUE, ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress()
+                        .getHostAddress(), file.getEpoch(), false,
+                !volume.isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
+                    : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
+                        : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), master.getConfig()
+                        .getCapabilitySecret());
             
             // set the XCapability and XLocationsList headers
             XLocList xloc = file.getXLocList();

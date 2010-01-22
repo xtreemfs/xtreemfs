@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_service_get_by_uuidRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012020;
+    public static final int TAG = 2010012222;
     
     public xtreemfs_service_get_by_uuidRequest() {  }
     public xtreemfs_service_get_by_uuidRequest( String uuid ) { this.uuid = uuid; }
@@ -39,10 +39,10 @@ public class xtreemfs_service_get_by_uuidRequest extends org.xtreemfs.interfaces
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012020;    
+    public static final long serialVersionUID = 2010012222;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012020; }
+    public int getTag() { return 2010012222; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_uuidRequest"; }
     
     public int getXDRSize()

@@ -31,7 +31,7 @@ public class ServiceSet extends Sequence<Service>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2010011946; }
+    public int getTag() { return 2010012148; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ServiceSet"; }
 
     public int getXDRSize() 

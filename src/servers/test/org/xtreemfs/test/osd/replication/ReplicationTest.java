@@ -51,6 +51,7 @@ import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
+import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
@@ -121,7 +122,7 @@ public class ReplicationTest extends TestCase {
 
         fileID = "1:1";
         objectNo = 0;
-        cap = new Capability(fileID, 0, 60, System.currentTimeMillis(), "", 0, false, configs[0].getCapabilitySecret());
+        cap = new Capability(fileID, 0, 60, System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, configs[0].getCapabilitySecret());
 
         xLoc = createLocations(4, 3);
     }

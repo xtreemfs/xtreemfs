@@ -34,12 +34,19 @@ module org
         OSD_SELECTION_POLICY_SORT_DCMAP = 3000,
         OSD_SELECTION_POLICY_SORT_FQDN = 3001,
         OSD_SELECTION_POLICY_SORT_RANDOM = 3002,
-	      OSD_SELECTION_POLICY_SORT_VIVALDI = 3003
+        OSD_SELECTION_POLICY_SORT_VIVALDI = 3003
       };
       
       enum ReplicaSelectionPolicyType
       {
         REPLICA_SELECTION_POLICY_SIMPLE = 1
+      };
+      
+      enum SnapConfig
+      {
+      	SNAP_CONFIG_SNAPS_DISABLED = 0,
+      	SNAP_CONFIG_ACCESS_CURRENT = 1,
+      	SNAP_CONFIG_ACCESS_SNAP = 2
       };
 
       struct OSDWriteResponse # 17
@@ -85,6 +92,8 @@ module org
         boolean replicate_on_close;
         string server_signature;
         uint32_t truncate_epoch;
+        SnapConfig snap_config;
+        uint64_t snap_timestamp;
       };
 
       struct XLocSet # 24

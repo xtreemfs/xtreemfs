@@ -38,6 +38,7 @@ import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.FileCredentialsSet;
 import org.xtreemfs.interfaces.MRCInterface.MRCException;
+import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.Replica;
@@ -343,7 +344,7 @@ public class Volume {
     void touch(String path) throws IOException {
         RPCResponse response = null;
         try {
-            response = mrcClient.create(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path), 0700);
+            response = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path), Constants.SYSTEM_V_FCNTL_H_O_CREAT, 0700, 0, new VivaldiCoordinates());
             response.get();
         } catch (MRCException ex) {
            throw wrapException(ex);
@@ -417,8 +418,14 @@ public class Volume {
             XCap cap = ofl.getCapability(fileId);
             RPCResponse response = null;
             try {
-                response = mrcClient.xtreemfs_update_file_size(mrcClient.getDefaultServerAddress(), cap, owr);
+                if(owr.getNew_file_size().size() == 0)
+                    return;
+                
+                long newSize = owr.getNew_file_size().get(0).getSize_in_bytes();
+                int newEpoch = owr.getNew_file_size().get(0).getTruncate_epoch();
+                response = mrcClient.fsetattr(mrcClient.getDefaultServerAddress(), cap, new Stat(0, 0, 0, 0, "", "", newSize, 0, 0, 0, 0, newEpoch, 0), MRCInterface.SETATTR_SIZE);
                 response.get();
+                
             } catch (MRCException ex) {
                throw wrapException(ex);
             } catch (ONCRPCException ex) {

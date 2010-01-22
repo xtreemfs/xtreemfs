@@ -137,10 +137,10 @@ public class ReadDirAndStatOperation extends MRCOperation {
                 if ((xlocList != null) && (xlocList.getReplicaCount() > 0))
                     blkSize = xlocList.getReplica(0).getStripingPolicy().getStripeSize() * 1024;
             }
-            Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, child.getLinkCount(), 1, 1,
-                size, (long) child.getAtime() * (long) 1e9, (long) child.getMtime() * (long) 1e9,
-                (long) child.getCtime() * (long) 1e9, blkSize, child.getOwnerId(), child.getOwningGroupId(),
-                child.getEpoch(), (int) child.getW32Attrs());
+            Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, child.getLinkCount(), child
+                    .getOwnerId(), child.getOwningGroupId(), size, (long) child.getAtime() * (long) 1e9,
+                (long) child.getMtime() * (long) 1e9, (long) child.getCtime() * (long) 1e9, blkSize, child
+                        .getEpoch(), (int) child.getW32Attrs());
             
             dirContent.add(new DirectoryEntry(child.getFileName(), stat));
         }

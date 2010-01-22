@@ -28,6 +28,7 @@ import java.net.InetSocketAddress;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.foundation.ErrNo;
+import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_replica_removeResponse;
 import org.xtreemfs.mrc.ErrorRecord;
@@ -136,7 +137,11 @@ public class RemoveReplicaOperation extends MRCOperation {
         Capability deleteCap = new Capability(idRes.getVolumeId() + ":" + file.getId(),
             FileAccessManager.NON_POSIX_DELETE, master.getConfig().getCapabilityTimeout(), Integer.MAX_VALUE,
             ((InetSocketAddress) rq.getRPCRequest().getClientIdentity()).getAddress().getHostAddress(), file
-                    .getEpoch(), false, master.getConfig().getCapabilitySecret());
+                    .getEpoch(), false,
+            !sMan.getVolumeInfo().isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED : sMan
+                    .getVolumeInfo().isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
+                : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, sMan.getVolumeInfo().getCreationTime(), master
+                    .getConfig().getCapabilitySecret());
         
         // set the response
         rq.setResponse(new xtreemfs_replica_removeResponse(deleteCap.getXCap()));

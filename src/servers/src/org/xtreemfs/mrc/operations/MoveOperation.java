@@ -31,6 +31,7 @@ import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.FileCredentialsSet;
+import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.MRCInterface.renameRequest;
 import org.xtreemfs.interfaces.MRCInterface.renameResponse;
 import org.xtreemfs.mrc.MRCRequest;
@@ -110,45 +111,46 @@ public class MoveOperation extends MRCOperation {
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
         
         PathResolver tRes = null;
-//        
-//        // check if the file is a fuse-hidden file; if so, move it to the
-//        // .fuse-hidden diretory
-//        if (tp.getLastComp(0).startsWith(".fuse_hidden")) {
-//            
-//            // generate the new path
-//            tp = MRCHelper.getFuseHiddenPath(tp);
-//            
-//            // check if the fuse-hidden directory exists
-//            try {
-//                tRes = new PathResolver(sMan, tp);
-//                
-//            } catch (UserException exc) {
-//                
-//                // if no fuse-hidden directory exists yet ...
-//                if (exc.getErrno() == ErrNo.ENOENT) {
-//                    
-//                    // get the next free file ID
-//                    long fileId = sMan.getNextFileId();
-//                    
-//                    // create fuse-hidden directory
-//                    FileMetadata dir = sMan.createDir(fileId, 1, tp.getComp(1), 0, 0, 0, "", "", 0777, 0, update);
-//                    
-//                    // set the file ID as the last one
-//                    sMan.setLastFileId(fileId, update);
-//
-//                    // re-initialize the path resolver
-//                    tRes = new PathResolver(tp, dir, null);
-//                } 
-//                
-//                else
-//                    throw exc;
-//            }
-//            
-//        }
-//
-//        // in the normal case, resolve the target directory
-//        else
-            tRes = new PathResolver(sMan, tp);
+        //        
+        // // check if the file is a fuse-hidden file; if so, move it to the
+        // // .fuse-hidden diretory
+        // if (tp.getLastComp(0).startsWith(".fuse_hidden")) {
+        //            
+        // // generate the new path
+        // tp = MRCHelper.getFuseHiddenPath(tp);
+        //            
+        // // check if the fuse-hidden directory exists
+        // try {
+        // tRes = new PathResolver(sMan, tp);
+        //                
+        // } catch (UserException exc) {
+        //                
+        // // if no fuse-hidden directory exists yet ...
+        // if (exc.getErrno() == ErrNo.ENOENT) {
+        //                    
+        // // get the next free file ID
+        // long fileId = sMan.getNextFileId();
+        //                    
+        // // create fuse-hidden directory
+        // FileMetadata dir = sMan.createDir(fileId, 1, tp.getComp(1), 0, 0, 0,
+        // "", "", 0777, 0, update);
+        //                    
+        // // set the file ID as the last one
+        // sMan.setLastFileId(fileId, update);
+        //
+        // // re-initialize the path resolver
+        // tRes = new PathResolver(tp, dir, null);
+        // }
+        //                
+        // else
+        // throw exc;
+        // }
+        //            
+        // }
+        //
+        // // in the normal case, resolve the target directory
+        // else
+        tRes = new PathResolver(sMan, tp);
         
         FileMetadata targetParentDir = tRes.getParentDir();
         if (targetParentDir == null || !targetParentDir.isDirectory())
@@ -273,8 +275,11 @@ public class MoveOperation extends MRCOperation {
                     Capability cap = new Capability(volume.getId() + ":" + target.getId(),
                         FileAccessManager.NON_POSIX_DELETE, master.getConfig().getCapabilityTimeout(),
                         Integer.MAX_VALUE, ((InetSocketAddress) rq.getRPCRequest().getClientIdentity())
-                                .getAddress().getHostAddress(), target.getEpoch(), false, master.getConfig()
-                                .getCapabilitySecret());
+                                .getAddress().getHostAddress(), target.getEpoch(), false, !volume
+                                .isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED : volume
+                                .isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
+                            : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), master
+                                .getConfig().getCapabilitySecret());
                     
                     creds.add(new FileCredentials(cap.getXCap(), Converter.xLocListToXLocSet(target
                             .getXLocList())));

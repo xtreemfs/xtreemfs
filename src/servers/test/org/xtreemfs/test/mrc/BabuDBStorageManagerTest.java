@@ -116,7 +116,7 @@ public class BabuDBStorageManagerTest extends TestCase {
         exc = null;
         AtomicDBUpdate update = mngr.createAtomicDBUpdate(listener, null);
         mngr.init("volume", (short) 1, new short[] { 1 }, new short[0], 1, false, "me", "myGrp", 511, null,
-            null, update);
+            null, false, update);
         update.execute();
         waitForResponse();
         

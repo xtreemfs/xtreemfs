@@ -48,9 +48,7 @@ import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.FileCredentialsSet;
 import org.xtreemfs.interfaces.NewFileSize;
-import org.xtreemfs.interfaces.NewFileSizeSet;
 import org.xtreemfs.interfaces.OSDWriteResponse;
-import org.xtreemfs.interfaces.OSDtoMRCDataSet;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.StringSet;
@@ -58,6 +56,7 @@ import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.interfaces.XCap;
+import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.MRCInterface.setxattrResponse;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
@@ -533,7 +532,9 @@ public class RandomAccessFile implements ObjectStore {
         if (wresp != null) {
             RPCResponse r = null;
             try {
-                r = mrcClient.xtreemfs_update_file_size(mrcAddress, fileCredentials.getXcap(), wresp);
+                long fs = wresp.getNew_file_size().get(0).getSize_in_bytes();
+                int ep = wresp.getNew_file_size().get(0).getTruncate_epoch();
+                r = mrcClient.fsetattr(mrcAddress, fileCredentials.getXcap(), new Stat(0, 0, 0, 0, "", "", fs, 0, 0, 0, 0, ep, 0), MRCInterface.SETATTR_SIZE);
                 r.get();
                 wresp = null;
             } catch (ONCRPCException ex) {
@@ -917,12 +918,9 @@ public class RandomAccessFile implements ObjectStore {
     }
     
     public void forceFileSize(long newFileSize) throws IOException {
-        NewFileSizeSet newfsset = new NewFileSizeSet();
-        newfsset.add(new NewFileSize(newFileSize, fileCredentials.getXcap().getTruncate_epoch()));
-        OSDWriteResponse wr = new OSDWriteResponse(newfsset, new OSDtoMRCDataSet());
         RPCResponse r = null;
         try {
-            r = mrcClient.xtreemfs_update_file_size(mrcAddress, fileCredentials.getXcap(), wr);
+            r = mrcClient.fsetattr(mrcAddress, fileCredentials.getXcap(), new Stat(0, 0, 0, 0, "", "", newFileSize, 0, 0, 0, 0, fileCredentials.getXcap().getTruncate_epoch(), 0), MRCInterface.SETATTR_SIZE);
             r.get();
         } catch (ONCRPCException ex) {
             throw new IOException("cannot update file size", ex);

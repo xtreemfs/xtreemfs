@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class ObjectList implements Struct
 {
-    public static final int TAG = 2010011966;
+    public static final int TAG = 2010012168;
     
     public ObjectList() {  }
     public ObjectList( ReusableBuffer set, int stripe_width, int first_ ) { this.set = set; this.stripe_width = stripe_width; this.first_ = first_; }
@@ -39,10 +39,10 @@ public class ObjectList implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010011966;    
+    public static final long serialVersionUID = 2010012168;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2010011966; }
+    public int getTag() { return 2010012168; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ObjectList"; }
     
     public int getXDRSize()

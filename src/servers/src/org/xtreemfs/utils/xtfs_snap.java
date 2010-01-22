@@ -41,19 +41,25 @@ import org.xtreemfs.utils.CLIParser.CliOption;
  */
 public class xtfs_snap {
     
-    public final static String OPTION_HELP      = "h";
+    public final static String OPTION_HELP       = "h";
     
-    public final static String OPTION_HELP_LONG = "-help";
+    public final static String OPTION_HELP_LONG  = "-help";
     
-    public final static String OPTION_RECURSIVE = "r";
+    public final static String OPTION_RECURSIVE  = "r";
     
-    public final static String OPTION_CREATE    = "c";
+    public final static String OPTION_CREATE     = "c";
     
-    public final static String OPTION_DELETE    = "x";
+    public final static String OPTION_DELETE     = "x";
     
-    public final static String OPTION_LIST      = "l";
+    public final static String OPTION_LIST       = "l";
     
-    public final static String OPTION_PATH      = "d";
+    public final static String OPTION_PATH       = "d";
+    
+    public final static String OPTION_ENABLE     = "-enable";
+    
+    public final static String OPTION_DISABLE    = "-disable";
+    
+    public final static String OPTION_IS_ENABLED = "-is_enabled";
     
     /**
      * @param args
@@ -69,6 +75,9 @@ public class xtfs_snap {
         options.put(OPTION_DELETE, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(OPTION_LIST, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         options.put(OPTION_PATH, new CliOption(CliOption.OPTIONTYPE.STRING));
+        options.put(OPTION_ENABLE, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put(OPTION_DISABLE, new CliOption(CliOption.OPTIONTYPE.SWITCH));
+        options.put(OPTION_IS_ENABLED, new CliOption(CliOption.OPTIONTYPE.SWITCH));
         
         try {
             CLIParser.parseCLI(args, options, arguments);
@@ -100,6 +109,14 @@ public class xtfs_snap {
         CliOption c = options.get(OPTION_CREATE);
         CliOption x = options.get(OPTION_DELETE);
         CliOption l = options.get(OPTION_LIST);
+        CliOption enable = options.get(OPTION_ENABLE);
+        CliOption disable = options.get(OPTION_DISABLE);
+        CliOption isEnabled = options.get(OPTION_IS_ENABLED);
+        
+        if (enable.switchValue && disable.switchValue) {
+            usage();
+            return;
+        }
         
         CliOption p = options.get(OPTION_PATH);
         final String path = p.stringValue == null ? new File("").getAbsolutePath() : p.stringValue;
@@ -108,7 +125,8 @@ public class xtfs_snap {
             return;
         }
         
-        if (!c.switchValue && !x.switchValue && !l.switchValue) {
+        if (!c.switchValue && !x.switchValue && !l.switchValue && !enable.switchValue && !disable.switchValue
+            && !isEnabled.switchValue) {
             usage();
             return;
         }
@@ -130,11 +148,20 @@ public class xtfs_snap {
             }
             
             if (l.switchValue) {
-                
                 String snaps = utils.getxattr(utils.findXtreemFSRootDir(path), "xtreemfs.snapshots");
                 if (snaps != null)
                     System.out.println(snaps);
-                
+            }
+            
+            if (enable.switchValue) {
+                utils.setxattr(path, "xtreemfs.snapshots_enabled", "true");
+            } else if (disable.switchValue) {
+                utils.setxattr(path, "xtreemfs.snapshots_enabled", "false");
+            }
+            
+            if (isEnabled.switchValue) {
+                boolean snapsEnabled = "true".equals(utils.getxattr(path, "xtreemfs.snapshots_enabled"));
+                System.out.println(snapsEnabled);
             }
             
         } catch (IOException exc) {
@@ -159,6 +186,9 @@ public class xtfs_snap {
             + " <path>] [<name>]\n");
         out.append("\t" + cmd + " -" + OPTION_DELETE + " [-" + OPTION_PATH + " <path>] <name>\n");
         out.append("\t" + cmd + " -" + OPTION_LIST + " [-" + OPTION_PATH + " <path>]\n");
+        out.append("\t" + cmd + " -" + OPTION_ENABLE + " [-" + OPTION_PATH + " <root-dir>]\n");
+        out.append("\t" + cmd + " -" + OPTION_DISABLE + " [-" + OPTION_PATH + " <root-dir>]\n");
+        out.append("\t" + cmd + " -" + OPTION_IS_ENABLED + " [-" + OPTION_PATH + " <root-dir>]\n");
         out.append("\t" + cmd + " -" + OPTION_HELP + "|-" + OPTION_HELP_LONG + "\n");
         out.append("\noptions:\n");
         out.append("\t-" + OPTION_CREATE + ": create a snapshot\n");
@@ -170,6 +200,9 @@ public class xtfs_snap {
         out.append("\t-" + OPTION_LIST + ": list all snapshots in the system\n");
         out.append("\t-" + OPTION_RECURSIVE + ": include subdirectories into snapshot\n");
         out.append("\t-" + OPTION_DELETE + ": delete a snapshot\n");
+        out.append("\t-" + OPTION_ENABLE + ": enable snapshots on the volume\n");
+        out.append("\t-" + OPTION_DISABLE + ": disable snapshots on the volume\n");
+        out.append("\t-" + OPTION_IS_ENABLED + ": check if snapshots are enabled\n");
         
         System.out.println(out.toString());
     }

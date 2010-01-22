@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class errnoException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 2010012213;
+    public static final int TAG = 2010012415;
     
     public errnoException() {  }
     public errnoException( int error_code, String error_message, String stack_trace ) { this.error_code = error_code; this.error_message = error_message; this.stack_trace = stack_trace; }
@@ -40,10 +40,10 @@ public class errnoException extends org.xtreemfs.interfaces.utils.ONCRPCExceptio
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012213;    
+    public static final long serialVersionUID = 2010012415;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012213; }
+    public int getTag() { return 2010012415; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::errnoException"; }
     
     public int getXDRSize()

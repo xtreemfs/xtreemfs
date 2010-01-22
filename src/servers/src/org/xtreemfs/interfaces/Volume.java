@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class Volume implements Struct
 {
-    public static final int TAG = 2010011955;
+    public static final int TAG = 2010012157;
     
     public Volume() { access_control_policy = AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL; default_striping_policy = new StripingPolicy();  }
     public Volume( AccessControlPolicyType access_control_policy, StripingPolicy default_striping_policy, String id, int mode, String name, String owner_group_id, String owner_user_id ) { this.access_control_policy = access_control_policy; this.default_striping_policy = default_striping_policy; this.id = id; this.mode = mode; this.name = name; this.owner_group_id = owner_group_id; this.owner_user_id = owner_user_id; }
@@ -47,10 +47,10 @@ public class Volume implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010011955;    
+    public static final long serialVersionUID = 2010012157;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2010011955; }
+    public int getTag() { return 2010012157; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Volume"; }
     
     public int getXDRSize()

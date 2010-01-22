@@ -66,7 +66,8 @@ public class RenewOperation extends MRCOperation {
         Capability newCap = new Capability(cap.getFileId(), cap.getAccessMode(), master.getConfig()
                 .getCapabilityTimeout(), TimeSync.getGlobalTime() / 1000
             + master.getConfig().getCapabilityTimeout(), cap.getClientIdentity(), cap.getEpochNo(), cap
-                .isReplicateOnClose(), master.getConfig().getCapabilitySecret());
+                .isReplicateOnClose(), cap.getSnapConfig(), cap.getSnapTimestamp(), master.getConfig()
+                .getCapabilitySecret());
         
         // set the response
         rq.setResponse(new xtreemfs_renew_capabilityResponse(newCap.getXCap()));

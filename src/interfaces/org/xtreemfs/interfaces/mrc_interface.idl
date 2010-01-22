@@ -86,7 +86,7 @@ module org
 
         // POSIX/FUSE operations
         void close( VivaldiCoordinates client_vivaldi_coordinates, XCap write_xcap ) # 1;
-        void fsetattr( XCap xcap, Stat stbuf ) # 2;
+        void fsetattr( XCap xcap, Stat stbuf, uint32_t to_set ) # 2;
         void ftruncate( XCap write_xcap, out XCap truncate_xcap ) # 3;
         void getattr( string path, out Stat stbuf ) # 4;
         void getxattr( string path, string name, out string value ) # 5;

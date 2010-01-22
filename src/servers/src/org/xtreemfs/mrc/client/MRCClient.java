@@ -37,7 +37,6 @@ import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.FileCredentialsSet;
-import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.StatVFS;
@@ -49,16 +48,9 @@ import org.xtreemfs.interfaces.Volume;
 import org.xtreemfs.interfaces.VolumeSet;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
-import org.xtreemfs.interfaces.MRCInterface.accessRequest;
-import org.xtreemfs.interfaces.MRCInterface.accessResponse;
-import org.xtreemfs.interfaces.MRCInterface.chmodRequest;
-import org.xtreemfs.interfaces.MRCInterface.chmodResponse;
-import org.xtreemfs.interfaces.MRCInterface.chownRequest;
-import org.xtreemfs.interfaces.MRCInterface.chownResponse;
 import org.xtreemfs.interfaces.MRCInterface.closeRequest;
 import org.xtreemfs.interfaces.MRCInterface.closeResponse;
-import org.xtreemfs.interfaces.MRCInterface.creatRequest;
-import org.xtreemfs.interfaces.MRCInterface.creatResponse;
+import org.xtreemfs.interfaces.MRCInterface.fsetattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.ftruncateRequest;
 import org.xtreemfs.interfaces.MRCInterface.ftruncateResponse;
 import org.xtreemfs.interfaces.MRCInterface.getattrRequest;
@@ -93,8 +85,6 @@ import org.xtreemfs.interfaces.MRCInterface.symlinkRequest;
 import org.xtreemfs.interfaces.MRCInterface.symlinkResponse;
 import org.xtreemfs.interfaces.MRCInterface.unlinkRequest;
 import org.xtreemfs.interfaces.MRCInterface.unlinkResponse;
-import org.xtreemfs.interfaces.MRCInterface.utimensRequest;
-import org.xtreemfs.interfaces.MRCInterface.utimensResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_check_file_existsResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_checkpointRequest;
@@ -125,8 +115,6 @@ import org.xtreemfs.interfaces.MRCInterface.xtreemfs_rmvolRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_rmvolResponse;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_shutdownRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_shutdownResponse;
-import org.xtreemfs.interfaces.MRCInterface.xtreemfs_update_file_sizeRequest;
-import org.xtreemfs.interfaces.MRCInterface.xtreemfs_update_file_sizeResponse;
 
 /**
  * 
@@ -204,53 +192,6 @@ public class MRCClient extends ONCRPCClient {
     
     /* POSIX metadata calls */
 
-    public RPCResponse<Boolean> access(InetSocketAddress server, UserCredentials credentials, String path,
-        int mode) {
-        
-        accessRequest rq = new accessRequest(path, mode);
-        RPCResponse<Boolean> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Boolean>() {
-            
-            @Override
-            public Boolean getResult(ReusableBuffer data) {
-                final accessResponse resp = new accessResponse();
-                resp.unmarshal(new XDRUnmarshaller(data));
-                return resp.getReturnValue();
-            }
-        }, credentials);
-        return r;
-    }
-    
-    public RPCResponse chmod(InetSocketAddress server, UserCredentials credentials, String path, int mode) {
-        
-        chmodRequest rq = new chmodRequest(path, mode);
-        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
-            
-            @Override
-            public Object getResult(ReusableBuffer data) {
-                final chmodResponse resp = new chmodResponse();
-                resp.unmarshal(new XDRUnmarshaller(data));
-                return null;
-            }
-        }, credentials);
-        return r;
-    }
-    
-    public RPCResponse chown(InetSocketAddress server, UserCredentials credentials, String path,
-        String newUID, String newGID) {
-        
-        chownRequest rq = new chownRequest(path, newUID, newGID);
-        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
-            
-            @Override
-            public Object getResult(ReusableBuffer data) {
-                final chownResponse resp = new chownResponse();
-                resp.unmarshal(new XDRUnmarshaller(data));
-                return null;
-            }
-        }, credentials);
-        return r;
-    }
-    
     public RPCResponse close(InetSocketAddress server, VivaldiCoordinates vivaldiCoords, XCap capability) {
         
         closeRequest rq = new closeRequest(vivaldiCoords, capability);
@@ -266,18 +207,18 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
-    public RPCResponse create(InetSocketAddress server, UserCredentials credentials, String path, int mode) {
+    public RPCResponse fsetattr(InetSocketAddress server, XCap xcap, Stat statInfo, int toSet) {
         
-        creatRequest rq = new creatRequest(path, mode);
+        fsetattrRequest rq = new fsetattrRequest(xcap, statInfo, toSet);
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
             public Object getResult(ReusableBuffer data) {
-                final creatResponse resp = new creatResponse();
+                final setattrResponse resp = new setattrResponse();
                 resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
             }
-        }, credentials);
+        });
         return r;
     }
     
@@ -519,9 +460,9 @@ public class MRCClient extends ONCRPCClient {
     }
     
     public RPCResponse setattr(InetSocketAddress server, UserCredentials credentials, String path,
-        Stat statInfo) {
+        Stat statInfo, int toSet) {
         
-        setattrRequest rq = new setattrRequest(path, statInfo);
+        setattrRequest rq = new setattrRequest(path, statInfo, toSet);
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -596,22 +537,6 @@ public class MRCClient extends ONCRPCClient {
                     return resp.getFile_credentials();
                 }
             }, credentials);
-        return r;
-    }
-    
-    public RPCResponse utime(InetSocketAddress server, UserCredentials credentials, String path, long atime,
-        long ctime, long mtime) {
-        
-        utimensRequest rq = new utimensRequest(path, atime, ctime, mtime);
-        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
-            
-            @Override
-            public Object getResult(ReusableBuffer data) {
-                final utimensResponse resp = new utimensResponse();
-                resp.unmarshal(new XDRUnmarshaller(data));
-                return null;
-            }
-        }, credentials);
         return r;
     }
     
@@ -727,22 +652,6 @@ public class MRCClient extends ONCRPCClient {
                 return null;
             }
         }, credentials);
-        return r;
-    }
-    
-    public RPCResponse xtreemfs_update_file_size(InetSocketAddress server, XCap xcap,
-        OSDWriteResponse newFileSize) {
-        
-        xtreemfs_update_file_sizeRequest rq = new xtreemfs_update_file_sizeRequest(xcap, newFileSize);
-        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
-            
-            @Override
-            public Object getResult(ReusableBuffer data) {
-                final xtreemfs_update_file_sizeResponse resp = new xtreemfs_update_file_sizeResponse();
-                resp.unmarshal(new XDRUnmarshaller(data));
-                return null;
-            }
-        });
         return r;
     }
     

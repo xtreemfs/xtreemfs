@@ -48,11 +48,14 @@ public class FileMetadata {
     private long               truncateEpoch;
 
     private final StripingPolicyImpl stripingPolicy;
+    
+    private Map<Long, int[]> fileVersions;
 
     /** Creates a new instance of FileInfo */
     public FileMetadata(StripingPolicyImpl sp) {
         objVersions = new HashMap<Long, Long>();
         objChecksums = new HashMap<Long, Long>();
+        fileVersions = new HashMap<Long, int[]>();
         stripingPolicy = sp;
     }
 
@@ -127,4 +130,13 @@ public class FileMetadata {
     public StripingPolicyImpl getStripingPolicy() {
         return stripingPolicy;
     }
+
+    public Map<Long, int[]> getFileVersions() {
+        return fileVersions;
+    }
+
+    public void setFileVersions(Map<Long, int[]> fileVersions) {
+        this.fileVersions = fileVersions;
+    }
+    
 }

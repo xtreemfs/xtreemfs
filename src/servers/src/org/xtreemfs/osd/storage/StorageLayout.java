@@ -65,6 +65,11 @@ public abstract class StorageLayout {
      * file to store the layout and version used to create on disk data
      */
     public static final String    VERSION_FILENAME = ".version";
+    
+    /**
+     * file that stores the mapping between file and object versions
+     */
+    public static final String    VTABLE_FILENAME = ".vtable";
 
     /**
      * true, if we are on a windows platform

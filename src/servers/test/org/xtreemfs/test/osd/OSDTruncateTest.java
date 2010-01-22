@@ -41,6 +41,7 @@ import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
+import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
@@ -78,7 +79,7 @@ public class OSDTruncateTest extends TestCase {
         serverID = SetupUtils.getOSD1UUID();
         
         fileId = "ABCDEF:1";
-        cap = new Capability(fileId, 0, 60, System.currentTimeMillis(), "", 0, false, osdConfig.getCapabilitySecret());
+        cap = new Capability(fileId, 0, 60, System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, osdConfig.getCapabilitySecret());
 
         ReplicaSet replicas = new ReplicaSet();
         StringSet osdset = new StringSet();

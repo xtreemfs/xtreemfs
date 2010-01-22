@@ -13,15 +13,11 @@ import yidl.runtime.Unmarshaller;
 
 
 
-public class accessResponse extends org.xtreemfs.interfaces.utils.Response
+public class fsetattrResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012112;
+    public static final int TAG = 2010012315;
     
-    public accessResponse() {  }
-    public accessResponse( boolean returnValue ) { this.returnValue = returnValue; }
-
-    public boolean getReturnValue() { return returnValue; }
-    public void setReturnValue( boolean returnValue ) { this.returnValue = returnValue; }
+    public fsetattrResponse() {  }
 
     // java.lang.Object
     public String toString() 
@@ -36,32 +32,30 @@ public class accessResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012112;    
+    public static final long serialVersionUID = 2010012315;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012112; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::accessResponse"; }
+    public int getTag() { return 2010012315; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::fsetattrResponse"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE / 8; // returnValue
+
         return my_size;
     }    
     
     public void marshal( Marshaller marshaller )
     {
-        marshaller.writeBoolean( "returnValue", returnValue );
+
     }
     
     public void unmarshal( Unmarshaller unmarshaller ) 
     {
-        returnValue = unmarshaller.readBoolean( "returnValue" );    
+    
     }
         
-    
-
-    private boolean returnValue;    
+        
 
 }
 

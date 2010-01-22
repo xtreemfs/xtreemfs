@@ -25,8 +25,6 @@
 package org.xtreemfs.test.osd;
 
 import java.io.File;
-import java.util.List;
-import java.util.Map;
 
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
@@ -39,12 +37,13 @@ import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.Lock;
-import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
+import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
+import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.osd.AdvisoryLock;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
@@ -87,7 +86,7 @@ public class AdvisoryLocksTest extends TestCase {
         serverID = SetupUtils.getOSD1UUID();
 
         fileId = "ABCDEF:1";
-        cap = new Capability(fileId, 0, 60, System.currentTimeMillis(), "", 0, false, osdConfig.getCapabilitySecret());
+        cap = new Capability(fileId, 0, 60, System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, osdConfig.getCapabilitySecret());
 
         ReplicaSet replicas = new ReplicaSet();
         StringSet osdset = new StringSet();

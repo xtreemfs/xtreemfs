@@ -44,6 +44,8 @@ public interface VolumeManager {
     
     public static final boolean DEFAULT_AUTO_REPL_FULL   = false;
     
+    public static final boolean DEFAULT_ALLOW_SNAPS      = false;
+    
     public static final char    SNAPSHOT_SEPARATOR       = '@';
     
     /**

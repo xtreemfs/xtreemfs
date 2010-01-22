@@ -31,7 +31,7 @@ package org.xtreemfs.osd.storage;
 public class CowPolicy {
     
     public static final CowPolicy PolicyNoCow = new CowPolicy(cowMode.NO_COW);
-
+    
     public enum cowMode {
         /**
          * Do not copy on write, overwrite instead.

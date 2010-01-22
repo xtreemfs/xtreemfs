@@ -118,6 +118,8 @@ public class MRCHelper {
             repl_factor,
             repl_full,
             snapshots,
+            snapshots_enabled,
+            snapshot_time,
             mark_replica_complete
     }
     
@@ -239,8 +241,10 @@ public class MRCHelper {
      * Checks whether all service UUIDs from the list can be resolved, i.e.
      * refer to valid services.
      * 
-     * @param newOSDs the list of OSDs
-     * @return <tt>true</tt>, if all OSDs are resolvable, <tt>false</tt>, otherwise
+     * @param newOSDs
+     *            the list of OSDs
+     * @return <tt>true</tt>, if all OSDs are resolvable, <tt>false</tt>,
+     *         otherwise
      */
     public static boolean isResolvable(List<String> newOSDs) {
         if (newOSDs != null)
@@ -380,7 +384,7 @@ public class MRCHelper {
                 
             case snapshots: {
                 
-                if (file.getId() != 1)
+                if (file.getId() != 1 || sMan.getVolumeInfo().isSnapVolume())
                     return "";
                 
                 StringBuilder sb = new StringBuilder();
@@ -399,6 +403,11 @@ public class MRCHelper {
                 return sb.toString();
             }
                 
+            case snapshots_enabled:
+                return file.getId() == 1 && !sMan.getVolumeInfo().isSnapVolume() ? String.valueOf(sMan.getVolumeInfo().isSnapshotsEnabled()) : "";
+            case snapshot_time:
+                return file.getId() == 1 && sMan.getVolumeInfo().isSnapVolume() ? Long.toString(sMan
+                        .getVolumeInfo().getCreationTime()) : "";
             }
         }
         
@@ -573,6 +582,16 @@ public class MRCHelper {
             
             else
                 throw new UserException(ErrNo.EINVAL, "invalid snapshot command: " + value);
+            
+            break;
+        
+        case snapshots_enabled:
+
+            if (file.getId() != 1)
+                throw new UserException(ErrNo.EINVAL, "snapshots can only be enabled or disabled on volumes");
+            
+            boolean enable = Boolean.parseBoolean(value);
+            sMan.getVolumeInfo().setAllowSnaps(enable, update);
             
             break;
         

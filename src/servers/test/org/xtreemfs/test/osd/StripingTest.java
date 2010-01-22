@@ -48,6 +48,7 @@ import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
+import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
@@ -79,7 +80,7 @@ public class StripingTest extends TestCase {
             if (mode == 't')
                 issuedEpoch++;
 
-            return new Capability(FILE_ID, 0, 60, System.currentTimeMillis(), "", (int)issuedEpoch, false, capSecret);
+            return new Capability(FILE_ID, 0, 60, System.currentTimeMillis(), "", (int)issuedEpoch, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, capSecret);
         }
         
         synchronized long getFileSize() {
@@ -199,7 +200,7 @@ public class StripingTest extends TestCase {
     }
 
     private Capability getCap(String fname) {
-        return new Capability(fname, 0, 60, System.currentTimeMillis(), "", 0, false, capSecret);
+        return new Capability(fname, 0, 60, System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, capSecret);
     }
     
     protected void tearDown() throws Exception {

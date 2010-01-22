@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_lock_acquireRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012261;
+    public static final int TAG = 2010012463;
     
     public xtreemfs_lock_acquireRequest() { file_credentials = new FileCredentials();  }
     public xtreemfs_lock_acquireRequest( FileCredentials file_credentials, String client_uuid, int client_pid, String file_id, long offset, long length, boolean exclusive ) { this.file_credentials = file_credentials; this.client_uuid = client_uuid; this.client_pid = client_pid; this.file_id = file_id; this.offset = offset; this.length = length; this.exclusive = exclusive; }
@@ -51,10 +51,10 @@ public class xtreemfs_lock_acquireRequest extends org.xtreemfs.interfaces.utils.
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012261;    
+    public static final long serialVersionUID = 2010012463;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012261; }
+    public int getTag() { return 2010012463; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_lock_acquireRequest"; }
     
     public int getXDRSize()

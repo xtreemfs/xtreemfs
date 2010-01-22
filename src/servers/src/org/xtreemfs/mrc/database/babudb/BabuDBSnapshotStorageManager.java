@@ -111,8 +111,8 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
      * @param volumeId
      *            the volume ID
      */
-    public BabuDBSnapshotStorageManager(BabuDB dbs, String volumeName, String volumeId, String snapName)
-        throws DatabaseException {
+    public BabuDBSnapshotStorageManager(BabuDB dbs, String volumeName, String volumeId, String snapName,
+        long timestamp) throws DatabaseException {
         
         this.volumeName = volumeName;
         
@@ -131,7 +131,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
         if (this.rootParentId == -1)
             throw new DatabaseException("no root directory found", ExceptionType.INTERNAL_DB_ERROR);
         
-        this.volume = new BabuDBSnapshotVolumeInfo();
+        this.volume = new BabuDBSnapshotVolumeInfo(timestamp);
         volume.init(this);
     }
     
@@ -277,8 +277,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, uid, key);
-            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(
-                    XATTRS_INDEX, prefix, null).get();
+            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(XATTRS_INDEX, prefix, null).get();
             
             // check whether the entry is the correct one
             while (it.hasNext()) {
@@ -303,8 +302,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, null, null);
-            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(
-                    XATTRS_INDEX, prefix, null).get();
+            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(XATTRS_INDEX, prefix, null).get();
             
             return new XAttrIterator(it, null);
             
@@ -320,8 +318,7 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
             
             // peform a prefix lookup
             byte[] prefix = BabuDBStorageHelper.createXAttrPrefixKey(fileId, uid, null);
-            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(
-                    XATTRS_INDEX, prefix, null).get();
+            Iterator<Entry<byte[], byte[]>> it = database.prefixLookup(XATTRS_INDEX, prefix, null).get();
             
             return new XAttrIterator(it, uid);
             
@@ -399,8 +396,8 @@ public class BabuDBSnapshotStorageManager implements StorageManager {
         throws DatabaseException {
         
         try {
-            return new AtomicBabuDBSnapshotUpdate(listener == null ? null : 
-                new BabuDBRequestListenerWrapper<Object>(listener), context);
+            return new AtomicBabuDBSnapshotUpdate(listener == null ? null
+                : new BabuDBRequestListenerWrapper<Object>(listener), context);
         } catch (BabuDBException exc) {
             throw new DatabaseException(exc);
         }

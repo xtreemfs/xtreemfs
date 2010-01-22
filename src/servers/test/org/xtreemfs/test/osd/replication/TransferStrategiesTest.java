@@ -41,6 +41,7 @@ import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.ReplicaSet;
+import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.XLocSet;
@@ -81,7 +82,7 @@ public class TransferStrategiesTest extends TestCase {
         Logging.start(SetupUtils.DEBUG_LEVEL, SetupUtils.DEBUG_CATEGORIES);
 
         String file = "1:1";
-        cap = new Capability(fileID, 0, 60, System.currentTimeMillis(), "", 0, false, "secretPassphrase");
+        cap = new Capability(fileID, 0, 60, System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, "secretPassphrase");
 
         this.stripeSize = 128 * 1024; // byte
         osdNumber = 12;

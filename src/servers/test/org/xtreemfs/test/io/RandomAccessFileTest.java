@@ -48,8 +48,10 @@ import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.UserCredentials;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
@@ -104,7 +106,7 @@ public class RandomAccessFileTest extends TestCase {
         dsCfg = SetupUtils.createDIRConfig();
         
         mrcCfg1 = SetupUtils.createMRC1Config();
-        mrcDB1  = SetupUtils.createMRC1dbsConfig();
+        mrcDB1 = SetupUtils.createMRC1dbsConfig();
         mrc1Address = SetupUtils.getMRC1Addr();
         
         osdConfig1 = SetupUtils.createOSD1Config();
@@ -124,7 +126,7 @@ public class RandomAccessFileTest extends TestCase {
         osd4 = new OSD(osdConfig4);
         
         // start MRC
-        mrc1 = new MRCRequestDispatcher(mrcCfg1,mrcDB1);
+        mrc1 = new MRCRequestDispatcher(mrcCfg1, mrcDB1);
         mrc1.startup();
         
         volumeName = "testVolume";
@@ -142,7 +144,8 @@ public class RandomAccessFileTest extends TestCase {
         r.get();
         
         for (int i = 0; i < 10; i++) {
-            r = testEnv.getMrcClient().create(mrc1Address, uc, volumeName + "/myDir/test" + i + ".txt", 0);
+            r = testEnv.getMrcClient().open(mrc1Address, uc, volumeName + "/myDir/test" + i + ".txt",
+                FileAccessManager.O_CREAT | FileAccessManager.O_EXCL, 0, 0, new VivaldiCoordinates());
             r.get();
         }
         // testEnv.getMrcClient().createFile(mrc1Address, volumeName +
@@ -289,26 +292,26 @@ public class RandomAccessFileTest extends TestCase {
         // check if replication flags are set correctly
         List<org.xtreemfs.common.xloc.Replica> replicas = randomAccessFile.getXLoc().getReplicas();
         assertTrue(replicas.get(0).isComplete()); // original should be marked
-                                                  // as full
+        // as full
         assertFalse(replicas.get(1).isComplete()); // replica 1 is empty
         assertFalse(replicas.get(2).isComplete()); // replica 2 is empty
         assertTrue(replicas.get(1).isPartialReplica()); // replica 1 should be
-                                                        // filled ondemand
+        // filled ondemand
         assertFalse(replicas.get(2).isPartialReplica()); // replica 2 should be
-                                                         // filled until it is
-                                                         // full
+        // filled until it is
+        // full
         assertTrue(ReplicationFlags.isRandomStrategy(replicas.get(1).getTransferStrategyFlags())); // replica
-                                                                                                   // 1
-                                                                                                   // is
-                                                                                                   // using
-                                                                                                   // random
-                                                                                                   // strategy
+        // 1
+        // is
+        // using
+        // random
+        // strategy
         assertTrue(ReplicationFlags.isSequentialStrategy(replicas.get(2).getTransferStrategyFlags())); // replica
-                                                                                                       // 2
-                                                                                                       // is
-                                                                                                       // using
-                                                                                                       // sequential
-                                                                                                       // strategy
+        // 2
+        // is
+        // using
+        // sequential
+        // strategy
         
         // remove the first replica
         randomAccessFile.removeReplica(replica1.get(0));

@@ -42,8 +42,10 @@ import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
+import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.mrc.MRCConfig;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.osd.OSD;
 import org.xtreemfs.osd.OSDConfig;
@@ -77,7 +79,7 @@ public class ScrubberTest extends TestCase {
     private Scrubber             scrubber;
     
     private TestEnvironment      testEnv;
-
+    
     private Client               newClient;
     
     public ScrubberTest() {
@@ -115,7 +117,7 @@ public class ScrubberTest extends TestCase {
         osd1 = new OSD(osdConfig1);
         osd2 = new OSD(osdConfig2);
         // start MRC
-        mrc1 = new MRCRequestDispatcher(mrcCfg1,mrcDBCfg1);
+        mrc1 = new MRCRequestDispatcher(mrcCfg1, mrcDBCfg1);
         mrc1.startup();
         
         client = testEnv.getMrcClient();
@@ -144,18 +146,20 @@ public class ScrubberTest extends TestCase {
         r.get();
         
         for (int i = 0; i < 2; i++) {
-            r = testEnv.getMrcClient().create(mrc1Address, Scrubber.credentials,
-                volumeName + "/myDir/test" + i + ".txt", 0);
+            r = testEnv.getMrcClient().open(mrc1Address, Scrubber.credentials,
+                volumeName + "/myDir/test" + i + ".txt", FileAccessManager.O_CREAT, 0, 0,
+                new VivaldiCoordinates());
             r.get();
             r.freeBuffers();
         }
         
-        r = testEnv.getMrcClient().create(mrc1Address, Scrubber.credentials, volumeName + "/test10.txt", 0);
+        r = testEnv.getMrcClient().open(mrc1Address, Scrubber.credentials, volumeName + "/test10.txt",
+            FileAccessManager.O_CREAT, 0, 0, new VivaldiCoordinates());
         r.get();
         r.freeBuffers();
         
-        r = testEnv.getMrcClient().create(mrc1Address, Scrubber.credentials,
-            volumeName + "/anotherDir/test11.txt", 0);
+        r = testEnv.getMrcClient().open(mrc1Address, Scrubber.credentials,
+            volumeName + "/anotherDir/test11.txt", FileAccessManager.O_CREAT, 0, 0, new VivaldiCoordinates());
         r.get();
         r.freeBuffers();
         
@@ -181,8 +185,9 @@ public class ScrubberTest extends TestCase {
         randomAccessFile1.close();
         
         randomAccessFile2.write(bytesIn, 0, 65536);
-
-        newClient = new Client(new InetSocketAddress[]{testEnv.getDIRAddress()}, 15*1000, 5*60*1000, null);
+        
+        newClient = new Client(new InetSocketAddress[] { testEnv.getDIRAddress() }, 15 * 1000, 5 * 60 * 1000,
+            null);
         newClient.start();
     }
     
@@ -190,7 +195,7 @@ public class ScrubberTest extends TestCase {
         mrc1.shutdown();
         osd1.shutdown();
         osd2.shutdown();
-
+        
         newClient.stop();
         
         testEnv.shutdown();

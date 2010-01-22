@@ -54,7 +54,13 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     
     private boolean replFull;
     
+    private long creationTimestamp;
+    
     private BabuDBSnapshotStorageManager sMan;
+    
+    public BabuDBSnapshotVolumeInfo(long creationTimestamp) {
+        this.creationTimestamp = creationTimestamp;
+    }
     
     public void init(BabuDBSnapshotStorageManager sMan) throws DatabaseException {
         
@@ -125,6 +131,11 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     }
     
     @Override
+    public void setAllowSnaps(boolean allowSnaps, AtomicDBUpdate update) throws DatabaseException {
+        sMan.throwException();
+    }
+    
+    @Override
     public void updateVolumeSize(long diff, AtomicDBUpdate update) throws DatabaseException {
         sMan.throwException();
     }
@@ -152,6 +163,21 @@ public class BabuDBSnapshotVolumeInfo implements VolumeInfo {
     @Override
     public boolean getAutoReplFull() {
         return replFull;
+    }
+
+    @Override
+    public boolean isSnapVolume() throws DatabaseException {
+        return true;
+    }
+
+    @Override
+    public boolean isSnapshotsEnabled() throws DatabaseException {
+        return true;
+    }
+    
+    @Override
+    public long getCreationTime() throws DatabaseException {
+        return creationTimestamp;
     }
     
 }

@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class AddressMapping implements Struct
 {
-    public static final int TAG = 2010011941;
+    public static final int TAG = 2010012143;
     
     public AddressMapping() {  }
     public AddressMapping( String uuid, long version, String protocol, String address, int port, String match_network, int ttl_s, String uri ) { this.uuid = uuid; this.version = version; this.protocol = protocol; this.address = address; this.port = port; this.match_network = match_network; this.ttl_s = ttl_s; this.uri = uri; }
@@ -49,10 +49,10 @@ public class AddressMapping implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010011941;    
+    public static final long serialVersionUID = 2010012143;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2010011941; }
+    public int getTag() { return 2010012143; }
     public String getTypeName() { return "org::xtreemfs::interfaces::AddressMapping"; }
     
     public int getXDRSize()
