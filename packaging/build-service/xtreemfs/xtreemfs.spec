@@ -1,6 +1,6 @@
 # norootforbuild
 
-%if 0%{?centos_version} == 501 || 0%{?mandriva_version} == 2007 || 0%{?mdkversion} == 200700 || 0%{?rhel_version} == 501 || 0%{?sles_version} == 10 || 0%{?fedora_version} == 12 
+%if 0%{?centos_version} == 501 || 0%{?mandriva_version} == 2007 || 0%{?mdkversion} == 200700 || 0%{?rhel_version} == 501 || 0%{?sles_version} == 10
 %define client_subpackage 0
 %else
 %define client_subpackage 1
