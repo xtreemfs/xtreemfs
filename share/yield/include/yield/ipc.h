@@ -1490,33 +1490,48 @@ namespace YIELD
       // create( ... ) factory methods throw exceptions
 
       static yidl::runtime::auto_Object<SSLContext> 
-        create( SSL_METHOD* method = SSLv23_client_method() );
+      create
+      (
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        const
+#endif
+        SSL_METHOD* method = SSLv23_client_method() 
+      );
 
       static yidl::runtime::auto_Object<SSLContext> 
-        create
-        ( 
-          SSL_METHOD* method, 
-          const YIELD::platform::Path& pem_certificate_file_path, 
-          const YIELD::platform::Path& pem_private_key_file_path, 
-          const std::string& pem_private_key_passphrase 
-        );
+      create
+      ( 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        const
+#endif
+        SSL_METHOD* method, 
+        const YIELD::platform::Path& pem_certificate_file_path, 
+        const YIELD::platform::Path& pem_private_key_file_path, 
+        const std::string& pem_private_key_passphrase 
+      );
 
       static yidl::runtime::auto_Object<SSLContext> 
-        create
-        ( 
-          SSL_METHOD* method, 
-          const std::string& pem_certificate_str, 
-          const std::string& pem_private_key_str, 
-          const std::string& pem_private_key_passphrase 
-        );
+      create
+      ( 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        const
+#endif
+        SSL_METHOD* method, 
+        const std::string& pem_certificate_str, 
+        const std::string& pem_private_key_str, 
+        const std::string& pem_private_key_passphrase 
+      );
 
       static yidl::runtime::auto_Object<SSLContext> 
-        create
-        ( 
-          SSL_METHOD* method, 
-          const YIELD::platform::Path& pkcs12_file_path, 
-          const std::string& pkcs12_passphrase 
-        );
+      create
+      ( 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        const
+#endif
+        SSL_METHOD* method, 
+        const YIELD::platform::Path& pkcs12_file_path, 
+        const std::string& pkcs12_passphrase 
+      );
 #else
       static yidl::runtime::auto_Object<SSLContext> create();
 #endif
@@ -1537,7 +1552,14 @@ namespace YIELD
       ~SSLContext();
 
 #ifdef YIELD_HAVE_OPENSSL    
-      static SSL_CTX* createSSL_CTX( SSL_METHOD* method );
+      static SSL_CTX* createSSL_CTX
+      ( 
+#if OPENSSL_VERSION_NUMBER >= 0x10000000L
+        const
+#endif
+        SSL_METHOD* method 
+      );
+
       SSL_CTX* ctx;
 #endif
 	  };
