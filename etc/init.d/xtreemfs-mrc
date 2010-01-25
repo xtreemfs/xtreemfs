@@ -5,7 +5,7 @@
 # Required-Start:    $network
 # Required-Stop:     $network
 # Should-Start:      xtreemfs-dir
-# Should-Stop:       
+# Should-Stop:       $null
 # Default-Start:     2 3 4 5
 # Default-Stop:
 # Short-Description: XtreemFS MRC

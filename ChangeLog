@@ -81,5 +81,22 @@
 	* added web-based admin console (in trunk/contrib/console)
 
 09-DEC-2009
-        * added per-file block size (st_blksize) to struct Stat;
-          used by cp to determine I/O buffer sizes on Linux
+    * added per-file block size (st_blksize) to struct Stat;
+        used by cp to determine I/O buffer sizes on Linux
+        
+11-DEC-2009
+    * version 1.2. release
+
+16-DEC-2009
+    *fixed issue #109
+
+08-JAN-2010
+    * status of servers can now be set by admins (online, offline, etc.)
+    * scrubber now removes dead replicas and creates new ones, marks full replicas as complete if needed
+
+13-JAN-2010
+    * fixed issues #55 and #75
+    * added UUID-based OSD selection policy to default policies
+
+22-JAN-2010
+    * added client support for Fedora 12
