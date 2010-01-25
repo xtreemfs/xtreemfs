@@ -119,7 +119,7 @@ public class dir_replication_test {
         
         Logging.start(Logging.LEVEL_ERROR);
         try {
-            TimeSync.initialize(null, 60000, 50);
+            TimeSync.initializeLocal(60000, 50);
         } catch (Exception ex) {
             ex.printStackTrace();
             System.exit(1);
