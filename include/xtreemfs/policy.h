@@ -50,5 +50,6 @@ typedef int ( *get_user_credentials_from_passwd_t )
   char* out_group_ids,
   size_t* out_group_ids_size
 );
+#endif
 
 #endif
