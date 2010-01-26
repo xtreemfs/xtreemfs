@@ -15,7 +15,7 @@ DIRProxy::~DIRProxy()
     uuid_to_address_mappings_i != uuid_to_address_mappings_cache.end(); 
     uuid_to_address_mappings_i++ 
   )
-    yidl::runtime::Object::decRef( *uuid_to_address_mappings_i->second );
+    CachedAddressMappings::decRef( *uuid_to_address_mappings_i->second );
 }
 
 auto_DIRProxy 
@@ -95,7 +95,7 @@ DIRProxy::getAddressMappingsFromUUID
       }
       else
       {
-        yidl::runtime::Object::decRef( cached_address_mappings );
+        CachedAddressMappings::decRef( cached_address_mappings );
         uuid_to_address_mappings_cache.erase( uuid_to_address_mappings_i );
         uuid_to_address_mappings_cache_lock.release();
       }

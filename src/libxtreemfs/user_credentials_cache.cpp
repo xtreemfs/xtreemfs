@@ -14,7 +14,7 @@ UserCredentialsCache::~UserCredentialsCache()
     policy_shared_library_i != policy_shared_libraries.end(); 
     policy_shared_library_i++ 
   )
-    yidl::runtime::Object::decRef( **policy_shared_library_i );
+    YIELD::platform::SharedLibrary::decRef( **policy_shared_library_i );
 
 #ifndef _WIN32
   for 

@@ -13,6 +13,7 @@ namespace org
     namespace interfaces
     {
       class Stat;
+      class OSDWriteResponse;
     };
   };
 };
@@ -25,8 +26,14 @@ namespace xtreemfs
 
   class Stat : public YIELD::platform::Stat
   {
-  private:
-    friend class Volume;
+  public:
+    Stat( const YIELD::platform::Stat& stbuf );
+
+    Stat
+    (
+      const YIELD::platform::Stat& stbuf,
+      UserCredentialsCache& user_credentials_cache
+    );
 
     Stat
     ( 
@@ -34,6 +41,15 @@ namespace xtreemfs
       UserCredentialsCache& user_credentials_cache
     );
 
+    Stat
+    ( 
+      const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response 
+    );
+
+    operator org::xtreemfs::interfaces::Stat() const;
+
+  private:
+    std::string group_id, user_id;
     uint32_t truncate_epoch;
   };
 };

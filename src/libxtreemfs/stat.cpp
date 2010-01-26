@@ -12,6 +12,12 @@ using namespace xtreemfs;
 #endif
 
 
+Stat::Stat( const YIELD::platform::Stat& stbuf) 
+  : YIELD::platform::Stat( stbuf )
+{
+  truncate_epoch = 0;
+}
+
 Stat::Stat
 ( 
   const org::xtreemfs::interfaces::Stat& xtreemfs_stbuf,
@@ -20,7 +26,8 @@ Stat::Stat
 : YIELD::platform::Stat  
   (
 #ifdef _WIN32
-    xtreemfs_stbuf.get_mode(), 
+    xtreemfs_stbuf.get_mode(),
+    xtreemfs_stbuf.get_nlink(),
     xtreemfs_stbuf.get_size(), 
     xtreemfs_stbuf.get_atime_ns(), 
     xtreemfs_stbuf.get_mtime_ns(), 
@@ -56,4 +63,55 @@ Stat::Stat
   set_uid( uid );
   set_gid( gid );
 #endif
+}
+
+Stat::Stat
+( 
+  const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response 
+)
+{
+  if ( osd_write_response.get_new_file_size().empty() )
+    DebugBreak();
+
+  set_size( osd_write_response.get_new_file_size()[0].get_size_in_bytes() );
+
+  truncate_epoch 
+    = osd_write_response.get_new_file_size()[0].get_truncate_epoch();
+}
+
+Stat::operator org::xtreemfs::interfaces::Stat() const
+{
+  return org::xtreemfs::interfaces::Stat
+  (
+#ifdef _WIN32
+    0, // dev
+    0, // ino
+#else
+    get_dev(),
+    get_ino(),
+#endif
+    get_mode(),
+#ifdef _WIN32
+    0,
+#else
+    get_nlink(),
+#endif
+    user_id,
+    group_id,
+    get_size(),
+    get_atime(),
+    get_mtime(),
+    get_ctime(),
+#ifdef _WIN32
+    0,
+#else
+    get_blksize(),
+#endif
+    truncate_epoch,
+#ifdef _WIN32
+    get_attributes()
+#else
+    0
+#endif
+  );
 }

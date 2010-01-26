@@ -16,10 +16,11 @@ namespace xtreemfs
   {
   public:
     void close( OpenFile& open_file );
+
     auto_Volume get_parent_volume() const { return parent_volume; }
     const YIELD::platform::Path& get_path() const { return path; }
+    org::xtreemfs::interfaces::XLocSet get_xlocs() const { return xlocs; }
     
-
     YIELD::platform::auto_File
     open
     ( 
@@ -34,11 +35,11 @@ namespace xtreemfs
 
     bool
     getlk
-    ( 
-      const org::xtreemfs::interfaces::FileCredentials& file_credentials,
+    (       
       bool exclusive, 
       uint64_t offset, 
-      uint64_t length 
+      uint64_t length,
+      const org::xtreemfs::interfaces::XCap& xcap
     );
 
     bool getxattr( const std::string& name, std::string& out_value );
@@ -48,30 +49,30 @@ namespace xtreemfs
     ssize_t 
     read
     ( 
-      const org::xtreemfs::interfaces::FileCredentials& file_credentials,
       void* buffer, 
       size_t buffer_len, 
-      uint64_t offset 
+      uint64_t offset,
+      const org::xtreemfs::interfaces::XCap& xcap
     );
 
     bool removexattr( const std::string& name );
 
     bool
     setlk
-    ( 
-      const org::xtreemfs::interfaces::FileCredentials& file_credentials, 
+    (       
       bool exclusive, 
       uint64_t offset, 
-      uint64_t length 
+      uint64_t length,
+      const org::xtreemfs::interfaces::XCap& xcap
     );
 
     bool
     setlkw
-    ( 
-      const org::xtreemfs::interfaces::FileCredentials& file_credentials,
+    (       
       bool exclusive, 
       uint64_t offset, 
-      uint64_t length 
+      uint64_t length,
+      const org::xtreemfs::interfaces::XCap& xcap
     );
 
     bool
@@ -85,31 +86,31 @@ namespace xtreemfs
     bool 
     sync
     ( 
-      const org::xtreemfs::interfaces::FileCredentials& file_credentials 
+      const org::xtreemfs::interfaces::XCap& xcap 
     );
 
     bool 
     truncate
-    ( 
-      org::xtreemfs::interfaces::FileCredentials& file_credentials,
-      uint64_t offset 
+    (       
+      uint64_t offset,
+      org::xtreemfs::interfaces::XCap& xcap
     );
 
     bool 
     unlk
     ( 
-      const org::xtreemfs::interfaces::FileCredentials& file_credentials,
       uint64_t offset, 
-      uint64_t length 
+      uint64_t length,
+      const org::xtreemfs::interfaces::XCap& xcap
     );
 
     ssize_t
     write
-    ( 
-      const org::xtreemfs::interfaces::FileCredentials& file_credentials,
+    (       
       const void* buffer,
       size_t buffer_len,
-      uint64_t offset
+      uint64_t offset,
+      const org::xtreemfs::interfaces::XCap& xcap
     );
     
   private:
@@ -129,11 +130,11 @@ namespace xtreemfs
     );
 
 
-    std::vector<org::xtreemfs::interfaces::Lock> locks;
-    uint32_t open_file_count;
     YIELD::platform::Path path;
     auto_Volume parent_volume;
+    uint32_t reader_count, writer_count;
     ssize_t selected_file_replica;
+    org::xtreemfs::interfaces::XLocSet xlocs;
   };
 
   typedef yidl::runtime::auto_Object<SharedFile> auto_SharedFile;

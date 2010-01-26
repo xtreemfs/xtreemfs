@@ -1,4 +1,4 @@
-// Revision: 1953
+// Revision: 1958
 
 #include "yield/platform.h"
 using namespace YIELD::platform;
@@ -1998,8 +1998,8 @@ Stat::Stat()
   ino( static_cast<ino_t>( -1 ) ),
 #endif
   mode( static_cast<mode_t>( -1 ) ),
-#ifndef _WIN32
   nlink( static_cast<nlink_t>( -1 ) ),
+#ifndef _WIN32
   uid( static_cast<uid_t>( -1 ) ),
   gid( static_cast<gid_t>( -1 ) ),
   rdev( static_cast<dev_t>( -1 ) ),
@@ -2008,25 +2008,54 @@ Stat::Stat()
   atime( static_cast<uint64_t>( 0 ) ),
   mtime( static_cast<uint64_t>( 0 ) ),
   ctime( static_cast<uint64_t>( 0 ) ),
-#ifdef _WIN32
-  attributes( static_cast<uint32_t>( -1 ) )
-#else
+#ifndef _WIN32
   blksize( static_cast<blksize_t>( -1 ) ),
   blocks( static_cast<blkcnt_t>( -1 ) )
+#else
+  attributes( static_cast<uint32_t>( -1 ) )
+#endif
+{ }
+Stat::Stat( const Stat& stbuf )
+:
+#ifndef _WIN32
+  dev( stbuf.get_dev() ),
+  ino( stbuf.get_ino() ),
+#endif
+  mode( stbuf.get_mode() ),
+  nlink( stbuf.get_nlink() ),
+#ifndef _WIN32
+  uid( stbuf.get_uid() ),
+  gid( stbuf.get_gid() ),
+  rdev( stbuf.get_rdev() ),
+#endif
+  size( stbuf.get_size() ),
+  atime( stbuf.get_atime() ),
+  mtime( stbuf.get_mtime() ),
+  ctime( stbuf.get_ctime() ),
+#ifndef _WIN32
+  blksize( stbuf.get_blksize() ),
+  blocks( stbuf.get_blocks() )
+#else
+  attributes( stbuf.get_attributes() )
 #endif
 { }
 #ifdef _WIN32
 Stat::Stat
 (
   mode_t mode,
+  nlink_t nlink,
   uint64_t size,
   const Time& atime,
   const Time& mtime,
   const Time& ctime,
   uint32_t attributes
 )
-  : mode( mode ), size( size ),
-    atime( atime ), mtime( mtime ), ctime( ctime ),
+  : mode( mode ),
+    nlink( nlink ),
+    size( size ),
+    atime( atime ),
+    mtime( mtime ),
+    ctime( ctime ),
     attributes( attributes )
 { }
 Stat::Stat( const BY_HANDLE_FILE_INFORMATION& bhfi )
@@ -2036,9 +2065,10 @@ Stat::Stat( const BY_HANDLE_FILE_INFORMATION& bhfi )
       S_IFDIR :
       S_IFREG
     ),
-    ctime( bhfi.ftCreationTime ),
+    nlink( static_cast<nlink_t>( bhfi.nNumberOfLinks ) ),
     atime( bhfi.ftLastAccessTime ),
     mtime( bhfi.ftLastWriteTime ),
+    ctime( bhfi.ftCreationTime ),
     attributes( bhfi.dwFileAttributes )
 {
   ULARGE_INTEGER size;
@@ -2053,6 +2083,7 @@ Stat::Stat( const WIN32_FIND_DATA& find_data )
       S_IFDIR :
       S_IFREG
     ),
+    nlink( 1 ), // WIN32_FIND_DATA doesn't have a nNumberOfLinks
     atime( find_data.ftLastAccessTime ),
     mtime( find_data.ftLastWriteTime ),
     ctime( find_data.ftCreationTime ),
@@ -2063,27 +2094,21 @@ Stat::Stat( const WIN32_FIND_DATA& find_data )
   size.HighPart = find_data.nFileSizeHigh;
   this->size = static_cast<size_t>( size.QuadPart );
 }
-Stat::Stat( const struct stat& stbuf )
-  : mode( stbuf.st_mode ),
-    size( stbuf.st_size ),
-    atime( static_cast<uint32_t>( stbuf.st_atime ) ),
-    mtime( static_cast<uint32_t>( stbuf.st_mtime ) ),
-    ctime( static_cast<uint32_t>( stbuf.st_ctime ) ),
-    attributes( 0 )
-{ }
 Stat::Stat
 (
+  uint32_t nNumberOfLinks,
   uint32_t nFileSizeHigh,
   uint32_t nFileSizeLow,
+  const FILETIME* ftLastAccessTime,
   const FILETIME* ftLastWriteTime,
   const FILETIME* ftCreationTime,
-  const FILETIME* ftLastAccessTime,
   uint32_t dwFileAttributes
 )
   : mode
     (
       ( dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ? S_IFDIR : S_IFREG
     ),
+    nlink( static_cast<nlink_t>( nNumberOfLinks ) ),
     atime( ftLastAccessTime ),
     mtime( ftLastWriteTime ),
     ctime( ftCreationTime ),
@@ -2095,21 +2120,6 @@ Stat::Stat
   this->size = static_cast<size_t>( size.QuadPart );
 }
 #else
-Stat::Stat( const struct stat& stbuf )
-  : dev( stbuf.st_dev ),
-    ino( stbuf.st_ino ),
-    mode( stbuf.st_mode ),
-    nlink( stbuf.st_nlink ),
-    uid( stbuf.st_uid ),
-    gid( stbuf.st_gid ),
-    rdev( stbuf.st_rdev ),
-    size( stbuf.st_size ),
-    atime( static_cast<uint32_t>( stbuf.st_atime ) ),
-    mtime( static_cast<uint32_t>( stbuf.st_mtime ) ),
-    ctime( static_cast<uint32_t>( stbuf.st_ctime ) ),
-    blksize( stbuf.st_blksize ),
-    blocks( stbuf.st_blocks )
-{ }
 Stat::Stat
 (
   dev_t dev,
@@ -2141,6 +2151,30 @@ Stat::Stat
   blocks( blocks )
 { }
 #endif
+Stat::Stat( const struct stat& stbuf )
+  :
+#ifndef _WIN32
+    dev( stbuf.st_dev ),
+    ino( stbuf.st_ino ),
+#endif
+    mode( stbuf.st_mode ),
+    nlink( stbuf.st_nlink ),
+#ifndef _WIN32
+    uid( stbuf.st_uid ),
+    gid( stbuf.st_gid ),
+    rdev( stbuf.st_rdev ),
+#endif
+    size( stbuf.st_size ),
+    atime( static_cast<uint32_t>( stbuf.st_atime ) ),
+    mtime( static_cast<uint32_t>( stbuf.st_mtime ) ),
+#ifdef _WIN32
+    ctime( static_cast<uint32_t>( stbuf.st_ctime ) )
+#else
+    ctime( static_cast<uint32_t>( stbuf.st_ctime ) ),
+    blksize( stbuf.st_blksize ),
+    blocks( stbuf.st_blocks )
+#endif
+{ }
 #ifdef _WIN32
 uint32_t Stat::get_attributes() const
 {
@@ -2167,8 +2201,8 @@ Stat& Stat::operator=( const Stat& other )
   set_ino( other.get_ino() );
 #endif
   set_mode( other.get_mode() );
-#ifndef _WIN32
   set_nlink( other.get_nlink() );
+#ifndef _WIN32
   set_uid( other.get_uid() );
   set_gid( other.get_gid() );
   set_rdev( other.get_rdev() );
@@ -2193,8 +2227,8 @@ bool Stat::operator==( const Stat& other ) const
          get_ino() == other.get_ino() &&
 #endif
          get_mode() == other.get_mode() &&
-#ifndef _WIN32
          get_nlink() == other.get_nlink() &&
+#ifndef _WIN32
          get_uid() == other.get_uid() &&
          get_gid() == other.get_gid() &&
          get_rdev() == other.get_rdev() &&
@@ -2224,13 +2258,9 @@ Stat::operator struct stat() const
   stbuf.st_dev = get_dev();
   stbuf.st_ino = get_ino();
 #endif
-#ifdef _WIN32
-  stbuf.st_mode = static_cast<unsigned short>( get_mode() );
-#else
   stbuf.st_mode = get_mode();
-#endif
-#ifndef _WIN32
   stbuf.st_nlink = get_nlink();
+#ifndef _WIN32
   stbuf.st_uid = get_uid();
   stbuf.st_gid = get_gid();
   stbuf.st_rdev = get_rdev();
@@ -2248,28 +2278,29 @@ Stat::operator struct stat() const
 #ifdef _WIN32
 Stat::operator BY_HANDLE_FILE_INFORMATION() const
 {
-  BY_HANDLE_FILE_INFORMATION HandleFileInformation;
-  memset( &HandleFileInformation, 0, sizeof( HandleFileInformation ) );
-  HandleFileInformation.ftCreationTime = get_ctime();
-  HandleFileInformation.ftLastWriteTime = get_mtime();
-  HandleFileInformation.ftLastAccessTime = get_atime();
+  BY_HANDLE_FILE_INFORMATION bhfi;
+  memset( &bhfi, 0, sizeof( bhfi ) );
+  bhfi.dwFileAttributes = get_attributes();
+  bhfi.ftCreationTime = get_ctime();
+  bhfi.ftLastWriteTime = get_mtime();
+  bhfi.ftLastWriteTime = get_mtime();
   ULARGE_INTEGER size; size.QuadPart = get_size();
-  HandleFileInformation.nFileSizeLow = size.LowPart;
-  HandleFileInformation.nFileSizeHigh = size.HighPart;
-  HandleFileInformation.dwFileAttributes = get_attributes();
-  return HandleFileInformation;
+  bhfi.nFileSizeLow = size.LowPart;
+  bhfi.nFileSizeHigh = size.HighPart;
+  bhfi.nNumberOfLinks = get_nlink();
+  return bhfi;
 }
 Stat::operator WIN32_FIND_DATA() const
 {
   WIN32_FIND_DATA find_data;
   memset( &find_data, 0, sizeof( find_data ) );
+  find_data.dwFileAttributes = get_attributes();
   find_data.ftCreationTime = get_ctime();
-  find_data.ftLastWriteTime = get_mtime();
   find_data.ftLastAccessTime = get_atime();
+  find_data.ftLastWriteTime = get_mtime();
   ULARGE_INTEGER size; size.QuadPart = get_size();
   find_data.nFileSizeLow = size.LowPart;
   find_data.nFileSizeHigh = size.HighPart;
-  find_data.dwFileAttributes = get_attributes();
   return find_data;
 }
 #endif
@@ -2287,11 +2318,11 @@ void Stat::set_mode( mode_t mode )
 {
   this->mode = mode;
 }
-#ifndef _WIN32
 void Stat::set_nlink( nlink_t nlink )
 {
   this->nlink = nlink;
 }
+#ifndef _WIN32
 void Stat::set_uid( uid_t uid )
 {
   this->uid = uid;
@@ -3046,10 +3077,10 @@ void TimerQueue::Thread::run()
             );
           }
           else
-            yidl::runtime::Object::decRef( *timer );
+            TimerQueue::Timer::decRef( *timer );
         }
         else
-          yidl::runtime::Object::decRef( *timer );
+          TimerQueue::Timer::decRef( *timer );
       }
       else // Wait on the new timers queue until a new timer arrives
            // or it's time to fire the next timer
@@ -3093,7 +3124,7 @@ VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
   {
     this_->fire();
     if ( this_->get_period() == 0 )
-      yidl::runtime::Object::decRef( *this_ );
+      TimerQueue::Timer::decRef( *this_ );
     else
       this_->last_fire_time = Time();
   }

@@ -1,4 +1,4 @@
-// Revision: 1934
+// Revision: 1958
 
 #include "yield/concurrency.h"
 using namespace YIELD::concurrency;
@@ -97,7 +97,7 @@ ColorStageGroup::~ColorStageGroup()
   )
   {
     ( *thread_i )->stop();
-    yidl::runtime::Object::decRef( **thread_i );
+    Thread::decRef( **thread_i );
   }
 }
 
@@ -115,14 +115,14 @@ void EventHandler::handleUnknownEvent( Event& ev )
     case YIDL_RUNTIME_OBJECT_TYPE_ID( Stage::StartupEvent ):
     case YIDL_RUNTIME_OBJECT_TYPE_ID( Stage::ShutdownEvent ):
     {
-      Object::decRef( ev );
+      Event::decRef( ev );
     }
     break;
     default:
     {
       std::cerr << get_type_name() << " dropping unknown event: " <<
                    ev.get_type_name() << std::endl;
-      Object::decRef( ev );
+      Event::decRef( ev );
     }
     break;
   }
@@ -168,7 +168,7 @@ EventTargetMux::~EventTargetMux()
     event_target_i < event_targets_len;
     event_target_i++
   )
-    Object::decRef( *event_targets[event_target_i] );
+    EventTarget::decRef( *event_targets[event_target_i] );
   delete [] event_targets;
 }
 void EventTargetMux::addEventTarget( auto_EventTarget event_target )
@@ -471,7 +471,7 @@ PollingStageGroup<VisitPolicyType>::~PollingStageGroup()
   )
   {
     ( *thread_i )->stop();
-    yidl::runtime::Object::decRef( **thread_i );
+    Thread::decRef( **thread_i );
   }
 }
 template class PollingStageGroup<DBRVisitPolicy>;
@@ -561,7 +561,7 @@ SEDAStageGroup::~SEDAStageGroup()
     thread_i != threads.end();
     thread_i++
   )
-    Object::decRef( **thread_i );
+    Thread::decRef( **thread_i );
 }
 void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
 {
@@ -659,7 +659,7 @@ StageGroup::StageGroup()
 StageGroup::~StageGroup()
 {
   for ( uint8_t stage_i = 0; stage_i < YIELD_STAGES_PER_GROUP_MAX; stage_i++ )
-    Object::decRef( stages[stage_i] );
+    Stage::decRef( stages[stage_i] );
 }
 
 void StageGroup::addStage( auto_Stage stage )

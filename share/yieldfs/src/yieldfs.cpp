@@ -522,7 +522,7 @@ namespace yieldfs
       {
         fi->fh = 0;
         int ret = file->close() ? 0 : -1 * errno;
-        yidl::runtime::Object::decRef( *file );
+        YIELD::platform::File::decRef( *file );
         return ret;
       }
       else
@@ -971,7 +971,7 @@ namespace yieldfs
         else
           ret = -1 * ::GetLastError();
 
-        yidl::runtime::Object::decRef( *file );
+        YIELD::platform::File::decRef( *file );
 
         return ret;
       }
@@ -1269,7 +1269,7 @@ namespace yieldfs
         {
           read_ret = file->read( Buffer, BufferLength, Offset );
           file->close(); // See note in CloseFile; assume this succeeds
-          yidl::runtime::Object::decRef( *file );
+          YIELD::platform::File::decRef( *file );
         }
         else
           return -1 * ::GetLastError();
@@ -1408,7 +1408,7 @@ namespace yieldfs
         {
           write_ret = file->write( Buffer, NumberOfBytesToWrite, Offset );
           file->close(); // See note in CloseFile; assume this succeeds
-          yidl::runtime::Object::decRef( *file );
+          YIELD::platform::File::decRef( *file );
         }
         else
           return -1 * ::GetLastError();

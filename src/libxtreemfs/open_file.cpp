@@ -36,7 +36,7 @@ public:
         open_file->parent_shared_file->get_parent_volume()->get_mrc_proxy()
           ->xtreemfs_renew_capability
         ( 
-          open_file->file_credentials.get_xcap(),
+          open_file->get_xcap(),
           renewed_xcap      
         );
 
@@ -45,13 +45,9 @@ public:
         //  "xtreemfs::OpenFile: successfully renewed XCap for open_file " <<
         //  open_file->file_credentials.get_xcap().get_file_id() << ".";
 
-        open_file->file_credentials.set_xcap( renewed_xcap );
+        open_file->xcap = renewed_xcap;
 
-        if 
-        ( 
-          renewed_xcap.get_expire_timeout_s() > 
-          XCAP_EXPIRE_TIMEOUT_S_MIN 
-        )
+        if ( renewed_xcap.get_expire_timeout_s() > XCAP_EXPIRE_TIMEOUT_S_MIN )
         {
           // Add another timer for the renewed xcap
           // Don't use periods here on the pessimistic assumption that
@@ -94,17 +90,17 @@ private:
 
 OpenFile::OpenFile
 ( 
-  const FileCredentials& file_credentials,
-  auto_SharedFile parent_shared_file
+  auto_SharedFile parent_shared_file,
+  const XCap& xcap
 )
-: file_credentials( file_credentials ),
-  parent_shared_file( parent_shared_file )
+: parent_shared_file( parent_shared_file ),
+  xcap( xcap )
 {
   closed = false;
 
   if 
   (
-    file_credentials.get_xcap().get_expire_timeout_s() >
+    xcap.get_expire_timeout_s() >
     XCAP_EXPIRE_TIMEOUT_S_MIN
   )
   {
@@ -120,9 +116,7 @@ OpenFile::OpenFile
       new XCapTimer
       (
         incRef(), 
-        ( file_credentials.get_xcap().get_expire_timeout_s() - 
-          XCAP_EXPIRE_TIMEOUT_S_MIN ) 
-        * NS_IN_S 
+        ( xcap.get_expire_timeout_s() - XCAP_EXPIRE_TIMEOUT_S_MIN ) * NS_IN_S
       )
     );  
   }
@@ -142,37 +136,11 @@ bool OpenFile::close()
 {
   if ( !closed )
   {
-    //try
-    //{
-    //  if ( !latest_osd_write_response.get_new_file_size().empty() )  
-    //  {
-    //    parent_shared_file->get_parent_volume()->get_mrc_proxy()
-    //      ->xtreemfs_update_file_size
-    //    ( 
-    //      file_credentials.get_xcap(), 
-    //      latest_osd_write_response 
-    //    );
-
-    //    latest_osd_write_response.set_new_file_size( NewFileSize() );
-    //  }
-    //    
-    //  if ( file_credentials.get_xcap().get_replicate_on_close() )
-    //  {
-    //    parent_shared_file->get_parent_volume()->get_mrc_proxy()
-    //      ->close
-    //    ( 
-    //      parent_volume->get_vivaldi_coordinates(), 
-    //      file_credentials.get_xcap() 
-    //    );
-    //  }
-    //}
-    //catch ( std::exception& )
-    //{ }
-
+    parent_shared_file->close( *this );
     closed = true;
   }
 
-  return true; // ??
+  return true;
 }
 
 bool OpenFile::datasync()
@@ -187,18 +155,12 @@ YIELD::platform::auto_Stat OpenFile::getattr()
 
 bool OpenFile::getlk( bool exclusive, uint64_t offset, uint64_t length )
 {
-  return parent_shared_file->getlk
-         (
-           file_credentials,
-           exclusive, 
-           offset,
-           length
-         );
+  return parent_shared_file->getlk( exclusive, offset, length, xcap );
 }
 
 size_t OpenFile::getpagesize()
 {
-  return file_credentials.get_xlocs().get_replicas()[0]
+  return parent_shared_file->get_xlocs().get_replicas()[0]
     .get_striping_policy().get_stripe_size() * 1024;
 }
 
@@ -214,7 +176,7 @@ bool OpenFile::listxattr( std::vector<std::string>& out_names )
 
 ssize_t OpenFile::read( void* rbuf, size_t size, uint64_t offset )
 {
-  return parent_shared_file->read( file_credentials, rbuf, size, offset );
+  return parent_shared_file->read( rbuf, size, offset, xcap );
 }
 
 bool OpenFile::removexattr( const std::string& name )
@@ -224,24 +186,12 @@ bool OpenFile::removexattr( const std::string& name )
 
 bool OpenFile::setlk( bool exclusive, uint64_t offset, uint64_t length )
 {
-  return parent_shared_file->setlk
-         ( 
-           file_credentials, 
-           exclusive, 
-           offset, 
-           length 
-         );
+  return parent_shared_file->setlk( exclusive, offset, length, xcap );
 }
 
 bool OpenFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
 {
-  return parent_shared_file->setlkw
-         ( 
-           file_credentials, 
-           exclusive, 
-           offset, 
-           length 
-         );
+  return parent_shared_file->setlkw( exclusive, offset, length, xcap );
 }
 
 bool OpenFile::setxattr
@@ -256,21 +206,21 @@ bool OpenFile::setxattr
 
 bool OpenFile::sync()
 {
-  return parent_shared_file->sync( file_credentials );
+  return parent_shared_file->sync( xcap );
 }
 
 bool OpenFile::truncate( uint64_t new_size )
 {
-  return parent_shared_file->truncate( file_credentials, new_size );
+  return parent_shared_file->truncate( new_size, xcap );
 }
 
 bool OpenFile::unlk( uint64_t offset, uint64_t length )
 {
-  return parent_shared_file->unlk( file_credentials, offset, length );
+  return parent_shared_file->unlk( offset, length, xcap );
 }
 
 ssize_t OpenFile::write( const void* wbuf, size_t size, uint64_t offset )
 {
-  return parent_shared_file->write( file_credentials, wbuf, size, offset );
+  return parent_shared_file->write( wbuf, size, offset, xcap );
 }
 

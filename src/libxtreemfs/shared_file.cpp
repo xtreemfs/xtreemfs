@@ -1,5 +1,6 @@
 #include "shared_file.h"
 #include "open_file.h"
+#include "stat.h"
 using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
@@ -108,15 +109,46 @@ SharedFile::SharedFile
 ) : parent_volume( parent_volume ),
     path( path )
 {
-  open_file_count = 0;
+  reader_count = writer_count = 0;
   selected_file_replica = 0;
 }
 
 void SharedFile::close( xtreemfs::OpenFile& open_file )
 {
+  if ( open_file.get_xcap().get_access_mode() == O_RDONLY )
+  {
+#ifdef _DEBUG
+    if ( reader_count == 0 )
+      DebugBreak();
+#endif
+    --reader_count;
+  }
+  else
+  {
+#ifdef _DEBUG
+    if ( writer_count == 0 )
+      DebugBreak();
+#endif
+    --writer_count;
+
+    if 
+    ( 
+      writer_count == 0 
+      &&
+      open_file.get_xcap().get_replicate_on_close()
+    )
+    {
+      parent_volume->get_mrc_proxy()->close
+      ( 
+        parent_volume->get_vivaldi_coordinates(),
+        open_file.get_xcap()
+      );
+    }
+  }
+
   OpenFile::decRef( open_file );
-  --open_file_count;
-  if ( open_file_count == 0 )
+
+  if ( reader_count == 0 && writer_count == 0 )
     parent_volume->release( *this );
 }
 
@@ -128,19 +160,19 @@ YIELD::platform::auto_Stat SharedFile::getattr()
 bool
 SharedFile::getlk
 ( 
-  const org::xtreemfs::interfaces::FileCredentials& file_credentials,
   bool exclusive, 
   uint64_t offset, 
-  uint64_t length 
+  uint64_t length,
+  const XCap& xcap
 )
 {
   Lock lock = 
     parent_volume->get_osd_proxy_mux()->xtreemfs_lock_check
     ( 
-      file_credentials,
+      FileCredentials( xcap, xlocs ),
       parent_volume->get_uuid(),
       yieldfs::FUSE::getpid(), 
-      file_credentials.get_xcap().get_file_id(), 
+      xcap.get_file_id(), 
       offset, 
       length, 
       exclusive 
@@ -162,20 +194,27 @@ bool SharedFile::listxattr( std::vector<std::string>& out_names )
 YIELD::platform::auto_File
 SharedFile::open
 ( 
-  org::xtreemfs::interfaces::FileCredentials& file_credentials 
+  FileCredentials& file_credentials 
 )
 {
-  ++open_file_count;
-  return new xtreemfs::OpenFile( file_credentials, incRef() );
+  if ( file_credentials.get_xlocs().get_version() >= xlocs.get_version() )
+    xlocs = file_credentials.get_xlocs();
+
+  if ( file_credentials.get_xcap().get_access_mode() == O_RDONLY )
+    ++reader_count;
+  else
+    ++writer_count;
+
+  return new xtreemfs::OpenFile( incRef(), file_credentials.get_xcap() );
 }
 
 ssize_t 
 SharedFile::read
-( 
-  const org::xtreemfs::interfaces::FileCredentials& file_credentials,
+(   
   void* rbuf, 
   size_t size, 
-  uint64_t offset 
+  uint64_t offset,
+  const XCap& xcap
 )
 {
   std::vector<ReadResponse*> read_responses;
@@ -200,8 +239,8 @@ SharedFile::read
          *rbuf_p = static_cast<char*>( rbuf ), 
          *rbuf_end = static_cast<char*>( rbuf ) + size;
     uint64_t current_file_offset = offset;
-    uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0]
-                            .get_striping_policy().get_stripe_size() * 1024;    
+    uint32_t stripe_size = xlocs.get_replicas()[0].get_striping_policy().
+                             get_stripe_size() * 1024;    
 
     YIELD::concurrency::auto_ResponseQueue<ReadResponse> 
       read_response_queue
@@ -230,7 +269,7 @@ SharedFile::read
           ( expected_read_response_count + 1 ) <<
           " for " << object_size << 
           " bytes from object number " << object_number <<
-          " in file " << file_credentials.get_xcap().get_file_id() <<
+          " in file " << xcap.get_file_id() <<
           " (object offset = " << object_offset <<
           ", file offset = " << current_file_offset <<
           ", remaining buffer size = " << 
@@ -241,8 +280,8 @@ SharedFile::read
       ReadRequest* read_request = 
         new ReadRequest
         ( 
-          file_credentials, 
-          file_credentials.get_xcap().get_file_id(), 
+          FileCredentials( xcap, xlocs ), 
+          xcap.get_file_id(), 
           object_number, 
           0, 
           object_offset, 
@@ -293,7 +332,7 @@ SharedFile::read
       {
         log->getStream( YIELD::platform::Log::LOG_INFO ) << 
           "xtreemfs::SharedFile: read " << data->size() <<
-          " bytes from file " << file_credentials.get_xcap().get_file_id() <<            
+          " bytes from file " << xcap.get_file_id() <<            
           " with " << zero_padding << " bytes of zero padding" <<
           ", starting from buffer offset " << 
           static_cast<size_t>( rbuf_p - rbuf_start ) << 
@@ -339,7 +378,7 @@ SharedFile::read
     {
       log->getStream( YIELD::platform::Log::LOG_INFO ) << 
         "xtreemfs::SharedFile: read " << ret <<
-        " bytes from file " << file_credentials.get_xcap().get_file_id() <<
+        " bytes from file " << xcap.get_file_id() <<
         " in total, returning from read().";           
     }
 #endif
@@ -384,7 +423,7 @@ SharedFile::read
     read_response_i != read_responses.end(); 
     read_response_i++ 
   )
-    yidl::runtime::Object::decRef( **read_response_i );
+    ReadResponse::decRef( **read_response_i );
 
   return ret;
 }
@@ -397,26 +436,26 @@ bool SharedFile::removexattr( const std::string& name )
 bool
 SharedFile::setlk
 ( 
-  const org::xtreemfs::interfaces::FileCredentials& file_credentials, 
   bool exclusive, 
   uint64_t offset, 
-  uint64_t length 
+  uint64_t length,
+  const XCap& xcap
 )
 {
   SHARED_FILE_OPERATION_BEGIN;
 
-  Lock lock = 
+  //Lock lock = 
     parent_volume->get_osd_proxy_mux()->xtreemfs_lock_acquire
     ( 
-      file_credentials, 
+      FileCredentials( xcap, xlocs ), 
       parent_volume->get_uuid(), 
       yieldfs::FUSE::getpid(), 
-      file_credentials.get_xcap().get_file_id(), 
+      xcap.get_file_id(), 
       offset, length, 
       exclusive 
     );
 
-  locks.push_back( lock );
+  //locks.push_back( lock );
 
   return true;
 
@@ -425,11 +464,11 @@ SharedFile::setlk
 
 bool
 SharedFile::setlkw
-( 
-  const org::xtreemfs::interfaces::FileCredentials& file_credentials,
+(   
   bool exclusive, 
   uint64_t offset, 
-  uint64_t length 
+  uint64_t length,
+  const XCap& xcap
 )
 {
   SHARED_FILE_OPERATION_BEGIN;
@@ -438,19 +477,19 @@ SharedFile::setlkw
   {
     try
     {
-       Lock lock = 
+       //Lock lock = 
           parent_volume->get_osd_proxy_mux()->xtreemfs_lock_acquire
           ( 
-            file_credentials, 
+            FileCredentials( xcap, xlocs ), 
             parent_volume->get_uuid(), 
             yieldfs::FUSE::getpid(), 
-            file_credentials.get_xcap().get_file_id(), 
+            xcap.get_file_id(), 
             offset, 
             length, 
             exclusive 
           );
 
-      locks.push_back( lock );
+      //locks.push_back( lock );
 
       return true;
     }
@@ -474,21 +513,13 @@ bool SharedFile::setxattr
 bool 
 SharedFile::sync
 ( 
-  const org::xtreemfs::interfaces::FileCredentials& file_credentials 
+  const XCap& xcap
 )
 {
   //SHARED_FILE_OPERATION_BEGIN;
 
-  //if ( !latest_osd_write_response.get_new_file_size().empty() )
-  //{
-  //  parent_volume->get_mrc_proxy()->xtreemfs_update_file_size
-  //  ( 
-  //    file_credentials.get_xcap(), 
-  //    latest_osd_write_response 
-  //  );
-
-  //  latest_osd_write_response.set_new_file_size( NewFileSize() );
-  //}  
+  // TODO: sync the metadata cache
+  // TODO: sync the data cache
 
   return true;
 
@@ -498,40 +529,35 @@ SharedFile::sync
 bool 
 SharedFile::truncate
 ( 
-  org::xtreemfs::interfaces::FileCredentials& file_credentials,
-  uint64_t new_size 
+  uint64_t new_size,
+  XCap& xcap
 )
 {
   SHARED_FILE_OPERATION_BEGIN;
 
   XCap truncate_xcap;
   parent_volume->get_mrc_proxy()->
-    ftruncate( file_credentials.get_xcap(), truncate_xcap );
-  file_credentials.set_xcap( truncate_xcap );
-  OSDWriteResponse osd_write_response;
+    ftruncate( xcap, truncate_xcap );
+  xcap = truncate_xcap;
 
+  OSDWriteResponse osd_write_response;
   parent_volume->get_osd_proxy_mux()->truncate
   ( 
-    file_credentials, 
-    file_credentials.get_xcap().get_file_id(), 
+    FileCredentials( xcap, xlocs ), 
+    xcap.get_file_id(), 
     new_size, 
     osd_write_response 
   );
 
-  //if 
-  //( 
-  //  ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != 
-  //   Volume::VOLUME_FLAG_CACHE_METADATA 
-  //)
-  //{
-  //  parent_volume->get_mrc_proxy()->xtreemfs_update_file_size
-  //  ( 
-  //    file_credentials.get_xcap(), 
-  //    osd_write_response 
-  //  );
-  //}
-  //else if ( osd_write_response > latest_osd_write_response )
-  //  latest_osd_write_response = osd_write_response;
+  if ( !osd_write_response.get_new_file_size().empty() )
+  {
+    parent_volume->fsetattr
+    ( 
+      osd_write_response, 
+      MRCInterface::SETATTR_SIZE, 
+      xcap 
+    );
+  }
 
   return true;
 
@@ -541,39 +567,40 @@ SharedFile::truncate
 bool 
 SharedFile::unlk
 ( 
-  const org::xtreemfs::interfaces::FileCredentials& file_credentials,
   uint64_t offset, 
-  uint64_t length 
+  uint64_t length,
+  const XCap& xcap
 )
 {
-  SHARED_FILE_OPERATION_BEGIN;
+  //SHARED_FILE_OPERATION_BEGIN;
 
-  if ( locks.empty() )
-    return true;
-  else
-  {
-    parent_volume->get_osd_proxy_mux()->xtreemfs_lock_release
-    ( 
-      file_credentials, 
-      file_credentials.get_xcap().get_file_id(), 
-      locks.back() 
-    );
+  //if ( locks.empty() )
+  //  return true;
+  //else
+  //{
+  //  parent_volume->get_osd_proxy_mux()->xtreemfs_lock_release
+  //  ( 
+  //    file_credentials, 
+  //    xcap.get_file_id(), 
+  //    locks.back() 
+  //  );
 
-    locks.pop_back();
+  //  locks.pop_back();
 
-    return true;
-  }
+  //  return true;
+  //}
 
-  SHARED_FILE_OPERATION_END;
+  //SHARED_FILE_OPERATION_END;
+  return true;
 }
 
 ssize_t
 SharedFile::write
 ( 
-  const org::xtreemfs::interfaces::FileCredentials& file_credentials,
   const void* wbuf,
   size_t size,
-  uint64_t offset
+  uint64_t offset,
+  const XCap& xcap
 )
 {
   YIELD::platform::auto_Log log( parent_volume->get_log() );
@@ -596,8 +623,8 @@ SharedFile::write
     const char *wbuf_p = static_cast<const char*>( wbuf ), 
                *wbuf_end = static_cast<const char*>( wbuf ) + size;
     uint64_t current_file_offset = offset;
-    uint32_t stripe_size = file_credentials.get_xlocs().get_replicas()[0]
-                            .get_striping_policy().get_stripe_size() * 1024;
+    uint32_t stripe_size = xlocs.get_replicas()[0].get_striping_policy().
+                             get_stripe_size() * 1024;
 
     YIELD::concurrency::auto_ResponseQueue<OSDInterface::writeResponse>
       write_response_queue
@@ -625,8 +652,8 @@ SharedFile::write
       OSDInterface::writeRequest* write_request =
         new OSDInterface::writeRequest
         ( 
-          file_credentials, 
-          file_credentials.get_xcap().get_file_id(), 
+          FileCredentials( xcap, xlocs ), 
+          xcap.get_file_id(), 
           object_number, 
           0, 
           object_offset, 
@@ -647,7 +674,7 @@ SharedFile::write
           ( expected_write_response_count + 1 ) <<
           " of " << object_size << 
           " bytes to object number " << object_number <<
-          " in file " << file_credentials.get_xcap().get_file_id() <<
+          " in file " << xcap.get_file_id() <<
           " (object offset = " << object_offset <<
           ", file offset = " << current_file_offset  <<
           ").";
@@ -661,6 +688,9 @@ SharedFile::write
       wbuf_p += object_size;
       current_file_offset += object_size;
     }
+
+
+    OSDWriteResponse latest_osd_write_response;
 
     for 
     ( 
@@ -687,53 +717,37 @@ SharedFile::write
           expected_write_response_count << ".";
 #endif
 
-//      if 
-//      ( 
-//        write_response.get_osd_write_response() > latest_osd_write_response 
-//      )
-//      {
-//#ifdef _DEBUG
-//        if 
-//        ( 
-//          ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-//              Volume::VOLUME_FLAG_TRACE_FILE_IO 
-//        )
-//          log->getStream( YIELD::platform::Log::LOG_INFO ) << 
-//            "xtreemfs::SharedFile: OSD write response is newer than latest known.";
-//#endif
-//
-//        latest_osd_write_response = write_response.get_osd_write_response();
-//      }
+      if 
+      ( 
+        write_response.get_osd_write_response() > latest_osd_write_response 
+      )
+      {
+#ifdef _DEBUG
+        if 
+        ( 
+          ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+              Volume::VOLUME_FLAG_TRACE_FILE_IO 
+        )
+          log->getStream( YIELD::platform::Log::LOG_INFO ) << 
+            "xtreemfs::SharedFile: OSD write response is newer than latest known.";
+#endif
+
+        latest_osd_write_response = write_response.get_osd_write_response();
+      }
 
       // yidl::runtime::Object::decRef( write_response );
       write_responses.push_back( &write_response );
     }
 
-//    if 
-//    ( 
-//      !latest_osd_write_response.get_new_file_size().empty() &&
-//      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_CACHE_METADATA ) != 
-//      Volume::VOLUME_FLAG_CACHE_METADATA 
-//    )
-//    {
-//#ifdef _DEBUG
-//      if 
-//      ( 
-//        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-//            Volume::VOLUME_FLAG_TRACE_FILE_IO 
-//      )
-//        log->getStream( YIELD::platform::Log::LOG_INFO ) << 
-//            "xtreemfs::SharedFile: flushing file size updates.";
-//#endif
-//
-//      parent_volume->get_mrc_proxy()->xtreemfs_update_file_size
-//      ( 
-//        file_credentials.get_xcap(), 
-//        latest_osd_write_response 
-//      );
-//
-//      latest_osd_write_response.set_new_file_size( NewFileSize() );
-    //}
+    if ( !latest_osd_write_response.get_new_file_size().empty() )
+    {
+      parent_volume->fsetattr
+      ( 
+        latest_osd_write_response, 
+        MRCInterface::SETATTR_SIZE, 
+        xcap 
+      );
+    }
 
     ret = static_cast<ssize_t>( current_file_offset - offset );
   }
@@ -761,7 +775,7 @@ SharedFile::write
       write_response_i != write_responses.end(); 
       write_response_i++ 
     )
-      yidl::runtime::Object::decRef( **write_response_i );    
+      OSDInterface::writeResponse::decRef( **write_response_i );    
 
     YIELD::platform::Exception::set_errno
     ( 
@@ -787,7 +801,7 @@ SharedFile::write
     write_response_i != write_responses.end(); 
     write_response_i++ 
    )
-    yidl::runtime::Object::decRef( **write_response_i );
+     OSDInterface::writeResponse::decRef( **write_response_i );
 
   return ret;
 }

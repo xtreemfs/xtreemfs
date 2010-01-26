@@ -12,31 +12,35 @@
 namespace xtreemfs
 {
   class SharedFile;
+  class Stat;
 
 
   class Volume : public YIELD::platform::Volume
   {
   public:
-    const static uint32_t VOLUME_FLAG_CACHE_METADATA = 1;
-    const static uint32_t VOLUME_FLAG_TRACE_FILE_IO = 2;
+    const static uint32_t VOLUME_FLAG_FILE_SIZE_CACHE = 1;
+    const static uint32_t VOLUME_FLAG_METADATA_CACHE = 2;
+    const static uint32_t VOLUME_FLAG_WRITE_BACK_CACHE = 4;
+    const static uint32_t VOLUME_FLAG_WRITE_THROUGH_CACHE = 8;
+    const static uint32_t VOLUME_FLAG_TRACE_FILE_IO = 16;
 
 
     static yidl::runtime::auto_Object<Volume> 
-      create
-      ( 
-        const YIELD::ipc::URI& dir_uri,
-        const std::string& name,
-        uint32_t flags = 0,
-        YIELD::platform::auto_Log log = NULL,
-        uint32_t proxy_flags = 0,
-        const YIELD::platform::Time& proxy_operation_timeout 
-          = DIRProxy::OPERATION_TIMEOUT_DEFAULT,
-        uint8_t proxy_reconnect_tries_max 
-          = DIRProxy::RECONNECT_TRIES_MAX_DEFAULT,
-        YIELD::ipc::auto_SSLContext proxy_ssl_context = NULL,
-        const YIELD::platform::Path& vivaldi_coordinates_file_path 
-          = YIELD::platform::Path()
-      );
+    create
+    ( 
+      const YIELD::ipc::URI& dir_uri,
+      const std::string& name,
+      uint32_t flags = 0,
+      YIELD::platform::auto_Log log = NULL,
+      uint32_t proxy_flags = 0,
+      const YIELD::platform::Time& proxy_operation_timeout 
+        = DIRProxy::OPERATION_TIMEOUT_DEFAULT,
+      uint8_t proxy_reconnect_tries_max 
+        = DIRProxy::RECONNECT_TRIES_MAX_DEFAULT,
+      YIELD::ipc::auto_SSLContext proxy_ssl_context = NULL,
+      const YIELD::platform::Path& vivaldi_coordinates_file_path 
+        = YIELD::platform::Path()
+    );
 
     uint32_t get_flags() const { return flags; }
     YIELD::platform::auto_Log get_log() const { return log; }
@@ -46,6 +50,13 @@ namespace xtreemfs
 
     org::xtreemfs::interfaces::VivaldiCoordinates 
       get_vivaldi_coordinates() const;
+
+    void fsetattr
+    ( 
+      const Stat& stbuf,
+      uint32_t to_set,
+      const org::xtreemfs::interfaces::XCap& xcap
+    );
 
     void release( SharedFile& );
 

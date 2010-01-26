@@ -255,7 +255,8 @@ typedef uint32_t fsblkcnt_t;
 typedef uint32_t fsfilcnt_t;
 #endif
 
-typedef int mode_t;
+typedef unsigned short mode_t;
+typedef short nlink_t;
 
 struct _OVERLAPPED;
 typedef _OVERLAPPED OVERLAPPED;
@@ -1550,11 +1551,13 @@ namespace YIELD
     {
     public:
       Stat(); // -> set each member individually, for setattr
+      Stat( const Stat& );
 
 #ifdef _WIN32
       Stat
       ( 
-        mode_t mode, 
+        mode_t mode,
+        nlink_t nlink,
         uint64_t size, 
         const Time& atime, 
         const Time& mtime, 
@@ -1568,11 +1571,12 @@ namespace YIELD
 
       Stat
       ( 
+        uint32_t nNumberOfLinks,
         uint32_t nFileSizeHigh, 
         uint32_t nFileSizeLow, 
+        const FILETIME* ftLastAccessTime, 
         const FILETIME* ftLastWriteTime, 
         const FILETIME* ftCreationTime, 
-        const FILETIME* ftLastAccessTime, 
         uint32_t dwFileAttributes 
       );
 #else
@@ -1601,8 +1605,8 @@ namespace YIELD
       ino_t get_ino() const { return ino; }
 #endif
       mode_t get_mode() const { return mode; }
-#ifndef _WIN32
       nlink_t get_nlink() const { return nlink; }
+#ifndef _WIN32
       uid_t get_uid() const { return uid; }
       gid_t get_gid() const { return gid; }
       dev_t get_rdev() const { return rdev; }
@@ -1611,11 +1615,11 @@ namespace YIELD
       const Time& get_atime() const { return atime; }
       const Time& get_mtime() const { return mtime; }
       const Time& get_ctime() const { return ctime; }
-#ifdef _WIN32
-      uint32_t get_attributes() const;
-#else
+#ifndef _WIN32
       blksize_t get_blksize() const { return blksize; }
       blkcnt_t get_blocks() const { return blocks; }
+#else
+      uint32_t get_attributes() const;
 #endif
 
       bool ISDIR() const { return ( get_mode() & S_IFDIR ) == S_IFDIR; }
@@ -1638,8 +1642,8 @@ namespace YIELD
       void set_ino( ino_t ino );
 #endif
       void set_mode( mode_t mode );
-#ifndef _WIN32
       void set_nlink( nlink_t nlink );
+#ifndef _WIN32
       void set_uid( uid_t uid );
       void set_gid( gid_t gid );
       void set_rdev( dev_t );
@@ -1648,11 +1652,11 @@ namespace YIELD
       void set_atime( const Time& atime );
       void set_mtime( const Time& mtime );
       void set_ctime( const Time& ctime );
-#ifdef _WIN32
-      void set_attributes( uint32_t attributes );
-#else
+#ifndef _WIN32
       void set_blksize( blksize_t blksize );
       void set_blocks( blkcnt_t blocks );
+#else
+      void set_attributes( uint32_t attributes );
 #endif
 
       // yidl::runtime::Object
@@ -1661,14 +1665,15 @@ namespace YIELD
     protected:
       virtual ~Stat() { }
 
+    private:
       // POSIX field order; Linux, FreeBSD, et al. all have different orders
 #ifndef _WIN32
       dev_t dev;
       ino_t ino;
 #endif
       mode_t mode;
-#ifndef _WIN32
       nlink_t nlink;
+#ifndef _WIN32
       uid_t uid;
       gid_t gid;
       dev_t rdev;
@@ -1677,15 +1682,12 @@ namespace YIELD
       Time atime;
       Time mtime;
       Time ctime;
-#ifdef _WIN32
-      uint32_t attributes;
-#else
+#ifndef _WIN32
       blksize_t blksize;
       blkcnt_t blocks;
+#else
+      uint32_t attributes;
 #endif
-
-    private:
-      Stat( const Stat& ) { DebugBreak(); } // Prevent copying
     };
 
     static inline std::ostream& operator<<( std::ostream& os, const Stat& stbuf )
@@ -1730,11 +1732,11 @@ namespace YIELD
       os << "st_atime: " << stbuf.get_atime() << ", ";
       os << "st_mtime: " << stbuf.get_mtime() << ", ";
       os << "st_ctime: " << stbuf.get_ctime() << ", ";
-#ifdef _WIN32
-      os << "attributes: " << stbuf.get_attributes() << ", ";
-#else
+#ifndef _WIN32
       os << "st_blksize: " << stbuf.get_blksize() << ", ";
       os << "st_blocks: " << stbuf.get_blocks() << ", ";
+#else
+      os << "attributes: " << stbuf.get_attributes() << ", ";
 #endif
       os << " 0 }";
       return os;

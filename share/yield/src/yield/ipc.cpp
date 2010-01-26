@@ -1,3 +1,5 @@
+// Revision: 1958
+
 #include "yield/ipc.h"
 
 
@@ -49,7 +51,7 @@ YIELD::ipc::Client<RequestType, ResponseType>::~Client()
     {
       socket_->shutdown();
       socket_->close();
-      yidl::runtime::Object::decRef( *socket_ );
+      Socket::decRef( *socket_ );
       socket_ = sockets.try_dequeue();
     }
     else
@@ -175,14 +177,14 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
             );
           socket_->aio_connect( aio_connect_control_block );
         }
-        yidl::runtime::Object::decRef( *socket_ );
+        Socket::decRef( *socket_ );
         break;
       }
     }
     break;
     default:
     {
-      yidl::runtime::Object::decRef( ev );
+      YIELD::concurrency::Event::decRef( ev );
     }
     break;
   }
@@ -1340,7 +1342,7 @@ public:
       (
         new AIOWriteControlBlock( http_response.serialize() )
       );
-      Object::decRef( http_response );
+      HTTPResponse::decRef( http_response );
     }
     else
       DebugBreak();
@@ -2642,7 +2644,7 @@ void YIELD::ipc::ONCRPCRequest::respond
           = interface_->checkResponse( *oncrpc_response_body );
         if ( interface_response != NULL )
         {
-          Object::decRef( response );
+          YIELD::concurrency::Response::decRef( response );
           return interface_request->respond( interface_response->incRef() );
         }
         else if
@@ -2651,7 +2653,7 @@ void YIELD::ipc::ONCRPCRequest::respond
            YIDL_RUNTIME_OBJECT_TYPE_ID( YIELD::concurrency::ExceptionResponse )
         )
         {
-          Object::decRef( response );
+          YIELD::concurrency::Response::decRef( response );
           return interface_request->respond
                 (
                   static_cast<YIELD::concurrency::ExceptionResponse&>
@@ -3034,7 +3036,7 @@ public:
       );
     }
     else if ( deserialize_ret < 0 )
-      Object::decRef( *oncrpc_request );
+      ONCRPCRequest::decRef( *oncrpc_request );
     else
       DebugBreak();
   }
@@ -5261,14 +5263,14 @@ public:
           }
           break;
         }
-        Object::decRef( *aio_control_block );
+        YIELD::platform::AIOControlBlock::decRef( *aio_control_block );
       }
       else if ( lpOverlapped != NULL )
       {
         YIELD::platform::AIOControlBlock* aio_control_block
           = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
         aio_control_block->onError( ::GetLastError() );
-        Object::decRef( *aio_control_block );
+        YIELD::platform::AIOControlBlock::decRef( *aio_control_block );
       }
       else
         break;
@@ -5718,7 +5720,7 @@ private:
       case Socket::AIOControlBlock::EXECUTE_STATUS_DONE:
       {
         dissociate( fd );
-        Object::decRef( *aio_control_block );
+        AIOControlBlock::decRef( *aio_control_block );
         return true;
       }
       case Socket::AIOControlBlock::EXECUTE_STATUS_WANT_READ:
@@ -5865,7 +5867,7 @@ YIELD::ipc::Socket::AIOQueue::~AIOQueue()
   )
   {
     ( *iocp_worker_thread_i )->stop();
-    Object::decRef( **iocp_worker_thread_i );
+    IOCPWorkerThread::decRef( **iocp_worker_thread_i );
   }
 #endif
   for
@@ -5877,7 +5879,7 @@ YIELD::ipc::Socket::AIOQueue::~AIOQueue()
   )
   {
     ( *nbio_worker_thread_i )->stop();
-    Object::decRef( **nbio_worker_thread_i );
+    IOCPWorkerThread::decRef( **nbio_worker_thread_i );
   }
 }
 #ifdef _WIN32

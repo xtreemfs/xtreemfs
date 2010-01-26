@@ -59,7 +59,7 @@ public:
 
           osd_proxy_mux->send( read_request->incRef() );
 
-          yidl::runtime::Object::decRef( ev );
+          YIELD::concurrency::Event::decRef( ev );
         }
         else // There is only one replica, send the exception back
           original_response_target->send( ev );
@@ -103,7 +103,7 @@ public:
       response_i != responses.end(); 
       response_i++ 
     )
-      yidl::runtime::Object::decRef( **response_i );
+      YIELD::concurrency::Event::decRef( **response_i );
   }
 
   // yidl::runtime::Object
@@ -238,7 +238,7 @@ OSDProxyMux::~OSDProxyMux()
     osd_proxies_i != osd_proxies.end(); 
     osd_proxies_i++ 
   )
-    yidl::runtime::Object::decRef( *osd_proxies_i->second );
+    OSDProxy::decRef( *osd_proxies_i->second );
 }
 
 auto_OSDProxy OSDProxyMux::getOSDProxy
@@ -431,7 +431,7 @@ void OSDProxyMux::handletruncateRequest( truncateRequest& req )
       getOSDProxy( ( *replica_i ).get_osd_uuids()[0] ).get() 
     )->send( req.incRef() );
 
-  yidl::runtime::Object::decRef( req );
+  truncateRequest::decRef( req );
 }
 
 void OSDProxyMux::handleunlinkRequest( unlinkRequest& req )
@@ -457,7 +457,7 @@ void OSDProxyMux::handleunlinkRequest( unlinkRequest& req )
       getOSDProxy( ( *replica_i ).get_osd_uuids()[0] ).get() 
     )->send( req.incRef() );
 
-  yidl::runtime::Object::decRef( req );
+  unlinkRequest::decRef( req );
 }
 
 void OSDProxyMux::handlewriteRequest( writeRequest& req )

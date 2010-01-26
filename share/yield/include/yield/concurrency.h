@@ -382,7 +382,7 @@ namespace YIELD
             }
             catch ( ExceptionResponse& )
             {
-              Object::decRef( *dequeued_ev );
+              Event::decRef( *dequeued_ev );
               throw;
             }
           }
@@ -431,7 +431,7 @@ namespace YIELD
               }
               catch ( ExceptionResponse& )
               {
-                Object::decRef( *dequeued_ev );
+                Event::decRef( *dequeued_ev );
                 throw;
               }
 

@@ -12,6 +12,8 @@ namespace xtreemfs
   class OpenFile : public YIELD::platform::File
   {
   public:
+    const org::xtreemfs::interfaces::XCap& get_xcap() const { return xcap; }
+
     // yidl::runtime::Object
     YIDL_RUNTIME_OBJECT_PROTOTYPES( OpenFile, 0 );
 
@@ -26,15 +28,15 @@ namespace xtreemfs
 
     OpenFile
     (
-      const org::xtreemfs::interfaces::FileCredentials& file_credentials,
-      auto_SharedFile parent_shared_file
+      auto_SharedFile parent_shared_file,
+      const org::xtreemfs::interfaces::XCap& xcap
     );
 
     ~OpenFile();
 
     bool closed;
-    org::xtreemfs::interfaces::FileCredentials file_credentials;
     auto_SharedFile parent_shared_file;
+    org::xtreemfs::interfaces::XCap xcap;
     yidl::runtime::auto_Object<XCapTimer> xcap_timer;
   };
 

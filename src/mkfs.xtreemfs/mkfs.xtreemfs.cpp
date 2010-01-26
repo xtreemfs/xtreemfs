@@ -33,7 +33,7 @@ namespace mkfs_xtreemfs
         "--mode", 
         "n" 
       );
-      mode = YIELD::platform::Volume::DEFAULT_DIRECTORY_MODE;
+      mode = YIELD::platform::Volume::DIRECTORY_MODE_DEFAULT;
 
       addOption
       ( 
@@ -159,7 +159,7 @@ namespace mkfs_xtreemfs
           {
             mode = strtol( arg, NULL, 0 );
             if ( mode == 0 )
-              mode = YIELD::platform::Volume::DEFAULT_DIRECTORY_MODE;
+              mode = YIELD::platform::Volume::DIRECTORY_MODE_DEFAULT;
           }
           break;
 

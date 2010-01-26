@@ -157,7 +157,7 @@ namespace mount_xtreemfs
       // Fill volume_flags from options
       uint32_t volume_flags = 0;
       if ( metadata_cache )
-        volume_flags |= xtreemfs::Volume::VOLUME_FLAG_CACHE_METADATA;
+        volume_flags |= xtreemfs::Volume::VOLUME_FLAG_METADATA_CACHE;
       if ( trace_file_io )
         volume_flags |= xtreemfs::Volume::VOLUME_FLAG_TRACE_FILE_IO;
 

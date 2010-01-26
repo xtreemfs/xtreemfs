@@ -144,6 +144,19 @@ auto_Volume Volume::create
   );
 }
 
+void Volume::fsetattr
+( 
+  const xtreemfs::Stat& stbuf,
+  uint32_t to_set,
+  const org::xtreemfs::interfaces::XCap& xcap
+)
+{
+  if ( to_set != SETATTR_SIZE )
+    DebugBreak();
+
+  mrc_proxy->fsetattr( xcap, stbuf, to_set );
+}
+
 YIELD::platform::auto_Stat Volume::getattr( const YIELD::platform::Path& path )
 {
   VOLUME_OPERATION_BEGIN( stat )
@@ -469,15 +482,21 @@ YIELD::platform::auto_Path Volume::readlink
 }
 
 void Volume::release( SharedFile& shared_file )
-{
+{  
   shared_files_lock.acquire();
-  std::map<std::string, SharedFile*>::iterator shared_file_i 
+
+  std::map<std::string, SharedFile*>::iterator shared_file_i
     = shared_files.find( shared_file.get_path() );
-  if ( shared_file_i == shared_files.end() ) 
+
+  if ( shared_file_i != shared_files.end() )
+  {
+    shared_files.erase( shared_file_i );
+    SharedFile::decRef( shared_file );
+  }
+  else
     DebugBreak();
-  shared_files.erase( shared_file_i );
+
   shared_files_lock.release();
-  SharedFile::decRef( shared_file );
 }
 
 bool Volume::removexattr
@@ -554,45 +573,10 @@ bool Volume::setattr
 
   VOLUME_OPERATION_BEGIN( setattr )
   {    
-    org::xtreemfs::interfaces::Stat xtreemfs_stbuf;
-
-    xtreemfs_stbuf.set_mode( stbuf->get_mode() );
-
-#ifdef _WIN32
-    xtreemfs_stbuf.set_attributes( stbuf->get_attributes() );
-#else
-    if 
-    ( 
-      ( to_set & YIELD::platform::Volume::SETATTR_UID ) 
-        == YIELD::platform::Volume::SETATTR_UID 
-      &&
-      ( to_set & YIELD::platform::Volume::SETATTR_GID ) 
-        == YIELD::platform::Volume::SETATTR_GID 
-    )
-    {
-      UserCredentials user_credentials;
-      user_credentials_cache->getUserCredentialsFrompasswd
-      ( 
-        stbuf->get_uid(),
-        stbuf->get_gid(),
-        user_credentials 
-      );
-
-      xtreemfs_stbuf.set_user_id( user_credentials.get_user_id() );
-      if ( !user_credentials.get_group_ids().empty() )
-        xtreemfs_stbuf.set_group_id( user_credentials.get_group_ids()[0] );
-    }
-#endif
-
-    xtreemfs_stbuf.set_size( stbuf->get_size() );
-    xtreemfs_stbuf.set_atime_ns( stbuf->get_atime() );
-    xtreemfs_stbuf.set_mtime_ns( stbuf->get_mtime() );
-    xtreemfs_stbuf.set_ctime_ns( stbuf->get_ctime() );
-
     mrc_proxy->setattr
     ( 
       Path( this->name, path ), 
-      xtreemfs_stbuf,
+      Stat( *stbuf ),
       to_set
     );
 
