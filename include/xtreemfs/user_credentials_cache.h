@@ -5,6 +5,7 @@
 #define _XTREEMFS_USER_CREDENTIALS_CACHE_H_
 
 #include "xtreemfs/interfaces/types.h"
+#include "xtreemfs/policy.h"
 
 #include "yield.h"
 

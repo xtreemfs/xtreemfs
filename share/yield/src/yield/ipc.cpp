@@ -1,5 +1,3 @@
-// Revision: 1958
-
 #include "yield/ipc.h"
 
 
@@ -5879,7 +5877,7 @@ YIELD::ipc::Socket::AIOQueue::~AIOQueue()
   )
   {
     ( *nbio_worker_thread_i )->stop();
-    IOCPWorkerThread::decRef( **nbio_worker_thread_i );
+    NBIOWorkerThread::decRef( **nbio_worker_thread_i );
   }
 }
 #ifdef _WIN32

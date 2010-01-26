@@ -53,7 +53,7 @@ Stat::Stat
 {
 #ifndef _WIN32
   uid_t uid; gid_t gid;
-  getpasswdFromUserCredentials
+  user_credentials_cache.getpasswdFromUserCredentials
   ( 
     xtreemfs_stbuf.get_user_id(), 
     xtreemfs_stbuf.get_group_id(), 

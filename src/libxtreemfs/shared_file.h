@@ -130,8 +130,9 @@ namespace xtreemfs
     );
 
 
-    YIELD::platform::Path path;
     auto_Volume parent_volume;
+    YIELD::platform::Path path;
+
     uint32_t reader_count, writer_count;
     ssize_t selected_file_replica;
     org::xtreemfs::interfaces::XLocSet xlocs;

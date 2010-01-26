@@ -21,10 +21,8 @@ using namespace xtreemfs;
 #else
 #include "yieldfs.h"
 #include <errno.h>
-#include <grp.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h> 
-#include <pwd.h>
 #include <sys/socket.h>
 #include <unistd.h>
 #endif
@@ -337,11 +335,12 @@ Proxy<ProxyType, InterfaceType>::getCurrentUserCredentials
 #else
   uid_t caller_uid = yieldfs::FUSE::geteuid();
   gid_t caller_gid = yieldfs::FUSE::getegid();
+
   if 
   ( 
     caller_uid != static_cast<uid_t>( -1 ) && 
     caller_gid != static_cast<gid_t>( -1 ) &&
-    getUserCredentialsFrompasswd
+    user_credentials_cache->getUserCredentialsFrompasswd
     ( 
       caller_uid, 
       caller_gid, 
@@ -354,9 +353,10 @@ Proxy<ProxyType, InterfaceType>::getCurrentUserCredentials
   {
     caller_uid = ::geteuid();
     caller_gid = ::getegid();
+
     if 
     ( 
-      getUserCredentialsFrompasswd
+      user_credentials_cache->getUserCredentialsFrompasswd
       ( 
         caller_uid, 
         caller_gid, 

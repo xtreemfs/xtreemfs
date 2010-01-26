@@ -2,7 +2,13 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/user_credentials_cache.h"
+using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
+
+#ifndef _WIN32
+#include <grp.h>
+#include <pwd.h>
+#endif
 
 
 UserCredentialsCache::~UserCredentialsCache()
@@ -485,7 +491,7 @@ bool UserCredentialsCache::getUserCredentialsFrompasswd
   }
   else
   {
-    if ( uid != -1 )
+    if ( uid != static_cast<uid_t>( -1 ) )
     {
       struct passwd pwd, *pwd_res;
       int pwd_buf_len = sysconf( _SC_GETPW_R_SIZE_MAX );
@@ -514,7 +520,7 @@ bool UserCredentialsCache::getUserCredentialsFrompasswd
     else
       out_user_credentials.set_user_id( "" );
 
-    if ( gid != -1 )
+    if ( gid != static_cast<gid_t>( -1 ) )
     {
       struct group grp, *grp_res;
       int grp_buf_len = sysconf( _SC_GETGR_R_SIZE_MAX );

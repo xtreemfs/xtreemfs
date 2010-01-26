@@ -2,25 +2,19 @@
 
 #include <string.h>
 
-#ifndef _WIN32
 #include <errno.h>
 #include <xos_ams.h>
 #include <xos_protocol.h>
-#endif
 
 
 DLLEXPORT int get_passwd_from_user_credentials
 ( 
   const char* user_id, 
   const char* group_ids, 
-  int* uid, 
-  int* gid 
+  uid_t* uid, 
+  gid_t* gid 
 )
 {
-#ifdef _WIN32
-  uid = gid = 0;
-  return 0;
-#else
   int ams_fd;
   AMS_GPASSWD gpwd;
   AMS_GGROUPS ggrp;
@@ -41,8 +35,8 @@ DLLEXPORT int get_passwd_from_user_credentials
       ) >= 0 
     )
     {
-      *uid = gpwd.l_idtoken.g_mappeduid;
-      *gid = gpwd.l_idtoken.g_mappedgid;
+      *uid = ( uid_t )gpwd.l_idtoken.g_mappeduid;
+      *gid = ( gid_t )gpwd.l_idtoken.g_mappedgid;
       return 0;
     }
     else
@@ -50,13 +44,12 @@ DLLEXPORT int get_passwd_from_user_credentials
   }
   else
     return -1 * errno;
-#endif
 }
 
 DLLEXPORT int get_user_credentials_from_passwd
 ( 
-  int uid, 
-  int gid, 
+  uid_t uid, 
+  gid_t gid, 
   char* user_id, 
   size_t* user_id_len, 
   char* group_ids, 
@@ -66,10 +59,6 @@ DLLEXPORT int get_user_credentials_from_passwd
   const char *ams_user_id, *ams_group_id;
   size_t ams_user_id_len, ams_group_id_len;
   
-#ifdef _WIN32
-  ams_user_id = "ams_user_id";
-  ams_group_id = "ams_group_id";
-#else
   int ams_fd;
   AMS_GPASSWD gpwd;
   AMS_GGROUPS ggrp;
@@ -99,7 +88,6 @@ DLLEXPORT int get_user_credentials_from_passwd
   }
   else
     return -1 * errno;
-#endif
 
   ams_user_id_len = strlen( ams_user_id ) + 1;
   if ( user_id == NULL )

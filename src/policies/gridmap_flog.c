@@ -1,6 +1,5 @@
 #include "xtreemfs/policy.h"
 
-#ifndef _WIN32
 #include <errno.h>
 #include <fcntl.h>
 #include <pwd.h>
@@ -10,8 +9,8 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
 #define PWD_BUF_LEN 256
-#endif
 
 
 int open_gridmap
@@ -103,14 +102,10 @@ DLLEXPORT int get_passwd_from_user_credentials
 ( 
   const char* user_id, 
   const char* group_ids, 
-  int* uid, 
-  int* gid 
+  uid_t* uid, 
+  gid_t* gid 
 )
 {
-#ifdef _WIN32
-  *uid = *gid = 0;
-  return 0;
-#else
   int fd;
   char *gridmap, *gridmap_p, *gridmap_end; 
 
@@ -168,13 +163,12 @@ DLLEXPORT int get_passwd_from_user_credentials
  }
 
  return -1;
-#endif
 }
 
 DLLEXPORT int get_user_credentials_from_passwd
 ( 
-  int uid, 
-  int gid, 
+  uid_t uid, 
+  gid_t gid, 
   char* user_id, 
   size_t* user_id_len, 
   char* group_ids, 
