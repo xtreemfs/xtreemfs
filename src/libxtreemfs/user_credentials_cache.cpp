@@ -11,6 +11,30 @@ using namespace xtreemfs;
 #endif
 
 
+UserCredentialsCache::UserCredentialsCache()
+{
+#ifndef _WIN32
+  get_user_credentials_from_passwd
+    = reinterpret_cast<get_user_credentials_from_passwd_t>
+      (
+        getPolicyFunction
+        (
+          "get_user_credentials_from_passwd"
+        )
+      );
+
+  get_passwd_from_user_credentials
+    = reinterpret_cast<get_passwd_from_user_credentials_t>
+      (
+        getPolicyFunction
+        (
+          "get_passwd_from_user_credentials"
+        )
+      );
+#endif
+
+}
+
 UserCredentialsCache::~UserCredentialsCache()
 {
   for 

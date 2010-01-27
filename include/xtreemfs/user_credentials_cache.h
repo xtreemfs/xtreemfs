@@ -15,6 +15,7 @@ namespace xtreemfs
   class UserCredentialsCache : public yidl::runtime::Object
   {
   public:
+    UserCredentialsCache();
     ~UserCredentialsCache();
 
 #ifndef _WIN32
@@ -43,6 +44,7 @@ namespace xtreemfs
 
     void* getPolicyFunction( const char* name );
 
+/*
     template <typename PolicyFunctionType>
     bool getPolicyFunction
     (
@@ -64,6 +66,7 @@ namespace xtreemfs
       else
         return false;
     }
+*/
 
     // The actual credentials caches
 #ifndef _WIN32
