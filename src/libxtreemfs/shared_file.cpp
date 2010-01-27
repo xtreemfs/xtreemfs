@@ -146,7 +146,8 @@ void SharedFile::close( xtreemfs::OpenFile& open_file )
     }
   }
 
-  OpenFile::decRef( open_file );
+  // Don't decRef open_file, since we didn't keep a reference
+  // OpenFile::decRef( open_file );
 
   if ( reader_count == 0 && writer_count == 0 )
     parent_volume->release( *this );
