@@ -63,7 +63,8 @@ bool Volume::access( const YIELD::platform::Path&, int )
   return true;
 }
 
-auto_Volume Volume::create
+auto_Volume
+Volume::create
 ( 
   const YIELD::ipc::URI& dir_uri, 
   const std::string& name, 
@@ -144,7 +145,8 @@ auto_Volume Volume::create
   );
 }
 
-void Volume::fsetattr
+void
+Volume::fsetattr
 ( 
   const xtreemfs::Stat& stbuf,
   uint32_t to_set,
@@ -204,7 +206,7 @@ Volume::get_shared_file
 }
 
 org::xtreemfs::interfaces::VivaldiCoordinates 
-  Volume::get_vivaldi_coordinates() const
+Volume::get_vivaldi_coordinates() const
 {
   org::xtreemfs::interfaces::VivaldiCoordinates vivaldi_coordinates;
 
@@ -225,7 +227,8 @@ org::xtreemfs::interfaces::VivaldiCoordinates
   return vivaldi_coordinates;
 }
 
-bool Volume::getxattr
+bool
+Volume::getxattr
 ( 
   const YIELD::platform::Path& path, 
   const std::string& name, 
@@ -243,7 +246,8 @@ bool Volume::getxattr
   return false;
 }
 
-bool Volume::link
+bool 
+Volume::link
 ( 
   const YIELD::platform::Path& old_path, 
   const YIELD::platform::Path& new_path 
@@ -268,7 +272,8 @@ bool Volume::link
   return false;
 }
 
-bool Volume::listdir
+bool
+Volume::listdir
 ( 
   const YIELD::platform::Path& path, 
   const YIELD::platform::Path&, 
@@ -296,7 +301,8 @@ bool Volume::listdir
   return false;
 }
 
-bool Volume::listxattr
+bool
+Volume::listxattr
 ( 
   const YIELD::platform::Path& path, 
   std::vector<std::string>& out_names 
@@ -329,7 +335,8 @@ bool Volume::mkdir( const YIELD::platform::Path& path, mode_t mode )
   return false;
 }
 
-YIELD::platform::auto_File Volume::open
+YIELD::platform::auto_File
+Volume::open
 ( 
   const YIELD::platform::Path& path, 
   uint32_t flags, 
@@ -427,7 +434,8 @@ void Volume::osd_unlink
   }
 }
 
-bool Volume::readdir
+bool
+Volume::readdir
 ( 
   const YIELD::platform::Path& path, 
   const YIELD::platform::Path&, 
@@ -499,7 +507,8 @@ void Volume::release( SharedFile& shared_file )
   shared_files_lock.release();
 }
 
-bool Volume::removexattr
+bool
+Volume::removexattr
 ( 
   const YIELD::platform::Path& path, 
   const std::string& name 
@@ -516,7 +525,8 @@ bool Volume::removexattr
   return false;
 }
 
-bool Volume::rename
+bool
+Volume::rename
 ( 
   const YIELD::platform::Path& from_path, 
   const YIELD::platform::Path& to_path 
@@ -547,7 +557,8 @@ bool Volume::rename
   return false;
 }
 
-bool Volume::rmdir( const YIELD::platform::Path& path )
+bool
+Volume::rmdir( const YIELD::platform::Path& path )
 {
   // If metadata caching:
   // stat_cache->evict( path );
@@ -561,7 +572,8 @@ bool Volume::rmdir( const YIELD::platform::Path& path )
   return false;
 }
 
-bool Volume::setattr
+bool
+Volume::setattr
 ( 
   const YIELD::platform::Path& path, 
   YIELD::platform::auto_Stat stbuf,
@@ -586,7 +598,8 @@ bool Volume::setattr
   return false;
 }
 
-void Volume::set_errno
+void
+Volume::set_errno
 ( 
   const char* operation_name, 
   ProxyExceptionResponse& proxy_exception_response 
@@ -638,7 +651,8 @@ void Volume::set_errno( const char* operation_name, std::exception& exc )
 #endif  
 }
 
-bool Volume::setxattr
+bool
+Volume::setxattr
 ( 
   const YIELD::platform::Path& path, 
   const std::string& name, 
@@ -658,7 +672,8 @@ bool Volume::setxattr
   return false;
 }
 
-bool Volume::statvfs
+bool
+Volume::statvfs
 ( 
   const YIELD::platform::Path&, 
   struct statvfs& statvfsbuf 
@@ -682,7 +697,8 @@ bool Volume::statvfs
   return false;
 }
 
-bool Volume::symlink
+bool
+Volume::symlink
 ( 
   const YIELD::platform::Path& to_path, 
   const YIELD::platform::Path& from_path 

@@ -49,7 +49,7 @@ namespace xtreemfs
     const std::string& get_uuid() const { return uuid; }
 
     org::xtreemfs::interfaces::VivaldiCoordinates 
-      get_vivaldi_coordinates() const;
+    get_vivaldi_coordinates() const;
 
     void fsetattr
     ( 

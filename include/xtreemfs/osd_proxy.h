@@ -25,24 +25,24 @@ namespace xtreemfs
   {
   public:
     static yidl::runtime::auto_Object<OSDProxy> 
-      create
-      ( 
-        const YIELD::ipc::URI& absolute_uri,
-        uint16_t concurrency_level 
-          = CONCURRENCY_LEVEL_DEFAULT,
-        uint32_t flags 
-          = 0,
-        YIELD::platform::auto_Log log 
-          = NULL,
-        const YIELD::platform::Time& operation_timeout = 
-          OPERATION_TIMEOUT_DEFAULT,
-        uint8_t reconnect_tries_max = 
-          RECONNECT_TRIES_MAX_DEFAULT,
-        YIELD::ipc::auto_SSLContext ssl_context 
-          = NULL,
-        auto_UserCredentialsCache user_credentials_cache 
-          = NULL
-      );
+    create
+    ( 
+      const YIELD::ipc::URI& absolute_uri,
+      uint16_t concurrency_level 
+        = CONCURRENCY_LEVEL_DEFAULT,
+      uint32_t flags 
+        = 0,
+      YIELD::platform::auto_Log log 
+        = NULL,
+      const YIELD::platform::Time& operation_timeout = 
+        OPERATION_TIMEOUT_DEFAULT,
+      uint8_t reconnect_tries_max = 
+        RECONNECT_TRIES_MAX_DEFAULT,
+      YIELD::ipc::auto_SSLContext ssl_context 
+        = NULL,
+      auto_UserCredentialsCache user_credentials_cache 
+        = NULL
+    );
 
     // yidl::runtime::Object
     OSDProxy& incRef() { return yidl::runtime::Object::incRef( *this ); }

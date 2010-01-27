@@ -370,7 +370,6 @@ Proxy<ProxyType, InterfaceType>::getCurrentUserCredentials
 #endif
 }
 
-
 template <class ProxyType, class InterfaceType>
 void Proxy<ProxyType, InterfaceType>::send( YIELD::concurrency::Event& ev )
 {

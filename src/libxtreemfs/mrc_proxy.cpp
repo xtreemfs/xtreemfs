@@ -7,7 +7,8 @@ using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
 
-auto_MRCProxy MRCProxy::create
+auto_MRCProxy
+MRCProxy::create
 ( 
   const YIELD::ipc::URI& absolute_uri,
   uint16_t concurrency_level,
@@ -51,7 +52,8 @@ auto_MRCProxy MRCProxy::create
   );
 }
 
-void MRCProxy::getCurrentUserCredentials
+void 
+MRCProxy::getCurrentUserCredentials
 ( 
   org::xtreemfs::interfaces::UserCredentials& out_user_credentials 
 )

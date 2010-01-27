@@ -33,7 +33,9 @@
 
 
 #ifndef _WIN32
-typedef int ( *get_passwd_from_user_credentials_t )
+typedef
+int 
+( *get_passwd_from_user_credentials_t )
 (
   const char* user_id,
   const char* group_ids,
@@ -41,7 +43,9 @@ typedef int ( *get_passwd_from_user_credentials_t )
   gid_t* out_gid
 );
 
-typedef int ( *get_user_credentials_from_passwd_t )
+typedef 
+int 
+( *get_user_credentials_from_passwd_t )
 (
   uid_t uid,
   gid_t gid,

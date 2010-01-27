@@ -167,7 +167,8 @@ void* UserCredentialsCache::getPolicyFunction( const char* name )
 }
 
 #ifndef _WIN32
-void UserCredentialsCache::getpasswdFromUserCredentials
+void 
+UserCredentialsCache::getpasswdFromUserCredentials
 ( 
   const std::string& user_id, 
   const std::string& group_id, 
@@ -359,7 +360,8 @@ void UserCredentialsCache::getpasswdFromUserCredentials
   user_credentials_to_passwd_cache_lock.release();
 }
 
-bool UserCredentialsCache::getUserCredentialsFrompasswd
+bool
+UserCredentialsCache::getUserCredentialsFrompasswd
 ( 
   uid_t uid, 
   gid_t gid, 

@@ -50,7 +50,8 @@ OSDProxy::create
 }
 
 
-bool operator>
+bool
+operator>
 ( 
   const org::xtreemfs::interfaces::OSDWriteResponse& left, 
   const org::xtreemfs::interfaces::OSDWriteResponse& right 

@@ -195,7 +195,8 @@ bool OpenFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
   return parent_shared_file->setlkw( exclusive, offset, length, xcap );
 }
 
-bool OpenFile::setxattr
+bool
+OpenFile::setxattr
 ( 
   const std::string& name, 
   const std::string& value, 

@@ -109,8 +109,16 @@ namespace xtreemfs
       ( 
         OPTION_LOG_LEVEL, 
         "-d", 
-        "--log-level", 
+        "--debug", 
         "EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG" 
+      );
+
+      addOption
+      ( 
+        OPTION_LOG_LEVEL, 
+        "--log-level", 
+        NULL,
+        "EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG"
       );
       log_level = YIELD::platform::Log::LOG_WARNING;
 
@@ -204,7 +212,8 @@ namespace xtreemfs
       );
     }    
 
-    auto_MRCProxy createMRCProxy
+    auto_MRCProxy
+    createMRCProxy
     ( 
       const YIELD::ipc::URI& absolute_uri, 
       const char* password = "" 
@@ -334,7 +343,7 @@ namespace xtreemfs
     }
 
     YIELD::ipc::auto_URI 
-      parseVolumeURI
+    parseVolumeURI
     ( 
       const char* volume_uri_c_str, 
       std::string& volume_name 

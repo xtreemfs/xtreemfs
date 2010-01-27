@@ -241,7 +241,8 @@ OSDProxyMux::~OSDProxyMux()
     OSDProxy::decRef( *osd_proxies_i->second );
 }
 
-auto_OSDProxy OSDProxyMux::getOSDProxy
+auto_OSDProxy
+OSDProxyMux::getOSDProxy
 ( 
   OSDProxyRequest& osd_proxy_request, 
   const FileCredentials& file_credentials, 
