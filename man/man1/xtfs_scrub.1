@@ -1,13 +1,15 @@
-.TH xtfs_scrub 1 "October 2009" "The XtreemFS Distributed File System" "XtreemFS tools"
+.TH xtfs_scrub 1 "January 2010" "The XtreemFS Distributed File System" "XtreemFS tools"
 .SH NAME
-xtfs_scrub \- checks for each file in a volume if the MRC file size is outdated and if the checksum is correct. 
+xtfs_scrub \- checks for each file in a volume if the MRC file size is outdated and if the checksum of all objects is correct. The scrubber can also replace defective replicas in repair mode. 
 .SH SYNOPSIS
-\fBxtfs_scrub [ \fIoptions\fB ] \fI<volume_name>\fB | \fIuuid:<volume_uuid>
+\fBxtfs_scrub [ \fIoptions\fB ] \fI<volume_name>\fB
 .br
 
 .SH DESCRIPTION
 .I xtfs_scrub
-performs a consistency check of each file in a given volume. The check compares the file size stored as part of the metadata to the actual file size defined by all objects of the file. If the metadata file size is outdated, it is corrected, granted that no \fI\-chk\fP switch is provided. In addition, an error is indicated if the file's checksum is not correct. The volume to scrub can either be specified by a name <volume_name> or a UUID 'uuid:<volume_uuid>' 
+performs a consistency check of each file in a given volume. If run without -repair or -delete it will only perform checks and report problems. Th scrubber checks for file if the file size on the OSDs is stored on the MRC and fixes inconsistencies if run in the -repair mode. In addition, the scrubber checks the checksum for each object of a file if the checksums are enabled on the OSD.
+
+For replicated files the scrubber will check each replica for objects with inccorect checksum. In addition, it marks full replicas that successfully copied all objects as "complete" replicas. In the -repair mode, the scrubber will also replace replicas that contain ramoved OSDs. An OSD must be marked as dead/removed with the xtfs_chstatus tool, otherwise the scrubber will consider the OSD as temporarily unavailable and won't replace the replica.
 
 .SH EXAMPLE USAGE
 .B "xtfs_scrub -dir oncrpc://localhost:32638 myVolume
@@ -20,17 +22,20 @@ Scrubs all files in the volume named 'myVolume' registered at the Directory Serv
 \fB-c \fI<creds_file>
 a PKCS#12 file containing user credentials for SSL-based server connections
 .TP
-\fB\-chk
-check only (do not update file sizes on the MRC in case of inconsistencies)
-.TP
 \fB-cpass \fI<creds_passphrase>
 a pass phrase to decrypt the the user credentials file for SSL-based server connections
+.TP
+\fB\-delete
+deletes files where the objects are lost because they were stored on a failed/removed OSD
 .TP
 \fB-dir \fI<uri>
 Specifies the directory service to use (e.g. 'oncrpc://localhost:32638'). If no URI is specified, URI and security settings are taken from '/etc/xos/xtreemfs/default_dir'. In case of a secured URI ('oncrpcs://...'), it is necessary to also specify SSL settings.
 .TP
 \fB-h
 show usage info
+.TP
+\fB\-repair
+repair inconsistent file sizes and replace replicas on failed/removed OSD
 .TP
 \fB-t \fI<trusted_CAs>
 a PKCS#12 file containing a set of certificates from trusted CAs for SSL-based server connections
@@ -51,7 +56,8 @@ a pass phrase to decrypt the trusted CAs file for SSL-based server connections
 .BR xtfs_mrcdbtool (1),
 .BR xtfs_repl (1),
 .BR xtfs_sp (1),
-.BR xtfs_stat (1)
+.BR xtfs_stat (1),
+.BR xtfs_chstatus (1)
 .BR
 
 .SH AVAILABILITY
