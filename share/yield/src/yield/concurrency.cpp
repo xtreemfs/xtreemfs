@@ -1,5 +1,3 @@
-// Revision: 1958
-
 #include "yield/concurrency.h"
 using namespace YIELD::concurrency;
 
@@ -395,7 +393,8 @@ public:
       std::cerr << "yield::concurrency::PollingStageGroup::Thread: " <<
                    "error on set_processor_affinity( " <<
                    logical_processor_i << " ): " <<
-                   YIELD::platform::Exception::strerror() << std::endl;
+                   YIELD::platform::Exception() << 
+                   "." << std::endl;
     }
     uint64_t visit_timeout_ns = 1 * NS_IN_MS;
     uint64_t successful_visits = 0, total_visits = 0;

@@ -30,8 +30,7 @@ namespace xtreemfs
 
     virtual void set_error_code( uint32_t ) { }
 
-    // std::exception
-    virtual const char* what() const throw()
+    operator const char*() const throw()
     {
       if ( what_str.empty() )
       {

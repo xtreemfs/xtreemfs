@@ -1046,17 +1046,7 @@ namespace YIELD
         YIDL_RUNTIME_OBJECT_PROTOTYPES( AIOConnectControlBlock, 223 );
 
         // Socket::AIOControlBlock
-        ExecuteStatus execute()
-        {
-          if ( get_socket()->connect( get_peername() ) )
-            onCompletion( 0 );
-          else if ( get_socket()->want_connect() )
-            return EXECUTE_STATUS_WANT_WRITE;
-          else
-            onError( YIELD::platform::Exception::get_errno() );
-
-          return EXECUTE_STATUS_DONE;
-        }
+        ExecuteStatus execute();
 
       private:
         auto_SocketAddress peername;
@@ -1110,21 +1100,7 @@ namespace YIELD
         YIDL_RUNTIME_OBJECT_PROTOTYPES( AIOWriteControlBlock, 228 );
 
         // Socket::AIOControlBlock
-        ExecuteStatus execute()
-        {
-          ssize_t write_ret = get_socket()->write( get_buffer() );
-
-          if ( write_ret >= 0 )
-            onCompletion( static_cast<size_t>( write_ret ) );
-          else if ( get_socket()->want_write() )
-            return EXECUTE_STATUS_WANT_WRITE;
-          else if ( get_socket()->want_read() )
-            return EXECUTE_STATUS_WANT_READ;
-          else
-            onError( YIELD::platform::Exception::get_errno() );
-
-          return EXECUTE_STATUS_DONE;
-        }
+        ExecuteStatus execute();
 
       private:
         yidl::runtime::auto_Buffer buffer;
@@ -1428,24 +1404,7 @@ namespace YIELD
         YIDL_RUNTIME_OBJECT_PROTOTYPES( AIOAcceptControlBlock, 222 );
 
         // Socket::AIOControlBlock
-        ExecuteStatus execute()
-        {
-          accepted_tcp_socket = 
-            static_cast<TCPSocket*>( get_socket().get() )->accept();
-
-          if ( accepted_tcp_socket != NULL )
-            onCompletion( 0 );
-#ifdef _WIN32
-          else if ( YIELD::platform::Exception::get_errno() == 10035 )
-#else
-          else if ( YIELD::platform::Exception::get_errno() == EWOULDBLOCK )
-#endif
-            return EXECUTE_STATUS_WANT_READ;
-          else
-            onError( YIELD::platform::Exception::get_errno() );
-
-          return EXECUTE_STATUS_DONE;
-        }
+        ExecuteStatus execute();
 
       private:
         yidl::runtime::auto_Object<TCPSocket> accepted_tcp_socket;      
@@ -1751,23 +1710,7 @@ namespace YIELD
         YIDL_RUNTIME_OBJECT_PROTOTYPES( AIORecvFromControlBlock, 0 );
 
         // Socket::AIOControlBlock
-        ExecuteStatus execute()
-        {
-          ssize_t recvfrom_ret = 
-            static_cast<UDPSocket*>( get_socket().get() )->
-              recvfrom( buffer, *peername );
-
-          if ( recvfrom_ret > 0 )
-            onCompletion( static_cast<size_t>( recvfrom_ret ) );
-          else if ( recvfrom_ret == 0 )
-            DebugBreak();
-          else if ( get_socket()->want_read() )
-            return EXECUTE_STATUS_WANT_READ;
-          else
-            onError( YIELD::platform::Exception::get_errno() );          
-
-          return EXECUTE_STATUS_DONE;
-        }
+        ExecuteStatus execute();
 
       protected:
         ~AIORecvFromControlBlock();

@@ -92,8 +92,6 @@ typedef int ssize_t;
 #define MS_IN_S  1000
 #define US_IN_S  1000000
 
-#define YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH 128
-
 #define YIELD_PLATFORM_FILE_PROTOTYPES \
   virtual bool close(); \
   virtual bool datasync(); \
@@ -294,7 +292,6 @@ namespace YIELD
 {
   namespace platform
   {
-    template <class> class SynchronizedSTLQueue;
     class Path;
     class Stat;
 
@@ -302,33 +299,33 @@ namespace YIELD
     class Exception : public std::exception
     {
     public:
-      static uint32_t get_errno();
-      static void set_errno( uint32_t error_code );
-
-      // strerror's that do not take error_code use the current errno
-      static std::string strerror();
-      static std::string strerror( uint32_t error_code );
-      static void strerror( std::string& out_str );
-      static void strerror( uint32_t error_code, std::string& out_str );
-      static void strerror( char* out_str, size_t out_str_len );
-      static void strerror( uint32_t error_code, char*, size_t );
-
-      // A passed-in what buffer is always copied
+      // error_message is always copied
       Exception();
-      Exception( uint32_t error_code );
-      Exception( const char* what ) { init( what ); }
-      Exception( const std::string& what ) { init( what.c_str() ); }
-      Exception( const Exception& other ) { init( other.what_buffer ); }
-      virtual ~Exception() throw() { }
+      Exception( uint32_t error_code ); // Use a system error message
+      Exception( const char* error_message );
+      Exception( const std::string& error_message );
+      Exception( uint32_t error_code, const char* error_message );
+      Exception( uint32_t error_code, const std::string& error_message );
+      Exception( const Exception& other );
+      virtual ~Exception() throw();
+
+      virtual uint32_t get_error_code() const { return error_code; }
+      virtual const char* get_error_message() throw();
+
+      operator const char*() throw() { return get_error_message(); }
 
       // std::exception
-      virtual const char* what() const throw() { return what_buffer; }
+      const char* what() const throw()
+      { 
+        return const_cast<Exception*>( this )->get_error_message(); 
+      }
 
     protected:
-      char what_buffer[YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH];
+      void set_error_message( const char* error_message );
 
     private:
-      void init( const char* what );
+      uint32_t error_code;
+      char* error_message;
     };
 
 

@@ -124,12 +124,14 @@ namespace xtreemfs
 
     SharedFile
     (
+      YIELD::platform::auto_Log log,
       auto_Volume parent_volume,
       const YIELD::platform::Path& path // The first, "authoritative" path 
                                         // used to open this file
     );
 
 
+    YIELD::platform::auto_Log log;
     auto_Volume parent_volume;
     YIELD::platform::Path path;
 

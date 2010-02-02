@@ -329,7 +329,7 @@ namespace mount_xtreemfs
         {
           get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << 
             get_program_name() << ": error creating child process: " << 
-            YIELD::platform::Exception::strerror() << ".";
+            YIELD::platform::Exception() << ".";
           return 1;
         }
       }

@@ -25,11 +25,11 @@ using namespace xtreemfs;
 #define VOLUME_OPERATION_END( OperationName ) \
   catch ( ProxyExceptionResponse& proxy_exception_response ) \
   { \
-    set_errno( #OperationName, proxy_exception_response ); \
+    set_errno( log.get(), #OperationName, proxy_exception_response ); \
   } \
   catch ( std::exception& exc ) \
   { \
-    set_errno( #OperationName, exc ); \
+    set_errno( log.get(), #OperationName, exc ); \
   } \
 
 
@@ -194,7 +194,7 @@ Volume::get_shared_file
     shared_file = shared_file_i->second;
   else  
   {
-    shared_file = new SharedFile( incRef(), path );
+    shared_file = new SharedFile( log, incRef(), path );
     shared_files[path] = shared_file;
   }
 
@@ -601,6 +601,7 @@ Volume::setattr
 void
 Volume::set_errno
 ( 
+  YIELD::platform::Log* log,
   const char* operation_name, 
   ProxyExceptionResponse& proxy_exception_response 
 )
@@ -624,31 +625,40 @@ Volume::set_errno
       default:
       {
         log->getStream( YIELD::platform::Log::LOG_ERR ) << 
-          "xtreemfs::Volume: caught exception on " << 
-          operation_name << ": " << proxy_exception_response.what();
+          "xtreemfs: caught exception on " << 
+          operation_name << ": " << proxy_exception_response;
       }
       break;
     }
   }
-    
-  YIELD::platform::Exception::set_errno
-  ( 
-    proxy_exception_response.get_platform_error_code() 
-  );
+
+#ifdef _WIN32
+    SetLastError( proxy_exception_response.get_platform_error_code() );
+#else
+    errno 
+      = static_cast<int>( proxy_exception_response.get_platform_error_code() );
+#endif
 }
 
-void Volume::set_errno( const char* operation_name, std::exception& exc )
+void 
+Volume::set_errno
+( 
+  YIELD::platform::Log* log,
+  const char* operation_name, 
+  std::exception& exc 
+)
 {
   if ( log != NULL )
     log->getStream( YIELD::platform::Log::LOG_ERR ) << 
       "xtreemfs::Volume: caught exception on " << 
       operation_name << ": " << exc.what();
 
+
 #ifdef _WIN32
-  YIELD::platform::Exception::set_errno( ERROR_ACCESS_DENIED );
+  ::SetLastError( ERROR_ACCESS_DENIED );
 #else
-  YIELD::platform::Exception::set_errno( EIO );
-#endif  
+  errno = EIO;
+#endif
 }
 
 bool

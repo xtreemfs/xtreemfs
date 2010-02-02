@@ -1,5 +1,3 @@
-// Revision: 211
-
 #include "yieldfs.h"
 using namespace yieldfs;
 
@@ -2094,7 +2092,7 @@ bool TracingVolume::access( const YIELD::platform::Path& path, int amode )
     log,
     "yieldfs::TracingVolume::access",
     path,
-    amode,
+    static_cast<mode_t>( amode ),
     underlying_volume->access( path, amode )
   );
 }
@@ -2470,9 +2468,7 @@ TracingVolume::trace
   if ( operation_result )
    log_stream << " -> success.";
   else
-   log_stream << " -> failed, errno = " <<
-     YIELD::platform::Exception::get_errno() <<
-     ", what = " << YIELD::platform::Exception::strerror();
+   log_stream << " -> failed: " << YIELD::platform::Exception() << ".";
   return operation_result;
 }
 bool

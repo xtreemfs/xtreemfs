@@ -110,7 +110,7 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
               "yield::ipc::Client: could not create new socket " <<
               "to connect to <host>:"
               << this->peername->get_port() <<
-              ", error: " << YIELD::platform::Exception::strerror() << ".";
+              ", error: " << YIELD::platform::Exception() << ".";
             }
             continue; // Try to dequeue another existing socket
           }
@@ -247,8 +247,8 @@ public:
         client.log->getStream( YIELD::platform::Log::LOG_ERR ) <<
         "yield::ipc::Client: connect() to <host>:" <<
         client.peername->get_port() <<
-        " failed, errno=" << error_code << ", strerror=" <<
-        YIELD::platform::Exception::strerror( error_code ) << ".";
+        " failed: " <<
+        YIELD::platform::Exception( error_code ) << ".";
       }
       get_socket()->close();
       if ( get_socket()->recreate() )
@@ -414,9 +414,8 @@ public:
         "yield::ipc::Client: error reading " << response->get_type_name() <<
           "/" << reinterpret_cast<uint64_t>( response.get() ) <<
         " from socket #" << static_cast<uint64_t>( *get_socket() ) <<
-        ", errno=" << error_code << ", strerror=" <<
-          YIELD::platform::Exception::strerror( error_code ) <<
-        ", responding to " << request->get_type_name() <<
+        ", error='" << YIELD::platform::Exception( error_code ) <<
+        "', responding to " << request->get_type_name() <<
           "/" << reinterpret_cast<uint64_t>( request.get() ) <<
           " with ExceptionResponse.";
       }
@@ -537,9 +536,8 @@ public:
         request->get_type_name() <<
           "/" << reinterpret_cast<uint64_t>( request.get() ) <<
         " to socket #" << static_cast<uint64_t>( *get_socket() ) <<
-        ", errno=" << error_code << ", strerror=" <<
-          YIELD::platform::Exception::strerror( error_code ) <<
-        ", responding to " << request->get_type_name() <<
+        ", error='" << YIELD::platform::Exception( error_code ) <<
+        "', responding to " << request->get_type_name() <<
           "/" << reinterpret_cast<uint64_t>( request.get() ) <<
           " with ExceptionResponse.";
       }
@@ -1308,15 +1306,8 @@ public:
   { }
   void onCompletion( size_t )
   { }
-  void onError( uint32_t error_code )
+  void onError( uint32_t )
   {
-#ifndef _WIN32
-    if ( error_code != EBADF )
-#endif
-      std::cerr << "yield::ipc::HTTPServer: error on write (errno=" <<
-      error_code <<
-      ", strerror=" << YIELD::platform::Exception::strerror( error_code ) <<
-      ")." << std::endl;
     get_socket()->shutdown();
     get_socket()->close();
   }
@@ -1432,12 +1423,8 @@ public:
     static_cast<TCPSocket*>( get_socket().get() )
       ->aio_accept( new AIOAcceptControlBlock( http_request_target, log ) );
   }
-  void onError( uint32_t error_code )
+  void onError( uint32_t )
   {
-    std::cerr << "yield::ipc::HTTPServer: error on accept (errno=" <<
-      error_code << ", strerror=" <<
-      YIELD::platform::Exception::strerror( error_code ) <<
-      ")." << std::endl;
     get_socket()->shutdown();
     get_socket()->close();
   }
@@ -2862,13 +2849,8 @@ public:
   { }
   void onCompletion( size_t )
   { }
-  void onError( uint32_t error_code )
+  void onError( uint32_t )
   {
-    std::cerr << "yield::ipc::ONCRPCServer: error on write (errno="
-      << error_code <<
-      ", strerror=" << YIELD::platform::Exception::strerror( error_code )
-      << ")."
-      << std::endl;
     get_socket()->shutdown();
     get_socket()->close();
   }
@@ -3999,6 +3981,21 @@ void YIELD::ipc::RFC822Headers::set_next_iovec( const struct iovec& iovec )
 #endif
 YIELD::ipc::Socket::AIOQueue* YIELD::ipc::Socket::aio_queue = NULL;
 YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus
+YIELD::ipc::Socket::AIOConnectControlBlock::execute()
+{
+  if ( get_socket()->connect( get_peername() ) )
+    onCompletion( 0 );
+  else if ( get_socket()->want_connect() )
+    return EXECUTE_STATUS_WANT_WRITE;
+  else
+#ifdef _WIN32
+    onError( WSAGetLastError() );
+#else
+    onError( errno );
+#endif
+  return EXECUTE_STATUS_DONE;
+}
+YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus
 YIELD::ipc::Socket::AIOReadControlBlock::execute()
 {
   ssize_t read_ret = get_socket()->read( buffer );
@@ -4015,7 +4012,29 @@ YIELD::ipc::Socket::AIOReadControlBlock::execute()
   else if ( get_socket()->want_write() )
     return EXECUTE_STATUS_WANT_WRITE;
   else
-    onError( YIELD::platform::Exception::get_errno() );
+#ifdef _WIN32
+    onError( WSAGetLastError() );
+#else
+    onError( errno );
+#endif
+  return EXECUTE_STATUS_DONE;
+}
+YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus
+YIELD::ipc::Socket::AIOWriteControlBlock::execute()
+{
+  ssize_t write_ret = get_socket()->write( get_buffer() );
+  if ( write_ret >= 0 )
+    onCompletion( static_cast<size_t>( write_ret ) );
+  else if ( get_socket()->want_write() )
+    return EXECUTE_STATUS_WANT_WRITE;
+  else if ( get_socket()->want_read() )
+    return EXECUTE_STATUS_WANT_READ;
+  else
+#ifdef _WIN32
+    onError( WSAGetLastError() );
+#else
+    onError( errno );
+#endif
   return EXECUTE_STATUS_DONE;
 }
 YIELD::ipc::Socket::Socket
@@ -4057,10 +4076,11 @@ void YIELD::ipc::Socket::aio_connect_nbio
   else if ( want_connect() )
     get_aio_queue().submit( aio_connect_control_block.release() );
   else
-    aio_connect_control_block->onError
-    (
-      YIELD::platform::Exception::get_errno()
-    );
+#ifdef _WIN32
+    aio_connect_control_block->onError( WSAGetLastError() );
+#else
+    aio_connect_control_block->onError( errno );
+#endif
 }
 void YIELD::ipc::Socket::aio_read
 (
@@ -4125,7 +4145,11 @@ void YIELD::ipc::Socket::aio_read_nbio
   else if ( want_read() || want_write() )
     get_aio_queue().submit( aio_read_control_block.release() );
   else
-    aio_read_control_block->onError( YIELD::platform::Exception::get_errno() );
+#ifdef _WIN32
+    aio_read_control_block->onError( WSAGetLastError() );
+#else
+    aio_read_control_block->onError( errno );
+#endif
 }
 void YIELD::ipc::Socket::aio_write
 (
@@ -4242,10 +4266,11 @@ void YIELD::ipc::Socket::aio_write_nbio
   else if ( want_write() || want_read() )
     get_aio_queue().submit( aio_write_control_block.release() );
   else
-    aio_write_control_block->onError
-    (
-      YIELD::platform::Exception::get_errno()
-    );
+#ifdef _WIN32
+    aio_write_control_block->onError( WSAGetLastError() );
+#else
+    aio_write_control_block->onError( errno );
+#endif
 }
 bool YIELD::ipc::Socket::bind( auto_SocketAddress to_sockaddr )
 {
@@ -4882,7 +4907,7 @@ YIELD::ipc::SocketAddress::create( const char* hostname, uint16_t port )
     else
       what << "*";
     what << "\": ";
-    what << YIELD::platform::Exception::strerror();
+    what << YIELD::platform::Exception();
     throw YIELD::platform::Exception( what.str() );
   }
 }
@@ -5355,7 +5380,8 @@ public:
 #endif
     std::cerr << "yield::ipc::Socket::AIOQueue::NBIOWorkerThread: " <<
                  "error creating submit pipe: " <<
-                 YIELD::platform::Exception::strerror() << std::endl;
+                 YIELD::platform::Exception()
+                 << "." << std::endl;
   }
   ~NBIOWorkerThread()
   {
@@ -5527,11 +5553,8 @@ public:
         if ( errno != EINTR )
 #endif
           std::cerr << "yield::ipc::Socket::AIOQueue::NBIOWorkerThread: " <<
-                       "error on poll: errno=" <<
-                       YIELD::platform::Exception::get_errno() <<
-                       ", strerror=" <<
-                       YIELD::platform::Exception::strerror() <<
-                       "." << std::endl;
+            "error on poll: " << YIELD::platform::Exception() <<
+            "." << std::endl;
       }
     }
     is_running = false;
@@ -5948,15 +5971,12 @@ namespace YIELD
     {
     public:
       SSLException()
-        : YIELD::platform::Exception( static_cast<uint32_t>( 0 ) )
+        : YIELD::platform::Exception( ERR_peek_error() )
       {
         SSL_load_error_strings();
-        ERR_error_string_n
-        (
-          ERR_peek_error(),
-          what_buffer,
-          YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH
-        );
+        char error_message[256];
+        ERR_error_string_n( ERR_peek_error(), error_message, 256 );
+        set_error_message( error_message );
       }
     };
   };
@@ -6396,6 +6416,27 @@ YIELD::ipc::SSLSocket::writev
 void* YIELD::ipc::TCPSocket::lpfnAcceptEx = NULL;
 void* YIELD::ipc::TCPSocket::lpfnConnectEx = NULL;
 #endif
+YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus
+YIELD::ipc::TCPSocket::AIOAcceptControlBlock::execute()
+{
+  accepted_tcp_socket =
+    static_cast<TCPSocket*>( get_socket().get() )->accept();
+  if ( accepted_tcp_socket != NULL )
+    onCompletion( 0 );
+#ifdef _WIN32
+  else if ( WSAGetLastError() == WSAEWOULDBLOCK )
+#else
+  else if ( errno == EWOULDBLOCK )
+#endif
+    return EXECUTE_STATUS_WANT_READ;
+  else
+#ifdef _WIN32
+    onError( WSAGetLastError() );
+#else
+    onError( errno );
+#endif
+  return EXECUTE_STATUS_DONE;
+}
 #ifdef _WIN32
 YIELD::ipc::TCPSocket::TCPSocket( int domain, SOCKET socket_ )
 #else
@@ -6496,7 +6537,7 @@ YIELD::ipc::TCPSocket::aio_accept_iocp
   )
     aio_accept_control_block.release();
   else
-    aio_accept_control_block->onError( YIELD::platform::Exception::get_errno() );
+    aio_accept_control_block->onError( WSAGetLastError() );
 }
 #endif
 void
@@ -6601,10 +6642,7 @@ YIELD::ipc::TCPSocket::aio_connect_iocp
     else
       break;
   }
-  aio_connect_control_block->onError
-  (
-    YIELD::platform::Exception::get_errno()
-  );
+  aio_connect_control_block->onError( WSAGetLastError() );
 }
 #endif
 YIELD::ipc::auto_TCPSocket YIELD::ipc::TCPSocket::create()
@@ -6967,6 +7005,26 @@ YIELD::ipc::TracingSocket::writev
 #include <netinet/in.h> // For the IPPROTO_* constants
 #include <sys/socket.h>
 #endif
+YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus
+YIELD::ipc::UDPSocket::AIORecvFromControlBlock::execute()
+{
+  ssize_t recvfrom_ret =
+    static_cast<UDPSocket*>( get_socket().get() )->
+      recvfrom( buffer, *peername );
+  if ( recvfrom_ret > 0 )
+    onCompletion( static_cast<size_t>( recvfrom_ret ) );
+  else if ( recvfrom_ret == 0 )
+    DebugBreak();
+  else if ( get_socket()->want_read() )
+    return EXECUTE_STATUS_WANT_READ;
+  else
+#ifdef _WIN32
+    onError( WSAGetLastError() );
+#else
+    onError( errno );
+#endif
+  return EXECUTE_STATUS_DONE;
+}
 YIELD::ipc::UDPSocket::UDPSocket
 (
   int domain,

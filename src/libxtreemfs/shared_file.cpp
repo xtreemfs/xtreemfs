@@ -1,6 +1,7 @@
 #include "shared_file.h"
 #include "open_file.h"
 #include "stat.h"
+#include "xtreemfs/volume.h"
 using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
@@ -15,26 +16,22 @@ using namespace xtreemfs;
 #endif
 
 
-#define SHARED_FILE_OPERATION_BEGIN \
+#define SHARED_FILE_OPERATION_BEGIN( OperationName ) \
   try \
   {
 
-#define SHARED_FILE_OPERATION_END \
+#define SHARED_FILE_OPERATION_END( OperationName ) \
   } \
   catch ( ProxyExceptionResponse& proxy_exception_response ) \
   { \
-    YIELD::platform::Exception::set_errno \
-    ( \
-      proxy_exception_response.get_platform_error_code() \
-    ); \
+    Volume::set_errno( log.get(), #OperationName, proxy_exception_response ); \
     return false; \
   } \
-  catch ( std::exception& ) \
+  catch ( std::exception& exc ) \
   { \
-    YIELD::platform::Exception::set_errno( EIO ); \
+    Volume::set_errno( log.get(), #OperationName, exc ); \
     return false; \
   }
-
 
 class SharedFile::ReadBuffer : public yidl::runtime::FixedBuffer
 {
@@ -104,9 +101,11 @@ public:
 
 SharedFile::SharedFile
 (
+  YIELD::platform::auto_Log log,
   auto_Volume parent_volume,
   const YIELD::platform::Path& path
-) : parent_volume( parent_volume ),
+) : log( log ),
+    parent_volume( parent_volume ),
     path( path )
 {
   reader_count = writer_count = 0;
@@ -360,8 +359,14 @@ SharedFile::read
             data->size() << ", zero_padding=" << zero_padding << 
             ") larger than available buffer space (" << 
             static_cast<size_t>( rbuf_end - rbuf_p ) << ")";
-          YIELD::concurrency::ExceptionResponse::set_errno( EIO );
+
+#ifdef _WIN32
+          SetLastError( EIO );
+#else
+          errno = EIO;
+#endif
           ret = -1;
+
           break;
         }
       }
@@ -386,35 +391,12 @@ SharedFile::read
   }
   catch ( ProxyExceptionResponse& proxy_exception_response )
   {
-#ifdef _DEBUG
-    if 
-    (   
-      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-       Volume::VOLUME_FLAG_TRACE_FILE_IO 
-    )
-    {
-      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-        "xtreemfs::SharedFile: read threw ProxyExceptionResponse: " <<
-        "errno=" << proxy_exception_response.get_platform_error_code() <<
-        ", strerror=" << YIELD::platform::Exception::strerror( 
-          proxy_exception_response.get_platform_error_code() ) << ".";
-    }
-#endif
-
-    YIELD::platform::Exception::set_errno
-    ( 
-      proxy_exception_response.get_platform_error_code() 
-    );
-
+    Volume::set_errno( log.get(), "read", proxy_exception_response );
     ret = -1;
   }
   catch ( std::exception& exc )
   {
-    log->getStream( YIELD::platform::Log::LOG_ERR ) <<
-      "xtreemfs::SharedFile::read threw std::exception: " << exc.what() << ".";
-
-    YIELD::platform::Exception::set_errno( EIO );
-
+    Volume::set_errno( log.get(), "read", exc );
     ret = -1;
   }
 
@@ -443,7 +425,7 @@ SharedFile::setlk
   const XCap& xcap
 )
 {
-  SHARED_FILE_OPERATION_BEGIN;
+  SHARED_FILE_OPERATION_BEGIN( setlk );
 
   //Lock lock = 
     parent_volume->get_osd_proxy_mux()->xtreemfs_lock_acquire
@@ -460,7 +442,7 @@ SharedFile::setlk
 
   return true;
 
-  SHARED_FILE_OPERATION_END;
+  SHARED_FILE_OPERATION_END( setlk );
 }
 
 bool
@@ -472,7 +454,7 @@ SharedFile::setlkw
   const XCap& xcap
 )
 {
-  SHARED_FILE_OPERATION_BEGIN;
+  SHARED_FILE_OPERATION_BEGIN( setlkw );
 
   for ( ;; )
   {
@@ -498,7 +480,7 @@ SharedFile::setlkw
     { }
   }
 
-  SHARED_FILE_OPERATION_END;
+  SHARED_FILE_OPERATION_END( setlkw );
 }
 
 bool SharedFile::setxattr
@@ -517,14 +499,14 @@ SharedFile::sync
   const XCap& xcap
 )
 {
-  //SHARED_FILE_OPERATION_BEGIN;
+  //SHARED_FILE_OPERATION_BEGIN( sync );
 
   // TODO: sync the metadata cache
   // TODO: sync the data cache
 
   return true;
 
-  //SHARED_FILE_OPERATION_END;
+  //SHARED_FILE_OPERATION_END( sync );
 }
 
 bool 
@@ -534,7 +516,7 @@ SharedFile::truncate
   XCap& xcap
 )
 {
-  SHARED_FILE_OPERATION_BEGIN;
+  SHARED_FILE_OPERATION_BEGIN( truncate );
 
   XCap truncate_xcap;
   parent_volume->get_mrc_proxy()->
@@ -562,7 +544,7 @@ SharedFile::truncate
 
   return true;
 
-  SHARED_FILE_OPERATION_END;
+  SHARED_FILE_OPERATION_END( truncate );
 }
 
 bool 
@@ -573,7 +555,7 @@ SharedFile::unlk
   const XCap& xcap
 )
 {
-  //SHARED_FILE_OPERATION_BEGIN;
+  //SHARED_FILE_OPERATION_BEGIN( unlk );
 
   //if ( locks.empty() )
   //  return true;
@@ -591,7 +573,8 @@ SharedFile::unlk
   //  return true;
   //}
 
-  //SHARED_FILE_OPERATION_END;
+  //SHARED_FILE_OPERATION_END( unlk );
+
   return true;
 }
 
@@ -604,7 +587,6 @@ SharedFile::write
   const XCap& xcap
 )
 {
-  YIELD::platform::auto_Log log( parent_volume->get_log() );
   ssize_t ret;
   std::vector<OSDInterface::writeResponse*> write_responses;
 
@@ -754,44 +736,12 @@ SharedFile::write
   }
   catch ( ProxyExceptionResponse& proxy_exception_response )
   {
-#ifdef _DEBUG
-    if 
-    ( 
-      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-      Volume::VOLUME_FLAG_TRACE_FILE_IO 
-    )
-    {
-      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-        "xtreemfs::SharedFile: write threw ProxyExceptionResponse: " <<
-        "errno= " << proxy_exception_response.get_platform_error_code() <<
-        ", strerror=" << YIELD::platform::Exception::strerror( 
-          proxy_exception_response.get_platform_error_code() ) << ".";
-    }
-#endif
-
-    for 
-    ( 
-      std::vector<OSDInterface::writeResponse*>::iterator 
-        write_response_i = write_responses.begin(); 
-      write_response_i != write_responses.end(); 
-      write_response_i++ 
-    )
-      OSDInterface::writeResponse::decRef( **write_response_i );    
-
-    YIELD::platform::Exception::set_errno
-    ( 
-      proxy_exception_response.get_platform_error_code() 
-    );
-
+    Volume::set_errno( log.get(), "write", proxy_exception_response );
     ret = -1;
   }
   catch ( std::exception& exc )
   {
-    log->getStream( YIELD::platform::Log::LOG_ERR ) <<
-      "xtreemfs::SharedFile: write threw std::exception: " << exc.what() << ".";
-
-    YIELD::platform::Exception::set_errno( EIO );
-
+    Volume::set_errno( log.get(), "write", exc );
     ret = -1;
   }
 

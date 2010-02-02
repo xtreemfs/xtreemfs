@@ -175,7 +175,11 @@ namespace YIELD
       catch ( YIELD::platform::Exception& exc ) // Don't catch std::exceptions like bad_alloc
       {
         std::cerr << exc.what() << std::endl;
-        ret = 1;
+
+        if ( exc.get_error_code() != 0 )
+          ret = exc.get_error_code();
+        else
+          ret = 1;
       }
 
       // TimerQueue::destroyDefaultTimerQueue();

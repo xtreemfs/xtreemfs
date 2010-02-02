@@ -1,5 +1,3 @@
-// Revision: 1958
-
 #include "yield/platform.h"
 using namespace YIELD::platform;
 
@@ -97,101 +95,76 @@ void CountingSemaphore::release()
 #else
 #include <errno.h>
 #endif
-uint32_t Exception::get_errno()
+Exception::Exception()
+  : error_message( NULL )
 {
 #ifdef _WIN32
-  return static_cast<uint32_t>( ::GetLastError() );
+  error_code = static_cast<uint32_t>( ::GetLastError() );
 #else
-  return static_cast<uint32_t>( errno );
+  error_code = static_cast<uint32_t>( errno );
 #endif
 }
-void Exception::set_errno( uint32_t error_code )
+Exception::Exception( uint32_t error_code )
+  : error_code( error_code ), error_message( NULL )
+{ }
+Exception::Exception( const char* error_message )
+  : error_code( 0 ), error_message( NULL )
+{
+  set_error_message( error_message );
+}
+Exception::Exception( const std::string& error_message )
+  : error_code( 0 ), error_message( NULL )
+{
+  set_error_message( error_message.c_str() );
+}
+Exception::Exception( uint32_t error_code, const char* error_message )
+  : error_code( error_code ), error_message( NULL )
+{
+  set_error_message( error_message );
+}
+Exception::Exception( uint32_t error_code, const std::string& error_message )
+  : error_code( error_code ), error_message( NULL )
+{
+  set_error_message( error_message.c_str() );
+}
+Exception::Exception( const Exception& other )
+  : error_code( other.error_code ), error_message( NULL )
+{
+  set_error_message( other.error_message );
+}
+Exception::~Exception() throw()
 {
 #ifdef _WIN32
-  ::SetLastError( static_cast<DWORD>( error_code ) );
+  LocalFree( error_message );
 #else
-  errno = static_cast<int>( error_code );
+  delete [] error_message;
 #endif
 }
-std::string Exception::strerror()
+const char* Exception::get_error_message() throw()
 {
-  return strerror( get_errno() );
-}
-std::string Exception::strerror( uint32_t error_code )
-{
-  std::string out_str;
-  strerror( error_code, out_str );
-  return out_str;
-}
-void Exception::strerror( std::string& out_str )
-{
-  strerror( get_errno(), out_str );
-}
-void Exception::strerror( uint32_t error_code, std::string& out_str )
-{
-  char strerror_buffer[YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH];
-  strerror
-  (
-    error_code,
-    strerror_buffer,
-    YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1
-  );
-  out_str.assign( strerror_buffer );
-}
-void Exception::strerror( char* out_str, size_t out_str_len )
-{
-  return strerror( get_errno(), out_str, out_str_len );
-}
-void Exception::strerror
-(
-  uint32_t error_code,
-  char* out_str,
-  size_t out_str_len
-)
-{
-#ifdef _WIN32
-  if ( out_str_len > 0 )
+  if ( error_message != NULL )
+    return error_message;
+  else if ( error_code != 0 )
   {
+#ifdef _WIN32
     DWORD dwMessageLength
       = FormatMessageA
       (
-        FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS,
-        NULL, error_code,
+        FORMAT_MESSAGE_ALLOCATE_BUFFER|
+          FORMAT_MESSAGE_FROM_SYSTEM|
+          FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        error_code,
         MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
-        out_str,
-        static_cast<DWORD>( out_str_len ),
+        error_message,
+        0,
         NULL
       );
     if ( dwMessageLength > 0 )
     {
       if ( dwMessageLength > 2 )
-        out_str[dwMessageLength - 2] = 0; // Cut off trailing \r\n
-      return;
-    }
-    else if ( GetLastError() == ERROR_INSUFFICIENT_BUFFER )
-    {
-      LPSTR cMessage;
-      dwMessageLength
-        = FormatMessageA
-        (
-          FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
-          FORMAT_MESSAGE_ALLOCATE_BUFFER,
-          NULL,
-          error_code,
-          MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
-          ( LPSTR )&cMessage,
-          0,
-          NULL
-        );
-      if ( dwMessageLength > 0 )
-      {
-        if ( dwMessageLength > 2 )
-          cMessage[dwMessageLength - 2] = 0;
-        strncpy_s( out_str, out_str_len, cMessage, out_str_len - 1 );
-        out_str[out_str_len - 1] = 0;
-        LocalFree( cMessage );
-        return;
-      }
+        error_message[dwMessageLength - 2] = 0; // Cut off trailing \r\n
+      return error_message;
     }
     else if ( error_code >= NERR_BASE || error_code <= MAX_NERR )
     {
@@ -207,100 +180,61 @@ void Exception::strerror
         dwMessageLength
           = FormatMessageA
           (
-            FORMAT_MESSAGE_FROM_HMODULE|FORMAT_MESSAGE_IGNORE_INSERTS,
+            FORMAT_MESSAGE_ALLOCATE_BUFFER|
+              FORMAT_MESSAGE_FROM_SYSTEM|
+              FORMAT_MESSAGE_IGNORE_INSERTS,
             hModule,
             error_code,
             MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
-            out_str,
-            static_cast<DWORD>( out_str_len ),
+            error_message,
+            0,
             NULL
           );
         if ( dwMessageLength > 0 )
         {
-          if ( dwMessageLength > 2 )
-            out_str[dwMessageLength - 2] = 0; // Cut off trailing \r\n
           FreeLibrary( hModule );
-          return;
-        }
-        else if ( GetLastError() == ERROR_INSUFFICIENT_BUFFER )
-        {
-          LPSTR cMessage;
-          dwMessageLength
-            = FormatMessageA
-            (
-              FORMAT_MESSAGE_FROM_SYSTEM|FORMAT_MESSAGE_IGNORE_INSERTS|
-              FORMAT_MESSAGE_FROM_HMODULE|FORMAT_MESSAGE_ALLOCATE_BUFFER,
-              NULL,
-              error_code,
-              MAKELANGID( LANG_NEUTRAL, SUBLANG_DEFAULT ),
-              ( LPSTR )&cMessage,
-              0,
-              NULL
-            );
-          if ( dwMessageLength > 0 )
-          {
-            if ( dwMessageLength > 2 )
-              cMessage[dwMessageLength - 2] = 0;
-            strncpy_s( out_str, out_str_len, cMessage, out_str_len - 1 );
-            out_str[out_str_len - 1] = 0;
-            LocalFree( cMessage );
-            FreeLibrary( hModule );
-            return;
-          }
+          if ( dwMessageLength > 2 )
+            error_message[dwMessageLength - 2] = 0; // Cut off trailing \r\n
+          return error_message;
         }
         else
           FreeLibrary( hModule );
       }
     }
-    sprintf_s( out_str, out_str_len, "error_code = %u", error_code );
-  }
+    // Could not get an error_message for error_code from FormatMessage
+    // Set error_message to a dummy value so we don't have to try this again
+    error_message = static_cast<char*>( LocalAlloc( LMEM_FIXED, 10 ) );
+    memcpy( error_message, "(unknown)", 10 );
+    return error_message;
 #else
-  snprintf
-  (
-    out_str,
-    out_str_len,
-    "errno = %u, strerror = %s",
-    error_code,
-    std::strerror( error_code )
-  );
+    error_message = new char[256];
+    strerror_r( error_code, error_message, 256 );
+    return error_message;
 #endif
-}
-Exception::Exception()
-{
-  if ( get_errno() != 0 )
-  {
-    strerror
-    (
-      get_errno(),
-      what_buffer,
-      YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1
-    );
   }
   else
-    what_buffer[0] = 0;
+    return "(unknown)";
 }
-Exception::Exception( uint32_t error_code )
-{
-  if ( error_code != 0 )
-  {
-    strerror
-    (
-      error_code,
-      what_buffer,
-      YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1
-    );
-  }
-  else
-    what_buffer[0] = 0;
-}
-void Exception::init( const char* what )
+void Exception::set_error_message( const char* error_message )
 {
 #ifdef _WIN32
-  strncpy_s(
+  LocalFree( this->error_message );
 #else
-  strncpy(
+  delete [] this->error_message;
 #endif
-     what_buffer, what, YIELD_PLATFORM_EXCEPTION_WHAT_BUFFER_LENGTH-1 );
+  if ( error_message != NULL )
+  {
+    size_t error_message_len = strlen( error_message );
+#ifdef _WIN32
+    error_message
+      = static_cast<char*>( LocalAlloc( LMEM_FIXED, error_message_len+1 ) );
+#else
+    this->error_message = new char[error_message_len+1];
+#endif
+    memcpy( this->error_message, error_message, error_message_len+1 );
+  }
+  else
+    this->error_message = NULL;
 }
 
 

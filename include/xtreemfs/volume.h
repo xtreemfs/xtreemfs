@@ -84,6 +84,22 @@ namespace xtreemfs
       listdirCallback& callback 
     );
 
+    static void 
+    set_errno
+    ( 
+      YIELD::platform::Log* log,
+      const char* operation_name, 
+      ProxyExceptionResponse&
+    );
+
+    static void 
+    set_errno
+    ( 
+      YIELD::platform::Log* log,
+      const char* operation_name, 
+      std::exception& 
+    );
+
   private:
     Volume
     ( 
@@ -122,8 +138,6 @@ namespace xtreemfs
     );
 
     void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );
-    void set_errno( const char* operation_name, ProxyExceptionResponse& );
-    void set_errno( const char* operation_name, std::exception& );
   };
 
   typedef yidl::runtime::auto_Object<Volume> auto_Volume;
