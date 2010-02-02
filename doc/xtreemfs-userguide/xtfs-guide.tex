@@ -12,7 +12,7 @@
 
 \title{XtreemFS Installation and User Guide}
 
-\date{Version 1.2}
+\date{Version 1.2.1}
 
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
@@ -45,14 +45,24 @@ XtreemFS is developed within the \href{http://www.xtreemos.eu}{XtreemOS project}
 XtreemFS is available from the \href{http://www.XtreemFS.org}{XtreemFS website (www.XtreemFS.org)}.
 
 
-This document is \copyright{} 2009 by Bj\"orn Kolbeck, Jan Stender, Minor Gordon, Felix Hupfeld, Juan Gonzales. All rights reserved.
+This document is \copyright{} 2009, 2010 by Bj\"orn Kolbeck, Jan Stender, Minor Gordon, Felix Hupfeld, Juan Gonzales. All rights reserved.
 
 \setcounter{tocdepth}{10}
 \tableofcontents
 
 \chapter*{Changes}
 
-This is a summary of the most important changes in release 1.2.
+Summary of important changes in release 1.2.1:
+
+\begin{itemize}
+ \item \textbf{server status}\\
+ Each server (especially OSDs) have a persistent status which can be online or dead/removed. This status must be changed manually and is used by the scrubber tool to identify dead OSDs which have been removed from the system.
+ \item \textbf{enhanced scrubber}\\
+ The scrubber is now able to remove replicas which are stored on OSDs that are marked as dead/removed. The srubber will create new replicas for that file if a complete replica still exists and a sufficient number of OSDs is available. In addition, the scrubber marks replicas as ``complete'' if they contain all objects of the original file.
+\end{itemize}
+
+
+This is a summary of the most important changes in release 1.2:
 
 \begin{itemize}
  \item \textbf{renamed binaries}\\
@@ -1489,6 +1499,19 @@ directory service defined by the \texttt{-dir} option (localhost:32638 in this e
 The process will be started and can be stopped by setting the option
 \texttt{-stop}. To watch the cleanup progress use option \texttt{-i} for the
 interactive mode. For further information see \texttt{man xtfs\_cleanup}.
+
+\subsection{Setting the Service Status}
+
+The service's status field is shown in the service status page as \texttt{static.status}. The status can be 0 (online), 1 (marked for removal) and 2 (dead/removed). Status 0 (online) is the regular status for all services, even if they are temporarily offline. Status 2 (dead/removed) marks an OSD as permanently failed and the scrubber will removed replicas and files from these OSDs. Status 1 (marked for removal) is for future use.
+
+The status can be set with the \texttt{xtfs_chstatus} tool:
+
+\begin{verbatim}
+$> xtfs_chstatus -dir oncrpc://localhost:32638 \
+   u2i3-28isu2-iwuv29-isjd83 online
+\end{verbatim}
+
+This command sets the status of the service with the UUID \texttt{u2i3-28isu2-iwuv29-isjd83} to online.
 
 \section{User Tools}
 
