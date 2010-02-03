@@ -1504,7 +1504,7 @@ interactive mode. For further information see \texttt{man xtfs\_cleanup}.
 
 The service's status field is shown in the service status page as \texttt{static.status}. The status can be 0 (online), 1 (marked for removal) and 2 (dead/removed). Status 0 (online) is the regular status for all services, even if they are temporarily offline. Status 2 (dead/removed) marks an OSD as permanently failed and the scrubber will removed replicas and files from these OSDs. Status 1 (marked for removal) is for future use.
 
-The status can be set with the \texttt{xtfs_chstatus} tool:
+The status can be set with the \texttt{xtfs\_chstatus} tool:
 
 \begin{verbatim}
 $> xtfs_chstatus -dir oncrpc://localhost:32638 \
