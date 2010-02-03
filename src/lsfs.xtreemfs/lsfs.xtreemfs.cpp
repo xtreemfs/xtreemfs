@@ -2,6 +2,7 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/main.h"
+using namespace org::xtreemfs::interfaces;
 
 #include <iostream>
 
@@ -27,10 +28,10 @@ namespace lsfs_xtreemfs
     // YIELD::Main
     int _main( int, char** )
     {
-      org::xtreemfs::interfaces::ServiceSet services;
+      ServiceSet services;
       createDIRProxy( *dir_uri )->xtreemfs_service_get_by_type
       (
-        org::xtreemfs::interfaces::SERVICE_TYPE_VOLUME,
+        SERVICE_TYPE_VOLUME,
         services
       );
 
@@ -38,8 +39,7 @@ namespace lsfs_xtreemfs
       {
         for
         (
-          org::xtreemfs::interfaces::ServiceSet::const_iterator service_i
-            = services.begin();
+          ServiceSet::const_iterator service_i= services.begin();
           service_i != services.end();
           ++service_i 
         )
@@ -57,7 +57,7 @@ namespace lsfs_xtreemfs
 
              for
              (
-               org::xtreemfs::interfaces::ServiceDataMap::const_iterator data_i
+               ServiceDataMap::const_iterator data_i
                  = ( *service_i ).get_data().begin();
                data_i != ( *service_i ).get_data().end();
                ++data_i
@@ -73,8 +73,7 @@ namespace lsfs_xtreemfs
       {
         for
         (
-          org::xtreemfs::interfaces::ServiceSet::const_iterator service_i
-            = services.begin();
+          ServiceSet::const_iterator service_i = services.begin();
           service_i != services.end();
           ++service_i 
         )

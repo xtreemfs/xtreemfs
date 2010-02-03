@@ -2,6 +2,7 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/main.h"
+using namespace xtreemfs;
 
 #include "yieldfs.h"
 
@@ -157,15 +158,15 @@ namespace mount_xtreemfs
       // Fill volume_flags from options
       uint32_t volume_flags = 0;
       if ( metadata_cache )
-        volume_flags |= xtreemfs::Volume::VOLUME_FLAG_METADATA_CACHE;
+        volume_flags |= Volume::VOLUME_FLAG_METADATA_CACHE;
       if ( trace_file_io )
-        volume_flags |= xtreemfs::Volume::VOLUME_FLAG_TRACE_FILE_IO;
+        volume_flags |= Volume::VOLUME_FLAG_TRACE_FILE_IO;
 
       // Create the XtreemFS volume in the parent as well as the child process 
       // so that the parent will fail on most common errors 
       // (like failed connections) before the child is created
       YIELD::platform::auto_Volume volume = 
-        xtreemfs::Volume::create
+        Volume::create
         ( 
           *dir_uri, 
           volume_name, 
@@ -173,7 +174,7 @@ namespace mount_xtreemfs
           get_log(), 
           get_proxy_flags(), 
           get_operation_timeout(), 
-          xtreemfs::DIRProxy::RECONNECT_TRIES_MAX_DEFAULT, 
+          DIRProxy::RECONNECT_TRIES_MAX_DEFAULT, 
           get_proxy_ssl_context(), 
           vivaldi_coordinates_file_path 
         ).release();
