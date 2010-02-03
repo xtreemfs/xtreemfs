@@ -1,0 +1,14 @@
+module org
+{
+  module xtreemfs # 2010012113
+  {
+    module interfaces
+    {
+      interface NettestInterface # 400
+      {
+        // Operations
+        void xtreemfs_nop() # 1;
+      };
+    };
+  };
+};
