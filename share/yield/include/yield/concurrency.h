@@ -318,8 +318,12 @@ namespace YIELD
         : Exception( error_code ) 
       { }
 
-      ExceptionResponse( const char* what ) 
-        : Exception( what ) 
+      ExceptionResponse( const char* error_message ) 
+        : Exception( error_message ) 
+      { }
+
+      ExceptionResponse( uint32_t error_code, const char* error_message )
+        : Exception( error_code, error_message )
       { }
 
       ExceptionResponse( const Exception& other ) 

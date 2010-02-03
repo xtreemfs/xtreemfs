@@ -2776,36 +2776,11 @@ void YIELD::ipc::ONCRPCResponse::unmarshal
               unmarshaller.readStruct( "body", 0, *body );
           }
           break;
-          case 1:
-          {
-            body = new YIELD::concurrency::ExceptionResponse
-                      ( "ONC-RPC exception: program unavailable" );
-          }
-          break;
-          case 2:
-          {
-            body = new YIELD::concurrency::ExceptionResponse
-                   ( "ONC-RPC exception: program mismatch" );
-          }
-          break;
-          case 3:
-          {
-            body = new YIELD::concurrency::ExceptionResponse
-                   ( "ONC-RPC exception: procedure unavailable" );
-          }
-          break;
-          case 4:
-          {
-            body = new YIELD::concurrency::ExceptionResponse
-                  ( "ONC-RPC exception: garbage arguments" );
-          }
-          break;
-          case 5:
-          {
-            body = new YIELD::concurrency::ExceptionResponse
-                   ( "ONC-RPC exception: system error" );
-          }
-          break;
+          case 1: body = new ONCRPCProgramUnavailableError; break;
+          case 2: body = new ONCRPCProgramMismatchError; break;
+          case 3: body = new ONCRPCProcedureUnavailableError; break;
+          case 4: body = new ONCRPCGarbageArgumentsError; break;
+          case 5: body = new ONCRPCSystemError; break;
           default:
           {
             body = get_interface()
@@ -2813,26 +2788,22 @@ void YIELD::ipc::ONCRPCResponse::unmarshal
             if ( body != NULL )
               unmarshaller.readStruct( "body", 0, *body );
             else
-              body = new YIELD::concurrency::ExceptionResponse
-                     ( "ONC-RPC exception: system error" );
+              body = new ONCRPCSystemError;
           }
           break;
         }
       }
       else
         body = new YIELD::concurrency::ExceptionResponse
-               ( "ONC-RPC exception: received unexpected verification body" );
+               ( "ONC-RPC: received unexpected verification body" );
     }
     else if ( reply_stat == 1 ) // MSG_REJECTED
-      body = new YIELD::concurrency::ExceptionResponse
-             ( "ONC-RPC exception: received MSG_REJECTED reply_stat" );
-    else
-      body = new YIELD::concurrency::ExceptionResponse
-             ( "ONC-RPC exception: received unknown reply_stat" );
+      body = new ONCRPCMessageRejectedError;
+    else // Unknown reply_stat value
+      body = new ONCRPCMessageRejectedError;
   }
-  else
-    body = new YIELD::concurrency::ExceptionResponse
-          ( "ONC-RPC exception: received unknown msg_type" );
+  else // Unknown msg_type value
+    body = new ONCRPCMessageRejectedError;
   set_body( body );
 }
 

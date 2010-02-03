@@ -651,6 +651,16 @@ namespace YIELD
     typedef yidl::runtime::auto_Object<NamedPipe> auto_NamedPipe;
 
 
+    class ONCRPCGarbageArgumentsError 
+      : public YIELD::concurrency::ExceptionResponse
+    {
+    public:
+      ONCRPCGarbageArgumentsError()
+        : ExceptionResponse( 4, "ONC-RPC: garbage arguments" )
+      { }
+    };
+
+
     template <class ONCRPCMessageType> // CRTP
     class ONCRPCMessage
     {
@@ -704,6 +714,46 @@ namespace YIELD
       YIELD::concurrency::auto_Interface interface_;
       uint32_t xid;
       yidl::runtime::auto_Struct body;
+    };
+
+
+    class ONCRPCMessageRejectedError 
+      : public YIELD::concurrency::ExceptionResponse
+    {
+    public:
+      ONCRPCMessageRejectedError()
+        : ExceptionResponse( 1, "ONC-RPC: message rejected" )
+      { }
+    };
+
+
+    class ONCRPCProcedureUnavailableError 
+      : public YIELD::concurrency::ExceptionResponse
+    {
+    public:
+      ONCRPCProcedureUnavailableError()
+        : ExceptionResponse( 3, "ONC-RPC: procedure unavailable" )
+      { }
+    };
+
+
+    class ONCRPCProgramMismatchError 
+      : public YIELD::concurrency::ExceptionResponse
+    {
+    public:
+      ONCRPCProgramMismatchError()
+        : ExceptionResponse( 2, "ONC-RPC: program mismatch" )
+      { }
+    };
+
+
+    class ONCRPCProgramUnavailableError 
+      : public YIELD::concurrency::ExceptionResponse
+    {
+    public:
+      ONCRPCProgramUnavailableError()
+        : ExceptionResponse( 1, "ONC-RPC: program unavailable" )
+      { }
     };
 
 
@@ -952,6 +1002,16 @@ namespace YIELD
     };
 
     typedef yidl::runtime::auto_Object<ONCRPCServer> auto_ONCRPCServer;
+
+
+    class ONCRPCSystemError 
+      : public YIELD::concurrency::ExceptionResponse
+    {
+    public:
+      ONCRPCSystemError()
+        : ExceptionResponse( 5, "ONC-RPC: system error" )
+      { }
+    };
 
 
     class Pipe : public yidl::runtime::Object

@@ -19,7 +19,7 @@ namespace mkfs_xtreemfs
         ( 
           "mkfs.xtreemfs", 
           "create a new volume", 
-          "[oncrpc://]<dir host>[:port]/<volume name>" 
+          "[oncrpc://]<dir or mrc host>[:port]/<volume name>"
         )
     {
       addOption
@@ -96,19 +96,17 @@ namespace mkfs_xtreemfs
     {
       MKFS_XTREEMFS_OPTION_ACCESS_CONTROL_POLICY = 20,
       MKFS_XTREEMFS_OPTION_MODE = 21,
-      MKFS_XTREEMFS_OPTION_MRC = 22,
-      MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID = 23,
-      MKFS_XTREEMFS_OPTION_OWNER_USER_ID = 24,      
-      MKFS_XTREEMFS_OPTION_PASSWORD = 25,
-      MKFS_XTREEMFS_OPTION_STRIPING_POLICY = 26,
-      MKFS_XTREEMFS_OPTION_STRIPING_POLICY_STRIPE_SIZE = 27,
-      MKFS_XTREEMFS_OPTION_STRIPING_POLICY_WIDTH = 28
+      MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID = 22,
+      MKFS_XTREEMFS_OPTION_OWNER_USER_ID = 23,      
+      MKFS_XTREEMFS_OPTION_PASSWORD = 24,
+      MKFS_XTREEMFS_OPTION_STRIPING_POLICY = 25,
+      MKFS_XTREEMFS_OPTION_STRIPING_POLICY_STRIPE_SIZE = 26,
+      MKFS_XTREEMFS_OPTION_STRIPING_POLICY_WIDTH = 27
     };
 
     AccessControlPolicyType access_control_policy;
-    YIELD::ipc::auto_URI dir_uri;
+    YIELD::ipc::auto_URI dir_or_mrc_uri;
     uint32_t mode;
-    YIELD::ipc::auto_URI mrc_uri;
     std::string owner_group_id, owner_user_id;
     std::string password;
     StripingPolicyType striping_policy;
@@ -119,55 +117,73 @@ namespace mkfs_xtreemfs
     // YIELD::Main
     int _main( int, char** )
     {
-      if ( mrc_uri == NULL ) // No MRC selected
+      YIELD::ipc::auto_URI mrc_uri; // What we ultimately need to contact
+
+      // Check if the URI passed on the command line has a port that's
+      // the same as an MRC default port
+      if 
+      ( 
+        dir_or_mrc_uri->get_port() != 0
+        &&
+        (
+          ( 
+            dir_or_mrc_uri->get_scheme() == ONCRPC_SCHEME && 
+            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPC_PORT_DEFAULT 
+          )
+          ||
+          ( 
+            dir_or_mrc_uri->get_scheme() == ONCRPCS_SCHEME && 
+            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCS_PORT_DEFAULT 
+          )
+          ||
+          ( 
+            dir_or_mrc_uri->get_scheme() == ONCRPCG_SCHEME && 
+            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCG_PORT_DEFAULT 
+          )
+          ||
+          ( 
+            dir_or_mrc_uri->get_scheme() == ONCRPCU_SCHEME && 
+            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCU_PORT_DEFAULT 
+          )
+        )
+      )
       {
-        auto_DIRProxy dir_proxy( createDIRProxy( *dir_uri ) );
+        mrc_uri = dir_or_mrc_uri;
+      }
+      else
+      {
+        // Assume dir_or_mrc_uri is a DIR URI
+        auto_DIRProxy dir_proxy( createDIRProxy( *dir_or_mrc_uri ) );
 
         // Get a list of all MRC services
         ServiceSet mrc_services;
-        dir_proxy->xtreemfs_service_get_by_type
-        (
-          SERVICE_TYPE_MRC,
-          mrc_services
-        );
-
-        // Select a random MRC
-        std::srand( static_cast<unsigned int>( std::time( NULL ) ) );
-        Service& mrc_service = mrc_services[std::rand() % mrc_services.size()];
-
-        // Find an apppropriate address mapping
-        yidl::runtime::auto_Object<AddressMappingSet> mrc_address_mappings
-          = dir_proxy->getAddressMappingsFromUUID( mrc_service.get_uuid() );
-
-        for
-        (  
-          AddressMappingSet::const_iterator mrc_address_mapping_i = 
-            mrc_address_mappings->begin();
-          mrc_address_mapping_i != mrc_address_mappings->end();
-          ++mrc_address_mapping_i
-        )
+        try
         {
-          if 
-          ( 
-            ( *mrc_address_mapping_i ).get_protocol() == 
-            dir_uri->get_scheme() 
-          )
-          {
-            mrc_uri 
-              = new YIELD::ipc::URI( ( *mrc_address_mapping_i ).get_uri() );
-            break;
-          }
-        }  
+          dir_proxy->xtreemfs_service_get_by_type
+          (
+            SERVICE_TYPE_MRC,
+            mrc_services
+          );
+        }
+        catch ( YIELD::platform::Exception& )
+        {
+          // dir_or_mrc_uri is an MRC URI after all
+          mrc_uri = dir_or_mrc_uri;
+        }
 
         if ( mrc_uri == NULL )
         {
-          // No address mapping with the same scheme as the dir_uri
-          // Default to SSL if we have an SSL context, otherwise TCP
-          std::string match_protocol;
-          if ( get_proxy_ssl_context() != NULL )
-            match_protocol = ONCRPCS_SCHEME;
-          else
-            match_protocol = ONCRPC_SCHEME;
+          if ( mrc_services.empty() )
+            throw YIELD::platform::Exception( "could not find an MRC" );
+
+          // Select a random MRC
+          std::srand( static_cast<unsigned int>( std::time( NULL ) ) );
+          Service& mrc_service 
+            = mrc_services[std::rand() % mrc_services.size()];
+
+          // Find an apppropriate address mapping
+          yidl::runtime::auto_Object<AddressMappingSet> mrc_address_mappings
+            = dir_proxy->getAddressMappingsFromUUID( mrc_service.get_uuid() );
 
           for
           (  
@@ -177,16 +193,47 @@ namespace mkfs_xtreemfs
             ++mrc_address_mapping_i
           )
           {
-            if ( ( *mrc_address_mapping_i ).get_protocol() == match_protocol )
+            if 
+            ( 
+              ( *mrc_address_mapping_i ).get_protocol() == 
+              dir_or_mrc_uri->get_scheme() 
+            )
             {
               mrc_uri 
                 = new YIELD::ipc::URI( ( *mrc_address_mapping_i ).get_uri() );
               break;
             }
-          }
+          }  
 
           if ( mrc_uri == NULL )
-           throw YIELD::platform::Exception( "could not find a suitable MRC" );
+          {
+            // No address mapping with the same scheme as the dir_uri
+            // Default to SSL if we have an SSL context, otherwise TCP
+            std::string match_protocol;
+            if ( get_proxy_ssl_context() != NULL )
+              match_protocol = ONCRPCS_SCHEME;
+            else
+              match_protocol = ONCRPC_SCHEME;
+
+            for
+            (  
+              AddressMappingSet::const_iterator mrc_address_mapping_i = 
+                mrc_address_mappings->begin();
+              mrc_address_mapping_i != mrc_address_mappings->end();
+              ++mrc_address_mapping_i
+            )
+            {
+              if ( ( *mrc_address_mapping_i ).get_protocol() == match_protocol )
+              {
+                mrc_uri 
+                 = new YIELD::ipc::URI( ( *mrc_address_mapping_i ).get_uri() );
+                break;
+              }
+            }
+
+            if ( mrc_uri == NULL )
+             throw YIELD::platform::Exception( "could not an MRC" );
+          }
         }
       }
 
@@ -242,12 +289,6 @@ namespace mkfs_xtreemfs
           }
           break;
 
-          case MKFS_XTREEMFS_OPTION_MRC:
-          {
-            mrc_uri = parseURI( arg );
-          }
-          break;
-
           case MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID: 
           {
             owner_group_id = arg; 
@@ -299,11 +340,11 @@ namespace mkfs_xtreemfs
     void parseFiles( int files_count, char** files )
     {
       if ( files_count >= 1 )
-        dir_uri = parseVolumeURI( files[0], volume_name );
+        dir_or_mrc_uri = parseVolumeURI( files[0], volume_name );
       else
         throw YIELD::platform::Exception
         ( 
-          "must specify the MRC and volume name as a URI" 
+          "must specify the DIR or MRC host and volume name as a URI" 
         );
     }
   };
