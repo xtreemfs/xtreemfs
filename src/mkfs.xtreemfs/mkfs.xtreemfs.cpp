@@ -2,6 +2,11 @@
 // This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 
 #include "xtreemfs/main.h"
+using namespace org::xtreemfs::interfaces;
+using namespace xtreemfs;
+
+#include <cstdlib>
+#include <ctime>
 
 
 namespace mkfs_xtreemfs
@@ -13,8 +18,8 @@ namespace mkfs_xtreemfs
       : xtreemfs::Main
         ( 
           "mkfs.xtreemfs", 
-          "create a new volume on a specified MRC", 
-          "[oncrpc://]<mrc host>[:port]/<volume name>" 
+          "create a new volume", 
+          "[oncrpc://]<dir host>[:port]/<volume name>" 
         )
     {
       addOption
@@ -24,12 +29,12 @@ namespace mkfs_xtreemfs
         "--access-control-policy", 
         "NULL|POSIX|VOLUME" 
       );
-      access_control_policy = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;
+      access_control_policy = ACCESS_CONTROL_POLICY_POSIX;
 
       addOption
       ( 
         MKFS_XTREEMFS_OPTION_MODE, 
-        "-m", 
+        "-m",
         "--mode", 
         "n" 
       );
@@ -41,6 +46,14 @@ namespace mkfs_xtreemfs
         "-g", 
         "--owner-group-id", 
         "group id of owner" 
+      );
+
+      addOption
+      ( 
+        MKFS_XTREEMFS_OPTION_OWNER_USER_ID, 
+        "-u", 
+        "--owner-user-id", 
+        "user id of owner" 
       );
 
       addOption
@@ -57,7 +70,7 @@ namespace mkfs_xtreemfs
         "--striping-policy", 
         "NONE|RAID0" 
       );
-      striping_policy = org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
+      striping_policy = STRIPING_POLICY_RAID0;
 
       addOption
       ( 
@@ -67,14 +80,6 @@ namespace mkfs_xtreemfs
         "n" 
       );
       striping_policy_stripe_size = 128;
-
-      addOption
-      ( 
-        MKFS_XTREEMFS_OPTION_OWNER_USER_ID, 
-        "-u", 
-        "--owner-user-id", 
-        "user id of owner" 
-      );
 
       addOption
       ( 
@@ -91,20 +96,22 @@ namespace mkfs_xtreemfs
     {
       MKFS_XTREEMFS_OPTION_ACCESS_CONTROL_POLICY = 20,
       MKFS_XTREEMFS_OPTION_MODE = 21,
-      MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID = 22,
-      MKFS_XTREEMFS_OPTION_OWNER_USER_ID = 23,      
-      MKFS_XTREEMFS_OPTION_PASSWORD = 24,
-      MKFS_XTREEMFS_OPTION_STRIPING_POLICY = 25,
-      MKFS_XTREEMFS_OPTION_STRIPING_POLICY_STRIPE_SIZE = 26,
-      MKFS_XTREEMFS_OPTION_STRIPING_POLICY_WIDTH = 27
+      MKFS_XTREEMFS_OPTION_MRC = 22,
+      MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID = 23,
+      MKFS_XTREEMFS_OPTION_OWNER_USER_ID = 24,      
+      MKFS_XTREEMFS_OPTION_PASSWORD = 25,
+      MKFS_XTREEMFS_OPTION_STRIPING_POLICY = 26,
+      MKFS_XTREEMFS_OPTION_STRIPING_POLICY_STRIPE_SIZE = 27,
+      MKFS_XTREEMFS_OPTION_STRIPING_POLICY_WIDTH = 28
     };
 
-    org::xtreemfs::interfaces::AccessControlPolicyType access_control_policy;
+    AccessControlPolicyType access_control_policy;
+    YIELD::ipc::auto_URI dir_uri;
     uint32_t mode;
     YIELD::ipc::auto_URI mrc_uri;
     std::string owner_group_id, owner_user_id;
     std::string password;
-    org::xtreemfs::interfaces::StripingPolicyType striping_policy;
+    StripingPolicyType striping_policy;
     uint32_t striping_policy_stripe_size;
     uint32_t striping_policy_width;
     std::string volume_name;
@@ -112,12 +119,83 @@ namespace mkfs_xtreemfs
     // YIELD::Main
     int _main( int, char** )
     {
+      if ( mrc_uri == NULL ) // No MRC selected
+      {
+        auto_DIRProxy dir_proxy( createDIRProxy( *dir_uri ) );
+
+        // Get a list of all MRC services
+        ServiceSet mrc_services;
+        dir_proxy->xtreemfs_service_get_by_type
+        (
+          SERVICE_TYPE_MRC,
+          mrc_services
+        );
+
+        // Select a random MRC
+        std::srand( static_cast<unsigned int>( std::time( NULL ) ) );
+        Service& mrc_service = mrc_services[std::rand() % mrc_services.size()];
+
+        // Find an apppropriate address mapping
+        yidl::runtime::auto_Object<AddressMappingSet> mrc_address_mappings
+          = dir_proxy->getAddressMappingsFromUUID( mrc_service.get_uuid() );
+
+        for
+        (  
+          AddressMappingSet::const_iterator mrc_address_mapping_i = 
+            mrc_address_mappings->begin();
+          mrc_address_mapping_i != mrc_address_mappings->end();
+          ++mrc_address_mapping_i
+        )
+        {
+          if 
+          ( 
+            ( *mrc_address_mapping_i ).get_protocol() == 
+            dir_uri->get_scheme() 
+          )
+          {
+            mrc_uri 
+              = new YIELD::ipc::URI( ( *mrc_address_mapping_i ).get_uri() );
+            break;
+          }
+        }  
+
+        if ( mrc_uri == NULL )
+        {
+          // No address mapping with the same scheme as the dir_uri
+          // Default to SSL if we have an SSL context, otherwise TCP
+          std::string match_protocol;
+          if ( get_proxy_ssl_context() != NULL )
+            match_protocol = ONCRPCS_SCHEME;
+          else
+            match_protocol = ONCRPC_SCHEME;
+
+          for
+          (  
+            AddressMappingSet::const_iterator mrc_address_mapping_i = 
+              mrc_address_mappings->begin();
+            mrc_address_mapping_i != mrc_address_mappings->end();
+            ++mrc_address_mapping_i
+          )
+          {
+            if ( ( *mrc_address_mapping_i ).get_protocol() == match_protocol )
+            {
+              mrc_uri 
+                = new YIELD::ipc::URI( ( *mrc_address_mapping_i ).get_uri() );
+              break;
+            }
+          }
+
+          if ( mrc_uri == NULL )
+           throw YIELD::platform::Exception( "could not find a suitable MRC" );
+        }
+      }
+
       createMRCProxy( *mrc_uri, password.c_str() )->xtreemfs_mkvol
       ( 
         org::xtreemfs::interfaces::Volume
         (
           access_control_policy,
-          org::xtreemfs::interfaces::StripingPolicy
+          StripingPolicy
           ( 
             striping_policy, 
             striping_policy_stripe_size, 
@@ -130,6 +208,7 @@ namespace mkfs_xtreemfs
           owner_user_id
         )
       );
+
       return 0;
     }
 
@@ -143,15 +222,15 @@ namespace mkfs_xtreemfs
           {
             if ( strcmp( arg, "NULL" ) == 0 )
               access_control_policy 
-                = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_NULL;
+                = ACCESS_CONTROL_POLICY_NULL;
 
             else if ( strcmp( arg, "POSIX" ) == 0 )
               access_control_policy 
-                = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_POSIX;
+                = ACCESS_CONTROL_POLICY_POSIX;
 
             else if ( strcmp( arg, "VOLUME" ) == 0 )
               access_control_policy 
-                = org::xtreemfs::interfaces::ACCESS_CONTROL_POLICY_VOLUME;
+                = ACCESS_CONTROL_POLICY_VOLUME;
           }
           break;
 
@@ -160,6 +239,12 @@ namespace mkfs_xtreemfs
             mode = strtol( arg, NULL, 0 );
             if ( mode == 0 )
               mode = YIELD::platform::Volume::DIRECTORY_MODE_DEFAULT;
+          }
+          break;
+
+          case MKFS_XTREEMFS_OPTION_MRC:
+          {
+            mrc_uri = parseURI( arg );
           }
           break;
 
@@ -184,8 +269,7 @@ namespace mkfs_xtreemfs
           case MKFS_XTREEMFS_OPTION_STRIPING_POLICY:
           {
             if ( strcmp( arg, "RAID0" ) == 0 )
-              striping_policy 
-                = org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
+              striping_policy = STRIPING_POLICY_RAID0;
           }
           break;
 
@@ -215,7 +299,7 @@ namespace mkfs_xtreemfs
     void parseFiles( int files_count, char** files )
     {
       if ( files_count >= 1 )
-        mrc_uri = parseVolumeURI( files[0], volume_name );
+        dir_uri = parseVolumeURI( files[0], volume_name );
       else
         throw YIELD::platform::Exception
         ( 
