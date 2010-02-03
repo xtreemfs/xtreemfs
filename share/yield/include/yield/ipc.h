@@ -138,7 +138,7 @@ namespace YIELD
 
       const static uint16_t CONCURRENCY_LEVEL_DEFAULT = 4;
       const static uint64_t OPERATION_TIMEOUT_DEFAULT = 5 * NS_IN_S;
-      const static uint8_t RECONNECT_TRIES_MAX_DEFAULT = 3;
+      const static uint8_t RECONNECT_TRIES_MAX_DEFAULT = 2; 
       
       // YIELD::concurrency::EventHandler
       virtual void handleEvent( YIELD::concurrency::Event& );
