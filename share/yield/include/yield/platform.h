@@ -321,6 +321,7 @@ namespace YIELD
       }
 
     protected:
+      void set_error_code( uint32_t error_code );
       void set_error_message( const char* error_message );
 
     private:

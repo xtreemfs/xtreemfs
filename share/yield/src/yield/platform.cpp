@@ -203,8 +203,8 @@ const char* Exception::get_error_message() throw()
     }
     // Could not get an error_message for error_code from FormatMessage
     // Set error_message to a dummy value so we don't have to try this again
-    error_message = static_cast<char*>( LocalAlloc( LMEM_FIXED, 10 ) );
-    memcpy( error_message, "(unknown)", 10 );
+    error_message = static_cast<char*>( LocalAlloc( LMEM_FIXED, 19 ) );
+    sprintf_s( error_message, 19, "errno = %u", error_code );
     return error_message;
 #else
     error_message = new char[256];
@@ -214,6 +214,10 @@ const char* Exception::get_error_message() throw()
   }
   else
     return "(unknown)";
+}
+void Exception::set_error_code( uint32_t error_code )
+{
+  this->error_code = error_code;
 }
 void Exception::set_error_message( const char* error_message )
 {
@@ -226,7 +230,7 @@ void Exception::set_error_message( const char* error_message )
   {
     size_t error_message_len = strlen( error_message );
 #ifdef _WIN32
-    error_message
+    this->error_message
       = static_cast<char*>( LocalAlloc( LMEM_FIXED, error_message_len+1 ) );
 #else
     this->error_message = new char[error_message_len+1];

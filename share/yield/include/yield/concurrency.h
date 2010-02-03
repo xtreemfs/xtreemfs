@@ -335,12 +335,12 @@ namespace YIELD
 
       virtual ExceptionResponse* clone() const 
       { 
-        return new ExceptionResponse( what() ); 
+        return new ExceptionResponse( *this ); 
       }
 
       virtual void throwStackClone() const 
       { 
-        throw ExceptionResponse( what() ); 
+        throw ExceptionResponse( *this ); 
       }
 
       // yidl::runtime::Object
