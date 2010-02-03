@@ -4,7 +4,6 @@
 #include "xtreemfs/main.h"
 
 #include <iostream>
-#include <sstream>
 
 
 namespace lsfs_xtreemfs
@@ -16,89 +15,86 @@ namespace lsfs_xtreemfs
       : xtreemfs::Main
         ( 
           "lsfs.xtreemfs", 
-          "list volumes on a specified MRC", 
-          "[oncrpc://]<mrc host>[:port][/<volume name>]" 
+          "list volumes or detailed information on one volume",
+          "[oncrpc://]<dir host>[:port][/volume_name]"
         )
-    {
-      addOption( LSFS_XTREEMFS_OPTION_LONG_LISTING, "-l" );
-      long_listing = false;
-    }
+    { }
 
   private:
-    enum
-    {
-      LSFS_XTREEMFS_OPTION_LONG_LISTING = 20
-    };
-
-    bool long_listing;
-    YIELD::ipc::auto_URI mrc_uri;
+    YIELD::ipc::auto_URI dir_uri;
     std::string volume_name;
 
     // YIELD::Main
     int _main( int, char** )
     {
-      org::xtreemfs::interfaces::VolumeSet volumes;
-      createMRCProxy( *mrc_uri )->xtreemfs_lsvol( volumes );
+      org::xtreemfs::interfaces::ServiceSet services;
+      createDIRProxy( *dir_uri )->xtreemfs_service_get_by_type
+      (
+        org::xtreemfs::interfaces::SERVICE_TYPE_VOLUME,
+        services
+      );
 
-      for 
-      ( 
-        org::xtreemfs::interfaces::VolumeSet::const_iterator 
-          volume_i = volumes.begin(); 
-        volume_i != volumes.end(); 
-        volume_i++ 
-      )
+      if ( !volume_name.empty() ) // Print detailed info on one volume
       {
-        std::ostringstream volume_str;
-
-        if ( long_listing )
+        for
+        (
+          org::xtreemfs::interfaces::ServiceSet::const_iterator service_i
+            = services.begin();
+          service_i != services.end();
+          ++service_i 
+        )
         {
-          volume_str << "Volume '" << ( *volume_i ).get_name() << "'" << std::endl;
-          size_t volume_str_len = volume_str.str().size();
-          for ( size_t dash_i = 0; dash_i < volume_str_len; dash_i++ )
-            volume_str << '-';
+           if ( ( *service_i ).get_name() == volume_name )
+           {
+             std::cout << "Volume '" << volume_name << "'" << std::endl;
+             size_t volume_name_len = volume_name.size() + 9;
+             for ( size_t dash_i = 0; dash_i < volume_name_len; dash_i++ )
+               std::cout << '-';
+             std::cout << std::endl;
 
-          volume_str << std::endl;
+             std::cout << "name: " << ( *service_i ).get_name() << std::endl;
+             std::cout << "uuid: " << ( *service_i ).get_uuid() << std::endl;
 
-          volume_str << "\tID:       " << 
-            ( *volume_i ).get_id() << std::endl;
-
-          volume_str << "\tOwner:    " << 
-            ( *volume_i ).get_owner_user_id() << std::endl;
-
-          volume_str << "\tGroup:    " << 
-            ( *volume_i ).get_owner_group_id() << std::endl;
-
-          volume_str << "\tAccess:   " << 
-            ( *volume_i ).get_mode() << std::endl;
-
-          volume_str << std::endl;
+             for
+             (
+               org::xtreemfs::interfaces::ServiceDataMap::const_iterator data_i
+                 = ( *service_i ).get_data().begin();
+               data_i != ( *service_i ).get_data().end();
+               ++data_i
+             )
+             {
+               std::cout << ( *data_i ).first << ": " << 
+                            ( *data_i ).second << std::endl;
+             }
+           }
         }
-        else
-          volume_str << ( *volume_i ).get_name() << 
-            "  ->  " << ( *volume_i ).get_id() << std::endl;
-
-        std::cout << volume_str.str();
+      }
+      else // List all volumes
+      {
+        for
+        (
+          org::xtreemfs::interfaces::ServiceSet::const_iterator service_i
+            = services.begin();
+          service_i != services.end();
+          ++service_i 
+        )
+        {
+          std::cout << ( *service_i ).get_name() << " -> " <<
+                       ( *service_i ).get_uuid() <<
+                       std::endl;
+        }
       }
 
       return 0;
-    }
-
-    void parseOption( int id, char* arg )
-    {
-      switch ( id )
-      {
-        case LSFS_XTREEMFS_OPTION_LONG_LISTING: long_listing = true; break;
-        default: xtreemfs::Main::parseOption( id, arg ); break;
-      }
     }
 
     void parseFiles( int files_count, char** files )
     {
       if ( files_count >= 1 )
       {
-        mrc_uri = parseURI( files[0] );
-        if ( mrc_uri->get_resource().size() > 1 )
-          volume_name = mrc_uri->get_resource().c_str() + 1;
+        dir_uri = parseURI( files[0] );
+        if ( dir_uri->get_resource().size() > 1 )
+          volume_name = dir_uri->get_resource().c_str() + 1;
       }
       else
         throw YIELD::platform::Exception( "must specify an MRC URI" );
