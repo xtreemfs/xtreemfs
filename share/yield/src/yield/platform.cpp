@@ -207,8 +207,12 @@ const char* Exception::get_error_message() throw()
     sprintf_s( error_message, 19, "errno = %u", error_code );
     return error_message;
 #else
-    error_message = new char[256];
-    strerror_r( error_code, error_message, 256 );
+    // strerror_r is more or less unusable in a portable way,
+    // thanks to the GNU-specific implementation.
+    // You have to define _XOPEN_SOURCE to get the POSIX implementation,
+    // but that apparently breaks libstdc++.
+    // So we just use strerror.
+    set_error_message( strerror( error_code ) );
     return error_message;
 #endif
   }
@@ -250,8 +254,6 @@ void Exception::set_error_message( const char* error_message )
 #pragma warning( push )
 #pragma warning( disable: 4100 )
 #else
-#define _XOPEN_SOURCE 600
-#define _LARGEFILE64_SOURCE 1
 #include <stdlib.h>
 #include <fcntl.h>
 #include <sys/types.h>
