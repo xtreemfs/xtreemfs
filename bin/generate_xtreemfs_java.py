@@ -34,11 +34,13 @@ class XtreemFSJavaExceptionType(JavaExceptionType):
 class XtreemFSJavaInterface(JavaInterface, JavaClass):    
     def generate( self ):                            
         class_header = self.getClassHeader()        
-        constants = pad( "\n" + INDENT_SPACES, ( "\n" + INDENT_SPACES ).join( [repr( constant ) for constant in self.getConstants()] ), "\n\n" )        
-        tag = self.getTag()            
+        constants = pad( "\n" + INDENT_SPACES, ( "\n" + INDENT_SPACES ).join( [repr( constant ) for constant in self.getConstants()] ), "\n\n" )
+        prog = 0x20000000 + self.getTag()
+        version = self.getTag()            
         out = """\
 %(class_header)s%(constants)s
-    public static int getVersion() { return %(tag)s; }
+    public static int getProg() { return %(prog)u; }
+    public static int getVersion() { return %(version)u; }
 """ % locals()
 
         exception_factories = "".join( [exception_type.getExceptionFactory() for exception_type in self.getExceptionTypes()] )

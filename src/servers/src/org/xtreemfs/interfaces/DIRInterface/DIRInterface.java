@@ -19,6 +19,7 @@ public class DIRInterface
     public static final int ONCRPCU_PORT_DEFAULT = 32638;
 
 
+    public static int getProg() { return 2546883125; }
     public static int getVersion() { return 2010012213; }
 
     public static ONCRPCException createException( int accept_stat ) throws Exception

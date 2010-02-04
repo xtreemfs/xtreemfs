@@ -27,6 +27,7 @@ public class MRCInterface
     public static final int SETATTR_ATTRIBUTES = 128;
 
 
+    public static int getProg() { return 2546883225; }
     public static int getVersion() { return 2010012313; }
 
     public static ONCRPCException createException( int accept_stat ) throws Exception
