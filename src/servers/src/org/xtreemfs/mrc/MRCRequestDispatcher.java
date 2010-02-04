@@ -95,6 +95,8 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.common.util.Nettest;
+import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 
 /**
  * 
@@ -620,6 +622,11 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
     public void receiveRecord(ONCRPCRequest rq) {
         
         final ONCRPCRequestHeader hdr = rq.getRequestHeader();
+
+        if (hdr.getInterfaceVersion() == NettestInterface.getVersion()) {
+            Nettest.handleNettest(hdr,rq);
+            return;
+        }
         
         if (hdr.getInterfaceVersion() != MRCInterface.getVersion()) {
             rq.sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROG_MISMATCH,

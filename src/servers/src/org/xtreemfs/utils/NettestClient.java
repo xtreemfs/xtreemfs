@@ -15,6 +15,8 @@ import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 import org.xtreemfs.interfaces.NettestInterface.nopRequest;
 import org.xtreemfs.interfaces.NettestInterface.nopResponse;
+import org.xtreemfs.interfaces.NettestInterface.pingRequest;
+import org.xtreemfs.interfaces.NettestInterface.pingResponse;
 
 /**
  *
@@ -36,6 +38,22 @@ public class NettestClient extends ONCRPCClient {
                 final nopResponse resp = new nopResponse();
                 resp.unmarshal(new XDRUnmarshaller(data));
                 return null;
+            }
+        });
+        return r;
+    }
+
+    public RPCResponse<ReusableBuffer> xtreemfs_nettest_ping(InetSocketAddress server, ReusableBuffer data) {
+        pingRequest rq = new pingRequest(data);
+
+        RPCResponse r = sendRequest((server == null) ? this.getDefaultServerAddress() : server, rq.getTag(), rq,
+                new RPCResponseDecoder<ReusableBuffer>() {
+
+            @Override
+            public ReusableBuffer getResult(ReusableBuffer data) {
+                final pingResponse resp = new pingResponse();
+                resp.unmarshal(new XDRUnmarshaller(data));
+                return resp.getReturnValue();
             }
         });
         return r;

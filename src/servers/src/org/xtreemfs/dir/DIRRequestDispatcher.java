@@ -81,9 +81,13 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import org.xtreemfs.common.util.Nettest;
+import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 import org.xtreemfs.interfaces.NettestInterface.nopRequest;
 import org.xtreemfs.interfaces.NettestInterface.nopResponse;
+import org.xtreemfs.interfaces.NettestInterface.pingRequest;
+import org.xtreemfs.interfaces.NettestInterface.pingResponse;
 import org.xtreemfs.interfaces.utils.XDRUtils;
 
 /**
@@ -430,7 +434,7 @@ public class DIRRequestDispatcher extends LifeCycleThread
         final ONCRPCRequestHeader hdr = rq.getRequestHeader();
 
         if (hdr.getInterfaceVersion() == NettestInterface.getVersion()) {
-            handleNettest(hdr,rq);
+            Nettest.handleNettest(hdr,rq);
             return;
         }
 
@@ -468,25 +472,7 @@ public class DIRRequestDispatcher extends LifeCycleThread
         }
     }
 
-    public void handleNettest(ONCRPCRequestHeader header, ONCRPCRequest rq) {
-        if (header.getMessageType() != XDRUtils.TYPE_CALL) {
-            rq.sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS,
-                    ErrNo.EINVAL, "message type must be CALL"));
-            return;
-        }
-        switch (header.getProcedure()) {
-            case nopRequest.TAG: {
-                nopResponse response = new nopResponse();
-                rq.sendResponse(response);
-                break;
-            }
-            default: {
-                rq.sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_PROC_UNAVAIL,
-                        ErrNo.EINVAL, "requested operation is not available on this DIR"));
-                return;
-            }
-        }
-    }
+    
 
     @Override
     public void startupPerformed() {

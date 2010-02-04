@@ -32,6 +32,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.xtreemfs.babudb.config.BabuDBConfig;
+import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.dir.DIRRequestDispatcher;
@@ -46,6 +47,7 @@ import org.xtreemfs.interfaces.ServiceType;
 import org.xtreemfs.interfaces.DIRInterface.ConcurrentModificationException;
 import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
+import org.xtreemfs.utils.NettestClient;
 
 /**
  *
@@ -100,6 +102,22 @@ public class DIRTest extends TestCase {
         RPCResponse<Long> r = testEnv.getDirClient().xtreemfs_global_time_get(null);
         Long response = r.get();
 
+    }
+
+    @Test
+    public void testNettestNop() throws Exception {
+        NettestClient client = new NettestClient(testEnv.getRpcClient(),testEnv.getDirClient().getDefaultServerAddress());
+        RPCResponse r = client.xtreemfs_nettest_nop(null);
+        r.get();
+        r.freeBuffers();
+
+        ReusableBuffer data = ReusableBuffer.wrap("yagga yagga".getBytes());
+
+        RPCResponse<ReusableBuffer> r2 = client.xtreemfs_nettest_ping(null,data);
+        ReusableBuffer responseData = r2.get();
+        r2.freeBuffers();
+
+        assertEquals(data.limit(),responseData.limit());
     }
 
     @Test
