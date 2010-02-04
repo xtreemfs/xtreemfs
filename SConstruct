@@ -1,6 +1,7 @@
 SConscript( "proj/lsfs.xtreemfs/lsfs.xtreemfs.SConscript" )
 SConscript( "proj/mkfs.xtreemfs/mkfs.xtreemfs.SConscript" )
 SConscript( "proj/mount.xtreemfs/mount.xtreemfs.SConscript" )
+SConscript( "proj/mount.xtreemfs/nettest.xtreemfs.SConscript" )
 SConscript( "proj/rmfs.xtreemfs/rmfs.xtreemfs.SConscript" )
 SConscript( "proj/xtfs_vivaldi/xtfs_vivaldi.SConscript" )
 

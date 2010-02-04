@@ -55,10 +55,9 @@ MRCProxy::create
 void 
 MRCProxy::getCurrentUserCredentials
 ( 
-  org::xtreemfs::interfaces::UserCredentials& out_user_credentials 
+  UserCredentials& out_user_credentials 
 )
 {
-  Proxy<MRCProxy, org::xtreemfs::interfaces::MRCInterface>::
-    getCurrentUserCredentials( out_user_credentials );
+  Proxy<MRCInterface>::getCurrentUserCredentials( out_user_credentials );
   out_user_credentials.set_password( password );
 }

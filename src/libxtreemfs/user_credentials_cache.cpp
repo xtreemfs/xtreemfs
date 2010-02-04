@@ -5,7 +5,12 @@
 using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
-#ifndef _WIN32
+#ifdef _WIN32
+#include <windows.h>
+#include <lm.h>
+#pragma comment( lib, "Netapi32.lib" )
+#else
+#include "yieldfs.h"
 #include <grp.h>
 #include <pwd.h>
 #endif
@@ -88,6 +93,148 @@ UserCredentialsCache::~UserCredentialsCache()
   }
 #endif
 }
+
+void
+UserCredentialsCache::getCurrentUserCredentials
+( 
+  UserCredentials& out_user_credentials 
+)
+{
+//#ifdef _DEBUG
+//  if 
+//  ( 
+//    ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == 
+//    PROXY_FLAG_TRACE_AUTH && log != NULL 
+//  )  
+//    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << 
+//      "xtreemfs::Proxy: getting current user credentials.";
+//#endif
+
+#ifdef _WIN32
+  DWORD dwLevel = 1;
+  LPWKSTA_USER_INFO_1 user_info = NULL;
+  if 
+  ( 
+    NetWkstaUserGetInfo
+    ( 
+      NULL, 
+      dwLevel, 
+      ( LPBYTE *)&user_info 
+    ) == NERR_Success 
+  )
+  {
+    if ( user_info !=NULL )
+    {
+      int username_wcslen = 
+        static_cast<int>( wcsnlen( user_info->wkui1_username, UINT16_MAX ) );
+      int username_strlen = 
+        WideCharToMultiByte
+        ( 
+          GetACP(), 
+          0,
+          user_info->wkui1_username, 
+          username_wcslen, 
+          NULL, 
+          0, 
+          0, 
+          NULL 
+        );
+
+      char* user_id = new char[username_strlen+1];
+      WideCharToMultiByte
+      ( 
+        GetACP(), 
+        0, 
+        user_info->wkui1_username, 
+        username_wcslen, 
+        user_id, 
+        username_strlen+1, 
+        0, 
+        NULL 
+      );
+
+      out_user_credentials.set_user_id( user_id, username_strlen );
+      delete [] user_id;
+
+      int logon_domain_wcslen = 
+        static_cast<int>( wcsnlen( user_info->wkui1_logon_domain, UINT16_MAX ) );
+      int logon_domain_strlen = 
+        WideCharToMultiByte
+        ( 
+          GetACP(), 
+          0, 
+          user_info->wkui1_logon_domain, 
+          logon_domain_wcslen, 
+          NULL, 
+          0, 
+          0, 
+          NULL 
+        );
+
+      char* group_id = new char[logon_domain_strlen+1];
+      WideCharToMultiByte
+      ( 
+        GetACP(), 
+        0, 
+        user_info->wkui1_logon_domain, 
+        logon_domain_wcslen, 
+        group_id, 
+        logon_domain_strlen+1, 
+        0, 
+        NULL 
+      );
+      std::string group_id_str( group_id, logon_domain_strlen );
+      delete [] group_id;
+      StringSet group_ids;
+      group_ids.push_back( group_id_str );
+      out_user_credentials.set_group_ids( group_ids );
+
+      NetApiBufferFree( user_info );
+
+      return;
+    }
+
+    throw 
+      YIELD::platform::Exception( "could not retrieve user_id and group_id" );
+  }
+#else
+  uid_t caller_uid = yieldfs::FUSE::geteuid();
+  gid_t caller_gid = yieldfs::FUSE::getegid();
+
+  if 
+  ( 
+    caller_uid != static_cast<uid_t>( -1 ) && 
+    caller_gid != static_cast<gid_t>( -1 ) &&
+    getUserCredentialsFrompasswd
+    ( 
+      caller_uid, 
+      caller_gid, 
+      out_user_credentials 
+    ) 
+  )
+     return;
+
+  else
+  {
+    caller_uid = ::geteuid();
+    caller_gid = ::getegid();
+
+    if 
+    ( 
+      getUserCredentialsFrompasswd
+      ( 
+        caller_uid, 
+        caller_gid, 
+        out_user_credentials 
+      )  
+    )
+      return;
+    else
+      throw YIELD::platform::Exception();
+  }
+#endif
+}
+
 
 void* UserCredentialsCache::getPolicyFunction( const char* name )
 {

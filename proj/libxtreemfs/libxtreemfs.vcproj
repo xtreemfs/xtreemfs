@@ -163,6 +163,10 @@
     RelativePath="..\..\include\xtreemfs\dir_proxy.h"
     >
 </File>
+<File
+    RelativePath="..\..\include\xtreemfs\grid_ssl_socket.h"
+    >
+</File>
 <Filter Name="interfaces">
 <File
     RelativePath="..\..\include\xtreemfs\interfaces\constants.h"
@@ -295,6 +299,20 @@
     </FileConfiguration>
 </File>
 <File
+    RelativePath="..\..\src\interfaces\org\xtreemfs\interfaces\nettest_interface.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
     RelativePath="..\..\src\interfaces\org\xtreemfs\interfaces\osd_interface.idl"
     >
     <FileConfiguration
@@ -374,6 +392,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\src\libxtreemfs\grid_ssl_socket.cpp"
+    >
+</File>
+<File
     RelativePath="..\..\src\libxtreemfs\mrc_proxy.cpp"
     >
 </File>
@@ -391,10 +413,6 @@
 </File>
 <File
     RelativePath="..\..\src\libxtreemfs\path.cpp"
-    >
-</File>
-<File
-    RelativePath="..\..\src\libxtreemfs\proxy.cpp"
     >
 </File>
 <File

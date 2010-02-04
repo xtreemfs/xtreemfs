@@ -21,8 +21,7 @@
 
 namespace xtreemfs
 {
-  class DIRProxy 
-    : public Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>
+  class DIRProxy : public Proxy<org::xtreemfs::interfaces::DIRInterface>
   {
   public:
     static yidl::runtime::auto_Object<DIRProxy> 
@@ -60,7 +59,7 @@ namespace xtreemfs
       YIELD::ipc::auto_SocketFactory socket_factory,
       auto_UserCredentialsCache user_credentials_cache
     )
-    : Proxy<DIRProxy, org::xtreemfs::interfaces::DIRInterface>
+    : Proxy<org::xtreemfs::interfaces::DIRInterface>
       ( 
         concurrency_level, 
         flags, 

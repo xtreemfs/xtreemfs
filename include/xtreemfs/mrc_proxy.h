@@ -21,8 +21,7 @@ namespace xtreemfs
   class Path;
 
 
-  class MRCProxy 
-    : public Proxy<MRCProxy, org::xtreemfs::interfaces::MRCInterface>
+  class MRCProxy : public Proxy<org::xtreemfs::interfaces::MRCInterface>
   {
   public:
     static yidl::runtime::auto_Object<MRCProxy> 
@@ -62,7 +61,7 @@ namespace xtreemfs
       YIELD::ipc::auto_SocketFactory socket_factory,
       auto_UserCredentialsCache user_credentials_cache
     )
-      : Proxy<MRCProxy, org::xtreemfs::interfaces::MRCInterface>
+      : Proxy<org::xtreemfs::interfaces::MRCInterface>
         ( 
           concurrency_level, 
           flags, 

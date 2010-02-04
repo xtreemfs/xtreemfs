@@ -20,8 +20,7 @@
 
 namespace xtreemfs
 {
-  class OSDProxy 
-    : public Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>
+  class OSDProxy : public Proxy<org::xtreemfs::interfaces::OSDInterface>
   {
   public:
     static yidl::runtime::auto_Object<OSDProxy> 
@@ -69,7 +68,7 @@ namespace xtreemfs
       YIELD::ipc::auto_SocketFactory socket_factory,
       auto_UserCredentialsCache user_credentials_cache
     )
-      : Proxy<OSDProxy, org::xtreemfs::interfaces::OSDInterface>
+      : Proxy<org::xtreemfs::interfaces::OSDInterface>
       ( 
         concurrency_level, 
         flags,

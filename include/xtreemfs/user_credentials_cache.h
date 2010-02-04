@@ -18,6 +18,11 @@ namespace xtreemfs
     UserCredentialsCache();
     ~UserCredentialsCache();
 
+    void getCurrentUserCredentials
+    (
+      org::xtreemfs::interfaces::UserCredentials& out_user_credentials
+    );
+
 #ifndef _WIN32
     void getpasswdFromUserCredentials
     (
