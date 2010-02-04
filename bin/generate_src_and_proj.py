@@ -50,7 +50,13 @@ copyfile( os.path.join( YIELDFS_DIR_PATH, "src", "yieldfs.cpp" ), os.path.join( 
 interfaces_dir_path = os.path.join( XTREEMFS_DIR_PATH, "src", "interfaces", "org", "xtreemfs", "interfaces" )
 for interface_idl_file_name in os.listdir( interfaces_dir_path ):
     if interface_idl_file_name.endswith( ".idl" ):
-        generate_cpp( os.path.join( interfaces_dir_path, interface_idl_file_name ), os.path.join( XTREEMFS_DIR_PATH, "include", "xtreemfs", "interfaces", os.path.splitext( interface_idl_file_name )[0] + ".h" ) ) 
+		if interface_idl_file_name == "nettest_interface.idl":
+			generate_cpp( os.path.join( interfaces_dir_path, interface_idl_file_name ),
+						  os.path.join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs", "nettest_interface.h" ) )
+		else:
+			generate_cpp( 
+				os.path.join( interfaces_dir_path, interface_idl_file_name ), 
+				os.path.join( XTREEMFS_DIR_PATH, "include", "xtreemfs", "interfaces", os.path.splitext( interface_idl_file_name )[0] + ".h" ) ) 
 
 
 # Add copyright notices to the source, strip white space on the right        
@@ -85,7 +91,7 @@ generate_proj(
                              )
             )
                      
-for binary_name in ( "lsfs.xtreemfs", "mkfs.xtreemfs", "mount.xtreemfs", "rmfs.xtreemfs", "xtfs_vivaldi" ):
+for binary_name in ( "lsfs.xtreemfs", "mkfs.xtreemfs", "mount.xtreemfs", "nettest.xtreemfs", "rmfs.xtreemfs", "xtfs_vivaldi" ):
     os.chdir( os.path.join( XTREEMFS_DIR_PATH, "proj", binary_name ) )
     generate_proj( 
                    binary_name, 

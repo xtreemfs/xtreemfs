@@ -7,7 +7,7 @@ module org
       interface NettestInterface # 400
       {
         // Operations
-        void xtreemfs_nop() # 1;
+        void nop() # 1;
       };
     };
   };
