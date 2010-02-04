@@ -8,7 +8,8 @@ module org
       {
         // Operations
         void nop() # 1;
-        buffer ping(buffer data) #2;
+        void send_buffer( buffer data ) # 2;
+        void recv_buffer( uint32_t size, out buffer data ) # 3;
       };
     };
   };
