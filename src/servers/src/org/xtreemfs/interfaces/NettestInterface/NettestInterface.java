@@ -12,7 +12,7 @@ import yidl.runtime.PrettyPrinter;
 
 public class NettestInterface
 {
-    public static int getProg() { return 2546883425; }
+    public static long getProg() { return 2546883425l; }
     public static int getVersion() { return 2010012513; }
 
     public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
