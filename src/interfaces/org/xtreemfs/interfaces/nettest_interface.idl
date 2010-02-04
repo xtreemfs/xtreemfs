@@ -8,6 +8,7 @@ module org
       {
         // Operations
         void nop() # 1;
+        buffer ping(buffer data) #2;
       };
     };
   };
