@@ -15,8 +15,10 @@ import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 import org.xtreemfs.interfaces.NettestInterface.nopRequest;
 import org.xtreemfs.interfaces.NettestInterface.nopResponse;
-import org.xtreemfs.interfaces.NettestInterface.pingRequest;
-import org.xtreemfs.interfaces.NettestInterface.pingResponse;
+import org.xtreemfs.interfaces.NettestInterface.recv_bufferRequest;
+import org.xtreemfs.interfaces.NettestInterface.recv_bufferResponse;
+import org.xtreemfs.interfaces.NettestInterface.send_bufferRequest;
+import org.xtreemfs.interfaces.NettestInterface.send_bufferResponse;
 
 /**
  *
@@ -43,17 +45,33 @@ public class NettestClient extends ONCRPCClient {
         return r;
     }
 
-    public RPCResponse<ReusableBuffer> xtreemfs_nettest_ping(InetSocketAddress server, ReusableBuffer data) {
-        pingRequest rq = new pingRequest(data);
+    public RPCResponse xtreemfs_nettest_send_buffer(InetSocketAddress server, ReusableBuffer data) {
+        send_bufferRequest rq = new send_bufferRequest(data);
+
+        RPCResponse r = sendRequest((server == null) ? this.getDefaultServerAddress() : server, rq.getTag(), rq,
+                new RPCResponseDecoder() {
+
+            @Override
+            public ReusableBuffer getResult(ReusableBuffer data) {
+                final send_bufferResponse resp = new send_bufferResponse();
+                resp.unmarshal(new XDRUnmarshaller(data));
+                return null;
+            }
+        });
+        return r;
+    }
+
+     public RPCResponse<ReusableBuffer> xtreemfs_nettest_recv_buffer(InetSocketAddress server, int size) {
+        recv_bufferRequest rq = new recv_bufferRequest(size);
 
         RPCResponse r = sendRequest((server == null) ? this.getDefaultServerAddress() : server, rq.getTag(), rq,
                 new RPCResponseDecoder<ReusableBuffer>() {
 
             @Override
             public ReusableBuffer getResult(ReusableBuffer data) {
-                final pingResponse resp = new pingResponse();
+                final recv_bufferResponse resp = new recv_bufferResponse();
                 resp.unmarshal(new XDRUnmarshaller(data));
-                return resp.getReturnValue();
+                return resp.getData();
             }
         });
         return r;

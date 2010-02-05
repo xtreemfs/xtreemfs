@@ -5,6 +5,7 @@
 
 package org.xtreemfs.common.util;
 
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.oncrpc.server.ONCRPCRequest;
@@ -12,8 +13,10 @@ import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.DIRInterface.ProtocolException;
 import org.xtreemfs.interfaces.NettestInterface.nopRequest;
 import org.xtreemfs.interfaces.NettestInterface.nopResponse;
-import org.xtreemfs.interfaces.NettestInterface.pingRequest;
-import org.xtreemfs.interfaces.NettestInterface.pingResponse;
+import org.xtreemfs.interfaces.NettestInterface.recv_bufferRequest;
+import org.xtreemfs.interfaces.NettestInterface.recv_bufferResponse;
+import org.xtreemfs.interfaces.NettestInterface.send_bufferRequest;
+import org.xtreemfs.interfaces.NettestInterface.send_bufferResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
 import org.xtreemfs.interfaces.utils.XDRUtils;
@@ -32,12 +35,25 @@ public class Nettest {
                 return;
             }
             switch (header.getProcedure()) {
-                case pingRequest.TAG: {
-                    pingRequest pRq = new pingRequest();
+                case send_bufferRequest.TAG: {
+                    send_bufferRequest pRq = new send_bufferRequest();
                     pRq.unmarshal(new XDRUnmarshaller(rq.getRequestFragment()));
-                    ReusableBuffer data = pRq.getData();
+                    send_bufferResponse pResp = new send_bufferResponse();
+                    rq.sendResponse(pResp);
+                    break;
+                }
+                case recv_bufferRequest.TAG: {
+                    recv_bufferRequest pRq = new recv_bufferRequest();
+                    pRq.unmarshal(new XDRUnmarshaller(rq.getRequestFragment()));
+                    if (pRq.getSize() > 1024*1024*2) {
+                        rq.sendException(new ProtocolException(ONCRPCResponseHeader.ACCEPT_STAT_GARBAGE_ARGS,
+                            ErrNo.EINVAL, "max buffer size is 2MB"));
+                        return;
+                    }
+                    ReusableBuffer data = BufferPool.allocate(pRq.getSize());
                     data.position(0);
-                    pingResponse pResp = new pingResponse(data);
+                    data.limit(data.capacity());
+                    recv_bufferResponse pResp = new recv_bufferResponse(data);
                     rq.sendResponse(pResp);
                     break;
                 }

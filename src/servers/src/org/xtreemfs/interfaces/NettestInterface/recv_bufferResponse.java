@@ -13,15 +13,15 @@ import yidl.runtime.Unmarshaller;
 
 
 
-public class pingResponse extends org.xtreemfs.interfaces.utils.Response
+public class recv_bufferResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012515;
+    public static final int TAG = 2010012516;
     
-    public pingResponse() {  }
-    public pingResponse( ReusableBuffer returnValue ) { this.returnValue = returnValue; }
+    public recv_bufferResponse() {  }
+    public recv_bufferResponse( ReusableBuffer data ) { this.data = data; }
 
-    public ReusableBuffer getReturnValue() { return returnValue; }
-    public void setReturnValue( ReusableBuffer returnValue ) { this.returnValue = returnValue; }
+    public ReusableBuffer getData() { return data; }
+    public void setData( ReusableBuffer data ) { this.data = data; }
 
     // java.lang.Object
     public String toString() 
@@ -36,32 +36,32 @@ public class pingResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012515;    
+    public static final long serialVersionUID = 2010012516;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012515; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::NettestInterface::pingResponse"; }
+    public int getTag() { return 2010012516; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::NettestInterface::recv_bufferResponse"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE / 8 + ( returnValue != null ? ( ( returnValue.remaining() % 4 == 0 ) ? returnValue.remaining() : ( returnValue.remaining() + 4 - returnValue.remaining() % 4 ) ) : 0 ); // returnValue
+        my_size += Integer.SIZE / 8 + ( data != null ? ( ( data.remaining() % 4 == 0 ) ? data.remaining() : ( data.remaining() + 4 - data.remaining() % 4 ) ) : 0 ); // data
         return my_size;
     }    
     
     public void marshal( Marshaller marshaller )
     {
-        marshaller.writeBuffer( "returnValue", returnValue );
+        marshaller.writeBuffer( "data", data );
     }
     
     public void unmarshal( Unmarshaller unmarshaller ) 
     {
-        returnValue = ( ReusableBuffer )unmarshaller.readBuffer( "returnValue" );    
+        data = ( ReusableBuffer )unmarshaller.readBuffer( "data" );    
     }
         
     
 
-    private ReusableBuffer returnValue;    
+    private ReusableBuffer data;    
 
 }
 

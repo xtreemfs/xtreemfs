@@ -13,15 +13,15 @@ import yidl.runtime.Unmarshaller;
 
 
 
-public class pingRequest extends org.xtreemfs.interfaces.utils.Request
+public class recv_bufferRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012515;
+    public static final int TAG = 2010012516;
     
-    public pingRequest() {  }
-    public pingRequest( ReusableBuffer data ) { this.data = data; }
+    public recv_bufferRequest() {  }
+    public recv_bufferRequest( int size ) { this.size = size; }
 
-    public ReusableBuffer getData() { return data; }
-    public void setData( ReusableBuffer data ) { this.data = data; }
+    public int getSize() { return size; }
+    public void setSize( int size ) { this.size = size; }
 
     // java.lang.Object
     public String toString() 
@@ -35,36 +35,36 @@ public class pingRequest extends org.xtreemfs.interfaces.utils.Request
     }
 
     // Request
-    public Response createDefaultResponse() { return new pingResponse(); }
+    public Response createDefaultResponse() { return new recv_bufferResponse(); }
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012515;    
+    public static final long serialVersionUID = 2010012516;    
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012515; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::NettestInterface::pingRequest"; }
+    public int getTag() { return 2010012516; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::NettestInterface::recv_bufferRequest"; }
     
     public int getXDRSize()
     {
         int my_size = 0;
-        my_size += Integer.SIZE / 8 + ( data != null ? ( ( data.remaining() % 4 == 0 ) ? data.remaining() : ( data.remaining() + 4 - data.remaining() % 4 ) ) : 0 ); // data
+        my_size += Integer.SIZE / 8; // size
         return my_size;
     }    
     
     public void marshal( Marshaller marshaller )
     {
-        marshaller.writeBuffer( "data", data );
+        marshaller.writeUint32( "size", size );
     }
     
     public void unmarshal( Unmarshaller unmarshaller ) 
     {
-        data = ( ReusableBuffer )unmarshaller.readBuffer( "data" );    
+        size = unmarshaller.readUint32( "size" );    
     }
         
     
 
-    private ReusableBuffer data;    
+    private int size;    
 
 }
 

@@ -82,13 +82,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.xtreemfs.common.util.Nettest;
-import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
-import org.xtreemfs.interfaces.NettestInterface.nopRequest;
-import org.xtreemfs.interfaces.NettestInterface.nopResponse;
-import org.xtreemfs.interfaces.NettestInterface.pingRequest;
-import org.xtreemfs.interfaces.NettestInterface.pingResponse;
-import org.xtreemfs.interfaces.utils.XDRUtils;
 
 /**
  * 

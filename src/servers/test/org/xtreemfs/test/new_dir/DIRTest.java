@@ -80,10 +80,6 @@ public class DIRTest extends TestCase {
         dir = new DIRRequestDispatcher(config, dbsConfig);
         dir.startup();
         dir.waitForStartup();
-
-        
-
-        
     }
 
     @After
@@ -113,11 +109,15 @@ public class DIRTest extends TestCase {
 
         ReusableBuffer data = ReusableBuffer.wrap("yagga yagga".getBytes());
 
-        RPCResponse<ReusableBuffer> r2 = client.xtreemfs_nettest_ping(null,data);
+        r = client.xtreemfs_nettest_send_buffer(null,data);
+        r.get();
+        r.freeBuffers();
+
+        RPCResponse<ReusableBuffer> r2 = client.xtreemfs_nettest_recv_buffer(null,1024);
         ReusableBuffer responseData = r2.get();
         r2.freeBuffers();
 
-        assertEquals(data.limit(),responseData.limit());
+        assertEquals(1024,responseData.limit());
     }
 
     @Test

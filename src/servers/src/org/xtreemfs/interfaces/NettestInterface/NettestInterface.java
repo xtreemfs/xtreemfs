@@ -20,7 +20,8 @@ public class NettestInterface
         switch( header.getProcedure() )
         {
             case 2010012514: return new nopRequest();
-            case 2010012515: return new pingRequest();
+            case 2010012515: return new send_bufferRequest();
+            case 2010012516: return new recv_bufferRequest();
 
             default: throw new Exception( "unknown request tag " + Integer.toString( header.getProcedure() ) );
         }
@@ -30,7 +31,7 @@ public class NettestInterface
     {
         switch( header.getXID() )
         {
-            case 2010012514: return new nopResponse();            case 2010012515: return new pingResponse();
+            case 2010012514: return new nopResponse();            case 2010012515: return new send_bufferResponse();            case 2010012516: return new recv_bufferResponse();
             default: throw new Exception( "unknown response XID " + Integer.toString( header.getXID() ) );
         }
     }    
