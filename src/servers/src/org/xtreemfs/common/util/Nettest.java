@@ -39,6 +39,7 @@ public class Nettest {
                     send_bufferRequest pRq = new send_bufferRequest();
                     pRq.unmarshal(new XDRUnmarshaller(rq.getRequestFragment()));
                     send_bufferResponse pResp = new send_bufferResponse();
+                    BufferPool.free(pRq.getData());
                     rq.sendResponse(pResp);
                     break;
                 }
