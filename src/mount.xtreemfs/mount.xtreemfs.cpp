@@ -54,6 +54,15 @@ namespace mount_xtreemfs
       );
       metadata_cache = false;
 
+#if FUSE_MAJOR_VERSION > 2 || ( FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 8 )
+      addOption
+      ( 
+        MOUNT_XTREEMFS_OPTION_NO_BIG_WRITES, 
+        "--no-big-writes" 
+      );
+      no_big_writes = false;
+#endif
+
       addOption
       ( 
         MOUNT_XTREEMFS_OPTION_TRACE_DATA_CACHE, 
@@ -112,13 +121,16 @@ namespace mount_xtreemfs
       MOUNT_XTREEMFS_OPTION_FOREGROUND = 21,
       MOUNT_XTREEMFS_OPTION_FUSE_OPTION = 22,
       MOUNT_XTREEMFS_OPTION_METADATA_CACHE = 23,
-      MOUNT_XTREEMFS_OPTION_TRACE_DATA_CACHE = 24,
-      MOUNT_XTREEMFS_OPTION_TRACE_FILE_IO = 25,
-      MOUNT_XTREEMFS_OPTION_TRACE_METADATA_CACHE = 26,
-      MOUNT_XTREEMFS_OPTION_TRACE_VOLUME_OPERATIONS = 27,
-      MOUNT_XTREEMFS_OPTION_VIVALDI_COORDINATES_FILE_PATH = 28,
-      MOUNT_XTREEMFS_OPTION_WRITE_BACK_CACHE = 29,
-      MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_CACHE = 30
+#if FUSE_MAJOR_VERSION > 2 || ( FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 8 )
+      MOUNT_XTREEMFS_OPTION_NO_BIG_WRITES = 24,
+#endif
+      MOUNT_XTREEMFS_OPTION_TRACE_DATA_CACHE = 25,
+      MOUNT_XTREEMFS_OPTION_TRACE_FILE_IO = 26,
+      MOUNT_XTREEMFS_OPTION_TRACE_METADATA_CACHE = 27,
+      MOUNT_XTREEMFS_OPTION_TRACE_VOLUME_OPERATIONS = 28,
+      MOUNT_XTREEMFS_OPTION_VIVALDI_COORDINATES_FILE_PATH = 29,
+      MOUNT_XTREEMFS_OPTION_WRITE_BACK_CACHE = 30,
+      MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_CACHE = 31
     };
 
     bool direct_io;
@@ -126,10 +138,14 @@ namespace mount_xtreemfs
     bool foreground;
     std::string fuse_o_args;
     bool metadata_cache;
-    std::string mount_point, volume_name;
+    std::string mount_point;
+#if FUSE_MAJOR_VERSION > 2 || ( FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 8 )
+    bool no_big_writes;
+#endif
     bool trace_data_cache, trace_file_io;
     bool trace_metadata_cache, trace_volume_operations;
     YIELD::platform::Path vivaldi_coordinates_file_path;
+    std::string volume_name;
     bool write_back_cache, write_through_cache;
 
 
@@ -255,7 +271,11 @@ namespace mount_xtreemfs
         fuse_argvv.push_back( "-o" );
         if ( !fuse_o_args.empty() )
           fuse_o_args.append( "," );
-        fuse_o_args.append( "use_ino,fsname=xtreemfs" );            
+        fuse_o_args.append( "use_ino,fsname=xtreemfs" );
+#if FUSE_MAJOR_VERSION > 2 || ( FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 8 )
+        if ( !no_big_writes )
+          fuse_o_args.append( ",big_writes" );
+#endif
         fuse_argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
         get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << 
             get_program_name() << ": passing -o " << fuse_o_args << 
