@@ -8,7 +8,7 @@
 
 
 // Constants
-#define RATE_DEFAULT 1
+#define RATE_DEFAULT 0
 #define NUM_CALLS_DEFAULT 1
 
 
@@ -39,7 +39,7 @@ namespace nettest_xtreemfs
         NETTEST_XTREEMFS_OPTION_RATE, 
         "-r",
         "--rate",
-        "rate to send RPCs in RPCs/s"
+        "rate to send RPCs in RPCs/s (default = 0 = as fast as the server will go)"
       );
       rate = RATE_DEFAULT;
 
@@ -48,7 +48,7 @@ namespace nettest_xtreemfs
         NETTEST_XTREEMFS_OPTION_RECV_BUFFER, 
         "--recv-buffer",
         NULL,
-        "receive buffers with the given size (power of 2, up to 2MB)"
+        "receive buffers with the given size (in K, power of 2, up to 2MB)"
       );
 
       addOption
@@ -56,7 +56,7 @@ namespace nettest_xtreemfs
         NETTEST_XTREEMFS_OPTION_SEND_BUFFER, 
         "--send-buffer",
         NULL,
-        "send buffers with the given size"
+        "send buffers with the given size (in K)"
       );
     }
 
@@ -94,21 +94,64 @@ namespace nettest_xtreemfs
           ) 
         );         
 
-      uint64_t sleep_ns 
-        = static_cast<uint64_t>( ( 1.0 / static_cast<double>( rate ) ) 
-          * static_cast<double>( NS_IN_S ) );
+      uint64_t sleep_after_each_call_ns;
+      if ( rate > 0 )
+      {
+        sleep_after_each_call_ns 
+          = static_cast<uint64_t>( ( 1.0 / static_cast<double>( rate ) )
+            * static_cast<double>( NS_IN_S ) );
+      }
+      else
+        sleep_after_each_call_ns = 0;
 
+      uint64_t io_total_kb = 0;
+      uint64_t rpc_time_total_ns = 0;
+      YIELD::platform::Time start_wall_time;
+ 
       for ( uint32_t call_i = 0; call_i < num_calls; call_i++ )
       {
+        YIELD::platform::Time rpc_time_start;
+
         if ( recv_buffer != NULL )
+        {
           nettest_proxy->recv_buffer( recv_buffer->capacity(), recv_buffer );
+          io_total_kb += recv_buffer->size() / 1024;
+        }
         else if ( send_buffer != NULL )
+        {
           nettest_proxy->send_buffer( send_buffer );
+          io_total_kb += send_buffer->size() / 1024;
+        }
         else
           nettest_proxy->nop();
 
-        YIELD::platform::Thread::nanosleep( sleep_ns );
+        rpc_time_total_ns += YIELD::platform::Time() - rpc_time_start;    
+
+        if ( sleep_after_each_call_ns > 0 )
+          YIELD::platform::Thread::nanosleep( sleep_after_each_call_ns );
       }
+
+      YIELD::platform::Time end_wall_time;
+      uint64_t wall_time_total_ns = ( end_wall_time - start_wall_time );
+      double wall_time_total_ms 
+        = static_cast<double>( wall_time_total_ns ) 
+          / static_cast<double>( NS_IN_MS );
+      double wall_time_total_s 
+        = static_cast<double>( wall_time_total_ns ) 
+          / static_cast<double>( NS_IN_S );
+
+      std::cout << "Elapsed wall time: " << 
+         wall_time_total_ms << "ms" << std::endl;
+
+      double rpc_time_total_ms 
+        = static_cast<double>( rpc_time_total_ns ) 
+          / static_cast<double>( NS_IN_MS );
+      std::cout << "Elapsed time spent in RPCs: " <<
+        rpc_time_total_ns << "ms" << std::endl;
+
+      double kb_per_s 
+        = static_cast<double>( io_total_kb ) / wall_time_total_s;        
+      std::cout << "KB/s: " << kb_per_s << std::endl;
 
       return 0;
     }
@@ -147,19 +190,28 @@ namespace nettest_xtreemfs
 
         case NETTEST_XTREEMFS_OPTION_RECV_BUFFER:
         {
-          // arg should be a power of 2 up to 2MB
-          // Then allocate recv_buffer
+          uint32_t capacity_kb = atoi( arg );
+          if ( capacity_kb > 0 )
+          {
+            // Round capacity up to the nearest power of 2
+            uint32_t rounded_capacity_kb = 1;
+            while ( rounded_capacity_kb < capacity_kb )
+              rounded_capacity_kb <<= 1;
+
+            recv_buffer
+              = new yidl::runtime::HeapBuffer( rounded_capacity_kb * 1024 );
+          }
         }
         break;
 
         case NETTEST_XTREEMFS_OPTION_SEND_BUFFER:
         {
-          uint32_t capacity = atoi( arg );
-          if ( capacity > 0 )
+          uint32_t capacity_kb = atoi( arg );
+          if ( capacity_kb > 0 )
           {
             send_buffer 
-              = new yidl::runtime::HeapBuffer( capacity );
-            for ( uint32_t byte_i = 0; byte_i < capacity; byte_i++ )
+              = new yidl::runtime::HeapBuffer( capacity_kb * 1024 );
+            for ( uint32_t byte_i = 0; byte_i < capacity_kb * 1024; byte_i++ )
               send_buffer->put( "m", 1 );
           }
         }
