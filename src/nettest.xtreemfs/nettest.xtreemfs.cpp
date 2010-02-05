@@ -104,6 +104,16 @@ namespace nettest_xtreemfs
       else
         sleep_after_each_call_ns = 0;
 
+
+      std::cout << "nettest: sending " << num_calls << " ";
+      if ( recv_buffer != NULL )
+        std::cout << "recv_buffer's";
+      else if ( send_buffer != NULL )
+        std::cout << "send_buffer's";
+      else
+        std::cout << "nop's";
+      std::cout << ":" << std::endl;
+
       uint64_t io_total_kb = 0;
       uint64_t rpc_time_total_ns = 0;
       YIELD::platform::Time start_wall_time;
@@ -127,6 +137,8 @@ namespace nettest_xtreemfs
 
         rpc_time_total_ns += YIELD::platform::Time() - rpc_time_start;    
 
+        std::cout << "." << std::flush;
+
         if ( sleep_after_each_call_ns > 0 )
           YIELD::platform::Thread::nanosleep( sleep_after_each_call_ns );
       }
@@ -140,6 +152,8 @@ namespace nettest_xtreemfs
         = static_cast<double>( wall_time_total_ns ) 
           / static_cast<double>( NS_IN_S );
 
+      std::cout << std::endl << std::endl;
+
       std::cout << "Elapsed wall time: " << 
          wall_time_total_ms << "ms" << std::endl;
 
@@ -147,11 +161,22 @@ namespace nettest_xtreemfs
         = static_cast<double>( rpc_time_total_ns ) 
           / static_cast<double>( NS_IN_MS );
       std::cout << "Elapsed time spent in RPCs: " <<
-        rpc_time_total_ns << "ms" << std::endl;
+        rpc_time_total_ms << "ms" << std::endl;
 
+      std::cout << "Average time per RPC: " <<
+        ( rpc_time_total_ms / static_cast<double>( num_calls ) ) << "ms" << std::endl;
+
+      
+      double io_total_mb = static_cast<double>( io_total_kb ) / 1024.0;
+      std::cout << "MB transferred: " << io_total_mb << std::endl;
+/*
       double kb_per_s 
         = static_cast<double>( io_total_kb ) / wall_time_total_s;        
       std::cout << "KB/s: " << kb_per_s << std::endl;
+*/
+      double mb_per_s 
+        = static_cast<double>( io_total_kb ) / 1024.0 / wall_time_total_s;        
+      std::cout << "MB/s: " << mb_per_s << std::endl;
 
       return 0;
     }
