@@ -1,5 +1,5 @@
-/*  Copyright (c) 2008 Consiglio Nazionale delle Ricerche and
-Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+/*  Copyright (c) 2008-2010, Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
+ and 2008 Consiglio Nazionale delle Ricerche
 
 This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
 Grid Operating System, see <http://www.xtreemos.eu> for more details.
@@ -39,6 +39,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.EmptyStackException;
 import java.util.HashMap;
 import java.util.Stack;
+import org.xtreemfs.common.LRUCache;
 
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
@@ -92,6 +93,10 @@ public class HashStorageLayout extends StorageLayout {
     private long               _stat_fileInfoLoads;
     
     private final boolean      checksumsEnabled;
+
+    private final LRUCache<String,String> hashedPathCache;
+
+    private static final boolean          USE_PATH_CACHE = true;
     
     /** Creates a new instance of HashStorageLayout */
     public HashStorageLayout(OSDConfig config, MetadataCache cache) throws IOException {
@@ -152,6 +157,8 @@ public class HashStorageLayout extends StorageLayout {
         }
         
         _stat_fileInfoLoads = 0;
+
+        hashedPathCache = new LRUCache<String, String>(2048);
     }
     
     public ObjectInformation readObject(String fileId, FileMetadata md, long objNo, int offset, int length)
@@ -720,11 +727,20 @@ public class HashStorageLayout extends StorageLayout {
     }
     
     private String generateRelativeFilePath(String fileId) {
+        if (USE_PATH_CACHE) {
+            String cached = hashedPathCache.get(fileId);
+            if (cached != null)
+                return cached;
+        }
         String id = (WIN) ? fileId.replace(':', '_') : fileId;
         StringBuilder path = generateHashPath(id);
         path.append(id);
         path.append("/");
-        return path.toString();
+        final String pathStr = path.toString();
+        if (USE_PATH_CACHE) {
+            hashedPathCache.put(fileId, pathStr);
+        }
+        return pathStr;
     }
     
     /**
