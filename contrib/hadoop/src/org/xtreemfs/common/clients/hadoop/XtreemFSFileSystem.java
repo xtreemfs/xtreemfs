@@ -24,6 +24,7 @@
 
 package org.xtreemfs.common.clients.hadoop;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -51,9 +52,15 @@ import org.xtreemfs.interfaces.UserCredentials;
 
 /**
  * A XtreemFS driver for hadoop
- * URI format: xtreemfs://volume@dirAddr:port/path...
+ * URI format: xtreemfs://dirAddr:port/path...
  * required configuration:
  * <PRE>
+ * <property>
+ * <name>xtreemfs.volumeName</name>
+ * <value>volumeName</value>
+ * <description>Name of the volume to use within XtreemFS.</description>
+ * </property>
+ * 
  * <property>
  * <name>fs.xtreemfs.impl</name>
  * <value>org.xtreemfs.common.clients.hadoop.XtreemFSFileSystem</value>
@@ -69,6 +76,8 @@ public class XtreemFSFileSystem extends FileSystem {
     private Volume  volume;
 
     private URI     fsURI;
+    
+    private Path    workingDirectory = new Path("/");
 
 
     @Override
@@ -77,6 +86,12 @@ public class XtreemFSFileSystem extends FileSystem {
         if (conf.getBoolean("xtreemfs.client.debug",false)) {
             logLevel = Logging.LEVEL_DEBUG;
         }
+        
+        String volumeName = conf.get("xtreemfs.volumeName");
+        if (volumeName == null)
+            throw new IOException("You have to specify a volume name at the" +
+            " core-site.xml! (xtreemfs.volumeName)");
+            
         Logging.start(logLevel, Category.all);
         Logging.logMessage(Logging.LEVEL_DEBUG, this,"init : "+uri);
         InetSocketAddress dir = new InetSocketAddress(uri.getHost(), uri.getPort());
@@ -103,7 +118,7 @@ public class XtreemFSFileSystem extends FileSystem {
             }
         }
 
-        volume = xtreemfsClient.getVolume(uri.getUserInfo(), uc);
+        volume = xtreemfsClient.getVolume(volumeName, uc);
         fsURI = uri;
         Logging.logMessage(Logging.LEVEL_DEBUG, this,"file system init complete: "+uri.getUserInfo());
     }
@@ -162,6 +177,7 @@ public class XtreemFSFileSystem extends FileSystem {
 
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public FSDataOutputStream create(Path file, FsPermission permissions,
             boolean overwrite, int bufferSize, short replication, long blockSize, Progressable prog) throws IOException {
@@ -170,6 +186,8 @@ public class XtreemFSFileSystem extends FileSystem {
         String openMode = "rw";
         if (overwrite)
             openMode += "t";
+        
+        f.createFile();
         final RandomAccessFile raf = f.open(openMode,permissions.toShort());
 
         return new FSDataOutputStream(new OutputStream() {
@@ -219,9 +237,14 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public boolean delete(Path file, boolean recursive) throws IOException {
-        final String path = file.toUri().getPath();
-        return delete(path);
-
+        try {
+            final String path = file.toUri().getPath();
+            return delete(path);
+        } catch (FileNotFoundException f) {
+            Logging.logMessage(Logging.LEVEL_WARN, this, "'%s' is not available" +
+            		" anymore. it could not be deleted! ", file.toString());
+            return false;
+        }
     }
 
     protected boolean delete(String path) throws IOException {
@@ -247,9 +270,13 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public FileStatus[] listStatus(Path hdPath) throws IOException {
+        if (hdPath == null) return null;
+        
         final String path = hdPath.toUri().getPath();
         Logging.logMessage(Logging.LEVEL_DEBUG, this,"ls: "+path);
         DirectoryEntry[] list = volume.listEntries(path);
+        if (list == null) return null;
+        
         FileStatus[] fslist = new FileStatus[list.length];
         for (int i = 0; i < list.length; i++) {
             final DirectoryEntry e = list[i];
@@ -264,12 +291,12 @@ public class XtreemFSFileSystem extends FileSystem {
 
     @Override
     public void setWorkingDirectory(Path arg0) {
-        throw new UnsupportedOperationException("Not supported yet. SETWK");
+        this.workingDirectory = arg0;
     }
 
     @Override
     public Path getWorkingDirectory() {
-        throw new UnsupportedOperationException("Not supported yet. GETWK");
+        return this.workingDirectory;
     }
 
     @Override
@@ -305,9 +332,4 @@ public class XtreemFSFileSystem extends FileSystem {
     public void close() {
         xtreemfsClient.stop();
     }
-
-    public void finalize() {
-
-    }
-
 }
