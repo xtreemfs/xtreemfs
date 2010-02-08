@@ -269,7 +269,7 @@ namespace YIELD
       }
       catch ( YIELD::platform::Exception& exc ) 
       {
-        std::cerr << exc.what() << std::endl;
+        std::cerr << program_name << ": " << exc.what() << std::endl;
 
         if ( exc.get_error_code() != 0 )
           ret = exc.get_error_code();
