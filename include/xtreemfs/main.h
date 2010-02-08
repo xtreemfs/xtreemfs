@@ -1,5 +1,31 @@
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+// Copyright (c) 2010 Minor Gordon
+// All rights reserved
+// 
+// This source file is part of the XtreemFS project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the XtreemFS project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #ifndef _XTREEMFS_MAIN_H_
 #define _XTREEMFS_MAIN_H_
@@ -41,24 +67,24 @@ namespace xtreemfs
         void* MinidumpCallback_context = this;
 #if defined(_WIN32)
 //            if ( !IsDebuggerPresent() )            {
-          exception_handler = 
+          exception_handler =
             new google_breakpad::ExceptionHandler
-            ( 
-              YIELD::platform::Path( "." ) + PATH_SEPARATOR_STRING, 
-              NULL, 
-              MinidumpCallback, 
-              MinidumpCallback_context, 
-              google_breakpad::ExceptionHandler::HANDLER_ALL 
+            (
+              YIELD::platform::Path( "." ) + PATH_SEPARATOR_STRING,
+              NULL,
+              MinidumpCallback,
+              MinidumpCallback_context,
+              google_breakpad::ExceptionHandler::HANDLER_ALL
             );
 #elif defined(__linux)
-        exception_handler = 
+        exception_handler =
           new google_breakpad::ExceptionHandler
-          ( 
-            YIELD::platform::Path( "." ) + PATH_SEPARATOR_STRING, 
-            NULL, 
-            MinidumpCallback, 
-            MinidumpCallback_context, 
-            true 
+          (
+            YIELD::platform::Path( "." ) + PATH_SEPARATOR_STRING,
+            NULL,
+            MinidumpCallback,
+            MinidumpCallback_context,
+            true
           );
 #else
 #error
@@ -90,107 +116,107 @@ namespace xtreemfs
 
 
     Main
-    ( 
-      const char* program_name, 
-      const char* program_description, 
-      const char* files_usage = NULL 
+    (
+      const char* program_name,
+      const char* program_description,
+      const char* files_usage = NULL
     )
       : YIELD::Main( program_name, program_description, files_usage )
     {
       addOption
-      ( 
-        OPTION_LOG_FILE_PATH, 
-        "-l", 
-        "--log-file-path", 
-        "<path>" 
+      (
+        OPTION_LOG_FILE_PATH,
+        "-l",
+        "--log-file-path",
+        "<path>"
       );
 
       addOption
-      ( 
-        OPTION_LOG_LEVEL, 
-        "-d", 
-        "--debug", 
-        "EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG" 
+      (
+        OPTION_LOG_LEVEL,
+        "-d",
+        "--debug",
+        "EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG"
       );
 
       addOption
-      ( 
-        OPTION_LOG_LEVEL, 
-        "--log-level", 
+      (
+        OPTION_LOG_LEVEL,
+        "--log-level",
         NULL,
         "EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG"
       );
       log_level = YIELD::platform::Log::LOG_WARNING;
 
       addOption
-      ( 
-        OPTION_OPERATION_TIMEOUT_MS, 
-        "-t", 
-        "--operation-timeout-ms", 
-        "n" 
+      (
+        OPTION_OPERATION_TIMEOUT_MS,
+        "-t",
+        "--operation-timeout-ms",
+        "n"
       );
       operation_timeout = static_cast<uint64_t>( DIRProxy::OPERATION_TIMEOUT_DEFAULT );
 
 #ifdef YIELD_HAVE_OPENSSL
       addOption
-      ( 
-        OPTION_PEM_CERTIFICATE_FILE_PATH, 
-        "--cert", 
-        "--pem-certificate-file-path", 
-        "PEM certificate file path" 
+      (
+        OPTION_PEM_CERTIFICATE_FILE_PATH,
+        "--cert",
+        "--pem-certificate-file-path",
+        "PEM certificate file path"
       );
 
       addOption
-      ( 
-        OPTION_PEM_PRIVATE_KEY_FILE_PATH, 
-        "--pkey", 
-        "--pem-private-key-file-path", 
-        "PEM private key file path" 
+      (
+        OPTION_PEM_PRIVATE_KEY_FILE_PATH,
+        "--pkey",
+        "--pem-private-key-file-path",
+        "PEM private key file path"
       );
 
       addOption
-      ( 
-        OPTION_PEM_PRIVATE_KEY_PASSPHRASE, 
-        "--pass", 
-        "--pem-private-key-passphrase", 
-        "PEM private key passphrase" 
+      (
+        OPTION_PEM_PRIVATE_KEY_PASSPHRASE,
+        "--pass",
+        "--pem-private-key-passphrase",
+        "PEM private key passphrase"
       );
 
       addOption
-      ( 
-        OPTION_PKCS12_FILE_PATH, 
-        "--pkcs12-file-path", 
-        NULL, 
-        "PKCS#12 file path" 
+      (
+        OPTION_PKCS12_FILE_PATH,
+        "--pkcs12-file-path",
+        NULL,
+        "PKCS#12 file path"
       );
 
       addOption
-      ( 
-        OPTION_PKCS12_PASSPHRASE, 
-        "--pkcs12-passphrase", 
-        NULL, 
-        "PKCS#12 passphrase" 
+      (
+        OPTION_PKCS12_PASSPHRASE,
+        "--pkcs12-passphrase",
+        NULL,
+        "PKCS#12 passphrase"
       );
 #endif
 
       addOption
-      ( 
-        OPTION_TRACE_AUTH, 
-        "--trace-auth" 
+      (
+        OPTION_TRACE_AUTH,
+        "--trace-auth"
       );
       trace_auth = false;
 
       addOption
-      ( 
-        OPTION_TRACE_NETWORK_IO, 
-        "--trace-network-io" 
+      (
+        OPTION_TRACE_NETWORK_IO,
+        "--trace-network-io"
       );
       trace_network_io = false;
 
       addOption
-      ( 
-        OPTION_TRACE_NETWORK_OPERATIONS, 
-        "--trace-network-operations" 
+      (
+        OPTION_TRACE_NETWORK_OPERATIONS,
+        "--trace-network-operations"
       );
       trace_network_operations = false;
     }
@@ -199,36 +225,36 @@ namespace xtreemfs
     { }
 
     auto_DIRProxy createDIRProxy( const YIELD::ipc::URI& absolute_uri )
-    {       
+    {
       return DIRProxy::create
-      ( 
-        absolute_uri, 
+      (
+        absolute_uri,
         DIRProxy::CONCURRENCY_LEVEL_DEFAULT,
-        get_proxy_flags(), 
-        get_log(), 
-        operation_timeout, 
-        DIRProxy::RECONNECT_TRIES_MAX_DEFAULT, 
-        get_proxy_ssl_context() 
+        get_proxy_flags(),
+        get_log(),
+        operation_timeout,
+        DIRProxy::RECONNECT_TRIES_MAX_DEFAULT,
+        get_proxy_ssl_context()
       );
-    }    
+    }
 
     auto_MRCProxy
     createMRCProxy
-    ( 
-      const YIELD::ipc::URI& absolute_uri, 
-      const char* password = "" 
+    (
+      const YIELD::ipc::URI& absolute_uri,
+      const char* password = ""
     )
     {
       return MRCProxy::create
-      ( 
-        absolute_uri, 
+      (
+        absolute_uri,
         MRCProxy::CONCURRENCY_LEVEL_DEFAULT,
-        get_proxy_flags(), 
-        get_log(), 
-        operation_timeout, 
-        password, 
-        MRCProxy::RECONNECT_TRIES_MAX_DEFAULT, 
-        get_proxy_ssl_context() 
+        get_proxy_flags(),
+        get_log(),
+        operation_timeout,
+        password,
+        MRCProxy::RECONNECT_TRIES_MAX_DEFAULT,
+        get_proxy_ssl_context()
       );
     }
 
@@ -238,25 +264,25 @@ namespace xtreemfs
       {
         if ( log_file_path.empty() || log_file_path == "-" )
           log = YIELD::platform::Log::open( std::cerr, get_log_level() );
-        else 
-          log = 
+        else
+          log =
             YIELD::platform::Log::open
-            ( 
-              log_file_path, 
-              get_log_level(), 
-              true 
+            (
+              log_file_path,
+              get_log_level(),
+              true
             ); // true = lazy open
       }
 
       return log;
     }
 
-    const std::string& get_log_file_path() const 
+    const std::string& get_log_file_path() const
     {
       return log_file_path;
     }
 
-    YIELD::platform::Log::Level get_log_level() const 
+    YIELD::platform::Log::Level get_log_level() const
     {
       return log_level;
     }
@@ -273,27 +299,27 @@ namespace xtreemfs
 #ifdef YIELD_HAVE_OPENSSL
         if ( !pkcs12_file_path.empty() )
         {
-          ssl_context = 
+          ssl_context =
             YIELD::ipc::SSLContext::create
-            ( 
-              SSLv3_client_method(), 
-              pkcs12_file_path, 
-              pkcs12_passphrase 
+            (
+              SSLv3_client_method(),
+              pkcs12_file_path,
+              pkcs12_passphrase
             );
         }
-        else if 
-        ( 
-          !pem_certificate_file_path.empty() && 
-          !pem_private_key_file_path.empty() 
+        else if
+        (
+          !pem_certificate_file_path.empty() &&
+          !pem_private_key_file_path.empty()
         )
         {
-          ssl_context = 
+          ssl_context =
             YIELD::ipc::SSLContext::create
-            ( 
-              SSLv3_client_method(), 
-              pem_certificate_file_path, 
-              pem_private_key_file_path, 
-              pem_private_key_passphrase 
+            (
+              SSLv3_client_method(),
+              pem_certificate_file_path,
+              pem_private_key_file_path,
+              pem_private_key_passphrase
             );
         }
 #else
@@ -323,18 +349,18 @@ namespace xtreemfs
       std::string uri_str( uri_c_str );
       if ( uri_str.find( "://" ) == std::string::npos )
       {
-        if ( !pkcs12_file_path.empty() || 
-            ( !pem_certificate_file_path.empty() && 
+        if ( !pkcs12_file_path.empty() ||
+            ( !pem_certificate_file_path.empty() &&
               !pem_private_key_file_path.empty() ) )
         {
-          uri_str = org::xtreemfs::interfaces::ONCRPCS_SCHEME + 
-                    std::string( "://" ) + 
+          uri_str = org::xtreemfs::interfaces::ONCRPCS_SCHEME +
+                    std::string( "://" ) +
                     uri_str;
         }
         else
         {
-          uri_str = org::xtreemfs::interfaces::ONCRPC_SCHEME + 
-                    std::string( "://" ) + 
+          uri_str = org::xtreemfs::interfaces::ONCRPC_SCHEME +
+                    std::string( "://" ) +
                     uri_str;
         }
       }
@@ -342,11 +368,11 @@ namespace xtreemfs
       return YIELD::ipc::auto_URI( new YIELD::ipc::URI( uri_str ) );
     }
 
-    YIELD::ipc::auto_URI 
+    YIELD::ipc::auto_URI
     parseVolumeURI
-    ( 
-      const char* volume_uri_c_str, 
-      std::string& volume_name 
+    (
+      const char* volume_uri_c_str,
+      std::string& volume_name
     )
     {
       YIELD::ipc::auto_URI volume_uri = parseURI( volume_uri_c_str );
@@ -364,9 +390,9 @@ namespace xtreemfs
     {
       switch ( id )
       {
-        case OPTION_LOG_FILE_PATH: 
+        case OPTION_LOG_FILE_PATH:
         {
-          log_file_path = arg; 
+          log_file_path = arg;
 
 #ifndef _WIN32
           if ( log_file_path != "-" )
@@ -377,73 +403,73 @@ namespace xtreemfs
           }
 #endif
         }
-        break;        
+        break;
 
         case OPTION_LOG_LEVEL:
         {
           uint8_t log_level_uint8 = static_cast<uint8_t>( atoi( arg ) );
           if ( log_level_uint8 == 0 )
           {
-            if 
-            ( 
-              strcmp( arg, "LOG_EMERG" ) == 0 || 
-              strcmp( arg, "EMERG" ) == 0 || 
-              strcmp( arg, "EMERGENCY" ) == 0 || 
-              strcmp( arg, "FATAL" ) == 0 || 
-              strcmp( arg, "FAIL" ) == 0 
+            if
+            (
+              strcmp( arg, "LOG_EMERG" ) == 0 ||
+              strcmp( arg, "EMERG" ) == 0 ||
+              strcmp( arg, "EMERGENCY" ) == 0 ||
+              strcmp( arg, "FATAL" ) == 0 ||
+              strcmp( arg, "FAIL" ) == 0
             )
               log_level = YIELD::platform::Log::LOG_EMERG;
 
-            else if 
-            ( 
-              strcmp( arg, "LOG_ALERT" ) == 0 || 
-              strcmp( arg, "ALERT" ) == 0 
+            else if
+            (
+              strcmp( arg, "LOG_ALERT" ) == 0 ||
+              strcmp( arg, "ALERT" ) == 0
             )
               log_level = YIELD::platform::Log::LOG_ALERT;
 
-            else if 
-            ( 
-              strcmp( arg, "LOG_CRIT" ) == 0 || 
-              strcmp( arg, "CRIT" ) == 0 || 
-              strcmp( arg, "CRITICAL" ) == 0 
+            else if
+            (
+              strcmp( arg, "LOG_CRIT" ) == 0 ||
+              strcmp( arg, "CRIT" ) == 0 ||
+              strcmp( arg, "CRITICAL" ) == 0
             )
               log_level = YIELD::platform::Log::LOG_CRIT;
 
-            else if 
-            ( 
-              strcmp( arg, "LOG_ERR" ) == 0 || 
-              strcmp( arg, "ERR" ) == 0 || 
-              strcmp( arg, "ERROR" ) == 0 
+            else if
+            (
+              strcmp( arg, "LOG_ERR" ) == 0 ||
+              strcmp( arg, "ERR" ) == 0 ||
+              strcmp( arg, "ERROR" ) == 0
             )
               log_level = YIELD::platform::Log::LOG_ERR;
 
-            else if 
-            ( 
-              strcmp( arg, "LOG_WARNING" ) == 0 || 
-              strcmp( arg, "WARNING" ) == 0 || 
-              strcmp( arg, "WARN" ) == 0 
+            else if
+            (
+              strcmp( arg, "LOG_WARNING" ) == 0 ||
+              strcmp( arg, "WARNING" ) == 0 ||
+              strcmp( arg, "WARN" ) == 0
             )
               log_level = YIELD::platform::Log::LOG_WARNING;
 
-            else if 
-            ( 
-              strcmp( arg, "LOG_NOTICE" ) == 0 || 
-              strcmp( arg, "NOTICE" ) == 0 
+            else if
+            (
+              strcmp( arg, "LOG_NOTICE" ) == 0 ||
+              strcmp( arg, "NOTICE" ) == 0
             )
               log_level = YIELD::platform::Log::LOG_NOTICE;
 
-            else if 
-            ( 
-              strcmp( arg, "LOG_INFO" ) == 0 || 
-              strcmp( arg, "INFO" ) == 0 
+            else if
+            (
+              strcmp( arg, "LOG_INFO" ) == 0 ||
+              strcmp( arg, "INFO" ) == 0
             )
               log_level = YIELD::platform::Log::LOG_INFO;
 
-            else if 
-            ( 
-              strcmp( arg, "LOG_DEBUG" ) == 0 || 
-              strcmp( arg, "DEBUG" ) == 0 || 
-              strcmp( arg, "TRACE" ) == 0 
+            else if
+            (
+              strcmp( arg, "LOG_DEBUG" ) == 0 ||
+              strcmp( arg, "DEBUG" ) == 0 ||
+              strcmp( arg, "TRACE" ) == 0
             )
               log_level = YIELD::platform::Log::LOG_DEBUG;
 
@@ -451,7 +477,7 @@ namespace xtreemfs
               log_level = YIELD::platform::Log::LOG_EMERG;
           }
           else if ( log_level_uint8 <= YIELD::platform::Log::LOG_DEBUG )
-            log_level = 
+            log_level =
               static_cast<YIELD::platform::Log::Level>( log_level_uint8 );
 
           else
@@ -463,59 +489,59 @@ namespace xtreemfs
         {
           double operation_timeout_ms = atof( arg );
           if ( operation_timeout_ms != 0 )
-            operation_timeout = 
+            operation_timeout =
               YIELD::platform::Time
-              ( 
-                static_cast<uint64_t>( operation_timeout_ms * NS_IN_MS ) 
+              (
+                static_cast<uint64_t>( operation_timeout_ms * NS_IN_MS )
               );
         }
         break;
 
         case OPTION_PEM_CERTIFICATE_FILE_PATH:
         {
-          pem_certificate_file_path = arg; 
+          pem_certificate_file_path = arg;
         }
         break;
 
         case OPTION_PEM_PRIVATE_KEY_FILE_PATH:
         {
-          pem_private_key_file_path = arg; 
+          pem_private_key_file_path = arg;
         }
         break;
 
         case OPTION_PEM_PRIVATE_KEY_PASSPHRASE:
         {
-          pem_private_key_passphrase = arg; 
+          pem_private_key_passphrase = arg;
         }
         break;
 
-        case OPTION_PKCS12_FILE_PATH: 
+        case OPTION_PKCS12_FILE_PATH:
         {
-          pkcs12_file_path = arg; 
+          pkcs12_file_path = arg;
         }
         break;
 
         case OPTION_PKCS12_PASSPHRASE:
         {
-          pkcs12_passphrase = arg; 
+          pkcs12_passphrase = arg;
         }
         break;
 
-        case OPTION_TRACE_AUTH: 
+        case OPTION_TRACE_AUTH:
         {
-          trace_auth = true; 
+          trace_auth = true;
         }
         break;
 
         case OPTION_TRACE_NETWORK_IO:
         {
-          trace_network_io = true; 
+          trace_network_io = true;
         }
         break;
 
         case OPTION_TRACE_NETWORK_OPERATIONS:
         {
-          trace_network_operations = true; 
+          trace_network_operations = true;
         }
         break;
 
@@ -528,8 +554,8 @@ namespace xtreemfs
     YIELD::platform::Log::Level log_level;
     std::string log_level_default_str;
     YIELD::platform::Time operation_timeout;
-    std::string pem_certificate_file_path, 
-                pem_private_key_file_path, 
+    std::string pem_certificate_file_path,
+                pem_private_key_file_path,
                 pem_private_key_passphrase;
     std::string pkcs12_file_path, pkcs12_passphrase;
     bool trace_auth, trace_network_io, trace_network_operations;
@@ -540,12 +566,12 @@ namespace xtreemfs
 #ifdef XTREEMFS_HAVE_GOOGLE_BREAKPAD
 #if defined(_WIN32)
     static bool MinidumpCallback
-    ( 
-      const wchar_t* dump_path, 
-      const wchar_t* minidump_id, 
-      void* context, EXCEPTION_POINTERS*, 
-      MDRawAssertionInfo*, 
-      bool succeeded 
+    (
+      const wchar_t* dump_path,
+      const wchar_t* minidump_id,
+      void* context, EXCEPTION_POINTERS*,
+      MDRawAssertionInfo*,
+      bool succeeded
     )
     {
       return static_cast<Main*>( context )->
@@ -553,11 +579,11 @@ namespace xtreemfs
     }
 #elif defined(__linux)
     static bool MinidumpCallback
-    ( 
-      const char *dump_path, 
-      const char *minidump_id, 
-      void* context, 
-      bool succeeded 
+    (
+      const char *dump_path,
+      const char *minidump_id,
+      void* context,
+      bool succeeded
     )
     {
       return static_cast<Main*>( context )->
@@ -567,42 +593,42 @@ namespace xtreemfs
 #error
 #endif
     bool MinidumpCallback
-    ( 
-      const YIELD::platform::Path& dump_path, 
-      const YIELD::platform::Path& minidump_id, 
-      bool succeeded 
+    (
+      const YIELD::platform::Path& dump_path,
+      const YIELD::platform::Path& minidump_id,
+      bool succeeded
     )
     {
       if ( succeeded )
       {
-        YIELD::platform::Path dump_file_name( minidump_id ); 
-        dump_file_name = 
+        YIELD::platform::Path dump_file_name( minidump_id );
+        dump_file_name =
           static_cast<const std::string&>( dump_file_name ) + ".dmp";
 
-        YIELD::platform::Path dump_file_path( dump_path ); 
+        YIELD::platform::Path dump_file_path( dump_path );
         dump_file_path = dump_file_path + dump_file_name;
 
-        std::string 
+        std::string
           dump_absolute_uri( "http://www.xtreemfs.org/dump/dump.php?f=" );
         dump_absolute_uri += static_cast<const std::string&>( dump_file_name );
 
-        get_log()->getStream( YIELD::platform::Log::LOG_EMERG ) << 
-          get_program_name() << ": crashed on unknown exception, dumping to " 
+        get_log()->getStream( YIELD::platform::Log::LOG_EMERG ) <<
+          get_program_name() << ": crashed on unknown exception, dumping to "
           << dump_file_path << " and trying to send to " << dump_absolute_uri;
 
         try
         {
           YIELD::ipc::HTTPClient::PUT
-          ( 
-            dump_absolute_uri, 
-            dump_file_path, 
-            get_log() 
+          (
+            dump_absolute_uri,
+            dump_file_path,
+            get_log()
           );
         }
         catch ( std::exception& exc )
         {
-          get_log()->getStream( YIELD::platform::Log::LOG_EMERG ) << 
-            get_program_name() << 
+          get_log()->getStream( YIELD::platform::Log::LOG_EMERG ) <<
+            get_program_name() <<
             ": exception trying to send dump to the server: " << exc.what();
         }
       }

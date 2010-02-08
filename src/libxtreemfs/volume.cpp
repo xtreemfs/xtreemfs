@@ -1,5 +1,31 @@
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+// Copyright (c) 2010 Minor Gordon
+// All rights reserved
+// 
+// This source file is part of the XtreemFS project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the XtreemFS project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #include "xtreemfs/volume.h"
 #include "open_file.h"
@@ -34,22 +60,22 @@ using namespace xtreemfs;
 
 
 Volume::Volume
-( 
-  auto_DIRProxy dir_proxy, 
-  uint32_t flags, 
-  YIELD::platform::auto_Log log, 
-  auto_MRCProxy mrc_proxy, 
+(
+  auto_DIRProxy dir_proxy,
+  uint32_t flags,
+  YIELD::platform::auto_Log log,
+  auto_MRCProxy mrc_proxy,
   const std::string& name,
-  auto_OSDProxyMux osd_proxy_mux, 
+  auto_OSDProxyMux osd_proxy_mux,
   YIELD::concurrency::auto_StageGroup stage_group,
   auto_UserCredentialsCache user_credentials_cache,
-  const YIELD::platform::Path& vivaldi_coordinates_file_path 
+  const YIELD::platform::Path& vivaldi_coordinates_file_path
 )
-  : dir_proxy( dir_proxy ), 
-    flags( flags ), 
-    log( log ), 
-    mrc_proxy( mrc_proxy ), 
-    name( name ), 
+  : dir_proxy( dir_proxy ),
+    flags( flags ),
+    log( log ),
+    mrc_proxy( mrc_proxy ),
+    name( name ),
     osd_proxy_mux( osd_proxy_mux ),
     stage_group( stage_group ),
     user_credentials_cache( user_credentials_cache ),
@@ -65,33 +91,33 @@ bool Volume::access( const YIELD::platform::Path&, int )
 
 auto_Volume
 Volume::create
-( 
-  const YIELD::ipc::URI& dir_uri, 
-  const std::string& name, 
-  uint32_t flags, 
-  YIELD::platform::auto_Log log, 
-  uint32_t proxy_flags, 
-  const YIELD::platform::Time& proxy_operation_timeout, 
+(
+  const YIELD::ipc::URI& dir_uri,
+  const std::string& name,
+  uint32_t flags,
+  YIELD::platform::auto_Log log,
+  uint32_t proxy_flags,
+  const YIELD::platform::Time& proxy_operation_timeout,
   uint8_t proxy_reconnect_tries_max,
-  YIELD::ipc::auto_SSLContext proxy_ssl_context, 
-  const YIELD::platform::Path& vivaldi_coordinates_file_path 
+  YIELD::ipc::auto_SSLContext proxy_ssl_context,
+  const YIELD::platform::Path& vivaldi_coordinates_file_path
 )
 {
   auto_UserCredentialsCache user_credentials_cache( new UserCredentialsCache );
 
   auto_DIRProxy dir_proxy = DIRProxy::create
-  ( 
+  (
     dir_uri,
     DIRProxy::CONCURRENCY_LEVEL_DEFAULT,
-    proxy_flags, 
-    log, 
-    proxy_operation_timeout, 
-    proxy_reconnect_tries_max, 
+    proxy_flags,
+    log,
+    proxy_operation_timeout,
+    proxy_reconnect_tries_max,
     proxy_ssl_context,
     user_credentials_cache
   );
 
-  YIELD::ipc::auto_URI mrc_uri; 
+  YIELD::ipc::auto_URI mrc_uri;
   std::string::size_type at_pos = name.find( '@' );
   if ( at_pos != std::string::npos )
     mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name.substr( 0, at_pos ) );
@@ -99,14 +125,14 @@ Volume::create
     mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
 
   auto_MRCProxy mrc_proxy = MRCProxy::create
-  ( 
-    *mrc_uri, 
+  (
+    *mrc_uri,
     MRCProxy::CONCURRENCY_LEVEL_DEFAULT,
-    proxy_flags, 
-    log, 
-    proxy_operation_timeout, 
-    "", 
-    proxy_reconnect_tries_max, 
+    proxy_flags,
+    log,
+    proxy_operation_timeout,
+    "",
+    proxy_reconnect_tries_max,
     proxy_ssl_context,
     user_credentials_cache
   );
@@ -115,31 +141,31 @@ Volume::create
   mrc_proxy->getattr( name + "/", stbuf );
 
   auto_OSDProxyMux osd_proxy_mux = OSDProxyMux::create
-  ( 
-    dir_proxy, 
+  (
+    dir_proxy,
     OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
-    proxy_flags, 
-    log, 
-    proxy_operation_timeout, 
-    proxy_reconnect_tries_max, 
+    proxy_flags,
+    log,
+    proxy_operation_timeout,
+    proxy_reconnect_tries_max,
     proxy_ssl_context,
     user_credentials_cache
   );
 
-  YIELD::concurrency::auto_StageGroup stage_group = 
+  YIELD::concurrency::auto_StageGroup stage_group =
     new YIELD::concurrency::SEDAStageGroup;
   stage_group->createStage( dir_proxy );
   stage_group->createStage( mrc_proxy );
   stage_group->createStage( osd_proxy_mux );
 
   return new Volume
-  ( 
-    dir_proxy, 
-    flags, log, 
-    mrc_proxy, 
-    name, 
-    osd_proxy_mux, 
-    stage_group, 
+  (
+    dir_proxy,
+    flags, log,
+    mrc_proxy,
+    name,
+    osd_proxy_mux,
+    stage_group,
     user_credentials_cache,
     vivaldi_coordinates_file_path
   );
@@ -147,7 +173,7 @@ Volume::create
 
 void
 Volume::fsetattr
-( 
+(
   const xtreemfs::Stat& stbuf,
   uint32_t to_set,
   const org::xtreemfs::interfaces::XCap& xcap
@@ -179,7 +205,7 @@ YIELD::platform::auto_Stat Volume::getattr( const Path& path )
 
 auto_SharedFile
 Volume::get_shared_file
-( 
+(
   const YIELD::platform::Path& path
 )
 {
@@ -192,7 +218,7 @@ Volume::get_shared_file
 
   if ( shared_file_i != shared_files.end() )
     shared_file = shared_file_i->second;
-  else  
+  else
   {
     shared_file = new SharedFile( log, incRef(), path );
     shared_files[path] = shared_file;
@@ -205,17 +231,17 @@ Volume::get_shared_file
   return shared_file;
 }
 
-org::xtreemfs::interfaces::VivaldiCoordinates 
+org::xtreemfs::interfaces::VivaldiCoordinates
 Volume::get_vivaldi_coordinates() const
 {
   org::xtreemfs::interfaces::VivaldiCoordinates vivaldi_coordinates;
 
   if ( !vivaldi_coordinates_file_path.empty() )
   {
-    YIELD::platform::auto_File vivaldi_coordinates_file = 
+    YIELD::platform::auto_File vivaldi_coordinates_file =
       YIELD::platform::Volume().open( vivaldi_coordinates_file_path );
     yidl::runtime::auto_Buffer vivaldi_coordinates_buffer
-      ( 
+      (
         new yidl::runtime::StackBuffer
           <sizeof( org::xtreemfs::interfaces::VivaldiCoordinates)>
       );
@@ -229,10 +255,10 @@ Volume::get_vivaldi_coordinates() const
 
 bool
 Volume::getxattr
-( 
-  const YIELD::platform::Path& path, 
-  const std::string& name, 
-  std::string& out_value 
+(
+  const YIELD::platform::Path& path,
+  const std::string& name,
+  std::string& out_value
 )
 {
   // Always pass through
@@ -246,24 +272,24 @@ Volume::getxattr
   return false;
 }
 
-bool 
+bool
 Volume::link
-( 
-  const YIELD::platform::Path& old_path, 
-  const YIELD::platform::Path& new_path 
+(
+  const YIELD::platform::Path& old_path,
+  const YIELD::platform::Path& new_path
 )
 {
   // If metadata caching enabled:
 //  stat_cache->evict( new_path );
 //  stat_cache->evict( old_path ); // Or modify nlink on old path
-  
+
 
   VOLUME_OPERATION_BEGIN( link )
   {
     mrc_proxy->link
-    ( 
-      Path( this->name, old_path ), 
-      Path( this->name, new_path ) 
+    (
+      Path( this->name, old_path ),
+      Path( this->name, new_path )
     );
 
     return true;
@@ -274,22 +300,22 @@ Volume::link
 
 bool
 Volume::listdir
-( 
-  const YIELD::platform::Path& path, 
-  const YIELD::platform::Path&, 
-  listdirCallback& callback 
+(
+  const YIELD::platform::Path& path,
+  const YIELD::platform::Path&,
+  listdirCallback& callback
 )
 {
   VOLUME_OPERATION_BEGIN( listdir )
   {
     org::xtreemfs::interfaces::StringSet names;
     mrc_proxy->xtreemfs_listdir( Path( this->name, path ), names );
-    for 
-    ( 
-      org::xtreemfs::interfaces::StringSet::const_iterator 
-        name_i = names.begin(); 
-      name_i != names.end(); 
-      name_i++ 
+    for
+    (
+      org::xtreemfs::interfaces::StringSet::const_iterator
+        name_i = names.begin();
+      name_i != names.end();
+      name_i++
     )
     {
       if ( !callback( *name_i ) )
@@ -303,9 +329,9 @@ Volume::listdir
 
 bool
 Volume::listxattr
-( 
-  const YIELD::platform::Path& path, 
-  std::vector<std::string>& out_names 
+(
+  const YIELD::platform::Path& path,
+  std::vector<std::string>& out_names
 )
 {
   // Always pass through... xattr caching with writes is ugly
@@ -323,7 +349,7 @@ Volume::listxattr
 
 bool Volume::mkdir( const YIELD::platform::Path& path, mode_t mode )
 {
-  // If metadata caching enabled: look up stat, 
+  // If metadata caching enabled: look up stat,
   // stat_cache->evict( getParentDirectoryPath( path ) );
 
   VOLUME_OPERATION_BEGIN( mkdir )
@@ -337,11 +363,11 @@ bool Volume::mkdir( const YIELD::platform::Path& path, mode_t mode )
 
 YIELD::platform::auto_File
 Volume::open
-( 
-  const YIELD::platform::Path& path, 
-  uint32_t flags, 
-  mode_t mode, 
-  uint32_t attributes 
+(
+  const YIELD::platform::Path& path,
+  uint32_t flags,
+  mode_t mode,
+  uint32_t attributes
 )
 {
   VOLUME_OPERATION_BEGIN( open )
@@ -359,8 +385,8 @@ Volume::open
       flags ^= O_SYNC;
     }
 
-    // Solaris and Windows have System V O_* constants; 
-    // on other systems we have to translate from the 
+    // Solaris and Windows have System V O_* constants;
+    // on other systems we have to translate from the
     // local constants to System V
 #if defined(__FreeBSD__) || defined(__linux__) || defined(__MACH__)
     if ( ( flags & O_WRONLY ) == O_WRONLY )
@@ -404,13 +430,13 @@ Volume::open
 
     org::xtreemfs::interfaces::FileCredentials file_credentials;
     mrc_proxy->open
-    ( 
-      Path( this->name, path ), 
-      system_v_flags, 
-      mode, 
-      attributes, 
-      get_vivaldi_coordinates(), 
-      file_credentials 
+    (
+      Path( this->name, path ),
+      system_v_flags,
+      mode,
+      attributes,
+      get_vivaldi_coordinates(),
+      file_credentials
     );
 
     return get_shared_file( path )->open( file_credentials );
@@ -420,14 +446,14 @@ Volume::open
 }
 
 void Volume::osd_unlink
-( 
-  const org::xtreemfs::interfaces::FileCredentialsSet& file_credentials_set 
+(
+  const org::xtreemfs::interfaces::FileCredentialsSet& file_credentials_set
 )
 {
-  if ( !file_credentials_set.empty() ) 
-  { 
+  if ( !file_credentials_set.empty() )
+  {
     // We have to delete files on all replica OSDs
-    const org::xtreemfs::interfaces::FileCredentials& file_credentials = 
+    const org::xtreemfs::interfaces::FileCredentials& file_credentials =
       file_credentials_set[0];
     const std::string& file_id = file_credentials.get_xcap().get_file_id();
     osd_proxy_mux->unlink( file_credentials, file_id );
@@ -436,10 +462,10 @@ void Volume::osd_unlink
 
 bool
 Volume::readdir
-( 
-  const YIELD::platform::Path& path, 
-  const YIELD::platform::Path&, 
-  YIELD::platform::Volume::readdirCallback& callback 
+(
+  const YIELD::platform::Path& path,
+  const YIELD::platform::Path&,
+  YIELD::platform::Volume::readdirCallback& callback
 )
 {
   VOLUME_OPERATION_BEGIN( readdir )
@@ -447,24 +473,24 @@ Volume::readdir
     org::xtreemfs::interfaces::DirectoryEntrySet directory_entries;
     mrc_proxy->readdir( Path( this->name, path ), directory_entries );
     for
-    ( 
-      org::xtreemfs::interfaces::DirectoryEntrySet::const_iterator 
-        directory_entry_i = directory_entries.begin(); 
-      directory_entry_i != directory_entries.end(); 
-      directory_entry_i++ 
+    (
+      org::xtreemfs::interfaces::DirectoryEntrySet::const_iterator
+        directory_entry_i = directory_entries.begin();
+      directory_entry_i != directory_entries.end();
+      directory_entry_i++
      )
     {
-      if 
-      ( 
+      if
+      (
         !callback
-        ( 
+        (
           ( *directory_entry_i ).get_name(),
           new Stat
-          ( 
-            ( *directory_entry_i ).get_stbuf(), 
+          (
+            ( *directory_entry_i ).get_stbuf(),
             *user_credentials_cache
           )
-        )            
+        )
       )
         return false;
     }
@@ -475,14 +501,14 @@ Volume::readdir
 }
 
 YIELD::platform::auto_Path Volume::readlink
-( 
-  const YIELD::platform::Path& path 
+(
+  const YIELD::platform::Path& path
 )
 {
   VOLUME_OPERATION_BEGIN( readlink )
   {
     std::string link_target_path;
-    mrc_proxy->readlink( Path( this->name, path ), link_target_path ); 
+    mrc_proxy->readlink( Path( this->name, path ), link_target_path );
     return new YIELD::platform::Path( link_target_path );
   }
   VOLUME_OPERATION_END( readlink );
@@ -490,7 +516,7 @@ YIELD::platform::auto_Path Volume::readlink
 }
 
 void Volume::release( SharedFile& shared_file )
-{  
+{
   shared_files_lock.acquire();
 
   std::map<std::string, SharedFile*>::iterator shared_file_i
@@ -509,9 +535,9 @@ void Volume::release( SharedFile& shared_file )
 
 bool
 Volume::removexattr
-( 
-  const YIELD::platform::Path& path, 
-  const std::string& name 
+(
+  const YIELD::platform::Path& path,
+  const std::string& name
 )
 {
   // If metadata caching, always evict( path )
@@ -527,9 +553,9 @@ Volume::removexattr
 
 bool
 Volume::rename
-( 
-  const YIELD::platform::Path& from_path, 
-  const YIELD::platform::Path& to_path 
+(
+  const YIELD::platform::Path& from_path,
+  const YIELD::platform::Path& to_path
 )
 {
   // If metadata caching:
@@ -543,10 +569,10 @@ Volume::rename
     org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
 
     mrc_proxy->rename
-    ( 
-      Path( this->name, from_path ), 
-      Path( this->name, to_path ), 
-      file_credentials_set 
+    (
+      Path( this->name, from_path ),
+      Path( this->name, to_path ),
+      file_credentials_set
     );
 
     osd_unlink( file_credentials_set );
@@ -574,8 +600,8 @@ Volume::rmdir( const YIELD::platform::Path& path )
 
 bool
 Volume::setattr
-( 
-  const YIELD::platform::Path& path, 
+(
+  const YIELD::platform::Path& path,
   YIELD::platform::auto_Stat stbuf,
   uint32_t to_set
 )
@@ -584,10 +610,10 @@ Volume::setattr
   // If disabled or lookup fails, pass through
 
   VOLUME_OPERATION_BEGIN( setattr )
-  {    
+  {
     mrc_proxy->setattr
-    ( 
-      Path( this->name, path ), 
+    (
+      Path( this->name, path ),
       Stat( *stbuf ),
       to_set
     );
@@ -600,10 +626,10 @@ Volume::setattr
 
 void
 Volume::set_errno
-( 
+(
   YIELD::platform::Log* log,
-  const char* operation_name, 
-  ProxyExceptionResponse& proxy_exception_response 
+  const char* operation_name,
+  ProxyExceptionResponse& proxy_exception_response
 )
 {
   if ( log != NULL )
@@ -624,8 +650,8 @@ Volume::set_errno
 #endif
       default:
       {
-        log->getStream( YIELD::platform::Log::LOG_ERR ) << 
-          "xtreemfs: caught exception on " << 
+        log->getStream( YIELD::platform::Log::LOG_ERR ) <<
+          "xtreemfs: caught exception on " <<
           operation_name << ": " << proxy_exception_response;
       }
       break;
@@ -635,22 +661,22 @@ Volume::set_errno
 #ifdef _WIN32
     SetLastError( proxy_exception_response.get_platform_error_code() );
 #else
-    errno 
+    errno
       = static_cast<int>( proxy_exception_response.get_platform_error_code() );
 #endif
 }
 
-void 
+void
 Volume::set_errno
-( 
+(
   YIELD::platform::Log* log,
-  const char* operation_name, 
-  std::exception& exc 
+  const char* operation_name,
+  std::exception& exc
 )
 {
   if ( log != NULL )
-    log->getStream( YIELD::platform::Log::LOG_ERR ) << 
-      "xtreemfs::Volume: caught exception on " << 
+    log->getStream( YIELD::platform::Log::LOG_ERR ) <<
+      "xtreemfs::Volume: caught exception on " <<
       operation_name << ": " << exc.what();
 
 
@@ -663,11 +689,11 @@ Volume::set_errno
 
 bool
 Volume::setxattr
-( 
-  const YIELD::platform::Path& path, 
-  const std::string& name, 
-  const std::string& value, 
-  int flags 
+(
+  const YIELD::platform::Path& path,
+  const std::string& name,
+  const std::string& value,
+  int flags
 )
 {
   // If metadata caching:
@@ -684,9 +710,9 @@ Volume::setxattr
 
 bool
 Volume::statvfs
-( 
-  const YIELD::platform::Path&, 
-  struct statvfs& statvfsbuf 
+(
+  const YIELD::platform::Path&,
+  struct statvfs& statvfsbuf
 )
 {
   // TODO: cache the StatVFS for a given time
@@ -699,7 +725,7 @@ Volume::statvfs
     statvfsbuf.f_bavail = xtreemfs_statvfsbuf.get_bavail();
     statvfsbuf.f_bfree = xtreemfs_statvfsbuf.get_bavail();
     statvfsbuf.f_blocks = xtreemfs_statvfsbuf.get_blocks();
-    statvfsbuf.f_bsize = xtreemfs_statvfsbuf.get_bsize();     
+    statvfsbuf.f_bsize = xtreemfs_statvfsbuf.get_bsize();
     statvfsbuf.f_namemax = xtreemfs_statvfsbuf.get_namelen();
     return true;
   }
@@ -709,9 +735,9 @@ Volume::statvfs
 
 bool
 Volume::symlink
-( 
-  const YIELD::platform::Path& to_path, 
-  const YIELD::platform::Path& from_path 
+(
+  const YIELD::platform::Path& to_path,
+  const YIELD::platform::Path& from_path
 )
 {
   // If metadata caching:
@@ -733,7 +759,7 @@ bool Volume::truncate( const YIELD::platform::Path& path, uint64_t new_size )
 
   VOLUME_OPERATION_BEGIN( truncate )
   {
-    YIELD::platform::auto_File file = 
+    YIELD::platform::auto_File file =
       YIELD::platform::Volume::open( path, O_TRUNC );
     if ( file != NULL )
       return file->truncate( new_size );
@@ -745,7 +771,7 @@ bool Volume::truncate( const YIELD::platform::Path& path, uint64_t new_size )
 }
 
 bool Volume::unlink( const YIELD::platform::Path& path )
-{  
+{
   // If metadata caching:
   //stat_cache->evict( path );
   // set_mtime on parent

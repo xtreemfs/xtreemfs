@@ -1,8 +1,6 @@
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+#ifndef _652432991_
+#define _652432991_
 
-#ifndef _XTREEMFS_INTERFACES_CONSTANTS_H_
-#define _XTREEMFS_INTERFACES_CONSTANTS_H_
 
 #include <string>
 
@@ -41,15 +39,17 @@ namespace org
       const static uint32_t SERVICE_STATUS_AVAIL = 0;
       const static uint32_t SERVICE_STATUS_TO_BE_REMOVED = 1;
       const static uint32_t SERVICE_STATUS_REMOVED = 2;
-
-
+  
+  
     };
-
-
-
+  
+  
+  
   };
-
-
+  
+  
 
 };
+
 #endif
+

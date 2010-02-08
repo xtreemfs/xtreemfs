@@ -1,10 +1,38 @@
+// Copyright (c) 2010 Minor Gordon
+// With original implementations and ideas contributed by Felix Hupfeld
+// All rights reserved
+// 
+// This source file is part of the Yield project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the Yield project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
 #include "yield/platform.h"
 using namespace YIELD::platform;
 
 
 // counting_semaphore.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #define NOMINMAX
 #include <windows.h>
@@ -16,6 +44,8 @@ using namespace YIELD::platform;
 #include <mach/task.h>
 #endif
 #endif
+
+
 CountingSemaphore::CountingSemaphore()
 {
 #if defined(_WIN32)
@@ -26,6 +56,7 @@ CountingSemaphore::CountingSemaphore()
   sem_init( &sem, 0, 0 );
 #endif
 }
+
 CountingSemaphore::~CountingSemaphore()
 {
 #if defined(_WIN32)
@@ -36,6 +67,7 @@ CountingSemaphore::~CountingSemaphore()
   sem_destroy( &sem );
 #endif
 }
+
 bool CountingSemaphore::acquire()
 {
 #if defined(_WIN32)
@@ -47,6 +79,7 @@ bool CountingSemaphore::acquire()
   return sem_wait( &sem ) == 0;
 #endif
 }
+
 bool CountingSemaphore::timed_acquire( uint64_t timeout_ns )
 {
 #if defined(_WIN32)
@@ -62,6 +95,7 @@ bool CountingSemaphore::timed_acquire( uint64_t timeout_ns )
   return sem_timedwait( &sem, &timeout_ts ) == 0;
 #endif
 }
+
 bool CountingSemaphore::try_acquire()
 {
 #if defined(_WIN32)
@@ -74,6 +108,7 @@ bool CountingSemaphore::try_acquire()
   return sem_trywait( &sem ) == 0;
 #endif
 }
+
 void CountingSemaphore::release()
 {
 #if defined(_WIN32)
@@ -87,14 +122,14 @@ void CountingSemaphore::release()
 
 
 // exception.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
 #include <lmerr.h>
 #else
 #include <errno.h>
 #endif
+
+
 Exception::Exception()
   : error_message( NULL )
 {
@@ -104,34 +139,41 @@ Exception::Exception()
   error_code = static_cast<uint32_t>( errno );
 #endif
 }
+
 Exception::Exception( uint32_t error_code )
   : error_code( error_code ), error_message( NULL )
 { }
+
 Exception::Exception( const char* error_message )
   : error_code( 0 ), error_message( NULL )
 {
   set_error_message( error_message );
 }
+
 Exception::Exception( const std::string& error_message )
   : error_code( 0 ), error_message( NULL )
 {
   set_error_message( error_message.c_str() );
 }
+
 Exception::Exception( uint32_t error_code, const char* error_message )
   : error_code( error_code ), error_message( NULL )
 {
   set_error_message( error_message );
 }
+
 Exception::Exception( uint32_t error_code, const std::string& error_message )
   : error_code( error_code ), error_message( NULL )
 {
   set_error_message( error_message.c_str() );
 }
+
 Exception::Exception( const Exception& other )
   : error_code( other.error_code ), error_message( NULL )
 {
   set_error_message( other.error_message );
 }
+
 Exception::~Exception() throw()
 {
 #ifdef _WIN32
@@ -140,6 +182,7 @@ Exception::~Exception() throw()
   delete [] error_message;
 #endif
 }
+
 const char* Exception::get_error_message() throw()
 {
   if ( error_message != NULL )
@@ -160,10 +203,12 @@ const char* Exception::get_error_message() throw()
         0,
         NULL
       );
+
     if ( dwMessageLength > 0 )
     {
       if ( dwMessageLength > 2 )
         error_message[dwMessageLength - 2] = 0; // Cut off trailing \r\n
+
       return error_message;
     }
     else if ( error_code >= NERR_BASE || error_code <= MAX_NERR )
@@ -175,6 +220,7 @@ const char* Exception::get_error_message() throw()
           NULL,
           LOAD_LIBRARY_AS_DATAFILE
         ); // Let's hope this is cheap..
+
       if ( hModule != NULL )
       {
         dwMessageLength
@@ -190,17 +236,21 @@ const char* Exception::get_error_message() throw()
             0,
             NULL
           );
+
         if ( dwMessageLength > 0 )
         {
           FreeLibrary( hModule );
+
           if ( dwMessageLength > 2 )
             error_message[dwMessageLength - 2] = 0; // Cut off trailing \r\n
+
           return error_message;
         }
         else
           FreeLibrary( hModule );
       }
     }
+
     // Could not get an error_message for error_code from FormatMessage
     // Set error_message to a dummy value so we don't have to try this again
     error_message = static_cast<char*>( LocalAlloc( LMEM_FIXED, 19 ) );
@@ -219,10 +269,12 @@ const char* Exception::get_error_message() throw()
   else
     return "(unknown)";
 }
+
 void Exception::set_error_code( uint32_t error_code )
 {
   this->error_code = error_code;
 }
+
 void Exception::set_error_message( const char* error_message )
 {
 #ifdef _WIN32
@@ -230,6 +282,7 @@ void Exception::set_error_message( const char* error_message )
 #else
   delete [] this->error_message;
 #endif
+
   if ( error_message != NULL )
   {
     size_t error_message_len = strlen( error_message );
@@ -247,8 +300,6 @@ void Exception::set_error_message( const char* error_message )
 
 
 // file.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
 #pragma warning( push )
@@ -290,6 +341,8 @@ extern off64_t lseek64(int, off64_t, int);
 #endif
 #endif
 #endif
+
+
 File::File()
 #ifdef _WIN32
   : fd( INVALID_HANDLE_VALUE )
@@ -297,6 +350,7 @@ File::File()
   : fd( -1 )
 #endif
 { }
+
 #ifdef _WIN32
 File::File( void* fd )
   : fd( fd )
@@ -305,10 +359,12 @@ File::File( int fd )
   : fd( fd )
 #endif
 { }
+
 File::File( const File& other )
 {
   DebugBreak();
 }
+
 bool File::close()
 {
 #ifdef _WIN32
@@ -325,6 +381,7 @@ bool File::close()
   else
     return false;
 }
+
 bool File::datasync()
 {
 #if defined(_WIN32)
@@ -335,6 +392,7 @@ bool File::datasync()
   return true;
 #endif
 }
+
 size_t File::getpagesize()
 {
 #ifdef _WIN32
@@ -345,6 +403,7 @@ size_t File::getpagesize()
   return ::getpagesize();
 #endif
 }
+
 auto_Stat File::getattr()
 {
 #ifdef _WIN32
@@ -358,6 +417,7 @@ auto_Stat File::getattr()
 #endif
   return NULL;
 }
+
 bool File::getlk( bool exclusive, uint64_t offset, uint64_t length )
 {
 #ifdef _WIN32
@@ -375,6 +435,7 @@ bool File::getlk( bool exclusive, uint64_t offset, uint64_t length )
     return false;
 #endif
 }
+
 bool File::getxattr( const std::string& name, std::string& out_value )
 {
 #ifdef YIELD_HAVE_XATTR_H
@@ -393,6 +454,7 @@ bool File::getxattr( const std::string& name, std::string& out_value )
   return false;
 #endif
 }
+
 bool File::listxattr( std::vector<std::string>& out_names )
 {
 #ifdef YIELD_HAVE_XATTR_H
@@ -416,12 +478,14 @@ bool File::listxattr( std::vector<std::string>& out_names )
   return false;
 #endif
 }
+
 ssize_t File::read( yidl::runtime::auto_Buffer buffer )
 {
   ssize_t read_ret = read( static_cast<void*>( *buffer ), buffer->capacity() );
   buffer->put( NULL, read_ret );
   return read_ret;
 }
+
 ssize_t File::read( void* buffer, size_t buffer_len, uint64_t offset )
 {
   if ( seek( offset, SEEK_SET ) )
@@ -429,6 +493,7 @@ ssize_t File::read( void* buffer, size_t buffer_len, uint64_t offset )
   else
     return -1;
 }
+
 ssize_t File::read( void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
@@ -451,6 +516,7 @@ ssize_t File::read( void* buffer, size_t buffer_len )
   return ::read( fd, buffer, buffer_len );
 #endif
 }
+
 bool File::removexattr( const std::string& name )
 {
 #ifdef YIELD_HAVE_XATTR_H
@@ -459,10 +525,12 @@ bool File::removexattr( const std::string& name )
   return false;
 #endif
 }
+
 bool File::seek( uint64_t offset )
 {
   return seek( offset, SEEK_SET );
 }
+
 bool File::seek( uint64_t offset, unsigned char whence )
 {
 #ifdef _WIN32
@@ -492,6 +560,7 @@ bool File::seek( uint64_t offset, unsigned char whence )
     return false;
 #endif
 }
+
 bool File::setlk( bool exclusive, uint64_t offset, uint64_t length )
 {
 #ifdef _WIN32
@@ -506,6 +575,7 @@ bool File::setlk( bool exclusive, uint64_t offset, uint64_t length )
   return fcntl( fd, F_SETLK, &flock_ ) != -1;
 #endif
 }
+
 bool File::setlkw( bool exclusive, uint64_t offset, uint64_t length )
 {
 #ifdef _WIN32
@@ -535,6 +605,7 @@ bool File::setlkw( bool exclusive, uint64_t offset, uint64_t length )
   return fcntl( fd, F_SETLKW, &flock_ ) != -1;
 #endif
 }
+
 bool File::setxattr
 (
   const std::string& name,
@@ -555,10 +626,12 @@ bool File::setxattr
   return false;
 #endif
 }
+
 auto_Stat File::stat()
 {
   return getattr();
 }
+
 bool File::sync()
 {
 #ifdef _WIN32
@@ -567,6 +640,7 @@ bool File::sync()
   return fsync( fd ) != -1;
 #endif
 }
+
 bool File::truncate( uint64_t new_size )
 {
 #ifdef _WIN32
@@ -589,6 +663,7 @@ bool File::truncate( uint64_t new_size )
   return ::ftruncate( fd, new_size ) != -1;
 #endif
 }
+
 bool File::unlk( uint64_t offset, uint64_t length )
 {
 #ifdef _WIN32
@@ -613,10 +688,12 @@ bool File::unlk( uint64_t offset, uint64_t length )
   return fcntl( fd, F_SETLK, &flock_ ) != -1;
 #endif
 }
+
 ssize_t File::write( yidl::runtime::auto_Buffer buffer )
 {
   return write( static_cast<void*>( *buffer ), buffer->size() );
 }
+
 ssize_t File::write( const void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
@@ -639,6 +716,7 @@ ssize_t File::write( const void* buffer, size_t buffer_len )
   return ::write( fd, buffer, buffer_len );
 #endif
 }
+
 ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
 {
   if ( seek( offset ) )
@@ -646,14 +724,13 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
   else
     return -1;
 }
+
 #ifdef _WIN32
 #pragma warning( pop )
 #endif
 
 
 // log.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 namespace YIELD
 {
   namespace platform
@@ -664,9 +741,11 @@ namespace YIELD
       FileLog( auto_File file, Level level )
         : Log( level ), file( file )
       { }
+
       FileLog( const Path& file_path, Level level ) // Lazy open
         : Log( level ), file_path( file_path )
       { }
+
       // Log
       void write( const char* str, size_t str_len )
       {
@@ -676,35 +755,46 @@ namespace YIELD
           if ( file == NULL )
             return;
         }
+
        file->write( str, str_len );
       }
+
     private:
       auto_File file;
       Path file_path;
     };
+
+
     class ostreamLog : public Log
     {
     public:
       ostreamLog( std::ostream& underlying_ostream, Level level )
         : Log( level ), underlying_ostream( underlying_ostream )
       { }
+
       ostreamLog& operator=( const ostreamLog& ) { return *this; }
+
       // Log
       void write( const char* str, size_t str_len )
       {
         underlying_ostream.write( str, str_len );
       }
+
     private:
       std::ostream& underlying_ostream;
     };
   };
 };
+
+
 Log::Stream::Stream( auto_Log log, Log::Level level )
   : log( log ), level( level )
 { }
+
 Log::Stream::Stream( const Stream& other )
   : log( other.log ), level( other.level )
 { }
+
 Log::Stream::~Stream()
 {
   if ( level <= log->get_level() && !oss.str().empty() )
@@ -728,13 +818,16 @@ Log::Stream::~Stream()
     stamped_oss << ": ";
     stamped_oss << oss.str();
     stamped_oss << std::endl;
+
     log->write( stamped_oss.str(), level );
   }
 }
+
 auto_Log Log::open( std::ostream& underlying_ostream, Level level )
 {
   return new ostreamLog( underlying_ostream, level );
 }
+
 auto_Log Log::open( const Path& file_path, Level level, bool lazy )
 {
   if ( lazy )
@@ -748,6 +841,7 @@ auto_Log Log::open( const Path& file_path, Level level, bool lazy )
       return NULL;
   }
 }
+
 void Log::write( const unsigned char* str, size_t str_len, Level level )
 {
   if ( level <= this->level )
@@ -768,12 +862,14 @@ void Log::write( const unsigned char* str, size_t str_len, Level level )
         break;
       }
     }
+
     if ( str_is_printable )
       write( reinterpret_cast<const char*>( str ), str_len, level );
     else
     {
       char* printable_str = new char[str_len * 3];
       size_t printable_str_len = 0;
+
       for ( size_t str_i = 0; str_i < str_len; str_i++ )
       {
         char hex_digit = ( str[str_i] >> 4 ) & 0x0F;
@@ -781,14 +877,18 @@ void Log::write( const unsigned char* str, size_t str_len, Level level )
           printable_str[printable_str_len++] = '0' + hex_digit;
         else
           printable_str[printable_str_len++] = 'A' + hex_digit - 10;
+
         hex_digit = str[str_i] & 0x0F;
         if ( hex_digit >= 0 && hex_digit <= 9 )
           printable_str[printable_str_len++] = '0' + hex_digit;
         else
           printable_str[printable_str_len++] = 'A' + hex_digit - 10;
+
         printable_str[printable_str_len++] = ' ';
       }
+
       write( printable_str, printable_str_len );
+
       delete [] printable_str;
     }
   }
@@ -796,8 +896,6 @@ void Log::write( const unsigned char* str, size_t str_len, Level level )
 
 
 // machine.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -809,13 +907,17 @@ void Log::write( const unsigned char* str, size_t str_len, Level level )
 #include <kstat.h> // For kstat
 #endif
 #endif
+
+
 uint16_t Machine::getLogicalProcessorsPerPhysicalProcessor()
 {
   return getOnlineLogicalProcessorCount() / getOnlinePhysicalProcessorCount();
 }
+
 uint16_t Machine::getOnlineLogicalProcessorCount()
 {
   uint16_t online_logical_processor_count = 0;
+
 #if defined(_WIN32)
   SYSTEM_INFO available_info;
   GetSystemInfo( &available_info );
@@ -830,6 +932,7 @@ uint16_t Machine::getOnlineLogicalProcessorCount()
   host_info_t info = (host_info_t)&basic_info;
   host_flavor_t flavor = HOST_BASIC_INFO;
   mach_msg_type_number_t count = HOST_BASIC_INFO_COUNT;
+
   if ( host_info( mach_host_self(), flavor, info, &count ) == KERN_SUCCESS )
     online_logical_processor_count = basic_info.avail_cpus;
 #elif defined(__sun)
@@ -841,19 +944,23 @@ uint16_t Machine::getOnlineLogicalProcessorCount()
       online_logical_processor_count++;
   }
 #endif
+
   if ( online_logical_processor_count > 0 )
     return online_logical_processor_count;
   else
     return 1;
 }
+
 uint16_t Machine::getOnlinePhysicalProcessorCount()
 {
 #if defined(__sun)
   kstat_ctl_t* kc;
+
   kc = kstat_open();
   if ( kc )
   {
     uint16_t online_physical_processor_count = 1;
+
     kstat* ksp = kstat_lookup( kc, "cpu_info", -1, NULL );
     int32_t last_core_id = 0;
     while ( ksp )
@@ -872,23 +979,26 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
       }
       ksp = ksp->ks_next;
     }
+
     kstat_close( kc );
+
     return online_physical_processor_count;
   }
 #endif
+
   return getOnlineLogicalProcessorCount();
 }
 
 
 // memory_mapped_file.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #define NOMINMAX
 #include <windows.h>
 #else
 #include <sys/mman.h>
 #endif
+
+
 MemoryMappedFile::MemoryMappedFile
 (
   auto_File underlying_file,
@@ -903,6 +1013,7 @@ MemoryMappedFile::MemoryMappedFile
   size = 0;
   start = NULL;
 }
+
 bool MemoryMappedFile::close()
 {
   if ( start != NULL )
@@ -915,6 +1026,7 @@ bool MemoryMappedFile::close()
 #endif
     start = NULL;
   }
+
 #ifdef _WIN32
   if ( mapping != NULL )
   {
@@ -922,8 +1034,10 @@ bool MemoryMappedFile::close()
     mapping = NULL;
   }
 #endif
+
   return underlying_file->close();
 }
+
 auto_MemoryMappedFile
 MemoryMappedFile::open( const Path& path )
 {
@@ -936,6 +1050,7 @@ MemoryMappedFile::open( const Path& path )
            0
           );
 }
+
 auto_MemoryMappedFile
 MemoryMappedFile::open( const Path& path, uint32_t flags )
 {
@@ -948,6 +1063,7 @@ MemoryMappedFile::open( const Path& path, uint32_t flags )
            0
          );
 }
+
 auto_MemoryMappedFile
 MemoryMappedFile::open
 (
@@ -959,6 +1075,7 @@ MemoryMappedFile::open
 )
 {
   auto_File file( Volume().open( path, flags, mode, attributes ) );
+
   if ( file != NULL )
   {
     size_t current_file_size;
@@ -978,8 +1095,10 @@ MemoryMappedFile::open
     }
     else
       current_file_size = 0;
+
     auto_MemoryMappedFile memory_mapped_file
       = new MemoryMappedFile( file, flags );
+
     if
     (
       memory_mapped_file->resize
@@ -994,6 +1113,7 @@ MemoryMappedFile::open
   else
     return NULL;
 }
+
 bool MemoryMappedFile::resize( size_t new_size )
 {
   if ( new_size > 0 )
@@ -1004,6 +1124,7 @@ bool MemoryMappedFile::resize( size_t new_size )
       if ( UnmapViewOfFile( start ) != TRUE )
         return false;
     }
+
     if ( mapping != NULL )
     {
       if ( CloseHandle( mapping ) != TRUE )
@@ -1017,6 +1138,7 @@ bool MemoryMappedFile::resize( size_t new_size )
         return false;
     }
 #endif
+
     if ( size == new_size ||
          underlying_file->truncate( new_size ) )
     {
@@ -1025,7 +1147,9 @@ bool MemoryMappedFile::resize( size_t new_size )
       if ( ( open_flags & O_RDWR ) == O_RDWR ||
            ( open_flags & O_WRONLY ) == O_WRONLY )
         map_flags = PAGE_READWRITE;
+
       ULARGE_INTEGER uliNewSize; uliNewSize.QuadPart = new_size;
+
       mapping = CreateFileMapping
                 (
                   *underlying_file,
@@ -1034,11 +1158,13 @@ bool MemoryMappedFile::resize( size_t new_size )
                   uliNewSize.LowPart,
                   NULL
                 );
+
       if ( mapping != NULL )
       {
         map_flags = FILE_MAP_READ;
         if( ( open_flags & O_RDWR ) || ( open_flags & O_WRONLY ) )
           map_flags = FILE_MAP_ALL_ACCESS;
+
         start = static_cast<char*>( MapViewOfFile( mapping, map_flags, 0, 0, 0 ) );
         if ( start != NULL )
         {
@@ -1051,6 +1177,7 @@ bool MemoryMappedFile::resize( size_t new_size )
       if( ( open_flags & O_RDWR ) == O_RDWR ||
           ( open_flags & O_WRONLY ) == O_WRONLY )
         mmap_flags |= PROT_WRITE;
+
       void* mmap_ret = mmap
                       (
                         0,
@@ -1060,6 +1187,7 @@ bool MemoryMappedFile::resize( size_t new_size )
                         *underlying_file,
                         0
                       );
+
       if ( mmap_ret != MAP_FAILED )
       {
         start = static_cast<char*>( mmap_ret );
@@ -1071,8 +1199,10 @@ bool MemoryMappedFile::resize( size_t new_size )
   }
   else
     return true;
+
   return false;
 }
+
 bool MemoryMappedFile::sync()
 {
 #ifdef _WIN32
@@ -1085,10 +1215,12 @@ bool MemoryMappedFile::sync()
   return sync( static_cast<size_t>( 0 ), size );
 #endif
 }
+
 bool MemoryMappedFile::sync( size_t offset, size_t length )
 {
   return sync( start + offset, length );
 }
+
 bool MemoryMappedFile::sync( void* ptr, size_t length )
 {
 #if defined(_WIN32)
@@ -1102,13 +1234,13 @@ bool MemoryMappedFile::sync( void* ptr, size_t length )
 
 
 // mutex.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #if defined(_WIN32)
 #include <windows.h>
 #elif defined(__linux__) || defined(__FreeBSD__) || defined(__sun)
 #define YIELD_HAVE_PTHREAD_MUTEX_TIMEDLOCK
 #endif
+
+
 Mutex::Mutex()
 {
 #ifdef _WIN32
@@ -1119,6 +1251,7 @@ Mutex::Mutex()
     DebugBreak();
 #endif
 }
+
 Mutex::~Mutex()
 {
 #ifdef _WIN32
@@ -1127,6 +1260,7 @@ Mutex::~Mutex()
   pthread_mutex_destroy( &pthread_mutex );
 #endif
 }
+
 bool Mutex::acquire()
 {
 #ifdef _WIN32
@@ -1137,6 +1271,7 @@ bool Mutex::acquire()
   return true;
 #endif
 }
+
 bool Mutex::try_acquire()
 {
 #ifdef _WIN32
@@ -1146,6 +1281,7 @@ bool Mutex::try_acquire()
   return pthread_mutex_trylock( &pthread_mutex ) == 0;
 #endif
 }
+
 bool Mutex::timed_acquire( uint64_t timeout_ns )
 {
 #ifdef _WIN32
@@ -1167,6 +1303,7 @@ bool Mutex::timed_acquire( uint64_t timeout_ns )
 #endif
 #endif
 }
+
 void Mutex::release()
 {
 #ifdef _WIN32
@@ -1178,8 +1315,6 @@ void Mutex::release()
 
 
 // path.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -1190,27 +1325,33 @@ void Mutex::release()
 //#define ICONV_SOURCE_CAST char**
 //#endif
 #endif
+
 // Paths from UTF-8
 //#ifdef _WIN32
 //    wide_path.assign( _wide_path, MultiByteToWideChar( CP_UTF8, 0, utf8_path.c_str(), ( int )utf8_path.size(), _wide_path, PATH_MAX ) );
 //#else
 //    MultiByteToMultiByte( "UTF-8", utf8_path, "", host_charset_path );
 //#endif
+
+
 Path::Path( const char* host_charset_path )
   : host_charset_path( host_charset_path )
 {
   init_from_host_charset_path();
 }
+
 Path::Path( const char* host_charset_path, size_t host_charset_path_len )
   : host_charset_path( host_charset_path, host_charset_path_len )
 {
   init_from_host_charset_path();
 }
+
 Path::Path( const std::string& host_charset_path )
   : host_charset_path( host_charset_path )
 {
   init_from_host_charset_path();
 }
+
 void Path::init_from_host_charset_path()
 {
   if
@@ -1220,6 +1361,7 @@ void Path::init_from_host_charset_path()
   )
     host_charset_path
       = host_charset_path.substr( 0, host_charset_path.size() - 1 );
+
 #ifdef _WIN32
   wchar_t _wide_path[PATH_MAX];
   wide_path.assign
@@ -1237,26 +1379,31 @@ void Path::init_from_host_charset_path()
   );
 #endif
 }
+
 #ifdef _WIN32
 Path::Path( const wchar_t* wide_path )
   : wide_path( wide_path )
 {
   init_from_wide_path();
 }
+
 Path::Path( const wchar_t* wide_path, size_t wide_path_len )
   : wide_path( wide_path, wide_path_len )
 {
   init_from_wide_path();
 }
+
 Path::Path( const std::wstring& wide_path )
   : wide_path( wide_path )
 {
   init_from_wide_path();
 }
+
 void Path::init_from_wide_path()
 {
   if ( wide_path.size() > 1 && wide_path[wide_path.size()-1] == PATH_SEPARATOR )
     wide_path = wide_path.substr( 0, wide_path.size() - 1 );
+
   char host_charset_path[PATH_MAX];
   int host_charset_path_len
     = WideCharToMultiByte
@@ -1273,12 +1420,14 @@ void Path::init_from_wide_path()
   this->host_charset_path.assign( host_charset_path, host_charset_path_len );
 }
 #endif
+
 Path::Path( const Path &other )
 : host_charset_path( other.host_charset_path )
 #ifdef _WIN32
 , wide_path( other.wide_path )
 #endif
 { }
+
 /*
 const std::string& Path::get_utf8_path()
 {
@@ -1313,8 +1462,10 @@ const std::string& Path::get_utf8_path()
      ); // "" = local host charset
 #endif
   }
+
   return utf8_path;
 }
+
 #ifndef _WIN32
 void Path::MultiByteToMultiByte
 (
@@ -1325,11 +1476,13 @@ void Path::MultiByteToMultiByte
 )
 {
   iconv_t converter;
+
   if ( ( converter = iconv_open( fromcode, tocode ) ) != ( iconv_t )-1 )
   {
     char* _frompath = const_cast<char*>( frompath.c_str() );
     char _topath[PATH_MAX], *_topath_p = _topath;
     size_t _frompath_size = frompath.size(), _topath_size = PATH_MAX;
+
 	//::iconv( converter, NULL, 0, NULL, 0 ) != -1 &&
    size_t iconv_ret
      = ::iconv
@@ -1344,6 +1497,7 @@ void Path::MultiByteToMultiByte
       topath.assign( _topath, PATH_MAX - _topath_size );
     else
       topath = frompath;
+
     iconv_close( converter );
   }
   else
@@ -1351,6 +1505,7 @@ void Path::MultiByteToMultiByte
 }
 #endif
 */
+
 Path Path::abspath() const
 {
 #ifdef _WIN32
@@ -1370,16 +1525,19 @@ Path Path::abspath() const
   return Path( abspath_buffer );
 #endif
 }
+
 #ifdef _WIN32
 bool Path::operator==( const wchar_t* other ) const
 {
   return wide_path == other;
 }
+
 bool Path::operator!=( const wchar_t* other ) const
 {
   return wide_path != other;
 }
 #endif
+
 bool Path::operator==( const Path& other ) const
 {
 #ifdef _WIN32
@@ -1388,6 +1546,7 @@ bool Path::operator==( const Path& other ) const
   return host_charset_path == other.host_charset_path;
 #endif
 }
+
 bool Path::operator!=( const Path& other ) const
 {
 #ifdef _WIN32
@@ -1396,14 +1555,17 @@ bool Path::operator!=( const Path& other ) const
   return host_charset_path != other.host_charset_path;
 #endif
 }
+
 bool Path::operator==( const char* other ) const
 {
   return host_charset_path == other;
 }
+
 bool Path::operator!=( const char* other ) const
 {
   return host_charset_path != other;
 }
+
 Path Path::join( const Path& other ) const
 {
 #ifdef _WIN32
@@ -1414,13 +1576,16 @@ Path Path::join( const Path& other ) const
   else
   {
     std::wstring combined_wide_path( wide_path );
+
     if
     (
       combined_wide_path[combined_wide_path.size()-1] != PATH_SEPARATOR &&
       other.wide_path[0] != PATH_SEPARATOR
     )
       combined_wide_path.append( PATH_SEPARATOR_WIDE_STRING, 1 );
+
     combined_wide_path.append( other.wide_path );
+
     return Path( combined_wide_path );
   }
 #else
@@ -1428,19 +1593,23 @@ Path Path::join( const Path& other ) const
   if ( !utf8_path.empty() && !other.utf8_path.empty() )
   {
     std::string combined_utf8_path( utf8_path );
+
     if
     (
       combined_utf8_path[combined_utf8_path.size()-1] != PATH_SEPARATOR &&
       other.utf8_path[0] != PATH_SEPARATOR
     )
       combined_utf8_path.append( PATH_SEPARATOR_STRING, 1 );
+
     combined_utf8_path.append( other.utf8_path );
+
     return Path( combined_utf8_path );
   }
   else
   {
 */
     std::string combined_host_charset_path( host_charset_path );
+
     if
     (
       combined_host_charset_path[combined_host_charset_path.size()-1]
@@ -1448,15 +1617,19 @@ Path Path::join( const Path& other ) const
       other.host_charset_path[0] != PATH_SEPARATOR
     )
       combined_host_charset_path.append( PATH_SEPARATOR_STRING, 1 );
+
     combined_host_charset_path.append( other.host_charset_path );
+
     return Path( combined_host_charset_path );
 //  }
 #endif
 }
+
 std::pair<Path, Path> Path::split() const
 {
   std::string::size_type last_sep
     = host_charset_path.find_last_of( PATH_SEPARATOR );
+
   if ( last_sep != std::string::npos )
     return std::make_pair
           (
@@ -1466,27 +1639,34 @@ std::pair<Path, Path> Path::split() const
   else
     return std::make_pair( Path(), *this );
 }
+
 void Path::split_all( std::vector<Path>& parts ) const
 {
   std::string::size_type last_sep
     = host_charset_path.find_first_not_of( PATH_SEPARATOR, 0 );
+
   std::string::size_type next_sep
     = host_charset_path.find_first_of( PATH_SEPARATOR, last_sep );
+
   while ( next_sep != std::string::npos || last_sep != std::string::npos )
   {
     parts.push_back
     (
       host_charset_path.substr( last_sep, next_sep - last_sep )
     );
+
     last_sep
       = host_charset_path.find_first_not_of( PATH_SEPARATOR, next_sep );
+
     next_sep
       = host_charset_path.find_first_of( PATH_SEPARATOR, last_sep );
   }
 }
+
 std::pair<Path, Path> Path::splitext() const
 {
   std::string::size_type last_dot = host_charset_path.find_last_of( "." );
+
   if ( last_dot == 0 || last_dot == std::string::npos )
     return std::make_pair( *this, Path() );
   else
@@ -1499,15 +1679,16 @@ std::pair<Path, Path> Path::splitext() const
 
 
 // performance_counter_set.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
+
 #if defined(__sun)
 #include <libcpc.h>
 #elif defined(YIELD_HAVE_PAPI)
 #include <papi.h>
 #include <pthread.h>
 #endif
+
+
 auto_PerformanceCounterSet PerformanceCounterSet::create()
 {
 #if defined(__sun)
@@ -1531,8 +1712,10 @@ auto_PerformanceCounterSet PerformanceCounterSet::create()
     }
   }
 #endif
+
   return NULL;
 }
+
 #if defined(__sun)
 PerformanceCounterSet::PerformanceCounterSet( cpc_t* cpc, cpc_set_t* cpc_set )
   : cpc( cpc ), cpc_set( cpc_set )
@@ -1544,6 +1727,7 @@ PerformanceCounterSet::PerformanceCounterSet( int papi_eventset )
   : papi_eventset( papi_eventset )
 { }
 #endif
+
 PerformanceCounterSet::~PerformanceCounterSet()
 {
 #if defined(__sun)
@@ -1554,6 +1738,7 @@ PerformanceCounterSet::~PerformanceCounterSet()
   PAPI_destroy_eventset( &papi_eventset );
 #endif
 }
+
 bool PerformanceCounterSet::addEvent( Event event )
 {
 #if defined(__sun)
@@ -1574,11 +1759,13 @@ bool PerformanceCounterSet::addEvent( Event event )
   }
 #endif
 }
+
 bool PerformanceCounterSet::addEvent( const char* name )
 {
 #if defined(__sun)
   int event_index
     = cpc_set_add_request( cpc, cpc_set, name, 0, CPC_COUNT_USER, 0, NULL );
+
   if ( event_index != -1 )
   {
     event_indices.push_back( event_index );
@@ -1599,8 +1786,10 @@ bool PerformanceCounterSet::addEvent( const char* name )
        return true;
   }
 #endif
+
   return false;
 }
+
 void PerformanceCounterSet::startCounting()
 {
 #if defined(__sun)
@@ -1612,13 +1801,16 @@ void PerformanceCounterSet::startCounting()
   PAPI_start( papi_eventset );
 #endif
 }
+
 void PerformanceCounterSet::stopCounting( uint64_t* counts )
 {
 #if defined(__sun)
   cpc_buf_t* stop_cpc_buf = cpc_buf_create( cpc, cpc_set );
   cpc_set_sample( cpc, cpc_set, stop_cpc_buf );
+
   cpc_buf_t* diff_cpc_buf = cpc_buf_create( cpc, cpc_set );
   cpc_buf_sub( cpc, diff_cpc_buf, stop_cpc_buf, start_cpc_buf );
+
   for
   (
     std::vector<int>::size_type event_index_i = 0;
@@ -1634,17 +1826,17 @@ void PerformanceCounterSet::stopCounting( uint64_t* counts )
       &counts[event_index_i]
     );
   }
+
   cpc_unbind( cpc, cpc_set );
 #elif defined(YIELD_HAVE_PAPI)
   PAPI_stop( papi_eventset, reinterpret_cast<long long int*>( counts ) );
 #endif
 }
+
 #endif
 
 
 // processor_set.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #if defined(_WIN32)
 #include <windows.h>
 #elif defined(__linux)
@@ -1652,6 +1844,8 @@ void PerformanceCounterSet::stopCounting( uint64_t* counts )
 #elif defined(__sun)
 #include <sys/pset.h>
 #endif
+
+
 ProcessorSet::ProcessorSet()
 {
 #if defined(_WIN32)
@@ -1666,6 +1860,7 @@ ProcessorSet::ProcessorSet()
   DebugBreak();
 #endif
 }
+
 ProcessorSet::ProcessorSet( uint32_t from_mask )
 {
 #if defined(_WIN32)
@@ -1689,6 +1884,7 @@ ProcessorSet::ProcessorSet( uint32_t from_mask )
   }
 #endif
 }
+
 ProcessorSet::~ProcessorSet()
 {
 #if defined(__linux)
@@ -1697,6 +1893,7 @@ ProcessorSet::~ProcessorSet()
   if ( psetid != PS_NONE ) pset_destroy( psetid );
 #endif
 }
+
 void ProcessorSet::clear()
 {
 #if defined(_WIN32)
@@ -1711,6 +1908,7 @@ void ProcessorSet::clear()
   }
 #endif
 }
+
 void ProcessorSet::clear( uint16_t processor_i )
 {
 #if defined(_WIN32)
@@ -1724,6 +1922,7 @@ void ProcessorSet::clear( uint16_t processor_i )
     pset_assign( PS_NONE, processor_i, NULL );
 #endif
 }
+
 uint16_t ProcessorSet::count() const
 {
   uint16_t count = 0;
@@ -1739,6 +1938,7 @@ uint16_t ProcessorSet::count() const
   }
   return count;
 }
+
 bool ProcessorSet::empty() const
 {
 #if defined(_WIN32)
@@ -1747,6 +1947,7 @@ bool ProcessorSet::empty() const
   return count() == 0;
 #endif
 }
+
 bool ProcessorSet::isset( uint16_t processor_i ) const
 {
 #if defined(_WIN32)
@@ -1773,6 +1974,7 @@ bool ProcessorSet::isset( uint16_t processor_i ) const
 #endif
   return false;
 }
+
 bool ProcessorSet::set( uint16_t processor_i )
 {
 #if defined(_WIN32)
@@ -1785,16 +1987,16 @@ bool ProcessorSet::set( uint16_t processor_i )
     if ( pset_create( &psetid ) != 0 )
       return false;
   }
+
   if ( pset_assign( psetid, processor_i, NULL ) != 0 )
     return false;
 #endif
+
   return isset( processor_i );
 }
 
 
 // shared_library.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
 #define snprintf _snprintf_s
@@ -1802,15 +2004,20 @@ bool ProcessorSet::set( uint16_t processor_i )
 #include <dlfcn.h>
 #include <cctype>
 #endif
+
+
 #ifdef _WIN32
 #define DLOPEN( file_path ) \
     LoadLibraryExA( file_path, 0, LOAD_WITH_ALTERED_SEARCH_PATH )
 #else
 #define DLOPEN( file_path ) dlopen( file_path, RTLD_NOW|RTLD_GLOBAL )
 #endif
+
+
 SharedLibrary::SharedLibrary( void* handle )
   : handle( handle )
 { }
+
 SharedLibrary::~SharedLibrary()
 {
   if ( handle != NULL )
@@ -1825,6 +2032,7 @@ SharedLibrary::~SharedLibrary()
 #endif
   }
 }
+
 void* SharedLibrary::getFunction
 (
   const char* function_name,
@@ -1842,6 +2050,7 @@ void* SharedLibrary::getFunction
   else
     return missing_function_return_value;
 }
+
 auto_SharedLibrary SharedLibrary::open
 (
   const Path& file_prefix,
@@ -1849,6 +2058,7 @@ auto_SharedLibrary SharedLibrary::open
 )
 {
   char file_path[PATH_MAX];
+
   void* handle;
   if ( ( handle = DLOPEN( file_prefix ) ) != NULL )
     return new SharedLibrary( handle );
@@ -1912,6 +2122,7 @@ auto_SharedLibrary SharedLibrary::open
               if ( ( handle = DLOPEN( file_path ) ) != NULL )
                 return new SharedLibrary( handle );
             }
+
             last_slash--;
             while ( *last_slash != PATH_SEPARATOR ) last_slash--;
           }
@@ -1919,18 +2130,19 @@ auto_SharedLibrary SharedLibrary::open
       }
     }
   }
+
   return NULL;
 }
 
 
 // stat.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
 #pragma warning( push )
 #pragma warning( disable: 4100 )
 #endif
+
+
 Stat::Stat()
 :
 #ifndef _WIN32
@@ -1955,6 +2167,7 @@ Stat::Stat()
   attributes( static_cast<uint32_t>( -1 ) )
 #endif
 { }
+
 Stat::Stat( const Stat& stbuf )
 :
 #ifndef _WIN32
@@ -1979,6 +2192,7 @@ Stat::Stat( const Stat& stbuf )
   attributes( stbuf.get_attributes() )
 #endif
 { }
+
 #ifdef _WIN32
 Stat::Stat
 (
@@ -1998,6 +2212,7 @@ Stat::Stat
     ctime( ctime ),
     attributes( attributes )
 { }
+
 Stat::Stat( const BY_HANDLE_FILE_INFORMATION& bhfi )
   : mode
     (
@@ -2016,6 +2231,7 @@ Stat::Stat( const BY_HANDLE_FILE_INFORMATION& bhfi )
   size.HighPart = bhfi.nFileSizeHigh;
   this->size = static_cast<size_t>( size.QuadPart );
 }
+
 Stat::Stat( const WIN32_FIND_DATA& find_data )
   : mode
     (
@@ -2034,6 +2250,7 @@ Stat::Stat( const WIN32_FIND_DATA& find_data )
   size.HighPart = find_data.nFileSizeHigh;
   this->size = static_cast<size_t>( size.QuadPart );
 }
+
 Stat::Stat
 (
   uint32_t nNumberOfLinks,
@@ -2091,6 +2308,7 @@ Stat::Stat
   blocks( blocks )
 { }
 #endif
+
 Stat::Stat( const struct stat& stbuf )
   :
 #ifndef _WIN32
@@ -2115,6 +2333,7 @@ Stat::Stat( const struct stat& stbuf )
     blocks( stbuf.st_blocks )
 #endif
 { }
+
 #ifdef _WIN32
 uint32_t Stat::get_attributes() const
 {
@@ -2134,6 +2353,7 @@ uint32_t Stat::get_attributes() const
 #endif
 }
 #endif
+
 Stat& Stat::operator=( const Stat& other )
 {
 #ifndef _WIN32
@@ -2159,6 +2379,7 @@ Stat& Stat::operator=( const Stat& other )
 #endif
   return *this;
 }
+
 bool Stat::operator==( const Stat& other ) const
 {
   return
@@ -2184,12 +2405,14 @@ bool Stat::operator==( const Stat& other ) const
          get_blocks() == other.get_blocks();
 #endif
 }
+
 Stat::operator std::string() const
 {
   std::ostringstream os;
   operator<<( os, *this );
   return os.str();
 }
+
 Stat::operator struct stat() const
 {
   struct stat stbuf;
@@ -2215,6 +2438,7 @@ Stat::operator struct stat() const
 #endif
   return stbuf;
 }
+
 #ifdef _WIN32
 Stat::operator BY_HANDLE_FILE_INFORMATION() const
 {
@@ -2230,6 +2454,7 @@ Stat::operator BY_HANDLE_FILE_INFORMATION() const
   bhfi.nNumberOfLinks = get_nlink();
   return bhfi;
 }
+
 Stat::operator WIN32_FIND_DATA() const
 {
   WIN32_FIND_DATA find_data;
@@ -2244,50 +2469,61 @@ Stat::operator WIN32_FIND_DATA() const
   return find_data;
 }
 #endif
+
 #ifndef _WIN32
 void Stat::set_dev( dev_t dev )
 {
   this->dev = dev;
 }
+
 void Stat::set_ino( ino_t ino )
 {
   this->ino = ino;
 }
 #endif
+
 void Stat::set_mode( mode_t mode )
 {
   this->mode = mode;
 }
+
 void Stat::set_nlink( nlink_t nlink )
 {
   this->nlink = nlink;
 }
+
 #ifndef _WIN32
 void Stat::set_uid( uid_t uid )
 {
   this->uid = uid;
 }
+
 void Stat::set_gid( gid_t gid )
 {
   this->gid = gid;
 }
+
 void Stat::set_rdev( dev_t )
 {
   this->rdev = rdev;
 }
 #endif
+
 void Stat::set_size( uint64_t size )
 {
   this->size = size;
 }
+
 void Stat::set_atime( const Time& atime )
 {
   this->atime = atime;
 }
+
 void Stat::set_mtime( const Time& mtime )
 {
   this->mtime = mtime;
 }
+
 void Stat::set_ctime( const Time& ctime )
 {
   this->ctime = ctime;
@@ -2302,19 +2538,19 @@ void Stat::set_blksize( blksize_t blksize )
 {
   this->blksize = blksize;
 }
+
 void Stat::set_blocks( blkcnt_t blocks )
 {
   this->blocks = blocks;
 }
 #endif
+
 #ifdef _WIN32
 #pragma warning( pop )
 #endif
 
 
 // thread.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -2327,17 +2563,21 @@ void Stat::set_blocks( blkcnt_t blocks )
 #include <sys/pset.h>
 #endif
 #endif
+
+
 Thread::Thread()
 {
   handle = 0;
   id = 0;
 }
+
 Thread::~Thread()
 {
 #ifdef _WIN32
   if ( handle ) CloseHandle( handle );
 #endif
 }
+
 void* Thread::getspecific( unsigned long key )
 {
 #ifdef _WIN32
@@ -2346,6 +2586,7 @@ void* Thread::getspecific( unsigned long key )
     return pthread_getspecific( key );
 #endif
 }
+
 unsigned long Thread::gettid()
 {
 #if defined(_WIN32)
@@ -2358,6 +2599,7 @@ unsigned long Thread::gettid()
   return 0;
 #endif
 }
+
 unsigned long Thread::key_create()
 {
 #ifdef _WIN32
@@ -2368,6 +2610,7 @@ unsigned long Thread::key_create()
   return key;
 #endif
 }
+
 void Thread::nanosleep( uint64_t timeout_ns )
 {
 #ifdef _WIN32
@@ -2377,6 +2620,7 @@ void Thread::nanosleep( uint64_t timeout_ns )
   ::nanosleep( &timeout_ts, NULL );
 #endif
 }
+
 #ifdef _WIN32
 //
 // Usage: SetThreadName (-1, "MainThread");
@@ -2391,6 +2635,7 @@ typedef struct tagTHREADNAME_INFO
 }
 THREADNAME_INFO;
 #endif
+
 void Thread::set_name( const char* thread_name )
 {
 #ifdef _WIN32
@@ -2399,6 +2644,7 @@ void Thread::set_name( const char* thread_name )
   info.szName = thread_name;
   info.dwThreadID = id;
   info.dwFlags = 0;
+
   __try
   {
       RaiseException
@@ -2413,6 +2659,7 @@ void Thread::set_name( const char* thread_name )
   {}
 #endif
 }
+
 bool Thread::set_processor_affinity( unsigned short logical_processor_i )
 {
   if ( id != 0 )
@@ -2433,6 +2680,7 @@ bool Thread::set_processor_affinity( unsigned short logical_processor_i )
   else
     return false;
 }
+
 bool Thread::set_processor_affinity
 (
   const ProcessorSet& logical_processor_set
@@ -2458,6 +2706,7 @@ bool Thread::set_processor_affinity
   else
     return false;
 }
+
 void Thread::setspecific( unsigned long key, void* value )
 {
 #ifdef _WIN32
@@ -2466,6 +2715,7 @@ void Thread::setspecific( unsigned long key, void* value )
   pthread_setspecific( key, value );
 #endif
 }
+
 void Thread::start()
 {
 #ifdef _WIN32
@@ -2478,6 +2728,7 @@ void Thread::start()
   pthread_attr_destroy( &attr );
 #endif
 }
+
 #ifdef _WIN32
 unsigned long __stdcall Thread::thread_stub( void* this_ )
 #else
@@ -2491,9 +2742,12 @@ void* Thread::thread_stub( void* this_ )
 #elif defined(__sun)
   static_cast<Thread*>( this_ )->id = thr_self();
 #endif
+
   static_cast<Thread*>( this_ )->run();
+
   return 0;
 }
+
 void Thread::yield()
 {
 #if defined(_WIN32)
@@ -2509,21 +2763,24 @@ void Thread::yield()
 
 
 // time.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #if defined(_WIN32)
 #include <windows.h> // For FILETIME
 #include <winsock.h> // For timeval
 #elif defined(__MACH__)
 #include <sys/time.h> // For gettimeofday
 #endif
+
+
 const char* HTTPDaysOfWeek[]
   = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
+
 const char* ISOMonths[]
   = {
       "Jan", "Feb", "Mar", "Apr", "May", "Jun",
       "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     };
+
+
 #ifdef _WIN32
 static inline ULONGLONG FILETIMEToUnixTimeNS( const FILETIME& file_time )
 {
@@ -2536,10 +2793,12 @@ static inline ULONGLONG FILETIMEToUnixTimeNS( const FILETIME& file_time )
   file_time_combined.QuadPart *= 100; // Into nanoseconds
   return file_time_combined.QuadPart;
 }
+
 static inline ULONG FILETIMEToUnixTimeS( const FILETIME& file_time )
 {
   return static_cast<ULONG>( FILETIMEToUnixTimeNS( file_time ) / 1000000000 );
 }
+
 static inline ULONGLONG FILETIMEToUnixTimeNS( const FILETIME* file_time )
 {
   if ( file_time )
@@ -2547,6 +2806,7 @@ static inline ULONGLONG FILETIMEToUnixTimeNS( const FILETIME* file_time )
   else
     return 0;
 }
+
 // Adapted from http://support.microsoft.com/kb/167296
 static inline FILETIME UnixTimeSToFILETIME( uint32_t unix_time_s )
 {
@@ -2556,6 +2816,7 @@ static inline FILETIME UnixTimeSToFILETIME( uint32_t unix_time_s )
  file_time.dwHighDateTime = ll >> 32;
  return file_time;
 }
+
 static inline FILETIME UnixTimeNSToFILETIME( uint64_t unix_time_ns )
 {
   // Add the difference in nanoseconds between
@@ -2568,6 +2829,7 @@ static inline FILETIME UnixTimeNSToFILETIME( uint64_t unix_time_ns )
   file_time.dwHighDateTime = unix_time_100_ns_intervals >> 32;
   return file_time;
 }
+
 static inline SYSTEMTIME UnixTimeNSToUTCSYSTEMTIME( uint64_t unix_time_ns )
 {
   FILETIME file_time = UnixTimeNSToFILETIME( unix_time_ns );
@@ -2575,6 +2837,7 @@ static inline SYSTEMTIME UnixTimeNSToUTCSYSTEMTIME( uint64_t unix_time_ns )
   FileTimeToSystemTime( &file_time, &system_time );
   return system_time;
 }
+
 static inline SYSTEMTIME UnixTimeNSToLocalSYSTEMTIME( uint64_t unix_time_ns )
 {
   SYSTEMTIME utc_system_time = UnixTimeNSToUTCSYSTEMTIME( unix_time_ns );
@@ -2590,11 +2853,13 @@ static inline SYSTEMTIME UnixTimeNSToLocalSYSTEMTIME( uint64_t unix_time_ns )
   return local_system_time;
 }
 #endif
+
 double Time::getCurrentUnixTimeMS()
 {
   return static_cast<double>( getCurrentUnixTimeNS() ) /
          static_cast<double>( NS_IN_MS );
 }
+
 uint64_t Time::getCurrentUnixTimeNS()
 {
 #if defined(_WIN32)
@@ -2612,20 +2877,24 @@ uint64_t Time::getCurrentUnixTimeNS()
   return ts.tv_sec * NS_IN_S + ts.tv_nsec;
 #endif
 }
+
 double Time::getCurrentUnixTimeS()
 {
   return static_cast<double>( getCurrentUnixTimeNS() ) /
          static_cast<double>( NS_IN_S );
 }
+
 Time::Time( const struct timeval& tv )
 {
   unix_time_ns = tv.tv_sec * NS_IN_S + tv.tv_usec * NS_IN_US;
 }
+
 #ifdef _WIN32
 Time::Time( const FILETIME& file_time )
 {
   unix_time_ns = FILETIMEToUnixTimeNS( file_time );
 }
+
 Time::Time( const FILETIME* file_time )
 {
   unix_time_ns = FILETIMEToUnixTimeNS( file_time );
@@ -2636,12 +2905,14 @@ Time::Time( const struct timespec& ts )
   unix_time_ns = ts.tv_sec * NS_IN_S + ts.tv_nsec;
 }
 #endif
+
 void Time::as_common_log_date_time( char* out_str, uint8_t out_str_len ) const
 {
 #ifdef _WIN32
   SYSTEMTIME local_system_time = UnixTimeNSToLocalSYSTEMTIME( unix_time_ns );
   TIME_ZONE_INFORMATION win_tz;
   GetTimeZoneInformation( &win_tz );
+
   // 10/Oct/2000:13:55:36 -0700
   _snprintf_s( out_str, out_str_len, _TRUNCATE,
           "%02d/%s/%04d:%02d:%02d:%02d %+0.4d",
@@ -2656,6 +2927,7 @@ void Time::as_common_log_date_time( char* out_str, uint8_t out_str_len ) const
   time_t unix_time_s = static_cast<time_t>( unix_time_ns / NS_IN_S );
   struct tm unix_tm;
   localtime_r( &unix_time_s, &unix_tm );
+
   snprintf( out_str, out_str_len,
             "%02d/%s/%04d:%02d:%02d:%02d %d",
             unix_tm.tm_mday,
@@ -2668,10 +2940,12 @@ void Time::as_common_log_date_time( char* out_str, uint8_t out_str_len ) const
                  // which is supposed to be secs west of GMT.
 #endif
 }
+
 void Time::as_http_date_time( char* out_str, uint8_t out_str_len ) const
 {
 #ifdef _WIN32
   SYSTEMTIME utc_system_time = UnixTimeNSToUTCSYSTEMTIME( unix_time_ns );
+
   _snprintf_s
   (
     out_str,
@@ -2690,6 +2964,7 @@ void Time::as_http_date_time( char* out_str, uint8_t out_str_len ) const
   time_t unix_time_s = static_cast<time_t>( unix_time_ns / NS_IN_S );
   struct tm unix_tm;
   gmtime_r( &unix_time_s, &unix_tm );
+
   snprintf
   (
     out_str,
@@ -2705,12 +2980,15 @@ void Time::as_http_date_time( char* out_str, uint8_t out_str_len ) const
   );
 #endif
 }
+
 /*
 uint64_t Time::parseHTTPDateTimeToUnixTimeNS( const char* date_str )
 {
   char day[4], month[4];
+
 #ifdef _WIN32
   SYSTEMTIME utc_system_time;
+
   int sf_ret
     = sscanf
       (
@@ -2724,8 +3002,10 @@ uint64_t Time::parseHTTPDateTimeToUnixTimeNS( const char* date_str )
         &utc_system_time.wMinute,
         &utc_system_time.wSecond
       );
+
   if ( sf_ret != 7 )
     return 0;
+
   for
   (
     utc_system_time.wDayOfWeek = 0;
@@ -2736,6 +3016,7 @@ uint64_t Time::parseHTTPDateTimeToUnixTimeNS( const char* date_str )
     if ( strcmp( day, HTTPDaysOfWeek[utc_system_time.wDayOfWeek] ) == 0 )
       break;
   }
+
   for
   (
     utc_system_time.wMonth = 0;
@@ -2747,11 +3028,13 @@ uint64_t Time::parseHTTPDateTimeToUnixTimeNS( const char* date_str )
       break;
   }
   utc_system_time.wMonth++; // Windows starts the months from 1
+
   FILETIME file_time;
   SystemTimeToFileTime( &utc_system_time, &file_time );
   return FILETIMEToUnixTimeNS( file_time );
 #else
   struct tm unix_tm;
+
   int sf_ret
     = sscanf
       (
@@ -2765,20 +3048,27 @@ uint64_t Time::parseHTTPDateTimeToUnixTimeNS( const char* date_str )
         &unix_tm.tm_min,
         &unix_tm.tm_sec
       );
+
   if ( sf_ret != 7 )
     return 0;
+
   unix_tm.tm_year -= 1900;
+
   for ( unix_tm.tm_wday = 0; unix_tm.tm_wday < 7; unix_tm.tm_wday++ )
     if ( strcmp( day, HTTPDaysOfWeek[unix_tm.tm_wday] ) == 0 )
       break;
+
   for ( unix_tm.tm_mon = 0; unix_tm.tm_mon < 12; unix_tm.tm_mon++ )
     if ( strcmp( month, ISOMonths[unix_tm.tm_mon] ) == 0 )
       break;
+
   time_t unix_time_s = mktime( &unix_tm ); // mktime is thread-safe
+
   return unix_time_s * NS_IN_S;
 #endif
 }
 */
+
 void Time::as_iso_date( char* out_str, uint8_t out_str_len ) const
 {
 #ifdef _WIN32
@@ -2808,10 +3098,12 @@ void Time::as_iso_date( char* out_str, uint8_t out_str_len ) const
   );
 #endif
 }
+
 void Time::as_iso_date_time( char* out_str, uint8_t out_str_len ) const
 {
 #ifdef _WIN32
   SYSTEMTIME local_system_time = UnixTimeNSToLocalSYSTEMTIME( unix_time_ns );
+
   _snprintf_s
   (
     out_str,
@@ -2829,6 +3121,7 @@ void Time::as_iso_date_time( char* out_str, uint8_t out_str_len ) const
   time_t unix_time_s = static_cast<time_t>(  unix_time_ns / NS_IN_S );
   struct tm unix_tm;
   localtime_r( &unix_time_s, &unix_tm );
+
   snprintf
   (
     out_str,
@@ -2843,6 +3136,7 @@ void Time::as_iso_date_time( char* out_str, uint8_t out_str_len ) const
   );
 #endif
 }
+
 Time::operator struct timeval() const
 {
   struct timeval tv;
@@ -2854,6 +3148,7 @@ Time::operator struct timeval() const
   tv.tv_usec = ( unix_time_ns % NS_IN_S ) / NS_IN_US;
   return tv;
 }
+
 #ifdef _WIN32
 Time::operator FILETIME() const
 {
@@ -2868,6 +3163,7 @@ Time::operator struct timespec() const
   return ts;
 }
 #endif
+
 Time::operator std::string() const
 {
   char iso_date_time[30];
@@ -2877,14 +3173,17 @@ Time::operator std::string() const
 
 
 // timer_queue.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
 #endif
+
 #include <queue>
 #include <utility>
+
+
 TimerQueue* TimerQueue::default_timer_queue = NULL;
+
+
 TimerQueue::TimerQueue()
 {
 #ifdef _WIN32
@@ -2893,11 +3192,13 @@ TimerQueue::TimerQueue()
   thread.start();
 #endif
 }
+
 #ifdef _WIN32
 TimerQueue::TimerQueue( HANDLE hTimerQueue )
   : hTimerQueue( hTimerQueue )
 { }
 #endif
+
 TimerQueue::~TimerQueue()
 {
 #ifdef _WIN32
@@ -2907,6 +3208,7 @@ TimerQueue::~TimerQueue()
   thread.stop();
 #endif
 }
+
 void TimerQueue::addTimer( yidl::runtime::auto_Object<Timer> timer )
 {
 #ifdef _WIN32
@@ -2925,11 +3227,13 @@ void TimerQueue::addTimer( yidl::runtime::auto_Object<Timer> timer )
   thread.addTimer( timer.release() );
 #endif
 }
+
 void TimerQueue::destroyDefaultTimerQueue()
 {
   if ( default_timer_queue != NULL )
     delete default_timer_queue;
 }
+
 TimerQueue& TimerQueue::getDefaultTimerQueue()
 {
   if ( default_timer_queue == NULL )
@@ -2940,6 +3244,8 @@ TimerQueue& TimerQueue::getDefaultTimerQueue()
 #endif
   return *default_timer_queue;
 }
+
+
 TimerQueue::Timer::Timer( const Time& timeout )
   : period( static_cast<uint64_t>( 0 ) ), timeout( timeout )
 {
@@ -2947,6 +3253,7 @@ TimerQueue::Timer::Timer( const Time& timeout )
   hTimer = hTimerQueue = NULL;
 #endif
 }
+
 TimerQueue::Timer::Timer( const Time& timeout, const Time& period )
   : period( period ), timeout( timeout )
 {
@@ -2956,8 +3263,10 @@ TimerQueue::Timer::Timer( const Time& timeout, const Time& period )
   deleted = false;
 #endif
 }
+
 TimerQueue::Timer::~Timer()
 { }
+
 void TimerQueue::Timer::delete_()
 {
 #ifdef _WIN32
@@ -2966,14 +3275,17 @@ void TimerQueue::Timer::delete_()
   deleted = true;
 #endif
 }
+
 #ifndef _WIN32
 TimerQueue::Thread::Thread()
 {
    should_run = true;
 }
+
 void TimerQueue::Thread::run()
 {
   set_name( "TimerQueueThread" );
+
   while ( should_run )
   {
     if ( timers.empty() )
@@ -3001,9 +3313,11 @@ void TimerQueue::Thread::run()
       {
         TimerQueue::Timer* timer = timers.top().second;
         timers.pop();
+
         if ( !timer->deleted )
         {
           timer->fire();
+
           if ( timer->get_period() != 0 )
           {
             timer->last_fire_time = Time();
@@ -3030,6 +3344,7 @@ void TimerQueue::Thread::run()
             (
               timers.top().first - current_unix_time_ns
             );
+
         if ( new_timer != NULL )
         {
           timers.push
@@ -3045,12 +3360,14 @@ void TimerQueue::Thread::run()
     }
   }
 }
+
 void TimerQueue::Thread::stop()
 {
   should_run = false;
   new_timers_queue.enqueue( NULL );
 }
 #endif
+
 #ifdef _WIN32
 VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
 (
@@ -3059,10 +3376,12 @@ VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
 )
 {
   Timer* this_ = static_cast<Timer*>( lpParameter );
+
   Time elapsed_time( Time() - this_->last_fire_time );
   if ( elapsed_time > 0 )
   {
     this_->fire();
+
     if ( this_->get_period() == 0 )
       TimerQueue::Timer::decRef( *this_ );
     else
@@ -3075,8 +3394,6 @@ VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
 
 
 // volume.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
 #pragma warning( push )
@@ -3106,6 +3423,8 @@ VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
 #endif
 #endif
 #endif
+
+
 namespace YIELD
 {
   class readdir_to_listdirCallback : public Volume::readdirCallback
@@ -3114,28 +3433,35 @@ namespace YIELD
     readdir_to_listdirCallback( Volume::listdirCallback& listdir_callback )
       : listdir_callback( listdir_callback )
     { }
+
     readdir_to_listdirCallback& operator=( const readdir_to_listdirCallback& )
     {
         return *this;
     }
+
     // Volume::readdirCallback
     bool operator()( const Path& dirent_name, auto_Stat stbuf )
     {
       return listdir_callback( dirent_name );
     }
+
   private:
     Volume::listdirCallback& listdir_callback;
   };
+
+
   class rmtree_readdirCallback : public Volume::readdirCallback
   {
   public:
     rmtree_readdirCallback( const Path& base_dir_path, Volume& volume )
       : base_dir_path( base_dir_path ), volume( volume )
     { }
+
     rmtree_readdirCallback& operator=( const rmtree_readdirCallback& )
     {
       return *this;
     }
+
     virtual bool operator()( const Path& path, auto_Stat stbuf )
     {
       if ( stbuf->ISDIR() )
@@ -3143,30 +3469,38 @@ namespace YIELD
       else
         return volume.unlink( base_dir_path + path );
     }
+
   private:
     const Path& base_dir_path;
     Volume& volume;
   };
+
+
   class SynclistdirCallback : public Volume::listdirCallback
   {
   public:
     SynclistdirCallback( std::vector<Path>& out_names )
       : out_names( out_names )
     { }
+
     SynclistdirCallback& operator=( const SynclistdirCallback& )
     {
       return *this;
     }
+
     // Volume::listdirCallback
     bool operator()( const Path& name )
     {
       out_names.push_back( name );
       return true;
     }
+
   private:
     std::vector<Path>& out_names;
   };
 };
+
+
 bool Volume::access( const Path& path, int amode )
 {
 #ifdef _WIN32
@@ -3176,6 +3510,7 @@ bool Volume::access( const Path& path, int amode )
   return ::access( path, amode ) >= 0;
 #endif
 }
+
 #ifndef _WIN32
 bool Volume::chmod( const Path& path, mode_t mode )
 {
@@ -3183,6 +3518,7 @@ bool Volume::chmod( const Path& path, mode_t mode )
   stbuf->set_mode( mode );
   return setattr( path, stbuf, SETATTR_MODE );
 }
+
 bool Volume::chown( const Path& path, uid_t uid, uid_t gid )
 {
   auto_Stat stbuf( new Stat );
@@ -3191,28 +3527,34 @@ bool Volume::chown( const Path& path, uid_t uid, uid_t gid )
   return setattr( path, stbuf, SETATTR_UID|SETATTR_GID );
 }
 #endif
+
 auto_File Volume::creat( const Path& path )
 {
   return creat( path, FILE_MODE_DEFAULT );
 }
+
 auto_File Volume::creat( const Path& path, mode_t mode )
 {
   return open( path, O_CREAT|O_WRONLY|O_TRUNC, mode );
 }
+
 bool Volume::exists( const Path& path )
 {
   return getattr( path ) != NULL;
 }
+
 bool Volume::isdir( const Path& path )
 {
   auto_Stat stbuf( getattr( path ) );
   return stbuf != NULL && stbuf->ISDIR();
 }
+
 bool Volume::isfile( const Path& path )
 {
   auto_Stat stbuf( getattr( path ) );
   return stbuf != NULL && stbuf->ISREG();
 }
+
 auto_Stat Volume::getattr( const Path& path )
 {
 #ifdef _WIN32
@@ -3230,6 +3572,7 @@ auto_Stat Volume::getattr( const Path& path )
 #endif
   return NULL;
 }
+
 bool Volume::getxattr
 (
   const Path& path,
@@ -3252,8 +3595,10 @@ bool Volume::getxattr
 #else
   errno = ENOTSUP;
 #endif
+
   return false;
 }
+
 bool Volume::link( const Path& old_path, const Path& new_path )
 {
 #ifdef _WIN32
@@ -3262,10 +3607,12 @@ bool Volume::link( const Path& old_path, const Path& new_path )
   return ::symlink( old_path, new_path ) != -1;
 #endif
 }
+
 bool Volume::listdir( const Path& path, listdirCallback& callback )
 {
   return listdir( path, Path(), callback );
 }
+
 bool Volume::listdir
 (
   const Path& path,
@@ -3276,10 +3623,12 @@ bool Volume::listdir
   readdir_to_listdirCallback readdir_callback( callback );
   return readdir( path, match_file_name_prefix, readdir_callback );
 }
+
 bool Volume::listdir( const Path& path, std::vector<Path>& out_names )
 {
   return listdir( path, Path(), out_names );
 }
+
 bool Volume::listdir
 (
   const Path& path,
@@ -3290,6 +3639,7 @@ bool Volume::listdir
   SynclistdirCallback listdir_callback( out_names );
   return listdir( path, match_file_name_prefix, listdir_callback );
 }
+
 bool Volume::listxattr( const Path& path, std::vector<std::string>& out_names )
 {
 #if defined(YIELD_HAVE_XATTR_H)
@@ -3314,20 +3664,25 @@ bool Volume::listxattr( const Path& path, std::vector<std::string>& out_names )
 #else
   errno = ENOTSUP;
 #endif
+
   return false;
 }
+
 bool Volume::makedirs( const Path& path )
 {
   return mktree( path, DIRECTORY_MODE_DEFAULT );
 }
+
 bool Volume::makedirs( const Path& path, mode_t mode )
 {
   return mktree( path, mode );
 }
+
 bool Volume::mkdir( const Path& path )
 {
   return mkdir( path, DIRECTORY_MODE_DEFAULT );
 }
+
 bool Volume::mkdir( const Path& path, mode_t mode )
 {
 #ifdef _WIN32
@@ -3336,32 +3691,41 @@ bool Volume::mkdir( const Path& path, mode_t mode )
   return ::mkdir( path, mode ) != -1;
 #endif
 }
+
 bool Volume::mktree( const Path& path )
 {
   return mktree( path, DIRECTORY_MODE_DEFAULT );
 }
+
 bool Volume::mktree( const Path& path, mode_t mode )
 {
   bool ret = true;
+
   std::pair<Path, Path> path_parts = path.split();
   if ( !path_parts.first.empty() )
     ret &= mktree( path_parts.first, mode );
+
   if ( !exists( path ) && !mkdir( path, mode ) )
       return false;
+
   return ret;
 }
+
 auto_File Volume::open( const Path& path )
 {
   return open( path, O_RDONLY, FILE_MODE_DEFAULT, 0 );
 }
+
 auto_File Volume::open( const Path& path, uint32_t flags )
 {
   return open( path, flags, FILE_MODE_DEFAULT, 0 );
 }
+
 auto_File Volume::open( const Path& path, uint32_t flags, mode_t mode )
 {
   return open( path, flags, mode, 0 );
 }
+
 auto_File
 Volume::open
 (
@@ -3375,6 +3739,7 @@ Volume::open
   DWORD file_access_flags = 0,
         file_create_flags = 0,
         file_open_flags = attributes|FILE_FLAG_SEQUENTIAL_SCAN;
+
   if ( ( flags & O_APPEND ) == O_APPEND )
     file_access_flags |= FILE_APPEND_DATA;
   else if ( ( flags & O_RDWR ) == O_RDWR )
@@ -3383,6 +3748,7 @@ Volume::open
     file_access_flags |= GENERIC_WRITE;
   else
     file_access_flags |= GENERIC_READ;
+
   if ( ( flags & O_CREAT ) == O_CREAT )
   {
     if ( ( flags & O_TRUNC ) == O_TRUNC )
@@ -3392,16 +3758,22 @@ Volume::open
   }
   else
     file_create_flags = OPEN_EXISTING;
+
 //  if ( ( flags & O_SPARSE ) == O_SPARSE )
 //    file_open_flags |= FILE_ATTRIBUTE_SPARSE_FILE;
+
   if ( ( flags & O_SYNC ) == O_SYNC )
     file_open_flags |= FILE_FLAG_WRITE_THROUGH;
+
   if ( ( flags & O_DIRECT ) == O_DIRECT )
     file_open_flags |= FILE_FLAG_NO_BUFFERING;
+
   if ( ( flags & O_ASYNC ) == O_ASYNC )
     file_open_flags |= FILE_FLAG_OVERLAPPED;
+
   if ( ( flags & O_HIDDEN ) == O_HIDDEN )
     file_open_flags = FILE_ATTRIBUTE_HIDDEN;
+
   HANDLE fd = CreateFileW
               (
                 path,
@@ -3412,6 +3784,7 @@ Volume::open
                 file_open_flags,
                 NULL
               );
+
   if ( fd != INVALID_HANDLE_VALUE )
   {
     if ( ( flags & O_TRUNC ) == O_TRUNC && ( flags & O_CREAT ) != O_CREAT )
@@ -3419,6 +3792,7 @@ Volume::open
       SetFilePointer( fd, 0, NULL, FILE_BEGIN );
       SetEndOfFile( fd );
     }
+
     return new File( fd );
   }
 #else
@@ -3426,12 +3800,15 @@ Volume::open
   if ( fd != -1 )
     return new File( fd );
 #endif
+
   return NULL;
 }
+
 bool Volume::readdir( const Path& path, readdirCallback& callback )
 {
   return readdir( path, Path(), callback );
 }
+
 bool
 Volume::readdir
 (
@@ -3449,6 +3826,7 @@ Volume::readdir
   (
     static_cast<const std::wstring&>( match_file_name_prefix )
   ).append( L"*" );
+
   WIN32_FIND_DATA find_data;
   HANDLE dir_handle = FindFirstFileW( search_pattern.c_str(), &find_data );
   if ( dir_handle != INVALID_HANDLE_VALUE )
@@ -3465,7 +3843,9 @@ Volume::readdir
         }
       }
     } while ( FindNextFileW( dir_handle, &find_data ) );
+
     FindClose( dir_handle );
+
     return true;
   }
   else
@@ -3495,9 +3875,12 @@ Volume::readdir
           }
         }
       }
+
       next_dirent = ::readdir( dir_handle );
     }
+
     closedir( dir_handle );
+
     return true;
   }
   else
@@ -3506,6 +3889,7 @@ Volume::readdir
   return false;
 #endif
 }
+
 auto_Path Volume::readlink( const Path& path )
 {
 #ifdef _WIN32
@@ -3520,6 +3904,7 @@ auto_Path Volume::readlink( const Path& path )
     return NULL;
 #endif
 }
+
 bool Volume::removexattr( const Path& path, const std::string& name )
 {
 #if defined(YIELD_HAVE_XATTR_H)
@@ -3531,6 +3916,7 @@ bool Volume::removexattr( const Path& path, const std::string& name )
 #endif
   return false;
 }
+
 bool Volume::rename( const Path& from_path, const Path& to_path )
 {
 #ifdef _WIN32
@@ -3539,6 +3925,7 @@ bool Volume::rename( const Path& from_path, const Path& to_path )
   return ::rename( from_path, to_path ) != -1;
 #endif
 }
+
 bool Volume::rmdir( const Path& path )
 {
 #ifdef _WIN32
@@ -3547,6 +3934,7 @@ bool Volume::rmdir( const Path& path )
   return ::rmdir( path ) != -1;
 #endif
 }
+
 bool Volume::rmtree( const Path& path )
 {
   auto_Stat path_stat = stat( path );
@@ -3561,6 +3949,7 @@ bool Volume::rmtree( const Path& path )
   else
     return unlink( path );
 }
+
 bool Volume::setattr( const Path& path, auto_Stat stbuf, uint32_t to_set )
 {
 #ifdef _WIN32
@@ -3577,6 +3966,7 @@ bool Volume::setattr( const Path& path, auto_Stat stbuf, uint32_t to_set )
       FILETIME ftCreationTime = stbuf->get_ctime(),
                ftLastAccessTime = stbuf->get_atime(),
                ftLastWriteTime = stbuf->get_mtime();
+
       return SetFileTime
              (
                *file,
@@ -3591,6 +3981,7 @@ bool Volume::setattr( const Path& path, auto_Stat stbuf, uint32_t to_set )
     else
       return false;
   }
+
   if ( ( to_set & SETATTR_ATTRIBUTES ) == SETATTR_ATTRIBUTES )
   {
     if ( SetFileAttributes( path, stbuf->get_attributes() ) == 0 )
@@ -3602,6 +3993,7 @@ bool Volume::setattr( const Path& path, auto_Stat stbuf, uint32_t to_set )
     if ( ::chmod( path, stbuf->get_mode() ) == -1 )
       return false;
   }
+
   if ( ( to_set & SETATTR_UID ) == SETATTR_UID )
   {
     if ( ( to_set & SETATTR_GID ) == SETATTR_GID ) // Change both
@@ -3620,6 +4012,7 @@ bool Volume::setattr( const Path& path, auto_Stat stbuf, uint32_t to_set )
     if ( ::chown( path, -1, stbuf->get_gid() ) == -1 )
       return false;
   }
+
   if
   (
     ( to_set & SETATTR_ATIME ) == SETATTR_ATIME ||
@@ -3633,8 +4026,10 @@ bool Volume::setattr( const Path& path, auto_Stat stbuf, uint32_t to_set )
       return false;
   }
 #endif
+
   return true;
 }
+
 bool
 Volume::setxattr
 (
@@ -3660,10 +4055,12 @@ Volume::setxattr
 #endif
   return false;
 }
+
 auto_Stat Volume::stat( const Path& path )
 {
   return getattr( path );
 }
+
 bool Volume::statvfs( const Path& path, struct statvfs& buffer )
 {
 #ifdef _WIN32
@@ -3683,12 +4080,16 @@ bool Volume::statvfs( const Path& path, struct statvfs& buffer )
   {
     buffer.f_bsize = 4096;
     buffer.f_frsize = 4096;
+
     buffer.f_blocks
       = static_cast<fsblkcnt_t>( uTotalNumberOfBytes.QuadPart / 4096 );
+
     buffer.f_bfree
       = static_cast<fsblkcnt_t>( uTotalNumberOfFreeBytes.QuadPart / 4096 );
+
     buffer.f_bavail
       = static_cast<fsblkcnt_t>( uFreeBytesAvailableToCaller.QuadPart / 4096 );
+
     buffer.f_namemax = PATH_MAX;
     return true;
   }
@@ -3698,6 +4099,7 @@ bool Volume::statvfs( const Path& path, struct statvfs& buffer )
   return ::statvfs( path, &buffer ) == 0;
 #endif
 }
+
 bool Volume::symlink( const Path& old_path, const Path& new_path )
 {
 #ifdef _WIN32
@@ -3707,15 +4109,18 @@ bool Volume::symlink( const Path& old_path, const Path& new_path )
   return ::symlink( old_path, new_path ) != -1;
 #endif
 }
+
 bool Volume::touch( const Path& path )
 {
   return touch( path, FILE_MODE_DEFAULT );
 }
+
 bool Volume::touch( const Path& path, mode_t mode )
 {
   auto_File file = creat( path, mode );
   return file != NULL;
 }
+
 bool Volume::truncate( const Path& path, uint64_t new_size )
 {
 #ifdef _WIN32
@@ -3731,6 +4136,7 @@ bool Volume::truncate( const Path& path, uint64_t new_size )
   return ::truncate( path, new_size ) >= 0;
 #endif
 }
+
 bool Volume::unlink( const Path& path )
 {
 #ifdef _WIN32
@@ -3739,6 +4145,7 @@ bool Volume::unlink( const Path& path )
   return ::unlink( path ) >= 0;
 #endif
 }
+
 bool
 Volume::utime
 (
@@ -3752,6 +4159,7 @@ Volume::utime
   stbuf->set_mtime( mtime );
   return setattr( path, stbuf, SETATTR_ATIME|SETATTR_MTIME );
 }
+
 bool
 Volume::utime
 (
@@ -3767,6 +4175,7 @@ Volume::utime
   stbuf->set_ctime( ctime );
   return setattr( path, stbuf, SETATTR_ATIME|SETATTR_MTIME|SETATTR_CTIME );
 }
+
 Path Volume::volname( const Path& path )
 {
 #ifdef _WIN32
@@ -3776,8 +4185,10 @@ Path Volume::volname( const Path& path )
   {
     std::string root_dir_path( path_parts[0] );
     root_dir_path.append( PATH_SEPARATOR_STRING );
+
     char volume_name[PATH_MAX],
          file_system_name[PATH_MAX];
+
     if
     (
       GetVolumeInformationA
@@ -3795,32 +4206,35 @@ Path Volume::volname( const Path& path )
       strnlen( volume_name, PATH_MAX ) > 0
     )
       return Path( volume_name );
+
     return root_dir_path;
   }
 #endif
   return Path();
 }
+
 #ifdef _WIN32
 #pragma warning( pop )
 #endif
 
 
 // xdr_marshaller.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 XDRMarshaller::XDRMarshaller()
 {
   buffer = new yidl::runtime::StringBuffer;
 }
+
 void XDRMarshaller::writeKey( const char* key )
 {
   if ( !in_map_stack.empty() && in_map_stack.back() && key != NULL )
     Marshaller::writeString( NULL, 0, key );
 }
+
 void XDRMarshaller::writeBoolean( const char* key, uint32_t tag, bool value )
 {
   writeInt32( key, tag, value ? 1 : 0 );
 }
+
 void
 XDRMarshaller::writeBuffer
 (
@@ -3829,13 +4243,16 @@ XDRMarshaller::writeBuffer
 )
 {
   writeInt32( key, tag, static_cast<int32_t>( value->size() ) );
+
   buffer->put( static_cast<void*>( *value ), value->size() );
+
   if ( value->size() % 4 != 0 )
   {
     static char zeros[] = { 0, 0, 0 };
     buffer->put( static_cast<const void*>( zeros ), 4 - ( value->size() % 4 ) );
   }
 }
+
 void XDRMarshaller::writeDouble( const char* key, uint32_t, double value )
 {
   writeKey( key );
@@ -3844,6 +4261,7 @@ void XDRMarshaller::writeDouble( const char* key, uint32_t, double value )
   uint64_value = Machine::htonll( uint64_value );
   buffer->put( &uint64_value, sizeof( uint64_value ) );
 }
+
 void XDRMarshaller::writeFloat( const char* key, uint32_t, float value )
 {
   writeKey( key );
@@ -3856,6 +4274,7 @@ void XDRMarshaller::writeFloat( const char* key, uint32_t, float value )
 #endif
   buffer->put( &uint32_value, sizeof( uint32_value ) );
 }
+
 void XDRMarshaller::writeInt32( const char* key, uint32_t, int32_t value )
 {
   writeKey( key );
@@ -3866,12 +4285,14 @@ void XDRMarshaller::writeInt32( const char* key, uint32_t, int32_t value )
 #endif
   buffer->put( &value, sizeof( value ) );
 }
+
 void XDRMarshaller::writeInt64( const char* key, uint32_t, int64_t value )
 {
   writeKey( key );
   value = Machine::htonll( value );
   buffer->put( &value, sizeof( value ) );
 }
+
 void
 XDRMarshaller::writeMap
 (
@@ -3885,6 +4306,7 @@ XDRMarshaller::writeMap
   value.marshal( *this );
   in_map_stack.pop_back();
 }
+
 void
 XDRMarshaller::writeSequence
 (
@@ -3896,6 +4318,7 @@ XDRMarshaller::writeSequence
   writeInt32( key, tag, static_cast<int32_t>( value.get_size() ) );
   value.marshal( *this );
 }
+
 void
 XDRMarshaller::writeString
 (
@@ -3913,6 +4336,7 @@ XDRMarshaller::writeString
     buffer->put( static_cast<const void*>( zeros ), 4 - ( value_len % 4 ) );
   }
 }
+
 void
 XDRMarshaller::writeStruct
 (
@@ -3927,11 +4351,10 @@ XDRMarshaller::writeStruct
 
 
 // xdr_unmarshaller.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 XDRUnmarshaller::XDRUnmarshaller( yidl::runtime::auto_Buffer buffer )
   : buffer( buffer )
 { }
+
 void XDRUnmarshaller::read( void* buffer, size_t buffer_len )
 {
 //#ifdef _DEBUG
@@ -3940,10 +4363,12 @@ void XDRUnmarshaller::read( void* buffer, size_t buffer_len )
 //#endif
   this->buffer->get( buffer, buffer_len );
 }
+
 bool XDRUnmarshaller::readBoolean( const char* key, uint32_t tag )
 {
   return readInt32( key, tag ) == 1;
 }
+
 void
 XDRUnmarshaller::readBuffer
 (
@@ -3962,6 +4387,7 @@ XDRUnmarshaller::readBuffer
     read( zeros, 4 - ( size % 4 ) );
   }
 }
+
 double XDRUnmarshaller::readDouble( const char*, uint32_t )
 {
   uint64_t uint64_value;
@@ -3977,6 +4403,7 @@ double XDRUnmarshaller::readDouble( const char*, uint32_t )
   );
   return double_value;
 }
+
 float XDRUnmarshaller::readFloat( const char*, uint32_t )
 {
   uint32_t uint32_value;
@@ -3996,6 +4423,7 @@ float XDRUnmarshaller::readFloat( const char*, uint32_t )
   );
   return float_value;
 }
+
 int32_t XDRUnmarshaller::readInt32( const char*, uint32_t )
 {
   int32_t value;
@@ -4006,12 +4434,14 @@ int32_t XDRUnmarshaller::readInt32( const char*, uint32_t )
   return Machine::ntohl( value );
 #endif
 }
+
 int64_t XDRUnmarshaller::readInt64( const char*, uint32_t )
 {
   int64_t value;
   read( &value, sizeof( value ) );
   return Machine::ntohll( value );
 }
+
 void
 XDRUnmarshaller::readMap
 (
@@ -4024,6 +4454,7 @@ XDRUnmarshaller::readMap
   for ( size_t i = 0; i < size; i++ )
     value.unmarshal( *this );
 }
+
 void
 XDRUnmarshaller::readSequence
 (
@@ -4039,6 +4470,7 @@ XDRUnmarshaller::readSequence
       value.unmarshal( *this );
   }
 }
+
 void
 XDRUnmarshaller::readString
 (
@@ -4048,6 +4480,7 @@ XDRUnmarshaller::readString
 )
 {
   size_t str_len = readInt32( key, tag );
+
   if ( str_len < UINT16_MAX )
   {
     if ( str_len != 0 )
@@ -4057,12 +4490,14 @@ XDRUnmarshaller::readString
         padded_str_len = str_len;
       else
         padded_str_len = str_len + 4 - padded_str_len;
+
       value.resize( padded_str_len );
       read( const_cast<char*>( value.c_str() ), padded_str_len );
       value.resize( str_len );
     }
   }
 }
+
 void
 XDRUnmarshaller::readStruct
 (

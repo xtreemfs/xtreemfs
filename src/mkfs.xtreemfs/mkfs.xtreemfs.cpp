@@ -1,5 +1,31 @@
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+// Copyright (c) 2010 Minor Gordon
+// All rights reserved
+// 
+// This source file is part of the XtreemFS project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the XtreemFS project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #include "xtreemfs/main.h"
 using namespace org::xtreemfs::interfaces;
@@ -16,77 +42,77 @@ namespace mkfs_xtreemfs
   public:
     Main()
       : xtreemfs::Main
-        ( 
-          "mkfs.xtreemfs", 
-          "create a new volume", 
+        (
+          "mkfs.xtreemfs",
+          "create a new volume",
           "[oncrpc://]<dir or mrc host>[:port]/<volume name>"
         )
     {
       addOption
-      ( 
-        MKFS_XTREEMFS_OPTION_ACCESS_CONTROL_POLICY, 
-        "-a", 
-        "--access-control-policy", 
-        "NULL|POSIX|VOLUME" 
+      (
+        MKFS_XTREEMFS_OPTION_ACCESS_CONTROL_POLICY,
+        "-a",
+        "--access-control-policy",
+        "NULL|POSIX|VOLUME"
       );
       access_control_policy = ACCESS_CONTROL_POLICY_POSIX;
 
       addOption
-      ( 
-        MKFS_XTREEMFS_OPTION_MODE, 
+      (
+        MKFS_XTREEMFS_OPTION_MODE,
         "-m",
-        "--mode", 
-        "n" 
+        "--mode",
+        "n"
       );
       mode = YIELD::platform::Volume::DIRECTORY_MODE_DEFAULT;
 
       addOption
-      ( 
-        MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID, 
-        "-g", 
-        "--owner-group-id", 
-        "group id of owner" 
+      (
+        MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID,
+        "-g",
+        "--owner-group-id",
+        "group id of owner"
       );
 
       addOption
-      ( 
-        MKFS_XTREEMFS_OPTION_OWNER_USER_ID, 
-        "-u", 
-        "--owner-user-id", 
-        "user id of owner" 
+      (
+        MKFS_XTREEMFS_OPTION_OWNER_USER_ID,
+        "-u",
+        "--owner-user-id",
+        "user id of owner"
       );
 
       addOption
-      ( 
-        MKFS_XTREEMFS_OPTION_PASSWORD, 
-        "--password", NULL, 
-        "MRC's administrator password" 
+      (
+        MKFS_XTREEMFS_OPTION_PASSWORD,
+        "--password", NULL,
+        "MRC's administrator password"
       );
 
       addOption
-      ( 
-        MKFS_XTREEMFS_OPTION_STRIPING_POLICY, 
-        "-p", 
-        "--striping-policy", 
-        "NONE|RAID0" 
+      (
+        MKFS_XTREEMFS_OPTION_STRIPING_POLICY,
+        "-p",
+        "--striping-policy",
+        "NONE|RAID0"
       );
       striping_policy = STRIPING_POLICY_RAID0;
 
       addOption
-      ( 
-        MKFS_XTREEMFS_OPTION_STRIPING_POLICY_STRIPE_SIZE, 
-        "-s", 
-        "--striping-policy-stripe-size", 
-        "n" 
+      (
+        MKFS_XTREEMFS_OPTION_STRIPING_POLICY_STRIPE_SIZE,
+        "-s",
+        "--striping-policy-stripe-size",
+        "n"
       );
       striping_policy_stripe_size = 128;
 
       addOption
-      ( 
-        MKFS_XTREEMFS_OPTION_STRIPING_POLICY_WIDTH, 
-        "-w", 
-        "--striping-policy-width", 
-        "n" 
+      (
+        MKFS_XTREEMFS_OPTION_STRIPING_POLICY_WIDTH,
+        "-w",
+        "--striping-policy-width",
+        "n"
       );
       striping_policy_width = 1;
     }
@@ -97,7 +123,7 @@ namespace mkfs_xtreemfs
       MKFS_XTREEMFS_OPTION_ACCESS_CONTROL_POLICY = 20,
       MKFS_XTREEMFS_OPTION_MODE = 21,
       MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID = 22,
-      MKFS_XTREEMFS_OPTION_OWNER_USER_ID = 23,      
+      MKFS_XTREEMFS_OPTION_OWNER_USER_ID = 23,
       MKFS_XTREEMFS_OPTION_PASSWORD = 24,
       MKFS_XTREEMFS_OPTION_STRIPING_POLICY = 25,
       MKFS_XTREEMFS_OPTION_STRIPING_POLICY_STRIPE_SIZE = 26,
@@ -121,29 +147,29 @@ namespace mkfs_xtreemfs
 
       // Check if the URI passed on the command line has a port that's
       // the same as an MRC default port
-      if 
-      ( 
+      if
+      (
         dir_or_mrc_uri->get_port() != 0
         &&
         (
-          ( 
-            dir_or_mrc_uri->get_scheme() == ONCRPC_SCHEME && 
-            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPC_PORT_DEFAULT 
+          (
+            dir_or_mrc_uri->get_scheme() == ONCRPC_SCHEME &&
+            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPC_PORT_DEFAULT
           )
           ||
-          ( 
-            dir_or_mrc_uri->get_scheme() == ONCRPCS_SCHEME && 
-            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCS_PORT_DEFAULT 
+          (
+            dir_or_mrc_uri->get_scheme() == ONCRPCS_SCHEME &&
+            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCS_PORT_DEFAULT
           )
           ||
-          ( 
-            dir_or_mrc_uri->get_scheme() == ONCRPCG_SCHEME && 
-            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCG_PORT_DEFAULT 
+          (
+            dir_or_mrc_uri->get_scheme() == ONCRPCG_SCHEME &&
+            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCG_PORT_DEFAULT
           )
           ||
-          ( 
-            dir_or_mrc_uri->get_scheme() == ONCRPCU_SCHEME && 
-            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCU_PORT_DEFAULT 
+          (
+            dir_or_mrc_uri->get_scheme() == ONCRPCU_SCHEME &&
+            dir_or_mrc_uri->get_port() == MRCInterface::ONCRPCU_PORT_DEFAULT
           )
         )
       )
@@ -178,7 +204,7 @@ namespace mkfs_xtreemfs
 
           // Select a random MRC
           std::srand( static_cast<unsigned int>( std::time( NULL ) ) );
-          Service& mrc_service 
+          Service& mrc_service
             = mrc_services[std::rand() % mrc_services.size()];
 
           // Find an apppropriate address mapping
@@ -186,24 +212,24 @@ namespace mkfs_xtreemfs
             = dir_proxy->getAddressMappingsFromUUID( mrc_service.get_uuid() );
 
           for
-          (  
-            AddressMappingSet::const_iterator mrc_address_mapping_i = 
+          (
+            AddressMappingSet::const_iterator mrc_address_mapping_i =
               mrc_address_mappings->begin();
             mrc_address_mapping_i != mrc_address_mappings->end();
             ++mrc_address_mapping_i
           )
           {
-            if 
-            ( 
-              ( *mrc_address_mapping_i ).get_protocol() == 
-              dir_or_mrc_uri->get_scheme() 
+            if
+            (
+              ( *mrc_address_mapping_i ).get_protocol() ==
+              dir_or_mrc_uri->get_scheme()
             )
             {
-              mrc_uri 
+              mrc_uri
                 = new YIELD::ipc::URI( ( *mrc_address_mapping_i ).get_uri() );
               break;
             }
-          }  
+          }
 
           if ( mrc_uri == NULL )
           {
@@ -216,8 +242,8 @@ namespace mkfs_xtreemfs
               match_protocol = ONCRPC_SCHEME;
 
             for
-            (  
-              AddressMappingSet::const_iterator mrc_address_mapping_i = 
+            (
+              AddressMappingSet::const_iterator mrc_address_mapping_i =
                 mrc_address_mappings->begin();
               mrc_address_mapping_i != mrc_address_mappings->end();
               ++mrc_address_mapping_i
@@ -225,7 +251,7 @@ namespace mkfs_xtreemfs
             {
               if ( ( *mrc_address_mapping_i ).get_protocol() == match_protocol )
               {
-                mrc_uri 
+                mrc_uri
                  = new YIELD::ipc::URI( ( *mrc_address_mapping_i ).get_uri() );
                 break;
               }
@@ -238,15 +264,15 @@ namespace mkfs_xtreemfs
       }
 
       createMRCProxy( *mrc_uri, password.c_str() )->xtreemfs_mkvol
-      ( 
+      (
         org::xtreemfs::interfaces::Volume
         (
           access_control_policy,
           StripingPolicy
-          ( 
-            striping_policy, 
-            striping_policy_stripe_size, 
-            striping_policy_width 
+          (
+            striping_policy,
+            striping_policy_stripe_size,
+            striping_policy_width
           ),
           std::string(),
           mode,
@@ -268,15 +294,15 @@ namespace mkfs_xtreemfs
           case MKFS_XTREEMFS_OPTION_ACCESS_CONTROL_POLICY:
           {
             if ( strcmp( arg, "NULL" ) == 0 )
-              access_control_policy 
+              access_control_policy
                 = ACCESS_CONTROL_POLICY_NULL;
 
             else if ( strcmp( arg, "POSIX" ) == 0 )
-              access_control_policy 
+              access_control_policy
                 = ACCESS_CONTROL_POLICY_POSIX;
 
             else if ( strcmp( arg, "VOLUME" ) == 0 )
-              access_control_policy 
+              access_control_policy
                 = ACCESS_CONTROL_POLICY_VOLUME;
           }
           break;
@@ -289,21 +315,21 @@ namespace mkfs_xtreemfs
           }
           break;
 
-          case MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID: 
+          case MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID:
           {
-            owner_group_id = arg; 
+            owner_group_id = arg;
           }
           break;
 
-          case MKFS_XTREEMFS_OPTION_OWNER_USER_ID: 
+          case MKFS_XTREEMFS_OPTION_OWNER_USER_ID:
           {
-            owner_user_id = arg; 
+            owner_user_id = arg;
           }
           break;
 
           case MKFS_XTREEMFS_OPTION_PASSWORD:
           {
-            password = arg; 
+            password = arg;
           }
           break;
 
@@ -324,7 +350,7 @@ namespace mkfs_xtreemfs
 
           case MKFS_XTREEMFS_OPTION_STRIPING_POLICY_WIDTH:
           {
-            uint32_t new_striping_policy_width 
+            uint32_t new_striping_policy_width
               = static_cast<uint16_t>( atoi( arg ) );
 
             if ( new_striping_policy_width != 0 )
@@ -343,8 +369,8 @@ namespace mkfs_xtreemfs
         dir_or_mrc_uri = parseVolumeURI( files[0], volume_name );
       else
         throw YIELD::platform::Exception
-        ( 
-          "must specify the DIR or MRC host and volume name as a URI" 
+        (
+          "must specify the DIR or MRC host and volume name as a URI"
         );
     }
   };

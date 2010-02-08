@@ -1,5 +1,31 @@
-// Copyright 2003-2010 Minor Gordon.
-// This source comes from the yidl project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+// Copyright (c) 2010 Minor Gordon
+// All rights reserved
+// 
+// This source file is part of the yidl project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the yidl project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #ifndef _YIDL_H_
 #define _YIDL_H_
@@ -9,34 +35,34 @@
 #ifdef _WIN32
 // msstdint.h
 // ISO C9x  compliant stdint.h for Microsoft Visual Studio
-// Based on ISO/IEC 9899:TC2 Committee draft (May 6, 2005) WG14/N1124 
-// 
+// Based on ISO/IEC 9899:TC2 Committee draft (May 6, 2005) WG14/N1124
+//
 //  Copyright (c) 2006-2008 Alexander Chemeris
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
-// 
+//
 //   1. Redistributions of source code must retain the above copyright notice,
 //      this list of conditions and the following disclaimer.
-// 
+//
 //   2. Redistributions in binary form must reproduce the above copyright
 //      notice, this list of conditions and the following disclaimer in the
 //      documentation and/or other materials provided with the distribution.
-// 
+//
 //   3. The name of the author may be used to endorse or promote products
 //      derived from this software without specific prior written permission.
-// 
+//
 // THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
 // WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
 // MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
 // EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
 // SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
-// OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, 
+// OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
 // WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
 // OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 // ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-// 
+//
 ///////////////////////////////////////////////////////////////////////////////
 
 #include <limits.h>
@@ -46,7 +72,7 @@
 //   error C2733: second C linkage of overloaded function 'wmemchr' not allowed
 #if (_MSC_VER < 1300) && defined(__cplusplus)
    extern "C++" {
-#endif 
+#endif
 #     include <wchar.h>
 #if (_MSC_VER < 1300) && defined(__cplusplus)
    }
@@ -245,10 +271,10 @@ extern "C"
   __declspec( dllimport ) void __stdcall DebugBreak();
 
 	__int64 _InterlockedCompareExchange64
-  ( 
-    volatile __int64* current_value, 
-    __int64 new_value, 
-    __int64 old_value 
+  (
+    volatile __int64* current_value,
+    __int64 new_value,
+    __int64 old_value
   );
 
   __int64 _InterlockedIncrement64( volatile __int64* current_value );
@@ -259,23 +285,23 @@ extern "C"
 {
   __declspec( dllimport ) void __stdcall DebugBreak();
 
-  __declspec( dllimport ) long __stdcall 
+  __declspec( dllimport ) long __stdcall
   InterlockedCompareExchange
-  ( 
-    volatile long* current_value, 
-    long new_value, 
-    long old_value 
+  (
+    volatile long* current_value,
+    long new_value,
+    long old_value
   );
 
-  __declspec( dllimport ) long __stdcall 
+  __declspec( dllimport ) long __stdcall
   InterlockedIncrement
-  ( 
+  (
     volatile long* current_value
   );
 
-  __declspec( dllimport ) long __stdcall 
+  __declspec( dllimport ) long __stdcall
   InterlockedDecrement
-  ( 
+  (
     volatile long* current_value
   );
 }
@@ -286,9 +312,9 @@ extern "C"
 
 struct iovec // a WSABUF on 32-bit systems
 {
-  size_t iov_len; // the WSABUF .len is actually a ULONG, 
+  size_t iov_len; // the WSABUF .len is actually a ULONG,
                   // which is != size_t on Win64
-                  // That means that we have to copy and 
+                  // That means that we have to copy and
                   // truncate an iovec to a WSABUF on Win64.
                   // That's easier (in terms of warnings, use of sizeof, etc.)
                   // than making this a uint32_t, however.
@@ -303,11 +329,11 @@ static inline void DebugBreak()
 }
 
 inline void memcpy_s
-( 
-  void* dest, 
-  size_t dest_size, 
-  const void* src, 
-  size_t count 
+(
+  void* dest,
+  size_t dest_size,
+  const void* src,
+  size_t count
 )
 {
   memcpy( dest, src, count );
@@ -356,10 +382,10 @@ namespace yidl
 #endif
 
     static inline atomic_t atomic_cas
-    ( 
-      volatile atomic_t* current_value, 
-      atomic_t new_value, 
-      atomic_t old_value 
+    (
+      volatile atomic_t* current_value,
+      atomic_t new_value,
+      atomic_t old_value
     )
     {
 #if defined(_WIN64)
@@ -389,8 +415,8 @@ namespace yidl
         return old_value;
       }
       else
-        return *current_value;  
-#endif  
+        return *current_value;
+#endif
 #elif defined(__i386__)
       atomic_t prev;
       asm volatile(	"lock\n"
@@ -411,7 +437,7 @@ namespace yidl
               sync\n"
               "2:"
             : "=&r" ( prev ), "=m" ( *current_value )
-                  : "r" ( current_value ), "r" ( old_value ), "r" ( new_value ), 
+                  : "r" ( current_value ), "r" ( old_value ), "r" ( new_value ),
                     "m" ( *current_value )
                   : "cc", "memory"
                 );
@@ -545,93 +571,93 @@ namespace yidl
     };
 
 
-    // auto_Object isike auto_ptr, but using Object::decRef instead of delete; 
-    // an operator delete( void* ) on Object doesn't work, because the object 
+    // auto_Object isike auto_ptr, but using Object::decRef instead of delete;
+    // an operator delete( void* ) on Object doesn't work, because the object
     // is destructed before that call
     template <class ObjectType = Object>
-    class auto_Object 
+    class auto_Object
     {
     public:
-      auto_Object() 
-        : object( 0 ) 
+      auto_Object()
+        : object( 0 )
       { }
 
-      auto_Object( ObjectType* object ) 
-        : object( object ) 
+      auto_Object( ObjectType* object )
+        : object( object )
       { }
 
-      auto_Object( ObjectType& object ) 
-        : object( &object ) 
+      auto_Object( ObjectType& object )
+        : object( &object )
       { }
 
       auto_Object( const auto_Object<ObjectType>& other )
-      { 
-          object = Object::incRef( other.object ); 
+      {
+          object = Object::incRef( other.object );
       }
 
-      ~auto_Object() 
-      { 
-          Object::decRef( object ); 
+      ~auto_Object()
+      {
+          Object::decRef( object );
       }
 
-      inline ObjectType* get() const 
-      { 
-          return object; 
+      inline ObjectType* get() const
+      {
+          return object;
       }
 
       auto_Object& operator=( const auto_Object<ObjectType>& other )
-      { 
-        Object::decRef( this->object ); 
-        object = Object::incRef( other.object ); 
-        return *this; 
+      {
+        Object::decRef( this->object );
+        object = Object::incRef( other.object );
+        return *this;
       }
 
       auto_Object& operator=( ObjectType* object )
-      { 
-        Object::decRef( this->object ); 
-        this->object = object; 
-        return *this; 
+      {
+        Object::decRef( this->object );
+        this->object = object;
+        return *this;
       }
 
-      inline bool operator==( const auto_Object<ObjectType>& other ) const 
-      { 
-        return object == other.object; 
+      inline bool operator==( const auto_Object<ObjectType>& other ) const
+      {
+        return object == other.object;
       }
 
-      inline bool operator==( const ObjectType* other ) const 
-      { 
-        return object == other; 
+      inline bool operator==( const ObjectType* other ) const
+      {
+        return object == other;
       }
 
-      inline bool operator!=( const ObjectType* other ) const 
-      { 
-        return object != other; 
+      inline bool operator!=( const ObjectType* other ) const
+      {
+        return object != other;
       }
 
       // Creates sneaky bugs
-      // operator ObjectType*() const { return object; } 
+      // operator ObjectType*() const { return object; }
 
-      inline ObjectType* operator->() const 
-      { 
-        return get(); 
+      inline ObjectType* operator->() const
+      {
+        return get();
       }
 
-      inline ObjectType& operator*() const 
-      { 
-        return *get(); 
+      inline ObjectType& operator*() const
+      {
+        return *get();
       }
 
-      inline ObjectType* release() 
-      { 
-        ObjectType* temp_object = object; 
-        object = 0; 
-        return temp_object; 
+      inline ObjectType* release()
+      {
+        ObjectType* temp_object = object;
+        object = 0;
+        return temp_object;
       }
 
-      inline void reset( ObjectType* object ) 
-      { 
-        Object::decRef( this->object ); 
-        this->object = object; 
+      inline void reset( ObjectType* object )
+      {
+        Object::decRef( this->object );
+        this->object = object;
       }
 
     private:
@@ -652,16 +678,16 @@ namespace yidl
       // get: copy out of the buffer, advancing position
       virtual size_t get( void* into_buffer, size_t into_buffer_len ) = 0;
 
-      // Casts to get at the underlying buffer; 
+      // Casts to get at the underlying buffer;
       // may not be implemented by some buffers
-      operator char*() const 
-      { 
-        return static_cast<char*>( static_cast<void*>( *this ) ); 
+      operator char*() const
+      {
+        return static_cast<char*>( static_cast<void*>( *this ) );
       }
 
-      operator unsigned char*() const 
-      { 
-        return static_cast<unsigned char*>( static_cast<void*>( *this ) ); 
+      operator unsigned char*() const
+      {
+        return static_cast<unsigned char*>( static_cast<void*>( *this ) );
       }
 
       virtual operator void*() const = 0;
@@ -693,14 +719,14 @@ namespace yidl
       }
 
       // put: append bytes to the buffer, increases size but not position
-      size_t put( const char* from_string ) 
+      size_t put( const char* from_string )
       {
-        return put( from_string, strlen( from_string ) ); 
+        return put( from_string, strlen( from_string ) );
       }
 
-      size_t put( const std::string& from_string ) 
-      { 
-        return put( from_string.c_str(), from_string.size() ); 
+      size_t put( const std::string& from_string )
+      {
+        return put( from_string.c_str(), from_string.size() );
       }
 
       virtual size_t put( const void* from_buf, size_t from_buf_len ) = 0;
@@ -745,11 +771,11 @@ namespace yidl
         if ( into_buffer != NULL )
         {
           memcpy_s
-          ( 
-            into_buffer, 
-            into_buffer_len, 
-            static_cast<uint8_t*>( iov.iov_base ) + position(), 
-            into_buffer_len 
+          (
+            into_buffer,
+            into_buffer_len,
+            static_cast<uint8_t*>( iov.iov_base ) + position(),
+            into_buffer_len
           );
         }
 
@@ -770,18 +796,18 @@ namespace yidl
         if ( from_buffer != NULL && from_buffer != iov.iov_base )
         {
           memcpy_s
-          ( 
-            static_cast<uint8_t*>( iov.iov_base ) + iov.iov_len, 
-            capacity() - iov.iov_len, 
-            from_buffer, 
-            from_buffer_len 
+          (
+            static_cast<uint8_t*>( iov.iov_base ) + iov.iov_len,
+            capacity() - iov.iov_len,
+            from_buffer,
+            from_buffer_len
           );
         }
 
         iov.iov_len += from_buffer_len;
         return from_buffer_len;
       }
-      
+
       size_t size() const { return iov.iov_len; }
 
     protected:
@@ -805,8 +831,8 @@ namespace yidl
         : FixedBuffer( capacity )
       {
         iov.iov_base = new uint8_t[capacity];
-      } 
-      
+      }
+
       virtual ~HeapBuffer()
       {
         delete [] static_cast<uint8_t*>( iov.iov_base );
@@ -830,159 +856,159 @@ namespace yidl
       virtual ~Marshaller() { }
 
       virtual void writeBoolean
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        bool value 
+      (
+        const char* key,
+        uint32_t tag,
+        bool value
       ) = 0;
 
       virtual void writeBuffer
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        auto_Object<Buffer> value 
+      (
+        const char* key,
+        uint32_t tag,
+        auto_Object<Buffer> value
       ) = 0;
 
       virtual void writeFloat
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        float value ) 
-      { 
-        writeDouble( key, tag, value ); 
+      (
+        const char* key,
+        uint32_t tag,
+        float value )
+      {
+        writeDouble( key, tag, value );
       }
 
       virtual void writeDouble
-      (   
-        const char* key, 
-        uint32_t tag, 
-        double value 
+      (
+        const char* key,
+        uint32_t tag,
+        double value
       ) = 0;
 
       virtual void writeInt8
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        int8_t value 
-      ) 
-      { 
-        writeInt16( key, tag, value ); 
+      (
+        const char* key,
+        uint32_t tag,
+        int8_t value
+      )
+      {
+        writeInt16( key, tag, value );
       }
 
       virtual void writeInt16
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        int16_t value 
-      ) 
-      { 
-        writeInt32( key, tag, value ); 
+      (
+        const char* key,
+        uint32_t tag,
+        int16_t value
+      )
+      {
+        writeInt32( key, tag, value );
       }
 
       virtual void writeInt32
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        int32_t value 
-      ) 
-      { 
-        writeInt64( key, tag, value ); 
+      (
+        const char* key,
+        uint32_t tag,
+        int32_t value
+      )
+      {
+        writeInt64( key, tag, value );
       }
 
       virtual void writeInt64
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        int64_t value 
+      (
+        const char* key,
+        uint32_t tag,
+        int64_t value
       ) = 0;
 
       virtual void writeMap
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        const Map& value 
+      (
+        const char* key,
+        uint32_t tag,
+        const Map& value
       ) = 0;
 
       virtual void writeSequence
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        const Sequence& value 
+      (
+        const char* key,
+        uint32_t tag,
+        const Sequence& value
       ) = 0;
 
       virtual void writeStruct
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        const Struct& value 
+      (
+        const char* key,
+        uint32_t tag,
+        const Struct& value
       ) = 0;
 
       virtual void writeString
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        const std::string& value 
-      ) 
-      { 
-        writeString( key, tag, value.c_str(), value.size() ); 
+      (
+        const char* key,
+        uint32_t tag,
+        const std::string& value
+      )
+      {
+        writeString( key, tag, value.c_str(), value.size() );
       }
 
       virtual void writeString
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        const char* value 
-      ) 
-      { 
-        writeString( key, tag, value, strnlen( value, UINT16_MAX ) ); 
+      (
+        const char* key,
+        uint32_t tag,
+        const char* value
+      )
+      {
+        writeString( key, tag, value, strnlen( value, UINT16_MAX ) );
       }
 
       virtual void writeString
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        const char* value, 
-        size_t value_len 
+      (
+        const char* key,
+        uint32_t tag,
+        const char* value,
+        size_t value_len
       ) = 0;
 
       virtual void writeUint8
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        uint8_t value 
-      ) 
-      { 
-        writeInt8( key, tag, static_cast<int8_t>( value ) ); 
+      (
+        const char* key,
+        uint32_t tag,
+        uint8_t value
+      )
+      {
+        writeInt8( key, tag, static_cast<int8_t>( value ) );
       }
 
       virtual void writeUint16
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        uint16_t value 
-      ) 
-      { 
-        writeInt16( key, tag, static_cast<int16_t>( value ) ); 
+      (
+        const char* key,
+        uint32_t tag,
+        uint16_t value
+      )
+      {
+        writeInt16( key, tag, static_cast<int16_t>( value ) );
       }
 
       virtual void writeUint32
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        uint32_t value 
-      ) 
-      { 
-        writeInt32( key, tag, static_cast<int32_t>( value ) ); 
+      (
+        const char* key,
+        uint32_t tag,
+        uint32_t value
+      )
+      {
+        writeInt32( key, tag, static_cast<int32_t>( value ) );
       }
 
       virtual void writeUint64
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        uint64_t value 
-      ) 
-      { 
-        writeInt64( key, tag, static_cast<int64_t>( value ) ); 
+      (
+        const char* key,
+        uint32_t tag,
+        uint64_t value
+      )
+      {
+        writeInt64( key, tag, static_cast<int64_t>( value ) );
       }
     };
 
@@ -1030,9 +1056,9 @@ namespace yidl
         : os( os )
       { }
 
-      PrettyPrinter& operator=( const PrettyPrinter& ) 
-      { 
-        return *this; 
+      PrettyPrinter& operator=( const PrettyPrinter& )
+      {
+        return *this;
       }
 
       // Marshaller
@@ -1067,11 +1093,11 @@ namespace yidl
       void writeSequence( const char*, uint32_t, const Sequence& value );
 
       void writeString
-      ( 
-        const char*, 
-        uint32_t, 
-        const char* value, 
-        size_t value_len 
+      (
+        const char*,
+        uint32_t,
+        const char* value,
+        size_t value_len
       )
       {
         os.write( value, value_len );
@@ -1093,10 +1119,10 @@ namespace yidl
 
 
     inline void PrettyPrinter::writeSequence
-    ( 
-      const char*, 
-      uint32_t, 
-      const Sequence& value 
+    (
+      const char*,
+      uint32_t,
+      const Sequence& value
     )
     {
       os << "[ ";
@@ -1134,14 +1160,14 @@ namespace yidl
     class StringBuffer : public Buffer
     {
     public:
-      StringBuffer() 
+      StringBuffer()
       { }
 
       StringBuffer( size_t capacity )
       {
         _string.reserve( capacity );
-      } 
-      
+      }
+
       StringBuffer( const std::string& str )
         : _string( str )
       { }
@@ -1159,14 +1185,14 @@ namespace yidl
       operator const std::string&() const { return _string; }
       operator void*() const { return const_cast<char*>( _string.c_str() ); }
 
-      bool operator==( const StringBuffer& other ) const 
-      { 
-        return _string == other._string; 
+      bool operator==( const StringBuffer& other ) const
+      {
+        return _string == other._string;
       }
 
-      bool operator==( const char* other ) const 
-      { 
-        return _string == other; 
+      bool operator==( const char* other ) const
+      {
+        return _string == other;
       }
 
       // Object
@@ -1181,11 +1207,11 @@ namespace yidl
           into_buffer_len = size() - position();
 
         memcpy_s
-        ( 
-          into_buffer, 
-          into_buffer_len, 
-          _string.c_str() + position(), 
-          into_buffer_len 
+        (
+          into_buffer,
+          into_buffer_len,
+          _string.c_str() + position(),
+          into_buffer_len
         );
 
         position( position() + into_buffer_len );
@@ -1196,9 +1222,9 @@ namespace yidl
       size_t put( const void* from_buffer, size_t from_buffer_len )
       {
         _string.append
-        ( 
-          static_cast<const char*>( from_buffer ), 
-          from_buffer_len 
+        (
+          static_cast<const char*>( from_buffer ),
+          from_buffer_len
         );
 
         return from_buffer_len;
@@ -1224,9 +1250,9 @@ namespace yidl
       }
 
       StringLiteralBuffer
-      ( 
-        const char* string_literal, 
-        size_t string_literal_len 
+      (
+        const char* string_literal,
+        size_t string_literal_len
       )
         : FixedBuffer( string_literal_len )
       {
@@ -1235,9 +1261,9 @@ namespace yidl
       }
 
       StringLiteralBuffer
-      ( 
-        const void* string_literal, 
-        size_t string_literal_len 
+      (
+        const void* string_literal,
+        size_t string_literal_len
       )
         : FixedBuffer( string_literal_len )
       {
@@ -1260,10 +1286,10 @@ namespace yidl
 
 
     inline void PrettyPrinter::writeStruct
-    ( 
-      const char*, 
-      uint32_t, 
-      const Struct& value 
+    (
+      const char*,
+      uint32_t,
+      const Struct& value
     )
     {
       os << value.get_type_name() << "( ";
@@ -1280,32 +1306,32 @@ namespace yidl
       virtual bool readBoolean( const char* key, uint32_t tag ) = 0;
 
       virtual void readBuffer
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        auto_Buffer value 
+      (
+        const char* key,
+        uint32_t tag,
+        auto_Buffer value
       ) = 0;
 
       virtual double readDouble( const char* key, uint32_t tag ) = 0;
 
-      virtual float readFloat( const char* key, uint32_t tag ) 
-      { 
-        return static_cast<float>( readDouble( key, tag ) ); 
+      virtual float readFloat( const char* key, uint32_t tag )
+      {
+        return static_cast<float>( readDouble( key, tag ) );
       }
 
-      virtual int8_t readInt8( const char* key, uint32_t tag ) 
-      { 
-        return static_cast<int8_t>( readInt16( key, tag ) ); 
+      virtual int8_t readInt8( const char* key, uint32_t tag )
+      {
+        return static_cast<int8_t>( readInt16( key, tag ) );
       }
 
-      virtual int16_t readInt16( const char* key, uint32_t tag ) 
-      { 
-        return static_cast<int16_t>( readInt32( key, tag ) ); 
+      virtual int16_t readInt16( const char* key, uint32_t tag )
+      {
+        return static_cast<int16_t>( readInt32( key, tag ) );
       }
 
-      virtual int32_t readInt32( const char* key, uint32_t tag ) 
-      { 
-        return static_cast<int32_t>( readInt64( key, tag ) ); 
+      virtual int32_t readInt32( const char* key, uint32_t tag )
+      {
+        return static_cast<int32_t>( readInt64( key, tag ) );
       }
 
       virtual int64_t readInt64( const char* key, uint32_t tag ) = 0;
@@ -1313,44 +1339,44 @@ namespace yidl
       virtual void readMap( const char* key, uint32_t tag, Map& value ) = 0;
 
       virtual void readSequence
-      ( 
+      (
         const char* key,
-        uint32_t tag, 
-        Sequence& value 
+        uint32_t tag,
+        Sequence& value
       ) = 0;
 
       virtual void readString
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        std::string& value 
+      (
+        const char* key,
+        uint32_t tag,
+        std::string& value
       ) = 0;
 
       virtual void readStruct
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        Struct& value 
+      (
+        const char* key,
+        uint32_t tag,
+        Struct& value
       ) = 0;
 
-      virtual uint8_t readUint8( const char* key, uint32_t tag ) 
-      { 
-        return static_cast<uint8_t>( readInt8( key, tag ) ); 
+      virtual uint8_t readUint8( const char* key, uint32_t tag )
+      {
+        return static_cast<uint8_t>( readInt8( key, tag ) );
       }
 
-      virtual uint16_t readUint16( const char* key, uint32_t tag ) 
-      { 
-        return static_cast<uint16_t>( readInt16( key, tag ) ); 
+      virtual uint16_t readUint16( const char* key, uint32_t tag )
+      {
+        return static_cast<uint16_t>( readInt16( key, tag ) );
       }
 
-      virtual uint32_t readUint32( const char* key, uint32_t tag ) 
-      { 
-        return static_cast<uint32_t>( readInt32( key, tag ) ); 
+      virtual uint32_t readUint32( const char* key, uint32_t tag )
+      {
+        return static_cast<uint32_t>( readInt32( key, tag ) );
       }
 
-      virtual uint64_t readUint64( const char* key, uint32_t tag ) 
-      { 
-        return static_cast<uint64_t>( readInt64( key, tag ) ); 
+      virtual uint64_t readUint64( const char* key, uint32_t tag )
+      {
+        return static_cast<uint64_t>( readInt64( key, tag ) );
       }
     };
 
@@ -1390,5 +1416,6 @@ namespace yidl
     );
   };
 };
+
 
 #endif

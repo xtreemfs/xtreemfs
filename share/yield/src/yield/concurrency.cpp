@@ -1,10 +1,38 @@
+// Copyright (c) 2010 Minor Gordon
+// With original implementations and ideas contributed by Felix Hupfeld
+// All rights reserved
+// 
+// This source file is part of the Yield project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the Yield project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
 #include "yield/concurrency.h"
 using namespace YIELD::concurrency;
 
 
 // color_stage_group.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 class ColorStageGroup::Thread : public ::YIELD::platform::Thread
 {
 public:
@@ -21,23 +49,29 @@ public:
     is_running = false;
     should_run = true;
   }
+
   void stop()
   {
     should_run = false;
+
     yidl::runtime::auto_Object<Stage::ShutdownEvent>
       stage_shutdown_event( new Stage::ShutdownEvent );
+
     while ( is_running )
     {
       event_queue->enqueue( stage_shutdown_event->incRef() );
       nanosleep( 5 * NS_IN_MS );
     }
   }
+
   // Thread
   void run()
   {
     is_running = true;
+
     this->set_name( name.c_str() );
     this->set_processor_affinity( logical_processor_i );
+
     while ( should_run )
     {
       Event* event = event_queue->dequeue();
@@ -47,14 +81,19 @@ public:
           event->get_next_stage()->visit( *event );
       }
     }
+
     is_running = false;
   }
+
 private:
   auto_STLEventQueue event_queue;
   uint16_t logical_processor_i;
   std::string name;
+
   bool is_running, should_run;
 };
+
+
 ColorStageGroup::ColorStageGroup
 (
   const char* name,
@@ -63,10 +102,13 @@ ColorStageGroup::ColorStageGroup
 )
 {
   event_queue = new STLEventQueue;
+
   uint16_t online_logical_processor_count
     = YIELD::platform::Machine::getOnlineLogicalProcessorCount();
+
   if ( thread_count == -1 )
     thread_count = static_cast<int16_t>( online_logical_processor_count );
+
   for
   (
     uint16_t logical_processor_i = start_logical_processor_i;
@@ -85,6 +127,7 @@ ColorStageGroup::ColorStageGroup
     threads.push_back( thread );
   }
 }
+
 ColorStageGroup::~ColorStageGroup()
 {
   for
@@ -101,11 +144,10 @@ ColorStageGroup::~ColorStageGroup()
 
 
 // event_handler.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 EventHandler::EventHandler()
   : redirect_event_target( NULL )
 { }
+
 void EventHandler::handleUnknownEvent( Event& ev )
 {
   switch ( ev.get_type_id() )
@@ -116,15 +158,18 @@ void EventHandler::handleUnknownEvent( Event& ev )
       Event::decRef( ev );
     }
     break;
+
     default:
     {
       std::cerr << get_type_name() << " dropping unknown event: " <<
                    ev.get_type_name() << std::endl;
+
       Event::decRef( ev );
     }
     break;
   }
 }
+
 void EventHandler::send( Event& ev )
 {
   if ( redirect_event_target != NULL )
@@ -138,6 +183,7 @@ void EventHandler::send( Event& ev )
     handleEvent_lock.release();
   }
 }
+
 void EventHandler::set_redirect_event_target
 (
   EventTarget* redirect_event_target
@@ -151,13 +197,12 @@ void EventHandler::set_redirect_event_target
 
 
 // event_target_mux.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 EventTargetMux::EventTargetMux()
 {
   event_targets = NULL;
   event_targets_len = 0;
 }
+
 EventTargetMux::~EventTargetMux()
 {
   for
@@ -167,8 +212,10 @@ EventTargetMux::~EventTargetMux()
     event_target_i++
   )
     EventTarget::decRef( *event_targets[event_target_i] );
+
   delete [] event_targets;
 }
+
 void EventTargetMux::addEventTarget( auto_EventTarget event_target )
 {
   EventTarget** new_event_targets = new EventTarget*[event_targets_len+1];
@@ -181,12 +228,14 @@ void EventTargetMux::addEventTarget( auto_EventTarget event_target )
       event_targets,
       event_targets_len * sizeof( EventTarget* )
     );
+
     delete [] event_targets;
   }
   event_targets = new_event_targets;
   event_targets[event_targets_len] = event_target.release();
   event_targets_len++;
 }
+
 void EventTargetMux::send( Event& ev )
 {
   next_event_target_i = ( next_event_target_i + 1 ) % event_targets_len;
@@ -195,20 +244,23 @@ void EventTargetMux::send( Event& ev )
 
 
 // mg1_visit_policy.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #include <cmath>
+
 #define YIELD_MG1_MIN_RO 0.005
 // Higher smoothing factor discounts older values faster
 #define YIELD_MG1_RHO_EMA_SMOOTHING_FACTOR 0.7
+
+
 MG1VisitPolicy::MG1VisitPolicy( Stage** stages ) : VisitPolicy( stages )
 {
   memset( polling_table, 0, sizeof( polling_table ) );
   polling_table_pos = YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE;
   memset( last_rhos, 0, sizeof( last_rhos ) );
+
   double inverse_golden_ratio = ( std::sqrt( 5.0 ) - 1.0 ) / 2.0;
   double unit_circle[YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE],
          ordered_unit_circle[YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE+1];
+
   for
   (
     uint32_t uc_i = 0;
@@ -219,11 +271,13 @@ MG1VisitPolicy::MG1VisitPolicy( Stage** stages ) : VisitPolicy( stages )
     unit_circle[uc_i] = fmod( uc_i * inverse_golden_ratio, 1.0 );
     ordered_unit_circle[uc_i] = unit_circle[uc_i];
   }
+
   std::sort
   (
     ordered_unit_circle,
     ordered_unit_circle+YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE
   );
+
   for
   (
     uint32_t uc_i = 0;
@@ -249,10 +303,12 @@ MG1VisitPolicy::MG1VisitPolicy( Stage** stages ) : VisitPolicy( stages )
     if ( !found ) DebugBreak();
   }
 }
+
 bool MG1VisitPolicy::populatePollingTable()
 {
   double rho_sqrt[YIELD_STAGES_PER_GROUP_MAX], rho_sqrt_sum = 0;
   memset( rho_sqrt, 0, sizeof( rho_sqrt ) );
+
   for ( uint8_t s_i = 0; s_i < YIELD_STAGES_PER_GROUP_MAX; s_i++ )
   {
     if ( stages[s_i] )
@@ -267,6 +323,7 @@ bool MG1VisitPolicy::populatePollingTable()
       rho_sqrt_sum += rho_sqrt[s_i];
     }
   }
+
   if ( rho_sqrt_sum > 0 )
   {
     // frequency[i] = sqrt( rho[i] * ( 1.0 - rho[i] ) ) /
@@ -274,6 +331,7 @@ bool MG1VisitPolicy::populatePollingTable()
     // occurrences[i] = frequency[i] * YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE
     uint32_t m[YIELD_STAGES_PER_GROUP_MAX], m_count = 0, m_total = 0;
     uint32_t max_m = 0; uint8_t fill_s_i;
+
     for ( uint8_t s_i = 0; s_i < YIELD_STAGES_PER_GROUP_MAX; s_i++ )
     {
       if ( rho_sqrt[s_i] > 0 )
@@ -302,6 +360,7 @@ bool MG1VisitPolicy::populatePollingTable()
       else
         m[s_i] = 0;
     }
+
     if ( m_total == 0 )
     {
       // Frequencies were too low to get an uint32_t m[s_i] > 0
@@ -310,6 +369,7 @@ bool MG1VisitPolicy::populatePollingTable()
           (
             YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE / m_count
           );
+
       for ( uint8_t s_i = 0; s_i < YIELD_STAGES_PER_GROUP_MAX; s_i++ )
       {
         if ( rho_sqrt[s_i] > 0 )
@@ -319,9 +379,11 @@ bool MG1VisitPolicy::populatePollingTable()
         }
       }
     }
+
     // Fill the polling table with the most frequently-occurring stage
     // to plug the gaps in the golden circle coverage
     memset( polling_table, fill_s_i, sizeof( polling_table ) );
+
     uint32_t m_i = 0, m_i_end;
     for ( uint8_t s_i = 0; s_i < YIELD_STAGES_PER_GROUP_MAX; s_i++ )
     {
@@ -333,6 +395,7 @@ bool MG1VisitPolicy::populatePollingTable()
           polling_table[golden_ratio_circle[m_i]] = s_i;
       }
     }
+
 #ifdef _DEBUG
     //// Make sure every stage with a nonzero rho is represented
     //// in the polling table
@@ -354,6 +417,7 @@ bool MG1VisitPolicy::populatePollingTable()
     //      }
     //}
 #endif
+
     return true;
   }
   else // Ro's were all 0 => no activity => idle half a second
@@ -362,8 +426,6 @@ bool MG1VisitPolicy::populatePollingTable()
 
 
 // polling_stage_group.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 template <class VisitPolicyType>
 class PollingStageGroup<VisitPolicyType>::Thread
   : public ::YIELD::platform::Thread
@@ -377,34 +439,42 @@ public:
     is_running = false;
     should_run = true;
   }
+
   void stop()
   {
     should_run = false;
     while ( is_running )
       Thread::yield();
   }
+
   // Thread
   void run()
   {
     is_running = true;
+
     this->set_name( name.c_str() );
+
     if ( !this->set_processor_affinity( logical_processor_i ) )
     {
       std::cerr << "yield::concurrency::PollingStageGroup::Thread: " <<
                    "error on set_processor_affinity( " <<
                    logical_processor_i << " ): " <<
-                   YIELD::platform::Exception() << 
+                   YIELD::platform::Exception() <<
                    "." << std::endl;
     }
+
     uint64_t visit_timeout_ns = 1 * NS_IN_MS;
     uint64_t successful_visits = 0, total_visits = 0;
+
     while ( should_run )
     {
       Stage* next_stage_to_visit
         = visit_policy.getNextStageToVisit( visit_timeout_ns == 0 );
+
       if ( next_stage_to_visit != NULL )
       {
         total_visits++;
+
         if ( next_stage_to_visit->visit( visit_timeout_ns ) )
         {
           successful_visits++;
@@ -414,19 +484,25 @@ public:
           visit_timeout_ns += 1;
       }
     }
+
     std::cout <<
       "yield::concurrency::PollingStageGroup::Thread: visit efficiency = " <<
       static_cast<double>( successful_visits ) /
         static_cast<double>( total_visits )
       << std::endl;
+
     is_running = false;
   }
+
 private:
   uint16_t logical_processor_i;
   std::string name;
   VisitPolicyType visit_policy;
+
   bool is_running, should_run;
 };
+
+
 template <class VisitPolicyType>
 PollingStageGroup<VisitPolicyType>::PollingStageGroup
 (
@@ -441,6 +517,7 @@ PollingStageGroup<VisitPolicyType>::PollingStageGroup
     = YIELD::platform::Machine::getOnlineLogicalProcessorCount();
   if ( thread_count == -1 )
     thread_count = static_cast<int16_t>( online_logical_processor_count );
+
   for
   (
     uint16_t logical_processor_i = start_logical_processor_i;
@@ -459,6 +536,7 @@ PollingStageGroup<VisitPolicyType>::PollingStageGroup
     threads.push_back( thread );
   }
 }
+
 template <class VisitPolicyType>
 PollingStageGroup<VisitPolicyType>::~PollingStageGroup()
 {
@@ -473,6 +551,8 @@ PollingStageGroup<VisitPolicyType>::~PollingStageGroup()
     Thread::decRef( **thread_i );
   }
 }
+
+
 template class PollingStageGroup<DBRVisitPolicy>;
 template class PollingStageGroup<MG1VisitPolicy>;
 template class PollingStageGroup<SRPTVisitPolicy>;
@@ -480,16 +560,16 @@ template class PollingStageGroup<WavefrontVisitPolicy>;
 
 
 // request.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 auto_EventTarget Request::get_response_target() const
 {
   return response_target;
 }
+
 void Request::respond( Response& response )
 {
   response_target->send( response );
 }
+
 void Request::set_response_target( auto_EventTarget response_target )
 {
   this->response_target = response_target;
@@ -497,8 +577,6 @@ void Request::set_response_target( auto_EventTarget response_target )
 
 
 // seda_stage_group.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 class SEDAStageGroup::Thread : public ::YIELD::platform::Thread
 {
 public:
@@ -508,12 +586,16 @@ public:
     is_running = false;
     should_run = true;
   }
+
   auto_Stage get_stage() { return stage; }
+
   void stop()
   {
     should_run = false;
+
     yidl::runtime::auto_Object<Stage::ShutdownEvent> stage_shutdown_event
       = new Stage::ShutdownEvent;
+
     for ( ;; )
     {
       stage->send( stage_shutdown_event->incRef() );
@@ -523,28 +605,39 @@ public:
         break;
     }
   }
+
   // Thread
   void run()
   {
     is_running = true;
+
     Thread::set_name( stage->get_stage_name() );
+
     while ( should_run )
       stage->visit();
+
     is_running = false;
   }
+
   void start()
   {
     ::YIELD::platform::Thread::start();
     while ( !is_running )
       YIELD::platform::Thread::yield();
   }
+
   // yidl::runtime::Object
   YIDL_RUNTIME_OBJECT_PROTOTYPES( SEDAStageGroup::Thread, 0 );
+
 private:
   ~Thread() { }
+
   auto_Stage stage;
+
   bool is_running, should_run;
 };
+
+
 SEDAStageGroup::~SEDAStageGroup()
 {
   for
@@ -554,6 +647,7 @@ SEDAStageGroup::~SEDAStageGroup()
     thread_i++
   )
     ( *thread_i )->stop();
+
   for
   (
     std::vector<Thread*>::iterator thread_i = threads.begin();
@@ -562,6 +656,7 @@ SEDAStageGroup::~SEDAStageGroup()
   )
     Thread::decRef( **thread_i );
 }
+
 void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
 {
   for ( unsigned short thread_i = 0; thread_i < thread_count; thread_i++ )
@@ -574,8 +669,6 @@ void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
 
 
 // stage.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 class Stage::StatisticsTimer : public YIELD::platform::TimerQueue::Timer
 {
 public:
@@ -584,6 +677,7 @@ public:
       stage( stage ),
       last_fire_time( static_cast<uint64_t>( 0 ) )
   { }
+
   // TimerQueue::Timer
   void fire()
   {
@@ -591,30 +685,42 @@ public:
     {
       YIELD::platform::Time
         elapsed_time( YIELD::platform::Time() - last_fire_time );
+
       stage->arrival_rate_s
         = static_cast<double>( stage->event_queue_arrival_count ) /
           elapsed_time.as_unix_time_s();
+
       stage->event_queue_arrival_count = 0;
+
       stage->service_rate_s = static_cast<double>( NS_IN_S ) /
                               stage->event_processing_time_ns_sampler
                                 .get_percentile( 0.95 );
+
       stage->rho = stage->arrival_rate_s / stage->service_rate_s;
+
       last_fire_time = YIELD::platform::Time();
     }
   }
+
 private:
   auto_Stage stage;
+
   YIELD::platform::Time last_fire_time;
 };
+
+
 Stage::Stage( const char* name )
   : name( name )
 {
   // event_processing_time_ns_total = 0;
+
   // send() would normally inc these, but we can't use send()
   // because it's a virtual function; instead we enqueue directly
   // and increment the lengths ourselves
   event_queue_length = event_queue_arrival_count = 1;
+
   // events_processed_total = 0;
+
 #ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
   performance_counters = PerformanceCounterSet::create();
   performance_counters->addEvent( PerformanceCounterSet::EVENT_L1_DCM );
@@ -626,17 +732,20 @@ Stage::Stage( const char* name )
     sizeof( performance_counter_totals )
   );
 #endif
+
   YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer
   (
     new StatisticsTimer( this )
   );
 }
+
 Stage::~Stage()
 {
 #ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
   std::cout << get_stage_name() << ": L1 data cache misses: " <<
     performance_counter_totals[0] <<
     std::endl;
+
   std::cout << get_stage_name() << ": L2 instruction cache misses: " <<
     performance_counter_totals[1] <<
     std::endl;
@@ -645,11 +754,6 @@ Stage::~Stage()
 
 
 // stage_group.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
-
-
-
 StageGroup::StageGroup()
 {
   memset( stages, 0, sizeof( stages ) );
@@ -679,10 +783,11 @@ void StageGroup::addStage( auto_Stage stage )
 }
 
 
+
 // thread_local_event_queue.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #include <stack>
+
+
 class ThreadLocalEventQueue::EventStack : private std::stack<Event*>
 {
 public:
@@ -697,15 +802,19 @@ public:
     else
       return NULL;
   }
+
   void push( Event& ev )
   {
     std::stack<Event*>::push( &ev );
   }
 };
+
+
 ThreadLocalEventQueue::ThreadLocalEventQueue()
 {
   tls_key = YIELD::platform::Thread::key_create();
 }
+
 ThreadLocalEventQueue::~ThreadLocalEventQueue()
 {
   for
@@ -716,6 +825,7 @@ ThreadLocalEventQueue::~ThreadLocalEventQueue()
   )
     delete *event_stack_i;
 }
+
 Event* ThreadLocalEventQueue::dequeue()
 {
   Event* event = getEventStack()->pop();
@@ -724,6 +834,7 @@ Event* ThreadLocalEventQueue::dequeue()
   else
     return all_processor_event_queue.dequeue();
 }
+
 bool ThreadLocalEventQueue::enqueue( Event& ev )
 {
   EventStack* event_stack
@@ -731,6 +842,7 @@ bool ThreadLocalEventQueue::enqueue( Event& ev )
     (
       YIELD::platform::Thread::getspecific( tls_key )
     );
+
   if ( event_stack != NULL )
   {
     event_stack->push( ev );
@@ -739,6 +851,7 @@ bool ThreadLocalEventQueue::enqueue( Event& ev )
   else
     return all_processor_event_queue.enqueue( &ev );
 }
+
 ThreadLocalEventQueue::EventStack* ThreadLocalEventQueue::getEventStack()
 {
   EventStack* event_stack
@@ -746,6 +859,7 @@ ThreadLocalEventQueue::EventStack* ThreadLocalEventQueue::getEventStack()
     (
       YIELD::platform::Thread::getspecific( tls_key )
     );
+
   if ( event_stack == NULL )
   {
     event_stack = new EventStack;
@@ -754,6 +868,7 @@ ThreadLocalEventQueue::EventStack* ThreadLocalEventQueue::getEventStack()
   }
   return event_stack;
 }
+
 Event* ThreadLocalEventQueue::timed_dequeue( uint64_t timeout_ns )
 {
   Event* event = getEventStack()->pop();
@@ -762,6 +877,7 @@ Event* ThreadLocalEventQueue::timed_dequeue( uint64_t timeout_ns )
   else
     return all_processor_event_queue.timed_dequeue( timeout_ns );
 }
+
 Event* ThreadLocalEventQueue::try_dequeue()
 {
   Event* event = getEventStack()->pop();

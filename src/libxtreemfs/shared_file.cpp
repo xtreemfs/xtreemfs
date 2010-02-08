@@ -1,3 +1,32 @@
+// Copyright (c) 2010 Minor Gordon
+// All rights reserved
+// 
+// This source file is part of the XtreemFS project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the XtreemFS project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
 #include "shared_file.h"
 #include "open_file.h"
 #include "stat.h"
@@ -56,30 +85,30 @@ class SharedFile::ReadRequest : public OSDInterface::readRequest
 {
 public:
   ReadRequest
-  ( 
-    const FileCredentials& file_credentials, 
-    const std::string& file_id, 
-    uint64_t object_number, 
-    uint64_t object_version, 
-    uint32_t offset, 
-    uint32_t length, 
-    yidl::runtime::auto_Buffer buffer 
-  ) 
+  (
+    const FileCredentials& file_credentials,
+    const std::string& file_id,
+    uint64_t object_number,
+    uint64_t object_version,
+    uint32_t offset,
+    uint32_t length,
+    yidl::runtime::auto_Buffer buffer
+  )
     : OSDInterface::readRequest
-      ( 
-        file_credentials, 
-        file_id, 
-        object_number, 
-        object_version, 
-        offset, 
-        length 
+      (
+        file_credentials,
+        file_id,
+        object_number,
+        object_version,
+        offset,
+        length
        ),
     buffer( buffer )
   { }
 
-  YIELD::concurrency::auto_Response createResponse() 
-  { 
-    return new ReadResponse( buffer ); 
+  YIELD::concurrency::auto_Response createResponse()
+  {
+    return new ReadResponse( buffer );
   }
 
 private:
@@ -130,15 +159,15 @@ void SharedFile::close( xtreemfs::OpenFile& open_file )
 #endif
     --writer_count;
 
-    if 
-    ( 
-      writer_count == 0 
+    if
+    (
+      writer_count == 0
       &&
       open_file.get_xcap().get_replicate_on_close()
     )
     {
       parent_volume->get_mrc_proxy()->close
-      ( 
+      (
         parent_volume->get_vivaldi_coordinates(),
         open_file.get_xcap()
       );
@@ -159,23 +188,23 @@ YIELD::platform::auto_Stat SharedFile::getattr()
 
 bool
 SharedFile::getlk
-( 
-  bool exclusive, 
-  uint64_t offset, 
+(
+  bool exclusive,
+  uint64_t offset,
   uint64_t length,
   const XCap& xcap
 )
 {
-  Lock lock = 
+  Lock lock =
     parent_volume->get_osd_proxy_mux()->xtreemfs_lock_check
-    ( 
+    (
       FileCredentials( xcap, xlocs ),
       parent_volume->get_uuid(),
-      yieldfs::FUSE::getpid(), 
-      xcap.get_file_id(), 
-      offset, 
-      length, 
-      exclusive 
+      yieldfs::FUSE::getpid(),
+      xcap.get_file_id(),
+      offset,
+      length,
+      exclusive
     );
 
   return lock.get_client_pid() != yieldfs::FUSE::getpid();
@@ -193,8 +222,8 @@ bool SharedFile::listxattr( std::vector<std::string>& out_names )
 
 YIELD::platform::auto_File
 SharedFile::open
-( 
-  FileCredentials& file_credentials 
+(
+  FileCredentials& file_credentials
 )
 {
   if ( file_credentials.get_xlocs().get_version() >= xlocs.get_version() )
@@ -208,11 +237,11 @@ SharedFile::open
   return new xtreemfs::OpenFile( incRef(), file_credentials.get_xcap() );
 }
 
-ssize_t 
+ssize_t
 SharedFile::read
-(   
-  void* rbuf, 
-  size_t size, 
+(
+  void* rbuf,
+  size_t size,
   uint64_t offset,
   const XCap& xcap
 )
@@ -224,33 +253,33 @@ SharedFile::read
   try
   {
 #ifdef _DEBUG
-    if 
-    ( 
-      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-         Volume::VOLUME_FLAG_TRACE_FILE_IO 
+    if
+    (
+      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
+         Volume::VOLUME_FLAG_TRACE_FILE_IO
     )
-      log->getStream( YIELD::platform::Log::LOG_INFO ) << 
-        "xtreemfs::SharedFile::read( rbuf, size=" << size << 
-        ", offset=" << offset << 
+      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        "xtreemfs::SharedFile::read( rbuf, size=" << size <<
+        ", offset=" << offset <<
         " )";
 #endif
 
-    char *rbuf_start = static_cast<char*>( rbuf ), 
-         *rbuf_p = static_cast<char*>( rbuf ), 
+    char *rbuf_start = static_cast<char*>( rbuf ),
+         *rbuf_p = static_cast<char*>( rbuf ),
          *rbuf_end = static_cast<char*>( rbuf ) + size;
     uint64_t current_file_offset = offset;
     uint32_t stripe_size = xlocs.get_replicas()[0].get_striping_policy().
-                             get_stripe_size() * 1024;    
+                             get_stripe_size() * 1024;
 
-    YIELD::concurrency::auto_ResponseQueue<ReadResponse> 
+    YIELD::concurrency::auto_ResponseQueue<ReadResponse>
       read_response_queue
-      ( 
-        new YIELD::concurrency::ResponseQueue<ReadResponse> 
+      (
+        new YIELD::concurrency::ResponseQueue<ReadResponse>
       );
     size_t expected_read_response_count = 0;
 
     while ( rbuf_p < rbuf_end )
-    {      
+    {
       uint64_t object_number = current_file_offset / stripe_size;
       uint32_t object_offset = current_file_offset % stripe_size;
       size_t object_size = static_cast<size_t>( rbuf_end - rbuf_p );
@@ -258,35 +287,35 @@ SharedFile::read
         object_size = stripe_size - object_offset;
 
 #ifdef _DEBUG
-      if 
-      ( 
-        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-        Volume::VOLUME_FLAG_TRACE_FILE_IO 
+      if
+      (
+        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
+        Volume::VOLUME_FLAG_TRACE_FILE_IO
       )
       {
-        log->getStream( YIELD::platform::Log::LOG_INFO ) << 
-          "xtreemfs::SharedFile: issuing read # " << 
+        log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+          "xtreemfs::SharedFile: issuing read # " <<
           ( expected_read_response_count + 1 ) <<
-          " for " << object_size << 
+          " for " << object_size <<
           " bytes from object number " << object_number <<
           " in file " << xcap.get_file_id() <<
           " (object offset = " << object_offset <<
           ", file offset = " << current_file_offset <<
-          ", remaining buffer size = " << 
+          ", remaining buffer size = " <<
           static_cast<size_t>( rbuf_end - rbuf_p ) << ").";
       }
 #endif
 
-      ReadRequest* read_request = 
+      ReadRequest* read_request =
         new ReadRequest
-        ( 
-          FileCredentials( xcap, xlocs ), 
-          xcap.get_file_id(), 
-          object_number, 
-          0, 
-          object_offset, 
-          static_cast<uint32_t>( object_size ), 
-          new ReadBuffer( rbuf_p, object_size ) 
+        (
+          FileCredentials( xcap, xlocs ),
+          xcap.get_file_id(),
+          object_number,
+          0,
+          object_offset,
+          static_cast<uint32_t>( object_size ),
+          new ReadBuffer( rbuf_p, object_size )
         );
       read_request->set_response_target( read_response_queue->incRef() );
       read_request->set_selected_file_replica( selected_file_replica );
@@ -299,21 +328,21 @@ SharedFile::read
     }
 
 #ifdef _DEBUG
-    if 
-    ( 
-      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-      Volume::VOLUME_FLAG_TRACE_FILE_IO 
+    if
+    (
+      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
+      Volume::VOLUME_FLAG_TRACE_FILE_IO
     )
-      log->getStream( YIELD::platform::Log::LOG_INFO ) << 
-        "xtreemfs::SharedFile: issued " << expected_read_response_count << 
+      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        "xtreemfs::SharedFile: issued " << expected_read_response_count <<
         " parallel reads.";
 #endif
 
-    for 
-    ( 
-      size_t read_response_i = 0; 
-      read_response_i < expected_read_response_count; 
-      read_response_i++ 
+    for
+    (
+      size_t read_response_i = 0;
+      read_response_i < expected_read_response_count;
+      read_response_i++
     )
     {
       ReadResponse& read_response = read_response_queue->dequeue();
@@ -327,16 +356,16 @@ SharedFile::read
         selected_file_replica = read_response.get_selected_file_replica();
 
 #ifdef _DEBUG
-      if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
+      if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
             Volume::VOLUME_FLAG_TRACE_FILE_IO )
       {
-        log->getStream( YIELD::platform::Log::LOG_INFO ) << 
+        log->getStream( YIELD::platform::Log::LOG_INFO ) <<
           "xtreemfs::SharedFile: read " << data->size() <<
-          " bytes from file " << xcap.get_file_id() <<            
+          " bytes from file " << xcap.get_file_id() <<
           " with " << zero_padding << " bytes of zero padding" <<
-          ", starting from buffer offset " << 
-          static_cast<size_t>( rbuf_p - rbuf_start ) << 
-          ", read # " << ( read_response_i + 1 ) << " of " << 
+          ", starting from buffer offset " <<
+          static_cast<size_t>( rbuf_p - rbuf_start ) <<
+          ", read # " << ( read_response_i + 1 ) << " of " <<
           expected_read_response_count << " parallel reads.";
       }
 #endif
@@ -344,7 +373,7 @@ SharedFile::read
       ret += data->size();
 
       if ( zero_padding > 0 )
-      { 
+      {
         rbuf_p += data->size();
 
         if ( rbuf_p + zero_padding <= rbuf_end )
@@ -354,10 +383,10 @@ SharedFile::read
         }
         else
         {
-          log->getStream( YIELD::platform::Log::LOG_ERR ) << 
-            "xtreemfs::SharedFile: received zero_padding (data size=" << 
-            data->size() << ", zero_padding=" << zero_padding << 
-            ") larger than available buffer space (" << 
+          log->getStream( YIELD::platform::Log::LOG_ERR ) <<
+            "xtreemfs::SharedFile: received zero_padding (data size=" <<
+            data->size() << ", zero_padding=" << zero_padding <<
+            ") larger than available buffer space (" <<
             static_cast<size_t>( rbuf_end - rbuf_p ) << ")";
 
 #ifdef _WIN32
@@ -373,19 +402,19 @@ SharedFile::read
     }
 
 #ifdef _DEBUG
-    if ( static_cast<size_t>( ret ) > size ) 
+    if ( static_cast<size_t>( ret ) > size )
       DebugBreak();
 
-    if 
-    ( 
-      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-       Volume::VOLUME_FLAG_TRACE_FILE_IO 
+    if
+    (
+      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
+       Volume::VOLUME_FLAG_TRACE_FILE_IO
     )
     {
-      log->getStream( YIELD::platform::Log::LOG_INFO ) << 
+      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
         "xtreemfs::SharedFile: read " << ret <<
         " bytes from file " << xcap.get_file_id() <<
-        " in total, returning from read().";           
+        " in total, returning from read().";
     }
 #endif
   }
@@ -400,11 +429,11 @@ SharedFile::read
     ret = -1;
   }
 
-  for 
-  ( 
-    std::vector<ReadResponse*>::iterator read_response_i = read_responses.begin(); 
-    read_response_i != read_responses.end(); 
-    read_response_i++ 
+  for
+  (
+    std::vector<ReadResponse*>::iterator read_response_i = read_responses.begin();
+    read_response_i != read_responses.end();
+    read_response_i++
   )
     ReadResponse::decRef( **read_response_i );
 
@@ -418,24 +447,24 @@ bool SharedFile::removexattr( const std::string& name )
 
 bool
 SharedFile::setlk
-( 
-  bool exclusive, 
-  uint64_t offset, 
+(
+  bool exclusive,
+  uint64_t offset,
   uint64_t length,
   const XCap& xcap
 )
 {
   SHARED_FILE_OPERATION_BEGIN( setlk );
 
-  //Lock lock = 
+  //Lock lock =
     parent_volume->get_osd_proxy_mux()->xtreemfs_lock_acquire
-    ( 
-      FileCredentials( xcap, xlocs ), 
-      parent_volume->get_uuid(), 
-      yieldfs::FUSE::getpid(), 
-      xcap.get_file_id(), 
-      offset, length, 
-      exclusive 
+    (
+      FileCredentials( xcap, xlocs ),
+      parent_volume->get_uuid(),
+      yieldfs::FUSE::getpid(),
+      xcap.get_file_id(),
+      offset, length,
+      exclusive
     );
 
   //locks.push_back( lock );
@@ -447,9 +476,9 @@ SharedFile::setlk
 
 bool
 SharedFile::setlkw
-(   
-  bool exclusive, 
-  uint64_t offset, 
+(
+  bool exclusive,
+  uint64_t offset,
   uint64_t length,
   const XCap& xcap
 )
@@ -460,16 +489,16 @@ SharedFile::setlkw
   {
     try
     {
-       //Lock lock = 
+       //Lock lock =
           parent_volume->get_osd_proxy_mux()->xtreemfs_lock_acquire
-          ( 
-            FileCredentials( xcap, xlocs ), 
-            parent_volume->get_uuid(), 
-            yieldfs::FUSE::getpid(), 
-            xcap.get_file_id(), 
-            offset, 
-            length, 
-            exclusive 
+          (
+            FileCredentials( xcap, xlocs ),
+            parent_volume->get_uuid(),
+            yieldfs::FUSE::getpid(),
+            xcap.get_file_id(),
+            offset,
+            length,
+            exclusive
           );
 
       //locks.push_back( lock );
@@ -484,18 +513,18 @@ SharedFile::setlkw
 }
 
 bool SharedFile::setxattr
-( 
-  const std::string& name, 
-  const std::string& value, 
-  int flags 
+(
+  const std::string& name,
+  const std::string& value,
+  int flags
 )
 {
   return parent_volume->setxattr( path, name, value, flags );
 }
 
-bool 
+bool
 SharedFile::sync
-( 
+(
   const XCap& xcap
 )
 {
@@ -509,9 +538,9 @@ SharedFile::sync
   //SHARED_FILE_OPERATION_END( sync );
 }
 
-bool 
+bool
 SharedFile::truncate
-( 
+(
   uint64_t new_size,
   XCap& xcap
 )
@@ -525,20 +554,20 @@ SharedFile::truncate
 
   OSDWriteResponse osd_write_response;
   parent_volume->get_osd_proxy_mux()->truncate
-  ( 
-    FileCredentials( xcap, xlocs ), 
-    xcap.get_file_id(), 
-    new_size, 
-    osd_write_response 
+  (
+    FileCredentials( xcap, xlocs ),
+    xcap.get_file_id(),
+    new_size,
+    osd_write_response
   );
 
   if ( !osd_write_response.get_new_file_size().empty() )
   {
     parent_volume->fsetattr
-    ( 
-      osd_write_response, 
-      MRCInterface::SETATTR_SIZE, 
-      xcap 
+    (
+      osd_write_response,
+      MRCInterface::SETATTR_SIZE,
+      xcap
     );
   }
 
@@ -547,10 +576,10 @@ SharedFile::truncate
   SHARED_FILE_OPERATION_END( truncate );
 }
 
-bool 
+bool
 SharedFile::unlk
-( 
-  uint64_t offset, 
+(
+  uint64_t offset,
   uint64_t length,
   const XCap& xcap
 )
@@ -562,10 +591,10 @@ SharedFile::unlk
   //else
   //{
   //  parent_volume->get_osd_proxy_mux()->xtreemfs_lock_release
-  //  ( 
-  //    file_credentials, 
-  //    xcap.get_file_id(), 
-  //    locks.back() 
+  //  (
+  //    file_credentials,
+  //    xcap.get_file_id(),
+  //    locks.back()
   //  );
 
   //  locks.pop_back();
@@ -580,7 +609,7 @@ SharedFile::unlk
 
 ssize_t
 SharedFile::write
-( 
+(
   const void* wbuf,
   size_t size,
   uint64_t offset,
@@ -591,19 +620,19 @@ SharedFile::write
   std::vector<OSDInterface::writeResponse*> write_responses;
 
 #ifdef _DEBUG
-  if 
-  ( 
-    ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-    Volume::VOLUME_FLAG_TRACE_FILE_IO 
+  if
+  (
+    ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
+    Volume::VOLUME_FLAG_TRACE_FILE_IO
   )
-    log->getStream( YIELD::platform::Log::LOG_INFO ) << 
-      "xtreemfs::SharedFile::write( wbuf, size=" << size << 
+    log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+      "xtreemfs::SharedFile::write( wbuf, size=" << size <<
       ", offset=" << offset << " )";
 #endif
 
   try
   {
-    const char *wbuf_p = static_cast<const char*>( wbuf ), 
+    const char *wbuf_p = static_cast<const char*>( wbuf ),
                *wbuf_end = static_cast<const char*>( wbuf ) + size;
     uint64_t current_file_offset = offset;
     uint32_t stripe_size = xlocs.get_replicas()[0].get_striping_policy().
@@ -625,7 +654,7 @@ SharedFile::write
         object_size = stripe_size - object_offset;
 
       ObjectData object_data
-      ( 
+      (
         0,
         false,
         0,
@@ -634,28 +663,28 @@ SharedFile::write
 
       OSDInterface::writeRequest* write_request =
         new OSDInterface::writeRequest
-        ( 
-          FileCredentials( xcap, xlocs ), 
-          xcap.get_file_id(), 
-          object_number, 
-          0, 
-          object_offset, 
-          0, 
-          object_data 
+        (
+          FileCredentials( xcap, xlocs ),
+          xcap.get_file_id(),
+          object_number,
+          0,
+          object_offset,
+          0,
+          object_data
         );
       write_request->set_selected_file_replica( selected_file_replica );
 
 #ifdef _DEBUG
-      if 
-      ( 
-        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-           Volume::VOLUME_FLAG_TRACE_FILE_IO 
+      if
+      (
+        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
+           Volume::VOLUME_FLAG_TRACE_FILE_IO
       )
       {
-        log->getStream( YIELD::platform::Log::LOG_INFO ) << 
-          "xtreemfs::SharedFile: issuing write # " << 
+        log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+          "xtreemfs::SharedFile: issuing write # " <<
           ( expected_write_response_count + 1 ) <<
-          " of " << object_size << 
+          " of " << object_size <<
           " bytes to object number " << object_number <<
           " in file " << xcap.get_file_id() <<
           " (object offset = " << object_offset <<
@@ -675,43 +704,43 @@ SharedFile::write
 
     OSDWriteResponse latest_osd_write_response;
 
-    for 
-    ( 
-      size_t write_response_i = 0; 
-      write_response_i < expected_write_response_count; 
-      write_response_i++ 
+    for
+    (
+      size_t write_response_i = 0;
+      write_response_i < expected_write_response_count;
+      write_response_i++
     )
     {
-      OSDInterface::writeResponse& write_response = 
+      OSDInterface::writeResponse& write_response =
         write_response_queue->dequeue();
 
       if ( write_response.get_selected_file_replica() != 0 )
         selected_file_replica = write_response.get_selected_file_replica();
 
 #ifdef _DEBUG
-      if 
-      ( 
-        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-           Volume::VOLUME_FLAG_TRACE_FILE_IO 
+      if
+      (
+        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
+           Volume::VOLUME_FLAG_TRACE_FILE_IO
       )
-        log->getStream( YIELD::platform::Log::LOG_INFO ) << 
-          "xtreemfs::SharedFile::write received response # " << 
-          ( write_response_i + 1 ) << " of " << 
+        log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+          "xtreemfs::SharedFile::write received response # " <<
+          ( write_response_i + 1 ) << " of " <<
           expected_write_response_count << ".";
 #endif
 
-      if 
-      ( 
-        write_response.get_osd_write_response() > latest_osd_write_response 
+      if
+      (
+        write_response.get_osd_write_response() > latest_osd_write_response
       )
       {
 #ifdef _DEBUG
-        if 
-        ( 
-          ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) == 
-              Volume::VOLUME_FLAG_TRACE_FILE_IO 
+        if
+        (
+          ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
+              Volume::VOLUME_FLAG_TRACE_FILE_IO
         )
-          log->getStream( YIELD::platform::Log::LOG_INFO ) << 
+          log->getStream( YIELD::platform::Log::LOG_INFO ) <<
             "xtreemfs::SharedFile: OSD write response is newer than latest known.";
 #endif
 
@@ -725,10 +754,10 @@ SharedFile::write
     if ( !latest_osd_write_response.get_new_file_size().empty() )
     {
       parent_volume->fsetattr
-      ( 
-        latest_osd_write_response, 
-        MRCInterface::SETATTR_SIZE, 
-        xcap 
+      (
+        latest_osd_write_response,
+        MRCInterface::SETATTR_SIZE,
+        xcap
       );
     }
 
@@ -745,12 +774,12 @@ SharedFile::write
     ret = -1;
   }
 
-  for 
-  ( 
-    std::vector<OSDInterface::writeResponse*>::iterator 
-      write_response_i = write_responses.begin(); 
-    write_response_i != write_responses.end(); 
-    write_response_i++ 
+  for
+  (
+    std::vector<OSDInterface::writeResponse*>::iterator
+      write_response_i = write_responses.begin();
+    write_response_i != write_responses.end();
+    write_response_i++
    )
      OSDInterface::writeResponse::decRef( **write_response_i );
 

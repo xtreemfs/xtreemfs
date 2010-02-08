@@ -1,13 +1,37 @@
+// Copyright (c) 2010 Minor Gordon
+// All rights reserved
+// 
+// This source file is part of the YieldFS project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the YieldFS project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
 #include "yieldfs.h"
 using namespace yieldfs;
 
 
 // fuse_unix.h
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
-
-
-
 #ifndef _WIN32
 #define FUSE_USE_VERSION 26
 #include <fuse.h>
@@ -644,12 +668,8 @@ namespace yieldfs
 
 
 
+
 // fuse_win32.h
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
-
-
-
 #ifdef _WIN32
 #include <windows.h>
 #include <dokan.h>
@@ -1455,13 +1475,8 @@ namespace yieldfs
 };
 
 
+
 // tracing_file.h
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
-
-
-
-
 namespace yieldfs
 {
   class TracingFile : public StackableFile
@@ -1482,14 +1497,16 @@ namespace yieldfs
 };
 
 
+
 // fuse.cpp
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 #ifdef _WIN32
 #else
 #endif
+
+
 #ifndef _WIN32
 bool FUSE::is_running = false;
+
 uid_t FUSE::geteuid()
 {
   if ( is_running )
@@ -1503,6 +1520,7 @@ uid_t FUSE::geteuid()
   else
     return static_cast<uid_t>( -1 );
 }
+
 gid_t FUSE::getegid()
 {
   if ( is_running )
@@ -1517,6 +1535,7 @@ gid_t FUSE::getegid()
     return static_cast<gid_t>( -1 );
 }
 #endif
+
 uint32_t FUSE::getpid()
 {
 #ifdef _WIN32
@@ -1534,6 +1553,7 @@ uint32_t FUSE::getpid()
     return static_cast<uint32_t>( ::getpid() );
 #endif
 }
+
 FUSE::FUSE( YIELD::platform::auto_Volume volume, uint32_t flags )
 {
 #ifdef _WIN32
@@ -1542,6 +1562,7 @@ FUSE::FUSE( YIELD::platform::auto_Volume volume, uint32_t flags )
   fuse_unix = new FUSEUnix( volume, flags );
 #endif
 }
+
 FUSE::~FUSE()
 {
 #ifdef _WIN32
@@ -1550,6 +1571,7 @@ FUSE::~FUSE()
   delete fuse_unix;
 #endif
 }
+
 #ifdef _WIN32
 int FUSE::main( const char* mount_point )
 {
@@ -1561,6 +1583,7 @@ int FUSE::main( char* argv0, const char* mount_point )
   is_running = true;
   return fuse_unix->main( argv0, mount_point );
 }
+
 int FUSE::main( struct fuse_args& fuse_args_, const char* mount_point )
 {
   is_running = true;
@@ -1570,48 +1593,56 @@ int FUSE::main( struct fuse_args& fuse_args_, const char* mount_point )
 
 
 // stackable_file.cpp
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 bool StackableFile::close()
 {
   return underlying_file->close();
 }
+
 bool StackableFile::datasync()
 {
   return underlying_file->datasync();
 }
+
 YIELD::platform::auto_Stat StackableFile::getattr()
 {
   return underlying_file->getattr();
 }
+
 bool StackableFile::getlk( bool exclusive, uint64_t offset, uint64_t length )
 {
   return underlying_file->getlk( exclusive, offset, length );
 }
+
 bool StackableFile::getxattr( const std::string& name, std::string& out_value )
 {
   return underlying_file->getxattr( name, out_value );
 }
+
 bool StackableFile::listxattr( std::vector<std::string>& out_names )
 {
   return underlying_file->listxattr( out_names );
 }
+
 ssize_t StackableFile::read( void* buffer, size_t buffer_len, uint64_t offset )
 {
   return underlying_file->read( buffer, buffer_len, offset );
 }
+
 bool StackableFile::removexattr( const std::string& name )
 {
   return underlying_file->removexattr( name );
 }
+
 bool StackableFile::setlk( bool exclusive, uint64_t offset, uint64_t length )
 {
   return underlying_file->setlk( exclusive, offset, length );
 }
+
 bool StackableFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
 {
   return underlying_file->setlkw( exclusive, offset, length );
 }
+
 bool
 StackableFile::setxattr
 (
@@ -1622,18 +1653,22 @@ StackableFile::setxattr
 {
   return underlying_file->setxattr( name, value, flags );
 }
+
 bool StackableFile::sync()
 {
   return underlying_file->sync();
 }
+
 bool StackableFile::truncate( uint64_t offset )
 {
   return underlying_file->truncate( offset );
 }
+
 bool StackableFile::unlk( uint64_t offset, uint64_t length )
 {
   return underlying_file->unlk( offset, length );
 }
+
 ssize_t
 StackableFile::write
 (
@@ -1647,12 +1682,11 @@ StackableFile::write
 
 
 // stackable_volume.cpp
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 bool StackableVolume::access( const YIELD::platform::Path& path, int amode )
 {
   return underlying_volume->access( path, amode );
 }
+
 YIELD::platform::auto_Stat
 StackableVolume::getattr
 (
@@ -1661,6 +1695,7 @@ StackableVolume::getattr
 {
   return underlying_volume->getattr( path );
 }
+
 bool
 StackableVolume::getxattr
 (
@@ -1671,6 +1706,7 @@ StackableVolume::getxattr
 {
   return underlying_volume->getxattr( path, name, out_value );
 }
+
 bool
 StackableVolume::link
 (
@@ -1680,6 +1716,7 @@ StackableVolume::link
 {
   return underlying_volume->link( old_path, new_path );
 }
+
 bool
 StackableVolume::listxattr
 (
@@ -1689,10 +1726,12 @@ StackableVolume::listxattr
 {
   return underlying_volume->listxattr( path, out_names );
 }
+
 bool StackableVolume::mkdir( const YIELD::platform::Path& path, mode_t mode )
 {
   return underlying_volume->mkdir( path, mode );
 }
+
 YIELD::platform::auto_File
 StackableVolume::open
 (
@@ -1704,6 +1743,7 @@ StackableVolume::open
 {
   return underlying_volume->open( path, flags, mode, attributes );
 }
+
 bool
 StackableVolume::readdir
 (
@@ -1714,11 +1754,13 @@ StackableVolume::readdir
 {
   return underlying_volume->readdir( path, match_file_name_prefix, callback );
 }
+
 YIELD::platform::auto_Path
 StackableVolume::readlink( const YIELD::platform::Path& path )
 {
   return underlying_volume->readlink( path );
 }
+
 bool
 StackableVolume::removexattr
 (
@@ -1728,6 +1770,7 @@ StackableVolume::removexattr
 {
   return underlying_volume->removexattr( path, name );
 }
+
 bool
 StackableVolume::rename
 (
@@ -1737,11 +1780,13 @@ StackableVolume::rename
 {
   return underlying_volume->rename( from_path, to_path );
 }
+
 bool
 StackableVolume::rmdir( const YIELD::platform::Path& path )
 {
   return underlying_volume->rmdir( path );
 }
+
 bool
 StackableVolume::setattr
 (
@@ -1752,6 +1797,7 @@ StackableVolume::setattr
 {
   return underlying_volume->setattr( path, stbuf, to_set );
 }
+
 bool
 StackableVolume::setxattr
 (
@@ -1763,6 +1809,7 @@ StackableVolume::setxattr
 {
   return underlying_volume->setxattr( path, name, value, flags );
 }
+
 bool
 StackableVolume::statvfs
 (
@@ -1772,6 +1819,7 @@ StackableVolume::statvfs
 {
   return underlying_volume->statvfs( path, stvfsbuf );
 }
+
 bool
 StackableVolume::symlink
 (
@@ -1781,6 +1829,7 @@ StackableVolume::symlink
 {
   return underlying_volume->symlink( old_path, new_path );
 }
+
 bool
 StackableVolume::truncate
 (
@@ -1790,10 +1839,12 @@ StackableVolume::truncate
 {
   return underlying_volume->truncate( path, new_size );
 }
+
 bool StackableVolume::unlink( const YIELD::platform::Path& path )
 {
   return underlying_volume->unlink( path );
 }
+
 YIELD::platform::Path
 StackableVolume::volname
 (
@@ -1805,9 +1856,9 @@ StackableVolume::volname
 
 
 // tracing_file.cpp
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 #include <iostream>
+
+
 TracingFile::TracingFile
 (
   YIELD::platform::auto_Log log,
@@ -1820,6 +1871,7 @@ TracingFile::TracingFile
     this->log =
     YIELD::platform::Log::open( std::cout, YIELD::platform::Log::LOG_INFO );
 }
+
 bool TracingFile::close()
 {
   return TracingVolume::trace
@@ -1830,6 +1882,7 @@ bool TracingFile::close()
     underlying_file->close()
   );
 }
+
 bool TracingFile::datasync()
 {
   return TracingVolume::trace
@@ -1840,6 +1893,7 @@ bool TracingFile::datasync()
     underlying_file->datasync()
   );
 }
+
 YIELD::platform::auto_Stat TracingFile::getattr()
 {
   YIELD::platform::auto_Stat stbuf = underlying_file->getattr();
@@ -1852,6 +1906,7 @@ YIELD::platform::auto_Stat TracingFile::getattr()
   );
   return stbuf;
 }
+
 bool TracingFile::getlk( bool exclusive, uint64_t offset, uint64_t length )
 {
   return TracingVolume::trace
@@ -1864,6 +1919,7 @@ bool TracingFile::getlk( bool exclusive, uint64_t offset, uint64_t length )
     underlying_file->getlk( exclusive, offset, length )
   );
 }
+
 bool TracingFile::getxattr( const std::string& name, std::string& out_value )
 {
   return TracingVolume::trace
@@ -1875,6 +1931,8 @@ bool TracingFile::getxattr( const std::string& name, std::string& out_value )
     underlying_file->getxattr( name, out_value )
   );
 }
+
+
 bool TracingFile::listxattr( std::vector<std::string>& out_names )
 {
   return TracingVolume::trace
@@ -1885,6 +1943,7 @@ bool TracingFile::listxattr( std::vector<std::string>& out_names )
     underlying_file->listxattr( out_names )
   );
 }
+
 ssize_t TracingFile::read( void* rbuf, size_t size, uint64_t offset )
 {
   ssize_t read_ret = underlying_file->read( rbuf, size, offset );
@@ -1899,6 +1958,7 @@ ssize_t TracingFile::read( void* rbuf, size_t size, uint64_t offset )
   );
   return read_ret;
 }
+
 bool TracingFile::removexattr( const std::string& name )
 {
   return TracingVolume::trace
@@ -1910,6 +1970,7 @@ bool TracingFile::removexattr( const std::string& name )
     underlying_file->removexattr( name )
   );
 }
+
 bool TracingFile::setlk( bool exclusive, uint64_t offset, uint64_t length )
 {
   return TracingVolume::trace
@@ -1922,6 +1983,7 @@ bool TracingFile::setlk( bool exclusive, uint64_t offset, uint64_t length )
     underlying_file->setlk( exclusive, offset, length )
   );
 }
+
 bool TracingFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
 {
   return TracingVolume::trace
@@ -1934,6 +1996,7 @@ bool TracingFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
     underlying_file->setlkw( exclusive, offset, length )
   );
 }
+
 bool TracingFile::setxattr
 (
   const std::string& name,
@@ -1950,6 +2013,7 @@ bool TracingFile::setxattr
     underlying_file->setxattr( name, value, flags )
   );
 }
+
 bool TracingFile::sync()
 {
   return TracingVolume::trace
@@ -1960,6 +2024,7 @@ bool TracingFile::sync()
     underlying_file->sync()
   );
 }
+
 bool TracingFile::truncate( uint64_t new_size )
 {
   return TracingVolume::trace
@@ -1972,6 +2037,7 @@ bool TracingFile::truncate( uint64_t new_size )
     underlying_file->truncate( new_size )
   );
 }
+
 bool TracingFile::unlk( uint64_t offset, uint64_t length )
 {
   return TracingVolume::trace
@@ -1984,6 +2050,7 @@ bool TracingFile::unlk( uint64_t offset, uint64_t length )
     underlying_file->unlk( offset, length )
   );
 }
+
 ssize_t
 TracingFile::write
 (
@@ -1993,6 +2060,7 @@ TracingFile::write
 )
 {
   ssize_t write_ret = underlying_file->write( buffer, buffer_len, offset );
+
   TracingVolume::trace
   (
     log,
@@ -2002,14 +2070,15 @@ TracingFile::write
     offset,
     write_ret == static_cast<ssize_t>( buffer_len )
   );
+
   return write_ret;
 }
 
 
 // tracing_volume.cpp
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the YieldFS project. It is licensed under the New BSD license (see COPYING for terms and conditions).
 #include <iostream>
+
+
 class TracingVolume::listdirCallback
   : public YIELD::platform::Volume::listdirCallback
 {
@@ -2021,10 +2090,12 @@ public:
   )
     : user_listdir_callback( user_listdir_callback ), log( log )
   { }
+
   listdirCallback& operator=( const listdirCallback& )
   {
     return *this;
   }
+
   // YIELD::platform::Volume::listdirCallback
   bool operator()( const YIELD::platform::Path& path )
   {
@@ -2032,10 +2103,13 @@ public:
       "yieldfs::TracingVolume::listdir: returning path " << path << ".";
     return user_listdir_callback( path );
   }
+
 private:
   YIELD::platform::Volume::listdirCallback& user_listdir_callback;
   YIELD::platform::auto_Log log;
 };
+
+
 class TracingVolume::readdirCallback
   : public YIELD::platform::Volume::readdirCallback
 {
@@ -2047,10 +2121,12 @@ public:
   )
     : user_readdir_callback( user_readdir_callback ), log( log )
   { }
+
   readdirCallback& operator=( const readdirCallback& )
   {
     return *this;
   }
+
   // YIELD::platform::Volume::readdirCallback
   bool operator()
   (
@@ -2063,21 +2139,26 @@ public:
       path << ": " << static_cast<std::string>( *stbuf ) << ".";
     return user_readdir_callback( path, stbuf );
   }
+
 private:
   YIELD::platform::Volume::readdirCallback& user_readdir_callback;
   YIELD::platform::auto_Log log;
 };
+
+
 TracingVolume::TracingVolume()
 {
   log =
     YIELD::platform::Log::open( std::cout, YIELD::platform::Log::LOG_INFO );
 }
+
 TracingVolume::TracingVolume( YIELD::platform::auto_Volume underlying_volume )
   : StackableVolume( underlying_volume )
 {
   log =
     YIELD::platform::Log::open( std::cout, YIELD::platform::Log::LOG_INFO );
 }
+
 TracingVolume::TracingVolume
 (
   YIELD::platform::auto_Log log,
@@ -2085,6 +2166,7 @@ TracingVolume::TracingVolume
 )
   : StackableVolume( log, underlying_volume )
 { }
+
 bool TracingVolume::access( const YIELD::platform::Path& path, int amode )
 {
   return trace
@@ -2096,6 +2178,7 @@ bool TracingVolume::access( const YIELD::platform::Path& path, int amode )
     underlying_volume->access( path, amode )
   );
 }
+
 YIELD::platform::auto_Stat
 TracingVolume::getattr
 (
@@ -2110,6 +2193,7 @@ TracingVolume::getattr
       static_cast<std::string>( *stbuf ) << ".";
   return stbuf;
 }
+
 bool
 TracingVolume::getxattr
 (
@@ -2128,6 +2212,7 @@ TracingVolume::getxattr
     underlying_volume->getxattr( path, name, out_value )
   );
 }
+
 bool
 TracingVolume::link
 (
@@ -2144,6 +2229,7 @@ TracingVolume::link
     underlying_volume->link( old_path, new_path )
   );
 }
+
 bool
 TracingVolume::listdir
 (
@@ -2155,7 +2241,9 @@ TracingVolume::listdir
   log->getStream( YIELD::platform::Log::LOG_INFO ) <<
       "yieldfs::TracingVolume: listdir( " <<
       path << ", " << match_file_name_prefix << " )";
+
   listdirCallback wrapped_callback( callback, log );
+
   return trace
   (
     log,
@@ -2169,6 +2257,7 @@ TracingVolume::listdir
     )
   );
 }
+
 bool
 TracingVolume::listxattr
 (
@@ -2202,6 +2291,7 @@ TracingVolume::listxattr
   else
     return false;
 }
+
 bool
 TracingVolume::mkdir( const YIELD::platform::Path& path, mode_t mode )
 {
@@ -2214,6 +2304,7 @@ TracingVolume::mkdir( const YIELD::platform::Path& path, mode_t mode )
     underlying_volume->mkdir( path, mode )
   );
 }
+
 YIELD::platform::auto_File
 TracingVolume::open
 (
@@ -2227,13 +2318,17 @@ TracingVolume::open
     underlying_volume->open( path, flags, mode, attributes );
   if( file != NULL )
     file = new TracingFile( log, path, file );
+
   YIELD::platform::Log::Stream log_stream =
     log->getStream( YIELD::platform::Log::LOG_INFO );
   log_stream << "yieldfs::TracingVolume::open( " << path <<
     ", " << flags << ", " << mode << ", " << attributes << " )";
+
   trace( log_stream, file != NULL );
+
   return file;
 }
+
 bool
 TracingVolume::readdir
 (
@@ -2256,6 +2351,7 @@ TracingVolume::readdir
     )
   );
 }
+
 YIELD::platform::auto_Path
 TracingVolume::readlink
 (
@@ -2266,6 +2362,7 @@ TracingVolume::readlink
   trace( log, "yieldfs::TracingVolume::readlink", path, link_path != NULL );
   return link_path;
 }
+
 bool
 TracingVolume::removexattr
 (
@@ -2282,6 +2379,7 @@ TracingVolume::removexattr
     underlying_volume->removexattr( path, name )
   );
 }
+
 bool
 TracingVolume::rename
 (
@@ -2298,6 +2396,7 @@ TracingVolume::rename
     underlying_volume->rename( from_path, to_path )
   );
 }
+
 bool
 TracingVolume::rmdir( const YIELD::platform::Path& path )
 {
@@ -2309,6 +2408,7 @@ TracingVolume::rmdir( const YIELD::platform::Path& path )
     underlying_volume->rmdir( path )
   );
 }
+
 bool
 TracingVolume::setattr
 (
@@ -2330,6 +2430,7 @@ TracingVolume::setattr
     underlying_volume->setattr( path, stbuf, to_set )
   );
 }
+
 bool
 TracingVolume::setxattr
 (
@@ -2349,6 +2450,7 @@ TracingVolume::setxattr
     underlying_volume->setxattr( path, name, value, flags )
   );
 }
+
 bool
 TracingVolume::statvfs
 (
@@ -2364,6 +2466,7 @@ TracingVolume::statvfs
     underlying_volume->statvfs( path, buf )
   );
 }
+
 bool
 TracingVolume::symlink
 (
@@ -2380,6 +2483,7 @@ TracingVolume::symlink
     underlying_volume->symlink( to_path, from_path )
   );
 }
+
 bool
 TracingVolume::trace
 (
@@ -2394,6 +2498,7 @@ TracingVolume::trace
   log_stream << operation_name << "( " << path << " )";
   return trace( log_stream, operation_result );
 }
+
 bool
 TracingVolume::trace
 (
@@ -2409,6 +2514,7 @@ TracingVolume::trace
   log_stream << operation_name << "( " << path << ", " << mode << " )";
   return trace( log_stream, operation_result );
 }
+
 bool
 TracingVolume::trace
 (
@@ -2424,6 +2530,7 @@ TracingVolume::trace
   log_stream << operation_name << "( " << old_path << ", " << new_path << " )";
   return trace( log_stream, operation_result );
 }
+
 bool
 TracingVolume::trace
 (
@@ -2441,6 +2548,7 @@ TracingVolume::trace
     << xattr_name << ", " << xattr_value << " )";
   return trace( log_stream, operation_result );
 }
+
 bool
 TracingVolume::trace
 (
@@ -2458,6 +2566,7 @@ TracingVolume::trace
     << size << ", " << offset << " )";
   return trace( log_stream, operation_result );
 }
+
 bool
 TracingVolume::trace
 (
@@ -2469,8 +2578,10 @@ TracingVolume::trace
    log_stream << " -> success.";
   else
    log_stream << " -> failed: " << YIELD::platform::Exception() << ".";
+
   return operation_result;
 }
+
 bool
 TracingVolume::truncate
 (
@@ -2488,6 +2599,7 @@ TracingVolume::truncate
     underlying_volume->truncate( path, new_size )
   );
 }
+
 bool
 TracingVolume::unlink( const YIELD::platform::Path& path )
 {
@@ -2499,6 +2611,7 @@ TracingVolume::unlink( const YIELD::platform::Path& path )
     underlying_volume->unlink( path )
   );
 }
+
 YIELD::platform::Path
 TracingVolume::volname
 (

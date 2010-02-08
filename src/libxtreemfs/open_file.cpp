@@ -1,5 +1,31 @@
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+// Copyright (c) 2010 Minor Gordon
+// All rights reserved
+// 
+// This source file is part of the XtreemFS project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the XtreemFS project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #include "open_file.h"
 using namespace org::xtreemfs::interfaces;
@@ -29,19 +55,19 @@ public:
         XCap renewed_xcap;
 
         //open_file->parent_volume->get_log()->
-        //  getStream( YIELD::platform::Log::LOG_INFO ) << 
-        //  "xtreemfs::OpenFile: renewing XCap for file " << 
+        //  getStream( YIELD::platform::Log::LOG_INFO ) <<
+        //  "xtreemfs::OpenFile: renewing XCap for file " <<
         //  open_file->file_credentials.get_xcap().get_file_id() << ".";
 
         open_file->parent_shared_file->get_parent_volume()->get_mrc_proxy()
           ->xtreemfs_renew_capability
-        ( 
+        (
           open_file->get_xcap(),
-          renewed_xcap      
+          renewed_xcap
         );
 
         //open_file->parent_volume->get_log()->
-        //  getStream( YIELD::platform::Log::LOG_INFO ) << 
+        //  getStream( YIELD::platform::Log::LOG_INFO ) <<
         //  "xtreemfs::OpenFile: successfully renewed XCap for open_file " <<
         //  open_file->file_credentials.get_xcap().get_file_id() << ".";
 
@@ -57,27 +83,27 @@ public:
             new XCapTimer
             (
               open_file,
-              ( renewed_xcap.get_expire_timeout_s() - 
-                XCAP_EXPIRE_TIMEOUT_S_MIN ) 
+              ( renewed_xcap.get_expire_timeout_s() -
+                XCAP_EXPIRE_TIMEOUT_S_MIN )
               * NS_IN_S
             )
           );
         }
-        //else 
+        //else
         //  open_file->parent_volume->get_log()->
         //    getStream( YIELD::platform::Log::LOG_ERR ) <<
-        //      "xtreemfs::OpenFile: received xcap for file " << 
+        //      "xtreemfs::OpenFile: received xcap for file " <<
         //      renewed_xcap.get_file_id() <<
-        //      "that expires in less than " << 
-        //      XCAP_EXPIRE_TIMEOUT_S_MIN << 
+        //      "that expires in less than " <<
+        //      XCAP_EXPIRE_TIMEOUT_S_MIN <<
         //      " seconds, will not try to renew.";
       }
       catch ( std::exception& )
       {
         //open_file->parent_volume->get_log()->
-        //  getStream( YIELD::platform::Log::LOG_ERR ) << 
+        //  getStream( YIELD::platform::Log::LOG_ERR ) <<
         //  "xtreemfs::OpenFile: caught exception trying to renew XCap for file " <<
-        //  open_file->file_credentials.get_xcap().get_file_id() << 
+        //  open_file->file_credentials.get_xcap().get_file_id() <<
         //  ": " << exc.what() << ".";
       }
     }
@@ -89,7 +115,7 @@ private:
 
 
 OpenFile::OpenFile
-( 
+(
   auto_SharedFile parent_shared_file,
   const XCap& xcap
 )
@@ -98,7 +124,7 @@ OpenFile::OpenFile
 {
   closed = false;
 
-  if 
+  if
   (
     xcap.get_expire_timeout_s() >
     XCAP_EXPIRE_TIMEOUT_S_MIN
@@ -112,19 +138,19 @@ OpenFile::OpenFile
     // -> it's important to explicitly close() instead of relying on the destructor
     // close(). (The FUSE interface explicitly close()s on release()).
     YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer
-    ( 
+    (
       new XCapTimer
       (
-        incRef(), 
+        incRef(),
 //        10 * NS_IN_S
         ( xcap.get_expire_timeout_s() - XCAP_EXPIRE_TIMEOUT_S_MIN ) * NS_IN_S
       )
-    );  
+    );
   }
-  //else 
+  //else
   //  parent_volume->get_log()->getStream( YIELD::platform::Log::LOG_ERR ) <<
   //    "xtreemfs::OpenFile: received xcap that expires in less than " <<
-  //    XCAP_EXPIRE_TIMEOUT_S_MIN << 
+  //    XCAP_EXPIRE_TIMEOUT_S_MIN <<
   //    " seconds, will not try to renew.";
 }
 
@@ -197,10 +223,10 @@ bool OpenFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
 
 bool
 OpenFile::setxattr
-( 
-  const std::string& name, 
-  const std::string& value, 
-  int flags 
+(
+  const std::string& name,
+  const std::string& value,
+  int flags
 )
 {
   return parent_shared_file->setxattr( name, value, flags );

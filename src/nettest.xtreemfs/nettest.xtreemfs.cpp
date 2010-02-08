@@ -1,5 +1,31 @@
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+// Copyright (c) 2010 Minor Gordon
+// All rights reserved
+// 
+// This source file is part of the XtreemFS project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the XtreemFS project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #include "nettest_proxy.h"
 #include "xtreemfs/main.h"
@@ -19,24 +45,24 @@ namespace nettest_xtreemfs
   public:
     Main()
       : xtreemfs::Main
-        ( 
-          "nettest.xtreemfs", 
+        (
+          "nettest.xtreemfs",
           "test the network connection to an XtreemFS server",
           "[oncrpc://]<host>:port"
         )
     {
       addOption
       (
-        NETTEST_XTREEMFS_OPTION_NUM_CALLS, 
+        NETTEST_XTREEMFS_OPTION_NUM_CALLS,
         "-n",
         "--num-calls",
-        "number of RPCs to send"        
+        "number of RPCs to send"
       );
       num_calls = NUM_CALLS_DEFAULT;
 
       addOption
       (
-        NETTEST_XTREEMFS_OPTION_RATE, 
+        NETTEST_XTREEMFS_OPTION_RATE,
         "-r",
         "--rate",
         "rate to send RPCs in RPCs/s (default = 0 = as fast as the server will go)"
@@ -45,7 +71,7 @@ namespace nettest_xtreemfs
 
       addOption
       (
-        NETTEST_XTREEMFS_OPTION_RECV_BUFFER, 
+        NETTEST_XTREEMFS_OPTION_RECV_BUFFER,
         "--recv-buffer",
         NULL,
         "receive buffers with the given size (in K, power of 2, up to 2MB)"
@@ -53,7 +79,7 @@ namespace nettest_xtreemfs
 
       addOption
       (
-        NETTEST_XTREEMFS_OPTION_SEND_BUFFER, 
+        NETTEST_XTREEMFS_OPTION_SEND_BUFFER,
         "--send-buffer",
         NULL,
         "send buffers with the given size (in K)"
@@ -79,11 +105,11 @@ namespace nettest_xtreemfs
     // YIELD::Main
     int _main( int, char** )
     {
-      auto_NettestProxy 
+      auto_NettestProxy
         nettest_proxy
-        ( 
+        (
           NettestProxy::create
-          ( 
+          (
             *uri,
             NettestProxy::CONCURRENCY_LEVEL_DEFAULT,
             0,
@@ -91,13 +117,13 @@ namespace nettest_xtreemfs
             get_operation_timeout(),
             NettestProxy::RECONNECT_TRIES_MAX_DEFAULT,
             get_proxy_ssl_context()
-          ) 
-        );         
+          )
+        );
 
       uint64_t sleep_after_each_call_ns;
       if ( rate > 0 )
       {
-        sleep_after_each_call_ns 
+        sleep_after_each_call_ns
           = static_cast<uint64_t>( ( 1.0 / static_cast<double>( rate ) )
             * static_cast<double>( NS_IN_S ) );
       }
@@ -117,7 +143,7 @@ namespace nettest_xtreemfs
       uint64_t io_total_kb = 0;
       uint64_t rpc_time_total_ns = 0;
       YIELD::platform::Time start_wall_time;
- 
+
       for ( uint32_t call_i = 0; call_i < num_calls; call_i++ )
       {
         YIELD::platform::Time rpc_time_start;
@@ -135,7 +161,7 @@ namespace nettest_xtreemfs
         else
           nettest_proxy->nop();
 
-        rpc_time_total_ns += YIELD::platform::Time() - rpc_time_start;    
+        rpc_time_total_ns += YIELD::platform::Time() - rpc_time_start;
 
         std::cout << "." << std::flush;
 
@@ -145,20 +171,20 @@ namespace nettest_xtreemfs
 
       YIELD::platform::Time end_wall_time;
       uint64_t wall_time_total_ns = ( end_wall_time - start_wall_time );
-      double wall_time_total_ms 
-        = static_cast<double>( wall_time_total_ns ) 
+      double wall_time_total_ms
+        = static_cast<double>( wall_time_total_ns )
           / static_cast<double>( NS_IN_MS );
-      double wall_time_total_s 
-        = static_cast<double>( wall_time_total_ns ) 
+      double wall_time_total_s
+        = static_cast<double>( wall_time_total_ns )
           / static_cast<double>( NS_IN_S );
 
       std::cout << std::endl << std::endl;
 
-      std::cout << "Elapsed wall time: " << 
+      std::cout << "Elapsed wall time: " <<
          wall_time_total_ms << "ms" << std::endl;
 
-      double rpc_time_total_ms 
-        = static_cast<double>( rpc_time_total_ns ) 
+      double rpc_time_total_ms
+        = static_cast<double>( rpc_time_total_ns )
           / static_cast<double>( NS_IN_MS );
       std::cout << "Elapsed time spent in RPCs: " <<
         rpc_time_total_ms << "ms" << std::endl;
@@ -166,16 +192,16 @@ namespace nettest_xtreemfs
       std::cout << "Average time per RPC: " <<
         ( rpc_time_total_ms / static_cast<double>( num_calls ) ) << "ms" << std::endl;
 
-      
+
       double io_total_mb = static_cast<double>( io_total_kb ) / 1024.0;
       std::cout << "MB transferred: " << io_total_mb << std::endl;
 /*
-      double kb_per_s 
-        = static_cast<double>( io_total_kb ) / wall_time_total_s;        
+      double kb_per_s
+        = static_cast<double>( io_total_kb ) / wall_time_total_s;
       std::cout << "KB/s: " << kb_per_s << std::endl;
 */
-      double mb_per_s 
-        = static_cast<double>( io_total_kb ) / 1024.0 / wall_time_total_s;        
+      double mb_per_s
+        = static_cast<double>( io_total_kb ) / 1024.0 / wall_time_total_s;
       std::cout << "MB/s: " << mb_per_s << std::endl;
 
       return 0;
@@ -234,7 +260,7 @@ namespace nettest_xtreemfs
           uint32_t capacity_kb = atoi( arg );
           if ( capacity_kb > 0 )
           {
-            send_buffer 
+            send_buffer
               = new yidl::runtime::HeapBuffer( capacity_kb * 1024 );
             for ( uint32_t byte_i = 0; byte_i < capacity_kb * 1024; byte_i++ )
               send_buffer->put( "m", 1 );

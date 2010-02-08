@@ -1,5 +1,32 @@
-// Copyright 2003-2008 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+// Copyright (c) 2010 Minor Gordon
+// With original implementations and ideas contributed by Felix Hupfeld
+// All rights reserved
+// 
+// This source file is part of the Yield project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the Yield project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #ifndef _YIELD_PLATFORM_H_
 #define _YIELD_PLATFORM_H_
@@ -223,11 +250,11 @@ typedef int ssize_t;
     {
       unsigned long Internal;
       unsigned long InternalHigh;
-      union 
+      union
       {
 #pragma warning( push )
 #pragma warning( disable: 4201 )
-        struct 
+        struct
         {
           unsigned int Offset;
           unsigned int OffsetHigh;
@@ -236,7 +263,7 @@ typedef int ssize_t;
         void* Pointer;
       };
 
-      void* hEvent;  
+      void* hEvent;
     };
 
 struct _BY_HANDLE_FILE_INFORMATION;
@@ -264,7 +291,7 @@ struct statvfs
 {
   unsigned long f_bsize;    // File system block size.
   unsigned long f_frsize;   // Fundamental file system block size.
-  fsblkcnt_t    f_blocks;   // Total number of blocks on file system 
+  fsblkcnt_t    f_blocks;   // Total number of blocks on file system
                             // in units of f_frsize.
   fsblkcnt_t    f_bfree;    // Total number of free blocks.
   fsblkcnt_t    f_bavail;   // Number of free blocks available to
@@ -316,8 +343,8 @@ namespace YIELD
 
       // std::exception
       const char* what() const throw()
-      { 
-        return const_cast<Exception*>( this )->get_error_message(); 
+      {
+        return const_cast<Exception*>( this )->get_error_message();
       }
 
     protected:
@@ -354,24 +381,24 @@ namespace YIELD
       void as_iso_date( char* out_str, uint8_t out_str_len ) const;
       void as_iso_date_time( char* out_str, uint8_t out_str_len ) const;
 
-      inline uint64_t as_unix_time_ns() const 
-      { 
-        return unix_time_ns; 
+      inline uint64_t as_unix_time_ns() const
+      {
+        return unix_time_ns;
       }
 
-      inline uint64_t as_unix_time_ms() const 
-      { 
-        return unix_time_ns / NS_IN_MS; 
+      inline uint64_t as_unix_time_ms() const
+      {
+        return unix_time_ns / NS_IN_MS;
       }
 
-      inline uint32_t as_unix_time_s() const 
-      { 
-        return static_cast<uint32_t>( unix_time_ns / NS_IN_S ); 
+      inline uint32_t as_unix_time_s() const
+      {
+        return static_cast<uint32_t>( unix_time_ns / NS_IN_S );
       }
 
-      inline operator uint64_t() const 
-      { 
-        return unix_time_ns; 
+      inline operator uint64_t() const
+      {
+        return unix_time_ns;
       }
 
       operator struct timeval() const;
@@ -382,46 +409,46 @@ namespace YIELD
 #endif
       operator std::string() const;
 
-      inline Time operator+( const Time& other ) const 
-      { 
-        return Time( unix_time_ns + other.unix_time_ns ); 
+      inline Time operator+( const Time& other ) const
+      {
+        return Time( unix_time_ns + other.unix_time_ns );
       }
 
-      inline Time& operator+=( const Time& other ) 
-      { 
-        unix_time_ns += other.unix_time_ns; 
-        return *this; 
+      inline Time& operator+=( const Time& other )
+      {
+        unix_time_ns += other.unix_time_ns;
+        return *this;
       }
 
-      inline Time operator-( const Time& other ) const 
-      { 
-        return Time( unix_time_ns - other.unix_time_ns ); 
+      inline Time operator-( const Time& other ) const
+      {
+        return Time( unix_time_ns - other.unix_time_ns );
       }
 
-      inline Time& operator-=( const Time& other ) 
-      { 
-        unix_time_ns -= other.unix_time_ns; 
-        return *this; 
+      inline Time& operator-=( const Time& other )
+      {
+        unix_time_ns -= other.unix_time_ns;
+        return *this;
       }
 
-      inline bool operator<( const Time& other ) const 
-      { 
-        return unix_time_ns < other.unix_time_ns; 
+      inline bool operator<( const Time& other ) const
+      {
+        return unix_time_ns < other.unix_time_ns;
       }
 
-      inline bool operator>( const Time& other ) const 
-      { 
-        return unix_time_ns > other.unix_time_ns; 
+      inline bool operator>( const Time& other ) const
+      {
+        return unix_time_ns > other.unix_time_ns;
       }
 
-      inline bool operator>=( const Time& other ) const 
-      { 
-        return unix_time_ns >= other.unix_time_ns; 
+      inline bool operator>=( const Time& other ) const
+      {
+        return unix_time_ns >= other.unix_time_ns;
       }
 
-      inline Time& operator=( uint64_t unix_time_ns ) 
-      { 
-        this->unix_time_ns = unix_time_ns; return *this; 
+      inline Time& operator=( uint64_t unix_time_ns )
+      {
+        this->unix_time_ns = unix_time_ns; return *this;
       }
 
     private:
@@ -449,17 +476,17 @@ namespace YIELD
       }
 
 #ifdef _WIN32
-      static AIOControlBlock* from_OVERLAPPED( OVERLAPPED* overlapped ) 
-      { 
-        return reinterpret_cast<struct aiocb*>( overlapped )->this_; 
+      static AIOControlBlock* from_OVERLAPPED( OVERLAPPED* overlapped )
+      {
+        return reinterpret_cast<struct aiocb*>( overlapped )->this_;
       }
 #endif
       virtual void onCompletion( size_t bytes_transferred ) = 0;
       virtual void onError( uint32_t error_code ) = 0;
 #if defined(_WIN32)
-      operator OVERLAPPED*() 
-      { 
-        return reinterpret_cast<OVERLAPPED*>( &aiocb_ ); 
+      operator OVERLAPPED*()
+      {
+        return reinterpret_cast<OVERLAPPED*>( &aiocb_ );
       }
 #elif defined(YIELD_HAVE_POSIX_FILE_AIO)
       operator ::aiocb*() { return &aiocb_; }
@@ -476,7 +503,7 @@ namespace YIELD
       } aiocb_;
 #endif
     };
-  
+
     typedef yidl::runtime::auto_Object<AIOControlBlock> auto_AIOControlBlock;
 
 
@@ -510,7 +537,7 @@ namespace YIELD
       const static mode_t MODE_DEFAULT = S_IREAD|S_IWRITE;
 
 
-      // Construct from a platform file descriptor; 
+      // Construct from a platform file descriptor;
       // takes ownership of the descriptor
 #ifdef _WIN32
       File( void* fd );
@@ -526,16 +553,16 @@ namespace YIELD
       operator void*() const { return fd; }
 #else
       operator int() const { return fd; }
-#endif    
+#endif
 
       // Reads from the current file pointer
-      virtual ssize_t read( yidl::runtime::auto_Buffer buffer ); 
+      virtual ssize_t read( yidl::runtime::auto_Buffer buffer );
 
       // Reads from the current file pointer
-      virtual ssize_t read( void* buffer, size_t buffer_len ); 
+      virtual ssize_t read( void* buffer, size_t buffer_len );
 
       // Seeks from the beginning of the file
-      virtual bool seek( uint64_t offset ); 
+      virtual bool seek( uint64_t offset );
 
       virtual bool seek( uint64_t offset, unsigned char whence );
 
@@ -544,8 +571,8 @@ namespace YIELD
 
       // Writes from the current position
       virtual ssize_t write( yidl::runtime::auto_Buffer buffer );
-    
-      virtual ssize_t write( const void* buffer, size_t buffer_len ); 
+
+      virtual ssize_t write( const void* buffer, size_t buffer_len );
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( File, 1 );
@@ -566,7 +593,7 @@ namespace YIELD
 
     typedef yidl::runtime::auto_Object<File> auto_File;
 
-    
+
     class Log : public yidl::runtime::Object
     {
     public:
@@ -596,7 +623,7 @@ namespace YIELD
           if ( level <= log->get_level() )
             oss << t;
           return *this;
-        }      
+        }
 
       private:
         friend class Log;
@@ -612,12 +639,12 @@ namespace YIELD
 
       static yidl::runtime::auto_Object<Log> open( std::ostream&, Level );
 
-      static yidl::runtime::auto_Object<Log> 
+      static yidl::runtime::auto_Object<Log>
       open
-      ( 
-        const Path& file_path, 
-        Level level, 
-        bool lazy = false 
+      (
+        const Path& file_path,
+        Level level,
+        bool lazy = false
       );
 
       Level get_level() const { return level; }
@@ -638,10 +665,10 @@ namespace YIELD
       void write( const void* str, size_t str_len, Level level )
       {
         return write
-        ( 
-          static_cast<const unsigned char*>( str ), 
-          str_len, 
-          level 
+        (
+          static_cast<const unsigned char*>( str ),
+          str_len,
+          level
         );
       }
 
@@ -652,7 +679,7 @@ namespace YIELD
         if ( level <= this->level )
           write( str, str_len );
       }
-      
+
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( Log, 2 );
 
@@ -695,9 +722,9 @@ namespace YIELD
 #ifdef __BIG_ENDIAN__
         return x;
 #else
-        return ( x >> 24 ) | 
-               ( ( x << 8 ) & 0x00FF0000 ) | 
-               ( ( x >> 8 ) & 0x0000FF00 ) | 
+        return ( x >> 24 ) |
+               ( ( x << 8 ) & 0x00FF0000 ) |
+               ( ( x >> 8 ) & 0x0000FF00 ) |
                ( x << 24 );
 #endif
       }
@@ -708,13 +735,13 @@ namespace YIELD
 #ifdef __BIG_ENDIAN__
         return x;
 #else
-        return ( x >> 56 ) | 
-               ( ( x << 40 ) & 0x00FF000000000000ULL ) | 
-               ( ( x << 24 ) & 0x0000FF0000000000ULL ) | 
-               ( ( x << 8 )  & 0x000000FF00000000ULL ) | 
-               ( ( x >> 8)  & 0x00000000FF000000ULL ) | 
-               ( ( x >> 24) & 0x0000000000FF0000ULL ) | 
-               ( ( x >> 40 ) & 0x000000000000FF00ULL ) | 
+        return ( x >> 56 ) |
+               ( ( x << 40 ) & 0x00FF000000000000ULL ) |
+               ( ( x << 24 ) & 0x0000FF0000000000ULL ) |
+               ( ( x << 8 )  & 0x000000FF00000000ULL ) |
+               ( ( x >> 8)  & 0x00000000FF000000ULL ) |
+               ( ( x >> 24) & 0x0000000000FF0000ULL ) |
+               ( ( x >> 40 ) & 0x000000000000FF00ULL ) |
                ( x << 56 );
 #endif
       }
@@ -734,9 +761,9 @@ namespace YIELD
 #ifdef __BIG_ENDIAN__
         return x;
 #else
-        return ( x >> 24 ) | 
-               ( ( x << 8 ) & 0x00FF0000 ) | 
-               ( ( x >> 8 ) & 0x0000FF00 ) | 
+        return ( x >> 24 ) |
+               ( ( x << 8 ) & 0x00FF0000 ) |
+               ( ( x >> 8 ) & 0x0000FF00 ) |
                ( x << 24 );
 #endif
       }
@@ -747,13 +774,13 @@ namespace YIELD
 #ifdef __BIG_ENDIAN__
         return x;
 #else
-        return ( x >> 56 ) | 
-               ( ( x << 40 ) & 0x00FF000000000000ULL ) | 
-               ( ( x << 24 ) & 0x0000FF0000000000ULL ) | 
-               ( ( x << 8 )  & 0x000000FF00000000ULL ) | 
-               ( ( x >> 8 )  & 0x00000000FF000000ULL ) | 
-               ( ( x >> 24) & 0x0000000000FF0000ULL ) | 
-               ( ( x >> 40 ) & 0x000000000000FF00ULL ) | 
+        return ( x >> 56 ) |
+               ( ( x << 40 ) & 0x00FF000000000000ULL ) |
+               ( ( x << 24 ) & 0x0000FF0000000000ULL ) |
+               ( ( x << 8 )  & 0x000000FF00000000ULL ) |
+               ( ( x >> 8 )  & 0x00000000FF000000ULL ) |
+               ( ( x >> 24) & 0x0000000000FF0000ULL ) |
+               ( ( x >> 40 ) & 0x000000000000FF00ULL ) |
                ( x << 56 );
 #endif
       }
@@ -763,20 +790,20 @@ namespace YIELD
     class MemoryMappedFile : public yidl::runtime::Object
     {
     public:
-      static yidl::runtime::auto_Object<MemoryMappedFile> 
+      static yidl::runtime::auto_Object<MemoryMappedFile>
       open( const Path& path );
 
-      static yidl::runtime::auto_Object<MemoryMappedFile> 
+      static yidl::runtime::auto_Object<MemoryMappedFile>
       open( const Path& path, uint32_t flags );
 
-      static yidl::runtime::auto_Object<MemoryMappedFile> 
+      static yidl::runtime::auto_Object<MemoryMappedFile>
       open
-      ( 
-        const Path& path, 
-        uint32_t flags, 
-        mode_t mode, 
-        uint32_t attributes, 
-        size_t minimum_size 
+      (
+        const Path& path,
+        uint32_t flags,
+        mode_t mode,
+        uint32_t attributes,
+        size_t minimum_size
       );
 
       virtual bool close();
@@ -793,9 +820,9 @@ namespace YIELD
 
     protected:
       MemoryMappedFile
-      ( 
-        yidl::runtime::auto_Object<File> underlying_file, 
-        uint32_t open_flags 
+      (
+        yidl::runtime::auto_Object<File> underlying_file,
+        uint32_t open_flags
       );
 
       virtual ~MemoryMappedFile() { close(); }
@@ -821,7 +848,7 @@ namespace YIELD
       ~Mutex();
 
       // These calls are modeled after the pthread calls they delegate to
-      // Have a separate function for timeout_ns == 0 (never block) to 
+      // Have a separate function for timeout_ns == 0 (never block) to
       // avoid an if branch on a critical path
       bool acquire(); // Blocking
       bool try_acquire(); // Never blocks
@@ -873,10 +900,10 @@ namespace YIELD
           try_pos = ( copied_head + 1 ) % ( QueueLength + 2 );
           try_element = reinterpret_cast<ElementType>( elements[try_pos] );
 
-          while 
-          ( 
+          while
+          (
             try_element == reinterpret_cast<ElementType>( 0 ) ||
-            try_element == reinterpret_cast<ElementType>( 1 ) 
+            try_element == reinterpret_cast<ElementType>( 1 )
           )
           {
             if ( copied_head != head )
@@ -896,10 +923,10 @@ namespace YIELD
           if ( try_pos == tail )
           {
             yidl::runtime::atomic_cas
-            ( 
-              &tail, 
-              ( try_pos + 1 ) % ( QueueLength + 2 ), 
-              try_pos 
+            (
+              &tail,
+              ( try_pos + 1 ) % ( QueueLength + 2 ),
+              try_pos
             );
 
             continue;
@@ -908,22 +935,22 @@ namespace YIELD
           if ( copied_head != head )
             continue;
 
-          if 
-          ( 
+          if
+          (
             yidl::runtime::atomic_cas
-            ( 
+            (
               // Memory
               reinterpret_cast<volatile yidl::runtime::atomic_t*>
-              ( 
-                &elements[try_pos] 
-              ), 
+              (
+                &elements[try_pos]
+              ),
 
               // New value
-              ( 
+              (
                 reinterpret_cast<yidl::runtime::atomic_t>
-                ( 
-                  try_element 
-                ) & POINTER_HIGH_BIT 
+                (
+                  try_element
+                ) & POINTER_HIGH_BIT
               ) ? 1 : 0,
 
               // New value
@@ -936,20 +963,20 @@ namespace YIELD
             if ( try_pos % 2 == 0 )
             {
               yidl::runtime::atomic_cas
-              ( 
-                &head, 
-                try_pos, 
-                copied_head 
+              (
+                &head,
+                try_pos,
+                copied_head
               );
             }
 
-            return 
+            return
               reinterpret_cast<ElementType>
-              ( 
-                ( 
-                  reinterpret_cast<yidl::runtime::atomic_t>( try_element ) 
-                  & POINTER_LOW_BITS 
-              ) << 1 
+              (
+                (
+                  reinterpret_cast<yidl::runtime::atomic_t>( try_element )
+                  & POINTER_LOW_BITS
+              ) << 1
             );
           }
         }
@@ -958,26 +985,26 @@ namespace YIELD
       bool enqueue( ElementType element )
       {
 #ifdef _DEBUG
-        if ( reinterpret_cast<yidl::runtime::atomic_t>( element ) & 0x1 ) 
+        if ( reinterpret_cast<yidl::runtime::atomic_t>( element ) & 0x1 )
           DebugBreak();
 #endif
 
         element = reinterpret_cast<ElementType>
-        ( 
-          reinterpret_cast<yidl::runtime::atomic_t>( element ) >> 1 
+        (
+          reinterpret_cast<yidl::runtime::atomic_t>( element ) >> 1
         );
 
 #ifdef _DEBUG
-        if 
-        ( 
-          reinterpret_cast<yidl::runtime::atomic_t>( element ) & 
-            POINTER_HIGH_BIT 
+        if
+        (
+          reinterpret_cast<yidl::runtime::atomic_t>( element ) &
+            POINTER_HIGH_BIT
         )
           DebugBreak();
 #endif
 
-        yidl::runtime::atomic_t copied_tail, 
-                                last_try_pos, 
+        yidl::runtime::atomic_t copied_tail,
+                                last_try_pos,
                                 try_pos; // te, ate, temp
         ElementType try_element;
 
@@ -985,17 +1012,17 @@ namespace YIELD
         {
           copied_tail = tail;
           last_try_pos = copied_tail;
-          try_element 
+          try_element
             = reinterpret_cast<ElementType>
-            ( 
-              elements[last_try_pos] 
+            (
+              elements[last_try_pos]
             );
           try_pos = ( last_try_pos + 1 ) % ( QueueLength + 2 );
 
-          while 
-          ( 
+          while
+          (
             try_element != reinterpret_cast<ElementType>( 0 ) &&
-            try_element != reinterpret_cast<ElementType>( 1 ) 
+            try_element != reinterpret_cast<ElementType>( 1 )
           )
           {
             if ( copied_tail != tail )
@@ -1009,13 +1036,13 @@ namespace YIELD
             try_pos = ( last_try_pos + 1 ) % ( QueueLength + 2 );
           }
 
-          if ( copied_tail != tail ) // Someone changed tail                                      
+          if ( copied_tail != tail ) // Someone changed tail
             continue;                // while we were looping
 
           if ( try_pos == head )
           {
             last_try_pos = ( try_pos + 1 ) % ( QueueLength + 2 );
-            try_element 
+            try_element
               = reinterpret_cast<ElementType>( elements[last_try_pos] );
 
             if ( try_element != reinterpret_cast<ElementType>( 0 ) &&
@@ -1023,10 +1050,10 @@ namespace YIELD
               return false; // Queue is full
 
             yidl::runtime::atomic_cas
-            ( 
-              &head, 
-              last_try_pos, 
-              try_pos 
+            (
+              &head,
+              last_try_pos,
+              try_pos
             );
 
             continue;
@@ -1036,19 +1063,19 @@ namespace YIELD
             continue;
 
           // diff next line
-          if 
+          if
           (
             yidl::runtime::atomic_cas
-            ( 
+            (
               // Memory
               reinterpret_cast<volatile yidl::runtime::atomic_t*>
-              ( 
-                &elements[last_try_pos] 
-              ), 
+              (
+                &elements[last_try_pos]
+              ),
 
               // New value
-              try_element == reinterpret_cast<ElementType>( 1 ) ? 
-                ( reinterpret_cast<yidl::runtime::atomic_t>( element ) 
+              try_element == reinterpret_cast<ElementType>( 1 ) ?
+                ( reinterpret_cast<yidl::runtime::atomic_t>( element )
                   | POINTER_HIGH_BIT ) :
                 reinterpret_cast<yidl::runtime::atomic_t>( element ),
 
@@ -1062,10 +1089,10 @@ namespace YIELD
             if ( try_pos % 2 == 0 )
             {
               yidl::runtime::atomic_cas
-              ( 
-                &tail, 
-                try_pos, 
-                copied_tail 
+              (
+                &tail,
+                try_pos,
+                copied_tail
               );
             }
 
@@ -1079,10 +1106,10 @@ namespace YIELD
       volatile yidl::runtime::atomic_t head, tail;
 
 #if defined(__LLP64__) || defined(__LP64__)
-      const static yidl::runtime::atomic_t POINTER_HIGH_BIT 
+      const static yidl::runtime::atomic_t POINTER_HIGH_BIT
         = 0x8000000000000000;
 
-      const static yidl::runtime::atomic_t POINTER_LOW_BITS 
+      const static yidl::runtime::atomic_t POINTER_LOW_BITS
         = 0x7fffffffffffffff;
 #else
       const static yidl::runtime::atomic_t POINTER_HIGH_BIT = 0x80000000;
@@ -1167,7 +1194,7 @@ namespace YIELD
     class PerformanceCounterSet : public yidl::runtime::Object
     {
     public:
-      enum Event 
+      enum Event
       {
         EVENT_L1_DCM, // L1 data cache miss
         EVENT_L2_DCM, // L2 data cache miss
@@ -1175,7 +1202,7 @@ namespace YIELD
       };
 
       static yidl::runtime::auto_Object<PerformanceCounterSet> create();
-      
+
       bool addEvent( Event event );
       bool addEvent( const char* name );
       void startCounting();
@@ -1184,7 +1211,7 @@ namespace YIELD
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( PerformanceCounterSet, 0 );
 
-    private:    
+    private:
 #if defined(__sun)
       PerformanceCounterSet( cpc_t* cpc, cpc_set_t* cpc_set );
       cpc_t* cpc; cpc_set_t* cpc_set;
@@ -1199,7 +1226,7 @@ namespace YIELD
       ~PerformanceCounterSet();
     };
 
-    typedef yidl::runtime::auto_Object<PerformanceCounterSet> 
+    typedef yidl::runtime::auto_Object<PerformanceCounterSet>
       auto_PerformanceCounterSet;
 #endif
 
@@ -1215,7 +1242,7 @@ namespace YIELD
       uint16_t count() const;
       bool empty() const;
       bool isset( uint16_t processor_i ) const;
-      bool set( uint16_t processor_i );    
+      bool set( uint16_t processor_i );
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( ProcessorSet, 8 );
@@ -1257,9 +1284,9 @@ namespace YIELD
         lock.release();
       }
 
-      SampleType get_max() const 
-      { 
-        return max; 
+      SampleType get_max() const
+      {
+        return max;
       }
 
       SampleType get_mean()
@@ -1269,9 +1296,9 @@ namespace YIELD
 
         if ( samples_count > 0 )
           mean = static_cast<SampleType>
-                 ( 
-                   static_cast<double>( total ) / 
-                   static_cast<double>( samples_count ) 
+                 (
+                   static_cast<double>( total ) /
+                   static_cast<double>( samples_count )
                  );
         else
           mean = 0;
@@ -1279,7 +1306,7 @@ namespace YIELD
         lock.release();
         return mean;
       }
-   
+
       SampleType get_median()
       {
         lock.acquire();
@@ -1296,8 +1323,8 @@ namespace YIELD
             SampleType median_temp = samples[sc_div_2] + samples[sc_div_2-1];
             if ( median_temp > 0 )
               median = static_cast<SampleType>
-                       ( 
-                         static_cast<double>( median_temp ) / 2.0 
+                       (
+                         static_cast<double>( median_temp ) / 2.0
                        );
             else
               median = 0;
@@ -1310,9 +1337,9 @@ namespace YIELD
         return median;
       }
 
-      SampleType get_min() const 
-      { 
-        return min; 
+      SampleType get_min() const
+      {
+        return min;
       }
 
       SampleType get_percentile( double percentile )
@@ -1325,8 +1352,8 @@ namespace YIELD
           if ( samples_count > 0 )
           {
             std::sort( samples, samples + samples_count );
-            value = 
-              samples[static_cast<size_t>( percentile * 
+            value =
+              samples[static_cast<size_t>( percentile *
                 static_cast<double>( samples_count ) )];
           }
           else
@@ -1340,8 +1367,8 @@ namespace YIELD
       }
 
       uint32_t get_samples_count() const
-      { 
-        return samples_count; 
+      {
+        return samples_count;
       }
 
       void set_next_sample( SampleType sample )
@@ -1370,13 +1397,13 @@ namespace YIELD
 
 
     template <class ElementType, uint32_t QueueLength>
-    class SynchronizedNonBlockingFiniteQueue 
+    class SynchronizedNonBlockingFiniteQueue
       : private NonBlockingFiniteQueue<ElementType, QueueLength>
     {
     public:
       ElementType dequeue()
       {
-        ElementType element = 
+        ElementType element =
           NonBlockingFiniteQueue<ElementType, QueueLength>::dequeue();
 
         while ( element == 0 )
@@ -1390,7 +1417,7 @@ namespace YIELD
 
       bool enqueue( ElementType element )
       {
-        bool enqueued = 
+        bool enqueued =
           NonBlockingFiniteQueue<ElementType, QueueLength>::enqueue( element );
         signal.release();
         return enqueued;
@@ -1398,7 +1425,7 @@ namespace YIELD
 
       ElementType timed_dequeue( uint64_t timeout_ns )
       {
-        ElementType element 
+        ElementType element
           = NonBlockingFiniteQueue<ElementType, QueueLength>::dequeue();
 
         if ( element != 0 )
@@ -1473,7 +1500,7 @@ namespace YIELD
             }
           }
 
-          uint64_t elapsed_time_ns 
+          uint64_t elapsed_time_ns
             = Time::getCurrentUnixTimeNS() - start_time_ns;
           if ( elapsed_time_ns < timeout_ns )
             timeout_ns -= elapsed_time_ns;
@@ -1509,28 +1536,28 @@ namespace YIELD
     class SharedLibrary : public yidl::runtime::Object
     {
     public:
-      static yidl::runtime::auto_Object<SharedLibrary> 
+      static yidl::runtime::auto_Object<SharedLibrary>
         open( const Path& file_prefix, const char* argv0 = 0 );
 
       void* getFunction
-      ( 
-        const char* function_name, 
-        void* missing_function_return_value = NULL 
+      (
+        const char* function_name,
+        void* missing_function_return_value = NULL
       );
 
       template <typename FunctionType>
-      FunctionType 
+      FunctionType
       getFunction
-      ( 
-        const char* function_name, 
-        FunctionType missing_function_return_value = NULL 
+      (
+        const char* function_name,
+        FunctionType missing_function_return_value = NULL
       )
       {
         return static_cast<FunctionType>
-        ( 
-          getFunction( function_name, missing_function_return_value ) 
+        (
+          getFunction( function_name, missing_function_return_value )
         );
-      }    
+      }
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( SharedLibrary, 11 );
@@ -1553,14 +1580,14 @@ namespace YIELD
 
 #ifdef _WIN32
       Stat
-      ( 
+      (
         mode_t mode,
         nlink_t nlink,
-        uint64_t size, 
-        const Time& atime, 
-        const Time& mtime, 
-        const Time& ctime, 
-        uint32_t attributes 
+        uint64_t size,
+        const Time& atime,
+        const Time& mtime,
+        const Time& ctime,
+        uint32_t attributes
       );
 
       Stat( const BY_HANDLE_FILE_INFORMATION& );
@@ -1568,19 +1595,19 @@ namespace YIELD
       Stat( const WIN32_FIND_DATA& );
 
       Stat
-      ( 
+      (
         uint32_t nNumberOfLinks,
-        uint32_t nFileSizeHigh, 
-        uint32_t nFileSizeLow, 
-        const FILETIME* ftLastAccessTime, 
-        const FILETIME* ftLastWriteTime, 
-        const FILETIME* ftCreationTime, 
-        uint32_t dwFileAttributes 
+        uint32_t nFileSizeHigh,
+        uint32_t nFileSizeLow,
+        const FILETIME* ftLastAccessTime,
+        const FILETIME* ftLastWriteTime,
+        const FILETIME* ftCreationTime,
+        uint32_t dwFileAttributes
       );
 #else
       // POSIX field order; Linux, FreeBSD, et al. all have different orders
       Stat
-      ( 
+      (
         dev_t dev,
         ino_t ino,
         mode_t mode,
@@ -1818,12 +1845,12 @@ namespace YIELD
         SynchronizedSTLQueue<TimerQueue::Timer*> new_timers_queue;
         bool should_run;
         std::priority_queue
-        < 
-          std::pair<uint64_t, Timer*>, 
-          std::vector< std::pair<uint64_t, Timer*> >, 
-          std::greater< std::pair<uint64_t, Timer*> > 
+        <
+          std::pair<uint64_t, Timer*>,
+          std::vector< std::pair<uint64_t, Timer*> >,
+          std::greater< std::pair<uint64_t, Timer*> >
         > timers;
-      }; 
+      };
 
       Thread thread;
 #endif
@@ -1837,7 +1864,7 @@ namespace YIELD
         Timer( const Time& timeout );
         Timer( const Time& timeout, const Time& period );
         virtual ~Timer();
-        
+
         void delete_();
         const Time& get_period() const { return period; }
         const Time& get_timeout() const { return timeout; }
@@ -1869,7 +1896,7 @@ namespace YIELD
 
     class Volume : public yidl::runtime::Object
     {
-    public:    
+    public:
       const static mode_t FILE_MODE_DEFAULT = File::MODE_DEFAULT;
       const static mode_t DIRECTORY_MODE_DEFAULT = S_IREAD|S_IWRITE|S_IEXEC;
 
@@ -1911,7 +1938,7 @@ namespace YIELD
       YIELD_PLATFORM_VOLUME_PROTOTYPES;
 
       // Convenience methods that don't make any system calls but delegate to
-      // YIELD_PLATFORM_VOLUME_PROTOTYPES, 
+      // YIELD_PLATFORM_VOLUME_PROTOTYPES,
       // which should be implemented by subclasses
 
 #ifndef _WIN32
@@ -1940,19 +1967,19 @@ namespace YIELD
       // Delegates to readdir
       virtual bool
       listdir
-      ( 
-        const Path& path, 
-        const Path& match_file_name_prefix, 
-        listdirCallback& 
+      (
+        const Path& path,
+        const Path& match_file_name_prefix,
+        listdirCallback&
       );
 
       // Delegates to readdir
       virtual bool
       listdir
-      ( 
-        const Path& path, 
-        const Path& match_file_name_prefix, 
-        std::vector<Path>& out_names 
+      (
+        const Path& path,
+        const Path& match_file_name_prefix,
+        std::vector<Path>& out_names
       );
 
       // Recursive mkdir
@@ -1989,7 +2016,7 @@ namespace YIELD
         const YIELD::platform::Time& atime,
         const YIELD::platform::Time& mtime
       );
-      
+
       virtual bool
       utime
       (

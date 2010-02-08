@@ -1,9 +1,37 @@
+// Copyright (c) 2010 Minor Gordon
+// With original implementations and ideas contributed by Felix Hupfeld
+// All rights reserved
+// 
+// This source file is part of the Yield project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the Yield project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+
 #include "yield/ipc.h"
 
 
 // client.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #pragma warning( push )
 #pragma warning( disable: 4995 )
@@ -16,6 +44,8 @@
 #define ETIMEDOUT WSAETIMEDOUT
 #endif
 #endif
+
+
 template <class RequestType, class ResponseType>
 YIELD::ipc::Client<RequestType, ResponseType>::Client
 (
@@ -39,6 +69,7 @@ YIELD::ipc::Client<RequestType, ResponseType>::Client
     sockets.enqueue( NULL ); // Enqueue a placeholder for each socket;
                              // the sockets will be created on demand
 }
+
 template <class RequestType, class ResponseType>
 YIELD::ipc::Client<RequestType, ResponseType>::~Client()
 {
@@ -56,6 +87,7 @@ YIELD::ipc::Client<RequestType, ResponseType>::~Client()
       break;
   }
 }
+
 template <class RequestType, class ResponseType>
 void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
 (
@@ -67,6 +99,7 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
     case YIDL_RUNTIME_OBJECT_TYPE_ID( RequestType ):
     {
       RequestType& request = static_cast<RequestType&>( ev );
+
       if
       (
         ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) ==
@@ -80,6 +113,7 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
         reinterpret_cast<uint64_t>( &request ) << " to <host>:" <<
         this->peername->get_port() << ".";
       }
+
       for ( ;; )
       {
         Socket* socket_ = sockets.dequeue(); // Blocking dequeue
@@ -112,9 +146,11 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
               << this->peername->get_port() <<
               ", error: " << YIELD::platform::Exception() << ".";
             }
+
             continue; // Try to dequeue another existing socket
           }
         }
+
         if ( socket_->is_connected() )
         {
           if
@@ -131,8 +167,10 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
             " to <host>:" << this->peername->get_port() <<
             " on socket #" << static_cast<uint64_t>( *socket_ ) << ".";
           }
+
           AIOWriteControlBlock* aio_write_control_block =
             new AIOWriteControlBlock( request.serialize(), *this, request );
+
           YIELD::platform::TimerQueue::getDefaultTimerQueue().
             addTimer
             (
@@ -142,6 +180,7 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
                 operation_timeout
               )
             );
+
           socket_->aio_write( aio_write_control_block );
         }
         else
@@ -162,8 +201,10 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
             static_cast<uint16_t>( request.get_reconnect_tries() + 1 ) <<
             ").";
           }
+
           AIOConnectControlBlock* aio_connect_control_block =
             new AIOConnectControlBlock( *this, request );
+
           YIELD::platform::TimerQueue::getDefaultTimerQueue().
             addTimer
             (
@@ -173,13 +214,17 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
                 operation_timeout
               )
             );
+
           socket_->aio_connect( aio_connect_control_block );
         }
+
         Socket::decRef( *socket_ );
+
         break;
       }
     }
     break;
+
     default:
     {
       YIELD::concurrency::Event::decRef( ev );
@@ -187,6 +232,8 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
     break;
   }
 }
+
+
 template <class RequestType, class ResponseType>
 class YIELD::ipc::Client<RequestType, ResponseType>::AIOConnectControlBlock
   : public Socket::AIOConnectControlBlock
@@ -201,10 +248,12 @@ public:
       client( client ),
       request( request )
   { }
+
   AIOConnectControlBlock& operator=( const AIOConnectControlBlock& )
   {
     return *this;
   }
+
   // AIOControlBlock
   void onCompletion( size_t )
   {
@@ -223,8 +272,10 @@ public:
         client.peername->get_port() << " on socket #" <<
         static_cast<uint64_t>( *get_socket() ) << ".";
       }
+
       AIOWriteControlBlock* aio_write_control_block =
         new AIOWriteControlBlock( request->serialize(), client, request );
+
       YIELD::platform::TimerQueue::getDefaultTimerQueue().
         addTimer
         (
@@ -234,10 +285,13 @@ public:
             client.operation_timeout
           )
         );
+
       get_socket()->aio_write( aio_write_control_block );
+
       request = NULL;
     }
   }
+
   void onError( uint32_t error_code )
   {
     if ( request_lock.try_acquire() )
@@ -250,11 +304,13 @@ public:
         " failed: " <<
         YIELD::platform::Exception( error_code ) << ".";
       }
+
       get_socket()->close();
       if ( get_socket()->recreate() )
         client.sockets.enqueue( get_socket().release() );
       else
         client.sockets.enqueue( NULL );
+
       if ( request->get_reconnect_tries() < client.reconnect_tries_max )
       {
         request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
@@ -265,14 +321,18 @@ public:
         (
           *( new YIELD::concurrency::ExceptionResponse( error_code ) )
         );
+
       request = NULL;
     }
   }
+
 private:
   Client<RequestType,ResponseType>& client;
   yidl::runtime::auto_Object<RequestType> request;
   YIELD::platform::Mutex request_lock;
 };
+
+
 template <class RequestType, class ResponseType>
 class YIELD::ipc::Client<RequestType, ResponseType>::AIOReadControlBlock
   : public Socket::AIOReadControlBlock
@@ -289,10 +349,12 @@ public:
       client( client ),
       request( request ), response( response )
   { }
+
   AIOReadControlBlock& operator=( const AIOReadControlBlock& )
   {
     return *this;
   }
+
   // AIOControlBlock
   void onCompletion( size_t bytes_transferred )
   {
@@ -300,6 +362,7 @@ public:
     if ( bytes_transferred <= 0 )
       DebugBreak();
 #endif
+
     if ( request_lock.try_acquire() )
     {
       if
@@ -316,7 +379,9 @@ public:
         " for " << response->get_type_name() << "/" <<
         reinterpret_cast<uint64_t>( response.get() ) << ".";
       }
+
       ssize_t deserialize_ret = response->deserialize( get_buffer() );
+
       if ( deserialize_ret == 0 )
       {
         if
@@ -334,6 +399,7 @@ public:
           ", responding to " << request->get_type_name() <<
             "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
         }
+
         request->respond( *response.release() );
         client.sockets.enqueue( get_socket().release() );
       }
@@ -344,6 +410,7 @@ public:
              static_cast<size_t>( deserialize_ret ) )
           buffer = new yidl::runtime::HeapBuffer( deserialize_ret );
         // else re-use the same buffer
+
         if
         (
           ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) ==
@@ -359,6 +426,7 @@ public:
           ", reading again with " << ( buffer->capacity() - buffer->size() ) <<
           " byte buffer.";
         }
+
         AIOReadControlBlock* aio_read_control_block =
           new AIOReadControlBlock
           (
@@ -367,6 +435,7 @@ public:
             request.release(),
             response.release()
           );
+
         YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer
         (
           new OperationTimer
@@ -375,6 +444,7 @@ public:
             client.operation_timeout
           )
         );
+
         get_socket()->aio_read( aio_read_control_block );
       }
       else
@@ -389,14 +459,17 @@ public:
             "/" << reinterpret_cast<uint64_t>( request.get() ) <<
           " with ExceptionResponse.";
         }
+
         request->respond
         (
           *( new YIELD::concurrency::ExceptionResponse( ECONNABORTED ) )
         );
+
         get_socket()->shutdown();
         get_socket()->close();
         client.sockets.enqueue( get_socket().release() );
       }
+
       // Clear references so their objects will be deleted now instead of when
       // the timeout occurs (the timeout has the last reference to this control block).
       request = NULL;
@@ -404,6 +477,7 @@ public:
       unlink_buffer();
     }
   }
+
   void onError( uint32_t error_code )
   {
     if ( request_lock.try_acquire() )
@@ -419,17 +493,20 @@ public:
           "/" << reinterpret_cast<uint64_t>( request.get() ) <<
           " with ExceptionResponse.";
       }
+
       get_socket()->shutdown();
       get_socket()->close();
       if ( get_socket()->recreate() )
         client.sockets.enqueue( get_socket().release() );
       else
         client.sockets.enqueue( NULL );
+
       if ( request->get_reconnect_tries() < client.reconnect_tries_max )
       {
         // Hack: if the read timed out, increase the timeout for the next try
         if ( error_code == ETIMEDOUT )
           client.operation_timeout = client.operation_timeout * 2;
+
         request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
         client.handleEvent( *request.release() );
       }
@@ -441,15 +518,19 @@ public:
         );
         request = NULL;
       }
+
       unlink_buffer();
     }
   }
+
 private:
   Client<RequestType,ResponseType>& client;
   yidl::runtime::auto_Object<RequestType> request;
   YIELD::platform::Mutex request_lock;
   yidl::runtime::auto_Object<ResponseType> response;
 };
+
+
 template <class RequestType, class ResponseType>
 class YIELD::ipc::Client<RequestType, ResponseType>::AIOWriteControlBlock
   : public Socket::AIOWriteControlBlock
@@ -465,10 +546,12 @@ public:
       client( client ),
       request( request )
   { }
+
   AIOWriteControlBlock& operator=( const AIOWriteControlBlock& )
   {
     return *this;
   }
+
   // AIOControlBlock
   void onCompletion( size_t bytes_transferred )
   {
@@ -488,11 +571,14 @@ public:
         " for " << request->get_type_name() <<
           "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
       }
+
+
       yidl::runtime::auto_Object<ResponseType>
         response
         (
           static_cast<ResponseType*>( request->createResponse().release() )
         );
+
       if
       (
         ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) ==
@@ -507,11 +593,14 @@ public:
         " to " << request->get_type_name() <<
           "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
       }
+
+
       AIOReadControlBlock* aio_read_control_block =
         new AIOReadControlBlock
         (
           new yidl::runtime::HeapBuffer( 1024 ), client, request, response
         );
+
       YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer
       (
         new OperationTimer
@@ -520,11 +609,15 @@ public:
           client.operation_timeout
         )
       );
+
       get_socket()->aio_read( aio_read_control_block );
+
+
       request = NULL;
       unlink_buffer();
     }
   }
+
   void onError( uint32_t error_code )
   {
     if ( request_lock.try_acquire() )
@@ -541,12 +634,14 @@ public:
           "/" << reinterpret_cast<uint64_t>( request.get() ) <<
           " with ExceptionResponse.";
       }
+
       get_socket()->shutdown();
       get_socket()->close();
       if ( get_socket()->recreate() )
         client.sockets.enqueue( get_socket().release() );
       else
         client.sockets.enqueue( NULL );
+
       if ( request->get_reconnect_tries() < client.reconnect_tries_max )
       {
         request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
@@ -560,14 +655,18 @@ public:
         );
         request = NULL;
       }
+
       unlink_buffer();
     }
   }
+
 private:
   Client<RequestType,ResponseType>& client;
   yidl::runtime::auto_Object<RequestType> request;
   YIELD::platform::Mutex request_lock;
 };
+
+
 template <class RequestType, class ResponseType>
 class YIELD::ipc::Client<RequestType, ResponseType>::OperationTimer
   : public YIELD::platform::TimerQueue::Timer
@@ -581,20 +680,22 @@ public:
     : YIELD::platform::TimerQueue::Timer( operation_timeout ),
       aio_control_block( aio_control_block )
   { }
+
   void fire()
   {
     aio_control_block->onError( ETIMEDOUT );
   }
+
 private:
   YIELD::platform::auto_AIOControlBlock aio_control_block;
 };
+
+
 template class YIELD::ipc::Client<YIELD::ipc::HTTPRequest, YIELD::ipc::HTTPResponse>;
 template class YIELD::ipc::Client<YIELD::ipc::ONCRPCRequest, YIELD::ipc::ONCRPCResponse>;
 
 
 // gather_buffer.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 YIELD::ipc::GatherBuffer::GatherBuffer
 (
   const struct iovec* iovecs,
@@ -602,6 +703,7 @@ YIELD::ipc::GatherBuffer::GatherBuffer
 )
   : iovecs( iovecs ), iovecs_len( iovecs_len )
 { }
+
 size_t YIELD::ipc::GatherBuffer::get
 (
   void* into_buffer,
@@ -610,6 +712,7 @@ size_t YIELD::ipc::GatherBuffer::get
 {
   char* into_buffer_p = static_cast<char*>( into_buffer );
   size_t iovec_offset = position();
+
   uint32_t iovec_i = 0;
   while ( iovec_offset >= iovecs[iovec_i].iov_len )
   {
@@ -617,6 +720,7 @@ size_t YIELD::ipc::GatherBuffer::get
     if ( ++iovec_i >= iovecs_len )
       return 0;
   }
+
   for ( ;; )
   {
     if ( iovecs[iovec_i].iov_len - iovec_offset < into_buffer_len )
@@ -655,8 +759,10 @@ size_t YIELD::ipc::GatherBuffer::get
       break;
     }
   }
+
   return into_buffer_p - static_cast<char*>( into_buffer );
 }
+
 size_t YIELD::ipc::GatherBuffer::size() const
 {
   size_t _size = 0;
@@ -667,8 +773,6 @@ size_t YIELD::ipc::GatherBuffer::size() const
 
 
 // http_client.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 YIELD::ipc::auto_HTTPClient
   YIELD::ipc::HTTPClient::create
   (
@@ -684,8 +788,11 @@ YIELD::ipc::auto_HTTPClient
   URI checked_absolute_uri( absolute_uri );
   if ( checked_absolute_uri.get_port() == 0 )
     checked_absolute_uri.set_port( 80 );
+
   auto_SocketAddress peername = SocketAddress::create( absolute_uri );
+
   auto_SocketFactory socket_factory;
+
 #ifdef YIELD_HAVE_OPENSSL
   if ( absolute_uri.get_scheme() == "https" )
   {
@@ -703,12 +810,14 @@ YIELD::ipc::auto_HTTPClient
   else
 #endif
     socket_factory = new TCPSocketFactory;
+
   return new HTTPClient
   (
     concurrency_level, flags, log, operation_timeout,
     peername, reconnect_tries_max, socket_factory
   );
 }
+
 YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::GET
 (
   const URI& absolute_uri,
@@ -717,6 +826,7 @@ YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::GET
 {
   return sendHTTPRequest( "GET", absolute_uri, NULL, log );
 }
+
 YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::PUT
 (
   const URI& absolute_uri,
@@ -726,6 +836,7 @@ YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::PUT
 {
   return sendHTTPRequest( "PUT", absolute_uri, body, log );
 }
+
 YIELD::ipc::auto_HTTPResponse
   YIELD::ipc::HTTPClient::PUT
   (
@@ -736,6 +847,7 @@ YIELD::ipc::auto_HTTPResponse
 {
   YIELD::platform::auto_File
     file( YIELD::platform::Volume().open( body_file_path ) );
+
   if ( file != NULL )
   {
     size_t file_size = static_cast<size_t>( file->stat()->get_size() );
@@ -747,6 +859,7 @@ YIELD::ipc::auto_HTTPResponse
   else
     throw YIELD::platform::Exception();
 }
+
 YIELD::ipc::auto_HTTPResponse
   YIELD::ipc::HTTPClient::sendHTTPRequest
   (
@@ -766,25 +879,28 @@ YIELD::ipc::auto_HTTPResponse
       log
     )
   );
+
   auto_HTTPRequest
     http_request( new HTTPRequest( method, absolute_uri, body ) );
   http_request->set_header( "User-Agent", "Flog 0.99" );
+
   YIELD::concurrency::auto_ResponseQueue<HTTPResponse>
     http_response_queue( new YIELD::concurrency::ResponseQueue<HTTPResponse> );
   http_request->set_response_target( http_response_queue->incRef() );
+
   http_client->send( http_request->incRef() );
+
   return http_response_queue->dequeue();
 }
 
 
 // http_message.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 YIELD::ipc::HTTPMessage::HTTPMessage( uint8_t reserve_iovecs_count )
   : RFC822Headers( reserve_iovecs_count )
 {
   http_version = 1;
 }
+
 YIELD::ipc::HTTPMessage::HTTPMessage
 (
   uint8_t reserve_iovecs_count,
@@ -794,6 +910,7 @@ YIELD::ipc::HTTPMessage::HTTPMessage
 {
   http_version = 1;
 }
+
 ssize_t YIELD::ipc::HTTPMessage::deserialize
 (
   yidl::runtime::auto_Buffer buffer
@@ -805,6 +922,7 @@ ssize_t YIELD::ipc::HTTPMessage::deserialize
     {
       ssize_t RFC822Headers_deserialize_ret
         = RFC822Headers::deserialize( buffer );
+
       if ( RFC822Headers_deserialize_ret == 0 )
       {
         if ( strcmp( get_header( "Transfer-Encoding" ), "chunked" ) == 0 )
@@ -819,6 +937,7 @@ ssize_t YIELD::ipc::HTTPMessage::deserialize
           if ( content_length_str == NULL )
             content_length_str = get_header( "Content-length" ); // httperf
           size_t content_length = atoi( content_length_str );
+
           if ( content_length == 0 )
           {
             deserialize_state = DESERIALIZE_DONE;
@@ -827,6 +946,7 @@ ssize_t YIELD::ipc::HTTPMessage::deserialize
           else
           {
             deserialize_state = DESERIALIZING_BODY;
+
             if ( strcmp( get_header( "Expect" ), "100-continue" ) == 0 )
             {
               // DebugBreak();
@@ -839,6 +959,7 @@ ssize_t YIELD::ipc::HTTPMessage::deserialize
       else
         return RFC822Headers_deserialize_ret;
     }
+
     case DESERIALIZING_BODY:
     {
       if ( buffer->size() - buffer->position() > 0 )
@@ -882,6 +1003,7 @@ ssize_t YIELD::ipc::HTTPMessage::deserialize
           );
           body = concatenated_body.release();
         }
+
         const char* content_length_str
           = get_header( "Content-Length", NULL ); // Most browsers
         if ( content_length_str == NULL )
@@ -891,10 +1013,13 @@ ssize_t YIELD::ipc::HTTPMessage::deserialize
           deserialize_state = DESERIALIZE_DONE;
       }
     }
+
     case DESERIALIZE_DONE: return 0;
+
     default: DebugBreak(); return -1;
   }
 }
+
 yidl::runtime::auto_Buffer YIELD::ipc::HTTPMessage::serialize()
 {
   // Finalize headers
@@ -908,9 +1033,12 @@ yidl::runtime::auto_Buffer YIELD::ipc::HTTPMessage::serialize()
 #else
       snprintf( content_length_str, 32, "%zu", body->size() );
 #endif
+
       set_header( "Content-Length", content_length_str );
     }
+
     set_next_iovec( "\r\n", 2 );
+
     set_next_iovec
     (
       static_cast<const char*>( static_cast<void*>( *body ) ),
@@ -919,13 +1047,12 @@ yidl::runtime::auto_Buffer YIELD::ipc::HTTPMessage::serialize()
   }
   else
     set_next_iovec( "\r\n", 2 );
+
   return RFC822Headers::serialize();
 }
 
 
 // http_request.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 YIELD::ipc::HTTPRequest::HTTPRequest()
   : HTTPMessage( 0 )
 {
@@ -936,6 +1063,7 @@ YIELD::ipc::HTTPRequest::HTTPRequest()
   http_version = 1;
   deserialize_state = DESERIALIZING_METHOD;
 }
+
 YIELD::ipc::HTTPRequest::HTTPRequest
 (
   const char* method,
@@ -947,6 +1075,7 @@ YIELD::ipc::HTTPRequest::HTTPRequest
 {
   init( method, relative_uri, host, body );
 }
+
 YIELD::ipc::HTTPRequest::HTTPRequest
 (
   const char* method,
@@ -963,10 +1092,12 @@ YIELD::ipc::HTTPRequest::HTTPRequest
     body
   );
 }
+
 YIELD::concurrency::auto_Response YIELD::ipc::HTTPRequest::createResponse()
 {
   return new HTTPResponse;
 }
+
 void YIELD::ipc::HTTPRequest::init
 (
   const char* method,
@@ -987,10 +1118,12 @@ void YIELD::ipc::HTTPRequest::init
   set_header( "Host", const_cast<char*>( host ) );
   deserialize_state = DESERIALIZE_DONE;
 }
+
 YIELD::ipc::HTTPRequest::~HTTPRequest()
 {
   delete [] uri;
 }
+
 ssize_t YIELD::ipc::HTTPRequest::deserialize
 (
   yidl::runtime::auto_Buffer buffer
@@ -1022,6 +1155,7 @@ ssize_t YIELD::ipc::HTTPRequest::deserialize
       }
       // Fall through
     }
+
     case DESERIALIZING_URI:
     {
       char* uri_p = uri + strnlen( uri, UINT16_MAX );
@@ -1059,6 +1193,7 @@ ssize_t YIELD::ipc::HTTPRequest::deserialize
       }
       // Fall through
     }
+
     case DESERIALIZING_HTTP_VERSION:
     {
       for ( ;; )
@@ -1083,13 +1218,16 @@ ssize_t YIELD::ipc::HTTPRequest::deserialize
       }
     }
     // Fall through
+
     default: return HTTPMessage::deserialize( buffer );
   }
 }
+
 void YIELD::ipc::HTTPRequest::respond( uint16_t status_code )
 {
   respond( *( new HTTPResponse( status_code ) ) );
 }
+
 void YIELD::ipc::HTTPRequest::respond
 (
   uint16_t status_code,
@@ -1098,10 +1236,12 @@ void YIELD::ipc::HTTPRequest::respond
 {
   respond( *( new HTTPResponse( status_code, body ) ) );
 }
+
 void YIELD::ipc::HTTPRequest::respond( YIELD::concurrency::Response& response )
 {
   YIELD::concurrency::Request::respond( response );
 }
+
 yidl::runtime::auto_Buffer YIELD::ipc::HTTPRequest::serialize()
 {
   RFC822Headers::set_iovec( 0, method, strnlen( method, 16 ) );
@@ -1110,6 +1250,7 @@ yidl::runtime::auto_Buffer YIELD::ipc::HTTPRequest::serialize()
   RFC822Headers::set_iovec( 3, " HTTP/1.1\r\n", 11 );
   return HTTPMessage::serialize();
 }
+
 void YIELD::ipc::HTTPRequest::set_reconnect_tries( uint8_t reconnect_tries )
 {
   this->reconnect_tries = reconnect_tries;
@@ -1117,20 +1258,20 @@ void YIELD::ipc::HTTPRequest::set_reconnect_tries( uint8_t reconnect_tries )
 
 
 // http_response.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 YIELD::ipc::HTTPResponse::HTTPResponse()
   : HTTPMessage( 0 )
 {
   memset( status_code_str, 0, sizeof( status_code_str ) );
   deserialize_state = DESERIALIZING_HTTP_VERSION;
 }
+
 YIELD::ipc::HTTPResponse::HTTPResponse( uint16_t status_code )
   : HTTPMessage( 1 ), status_code( status_code )
 {
   http_version = 1;
   deserialize_state = DESERIALIZE_DONE;
 }
+
 YIELD::ipc::HTTPResponse::HTTPResponse
 (
   uint16_t status_code,
@@ -1140,6 +1281,7 @@ YIELD::ipc::HTTPResponse::HTTPResponse
 {
   deserialize_state = DESERIALIZE_DONE;
 }
+
 ssize_t YIELD::ipc::HTTPResponse::deserialize
 (
   yidl::runtime::auto_Buffer buffer
@@ -1171,6 +1313,7 @@ ssize_t YIELD::ipc::HTTPResponse::deserialize
       }
     }
     // Fall through
+
     case DESERIALIZING_STATUS_CODE:
     {
       char* status_code_str_p
@@ -1206,6 +1349,7 @@ ssize_t YIELD::ipc::HTTPResponse::deserialize
       }
     }
     // Fall through
+
     case DESERIALIZING_REASON:
     {
       char c;
@@ -1224,13 +1368,16 @@ ssize_t YIELD::ipc::HTTPResponse::deserialize
       }
     }
     // Fall through
+
     default: return HTTPMessage::deserialize( buffer );
   }
 }
+
 yidl::runtime::auto_Buffer YIELD::ipc::HTTPResponse::serialize()
 {
   const char* status_line;
   size_t status_line_len;
+
   switch ( status_code )
   {
     case 100: status_line = "HTTP/1.1 100 Continue\r\n"; status_line_len = 23; break;
@@ -1278,16 +1425,21 @@ yidl::runtime::auto_Buffer YIELD::ipc::HTTPResponse::serialize()
     case 507: status_line = "HTTP/1.1 507 Insufficient Storage\r\n"; status_line_len = 35; break;
     default: status_line = "HTTP/1.1 500 Internal Server Error\r\n"; status_line_len = 36; break;
   }
+
   RFC822Headers::set_iovec( 0, status_line, status_line_len );
+
   char date[32];
   YIELD::platform::Time().as_http_date_time( date, 32 );
   set_header( "Date", date );
+
   return HTTPMessage::serialize();
 }
+
 void YIELD::ipc::HTTPResponse::set_body( yidl::runtime::auto_Buffer body )
 {
   this->body = body;
 }
+
 void YIELD::ipc::HTTPResponse::set_status_code( uint16_t status_code )
 {
   this->status_code = status_code;
@@ -1295,8 +1447,6 @@ void YIELD::ipc::HTTPResponse::set_status_code( uint16_t status_code )
 
 
 // http_server.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 class YIELD::ipc::HTTPServer::AIOWriteControlBlock
   : public Socket::AIOWriteControlBlock
 {
@@ -1304,14 +1454,18 @@ public:
   AIOWriteControlBlock( yidl::runtime::auto_Buffer buffer )
     : Socket::AIOWriteControlBlock( buffer )
   { }
+
   void onCompletion( size_t )
   { }
+
   void onError( uint32_t )
   {
     get_socket()->shutdown();
     get_socket()->close();
   }
 };
+
+
 class YIELD::ipc::HTTPServer::HTTPResponseTarget
   : public YIELD::concurrency::EventTarget
 {
@@ -1319,26 +1473,33 @@ public:
   HTTPResponseTarget( auto_Socket socket_ )
     : socket_( socket_ )
   { }
+
   // yidl::runtime::Object
   YIDL_RUNTIME_OBJECT_PROTOTYPES( HTTPServer::HTTPResponseTarget, 0 );
+
   // EventTarget
   void send( YIELD::concurrency::Event& ev )
   {
     if ( ev.get_type_id() == YIDL_RUNTIME_OBJECT_TYPE_ID( HTTPResponse ) )
     {
       HTTPResponse& http_response = static_cast<HTTPResponse&>( ev );
+
       socket_->aio_write
       (
         new AIOWriteControlBlock( http_response.serialize() )
       );
+
       HTTPResponse::decRef( http_response );
     }
     else
       DebugBreak();
   }
+
 private:
   auto_Socket socket_;
 };
+
+
 class YIELD::ipc::HTTPServer::AIOReadControlBlock
   : public Socket::AIOReadControlBlock
 {
@@ -1353,6 +1514,7 @@ public:
       http_request( http_request ),
       http_request_target( http_request_target )
   { }
+
   void onCompletion( size_t )
   {
     for ( ;; )
@@ -1378,6 +1540,7 @@ public:
             http_request_target
           )
         );
+
         return;
       }
       else
@@ -1388,14 +1551,18 @@ public:
       }
     }
   }
+
   void onError( uint32_t )
   {
     get_socket()->close();
   }
+
 private:
   auto_HTTPRequest http_request;
   YIELD::concurrency::auto_EventTarget http_request_target;
 };
+
+
 class YIELD::ipc::HTTPServer::AIOAcceptControlBlock
   : public TCPSocket::AIOAcceptControlBlock
 {
@@ -1407,11 +1574,13 @@ public:
   )
     : http_request_target( http_request_target ), log( log )
   { }
+
   void onCompletion( size_t )
   {
     auto_Socket accepted_tcp_socket( get_accepted_tcp_socket().release() );
     if ( log != NULL && log->get_level() >= YIELD::platform::Log::LOG_INFO )
       accepted_tcp_socket = new TracingSocket( accepted_tcp_socket, log );
+
     accepted_tcp_socket->aio_read
     (
       new AIOReadControlBlock
@@ -1420,18 +1589,23 @@ public:
         new HTTPRequest, http_request_target
       )
     );
+
     static_cast<TCPSocket*>( get_socket().get() )
       ->aio_accept( new AIOAcceptControlBlock( http_request_target, log ) );
   }
+
   void onError( uint32_t )
   {
     get_socket()->shutdown();
     get_socket()->close();
   }
+
 private:
   YIELD::concurrency::auto_EventTarget http_request_target;
   YIELD::platform::auto_Log log;
 };
+
+
 YIELD::ipc::HTTPServer::HTTPServer
 (
   YIELD::concurrency::auto_EventTarget http_request_target,
@@ -1450,6 +1624,7 @@ YIELD::ipc::HTTPServer::HTTPServer
     );
   }
 }
+
 YIELD::ipc::auto_HTTPServer
   YIELD::ipc::HTTPServer::create
   (
@@ -1460,6 +1635,7 @@ YIELD::ipc::auto_HTTPServer
   )
 {
   auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
+
   auto_TCPSocket listen_tcp_socket;
 #ifdef YIELD_HAVE_OPENSSL
   if ( absolute_uri.get_scheme() == "https" && ssl_context != NULL )
@@ -1467,6 +1643,7 @@ YIELD::ipc::auto_HTTPServer
   else
 #endif
     listen_tcp_socket = TCPSocket::create();
+
   if ( listen_tcp_socket != NULL &&
        listen_tcp_socket->bind( sockname ) &&
        listen_tcp_socket->listen() )
@@ -1477,12 +1654,12 @@ YIELD::ipc::auto_HTTPServer
 
 
 // json_marshaller.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 extern "C"
 {
   #include <yajl.h>
 };
+
+
 YIELD::ipc::JSONMarshaller::JSONMarshaller( bool write_empty_strings )
 : write_empty_strings( write_empty_strings )
 {
@@ -1490,6 +1667,7 @@ YIELD::ipc::JSONMarshaller::JSONMarshaller( bool write_empty_strings )
   root_key = NULL;
   writer = yajl_gen_alloc( NULL );
 }
+
 YIELD::ipc::JSONMarshaller::JSONMarshaller
 (
   JSONMarshaller& parent_json_marshaller,
@@ -1500,11 +1678,13 @@ YIELD::ipc::JSONMarshaller::JSONMarshaller
     writer( parent_json_marshaller.writer ),
     buffer( parent_json_marshaller.buffer )
 { }
+
 YIELD::ipc::JSONMarshaller::~JSONMarshaller()
 {
 //  if ( root_key == NULL ) // This is the root JSONMarshaller
 //    yajl_gen_free( writer );
 }
+
 void YIELD::ipc::JSONMarshaller::flushYAJLBuffer()
 {
   const unsigned char* buffer;
@@ -1513,6 +1693,7 @@ void YIELD::ipc::JSONMarshaller::flushYAJLBuffer()
   this->buffer->put( buffer, len );
   yajl_gen_clear( writer );
 }
+
 void YIELD::ipc::JSONMarshaller::writeBoolean
 (
   const char* key,
@@ -1524,6 +1705,7 @@ void YIELD::ipc::JSONMarshaller::writeBoolean
   yajl_gen_bool( writer, static_cast<int>( value ) );
   flushYAJLBuffer();
 }
+
 void YIELD::ipc::JSONMarshaller::writeBuffer
 (
   const char*,
@@ -1533,6 +1715,7 @@ void YIELD::ipc::JSONMarshaller::writeBuffer
 {
   DebugBreak();
 }
+
 void YIELD::ipc::JSONMarshaller::writeKey( const char* key )
 {
   if ( in_map && key != NULL )
@@ -1545,6 +1728,7 @@ void YIELD::ipc::JSONMarshaller::writeKey( const char* key )
     );
   }
 }
+
 void YIELD::ipc::JSONMarshaller::writeDouble
 (
   const char* key,
@@ -1556,6 +1740,7 @@ void YIELD::ipc::JSONMarshaller::writeDouble
   yajl_gen_double( writer, value );
   flushYAJLBuffer();
 }
+
 void YIELD::ipc::JSONMarshaller::writeInt64
 (
   const char* key,
@@ -1567,6 +1752,7 @@ void YIELD::ipc::JSONMarshaller::writeInt64
   yajl_gen_integer( writer, static_cast<long>( value ) );
   flushYAJLBuffer();
 }
+
 void YIELD::ipc::JSONMarshaller::writeMap
 (
   const char* key,
@@ -1577,6 +1763,7 @@ void YIELD::ipc::JSONMarshaller::writeMap
   writeKey( key );
   JSONMarshaller( *this, key ).writeMap( &value );
 }
+
 void YIELD::ipc::JSONMarshaller::writeMap
 (
   const yidl::runtime::Map* value
@@ -1589,6 +1776,7 @@ void YIELD::ipc::JSONMarshaller::writeMap
   yajl_gen_map_close( writer );
   flushYAJLBuffer();
 }
+
 void YIELD::ipc::JSONMarshaller::writeStruct
 (
   const char* key,
@@ -1599,6 +1787,7 @@ void YIELD::ipc::JSONMarshaller::writeStruct
   writeKey( key );
   JSONMarshaller( *this, key ).writeStruct( &value );
 }
+
 void YIELD::ipc::JSONMarshaller::writeStruct
 (
   const yidl::runtime::Struct* value
@@ -1611,6 +1800,7 @@ void YIELD::ipc::JSONMarshaller::writeStruct
   yajl_gen_map_close( writer );
   flushYAJLBuffer();
 }
+
 void YIELD::ipc::JSONMarshaller::writeSequence
 (
   const char* key,
@@ -1621,6 +1811,7 @@ void YIELD::ipc::JSONMarshaller::writeSequence
   writeKey( key );
   JSONMarshaller( *this, key ).writeSequence( &value );
 }
+
 void YIELD::ipc::JSONMarshaller::writeSequence
 (
   const yidl::runtime::Sequence* value
@@ -1633,6 +1824,7 @@ void YIELD::ipc::JSONMarshaller::writeSequence
   yajl_gen_array_close( writer );
   flushYAJLBuffer();
 }
+
 void YIELD::ipc::JSONMarshaller::writeString
 (
   const char* key,
@@ -1656,12 +1848,12 @@ void YIELD::ipc::JSONMarshaller::writeString
 
 
 // json_unmarshaller.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 extern "C"
 {
   #include <yajl.h>
 };
+
+
 class YIELD::ipc::JSONUnmarshaller::JSONValue
 {
 public:
@@ -1670,21 +1862,27 @@ public:
   {
     as_double = 0;
     as_integer = 0;
+
     parent = child = prev = next = NULL;
     have_read = false;
   }
+
   virtual ~JSONValue()
   {
     delete child;
     delete next;
   }
+
   yidl::runtime::auto_StringBuffer identifier;
   bool is_map;
+
   double as_double;
   int64_t as_integer;
   yidl::runtime::auto_StringBuffer as_string;
+
   JSONValue *parent, *child, *prev, *next;
   bool have_read;
+
 protected:
   JSONValue()
   {
@@ -1694,6 +1892,8 @@ protected:
     as_integer = 0;
   }
 };
+
+
 class YIELD::ipc::JSONUnmarshaller::JSONObject : public JSONValue
 {
 public:
@@ -1702,6 +1902,7 @@ public:
     current_json_value = parent_json_value = NULL;
     reader = yajl_alloc( &JSONObject_yajl_callbacks, NULL, this );
     next_map_key = NULL; next_map_key_len = 0;
+
     const unsigned char* json_text =
       static_cast<const unsigned char*>
       (
@@ -1709,8 +1910,10 @@ public:
       );
     unsigned int json_text_len
       = static_cast<unsigned int>( json_buffer->size() );
+
     yajl_status yajl_parse_status
       = yajl_parse( reader, json_text, json_text_len );
+
     if ( yajl_parse_status == yajl_status_ok )
       return;
     else if ( yajl_parse_status != yajl_status_insufficient_data )
@@ -1724,17 +1927,22 @@ public:
       throw YIELD::platform::Exception( what.str() );
     }
   }
+
   ~JSONObject()
   {
     yajl_free( reader );
   }
+
 private:
   yajl_handle reader;
+
   std::string type_name;
   uint32_t tag;
+
   // Parsing state
   JSONValue *current_json_value, *parent_json_value;
   const char* next_map_key; size_t next_map_key_len;
+
   // yajl callbacks
   static int handle_yajl_null( void* _self )
   {
@@ -1742,24 +1950,28 @@ private:
     self->createNextJSONValue().as_integer = 0;
     return 1;
   }
+
   static int handle_yajl_boolean( void* _self, int value )
   {
     JSONObject* self = static_cast<JSONObject*>( _self );
     self->createNextJSONValue().as_integer = value;
     return 1;
   }
+
   static int handle_yajl_integer( void* _self, long value )
   {
     JSONObject* self = static_cast<JSONObject*>( _self );
     self->createNextJSONValue().as_integer = value;
     return 1;
   }
+
   static int handle_yajl_double( void* _self, double value )
   {
     JSONObject* self = static_cast<JSONObject*>( _self );
     self->createNextJSONValue().as_double = value;
     return 1;
   }
+
   static int handle_yajl_string
   (
     void* _self,
@@ -1777,6 +1989,7 @@ private:
         );
     return 1;
   }
+
   static int handle_yajl_start_map( void* _self )
   {
     JSONObject* self = static_cast<JSONObject*>( _self );
@@ -1785,6 +1998,7 @@ private:
     self->current_json_value = json_value.child;
     return 1;
   }
+
   static int handle_yajl_map_key
   (
     void* _self,
@@ -1797,6 +2011,7 @@ private:
     self->next_map_key_len = map_key_len;
     return 1;
   }
+
   static int handle_yajl_end_map( void* _self )
   {
     JSONObject* self = static_cast<JSONObject*>( _self );
@@ -1807,6 +2022,7 @@ private:
     self->parent_json_value = NULL;
     return 1;
   }
+
   static int handle_yajl_start_array( void* _self )
   {
     JSONObject* self = static_cast<JSONObject*>( _self );
@@ -1815,6 +2031,7 @@ private:
     self->current_json_value = json_value.child;
     return 1;
   }
+
   static int handle_yajl_end_array( void* _self )
   {
     JSONObject* self = static_cast<JSONObject*>( _self );
@@ -1825,6 +2042,7 @@ private:
     self->parent_json_value = NULL;
     return 1;
   }
+
   JSONValue& createNextJSONValue( bool is_map = false )
   {
     yidl::runtime::auto_StringBuffer identifier;
@@ -1835,8 +2053,10 @@ private:
     }
     else
       identifier = NULL;
+
     next_map_key = NULL;
     next_map_key_len = 0;
+
     if ( current_json_value == NULL )
     {
       if ( parent_json_value ) // This is the first value of an array or map
@@ -1861,10 +2081,13 @@ private:
       current_json_value->next = next_json_value;
       current_json_value = next_json_value;
     }
+
     return *current_json_value;
   }
+
   static yajl_callbacks JSONObject_yajl_callbacks;
 };
+
 yajl_callbacks
   YIELD::ipc::JSONUnmarshaller::JSONObject::JSONObject_yajl_callbacks =
 {
@@ -1880,6 +2103,8 @@ yajl_callbacks
   handle_yajl_start_array,
   handle_yajl_end_array
 };
+
+
 YIELD::ipc::JSONUnmarshaller::JSONUnmarshaller
 (
   yidl::runtime::auto_Buffer buffer
@@ -1889,6 +2114,7 @@ YIELD::ipc::JSONUnmarshaller::JSONUnmarshaller
   root_json_value = new JSONObject( buffer );
   next_json_value = root_json_value->child;
 }
+
 YIELD::ipc::JSONUnmarshaller::JSONUnmarshaller
 (
   const char* root_key,
@@ -1897,11 +2123,13 @@ YIELD::ipc::JSONUnmarshaller::JSONUnmarshaller
   : root_key( root_key ), root_json_value( &root_json_value ),
     next_json_value( root_json_value.child )
 { }
+
 YIELD::ipc::JSONUnmarshaller::~JSONUnmarshaller()
 {
 //  if ( root_key == NULL )
 //    delete root_json_value;
 }
+
 bool YIELD::ipc::JSONUnmarshaller::readBoolean( const char* key, uint32_t )
 {
   JSONValue* json_value = readJSONValue( key );
@@ -1915,6 +2143,7 @@ bool YIELD::ipc::JSONUnmarshaller::readBoolean( const char* key, uint32_t )
   else
     return false;
 }
+
 void YIELD::ipc::JSONUnmarshaller::readBuffer
 (
   const char*,
@@ -1924,6 +2153,7 @@ void YIELD::ipc::JSONUnmarshaller::readBuffer
 {
   DebugBreak();
 }
+
 double YIELD::ipc::JSONUnmarshaller::readDouble( const char* key, uint32_t )
 {
   JSONValue* json_value = readJSONValue( key );
@@ -1942,6 +2172,7 @@ double YIELD::ipc::JSONUnmarshaller::readDouble( const char* key, uint32_t )
   else
     return 0;
 }
+
 int64_t YIELD::ipc::JSONUnmarshaller::readInt64( const char* key, uint32_t )
 {
   JSONValue* json_value = readJSONValue( key );
@@ -1955,6 +2186,7 @@ int64_t YIELD::ipc::JSONUnmarshaller::readInt64( const char* key, uint32_t )
   else
     return 0;
 }
+
 void YIELD::ipc::JSONUnmarshaller::readMap
 (
   const char* key,
@@ -1978,15 +2210,18 @@ void YIELD::ipc::JSONUnmarshaller::readMap
   }
   else
     return;
+
   JSONUnmarshaller child_json_unmarshaller( key, *json_value );
   child_json_unmarshaller.readMap( value );
   json_value->have_read = true;
 }
+
 void YIELD::ipc::JSONUnmarshaller::readMap( yidl::runtime::Map& value )
 {
   while ( next_json_value )
     value.unmarshal( *this );
 }
+
 void YIELD::ipc::JSONUnmarshaller::readSequence
 (
   const char* key,
@@ -2010,10 +2245,12 @@ void YIELD::ipc::JSONUnmarshaller::readSequence
   }
   else
     return;
+
   JSONUnmarshaller child_json_unmarshaller( key, *json_value );
   child_json_unmarshaller.readSequence( value );
   json_value->have_read = true;
 }
+
 void YIELD::ipc::JSONUnmarshaller::readSequence
 (
   yidl::runtime::Sequence& value
@@ -2022,6 +2259,7 @@ void YIELD::ipc::JSONUnmarshaller::readSequence
   while ( next_json_value )
     value.unmarshal( *this );
 }
+
 void YIELD::ipc::JSONUnmarshaller::readString
 (
   const char* key,
@@ -2046,6 +2284,7 @@ void YIELD::ipc::JSONUnmarshaller::readString
       str.assign( static_cast<const std::string&>( *json_value->identifier ) );
   }
 }
+
 void YIELD::ipc::JSONUnmarshaller::readStruct
 (
   const char* key,
@@ -2069,14 +2308,17 @@ void YIELD::ipc::JSONUnmarshaller::readStruct
   }
   else
     return;
+
   JSONUnmarshaller child_json_unmarshaller( key, *json_value );
   child_json_unmarshaller.readStruct( value );
   json_value->have_read = true;
 }
+
 void YIELD::ipc::JSONUnmarshaller::readStruct( yidl::runtime::Struct& s )
 {
   s.unmarshal( *this );
 }
+
 YIELD::ipc::JSONUnmarshaller::JSONValue*
   YIELD::ipc::JSONUnmarshaller::readJSONValue( const char* key )
 {
@@ -2085,6 +2327,7 @@ YIELD::ipc::JSONUnmarshaller::JSONValue*
     if ( key != NULL ) // Given a key, reading a value
     {
       JSONValue* child_json_value = root_json_value->child;
+
       while ( child_json_value )
       {
         if
@@ -2097,6 +2340,7 @@ YIELD::ipc::JSONUnmarshaller::JSONValue*
           child_json_value->have_read = true;
           return child_json_value;
         }
+
         child_json_value = child_json_value->next;
       }
     }
@@ -2118,18 +2362,19 @@ YIELD::ipc::JSONUnmarshaller::JSONValue*
       return json_value;
     }
   }
+
   return NULL;
 }
 
 
 // named_pipe.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
 #pragma warning( push )
 #pragma warning( disable: 4100 )
 #endif
+
+
 YIELD::ipc::auto_NamedPipe YIELD::ipc::NamedPipe::open
 (
   const YIELD::platform::Path& path,
@@ -2140,6 +2385,7 @@ YIELD::ipc::auto_NamedPipe YIELD::ipc::NamedPipe::open
 #ifdef _WIN32
   YIELD::platform::Path named_pipe_base_dir_path( TEXT( "\\\\.\\pipe" ) );
   YIELD::platform::Path named_pipe_path( named_pipe_base_dir_path + path );
+
   if ( ( flags & O_CREAT ) == O_CREAT ) // Server
   {
     HANDLE hPipe
@@ -2154,6 +2400,7 @@ YIELD::ipc::auto_NamedPipe YIELD::ipc::NamedPipe::open
           0,
           NULL
         );
+
     if ( hPipe != INVALID_HANDLE_VALUE )
       return new NamedPipe( new YIELD::platform::File( hPipe ), false );
   }
@@ -2164,6 +2411,7 @@ YIELD::ipc::auto_NamedPipe YIELD::ipc::NamedPipe::open
       (
         YIELD::platform::Volume().open( named_pipe_path, flags )
       );
+
     if ( underlying_file != NULL )
       return new NamedPipe( underlying_file, true );
   }
@@ -2176,13 +2424,17 @@ YIELD::ipc::auto_NamedPipe YIELD::ipc::NamedPipe::open
     else
       return NULL;
   }
+
   YIELD::platform::auto_File
     underlying_file( YIELD::platform::Volume().open( path, flags ) );
+
   if ( underlying_file != NULL )
     return new NamedPipe( underlying_file );
 #endif
+
   return NULL;
 }
+
 #ifdef _WIN32
 YIELD::ipc::NamedPipe::NamedPipe
 (
@@ -2196,6 +2448,7 @@ YIELD::ipc::NamedPipe::NamedPipe( YIELD::platform::auto_File underlying_file )
   : underlying_file( underlying_file )
 { }
 #endif
+
 #ifdef _WIN32
 bool YIELD::ipc::NamedPipe::connect()
 {
@@ -2214,6 +2467,7 @@ bool YIELD::ipc::NamedPipe::connect()
   }
 }
 #endif
+
 ssize_t YIELD::ipc::NamedPipe::read( void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
@@ -2225,6 +2479,7 @@ ssize_t YIELD::ipc::NamedPipe::read( void* buffer, size_t buffer_len )
   return underlying_file->read( buffer, buffer_len );
 #endif
 }
+
 ssize_t YIELD::ipc::NamedPipe::write( const void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
@@ -2236,14 +2491,13 @@ ssize_t YIELD::ipc::NamedPipe::write( const void* buffer, size_t buffer_len )
   return underlying_file->write( buffer, buffer_len );
 #endif
 }
+
 #ifdef _WIN32
 #pragma warning( pop )
 #endif
 
 
 // oncrpc_message.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 template <class ONCRPCMessageType>
 YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage
 (
@@ -2254,6 +2508,7 @@ YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage
   xid = 0;
   deserialize_state = DESERIALIZING_RECORD_FRAGMENT_MARKER;
 }
+
 template <class ONCRPCMessageType>
 YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage
 (
@@ -2264,9 +2519,11 @@ YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage
 {
   deserialize_state = DESERIALIZING_RECORD_FRAGMENT_MARKER;
 }
+
 template <class ONCRPCMessageType>
 YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::~ONCRPCMessage()
 { }
+
 template <class ONCRPCMessageType>
 ssize_t YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserialize
 (
@@ -2278,34 +2535,43 @@ ssize_t YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserialize
     case DESERIALIZING_RECORD_FRAGMENT_MARKER:
     {
       ssize_t deserialize_ret = deserializeRecordFragmentMarker( buffer );
+
       if ( deserialize_ret == 0 )
         deserialize_state = DESERIALIZING_RECORD_FRAGMENT;
       else
         return deserialize_ret;
     }
     // Drop down
+
     case DESERIALIZING_RECORD_FRAGMENT:
     {
       ssize_t deserialize_ret = deserializeRecordFragment( buffer );
+
       if ( deserialize_ret == 0 )
         deserialize_state = DESERIALIZE_DONE;
       else if ( deserialize_ret > 0 )
         deserialize_state = DESERIALIZING_LONG_RECORD_FRAGMENT;
+
       return deserialize_ret;
     }
+
     case DESERIALIZING_LONG_RECORD_FRAGMENT:
     {
       ssize_t deserialize_ret = deserializeLongRecordFragment( buffer );
+
       if ( deserialize_ret == 0 )
         deserialize_state = DESERIALIZE_DONE;
       else
         return deserialize_ret;
     }
     // Drop down
+
     case DESERIALIZE_DONE: return 0;
   }
+
   return -1;
 }
+
 template <class ONCRPCMessageType>
 ssize_t
 YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker
@@ -2320,6 +2586,7 @@ YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker
         &record_fragment_marker,
         sizeof( record_fragment_marker )
       );
+
   if ( record_fragment_marker_filled == sizeof( record_fragment_marker ) )
   {
 #ifdef __MACH__
@@ -2345,6 +2612,7 @@ YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker
   else
     return -1;
 }
+
 template <class ONCRPCMessageType>
 ssize_t
 YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment
@@ -2364,12 +2632,15 @@ YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment
   {
     record_fragment_buffer
       = new yidl::runtime::HeapBuffer( record_fragment_length );
+
     buffer->get
     (
       static_cast<void*>( *record_fragment_buffer ),
       gettable_buffer_size
     );
+
     record_fragment_buffer->put( NULL, gettable_buffer_size );
+
     return static_cast<ssize_t>
           (
             record_fragment_length
@@ -2379,6 +2650,7 @@ YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment
   else
     return -1;
 }
+
 template <class ONCRPCMessageType>
 ssize_t
 YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment
@@ -2389,6 +2661,7 @@ YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment
   size_t gettable_buffer_size = buffer->size() - buffer->position();
   size_t remaining_record_fragment_length
     = record_fragment_length - record_fragment_buffer->size();
+
   if ( gettable_buffer_size < remaining_record_fragment_length )
   {
     buffer->get
@@ -2397,7 +2670,9 @@ YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment
         + record_fragment_buffer->size(),
       gettable_buffer_size
     );
+
     record_fragment_buffer->put( NULL, gettable_buffer_size );
+
     return static_cast<ssize_t>
            (
              record_fragment_length
@@ -2412,16 +2687,21 @@ YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment
         + record_fragment_buffer->size(),
       gettable_buffer_size
     );
+
     record_fragment_buffer->put( NULL, gettable_buffer_size );
+
     YIELD::platform::XDRUnmarshaller
       xdr_unmarshaller( record_fragment_buffer );
+
     static_cast<ONCRPCMessageType*>( this )->unmarshal( xdr_unmarshaller );
+
     return 0;
   }
   else // The buffer is larger than we need to fill the record fragment,
        // logic error somewhere
     return -1;
 }
+
 template <class ONCRPCMessageType>
 void YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::marshal
 (
@@ -2430,6 +2710,7 @@ void YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::marshal
 {
   marshaller.writeUint32( "xid", 0, xid );
 }
+
 template <class ONCRPCMessageType>
 yidl::runtime::auto_Buffer
 YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::serialize()
@@ -2438,17 +2719,21 @@ YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::serialize()
   xdr_marshaller.writeUint32( "record_fragment_marker", 0, 0 );
   static_cast<ONCRPCMessageType*>( this )->marshal( xdr_marshaller );
   yidl::runtime::auto_StringBuffer xdr_buffer = xdr_marshaller.get_buffer();
+
   uint32_t record_fragment_length
     = static_cast<uint32_t>( xdr_buffer->size() - sizeof( uint32_t ) );
+
   // Indicate that this is the last fragment
   uint32_t record_fragment_marker
     = record_fragment_length | ( 1 << 31 );
+
 #ifdef __MACH__
   record_fragment_marker = htonl( record_fragment_marker );
 #else
   record_fragment_marker
     = YIELD::platform::Machine::htonl( record_fragment_marker );
 #endif
+
   static_cast<std::string&>( *xdr_buffer )
     .replace
     (
@@ -2457,8 +2742,10 @@ YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::serialize()
       reinterpret_cast<const char*>( &record_fragment_marker ),
       sizeof( uint32_t )
     );
+
   return xdr_buffer.release();
 }
+
 template <class ONCRPCMessageType>
 void YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::unmarshal
 (
@@ -2467,13 +2754,12 @@ void YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::unmarshal
 {
   xid = unmarshaller.readUint32( "xid", 0 );
 }
+
 template class YIELD::ipc::ONCRPCMessage<YIELD::ipc::ONCRPCRequest>;
 template class YIELD::ipc::ONCRPCMessage<YIELD::ipc::ONCRPCResponse>;
 
 
 // oncrpc_request.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 YIELD::ipc::ONCRPCRequest::ONCRPCRequest
 (
   YIELD::concurrency::auto_Interface interface_
@@ -2482,6 +2768,7 @@ YIELD::ipc::ONCRPCRequest::ONCRPCRequest
 {
   reconnect_tries = 0;
 }
+
 YIELD::ipc::ONCRPCRequest::ONCRPCRequest
 (
   YIELD::concurrency::auto_Interface interface_,
@@ -2500,6 +2787,7 @@ YIELD::ipc::ONCRPCRequest::ONCRPCRequest
   credential_auth_flavor = AUTH_NONE;
   reconnect_tries = 0;
 }
+
 YIELD::ipc::ONCRPCRequest::ONCRPCRequest
 (
   YIELD::concurrency::auto_Interface interface_,
@@ -2521,6 +2809,7 @@ YIELD::ipc::ONCRPCRequest::ONCRPCRequest
   vers = interface_->get_type_id();
   reconnect_tries = 0;
 }
+
 YIELD::ipc::ONCRPCRequest::ONCRPCRequest
 (
   uint32_t prog,
@@ -2541,6 +2830,7 @@ YIELD::ipc::ONCRPCRequest::ONCRPCRequest
   credential_auth_flavor = AUTH_NONE;
   reconnect_tries = 0;
 }
+
 YIELD::ipc::ONCRPCRequest::ONCRPCRequest
 (
   uint32_t prog,
@@ -2564,6 +2854,7 @@ YIELD::ipc::ONCRPCRequest::ONCRPCRequest
 {
   reconnect_tries = 0;
 }
+
 YIELD::concurrency::auto_Response YIELD::ipc::ONCRPCRequest::createResponse()
 {
   return new ONCRPCResponse
@@ -2574,17 +2865,20 @@ YIELD::concurrency::auto_Response YIELD::ipc::ONCRPCRequest::createResponse()
                 ->createResponse().release()
             );
 }
+
 void YIELD::ipc::ONCRPCRequest::marshal
 (
   yidl::runtime::Marshaller& marshaller
 )
 {
   ONCRPCMessage<ONCRPCRequest>::marshal( marshaller );
+
   marshaller.writeInt32( "msg_type", 0, 0 ); // MSG_CALL
   marshaller.writeInt32( "rpcvers", 0, 2 );
   marshaller.writeInt32( "prog", 0, prog );
   marshaller.writeInt32( "vers", 0, vers );
   marshaller.writeInt32( "proc", 0, proc );
+
   marshaller.writeInt32( "credential_auth_flavor", 0, credential_auth_flavor );
   if ( credential_auth_flavor == AUTH_NONE || credential == NULL )
     marshaller.writeInt32( "credential_auth_body_length", 0, 0 );
@@ -2599,10 +2893,13 @@ void YIELD::ipc::ONCRPCRequest::marshal
       credential_auth_body_xdr_marshaller.get_buffer().release()
     );
   }
+
   marshaller.writeInt32( "verf_auth_flavor", 0, AUTH_NONE );
   marshaller.writeInt32( "verf_auth_body_length", 0, 0 );
+
   marshaller.writeStruct( "body", 0, *get_body() );
 }
+
 void YIELD::ipc::ONCRPCRequest::respond
 (
   YIELD::concurrency::Response& response
@@ -2612,7 +2909,9 @@ void YIELD::ipc::ONCRPCRequest::respond
   {
     YIELD::concurrency::auto_Interface interface_( get_interface() );
     yidl::runtime::auto_Struct body( get_body() );
+
     Request* interface_request = interface_->checkRequest( *body );
+
     if ( interface_request != NULL )
     {
       if
@@ -2652,18 +2951,22 @@ void YIELD::ipc::ONCRPCRequest::respond
         return interface_request->respond( response );
     }
   }
+
   return Request::respond( response );
 }
+
 void YIELD::ipc::ONCRPCRequest::set_reconnect_tries( uint8_t reconnect_tries )
 {
   this->reconnect_tries = reconnect_tries;
 }
+
 void YIELD::ipc::ONCRPCRequest::unmarshal
 (
   yidl::runtime::Unmarshaller& unmarshaller
 )
 {
   ONCRPCMessage<ONCRPCRequest>::unmarshal( unmarshaller );
+
   int32_t msg_type = unmarshaller.readInt32( "msg_type", 0 );
   if ( msg_type == 0 ) // CALL
   {
@@ -2673,6 +2976,7 @@ void YIELD::ipc::ONCRPCRequest::unmarshal
       unmarshaller.readUint32( "prog", 0 );
       unmarshaller.readUint32( "vers", 0 );
       uint32_t proc = unmarshaller.readUint32( "proc", 0 );
+
       unmarshaller.readUint32( "credential_auth_flavor", 0 );
       std::string credential_auth_body;
       unmarshaller.readString
@@ -2681,11 +2985,13 @@ void YIELD::ipc::ONCRPCRequest::unmarshal
         0,
         credential_auth_body
       );
+
       unmarshaller.readUint32( "verf_auth_flavor", 0 );
       uint32_t verf_auth_body_length
         = unmarshaller.readUint32( "credential_auth_body_length", 0 );
       if ( verf_auth_body_length > 0 )
         DebugBreak();
+
       yidl::runtime::auto_Struct body( get_body() );
       if ( body != NULL )
         unmarshaller.readStruct( "body", 0, *body );
@@ -2704,14 +3010,13 @@ void YIELD::ipc::ONCRPCRequest::unmarshal
 
 
 // oncrpc_response.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 YIELD::ipc::ONCRPCResponse::ONCRPCResponse
 (
   YIELD::concurrency::auto_Interface interface_
 )
   : ONCRPCMessage<ONCRPCResponse>( interface_ )
 { }
+
 YIELD::ipc::ONCRPCResponse::ONCRPCResponse
 (
   YIELD::concurrency::auto_Interface interface_,
@@ -2720,6 +3025,7 @@ YIELD::ipc::ONCRPCResponse::ONCRPCResponse
 )
   : ONCRPCMessage<ONCRPCResponse>( interface_, xid, body )
 { }
+
 void YIELD::ipc::ONCRPCResponse::marshal
 (
   yidl::runtime::Marshaller& marshaller
@@ -2748,13 +3054,16 @@ void YIELD::ipc::ONCRPCResponse::marshal
   else
     marshaller.writeInt32( "accept_stat", 0, 5 ); // SYSTEM_ERR
 }
+
 void YIELD::ipc::ONCRPCResponse::unmarshal
 (
   yidl::runtime::Unmarshaller& unmarshaller
 )
 {
   ONCRPCMessage<ONCRPCResponse>::unmarshal( unmarshaller );
+
   yidl::runtime::auto_Struct body( get_body() );
+
   int32_t msg_type = unmarshaller.readInt32( "msg_type", 0 );
   if ( msg_type == 1 ) // REPLY
   {
@@ -2763,11 +3072,14 @@ void YIELD::ipc::ONCRPCResponse::unmarshal
     {
       uint32_t verf_auth_flavor
         = unmarshaller.readUint32( "verf_auth_flavor", 0 );
+
       uint32_t verf_authbody_length
         = unmarshaller.readUint32( "verf_authbody_length", 0 );
+
       if ( verf_auth_flavor == 0 && verf_authbody_length == 0 )
       {
         uint32_t accept_stat = unmarshaller.readUint32( "accept_stat", 0 );
+
         switch ( accept_stat )
         {
           case 0:
@@ -2776,15 +3088,18 @@ void YIELD::ipc::ONCRPCResponse::unmarshal
               unmarshaller.readStruct( "body", 0, *body );
           }
           break;
+
           case 1: body = new ONCRPCProgramUnavailableError; break;
           case 2: body = new ONCRPCProgramMismatchError; break;
           case 3: body = new ONCRPCProcedureUnavailableError; break;
           case 4: body = new ONCRPCGarbageArgumentsError; break;
           case 5: body = new ONCRPCSystemError; break;
+
           default:
           {
             body = get_interface()
               ->createExceptionResponse( accept_stat ).release();
+
             if ( body != NULL )
               unmarshaller.readStruct( "body", 0, *body );
             else
@@ -2804,13 +3119,12 @@ void YIELD::ipc::ONCRPCResponse::unmarshal
   }
   else // Unknown msg_type value
     body = new ONCRPCMessageRejectedError;
+
   set_body( body );
 }
 
 
 // oncrpc_server.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 class YIELD::ipc::ONCRPCServer::AIOWriteControlBlock
   : public Socket::AIOWriteControlBlock
 {
@@ -2818,14 +3132,18 @@ public:
   AIOWriteControlBlock( yidl::runtime::auto_Buffer buffer )
     : Socket::AIOWriteControlBlock( buffer )
   { }
+
   void onCompletion( size_t )
   { }
+
   void onError( uint32_t )
   {
     get_socket()->shutdown();
     get_socket()->close();
   }
 };
+
+
 class YIELD::ipc::ONCRPCServer::ONCRPCResponseTarget
   : public YIELD::concurrency::EventTarget
 {
@@ -2842,13 +3160,16 @@ public:
       peername( peername ),
       socket_( socket_ )
   { }
+
   // yidl::runtime::Object
   YIDL_RUNTIME_OBJECT_PROTOTYPES( ONCRPCServer::ONCRPCResponseTarget, 0 );
+
   // EventTarget
   void send( YIELD::concurrency::Event& ev )
   {
     ONCRPCResponse
       oncrpc_response( interface_, oncrpc_request->get_xid(), ev );
+
     if ( peername != NULL )
     {
       static_cast<UDPSocket*>( socket_.get() )->sendto
@@ -2865,12 +3186,15 @@ public:
       );
     }
   }
+
 private:
   YIELD::concurrency::auto_Interface interface_;
   auto_ONCRPCRequest oncrpc_request;
   auto_SocketAddress peername;
   auto_Socket socket_;
 };
+
+
 class YIELD::ipc::ONCRPCServer::AIOReadControlBlock
   : public Socket::AIOReadControlBlock
 {
@@ -2885,11 +3209,13 @@ public:
       interface_( interface_ ),
       oncrpc_request( oncrpc_request )
   { }
+
   void onCompletion( size_t )
   {
     for ( ;; )
     {
       ssize_t deserialize_ret = oncrpc_request->deserialize( get_buffer() );
+
       if ( deserialize_ret == 0 )
       {
         yidl::runtime::auto_Struct oncrpc_request_body
@@ -2899,6 +3225,7 @@ public:
         if ( interface_request != NULL )
         {
           oncrpc_request_body.release();
+
           interface_request->set_response_target
           (
             new ONCRPCResponseTarget
@@ -2909,10 +3236,12 @@ public:
               get_socket()
             )
           );
+
           interface_->send( *interface_request );
         }
         else
           DebugBreak();
+
         oncrpc_request = new ONCRPCRequest( interface_ );
       }
       else if ( deserialize_ret > 0 )
@@ -2926,6 +3255,7 @@ public:
             oncrpc_request
           )
         );
+
         return;
       }
       else
@@ -2936,14 +3266,18 @@ public:
       }
     }
   }
+
   void onError( uint32_t )
   {
     get_socket()->close();
   }
+
 private:
   YIELD::concurrency::auto_Interface interface_;
   auto_ONCRPCRequest oncrpc_request;
 };
+
+
 class YIELD::ipc::ONCRPCServer::AIORecvFromControlBlock
   : public UDPSocket::AIORecvFromControlBlock
 {
@@ -2955,6 +3289,7 @@ public:
       ),
       interface_( interface_ )
   { }
+
   // AIOControlBlock
   void onCompletion( size_t )
   {
@@ -2969,6 +3304,7 @@ public:
       if ( interface_request != NULL )
       {
         oncrpc_request_body.release();
+
         interface_request->set_response_target
         (
           new ONCRPCResponseTarget
@@ -2979,8 +3315,10 @@ public:
             get_socket()
           )
         );
+
         interface_->send( *interface_request );
       }
+
       static_cast<UDPSocket*>( get_socket().get() )->aio_recvfrom
       (
         new AIORecvFromControlBlock( interface_ )
@@ -2991,13 +3329,17 @@ public:
     else
       DebugBreak();
   }
+
   void onError( uint32_t )
   {
     // DebugBreak();
   }
+
 private:
   YIELD::concurrency::auto_Interface interface_;
 };
+
+
 class YIELD::ipc::ONCRPCServer::AIOAcceptControlBlock
   : public TCPSocket::AIOAcceptControlBlock
 {
@@ -3005,6 +3347,7 @@ public:
   AIOAcceptControlBlock( YIELD::concurrency::auto_Interface interface_ )
     : interface_( interface_ )
   { }
+
   void onCompletion( size_t )
   {
     get_accepted_tcp_socket()->aio_read
@@ -3016,16 +3359,21 @@ public:
         new ONCRPCRequest( interface_ )
       )
     );
+
     static_cast<TCPSocket*>( get_socket().get() )->aio_accept
     (
       new AIOAcceptControlBlock( interface_ )
     );
   }
+
   void onError( uint32_t )
   { }
+
 private:
   YIELD::concurrency::auto_Interface interface_;
 };
+
+
 YIELD::ipc::ONCRPCServer::ONCRPCServer
 (
   YIELD::concurrency::auto_Interface interface_,
@@ -3033,6 +3381,7 @@ YIELD::ipc::ONCRPCServer::ONCRPCServer
 )
   : interface_( interface_ ), socket_( socket_ )
 { }
+
 YIELD::ipc::auto_ONCRPCServer
 YIELD::ipc::ONCRPCServer::create
 (
@@ -3043,6 +3392,7 @@ YIELD::ipc::ONCRPCServer::create
 )
 {
   auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
+
   if ( absolute_uri.get_scheme() == "oncrpcu" )
   {
     auto_UDPSocket udp_socket( UDPSocket::create() );
@@ -3062,6 +3412,7 @@ YIELD::ipc::ONCRPCServer::create
     else
 #endif
       listen_tcp_socket = TCPSocket::create();
+
     if
     (
       listen_tcp_socket != NULL &&
@@ -3073,16 +3424,17 @@ YIELD::ipc::ONCRPCServer::create
       return new ONCRPCServer( interface_, listen_tcp_socket.release() );
     }
   }
+
   throw YIELD::platform::Exception();
 }
 
 
 // pipe.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #include <windows.h>
 #endif
+
+
 void YIELD::ipc::Pipe::close()
 {
 #ifdef _WIN32
@@ -3091,6 +3443,7 @@ void YIELD::ipc::Pipe::close()
     CloseHandle( ends[0] );
     ends[0] = INVALID_HANDLE_VALUE;
   }
+
   if ( ends[1] != INVALID_HANDLE_VALUE )
   {
     CloseHandle( ends[1] );
@@ -3101,6 +3454,7 @@ void YIELD::ipc::Pipe::close()
   ::close( ends[1] );
 #endif
 }
+
 YIELD::ipc::auto_Pipe YIELD::ipc::Pipe::create()
 {
 #ifdef _WIN32
@@ -3128,8 +3482,10 @@ YIELD::ipc::auto_Pipe YIELD::ipc::Pipe::create()
   if ( ::pipe( ends ) != -1 )
     return new Pipe( ends );
 #endif
+
   throw YIELD::platform::Exception();
 }
+
 #ifdef _WIN32
 YIELD::ipc::Pipe::Pipe( void* ends[2] )
 #else
@@ -3139,10 +3495,12 @@ YIELD::ipc::Pipe::Pipe( int ends[2] )
   this->ends[0] = ends[0];
   this->ends[1] = ends[1];
 }
+
 YIELD::ipc::Pipe::~Pipe()
 {
   close();
 }
+
 ssize_t YIELD::ipc::Pipe::read( void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
@@ -3165,6 +3523,7 @@ ssize_t YIELD::ipc::Pipe::read( void* buffer, size_t buffer_len )
   return ::read( ends[0], buffer, buffer_len );
 #endif
 }
+
 bool YIELD::ipc::Pipe::set_blocking_mode( bool blocking )
 {
 #ifdef _WIN32
@@ -3210,6 +3569,7 @@ bool YIELD::ipc::Pipe::set_blocking_mode( bool blocking )
   }
 #endif
 }
+
 ssize_t YIELD::ipc::Pipe::write( const void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
@@ -3235,14 +3595,14 @@ ssize_t YIELD::ipc::Pipe::write( const void* buffer, size_t buffer_len )
 
 
 // process.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #if defined(_WIN32)
 #include <windows.h>
 #else
 #include <signal.h>
 #include <sys/wait.h> // For waitpid
 #endif
+
+
 YIELD::ipc::auto_Process YIELD::ipc::Process::create
 (
   const YIELD::platform::Path& command_line
@@ -3253,6 +3613,7 @@ YIELD::ipc::auto_Process YIELD::ipc::Process::create
   //auto_Pipe child_stdin = Pipe::create(),
   //                  child_stdout = Pipe::create(),
   //                  child_stderr = Pipe::create();
+
   STARTUPINFO startup_info;
   ZeroMemory( &startup_info, sizeof( STARTUPINFO ) );
   startup_info.cb = sizeof( STARTUPINFO );
@@ -3260,8 +3621,10 @@ YIELD::ipc::auto_Process YIELD::ipc::Process::create
   //startup_info.hStdOutput = *child_stdout->get_output_stream()->get_file();
   //startup_info.hStdError = *child_stdout->get_output_stream()->get_file();
   //startup_info.dwFlags = STARTF_USESTDHANDLES;
+
   PROCESS_INFORMATION proc_info;
   ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );
+
   if
   (
     CreateProcess
@@ -3295,6 +3658,7 @@ YIELD::ipc::auto_Process YIELD::ipc::Process::create
   return create( command_line, argv );
 #endif
 }
+
 YIELD::ipc::auto_Process YIELD::ipc::Process::create( int argc, char** argv )
 {
   std::vector<char*> argvv;
@@ -3303,6 +3667,7 @@ YIELD::ipc::auto_Process YIELD::ipc::Process::create( int argc, char** argv )
   argvv.push_back( NULL );
   return create( argv[0], const_cast<const char**>( &argvv[0] ) );
 }
+
 YIELD::ipc::auto_Process YIELD::ipc::Process::create
 (
   const YIELD::platform::Path& executable_file_path,
@@ -3312,6 +3677,7 @@ YIELD::ipc::auto_Process YIELD::ipc::Process::create
 #ifdef _WIN32
   const std::string& executable_file_path_str
     = static_cast<const std::string&>( executable_file_path );
+
   std::string command_line;
   if ( executable_file_path_str.find( ' ' ) == -1 )
     command_line.append( executable_file_path_str );
@@ -3321,6 +3687,7 @@ YIELD::ipc::auto_Process YIELD::ipc::Process::create
     command_line.append( executable_file_path_str );
     command_line.append( "\"", 1 );
   }
+
   size_t arg_i = 0;
   while ( null_terminated_argv[arg_i] != NULL )
   {
@@ -3328,12 +3695,14 @@ YIELD::ipc::auto_Process YIELD::ipc::Process::create
     command_line.append( null_terminated_argv[arg_i] );
     arg_i++;
   }
+
   return create( command_line );
 #else
   auto_Pipe child_stdin, child_stdout, child_stderr;
   //auto_Pipe child_stdin = Pipe::create(),
   //                  child_stdout = Pipe::create(),
   //                  child_stderr = Pipe::create();
+
   pid_t child_pid = fork();
   if ( child_pid == -1 )
     throw YIELD::platform::Exception();
@@ -3342,12 +3711,15 @@ YIELD::ipc::auto_Process YIELD::ipc::Process::create
     //close( STDIN_FILENO );
     // Set stdin to read end of stdin pipe
     //dup2( *child_stdin->get_input_stream()->get_file(), STDIN_FILENO );
+
     //close( STDOUT_FILENO );
     // Set stdout to write end of stdout pipe
     //dup2( *child_stdout->get_output_stream()->get_file(), STDOUT_FILENO );
+
     //close( STDERR_FILENO );
     // Set stderr to write end of stderr pipe
     //dup2( *child_stderr->get_output_stream()->get_file(), STDERR_FILENO );
+
     std::vector<char*> argv_with_executable_file_path;
     argv_with_executable_file_path.push_back
     (
@@ -3363,6 +3735,7 @@ YIELD::ipc::auto_Process YIELD::ipc::Process::create
       arg_i++;
     }
     argv_with_executable_file_path.push_back( NULL );
+
     execv( executable_file_path, &argv_with_executable_file_path[0] );
     return NULL; // Should never be reached
   }
@@ -3370,6 +3743,7 @@ YIELD::ipc::auto_Process YIELD::ipc::Process::create
     return new Process( child_pid, child_stdin, child_stdout, child_stderr );
 #endif
 }
+
 #ifdef _WIN32
 YIELD::ipc::Process::Process
 (
@@ -3395,6 +3769,7 @@ YIELD::ipc::Process::Process
     child_stdout( child_stdout ),
     child_stderr( child_stderr )
 { }
+
 YIELD::ipc::Process::~Process()
 {
 #ifdef _WIN32
@@ -3402,6 +3777,7 @@ YIELD::ipc::Process::~Process()
   CloseHandle( hChildThread );
 #endif
 }
+
 unsigned long YIELD::ipc::Process::getpid()
 {
 #ifdef _WIN32
@@ -3410,6 +3786,7 @@ unsigned long YIELD::ipc::Process::getpid()
   return ::getpid();
 #endif
 }
+
 bool YIELD::ipc::Process::kill()
 {
 #ifdef _WIN32
@@ -3418,6 +3795,7 @@ bool YIELD::ipc::Process::kill()
   return ::kill( child_pid, SIGKILL ) == 0;
 #endif
 }
+
 bool YIELD::ipc::Process::poll( int* out_return_code )
 {
 #ifdef _WIN32
@@ -3429,6 +3807,7 @@ bool YIELD::ipc::Process::poll( int* out_return_code )
       GetExitCodeProcess( hChildProcess, &dwChildExitCode );
       *out_return_code = ( int )dwChildExitCode;
     }
+
     return true;
   }
   else
@@ -3461,6 +3840,7 @@ bool YIELD::ipc::Process::poll( int* out_return_code )
     return false;
 #endif
 }
+
 bool YIELD::ipc::Process::terminate()
 {
 #ifdef _WIN32
@@ -3469,6 +3849,7 @@ bool YIELD::ipc::Process::terminate()
   return ::kill( child_pid, SIGTERM ) == 0;
 #endif
 }
+
 int YIELD::ipc::Process::wait()
 {
 #ifdef _WIN32
@@ -3487,8 +3868,6 @@ int YIELD::ipc::Process::wait()
 
 
 // rfc822_headers.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 YIELD::ipc::RFC822Headers::RFC822Headers( uint8_t reserve_iovecs_count )
 {
   deserialize_state = DESERIALIZING_LEADING_WHITESPACE;
@@ -3500,10 +3879,12 @@ YIELD::ipc::RFC822Headers::RFC822Headers( uint8_t reserve_iovecs_count )
     memset( &stack_iovecs[iovec_i], 0, sizeof( stack_iovecs[iovec_i] ) );
   iovecs_filled = reserve_iovecs_count;
 }
+
 YIELD::ipc::RFC822Headers::~RFC822Headers()
 {
   delete [] heap_buffer;
 }
+
 void YIELD::ipc::RFC822Headers::allocateHeapBuffer()
 {
   if ( heap_buffer_len == 0 )
@@ -3535,6 +3916,7 @@ void YIELD::ipc::RFC822Headers::allocateHeapBuffer()
     heap_buffer = new_heap_buffer;
   }
 }
+
 ssize_t
 YIELD::ipc::RFC822Headers::deserialize
 (
@@ -3567,6 +3949,7 @@ YIELD::ipc::RFC822Headers::deserialize
         }
       }
       // Fall through
+
       case DESERIALIZING_HEADER_NAME:
       {
         char c;
@@ -3580,12 +3963,15 @@ YIELD::ipc::RFC822Headers::deserialize
               deserialize_state = DESERIALIZING_TRAILING_CRLF;
             }
             continue;
+
             // TODO: support folded lines here (look for isspace( c ),
             // if so it's an extension of the previous line
+
             default:
             {
               *buffer_p = c;
               advanceBufferPointer();
+
               for ( ;; )
               {
                 if ( buffer->get( buffer_p, 1 ) )
@@ -3612,6 +3998,7 @@ YIELD::ipc::RFC822Headers::deserialize
           return 1;
       }
       // Fall through
+
       case DESERIALIZING_HEADER_NAME_VALUE_SEPARATOR:
       {
         char c;
@@ -3634,6 +4021,7 @@ YIELD::ipc::RFC822Headers::deserialize
         }
       }
       // Fall through
+
       case DESERIALIZING_HEADER_VALUE:
       {
         for ( ;; )
@@ -3655,6 +4043,7 @@ YIELD::ipc::RFC822Headers::deserialize
         }
       }
       // Fall through
+
       case DESERIALIZING_HEADER_VALUE_TERMINATOR:
       {
         char c;
@@ -3673,6 +4062,7 @@ YIELD::ipc::RFC822Headers::deserialize
         }
       }
       continue; // To the next header name
+
       case DESERIALIZING_TRAILING_CRLF:
       {
         char c;
@@ -3683,6 +4073,7 @@ YIELD::ipc::RFC822Headers::deserialize
             if ( c == '\n' )
             {
               *buffer_p = 0;
+
               // Fill the iovecs so get_header will work
               // TODO: do this as we're parsing
               const char* temp_buffer_p;
@@ -3690,6 +4081,7 @@ YIELD::ipc::RFC822Headers::deserialize
                 temp_buffer_p = heap_buffer;
               else
                 temp_buffer_p = stack_buffer;
+
               while ( temp_buffer_p < buffer_p )
               {
                 const char* header_name = temp_buffer_p;
@@ -3703,6 +4095,7 @@ YIELD::ipc::RFC822Headers::deserialize
                 set_next_iovec( header_value, header_value_len );
                 set_next_iovec( "\r\n", 2 );
               }
+
               deserialize_state = DESERIALIZE_DONE;
               return 0;
             }
@@ -3710,11 +4103,13 @@ YIELD::ipc::RFC822Headers::deserialize
           else
             return 1;
         }
+
         case DESERIALIZE_DONE: return 0;
       }
     } // switch
   } // for ( ;; )
 }
+
 char* YIELD::ipc::RFC822Headers::get_header
 (
   const char* header_name,
@@ -3741,6 +4136,7 @@ char* YIELD::ipc::RFC822Headers::get_header
   }
   return const_cast<char*>( default_value );
 }
+
 yidl::runtime::auto_Buffer YIELD::ipc::RFC822Headers::serialize()
 {
   if ( heap_iovecs != NULL )
@@ -3748,6 +4144,7 @@ yidl::runtime::auto_Buffer YIELD::ipc::RFC822Headers::serialize()
   else
     return new GatherBuffer( stack_iovecs, iovecs_filled );
 }
+
 //void RFC822Headers::set_header( const char* header, size_t header_len )
 //{
 //  DebugBreak(); // TODO: Separate header name and value
@@ -3761,6 +4158,7 @@ yidl::runtime::auto_Buffer YIELD::ipc::RFC822Headers::serialize()
 //    copy_iovec( header, header_len );
 //    */
 //}
+
 void YIELD::ipc::RFC822Headers::set_header
 (
   const char* header_name,
@@ -3772,6 +4170,7 @@ void YIELD::ipc::RFC822Headers::set_header
   set_next_iovec( header_value, strnlen( header_value, UINT16_MAX ) );
   set_next_iovec( "\r\n", 2 );
 }
+
 void YIELD::ipc::RFC822Headers::set_header
 (
   const char* header_name,
@@ -3783,6 +4182,7 @@ void YIELD::ipc::RFC822Headers::set_header
   set_next_iovec( header_value, strnlen( header_value, UINT16_MAX ) );
   set_next_iovec( "\r\n", 2 );
 }
+
 void YIELD::ipc::RFC822Headers::set_header
 (
   char* header_name,
@@ -3794,6 +4194,7 @@ void YIELD::ipc::RFC822Headers::set_header
   set_next_iovec( header_value, strnlen( header_value, UINT16_MAX ) );
   set_next_iovec( "\r\n", 2 );
 }
+
 void YIELD::ipc::RFC822Headers::set_header
 (
   const std::string& header_name,
@@ -3805,14 +4206,18 @@ void YIELD::ipc::RFC822Headers::set_header
     const_cast<char*>( header_name.c_str() ),
     header_name.size()
   ); // Copy
+
   set_next_iovec( ": ", 2 );
+
   set_next_iovec
   (
     const_cast<char*>( header_value.c_str() ),
     header_value.size()
   ); // Copy
+
   set_next_iovec( "\r\n", 2 );
 }
+
 void YIELD::ipc::RFC822Headers::set_iovec
 (
   uint8_t iovec_i,
@@ -3834,6 +4239,7 @@ void YIELD::ipc::RFC822Headers::set_iovec
     heap_iovecs[iovec_i].iov_len = len;
   }
 }
+
 void YIELD::ipc::RFC822Headers::set_next_iovec( char* data, size_t len )
 {
   if ( heap_buffer == NULL )
@@ -3873,6 +4279,7 @@ void YIELD::ipc::RFC822Headers::set_next_iovec( char* data, size_t len )
       iovecs = heap_iovecs;
     else
       iovecs = stack_iovecs;
+
     for ( uint8_t iovec_i = 0; iovec_i < iovecs_filled; iovec_i++ )
     {
       if
@@ -3891,12 +4298,14 @@ void YIELD::ipc::RFC822Headers::set_next_iovec( char* data, size_t len )
     delete [] heap_buffer;
     heap_buffer = new_heap_buffer;
   }
+
   const char* buffer_p_before = buffer_p;
   memcpy_s( buffer_p, len, data, len );
   buffer_p += len;
   if ( data[len-1] == 0 ) len--;
   set_next_iovec( buffer_p_before, len );
 }
+
 void YIELD::ipc::RFC822Headers::set_next_iovec( const char* data, size_t len )
 {
   struct iovec _iovec;
@@ -3904,6 +4313,7 @@ void YIELD::ipc::RFC822Headers::set_next_iovec( const char* data, size_t len )
   _iovec.iov_len = len;
   set_next_iovec( _iovec );
 }
+
 void YIELD::ipc::RFC822Headers::set_next_iovec( const struct iovec& iovec )
 {
   if ( heap_iovecs == NULL )
@@ -3927,13 +4337,12 @@ void YIELD::ipc::RFC822Headers::set_next_iovec( const struct iovec& iovec )
     heap_iovecs[iovecs_filled] = iovec;
   else
     return;
+
   iovecs_filled++;
 }
 
 
 // socket.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #pragma warning( 4 : 4365 )
 #pragma warning( push )
@@ -3950,7 +4359,11 @@ void YIELD::ipc::RFC822Headers::set_next_iovec( const struct iovec& iovec )
 #include <sys/socket.h>
 #include <unistd.h>
 #endif
+
+
 YIELD::ipc::Socket::AIOQueue* YIELD::ipc::Socket::aio_queue = NULL;
+
+
 YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus
 YIELD::ipc::Socket::AIOConnectControlBlock::execute()
 {
@@ -3964,8 +4377,11 @@ YIELD::ipc::Socket::AIOConnectControlBlock::execute()
 #else
     onError( errno );
 #endif
+
   return EXECUTE_STATUS_DONE;
 }
+
+
 YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus
 YIELD::ipc::Socket::AIOReadControlBlock::execute()
 {
@@ -3988,12 +4404,16 @@ YIELD::ipc::Socket::AIOReadControlBlock::execute()
 #else
     onError( errno );
 #endif
+
   return EXECUTE_STATUS_DONE;
 }
+
+
 YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus
 YIELD::ipc::Socket::AIOWriteControlBlock::execute()
 {
   ssize_t write_ret = get_socket()->write( get_buffer() );
+
   if ( write_ret >= 0 )
     onCompletion( static_cast<size_t>( write_ret ) );
   else if ( get_socket()->want_write() )
@@ -4006,8 +4426,11 @@ YIELD::ipc::Socket::AIOWriteControlBlock::execute()
 #else
     onError( errno );
 #endif
+
   return EXECUTE_STATUS_DONE;
 }
+
+
 YIELD::ipc::Socket::Socket
 (
   int domain,
@@ -4024,10 +4447,12 @@ YIELD::ipc::Socket::Socket
   blocking_mode = true;
   connected = false;
 }
+
 YIELD::ipc::Socket::~Socket()
 {
   close();
 }
+
 void YIELD::ipc::Socket::aio_connect
 (
   auto_AIOConnectControlBlock aio_connect_control_block
@@ -4035,12 +4460,14 @@ void YIELD::ipc::Socket::aio_connect
 {
   aio_connect_nbio( aio_connect_control_block );
 }
+
 void YIELD::ipc::Socket::aio_connect_nbio
 (
   auto_AIOConnectControlBlock aio_connect_control_block
 )
 {
   aio_connect_control_block->set_socket( *this );
+
   set_blocking_mode( false );
   if ( connect( aio_connect_control_block->get_peername() ) )
     aio_connect_control_block->onCompletion( 0 );
@@ -4053,6 +4480,7 @@ void YIELD::ipc::Socket::aio_connect_nbio
     aio_connect_control_block->onError( errno );
 #endif
 }
+
 void YIELD::ipc::Socket::aio_read
 (
   auto_AIOReadControlBlock aio_read_control_block
@@ -4064,6 +4492,7 @@ void YIELD::ipc::Socket::aio_read
   aio_read_nbio( aio_read_control_block );
 #endif
 }
+
 #ifdef _WIN32
 void YIELD::ipc::Socket::aio_read_iocp
 (
@@ -4072,6 +4501,7 @@ void YIELD::ipc::Socket::aio_read_iocp
 {
   aio_read_control_block->set_socket( *this );
   get_aio_queue().associate( *this );
+
   yidl::runtime::auto_Buffer buffer( aio_read_control_block->get_buffer() );
   WSABUF wsabuf[1];
   wsabuf[0].buf = static_cast<char*>( *buffer ) + buffer->size();
@@ -4097,6 +4527,7 @@ void YIELD::ipc::Socket::aio_read_iocp
     aio_read_control_block->onError( WSAGetLastError() );
 }
 #endif
+
 void YIELD::ipc::Socket::aio_read_nbio
 (
   auto_AIOReadControlBlock aio_read_control_block
@@ -4122,6 +4553,7 @@ void YIELD::ipc::Socket::aio_read_nbio
     aio_read_control_block->onError( errno );
 #endif
 }
+
 void YIELD::ipc::Socket::aio_write
 (
   auto_AIOWriteControlBlock aio_write_control_block
@@ -4133,6 +4565,7 @@ void YIELD::ipc::Socket::aio_write
   aio_write_nbio( aio_write_control_block );
 #endif
 }
+
 #ifdef _WIN32
 void YIELD::ipc::Socket::aio_write_iocp
 (
@@ -4141,6 +4574,7 @@ void YIELD::ipc::Socket::aio_write_iocp
 {
   aio_write_control_block->set_socket( *this );
   get_aio_queue().associate( *this );
+
   yidl::runtime::auto_Buffer buffer( aio_write_control_block->get_buffer() );
   if ( buffer->get_type_id() == YIDL_RUNTIME_OBJECT_TYPE_ID( GatherBuffer ) )
   {
@@ -4224,6 +4658,7 @@ void YIELD::ipc::Socket::aio_write_iocp
   }
 }
 #endif
+
 void YIELD::ipc::Socket::aio_write_nbio
 (
   auto_AIOWriteControlBlock aio_write_control_block
@@ -4243,6 +4678,7 @@ void YIELD::ipc::Socket::aio_write_nbio
     aio_write_control_block->onError( errno );
 #endif
 }
+
 bool YIELD::ipc::Socket::bind( auto_SocketAddress to_sockaddr )
 {
   for ( ;; )
@@ -4253,6 +4689,7 @@ bool YIELD::ipc::Socket::bind( auto_SocketAddress to_sockaddr )
       if ( ::bind( *this, name, namelen ) != -1 )
         return true;
     }
+
     if ( domain == AF_INET6 &&
 #ifdef _WIN32
         WSAGetLastError() == WSAEAFNOSUPPORT )
@@ -4269,6 +4706,7 @@ bool YIELD::ipc::Socket::bind( auto_SocketAddress to_sockaddr )
       return false;
   }
 }
+
 bool YIELD::ipc::Socket::close()
 {
 #ifdef _WIN32
@@ -4299,6 +4737,7 @@ bool YIELD::ipc::Socket::close()
   else
     return true;
 }
+
 bool YIELD::ipc::Socket::connect( auto_SocketAddress to_sockaddr )
 {
   if ( !connected )
@@ -4334,6 +4773,7 @@ bool YIELD::ipc::Socket::connect( auto_SocketAddress to_sockaddr )
                 return false;
             }
             break;
+
             default: return false;
           }
         }
@@ -4348,6 +4788,7 @@ bool YIELD::ipc::Socket::connect( auto_SocketAddress to_sockaddr )
   else
     return true;
 }
+
 #ifdef _WIN32
 SOCKET YIELD::ipc::Socket::create( int& domain, int type, int protocol )
 #else
@@ -4380,6 +4821,7 @@ int YIELD::ipc::Socket::create( int& domain, int type, int protocol )
   }
   else
     return INVALID_SOCKET;
+
   return socket_;
 #else
   int socket_ = ::socket( AF_INET6, type, protocol );
@@ -4394,6 +4836,7 @@ int YIELD::ipc::Socket::create( int& domain, int type, int protocol )
     return -1;
 #endif
 }
+
 void YIELD::ipc::Socket::destroy()
 {
   delete aio_queue;
@@ -4401,16 +4844,19 @@ void YIELD::ipc::Socket::destroy()
   WSACleanup();
 #endif
 }
+
 YIELD::ipc::Socket::AIOQueue& YIELD::ipc::Socket::get_aio_queue()
 {
   if ( aio_queue == NULL )
     aio_queue = new AIOQueue;
   return *aio_queue;
 }
+
 bool YIELD::ipc::Socket::get_blocking_mode() const
 {
   return blocking_mode;
 }
+
 std::string YIELD::ipc::Socket::getfqdn()
 {
 #ifdef _WIN32
@@ -4436,15 +4882,18 @@ std::string YIELD::ipc::Socket::getfqdn()
     else
       delete [] fqdn_temp;
   }
+
   return std::string();
 #else
   char fqdn[256];
   ::gethostname( fqdn, 256 );
   char* first_dot = strstr( fqdn, "." );
   if ( first_dot != NULL ) *first_dot = 0;
+
   // getnameinfo does not return aliases, which means we get "localhost"
   // on Linux if that's the first
   // entry for 127.0.0.1 in /etc/hosts
+
 #ifndef __sun
   char domainname[256];
   // getdomainname is not a public call on Solaris, apparently
@@ -4466,6 +4915,7 @@ std::string YIELD::ipc::Socket::getfqdn()
         sizeof( uint32_t ),
         AF_INET
       );
+
     if ( hostents != NULL )
     {
       if
@@ -4498,6 +4948,7 @@ std::string YIELD::ipc::Socket::getfqdn()
   return fqdn;
 #endif
 }
+
 std::string YIELD::ipc::Socket::gethostname()
 {
 #ifdef _WIN32
@@ -4523,6 +4974,7 @@ std::string YIELD::ipc::Socket::gethostname()
     else
       delete [] hostname_temp;
   }
+
   return std::string();
 #else
   char hostname[256];
@@ -4530,6 +4982,7 @@ std::string YIELD::ipc::Socket::gethostname()
   return hostname;
 #endif
 }
+
 YIELD::ipc::auto_SocketAddress YIELD::ipc::Socket::getpeername()
 {
   struct sockaddr_storage peername_sockaddr_storage;
@@ -4548,6 +5001,7 @@ YIELD::ipc::auto_SocketAddress YIELD::ipc::Socket::getpeername()
   else
     return NULL;
 }
+
 YIELD::ipc::auto_SocketAddress YIELD::ipc::Socket::getsockname()
 {
   struct sockaddr_storage sockname_sockaddr_storage;
@@ -4566,6 +5020,7 @@ YIELD::ipc::auto_SocketAddress YIELD::ipc::Socket::getsockname()
   else
     return NULL;
 }
+
 void YIELD::ipc::Socket::init()
 {
 #ifdef _WIN32
@@ -4576,6 +5031,7 @@ void YIELD::ipc::Socket::init()
   signal( SIGPIPE, SIG_IGN );
 #endif
 }
+
 bool YIELD::ipc::Socket::is_closed() const
 {
 #ifdef _WIN32
@@ -4584,10 +5040,12 @@ bool YIELD::ipc::Socket::is_closed() const
   return socket_ == -1;
 #endif
 }
+
 bool YIELD::ipc::Socket::operator==( const Socket& other ) const
 {
   return socket_ == other.socket_;
 }
+
 ssize_t YIELD::ipc::Socket::read( yidl::runtime::auto_Buffer buffer )
 {
   ssize_t read_ret
@@ -4596,10 +5054,12 @@ ssize_t YIELD::ipc::Socket::read( yidl::runtime::auto_Buffer buffer )
         static_cast<char*>( *buffer ) + buffer->size(),
         buffer->capacity() - buffer->size()
       );
+
   if ( read_ret > 0 )
     buffer->put( NULL, static_cast<size_t>( read_ret ) );
   return read_ret;
 }
+
 ssize_t YIELD::ipc::Socket::read( void* buffer, size_t buffer_len )
 {
 #if defined(_WIN32)
@@ -4616,10 +5076,12 @@ ssize_t YIELD::ipc::Socket::read( void* buffer, size_t buffer_len )
   return ::recv( socket_, buffer, buffer_len, 0 );
 #endif
 }
+
 bool YIELD::ipc::Socket::recreate()
 {
   return recreate( AF_INET6 );
 }
+
 bool YIELD::ipc::Socket::recreate( int domain )
 {
   close();
@@ -4639,6 +5101,7 @@ bool YIELD::ipc::Socket::recreate( int domain )
   else
     return false;
 }
+
 bool YIELD::ipc::Socket::set_blocking_mode( bool blocking )
 {
 #ifdef _WIN32
@@ -4679,11 +5142,13 @@ bool YIELD::ipc::Socket::set_blocking_mode( bool blocking )
   }
 #endif
 }
+
 bool YIELD::ipc::Socket::shutdown()
 {
   connected = false;
   return true;
 }
+
 bool YIELD::ipc::Socket::want_connect() const
 {
 #ifdef _WIN32
@@ -4705,6 +5170,7 @@ bool YIELD::ipc::Socket::want_connect() const
   }
 #endif
 }
+
 bool YIELD::ipc::Socket::want_read() const
 {
 #ifdef _WIN32
@@ -4713,6 +5179,7 @@ bool YIELD::ipc::Socket::want_read() const
   return errno == EWOULDBLOCK;
 #endif
 }
+
 bool YIELD::ipc::Socket::want_write() const
 {
 #ifdef _WIN32
@@ -4721,6 +5188,7 @@ bool YIELD::ipc::Socket::want_write() const
   return errno == EWOULDBLOCK;
 #endif
 }
+
 ssize_t YIELD::ipc::Socket::write( yidl::runtime::auto_Buffer buffer )
 {
   if ( buffer->get_type_id() == YIDL_RUNTIME_OBJECT_TYPE_ID( GatherBuffer ) )
@@ -4732,6 +5200,7 @@ ssize_t YIELD::ipc::Socket::write( yidl::runtime::auto_Buffer buffer )
   else
     return write( static_cast<void*>( *buffer ), buffer->size() );
 }
+
 ssize_t YIELD::ipc::Socket::write( const void* buffer, size_t buffer_len )
 {
   // Go through writev to have a unified partial
@@ -4741,6 +5210,7 @@ ssize_t YIELD::ipc::Socket::write( const void* buffer, size_t buffer_len )
   buffers[0].iov_len = buffer_len;
   return writev( buffers, 1 );
 }
+
 ssize_t YIELD::ipc::Socket::writev
 (
   const struct iovec* buffers,
@@ -4816,8 +5286,6 @@ ssize_t YIELD::ipc::Socket::writev
 
 
 // socket_address.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #pragma warning( 4 : 4365 )
 #pragma warning( push )
@@ -4830,9 +5298,12 @@ ssize_t YIELD::ipc::Socket::writev
 #include <netinet/in.h>
 #include <sys/socket.h>
 #endif
+
+
 YIELD::ipc::SocketAddress::SocketAddress( struct addrinfo& addrinfo_list )
   : addrinfo_list( &addrinfo_list ), _sockaddr_storage( NULL )
 { }
+
 YIELD::ipc::SocketAddress::~SocketAddress()
 {
   if ( addrinfo_list != NULL )
@@ -4840,6 +5311,7 @@ YIELD::ipc::SocketAddress::~SocketAddress()
   else if ( _sockaddr_storage != NULL )
     delete _sockaddr_storage;
 }
+
 YIELD::ipc::SocketAddress::SocketAddress
 (
   const struct sockaddr_storage& _sockaddr_storage
@@ -4855,6 +5327,7 @@ YIELD::ipc::SocketAddress::SocketAddress
     sizeof( _sockaddr_storage )
   );
 }
+
 YIELD::ipc::auto_SocketAddress
 YIELD::ipc::SocketAddress::create( const URI& uri )
 {
@@ -4863,6 +5336,7 @@ YIELD::ipc::SocketAddress::create( const URI& uri )
   else
     return create( uri.get_host().c_str(), uri.get_port() );
 }
+
 YIELD::ipc::auto_SocketAddress
 YIELD::ipc::SocketAddress::create( const char* hostname, uint16_t port )
 {
@@ -4879,9 +5353,11 @@ YIELD::ipc::SocketAddress::create( const char* hostname, uint16_t port )
       what << "*";
     what << "\": ";
     what << YIELD::platform::Exception();
+
     throw YIELD::platform::Exception( what.str() );
   }
 }
+
 bool YIELD::ipc::SocketAddress::as_struct_sockaddr
 (
   int family,
@@ -4910,6 +5386,7 @@ bool YIELD::ipc::SocketAddress::as_struct_sockaddr
     out_sockaddrlen = sizeof( *_sockaddr_storage );
     return true;
   }
+
 #ifdef _WIN32
   ::WSASetLastError( WSAEAFNOSUPPORT );
 #else
@@ -4917,12 +5394,14 @@ bool YIELD::ipc::SocketAddress::as_struct_sockaddr
 #endif
   return false;
 }
+
 struct addrinfo*
 YIELD::ipc::SocketAddress::getaddrinfo( const char* hostname, uint16_t port )
 {
 #ifdef _WIN32
   Socket::init();
 #endif
+
   const char* servname;
 #ifdef __sun
   if ( hostname == NULL )
@@ -4934,12 +5413,15 @@ YIELD::ipc::SocketAddress::getaddrinfo( const char* hostname, uint16_t port )
   std::string servname_str = servname_oss.str();
   servname = servname_str.c_str();
 #endif
+
   struct addrinfo addrinfo_hints;
   memset( &addrinfo_hints, 0, sizeof( addrinfo_hints ) );
   addrinfo_hints.ai_family = AF_UNSPEC;
   if ( hostname == NULL )
     addrinfo_hints.ai_flags |= AI_PASSIVE; // To get INADDR_ANYs
+
   struct addrinfo* addrinfo_list;
+
   int getaddrinfo_ret
     = ::getaddrinfo
       (
@@ -4948,6 +5430,7 @@ YIELD::ipc::SocketAddress::getaddrinfo( const char* hostname, uint16_t port )
         &addrinfo_hints,
         &addrinfo_list
       );
+
   if ( getaddrinfo_ret == 0 )
   {
 #ifdef __sun
@@ -4962,22 +5445,27 @@ YIELD::ipc::SocketAddress::getaddrinfo( const char* hostname, uint16_t port )
             ->sin_port = htons( port );
         }
         break;
+
         case AF_INET6:
         {
           reinterpret_cast<struct sockaddr_in6*>( addrinfo_p->ai_addr )
             ->sin6_port = htons( port );
         }
         break;
+
         default: DebugBreak();
       }
+
       addrinfo_p = addrinfo_p->ai_next;
     }
 #endif
+
     return addrinfo_list;
   }
   else
     return NULL;
 }
+
 bool YIELD::ipc::SocketAddress::getnameinfo
 (
   std::string& out_hostname,
@@ -4993,6 +5481,7 @@ bool YIELD::ipc::SocketAddress::getnameinfo
   else
     return false;
 }
+
 bool YIELD::ipc::SocketAddress::getnameinfo
 (
   char* out_hostname,
@@ -5036,6 +5525,7 @@ bool YIELD::ipc::SocketAddress::getnameinfo
              numeric ? NI_NUMERICHOST : 0
            ) == 0;
 }
+
 uint16_t YIELD::ipc::SocketAddress::get_port() const
 {
   if ( addrinfo_list != NULL )
@@ -5052,6 +5542,7 @@ uint16_t YIELD::ipc::SocketAddress::get_port() const
                  )->sin_port
                );
       }
+
       case AF_INET6:
       {
         return ntohs
@@ -5062,6 +5553,7 @@ uint16_t YIELD::ipc::SocketAddress::get_port() const
                  )->sin6_port
                );
       }
+
       default:
       {
         DebugBreak();
@@ -5081,6 +5573,7 @@ uint16_t YIELD::ipc::SocketAddress::get_port() const
                    ->sin_port
                );
       }
+
       case AF_INET6:
       {
         return ntohs
@@ -5089,6 +5582,7 @@ uint16_t YIELD::ipc::SocketAddress::get_port() const
                   ->sin6_port
                );
       }
+
       default:
       {
         DebugBreak();
@@ -5097,6 +5591,7 @@ uint16_t YIELD::ipc::SocketAddress::get_port() const
     }
   }
 }
+
 bool YIELD::ipc::SocketAddress::operator==( const SocketAddress& other ) const
 {
   if ( addrinfo_list != NULL )
@@ -5126,12 +5621,14 @@ bool YIELD::ipc::SocketAddress::operator==( const SocketAddress& other ) const
           else
             other_addrinfo_p = other_addrinfo_p->ai_next;
         }
+
         if ( other_addrinfo_p != NULL ) // i.e. we found the addrinfo
                                         // in the other's list
           addrinfo_p = addrinfo_p->ai_next;
         else
           return false;
       }
+
       return true;
     }
     else
@@ -5183,6 +5680,8 @@ bool YIELD::ipc::SocketAddress::operator==( const SocketAddress& other ) const
 #include <vector>
 #endif
 #endif
+
+
 #ifdef _WIN32
 class YIELD::ipc::Socket::AIOQueue::IOCPWorkerThread
   : public YIELD::platform::Thread
@@ -5193,21 +5692,26 @@ public:
   {
     is_running = false;
   }
+
   void stop()
   {
     while ( is_running )
       Thread::yield();
   }
+
   // Thread
   void run()
   {
     is_running = true;
+
     set_name( "Socket::AIOQueue::IOCPWorkerThread" );
+
     for ( ;; )
     {
       DWORD dwBytesTransferred;
       ULONG_PTR ulCompletionKey;
       LPOVERLAPPED lpOverlapped;
+
       if
       (
         GetQueuedCompletionStatus
@@ -5222,25 +5726,30 @@ public:
       {
         YIELD::platform::AIOControlBlock* aio_control_block
           = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
+
         switch ( aio_control_block->get_type_id() )
         {
           case YIDL_RUNTIME_OBJECT_TYPE_ID( Socket::AIOConnectControlBlock ):
           {
             static_cast<Socket::AIOConnectControlBlock*>( aio_control_block )
               ->get_socket()->connected = true;
+
             aio_control_block->onCompletion( dwBytesTransferred );
           }
           break;
+
           case YIDL_RUNTIME_OBJECT_TYPE_ID( Socket::AIOReadControlBlock ):
           {
             static_cast<Socket::AIOReadControlBlock*>( aio_control_block )
               ->get_buffer()->put( NULL, dwBytesTransferred );
+
             if ( dwBytesTransferred > 0 )
               aio_control_block->onCompletion( dwBytesTransferred );
             else
               aio_control_block->onError( WSAECONNRESET );
           }
           break;
+
           case YIDL_RUNTIME_OBJECT_TYPE_ID
                ( UDPSocket::AIORecvFromControlBlock ):
           {
@@ -5248,34 +5757,43 @@ public:
             (
               aio_control_block
             )->get_buffer()->put( NULL, dwBytesTransferred );
+
             aio_control_block->onCompletion( dwBytesTransferred );
           }
           break;
+
           default:
           {
             aio_control_block->onCompletion( dwBytesTransferred );
           }
           break;
         }
+
         YIELD::platform::AIOControlBlock::decRef( *aio_control_block );
       }
       else if ( lpOverlapped != NULL )
       {
         YIELD::platform::AIOControlBlock* aio_control_block
           = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
+
         aio_control_block->onError( ::GetLastError() );
+
         YIELD::platform::AIOControlBlock::decRef( *aio_control_block );
       }
       else
         break;
     }
+
     is_running = false;
   }
+
 private:
   HANDLE hIoCompletionPort;
   bool is_running;
 };
 #endif
+
+
 class YIELD::ipc::Socket::AIOQueue::NBIOWorkerThread
   : public YIELD::platform::Thread
 {
@@ -5284,6 +5802,7 @@ public:
   {
     is_running = false;
     should_run = true;
+
 #if defined(_WIN32)
     FD_ZERO( &read_fds );
     FD_ZERO( &write_fds );
@@ -5295,6 +5814,7 @@ public:
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
     poll_fd = port_create();
 #endif
+
 #if defined(_WIN32)
     auto_TCPSocket submit_listen_tcp_socket = TCPSocket::create( AF_INET );
     if
@@ -5333,8 +5853,10 @@ public:
     {
       submit_pipe_read_end
         = new Socket( AF_UNIX, SOCK_STREAM, 0, socket_vector[0] );
+
       submit_pipe_write_end
         = new Socket( AF_UNIX, SOCK_STREAM, 0, socket_vector[1] );
+
       if
       (
         submit_pipe_read_end->set_blocking_mode( false ) &&
@@ -5349,11 +5871,13 @@ public:
          associate( submit_pipe->get_read_end(), true, false ) )
         return;
 #endif
+
     std::cerr << "yield::ipc::Socket::AIOQueue::NBIOWorkerThread: " <<
                  "error creating submit pipe: " <<
                  YIELD::platform::Exception()
                  << "." << std::endl;
   }
+
   ~NBIOWorkerThread()
   {
 #if defined(YIELD_HAVE_LINUX_EPOLL) || \
@@ -5362,6 +5886,7 @@ public:
     ::close( poll_fd );
 #endif
   }
+
   void submit( yidl::runtime::auto_Object<AIOControlBlock> aio_control_block )
   {
     AIOControlBlock* submit_aio_control_block = aio_control_block.release();
@@ -5379,6 +5904,7 @@ public:
     );
 #endif
   }
+
   void stop()
   {
     should_run = false;
@@ -5391,11 +5917,13 @@ public:
     while ( is_running )
       Thread::yield();
   }
+
   // Thread
   void run()
   {
     is_running = true;
     set_name( "Socket::AIOQueue::NBIOWorkerThread" );
+
 #if defined(_WIN32)
     fd_set read_fds_copy, write_fds_copy, except_fds_copy;
     FD_ZERO( &read_fds_copy );
@@ -5408,6 +5936,7 @@ public:
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
     port_event_t returned_events[1];
 #endif
+
     while ( should_run )
     {
 #if defined(_WIN32)
@@ -5418,6 +5947,7 @@ public:
         &read_fds,
         sizeof( read_fds )
       );
+
       memcpy_s
       (
         &write_fds_copy,
@@ -5425,6 +5955,7 @@ public:
         &write_fds,
         sizeof( write_fds )
       );
+
       memcpy_s
       (
         &except_fds_copy,
@@ -5432,6 +5963,7 @@ public:
         &except_fds,
         sizeof( except_fds )
       );
+
       int active_fds
         = select( 0, &read_fds_copy, &write_fds_copy, &except_fds_copy, NULL );
 #elif defined(YIELD_HAVE_LINUX_EPOLL)
@@ -5445,6 +5977,7 @@ public:
 #else
       int active_fds = poll( &pollfds[0], pollfds.size(), -1 );
 #endif
+
       if ( active_fds > 0 && should_run )
       {
 #ifdef _WIN32
@@ -5455,6 +5988,7 @@ public:
           FD_CLR( *submit_pipe_read_end, &read_fds_copy );
           dequeueSubmittedAIOControlBlocks();
         }
+
         fd_to_aio_control_block_i = fd_to_aio_control_block_map.begin();
         while
         (
@@ -5474,6 +6008,7 @@ public:
             fd_to_aio_control_block_i++;
             continue;
           }
+
           active_fds--;
 #else
         std::map<int, AIOControlBlock*>::iterator fd_to_aio_control_block_i;
@@ -5493,6 +6028,7 @@ public:
           DebugBreak(); // Look through pollfds
 #endif
 #endif
+
 #ifdef __MACH__
           if ( fd == *submit_pipe_read_end )
 #else
@@ -5505,8 +6041,10 @@ public:
 #endif
             continue;
           }
+
           fd_to_aio_control_block_i = fd_to_aio_control_block_map.find( fd );
 #endif
+
           if ( processAIOControlBlock( fd_to_aio_control_block_i->second ) )
           {
 #ifdef _WIN32
@@ -5528,10 +6066,13 @@ public:
             "." << std::endl;
       }
     }
+
     is_running = false;
   }
+
 private:
   bool is_running, should_run;
+
 #if defined(_WIN32)
   std::map<SOCKET, AIOControlBlock*> fd_to_aio_control_block_map;
   fd_set read_fds, write_fds, except_fds;
@@ -5545,6 +6086,7 @@ private:
   std::vector<pollfd> pollfds;
 #endif
 #endif
+
 #if defined(_WIN32)
   auto_TCPSocket submit_pipe_read_end, submit_pipe_write_end;
 #elif defined(__MACH__)
@@ -5552,6 +6094,7 @@ private:
 #else
   auto_Pipe submit_pipe;
 #endif
+
 #ifdef _WIN32
   bool associate( SOCKET fd, bool enable_read, bool enable_write )
 #else
@@ -5561,11 +6104,13 @@ private:
 #if defined(_WIN32)
     if ( enable_read )
       FD_SET( fd, &read_fds );
+
     if ( enable_write )
     {
         FD_SET( fd, &write_fds );
         FD_SET( fd, &except_fds );
     }
+
     return true;
 #elif defined(YIELD_HAVE_LINUX_EPOLL)
     struct epoll_event change_event;
@@ -5576,6 +6121,7 @@ private:
     return epoll_ctl( poll_fd, EPOLL_CTL_ADD, fd, &change_event ) != -1;
 #elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
     struct kevent change_events[2];
+
     EV_SET
     (
       &change_events[0],
@@ -5586,6 +6132,7 @@ private:
       0,
       NULL
     );
+
     EV_SET
     (
       &change_events[1],
@@ -5596,6 +6143,7 @@ private:
       0,
       NULL
     );
+
     return kevent( poll_fd, change_events, 2, 0, 0, NULL ) != -1;
 #elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
     int events = 0;
@@ -5614,6 +6162,7 @@ private:
       if ( pollfds[pollfd_i].fd == fd )
         return false;
     }
+
     struct pollfd attach_pollfd;
     memset( &attach_pollfd, 0, sizeof( attach_pollfd ) );
     if ( enable_read ) attach_pollfd.events |= POLLIN;
@@ -5624,6 +6173,7 @@ private:
     return true;
 #endif
   }
+
   void dequeueSubmittedAIOControlBlocks()
   {
     AIOControlBlock* aio_control_block;
@@ -5662,6 +6212,7 @@ private:
         DebugBreak();
     }
   }
+
 #ifdef _WIN32
   void dissociate( SOCKET fd )
 #else
@@ -5700,6 +6251,7 @@ private:
     }
 #endif
   }
+
   bool processAIOControlBlock( AIOControlBlock* aio_control_block )
   {
 #ifdef _WIN32
@@ -5707,6 +6259,7 @@ private:
 #else
     int fd = *aio_control_block->get_socket();
 #endif
+
     switch ( aio_control_block->execute() )
     {
       case Socket::AIOControlBlock::EXECUTE_STATUS_DONE:
@@ -5715,16 +6268,19 @@ private:
         AIOControlBlock::decRef( *aio_control_block );
         return true;
       }
+
       case Socket::AIOControlBlock::EXECUTE_STATUS_WANT_READ:
       {
         toggle( fd, true, false );
         return false;
       }
+
       case Socket::AIOControlBlock::EXECUTE_STATUS_WANT_WRITE:
       {
         toggle( fd, false, true );
         return false;
       }
+
       default:
       {
         DebugBreak();
@@ -5732,6 +6288,7 @@ private:
       }
     }
   }
+
 #ifdef _WIN32
   bool toggle( SOCKET fd, bool enable_read, bool enable_write )
 #else
@@ -5743,6 +6300,7 @@ private:
       FD_SET( fd, &read_fds );
     else
       FD_CLR( fd, &read_fds );
+
     if ( enable_write )
     {
       FD_SET( fd, &write_fds );
@@ -5753,6 +6311,7 @@ private:
       FD_CLR( fd, &write_fds );
       FD_CLR( fd, &except_fds );
     }
+
     return true;
 #elif defined(YIELD_HAVE_LINUX_EPOLL)
     struct epoll_event change_event;
@@ -5763,6 +6322,7 @@ private:
     return epoll_ctl( poll_fd, EPOLL_CTL_MOD, fd, &change_event ) != -1;
 #elif defined YIELD_HAVE_FREEBSD_KQUEUE
     struct kevent change_events[2];
+
     EV_SET
     (
       &change_events[0],
@@ -5773,6 +6333,7 @@ private:
       0,
       NULL
     );
+
     EV_SET
     (
       &change_events[1],
@@ -5783,6 +6344,7 @@ private:
       0,
       NULL
     );
+
     return kevent
            (
              poll_fd,
@@ -5820,16 +6382,20 @@ private:
         return true;
       }
     }
+
     return false;
 #endif
   }
 };
+
+
 YIELD::ipc::Socket::AIOQueue::AIOQueue()
 {
 #ifdef _WIN32
   hIoCompletionPort
     = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0 );
   if ( hIoCompletionPort == INVALID_HANDLE_VALUE ) DebugBreak();
+
   uint16_t iocp_worker_thread_count
     = YIELD::platform::Machine::getOnlineLogicalProcessorCount();
   for
@@ -5846,10 +6412,12 @@ YIELD::ipc::Socket::AIOQueue::AIOQueue()
   }
 #endif
 }
+
 YIELD::ipc::Socket::AIOQueue::~AIOQueue()
 {
 #ifdef _WIN32
   CloseHandle( hIoCompletionPort );
+
   for
   (
     std::vector<IOCPWorkerThread*>::iterator
@@ -5862,6 +6430,7 @@ YIELD::ipc::Socket::AIOQueue::~AIOQueue()
     IOCPWorkerThread::decRef( **iocp_worker_thread_i );
   }
 #endif
+
   for
   (
     std::vector<NBIOWorkerThread*>::iterator
@@ -5874,6 +6443,7 @@ YIELD::ipc::Socket::AIOQueue::~AIOQueue()
     NBIOWorkerThread::decRef( **nbio_worker_thread_i );
   }
 }
+
 #ifdef _WIN32
 void YIELD::ipc::Socket::AIOQueue::associate( Socket& socket_ )
 {
@@ -5886,6 +6456,7 @@ void YIELD::ipc::Socket::AIOQueue::associate( Socket& socket_ )
   );
 }
 #endif
+
 void YIELD::ipc::Socket::AIOQueue::submit
 (
   auto_AIOControlBlock aio_control_block
@@ -5908,19 +6479,19 @@ void YIELD::ipc::Socket::AIOQueue::submit
       nbio_worker_threads.push_back( nbio_worker_thread );
     }
   }
+
   nbio_worker_threads
   [
     YIELD::platform::Thread::gettid() % nbio_worker_threads.size()
   ]->submit( aio_control_block );
 }
+
 #ifdef _WIN32
 #pragma warning( pop )
 #endif
 
 
 // ssl_context.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef YIELD_HAVE_OPENSSL
 #include <openssl/err.h>
 #include <openssl/pem.h>
@@ -5933,7 +6504,10 @@ void YIELD::ipc::Socket::AIOQueue::submit
 #pragma comment( lib, "ssleay32.lib" )
 #endif
 #endif
+
+
 #ifdef YIELD_HAVE_OPENSSL
+
 namespace YIELD
 {
   namespace ipc
@@ -5945,6 +6519,7 @@ namespace YIELD
         : YIELD::platform::Exception( ERR_peek_error() )
       {
         SSL_load_error_strings();
+
         char error_message[256];
         ERR_error_string_n( ERR_peek_error(), error_message, 256 );
         set_error_message( error_message );
@@ -5952,6 +6527,8 @@ namespace YIELD
     };
   };
 };
+
+
 static int pem_password_callback( char *buf, int size, int, void *userdata )
 {
   const std::string* pem_password
@@ -5961,9 +6538,12 @@ static int pem_password_callback( char *buf, int size, int, void *userdata )
   memcpy_s( buf, size, pem_password->c_str(), size );
   return size;
 }
+
+
 YIELD::ipc::SSLContext::SSLContext( SSL_CTX* ctx )
   : ctx( ctx )
 { }
+
 YIELD::ipc::auto_SSLContext
 YIELD::ipc::SSLContext::create
 (
@@ -5975,6 +6555,7 @@ YIELD::ipc::SSLContext::create
 {
   return new SSLContext( createSSL_CTX( method ) );
 }
+
 YIELD::ipc::auto_SSLContext
 YIELD::ipc::SSLContext::create
 (
@@ -5988,6 +6569,7 @@ YIELD::ipc::SSLContext::create
 )
 {
   SSL_CTX* ctx = createSSL_CTX( method );
+
   if
   (
     SSL_CTX_use_certificate_file
@@ -6007,6 +6589,7 @@ YIELD::ipc::SSLContext::create
         const_cast<std::string*>( &pem_private_key_passphrase )
       );
     }
+
     if
     (
       SSL_CTX_use_PrivateKey_file
@@ -6018,8 +6601,10 @@ YIELD::ipc::SSLContext::create
     )
       return new SSLContext( ctx );
   }
+
   throw SSLException();
 }
+
 YIELD::ipc::auto_SSLContext
 YIELD::ipc::SSLContext::create
 (
@@ -6033,6 +6618,7 @@ YIELD::ipc::SSLContext::create
 )
 {
   SSL_CTX* ctx = createSSL_CTX( method );
+
   BIO* pem_certificate_bio
     = BIO_new_mem_buf
       (
@@ -6042,6 +6628,7 @@ YIELD::ipc::SSLContext::create
         ),
         static_cast<int>( pem_certificate_str.size() )
       );
+
   if ( pem_certificate_bio != NULL )
   {
     X509* cert
@@ -6052,9 +6639,11 @@ YIELD::ipc::SSLContext::create
           pem_password_callback,
           const_cast<std::string*>( &pem_private_key_passphrase )
         );
+
     if ( cert != NULL )
     {
       SSL_CTX_use_certificate( ctx, cert );
+
       BIO* pem_private_key_bio
         = BIO_new_mem_buf
           (
@@ -6064,6 +6653,7 @@ YIELD::ipc::SSLContext::create
             ),
             static_cast<int>( pem_private_key_str.size() )
           );
+
       if ( pem_private_key_bio != NULL )
       {
         EVP_PKEY* pkey
@@ -6074,20 +6664,27 @@ YIELD::ipc::SSLContext::create
               pem_password_callback,
               const_cast<std::string*>( &pem_private_key_passphrase )
             );
+
         if ( pkey != NULL )
         {
           SSL_CTX_use_PrivateKey( ctx, pkey );
+
           BIO_free( pem_certificate_bio );
           BIO_free( pem_private_key_bio );
+
           return new SSLContext( ctx );
         }
+
         BIO_free( pem_private_key_bio );
       }
     }
+
     BIO_free( pem_certificate_bio );
   }
+
   throw SSLException();
 }
+
 YIELD::ipc::auto_SSLContext
 YIELD::ipc::SSLContext::create
 (
@@ -6100,6 +6697,7 @@ YIELD::ipc::SSLContext::create
 )
 {
   SSL_CTX* ctx = createSSL_CTX( method );
+
   BIO* bio = BIO_new_file( pkcs12_file_path, "rb" );
   if ( bio != NULL )
   {
@@ -6115,36 +6713,48 @@ YIELD::ipc::SSLContext::create
         {
           SSL_CTX_use_certificate( ctx, cert );
           SSL_CTX_use_PrivateKey( ctx, pkey );
+
           X509_STORE* store = SSL_CTX_get_cert_store( ctx );
           for ( int i = 0; i < sk_X509_num( ca ); i++ )
           {
             X509* store_cert = sk_X509_value( ca, i );
             X509_STORE_add_cert( store, store_cert );
           }
+
           BIO_free( bio );
+
           return new SSLContext( ctx );
         }
       }
     }
+
     BIO_free( bio );
   }
+
   throw SSLException();
 }
+
 #else
+
 YIELD::ipc::SSLContext::SSLContext()
 { }
+
 YIELD::ipc::auto_SSLContext YIELD::ipc::SSLContext::create()
 {
   return new SSLContext;
 }
+
 #endif
+
 YIELD::ipc::SSLContext::~SSLContext()
 {
 #ifdef YIELD_HAVE_OPENSSL
   SSL_CTX_free( ctx );
 #endif
 }
+
 #ifdef YIELD_HAVE_OPENSSL
+
 SSL_CTX*
 YIELD::ipc::SSLContext::createSSL_CTX
 (
@@ -6156,6 +6766,7 @@ YIELD::ipc::SSLContext::createSSL_CTX
 {
   SSL_library_init();
   OpenSSL_add_all_algorithms();
+
   SSL_CTX* ctx = SSL_CTX_new( method );
   if ( ctx != NULL )
   {
@@ -6170,13 +6781,13 @@ YIELD::ipc::SSLContext::createSSL_CTX
   else
     throw SSLException();
 }
+
 #endif
 
 
 // ssl_socket.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef YIELD_HAVE_OPENSSL
+
 #ifdef _WIN32
 #pragma warning( 4 : 4365 )
 #pragma warning( push )
@@ -6187,6 +6798,8 @@ YIELD::ipc::SSLContext::createSSL_CTX
 #include <netinet/in.h> // For the IPPROTO_* constants
 #include <sys/socket.h>
 #endif
+
+
 YIELD::ipc::SSLSocket::SSLSocket
 (
   int domain,
@@ -6200,10 +6813,12 @@ YIELD::ipc::SSLSocket::SSLSocket
 )
   : TCPSocket( domain, socket_ ), ctx( ctx ), ssl( ssl )
 { }
+
 YIELD::ipc::SSLSocket::~SSLSocket()
 {
   SSL_free( ssl );
 }
+
 YIELD::ipc::auto_TCPSocket YIELD::ipc::SSLSocket::accept()
 {
   SSL_set_fd( ssl, *this );
@@ -6222,6 +6837,7 @@ YIELD::ipc::auto_TCPSocket YIELD::ipc::SSLSocket::accept()
   else
     return NULL;
 }
+
 void YIELD::ipc::SSLSocket::aio_accept
 (
   auto_AIOAcceptControlBlock aio_accept_control_block
@@ -6229,6 +6845,7 @@ void YIELD::ipc::SSLSocket::aio_accept
 {
   aio_accept_nbio( aio_accept_control_block );
 }
+
 void YIELD::ipc::SSLSocket::aio_connect
 (
   auto_AIOConnectControlBlock aio_connect_control_block
@@ -6236,6 +6853,7 @@ void YIELD::ipc::SSLSocket::aio_connect
 {
   aio_connect_nbio( aio_connect_control_block );
 }
+
 void YIELD::ipc::SSLSocket::aio_read
 (
   auto_AIOReadControlBlock aio_read_control_block
@@ -6243,6 +6861,7 @@ void YIELD::ipc::SSLSocket::aio_read
 {
   aio_read_nbio( aio_read_control_block );
 }
+
 void YIELD::ipc::SSLSocket::aio_write
 (
   auto_AIOWriteControlBlock aio_write_control_block
@@ -6250,6 +6869,7 @@ void YIELD::ipc::SSLSocket::aio_write
 {
   aio_write_nbio( aio_write_control_block );
 }
+
 bool YIELD::ipc::SSLSocket::connect( auto_SocketAddress peername )
 {
   if ( TCPSocket::connect( peername ) )
@@ -6261,11 +6881,13 @@ bool YIELD::ipc::SSLSocket::connect( auto_SocketAddress peername )
   else
     return false;
 }
+
 YIELD::ipc::auto_SSLSocket
 YIELD::ipc::SSLSocket::create( auto_SSLContext ctx )
 {
   return create( AF_INET6, ctx );
 }
+
 YIELD::ipc::auto_SSLSocket
 YIELD::ipc::SSLSocket::create( int domain, auto_SSLContext ctx )
 {
@@ -6286,14 +6908,17 @@ YIELD::ipc::SSLSocket::create( int domain, auto_SSLContext ctx )
   else
     return NULL;
 }
+
 /*
 void SSLSocket::info_callback( const SSL* ssl, int where, int ret )
 {
   std::ostringstream info;
+
   int w = where & ~SSL_ST_MASK;
   if ( ( w & SSL_ST_CONNECT ) == SSL_ST_CONNECT ) info << "SSL_connect:";
   else if ( ( w & SSL_ST_ACCEPT ) == SSL_ST_ACCEPT ) info << "SSL_accept:";
   else info << "undefined:";
+
   if ( ( where & SSL_CB_LOOP ) == SSL_CB_LOOP )
     info << SSL_state_string_long( ssl );
   else if ( ( where & SSL_CB_ALERT ) == SSL_CB_ALERT )
@@ -6314,14 +6939,17 @@ void SSLSocket::info_callback( const SSL* ssl, int where, int ret )
   }
   else
     return;
+
   reinterpret_cast<SSLSocket*>( SSL_get_app_data( const_cast<SSL*>( ssl ) ) )
     ->log->getStream( Log::LOG_NOTICE ) << "SSLSocket: " << info.str();
 }
 */
+
 ssize_t YIELD::ipc::SSLSocket::read( void* buffer, size_t buffer_len )
 {
   return SSL_read( ssl, buffer, static_cast<int>( buffer_len ) );
 }
+
 bool YIELD::ipc::SSLSocket::shutdown()
 {
   if ( SSL_shutdown( ssl ) != -1 )
@@ -6329,18 +6957,22 @@ bool YIELD::ipc::SSLSocket::shutdown()
   else
     return false;
 }
+
 bool YIELD::ipc::SSLSocket::want_read() const
 {
   return SSL_want_read( ssl ) == 1;
 }
+
 bool YIELD::ipc::SSLSocket::want_write() const
 {
   return SSL_want_write( ssl ) == 1;
 }
+
 ssize_t YIELD::ipc::SSLSocket::write( const void* buffer, size_t buffer_len )
 {
   return SSL_write( ssl, buffer, static_cast<int>( buffer_len ) );
 }
+
 ssize_t
 YIELD::ipc::SSLSocket::writev
 (
@@ -6364,12 +6996,11 @@ YIELD::ipc::SSLSocket::writev
     return write( buffer.c_str(), buffer.size() );
   }
 }
+
 #endif
 
 
 // tcp_socket.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #if defined(_WIN32)
 #pragma warning( 4 : 4365 )
 #pragma warning( push )
@@ -6382,16 +7013,22 @@ YIELD::ipc::SSLSocket::writev
 #include <netinet/tcp.h> // For the TCP_* constants
 #include <sys/socket.h>
 #endif
+
 #include <cstring>
+
+
 #ifdef _WIN32
 void* YIELD::ipc::TCPSocket::lpfnAcceptEx = NULL;
 void* YIELD::ipc::TCPSocket::lpfnConnectEx = NULL;
 #endif
+
+
 YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus
 YIELD::ipc::TCPSocket::AIOAcceptControlBlock::execute()
 {
   accepted_tcp_socket =
     static_cast<TCPSocket*>( get_socket().get() )->accept();
+
   if ( accepted_tcp_socket != NULL )
     onCompletion( 0 );
 #ifdef _WIN32
@@ -6406,8 +7043,11 @@ YIELD::ipc::TCPSocket::AIOAcceptControlBlock::execute()
 #else
     onError( errno );
 #endif
+
   return EXECUTE_STATUS_DONE;
 }
+
+
 #ifdef _WIN32
 YIELD::ipc::TCPSocket::TCPSocket( int domain, SOCKET socket_ )
 #else
@@ -6417,6 +7057,7 @@ YIELD::ipc::TCPSocket::TCPSocket( int domain, int socket_ )
 {
   partial_write_len = 0;
 }
+
 YIELD::ipc::auto_TCPSocket YIELD::ipc::TCPSocket::accept()
 {
 #ifdef _WIN32
@@ -6430,6 +7071,7 @@ YIELD::ipc::auto_TCPSocket YIELD::ipc::TCPSocket::accept()
   else
     return NULL;
 }
+
 #ifdef _WIN32
 SOCKET YIELD::ipc::TCPSocket::_accept()
 #else
@@ -6445,6 +7087,7 @@ int YIELD::ipc::TCPSocket::_accept()
            &peername_storage_len
          );
 }
+
 void
 YIELD::ipc::TCPSocket::aio_accept
 (
@@ -6457,6 +7100,7 @@ YIELD::ipc::TCPSocket::aio_accept
   aio_accept_nbio( aio_accept_control_block );
 #endif
 }
+
 #ifdef _WIN32
 void
 YIELD::ipc::TCPSocket::aio_accept_iocp
@@ -6466,6 +7110,7 @@ YIELD::ipc::TCPSocket::aio_accept_iocp
 {
   aio_accept_control_block->set_socket( *this );
   get_aio_queue().associate( *this );
+
   if ( lpfnAcceptEx == NULL )
   {
     GUID GuidAcceptEx = WSAID_ACCEPTEX;
@@ -6483,12 +7128,15 @@ YIELD::ipc::TCPSocket::aio_accept_iocp
       NULL
     );
   }
+
   aio_accept_control_block->accepted_tcp_socket = TCPSocket::create( get_domain() );
+
   DWORD sizeof_peername;
   if ( get_domain() == AF_INET6 )
     sizeof_peername = sizeof( sockaddr_in6 );
   else
     sizeof_peername = sizeof( sockaddr_in );
+
   DWORD dwBytesReceived;
   if
   (
@@ -6511,6 +7159,7 @@ YIELD::ipc::TCPSocket::aio_accept_iocp
     aio_accept_control_block->onError( WSAGetLastError() );
 }
 #endif
+
 void
 YIELD::ipc::TCPSocket::aio_accept_nbio
 (
@@ -6521,6 +7170,7 @@ YIELD::ipc::TCPSocket::aio_accept_nbio
   set_blocking_mode( false );
   get_aio_queue().submit( aio_accept_control_block.release() );
 }
+
 void
 YIELD::ipc::TCPSocket::aio_connect
 (
@@ -6533,6 +7183,7 @@ YIELD::ipc::TCPSocket::aio_connect
   aio_connect_nbio( aio_connect_control_block );
 #endif
 }
+
 #ifdef _WIN32
 void
 YIELD::ipc::TCPSocket::aio_connect_iocp
@@ -6541,6 +7192,7 @@ YIELD::ipc::TCPSocket::aio_connect_iocp
 )
 {
   aio_connect_control_block->set_socket( *this );
+
   if ( lpfnConnectEx == NULL )
   {
     GUID GuidConnectEx = WSAID_CONNECTEX;
@@ -6558,6 +7210,7 @@ YIELD::ipc::TCPSocket::aio_connect_iocp
       NULL
     );
   }
+
   for ( ;; )
   {
     struct sockaddr* name; socklen_t namelen;
@@ -6574,6 +7227,7 @@ YIELD::ipc::TCPSocket::aio_connect_iocp
       if ( bind( SocketAddress::create( NULL, 0 ) ) )
       {
         get_aio_queue().associate( *this );
+
         DWORD dwBytesSent;
         if
         (
@@ -6613,13 +7267,16 @@ YIELD::ipc::TCPSocket::aio_connect_iocp
     else
       break;
   }
+
   aio_connect_control_block->onError( WSAGetLastError() );
 }
 #endif
+
 YIELD::ipc::auto_TCPSocket YIELD::ipc::TCPSocket::create()
 {
   return create( AF_INET6 );
 }
+
 YIELD::ipc::auto_TCPSocket YIELD::ipc::TCPSocket::create( int domain )
 {
 #ifdef _WIN32
@@ -6633,6 +7290,7 @@ YIELD::ipc::auto_TCPSocket YIELD::ipc::TCPSocket::create( int domain )
   else
     return NULL;
 }
+
 bool YIELD::ipc::TCPSocket::listen()
 {
   int flag = 1;
@@ -6644,6 +7302,7 @@ bool YIELD::ipc::TCPSocket::listen()
     reinterpret_cast<char*>( &flag ),
     sizeof( int )
   );
+
   flag = 1;
   setsockopt
   (
@@ -6653,6 +7312,7 @@ bool YIELD::ipc::TCPSocket::listen()
     reinterpret_cast<char*>( &flag ),
     sizeof( int )
   );
+
   linger lingeropt;
   lingeropt.l_onoff = 1;
   lingeropt.l_linger = 0;
@@ -6664,8 +7324,10 @@ bool YIELD::ipc::TCPSocket::listen()
     reinterpret_cast<char*>( &lingeropt ),
     static_cast<int>( sizeof( lingeropt ) )
   );
+
   return ::listen( *this, SOMAXCONN ) != -1;
 }
+
 bool YIELD::ipc::TCPSocket::shutdown()
 {
 #ifdef _WIN32
@@ -6677,6 +7339,7 @@ bool YIELD::ipc::TCPSocket::shutdown()
   else
     return false;
 }
+
 ssize_t
 YIELD::ipc::TCPSocket::writev
 (
@@ -6687,7 +7350,9 @@ YIELD::ipc::TCPSocket::writev
   size_t buffers_len = 0;
   for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
     buffers_len += buffers[buffer_i].iov_len;
+
   ssize_t ret = 0;
+
   for ( ;; )
   {
     // Recalculate these every time we do a socket writev
@@ -6695,6 +7360,7 @@ YIELD::ipc::TCPSocket::writev
     // number of (rarely-tested) branches
     uint32_t wrote_until_buffer_i = 0;
     size_t wrote_until_buffer_i_pos = 0;
+
     if ( partial_write_len > 0 )
     {
       size_t temp_partial_write_len = partial_write_len;
@@ -6723,6 +7389,7 @@ YIELD::ipc::TCPSocket::writev
         }
       }
     }
+
     ssize_t Socket_writev_ret;
     if ( wrote_until_buffer_i_pos == 0 ) // Writing whole buffers
     {
@@ -6736,13 +7403,17 @@ YIELD::ipc::TCPSocket::writev
     else // Writing part of a buffer
     {
       struct iovec temp_iovec;
+
       temp_iovec.iov_base
         = static_cast<char*>( buffers[wrote_until_buffer_i].iov_base )
           + wrote_until_buffer_i_pos;
+
       temp_iovec.iov_len = buffers[wrote_until_buffer_i].iov_len
                            - wrote_until_buffer_i_pos;
+
       Socket_writev_ret = Socket::writev( &temp_iovec, 1 );
     }
+
     if ( Socket_writev_ret > 0 )
     {
       ret += Socket_writev_ret;
@@ -6763,11 +7434,11 @@ YIELD::ipc::TCPSocket::writev
 
 
 // tracing_socket.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #ifdef _WIN32
 #pragma warning( 4 : 4365 )
 #endif
+
+
 YIELD::ipc::TracingSocket::TracingSocket
 (
   auto_Socket underlying_socket,
@@ -6782,6 +7453,7 @@ YIELD::ipc::TracingSocket::TracingSocket
     ),
     underlying_socket( underlying_socket ), log( log )
 { }
+
 void
 YIELD::ipc::TracingSocket::aio_connect
 (
@@ -6790,6 +7462,7 @@ YIELD::ipc::TracingSocket::aio_connect
 {
   aio_connect_nbio( aio_connect_control_block );
 }
+
 void
 YIELD::ipc::TracingSocket::aio_read
 (
@@ -6798,6 +7471,7 @@ YIELD::ipc::TracingSocket::aio_read
 {
   aio_read_nbio( aio_read_control_block );
 }
+
 void
 YIELD::ipc::TracingSocket::aio_write
 (
@@ -6806,14 +7480,17 @@ YIELD::ipc::TracingSocket::aio_write
 {
   aio_write_nbio( aio_write_control_block );
 }
+
 bool YIELD::ipc::TracingSocket::bind( auto_SocketAddress to_sockaddr )
 {
   return underlying_socket->bind( to_sockaddr );
 }
+
 bool YIELD::ipc::TracingSocket::close()
 {
   return underlying_socket->close();
 }
+
 bool YIELD::ipc::TracingSocket::connect( auto_SocketAddress to_sockaddr )
 {
   std::string to_hostname;
@@ -6826,35 +7503,43 @@ bool YIELD::ipc::TracingSocket::connect( auto_SocketAddress to_sockaddr )
   }
   return underlying_socket->connect( to_sockaddr );
 }
+
 bool YIELD::ipc::TracingSocket::get_blocking_mode() const
 {
   return underlying_socket->get_blocking_mode();
 }
+
 YIELD::ipc::auto_SocketAddress YIELD::ipc::TracingSocket::getpeername()
 {
   return underlying_socket->getpeername();
 }
+
 YIELD::ipc::auto_SocketAddress YIELD::ipc::TracingSocket::getsockname()
 {
   return underlying_socket->getsockname();
 }
+
 ssize_t YIELD::ipc::TracingSocket::read( void* buffer, size_t buffer_len )
 {
   log->getStream( YIELD::platform::Log::LOG_INFO ) <<
     "yield::ipc::TracingSocket: trying to read " << buffer_len <<
     " bytes from socket #" << static_cast<uint64_t>( *this ) << ".";
+
   ssize_t read_ret = underlying_socket->read( buffer, buffer_len );
+
   if ( read_ret > 0 )
   {
     log->getStream( YIELD::platform::Log::LOG_INFO ) <<
       "yield::ipc::TracingSocket: read " << read_ret <<
       " bytes from socket #" << static_cast<uint64_t>( *this ) << ".";
+
     log->write
     (
       buffer,
       static_cast<size_t>( read_ret ),
       YIELD::platform::Log::LOG_DEBUG
     );
+
     log->write( "\n", YIELD::platform::Log::LOG_DEBUG );
   }
   else if
@@ -6865,45 +7550,58 @@ ssize_t YIELD::ipc::TracingSocket::read( void* buffer, size_t buffer_len )
     log->getStream( YIELD::platform::Log::LOG_INFO ) <<
       "yield::ipc::TracingSocket: lost connection while trying to read " <<
       "socket #" << static_cast<uint64_t>( *this ) << ".";
+
   return read_ret;
 }
+
 bool YIELD::ipc::TracingSocket::set_blocking_mode( bool blocking )
 {
   return underlying_socket->set_blocking_mode( blocking );
 }
+
+
 bool YIELD::ipc::TracingSocket::want_connect() const
 {
   bool want_connect_ret = underlying_socket->want_connect();
+
   if ( want_connect_ret )
   {
     log->getStream( YIELD::platform::Log::LOG_INFO ) <<
       "yield::ipc::TracingSocket: would block on connect on socket #" <<
       static_cast<uint64_t>( *this ) << ".";
   }
+
   return want_connect_ret;
 }
+
 bool YIELD::ipc::TracingSocket::want_read() const
 {
   bool want_read_ret = underlying_socket->want_read();
+
   if ( want_read_ret )
   {
     log->getStream( YIELD::platform::Log::LOG_INFO ) <<
       "yield::ipc::TracingSocket: would block on read on socket #" <<
       static_cast<uint64_t>( *this ) << ".";
   }
+
   return want_read_ret;
 }
+
 bool YIELD::ipc::TracingSocket::want_write() const
 {
   bool want_write_ret = underlying_socket->want_write();
+
   if ( want_write_ret )
   {
     log->getStream( YIELD::platform::Log::LOG_INFO ) <<
       "yield::ipc::TracingSocket: would block on write on socket #" <<
       static_cast<uint64_t>( *this ) << ".";
   }
+
   return want_write_ret;
 }
+
 ssize_t
 YIELD::ipc::TracingSocket::writev
 (
@@ -6914,16 +7612,20 @@ YIELD::ipc::TracingSocket::writev
   size_t buffers_len = 0;
   for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
     buffers_len += buffers[buffer_i].iov_len;
+
   log->getStream( YIELD::platform::Log::LOG_INFO ) <<
     "yield::ipc::TracingSocket: trying to write " << buffers_len <<
     " bytes to socket #" << static_cast<uint64_t>( *this ) << ".";
+
   ssize_t writev_ret = underlying_socket->writev( buffers, buffers_count );
+
   if ( writev_ret >= 0 )
   {
     size_t temp_writev_ret = static_cast<size_t>( writev_ret );
     log->getStream( YIELD::platform::Log::LOG_INFO ) <<
       "yield::ipc::TracingSocket: wrote " << writev_ret <<
       " bytes to socket #" << static_cast<uint64_t>( *this ) << ".";
+
     for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
     {
       if ( buffers[buffer_i].iov_len <= temp_writev_ret )
@@ -6934,6 +7636,7 @@ YIELD::ipc::TracingSocket::writev
           buffers[buffer_i].iov_len,
           YIELD::platform::Log::LOG_DEBUG
         );
+
         temp_writev_ret -= buffers[buffer_i].iov_len;
       }
       else
@@ -6944,6 +7647,7 @@ YIELD::ipc::TracingSocket::writev
           temp_writev_ret,
           YIELD::platform::Log::LOG_DEBUG
         );
+
         break;
       }
     }
@@ -6959,13 +7663,12 @@ YIELD::ipc::TracingSocket::writev
       "yield::ipc::TracingSocket: lost connection while trying to write to " <<
       "socket #" <<  static_cast<uint64_t>( *this ) << ".";
   }
+
   return writev_ret;
 }
 
 
 // udp_socket.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 #if defined(_WIN32)
 #pragma warning( 4 : 4365 )
 #pragma warning( push )
@@ -6976,12 +7679,15 @@ YIELD::ipc::TracingSocket::writev
 #include <netinet/in.h> // For the IPPROTO_* constants
 #include <sys/socket.h>
 #endif
+
+
 YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus
 YIELD::ipc::UDPSocket::AIORecvFromControlBlock::execute()
 {
   ssize_t recvfrom_ret =
     static_cast<UDPSocket*>( get_socket().get() )->
       recvfrom( buffer, *peername );
+
   if ( recvfrom_ret > 0 )
     onCompletion( static_cast<size_t>( recvfrom_ret ) );
   else if ( recvfrom_ret == 0 )
@@ -6994,8 +7700,11 @@ YIELD::ipc::UDPSocket::AIORecvFromControlBlock::execute()
 #else
     onError( errno );
 #endif
+
   return EXECUTE_STATUS_DONE;
 }
+
+
 YIELD::ipc::UDPSocket::UDPSocket
 (
   int domain,
@@ -7007,6 +7716,7 @@ YIELD::ipc::UDPSocket::UDPSocket
 )
   : Socket( domain, SOCK_DGRAM, IPPROTO_UDP, socket_ )
 { }
+
 void
 YIELD::ipc::UDPSocket::aio_recvfrom
 (
@@ -7019,6 +7729,7 @@ YIELD::ipc::UDPSocket::aio_recvfrom
   aio_recvfrom_nbio( aio_recvfrom_control_block );
 #endif
 }
+
 #ifdef _WIN32
 void
 YIELD::ipc::UDPSocket::aio_recvfrom_iocp
@@ -7028,6 +7739,7 @@ YIELD::ipc::UDPSocket::aio_recvfrom_iocp
 {
   aio_recvfrom_control_block->set_socket( *this );
   get_aio_queue().associate( *this );
+
   yidl::runtime::auto_Buffer buffer( aio_recvfrom_control_block->get_buffer() );
   WSABUF wsabuf[1];
   wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) );
@@ -7059,6 +7771,7 @@ YIELD::ipc::UDPSocket::aio_recvfrom_iocp
     aio_recvfrom_control_block->onError( WSAGetLastError() );
 }
 #endif
+
 void
 YIELD::ipc::UDPSocket::aio_recvfrom_nbio
 (
@@ -7069,6 +7782,7 @@ YIELD::ipc::UDPSocket::aio_recvfrom_nbio
   set_blocking_mode( false );
   get_aio_queue().submit( aio_recvfrom_control_block.release() );
 }
+
 YIELD::ipc::auto_UDPSocket YIELD::ipc::UDPSocket::create()
 {
   int domain = AF_INET6;
@@ -7090,6 +7804,7 @@ YIELD::ipc::auto_UDPSocket YIELD::ipc::UDPSocket::create()
       return NULL;
   }
 }
+
 ssize_t
 YIELD::ipc::UDPSocket::recvfrom
 (
@@ -7104,10 +7819,13 @@ YIELD::ipc::UDPSocket::recvfrom
         buffer->capacity() - buffer->size(),
         peername
       );
+
   if ( recvfrom_ret > 0 )
     buffer->put( NULL, static_cast<size_t>( recvfrom_ret ) );
+
   return recvfrom_ret;
 }
+
 ssize_t
 YIELD::ipc::UDPSocket::recvfrom
 (
@@ -7127,6 +7845,7 @@ YIELD::ipc::UDPSocket::recvfrom
            &peername_len
          );
 }
+
 ssize_t
 YIELD::ipc::UDPSocket::sendto
 (
@@ -7136,6 +7855,7 @@ YIELD::ipc::UDPSocket::sendto
 {
   return sendto( static_cast<void*>( *buffer ), buffer->size(), peername );
 }
+
 ssize_t
 YIELD::ipc::UDPSocket::sendto
 (
@@ -7160,6 +7880,8 @@ YIELD::ipc::UDPSocket::sendto
   else
     return -1;
 }
+
+
 YIELD::ipc::UDPSocket::AIORecvFromControlBlock::AIORecvFromControlBlock
 (
   yidl::runtime::auto_Buffer buffer
@@ -7168,10 +7890,12 @@ YIELD::ipc::UDPSocket::AIORecvFromControlBlock::AIORecvFromControlBlock
 {
   peername = new sockaddr_storage;
 }
+
 YIELD::ipc::UDPSocket::AIORecvFromControlBlock::~AIORecvFromControlBlock()
 {
   delete peername;
 }
+
 YIELD::ipc::auto_SocketAddress
 YIELD::ipc::UDPSocket::AIORecvFromControlBlock::get_peername() const
 {
@@ -7180,27 +7904,31 @@ YIELD::ipc::UDPSocket::AIORecvFromControlBlock::get_peername() const
 
 
 // uri.cpp
-// Copyright 2003-2010 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
 extern "C"
 {
   #include <uriparser.h>
 };
+
+
 YIELD::ipc::URI::URI( const char* uri )
 {
   init( uri, strnlen( uri, UINT16_MAX ) );
 }
+
 YIELD::ipc::URI::URI( const std::string& uri )
 {
   init( uri.c_str(), uri.size() );
 }
+
 YIELD::ipc::URI::URI( const char* uri, size_t uri_len )
 {
   init( uri, uri_len );
 }
+
 YIELD::ipc::URI::URI( const char* scheme, const char* host, uint16_t port )
   : scheme( scheme ), host( host ), port( port ), resource( "/" )
 { }
+
 YIELD::ipc::URI::URI
 (
   const char* scheme,
@@ -7210,18 +7938,22 @@ YIELD::ipc::URI::URI
 )
   : scheme( scheme ), host( host ), port( port ), resource( resource )
 { }
+
 YIELD::ipc::URI::URI( const URI& other )
 : scheme( other.scheme ), user( other.user ), password( other.password ),
   host( other.host ), port( other.port ), resource( other.resource )
 { }
+
 YIELD::ipc::auto_URI YIELD::ipc::URI::parse( const char* uri )
 {
   return parse( uri, strnlen( uri, UINT16_MAX ) );
 }
+
 YIELD::ipc::auto_URI YIELD::ipc::URI::parse( const std::string& uri )
 {
   return parse( uri.c_str(), uri.size() );
 }
+
 YIELD::ipc::auto_URI YIELD::ipc::URI::parse( const char* uri, size_t uri_len )
 {
   UriParserStateA parser_state;
@@ -7239,6 +7971,7 @@ YIELD::ipc::auto_URI YIELD::ipc::URI::parse( const char* uri, size_t uri_len )
     return NULL;
   }
 }
+
 void YIELD::ipc::URI::init( const char* uri, size_t uri_len )
 {
   UriParserStateA parser_state;
@@ -7255,6 +7988,7 @@ void YIELD::ipc::URI::init( const char* uri, size_t uri_len )
     throw YIELD::platform::Exception( "invalid URI" );
   }
 }
+
 void YIELD::ipc::URI::init( UriUriA& parsed_uri )
 {
   scheme.assign
@@ -7262,11 +7996,13 @@ void YIELD::ipc::URI::init( UriUriA& parsed_uri )
     parsed_uri.scheme.first,
     parsed_uri.scheme.afterLast - parsed_uri.scheme.first
   );
+
   host.assign
   (
     parsed_uri.hostText.first,
     parsed_uri.hostText.afterLast - parsed_uri.hostText.first
   );
+
   if ( parsed_uri.portText.first != NULL )
   {
     port
@@ -7282,6 +8018,7 @@ void YIELD::ipc::URI::init( UriUriA& parsed_uri )
   }
   else
     port = 0;
+
   if ( parsed_uri.userInfo.first != NULL )
   {
     const char* userInfo_p = parsed_uri.userInfo.first;
@@ -7294,15 +8031,18 @@ void YIELD::ipc::URI::init( UriUriA& parsed_uri )
           parsed_uri.userInfo.first,
           userInfo_p - parsed_uri.userInfo.first
         );
+
         password.assign
         (
           userInfo_p + 1,
           parsed_uri.userInfo.afterLast - userInfo_p - 1
         );
+
         break;
       }
       userInfo_p++;
     }
+
     if ( user.empty() ) // No colon found => no password, just the user
     {
       user.assign
@@ -7312,6 +8052,7 @@ void YIELD::ipc::URI::init( UriUriA& parsed_uri )
       );
     }
   }
+
   if ( parsed_uri.pathHead != NULL )
   {
     UriPathSegmentA* path_segment = parsed_uri.pathHead;
@@ -7326,6 +8067,7 @@ void YIELD::ipc::URI::init( UriUriA& parsed_uri )
       path_segment = path_segment->next;
     }
     while ( path_segment != NULL );
+
     if ( parsed_uri.query.first != NULL )
     {
       UriQueryListA* query_list;
@@ -7336,18 +8078,21 @@ void YIELD::ipc::URI::init( UriUriA& parsed_uri )
         parsed_uri.query.first,
         parsed_uri.query.afterLast
       );
+
       UriQueryListA* query_list_p = query_list;
       while ( query_list_p != NULL )
       {
         query.insert( std::make_pair( query_list_p->key, query_list_p->value ) );
         query_list_p = query_list_p->next;
       }
+
       uriFreeQueryListA( query_list );
     }
   }
   else
     resource = "/";
 }
+
 std::string
 YIELD::ipc::URI::get_query_value
 (
@@ -7357,11 +8102,13 @@ YIELD::ipc::URI::get_query_value
 {
   std::multimap<std::string, std::string>::const_iterator
     query_value_i = query.find( key );
+
   if ( query_value_i != query.end() )
     return query_value_i->second;
   else
     return default_query_value;
 }
+
 std::multimap<std::string, std::string>::const_iterator
 YIELD::ipc::URI::get_query_values( const std::string& key ) const
 {
@@ -7468,4 +8215,5 @@ YIELD::ipc::UUID::operator std::string() const
   return generic_uuid;
 #endif
 }
+
 

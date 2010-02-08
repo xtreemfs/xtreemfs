@@ -1,5 +1,32 @@
-// Copyright 2003-2008 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+// Copyright (c) 2010 Minor Gordon
+// With original implementations and ideas contributed by Felix Hupfeld
+// All rights reserved
+// 
+// This source file is part of the Yield project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the Yield project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #ifndef _YIELD_IPC_H_
 #define _YIELD_IPC_H_
@@ -50,14 +77,14 @@ namespace YIELD
     typedef yidl::runtime::auto_Object<SSLContext> auto_SSLContext;
     typedef yidl::runtime::auto_Object<TCPSocket> auto_TCPSocket;
     typedef yidl::runtime::auto_Object<URI> auto_URI;
-    
+
 
 #ifdef YIELD_HAVE_ZLIB
-    static inline yidl::runtime::auto_Buffer 
+    static inline yidl::runtime::auto_Buffer
     deflate
-    ( 
-      yidl::runtime::auto_Buffer buffer, 
-      int level = Z_BEST_COMPRESSION 
+    (
+      yidl::runtime::auto_Buffer buffer,
+      int level = Z_BEST_COMPRESSION
     )
     {
       z_stream zstream;
@@ -74,12 +101,12 @@ namespace YIELD
         zstream.next_out = zstream_out;
         zstream.avail_out = 4096;
 
-        yidl::runtime::auto_Buffer 
+        yidl::runtime::auto_Buffer
           out_buffer( new yidl::runtime::StringBuffer );
 
         while ( ::deflate( &zstream, Z_NO_FLUSH ) == Z_OK )
         {
-          if ( zstream.avail_out == 0 ) 
+          if ( zstream.avail_out == 0 )
           {
             // Filled zstream_out, copy it into out_buffer and keep deflating
             out_buffer->put( zstream_out, sizeof( zstream_out ) );
@@ -89,12 +116,12 @@ namespace YIELD
           else // deflate returned Z_OK without filling zstream_out -> done
           {
             int deflate_ret;
-            // Z_OK = need more buffer space to finish compression, 
+            // Z_OK = need more buffer space to finish compression,
             // Z_STREAM_END = really done
             while ( ( deflate_ret = ::deflate( &zstream, Z_FINISH ) ) == Z_OK )
-            {              
+            {
               out_buffer->put( zstream_out, sizeof( zstream_out ) );
-              zstream.next_out = zstream_out;              
+              zstream.next_out = zstream_out;
               zstream.avail_out = sizeof( zstream_out );
             }
 
@@ -105,9 +132,9 @@ namespace YIELD
                 if ( zstream.avail_out < sizeof( zstream_out ) )
                 {
                   out_buffer->put
-                  ( 
-                    zstream_out, 
-                    sizeof( zstream_out ) - zstream.avail_out 
+                  (
+                    zstream_out,
+                    sizeof( zstream_out ) - zstream.avail_out
                   );
                 }
 
@@ -132,27 +159,27 @@ namespace YIELD
     template <class RequestType, class ResponseType>
     class Client
     {
-    public:    
+    public:
       const static uint32_t CLIENT_FLAG_TRACE_IO = 1;
       const static uint32_t CLIENT_FLAG_TRACE_OPERATIONS = 2;
 
       const static uint16_t CONCURRENCY_LEVEL_DEFAULT = 4;
       const static uint64_t OPERATION_TIMEOUT_DEFAULT = 5 * NS_IN_S;
-      const static uint8_t RECONNECT_TRIES_MAX_DEFAULT = 2; 
-      
+      const static uint8_t RECONNECT_TRIES_MAX_DEFAULT = 2;
+
       // YIELD::concurrency::EventHandler
       virtual void handleEvent( YIELD::concurrency::Event& );
 
     protected:
       Client
-      ( 
+      (
         uint16_t concurrency_level, // e.g. the # of simultaneous conns for TCP
-        uint32_t flags, 
-        YIELD::platform::auto_Log log, 
-        const YIELD::platform::Time& operation_timeout, 
-        auto_SocketAddress peername, 
-        uint8_t reconnect_tries_max, 
-        auto_SocketFactory socket_factory 
+        uint32_t flags,
+        YIELD::platform::auto_Log log,
+        const YIELD::platform::Time& operation_timeout,
+        auto_SocketAddress peername,
+        uint8_t reconnect_tries_max,
+        auto_SocketFactory socket_factory
       );
       virtual ~Client();
 
@@ -173,7 +200,7 @@ namespace YIELD
       class AIOConnectControlBlock;
       class AIOReadControlBlock;
       class AIOWriteControlBlock;
-      
+
       class OperationTimer;
     };
 
@@ -213,14 +240,14 @@ namespace YIELD
       ssize_t deserialize( yidl::runtime::auto_Buffer );
 
       char* get_header
-      ( 
-        const char* header_name, 
-        const char* default_value="" 
+      (
+        const char* header_name,
+        const char* default_value=""
       );
 
-      char* operator[]( const char* header_name ) 
-      { 
-        return get_header( header_name ); 
+      char* operator[]( const char* header_name )
+      {
+        return get_header( header_name );
       }
 
       // set_header( ... ): char* copies into a buffer, const char* does not
@@ -229,9 +256,9 @@ namespace YIELD
       void set_header( char* header_name, char* header_value );
 
       void set_header
-      ( 
-        const std::string& header_name, 
-        const std::string& header_value 
+      (
+        const std::string& header_name,
+        const std::string& header_value
       );
 
       yidl::runtime::auto_Buffer serialize();
@@ -243,24 +270,24 @@ namespace YIELD
       void set_next_iovec( const struct iovec& out_iovec );
 
     private:
-      enum 
-      { 
-        DESERIALIZING_LEADING_WHITESPACE, 
-        DESERIALIZING_HEADER_NAME, 
-        DESERIALIZING_HEADER_NAME_VALUE_SEPARATOR, 
-        DESERIALIZING_HEADER_VALUE, 
-        DESERIALIZING_HEADER_VALUE_TERMINATOR, 
-        DESERIALIZING_TRAILING_CRLF, 
-        DESERIALIZE_DONE 
+      enum
+      {
+        DESERIALIZING_LEADING_WHITESPACE,
+        DESERIALIZING_HEADER_NAME,
+        DESERIALIZING_HEADER_NAME_VALUE_SEPARATOR,
+        DESERIALIZING_HEADER_VALUE,
+        DESERIALIZING_HEADER_VALUE_TERMINATOR,
+        DESERIALIZING_TRAILING_CRLF,
+        DESERIALIZE_DONE
       } deserialize_state;
 
       char stack_buffer[YIELD_RFC822_HEADERS_STACK_BUFFER_LENGTH],
-           *heap_buffer, 
+           *heap_buffer,
            *buffer_p;
       size_t heap_buffer_len;
 
-      iovec stack_iovecs[YIELD_RFC822_HEADERS_STACK_IOVECS_LENGTH], 
-            *heap_iovecs; 
+      iovec stack_iovecs[YIELD_RFC822_HEADERS_STACK_IOVECS_LENGTH],
+            *heap_iovecs;
       uint8_t iovecs_filled;
 
       inline void advanceBufferPointer()
@@ -269,17 +296,17 @@ namespace YIELD
 
         if ( heap_buffer == NULL )
         {
-          if 
-          ( 
-            buffer_p - stack_buffer < 
-              YIELD_RFC822_HEADERS_STACK_BUFFER_LENGTH 
+          if
+          (
+            buffer_p - stack_buffer <
+              YIELD_RFC822_HEADERS_STACK_BUFFER_LENGTH
           )
             return;
           else
             allocateHeapBuffer();
         }
-        else if 
-        ( 
+        else if
+        (
           static_cast<size_t>( buffer_p - heap_buffer ) < heap_buffer_len
         )
           return;
@@ -305,10 +332,10 @@ namespace YIELD
 
       yidl::runtime::auto_Buffer body;
 
-      enum 
+      enum
       {
         DESERIALIZE_DONE,
-        DESERIALIZING_BODY,      
+        DESERIALIZING_BODY,
         DESERIALIZING_METHOD,
         DESERIALIZING_HEADERS,
         DESERIALIZING_HTTP_VERSION,
@@ -324,7 +351,7 @@ namespace YIELD
     };
 
 
-    class HTTPResponse 
+    class HTTPResponse
       : public YIELD::concurrency::Response, public HTTPMessage
     {
     public:
@@ -349,7 +376,7 @@ namespace YIELD
 
     private:
       HTTPResponse( const HTTPResponse& other ) // Prevent copying
-        : HTTPMessage( other ) 
+        : HTTPMessage( other )
       { }
 
       uint8_t http_version;
@@ -359,38 +386,38 @@ namespace YIELD
     typedef yidl::runtime::auto_Object<HTTPResponse> auto_HTTPResponse;
 
 
-    class HTTPRequest 
+    class HTTPRequest
       : public YIELD::concurrency::Request, public HTTPMessage
     {
     public:
       HTTPRequest(); // Incoming
 
       HTTPRequest // Outgoing
-      ( 
-        const char* method, 
-        const char* relative_uri, 
-        const char* host, 
-        yidl::runtime::auto_Buffer body = NULL 
+      (
+        const char* method,
+        const char* relative_uri,
+        const char* host,
+        yidl::runtime::auto_Buffer body = NULL
       );
 
       HTTPRequest // Outgoing
-      ( 
-        const char* method, 
-        const URI& absolute_uri, 
-        yidl::runtime::auto_Buffer body = NULL 
-      ); 
+      (
+        const char* method,
+        const URI& absolute_uri,
+        yidl::runtime::auto_Buffer body = NULL
+      );
 
       uint8_t get_reconnect_tries() const { return reconnect_tries; }
       ssize_t deserialize( yidl::runtime::auto_Buffer );
       uint8_t get_http_version() const { return http_version; }
       const char* get_method() const { return method; }
-      const char* get_uri() const { return uri; }    
+      const char* get_uri() const { return uri; }
       virtual void respond( uint16_t status_code );
 
       virtual void respond
-      ( 
-        uint16_t status_code, 
-        yidl::runtime::auto_Buffer body 
+      (
+        uint16_t status_code,
+        yidl::runtime::auto_Buffer body
       );
 
       virtual void respond( YIELD::concurrency::Response& response );
@@ -414,11 +441,11 @@ namespace YIELD
       }
 
       void init
-      ( 
-        const char* method, 
-        const char* relative_uri, 
-        const char* host, 
-        yidl::runtime::auto_Buffer body 
+      (
+        const char* method,
+        const char* relative_uri,
+        const char* host,
+        yidl::runtime::auto_Buffer body
       );
 
       char method[16];
@@ -429,105 +456,105 @@ namespace YIELD
     typedef yidl::runtime::auto_Object<HTTPRequest> auto_HTTPRequest;
 
 
-    class HTTPClient 
-      : public YIELD::concurrency::EventHandler, 
+    class HTTPClient
+      : public YIELD::concurrency::EventHandler,
         public Client<HTTPRequest, HTTPResponse>
     {
     public:
       // create( ... ) throws an exception instead of returning NULL
-      static yidl::runtime::auto_Object<HTTPClient> 
+      static yidl::runtime::auto_Object<HTTPClient>
       create
-      ( 
-        const URI& absolute_uri, 
+      (
+        const URI& absolute_uri,
         uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
         uint32_t flags = 0,
-        YIELD::platform::auto_Log log = NULL,                                                             
-        const YIELD::platform::Time& operation_timeout 
+        YIELD::platform::auto_Log log = NULL,
+        const YIELD::platform::Time& operation_timeout
           = OPERATION_TIMEOUT_DEFAULT,
         uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
         yidl::runtime::auto_Object<SSLContext> ssl_context = NULL
       );
 
-      static auto_HTTPResponse 
+      static auto_HTTPResponse
       GET
-      ( 
-        const URI& absolute_uri, 
-        YIELD::platform::auto_Log log = NULL 
+      (
+        const URI& absolute_uri,
+        YIELD::platform::auto_Log log = NULL
       );
 
-      static auto_HTTPResponse 
+      static auto_HTTPResponse
       PUT
       (
-        const URI& absolute_uri, 
-        yidl::runtime::auto_Buffer body, 
-        YIELD::platform::auto_Log log = NULL 
+        const URI& absolute_uri,
+        yidl::runtime::auto_Buffer body,
+        YIELD::platform::auto_Log log = NULL
       );
 
-      static auto_HTTPResponse 
+      static auto_HTTPResponse
       PUT
-      ( 
-        const URI& absolute_uri, 
-        const YIELD::platform::Path& body_file_path, 
-        YIELD::platform::auto_Log log = NULL 
+      (
+        const URI& absolute_uri,
+        const YIELD::platform::Path& body_file_path,
+        YIELD::platform::auto_Log log = NULL
       );
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( HTTPClient, 207 );
 
       // YIELD::concurrency::EventHandler
-      virtual void handleEvent( YIELD::concurrency::Event& ev ) 
-      { 
-        Client<HTTPRequest, HTTPResponse>::handleEvent( ev ); 
+      virtual void handleEvent( YIELD::concurrency::Event& ev )
+      {
+        Client<HTTPRequest, HTTPResponse>::handleEvent( ev );
       }
 
     private:
       HTTPClient
       (
         uint16_t concurrency_level,
-        uint32_t flags, 
-        YIELD::platform::auto_Log log, 
-        const YIELD::platform::Time& operation_timeout, 
-        auto_SocketAddress peername, 
-        uint8_t reconnect_tries_max, 
+        uint32_t flags,
+        YIELD::platform::auto_Log log,
+        const YIELD::platform::Time& operation_timeout,
+        auto_SocketAddress peername,
+        uint8_t reconnect_tries_max,
         auto_SocketFactory socket_factory
       )
         : Client<HTTPRequest, HTTPResponse>
-          ( 
-            concurrency_level, 
-            flags, 
-            log, 
+          (
+            concurrency_level,
+            flags,
+            log,
             operation_timeout,
-            peername, 
-            reconnect_tries_max, 
-            socket_factory 
+            peername,
+            reconnect_tries_max,
+            socket_factory
           )
       { }
 
       virtual ~HTTPClient() { }
 
-      static auto_HTTPResponse 
+      static auto_HTTPResponse
       sendHTTPRequest
-      ( 
-        const char* method, 
-        const URI& uri, 
-        yidl::runtime::auto_Buffer body, 
-        YIELD::platform::auto_Log log 
+      (
+        const char* method,
+        const URI& uri,
+        yidl::runtime::auto_Buffer body,
+        YIELD::platform::auto_Log log
       );
     };
 
     typedef yidl::runtime::auto_Object<HTTPClient> auto_HTTPClient;
-      
+
 
     class HTTPServer : public yidl::runtime::Object
     {
     public:
-      static yidl::runtime::auto_Object<HTTPServer> 
+      static yidl::runtime::auto_Object<HTTPServer>
       create
-      ( 
+      (
         const URI& absolute_uri,
-        YIELD::concurrency::auto_EventTarget http_request_target, 
-        YIELD::platform::auto_Log log = NULL, 
-        auto_SSLContext ssl_context = NULL 
+        YIELD::concurrency::auto_EventTarget http_request_target,
+        YIELD::platform::auto_Log log = NULL,
+        auto_SSLContext ssl_context = NULL
       );
 
       // yidl::runtime::Object
@@ -535,10 +562,10 @@ namespace YIELD
 
     private:
       HTTPServer
-      ( 
-        YIELD::concurrency::auto_EventTarget http_request_target, 
-        auto_TCPSocket listen_tcp_socket, 
-        YIELD::platform::auto_Log log 
+      (
+        YIELD::concurrency::auto_EventTarget http_request_target,
+        auto_TCPSocket listen_tcp_socket,
+        YIELD::platform::auto_Log log
       );
 
       YIELD::concurrency::auto_EventTarget http_request_target;
@@ -568,9 +595,9 @@ namespace YIELD
 
     protected:
       JSONMarshaller
-      ( 
-        JSONMarshaller& parent_json_marshaller, 
-        const char* root_key 
+      (
+        JSONMarshaller& parent_json_marshaller,
+        const char* root_key
       );
 
       virtual void writeKey( const char* );
@@ -618,19 +645,19 @@ namespace YIELD
     {
     public:
       // open returns NULL instead of throwing exceptions
-      static yidl::runtime::auto_Object<NamedPipe> 
+      static yidl::runtime::auto_Object<NamedPipe>
       open
-      ( 
-        const YIELD::platform::Path& path, 
-        uint32_t flags = O_RDWR, 
-        mode_t mode = YIELD::platform::File::MODE_DEFAULT 
-      ); 
-            
+      (
+        const YIELD::platform::Path& path,
+        uint32_t flags = O_RDWR,
+        mode_t mode = YIELD::platform::File::MODE_DEFAULT
+      );
+
       virtual ssize_t read( void* buffer, size_t buffer_len );
       virtual ssize_t write( const void* buffer, size_t buffer_len );
-      
+
       // yidl::runtime::Object
-      YIDL_RUNTIME_OBJECT_PROTOTYPES( NamedPipe, 4 );  
+      YIDL_RUNTIME_OBJECT_PROTOTYPES( NamedPipe, 4 );
 
     private:
 #ifdef WIN32
@@ -651,7 +678,7 @@ namespace YIELD
     typedef yidl::runtime::auto_Object<NamedPipe> auto_NamedPipe;
 
 
-    class ONCRPCGarbageArgumentsError 
+    class ONCRPCGarbageArgumentsError
       : public YIELD::concurrency::ExceptionResponse
     {
     public:
@@ -668,12 +695,12 @@ namespace YIELD
       virtual ssize_t deserialize( yidl::runtime::auto_Buffer );
       yidl::runtime::auto_Struct get_body() const { return body; }
 
-      YIELD::concurrency::auto_Interface get_interface() const 
-      { 
-        return interface_; 
+      YIELD::concurrency::auto_Interface get_interface() const
+      {
+        return interface_;
       }
 
-      uint32_t get_xid() const { return xid; }    
+      uint32_t get_xid() const { return xid; }
       virtual yidl::runtime::auto_Buffer serialize();
       void set_body( yidl::runtime::auto_Struct body ) { this->body = body; }
 
@@ -681,22 +708,22 @@ namespace YIELD
       // Incoming
       ONCRPCMessage( YIELD::concurrency::auto_Interface interface_ );
 
-      // Outgoing 
+      // Outgoing
       ONCRPCMessage
-      ( 
-        YIELD::concurrency::auto_Interface interface_, 
-        uint32_t xid, 
-        yidl::runtime::auto_Struct body 
+      (
+        YIELD::concurrency::auto_Interface interface_,
+        uint32_t xid,
+        yidl::runtime::auto_Struct body
       );
 
       virtual ~ONCRPCMessage();
 
-      enum 
-      { 
-        DESERIALIZING_RECORD_FRAGMENT_MARKER, 
-        DESERIALIZING_RECORD_FRAGMENT, 
-        DESERIALIZING_LONG_RECORD_FRAGMENT, 
-        DESERIALIZE_DONE 
+      enum
+      {
+        DESERIALIZING_RECORD_FRAGMENT_MARKER,
+        DESERIALIZING_RECORD_FRAGMENT,
+        DESERIALIZING_LONG_RECORD_FRAGMENT,
+        DESERIALIZE_DONE
       } deserialize_state;
 
       ssize_t deserializeRecordFragmentMarker( yidl::runtime::auto_Buffer );
@@ -717,7 +744,7 @@ namespace YIELD
     };
 
 
-    class ONCRPCMessageRejectedError 
+    class ONCRPCMessageRejectedError
       : public YIELD::concurrency::ExceptionResponse
     {
     public:
@@ -727,7 +754,7 @@ namespace YIELD
     };
 
 
-    class ONCRPCProcedureUnavailableError 
+    class ONCRPCProcedureUnavailableError
       : public YIELD::concurrency::ExceptionResponse
     {
     public:
@@ -737,7 +764,7 @@ namespace YIELD
     };
 
 
-    class ONCRPCProgramMismatchError 
+    class ONCRPCProgramMismatchError
       : public YIELD::concurrency::ExceptionResponse
     {
     public:
@@ -747,7 +774,7 @@ namespace YIELD
     };
 
 
-    class ONCRPCProgramUnavailableError 
+    class ONCRPCProgramUnavailableError
       : public YIELD::concurrency::ExceptionResponse
     {
     public:
@@ -757,8 +784,8 @@ namespace YIELD
     };
 
 
-    class ONCRPCResponse 
-      : public YIELD::concurrency::Response, 
+    class ONCRPCResponse
+      : public YIELD::concurrency::Response,
         public ONCRPCMessage<ONCRPCResponse>
     {
     public:
@@ -768,9 +795,9 @@ namespace YIELD
       // Outgoing
       ONCRPCResponse
       (
-        YIELD::concurrency::auto_Interface interface_, 
-        uint32_t xid, 
-        yidl::runtime::auto_Struct body 
+        YIELD::concurrency::auto_Interface interface_,
+        uint32_t xid,
+        yidl::runtime::auto_Struct body
       );
 
       virtual ~ONCRPCResponse() { }
@@ -784,8 +811,8 @@ namespace YIELD
     typedef yidl::runtime::auto_Object<ONCRPCResponse> auto_ONCRPCResponse;
 
 
-    class ONCRPCRequest 
-      : public YIELD::concurrency::Request, 
+    class ONCRPCRequest
+      : public YIELD::concurrency::Request,
         public ONCRPCMessage<ONCRPCRequest>
     {
     public:
@@ -796,42 +823,42 @@ namespace YIELD
 
       // Outgoing
       ONCRPCRequest
-      ( 
-        YIELD::concurrency::auto_Interface interface_, 
-        yidl::runtime::auto_Struct body 
+      (
+        YIELD::concurrency::auto_Interface interface_,
+        yidl::runtime::auto_Struct body
       );
 
       ONCRPCRequest // Outgoing
       (
-        YIELD::concurrency::auto_Interface interface_, 
-        uint32_t credential_auth_flavor, 
-        yidl::runtime::auto_Struct credential, 
-        yidl::runtime::auto_Struct body 
-      ); 
+        YIELD::concurrency::auto_Interface interface_,
+        uint32_t credential_auth_flavor,
+        yidl::runtime::auto_Struct credential,
+        yidl::runtime::auto_Struct body
+      );
 
       ONCRPCRequest // For testing
       (
-        uint32_t prog, 
-        uint32_t proc, 
-        uint32_t vers, 
-        yidl::runtime::auto_Struct body 
-      ); 
+        uint32_t prog,
+        uint32_t proc,
+        uint32_t vers,
+        yidl::runtime::auto_Struct body
+      );
 
       ONCRPCRequest // For testing
-      ( 
-        uint32_t prog, 
-        uint32_t proc, 
-        uint32_t vers, 
-        uint32_t credential_auth_flavor, 
-        yidl::runtime::auto_Struct credential, 
-        yidl::runtime::auto_Struct body 
-      ); 
+      (
+        uint32_t prog,
+        uint32_t proc,
+        uint32_t vers,
+        uint32_t credential_auth_flavor,
+        yidl::runtime::auto_Struct credential,
+        yidl::runtime::auto_Struct body
+      );
 
       virtual ~ONCRPCRequest() { }
 
-      uint32_t get_credential_auth_flavor() const 
-      { 
-        return credential_auth_flavor; 
+      uint32_t get_credential_auth_flavor() const
+      {
+        return credential_auth_flavor;
       }
 
       yidl::runtime::auto_Struct get_credential() const { return credential; }
@@ -860,27 +887,27 @@ namespace YIELD
 
 
     template <class InterfaceType>
-    class ONCRPCClient 
-      : public InterfaceType, 
+    class ONCRPCClient
+      : public InterfaceType,
         public Client<ONCRPCRequest, ONCRPCResponse>
     {
     public:
-      static yidl::runtime::auto_Object< ONCRPCClient<InterfaceType> > 
+      static yidl::runtime::auto_Object< ONCRPCClient<InterfaceType> >
       create
-      ( 
-        const URI& absolute_uri, 
-        uint16_t concurrency_level 
+      (
+        const URI& absolute_uri,
+        uint16_t concurrency_level
           = CONCURRENCY_LEVEL_DEFAULT,
-        uint32_t flags 
+        uint32_t flags
           = 0,
-        YIELD::platform::auto_Log log 
-          = NULL, 
-        const YIELD::platform::Time& operation_timeout 
-          = OPERATION_TIMEOUT_DEFAULT, 
-        uint8_t reconnect_tries_max 
+        YIELD::platform::auto_Log log
+          = NULL,
+        const YIELD::platform::Time& operation_timeout
+          = OPERATION_TIMEOUT_DEFAULT,
+        uint8_t reconnect_tries_max
           = RECONNECT_TRIES_MAX_DEFAULT,
-        auto_SSLContext ssl_context 
-          = NULL 
+        auto_SSLContext ssl_context
+          = NULL
       );
 
       // YIELD::concurrency::EventHandler
@@ -888,27 +915,27 @@ namespace YIELD
       {
         if ( InterfaceType::checkRequest( ev ) != NULL )
         {
-          ONCRPCRequest* oncrpc_request 
+          ONCRPCRequest* oncrpc_request
             = new ONCRPCRequest( this->incRef(), ev );
 #ifdef _DEBUG
           if ( ( this->get_flags() & this->CLIENT_FLAG_TRACE_OPERATIONS ) ==
                this->CLIENT_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
-            this->get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << 
+            this->get_log()->getStream( YIELD::platform::Log::LOG_INFO ) <<
               "yield::ipc::ONCRPCClient: creating new ONCRPCRequest/" <<
-              reinterpret_cast<uint64_t>( oncrpc_request ) << 
-              " (xid=" << oncrpc_request->get_xid() << 
+              reinterpret_cast<uint64_t>( oncrpc_request ) <<
+              " (xid=" << oncrpc_request->get_xid() <<
               ") for interface request " << ev.get_type_name() << ".";
 #endif
 
           Client<ONCRPCRequest, ONCRPCResponse>::handleEvent
-          ( 
-            *oncrpc_request 
+          (
+            *oncrpc_request
           );
         }
         else
         {
 #ifdef _DEBUG
-          if ( ( this->get_flags() & this->CLIENT_FLAG_TRACE_OPERATIONS ) == 
+          if ( ( this->get_flags() & this->CLIENT_FLAG_TRACE_OPERATIONS ) ==
             this->CLIENT_FLAG_TRACE_OPERATIONS && this->get_log() != NULL )
           {
             switch ( ev.get_type_id() )
@@ -916,20 +943,20 @@ namespace YIELD
               case YIDL_RUNTIME_OBJECT_TYPE_ID( ONCRPCRequest ):
               {
                 this->get_log()->getStream( YIELD::platform::Log::LOG_INFO ) <<
-                  "yield::ipc::ONCRPCClient: send()'ing ONCRPCRequest/" << 
-                  reinterpret_cast<uint64_t>( &ev ) << 
-                  " (xid=" << static_cast<ONCRPCRequest&>( ev ).get_xid() << 
+                  "yield::ipc::ONCRPCClient: send()'ing ONCRPCRequest/" <<
+                  reinterpret_cast<uint64_t>( &ev ) <<
+                  " (xid=" << static_cast<ONCRPCRequest&>( ev ).get_xid() <<
                   ").";
               }
               break;
 
-              case YIDL_RUNTIME_OBJECT_TYPE_ID( ONCRPCResponse ): 
+              case YIDL_RUNTIME_OBJECT_TYPE_ID( ONCRPCResponse ):
               {
                 this->get_log()->getStream( YIELD::platform::Log::LOG_INFO ) <<
-                  "yield::ipc::ONCRPCClient: send()'ing ONCRPCRequest/" << 
-                  reinterpret_cast<uint64_t>( &ev ) << 
+                  "yield::ipc::ONCRPCClient: send()'ing ONCRPCRequest/" <<
+                  reinterpret_cast<uint64_t>( &ev ) <<
                   " (xid=" << static_cast<ONCRPCResponse&>( ev ).get_xid() <<
-                  ")."; 
+                  ").";
               }
               break;
             }
@@ -942,23 +969,23 @@ namespace YIELD
 
     protected:
       ONCRPCClient
-      ( 
+      (
         uint16_t concurrency_level,
-        uint32_t flags, 
-        YIELD::platform::auto_Log log, 
-        const YIELD::platform::Time& operation_timeout, 
-        auto_SocketAddress peername, 
-        uint8_t reconnect_tries_max, 
-        auto_SocketFactory socket_factory 
+        uint32_t flags,
+        YIELD::platform::auto_Log log,
+        const YIELD::platform::Time& operation_timeout,
+        auto_SocketAddress peername,
+        uint8_t reconnect_tries_max,
+        auto_SocketFactory socket_factory
       )
         : Client<ONCRPCRequest, ONCRPCResponse>
-          ( 
-            concurrency_level, 
-            flags, 
-            log, 
-            operation_timeout, 
-            peername, 
-            reconnect_tries_max, 
+          (
+            concurrency_level,
+            flags,
+            log,
+            operation_timeout,
+            peername,
+            reconnect_tries_max,
             socket_factory
           )
       { }
@@ -966,27 +993,27 @@ namespace YIELD
       virtual ~ONCRPCClient() { }
     };
 
-    
+
     class ONCRPCServer : public yidl::runtime::Object
     {
     public:
-      static yidl::runtime::auto_Object<ONCRPCServer>         
+      static yidl::runtime::auto_Object<ONCRPCServer>
       create
-      ( 
+      (
         const URI& absolute_uri,
         YIELD::concurrency::auto_Interface interface_,
-        YIELD::platform::auto_Log log = NULL, 
-        auto_SSLContext ssl_context = NULL 
+        YIELD::platform::auto_Log log = NULL,
+        auto_SSLContext ssl_context = NULL
       ); // Throws exceptions
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( ONCRPCServer, 0 );
-     
+
     protected:
       ONCRPCServer
-      ( 
-        YIELD::concurrency::auto_Interface interface_, 
-        auto_Socket socket_ 
+      (
+        YIELD::concurrency::auto_Interface interface_,
+        auto_Socket socket_
       );
 
     private:
@@ -1004,7 +1031,7 @@ namespace YIELD
     typedef yidl::runtime::auto_Object<ONCRPCServer> auto_ONCRPCServer;
 
 
-    class ONCRPCSystemError 
+    class ONCRPCSystemError
       : public YIELD::concurrency::ExceptionResponse
     {
     public:
@@ -1060,24 +1087,24 @@ namespace YIELD
       public:
         virtual ~AIOControlBlock() { }
 
-        enum ExecuteStatus 
-        { 
-          EXECUTE_STATUS_DONE = 0, 
-          EXECUTE_STATUS_WANT_READ, 
-          EXECUTE_STATUS_WANT_WRITE 
+        enum ExecuteStatus
+        {
+          EXECUTE_STATUS_DONE = 0,
+          EXECUTE_STATUS_WANT_READ,
+          EXECUTE_STATUS_WANT_WRITE
         };
 
         virtual ExecuteStatus execute() = 0;
 
-        yidl::runtime::auto_Object<Socket> get_socket() const 
-        { 
-          return socket_; 
+        yidl::runtime::auto_Object<Socket> get_socket() const
+        {
+          return socket_;
         }
 
-        void set_socket( Socket& socket_ ) 
-        { 
-          if ( this->socket_ == NULL ) 
-            this->socket_ = socket_.incRef(); 
+        void set_socket( Socket& socket_ )
+        {
+          if ( this->socket_ == NULL )
+            this->socket_ = socket_.incRef();
         }
 
       protected:
@@ -1139,7 +1166,7 @@ namespace YIELD
         yidl::runtime::auto_Buffer buffer;
       };
 
-      typedef yidl::runtime::auto_Object<AIOReadControlBlock> 
+      typedef yidl::runtime::auto_Object<AIOReadControlBlock>
         auto_AIOReadControlBlock;
 
 
@@ -1166,7 +1193,7 @@ namespace YIELD
         yidl::runtime::auto_Buffer buffer;
       };
 
-      typedef yidl::runtime::auto_Object<AIOWriteControlBlock> 
+      typedef yidl::runtime::auto_Object<AIOWriteControlBlock>
         auto_AIOWriteControlBlock;
 
 #if defined(_WIN64)
@@ -1182,7 +1209,7 @@ namespace YIELD
       virtual void aio_write( auto_AIOWriteControlBlock );
       virtual bool bind( auto_SocketAddress to_sockaddr );
       virtual bool close();
-      virtual bool connect( auto_SocketAddress to_sockaddr );      
+      virtual bool connect( auto_SocketAddress to_sockaddr );
       static void destroy();
       virtual bool get_blocking_mode() const;
       int get_domain() const { return domain; }
@@ -1213,12 +1240,12 @@ namespace YIELD
       virtual bool want_read() const;
       virtual bool want_write() const;
       virtual ssize_t write( yidl::runtime::auto_Buffer buffer );
-      virtual ssize_t write( const void* buffer, size_t buffer_len );    
+      virtual ssize_t write( const void* buffer, size_t buffer_len );
 
       virtual ssize_t writev
-      ( 
-        const struct iovec* buffers, 
-        uint32_t buffers_count 
+      (
+        const struct iovec* buffers,
+        uint32_t buffers_count
       );
 
       // yidl::runtime::Object
@@ -1299,61 +1326,61 @@ namespace YIELD
 
       // create( ... ) factory methods throw exceptions
       // hostname can be NULL for INADDR_ANY
-      static yidl::runtime::auto_Object<SocketAddress> 
+      static yidl::runtime::auto_Object<SocketAddress>
       create( const char* hostname )
-      { 
-        return create( hostname, 0 ); 
+      {
+        return create( hostname, 0 );
       }
-
-      static yidl::runtime::auto_Object<SocketAddress> 
-      create
-      ( 
-        const char* hostname, 
-        uint16_t port 
-      ); 
 
       static yidl::runtime::auto_Object<SocketAddress>
       create
-      ( 
+      (
+        const char* hostname,
+        uint16_t port
+      );
+
+      static yidl::runtime::auto_Object<SocketAddress>
+      create
+      (
         const URI& uri
       );
 
 #ifdef _WIN32
       bool as_struct_sockaddr
-      ( 
-        int family, 
-        struct sockaddr*& out_sockaddr, 
-        int32_t& out_sockaddrlen 
+      (
+        int family,
+        struct sockaddr*& out_sockaddr,
+        int32_t& out_sockaddrlen
       );
 #else
       bool as_struct_sockaddr
       (
-        int family, 
-        struct sockaddr*& out_sockaddr, 
-        uint32_t& out_sockaddrlen 
+        int family,
+        struct sockaddr*& out_sockaddr,
+        uint32_t& out_sockaddrlen
       );
 #endif
 
-      bool 
+      bool
       getnameinfo
-      ( 
-        std::string& out_hostname, 
-        bool numeric = true 
+      (
+        std::string& out_hostname,
+        bool numeric = true
       ) const;
 
       bool getnameinfo
-      ( 
-        char* out_hostname, 
-        uint32_t out_hostname_len, 
-        bool numeric = true 
+      (
+        char* out_hostname,
+        uint32_t out_hostname_len,
+        bool numeric = true
       ) const;
 
       uint16_t get_port() const;
       bool operator==( const SocketAddress& ) const;
 
-      bool operator!=( const SocketAddress& other ) const 
-      { 
-        return !operator==( other ); 
+      bool operator!=( const SocketAddress& other ) const
+      {
+        return !operator==( other );
       }
 
       // yidl::runtime::Object
@@ -1374,36 +1401,36 @@ namespace YIELD
       static struct addrinfo* getaddrinfo( const char* hostname, uint16_t port );
     };
 
-  
+
     class SocketFactory : public yidl::runtime::Object
     {
     public:
       virtual auto_Socket createSocket() = 0;
-    };    
+    };
 
 
     class Process : public yidl::runtime::Object
     {
     public:
       // create( ... ) factory methods throw exceptions
-      static yidl::runtime::auto_Object<Process> 
-      create
-      ( 
-        const YIELD::platform::Path& executable_file_path 
-      );
-
-      static yidl::runtime::auto_Object<Process> 
+      static yidl::runtime::auto_Object<Process>
       create
       (
-        int argc, 
-        char** argv 
+        const YIELD::platform::Path& executable_file_path
       );
 
-      static yidl::runtime::auto_Object<Process> 
+      static yidl::runtime::auto_Object<Process>
       create
-      ( 
-        const YIELD::platform::Path& executable_file_path, 
-        const char** null_terminated_argv 
+      (
+        int argc,
+        char** argv
+      );
+
+      static yidl::runtime::auto_Object<Process>
+      create
+      (
+        const YIELD::platform::Path& executable_file_path,
+        const char** null_terminated_argv
       );
 
       auto_Pipe get_stdin() const { return child_stdin; }
@@ -1421,16 +1448,16 @@ namespace YIELD
 
     private:
       Process
-      ( 
+      (
 #ifdef _WIN32
-        void* hChildProcess, 
-        void* hChildThread,       
+        void* hChildProcess,
+        void* hChildThread,
 #else
-        pid_t child_pid, 
+        pid_t child_pid,
 #endif
-        auto_Pipe child_stdin, 
-        auto_Pipe child_stdout, 
-        auto_Pipe child_stderr 
+        auto_Pipe child_stdin,
+        auto_Pipe child_stdout,
+        auto_Pipe child_stderr
       );
 
       ~Process();
@@ -1440,7 +1467,7 @@ namespace YIELD
 #else
       int child_pid;
 #endif
-      auto_Pipe child_stdin, child_stdout, child_stderr;  
+      auto_Pipe child_stdin, child_stdout, child_stderr;
     };
 
     typedef yidl::runtime::auto_Object<Process> auto_Process;
@@ -1456,8 +1483,8 @@ namespace YIELD
         { }
 
         yidl::runtime::auto_Object<TCPSocket> get_accepted_tcp_socket() const
-        { 
-          return accepted_tcp_socket; 
+        {
+          return accepted_tcp_socket;
         }
 
         // yidl::runtime::Object
@@ -1467,7 +1494,7 @@ namespace YIELD
         ExecuteStatus execute();
 
       private:
-        yidl::runtime::auto_Object<TCPSocket> accepted_tcp_socket;      
+        yidl::runtime::auto_Object<TCPSocket> accepted_tcp_socket;
 
 #ifdef _WIN32
         friend class TCPSocket;
@@ -1475,13 +1502,13 @@ namespace YIELD
 #endif
       };
 
-      typedef yidl::runtime::auto_Object<AIOAcceptControlBlock> 
+      typedef yidl::runtime::auto_Object<AIOAcceptControlBlock>
         auto_AIOAcceptControlBlock;
 
 
-      virtual void aio_accept( auto_AIOAcceptControlBlock );    
+      virtual void aio_accept( auto_AIOAcceptControlBlock );
       virtual void aio_connect( auto_AIOConnectControlBlock );
-      // create( ... ) methods return NULL instead of throwing exceptions, 
+      // create( ... ) methods return NULL instead of throwing exceptions,
       // since they're on the critical path of clients and servers
       static yidl::runtime::auto_Object<TCPSocket> create(); // AF_INET6
       static yidl::runtime::auto_Object<TCPSocket> create( int domain );
@@ -1490,9 +1517,9 @@ namespace YIELD
       virtual bool shutdown();
 
       virtual ssize_t writev
-      ( 
-        const struct iovec* buffers, 
-        uint32_t buffers_count 
+      (
+        const struct iovec* buffers,
+        uint32_t buffers_count
       );
 
       // yidl::runtime::Object
@@ -1502,7 +1529,7 @@ namespace YIELD
 #if defined(_WIN64)
       TCPSocket( int domain, uint64_t socket_ );
 #elif defined(_WIN32)
-      TCPSocket( int domain, uint32_t socket_ );      
+      TCPSocket( int domain, uint32_t socket_ );
 #else
       TCPSocket( int domain, int socket_ );
 #endif
@@ -1539,48 +1566,48 @@ namespace YIELD
 #ifdef YIELD_HAVE_OPENSSL
       // create( ... ) factory methods throw exceptions
 
-      static yidl::runtime::auto_Object<SSLContext> 
+      static yidl::runtime::auto_Object<SSLContext>
       create
       (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
         const
 #endif
-        SSL_METHOD* method = SSLv23_client_method() 
+        SSL_METHOD* method = SSLv23_client_method()
       );
 
-      static yidl::runtime::auto_Object<SSLContext> 
+      static yidl::runtime::auto_Object<SSLContext>
       create
-      ( 
+      (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
         const
 #endif
-        SSL_METHOD* method, 
-        const YIELD::platform::Path& pem_certificate_file_path, 
-        const YIELD::platform::Path& pem_private_key_file_path, 
-        const std::string& pem_private_key_passphrase 
+        SSL_METHOD* method,
+        const YIELD::platform::Path& pem_certificate_file_path,
+        const YIELD::platform::Path& pem_private_key_file_path,
+        const std::string& pem_private_key_passphrase
       );
 
-      static yidl::runtime::auto_Object<SSLContext> 
+      static yidl::runtime::auto_Object<SSLContext>
       create
-      ( 
+      (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
         const
 #endif
-        SSL_METHOD* method, 
-        const std::string& pem_certificate_str, 
-        const std::string& pem_private_key_str, 
-        const std::string& pem_private_key_passphrase 
+        SSL_METHOD* method,
+        const std::string& pem_certificate_str,
+        const std::string& pem_private_key_str,
+        const std::string& pem_private_key_passphrase
       );
 
-      static yidl::runtime::auto_Object<SSLContext> 
+      static yidl::runtime::auto_Object<SSLContext>
       create
-      ( 
+      (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
         const
 #endif
-        SSL_METHOD* method, 
-        const YIELD::platform::Path& pkcs12_file_path, 
-        const std::string& pkcs12_passphrase 
+        SSL_METHOD* method,
+        const YIELD::platform::Path& pkcs12_file_path,
+        const std::string& pkcs12_passphrase
       );
 #else
       static yidl::runtime::auto_Object<SSLContext> create();
@@ -1601,13 +1628,13 @@ namespace YIELD
 #endif
       ~SSLContext();
 
-#ifdef YIELD_HAVE_OPENSSL    
+#ifdef YIELD_HAVE_OPENSSL
       static SSL_CTX* createSSL_CTX
-      ( 
+      (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
         const
 #endif
-        SSL_METHOD* method 
+        SSL_METHOD* method
       );
 
       SSL_CTX* ctx;
@@ -1619,14 +1646,14 @@ namespace YIELD
     class SSLSocket : public TCPSocket
     {
     public:
-      // create( ... ) factory methods return NULL 
+      // create( ... ) factory methods return NULL
       // instead of throwing exceptions
       static yidl::runtime::auto_Object<SSLSocket> create( auto_SSLContext );
 
       static yidl::runtime::auto_Object<SSLSocket> create
-      ( 
-        int domain, 
-        auto_SSLContext 
+      (
+        int domain,
+        auto_SSLContext
       );
 
       // yidl::runtime::Object
@@ -1643,14 +1670,14 @@ namespace YIELD
       virtual ssize_t write( const void* buffer, size_t buffer_len );
 
       virtual ssize_t writev
-      ( 
-        const struct iovec* buffers, 
-        uint32_t buffers_count 
+      (
+        const struct iovec* buffers,
+        uint32_t buffers_count
       );
 
       // TCPSocket
       auto_TCPSocket accept();
-      void aio_accept( auto_AIOAcceptControlBlock );    
+      void aio_accept( auto_AIOAcceptControlBlock );
       virtual bool shutdown();
 
     protected:
@@ -1669,7 +1696,7 @@ namespace YIELD
 
     typedef yidl::runtime::auto_Object<SSLSocket> auto_SSLSocket;
 
-    
+
     class SSLSocketFactory : public SocketFactory
     {
     public:
@@ -1714,20 +1741,20 @@ namespace YIELD
     {
     public:
       TracingSocket
-      ( 
-        auto_Socket underlying_socket, 
-        YIELD::platform::auto_Log log 
+      (
+        auto_Socket underlying_socket,
+        YIELD::platform::auto_Log log
       );
-    
+
       // yidl::runtime::Object
-      virtual uint32_t get_type_id() const 
-      { 
-        return underlying_socket->get_type_id(); 
+      virtual uint32_t get_type_id() const
+      {
+        return underlying_socket->get_type_id();
       }
 
-      const char* get_type_name() const 
-      { 
-        return underlying_socket->get_type_name(); 
+      const char* get_type_name() const
+      {
+        return underlying_socket->get_type_name();
       }
 
       // Socket
@@ -1782,7 +1809,7 @@ namespace YIELD
         struct sockaddr_storage* peername;
       };
 
-      typedef yidl::runtime::auto_Object<AIORecvFromControlBlock> 
+      typedef yidl::runtime::auto_Object<AIORecvFromControlBlock>
         auto_AIORecvFromControlBlock;
 
 
@@ -1791,28 +1818,28 @@ namespace YIELD
       static yidl::runtime::auto_Object<UDPSocket> create();
 
       ssize_t recvfrom
-      ( 
-        yidl::runtime::auto_Buffer buffer, 
-        struct sockaddr_storage& peername 
+      (
+        yidl::runtime::auto_Buffer buffer,
+        struct sockaddr_storage& peername
       );
 
       ssize_t recvfrom
-      ( 
-        void* buffer, size_t buffer_len, 
-        struct sockaddr_storage& peername 
+      (
+        void* buffer, size_t buffer_len,
+        struct sockaddr_storage& peername
       );
 
       ssize_t sendto
-      ( 
-        yidl::runtime::auto_Buffer buffer, 
-        auto_SocketAddress peername 
+      (
+        yidl::runtime::auto_Buffer buffer,
+        auto_SocketAddress peername
       );
 
       ssize_t sendto
-      ( 
-        const void* buffer, 
-        size_t buffer_len, 
-        auto_SocketAddress peername 
+      (
+        const void* buffer,
+        size_t buffer_len,
+        auto_SocketAddress peername
       );
 
       // yidl::runtime::Object
@@ -1826,7 +1853,7 @@ namespace YIELD
 
     private:
 #if defined(_WIN64)
-      UDPSocket( int domain, uint64_t socket_ );    
+      UDPSocket( int domain, uint64_t socket_ );
 #elif defined(_WIN32)
       UDPSocket( int domain, uint32_t socket_ );
 #else
@@ -1857,16 +1884,16 @@ namespace YIELD
     class URI : public yidl::runtime::Object
     {
     public:
-      // parse( ... ) factory methods return NULL 
+      // parse( ... ) factory methods return NULL
       // instead of throwing exceptions
       static yidl::runtime::auto_Object<URI> parse( const char* uri );
       static yidl::runtime::auto_Object<URI> parse( const std::string& uri );
 
-      static yidl::runtime::auto_Object<URI> 
+      static yidl::runtime::auto_Object<URI>
       parse
-      ( 
-        const char* uri, 
-        size_t uri_len 
+      (
+        const char* uri,
+        size_t uri_len
       );
 
       // Constructors throw exceptions
@@ -1885,18 +1912,18 @@ namespace YIELD
       unsigned short get_port() const { return port; }
       const std::string& get_resource() const { return resource; }
 
-      const std::multimap<std::string, std::string>& get_query() const 
-      { 
-        return query; 
+      const std::multimap<std::string, std::string>& get_query() const
+      {
+        return query;
       }
 
       std::string get_query_value
-      ( 
-        const std::string& key, 
-        const char* default_query_value = "" 
-      ) const; 
+      (
+        const std::string& key,
+        const char* default_query_value = ""
+      ) const;
 
-      std::multimap<std::string, std::string>::const_iterator 
+      std::multimap<std::string, std::string>::const_iterator
         get_query_values( const std::string& key ) const;
 
       void set_port( unsigned short port ) { this->port = port; }
@@ -1945,16 +1972,16 @@ namespace YIELD
 
 
     template <class InterfaceType>
-    yidl::runtime::auto_Object< ONCRPCClient<InterfaceType> > 
+    yidl::runtime::auto_Object< ONCRPCClient<InterfaceType> >
     ONCRPCClient<InterfaceType>::create
-    (           
+    (
       const URI& absolute_uri,
       uint16_t concurrency_level,
       uint32_t flags,
-      YIELD::platform::auto_Log log, 
+      YIELD::platform::auto_Log log,
       const YIELD::platform::Time& operation_timeout,
       uint8_t reconnect_tries_max,
-      auto_SSLContext ssl_context 
+      auto_SSLContext ssl_context
     )
     {
       auto_SocketAddress peername = SocketAddress::create( absolute_uri );
@@ -1976,9 +2003,9 @@ namespace YIELD
         socket_factory = new TCPSocketFactory;
 
       return new ONCRPCClient<InterfaceType>
-      ( 
-        concurrency_level, flags, log, operation_timeout, 
-        peername, reconnect_tries_max, socket_factory 
+      (
+        concurrency_level, flags, log, operation_timeout,
+        peername, reconnect_tries_max, socket_factory
       );
     }
   };

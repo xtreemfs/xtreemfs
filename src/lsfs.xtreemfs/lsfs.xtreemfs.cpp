@@ -1,5 +1,31 @@
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+// Copyright (c) 2010 Minor Gordon
+// All rights reserved
+// 
+// This source file is part of the XtreemFS project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the XtreemFS project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #include "xtreemfs/main.h"
 using namespace org::xtreemfs::interfaces;
@@ -14,8 +40,8 @@ namespace lsfs_xtreemfs
   public:
     Main()
       : xtreemfs::Main
-        ( 
-          "lsfs.xtreemfs", 
+        (
+          "lsfs.xtreemfs",
           "list volumes or detailed information on one volume",
           "[oncrpc://]<dir host>[:port][/volume_name]"
         )
@@ -41,7 +67,7 @@ namespace lsfs_xtreemfs
         (
           ServiceSet::const_iterator service_i= services.begin();
           service_i != services.end();
-          ++service_i 
+          ++service_i
         )
         {
            if ( ( *service_i ).get_name() == volume_name )
@@ -63,7 +89,7 @@ namespace lsfs_xtreemfs
                ++data_i
              )
              {
-               std::cout << ( *data_i ).first << ": " << 
+               std::cout << ( *data_i ).first << ": " <<
                             ( *data_i ).second << std::endl;
              }
            }
@@ -75,7 +101,7 @@ namespace lsfs_xtreemfs
         (
           ServiceSet::const_iterator service_i = services.begin();
           service_i != services.end();
-          ++service_i 
+          ++service_i
         )
         {
           std::cout << ( *service_i ).get_name() << " -> " <<

@@ -49,7 +49,7 @@ except ImportError:
 
 from yidl.compiler.idl_parser import parseIDL
 from yidl.generators import generate_cpp, generate_proj, generate_SConscript, generate_vcproj
-from yidl.utilities import format_src, pad, writeGeneratedFile 
+from yidl.utilities import format_src, pad, write_file 
 
 
 # Copy yidl source and headers into share/
@@ -79,16 +79,21 @@ for interface_idl_file_name in os.listdir( INTERFACES_DIR_PATH ):
 
 
 # Add copyright notices to the source, strip white space on the right        
-format_src( "XtreemFS", 
-            src_dir_paths=( 
-                            os.path.join( XTREEMFS_DIR_PATH, "include" ),
-                            os.path.join( XTREEMFS_DIR_PATH, "src", "libxtreemfs" ), 
-                            os.path.join( XTREEMFS_DIR_PATH, "src", "lsfs.xtreemfs" ),
-                            os.path.join( XTREEMFS_DIR_PATH, "src", "mkfs.xtreemfs" ),
-                            os.path.join( XTREEMFS_DIR_PATH, "src", "mount.xtreemfs" ),
-                            os.path.join( XTREEMFS_DIR_PATH, "src", "rmfs.xtreemfs" ),
-                           ),
-            start_year=2009 )
+format_src( 
+    author="Minor Gordon",
+    project="XtreemFS", 
+    #force=True,
+    src_paths=( 
+                os.path.join( XTREEMFS_DIR_PATH, "include" ),
+                os.path.join( XTREEMFS_DIR_PATH, "include", "xtreemfs" ),                        
+                os.path.join( XTREEMFS_DIR_PATH, "src", "libxtreemfs" ),
+                os.path.join( XTREEMFS_DIR_PATH, "src", "lsfs.xtreemfs" ),
+                os.path.join( XTREEMFS_DIR_PATH, "src", "mkfs.xtreemfs" ),
+                os.path.join( XTREEMFS_DIR_PATH, "src", "mount.xtreemfs" ),
+                os.path.join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs" ),
+                os.path.join( XTREEMFS_DIR_PATH, "src", "rmfs.xtreemfs" ),
+              )
+)
 
 
 # Generate project files
@@ -229,7 +234,7 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
 
         out += self.getClassFooter()
                 
-        writeGeneratedFile( self.getFilePath(), out )            
+        write_file( self.getFilePath(), out )            
 
         for operation in self.getOperations():
             operation.generate()

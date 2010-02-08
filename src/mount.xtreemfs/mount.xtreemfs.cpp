@@ -1,5 +1,31 @@
-// Copyright 2009-2010 Minor Gordon.
-// This source comes from the XtreemFS project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+// Copyright (c) 2010 Minor Gordon
+// All rights reserved
+// 
+// This source file is part of the XtreemFS project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the XtreemFS project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #include "xtreemfs/main.h"
 using namespace xtreemfs;
@@ -23,93 +49,93 @@ namespace mount_xtreemfs
   public:
     Main()
       : xtreemfs::Main
-        ( 
-          "mount.xtreemfs", 
-          "mount an XtreemFS volume", 
-          "[oncrpc://]<dir host>[:port]/<volume name> <mount point>" 
+        (
+          "mount.xtreemfs",
+          "mount an XtreemFS volume",
+          "[oncrpc://]<dir host>[:port]/<volume name> <mount point>"
         )
     {
       direct_io = false;
 
       addOption
-      ( 
-        MOUNT_XTREEMFS_OPTION_FOREGROUND, 
-        "-f", 
-        "--foreground" 
+      (
+        MOUNT_XTREEMFS_OPTION_FOREGROUND,
+        "-f",
+        "--foreground"
       );
       foreground = false;
 
       addOption
-      ( 
-        MOUNT_XTREEMFS_OPTION_FUSE_OPTION, 
-        "-o", 
-        NULL, 
-        "<fuse_option>" 
+      (
+        MOUNT_XTREEMFS_OPTION_FUSE_OPTION,
+        "-o",
+        NULL,
+        "<fuse_option>"
       );
 
       addOption
-      ( 
-        MOUNT_XTREEMFS_OPTION_METADATA_CACHE, 
-        "--metadata-cache" 
+      (
+        MOUNT_XTREEMFS_OPTION_METADATA_CACHE,
+        "--metadata-cache"
       );
       metadata_cache = false;
 
 #if FUSE_MAJOR_VERSION > 2 || ( FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 8 )
       addOption
-      ( 
-        MOUNT_XTREEMFS_OPTION_NO_BIG_WRITES, 
-        "--no-big-writes" 
+      (
+        MOUNT_XTREEMFS_OPTION_NO_BIG_WRITES,
+        "--no-big-writes"
       );
       no_big_writes = false;
 #endif
 
       addOption
-      ( 
-        MOUNT_XTREEMFS_OPTION_TRACE_DATA_CACHE, 
-        "--trace-data-cache" 
+      (
+        MOUNT_XTREEMFS_OPTION_TRACE_DATA_CACHE,
+        "--trace-data-cache"
       );
       trace_data_cache = false;
 
       addOption
-      ( 
-        MOUNT_XTREEMFS_OPTION_TRACE_FILE_IO, 
-        "--trace-file-io" 
+      (
+        MOUNT_XTREEMFS_OPTION_TRACE_FILE_IO,
+        "--trace-file-io"
       );
       trace_file_io = false;
 
       addOption
-      ( 
-        MOUNT_XTREEMFS_OPTION_TRACE_METADATA_CACHE, 
-        "--trace-metadata-cache" 
+      (
+        MOUNT_XTREEMFS_OPTION_TRACE_METADATA_CACHE,
+        "--trace-metadata-cache"
       );
       trace_metadata_cache = false;
 
       addOption
-      ( 
-        MOUNT_XTREEMFS_OPTION_TRACE_VOLUME_OPERATIONS, 
-        "--trace-volume-operations" 
+      (
+        MOUNT_XTREEMFS_OPTION_TRACE_VOLUME_OPERATIONS,
+        "--trace-volume-operations"
       );
       trace_volume_operations = false;
 
       addOption
-      ( 
-        MOUNT_XTREEMFS_OPTION_VIVALDI_COORDINATES_FILE_PATH, 
-        "--vivaldi-coordinates-file-path", 
-        NULL, 
-        "path to Vivaldi coordinates file produced by xtfs_vivaldi" 
+      (
+        MOUNT_XTREEMFS_OPTION_VIVALDI_COORDINATES_FILE_PATH,
+        "--vivaldi-coordinates-file-path",
+        NULL,
+        "path to Vivaldi coordinates file produced by xtfs_vivaldi"
       );
 
       addOption
-      ( 
-        MOUNT_XTREEMFS_OPTION_WRITE_BACK_CACHE, 
-        "--write-back-cache" 
+      (
+        MOUNT_XTREEMFS_OPTION_WRITE_BACK_CACHE,
+        "--write-back-cache"
       );
       write_back_cache = false;
 
       addOption
-      ( 
-        MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_CACHE, 
-        "--write-through-cache" 
+      (
+        MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_CACHE,
+        "--write-through-cache"
       );
       write_through_cache = false;
     }
@@ -152,10 +178,10 @@ namespace mount_xtreemfs
     // YIELD::Main
     int _main( int argc, char** argv )
     {
-      // Make sure the log level is set high enough for any 
+      // Make sure the log level is set high enough for any
       // --trace options to show up
       if ( get_log_level() >= YIELD::platform::Log::LOG_INFO )
-        trace_volume_operations = true;              
+        trace_volume_operations = true;
       if ( get_log_level() >= YIELD::platform::Log::LOG_DEBUG )
       {
         trace_data_cache = true;
@@ -164,10 +190,10 @@ namespace mount_xtreemfs
       }
 
       if ( get_log_level() < YIELD::platform::Log::LOG_INFO &&
-           ( trace_data_cache || 
-             trace_file_io || 
-             trace_metadata_cache || 
-             get_proxy_flags() != 0 || 
+           ( trace_data_cache ||
+             trace_file_io ||
+             trace_metadata_cache ||
+             get_proxy_flags() != 0 ||
              trace_volume_operations ) )
         get_log()->set_level( YIELD::platform::Log::LOG_INFO );
 
@@ -178,86 +204,86 @@ namespace mount_xtreemfs
       if ( trace_file_io )
         volume_flags |= Volume::VOLUME_FLAG_TRACE_FILE_IO;
 
-      // Create the XtreemFS volume in the parent as well as the child process 
-      // so that the parent will fail on most common errors 
+      // Create the XtreemFS volume in the parent as well as the child process
+      // so that the parent will fail on most common errors
       // (like failed connections) before the child is created
-      YIELD::platform::auto_Volume volume = 
+      YIELD::platform::auto_Volume volume =
         Volume::create
-        ( 
-          *dir_uri, 
-          volume_name, 
-          volume_flags, 
-          get_log(), 
-          get_proxy_flags(), 
-          get_operation_timeout(), 
-          DIRProxy::RECONNECT_TRIES_MAX_DEFAULT, 
-          get_proxy_ssl_context(), 
-          vivaldi_coordinates_file_path 
+        (
+          *dir_uri,
+          volume_name,
+          volume_flags,
+          get_log(),
+          get_proxy_flags(),
+          get_operation_timeout(),
+          DIRProxy::RECONNECT_TRIES_MAX_DEFAULT,
+          get_proxy_ssl_context(),
+          vivaldi_coordinates_file_path
         ).release();
 
       if ( foreground )
       {
         if ( direct_io )
-          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << 
+          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) <<
             get_program_name() << ": enabling FUSE direct I/O.";
 
         // Stack volumes
         if ( metadata_cache )
         {
           //volume = new yieldfs::MetadataCachingVolume
-          //( 
-          //  trace_metadata_cache ? get_log() : 
-          //  NULL, 
-          //  5, 
-          //  volume 
+          //(
+          //  trace_metadata_cache ? get_log() :
+          //  NULL,
+          //  5,
+          //  volume
           //);
 
-          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << 
+          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) <<
             get_program_name() << ": caching metadata.";
         }
 
         if ( write_back_cache )
         {
           //volume = new yieldfs::WriteBackCachingVolume
-          //( 
-          //  256 * 1024 * 1024, 
-          //  5000, 
+          //(
+          //  256 * 1024 * 1024,
+          //  5000,
           //  trace_data_cache ? get_log() : NULL,
           //  volume
           //);
 
-          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << 
+          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) <<
             get_program_name() << ": caching file reads.";
         }
         else if ( write_through_cache )
         {
           //volume = new yieldfs::WriteThroughCachingVolume
-          //( 
+          //(
           //  trace_data_cache ? get_log() : NULL,
           //  volume
           //);
 
-          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << 
+          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) <<
             get_program_name() << ": caching file writes.";
         }
 
-        if ( trace_volume_operations && 
+        if ( trace_volume_operations &&
              get_log_level() >= YIELD::platform::Log::LOG_INFO )
         {
           volume = new yieldfs::TracingVolume( get_log(), volume );
 
-          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << 
+          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) <<
             get_program_name() << ": tracing volume operations.";
         }
 
         uint32_t fuse_flags = 0;
         if ( direct_io )
           fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
-        if ( trace_volume_operations && 
+        if ( trace_volume_operations &&
              get_log_level() >= YIELD::platform::Log::LOG_INFO )
           fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
 
-        std::auto_ptr<yieldfs::FUSE> 
+        std::auto_ptr<yieldfs::FUSE>
           fuse( new yieldfs::FUSE( volume, fuse_flags ) );
 
 #ifdef _WIN32
@@ -265,7 +291,7 @@ namespace mount_xtreemfs
 #else
         std::vector<char*> fuse_argvv;
         fuse_argvv.push_back( argv[0] );
-        if ( ( fuse_flags & yieldfs::FUSE::FUSE_FLAG_DEBUG ) == 
+        if ( ( fuse_flags & yieldfs::FUSE::FUSE_FLAG_DEBUG ) ==
              yieldfs::FUSE::FUSE_FLAG_DEBUG )
           fuse_argvv.push_back( "-d" );
         fuse_argvv.push_back( "-o" );
@@ -277,11 +303,11 @@ namespace mount_xtreemfs
           fuse_o_args.append( ",big_writes" );
 #endif
         fuse_argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
-        get_log()->getStream( YIELD::platform::Log::LOG_INFO ) << 
-            get_program_name() << ": passing -o " << fuse_o_args << 
+        get_log()->getStream( YIELD::platform::Log::LOG_INFO ) <<
+            get_program_name() << ": passing -o " << fuse_o_args <<
             " to FUSE.";
         fuse_argvv.push_back( NULL );
-        struct fuse_args fuse_args_ = 
+        struct fuse_args fuse_args_ =
           FUSE_ARGS_INIT( fuse_argvv.size() - 1 , &fuse_argvv[0] );
 
         return fuse->main( fuse_args_, mount_point.c_str() );
@@ -311,15 +337,15 @@ namespace mount_xtreemfs
         child_argvv.push_back( NULL );
 
 
-        YIELD::ipc::auto_Process child_process = 
+        YIELD::ipc::auto_Process child_process =
           YIELD::ipc::Process::create
-          ( 
-            argv[0], 
-            const_cast<const char**>( &child_argvv[0] ) 
+          (
+            argv[0],
+            const_cast<const char**>( &child_argvv[0] )
           );
 
         if ( child_process != NULL )
-        { 
+        {
           int child_ret = 0;
 #ifndef _WIN32
           std::string xtreemfs_url;
@@ -327,16 +353,16 @@ namespace mount_xtreemfs
           for ( uint8_t poll_i = 0; poll_i < 10; poll_i++ )
           {
             if ( child_process->poll( &child_ret ) )
-              return child_ret; // Child failed 
+              return child_ret; // Child failed
 #ifndef _WIN32
-            else if 
-            ( 
+            else if
+            (
               YIELD::platform::Volume().getxattr
-              ( 
-                mount_point, 
-                "xtreemfs.url", 
-                xtreemfs_url 
-              ) 
+              (
+                mount_point,
+                "xtreemfs.url",
+                xtreemfs_url
+              )
             )
               return 0; // Child started successfully
 #endif
@@ -346,10 +372,10 @@ namespace mount_xtreemfs
 
           return 0; // Assume the child started successfully
         }
-        else 
+        else
         {
-          get_log()->getStream( YIELD::platform::Log::LOG_ERR ) << 
-            get_program_name() << ": error creating child process: " << 
+          get_log()->getStream( YIELD::platform::Log::LOG_ERR ) <<
+            get_program_name() << ": error creating child process: " <<
             YIELD::platform::Exception() << ".";
           return 1;
         }
@@ -439,8 +465,8 @@ namespace mount_xtreemfs
       }
 
       throw YIELD::platform::Exception
-      ( 
-        "must specify dir_host/volume name and mount point" 
+      (
+        "must specify dir_host/volume name and mount point"
       );
     }
   };
