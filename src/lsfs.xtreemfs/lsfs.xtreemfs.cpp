@@ -51,6 +51,7 @@ namespace lsfs_xtreemfs
     YIELD::ipc::auto_URI dir_uri;
     std::string volume_name;
 
+
     // YIELD::Main
     int _main( int, char** )
     {
@@ -115,14 +116,21 @@ namespace lsfs_xtreemfs
 
     void parseFiles( int files_count, char** files )
     {
-      if ( files_count >= 1 )
+      if ( files_count == 1 )
       {
         dir_uri = parseURI( files[0] );
         if ( dir_uri->get_resource().size() > 1 )
           volume_name = dir_uri->get_resource().c_str() + 1;
       }
+      else if ( files_count == 0 )
+        throw YIELD::platform::Exception( "must specify a DIR[/volume] URI" );
       else
-        throw YIELD::platform::Exception( "must specify an MRC URI" );
+      {
+        throw YIELD::platform::Exception
+        (
+          "extra parameters after the DIR[/volume] URI" 
+        );
+      }
     }
   };
 };

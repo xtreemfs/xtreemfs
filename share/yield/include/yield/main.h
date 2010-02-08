@@ -87,7 +87,12 @@ namespace YIELD
 
       int ret = main( static_cast<int>( argvv.size() ), &argvv[0] );
 
-      for ( std::vector<char*>::size_type argvv_i = 1; argvv_i < argvv.size(); argvv_i++ )
+      for 
+      ( 
+        std::vector<char*>::size_type argvv_i = 1; 
+        argvv_i < argvv.size(); 
+        argvv_i++
+      )
         delete [] argvv[argvv_i];
 
       return ret;
@@ -101,21 +106,41 @@ namespace YIELD
       try
       {
         std::vector<CSimpleOpt::SOption> simpleopt_options;
-        for ( std::vector<Option>::const_iterator option_i = options.begin(); option_i != options.end(); option_i++ )
+        for 
+        ( 
+          std::vector<Option>::const_iterator option_i = options.begin();
+          option_i != options.end(); 
+          option_i++ 
+        )
         {
           const Option& option = *option_i;
-          CSimpleOpt::SOption short_simpleopt_option = { option.get_id(), option.get_short_arg(), option.get_default_values() ? SO_REQ_SEP : SO_NONE };
+          CSimpleOpt::SOption short_simpleopt_option 
+            = 
+            { 
+              option.get_id(), 
+              option.get_short_arg(), 
+              option.get_default_values() ? SO_REQ_SEP : SO_NONE 
+            };
           simpleopt_options.push_back( short_simpleopt_option );
+
           if ( option.get_long_arg() )
           {
-            CSimpleOpt::SOption long_simpleopt_option = { option.get_id(), option.get_long_arg(), option.get_default_values() ? SO_REQ_SEP : SO_NONE };
+            CSimpleOpt::SOption long_simpleopt_option 
+              = 
+              { 
+                option.get_id(), 
+                option.get_long_arg(), 
+                option.get_default_values() ? SO_REQ_SEP : SO_NONE 
+              };
             simpleopt_options.push_back( long_simpleopt_option );
           }
         }
+
         CSimpleOpt::SOption sentinel_simpleopt_option = SO_END_OF_OPTIONS;
         simpleopt_options.push_back( sentinel_simpleopt_option );
 
-        // Make copies of the strings in argv so that SimpleOpt can punch holes in them
+        // Make copies of the strings in argv so that 
+        // SimpleOpt can punch holes in them
         std::vector<char*> argvv( argc );
         for ( int arg_i = 0; arg_i < argc; arg_i++ )
         {
@@ -128,21 +153,63 @@ namespace YIELD
 
         while ( args.Next() )
         {
-          if ( args.LastError() == SO_SUCCESS )
+          switch ( args.LastError() )
           {
-            if ( args.OptionId() == 0 )
+            case SO_SUCCESS:
             {
-              printUsage();
-              return 0;
+              if ( args.OptionId() == 0 )
+              {
+                printUsage();
+                return 0;
+              }
+              else
+                parseOption( args.OptionId(), args.OptionArg() );
             }
-            else
-              parseOption( args.OptionId(), args.OptionArg() );
+            break;
+
+            case SO_OPT_INVALID: // Unregistered option
+            {
+              std::cerr << program_name << ": unknown option: " <<
+                           args.OptionText() << std::endl;
+              return 1;
+            }
+            break;
+
+            case SO_ARG_INVALID: // Option doesn't take an argument
+            {
+              std::cerr << program_name << ": " << args.OptionText() << 
+                           " does not take an argument." << std::endl;
+              return 1;
+            }
+            break;
+
+            case SO_ARG_MISSING: // Option missing an argument
+            {
+              std::cerr << program_name << ": " << args.OptionText() << 
+                           " requires an argument." << std::endl;
+              return 1;
+            }
+            break;
+
+            case SO_ARG_INVALID_DATA: // Argument looks like another option
+            {
+              std::cerr << program_name << ": " << args.OptionText() << 
+                           " requires an argument, but you appear to have"
+                           << " passed another option." << std::endl;
+              return 1;
+            }
+            break;
           }
         }
 
         parseFiles( args.FileCount(), args.Files() );
 
-        for ( std::vector<char*>::iterator arg_i = argvv.begin(); arg_i != argvv.end(); arg_i++ )
+        for 
+        ( 
+          std::vector<char*>::iterator arg_i = argvv.begin(); 
+          arg_i != argvv.end(); 
+          arg_i++ 
+        )
           delete [] *arg_i;
         argvv.clear();
 
@@ -196,10 +263,11 @@ namespace YIELD
         for ( int arg_i = 1; arg_i < argc; arg_i++ )
           argvv.push_back( argv[arg_i] );
 
-        // Pass the original argv to _main instead of the copies SimpleOpt punched holes in
+        // Pass the original argv to _main instead of the copies 
+        // SimpleOpt punched holes in
         ret = _main( static_cast<int>( argvv.size() ), &argvv[0] );
       }
-      catch ( YIELD::platform::Exception& exc ) // Don't catch std::exceptions like bad_alloc
+      catch ( YIELD::platform::Exception& exc ) 
       {
         std::cerr << exc.what() << std::endl;
 
@@ -208,6 +276,7 @@ namespace YIELD
         else
           ret = 1;
       }
+      // Don't catch std::exceptions like bad_alloc
 
       // TimerQueue::destroyDefaultTimerQueue();
 
@@ -215,15 +284,29 @@ namespace YIELD
     }
 
   protected:
-    Main( const char* program_name, const char* program_description = NULL, const char* files_usage = NULL )
-      : program_name( program_name ), program_description( program_description ), files_usage( files_usage )
+    Main
+    ( 
+      const char* program_name, 
+      const char* program_description = NULL, 
+      const char* files_usage = NULL 
+    )
+      : program_name( program_name ), 
+        program_description( program_description ), 
+        files_usage( files_usage )
     {
       addOption( 0, "-h", "--help" );
     }
 
     virtual ~Main() { }
 
-    void addOption( int id, const char* short_arg, const char* long_arg = NULL, const char* default_values = NULL )
+    void 
+    addOption
+    ( 
+      int id, 
+      const char* short_arg, 
+      const char* long_arg = NULL, 
+      const char* default_values = NULL 
+    )
     {
       options.push_back( Option( id, short_arg, long_arg, default_values ) );
     }
@@ -253,8 +336,14 @@ namespace YIELD
         std::cout << " " << files_usage;
       std::cout << std::endl;
       std::cout << std::endl;
+
       std::sort( options.begin(), options.end() );
-      for ( std::vector<Option>::const_iterator option_i = options.begin(); option_i != options.end(); option_i++ )
+      for 
+      ( 
+        std::vector<Option>::const_iterator option_i = options.begin();
+        option_i != options.end(); 
+        option_i++ 
+      )
       {
         const Option& option = *option_i;
         std::cout << "  " << option.get_short_arg();
@@ -263,8 +352,9 @@ namespace YIELD
         if ( option.get_default_values() )
           std::cout << "=" << option.get_default_values();
         std::cout << std::endl;
-       }
-       std::cout << std::endl;
+      }
+
+      std::cout << std::endl;
     }
 
     // Methods for subclasses to override
@@ -276,12 +366,20 @@ namespace YIELD
     const char *program_name, *program_description, *files_usage;
 
 
-
     class Option
     {
     public:
-      Option( int id, const char* short_arg, const char* long_arg, const char* default_values )
-        : id( id ), short_arg( short_arg ), long_arg( long_arg ), default_values( default_values )
+      Option
+      ( 
+        int id, 
+        const char* short_arg, 
+        const char* long_arg, 
+        const char* default_values 
+      )
+        : id( id ), 
+          short_arg( short_arg ), 
+          long_arg( long_arg ), 
+          default_values( default_values )
       { }
 
       int get_id() const { return id; }

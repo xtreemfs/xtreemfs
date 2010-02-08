@@ -140,6 +140,7 @@ namespace mkfs_xtreemfs
     uint32_t striping_policy_width;
     std::string volume_name;
 
+
     // YIELD::Main
     int _main( int, char** )
     {
@@ -365,13 +366,22 @@ namespace mkfs_xtreemfs
 
     void parseFiles( int files_count, char** files )
     {
-      if ( files_count >= 1 )
+      if ( files_count == 1 )
         dir_or_mrc_uri = parseVolumeURI( files[0], volume_name );
-      else
+      else if ( files_count == 0 )
+      {
         throw YIELD::platform::Exception
         (
-          "must specify the DIR or MRC host and volume name as a URI"
+          "must specify the <DIR|MRC>/volume URI"
         );
+      }
+      else 
+      {
+        throw YIELD::platform::Exception
+        ( 
+          "extra parameters after the <DIR|MRC>/volume URI" 
+        );
+      }
     }
   };
 };

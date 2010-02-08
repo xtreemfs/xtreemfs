@@ -28,6 +28,7 @@
 
 
 #include "xtreemfs/main.h"
+using namespace xtreemfs;
 
 
 namespace rmfs_xtreemfs
@@ -39,8 +40,8 @@ namespace rmfs_xtreemfs
       : xtreemfs::Main
         (
           "rmfs.xtreemfs",
-          "remove a volume from a specified MRC",
-          "[oncrpc://]<mrc host>[:port]/<volume name>"
+          "remove a volume",
+          "[oncrpc://]<dir host>[:port]/<volume name>"
         )
     {
       addOption
@@ -58,8 +59,7 @@ namespace rmfs_xtreemfs
       RMFS_XTREEMFS_OPTION_PASSWORD = 20
     };
 
-
-    YIELD::ipc::auto_URI mrc_uri;
+    YIELD::ipc::auto_URI dir_uri;
     std::string password;
     std::string volume_name;
 
@@ -67,20 +67,36 @@ namespace rmfs_xtreemfs
     // YIELD::Main
     int _main( int, char** )
     {
-      createMRCProxy( *mrc_uri, password.c_str() )
-        ->xtreemfs_rmvol( volume_name );
+      auto_DIRProxy dir_proxy = createDIRProxy( *dir_uri );
+      
+      YIELD::ipc::auto_URI mrc_uri 
+        = dir_proxy->getVolumeURIFromVolumeName( volume_name );
+      
+      auto_MRCProxy mrc_proxy = createMRCProxy( *mrc_uri, password.c_str() );
+
+      mrc_proxy->xtreemfs_rmvol( volume_name );
+
       return 0;
     }
 
     void parseFiles( int files_count, char** files )
     {
-      if ( files_count >= 1 )
-        mrc_uri = parseVolumeURI( files[0], volume_name );
-      else
+      if ( files_count == 1 )
+        dir_uri = parseVolumeURI( files[0], volume_name );
+      else if ( files_count == 0 )
+      {
         throw YIELD::platform::Exception
         (
-          "must specify the MRC and volume name as a URI"
+          "must specify the DIR/volume URI"
         );
+      }
+      else
+      {
+        throw YIELD::platform::Exception
+        (
+          "extra parameters after the DIR/volume URI"
+        );
+      }
     }
 
     void parseOption( int id, char* arg )

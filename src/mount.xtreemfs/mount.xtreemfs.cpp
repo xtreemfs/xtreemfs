@@ -457,17 +457,25 @@ namespace mount_xtreemfs
 
     void parseFiles( int file_count, char** files )
     {
-      if ( file_count >= 2 )
+      if ( file_count == 2 )
       {
         dir_uri = parseVolumeURI( files[0], volume_name );
         mount_point = files[1];
-        return;
       }
-
-      throw YIELD::platform::Exception
-      (
-        "must specify dir_host/volume name and mount point"
-      );
+      else if ( file_count < 2 )
+      {
+        throw YIELD::platform::Exception
+        (
+          "must specify a DIR/volume URI and a mount point"
+        );
+      }
+      else
+      {
+        throw YIELD::platform::Exception
+        (
+          "extra parameters after the DIR/volume URI and mount point"
+        );
+      }
     }
   };
 };
