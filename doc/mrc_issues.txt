@@ -1,3 +1,0 @@
-1. To ensure that the log file is synced onto the HD and a power failure/crash
-after sync does not destroy the data, the write cache of the hard drive must be
-disabled. This cache cannot be by-passed by software.
