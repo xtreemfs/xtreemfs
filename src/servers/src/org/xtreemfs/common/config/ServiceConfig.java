@@ -114,6 +114,7 @@ public class ServiceConfig extends Config {
         this.debugCategories = this.readCategories("debug.categories");
         
         this.hostname = readOptionalString("hostname", "");
+        this.hostname = this.hostname.trim();
 
         this.useGRIDSSLmode = this.readOptionalBoolean("ssl.grid_ssl", false);
 
