@@ -189,7 +189,7 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
         version = self.getTag()            
         out = """\
 %(class_header)s%(constants)s
-    public static int getProg() { return %(prog)u; }
+    public static long getProg() { return %(prog)ul; }
     public static int getVersion() { return %(version)u; }
 """ % locals()
 
