@@ -19,7 +19,7 @@ public class OSDInterface
     public static final int ONCRPCU_PORT_DEFAULT = 32640;
 
 
-    public static long getProg() { return 2546883325l; }
+    public static int getProg() { return 2546883325; }
     public static int getVersion() { return 2010012413; }
 
     public static ONCRPCException createException( int accept_stat ) throws Exception
