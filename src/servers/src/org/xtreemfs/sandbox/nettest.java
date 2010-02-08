@@ -6,6 +6,7 @@ package org.xtreemfs.sandbox;
 
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
@@ -13,7 +14,18 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.util.OutputUtils;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.NettestInterface.send_bufferRequest;
+import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.Replica;
+import org.xtreemfs.interfaces.ReplicaSet;
+import org.xtreemfs.interfaces.SnapConfig;
+import org.xtreemfs.interfaces.StringSet;
+import org.xtreemfs.interfaces.StripingPolicy;
+import org.xtreemfs.interfaces.StripingPolicyType;
+import org.xtreemfs.interfaces.XCap;
+import org.xtreemfs.interfaces.XLocSet;
+import org.xtreemfs.osd.client.OSDClient;
 import org.xtreemfs.utils.NettestClient;
 
 /**
@@ -28,8 +40,8 @@ public class nettest {
     public static void main(String[] args) {
         // TODO code application logic here
 
-        if (args.length != 4) {
-            System.out.println("usage: nettest <block size in kB> <num packets> <hostname> <port>\n");
+        if (args.length < 4) {
+            System.out.println("usage: nettest <block size in kB> <num packets> <hostname> <port> [osd UUID]\n");
             System.exit(1);
         }
 
@@ -42,6 +54,8 @@ public class nettest {
             final int numPackets = Integer.parseInt(args[1]);
             final String hostname = args[2];
             final int port = Integer.parseInt(args[3]);
+            final boolean dummyWrites = args.length == 5;
+            final String uuid = (dummyWrites) ? args[4]: "";
 
             InetSocketAddress srv = new InetSocketAddress(hostname, port);
 
@@ -51,18 +65,46 @@ public class nettest {
             rpcClient.waitForStartup();
 
             NettestClient ntC = new NettestClient(rpcClient, srv);
+            OSDClient osdC = new OSDClient(rpcClient);
 
             System.out.println("starting " + numPackets + " pings...");
             final long tStart = System.currentTimeMillis();
 
-            for (int i = 0; i < numPackets; i++) {
-                ReusableBuffer rb = BufferPool.allocate(blockSize);
-                rb.limit(rb.capacity());
+            if (dummyWrites) {
 
-                RPCResponse r = ntC.xtreemfs_nettest_send_buffer(null, rb);
-                r.get();
-                r.freeBuffers();
-                System.out.print(".");
+                XLocSet xloc = new XLocSet();
+                ReplicaSet rset = new ReplicaSet();
+                StringSet uuids = new StringSet();
+                uuids.add(uuid);
+                Replica repl = new Replica(uuids, 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, blockSize, 1));
+                rset.add(repl);
+                xloc.setReplicas(rset);
+                FileCredentials fcred = new FileCredentials(new XCap(0, "yagga", 0, 0, "ABCDEF:123", false, "", 1, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0),
+                        xloc);
+
+                for (int i = 0; i < numPackets; i++) {
+
+                    ReusableBuffer rb = BufferPool.allocate(blockSize);
+                    rb.limit(rb.capacity());
+
+                    ObjectData odata = new ObjectData(0, false, 0, rb);
+
+                    RPCResponse r = osdC.write(srv,"ABCDEF:123", fcred, (long)i, 0, 0, 0, odata);
+                    r.get();
+                    r.freeBuffers();
+                    System.out.print(".");
+                }
+            } else {
+                for (int i = 0; i < numPackets; i++) {
+
+                    ReusableBuffer rb = BufferPool.allocate(blockSize);
+                    rb.limit(rb.capacity());
+
+                    RPCResponse r = ntC.xtreemfs_nettest_send_buffer(null, rb);
+                    r.get();
+                    r.freeBuffers();
+                    System.out.print(".");
+                }
             }
             System.out.println("");
 
