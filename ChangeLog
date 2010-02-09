@@ -100,3 +100,6 @@
 
 22-JAN-2010
     * added client support for Fedora 12
+9-FEB-2010
+    * when deciding which OSD to contact to recalculate their position, nodes now choose
+      more frequently the OSDs that are closer.

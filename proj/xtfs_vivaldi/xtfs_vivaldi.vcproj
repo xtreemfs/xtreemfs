@@ -172,6 +172,10 @@
     RelativePath="..\..\src\xtfs_vivaldi\xtfs_vivaldi.cpp"
     >
 </File>
+<File
+    RelativePath="..\..\src\xtfs_vivaldi\zipf_generator.cpp"
+    >
+</File>
 
         </Filter>
     </Files>

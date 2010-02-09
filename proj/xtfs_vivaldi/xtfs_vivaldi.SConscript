@@ -84,4 +84,5 @@ for lib in ["xtreemfs"]:
 
 build_env.Program( "../../bin/xtfs_vivaldi", (
     r"../../src/xtfs_vivaldi/vivaldi_node.cpp",
-    r"../../src/xtfs_vivaldi/xtfs_vivaldi.cpp" ) )
+    r"../../src/xtfs_vivaldi/xtfs_vivaldi.cpp",
+    r"../../src/xtfs_vivaldi/zipf_generator.cpp" ) )
