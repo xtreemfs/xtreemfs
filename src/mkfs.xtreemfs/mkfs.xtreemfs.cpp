@@ -375,11 +375,11 @@ namespace mkfs_xtreemfs
           "must specify the <DIR|MRC>/volume URI"
         );
       }
-      else 
+      else
       {
         throw YIELD::platform::Exception
-        ( 
-          "extra parameters after the <DIR|MRC>/volume URI" 
+        (
+          "extra parameters after the <DIR|MRC>/volume URI"
         );
       }
     }

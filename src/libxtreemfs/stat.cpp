@@ -41,64 +41,56 @@ using namespace xtreemfs;
 #endif
 
 
-Stat::Stat( const YIELD::platform::Stat& stbuf)
-  : YIELD::platform::Stat( stbuf )
+Stat::Stat( const YIELD::platform::Stat& stbuf )
+: YIELD::platform::Stat( stbuf ), refresh_time( 0 * NS_IN_S )
 {
+  changed_members = 0;
   truncate_epoch = 0;
 }
 
-Stat::Stat
-(
-  const org::xtreemfs::interfaces::Stat& xtreemfs_stbuf,
-  UserCredentialsCache& user_credentials_cache
-)
+Stat::Stat( const org::xtreemfs::interfaces::Stat& stbuf )
 : YIELD::platform::Stat
   (
 #ifdef _WIN32
-    xtreemfs_stbuf.get_mode(),
-    xtreemfs_stbuf.get_nlink(),
-    xtreemfs_stbuf.get_size(),
-    xtreemfs_stbuf.get_atime_ns(),
-    xtreemfs_stbuf.get_mtime_ns(),
-    xtreemfs_stbuf.get_ctime_ns(),
-    xtreemfs_stbuf.get_attributes()
+    static_cast<mode_t>( stbuf.get_mode() ),
+    static_cast<nlink_t>( stbuf.get_nlink() ),
+    stbuf.get_size(),
+    stbuf.get_atime_ns(),
+    stbuf.get_mtime_ns(),
+    stbuf.get_ctime_ns(),
+    stbuf.get_attributes()
 #else
-    xtreemfs_stbuf.get_dev(),
-    xtreemfs_stbuf.get_ino(),
-    xtreemfs_stbuf.get_mode(),
-    xtreemfs_stbuf.get_nlink(),
+    stbuf.get_dev(),
+    stbuf.get_ino(),
+    stbuf.get_mode(),
+    stbuf.get_nlink(),
     0, // uid
     0, // gid
     0, // rdev
-    xtreemfs_stbuf.get_size(),
-    xtreemfs_stbuf.get_atime_ns(),
-    xtreemfs_stbuf.get_mtime_ns(),
-    xtreemfs_stbuf.get_ctime_ns(),
-    xtreemfs_stbuf.get_blksize(),
+    stbuf.get_size(),
+    stbuf.get_atime_ns(),
+    stbuf.get_mtime_ns(),
+    stbuf.get_ctime_ns(),
+    stbuf.get_blksize(),
     0 // blocks
 #endif
   ),
-  truncate_epoch( xtreemfs_stbuf.get_truncate_epoch() )
+  group_id( stbuf.get_group_id() ),
+  truncate_epoch( stbuf.get_truncate_epoch() ),
+  user_id( stbuf.get_user_id() )
 {
-#ifndef _WIN32
-  uid_t uid; gid_t gid;
-  user_credentials_cache.getpasswdFromUserCredentials
-  (
-    xtreemfs_stbuf.get_user_id(),
-    xtreemfs_stbuf.get_group_id(),
-    uid,
-    gid
-  );
-  set_uid( uid );
-  set_gid( gid );
-#endif
+  changed_members = 0;
+  // refresh_time is the current time
 }
 
 Stat::Stat
 (
   const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response
 )
+: refresh_time( 0 * NS_IN_S )
 {
+  changed_members = 0;
+
   if ( osd_write_response.get_new_file_size().empty() )
     DebugBreak();
 
@@ -106,6 +98,11 @@ Stat::Stat
 
   truncate_epoch
     = osd_write_response.get_new_file_size()[0].get_truncate_epoch();
+}
+
+const YIELD::platform::Time& Stat::get_refresh_time() const 
+{ 
+  return refresh_time; 
 }
 
 Stat::operator org::xtreemfs::interfaces::Stat() const
@@ -143,4 +140,112 @@ Stat::operator org::xtreemfs::interfaces::Stat() const
     0
 #endif
   );
+}
+
+Stat& Stat::operator=( const org::xtreemfs::interfaces::Stat& stbuf )
+{
+#ifndef _WIN32
+  set_dev( stbuf.get_dev() );
+  set_ino( stbuf.get_ino() );
+#endif
+
+  if 
+  ( 
+    ( changed_members & YIELD::platform::Volume::SETATTR_MODE )
+       != YIELD::platform::Volume::SETATTR_MODE
+  )
+    set_mode( static_cast<mode_t>( stbuf.get_mode() ) );
+
+  set_nlink( static_cast<nlink_t>( stbuf.get_nlink() ) );
+
+#ifndef _WIN32
+  if 
+  ( 
+    ( changed_members & YIELD::platform::Volume::SETATTR_GID )
+       != YIELD::platform::Volume::SETATTR_GID
+  )
+    set_group_id( stbuf.get_group_id() );
+
+  if 
+  ( 
+    ( changed_members & YIELD::platform::Volume::SETATTR_UID )
+       != YIELD::platform::Volume::SETATTR_UID
+  )
+    set_user_id( stbuf.get_user_id() );
+#endif
+
+  if ( stbuf.get_truncate_epoch() > truncate_epoch )
+    set_size( stbuf.get_size() );
+  else if ( stbuf.get_truncate_epoch() == truncate_epoch )
+  {
+    if ( stbuf.get_size() > get_size() )
+    {
+      set_size( stbuf.get_size() );
+
+      // Pretend we never changed the size
+      if 
+      ( 
+        ( changed_members & YIELD::platform::Volume::SETATTR_SIZE )
+           == YIELD::platform::Volume::SETATTR_SIZE
+      )
+        changed_members ^= YIELD::platform::Volume::SETATTR_SIZE;
+    }
+  }
+  else // A truncate_epoch we got from the server is less than our own?!
+    DebugBreak();
+
+  if 
+  ( 
+    ( changed_members & YIELD::platform::Volume::SETATTR_ATIME )
+       != YIELD::platform::Volume::SETATTR_ATIME
+  )
+    set_atime( stbuf.get_atime_ns() );
+
+  if 
+  ( 
+    ( changed_members & YIELD::platform::Volume::SETATTR_MTIME )
+       != YIELD::platform::Volume::SETATTR_MTIME
+  )
+    set_mtime( stbuf.get_mtime_ns() );
+
+  if 
+  ( 
+    ( changed_members & YIELD::platform::Volume::SETATTR_CTIME )
+       != YIELD::platform::Volume::SETATTR_CTIME
+  )
+    set_ctime( stbuf.get_ctime_ns() );
+
+#ifdef _WIN32
+  if 
+  ( 
+    ( changed_members & YIELD::platform::Volume::SETATTR_ATTRIBUTES )
+       != YIELD::platform::Volume::SETATTR_ATTRIBUTES
+  )
+    set_attributes( stbuf.get_attributes() );
+#else
+  set_blksize( stbuf.get_blksize() );
+#endif
+
+
+  truncate_epoch = stbuf.get_truncate_epoch();
+
+  refresh_time = YIELD::platform::Time();
+
+  return *this;
+}
+
+void Stat::set( const YIELD::platform::Stat& other, uint32_t to_set )
+{
+  YIELD::platform::Stat::set( other, to_set );
+  changed_members |= to_set;
+}
+
+void Stat::set_group_id( const std::string& group_id ) 
+{ 
+  this->group_id = group_id; 
+}
+
+void Stat::set_user_id( const std::string& user_id )
+{ 
+  this->user_id = user_id; 
 }

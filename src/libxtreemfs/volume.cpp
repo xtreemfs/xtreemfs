@@ -31,6 +31,7 @@
 #include "open_file.h"
 #include "shared_file.h"
 #include "stat.h"
+#include "stat_cache.h"
 #include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/osd_proxy.h"
 #include "xtreemfs/path.h"
@@ -81,6 +82,32 @@ Volume::Volume
     user_credentials_cache( user_credentials_cache ),
     vivaldi_coordinates_file_path( vivaldi_coordinates_file_path )
 {
+  if 
+  ( 
+    ( flags & VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE ) 
+      == VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE 
+  )
+    // read_ttl = 0 = don't cache read Stats
+    stat_cache = new StatCache( mrc_proxy, 0 * NS_IN_S, name, true );
+
+  else if 
+  ( 
+    ( flags & VOLUME_FLAG_WRITE_BACK_STAT_CACHE ) 
+      == VOLUME_FLAG_WRITE_BACK_STAT_CACHE 
+  )
+    stat_cache = new StatCache( mrc_proxy, 5 * NS_IN_S, name, true );
+
+  else if 
+  ( 
+    ( flags & VOLUME_FLAG_WRITE_THROUGH_STAT_CACHE ) 
+      == VOLUME_FLAG_WRITE_THROUGH_STAT_CACHE 
+  )
+    stat_cache = new StatCache( mrc_proxy, 5 * NS_IN_S, name, false );
+
+  else
+    // The default: don't cache read stats, write through
+    stat_cache = new StatCache( mrc_proxy, 0 * NS_IN_S, name, false );
+
   uuid = YIELD::ipc::UUID();
 }
 
@@ -161,7 +188,8 @@ Volume::create
   return new Volume
   (
     dir_proxy,
-    flags, log,
+    flags,
+    log,
     mrc_proxy,
     name,
     osd_proxy_mux,
@@ -174,33 +202,26 @@ Volume::create
 void
 Volume::fsetattr
 (
+  const YIELD::platform::Path& path,
   const xtreemfs::Stat& stbuf,
   uint32_t to_set,
-  const org::xtreemfs::interfaces::XCap& xcap
+  const org::xtreemfs::interfaces::XCap& write_xcap
 )
 {
   if ( to_set != SETATTR_SIZE )
     DebugBreak();
 
-  mrc_proxy->fsetattr( xcap, stbuf, to_set );
+  mrc_proxy->fsetattr( write_xcap, stbuf, to_set );
 }
 
 YIELD::platform::auto_Stat Volume::getattr( const YIELD::platform::Path& path )
 {
-  VOLUME_OPERATION_BEGIN( stat )
+  VOLUME_OPERATION_BEGIN( stat ) 
   {
-    return getattr( Path( this->name, path ) );
+    return stat_cache->getattr( path );
   }
   VOLUME_OPERATION_END( stat );
   return NULL;
-}
-
-YIELD::platform::auto_Stat Volume::getattr( const Path& path )
-{
-  // If metadata caching, look up
-  org::xtreemfs::interfaces::Stat stbuf;
-  mrc_proxy->getattr( path, stbuf );
-  return new Stat( stbuf, *user_credentials_cache );
 }
 
 auto_SharedFile
@@ -445,21 +466,6 @@ Volume::open
   return NULL;
 }
 
-void Volume::osd_unlink
-(
-  const org::xtreemfs::interfaces::FileCredentialsSet& file_credentials_set
-)
-{
-  if ( !file_credentials_set.empty() )
-  {
-    // We have to delete files on all replica OSDs
-    const org::xtreemfs::interfaces::FileCredentials& file_credentials =
-      file_credentials_set[0];
-    const std::string& file_id = file_credentials.get_xcap().get_file_id();
-    osd_proxy_mux->unlink( file_credentials, file_id );
-  }
-}
-
 bool
 Volume::readdir
 (
@@ -480,18 +486,21 @@ Volume::readdir
       directory_entry_i++
      )
     {
-      if
+      Stat* stbuf = new Stat( ( *directory_entry_i ).get_stbuf() );
+#ifndef _WIN32
+      uid_t uid; gid_t gid;
+      user_credentials_cache->getpasswdFromUserCredentials
       (
-        !callback
-        (
-          ( *directory_entry_i ).get_name(),
-          new Stat
-          (
-            ( *directory_entry_i ).get_stbuf(),
-            *user_credentials_cache
-          )
-        )
-      )
+        ( ( *directory_entry_i ).get_stbuf().get_user_id(),
+        ( ( *directory_entry_i ).get_stbuf().get_group_id(),
+        uid,
+        gid
+      );
+      stbuf->set_uid( uid );
+      stbuf->set_gid( gid );
+#endif
+
+      if ( !callback( ( *directory_entry_i ).get_name(), stbuf ) )
         return false;
     }
     return true;
@@ -575,7 +584,14 @@ Volume::rename
       file_credentials_set
     );
 
-    osd_unlink( file_credentials_set );
+    if ( !file_credentials_set.empty() )
+    {
+      osd_proxy_mux->unlink
+      ( 
+        file_credentials_set[0], 
+        file_credentials_set[0].get_xcap().get_file_id()
+      );
+    }
 
     return true;
   }
@@ -602,7 +618,7 @@ bool
 Volume::setattr
 (
   const YIELD::platform::Path& path,
-  YIELD::platform::auto_Stat stbuf,
+  YIELD::platform::auto_Stat _stbuf,
   uint32_t to_set
 )
 {
@@ -611,10 +627,70 @@ Volume::setattr
 
   VOLUME_OPERATION_BEGIN( setattr )
   {
+    Stat stbuf( *_stbuf );
+#ifndef _WIN32
+    if 
+    ( 
+      ( to_set & SETATTR_UID ) == SETATTR_UID &&
+      ( to_set & SETATTR_GID ) == SETATTR_GID 
+    )
+    {
+      org::xtreemfs::interfaces::UserCredentials user_credentials;
+      if 
+      ( 
+        user_credentials_cache->getUserCredentialsFrompasswd
+        (
+          stbuf.get_uid(),
+          stbuf.get_gid(),
+          user_credentials
+        )
+      )
+      {
+        stbuf.set_user_id( user_credentials.get_user_id() );
+        stbuf.set_group_id( user_credentials.get_group_ids()[0] );
+      }
+      else
+        throw YIELD::platform::Exception( "could not look up uid and gid" );
+    }
+    else if ( ( to_set & SETATTR_UID ) == SETATTR_UID )
+    {
+      org::xtreemfs::interfaces::UserCredentials user_credentials;
+      if 
+      ( 
+        user_credentials_cache->getUserCredentialsFrompasswd
+        (
+          stbuf.get_uid(),
+          static_cast<gid_t>( -1 ),
+          user_credentials
+        )
+      )
+        stbuf.set_user_id( user_credentials.get_user_id() );
+      else
+        throw YIELD::platform::Exception( "could not look up uid" );
+
+    }
+    else if ( ( to_set & SETATTR_GID ) == SETATTR_GID )
+    {
+      org::xtreemfs::interfaces::UserCredentials user_credentials;
+      if 
+      ( 
+        user_credentials_cache->getUserCredentialsFrompasswd
+        (
+          static_cast<uid_t>( -1 ),
+          stbuf.get_gid(),
+          user_credentials
+        )
+      )
+        stbuf.set_group_id( user_credentials.get_group_ids()[0] );
+      else
+        throw YIELD::platform::Exception( "could not look up gid" );
+    }
+#endif
+
     mrc_proxy->setattr
     (
       Path( this->name, path ),
-      Stat( *stbuf ),
+      stbuf,
       to_set
     );
 
@@ -780,7 +856,16 @@ bool Volume::unlink( const YIELD::platform::Path& path )
   {
     org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
     mrc_proxy->unlink( Path( this->name, path ), file_credentials_set );
-    osd_unlink( file_credentials_set );
+
+    if ( !file_credentials_set.empty() )
+    {
+      osd_proxy_mux->unlink
+      ( 
+        file_credentials_set[0], 
+        file_credentials_set[0].get_xcap().get_file_id()
+      );
+    }
+
     return true;
   }
   VOLUME_OPERATION_END( unlink );

@@ -48,16 +48,6 @@ namespace xtreemfs
   class Proxy : public YIELD::ipc::ONCRPCClient<InterfaceType>
   {
   public:
-    const static uint32_t PROXY_FLAG_TRACE_IO =
-      YIELD::ipc::Client<YIELD::ipc::ONCRPCRequest, YIELD::ipc::ONCRPCResponse>
-        ::CLIENT_FLAG_TRACE_IO;
-
-    const static uint32_t PROXY_FLAG_TRACE_OPERATIONS =
-      YIELD::ipc::Client<YIELD::ipc::ONCRPCRequest, YIELD::ipc::ONCRPCResponse>
-        ::CLIENT_FLAG_TRACE_OPERATIONS;
-
-    const static uint32_t PROXY_FLAG_TRACE_AUTH = 8;
-
     // YIELD::concurrency::EventTarget
     virtual void send( YIELD::concurrency::Event& ev )
     {

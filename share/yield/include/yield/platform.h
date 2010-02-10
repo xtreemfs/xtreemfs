@@ -1662,26 +1662,28 @@ namespace YIELD
       operator WIN32_FIND_DATA() const;
 #endif
 
+      // to_set = bitmask of Volume::SETATTR_* constants
+      virtual void set( const Stat&, uint32_t to_set );
 #ifndef _WIN32
-      void set_dev( dev_t dev );
-      void set_ino( ino_t ino );
+      virtual void set_dev( dev_t dev );
+      virtual void set_ino( ino_t ino );
 #endif
-      void set_mode( mode_t mode );
-      void set_nlink( nlink_t nlink );
+      virtual void set_mode( mode_t mode );
+      virtual void set_nlink( nlink_t nlink );
 #ifndef _WIN32
-      void set_uid( uid_t uid );
-      void set_gid( gid_t gid );
-      void set_rdev( dev_t );
+      virtual void set_uid( uid_t uid );
+      virtual void set_gid( gid_t gid );
+      virtual void set_rdev( dev_t );
 #endif
-      void set_size( uint64_t size );
-      void set_atime( const Time& atime );
-      void set_mtime( const Time& mtime );
-      void set_ctime( const Time& ctime );
+      virtual void set_size( uint64_t size );
+      virtual void set_atime( const Time& atime );
+      virtual void set_mtime( const Time& mtime );
+      virtual void set_ctime( const Time& ctime );
 #ifndef _WIN32
-      void set_blksize( blksize_t blksize );
-      void set_blocks( blkcnt_t blocks );
+      virtual void set_blksize( blksize_t blksize );
+      virtual void set_blocks( blkcnt_t blocks );
 #else
-      void set_attributes( uint32_t attributes );
+      virtual void set_attributes( uint32_t attributes );
 #endif
 
       // yidl::runtime::Object
@@ -1902,8 +1904,10 @@ namespace YIELD
 
       // Flags for setattr's to_set
       const static uint32_t SETATTR_MODE = 1;
+#ifndef _WIN32
       const static uint32_t SETATTR_UID = 2;
       const static uint32_t SETATTR_GID = 4;
+#endif
       const static uint32_t SETATTR_SIZE = 8;
       const static uint32_t SETATTR_ATIME = 16;
       const static uint32_t SETATTR_MTIME = 32;

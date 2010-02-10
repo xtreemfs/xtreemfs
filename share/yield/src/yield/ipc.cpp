@@ -125,8 +125,8 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
           {
             if
             (
-              ( this->flags & this->CLIENT_FLAG_TRACE_IO ) ==
-                 this->CLIENT_FLAG_TRACE_IO
+              ( this->flags & this->CLIENT_FLAG_TRACE_NETWORK_IO ) ==
+                 this->CLIENT_FLAG_TRACE_NETWORK_IO
                &&
                log != NULL
                &&

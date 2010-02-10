@@ -160,7 +160,7 @@ namespace YIELD
     class Client
     {
     public:
-      const static uint32_t CLIENT_FLAG_TRACE_IO = 1;
+      const static uint32_t CLIENT_FLAG_TRACE_NETWORK_IO = 1;
       const static uint32_t CLIENT_FLAG_TRACE_OPERATIONS = 2;
 
       const static uint16_t CONCURRENCY_LEVEL_DEFAULT = 4;

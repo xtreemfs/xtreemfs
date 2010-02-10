@@ -60,11 +60,9 @@ namespace xtreemfs
       const YIELD::platform::Time& operation_timeout =
         OPERATION_TIMEOUT_DEFAULT,
       const char* password = "",
-      uint8_t reconnect_tries_max =
-        RECONNECT_TRIES_MAX_DEFAULT,
+      uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
       YIELD::ipc::auto_SSLContext ssl_context = NULL,
-      auto_UserCredentialsCache
-        user_credentials_cache = NULL
+      auto_UserCredentialsCache user_credentials_cache = NULL
     );
 
     // Proxy

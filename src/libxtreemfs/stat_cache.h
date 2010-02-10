@@ -27,89 +27,68 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#include "xtreemfs/main.h"
-using namespace xtreemfs;
+#ifndef _LIBXTREEMFS_STAT_CACHE_H_
+#define _LIBXTREEMFS_STAT_CACHE_H_
+
+#include "stat.h"
+#include "xtreemfs/mrc_proxy.h"
+#include "xtreemfs/user_credentials_cache.h"
 
 
-namespace rmfs_xtreemfs
+namespace xtreemfs
 {
-  class Main : public xtreemfs::Main
+  class StatCache : private std::map<YIELD::platform::Path, Stat*>
   {
   public:
-    Main()
-      : xtreemfs::Main
-        (
-          "rmfs.xtreemfs",
-          "remove a volume",
-          "[oncrpc://]<dir host>[:port]/<volume name>"
-        )
-    {
-      addOption
-      (
-        RMFS_XTREEMFS_OPTION_PASSWORD,
-        "--password",
-        NULL,
-        "password for volume"
-      );
-    }
+    StatCache
+    ( 
+      auto_MRCProxy mrc_proxy, 
+      const YIELD::platform::Time& read_ttl,
+      auto_UserCredentialsCache user_credentials_cache,
+      const std::string& volume_name,
+      bool write_back = true // else write_through
+    );
+
+    ~StatCache();
+
+    void 
+    fsetattr
+    ( 
+      const YIELD::platform::Path& path,
+      auto_Stat stbuf,
+      uint32_t to_set,
+      const org::xtreemfs::interfaces::XCap& write_xcap
+    );
+
+    YIELD::platform::auto_Stat
+    getattr
+    ( 
+      const YIELD::platform::Path& path 
+    );
+
+    void 
+    metadatasync
+    ( 
+      const YIELD::platform::Path& path, 
+      const org::xtreemfs::interfaces::XCap& write_xcap
+    );
+
+    void 
+    setattr
+    ( 
+      const YIELD::platform::Path& path, 
+      auto_Stat stbuf,
+      uint32_t to_set
+    );
 
   private:
-    enum
-    {
-      RMFS_XTREEMFS_OPTION_PASSWORD = 20
-    };
-
-    YIELD::ipc::auto_URI dir_uri;
-    std::string password;
+    YIELD::platform::Mutex lock;
+    auto_MRCProxy mrc_proxy;
+    YIELD::platform::Time read_ttl;
+    auto_UserCredentialsCache user_credentials_cache;
     std::string volume_name;
-
-
-    // YIELD::Main
-    int _main( int, char** )
-    {
-      auto_DIRProxy dir_proxy = createDIRProxy( *dir_uri );
-
-      YIELD::ipc::auto_URI mrc_uri
-        = dir_proxy->getVolumeURIFromVolumeName( volume_name );
-
-      auto_MRCProxy mrc_proxy = createMRCProxy( *mrc_uri, password.c_str() );
-
-      mrc_proxy->xtreemfs_rmvol( volume_name );
-
-      return 0;
-    }
-
-    void parseFiles( int files_count, char** files )
-    {
-      if ( files_count == 1 )
-        dir_uri = parseVolumeURI( files[0], volume_name );
-      else if ( files_count == 0 )
-      {
-        throw YIELD::platform::Exception
-        (
-          "must specify the DIR/volume URI"
-        );
-      }
-      else
-      {
-        throw YIELD::platform::Exception
-        (
-          "extra parameters after the DIR/volume URI"
-        );
-      }
-    }
-
-    void parseOption( int id, char* arg )
-    {
-      if ( arg && id == RMFS_XTREEMFS_OPTION_PASSWORD )
-        password = arg;
-      else
-        xtreemfs::Main::parseOption( id, arg );
-    }
+    bool write_back;
   };
 };
 
-int main( int argc, char** argv )
-{
-  return rmfs_xtreemfs::Main().main( argc, argv );
-}
+#endif

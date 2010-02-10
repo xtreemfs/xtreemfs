@@ -334,12 +334,10 @@ namespace xtreemfs
     {
       uint32_t proxy_flags = 0;
 
-      if ( trace_auth )
-        proxy_flags |= DIRProxy::PROXY_FLAG_TRACE_AUTH;
       if ( trace_network_io )
-        proxy_flags |= DIRProxy::PROXY_FLAG_TRACE_IO;
+        proxy_flags |= DIRProxy::CLIENT_FLAG_TRACE_NETWORK_IO;
       if ( trace_network_operations )
-        proxy_flags |= DIRProxy::PROXY_FLAG_TRACE_OPERATIONS;
+        proxy_flags |= DIRProxy::CLIENT_FLAG_TRACE_OPERATIONS;
 
       return proxy_flags;
     }

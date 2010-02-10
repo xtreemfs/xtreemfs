@@ -39,16 +39,19 @@ namespace xtreemfs
 {
   class SharedFile;
   class Stat;
+  class StatCache;
 
 
   class Volume : public YIELD::platform::Volume
   {
   public:
-    const static uint32_t VOLUME_FLAG_FILE_SIZE_CACHE = 1;
-    const static uint32_t VOLUME_FLAG_METADATA_CACHE = 2;
-    const static uint32_t VOLUME_FLAG_WRITE_BACK_CACHE = 4;
-    const static uint32_t VOLUME_FLAG_WRITE_THROUGH_CACHE = 8;
-    const static uint32_t VOLUME_FLAG_TRACE_FILE_IO = 16;
+    const static uint32_t VOLUME_FLAG_WRITE_BACK_DATA_CACHE = 1;
+    const static uint32_t VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE = 2;
+    const static uint32_t VOLUME_FLAG_WRITE_BACK_STAT_CACHE = 4;
+    const static uint32_t VOLUME_FLAG_WRITE_THROUGH_DATA_CACHE = 8;
+    const static uint32_t VOLUME_FLAG_WRITE_THROUGH_FILE_SIZE_CACHE = 16;
+    const static uint32_t VOLUME_FLAG_WRITE_THROUGH_STAT_CACHE = 32;
+    const static uint32_t VOLUME_FLAG_TRACE_FILE_IO = 64;
 
 
     static yidl::runtime::auto_Object<Volume>
@@ -68,6 +71,15 @@ namespace xtreemfs
         = YIELD::platform::Path()
     );
 
+    // fsetattr is used for setting the file size
+    void fsetattr
+    (
+      const YIELD::platform::Path& path,
+      const Stat& stbuf,
+      uint32_t to_set,
+      const org::xtreemfs::interfaces::XCap& write_xcap
+    );
+
     uint32_t get_flags() const { return flags; }
     YIELD::platform::auto_Log get_log() const { return log; }
     auto_MRCProxy get_mrc_proxy() const { return mrc_proxy; }
@@ -77,11 +89,10 @@ namespace xtreemfs
     org::xtreemfs::interfaces::VivaldiCoordinates
     get_vivaldi_coordinates() const;
 
-    void fsetattr
+    void metadatasync
     (
-      const Stat& stbuf,
-      uint32_t to_set,
-      const org::xtreemfs::interfaces::XCap& xcap
+      const YIELD::platform::Path& path,
+      const org::xtreemfs::interfaces::XCap& write_xcap
     );
 
     void release( SharedFile& );
@@ -91,8 +102,6 @@ namespace xtreemfs
 
     // YIELD::platform::Volume
     YIELD_PLATFORM_VOLUME_PROTOTYPES;
-
-    YIELD::platform::auto_Stat getattr( const Path& path );
 
     bool listdir
     (
@@ -140,7 +149,7 @@ namespace xtreemfs
       const YIELD::platform::Path& vivaldi_coordinates_file_path
     );
 
-    ~Volume() { }
+    ~Volume();
 
 
     auto_DIRProxy dir_proxy;
@@ -153,6 +162,7 @@ namespace xtreemfs
     YIELD::platform::Mutex shared_files_lock;
     YIELD::concurrency::auto_StageGroup stage_group;
     std::string uuid;
+    StatCache* stat_cache;
     auto_UserCredentialsCache user_credentials_cache;
     YIELD::platform::Path vivaldi_coordinates_file_path;
 
@@ -162,8 +172,6 @@ namespace xtreemfs
     (
       const YIELD::platform::Path& path
     );
-
-    void osd_unlink( const org::xtreemfs::interfaces::FileCredentialsSet& );
   };
 
   typedef yidl::runtime::auto_Object<Volume> auto_Volume;

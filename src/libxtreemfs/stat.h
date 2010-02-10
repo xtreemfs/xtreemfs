@@ -53,31 +53,42 @@ namespace xtreemfs
   class Stat : public YIELD::platform::Stat
   {
   public:
-    Stat( const YIELD::platform::Stat& stbuf );
-
-    Stat
-    (
-      const YIELD::platform::Stat& stbuf,
-      UserCredentialsCache& user_credentials_cache
-    );
-
-    Stat
-    (
-      const org::xtreemfs::interfaces::Stat& stbuf,
-      UserCredentialsCache& user_credentials_cache
-    );
-
-    Stat
-    (
-      const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response
-    );
+    Stat( const YIELD::platform::Stat& );
+    Stat( const org::xtreemfs::interfaces::Stat& );
+    Stat( const org::xtreemfs::interfaces::OSDWriteResponse& );
+    
+    void clear_changed_members() { this->changed_members = 0; }
+    uint32_t get_changed_members() const { return changed_members; }
+    const std::string& get_group_id() const { return group_id; }
+    uint32_t get_truncate_epoch() const { return truncate_epoch; }
+    const YIELD::platform::Time& get_refresh_time() const;
+    const std::string& get_user_id() const { return user_id; }
 
     operator org::xtreemfs::interfaces::Stat() const;
+    Stat& operator=( const org::xtreemfs::interfaces::Stat& ); 
+
+    void set_group_id( const std::string& group_id ); 
+    void set_user_id( const std::string& user_id );
+
+    // YIELD::platform::Stat
+    void set( const YIELD::platform::Stat&, uint32_t to_set );
+#ifndef _WIN32
+    void set_gid( gid_t gid );
+    void set_uid( uid_t uid );
+#endif
 
   private:
-    std::string group_id, user_id;
-    uint32_t truncate_epoch;
+    uint32_t changed_members; // SETATTR_* bitmask
+    std::string group_id;
+    uint32_t truncate_epoch;    
+    YIELD::platform::Time refresh_time; // Last time the Stat was set from
+                                        // an org::xtreemfs::interfaces::Stat
+                                        // or 0 if the contents did not come
+                                        // from the server (i.e. on setattr)
+    std::string user_id;
   };
+
+  typedef yidl::runtime::auto_Object<Stat> auto_Stat;
 };
 
 #endif

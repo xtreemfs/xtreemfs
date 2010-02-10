@@ -128,7 +128,7 @@ namespace lsfs_xtreemfs
       {
         throw YIELD::platform::Exception
         (
-          "extra parameters after the DIR[/volume] URI" 
+          "extra parameters after the DIR[/volume] URI"
         );
       }
     }

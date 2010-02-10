@@ -54,7 +54,7 @@ except:
     build_env = Environment( **build_env )
 
     build_conf = build_env.Configure()
-    if sys.platform.startswith( "linux" ) and platform.machine() == "i686": 
+    if sys.platform.startswith( "linux" ) and platform.machine() == "i686":
         build_env["CCFLAGS"] += "-march=i686 "
 
     Export( "build_env", "build_conf" )
@@ -107,5 +107,6 @@ build_env.Library( "../../lib/xtreemfs", (
     r"../../src/libxtreemfs/proxy_exception_response.cpp",
     r"../../src/libxtreemfs/shared_file.cpp",
     r"../../src/libxtreemfs/stat.cpp",
+    r"../../src/libxtreemfs/stat_cache.cpp",
     r"../../src/libxtreemfs/user_credentials_cache.cpp",
     r"../../src/libxtreemfs/volume.cpp" ) )
