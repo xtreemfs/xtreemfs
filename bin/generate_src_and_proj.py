@@ -1,5 +1,6 @@
 import os.path, sys
 from shutil import copyfile
+from optparse import OptionParser
 
 
 # Constants
@@ -52,6 +53,14 @@ from yidl.generators import generate_cpp, generate_proj, generate_SConscript, ge
 from yidl.utilities import format_src, pad, write_file 
 
 
+assert __name__ == "__main__"
+
+
+option_parser = OptionParser()
+option_parser.add_option( "-f", "--force", action="store_true", dest="force" )
+options, ignore = option_parser.parse_args()
+
+
 # Copy yidl source and headers into share/
 copyfile( os.path.join( YIDL_DIR_PATH, "include", "yidl.h" ), os.path.join( XTREEMFS_DIR_PATH, "share", "yidl", "include", "yidl.h" ) )
 
@@ -70,19 +79,24 @@ copyfile( os.path.join( YIELDFS_DIR_PATH, "src", "yieldfs.cpp" ), os.path.join( 
 for interface_idl_file_name in os.listdir( INTERFACES_DIR_PATH ):
     if interface_idl_file_name.endswith( ".idl" ):
 		if interface_idl_file_name == "nettest_interface.idl":
-			generate_cpp( os.path.join( INTERFACES_DIR_PATH, interface_idl_file_name ),
-						  os.path.join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs", "nettest_interface.h" ) )
+			generate_cpp( 
+              os.path.join( INTERFACES_DIR_PATH, interface_idl_file_name ),
+			  os.path.join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs", "nettest_interface.h" ),
+              force=options.force 
+            )
 		else:
 			generate_cpp( 
 				os.path.join( INTERFACES_DIR_PATH, interface_idl_file_name ), 
-				os.path.join( XTREEMFS_DIR_PATH, "include", "xtreemfs", "interfaces", os.path.splitext( interface_idl_file_name )[0] + ".h" ) ) 
+				os.path.join( XTREEMFS_DIR_PATH, "include", "xtreemfs", "interfaces", os.path.splitext( interface_idl_file_name )[0] + ".h" ),
+                force=options.force
+            ) 
 
 
 # Add copyright notices to the source, strip white space on the right        
 format_src( 
     author="Minor Gordon",
+    force=options.force,
     project="XtreemFS", 
-    #force=True,
     src_paths=( 
                 os.path.join( XTREEMFS_DIR_PATH, "include" ),
                 os.path.join( XTREEMFS_DIR_PATH, "include", "xtreemfs" ),                        
@@ -90,7 +104,8 @@ format_src(
                 os.path.join( XTREEMFS_DIR_PATH, "src", "lsfs.xtreemfs" ),
                 os.path.join( XTREEMFS_DIR_PATH, "src", "mkfs.xtreemfs" ),
                 os.path.join( XTREEMFS_DIR_PATH, "src", "mount.xtreemfs" ),
-                os.path.join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs" ),
+                os.path.join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs", "nettest.xtreemfs.cpp" ),
+                os.path.join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs", "nettest_proxy.h" ),
                 os.path.join( XTREEMFS_DIR_PATH, "src", "rmfs.xtreemfs" ),
               )
 )
