@@ -522,8 +522,8 @@ Volume::readdir
       uid_t uid; gid_t gid;
       user_credentials_cache->getpasswdFromUserCredentials
       (
-        ( ( *directory_entry_i ).get_stbuf().get_user_id(),
-        ( ( *directory_entry_i ).get_stbuf().get_group_id(),
+        ( *directory_entry_i ).get_stbuf().get_user_id(),
+        ( *directory_entry_i ).get_stbuf().get_group_id(),
         uid,
         gid
       );

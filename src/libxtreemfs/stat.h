@@ -72,10 +72,6 @@ namespace xtreemfs
 
     // YIELD::platform::Stat
     void set( const YIELD::platform::Stat&, uint32_t to_set );
-#ifndef _WIN32
-    void set_gid( gid_t gid );
-    void set_uid( uid_t uid );
-#endif
 
   private:
     uint32_t changed_members; // SETATTR_* bitmask

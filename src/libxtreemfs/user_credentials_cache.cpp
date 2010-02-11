@@ -310,7 +310,7 @@ void* UserCredentialsCache::getPolicyFunction( const char* name )
         file_name = static_cast<const std::string&>( *file_name_i );
 
       std::string::size_type
-       dll_pos = file_name.find( YIELD::platform::SharedLibrary::SHLIBSUFFIX );
+       dll_pos = file_name.find( static_cast<const std::string&>( YIELD::platform::SharedLibrary::SHLIBSUFFIX ) );
 
       if
       (
