@@ -233,10 +233,9 @@ Stat& Stat::operator=( const org::xtreemfs::interfaces::Stat& stbuf )
   return *this;
 }
 
-void Stat::set( const YIELD::platform::Stat& other, uint32_t to_set )
+void Stat::set_changed_members( uint32_t changed_members )
 {
-  YIELD::platform::Stat::set( other, to_set );
-  changed_members |= to_set;
+  this->changed_members = changed_members;
 }
 
 void Stat::set_group_id( const std::string& group_id ) 

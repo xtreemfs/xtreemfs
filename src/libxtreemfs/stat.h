@@ -57,7 +57,6 @@ namespace xtreemfs
     Stat( const org::xtreemfs::interfaces::Stat& );
     Stat( const org::xtreemfs::interfaces::OSDWriteResponse& );
     
-    void clear_changed_members() { this->changed_members = 0; }
     uint32_t get_changed_members() const { return changed_members; }
     const std::string& get_group_id() const { return group_id; }
     uint32_t get_truncate_epoch() const { return truncate_epoch; }
@@ -67,16 +66,15 @@ namespace xtreemfs
     operator org::xtreemfs::interfaces::Stat() const;
     Stat& operator=( const org::xtreemfs::interfaces::Stat& ); 
 
+    void set_changed_members( uint32_t changed_members );
     void set_group_id( const std::string& group_id ); 
     void set_user_id( const std::string& user_id );
 
-    // YIELD::platform::Stat
-    void set( const YIELD::platform::Stat&, uint32_t to_set );
-
   private:
-    uint32_t changed_members; // SETATTR_* bitmask
+    uint32_t changed_members; // SETATTR_* bitmask, for a write-back StatCache
+                              // to keep track of to_set's
     std::string group_id;
-    uint32_t truncate_epoch;    
+    uint32_t truncate_epoch;
     YIELD::platform::Time refresh_time; // Last time the Stat was set from
                                         // an org::xtreemfs::interfaces::Stat
                                         // or 0 if the contents did not come

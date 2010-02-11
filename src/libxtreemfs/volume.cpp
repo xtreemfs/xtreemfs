@@ -83,7 +83,7 @@ Volume::Volume
     vivaldi_coordinates_file_path( vivaldi_coordinates_file_path )
 {
   double stat_cache_read_ttl_s;
-  bool stat_cache_write_back;
+  uint32_t stat_cache_write_back_attrs;
 
   if 
   ( 
@@ -92,7 +92,7 @@ Volume::Volume
   )
   {
     stat_cache_read_ttl_s = 0; // Don't cache read Stats
-    stat_cache_write_back = true;
+    stat_cache_write_back_attrs = YIELD::platform::Volume::SETATTR_SIZE;
   }
   else if 
   ( 
@@ -101,7 +101,7 @@ Volume::Volume
   )
   {
     stat_cache_read_ttl_s = 5;
-    stat_cache_write_back = true;
+    stat_cache_write_back_attrs = YIELD::platform::Volume::SETATTR_SIZE;
   }
   else if 
   ( 
@@ -110,12 +110,12 @@ Volume::Volume
   )
   {
     stat_cache_read_ttl_s = 5;
-    stat_cache_write_back = false;
+    stat_cache_write_back_attrs = 0;
   }
   else
   {
     stat_cache_read_ttl_s = 0;
-    stat_cache_write_back = false;
+    stat_cache_write_back_attrs = 0;
   }
 
   stat_cache 
@@ -125,7 +125,7 @@ Volume::Volume
             stat_cache_read_ttl_s, 
             user_credentials_cache, 
             name, 
-            stat_cache_write_back 
+            stat_cache_write_back_attrs 
           );
 
   uuid = YIELD::ipc::UUID();
@@ -402,7 +402,7 @@ Volume::metadatasync
 
 bool Volume::mkdir( const YIELD::platform::Path& path, mode_t mode )
 {
-  // stat_cache->evict( getParentDirectoryPath( path ) );
+  stat_cache->evict( path.parent_path() );
 
   VOLUME_OPERATION_BEGIN( mkdir )
   {
@@ -596,10 +596,10 @@ Volume::rename
   const YIELD::platform::Path& to_path
 )
 {
-  // If metadata caching:
-  // Don't evict from_path or to_path in case there are outstanding file size updates
-  //stat_cache->evict( getParentDirectoryPath( from_path ) ); // Change parent dir's mtime
-  //stat_cache->evict( getParentDirectoryPath( to_path ) ); // Change parent dir's mtime
+  // Don't evict from_path or to_path in case there are 
+  // outstanding file size updates
+  stat_cache->evict( from_path.parent_path() );
+  stat_cache->evict( to_path.parent_path() );
 
   VOLUME_OPERATION_BEGIN( rename )
   {
@@ -832,7 +832,7 @@ Volume::symlink
   VOLUME_OPERATION_BEGIN( symlink )
   {
     mrc_proxy->symlink( to_path, Path( this->name, from_path ) );
-    // stat_cache->evict( getParentDirectoryPath( from_path ) );
+    stat_cache->evict( from_path.parent_path() );
     return true;
   }
   VOLUME_OPERATION_END( symlink );

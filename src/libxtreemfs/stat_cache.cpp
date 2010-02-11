@@ -38,12 +38,12 @@ StatCache::StatCache
   const YIELD::platform::Time& read_ttl, 
   auto_UserCredentialsCache user_credentials_cache,
   const std::string& volume_name,
-  bool write_back
+  uint32_t write_back_attrs
 ) : mrc_proxy( mrc_proxy ), 
     read_ttl( read_ttl ), 
     user_credentials_cache( user_credentials_cache ),
     volume_name( volume_name ),
-    write_back( write_back )
+    write_back_attrs( write_back_attrs )
 { }
 
 StatCache::~StatCache()
@@ -80,16 +80,8 @@ StatCache::fsetattr
   const org::xtreemfs::interfaces::XCap& write_xcap
 )
 {
-#ifdef _DEBUG
-  if ( to_set != YIELD::platform::Volume::SETATTR_SIZE )
-    DebugBreak();
-
-  if ( stbuf->get_changed_members() != to_set )
-    DebugBreak();
-#endif
-
-  if ( !write_back )
-  {
+  if ( should_write_through( to_set ) )
+  {    
     mrc_proxy->fsetattr
     ( 
       write_xcap, 
@@ -97,18 +89,10 @@ StatCache::fsetattr
       to_set
     );
 
-    stbuf->clear_changed_members();
+    _setattr( path, stbuf, to_set, true );
   }
-
-  lock.acquire();
-
-  iterator stat_i = find( path );
-  if ( stat_i != end() )
-    stat_i->second->set( *stbuf, to_set );
   else
-    operator[]( path ) = stbuf.release();
-
-  lock.release();
+    _setattr( path, stbuf, to_set, false );
 }
 
 YIELD::platform::auto_Stat
@@ -193,7 +177,7 @@ StatCache::metadatasync
   const org::xtreemfs::interfaces::XCap& write_xcap 
 )
 {
-  if ( write_back )
+  if ( write_back_attrs != 0 )
   {
     lock.acquire();
 
@@ -212,7 +196,7 @@ StatCache::metadatasync
             stbuf->get_changed_members()
           );
 
-          stbuf->clear_changed_members();
+          stbuf->set_changed_members( 0 );
         }
         catch ( ... )
         {
@@ -238,23 +222,86 @@ StatCache::setattr
 )
 {
 #ifdef _DEBUG
-  if ( stbuf->get_changed_members() != to_set )
+  if 
+  ( 
+    ( to_set & YIELD::platform::Volume::SETATTR_SIZE ) 
+      == YIELD::platform::Volume::SETATTR_SIZE 
+  )
     DebugBreak();
 #endif
 
-  if ( !write_back )
+  if ( should_write_through( to_set ) )
   {
     mrc_proxy->setattr( Path( volume_name, path ), *stbuf, to_set );
-    stbuf->clear_changed_members();
+    _setattr( path, stbuf, to_set, true );
   }
+  else
+    _setattr( path, stbuf, to_set, false );
+}
 
+void StatCache::_setattr
+(
+  const YIELD::platform::Path& path,
+  auto_Stat stbuf, 
+  uint32_t to_set,
+  bool wrote_through
+)
+{
   lock.acquire();
 
   iterator stat_i = find( path );
   if ( stat_i != end() )
+  {
+    if ( !wrote_through )
+    {
+      stat_i->second->set_changed_members
+      ( 
+        stat_i->second->get_changed_members() | to_set 
+      );
+    }
+
     stat_i->second->set( *stbuf, to_set );
+  }
   else
+  {
+    if ( !wrote_through )
+    {
+#ifdef _DEBUG
+      if ( stbuf->get_changed_members() != 0 )
+        DebugBreak();
+#endif
+
+      stbuf->set_changed_members( to_set );
+    }
+
     operator[]( path ) = stbuf.release();
+  }
 
   lock.release();
+}
+
+bool StatCache::should_write_through( uint32_t to_set ) const
+{
+  if ( write_back_attrs == 0 )
+    return true;
+  else
+  {
+    for ( uint8_t setattr_bit_i = 0; setattr_bit_i < 31; setattr_bit_i++ )
+    {
+      uint32_t setattr_bit = 1 << setattr_bit_i;
+      if 
+      ( 
+        ( to_set & setattr_bit ) == setattr_bit
+        && 
+        ( write_back_attrs & setattr_bit ) != setattr_bit
+      )
+      {
+        // There is a SETATTR_* in to_set that is not in write_back_attrs
+        // -> write through
+        return true;
+      }
+    }
+
+    return false;
+  }
 }

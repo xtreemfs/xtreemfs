@@ -36,7 +36,7 @@
 
 
 namespace xtreemfs
-{
+{ 
   class StatCache : private std::map<YIELD::platform::Path, Stat*>
   {
   public:
@@ -46,7 +46,7 @@ namespace xtreemfs
       const YIELD::platform::Time& read_ttl,
       auto_UserCredentialsCache user_credentials_cache,
       const std::string& volume_name,
-      bool write_back = true // else write_through
+      uint32_t write_back_attrs = YIELD::platform::Volume::SETATTR_SIZE
     );
 
     ~StatCache();
@@ -86,10 +86,21 @@ namespace xtreemfs
   private:
     YIELD::platform::Mutex lock;
     auto_MRCProxy mrc_proxy;
-    YIELD::platform::Time read_ttl;
+    YIELD::platform::Time read_ttl; // Time to keep Stats read from the server
     auto_UserCredentialsCache user_credentials_cache;
     std::string volume_name;
-    bool write_back;
+    uint32_t write_back_attrs; // SETATTR_ types to write back
+
+
+    void _setattr 
+    (
+      const YIELD::platform::Path& path,
+      auto_Stat stbuf, 
+      uint32_t to_set,
+      bool wrote_through
+    );  
+
+    bool should_write_through( uint32_t to_set ) const;
   };
 };
 
