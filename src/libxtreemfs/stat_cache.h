@@ -51,6 +51,8 @@ namespace xtreemfs
 
     ~StatCache();
 
+    void evict( const YIELD::platform::Path& path );
+
     void 
     fsetattr
     ( 

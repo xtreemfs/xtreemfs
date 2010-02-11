@@ -890,16 +890,16 @@ namespace yieldfs
 
         case OPEN_EXISTING: // Only open an existing file
         {
-          if (
-               YIELD::platform::Path( FileName ) == PATH_SEPARATOR_WIDE_STRING
-             )
+          YIELD::platform::Path path( FileName );
+
+          if ( path == YIELD::platform::Path::SEPARATOR )
           {
             DokanFileInfo->IsDirectory = TRUE;
             return ERROR_SUCCESS;
           }
           else
           {
-            YIELD::platform::auto_Stat stbuf = volume.stat( FileName );
+            YIELD::platform::auto_Stat stbuf = volume.stat( path );
             if ( stbuf!= NULL )
             {
               if ( stbuf->ISDIR() )
@@ -910,7 +910,7 @@ namespace yieldfs
               else
                 file = volume.open
                        (
-                         FileName,
+                         path,
                          open_flags,
                          YIELD::platform::File::MODE_DEFAULT,
                          file_attributes
@@ -956,9 +956,10 @@ namespace yieldfs
 	    PDOKAN_FILE_INFO DokanFileInfo
     )
     {
-      if ( wcscmp( FileName, PATH_SEPARATOR_WIDE_STRING ) != 0 )
+      YIELD::platform::Path path( FileName );
+      if ( path != YIELD::platform::Path::SEPARATOR )
       {
-        if ( get_volume( DokanFileInfo ).mkdir( FileName ) )
+        if ( get_volume( DokanFileInfo ).mkdir( path ) )
           return ERROR_SUCCESS;
         else
           return -1 * ::GetLastError();
@@ -1159,8 +1160,7 @@ namespace yieldfs
 	    PDOKAN_FILE_INFO DokanFileInfo )
     {
       YIELD::platform::Path name =
-        get_volume( DokanFileInfo ).
-          volname( YIELD::platform::Path( PATH_SEPARATOR_STRING ) );
+       get_volume( DokanFileInfo ).volname( YIELD::platform::Path::SEPARATOR );
 
       struct statvfs stbuf;
       if
@@ -1205,10 +1205,15 @@ namespace yieldfs
 	    PDOKAN_FILE_INFO DokanFileInfo
     )
     {
-      if ( get_file( DokanFileInfo )->setlkw( true, ByteOffset, Length ) )
+      if ( get_file( DokanFileInfo ) != NULL )
+      {
+        if ( get_file( DokanFileInfo )->setlkw( true, ByteOffset, Length ) )
+          return ERROR_SUCCESS;
+        else
+          return -1 * ::GetLastError();
+      }
+      else // ?!
         return ERROR_SUCCESS;
-      else
-        return -1 * ::GetLastError();
     }
 
     static int DOKAN_CALLBACK
@@ -1236,7 +1241,9 @@ namespace yieldfs
 	    PDOKAN_FILE_INFO DokanFileInfo
     )
     {
-      if ( wcscmp( FileName, PATH_SEPARATOR_WIDE_STRING ) == 0 )
+      YIELD::platform::Path path( FileName );
+
+      if ( path == YIELD::platform::Path::SEPARATOR )
       {
         DokanFileInfo->IsDirectory = TRUE;
         return ERROR_SUCCESS;
@@ -1244,17 +1251,12 @@ namespace yieldfs
       else
       {
         YIELD::platform::auto_Stat stbuf =
-            get_volume( DokanFileInfo ).stat( FileName );
+            get_volume( DokanFileInfo ).stat( path );
 
-        if ( stbuf!= NULL )
+        if ( stbuf!= NULL && stbuf->ISDIR() )
         {
-          if ( stbuf->ISDIR() )
-          {
-            DokanFileInfo->IsDirectory = TRUE;
-            return ERROR_SUCCESS;
-          }
-          else
-            return -1 * ERROR_FILE_NOT_FOUND;
+          DokanFileInfo->IsDirectory = TRUE;
+          return ERROR_SUCCESS;
         }
         else
           return -1 * ERROR_FILE_NOT_FOUND;
@@ -1385,10 +1387,15 @@ namespace yieldfs
 	    PDOKAN_FILE_INFO DokanFileInfo
     )
     {
-      if ( get_file( DokanFileInfo )->unlk( ByteOffset, Length ) )
+      if ( get_file( DokanFileInfo ) != NULL )
+      {
+        if ( get_file( DokanFileInfo )->unlk( ByteOffset, Length ) )
+          return ERROR_SUCCESS;
+        else
+          return -1 * ::GetLastError();
+      }
+      else // ?!
         return ERROR_SUCCESS;
-      else
-        return -1 * ::GetLastError();
     }
 
     static int DOKAN_CALLBACK

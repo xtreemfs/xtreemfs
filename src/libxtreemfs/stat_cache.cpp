@@ -46,6 +46,31 @@ StatCache::StatCache
     write_back( write_back )
 { }
 
+StatCache::~StatCache()
+{
+  for ( iterator stat_i = begin(); stat_i != end(); stat_i++ )
+    delete stat_i->second;
+}
+
+void StatCache::evict( const YIELD::platform::Path& path )
+{
+  lock.acquire();
+
+  iterator stat_i = find( path );
+  if ( stat_i != end() )
+  {
+#ifdef _DEBUG
+    if ( stat_i->second->get_changed_members() != 0 )
+      DebugBreak();
+#endif
+
+    delete stat_i->second;
+    erase( stat_i );
+  }
+
+  lock.release();
+}
+
 void 
 StatCache::fsetattr
 ( 
@@ -56,6 +81,9 @@ StatCache::fsetattr
 )
 {
 #ifdef _DEBUG
+  if ( to_set != YIELD::platform::Volume::SETATTR_SIZE )
+    DebugBreak();
+
   if ( stbuf->get_changed_members() != to_set )
     DebugBreak();
 #endif
@@ -96,8 +124,9 @@ StatCache::getattr
   if ( stat_i != end() )
   {
     stbuf = stat_i->second;
-    if ( stbuf->get_refresh_time() > 0 ) // stbuf came from the server
-    {                                    // at some point        
+    // Check if stbuf came from the server at some point
+    if ( stbuf->get_refresh_time() > static_cast<uint64_t>( 0 ) ) 
+    {
       if ( YIELD::platform::Time() - stbuf->get_refresh_time() < read_ttl )
       {
         stbuf->incRef();

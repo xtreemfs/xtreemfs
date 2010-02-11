@@ -159,18 +159,18 @@ void SharedFile::close( xtreemfs::OpenFile& open_file )
 #endif
     --writer_count;
 
-    if
-    (
-      writer_count == 0
-      &&
-      open_file.get_xcap().get_replicate_on_close()
-    )
+    if ( writer_count == 0 )
     {
-      parent_volume->get_mrc_proxy()->close
-      (
-        parent_volume->get_vivaldi_coordinates(),
-        open_file.get_xcap()
-      );
+      parent_volume->metadatasync( path, open_file.get_xcap() );
+
+      if ( open_file.get_xcap().get_replicate_on_close() )
+      {
+        parent_volume->get_mrc_proxy()->close
+        (
+          parent_volume->get_vivaldi_coordinates(),
+          open_file.get_xcap()
+        );
+      }
     }
   }
 
@@ -528,14 +528,13 @@ SharedFile::sync
   const XCap& xcap
 )
 {
-  //SHARED_FILE_OPERATION_BEGIN( sync );
+  SHARED_FILE_OPERATION_BEGIN( sync );
 
-  // TODO: sync the metadata cache
-  // TODO: sync the data cache
+  parent_volume->metadatasync( path, xcap );
 
   return true;
 
-  //SHARED_FILE_OPERATION_END( sync );
+  SHARED_FILE_OPERATION_END( sync );
 }
 
 bool
@@ -565,8 +564,9 @@ SharedFile::truncate
   {
     parent_volume->fsetattr
     (
-      osd_write_response,
-      MRCInterface::SETATTR_SIZE,
+      path,
+      new Stat( osd_write_response ),
+      YIELD::platform::Volume::SETATTR_SIZE,
       xcap
     );
   }
@@ -755,8 +755,9 @@ SharedFile::write
     {
       parent_volume->fsetattr
       (
-        latest_osd_write_response,
-        MRCInterface::SETATTR_SIZE,
+        path,
+        new Stat( latest_osd_write_response ),
+        YIELD::platform::Volume::SETATTR_SIZE,
         xcap
       );
     }

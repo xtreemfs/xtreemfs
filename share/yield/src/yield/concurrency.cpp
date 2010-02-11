@@ -1,33 +1,3 @@
-// Copyright (c) 2010 Minor Gordon
-// With original implementations and ideas contributed by Felix Hupfeld
-// All rights reserved
-// 
-// This source file is part of the Yield project.
-// It is licensed under the New BSD license:
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-// * Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-// * Neither the name of the Yield project nor the
-// names of its contributors may be used to endorse or promote products
-// derived from this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
 #include "yield/concurrency.h"
 using namespace YIELD::concurrency;
 
@@ -60,7 +30,7 @@ public:
     while ( is_running )
     {
       event_queue->enqueue( stage_shutdown_event->incRef() );
-      nanosleep( 5 * NS_IN_MS );
+      nanosleep( 5.0 );
     }
   }
 
@@ -463,25 +433,25 @@ public:
                    "." << std::endl;
     }
 
-    uint64_t visit_timeout_ns = 1 * NS_IN_MS;
+    YIELD::platform::Time visit_timeout( 0.5 );
     uint64_t successful_visits = 0, total_visits = 0;
 
     while ( should_run )
     {
       Stage* next_stage_to_visit
-        = visit_policy.getNextStageToVisit( visit_timeout_ns == 0 );
+        = visit_policy.getNextStageToVisit( visit_timeout == static_cast<uint64_t>( 0 ) );
 
       if ( next_stage_to_visit != NULL )
       {
         total_visits++;
 
-        if ( next_stage_to_visit->visit( visit_timeout_ns ) )
+        if ( next_stage_to_visit->visit( visit_timeout ) )
         {
           successful_visits++;
-          visit_timeout_ns = 0;
+          visit_timeout = static_cast<uint64_t>( 0 );
         }
-        else if ( visit_timeout_ns < 1 * NS_IN_MS )
-          visit_timeout_ns += 1;
+        else if ( visit_timeout < 1.0 )
+          visit_timeout += 0.001;
       }
     }
 
@@ -600,7 +570,7 @@ public:
     {
       stage->send( stage_shutdown_event->incRef() );
       if ( is_running )
-        nanosleep( 50 * NS_IN_MS );
+        nanosleep( 0.5 );
       else
         break;
     }
@@ -673,7 +643,7 @@ class Stage::StatisticsTimer : public YIELD::platform::TimerQueue::Timer
 {
 public:
   StatisticsTimer( yidl::runtime::auto_Object<Stage> stage )
-    : Timer( 5 * NS_IN_S, 5 * NS_IN_S ),
+    : Timer( 5.0, 5.0 ),
       stage( stage ),
       last_fire_time( static_cast<uint64_t>( 0 ) )
   { }
@@ -692,9 +662,10 @@ public:
 
       stage->event_queue_arrival_count = 0;
 
-      stage->service_rate_s = static_cast<double>( NS_IN_S ) /
-                              stage->event_processing_time_ns_sampler
-                                .get_percentile( 0.95 );
+      stage->service_rate_s
+        = static_cast<double>( YIELD::platform::Time::NS_IN_S ) /
+          stage->event_processing_time_sampler
+            .get_percentile( 0.95 );
 
       stage->rho = stage->arrival_rate_s / stage->service_rate_s;
 
@@ -869,13 +840,17 @@ ThreadLocalEventQueue::EventStack* ThreadLocalEventQueue::getEventStack()
   return event_stack;
 }
 
-Event* ThreadLocalEventQueue::timed_dequeue( uint64_t timeout_ns )
+Event*
+ThreadLocalEventQueue::timed_dequeue
+(
+  const YIELD::platform::Time& timeout
+)
 {
   Event* event = getEventStack()->pop();
   if ( event != NULL )
     return event;
   else
-    return all_processor_event_queue.timed_dequeue( timeout_ns );
+    return all_processor_event_queue.timed_dequeue( timeout );
 }
 
 Event* ThreadLocalEventQueue::try_dequeue()

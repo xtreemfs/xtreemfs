@@ -55,8 +55,6 @@ namespace mount_xtreemfs
           "[oncrpc://]<dir host>[:port]/<volume name> <mount point>"
         )
     {
-      direct_io = false;
-
       addOption
       (
         MOUNT_XTREEMFS_OPTION_FOREGROUND,
@@ -73,13 +71,6 @@ namespace mount_xtreemfs
         "<fuse_option>"
       );
 
-      addOption
-      (
-        MOUNT_XTREEMFS_OPTION_METADATA_CACHE,
-        "--metadata-cache"
-      );
-      metadata_cache = false;
-
 #if FUSE_MAJOR_VERSION > 2 || ( FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 8 )
       addOption
       (
@@ -91,24 +82,9 @@ namespace mount_xtreemfs
 
       addOption
       (
-        MOUNT_XTREEMFS_OPTION_TRACE_DATA_CACHE,
-        "--trace-data-cache"
-      );
-      trace_data_cache = false;
-
-      addOption
-      (
         MOUNT_XTREEMFS_OPTION_TRACE_FILE_IO,
         "--trace-file-io"
       );
-      trace_file_io = false;
-
-      addOption
-      (
-        MOUNT_XTREEMFS_OPTION_TRACE_METADATA_CACHE,
-        "--trace-metadata-cache"
-      );
-      trace_metadata_cache = false;
 
       addOption
       (
@@ -127,17 +103,36 @@ namespace mount_xtreemfs
 
       addOption
       (
-        MOUNT_XTREEMFS_OPTION_WRITE_BACK_CACHE,
-        "--write-back-cache"
+        MOUNT_XTREEMFS_OPTION_WRITE_BACK_DATA_CACHE,
+        "--write-back-data-cache"
       );
-      write_back_cache = false;
 
       addOption
       (
-        MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_CACHE,
-        "--write-through-cache"
+        MOUNT_XTREEMFS_OPTION_WRITE_BACK_STAT_CACHE,
+        "--write-back-stat-cache"
       );
-      write_through_cache = false;
+
+      addOption
+      (
+        MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_DATA_CACHE,
+        "--write-through-data-cache"
+      );
+
+      addOption
+      (
+        MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_FILE_SIZE_CACHE,
+        "--write-through-file-size-cache"
+      );
+
+      addOption
+      (
+        MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_STAT_CACHE,
+        "--write-through-stat-cache"
+      );
+
+      fuse_flags = yieldfs::FUSE::FUSE_FLAGS_DEFAULT;
+      volume_flags = Volume::VOLUME_FLAGS_DEFAULT;
     }
 
   private:
@@ -152,27 +147,28 @@ namespace mount_xtreemfs
 #endif
       MOUNT_XTREEMFS_OPTION_TRACE_DATA_CACHE = 25,
       MOUNT_XTREEMFS_OPTION_TRACE_FILE_IO = 26,
-      MOUNT_XTREEMFS_OPTION_TRACE_METADATA_CACHE = 27,
+      MOUNT_XTREEMFS_OPTION_TRACE_STAT_CACHE = 27,
       MOUNT_XTREEMFS_OPTION_TRACE_VOLUME_OPERATIONS = 28,
       MOUNT_XTREEMFS_OPTION_VIVALDI_COORDINATES_FILE_PATH = 29,
-      MOUNT_XTREEMFS_OPTION_WRITE_BACK_CACHE = 30,
-      MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_CACHE = 31
+      MOUNT_XTREEMFS_OPTION_WRITE_BACK_DATA_CACHE = 30,
+      MOUNT_XTREEMFS_OPTION_WRITE_BACK_STAT_CACHE = 31,
+      MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_DATA_CACHE = 32,
+      MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_FILE_SIZE_CACHE = 33,
+      MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_STAT_CACHE = 34
     };
 
-    bool direct_io;
     YIELD::ipc::auto_URI dir_uri;
     bool foreground;
+    uint32_t fuse_flags;
     std::string fuse_o_args;
-    bool metadata_cache;
     std::string mount_point;
 #if FUSE_MAJOR_VERSION > 2 || ( FUSE_MAJOR_VERSION == 2 && FUSE_MINOR_VERSION >= 8 )
     bool no_big_writes;
 #endif
-    bool trace_data_cache, trace_file_io;
-    bool trace_metadata_cache, trace_volume_operations;
+    bool trace_volume_operations;
     YIELD::platform::Path vivaldi_coordinates_file_path;
     std::string volume_name;
-    bool write_back_cache, write_through_cache;
+    uint32_t volume_flags;
 
 
     // YIELD::Main
@@ -180,29 +176,23 @@ namespace mount_xtreemfs
     {
       // Make sure the log level is set high enough for any
       // --trace options to show up
-      if ( get_log_level() >= YIELD::platform::Log::LOG_INFO )
-        trace_volume_operations = true;
-      if ( get_log_level() >= YIELD::platform::Log::LOG_DEBUG )
-      {
-        trace_data_cache = true;
-        trace_file_io = true;
-        trace_metadata_cache = true;
-      }
-
-      if ( get_log_level() < YIELD::platform::Log::LOG_INFO &&
-           ( trace_data_cache ||
-             trace_file_io ||
-             trace_metadata_cache ||
-             get_proxy_flags() != 0 ||
-             trace_volume_operations ) )
+      if 
+      ( 
+        get_log_level() < YIELD::platform::Log::LOG_INFO &&
+        (
+          get_proxy_flags() != 0
+          ||
+          ( volume_flags & Volume::VOLUME_FLAG_TRACE_DATA_CACHE )
+              == Volume::VOLUME_FLAG_TRACE_DATA_CACHE
+          ||
+          ( volume_flags & Volume::VOLUME_FLAG_TRACE_FILE_IO )
+              == Volume::VOLUME_FLAG_TRACE_FILE_IO
+          ||
+          ( volume_flags & Volume::VOLUME_FLAG_TRACE_STAT_CACHE )
+              == Volume::VOLUME_FLAG_TRACE_STAT_CACHE
+        )
+      )
         get_log()->set_level( YIELD::platform::Log::LOG_INFO );
-
-      // Fill volume_flags from options
-      uint32_t volume_flags = 0;
-      if ( metadata_cache )
-        volume_flags |= Volume::VOLUME_FLAG_METADATA_CACHE;
-      if ( trace_file_io )
-        volume_flags |= Volume::VOLUME_FLAG_TRACE_FILE_IO;
 
       // Create the XtreemFS volume in the parent as well as the child process
       // so that the parent will fail on most common errors
@@ -223,65 +213,8 @@ namespace mount_xtreemfs
 
       if ( foreground )
       {
-        if ( direct_io )
-          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) <<
-            get_program_name() << ": enabling FUSE direct I/O.";
-
-        // Stack volumes
-        if ( metadata_cache )
-        {
-          //volume = new yieldfs::MetadataCachingVolume
-          //(
-          //  trace_metadata_cache ? get_log() :
-          //  NULL,
-          //  5,
-          //  volume
-          //);
-
-          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) <<
-            get_program_name() << ": caching metadata.";
-        }
-
-        if ( write_back_cache )
-        {
-          //volume = new yieldfs::WriteBackCachingVolume
-          //(
-          //  256 * 1024 * 1024,
-          //  5000,
-          //  trace_data_cache ? get_log() : NULL,
-          //  volume
-          //);
-
-          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) <<
-            get_program_name() << ": caching file reads.";
-        }
-        else if ( write_through_cache )
-        {
-          //volume = new yieldfs::WriteThroughCachingVolume
-          //(
-          //  trace_data_cache ? get_log() : NULL,
-          //  volume
-          //);
-
-          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) <<
-            get_program_name() << ": caching file writes.";
-        }
-
-        if ( trace_volume_operations &&
-             get_log_level() >= YIELD::platform::Log::LOG_INFO )
-        {
+        if ( trace_volume_operations )
           volume = new yieldfs::TracingVolume( get_log(), volume );
-
-          get_log()->getStream( YIELD::platform::Log::LOG_INFO ) <<
-            get_program_name() << ": tracing volume operations.";
-        }
-
-        uint32_t fuse_flags = 0;
-        if ( direct_io )
-          fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
-        if ( trace_volume_operations &&
-             get_log_level() >= YIELD::platform::Log::LOG_INFO )
-          fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
 
         std::auto_ptr<yieldfs::FUSE>
           fuse( new yieldfs::FUSE( volume, fuse_flags ) );
@@ -367,7 +300,7 @@ namespace mount_xtreemfs
               return 0; // Child started successfully
 #endif
             else
-             YIELD::platform::Thread::nanosleep( 100 * NS_IN_MS );
+             YIELD::platform::Thread::nanosleep( 0.1 );
           }
 
           return 0; // Assume the child started successfully
@@ -395,37 +328,32 @@ namespace mount_xtreemfs
           fuse_o_args.append( arg );
 
           if ( strstr( arg, "direct_io" ) != NULL )
-            direct_io = true;
-        }
-        break;
-
-        case MOUNT_XTREEMFS_OPTION_METADATA_CACHE:
-        {
-          metadata_cache = true;
+            fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
         }
         break;
 
         case MOUNT_XTREEMFS_OPTION_TRACE_DATA_CACHE:
         {
-          trace_data_cache = true;
+          volume_flags |= Volume::VOLUME_FLAG_TRACE_DATA_CACHE;
         }
         break;
 
         case MOUNT_XTREEMFS_OPTION_TRACE_FILE_IO:
         {
-          trace_file_io = true;
+          volume_flags |= Volume::VOLUME_FLAG_TRACE_FILE_IO;
         }
         break;
 
-        case MOUNT_XTREEMFS_OPTION_TRACE_METADATA_CACHE:
+        case MOUNT_XTREEMFS_OPTION_TRACE_STAT_CACHE:
         {
-          trace_metadata_cache = true;
+          volume_flags |= Volume::VOLUME_FLAG_TRACE_STAT_CACHE;
         }
         break;
 
         case MOUNT_XTREEMFS_OPTION_TRACE_VOLUME_OPERATIONS:
-        {
+        {          
           trace_volume_operations = true;
+          fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
         }
         break;
 
@@ -435,15 +363,40 @@ namespace mount_xtreemfs
         }
         break;
 
-        case MOUNT_XTREEMFS_OPTION_WRITE_BACK_CACHE:
+        case MOUNT_XTREEMFS_OPTION_WRITE_BACK_DATA_CACHE:
         {
-          write_back_cache = true;
+          volume_flags |= Volume::VOLUME_FLAG_WRITE_BACK_DATA_CACHE;
         }
         break;
 
-        case MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_CACHE:
+        case MOUNT_XTREEMFS_OPTION_WRITE_BACK_STAT_CACHE:
         {
-          write_through_cache = true;
+          volume_flags |= Volume::VOLUME_FLAG_WRITE_BACK_STAT_CACHE;
+        }
+        break;
+
+        case MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_DATA_CACHE:
+        {
+          volume_flags |= Volume::VOLUME_FLAG_WRITE_THROUGH_DATA_CACHE;
+        }
+        break;
+
+        case MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_FILE_SIZE_CACHE:
+        {
+          if 
+          ( 
+            ( volume_flags & Volume::VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE )
+              == Volume::VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE
+          )
+            volume_flags ^= Volume::VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE;
+
+          volume_flags |= Volume::VOLUME_FLAG_WRITE_THROUGH_FILE_SIZE_CACHE;
+        }
+        break;
+
+        case MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_STAT_CACHE:
+        {
+          volume_flags |= Volume::VOLUME_FLAG_WRITE_THROUGH_STAT_CACHE;
         }
         break;
 

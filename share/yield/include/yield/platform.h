@@ -85,12 +85,6 @@ typedef int ssize_t;
 #define O_ASYNC 020000
 #define O_DIRECT 040000
 #define O_HIDDEN 0100000
-#define PATH_SEPARATOR '\\'
-#define PATH_SEPARATOR_STRING "\\"
-#define PATH_SEPARATOR_WIDE_STRING L"\\"
-#ifndef SHLIBSUFFIX
-#define SHLIBSUFFIX "dll"
-#endif
 #ifndef UNICODE
 #define UNICODE 1
 #endif
@@ -102,22 +96,8 @@ typedef int ssize_t;
 #define DLLEXPORT extern "C"
 #endif
 #endif
-#define PATH_SEPARATOR '/'
-#define PATH_SEPARATOR_STRING "/"
-#ifndef SHLIBSUFFIX
-#if defined(__MACH__)
-#define SHLIBSUFFIX "dylib"
-#else
-#define SHLIBSUFFIX "so"
-#endif
-#endif
 #endif
 
-#define NS_IN_US 1000ULL
-#define NS_IN_MS 1000000ULL
-#define NS_IN_S  1000000000ULL
-#define MS_IN_S  1000
-#define US_IN_S  1000000
 
 #define YIELD_PLATFORM_FILE_PROTOTYPES \
   virtual bool close(); \
@@ -360,13 +340,27 @@ namespace YIELD
     class Time
     {
     public:
-      // Unix epoch times (from January 1, 1970)
-      static uint64_t getCurrentUnixTimeNS();
-      static double getCurrentUnixTimeMS();
-      static double getCurrentUnixTimeS();
+      const static uint64_t NS_IN_US = 1000ULL;
+      const static uint64_t NS_IN_MS = 1000000ULL;
+      const static uint64_t NS_IN_S = 1000000000ULL;
+      
 
-      Time() : unix_time_ns( getCurrentUnixTimeNS() ) { }
-      Time( uint64_t unix_time_ns ) : unix_time_ns( unix_time_ns ) { }
+      Time(); // Current time
+
+      Time( uint64_t unix_time_ns )
+        : unix_time_ns( unix_time_ns ) 
+      { }
+
+      Time( double unix_time_s )
+        : unix_time_ns
+          ( 
+            static_cast<uint64_t>
+            ( 
+              unix_time_s * static_cast<double>( NS_IN_S )
+            )
+          )
+      { }
+
       Time( const struct timeval& );
 #ifdef _WIN32
       Time( const FILETIME& );
@@ -374,31 +368,47 @@ namespace YIELD
 #else
       Time( const struct timespec& );
 #endif
-      Time( const Time& other ) : unix_time_ns( other.unix_time_ns ) { }
+
+      Time( const Time& other ) 
+        : unix_time_ns( other.unix_time_ns )
+       { }
 
       void as_common_log_date_time( char* out_str, uint8_t out_str_len ) const;
       void as_http_date_time( char* out_str, uint8_t out_str_len ) const;
       void as_iso_date( char* out_str, uint8_t out_str_len ) const;
       void as_iso_date_time( char* out_str, uint8_t out_str_len ) const;
 
+      inline double as_unix_time_ms() const
+      {
+        return static_cast<double>( unix_time_ns ) 
+               / static_cast<double>( NS_IN_MS );
+      }
+
       inline uint64_t as_unix_time_ns() const
       {
         return unix_time_ns;
       }
 
-      inline uint64_t as_unix_time_ms() const
+      inline double as_unix_time_s() const
       {
-        return unix_time_ns / NS_IN_MS;
+        return static_cast<double>( unix_time_ns ) 
+               / static_cast<double>( NS_IN_S );
       }
 
-      inline uint32_t as_unix_time_s() const
+      inline double as_unix_time_us() const
       {
-        return static_cast<uint32_t>( unix_time_ns / NS_IN_S );
+        return static_cast<double>( unix_time_ns ) 
+               / static_cast<double>( NS_IN_US );
       }
 
       inline operator uint64_t() const
       {
-        return unix_time_ns;
+        return as_unix_time_ns();
+      }
+
+      inline operator double() const
+      {
+        return as_unix_time_s();
       }
 
       operator struct timeval() const;
@@ -409,9 +419,41 @@ namespace YIELD
 #endif
       operator std::string() const;
 
+      inline Time& operator=( const Time& other )
+      {
+        unix_time_ns = other.unix_time_ns;
+        return *this;
+      }
+
+      inline Time& operator=( uint64_t unix_time_ns )
+      {
+        this->unix_time_ns = unix_time_ns; 
+        return *this;
+      }      
+
+      inline Time& operator=( double unix_time_s )
+      {
+        this->unix_time_ns = 
+          static_cast<uint64_t>
+          ( 
+            unix_time_s * static_cast<double>( NS_IN_S ) 
+          );
+        return *this;
+      }
+
       inline Time operator+( const Time& other ) const
       {
         return Time( unix_time_ns + other.unix_time_ns );
+      }
+
+      inline Time operator+( uint64_t unix_time_ns ) const
+      {
+        return Time( this->unix_time_ns + unix_time_ns );
+      }
+
+      inline Time operator+( double unix_time_s ) const
+      {
+        return Time( as_unix_time_s() + unix_time_s );
       }
 
       inline Time& operator+=( const Time& other )
@@ -420,15 +462,113 @@ namespace YIELD
         return *this;
       }
 
+      inline Time& operator+=( uint64_t unix_time_ns )
+      {
+        this->unix_time_ns += unix_time_ns;
+        return *this;
+      }
+
+      inline Time& operator+=( double unix_time_s )
+      {
+        this->unix_time_ns += 
+          static_cast<uint64_t>
+          ( 
+            unix_time_s * static_cast<double>( NS_IN_S ) 
+          );
+
+        return *this;
+      }
+
       inline Time operator-( const Time& other ) const
       {
-        return Time( unix_time_ns - other.unix_time_ns );
+        if ( unix_time_ns >= other.unix_time_ns )
+          return Time( unix_time_ns - other.unix_time_ns );
+        else
+          return Time( static_cast<uint64_t>( 0 ) );
+      }
+
+      inline Time operator-( uint64_t unix_time_ns ) const
+      {
+        if ( this->unix_time_ns >= unix_time_ns )
+          return Time( this->unix_time_ns - unix_time_ns );
+        else
+          return Time( static_cast<uint64_t>( 0 ) );
+      }
+
+      inline Time operator-( double unix_time_s ) const
+      {
+        double this_unix_time_s = as_unix_time_s();
+        if ( this_unix_time_s >= unix_time_s )
+          return Time( this_unix_time_s - unix_time_s );
+        else
+          return Time( static_cast<uint64_t>( 0 ) );
       }
 
       inline Time& operator-=( const Time& other )
       {
-        unix_time_ns -= other.unix_time_ns;
+        if ( unix_time_ns >= other.unix_time_ns )
+          unix_time_ns -= other.unix_time_ns;
+        else
+          unix_time_ns = 0;
+
         return *this;
+      }
+
+      inline Time& operator-=( uint64_t unix_time_ns )
+      {
+        if ( this->unix_time_ns >= unix_time_ns )
+          this->unix_time_ns -= unix_time_ns;
+        else
+          this->unix_time_ns = 0;
+
+        return *this;
+      }
+
+      inline Time& operator-=( double unix_time_s )
+      {
+        double this_unix_time_s = as_unix_time_s();
+        if ( this_unix_time_s >= unix_time_s )
+          this->unix_time_ns -= static_cast<uint64_t>( unix_time_s * NS_IN_S );
+        else
+          this->unix_time_ns = 0;
+
+        return *this;
+      }
+
+      inline Time& operator*=( const Time& other )
+      {
+        unix_time_ns *= other.unix_time_ns;
+        return *this;
+      }
+
+      inline bool operator==( const Time& other ) const
+      {
+        return unix_time_ns == other.unix_time_ns;
+      }
+
+      inline bool operator==( uint64_t unix_time_ns ) const
+      {
+        return this->unix_time_ns == unix_time_ns;
+      }
+
+      inline bool operator==( double unix_time_s ) const
+      {
+        return as_unix_time_s() == unix_time_s;
+      }
+
+      inline bool operator!=( const Time& other ) const
+      {
+        return unix_time_ns != other.unix_time_ns;
+      }
+
+      inline bool operator!=( uint64_t unix_time_ns ) const
+      {
+        return this->unix_time_ns != unix_time_ns;
+      }
+
+      inline bool operator!=( double unix_time_s ) const
+      {
+        return as_unix_time_s() != unix_time_s;
       }
 
       inline bool operator<( const Time& other ) const
@@ -436,9 +576,44 @@ namespace YIELD
         return unix_time_ns < other.unix_time_ns;
       }
 
+      inline bool operator<( uint64_t unix_time_ns ) const
+      {
+        return this->unix_time_ns < unix_time_ns;
+      }
+
+      inline bool operator<( double unix_time_s ) const
+      {
+        return as_unix_time_s() < unix_time_s;
+      }
+
+      inline bool operator<=( const Time& other ) const
+      {
+        return unix_time_ns <= other.unix_time_ns;
+      }
+
+      inline bool operator<=( uint64_t unix_time_ns ) const
+      {
+        return this->unix_time_ns <= unix_time_ns;
+      }
+
+      inline bool operator<=( double unix_time_s ) const
+      {
+        return as_unix_time_s() <= unix_time_s;
+      }
+
       inline bool operator>( const Time& other ) const
       {
         return unix_time_ns > other.unix_time_ns;
+      }
+
+      inline bool operator>( uint64_t unix_time_ns ) const
+      {
+        return this->unix_time_ns > unix_time_ns;
+      }
+
+      inline bool operator>( double unix_time_s ) const
+      {
+        return as_unix_time_s() > unix_time_s;
       }
 
       inline bool operator>=( const Time& other ) const
@@ -446,12 +621,19 @@ namespace YIELD
         return unix_time_ns >= other.unix_time_ns;
       }
 
-      inline Time& operator=( uint64_t unix_time_ns )
+      inline bool operator>=( uint64_t unix_time_ns ) const
       {
-        this->unix_time_ns = unix_time_ns; return *this;
+        return this->unix_time_ns >= unix_time_ns;
+      }
+
+      inline bool operator>=( double unix_time_s ) const
+      {
+        return as_unix_time_s() >= unix_time_s;
       }
 
     private:
+      // The time is stored internally as a Unix epoch time, i.e.
+      // nanoseconds since January 1, 1970
       uint64_t unix_time_ns;
     };
 
@@ -514,7 +696,7 @@ namespace YIELD
       ~CountingSemaphore();
 
       bool acquire(); // Blocking
-      bool timed_acquire( uint64_t timeout_ns ); // May block for timeout_ns
+      bool timed_acquire( const Time& timeout ); // May block for timeout
       bool try_acquire(); // Never blocks
       void release();
 
@@ -848,11 +1030,11 @@ namespace YIELD
       ~Mutex();
 
       // These calls are modeled after the pthread calls they delegate to
-      // Have a separate function for timeout_ns == 0 (never block) to
+      // Have a separate function for timeout == 0 (never block) to
       // avoid an if branch on a critical path
       bool acquire(); // Blocking
+      bool timed_acquire( const Time& timeout ); // May block for timeout
       bool try_acquire(); // Never blocks
-      bool timed_acquire( uint64_t timeout_ns ); // May block for timeout_ns
       void release();
 
     private:
@@ -869,7 +1051,7 @@ namespace YIELD
     public:
       inline bool acquire() { return true; }
       inline bool try_acquire() { return true; }
-      inline bool timed_acquire( uint64_t ) { return true; }
+      inline bool timed_acquire( const Time& ) { return true; }
       inline void release() { }
     };
 
@@ -1120,71 +1302,162 @@ namespace YIELD
 
     class Path : public yidl::runtime::Object
     {
+      // Path objects are currently immutable
     public:
-      Path() { }
-      Path( const char* host_charset_path );
-      Path( const char* host_charset_path, size_t host_charset_path_len );
-      Path( const std::string& host_charset_path );
 #ifdef _WIN32
-      Path( const wchar_t* wide_path );
-      Path( const wchar_t* wide_path, size_t wide_path_len );
-      Path( const std::wstring& wide_path );
+      typedef std::wstring string_type;
+      const static wchar_t SEPARATOR = L'\\';
+#else
+      typedef std::string string_type;
+      const static char SEPARATOR = '/';
 #endif
-      Path( const Path& );
-      virtual ~Path() { }
+
+      Path() { }
+      Path( char narrow_path );
+      Path( const char* narrow_path );
+      Path( const char* narrow_path, size_t narrow_path_len );      
+      Path( const std::string& narrow_path );
+#ifdef _WIN32
+      Path( wchar_t wide_path );
+      Path( const wchar_t* wide_path );
+      Path( const wchar_t* wide_path, size_t wide_path_len );      
+      Path( const std::wstring& wide_path );
+#endif      
+
+      Path( const Path& path )
+        : path( path.path )
+      { }
+
+      ~Path() { }
 
       Path abspath() const;
-      bool empty() const { return host_charset_path.empty(); }
-  //    const std::string& get_utf8_path();
-#ifdef _WIN32
-      const std::wstring& get_wide_path() const { return wide_path; }
-      operator const std::wstring&() const { return wide_path; }
-      operator const wchar_t*() const { return wide_path.c_str(); }
-      bool operator==( const wchar_t* ) const;
-      bool operator!=( const wchar_t* ) const;
-#endif
-      operator const char*() const { return host_charset_path.c_str(); }
-      operator const std::string&() const { return host_charset_path; }
-      Path operator+( const Path& other ) const { return join( other ); }
-      bool operator==( const Path& ) const;
-      bool operator!=( const Path& ) const;
-      bool operator==( const char* ) const;
-      bool operator!=( const char* ) const;
+      bool empty() const { return path.empty(); }
+      Path extension() const;
+      Path filename() const;
 
-      bool operator<( const Path& other ) const // For sorting
+      operator const string_type&() const { return path; }
+      operator const string_type::value_type*() const { return path.c_str(); }
+#ifdef _WIN32
+      operator std::string() const;
+#endif
+      string_type::value_type operator[]( string_type::size_type i ) const
       {
-      #ifdef _WIN32
-        return wide_path.compare( other.wide_path ) < 0;
-      #else
-        return host_charset_path.compare( other.host_charset_path ) < 0;
-      #endif
+        return path[i];
       }
 
-      Path join( const Path& ) const;
+      bool operator==( const Path& path ) const
+      {
+        return this->path == path.path;
+      }
+
+      bool operator==( const string_type& path ) const
+      {
+        return this->path == path;
+      }
+
+      bool operator==( string_type::value_type path ) const
+      {
+        return this->path.size() == 1 && this->path[0] == path;
+      }
+
+      bool operator==( const string_type::value_type* path ) const
+      {
+        return this->path == path;
+      }
+
+      bool operator!=( const Path& path ) const
+      {
+        return this->path != path.path;
+      }
+
+      bool operator!=( const string_type& path ) const
+      {
+        return this->path != path;
+      }
+
+      bool operator!=( string_type::value_type path ) const
+      {
+        return this->path.size() != 1 || this->path[0] != path;
+      }
+
+      bool operator!=( const string_type::value_type* path ) const
+      {
+        return this->path != path;
+      }
+
+      bool operator<( const Path& path ) const // For sorting
+      {
+        return this->path.compare( path.path ) < 0;
+      }
+
+      Path operator+( const Path& path ) const; // Appends to the path 
+                                           // without adding a separator
+      Path operator+( const string_type& path ) const;
+      Path operator+( string_type::value_type path ) const;
+      Path operator+( const string_type::value_type* path ) const;
+    
+      Path parent_path() const;
+      Path root_path() const;
+      size_t size() const { return path.size(); }
       std::pair<Path, Path> split() const; // head, tail
-      void split_all( std::vector<Path>& ) const; // parts between separator
+      void splitall( std::vector<Path>& ) const; // parts between separator
       std::pair<Path, Path> splitext() const;
-      size_t size() const { return host_charset_path.size(); }
+      Path stem();
 
       // yidl::runtime::Object
       YIDL_RUNTIME_OBJECT_PROTOTYPES( Path, 5 );
 
     private:
-      void init_from_host_charset_path();
 #ifdef _WIN32
-      void init_from_wide_path();
+      void init( const char* narrow_path, size_t narrow_path_len );
 #endif
 
-      std::string host_charset_path;
-#ifdef _WIN32
-      std::wstring wide_path;
-#endif
+      string_type path;
     };
 
     static inline std::ostream& operator<<( std::ostream& os, const Path& path )
     {
+#ifdef _WIN32
+      os << static_cast<std::string>( path );
+#else
       os << static_cast<const std::string&>( path );
+#endif
       return os;
+    }
+
+    // Joins two paths, adding a separator as necessary
+    static inline Path
+    operator/
+    ( 
+      const Path& left_path, 
+      const Path& right_path 
+    )
+    {
+      if ( left_path.empty() )
+        return right_path;
+      else if ( right_path.empty() )
+        return left_path;
+      else
+      {
+        Path::string_type 
+          combined_path( static_cast<const Path::string_type&>( left_path ) );
+
+        if
+        (          
+          left_path[left_path.size()-1] != Path::SEPARATOR 
+          &&
+          static_cast<const Path::string_type&>( right_path )[0]
+            != Path::SEPARATOR
+        )
+          combined_path += Path::SEPARATOR;
+
+        combined_path.append
+        ( 
+          static_cast<const Path::string_type&>( right_path ) 
+        );
+
+        return Path( combined_path );
+      }
     }
 
     typedef yidl::runtime::auto_Object<Path> auto_Path;
@@ -1423,7 +1696,7 @@ namespace YIELD
         return enqueued;
       }
 
-      ElementType timed_dequeue( uint64_t timeout_ns )
+      ElementType timed_dequeue( const Time& timeout )
       {
         ElementType element
           = NonBlockingFiniteQueue<ElementType, QueueLength>::dequeue();
@@ -1432,7 +1705,7 @@ namespace YIELD
           return element;
         else
         {
-          signal.timed_acquire( timeout_ns );
+          signal.timed_acquire( timeout );
           return NonBlockingFiniteQueue<ElementType, QueueLength>::dequeue();
         }
       }
@@ -1478,13 +1751,15 @@ namespace YIELD
         return true;
       }
 
-      ElementType timed_dequeue( uint64_t timeout_ns )
+      ElementType timed_dequeue( const Time& timeout )
       {
+        Time timeout_left( timeout );
+
         for ( ;; )
         {
-          uint64_t start_time_ns = Time::getCurrentUnixTimeNS();
+          Time start_time;
 
-          if ( signal.timed_acquire( timeout_ns ) )
+          if ( signal.timed_acquire( timeout_left ) )
           {
             if ( lock.try_acquire() )
             {
@@ -1500,10 +1775,9 @@ namespace YIELD
             }
           }
 
-          uint64_t elapsed_time_ns
-            = Time::getCurrentUnixTimeNS() - start_time_ns;
-          if ( elapsed_time_ns < timeout_ns )
-            timeout_ns -= elapsed_time_ns;
+          Time elapsed_time; elapsed_time -= start_time;
+          if ( elapsed_time < timeout_left )
+            timeout_left -= elapsed_time;
           else
             return NULL;
         }
@@ -1536,6 +1810,9 @@ namespace YIELD
     class SharedLibrary : public yidl::runtime::Object
     {
     public:
+      const static Path SHLIBSUFFIX;
+
+
       static yidl::runtime::auto_Object<SharedLibrary>
         open( const Path& file_prefix, const char* argv0 = 0 );
 
@@ -1782,7 +2059,7 @@ namespace YIELD
       static void* getspecific( unsigned long key ); // Get TLS
       static unsigned long gettid(); // Get current thread ID
       static unsigned long key_create(); // Create TLS key
-      static void nanosleep( uint64_t timeout_ns );
+      static void nanosleep( const Time& );
       void set_name( const char* name );
       bool set_processor_affinity( unsigned short logical_processor_i );
       bool set_processor_affinity( const ProcessorSet& logical_processor_set );
@@ -1848,9 +2125,9 @@ namespace YIELD
         bool should_run;
         std::priority_queue
         <
-          std::pair<uint64_t, Timer*>,
-          std::vector< std::pair<uint64_t, Timer*> >,
-          std::greater< std::pair<uint64_t, Timer*> >
+          std::pair<Time, Timer*>,
+          std::vector< std::pair<Time, Timer*> >,
+          std::greater< std::pair<Time, Timer*> >
         > timers;
       };
 

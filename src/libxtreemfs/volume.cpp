@@ -82,33 +82,58 @@ Volume::Volume
     user_credentials_cache( user_credentials_cache ),
     vivaldi_coordinates_file_path( vivaldi_coordinates_file_path )
 {
+  double stat_cache_read_ttl_s;
+  bool stat_cache_write_back;
+
   if 
   ( 
     ( flags & VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE ) 
       == VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE 
   )
-    // read_ttl = 0 = don't cache read Stats
-    stat_cache = new StatCache( mrc_proxy, 0 * NS_IN_S, name, true );
-
+  {
+    stat_cache_read_ttl_s = 0; // Don't cache read Stats
+    stat_cache_write_back = true;
+  }
   else if 
   ( 
     ( flags & VOLUME_FLAG_WRITE_BACK_STAT_CACHE ) 
       == VOLUME_FLAG_WRITE_BACK_STAT_CACHE 
   )
-    stat_cache = new StatCache( mrc_proxy, 5 * NS_IN_S, name, true );
-
+  {
+    stat_cache_read_ttl_s = 5;
+    stat_cache_write_back = true;
+  }
   else if 
   ( 
     ( flags & VOLUME_FLAG_WRITE_THROUGH_STAT_CACHE ) 
-      == VOLUME_FLAG_WRITE_THROUGH_STAT_CACHE 
+      == VOLUME_FLAG_WRITE_THROUGH_STAT_CACHE
   )
-    stat_cache = new StatCache( mrc_proxy, 5 * NS_IN_S, name, false );
-
+  {
+    stat_cache_read_ttl_s = 5;
+    stat_cache_write_back = false;
+  }
   else
-    // The default: don't cache read stats, write through
-    stat_cache = new StatCache( mrc_proxy, 0 * NS_IN_S, name, false );
+  {
+    stat_cache_read_ttl_s = 0;
+    stat_cache_write_back = false;
+  }
+
+  stat_cache 
+    = new StatCache
+          ( 
+            mrc_proxy, 
+            stat_cache_read_ttl_s, 
+            user_credentials_cache, 
+            name, 
+            stat_cache_write_back 
+          );
 
   uuid = YIELD::ipc::UUID();
+}
+
+Volume::~Volume()
+{
+  delete stat_cache;
 }
 
 bool Volume::access( const YIELD::platform::Path&, int )
@@ -203,15 +228,12 @@ void
 Volume::fsetattr
 (
   const YIELD::platform::Path& path,
-  const xtreemfs::Stat& stbuf,
+  auto_Stat stbuf,
   uint32_t to_set,
   const org::xtreemfs::interfaces::XCap& write_xcap
 )
 {
-  if ( to_set != SETATTR_SIZE )
-    DebugBreak();
-
-  mrc_proxy->fsetattr( write_xcap, stbuf, to_set );
+  stat_cache->fsetattr( path, stbuf, to_set, write_xcap );
 }
 
 YIELD::platform::auto_Stat Volume::getattr( const YIELD::platform::Path& path )
@@ -300,10 +322,8 @@ Volume::link
   const YIELD::platform::Path& new_path
 )
 {
-  // If metadata caching enabled:
-//  stat_cache->evict( new_path );
-//  stat_cache->evict( old_path ); // Or modify nlink on old path
-
+  // Don't stat_cache->evict( old_path ) in case there are file size updates
+  // Just let it expire
 
   VOLUME_OPERATION_BEGIN( link )
   {
@@ -355,8 +375,6 @@ Volume::listxattr
   std::vector<std::string>& out_names
 )
 {
-  // Always pass through... xattr caching with writes is ugly
-
   VOLUME_OPERATION_BEGIN( listxattr )
   {
     org::xtreemfs::interfaces::StringSet names;
@@ -368,9 +386,22 @@ Volume::listxattr
   return false;
 }
 
+void 
+Volume::metadatasync
+(
+  const YIELD::platform::Path& path,
+  const org::xtreemfs::interfaces::XCap& write_xcap
+)
+{
+  VOLUME_OPERATION_BEGIN( metadatasync )
+  {
+    stat_cache->metadatasync( path, write_xcap );
+  }
+  VOLUME_OPERATION_END( metadatasync );
+}
+
 bool Volume::mkdir( const YIELD::platform::Path& path, mode_t mode )
 {
-  // If metadata caching enabled: look up stat,
   // stat_cache->evict( getParentDirectoryPath( path ) );
 
   VOLUME_OPERATION_BEGIN( mkdir )
@@ -549,8 +580,6 @@ Volume::removexattr
   const std::string& name
 )
 {
-  // If metadata caching, always evict( path )
-
   VOLUME_OPERATION_BEGIN( removexattr )
   {
     mrc_proxy->removexattr( Path( this->name, path ), name );
@@ -568,9 +597,8 @@ Volume::rename
 )
 {
   // If metadata caching:
-  //stat_cache->evict( from_path );
+  // Don't evict from_path or to_path in case there are outstanding file size updates
   //stat_cache->evict( getParentDirectoryPath( from_path ) ); // Change parent dir's mtime
-  //stat_cache->evict( to_path );
   //stat_cache->evict( getParentDirectoryPath( to_path ) ); // Change parent dir's mtime
 
   VOLUME_OPERATION_BEGIN( rename )
@@ -602,12 +630,10 @@ Volume::rename
 bool
 Volume::rmdir( const YIELD::platform::Path& path )
 {
-  // If metadata caching:
-  // stat_cache->evict( path );
-
   VOLUME_OPERATION_BEGIN( rmdir )
-  {
+  {    
     mrc_proxy->rmdir( Path( this->name, path ) );
+    stat_cache->evict( path );
     return true;
   }
   VOLUME_OPERATION_END( rmdir );
@@ -622,12 +648,9 @@ Volume::setattr
   uint32_t to_set
 )
 {
-  // If metadata caching: look up stat, set_attributes
-  // If disabled or lookup fails, pass through
-
   VOLUME_OPERATION_BEGIN( setattr )
   {
-    Stat stbuf( *_stbuf );
+    auto_Stat stbuf( new Stat( *_stbuf ) );
 #ifndef _WIN32
     if 
     ( 
@@ -640,14 +663,14 @@ Volume::setattr
       ( 
         user_credentials_cache->getUserCredentialsFrompasswd
         (
-          stbuf.get_uid(),
-          stbuf.get_gid(),
+          stbuf->get_uid(),
+          stbuf->get_gid(),
           user_credentials
         )
       )
       {
-        stbuf.set_user_id( user_credentials.get_user_id() );
-        stbuf.set_group_id( user_credentials.get_group_ids()[0] );
+        stbuf->set_user_id( user_credentials.get_user_id() );
+        stbuf->set_group_id( user_credentials.get_group_ids()[0] );
       }
       else
         throw YIELD::platform::Exception( "could not look up uid and gid" );
@@ -659,12 +682,12 @@ Volume::setattr
       ( 
         user_credentials_cache->getUserCredentialsFrompasswd
         (
-          stbuf.get_uid(),
+          stbuf->get_uid(),
           static_cast<gid_t>( -1 ),
           user_credentials
         )
       )
-        stbuf.set_user_id( user_credentials.get_user_id() );
+        stbuf->set_user_id( user_credentials.get_user_id() );
       else
         throw YIELD::platform::Exception( "could not look up uid" );
 
@@ -677,22 +700,17 @@ Volume::setattr
         user_credentials_cache->getUserCredentialsFrompasswd
         (
           static_cast<uid_t>( -1 ),
-          stbuf.get_gid(),
+          stbuf->get_gid(),
           user_credentials
         )
       )
-        stbuf.set_group_id( user_credentials.get_group_ids()[0] );
+        stbuf->set_group_id( user_credentials.get_group_ids()[0] );
       else
         throw YIELD::platform::Exception( "could not look up gid" );
     }
 #endif
 
-    mrc_proxy->setattr
-    (
-      Path( this->name, path ),
-      stbuf,
-      to_set
-    );
+    stat_cache->setattr( path, stbuf, to_set );
 
     return true;
   }
@@ -772,9 +790,6 @@ Volume::setxattr
   int flags
 )
 {
-  // If metadata caching:
-  // stat_cache->evict( path );
-
   VOLUME_OPERATION_BEGIN( setxattr )
   {
     mrc_proxy->setxattr( Path( this->name, path ), name, value, flags );
@@ -791,8 +806,6 @@ Volume::statvfs
   struct statvfs& statvfsbuf
 )
 {
-  // TODO: cache the StatVFS for a given time
-
   VOLUME_OPERATION_BEGIN( statvfs )
   {
     org::xtreemfs::interfaces::StatVFS xtreemfs_statvfsbuf;
@@ -816,13 +829,10 @@ Volume::symlink
   const YIELD::platform::Path& from_path
 )
 {
-  // If metadata caching:
-  //stat_cache->evict( from_path );
-  //stat_cache->evict( getParentDirectoryPath( from_path ) );
-
   VOLUME_OPERATION_BEGIN( symlink )
   {
     mrc_proxy->symlink( to_path, Path( this->name, from_path ) );
+    // stat_cache->evict( getParentDirectoryPath( from_path ) );
     return true;
   }
   VOLUME_OPERATION_END( symlink );
@@ -831,12 +841,11 @@ Volume::symlink
 
 bool Volume::truncate( const YIELD::platform::Path& path, uint64_t new_size )
 {
-  // If metadata caching: set_size on stat
-
   VOLUME_OPERATION_BEGIN( truncate )
   {
     YIELD::platform::auto_File file =
       YIELD::platform::Volume::open( path, O_TRUNC );
+
     if ( file != NULL )
       return file->truncate( new_size );
     else
@@ -848,10 +857,6 @@ bool Volume::truncate( const YIELD::platform::Path& path, uint64_t new_size )
 
 bool Volume::unlink( const YIELD::platform::Path& path )
 {
-  // If metadata caching:
-  //stat_cache->evict( path );
-  // set_mtime on parent
-
   VOLUME_OPERATION_BEGIN( unlink )
   {
     org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
@@ -865,6 +870,9 @@ bool Volume::unlink( const YIELD::platform::Path& path )
         file_credentials_set[0].get_xcap().get_file_id()
       );
     }
+
+    // Don't stat_cache->evict( path ) in case there are 
+    // outstanding file size updates
 
     return true;
   }

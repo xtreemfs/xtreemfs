@@ -51,7 +51,11 @@ namespace xtreemfs
     const static uint32_t VOLUME_FLAG_WRITE_THROUGH_DATA_CACHE = 8;
     const static uint32_t VOLUME_FLAG_WRITE_THROUGH_FILE_SIZE_CACHE = 16;
     const static uint32_t VOLUME_FLAG_WRITE_THROUGH_STAT_CACHE = 32;
-    const static uint32_t VOLUME_FLAG_TRACE_FILE_IO = 64;
+    const static uint32_t VOLUME_FLAG_TRACE_DATA_CACHE = 64;
+    const static uint32_t VOLUME_FLAG_TRACE_FILE_IO = 128;
+    const static uint32_t VOLUME_FLAG_TRACE_STAT_CACHE = 256;
+    const static uint32_t VOLUME_FLAGS_DEFAULT 
+      = VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE;
 
 
     static yidl::runtime::auto_Object<Volume>
@@ -59,7 +63,7 @@ namespace xtreemfs
     (
       const YIELD::ipc::URI& dir_uri,
       const std::string& name,
-      uint32_t flags = 0,
+      uint32_t flags = VOLUME_FLAGS_DEFAULT,
       YIELD::platform::auto_Log log = NULL,
       uint32_t proxy_flags = 0,
       const YIELD::platform::Time& proxy_operation_timeout
@@ -75,7 +79,7 @@ namespace xtreemfs
     void fsetattr
     (
       const YIELD::platform::Path& path,
-      const Stat& stbuf,
+      yidl::runtime::auto_Object<Stat> stbuf,
       uint32_t to_set,
       const org::xtreemfs::interfaces::XCap& write_xcap
     );
@@ -89,7 +93,8 @@ namespace xtreemfs
     org::xtreemfs::interfaces::VivaldiCoordinates
     get_vivaldi_coordinates() const;
 
-    void metadatasync
+    void 
+    metadatasync
     (
       const YIELD::platform::Path& path,
       const org::xtreemfs::interfaces::XCap& write_xcap

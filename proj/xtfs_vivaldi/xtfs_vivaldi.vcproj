@@ -165,6 +165,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\src\xtfs_vivaldi\zipf_generator.h"
+    >
+</File>
+<File
     RelativePath="..\..\src\xtfs_vivaldi\vivaldi_node.cpp"
     >
 </File>

@@ -1,3 +1,5 @@
+// Revision: 1980
+
 #include "yield/platform.h"
 using namespace YIELD::platform;
 
@@ -50,18 +52,21 @@ bool CountingSemaphore::acquire()
 #endif
 }
 
-bool CountingSemaphore::timed_acquire( uint64_t timeout_ns )
+bool CountingSemaphore::timed_acquire( const Time& timeout )
 {
 #if defined(_WIN32)
-  DWORD timeout_ms = static_cast<DWORD>( timeout_ns / NS_IN_MS );
+  DWORD timeout_ms = static_cast<DWORD>( timeout.as_unix_time_ms() );
   DWORD dwRet = WaitForSingleObjectEx( hSemaphore, timeout_ms, TRUE );
   return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
 #elif defined(__MACH__)
   mach_timespec_t timeout_m_ts
-    = { timeout_ns / NS_IN_S, timeout_ns % NS_IN_S };
+    = {
+        timeout.as_unix_time_ns() / Time::NS_IN_S,
+        timeout.as_unix_time_ns() % Time::NS_IN_S
+      };
   return semaphore_timedwait( sem, timeout_m_ts ) == KERN_SUCCESS;
 #else
-  struct timespec timeout_ts = ( Time() + Time( timeout_ns ) );
+  struct timespec timeout_ts = Time() + timeout;
   return sem_timedwait( &sem, &timeout_ts ) == 0;
 #endif
 }
@@ -1252,22 +1257,22 @@ bool Mutex::try_acquire()
 #endif
 }
 
-bool Mutex::timed_acquire( uint64_t timeout_ns )
+bool Mutex::timed_acquire( const Time& timeout )
 {
 #ifdef _WIN32
-  DWORD timeout_ms = static_cast<DWORD>( timeout_ns / NS_IN_MS );
+  DWORD timeout_ms = static_cast<DWORD>( timeout.as_unix_time_ms() );
   DWORD dwRet = WaitForSingleObjectEx( hMutex, timeout_ms, TRUE );
   return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
 #else
 #ifdef YIELD_HAVE_PTHREAD_MUTEX_TIMEDLOCK
-  struct timespec timeout_ts = ( Time() + Time( timeout_ns ) );
+  struct timespec timeout_ts = Time() + timeout;
   return ( pthread_mutex_timedlock( &pthread_mutex, &timeout_ts ) == 0 );
 #else
   if ( pthread_mutex_trylock( &pthread_mutex ) == 0 )
     return true;
   else
   {
-    usleep( timeout_ns / 1000 );
+    usleep( timeout.as_unix_time_us() );
     return pthread_mutex_trylock( &pthread_mutex ) == 0;
   }
 #endif
@@ -1287,363 +1292,228 @@ void Mutex::release()
 // path.cpp
 #ifdef _WIN32
 #include <windows.h>
-#else
-//#include <iconv.h>
-//#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__sun)
-//#define ICONV_SOURCE_CAST const char**
-//#else
-//#define ICONV_SOURCE_CAST char**
-//#endif
 #endif
 
-// Paths from UTF-8
-//#ifdef _WIN32
-//    wide_path.assign( _wide_path, MultiByteToWideChar( CP_UTF8, 0, utf8_path.c_str(), ( int )utf8_path.size(), _wide_path, PATH_MAX ) );
-//#else
-//    MultiByteToMultiByte( "UTF-8", utf8_path, "", host_charset_path );
-//#endif
-
-
-Path::Path( const char* host_charset_path )
-  : host_charset_path( host_charset_path )
-{
-  init_from_host_charset_path();
-}
-
-Path::Path( const char* host_charset_path, size_t host_charset_path_len )
-  : host_charset_path( host_charset_path, host_charset_path_len )
-{
-  init_from_host_charset_path();
-}
-
-Path::Path( const std::string& host_charset_path )
-  : host_charset_path( host_charset_path )
-{
-  init_from_host_charset_path();
-}
-
-void Path::init_from_host_charset_path()
-{
-  if
-  (
-    host_charset_path.size() > 1 &&
-    host_charset_path[host_charset_path.size()-1] == PATH_SEPARATOR
-  )
-    host_charset_path
-      = host_charset_path.substr( 0, host_charset_path.size() - 1 );
 
 #ifdef _WIN32
-  wchar_t _wide_path[PATH_MAX];
-  wide_path.assign
+Path::Path( char narrow_path )
+{
+  init( &narrow_path, 1 );
+}
+
+Path::Path( const char* narrow_path )
+{
+  init( narrow_path, strlen( narrow_path ) );
+}
+
+Path::Path( const char* narrow_path, size_t narrow_path_len )
+{
+  init( narrow_path, narrow_path_len );
+}
+
+Path::Path( const std::string& narrow_path )
+{
+  init( narrow_path.c_str(), narrow_path.size() );
+}
+
+Path::Path( wchar_t wide_path )
+  : path( 1, wide_path )
+{ }
+
+Path::Path( const wchar_t* wide_path )
+  : path( wide_path )
+{ }
+
+Path::Path( const wchar_t* wide_path, size_t wide_path_len )
+  : path( wide_path, wide_path_len )
+{ }
+
+Path::Path( const std::wstring& wide_path )
+  : path( wide_path )
+{ }
+#else
+Path::Path( char narrow_path )
+  : path( 1, narrow_path )
+{ }
+
+Path::Path( const char* narrow_path )
+  : path( narrow_path )
+{ }
+
+Path::Path( const char* narrow_path, size_t narrow_path_len )
+  : path( narrow_path, narrow_path_len )
+{ }
+
+Path::Path( const std::string& narrow_path )
+  : path( narrow_path )
+{ }
+#endif
+
+Path Path::abspath() const
+{
+  string_type::value_type abspath_[PATH_MAX];
+#ifdef _WIN32
+  DWORD abspath__len
+    = GetFullPathNameW
+      (
+        *this,
+        PATH_MAX,
+        abspath_,
+        NULL
+      );
+  return Path( abspath_, abspath__len );
+#else
+  realpath( *this, abspath_ );
+  return Path( abspath_ );
+#endif
+}
+
+#ifdef _WIN32
+void Path::init( const char* narrow_path, size_t narrow_path_len )
+{
+  wchar_t wide_path[PATH_MAX];
+  this->path.assign
   (
-    _wide_path,
+    wide_path,
     MultiByteToWideChar
     (
       GetACP(),
       0,
-      host_charset_path.c_str(),
-      static_cast<int>( host_charset_path.size() ),
-      _wide_path,
+      narrow_path,
+      static_cast<int>( narrow_path_len ),
+      wide_path,
       PATH_MAX
     )
   );
-#endif
 }
 
-#ifdef _WIN32
-Path::Path( const wchar_t* wide_path )
-  : wide_path( wide_path )
+Path::operator std::string() const
 {
-  init_from_wide_path();
-}
+  char narrow_path[PATH_MAX];
 
-Path::Path( const wchar_t* wide_path, size_t wide_path_len )
-  : wide_path( wide_path, wide_path_len )
-{
-  init_from_wide_path();
-}
-
-Path::Path( const std::wstring& wide_path )
-  : wide_path( wide_path )
-{
-  init_from_wide_path();
-}
-
-void Path::init_from_wide_path()
-{
-  if ( wide_path.size() > 1 && wide_path[wide_path.size()-1] == PATH_SEPARATOR )
-    wide_path = wide_path.substr( 0, wide_path.size() - 1 );
-
-  char host_charset_path[PATH_MAX];
-  int host_charset_path_len
+  int narrow_path_len
     = WideCharToMultiByte
     (
       GetACP(),
       0,
-      wide_path.c_str(),
-      ( int )wide_path.size(),
-      host_charset_path,
+      *this,
+      ( int )size(),
+      narrow_path,
       PATH_MAX,
       0,
       0
     );
-  this->host_charset_path.assign( host_charset_path, host_charset_path_len );
+
+  return std::string( narrow_path, narrow_path_len );
 }
 #endif
 
-Path::Path( const Path &other )
-: host_charset_path( other.host_charset_path )
-#ifdef _WIN32
-, wide_path( other.wide_path )
-#endif
-{ }
-
-/*
-const std::string& Path::get_utf8_path()
+Path Path::operator+( const Path& path ) const
 {
-  if ( utf8_path.empty() )
-  {
-#ifdef _WIN32
-    if ( !wide_path.empty() )
-    {
-      char _utf8_path[PATH_MAX];
-      int _utf8_path_len
-        = WideCharToMultiByte
-          (
-            CP_UTF8,
-            0,
-            wide_path.c_str(),
-            ( int )wide_path.size(),
-            _utf8_path,
-            PATH_MAX,
-            0,
-            0
-          );
-      utf8_path.assign( _utf8_path, _utf8_path_len );
-    }
-#else
-    if ( !host_charset_path.empty() )
-     MultiByteToMultiByte
-     (
-       "",
-       host_charset_path,
-       "UTF-8",
-       utf8_path
-     ); // "" = local host charset
-#endif
-  }
-
-  return utf8_path;
+  return operator+( path.path );
 }
 
-#ifndef _WIN32
-void Path::MultiByteToMultiByte
-(
-  const char* fromcode,
-  const std::string& frompath,
-  const char* tocode,
-  std::string& topath
-)
+Path Path::operator+( const string_type& path ) const
 {
-  iconv_t converter;
+  string_type combined_path( this->path );
+  combined_path.append( path );
+  return Path( combined_path );
+}
 
-  if ( ( converter = iconv_open( fromcode, tocode ) ) != ( iconv_t )-1 )
+Path Path::operator+( string_type::value_type path ) const
+{
+  string_type combined_path( this->path );
+  combined_path.append( path, 1 );
+  return Path( combined_path );
+}
+
+Path Path::operator+( const string_type::value_type* path ) const
+{
+  string_type combined_path( this->path );
+  combined_path.append( path );
+  return Path( combined_path );
+}
+
+Path Path::parent_path() const
+{
+  if ( *this != SEPARATOR )
   {
-    char* _frompath = const_cast<char*>( frompath.c_str() );
-    char _topath[PATH_MAX], *_topath_p = _topath;
-    size_t _frompath_size = frompath.size(), _topath_size = PATH_MAX;
-
-	//::iconv( converter, NULL, 0, NULL, 0 ) != -1 &&
-   size_t iconv_ret
-     = ::iconv
-       (
-         converter,
-         ( ICONV_SOURCE_CAST )&_frompath,
-         &_frompath_size,
-         &_topath_p,
-         &_topath_size
-       );
-    if ( iconv_ret != static_cast<size_t>( -1 ) )
-      topath.assign( _topath, PATH_MAX - _topath_size );
+    std::vector<YIELD::platform::Path> parts;
+    splitall( parts );
+    if ( parts.size() > 1 )
+      return parts[parts.size()-2];
     else
-      topath = frompath;
-
-    iconv_close( converter );
+      return YIELD::platform::Path( SEPARATOR );
   }
   else
-    DebugBreak();
+    return YIELD::platform::Path( SEPARATOR );
 }
-#endif
-*/
 
-Path Path::abspath() const
+Path Path::root_path() const
 {
 #ifdef _WIN32
-  wchar_t abspath_buffer[PATH_MAX];
-  DWORD abspath_buffer_len
-    = GetFullPathNameW
-      (
-        wide_path.c_str(),
-        PATH_MAX,
-        abspath_buffer,
-        NULL
-      );
-  return Path( abspath_buffer, abspath_buffer_len );
+  std::vector<Path> path_parts;
+  abspath().splitall( path_parts );
+  return path_parts[0] + SEPARATOR;
 #else
-  char abspath_buffer[PATH_MAX];
-  realpath( host_charset_path.c_str(), abspath_buffer );
-  return Path( abspath_buffer );
-#endif
-}
-
-#ifdef _WIN32
-bool Path::operator==( const wchar_t* other ) const
-{
-  return wide_path == other;
-}
-
-bool Path::operator!=( const wchar_t* other ) const
-{
-  return wide_path != other;
-}
-#endif
-
-bool Path::operator==( const Path& other ) const
-{
-#ifdef _WIN32
-  return wide_path == other.wide_path;
-#else
-  return host_charset_path == other.host_charset_path;
-#endif
-}
-
-bool Path::operator!=( const Path& other ) const
-{
-#ifdef _WIN32
-  return wide_path != other.wide_path;
-#else
-  return host_charset_path != other.host_charset_path;
-#endif
-}
-
-bool Path::operator==( const char* other ) const
-{
-  return host_charset_path == other;
-}
-
-bool Path::operator!=( const char* other ) const
-{
-  return host_charset_path != other;
-}
-
-Path Path::join( const Path& other ) const
-{
-#ifdef _WIN32
-  if ( wide_path.empty() )
-    return other;
-  else if ( other.wide_path.empty() )
-    return *this;
-  else
-  {
-    std::wstring combined_wide_path( wide_path );
-
-    if
-    (
-      combined_wide_path[combined_wide_path.size()-1] != PATH_SEPARATOR &&
-      other.wide_path[0] != PATH_SEPARATOR
-    )
-      combined_wide_path.append( PATH_SEPARATOR_WIDE_STRING, 1 );
-
-    combined_wide_path.append( other.wide_path );
-
-    return Path( combined_wide_path );
-  }
-#else
-/*
-  if ( !utf8_path.empty() && !other.utf8_path.empty() )
-  {
-    std::string combined_utf8_path( utf8_path );
-
-    if
-    (
-      combined_utf8_path[combined_utf8_path.size()-1] != PATH_SEPARATOR &&
-      other.utf8_path[0] != PATH_SEPARATOR
-    )
-      combined_utf8_path.append( PATH_SEPARATOR_STRING, 1 );
-
-    combined_utf8_path.append( other.utf8_path );
-
-    return Path( combined_utf8_path );
-  }
-  else
-  {
-*/
-    std::string combined_host_charset_path( host_charset_path );
-
-    if
-    (
-      combined_host_charset_path[combined_host_charset_path.size()-1]
-        != PATH_SEPARATOR &&
-      other.host_charset_path[0] != PATH_SEPARATOR
-    )
-      combined_host_charset_path.append( PATH_SEPARATOR_STRING, 1 );
-
-    combined_host_charset_path.append( other.host_charset_path );
-
-    return Path( combined_host_charset_path );
-//  }
+  return Path( "/" );
 #endif
 }
 
 std::pair<Path, Path> Path::split() const
 {
-  std::string::size_type last_sep
-    = host_charset_path.find_last_of( PATH_SEPARATOR );
+  string_type::size_type last_sep
+    = path.find_last_of( SEPARATOR );
 
-  if ( last_sep != std::string::npos )
+  if ( last_sep != string_type::npos )
     return std::make_pair
           (
-            host_charset_path.substr( 0, last_sep ),
-            host_charset_path.substr( last_sep + 1 )
+            path.substr( 0, last_sep ),
+            path.substr( last_sep + 1 )
           );
   else
     return std::make_pair( Path(), *this );
 }
 
-void Path::split_all( std::vector<Path>& parts ) const
+void Path::splitall( std::vector<Path>& parts ) const
 {
-  std::string::size_type last_sep
-    = host_charset_path.find_first_not_of( PATH_SEPARATOR, 0 );
+  string_type::size_type last_sep
+    = path.find_first_not_of( SEPARATOR, 0 );
 
-  std::string::size_type next_sep
-    = host_charset_path.find_first_of( PATH_SEPARATOR, last_sep );
+  string_type::size_type next_sep
+    = path.find_first_of( SEPARATOR, last_sep );
 
-  while ( next_sep != std::string::npos || last_sep != std::string::npos )
+  while ( next_sep != string_type::npos || last_sep != string_type::npos )
   {
     parts.push_back
     (
-      host_charset_path.substr( last_sep, next_sep - last_sep )
+      path.substr( last_sep, next_sep - last_sep )
     );
 
     last_sep
-      = host_charset_path.find_first_not_of( PATH_SEPARATOR, next_sep );
+      = path.find_first_not_of( SEPARATOR, next_sep );
 
     next_sep
-      = host_charset_path.find_first_of( PATH_SEPARATOR, last_sep );
+      = path.find_first_of( SEPARATOR, last_sep );
   }
 }
 
 std::pair<Path, Path> Path::splitext() const
 {
-  std::string::size_type last_dot = host_charset_path.find_last_of( "." );
+  string_type::size_type last_dot;
+#ifdef _WIN32
+  last_dot = path.find_last_of( L"." );
+#else
+  last_dot = path.find_last_of( "." );
+#endif
 
-  if ( last_dot == 0 || last_dot == std::string::npos )
+  if ( last_dot == 0 || last_dot == string_type::npos )
     return std::make_pair( *this, Path() );
   else
     return std::make_pair
            (
-             host_charset_path.substr( 0, last_dot ),
-             host_charset_path.substr( last_dot )
+             path.substr( 0, last_dot ),
+             path.substr( last_dot )
            );
 }
 
@@ -1969,7 +1839,6 @@ bool ProcessorSet::set( uint16_t processor_i )
 // shared_library.cpp
 #ifdef _WIN32
 #include <windows.h>
-#define snprintf _snprintf_s
 #else
 #include <dlfcn.h>
 #include <cctype>
@@ -1978,9 +1847,19 @@ bool ProcessorSet::set( uint16_t processor_i )
 
 #ifdef _WIN32
 #define DLOPEN( file_path ) \
-    LoadLibraryExA( file_path, 0, LOAD_WITH_ALTERED_SEARCH_PATH )
+    LoadLibraryEx( file_path, 0, LOAD_WITH_ALTERED_SEARCH_PATH )
 #else
-#define DLOPEN( file_path ) dlopen( file_path, RTLD_NOW|RTLD_GLOBAL )
+#define DLOPEN( file_path ) \
+    dlopen( file_path, RTLD_NOW|RTLD_GLOBAL )
+#endif
+
+
+#if defined(_WIN32)
+const Path SharedLibrary::SHLIBSUFFIX( "dll" );
+#elif defined(__MACH__)
+const Path SharedLibrary::SHLIBSUFFIX( "dylib" );
+#else
+const Path SharedLibrary::SHLIBSUFFIX( "so" );
 #endif
 
 
@@ -2027,74 +1906,44 @@ auto_SharedLibrary SharedLibrary::open
   const char* argv0
 )
 {
-  char file_path[PATH_MAX];
-
   void* handle;
   if ( ( handle = DLOPEN( file_prefix ) ) != NULL )
     return new SharedLibrary( handle );
   else
   {
-    snprintf
-    (
-      file_path,
-      PATH_MAX,
-      "lib%c%s.%s",
-      PATH_SEPARATOR,
-      static_cast<const char*>( file_prefix ),
-      SHLIBSUFFIX
-    );
+    Path file_path = "lib" / file_prefix + SHLIBSUFFIX;
+
     if ( ( handle = DLOPEN( file_path ) ) != NULL )
       return new SharedLibrary( handle );
     else
     {
-      snprintf
-      (
-        file_path,
-        PATH_MAX,
-        "%s.%s",
-        static_cast<const char*>( file_prefix ),
-        SHLIBSUFFIX
-      );
+      Path file_path = file_prefix + SHLIBSUFFIX;
+
       if ( ( handle = DLOPEN( file_path ) ) != NULL )
         return new SharedLibrary( handle );
       else
       {
         if ( argv0 != NULL )
         {
-          const char* last_slash = strrchr( argv0, PATH_SEPARATOR );
+          const char* last_slash = strrchr( argv0, Path::SEPARATOR );
           while ( last_slash != NULL && last_slash != argv0 )
           {
-            snprintf
-            (
-              file_path,
-              PATH_MAX,
-              "%.*s%s.%s",
-              static_cast<int>( last_slash - argv0 + 1 ),
-              argv0,
-              static_cast<const char*>( file_prefix ),
-              SHLIBSUFFIX
-            );
+            Path file_path = Path( argv0, last_slash - argv0 + 1 )
+                             + file_prefix + SHLIBSUFFIX;
+
             if ( ( handle = DLOPEN( file_path ) ) != NULL )
               return new SharedLibrary( handle );
             else
             {
-              snprintf
-              (
-                file_path,
-                PATH_MAX,
-                "%.*slib%c%s.%s",
-                static_cast<int>( last_slash - argv0 + 1 ),
-                argv0,
-                PATH_SEPARATOR,
-                static_cast<const char*>( file_prefix ),
-                SHLIBSUFFIX
-              );
+              Path file_path = Path( argv0, last_slash - argv0 + 1 )
+                               / "lib" + file_prefix + SHLIBSUFFIX;
+
               if ( ( handle = DLOPEN( file_path ) ) != NULL )
                 return new SharedLibrary( handle );
             }
 
             last_slash--;
-            while ( *last_slash != PATH_SEPARATOR ) last_slash--;
+            while ( *last_slash != Path::SEPARATOR ) last_slash--;
           }
         }
       }
@@ -2293,13 +2142,11 @@ Stat::Stat( const struct stat& stbuf )
     rdev( stbuf.st_rdev ),
 #endif
     size( stbuf.st_size ),
-    atime( static_cast<uint32_t>( stbuf.st_atime ) ),
-    mtime( static_cast<uint32_t>( stbuf.st_mtime ) ),
-#ifdef _WIN32
-    ctime( static_cast<uint32_t>( stbuf.st_ctime ) )
-#else
-    ctime( static_cast<uint32_t>( stbuf.st_ctime ) ),
-    blksize( stbuf.st_blksize ),
+    atime( static_cast<double>( stbuf.st_atime ) ),
+    mtime( static_cast<double>( stbuf.st_mtime ) ),
+    ctime( static_cast<double>( stbuf.st_ctime ) )
+#ifndef _WIN32
+    , blksize( stbuf.st_blksize ),
     blocks( stbuf.st_blocks )
 #endif
 { }
@@ -2612,12 +2459,12 @@ unsigned long Thread::key_create()
 #endif
 }
 
-void Thread::nanosleep( uint64_t timeout_ns )
+void Thread::nanosleep( const Time& timeout )
 {
 #ifdef _WIN32
-  Sleep( static_cast<DWORD>( timeout_ns / NS_IN_MS ) );
+  Sleep( static_cast<DWORD>( timeout.as_unix_time_ms() ) );
 #else
-  struct timespec timeout_ts = Time( timeout_ns );
+  struct timespec timeout_ts = timeout;
   ::nanosleep( &timeout_ts, NULL );
 #endif
 }
@@ -2855,34 +2702,23 @@ static inline SYSTEMTIME UnixTimeNSToLocalSYSTEMTIME( uint64_t unix_time_ns )
 }
 #endif
 
-double Time::getCurrentUnixTimeMS()
-{
-  return static_cast<double>( getCurrentUnixTimeNS() ) /
-         static_cast<double>( NS_IN_MS );
-}
 
-uint64_t Time::getCurrentUnixTimeNS()
+Time::Time()
 {
 #if defined(_WIN32)
   FILETIME file_time;
   GetSystemTimeAsFileTime( &file_time );
-  return FILETIMEToUnixTimeNS( file_time );
+  unix_time_ns = FILETIMEToUnixTimeNS( file_time );
 #elif defined(__MACH__)
   struct timeval tv;
   gettimeofday( &tv, NULL );
-  return tv.tv_sec * NS_IN_S + tv.tv_usec * NS_IN_US;
+  unix_time_ns = tv.tv_sec * NS_IN_S + tv.tv_usec * NS_IN_US;
 #else
   // POSIX real time
   struct timespec ts;
   clock_gettime( CLOCK_REALTIME, &ts );
-  return ts.tv_sec * NS_IN_S + ts.tv_nsec;
+  unix_time_ns = ts.tv_sec * NS_IN_S + ts.tv_nsec;
 #endif
-}
-
-double Time::getCurrentUnixTimeS()
-{
-  return static_cast<double>( getCurrentUnixTimeNS() ) /
-         static_cast<double>( NS_IN_S );
 }
 
 Time::Time( const struct timeval& tv )
@@ -3308,8 +3144,8 @@ void TimerQueue::Thread::run()
     }
     else
     {
-      uint64_t current_unix_time_ns = Time::getCurrentUnixTimeNS();
-      if ( timers.top().first <= current_unix_time_ns )
+      Time current_time;
+      if ( timers.top().first <= current_time )
       // Earliest timer has expired, fire it
       {
         TimerQueue::Timer* timer = timers.top().second;
@@ -3319,7 +3155,7 @@ void TimerQueue::Thread::run()
         {
           timer->fire();
 
-          if ( timer->get_period() != 0 )
+          if ( timer->get_period() != static_cast<uint64_t>( 0 ) )
           {
             timer->last_fire_time = Time();
             timers.push
@@ -3343,7 +3179,7 @@ void TimerQueue::Thread::run()
         TimerQueue::Timer* new_timer
           = new_timers_queue.timed_dequeue
             (
-              timers.top().first - current_unix_time_ns
+              timers.top().first - current_time
             );
 
         if ( new_timer != NULL )
@@ -3379,11 +3215,11 @@ VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
   Timer* this_ = static_cast<Timer*>( lpParameter );
 
   Time elapsed_time( Time() - this_->last_fire_time );
-  if ( elapsed_time > 0 )
+  if ( elapsed_time > 0ULL )
   {
     this_->fire();
 
-    if ( this_->get_period() == 0 )
+    if ( this_->get_period() == 0ULL )
       TimerQueue::Timer::decRef( *this_ );
     else
       this_->last_fire_time = Time();
@@ -4180,38 +4016,28 @@ Volume::utime
 Path Volume::volname( const Path& path )
 {
 #ifdef _WIN32
-  std::vector<Path> path_parts;
-  path.abspath().split_all( path_parts );
-  if ( !path_parts.empty() )
-  {
-    std::string root_dir_path( path_parts[0] );
-    root_dir_path.append( PATH_SEPARATOR_STRING );
+  wchar_t file_system_name[PATH_MAX], volume_name[PATH_MAX];
 
-    char volume_name[PATH_MAX],
-         file_system_name[PATH_MAX];
-
-    if
+  if
+  (
+    GetVolumeInformation
     (
-      GetVolumeInformationA
-      (
-        root_dir_path.c_str(),
-        volume_name,
-        PATH_MAX,
-        NULL,
-        NULL,
-        NULL,
-        file_system_name,
-        PATH_MAX
-      ) != 0
-      &&
-      strnlen( volume_name, PATH_MAX ) > 0
-    )
-      return Path( volume_name );
-
-    return root_dir_path;
-  }
+      path.root_path(),
+      volume_name,
+      PATH_MAX,
+      NULL,
+      NULL,
+      NULL,
+      file_system_name,
+      PATH_MAX
+    ) != 0
+    &&
+    wcsnlen( volume_name, PATH_MAX ) > 0
+  )
+    return Path( volume_name );
+  else
 #endif
-  return Path();
+    return path.root_path();
 }
 
 #ifdef _WIN32

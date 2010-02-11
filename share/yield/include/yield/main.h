@@ -175,11 +175,23 @@ namespace YIELD
             }
             break;
 
+            case SO_OPT_MULTIPLE:
+            {
+              DebugBreak(); // Should never happen
+            }
+            break;
+
             case SO_ARG_INVALID: // Option doesn't take an argument
             {
               std::cerr << program_name << ": " << args.OptionText() << 
                            " does not take an argument." << std::endl;
               return 1;
+            }
+            break;
+
+            case SO_ARG_INVALID_TYPE:
+            {
+              DebugBreak(); // Should never happen
             }
             break;
 

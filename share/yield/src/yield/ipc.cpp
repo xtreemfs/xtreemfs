@@ -1,33 +1,3 @@
-// Copyright (c) 2010 Minor Gordon
-// With original implementations and ideas contributed by Felix Hupfeld
-// All rights reserved
-// 
-// This source file is part of the Yield project.
-// It is licensed under the New BSD license:
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-// * Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-// * Neither the name of the Yield project nor the
-// names of its contributors may be used to endorse or promote products
-// derived from this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
 #include "yield/ipc.h"
 
 
@@ -505,7 +475,7 @@ public:
       {
         // Hack: if the read timed out, increase the timeout for the next try
         if ( error_code == ETIMEDOUT )
-          client.operation_timeout = client.operation_timeout * 2;
+          client.operation_timeout *= 2.0;
 
         request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
         client.handleEvent( *request.release() );
@@ -2777,7 +2747,7 @@ YIELD::ipc::ONCRPCRequest::ONCRPCRequest
   : ONCRPCMessage<ONCRPCRequest>
     (
       interface_,
-      static_cast<uint32_t>( YIELD::platform::Time::getCurrentUnixTimeS() ),
+      static_cast<uint32_t>( YIELD::platform::Time().as_unix_time_s() ),
       body
     )
 {
@@ -2798,7 +2768,7 @@ YIELD::ipc::ONCRPCRequest::ONCRPCRequest
   : ONCRPCMessage<ONCRPCRequest>
     (
       interface_,
-      static_cast<uint32_t>( YIELD::platform::Time::getCurrentUnixTimeS() ),
+      static_cast<uint32_t>( YIELD::platform::Time().as_unix_time_s() ),
       body
     ),
     credential_auth_flavor( credential_auth_flavor ),
@@ -2820,7 +2790,7 @@ YIELD::ipc::ONCRPCRequest::ONCRPCRequest
   : ONCRPCMessage<ONCRPCRequest>
     (
       NULL,
-      static_cast<uint32_t>( YIELD::platform::Time::getCurrentUnixTimeS() ),
+      static_cast<uint32_t>( YIELD::platform::Time().as_unix_time_s() ),
       body
     ),
     prog( prog ),
@@ -2843,7 +2813,7 @@ YIELD::ipc::ONCRPCRequest::ONCRPCRequest
   : ONCRPCMessage<ONCRPCRequest>
     (
       NULL,
-      static_cast<uint32_t>( YIELD::platform::Time::getCurrentUnixTimeS() ),
+      static_cast<uint32_t>( YIELD::platform::Time().as_unix_time_s() ),
       body
     ),
     prog( prog ),
@@ -3630,7 +3600,7 @@ YIELD::ipc::auto_Process YIELD::ipc::Process::create
     CreateProcess
     (
       NULL,
-      const_cast<wchar_t*>( command_line.get_wide_path().c_str() ),
+      const_cast<wchar_t*>( static_cast<const wchar_t*>( command_line ) ),
       NULL,
       NULL,
       TRUE,
@@ -6563,19 +6533,34 @@ YIELD::ipc::SSLContext::create
   const
 #endif
   SSL_METHOD* method,
+#ifdef _WIN32
+  const YIELD::platform::Path& _pem_certificate_file_path,
+  const YIELD::platform::Path& _pem_private_key_file_path,
+#else
   const YIELD::platform::Path& pem_certificate_file_path,
   const YIELD::platform::Path& pem_private_key_file_path,
+#endif
   const std::string& pem_private_key_passphrase
 )
 {
   SSL_CTX* ctx = createSSL_CTX( method );
+
+#ifdef _WIN32
+  // Need to get a string on Windows, because SSL doesn't support wide paths
+  std::string pem_certificate_file_path( _pem_certificate_file_path );
+  std::string pem_private_key_file_path( _pem_private_key_file_path );
+#endif
 
   if
   (
     SSL_CTX_use_certificate_file
     (
       ctx,
+#ifdef _WIN32
+      pem_certificate_file_path.c_str(),
+#else
       pem_certificate_file_path,
+#endif
       SSL_FILETYPE_PEM
     ) > 0
   )
@@ -6595,7 +6580,11 @@ YIELD::ipc::SSLContext::create
       SSL_CTX_use_PrivateKey_file
       (
         ctx,
+#ifdef _WIN32
+        pem_private_key_file_path.c_str(),
+#else
         pem_private_key_file_path,
+#endif
         SSL_FILETYPE_PEM
       ) > 0
     )
@@ -6692,13 +6681,26 @@ YIELD::ipc::SSLContext::create
   const
 #endif
   SSL_METHOD* method,
+#ifdef _WIN32
+  const YIELD::platform::Path& _pkcs12_file_path,
+#else
   const YIELD::platform::Path& pkcs12_file_path,
+#endif
   const std::string& pkcs12_passphrase
 )
 {
   SSL_CTX* ctx = createSSL_CTX( method );
 
+#ifdef _WIN32
+  // See note in the PEM create above re: the rationale for this
+  std::string pkcs12_file_path( _pkcs12_file_path );
+#endif
+
+#ifdef _WIN32
+  BIO* bio = BIO_new_file( pkcs12_file_path.c_str(), "rb" );
+#else
   BIO* bio = BIO_new_file( pkcs12_file_path, "rb" );
+#endif
   if ( bio != NULL )
   {
     PKCS12* p12 = d2i_PKCS12_bio( bio, NULL );

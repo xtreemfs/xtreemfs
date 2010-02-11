@@ -155,7 +155,7 @@ namespace YIELD
     public:
       virtual Event* dequeue() = 0;
       virtual bool enqueue( Event& ) = 0;
-      virtual Event* timed_dequeue( uint64_t timeout_ns ) = 0;
+      virtual Event* timed_dequeue( const YIELD::platform::Time& timeout ) = 0;
       virtual Event* try_dequeue() = 0;
 
       // yidl::runtime::Object
@@ -195,11 +195,11 @@ namespace YIELD
                   enqueue( &ev );
       }
 
-      Event* timed_dequeue( uint64_t timeout_ns )
+      Event* timed_dequeue( const YIELD::platform::Time& timeout )
       {
         return YIELD::platform::
                 SynchronizedNonBlockingFiniteQueue<Event*, 1024>::
-                  timed_dequeue( timeout_ns );
+                  timed_dequeue( timeout );
       }
 
       Event* try_dequeue()
@@ -233,11 +233,11 @@ namespace YIELD
         return YIELD::platform::SynchronizedSTLQueue<Event*>::enqueue( &ev );
       }
 
-      Event* timed_dequeue( uint64_t timeout_ns )
+      Event* timed_dequeue( const YIELD::platform::Time& timeout )
       {
         return YIELD::platform::
                  SynchronizedSTLQueue<Event*>::
-                   timed_dequeue( timeout_ns );
+                   timed_dequeue( timeout );
       }
 
       Event* try_dequeue()
@@ -258,7 +258,7 @@ namespace YIELD
       // EventQueue
       Event* dequeue();
       bool enqueue( Event& );
-      Event* timed_dequeue( uint64_t timeout_ns );
+      Event* timed_dequeue( const YIELD::platform::Time& timeout );
       Event* try_dequeue();
 
     private:
@@ -436,12 +436,12 @@ namespace YIELD
         YIELD::platform::SynchronizedSTLQueue<Event*>::enqueue( &ev );
       }
 
-      ResponseType& timed_dequeue( uint64_t timeout_ns )
+      ResponseType& timed_dequeue( const YIELD::platform::Time& timeout )
       {
         Event* dequeued_ev
           = YIELD::platform::
               SynchronizedSTLQueue<Event*>::
-                timed_dequeue( timeout_ns );
+                timed_dequeue( timeout );
 
         if ( dequeued_ev != NULL )
         {
@@ -545,7 +545,7 @@ namespace YIELD
       const char* get_stage_name() const { return name; }
       virtual auto_EventHandler get_event_handler() = 0;
       virtual bool visit() = 0;
-      virtual bool visit( uint64_t timeout_ns ) = 0;
+      virtual bool visit( const YIELD::platform::Time& timeout ) = 0;
       virtual void visit( Event& event ) = 0;
 
       // yidl::runtime::Object
@@ -556,10 +556,8 @@ namespace YIELD
       virtual ~Stage();
 
       YIELD::platform::Sampler<uint64_t, 1024, YIELD::platform::Mutex>
-        event_processing_time_ns_sampler;
-      // uint64_t event_processing_time_ns_total;
+        event_processing_time_sampler;
       uint32_t event_queue_length, event_queue_arrival_count;
-      // uint64_t events_processed_total;
   #ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
       YIELD::platform::auto_PerformanceCounterSet performance_counters;
       uint64_t performance_counter_totals[2];
@@ -671,11 +669,11 @@ namespace YIELD
         }
       }
 
-      bool visit( uint64_t timeout_ns )
+      bool visit( const YIELD::platform::Time& timeout )
       {
         if ( lock.try_acquire() )
         {
-          Event* event = event_queue->timed_dequeue( timeout_ns );
+          Event* event = event_queue->timed_dequeue( timeout );
           if ( event != NULL )
           {
             --event_queue_length;
@@ -723,7 +721,7 @@ namespace YIELD
 
       void callEventHandler( Event& event )
       {
-        uint64_t start_time_ns = YIELD::platform::Time::getCurrentUnixTimeNS();
+        YIELD::platform::Time start_time;
 
   #ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
         performance_counters->startCounting();
@@ -738,15 +736,13 @@ namespace YIELD
         performance_counter_totals[1] += performance_counter_counts[1];
   #endif
 
-        uint64_t event_processing_time_ns
-          = YIELD::platform::Time::getCurrentUnixTimeNS() - start_time_ns;
-        if ( event_processing_time_ns < 10 * NS_IN_S )
+        YIELD::platform::Time event_processing_time;
+        event_processing_time -= start_time;
+        if ( event_processing_time < 10.0 )
         {
-          event_processing_time_ns_sampler.
-            set_next_sample( event_processing_time_ns );
-  //        event_processing_time_ns_total += event_processing_time_ns;
+          event_processing_time_sampler.
+            set_next_sample( event_processing_time );
         }
-        // events_processed_total++;
       }
     };
 

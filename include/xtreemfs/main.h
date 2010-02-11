@@ -70,7 +70,7 @@ namespace xtreemfs
           exception_handler =
             new google_breakpad::ExceptionHandler
             (
-              YIELD::platform::Path( "." ) + PATH_SEPARATOR_STRING,
+              YIELD::platform::Path( "." ) + YIELD::platform::Path::SEPARATOR,
               NULL,
               MinidumpCallback,
               MinidumpCallback_context,
@@ -490,7 +490,10 @@ namespace xtreemfs
             operation_timeout =
               YIELD::platform::Time
               (
-                static_cast<uint64_t>( operation_timeout_ms * NS_IN_MS )
+                static_cast<uint64_t>
+                ( 
+                  operation_timeout_ms * YIELD::platform::Time::NS_IN_MS 
+                )
               );
         }
         break;

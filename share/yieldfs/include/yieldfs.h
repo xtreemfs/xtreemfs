@@ -58,8 +58,13 @@ namespace yieldfs
   public:
     const static uint32_t FUSE_FLAG_DEBUG = 1;
     const static uint32_t FUSE_FLAG_DIRECT_IO = 2;
+    const static uint32_t FUSE_FLAGS_DEFAULT = 0;
 
-    FUSE( YIELD::platform::auto_Volume volume, uint32_t flags = 0 );
+    FUSE
+    (
+      YIELD::platform::auto_Volume volume,
+      uint32_t flags = FUSE_FLAGS_DEFAULT
+    );
     ~FUSE();
 
     static uint32_t getpid();

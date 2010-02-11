@@ -85,7 +85,7 @@ public:
               open_file,
               ( renewed_xcap.get_expire_timeout_s() -
                 XCAP_EXPIRE_TIMEOUT_S_MIN )
-              * NS_IN_S
+              * YIELD::platform::Time::NS_IN_S
             )
           );
         }
@@ -143,7 +143,8 @@ OpenFile::OpenFile
       (
         incRef(),
 //        10 * NS_IN_S
-        ( xcap.get_expire_timeout_s() - XCAP_EXPIRE_TIMEOUT_S_MIN ) * NS_IN_S
+        ( xcap.get_expire_timeout_s() - XCAP_EXPIRE_TIMEOUT_S_MIN ) 
+        * YIELD::platform::Time::NS_IN_S
       )
     );
   }

@@ -42,7 +42,7 @@ using namespace xtreemfs;
 
 
 Stat::Stat( const YIELD::platform::Stat& stbuf )
-: YIELD::platform::Stat( stbuf ), refresh_time( 0 * NS_IN_S )
+: YIELD::platform::Stat( stbuf ), refresh_time( static_cast<uint64_t>( 0 ) )
 {
   changed_members = 0;
   truncate_epoch = 0;
@@ -87,14 +87,13 @@ Stat::Stat
 (
   const org::xtreemfs::interfaces::OSDWriteResponse& osd_write_response
 )
-: refresh_time( 0 * NS_IN_S )
+: refresh_time( static_cast<uint64_t>( 0 ) )
 {
-  changed_members = 0;
-
   if ( osd_write_response.get_new_file_size().empty() )
     DebugBreak();
 
   set_size( osd_write_response.get_new_file_size()[0].get_size_in_bytes() );
+  changed_members = YIELD::platform::Volume::SETATTR_SIZE;
 
   truncate_epoch
     = osd_write_response.get_new_file_size()[0].get_truncate_epoch();
