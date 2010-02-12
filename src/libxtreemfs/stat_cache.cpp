@@ -39,36 +39,37 @@ StatCache::StatCache
   auto_UserCredentialsCache user_credentials_cache,
   const std::string& volume_name,
   uint32_t write_back_attrs
-) : mrc_proxy( mrc_proxy ), 
-    read_ttl( read_ttl ), 
-    user_credentials_cache( user_credentials_cache ),
-    volume_name( volume_name ),
-    write_back_attrs( write_back_attrs )
+) 
+: mrc_proxy( mrc_proxy ), 
+  read_ttl( read_ttl ), 
+  user_credentials_cache( user_credentials_cache ),
+  volume_name( volume_name ),
+  write_back_attrs( write_back_attrs )
 { }
 
 StatCache::~StatCache()
 {
-  for ( iterator stat_i = begin(); stat_i != end(); stat_i++ )
-    delete stat_i->second;
+  for 
+  ( 
+    EntryMap::iterator entry_i = entries.begin(); 
+    entry_i != entries.end(); 
+    entry_i++ 
+  )
+    delete entry_i->second;
 }
 
 void StatCache::evict( const YIELD::platform::Path& path )
 {
-  lock.acquire();
+  entries_lock.acquire();
 
-  iterator stat_i = find( path );
-  if ( stat_i != end() )
+  EntryMap::iterator entry_i = entries.find( path );
+  if ( entry_i != entries.end() )
   {
-#ifdef _DEBUG
-    if ( stat_i->second->get_changed_members() != 0 )
-      DebugBreak();
-#endif
-
-    delete stat_i->second;
-    erase( stat_i );
+    delete entry_i->second;
+    entries.erase( entry_i );
   }
 
-  lock.release();
+  entries_lock.release();
 }
 
 void 
@@ -80,19 +81,18 @@ StatCache::fsetattr
   const org::xtreemfs::interfaces::XCap& write_xcap
 )
 {
-  if ( should_write_through( to_set ) )
+  uint32_t write_through_attrs = ~write_back_attrs & to_set;
+  if ( write_through_attrs != 0 )
   {    
     mrc_proxy->fsetattr
     ( 
       write_xcap, 
       *stbuf,
-      to_set
+      write_through_attrs
     );
-
-    _setattr( path, stbuf, to_set, true );
   }
-  else
-    _setattr( path, stbuf, to_set, false );
+
+  _setattr( path, stbuf, to_set );
 }
 
 YIELD::platform::auto_Stat
@@ -101,73 +101,90 @@ StatCache::getattr
   const YIELD::platform::Path& path
 )
 {
-  lock.acquire();
+  entries_lock.acquire();
 
-  Stat* stbuf;
-  iterator stat_i = find( path );
-  if ( stat_i != end() )
+  Entry* entry;
+  EntryMap::iterator entry_i = entries.find( path );
+  if ( entry_i != entries.end() )
   {
-    stbuf = stat_i->second;
-    // Check if stbuf came from the server at some point
-    if ( stbuf->get_refresh_time() > static_cast<uint64_t>( 0 ) ) 
+    entry = entry_i->second;
+    // Check if entry came from the server at some point
+    if ( entry->get_refresh_time() > static_cast<uint64_t>( 0 ) )
     {
-      if ( YIELD::platform::Time() - stbuf->get_refresh_time() < read_ttl )
+      if ( YIELD::platform::Time() - entry->get_refresh_time() < read_ttl )
       {
-        stbuf->incRef();
-        lock.release();
-        return stbuf;
+        Stat* stbuf = entry->get_stbuf().release(); 
+        entries_lock.release();
+        if ( stbuf != NULL )
+          return stbuf;
+        else // Placeholder for a missing file
+          throw org::xtreemfs::interfaces::MRCInterface::
+                  MRCException( 2, "file not found", "" );
       }
-      // else stbuf has expired
+      // else the entry has expired
     }
-    // else stbuf did not come from the server
+    // else the entry has an stbuf that did not come from the server
   }
   else
-    stbuf = NULL;
+    entry = NULL;
 
+  // Here we are getting a new Stat from the server
+  // (because the old entry expired, there never was one, etc.)
 
-  // Hold the lock through the RPC so that another thread doesn't try
+  // Hold the entries_lock through the RPC so that another thread doesn't try
   // to fill and insert entry in parallel
   org::xtreemfs::interfaces::Stat if_stbuf;
   try
   {
     mrc_proxy->getattr( Path( volume_name, path ), if_stbuf );
   }
-  catch ( ... )
+  catch ( ... ) // Probably not found
   {
-    delete stbuf; // Discard any unflushed changes
-    if ( stat_i != end() )     
-      erase( stat_i );
-    lock.release();
+    if ( entry == NULL ) // No entry for this path in the cache
+      entries[path] = new Entry; // Placeholder for a missing file
+    else if ( entry->get_stbuf() != NULL ) // i.e. this is not a placeholder       
+    {                                      // for a missing file
+      delete entry; // Discard any unflushed changes
+      entry_i->second = new Entry;
+    }
+    else // This is a placeholder for a missing file
+      entry->refresh(); // Update the refresh_time
+
+    entries_lock.release();
+
     throw;
   }
 
-  if ( stbuf == NULL )
+  // Here the server getattr has been successful
+  // Create an entry for the Stat if one doesn't exist already
+  if ( entry == NULL )
   {
-    stbuf = new Stat( if_stbuf );
-    operator[]( path ) = stbuf;
+    entry = new Entry( if_stbuf );
+    entries[path] = entry;
   }
   else
-    *stbuf = if_stbuf;
+    entry->refresh( if_stbuf );
+
+  Stat* entry_stbuf = entry->get_stbuf().release();
 
 #ifndef _WIN32
+  // Translate the user_id and group_id from the server Stat to uid and gid
   uid_t uid; gid_t gid;
   user_credentials_cache->getpasswdFromUserCredentials
   (
-    stbuf->get_user_id(),
-    stbuf->get_group_id(),
+    if_stbuf.get_user_id(),
+    if_stbuf.get_group_id(),
     uid,
     gid
   );
 
-  stbuf->set_uid( uid );
-  stbuf->set_gid( gid );
+  entry_stbuf->set_uid( uid );
+  entry_stbuf->set_gid( gid );
 #endif
-
-  stbuf->incRef();  
   
-  lock.release();
+  entries_lock.release();
 
-  return stbuf;
+  return entry_stbuf;
 }
 
 void 
@@ -179,37 +196,37 @@ StatCache::metadatasync
 {
   if ( write_back_attrs != 0 )
   {
-    lock.acquire();
+    entries_lock.acquire();
 
-    iterator stat_i = find( path );
-    if ( stat_i != end() )
+    EntryMap::iterator entry_i = entries.find( path );
+    if ( entry_i != entries.end() )
     {
-      Stat* stbuf = stat_i->second;
-      if ( stbuf->get_changed_members() != 0 )
+      Entry* entry = entry_i->second;
+      if ( entry->get_write_back_attrs() != 0 )
       {
         try
         {
           mrc_proxy->fsetattr
           ( 
             write_xcap, 
-            *stbuf,
-            stbuf->get_changed_members()
+            *entry->get_stbuf(),
+            entry->get_write_back_attrs()
           );
 
-          stbuf->set_changed_members( 0 );
+          entry->set_write_back_attrs( 0 );
         }
         catch ( ... )
         {
-          delete stbuf;
-          erase( stat_i );
-          lock.release();
+          delete entry;
+          entries.erase( entry_i );
+          entries_lock.release();
           throw;
         }
       }
       // else nothing to be written, leave it
     }
 
-    lock.release();
+    entries_lock.release();
   }
 }
 
@@ -230,78 +247,177 @@ StatCache::setattr
     DebugBreak();
 #endif
 
-  if ( should_write_through( to_set ) )
-  {
-    mrc_proxy->setattr( Path( volume_name, path ), *stbuf, to_set );
-    _setattr( path, stbuf, to_set, true );
-  }
-  else
-    _setattr( path, stbuf, to_set, false );
+
+  uint32_t write_through_attrs = ~write_back_attrs & to_set;
+  if ( write_through_attrs != 0 )
+    mrc_proxy->setattr( Path( volume_name, path ), *stbuf, write_through_attrs );
+
+  _setattr( path, stbuf, to_set );
 }
 
 void StatCache::_setattr
 (
   const YIELD::platform::Path& path,
   auto_Stat stbuf, 
-  uint32_t to_set,
-  bool wrote_through
+  uint32_t to_set
 )
 {
-  lock.acquire();
+  uint32_t write_back_attrs = this->write_back_attrs & to_set;
 
-  iterator stat_i = find( path );
-  if ( stat_i != end() )
+  entries_lock.acquire();
+
+  EntryMap::iterator entry_i = entries.find( path );
+  if ( entry_i != entries.end() )
   {
-    if ( !wrote_through )
-    {
-      stat_i->second->set_changed_members
-      ( 
-        stat_i->second->get_changed_members() | to_set 
-      );
-    }
+    entry_i->second->change( stbuf, to_set );
 
-    stat_i->second->set( *stbuf, to_set );
+    entry_i->second->set_write_back_attrs
+    ( 
+      entry_i->second->get_write_back_attrs() | write_back_attrs 
+    );
   }
   else
-  {
-    if ( !wrote_through )
-    {
-#ifdef _DEBUG
-      if ( stbuf->get_changed_members() != 0 )
-        DebugBreak();
-#endif
+    entries[path] = new Entry( stbuf, write_back_attrs );
 
-      stbuf->set_changed_members( to_set );
-    }
-
-    operator[]( path ) = stbuf.release();
-  }
-
-  lock.release();
+  entries_lock.release();
 }
 
-bool StatCache::should_write_through( uint32_t to_set ) const
+StatCache::Entry::Entry()
 {
-  if ( write_back_attrs == 0 )
-    return true;
-  else
+  // refresh_time = current_time
+  // stbuf = NULL = missing file
+  write_back_attrs = 0;
+}
+
+StatCache::Entry::Entry( org::xtreemfs::interfaces::Stat stbuf )
+  : stbuf( new Stat( stbuf ) )
+{
+  // refresh_time = current_time
+  write_back_attrs = 0;
+}
+
+StatCache::Entry::Entry( auto_Stat stbuf, uint32_t write_back_attrs )
+  : refresh_time( static_cast<uint64_t>( 0 ) ), 
+    stbuf( stbuf ), 
+    write_back_attrs( write_back_attrs )
+{
+  // refresh_time = 0 = this entry has never come from the server
+}
+
+void StatCache::Entry::change( auto_Stat stbuf, uint32_t to_set )
+{
+  if ( this->stbuf != NULL )
+    this->stbuf->set( *stbuf, to_set );
+  else // This is an entry for a missing file, 
+       // which now has metadata set on it?!
+    this->stbuf = stbuf;
+}
+
+const YIELD::platform::Time& StatCache::Entry::get_refresh_time() const
+{
+  return refresh_time;
+}
+
+void StatCache::Entry::refresh()
+{
+  refresh_time = YIELD::platform::Time();
+}
+
+void StatCache::Entry::refresh( const org::xtreemfs::interfaces::Stat& stbuf )
+{
+  if ( this->stbuf != NULL )
   {
-    for ( uint8_t setattr_bit_i = 0; setattr_bit_i < 31; setattr_bit_i++ )
+#ifndef _WIN32
+    this->stbuf->set_dev( stbuf.get_dev() );
+    this->stbuf->set_ino( stbuf.get_ino() );
+#endif
+
+    if 
+    ( 
+      ( write_back_attrs & YIELD::platform::Volume::SETATTR_MODE )
+         != YIELD::platform::Volume::SETATTR_MODE
+    )
+      this->stbuf->set_mode( static_cast<mode_t>( stbuf.get_mode() ) );
+
+    this->stbuf->set_nlink( static_cast<nlink_t>( stbuf.get_nlink() ) );
+
+#ifndef _WIN32
+    if 
+    ( 
+      ( write_back_attrs & YIELD::platform::Volume::SETATTR_GID )
+         != YIELD::platform::Volume::SETATTR_GID
+    )
+      this->stbuf->set_group_id( stbuf.get_group_id() );
+
+    if 
+    ( 
+      ( write_back_attrs & YIELD::platform::Volume::SETATTR_UID )
+         != YIELD::platform::Volume::SETATTR_UID
+    )
+      this->stbuf->set_user_id( stbuf.get_user_id() );
+#endif
+
+    if ( stbuf.get_truncate_epoch() > this->stbuf->get_truncate_epoch() )
+      this->stbuf->set_size( stbuf.get_size() );
+    else if ( stbuf.get_truncate_epoch() == this->stbuf->get_truncate_epoch() )
     {
-      uint32_t setattr_bit = 1 << setattr_bit_i;
-      if 
-      ( 
-        ( to_set & setattr_bit ) == setattr_bit
-        && 
-        ( write_back_attrs & setattr_bit ) != setattr_bit
-      )
+      if ( stbuf.get_size() > this->stbuf->get_size() )
       {
-        // There is a SETATTR_* in to_set that is not in write_back_attrs
-        // -> write through
-        return true;
+        this->stbuf->set_size( stbuf.get_size() );
+
+        // Pretend we never changed the size
+        if 
+        ( 
+          ( write_back_attrs & YIELD::platform::Volume::SETATTR_SIZE )
+             == YIELD::platform::Volume::SETATTR_SIZE
+        )
+          write_back_attrs ^= YIELD::platform::Volume::SETATTR_SIZE;
       }
     }
+    else // A truncate_epoch we got from the server is less than our own?!
+      DebugBreak();
 
-    return false;
+    if 
+    ( 
+      ( write_back_attrs & YIELD::platform::Volume::SETATTR_ATIME )
+         != YIELD::platform::Volume::SETATTR_ATIME
+    )
+      this->stbuf->set_atime( stbuf.get_atime_ns() );
+
+    if 
+    ( 
+      ( write_back_attrs & YIELD::platform::Volume::SETATTR_MTIME )
+         != YIELD::platform::Volume::SETATTR_MTIME
+    )
+      this->stbuf->set_mtime( stbuf.get_mtime_ns() );
+
+    if 
+    ( 
+      ( write_back_attrs & YIELD::platform::Volume::SETATTR_CTIME )
+         != YIELD::platform::Volume::SETATTR_CTIME
+    )
+      this->stbuf->set_ctime( stbuf.get_ctime_ns() );
+
+#ifdef _WIN32
+    if 
+    ( 
+      ( write_back_attrs & YIELD::platform::Volume::SETATTR_ATTRIBUTES )
+         != YIELD::platform::Volume::SETATTR_ATTRIBUTES
+    )
+      this->stbuf->set_attributes( stbuf.get_attributes() );
+#else
+    this->stbuf->set_blksize( stbuf.get_blksize() );
+#endif
+
+    this->stbuf->set_truncate_epoch( stbuf.get_truncate_epoch() );
+
+    this->refresh_time = YIELD::platform::Time();
   }
+  else // stbuf = NULL, so this entry was a placeholder for a missing file
+    this->stbuf = new Stat( stbuf ); // The file exists now
+}
+
+void StatCache::Entry::set_write_back_attrs( uint32_t write_back_attrs ) 
+{ 
+  this->write_back_attrs = write_back_attrs; 
 }

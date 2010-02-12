@@ -37,7 +37,7 @@
 
 namespace xtreemfs
 { 
-  class StatCache : private std::map<YIELD::platform::Path, Stat*>
+  class StatCache
   {
   public:
     StatCache
@@ -83,8 +83,7 @@ namespace xtreemfs
       uint32_t to_set
     );
 
-  private:
-    YIELD::platform::Mutex lock;
+  private:    
     auto_MRCProxy mrc_proxy;
     YIELD::platform::Time read_ttl; // Time to keep Stats read from the server
     auto_UserCredentialsCache user_credentials_cache;
@@ -92,15 +91,41 @@ namespace xtreemfs
     uint32_t write_back_attrs; // SETATTR_ types to write back
 
 
+    class Entry
+    {
+    public:
+      Entry(); // Missing file
+      Entry( org::xtreemfs::interfaces::Stat stbuf ); // From a getattr
+      Entry( auto_Stat stbuf, uint32_t write_back_attrs ); // From a setattr
+
+      void change( auto_Stat stbuf, uint32_t to_set ); // On setattr
+      auto_Stat get_stbuf() const { return stbuf; }      
+      uint32_t get_write_back_attrs() const { return write_back_attrs; }
+      const YIELD::platform::Time& get_refresh_time() const;
+      void refresh(); // On getattr for a missing file
+      void refresh( const org::xtreemfs::interfaces::Stat& stbuf ); // On getattr
+      void set_write_back_attrs( uint32_t write_back_attrs );
+
+    private:
+      YIELD::platform::Time refresh_time; // Last time the Stat was set from
+                                          // an org::xtreemfs::interfaces::Stat
+                                          // or 0 if the contents did not come
+                                          // from the server (i.e. on setattr)
+      auto_Stat stbuf;
+      uint32_t write_back_attrs; // Union of SETATTR_* changes
+    };
+
+    typedef std::map<YIELD::platform::Path, Entry*> EntryMap;
+    EntryMap entries;
+    YIELD::platform::Mutex entries_lock;
+
+
     void _setattr 
     (
       const YIELD::platform::Path& path,
       auto_Stat stbuf, 
-      uint32_t to_set,
-      bool wrote_through
+      uint32_t to_set
     );  
-
-    bool should_write_through( uint32_t to_set ) const;
   };
 };
 
