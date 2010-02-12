@@ -1,4 +1,4 @@
-/*  Copyright (c) 2008 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
+/*  Copyright (c) 2008-2010 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
     This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
     Grid Operating System, see <http://www.xtreemos.eu> for more details.
@@ -72,6 +72,9 @@ public final class ASCIIString implements Serializable {
         try {
             ASCIIString other = (ASCIIString)o;
 
+            if (other.length() != this.length())
+                return false;
+
             for (int i = 0; i < data.length; i++) {
                 if (this.unckeckedGetByte(i) != other.unckeckedGetByte(i))
                     return false;
@@ -110,6 +113,14 @@ public final class ASCIIString implements Serializable {
             hash = h;
         }
         return h;
+    }
+
+    public int length() {
+        return data.length;
+    }
+
+    public int getSerializedSize() {
+        return length()+Integer.SIZE/8;
     }
 
 }
