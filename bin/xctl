@@ -34,6 +34,7 @@ OSD_URI_DEFAULT = "oncrpc://localhost:%u/" % OSD_ONCRPC_PORT_DEFAULT
 # Misc
 STRIPE_SIZE_DEFAULT = 128
 STRIPING_POLICY_TYPE_DEFAULT = "RAID0"
+STRIPING_POLICY_TYPE_NONE = "NONE"
       
 
 class Autotest:
@@ -59,13 +60,15 @@ class Autotest:
                              
     def __get_volumes( self ):
         volumes = []
-        for osd_i in xrange( self.__osd_count ):
+        #for osd_i in xrange( self.__osd_count ):
+        for osd_i in xrange(1): # create only test_0 directory
             volume_name = "test_" + str( osd_i )
             for direct_io in ( False, True ):
                 mount_point_dir_path = os.path.join( "mnt", volume_name )
-                if not direct_io:
-                    mount_point_dir_path += "_nondirect"
+                #if not direct_io:
+                #    mount_point_dir_path += "_nondirect"
                 volume = Volume( name=volume_name, mount_point_dir_path=mount_point_dir_path )
+                print "create next volume"
                 volumes.append( volume )
         return volumes
     
@@ -93,8 +96,10 @@ class Autotest:
         volumes = self.__get_volumes()
 
         # Create volumes
+        print "create_volumes: number of volumes to create:", len( volumes )
         for volume_i in xrange( 0, len( volumes ), 2 ):
             volume = volumes[volume_i]
+            print "stripe_width from create volume:",( replicate_on_close and ( ( volume_i / 2 ) + 1 ) or 1 )
             try: 
                 volume.create( 
                                debug_level=debug_level,                              
@@ -112,6 +117,7 @@ class Autotest:
         try:
             for volume_i in xrange( len( volumes ) ):
                 volume = volumes[volume_i]            
+                print "mount_volumes: replication factor from mount volumes:",( replicate_on_close and ( ( volume_i / 2 ) + 1 ) or 0 ) 
                 volume.mount( 
                               debug_level=debug_level,
                               direct_io=( volume_i % 2 == 1 ), # Or have volume.get_direct_io()?
@@ -205,6 +211,8 @@ class Autotest:
                             
     def run( self ):               
         failed_test_count = 0
+        # test only the first volume, why does it create so many volumes?
+        #for volume in self.__get_volumes():
         for volume in self.__get_volumes():
             failed_test_count += volume.test()
         return failed_test_count
@@ -540,7 +548,7 @@ class Volume:
                 mrc_uri=MRC_URI_DEFAULT,
                 pkcs12_file_path=None,
                 pkcs12_passphrase=None,
-                stripe_width=1,
+                stripe_width=3,
               ):
         
         mkfs_xtreemfs_file_path = os.path.abspath( os.path.join( MY_DIR_PATH, "mkfs.xtreemfs" ) )
@@ -670,7 +678,7 @@ class Volume:
                     if DEBUG_ME: 
                         print "xctl: test module", test_module_name, "does not have a createTestSuite global function"                        
                             
-            test_module_names = test_suite_factories.keys()
+            test_module_names = test_suite_factories.keys()     # names of the testSuites
             test_module_names.sort()
             for test_module_name in test_module_names:
                 test_suite_factory = test_suite_factories[test_module_name]                
@@ -678,26 +686,29 @@ class Volume:
                 if test_suite is not None:            
                     test_run_dir_path = os.path.join( self.get_mount_point_dir_path(), test_module_name )
                     try: 
-                        os.mkdir( test_run_dir_path )
+                        print "create testdirectory in " , test_run_dir_path
+                        os.mkdir( test_run_dir_path )           # create directory for this test
                     except KeyboardInterrupt:
                         raise
                     except:
                         pass # The directory may already exist because of direct/nondirect volume sharing
                     os.chdir( test_run_dir_path )
                     print "xctl: running", test_module_name, "in", test_run_dir_path
-
-                    result = unittest.TextTestRunner( verbosity=( verbose and 2 or 1 ) ).run( test_suite )
+                                                                # start test
+                    result = unittest.TextTestRunner( verbosity=( verbose and 2 or 1 ) ).run( test_suite ) 
                     if not result.wasSuccessful(): failed_test_count += 1
 
                     os.chdir( original_cwd ) # Change back so we can rmtree test_run_dir_path
-                    try: 
-                        shutil.rmtree( test_run_dir_path )
-                    except KeyboardInterrupt:
-                        raise
-                    except:
-                        if DEBUG_ME:
-                            print "xctl: error cleaning up test directory", test_run_dir_path
-                            traceback.print_exc()        
+                    #try: 
+                    #    shutil.rmtree( test_run_dir_path )
+                    #except KeyboardInterrupt:
+                    #    raise
+                    #except:
+                    #    if DEBUG_ME:
+                    #        print "xctl: error cleaning up test directory", test_run_dir_path
+                    #        traceback.print_exc()        
+                    if DEBUG_ME:
+                        print "xctl: temp jump over cleaning test directory"
 
         except KeyboardInterrupt:
             os.chdir( original_cwd )
@@ -746,7 +757,9 @@ if __name__ == "__main__":
     option_parser.add_option( "--stop-autotest-servers", action="store_true", dest="stop_autotest_servers" )        
     option_parser.add_option( "--stop-dir", action="store_true", dest="stop_dir" )
     option_parser.add_option( "--stop-mrc", action="store_true", dest="stop_mrc" )
-    option_parser.add_option( "--stop-osd", action="store_true", dest="stop_osd" )    
+    option_parser.add_option( "--stop-osd", action="store_true", dest="stop_osd" ) 
+    option_parser.add_option( "--start-scene", action="store_true", help="start client and servers only for manual tests" )
+    option_parser.add_option( "--stop-scene", action="store_true", help="stop clients and servers after manual tests" )   
 
     options, positional_args = option_parser.parse_args()
 
@@ -804,15 +817,30 @@ if __name__ == "__main__":
                     interrupted = True
                 
             if options.stop_autotest_clients or options.autotest:
-                autotest.stop_clients()
+               autotest.stop_clients()
 
             if options.autotest and not interrupted:
-                autotest.save_server_status_pages()
+               autotest.save_server_status_pages()
                 
             if options.stop_autotest_servers or options.autotest:
-                autotest.stop_servers()
+               autotest.stop_servers()
                 
             sys.exit( ret )
+            
+    elif options.start_scene or options.stop_scene:
+        autotest = Autotest( osd_count=options.autotest_osd_count, server_uri=server_uri )
+        if options.start_scene:        
+            autotest.start_servers( debug_level=server_debug_level )
+            autotest.start_clients( 
+                                    debug_level=client_debug_level,
+                                    mount_options=options.mount_options, 
+                                    replicate_on_close=options.replicate_on_close 
+                                  )
+        if options.stop_scene:
+            autotest.stop_clients()
+            autotest.save_server_status_pages()
+            autotest.stop_servers()
+                
     elif options.start_dir or options.stop_dir:
         if not options.config_file_path:
             options.config_file_path = DIR_CONFIG_FILE_PATH_DEFAULT
