@@ -63,10 +63,8 @@ namespace xtreemfs
         YIELD::ipc::Socket::init();
 
 #ifdef XTREEMFS_HAVE_GOOGLE_BREAKPAD
-        google_breakpad::ExceptionHandler* exception_handler;
         void* MinidumpCallback_context = this;
-#if defined(_WIN32)
-//            if ( !IsDebuggerPresent() )            {
+        google_breakpad::ExceptionHandler* 
           exception_handler =
             new google_breakpad::ExceptionHandler
             (
@@ -74,21 +72,12 @@ namespace xtreemfs
               NULL,
               MinidumpCallback,
               MinidumpCallback_context,
+#if defined(_WIN32)
               google_breakpad::ExceptionHandler::HANDLER_ALL
-            );
 #elif defined(__linux)
-        exception_handler =
-          new google_breakpad::ExceptionHandler
-          (
-            YIELD::platform::Path( "." ) + PATH_SEPARATOR_STRING,
-            NULL,
-            MinidumpCallback,
-            MinidumpCallback_context,
-            true
-          );
-#else
-#error
+              true
 #endif
+            );
 #endif
         int ret = YIELD::Main::main( argc, argv );
 
