@@ -54,7 +54,7 @@ except:
     build_env = Environment( **build_env )
 
     build_conf = build_env.Configure()
-    if sys.platform.startswith( "linux" ) and platform.machine() == "i686": 
+    if sys.platform.startswith( "linux" ) and platform.machine() == "i686":
         build_env["CCFLAGS"] += "-march=i686 "
 
     Export( "build_env", "build_conf" )
@@ -72,11 +72,11 @@ for include_dir_path in include_dir_paths:
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
 
 build_env.Library( "../../lib/google-breakpad", (
-    r"../../share/google-breakpad/src/client/windows/crash_generation/client_info.cc",
-    r"../../share/google-breakpad/src/client/windows/crash_generation/crash_generation_client.cc",
-    r"../../share/google-breakpad/src/client/windows/crash_generation/minidump_generator.cc",
-    r"../../share/google-breakpad/src/client/windows/handler/exception_handler.cc",
     r"../../share/google-breakpad/src/common/convert_UTF.c",
     r"../../share/google-breakpad/src/common/string_conversion.cc",
     r"../../share/google-breakpad/src/common/windows/guid_string.cc",
-    r"../../share/google-breakpad/src/common/windows/string_utils.cc" ) )
+    r"../../share/google-breakpad/src/common/windows/string_utils.cc",
+    r"../../share/google-breakpad/src/client/windows/crash_generation/client_info.cc",
+    r"../../share/google-breakpad/src/client/windows/crash_generation/crash_generation_client.cc",
+    r"../../share/google-breakpad/src/client/windows/crash_generation/minidump_generator.cc",
+    r"../../share/google-breakpad/src/client/windows/handler/exception_handler.cc" ) )

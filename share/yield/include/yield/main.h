@@ -87,10 +87,10 @@ namespace YIELD
 
       int ret = main( static_cast<int>( argvv.size() ), &argvv[0] );
 
-      for 
-      ( 
-        std::vector<char*>::size_type argvv_i = 1; 
-        argvv_i < argvv.size(); 
+      for
+      (
+        std::vector<char*>::size_type argvv_i = 1;
+        argvv_i < argvv.size();
         argvv_i++
       )
         delete [] argvv[argvv_i];
@@ -106,31 +106,31 @@ namespace YIELD
       try
       {
         std::vector<CSimpleOpt::SOption> simpleopt_options;
-        for 
-        ( 
+        for
+        (
           std::vector<Option>::const_iterator option_i = options.begin();
-          option_i != options.end(); 
-          option_i++ 
+          option_i != options.end();
+          option_i++
         )
         {
           const Option& option = *option_i;
-          CSimpleOpt::SOption short_simpleopt_option 
-            = 
-            { 
-              option.get_id(), 
-              option.get_short_arg(), 
-              option.get_default_values() ? SO_REQ_SEP : SO_NONE 
+          CSimpleOpt::SOption short_simpleopt_option
+            =
+            {
+              option.get_id(),
+              option.get_short_arg(),
+              option.get_default_values() ? SO_REQ_SEP : SO_NONE
             };
           simpleopt_options.push_back( short_simpleopt_option );
 
           if ( option.get_long_arg() )
           {
-            CSimpleOpt::SOption long_simpleopt_option 
-              = 
-              { 
-                option.get_id(), 
-                option.get_long_arg(), 
-                option.get_default_values() ? SO_REQ_SEP : SO_NONE 
+            CSimpleOpt::SOption long_simpleopt_option
+              =
+              {
+                option.get_id(),
+                option.get_long_arg(),
+                option.get_default_values() ? SO_REQ_SEP : SO_NONE
               };
             simpleopt_options.push_back( long_simpleopt_option );
           }
@@ -139,7 +139,7 @@ namespace YIELD
         CSimpleOpt::SOption sentinel_simpleopt_option = SO_END_OF_OPTIONS;
         simpleopt_options.push_back( sentinel_simpleopt_option );
 
-        // Make copies of the strings in argv so that 
+        // Make copies of the strings in argv so that
         // SimpleOpt can punch holes in them
         std::vector<char*> argvv( argc );
         for ( int arg_i = 0; arg_i < argc; arg_i++ )
@@ -183,7 +183,7 @@ namespace YIELD
 
             case SO_ARG_INVALID: // Option doesn't take an argument
             {
-              std::cerr << program_name << ": " << args.OptionText() << 
+              std::cerr << program_name << ": " << args.OptionText() <<
                            " does not take an argument." << std::endl;
               return 1;
             }
@@ -197,7 +197,7 @@ namespace YIELD
 
             case SO_ARG_MISSING: // Option missing an argument
             {
-              std::cerr << program_name << ": " << args.OptionText() << 
+              std::cerr << program_name << ": " << args.OptionText() <<
                            " requires an argument." << std::endl;
               return 1;
             }
@@ -205,7 +205,7 @@ namespace YIELD
 
             case SO_ARG_INVALID_DATA: // Argument looks like another option
             {
-              std::cerr << program_name << ": " << args.OptionText() << 
+              std::cerr << program_name << ": " << args.OptionText() <<
                            " requires an argument, but you appear to have"
                            << " passed another option." << std::endl;
               return 1;
@@ -216,11 +216,11 @@ namespace YIELD
 
         parseFiles( args.FileCount(), args.Files() );
 
-        for 
-        ( 
-          std::vector<char*>::iterator arg_i = argvv.begin(); 
-          arg_i != argvv.end(); 
-          arg_i++ 
+        for
+        (
+          std::vector<char*>::iterator arg_i = argvv.begin();
+          arg_i != argvv.end();
+          arg_i++
         )
           delete [] *arg_i;
         argvv.clear();
@@ -275,11 +275,11 @@ namespace YIELD
         for ( int arg_i = 1; arg_i < argc; arg_i++ )
           argvv.push_back( argv[arg_i] );
 
-        // Pass the original argv to _main instead of the copies 
+        // Pass the original argv to _main instead of the copies
         // SimpleOpt punched holes in
         ret = _main( static_cast<int>( argvv.size() ), &argvv[0] );
       }
-      catch ( YIELD::platform::Exception& exc ) 
+      catch ( YIELD::platform::Exception& exc )
       {
         std::cerr << program_name << ": " << exc.what() << std::endl;
 
@@ -297,13 +297,13 @@ namespace YIELD
 
   protected:
     Main
-    ( 
-      const char* program_name, 
-      const char* program_description = NULL, 
-      const char* files_usage = NULL 
+    (
+      const char* program_name,
+      const char* program_description = NULL,
+      const char* files_usage = NULL
     )
-      : program_name( program_name ), 
-        program_description( program_description ), 
+      : program_name( program_name ),
+        program_description( program_description ),
         files_usage( files_usage )
     {
       addOption( 0, "-h", "--help" );
@@ -311,13 +311,13 @@ namespace YIELD
 
     virtual ~Main() { }
 
-    void 
+    void
     addOption
-    ( 
-      int id, 
-      const char* short_arg, 
-      const char* long_arg = NULL, 
-      const char* default_values = NULL 
+    (
+      int id,
+      const char* short_arg,
+      const char* long_arg = NULL,
+      const char* default_values = NULL
     )
     {
       options.push_back( Option( id, short_arg, long_arg, default_values ) );
@@ -350,11 +350,11 @@ namespace YIELD
       std::cout << std::endl;
 
       std::sort( options.begin(), options.end() );
-      for 
-      ( 
+      for
+      (
         std::vector<Option>::const_iterator option_i = options.begin();
-        option_i != options.end(); 
-        option_i++ 
+        option_i != options.end();
+        option_i++
       )
       {
         const Option& option = *option_i;
@@ -382,15 +382,15 @@ namespace YIELD
     {
     public:
       Option
-      ( 
-        int id, 
-        const char* short_arg, 
-        const char* long_arg, 
-        const char* default_values 
+      (
+        int id,
+        const char* short_arg,
+        const char* long_arg,
+        const char* default_values
       )
-        : id( id ), 
-          short_arg( short_arg ), 
-          long_arg( long_arg ), 
+        : id( id ),
+          short_arg( short_arg ),
+          long_arg( long_arg ),
           default_values( default_values )
       { }
 
@@ -429,5 +429,6 @@ namespace YIELD
 #endif
   };
 };
+
 
 #endif

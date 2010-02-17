@@ -164,7 +164,7 @@ namespace YIELD
       const static uint32_t CLIENT_FLAG_TRACE_OPERATIONS = 2;
 
       const static uint16_t CONCURRENCY_LEVEL_DEFAULT = 4;
-      const static uint64_t OPERATION_TIMEOUT_DEFAULT 
+      const static uint64_t OPERATION_TIMEOUT_DEFAULT
         = 5 * YIELD::platform::Time::NS_IN_S;
       const static uint8_t RECONNECT_TRIES_MAX_DEFAULT = 2;
 
@@ -1640,7 +1640,7 @@ namespace YIELD
 
       SSL_CTX* ctx;
 #endif
-	  };
+    };
 
 
 #ifdef YIELD_HAVE_OPENSSL
@@ -2011,5 +2011,6 @@ namespace YIELD
     }
   };
 };
+
 
 #endif

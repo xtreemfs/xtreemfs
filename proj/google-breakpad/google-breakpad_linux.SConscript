@@ -54,7 +54,7 @@ except:
     build_env = Environment( **build_env )
 
     build_conf = build_env.Configure()
-    if sys.platform.startswith( "linux" ) and platform.machine() == "i686": 
+    if sys.platform.startswith( "linux" ) and platform.machine() == "i686":
         build_env["CCFLAGS"] += "-march=i686 "
 
     Export( "build_env", "build_conf" )
@@ -64,13 +64,13 @@ for include_dir_path in include_dir_paths:
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
 
 build_env.Library( "../../lib/google-breakpad", (
-    r"../../share/google-breakpad/src/client/minidump_file_writer.cc",
-    r"../../share/google-breakpad/src/client/linux/handler/exception_handler.cc",
-    r"../../share/google-breakpad/src/client/linux/handler/linux_thread.cc",
-    r"../../share/google-breakpad/src/client/linux/handler/minidump_generator.cc",
     r"../../share/google-breakpad/src/common/convert_UTF.c",
     r"../../share/google-breakpad/src/common/md5.c",
     r"../../share/google-breakpad/src/common/string_conversion.cc",
     r"../../share/google-breakpad/src/common/linux/dump_symbols.cc",
     r"../../share/google-breakpad/src/common/linux/file_id.cc",
-    r"../../share/google-breakpad/src/common/linux/guid_creator.cc" ) )
+    r"../../share/google-breakpad/src/common/linux/guid_creator.cc",
+    r"../../share/google-breakpad/src/client/minidump_file_writer.cc",
+    r"../../share/google-breakpad/src/client/linux/handler/exception_handler.cc",
+    r"../../share/google-breakpad/src/client/linux/handler/linux_thread.cc",
+    r"../../share/google-breakpad/src/client/linux/handler/minidump_generator.cc" ) )

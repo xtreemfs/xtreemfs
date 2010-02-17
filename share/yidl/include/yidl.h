@@ -270,7 +270,7 @@ extern "C"
 {
   __declspec( dllimport ) void __stdcall DebugBreak();
 
-	__int64 _InterlockedCompareExchange64
+  __int64 _InterlockedCompareExchange64
   (
     volatile __int64* current_value,
     __int64 new_value,
@@ -419,7 +419,7 @@ namespace yidl
 #endif
 #elif defined(__i386__)
       atomic_t prev;
-      asm volatile(	"lock\n"
+      asm volatile(  "lock\n"
               "cmpxchgl %1,%2\n"
             : "=a" ( prev )
                   : "r" ( new_value ), "m" ( *current_value ) , "0" ( old_value )
@@ -428,12 +428,12 @@ namespace yidl
       return prev;
 #elif defined(__ppc__)
       atomic_t prev;
-      asm volatile(	"					\n\
-              1:	ldarx   %0,0,%2 \n\
+      asm volatile(  "          \n\
+              1:  ldarx   %0,0,%2 \n\
               cmpd    0,%0,%3 \n\
-              bne     2f		\n\
+              bne     2f    \n\
               stdcx.  %4,0,%2 \n\
-              bne-    1b		\n\
+              bne-    1b    \n\
               sync\n"
               "2:"
             : "=&r" ( prev ), "=m" ( *current_value )
@@ -444,7 +444,7 @@ namespace yidl
       return prev;
 #elif defined(__x86_64__)
       atomic_t prev;
-      asm volatile(	"lock\n"
+      asm volatile(  "lock\n"
               "cmpxchgq %1,%2\n"
             : "=a" ( prev )
                   : "r" ( new_value ), "m" ( *current_value ) , "0" ( old_value )
@@ -481,7 +481,7 @@ namespace yidl
     static inline atomic_t atomic_inc( volatile atomic_t* current_value )
     {
 #if defined(_WIN64)
-	    return _InterlockedIncrement64( current_value );
+      return _InterlockedIncrement64( current_value );
 #elif defined(_WIN32)
       return InterlockedIncrement( current_value );
 #elif defined(__sun)
@@ -592,17 +592,17 @@ namespace yidl
 
       auto_Object( const auto_Object<ObjectType>& other )
       {
-          object = Object::incRef( other.object );
+  	    object = Object::incRef( other.object );
       }
 
       ~auto_Object()
       {
-          Object::decRef( object );
+        Object::decRef( object );
       }
 
       inline ObjectType* get() const
       {
-          return object;
+        return object;
       }
 
       auto_Object& operator=( const auto_Object<ObjectType>& other )
@@ -1416,6 +1416,5 @@ namespace yidl
     );
   };
 };
-
 
 #endif

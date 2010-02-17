@@ -343,19 +343,19 @@ namespace YIELD
       const static uint64_t NS_IN_US = 1000ULL;
       const static uint64_t NS_IN_MS = 1000000ULL;
       const static uint64_t NS_IN_S = 1000000000ULL;
-      
+
 
       Time(); // Current time
 
       Time( uint64_t unix_time_ns )
-        : unix_time_ns( unix_time_ns ) 
+        : unix_time_ns( unix_time_ns )
       { }
 
       Time( double unix_time_s )
         : unix_time_ns
-          ( 
+          (
             static_cast<uint64_t>
-            ( 
+            (
               unix_time_s * static_cast<double>( NS_IN_S )
             )
           )
@@ -369,7 +369,7 @@ namespace YIELD
       Time( const struct timespec& );
 #endif
 
-      Time( const Time& other ) 
+      Time( const Time& other )
         : unix_time_ns( other.unix_time_ns )
        { }
 
@@ -380,7 +380,7 @@ namespace YIELD
 
       inline double as_unix_time_ms() const
       {
-        return static_cast<double>( unix_time_ns ) 
+        return static_cast<double>( unix_time_ns )
                / static_cast<double>( NS_IN_MS );
       }
 
@@ -391,13 +391,13 @@ namespace YIELD
 
       inline double as_unix_time_s() const
       {
-        return static_cast<double>( unix_time_ns ) 
+        return static_cast<double>( unix_time_ns )
                / static_cast<double>( NS_IN_S );
       }
 
       inline double as_unix_time_us() const
       {
-        return static_cast<double>( unix_time_ns ) 
+        return static_cast<double>( unix_time_ns )
                / static_cast<double>( NS_IN_US );
       }
 
@@ -427,16 +427,16 @@ namespace YIELD
 
       inline Time& operator=( uint64_t unix_time_ns )
       {
-        this->unix_time_ns = unix_time_ns; 
+        this->unix_time_ns = unix_time_ns;
         return *this;
-      }      
+      }
 
       inline Time& operator=( double unix_time_s )
       {
-        this->unix_time_ns = 
+        this->unix_time_ns =
           static_cast<uint64_t>
-          ( 
-            unix_time_s * static_cast<double>( NS_IN_S ) 
+          (
+            unix_time_s * static_cast<double>( NS_IN_S )
           );
         return *this;
       }
@@ -470,10 +470,10 @@ namespace YIELD
 
       inline Time& operator+=( double unix_time_s )
       {
-        this->unix_time_ns += 
+        this->unix_time_ns +=
           static_cast<uint64_t>
-          ( 
-            unix_time_s * static_cast<double>( NS_IN_S ) 
+          (
+            unix_time_s * static_cast<double>( NS_IN_S )
           );
 
         return *this;
@@ -1315,14 +1315,14 @@ namespace YIELD
       Path() { }
       Path( char narrow_path );
       Path( const char* narrow_path );
-      Path( const char* narrow_path, size_t narrow_path_len );      
+      Path( const char* narrow_path, size_t narrow_path_len );
       Path( const std::string& narrow_path );
 #ifdef _WIN32
       Path( wchar_t wide_path );
       Path( const wchar_t* wide_path );
-      Path( const wchar_t* wide_path, size_t wide_path_len );      
+      Path( const wchar_t* wide_path, size_t wide_path_len );
       Path( const std::wstring& wide_path );
-#endif      
+#endif
 
       Path( const Path& path )
         : path( path.path )
@@ -1390,12 +1390,12 @@ namespace YIELD
         return this->path.compare( path.path ) < 0;
       }
 
-      Path operator+( const Path& path ) const; // Appends to the path 
+      Path operator+( const Path& path ) const; // Appends to the path
                                            // without adding a separator
       Path operator+( const string_type& path ) const;
       Path operator+( string_type::value_type path ) const;
       Path operator+( const string_type::value_type* path ) const;
-    
+
       Path parent_path() const;
       Path root_path() const;
       size_t size() const { return path.size(); }
@@ -1428,9 +1428,9 @@ namespace YIELD
     // Joins two paths, adding a separator as necessary
     static inline Path
     operator/
-    ( 
-      const Path& left_path, 
-      const Path& right_path 
+    (
+      const Path& left_path,
+      const Path& right_path
     )
     {
       if ( left_path.empty() )
@@ -1439,12 +1439,12 @@ namespace YIELD
         return left_path;
       else
       {
-        Path::string_type 
+        Path::string_type
           combined_path( static_cast<const Path::string_type&>( left_path ) );
 
         if
-        (          
-          left_path[left_path.size()-1] != Path::SEPARATOR 
+        (
+          left_path[left_path.size()-1] != Path::SEPARATOR
           &&
           static_cast<const Path::string_type&>( right_path )[0]
             != Path::SEPARATOR
@@ -1452,8 +1452,8 @@ namespace YIELD
           combined_path += Path::SEPARATOR;
 
         combined_path.append
-        ( 
-          static_cast<const Path::string_type&>( right_path ) 
+        (
+          static_cast<const Path::string_type&>( right_path )
         );
 
         return Path( combined_path );
@@ -2352,5 +2352,6 @@ namespace YIELD
     };
   };
 };
+
 
 #endif

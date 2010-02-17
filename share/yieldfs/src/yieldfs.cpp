@@ -1,32 +1,3 @@
-// Copyright (c) 2010 Minor Gordon
-// All rights reserved
-// 
-// This source file is part of the YieldFS project.
-// It is licensed under the New BSD license:
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-// * Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-// * Neither the name of the YieldFS project nor the
-// names of its contributors may be used to endorse or promote products
-// derived from this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
 #include "yieldfs.h"
 using namespace yieldfs;
 
@@ -703,28 +674,28 @@ namespace yieldfs
 
       DOKAN_OPERATIONS operations =
       {
-	      CreateFile,
-	      OpenDirectory,
-	      CreateDirectory,
-	      Cleanup,
-	      CloseFile,
-	      ReadFile,
-	      WriteFile,
-	      FlushFileBuffers,
-	      GetFileInformation,
-	      FindFiles,
-	      NULL, // FindFilesWithPattern
-	      SetFileAttributes,
-	      SetFileTime,
-	      DeleteFile,
-	      DeleteDirectory,
-	      MoveFile,
-	      SetEndOfFile,
-	      LockFile,
-	      UnlockFile,
-	      GetDiskFreeSpace,
-	      GetVolumeInformation,
-	      Unmount
+        CreateFile,
+        OpenDirectory,
+        CreateDirectory,
+        Cleanup,
+        CloseFile,
+        ReadFile,
+        WriteFile,
+        FlushFileBuffers,
+        GetFileInformation,
+        FindFiles,
+        NULL, // FindFilesWithPattern
+        SetFileAttributes,
+        SetFileTime,
+        DeleteFile,
+        DeleteDirectory,
+        MoveFile,
+        SetEndOfFile,
+        LockFile,
+        UnlockFile,
+        GetDiskFreeSpace,
+        GetVolumeInformation,
+        Unmount
       };
 
       if ( DokanMain( &options, &operations ) )
@@ -952,8 +923,8 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     CreateDirectory
     (
-	    LPCWSTR FileName,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR FileName,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       YIELD::platform::Path path( FileName );
@@ -971,8 +942,8 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     CloseFile
     (
-	    LPCWSTR, // FileName,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR, // FileName,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       // close() explicitly to trigger replication in XtreemFS
@@ -1001,8 +972,8 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     Cleanup
     (
-	    LPCWSTR FileName,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR FileName,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       if ( DokanFileInfo->DeleteOnClose )
@@ -1019,8 +990,8 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     DeleteDirectory
     (
-	    LPCWSTR FileName,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR FileName,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       if ( get_volume( DokanFileInfo ).rmdir( FileName ) )
@@ -1032,8 +1003,8 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     DeleteFile
     (
-	    LPCWSTR, // FileName,
-	    PDOKAN_FILE_INFO
+      LPCWSTR, // FileName,
+      PDOKAN_FILE_INFO
     )
     {
       // Don't actually unlink the file here,
@@ -1074,9 +1045,9 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     FindFiles
     (
-	    LPCWSTR FileName,
-	    PFillFindData FillFindData,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR FileName,
+      PFillFindData FillFindData,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       readdirCallback readdir_callback( FillFindData, DokanFileInfo );
@@ -1089,8 +1060,8 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     FlushFileBuffers
     (
-	    LPCWSTR, // FileName,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR, // FileName,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       if ( get_file( DokanFileInfo )->datasync() )
@@ -1102,10 +1073,10 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     GetDiskFreeSpace
     (
-	    PULONGLONG FreeBytesAvailable,
-	    PULONGLONG TotalNumberOfBytes,
-	    PULONGLONG TotalNumberOfFreeBytes,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      PULONGLONG FreeBytesAvailable,
+      PULONGLONG TotalNumberOfBytes,
+      PULONGLONG TotalNumberOfFreeBytes,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       struct statvfs stbuf;
@@ -1130,9 +1101,9 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     GetFileInformation
     (
-	    LPCWSTR FileName,
-	    LPBY_HANDLE_FILE_INFORMATION HandleFileInformation,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR FileName,
+      LPBY_HANDLE_FILE_INFORMATION HandleFileInformation,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       YIELD::platform::auto_Stat stbuf =
@@ -1150,14 +1121,14 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     GetVolumeInformation
     (
-	    LPWSTR VolumeNameBuffer,
-	    DWORD, // VolumeNameSize,
-	    LPDWORD VolumeSerialNumber,
-	    LPDWORD MaximumComponentLength,
-	    LPDWORD FileSystemFlags,
-	    LPWSTR FileSystemNameBuffer,
-	    DWORD, // FileSystemNameSize,
-	    PDOKAN_FILE_INFO DokanFileInfo )
+      LPWSTR VolumeNameBuffer,
+      DWORD, // VolumeNameSize,
+      LPDWORD VolumeSerialNumber,
+      LPDWORD MaximumComponentLength,
+      LPDWORD FileSystemFlags,
+      LPWSTR FileSystemNameBuffer,
+      DWORD, // FileSystemNameSize,
+      PDOKAN_FILE_INFO DokanFileInfo )
     {
       YIELD::platform::Path name =
        get_volume( DokanFileInfo ).volname( YIELD::platform::Path::SEPARATOR );
@@ -1199,10 +1170,10 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     LockFile
     (
-	    LPCWSTR, // FileName,
-	    LONGLONG ByteOffset,
-	    LONGLONG Length,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR, // FileName,
+      LONGLONG ByteOffset,
+      LONGLONG Length,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       if ( get_file( DokanFileInfo ) != NULL )
@@ -1219,10 +1190,10 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     MoveFile
     (
-	    LPCWSTR FileName,
-	    LPCWSTR NewFileName,
-	    BOOL ReplaceIfExisting,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR FileName,
+      LPCWSTR NewFileName,
+      BOOL ReplaceIfExisting,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       if ( ReplaceIfExisting )
@@ -1237,8 +1208,8 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     OpenDirectory
     (
-	    LPCWSTR FileName,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR FileName,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       YIELD::platform::Path path( FileName );
@@ -1266,12 +1237,12 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     ReadFile
     (
-	    LPCWSTR FileName,
-	    LPVOID Buffer,
-	    DWORD BufferLength,
-	    LPDWORD ReadLength,
-	    LONGLONG Offset,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR FileName,
+      LPVOID Buffer,
+      DWORD BufferLength,
+      LPDWORD ReadLength,
+      LONGLONG Offset,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       YIELD::platform::File* file = get_file( DokanFileInfo );
@@ -1308,9 +1279,9 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     SetEndOfFile
     (
-	    LPCWSTR FileName,
-	    LONGLONG ByteOffset,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR FileName,
+      LONGLONG ByteOffset,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       YIELD::platform::File* file = get_file( DokanFileInfo );
@@ -1332,9 +1303,9 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     SetFileAttributes
     (
-	    LPCWSTR FileName,
-	    DWORD FileAttributes,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR FileName,
+      DWORD FileAttributes,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       YIELD::platform::auto_Stat stbuf( new YIELD::platform::Stat );
@@ -1356,11 +1327,11 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     SetFileTime
     (
-	    LPCWSTR FileName,
-	    CONST FILETIME* CreationTime,
-	    CONST FILETIME*	LastAccessTime,
-	    CONST FILETIME*	LastWriteTime,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR FileName,
+      CONST FILETIME* CreationTime,
+      CONST FILETIME*  LastAccessTime,
+      CONST FILETIME*  LastWriteTime,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       if
@@ -1381,10 +1352,10 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     UnlockFile
     (
-	    LPCWSTR, // FileName,
-	    LONGLONG ByteOffset,
-	    LONGLONG Length,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR, // FileName,
+      LONGLONG ByteOffset,
+      LONGLONG Length,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       if ( get_file( DokanFileInfo ) != NULL )
@@ -1401,21 +1372,21 @@ namespace yieldfs
     static int DOKAN_CALLBACK
     Unmount
     (
-	    PDOKAN_FILE_INFO
+      PDOKAN_FILE_INFO
     )
     {
-	    return ERROR_SUCCESS;
+      return ERROR_SUCCESS;
     }
 
     static int DOKAN_CALLBACK
     WriteFile
     (
-	    LPCWSTR FileName,
-	    LPCVOID Buffer,
-	    DWORD NumberOfBytesToWrite,
-	    LPDWORD NumberOfBytesWritten,
-	    LONGLONG Offset,
-	    PDOKAN_FILE_INFO DokanFileInfo
+      LPCWSTR FileName,
+      LPCVOID Buffer,
+      DWORD NumberOfBytesToWrite,
+      LPDWORD NumberOfBytesWritten,
+      LONGLONG Offset,
+      PDOKAN_FILE_INFO DokanFileInfo
     )
     {
       YIELD::platform::File* file = get_file( DokanFileInfo );
@@ -1480,6 +1451,7 @@ namespace yieldfs
   };
 #endif
 };
+
 
 
 
