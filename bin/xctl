@@ -60,13 +60,13 @@ class Autotest:
                              
     def __get_volumes( self ):
         volumes = []
-        #for osd_i in xrange( self.__osd_count ):
+        #for osd_i in xrange( self.__osd_count ):   % this created earlier a number of osds
         for osd_i in xrange(1): # create only test_0 directory
             volume_name = "test_" + str( osd_i )
             for direct_io in ( False, True ):
                 mount_point_dir_path = os.path.join( "mnt", volume_name )
-                #if not direct_io:
-                #    mount_point_dir_path += "_nondirect"
+                if not direct_io:
+                    mount_point_dir_path += "_nondirect"
                 volume = Volume( name=volume_name, mount_point_dir_path=mount_point_dir_path )
                 print "create next volume"
                 volumes.append( volume )
@@ -99,14 +99,15 @@ class Autotest:
         print "create_volumes: number of volumes to create:", len( volumes )
         for volume_i in xrange( 0, len( volumes ), 2 ):
             volume = volumes[volume_i]
-            print "stripe_width from create volume:",( replicate_on_close and ( ( volume_i / 2 ) + 1 ) or 1 )
+            #print "stripe_width from create volume:",( replicate_on_close and ( ( volume_i / 2 ) + 1 ) or 1 )
             try: 
                 volume.create( 
                                debug_level=debug_level,                              
                                mrc_uri=self.__server_uri,                                
                                pkcs12_file_path=pkcs12_file_path,
                                pkcs12_passphrase=pkcs12_passphrase,
-                               stripe_width=( replicate_on_close and ( ( volume_i / 2 ) + 1 ) or 1 ),                                                            
+                               #stripe_width=( replicate_on_close and ( ( volume_i / 2 ) + 1 ) or 1 ),
+                               stripe_width=3                                                            
                               )
             except: 
                 if DEBUG_ME:
@@ -211,8 +212,6 @@ class Autotest:
                             
     def run( self ):               
         failed_test_count = 0
-        # test only the first volume, why does it create so many volumes?
-        #for volume in self.__get_volumes():
         for volume in self.__get_volumes():
             failed_test_count += volume.test()
         return failed_test_count
@@ -557,7 +556,8 @@ class Volume:
             
         mkfs_xtreemfs_args = [mkfs_xtreemfs_file_path]
         mkfs_xtreemfs_args.extend( ( "-d", str( debug_level ) ) )
-        mkfs_xtreemfs_args.extend( ( "-p", str( STRIPING_POLICY_TYPE_DEFAULT ) ) )
+        mkfs_xtreemfs_args.extend( ( "-p", str( STRIPING_POLICY_TYPE_NONE ) ) )
+        #mkfs_xtreemfs_args.extend( ( "-p", str( STRIPING_POLICY_TYPE_DEFAULT ) ) )
         if pkcs12_file_path is not None: mkfs_xtreemfs_args.extend( ( "--pkcs12-file-path", pkcs12_file_path ) )
         if pkcs12_passphrase is not None: mkfs_xtreemfs_args.extend( ( "--pkcs12-passphrase", pkcs12_passphrase ) )
         mkfs_xtreemfs_args.extend( ( "-s", str( STRIPE_SIZE_DEFAULT ) ) )
