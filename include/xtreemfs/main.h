@@ -40,7 +40,7 @@
 //#ifdef _DEBUG
 //#include <vld.h>
 //#endif
-#elif defined(__linux) && !defined(__x86_64__)
+#elif defined(__linux) //&& !defined(__x86_64__)
 #include "client/linux/handler/exception_handler.h"
 #define XTREEMFS_HAVE_GOOGLE_BREAKPAD 1
 #endif
