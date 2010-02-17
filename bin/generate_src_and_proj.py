@@ -9,7 +9,7 @@ MY_DIR_PATH = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ )
 GOOGLE_BREAKPAD_DIR_PATH = os.path.join( MY_DIR_PATH, "..", "share", "google-breakpad" )
 GOOGLE_BREAKPAD_INCLUDE_DIR_PATHS = ( os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src" ), )                   
 GOOGLE_BREAKPAD_EXCLUDED_FILE_NAMES = ( "google_breakpad", )
-GOOGLE_BREAKPAD_EXCLUDED_FILE_NAMES_WINDOWS = GOOGLE_BREAKPAD_EXCLUDED_FILE_NAMES + ( "linux", "mac", "solaris", "minidump_file_writer.*", "md5.*", "crash_generation_server.cc" )
+GOOGLE_BREAKPAD_EXCLUDED_FILE_NAMES_WINDOWS = GOOGLE_BREAKPAD_EXCLUDED_FILE_NAMES + ( "dwarf", "linux", "minidump_file_writer.*", "md5.*", "crash_generation_server.cc" )
 GOOGLE_BREAKPAD_OUTPUT_FILE_PATH = os.path.join( MY_DIR_PATH, "..", "lib", "google-breakpad" )
 GOOGLE_BREAKPAD_SRC_DIR_PATHS = ( os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src" ), )
 
@@ -154,7 +154,7 @@ os.chdir( os.path.join( XTREEMFS_DIR_PATH, "proj", "google-breakpad" ) )
 generate_SConscript( "google-breakpad", force=options.force )
 generate_SConscript( 
                      "google-breakpad_linux", 
-                     excluded_file_names=GOOGLE_BREAKPAD_EXCLUDED_FILE_NAMES + ( "windows", "mac", "solaris" ),
+                     excluded_file_names=GOOGLE_BREAKPAD_EXCLUDED_FILE_NAMES + ( "windows", ),
                      force=options.force,
                      include_dir_paths=GOOGLE_BREAKPAD_INCLUDE_DIR_PATHS,
                      output_file_path=GOOGLE_BREAKPAD_OUTPUT_FILE_PATH,

@@ -237,56 +237,6 @@
     RelativePath="..\..\share\google-breakpad\src\common\convert_UTF.c"
     >
 </File>
-<Filter Name="dwarf">
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\dwarf\bytereader-inl.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\dwarf\bytereader.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\dwarf\dwarf2diehandler.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\dwarf\dwarf2enums.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\dwarf\dwarf2reader.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\dwarf\functioninfo.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\dwarf\line_state_machine.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\dwarf\types.h"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\dwarf\bytereader.cc"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\dwarf\dwarf2diehandler.cc"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\dwarf\dwarf2reader.cc"
-    >
-</File>
-<File
-    RelativePath="..\..\share\google-breakpad\src\common\dwarf\functioninfo.cc"
-    >
-</File>
-</Filter>
 <File
     RelativePath="..\..\share\google-breakpad\src\common\string_conversion.cc"
     >
