@@ -149,12 +149,13 @@ public class File {
 
     public RandomAccessFile open(String openMode, int permissions) throws IOException {
         int flags = 0;
-        if (openMode.equals("r")) {
-            flags |= Constants.SYSTEM_V_FCNTL_H_O_RDONLY;
-        } else if (openMode.equals("rw")) {
+        if (openMode.contains("rw")) {
             flags |= Constants.SYSTEM_V_FCNTL_H_O_RDWR;
             flags |= Constants.SYSTEM_V_FCNTL_H_O_CREAT;
-        }
+        } else if (openMode.contains("r")) {
+            flags |= Constants.SYSTEM_V_FCNTL_H_O_RDONLY;
+        } 
+            
         if (openMode.contains("t")) {
             flags |= Constants.SYSTEM_V_FCNTL_H_O_TRUNC;
         }

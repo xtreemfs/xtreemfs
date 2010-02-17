@@ -77,11 +77,12 @@ public class XtreemFSFileSystem extends FileSystem {
 
     private URI     fsURI;
     
-    private Path    workingDirectory = new Path("/");
+    private Path    workingDirectory;
 
 
     @Override
     public void initialize(URI uri, Configuration conf) throws IOException {
+        super.initialize(uri, conf);
         int logLevel = Logging.LEVEL_WARN;
         if (conf.getBoolean("xtreemfs.client.debug",false)) {
             logLevel = Logging.LEVEL_DEBUG;
@@ -114,12 +115,13 @@ public class XtreemFSFileSystem extends FileSystem {
             if (System.getenv("USER") != null) {
                 StringSet grps = new StringSet();
                 grps.add("users");
-                uc = new UserCredentials(System.getenv("USER"), grps, "");
+                uc = new UserCredentials(System.getProperty("user.name"), grps, "");
             }
         }
 
-        volume = xtreemfsClient.getVolume(volumeName, uc);
         fsURI = uri;
+        workingDirectory = getHomeDirectory();
+        volume = xtreemfsClient.getVolume(volumeName, uc);
         Logging.logMessage(Logging.LEVEL_DEBUG, this,"file system init complete: "+uri.getUserInfo());
     }
 
@@ -187,7 +189,6 @@ public class XtreemFSFileSystem extends FileSystem {
         if (overwrite)
             openMode += "t";
         
-        f.createFile();
         final RandomAccessFile raf = f.open(openMode,permissions.toShort());
 
         return new FSDataOutputStream(new OutputStream() {
@@ -241,8 +242,8 @@ public class XtreemFSFileSystem extends FileSystem {
             final String path = file.toUri().getPath();
             return delete(path);
         } catch (FileNotFoundException f) {
-            Logging.logMessage(Logging.LEVEL_WARN, this, "'%s' is not available" +
-            		" anymore. it could not be deleted! ", file.toString());
+            Logging.logMessage(Logging.LEVEL_WARN, this, "'%s' could not be " +
+            		"deleted, because it is not available.", file.toString());
             return false;
         }
     }

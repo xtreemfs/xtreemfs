@@ -508,7 +508,7 @@ public class Volume {
 
     static IOException wrapException(MRCException ex) {
         if (ex.getError_code() == ErrNo.ENOENT)
-            return new FileNotFoundException();
+            return new FileNotFoundException(ex.getError_message());
         return new IOException(ex.getError_message(),ex);
     }
 
