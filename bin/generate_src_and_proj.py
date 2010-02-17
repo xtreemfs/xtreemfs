@@ -115,7 +115,8 @@ format_src(
 os.chdir( os.path.join( XTREEMFS_DIR_PATH, "proj", "libxtreemfs" ) )
 generate_proj( 
                "libxtreemfs",      
-               defines=DEFINES,               
+               defines=DEFINES,
+               force=options.force,
                include_dir_paths=INCLUDE_DIR_PATHS,
                lib_dir_paths=LIB_DIR_PATHS,
                libs_win=( "libeay32.lib", "ssleay32.lib" ),
@@ -140,6 +141,7 @@ for binary_name in ( "lsfs.xtreemfs", "mkfs.xtreemfs", "mount.xtreemfs", "nettes
                                           ),
                    defines=DEFINES,
                    include_dir_paths=INCLUDE_DIR_PATHS + ( os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src" ), ),
+                   force=options.force,
                    lib_dir_paths=LIB_DIR_PATHS,                   
                    libs=( "xtreemfs_d.lib", ),
                    output_file_path=os.path.join( XTREEMFS_DIR_PATH, "bin", binary_name ),
@@ -149,10 +151,11 @@ for binary_name in ( "lsfs.xtreemfs", "mkfs.xtreemfs", "mount.xtreemfs", "nettes
 
                                       
 os.chdir( os.path.join( XTREEMFS_DIR_PATH, "proj", "google-breakpad" ) )
-generate_SConscript( "google-breakpad" )
+generate_SConscript( "google-breakpad", force=options.force )
 generate_SConscript( 
                      "google-breakpad_linux", 
                      excluded_file_names=GOOGLE_BREAKPAD_EXCLUDED_FILE_NAMES + ( "windows", "mac", "solaris" ),
+                     force=options.force,
                      include_dir_paths=GOOGLE_BREAKPAD_INCLUDE_DIR_PATHS,
                      output_file_path=GOOGLE_BREAKPAD_OUTPUT_FILE_PATH,
                      src_dir_paths=GOOGLE_BREAKPAD_SRC_DIR_PATHS,
@@ -161,6 +164,7 @@ generate_SConscript(
                      "google-breakpad_windows", 
                      defines=( "UNICODE", ),
                      excluded_file_names=GOOGLE_BREAKPAD_EXCLUDED_FILE_NAMES_WINDOWS,
+                     force=options.force,
                      include_dir_paths=GOOGLE_BREAKPAD_INCLUDE_DIR_PATHS,
                      output_file_path=GOOGLE_BREAKPAD_OUTPUT_FILE_PATH,
                      src_dir_paths=GOOGLE_BREAKPAD_SRC_DIR_PATHS,
@@ -169,6 +173,7 @@ generate_vcproj(
                  "google-breakpad",
                  defines=( "UNICODE", ),
                  excluded_file_names=GOOGLE_BREAKPAD_EXCLUDED_FILE_NAMES_WINDOWS,
+                 force=options.force,
                  include_dir_paths=GOOGLE_BREAKPAD_INCLUDE_DIR_PATHS,
                  output_file_path=GOOGLE_BREAKPAD_OUTPUT_FILE_PATH,
                  src_dir_paths=GOOGLE_BREAKPAD_SRC_DIR_PATHS,
