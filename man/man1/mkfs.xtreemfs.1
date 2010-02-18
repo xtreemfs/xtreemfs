@@ -2,12 +2,12 @@
 .SH NAME
 mkfs.xtreemfs \- create a new XtreemFS volume
 .SH SYNOPSIS
-\fBmkfs.xtreemfs [\fIoptions\fB] [oncrpc[s]://]\fImrchost\fR[:\fIport\fR]/\fIvolume
+\fBmkfs.xtreemfs [\fIoptions\fB] [oncrpc[s]://]\fImrchost|dirhost\fR[:\fIport\fR]/\fIvolume
 .br
 
 .SH DESCRIPTION
 .I mkfs.xtreemfs
-creates a new volume named \fIvolume \fRon the XtreemFS MRC running at \fImrchost\fR:\fIport\fR.
+creates a new volume named \fIvolume\fR. Users may choose to either specify the MRC URI \fImrchost\fR:\fIport\fR at which the volume will be created, or the Directory Service URI \fIdirhost\fR:\fIport\fR at which the volume will be registered. In the latter case, the volume will be created on random MRC registered at the Directory Service.
 
 .SH EXAMPLE USAGE
 .B "mkfs.xtreemfs remote.mrc.machine/myVolume"
@@ -19,8 +19,8 @@ creates a new volume named \fIvolume \fRon the XtreemFS MRC running at \fImrchos
 \fB\-a/\-\-access\-control\-policy=\fINULL|POSIX|VOLUME
 access control policy for the volume
 .TP
-\fB\-d/\-\-debug=\fIlevel
-debug level
+\fB\-d/\-\-debug/\-\-log\-level=\fIEMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG
+log level
 .TP
 \fB\-g/\-\-owner\-group\-id=\fIgroup ID
 group ID string of the volume's owning group
@@ -28,14 +28,14 @@ group ID string of the volume's owning group
 \fB\-h/\-\-help
 print help and exit
 .TP
+\fB\-l/\-\-log\-file\-path=\fIlog_file_path
+path to the client log file
+.TP
 \fB\-m/\-\-mode=n
 initial POSIX access mode for the root directory
 .TP
 \fB\-p/\-\-striping\-policy=\fINONE|RAID0
 default striping policy for the volume
-.TP
-\fB\-\-password=\fIpassword
-MRC administrator password (if required)
 .TP
 \fB\-s/\-\-striping\-policy\-stripe\-size=\fIn
 stripe size for the volume's default striping policy
@@ -55,6 +55,9 @@ PEM certificate file path (for SSL installations only)
 \fB\-\-pass/\-\-pem\-private\-key\-passphrase=\fIpass
 PEM private key passphrase (for SSL installations only)
 .TP
+\fB\-\-password=\fIpassword
+MRC administrator password (if required)
+.TP
 \fB\-\-pkcs12\-file\-path=\fIfile
 PKCS#12 file path (for SSL installations only)
 .TP
@@ -63,6 +66,15 @@ PKCS#12 file passphrase (for SSL installations only)
 .TP
 \fB\-\-pkey/\-\-pem\-private\-key\-file\-path=\fIfile
 PEM private key file path
+.TP
+\fB\-\-trace\-auth
+trace authentication
+.TP
+\fB\-\-trace\-network\-io
+trace network I/O
+.TP
+\fB\-\-trace\-network\-operations
+trace network operations
 
 .SH "SEE ALSO"
 .BR lsfs.xtreemfs (1),

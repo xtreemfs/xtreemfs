@@ -2,22 +2,15 @@
 .SH NAME
 xtfs_stat \- shows extended information on an XtreemFS file or directory
 .SH SYNOPSIS
-\fBxtfs_stat [\fIoptions\fB] [oncrpc[s]://]\fIdirhost\fR[:\fIport\fR]/\fIvolume\fR/[\fIpath\fR]
+\fBxtfs_stat [\fIpath\fR]
 .br
 
 .SH DESCRIPTION
 .I xtfs_stat
-shows information about a file or directory \fIpath\fP in the volume \fIvolume\fR registered at the Directory Service \fIdirhost\fR:\fIport\fR. \fIxtfs_stat\fR lists standard POSIX metadata, as well as specific XtreemFS-related metadata. Amongst others, the latter includes information about how the file is striped, and where single objects of the file are stored.
+shows information about a file or directory \fIpath\fP. \fIxtfs_stat\fR lists all kinds of POSIX and XtreemFS-specific metadata.
 
 .SH EXAMPLE USAGE
-.B "xtfs_stat remote.dirservice.machine/SomeVolume/somedir/myfile"
-.br
-.B "xtfs_stat oncrpc://remote.dirservice.machine:32638/Volume1"
-
-.SH OPTIONS
-.TP
-\fB\-h/\-\-help
-print help and exit
+.B "xtfs_stat xtfs-mount/somedir/myfile"
 
 .SH "SEE ALSO"
 .BR lsfs.xtreemfs (1),
@@ -33,4 +26,4 @@ print help and exit
 .BR
 
 .SH AVAILABILITY
-The xtfs_stat command is part of the XtreemFS-tools package and is available from http://www.xtreemfs.org
+The xtfs_stat command is part of the XtreemFS-tools package and is available from http://www.xtreemfs.org.
