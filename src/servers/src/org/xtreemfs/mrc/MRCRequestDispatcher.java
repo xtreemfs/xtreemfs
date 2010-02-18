@@ -523,6 +523,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 volTableBuf.append(v.getName());
                 volTableBuf
                         .append("</td><td><table border=\"0\" cellpadding=\"0\"><tr><td class=\"subtitle\">selectable OSDs</td><td align=\"right\">");
+                volTableBuf.append(osdList.size()+" OSDs: ");
                 Iterator<Service> it = osdList.iterator();
                 while (it.hasNext()) {
                     Service osd = it.next();
