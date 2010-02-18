@@ -81,14 +81,14 @@ public class xtfs_stat {
             final Map<String, String> attrs = utils.getxattrs(fileName);
             if (attrs == null) {
                 System.err.println("file not found: " + fileName);
-                return;
+                System.exit(1);
             }
             
             String url = attrs.get("xtreemfs.url");
             if (url == null) {
                 System.out.println("'" + fileName
                     + "' is probably not part of an XtreemFS volume (no MRC URL found).");
-                return;
+                System.exit(2);
             }
             
             // first, render all general XtreemFS attributes
@@ -166,10 +166,13 @@ public class xtfs_stat {
             
         } catch (IOException ex) {
             ex.printStackTrace();
+            System.exit(10);
         } catch (InterruptedException ex) {
             ex.printStackTrace();
+            System.exit(10);
         } catch (Exception ex) {
             ex.printStackTrace();
+            System.exit(10);
         }
     }
     
