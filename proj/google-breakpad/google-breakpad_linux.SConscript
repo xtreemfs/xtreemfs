@@ -64,9 +64,17 @@ for include_dir_path in include_dir_paths:
     if not include_dir_path in build_env["CPPPATH"]: build_env["CPPPATH"].append( include_dir_path )
 
 build_env.Library( "../../lib/google-breakpad", (
+    r"../../share/google-breakpad/src/client/linux/crash_generation/crash_generation_client.cc",
+    r"../../share/google-breakpad/src/client/linux/crash_generation/crash_generation_server.cc",
+    r"../../share/google-breakpad/src/client/linux/handler/exception_handler.cc",
+    r"../../share/google-breakpad/src/client/linux/minidump_writer/linux_dumper.cc",
+    r"../../share/google-breakpad/src/client/linux/minidump_writer/minidump_writer.cc",
+    r"../../share/google-breakpad/src/client/minidump_file_writer.cc",
     r"../../share/google-breakpad/src/common/convert_UTF.c",
-    r"../../share/google-breakpad/src/common/md5.c",
-    r"../../share/google-breakpad/src/common/string_conversion.cc",
+    r"../../share/google-breakpad/src/common/dwarf/bytereader.cc",
+    r"../../share/google-breakpad/src/common/dwarf/dwarf2diehandler.cc",
+    r"../../share/google-breakpad/src/common/dwarf/dwarf2reader.cc",
+    r"../../share/google-breakpad/src/common/dwarf/functioninfo.cc",
     r"../../share/google-breakpad/src/common/linux/dump_stabs.cc",
     r"../../share/google-breakpad/src/common/linux/dump_symbols.cc",
     r"../../share/google-breakpad/src/common/linux/dwarf_cu_to_module.cc",
@@ -76,13 +84,5 @@ build_env.Library( "../../lib/google-breakpad", (
     r"../../share/google-breakpad/src/common/linux/language.cc",
     r"../../share/google-breakpad/src/common/linux/module.cc",
     r"../../share/google-breakpad/src/common/linux/stabs_reader.cc",
-    r"../../share/google-breakpad/src/common/dwarf/bytereader.cc",
-    r"../../share/google-breakpad/src/common/dwarf/dwarf2diehandler.cc",
-    r"../../share/google-breakpad/src/common/dwarf/dwarf2reader.cc",
-    r"../../share/google-breakpad/src/common/dwarf/functioninfo.cc",
-    r"../../share/google-breakpad/src/client/minidump_file_writer.cc",
-    r"../../share/google-breakpad/src/client/linux/minidump_writer/linux_dumper.cc",
-    r"../../share/google-breakpad/src/client/linux/minidump_writer/minidump_writer.cc",
-    r"../../share/google-breakpad/src/client/linux/crash_generation/crash_generation_client.cc",
-    r"../../share/google-breakpad/src/client/linux/crash_generation/crash_generation_server.cc",
-    r"../../share/google-breakpad/src/client/linux/handler/exception_handler.cc" ) )
+    r"../../share/google-breakpad/src/common/md5.c",
+    r"../../share/google-breakpad/src/common/string_conversion.cc" ) )
