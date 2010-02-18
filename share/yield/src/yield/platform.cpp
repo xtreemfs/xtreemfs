@@ -1,33 +1,3 @@
-// Copyright (c) 2010 Minor Gordon
-// With original implementations and ideas contributed by Felix Hupfeld
-// All rights reserved
-// 
-// This source file is part of the Yield project.
-// It is licensed under the New BSD license:
-// 
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-// * Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
-// * Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
-// documentation and/or other materials provided with the distribution.
-// * Neither the name of the Yield project nor the
-// names of its contributors may be used to endorse or promote products
-// derived from this software without specific prior written permission.
-// 
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-
 #include "yield/platform.h"
 using namespace YIELD::platform;
 
@@ -730,6 +700,363 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
 
 #ifdef _WIN32
 #pragma warning( pop )
+#endif
+
+
+// iconv.cpp
+#ifdef _WIN32
+#define UNICODE
+#include <windows.h>
+#else
+#include <iconv.h>
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__sun)
+#define ICONV_SOURCE_CAST const char**
+#else
+#define ICONV_SOURCE_CAST char**
+#endif
+#endif
+
+
+#ifdef _WIN32
+iconv::iconv( UINT fromcode, UINT tocode )
+  : fromcode( fromcode ), tocode( tocode )
+{ }
+#else
+iconv::iconv( iconv_t cd )
+ : cd( cd )
+{ }
+#endif
+
+iconv::~iconv()
+{
+#ifndef _WIN32
+  iconv_close( cd );
+#endif
+}
+
+auto_iconv iconv::open( const char* tocode, const char* fromcode )
+{
+#ifdef _WIN32
+  UINT tocode_uint, fromcode_uint;
+
+  if ( strcmp( tocode, "UTF-8") == 0 )
+    tocode_uint = CP_UTF8;
+  else if ( strcmp( tocode, "") == 0 || strcmp( tocode, "char" ) == 0 )
+    tocode_uint = GetACP();
+  else
+    throw Exception( "iconv: unsupported tocode" );
+
+  if ( strcmp( fromcode, "UTF-8") == 0 )
+    fromcode_uint = CP_UTF8;
+  else if ( strcmp( fromcode, "") == 0 || strcmp( fromcode, "char" ) == 0 )
+    fromcode_uint = GetACP();
+  else
+    throw Exception( "iconv: unsupported fromcode" );
+
+  return new iconv( fromcode_uint, tocode_uint );
+#else
+  iconv_t cd = ::iconv_open( tocode, fromcode );
+  if ( cd != reinterpret_cast<iconv_t>( -1 ) )
+    return new iconv( cd );
+  else
+    throw Exception();
+#endif
+}
+
+size_t
+iconv::operator()
+(
+  const char** inbuf,
+  size_t* inbytesleft,
+  char** outbuf,
+  size_t* outbytesleft
+)
+{
+#ifdef _WIN32
+  int inbuf_w_len
+    = MultiByteToWideChar
+      (
+        fromcode,
+        0,
+        inbuf,
+        static_cast<int>( *inbytesleft ),
+        NULL,
+        0
+      );
+
+  if ( inbuf_w_len > 0 )
+  {
+    wchar_t* inbuf_w = new wchar_t[inbuf_w_len];
+
+    inbuf_w_len
+      = MultiByteToWideChar
+        (
+          fromcode,
+          0,
+          inbuf,
+          static_cast<int>( *inbytesleft ),
+          inbuf_w,
+          inbuf_w_len
+        );
+
+    if ( inbuf_w_len > 0 )
+    {
+      int outbyteswritten
+        = WideCharToMultiByte
+          (
+            tocode,
+            0,
+            inbuf_w,
+            inbuf_w_len,
+            outbuf,
+            *outbytesleft,
+            0,
+            0
+          );
+
+      delete [] inbuf_w;
+
+      if ( outbyteswritten > 0 )
+      {
+        *outbytesleft -= outbyteswritten;
+        return outbyteswritten;
+      }
+    }
+    else
+      delete [] inbuf_w;
+  }
+
+  return static_cast<size_t>( -1 );
+#else
+  // Reset the converter
+  if ( ::iconv( cd, NULL, 0, NULL, 0 ) != static_cast<size_t>( -1 ) )
+  {
+    // Now try to convert; will return ( size_t )-1 on failure
+    return ::iconv
+           (
+             cd,
+             ( ICONV_SOURCE_CAST )inbuf,
+             inbytesleft,
+             outbuf,
+             outbytesleft
+           );
+  }
+  else
+    return static_cast<size_t>( -1 );
+#endif
+}
+
+bool iconv::operator()( const std::string& inbuf, std::string& outbuf )
+{
+#ifdef _WIN32
+  int inbuf_w_len
+    = MultiByteToWideChar
+      (
+        fromcode,
+        0,
+        inbuf.c_str(),
+        inbuf.size(),
+        NULL,
+        0
+      );
+
+  if ( inbuf_w_len > 0 )
+  {
+    wchar_t* inbuf_w = new wchar_t[inbuf_w_len];
+
+    inbuf_w_len
+      = MultiByteToWideChar
+        (
+          fromcode,
+          0,
+          inbuf.c_str(),
+          inbuf.size(),
+          inbuf_w,
+          inbuf_w_len
+        );
+
+    if ( inbuf_w_len > 0 )
+    {
+      int outbuf_c_len
+        = WideCharToMultiByte
+          (
+            tocode,
+            0,
+            inbuf_w,
+            inbuf_w_len,
+            NULL,
+            0,
+            0,
+            0
+          );
+
+      if ( outbuf_c_len > 0 )
+      {
+        char* outbuf_c = new char[outbuf_c_len];
+
+        outbuf_c_len
+          = WideCharToMultiByte
+            (
+              tocode,
+              0,
+              inbuf_w,
+              inbuf_w_len,
+              outbuf_c,
+              outbuf_c_len,
+              0,
+              0
+            );
+
+        if ( outbuf_c_len > 0 )
+        {
+          outbuf.append( outbuf_c, outbuf_c_len );
+          delete [] outbuf_c;
+          return true;
+        }
+        else
+          delete [] outbuf_c;
+      }
+      else
+        delete [] inbuf_w;
+    }
+    else
+      delete [] inbuf_w;
+  }
+
+  return false;
+#else
+  // Reset the converter
+  if ( ::iconv( cd, NULL, 0, NULL, 0 ) != static_cast<size_t>( -1 ) )
+  {
+    char* inbuf_c = const_cast<char*>( inbuf.c_str() );
+    size_t inbytesleft = inbuf.size();
+    size_t outbuf_c_len = inbuf.size();
+
+    for ( ;; ) // Loop as long as ::iconv returns E2BIG
+    {
+      char* outbuf_c = new char[outbuf_c_len];
+      char* outbuf_c_dummy = outbuf_c;
+      size_t outbytesleft = outbuf_c_len;
+
+      size_t iconv_ret
+        = ::iconv
+          (
+            cd,
+            ( ICONV_SOURCE_CAST )&inbuf_c,
+            &inbytesleft,
+            &outbuf_c_dummy,
+            &outbytesleft
+          );
+
+      if ( iconv_ret != static_cast<size_t>( -1 ) )
+      {
+        outbuf.append( outbuf_c, outbuf_c_len - outbytesleft );
+        delete [] outbuf_c;
+        return true;
+      }
+      else if ( errno == E2BIG )
+      {
+        delete [] outbuf_c;
+        outbuf_c_len *= 2;
+        continue;
+      }
+      else
+      {
+        delete [] outbuf_c;
+        return false;
+      }
+    }
+  }
+  else
+    return false;
+#endif
+}
+
+#ifdef _WIN32
+bool iconv::operator()( const std::string& inbuf, const std::wstring& outbuf )
+{
+  int outbuf_w_len
+    = MultiByteToWideChar
+      (
+        fromcode,
+        0,
+        inbuf.c_str(),
+        inbuf.size(),
+        NULL,
+        0
+      );
+
+  if ( outbuf_w_len > 0 )
+  {
+    wchar_t* outbuf_w = new wchar_t[outbuf_w_len];
+
+    outbuf_w_len
+      = MultiByteToWideChar
+        (
+          fromcode,
+          0,
+          inbuf.c_str(),
+          inbuf.size(),
+          outbuf_w,
+          outbuf_w_len
+        );
+
+    if ( outbuf_w_len > 0 )
+    {
+      outbuf.append( outbuf_w, outbuf_w_len );
+      delete [] outbuf_w;
+    }
+    else
+      delete [] outbuf_w;
+  }
+
+  return false;
+}
+
+bool iconv::operator()( const std::wstring& inbuf, std::string& outbuf )
+{
+  int outbuf_c_len
+    = WideCharToMultiByte
+      (
+        tocode,
+        0,
+        inbuf.c_str(),
+        inbuf.size(),
+        NULL,
+        0,
+        0,
+        0
+      );
+
+  if ( outbuf_c_len > 0 )
+  {
+    char* outbuf_c = new char[outbuf_c_len];
+
+    outbuf_c_len
+      = WideCharToMultiByte
+        (
+          tocode,
+          0,
+          inbuf.c_str(),
+          inbuf.size(),
+          outbuf_c,
+          outbuf_c_len,
+          0,
+          0
+        );
+
+    if ( outbuf_c_len > 0 )
+    {
+      outbuf.append( outbuf_c, outbuf_c_len );
+      delete [] outbuf_c;
+      return true;
+    }
+    else
+      delete [] outbuf_c;
+
+
+  return false;
+}
 #endif
 
 

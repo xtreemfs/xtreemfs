@@ -776,6 +776,55 @@ namespace YIELD
     typedef yidl::runtime::auto_Object<File> auto_File;
 
 
+    class iconv : public yidl::runtime::Object
+    {
+    public:
+      // open throws an exception on failure instead of returning NULL
+      static yidl::runtime::auto_Object<iconv>
+      open
+      (
+        const char* tocode = "char", // "char" = locale-dependent character encoding
+        const char* fromcode = "UTF-8"
+      );
+
+      // Returns ( size_t )-1 on failure, like iconv.3
+      size_t
+      operator()
+      (
+        const char** inbuf,
+        size_t* inbytesleft,
+        char** outbuf,
+        size_t* outbytesleft
+      );
+
+      // Other operator()'s return false on failure
+      bool operator()( const std::string& inbuf, std::string& outbuf );
+#ifdef _WIN32
+      bool operator()( const std::string& inbuf, const std::wstring& outbuf );
+      bool operator()( const std::wstring& inbuf, std::string& outbuf );
+#endif
+
+      // yidl::runtime::Object
+      YIDL_RUNTIME_OBJECT_PROTOTYPES( iconv, 0 );
+
+    private:
+#ifdef _WIN32
+      iconv( const std::string& fromcode, const std::string& tocode );
+#else
+      iconv( void* cd );
+#endif
+      ~iconv();
+
+#ifdef _WIN32
+      unsigned int fromcode, tocode;
+#else
+      void* cd;
+#endif
+    };
+
+    typedef yidl::runtime::auto_Object<iconv> auto_iconv;
+
+
     class Log : public yidl::runtime::Object
     {
     public:

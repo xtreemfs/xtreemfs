@@ -42,23 +42,31 @@ Path::Path
 {
   if ( !local_path.empty() )
   {
+    YIELD::platform::auto_iconv iconv
+      = YIELD::platform::iconv::open( "UTF-8", "" );
+
 #ifdef _WIN32
     global_path.append( 1, '/' );
     
-    std::string local_path_str( static_cast<std::string>( this->local_path ) );
+    std::string local_path_utf8;
+    ( *iconv )
+    (
+      static_cast<const std::wstring&>( this->local_path ),
+      local_path_utf8
+    );
 
-    if ( local_path_str.size() > 1 )
+    if ( local_path_utf8.size() > 1 )
     {
-      if ( local_path_str[0] == '\\' )
+      if ( local_path_utf8[0] == '\\' )
       {
         global_path.append
         (
-          local_path_str.c_str() + 1,
-          local_path_str.size() - 1
+          local_path_utf8.c_str() + 1,
+          local_path_utf8.size() - 1
         );
       }
       else
-        global_path.append( local_path_str );
+        global_path.append( local_path_utf8 );
 
       std::string::size_type next_sep = global_path.find( '\\' );
       while ( next_sep != std::string::npos )
@@ -68,17 +76,15 @@ Path::Path
       }
     }
 #else
-    if 
-    ( 
-      static_cast<const std::string&>( local_path )[0]
-        == YIELD::platform::Path::SEPARATOR 
-    )
-      global_path += static_cast<const std::string&>( this->local_path );
+    std::string local_path_utf8;
+    ( *iconv )( this->local_path, local_path_utf8 );
+
+    if ( local_path_utf8[0] == YIELD::platform::Path::SEPARATOR )
+      global_path += local_path_utf8;
     else
     {
       global_path.append( 1, '/' );
-//      global_path.append( this->local_path.get_utf8_path() );
-      global_path += static_cast<const std::string&>( this->local_path );
+      global_path += local_path_utf8;
     }
 #endif
   }
