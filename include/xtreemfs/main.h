@@ -292,7 +292,7 @@ namespace xtreemfs
             YIELD::ipc::SSLContext::create
             (
               SSLv3_client_method(),
-              pkcs12_file_path,
+              YIELD::platform::Path( pkcs12_file_path ),
               pkcs12_passphrase
             );
         }
@@ -306,8 +306,8 @@ namespace xtreemfs
             YIELD::ipc::SSLContext::create
             (
               SSLv3_client_method(),
-              pem_certificate_file_path,
-              pem_private_key_file_path,
+              YIELD::platform::Path( pem_certificate_file_path ),
+              YIELD::platform::Path( pem_private_key_file_path ),
               pem_private_key_passphrase
             );
         }
