@@ -24,6 +24,7 @@
 
 package org.xtreemfs.interfaces.utils;
 
+import java.nio.charset.Charset;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.utils.ONCRPCBufferWriter;
 import org.xtreemfs.common.buffer.BufferPool;
@@ -49,6 +50,8 @@ public class XDRUtils {
     public static final int TYPE_CALL = 0;
 
     public static final int TYPE_RESPONSE = 1;
+
+    private static final Charset UTF8 = Charset.forName("UTF-8");
 
 
     public static ReusableBuffer deserializeSerializableBuffer(ReusableBuffer data) {
@@ -113,7 +116,7 @@ public class XDRUtils {
             throw new IllegalArgumentException("string is too large ("+strlen+"), maximum allowed is "+MAX_STRLEN+" bytes");
         byte[] bytes = new byte[strlen];
         buf.get(bytes);
-        final String str = new String(bytes);
+        final String str = new String(bytes,UTF8);
         if (strlen% 4 > 0) {
             for (int k = 0; k < (4 - (strlen % 4)); k++) {
                 buf.get();
@@ -127,7 +130,7 @@ public class XDRUtils {
             writer.writeInt32(null,0);
             return;
         }
-        final byte[] bytes = str.getBytes();
+        final byte[] bytes = str.getBytes(UTF8);
         serializeString(bytes, writer);
     }
 
