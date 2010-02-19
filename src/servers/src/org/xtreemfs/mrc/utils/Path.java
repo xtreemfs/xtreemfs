@@ -54,9 +54,9 @@ public class Path {
             this.compIndices = new ArrayList<Integer>(15);
             compIndices.add(-1);
 
-            byte[] bytes = this.path.getBytes();
-            for (int i = 0; i < bytes.length; i++)
-                if (bytes[i] == SEPARATOR)
+            char[] chars = this.path.toCharArray();
+            for (int i = 0; i < chars.length; i++)
+                if (chars[i] == SEPARATOR)
                     compIndices.add(i);
         }
         
@@ -129,22 +129,22 @@ public class Path {
         return path;
     }
     
-    public static void main(String[] args) {
-        Path path = new Path("myVolume/test/blub/bla.txt");
-        System.out.println(path);
-        System.out.println(path.getComp(0));
-        System.out.println(path.getLastComp(0));
-        System.out.println(path.getComp(1));
-        System.out.println(path.getLastComp(1));
-        System.out.println(path.getComps(1, 2));
-        System.out.println(path.getComp(path.getCompCount()));
-        System.out.println(path.getLastComp(path.getCompCount()));
-        System.out.println(path.getComps(0, 0));
-        System.out.println(path.getComps(1, 1));
-        System.out.println(path.getComps(2, 2));
-        System.out.println(path.getComps(3, 3));
-        System.out.println(path.getComps(5, -1));
-        System.out.println(path.getCompCount());
-    }
+//    public static void main(String[] args) {
+//        Path path = new Path("myVolume/test/blub/bla.txt");
+//        System.out.println(path);
+//        System.out.println(path.getComp(0));
+//        System.out.println(path.getLastComp(0));
+//        System.out.println(path.getComp(1));
+//        System.out.println(path.getLastComp(1));
+//        System.out.println(path.getComps(1, 2));
+//        System.out.println(path.getComp(path.getCompCount()));
+//        System.out.println(path.getLastComp(path.getCompCount()));
+//        System.out.println(path.getComps(0, 0));
+//        System.out.println(path.getComps(1, 1));
+//        System.out.println(path.getComps(2, 2));
+//        System.out.println(path.getComps(3, 3));
+//        System.out.println(path.getComps(5, -1));
+//        System.out.println(path.getCompCount());
+//    }
     
 }
