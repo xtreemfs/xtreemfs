@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class readRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012423;
-    
+    public static final int TAG = 2010022525;
+
     public readRequest() { file_credentials = new FileCredentials();  }
     public readRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version, int offset, int length ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.length = length; }
 
@@ -49,12 +49,12 @@ public class readRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012423;    
+    public static final long serialVersionUID = 2010022525;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012423; }
+    public int getTag() { return 2010022525; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::readRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -65,8 +65,8 @@ public class readRequest extends org.xtreemfs.interfaces.utils.Request
         my_size += Integer.SIZE / 8; // offset
         my_size += Integer.SIZE / 8; // length
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeStruct( "file_credentials", file_credentials );
@@ -76,17 +76,17 @@ public class readRequest extends org.xtreemfs.interfaces.utils.Request
         marshaller.writeUint32( "offset", offset );
         marshaller.writeUint32( "length", length );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         file_credentials = new FileCredentials(); unmarshaller.readStruct( "file_credentials", file_credentials );
         file_id = unmarshaller.readString( "file_id" );
         object_number = unmarshaller.readUint64( "object_number" );
         object_version = unmarshaller.readUint64( "object_version" );
         offset = unmarshaller.readUint32( "offset" );
-        length = unmarshaller.readUint32( "length" );    
+        length = unmarshaller.readUint32( "length" );
     }
-        
+
     
 
     private FileCredentials file_credentials;
@@ -94,7 +94,7 @@ public class readRequest extends org.xtreemfs.interfaces.utils.Request
     private long object_number;
     private long object_version;
     private int offset;
-    private int length;    
+    private int length;
 
 }
 

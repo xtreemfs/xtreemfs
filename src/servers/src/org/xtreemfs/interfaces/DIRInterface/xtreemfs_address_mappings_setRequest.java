@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_address_mappings_setRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012216;
-    
+    public static final int TAG = 2010022318;
+
     public xtreemfs_address_mappings_setRequest() { address_mappings = new AddressMappingSet();  }
     public xtreemfs_address_mappings_setRequest( AddressMappingSet address_mappings ) { this.address_mappings = address_mappings; }
 
@@ -39,32 +39,32 @@ public class xtreemfs_address_mappings_setRequest extends org.xtreemfs.interface
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012216;    
+    public static final long serialVersionUID = 2010022318;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012216; }
+    public int getTag() { return 2010022318; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_setRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += address_mappings.getXDRSize(); // address_mappings
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeSequence( "address_mappings", address_mappings );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        address_mappings = new AddressMappingSet(); unmarshaller.readSequence( "address_mappings", address_mappings );    
+        address_mappings = new AddressMappingSet(); unmarshaller.readSequence( "address_mappings", address_mappings );
     }
-        
+
     
 
-    private AddressMappingSet address_mappings;    
+    private AddressMappingSet address_mappings;
 
 }
 

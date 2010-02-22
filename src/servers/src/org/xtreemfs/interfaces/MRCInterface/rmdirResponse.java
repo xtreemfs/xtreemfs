@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class rmdirResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012327;
-    
+    public static final int TAG = 2010022430;
+
     public rmdirResponse() {  }
 
     // java.lang.Object
@@ -32,30 +32,30 @@ public class rmdirResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012327;    
+    public static final long serialVersionUID = 2010022430;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012327; }
+    public int getTag() { return 2010022430; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::rmdirResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
 
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
 
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-    
+
     }
-        
-        
+
+    
 
 }
 

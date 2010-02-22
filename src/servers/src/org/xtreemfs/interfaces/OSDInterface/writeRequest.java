@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class writeRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012426;
-    
+    public static final int TAG = 2010022528;
+
     public writeRequest() { file_credentials = new FileCredentials(); object_data = new ObjectData();  }
     public writeRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version, int offset, long lease_timeout, ObjectData object_data ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.lease_timeout = lease_timeout; this.object_data = object_data; }
 
@@ -51,12 +51,12 @@ public class writeRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012426;    
+    public static final long serialVersionUID = 2010022528;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012426; }
+    public int getTag() { return 2010022528; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::writeRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -68,8 +68,8 @@ public class writeRequest extends org.xtreemfs.interfaces.utils.Request
         my_size += Long.SIZE / 8; // lease_timeout
         my_size += object_data.getXDRSize(); // object_data
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeStruct( "file_credentials", file_credentials );
@@ -80,8 +80,8 @@ public class writeRequest extends org.xtreemfs.interfaces.utils.Request
         marshaller.writeUint64( "lease_timeout", lease_timeout );
         marshaller.writeStruct( "object_data", object_data );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         file_credentials = new FileCredentials(); unmarshaller.readStruct( "file_credentials", file_credentials );
         file_id = unmarshaller.readString( "file_id" );
@@ -89,9 +89,9 @@ public class writeRequest extends org.xtreemfs.interfaces.utils.Request
         object_version = unmarshaller.readUint64( "object_version" );
         offset = unmarshaller.readUint32( "offset" );
         lease_timeout = unmarshaller.readUint64( "lease_timeout" );
-        object_data = new ObjectData(); unmarshaller.readStruct( "object_data", object_data );    
+        object_data = new ObjectData(); unmarshaller.readStruct( "object_data", object_data );
     }
-        
+
     
 
     private FileCredentials file_credentials;
@@ -100,7 +100,7 @@ public class writeRequest extends org.xtreemfs.interfaces.utils.Request
     private long object_version;
     private int offset;
     private long lease_timeout;
-    private ObjectData object_data;    
+    private ObjectData object_data;
 
 }
 

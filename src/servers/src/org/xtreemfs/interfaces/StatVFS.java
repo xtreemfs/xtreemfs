@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class StatVFS implements Struct
 {
-    public static final int TAG = 2010012156;
-    
+    public static final int TAG = 2010022259;
+
     public StatVFS() {  }
     public StatVFS( int bsize, long bavail, long blocks, String fsid, int namelen ) { this.bsize = bsize; this.bavail = bavail; this.blocks = blocks; this.fsid = fsid; this.namelen = namelen; }
 
@@ -43,12 +43,12 @@ public class StatVFS implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012156;    
+    public static final long serialVersionUID = 2010022259;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012156; }
+    public int getTag() { return 2010022259; }
     public String getTypeName() { return "org::xtreemfs::interfaces::StatVFS"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -58,8 +58,8 @@ public class StatVFS implements Struct
         my_size += Integer.SIZE / 8 + ( fsid != null ? ( ( fsid.getBytes().length % 4 == 0 ) ? fsid.getBytes().length : ( fsid.getBytes().length + 4 - fsid.getBytes().length % 4 ) ) : 0 ); // fsid
         my_size += Integer.SIZE / 8; // namelen
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeUint32( "bsize", bsize );
@@ -68,23 +68,23 @@ public class StatVFS implements Struct
         marshaller.writeString( "fsid", fsid );
         marshaller.writeUint32( "namelen", namelen );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         bsize = unmarshaller.readUint32( "bsize" );
         bavail = unmarshaller.readUint64( "bavail" );
         blocks = unmarshaller.readUint64( "blocks" );
         fsid = unmarshaller.readString( "fsid" );
-        namelen = unmarshaller.readUint32( "namelen" );    
+        namelen = unmarshaller.readUint32( "namelen" );
     }
-        
+
     
 
     private int bsize;
     private long bavail;
     private long blocks;
     private String fsid;
-    private int namelen;    
+    private int namelen;
 
 }
 

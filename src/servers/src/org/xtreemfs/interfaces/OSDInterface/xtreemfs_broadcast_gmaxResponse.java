@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_broadcast_gmaxResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012433;
-    
+    public static final int TAG = 2010022535;
+
     public xtreemfs_broadcast_gmaxResponse() {  }
 
     // java.lang.Object
@@ -32,30 +32,30 @@ public class xtreemfs_broadcast_gmaxResponse extends org.xtreemfs.interfaces.uti
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012433;    
+    public static final long serialVersionUID = 2010022535;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012433; }
+    public int getTag() { return 2010022535; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_broadcast_gmaxResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
 
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
 
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-    
+
     }
-        
-        
+
+    
 
 }
 

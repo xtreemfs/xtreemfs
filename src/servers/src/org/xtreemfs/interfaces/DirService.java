@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class DirService implements Struct
 {
-    public static final int TAG = 2010012148;
-    
+    public static final int TAG = 2010022250;
+
     public DirService() {  }
     public DirService( String address, int port, String protocol, int interface_version ) { this.address = address; this.port = port; this.protocol = protocol; this.interface_version = interface_version; }
 
@@ -41,12 +41,12 @@ public class DirService implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012148;    
+    public static final long serialVersionUID = 2010022250;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012148; }
+    public int getTag() { return 2010022250; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DirService"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -55,8 +55,8 @@ public class DirService implements Struct
         my_size += Integer.SIZE / 8 + ( protocol != null ? ( ( protocol.getBytes().length % 4 == 0 ) ? protocol.getBytes().length : ( protocol.getBytes().length + 4 - protocol.getBytes().length % 4 ) ) : 0 ); // protocol
         my_size += Integer.SIZE / 8; // interface_version
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "address", address );
@@ -64,21 +64,21 @@ public class DirService implements Struct
         marshaller.writeString( "protocol", protocol );
         marshaller.writeUint32( "interface_version", interface_version );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         address = unmarshaller.readString( "address" );
         port = unmarshaller.readUint16( "port" );
         protocol = unmarshaller.readString( "protocol" );
-        interface_version = unmarshaller.readUint32( "interface_version" );    
+        interface_version = unmarshaller.readUint32( "interface_version" );
     }
-        
+
     
 
     private String address;
     private int port;
     private String protocol;
-    private int interface_version;    
+    private int interface_version;
 
 }
 

@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_renew_capabilityResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012351;
-    
+    public static final int TAG = 2010022453;
+
     public xtreemfs_renew_capabilityResponse() { renewed_xcap = new XCap();  }
     public xtreemfs_renew_capabilityResponse( XCap renewed_xcap ) { this.renewed_xcap = renewed_xcap; }
 
@@ -36,32 +36,32 @@ public class xtreemfs_renew_capabilityResponse extends org.xtreemfs.interfaces.u
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012351;    
+    public static final long serialVersionUID = 2010022453;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012351; }
+    public int getTag() { return 2010022453; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += renewed_xcap.getXDRSize(); // renewed_xcap
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeStruct( "renewed_xcap", renewed_xcap );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        renewed_xcap = new XCap(); unmarshaller.readStruct( "renewed_xcap", renewed_xcap );    
+        renewed_xcap = new XCap(); unmarshaller.readStruct( "renewed_xcap", renewed_xcap );
     }
-        
+
     
 
-    private XCap renewed_xcap;    
+    private XCap renewed_xcap;
 
 }
 

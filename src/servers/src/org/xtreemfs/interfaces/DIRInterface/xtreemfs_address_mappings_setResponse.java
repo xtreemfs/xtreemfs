@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_address_mappings_setResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012216;
-    
+    public static final int TAG = 2010022318;
+
     public xtreemfs_address_mappings_setResponse() {  }
     public xtreemfs_address_mappings_setResponse( long returnValue ) { this.returnValue = returnValue; }
 
@@ -36,32 +36,32 @@ public class xtreemfs_address_mappings_setResponse extends org.xtreemfs.interfac
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012216;    
+    public static final long serialVersionUID = 2010022318;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012216; }
+    public int getTag() { return 2010022318; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_setResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Long.SIZE / 8; // returnValue
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeUint64( "returnValue", returnValue );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        returnValue = unmarshaller.readUint64( "returnValue" );    
+        returnValue = unmarshaller.readUint64( "returnValue" );
     }
-        
+
     
 
-    private long returnValue;    
+    private long returnValue;
 
 }
 

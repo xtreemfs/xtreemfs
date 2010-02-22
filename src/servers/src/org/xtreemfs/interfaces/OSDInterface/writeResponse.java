@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class writeResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012426;
-    
+    public static final int TAG = 2010022528;
+
     public writeResponse() { osd_write_response = new OSDWriteResponse();  }
     public writeResponse( OSDWriteResponse osd_write_response ) { this.osd_write_response = osd_write_response; }
 
@@ -36,32 +36,32 @@ public class writeResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012426;    
+    public static final long serialVersionUID = 2010022528;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012426; }
+    public int getTag() { return 2010022528; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::writeResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += osd_write_response.getXDRSize(); // osd_write_response
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeStruct( "osd_write_response", osd_write_response );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        osd_write_response = new OSDWriteResponse(); unmarshaller.readStruct( "osd_write_response", osd_write_response );    
+        osd_write_response = new OSDWriteResponse(); unmarshaller.readStruct( "osd_write_response", osd_write_response );
     }
-        
+
     
 
-    private OSDWriteResponse osd_write_response;    
+    private OSDWriteResponse osd_write_response;
 
 }
 

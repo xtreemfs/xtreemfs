@@ -14,10 +14,10 @@ import yidl.runtime.Unmarshaller;
 
 public class Stat implements Struct
 {
-    public static final int TAG = 2010012153;
-    
+    public static final int TAG = 2010022255;
+
     public Stat() {  }
-    public Stat( long dev, long ino, int mode, int nlink, String user_id, String group_id, long size, long atime_ns, long mtime_ns, long ctime_ns, int blksize, int truncate_epoch, int attributes ) { this.dev = dev; this.ino = ino; this.mode = mode; this.nlink = nlink; this.user_id = user_id; this.group_id = group_id; this.size = size; this.atime_ns = atime_ns; this.mtime_ns = mtime_ns; this.ctime_ns = ctime_ns; this.blksize = blksize; this.truncate_epoch = truncate_epoch; this.attributes = attributes; }
+    public Stat( long dev, long ino, int mode, int nlink, String user_id, String group_id, long size, long atime_ns, long mtime_ns, long ctime_ns, int blksize, long etag, int truncate_epoch, int attributes ) { this.dev = dev; this.ino = ino; this.mode = mode; this.nlink = nlink; this.user_id = user_id; this.group_id = group_id; this.size = size; this.atime_ns = atime_ns; this.mtime_ns = mtime_ns; this.ctime_ns = ctime_ns; this.blksize = blksize; this.etag = etag; this.truncate_epoch = truncate_epoch; this.attributes = attributes; }
 
     public long getDev() { return dev; }
     public void setDev( long dev ) { this.dev = dev; }
@@ -41,6 +41,8 @@ public class Stat implements Struct
     public void setCtime_ns( long ctime_ns ) { this.ctime_ns = ctime_ns; }
     public int getBlksize() { return blksize; }
     public void setBlksize( int blksize ) { this.blksize = blksize; }
+    public long getEtag() { return etag; }
+    public void setEtag( long etag ) { this.etag = etag; }
     public int getTruncate_epoch() { return truncate_epoch; }
     public void setTruncate_epoch( int truncate_epoch ) { this.truncate_epoch = truncate_epoch; }
     public int getAttributes() { return attributes; }
@@ -59,12 +61,12 @@ public class Stat implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012153;    
+    public static final long serialVersionUID = 2010022255;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012153; }
+    public int getTag() { return 2010022255; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Stat"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -79,11 +81,12 @@ public class Stat implements Struct
         my_size += Long.SIZE / 8; // mtime_ns
         my_size += Long.SIZE / 8; // ctime_ns
         my_size += Integer.SIZE / 8; // blksize
+        my_size += Long.SIZE / 8; // etag
         my_size += Integer.SIZE / 8; // truncate_epoch
         my_size += Integer.SIZE / 8; // attributes
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeUint64( "dev", dev );
@@ -97,11 +100,12 @@ public class Stat implements Struct
         marshaller.writeUint64( "mtime_ns", mtime_ns );
         marshaller.writeUint64( "ctime_ns", ctime_ns );
         marshaller.writeUint32( "blksize", blksize );
+        marshaller.writeUint64( "etag", etag );
         marshaller.writeUint32( "truncate_epoch", truncate_epoch );
         marshaller.writeUint32( "attributes", attributes );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         dev = unmarshaller.readUint64( "dev" );
         ino = unmarshaller.readUint64( "ino" );
@@ -114,10 +118,11 @@ public class Stat implements Struct
         mtime_ns = unmarshaller.readUint64( "mtime_ns" );
         ctime_ns = unmarshaller.readUint64( "ctime_ns" );
         blksize = unmarshaller.readUint32( "blksize" );
+        etag = unmarshaller.readUint64( "etag" );
         truncate_epoch = unmarshaller.readUint32( "truncate_epoch" );
-        attributes = unmarshaller.readUint32( "attributes" );    
+        attributes = unmarshaller.readUint32( "attributes" );
     }
-        
+
     
 
     private long dev;
@@ -131,8 +136,9 @@ public class Stat implements Struct
     private long mtime_ns;
     private long ctime_ns;
     private int blksize;
+    private long etag;
     private int truncate_epoch;
-    private int attributes;    
+    private int attributes;
 
 }
 

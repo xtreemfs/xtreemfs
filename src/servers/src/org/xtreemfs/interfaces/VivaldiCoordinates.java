@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class VivaldiCoordinates implements Struct
 {
-    public static final int TAG = 2010012135;
-    
+    public static final int TAG = 2010022237;
+
     public VivaldiCoordinates() {  }
     public VivaldiCoordinates( double x_coordinate, double y_coordinate, double local_error ) { this.x_coordinate = x_coordinate; this.y_coordinate = y_coordinate; this.local_error = local_error; }
 
@@ -39,12 +39,12 @@ public class VivaldiCoordinates implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012135;    
+    public static final long serialVersionUID = 2010022237;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012135; }
+    public int getTag() { return 2010022237; }
     public String getTypeName() { return "org::xtreemfs::interfaces::VivaldiCoordinates"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -52,27 +52,27 @@ public class VivaldiCoordinates implements Struct
         my_size += Double.SIZE / 8; // y_coordinate
         my_size += Double.SIZE / 8; // local_error
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeDouble( "x_coordinate", x_coordinate );
         marshaller.writeDouble( "y_coordinate", y_coordinate );
         marshaller.writeDouble( "local_error", local_error );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         x_coordinate = unmarshaller.readDouble( "x_coordinate" );
         y_coordinate = unmarshaller.readDouble( "y_coordinate" );
-        local_error = unmarshaller.readDouble( "local_error" );    
+        local_error = unmarshaller.readDouble( "local_error" );
     }
-        
+
     
 
     private double x_coordinate;
     private double y_coordinate;
-    private double local_error;    
+    private double local_error;
 
 }
 

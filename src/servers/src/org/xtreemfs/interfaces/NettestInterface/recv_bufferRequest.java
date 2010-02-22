@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class recv_bufferRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012516;
-    
+    public static final int TAG = 2010022618;
+
     public recv_bufferRequest() {  }
     public recv_bufferRequest( int size ) { this.size = size; }
 
@@ -39,32 +39,32 @@ public class recv_bufferRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012516;    
+    public static final long serialVersionUID = 2010022618;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012516; }
+    public int getTag() { return 2010022618; }
     public String getTypeName() { return "org::xtreemfs::interfaces::NettestInterface::recv_bufferRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8; // size
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeUint32( "size", size );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        size = unmarshaller.readUint32( "size" );    
+        size = unmarshaller.readUint32( "size" );
     }
-        
+
     
 
-    private int size;    
+    private int size;
 
 }
 

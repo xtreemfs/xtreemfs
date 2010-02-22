@@ -31,35 +31,35 @@ public class NewFileSizeSet extends Sequence<NewFileSize>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012125; }
+    public int getTag() { return 2010022227; }
     public String getTypeName() { return "org::xtreemfs::interfaces::NewFileSizeSet"; }
 
-    public int getXDRSize() 
+    public int getXDRSize()
     {
         int my_size = 4; // Length of the sequence
-        
-        for ( Iterator<NewFileSize> i = iterator(); i.hasNext(); ) 
+
+        for ( Iterator<NewFileSize> i = iterator(); i.hasNext(); )
         {
             NewFileSize value = i.next();
             my_size += value.getXDRSize(); // Size of value
         }
-        
+
         return my_size;
     }
-    
+
     public void marshal( Marshaller marshaller )
     {
         for ( Iterator<NewFileSize> i = iterator(); i.hasNext(); )
             marshaller.writeStruct( "value", i.next() );;
     }
-    
+
     public void unmarshal( Unmarshaller unmarshaller )
     {
-        NewFileSize value; 
+        NewFileSize value;
         value = new NewFileSize(); unmarshaller.readStruct( "value", value );
-        this.add( value );    
+        this.add( value );
     }
-        
+
 
 }
 

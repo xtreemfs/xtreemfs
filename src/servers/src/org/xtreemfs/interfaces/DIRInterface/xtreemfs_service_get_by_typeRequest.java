@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_service_get_by_typeRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012221;
-    
+    public static final int TAG = 2010022323;
+
     public xtreemfs_service_get_by_typeRequest() { type = ServiceType.SERVICE_TYPE_MIXED;  }
     public xtreemfs_service_get_by_typeRequest( ServiceType type ) { this.type = type; }
 
@@ -39,32 +39,32 @@ public class xtreemfs_service_get_by_typeRequest extends org.xtreemfs.interfaces
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012221;    
+    public static final long serialVersionUID = 2010022323;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012221; }
+    public int getTag() { return 2010022323; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_typeRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8; // type
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeInt32( type, type.intValue() );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        type = ServiceType.parseInt( unmarshaller.readInt32( "type" ) );    
+        type = ServiceType.parseInt( unmarshaller.readInt32( "type" ) );
     }
-        
+
     
 
-    private ServiceType type;    
+    private ServiceType type;
 
 }
 

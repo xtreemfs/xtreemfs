@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_broadcast_gmaxRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012433;
-    
+    public static final int TAG = 2010022535;
+
     public xtreemfs_broadcast_gmaxRequest() {  }
     public xtreemfs_broadcast_gmaxRequest( String file_id, long truncate_epoch, long last_object, long file_size ) { this.file_id = file_id; this.truncate_epoch = truncate_epoch; this.last_object = last_object; this.file_size = file_size; }
 
@@ -45,12 +45,12 @@ public class xtreemfs_broadcast_gmaxRequest extends org.xtreemfs.interfaces.util
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012433;    
+    public static final long serialVersionUID = 2010022535;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012433; }
+    public int getTag() { return 2010022535; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_broadcast_gmaxRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -59,8 +59,8 @@ public class xtreemfs_broadcast_gmaxRequest extends org.xtreemfs.interfaces.util
         my_size += Long.SIZE / 8; // last_object
         my_size += Long.SIZE / 8; // file_size
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "file_id", file_id );
@@ -68,21 +68,21 @@ public class xtreemfs_broadcast_gmaxRequest extends org.xtreemfs.interfaces.util
         marshaller.writeUint64( "last_object", last_object );
         marshaller.writeUint64( "file_size", file_size );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         file_id = unmarshaller.readString( "file_id" );
         truncate_epoch = unmarshaller.readUint64( "truncate_epoch" );
         last_object = unmarshaller.readUint64( "last_object" );
-        file_size = unmarshaller.readUint64( "file_size" );    
+        file_size = unmarshaller.readUint64( "file_size" );
     }
-        
+
     
 
     private String file_id;
     private long truncate_epoch;
     private long last_object;
-    private long file_size;    
+    private long file_size;
 
 }
 

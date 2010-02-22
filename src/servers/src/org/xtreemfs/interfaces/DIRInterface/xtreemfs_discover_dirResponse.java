@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_discover_dirResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012218;
-    
+    public static final int TAG = 2010022320;
+
     public xtreemfs_discover_dirResponse() { dir_service = new DirService();  }
     public xtreemfs_discover_dirResponse( DirService dir_service ) { this.dir_service = dir_service; }
 
@@ -36,32 +36,32 @@ public class xtreemfs_discover_dirResponse extends org.xtreemfs.interfaces.utils
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012218;    
+    public static final long serialVersionUID = 2010022320;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012218; }
+    public int getTag() { return 2010022320; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_discover_dirResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += dir_service.getXDRSize(); // dir_service
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeStruct( "dir_service", dir_service );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        dir_service = new DirService(); unmarshaller.readStruct( "dir_service", dir_service );    
+        dir_service = new DirService(); unmarshaller.readStruct( "dir_service", dir_service );
     }
-        
+
     
 
-    private DirService dir_service;    
+    private DirService dir_service;
 
 }
 

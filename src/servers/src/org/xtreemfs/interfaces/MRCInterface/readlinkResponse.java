@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class readlinkResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012324;
-    
+    public static final int TAG = 2010022427;
+
     public readlinkResponse() {  }
     public readlinkResponse( String link_target_path ) { this.link_target_path = link_target_path; }
 
@@ -36,32 +36,32 @@ public class readlinkResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012324;    
+    public static final long serialVersionUID = 2010022427;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012324; }
+    public int getTag() { return 2010022427; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readlinkResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( link_target_path != null ? ( ( link_target_path.getBytes().length % 4 == 0 ) ? link_target_path.getBytes().length : ( link_target_path.getBytes().length + 4 - link_target_path.getBytes().length % 4 ) ) : 0 ); // link_target_path
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "link_target_path", link_target_path );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        link_target_path = unmarshaller.readString( "link_target_path" );    
+        link_target_path = unmarshaller.readString( "link_target_path" );
     }
-        
+
     
 
-    private String link_target_path;    
+    private String link_target_path;
 
 }
 

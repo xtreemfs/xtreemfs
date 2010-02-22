@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 2010012419;
-    
+    public static final int TAG = 2010022521;
+
     public RedirectException() {  }
     public RedirectException( String to_uuid ) { this.to_uuid = to_uuid; }
 
@@ -36,32 +36,32 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012419;    
+    public static final long serialVersionUID = 2010022521;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012419; }
+    public int getTag() { return 2010022521; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::RedirectException"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( to_uuid != null ? ( ( to_uuid.getBytes().length % 4 == 0 ) ? to_uuid.getBytes().length : ( to_uuid.getBytes().length + 4 - to_uuid.getBytes().length % 4 ) ) : 0 ); // to_uuid
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "to_uuid", to_uuid );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        to_uuid = unmarshaller.readString( "to_uuid" );    
+        to_uuid = unmarshaller.readString( "to_uuid" );
     }
-        
+
     
 
-    private String to_uuid;    
+    private String to_uuid;
 
 }
 

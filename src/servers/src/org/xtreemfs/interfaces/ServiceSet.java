@@ -31,35 +31,35 @@ public class ServiceSet extends Sequence<Service>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012148; }
+    public int getTag() { return 2010022250; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ServiceSet"; }
 
-    public int getXDRSize() 
+    public int getXDRSize()
     {
         int my_size = 4; // Length of the sequence
-        
-        for ( Iterator<Service> i = iterator(); i.hasNext(); ) 
+
+        for ( Iterator<Service> i = iterator(); i.hasNext(); )
         {
             Service value = i.next();
             my_size += value.getXDRSize(); // Size of value
         }
-        
+
         return my_size;
     }
-    
+
     public void marshal( Marshaller marshaller )
     {
         for ( Iterator<Service> i = iterator(); i.hasNext(); )
             marshaller.writeStruct( "value", i.next() );;
     }
-    
+
     public void unmarshal( Unmarshaller unmarshaller )
     {
-        Service value; 
+        Service value;
         value = new Service(); unmarshaller.readStruct( "value", value );
-        this.add( value );    
+        this.add( value );
     }
-        
+
 
 }
 

@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class Service implements Struct
 {
-    public static final int TAG = 2010012147;
-    
+    public static final int TAG = 2010022249;
+
     public Service() { type = ServiceType.SERVICE_TYPE_MIXED; data = new ServiceDataMap();  }
     public Service( ServiceType type, String uuid, long version, String name, long last_updated_s, ServiceDataMap data ) { this.type = type; this.uuid = uuid; this.version = version; this.name = name; this.last_updated_s = last_updated_s; this.data = data; }
 
@@ -45,12 +45,12 @@ public class Service implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012147;    
+    public static final long serialVersionUID = 2010022249;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012147; }
+    public int getTag() { return 2010022249; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Service"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -61,8 +61,8 @@ public class Service implements Struct
         my_size += Long.SIZE / 8; // last_updated_s
         my_size += data.getXDRSize(); // data
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeInt32( type, type.intValue() );
@@ -72,17 +72,17 @@ public class Service implements Struct
         marshaller.writeUint64( "last_updated_s", last_updated_s );
         marshaller.writeMap( "data", data );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         type = ServiceType.parseInt( unmarshaller.readInt32( "type" ) );
         uuid = unmarshaller.readString( "uuid" );
         version = unmarshaller.readUint64( "version" );
         name = unmarshaller.readString( "name" );
         last_updated_s = unmarshaller.readUint64( "last_updated_s" );
-        data = new ServiceDataMap(); unmarshaller.readMap( "data", data );    
+        data = new ServiceDataMap(); unmarshaller.readMap( "data", data );
     }
-        
+
     
 
     private ServiceType type;
@@ -90,7 +90,7 @@ public class Service implements Struct
     private long version;
     private String name;
     private long last_updated_s;
-    private ServiceDataMap data;    
+    private ServiceDataMap data;
 
 }
 

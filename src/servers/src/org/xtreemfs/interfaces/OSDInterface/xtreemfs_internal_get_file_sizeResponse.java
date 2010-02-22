@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_internal_get_file_sizeResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012455;
-    
+    public static final int TAG = 2010022557;
+
     public xtreemfs_internal_get_file_sizeResponse() {  }
     public xtreemfs_internal_get_file_sizeResponse( long returnValue ) { this.returnValue = returnValue; }
 
@@ -36,32 +36,32 @@ public class xtreemfs_internal_get_file_sizeResponse extends org.xtreemfs.interf
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012455;    
+    public static final long serialVersionUID = 2010022557;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012455; }
+    public int getTag() { return 2010022557; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_file_sizeResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Long.SIZE / 8; // returnValue
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeUint64( "returnValue", returnValue );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        returnValue = unmarshaller.readUint64( "returnValue" );    
+        returnValue = unmarshaller.readUint64( "returnValue" );
     }
-        
+
     
 
-    private long returnValue;    
+    private long returnValue;
 
 }
 

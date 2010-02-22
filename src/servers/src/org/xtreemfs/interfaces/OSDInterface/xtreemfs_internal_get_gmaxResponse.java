@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_internal_get_gmaxResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012453;
-    
+    public static final int TAG = 2010022555;
+
     public xtreemfs_internal_get_gmaxResponse() { returnValue = new InternalGmax();  }
     public xtreemfs_internal_get_gmaxResponse( InternalGmax returnValue ) { this.returnValue = returnValue; }
 
@@ -36,32 +36,32 @@ public class xtreemfs_internal_get_gmaxResponse extends org.xtreemfs.interfaces.
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012453;    
+    public static final long serialVersionUID = 2010022555;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012453; }
+    public int getTag() { return 2010022555; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_gmaxResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += returnValue.getXDRSize(); // returnValue
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeStruct( "returnValue", returnValue );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        returnValue = new InternalGmax(); unmarshaller.readStruct( "returnValue", returnValue );    
+        returnValue = new InternalGmax(); unmarshaller.readStruct( "returnValue", returnValue );
     }
-        
+
     
 
-    private InternalGmax returnValue;    
+    private InternalGmax returnValue;
 
 }
 

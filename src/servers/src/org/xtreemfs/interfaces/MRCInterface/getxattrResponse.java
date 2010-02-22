@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class getxattrResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012318;
-    
+    public static final int TAG = 2010022420;
+
     public getxattrResponse() {  }
     public getxattrResponse( String value ) { this.value = value; }
 
@@ -36,32 +36,32 @@ public class getxattrResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012318;    
+    public static final long serialVersionUID = 2010022420;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012318; }
+    public int getTag() { return 2010022420; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getxattrResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( value != null ? ( ( value.getBytes().length % 4 == 0 ) ? value.getBytes().length : ( value.getBytes().length + 4 - value.getBytes().length % 4 ) ) : 0 ); // value
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "value", value );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        value = unmarshaller.readString( "value" );    
+        value = unmarshaller.readString( "value" );
     }
-        
+
     
 
-    private String value;    
+    private String value;
 
 }
 

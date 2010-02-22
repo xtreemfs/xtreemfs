@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_lsvolResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012348;
-    
+    public static final int TAG = 2010022451;
+
     public xtreemfs_lsvolResponse() { volumes = new VolumeSet();  }
     public xtreemfs_lsvolResponse( VolumeSet volumes ) { this.volumes = volumes; }
 
@@ -36,32 +36,32 @@ public class xtreemfs_lsvolResponse extends org.xtreemfs.interfaces.utils.Respon
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012348;    
+    public static final long serialVersionUID = 2010022451;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012348; }
+    public int getTag() { return 2010022451; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_lsvolResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += volumes.getXDRSize(); // volumes
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeSequence( "volumes", volumes );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        volumes = new VolumeSet(); unmarshaller.readSequence( "volumes", volumes );    
+        volumes = new VolumeSet(); unmarshaller.readSequence( "volumes", volumes );
     }
-        
+
     
 
-    private VolumeSet volumes;    
+    private VolumeSet volumes;
 
 }
 

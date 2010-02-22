@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_internal_get_object_setResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012457;
-    
+    public static final int TAG = 2010022559;
+
     public xtreemfs_internal_get_object_setResponse() { returnValue = new ObjectList();  }
     public xtreemfs_internal_get_object_setResponse( ObjectList returnValue ) { this.returnValue = returnValue; }
 
@@ -36,32 +36,32 @@ public class xtreemfs_internal_get_object_setResponse extends org.xtreemfs.inter
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012457;    
+    public static final long serialVersionUID = 2010022559;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012457; }
+    public int getTag() { return 2010022559; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_object_setResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += returnValue.getXDRSize(); // returnValue
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeStruct( "returnValue", returnValue );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        returnValue = new ObjectList(); unmarshaller.readStruct( "returnValue", returnValue );    
+        returnValue = new ObjectList(); unmarshaller.readStruct( "returnValue", returnValue );
     }
-        
+
     
 
-    private ObjectList returnValue;    
+    private ObjectList returnValue;
 
 }
 

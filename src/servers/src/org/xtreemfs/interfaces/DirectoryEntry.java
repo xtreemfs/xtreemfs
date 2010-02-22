@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class DirectoryEntry implements Struct
 {
-    public static final int TAG = 2010012154;
-    
+    public static final int TAG = 2010022257;
+
     public DirectoryEntry() { stbuf = new Stat();  }
     public DirectoryEntry( String name, Stat stbuf ) { this.name = name; this.stbuf = stbuf; }
 
@@ -37,36 +37,36 @@ public class DirectoryEntry implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012154;    
+    public static final long serialVersionUID = 2010022257;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012154; }
+    public int getTag() { return 2010022257; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DirectoryEntry"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( name != null ? ( ( name.getBytes().length % 4 == 0 ) ? name.getBytes().length : ( name.getBytes().length + 4 - name.getBytes().length % 4 ) ) : 0 ); // name
         my_size += stbuf.getXDRSize(); // stbuf
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "name", name );
         marshaller.writeStruct( "stbuf", stbuf );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         name = unmarshaller.readString( "name" );
-        stbuf = new Stat(); unmarshaller.readStruct( "stbuf", stbuf );    
+        stbuf = new Stat(); unmarshaller.readStruct( "stbuf", stbuf );
     }
-        
+
     
 
     private String name;
-    private Stat stbuf;    
+    private Stat stbuf;
 
 }
 

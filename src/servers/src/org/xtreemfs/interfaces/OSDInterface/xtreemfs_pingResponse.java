@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_pingResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012473;
-    
+    public static final int TAG = 2010022575;
+
     public xtreemfs_pingResponse() { remote_coordinates = new VivaldiCoordinates();  }
     public xtreemfs_pingResponse( VivaldiCoordinates remote_coordinates ) { this.remote_coordinates = remote_coordinates; }
 
@@ -36,32 +36,32 @@ public class xtreemfs_pingResponse extends org.xtreemfs.interfaces.utils.Respons
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012473;    
+    public static final long serialVersionUID = 2010022575;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012473; }
+    public int getTag() { return 2010022575; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_pingResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += remote_coordinates.getXDRSize(); // remote_coordinates
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeStruct( "remote_coordinates", remote_coordinates );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        remote_coordinates = new VivaldiCoordinates(); unmarshaller.readStruct( "remote_coordinates", remote_coordinates );    
+        remote_coordinates = new VivaldiCoordinates(); unmarshaller.readStruct( "remote_coordinates", remote_coordinates );
     }
-        
+
     
 
-    private VivaldiCoordinates remote_coordinates;    
+    private VivaldiCoordinates remote_coordinates;
 
 }
 

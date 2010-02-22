@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_cleanup_startRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012445;
-    
+    public static final int TAG = 2010022547;
+
     public xtreemfs_cleanup_startRequest() {  }
     public xtreemfs_cleanup_startRequest( boolean remove_zombies, boolean remove_unavail_volume, boolean lost_and_found ) { this.remove_zombies = remove_zombies; this.remove_unavail_volume = remove_unavail_volume; this.lost_and_found = lost_and_found; }
 
@@ -43,12 +43,12 @@ public class xtreemfs_cleanup_startRequest extends org.xtreemfs.interfaces.utils
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012445;    
+    public static final long serialVersionUID = 2010022547;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012445; }
+    public int getTag() { return 2010022547; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_startRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -56,27 +56,27 @@ public class xtreemfs_cleanup_startRequest extends org.xtreemfs.interfaces.utils
         my_size += Integer.SIZE / 8; // remove_unavail_volume
         my_size += Integer.SIZE / 8; // lost_and_found
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeBoolean( "remove_zombies", remove_zombies );
         marshaller.writeBoolean( "remove_unavail_volume", remove_unavail_volume );
         marshaller.writeBoolean( "lost_and_found", lost_and_found );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         remove_zombies = unmarshaller.readBoolean( "remove_zombies" );
         remove_unavail_volume = unmarshaller.readBoolean( "remove_unavail_volume" );
-        lost_and_found = unmarshaller.readBoolean( "lost_and_found" );    
+        lost_and_found = unmarshaller.readBoolean( "lost_and_found" );
     }
-        
+
     
 
     private boolean remove_zombies;
     private boolean remove_unavail_volume;
-    private boolean lost_and_found;    
+    private boolean lost_and_found;
 
 }
 

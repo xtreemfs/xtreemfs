@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_replica_addRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012353;
-    
+    public static final int TAG = 2010022455;
+
     public xtreemfs_replica_addRequest() { new_replica = new Replica();  }
     public xtreemfs_replica_addRequest( String file_id, Replica new_replica ) { this.file_id = file_id; this.new_replica = new_replica; }
 
@@ -41,36 +41,36 @@ public class xtreemfs_replica_addRequest extends org.xtreemfs.interfaces.utils.R
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012353;    
+    public static final long serialVersionUID = 2010022455;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012353; }
+    public int getTag() { return 2010022455; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_addRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 ); // file_id
         my_size += new_replica.getXDRSize(); // new_replica
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "file_id", file_id );
         marshaller.writeStruct( "new_replica", new_replica );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         file_id = unmarshaller.readString( "file_id" );
-        new_replica = new Replica(); unmarshaller.readStruct( "new_replica", new_replica );    
+        new_replica = new Replica(); unmarshaller.readStruct( "new_replica", new_replica );
     }
-        
+
     
 
     private String file_id;
-    private Replica new_replica;    
+    private Replica new_replica;
 
 }
 

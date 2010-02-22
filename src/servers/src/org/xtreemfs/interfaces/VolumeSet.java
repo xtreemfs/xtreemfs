@@ -31,35 +31,35 @@ public class VolumeSet extends Sequence<Volume>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012158; }
+    public int getTag() { return 2010022261; }
     public String getTypeName() { return "org::xtreemfs::interfaces::VolumeSet"; }
 
-    public int getXDRSize() 
+    public int getXDRSize()
     {
         int my_size = 4; // Length of the sequence
-        
-        for ( Iterator<Volume> i = iterator(); i.hasNext(); ) 
+
+        for ( Iterator<Volume> i = iterator(); i.hasNext(); )
         {
             Volume value = i.next();
             my_size += value.getXDRSize(); // Size of value
         }
-        
+
         return my_size;
     }
-    
+
     public void marshal( Marshaller marshaller )
     {
         for ( Iterator<Volume> i = iterator(); i.hasNext(); )
             marshaller.writeStruct( "value", i.next() );;
     }
-    
+
     public void unmarshal( Unmarshaller unmarshaller )
     {
-        Volume value; 
+        Volume value;
         value = new Volume(); unmarshaller.readStruct( "value", value );
-        this.add( value );    
+        this.add( value );
     }
-        
+
 
 }
 

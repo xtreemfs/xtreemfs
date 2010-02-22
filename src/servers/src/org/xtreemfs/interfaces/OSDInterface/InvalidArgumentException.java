@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 2010012416;
-    
+    public static final int TAG = 2010022518;
+
     public InvalidArgumentException() {  }
     public InvalidArgumentException( String error_message ) { this.error_message = error_message; }
 
@@ -36,32 +36,32 @@ public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCR
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012416;    
+    public static final long serialVersionUID = 2010022518;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012416; }
+    public int getTag() { return 2010022518; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::InvalidArgumentException"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( error_message != null ? ( ( error_message.getBytes().length % 4 == 0 ) ? error_message.getBytes().length : ( error_message.getBytes().length + 4 - error_message.getBytes().length % 4 ) ) : 0 ); // error_message
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "error_message", error_message );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        error_message = unmarshaller.readString( "error_message" );    
+        error_message = unmarshaller.readString( "error_message" );
     }
-        
+
     
 
-    private String error_message;    
+    private String error_message;
 
 }
 

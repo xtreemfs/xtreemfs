@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_lock_releaseRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012465;
-    
+    public static final int TAG = 2010022567;
+
     public xtreemfs_lock_releaseRequest() { file_credentials = new FileCredentials(); lock = new Lock();  }
     public xtreemfs_lock_releaseRequest( FileCredentials file_credentials, String file_id, Lock lock ) { this.file_credentials = file_credentials; this.file_id = file_id; this.lock = lock; }
 
@@ -43,12 +43,12 @@ public class xtreemfs_lock_releaseRequest extends org.xtreemfs.interfaces.utils.
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012465;    
+    public static final long serialVersionUID = 2010022567;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012465; }
+    public int getTag() { return 2010022567; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_lock_releaseRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -56,27 +56,27 @@ public class xtreemfs_lock_releaseRequest extends org.xtreemfs.interfaces.utils.
         my_size += Integer.SIZE / 8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 ); // file_id
         my_size += lock.getXDRSize(); // lock
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeStruct( "file_credentials", file_credentials );
         marshaller.writeString( "file_id", file_id );
         marshaller.writeStruct( "lock", lock );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         file_credentials = new FileCredentials(); unmarshaller.readStruct( "file_credentials", file_credentials );
         file_id = unmarshaller.readString( "file_id" );
-        lock = new Lock(); unmarshaller.readStruct( "lock", lock );    
+        lock = new Lock(); unmarshaller.readStruct( "lock", lock );
     }
-        
+
     
 
     private FileCredentials file_credentials;
     private String file_id;
-    private Lock lock;    
+    private Lock lock;
 
 }
 

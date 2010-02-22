@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_cleanup_startResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012445;
-    
+    public static final int TAG = 2010022547;
+
     public xtreemfs_cleanup_startResponse() {  }
 
     // java.lang.Object
@@ -32,30 +32,30 @@ public class xtreemfs_cleanup_startResponse extends org.xtreemfs.interfaces.util
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012445;    
+    public static final long serialVersionUID = 2010022547;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012445; }
+    public int getTag() { return 2010022547; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_startResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
 
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
 
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-    
+
     }
-        
-        
+
+    
 
 }
 

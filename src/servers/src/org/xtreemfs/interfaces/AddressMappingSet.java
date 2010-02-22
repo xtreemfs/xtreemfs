@@ -31,35 +31,35 @@ public class AddressMappingSet extends Sequence<AddressMapping>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012144; }
+    public int getTag() { return 2010022246; }
     public String getTypeName() { return "org::xtreemfs::interfaces::AddressMappingSet"; }
 
-    public int getXDRSize() 
+    public int getXDRSize()
     {
         int my_size = 4; // Length of the sequence
-        
-        for ( Iterator<AddressMapping> i = iterator(); i.hasNext(); ) 
+
+        for ( Iterator<AddressMapping> i = iterator(); i.hasNext(); )
         {
             AddressMapping value = i.next();
             my_size += value.getXDRSize(); // Size of value
         }
-        
+
         return my_size;
     }
-    
+
     public void marshal( Marshaller marshaller )
     {
         for ( Iterator<AddressMapping> i = iterator(); i.hasNext(); )
             marshaller.writeStruct( "value", i.next() );;
     }
-    
+
     public void unmarshal( Unmarshaller unmarshaller )
     {
-        AddressMapping value; 
+        AddressMapping value;
         value = new AddressMapping(); unmarshaller.readStruct( "value", value );
-        this.add( value );    
+        this.add( value );
     }
-        
+
 
 }
 

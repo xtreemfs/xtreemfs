@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_lock_acquireRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012463;
-    
+    public static final int TAG = 2010022565;
+
     public xtreemfs_lock_acquireRequest() { file_credentials = new FileCredentials();  }
     public xtreemfs_lock_acquireRequest( FileCredentials file_credentials, String client_uuid, int client_pid, String file_id, long offset, long length, boolean exclusive ) { this.file_credentials = file_credentials; this.client_uuid = client_uuid; this.client_pid = client_pid; this.file_id = file_id; this.offset = offset; this.length = length; this.exclusive = exclusive; }
 
@@ -51,12 +51,12 @@ public class xtreemfs_lock_acquireRequest extends org.xtreemfs.interfaces.utils.
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012463;    
+    public static final long serialVersionUID = 2010022565;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012463; }
+    public int getTag() { return 2010022565; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_lock_acquireRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -68,8 +68,8 @@ public class xtreemfs_lock_acquireRequest extends org.xtreemfs.interfaces.utils.
         my_size += Long.SIZE / 8; // length
         my_size += Integer.SIZE / 8; // exclusive
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeStruct( "file_credentials", file_credentials );
@@ -80,8 +80,8 @@ public class xtreemfs_lock_acquireRequest extends org.xtreemfs.interfaces.utils.
         marshaller.writeUint64( "length", length );
         marshaller.writeBoolean( "exclusive", exclusive );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         file_credentials = new FileCredentials(); unmarshaller.readStruct( "file_credentials", file_credentials );
         client_uuid = unmarshaller.readString( "client_uuid" );
@@ -89,9 +89,9 @@ public class xtreemfs_lock_acquireRequest extends org.xtreemfs.interfaces.utils.
         file_id = unmarshaller.readString( "file_id" );
         offset = unmarshaller.readUint64( "offset" );
         length = unmarshaller.readUint64( "length" );
-        exclusive = unmarshaller.readBoolean( "exclusive" );    
+        exclusive = unmarshaller.readBoolean( "exclusive" );
     }
-        
+
     
 
     private FileCredentials file_credentials;
@@ -100,7 +100,7 @@ public class xtreemfs_lock_acquireRequest extends org.xtreemfs.interfaces.utils.
     private String file_id;
     private long offset;
     private long length;
-    private boolean exclusive;    
+    private boolean exclusive;
 
 }
 

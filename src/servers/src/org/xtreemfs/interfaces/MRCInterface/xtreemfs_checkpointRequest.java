@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_checkpointRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012343;
-    
+    public static final int TAG = 2010022445;
+
     public xtreemfs_checkpointRequest() {  }
 
     // java.lang.Object
@@ -35,30 +35,30 @@ public class xtreemfs_checkpointRequest extends org.xtreemfs.interfaces.utils.Re
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012343;    
+    public static final long serialVersionUID = 2010022445;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012343; }
+    public int getTag() { return 2010022445; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_checkpointRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
 
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
 
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-    
+
     }
-        
-        
+
+    
 
 }
 

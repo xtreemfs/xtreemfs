@@ -15,13 +15,13 @@ import yidl.runtime.Unmarshaller;
 
 public class getattrResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012317;
-    
-    public getattrResponse() { stbuf = new Stat();  }
-    public getattrResponse( Stat stbuf ) { this.stbuf = stbuf; }
+    public static final int TAG = 2010022419;
 
-    public Stat getStbuf() { return stbuf; }
-    public void setStbuf( Stat stbuf ) { this.stbuf = stbuf; }
+    public getattrResponse() { stbuf = new StatSet();  }
+    public getattrResponse( StatSet stbuf ) { this.stbuf = stbuf; }
+
+    public StatSet getStbuf() { return stbuf; }
+    public void setStbuf( StatSet stbuf ) { this.stbuf = stbuf; }
 
     // java.lang.Object
     public String toString() 
@@ -36,32 +36,32 @@ public class getattrResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012317;    
+    public static final long serialVersionUID = 2010022419;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012317; }
+    public int getTag() { return 2010022419; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getattrResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += stbuf.getXDRSize(); // stbuf
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
-        marshaller.writeStruct( "stbuf", stbuf );
+        marshaller.writeSequence( "stbuf", stbuf );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        stbuf = new Stat(); unmarshaller.readStruct( "stbuf", stbuf );    
+        stbuf = new StatSet(); unmarshaller.readSequence( "stbuf", stbuf );
     }
-        
+
     
 
-    private Stat stbuf;    
+    private StatSet stbuf;
 
 }
 

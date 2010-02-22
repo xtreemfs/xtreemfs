@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class DIRException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 2010012236;
-    
+    public static final int TAG = 2010022338;
+
     public DIRException() {  }
     public DIRException( int error_code, String error_message, String stack_trace ) { this.error_code = error_code; this.error_message = error_message; this.stack_trace = stack_trace; }
 
@@ -40,12 +40,12 @@ public class DIRException extends org.xtreemfs.interfaces.utils.ONCRPCException
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012236;    
+    public static final long serialVersionUID = 2010022338;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012236; }
+    public int getTag() { return 2010022338; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::DIRException"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -53,27 +53,27 @@ public class DIRException extends org.xtreemfs.interfaces.utils.ONCRPCException
         my_size += Integer.SIZE / 8 + ( error_message != null ? ( ( error_message.getBytes().length % 4 == 0 ) ? error_message.getBytes().length : ( error_message.getBytes().length + 4 - error_message.getBytes().length % 4 ) ) : 0 ); // error_message
         my_size += Integer.SIZE / 8 + ( stack_trace != null ? ( ( stack_trace.getBytes().length % 4 == 0 ) ? stack_trace.getBytes().length : ( stack_trace.getBytes().length + 4 - stack_trace.getBytes().length % 4 ) ) : 0 ); // stack_trace
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeUint32( "error_code", error_code );
         marshaller.writeString( "error_message", error_message );
         marshaller.writeString( "stack_trace", stack_trace );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         error_code = unmarshaller.readUint32( "error_code" );
         error_message = unmarshaller.readString( "error_message" );
-        stack_trace = unmarshaller.readString( "stack_trace" );    
+        stack_trace = unmarshaller.readString( "stack_trace" );
     }
-        
+
     
 
     private int error_code;
     private String error_message;
-    private String stack_trace;    
+    private String stack_trace;
 
 }
 

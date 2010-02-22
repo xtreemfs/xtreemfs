@@ -31,35 +31,35 @@ public class FileCredentialsSet extends Sequence<FileCredentials>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012139; }
+    public int getTag() { return 2010022241; }
     public String getTypeName() { return "org::xtreemfs::interfaces::FileCredentialsSet"; }
 
-    public int getXDRSize() 
+    public int getXDRSize()
     {
         int my_size = 4; // Length of the sequence
-        
-        for ( Iterator<FileCredentials> i = iterator(); i.hasNext(); ) 
+
+        for ( Iterator<FileCredentials> i = iterator(); i.hasNext(); )
         {
             FileCredentials value = i.next();
             my_size += value.getXDRSize(); // Size of value
         }
-        
+
         return my_size;
     }
-    
+
     public void marshal( Marshaller marshaller )
     {
         for ( Iterator<FileCredentials> i = iterator(); i.hasNext(); )
             marshaller.writeStruct( "value", i.next() );;
     }
-    
+
     public void unmarshal( Unmarshaller unmarshaller )
     {
-        FileCredentials value; 
+        FileCredentials value;
         value = new FileCredentials(); unmarshaller.readStruct( "value", value );
-        this.add( value );    
+        this.add( value );
     }
-        
+
 
 }
 

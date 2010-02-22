@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_check_file_existsRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012344;
-    
+    public static final int TAG = 2010022446;
+
     public xtreemfs_check_file_existsRequest() { file_ids = new StringSet();  }
     public xtreemfs_check_file_existsRequest( String volume_id, StringSet file_ids, String osd_uuid ) { this.volume_id = volume_id; this.file_ids = file_ids; this.osd_uuid = osd_uuid; }
 
@@ -43,12 +43,12 @@ public class xtreemfs_check_file_existsRequest extends org.xtreemfs.interfaces.u
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012344;    
+    public static final long serialVersionUID = 2010022446;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012344; }
+    public int getTag() { return 2010022446; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_check_file_existsRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -56,27 +56,27 @@ public class xtreemfs_check_file_existsRequest extends org.xtreemfs.interfaces.u
         my_size += file_ids.getXDRSize(); // file_ids
         my_size += Integer.SIZE / 8 + ( osd_uuid != null ? ( ( osd_uuid.getBytes().length % 4 == 0 ) ? osd_uuid.getBytes().length : ( osd_uuid.getBytes().length + 4 - osd_uuid.getBytes().length % 4 ) ) : 0 ); // osd_uuid
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "volume_id", volume_id );
         marshaller.writeSequence( "file_ids", file_ids );
         marshaller.writeString( "osd_uuid", osd_uuid );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         volume_id = unmarshaller.readString( "volume_id" );
         file_ids = new StringSet(); unmarshaller.readSequence( "file_ids", file_ids );
-        osd_uuid = unmarshaller.readString( "osd_uuid" );    
+        osd_uuid = unmarshaller.readString( "osd_uuid" );
     }
-        
+
     
 
     private String volume_id;
     private StringSet file_ids;
-    private String osd_uuid;    
+    private String osd_uuid;
 
 }
 

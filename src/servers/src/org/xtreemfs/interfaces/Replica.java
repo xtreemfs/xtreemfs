@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class Replica implements Struct
 {
-    public static final int TAG = 2010012133;
-    
+    public static final int TAG = 2010022235;
+
     public Replica() { osd_uuids = new StringSet(); striping_policy = new StripingPolicy();  }
     public Replica( StringSet osd_uuids, int replication_flags, StripingPolicy striping_policy ) { this.osd_uuids = osd_uuids; this.replication_flags = replication_flags; this.striping_policy = striping_policy; }
 
@@ -39,12 +39,12 @@ public class Replica implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012133;    
+    public static final long serialVersionUID = 2010022235;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012133; }
+    public int getTag() { return 2010022235; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Replica"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -52,27 +52,27 @@ public class Replica implements Struct
         my_size += Integer.SIZE / 8; // replication_flags
         my_size += striping_policy.getXDRSize(); // striping_policy
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeSequence( "osd_uuids", osd_uuids );
         marshaller.writeUint32( "replication_flags", replication_flags );
         marshaller.writeStruct( "striping_policy", striping_policy );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         osd_uuids = new StringSet(); unmarshaller.readSequence( "osd_uuids", osd_uuids );
         replication_flags = unmarshaller.readUint32( "replication_flags" );
-        striping_policy = new StripingPolicy(); unmarshaller.readStruct( "striping_policy", striping_policy );    
+        striping_policy = new StripingPolicy(); unmarshaller.readStruct( "striping_policy", striping_policy );
     }
-        
+
     
 
     private StringSet osd_uuids;
     private int replication_flags;
-    private StripingPolicy striping_policy;    
+    private StripingPolicy striping_policy;
 
 }
 

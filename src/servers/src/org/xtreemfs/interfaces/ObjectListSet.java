@@ -31,35 +31,35 @@ public class ObjectListSet extends Sequence<ObjectList>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012169; }
+    public int getTag() { return 2010022271; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ObjectListSet"; }
 
-    public int getXDRSize() 
+    public int getXDRSize()
     {
         int my_size = 4; // Length of the sequence
-        
-        for ( Iterator<ObjectList> i = iterator(); i.hasNext(); ) 
+
+        for ( Iterator<ObjectList> i = iterator(); i.hasNext(); )
         {
             ObjectList value = i.next();
             my_size += value.getXDRSize(); // Size of value
         }
-        
+
         return my_size;
     }
-    
+
     public void marshal( Marshaller marshaller )
     {
         for ( Iterator<ObjectList> i = iterator(); i.hasNext(); )
             marshaller.writeStruct( "value", i.next() );;
     }
-    
+
     public void unmarshal( Unmarshaller unmarshaller )
     {
-        ObjectList value; 
+        ObjectList value;
         value = new ObjectList(); unmarshaller.readStruct( "value", value );
-        this.add( value );    
+        this.add( value );
     }
-        
+
 
 }
 

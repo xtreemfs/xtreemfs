@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_service_get_by_nameRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012223;
-    
+    public static final int TAG = 2010022325;
+
     public xtreemfs_service_get_by_nameRequest() {  }
     public xtreemfs_service_get_by_nameRequest( String name ) { this.name = name; }
 
@@ -39,32 +39,32 @@ public class xtreemfs_service_get_by_nameRequest extends org.xtreemfs.interfaces
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012223;    
+    public static final long serialVersionUID = 2010022325;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012223; }
+    public int getTag() { return 2010022325; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_get_by_nameRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( name != null ? ( ( name.getBytes().length % 4 == 0 ) ? name.getBytes().length : ( name.getBytes().length + 4 - name.getBytes().length % 4 ) ) : 0 ); // name
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "name", name );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        name = unmarshaller.readString( "name" );    
+        name = unmarshaller.readString( "name" );
     }
-        
+
     
 
-    private String name;    
+    private String name;
 
 }
 

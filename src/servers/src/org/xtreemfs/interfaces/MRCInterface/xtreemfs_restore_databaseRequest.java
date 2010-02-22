@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_restore_databaseRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012356;
-    
+    public static final int TAG = 2010022458;
+
     public xtreemfs_restore_databaseRequest() {  }
     public xtreemfs_restore_databaseRequest( String dump_file ) { this.dump_file = dump_file; }
 
@@ -39,32 +39,32 @@ public class xtreemfs_restore_databaseRequest extends org.xtreemfs.interfaces.ut
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012356;    
+    public static final long serialVersionUID = 2010022458;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012356; }
+    public int getTag() { return 2010022458; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_databaseRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( dump_file != null ? ( ( dump_file.getBytes().length % 4 == 0 ) ? dump_file.getBytes().length : ( dump_file.getBytes().length + 4 - dump_file.getBytes().length % 4 ) ) : 0 ); // dump_file
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "dump_file", dump_file );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        dump_file = unmarshaller.readString( "dump_file" );    
+        dump_file = unmarshaller.readString( "dump_file" );
     }
-        
+
     
 
-    private String dump_file;    
+    private String dump_file;
 
 }
 

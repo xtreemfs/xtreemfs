@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class ftruncateRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012316;
-    
+    public static final int TAG = 2010022418;
+
     public ftruncateRequest() { write_xcap = new XCap();  }
     public ftruncateRequest( XCap write_xcap ) { this.write_xcap = write_xcap; }
 
@@ -39,32 +39,32 @@ public class ftruncateRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012316;    
+    public static final long serialVersionUID = 2010022418;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012316; }
+    public int getTag() { return 2010022418; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::ftruncateRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += write_xcap.getXDRSize(); // write_xcap
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeStruct( "write_xcap", write_xcap );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        write_xcap = new XCap(); unmarshaller.readStruct( "write_xcap", write_xcap );    
+        write_xcap = new XCap(); unmarshaller.readStruct( "write_xcap", write_xcap );
     }
-        
+
     
 
-    private XCap write_xcap;    
+    private XCap write_xcap;
 
 }
 

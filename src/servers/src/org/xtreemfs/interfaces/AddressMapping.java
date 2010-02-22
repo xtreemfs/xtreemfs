@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class AddressMapping implements Struct
 {
-    public static final int TAG = 2010012143;
-    
+    public static final int TAG = 2010022245;
+
     public AddressMapping() {  }
     public AddressMapping( String uuid, long version, String protocol, String address, int port, String match_network, int ttl_s, String uri ) { this.uuid = uuid; this.version = version; this.protocol = protocol; this.address = address; this.port = port; this.match_network = match_network; this.ttl_s = ttl_s; this.uri = uri; }
 
@@ -49,12 +49,12 @@ public class AddressMapping implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012143;    
+    public static final long serialVersionUID = 2010022245;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012143; }
+    public int getTag() { return 2010022245; }
     public String getTypeName() { return "org::xtreemfs::interfaces::AddressMapping"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -67,8 +67,8 @@ public class AddressMapping implements Struct
         my_size += Integer.SIZE / 8; // ttl_s
         my_size += Integer.SIZE / 8 + ( uri != null ? ( ( uri.getBytes().length % 4 == 0 ) ? uri.getBytes().length : ( uri.getBytes().length + 4 - uri.getBytes().length % 4 ) ) : 0 ); // uri
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "uuid", uuid );
@@ -80,8 +80,8 @@ public class AddressMapping implements Struct
         marshaller.writeUint32( "ttl_s", ttl_s );
         marshaller.writeString( "uri", uri );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         uuid = unmarshaller.readString( "uuid" );
         version = unmarshaller.readUint64( "version" );
@@ -90,9 +90,9 @@ public class AddressMapping implements Struct
         port = unmarshaller.readUint16( "port" );
         match_network = unmarshaller.readString( "match_network" );
         ttl_s = unmarshaller.readUint32( "ttl_s" );
-        uri = unmarshaller.readString( "uri" );    
+        uri = unmarshaller.readString( "uri" );
     }
-        
+
     
 
     private String uuid;
@@ -102,7 +102,7 @@ public class AddressMapping implements Struct
     private int port;
     private String match_network;
     private int ttl_s;
-    private String uri;    
+    private String uri;
 
 }
 

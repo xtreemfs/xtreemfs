@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_internal_debugResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012347;
-    
+    public static final int TAG = 2010022449;
+
     public xtreemfs_internal_debugResponse() {  }
     public xtreemfs_internal_debugResponse( String result ) { this.result = result; }
 
@@ -36,32 +36,32 @@ public class xtreemfs_internal_debugResponse extends org.xtreemfs.interfaces.uti
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012347;    
+    public static final long serialVersionUID = 2010022449;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012347; }
+    public int getTag() { return 2010022449; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_internal_debugResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( result != null ? ( ( result.getBytes().length % 4 == 0 ) ? result.getBytes().length : ( result.getBytes().length + 4 - result.getBytes().length % 4 ) ) : 0 ); // result
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "result", result );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        result = unmarshaller.readString( "result" );    
+        result = unmarshaller.readString( "result" );
     }
-        
+
     
 
-    private String result;    
+    private String result;
 
 }
 

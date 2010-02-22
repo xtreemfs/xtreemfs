@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class InternalReadLocalResponse implements Struct
 {
-    public static final int TAG = 2010012165;
-    
+    public static final int TAG = 2010022267;
+
     public InternalReadLocalResponse() { data = new ObjectData(); object_set = new ObjectListSet();  }
     public InternalReadLocalResponse( ObjectData data, ObjectListSet object_set ) { this.data = data; this.object_set = object_set; }
 
@@ -37,36 +37,36 @@ public class InternalReadLocalResponse implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012165;    
+    public static final long serialVersionUID = 2010022267;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012165; }
+    public int getTag() { return 2010022267; }
     public String getTypeName() { return "org::xtreemfs::interfaces::InternalReadLocalResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += data.getXDRSize(); // data
         my_size += object_set.getXDRSize(); // object_set
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeStruct( "data", data );
         marshaller.writeSequence( "object_set", object_set );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         data = new ObjectData(); unmarshaller.readStruct( "data", data );
-        object_set = new ObjectListSet(); unmarshaller.readSequence( "object_set", object_set );    
+        object_set = new ObjectListSet(); unmarshaller.readSequence( "object_set", object_set );
     }
-        
+
     
 
     private ObjectData data;
-    private ObjectListSet object_set;    
+    private ObjectListSet object_set;
 
 }
 

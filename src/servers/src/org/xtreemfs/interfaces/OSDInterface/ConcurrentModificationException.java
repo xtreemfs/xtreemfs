@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class ConcurrentModificationException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 2010012414;
-    
+    public static final int TAG = 2010022516;
+
     public ConcurrentModificationException() {  }
     public ConcurrentModificationException( String stack_trace ) { this.stack_trace = stack_trace; }
 
@@ -36,32 +36,32 @@ public class ConcurrentModificationException extends org.xtreemfs.interfaces.uti
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012414;    
+    public static final long serialVersionUID = 2010022516;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012414; }
+    public int getTag() { return 2010022516; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::ConcurrentModificationException"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( stack_trace != null ? ( ( stack_trace.getBytes().length % 4 == 0 ) ? stack_trace.getBytes().length : ( stack_trace.getBytes().length + 4 - stack_trace.getBytes().length % 4 ) ) : 0 ); // stack_trace
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "stack_trace", stack_trace );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        stack_trace = unmarshaller.readString( "stack_trace" );    
+        stack_trace = unmarshaller.readString( "stack_trace" );
     }
-        
+
     
 
-    private String stack_trace;    
+    private String stack_trace;
 
 }
 

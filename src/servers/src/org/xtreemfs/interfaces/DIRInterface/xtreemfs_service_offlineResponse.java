@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_service_offlineResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012226;
-    
+    public static final int TAG = 2010022328;
+
     public xtreemfs_service_offlineResponse() {  }
 
     // java.lang.Object
@@ -32,30 +32,30 @@ public class xtreemfs_service_offlineResponse extends org.xtreemfs.interfaces.ut
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012226;    
+    public static final long serialVersionUID = 2010022328;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012226; }
+    public int getTag() { return 2010022328; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_service_offlineResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
 
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
 
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-    
+
     }
-        
-        
+
+    
 
 }
 

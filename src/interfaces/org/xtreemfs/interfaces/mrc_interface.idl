@@ -6,7 +6,7 @@
 
 module org
 {
-  module xtreemfs # 2010012113
+  module xtreemfs # 2010022215
   {
     module interfaces
     {
@@ -26,21 +26,24 @@ module org
         uint32_t blksize;
 
         // XtreemFS-specific attributes
+        uint64_t etag;
         uint32_t truncate_epoch;
 
         // Win32-specific attributes
         uint32_t attributes;
       };
 
-      struct DirectoryEntry # 41
+      typedef sequence<Stat> StatSet # 41;
+
+      struct DirectoryEntry # 42
       {
         string name;
         Stat stbuf;
       };
 
-      typedef sequence<DirectoryEntry> DirectoryEntrySet # 42;
+      typedef sequence<DirectoryEntry> DirectoryEntrySet # 43;
 
-      struct StatVFS # 43
+      struct StatVFS # 44
       {
         //size of a block in bytes
         uint32_t bsize;
@@ -52,7 +55,7 @@ module org
         uint32_t namelen;
       };
 
-      struct Volume # 44
+      struct Volume # 45
       {
         AccessControlPolicyType access_control_policy;
         StripingPolicy default_striping_policy;
@@ -63,7 +66,7 @@ module org
         string owner_user_id;
       };
 
-      typedef sequence<Volume> VolumeSet # 45;
+      typedef sequence<Volume> VolumeSet # 46;
 
 
       interface MRCInterface # 200
@@ -88,22 +91,23 @@ module org
         void close( VivaldiCoordinates client_vivaldi_coordinates, XCap write_xcap ) # 1;
         void fsetattr( XCap xcap, Stat stbuf, uint32_t to_set ) # 2;
         void ftruncate( XCap write_xcap, out XCap truncate_xcap ) # 3;
-        void getattr( string path, out Stat stbuf ) # 4;
+        void getattr( string path, uint64_t known_etag, out StatSet stbuf ) # 4;
         void getxattr( string path, string name, out string value ) # 5;
         void link( string target_path, string link_path ) # 6;
         void listxattr( string path, out StringSet names ) # 7;
         void mkdir( string path, uint32_t mode ) # 8;
         void open( string path, uint32_t flags, uint32_t mode, uint32_t attributes, VivaldiCoordinates client_vivaldi_coordinates, out FileCredentials file_credentials ) # 9;
-        void readdir( string path, out DirectoryEntrySet directory_entries ) # 10;
-        void readlink( string path, out string link_target_path ) # 11;
-        void removexattr( string path, string name ) # 12;
-        void rename( string source_path, string target_path, out FileCredentialsSet file_credentials ) # 13;
-        void rmdir( string path ) # 14;
-        void setattr( string path, Stat stbuf, uint32_t to_set ) # 15;
-        void setxattr( string path, string name, string value, int flags ) # 16;
-        void statvfs( string volume_name, out StatVFS stbuf ) # 17;
-        void symlink( string target_path, string link_path ) # 18;
-        void unlink( string path, out FileCredentialsSet file_credentials ) # 19;
+        void opendir( string path, uint64_t known_etag, uint16_t limit_directory_entries_count, out DirectoryEntrySet first_directory_entries ) # 10;
+        void readdir( uint64_t known_etag, uint16_t limit_directory_entries_count, out DirectoryEntrySet more_directory_entries ) # 11;
+        void readlink( string path, out string link_target_path ) # 12;
+        void removexattr( string path, string name ) # 13;
+        void rename( string source_path, string target_path, out FileCredentialsSet file_credentials ) # 14;
+        void rmdir( string path ) # 15;
+        void setattr( string path, Stat stbuf, uint32_t to_set ) # 16;
+        void setxattr( string path, string name, string value, int flags ) # 17;
+        void statvfs( string volume_name, out StatVFS stbuf ) # 18;
+        void symlink( string target_path, string link_path ) # 19;
+        void unlink( string path, out FileCredentialsSet file_credentials ) # 20;
 
         // XtreemFS-specific operations
         void xtreemfs_checkpoint() # 30;
@@ -111,8 +115,8 @@ module org
         void xtreemfs_dump_database( string dump_file ) # 32;
         void xtreemfs_get_suitable_osds( string file_id, uint32_t num_osds, out StringSet osd_uuids ) # 33;
         void xtreemfs_internal_debug( string operation, out string result ) # 34;
-        void xtreemfs_listdir( string path, out StringSet names ) # 36; // Optimization for metadata caching
-        void xtreemfs_lsvol( out VolumeSet volumes ) # 35;
+        void xtreemfs_listdir( uint64_t known_etag, out StringSet names ) # 35; // Optimization for metadata caching
+        void xtreemfs_lsvol( out VolumeSet volumes ) # 36;
         void xtreemfs_mkvol( Volume volume ) # 37;
         void xtreemfs_renew_capability( in XCap old_xcap, out XCap renewed_xcap ) # 38;
         void xtreemfs_replication_to_master() # 39;
@@ -131,6 +135,7 @@ module org
         exception MRCException # 53 { uint32_t error_code; string error_message; string stack_trace; };
         exception ProtocolException # 54 { uint32_t accept_stat; uint32_t error_code; string stack_trace; };
         exception RedirectException # 55 { string address; uint16_t port; };
+        exception StaleETagException # 56 { };
       };
     };
   };

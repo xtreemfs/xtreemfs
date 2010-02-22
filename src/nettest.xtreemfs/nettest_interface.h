@@ -1,5 +1,5 @@
-#ifndef _771174349_
-#define _771174349_
+#ifndef _1436967923_H_
+#define _1436967923_H_
 
 
 #include "yield/concurrency.h"
@@ -90,7 +90,7 @@ namespace org
           bool operator==( const nopResponse& ) const { return true; }
   
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( nopResponse, 2010012514 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( nopResponse, 2010022616 );
   
         };
   
@@ -103,7 +103,7 @@ namespace org
           bool operator==( const nopRequest& ) const { return true; }
   
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( nopRequest, 2010012514 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( nopRequest, 2010022616 );
           // YIELD::concurrency::Request
           virtual ::YIELD::concurrency::auto_Response createResponse() { return new nopResponse; }
   
@@ -118,7 +118,7 @@ namespace org
           bool operator==( const send_bufferResponse& ) const { return true; }
   
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( send_bufferResponse, 2010012515 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( send_bufferResponse, 2010022617 );
   
         };
   
@@ -135,7 +135,7 @@ namespace org
           bool operator==( const send_bufferRequest& other ) const { return *data == *other.data; }
   
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( send_bufferRequest, 2010012515 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( send_bufferRequest, 2010022617 );
   
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeBuffer( "data", 0, data ); }
@@ -160,7 +160,7 @@ namespace org
           bool operator==( const recv_bufferResponse& other ) const { return *data == *other.data; }
   
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( recv_bufferResponse, 2010012516 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( recv_bufferResponse, 2010022618 );
   
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeBuffer( "data", 0, data ); }
@@ -183,7 +183,7 @@ namespace org
           bool operator==( const recv_bufferRequest& other ) const { return size == other.size; }
   
           // yidl::runtime::Object
-          YIDL_RUNTIME_OBJECT_PROTOTYPES( recv_bufferRequest, 2010012516 );
+          YIDL_RUNTIME_OBJECT_PROTOTYPES( recv_bufferRequest, 2010022618 );
   
           // yidl::Struct
           void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeUint32( "size", 0, size ); }
@@ -198,7 +198,7 @@ namespace org
   
   
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( NettestInterface, 2010012513 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( NettestInterface, 2010022615 );
   
         // YIELD::concurrency::EventHandler
         virtual void handleEvent( ::YIELD::concurrency::Event& ev )
@@ -208,9 +208,9 @@ namespace org
             // Switch on the event types that this interface handles, unwrap the corresponding requests and delegate to impl
             switch ( ev.get_type_id() )
             {
-              case 2010012514UL: handlenopRequest( static_cast<nopRequest&>( ev ) ); return;
-              case 2010012515UL: handlesend_bufferRequest( static_cast<send_bufferRequest&>( ev ) ); return;
-              case 2010012516UL: handlerecv_bufferRequest( static_cast<recv_bufferRequest&>( ev ) ); return;
+              case 2010022616UL: handlenopRequest( static_cast<nopRequest&>( ev ) ); return;
+              case 2010022617UL: handlesend_bufferRequest( static_cast<send_bufferRequest&>( ev ) ); return;
+              case 2010022618UL: handlerecv_bufferRequest( static_cast<recv_bufferRequest&>( ev ) ); return;
               default: handleUnknownEvent( ev ); return;
             }
           }
@@ -236,9 +236,9 @@ namespace org
           {
             switch ( request.get_type_id() )
             {
-              case 2010012514: return static_cast<nopRequest*>( &request );
-              case 2010012515: return static_cast<send_bufferRequest*>( &request );
-              case 2010012516: return static_cast<recv_bufferRequest*>( &request );
+              case 2010022616: return static_cast<nopRequest*>( &request );
+              case 2010022617: return static_cast<send_bufferRequest*>( &request );
+              case 2010022618: return static_cast<recv_bufferRequest*>( &request );
               default: return NULL;
             }
           }
@@ -247,9 +247,9 @@ namespace org
           {
             switch ( response.get_type_id() )
             {
-              case 2010012514: return static_cast<nopResponse*>( &response );
-              case 2010012515: return static_cast<send_bufferResponse*>( &response );
-              case 2010012516: return static_cast<recv_bufferResponse*>( &response );
+              case 2010022616: return static_cast<nopResponse*>( &response );
+              case 2010022617: return static_cast<send_bufferResponse*>( &response );
+              case 2010022618: return static_cast<recv_bufferResponse*>( &response );
               default: return NULL;
             }
           }
@@ -258,9 +258,9 @@ namespace org
           {
             switch ( tag )
             {
-              case 2010012514: return new nopRequest;
-              case 2010012515: return new send_bufferRequest;
-              case 2010012516: return new recv_bufferRequest;
+              case 2010022616: return new nopRequest;
+              case 2010022617: return new send_bufferRequest;
+              case 2010022618: return new recv_bufferRequest;
               default: return NULL;
             }
           }
@@ -269,9 +269,9 @@ namespace org
           {
             switch ( tag )
             {
-              case 2010012514: return new nopResponse;
-              case 2010012515: return new send_bufferResponse;
-              case 2010012516: return new recv_bufferResponse;
+              case 2010022616: return new nopResponse;
+              case 2010022617: return new send_bufferResponse;
+              case 2010022618: return new recv_bufferResponse;
               default: return NULL;
             }
           }
@@ -311,4 +311,3 @@ namespace org
 };
 
 #endif
-

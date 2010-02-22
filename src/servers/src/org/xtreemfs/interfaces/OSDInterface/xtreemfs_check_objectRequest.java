@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_check_objectRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012434;
-    
+    public static final int TAG = 2010022536;
+
     public xtreemfs_check_objectRequest() { file_credentials = new FileCredentials();  }
     public xtreemfs_check_objectRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; }
 
@@ -45,12 +45,12 @@ public class xtreemfs_check_objectRequest extends org.xtreemfs.interfaces.utils.
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012434;    
+    public static final long serialVersionUID = 2010022536;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012434; }
+    public int getTag() { return 2010022536; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_check_objectRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -59,8 +59,8 @@ public class xtreemfs_check_objectRequest extends org.xtreemfs.interfaces.utils.
         my_size += Long.SIZE / 8; // object_number
         my_size += Long.SIZE / 8; // object_version
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeStruct( "file_credentials", file_credentials );
@@ -68,21 +68,21 @@ public class xtreemfs_check_objectRequest extends org.xtreemfs.interfaces.utils.
         marshaller.writeUint64( "object_number", object_number );
         marshaller.writeUint64( "object_version", object_version );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         file_credentials = new FileCredentials(); unmarshaller.readStruct( "file_credentials", file_credentials );
         file_id = unmarshaller.readString( "file_id" );
         object_number = unmarshaller.readUint64( "object_number" );
-        object_version = unmarshaller.readUint64( "object_version" );    
+        object_version = unmarshaller.readUint64( "object_version" );
     }
-        
+
     
 
     private FileCredentials file_credentials;
     private String file_id;
     private long object_number;
-    private long object_version;    
+    private long object_version;
 
 }
 

@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_restore_fileRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012357;
-    
+    public static final int TAG = 2010022459;
+
     public xtreemfs_restore_fileRequest() {  }
     public xtreemfs_restore_fileRequest( String file_path, String file_id, long file_size, String osd_uuid, int stripe_size ) { this.file_path = file_path; this.file_id = file_id; this.file_size = file_size; this.osd_uuid = osd_uuid; this.stripe_size = stripe_size; }
 
@@ -47,12 +47,12 @@ public class xtreemfs_restore_fileRequest extends org.xtreemfs.interfaces.utils.
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012357;    
+    public static final long serialVersionUID = 2010022459;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012357; }
+    public int getTag() { return 2010022459; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_fileRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -62,8 +62,8 @@ public class xtreemfs_restore_fileRequest extends org.xtreemfs.interfaces.utils.
         my_size += Integer.SIZE / 8 + ( osd_uuid != null ? ( ( osd_uuid.getBytes().length % 4 == 0 ) ? osd_uuid.getBytes().length : ( osd_uuid.getBytes().length + 4 - osd_uuid.getBytes().length % 4 ) ) : 0 ); // osd_uuid
         my_size += Integer.SIZE / 8; // stripe_size
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "file_path", file_path );
@@ -72,23 +72,23 @@ public class xtreemfs_restore_fileRequest extends org.xtreemfs.interfaces.utils.
         marshaller.writeString( "osd_uuid", osd_uuid );
         marshaller.writeInt32( "stripe_size", stripe_size );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         file_path = unmarshaller.readString( "file_path" );
         file_id = unmarshaller.readString( "file_id" );
         file_size = unmarshaller.readUint64( "file_size" );
         osd_uuid = unmarshaller.readString( "osd_uuid" );
-        stripe_size = unmarshaller.readInt32( "stripe_size" );    
+        stripe_size = unmarshaller.readInt32( "stripe_size" );
     }
-        
+
     
 
     private String file_path;
     private String file_id;
     private long file_size;
     private String osd_uuid;
-    private int stripe_size;    
+    private int stripe_size;
 
 }
 

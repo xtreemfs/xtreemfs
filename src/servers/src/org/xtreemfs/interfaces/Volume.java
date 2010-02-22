@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class Volume implements Struct
 {
-    public static final int TAG = 2010012157;
-    
+    public static final int TAG = 2010022260;
+
     public Volume() { access_control_policy = AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL; default_striping_policy = new StripingPolicy();  }
     public Volume( AccessControlPolicyType access_control_policy, StripingPolicy default_striping_policy, String id, int mode, String name, String owner_group_id, String owner_user_id ) { this.access_control_policy = access_control_policy; this.default_striping_policy = default_striping_policy; this.id = id; this.mode = mode; this.name = name; this.owner_group_id = owner_group_id; this.owner_user_id = owner_user_id; }
 
@@ -47,12 +47,12 @@ public class Volume implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012157;    
+    public static final long serialVersionUID = 2010022260;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012157; }
+    public int getTag() { return 2010022260; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Volume"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -64,8 +64,8 @@ public class Volume implements Struct
         my_size += Integer.SIZE / 8 + ( owner_group_id != null ? ( ( owner_group_id.getBytes().length % 4 == 0 ) ? owner_group_id.getBytes().length : ( owner_group_id.getBytes().length + 4 - owner_group_id.getBytes().length % 4 ) ) : 0 ); // owner_group_id
         my_size += Integer.SIZE / 8 + ( owner_user_id != null ? ( ( owner_user_id.getBytes().length % 4 == 0 ) ? owner_user_id.getBytes().length : ( owner_user_id.getBytes().length + 4 - owner_user_id.getBytes().length % 4 ) ) : 0 ); // owner_user_id
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeInt32( access_control_policy, access_control_policy.intValue() );
@@ -76,8 +76,8 @@ public class Volume implements Struct
         marshaller.writeString( "owner_group_id", owner_group_id );
         marshaller.writeString( "owner_user_id", owner_user_id );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         access_control_policy = AccessControlPolicyType.parseInt( unmarshaller.readInt32( "access_control_policy" ) );
         default_striping_policy = new StripingPolicy(); unmarshaller.readStruct( "default_striping_policy", default_striping_policy );
@@ -85,9 +85,9 @@ public class Volume implements Struct
         mode = unmarshaller.readUint32( "mode" );
         name = unmarshaller.readString( "name" );
         owner_group_id = unmarshaller.readString( "owner_group_id" );
-        owner_user_id = unmarshaller.readString( "owner_user_id" );    
+        owner_user_id = unmarshaller.readString( "owner_user_id" );
     }
-        
+
     
 
     private AccessControlPolicyType access_control_policy;
@@ -96,7 +96,7 @@ public class Volume implements Struct
     private int mode;
     private String name;
     private String owner_group_id;
-    private String owner_user_id;    
+    private String owner_user_id;
 
 }
 

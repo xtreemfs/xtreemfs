@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_replica_listRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012354;
-    
+    public static final int TAG = 2010022456;
+
     public xtreemfs_replica_listRequest() {  }
     public xtreemfs_replica_listRequest( String file_id ) { this.file_id = file_id; }
 
@@ -39,32 +39,32 @@ public class xtreemfs_replica_listRequest extends org.xtreemfs.interfaces.utils.
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012354;    
+    public static final long serialVersionUID = 2010022456;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012354; }
+    public int getTag() { return 2010022456; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( file_id != null ? ( ( file_id.getBytes().length % 4 == 0 ) ? file_id.getBytes().length : ( file_id.getBytes().length + 4 - file_id.getBytes().length % 4 ) ) : 0 ); // file_id
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "file_id", file_id );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        file_id = unmarshaller.readString( "file_id" );    
+        file_id = unmarshaller.readString( "file_id" );
     }
-        
+
     
 
-    private String file_id;    
+    private String file_id;
 
 }
 

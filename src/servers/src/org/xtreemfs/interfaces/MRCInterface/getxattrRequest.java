@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class getxattrRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012318;
-    
+    public static final int TAG = 2010022420;
+
     public getxattrRequest() {  }
     public getxattrRequest( String path, String name ) { this.path = path; this.name = name; }
 
@@ -41,36 +41,36 @@ public class getxattrRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012318;    
+    public static final long serialVersionUID = 2010022420;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012318; }
+    public int getTag() { return 2010022420; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::getxattrRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( path != null ? ( ( path.getBytes().length % 4 == 0 ) ? path.getBytes().length : ( path.getBytes().length + 4 - path.getBytes().length % 4 ) ) : 0 ); // path
         my_size += Integer.SIZE / 8 + ( name != null ? ( ( name.getBytes().length % 4 == 0 ) ? name.getBytes().length : ( name.getBytes().length + 4 - name.getBytes().length % 4 ) ) : 0 ); // name
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "path", path );
         marshaller.writeString( "name", name );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         path = unmarshaller.readString( "path" );
-        name = unmarshaller.readString( "name" );    
+        name = unmarshaller.readString( "name" );
     }
-        
+
     
 
     private String path;
-    private String name;    
+    private String name;
 
 }
 

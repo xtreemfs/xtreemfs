@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class ObjectData implements Struct
 {
-    public static final int TAG = 2010012164;
-    
+    public static final int TAG = 2010022266;
+
     public ObjectData() {  }
     public ObjectData( int checksum, boolean invalid_checksum_on_osd, int zero_padding, ReusableBuffer data ) { this.checksum = checksum; this.invalid_checksum_on_osd = invalid_checksum_on_osd; this.zero_padding = zero_padding; this.data = data; }
 
@@ -41,12 +41,12 @@ public class ObjectData implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012164;    
+    public static final long serialVersionUID = 2010022266;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012164; }
+    public int getTag() { return 2010022266; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ObjectData"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -55,8 +55,8 @@ public class ObjectData implements Struct
         my_size += Integer.SIZE / 8; // zero_padding
         my_size += Integer.SIZE / 8 + ( data != null ? ( ( data.remaining() % 4 == 0 ) ? data.remaining() : ( data.remaining() + 4 - data.remaining() % 4 ) ) : 0 ); // data
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeUint32( "checksum", checksum );
@@ -64,21 +64,21 @@ public class ObjectData implements Struct
         marshaller.writeUint32( "zero_padding", zero_padding );
         marshaller.writeBuffer( "data", data );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         checksum = unmarshaller.readUint32( "checksum" );
         invalid_checksum_on_osd = unmarshaller.readBoolean( "invalid_checksum_on_osd" );
         zero_padding = unmarshaller.readUint32( "zero_padding" );
-        data = ( ReusableBuffer )unmarshaller.readBuffer( "data" );    
+        data = ( ReusableBuffer )unmarshaller.readBuffer( "data" );
     }
-        
+
     
 
     private int checksum;
     private boolean invalid_checksum_on_osd;
     private int zero_padding;
-    private ReusableBuffer data;    
+    private ReusableBuffer data;
 
 }
 

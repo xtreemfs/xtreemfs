@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 2010012237;
-    
+    public static final int TAG = 2010022339;
+
     public RedirectException() {  }
     public RedirectException( String address, int port ) { this.address = address; this.port = port; }
 
@@ -38,36 +38,36 @@ public class RedirectException extends org.xtreemfs.interfaces.utils.ONCRPCExcep
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012237;    
+    public static final long serialVersionUID = 2010022339;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012237; }
+    public int getTag() { return 2010022339; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::RedirectException"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( address != null ? ( ( address.getBytes().length % 4 == 0 ) ? address.getBytes().length : ( address.getBytes().length + 4 - address.getBytes().length % 4 ) ) : 0 ); // address
         my_size += Integer.SIZE / 8; // port
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "address", address );
         marshaller.writeUint16( "port", port );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         address = unmarshaller.readString( "address" );
-        port = unmarshaller.readUint16( "port" );    
+        port = unmarshaller.readUint16( "port" );
     }
-        
+
     
 
     private String address;
-    private int port;    
+    private int port;
 
 }
 

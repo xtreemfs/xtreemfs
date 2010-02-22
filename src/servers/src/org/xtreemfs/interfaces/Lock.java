@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class Lock implements Struct
 {
-    public static final int TAG = 2010012167;
-    
+    public static final int TAG = 2010022269;
+
     public Lock() {  }
     public Lock( int client_pid, String client_uuid, long length, long offset ) { this.client_pid = client_pid; this.client_uuid = client_uuid; this.length = length; this.offset = offset; }
 
@@ -41,12 +41,12 @@ public class Lock implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012167;    
+    public static final long serialVersionUID = 2010022269;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012167; }
+    public int getTag() { return 2010022269; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Lock"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -55,8 +55,8 @@ public class Lock implements Struct
         my_size += Long.SIZE / 8; // length
         my_size += Long.SIZE / 8; // offset
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeUint32( "client_pid", client_pid );
@@ -64,21 +64,21 @@ public class Lock implements Struct
         marshaller.writeUint64( "length", length );
         marshaller.writeUint64( "offset", offset );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         client_pid = unmarshaller.readUint32( "client_pid" );
         client_uuid = unmarshaller.readString( "client_uuid" );
         length = unmarshaller.readUint64( "length" );
-        offset = unmarshaller.readUint64( "offset" );    
+        offset = unmarshaller.readUint64( "offset" );
     }
-        
+
     
 
     private int client_pid;
     private String client_uuid;
     private long length;
-    private long offset;    
+    private long offset;
 
 }
 

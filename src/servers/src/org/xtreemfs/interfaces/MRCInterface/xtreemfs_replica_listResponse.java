@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_replica_listResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012354;
-    
+    public static final int TAG = 2010022456;
+
     public xtreemfs_replica_listResponse() { replicas = new ReplicaSet();  }
     public xtreemfs_replica_listResponse( ReplicaSet replicas ) { this.replicas = replicas; }
 
@@ -36,32 +36,32 @@ public class xtreemfs_replica_listResponse extends org.xtreemfs.interfaces.utils
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012354;    
+    public static final long serialVersionUID = 2010022456;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012354; }
+    public int getTag() { return 2010022456; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_replica_listResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += replicas.getXDRSize(); // replicas
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeSequence( "replicas", replicas );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        replicas = new ReplicaSet(); unmarshaller.readSequence( "replicas", replicas );    
+        replicas = new ReplicaSet(); unmarshaller.readSequence( "replicas", replicas );
     }
-        
+
     
 
-    private ReplicaSet replicas;    
+    private ReplicaSet replicas;
 
 }
 

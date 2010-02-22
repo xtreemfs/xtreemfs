@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class statvfsRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012330;
-    
+    public static final int TAG = 2010022433;
+
     public statvfsRequest() {  }
     public statvfsRequest( String volume_name ) { this.volume_name = volume_name; }
 
@@ -39,32 +39,32 @@ public class statvfsRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012330;    
+    public static final long serialVersionUID = 2010022433;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012330; }
+    public int getTag() { return 2010022433; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::statvfsRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( volume_name != null ? ( ( volume_name.getBytes().length % 4 == 0 ) ? volume_name.getBytes().length : ( volume_name.getBytes().length + 4 - volume_name.getBytes().length % 4 ) ) : 0 ); // volume_name
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "volume_name", volume_name );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        volume_name = unmarshaller.readString( "volume_name" );    
+        volume_name = unmarshaller.readString( "volume_name" );
     }
-        
+
     
 
-    private String volume_name;    
+    private String volume_name;
 
 }
 

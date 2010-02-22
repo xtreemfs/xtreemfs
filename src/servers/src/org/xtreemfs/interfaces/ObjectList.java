@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class ObjectList implements Struct
 {
-    public static final int TAG = 2010012168;
-    
+    public static final int TAG = 2010022270;
+
     public ObjectList() {  }
     public ObjectList( ReusableBuffer set, int stripe_width, int first_ ) { this.set = set; this.stripe_width = stripe_width; this.first_ = first_; }
 
@@ -39,12 +39,12 @@ public class ObjectList implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012168;    
+    public static final long serialVersionUID = 2010022270;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012168; }
+    public int getTag() { return 2010022270; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ObjectList"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -52,27 +52,27 @@ public class ObjectList implements Struct
         my_size += Integer.SIZE / 8; // stripe_width
         my_size += Integer.SIZE / 8; // first_
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeBuffer( "set", set );
         marshaller.writeUint32( "stripe_width", stripe_width );
         marshaller.writeUint32( "first_", first_ );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         set = ( ReusableBuffer )unmarshaller.readBuffer( "set" );
         stripe_width = unmarshaller.readUint32( "stripe_width" );
-        first_ = unmarshaller.readUint32( "first_" );    
+        first_ = unmarshaller.readUint32( "first_" );
     }
-        
+
     
 
     private ReusableBuffer set;
     private int stripe_width;
-    private int first_;    
+    private int first_;
 
 }
 

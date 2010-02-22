@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class XCap implements Struct
 {
-    public static final int TAG = 2010012136;
-    
+    public static final int TAG = 2010022238;
+
     public XCap() { snap_config = SnapConfig.SNAP_CONFIG_SNAPS_DISABLED;  }
     public XCap( int access_mode, String client_identity, long expire_time_s, int expire_timeout_s, String file_id, boolean replicate_on_close, String server_signature, int truncate_epoch, SnapConfig snap_config, long snap_timestamp ) { this.access_mode = access_mode; this.client_identity = client_identity; this.expire_time_s = expire_time_s; this.expire_timeout_s = expire_timeout_s; this.file_id = file_id; this.replicate_on_close = replicate_on_close; this.server_signature = server_signature; this.truncate_epoch = truncate_epoch; this.snap_config = snap_config; this.snap_timestamp = snap_timestamp; }
 
@@ -53,12 +53,12 @@ public class XCap implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012136;    
+    public static final long serialVersionUID = 2010022238;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012136; }
+    public int getTag() { return 2010022238; }
     public String getTypeName() { return "org::xtreemfs::interfaces::XCap"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -73,8 +73,8 @@ public class XCap implements Struct
         my_size += Integer.SIZE / 8; // snap_config
         my_size += Long.SIZE / 8; // snap_timestamp
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeUint32( "access_mode", access_mode );
@@ -88,8 +88,8 @@ public class XCap implements Struct
         marshaller.writeInt32( snap_config, snap_config.intValue() );
         marshaller.writeUint64( "snap_timestamp", snap_timestamp );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         access_mode = unmarshaller.readUint32( "access_mode" );
         client_identity = unmarshaller.readString( "client_identity" );
@@ -100,9 +100,9 @@ public class XCap implements Struct
         server_signature = unmarshaller.readString( "server_signature" );
         truncate_epoch = unmarshaller.readUint32( "truncate_epoch" );
         snap_config = SnapConfig.parseInt( unmarshaller.readInt32( "snap_config" ) );
-        snap_timestamp = unmarshaller.readUint64( "snap_timestamp" );    
+        snap_timestamp = unmarshaller.readUint64( "snap_timestamp" );
     }
-        
+
     
 
     private int access_mode;
@@ -114,7 +114,7 @@ public class XCap implements Struct
     private String server_signature;
     private int truncate_epoch;
     private SnapConfig snap_config;
-    private long snap_timestamp;    
+    private long snap_timestamp;
 
 }
 

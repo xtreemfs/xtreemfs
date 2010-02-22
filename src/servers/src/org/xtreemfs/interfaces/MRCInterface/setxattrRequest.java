@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class setxattrRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012329;
-    
+    public static final int TAG = 2010022432;
+
     public setxattrRequest() {  }
     public setxattrRequest( String path, String name, String value, int flags ) { this.path = path; this.name = name; this.value = value; this.flags = flags; }
 
@@ -45,12 +45,12 @@ public class setxattrRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012329;    
+    public static final long serialVersionUID = 2010022432;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012329; }
+    public int getTag() { return 2010022432; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -59,8 +59,8 @@ public class setxattrRequest extends org.xtreemfs.interfaces.utils.Request
         my_size += Integer.SIZE / 8 + ( value != null ? ( ( value.getBytes().length % 4 == 0 ) ? value.getBytes().length : ( value.getBytes().length + 4 - value.getBytes().length % 4 ) ) : 0 ); // value
         my_size += Integer.SIZE / 8; // flags
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "path", path );
@@ -68,21 +68,21 @@ public class setxattrRequest extends org.xtreemfs.interfaces.utils.Request
         marshaller.writeString( "value", value );
         marshaller.writeInt32( "flags", flags );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         path = unmarshaller.readString( "path" );
         name = unmarshaller.readString( "name" );
         value = unmarshaller.readString( "value" );
-        flags = unmarshaller.readInt32( "flags" );    
+        flags = unmarshaller.readInt32( "flags" );
     }
-        
+
     
 
     private String path;
     private String name;
     private String value;
-    private int flags;    
+    private int flags;
 
 }
 

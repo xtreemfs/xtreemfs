@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_rmvolRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012358;
-    
+    public static final int TAG = 2010022460;
+
     public xtreemfs_rmvolRequest() {  }
     public xtreemfs_rmvolRequest( String volume_name ) { this.volume_name = volume_name; }
 
@@ -39,32 +39,32 @@ public class xtreemfs_rmvolRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012358;    
+    public static final long serialVersionUID = 2010022460;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012358; }
+    public int getTag() { return 2010022460; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_rmvolRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Integer.SIZE / 8 + ( volume_name != null ? ( ( volume_name.getBytes().length % 4 == 0 ) ? volume_name.getBytes().length : ( volume_name.getBytes().length + 4 - volume_name.getBytes().length % 4 ) ) : 0 ); // volume_name
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "volume_name", volume_name );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        volume_name = unmarshaller.readString( "volume_name" );    
+        volume_name = unmarshaller.readString( "volume_name" );
     }
-        
+
     
 
-    private String volume_name;    
+    private String volume_name;
 
 }
 

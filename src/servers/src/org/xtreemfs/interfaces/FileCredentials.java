@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class FileCredentials implements Struct
 {
-    public static final int TAG = 2010012138;
-    
+    public static final int TAG = 2010022240;
+
     public FileCredentials() { xcap = new XCap(); xlocs = new XLocSet();  }
     public FileCredentials( XCap xcap, XLocSet xlocs ) { this.xcap = xcap; this.xlocs = xlocs; }
 
@@ -37,36 +37,36 @@ public class FileCredentials implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012138;    
+    public static final long serialVersionUID = 2010022240;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012138; }
+    public int getTag() { return 2010022240; }
     public String getTypeName() { return "org::xtreemfs::interfaces::FileCredentials"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += xcap.getXDRSize(); // xcap
         my_size += xlocs.getXDRSize(); // xlocs
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeStruct( "xcap", xcap );
         marshaller.writeStruct( "xlocs", xlocs );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         xcap = new XCap(); unmarshaller.readStruct( "xcap", xcap );
-        xlocs = new XLocSet(); unmarshaller.readStruct( "xlocs", xlocs );    
+        xlocs = new XLocSet(); unmarshaller.readStruct( "xlocs", xlocs );
     }
-        
+
     
 
     private XCap xcap;
-    private XLocSet xlocs;    
+    private XLocSet xlocs;
 
 }
 

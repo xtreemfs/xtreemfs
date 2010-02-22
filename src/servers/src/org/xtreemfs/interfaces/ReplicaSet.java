@@ -31,35 +31,35 @@ public class ReplicaSet extends Sequence<Replica>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012134; }
+    public int getTag() { return 2010022236; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ReplicaSet"; }
 
-    public int getXDRSize() 
+    public int getXDRSize()
     {
         int my_size = 4; // Length of the sequence
-        
-        for ( Iterator<Replica> i = iterator(); i.hasNext(); ) 
+
+        for ( Iterator<Replica> i = iterator(); i.hasNext(); )
         {
             Replica value = i.next();
             my_size += value.getXDRSize(); // Size of value
         }
-        
+
         return my_size;
     }
-    
+
     public void marshal( Marshaller marshaller )
     {
         for ( Iterator<Replica> i = iterator(); i.hasNext(); )
             marshaller.writeStruct( "value", i.next() );;
     }
-    
+
     public void unmarshal( Unmarshaller unmarshaller )
     {
-        Replica value; 
+        Replica value;
         value = new Replica(); unmarshaller.readStruct( "value", value );
-        this.add( value );    
+        this.add( value );
     }
-        
+
 
 }
 

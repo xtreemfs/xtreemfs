@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_internal_read_localResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010012456;
-    
+    public static final int TAG = 2010022558;
+
     public xtreemfs_internal_read_localResponse() { returnValue = new InternalReadLocalResponse();  }
     public xtreemfs_internal_read_localResponse( InternalReadLocalResponse returnValue ) { this.returnValue = returnValue; }
 
@@ -36,32 +36,32 @@ public class xtreemfs_internal_read_localResponse extends org.xtreemfs.interface
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012456;    
+    public static final long serialVersionUID = 2010022558;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012456; }
+    public int getTag() { return 2010022558; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_read_localResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += returnValue.getXDRSize(); // returnValue
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeStruct( "returnValue", returnValue );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        returnValue = new InternalReadLocalResponse(); unmarshaller.readStruct( "returnValue", returnValue );    
+        returnValue = new InternalReadLocalResponse(); unmarshaller.readStruct( "returnValue", returnValue );
     }
-        
+
     
 
-    private InternalReadLocalResponse returnValue;    
+    private InternalReadLocalResponse returnValue;
 
 }
 

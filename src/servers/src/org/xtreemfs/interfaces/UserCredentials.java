@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class UserCredentials implements Struct
 {
-    public static final int TAG = 2010012115;
-    
+    public static final int TAG = 2010022217;
+
     public UserCredentials() { group_ids = new StringSet();  }
     public UserCredentials( String user_id, StringSet group_ids, String password ) { this.user_id = user_id; this.group_ids = group_ids; this.password = password; }
 
@@ -39,12 +39,12 @@ public class UserCredentials implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012115;    
+    public static final long serialVersionUID = 2010022217;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012115; }
+    public int getTag() { return 2010022217; }
     public String getTypeName() { return "org::xtreemfs::interfaces::UserCredentials"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -52,27 +52,27 @@ public class UserCredentials implements Struct
         my_size += group_ids.getXDRSize(); // group_ids
         my_size += Integer.SIZE / 8 + ( password != null ? ( ( password.getBytes().length % 4 == 0 ) ? password.getBytes().length : ( password.getBytes().length + 4 - password.getBytes().length % 4 ) ) : 0 ); // password
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "user_id", user_id );
         marshaller.writeSequence( "group_ids", group_ids );
         marshaller.writeString( "password", password );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         user_id = unmarshaller.readString( "user_id" );
         group_ids = new StringSet(); unmarshaller.readSequence( "group_ids", group_ids );
-        password = unmarshaller.readString( "password" );    
+        password = unmarshaller.readString( "password" );
     }
-        
+
     
 
     private String user_id;
     private StringSet group_ids;
-    private String password;    
+    private String password;
 
 }
 

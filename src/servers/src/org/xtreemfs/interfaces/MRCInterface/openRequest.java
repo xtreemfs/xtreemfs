@@ -15,8 +15,8 @@ import yidl.runtime.Unmarshaller;
 
 public class openRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010012322;
-    
+    public static final int TAG = 2010022424;
+
     public openRequest() { client_vivaldi_coordinates = new VivaldiCoordinates();  }
     public openRequest( String path, int flags, int mode, int attributes, VivaldiCoordinates client_vivaldi_coordinates ) { this.path = path; this.flags = flags; this.mode = mode; this.attributes = attributes; this.client_vivaldi_coordinates = client_vivaldi_coordinates; }
 
@@ -47,12 +47,12 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012322;    
+    public static final long serialVersionUID = 2010022424;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012322; }
+    public int getTag() { return 2010022424; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::openRequest"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
@@ -62,8 +62,8 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
         my_size += Integer.SIZE / 8; // attributes
         my_size += client_vivaldi_coordinates.getXDRSize(); // client_vivaldi_coordinates
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "path", path );
@@ -72,23 +72,23 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
         marshaller.writeUint32( "attributes", attributes );
         marshaller.writeStruct( "client_vivaldi_coordinates", client_vivaldi_coordinates );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         path = unmarshaller.readString( "path" );
         flags = unmarshaller.readUint32( "flags" );
         mode = unmarshaller.readUint32( "mode" );
         attributes = unmarshaller.readUint32( "attributes" );
-        client_vivaldi_coordinates = new VivaldiCoordinates(); unmarshaller.readStruct( "client_vivaldi_coordinates", client_vivaldi_coordinates );    
+        client_vivaldi_coordinates = new VivaldiCoordinates(); unmarshaller.readStruct( "client_vivaldi_coordinates", client_vivaldi_coordinates );
     }
-        
+
     
 
     private String path;
     private int flags;
     private int mode;
     private int attributes;
-    private VivaldiCoordinates client_vivaldi_coordinates;    
+    private VivaldiCoordinates client_vivaldi_coordinates;
 
 }
 

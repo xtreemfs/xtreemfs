@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class NewFileSize implements Struct
 {
-    public static final int TAG = 2010012124;
-    
+    public static final int TAG = 2010022226;
+
     public NewFileSize() {  }
     public NewFileSize( long size_in_bytes, int truncate_epoch ) { this.size_in_bytes = size_in_bytes; this.truncate_epoch = truncate_epoch; }
 
@@ -37,36 +37,36 @@ public class NewFileSize implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012124;    
+    public static final long serialVersionUID = 2010022226;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012124; }
+    public int getTag() { return 2010022226; }
     public String getTypeName() { return "org::xtreemfs::interfaces::NewFileSize"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += Long.SIZE / 8; // size_in_bytes
         my_size += Integer.SIZE / 8; // truncate_epoch
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeUint64( "size_in_bytes", size_in_bytes );
         marshaller.writeUint32( "truncate_epoch", truncate_epoch );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
         size_in_bytes = unmarshaller.readUint64( "size_in_bytes" );
-        truncate_epoch = unmarshaller.readUint32( "truncate_epoch" );    
+        truncate_epoch = unmarshaller.readUint32( "truncate_epoch" );
     }
-        
+
     
 
     private long size_in_bytes;
-    private int truncate_epoch;    
+    private int truncate_epoch;
 
 }
 

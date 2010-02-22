@@ -14,8 +14,8 @@ import yidl.runtime.Unmarshaller;
 
 public class OSDWriteResponse implements Struct
 {
-    public static final int TAG = 2010012130;
-    
+    public static final int TAG = 2010022232;
+
     public OSDWriteResponse() { new_file_size = new NewFileSizeSet();  }
     public OSDWriteResponse( NewFileSizeSet new_file_size ) { this.new_file_size = new_file_size; }
 
@@ -35,32 +35,32 @@ public class OSDWriteResponse implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010012130;    
+    public static final long serialVersionUID = 2010022232;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010012130; }
+    public int getTag() { return 2010022232; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDWriteResponse"; }
-    
+
     public int getXDRSize()
     {
         int my_size = 0;
         my_size += new_file_size.getXDRSize(); // new_file_size
         return my_size;
-    }    
-    
+    }
+
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeSequence( "new_file_size", new_file_size );
     }
-    
-    public void unmarshal( Unmarshaller unmarshaller ) 
+
+    public void unmarshal( Unmarshaller unmarshaller )
     {
-        new_file_size = new NewFileSizeSet(); unmarshaller.readSequence( "new_file_size", new_file_size );    
+        new_file_size = new NewFileSizeSet(); unmarshaller.readSequence( "new_file_size", new_file_size );
     }
-        
+
     
 
-    private NewFileSizeSet new_file_size;    
+    private NewFileSizeSet new_file_size;
 
 }
 
