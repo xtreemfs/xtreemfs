@@ -81,6 +81,7 @@ This is a summary of the most important changes in release 1.2:
 
 
 \chapter{Quick Start}
+\label{sec:quick_start}
 
 This is the very short version to help you set up a local installation of XtreemFS.
 
@@ -2034,6 +2035,123 @@ ssl.trusted_certs.container = jks
 \texttt{service.p12} refers to the converted file containing the credentials of the respective service. Make sure that all paths and passphrases (\texttt{xtreemfs} in this example) are correct.
 
 
+\chapter{Hadoop Integration}
+
+\section{Introduction}
+\label{sec:hadoop_integration}
+
+XtreemFS\index{Hadoop!Integration} is a distributed filesystem that can be used instead of HDFS the distributed filesystem made by the developers of Hadoop.
+
+Therefore it replaces the NameNode and the Datanodes provided by HDFS in a common Hadoop setup. A DIR is used instead of a NameNode, because it stores the information about where the files and there metadata are located at the OSDs and the MRC, like the NameNode does for DataNodes. These DataNodes hold the files that have been stored at HDFS. On XtreemFS these files are split into metadata and raw filedata to be stored seperated at a MRC and OSDs.
+
+\begin{figure}[h]
+ \centering
+ \resizebox{0.80\linewidth}{!}{\includegraphics{images/cluster_setup.png}}
+ % screenshot_status.png: 783x444 pixel, 72dpi, 28.82x29.88 cm, bb=0 0 783 444
+ \caption{Hadoop cluster setup recommendation}
+ \label{fig:cluster_setup}
+\end{figure}
+
+The three master services JobTracker, DIR and MRC are required in a Hadoop configuration. They can run alone or in arbitrary combinations on the same machine. Hadoop can be used with an arbitrary number of Slaves. It is recommended to run a TaskTracker together with an OSD on each Slave machine to improve performance, but it is not mandatory.
+
+\section{Quick Start}
+\label{sec:hadoop_quickstart}
+
+This section will help you to set up a simple Hadoop configuration with all necessary services running on the same host.
+
+\textbf{Required software:}
+\begin{itemize}
+\item XtreemFS servers (v 1.2.1) inlcuding XtreemFS.jar and yidl.jar (\href{http://www.XtreemFS.org}{www.XtreemFS.org})
+\item HadoopClient.jar (\href{http://www.XtreemFS.org}{www.XtreemFS.org})
+\item Hadoop (v 0.20.1) (\href{http://hadoop.apache.org}{hadoop.apache.org})
+\item JDK 1.6+ (\href{http://java.sun.com}{Oracle/SUN})
+\end{itemize}
+
+\textbf{Setup:}
+\begin{enumerate}
+ \item Install and start XtreemFS:\\
+	Follow the instructions given by the quick start guide for XtreemFS, available at Sec.\ref{sec:quick_start}. Notice 	
+	that the DIR is reachable at \textit{localhost:32638}, beause this information will be important later.
+
+\item Download and extract Hadoop
+
+\item Configure Hadoop to use XtreemFS instead of HDFS:
+	\begin{enumerate}
+	\item After downloading and extracting Hadoop you first have to add XtreemFS, the HadoopClient and yidl to its 
+	classpath. To do so edit the \textit{hadoop-env.sh} that can be found in the \textit{conf} directory of Hadoop and 
+	add the paths to XtreemFS.jar, yidl.jar and HadoopClient.jar separated by '\textit{:}' to the HADOOP\_CLASSPATH. 
+	If you run a Linux-based OS these jar-libraries are located at '\textit{/usr/share/java/}'.
+	\item Now you have to specify some properties at the \textit{core-site.xml} which also has to be in the \textit{conf} 
+	directory of Hadoop. If this file does not exist you can safely create it.
+	\begin{verbatim}
+	<configuration>
+
+		<property>
+		  <name>fs.xtreemfs.impl</name>
+		  <value>org.xtreemfs.common.clients.hadoop.XtreemFSFileSystem</value>
+		  <description>The FileSystem for xtreemfs: uris.</description>
+		</property>
+
+		<property>
+		  <name>fs.default.name</name>
+		  <value>xtreemfs://localhost:32638</value>
+		  <description>Address for the DIR.</description>
+		</property>
+
+		<property>
+		  <name>xtreemfs.volumeName</name>
+		  <value>volumeName</value>
+		  <description>Name of the volume to use within XtreemFS.</description>
+		</property>
+
+	</configuration>
+	\end{verbatim}
+	\begin{enumerate}
+	\item The first property is required to register the HadoopClient of XtreemFS at Hadoop. Now you are able to access 	
+	XtreemFS by the Hadoop binary using the \textit{fs} argument. 
+	\item The next property makes Hadoop use the DIR instead of a 
+	NameNode, therefore address and port of the DIR has to be populated. In this case the DIR is located at 
+	\textit{localhost:32638}. 
+	\item The last property specifies the name of the volume to use within XtreemFS. Make sure, that the volume (here 
+	named \textit{volumeName}) does exist. If the volume is not available Hadoop will not be able to use XtreemFS!
+	\end{enumerate}
+	Hint: If you want to provide userrights to your Hadoop installation according to the POSIX file-access-policy, you 
+	have to set the following additional properties: 
+	\begin{verbatim}
+	<property>
+	  <name>xtreemfs.client.userid</name>
+	  <value>hadoopUserID</value>
+	  <description>UserID to be used by Hadoop while accessing XtreemFS.</description>
+	</property>
+
+	<property>
+	  <name>xtreemfs.client.groupid</name>
+	  <value>hadoopGroupID</value>
+	  <description>GroupID to be used by Hadoop while accessing XtreemFS.</description>
+	</property>
+	\end{verbatim}
+	\end{enumerate}
+
+\item To provide the minimum JobTracker configuration for Hadoop you have also to add the following property to the 
+	\textit{conf/mapred-site.xml}:
+	
+	\begin{verbatim}
+	<configuration>
+
+	<property>
+	  <name>mapred.job.tracker</name>
+	  <value>localhost:9001</value>
+	  <description>Listening address for the JobTracker.</description>
+	</property>
+
+	</configuration>
+	\end{verbatim}
+	Which specifies the address where the JobTracker will be running at.
+
+\item Finally you are now able to start the JobTracker by running '\textit{bin/hadoop jobtracker}' from within the Hadoop root-directory and a TaskTracker by executing '\textit{bin/hadoop tasktracker}'.
+
+\end{enumerate}
+Congratulations! You successfully finished the quick start guide of the XtreemFS-Hadoop integration and are now able to use your Hadoop applications like as is well known or go on with the tutorials available on \href{http://hadoop.apache.org}{hadoop.apache.org}.
 
 \chapter{Command Line Utilities}
 \label{sec:cli_utils}
