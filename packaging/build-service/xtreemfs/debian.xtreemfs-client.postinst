@@ -1,0 +1,7 @@
+#!/bin/bash
+# this scripts uses the tool 'uuidgen'
+
+XTREEMFS_CONFIG_DIR=/etc/xos/xtreemfs/
+
+$XTREEMFS_CONFIG_DIR/postinstall_setup.sh
+/etc/init.d/xtreemfs-vivaldi try-restart

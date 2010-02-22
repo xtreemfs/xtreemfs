@@ -2,6 +2,7 @@
 
 XTREEMFS_LOG_DIR=/var/log/xtreemfs
 XTREEMFS_HOME=/var/lib/xtreemfs
+XTREEMFS_ETC=/etc/xos/xtreemfs
 XTREEMFS_USER=xtreemfs
 XTREEMFS_GROUP=xtreemfs
 
@@ -36,4 +37,17 @@ if [ ! -e $XTREEMFS_LOG_DIR ]
 then
         mkdir $XTREEMFS_LOG_DIR
         chown -R $XTREEMFS_USER $XTREEMFS_LOG_DIR
+fi
+
+if [ -e $XTREEMFS_ETC ]
+then
+        group=`stat -c %G $XTREEMFS_ETC`
+        if [ $group != $XTREEMFS_GROUP ]
+        then
+            echo "directory $XTREEMFS_ETC is not owned by $XTREEMFS_GROUP, executing chmod (may take some time)"
+            chgrp -R $XTREEMFS_GROUP $XTREEMFS_ETC
+        fi
+        echo "setting $XTREEMFS_ETC/*.properties and $XTREEMFS_ETC/truststore/ to 0750, executing chmod (may take some time)"
+        chmod 0750 $XTREEMFS_ETC/*.properties
+        chmod -R 0750 $XTREEMFS_ETC/truststore/
 fi

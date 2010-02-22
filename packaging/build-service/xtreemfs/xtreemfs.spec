@@ -21,19 +21,22 @@ BuildRequires:  ant >= 1.6.5 java-devel >= 1.6.0
 BuildRequires:  python >= 2.4 gcc-c++ >= 4.2 fuse >= 2.6 fuse-devel >= 2.6 openssl-devel >= 0.9.8
 %endif
 
-# openSUSE >=10.2 
-%if 0%{?suse_version} >= 1020 
+# openSUSE >=10.2
+%if 0%{?suse_version} >= 1020
+PreReq:         /usr/sbin/groupadd /usr/sbin/useradd /bin/mkdir /usr/bin/grep /bin/chmod /bin/chown /bin/chgrp /usr/bin/stat
 #BuildRequires:  libopenssl-devel >= 0.8
 BuildRequires:  pwdutils >= 3
 %endif
 
-# Mandriva >=2008 
-%if 0%{?mandriva_version} >= 2007 
+# Mandriva >=2008
+%if 0%{?mandriva_version} >= 2007
+Requires(pre):  /usr/sbin/groupadd /usr/sbin/useradd /bin/mkdir /bin/grep /bin/chmod /bin/chown /bin/chgrp /bin/stat
 #BuildRequires:  libopenssl-devel >= 0.8
 %endif
 
 # Fedora >=7 with Extras
-%if 0%{?fedora_version} >= 7 
+%if 0%{?fedora_version} >= 7
+Requires(pre):  /usr/sbin/groupadd /usr/sbin/useradd /bin/mkdir /bin/grep /bin/chmod /bin/chown /bin/chgrp /usr/bin/stat
 #BuildRequires:  openssl-devel >= 0.8
 BuildRequires:  kernel redhat-rpm-config
 %endif
@@ -128,6 +131,9 @@ make install-server DESTDIR=$RPM_BUILD_ROOT
 make install-tools DESTDIR=$RPM_BUILD_ROOT
 %endif
 
+# add /etc/xos/xtreemfs/truststore/certs/ folder used for storing certificates
+mkdir -p $RPM_BUILD_ROOT/etc/xos/xtreemfs/truststore/certs/
+
 # remove copyright notes (let rpm handle that)
 %if %{client_subpackage}
 rm $RPM_BUILD_ROOT/usr/share/doc/xtreemfs-client/COPYING
@@ -155,6 +161,61 @@ fi
 
 $XTREEMFS_CONFIG_DIR/postinstall_setup.sh
 
+%if 0%{?suse_version}
+# suse will try to restart using its macro in the postun section
+%else
+# other distros restart the daemons if they have been running before
+/etc/init.d/xtreemfs-dir try-restart
+/etc/init.d/xtreemfs-mrc try-restart
+/etc/init.d/xtreemfs-osd try-restart
+%endif
+
+%preun server
+%if 0%{?suse_version}
+%stop_on_removal xtreemfs-dir xtreemfs-mrc xtreemfs-osd
+%else
+# should also stop here, but it might be an update, not an uninstall
+# TODO: need to check which operation (update/install/uninstall)
+#/etc/init.d/xtreemfs-dir stop
+#/etc/init.d/xtreemfs-mrc stop
+#/etc/init.d/xtreemfs-osd stop
+%endif
+
+%postun server
+%if 0%{?suse_version}
+%restart_on_update xtreemfs-dir xtreemfs-mrc xtreemfs-osd
+%insserv_cleanup
+%else
+# this is done in the post section instead:
+#/etc/init.d/xtreemfs-dir try-restart
+#/etc/init.d/xtreemfs-mrc try-restart
+#/etc/init.d/xtreemfs-osd try-restart
+%endif
+
+%if %{client_subpackage}
+%post client
+/etc/xos/xtreemfs/postinstall_setup.sh
+/etc/init.d/xtreemfs-vivaldi try-restart
+
+%preun client
+%if 0%{?suse_version}
+%stop_on_removal xtreemfs-vivaldi
+%else
+# should also stop here, but it might be an update, not an uninstall
+# TODO: need to check which operation (update/install/uninstall)
+#/etc/init.d/xtreemfs-vivaldi stop
+%endif
+
+%postun client
+%if 0%{?suse_version}
+%restart_on_update xtreemfs-vivaldi
+%insserv_cleanup
+%else
+# this is done in the post section instead:
+#/etc/init.d/xtreemfs-vivaldi try-restart
+%endif
+%endif
+
 %clean
 rm -rf $RPM_BUILD_ROOT
 
@@ -164,6 +225,7 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/*.xtreemfs
 /usr/bin/xtfs_*mount
 /usr/bin/xtfs_vivaldi
+/etc/init.d/xtreemfs-vivaldi
 /usr/share/man/man1/*.xtreemfs*
 %dir /etc/xos/
 %dir /etc/xos/xtreemfs/
@@ -182,9 +244,12 @@ rm -rf $RPM_BUILD_ROOT
 %files server
 %defattr(-,root,root)
 /etc/init.d/xtreemfs-*
+%exclude /etc/init.d/xtreemfs-vivaldi
 %dir /etc/xos/
 %dir /etc/xos/xtreemfs/
-%config(noreplace) /etc/xos/xtreemfs/*.properties
+%dir %attr(0750,root,root) /etc/xos/xtreemfs/truststore/
+%dir %attr(0750,root,root) /etc/xos/xtreemfs/truststore/certs/
+%config(noreplace) %attr(0750,root,root) /etc/xos/xtreemfs/*.properties
 /etc/xos/xtreemfs/generate_uuid
 /etc/xos/xtreemfs/postinstall_setup.sh
 #/usr/share/doc/xtreemfs-server/

@@ -1,15 +1,19 @@
-#!/bin/bash  
-# this scripts uses the tool 'uuidgen'  
-   
-XTREEMFS_CONFIG_DIR=/etc/xos/xtreemfs/  
-  
-# generate UUIDs  
-if [ -x $XTREEMFS_CONFIG_DIR/generate_uuid ]; then  
-$XTREEMFS_CONFIG_DIR/generate_uuid $XTREEMFS_CONFIG_DIR/dirconfig.properties  
-$XTREEMFS_CONFIG_DIR/generate_uuid $XTREEMFS_CONFIG_DIR/mrcconfig.properties  
-$XTREEMFS_CONFIG_DIR/generate_uuid $XTREEMFS_CONFIG_DIR/osdconfig.properties  
-else  
-echo "UUID can't be generated automatically. Please enter a correct UUID in each config file of a xtreemfs service."  
-fi 
+#!/bin/bash
+# this scripts uses the tool 'uuidgen'
+
+XTREEMFS_CONFIG_DIR=/etc/xos/xtreemfs/
+
+# generate UUIDs
+if [ -x $XTREEMFS_CONFIG_DIR/generate_uuid ]; then
+$XTREEMFS_CONFIG_DIR/generate_uuid $XTREEMFS_CONFIG_DIR/dirconfig.properties
+$XTREEMFS_CONFIG_DIR/generate_uuid $XTREEMFS_CONFIG_DIR/mrcconfig.properties
+$XTREEMFS_CONFIG_DIR/generate_uuid $XTREEMFS_CONFIG_DIR/osdconfig.properties
+else
+echo "UUID can't be generated automatically. Please enter a correct UUID in each config file of a xtreemfs service."
+fi
 
 $XTREEMFS_CONFIG_DIR/postinstall_setup.sh
+
+/etc/init.d/xtreemfs-dir try-restart
+/etc/init.d/xtreemfs-mrc try-restart
+/etc/init.d/xtreemfs-osd try-restart
