@@ -24,21 +24,27 @@
 
 package org.xtreemfs.mrc.operations;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.DirectoryEntry;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.Stat;
+import org.xtreemfs.interfaces.StatSet;
 import org.xtreemfs.interfaces.MRCInterface.readdirRequest;
 import org.xtreemfs.interfaces.MRCInterface.readdirResponse;
 import org.xtreemfs.mrc.ErrorRecord;
+import org.xtreemfs.mrc.MRCException;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.AtomicDBUpdate;
+import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
@@ -106,49 +112,96 @@ public class ReadDirAndStatOperation extends MRCOperation {
         faMan.checkPermission(FileAccessManager.O_RDONLY, sMan, file, res.getParentDirId(),
             rq.getDetails().userId, rq.getDetails().superUser, rq.getDetails().groupIds);
         
+        // TODO: support dirs w/ more than Integer.MAX_VALUE entries
+        int seenEntries = (int) rqArgs.getSeen_directory_entries_count();
+        int numEntries = rqArgs.getLimit_directory_entries_count();
+        boolean namesOnly = rqArgs.getNames_only();
+        
+        DirectoryEntrySet entries = new DirectoryEntrySet();
+        
+        List<DirectoryEntry> tmpDirContent = new ArrayList<DirectoryEntry>(10);
+        
         AtomicDBUpdate update = sMan.createAtomicDBUpdate(master, rq);
         
         // if required, update POSIX timestamps
         if (!master.getConfig().isNoAtime())
             MRCHelper.updateFileTimes(res.getParentDirId(), file, true, false, false, sMan, update);
         
-        DirectoryEntrySet dirContent = new DirectoryEntrySet();
+        // get the parent directory
+        FileMetadata parentDir = res.getParentDir();
+        if (parentDir != null) {
+            
+            StatSet set = new StatSet();
+            if (!namesOnly)
+                set.add(getStat(sMan, faMan, rq, volume, parentDir));
+            
+            tmpDirContent.add(new DirectoryEntry("..", set));
+        }
         
-        Iterator<FileMetadata> it = sMan.getChildren(res.getFile().getId());
-        while (it.hasNext()) {
+        // get the current directory
+        Stat stat = getStat(sMan, faMan, rq, volume, file);
+        long newEtag = stat.getEtag();
+        long knownEtag = rqArgs.getKnown_etag();
+        
+        if (newEtag != knownEtag) {
             
-            FileMetadata child = it.next();
+            StatSet set = new StatSet();
+            if (!namesOnly)
+                set.add(stat);
             
-            // // ignore the .fuse-hidden directory
-            // if (res.getFile().getId() == 1 &&
-            // child.getFileName().equals(".fuse-hidden"))
-            // continue;
-            //            
-            String linkTarget = sMan.getSoftlinkTarget(child.getId());
-            int mode = faMan
-                    .getPosixAccessMode(sMan, child, rq.getDetails().userId, rq.getDetails().groupIds);
-            mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_H_S_IFLNK
-                : child.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR
-                    : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
-            long size = linkTarget != null ? linkTarget.length() : child.isDirectory() ? 0 : child.getSize();
-            int blkSize = 0;
-            if ((linkTarget == null) && (!file.isDirectory())) {
-                XLocList xlocList = child.getXLocList();
-                if ((xlocList != null) && (xlocList.getReplicaCount() > 0))
-                    blkSize = xlocList.getReplica(0).getStripingPolicy().getStripeSize() * 1024;
+            tmpDirContent.add(new DirectoryEntry(".", set));
+            
+            // get all children
+            Iterator<FileMetadata> it = sMan.getChildren(res.getFile().getId());
+            while (it.hasNext()) {
+                
+                FileMetadata child = it.next();
+                set = new StatSet();
+                
+                if (!namesOnly)
+                    set.add(getStat(sMan, faMan, rq, volume, child));
+                
+                tmpDirContent.add(new DirectoryEntry(child.getFileName(), set));
             }
-            Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, child.getLinkCount(), child
-                    .getOwnerId(), child.getOwningGroupId(), size, (long) child.getAtime() * (long) 1e9,
-                (long) child.getMtime() * (long) 1e9, (long) child.getCtime() * (long) 1e9, blkSize, child
-                        .getEpoch(), (int) child.getW32Attrs());
             
-            dirContent.add(new DirectoryEntry(child.getFileName(), stat));
+            // quick and dirty: first, create the entire list, then sort out all
+            // redundant elements
+            // FIXME: provide for a faster solution by only selecting those
+            // entries that are needed
+            int lastEntryPlusOne = Math.min(tmpDirContent.size(), seenEntries + numEntries);
+            for (int i = seenEntries; i < lastEntryPlusOne; i++)
+                entries.add(tmpDirContent.get(i));
+            
         }
         
         // set the response
-        rq.setResponse(new readdirResponse(dirContent));
+        rq.setResponse(new readdirResponse(entries));
         
         update.execute();
+    }
+    
+    private Stat getStat(StorageManager sMan, FileAccessManager faMan, MRCRequest rq, VolumeInfo volume,
+        FileMetadata file) throws DatabaseException, MRCException {
+        
+        String linkTarget = sMan.getSoftlinkTarget(file.getId());
+        int mode = faMan.getPosixAccessMode(sMan, file, rq.getDetails().userId, rq.getDetails().groupIds);
+        mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_H_S_IFLNK
+            : file.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
+        long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : file.getSize();
+        int blkSize = 0;
+        if ((linkTarget == null) && (!file.isDirectory())) {
+            XLocList xlocList = file.getXLocList();
+            if ((xlocList != null) && (xlocList.getReplicaCount() > 0))
+                blkSize = xlocList.getReplica(0).getStripingPolicy().getStripeSize() * 1024;
+        }
+        
+        final long newEtag = file.getAtime() + file.getMtime() + file.getCtime();
+        
+        return new Stat(volume.getId().hashCode(), file.getId(), mode, file.getLinkCount(),
+            file.getOwnerId(), file.getOwningGroupId(), size, (long) file.getAtime() * (long) 1e9,
+            (long) file.getMtime() * (long) 1e9, (long) file.getCtime() * (long) 1e9, blkSize, newEtag, file
+                    .getEpoch(), (int) file.getW32Attrs());
+        
     }
     
 }

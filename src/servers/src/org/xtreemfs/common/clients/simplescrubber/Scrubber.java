@@ -294,10 +294,10 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
             DirectoryEntry[] ls = volume.listEntries(currentDirName);
 
             for (DirectoryEntry e : ls) {
-                if ((e.getStbuf().getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFREG) != 0) {
+                if ((e.getStbuf().get(0).getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFREG) != 0) {
                     //regular file
                     files.push(currentDirName + e.getName());
-                } else if ((e.getStbuf().getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFDIR) != 0) {
+                } else if ((e.getStbuf().get(0).getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFDIR) != 0) {
                     directories.push(currentDirName + e.getName() + "/");
                 }
             }

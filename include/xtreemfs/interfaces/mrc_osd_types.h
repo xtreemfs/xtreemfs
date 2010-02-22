@@ -1,5 +1,5 @@
-#ifndef _313702679_
-#define _313702679_
+#ifndef _1647777793_
+#define _1647777793_
 
 
 #include "types.h"
@@ -35,7 +35,7 @@ namespace org
         bool operator==( const NewFileSize& other ) const { return size_in_bytes == other.size_in_bytes && truncate_epoch == other.truncate_epoch; }
   
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( NewFileSize, 2010012124 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( NewFileSize, 2010022226 );
   
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeUint64( "size_in_bytes", 0, size_in_bytes ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); }
@@ -55,7 +55,7 @@ namespace org
         virtual ~NewFileSizeSet() { }
   
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( NewFileSizeSet, 2010012125 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( NewFileSizeSet, 2010022227 );
   
         // yidl::Sequence
         size_t get_size() const { return size(); }
@@ -76,7 +76,7 @@ namespace org
         bool operator==( const OSDWriteResponse& other ) const { return new_file_size == other.new_file_size; }
   
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( OSDWriteResponse, 2010012130 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( OSDWriteResponse, 2010022232 );
   
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "new_file_size", 0, new_file_size ); }
@@ -103,7 +103,7 @@ namespace org
         bool operator==( const StripingPolicy& other ) const { return type == other.type && stripe_size == other.stripe_size && width == other.width; }
   
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( StripingPolicy, 2010012132 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( StripingPolicy, 2010022234 );
   
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeInt32( "type", 0, static_cast<int32_t>( type ) ); marshaller.writeUint32( "stripe_size", 0, stripe_size ); marshaller.writeUint32( "width", 0, width ); }
@@ -132,7 +132,7 @@ namespace org
         bool operator==( const Replica& other ) const { return osd_uuids == other.osd_uuids && replication_flags == other.replication_flags && striping_policy == other.striping_policy; }
   
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( Replica, 2010012133 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( Replica, 2010022235 );
   
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeSequence( "osd_uuids", 0, osd_uuids ); marshaller.writeUint32( "replication_flags", 0, replication_flags ); marshaller.writeStruct( "striping_policy", 0, striping_policy ); }
@@ -153,7 +153,7 @@ namespace org
         virtual ~ReplicaSet() { }
   
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( ReplicaSet, 2010012134 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( ReplicaSet, 2010022236 );
   
         // yidl::Sequence
         size_t get_size() const { return size(); }
@@ -178,7 +178,7 @@ namespace org
         bool operator==( const VivaldiCoordinates& other ) const { return x_coordinate == other.x_coordinate && y_coordinate == other.y_coordinate && local_error == other.local_error; }
   
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( VivaldiCoordinates, 2010012135 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( VivaldiCoordinates, 2010022237 );
   
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeDouble( "x_coordinate", 0, x_coordinate ); marshaller.writeDouble( "y_coordinate", 0, y_coordinate ); marshaller.writeDouble( "local_error", 0, local_error ); }
@@ -225,7 +225,7 @@ namespace org
         bool operator==( const XCap& other ) const { return access_mode == other.access_mode && client_identity == other.client_identity && expire_time_s == other.expire_time_s && expire_timeout_s == other.expire_timeout_s && file_id == other.file_id && replicate_on_close == other.replicate_on_close && server_signature == other.server_signature && truncate_epoch == other.truncate_epoch && snap_config == other.snap_config && snap_timestamp == other.snap_timestamp; }
   
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( XCap, 2010012136 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( XCap, 2010022238 );
   
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeUint32( "access_mode", 0, access_mode ); marshaller.writeString( "client_identity", 0, client_identity ); marshaller.writeUint64( "expire_time_s", 0, expire_time_s ); marshaller.writeUint32( "expire_timeout_s", 0, expire_timeout_s ); marshaller.writeString( "file_id", 0, file_id ); marshaller.writeBoolean( "replicate_on_close", 0, replicate_on_close ); marshaller.writeString( "server_signature", 0, server_signature ); marshaller.writeUint32( "truncate_epoch", 0, truncate_epoch ); marshaller.writeInt32( "snap_config", 0, static_cast<int32_t>( snap_config ) ); marshaller.writeUint64( "snap_timestamp", 0, snap_timestamp ); }
@@ -265,7 +265,7 @@ namespace org
         bool operator==( const XLocSet& other ) const { return read_only_file_size == other.read_only_file_size && replicas == other.replicas && replica_update_policy == other.replica_update_policy && version == other.version; }
   
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( XLocSet, 2010012137 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( XLocSet, 2010022239 );
   
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeUint64( "read_only_file_size", 0, read_only_file_size ); marshaller.writeSequence( "replicas", 0, replicas ); marshaller.writeString( "replica_update_policy", 0, replica_update_policy ); marshaller.writeUint32( "version", 0, version ); }
@@ -293,7 +293,7 @@ namespace org
         bool operator==( const FileCredentials& other ) const { return xcap == other.xcap && xlocs == other.xlocs; }
   
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( FileCredentials, 2010012138 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( FileCredentials, 2010022240 );
   
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeStruct( "xcap", 0, xcap ); marshaller.writeStruct( "xlocs", 0, xlocs ); }
@@ -313,7 +313,7 @@ namespace org
         virtual ~FileCredentialsSet() { }
   
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( FileCredentialsSet, 2010012139 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( FileCredentialsSet, 2010022241 );
   
         // yidl::Sequence
         size_t get_size() const { return size(); }

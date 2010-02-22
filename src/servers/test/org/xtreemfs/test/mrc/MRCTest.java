@@ -160,12 +160,12 @@ public class MRCTest extends TestCase {
         // test 'readDir' and 'stat'
         
         DirectoryEntrySet entrySet = invokeSync(client.readdir(mrcAddress, uc, volumeName));
-        assertEquals(2, entrySet.size());
+        assertEquals(3, entrySet.size());
         
         entrySet = invokeSync(client.readdir(mrcAddress, uc, volumeName + "/myDir"));
-        assertEquals(10, entrySet.size());
+        assertEquals(12, entrySet.size());
         
-        Stat stat = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/myDir/test2.txt"));
+        Stat stat = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/myDir/test2.txt")).get(0);
         assertEquals(uid, stat.getUser_id());
         assertTrue("test2.txt is a not a file", (stat.getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFREG) != 0);
         assertEquals(0, stat.getSize());
@@ -180,7 +180,7 @@ public class MRCTest extends TestCase {
         invokeSync(client.unlink(mrcAddress, uc, volumeName + "/myDir/test3.txt"));
         
         entrySet = invokeSync(client.readdir(mrcAddress, uc, volumeName + "/myDir"));
-        assertEquals(9, entrySet.size());
+        assertEquals(11, entrySet.size());
         
         invokeSync(client.rmdir(mrcAddress, uc, volumeName + "/anotherDir"));
     }
@@ -324,26 +324,26 @@ public class MRCTest extends TestCase {
         invokeSync(client.link(mrcAddress, uc, volumeName + "/test1.txt", volumeName + "/test2.txt"));
         
         // check whether both links refer to the same file
-        Stat stat1 = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test1.txt"));
-        Stat stat2 = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test2.txt"));
+        Stat stat1 = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test1.txt")).get(0);
+        Stat stat2 = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test2.txt")).get(0);
         
         assertEquals(stat1.getIno(), stat2.getIno());
         assertEquals(2, stat1.getNlink());
         
         // delete both files and check link count
         invokeSync(client.unlink(mrcAddress, uc, volumeName + "/test1.txt"));
-        Stat stat = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test2.txt"));
+        Stat stat = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test2.txt")).get(0);
         assertEquals(1, stat.getNlink());
         invokeSync(client.unlink(mrcAddress, uc, volumeName + "/test2.txt"));
         
         try {
-            stat = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test1.txt"));
+            stat = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test1.txt")).get(0);
             fail("file should not exist anymore");
         } catch (MRCException exc) {
         }
         
         try {
-            stat = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test2.txt"));
+            stat = invokeSync(client.getattr(mrcAddress, uc, volumeName + "/test2.txt")).get(0);
             fail("file should not exist anymore");
         } catch (MRCException exc) {
         }
@@ -611,7 +611,7 @@ public class MRCTest extends TestCase {
         invokeSync(client.setattr(mrcAddress, uc4, noACVolumeName + "/chownTestFile", createChownStat(
             "newUser", "newGroup"), MRCInterface.SETATTR_UID | MRCInterface.SETATTR_GID));
         
-        Stat stat = invokeSync(client.getattr(mrcAddress, uc3, noACVolumeName + "/chownTestFile"));
+        Stat stat = invokeSync(client.getattr(mrcAddress, uc3, noACVolumeName + "/chownTestFile")).get(0);
         assertEquals("newUser", stat.getUser_id());
         assertEquals("newGroup", stat.getGroup_id());
         
@@ -737,12 +737,12 @@ public class MRCTest extends TestCase {
         
         invokeSync(client.open(mrcAddress, uc1, posixVolName + "/someFile.txt", FileAccessManager.O_CREAT,
             224, 0, new VivaldiCoordinates()));
-        stat = invokeSync(client.getattr(mrcAddress, uc1, posixVolName + "/someFile.txt"));
+        stat = invokeSync(client.getattr(mrcAddress, uc1, posixVolName + "/someFile.txt")).get(0);
         assertEquals(224, stat.getMode() & 0x7FF);
         
         invokeSync(client.setattr(mrcAddress, uc1, posixVolName + "/someFile.txt", createChmodStat(192),
             MRCInterface.SETATTR_MODE));
-        stat = invokeSync(client.getattr(mrcAddress, uc1, posixVolName + "/someFile.txt"));
+        stat = invokeSync(client.getattr(mrcAddress, uc1, posixVolName + "/someFile.txt")).get(0);
         assertEquals(192, stat.getMode() & 0x7FF);
         
         // create a new directory w/ search access for anyone w/ access rights
@@ -801,52 +801,52 @@ public class MRCTest extends TestCase {
         XCap cap = invokeSync(
             client.open(mrcAddress, uc, fileName, FileAccessManager.O_RDONLY, 0, 0, new VivaldiCoordinates()))
                 .getXcap();
-        Stat stat = invokeSync(client.getattr(mrcAddress, uc, fileName));
+        Stat stat = invokeSync(client.getattr(mrcAddress, uc, fileName)).get(0);
         assertEquals(0L, stat.getSize());
         
         stat = createFSStat(27, 0);
         invokeSync(client.fsetattr(mrcAddress, cap, stat, MRCInterface.SETATTR_SIZE));
-        stat = invokeSync(client.getattr(mrcAddress, uc, fileName));
+        stat = invokeSync(client.getattr(mrcAddress, uc, fileName)).get(0);
         assertEquals(27L, stat.getSize());
         
         stat = createFSStat(12, 0);
         invokeSync(client.fsetattr(mrcAddress, cap, stat, MRCInterface.SETATTR_SIZE));
-        stat = invokeSync(client.getattr(mrcAddress, uc, fileName));
+        stat = invokeSync(client.getattr(mrcAddress, uc, fileName)).get(0);
         assertEquals(27L, stat.getSize());
         
         stat = createFSStat(34, 0);
         invokeSync(client.fsetattr(mrcAddress, cap, stat, MRCInterface.SETATTR_SIZE));
-        stat = invokeSync(client.getattr(mrcAddress, uc, fileName));
+        stat = invokeSync(client.getattr(mrcAddress, uc, fileName)).get(0);
         assertEquals(34L, stat.getSize());
         
         stat = createFSStat(10, 1);
         invokeSync(client.fsetattr(mrcAddress, cap, stat, MRCInterface.SETATTR_SIZE));
-        stat = invokeSync(client.getattr(mrcAddress, uc, fileName));
+        stat = invokeSync(client.getattr(mrcAddress, uc, fileName)).get(0);
         assertEquals(10L, stat.getSize());
         
         stat = createFSStat(34, 1);
         invokeSync(client.fsetattr(mrcAddress, cap, stat, MRCInterface.SETATTR_SIZE));
-        stat = invokeSync(client.getattr(mrcAddress, uc, fileName));
+        stat = invokeSync(client.getattr(mrcAddress, uc, fileName)).get(0);
         assertEquals(34L, stat.getSize());
         
         stat = createFSStat(10, 1);
         invokeSync(client.fsetattr(mrcAddress, cap, stat, MRCInterface.SETATTR_SIZE));
-        stat = invokeSync(client.getattr(mrcAddress, uc, fileName));
+        stat = invokeSync(client.getattr(mrcAddress, uc, fileName)).get(0);
         assertEquals(34L, stat.getSize());
         
         stat = createFSStat(0, 2);
         invokeSync(client.fsetattr(mrcAddress, cap, stat, MRCInterface.SETATTR_SIZE));
-        stat = invokeSync(client.getattr(mrcAddress, uc, fileName));
+        stat = invokeSync(client.getattr(mrcAddress, uc, fileName)).get(0);
         assertEquals(0L, stat.getSize());
         
         stat = createFSStat(12, 0);
         invokeSync(client.fsetattr(mrcAddress, cap, stat, MRCInterface.SETATTR_SIZE));
-        stat = invokeSync(client.getattr(mrcAddress, uc, fileName));
+        stat = invokeSync(client.getattr(mrcAddress, uc, fileName)).get(0);
         assertEquals(0L, stat.getSize());
         
         stat = createFSStat(32, 4);
         invokeSync(client.fsetattr(mrcAddress, cap, stat, MRCInterface.SETATTR_SIZE));
-        stat = invokeSync(client.getattr(mrcAddress, uc, fileName));
+        stat = invokeSync(client.getattr(mrcAddress, uc, fileName)).get(0);
         assertEquals(32L, stat.getSize());
     }
     
@@ -886,10 +886,10 @@ public class MRCTest extends TestCase {
         assertEquals(sp1.getStripe_size(), sp.getStripe_size());
         
         // check block size in Stat
-        Stat stat = invokeSync(client.getattr(mrcAddress, uc, fileName1));
+        Stat stat = invokeSync(client.getattr(mrcAddress, uc, fileName1)).get(0);
         assertEquals(sp1.getStripe_size() * 1024, stat.getBlksize());
         
-        stat = invokeSync(client.getattr(mrcAddress, uc, dirName));
+        stat = invokeSync(client.getattr(mrcAddress, uc, dirName)).get(0);
         assertEquals(0, stat.getBlksize());
         
         // TODO set the default striping policy of the parent directory via an
@@ -953,7 +953,7 @@ public class MRCTest extends TestCase {
         for (String path : paths) {
             
             try {
-                Stat stat = invokeSync(client.getattr(mrcAddress, uc, path));
+                Stat stat = invokeSync(client.getattr(mrcAddress, uc, path)).get(0);
                 
                 // continue if the path does not point to a directory
                 if ((stat.getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFDIR) == 0)
@@ -976,7 +976,7 @@ public class MRCTest extends TestCase {
                     count++;
             }
             
-            assertEquals(count, size);
+            assertEquals(count + (path.contains("/")? 2: 1), size);
         }
     }
     
@@ -995,15 +995,15 @@ public class MRCTest extends TestCase {
     }
     
     private static Stat createChmodStat(int newMode) {
-        return new Stat(0, 0, newMode, 0, "", "", 0, 0, 0, 0, 0, 0, 0);
+        return new Stat(0, 0, newMode, 0, "", "", 0, 0, 0, 0, 0, 0, 0, 0);
     }
     
     private static Stat createFSStat(int newFS, int newEpoch) {
-        return new Stat(0, 0, 0, 0, "", "", newFS, 0, 0, 0, 0, newEpoch, 0);
+        return new Stat(0, 0, 0, 0, "", "", newFS, 0, 0, 0, 0, 0, newEpoch, 0);
     }
     
     private static Stat createChownStat(String newUid, String newGid) {
-        return new Stat(0, 0, 0, 0, newUid, newGid, 0, 0, 0, 0, 0, 0, 0);
+        return new Stat(0, 0, 0, 0, newUid, newGid, 0, 0, 0, 0, 0, 0, 0, 0);
     }
     
     private static <T> T invokeSync(RPCResponse<T> response) throws ONCRPCException, IOException,

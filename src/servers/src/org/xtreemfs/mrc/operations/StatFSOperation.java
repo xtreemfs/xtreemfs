@@ -24,14 +24,20 @@
 
 package org.xtreemfs.mrc.operations;
 
+import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.StatVFS;
+import org.xtreemfs.interfaces.StatVFSSet;
+import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.MRCInterface.statvfsRequest;
 import org.xtreemfs.interfaces.MRCInterface.statvfsResponse;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.database.DatabaseException;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeInfo;
 import org.xtreemfs.mrc.database.VolumeManager;
+import org.xtreemfs.mrc.metadata.FileMetadata;
+import org.xtreemfs.mrc.utils.Converter;
 
 /**
  * 
@@ -50,19 +56,42 @@ public class StatFSOperation extends MRCOperation {
         
         final VolumeManager vMan = master.getVolumeManager();
         final StorageManager sMan = vMan.getStorageManagerByName(rqArgs.getVolume_name());
+        
+        StatVFS volumeInfo = getVolumeInfo(master, sMan);
+        long knownEtag = rqArgs.getKnown_etag();
+        
+        StatVFSSet set = new StatVFSSet();
+        if (knownEtag != volumeInfo.getEtag())
+            set.add(volumeInfo);
+        
+        // set the response
+        rq.setResponse(new statvfsResponse(set));
+        finishRequest(rq);
+        
+    }
+    
+    protected static StatVFS getVolumeInfo(MRCRequestDispatcher master, StorageManager sMan) throws DatabaseException {
+        
         final VolumeInfo volume = sMan.getVolumeInfo();
+        final FileMetadata volumeRoot = sMan.getMetadata(1);
         
         int blockSize = sMan.getDefaultStripingPolicy(1).getStripeSize() * 1024;
         long bavail = master.getOSDStatusManager().getFreeSpace(volume.getId()) / blockSize;
         long used_blocks = volume.getVolumeSize() / blockSize;
         long blocks = bavail + used_blocks;
+        String volumeId = volume.getId();
+        AccessControlPolicyType acPolId = AccessControlPolicyType.parseInt(volume.getAcPolicyId());
+        StripingPolicy defaultStripingPolicy = Converter.stripingPolicyToStripingPolicy(sMan
+                .getDefaultStripingPolicy(1));
+        String volumeName = volume.getName();
+        String owningGroupId = volumeRoot.getOwningGroupId();
+        String ownerId = volumeRoot.getOwnerId();
+        int perms = volumeRoot.getPerms();
         
-        StatVFS statfs = new StatVFS(blockSize, bavail, blocks, volume.getId(), 1024);
+        long newEtag = blockSize + bavail + used_blocks + blocks;
         
-        // set the response
-        rq.setResponse(new statvfsResponse(statfs));
-        finishRequest(rq);
-        
+        return new StatVFS(blockSize, bavail, blocks, volumeId, 1024, acPolId, defaultStripingPolicy,
+            newEtag, perms, volumeName, owningGroupId, ownerId);
+                
     }
-    
 }

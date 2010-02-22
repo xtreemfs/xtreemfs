@@ -38,7 +38,7 @@ import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceDataMap;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
-import org.xtreemfs.interfaces.Volume;
+import org.xtreemfs.interfaces.StatVFS;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolRequest;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_mkvolResponse;
 import org.xtreemfs.mrc.ErrorRecord;
@@ -68,7 +68,7 @@ public class CreateVolumeOperation extends MRCOperation {
             throw new UserException(ErrNo.EPERM, "invalid password");
         
         validateContext(rq);
-        Volume volData = rqArgs.getVolume();
+        StatVFS volData = rqArgs.getVolume();
         
         try {
             master.getFileAccessManager().getFileAccessPolicy(
@@ -114,7 +114,7 @@ public class CreateVolumeOperation extends MRCOperation {
             // been registered, return an error
             
             ServiceSet response = rpcResponse.get();
-            Volume volData = rqArgs.getVolume();
+            StatVFS volData = rqArgs.getVolume();
             
             // check if the volume already exists; if so, return an error
             for (Service reg : response)

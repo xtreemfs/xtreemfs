@@ -26,6 +26,7 @@ package org.xtreemfs.mrc.operations;
 
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Stat;
+import org.xtreemfs.interfaces.StatSet;
 import org.xtreemfs.interfaces.MRCInterface.getattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.getattrResponse;
 import org.xtreemfs.mrc.MRCRequest;
@@ -75,29 +76,40 @@ public class StatOperation extends MRCOperation {
         // check whether file exists
         res.checkIfFileDoesNotExist();
         
-        // retrieve and prepare the metadata to return
         FileMetadata file = res.getFile();
         
-        String linkTarget = sMan.getSoftlinkTarget(file.getId());
-        int mode = faMan.getPosixAccessMode(sMan, file, rq.getDetails().userId, rq.getDetails().groupIds);
-        mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_H_S_IFLNK
-            : file.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
-        long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : file.getSize();
-        int blkSize = 0;
-        if ((linkTarget == null) && (!file.isDirectory())) {
-            XLocList xlocList = file.getXLocList();
-            if ((xlocList != null) && (xlocList.getReplicaCount() > 0))
-                blkSize = xlocList.getReplica(0).getStripingPolicy().getStripeSize() * 1024;
+        final long knownEtag = rqArgs.getKnown_etag();
+        final long newEtag = file.getCtime();
+        
+        // retrieve and prepare the metadata to return
+        StatSet set = new StatSet();
+        if (knownEtag != newEtag) {
+            
+            String linkTarget = sMan.getSoftlinkTarget(file.getId());
+            int mode = faMan.getPosixAccessMode(sMan, file, rq.getDetails().userId, rq.getDetails().groupIds);
+            mode |= linkTarget != null ? Constants.SYSTEM_V_FCNTL_H_S_IFLNK
+                : file.isDirectory() ? Constants.SYSTEM_V_FCNTL_H_S_IFDIR
+                    : Constants.SYSTEM_V_FCNTL_H_S_IFREG;
+            long size = linkTarget != null ? linkTarget.length() : file.isDirectory() ? 0 : file.getSize();
+            int blkSize = 0;
+            if ((linkTarget == null) && (!file.isDirectory())) {
+                XLocList xlocList = file.getXLocList();
+                if ((xlocList != null) && (xlocList.getReplicaCount() > 0))
+                    blkSize = xlocList.getReplica(0).getStripingPolicy().getStripeSize() * 1024;
+            }
+            Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, file.getLinkCount(), file
+                    .getOwnerId(), file.getOwningGroupId(), size, (long) file.getAtime() * (long) 1e9,
+                (long) file.getMtime() * (long) 1e9, (long) file.getCtime() * (long) 1e9, blkSize, newEtag,
+                file.isDirectory() ? 0 : file.getEpoch(), (int) file.getW32Attrs());
+            
+            set.add(stat);
+            
         }
-        Stat stat = new Stat(volume.getId().hashCode(), file.getId(), mode, file.getLinkCount(), file
-                .getOwnerId(), file.getOwningGroupId(), size, (long) file.getAtime() * (long) 1e9,
-            (long) file.getMtime() * (long) 1e9, (long) file.getCtime() * (long) 1e9, blkSize, file
-                    .isDirectory() ? 0 : file.getEpoch(), (int) file.getW32Attrs());
         
         // set the response
-        rq.setResponse(new getattrResponse(stat));
+        rq.setResponse(new getattrResponse(set));
+        
         finishRequest(rq);
         
     }
-    
 }

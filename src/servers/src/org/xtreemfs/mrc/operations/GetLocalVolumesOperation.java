@@ -26,16 +26,12 @@ package org.xtreemfs.mrc.operations;
 
 import java.util.Collection;
 
-import org.xtreemfs.interfaces.AccessControlPolicyType;
-import org.xtreemfs.interfaces.Volume;
-import org.xtreemfs.interfaces.VolumeSet;
+import org.xtreemfs.interfaces.StatVFS;
+import org.xtreemfs.interfaces.StatVFSSet;
 import org.xtreemfs.interfaces.MRCInterface.xtreemfs_lsvolResponse;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
 import org.xtreemfs.mrc.database.StorageManager;
-import org.xtreemfs.mrc.database.VolumeInfo;
-import org.xtreemfs.mrc.metadata.FileMetadata;
-import org.xtreemfs.mrc.utils.Converter;
 
 /**
  * 
@@ -52,15 +48,10 @@ public class GetLocalVolumesOperation extends MRCOperation {
         
         Collection<StorageManager> sMans = master.getVolumeManager().getStorageManagers();
         
-        VolumeSet vSet = new VolumeSet();
+        StatVFSSet vSet = new StatVFSSet();
         for (StorageManager sMan : sMans) {
-            
-            VolumeInfo vol = sMan.getVolumeInfo();
-            FileMetadata md = sMan.getMetadata(1);
-            vSet.add(new Volume(AccessControlPolicyType.parseInt(vol.getAcPolicyId()), Converter
-                    .stripingPolicyToStripingPolicy(sMan.getDefaultStripingPolicy(1)), 
-                    vol.getId(), sMan.getMetadata(1).getPerms(), vol.getName(), 
-                    md.getOwningGroupId(), md.getOwnerId()));
+            StatVFS vInfo = StatFSOperation.getVolumeInfo(master, sMan);
+            vSet.add(vInfo);
         }
         
         rq.setResponse(new xtreemfs_lsvolResponse(vSet));

@@ -51,6 +51,7 @@ import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.Stat;
+import org.xtreemfs.interfaces.StatSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.UserCredentials;
@@ -534,7 +535,7 @@ public class RandomAccessFile implements ObjectStore {
             try {
                 long fs = wresp.getNew_file_size().get(0).getSize_in_bytes();
                 int ep = wresp.getNew_file_size().get(0).getTruncate_epoch();
-                r = mrcClient.fsetattr(mrcAddress, fileCredentials.getXcap(), new Stat(0, 0, 0, 0, "", "", fs, 0, 0, 0, 0, ep, 0), MRCInterface.SETATTR_SIZE);
+                r = mrcClient.fsetattr(mrcAddress, fileCredentials.getXcap(), new Stat(0, 0, 0, 0, "", "", fs, 0, 0, 0, 0, 0, ep, 0), MRCInterface.SETATTR_SIZE);
                 r.get();
                 wresp = null;
             } catch (ONCRPCException ex) {
@@ -579,10 +580,10 @@ public class RandomAccessFile implements ObjectStore {
     }
     
     public long length() throws IOException {
-        RPCResponse<Stat> r = null;
+        RPCResponse<StatSet> r = null;
         try {
             r = mrcClient.getattr(mrcAddress, credentials, pathName);
-            Stat statInfo = r.get();
+            Stat statInfo = r.get().get(0);
             
             // decide what to use...
             if (wresp != null) {
@@ -920,7 +921,7 @@ public class RandomAccessFile implements ObjectStore {
     public void forceFileSize(long newFileSize) throws IOException {
         RPCResponse r = null;
         try {
-            r = mrcClient.fsetattr(mrcAddress, fileCredentials.getXcap(), new Stat(0, 0, 0, 0, "", "", newFileSize, 0, 0, 0, 0, fileCredentials.getXcap().getTruncate_epoch(), 0), MRCInterface.SETATTR_SIZE);
+            r = mrcClient.fsetattr(mrcAddress, fileCredentials.getXcap(), new Stat(0, 0, 0, 0, "", "", newFileSize, 0, 0, 0, 0, 0, fileCredentials.getXcap().getTruncate_epoch(), 0), MRCInterface.SETATTR_SIZE);
             r.get();
         } catch (ONCRPCException ex) {
             throw new IOException("cannot update file size", ex);
@@ -933,10 +934,10 @@ public class RandomAccessFile implements ObjectStore {
     }
     
     public Stat stat() throws IOException {
-        RPCResponse<Stat> r = null;
+        RPCResponse<StatSet> r = null;
         try {
             r = mrcClient.getattr(mrcAddress, credentials, pathName);
-            return r.get();
+            return r.get().get(0);
         } catch (ONCRPCException ex) {
             throw new IOException("cannot update file size", ex);
         } catch (InterruptedException ex) {

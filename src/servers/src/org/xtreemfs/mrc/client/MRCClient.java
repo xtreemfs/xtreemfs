@@ -39,13 +39,13 @@ import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.FileCredentialsSet;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.Stat;
+import org.xtreemfs.interfaces.StatSet;
 import org.xtreemfs.interfaces.StatVFS;
+import org.xtreemfs.interfaces.StatVFSSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.VivaldiCoordinates;
-import org.xtreemfs.interfaces.Volume;
-import org.xtreemfs.interfaces.VolumeSet;
 import org.xtreemfs.interfaces.XCap;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.MRCInterface.closeRequest;
@@ -209,7 +209,7 @@ public class MRCClient extends ONCRPCClient {
     
     public RPCResponse fsetattr(InetSocketAddress server, XCap xcap, Stat statInfo, int toSet) {
         
-        fsetattrRequest rq = new fsetattrRequest(xcap, statInfo, toSet);
+        fsetattrRequest rq = new fsetattrRequest(statInfo, toSet, xcap);
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -237,13 +237,13 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
-    public RPCResponse<Stat> getattr(InetSocketAddress server, UserCredentials credentials, String path) {
+    public RPCResponse<StatSet> getattr(InetSocketAddress server, UserCredentials credentials, String path) {
         
-        getattrRequest rq = new getattrRequest(path);
-        RPCResponse<Stat> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<Stat>() {
+        getattrRequest rq = new getattrRequest(path, 0);
+        RPCResponse<StatSet> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<StatSet>() {
             
             @Override
-            public Stat getResult(ReusableBuffer data) {
+            public StatSet getResult(ReusableBuffer data) {
                 final getattrResponse resp = new getattrResponse();
                 resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getStbuf();
@@ -299,13 +299,13 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
-    public RPCResponse<VolumeSet> lsvol(InetSocketAddress server, UserCredentials credentials) {
+    public RPCResponse<StatVFSSet> lsvol(InetSocketAddress server, UserCredentials credentials) {
         
         xtreemfs_lsvolRequest rq = new xtreemfs_lsvolRequest();
-        RPCResponse<VolumeSet> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<VolumeSet>() {
+        RPCResponse<StatVFSSet> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<StatVFSSet>() {
             
             @Override
-            public VolumeSet getResult(ReusableBuffer data) {
+            public StatVFSSet getResult(ReusableBuffer data) {
                 final xtreemfs_lsvolResponse resp = new xtreemfs_lsvolResponse();
                 resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getVolumes();
@@ -333,8 +333,8 @@ public class MRCClient extends ONCRPCClient {
     public RPCResponse mkvol(InetSocketAddress server, UserCredentials credentials, String volumeName,
         StripingPolicy defaultStripingPolicy, int accessControlPolicy, int accessMode) {
         
-        xtreemfs_mkvolRequest rq = new xtreemfs_mkvolRequest(new Volume(AccessControlPolicyType
-                .parseInt(accessControlPolicy), defaultStripingPolicy, "", accessMode, volumeName, "", ""));
+        xtreemfs_mkvolRequest rq = new xtreemfs_mkvolRequest(new StatVFS(0, 0, 0, "", 0, AccessControlPolicyType
+                .parseInt(accessControlPolicy), defaultStripingPolicy, 0, accessMode, volumeName, "", ""));
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -367,7 +367,7 @@ public class MRCClient extends ONCRPCClient {
     public RPCResponse<DirectoryEntrySet> readdir(InetSocketAddress server, UserCredentials credentials,
         String path) {
         
-        readdirRequest rq = new readdirRequest(path);
+        readdirRequest rq = new readdirRequest(path, 0, Integer.MAX_VALUE, false, 0);
         RPCResponse<DirectoryEntrySet> r = sendRequest(server, rq.getTag(), rq,
             new RPCResponseDecoder<DirectoryEntrySet>() {
                 
@@ -491,14 +491,14 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
-    public RPCResponse<StatVFS> statfs(InetSocketAddress server, UserCredentials credentials,
+    public RPCResponse<StatVFSSet> statfs(InetSocketAddress server, UserCredentials credentials,
         String volumeName) {
         
-        statvfsRequest rq = new statvfsRequest(volumeName);
-        RPCResponse<StatVFS> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<StatVFS>() {
+        statvfsRequest rq = new statvfsRequest(volumeName, 0);
+        RPCResponse<StatVFSSet> r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder<StatVFSSet>() {
             
             @Override
-            public StatVFS getResult(ReusableBuffer data) {
+            public StatVFSSet getResult(ReusableBuffer data) {
                 final statvfsResponse resp = new statvfsResponse();
                 resp.unmarshal(new XDRUnmarshaller(data));
                 return resp.getStbuf();

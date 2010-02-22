@@ -1,5 +1,5 @@
-#ifndef _1415827111_
-#define _1415827111_
+#ifndef _786904593_
+#define _786904593_
 
 
 #include "yidl.h"
@@ -23,7 +23,7 @@ namespace org
         virtual ~StringSet() { }
   
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( StringSet, 2010012114 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( StringSet, 2010022216 );
   
         // yidl::Sequence
         size_t get_size() const { return size(); }
@@ -51,7 +51,7 @@ namespace org
         bool operator==( const UserCredentials& other ) const { return user_id == other.user_id && group_ids == other.group_ids && password == other.password; }
   
         // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( UserCredentials, 2010012115 );
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( UserCredentials, 2010022217 );
   
         // yidl::Struct
         void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "user_id", 0, user_id ); marshaller.writeSequence( "group_ids", 0, group_ids ); marshaller.writeString( "password", 0, password ); }

@@ -26,8 +26,9 @@
 package org.xtreemfs.common.clients;
 
 import java.io.FileNotFoundException;
-import org.xtreemfs.common.clients.internal.OpenFileList;
 import java.io.IOException;
+
+import org.xtreemfs.common.clients.internal.OpenFileList;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.uuids.UUIDResolver;
 import org.xtreemfs.foundation.ErrNo;
@@ -37,18 +38,20 @@ import org.xtreemfs.interfaces.DirectoryEntry;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.FileCredentialsSet;
-import org.xtreemfs.interfaces.MRCInterface.MRCException;
-import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.Replica;
 import org.xtreemfs.interfaces.Stat;
+import org.xtreemfs.interfaces.StatSet;
 import org.xtreemfs.interfaces.StatVFS;
+import org.xtreemfs.interfaces.StatVFSSet;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.VivaldiCoordinates;
 import org.xtreemfs.interfaces.XCap;
+import org.xtreemfs.interfaces.MRCInterface.MRCException;
+import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.osd.client.OSDClient;
@@ -124,7 +127,7 @@ public class Volume {
             DirectoryEntry[] list = new DirectoryEntry[entries.size()];
             for (int i = 0; i < list.length; i++) {
                 list[i] = entries.get(i);
-                final Stat s = list[i].getStbuf();
+                final Stat s = list[i].getStbuf().get(0);
                 OSDWriteResponse r = ofl.getLocalFS(volumeName + s.getIno());
                 if (r != null) {
                     final NewFileSize fs = r.getNew_file_size().get(0);
@@ -166,10 +169,10 @@ public class Volume {
     }
 
     public long getFreeSpace() throws IOException {
-        RPCResponse<StatVFS> response = null;
+        RPCResponse<StatVFSSet> response = null;
         try {
             response = mrcClient.statfs(mrcClient.getDefaultServerAddress(), userCreds, volumeName.replace("/", ""));
-            StatVFS fsinfo = response.get();
+            StatVFS fsinfo = response.get().get(0);
             return fsinfo.getBavail()*fsinfo.getBsize();
         } catch (MRCException ex) {
             throw wrapException(ex);
@@ -204,10 +207,10 @@ public class Volume {
     }
 
     public long getUsedSpace() throws IOException {
-        RPCResponse<StatVFS> response = null;
+        RPCResponse<StatVFSSet> response = null;
         try {
             response = mrcClient.statfs(mrcClient.getDefaultServerAddress(), userCreds, volumeName.replace("/", ""));
-            StatVFS fsinfo = response.get();
+            StatVFS fsinfo = response.get().get(0);
             return (fsinfo.getBlocks()-fsinfo.getBavail())*fsinfo.getBsize();
         } catch (MRCException ex) {
             throw wrapException(ex);
@@ -222,10 +225,10 @@ public class Volume {
     }
 
     public long getDefaultObjectSize() throws IOException {
-        RPCResponse<StatVFS> response = null;
+        RPCResponse<StatVFSSet> response = null;
         try {
             response = mrcClient.statfs(mrcClient.getDefaultServerAddress(), userCreds, volumeName.replace("/", ""));
-            StatVFS fsinfo = response.get();
+            StatVFS fsinfo = response.get().get(0);
             return fsinfo.getBsize();
         } catch (MRCException ex) {
             throw wrapException(ex);
@@ -240,10 +243,10 @@ public class Volume {
     }
 
     Stat stat(String path) throws IOException {
-        RPCResponse<Stat> response = null;
+        RPCResponse<StatSet> response = null;
         try {
             response = mrcClient.getattr(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path));
-            Stat s = response.get();
+            Stat s = response.get().get(0);
             OSDWriteResponse r = ofl.getLocalFS(volumeName + s.getIno());
             if (r != null) {
                 final NewFileSize fs = r.getNew_file_size().get(0);
@@ -423,7 +426,7 @@ public class Volume {
                 
                 long newSize = owr.getNew_file_size().get(0).getSize_in_bytes();
                 int newEpoch = owr.getNew_file_size().get(0).getTruncate_epoch();
-                response = mrcClient.fsetattr(mrcClient.getDefaultServerAddress(), cap, new Stat(0, 0, 0, 0, "", "", newSize, 0, 0, 0, 0, newEpoch, 0), MRCInterface.SETATTR_SIZE);
+                response = mrcClient.fsetattr(mrcClient.getDefaultServerAddress(), cap, new Stat(0, 0, 0, 0, "", "", newSize, 0, 0, 0, 0, 0, newEpoch, 0), MRCInterface.SETATTR_SIZE);
                 response.get();
                 
             } catch (MRCException ex) {
