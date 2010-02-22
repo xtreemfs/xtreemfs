@@ -11,7 +11,7 @@ if [ $group_exists -eq 0 ]
 then
 	groupadd $XTREEMFS_GROUP
 	echo "created group XTREEMFS_GROUP"
-fu
+fi
 if [ $exists -eq 0 ]
 then
         mkdir $XTREEMFS_HOME
