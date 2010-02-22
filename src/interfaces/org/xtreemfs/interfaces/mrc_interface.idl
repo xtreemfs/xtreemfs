@@ -94,17 +94,16 @@ module org
         void listxattr( string path, out StringSet names ) # 7;
         void mkdir( string path, uint32_t mode ) # 8;
         void open( string path, uint32_t flags, uint32_t mode, uint32_t attributes, VivaldiCoordinates client_vivaldi_coordinates, out FileCredentials file_credentials ) # 9;
-        void opendir( string path, uint64_t known_etag, uint16_t limit_first_directory_entries_count, out DirectoryEntrySet first_directory_entries ) # 10;
-        void readdir( uint64_t known_etag, uint16_t limit_more_directory_entries_count, boolean names_only, uint64_t seen_directory_entries_count, out DirectoryEntrySet more_directory_entries ) # 11;
-        void readlink( string path, out string link_target_path ) # 12;
-        void removexattr( string path, string name ) # 13;
-        void rename( string source_path, string target_path, out FileCredentialsSet file_credentials ) # 14;
-        void rmdir( string path ) # 15;
-        void setattr( string path, Stat stbuf, uint32_t to_set ) # 16;
-        void setxattr( string path, string name, string value, int flags ) # 17;
-        void statvfs( string volume_name, uint64_t known_etag, out StatVFSSet stbuf ) # 18;
-        void symlink( string target_path, string link_path ) # 19;
-        void unlink( string path, out FileCredentialsSet file_credentials ) # 20;
+        void readdir( string path, uint64_t known_etag, uint16_t limit_directory_entries_count, boolean names_only, uint64_t seen_directory_entries_count, out DirectoryEntrySet directory_entries ) # 10;
+        void readlink( string path, out string link_target_path ) # 11;
+        void removexattr( string path, string name ) # 12;
+        void rename( string source_path, string target_path, out FileCredentialsSet file_credentials ) # 13;
+        void rmdir( string path ) # 14;
+        void setattr( string path, Stat stbuf, uint32_t to_set ) # 15;
+        void setxattr( string path, string name, string value, int flags ) # 16;
+        void statvfs( string volume_name, uint64_t known_etag, out StatVFSSet stbuf ) # 17;
+        void symlink( string target_path, string link_path ) # 18;
+        void unlink( string path, out FileCredentialsSet file_credentials ) # 19;
 
         // XtreemFS-specific operations
         void xtreemfs_checkpoint() # 30;
