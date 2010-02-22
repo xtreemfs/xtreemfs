@@ -12,6 +12,7 @@ module org
     {
       struct Stat # 40
       {
+        // POSIX attributes
         uint64_t dev; // A hash of the volume id
         uint64_t ino; // The file id
         uint32_t mode;
@@ -33,40 +34,36 @@ module org
         uint32_t attributes;
       };
 
-      typedef sequence<Stat> StatSet # 41;
+      typedef sequence<Stat> StatSet # 41; // For returning 0 or 1 Stats on a conditional getattr
 
       struct DirectoryEntry # 42
       {
         string name;
-        Stat stbuf;
+        StatSet stbuf; // Can have 0 or 1 Stats on a readdir for names only
       };
 
       typedef sequence<DirectoryEntry> DirectoryEntrySet # 43;
 
       struct StatVFS # 44
-      {
-        //size of a block in bytes
-        uint32_t bsize;
-        //number of free blocks in the file system
-        uint64_t bavail;
-        //total number of blocks in file system
-        uint64_t blocks;
-        string fsid;
-        uint32_t namelen;
-      };
+      {        
+        // POSIX attributes
+        uint32_t bsize; // size of a block in bytes        
+        uint64_t bavail; // number of free blocks in the file system        
+        uint64_t blocks; // total number of blocks in file system
+        string fsid; // volume id
+        uint32_t namemax; // maximum filename length
 
-      struct Volume # 45
-      {
+        // XtreemFS-specific attributes
         AccessControlPolicyType access_control_policy;
         StripingPolicy default_striping_policy;
-        string id;
+        uint64_t etag;
         uint32_t mode;
         string name;
         string owner_group_id;
         string owner_user_id;
       };
 
-      typedef sequence<Volume> VolumeSet # 46;
+      typedef sequence<StatVFS> StatVFSSet # 45;
 
 
       interface MRCInterface # 200
@@ -89,7 +86,7 @@ module org
 
         // POSIX/FUSE operations
         void close( VivaldiCoordinates client_vivaldi_coordinates, XCap write_xcap ) # 1;
-        void fsetattr( XCap xcap, Stat stbuf, uint32_t to_set ) # 2;
+        void fsetattr( Stat stbuf, uint32_t to_set, XCap xcap ) # 2;
         void ftruncate( XCap write_xcap, out XCap truncate_xcap ) # 3;
         void getattr( string path, uint64_t known_etag, out StatSet stbuf ) # 4;
         void getxattr( string path, string name, out string value ) # 5;
@@ -97,15 +94,15 @@ module org
         void listxattr( string path, out StringSet names ) # 7;
         void mkdir( string path, uint32_t mode ) # 8;
         void open( string path, uint32_t flags, uint32_t mode, uint32_t attributes, VivaldiCoordinates client_vivaldi_coordinates, out FileCredentials file_credentials ) # 9;
-        void opendir( string path, uint64_t known_etag, uint16_t limit_directory_entries_count, out DirectoryEntrySet first_directory_entries ) # 10;
-        void readdir( uint64_t known_etag, uint16_t limit_directory_entries_count, out DirectoryEntrySet more_directory_entries ) # 11;
+        void opendir( string path, uint64_t known_etag, uint16_t limit_first_directory_entries_count, out DirectoryEntrySet first_directory_entries ) # 10;
+        void readdir( uint64_t known_etag, uint16_t limit_more_directory_entries_count, boolean names_only, uint64_t seen_directory_entries_count, out DirectoryEntrySet more_directory_entries ) # 11;
         void readlink( string path, out string link_target_path ) # 12;
         void removexattr( string path, string name ) # 13;
         void rename( string source_path, string target_path, out FileCredentialsSet file_credentials ) # 14;
         void rmdir( string path ) # 15;
         void setattr( string path, Stat stbuf, uint32_t to_set ) # 16;
         void setxattr( string path, string name, string value, int flags ) # 17;
-        void statvfs( string volume_name, out StatVFS stbuf ) # 18;
+        void statvfs( string volume_name, uint64_t known_etag, out StatVFSSet stbuf ) # 18;
         void symlink( string target_path, string link_path ) # 19;
         void unlink( string path, out FileCredentialsSet file_credentials ) # 20;
 
@@ -115,18 +112,17 @@ module org
         void xtreemfs_dump_database( string dump_file ) # 32;
         void xtreemfs_get_suitable_osds( string file_id, uint32_t num_osds, out StringSet osd_uuids ) # 33;
         void xtreemfs_internal_debug( string operation, out string result ) # 34;
-        void xtreemfs_listdir( uint64_t known_etag, out StringSet names ) # 35; // Optimization for metadata caching
-        void xtreemfs_lsvol( out VolumeSet volumes ) # 36;
-        void xtreemfs_mkvol( Volume volume ) # 37;
-        void xtreemfs_renew_capability( in XCap old_xcap, out XCap renewed_xcap ) # 38;
-        void xtreemfs_replication_to_master() # 39;
-        void xtreemfs_replica_add( string file_id, Replica new_replica ) # 40;
-        void xtreemfs_replica_list( string file_id, out ReplicaSet replicas ) # 41;
-        void xtreemfs_replica_remove( string file_id, string osd_uuid, out XCap delete_xcap ) # 42;
-        void xtreemfs_restore_database( string dump_file ) # 43;
-        void xtreemfs_restore_file( string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size ) # 44;
-        void xtreemfs_rmvol( string volume_name ) # 45;
-        void xtreemfs_shutdown() # 46;
+        void xtreemfs_lsvol( out StatVFSSet volumes ) # 35;
+        void xtreemfs_mkvol( StatVFS volume ) # 36;
+        void xtreemfs_renew_capability( in XCap old_xcap, out XCap renewed_xcap ) # 37;
+        void xtreemfs_replication_to_master() # 38;
+        void xtreemfs_replica_add( string file_id, Replica new_replica ) # 39;
+        void xtreemfs_replica_list( string file_id, out ReplicaSet replicas ) # 40;
+        void xtreemfs_replica_remove( string file_id, string osd_uuid, out XCap delete_xcap ) # 41;
+        void xtreemfs_restore_database( string dump_file ) # 42;
+        void xtreemfs_restore_file( string file_path, string file_id, uint64_t file_size, string osd_uuid, int32_t stripe_size ) # 43;
+        void xtreemfs_rmvol( string volume_name ) # 44;
+        void xtreemfs_shutdown() # 45;
 
         // Exceptions
         exception ConcurrentModificationException # 50 { string stack_trace; };

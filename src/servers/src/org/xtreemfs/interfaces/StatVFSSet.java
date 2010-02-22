@@ -14,9 +14,9 @@ import yidl.runtime.Unmarshaller;
 
 
 
-public class VolumeSet extends Sequence<Volume>
+public class StatVFSSet extends Sequence<StatVFS>
 {
-    public VolumeSet() { }
+    public StatVFSSet() { }
 
     // java.lang.Object
     public String toString() 
@@ -31,16 +31,16 @@ public class VolumeSet extends Sequence<Volume>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022261; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::VolumeSet"; }
+    public int getTag() { return 2010022260; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::StatVFSSet"; }
 
     public int getXDRSize()
     {
         int my_size = 4; // Length of the sequence
 
-        for ( Iterator<Volume> i = iterator(); i.hasNext(); )
+        for ( Iterator<StatVFS> i = iterator(); i.hasNext(); )
         {
-            Volume value = i.next();
+            StatVFS value = i.next();
             my_size += value.getXDRSize(); // Size of value
         }
 
@@ -49,14 +49,14 @@ public class VolumeSet extends Sequence<Volume>
 
     public void marshal( Marshaller marshaller )
     {
-        for ( Iterator<Volume> i = iterator(); i.hasNext(); )
+        for ( Iterator<StatVFS> i = iterator(); i.hasNext(); )
             marshaller.writeStruct( "value", i.next() );;
     }
 
     public void unmarshal( Unmarshaller unmarshaller )
     {
-        Volume value;
-        value = new Volume(); unmarshaller.readStruct( "value", value );
+        StatVFS value;
+        value = new StatVFS(); unmarshaller.readStruct( "value", value );
         this.add( value );
     }
 

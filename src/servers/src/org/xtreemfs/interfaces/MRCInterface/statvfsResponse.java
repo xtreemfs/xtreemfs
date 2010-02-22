@@ -17,11 +17,11 @@ public class statvfsResponse extends org.xtreemfs.interfaces.utils.Response
 {
     public static final int TAG = 2010022433;
 
-    public statvfsResponse() { stbuf = new StatVFS();  }
-    public statvfsResponse( StatVFS stbuf ) { this.stbuf = stbuf; }
+    public statvfsResponse() { stbuf = new StatVFSSet();  }
+    public statvfsResponse( StatVFSSet stbuf ) { this.stbuf = stbuf; }
 
-    public StatVFS getStbuf() { return stbuf; }
-    public void setStbuf( StatVFS stbuf ) { this.stbuf = stbuf; }
+    public StatVFSSet getStbuf() { return stbuf; }
+    public void setStbuf( StatVFSSet stbuf ) { this.stbuf = stbuf; }
 
     // java.lang.Object
     public String toString() 
@@ -51,17 +51,17 @@ public class statvfsResponse extends org.xtreemfs.interfaces.utils.Response
 
     public void marshal( Marshaller marshaller )
     {
-        marshaller.writeStruct( "stbuf", stbuf );
+        marshaller.writeSequence( "stbuf", stbuf );
     }
 
     public void unmarshal( Unmarshaller unmarshaller )
     {
-        stbuf = new StatVFS(); unmarshaller.readStruct( "stbuf", stbuf );
+        stbuf = new StatVFSSet(); unmarshaller.readSequence( "stbuf", stbuf );
     }
 
     
 
-    private StatVFS stbuf;
+    private StatVFSSet stbuf;
 
 }
 

@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_renew_capabilityRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010022453;
+    public static final int TAG = 2010022452;
 
     public xtreemfs_renew_capabilityRequest() { old_xcap = new XCap();  }
     public xtreemfs_renew_capabilityRequest( XCap old_xcap ) { this.old_xcap = old_xcap; }
@@ -39,10 +39,10 @@ public class xtreemfs_renew_capabilityRequest extends org.xtreemfs.interfaces.ut
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010022453;
+    public static final long serialVersionUID = 2010022452;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022453; }
+    public int getTag() { return 2010022452; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_renew_capabilityRequest"; }
 
     public int getXDRSize()

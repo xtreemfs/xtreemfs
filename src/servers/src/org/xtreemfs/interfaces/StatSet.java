@@ -1,23 +1,22 @@
-package org.xtreemfs.interfaces.MRCInterface;
+package org.xtreemfs.interfaces;
 
 import java.io.StringWriter;
+import java.util.Iterator;
 import org.xtreemfs.*;
 import org.xtreemfs.common.buffer.ReusableBuffer;
-import org.xtreemfs.interfaces.*;
 import org.xtreemfs.interfaces.utils.*;
 import yidl.runtime.Marshaller;
 import yidl.runtime.PrettyPrinter;
+import yidl.runtime.Sequence;
 import yidl.runtime.Struct;
 import yidl.runtime.Unmarshaller;
 
 
 
 
-public class xtreemfs_shutdownResponse extends org.xtreemfs.interfaces.utils.Response
+public class StatSet extends Sequence<Stat>
 {
-    public static final int TAG = 2010022460;
-
-    public xtreemfs_shutdownResponse() {  }
+    public StatSet() { }
 
     // java.lang.Object
     public String toString() 
@@ -26,36 +25,41 @@ public class xtreemfs_shutdownResponse extends org.xtreemfs.interfaces.utils.Res
         string_writer.append(this.getClass().getCanonicalName());
         string_writer.append(" ");
         PrettyPrinter pretty_printer = new PrettyPrinter( string_writer );
-        pretty_printer.writeStruct( "", this );
+        pretty_printer.writeSequence( "", this );
         return string_writer.toString();
     }
 
 
-    // java.io.Serializable
-    public static final long serialVersionUID = 2010022460;
-
     // yidl.runtime.Object
-    public int getTag() { return 2010022460; }
-    public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_shutdownResponse"; }
+    public int getTag() { return 2010022256; }
+    public String getTypeName() { return "org::xtreemfs::interfaces::StatSet"; }
 
     public int getXDRSize()
     {
-        int my_size = 0;
+        int my_size = 4; // Length of the sequence
+
+        for ( Iterator<Stat> i = iterator(); i.hasNext(); )
+        {
+            Stat value = i.next();
+            my_size += value.getXDRSize(); // Size of value
+        }
 
         return my_size;
     }
 
     public void marshal( Marshaller marshaller )
     {
-
+        for ( Iterator<Stat> i = iterator(); i.hasNext(); )
+            marshaller.writeStruct( "value", i.next() );;
     }
 
     public void unmarshal( Unmarshaller unmarshaller )
     {
-
+        Stat value;
+        value = new Stat(); unmarshaller.readStruct( "value", value );
+        this.add( value );
     }
 
-    
 
 }
 

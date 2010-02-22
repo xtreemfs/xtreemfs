@@ -15,13 +15,13 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_mkvolRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010022452;
+    public static final int TAG = 2010022451;
 
-    public xtreemfs_mkvolRequest() { volume = new Volume();  }
-    public xtreemfs_mkvolRequest( Volume volume ) { this.volume = volume; }
+    public xtreemfs_mkvolRequest() { volume = new StatVFS();  }
+    public xtreemfs_mkvolRequest( StatVFS volume ) { this.volume = volume; }
 
-    public Volume getVolume() { return volume; }
-    public void setVolume( Volume volume ) { this.volume = volume; }
+    public StatVFS getVolume() { return volume; }
+    public void setVolume( StatVFS volume ) { this.volume = volume; }
 
     // java.lang.Object
     public String toString() 
@@ -39,10 +39,10 @@ public class xtreemfs_mkvolRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010022452;
+    public static final long serialVersionUID = 2010022451;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022452; }
+    public int getTag() { return 2010022451; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_mkvolRequest"; }
 
     public int getXDRSize()
@@ -59,12 +59,12 @@ public class xtreemfs_mkvolRequest extends org.xtreemfs.interfaces.utils.Request
 
     public void unmarshal( Unmarshaller unmarshaller )
     {
-        volume = new Volume(); unmarshaller.readStruct( "volume", volume );
+        volume = new StatVFS(); unmarshaller.readStruct( "volume", volume );
     }
 
     
 
-    private Volume volume;
+    private StatVFS volume;
 
 }
 

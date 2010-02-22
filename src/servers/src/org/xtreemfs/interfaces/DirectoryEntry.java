@@ -16,13 +16,13 @@ public class DirectoryEntry implements Struct
 {
     public static final int TAG = 2010022257;
 
-    public DirectoryEntry() { stbuf = new Stat();  }
-    public DirectoryEntry( String name, Stat stbuf ) { this.name = name; this.stbuf = stbuf; }
+    public DirectoryEntry() { stbuf = new StatSet();  }
+    public DirectoryEntry( String name, StatSet stbuf ) { this.name = name; this.stbuf = stbuf; }
 
     public String getName() { return name; }
     public void setName( String name ) { this.name = name; }
-    public Stat getStbuf() { return stbuf; }
-    public void setStbuf( Stat stbuf ) { this.stbuf = stbuf; }
+    public StatSet getStbuf() { return stbuf; }
+    public void setStbuf( StatSet stbuf ) { this.stbuf = stbuf; }
 
     // java.lang.Object
     public String toString() 
@@ -54,19 +54,19 @@ public class DirectoryEntry implements Struct
     public void marshal( Marshaller marshaller )
     {
         marshaller.writeString( "name", name );
-        marshaller.writeStruct( "stbuf", stbuf );
+        marshaller.writeSequence( "stbuf", stbuf );
     }
 
     public void unmarshal( Unmarshaller unmarshaller )
     {
         name = unmarshaller.readString( "name" );
-        stbuf = new Stat(); unmarshaller.readStruct( "stbuf", stbuf );
+        stbuf = new StatSet(); unmarshaller.readSequence( "stbuf", stbuf );
     }
 
     
 
     private String name;
-    private Stat stbuf;
+    private StatSet stbuf;
 
 }
 
