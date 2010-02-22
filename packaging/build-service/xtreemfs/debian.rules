@@ -70,6 +70,7 @@ install: build
 	         $(BUILD_DIR)/usr/bin/*.xtreemfs \
 	         $(BUILD_DIR)/usr/bin/xtfs_*mount \
 	         $(BUILD_DIR)/usr/bin/xtfs_vivaldi
+	mkdir -p $(BUILD_DIR)-client/etc/init.d
 	mv    -t $(BUILD_DIR)-client/etc/init.d \
 	         $(BUILD_DIR)/etc/init.d/xtreemfs-vivaldi
 	mkdir -p $(BUILD_DIR)-client/usr/share/man/man1
