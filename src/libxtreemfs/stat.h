@@ -57,6 +57,7 @@ namespace xtreemfs
     Stat( const org::xtreemfs::interfaces::Stat& );
     Stat( const org::xtreemfs::interfaces::OSDWriteResponse& );
     
+    uint64_t get_etag() const { return etag; }
     const std::string& get_group_id() const { return group_id; }
     uint32_t get_truncate_epoch() const { return truncate_epoch; }
     const std::string& get_user_id() const { return user_id; }

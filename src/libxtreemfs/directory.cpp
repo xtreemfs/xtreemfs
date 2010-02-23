@@ -21,49 +21,74 @@ Directory::Directory
   path( path ),
   user_credentials_cache( user_credentials_cache )
 {
+  read_directory_entry_i = 0;
   seen_directory_entries_count = first_directory_entries.size();
 }
 
 YIELD::platform::Directory::auto_Entry Directory::readdir()
 {
-  if ( directory_entries.empty() )
+  if ( read_directory_entry_i >= directory_entries.size() )
   {
-    try
+    // ^ We've read all of the entries we got from the server
+    if ( directory_entries.size() == LIMIT_DIRECTORY_ENTRIES_COUNT_DEFAULT )
     {
-      mrc_proxy->readdir
-      ( 
-        path,
-        0, // known_etag
-        LIMIT_DIRECTORY_ENTRIES_COUNT_DEFAULT,
-        false, // names_only
-        0, // seen_directory_entries_count
-        directory_entries 
-      );
+      // ^ The last server readdir returned the maximum number of entries,
+      // try to read again
+
+      directory_entries.clear();
+
+      try
+      {
+        mrc_proxy->readdir
+        ( 
+          path,
+          0, // known_etag
+          LIMIT_DIRECTORY_ENTRIES_COUNT_DEFAULT,
+          false, // names_only
+          seen_directory_entries_count,
+          directory_entries 
+        );
+      }
+      catch ( ProxyExceptionResponse& proxy_exception_response )
+      {
+        Volume::set_errno( log.get(), "readdir", proxy_exception_response );
+        return NULL;
+      }
+      catch ( std::exception& exc ) \
+      {
+        Volume::set_errno( log.get(), "readdir", exc );
+        return NULL;
+      }
+
+      if ( !directory_entries.empty() )
+      {
+        read_directory_entry_i = 0;
+        seen_directory_entries_count += directory_entries.size();
+      }
+      else // No more directory entries from the server
+        return NULL;
     }
-    catch ( ProxyExceptionResponse& proxy_exception_response )
-    {
-      Volume::set_errno( log.get(), "readdir", proxy_exception_response );
-      return NULL;
-    }
-    catch ( std::exception& exc ) \
-    {
-      Volume::set_errno( log.get(), "readdir", exc );
-      return NULL;
-    }
+    else           // The last server readdir returned fewer than
+      return NULL; // the requested renumber of entries
   }
+
+  const DirectoryEntry& read_directory_entry 
+    = directory_entries[read_directory_entry_i];
+  ++read_directory_entry_i;
 
   Stat* stbuf;
   if ( names_only )
     stbuf = NULL;
   else
   {
-    stbuf = new Stat( directory_entries[0].get_stbuf()[0] );
+
+    stbuf = new Stat( read_directory_entry.get_stbuf()[0] );
 #ifndef _WIN32
     uid_t uid; gid_t gid;
     user_credentials_cache->getpasswdFromUserCredentials
     (
-      directory_entries[0].get_stbuf()[0].get_user_id(),
-      directory_entries[0].get_stbuf()[0].get_group_id(),
+      read_directory_entry.get_stbuf()[0].get_user_id(),
+      read_directory_entry.get_stbuf()[0].get_group_id(),
       uid,
       gid
     );
@@ -71,15 +96,10 @@ YIELD::platform::Directory::auto_Entry Directory::readdir()
     stbuf->set_gid( gid );
 #endif
   }
-
-  YIELD::platform::Directory::Entry* dirent
-    = new YIELD::platform::Directory::Entry
-          ( 
-            directory_entries[0].get_name(), 
-            stbuf 
-          );
-
-  directory_entries.erase( directory_entries.begin() );
-
-  return dirent;
+  
+  return new YIELD::platform::Directory::Entry
+             ( 
+               read_directory_entry.get_name(), 
+               stbuf 
+             );
 }

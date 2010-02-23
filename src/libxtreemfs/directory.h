@@ -40,7 +40,7 @@ namespace xtreemfs
   class Directory : public YIELD::platform::Directory
   {
   public:
-    const static uint64_t LIMIT_DIRECTORY_ENTRIES_COUNT_DEFAULT = 20;
+    const static uint64_t LIMIT_DIRECTORY_ENTRIES_COUNT_DEFAULT = 100;
 
     // yidl::runtime::Object
     YIDL_RUNTIME_OBJECT_PROTOTYPES( Directory, 0 );
@@ -69,6 +69,7 @@ namespace xtreemfs
     auto_MRCProxy mrc_proxy;
     bool names_only;
     Path path;
+    uint16_t read_directory_entry_i;
     uint64_t seen_directory_entries_count;
     auto_UserCredentialsCache user_credentials_cache;
   };

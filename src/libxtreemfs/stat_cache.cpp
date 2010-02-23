@@ -103,7 +103,9 @@ StatCache::getattr
 {
   entries_lock.acquire();
 
-  Entry* entry;
+  Entry* entry; 
+  uint64_t entry_etag;
+
   EntryMap::iterator entry_i = entries.find( path );
   if ( entry_i != entries.end() )
   {
@@ -124,9 +126,17 @@ StatCache::getattr
       // else the entry has expired
     }
     // else the entry has an stbuf that did not come from the server
+
+    if ( entry->get_stbuf() != NULL )
+      entry_etag = entry->get_stbuf()->get_etag();
+    else
+      entry_etag = 0;
   }
   else
+  {
     entry = NULL;
+    entry_etag = 0;
+  }
 
   // Here we are getting a new Stat from the server
   // (because the old entry expired, there never was one, etc.)
@@ -136,7 +146,12 @@ StatCache::getattr
   org::xtreemfs::interfaces::StatSet if_stbuf;
   try
   {
-    mrc_proxy->getattr( Path( volume_name, path ), 0, if_stbuf );
+    mrc_proxy->getattr
+    ( 
+      Path( volume_name, path ), 
+      entry_etag,
+      if_stbuf
+    );
   }
   catch ( ... ) // Probably not found
   {
@@ -156,32 +171,36 @@ StatCache::getattr
   }
 
   // Here the server getattr has been successful
-  // Create an entry for the Stat if one doesn't exist already
-  if ( entry == NULL )
-  {
-    entry = new Entry( if_stbuf[0] );
-    entries[path] = entry;
+  if ( entry == NULL || !if_stbuf.empty() )                                            
+  {                                         
+    if ( entry == NULL ) // The Stat has never been seen by the client
+    {
+      entry = new Entry( if_stbuf[0] );
+      entries[path] = entry;
+    }
+    else // !if_stbuf.empty() -> // The Stat has changed on the server
+      entry->refresh( if_stbuf[0] );
+
+#ifndef _WIN32
+    // Translate the user_id and group_id from the server Stat to uid and gid
+    uid_t uid; gid_t gid;
+    user_credentials_cache->getpasswdFromUserCredentials
+    (
+      if_stbuf[0].get_user_id(),
+      if_stbuf[0].get_group_id(),
+      uid,
+      gid
+    );
+
+    entry->get_stbuf()->set_uid( uid );
+    entry->get_stbuf()->set_gid( gid );
+#endif
   }
-  else
-    entry->refresh( if_stbuf[0] );
+  else // The Stat has not changed on the server
+    entry->refresh(); // Update the refresh_time
 
   Stat* entry_stbuf = entry->get_stbuf().release();
 
-#ifndef _WIN32
-  // Translate the user_id and group_id from the server Stat to uid and gid
-  uid_t uid; gid_t gid;
-  user_credentials_cache->getpasswdFromUserCredentials
-  (
-    if_stbuf[0].get_user_id(),
-    if_stbuf[0].get_group_id(),
-    uid,
-    gid
-  );
-
-  entry_stbuf->set_uid( uid );
-  entry_stbuf->set_gid( gid );
-#endif
-  
   entries_lock.release();
 
   return entry_stbuf;
@@ -409,6 +428,7 @@ void StatCache::Entry::refresh( const org::xtreemfs::interfaces::Stat& stbuf )
     this->stbuf->set_blksize( stbuf.get_blksize() );
 #endif
 
+    this->stbuf->set_etag( stbuf.get_etag() );
     this->stbuf->set_truncate_epoch( stbuf.get_truncate_epoch() );
 
     this->refresh_time = YIELD::platform::Time();
