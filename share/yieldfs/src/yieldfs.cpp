@@ -403,37 +403,6 @@ namespace yieldfs
         return -1 * errno;
     }
 
-    class readdirCallback : public YIELD::platform::Volume::readdirCallback
-    {
-    public:
-      readdirCallback( void* buf, fuse_fill_dir_t filler )
-        : buf( buf ), filler( filler )
-      { }
-
-      // YIELD::platform::Volume::readdirCallback
-      bool operator()
-      (
-        const YIELD::platform::Path& name,
-        YIELD::platform::auto_Stat stbuf
-      )
-      {
-        struct stat struct_stat_stbuf = *stbuf;
-
-        filler
-        (
-          buf,
-          static_cast<const std::string&>( name ).c_str(),
-          &struct_stat_stbuf, 0
-        );
-
-        return true;
-      }
-
-    private:
-      void* buf;
-      fuse_fill_dir_t filler;
-    };
-
     static int
     readdir
     (
@@ -444,35 +413,30 @@ namespace yieldfs
       struct fuse_file_info* fi
     )
     {
-      YIELD::platform::Volume& volume = get_volume();
-
-      YIELD::platform::auto_Stat yield_stbuf = volume.stat( path );
-      if ( yield_stbuf != NULL )
+      YIELD::platform::auto_Directory dir = get_volume().opendir( path );
+      if ( dir != NULL )
       {
-        struct stat stbuf = *yield_stbuf;
-        filler( buf, ".", &stbuf, 0 );
+        YIELD::platform::Directory::auto_Entry dirent = dir->readdir();
 
-        if ( strcmp( path, "/" ) != 0 )
+        while ( dirent != NULL )
         {
-          yield_stbuf =
-            volume.stat( YIELD::platform::Path( path ).split().first );
-
-          if ( yield_stbuf != NULL )
-          {
-            stbuf = *yield_stbuf;
-            filler( buf, "..", &stbuf, 0 );
-          }
+          struct stat stbuf;
+          if ( dirent->get_stat() != NULL )
+            stbuf = *dirent->get_stat();
           else
-            return -1 * errno;
+            DebugBreak();
+
+          filler
+          (
+            buf,
+            static_cast<const std::string&>( dirent->get_name() ).c_str(),
+            &stbuf, 0
+          );
+
+          dirent = dir->readdir();
         }
 
-        readdirCallback readdir_callback( buf, filler );
-        if ( volume.readdir( path, readdir_callback ) )
-          return 0;
-        else if ( errno != 0 )
-          return -1 * errno;
-        else
-          return -1 * EINTR;
+        return 0;
       }
       else
         return -1 * errno;
@@ -1021,14 +985,12 @@ namespace yieldfs
       PDOKAN_FILE_INFO DokanFileInfo
     )
     {
-      YIELD::platform::auto_Directory directory
+      YIELD::platform::auto_Directory dir
         = get_volume( DokanFileInfo ).opendir( FileName );
 
-      if ( directory != NULL )
+      if ( dir != NULL )
       {
-        YIELD::platform::Directory::auto_Entry dirent
-          = directory->readdir();
-
+        YIELD::platform::Directory::auto_Entry dirent = dir->readdir();
         while ( dirent != NULL )
         {
           if ( dirent->get_name() != L"." && dirent->get_name() != L".." )
@@ -1045,7 +1007,7 @@ namespace yieldfs
             FillFindData( &find_data, DokanFileInfo );
           }
 
-          dirent = directory->readdir();
+          dirent = dir->readdir();
         }
 
         return ERROR_SUCCESS;
