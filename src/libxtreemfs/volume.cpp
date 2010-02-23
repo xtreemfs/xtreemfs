@@ -502,7 +502,8 @@ Volume::opendir
                  log, 
                  mrc_proxy, 
                  false, 
-                 path 
+                 path,
+                 user_credentials_cache
                );
   }
   VOLUME_OPERATION_END( opendir );

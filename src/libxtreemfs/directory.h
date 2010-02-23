@@ -32,6 +32,7 @@
 
 #include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/path.h"
+#include "xtreemfs/user_credentials_cache.h"
 
 
 namespace xtreemfs
@@ -56,7 +57,8 @@ namespace xtreemfs
       YIELD::platform::auto_Log log,
       auto_MRCProxy mrc_proxy,
       bool names_only,
-      const Path& path
+      const Path& path,
+      auto_UserCredentialsCache user_credentials_cache
     );
 
     ~Directory()
@@ -68,6 +70,7 @@ namespace xtreemfs
     bool names_only;
     Path path;
     uint64_t seen_directory_entries_count;
+    auto_UserCredentialsCache user_credentials_cache;
   };
 
   typedef yidl::runtime::auto_Object<Directory> auto_Directory;

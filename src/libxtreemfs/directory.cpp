@@ -11,13 +11,15 @@ Directory::Directory
   YIELD::platform::auto_Log log,
   auto_MRCProxy mrc_proxy,
   bool names_only,
-  const Path& path
+  const Path& path,
+  auto_UserCredentialsCache user_credentials_cache
 )
 : directory_entries( first_directory_entries ),
   log( log ),
   mrc_proxy( mrc_proxy ),
   names_only( names_only ),
-  path( path )
+  path( path ),
+  user_credentials_cache( user_credentials_cache )
 {
   seen_directory_entries_count = first_directory_entries.size();
 }
@@ -60,8 +62,8 @@ YIELD::platform::Directory::auto_Entry Directory::readdir()
     uid_t uid; gid_t gid;
     user_credentials_cache->getpasswdFromUserCredentials
     (
-      directory_entries[0].get_stat().get_user_id(),
-      directory_entries[0].get_stat().get_group_id(),
+      directory_entries[0].get_stbuf()[0].get_user_id(),
+      directory_entries[0].get_stbuf()[0].get_group_id(),
       uid,
       gid
     );

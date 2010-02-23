@@ -172,8 +172,8 @@ StatCache::getattr
   uid_t uid; gid_t gid;
   user_credentials_cache->getpasswdFromUserCredentials
   (
-    if_stbuf.get_user_id(),
-    if_stbuf.get_group_id(),
+    if_stbuf[0].get_user_id(),
+    if_stbuf[0].get_group_id(),
     uid,
     gid
   );
