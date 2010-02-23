@@ -57,6 +57,16 @@ Obsoletes:      XtreemFS-client < %{version}
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
 
 This package contains the XtreemFS client module.
+
+%package client-policies-gridmap_flog
+Summary:        XtreemFS client gridmap_flog policy
+Group:          Networking
+Requires:       %{name}-client == %{version}-%{release}
+
+%description client-policies-gridmap_flog
+XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
+
+This package contains the gridmap_flog policy for the XtreemFS client.
 %endif
 
 %package backend
@@ -116,6 +126,8 @@ export CCFLAGS="$CCFLAGS -fPIC"
 %endif
 
 %if %{client_subpackage}
+sed -i -e "s@.*policy_dir_paths\.push_back( \"src/policies/lib\" );.*@@g"\
+       -e "s@/lib/xtreemfs/policies/@%{_libdir}/xtreemfs/policies/@g" src/libxtreemfs/user_credentials_cache.cpp
 make %{?jobs:-j%jobs}
 %else
 make %{?jobs:-j%jobs} server
@@ -127,6 +139,8 @@ export NO_BRP_CHECK_BYTECODE_VERSION=true
 
 %if %{client_subpackage}
 make install DESTDIR=$RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT%{_libdir}/xtreemfs/policies/
+cp lib/libgridmap_flog.so $RPM_BUILD_ROOT%{_libdir}/xtreemfs/policies/
 %else
 make install-server DESTDIR=$RPM_BUILD_ROOT
 make install-tools DESTDIR=$RPM_BUILD_ROOT
@@ -233,6 +247,8 @@ rm -rf $RPM_BUILD_ROOT
 /usr/bin/*.xtreemfs
 /usr/bin/xtfs_*mount
 /usr/bin/xtfs_vivaldi
+%dir %{_libdir}/xtreemfs
+%dir %{_libdir}/xtreemfs/policies
 /etc/init.d/xtreemfs-vivaldi
 /usr/share/man/man1/*.xtreemfs*
 %dir /etc/xos/
@@ -240,6 +256,10 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) /etc/xos/xtreemfs/default_dir
 #/usr/share/doc/xtreemfs-client/
 %doc COPYING
+
+%files client-policies-gridmap_flog
+%defattr(-,root,root)
+%{_libdir}/xtreemfs/policies/libgridmap_flog.so
 %endif
 
 %files backend
