@@ -361,7 +361,7 @@ auto_OSDProxy OSDProxyMux::getOSDProxy( const std::string& osd_uuid )
       address_mapping_i++
     )
     {
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
       if ( ssl_context != NULL &&
            (
              ( *address_mapping_i ).get_protocol() == ONCRPCS_SCHEME ||

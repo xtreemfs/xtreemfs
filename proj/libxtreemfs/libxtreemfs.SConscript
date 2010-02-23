@@ -59,7 +59,7 @@ except:
 
     Export( "build_env", "build_conf" )
 
-defines = ["YIELD_HAVE_OPENSSL"]
+defines = ["YIELD_IPC_HAVE_OPENSSL"]
 if sys.platform.startswith( "win" ): defines.extend( [] )
 else: defines.extend( [] )
 for define in defines:

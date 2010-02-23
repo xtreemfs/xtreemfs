@@ -431,10 +431,10 @@ void Exception::set_error_message( const char* error_message )
 extern off64_t lseek64(int, off64_t, int);
 #define lseek lseek64
 #endif
-#ifdef YIELD_HAVE_POSIX_FILE_AIO
+#ifdef YIELD_PLATFORM_HAVE_POSIX_FILE_AIO
 #include <aio.h>
 #endif
-#ifdef YIELD_HAVE_XATTR_H
+#ifdef YIELD_PLATFORM_HAVE_XATTR_H
 #if defined(__linux__)
 #include <sys/xattr.h>
 #define FLISTXATTR ::flistxattr
@@ -551,7 +551,7 @@ bool File::getlk( bool exclusive, uint64_t offset, uint64_t length )
 
 bool File::getxattr( const std::string& name, std::string& out_value )
 {
-#ifdef YIELD_HAVE_XATTR_H
+#ifdef YIELD_PLATFORM_HAVE_XATTR_H
   ssize_t value_len = FGETXATTR( fd, name.c_str(), NULL, 0 );
   if ( value_len != -1 )
   {
@@ -570,7 +570,7 @@ bool File::getxattr( const std::string& name, std::string& out_value )
 
 bool File::listxattr( std::vector<std::string>& out_names )
 {
-#ifdef YIELD_HAVE_XATTR_H
+#ifdef YIELD_PLATFORM_HAVE_XATTR_H
   size_t names_len = FLISTXATTR( fd, NULL, 0 );
   if ( names_len > 0 )
   {
@@ -632,7 +632,7 @@ ssize_t File::read( void* buffer, size_t buffer_len )
 
 bool File::removexattr( const std::string& name )
 {
-#ifdef YIELD_HAVE_XATTR_H
+#ifdef YIELD_PLATFORM_HAVE_XATTR_H
   return FREMOVEXATTR( fd, name.c_str() ) != -1;
 #else
   return false;
@@ -726,7 +726,7 @@ bool File::setxattr
   int flags
 )
 {
-#ifdef YIELD_HAVE_XATTR_H
+#ifdef YIELD_PLATFORM_HAVE_XATTR_H
   return FSETXATTR
   (
     fd,
@@ -1712,7 +1712,7 @@ bool MemoryMappedFile::sync( void* ptr, size_t length )
 #if defined(_WIN32)
 #include <windows.h>
 #elif defined(__linux__) || defined(__FreeBSD__) || defined(__sun)
-#define YIELD_HAVE_PTHREAD_MUTEX_TIMEDLOCK
+#define YIELD_PLATFORM_HAVE_PTHREAD_MUTEX_TIMEDLOCK
 #endif
 
 
@@ -1764,7 +1764,7 @@ bool Mutex::timed_acquire( const Time& timeout )
   DWORD dwRet = WaitForSingleObjectEx( hMutex, timeout_ms, TRUE );
   return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
 #else
-#ifdef YIELD_HAVE_PTHREAD_MUTEX_TIMEDLOCK
+#ifdef YIELD_PLATFORM_HAVE_PTHREAD_MUTEX_TIMEDLOCK
   struct timespec timeout_ts = Time() + timeout;
   return ( pthread_mutex_timedlock( &pthread_mutex, &timeout_ts ) == 0 );
 #else
@@ -2019,11 +2019,11 @@ std::pair<Path, Path> Path::splitext() const
 
 
 // performance_counter_set.cpp
-#ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
+#ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
 
 #if defined(__sun)
 #include <libcpc.h>
-#elif defined(YIELD_HAVE_PAPI)
+#elif defined(YIELD_PLATFORM_HAVE_PAPI)
 #include <papi.h>
 #include <pthread.h>
 #endif
@@ -2041,7 +2041,7 @@ auto_PerformanceCounterSet PerformanceCounterSet::create()
     else
       cpc_close( cpc );
   }
-#elif defined(YIELD_HAVE_PAPI)
+#elif defined(YIELD_PLATFORM_HAVE_PAPI)
   if ( PAPI_library_init( PAPI_VER_CURRENT ) == PAPI_VER_CURRENT )
   {
     if ( PAPI_thread_init( pthread_self ) == PAPI_OK )
@@ -2062,7 +2062,7 @@ PerformanceCounterSet::PerformanceCounterSet( cpc_t* cpc, cpc_set_t* cpc_set )
 {
   start_cpc_buf = NULL;
 }
-#elif defined(YIELD_HAVE_PAPI)
+#elif defined(YIELD_PLATFORM_HAVE_PAPI)
 PerformanceCounterSet::PerformanceCounterSet( int papi_eventset )
   : papi_eventset( papi_eventset )
 { }
@@ -2073,7 +2073,7 @@ PerformanceCounterSet::~PerformanceCounterSet()
 #if defined(__sun)
   cpc_set_destroy( cpc, cpc_set );
   cpc_close( cpc );
-#elif defined(YIELD_HAVE_PAPI)
+#elif defined(YIELD_PLATFORM_HAVE_PAPI)
   PAPI_cleanup_eventset( papi_eventset );
   PAPI_destroy_eventset( &papi_eventset );
 #endif
@@ -2089,7 +2089,7 @@ bool PerformanceCounterSet::addEvent( Event event )
     case EVENT_L2_ICM: return addEvent( "IC_refill_from_system" );
     default: DebugBreak(); return false;
   }
-#elif defined(YIELD_HAVE_PAPI)
+#elif defined(YIELD_PLATFORM_HAVE_PAPI)
   switch ( event )
   {
     case EVENT_L1_DCM: return addEvent( "PAPI_l1_dcm" );
@@ -2111,7 +2111,7 @@ bool PerformanceCounterSet::addEvent( const char* name )
     event_indices.push_back( event_index );
     return true;
   }
-#elif defined(YIELD_HAVE_PAPI)
+#elif defined(YIELD_PLATFORM_HAVE_PAPI)
   int papi_event_code;
   if
   (
@@ -2137,7 +2137,7 @@ void PerformanceCounterSet::startCounting()
     start_cpc_buf = cpc_buf_create( cpc, cpc_set );
   cpc_bind_curlwp( cpc, cpc_set, 0 );
   cpc_set_sample( cpc, cpc_set, start_cpc_buf );
-#elif defined(YIELD_HAVE_PAPI)
+#elif defined(YIELD_PLATFORM_HAVE_PAPI)
   PAPI_start( papi_eventset );
 #endif
 }
@@ -2168,7 +2168,7 @@ void PerformanceCounterSet::stopCounting( uint64_t* counts )
   }
 
   cpc_unbind( cpc, cpc_set );
-#elif defined(YIELD_HAVE_PAPI)
+#elif defined(YIELD_PLATFORM_HAVE_PAPI)
   PAPI_stop( papi_eventset, reinterpret_cast<long long int*>( counts ) );
 #endif
 }
@@ -3740,7 +3740,7 @@ VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
 #include <sys/statvfs.h>
 #include <sys/time.h>
 #include <utime.h>
-#ifdef YIELD_HAVE_XATTR_H
+#ifdef YIELD_PLATFORM_HAVE_XATTR_H
 #if defined(__linux__)
 #include <sys/xattr.h>
 #define LISTXATTR ::listxattr
@@ -3841,7 +3841,7 @@ bool Volume::getxattr
   std::string& out_value
 )
 {
-#if defined(YIELD_HAVE_XATTR_H)
+#if defined(YIELD_PLATFORM_HAVE_XATTR_H)
   ssize_t value_len = GETXATTR( path, name.c_str(), NULL, 0 );
   if ( value_len != -1 )
   {
@@ -3871,7 +3871,7 @@ bool Volume::link( const Path& old_path, const Path& new_path )
 
 bool Volume::listxattr( const Path& path, std::vector<std::string>& out_names )
 {
-#if defined(YIELD_HAVE_XATTR_H)
+#if defined(YIELD_PLATFORM_HAVE_XATTR_H)
   size_t names_len = LISTXATTR( path, NULL, 0 );
   if ( names_len > 0 )
   {
@@ -4074,7 +4074,7 @@ auto_Path Volume::readlink( const Path& path )
 
 bool Volume::removexattr( const Path& path, const std::string& name )
 {
-#if defined(YIELD_HAVE_XATTR_H)
+#if defined(YIELD_PLATFORM_HAVE_XATTR_H)
   return REMOVEXATTR( path, name.c_str() ) != -1;
 #elif defined(_WIN32)
   ::SetLastError( ERROR_NOT_SUPPORTED );
@@ -4227,7 +4227,7 @@ Volume::setxattr
   int flags
 )
 {
-#if defined(YIELD_HAVE_XATTR_H)
+#if defined(YIELD_PLATFORM_HAVE_XATTR_H)
   return SETXATTR
          (
            path,

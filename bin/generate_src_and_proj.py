@@ -22,7 +22,7 @@ YIELDFS_DIR_PATH = os.path.abspath( os.path.join( MY_DIR_PATH, "..", "..", "yiel
 XTREEMFS_DIR_PATH = os.path.abspath( os.path.join( MY_DIR_PATH, ".." ) )
 
 
-DEFINES = ( "YIELD_HAVE_OPENSSL", )
+DEFINES = ( "YIELD_IPC_HAVE_OPENSSL", )
 
 INCLUDE_DIR_PATHS = ( 
                       os.path.join( XTREEMFS_DIR_PATH, "include" ), 

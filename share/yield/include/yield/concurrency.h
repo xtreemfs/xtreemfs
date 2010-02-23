@@ -558,7 +558,7 @@ namespace YIELD
       YIELD::platform::Sampler<uint64_t, 1024, YIELD::platform::Mutex>
         event_processing_time_sampler;
       uint32_t event_queue_length, event_queue_arrival_count;
-  #ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
+  #ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
       YIELD::platform::auto_PerformanceCounterSet performance_counters;
       uint64_t performance_counter_totals[2];
   #endif
@@ -723,13 +723,13 @@ namespace YIELD
       {
         YIELD::platform::Time start_time;
 
-  #ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
+  #ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
         performance_counters->startCounting();
   #endif
 
         event_handler->handleEvent( event );
 
-  #ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
+  #ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
         uint64_t performance_counter_counts[2];
         performance_counters->stopCounting( performance_counter_counts );
         performance_counter_totals[0] += performance_counter_counts[0];

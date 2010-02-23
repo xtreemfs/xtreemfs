@@ -33,13 +33,13 @@
 
 #include "yield/concurrency.h"
 
-#ifdef YIELD_HAVE_LIBUUID
+#ifdef YIELD_IPC_HAVE_LIBUUID
 #include <uuid/uuid.h>
 #endif
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
 #include <openssl/ssl.h>
 #endif
-#ifdef YIELD_HAVE_ZLIB
+#ifdef YIELD_IPC_HAVE_ZLIB
 #ifdef _WIN32
 #undef ZLIB_WINAPI // So zlib doesn't #include windows.h
 #pragma comment( lib, "zdll.lib" )
@@ -79,7 +79,7 @@ namespace YIELD
     typedef yidl::runtime::auto_Object<URI> auto_URI;
 
 
-#ifdef YIELD_HAVE_ZLIB
+#ifdef YIELD_IPC_HAVE_ZLIB
     static inline yidl::runtime::auto_Buffer
     deflate
     (
@@ -1564,7 +1564,7 @@ namespace YIELD
     class SSLContext : public yidl::runtime::Object
     {
     public:
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
       // create( ... ) factory methods throw exceptions
 
       static yidl::runtime::auto_Object<SSLContext>
@@ -1614,7 +1614,7 @@ namespace YIELD
       static yidl::runtime::auto_Object<SSLContext> create();
 #endif
 
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
       SSL_CTX* get_ssl_ctx() const { return ctx; }
 #endif
 
@@ -1622,14 +1622,14 @@ namespace YIELD
       YIDL_RUNTIME_OBJECT_PROTOTYPES( SSLContext, 215 );
 
   private:
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
       SSLContext( SSL_CTX* ctx );
 #else
       SSLContext();
 #endif
       ~SSLContext();
 
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
       static SSL_CTX* createSSL_CTX
       (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
@@ -1643,7 +1643,7 @@ namespace YIELD
     };
 
 
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
     class SSLSocket : public TCPSocket
     {
     public:
@@ -1964,7 +1964,7 @@ namespace YIELD
     private:
 #if defined(_WIN32)
       void* win32_uuid;
-#elif defined(YIELD_HAVE_LIBUUID)
+#elif defined(YIELD_IPC_HAVE_LIBUUID)
       uuid_t libuuid_uuid;
 #else
       char generic_uuid[256];
@@ -1988,7 +1988,7 @@ namespace YIELD
       auto_SocketAddress peername = SocketAddress::create( absolute_uri );
 
       auto_SocketFactory socket_factory;
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
       if ( absolute_uri.get_scheme() == "oncrpcs" )
       {
         if ( ssl_context == NULL )

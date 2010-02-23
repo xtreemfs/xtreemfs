@@ -722,7 +722,7 @@ Stage::Stage( const char* name )
 
   // events_processed_total = 0;
 
-#ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
+#ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
   performance_counters = YIELD::platform::PerformanceCounterSet::create();
   performance_counters->addEvent( YIELD::platform::PerformanceCounterSet::EVENT_L1_DCM );
   performance_counters->addEvent( YIELD::platform::PerformanceCounterSet::EVENT_L2_ICM );
@@ -742,7 +742,7 @@ Stage::Stage( const char* name )
 
 Stage::~Stage()
 {
-#ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
+#ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
   std::cout << get_stage_name() << ": L1 data cache misses: " <<
     performance_counter_totals[0] <<
     std::endl;

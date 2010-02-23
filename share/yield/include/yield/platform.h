@@ -47,12 +47,12 @@ typedef int ssize_t;
 #endif
 #ifdef __sun
 #include <libcpc.h>
-#define YIELD_HAVE_PERFORMANCE_COUNTERS 1
+#define YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS 1
 #endif
-#ifdef YIELD_HAVE_PAPI
-#define YIELD_HAVE_PERFORMANCE_COUNTERS 1
+#ifdef YIELD_PLATFORM_HAVE_PAPI
+#define YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS 1
 #endif
-#ifdef YIELD_HAVE_POSIX_FILE_AIO
+#ifdef YIELD_PLATFORM_HAVE_POSIX_FILE_AIO
 #include <aio.h>
 #endif
 #endif
@@ -619,7 +619,7 @@ namespace YIELD
     public:
       AIOControlBlock()
       {
-#if defined(_WIN32) || defined(YIELD_HAVE_POSIX_FILE_AIO)
+#if defined(_WIN32) || defined(YIELD_PLATFORM_HAVE_POSIX_FILE_AIO)
         memset( &aiocb_, 0, sizeof( aiocb_ ) );
         aiocb_.this_ = this;
 #endif
@@ -638,7 +638,7 @@ namespace YIELD
       {
         return reinterpret_cast<OVERLAPPED*>( &aiocb_ );
       }
-#elif defined(YIELD_HAVE_POSIX_FILE_AIO)
+#elif defined(YIELD_PLATFORM_HAVE_POSIX_FILE_AIO)
       operator ::aiocb*() { return &aiocb_; }
 #endif
 
@@ -646,7 +646,7 @@ namespace YIELD
       virtual ~AIOControlBlock() { }
 
     private:
-#if defined(_WIN32) || defined(YIELD_HAVE_POSIX_FILE_AIO)
+#if defined(_WIN32) || defined(YIELD_PLATFORM_HAVE_POSIX_FILE_AIO)
       struct aiocb : ::aiocb
       {
         AIOControlBlock* this_;
@@ -1450,7 +1450,7 @@ namespace YIELD
     typedef yidl::runtime::auto_Object<Path> auto_Path;
 
 
-#ifdef YIELD_HAVE_PERFORMANCE_COUNTERS
+#ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
     class PerformanceCounterSet : public yidl::runtime::Object
     {
     public:
@@ -1478,7 +1478,7 @@ namespace YIELD
 
       std::vector<int> event_indices;
       cpc_buf_t* start_cpc_buf;
-#elif defined(YIELD_HAVE_PAPI)
+#elif defined(YIELD_PLATFORM_HAVE_PAPI)
       PerformanceCounterSet( int papi_eventset );
       int papi_eventset;
 #endif

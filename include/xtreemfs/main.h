@@ -146,7 +146,7 @@ namespace xtreemfs
       );
       operation_timeout = static_cast<uint64_t>( DIRProxy::OPERATION_TIMEOUT_DEFAULT );
 
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
       addOption
       (
         OPTION_PEM_CERTIFICATE_FILE_PATH,
@@ -285,7 +285,7 @@ namespace xtreemfs
     {
       if ( ssl_context == NULL )
       {
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
         if ( !pkcs12_file_path.empty() )
         {
           ssl_context =

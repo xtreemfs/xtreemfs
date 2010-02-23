@@ -793,7 +793,7 @@ YIELD::ipc::auto_HTTPClient
 
   auto_SocketFactory socket_factory;
 
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
   if ( absolute_uri.get_scheme() == "https" )
   {
     if ( ssl_context != NULL )
@@ -1637,7 +1637,7 @@ YIELD::ipc::auto_HTTPServer
   auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
 
   auto_TCPSocket listen_tcp_socket;
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
   if ( absolute_uri.get_scheme() == "https" && ssl_context != NULL )
     listen_tcp_socket = SSLSocket::create( ssl_context ).release();
   else
@@ -3406,7 +3406,7 @@ YIELD::ipc::ONCRPCServer::create
   else
   {
     auto_TCPSocket listen_tcp_socket;
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
     if ( absolute_uri.get_scheme() == "oncrpcs" && ssl_context != NULL )
       listen_tcp_socket = SSLSocket::create( ssl_context ).release();
     else
@@ -5664,15 +5664,15 @@ bool YIELD::ipc::SocketAddress::operator==( const SocketAddress& other ) const
 #include <sys/socket.h>
 #include <unistd.h>
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__MACH__)
-#define YIELD_HAVE_FREEBSD_KQUEUE 1
+#define YIELD_IPC_HAVE_FREEBSD_KQUEUE 1
 #include <netinet/in.h>
 #include <sys/types.h>
 #include <sys/event.h>
 #include <sys/time.h>
 #elif defined(__linux__)
-#define YIELD_HAVE_LINUX_EPOLL 1
+#define YIELD_IPC_HAVE_LINUX_EPOLL 1
 #include <sys/epoll.h>
-#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
 #include <port.h>
 #include <sys/poll.h>
 #else
@@ -5807,11 +5807,11 @@ public:
     FD_ZERO( &read_fds );
     FD_ZERO( &write_fds );
     FD_ZERO( &except_fds );
-#elif defined(YIELD_HAVE_LINUX_EPOLL)
+#elif defined(YIELD_IPC_HAVE_LINUX_EPOLL)
     poll_fd = epoll_create( 32768 );
-#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
+#elif defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE)
     poll_fd = kqueue();
-#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
     poll_fd = port_create();
 #endif
 
@@ -5880,9 +5880,9 @@ public:
 
   ~NBIOWorkerThread()
   {
-#if defined(YIELD_HAVE_LINUX_EPOLL) || \
-    defined(YIELD_HAVE_FREEBSD_KQUEUE) || \
-    defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+#if defined(YIELD_IPC_HAVE_LINUX_EPOLL) || \
+    defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE) || \
+    defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
     ::close( poll_fd );
 #endif
   }
@@ -5929,11 +5929,11 @@ public:
     FD_ZERO( &read_fds_copy );
     FD_ZERO( &write_fds_copy );
     FD_ZERO( &except_fds_copy );
-#elif defined(YIELD_HAVE_LINUX_EPOLL)
+#elif defined(YIELD_IPC_HAVE_LINUX_EPOLL)
     struct epoll_event returned_events[8192];
-#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
+#elif defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE)
     struct kevent returned_events[8192];
-#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
     port_event_t returned_events[1];
 #endif
 
@@ -5966,11 +5966,11 @@ public:
 
       int active_fds
         = select( 0, &read_fds_copy, &write_fds_copy, &except_fds_copy, NULL );
-#elif defined(YIELD_HAVE_LINUX_EPOLL)
+#elif defined(YIELD_IPC_HAVE_LINUX_EPOLL)
       int active_fds = epoll_wait( poll_fd, returned_events, 8192, -1 );
-#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
+#elif defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE)
       int active_fds = kevent( poll_fd, 0, 0, returned_events, 8192, NULL );
-#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
       int active_fds = port_get( poll_fd, returned_events, NULL );
       if ( active_fds == 0 )
         active_fds = 1;
@@ -6014,15 +6014,15 @@ public:
         std::map<int, AIOControlBlock*>::iterator fd_to_aio_control_block_i;
         while ( active_fds > 0 )
         {
-#if defined(YIELD_HAVE_LINUX_EPOLL) || \
-    defined(YIELD_HAVE_FREEBSD_KQUEUE) || \
-    defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+#if defined(YIELD_IPC_HAVE_LINUX_EPOLL) || \
+    defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE) || \
+    defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
           active_fds--;
-#if defined(YIELD_HAVE_LINUX_EPOLL)
+#if defined(YIELD_IPC_HAVE_LINUX_EPOLL)
           int fd = returned_events[active_fds].data.fd;
-#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
+#elif defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE)
           int fd = returned_events[active_fds].ident;
-#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
           int fd = returned_events[active_fds].portev_object;
 #else
           DebugBreak(); // Look through pollfds
@@ -6036,7 +6036,7 @@ public:
 #endif
           {
             dequeueSubmittedAIOControlBlocks();
-#ifdef YIELD_HAVE_SOLARIS_EVENT_PORTS
+#ifdef YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS
             toggle( submit_pipe->get_read_end(), true, false );
 #endif
             continue;
@@ -6078,9 +6078,9 @@ private:
   fd_set read_fds, write_fds, except_fds;
 #else
   std::map<int, AIOControlBlock*> fd_to_aio_control_block_map;
-#if defined(YIELD_HAVE_LINUX_EPOLL) || \
-    defined(YIELD_HAVE_FREEBSD_KQUEUE) || \
-    defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+#if defined(YIELD_IPC_HAVE_LINUX_EPOLL) || \
+    defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE) || \
+    defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
   int poll_fd;
 #else
   std::vector<pollfd> pollfds;
@@ -6112,14 +6112,14 @@ private:
     }
 
     return true;
-#elif defined(YIELD_HAVE_LINUX_EPOLL)
+#elif defined(YIELD_IPC_HAVE_LINUX_EPOLL)
     struct epoll_event change_event;
     memset( &change_event, 0, sizeof( change_event ) );
     if ( enable_read ) change_event.events |= EPOLLIN;
     if ( enable_write ) change_event.events |= EPOLLOUT;
     change_event.data.fd = fd;
     return epoll_ctl( poll_fd, EPOLL_CTL_ADD, fd, &change_event ) != -1;
-#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
+#elif defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE)
     struct kevent change_events[2];
 
     EV_SET
@@ -6145,7 +6145,7 @@ private:
     );
 
     return kevent( poll_fd, change_events, 2, 0, 0, NULL ) != -1;
-#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
     int events = 0;
     if ( enable_read ) events |= POLLIN;
     if ( enable_write ) events |= POLLOUT;
@@ -6223,19 +6223,19 @@ private:
     FD_CLR( fd, &read_fds );
     FD_CLR( fd, &write_fds );
     FD_CLR( fd, &except_fds );
-#elif defined(YIELD_HAVE_LINUX_EPOLL)
+#elif defined(YIELD_IPC_HAVE_LINUX_EPOLL)
     // From the man page: In kernel versions before 2.6.9,
     // the EPOLL_CTL_DEL operation required a non-NULL pointer in event,
     // even though this argument is ignored. Since kernel 2.6.9,
     // event can be specified as NULL when using EPOLL_CTL_DEL.
     struct epoll_event change_event;
     epoll_ctl( poll_fd, EPOLL_CTL_DEL, fd, &change_event );
-#elif defined(YIELD_HAVE_FREEBSD_KQUEUE)
+#elif defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE)
     struct kevent change_events[2];
     EV_SET( &change_events[0], fd, EVFILT_READ, EV_DELETE, 0, 0, NULL );
     EV_SET( &change_events[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL );
     kevent( poll_fd, change_events, 2, 0, 0, NULL );
-#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
     port_dissociate( poll_fd, PORT_SOURCE_FD, fd );
 #else
     for
@@ -6313,14 +6313,14 @@ private:
     }
 
     return true;
-#elif defined(YIELD_HAVE_LINUX_EPOLL)
+#elif defined(YIELD_IPC_HAVE_LINUX_EPOLL)
     struct epoll_event change_event;
     memset( &change_event, 0, sizeof( change_event ) );
     if ( enable_read ) change_event.events |= EPOLLIN;
     if ( enable_write ) change_event.events |= EPOLLOUT;
     change_event.data.fd = fd;
     return epoll_ctl( poll_fd, EPOLL_CTL_MOD, fd, &change_event ) != -1;
-#elif defined YIELD_HAVE_FREEBSD_KQUEUE
+#elif defined YIELD_IPC_HAVE_FREEBSD_KQUEUE
     struct kevent change_events[2];
 
     EV_SET
@@ -6356,7 +6356,7 @@ private:
            ) != -1
            ||
            errno == ENOENT; // ENOENT = the event was not originally enabled
-#elif defined(YIELD_HAVE_SOLARIS_EVENT_PORTS)
+#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
     if ( enable_read || enable_write )
     {
       int events = 0;
@@ -6492,7 +6492,7 @@ void YIELD::ipc::Socket::AIOQueue::submit
 
 
 // ssl_context.cpp
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
 #include <openssl/err.h>
 #include <openssl/pem.h>
 #include <openssl/pkcs12.h>
@@ -6506,7 +6506,7 @@ void YIELD::ipc::Socket::AIOQueue::submit
 #endif
 
 
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
 
 namespace YIELD
 {
@@ -6780,12 +6780,12 @@ YIELD::ipc::auto_SSLContext YIELD::ipc::SSLContext::create()
 
 YIELD::ipc::SSLContext::~SSLContext()
 {
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
   SSL_CTX_free( ctx );
 #endif
 }
 
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
 
 SSL_CTX*
 YIELD::ipc::SSLContext::createSSL_CTX
@@ -6818,7 +6818,7 @@ YIELD::ipc::SSLContext::createSSL_CTX
 
 
 // ssl_socket.cpp
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
 
 #ifdef _WIN32
 #pragma warning( 4 : 4365 )
@@ -8154,7 +8154,7 @@ YIELD::ipc::URI::get_query_values( const std::string& key ) const
 #pragma comment( lib, "Rpcrt4.lib" )
 #endif
 
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
 #include <openssl/sha.h>
 #endif
 
@@ -8168,11 +8168,11 @@ YIELD::ipc::UUID::UUID()
 #if defined(_WIN32)
   win32_uuid = new ::UUID;
   UuidCreate( static_cast<::UUID*>( win32_uuid ) );
-#elif defined(YIELD_HAVE_LIBUUID)
+#elif defined(YIELD_IPC_HAVE_LIBUUID)
   uuid_generate( libuuid_uuid );
 #else
   std::strncpy( generic_uuid, Socket::getfqdn().c_str(), 256 );
-#ifdef YIELD_HAVE_OPENSSL
+#ifdef YIELD_IPC_HAVE_OPENSSL
   SHA_CTX ctx; SHA1_Init( &ctx );
   SHA1_Update( &ctx, generic_uuid, strlen( generic_uuid ) );
   memset( generic_uuid, 0, sizeof( generic_uuid ) );
@@ -8206,7 +8206,7 @@ YIELD::ipc::UUID::UUID( const std::string& from_string )
     reinterpret_cast<RPC_CSTR>( const_cast<char*>( from_string.c_str() ) ),
     static_cast<::UUID*>( win32_uuid )
   );
-#elif defined(YIELD_HAVE_LIBUUID)
+#elif defined(YIELD_IPC_HAVE_LIBUUID)
   uuid_parse( from_string.c_str(), libuuid_uuid );
 #else
   std::strncpy( generic_uuid, from_string.c_str(), 256 );
@@ -8224,7 +8224,7 @@ bool YIELD::ipc::UUID::operator==( const YIELD::ipc::UUID& other ) const
 {
 #ifdef _WIN32
   return memcmp( win32_uuid, other.win32_uuid, sizeof( ::UUID ) ) == 0;
-#elif defined(YIELD_HAVE_LIBUUID)
+#elif defined(YIELD_IPC_HAVE_LIBUUID)
   return uuid_compare( libuuid_uuid, other.libuuid_uuid ) == 0;
 #else
   return strncmp( generic_uuid, other.generic_uuid, 256 );
@@ -8239,7 +8239,7 @@ YIELD::ipc::UUID::operator std::string() const
   std::string to_string( reinterpret_cast<char*>( temp_to_string ) );
   RpcStringFreeA( &temp_to_string );
   return to_string;
-#elif defined(YIELD_HAVE_LIBUUID)
+#elif defined(YIELD_IPC_HAVE_LIBUUID)
   char out[37];
   uuid_unparse( libuuid_uuid, out );
   return out;
