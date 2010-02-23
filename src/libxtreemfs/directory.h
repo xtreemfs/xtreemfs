@@ -27,55 +27,50 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-#ifndef _LIBXTREEMFS_STAT_H_
-#define _LIBXTREEMFS_STAT_H_
+#ifndef _LIBXTREEMFS_DIRECTORY_H_
+#define _LIBXTREEMFS_DIRECTORY_H_
 
-#include "yield.h"
-
-namespace org
-{
-  namespace xtreemfs
-  {
-    namespace interfaces
-    {
-      class Stat;
-      class OSDWriteResponse;
-    };
-  };
-};
+#include "xtreemfs/mrc_proxy.h"
+#include "xtreemfs/path.h"
 
 
 namespace xtreemfs
 {
-  class UserCredentialsCache;
-
-
-  class Stat : public YIELD::platform::Stat
+  class Directory : public YIELD::platform::Directory
   {
   public:
-    Stat( const YIELD::platform::Stat& );
-    Stat( const org::xtreemfs::interfaces::Stat& );
-    Stat( const org::xtreemfs::interfaces::OSDWriteResponse& );
-    
-    const std::string& get_group_id() const { return group_id; }
-    uint32_t get_truncate_epoch() const { return truncate_epoch; }
-    const std::string& get_user_id() const { return user_id; }
+    const static uint64_t LIMIT_DIRECTORY_ENTRIES_COUNT_DEFAULT = 20;
 
-    operator org::xtreemfs::interfaces::Stat() const;
+    // yidl::runtime::Object
+    YIDL_RUNTIME_OBJECT_PROTOTYPES( Directory, 0 );
 
-    void set_etag( uint64_t etag );
-    void set_group_id( const std::string& group_id ); 
-    void set_truncate_epoch( uint32_t truncate_epoch );
-    void set_user_id( const std::string& user_id );
+    // YIELD::platform::Directory
+    YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
 
   private:
-    uint64_t etag;
-    std::string group_id;
-    uint32_t truncate_epoch;
-    std::string user_id;
+    friend class Volume;
+
+    Directory
+    ( 
+      const org::xtreemfs::interfaces::DirectoryEntrySet& first_directory_entries,
+      YIELD::platform::auto_Log log,
+      auto_MRCProxy mrc_proxy,
+      bool names_only,
+      const Path& path
+    );
+
+    ~Directory()
+    { }
+
+    org::xtreemfs::interfaces::DirectoryEntrySet directory_entries;
+    YIELD::platform::auto_Log log;
+    auto_MRCProxy mrc_proxy;
+    bool names_only;
+    Path path;
+    uint64_t seen_directory_entries_count;
   };
 
-  typedef yidl::runtime::auto_Object<Stat> auto_Stat;
+  typedef yidl::runtime::auto_Object<Directory> auto_Directory;
 };
 
 #endif

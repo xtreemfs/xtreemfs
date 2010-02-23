@@ -55,7 +55,7 @@ namespace mkfs_xtreemfs
         "--access-control-policy",
         "NULL|POSIX|VOLUME"
       );
-      access_control_policy = ACCESS_CONTROL_POLICY_POSIX;
+      fs.set_access_control_policy( ACCESS_CONTROL_POLICY_POSIX );
 
       addOption
       (
@@ -64,7 +64,7 @@ namespace mkfs_xtreemfs
         "--mode",
         "n"
       );
-      mode = YIELD::platform::Volume::DIRECTORY_MODE_DEFAULT;
+      fs.set_mode( YIELD::platform::Volume::DIRECTORY_MODE_DEFAULT );
 
       addOption
       (
@@ -96,7 +96,7 @@ namespace mkfs_xtreemfs
         "--striping-policy",
         "NONE|RAID0"
       );
-      striping_policy = STRIPING_POLICY_RAID0;
+      fs_default_striping_policy.set_type( STRIPING_POLICY_RAID0 );
 
       addOption
       (
@@ -105,7 +105,7 @@ namespace mkfs_xtreemfs
         "--striping-policy-stripe-size",
         "n"
       );
-      striping_policy_stripe_size = 128;
+      fs_default_striping_policy.set_stripe_size( 128 );
 
       addOption
       (
@@ -114,7 +114,7 @@ namespace mkfs_xtreemfs
         "--striping-policy-width",
         "n"
       );
-      striping_policy_width = 1;
+      fs_default_striping_policy.set_width( 1 );
     }
 
   private:
@@ -130,15 +130,11 @@ namespace mkfs_xtreemfs
       MKFS_XTREEMFS_OPTION_STRIPING_POLICY_WIDTH = 27
     };
 
-    AccessControlPolicyType access_control_policy;
+
     YIELD::ipc::auto_URI dir_or_mrc_uri;
-    uint32_t mode;
-    std::string owner_group_id, owner_user_id;
-    std::string password;
-    StripingPolicyType striping_policy;
-    uint32_t striping_policy_stripe_size;
-    uint32_t striping_policy_width;
-    std::string volume_name;
+    StatVFS fs;
+    StripingPolicy fs_default_striping_policy;
+    std::string mrc_password;
 
 
     // YIELD::Main
@@ -263,25 +259,9 @@ namespace mkfs_xtreemfs
           }
         }
       }
-
-      createMRCProxy( *mrc_uri, password.c_str() )->xtreemfs_mkvol
-      (
-        org::xtreemfs::interfaces::Volume
-        (
-          access_control_policy,
-          StripingPolicy
-          (
-            striping_policy,
-            striping_policy_stripe_size,
-            striping_policy_width
-          ),
-          std::string(),
-          mode,
-          volume_name,
-          owner_group_id,
-          owner_user_id
-        )
-      );
+  
+      fs.set_default_striping_policy( fs_default_striping_policy );
+      createMRCProxy( *mrc_uri, mrc_password.c_str() )->xtreemfs_mkvol( fs );
 
       return 0;
     }
@@ -295,67 +275,60 @@ namespace mkfs_xtreemfs
           case MKFS_XTREEMFS_OPTION_ACCESS_CONTROL_POLICY:
           {
             if ( strcmp( arg, "NULL" ) == 0 )
-              access_control_policy
-                = ACCESS_CONTROL_POLICY_NULL;
-
+              fs.set_access_control_policy( ACCESS_CONTROL_POLICY_NULL );
             else if ( strcmp( arg, "POSIX" ) == 0 )
-              access_control_policy
-                = ACCESS_CONTROL_POLICY_POSIX;
-
+              fs.set_access_control_policy( ACCESS_CONTROL_POLICY_POSIX );
             else if ( strcmp( arg, "VOLUME" ) == 0 )
-              access_control_policy
-                = ACCESS_CONTROL_POLICY_VOLUME;
+              fs.set_access_control_policy( ACCESS_CONTROL_POLICY_VOLUME );
           }
           break;
 
           case MKFS_XTREEMFS_OPTION_MODE:
           {
-            mode = strtol( arg, NULL, 0 );
-            if ( mode == 0 )
-              mode = YIELD::platform::Volume::DIRECTORY_MODE_DEFAULT;
+            uint32_t mode = strtol( arg, NULL, 0 );
+            if ( mode != 0 )
+              fs.set_mode( mode );
           }
           break;
 
           case MKFS_XTREEMFS_OPTION_OWNER_GROUP_ID:
           {
-            owner_group_id = arg;
+            fs.set_owner_group_id( arg );
           }
           break;
 
           case MKFS_XTREEMFS_OPTION_OWNER_USER_ID:
           {
-            owner_user_id = arg;
+            fs.set_owner_user_id( arg );
           }
           break;
 
           case MKFS_XTREEMFS_OPTION_PASSWORD:
           {
-            password = arg;
+            mrc_password = arg;
           }
           break;
 
           case MKFS_XTREEMFS_OPTION_STRIPING_POLICY:
           {
             if ( strcmp( arg, "RAID0" ) == 0 )
-              striping_policy = STRIPING_POLICY_RAID0;
+              fs_default_striping_policy.set_type( STRIPING_POLICY_RAID0 );
           }
           break;
 
           case MKFS_XTREEMFS_OPTION_STRIPING_POLICY_STRIPE_SIZE:
           {
-            uint32_t new_striping_policy_stripe_size = atoi( arg );
-            if ( new_striping_policy_stripe_size != 0 )
-              striping_policy_stripe_size = new_striping_policy_stripe_size;
+            uint32_t stripe_size = atoi( arg );
+            if ( stripe_size != 0 )
+              fs_default_striping_policy.set_stripe_size( stripe_size );
           }
           break;
 
           case MKFS_XTREEMFS_OPTION_STRIPING_POLICY_WIDTH:
           {
-            uint32_t new_striping_policy_width
-              = static_cast<uint16_t>( atoi( arg ) );
-
-            if ( new_striping_policy_width != 0 )
-              striping_policy_width = new_striping_policy_width;
+            uint32_t width = static_cast<uint16_t>( atoi( arg ) );
+            if ( width != 0 )
+              fs_default_striping_policy.set_width( width );
           }
           break;
 
@@ -367,7 +340,11 @@ namespace mkfs_xtreemfs
     void parseFiles( int files_count, char** files )
     {
       if ( files_count == 1 )
-        dir_or_mrc_uri = parseVolumeURI( files[0], volume_name );
+      {
+        std::string fs_name;
+        dir_or_mrc_uri = parseVolumeURI( files[0], fs_name );
+        fs.set_name( fs_name );
+      }
       else if ( files_count == 0 )
       {
         throw YIELD::platform::Exception

@@ -94,6 +94,146 @@ void CountingSemaphore::release()
 }
 
 
+// directory.cpp
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <dirent.h>
+#endif
+
+
+Directory::Directory()
+#ifdef _WIN32
+  : hDirectory( INVALID_HANDLE_VALUE )
+#else
+  : dirp( NULL )
+#endif
+{ }
+
+#ifdef _WIN32
+Directory::Directory
+(
+  HANDLE hDirectory,
+  const WIN32_FIND_DATA& first_find_data
+)
+  : hDirectory( hDirectory )
+{
+  this->first_find_data = new WIN32_FIND_DATA;
+  memcpy_s
+  (
+    this->first_find_data,
+    sizeof( *this->first_find_data ),
+    &first_find_data,
+    sizeof( first_find_data )
+  );
+}
+#else
+Directory::Directory( void* dirp )
+  : dirp( dirp )
+{
+}
+#endif
+
+Directory::~Directory()
+{
+#ifdef _WIN32
+  if ( hDirectory != INVALID_HANDLE_VALUE )
+  {
+    FindClose( hDirectory );
+    delete first_find_data;
+  }
+#else
+  if ( dirp != NULL )
+    closedir( static_cast<DIR*>( dirp ) );
+#endif
+}
+
+Directory::auto_Entry Directory::readdir()
+{
+#ifdef _WIN32
+  if ( first_find_data != NULL )
+  {
+    Entry* entry
+      = new Entry( first_find_data->cFileName, new Stat( *first_find_data ) );
+    delete first_find_data;
+    first_find_data = NULL;
+    return entry;
+  }
+
+  WIN32_FIND_DATA next_find_data;
+  if ( FindNextFileW( hDirectory, &next_find_data ) )
+    return new Entry( next_find_data.cFileName, new Stat( next_find_data ) );
+#else
+  struct dirent* next_dirent = ::readdir( static_cast<DIR*>( dirp ) );
+  if ( next_dirent != NULL )
+    return new Entry( next_dirent->d_name, next_dirent->d_type );
+#endif
+
+  return NULL;
+}
+
+
+Directory::Entry::Entry( const Path& name )
+  : name( name )
+{
+#ifndef _WIN32
+  d_type = DT_UNKNOWN;
+#endif
+}
+
+Directory::Entry::Entry( const Path& name, auto_Stat stbuf )
+  : name( name ), stbuf( stbuf )
+{
+#ifndef _WIN32
+  d_type = DT_UNKNOWN;
+#endif
+}
+
+#ifndef _WIN32
+Directory::Entry::Entry( const char* d_name, unsigned char d_type )
+  : name( d_name ), d_type( d_type )
+{ }
+#endif
+
+bool Directory::Entry::ISDIR() const
+{
+  if ( stbuf != NULL )
+    return stbuf->ISDIR();
+  else
+#ifdef _WIN32
+    return false;
+#else
+    return d_type == DT_DIR;
+#endif
+}
+
+#ifndef _WIN32
+bool Directory::Entry::ISLNK() const
+{
+  if ( stbuf != NULL )
+    return stbuf->ISLNK();
+  else
+#ifdef _WIN32
+    return false;
+#else
+    return d_type == DT_LNK;
+#endif
+}
+#endif
+
+bool Directory::Entry::ISREG() const
+{
+  if ( stbuf != NULL )
+    return stbuf->ISREG();
+  else
+#ifdef _WIN32
+    return false;
+#else
+    return d_type == DT_REG;
+#endif
+}
+
+
 // exception.cpp
 #ifdef _WIN32
 #include <windows.h>
@@ -705,7 +845,6 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
 
 // iconv.cpp
 #ifdef _WIN32
-#define UNICODE
 #include <windows.h>
 #else
 #include <iconv.h>
@@ -734,25 +873,25 @@ iconv::~iconv()
 #endif
 }
 
+#ifdef _WIN32
+UINT iconv::iconv_code_to_win32_code( const char* iconv_code )
+{
+  if ( strcmp( iconv_code, "") == 0 || strcmp( iconv_code, "char" ) == 0 )
+    return GetACP();
+  else if ( strcmp( iconv_code, "ISO-8859-1" ) == 0 )
+    return CP_ACP;
+  else if ( strcmp( iconv_code, "UTF-8") == 0 )
+    return CP_UTF8;
+  else
+    throw Exception( "iconv: unsupported code" );
+}
+#endif
+
 auto_iconv iconv::open( const char* tocode, const char* fromcode )
 {
 #ifdef _WIN32
-  UINT tocode_uint, fromcode_uint;
-
-  if ( strcmp( tocode, "UTF-8") == 0 )
-    tocode_uint = CP_UTF8;
-  else if ( strcmp( tocode, "") == 0 || strcmp( tocode, "char" ) == 0 )
-    tocode_uint = GetACP();
-  else
-    throw Exception( "iconv: unsupported tocode" );
-
-  if ( strcmp( fromcode, "UTF-8") == 0 )
-    fromcode_uint = CP_UTF8;
-  else if ( strcmp( fromcode, "") == 0 || strcmp( fromcode, "char" ) == 0 )
-    fromcode_uint = GetACP();
-  else
-    throw Exception( "iconv: unsupported fromcode" );
-
+  UINT tocode_uint = iconv_code_to_win32_code( tocode );
+  UINT fromcode_uint = iconv_code_to_win32_code( fromcode );
   return new iconv( fromcode_uint, tocode_uint );
 #else
   iconv_t cd = ::iconv_open( tocode, fromcode );
@@ -778,7 +917,7 @@ iconv::operator()
       (
         fromcode,
         0,
-        inbuf,
+        *inbuf,
         static_cast<int>( *inbytesleft ),
         NULL,
         0
@@ -793,7 +932,7 @@ iconv::operator()
         (
           fromcode,
           0,
-          inbuf,
+          *inbuf,
           static_cast<int>( *inbytesleft ),
           inbuf_w,
           inbuf_w_len
@@ -808,7 +947,7 @@ iconv::operator()
             0,
             inbuf_w,
             inbuf_w_len,
-            outbuf,
+            *outbuf,
             *outbytesleft,
             0,
             0
@@ -818,6 +957,8 @@ iconv::operator()
 
       if ( outbyteswritten > 0 )
       {
+        *inbuf += *inbytesleft;
+        *inbytesleft = 0;
         *outbytesleft -= outbyteswritten;
         return outbyteswritten;
       }
@@ -956,6 +1097,10 @@ bool iconv::operator()( const std::string& inbuf, std::string& outbuf )
       }
       else if ( errno == E2BIG )
       {
+#ifdef _DEBUG
+        if ( outbytesleft != 0 ) DebugBreak();
+#endif
+        outbuf.append( outbuf_c, outbuf_c_len );
         delete [] outbuf_c;
         outbuf_c_len *= 2;
         continue;
@@ -973,7 +1118,7 @@ bool iconv::operator()( const std::string& inbuf, std::string& outbuf )
 }
 
 #ifdef _WIN32
-bool iconv::operator()( const std::string& inbuf, const std::wstring& outbuf )
+bool iconv::operator()( const std::string& inbuf, std::wstring& outbuf )
 {
   int outbuf_w_len
     = MultiByteToWideChar
@@ -1053,7 +1198,7 @@ bool iconv::operator()( const std::wstring& inbuf, std::string& outbuf )
     }
     else
       delete [] outbuf_c;
-
+  }
 
   return false;
 }
@@ -3617,82 +3762,6 @@ VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
 #endif
 
 
-namespace YIELD
-{
-  class readdir_to_listdirCallback : public Volume::readdirCallback
-  {
-  public:
-    readdir_to_listdirCallback( Volume::listdirCallback& listdir_callback )
-      : listdir_callback( listdir_callback )
-    { }
-
-    readdir_to_listdirCallback& operator=( const readdir_to_listdirCallback& )
-    {
-        return *this;
-    }
-
-    // Volume::readdirCallback
-    bool operator()( const Path& dirent_name, auto_Stat stbuf )
-    {
-      return listdir_callback( dirent_name );
-    }
-
-  private:
-    Volume::listdirCallback& listdir_callback;
-  };
-
-
-  class rmtree_readdirCallback : public Volume::readdirCallback
-  {
-  public:
-    rmtree_readdirCallback( const Path& base_dir_path, Volume& volume )
-      : base_dir_path( base_dir_path ), volume( volume )
-    { }
-
-    rmtree_readdirCallback& operator=( const rmtree_readdirCallback& )
-    {
-      return *this;
-    }
-
-    virtual bool operator()( const Path& path, auto_Stat stbuf )
-    {
-      if ( stbuf->ISDIR() )
-        return volume.rmtree( base_dir_path + path );
-      else
-        return volume.unlink( base_dir_path + path );
-    }
-
-  private:
-    const Path& base_dir_path;
-    Volume& volume;
-  };
-
-
-  class SynclistdirCallback : public Volume::listdirCallback
-  {
-  public:
-    SynclistdirCallback( std::vector<Path>& out_names )
-      : out_names( out_names )
-    { }
-
-    SynclistdirCallback& operator=( const SynclistdirCallback& )
-    {
-      return *this;
-    }
-
-    // Volume::listdirCallback
-    bool operator()( const Path& name )
-    {
-      out_names.push_back( name );
-      return true;
-    }
-
-  private:
-    std::vector<Path>& out_names;
-  };
-};
-
-
 bool Volume::access( const Path& path, int amode )
 {
 #ifdef _WIN32
@@ -3798,38 +3867,6 @@ bool Volume::link( const Path& old_path, const Path& new_path )
 #else
   return ::symlink( old_path, new_path ) != -1;
 #endif
-}
-
-bool Volume::listdir( const Path& path, listdirCallback& callback )
-{
-  return listdir( path, Path(), callback );
-}
-
-bool Volume::listdir
-(
-  const Path& path,
-  const Path& match_file_name_prefix,
-  listdirCallback& callback
-)
-{
-  readdir_to_listdirCallback readdir_callback( callback );
-  return readdir( path, match_file_name_prefix, readdir_callback );
-}
-
-bool Volume::listdir( const Path& path, std::vector<Path>& out_names )
-{
-  return listdir( path, Path(), out_names );
-}
-
-bool Volume::listdir
-(
-  const Path& path,
-  const Path& match_file_name_prefix,
-  std::vector<Path>& out_names
-)
-{
-  SynclistdirCallback listdir_callback( out_names );
-  return listdir( path, match_file_name_prefix, listdir_callback );
 }
 
 bool Volume::listxattr( const Path& path, std::vector<std::string>& out_names )
@@ -3996,90 +4033,28 @@ Volume::open
   return NULL;
 }
 
-bool Volume::readdir( const Path& path, readdirCallback& callback )
-{
-  return readdir( path, Path(), callback );
-}
-
-bool
-Volume::readdir
-(
-  const Path& path,
-  const Path& match_file_name_prefix,
-  readdirCallback& callback
-)
+auto_Directory Volume::opendir( const Path& path )
 {
 #ifdef _WIN32
   std::wstring search_pattern( path );
   if ( search_pattern.size() > 0 &&
        search_pattern[search_pattern.size()-1] != L'\\' )
     search_pattern.append( L"\\" );
-  search_pattern.append
-  (
-    static_cast<const std::wstring&>( match_file_name_prefix )
-  ).append( L"*" );
+  search_pattern.append( L"*" );
 
   WIN32_FIND_DATA find_data;
-  HANDLE dir_handle = FindFirstFileW( search_pattern.c_str(), &find_data );
-  if ( dir_handle != INVALID_HANDLE_VALUE )
-  {
-    do
-    {
-      if ( wcscmp( find_data.cFileName, L"." ) != 0 &&
-           wcscmp( find_data.cFileName, L".." ) != 0 )
-      {
-        if ( !callback( find_data.cFileName, new Stat( find_data ) ) )
-        {
-          FindClose( dir_handle );
-          return false;
-        }
-      }
-    } while ( FindNextFileW( dir_handle, &find_data ) );
-
-    FindClose( dir_handle );
-
-    return true;
-  }
-  else
-    return false;
+  HANDLE hDirectory = FindFirstFileW( search_pattern.c_str(), &find_data );
+  if ( hDirectory != INVALID_HANDLE_VALUE )
+    return new Directory( hDirectory, find_data );
 #elif !defined(__sun)
-  DIR* dir_handle = opendir( path );
-  if ( dir_handle != NULL )
-  {
-    struct dirent* next_dirent = ::readdir( dir_handle );
-    while ( next_dirent != NULL )
-    {
-      if ( next_dirent->d_name[0] != '.' &&
-           ( next_dirent->d_type == DT_DIR || next_dirent->d_type == DT_REG ) )
-      {
-        if ( match_file_name_prefix.empty() ||
-             strstr( next_dirent->d_name, match_file_name_prefix ) ==
-              next_dirent->d_name )
-        {
-          auto_Stat stbuf = stat( path + next_dirent->d_name );
-          if ( stbuf != NULL )
-          {
-            if ( !callback( next_dirent->d_name, stbuf ) )
-            {
-              closedir( dir_handle );
-              return false;
-            }
-          }
-        }
-      }
-
-      next_dirent = ::readdir( dir_handle );
-    }
-
-    closedir( dir_handle );
-
-    return true;
-  }
-  else
-    return false;
+  DIR* dirp = ::opendir( path );
+  if ( dirp != NULL )
+    return new Directory( dirp );
 #else
-  return false;
+  errno = ENOTSUP;
 #endif
+
+  return NULL;
 }
 
 auto_Path Volume::readlink( const Path& path )
@@ -4129,17 +4104,38 @@ bool Volume::rmdir( const Path& path )
 
 bool Volume::rmtree( const Path& path )
 {
-  auto_Stat path_stat = stat( path );
-  if ( path_stat != NULL && path_stat->ISDIR() )
+  auto_Directory dir = opendir( path );
+  if ( dir != NULL )
   {
-    rmtree_readdirCallback readdir_callback( path, *this );
-    if ( readdir( path, readdir_callback ) )
-      return rmdir( path );
-    else
-      return false;
+    Directory::auto_Entry dirent = dir->readdir();
+    while ( dirent != NULL )
+    {
+      if ( dirent->ISDIR() )
+      {
+        if
+        (
+          dirent->get_name() != Path( "." )
+          &&
+          dirent->get_name() != Path( ".." )
+        )
+        {
+          if ( !rmtree( path / dirent->get_name() ) )
+            return false;
+        }
+      }
+      else
+      {
+        if ( !unlink( path / dirent->get_name() ) )
+          return false;
+      }
+
+      dirent = dir->readdir();
+    }
+
+    return rmdir( path );
   }
   else
-    return unlink( path );
+    return false;
 }
 
 bool Volume::setattr( const Path& path, auto_Stat stbuf, uint32_t to_set )

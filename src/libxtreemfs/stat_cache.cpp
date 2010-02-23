@@ -86,9 +86,9 @@ StatCache::fsetattr
   {    
     mrc_proxy->fsetattr
     ( 
-      write_xcap, 
       *stbuf,
-      write_through_attrs
+      write_through_attrs,
+      write_xcap
     );
   }
 
@@ -133,10 +133,10 @@ StatCache::getattr
 
   // Hold the entries_lock through the RPC so that another thread doesn't try
   // to fill and insert entry in parallel
-  org::xtreemfs::interfaces::Stat if_stbuf;
+  org::xtreemfs::interfaces::StatSet if_stbuf;
   try
   {
-    mrc_proxy->getattr( Path( volume_name, path ), if_stbuf );
+    mrc_proxy->getattr( Path( volume_name, path ), 0, if_stbuf );
   }
   catch ( ... ) // Probably not found
   {
@@ -159,11 +159,11 @@ StatCache::getattr
   // Create an entry for the Stat if one doesn't exist already
   if ( entry == NULL )
   {
-    entry = new Entry( if_stbuf );
+    entry = new Entry( if_stbuf[0] );
     entries[path] = entry;
   }
   else
-    entry->refresh( if_stbuf );
+    entry->refresh( if_stbuf[0] );
 
   Stat* entry_stbuf = entry->get_stbuf().release();
 
@@ -208,9 +208,9 @@ StatCache::metadatasync
         {
           mrc_proxy->fsetattr
           ( 
-            write_xcap, 
             *entry->get_stbuf(),
-            entry->get_write_back_attrs()
+            entry->get_write_back_attrs(),
+            write_xcap
           );
 
           entry->set_write_back_attrs( 0 );

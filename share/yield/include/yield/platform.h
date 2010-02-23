@@ -98,6 +98,9 @@ typedef int ssize_t;
 #endif
 #endif
 
+#define YIELD_PLATFORM_DIRECTORY_PROTOTYPES \
+  virtual YIELD::platform::Directory::auto_Entry readdir();
+
 
 #define YIELD_PLATFORM_FILE_PROTOTYPES \
   virtual bool close(); \
@@ -163,12 +166,10 @@ typedef int ssize_t;
       mode_t mode, \
       uint32_t attributes \
     ); \
-    virtual bool \
-    readdir \
+    virtual YIELD::platform::auto_Directory \
+    opendir \
     ( \
-      const YIELD::platform::Path& path, \
-      const YIELD::platform::Path& match_file_name_prefix, \
-      YIELD::platform::Volume::readdirCallback& callback \
+      const YIELD::platform::Path& path \
     ); \
     virtual YIELD::platform::auto_Path \
     readlink \
@@ -299,42 +300,9 @@ namespace YIELD
 {
   namespace platform
   {
+    class File;
     class Path;
     class Stat;
-
-
-    class Exception : public std::exception
-    {
-    public:
-      // error_message is always copied
-      Exception();
-      Exception( uint32_t error_code ); // Use a system error message
-      Exception( const char* error_message );
-      Exception( const std::string& error_message );
-      Exception( uint32_t error_code, const char* error_message );
-      Exception( uint32_t error_code, const std::string& error_message );
-      Exception( const Exception& other );
-      virtual ~Exception() throw();
-
-      virtual uint32_t get_error_code() const { return error_code; }
-      virtual const char* get_error_message() throw();
-
-      operator const char*() throw() { return get_error_message(); }
-
-      // std::exception
-      const char* what() const throw()
-      {
-        return const_cast<Exception*>( this )->get_error_message();
-      }
-
-    protected:
-      void set_error_code( uint32_t error_code );
-      void set_error_message( const char* error_message );
-
-    private:
-      uint32_t error_code;
-      char* error_message;
-    };
 
 
     class Time
@@ -711,69 +679,38 @@ namespace YIELD
     };
 
 
-    class File : public yidl::runtime::Object
+    class Exception : public std::exception
     {
     public:
-      const static uint32_t ATTRIBUTES_DEFAULT = 0;
-      const static uint32_t FLAGS_DEFAULT = O_RDONLY;
-      const static mode_t MODE_DEFAULT = S_IREAD|S_IWRITE;
+      // error_message is always copied
+      Exception();
+      Exception( uint32_t error_code ); // Use a system error message
+      Exception( const char* error_message );
+      Exception( const std::string& error_message );
+      Exception( uint32_t error_code, const char* error_message );
+      Exception( uint32_t error_code, const std::string& error_message );
+      Exception( const Exception& other );
+      virtual ~Exception() throw();
 
+      virtual uint32_t get_error_code() const { return error_code; }
+      virtual const char* get_error_message() throw();
 
-      // Construct from a platform file descriptor;
-      // takes ownership of the descriptor
-#ifdef _WIN32
-      File( void* fd );
-#else
-      File( int fd );
-#endif
+      operator const char*() throw() { return get_error_message(); }
 
-      YIELD_PLATFORM_FILE_PROTOTYPES;
-
-      virtual size_t getpagesize();
-
-#ifdef _WIN32
-      operator void*() const { return fd; }
-#else
-      operator int() const { return fd; }
-#endif
-
-      // Reads from the current file pointer
-      virtual ssize_t read( yidl::runtime::auto_Buffer buffer );
-
-      // Reads from the current file pointer
-      virtual ssize_t read( void* buffer, size_t buffer_len );
-
-      // Seeks from the beginning of the file
-      virtual bool seek( uint64_t offset );
-
-      virtual bool seek( uint64_t offset, unsigned char whence );
-
-      // Delegates to getattr
-      virtual yidl::runtime::auto_Object<Stat> stat();
-
-      // Writes from the current position
-      virtual ssize_t write( yidl::runtime::auto_Buffer buffer );
-
-      virtual ssize_t write( const void* buffer, size_t buffer_len );
-
-      // yidl::runtime::Object
-      YIDL_RUNTIME_OBJECT_PROTOTYPES( File, 1 );
+      // std::exception
+      const char* what() const throw()
+      {
+        return const_cast<Exception*>( this )->get_error_message();
+      }
 
     protected:
-      File();
-      virtual ~File() { close(); }
+      void set_error_code( uint32_t error_code );
+      void set_error_message( const char* error_message );
 
     private:
-      File( const File& ); // Prevent copying
-
-#ifdef _WIN32
-      void* fd;
-#else
-      int fd;
-#endif
+      uint32_t error_code;
+      char* error_message;
     };
-
-    typedef yidl::runtime::auto_Object<File> auto_File;
 
 
     class iconv : public yidl::runtime::Object
@@ -783,7 +720,7 @@ namespace YIELD
       static yidl::runtime::auto_Object<iconv>
       open
       (
-        const char* tocode = "char", // "char" = locale-dependent character encoding
+        const char* tocode = "", // "" = locale-dependent character encoding
         const char* fromcode = "UTF-8"
       );
 
@@ -800,7 +737,7 @@ namespace YIELD
       // Other operator()'s return false on failure
       bool operator()( const std::string& inbuf, std::string& outbuf );
 #ifdef _WIN32
-      bool operator()( const std::string& inbuf, const std::wstring& outbuf );
+      bool operator()( const std::string& inbuf, std::wstring& outbuf );
       bool operator()( const std::wstring& inbuf, std::string& outbuf );
 #endif
 
@@ -809,13 +746,14 @@ namespace YIELD
 
     private:
 #ifdef _WIN32
-      iconv( const std::string& fromcode, const std::string& tocode );
+      iconv( unsigned int fromcode, unsigned int tocode );
 #else
       iconv( void* cd );
 #endif
       ~iconv();
 
 #ifdef _WIN32
+      static unsigned int iconv_code_to_win32_code( const char* iconv_code );
       unsigned int fromcode, tocode;
 #else
       void* cd;
@@ -1974,10 +1912,10 @@ namespace YIELD
 #endif
 
       bool ISDIR() const { return ( get_mode() & S_IFDIR ) == S_IFDIR; }
-      bool ISREG() const { return ( get_mode() & S_IFREG ) == S_IFREG; }
 #ifndef _WIN32
       bool ISLNK() const { return S_ISLNK( get_mode() ); }
 #endif
+      bool ISREG() const { return ( get_mode() & S_IFREG ) == S_IFREG; }
 
       virtual Stat& operator=( const Stat& );
       virtual bool operator==( const Stat& ) const;
@@ -2222,6 +2160,140 @@ namespace YIELD
     typedef yidl::runtime::auto_Object<TimerQueue> auto_TimerQueue;
 
 
+    class Directory : public yidl::runtime::Object
+    {
+    public:
+      class Entry : public yidl::runtime::Object
+      {
+        // has-a Stat instead of is-a Stat because
+        // (1) readdir on Unix returns a struct dirent,
+        //     which is only a subset of struct stat ->
+        //     the Stat member will be NULL
+        // (2) subclasses of Directory can attach their own
+        //     subclasses of Stat
+      public:
+        Entry( const Path& name );
+        Entry( const Path& name, auto_Stat stbuf );
+
+        const Path& get_name() const { return name; }
+        auto_Stat get_stat() const { return stbuf; }
+
+        bool ISDIR() const;
+#ifndef _WIN32
+        bool ISLNK() const;
+#endif
+        bool ISREG() const;
+
+        // yidl::runtime::Object
+        YIDL_RUNTIME_OBJECT_PROTOTYPES( Directory::Entry, 0 );
+
+      private:
+        Path name;
+        auto_Stat stbuf;
+
+#ifndef _WIN32
+        friend class Directory;
+        Entry( const char* d_name, unsigned char d_type );
+        unsigned char d_type;
+#endif
+      };
+
+      typedef yidl::runtime::auto_Object<Entry> auto_Entry;
+
+
+      YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
+
+      // yidl::runtime::Object
+      YIDL_RUNTIME_OBJECT_PROTOTYPES( Directory, 0 );
+
+    protected:
+      Directory();
+      virtual ~Directory();
+
+    private:
+      friend class Volume;
+#ifdef _WIN32
+      Directory( void* hDirectory, const WIN32_FIND_DATA& first_find_data );
+#else
+      Directory( void* dirp );
+#endif
+
+#ifdef _WIN32
+      void* hDirectory;
+      WIN32_FIND_DATA* first_find_data;
+#else
+      void* dirp;
+#endif
+    };
+
+    typedef yidl::runtime::auto_Object<Directory> auto_Directory;
+
+
+    class File : public yidl::runtime::Object
+    {
+    public:
+      const static uint32_t ATTRIBUTES_DEFAULT = 0;
+      const static uint32_t FLAGS_DEFAULT = O_RDONLY;
+      const static mode_t MODE_DEFAULT = S_IREAD|S_IWRITE;
+
+
+      // Construct from a platform file descriptor;
+      // takes ownership of the descriptor
+#ifdef _WIN32
+      File( void* fd );
+#else
+      File( int fd );
+#endif
+
+      YIELD_PLATFORM_FILE_PROTOTYPES;
+
+      virtual size_t getpagesize();
+
+#ifdef _WIN32
+      operator void*() const { return fd; }
+#else
+      operator int() const { return fd; }
+#endif
+
+      // Reads from the current file pointer
+      virtual ssize_t read( yidl::runtime::auto_Buffer buffer );
+
+      // Reads from the current file pointer
+      virtual ssize_t read( void* buffer, size_t buffer_len );
+
+      // Seeks from the beginning of the file
+      virtual bool seek( uint64_t offset );
+
+      virtual bool seek( uint64_t offset, unsigned char whence );
+
+      // Delegates to getattr
+      virtual yidl::runtime::auto_Object<Stat> stat();
+
+      // Writes from the current position
+      virtual ssize_t write( yidl::runtime::auto_Buffer buffer );
+
+      virtual ssize_t write( const void* buffer, size_t buffer_len );
+
+      // yidl::runtime::Object
+      YIDL_RUNTIME_OBJECT_PROTOTYPES( File, 1 );
+
+    protected:
+      File();
+      virtual ~File() { close(); }
+
+    private:
+      File( const File& ); // Prevent copying
+
+#ifdef _WIN32
+      void* fd;
+#else
+      int fd;
+#endif
+    };
+
+    typedef yidl::runtime::auto_Object<File> auto_File;
+
+
     class Volume : public yidl::runtime::Object
     {
     public:
@@ -2242,33 +2314,12 @@ namespace YIELD
       const static uint32_t SETATTR_ATTRIBUTES = 128;
 #endif
 
-
-      class listdirCallback
-      {
-      public:
-        virtual ~listdirCallback() { }
-
-        // Return false to stop listing
-        virtual bool operator()( const Path& dirent_name ) = 0;
-      };
-
-
-      class readdirCallback
-      {
-      public:
-        virtual ~readdirCallback() { }
-
-        // Return false to stop reading
-        virtual bool operator()( const Path& dirent_name, auto_Stat stbuf ) = 0;
-      };
-
-
       virtual ~Volume() { }
 
       YIELD_PLATFORM_VOLUME_PROTOTYPES;
 
-      // Convenience methods that don't make any system calls but delegate to
-      // YIELD_PLATFORM_VOLUME_PROTOTYPES,
+      // The following are all convenience methods that don't make any system calls
+      //  but delegate to YIELD_PLATFORM_VOLUME_PROTOTYPES,
       // which should be implemented by subclasses
 
 #ifndef _WIN32
@@ -2288,30 +2339,6 @@ namespace YIELD
       virtual bool isdir( const Path& path );
       virtual bool isfile( const Path& path );
 
-      // Delegates to full listdir
-      virtual bool listdir( const Path& path, listdirCallback& );
-
-      // Delegates to full listdir
-      virtual bool listdir( const Path& path, std::vector<Path>& out_names );
-
-      // Delegates to readdir
-      virtual bool
-      listdir
-      (
-        const Path& path,
-        const Path& match_file_name_prefix,
-        listdirCallback&
-      );
-
-      // Delegates to readdir
-      virtual bool
-      listdir
-      (
-        const Path& path,
-        const Path& match_file_name_prefix,
-        std::vector<Path>& out_names
-      );
-
       // Recursive mkdir
       virtual bool makedirs( const Path& path ); // Python function name
       virtual bool makedirs( const Path& path, mode_t mode );
@@ -2319,13 +2346,10 @@ namespace YIELD
       virtual bool mktree( const Path& path );
       virtual bool mktree( const Path& path, mode_t mode );
 
-      // Delegates to full open
+      // Delegate to full open
       virtual auto_File open( const Path& path );
       virtual auto_File open( const Path& path, uint32_t flags );
       virtual auto_File open( const Path& path, uint32_t flags, mode_t mode );
-
-      // Delegates to full readdir
-      virtual bool readdir( const Path& path, readdirCallback& );
 
       // Recursive rmdir + unlink
       virtual bool rmtree( const Path& path );
@@ -2338,7 +2362,6 @@ namespace YIELD
       virtual bool touch( const Path& path, mode_t mode );
 
       // Delegate to setattr
-      // Uses the most accurate system call available
       virtual bool
       utime
       (

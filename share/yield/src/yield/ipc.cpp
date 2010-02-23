@@ -8247,5 +8247,3 @@ YIELD::ipc::UUID::operator std::string() const
   return generic_uuid;
 #endif
 }
-
-

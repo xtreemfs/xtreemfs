@@ -1013,35 +1013,6 @@ namespace yieldfs
       return ERROR_SUCCESS;
     }
 
-    class readdirCallback : public YIELD::platform::Volume::readdirCallback
-    {
-    public:
-      readdirCallback
-      (
-        PFillFindData FillFindData,
-        PDOKAN_FILE_INFO DokanFileInfo
-      )
-        : FillFindData( FillFindData ), DokanFileInfo( DokanFileInfo )
-      { }
-
-      // YIELD::platform::Volume::readdirCallback
-      bool operator()
-      (
-        const YIELD::platform::Path& path,
-        YIELD::platform::auto_Stat stbuf
-      )
-      {
-        WIN32_FIND_DATA find_data = *stbuf;
-        wcsncpy_s( find_data.cFileName, 260, path, path.size() );
-        FillFindData( &find_data, DokanFileInfo );
-        return true;
-      }
-
-    private:
-      PFillFindData FillFindData;
-      PDOKAN_FILE_INFO DokanFileInfo;
-    };
-
     static int DOKAN_CALLBACK
     FindFiles
     (
@@ -1050,9 +1021,35 @@ namespace yieldfs
       PDOKAN_FILE_INFO DokanFileInfo
     )
     {
-      readdirCallback readdir_callback( FillFindData, DokanFileInfo );
-      if ( get_volume( DokanFileInfo ).readdir( FileName, readdir_callback ) )
+      YIELD::platform::auto_Directory directory
+        = get_volume( DokanFileInfo ).opendir( FileName );
+
+      if ( directory != NULL )
+      {
+        YIELD::platform::Directory::auto_Entry dirent
+          = directory->readdir();
+
+        while ( dirent != NULL )
+        {
+          if ( dirent->get_name() != L"." && dirent->get_name() != L".." )
+          {
+            WIN32_FIND_DATA find_data = *dirent->get_stat();
+            wcsncpy_s
+            (
+              find_data.cFileName,
+              260,
+              dirent->get_name(),
+              dirent->get_name().size()
+            );
+
+            FillFindData( &find_data, DokanFileInfo );
+          }
+
+          dirent = directory->readdir();
+        }
+
         return ERROR_SUCCESS;
+      }
       else
         return -1 * ::GetLastError();
     }
@@ -1455,6 +1452,32 @@ namespace yieldfs
 
 
 
+// tracing_directory.h
+namespace yieldfs
+{
+  class TracingDirectory : public StackableDirectory
+  {
+  public:
+    TracingDirectory
+    (
+      YIELD::platform::auto_Log log,
+      const YIELD::platform::Path& path,
+      YIELD::platform::auto_Directory underlying_file
+    );
+
+    // YIELD::platform::Directory
+    YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
+
+  private:
+    ~TracingDirectory();
+
+    YIELD::platform::auto_Log log;
+    YIELD::platform::Path path;
+  };
+};
+
+
+
 // tracing_file.h
 namespace yieldfs
 {
@@ -1468,10 +1491,14 @@ namespace yieldfs
       YIELD::platform::auto_File underlying_file
     );
 
+    // YIELD::platform::File
     YIELD_PLATFORM_FILE_PROTOTYPES;
 
   private:
-    ~TracingFile() { }
+    ~TracingFile();
+
+    YIELD::platform::auto_Log log;
+    YIELD::platform::Path path;
   };
 };
 
@@ -1569,6 +1596,13 @@ int FUSE::main( struct fuse_args& fuse_args_, const char* mount_point )
   return fuse_unix->main( fuse_args_, mount_point );
 }
 #endif
+
+
+// stackable_directory.cpp
+YIELD::platform::Directory::auto_Entry StackableDirectory::readdir()
+{
+  return underlying_directory->readdir();
+}
 
 
 // stackable_file.cpp
@@ -1723,15 +1757,13 @@ StackableVolume::open
   return underlying_volume->open( path, flags, mode, attributes );
 }
 
-bool
-StackableVolume::readdir
+YIELD::platform::auto_Directory
+StackableVolume::opendir
 (
-  const YIELD::platform::Path& path,
-  const YIELD::platform::Path& match_file_name_prefix,
-  YIELD::platform::Volume::readdirCallback& callback
+  const YIELD::platform::Path& path
 )
 {
-  return underlying_volume->readdir( path, match_file_name_prefix, callback );
+  return underlying_volume->opendir( path );
 }
 
 YIELD::platform::auto_Path
@@ -1834,21 +1866,70 @@ StackableVolume::volname
 }
 
 
+// tracing_directory.cpp
+TracingDirectory::TracingDirectory
+(
+  YIELD::platform::auto_Log log,
+  const YIELD::platform::Path& path,
+  YIELD::platform::auto_Directory underlying_directory
+)
+  : StackableDirectory( underlying_directory ),
+    log( log ),
+    path( path )
+{ }
+
+TracingDirectory::~TracingDirectory()
+{
+  log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+    "yieldfs::TracingDirectory::closedir( " << path << " )";
+}
+
+YIELD::platform::Directory::auto_Entry TracingDirectory::readdir()
+{
+  auto_Entry dirent = StackableDirectory::readdir();
+  if ( dirent != NULL )
+  {
+    if
+    (
+      log->get_level() >= YIELD::platform::Log::LOG_DEBUG
+      &&
+      dirent->get_stat() != NULL
+    )
+    {
+      log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
+        "yieldfs::TracingDirectory::readdir( " << path << " ) -> " <<
+        dirent->get_name() << ": " <<
+        static_cast<std::string>( *dirent->get_stat() );
+    }
+    else
+    {
+      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        "yieldfs::TracingDirectory::readdir( " << path << " ) -> " <<
+        dirent->get_name();
+    }
+
+    return dirent;
+  }
+  else
+    return NULL;
+}
+
+
 // tracing_file.cpp
-#include <iostream>
-
-
 TracingFile::TracingFile
 (
   YIELD::platform::auto_Log log,
   const YIELD::platform::Path& path,
   YIELD::platform::auto_File underlying_file
 )
-  : StackableFile( log, path, underlying_file )
+  : StackableFile( underlying_file ),
+    log( log ),
+    path( path )
+{ }
+
+TracingFile::~TracingFile()
 {
-  if ( this->log == NULL )
-    this->log =
-    YIELD::platform::Log::open( std::cout, YIELD::platform::Log::LOG_INFO );
+  close();
 }
 
 bool TracingFile::close()
@@ -1858,7 +1939,7 @@ bool TracingFile::close()
     log,
     "yieldfs::TracingFile::close",
     path,
-    underlying_file->close()
+    StackableFile::close()
   );
 }
 
@@ -1869,13 +1950,13 @@ bool TracingFile::datasync()
     log,
     "yieldfs::TracingFile::datasync",
     path,
-    underlying_file->datasync()
+    StackableFile::datasync()
   );
 }
 
 YIELD::platform::auto_Stat TracingFile::getattr()
 {
-  YIELD::platform::auto_Stat stbuf = underlying_file->getattr();
+  YIELD::platform::auto_Stat stbuf = StackableFile::getattr();
   TracingVolume::trace
   (
     log,
@@ -1895,7 +1976,7 @@ bool TracingFile::getlk( bool exclusive, uint64_t offset, uint64_t length )
     path,
     offset,
     length,
-    underlying_file->getlk( exclusive, offset, length )
+    StackableFile::getlk( exclusive, offset, length )
   );
 }
 
@@ -1907,7 +1988,7 @@ bool TracingFile::getxattr( const std::string& name, std::string& out_value )
     "yieldfs::TracingFile::getxattr",
     path,
     name,
-    underlying_file->getxattr( name, out_value )
+    StackableFile::getxattr( name, out_value )
   );
 }
 
@@ -1919,13 +2000,13 @@ bool TracingFile::listxattr( std::vector<std::string>& out_names )
     log,
     "yieldfs::TracingFile::listxattr",
     path,
-    underlying_file->listxattr( out_names )
+    StackableFile::listxattr( out_names )
   );
 }
 
 ssize_t TracingFile::read( void* rbuf, size_t size, uint64_t offset )
 {
-  ssize_t read_ret = underlying_file->read( rbuf, size, offset );
+  ssize_t read_ret = StackableFile::read( rbuf, size, offset );
   TracingVolume::trace
   (
     log,
@@ -1946,7 +2027,7 @@ bool TracingFile::removexattr( const std::string& name )
     "yieldfs::TracingFile::removexattr",
     path,
     name,
-    underlying_file->removexattr( name )
+    StackableFile::removexattr( name )
   );
 }
 
@@ -1959,7 +2040,7 @@ bool TracingFile::setlk( bool exclusive, uint64_t offset, uint64_t length )
     path,
     offset,
     length,
-    underlying_file->setlk( exclusive, offset, length )
+    StackableFile::setlk( exclusive, offset, length )
   );
 }
 
@@ -1972,7 +2053,7 @@ bool TracingFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
     path,
     offset,
     length,
-    underlying_file->setlkw( exclusive, offset, length )
+    StackableFile::setlkw( exclusive, offset, length )
   );
 }
 
@@ -1989,7 +2070,7 @@ bool TracingFile::setxattr
     "yieldfs::TracingFile::setxattr",
     path,
     name,
-    underlying_file->setxattr( name, value, flags )
+    StackableFile::setxattr( name, value, flags )
   );
 }
 
@@ -2000,7 +2081,7 @@ bool TracingFile::sync()
     log,
     "yieldfs::TracingFile::sync",
     path,
-    underlying_file->sync()
+    StackableFile::sync()
   );
 }
 
@@ -2013,7 +2094,7 @@ bool TracingFile::truncate( uint64_t new_size )
     path,
     0,
     new_size,
-    underlying_file->truncate( new_size )
+    StackableFile::truncate( new_size )
   );
 }
 
@@ -2026,7 +2107,7 @@ bool TracingFile::unlk( uint64_t offset, uint64_t length )
     path,
     offset,
     length,
-    underlying_file->unlk( offset, length )
+    StackableFile::unlk( offset, length )
   );
 }
 
@@ -2038,7 +2119,7 @@ TracingFile::write
   uint64_t offset
 )
 {
-  ssize_t write_ret = underlying_file->write( buffer, buffer_len, offset );
+  ssize_t write_ret = StackableFile::write( buffer, buffer_len, offset );
 
   TracingVolume::trace
   (
@@ -2056,73 +2137,6 @@ TracingFile::write
 
 // tracing_volume.cpp
 #include <iostream>
-
-
-class TracingVolume::listdirCallback
-  : public YIELD::platform::Volume::listdirCallback
-{
-public:
-  listdirCallback
-  (
-    YIELD::platform::Volume::listdirCallback& user_listdir_callback,
-    YIELD::platform::auto_Log log
-  )
-    : user_listdir_callback( user_listdir_callback ), log( log )
-  { }
-
-  listdirCallback& operator=( const listdirCallback& )
-  {
-    return *this;
-  }
-
-  // YIELD::platform::Volume::listdirCallback
-  bool operator()( const YIELD::platform::Path& path )
-  {
-    log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
-      "yieldfs::TracingVolume::listdir: returning path " << path << ".";
-    return user_listdir_callback( path );
-  }
-
-private:
-  YIELD::platform::Volume::listdirCallback& user_listdir_callback;
-  YIELD::platform::auto_Log log;
-};
-
-
-class TracingVolume::readdirCallback
-  : public YIELD::platform::Volume::readdirCallback
-{
-public:
-  readdirCallback
-  (
-    YIELD::platform::Volume::readdirCallback& user_readdir_callback,
-    YIELD::platform::auto_Log log
-  )
-    : user_readdir_callback( user_readdir_callback ), log( log )
-  { }
-
-  readdirCallback& operator=( const readdirCallback& )
-  {
-    return *this;
-  }
-
-  // YIELD::platform::Volume::readdirCallback
-  bool operator()
-  (
-    const YIELD::platform::Path& path,
-    YIELD::platform::auto_Stat stbuf
-  )
-  {
-    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << \
-      "yieldfs::TracingVolume: readdir: returning directory entry " <<
-      path << ": " << static_cast<std::string>( *stbuf ) << ".";
-    return user_readdir_callback( path, stbuf );
-  }
-
-private:
-  YIELD::platform::Volume::readdirCallback& user_readdir_callback;
-  YIELD::platform::auto_Log log;
-};
 
 
 TracingVolume::TracingVolume()
@@ -2143,7 +2157,8 @@ TracingVolume::TracingVolume
   YIELD::platform::auto_Log log,
   YIELD::platform::auto_Volume underlying_volume
 )
-  : StackableVolume( log, underlying_volume )
+  : StackableVolume( underlying_volume ),
+    log( log )
 { }
 
 bool TracingVolume::access( const YIELD::platform::Path& path, int amode )
@@ -2154,7 +2169,7 @@ bool TracingVolume::access( const YIELD::platform::Path& path, int amode )
     "yieldfs::TracingVolume::access",
     path,
     static_cast<mode_t>( amode ),
-    underlying_volume->access( path, amode )
+    StackableVolume::access( path, amode )
   );
 }
 
@@ -2164,7 +2179,7 @@ TracingVolume::getattr
  const YIELD::platform::Path& path
 )
 {
-  YIELD::platform::auto_Stat stbuf = underlying_volume->getattr( path );
+  YIELD::platform::auto_Stat stbuf = StackableVolume::getattr( path );
   trace( log, "yieldfs::TracingVolume::getattr", path, stbuf != NULL );
   if ( stbuf != NULL )
     log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
@@ -2188,7 +2203,7 @@ TracingVolume::getxattr
     path,
     name,
     out_value,
-    underlying_volume->getxattr( path, name, out_value )
+    StackableVolume::getxattr( path, name, out_value )
   );
 }
 
@@ -2205,35 +2220,7 @@ TracingVolume::link
     "yieldfs::TracingVolume::link",
     old_path,
     new_path,
-    underlying_volume->link( old_path, new_path )
-  );
-}
-
-bool
-TracingVolume::listdir
-(
-  const YIELD::platform::Path& path,
-  const YIELD::platform::Path& match_file_name_prefix,
-  YIELD::platform::Volume::listdirCallback& callback
-)
-{
-  log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-      "yieldfs::TracingVolume: listdir( " <<
-      path << ", " << match_file_name_prefix << " )";
-
-  listdirCallback wrapped_callback( callback, log );
-
-  return trace
-  (
-    log,
-    "yieldfs::TracingVolume::listdir",
-    path,
-    underlying_volume->listdir
-    (
-      path,
-      match_file_name_prefix,
-      wrapped_callback
-    )
+    StackableVolume::link( old_path, new_path )
   );
 }
 
@@ -2251,7 +2238,7 @@ TracingVolume::listxattr
       log,
       "yieldfs::TracingVolume::listxattr",
       path,
-      underlying_volume->listxattr( path, out_names )
+      StackableVolume::listxattr( path, out_names )
     )
   )
   {
@@ -2280,7 +2267,7 @@ TracingVolume::mkdir( const YIELD::platform::Path& path, mode_t mode )
     "yieldfs::TracingVolume::mkdir",
     path,
     mode,
-    underlying_volume->mkdir( path, mode )
+    StackableVolume::mkdir( path, mode )
   );
 }
 
@@ -2294,8 +2281,8 @@ TracingVolume::open
 )
 {
   YIELD::platform::auto_File file =
-    underlying_volume->open( path, flags, mode, attributes );
-  if( file != NULL )
+    StackableVolume::open( path, flags, mode, attributes );
+  if ( file != NULL )
     file = new TracingFile( log, path, file );
 
   YIELD::platform::Log::Stream log_stream =
@@ -2308,27 +2295,19 @@ TracingVolume::open
   return file;
 }
 
-bool
-TracingVolume::readdir
+YIELD::platform::auto_Directory
+TracingVolume::opendir
 (
-  const YIELD::platform::Path& path,
-  const YIELD::platform::Path& match_file_name_prefix,
-  YIELD::platform::Volume::readdirCallback& callback
+  const YIELD::platform::Path& path
 )
 {
-  readdirCallback wrapped_callback( callback, log );
-  return trace
-  (
-    log,
-    "yieldfs::TracingVolume::readdir",
-    path,
-    underlying_volume->readdir
-    (
-      path,
-      match_file_name_prefix,
-      wrapped_callback
-    )
-  );
+  YIELD::platform::auto_Directory directory = StackableVolume::opendir( path );
+  if ( directory != NULL )
+    directory = new TracingDirectory( log, path, directory );
+
+  trace( log, "yieldfs::TracingVolume::opendir", path, directory != NULL );
+
+  return directory;
 }
 
 YIELD::platform::auto_Path
@@ -2337,7 +2316,7 @@ TracingVolume::readlink
   const YIELD::platform::Path& path
 )
 {
-  YIELD::platform::auto_Path link_path = underlying_volume->readlink( path );
+  YIELD::platform::auto_Path link_path = StackableVolume::readlink( path );
   trace( log, "yieldfs::TracingVolume::readlink", path, link_path != NULL );
   return link_path;
 }
@@ -2355,7 +2334,7 @@ TracingVolume::removexattr
     "yieldfs::TracingVolume::removexattr",
     path,
     name,
-    underlying_volume->removexattr( path, name )
+    StackableVolume::removexattr( path, name )
   );
 }
 
@@ -2372,7 +2351,7 @@ TracingVolume::rename
     "yieldfs::TracingVolume::rename",
     from_path,
     to_path,
-    underlying_volume->rename( from_path, to_path )
+    StackableVolume::rename( from_path, to_path )
   );
 }
 
@@ -2384,7 +2363,7 @@ TracingVolume::rmdir( const YIELD::platform::Path& path )
     log,
     "yieldfs::TracingVolume::rmdir",
     path,
-    underlying_volume->rmdir( path )
+    StackableVolume::rmdir( path )
   );
 }
 
@@ -2406,7 +2385,7 @@ TracingVolume::setattr
   return trace
   (
     log_stream,
-    underlying_volume->setattr( path, stbuf, to_set )
+    StackableVolume::setattr( path, stbuf, to_set )
   );
 }
 
@@ -2426,7 +2405,7 @@ TracingVolume::setxattr
     path,
     name,
     value,
-    underlying_volume->setxattr( path, name, value, flags )
+    StackableVolume::setxattr( path, name, value, flags )
   );
 }
 
@@ -2442,7 +2421,7 @@ TracingVolume::statvfs
     log,
     "yieldfs::TracingVolume::statvfs",
     path,
-    underlying_volume->statvfs( path, buf )
+    StackableVolume::statvfs( path, buf )
   );
 }
 
@@ -2459,7 +2438,7 @@ TracingVolume::symlink
     "yieldfs::TracingVolume::symlink",
     to_path,
     from_path,
-    underlying_volume->symlink( to_path, from_path )
+    StackableVolume::symlink( to_path, from_path )
   );
 }
 
@@ -2575,7 +2554,7 @@ TracingVolume::truncate
     path,
     0,
     new_size,
-    underlying_volume->truncate( path, new_size )
+    StackableVolume::truncate( path, new_size )
   );
 }
 
@@ -2587,7 +2566,7 @@ TracingVolume::unlink( const YIELD::platform::Path& path )
     log,
     "yieldfs::TracingVolume::unlink",
     path,
-    underlying_volume->unlink( path )
+    StackableVolume::unlink( path )
   );
 }
 
@@ -2599,6 +2578,6 @@ TracingVolume::volname
 {
   log->getStream( YIELD::platform::Log::LOG_INFO ) <<
     "yieldfs::TracingVolume::volname( " << path << " ) -> success.";
-  return underlying_volume->volname( path );
+  return StackableVolume::volname( path );
 }
 

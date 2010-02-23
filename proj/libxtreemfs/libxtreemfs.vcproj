@@ -376,6 +376,10 @@
     >
 </File>
 <File
+    RelativePath="..\..\src\libxtreemfs\directory.h"
+    >
+</File>
+<File
     RelativePath="..\..\src\libxtreemfs\open_file.h"
     >
 </File>
@@ -393,6 +397,10 @@
 </File>
 <File
     RelativePath="..\..\src\libxtreemfs\dir_proxy.cpp"
+    >
+</File>
+<File
+    RelativePath="..\..\src\libxtreemfs\directory.cpp"
     >
 </File>
 <File

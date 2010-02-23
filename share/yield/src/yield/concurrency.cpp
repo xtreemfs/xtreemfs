@@ -784,7 +784,6 @@ void StageGroup::addStage( auto_Stage stage )
 }
 
 
-
 // thread_local_event_queue.cpp
 #include <stack>
 
@@ -891,4 +890,3 @@ Event* ThreadLocalEventQueue::try_dequeue()
   else
     return all_processor_event_queue.try_dequeue();
 }
-

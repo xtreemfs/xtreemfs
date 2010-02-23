@@ -28,6 +28,7 @@
 
 
 #include "xtreemfs/volume.h"
+#include "directory.h"
 #include "open_file.h"
 #include "shared_file.h"
 #include "stat.h"
@@ -35,7 +36,7 @@
 #include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/osd_proxy.h"
 #include "xtreemfs/path.h"
-// No using namespace org::xtreemfs::interfaces since Volume is a class there
+using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
 #include <errno.h>
@@ -189,8 +190,8 @@ Volume::create
     user_credentials_cache
   );
 
-  org::xtreemfs::interfaces::Stat stbuf;
-  mrc_proxy->getattr( name + "/", stbuf );
+  StatSet stbuf;
+  mrc_proxy->getattr( name + "/", 0, stbuf );
 
   auto_OSDProxyMux osd_proxy_mux = OSDProxyMux::create
   (
@@ -230,7 +231,7 @@ Volume::fsetattr
   const YIELD::platform::Path& path,
   auto_Stat stbuf,
   uint32_t to_set,
-  const org::xtreemfs::interfaces::XCap& write_xcap
+  const XCap& write_xcap
 )
 {
   stat_cache->fsetattr( path, stbuf, to_set, write_xcap );
@@ -274,10 +275,10 @@ Volume::get_shared_file
   return shared_file;
 }
 
-org::xtreemfs::interfaces::VivaldiCoordinates
+VivaldiCoordinates
 Volume::get_vivaldi_coordinates() const
 {
-  org::xtreemfs::interfaces::VivaldiCoordinates vivaldi_coordinates;
+  VivaldiCoordinates vivaldi_coordinates;
 
   if ( !vivaldi_coordinates_file_path.empty() )
   {
@@ -286,7 +287,7 @@ Volume::get_vivaldi_coordinates() const
     yidl::runtime::auto_Buffer vivaldi_coordinates_buffer
       (
         new yidl::runtime::StackBuffer
-          <sizeof( org::xtreemfs::interfaces::VivaldiCoordinates)>
+          <sizeof( VivaldiCoordinates)>
       );
     vivaldi_coordinates_file->read( vivaldi_coordinates_buffer );
     YIELD::platform::XDRUnmarshaller xdr_unmarshaller( vivaldi_coordinates_buffer );
@@ -340,35 +341,6 @@ Volume::link
 }
 
 bool
-Volume::listdir
-(
-  const YIELD::platform::Path& path,
-  const YIELD::platform::Path&,
-  listdirCallback& callback
-)
-{
-  VOLUME_OPERATION_BEGIN( listdir )
-  {
-    org::xtreemfs::interfaces::StringSet names;
-    mrc_proxy->xtreemfs_listdir( Path( this->name, path ), names );
-    for
-    (
-      org::xtreemfs::interfaces::StringSet::const_iterator
-        name_i = names.begin();
-      name_i != names.end();
-      name_i++
-    )
-    {
-      if ( !callback( *name_i ) )
-        return false;
-    }
-    return true;
-  }
-  VOLUME_OPERATION_END( listdir );
-  return false;
-}
-
-bool
 Volume::listxattr
 (
   const YIELD::platform::Path& path,
@@ -377,7 +349,7 @@ Volume::listxattr
 {
   VOLUME_OPERATION_BEGIN( listxattr )
   {
-    org::xtreemfs::interfaces::StringSet names;
+    StringSet names;
     mrc_proxy->listxattr( Path( this->name, path ), names );
     out_names.assign( names.begin(), names.end() );
     return true;
@@ -390,7 +362,7 @@ void
 Volume::metadatasync
 (
   const YIELD::platform::Path& path,
-  const org::xtreemfs::interfaces::XCap& write_xcap
+  const XCap& write_xcap
 )
 {
   VOLUME_OPERATION_BEGIN( metadatasync )
@@ -433,7 +405,7 @@ Volume::open
 
     if ( ( flags & O_SYNC ) == O_SYNC )
     {
-      system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_SYNC;
+      system_v_flags |= SYSTEM_V_FCNTL_H_O_SYNC;
       flags ^= O_SYNC;
     }
 
@@ -443,44 +415,44 @@ Volume::open
 #if defined(__FreeBSD__) || defined(__linux__) || defined(__MACH__)
     if ( ( flags & O_WRONLY ) == O_WRONLY )
     {
-	    system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_WRONLY;
+	    system_v_flags |= SYSTEM_V_FCNTL_H_O_WRONLY;
 	    flags ^= O_WRONLY;
     }
 
     if ( ( flags & O_RDWR ) == O_RDWR )
     {
-	    system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_RDWR;
+	    system_v_flags |= SYSTEM_V_FCNTL_H_O_RDWR;
 	    flags ^= O_RDWR;
     }
 
     if ( ( flags & O_APPEND ) == O_APPEND )
     {
-	    system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_APPEND;
+	    system_v_flags |= SYSTEM_V_FCNTL_H_O_APPEND;
 	    flags ^= O_APPEND;
     }
 
     if ( ( flags & O_CREAT ) == O_CREAT )
     {
-	    system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_CREAT;
+	    system_v_flags |= SYSTEM_V_FCNTL_H_O_CREAT;
 	    flags ^= O_CREAT;
     }
 
     if ( ( flags & O_TRUNC ) == O_TRUNC )
     {
-	    system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_TRUNC;
+	    system_v_flags |= SYSTEM_V_FCNTL_H_O_TRUNC;
 	    flags ^= O_TRUNC;
     }
 
     if ( ( flags & O_EXCL ) == O_EXCL )
     {
-	    system_v_flags |= org::xtreemfs::interfaces::SYSTEM_V_FCNTL_H_O_EXCL;
+	    system_v_flags |= SYSTEM_V_FCNTL_H_O_EXCL;
 	    flags ^= O_EXCL;
     }
 #endif
     system_v_flags |= flags;
 #endif
 
-    org::xtreemfs::interfaces::FileCredentials file_credentials;
+    FileCredentials file_credentials;
     mrc_proxy->open
     (
       Path( this->name, path ),
@@ -497,47 +469,44 @@ Volume::open
   return NULL;
 }
 
-bool
-Volume::readdir
+YIELD::platform::auto_Directory 
+Volume::opendir
 (
-  const YIELD::platform::Path& path,
-  const YIELD::platform::Path&,
-  YIELD::platform::Volume::readdirCallback& callback
+  const YIELD::platform::Path& _path 
 )
 {
-  VOLUME_OPERATION_BEGIN( readdir )
+  Path path( this->name, _path );
+
+  VOLUME_OPERATION_BEGIN( opendir )
   {
-    org::xtreemfs::interfaces::DirectoryEntrySet directory_entries;
-    mrc_proxy->readdir( Path( this->name, path ), directory_entries );
-    for
-    (
-      org::xtreemfs::interfaces::DirectoryEntrySet::const_iterator
-        directory_entry_i = directory_entries.begin();
-      directory_entry_i != directory_entries.end();
-      directory_entry_i++
-     )
-    {
-      Stat* stbuf = new Stat( ( *directory_entry_i ).get_stbuf() );
-#ifndef _WIN32
-      uid_t uid; gid_t gid;
-      user_credentials_cache->getpasswdFromUserCredentials
-      (
-        ( *directory_entry_i ).get_stbuf().get_user_id(),
-        ( *directory_entry_i ).get_stbuf().get_group_id(),
-        uid,
-        gid
-      );
-      stbuf->set_uid( uid );
-      stbuf->set_gid( gid );
+    DirectoryEntrySet first_directory_entries;
+
+    mrc_proxy->readdir
+    ( 
+      path,
+      0, // known_etag
+      Directory::LIMIT_DIRECTORY_ENTRIES_COUNT_DEFAULT,
+      false, // names_only
+      0, // seen_directory_entries_count
+      first_directory_entries 
+    );
+
+#ifdef _DEBUG
+    if ( first_directory_entries.empty() )
+      DebugBreak();
 #endif
 
-      if ( !callback( ( *directory_entry_i ).get_name(), stbuf ) )
-        return false;
-    }
-    return true;
+    return new Directory
+               ( 
+                 first_directory_entries, 
+                 log, 
+                 mrc_proxy, 
+                 false, 
+                 path 
+               );
   }
-  VOLUME_OPERATION_END( readdir );
-  return false;
+  VOLUME_OPERATION_END( opendir );
+  return NULL;
 }
 
 YIELD::platform::auto_Path Volume::readlink
@@ -603,7 +572,7 @@ Volume::rename
 
   VOLUME_OPERATION_BEGIN( rename )
   {
-    org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
+    FileCredentialsSet file_credentials_set;
 
     mrc_proxy->rename
     (
@@ -658,7 +627,7 @@ Volume::setattr
       ( to_set & SETATTR_GID ) == SETATTR_GID 
     )
     {
-      org::xtreemfs::interfaces::UserCredentials user_credentials;
+      UserCredentials user_credentials;
       if 
       ( 
         user_credentials_cache->getUserCredentialsFrompasswd
@@ -677,7 +646,7 @@ Volume::setattr
     }
     else if ( ( to_set & SETATTR_UID ) == SETATTR_UID )
     {
-      org::xtreemfs::interfaces::UserCredentials user_credentials;
+      UserCredentials user_credentials;
       if 
       ( 
         user_credentials_cache->getUserCredentialsFrompasswd
@@ -694,7 +663,7 @@ Volume::setattr
     }
     else if ( ( to_set & SETATTR_GID ) == SETATTR_GID )
     {
-      org::xtreemfs::interfaces::UserCredentials user_credentials;
+      UserCredentials user_credentials;
       if 
       ( 
         user_credentials_cache->getUserCredentialsFrompasswd
@@ -808,14 +777,14 @@ Volume::statvfs
 {
   VOLUME_OPERATION_BEGIN( statvfs )
   {
-    org::xtreemfs::interfaces::StatVFS xtreemfs_statvfsbuf;
-    mrc_proxy->statvfs( this->name, xtreemfs_statvfsbuf );
+    StatVFSSet xtreemfs_statvfsbuf;
+    mrc_proxy->statvfs( this->name, 0, xtreemfs_statvfsbuf );
     memset( &statvfsbuf, 0, sizeof( statvfsbuf ) );
-    statvfsbuf.f_bavail = xtreemfs_statvfsbuf.get_bavail();
-    statvfsbuf.f_bfree = xtreemfs_statvfsbuf.get_bavail();
-    statvfsbuf.f_blocks = xtreemfs_statvfsbuf.get_blocks();
-    statvfsbuf.f_bsize = xtreemfs_statvfsbuf.get_bsize();
-    statvfsbuf.f_namemax = xtreemfs_statvfsbuf.get_namelen();
+    statvfsbuf.f_bavail = xtreemfs_statvfsbuf[0].get_bavail();
+    statvfsbuf.f_bfree = xtreemfs_statvfsbuf[0].get_bavail();
+    statvfsbuf.f_blocks = xtreemfs_statvfsbuf[0].get_blocks();
+    statvfsbuf.f_bsize = xtreemfs_statvfsbuf[0].get_bsize();
+    statvfsbuf.f_namemax = xtreemfs_statvfsbuf[0].get_namemax();
     return true;
   }
   VOLUME_OPERATION_END( statvfs );
@@ -859,7 +828,7 @@ bool Volume::unlink( const YIELD::platform::Path& path )
 {
   VOLUME_OPERATION_BEGIN( unlink )
   {
-    org::xtreemfs::interfaces::FileCredentialsSet file_credentials_set;
+    FileCredentialsSet file_credentials_set;
     mrc_proxy->unlink( Path( this->name, path ), file_credentials_set );
 
     if ( !file_credentials_set.empty() )

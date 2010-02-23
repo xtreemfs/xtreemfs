@@ -98,6 +98,7 @@ build_env.Library( "../../lib/xtreemfs", (
     r"../../share/yield/src/yield/platform.cpp",
     r"../../share/yieldfs/src/yieldfs.cpp",
     r"../../src/libxtreemfs/dir_proxy.cpp",
+    r"../../src/libxtreemfs/directory.cpp",
     r"../../src/libxtreemfs/grid_ssl_socket.cpp",
     r"../../src/libxtreemfs/mrc_proxy.cpp",
     r"../../src/libxtreemfs/open_file.cpp",

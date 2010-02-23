@@ -87,11 +87,33 @@ namespace yieldfs
   };
 
 
+  class StackableDirectory : public YIELD::platform::Directory
+  {
+  public:
+    // YIELD::platform::Directory
+    // virtual YIELD::platform::Directory methods that 
+    // delegate to underlying_directory
+    YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
+
+  protected:
+    StackableDirectory
+    (
+      YIELD::platform::auto_Directory underlying_directory
+    )
+      : underlying_directory( underlying_directory )
+    { }
+
+    virtual ~StackableDirectory()
+    { }
+
+  private:
+    YIELD::platform::auto_Directory underlying_directory;
+  };
+
+
   class StackableFile : public YIELD::platform::File
   {
   public:
-    const YIELD::platform::Path& get_path() const { return path; }
-
     // YIELD::platform::File
     // virtual YIELD::platform::File methods that delegate to underlying_file
     YIELD_PLATFORM_FILE_PROTOTYPES;
@@ -99,19 +121,15 @@ namespace yieldfs
   protected:
     StackableFile
     (
-      YIELD::platform::auto_Log log,
-      const YIELD::platform::Path& path,
       YIELD::platform::auto_File underlying_file
-     )
-      : log( log ), path( path ), underlying_file( underlying_file )
+    )
+      : underlying_file( underlying_file )
     { }
 
     virtual ~StackableFile()
     { }
 
-
-    YIELD::platform::auto_Log log;
-    YIELD::platform::Path path;
+  private:
     YIELD::platform::auto_File underlying_file;
   };
 
@@ -132,16 +150,7 @@ namespace yieldfs
       : underlying_volume( underlying_volume )
     { }
 
-    StackableVolume
-    (
-      YIELD::platform::auto_Log log,
-      YIELD::platform::auto_Volume underlying_volume
-    )
-      : log( log ), underlying_volume( underlying_volume )
-    { }
-
-
-    YIELD::platform::auto_Log log;
+  private:
     YIELD::platform::auto_Volume underlying_volume;
   };
 
@@ -162,23 +171,7 @@ namespace yieldfs
       YIELD::platform::auto_Volume underlying_volume
     );
 
-    // YIELD::platform::Volume
-    YIELD_PLATFORM_VOLUME_PROTOTYPES;
-
-    bool listdir
-    (
-      const YIELD::platform::Path& path,
-      const YIELD::platform::Path& match_file_name_prefix,
-      listdirCallback& callback
-    );
-
-  private:
-    class listdirCallback;
-    class readdirCallback;
-    friend class TracingFile;
-
-    ~TracingVolume() { }
-
+    // static trace methods for TracingDirectory and TracingFile to share
     static bool
     trace
     (
@@ -236,6 +229,14 @@ namespace yieldfs
       YIELD::platform::Log::Stream& log_stream,
       bool operation_result
     );
+
+    // YIELD::platform::Volume
+    YIELD_PLATFORM_VOLUME_PROTOTYPES;
+
+  private:
+    ~TracingVolume() { }
+
+    YIELD::platform::auto_Log log;
   };
 };
 

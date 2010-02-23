@@ -295,42 +295,61 @@ void* UserCredentialsCache::getPolicyFunction( const char* name )
     policy_dir_path_i++
   )
   {
-    std::vector<YIELD::platform::Path> file_names;
-    volume->listdir( *policy_dir_path_i, file_names );
+    YIELD::platform::auto_Directory directory 
+      = volume->opendir( *policy_dir_path_i );
 
-    for
-    (
-      std::vector<YIELD::platform::Path>::iterator
-        file_name_i = file_names.begin();
-      file_name_i != file_names.end();
-      file_name_i++
-    )
+    if ( directory != NULL )
     {
-      const std::string&
-        file_name = static_cast<const std::string&>( *file_name_i );
+      YIELD::platform::Directory::auto_Entry
+        dirent = directory->readdir();
 
-      std::string::size_type
-       dll_pos = file_name.find( static_cast<const std::string&>( YIELD::platform::SharedLibrary::SHLIBSUFFIX ) );
-
-      if
-      (
-        dll_pos != std::string::npos &&
-        dll_pos != 0 &&
-        file_name[dll_pos-1] == '.'
-      )
+      while ( dirent != NULL )
       {
-        YIELD::platform::Path policy_shared_library_path
-          = *policy_dir_path_i  + file_name;
-
-        YIELD::platform::auto_SharedLibrary policy_shared_library
-          = YIELD::platform::SharedLibrary::open( policy_shared_library_path );
-
-        if ( policy_shared_library != NULL )
+        if ( dirent->ISREG() )
         {
-          void* policy_function = policy_shared_library->getFunction( name );
-          if ( policy_function != NULL )
-            policy_shared_libraries.push_back( policy_shared_library.release() );
-          return policy_function;
+          const std::string&
+            file_name = static_cast<const std::string&>( dirent->get_name() );
+
+          std::string::size_type
+            dll_pos = file_name.find
+                      ( 
+                        static_cast<const std::string&>
+                        ( 
+                          YIELD::platform::SharedLibrary::SHLIBSUFFIX 
+                        ) 
+                      );
+
+          if
+          (
+            dll_pos != std::string::npos &&
+            dll_pos != 0 &&
+            file_name[dll_pos-1] == '.'
+          )
+          {
+            YIELD::platform::Path policy_shared_library_path
+              = *policy_dir_path_i / file_name;
+
+            YIELD::platform::auto_SharedLibrary policy_shared_library
+              = YIELD::platform::SharedLibrary::open
+                ( 
+                  policy_shared_library_path 
+                );
+
+            if ( policy_shared_library != NULL )
+            {
+              void* policy_function = policy_shared_library->getFunction( name );
+              if ( policy_function != NULL )
+              {
+                policy_shared_libraries.push_back
+                ( 
+                  policy_shared_library.release() 
+                );
+              }
+              return policy_function;
+            }
+          }
+
+          dirent = directory->readdir();
         }
       }
     }

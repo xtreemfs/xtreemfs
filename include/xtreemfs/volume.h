@@ -108,22 +108,6 @@ namespace xtreemfs
     // YIELD::platform::Volume
     YIELD_PLATFORM_VOLUME_PROTOTYPES;
 
-    bool listdir
-    (
-      const YIELD::platform::Path& path,
-      listdirCallback& callback
-    )
-    {
-      return listdir( path, YIELD::platform::Path(), callback );
-    }
-
-    bool listdir
-    (
-      const YIELD::platform::Path& path,
-      const YIELD::platform::Path& match_file_name_prefix,
-      listdirCallback& callback
-    );
-
     static void
     set_errno
     (

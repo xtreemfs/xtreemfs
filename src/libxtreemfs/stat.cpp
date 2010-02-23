@@ -44,6 +44,7 @@ using namespace xtreemfs;
 Stat::Stat( const YIELD::platform::Stat& stbuf )
 : YIELD::platform::Stat( stbuf )
 {
+  etag = 0;
   truncate_epoch = 0;
 }
 
@@ -74,6 +75,7 @@ Stat::Stat( const org::xtreemfs::interfaces::Stat& stbuf )
     0 // blocks
 #endif
   ),
+  etag( stbuf.get_etag() ),
   group_id( stbuf.get_group_id() ),
   truncate_epoch( stbuf.get_truncate_epoch() ),
   user_id( stbuf.get_user_id() )
@@ -121,6 +123,7 @@ Stat::operator org::xtreemfs::interfaces::Stat() const
 #else
     get_blksize(),
 #endif
+    etag,
     truncate_epoch,
 #ifdef _WIN32
     get_attributes()
@@ -128,6 +131,11 @@ Stat::operator org::xtreemfs::interfaces::Stat() const
     0
 #endif
   );
+}
+
+void Stat::set_etag( uint64_t etag )
+{
+  this->etag = etag;
 }
 
 void Stat::set_group_id( const std::string& group_id ) 
