@@ -20,7 +20,7 @@ Description: XtreemFS server
 
 Package: xtreemfs-server
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, xtreemfs-backend (= ${binary:Version}), grep, sudo, java6-runtime-headless
+Depends: ${shlibs:Depends}, ${misc:Depends}, xtreemfs-backend (= ${binary:Version}), grep, sudo, java6-runtime-headless, uuid-runtime
 Description: XtreemFS server
  XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org. This package contains the XtreemFS server components (DIR, MRC, OSD). To run the XtreemFS services, a SUN JAVA 6 RUNTIME ENVIROMENT IS REQUIRED! Make sure that Java is installed in /usr/bin, or $JAVA_HOME is set.
 

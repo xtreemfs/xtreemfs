@@ -12,7 +12,8 @@ else
 echo "UUID can't be generated automatically. Please enter a correct UUID in each config file of a xtreemfs service."
 fi
 
-$XTREEMFS_CONFIG_DIR/postinstall_setup.sh
+#$XTREEMFS_CONFIG_DIR/postinstall_setup.sh
+_POSTINSTALL_
 
 /etc/init.d/xtreemfs-dir try-restart
 /etc/init.d/xtreemfs-mrc try-restart
