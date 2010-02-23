@@ -53,7 +53,7 @@ YIELD::platform::CountingSemaphore YIELD::Main::pause_semaphore;
 #define MAX_RETRIES_FOR_A_REQUEST 2
 
 /*
- * Skew for ZipfGenerator
+ * Skewness for ZipfGenerator
  */
 #define ZIPFGENERATOR_SKEW 0.5
 
@@ -253,7 +253,8 @@ namespace xtfs_vivaldi
                                       OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
                                       get_proxy_flags(),
                                       get_log(),
-                                      get_operation_timeout() );
+                                      get_operation_timeout(),
+                                      static_cast<uint8_t>(1)); //RECONNECT_TRIES_MAX
 
                 org::xtreemfs::interfaces::VivaldiCoordinates random_osd_vivaldi_coordinates;
 

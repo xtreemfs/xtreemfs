@@ -1,4 +1,4 @@
-/*  Copyright (c) 2008 Barcelona Supercomputing Center - Centro Nacional
+/*  Copyright (c) 2009 Barcelona Supercomputing Center - Centro Nacional
   de Supercomputacion and Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
   This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based

@@ -15,13 +15,24 @@ namespace xtfs_vivaldi
   {
 
   public:
-
+    /*
+     * Creates a new ZipfGenerator with the given skewness
+     *    skew: Desired skewness
+     */
     ZipfGenerator(const double skew);
+    /*
+     *  Returns a number from [0,this.size)
+     */
     int next();
+    /*
+     * Modifies the rank of the generated indexes
+     */
     void set_size(const int new_size);
 
   private:
-
+    /*
+     * Returns the probability (0.0,1.0) to choose a given index
+     */
     double get_probability(const int rank);
 
     int size;
