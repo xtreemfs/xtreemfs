@@ -91,8 +91,6 @@ if not sys.platform.startswith( "win" ):
 
 
 build_env.Library( "../../lib/xtreemfs", (
-    r"../../share/yield/src/uriparser.c",
-    r"../../share/yield/src/yajl.c",
     r"../../share/yield/src/yield/concurrency.cpp",
     r"../../share/yield/src/yield/ipc.cpp",
     r"../../share/yield/src/yield/platform.cpp",

@@ -74,6 +74,7 @@ for include_dir_path in include_dir_paths:
 build_env.Library( "../../lib/google-breakpad", (
     r"../../share/google-breakpad/src/client/windows/crash_generation/client_info.cc",
     r"../../share/google-breakpad/src/client/windows/crash_generation/crash_generation_client.cc",
+    r"../../share/google-breakpad/src/client/windows/crash_generation/crash_generation_server.cc",
     r"../../share/google-breakpad/src/client/windows/crash_generation/minidump_generator.cc",
     r"../../share/google-breakpad/src/client/windows/handler/exception_handler.cc",
     r"../../share/google-breakpad/src/common/convert_UTF.c",

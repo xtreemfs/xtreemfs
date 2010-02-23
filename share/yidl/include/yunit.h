@@ -1,11 +1,39 @@
-// Copyright 2003-2009 Minor Gordon, with original implementations and ideas contributed by Felix Hupfeld.
-// This source comes from the Yield project. It is licensed under the GPLv2 (see COPYING for terms and conditions).
+// Copyright (c) 2010 Minor Gordon
+// All rights reserved
+// 
+// This source file is part of the yidl project.
+// It is licensed under the New BSD license:
+// 
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+// * Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// * Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+// * Neither the name of the yidl project nor the
+// names of its contributors may be used to endorse or promote products
+// derived from this software without specific prior written permission.
+// 
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 
 #ifndef _YUNIT_H_
 #define _YUNIT_H_
 
 #include <cstdio>
 #include <iostream>
+#include <string>
+#include <vector>
 
 
 #define ASSERT_TRUE( stat ) { if ( !( ( stat ) == true ) ) throw yunit::AssertionException( __FILE__, __LINE__, #stat" != true" ); }
@@ -27,11 +55,13 @@ class TestSuiteName##_##TestCaseName##Test : public TestCaseType \
 { \
 public:\
   TestSuiteName##_##TestCaseName##Test() \
-  : TestCaseType( TestSuiteName##TestSuite(), # TestCaseName ) \
-  { } \
+  : TestCaseType( # TestSuiteName "_" # TestCaseName "Test" ) \
+  { \
+    TestSuiteName##TestSuite().addTest( this ); \
+  } \
   void runTest(); \
 };\
-TestSuiteName##_##TestCaseName##Test TestSuiteName##_##TestCaseName##Test_inst;\
+TestSuiteName##_##TestCaseName##Test* TestSuiteName##_##TestCaseName##Test_inst = new TestSuiteName##_##TestCaseName##Test;\
 void TestSuiteName##_##TestCaseName##Test::runTest()
 
 #define TEST_CASE( TestSuiteName, TestCaseName ) TEST_CASE_EX( TestSuiteName, TestCaseName, yunit::TestCase )
@@ -73,17 +103,20 @@ namespace yunit
   class TestCase
   {
   public:
-    TestCase( TestSuite& test_suite, const std::string& name );
+    TestCase( const std::string& name )
+      : name( name )
+    { }
+
     virtual ~TestCase() { }
 
     virtual void setUp() { }
     virtual void runTest() { }
     virtual void run( TestResult& ) { runTest(); }
     virtual void tearDown() { }
-    const char* shortDescription() const { return short_description.c_str(); }
+    const char* shortDescription() const { return name.c_str(); }
 
   protected:
-    std::string short_description;
+    std::string name;
   };
 
 
@@ -112,23 +145,13 @@ namespace yunit
 
     virtual ~TestSuite()
     {
-      for ( std::vector<TestCase*>::size_type test_case_i = 0; test_case_i < size(); test_case_i++ )
-      {
-        if ( own_test_cases[test_case_i] )
-          delete at( test_case_i );
-      }
+      for ( iterator test_case_i = begin(); test_case_i != end(); test_case_i++ )
+        delete *test_case_i;
     }
 
-    void addTest( TestCase* test_case, bool own_test_case = true ) // for addTest( new ... )
+    void addTest( TestCase* test_case )
     {
       push_back( test_case );
-      own_test_cases.push_back( own_test_case );
-    }
-
-    void addTest( TestCase& test_case, bool own_test_case = false ) // for addTest( *this )
-    {
-      push_back( &test_case );
-      own_test_cases.push_back( own_test_case );
     }
 
     const std::string& get_name() const { return name; }
@@ -173,16 +196,7 @@ namespace yunit
 
   private:
     std::string name;
-
-    std::vector<bool> own_test_cases;
   };
-
-
-  inline TestCase::TestCase( TestSuite& test_suite, const std::string& name )
-    : short_description( test_suite.get_name() + "_" + name )
-  {
-    test_suite.addTest( *this );
-  }
 
 
   inline int TestRunner::run( TestSuite& test_suite )
@@ -192,5 +206,6 @@ namespace yunit
     return 0;
   }
 };
+
 
 #endif
