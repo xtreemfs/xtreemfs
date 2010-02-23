@@ -20,6 +20,7 @@ import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
+import org.xtreemfs.interfaces.StatSet;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser;
 import org.xtreemfs.utils.CLIParser.CliOption;
@@ -58,8 +59,8 @@ public class mrc_stat {
             groups.add("test");
             final UserCredentials uc = MRCClient.getCredentials("test", groups);
 
-            RPCResponse<Stat> r = c.getattr(null, uc, path);
-            Stat data = r.get();
+            RPCResponse<StatSet> r = c.getattr(null, uc, path);
+            Stat data = r.get().get(0);
             r.freeBuffers();
             rpcClient.shutdown();
             System.out.println("file id      "+data.getIno());

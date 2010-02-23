@@ -21,6 +21,7 @@ import org.xtreemfs.interfaces.DIRInterface.DIRInterface;
 import org.xtreemfs.interfaces.DirectoryEntry;
 import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.MRCInterface.MRCInterface;
+import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.mrc.client.MRCClient;
 import org.xtreemfs.utils.CLIParser;
@@ -64,8 +65,9 @@ public class mrc_ls {
             DirectoryEntrySet entries = r.get();
             r.freeBuffers();
             for (DirectoryEntry e : entries) {
-                System.out.println(e.getName()+"\t"+e.getStbuf().getMode()+"\t"+OutputUtils.formatBytes(e.getStbuf().getSize())+"\t"+
-                        e.getStbuf().getAttributes());
+                final Stat s = e.getStbuf().get(0);
+                System.out.println(e.getName()+"\t"+s.getMode()+"\t"+OutputUtils.formatBytes(s.getSize())+"\t"+
+                        s.getAttributes());
             }
             rpcClient.shutdown();
         } catch (Exception ex) {

@@ -55,6 +55,7 @@ import org.xtreemfs.interfaces.DirectoryEntrySet;
 import org.xtreemfs.interfaces.Service;
 import org.xtreemfs.interfaces.ServiceSet;
 import org.xtreemfs.interfaces.ServiceType;
+import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.UserCredentials;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.mrc.client.MRCClient;
@@ -228,10 +229,11 @@ public class DemoScrubber implements DemoScrubberFileInfo.FileScrubbedListener {
             r.freeBuffers();
 
             for (DirectoryEntry e : ls) {
-                if ((e.getStbuf().getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFREG) != 0) {
+                final Stat s = e.getStbuf().get(0);
+                if ((s.getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFREG) != 0) {
                     //regular file
                     files.push(currentDirName+"/"+e.getName());
-                } else if ((e.getStbuf().getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFDIR) != 0) {
+                } else if ((s.getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFDIR) != 0) {
                     directories.push(currentDirName+"/"+e.getName());
                 }
             }
