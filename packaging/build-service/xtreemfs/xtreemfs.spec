@@ -58,12 +58,12 @@ XtreemFS is a distributed and replicated file system for the internet. For more 
 
 This package contains the XtreemFS client module.
 
-%package client-policies-gridmap_flog
+%package client-policies-gridmap-flog
 Summary:        XtreemFS client gridmap_flog policy
 Group:          Networking
 Requires:       %{name}-client == %{version}-%{release}
 
-%description client-policies-gridmap_flog
+%description client-policies-gridmap-flog
 XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org.
 
 This package contains the gridmap_flog policy for the XtreemFS client.
@@ -257,7 +257,7 @@ rm -rf $RPM_BUILD_ROOT
 #/usr/share/doc/xtreemfs-client/
 %doc COPYING
 
-%files client-policies-gridmap_flog
+%files client-policies-gridmap-flog
 %defattr(-,root,root)
 %{_libdir}/xtreemfs/policies/libgridmap_flog.so
 %endif

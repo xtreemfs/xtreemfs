@@ -12,7 +12,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, fuse-utils (>= 2.6)
 Description: XtreemFS client
  XtreemFS is a distributed and replicated file system for the internet. For more details, visit www.xtreemfs.org. This package contains the XtreemFS client module.
 
-Package: xtreemfs-client-policies-gridmap_flog
+Package: xtreemfs-client-policies-gridmap-flog
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}, xtreemfs-client (= ${binary:Version})
 Description: XtreemFS client gridmap_flog policy
