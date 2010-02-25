@@ -120,7 +120,8 @@ public class MRCHelper {
             snapshots,
             snapshots_enabled,
             snapshot_time,
-            mark_replica_complete
+            mark_replica_complete,
+            dir_service
     }
     
     public enum FileType {
@@ -404,10 +405,16 @@ public class MRCHelper {
             }
                 
             case snapshots_enabled:
-                return file.getId() == 1 && !sMan.getVolumeInfo().isSnapVolume() ? String.valueOf(sMan.getVolumeInfo().isSnapshotsEnabled()) : "";
+                return file.getId() == 1 && !sMan.getVolumeInfo().isSnapVolume() ? String.valueOf(sMan
+                        .getVolumeInfo().isSnapshotsEnabled()) : "";
             case snapshot_time:
                 return file.getId() == 1 && sMan.getVolumeInfo().isSnapVolume() ? Long.toString(sMan
                         .getVolumeInfo().getCreationTime()) : "";
+                
+            case dir_service:
+                return file.getId() == 1 ? (config.isUsingSSL() ? "oncrpcs://" : "oncrpc://")
+                    + config.getDirectoryService().getAddress().getHostName() + ":" + config.getDirectoryService().getPort() : "";
+                
             }
         }
         
