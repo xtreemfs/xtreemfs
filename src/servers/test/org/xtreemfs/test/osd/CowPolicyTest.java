@@ -48,7 +48,8 @@ public class CowPolicyTest extends TestCase {
     }
     
     public void testCowOnce() throws Exception {
-        CowPolicy p = new CowPolicy(cowMode.COW_ONCE,115);
+        CowPolicy p = new CowPolicy(cowMode.COW_ONCE);
+        p.initCowFlagsIfRequired(115);
         assertTrue(p.isCOW(0));
         assertTrue(p.isCOW(10));
         assertTrue(p.isCOW(55));

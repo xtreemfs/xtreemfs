@@ -60,6 +60,9 @@ import org.xtreemfs.test.SetupUtils;
 import org.xtreemfs.test.TestEnvironment;
 
 public class StripingTest extends TestCase {
+    
+    private static final boolean COW = false;
+    
     private TestEnvironment testEnv;
     
     static class MRCDummy implements RPCResponseAvailableListener<OSDWriteResponse> {
@@ -80,7 +83,7 @@ public class StripingTest extends TestCase {
             if (mode == 't')
                 issuedEpoch++;
 
-            return new Capability(FILE_ID, 0, 60, System.currentTimeMillis(), "", (int)issuedEpoch, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, capSecret);
+            return new Capability(FILE_ID, 0, 60, System.currentTimeMillis(), "", (int)issuedEpoch, false, COW? SnapConfig.SNAP_CONFIG_ACCESS_CURRENT: SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, capSecret);
         }
         
         synchronized long getFileSize() {
@@ -200,7 +203,7 @@ public class StripingTest extends TestCase {
     }
 
     private Capability getCap(String fname) {
-        return new Capability(fname, 0, 60, System.currentTimeMillis(), "", 0, false, SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, capSecret);
+        return new Capability(fname, 0, 60, System.currentTimeMillis(), "", 0, false, COW? SnapConfig.SNAP_CONFIG_ACCESS_CURRENT: SnapConfig.SNAP_CONFIG_SNAPS_DISABLED, 0, capSecret);
     }
     
     protected void tearDown() throws Exception {

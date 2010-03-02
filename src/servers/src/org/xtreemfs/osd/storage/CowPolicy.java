@@ -26,6 +26,7 @@ package org.xtreemfs.osd.storage;
 
 /**
  * This class implements differen copy-on-write strategies.
+ * 
  * @author bjko
  */
 public class CowPolicy {
@@ -38,8 +39,8 @@ public class CowPolicy {
          */
         NO_COW,
         /**
-         * Create a copy only for the first write after open,
-         * then overwrite for each subsequent request.
+         * Create a copy only for the first write after open, then overwrite for
+         * each subsequent request.
          */
         COW_ONCE,
         /**
@@ -54,51 +55,59 @@ public class CowPolicy {
     private final cowMode mode;
     
     /**
-     * The initial number of objects. Required for
-     * COW_ONCE mode.
+     * The initial number of objects. Required for COW_ONCE mode.
      */
-    private final long    initialObjectCount;
+    private long          initialObjectCount;
     
     /**
      * per-object flag which indicates if the object has already been copied
      * (for COW_ONCE mode). Each bit is used
      */
-    private final byte[]  cowFlags;
+    private byte[]        cowFlags;
     
     /**
      * Create a new cowPolicy
-     * @param mode can be NO_COW or ALWAYS_COW but not COW_ONCE
+     * 
+     * @param mode
+     *            the COW mode
      */
     public CowPolicy(cowMode mode) {
-        if (mode == cowMode.COW_ONCE) {
-            throw new IllegalArgumentException("Mode COW_ONCE requires initial object count!");
-        }
         this.mode = mode;
-        this.initialObjectCount = 0;
-        this.cowFlags = null;
     }
     
     /**
-     * Creates a new cowPolicy with COW_ONCE
-     * @param mode mut be COW_ONCE
-     * @param initialObjectCount the number of objects when openening the file (added objects do not require COW)
+     * Initializes the COW flags if necessary.
+     * 
+     * @param objectCount
+     *            the current number of objects
      */
-    public CowPolicy(cowMode mode, long initialObjectCount) {
-        this.mode = mode;
-        this.initialObjectCount = initialObjectCount;
-        final int fieldLen = (int) Math.ceil(initialObjectCount/Byte.SIZE);
-        cowFlags = new byte[fieldLen];
+    public void initCowFlagsIfRequired(long objectCount) {
+        
+        if (mode == cowMode.COW_ONCE && cowFlags == null) {
+            
+            assert (objectCount / Byte.SIZE < Integer.MAX_VALUE) : "number of objects for COW_ONCE file ("
+                + objectCount + ") exceeds limit (" + Integer.MAX_VALUE * Byte.SIZE + ")";
+            
+            final int fieldLen = (int) Math.ceil((double) objectCount / Byte.SIZE);
+            cowFlags = new byte[fieldLen];
+            initialObjectCount = objectCount;
+        }
     }
     
     /**
      * Checks if an object must be copied before writing
-     * @param objectNumber the object to be modified
+     * 
+     * @param objectNumber
+     *            the object to be modified
      * @return true, if a new version must be created
      */
     private boolean requiresCow(int objectNumber) {
-        assert(mode == cowMode.COW_ONCE);
-        //new objects do not need copy-on-write ;-)
-        if (objectNumber >= this.initialObjectCount)
+        
+        assert (mode == cowMode.COW_ONCE);
+        assert (cowFlags != null);
+        
+        // new objects do not need copy-on-write ;-)
+        if (objectNumber >= initialObjectCount)
             return false;
         
         final int field = objectNumber / Byte.SIZE;
@@ -108,24 +117,39 @@ public class CowPolicy {
     
     /**
      * Checks if copy-on-write is necessary for an object
-     * @param objectNumber the object to be modified
+     * 
+     * @param objectNumber
+     *            the object to be modified
      * @return true, if a new version must be created
      */
     public boolean isCOW(int objectNumber) {
-        return ((mode != cowMode.NO_COW) && 
-                ((mode == cowMode.ALWAYS_COW) || requiresCow(objectNumber)) );
+        return ((mode != cowMode.NO_COW) && ((mode == cowMode.ALWAYS_COW) || requiresCow(objectNumber)));
+    }
+    
+    /**
+     * Checks if copy-on-write is generally enabled.
+     * 
+     * @return true, if a COW mode other than NO_COW was assigned to the policy
+     */
+    public boolean cowEnabled() {
+        return mode != cowMode.NO_COW;
     }
     
     /**
      * toggels the written flag for an object if in COW_ONMCE mode
-     * @param objectNumber the object which was modified
+     * 
+     * @param objectNumber
+     *            the object which was modified
      */
     public void objectChanged(int objectNumber) {
-        //ignore new objects
-        if ((mode == cowMode.COW_ONCE) && (objectNumber < this.initialObjectCount)) {
+        
+        assert (cowFlags != null);
+        
+        // ignore new objects
+        if ((mode == cowMode.COW_ONCE) && (objectNumber < initialObjectCount)) {
             final int field = objectNumber / Byte.SIZE;
             final int bit = objectNumber % Byte.SIZE;
-            cowFlags[field] = (byte)(cowFlags[field] | (0x01 << bit));
+            cowFlags[field] = (byte) (cowFlags[field] | (0x01 << bit));
         }
     }
     

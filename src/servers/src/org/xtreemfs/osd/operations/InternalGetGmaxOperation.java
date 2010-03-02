@@ -30,6 +30,7 @@ import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.InternalGmax;
+import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_gmaxRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_get_gmaxResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
@@ -38,71 +39,74 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetGmaxCallback;
 
 public final class InternalGetGmaxOperation extends OSDOperation {
-
-    final int procId;
-    final String sharedSecret;
+    
+    final int         procId;
+    
+    final String      sharedSecret;
+    
     final ServiceUUID localUUID;
-
+    
     public InternalGetGmaxOperation(OSDRequestDispatcher master) {
-        super(master);;
+        super(master);
+        ;
         procId = xtreemfs_internal_get_gmaxRequest.TAG;
         sharedSecret = master.getConfig().getCapabilitySecret();
         localUUID = master.getConfig().getUUID();
     }
-
+    
     @Override
     public int getProcedureId() {
         return procId;
     }
-
+    
     @Override
     public void startRequest(final OSDRequest rq) {
-        final xtreemfs_internal_get_gmaxRequest args = (xtreemfs_internal_get_gmaxRequest)rq.getRequestArgs();
-        master.getStorageStage().internalGetGmax(args.getFile_id(),
-                rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                rq, new InternalGetGmaxCallback() {
-
-            @Override
-            public void gmaxComplete(InternalGmax result, Exception error) {
-                if (error != null) {
-                    if (error instanceof ONCRPCException)
-                        rq.sendException((ONCRPCException)error);
-                    else
-                        rq.sendInternalServerError(error);
-                } else
-                    sendResponse(rq, result);
-            }
-        });
+        final xtreemfs_internal_get_gmaxRequest args = (xtreemfs_internal_get_gmaxRequest) rq
+                .getRequestArgs();
+        master.getStorageStage().internalGetGmax(
+            args.getFile_id(),
+            rq.getLocationList().getLocalReplica().getStripingPolicy(),
+            rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP ? rq.getCapability()
+                    .getSnapTimestamp() : 0, rq, new InternalGetGmaxCallback() {
+                
+                @Override
+                public void gmaxComplete(InternalGmax result, Exception error) {
+                    if (error != null) {
+                        if (error instanceof ONCRPCException)
+                            rq.sendException((ONCRPCException) error);
+                        else
+                            rq.sendInternalServerError(error);
+                    } else
+                        sendResponse(rq, result);
+                }
+            });
     }
-
-
+    
     public void sendResponse(OSDRequest rq, InternalGmax result) {
         xtreemfs_internal_get_gmaxResponse response = new xtreemfs_internal_get_gmaxResponse(result);
         rq.sendSuccess(response);
     }
-
+    
     @Override
     public yidl.runtime.Object parseRPCMessage(ReusableBuffer data, OSDRequest rq) throws Exception {
         xtreemfs_internal_get_gmaxRequest rpcrq = new xtreemfs_internal_get_gmaxRequest();
         rpcrq.unmarshal(new XDRUnmarshaller(data));
-
+        
         rq.setFileId(rpcrq.getFile_id());
-        rq.setCapability(new Capability(rpcrq.getFile_credentials().getXcap(),sharedSecret));
+        rq.setCapability(new Capability(rpcrq.getFile_credentials().getXcap(), sharedSecret));
         rq.setLocationList(new XLocations(rpcrq.getFile_credentials().getXlocs(), localUUID));
-
+        
         return rpcrq;
     }
-
+    
     @Override
     public boolean requiresCapability() {
         return true;
     }
-
+    
     @Override
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
     
-
 }

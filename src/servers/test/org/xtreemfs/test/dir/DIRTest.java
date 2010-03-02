@@ -22,7 +22,7 @@
  * AUTHORS: Björn Kolbeck (ZIB)
  */
 
-package org.xtreemfs.test.new_dir;
+package org.xtreemfs.test.dir;
 
 import java.io.IOException;
 

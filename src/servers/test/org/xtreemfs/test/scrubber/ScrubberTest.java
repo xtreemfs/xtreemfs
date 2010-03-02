@@ -40,6 +40,7 @@ import org.xtreemfs.dir.DIRConfig;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.interfaces.AccessControlPolicyType;
 import org.xtreemfs.interfaces.Stat;
+import org.xtreemfs.interfaces.StatSet;
 import org.xtreemfs.interfaces.StripingPolicy;
 import org.xtreemfs.interfaces.StripingPolicyType;
 import org.xtreemfs.interfaces.VivaldiCoordinates;
@@ -210,14 +211,14 @@ public class ScrubberTest extends TestCase {
         
         // file size corrected from 10 to 0
         RPCResponse r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/myDir/test0.txt");
-        Stat s = (Stat) r.get();
+        Stat s = ((StatSet) r.get()).get(0);
         r.freeBuffers();
         
         assertEquals(0, s.getSize());
         
         // file size same as before
         r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/myDir/test1.txt");
-        s = (Stat) r.get();
+        s = ((StatSet) r.get()).get(0);
         r.freeBuffers();
         
         assertEquals(0, s.getSize());
@@ -231,7 +232,7 @@ public class ScrubberTest extends TestCase {
         // file size corrected from 0 to 72000 (this file is stored in two
         // objects)
         r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/anotherDir/test11.txt");
-        s = (Stat) r.get();
+        s = ((StatSet) r.get()).get(0);
         r.freeBuffers();
         
         assertEquals(72000, s.getSize());
@@ -239,7 +240,7 @@ public class ScrubberTest extends TestCase {
         // file size corrected from 0 to 65536, which is the stripe size.
         
         r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/test10.txt");
-        s = (Stat) r.get();
+        s = ((StatSet) r.get()).get(0);
         r.freeBuffers();
         
         assertEquals(65536, s.getSize());

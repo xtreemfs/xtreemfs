@@ -86,7 +86,7 @@ public final class DeleteOperation extends OSDOperation {
             if (rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY))
                 master.getReplicationStage().cancelReplicationForFile(args.getFile_id());
             
-            master.getDeletionStage().deleteObjects(args.getFile_id(), rq, new DeleteObjectsCallback() {
+            master.getDeletionStage().deleteObjects(args.getFile_id(), null, rq.getCowPolicy().cowEnabled(), rq, new DeleteObjectsCallback() {
 
                 @Override
                 public void deleteComplete(Exception error) {

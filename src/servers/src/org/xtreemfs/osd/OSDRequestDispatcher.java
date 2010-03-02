@@ -269,7 +269,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         udpCom = new UDPCommunicator(config.getPort(), this);
         udpCom.setLifeCycleListener(this);
         
-        preprocStage = new PreprocStage(this);
+        preprocStage = new PreprocStage(this, metadataCache);
         preprocStage.setLifeCycleListener(this);
         
         stStage = new StorageStage(this, metadataCache, storageLayout, 1);

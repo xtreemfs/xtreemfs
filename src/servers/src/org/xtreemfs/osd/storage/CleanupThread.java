@@ -207,6 +207,9 @@ public class CleanupThread extends LifeCycleThread {
                                      zombieFiles.put(zombie,l.files.get(zombie));
                                  }
                              } else {
+                                 
+                                 final boolean cowEnabled = false; // FIXME: fetch COW policy for current volume
+                                 
                                  volume.mrc = new ServiceUUID(s.get(0).getData().get("mrc"));
                                  RPCResponse<String> r = mrcClient.xtreemfs_checkFileExists(volume.mrc.getAddress(), volume.id, perVolume.get(volume), localUUID.toString());
                                  String eval = r.get();
@@ -248,7 +251,7 @@ public class CleanupThread extends LifeCycleThread {
                                                          }
                                                      // deal with the unrestoreable replica
                                                      } else if (!isDeleteOnClose) {
-                                                         master.getDeletionStage().deleteObjects(fName, null, new DeletionStage.DeleteObjectsCallback() {
+                                                         master.getDeletionStage().deleteObjects(fName, null, cowEnabled, null, new DeletionStage.DeleteObjectsCallback() {
                                                              
                                                              @Override
                                                              public void deleteComplete(Exception error) {
@@ -306,9 +309,11 @@ public class CleanupThread extends LifeCycleThread {
                             Map<String,FileData> zombieFiles = zombieFilesPerVolume.get(volume);
                             final AtomicInteger openDeletes = new AtomicInteger(0);
                             
+                            final boolean cowEnabled = false; // FIXME: fetch COW policy for current volume
+                            
                             for (final String fileName : zombieFiles.keySet()) {
                                 openDeletes.incrementAndGet(); 
-                                master.getDeletionStage().deleteObjects(fileName, null, new DeletionStage.DeleteObjectsCallback() {
+                                master.getDeletionStage().deleteObjects(fileName, null, cowEnabled, null, new DeletionStage.DeleteObjectsCallback() {
                                 
                                     @Override
                                     public void deleteComplete(Exception error) {

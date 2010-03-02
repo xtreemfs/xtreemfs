@@ -79,7 +79,7 @@ public class StatOperation extends MRCOperation {
         FileMetadata file = res.getFile();
         
         final long knownEtag = rqArgs.getKnown_etag();
-        final long newEtag = file.getCtime();
+        final long newEtag = file.getCtime() + file.getMtime();
         
         // retrieve and prepare the metadata to return
         StatSet set = new StatSet();

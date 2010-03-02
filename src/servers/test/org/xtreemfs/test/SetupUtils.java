@@ -403,4 +403,15 @@ public class SetupUtils {
         return ReusableBuffer.wrap(data);
     }
     
+    /**
+     * @param size
+     *            in byte
+     */
+    public static ReusableBuffer generateData(int size, byte ch) {
+        byte[] data = new byte[size];
+        for(int i = 0; i < data.length; i++)
+            data[i] = ch;
+        return ReusableBuffer.wrap(data);
+    }
+    
 }

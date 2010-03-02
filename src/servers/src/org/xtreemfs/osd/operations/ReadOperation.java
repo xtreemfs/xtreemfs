@@ -39,6 +39,7 @@ import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.ObjectData;
+import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.readRequest;
 import org.xtreemfs.interfaces.OSDInterface.readResponse;
@@ -98,7 +99,7 @@ public final class ReadOperation extends OSDOperation {
         }
 
         master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), sp,
-                args.getOffset(),args.getLength(), rq, new ReadObjectCallback() {
+                args.getOffset(),args.getLength(), rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP? rq.getCapability().getSnapTimestamp(): 0, rq, new ReadObjectCallback() {
 
             @Override
             public void readComplete(ObjectInformation result, Exception error) {
@@ -189,8 +190,13 @@ public final class ReadOperation extends OSDOperation {
             }
             final boolean isLastObjectLocallyKnown = maxObjNo <= args.getObject_number();
             readFinish(rq, args, result, isLastObjectLocallyKnown);
+            
+            if (args.getFile_credentials().getXcap().getSnap_config() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP)
+                return;
+            
             //and update gmax locally
             master.getStorageStage().receivedGMAX_ASYNC(args.getFile_id(), maxTruncate, maxObjNo);
+            
         } catch (Exception ex) {
             rq.sendInternalServerError(ex);
         } finally {

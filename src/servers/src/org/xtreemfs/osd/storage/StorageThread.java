@@ -27,7 +27,10 @@ package org.xtreemfs.osd.storage;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Set;
+import java.util.Map.Entry;
 
+import org.xtreemfs.common.TimeSync;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
@@ -46,33 +49,37 @@ import org.xtreemfs.osd.OSDRequestDispatcher;
 import org.xtreemfs.osd.replication.ObjectSet;
 import org.xtreemfs.osd.stages.Stage;
 import org.xtreemfs.osd.stages.StorageStage.CachesFlushedCallback;
+import org.xtreemfs.osd.stages.StorageStage.CreateFileVersionCallback;
 import org.xtreemfs.osd.stages.StorageStage.GetFileSizeCallback;
 import org.xtreemfs.osd.stages.StorageStage.GetObjectListCallback;
 import org.xtreemfs.osd.stages.StorageStage.InternalGetGmaxCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.TruncateCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
+import org.xtreemfs.osd.storage.VersionTable.Version;
 import org.xtreemfs.osd.striping.UDPMessage;
 
 public class StorageThread extends Stage {
     
-    public static final int      STAGEOP_READ_OBJECT          = 1;
+    public static final int      STAGEOP_READ_OBJECT           = 1;
     
-    public static final int      STAGEOP_WRITE_OBJECT         = 2;
+    public static final int      STAGEOP_WRITE_OBJECT          = 2;
     
-    public static final int      STAGEOP_TRUNCATE             = 3;
+    public static final int      STAGEOP_TRUNCATE              = 3;
     
-    public static final int      STAGEOP_FLUSH_CACHES         = 4;
+    public static final int      STAGEOP_FLUSH_CACHES          = 4;
     
-    public static final int      STAGEOP_GMAX_RECEIVED        = 5;
+    public static final int      STAGEOP_GMAX_RECEIVED         = 5;
     
-    public static final int      STAGEOP_GET_GMAX             = 6;
+    public static final int      STAGEOP_GET_GMAX              = 6;
     
-    public static final int      STAGEOP_GET_FILE_SIZE        = 7;
+    public static final int      STAGEOP_GET_FILE_SIZE         = 7;
     
-    public static final int      STAGEOP_GET_OBJECT_SET       = 8;
+    public static final int      STAGEOP_GET_OBJECT_SET        = 8;
     
     public static final int      STAGEOP_INSERT_PADDING_OBJECT = 9;
+    
+    public static final int      STAGEOP_CREATE_FILE_VERSION   = 10;
     
     private MetadataCache        cache;
     
@@ -124,6 +131,9 @@ public class StorageThread extends Stage {
                 break;
             case STAGEOP_INSERT_PADDING_OBJECT:
                 processInsertPaddingObject(method);
+                break;
+            case STAGEOP_CREATE_FILE_VERSION:
+                processCreateFileVersion(method);
                 break;
             }
             
@@ -198,6 +208,7 @@ public class StorageThread extends Stage {
         try {
             final String fileId = (String) rq.getArgs()[0];
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[1];
+            final long snapTimestamp = (Long) rq.getArgs()[2];
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
@@ -207,8 +218,27 @@ public class StorageThread extends Stage {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "GET GMAX: %s", fileId);
             }
             
-            InternalGmax gmax = new InternalGmax(fi.getTruncateEpoch(), fi.getFilesize(), fi
-                    .getLastObjectNumber());
+            long fileSize = -1;
+            long lastObj = -1;
+            
+            // determine last object number and file size
+            
+            // in case of a previous file version, determine the last object +
+            // file size from the version table / data on disk
+            if (snapTimestamp > 0) {
+                Version v = fi.getVersionTable().getLatestVersionBefore(snapTimestamp);
+                lastObj = v.getObjCount() - 1;
+                fileSize = v.getFileSize();
+            }
+
+            // in case of the current version, retrieve last object + file size
+            // from the cached file metadata
+            else {
+                lastObj = fi.getLastObjectNumber();
+                fileSize = fi.getFilesize();
+            }
+            
+            InternalGmax gmax = new InternalGmax(fi.getTruncateEpoch(), fileSize, lastObj);
             
             cback.gmaxComplete(gmax, null);
         } catch (IOException ex) {
@@ -230,31 +260,40 @@ public class StorageThread extends Stage {
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[2];
             final int offset = (Integer) rq.getArgs()[3];
             final int length = (Integer) rq.getArgs()[4];
+            final long versionTimestamp = (Long) rq.getArgs()[5];
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             // final boolean rangeRequested = (offset > 0) || (length <
             // stripeSize);
-            
             
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
                     "READ: %s-%d offset=%d, length=%d", fileId, objNo, offset, length);
             }
             
-            long objVer = fi.getObjectVersion(objNo);
+            // if a snapshot is supposed to be read, read the corresponding
+            // object version; otherwise, read the latest object version
+            long objVer = versionTimestamp != 0 ? fi.getVersionTable().getLatestVersionBefore(
+                versionTimestamp).getObjVersion(objNo) : fi.getLatestObjectVersion(objNo);
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "getting objVer %d", objVer);
             }
             
-            long objChksm = fi.getObjectChecksum(objNo);
+            long objChksm = fi.getObjectChecksum(objNo, objVer);
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "checksum is %d", objChksm);
             }
             
-            ObjectInformation obj =  layout.readObject(fileId, fi, objNo, offset, length);
-                
-            obj.setLastLocalObjectNo(fi.getLastObjectNumber());
-            obj.setGlobalLastObjectNo(fi.getGlobalLastObjectNumber());
+            ObjectInformation obj = layout.readObject(fileId, fi, objNo, offset, length, objVer);
+            
+            if (versionTimestamp != 0) {
+                int lastObj = fi.getVersionTable().getLatestVersionBefore(versionTimestamp).getObjCount() - 1;
+                obj.setLastLocalObjectNo(lastObj);
+                obj.setGlobalLastObjectNo(lastObj);
+            } else {
+                obj.setLastLocalObjectNo(fi.getLastObjectNumber());
+                obj.setGlobalLastObjectNo(fi.getGlobalLastObjectNumber());
+            }
             
             cback.readComplete(obj, null);
         } catch (IOException ex) {
@@ -293,8 +332,9 @@ public class StorageThread extends Stage {
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[2];
             final int size = (Integer) rq.getArgs()[3];
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
+            final long version = fi.getLatestObjectVersion(objNo) + 1;
             
-            layout.createPaddingObject(fileId, fi, objNo, 1, size);
+            layout.createPaddingObject(fileId, fi, objNo, version, size);
             
             OSDWriteResponse response = new OSDWriteResponse();
             cback.writeComplete(response, null);
@@ -317,7 +357,7 @@ public class StorageThread extends Stage {
             final XLocations xloc = (XLocations) rq.getArgs()[6];
             final boolean gMaxOff = (Boolean) rq.getArgs()[7];
             final boolean syncWrite = (Boolean) rq.getArgs()[8];
-            //use only if != null
+            // use only if != null
             final Long newVersionArg = (Long) rq.getArgs()[9];
             
             final int dataLength = data.remaining();
@@ -338,28 +378,35 @@ public class StorageThread extends Stage {
                 return;
             }
             
-            // determine obj version to write
-            final boolean isCow = cow.isCOW((int)objNo);
-            long currentV = fi.getObjectVersion(objNo);
-            if (currentV == 0) {
-                currentV++;
-            }
-            long newVersion = (isCow || checksumsEnabled) ? currentV+1 : currentV;
+            // assign the number of objects to the COW policy if necessary (this
+            // is e.g. needed for the COW_ONCE policy)
+            cow.initCowFlagsIfRequired(fi.getLastObjectNumber() + 1);
+            
+            // determine the largest known version of the object
+            long largestV = fi.getLargestObjectVersion(objNo);
+            
+            // determine the object version to write
+            final boolean isCow = cow.isCOW((int) objNo);
+            long newVersion = (isCow || checksumsEnabled) ? largestV + 1 : Math.max(1, largestV);
             if (newVersionArg != null) {
-                //new version passed via arg always prevails
+                // new version passed via arg always prevails
                 newVersion = newVersionArg;
             }
             assert (data != null);
-
-            //make sure last object is set correctly!
+            
+            // make sure last object is set correctly!
             if (objNo > fi.getLastObjectNumber()) {
-               fi.setLastObjectNumber(objNo);
+                fi.setLastObjectNumber(objNo);
             }
-
+            
             layout.writeObject(fileId, fi, data, objNo, offset, newVersion, syncWrite, isCow);
-
+            
+            // update the "latest versions" file
+            if (cow.cowEnabled())
+                layout.updateCurrentObjVersion(fileId, objNo, newVersion);
+            
             if (isCow)
-                cow.objectChanged((int)objNo);
+                cow.objectChanged((int) objNo);
             
             OSDWriteResponse response = new OSDWriteResponse();
             
@@ -422,7 +469,7 @@ public class StorageThread extends Stage {
             if (Logging.isDebug())
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "new last object=%d gmax=%d", fi
                         .getLastObjectNumber(), fi.getGlobalLastObjectNumber());
-            //BufferPool.free(data);
+            // BufferPool.free(data);
             cback.writeComplete(response, null);
             
         } catch (IOException ex) {
@@ -440,6 +487,7 @@ public class StorageThread extends Stage {
             final StripingPolicyImpl sp = (StripingPolicyImpl) rq.getArgs()[2];
             final Replica currentReplica = (Replica) rq.getArgs()[3];
             final long epochNumber = (Long) rq.getArgs()[4];
+            final CowPolicy cow = (CowPolicy) rq.getArgs()[5];
             
             final FileMetadata fi = layout.getFileMetadata(sp, fileId);
             
@@ -450,9 +498,12 @@ public class StorageThread extends Stage {
                 return;
             }
             
+            // assign the number of objects to the COW policy if necessary (this
+            // is e.g. needed for the COW_ONCE policy)
+            cow.initCowFlagsIfRequired(fi.getLastObjectNumber() + 1);
+            
             // find the offset of the local OSD in the current replica's
-            // locations
-            // list
+            // locations list
             // FIXME: unify OSD IDs
             final int relativeOSDNumber = currentReplica.getOSDs().indexOf(master.getConfig().getUUID());
             
@@ -460,22 +511,47 @@ public class StorageThread extends Stage {
             long newGlobalLastObject = -1;
             
             if (newFileSize == 0) {
-                // truncate to zero: remove all objects
+                // truncate file to zero length
+                
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "truncate to 0");
                 
-                layout.deleteFile(fileId,false);
-                fi.getObjChecksums().clear();
-                fi.getObjVersions().clear();
+                // if copy-on-write is enabled ...
+                if (cow.cowEnabled()) {
+                    
+                    // only delete those objects that make up the latest
+                    // version of the file and are not part of former file
+                    // versions
+                    
+                    for (Entry<Long, Long> entry : fi.getLatestObjectVersions()) {
+                        
+                        long objNo = entry.getKey();
+                        long objVer = entry.getValue();
+                        
+                        if (!fi.getVersionTable().isContained(objNo, objVer))
+                            layout.deleteObject(fileId, fi, objNo, objVer);
+                    }
+                }
+
+                // otherwise ...
+                else
+                    // delete all objects of the file (but not the metadata)
+                    layout.deleteFile(fileId, false);
+                
+                fi.clearLatestObjectVersions();
+                
             } else if (fi.getFilesize() > newFileSize) {
                 // shrink file
-                newLastObject = truncateShrink(fileId, newFileSize, epochNumber, sp, fi, relativeOSDNumber);
+                newLastObject = truncateShrink(fileId, newFileSize, epochNumber, sp, fi, relativeOSDNumber,
+                    cow);
                 newGlobalLastObject = sp.getObjectNoForOffset(newFileSize - 1);
             } else if (fi.getFilesize() < newFileSize) {
                 // extend file
-                newLastObject = truncateExtend(fileId, newFileSize, epochNumber, sp, fi, relativeOSDNumber);
+                newLastObject = truncateExtend(fileId, newFileSize, epochNumber, sp, fi, relativeOSDNumber,
+                    cow);
                 newGlobalLastObject = sp.getObjectNoForOffset(newFileSize - 1);
             } else if (fi.getFilesize() == newFileSize) {
+                // file size remains unchanged
                 
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
@@ -495,10 +571,16 @@ public class StorageThread extends Stage {
             // store the truncate epoch persistently
             layout.setTruncateEpoch(fileId, epochNumber);
             
+            // if copy-on-write is enabled, set the new object count for the
+            // latest version
+            if (cow.cowEnabled())
+                layout.updateCurrentVersionSize(fileId, newLastObject);
+            
             // append the new file size and epoch number to the response
             OSDWriteResponse response = new OSDWriteResponse();
             response.getNew_file_size().add(new NewFileSize(newFileSize, (int) epochNumber));
             cback.truncateComplete(response, null);
+            
         } catch (Exception ex) {
             cback.truncateComplete(null, ex);
         }
@@ -517,29 +599,59 @@ public class StorageThread extends Stage {
         cback.getObjectSetComplete(objectSet, null);
     }
     
-    private ReusableBuffer padWithZeros(ReusableBuffer data, int stripeSize) {
-        int oldSize = data.capacity();
-        if (!data.enlarge(stripeSize)) {
-            ReusableBuffer tmp = BufferPool.allocate(stripeSize);
-            data.position(0);
-            tmp.put(data);
-            while (tmp.hasRemaining()) {
-                tmp.put((byte) 0);
-            }
-            BufferPool.free(data);
-            return tmp;
+    /**
+     * @param method
+     */
+    private void processCreateFileVersion(StageRequest rq) {
+        
+        final CreateFileVersionCallback cback = (CreateFileVersionCallback) rq.getCallback();
+        final String fileId = (String) rq.getArgs()[0];
+        
+        FileMetadata fi = (FileMetadata) rq.getArgs()[1];
+        
+        try {
             
-        } else {
-            data.position(oldSize);
-            while (data.hasRemaining()) {
-                data.put((byte) 0);
+            if (fi == null)
+                fi = layout.getFileMetadataNoCaching(null, fileId);
+            
+            Set<Entry<Long, Long>> objVersions = fi.getLatestObjectVersions();
+            long fileSize = fi.getFilesize();
+            
+            // convert the set of object versions into an array
+            
+            // first, determine the last object
+            long maxKey = -1;
+            for (Entry<Long, Long> ver : objVersions) {
+                if (ver.getKey() > maxKey)
+                    maxKey = ver.getKey();
             }
-            return data;
+            
+            // instantiate a sufficiently large array
+            assert (maxKey < Integer.MAX_VALUE);
+            int[] versions = new int[(int) maxKey + 1];
+            
+            // set all object versions in the array
+            for (Entry<Long, Long> ver : objVersions)
+                versions[ver.getKey().intValue()] = ver.getValue().intValue();
+            
+            // create and save the new version
+            fi.getVersionTable().addVersion(TimeSync.getGlobalTime(), versions, fileSize);
+            try {
+                fi.getVersionTable().save();
+            } catch (IOException e) {
+                Logging.logError(Logging.LEVEL_ERROR, this, e);
+            }
+            
+        } catch (Exception e) {
+            
+            Logging.logError(Logging.LEVEL_ERROR, this, e);
+            cback.createFileVersionComplete(0, e);
         }
+        
     }
     
-    private long truncateShrink(String fileId, long fileSize, long epoch, StripingPolicyImpl sp, FileMetadata fi,
-        int relOsdId) throws IOException, OSDException {
+    private long truncateShrink(String fileId, long fileSize, long epoch, StripingPolicyImpl sp,
+        FileMetadata fi, int relOsdId, CowPolicy cow) throws IOException, OSDException {
         // first find out which is the new "last object"
         final long newLastObject = sp.getObjectNoForOffset(fileSize - 1);
         final long oldLastObject = fi.getLastObjectNumber();
@@ -550,31 +662,76 @@ public class StorageThread extends Stage {
                 "truncate shrink to: %d old last: %d   new last: %d", fileSize, fi.getLastObjectNumber(),
                 newLastObject);
         
-        // remove all unnecessary objects
-        final long oldRow = sp.getRow(oldLastObject);
-        final long lastRow = sp.getRow(newLastObject);
-        
-        for (long r = oldRow; r >= lastRow; r--) {
-            final long rowObj = r * sp.getWidth() + relOsdId;
-            if (rowObj == newLastObject) {
-                // is local and needs to be shrunk
-                final int newObjSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
-                truncateObject(fileId, newLastObject, sp, newObjSize, relOsdId);
-            } else if (rowObj > newLastObject) {
-                // delete objects
-                final long v = fi.getObjectVersion(rowObj);
-                layout.deleteObject(fileId, fi, rowObj, v);
-                fi.deleteObject(rowObj);
+        // if copy-on-write enabled ...
+        if (cow.cowEnabled()) {
+            
+            // only remove objects that are no longer bound to former file
+            // versions
+            final long oldRow = sp.getRow(oldLastObject);
+            final long lastRow = sp.getRow(newLastObject);
+            
+            for (long r = oldRow; r >= lastRow; r--) {
+                
+                final long rowObj = r * sp.getWidth() + relOsdId;
+                
+                if (rowObj == newLastObject) {
+                    // currently examined object is new last object and local:
+                    // shrink it
+                    final int newObjSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
+                    truncateObject(fileId, newLastObject, sp, newObjSize, relOsdId, cow);
+                    
+                } else if (rowObj > newLastObject) {
+                    
+                    // currently examined object is larger than new last object
+                    // and not contained in any previous version of the file:
+                    // delete it
+                    final long v = fi.getLatestObjectVersion(rowObj);
+                    if (!fi.getVersionTable().isContained(rowObj, v))
+                        layout.deleteObject(fileId, fi, rowObj, v);
+                    
+                    fi.discardObject(rowObj, v);
+                }
             }
+            
+        }
+
+        // otherwise ...
+        else {
+            
+            // remove all unnecessary objects
+            final long oldRow = sp.getRow(oldLastObject);
+            final long lastRow = sp.getRow(newLastObject);
+            
+            for (long r = oldRow; r >= lastRow; r--) {
+                final long rowObj = r * sp.getWidth() + relOsdId;
+                
+                if (rowObj == newLastObject) {
+                    // currently examined object is new last object and local:
+                    // shrink it
+                    final int newObjSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
+                    truncateObject(fileId, newLastObject, sp, newObjSize, relOsdId, cow);
+                    
+                } else if (rowObj > newLastObject) {
+                    
+                    // currently examined object is larger than new last object:
+                    // delete it
+                    final long v = fi.getLatestObjectVersion(rowObj);
+                    layout.deleteObject(fileId, fi, rowObj, v);
+                    
+                    fi.discardObject(rowObj, v);
+                }
+            }
+            
         }
         
-        // make sure that last objects exist
+        // make sure that new last object exists
         for (long obj = newLastObject - 1; obj > newLastObject - sp.getWidth(); obj--) {
             if (obj > 0 && sp.isLocalObject(obj, relOsdId)) {
-                long v = fi.getObjectVersion(obj);
+                long v = fi.getLatestObjectVersion(obj);
                 if (v == 0) {
                     // does not exist
-                    createPaddingObject(fileId, obj, sp, 1, sp.getStripeSizeForObject(obj), fi);
+                    createPaddingObject(fileId, obj, sp, fi.getLargestObjectVersion(obj) + 1, sp
+                            .getStripeSizeForObject(obj), fi);
                 }
             }
         }
@@ -582,8 +739,8 @@ public class StorageThread extends Stage {
         return newLastObject;
     }
     
-    private long truncateExtend(String fileId, long fileSize, long epoch, StripingPolicyImpl sp, FileMetadata fi,
-        int relOsdId) throws IOException, OSDException {
+    private long truncateExtend(String fileId, long fileSize, long epoch, StripingPolicyImpl sp,
+        FileMetadata fi, int relOsdId, CowPolicy cow) throws IOException, OSDException {
         // first find out which is the new "last object"
         final long newLastObject = sp.getObjectNoForOffset(fileSize - 1);
         final long oldLastObject = fi.getLastObjectNumber();
@@ -593,38 +750,55 @@ public class StorageThread extends Stage {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this,
                 "truncate extend to: %d old last: %d   new last: %d", fileSize, oldLastObject, newLastObject);
         
+        // if no objects need to be added and the last object is stored locally
+        // ...
         if ((sp.getOSDforObject(newLastObject) == relOsdId) && newLastObject == oldLastObject) {
-            // simply extend the old one
-            truncateObject(fileId, newLastObject, sp, (int)(fileSize - sp.getObjectStartOffset(newLastObject)),
-                relOsdId);
-        } else {
+            // ... simply extend the old one
+            truncateObject(fileId, newLastObject, sp, (int) (fileSize - sp
+                    .getObjectStartOffset(newLastObject)), relOsdId, cow);
+        }
+
+        // otherwise ...
+        else {
+            
+            // extend the old last object to full object size
             if ((oldLastObject > -1) && (sp.isLocalObject(oldLastObject, relOsdId))) {
-                truncateObject(fileId, oldLastObject, sp, sp.getStripeSizeForObject(oldLastObject), relOsdId);
+                truncateObject(fileId, oldLastObject, sp, sp.getStripeSizeForObject(oldLastObject), relOsdId,
+                    cow);
             }
             
-            // create padding objects
+            // if the new last object is a local object, create a padding
+            // object to ensure that it exists
             if (sp.isLocalObject(newLastObject, relOsdId)) {
+                
+                long version = cow.isCOW((int) newLastObject) ? fi.getLargestObjectVersion(newLastObject) + 1
+                    : Math.max(1, fi.getLargestObjectVersion(newLastObject));
                 int objSize = (int) (fileSize - sp.getObjectStartOffset(newLastObject));
-                createPaddingObject(fileId, newLastObject, sp, 1, objSize, fi);
+                
+                createPaddingObject(fileId, newLastObject, sp, version, objSize, fi);
             }
             
-            // make sure that last objects exist
+            // make sure that new last objects also exist on all other OSDs
             for (long obj = newLastObject - 1; obj > newLastObject - sp.getWidth(); obj--) {
                 if (obj > 0 && sp.isLocalObject(obj, relOsdId)) {
-                    long v = fi.getObjectVersion(obj);
+                    long v = fi.getLatestObjectVersion(obj);
                     if (v == 0) {
                         // does not exist
-                        createPaddingObject(fileId, obj, sp, 1, sp.getStripeSizeForObject(obj), fi);
+                        final boolean isCow = cow.isCOW((int) obj);
+                        createPaddingObject(fileId, obj, sp, isCow ? fi.getLargestObjectVersion(obj) + 1
+                            : Math.max(1, fi.getLargestObjectVersion(obj)), sp.getStripeSizeForObject(obj),
+                            fi);
                     }
                 }
             }
+            
         }
         
         return newLastObject;
     }
     
-    private void truncateObject(String fileId, long objNo, StripingPolicyImpl sp, int newSize, long relOsdId)
-        throws IOException, OSDException {
+    private void truncateObject(String fileId, long objNo, StripingPolicyImpl sp, int newSize, long relOsdId,
+        CowPolicy cow) throws IOException, OSDException {
         
         assert (newSize > 0) : "new size is " + newSize + " but should be > 0";
         assert (newSize <= sp.getStripeSizeForObject(objNo));
@@ -635,9 +809,12 @@ public class StorageThread extends Stage {
             Logging.logMessage(Logging.LEVEL_DEBUG, Category.proc, this, "truncate object to %d", newSize);
         
         final FileMetadata fi = layout.getFileMetadata(sp, fileId);
-        final long version = fi.getObjectVersion(objNo);
+        final boolean isCow = cow.isCOW((int) objNo);
+        final long newVersion = isCow ? fi.getLargestObjectVersion(objNo) + 1 : Math.max(1, fi
+                .getLatestObjectVersion(objNo));
         
-        layout.truncateObject(fileId, fi, objNo, newSize, version+1, false);
+        layout.truncateObject(fileId, fi, objNo, newSize, newVersion, isCow);
+        
     }
     
     private void createPaddingObject(String fileId, long objNo, StripingPolicyImpl sp, long version,

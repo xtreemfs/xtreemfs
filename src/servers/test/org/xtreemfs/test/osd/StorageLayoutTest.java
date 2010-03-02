@@ -29,8 +29,8 @@ package org.xtreemfs.test.osd;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 
-import java.util.Properties;
 import junit.framework.TestCase;
 import junit.textui.TestRunner;
 
@@ -114,18 +114,22 @@ public class StorageLayoutTest extends TestCase {
         StripingPolicyImpl sp = StripingPolicyImpl.getPolicy(new Replica(new StringSet(), 0, new StripingPolicy(StripingPolicyType.STRIPING_POLICY_RAID0, 64, 1)),0);//new RAID0(64, 1);
 
         FileMetadata md = new FileMetadata(sp);
-
+        md.initLatestObjectVersions(new HashMap<Long, Long>());
+        md.initLargestObjectVersions(new HashMap<Long, Long>());
+        md.initObjectChecksums(new HashMap<String, Long>());
+        
         assertFalse(layout.fileExists(fileId));
 
         ReusableBuffer data = BufferPool.allocate(64);
         for (int i = 0; i < 64; i++) {
             data.put((byte) (48 + i));
         }
+                
         //write 64 bytes
         layout.writeObject(fileId, md, data, 0l, 0, 1l, false, false);
 
         //read full object
-        ObjectInformation oinfo = layout.readObject(fileId,md, 0l, 0, StorageLayout.FULL_OBJECT_LENGTH);
+        ObjectInformation oinfo = layout.readObject(fileId, md, 0l, 0, StorageLayout.FULL_OBJECT_LENGTH, 1l);
         assertEquals(64, oinfo.getData().capacity());
         for (int i = 0; i < 64; i++) {
             assertEquals((byte) (48 + i), oinfo.getData().get());
@@ -133,11 +137,11 @@ public class StorageLayoutTest extends TestCase {
         BufferPool.free(oinfo.getData());
 
         //read object 1 (does not exist)
-        oinfo = layout.readObject(fileId,md, 1l, 0, StorageLayout.FULL_OBJECT_LENGTH);
+        oinfo = layout.readObject(fileId,md, 1l, 0, StorageLayout.FULL_OBJECT_LENGTH, 1l);
         assertEquals(ObjectInformation.ObjectStatus.DOES_NOT_EXIST,oinfo.getStatus());
 
         //range test
-        oinfo = layout.readObject(fileId,md, 0l, 32, 32);
+        oinfo = layout.readObject(fileId,md, 0l, 32, 32, 1l);
         assertEquals(32, oinfo.getData().capacity());
         for (int i = 32; i < 64; i++) {
             assertEquals((byte) (48 + i), oinfo.getData().get());
@@ -145,14 +149,14 @@ public class StorageLayoutTest extends TestCase {
         BufferPool.free(oinfo.getData());
 
         //range test
-        oinfo = layout.readObject(fileId,md, 0l, 32, 1);
+        oinfo = layout.readObject(fileId,md, 0l, 32, 1, 1l);
         assertEquals(1, oinfo.getData().capacity());
         for (int i = 32; i < 33; i++) {
             assertEquals((byte) (48 + i), oinfo.getData().get());
         }
         BufferPool.free(oinfo.getData());
 
-        oinfo = layout.readObject(fileId,md, 0l, 32, 64);
+        oinfo = layout.readObject(fileId,md, 0l, 32, 64, 1l);
         assertEquals(32, oinfo.getData().capacity());
         for (int i = 32; i < 64; i++) {
             assertEquals((byte) (48 + i), oinfo.getData().get());
@@ -161,12 +165,12 @@ public class StorageLayoutTest extends TestCase {
 
         //truncate to 32 byte
         layout.truncateObject(fileId, md, 0l, 32, 1, false);
-        oinfo = layout.readObject(fileId,md, 0l, 32, 64);
+        oinfo = layout.readObject(fileId,md, 0l, 32, 64, 1l);
         assertEquals(0, oinfo.getData().capacity());
         BufferPool.free(oinfo.getData());
 
         //read (non-existent) data from offset 32
-        oinfo = layout.readObject(fileId,md, 0l, 0, 32);
+        oinfo = layout.readObject(fileId,md, 0l, 0, 32, 1l);
         assertEquals(32, oinfo.getData().capacity());
         for (int i = 0; i < 32; i++) {
             assertEquals((byte) (48 + i), oinfo.getData().get());
@@ -175,7 +179,7 @@ public class StorageLayoutTest extends TestCase {
 
         //truncate extend to 64 bytes
         layout.truncateObject(fileId, md, 0l, 64, 2, false);
-        oinfo = layout.readObject(fileId,md, 0l, 32, 64);
+        oinfo = layout.readObject(fileId,md, 0l, 32, 64, 2l);
         assertEquals(32, oinfo.getData().capacity());
         for (int i = 0; i < 32; i++) {
             assertEquals((byte) 0, oinfo.getData().get());
@@ -203,7 +207,7 @@ public class StorageLayoutTest extends TestCase {
         layout.writeObject(fileId, md, data, 3l, 0, 1l, false, false);
 
         //read object 1... should be all zeros or zero padding
-        oinfo = layout.readObject(fileId,md, 1l, 0, 32);
+        oinfo = layout.readObject(fileId,md, 1l, 0, 32, 1l);
         if (oinfo.getStatus() == ObjectInformation.ObjectStatus.PADDING_OBJECT) {
             //fine
         } else if (oinfo.getStatus() == ObjectInformation.ObjectStatus.DOES_NOT_EXIST) {
@@ -231,6 +235,9 @@ public class StorageLayoutTest extends TestCase {
         assertEquals(0, layout.getObjectSet(fileId).size());
 
         FileMetadata md = new FileMetadata(sp);
+        md.initLatestObjectVersions(new HashMap<Long, Long>());
+        md.initLargestObjectVersions(new HashMap<Long, Long>());
+        md.initObjectChecksums(new HashMap<String, Long>());
 
         ReusableBuffer data = BufferPool.allocate(64);
         for (int i = 0; i < 64; i++) {

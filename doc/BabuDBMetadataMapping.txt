@@ -45,7 +45,7 @@ readOnlyFlag 1
 fileName     1
 owner        1
 group        1
-xLocList     2
+xLocList     1
 
 
 Indices are structured as follows (numbers indicate entry sizes in bytes):

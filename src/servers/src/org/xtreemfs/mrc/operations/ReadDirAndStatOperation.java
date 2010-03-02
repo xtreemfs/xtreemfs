@@ -26,7 +26,6 @@ package org.xtreemfs.mrc.operations;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.xtreemfs.foundation.ErrNo;
@@ -195,7 +194,7 @@ public class ReadDirAndStatOperation extends MRCOperation {
                 blkSize = xlocList.getReplica(0).getStripingPolicy().getStripeSize() * 1024;
         }
         
-        final long newEtag = file.getAtime() + file.getMtime() + file.getCtime();
+        final long newEtag = file.getMtime() + file.getCtime();
         
         return new Stat(volume.getId().hashCode(), file.getId(), mode, file.getLinkCount(),
             file.getOwnerId(), file.getOwningGroupId(), size, (long) file.getAtime() * (long) 1e9,

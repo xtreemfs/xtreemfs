@@ -24,23 +24,22 @@ along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 package org.xtreemfs.osd.storage;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel.MapMode;
 import java.security.NoSuchAlgorithmException;
 import java.util.EmptyStackException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
-import org.xtreemfs.common.LRUCache;
 
+import org.xtreemfs.common.LRUCache;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.checksums.ChecksumAlgorithm;
@@ -58,45 +57,60 @@ import org.xtreemfs.osd.replication.ObjectSet;
  */
 public class HashStorageLayout extends StorageLayout {
     
-    public static final int    SL_TAG                = 0x00000002;
+    /**
+     * file to store the truncate epoch in (metadata)
+     */
+    public static final String             TEPOCH_FILENAME       = ".tepoch";
+    
+    /**
+     * file that stores the mapping between file and object versions
+     */
+    public static final String             VTABLE_FILENAME       = ".vtable";
+    
+    /**
+     * file that stores the mapping between file and object versions
+     */
+    public static final String             CURRENT_VER_FILENAME  = ".curr_file_ver";
+    
+    public static final int                SL_TAG                = 0x00000002;
     
     /** 32bit algorithm */
-    public static final String JAVA_HASH             = "Java-Hash";
+    public static final String             JAVA_HASH             = "Java-Hash";
     
     /** 64bit algorithm */
-    public static final String SDBM_HASH             = "SDBM";
+    public static final String             SDBM_HASH             = "SDBM";
     
-    public static final int    SUBDIRS_16            = 15;
+    public static final int                SUBDIRS_16            = 15;
     
-    public static final int    SUBDIRS_256           = 255;
+    public static final int                SUBDIRS_256           = 255;
     
-    public static final int    SUBDIRS_4096          = 4095;
+    public static final int                SUBDIRS_4096          = 4095;
     
-    public static final int    SUBDIRS_65535         = 65534;
+    public static final int                SUBDIRS_65535         = 65534;
     
-    public static final int    SUBDIRS_1048576       = 1048575;
+    public static final int                SUBDIRS_1048576       = 1048575;
     
-    public static final int    SUBDIRS_16777216      = 16777215;
+    public static final int                SUBDIRS_16777216      = 16777215;
     
-    public static final String DEFAULT_HASH          = JAVA_HASH;
+    public static final String             DEFAULT_HASH          = JAVA_HASH;
     
-    private static final int   DEFAULT_SUBDIRS       = SUBDIRS_256;
+    private static final int               DEFAULT_SUBDIRS       = SUBDIRS_256;
     
-    private static final int   DEFAULT_MAX_DIR_DEPTH = 4;
+    private static final int               DEFAULT_MAX_DIR_DEPTH = 4;
     
-    private int                prefixLength;
+    private int                            prefixLength;
     
-    private int                hashCutLength;
+    private int                            hashCutLength;
     
-    private ChecksumAlgorithm  checksumAlgo;
+    private ChecksumAlgorithm              checksumAlgo;
     
-    private long               _stat_fileInfoLoads;
+    private long                           _stat_fileInfoLoads;
     
-    private final boolean      checksumsEnabled;
-
-    private final LRUCache<String,String> hashedPathCache;
-
-    private static final boolean          USE_PATH_CACHE = true;
+    private final boolean                  checksumsEnabled;
+    
+    private final LRUCache<String, String> hashedPathCache;
+    
+    private static final boolean           USE_PATH_CACHE        = true;
     
     /** Creates a new instance of HashStorageLayout */
     public HashStorageLayout(OSDConfig config, MetadataCache cache) throws IOException {
@@ -157,12 +171,13 @@ public class HashStorageLayout extends StorageLayout {
         }
         
         _stat_fileInfoLoads = 0;
-
+        
         hashedPathCache = new LRUCache<String, String>(2048);
     }
     
-    public ObjectInformation readObject(String fileId, FileMetadata md, long objNo, int offset, int length)
-        throws IOException {
+    @Override
+    public ObjectInformation readObject(String fileId, FileMetadata md, long objNo, int offset, int length,
+        long version) throws IOException {
         
         final int stripeSize = md.getStripingPolicy().getStripeSizeForObject(objNo);
         if (Logging.isDebug()) {
@@ -177,9 +192,8 @@ public class HashStorageLayout extends StorageLayout {
             length = stripeSize;
         }
         
-        final long oldVersion = md.getObjectVersion(objNo);
-        if (oldVersion == 0) {
-            // object does not exis
+        if (version == 0) {
+            // object does not exist
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this,
                     "object does not exist (according to md cache)");
@@ -187,8 +201,8 @@ public class HashStorageLayout extends StorageLayout {
             return new ObjectInformation(ObjectInformation.ObjectStatus.DOES_NOT_EXIST, null, stripeSize);
         }
         
-        final long oldChecksum = md.getObjectChecksum(objNo);
-        String fileName = generateAbsoluteObjectPathFromFileId(fileId, objNo, oldVersion, oldChecksum);
+        final long oldChecksum = md.getObjectChecksum(objNo, version);
+        String fileName = generateAbsoluteObjectPathFromFileId(fileId, objNo, version, oldChecksum);
         
         if (Logging.isDebug()) {
             Logging
@@ -306,10 +320,10 @@ public class HashStorageLayout extends StorageLayout {
         
         assert (data != null);
         
-        final long oldVersion = md.getObjectVersion(objNo);
-        final long oldChecksum = md.getObjectChecksum(objNo);
+        final long oldVersion = md.getLatestObjectVersion(objNo);
+        final long oldChecksum = md.getObjectChecksum(objNo, oldVersion);
         
-        ReusableBuffer fullObj = cow(fileId, md, objNo, data, offset);
+        ReusableBuffer fullObj = cow(fileId, md, objNo, data, offset, oldVersion);
         
         long newChecksum = 0;
         if (checksumsEnabled) {
@@ -333,8 +347,9 @@ public class HashStorageLayout extends StorageLayout {
             File oldFile = new File(oldFilename);
             oldFile.delete();
         }
-        md.getObjVersions().put(objNo, newVersion);
-        md.getObjChecksums().put(objNo, newChecksum);
+        
+        md.updateObjectVersion(objNo, newVersion);
+        md.updateObjectChecksum(objNo, newVersion, newChecksum);
         BufferPool.free(fullObj);
     }
     
@@ -343,7 +358,7 @@ public class HashStorageLayout extends StorageLayout {
         // write file
         assert (!checksumsEnabled);
         
-        final long oldVersion = md.getObjectVersion(objNo);
+        final long oldVersion = md.getLatestObjectVersion(objNo);
         final String filename = generateAbsoluteObjectPathFromRelPath(relativePath, objNo, oldVersion, 0l);
         if (Logging.isDebug()) {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "writing to file: %s", filename);
@@ -364,7 +379,7 @@ public class HashStorageLayout extends StorageLayout {
             if (Logging.isDebug()) {
                 Logging.logMessage(Logging.LEVEL_DEBUG, this, "renamed to: %s", newFilename);
             }
-            md.getObjVersions().put(objNo, newVersion);
+            md.updateObjectVersion(objNo, newVersion);
         }
     }
     
@@ -372,8 +387,8 @@ public class HashStorageLayout extends StorageLayout {
         long objNo, long newVersion, boolean sync, boolean deleteOldVersion) throws IOException {
         // write file
         
-        final long oldVersion = md.getObjectVersion(objNo);
-        final long oldChecksum = md.getObjectChecksum(objNo);
+        final long oldVersion = md.getLatestObjectVersion(objNo);
+        final long oldChecksum = md.getObjectChecksum(objNo, oldVersion);
         
         long newChecksum = 0;
         if (checksumsEnabled) {
@@ -401,101 +416,121 @@ public class HashStorageLayout extends StorageLayout {
             File oldFile = new File(oldFilename);
             oldFile.delete();
         }
-        md.getObjVersions().put(objNo, newVersion);
-        md.getObjChecksums().put(objNo, newChecksum);
+        
+        md.updateObjectVersion(objNo, newVersion);
+        
+        if (checksumsEnabled)
+            md.updateObjectChecksum(objNo, newVersion, newChecksum);
     }
     
+    @Override
+    public void updateCurrentObjVersion(String fileId, long objNo, long newVersion) throws IOException {
+        
+        File file = new File(generateAbsoluteFilePath(fileId), CURRENT_VER_FILENAME);
+        if (!file.exists())
+            file.createNewFile();
+        
+        RandomAccessFile versionFile = new RandomAccessFile(file, "rw");
+        versionFile.seek(objNo * Long.SIZE / 8);
+        versionFile.writeLong(newVersion);
+        versionFile.close();
+    }
+    
+    @Override
+    public void updateCurrentVersionSize(String fileId, long newLastObject) throws IOException {
+        
+        File file = new File(generateAbsoluteFilePath(fileId), CURRENT_VER_FILENAME);
+        if (!file.exists())
+            file.createNewFile();
+        
+        RandomAccessFile versionFile = new RandomAccessFile(file, "rw");
+        versionFile.setLength((newLastObject + 1) * Long.SIZE / 8);
+        versionFile.close();
+    }
+    
+    @Override
     public void truncateObject(String fileId, FileMetadata md, long objNo, int newLength, long newVersion,
         boolean cow) throws IOException {
         
-        if (newLength == 0) {
-            // delete the object
-            if (Logging.isDebug()) {
-                Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this, "truncate object %d to length 0",
-                    objNo);
-            }
-            deleteObject(fileId, md, objNo, LATEST_VERSION);
-            md.deleteObject(objNo);
-        } else {
-            final long oldVersion = md.getObjectVersion(objNo);
-            final long oldChecksum = md.getObjectChecksum(objNo);
+        final long oldVersion = md.getLatestObjectVersion(objNo);
+        final long oldChecksum = md.getObjectChecksum(objNo, oldVersion);
+        
+        assert (newLength <= md.getStripingPolicy().getStripeSizeForObject(objNo));
+        
+        String oldFileName = generateAbsoluteObjectPathFromFileId(fileId, objNo, oldVersion, oldChecksum);
+        File oldFile = new File(oldFileName);
+        final long currentLength = oldFile.length();
+        
+        String mode = "rw";
+        
+        if (newLength == currentLength) {
+            return;
+        }
+        
+        if (cow || checksumsEnabled) {
+            ReusableBuffer oldData = unwrapObjectData(fileId, md, objNo, oldVersion);
             
-            assert (newLength <= md.getStripingPolicy().getStripeSizeForObject(objNo));
-            
-            String oldFileName = generateAbsoluteObjectPathFromFileId(fileId, objNo, oldVersion, oldChecksum);
-            File oldFile = new File(oldFileName);
-            final long currentLength = oldFile.length();
-            
-            String mode = "rw";
-            
-            if (newLength == currentLength) {
-                return;
-            }
-            
-            if (cow || checksumsEnabled) {
-                ReusableBuffer oldData = unwrapObjectData(fileId, md, objNo);
-                
-                if (newLength < oldData.capacity()) {
-                    oldData.range(0, newLength);
-                } else {
-                    ReusableBuffer newData = BufferPool.allocate(newLength);
-                    newData.put(oldData);
-                    while (newData.hasRemaining()) {
-                        newData.put((byte) 0);
-                    }
-                    BufferPool.free(oldData);
-                    oldData = newData;
+            if (newLength < oldData.capacity()) {
+                oldData.range(0, newLength);
+            } else {
+                ReusableBuffer newData = BufferPool.allocate(newLength);
+                newData.put(oldData);
+                while (newData.hasRemaining()) {
+                    newData.put((byte) 0);
                 }
-                oldData.position(0);
-                
-                long newChecksum = 0l;
-                if (checksumsEnabled) {
-                    // calc checksum
-                    checksumAlgo.update(oldData.getBuffer());
-                    newChecksum = checksumAlgo.getValue();
-                }
-                
-                if (!cow) {
-                    oldFile.delete();
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this,
-                            "truncate object %d, delete old version %d: %s", objNo, oldVersion, oldFileName);
-                    }
-                }
-                
-                String newFilename = generateAbsoluteObjectPathFromFileId(fileId, objNo, newVersion,
-                    newChecksum);
-                RandomAccessFile raf = new RandomAccessFile(newFilename, mode);
-                raf.getChannel().write(oldData.getBuffer());
-                raf.close();
                 BufferPool.free(oldData);
+                oldData = newData;
+            }
+            oldData.position(0);
+            
+            long newChecksum = 0l;
+            if (checksumsEnabled) {
+                // calc checksum
+                checksumAlgo.update(oldData.getBuffer());
+                newChecksum = checksumAlgo.getValue();
+            }
+            
+            if (!cow) {
+                oldFile.delete();
                 if (Logging.isDebug()) {
                     Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this,
-                        "truncate object %d, wrote new version %d: %s", objNo, newVersion, newFilename);
-                }
-                
-                md.getObjVersions().put(objNo, newVersion);
-                md.getObjChecksums().put(objNo, newChecksum);
-            } else {
-                // just make the object shorter
-                RandomAccessFile raf = new RandomAccessFile(oldFile, mode);
-                raf.setLength(newLength);
-                raf.close();
-                if (newVersion != oldVersion) {
-                    String newFilename = generateAbsoluteObjectPathFromFileId(fileId, objNo, newVersion, 0l);
-                    oldFile.renameTo(new File(newFilename));
-                    md.getObjVersions().put(objNo, newVersion);
-                    if (Logging.isDebug()) {
-                        Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this,
-                            "truncate object %d, renamed file for new version %d: %s", objNo, newVersion,
-                            newFilename);
-                    }
+                        "truncate object %d, delete old version %d: %s", objNo, oldVersion, oldFileName);
                 }
             }
             
+            String newFilename = generateAbsoluteObjectPathFromFileId(fileId, objNo, newVersion, newChecksum);
+            RandomAccessFile raf = new RandomAccessFile(newFilename, mode);
+            raf.getChannel().write(oldData.getBuffer());
+            raf.close();
+            BufferPool.free(oldData);
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this,
+                    "truncate object %d, wrote new version %d: %s", objNo, newVersion, newFilename);
+            }
+            
+            md.updateObjectVersion(objNo, newVersion);
+            if (checksumsEnabled)
+                md.updateObjectChecksum(objNo, newVersion, newChecksum);
+            
+        } else {
+            // just make the object shorter
+            RandomAccessFile raf = new RandomAccessFile(oldFile, mode);
+            raf.setLength(newLength);
+            raf.close();
+            if (newVersion != oldVersion) {
+                String newFilename = generateAbsoluteObjectPathFromFileId(fileId, objNo, newVersion, 0l);
+                oldFile.renameTo(new File(newFilename));
+                md.updateObjectVersion(objNo, newVersion);
+                if (Logging.isDebug()) {
+                    Logging.logMessage(Logging.LEVEL_DEBUG, Category.db, this,
+                        "truncate object %d, renamed file for new version %d: %s", objNo, newVersion,
+                        newFilename);
+                }
+            }
         }
     }
     
+    @Override
     public void createPaddingObject(String fileId, FileMetadata md, long objNo, long version, int size)
         throws IOException {
         
@@ -518,24 +553,34 @@ public class HashStorageLayout extends StorageLayout {
         raf.setLength(size);
         raf.close();
         
-        md.getObjVersions().put(objNo, version);
-        md.getObjChecksums().put(objNo, checksum);
+        md.updateObjectVersion(objNo, version);
         
+        if (checksumsEnabled)
+            md.updateObjectChecksum(objNo, version, checksum);
     }
     
+    @Override
     public void deleteFile(String fileId, boolean deleteMetadata) throws IOException {
+        
         File fileDir = new File(generateAbsoluteFilePath(fileId));
         File[] objs = fileDir.listFiles();
+        
         if (objs == null) {
             return;
         }
-        for (File obj : objs) {
-            obj.delete();
-        }
-        
-        // delete all empty dirs along the path
-        if (deleteMetadata) {
-            del(fileDir);
+
+        // otherwise, delete the file including its metadata
+        else {
+            
+            for (File obj : objs) {
+                obj.delete();
+            }
+            
+            // delete all empty dirs along the path
+            if (deleteMetadata) {
+                del(fileDir);
+            }
+            
         }
     }
     
@@ -548,9 +593,10 @@ public class HashStorageLayout extends StorageLayout {
         }
     }
     
+    @Override
     public void deleteObject(String fileId, FileMetadata md, final long objNo, long version)
         throws IOException {
-        final long verToDel = (version == LATEST_VERSION) ? md.getObjectVersion(objNo) : version;
+        final long verToDel = (version == LATEST_VERSION) ? md.getLatestObjectVersion(objNo) : version;
         File fileDir = new File(generateAbsoluteFilePath(fileId));
         File[] objs = fileDir.listFiles(new FileFilter() {
             
@@ -567,6 +613,7 @@ public class HashStorageLayout extends StorageLayout {
         }
     }
     
+    @Override
     public boolean fileExists(String fileId) {
         File dir = new File(generateAbsoluteFilePath(fileId));
         return dir.exists();
@@ -579,31 +626,97 @@ public class HashStorageLayout extends StorageLayout {
         FileMetadata info = new FileMetadata(sp);
         
         File fileDir = new File(generateAbsoluteFilePath(fileId));
+        
+        // file exists already ...
         if (fileDir.exists()) {
             
-            String[] objs = fileDir.list();
-            String lastObject = null;
-            long lastObjNum = -1;
-            // long lastObjNumVer = -1;
+            Map<Long, Long> largestObjVersions = new HashMap<Long, Long>();
+            Map<String, Long> objChecksums = new HashMap<String, Long>();
+            Map<Long, Long> latestObjVersions = null;
             
+            long lastObjNum = -1;
+            String lastObject = null;
+            
+            File currVerFile = new File(fileDir, CURRENT_VER_FILENAME);
+            boolean multiVersionSupport = currVerFile.exists();
+            
+            // if multi-file-version support is enabled, retrieve the object
+            // versions for the current file version from the "latest versions"
+            // file
+            if (multiVersionSupport) {
+                
+                latestObjVersions = new HashMap<Long, Long>();
+                
+                RandomAccessFile rf = new RandomAccessFile(currVerFile, "r");
+                for (long l = 0;; l++) {
+                    // read object numbers until the file ends
+                    try {
+                        long objVer = rf.readLong();
+                        if (objVer != 0)
+                            latestObjVersions.put(l, objVer);
+                    } catch (EOFException exc) {
+                        lastObjNum = l - 1;
+                        break;
+                    }
+                }
+                
+                rf.close();
+            }
+            
+            // determine the largest object versions, as well as all checksums
+            String[] objs = fileDir.list();
             for (String obj : objs) {
+                
                 if (obj.startsWith(".")) {
                     continue; // ignore special files (metadata, .tepoch)
                 }
+                
                 ObjFileData ofd = parseFileName(obj);
-                if (ofd.objNo > lastObjNum) {
-                    lastObject = obj;
-                    lastObjNum = ofd.objNo;
+                
+                // determine the checksum
+                if (ofd.checksum != 0)
+                    objChecksums.put(ofd.objNo + "." + ofd.objVersion, ofd.checksum);
+                
+                // determine the last object
+                if (multiVersionSupport) {
+                    Long latestObjVer = latestObjVersions.get(ofd.objNo);
+                    if (ofd.objNo == lastObjNum && latestObjVer != null && ofd.objVersion == latestObjVer)
+                        lastObject = obj;
+                }
+
+                else {
+                    if (ofd.objNo > lastObjNum) {
+                        lastObject = obj;
+                        lastObjNum = ofd.objNo;
+                    }
                 }
                 
-                Long oldver = info.getObjVersions().get(ofd.objNo);
-                if ((oldver == null) || (oldver < ofd.objVersion)) {
-                    info.getObjVersions().put((long) ofd.objNo, ofd.objVersion);
-                    info.getObjChecksums().put((long) ofd.objNo, ofd.checksum);
-                }
+                // determine the largest object version
+                Long oldver = largestObjVersions.get(ofd.objNo);
+                if ((oldver == null) || (oldver < ofd.objVersion))
+                    largestObjVersions.put((long) ofd.objNo, ofd.objVersion);
             }
             
-            // generate filesize from lastObjectNumber
+            if (multiVersionSupport) {
+                
+                // set object versions and checksums of the latest file version
+                info.initLatestObjectVersions(latestObjVersions);
+                
+                // if multi-file-version support is enabled, it is also
+                // necessary to keep track of the largest file versions
+                info.initLargestObjectVersions(largestObjVersions);
+            }
+
+            // if no multi-version support is enabled, the file version consists
+            // of the set of objects with the latest version numbers
+            else {
+                info.initLatestObjectVersions(largestObjVersions);
+                info.initLargestObjectVersions(largestObjVersions);
+            }
+            
+            info.initObjectChecksums(objChecksums);
+            
+            // determine filesize from lastObjectNumber
             if (lastObjNum > -1) {
                 File lastObjFile = new File(fileDir.getAbsolutePath() + "/" + lastObject);
                 long lastObjSize = lastObjFile.length();
@@ -632,40 +745,31 @@ public class HashStorageLayout extends StorageLayout {
                 rf.close();
             }
             
-            // read version table from file
-            File vtable = new File(fileDir, VTABLE_FILENAME);
-            if (vtable.exists()) {
-                
-                FileInputStream fi = new FileInputStream(vtable);
-                MappedByteBuffer map = fi.getChannel().map(MapMode.READ_ONLY, 0, vtable.length());
-                
-                while (map.position() < map.limit()) {
-                    
-                    final long timestamp = map.getLong();
-                    final long numObjs = map.getLong();
-                    
-                    assert (numObjs <= Integer.MAX_VALUE) : "number of objects: " + numObjs
-                        + ", current limit = " + Integer.MAX_VALUE;
-                    // TODO: solve this problem for files with more than
-                    // Integer.MAX_VALUE objects
-                    
-                    final int[] versions = new int[(int) numObjs];
-                    for (int i = 0; i < versions.length; i++)
-                        versions[i] = map.getInt();
-                    
-                    info.getFileVersions().put(timestamp, versions);
-                }
-                
-            }
+            // initialize version table
+            File vtFile = new File(fileDir, VTABLE_FILENAME);
+            VersionTable vt = new VersionTable(vtFile);
+            if (vtFile.exists())
+                vt.load();
             
-        } else {
+            info.initVersionTable(vt);
+            
+        }
+
+        // file does not exist
+        else {
             info.setFilesize(0);
             info.setLastObjectNumber(-1);
+            info.initLatestObjectVersions(new HashMap<Long, Long>());
+            info.initLargestObjectVersions(new HashMap<Long, Long>());
+            info.initObjectChecksums(new HashMap<String, Long>());
+            info.initVersionTable(new VersionTable(new File(fileDir, VTABLE_FILENAME)));
         }
+        
         info.setGlobalLastObjectNumber(-1);
         return info;
     }
     
+    @Override
     public void setTruncateEpoch(String fileId, long newTruncateEpoch) throws IOException {
         File parent = new File(generateAbsoluteFilePath(fileId));
         if (!parent.exists()) {
@@ -872,6 +976,7 @@ public class HashStorageLayout extends StorageLayout {
         }
     }
     
+    @Override
     public FileList getFileList(FileList l, int maxNumEntries) {
         
         if (l == null) {
@@ -954,4 +1059,5 @@ public class HashStorageLayout extends StorageLayout {
             return l;
         }
     }
+    
 }

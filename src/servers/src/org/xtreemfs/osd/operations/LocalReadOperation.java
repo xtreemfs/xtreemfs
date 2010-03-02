@@ -35,6 +35,7 @@ import org.xtreemfs.interfaces.InternalReadLocalResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.ObjectList;
 import org.xtreemfs.interfaces.ObjectListSet;
+import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_read_localRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_internal_read_localResponse;
@@ -84,7 +85,9 @@ public final class LocalReadOperation extends OSDOperation {
         final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
         
         master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), sp,
-            (int) args.getOffset(), (int) args.getLength(), rq, new ReadObjectCallback() {
+            (int) args.getOffset(), (int) args.getLength(),
+            rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP ? rq.getCapability()
+                    .getSnapTimestamp() : 0, rq, new ReadObjectCallback() {
                 
                 @Override
                 public void readComplete(ObjectInformation result, Exception error) {

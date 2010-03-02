@@ -25,118 +25,156 @@
 
 package org.xtreemfs.osd.storage;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.Map.Entry;
+
+import org.xtreemfs.common.logging.Logging;
+import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 
 /**
- *
+ * 
  * @author bjko
  */
 public class FileMetadata {
-
-    private Map<Long, Long>     objVersions;
-
-    private Map<Long, Long>     objChecksums;
-
-    private long               filesize;
-
-    private long               lastObjectNumber;
-
-    private long               globalLastObjectNumber;
-
-    private long               truncateEpoch;
-
+    
+    private Map<Long, Long>          latestObjVersions;
+    
+    private Map<Long, Long>          largestObjVersions;
+    
+    private Map<String, Long>        objChecksums;
+    
+    private long                     filesize;
+    
+    private long                     lastObjectNumber;
+    
+    private long                     globalLastObjectNumber;
+    
+    private long                     truncateEpoch;
+    
     private final StripingPolicyImpl stripingPolicy;
     
-    private Map<Long, int[]> fileVersions;
-
+    private VersionTable             versionTable;
+    
     /** Creates a new instance of FileInfo */
     public FileMetadata(StripingPolicyImpl sp) {
-        objVersions = new HashMap<Long, Long>();
-        objChecksums = new HashMap<Long, Long>();
-        fileVersions = new HashMap<Long, int[]>();
         stripingPolicy = sp;
     }
-
-    public Map<Long, Long> getObjVersions() {
-        return objVersions;
-    }
-
-    public Map<Long, Long> getObjChecksums() {
-        return objChecksums;
-    }
-
+    
     public long getFilesize() {
         return filesize;
     }
-
+    
     public void setFilesize(long filesize) {
         this.filesize = filesize;
     }
-
+    
     public long getLastObjectNumber() {
         return lastObjectNumber;
     }
-
+    
     public void setLastObjectNumber(long lastObjectNumber) {
         this.lastObjectNumber = lastObjectNumber;
     }
-
-    public long getObjectVersion(long objId) {
-        Long v = objVersions.get(objId);
+    
+    public long getLargestObjectVersion(long objId) {
+        Long v = largestObjVersions.get(objId);
         return (v == null) ? 0 : v;
     }
-
-    public Long getObjectChecksum(long objId) {
-        Long c = objChecksums.get(objId);
+    
+    public long getLatestObjectVersion(long objId) {
+        Long v = latestObjVersions.get(objId);
+        return (v == null) ? 0 : v;
+    }
+    
+    public Long getObjectChecksum(long objId, long objVer) {
+        Long c = objChecksums.get(objId + "." + objVer);
         return (c == null) ? 0 : c;
     }
-
-    public void deleteObject(long objId) {
-        objVersions.remove(objId);
-        objChecksums.remove(objId);
+    
+    public Set<Entry<Long, Long>> getLatestObjectVersions() {
+        return latestObjVersions.entrySet();
     }
-
+    
+    public void clearLatestObjectVersions() {
+        latestObjVersions.clear();
+    }
+    
+    public void initLargestObjectVersions(Map<Long, Long> largestObjVersions) {
+        assert (this.largestObjVersions == null);
+        this.largestObjVersions = largestObjVersions;
+    }
+    
+    public void initLatestObjectVersions(Map<Long, Long> latestObjVersions) {
+        assert (this.latestObjVersions == null);
+        this.latestObjVersions = latestObjVersions;
+    }
+    
+    public void initObjectChecksums(Map<String, Long> objChecksums) {
+        assert (this.objChecksums == null);
+        this.objChecksums = objChecksums;
+    }
+    
+    public void initVersionTable(VersionTable versionTable) {
+        assert (this.versionTable == null);
+        this.versionTable = versionTable;
+    }
+    
+    public void updateObjectVersion(long objId, long newVersion) {
+        
+        latestObjVersions.put(objId, newVersion);
+        
+        if (largestObjVersions != latestObjVersions && newVersion != 0)
+            largestObjVersions.put(objId, newVersion);
+        
+    }
+    
+    public void updateObjectChecksum(long objId, long objVer, long newChecksum) {
+        objChecksums.put(objId + "." + objVer, newChecksum);
+    }
+    
+    public void discardObject(long objId, long objVer) {
+        latestObjVersions.remove(objId);
+        objChecksums.remove(objId + "." + objVer);
+    }
+    
     public String toString() {
         return "fileSize=" + filesize + ", lastObjNo=" + lastObjectNumber;
     }
-
+    
     public long getTruncateEpoch() {
         return truncateEpoch;
     }
-
+    
     public void setTruncateEpoch(long truncateEpoch) {
         this.truncateEpoch = truncateEpoch;
     }
-
+    
     /**
      * @return the globalLastObjectNumber
      */
     public long getGlobalLastObjectNumber() {
         return globalLastObjectNumber;
     }
-
+    
     /**
-     * @param globalLastObjectNumber the globalLastObjectNumber to set
+     * @param globalLastObjectNumber
+     *            the globalLastObjectNumber to set
      */
     public void setGlobalLastObjectNumber(long globalLastObjectNumber) {
         this.globalLastObjectNumber = globalLastObjectNumber;
     }
-
+    
     /**
      * @return the stripingPolicy
      */
     public StripingPolicyImpl getStripingPolicy() {
         return stripingPolicy;
     }
-
-    public Map<Long, int[]> getFileVersions() {
-        return fileVersions;
-    }
-
-    public void setFileVersions(Map<Long, int[]> fileVersions) {
-        this.fileVersions = fileVersions;
+    
+    public VersionTable getVersionTable() {
+        return versionTable;
     }
     
 }

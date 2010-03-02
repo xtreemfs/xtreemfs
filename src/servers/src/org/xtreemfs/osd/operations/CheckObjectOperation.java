@@ -34,6 +34,7 @@ import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
 import org.xtreemfs.interfaces.InternalGmax;
+import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_check_objectRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_check_objectResponse;
 import org.xtreemfs.interfaces.ObjectData;
@@ -75,7 +76,8 @@ public final class CheckObjectOperation extends OSDOperation {
         }
         
         master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), rq.getLocationList().getLocalReplica().getStripingPolicy(),
-                0,StorageLayout.FULL_OBJECT_LENGTH, rq, new ReadObjectCallback() {
+                0,StorageLayout.FULL_OBJECT_LENGTH, rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP ? rq.getCapability()
+                    .getSnapTimestamp() : 0, rq, new ReadObjectCallback() {
 
             @Override
             public void readComplete(ObjectInformation result, Exception error) {
