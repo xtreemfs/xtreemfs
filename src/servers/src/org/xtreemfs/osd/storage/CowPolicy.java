@@ -143,10 +143,9 @@ public class CowPolicy {
      */
     public void objectChanged(int objectNumber) {
         
-        assert (cowFlags != null);
-        
         // ignore new objects
         if ((mode == cowMode.COW_ONCE) && (objectNumber < initialObjectCount)) {
+            assert (cowFlags != null);
             final int field = objectNumber / Byte.SIZE;
             final int bit = objectNumber % Byte.SIZE;
             cowFlags[field] = (byte) (cowFlags[field] | (0x01 << bit));
