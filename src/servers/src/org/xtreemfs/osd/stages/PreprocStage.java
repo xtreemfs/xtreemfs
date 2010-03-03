@@ -169,6 +169,7 @@ public class PreprocStage extends Stage {
                     cowPolicy = new CowPolicy(cowMode.COW_ONCE);
                 
                 oft.openFile(fileId, TimeSync.getLocalSystemTime() + OFT_OPEN_EXTENSION, cowPolicy);
+                request.setFileOpen(true);
             }
             request.setCowPolicy(cowPolicy);
         }

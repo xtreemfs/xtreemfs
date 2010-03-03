@@ -94,6 +94,8 @@ public class EventCloseFile extends OSDOperation {
                 
             }
         });
+
+        master.getRWReplicationStage().fileClosed(fileId);
         
     }
     

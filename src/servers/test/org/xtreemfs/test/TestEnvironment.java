@@ -149,8 +149,8 @@ public class TestEnvironment {
             Logging.logMessage(Logging.LEVEL_DEBUG, this, "DIR running");
         }
         
-        if (enabledServs.contains(Services.TIME_SYNC)) {
-            tsInstance = TimeSync.initialize(null, 60 * 1000, 50);
+        if (enabledServs.contains(Services.TIME_SYNC) || enabledServs.contains(Services.MOCKUP_OSD)) {
+            tsInstance = TimeSync.initializeLocal(60 * 1000, 50);
             tsInstance.waitForStartup();
         }
         
@@ -235,6 +235,7 @@ public class TestEnvironment {
     }
     
     public void shutdown() {
+        Logging.logMessage(Logging.LEVEL_DEBUG, this,"shutting down testEnv...");
                 
         if (enabledServs.contains(Services.MRC)) {
             try {
@@ -246,8 +247,9 @@ public class TestEnvironment {
                 
         if (enabledServs.contains(Services.OSD)) {
             try {
-                for (OSDRequestDispatcher osd : osds)
+                for (OSDRequestDispatcher osd : osds) {
                     osd.shutdown();
+                }
             } catch (Throwable th) {
                 th.printStackTrace();
             }

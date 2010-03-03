@@ -26,10 +26,12 @@ package org.xtreemfs.osd.client;
 
 import java.net.InetSocketAddress;
 
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.client.ONCRPCClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
+import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseDecoder;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.FileCredentials;
@@ -80,6 +82,11 @@ import org.xtreemfs.interfaces.OSDInterface.xtreemfs_lock_releaseRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_lock_releaseResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_pingResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_flease_msgRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_truncateRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_truncateResponse;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_updateRequest;
+import org.xtreemfs.interfaces.OSDInterface.xtreemfs_rwr_updateResponse;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_shutdownRequest;
 import org.xtreemfs.interfaces.OSDInterface.xtreemfs_shutdownResponse;
 import org.xtreemfs.interfaces.VivaldiCoordinates;
@@ -449,6 +456,59 @@ public class OSDClient extends ONCRPCClient {
                         return resp.getRemote_coordinates();
                     }
                 });
+        return r;
+    }
+
+    public void rwr_flease_msg(InetSocketAddress server, final ReusableBuffer message, String hostname, int port) {
+
+        xtreemfs_rwr_flease_msgRequest rq = new xtreemfs_rwr_flease_msgRequest(message,hostname, port);
+
+        final RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
+
+            @Override
+            public Object getResult(ReusableBuffer data) {
+                return null;
+            }
+        });
+        r.registerListener(new RPCResponseAvailableListener() {
+
+            @Override
+            public void responseAvailable(RPCResponse r) {
+                r.freeBuffers();
+            }
+        });
+    }
+
+    public RPCResponse rwr_update(InetSocketAddress server, FileCredentials credentials, String fileId, long objNo, long objVersion, int offset, ObjectData data) {
+
+        xtreemfs_rwr_updateRequest rq = new xtreemfs_rwr_updateRequest(credentials, fileId, objNo, objVersion, offset, data);
+
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
+
+            @Override
+            public Object getResult(ReusableBuffer data) {
+                xtreemfs_rwr_updateResponse resp = new xtreemfs_rwr_updateResponse();
+                resp.unmarshal(new XDRUnmarshaller(data));
+                return null;
+            }
+        });
+        return r;
+    }
+
+    public RPCResponse rwr_truncate(InetSocketAddress server, FileCredentials credentials, String fileId, long newFileSize,
+            long objVersion) {
+
+        xtreemfs_rwr_truncateRequest rq = new xtreemfs_rwr_truncateRequest(credentials, fileId, newFileSize, objVersion);
+
+        RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
+
+            @Override
+            public Object getResult(ReusableBuffer data) {
+                xtreemfs_rwr_truncateResponse resp = new xtreemfs_rwr_truncateResponse();
+                resp.unmarshal(new XDRUnmarshaller(data));
+                return null;
+            }
+        });
         return r;
     }
 }

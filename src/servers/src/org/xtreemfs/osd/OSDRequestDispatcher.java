@@ -118,12 +118,17 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
+import java.util.Map.Entry;
 import org.xtreemfs.common.util.Nettest;
 import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.NettestInterface.NettestInterface;
 import org.xtreemfs.interfaces.OSDInterface.ProtocolException;
 import org.xtreemfs.interfaces.utils.ONCRPCRequestHeader;
 import org.xtreemfs.interfaces.utils.ONCRPCResponseHeader;
+import org.xtreemfs.osd.operations.FleaseMessageOperation;
+import org.xtreemfs.osd.operations.InternalRWRTruncateOperation;
+import org.xtreemfs.osd.operations.InternalRWRUpdateOperation;
+import org.xtreemfs.osd.rwre.RWReplicationStage;
 
 public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycleListener,
     UDPReceiverInterface {
@@ -176,6 +181,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     protected final AtomicReference<VivaldiCoordinates> myCoordinates;
     
     protected final CleanupThread                       cThread;
+
+    protected final RWReplicationStage                  rwrStage;
     
     /**
      * reachability of services
@@ -280,6 +287,9 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         replStage = new ReplicationStage(this);
         replStage.setLifeCycleListener(this);
+
+        rwrStage = new RWReplicationStage(this, serverSSLopts);
+        rwrStage.setLifeCycleListener(this);
         
         // ----------------------------------------
         // initialize TimeSync and Heartbeat thread
@@ -360,7 +370,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             }
         };
         heartbeatThread = new HeartbeatThread("OSD HB Thr", dirClient, config.getUUID(), gen, config, true);
-        
+
         httpServ = HttpServer.create(new InetSocketAddress(config.getHttpPort()), 0);
         final HttpContext ctx = httpServ.createContext("/", new HttpHandler() {
             public void handle(HttpExchange httpExchange) throws IOException {
@@ -368,6 +378,41 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
                 try {
                     if (httpExchange.getRequestURI().getPath().contains("strace")) {
                         content = OutputUtils.getThreadDump().getBytes("ascii");
+                    } else if (httpExchange.getRequestURI().getPath().contains("rft")) {
+                        final StringBuffer sb = new StringBuffer();
+                        final AtomicReference<Map<String,Map<String,String>>> result = new AtomicReference();
+                        sb.append("<HTML><HEAD><TITLE>Replicated File Status List</TITLE></HEAD><BODY>");
+                        sb.append("<TABLE border=\"1\">");
+                        sb.append("<TR><TD><B>File ID</B></TD><TD><B>Status</B></TD></TR>");
+                        rwrStage.getStatus(new RWReplicationStage.StatusCallback() {
+
+                            @Override
+                            public void statusComplete(Map<String, Map<String, String>> status) {
+                                synchronized (result) {
+                                    result.set(status);
+                                    result.notifyAll();
+                                }
+                            }
+                        });
+                        synchronized (result) {
+                            if (result.get() == null)
+                                result.wait();
+                        }
+                        Map<String,Map<String,String>> status = result.get();
+                        for (String fileId : status.keySet()) {
+                            sb.append("<TR><TD>");
+                            sb.append(fileId);
+                            sb.append("</TD><TD><TABLE border=\"0\">");
+                            for (Entry<String,String> e : status.get(fileId).entrySet()) {
+                                sb.append("<TR><TD>");
+                                sb.append(e.getKey());
+                                sb.append("</TD><TD>");
+                                sb.append(e.getValue());
+                                sb.append("</TD></TR>\n");
+                            }
+                            sb.append("</TABLE></TD></TR>\n");
+                        }
+                        content = sb.toString().getBytes("ascii");
                     } else {
                         content = StatusPage.getStatusPage(OSDRequestDispatcher.this).getBytes("ascii");
                     }
@@ -428,6 +473,7 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             replStage.start();
             vStage.start();
             cThread.start();
+            rwrStage.start();
             
             udpCom.waitForStartup();
             preprocStage.waitForStartup();
@@ -435,6 +481,8 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             stStage.waitForStartup();
             vStage.waitForStartup();
             cThread.waitForStartup();
+
+            rwrStage.waitForStartup();
             
             heartbeatThread.initialize();
             heartbeatThread.start();
@@ -476,16 +524,20 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
             delStage.shutdown();
             stStage.shutdown();
             replStage.shutdown();
+            rwrStage.shutdown();
             vStage.shutdown();
             cThread.shutdown();
+            
             
             udpCom.waitForShutdown();
             preprocStage.waitForShutdown();
             delStage.waitForShutdown();
             stStage.waitForShutdown();
             replStage.waitForShutdown();
+            rwrStage.waitForShutdown();
             vStage.waitForShutdown();
             cThread.waitForShutdown();
+            
             
             httpServ.stop(0);
             
@@ -715,6 +767,15 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
         op = new VivaldiPingOperation(this);
         operations.put(op.getProcedureId(), op);
+
+        op = new FleaseMessageOperation(this);
+        operations.put(op.getProcedureId(), op);
+
+        op = new InternalRWRUpdateOperation(this);
+        operations.put(op.getProcedureId(), op);
+
+        op = new InternalRWRTruncateOperation(this);
+        operations.put(op.getProcedureId(), op);
         
         // --internal events here--
         
@@ -750,6 +811,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
 
     public VivaldiStage getVivaldiStage() {
         return this.vStage;
+    }
+
+    public RWReplicationStage getRWReplicationStage() {
+        return this.rwrStage;
     }
     
     @Override
@@ -847,6 +912,10 @@ public class OSDRequestDispatcher implements RPCServerRequestListener, LifeCycle
     
     public void updateVivaldiCoordinates(VivaldiCoordinates newVC) {
         myCoordinates.set(newVC);
+    }
+
+    public String getHostName() {
+        return heartbeatThread.getAdvertisedHostName();
     }
     
 }

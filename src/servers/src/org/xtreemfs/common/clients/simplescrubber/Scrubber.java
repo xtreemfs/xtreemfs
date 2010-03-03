@@ -165,7 +165,8 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         ServiceSet servs = client.getRegistry();
         for (Service serv : servs) {
             if ( (serv.getType() == ServiceType.SERVICE_TYPE_OSD) &&
-                 serv.getData().get(HeartbeatThread.STATUS_ATTR).equalsIgnoreCase(status_removed) ) {
+                 (serv.getData().get(HeartbeatThread.STATUS_ATTR) != null)
+                 && serv.getData().get(HeartbeatThread.STATUS_ATTR).equalsIgnoreCase(status_removed) ) {
                 removedOSDs.add(serv.getUuid());
             }
         }
@@ -293,12 +294,18 @@ public class Scrubber implements FileInfo.FileScrubbedListener {
         try {
             DirectoryEntry[] ls = volume.listEntries(currentDirName);
 
+            if (ls == null) {
+                Logging.logMessage(Logging.LEVEL_ERROR, this,"path %s does not exist!",currentDirName);
+                return;
+            }
+
             for (DirectoryEntry e : ls) {
                 if ((e.getStbuf().get(0).getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFREG) != 0) {
                     //regular file
                     files.push(currentDirName + e.getName());
                 } else if ((e.getStbuf().get(0).getMode() & Constants.SYSTEM_V_FCNTL_H_S_IFDIR) != 0) {
-                    directories.push(currentDirName + e.getName() + "/");
+                    if (!e.getName().equals(".") && !e.getName().equals(".."))
+                        directories.push(currentDirName + e.getName() + "/");
                 }
             }
         } catch (IOException ex) {

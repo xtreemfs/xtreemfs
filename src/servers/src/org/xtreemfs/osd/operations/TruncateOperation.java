@@ -1,53 +1,64 @@
 /*  Copyright (c) 2009 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin.
 
- This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
- Grid Operating System, see <http://www.xtreemos.eu> for more details.
- The XtreemOS project has been developed with the financial support of the
- European Commission's IST program under contract #FP6-033576.
+This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
+Grid Operating System, see <http://www.xtreemos.eu> for more details.
+The XtreemOS project has been developed with the financial support of the
+European Commission's IST program under contract #FP6-033576.
 
- XtreemFS is free software: you can redistribute it and/or modify it under
- the terms of the GNU General Public License as published by the Free
- Software Foundation, either version 2 of the License, or (at your option)
- any later version.
+XtreemFS is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 2 of the License, or (at your option)
+any later version.
 
- XtreemFS is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- GNU General Public License for more details.
+XtreemFS is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
 
- You should have received a copy of the GNU General Public License
- along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
+You should have received a copy of the GNU General Public License
+along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 /*
  * AUTHORS: Björn Kolbeck (ZIB)
  */
-
 package org.xtreemfs.osd.operations;
 
 import java.io.IOException;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.xtreemfs.common.Capability;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
+import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
+import org.xtreemfs.interfaces.OSDInterface.RedirectException;
 import org.xtreemfs.interfaces.OSDInterface.truncateRequest;
 import org.xtreemfs.interfaces.OSDInterface.truncateResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.rwre.RWReplicationStage;
+import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy.PrepareOperationCallback;
+import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
+import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.TruncateCallback;
+import org.xtreemfs.osd.storage.ObjectInformation;
 
 public final class TruncateOperation extends OSDOperation {
 
     final int procId;
+
     final String sharedSecret;
+
     final ServiceUUID localUUID;
 
     public TruncateOperation(OSDRequestDispatcher master) {
@@ -64,7 +75,7 @@ public final class TruncateOperation extends OSDOperation {
 
     @Override
     public void startRequest(final OSDRequest rq) {
-        final truncateRequest args = (truncateRequest)rq.getRequestArgs();
+        final truncateRequest args = (truncateRequest) rq.getRequestArgs();
 
         if (args.getNew_file_size() < 0) {
             rq.sendException(new OSDException(ErrorCodes.INVALID_PARAMS, "new_file_size for truncate must be >= 0", ""));
@@ -76,38 +87,153 @@ public final class TruncateOperation extends OSDOperation {
             return;
         }
 
-        master.getStorageStage().truncate(args.getFile_id(), args.getNew_file_size(),
-            rq.getLocationList().getLocalReplica().getStripingPolicy(),
-            rq.getLocationList().getLocalReplica(), rq.getCapability().getEpochNo(), rq.getCowPolicy(), rq,
-            new TruncateCallback() {
+        if ((rq.getLocationList().getReplicaUpdatePolicy().length() == 0) ||
+                (rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY))) {
 
-            @Override
-            public void truncateComplete(OSDWriteResponse result, Exception error) {
-                step2(rq, args, result, error);
-            }
-        });
+            master.getStorageStage().truncate(args.getFile_id(), args.getNew_file_size(),
+                rq.getLocationList().getLocalReplica().getStripingPolicy(),
+                rq.getLocationList().getLocalReplica(), rq.getCapability().getEpochNo(), rq.getCowPolicy(),
+                null, rq,
+                new TruncateCallback() {
+
+                    @Override
+                    public void truncateComplete(OSDWriteResponse result, Exception error) {
+                        step2(rq, args, result, error);
+                    }
+            });
+        } else {
+            replicatedFileOpen(rq, args);
+        }
     }
 
-    public void step2(final OSDRequest rq, final truncateRequest args, OSDWriteResponse result, Exception error) {
+    public void replicatedFileOpen(final OSDRequest rq,
+            final truncateRequest args) {
+
+        if (rq.isFileOpen()) {
+            if (Logging.isDebug()) {
+                Logging.logMessage(Logging.LEVEL_DEBUG, this, "open rw/ repl file: " + rq.getFileId());
+            }
+            //initialize replication state
+
+            //load max obj ver from disk
+            master.getStorageStage().internalGetMaxObjectNo(rq.getFileId(),
+                    rq.getLocationList().getLocalReplica().getStripingPolicy(),
+                    new InternalGetMaxObjectNoCallback() {
+
+                        @Override
+                        public void maxObjectNoCompleted(long maxObjNo, Exception error) {
+                            if (Logging.isDebug()) {
+                                Logging.logMessage(Logging.LEVEL_DEBUG, this, "received max objNo for: " + rq.getFileId() + " maxObj: " + maxObjNo +
+                                        " error: " + error);
+                            }
+                            if (error != null) {
+                                sendError(rq, error);
+                            } else {
+                                //open file in repl stage
+                                master.getRWReplicationStage().openFile(args.getFile_credentials(),
+                                        rq.getLocationList(), maxObjNo, new RWReplicationStage.OpenFileCallback() {
+
+                                    @Override
+                                    public void fileOpenComplete(Exception error) {
+                                        if (Logging.isDebug()) {
+                                            Logging.logMessage(Logging.LEVEL_DEBUG, this, "open complete for file: " + rq.getFileId() + " error: " + error);
+                                        }
+                                        if (error != null) {
+                                            sendError(rq, error);
+                                        } else {
+                                            rwReplicatedTruncate(rq, args);
+                                        }
+                                    }
+                                }, rq);
+                            }
+
+                        }
+                    });
+        } else {
+            rwReplicatedTruncate(rq, args);
+        }
+    }
+
+    public void rwReplicatedTruncate(final OSDRequest rq,
+            final truncateRequest args) {
+        master.getRWReplicationStage().prepareOperation(args.getFile_credentials(), 0, 0, RWReplicationStage.Operation.TRUNCATE, new PrepareOperationCallback() {
+
+            @Override
+            public void prepareOperationComplete(boolean canExecOperation, String redirectToUUID, final long newObjVersion, Exception error) {
+                if (redirectToUUID != null) {
+                    sendError(rq, new RedirectException(redirectToUUID));
+                    return;
+
+                }
+                if (error != null) {
+                    sendError(rq, error);
+                    return;
+
+                }
+
+                System.out.println("preparOpComplete called");
+                final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
+
+                //FIXME: ignore canExecOperation for now...
+               master.getStorageStage().truncate(args.getFile_id(), args.getNew_file_size(),
+                    rq.getLocationList().getLocalReplica().getStripingPolicy(),
+                    rq.getLocationList().getLocalReplica(), rq.getCapability().getEpochNo(), rq.getCowPolicy(),
+                    newObjVersion, rq, new TruncateCallback() {
+
+                @Override
+                public void truncateComplete(OSDWriteResponse result, Exception error) {
+                    replicateTruncate(rq, newObjVersion, args, result, error);
+                }
+            });
+            }
+        }, rq);
+    }
+
+    public void replicateTruncate(final OSDRequest rq,
+            final long newObjVersion,
+            final truncateRequest args,
+            final OSDWriteResponse result, Exception error) {
+            if (error != null)
+                step2(rq, args, result, error);
+            else {
+                master.getRWReplicationStage().replicateTruncate(args.getFile_credentials(),
+                    args.getNew_file_size(), newObjVersion,
+                    rq.getLocationList(), new RWReplicationStage.ReplicatedOperationCallback() {
+
+                @Override
+                public void writeCompleted(Exception error) {
+                    step2(rq, args, result, error);
+                }
+            }, rq);
+            }
+    }
+
+    public void step2(final OSDRequest rq,
+            final truncateRequest args,
+            OSDWriteResponse result, Exception error) {
 
         if (error != null) {
-            if (error instanceof ONCRPCException)
-                rq.sendException((ONCRPCException)error);
-            else
+            if (error instanceof ONCRPCException) {
+                rq.sendException((ONCRPCException) error);
+            } else {
                 rq.sendInternalServerError(error);
+            }
         } else {
             //check for striping
             if (rq.getLocationList().getLocalReplica().isStriped()) {
                 //disseminate internal truncate to all other OSDs
-                disseminateTruncates(rq,args,result);
+                disseminateTruncates(rq, args, result);
             } else {
                 //non-striped
                 sendResponse(rq, result);
             }
+
         }
     }
 
-    private void disseminateTruncates(final OSDRequest rq, final truncateRequest args, final OSDWriteResponse result) {
+    private void disseminateTruncates(final OSDRequest rq,
+            final truncateRequest args,
+            final OSDWriteResponse result) {
         try {
             final List<ServiceUUID> osds = rq.getLocationList().getLocalReplica().getOSDs();
             final RPCResponse[] gmaxRPCs = new RPCResponse[osds.size() - 1];
@@ -115,16 +241,16 @@ public final class TruncateOperation extends OSDOperation {
             for (ServiceUUID osd : osds) {
                 if (!osd.equals(localUUID)) {
                     gmaxRPCs[cnt++] = master.getOSDClient().internal_truncate(osd.getAddress(),
-                            args.getFile_id(), args.getFile_credentials(),args.getNew_file_size());
+                            args.getFile_id(), args.getFile_credentials(), args.getNew_file_size());
                 }
+
             }
             this.waitForResponses(gmaxRPCs, new ResponsesListener() {
 
                 @Override
                 public void responsesAvailable() {
-                    analyzeTruncateResponses(rq,result,gmaxRPCs);
+                    analyzeTruncateResponses(rq, result, gmaxRPCs);
                 }
-
             });
         } catch (IOException ex) {
             rq.sendInternalServerError(ex);
@@ -132,15 +258,20 @@ public final class TruncateOperation extends OSDOperation {
             rq.sendInternalServerError(ex);
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
             return;
+
         }
+
+
     }
 
     private void analyzeTruncateResponses(OSDRequest rq, OSDWriteResponse result, RPCResponse[] gmaxRPCs) {
         //analyze results
         try {
-            for (int i = 0; i < gmaxRPCs.length; i++) {
+            for (int i = 0; i <
+                    gmaxRPCs.length; i++) {
                 gmaxRPCs[i].get();
             }
+
             sendResponse(rq, result);
         } catch (IOException ex) {
             rq.sendInternalServerError(ex);
@@ -148,9 +279,11 @@ public final class TruncateOperation extends OSDOperation {
             rq.sendInternalServerError(ex);
             Logging.logError(Logging.LEVEL_ERROR, this, ex);
         } finally {
-            for (RPCResponse r : gmaxRPCs)
+            for (RPCResponse r : gmaxRPCs) {
                 r.freeBuffers();
+            }
         }
+
     }
 
     public void sendResponse(OSDRequest rq, OSDWriteResponse result) {
@@ -164,7 +297,7 @@ public final class TruncateOperation extends OSDOperation {
         rpcrq.unmarshal(new XDRUnmarshaller(data));
 
         rq.setFileId(rpcrq.getFile_id());
-        rq.setCapability(new Capability(rpcrq.getFile_credentials().getXcap(),sharedSecret));
+        rq.setCapability(new Capability(rpcrq.getFile_credentials().getXcap(), sharedSecret));
         rq.setLocationList(new XLocations(rpcrq.getFile_credentials().getXlocs(), localUUID));
 
         return rpcrq;
@@ -179,7 +312,4 @@ public final class TruncateOperation extends OSDOperation {
     public void startInternalEvent(Object[] args) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    
-
 }

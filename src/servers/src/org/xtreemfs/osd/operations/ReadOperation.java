@@ -41,13 +41,17 @@ import org.xtreemfs.interfaces.InternalGmax;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.SnapConfig;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
+import org.xtreemfs.interfaces.OSDInterface.RedirectException;
 import org.xtreemfs.interfaces.OSDInterface.readRequest;
 import org.xtreemfs.interfaces.OSDInterface.readResponse;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.rwre.RWReplicationStage;
+import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy.PrepareOperationCallback;
 import org.xtreemfs.osd.stages.ReplicationStage.FetchObjectCallback;
+import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
 import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.storage.ObjectInformation;
 import org.xtreemfs.osd.storage.ObjectInformation.ObjectStatus;
@@ -98,14 +102,95 @@ public final class ReadOperation extends OSDOperation {
             return;
         }
 
-        master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), sp,
-                args.getOffset(),args.getLength(), rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP? rq.getCapability().getSnapTimestamp(): 0, rq, new ReadObjectCallback() {
+        if ( (rq.getLocationList().getReplicaUpdatePolicy().length() == 0)
+            || (rq.getLocationList().getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_RONLY))){
+
+            final long snapVerTS = rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP? rq.getCapability().getSnapTimestamp(): 0;
+
+            master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), sp,
+                args.getOffset(),args.getLength(), snapVerTS, rq, new ReadObjectCallback() {
+
+                @Override
+                public void readComplete(ObjectInformation result, Exception error) {
+                    postRead(rq, args, result, error);
+                }
+            });
+        } else {
+            replicatedFileOpen(rq, args);
+        }
+    }
+
+    public void replicatedFileOpen(final OSDRequest rq, final readRequest args) {
+
+        if (rq.isFileOpen()) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"open rw/ repl file: "+rq.getFileId());
+            //initialize replication state
+
+            //load max obj ver from disk
+            master.getStorageStage().internalGetMaxObjectNo(rq.getFileId(),
+                    rq.getLocationList().getLocalReplica().getStripingPolicy(),
+                    new InternalGetMaxObjectNoCallback() {
+
+                @Override
+                public void maxObjectNoCompleted(long maxObjNo, Exception error) {
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"received max objNo for: "+rq.getFileId()+" maxObj: "+maxObjNo+
+                                " error: "+error);
+                    if (error != null) {
+                        sendError(rq, error);
+                    } else {
+                        //open file in repl stage
+                        master.getRWReplicationStage().openFile(args.getFile_credentials(),
+                                rq.getLocationList(), maxObjNo, new RWReplicationStage.OpenFileCallback() {
+
+                            @Override
+                            public void fileOpenComplete(Exception error) {
+                                if (Logging.isDebug())
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"open complete for file: "+rq.getFileId()+" error: "+error);
+                                if (error != null)
+                                    sendError(rq, error);
+                                else
+                                    rwReplicatedRead(rq,args);
+                            }
+                        }, rq);
+                    }
+                }
+            });
+        } else
+            rwReplicatedRead(rq, args);
+    }
+
+    public void rwReplicatedRead(final OSDRequest rq, final readRequest args) {
+        master.getRWReplicationStage().prepareOperation(args.getFile_credentials(), args.getObject_number(), args.getObject_version(), RWReplicationStage.Operation.READ, new PrepareOperationCallback() {
 
             @Override
-            public void readComplete(ObjectInformation result, Exception error) {
-                postRead(rq, args, result, error);
+            public void prepareOperationComplete(boolean canExecOperation, String redirectToUUID, final long newObjVersion, Exception error) {
+                if (redirectToUUID != null) {
+                    sendError(rq, new RedirectException(redirectToUUID));
+                    return;
+                }
+                if (error != null) {
+                    sendError(rq, error);
+                    return;
+                }
+
+                System.out.println("preparOpComplete called");
+                final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
+
+                final long snapVerTS = rq.getCapability().getSnapConfig() == SnapConfig.SNAP_CONFIG_ACCESS_SNAP? rq.getCapability().getSnapTimestamp(): 0;
+
+                //FIXME: ignore canExecOperation for now...
+                master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), sp,
+                    args.getOffset(),args.getLength(), snapVerTS, rq, new ReadObjectCallback() {
+
+                    @Override
+                    public void readComplete(ObjectInformation result, Exception error) {
+                        postRead(rq, args, result, error);
+                    }
+                });
             }
-        });
+        }, rq);
     }
 
     public void postRead(final OSDRequest rq, readRequest args, ObjectInformation result, Exception error) {
@@ -255,11 +340,7 @@ public final class ReadOperation extends OSDOperation {
         StripingPolicyImpl sp = xLoc.getLocalReplica().getStripingPolicy();
 
         if (error != null) {
-            if (error instanceof ONCRPCException) {
-                rq.sendException((ONCRPCException) error);
-            } else {
-                rq.sendOSDException(ErrorCodes.IO_ERROR, error.getMessage());
-            }
+            sendError(rq, error);
         } else {
             try {
                 // replication always delivers full objects => cut data

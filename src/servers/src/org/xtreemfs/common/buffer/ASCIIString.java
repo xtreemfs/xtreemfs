@@ -76,7 +76,7 @@ public final class ASCIIString implements Serializable {
                 return false;
 
             for (int i = 0; i < data.length; i++) {
-                if (this.unckeckedGetByte(i) != other.unckeckedGetByte(i))
+                if (data[i] != other.data[i])
                     return false;
             }
             return true;

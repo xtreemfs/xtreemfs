@@ -296,7 +296,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         httpServ.stop(0);
         
-        TimeSync.getInstance().shutdown();
+        //TimeSync.getInstance().shutdown();
     }
     
     public void startup() {
@@ -370,7 +370,7 @@ public class MRCRequestDispatcher implements RPCServerRequestListener, LifeCycle
         
         httpServ.stop(0);
         
-        TimeSync.getInstance().shutdown();
+        //TimeSync.getInstance().shutdown();
         
         if (Logging.isInfo())
             Logging.logMessage(Logging.LEVEL_INFO, Category.lifecycle, this, "MRC shutdown complete");

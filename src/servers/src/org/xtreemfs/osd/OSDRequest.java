@@ -69,6 +69,12 @@ public final class OSDRequest {
     
     private CowPolicy           cowPolicy;
 
+    /**
+     * true, if this is the first call to a file
+     * (i.e. no entry in OFT)
+     */
+    private boolean             fileOpen;
+
 
 	public OSDRequest(ONCRPCRequest request) {
 		this.rpcRequest = request;
@@ -247,6 +253,20 @@ public final class OSDRequest {
      */
     public void setCowPolicy(CowPolicy cowPolicy) {
         this.cowPolicy = cowPolicy;
+    }
+
+    /**
+     * @return the fileOpen
+     */
+    public boolean isFileOpen() {
+        return fileOpen;
+    }
+
+    /**
+     * @param fileOpen the fileOpen to set
+     */
+    public void setFileOpen(boolean fileOpen) {
+        this.fileOpen = fileOpen;
     }
 
 	

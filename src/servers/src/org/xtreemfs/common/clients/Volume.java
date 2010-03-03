@@ -74,7 +74,7 @@ public class Volume {
 
     private final OpenFileList ofl;
 
-    public Volume(OSDClient osdClient, MRCClient client, String volumeName, UUIDResolver uuidResolver, UserCredentials userCreds) {
+    Volume(OSDClient osdClient, MRCClient client, String volumeName, UUIDResolver uuidResolver, UserCredentials userCreds) {
         this.mrcClient = client;
         this.volumeName = volumeName.endsWith("/") ? volumeName : volumeName+"/";
         this.uuidResolver = uuidResolver;

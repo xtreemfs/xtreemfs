@@ -1,5 +1,4 @@
-/*  Copyright (c) 2008 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin and
-    Barcelona Supercomputing Center - Centro Nacional de Supercomputacion.
+/*  Copyright (c) 2008-2010 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
 
     This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
     Grid Operating System, see <http://www.xtreemos.eu> for more details.
@@ -20,7 +19,7 @@
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
  */
 /*
- * AUTHORS: Jan Stender (ZIB), Björn Kolbeck (ZIB), Jesús Malo (BSC)
+ * AUTHORS: Jan Stender (ZIB), Björn Kolbeck (ZIB)
  */
 
 package org.xtreemfs.common;
@@ -32,7 +31,6 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
 import java.net.Socket;
-import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.regex.Matcher;
@@ -41,7 +39,6 @@ import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.logging.Logging.Category;
 import org.xtreemfs.dir.client.DIRClient;
 import org.xtreemfs.foundation.LifeCycleThread;
-import org.xtreemfs.foundation.oncrpc.client.RPCNIOSocketClient;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 
 /**
@@ -311,8 +308,7 @@ public final class TimeSync extends LifeCycleThread {
             case XTREEMFS_DIR : {
                 RPCResponse<Long> r = null;
                 try {
-                    long tStart = localSysTime;
-
+                    long tStart = System.currentTimeMillis();
                     long oldDrift = currentDrift;
                     r = dir.xtreemfs_global_time_get(null);
                     Long globalTime = r.get();
@@ -402,7 +398,7 @@ public final class TimeSync extends LifeCycleThread {
                     ex.printStackTrace();
                     lastSync = System.currentTimeMillis();
                 }
-            }
+             }
         }
     }
     

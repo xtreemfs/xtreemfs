@@ -207,12 +207,12 @@ public class StripingTest extends TestCase {
     }
     
     protected void tearDown() throws Exception {
-        
-        testEnv.shutdown();
 
         osdServer.get(0).shutdown();
         osdServer.get(1).shutdown();
         osdServer.get(2).shutdown();
+
+        testEnv.shutdown();
     }
     
     /* TODO: test delete/truncate epochs! */

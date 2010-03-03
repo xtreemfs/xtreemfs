@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_cleanup_is_runningRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010022546;
+    public static final int TAG = 2010030645;
 
     public xtreemfs_cleanup_is_runningRequest() {  }
 
@@ -35,10 +35,10 @@ public class xtreemfs_cleanup_is_runningRequest extends org.xtreemfs.interfaces.
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010022546;
+    public static final long serialVersionUID = 2010030645;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022546; }
+    public int getTag() { return 2010030645; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_cleanup_is_runningRequest"; }
 
     public int getXDRSize()

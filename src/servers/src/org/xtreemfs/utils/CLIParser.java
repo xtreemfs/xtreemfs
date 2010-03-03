@@ -29,7 +29,7 @@ public class CLIParser {
         public String           urlDefaultProtocol;
         
         public int              urlDefaultPort;
-        
+
         public CliOption(OPTIONTYPE oType) {
             this.optType = oType;
             if (optType == OPTIONTYPE.SWITCH)

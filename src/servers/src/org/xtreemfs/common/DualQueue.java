@@ -24,6 +24,8 @@
 
 package org.xtreemfs.common;
 
+import java.util.Collection;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -36,8 +38,8 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public final class DualQueue {
     
-    private final LinkedBlockingQueue highPriority;
-    private final LinkedBlockingQueue lowPriority;
+    private final ConcurrentLinkedQueue highPriority;
+    private final ConcurrentLinkedQueue lowPriority;
     
     private final AtomicInteger          totalQueueLength;
     
@@ -46,8 +48,8 @@ public final class DualQueue {
     private final Condition              notEmpty;
     
     public DualQueue() {
-        highPriority = new LinkedBlockingQueue();
-        lowPriority = new LinkedBlockingQueue();
+        highPriority = new ConcurrentLinkedQueue();
+        lowPriority = new ConcurrentLinkedQueue();
         totalQueueLength = new AtomicInteger(0);
         waitLock = new ReentrantLock();
         notEmpty = waitLock.newCondition();
@@ -72,6 +74,22 @@ public final class DualQueue {
                 waitLock.unlock();
             }
         }
+    }
+
+    public void poll(Collection container, int maxItems) throws InterruptedException {
+        if (totalQueueLength.get() == 0) {
+            try {
+                waitLock.lockInterruptibly();
+                notEmpty.await();
+            } finally {
+                waitLock.unlock();
+            }
+        }
+
+        int numItems = 0;
+        do {
+            
+        } while (numItems < maxItems);
     }
     
     public Object poll() throws InterruptedException {
@@ -101,7 +119,7 @@ public final class DualQueue {
     
     public Object poll(long waitTimeInMs) throws InterruptedException {
         
-        if (totalQueueLength.get() == 0) {
+        while (totalQueueLength.get() == 0) {
             try {
                 waitLock.lockInterruptibly();
                 notEmpty.await(waitTimeInMs,TimeUnit.MILLISECONDS);

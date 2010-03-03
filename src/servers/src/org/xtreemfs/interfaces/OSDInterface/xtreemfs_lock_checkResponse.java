@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_lock_checkResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010022566;
+    public static final int TAG = 2010030665;
 
     public xtreemfs_lock_checkResponse() { returnValue = new Lock();  }
     public xtreemfs_lock_checkResponse( Lock returnValue ) { this.returnValue = returnValue; }
@@ -36,10 +36,10 @@ public class xtreemfs_lock_checkResponse extends org.xtreemfs.interfaces.utils.R
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010022566;
+    public static final long serialVersionUID = 2010030665;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022566; }
+    public int getTag() { return 2010030665; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_lock_checkResponse"; }
 
     public int getXDRSize()

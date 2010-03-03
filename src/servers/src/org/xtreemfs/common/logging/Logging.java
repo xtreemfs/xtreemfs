@@ -115,7 +115,7 @@ public class Logging {
     
     public static final String       FORMAT_PATTERN     = "[ %c | %-20s | %-15s | %3d | %15s ] %s";
     
-    private static final PrintStream out                = System.out;
+    private static PrintStream out                = System.out;
     
     protected static Logging         instance;
     
@@ -144,6 +144,10 @@ public class Logging {
         instance = this;
         
         startTime = System.currentTimeMillis();
+    }
+
+    public static void redirect(PrintStream out) {
+        Logging.out = out;
     }
     
     public static void logMessage(int level, Category cat, Object me, String formatPattern, Object... args) {

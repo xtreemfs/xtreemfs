@@ -40,7 +40,7 @@ import java.util.Map;
  * @author bjko
  */
 public class JSONParser {
-    
+
     /**
      * Creates a new instance of JSONParser
      */

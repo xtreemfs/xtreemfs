@@ -245,7 +245,7 @@ public class xtfs_repl {
      * @throws IOException
      * @throws InterruptedException
      */
-    private void initialize(boolean fileRequired) throws Exception {
+    public void initialize(boolean fileRequired) throws Exception {
         
         client = new Client(dirAddrs, 10000, 30000, sslOptions);
         client.start();
@@ -271,7 +271,7 @@ public class xtfs_repl {
     /*
      * add replica
      */
-    private void addReplica(List<ServiceUUID> osds, int replicationFlags, int stripeWidth) throws Exception {
+    public void addReplica(List<ServiceUUID> osds, int replicationFlags, int stripeWidth) throws Exception {
         if (file.isReadOnly()) {
             if (stripeWidth == 0) // not set => policy from replica 1
                 stripeWidth = osds.size();
@@ -296,7 +296,7 @@ public class xtfs_repl {
     }
     
     // automatic
-    private void addReplicaAutomatically(int replicationFlags, int stripeWidth) throws Exception {
+    public void addReplicaAutomatically(int replicationFlags, int stripeWidth) throws Exception {
         if (file.isReadOnly()) {
             if (stripeWidth == 0) // not set => policy from replica 1
                 stripeWidth = raFile.getCurrentReplicaStripeingWidth();
@@ -332,7 +332,7 @@ public class xtfs_repl {
         raFile.triggerInitialReplication();
     }
     
-    private void getOSDSelectionPolicy() {
+    public void getOSDSelectionPolicy() {
         try {
             String v = file.getxattr("xtreemfs.osel_policy");
             
@@ -366,7 +366,7 @@ public class xtfs_repl {
         }
     }
     
-    private void setOSDSelectionPolicy(String rsp) {
+    public void setOSDSelectionPolicy(String rsp) {
         try {
             
             String pol = "";
@@ -401,7 +401,7 @@ public class xtfs_repl {
         }
     }
     
-    private void getReplicaSelectionPolicy() {
+    public void getReplicaSelectionPolicy() {
         try {
             String v = file.getxattr("xtreemfs.rsel_policy");
             
@@ -433,7 +433,7 @@ public class xtfs_repl {
         }
     }
     
-    private void setReplicaSelectionPolicy(String rsp) {
+    public void setReplicaSelectionPolicy(String rsp) {
         try {
             
             String pol = "";
@@ -459,7 +459,7 @@ public class xtfs_repl {
         }
     }
     
-    private void getOnCloseReplFactor() {
+    public void getOnCloseReplFactor() {
         try {
             String v = file.getxattr("xtreemfs.repl_factor");
             System.out.println("on-close replication factor: " + v);
@@ -469,7 +469,7 @@ public class xtfs_repl {
         }
     }
     
-    private void setOnCloseReplFactor(String f) {
+    public void setOnCloseReplFactor(String f) {
         try {
             
             int factor = Integer.parseInt(f.trim());
@@ -484,7 +484,7 @@ public class xtfs_repl {
         }
     }
     
-    private void getPolicyAttrs() {
+    public void getPolicyAttrs() {
         try {
             System.out.println("policy attributes:");
             String[] keys = file.listXAttrs();
@@ -498,7 +498,7 @@ public class xtfs_repl {
         }
     }
     
-    private void setPolicyAttr(String kvPair) {
+    public void setPolicyAttr(String kvPair) {
         try {
             
             StringTokenizer st = new StringTokenizer(kvPair, "=;,");
@@ -518,7 +518,7 @@ public class xtfs_repl {
         }
     }
     
-    private void getOnCloseFull() {
+    public void getOnCloseFull() {
         try {
             System.out.print("create full replicas on close: ");
             String v = file.getxattr("xtreemfs.repl_full");
@@ -528,7 +528,7 @@ public class xtfs_repl {
         }
     }
     
-    private void setOnCloseFull(boolean full) {
+    public void setOnCloseFull(boolean full) {
         try {
             file.setxattr("xtreemfs.repl_full", String.valueOf(full));
             System.out.println("create full replicas on close was set to " + full);
@@ -540,7 +540,7 @@ public class xtfs_repl {
     /*
      * remove replica
      */
-    private void removeReplica(ServiceUUID osd) throws Exception {
+    public void removeReplica(ServiceUUID osd) throws Exception {
         if (file.isReadOnly()) {
             file.getReplica(raFile.getReplicaNumber(osd.toString())).removeReplica(true);
         } else
@@ -550,15 +550,23 @@ public class xtfs_repl {
     /*
      * other commands
      */
-    private void setReadOnly(boolean mode) throws Exception {
+    public void setReadOnly(boolean mode) throws Exception {
         file.setReadOnly(mode);
     }
+
+    public void isReadOnly() throws Exception {
+        if (file.isReadOnlyReplicated()) {
+            System.out.println("read-only: on");
+        } else {
+            System.out.println("read-only: off");
+        }
+    }
     
-    private void listReplicas() throws UnknownUUIDException, IOException {
+    public void listReplicas() throws UnknownUUIDException, IOException {
         printListOfReplicas(file.getReplicas());
     }
     
-    private void listSuitableOSDs() throws Exception {
+    public void listSuitableOSDs() throws Exception {
         String[] osds = file.getSuitableOSDs(1000);
         printListOfOSDs(osds);
     }
@@ -672,6 +680,10 @@ public class xtfs_repl {
                 replicationFlags = ReplicationFlags.setSequentialStrategy(replicationFlags);
         }
         return replicationFlags;
+    }
+
+    public UUIDResolver getResolver() {
+        return this.resolver;
     }
     
     /**

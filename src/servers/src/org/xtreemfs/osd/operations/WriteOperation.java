@@ -25,7 +25,9 @@
 package org.xtreemfs.osd.operations;
 
 import org.xtreemfs.common.Capability;
+import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
+import org.xtreemfs.common.logging.Logging;
 import org.xtreemfs.common.uuids.ServiceUUID;
 import org.xtreemfs.common.xloc.StripingPolicyImpl;
 import org.xtreemfs.common.xloc.XLocations;
@@ -33,13 +35,20 @@ import org.xtreemfs.foundation.oncrpc.utils.XDRUnmarshaller;
 import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.OSDInterface.OSDException;
+import org.xtreemfs.interfaces.OSDInterface.RedirectException;
 import org.xtreemfs.interfaces.OSDInterface.writeRequest;
 import org.xtreemfs.interfaces.OSDInterface.writeResponse;
+import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.osd.ErrorCodes;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
+import org.xtreemfs.osd.rwre.RWReplicationStage;
+import org.xtreemfs.osd.rwre.ReplicaUpdatePolicy.PrepareOperationCallback;
+import org.xtreemfs.osd.stages.StorageStage.InternalGetMaxObjectNoCallback;
+import org.xtreemfs.osd.stages.StorageStage.ReadObjectCallback;
 import org.xtreemfs.osd.stages.StorageStage.WriteObjectCallback;
+import org.xtreemfs.osd.storage.ObjectInformation;
 
 public final class WriteOperation extends OSDOperation {
 
@@ -92,19 +101,139 @@ public final class WriteOperation extends OSDOperation {
             master.objectReceived();
             master.dataReceived(args.getObject_data().getData().capacity());
 
-            master.getStorageStage().writeObject(args.getFile_id(), args.getObject_number(), sp,
-                    args.getOffset(), args.getObject_data().getData(), rq.getCowPolicy(),
-                    rq.getLocationList(), syncWrite, null, rq, new WriteObjectCallback() {
+            if (rq.getLocationList().getReplicaUpdatePolicy().length() == 0) {
 
-                        @Override
-                        public void writeComplete(OSDWriteResponse result, Exception error) {
-                            step2(rq, result, error);
-                        }
-                    });
+                master.getStorageStage().writeObject(args.getFile_id(), args.getObject_number(), sp,
+                        args.getOffset(), args.getObject_data().getData(), rq.getCowPolicy(),
+                        rq.getLocationList(), syncWrite, null, rq, new WriteObjectCallback() {
+
+                            @Override
+                            public void writeComplete(OSDWriteResponse result, Exception error) {
+                                sendResult(rq, result, error);
+                            }
+                        });
+            } else {
+                replicatedFileOpen(rq,args,syncWrite);
+            }
         }
     }
 
-    public void step2(final OSDRequest rq, OSDWriteResponse result, Exception error) {
+    public void replicatedFileOpen(final OSDRequest rq, final writeRequest args, final boolean syncWrite) {
+
+        if (rq.isFileOpen()) {
+            if (Logging.isDebug())
+                Logging.logMessage(Logging.LEVEL_DEBUG, this,"open rw/ repl file: "+rq.getFileId());
+            //initialize replication state
+
+            //load max obj ver from disk
+            master.getStorageStage().internalGetMaxObjectNo(rq.getFileId(),
+                    rq.getLocationList().getLocalReplica().getStripingPolicy(),
+                    new InternalGetMaxObjectNoCallback() {
+
+                @Override
+                public void maxObjectNoCompleted(long maxObjNo, Exception error) {
+                    if (Logging.isDebug())
+                        Logging.logMessage(Logging.LEVEL_DEBUG, this,"received max objNo for: "+rq.getFileId()+" maxObj: "+maxObjNo+
+                                " error: "+error);
+                    if (error != null) {
+                        sendResult(rq, null, error);
+                    } else {
+                        //open file in repl stage
+                        master.getRWReplicationStage().openFile(args.getFile_credentials(),
+                                rq.getLocationList(), maxObjNo, new RWReplicationStage.OpenFileCallback() {
+
+                            @Override
+                            public void fileOpenComplete(Exception error) {
+                                if (Logging.isDebug())
+                                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"open complete for file: "+rq.getFileId()+" error: "+error);
+                                if (error != null)
+                                    sendResult(rq, null, error);
+                                else
+                                    replicatedWrite(rq,args,syncWrite);
+                            }
+                        }, rq);
+                    }
+                }
+            });
+        } else
+            replicatedWrite(rq, args,syncWrite);
+    }
+
+    public void replicatedWrite(final OSDRequest rq, final writeRequest args, final boolean syncWrite) {
+        //prepareWrite first
+        master.getRWReplicationStage().prepareOperation(args.getFile_credentials(), args.getObject_number(), args.getObject_version(), RWReplicationStage.Operation.WRITE, new PrepareOperationCallback() {
+
+            @Override
+            public void prepareOperationComplete(boolean canExecOperation, String redirectToUUID, final long newObjVersion, Exception error) {
+                if (redirectToUUID != null) {
+                    BufferPool.free(args.getObject_data().getData());
+                    sendResult(rq, null, new RedirectException(redirectToUUID));
+                    return;
+                }
+                if (error != null) {
+                    BufferPool.free(args.getObject_data().getData());
+                    sendResult(rq, null, error);
+                    return;
+                }
+
+                System.out.println("preparOpComplete called");
+
+                //FIXME: ignore canExecOperation for now...
+                master.getStorageStage().writeObject(args.getFile_id(), args.getObject_number(),
+                        rq.getLocationList().getLocalReplica().getStripingPolicy(),
+                        args.getOffset(), args.getObject_data().getData().createViewBuffer(), rq.getCowPolicy(),
+                        rq.getLocationList(), syncWrite, newObjVersion, rq, new WriteObjectCallback() {
+
+                            @Override
+                            public void writeComplete(OSDWriteResponse result, Exception error) {
+                                if (error != null)
+                                    sendResult(rq, null, error);
+                                else
+                                    sendUpdates(rq,args,result,newObjVersion);
+                            }
+                        });
+            }
+        }, rq);
+    }
+
+    public void sendUpdates(final OSDRequest rq, final writeRequest args, final OSDWriteResponse result, final long newObjVersion) {
+        final StripingPolicyImpl sp = rq.getLocationList().getLocalReplica().getStripingPolicy();
+        if (args.getObject_data().getData().remaining() == sp.getStripeSizeForObject(args.getObject_number())) {
+
+            sendUpdates2(rq, args, result, newObjVersion, args.getObject_data());
+        } else {
+            //load object from disk
+            BufferPool.free(args.getObject_data().getData());
+
+            master.getStorageStage().readObject(args.getFile_id(), args.getObject_number(), sp, 0, -1, 0l, rq, new ReadObjectCallback() {
+
+                @Override
+                public void readComplete(ObjectInformation result2, Exception error) {
+                    if (error != null)
+                        sendResult(rq, null, error);
+                    else {
+                        ObjectData od = result2.getObjectData(false, 0, sp.getStripeSizeForObject(args.getObject_number()));
+                        sendUpdates2(rq, args, result, newObjVersion, od);
+                    }
+                }
+            });
+        }
+    }
+    public void sendUpdates2(final OSDRequest rq, final writeRequest args, final OSDWriteResponse result, final long newObjVersion,
+            final ObjectData data) {
+        master.getRWReplicationStage().replicatedWrite(args.getFile_credentials(),
+                    args.getObject_number(), newObjVersion, data,
+                    rq.getLocationList(), new RWReplicationStage.ReplicatedOperationCallback() {
+
+                @Override
+                public void writeCompleted(Exception error) {
+                    sendResult(rq, result, error);
+                }
+            }, rq);
+    }
+
+
+    public void sendResult(final OSDRequest rq, OSDWriteResponse result, Exception error) {
         if (error != null) {
             if (error instanceof ONCRPCException)
                 rq.sendException((ONCRPCException)error);

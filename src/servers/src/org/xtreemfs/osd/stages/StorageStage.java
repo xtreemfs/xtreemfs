@@ -113,9 +113,9 @@ public class StorageStage extends Stage {
     }
     
     public void truncate(String fileId, long newFileSize, StripingPolicyImpl sp, Replica currentReplica,
-        long truncateEpoch, CowPolicy cow, OSDRequest request, TruncateCallback listener) {
+        long truncateEpoch, CowPolicy cow, Long newObjVer, OSDRequest request, TruncateCallback listener) {
         this.enqueueOperation(fileId, StorageThread.STAGEOP_TRUNCATE, new Object[] { fileId, newFileSize, sp,
-            currentReplica, truncateEpoch, cow }, request, listener);
+            currentReplica, truncateEpoch, cow, newObjVer }, request, listener);
     }
     
     public static interface TruncateCallback {
@@ -148,10 +148,20 @@ public class StorageStage extends Stage {
         
         public void gmaxComplete(InternalGmax result, Exception error);
     }
-    
-    public void getObjectSet(String fileId, OSDRequest request, GetObjectListCallback listener) {
-        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_OBJECT_SET, new Object[] { fileId }, request,
-            listener);
+
+    public void internalGetMaxObjectNo(String fileId, StripingPolicyImpl sp, InternalGetMaxObjectNoCallback callback) {
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_MAX_OBJNO, new Object[]{fileId,sp}, null, callback);
+    }
+
+    public static interface InternalGetMaxObjectNoCallback {
+
+        public void maxObjectNoCompleted(long maxObjNo, Exception error);
+    }
+
+    public void getObjectSet(String fileId, OSDRequest request,
+            GetObjectListCallback listener) {
+        this.enqueueOperation(fileId, StorageThread.STAGEOP_GET_OBJECT_SET, new Object[] { fileId },
+                request, listener);
     }
     
     public void createFileVersion(String fileId, FileMetadata fi, OSDRequest request, CreateFileVersionCallback listener) {

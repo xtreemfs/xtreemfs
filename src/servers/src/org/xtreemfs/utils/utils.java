@@ -65,6 +65,7 @@ public class utils {
             
             // remove leading and trailing quotes
             value = value.substring(1, value.length() - 1);
+            value = value.replace("\\\"", "\"");
             
             result.put(key, value);
         }

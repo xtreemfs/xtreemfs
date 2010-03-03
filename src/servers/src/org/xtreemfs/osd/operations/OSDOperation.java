@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponse;
 import org.xtreemfs.foundation.oncrpc.client.RPCResponseAvailableListener;
+import org.xtreemfs.interfaces.utils.ONCRPCException;
 import org.xtreemfs.osd.OSDRequest;
 import org.xtreemfs.osd.OSDRequestDispatcher;
 
@@ -80,6 +81,14 @@ public abstract class OSDOperation {
             r.registerListener(l);
         }
 
+    }
+
+    public void sendError(OSDRequest rq, Exception error) {
+        if (error instanceof ONCRPCException) {
+            rq.sendException((ONCRPCException) error);
+        } else {
+            rq.sendInternalServerError(error);
+        }
     }
 
     public static interface ResponsesListener {

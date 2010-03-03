@@ -1,5 +1,4 @@
-/*  Copyright (c) 2008 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin and
-    Barcelona Supercomputing Center - Centro Nacional de Supercomputacion.
+/*  Copyright (c) 2008-2010 Konrad-Zuse-Zentrum fuer Informationstechnik Berlin
 
     This file is part of XtreemFS. XtreemFS is part of XtreemOS, a Linux-based
     Grid Operating System, see <http://www.xtreemos.eu> for more details.
@@ -20,7 +19,7 @@
     along with XtreemFS. If not, see <http://www.gnu.org/licenses/>.
 */
 /*
- * AUTHORS: BjÃ¶rn Kolbeck (ZIB), Jan Stender (ZIB), JesÃºs Malo (BSC)
+ * AUTHORS: Björn Kolbeck (ZIB), Jan Stender (ZIB)
  */
 
 package org.xtreemfs.foundation.json;
@@ -94,34 +93,5 @@ public class JSONString implements JSONInput {
     public String toString() {
         return "JSONString pos=" + position + "   str=" + str;
     }
-
-    /** 
-     *  @author JesÃºs Malo (jmalo)
-     */
-    public boolean equals(Object obj) {               
-        if(this == obj) return true;        
-        if((obj == null) || (obj.getClass() != this.getClass())) return false;
-        
-        JSONString other = (JSONString) obj;
-        
-        String Iam = toString();
-        String ItIs = other.toString();
-        
-        return Iam.equals(ItIs);        
-    }
     
-    /** 
-     *  @author JesÃºs Malo (jmalo)
-     */
-    public int hashCode() {
-        return toString().hashCode();
-    }
-    
-    /** It provides the String of the JSONString
-     *  @author JesÃºs Malo (jmalo)
-     *  @return The JSONString of the object
-     */
-    public String asString() {
-        return str;
-    }
 }

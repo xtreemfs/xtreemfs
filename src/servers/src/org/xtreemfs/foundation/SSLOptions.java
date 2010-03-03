@@ -33,9 +33,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 
+import java.security.cert.X509Certificate;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
 
 /**
  * Encapsulates the SSLOptions for the connections of pinky and speedy
@@ -204,8 +207,14 @@ public class SSLOptions {
             // First initialize the key and trust material.
             KeyStore ksKeys = KeyStore.getInstance(serverCredentialFileContainer);
             ksKeys.load(serverCredentialFile, serverCredentialFilePassphrase);
-            KeyStore ksTrust = KeyStore.getInstance(trustedCertificatesFileContainer);
-            ksTrust.load(trustedCertificatesFile, trustedCertificatesFilePassphrase);
+            
+            KeyStore ksTrust = null;
+            if (trustedCertificatesFileContainer.equals("none")) {
+                ksTrust = KeyStore.getInstance(KeyStore.getDefaultType());
+            } else {
+                ksTrust = KeyStore.getInstance(trustedCertificatesFileContainer);
+                ksTrust.load(trustedCertificatesFile, trustedCertificatesFilePassphrase);
+            }
             
             // KeyManager's decide which key material to use.
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
@@ -216,7 +225,13 @@ public class SSLOptions {
             tmf.init(ksTrust);
             
             sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            if (trustedCertificatesFileContainer.equals("none")) {
+                 TrustManager[] myTMs = new TrustManager [] {
+                              new NoAuthTrustStore() };
+                 sslContext.init(kmf.getKeyManagers(), myTMs, null);
+            } else {
+                sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
+            }
         } catch (UnrecoverableKeyException e) {
             e.printStackTrace();
         } catch (KeyManagementException e) {
@@ -269,5 +284,25 @@ public class SSLOptions {
 
     public boolean isFakeSSLMode() {
         return this.useFakeSSLMode;
+    }
+
+    private static class NoAuthTrustStore implements X509TrustManager {
+
+        @Override
+        public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+            //ignore
+        }
+
+        @Override
+        public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+            //ignore
+        }
+
+        @Override
+        public X509Certificate[] getAcceptedIssuers() {
+            return new X509Certificate[]{};
+        }
+
+
     }
 }

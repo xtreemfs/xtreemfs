@@ -277,6 +277,7 @@ public class RandomAccessFile {
             r = osdClient.check_object(osd.getAddress(),
                     fileId, credentials, objectNo, 0l);
             ObjectData od = r.get();
+            BufferPool.free(od.getData());
 
 
             if (od.getInvalid_checksum_on_osd()) {

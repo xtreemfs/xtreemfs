@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class ObjectData implements Struct
 {
-    public static final int TAG = 2010022266;
+    public static final int TAG = 2010030365;
 
     public ObjectData() {  }
     public ObjectData( int checksum, boolean invalid_checksum_on_osd, int zero_padding, ReusableBuffer data ) { this.checksum = checksum; this.invalid_checksum_on_osd = invalid_checksum_on_osd; this.zero_padding = zero_padding; this.data = data; }
@@ -41,10 +41,10 @@ public class ObjectData implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010022266;
+    public static final long serialVersionUID = 2010030365;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022266; }
+    public int getTag() { return 2010030365; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ObjectData"; }
 
     public int getXDRSize()

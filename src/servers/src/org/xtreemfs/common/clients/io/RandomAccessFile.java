@@ -204,6 +204,10 @@ public class RandomAccessFile implements ObjectStore {
             FileAccessManager.O_CREAT, this.mode, 0, new VivaldiCoordinates());
         fileCredentials = r.get();
         r.freeBuffers();
+
+        if (fileCredentials.getXlocs().getReplicas().size() == 0) {
+            throw new IOException("cannot assign OSDs to file");
+        }
         
         // all replicas have the same striping policy (more precisely the same
         // stripesize) at the moment

@@ -195,6 +195,7 @@ public class FileInfo implements Runnable {
                             listener.fileScrubbed(file, byteCounter, ReturnStatus.FILE_CORRUPT);
                         } else {
                             printFileErrorMessage(file.getFile(), file.getFileId(), "unable to check object #"+(nextObjectToScrub-1)+": "+ex);
+                            ex.printStackTrace();
                             listener.fileScrubbed(file, byteCounter, ReturnStatus.UNREACHABLE);
                         }
                         return;
