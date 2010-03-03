@@ -18,8 +18,10 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
     public static final int TAG = 2010022424;
 
     public openRequest() { client_vivaldi_coordinates = new VivaldiCoordinates();  }
-    public openRequest( String path, int flags, int mode, int attributes, VivaldiCoordinates client_vivaldi_coordinates ) { this.path = path; this.flags = flags; this.mode = mode; this.attributes = attributes; this.client_vivaldi_coordinates = client_vivaldi_coordinates; }
+    public openRequest( String volume_name, String path, int flags, int mode, int attributes, VivaldiCoordinates client_vivaldi_coordinates ) { this.volume_name = volume_name; this.path = path; this.flags = flags; this.mode = mode; this.attributes = attributes; this.client_vivaldi_coordinates = client_vivaldi_coordinates; }
 
+    public String getVolume_name() { return volume_name; }
+    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
     public int getFlags() { return flags; }
@@ -56,6 +58,7 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
     public int getXDRSize()
     {
         int my_size = 0;
+        my_size += Integer.SIZE / 8 + ( volume_name != null ? ( ( volume_name.getBytes().length % 4 == 0 ) ? volume_name.getBytes().length : ( volume_name.getBytes().length + 4 - volume_name.getBytes().length % 4 ) ) : 0 ); // volume_name
         my_size += Integer.SIZE / 8 + ( path != null ? ( ( path.getBytes().length % 4 == 0 ) ? path.getBytes().length : ( path.getBytes().length + 4 - path.getBytes().length % 4 ) ) : 0 ); // path
         my_size += Integer.SIZE / 8; // flags
         my_size += Integer.SIZE / 8; // mode
@@ -66,6 +69,7 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
 
     public void marshal( Marshaller marshaller )
     {
+        marshaller.writeString( "volume_name", volume_name );
         marshaller.writeString( "path", path );
         marshaller.writeUint32( "flags", flags );
         marshaller.writeUint32( "mode", mode );
@@ -75,6 +79,7 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
 
     public void unmarshal( Unmarshaller unmarshaller )
     {
+        volume_name = unmarshaller.readString( "volume_name" );
         path = unmarshaller.readString( "path" );
         flags = unmarshaller.readUint32( "flags" );
         mode = unmarshaller.readUint32( "mode" );
@@ -84,6 +89,7 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
 
     
 
+    private String volume_name;
     private String path;
     private int flags;
     private int mode;

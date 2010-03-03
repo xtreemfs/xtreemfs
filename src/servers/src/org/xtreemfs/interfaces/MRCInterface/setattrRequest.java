@@ -18,8 +18,10 @@ public class setattrRequest extends org.xtreemfs.interfaces.utils.Request
     public static final int TAG = 2010022430;
 
     public setattrRequest() { stbuf = new Stat();  }
-    public setattrRequest( String path, Stat stbuf, int to_set ) { this.path = path; this.stbuf = stbuf; this.to_set = to_set; }
+    public setattrRequest( String volume_name, String path, Stat stbuf, int to_set ) { this.volume_name = volume_name; this.path = path; this.stbuf = stbuf; this.to_set = to_set; }
 
+    public String getVolume_name() { return volume_name; }
+    public void setVolume_name( String volume_name ) { this.volume_name = volume_name; }
     public String getPath() { return path; }
     public void setPath( String path ) { this.path = path; }
     public Stat getStbuf() { return stbuf; }
@@ -52,6 +54,7 @@ public class setattrRequest extends org.xtreemfs.interfaces.utils.Request
     public int getXDRSize()
     {
         int my_size = 0;
+        my_size += Integer.SIZE / 8 + ( volume_name != null ? ( ( volume_name.getBytes().length % 4 == 0 ) ? volume_name.getBytes().length : ( volume_name.getBytes().length + 4 - volume_name.getBytes().length % 4 ) ) : 0 ); // volume_name
         my_size += Integer.SIZE / 8 + ( path != null ? ( ( path.getBytes().length % 4 == 0 ) ? path.getBytes().length : ( path.getBytes().length + 4 - path.getBytes().length % 4 ) ) : 0 ); // path
         my_size += stbuf.getXDRSize(); // stbuf
         my_size += Integer.SIZE / 8; // to_set
@@ -60,6 +63,7 @@ public class setattrRequest extends org.xtreemfs.interfaces.utils.Request
 
     public void marshal( Marshaller marshaller )
     {
+        marshaller.writeString( "volume_name", volume_name );
         marshaller.writeString( "path", path );
         marshaller.writeStruct( "stbuf", stbuf );
         marshaller.writeUint32( "to_set", to_set );
@@ -67,6 +71,7 @@ public class setattrRequest extends org.xtreemfs.interfaces.utils.Request
 
     public void unmarshal( Unmarshaller unmarshaller )
     {
+        volume_name = unmarshaller.readString( "volume_name" );
         path = unmarshaller.readString( "path" );
         stbuf = new Stat(); unmarshaller.readStruct( "stbuf", stbuf );
         to_set = unmarshaller.readUint32( "to_set" );
@@ -74,6 +79,7 @@ public class setattrRequest extends org.xtreemfs.interfaces.utils.Request
 
     
 
+    private String volume_name;
     private String path;
     private Stat stbuf;
     private int to_set;
