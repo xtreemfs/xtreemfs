@@ -541,44 +541,43 @@ public class Volume {
         final String fixedVol = fixPath(volumeName);
         final String fixedPath = fixPath(file.getPath());
         try {
-            if (file.isReadOnly()) {
-                org.xtreemfs.common.clients.Replica r = file.getReplica(0);
-                StripingPolicy sp = new StripingPolicy(r.getStripingPolicy(), r.getStripeSize(), width);
-                org.xtreemfs.interfaces.Replica newReplica = new org.xtreemfs.interfaces.Replica(osdSet,
-                    flags | Constants.REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING, sp);
-
-                response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fixedVol, fixedPath, 0, Constants.SYSTEM_V_FCNTL_H_O_RDWR, 0,new VivaldiCoordinates());
-                FileCredentials oldCreds = response1.get();
-                response1.freeBuffers();
-                response1 = null;
-
-                response3 = mrcClient.xtreemfs_replica_add(mrcClient.getDefaultServerAddress(), userCreds,
-                        oldCreds.getXcap().getFile_id(), newReplica);
-                response3.get();
-                response3.freeBuffers();
-                response3 = null;
-
-                if ((flags & Constants.REPL_FLAG_FULL_REPLICA) > 0) {
-
-                    response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fixedVol, fixedPath, 0, Constants.SYSTEM_V_FCNTL_H_O_RDWR, 0,new VivaldiCoordinates());
-                    FileCredentials newCreds = response1.get();
-                    for (int objNo = 0; objNo < width; objNo++) {
-                        ServiceUUID osd = new ServiceUUID(osdSet.get(objNo), uuidResolver);
-                        response3 = osdClient.read(osd.getAddress(), newCreds.getXcap().getFile_id(),
-                                newCreds, objNo, 0, 0, 1);
-                        response3.get();
-                        response3.freeBuffers();
-                        response3 = null;
-                    }
+            
+            org.xtreemfs.common.clients.Replica r = file.getReplica(0);
+            StripingPolicy sp = new StripingPolicy(r.getStripingPolicy(), r.getStripeSize(), width);
+            org.xtreemfs.interfaces.Replica newReplica = new org.xtreemfs.interfaces.Replica(osdSet, flags
+                | Constants.REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING, sp);
+            
+            response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fixedVol, fixedPath,
+                0, Constants.SYSTEM_V_FCNTL_H_O_RDWR, 0, new VivaldiCoordinates());
+            FileCredentials oldCreds = response1.get();
+            response1.freeBuffers();
+            response1 = null;
+            
+            response3 = mrcClient.xtreemfs_replica_add(mrcClient.getDefaultServerAddress(), userCreds,
+                oldCreds.getXcap().getFile_id(), newReplica);
+            response3.get();
+            response3.freeBuffers();
+            response3 = null;
+            
+            if ((flags & Constants.REPL_FLAG_FULL_REPLICA) > 0) {
+                
+                response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fixedVol,
+                    fixedPath, 0, Constants.SYSTEM_V_FCNTL_H_O_RDWR, 0, new VivaldiCoordinates());
+                FileCredentials newCreds = response1.get();
+                for (int objNo = 0; objNo < width; objNo++) {
+                    ServiceUUID osd = new ServiceUUID(osdSet.get(objNo), uuidResolver);
+                    response3 = osdClient.read(osd.getAddress(), newCreds.getXcap().getFile_id(), newCreds,
+                        objNo, 0, 0, 1);
+                    response3.get();
+                    response3.freeBuffers();
+                    response3 = null;
                 }
-
-            } else {
-                throw new IOException("file is not read-only marked, cannot add replicas");
             }
-             } catch (MRCException ex) {
+            
+        } catch (MRCException ex) {
             if (ex.getError_code() == ErrNo.ENOENT)
-                throw new FileNotFoundException("file '"+fullPath+"' does not exist");
-           throw wrapException(ex);
+                throw new FileNotFoundException("file '" + fullPath + "' does not exist");
+            throw wrapException(ex);
         } catch (ONCRPCException ex) {
             throw wrapException(ex);
         } catch (InterruptedException ex) {

@@ -111,13 +111,14 @@ public class AddReplicaOperation extends MRCOperation {
         
         StripingPolicy sPol = sMan.createStripingPolicy(sp.getType().toString(), sp.getStripe_size(), sp
                 .getWidth());
-        
-        if (!file.isReadOnly())
-            throw new UserException(ErrNo.EPERM, "the file has to be made read-only before adding replicas");
-        
+
         // check whether the new replica relies on a set of OSDs which
         // hasn't been used yet
         XLocList xLocList = file.getXLocList();
+        
+        if (!file.isReadOnly() && Constants.REPL_UPDATE_PC_NONE.equals(xLocList.getReplUpdatePolicy()))
+            throw new UserException(ErrNo.EPERM,
+                "the file has to be made read-only, or a replica update policy has to be specified before adding replicas");
         
         if (!MRCHelper.isResolvable(newRepl.getOsd_uuids()))
             throw new UserException(ErrNo.EINVAL, "replica contains unresolvable OSD UUIDs in '"

@@ -124,7 +124,8 @@ public class MRCHelper {
             snapshots_enabled,
             snapshot_time,
             mark_replica_complete,
-            acl
+            acl,
+            set_repl_update_policy
     }
     
     public enum FileType {
@@ -423,7 +424,7 @@ public class MRCHelper {
                     Logging.logError(Logging.LEVEL_ERROR, null, e);
                     throw new UserException(ErrNo.EINVAL);
                 }
-                                
+                
                 if (acl != null) {
                     
                     StringBuilder sb = new StringBuilder();
@@ -529,6 +530,8 @@ public class MRCHelper {
             break;
         
         case read_only:
+            
+            // TODO: unify w/ 'set_repl_update_policy'
 
             if (file.isDirectory())
                 throw new UserException(ErrNo.EPERM, "only files can be made read-only");
@@ -551,7 +554,7 @@ public class MRCHelper {
                         .setReplicaIsComplete(replicas[0].getReplicationFlags())));
                 
                 XLocList newXLoc = sMan.createXLocList(replicas, readOnly ? Constants.REPL_UPDATE_PC_RONLY
-                    : Constants.REPL_UPDATE_PC_NONE, xLoc.getVersion());
+                    : Constants.REPL_UPDATE_PC_NONE, xLoc.getVersion() + 1);
                 file.setXLocList(newXLoc);
                 sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             }
@@ -689,6 +692,44 @@ public class MRCHelper {
             } catch (Exception exc) {
                 throw new UserException(ErrNo.EINVAL, "malformed ACL modification request");
             }
+            
+            break;
+        
+        case set_repl_update_policy:
+
+            if (file.isDirectory())
+                throw new UserException(ErrNo.EISDIR, "file required");
+            
+            xlocs = file.getXLocList();
+            xlocArray = new XLoc[xlocs.getReplicaCount()];
+            it = xlocs.iterator();
+            for (int i = 0; it.hasNext(); i++)
+                xlocArray[i] = it.next();
+            
+            String replUpdatePolicy = xlocs.getReplUpdatePolicy();
+            
+            if (Constants.REPL_UPDATE_PC_RONLY.equals(replUpdatePolicy))
+                throw new UserException(ErrNo.EINVAL,
+                    "changing replica update policies of read-only-replicated files is not allowed");
+            
+            if (Constants.REPL_UPDATE_PC_NONE.equals(value)) {
+                // if there are more than one replica, report an error
+                if (xlocs.getReplicaCount() > 1)
+                    throw new UserException(ErrNo.EINVAL,
+                        "number of replicas has to be reduced 1 before replica update policy can be set to "
+                            + Constants.REPL_UPDATE_PC_NONE + " (current replica count = "
+                            + xlocs.getReplicaCount() + ")");
+            }
+            
+            if (!Constants.REPL_UPDATE_PC_WARA.equals(value)
+                && !Constants.REPL_UPDATE_PC_WARONE.equals(value)
+                && !Constants.REPL_UPDATE_PC_NONE.equals(value)
+                && !Constants.REPL_UPDATE_PC_RONLY.equals(value))
+                throw new UserException(ErrNo.EINVAL, "invalid replica update policy: " + value);
+            
+            newXLocList = sMan.createXLocList(xlocArray, value, xlocs.getVersion() + 1);
+            file.setXLocList(newXLocList);
+            sMan.setMetadata(file, FileMetadata.RC_METADATA, update);
             
             break;
         
