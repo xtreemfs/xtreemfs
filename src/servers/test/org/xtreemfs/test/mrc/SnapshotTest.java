@@ -146,26 +146,26 @@ public class SnapshotTest extends TestCase {
             POSIXFileAccessPolicy.POLICY_ID, 0775));
         
         // enable snapshots on the volume
-        invokeSync(client.setxattr(mrcAddress, uc, volumeName, "xtreemfs.snapshots_enabled", "true", 0));
+        invokeSync(client.setxattr(mrcAddress, uc, volumeName, "", "xtreemfs.snapshots_enabled", "true", 0));
         
         // create a random tree with some files and directories
         SortedSet<TreeEntry> tree = createRandomTree(numDirs, maxFilesPerDir);
         
         for (TreeEntry path : tree)
             if (path.isDir())
-                invokeSync(client.mkdir(mrcAddress, uc, volumeName + "/" + path.getName(), 0775));
+                invokeSync(client.mkdir(mrcAddress, uc, volumeName, path.getName(), 0775));
             else
-                invokeSync(client.open(mrcAddress, uc, volumeName + "/" + path.getName(),
-                    FileAccessManager.O_CREAT, 0775, 0, new VivaldiCoordinates()));
+                invokeSync(client.open(mrcAddress, uc, volumeName, path.getName(), FileAccessManager.O_CREAT,
+                    0775, 0, new VivaldiCoordinates()));
         
         assertTree(tree, volumeName, "", true);
         
         // create and test a recursive snapshot from the root directory
-        invokeSync(createSnapshot(volumeName, "rootSnap1", true));
+        invokeSync(createSnapshot(volumeName, "", "rootSnap1", true));
         assertTree(tree, volumeName + "@rootSnap1", "", true);
         
         // create and test a non-recursive snapshot from the root directory
-        invokeSync(createSnapshot(volumeName, "rootSnap2", false));
+        invokeSync(createSnapshot(volumeName, "", "rootSnap2", false));
         assertTree(tree, volumeName + "@rootSnap2", "", false);
         
         // create and test some random snapshots
@@ -175,9 +175,9 @@ public class SnapshotTest extends TestCase {
             String dir = getRandomDir(tree);
             boolean recursive = rnd.nextBoolean();
             
-            snaps.put(i, new Object[]{dir, recursive});
+            snaps.put(i, new Object[] { dir, recursive });
             
-            invokeSync(createSnapshot(volumeName + "/" + dir, i + "", recursive));
+            invokeSync(createSnapshot(volumeName, dir, i + "", recursive));
             assertTree(tree, volumeName + "@" + i, dir, recursive);
         }
         
@@ -188,19 +188,19 @@ public class SnapshotTest extends TestCase {
                 // delete
                 if (path.isDir())
                     try {
-                        invokeSync(client.rmdir(mrcAddress, uc, volumeName + "/" + path.getName()));
+                        invokeSync(client.rmdir(mrcAddress, uc, volumeName, path.getName()));
                     } catch (Exception exc) {
                     }
                 else
-                    invokeSync(client.unlink(mrcAddress, uc, volumeName + "/" + path.getName()));
+                    invokeSync(client.unlink(mrcAddress, uc, volumeName, path.getName()));
             }
         for (TreeEntry path : newTree)
             if (!tree.contains(path)) {
                 // add
                 if (path.isDir())
-                    invokeSync(client.mkdir(mrcAddress, uc, volumeName + "/" + path.getName(), 0775));
+                    invokeSync(client.mkdir(mrcAddress, uc, volumeName, path.getName(), 0775));
                 else
-                    invokeSync(client.open(mrcAddress, uc, volumeName + "/" + path.getName(),
+                    invokeSync(client.open(mrcAddress, uc, volumeName, path.getName(),
                         FileAccessManager.O_CREAT, 0775, 0, new VivaldiCoordinates()));
             }
         
@@ -209,12 +209,13 @@ public class SnapshotTest extends TestCase {
         
         // check the old snapshot trees
         for (Entry<Integer, Object[]> snap : snaps.entrySet())
-            assertTree(tree, volumeName + "@" + snap.getKey(), (String) snap.getValue()[0], (Boolean) snap.getValue()[1]);
+            assertTree(tree, volumeName + "@" + snap.getKey(), (String) snap.getValue()[0], (Boolean) snap
+                    .getValue()[1]);
     }
     
-    private RPCResponse<Object> createSnapshot(String path, String name, boolean recursive) {
-        return client.setxattr(mrcAddress, uc, path, "xtreemfs.snapshots", "c" + (recursive ? "r" : "") + " "
-            + name, 0);
+    private RPCResponse<Object> createSnapshot(String vol, String dir, String name, boolean recursive) {
+        return client.setxattr(mrcAddress, uc, vol, dir, "xtreemfs.snapshots", "c" + (recursive ? "r" : "")
+            + " " + name, 0);
     }
     
     private void assertTree(SortedSet<TreeEntry> tree, String volume, String path, boolean recursive)
@@ -232,12 +233,10 @@ public class SnapshotTest extends TestCase {
             if (relPath.startsWith("/"))
                 relPath = relPath.substring(1);
             
-            String fullPath = volume + "/" + relPath;
-            
             try {
-                invokeSync(client.getattr(mrcAddress, uc, fullPath));
+                invokeSync(client.getattr(mrcAddress, uc, volume, relPath));
             } catch (Exception exc) {
-                System.out.println("file: " + fullPath);
+                System.out.println("file: " + volume + "/" + relPath);
                 System.out.println();
                 printTree(tree);
                 System.out.println();

@@ -140,11 +140,11 @@ public class RandomAccessFileTest extends TestCase {
         // create some files and directories
         // testEnv.getMrcClient().createDir(mrc1Address, volumeName + "/myDir",
         // authString);
-        r = testEnv.getMrcClient().mkdir(mrc1Address, uc, volumeName + "/myDir", 0);
+        r = testEnv.getMrcClient().mkdir(mrc1Address, uc, volumeName, "myDir", 0);
         r.get();
         
         for (int i = 0; i < 10; i++) {
-            r = testEnv.getMrcClient().open(mrc1Address, uc, volumeName + "/myDir/test" + i + ".txt",
+            r = testEnv.getMrcClient().open(mrc1Address, uc, volumeName, "myDir/test" + i + ".txt",
                 FileAccessManager.O_CREAT | FileAccessManager.O_EXCL, 0, 0, new VivaldiCoordinates());
             r.get();
         }

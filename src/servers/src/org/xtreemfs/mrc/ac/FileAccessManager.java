@@ -140,18 +140,16 @@ public class FileAccessManager {
         return getVolumeFileAccessPolicy(sMan.getVolumeInfo().getId()).getACLEntries(sMan, file);
     }
     
-    public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
-        List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update) throws MRCException,
-        UserException {
-        getVolumeFileAccessPolicy(sMan.getVolumeInfo().getId()).setACLEntries(sMan, file, parentId, userId,
-            groupIds, entries, update);
+    public void updateACLEntries(StorageManager sMan, FileMetadata file, long parentId,
+        Map<String, Object> entries, AtomicDBUpdate update) throws MRCException, UserException {
+        getVolumeFileAccessPolicy(sMan.getVolumeInfo().getId()).updateACLEntries(sMan, file, parentId, entries,
+            update);
     }
     
-    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
-        List<String> groupIds, List<Object> entities, AtomicDBUpdate update) throws MRCException,
-        UserException {
+    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
+        List<Object> entities, AtomicDBUpdate update) throws MRCException, UserException {
         getVolumeFileAccessPolicy(sMan.getVolumeInfo().getId()).removeACLEntries(sMan, file, parentId,
-            userId, groupIds, entities, update);
+            entities, update);
     }
     
     public FileAccessPolicy getFileAccessPolicy(short policyId) {

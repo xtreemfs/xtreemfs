@@ -130,6 +130,8 @@ public class RandomAccessFile implements ObjectStore {
     
     private final int                   mode;
     
+    private final String                volName;
+    
     private final String                pathName;
     
     private final InetSocketAddress     mrcAddress;
@@ -184,9 +186,16 @@ public class RandomAccessFile implements ObjectStore {
     public RandomAccessFile(String mode, InetSocketAddress mrcAddress, String pathName,
         RPCNIOSocketClient rpcClient, UserCredentials credentials) throws ONCRPCException,
         InterruptedException, IOException {
-        this.pathName = pathName;
+        
         this.mrcAddress = mrcAddress;
         this.mode = translateMode(mode);
+        
+        int index = pathName.indexOf('/');
+        if (index == -1)
+            throw new IOException("invalid path: " + pathName);
+        
+        this.volName = pathName.substring(0, index);
+        this.pathName = pathName.substring(index + 1);
         
         assert (rpcClient != null);
         
@@ -200,11 +209,11 @@ public class RandomAccessFile implements ObjectStore {
         this.replicaSelectionPolicy = RANDOM_REPLICA_SELECTION_POLICY;
         
         // create a new file if necessary
-        RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, pathName,
+        RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, volName, this.pathName,
             FileAccessManager.O_CREAT, this.mode, 0, new VivaldiCoordinates());
         fileCredentials = r.get();
         r.freeBuffers();
-
+        
         if (fileCredentials.getXlocs().getReplicas().size() == 0) {
             throw new IOException("cannot assign OSDs to file");
         }
@@ -539,7 +548,8 @@ public class RandomAccessFile implements ObjectStore {
             try {
                 long fs = wresp.getNew_file_size().get(0).getSize_in_bytes();
                 int ep = wresp.getNew_file_size().get(0).getTruncate_epoch();
-                r = mrcClient.fsetattr(mrcAddress, fileCredentials.getXcap(), new Stat(0, 0, 0, 0, "", "", fs, 0, 0, 0, 0, 0, ep, 0), MRCInterface.SETATTR_SIZE);
+                r = mrcClient.fsetattr(mrcAddress, fileCredentials.getXcap(), new Stat(0, 0, 0, 0, "", "",
+                    fs, 0, 0, 0, 0, 0, ep, 0), MRCInterface.SETATTR_SIZE);
                 r.get();
                 wresp = null;
             } catch (ONCRPCException ex) {
@@ -560,7 +570,7 @@ public class RandomAccessFile implements ObjectStore {
             RPCResponse<FileCredentialsSet> r = null;
             RPCResponse delR = null;
             try {
-                r = mrcClient.unlink(mrcAddress, credentials, pathName);
+                r = mrcClient.unlink(mrcAddress, credentials, volName, pathName);
                 FileCredentialsSet fcreds = r.get();
                 if (fcreds.size() > 0) {
                     // must delete on OSDs too!
@@ -586,7 +596,7 @@ public class RandomAccessFile implements ObjectStore {
     public long length() throws IOException {
         RPCResponse<StatSet> r = null;
         try {
-            r = mrcClient.getattr(mrcAddress, credentials, pathName);
+            r = mrcClient.getattr(mrcAddress, credentials, volName, pathName);
             Stat statInfo = r.get().get(0);
             
             // decide what to use...
@@ -636,8 +646,8 @@ public class RandomAccessFile implements ObjectStore {
                 flush();
                 
                 // set read only
-                RPCResponse<setxattrResponse> r = mrcClient.setxattr(mrcAddress, credentials, pathName,
-                    "xtreemfs.read_only", "true", 0);
+                RPCResponse<setxattrResponse> r = mrcClient.setxattr(mrcAddress, credentials, volName,
+                    pathName, "xtreemfs.read_only", "true", 0);
                 r.get();
                 r.freeBuffers();
                 
@@ -658,8 +668,8 @@ public class RandomAccessFile implements ObjectStore {
                     throw new IOException("File has still replicas.");
                 else {
                     // set read only
-                    RPCResponse<setxattrResponse> r = mrcClient.setxattr(mrcAddress, credentials, pathName,
-                        "xtreemfs.read_only", "false", 0);
+                    RPCResponse<setxattrResponse> r = mrcClient.setxattr(mrcAddress, credentials, volName,
+                        pathName, "xtreemfs.read_only", "false", 0);
                     r.get();
                     r.freeBuffers();
                     
@@ -855,7 +865,7 @@ public class RandomAccessFile implements ObjectStore {
     }
     
     public String getPath() {
-        return pathName;
+        return volName + "/" + pathName;
     }
     
     public void seek(long pos) {
@@ -910,7 +920,7 @@ public class RandomAccessFile implements ObjectStore {
     private void forceFileCredentialsUpdate(int mode) throws ONCRPCException, IOException,
         InterruptedException {
         try {
-            RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, pathName,
+            RPCResponse<FileCredentials> r = mrcClient.open(mrcAddress, credentials, volName, pathName,
                 FileAccessManager.O_CREAT, mode, 0, new VivaldiCoordinates());
             fileCredentials = r.get();
             r.freeBuffers();
@@ -925,7 +935,9 @@ public class RandomAccessFile implements ObjectStore {
     public void forceFileSize(long newFileSize) throws IOException {
         RPCResponse r = null;
         try {
-            r = mrcClient.fsetattr(mrcAddress, fileCredentials.getXcap(), new Stat(0, 0, 0, 0, "", "", newFileSize, 0, 0, 0, 0, 0, fileCredentials.getXcap().getTruncate_epoch(), 0), MRCInterface.SETATTR_SIZE);
+            r = mrcClient.fsetattr(mrcAddress, fileCredentials.getXcap(), new Stat(0, 0, 0, 0, "", "",
+                newFileSize, 0, 0, 0, 0, 0, fileCredentials.getXcap().getTruncate_epoch(), 0),
+                MRCInterface.SETATTR_SIZE);
             r.get();
         } catch (ONCRPCException ex) {
             throw new IOException("cannot update file size", ex);
@@ -940,7 +952,7 @@ public class RandomAccessFile implements ObjectStore {
     public Stat stat() throws IOException {
         RPCResponse<StatSet> r = null;
         try {
-            r = mrcClient.getattr(mrcAddress, credentials, pathName);
+            r = mrcClient.getattr(mrcAddress, credentials, volName, pathName);
             return r.get().get(0);
         } catch (ONCRPCException ex) {
             throw new IOException("cannot update file size", ex);

@@ -135,32 +135,31 @@ public class ScrubberTest extends TestCase {
         // create some files and directories
         // testEnv.getMrcClient().createDir(mrc1Address, volumeName + "/myDir",
         // authString);
-        r = testEnv.getMrcClient().mkdir(mrc1Address, Scrubber.credentials, volumeName + "/myDir", 0);
+        r = testEnv.getMrcClient().mkdir(mrc1Address, Scrubber.credentials, volumeName, "myDir", 0);
         r.get();
         r.freeBuffers();
         
-        r = testEnv.getMrcClient().mkdir(mrc1Address, Scrubber.credentials, volumeName + "/anotherDir", 0);
+        r = testEnv.getMrcClient().mkdir(mrc1Address, Scrubber.credentials, volumeName, "anotherDir", 0);
         r.get();
         r.freeBuffers();
         
-        r = testEnv.getMrcClient().mkdir(mrc1Address, Scrubber.credentials, volumeName + "/yetAnotherDir", 0);
+        r = testEnv.getMrcClient().mkdir(mrc1Address, Scrubber.credentials, volumeName, "yetAnotherDir", 0);
         r.get();
         
         for (int i = 0; i < 2; i++) {
-            r = testEnv.getMrcClient().open(mrc1Address, Scrubber.credentials,
-                volumeName + "/myDir/test" + i + ".txt", FileAccessManager.O_CREAT, 0, 0,
-                new VivaldiCoordinates());
+            r = testEnv.getMrcClient().open(mrc1Address, Scrubber.credentials, volumeName,
+                "myDir/test" + i + ".txt", FileAccessManager.O_CREAT, 0, 0, new VivaldiCoordinates());
             r.get();
             r.freeBuffers();
         }
         
-        r = testEnv.getMrcClient().open(mrc1Address, Scrubber.credentials, volumeName + "/test10.txt",
+        r = testEnv.getMrcClient().open(mrc1Address, Scrubber.credentials, volumeName, "test10.txt",
             FileAccessManager.O_CREAT, 0, 0, new VivaldiCoordinates());
         r.get();
         r.freeBuffers();
         
-        r = testEnv.getMrcClient().open(mrc1Address, Scrubber.credentials,
-            volumeName + "/anotherDir/test11.txt", FileAccessManager.O_CREAT, 0, 0, new VivaldiCoordinates());
+        r = testEnv.getMrcClient().open(mrc1Address, Scrubber.credentials, volumeName,
+            "anotherDir/test11.txt", FileAccessManager.O_CREAT, 0, 0, new VivaldiCoordinates());
         r.get();
         r.freeBuffers();
         
@@ -210,20 +209,20 @@ public class ScrubberTest extends TestCase {
         scrubber.scrub();
         
         // file size corrected from 10 to 0
-        RPCResponse r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/myDir/test0.txt");
+        RPCResponse r = client.getattr(mrc1Address, Scrubber.credentials, volumeName, "myDir/test0.txt");
         Stat s = ((StatSet) r.get()).get(0);
         r.freeBuffers();
         
         assertEquals(0, s.getSize());
         
         // file size same as before
-        r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/myDir/test1.txt");
+        r = client.getattr(mrc1Address, Scrubber.credentials, volumeName, "myDir/test1.txt");
         s = ((StatSet) r.get()).get(0);
         r.freeBuffers();
         
         assertEquals(0, s.getSize());
         
-        r = client.getxattr(mrc1Address, Scrubber.credentials, volumeName, Scrubber.latestScrubAttr);
+        r = client.getxattr(mrc1Address, Scrubber.credentials, volumeName, "", Scrubber.latestScrubAttr);
         String result = (String) r.get();
         r.freeBuffers();
         assertNotNull(result);
@@ -231,7 +230,7 @@ public class ScrubberTest extends TestCase {
         
         // file size corrected from 0 to 72000 (this file is stored in two
         // objects)
-        r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/anotherDir/test11.txt");
+        r = client.getattr(mrc1Address, Scrubber.credentials, volumeName, "anotherDir/test11.txt");
         s = ((StatSet) r.get()).get(0);
         r.freeBuffers();
         
@@ -239,7 +238,7 @@ public class ScrubberTest extends TestCase {
         
         // file size corrected from 0 to 65536, which is the stripe size.
         
-        r = client.getattr(mrc1Address, Scrubber.credentials, volumeName + "/test10.txt");
+        r = client.getattr(mrc1Address, Scrubber.credentials, volumeName, "test10.txt");
         s = ((StatSet) r.get()).get(0);
         r.freeBuffers();
         

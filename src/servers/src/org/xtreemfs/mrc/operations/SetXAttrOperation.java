@@ -65,7 +65,7 @@ public class SetXAttrOperation extends MRCOperation {
         
         validateContext(rq);
         
-        Path p = new Path(rqArgs.getPath());
+        Path p = new Path(rqArgs.getVolume_name() + "/" + rqArgs.getPath());
         
         StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
         PathResolver res = new PathResolver(sMan, p);
@@ -113,7 +113,7 @@ public class SetXAttrOperation extends MRCOperation {
             faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser,
                 rq.getDetails().groupIds);
             
-            MRCHelper.setSysAttrValue(sMan, vMan, res.getParentDirId(), file, attrKey
+            MRCHelper.setSysAttrValue(sMan, vMan, faMan, res.getParentDirId(), file, attrKey
                     .substring(StorageManager.SYS_ATTR_KEY_PREFIX.length()), attrVal, update);
         }
 

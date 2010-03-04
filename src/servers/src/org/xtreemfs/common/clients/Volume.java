@@ -94,9 +94,10 @@ public class Volume {
     public String[] list(String path) throws IOException {
         RPCResponse<DirectoryEntrySet> response = null;
         path = path.replace("//", "/");
-        final String fullPath = fixPath(volumeName+path);
+        final String fixedVol = fixPath(volumeName);
+        final String fixedPath = fixPath(path);
         try {
-            response = mrcClient.readdir(mrcClient.getDefaultServerAddress(), userCreds, fullPath);
+            response = mrcClient.readdir(mrcClient.getDefaultServerAddress(), userCreds, fixedVol, fixedPath);
             DirectoryEntrySet entries = response.get();
             String[] list = new String[entries.size()];
             for (int i = 0; i < list.length; i++) {
@@ -120,9 +121,10 @@ public class Volume {
     public DirectoryEntry[] listEntries(String path) throws IOException {
         RPCResponse<DirectoryEntrySet> response = null;
         path = path.replace("//", "/");
-        final String fullPath = fixPath(volumeName+path);
+        final String fixedVol = fixPath(volumeName);
+        final String fixedPath = fixPath(path);
         try {
-            response = mrcClient.readdir(mrcClient.getDefaultServerAddress(), userCreds, fullPath);
+            response = mrcClient.readdir(mrcClient.getDefaultServerAddress(), userCreds, fixedVol, fixedPath);
             DirectoryEntrySet entries = response.get();
             DirectoryEntry[] list = new DirectoryEntry[entries.size()];
             for (int i = 0; i < list.length; i++) {
@@ -165,6 +167,8 @@ public class Volume {
         path = path.replace("//", "/");
         if (path.endsWith("/"))
             return path.substring(0, path.length()-1);
+        if(path.startsWith("/"))
+            return path.substring(1);
         return path;
     }
 
@@ -245,7 +249,7 @@ public class Volume {
     Stat stat(String path) throws IOException {
         RPCResponse<StatSet> response = null;
         try {
-            response = mrcClient.getattr(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path));
+            response = mrcClient.getattr(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName), fixPath(path));
             Stat s = response.get().get(0);
             OSDWriteResponse r = ofl.getLocalFS(volumeName + s.getIno());
             if (r != null) {
@@ -274,7 +278,7 @@ public class Volume {
     String getxattr(String path, String name) throws IOException {
         RPCResponse<String> response = null;
         try {
-            response = mrcClient.getxattr(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path), name);
+            response = mrcClient.getxattr(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName), fixPath(path), name);
             return response.get();
         } catch (MRCException ex) {
             if (ex.getError_code() == ErrNo.ENODATA)
@@ -293,7 +297,7 @@ public class Volume {
     String[] listxattr(String path) throws IOException {
         RPCResponse<StringSet> response = null;
         try {
-            response = mrcClient.listxattr(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path));
+            response = mrcClient.listxattr(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName), fixPath(path));
             StringSet result = response.get();
             return (String[]) result.toArray(new String[result.size()]);
         } catch (MRCException ex) {
@@ -313,7 +317,7 @@ public class Volume {
     void setxattr(String path, String name, String value) throws IOException {
         RPCResponse response = null;
         try {
-            response = mrcClient.setxattr(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path), name, value, 0);
+            response = mrcClient.setxattr(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName), fixPath(path), name, value, 0);
             response.get();
         } catch (MRCException ex) {
             throw wrapException(ex);
@@ -330,7 +334,7 @@ public class Volume {
     void mkdir(String path, int permissions) throws IOException {
         RPCResponse response = null;
         try {
-            response = mrcClient.mkdir(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path), permissions);
+            response = mrcClient.mkdir(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName), fixPath(path), permissions);
             response.get();
         } catch (MRCException ex) {
            throw wrapException(ex);
@@ -347,7 +351,7 @@ public class Volume {
     void touch(String path) throws IOException {
         RPCResponse response = null;
         try {
-            response = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path), Constants.SYSTEM_V_FCNTL_H_O_CREAT, 0700, 0, new VivaldiCoordinates());
+            response = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName), fixPath(path), Constants.SYSTEM_V_FCNTL_H_O_CREAT, 0700, 0, new VivaldiCoordinates());
             response.get();
         } catch (MRCException ex) {
            throw wrapException(ex);
@@ -382,7 +386,7 @@ public class Volume {
         RPCResponse<FileCredentialsSet> response = null;
         RPCResponse ulnkResp = null;
         try {
-            response = mrcClient.unlink(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+path));
+            response = mrcClient.unlink(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName), fixPath(path));
             FileCredentialsSet fcs = response.get();
             if (fcs.size() > 0) {
                 //delete on OSDs
@@ -469,8 +473,10 @@ public class Volume {
     RandomAccessFile openFile(File parent, int flags, int mode) throws IOException {
         RPCResponse<FileCredentials> response = null;
         final String fullPath = fixPath(volumeName+parent.getPath());
+        final String fixedVol = fixPath(volumeName);
+        final String fixedPath = fixPath(parent.getPath());
         try {
-            response = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fullPath,flags,mode,0,new VivaldiCoordinates());
+            response = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fixedVol, fixedPath,flags,mode,0,new VivaldiCoordinates());
             FileCredentials cred = response.get();
             ofl.openFile(cred.getXcap());
 
@@ -532,6 +538,8 @@ public class Volume {
         RPCResponse<FileCredentials> response1 = null;
         RPCResponse response3 = null;
         final String fullPath = fixPath(volumeName+file.getPath());
+        final String fixedVol = fixPath(volumeName);
+        final String fixedPath = fixPath(file.getPath());
         try {
             if (file.isReadOnly()) {
                 org.xtreemfs.common.clients.Replica r = file.getReplica(0);
@@ -539,7 +547,7 @@ public class Volume {
                 org.xtreemfs.interfaces.Replica newReplica = new org.xtreemfs.interfaces.Replica(osdSet,
                     flags | Constants.REPL_FLAG_STRATEGY_SEQUENTIAL_PREFETCHING, sp);
 
-                response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fullPath, 0, Constants.SYSTEM_V_FCNTL_H_O_RDWR, 0,new VivaldiCoordinates());
+                response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fixedVol, fixedPath, 0, Constants.SYSTEM_V_FCNTL_H_O_RDWR, 0,new VivaldiCoordinates());
                 FileCredentials oldCreds = response1.get();
                 response1.freeBuffers();
                 response1 = null;
@@ -552,7 +560,7 @@ public class Volume {
 
                 if ((flags & Constants.REPL_FLAG_FULL_REPLICA) > 0) {
 
-                    response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fullPath, 0, Constants.SYSTEM_V_FCNTL_H_O_RDWR, 0,new VivaldiCoordinates());
+                    response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fixedVol, fixedPath, 0, Constants.SYSTEM_V_FCNTL_H_O_RDWR, 0,new VivaldiCoordinates());
                     FileCredentials newCreds = response1.get();
                     for (int objNo = 0; objNo < width; objNo++) {
                         ServiceUUID osd = new ServiceUUID(osdSet.get(objNo), uuidResolver);
@@ -590,8 +598,10 @@ public class Volume {
         RPCResponse<XCap> response2 = null;
         RPCResponse response3 = null;
         final String fullPath = fixPath(volumeName+file.getPath());
+        final String fixedVol = fixPath(volumeName);
+        final String fixedPath = fixPath(file.getPath());
         try {
-            response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fullPath, 0, Constants.SYSTEM_V_FCNTL_H_O_RDWR, 0,new VivaldiCoordinates());
+            response1 = mrcClient.open(mrcClient.getDefaultServerAddress(), userCreds, fixedVol, fixedPath, 0, Constants.SYSTEM_V_FCNTL_H_O_RDWR, 0,new VivaldiCoordinates());
             FileCredentials oldCreds = response1.get();
 
             response2 = mrcClient.xtreemfs_replica_remove(mrcClient.getDefaultServerAddress(), userCreds, oldCreds.getXcap().getFile_id(), headOSDuuid);

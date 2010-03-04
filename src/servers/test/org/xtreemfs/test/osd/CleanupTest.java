@@ -122,7 +122,7 @@ public class CleanupTest extends TestCase {
         setupTestVolume();
         
         // test/test1 --> zombie
-        r = env.getMrcClient().unlink(env.getMRCAddress(), uc, "test/test1");
+        r = env.getMrcClient().unlink(env.getMRCAddress(), uc, "test", "test1");
         r.get();
         r.freeBuffers();
         
@@ -156,7 +156,7 @@ public class CleanupTest extends TestCase {
         setupTestVolume();
         
         // test/test1 --> zombie
-        r = env.getMrcClient().unlink(env.getMRCAddress(), uc, "test/test1");
+        r = env.getMrcClient().unlink(env.getMRCAddress(), uc, "test", "test1");
         r.get();
         r.freeBuffers();
         
@@ -213,7 +213,7 @@ public class CleanupTest extends TestCase {
         setupTestVolume();
         
         // test/test1 --> zombie
-        r = env.getMrcClient().unlink(env.getMRCAddress(), uc, "test/test1");
+        r = env.getMrcClient().unlink(env.getMRCAddress(), uc, "test", "test1");
         r.get();
         r.freeBuffers();
         

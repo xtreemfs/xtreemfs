@@ -103,17 +103,17 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     public static final short   POLICY_ID          = (short) AccessControlPolicyType.ACCESS_CONTROL_POLICY_POSIX
                                                            .intValue();
     
-    private static final String OWNER              = "user:";
+    private static final String OWNER              = "u:";
     
-    private static final String OWNER_GROUP        = "group:";
+    private static final String OWNER_GROUP        = "g:";
     
-    private static final String OTHER              = "other:";
+    private static final String OTHER              = "o:";
     
-    private static final String MASK               = "mask:";
+    private static final String MASK               = "m:";
     
-    private static final String NAMED_USER_PREFIX  = "user:";
+    private static final String NAMED_USER_PREFIX  = "u:";
     
-    private static final String NAMED_GROUP_PREFIX = "group:";
+    private static final String NAMED_GROUP_PREFIX = "g:";
     
     private static final String STICKY_BIT         = "sticky";
     
@@ -187,8 +187,9 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     public String translateAccessFlags(int accessMode) {
         
         accessMode = accessMode
-            & (FileAccessManager.O_RDWR | FileAccessManager.O_WRONLY | FileAccessManager.O_APPEND | FileAccessManager.O_TRUNC
-                | FileAccessManager.NON_POSIX_SEARCH | FileAccessManager.NON_POSIX_DELETE | FileAccessManager.NON_POSIX_RM_MV_IN_DIR);
+            & (FileAccessManager.O_RDWR | FileAccessManager.O_WRONLY | FileAccessManager.O_APPEND
+                | FileAccessManager.O_TRUNC | FileAccessManager.NON_POSIX_SEARCH
+                | FileAccessManager.NON_POSIX_DELETE | FileAccessManager.NON_POSIX_RM_MV_IN_DIR);
         
         if (accessMode == FileAccessManager.O_RDONLY)
             return AM_READ;
@@ -301,9 +302,8 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public void setACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
-        List<String> groupIds, Map<String, Object> entries, AtomicDBUpdate update) throws MRCException,
-        UserException {
+    public void updateACLEntries(StorageManager sMan, FileMetadata file, long parentId,
+        Map<String, Object> entries, AtomicDBUpdate update) throws MRCException, UserException {
         
         try {
             
@@ -323,7 +323,28 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
                 }
             }
             
-            aclMap.putAll(entries);
+            for (Entry<String, Object> entry : entries.entrySet()) {
+                
+                String entity = entry.getKey();
+                String rwx = (String) entry.getValue();
+                
+                if (rwx != null) {
+                    int rights = 0;
+                    if (rwx.startsWith("0"))
+                        rights = Integer.parseInt(rwx, 8);
+                    else {
+                        if (rwx.indexOf('r') != -1)
+                            rights |= PERM_READ;
+                        if (rwx.indexOf('w') != -1)
+                            rights |= PERM_WRITE;
+                        if (rwx.indexOf('x') != -1)
+                            rights |= PERM_EXECUTE;
+                    }
+                    
+                    aclMap.put(entity, rights);
+                } else
+                    aclMap.remove(entity);
+            }
             
             // add the ACL entries
             for (Entry<String, Object> entry : aclMap.entrySet()) {
@@ -373,15 +394,14 @@ public class POSIXFileAccessPolicy implements FileAccessPolicy {
     }
     
     @Override
-    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId, String userId,
-        List<String> groupIds, List<Object> entities, AtomicDBUpdate update) throws MRCException,
-        UserException {
+    public void removeACLEntries(StorageManager sMan, FileMetadata file, long parentId,
+        List<Object> entities, AtomicDBUpdate update) throws MRCException, UserException {
         
         Map<String, Object> entries = new HashMap<String, Object>();
         for (Object entity : entities)
             entries.put((String) entity, null);
         
-        setACLEntries(sMan, file, parentId, userId, groupIds, entries, update);
+        updateACLEntries(sMan, file, parentId, entries, update);
     }
     
     @Override

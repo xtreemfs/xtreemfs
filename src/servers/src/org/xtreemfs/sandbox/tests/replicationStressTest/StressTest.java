@@ -164,7 +164,7 @@ public class StressTest {
         r2.freeBuffers();
 
         // create a directory
-        r2 = mrcClient.mkdir(null, TestFile.userCredentials, volumeName + dirPath, 0);
+        r2 = mrcClient.mkdir(null, TestFile.userCredentials, volumeName, dirPath, 0);
         r2.get();
         r2.freeBuffers();
 

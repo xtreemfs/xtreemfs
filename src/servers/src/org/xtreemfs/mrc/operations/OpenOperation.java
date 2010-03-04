@@ -82,7 +82,7 @@ public class OpenOperation extends MRCOperation {
         final VolumeManager vMan = master.getVolumeManager();
         final FileAccessManager faMan = master.getFileAccessManager();
         
-        Path p = new Path(rqArgs.getPath());
+        Path p = new Path(rqArgs.getVolume_name() + "/" + rqArgs.getPath());
         
         StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
         PathResolver res = new PathResolver(sMan, p);
@@ -241,8 +241,9 @@ public class OpenOperation extends MRCOperation {
             + master.getConfig().getCapabilityTimeout(), ((InetSocketAddress) rq.getRPCRequest()
                 .getClientIdentity()).getAddress().getHostAddress(), trEpoch, replicateOnClose, !volume
                 .isSnapshotsEnabled() ? SnapConfig.SNAP_CONFIG_SNAPS_DISABLED
-            : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT,
-            volume.getCreationTime(), master.getConfig().getCapabilitySecret());
+            : volume.isSnapVolume() ? SnapConfig.SNAP_CONFIG_ACCESS_SNAP
+                : SnapConfig.SNAP_CONFIG_ACCESS_CURRENT, volume.getCreationTime(), master.getConfig()
+                .getCapabilitySecret());
         
         if (Logging.isDebug())
             Logging

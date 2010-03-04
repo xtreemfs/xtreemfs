@@ -59,8 +59,8 @@ public class CreateDirOperation extends MRCOperation {
         
         validateContext(rq);
         
-        final Path p = new Path(rqArgs.getPath());
-        
+        final Path p = new Path(rqArgs.getVolume_name() + "/" + rqArgs.getPath());
+                
         final StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
         final PathResolver res = new PathResolver(sMan, p);
         

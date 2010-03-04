@@ -60,7 +60,7 @@ public class GetXAttrOperation extends MRCOperation {
         
         validateContext(rq);
         
-        Path p = new Path(rqArgs.getPath());
+        Path p = new Path(rqArgs.getVolume_name() + "/" + rqArgs.getPath());
         
         StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
         PathResolver res = new PathResolver(sMan, p);
@@ -95,8 +95,8 @@ public class GetXAttrOperation extends MRCOperation {
         
         String value = null;
         if (rqArgs.getName().startsWith("xtreemfs."))
-            value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(), res
-                    .toString(), file, rqArgs.getName().substring(9));
+            value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(), faMan,
+                res.toString(), file, rqArgs.getName().substring(9));
         else {
             
             // first, try to fetch an individual user attribute

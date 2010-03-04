@@ -28,11 +28,14 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
+import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.MRCInterface.listxattrRequest;
 import org.xtreemfs.interfaces.MRCInterface.listxattrResponse;
+import org.xtreemfs.mrc.ErrorRecord;
 import org.xtreemfs.mrc.MRCRequest;
 import org.xtreemfs.mrc.MRCRequestDispatcher;
+import org.xtreemfs.mrc.ErrorRecord.ErrorClass;
 import org.xtreemfs.mrc.ac.FileAccessManager;
 import org.xtreemfs.mrc.database.StorageManager;
 import org.xtreemfs.mrc.database.VolumeManager;
@@ -63,10 +66,10 @@ public class GetXAttrsOperation extends MRCOperation {
         
         validateContext(rq);
         
-        final Path p = new Path(rqArgs.getPath());
+        Path p = new Path(rqArgs.getVolume_name() + "/" + rqArgs.getPath());
         
-        final StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
-        final PathResolver res = new PathResolver(sMan, p);
+        StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
+        PathResolver res = new PathResolver(sMan, p);
         
         // check whether the path prefix is searchable
         faMan.checkSearchPermission(sMan, res, rq.getDetails().userId, rq.getDetails().superUser, rq
@@ -77,6 +80,24 @@ public class GetXAttrsOperation extends MRCOperation {
         
         // retrieve and prepare the metadata to return
         FileMetadata file = res.getFile();
+        
+        // if the file refers to a symbolic link, resolve the link
+        String target = sMan.getSoftlinkTarget(file.getId());
+        if (target != null) {
+            rqArgs.setPath(target);
+            p = new Path(target);
+            
+            // if the local MRC is not responsible, send a redirect
+            if (!vMan.hasVolume(p.getComp(0))) {
+                finishRequest(rq, new ErrorRecord(ErrorClass.USER_EXCEPTION, ErrNo.ENOENT, "link target "
+                    + target + " does not exist"));
+                return;
+            }
+            
+            sMan = vMan.getStorageManagerByName(p.getComp(0));
+            res = new PathResolver(sMan, p);
+            file = res.getFile();
+        }
         
         HashSet<String> attrNames = new HashSet<String>();
         
@@ -95,7 +116,7 @@ public class GetXAttrsOperation extends MRCOperation {
         for (SysAttrs attr : SysAttrs.values()) {
             String key = "xtreemfs." + attr.toString();
             Object value = MRCHelper.getSysAttrValue(master.getConfig(), sMan, master.getOSDStatusManager(),
-                res.toString(), file, attr.toString());
+                faMan, res.toString(), file, attr.toString());
             if (!value.equals(""))
                 attrNames.add(key);
         }

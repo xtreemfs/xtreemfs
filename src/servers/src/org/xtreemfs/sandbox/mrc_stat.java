@@ -59,7 +59,11 @@ public class mrc_stat {
             groups.add("test");
             final UserCredentials uc = MRCClient.getCredentials("test", groups);
 
-            RPCResponse<StatSet> r = c.getattr(null, uc, path);
+            int slashIndex = path.indexOf('/');
+            String volume = slashIndex == -1? path: path.substring(0, slashIndex);
+            String dir = slashIndex == -1? "": path.substring(slashIndex);
+            
+            RPCResponse<StatSet> r = c.getattr(null, uc, volume, dir);
             Stat data = r.get().get(0);
             r.freeBuffers();
             rpcClient.shutdown();

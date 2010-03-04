@@ -25,7 +25,6 @@ package org.xtreemfs.mrc.utils;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -266,15 +265,11 @@ public class DBAdminHelper {
         // convert old ACLs to POSIX access rights
         if (!openTag) {
             
-            String owner = state.currentEntity.getOwnerId();
-            List<String> groups = new ArrayList<String>(1);
-            groups.add(state.currentEntity.getOwningGroupId());
-            
             StorageManager sMan = vMan.getStorageManager(state.currentVolumeId);
             AtomicDBUpdate update = sMan.createAtomicDBUpdate(null, null);
             try {
-                faMan.setACLEntries(sMan, state.currentEntity, state.parentIds.get(0), owner, groups,
-                    state.currentACL, update);
+                faMan.updateACLEntries(sMan, state.currentEntity, state.parentIds.get(0), state.currentACL,
+                    update);
             } catch (MRCException e) {
                 throw new DatabaseException(e);
             } catch (UserException e) {

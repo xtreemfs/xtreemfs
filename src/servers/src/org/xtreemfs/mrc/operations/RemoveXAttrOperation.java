@@ -58,7 +58,7 @@ public class RemoveXAttrOperation extends MRCOperation {
         final VolumeManager vMan = master.getVolumeManager();
         final FileAccessManager faMan = master.getFileAccessManager();
         
-        Path p = new Path(rqArgs.getPath());
+        Path p = new Path(rqArgs.getVolume_name() + "/" + rqArgs.getPath());
         
         validateContext(rq);
         
@@ -107,7 +107,7 @@ public class RemoveXAttrOperation extends MRCOperation {
             faMan.checkPrivilegedPermissions(sMan, file, rq.getDetails().userId, rq.getDetails().superUser,
                 rq.getDetails().groupIds);
             
-            MRCHelper.setSysAttrValue(sMan, vMan, res.getParentDirId(), file, attrKey.substring(9), "",
+            MRCHelper.setSysAttrValue(sMan, vMan, faMan, res.getParentDirId(), file, attrKey.substring(9), "",
                 update);
         }
 

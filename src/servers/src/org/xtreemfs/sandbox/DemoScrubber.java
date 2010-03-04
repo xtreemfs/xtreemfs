@@ -180,7 +180,7 @@ public class DemoScrubber implements DemoScrubberFileInfo.FileScrubbedListener {
 
             try {
                 //mark volume as scrubbed
-                RPCResponse r = mrcClient.setxattr(null, credentials, volumeName, latestScrubAttr, Long.toString(TimeSync.getLocalSystemTime()), 0);
+                RPCResponse r = mrcClient.setxattr(null, credentials, volumeName, "", latestScrubAttr, Long.toString(TimeSync.getLocalSystemTime()), 0);
                 r.get();
                 r.freeBuffers();
             } catch (Exception ex2) {
@@ -224,7 +224,8 @@ public class DemoScrubber implements DemoScrubberFileInfo.FileScrubbedListener {
         currentDirName = directories.pop();
 
         try {
-            RPCResponse<DirectoryEntrySet> r = mrcClient.readdir(null, credentials, currentDirName);
+            String dirName = currentDirName.substring(volumeName.length() + 1);
+            RPCResponse<DirectoryEntrySet> r = mrcClient.readdir(null, credentials, volumeName, dirName);
             DirectoryEntrySet ls = r.get();
             r.freeBuffers();
 

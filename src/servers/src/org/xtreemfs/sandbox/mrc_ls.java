@@ -61,7 +61,11 @@ public class mrc_ls {
             groups.add("test");
             final UserCredentials uc = MRCClient.getCredentials("test", groups);
 
-            RPCResponse<DirectoryEntrySet> r = c.readdir(null, uc, path);
+            int slashIndex = path.indexOf('/');
+            String volume = slashIndex == -1? path: path.substring(0, slashIndex);
+            String dir = slashIndex == -1? "": path.substring(slashIndex);
+            
+            RPCResponse<DirectoryEntrySet> r = c.readdir(null, uc, volume, dir);
             DirectoryEntrySet entries = r.get();
             r.freeBuffers();
             for (DirectoryEntry e : entries) {

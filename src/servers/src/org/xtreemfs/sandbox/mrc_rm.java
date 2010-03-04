@@ -58,7 +58,11 @@ public class mrc_rm {
             groups.add("test");
             final UserCredentials uc = MRCClient.getCredentials("test", groups);
 
-            RPCResponse<FileCredentialsSet> r = c.unlink(null, uc, path);
+            int slashIndex = path.indexOf('/');
+            String volume = slashIndex == -1? path: path.substring(0, slashIndex);
+            String dir = slashIndex == -1? "": path.substring(slashIndex);
+            
+            RPCResponse<FileCredentialsSet> r = c.unlink(null, uc, volume, dir);
             FileCredentialsSet fcreds = r.get();
             r.freeBuffers();
             
