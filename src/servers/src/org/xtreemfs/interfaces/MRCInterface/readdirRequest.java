@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class readdirRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010022425;
+    public static final int TAG = 2010030524;
 
     public readdirRequest() {  }
     public readdirRequest( String volume_name, String path, long known_etag, int limit_directory_entries_count, boolean names_only, long seen_directory_entries_count ) { this.volume_name = volume_name; this.path = path; this.known_etag = known_etag; this.limit_directory_entries_count = limit_directory_entries_count; this.names_only = names_only; this.seen_directory_entries_count = seen_directory_entries_count; }
@@ -49,10 +49,10 @@ public class readdirRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010022425;
+    public static final long serialVersionUID = 2010030524;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022425; }
+    public int getTag() { return 2010030524; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::readdirRequest"; }
 
     public int getXDRSize()

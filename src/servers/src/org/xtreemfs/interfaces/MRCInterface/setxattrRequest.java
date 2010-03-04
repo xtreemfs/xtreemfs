@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class setxattrRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010022431;
+    public static final int TAG = 2010030530;
 
     public setxattrRequest() {  }
     public setxattrRequest( String volume_name, String path, String name, String value, int flags ) { this.volume_name = volume_name; this.path = path; this.name = name; this.value = value; this.flags = flags; }
@@ -47,10 +47,10 @@ public class setxattrRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010022431;
+    public static final long serialVersionUID = 2010030530;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022431; }
+    public int getTag() { return 2010030530; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setxattrRequest"; }
 
     public int getXDRSize()

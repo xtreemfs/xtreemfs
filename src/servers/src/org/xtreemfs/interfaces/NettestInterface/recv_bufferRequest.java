@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class recv_bufferRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010022618;
+    public static final int TAG = 2010030717;
 
     public recv_bufferRequest() {  }
     public recv_bufferRequest( int size ) { this.size = size; }
@@ -39,10 +39,10 @@ public class recv_bufferRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010022618;
+    public static final long serialVersionUID = 2010030717;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022618; }
+    public int getTag() { return 2010030717; }
     public String getTypeName() { return "org::xtreemfs::interfaces::NettestInterface::recv_bufferRequest"; }
 
     public int getXDRSize()

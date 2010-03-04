@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class rmdirResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010022429;
+    public static final int TAG = 2010030528;
 
     public rmdirResponse() {  }
 
@@ -32,10 +32,10 @@ public class rmdirResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010022429;
+    public static final long serialVersionUID = 2010030528;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022429; }
+    public int getTag() { return 2010030528; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::rmdirResponse"; }
 
     public int getXDRSize()

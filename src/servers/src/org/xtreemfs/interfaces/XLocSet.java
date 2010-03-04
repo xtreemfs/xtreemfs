@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class XLocSet implements Struct
 {
-    public static final int TAG = 2010022239;
+    public static final int TAG = 2010030338;
 
     public XLocSet() { replicas = new ReplicaSet();  }
     public XLocSet( long read_only_file_size, ReplicaSet replicas, String replica_update_policy, int version ) { this.read_only_file_size = read_only_file_size; this.replicas = replicas; this.replica_update_policy = replica_update_policy; this.version = version; }
@@ -41,10 +41,10 @@ public class XLocSet implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010022239;
+    public static final long serialVersionUID = 2010030338;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022239; }
+    public int getTag() { return 2010030338; }
     public String getTypeName() { return "org::xtreemfs::interfaces::XLocSet"; }
 
     public int getXDRSize()

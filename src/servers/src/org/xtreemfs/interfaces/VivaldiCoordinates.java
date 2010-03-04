@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class VivaldiCoordinates implements Struct
 {
-    public static final int TAG = 2010022237;
+    public static final int TAG = 2010030336;
 
     public VivaldiCoordinates() {  }
     public VivaldiCoordinates( double x_coordinate, double y_coordinate, double local_error ) { this.x_coordinate = x_coordinate; this.y_coordinate = y_coordinate; this.local_error = local_error; }
@@ -39,10 +39,10 @@ public class VivaldiCoordinates implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010022237;
+    public static final long serialVersionUID = 2010030336;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022237; }
+    public int getTag() { return 2010030336; }
     public String getTypeName() { return "org::xtreemfs::interfaces::VivaldiCoordinates"; }
 
     public int getXDRSize()

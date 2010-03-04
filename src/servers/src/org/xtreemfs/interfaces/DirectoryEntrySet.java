@@ -31,7 +31,7 @@ public class DirectoryEntrySet extends Sequence<DirectoryEntry>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022258; }
+    public int getTag() { return 2010030357; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DirectoryEntrySet"; }
 
     public int getXDRSize()

@@ -12,16 +12,16 @@ import yidl.runtime.PrettyPrinter;
 
 public class NettestInterface
 {
-    public static long getProg() { return 2546893527l; }
-    public static int getVersion() { return 2010022615; }
+    public static long getProg() { return 2546901626l; }
+    public static int getVersion() { return 2010030714; }
 
     public static Request createRequest( ONCRPCRequestHeader header ) throws Exception
     {
         switch( header.getProcedure() )
         {
-            case 2010022616: return new nopRequest();
-            case 2010022617: return new send_bufferRequest();
-            case 2010022618: return new recv_bufferRequest();
+            case 2010030715: return new nopRequest();
+            case 2010030716: return new send_bufferRequest();
+            case 2010030717: return new recv_bufferRequest();
 
             default: throw new Exception( "unknown request tag " + Integer.toString( header.getProcedure() ) );
         }
@@ -31,7 +31,7 @@ public class NettestInterface
     {
         switch( header.getXID() )
         {
-            case 2010022616: return new nopResponse();            case 2010022617: return new send_bufferResponse();            case 2010022618: return new recv_bufferResponse();
+            case 2010030715: return new nopResponse();            case 2010030716: return new send_bufferResponse();            case 2010030717: return new recv_bufferResponse();
             default: throw new Exception( "unknown response XID " + Integer.toString( header.getXID() ) );
         }
     }    

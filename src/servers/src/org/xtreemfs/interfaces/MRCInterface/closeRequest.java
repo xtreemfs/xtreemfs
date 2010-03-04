@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class closeRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010022416;
+    public static final int TAG = 2010030515;
 
     public closeRequest() { client_vivaldi_coordinates = new VivaldiCoordinates(); write_xcap = new XCap();  }
     public closeRequest( VivaldiCoordinates client_vivaldi_coordinates, XCap write_xcap ) { this.client_vivaldi_coordinates = client_vivaldi_coordinates; this.write_xcap = write_xcap; }
@@ -41,10 +41,10 @@ public class closeRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010022416;
+    public static final long serialVersionUID = 2010030515;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022416; }
+    public int getTag() { return 2010030515; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::closeRequest"; }
 
     public int getXDRSize()

@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class nopResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010022616;
+    public static final int TAG = 2010030715;
 
     public nopResponse() {  }
 
@@ -32,10 +32,10 @@ public class nopResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010022616;
+    public static final long serialVersionUID = 2010030715;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022616; }
+    public int getTag() { return 2010030715; }
     public String getTypeName() { return "org::xtreemfs::interfaces::NettestInterface::nopResponse"; }
 
     public int getXDRSize()

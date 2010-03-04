@@ -31,7 +31,7 @@ public class StatVFSSet extends Sequence<StatVFS>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022260; }
+    public int getTag() { return 2010030359; }
     public String getTypeName() { return "org::xtreemfs::interfaces::StatVFSSet"; }
 
     public int getXDRSize()

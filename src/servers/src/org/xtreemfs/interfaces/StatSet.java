@@ -31,7 +31,7 @@ public class StatSet extends Sequence<Stat>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2010022256; }
+    public int getTag() { return 2010030355; }
     public String getTypeName() { return "org::xtreemfs::interfaces::StatSet"; }
 
     public int getXDRSize()
