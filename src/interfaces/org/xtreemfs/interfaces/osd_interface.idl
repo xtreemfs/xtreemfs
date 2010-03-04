@@ -6,7 +6,7 @@
 
 module org
 {
-  module xtreemfs # 2010022215
+  module xtreemfs # 2010030314
   {
     module interfaces
     {
@@ -43,6 +43,22 @@ module org
 
       typedef sequence<ObjectList> ObjectListSet # 56;
 
+      struct ObjectVersion # 57
+      {
+       uint64_t object_number;
+       uint64_t object_version;
+      };
+
+      typedef sequence<ObjectVersion> ObjectVersionList # 58;
+
+      struct ReplicaStatus #59
+      {
+       uint64_t truncate_epoch;
+       uint64_t file_size;
+       uint64_t max_obj_version;
+       ObjectVersionList objectVersions;
+      };
+
       struct InternalReadLocalResponse # 52
       {
         ObjectData data;
@@ -75,6 +91,13 @@ module org
         void xtreemfs_cleanup_start( boolean remove_zombies, boolean remove_unavail_volume, boolean lost_and_found ) # 32;
         void xtreemfs_cleanup_status( out string status ) # 33;
         void xtreemfs_cleanup_stop() # 34;
+
+        void xtreemfs_rwr_fetch( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, out ObjectData object_data ) # 73;
+        void xtreemfs_rwr_flease_msg( buffer fleaseMessage, string senderHostname, uint32_t senderPort ) #71;
+        void xtreemfs_rwr_notify( FileCredentials file_credentials, string file_id ) #75;
+        void xtreemfs_rwr_status( FileCredentials file_credentials, string file_id, long max_local_obj_version, out ReplicaStatus local_state) #76;
+        void xtreemfs_rwr_truncate( FileCredentials file_credentials, string file_id, uint64_t new_file_size, uint64_t object_version ) #74;
+        void xtreemfs_rwr_update( FileCredentials file_credentials, string file_id, uint64_t object_number, uint64_t object_version, uint32_t offset, ObjectData object_data ) # 72;
 	
         InternalGmax xtreemfs_internal_get_gmax( FileCredentials file_credentials, string file_id ) # 40;
         void xtreemfs_internal_truncate( FileCredentials file_credentials, string file_id, uint64_t new_file_size, out OSDWriteResponse osd_write_response ) # 41;

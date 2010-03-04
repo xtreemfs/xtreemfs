@@ -9,12 +9,10 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
-import org.omg.CORBA.DATA_CONVERSION;
 import org.xtreemfs.common.buffer.ASCIIString;
 import org.xtreemfs.common.buffer.BufferPool;
 import org.xtreemfs.common.buffer.ReusableBuffer;
 import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.SSLOptions;
 import org.xtreemfs.foundation.flease.FleaseConfig;
@@ -73,7 +71,9 @@ public class RWReplicationStage extends Stage implements FleaseMessageSenderInte
 
         master.getConfig().getPort();
 
-        FleaseConfig fcfg = new FleaseConfig(15000, 1000, 500, null, master.getConfig().getUUID().toString(), 3);
+        FleaseConfig fcfg = new FleaseConfig(master.getConfig().getFleaseLeaseToMS(),
+                master.getConfig().getFleaseDmaxMS(), master.getConfig().getFleaseDmaxMS(),
+                null, master.getConfig().getUUID().toString(), master.getConfig().getFleaseRetries());
 
         fstage = new FleaseStage(fcfg, master.getConfig().getObjDir()+"/.flease_"+master.getConfig().getUUID().toString()+".lock",
                 this, false, new FleaseViewChangeListenerInterface() {

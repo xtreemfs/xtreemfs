@@ -72,6 +72,14 @@ public class OSDConfig extends ServiceConfig {
     private Map<String,String> customParams;
 
     private String            storageLayout;
+
+    private int               fleaseDmaxMS;
+
+    private int               fleaseLeaseToMS;
+
+    private int               fleaseMsgToMS;
+
+    private int               fleaseRetries;
     
     /** Creates a new instance of OSDConfig */
     public OSDConfig(String filename) throws IOException {
@@ -120,6 +128,14 @@ public class OSDConfig extends ServiceConfig {
                 customParams.put(propName,this.props.getProperty(propName));
             }
         }
+
+        this.fleaseDmaxMS = this.readOptionalInt("flease.dmax_ms", 1000);
+
+        this.fleaseLeaseToMS = this.readOptionalInt("flease.lease_timeout_ms", 15000);
+
+        this.fleaseMsgToMS = this.readOptionalInt("flease.message_to_ms", 500);
+
+        this.fleaseRetries = this.readOptionalInt("flease.retries", 3);
     }
     
     public InetSocketAddress getDirectoryService() {
@@ -201,6 +217,34 @@ public class OSDConfig extends ServiceConfig {
      */
     public String getStorageLayout() {
         return storageLayout;
+    }
+
+    /**
+     * @return the fleaseDmaxMS
+     */
+    public int getFleaseDmaxMS() {
+        return fleaseDmaxMS;
+    }
+
+    /**
+     * @return the fleaseLeaseToMS
+     */
+    public int getFleaseLeaseToMS() {
+        return fleaseLeaseToMS;
+    }
+
+    /**
+     * @return the fleaseMsgToMS
+     */
+    public int getFleaseMsgToMS() {
+        return fleaseMsgToMS;
+    }
+
+    /**
+     * @return the fleaseRetries
+     */
+    public int getFleaseRetries() {
+        return fleaseRetries;
     }
     
 }

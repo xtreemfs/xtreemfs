@@ -10,7 +10,8 @@ public interface Constants
     public static final String ONCRPCU_SCHEME = "oncrpcu";
     public static final String REPL_UPDATE_PC_NONE = "";
     public static final String REPL_UPDATE_PC_RONLY = "ronly";
-    public static final String REPL_UPDATE_PC_WARONE = "RW/WaR1";
+    public static final String REPL_UPDATE_PC_WARONE = "WaR1";
+    public static final String REPL_UPDATE_PC_WARA = "WaRa";
     public static final int REPL_FLAG_FULL_REPLICA = 1;
     public static final int REPL_FLAG_IS_COMPLETE = 2;
     public static final int REPL_FLAG_STRATEGY_RANDOM = 4;

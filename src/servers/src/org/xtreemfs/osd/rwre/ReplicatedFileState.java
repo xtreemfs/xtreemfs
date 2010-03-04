@@ -15,6 +15,7 @@ import org.xtreemfs.common.uuids.UnknownUUIDException;
 import org.xtreemfs.common.xloc.Replica;
 import org.xtreemfs.common.xloc.XLocations;
 import org.xtreemfs.foundation.flease.FleaseStage;
+import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.osd.client.OSDClient;
 
 /**
@@ -46,9 +47,12 @@ public class ReplicatedFileState {
             remoteOSDs.add(headOSD.getAddress());
         }
 
-        if (locations.getReplicaUpdatePolicy().equals("RW/WaR1")) {
+        if (locations.getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_WARONE)) {
             //FIXME: instantiate the right policy
             policy = new WaR1UpdatePolicy(remoteOSDs, fileId, fstage, client);
+        } else if (locations.getReplicaUpdatePolicy().equals(Constants.REPL_UPDATE_PC_WARA)) {
+            //FIXME: instantiate the right policy
+            policy = new WaRaUpdatePolicy(remoteOSDs, fileId, fstage, client);
         } else {
             throw new IllegalArgumentException("unsupported replica update mode: "+locations.getReplicaUpdatePolicy());
         }

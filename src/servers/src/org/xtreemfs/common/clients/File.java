@@ -28,13 +28,10 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import org.xtreemfs.common.logging.Logging;
-import org.xtreemfs.foundation.ErrNo;
 import org.xtreemfs.foundation.json.JSONException;
 import org.xtreemfs.foundation.json.JSONParser;
 import org.xtreemfs.foundation.json.JSONString;
 import org.xtreemfs.interfaces.Constants;
-import org.xtreemfs.interfaces.MRCInterface.MRCException;
 import org.xtreemfs.interfaces.Stat;
 import org.xtreemfs.interfaces.StringSet;
 import org.xtreemfs.interfaces.UserCredentials;
@@ -248,6 +245,12 @@ public class File {
 
     public boolean isReadOnly() throws IOException {
         return Boolean.valueOf(getxattr("xtreemfs.read_only"));
+    }
+
+    public boolean isReplicated() throws IOException {
+        Map<String,Object> l = getLocations();
+        String updatePolicy = (String)l.get("update-policy");
+        return !updatePolicy.equals(Constants.REPL_UPDATE_PC_NONE);
     }
 
     public String[] getSuitableOSDs(int numOSDs) throws IOException {

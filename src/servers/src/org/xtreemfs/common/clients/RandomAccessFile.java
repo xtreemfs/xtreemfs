@@ -43,6 +43,7 @@ import org.xtreemfs.interfaces.Constants;
 import org.xtreemfs.interfaces.FileCredentials;
 import org.xtreemfs.interfaces.NewFileSize;
 import org.xtreemfs.interfaces.NewFileSizeSet;
+import org.xtreemfs.interfaces.OSDInterface.RedirectException;
 import org.xtreemfs.interfaces.OSDWriteResponse;
 import org.xtreemfs.interfaces.ObjectData;
 import org.xtreemfs.interfaces.ObjectList;
@@ -56,6 +57,8 @@ import org.xtreemfs.osd.replication.ObjectSet;
  * @author bjko
  */
 public class RandomAccessFile {
+
+    public static final int WAIT_MS_BETWEEN_WRITE_SWITCHOVER = 1000;
 
     private final File parent;
     private final OSDClient osdClient;
@@ -240,6 +243,11 @@ public class RandomAccessFile {
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
                 cause = new IOException("operation aborted", ex);
+            } catch (RedirectException ex) {
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"redirected to: %s",ex.getTo_uuid());
+                forceReplica(ex.getTo_uuid());
+                continue;
             } catch (ONCRPCException ex) {
                 if (Logging.isDebug())
                     Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
@@ -256,7 +264,15 @@ public class RandomAccessFile {
                     r.freeBuffers();
             }
             numTries++;
+            try {
+                Thread.sleep(WAIT_MS_BETWEEN_WRITE_SWITCHOVER);
+            } catch (InterruptedException ex) {
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"comm error: %s",ex.toString());
+                throw new IOException("operation aborted", ex);
+            }
             switchToNextReplica();
+
         } while (numTries < numReplicas);
         throw cause;
     }
@@ -332,68 +348,84 @@ public class RandomAccessFile {
             return 0;
         }
 
-        final AtomicInteger responseCnt = new AtomicInteger(ors.size());
-        RPCResponse[] resps = new RPCResponse[ors.size()];
+        int numTries = 0;
 
-        try {
+        IOException cause = null;
+        
+        do {
+            final AtomicInteger responseCnt = new AtomicInteger(ors.size());
+            RPCResponse[] resps = new RPCResponse[ors.size()];
+            
 
 
-            final RPCResponseAvailableListener rl = new RPCResponseAvailableListener<OSDWriteResponse>() {
+            try {
 
-                @Override
-                public void responseAvailable(RPCResponse<OSDWriteResponse> r) {
-                    if (responseCnt.decrementAndGet() == 0) {
-                        //last response
-                        synchronized (responseCnt) {
-                            responseCnt.notify();
+
+                final RPCResponseAvailableListener rl = new RPCResponseAvailableListener<OSDWriteResponse>() {
+
+                    @Override
+                    public void responseAvailable(RPCResponse<OSDWriteResponse> r) {
+                        if (responseCnt.decrementAndGet() == 0) {
+                            //last response
+                            synchronized (responseCnt) {
+                                responseCnt.notify();
+                            }
                         }
                     }
+                };
+
+                int bytesWritten = 0;
+                for (int i = 0; i < ors.size(); i++) {
+                    ObjectRequest or = ors.get(i);
+                    bytesWritten += or.getData().capacity();
+                    ServiceUUID osd = new ServiceUUID(or.getOsdUUID(), parentVolume.uuidResolver);
+                    RPCResponse<OSDWriteResponse> r = osdClient.write(osd.getAddress(),
+                            fileId, credentials, or.getObjNo(), -1, or.getOffset(), 0l,
+                            new ObjectData(0, false, 0, or.getData()));
+                    resps[i] = r;
+                    r.registerListener(rl);
                 }
-            };
-
-            int bytesWritten = 0;
-            for (int i = 0; i < ors.size(); i++) {
-                ObjectRequest or = ors.get(i);
-                bytesWritten += or.getData().capacity();
-                ServiceUUID osd = new ServiceUUID(or.getOsdUUID(), parentVolume.uuidResolver);
-                RPCResponse<OSDWriteResponse> r = osdClient.write(osd.getAddress(),
-                        fileId, credentials, or.getObjNo(), -1, or.getOffset(), 0l,
-                        new ObjectData(0, false, 0, or.getData()));
-                resps[i] = r;
-                r.registerListener(rl);
-            }
 
 
-            synchronized (responseCnt) {
-                if (responseCnt.get() > 0) {
-                    responseCnt.wait();
+                synchronized (responseCnt) {
+                    if (responseCnt.get() > 0) {
+                        responseCnt.wait();
+                    }
                 }
+
+
+                //assemble responses
+                OSDWriteResponse owr = null;
+                for (int i = 0; i < ors.size(); i++) {
+                    owr = (OSDWriteResponse) resps[i].get();
+                }
+                parentVolume.storeFileSizeUpdate(fileId, owr);
+                if (syncMetadata) {
+                    parentVolume.pushFileSizeUpdate(fileId);
+                }
+                data.flip();
+
+                position += bytesWritten;
+
+                return bytesWritten;
+
+            } catch (InterruptedException ex) {
+                cause = new IOException("operation aborted", ex);
+            } catch (RedirectException ex) {
+                if (Logging.isDebug())
+                    Logging.logMessage(Logging.LEVEL_DEBUG, this,"redirected to: %s",ex.getTo_uuid());
+                forceReplica(ex.getTo_uuid());
+                continue;
+            } catch (ONCRPCException ex) {
+                cause = new IOException("communication failure", ex);
+            } finally {
+                for (RPCResponse r : resps)
+                    r.freeBuffers();
             }
-
-
-            //assemble responses
-            OSDWriteResponse owr = null;
-            for (int i = 0; i < ors.size(); i++) {
-                owr = (OSDWriteResponse) resps[i].get();
-            }
-            parentVolume.storeFileSizeUpdate(fileId, owr);
-            if (syncMetadata) {
-                parentVolume.pushFileSizeUpdate(fileId);
-            }
-            data.flip();
-
-            position += bytesWritten;
-
-            return bytesWritten;
-
-        } catch (InterruptedException ex) {
-            throw new IOException("operation aborted", ex);
-        } catch (ONCRPCException ex) {
-            throw new IOException("communication failure", ex);
-        } finally {
-            for (RPCResponse r : resps)
-                r.freeBuffers();
-        }
+            numTries++;
+            switchToNextReplica();
+        } while (numTries < numReplicas);
+        throw cause;
     }
 
     public void seek(long position) {
