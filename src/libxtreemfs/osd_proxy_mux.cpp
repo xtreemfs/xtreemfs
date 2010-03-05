@@ -45,9 +45,6 @@ public:
       read_request( read_request )
   { }
 
-  // yidl::runtime::Object
-  YIDL_RUNTIME_OBJECT_PROTOTYPES( OSDProxyMux::ReadResponseTarget, 1 );
-
   // YIELD::concurrency::EventTarget
   void send( YIELD::concurrency::Event& ev )
   {
@@ -131,9 +128,6 @@ public:
     )
       YIELD::concurrency::Event::decRef( **response_i );
   }
-
-  // yidl::runtime::Object
-  YIDL_RUNTIME_OBJECT_PROTOTYPES( OSDProxyMux::TruncateResponseTarget, 0 );
 
   // YIELD::concurrency::EventTarget
   void send( YIELD::concurrency::Event& ev )

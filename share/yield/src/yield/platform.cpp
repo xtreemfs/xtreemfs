@@ -2,95 +2,30 @@
 using namespace YIELD::platform;
 
 
-// counting_semaphore.cpp
-#ifdef _WIN32
-#define NOMINMAX
-#include <windows.h>
-#else
-#include <unistd.h>
-#ifdef __MACH__
-#include <mach/clock.h>
-#include <mach/mach_init.h>
-#include <mach/task.h>
-#endif
-#endif
-
-
-CountingSemaphore::CountingSemaphore()
+// bio_queue.cpp
+class BIOQueue::WorkerThread : public Thread
 {
-#if defined(_WIN32)
-  hSemaphore = CreateSemaphore( NULL, 0, LONG_MAX, NULL );
-#elif defined(__MACH__)
-  semaphore_create( mach_task_self(), &sem, SYNC_POLICY_FIFO, 0 );
-#else
-  sem_init( &sem, 0, 0 );
-#endif
-}
+public:
+  WorkerThread( BIOCB* biocb )
+    : biocb( biocb )
+  { }
 
-CountingSemaphore::~CountingSemaphore()
-{
-#if defined(_WIN32)
-  CloseHandle( hSemaphore );
-#elif defined(__MACH__)
-  semaphore_destroy( mach_task_self(), sem );
-#else
-  sem_destroy( &sem );
-#endif
-}
+  // Thread
+  void run()
+  {
+    biocb->execute();
+    delete biocb;
+  }
 
-bool CountingSemaphore::acquire()
-{
-#if defined(_WIN32)
-  DWORD dwRet = WaitForSingleObjectEx( hSemaphore, INFINITE, TRUE );
-  return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
-#elif defined(__MACH__)
-  return semaphore_wait( sem ) == KERN_SUCCESS;
-#else
-  return sem_wait( &sem ) == 0;
-#endif
-}
+private:
+  BIOCB* biocb;
+};
 
-bool CountingSemaphore::timed_acquire( const Time& timeout )
-{
-#if defined(_WIN32)
-  DWORD timeout_ms = static_cast<DWORD>( timeout.as_unix_time_ms() );
-  DWORD dwRet = WaitForSingleObjectEx( hSemaphore, timeout_ms, TRUE );
-  return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
-#elif defined(__MACH__)
-  mach_timespec_t timeout_m_ts
-    = {
-        timeout.as_unix_time_ns() / Time::NS_IN_S,
-        timeout.as_unix_time_ns() % Time::NS_IN_S
-      };
-  return semaphore_timedwait( sem, timeout_m_ts ) == KERN_SUCCESS;
-#else
-  struct timespec timeout_ts = Time() + timeout;
-  return sem_timedwait( &sem, &timeout_ts ) == 0;
-#endif
-}
 
-bool CountingSemaphore::try_acquire()
+void BIOQueue::submit( BIOCB* biocb )
 {
-#if defined(_WIN32)
-  DWORD dwRet = WaitForSingleObjectEx( hSemaphore, 0, TRUE );
-  return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
-#elif defined(__MACH__)
-  mach_timespec_t timeout_m_ts = { 0, 0 };
-  return semaphore_timedwait( sem, timeout_m_ts ) == KERN_SUCCESS;
-#else
-  return sem_trywait( &sem ) == 0;
-#endif
-}
-
-void CountingSemaphore::release()
-{
-#if defined(_WIN32)
-  ReleaseSemaphore( hSemaphore, 1, NULL );
-#elif defined(__MACH__)
-  semaphore_signal( sem );
-#else
-  sem_post( &sem );
-#endif
+  WorkerThread* worker_thread = new WorkerThread( biocb );
+  worker_thread->start();
 }
 
 
@@ -236,8 +171,8 @@ bool Directory::Entry::ISREG() const
 
 // exception.cpp
 #ifdef _WIN32
-#include <windows.h>
 #include <lmerr.h>
+#include <windows.h>
 #else
 #include <errno.h>
 #endif
@@ -412,6 +347,979 @@ void Exception::set_error_message( const char* error_message )
 }
 
 
+// fd_event_poller.cpp
+#include <map>
+
+#ifdef _WIN32
+#ifndef FD_SETSIZE
+#define FD_SETSIZE 1024
+#endif
+#undef INVALID_SOCKET
+#pragma warning( push )
+#pragma warning( disable: 4365 4995 )
+#include <ws2tcpip.h>
+#pragma warning( pop )
+#pragma warning( push )
+#define INVALID_SOCKET  (SOCKET)(~0)
+#pragma warning( disable: 4127 4389 ) // Warnings in the FD_* macros
+#else
+#include <unistd.h>
+#include <sys/poll.h>
+#include <vector>
+#if defined(__FreeBSD__) || defined(__MACH__) || defined(__OpenBSD__)
+#define YIELD_PLATFORM_HAVE_KQUEUE 1
+#include <sys/types.h>
+#include <sys/event.h>
+#include <sys/time.h>
+#elif defined(__linux__)
+#define YIELD_PLATFORM_HAVE_LINUX_EPOLL 1
+#include <sys/epoll.h>
+#elif defined(YIELD_PLATFORM_HAVE_SOLARIS_EVENT_PORTS)
+#include <port.h>
+#endif
+#endif
+
+
+namespace YIELD
+{
+  namespace platform
+  {
+    class FDEventPollerImpl : public FDEventPoller
+    {
+    protected:
+      FDEventPollerImpl()
+      { }
+
+      bool associate( fd_t fd, void* context )
+      {
+        FDToContextMap::const_iterator fd_i = fd_to_context_map.find( fd );
+        if ( fd_i == fd_to_context_map.end() )
+        {
+          fd_to_context_map[fd] = context;
+          return true;
+        }
+        else
+        {
+#ifdef _WIN32
+          WSASetLastError( WSA_INVALID_PARAMETER );
+#else
+          errno = EEXIST;
+#endif
+          return false;
+        }
+      }
+
+      bool find_context( fd_t fd, void** out_context = NULL )
+      {
+        FDToContextMap::const_iterator fd_i = fd_to_context_map.find( fd );
+        if ( fd_i != fd_to_context_map.end() )
+        {
+          if ( out_context != NULL )
+            *out_context = fd_i->second;
+          return true;
+        }
+        else
+        {
+#ifdef _WIN32
+          WSASetLastError( WSA_INVALID_PARAMETER );
+#else
+          errno = ENOENT;
+#endif
+          return false;
+        }
+      }
+
+      // FDEventPoller
+      virtual bool dissociate( fd_t fd )
+      {
+        FDToContextMap::iterator fd_i = fd_to_context_map.find( fd );
+        if ( fd_i != fd_to_context_map.end() )
+        {
+          fd_to_context_map.erase( fd_i );
+          return true;
+        }
+        else
+        {
+#ifdef _WIN32
+          WSASetLastError( WSA_INVALID_PARAMETER );
+#else
+          errno = ENOENT;
+#endif
+          return false;
+        }
+      }
+
+    protected:
+      // Need an fd_to_context_map even for poll primitives
+      // like kqueue that keep a context pointer in the kernel so that
+      // toggle doesn't have to take the context
+      // The map is protected and not private because the select()
+      // implementation iterates over the fd's
+      typedef std::map<fd_t,void*> FDToContextMap;
+      FDToContextMap fd_to_context_map;
+    };
+
+
+#ifdef YIELD_PLATFORM_HAVE_LINUX_EPOLL
+    class epollFDEventPoller : public FDEventPollerImpl
+    {
+    public:
+      ~epollFDEventPoller()
+      {
+        close( epfd );
+      }
+
+      static epollFDEventPoller* create()
+      {
+        int epfd = epoll_create( 32768 );
+        if ( epfd != -1 )
+          return new epollFDEventPoller( epfd );
+        else
+          throw Exception();
+      }
+
+      // FDEventPoller
+      bool associate( fd_t fd, void* context, bool want_read, bool want_write )
+      {
+        if ( FDEventPollerImpl::associate( fd, context ) )
+        {
+          struct epoll_event epoll_event_;
+          memset( &epoll_event_, 0, sizeof( epoll_event_ ) );
+          epoll_event_.data.fd = fd;
+          if ( want_read ) epoll_event_.events |= EPOLLIN;
+          if ( want_write ) epoll_event_.events |= EPOLLOUT;
+
+          if ( epoll_ctl( epfd, EPOLL_CTL_ADD, fd, &epoll_event_ ) != -1 )
+            return true;
+          else
+          {
+            FDEventPollerImpl::dissociate( fd );
+            return false;
+          }
+        }
+        else
+          return false;
+      }
+
+      bool dissociate( fd_t fd )
+      {
+        if ( FDEventPollerImpl::dissociate( fd ) )
+        {
+          // From the man page: In kernel versions before 2.6.9,
+          // the EPOLL_CTL_DEL operation required a non-NULL pointer in event,
+          // even though this argument is ignored. Since kernel 2.6.9,
+          // event can be specified as NULL when using EPOLL_CTL_DEL.
+          struct epoll_event epoll_event_;
+          return epoll_ctl( epfd, EPOLL_CTL_DEL, fd, &epoll_event_ ) != -1;
+        }
+        else
+          return false;
+      }
+
+      int poll( FDEvent* fd_events, int fd_events_len, const Time* timeout )
+      {
+        if ( epoll_events.capacity() < static_cast<size_t>( fd_events_len ) )
+          epoll_events.reserve( static_cast<size_t>( fd_events_len ) );
+
+        int active_fds_count
+          = epoll_wait
+            (
+              epfd,
+              &epoll_events[0],
+              fd_events_len,
+              timeout == NULL
+                ? -1
+                : static_cast<int>( timeout->as_unix_time_ms() )
+            );
+
+        if ( active_fds_count > 0 )
+        {
+          for
+          (
+            int active_fd_i = 0;
+            active_fd_i < active_fds_count;
+            active_fd_i++
+          )
+          {
+            const struct epoll_event& epoll_event_
+              = epoll_events[active_fd_i];
+
+            void* context;
+            if ( find_context( epoll_event_.data.fd, &context ) )
+            {
+              fd_events[active_fd_i].fill
+              (
+                context,
+                epoll_event_.data.fd,
+                ( epoll_event_.events & EPOLLIN ) == EPOLLIN,
+                ( epoll_event_.events & EPOLLOUT ) == EPOLLOUT
+              );
+            }
+            else
+              DebugBreak();
+          }
+        }
+
+        return active_fds_count;
+      }
+
+      bool toggle( fd_t fd, bool want_read, bool want_write )
+      {
+        struct epoll_event epoll_event_;
+        memset( &epoll_event_, 0, sizeof( epoll_event_ ) );
+        epoll_event_.data.fd = fd;
+        if ( want_read ) epoll_event_.events |= EPOLLIN;
+        if ( want_write ) epoll_event_.events |= EPOLLOUT;
+
+        if ( epoll_ctl( epfd, EPOLL_CTL_MOD, fd, &epoll_event_ ) != -1 )
+        {
+#ifdef _DEBUG
+          if ( !find_context( fd ) ) DebugBreak();
+#endif
+          return true;
+        }
+        else
+          return false;
+      }
+
+    private:
+      epollFDEventPoller( int epfd )
+        : epfd( epfd )
+      { }
+
+    private:
+      int epfd;
+      std::vector<struct epoll_event> epoll_events;
+    };
+#endif
+
+
+#ifdef YIELD_PLATFORM_HAVE_SOLARIS_EVENT_PORTS
+    class EventPortFDEventPoller : public FDEventPollerImpl
+    {
+    public:
+      ~EventPortFDEventPoller()
+      {
+        close( port );
+      }
+
+      static EventPortFDEventPoller* create()
+      {
+        int port = port_create();
+        if ( port != -1 )
+          return new EventPortFDEventPoller( port );
+        else
+          throw Exception();
+      }
+
+      // FDEventPoller
+      bool associate( fd_t fd, void* context, bool want_read, bool want_write )
+      {
+        if ( FDEventPollerImpl::associate( fd, context ) )
+        {
+          int events = 0;
+          if ( want_read ) events |= POLLIN;
+          if ( want_write ) events |= POLLOUT;
+
+          if
+          (
+            port_associate( port, PORT_SOURCE_FD, fd, events, context ) != -1
+          )
+            return true;
+          else
+          {
+            FDEventPollerImpl::dissociate( fd );
+            return false;
+          }
+        }
+        else
+          return false;
+      }
+
+      bool dissociate( fd_t fd )
+      {
+        if ( FDEventPollerImpl::dissociate( fd ) )
+          return port_dissociate( port, PORT_SOURCE_FD, fd ) != -1;
+        else
+          return false;
+      }
+
+      int poll( FDEvent* fd_events, int fd_events_len, const Time* timeout )
+      {
+        if ( port_events.capacity() < fd_events_len )
+          port_events.reserve( fd_events_len );
+
+        // port_getn doesn't seem to work -> only one event at a time
+        int active_fds_count;
+        if ( timeout == NULL )
+          active_fds_count = port_get( port, &port_events[0], NULL );
+        else
+        {
+          struct timespec timeout_ts = *timeout;
+          active_fds_count = port_get( port, &port_events[0], &timeout_ts );
+        }
+
+        if ( active_fds_count > 0 )
+        {
+          for
+          (
+            int active_fd_i = 0;
+            active_fd_i < active_fds_count;
+            active_fd_i++
+          )
+          (
+            const port_event_t& port_event = port_events[active_fd_i];
+
+            fd_events[active_fd_i].fill
+            (
+              port_event.portev_user
+              port_event.portev_object
+              ( port_event.portev_events & POLLIN ) == POLLIN,
+              ( port_event.portev_events & POLLOUT ) == POLLOUT
+            );
+          }
+        }
+
+        return active_fds_count;
+      }
+
+      bool toggle( fd_t fd, bool want_read, bool want_write )
+      {
+        void* context;
+        if ( find_context( fd, &context ) )
+        {
+        }
+        else
+          return false;
+      }
+
+    private:
+      EventPortFDEventPoller( int port )
+        : port( port )
+      { }
+
+    private:
+      int port;
+      std::vector<port_event_t> port_events;
+    };
+#endif
+
+
+#ifdef YIELD_PLATFORM_HAVE_KQUEUE
+    class kqueueFDEventPoller : public FDEventPollerImpl
+    {
+    public:
+      ~kqueueFDEventPoller()
+      {
+        close( kq );
+      }
+
+      static kqueueFDEventPoller* create()
+      {
+        int kq = kqueue();
+        if ( kq != -1 )
+          return new kqueueFDEventPoller( kq );
+        else
+          throw Exception();
+      }
+
+      // FDEventPoller
+      bool associate( fd_t fd, void* context, bool want_read, bool want_write )
+      {
+        if ( FDEventPollerImpl::associate( fd, context ) )
+        {
+          struct kevent kevents[2];
+          int nchanges = 0;
+
+          if ( want_read )
+          {
+            EV_SET
+            (
+              &kevents[nchanges],
+              fd,
+              EVFILT_READ,
+              EV_ENABLE
+              0,
+              0,
+              context
+            );
+
+            nchanges++;
+          }
+
+          if ( want_write )
+          {
+            EV_SET
+            (
+              &kevents[nchanges],
+              fd,
+              EVFILT_WRITE,
+              EV_ENABLE,
+              0,
+              0,
+              context
+            );
+
+            nchanges++;
+          }
+
+          if ( kevent( kq, kevents, nchanges - 1, 0, 0, NULL ) != -1 )
+            return true;
+          else
+          {
+            FDEventPollerImpl::dissociate( fd );
+            return false;
+          }
+        }
+        else
+          return false;
+      }
+
+      bool dissociate( fd_t fd )
+      {
+        if ( FDEventPollerImpl::dissociate( fd ) )
+        {
+          struct kevent kevents[2];
+          EV_SET( &kevents[0], fd, EVFILT_READ, EV_DELETE, 0, 0, NULL );
+          EV_SET( &kevents[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL );
+          kevent( kq, change_events, 2, 0, 0, NULL );
+        }
+        else
+          return false;
+      }
+
+      int poll( FDEvent* fd_events, int fd_events_len, const Time* timeout )
+      {
+        if ( kevents.capacity() < fd_events_len )
+          kevents.reserve( fd_events_len );
+
+        int active_fds_count;
+
+        if ( timeout == NULL )
+        {
+          active_fds_count
+            = kevent( epfd, 0, 0, &kevents[0], fd_events_len, NULL );
+        }
+        else
+        {
+          struct timespec timeout_ts = *timeout;
+          active_fds_count
+            = kevent( epfd, 0, 0, &kevents[0], fd_events_len, &timeout_ts );
+        }
+
+        if ( active_fds_count > 0 )
+        {
+          for
+          (
+            int active_fd_i = 0;
+            active_fd_i < active_fds_count;
+            active_fd_i++
+          )
+          (
+            const struct kevent& kevent_ = kevents[active_fd_i];
+
+            fd_events[active_fd_i].fill
+            (
+              kevent_.udata,
+              kevent_.ident,
+              kevent_.filter == EVFILT_READ,
+              kevent_.filter != EVFILT_READ
+            );
+          }
+        }
+
+        return active_fds_count;
+      }
+
+      bool toggle( fd_t fd, bool want_read, bool want_write )
+      {
+        void* context;
+        if ( find_context( fd, &context ) )
+        {
+          struct kevent kevents[2];
+
+          EV_SET
+          (
+            &kevents[nchanges],
+            fd,
+            EVFILT_READ, want_read ? EV_ENABLE : EV_DISABLE,
+            0,
+            0,
+            fd_i->second
+          );
+
+          EV_SET
+          (
+            &kevents[nchanges],
+            fd,
+            EVFILT_WRITE,
+            want_write ? EV_ENABLE : EV_DISABLE,
+            0,
+            0,
+            fd_i->second
+          );
+
+          return kevent( kq, kevents, 2, 0, 0, NULL ) != -1;
+        }
+        else
+          return false;
+      }
+
+    private:
+      kqueueFDEventPoller( int kq )
+        : epfd( kq )
+      { }
+
+    private:
+      std::vector<struct kevent> kevents;
+      int kq;
+    };
+#endif
+
+
+#ifndef _WIN32
+    class pollFDEventPoller : public FDEventPollerImpl
+    {
+    public:
+      static pollFDEventPoller* create()
+      {
+        return new pollFDEventPoller;
+      }
+
+      // FDEventPoller
+      bool associate( fd_t fd, void* context, bool want_read, bool want_write )
+      {
+        if ( FDEventPollerImpl::associate( fd, context ) )
+        {
+          fd_to_context_map[fd] = context;
+
+          struct pollfd new_pollfd;
+          memset( &new_pollfd, 0, sizeof( new_pollfd ) );
+          new_pollfd.fd = fd;
+          if ( want_read ) new_pollfd.events |= POLLIN;
+          if ( want_write ) new_pollfd.events |= POLLOUT;
+          pollfds.push_back( new_pollfd );
+
+          return true;
+        }
+        else
+          return false;
+      }
+
+      bool dissociate( fd_t fd )
+      {
+        if ( FDEventPollerImpl::dissociate( fd ) )
+        {
+          for
+          (
+            std::vector<struct pollfd>::iterator pollfd_i = pollfds.begin();
+            pollfd_i != pollfds.end();
+            ++pollfd_i
+          )
+          {
+            if ( ( *pollfd_i ).fd == fd )
+            {
+              pollfds.erase( pollfd_i );
+              return true;
+            }
+          }
+
+          DebugBreak();
+        }
+        else
+          return false;
+      }
+
+      int poll( FDEvent* fd_events, int fd_events_len, const Time* timeout )
+      {
+        int active_fds_count
+          = ::poll
+            (
+              &pollfds[0],
+              pollfds.size(),
+              timeout == NULL ? -1 : timeout->as_unix_time_ms()
+            );
+
+        if ( active_fds_count > 0 )
+        {
+          int fd_event_i = 0;
+          std::vector<struct pollfd>::const_iterator pollfd_i
+            = pollfds.begin();
+
+          while
+          (
+            active_fds_count > 0
+            &&
+            fd_event_i < fd_events_len
+            &&
+            pollfd_i != pollfds.end()
+          )
+          {
+            const struct pollfd& pollfd_ = *pollfd_i;
+
+            if ( pollfd_.revents != 0 )
+            {
+#ifdef _DEBUG
+              if ( ( pollfd_.revents & POLLERR ) == POLLERR )
+                DebugBreak();
+              if ( ( pollfd_.revents & POLLHUP ) == POLLHUP )
+                DebugBreak();
+              if ( ( pollfd_.revents & POLLPRI ) == POLLPRI )
+                DebugBreak();
+#endif
+
+              void* context;
+              if ( find_context( pollfd_.fd, &context ) )
+              {
+                fd_events[fd_event_i].fill
+                (
+                  context,
+                  pollfd_.fd,
+                  ( pollfd_.revents & POLLIN ) == POLLIN,
+                  ( pollfd_.revents & POLLOUT ) == POLLOUT
+                );
+
+                fd_event_i++;
+              }
+              else
+                DebugBreak();
+
+//              pollfd_.revents = 0;
+
+              active_fds_count--;
+            }
+
+            ++pollfd_i;
+          }
+
+          return fd_event_i;
+        }
+        else
+          return active_fds_count;
+      }
+
+      bool toggle( fd_t fd, bool want_read, bool want_write )
+      {
+        void* context;
+        if ( find_context( fd, &context ) )
+        {
+          for
+          (
+            std::vector<struct pollfd>::iterator pollfd_i = pollfds.begin();
+            pollfd_i != pollfds.end();
+            ++pollfd_i
+          )
+          {
+            if ( ( *pollfd_i ).fd == fd )
+            {
+              ( *pollfd_i ).events = 0;
+              if ( want_read ) ( *pollfd_i ).events |= POLLIN;
+              if ( want_write ) ( *pollfd_i ).events |= POLLOUT;
+              return true;
+            }
+          }
+
+          DebugBreak();
+        }
+        else
+          return false;
+      }
+
+    private:
+      pollFDEventPoller()
+      { }
+
+    private:
+      std::vector<struct pollfd> pollfds;
+    };
+#endif
+
+
+    class selectFDEventPoller : public FDEventPollerImpl
+    {
+    public:
+      static selectFDEventPoller* create()
+      {
+        return new selectFDEventPoller;
+      }
+
+      // FDEventPoller
+      bool associate( fd_t fd, void* context, bool want_read, bool want_write )
+      {
+        if ( FDEventPollerImpl::associate( fd, context ) )
+        {
+          if ( want_read )
+            FD_SET( fd, &read_fds );
+
+          if ( want_write )
+          {
+            //FD_SET( fd, &except_fds );
+            FD_SET( fd, &write_fds );
+          }
+
+          return true;
+        }
+        else
+          return false;
+      }
+
+      bool dissociate( fd_t fd )
+      {
+        if ( FDEventPollerImpl::dissociate( fd ) )
+        {
+          //FD_CLR( fd, &except_fds );
+          FD_CLR( fd, &read_fds );
+          FD_CLR( fd, &write_fds );
+          return true;
+        }
+        else
+          return false;
+      }
+
+      int poll( FDEvent* fd_events, int fd_events_len, const Time* timeout )
+      {
+        fd_set except_fds_copy, read_fds_copy, write_fds_copy;
+
+        memcpy_s
+        (
+          &except_fds_copy,
+          sizeof( except_fds_copy ),
+          &except_fds,
+          sizeof( except_fds )
+        );
+
+        memcpy_s
+        (
+          &read_fds_copy,
+          sizeof( read_fds_copy ),
+          &read_fds,
+          sizeof( read_fds )
+        );
+
+        memcpy_s
+        (
+          &write_fds_copy,
+          sizeof( write_fds_copy ),
+          &write_fds,
+          sizeof( write_fds )
+        );
+
+        int active_fds_count;
+        if ( timeout == NULL )
+        {
+          active_fds_count
+            = select
+              (
+                0,
+                &read_fds_copy,
+                &write_fds_copy,
+                &except_fds_copy,
+                NULL
+              );
+        }
+        else
+        {
+          struct timeval timeout_tv = *timeout;
+          active_fds_count
+            = select
+              (
+                0,
+                &read_fds_copy,
+                &write_fds_copy,
+                &except_fds_copy,
+                &timeout_tv
+              );
+        }
+
+        if ( active_fds_count > 0 )
+        {
+          FDToContextMap::const_iterator fd_i = fd_to_context_map.begin();
+          int fd_event_i = 0;
+
+          while
+          (
+            active_fds_count > 0
+            &&
+            fd_event_i < fd_events_len
+            &&
+            fd_i != fd_to_context_map.end()
+          )
+          {
+            bool want_except, want_read, want_write;
+
+            //if ( FD_ISSET( fd_i->first, &except_fds_copy ) )
+            //{
+            //  want_except = true;
+            //  active_fds_count--; // one for every fd event, not every fd
+            //}
+            //else
+              want_except = false;
+
+            if ( FD_ISSET( fd_i->first, &read_fds_copy ) )
+            {
+              want_read = true;
+              active_fds_count--;
+            }
+            else
+              want_read = false;
+
+            if
+            (
+              active_fds_count > 0
+              &&
+              FD_ISSET( fd_i->first, &write_fds_copy )
+            )
+            {
+              want_write = true;
+              active_fds_count--;
+            }
+            else
+              want_write = false;
+
+            if ( want_except || want_read || want_write )
+            {
+              fd_events[fd_event_i].fill
+              (
+                fd_i->second,
+                fd_i->first,
+                want_read,
+                want_except | want_write
+              );
+
+              fd_event_i++;
+            }
+
+            ++fd_i;
+          }
+
+          return fd_event_i;
+        }
+        else
+          return active_fds_count;
+      }
+
+      bool toggle( fd_t fd, bool want_read, bool want_write )
+      {
+        void* context;
+        if ( find_context( fd, &context ) )
+        {
+          if ( want_read )
+            FD_SET( fd, &read_fds );
+          else
+            FD_CLR( fd, &read_fds );
+
+          if ( want_write )
+          {
+            //FD_SET( fd, &except_fds );
+            FD_SET( fd, &write_fds );
+          }
+          else
+          {
+            //FD_CLR( fd, &except_fds );
+            FD_CLR( fd, &write_fds );
+          }
+
+          return true;
+        }
+        else
+          return false;
+      }
+
+    private:
+      selectFDEventPoller()
+      {
+        FD_ZERO( &except_fds );
+        FD_ZERO( &read_fds );
+        FD_ZERO( &write_fds );
+      }
+
+    private:
+      fd_set except_fds, read_fds, write_fds;
+    };
+  };
+};
+
+
+auto_FDEventPoller FDEventPoller::create()
+{
+#if defined(_WIN32)
+  return selectFDEventPoller::create();
+#elif defined(YIELD_HAVE_KQUEUE)
+  return kqueueFDEventPoller::create();
+#elif defined(YIELD_PLATFORM_HAVE_LINUX_EPOLL)
+  return epollFDEventPoller::create();
+#elif defined(YIELD_PLATFORM_HAVE_SOLARIS_EVENT_PORTS)
+  return EventPortFDEventPoller::create();
+#else
+  return pollFDEventPoller::create();
+#endif
+}
+
+bool FDEventPoller::poll()
+{
+  FDEvent fd_event;
+  return poll( &fd_event, 1, NULL ) == 1;
+}
+
+bool FDEventPoller::poll( const Time& timeout )
+{
+  FDEvent fd_event;
+  return poll( &fd_event, 1, &timeout ) == 1;
+}
+
+bool FDEventPoller::poll( FDEvent& fd_event )
+{
+  return poll( &fd_event, 1, NULL ) == 1;
+}
+
+bool FDEventPoller::poll( FDEvent& fd_event, const Time& timeout )
+{
+  return poll( &fd_event, 1, &timeout ) == 1;
+}
+
+int FDEventPoller::poll( FDEvent* fd_events, int fd_events_len )
+{
+  return poll( fd_events, fd_events_len, NULL );
+}
+
+int
+FDEventPoller::poll
+(
+  FDEvent* fd_events,
+  int fd_events_len,
+  const Time& timeout
+)
+{
+  if ( fd_events_len > 0 )
+    return poll( fd_events, fd_events_len, &timeout );
+  else
+    return 0;
+}
+
+bool FDEventPoller::try_poll()
+{
+  FDEvent fd_event;
+  Time timeout( 0 * Time::NS_IN_S );
+  return poll( &fd_event, 1, &timeout ) == 1;
+}
+
+bool FDEventPoller::try_poll( FDEvent& fd_event )
+{
+  Time timeout( 0 * Time::NS_IN_S );
+  return poll( &fd_event, 1, &timeout ) == 1;
+}
+
+int FDEventPoller::try_poll( FDEvent* fd_events, int fd_events_len )
+{
+  Time timeout( 0 * Time::NS_IN_S );
+  return poll( fd_events, fd_events_len, &timeout );
+}
+
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
+
+
 // file.cpp
 #ifdef _WIN32
 #include <windows.h>
@@ -431,7 +1339,7 @@ void Exception::set_error_message( const char* error_message )
 extern off64_t lseek64(int, off64_t, int);
 #define lseek lseek64
 #endif
-#ifdef YIELD_PLATFORM_HAVE_POSIX_FILE_AIO
+#ifdef YIELD_PLATFORM_HAVE_POSIX_AIO
 #include <aio.h>
 #endif
 #ifdef YIELD_PLATFORM_HAVE_XATTR_H
@@ -457,20 +1365,11 @@ extern off64_t lseek64(int, off64_t, int);
 
 
 File::File()
-#ifdef _WIN32
-  : fd( INVALID_HANDLE_VALUE )
-#else
-  : fd( -1 )
-#endif
+  : fd( INVALID_FD )
 { }
 
-#ifdef _WIN32
-File::File( void* fd )
+File::File( fd_t fd )
   : fd( fd )
-#else
-File::File( int fd )
-  : fd( fd )
-#endif
 { }
 
 File::File( const File& other )
@@ -480,15 +1379,9 @@ File::File( const File& other )
 
 bool File::close()
 {
-#ifdef _WIN32
-  if ( fd != INVALID_HANDLE_VALUE && CloseHandle( fd ) != 0 )
+  if ( Stream::close( fd ) )
   {
-    fd = INVALID_HANDLE_VALUE;
-#else
-  if ( fd != -1 && ::close( fd ) >= 0 )
-  {
-    fd = -1;
-#endif
+    fd = INVALID_FD;
     return true;
   }
   else
@@ -592,21 +1485,6 @@ bool File::listxattr( std::vector<std::string>& out_names )
 #endif
 }
 
-ssize_t File::read( yidl::runtime::auto_Buffer buffer )
-{
-  ssize_t read_ret = read( static_cast<void*>( *buffer ), buffer->capacity() );
-  buffer->put( NULL, read_ret );
-  return read_ret;
-}
-
-ssize_t File::read( void* buffer, size_t buffer_len, uint64_t offset )
-{
-  if ( seek( offset, SEEK_SET ) )
-    return read( buffer, buffer_len );
-  else
-    return -1;
-}
-
 ssize_t File::read( void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
@@ -615,19 +1493,27 @@ ssize_t File::read( void* buffer, size_t buffer_len )
   (
     ReadFile
     (
-      fd,
+      *this,
       buffer,
       static_cast<DWORD>( buffer_len ),
       &dwBytesRead,
       NULL
     )
   )
-    return dwBytesRead;
+    return static_cast<ssize_t>( dwBytesRead );
   else
     return -1;
 #else
-  return ::read( fd, buffer, buffer_len );
+  return ::read( *this, buffer, buffer_len );
 #endif
+}
+
+ssize_t File::read( void* buffer, size_t buffer_len, uint64_t offset )
+{
+  if ( seek( offset, SEEK_SET ) )
+    return read( buffer, buffer_len );
+  else
+    return -1;
 }
 
 bool File::removexattr( const std::string& name )
@@ -740,11 +1626,6 @@ bool File::setxattr
 #endif
 }
 
-auto_Stat File::stat()
-{
-  return getattr();
-}
-
 bool File::sync()
 {
 #ifdef _WIN32
@@ -802,11 +1683,6 @@ bool File::unlk( uint64_t offset, uint64_t length )
 #endif
 }
 
-ssize_t File::write( yidl::runtime::auto_Buffer buffer )
-{
-  return write( static_cast<void*>( *buffer ), buffer->size() );
-}
-
 ssize_t File::write( const void* buffer, size_t buffer_len )
 {
 #ifdef _WIN32
@@ -815,7 +1691,7 @@ ssize_t File::write( const void* buffer, size_t buffer_len )
   (
     WriteFile
     (
-      fd,
+      *this,
       buffer,
       static_cast<DWORD>( buffer_len ),
       &dwBytesWritten,
@@ -826,7 +1702,7 @@ ssize_t File::write( const void* buffer, size_t buffer_len )
   else
     return -1;
 #else
-  return ::write( fd, buffer, buffer_len );
+  return ::write( *this, buffer, buffer_len );
 #endif
 }
 
@@ -837,6 +1713,13 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
   else
     return -1;
 }
+
+#ifndef _WIN32
+ssize_t File::writev( const struct iovec* buffers, uint32_t buffers_count )
+{
+  return ::writev( *this, buffers, buffers_count );
+}
+#endif
 
 #ifdef _WIN32
 #pragma warning( pop )
@@ -857,8 +1740,8 @@ ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
 
 
 #ifdef _WIN32
-iconv::iconv( UINT fromcode, UINT tocode )
-  : fromcode( fromcode ), tocode( tocode )
+iconv::iconv( UINT from_code_page, UINT to_code_page )
+  : from_code_page( from_code_page ), to_code_page( to_code_page )
 { }
 #else
 iconv::iconv( iconv_t cd )
@@ -874,27 +1757,43 @@ iconv::~iconv()
 }
 
 #ifdef _WIN32
-UINT iconv::iconv_code_to_win32_code( const char* iconv_code )
+UINT iconv::Code_to_win32_code_page( Code code )
 {
-  if ( strcmp( iconv_code, "") == 0 || strcmp( iconv_code, "char" ) == 0 )
-    return GetACP();
-  else if ( strcmp( iconv_code, "ISO-8859-1" ) == 0 )
-    return CP_ACP;
-  else if ( strcmp( iconv_code, "UTF-8") == 0 )
-    return CP_UTF8;
-  else
-    throw Exception( "iconv: unsupported code" );
+  switch ( code )
+  {
+    case CODE_CHAR: return GetACP();
+    case CODE_ISO88591: return CP_ACP;
+    case CODE_UTF8: return CP_UTF8;
+    default: return GetACP();
+  }
+}
+#else
+const char* iconv::Code_to_iconv_code( Code code )
+{
+  switch ( code )
+  {
+    case CODE_CHAR: return "";
+    case CODE_ISO88591: return "ISO-8859-1";
+    case CODE_UTF8: return "UTF-8";
+    default: return "";
+  }
 }
 #endif
 
-auto_iconv iconv::open( const char* tocode, const char* fromcode )
+auto_iconv iconv::open( Code tocode, Code fromcode )
 {
 #ifdef _WIN32
-  UINT tocode_uint = iconv_code_to_win32_code( tocode );
-  UINT fromcode_uint = iconv_code_to_win32_code( fromcode );
-  return new iconv( fromcode_uint, tocode_uint );
+  UINT to_code_page = Code_to_win32_code_page( tocode );
+  UINT from_code_page = Code_to_win32_code_page( fromcode );
+  return new iconv( from_code_page, to_code_page );
 #else
-  iconv_t cd = ::iconv_open( tocode, fromcode );
+  iconv_t cd
+    = ::iconv_open
+      (
+        Code_to_iconv_code( tocode ),
+        Code_to_iconv_code( fromcode )
+      );
+
   if ( cd != reinterpret_cast<iconv_t>( -1 ) )
     return new iconv( cd );
   else
@@ -915,7 +1814,7 @@ iconv::operator()
   int inbuf_w_len
     = MultiByteToWideChar
       (
-        fromcode,
+        from_code_page,
         0,
         *inbuf,
         static_cast<int>( *inbytesleft ),
@@ -930,7 +1829,7 @@ iconv::operator()
     inbuf_w_len
       = MultiByteToWideChar
         (
-          fromcode,
+          from_code_page,
           0,
           *inbuf,
           static_cast<int>( *inbytesleft ),
@@ -943,7 +1842,7 @@ iconv::operator()
       int outbyteswritten
         = WideCharToMultiByte
           (
-            tocode,
+            to_code_page,
             0,
             inbuf_w,
             inbuf_w_len,
@@ -993,7 +1892,7 @@ bool iconv::operator()( const std::string& inbuf, std::string& outbuf )
   int inbuf_w_len
     = MultiByteToWideChar
       (
-        fromcode,
+        from_code_page,
         0,
         inbuf.c_str(),
         inbuf.size(),
@@ -1008,7 +1907,7 @@ bool iconv::operator()( const std::string& inbuf, std::string& outbuf )
     inbuf_w_len
       = MultiByteToWideChar
         (
-          fromcode,
+          from_code_page,
           0,
           inbuf.c_str(),
           inbuf.size(),
@@ -1021,7 +1920,7 @@ bool iconv::operator()( const std::string& inbuf, std::string& outbuf )
       int outbuf_c_len
         = WideCharToMultiByte
           (
-            tocode,
+            to_code_page,
             0,
             inbuf_w,
             inbuf_w_len,
@@ -1038,7 +1937,7 @@ bool iconv::operator()( const std::string& inbuf, std::string& outbuf )
         outbuf_c_len
           = WideCharToMultiByte
             (
-              tocode,
+              to_code_page,
               0,
               inbuf_w,
               inbuf_w_len,
@@ -1123,7 +2022,7 @@ bool iconv::operator()( const std::string& inbuf, std::wstring& outbuf )
   int outbuf_w_len
     = MultiByteToWideChar
       (
-        fromcode,
+        from_code_page,
         0,
         inbuf.c_str(),
         inbuf.size(),
@@ -1138,7 +2037,7 @@ bool iconv::operator()( const std::string& inbuf, std::wstring& outbuf )
     outbuf_w_len
       = MultiByteToWideChar
         (
-          fromcode,
+          from_code_page,
           0,
           inbuf.c_str(),
           inbuf.size(),
@@ -1163,7 +2062,7 @@ bool iconv::operator()( const std::wstring& inbuf, std::string& outbuf )
   int outbuf_c_len
     = WideCharToMultiByte
       (
-        tocode,
+        to_code_page,
         0,
         inbuf.c_str(),
         inbuf.size(),
@@ -1180,7 +2079,7 @@ bool iconv::operator()( const std::wstring& inbuf, std::string& outbuf )
     outbuf_c_len
       = WideCharToMultiByte
         (
-          tocode,
+          to_code_page,
           0,
           inbuf.c_str(),
           inbuf.size(),
@@ -1203,6 +2102,48 @@ bool iconv::operator()( const std::wstring& inbuf, std::string& outbuf )
   return false;
 }
 #endif
+
+
+// istream.cpp
+void
+IStream::aio_read
+(
+  yidl::runtime::auto_Buffer buffer,
+  AIOReadCallback& callback,
+  void* callback_context
+)
+{
+  ssize_t read_ret = read( *buffer );
+  if ( read_ret >= 0 )
+  {
+    callback.onReadCompletion
+    (
+      buffer,
+      callback_context
+    );
+  }
+  else
+#ifdef _WIN32
+    callback.onReadError( GetLastError(), callback_context );
+#else
+    callback.onReadError( errno, callback_context );
+#endif
+}
+
+ssize_t IStream::read( yidl::runtime::Buffer& buffer )
+{
+  ssize_t read_ret
+    = read
+      (
+        static_cast<char*>( buffer ) + buffer.size(),
+        buffer.capacity() - buffer.size()
+      );
+
+  if ( read_ret > 0 )
+    buffer.put( NULL, static_cast<size_t>( read_ret ) );
+
+  return read_ret;
+}
 
 
 // log.cpp
@@ -1246,8 +2187,6 @@ namespace YIELD
       ostreamLog( std::ostream& underlying_ostream, Level level )
         : Log( level ), underlying_ostream( underlying_ostream )
       { }
-
-      ostreamLog& operator=( const ostreamLog& ) { return *this; }
 
       // Log
       void write( const char* str, size_t str_len )
@@ -1315,6 +2254,32 @@ auto_Log Log::open( const Path& file_path, Level level, bool lazy )
     else
       return NULL;
   }
+}
+
+void Log::write( const char* str, Level level )
+{
+  write( str, strnlen( str, UINT16_MAX ), level );
+}
+
+void Log::write( const std::string& str, Level level )
+{
+  write( str.c_str(), str.size(), level );
+}
+
+void Log::write( const char* str, size_t str_len, Level level )
+{
+  if ( level <= this->level )
+    write( str, str_len );
+}
+
+void Log::write( const void* str, size_t str_len, Level level )
+{
+  return write
+  (
+    static_cast<const unsigned char*>( str ),
+    str_len,
+    level
+  );
 }
 
 void Log::write( const unsigned char* str, size_t str_len, Level level )
@@ -1467,7 +2432,6 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
 
 // memory_mapped_file.cpp
 #ifdef _WIN32
-#define NOMINMAX
 #include <windows.h>
 #else
 #include <sys/mman.h>
@@ -1485,7 +2449,7 @@ MemoryMappedFile::MemoryMappedFile
 #ifdef _WIN32
   mapping = NULL;
 #endif
-  size = 0;
+  size_ = 0;
   start = NULL;
 }
 
@@ -1497,7 +2461,7 @@ bool MemoryMappedFile::close()
 #ifdef _WIN32
     UnmapViewOfFile( start );
 #else
-    munmap( start, size );
+    munmap( start, size() );
 #endif
     start = NULL;
   }
@@ -1571,8 +2535,8 @@ MemoryMappedFile::open
     else
       current_file_size = 0;
 
-    auto_MemoryMappedFile memory_mapped_file
-      = new MemoryMappedFile( file, flags );
+    auto_MemoryMappedFile
+      memory_mapped_file( new MemoryMappedFile( file, flags ) );
 
     if
     (
@@ -1609,13 +2573,16 @@ bool MemoryMappedFile::resize( size_t new_size )
     if ( start != NULL )
     {
       sync();
-      if ( munmap( start, size ) == -1 )
+      if ( munmap( start, size() ) == -1 )
         return false;
     }
 #endif
 
-    if ( size == new_size ||
-         underlying_file->truncate( new_size ) )
+    if
+    (
+      size() == new_size
+      ||
+      underlying_file->truncate( new_size ) )
     {
 #ifdef _WIN32
       unsigned long map_flags = PAGE_READONLY;
@@ -1643,9 +2610,6 @@ bool MemoryMappedFile::resize( size_t new_size )
         start = static_cast<char*>( MapViewOfFile( mapping, map_flags, 0, 0, 0 ) );
         if ( start != NULL )
         {
-          size = new_size;
-          return true;
-        }
       }
 #else
       unsigned long mmap_flags = PROT_READ;
@@ -1666,10 +2630,10 @@ bool MemoryMappedFile::resize( size_t new_size )
       if ( mmap_ret != MAP_FAILED )
       {
         start = static_cast<char*>( mmap_ret );
-        size = new_size;
+#endif
+        this->size_ = new_size;
         return true;
       }
-#endif
     }
   }
   else
@@ -1687,7 +2651,7 @@ bool MemoryMappedFile::sync()
            static_cast<size_t>( 0 )
          ); // length 0 = flush to end of mapping
 #else
-  return sync( static_cast<size_t>( 0 ), size );
+  return sync( static_cast<size_t>( 0 ), size() );
 #endif
 }
 
@@ -1786,6 +2750,1505 @@ void Mutex::release()
 #else
   pthread_mutex_unlock( &pthread_mutex );
 #endif
+}
+
+
+// named_pipe.cpp
+#ifdef _WIN32
+#include <windows.h>
+#pragma warning( push )
+#pragma warning( disable: 4100 )
+#endif
+
+
+auto_NamedPipe NamedPipe::open
+(
+  const Path& path,
+  uint32_t flags,
+  mode_t mode
+)
+{
+#ifdef _WIN32
+  Path named_pipe_base_dir_path( TEXT( "\\\\.\\pipe" ) );
+  Path named_pipe_path( named_pipe_base_dir_path + path );
+
+  if ( ( flags & O_CREAT ) == O_CREAT ) // Server
+  {
+    HANDLE hPipe
+      = CreateNamedPipe
+        (
+          named_pipe_path,
+          PIPE_ACCESS_DUPLEX|FILE_FLAG_OVERLAPPED,
+          PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_WAIT,
+          PIPE_UNLIMITED_INSTANCES,
+          4096,
+          4096,
+          0,
+          NULL
+        );
+
+    if ( hPipe != INVALID_HANDLE_VALUE )
+      return new NamedPipe( hPipe, false );
+  }
+  else // Client
+  {
+    auto_File underlying_file( Volume().open( named_pipe_path, flags ) );
+    if ( underlying_file != NULL )
+    {
+      fd_t fd;
+
+      DuplicateHandle
+      (
+        GetCurrentProcess(),
+        *underlying_file,
+        GetCurrentProcess(),
+        &fd,
+        0,
+        FALSE,
+        DUPLICATE_SAME_ACCESS
+      );
+
+      return new NamedPipe( fd, true );
+    }
+  }
+#else
+  if ( ( flags & O_CREAT ) == O_CREAT )
+  {
+    if
+    (
+      ::mkfifo( path, mode ) != -1
+      ||
+      errno == EEXIST
+    )
+      flags ^= O_CREAT;
+    else
+      return NULL;
+  }
+
+  auto_File underlying_file( Volume().open( path, flags ) );
+  if ( underlying_file != NULL )
+    return new NamedPipe( dup( *underlying_file ) );
+#endif
+
+  return NULL;
+}
+
+#ifdef _WIN32
+NamedPipe::NamedPipe( fd_t fd, bool connected )
+  : File( fd ), connected( connected )
+{ }
+#else
+NamedPipe::NamedPipe( fd_t fd )
+  : File( fd )
+{ }
+#endif
+
+#ifdef _WIN32
+bool NamedPipe::connect()
+{
+  if ( connected )
+    return true;
+  else
+  {
+    if
+    (
+      ConnectNamedPipe( *this, NULL ) != 0
+      ||
+      GetLastError() == ERROR_PIPE_CONNECTED
+    )
+    {
+      connected = true;
+      return true;
+    }
+    else
+      return false;
+  }
+}
+
+ssize_t NamedPipe::read( void* buffer, size_t buffer_len )
+{
+  if ( connect() )
+    return File::read( buffer, buffer_len );
+  else
+    return -1;
+}
+
+ssize_t NamedPipe::write( const void* buffer, size_t buffer_len )
+{
+  if ( connect() )
+    return File::write( buffer, buffer_len );
+  else
+    return -1;
+}
+#endif
+
+#ifdef _WIN32
+#pragma warning( pop )
+#endif
+
+
+// nbio_queue.cpp
+class NBIOQueue::WorkerThread : public Thread
+{
+public:
+  static yidl::runtime::auto_Object<WorkerThread> create()
+  {
+    auto_FDEventPoller fd_event_poller( FDEventPoller::create() );
+
+    auto_SocketPair submit_pipe( SocketPair::create() );
+    if
+    (
+      submit_pipe->first().set_blocking_mode( false )
+      &&
+      fd_event_poller->associate( submit_pipe->first(), true, false )
+    )
+      return new WorkerThread( fd_event_poller, submit_pipe );
+    else
+      throw Exception();
+  }
+
+  void submit( NBIOCB* nbiocb )
+  {
+    submit_pipe->second().write( &nbiocb, sizeof( nbiocb ) );
+  }
+
+  // Thread
+  void run()
+  {
+    set_name( "NBIOQueue::WorkerThread" );
+
+    FDEventPoller::FDEvent fd_events[64];
+
+    for ( ;; )
+    {
+      int fd_events_count = fd_event_poller->poll( fd_events, 64 );
+      if ( fd_events_count > 0 )
+      {
+        for ( int fd_event_i = 0; fd_event_i < fd_events_count; fd_event_i++ )
+        {
+          const FDEventPoller::FDEvent& fd_event = fd_events[fd_event_i];
+
+          if ( fd_event.get_fd() == submit_pipe->first() )
+          {
+            // Read submitted NBIOCB's
+            NBIOCB* nbiocb;
+            for ( ;; )
+            {
+              ssize_t read_ret
+                = submit_pipe->first().read( &nbiocb, sizeof( nbiocb ) );
+
+              if ( read_ret == sizeof( nbiocb ) )
+              {
+                if ( nbiocb != NULL )
+                {
+                  switch ( nbiocb->get_state() )
+                  {
+                    case NBIOCB::STATE_WANT_CONNECT:
+                    case NBIOCB::STATE_WANT_WRITE:
+                    {
+                      fd_event_poller->associate
+                      (
+                        nbiocb->get_fd(),
+                        nbiocb,
+                        false,
+                        true
+                      );
+                    }
+                    break;
+
+                    case NBIOCB::STATE_WANT_READ:
+                    {
+                      fd_event_poller->associate
+                      (
+                        nbiocb->get_fd(),
+                        nbiocb,
+                        true
+                      );
+                    }
+                    break;
+
+                    default:
+                    {
+                      delete nbiocb;
+                    }
+                    break;
+                  }
+                }
+                else // NULL nbiocb = the stop signal
+                  return;
+              }
+              else if ( read_ret <= 0 )
+                break;
+              else
+                DebugBreak();
+            }
+          }
+          else
+          {
+            NBIOCB* nbiocb = static_cast<NBIOCB*>( fd_event.get_context() );
+
+            nbiocb->execute();
+
+            switch ( nbiocb->get_state() )
+            {
+              case NBIOCB::STATE_WANT_CONNECT:
+              case NBIOCB::STATE_WANT_WRITE:
+              {
+                fd_event_poller->toggle( nbiocb->get_fd(), false, true );
+              }
+              break;
+
+              case NBIOCB::STATE_WANT_READ:
+              {
+                fd_event_poller->toggle( nbiocb->get_fd(), true, false );
+              }
+              break;
+
+              case NBIOCB::STATE_COMPLETE:
+              case NBIOCB::STATE_ERROR:
+              {
+                fd_event_poller->dissociate( nbiocb->get_fd() );
+                delete nbiocb;
+              }
+              break;
+            }
+          }
+        }
+      }
+      else if ( fd_events_count < 0 )
+      {
+#ifndef _WIN32
+        if ( errno != EINTR )
+#endif
+          std::cerr << "NBIOQueue::WorkerThread: " <<
+            "error on poll: " << Exception() << "." << std::endl;
+      }
+    }
+  }
+
+private:
+  WorkerThread( auto_FDEventPoller fd_event_poller, auto_SocketPair submit_pipe )
+    : fd_event_poller( fd_event_poller ), submit_pipe( submit_pipe )
+  { }
+
+private:
+  auto_FDEventPoller fd_event_poller;
+  auto_SocketPair submit_pipe;
+};
+
+
+NBIOQueue::NBIOQueue( const std::vector<WorkerThread*>& worker_threads )
+  : worker_threads( worker_threads )
+{ }
+
+NBIOQueue::~NBIOQueue()
+{
+  for
+  (
+    std::vector<WorkerThread*>::iterator
+      worker_thread_i = worker_threads.begin();
+    worker_thread_i != worker_threads.end();
+    worker_thread_i++
+  )
+  {
+    ( *worker_thread_i )->submit( NULL );
+    ( *worker_thread_i )->join();
+#ifndef _WIN32
+    Thread::nanosleep( 10 * Time::NS_IN_MS );
+#endif
+    WorkerThread::dec_ref( **worker_thread_i );
+  }
+}
+
+auto_NBIOQueue NBIOQueue::create()
+{
+  std::vector<WorkerThread*> worker_threads;
+  uint16_t worker_thread_count = Machine::getOnlineLogicalProcessorCount();
+  // uint16_t worker_thread_count = 1;
+  for
+  (
+    uint16_t worker_thread_i = 0;
+    worker_thread_i < worker_thread_count;
+    worker_thread_i++
+  )
+  {
+    WorkerThread* worker_thread = WorkerThread::create().release();
+    worker_thread->start();
+    worker_threads.push_back( worker_thread );
+  }
+
+  return new NBIOQueue( worker_threads );
+}
+
+void NBIOQueue::submit( NBIOCB* nbiocb )
+{
+  if ( nbiocb != NULL )
+    worker_threads[Thread::gettid() % worker_threads.size()]->submit( nbiocb );
+}
+
+
+// option_parser.cpp
+#include <sstream>
+
+
+/*! @file SimpleOpt.h
+
+    Copyright (c) 2006-2007, Brodie Thiesfield
+
+    Permission is hereby granted, free of charge, to any person obtaining a
+    copy of this software and associated documentation files (the "Software"),
+    to deal in the Software without restriction, including without limitation
+    the rights to use, copy, modify, merge, publish, distribute, sublicense,
+    and/or sell copies of the Software, and to permit persons to whom the
+    Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included
+    in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+    OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+    MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+    SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+
+// Default the max arguments to a fixed value. If you want to be able to
+// handle any number of arguments, then predefine this to 0 and it will
+// use an internal dynamically allocated buffer instead.
+#ifdef SO_MAX_ARGS
+# define SO_STATICBUF   SO_MAX_ARGS
+#else
+# include <stdlib.h>    // malloc, free
+# include <string.h>    // memcpy
+# define SO_STATICBUF   50
+#endif
+
+//! Error values
+typedef enum _ESOError
+{
+    //! No error
+    SO_SUCCESS          =  0,
+
+    /*! It looks like an option (it starts with a switch character), but
+        it isn't registered in the option table. */
+    SO_OPT_INVALID      = -1,
+
+    /*! Multiple options matched the supplied option text.
+        Only returned when NOT using SO_O_EXACT. */
+    SO_OPT_MULTIPLE     = -2,
+
+    /*! Option doesn't take an argument, but a combined argument was
+        supplied. */
+    SO_ARG_INVALID      = -3,
+
+    /*! SO_REQ_CMB style-argument was supplied to a SO_REQ_SEP option
+        Only returned when using SO_O_PEDANTIC. */
+    SO_ARG_INVALID_TYPE = -4,
+
+    //! Required argument was not supplied
+    SO_ARG_MISSING      = -5,
+
+    /*! Option argument looks like another option.
+        Only returned when NOT using SO_O_NOERR. */
+    SO_ARG_INVALID_DATA = -6
+} ESOError;
+
+//! Option flags
+enum _ESOFlags
+{
+    /*! Disallow partial matching of option names */
+    SO_O_EXACT       = 0x0001,
+
+    /*! Disallow use of slash as an option marker on Windows.
+        Un*x only ever recognizes a hyphen. */
+    SO_O_NOSLASH     = 0x0002,
+
+    /*! Permit arguments on single letter options with no equals sign.
+        e.g. -oARG or -o[ARG] */
+    SO_O_SHORTARG    = 0x0004,
+
+    /*! Permit single character options to be clumped into a single
+        option string. e.g. "-a -b -c" <==> "-abc" */
+    SO_O_CLUMP       = 0x0008,
+
+    /*! Process the entire argv array for options, including the
+        argv[0] entry. */
+    SO_O_USEALL      = 0x0010,
+
+    /*! Do not generate an error for invalid options. errors for missing
+        arguments will still be generated. invalid options will be
+        treated as files. invalid options in clumps will be silently
+        ignored. */
+    SO_O_NOERR       = 0x0020,
+
+    /*! Validate argument type pedantically. Return an error when a
+        separated argument "-opt arg" is supplied by the user as a
+        combined argument "-opt=arg". By default this is not considered
+        an error. */
+    SO_O_PEDANTIC    = 0x0040,
+
+    /*! Case-insensitive comparisons for short arguments */
+    SO_O_ICASE_SHORT = 0x0100,
+
+    /*! Case-insensitive comparisons for long arguments */
+    SO_O_ICASE_LONG  = 0x0200,
+
+    /*! Case-insensitive comparisons for word arguments
+        i.e. arguments without any hyphens at the start. */
+    SO_O_ICASE_WORD  = 0x0400,
+
+    /*! Case-insensitive comparisons for all arg types */
+    SO_O_ICASE       = 0x0700
+};
+
+/*! Types of arguments that options may have. Note that some of the _ESOFlags
+    are not compatible with all argument types. SO_O_SHORTARG requires that
+    relevant options use either SO_REQ_CMB or SO_OPT. SO_O_CLUMP requires
+    that relevant options use only SO_NONE.
+ */
+typedef enum _ESOArgType {
+    /*! No argument. Just the option flags.
+        e.g. -o         --opt */
+    SO_NONE,
+
+    /*! Required separate argument.
+        e.g. -o ARG     --opt ARG */
+    SO_REQ_SEP,
+
+    /*! Required combined argument.
+        e.g. -oARG      -o=ARG      --opt=ARG  */
+    SO_REQ_CMB,
+
+    /*! Optional combined argument.
+        e.g. -o[ARG]    -o[=ARG]    --opt[=ARG] */
+    SO_OPT,
+
+    /*! Multiple separate arguments. The actual number of arguments is
+        determined programatically at the time the argument is processed.
+        e.g. -o N ARG1 ARG2 ... ARGN    --opt N ARG1 ARG2 ... ARGN */
+    SO_MULTI
+} ESOArgType;
+
+//! this option definition must be the last entry in the table
+#define SO_END_OF_OPTIONS   { -1, NULL, SO_NONE }
+
+#ifdef _DEBUG
+# ifdef _MSC_VER
+#  include <crtdbg.h>
+#  define SO_ASSERT(b)  _ASSERTE(b)
+# else
+#  include <assert.h>
+#  define SO_ASSERT(b)  assert(b)
+# endif
+#else
+# define SO_ASSERT(b)   //!< assertion used to test input data
+#endif
+
+// ---------------------------------------------------------------------------
+//                              MAIN TEMPLATE CLASS
+// ---------------------------------------------------------------------------
+
+/*! @brief Implementation of the SimpleOpt class */
+template<class SOCHAR>
+class CSimpleOptTempl
+{
+public:
+    /*! @brief Structure used to define all known options. */
+    struct SOption {
+        /*! ID to return for this flag. Optional but must be >= 0 */
+        int nId;
+
+        /*! arg string to search for, e.g.  "open", "-", "-f", "--file"
+            Note that on Windows the slash option marker will be converted
+            to a hyphen so that "-f" will also match "/f". */
+        const SOCHAR * pszArg;
+
+        /*! type of argument accepted by this option */
+        ESOArgType nArgType;
+    };
+
+    /*! @brief Initialize the class. Init() must be called later. */
+    CSimpleOptTempl()
+        : m_rgShuffleBuf(NULL)
+    {
+        Init(0, NULL, NULL, 0);
+    }
+
+    /*! @brief Initialize the class in preparation for use. */
+    CSimpleOptTempl(
+        int             argc,
+        SOCHAR *        argv[],
+        const SOption * a_rgOptions,
+        int             a_nFlags = 0
+        )
+        : m_rgShuffleBuf(NULL)
+    {
+        Init(argc, argv, a_rgOptions, a_nFlags);
+    }
+
+#ifndef SO_MAX_ARGS
+    /*! @brief Deallocate any allocated memory. */
+    ~CSimpleOptTempl() { if (m_rgShuffleBuf) free(m_rgShuffleBuf); }
+#endif
+
+    /*! @brief Initialize the class in preparation for calling Next.
+
+        The table of options pointed to by a_rgOptions does not need to be
+        valid at the time that Init() is called. However on every call to
+        Next() the table pointed to must be a valid options table with the
+        last valid entry set to SO_END_OF_OPTIONS.
+
+        NOTE: the array pointed to by a_argv will be modified by this
+        class and must not be used or modified outside of member calls to
+        this class.
+
+        @param a_argc       Argument array size
+        @param a_argv       Argument array
+        @param a_rgOptions  Valid option array
+        @param a_nFlags     Optional flags to modify the processing of
+                            the arguments
+
+        @return true        Successful
+        @return false       if SO_MAX_ARGC > 0:  Too many arguments
+                            if SO_MAX_ARGC == 0: Memory allocation failure
+    */
+    bool Init(
+        int             a_argc,
+        SOCHAR *        a_argv[],
+        const SOption * a_rgOptions,
+        int             a_nFlags = 0
+        );
+
+    /*! @brief Change the current options table during option parsing.
+
+        @param a_rgOptions  Valid option array
+     */
+    inline void SetOptions(const SOption * a_rgOptions) {
+        m_rgOptions = a_rgOptions;
+    }
+
+    /*! @brief Change the current flags during option parsing.
+
+        Note that changing the SO_O_USEALL flag here will have no affect.
+        It must be set using Init() or the constructor.
+
+        @param a_nFlags     Flags to modify the processing of the arguments
+     */
+    inline void SetFlags(int a_nFlags) { m_nFlags = a_nFlags; }
+
+    /*! @brief Query if a particular flag is set */
+    inline bool HasFlag(int a_nFlag) const {
+        return (m_nFlags & a_nFlag) == a_nFlag;
+    }
+
+    /*! @brief Advance to the next option if available.
+
+        When all options have been processed it will return false. When true
+        has been returned, you must check for an invalid or unrecognized
+        option using the LastError() method. This will be return an error
+        value other than SO_SUCCESS on an error. All standard data
+        (e.g. OptionText(), OptionArg(), OptionId(), etc) will be available
+        depending on the error.
+
+        After all options have been processed, the remaining files from the
+        command line can be processed in same order as they were passed to
+        the program.
+
+        @return true    option or error available for processing
+        @return false   all options have been processed
+    */
+    bool Next();
+
+    /*! Stops processing of the command line and returns all remaining
+        arguments as files. The next call to Next() will return false.
+     */
+    void Stop();
+
+    /*! @brief Return the last error that occurred.
+
+        This function must always be called before processing the current
+        option. This function is available only when Next() has returned true.
+     */
+    inline ESOError LastError() const  { return m_nLastError; }
+
+    /*! @brief Return the nId value from the options array for the current
+        option.
+
+        This function is available only when Next() has returned true.
+     */
+    inline int OptionId() const { return m_nOptionId; }
+
+    /*! @brief Return the pszArg from the options array for the current
+        option.
+
+        This function is available only when Next() has returned true.
+     */
+    inline const SOCHAR * OptionText() const { return m_pszOptionText; }
+
+    /*! @brief Return the argument for the current option where one exists.
+
+        If there is no argument for the option, this will return NULL.
+        This function is available only when Next() has returned true.
+     */
+    inline SOCHAR * OptionArg() const { return m_pszOptionArg; }
+
+    /*! @brief Validate and return the desired number of arguments.
+
+        This is only valid when OptionId() has return the ID of an option
+        that is registered as SO_MULTI. It may be called multiple times
+        each time returning the desired number of arguments. Previously
+        returned argument pointers are remain valid.
+
+        If an error occurs during processing, NULL will be returned and
+        the error will be available via LastError().
+
+        @param n    Number of arguments to return.
+     */
+    SOCHAR ** MultiArg(int n);
+
+    /*! @brief Returned the number of entries in the Files() array.
+
+        After Next() has returned false, this will be the list of files (or
+        otherwise unprocessed arguments).
+     */
+    inline int FileCount() const { return m_argc - m_nLastArg; }
+
+    /*! @brief Return the specified file argument.
+
+        @param n    Index of the file to return. This must be between 0
+                    and FileCount() - 1;
+     */
+    inline SOCHAR * File(int n) const {
+        SO_ASSERT(n >= 0 && n < FileCount());
+        return m_argv[m_nLastArg + n];
+    }
+
+    /*! @brief Return the array of files. */
+    inline SOCHAR ** Files() const { return &m_argv[m_nLastArg]; }
+
+private:
+    CSimpleOptTempl(const CSimpleOptTempl &); // disabled
+    CSimpleOptTempl & operator=(const CSimpleOptTempl &); // disabled
+
+    SOCHAR PrepareArg(SOCHAR * a_pszString) const;
+    bool NextClumped();
+    void ShuffleArg(int a_nStartIdx, int a_nCount);
+    int LookupOption(const SOCHAR * a_pszOption) const;
+    int CalcMatch(const SOCHAR *a_pszSource, const SOCHAR *a_pszTest) const;
+
+    // Find the '=' character within a string.
+    inline SOCHAR * FindEquals(SOCHAR *s) const {
+        while (*s && *s != (SOCHAR)'=') ++s;
+        return *s ? s : NULL;
+    }
+    bool IsEqual(SOCHAR a_cLeft, SOCHAR a_cRight, int a_nArgType) const;
+
+    inline void Copy(SOCHAR ** ppDst, SOCHAR ** ppSrc, int nCount) const {
+#ifdef SO_MAX_ARGS
+        // keep our promise of no CLIB usage
+        while (nCount-- > 0) *ppDst++ = *ppSrc++;
+#else
+        memcpy(ppDst, ppSrc, nCount * sizeof(SOCHAR*));
+#endif
+    }
+
+private:
+    const SOption * m_rgOptions;     //!< pointer to options table
+    int             m_nFlags;        //!< flags
+    int             m_nOptionIdx;    //!< current argv option index
+    int             m_nOptionId;     //!< id of current option (-1 = invalid)
+    int             m_nNextOption;   //!< index of next option
+    int             m_nLastArg;      //!< last argument, after this are files
+    int             m_argc;          //!< argc to process
+    SOCHAR **       m_argv;          //!< argv
+    const SOCHAR *  m_pszOptionText; //!< curr option text, e.g. "-f"
+    SOCHAR *        m_pszOptionArg;  //!< curr option arg, e.g. "c:\file.txt"
+    SOCHAR *        m_pszClump;      //!< clumped single character options
+    SOCHAR          m_szShort[3];    //!< temp for clump and combined args
+    ESOError        m_nLastError;    //!< error status from the last call
+    SOCHAR **       m_rgShuffleBuf;  //!< shuffle buffer for large argc
+};
+
+// ---------------------------------------------------------------------------
+//                                  IMPLEMENTATION
+// ---------------------------------------------------------------------------
+
+template<class SOCHAR>
+bool
+CSimpleOptTempl<SOCHAR>::Init(
+    int             a_argc,
+    SOCHAR *        a_argv[],
+    const SOption * a_rgOptions,
+    int             a_nFlags
+    )
+{
+    m_argc           = a_argc;
+    m_nLastArg       = a_argc;
+    m_argv           = a_argv;
+    m_rgOptions      = a_rgOptions;
+    m_nLastError     = SO_SUCCESS;
+    m_nOptionIdx     = 0;
+    m_nOptionId      = -1;
+    m_pszOptionText  = NULL;
+    m_pszOptionArg   = NULL;
+    m_nNextOption    = (a_nFlags & SO_O_USEALL) ? 0 : 1;
+    m_szShort[0]     = (SOCHAR)'-';
+    m_szShort[2]     = (SOCHAR)'\0';
+    m_nFlags         = a_nFlags;
+    m_pszClump       = NULL;
+
+#ifdef SO_MAX_ARGS
+	if (m_argc > SO_MAX_ARGS) {
+        m_nLastError = SO_ARG_INVALID_DATA;
+        m_nLastArg = 0;
+		return false;
+	}
+#else
+    if (m_rgShuffleBuf) {
+        free(m_rgShuffleBuf);
+    }
+    if (m_argc > SO_STATICBUF) {
+        m_rgShuffleBuf = (SOCHAR**) malloc(sizeof(SOCHAR*) * m_argc);
+        if (!m_rgShuffleBuf) {
+            return false;
+        }
+    }
+#endif
+
+    return true;
+}
+
+template<class SOCHAR>
+bool
+CSimpleOptTempl<SOCHAR>::Next()
+{
+#ifdef SO_MAX_ARGS
+    if (m_argc > SO_MAX_ARGS) {
+        SO_ASSERT(!"Too many args! Check the return value of Init()!");
+        return false;
+    }
+#endif
+
+    // process a clumped option string if appropriate
+    if (m_pszClump && *m_pszClump) {
+        // silently discard invalid clumped option
+        bool bIsValid = NextClumped();
+        while (*m_pszClump && !bIsValid && HasFlag(SO_O_NOERR)) {
+            bIsValid = NextClumped();
+        }
+
+        // return this option if valid or we are returning errors
+        if (bIsValid || !HasFlag(SO_O_NOERR)) {
+            return true;
+        }
+    }
+    SO_ASSERT(!m_pszClump || !*m_pszClump);
+    m_pszClump = NULL;
+
+    // init for the next option
+    m_nOptionIdx    = m_nNextOption;
+    m_nOptionId     = -1;
+    m_pszOptionText = NULL;
+    m_pszOptionArg  = NULL;
+    m_nLastError    = SO_SUCCESS;
+
+    // find the next option
+    SOCHAR cFirst;
+    int nTableIdx = -1;
+    int nOptIdx = m_nOptionIdx;
+    while (nTableIdx < 0 && nOptIdx < m_nLastArg) {
+        SOCHAR * pszArg = m_argv[nOptIdx];
+        m_pszOptionArg  = NULL;
+
+        // find this option in the options table
+        cFirst = PrepareArg(pszArg);
+        if (pszArg[0] == (SOCHAR)'-') {
+            // find any combined argument string and remove equals sign
+            m_pszOptionArg = FindEquals(pszArg);
+            if (m_pszOptionArg) {
+                *m_pszOptionArg++ = (SOCHAR)'\0';
+            }
+        }
+        nTableIdx = LookupOption(pszArg);
+
+        // if we didn't find this option but if it is a short form
+        // option then we try the alternative forms
+        if (nTableIdx < 0
+            && !m_pszOptionArg
+            && pszArg[0] == (SOCHAR)'-'
+            && pszArg[1]
+            && pszArg[1] != (SOCHAR)'-'
+            && pszArg[2])
+        {
+            // test for a short-form with argument if appropriate
+            if (HasFlag(SO_O_SHORTARG)) {
+                m_szShort[1] = pszArg[1];
+                int nIdx = LookupOption(m_szShort);
+                if (nIdx >= 0
+                    && (m_rgOptions[nIdx].nArgType == SO_REQ_CMB
+                        || m_rgOptions[nIdx].nArgType == SO_OPT))
+                {
+                    m_pszOptionArg = &pszArg[2];
+                    pszArg         = m_szShort;
+                    nTableIdx      = nIdx;
+                }
+            }
+
+            // test for a clumped short-form option string and we didn't
+            // match on the short-form argument above
+            if (nTableIdx < 0 && HasFlag(SO_O_CLUMP))  {
+                m_pszClump = &pszArg[1];
+                ++m_nNextOption;
+                if (nOptIdx > m_nOptionIdx) {
+                    ShuffleArg(m_nOptionIdx, nOptIdx - m_nOptionIdx);
+                }
+                return Next();
+            }
+        }
+
+        // The option wasn't found. If it starts with a switch character
+        // and we are not suppressing errors for invalid options then it
+        // is reported as an error, otherwise it is data.
+        if (nTableIdx < 0) {
+            if (!HasFlag(SO_O_NOERR) && pszArg[0] == (SOCHAR)'-') {
+                m_pszOptionText = pszArg;
+                break;
+            }
+
+            pszArg[0] = cFirst;
+            ++nOptIdx;
+            if (m_pszOptionArg) {
+                *(--m_pszOptionArg) = (SOCHAR)'=';
+            }
+        }
+    }
+
+    // end of options
+    if (nOptIdx >= m_nLastArg) {
+        if (nOptIdx > m_nOptionIdx) {
+            ShuffleArg(m_nOptionIdx, nOptIdx - m_nOptionIdx);
+        }
+        return false;
+    }
+    ++m_nNextOption;
+
+    // get the option id
+    ESOArgType nArgType = SO_NONE;
+    if (nTableIdx < 0) {
+        m_nLastError    = (ESOError) nTableIdx; // error code
+    }
+    else {
+        m_nOptionId     = m_rgOptions[nTableIdx].nId;
+        m_pszOptionText = m_rgOptions[nTableIdx].pszArg;
+
+        // ensure that the arg type is valid
+        nArgType = m_rgOptions[nTableIdx].nArgType;
+        switch (nArgType) {
+        case SO_NONE:
+            if (m_pszOptionArg) {
+                m_nLastError = SO_ARG_INVALID;
+            }
+            break;
+
+        case SO_REQ_SEP:
+            if (m_pszOptionArg) {
+                // they wanted separate args, but we got a combined one,
+                // unless we are pedantic, just accept it.
+                if (HasFlag(SO_O_PEDANTIC)) {
+                    m_nLastError = SO_ARG_INVALID_TYPE;
+                }
+            }
+            // more processing after we shuffle
+            break;
+
+        case SO_REQ_CMB:
+            if (!m_pszOptionArg) {
+                m_nLastError = SO_ARG_MISSING;
+            }
+            break;
+
+        case SO_OPT:
+            // nothing to do
+            break;
+
+        case SO_MULTI:
+            // nothing to do. Caller must now check for valid arguments
+            // using GetMultiArg()
+            break;
+        }
+    }
+
+    // shuffle the files out of the way
+    if (nOptIdx > m_nOptionIdx) {
+        ShuffleArg(m_nOptionIdx, nOptIdx - m_nOptionIdx);
+    }
+
+    // we need to return the separate arg if required, just re-use the
+    // multi-arg code because it all does the same thing
+    if (   nArgType == SO_REQ_SEP
+        && !m_pszOptionArg
+        && m_nLastError == SO_SUCCESS)
+    {
+        SOCHAR ** ppArgs = MultiArg(1);
+        if (ppArgs) {
+            m_pszOptionArg = *ppArgs;
+        }
+    }
+
+    return true;
+}
+
+template<class SOCHAR>
+void
+CSimpleOptTempl<SOCHAR>::Stop()
+{
+    if (m_nNextOption < m_nLastArg) {
+        ShuffleArg(m_nNextOption, m_nLastArg - m_nNextOption);
+    }
+}
+
+template<class SOCHAR>
+SOCHAR
+CSimpleOptTempl<SOCHAR>::PrepareArg(
+    SOCHAR * a_pszString
+    ) const
+{
+#ifdef _WIN32
+    // On Windows we can accept the forward slash as a single character
+    // option delimiter, but it cannot replace the '-' option used to
+    // denote stdin. On Un*x paths may start with slash so it may not
+    // be used to start an option.
+    if (!HasFlag(SO_O_NOSLASH)
+        && a_pszString[0] == (SOCHAR)'/'
+        && a_pszString[1]
+        && a_pszString[1] != (SOCHAR)'-')
+    {
+        a_pszString[0] = (SOCHAR)'-';
+        return (SOCHAR)'/';
+    }
+#endif
+    return a_pszString[0];
+}
+
+template<class SOCHAR>
+bool
+CSimpleOptTempl<SOCHAR>::NextClumped()
+{
+    // prepare for the next clumped option
+    m_szShort[1]    = *m_pszClump++;
+    m_nOptionId     = -1;
+    m_pszOptionText = NULL;
+    m_pszOptionArg  = NULL;
+    m_nLastError    = SO_SUCCESS;
+
+    // lookup this option, ensure that we are using exact matching
+    int nSavedFlags = m_nFlags;
+    m_nFlags = SO_O_EXACT;
+    int nTableIdx = LookupOption(m_szShort);
+    m_nFlags = nSavedFlags;
+
+    // unknown option
+    if (nTableIdx < 0) {
+        m_nLastError = (ESOError) nTableIdx; // error code
+        return false;
+    }
+
+    // valid option
+    m_pszOptionText = m_rgOptions[nTableIdx].pszArg;
+    ESOArgType nArgType = m_rgOptions[nTableIdx].nArgType;
+    if (nArgType == SO_NONE) {
+        m_nOptionId = m_rgOptions[nTableIdx].nId;
+        return true;
+    }
+
+    if (nArgType == SO_REQ_CMB && *m_pszClump) {
+        m_nOptionId = m_rgOptions[nTableIdx].nId;
+        m_pszOptionArg = m_pszClump;
+        while (*m_pszClump) ++m_pszClump; // must point to an empty string
+        return true;
+    }
+
+    // invalid option as it requires an argument
+    m_nLastError = SO_ARG_MISSING;
+    return true;
+}
+
+// Shuffle arguments to the end of the argv array.
+//
+// For example:
+//      argv[] = { "0", "1", "2", "3", "4", "5", "6", "7", "8" };
+//
+//  ShuffleArg(1, 1) = { "0", "2", "3", "4", "5", "6", "7", "8", "1" };
+//  ShuffleArg(5, 2) = { "0", "1", "2", "3", "4", "7", "8", "5", "6" };
+//  ShuffleArg(2, 4) = { "0", "1", "6", "7", "8", "2", "3", "4", "5" };
+template<class SOCHAR>
+void
+CSimpleOptTempl<SOCHAR>::ShuffleArg(
+    int a_nStartIdx,
+    int a_nCount
+    )
+{
+    SOCHAR * staticBuf[SO_STATICBUF];
+    SOCHAR ** buf = m_rgShuffleBuf ? m_rgShuffleBuf : staticBuf;
+    int nTail = m_argc - a_nStartIdx - a_nCount;
+
+    // make a copy of the elements to be moved
+    Copy(buf, m_argv + a_nStartIdx, a_nCount);
+
+    // move the tail down
+    Copy(m_argv + a_nStartIdx, m_argv + a_nStartIdx + a_nCount, nTail);
+
+    // append the moved elements to the tail
+    Copy(m_argv + a_nStartIdx + nTail, buf, a_nCount);
+
+    // update the index of the last unshuffled arg
+    m_nLastArg -= a_nCount;
+}
+
+// match on the long format strings. partial matches will be
+// accepted only if that feature is enabled.
+template<class SOCHAR>
+int
+CSimpleOptTempl<SOCHAR>::LookupOption(
+    const SOCHAR * a_pszOption
+    ) const
+{
+    int nBestMatch = -1;    // index of best match so far
+    int nBestMatchLen = 0;  // matching characters of best match
+    int nLastMatchLen = 0;  // matching characters of last best match
+
+    for (int n = 0; m_rgOptions[n].nId >= 0; ++n) {
+        // the option table must use hyphens as the option character,
+        // the slash character is converted to a hyphen for testing.
+        SO_ASSERT(m_rgOptions[n].pszArg[0] != (SOCHAR)'/');
+
+        int nMatchLen = CalcMatch(m_rgOptions[n].pszArg, a_pszOption);
+        if (nMatchLen == -1) {
+            return n;
+        }
+        if (nMatchLen > 0 && nMatchLen >= nBestMatchLen) {
+            nLastMatchLen = nBestMatchLen;
+            nBestMatchLen = nMatchLen;
+            nBestMatch = n;
+        }
+    }
+
+    // only partial matches or no match gets to here, ensure that we
+    // don't return a partial match unless it is a clear winner
+    if (HasFlag(SO_O_EXACT) || nBestMatch == -1) {
+        return SO_OPT_INVALID;
+    }
+    return (nBestMatchLen > nLastMatchLen) ? nBestMatch : SO_OPT_MULTIPLE;
+}
+
+// calculate the number of characters that match (case-sensitive)
+// 0 = no match, > 0 == number of characters, -1 == perfect match
+template<class SOCHAR>
+int
+CSimpleOptTempl<SOCHAR>::CalcMatch(
+    const SOCHAR *  a_pszSource,
+    const SOCHAR *  a_pszTest
+    ) const
+{
+    if (!a_pszSource || !a_pszTest) {
+        return 0;
+    }
+
+    // determine the argument type
+    int nArgType = SO_O_ICASE_LONG;
+    if (a_pszSource[0] != '-') {
+        nArgType = SO_O_ICASE_WORD;
+    }
+    else if (a_pszSource[1] != '-' && !a_pszSource[2]) {
+        nArgType = SO_O_ICASE_SHORT;
+    }
+
+    // match and skip leading hyphens
+    while (*a_pszSource == (SOCHAR)'-' && *a_pszSource == *a_pszTest) {
+        ++a_pszSource;
+        ++a_pszTest;
+    }
+    if (*a_pszSource == (SOCHAR)'-' || *a_pszTest == (SOCHAR)'-') {
+        return 0;
+    }
+
+    // find matching number of characters in the strings
+    int nLen = 0;
+    while (*a_pszSource && IsEqual(*a_pszSource, *a_pszTest, nArgType)) {
+        ++a_pszSource;
+        ++a_pszTest;
+        ++nLen;
+    }
+
+    // if we have exhausted the source...
+    if (!*a_pszSource) {
+        // and the test strings, then it's a perfect match
+        if (!*a_pszTest) {
+            return -1;
+        }
+
+        // otherwise the match failed as the test is longer than
+        // the source. i.e. "--mant" will not match the option "--man".
+        return 0;
+    }
+
+    // if we haven't exhausted the test string then it is not a match
+    // i.e. "--mantle" will not best-fit match to "--mandate" at all.
+    if (*a_pszTest) {
+        return 0;
+    }
+
+    // partial match to the current length of the test string
+    return nLen;
+}
+
+template<class SOCHAR>
+bool
+CSimpleOptTempl<SOCHAR>::IsEqual(
+    SOCHAR  a_cLeft,
+    SOCHAR  a_cRight,
+    int     a_nArgType
+    ) const
+{
+    // if this matches then we are doing case-insensitive matching
+    if (m_nFlags & a_nArgType) {
+        if (a_cLeft  >= 'A' && a_cLeft  <= 'Z') a_cLeft  += 'a' - 'A';
+        if (a_cRight >= 'A' && a_cRight <= 'Z') a_cRight += 'a' - 'A';
+    }
+    return a_cLeft == a_cRight;
+}
+
+// calculate the number of characters that match (case-sensitive)
+// 0 = no match, > 0 == number of characters, -1 == perfect match
+template<class SOCHAR>
+SOCHAR **
+CSimpleOptTempl<SOCHAR>::MultiArg(
+    int a_nCount
+    )
+{
+    // ensure we have enough arguments
+    if (m_nNextOption + a_nCount > m_nLastArg) {
+        m_nLastError = SO_ARG_MISSING;
+        return NULL;
+    }
+
+    // our argument array
+    SOCHAR ** rgpszArg = &m_argv[m_nNextOption];
+
+    // Ensure that each of the following don't start with an switch character.
+    // Only make this check if we are returning errors for unknown arguments.
+    if (!HasFlag(SO_O_NOERR)) {
+        for (int n = 0; n < a_nCount; ++n) {
+            SOCHAR ch = PrepareArg(rgpszArg[n]);
+            if (rgpszArg[n][0] == (SOCHAR)'-') {
+                rgpszArg[n][0] = ch;
+                m_nLastError = SO_ARG_INVALID_DATA;
+                return NULL;
+            }
+            rgpszArg[n][0] = ch;
+        }
+    }
+
+    // all good
+    m_nNextOption += a_nCount;
+    return rgpszArg;
+}
+
+
+// ---------------------------------------------------------------------------
+//                                  TYPE DEFINITIONS
+// ---------------------------------------------------------------------------
+
+/*! @brief ASCII/MBCS version of CSimpleOpt */
+typedef CSimpleOptTempl<char>    CSimpleOptA;
+
+/*! @brief wchar_t version of CSimpleOpt */
+typedef CSimpleOptTempl<wchar_t> CSimpleOptW;
+
+#if defined(_UNICODE)
+/*! @brief TCHAR version dependent on if _UNICODE is defined */
+# define CSimpleOpt CSimpleOptW
+#else
+/*! @brief TCHAR version dependent on if _UNICODE is defined */
+# define CSimpleOpt CSimpleOptA
+#endif
+
+/* end SimpleOpt.h */
+
+
+void
+OptionParser::add_option
+(
+  const std::string& arg,
+  bool require_value
+)
+{
+  add_option( arg, std::string(), require_value );
+}
+
+void
+OptionParser::add_option
+(
+  const std::string& arg,
+  const std::string& help,
+  bool require_value
+)
+{
+  for
+  (
+    std::vector<Option>::const_iterator option_i = options.begin();
+    option_i != options.end();
+    ++option_i
+  )
+  {
+    if ( ( *option_i ).get_arg() == arg )
+      return;
+  }
+
+  options.push_back( Option( arg, help, require_value ) );
+}
+
+int
+OptionParser::parse_args
+(
+  int argc,
+  char** argv,
+  std::vector<Option>& parsed_options
+)
+{
+  std::vector<CSimpleOpt::SOption> simpleopt_options;
+
+  for
+  (
+    std::vector<Option>::size_type option_i = 0;
+    option_i < options.size();
+    option_i++
+  )
+  {
+    CSimpleOpt::SOption simpleopt_option
+      =
+      {
+        option_i,
+        options[option_i].get_arg().c_str(),
+        options[option_i].get_require_value() ? SO_REQ_SEP : SO_NONE
+      };
+
+    simpleopt_options.push_back( simpleopt_option );
+  }
+
+  CSimpleOpt::SOption sentinel_simpleopt_option = SO_END_OF_OPTIONS;
+  simpleopt_options.push_back( sentinel_simpleopt_option );
+
+  // Make copies of the strings in argv so that
+  // SimpleOpt can punch holes in them
+  std::vector<char*> argvv( argc );
+  for ( int arg_i = 0; arg_i < argc; arg_i++ )
+  {
+    size_t arg_len = strnlen( argv[arg_i], SIZE_MAX ) + 1;
+    argvv[arg_i] = new char[arg_len];
+    memcpy_s( argvv[arg_i], arg_len, argv[arg_i], arg_len );
+  }
+
+  CSimpleOpt args( argc, &argvv[0], &simpleopt_options[0] );
+
+  while ( args.Next() )
+  {
+    switch ( args.LastError() )
+    {
+      case SO_SUCCESS:
+      {
+        for
+        (
+          std::vector<Option>::iterator option_i = options.begin();
+          option_i != options.end();
+          ++option_i
+        )
+        {
+          Option& option = *option_i;
+
+          if ( option.get_arg() == args.OptionText() )
+          {
+            if ( option.get_require_value() )
+            {
+              Option copied_option( option );
+              copied_option.set_value( args.OptionArg() );
+              parsed_options.push_back( copied_option );
+            }
+            else
+              parsed_options.push_back( option );
+          }
+        }
+      }
+      break;
+
+      case SO_OPT_INVALID:
+      {
+        std::string error_message( "unregistered option " );
+        error_message.append( args.OptionText() );
+        throw UnregisteredOptionException( error_message );
+      }
+      break;
+
+      case SO_ARG_INVALID:
+      {
+        std::string error_message( "unexpected value to option " );
+        error_message.append( args.OptionText() );
+        throw UnexpectedValueException( error_message );
+      }
+      break;
+
+      case SO_ARG_MISSING:
+      {
+        std::string error_message( "missing value to option " );
+        error_message.append( args.OptionText() );
+        throw MissingValueException( error_message );
+      }
+      break;
+
+      case SO_ARG_INVALID_DATA: // Argument looks like another option
+      {
+        std::ostringstream error_message;
+        error_message << args.OptionText() <<
+          "requires a value, but you appear to have passed another option.";
+        throw InvalidValueException( error_message.str() );
+      }
+      break;
+
+      default:
+      {
+        DebugBreak();
+      }
+      break;
+    }
+  }
+
+  for
+  (
+    std::vector<char*>::iterator arg_i = argvv.begin();
+    arg_i != argvv.end();
+    arg_i++
+  )
+    delete [] *arg_i;
+  argvv.clear();
+
+  return argc - args.FileCount();
+}
+
+void
+OptionParser::print_usage
+(
+  const std::string& program_name,
+  const char* program_description,
+  const char* files_usage
+)
+{
+  std::cout << std::endl;
+  std::cout << program_name;
+  if ( program_description )
+    std::cout << ": " << program_description;
+  std::cout << std::endl;
+  std::cout << std::endl;
+  std::cout << "Usage:" << std::endl;
+  std::cout << "  " << program_name << " [options]";
+  if ( files_usage )
+    std::cout << " " << files_usage;
+  std::cout << std::endl;
+  std::cout << std::endl;
+
+  std::sort( options.begin(), options.end() );
+  for
+  (
+    std::vector<Option>::const_iterator option_i = options.begin();
+    option_i != options.end();
+    option_i++
+  )
+  {
+    const Option& option = *option_i;
+    std::cout << "  " << option.get_arg();
+    std::cout << "\t" << option.get_help();
+    std::cout << std::endl;
+  }
+
+  std::cout << std::endl;
+}
+
+
+// ostream.cpp
+void
+OStream::aio_write
+(
+  yidl::runtime::auto_Buffer buffer,
+  AIOWriteCallback& callback,
+  void* callback_context
+)
+{
+  ssize_t write_ret = write( *buffer );
+  if ( write_ret >= 0 )
+  {
+#ifdef _DEBUG
+    if ( static_cast<size_t>( write_ret ) != buffer->size() )
+      DebugBreak();
+#endif
+    callback.onWriteCompletion( callback_context );
+  }
+  else
+#ifdef _WIN32
+    callback.onWriteError( GetLastError(), callback_context );
+#else
+    callback.onWriteError( errno, callback_context );
+#endif
+}
+
+void
+OStream::aio_writev
+(
+  yidl::runtime::auto_Buffers buffers,
+  AIOWriteCallback& callback,
+  void* callback_context
+)
+{
+  ssize_t writev_ret = writev( *buffers );
+  if ( writev_ret >= 0 )
+    callback.onWriteCompletion( callback_context );
+  else
+#ifdef _WIN32
+    callback.onWriteError( GetLastError(), callback_context );
+#else
+    callback.onWriteError( errno, callback_context );
+#endif
+}
+
+ssize_t OStream::write( const yidl::runtime::Buffer& buffer )
+{
+  return write( static_cast<void*>( buffer ), buffer.size() );
+}
+
+ssize_t OStream::writev( const yidl::runtime::Buffers& buffers )
+{
+  return writev( buffers, buffers.size() );
+}
+
+ssize_t OStream::writev( const struct iovec* buffers, uint32_t buffers_count )
+{
+  if ( buffers_count == 1 )
+    return write( buffers[0].iov_base, buffers[0].iov_len );
+  else
+  {
+    std::string buffer;
+    for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+    {
+      buffer.append
+      (
+        static_cast<const char*>( buffers[buffer_i].iov_base ),
+        buffers[buffer_i].iov_len
+      );
+    }
+
+    return write( buffer.c_str(), buffer.size() );
+  }
 }
 
 
@@ -1908,6 +4371,51 @@ Path::operator std::string() const
 }
 #endif
 
+bool Path::operator==( const Path& path ) const
+{
+  return this->path == path.path;
+}
+
+bool Path::operator==( const string_type& path ) const
+{
+  return this->path == path;
+}
+
+bool Path::operator==( string_type::value_type path ) const
+{
+  return this->path.size() == 1 && this->path[0] == path;
+}
+
+bool Path::operator==( const string_type::value_type* path ) const
+{
+  return this->path == path;
+}
+
+bool Path::operator!=( const Path& path ) const
+{
+  return this->path != path.path;
+}
+
+bool Path::operator!=( const string_type& path ) const
+{
+  return this->path != path;
+}
+
+bool Path::operator!=( string_type::value_type path ) const
+{
+  return this->path.size() != 1 || this->path[0] != path;
+}
+
+bool Path::operator!=( const string_type::value_type* path ) const
+{
+  return this->path != path;
+}
+
+bool Path::operator<( const Path& path ) const
+{
+  return this->path.compare( path.path ) < 0;
+}
+
 Path Path::operator+( const Path& path ) const
 {
   return operator+( path.path );
@@ -1938,15 +4446,15 @@ Path Path::parent_path() const
 {
   if ( *this != SEPARATOR )
   {
-    std::vector<YIELD::platform::Path> parts;
+    std::vector<Path> parts;
     splitall( parts );
     if ( parts.size() > 1 )
       return parts[parts.size()-2];
     else
-      return YIELD::platform::Path( SEPARATOR );
+      return Path( SEPARATOR );
   }
   else
-    return YIELD::platform::Path( SEPARATOR );
+    return Path( SEPARATOR );
 }
 
 Path Path::root_path() const
@@ -2176,10 +4684,407 @@ void PerformanceCounterSet::stopCounting( uint64_t* counts )
 #endif
 
 
-// processor_set.cpp
+// pipe.cpp
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+
+Pipe::Pipe( fd_t ends[2] )
+{
+  this->ends[0] = ends[0];
+  this->ends[1] = ends[1];
+}
+
+Pipe::~Pipe()
+{
+  close();
+}
+
+bool Pipe::close()
+{
+  if
+  (
+    Stream::close( ends[0] )
+    &&
+    Stream::close( ends[1] )
+  )
+  {
+    ends[0] = INVALID_FD;
+    ends[1] = INVALID_FD;
+    return true;
+  }
+  else
+    return false;
+}
+
+auto_Pipe Pipe::create()
+{
+  fd_t ends[2];
+#ifdef _WIN32
+  SECURITY_ATTRIBUTES pipe_security_attributes;
+  pipe_security_attributes.nLength = sizeof( SECURITY_ATTRIBUTES );
+  pipe_security_attributes.bInheritHandle = TRUE;
+  pipe_security_attributes.lpSecurityDescriptor = NULL;
+  if ( CreatePipe( &ends[0], &ends[1], &pipe_security_attributes, 0 ) )
+  {
+    if
+    (
+      SetHandleInformation( ends[0], HANDLE_FLAG_INHERIT, 0 ) &&
+      SetHandleInformation( ends[1], HANDLE_FLAG_INHERIT, 0 )
+    )
+      return new Pipe( ends );
+    else
+    {
+      CloseHandle( ends[0] );
+      CloseHandle( ends[1] );
+    }
+  }
+#else
+  if ( ::pipe( ends ) != -1 )
+    return new Pipe( ends );
+#endif
+
+  throw Exception();
+}
+
+ssize_t Pipe::read( void* buffer, size_t buffer_len )
+{
+#ifdef _WIN32
+  DWORD dwBytesRead;
+  if
+  (
+    ReadFile
+    (
+      ends[0],
+      buffer,
+      static_cast<DWORD>( buffer_len ),
+      &dwBytesRead,
+      NULL
+    )
+  )
+    return static_cast<ssize_t>( dwBytesRead );
+  else
+    return -1;
+#else
+  return ::read( ends[0], buffer, buffer_len );
+#endif
+}
+
+bool Pipe::set_read_blocking_mode( bool blocking )
+{
+#ifdef _WIN32
+  return false;
+#else
+  return Stream::set_blocking_mode( blocking, ends[0] );
+#endif
+}
+
+bool Pipe::set_write_blocking_mode( bool blocking )
+{
+#ifdef _WIN32
+  return false;
+#else
+  return Stream::set_blocking_mode( blocking, ends[1] );
+#endif
+}
+
+ssize_t Pipe::write( const void* buffer, size_t buffer_len )
+{
+#ifdef _WIN32
+  DWORD dwBytesWritten;
+  if
+  (
+    WriteFile
+    (
+      ends[1],
+      buffer,
+      static_cast<DWORD>( buffer_len ),
+      &dwBytesWritten,
+      NULL
+    )
+  )
+    return static_cast<ssize_t>( dwBytesWritten );
+  else
+    return -1;
+#else
+  return ::write( ends[1], buffer, buffer_len );
+#endif
+}
+
+
+// process.cpp
 #if defined(_WIN32)
 #include <windows.h>
-#elif defined(__linux)
+#else
+#include <signal.h>
+#include <sys/wait.h> // For waitpid
+#endif
+
+
+auto_Process Process::create( const Path& command_line )
+{
+#ifdef _WIN32
+  auto_Pipe child_stdin, child_stdout, child_stderr;
+  //auto_Pipe child_stdin = Pipe::create(),
+  //                  child_stdout = Pipe::create(),
+  //                  child_stderr = Pipe::create();
+
+  STARTUPINFO startup_info;
+  ZeroMemory( &startup_info, sizeof( STARTUPINFO ) );
+  startup_info.cb = sizeof( STARTUPINFO );
+  //startup_info.hStdInput = *child_stdin->get_input_stream()->get_file();
+  //startup_info.hStdOutput = *child_stdout->get_output_stream()->get_file();
+  //startup_info.hStdError = *child_stdout->get_output_stream()->get_file();
+  //startup_info.dwFlags = STARTF_USESTDHANDLES;
+
+  PROCESS_INFORMATION proc_info;
+  ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );
+
+  if
+  (
+    CreateProcess
+    (
+      NULL,
+      const_cast<wchar_t*>( static_cast<const wchar_t*>( command_line ) ),
+      NULL,
+      NULL,
+      TRUE,
+      CREATE_NO_WINDOW,
+      NULL,
+      NULL,
+      &startup_info,
+      &proc_info
+    )
+  )
+  {
+    return new Process
+               (
+                 proc_info.hProcess,
+                 proc_info.hThread,
+                 child_stdin,
+                 child_stdout,
+                 child_stderr
+               );
+  }
+  else
+    throw Exception();
+#else
+  const char* argv[] = { static_cast<const char*>( NULL ) };
+  return create( command_line, argv );
+#endif
+}
+
+auto_Process Process::create( int argc, char** argv )
+{
+  std::vector<char*> argvv;
+  for ( int arg_i = 1; arg_i < argc; arg_i++ )
+    argvv.push_back( argv[arg_i] );
+  argvv.push_back( NULL );
+  return create( argv[0], const_cast<const char**>( &argvv[0] ) );
+}
+
+auto_Process Process::create
+(
+  const Path& executable_file_path,
+  const char** null_terminated_argv
+)
+{
+#ifdef _WIN32
+  const std::string& executable_file_path_str
+    = static_cast<const std::string&>( executable_file_path );
+
+  std::string command_line;
+  if ( executable_file_path_str.find( ' ' ) == -1 )
+    command_line.append( executable_file_path_str );
+  else
+  {
+    command_line.append( "\"", 1 );
+    command_line.append( executable_file_path_str );
+    command_line.append( "\"", 1 );
+  }
+
+  size_t arg_i = 0;
+  while ( null_terminated_argv[arg_i] != NULL )
+  {
+    command_line.append( " ", 1 );
+    command_line.append( null_terminated_argv[arg_i] );
+    arg_i++;
+  }
+
+  return create( command_line );
+#else
+  auto_Pipe child_stdin, child_stdout, child_stderr;
+  //auto_Pipe child_stdin = Pipe::create(),
+  //                  child_stdout = Pipe::create(),
+  //                  child_stderr = Pipe::create();
+
+  pid_t child_pid = fork();
+  if ( child_pid == -1 )
+    throw Exception();
+  else if ( child_pid == 0 ) // Child
+  {
+    //close( STDIN_FILENO );
+    // Set stdin to read end of stdin pipe
+    //dup2( *child_stdin->get_input_stream()->get_file(), STDIN_FILENO );
+
+    //close( STDOUT_FILENO );
+    // Set stdout to write end of stdout pipe
+    //dup2( *child_stdout->get_output_stream()->get_file(), STDOUT_FILENO );
+
+    //close( STDERR_FILENO );
+    // Set stderr to write end of stderr pipe
+    //dup2( *child_stderr->get_output_stream()->get_file(), STDERR_FILENO );
+
+    std::vector<char*> argv_with_executable_file_path;
+    argv_with_executable_file_path.push_back
+    (
+      const_cast<char*>( static_cast<const char*>( executable_file_path ) )
+    );
+    size_t arg_i = 0;
+    while ( null_terminated_argv[arg_i] != NULL )
+    {
+      argv_with_executable_file_path.push_back
+      (
+        const_cast<char*>( null_terminated_argv[arg_i] )
+      );
+      arg_i++;
+    }
+    argv_with_executable_file_path.push_back( NULL );
+
+    execv( executable_file_path, &argv_with_executable_file_path[0] );
+    return NULL; // Should never be reached
+  }
+  else // Parent
+    return new Process( child_pid, child_stdin, child_stdout, child_stderr );
+#endif
+}
+
+#ifdef _WIN32
+Process::Process
+(
+  HANDLE hChildProcess,
+  HANDLE hChildThread,
+  auto_Pipe child_stdin,
+  auto_Pipe child_stdout,
+  auto_Pipe child_stderr
+)
+  : hChildProcess( hChildProcess ),
+    hChildThread( hChildThread ),
+#else
+Process::Process
+(
+  pid_t child_pid,
+  auto_Pipe child_stdin,
+  auto_Pipe child_stdout,
+  auto_Pipe child_stderr
+)
+  : child_pid( child_pid ),
+#endif
+    child_stdin( child_stdin ),
+    child_stdout( child_stdout ),
+    child_stderr( child_stderr )
+{ }
+
+Process::~Process()
+{
+#ifdef _WIN32
+  CloseHandle( hChildProcess );
+  CloseHandle( hChildThread );
+#endif
+}
+
+unsigned long Process::getpid()
+{
+#ifdef _WIN32
+  return GetCurrentProcessId();
+#else
+  return ::getpid();
+#endif
+}
+
+bool Process::kill()
+{
+#ifdef _WIN32
+  return TerminateProcess( hChildProcess, 0 ) == TRUE;
+#else
+  return ::kill( child_pid, SIGKILL ) == 0;
+#endif
+}
+
+bool Process::poll( int* out_return_code )
+{
+#ifdef _WIN32
+  if ( WaitForSingleObject( hChildProcess, 0 ) != WAIT_TIMEOUT )
+  {
+    if ( out_return_code )
+    {
+      DWORD dwChildExitCode;
+      GetExitCodeProcess( hChildProcess, &dwChildExitCode );
+      *out_return_code = ( int )dwChildExitCode;
+    }
+
+    return true;
+  }
+  else
+    return false;
+#else
+  if ( waitpid( child_pid, out_return_code, WNOHANG ) > 0 )
+  {
+    // "waitpid() was successful. The value returned indicates the process ID
+    // of the child process whose status information was recorded in the
+    // storage pointed to by stat_loc."
+#ifdef __FreeBSD__
+    if ( WIFEXITED( *out_return_code ) ) // Child exited normally
+    {
+      *out_return_code = WEXITSTATUS( *out_return_code );
+#else
+    if ( WIFEXITED( out_return_code ) ) // Child exited normally
+    {
+      *out_return_code = WEXITSTATUS( out_return_code );
+#endif
+      return true;
+    }
+    else
+      return false;
+  }
+  // 0 = WNOHANG was specified on the options parameter, but no child process
+  // was immediately available.
+  // -1 = waitpid() was not successful. The errno value is set
+  // to indicate the error.
+  else
+    return false;
+#endif
+}
+
+bool Process::terminate()
+{
+#ifdef _WIN32
+  return TerminateProcess( hChildProcess, 0 ) == TRUE;
+#else
+  return ::kill( child_pid, SIGTERM ) == 0;
+#endif
+}
+
+int Process::wait()
+{
+#ifdef _WIN32
+  WaitForSingleObject( hChildProcess, INFINITE );
+  DWORD dwChildExitCode;
+  GetExitCodeProcess( hChildProcess, &dwChildExitCode );
+  return ( int )dwChildExitCode;
+#else
+  int stat_loc;
+  if ( waitpid( child_pid, &stat_loc, 0 ) >= 0 )
+    return stat_loc;
+  else
+    return -1;
+#endif
+}
+
+
+// processor_set.cpp
+#if defined(__linux)
 #include <sched.h>
 #elif defined(__sun)
 #include <sys/pset.h>
@@ -2336,6 +5241,97 @@ bool ProcessorSet::set( uint16_t processor_i )
 }
 
 
+// semaphore.cpp
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach_init.h>
+#include <mach/task.h>
+#endif
+#endif
+
+
+Semaphore::Semaphore()
+{
+#if defined(_WIN32)
+  hSemaphore = CreateSemaphore( NULL, 0, LONG_MAX, NULL );
+#elif defined(__MACH__)
+  semaphore_create( mach_task_self(), &sem, SYNC_POLICY_FIFO, 0 );
+#else
+  sem_init( &sem, 0, 0 );
+#endif
+}
+
+Semaphore::~Semaphore()
+{
+#if defined(_WIN32)
+  CloseHandle( hSemaphore );
+#elif defined(__MACH__)
+  semaphore_destroy( mach_task_self(), sem );
+#else
+  sem_destroy( &sem );
+#endif
+}
+
+bool Semaphore::acquire()
+{
+#if defined(_WIN32)
+  DWORD dwRet = WaitForSingleObjectEx( hSemaphore, INFINITE, TRUE );
+  return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
+#elif defined(__MACH__)
+  return semaphore_wait( sem ) == KERN_SUCCESS;
+#else
+  return sem_wait( &sem ) == 0;
+#endif
+}
+
+bool Semaphore::timed_acquire( const Time& timeout )
+{
+#if defined(_WIN32)
+  DWORD timeout_ms = static_cast<DWORD>( timeout.as_unix_time_ms() );
+  DWORD dwRet = WaitForSingleObjectEx( hSemaphore, timeout_ms, TRUE );
+  return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
+#elif defined(__MACH__)
+  mach_timespec_t timeout_m_ts
+    = {
+        timeout.as_unix_time_ns() / Time::NS_IN_S,
+        timeout.as_unix_time_ns() % Time::NS_IN_S
+      };
+  return semaphore_timedwait( sem, timeout_m_ts ) == KERN_SUCCESS;
+#else
+  struct timespec timeout_ts = Time() + timeout;
+  return sem_timedwait( &sem, &timeout_ts ) == 0;
+#endif
+}
+
+bool Semaphore::try_acquire()
+{
+#if defined(_WIN32)
+  DWORD dwRet = WaitForSingleObjectEx( hSemaphore, 0, TRUE );
+  return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
+#elif defined(__MACH__)
+  mach_timespec_t timeout_m_ts = { 0, 0 };
+  return semaphore_timedwait( sem, timeout_m_ts ) == KERN_SUCCESS;
+#else
+  return sem_trywait( &sem ) == 0;
+#endif
+}
+
+void Semaphore::release()
+{
+#if defined(_WIN32)
+  ReleaseSemaphore( hSemaphore, 1, NULL );
+#elif defined(__MACH__)
+  semaphore_signal( sem );
+#else
+  sem_post( &sem );
+#endif
+}
+
+
 // shared_library.cpp
 #ifdef _WIN32
 #include <windows.h>
@@ -2452,6 +5448,1983 @@ auto_SharedLibrary SharedLibrary::open
 
   return NULL;
 }
+
+
+// socket.cpp
+#ifdef _WIN32
+#undef INVALID_SOCKET
+#pragma warning( push )
+#pragma warning( disable: 4365 4995 )
+#include <ws2tcpip.h>
+#pragma comment( lib, "ws2_32.lib" )
+#pragma warning( pop )
+#define INVALID_SOCKET  (SOCKET)(~0)
+#define ECONNABORTED WSAECONNABORTED
+#else
+#include <arpa/inet.h>
+#include <errno.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <signal.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#endif
+
+
+Socket::IOConnectCB::IOConnectCB
+(
+  auto_SocketAddress peername,
+  auto_Socket socket_,
+  AIOConnectCallback& callback,
+  void* callback_context
+)
+  : IOCB<AIOConnectCallback>( callback, callback_context ),
+    peername( peername ),
+    socket_( socket_ )
+{ }
+
+void Socket::IOConnectCB::onConnectCompletion()
+{
+  callback.onConnectCompletion( callback_context );
+}
+
+void Socket::IOConnectCB::onConnectError()
+{
+  onConnectError( get_last_error() );
+}
+
+void Socket::IOConnectCB::onConnectError( uint32_t error_code )
+{
+  callback.onConnectError( error_code, callback_context );
+}
+
+
+Socket::IORecvCB::IORecvCB
+(
+  yidl::runtime::auto_Buffer buffer,
+  int flags,
+  auto_Socket socket_,
+  AIOReadCallback& callback,
+  void* callback_context
+)
+  : IOCB<AIOReadCallback>( callback, callback_context ),
+    buffer( buffer ),
+    flags( flags ),
+    socket_( socket_ )
+{ }
+
+
+void Socket::IORecvCB::onReadCompletion()
+{
+  // Assumes buffer->put( NULL, recv_ret ) has already been called
+  callback.onReadCompletion( buffer, callback_context );
+  buffer = NULL; // To release the reference
+}
+
+void Socket::IORecvCB::onReadError()
+{
+  onReadError( get_last_error() );
+}
+
+void Socket::IORecvCB::onReadError( uint32_t error_code )
+{
+  buffer = NULL; // To release the reference
+  callback.onReadError( error_code, callback_context );
+}
+
+
+Socket::IOSendCB::IOSendCB
+(
+  yidl::runtime::auto_Buffer buffer,
+  int flags,
+  auto_Socket socket_,
+  AIOWriteCallback& callback,
+  void* callback_context
+)
+  : IOCB<AIOWriteCallback>( callback, callback_context ),
+    buffer( buffer ),
+    flags( flags ),
+    socket_( socket_ )
+{ }
+
+
+void Socket::IOSendCB::onWriteCompletion()
+{
+  buffer = NULL; // To release the reference
+  callback.onWriteCompletion( callback_context );
+}
+
+void Socket::IOSendCB::onWriteError()
+{
+  onWriteError( get_last_error() );
+}
+
+void Socket::IOSendCB::onWriteError( uint32_t error_code )
+{
+  buffer = NULL; // To release the reference
+  callback.onWriteError( error_code, callback_context );
+}
+
+
+Socket::IOSendMsgCB::IOSendMsgCB
+(
+  yidl::runtime::auto_Buffers buffers,
+  int flags,
+  auto_Socket socket_,
+  AIOWriteCallback& callback,
+  void* callback_context
+)
+  : IOCB<AIOWriteCallback>( callback, callback_context ),
+    buffers( buffers ),
+    flags( flags ),
+    socket_( socket_ )
+{ }
+
+void Socket::IOSendMsgCB::onWriteCompletion()
+{
+  buffers = NULL; // To release the reference
+  callback.onWriteCompletion( callback_context );
+}
+
+void Socket::IOSendMsgCB::onWriteError()
+{
+  onWriteError( get_last_error() );
+}
+
+void Socket::IOSendMsgCB::onWriteError( uint32_t error_code )
+{
+  buffers = NULL; // To release the reference
+  callback.onWriteError( error_code, callback_context );
+}
+
+
+class Socket::BIOConnectCB : public BIOCB, public IOConnectCB
+{
+public:
+  BIOConnectCB
+  (
+    auto_SocketAddress peername,
+    auto_Socket socket_,
+    AIOConnectCallback& callback,
+    void* callback_context
+  )
+    : IOConnectCB( peername, socket_, callback, callback_context )
+  { }
+
+  // BIOCB
+  void execute()
+  {
+    if ( socket_->set_blocking_mode( true ) )
+    {
+      if ( socket_->connect( *peername ) )
+        onConnectCompletion();
+      else
+        onConnectError();
+    }
+    else
+      onConnectError();
+  }
+};
+
+
+class Socket::BIORecvCB : public BIOCB, public IORecvCB
+{
+public:
+  BIORecvCB
+  (
+    yidl::runtime::auto_Buffer buffer,
+    int flags,
+    auto_Socket socket_,
+    AIOReadCallback& callback,
+    void* callback_context
+  )
+    : IORecvCB( buffer, flags, socket_, callback, callback_context )
+  { }
+
+  // BIOCB
+  void execute()
+  {
+    if ( socket_->set_blocking_mode( true ) )
+    {
+      ssize_t recv_ret = socket_->recv( *buffer, flags );
+      if ( recv_ret > 0 )
+        onReadCompletion();
+      else if ( recv_ret == 0 )
+        onReadError( ECONNABORTED );
+      else
+        onReadError();
+    }
+    else
+      onReadError();
+  }
+};
+
+
+class Socket::BIOSendCB : public BIOCB, public IOSendCB
+{
+public:
+  BIOSendCB
+  (
+    yidl::runtime::auto_Buffer buffer,
+    int flags,
+    auto_Socket socket_,
+    AIOWriteCallback& callback,
+    void* callback_context
+  )
+    : IOSendCB( buffer, flags, socket_, callback, callback_context )
+  { }
+
+  // BIOCB
+  void execute()
+  {
+    if ( socket_->set_blocking_mode( true ) )
+    {
+      ssize_t send_ret = socket_->send( *buffer, flags );
+      if ( send_ret >= 0 )
+      {
+#ifdef _WIN32
+        if ( static_cast<size_t>( send_ret ) != buffer->size() )
+          DebugBreak();
+#endif
+        onWriteCompletion();
+      }
+      else
+        onWriteError();
+    }
+    else
+      onWriteError();
+  }
+};
+
+
+class Socket::BIOSendMsgCB
+  : public BIOCB, public IOSendMsgCB
+{
+public:
+  BIOSendMsgCB
+  (
+    yidl::runtime::auto_Buffers buffers,
+    int flags,
+    auto_Socket socket_,
+    AIOWriteCallback& callback,
+    void* callback_context
+  )
+    : IOSendMsgCB( buffers, flags, socket_, callback, callback_context )
+  { }
+
+  // BIOCB
+  void execute()
+  {
+    if ( socket_->set_blocking_mode( true ) )
+    {
+      ssize_t sendmsg_ret = socket_->sendmsg( *buffers, flags );
+      if ( sendmsg_ret >= 0 )
+        onWriteCompletion();
+      else
+        onWriteError();
+    }
+    else
+      onWriteError();
+  }
+};
+
+
+class Socket::NBIOConnectCB : public NBIOCB, public IOConnectCB
+{
+public:
+  NBIOConnectCB
+  (
+    auto_SocketAddress peername,
+    auto_Socket socket_,
+    AIOConnectCallback& callback,
+    void* callback_context
+  )
+  : NBIOCB( STATE_WANT_CONNECT ),
+    IOConnectCB( peername, socket_, callback, callback_context )
+  { }
+
+  // NBIOCB
+  void execute()
+  {
+    if ( socket_->set_blocking_mode( false ) )
+    {
+      if ( socket_->connect( *peername ) )
+      {
+        set_state( STATE_COMPLETE );
+        onConnectCompletion();
+      }
+      else if ( socket_->want_connect() )
+        set_state( STATE_WANT_CONNECT );
+      else
+      {
+        set_state( STATE_ERROR );
+        onConnectError();
+      }
+    }
+    else
+    {
+      set_state( STATE_ERROR );
+      onConnectError();
+    }
+  }
+
+  socket_t get_fd() const { return *socket_; }
+};
+
+
+class Socket::NBIORecvCB : public NBIOCB, public IORecvCB
+{
+public:
+  NBIORecvCB
+  (
+    State state,
+    yidl::runtime::auto_Buffer buffer,
+    int flags,
+    auto_Socket socket_,
+    AIOReadCallback& callback,
+    void* callback_context
+  )
+    : NBIOCB( state ),
+      IORecvCB( buffer, flags, socket_, callback, callback_context )
+  { }
+
+  // NBIOCB
+  void execute()
+  {
+    if ( socket_->set_blocking_mode( false ) )
+    {
+      ssize_t recv_ret = socket_->recv( *buffer, flags );
+      if ( recv_ret > 0 )
+      {
+        set_state( STATE_COMPLETE );
+        onReadCompletion();
+      }
+      else if ( recv_ret == 0 )
+      {
+        set_state( STATE_ERROR );
+        onReadError( ECONNABORTED );
+      }
+      else if ( socket_->want_read() )
+        set_state( STATE_WANT_READ );
+      else if ( socket_->want_write() )
+        set_state( STATE_WANT_WRITE );
+      else
+      {
+        set_state( STATE_ERROR );
+        onReadError();
+      }
+    }
+    else
+    {
+      set_state( STATE_ERROR );
+      onReadError();
+    }
+  }
+
+  socket_t get_fd() const { return *socket_; }
+};
+
+
+class Socket::NBIOSendCB : public NBIOCB, public IOSendCB
+{
+public:
+  NBIOSendCB
+  (
+    State state,
+    yidl::runtime::auto_Buffer buffer,
+    int flags,
+    auto_Socket socket_,
+    AIOWriteCallback& callback,
+    void* callback_context
+  )
+    : NBIOCB( state ),
+      IOSendCB( buffer, flags, socket_, callback, callback_context )
+  { }
+
+  // NBIOCB
+  void execute()
+  {
+    if ( socket_->set_blocking_mode( false ) )
+    {
+      ssize_t send_ret = socket_->send( *buffer, flags );
+      if ( send_ret >= 0 )
+      {
+#ifdef _WIN32
+        if ( static_cast<size_t>( send_ret ) != buffer->size() )
+          DebugBreak();
+#endif
+        set_state( STATE_COMPLETE );
+        onWriteCompletion();
+      }
+      else if ( socket_->want_write() )
+        set_state( STATE_WANT_WRITE );
+      else if ( socket_->want_read() )
+        set_state( STATE_WANT_READ );
+      else
+      {
+        set_state( STATE_ERROR );
+        onWriteError();
+      }
+    }
+    else
+    {
+      set_state( STATE_ERROR );
+      onWriteError();
+    }
+  }
+
+  socket_t get_fd() const { return *socket_; }
+};
+
+
+class Socket::NBIOSendMsgCB : public NBIOCB, public IOSendMsgCB
+{
+public:
+  NBIOSendMsgCB
+  (
+    State state,
+    yidl::runtime::auto_Buffers buffers,
+    int flags,
+    auto_Socket socket_,
+    AIOWriteCallback& callback,
+    void* callback_context
+  )
+    : NBIOCB( state ),
+      IOSendMsgCB( buffers, flags, socket_, callback, callback_context )
+  { }
+
+  // NBIOCB
+  void execute()
+  {
+    if ( socket_->set_blocking_mode( false ) )
+    {
+      ssize_t sendmsg_ret = socket_->sendmsg( *buffers, flags );
+      if ( sendmsg_ret >= 0 )
+      {
+        set_state( STATE_COMPLETE );
+        onWriteCompletion();
+      }
+      else if ( socket_->want_write() )
+        set_state( STATE_WANT_WRITE );
+      else if ( socket_->want_read() )
+        set_state( STATE_WANT_READ );
+      else
+      {
+        set_state( STATE_ERROR );
+        onWriteError();
+      }
+    }
+    else
+    {
+      set_state( STATE_ERROR );
+      onWriteError();
+    }
+  }
+
+  socket_t get_fd() const { return *socket_; }
+};
+
+
+Socket::Socket( int domain, int type, int protocol, socket_t socket_ )
+  : domain( domain ), type( type ), protocol( protocol ), socket_( socket_ )
+{
+  blocking_mode = true;
+  connected = false;
+}
+
+Socket::~Socket()
+{
+  close();
+}
+
+void
+Socket::aio_connect
+(
+  auto_SocketAddress peername,
+  AIOConnectCallback& callback,
+  void* callback_context
+)
+{
+  // Try a non-blocking connect first (for e.g. localhost)
+  if ( set_blocking_mode( false ) )
+  {
+    if ( connect( *peername ) )
+    {
+      callback.onConnectCompletion( callback_context );
+      return;
+    }
+    else if ( !want_connect() )
+    {
+      callback.onConnectError( get_last_error(), callback_context );
+      return;
+    }
+  }
+
+  if ( io_queue != NULL )
+  {
+    switch ( io_queue->get_type_id() )
+    {
+      case BIOQueue::TYPE_ID:
+      {
+        static_cast<BIOQueue*>( io_queue.get() )
+          ->submit
+            (
+              new BIOConnectCB
+                  (
+                    peername,
+                    inc_ref(),
+                    callback,
+                    callback_context
+                  )
+            );
+      }
+      return;
+
+      case NBIOQueue::TYPE_ID:
+      {
+        static_cast<NBIOQueue*>( io_queue.get() )
+          ->submit
+            (
+              new NBIOConnectCB
+                  (
+                    peername,
+                    inc_ref(),
+                    callback,
+                    callback_context
+                  )
+            );
+      }
+      return;
+    }
+  }
+
+  set_blocking_mode( true );
+  if ( connect( *peername ) )
+    callback.onConnectCompletion( callback_context );
+  else
+    callback.onConnectError( get_last_error(), callback_context );
+}
+
+void
+Socket::aio_recv
+(
+  yidl::runtime::auto_Buffer buffer,
+  int flags,
+  AIOReadCallback& callback,
+  void* callback_context
+)
+{
+  // Try a non-blocking recv first
+  if ( set_blocking_mode( false ) )
+  {
+    ssize_t recv_ret = recv( *buffer, flags );
+    if ( recv_ret > 0 )
+    {
+      callback.onReadCompletion( buffer, callback_context );
+      return;
+    }
+    else if ( recv_ret == 0 )
+    {
+      callback.onReadError( ECONNABORTED, callback_context );
+      return;
+    }
+    else if ( !want_read() && !want_write() )
+    {
+      callback.onReadError( get_last_error(), callback_context );
+      return;
+    }
+  }
+
+  // Next try to offload the recv to an IOQueue
+  if ( io_queue != NULL )
+  {
+    switch ( io_queue->get_type_id() )
+    {
+      case BIOQueue::TYPE_ID:
+      {
+        static_cast<BIOQueue*>( io_queue.get() )
+          ->submit
+            (
+              new BIORecvCB
+                  (
+                    buffer,
+                    flags,
+                    inc_ref(),
+                    callback,
+                    callback_context
+                  )
+            );
+      }
+      return;
+
+      case NBIOQueue::TYPE_ID:
+      {
+        static_cast<NBIOQueue*>( io_queue.get() )
+          ->submit
+            (
+              new NBIORecvCB
+                  (
+                    want_read()
+                      ? NBIORecvCB::STATE_WANT_READ
+                      : NBIORecvCB::STATE_WANT_WRITE,
+                    buffer,
+                    flags,
+                    inc_ref(),
+                    callback,
+                    callback_context
+                  )
+            );
+      }
+      return;
+    }
+  }
+
+  // Nothing worked, return an error
+  callback.onReadError( get_last_error(), callback_context );
+}
+
+void
+Socket::aio_send
+(
+  yidl::runtime::auto_Buffer buffer,
+  int flags,
+  AIOWriteCallback& callback,
+  void* callback_context
+)
+{
+  // Don't translate flags here, since they'll be translated again
+  // on the ->send call (except on Win32)
+
+  // Try a non-blocking send first
+  if ( set_blocking_mode( false ) )
+  {
+    ssize_t send_ret = send( *buffer, flags );
+    if ( send_ret >= 0 )
+    {
+#ifdef _WIN32
+      if ( static_cast<size_t>( send_ret ) != buffer->size() )
+        DebugBreak();
+#endif
+      callback.onWriteCompletion( callback_context );
+      return;
+    }
+    else if ( !want_write() && !want_read() )
+    {
+      callback.onWriteError( get_last_error(), callback_context );
+      return;
+    }
+  }
+
+  // Next try to offload the send to an IOQueue
+  if ( io_queue != NULL )
+  {
+    switch ( io_queue->get_type_id() )
+    {
+      case BIOQueue::TYPE_ID:
+      {
+        static_cast<BIOQueue*>( io_queue.get() )
+          ->submit
+            (
+              new BIOSendCB
+                  (
+                    buffer,
+                    flags,
+                    inc_ref(),
+                    callback,
+                    callback_context
+                  )
+            );
+      }
+      return;
+
+      case NBIOQueue::TYPE_ID:
+      {
+        static_cast<NBIOQueue*>( io_queue.get() )
+          ->submit
+            (
+              new NBIOSendCB
+                  (
+                    want_write()
+                      ? NBIOSendCB::STATE_WANT_WRITE
+                      : NBIOSendCB::STATE_WANT_READ,
+                    buffer,
+                    flags,
+                    inc_ref(),
+                    callback,
+                    callback_context
+                  )
+            );
+      }
+      return;
+
+    }
+  }
+
+  // Finally, try a blocking send
+  set_blocking_mode( true );
+  ssize_t send_ret = send( *buffer, flags );
+  if ( send_ret >= 0 )
+  {
+#ifdef _DEBUG
+    if ( static_cast<size_t>( send_ret ) != buffer->size() )
+      DebugBreak();
+#endif
+    callback.onWriteCompletion( callback_context );
+  }
+  else
+    callback.onWriteError( get_last_error(), callback_context );
+}
+
+void Socket::aio_sendmsg
+(
+  yidl::runtime::auto_Buffers buffers,
+  int flags,
+  AIOWriteCallback& callback,
+  void* callback_context
+)
+{
+  // Try a non-blocking sendmsg first
+  if ( set_blocking_mode( false ) )
+  {
+    ssize_t sendmsg_ret = sendmsg( *buffers, flags );
+    if ( sendmsg_ret >= 0 )
+    {
+      callback.onWriteCompletion( callback_context );
+      return;
+    }
+    else if ( !want_write() && !want_read() )
+    {
+      callback.onWriteError( get_last_error(), callback_context );
+      return;
+    }
+  }
+
+  // Next try to offload the sendmsg to an IOQueue
+  if ( io_queue != NULL )
+  {
+    switch ( io_queue->get_type_id() )
+    {
+      case BIOQueue::TYPE_ID:
+      {
+        static_cast<BIOQueue*>( io_queue.get() )
+          ->submit
+            (
+              new BIOSendMsgCB
+                  (
+                    buffers,
+                    flags,
+                    inc_ref(),
+                    callback,
+                    callback_context
+                  )
+            );
+      }
+      return;
+
+      case NBIOQueue::TYPE_ID:
+      {
+        static_cast<NBIOQueue*>( io_queue.get() )
+          ->submit
+            (
+              new NBIOSendMsgCB
+                  (
+                    want_write()
+                      ? NBIOSendCB::STATE_WANT_WRITE
+                      : NBIOSendCB::STATE_WANT_READ,
+                    buffers,
+                    flags,
+                    inc_ref(),
+                    callback,
+                    callback_context
+                  )
+            );
+      }
+      return;
+
+      // default: unknown io_queue, drop down
+    }
+  }
+
+  // Finally, try a blocking sendmsg
+  set_blocking_mode( true );
+  ssize_t sendmsg_ret = sendmsg( *buffers, flags );
+  if ( sendmsg_ret >= 0 )
+    callback.onWriteCompletion( callback_context );
+  else
+    callback.onWriteError( get_last_error(), callback_context );
+}
+
+bool Socket::associate( auto_IOQueue io_queue )
+{
+  if ( this->io_queue == NULL )
+  {
+    switch ( io_queue->get_type_id() )
+    {
+      case BIOQueue::TYPE_ID:
+      case NBIOQueue::TYPE_ID:
+      {
+        this->io_queue = io_queue;
+        return true;
+      }
+      break;
+
+      default: return false;
+    }
+  }
+  else // this Socket is already associated with an IOQueue
+    return false;
+}
+
+bool Socket::bind( const SocketAddress& to_sockaddr )
+{
+  for ( ;; )
+  {
+    struct sockaddr* name; socklen_t namelen;
+    if ( to_sockaddr.as_struct_sockaddr( domain, name, namelen ) )
+    {
+      if ( ::bind( *this, name, namelen ) != -1 )
+        return true;
+    }
+
+    if
+    (
+      domain == AF_INET6
+      &&
+#ifdef _WIN32
+        WSAGetLastError() == WSAEAFNOSUPPORT
+#else
+        errno == EAFNOSUPPORT
+#endif
+    )
+    {
+      if ( recreate( AF_INET ) )
+        continue;
+      else
+        return false;
+    }
+    else
+      return false;
+  }
+}
+
+bool Socket::close()
+{
+  if ( Stream::close( socket_ ) )
+  {
+    connected = false;
+    socket_ = INVALID_SOCKET;
+    return true;
+  }
+  else
+    return false;
+}
+
+bool Socket::connect( const SocketAddress& peername )
+{
+  if ( !connected )
+  {
+    for ( ;; )
+    {
+      struct sockaddr* name; socklen_t namelen;
+      if ( peername.as_struct_sockaddr( domain, name, namelen ) )
+      {
+        if ( ::connect( *this, name, namelen ) != -1 )
+        {
+          connected = true;
+          return true;
+        }
+        else
+        {
+#ifdef _WIN32
+          switch ( WSAGetLastError() )
+          {
+            case WSAEISCONN: connected = true; return true;
+            case WSAEAFNOSUPPORT:
+#else
+          switch ( errno )
+          {
+            case EISCONN: connected = true; return true;
+            case EAFNOSUPPORT:
+#endif
+            {
+              if
+              (
+                domain == AF_INET6 &&
+                recreate( AF_INET )
+              )
+                continue;
+              else
+                return false;
+            }
+            break;
+
+            default: return false;
+          }
+        }
+      }
+      else if
+      (
+        domain == AF_INET6 &&
+        recreate( AF_INET )
+      )
+        continue;
+      else
+        return false;
+    }
+  }
+  else
+    return true;
+}
+
+auto_Socket Socket::create( int domain, int type, int protocol )
+{
+  socket_t socket_ = create( &domain, type, protocol );
+  if ( socket_ != INVALID_SOCKET )
+    return new Socket( domain, type, protocol, socket_ );
+  else
+    return NULL;
+}
+
+socket_t Socket::create( int* domain, int type, int protocol )
+{
+  socket_t socket_ = ::socket( *domain, type, protocol );
+
+#ifdef _WIN32
+  if ( socket_ == INVALID_SOCKET && WSAGetLastError() == WSANOTINITIALISED )
+  {
+    WORD wVersionRequested = MAKEWORD( 2, 2 );
+    WSADATA wsaData;
+    WSAStartup( wVersionRequested, &wsaData );
+
+    socket_ = ::socket( *domain, type, protocol );
+  }
+
+  if ( socket_ != INVALID_SOCKET )
+  {
+    if ( *domain == AF_INET6 )
+    {
+      DWORD ipv6only = 0; // Allow dual-mode sockets
+      setsockopt
+      (
+        socket_,
+        IPPROTO_IPV6,
+        IPV6_V6ONLY,
+        ( char* )&ipv6only,
+        sizeof( ipv6only )
+      );
+    }
+  }
+  else if ( *domain == AF_INET6 && WSAGetLastError() == WSAEAFNOSUPPORT )
+  {
+    *domain = AF_INET;
+    socket_ = ::socket( AF_INET, type, protocol );
+    if ( socket_ == INVALID_SOCKET )
+      return INVALID_SOCKET;
+  }
+  else
+    return INVALID_SOCKET;
+
+  return socket_;
+#else
+  if ( socket_ != -1 )
+    return socket_;
+  else if ( *domain == AF_INET6 && errno == EAFNOSUPPORT )
+  {
+    *domain = AF_INET;
+    return ::socket( AF_INET, type, protocol );
+  }
+  else
+    return -1;
+#endif
+}
+
+bool Socket::get_blocking_mode() const
+{
+  return blocking_mode;
+}
+
+std::string Socket::getfqdn()
+{
+#ifdef _WIN32
+  DWORD dwFQDNLength = 0;
+  GetComputerNameExA( ComputerNameDnsHostname, NULL, &dwFQDNLength );
+  if ( dwFQDNLength > 0 )
+  {
+    char* fqdn_temp = new char[dwFQDNLength];
+    if
+    (
+      GetComputerNameExA
+      (
+        ComputerNameDnsFullyQualified,
+        fqdn_temp,
+        &dwFQDNLength
+      )
+    )
+    {
+      std::string fqdn( fqdn_temp, dwFQDNLength );
+      delete [] fqdn_temp;
+      return fqdn;
+    }
+    else
+      delete [] fqdn_temp;
+  }
+
+  return std::string();
+#else
+  char fqdn[256];
+  ::gethostname( fqdn, 256 );
+  char* first_dot = strstr( fqdn, "." );
+  if ( first_dot != NULL ) *first_dot = 0;
+
+  // getnameinfo does not return aliases, which means we get "localhost"
+  // on Linux if that's the first
+  // entry for 127.0.0.1 in /etc/hosts
+
+#ifndef __sun
+  char domainname[256];
+  // getdomainname is not a public call on Solaris, apparently
+  if ( getdomainname( domainname, 256 ) == 0 &&
+       domainname[0] != 0 &&
+       strcmp( domainname, "(none)" ) != 0 &&
+       strcmp( domainname, fqdn ) != 0 &&
+       strstr( domainname, "localdomain" ) == NULL )
+         strcat( fqdn, domainname );
+  else
+  {
+#endif
+    // Try gethostbyaddr, like Python
+    uint32_t local_host_addr = inet_addr( "127.0.0.1" );
+    struct hostent* hostents
+      = gethostbyaddr
+      (
+        reinterpret_cast<char*>( &local_host_addr ),
+        sizeof( uint32_t ),
+        AF_INET
+      );
+
+    if ( hostents != NULL )
+    {
+      if
+      (
+        strchr( hostents->h_name, '.' ) != NULL &&
+        strstr( hostents->h_name, "localhost" ) == NULL
+      )
+      {
+        strncpy( fqdn, hostents->h_name, 256 );
+      }
+      else
+      {
+        for ( unsigned char i = 0; hostents->h_aliases[i] != NULL; i++ )
+        {
+          if
+          (
+            strchr( hostents->h_aliases[i], '.' ) != NULL &&
+            strstr( hostents->h_name, "localhost" ) == NULL
+          )
+          {
+            strncpy( fqdn, hostents->h_aliases[i], 256 );
+            break;
+          }
+        }
+      }
+    }
+#ifndef __sun
+  }
+#endif
+  return fqdn;
+#endif
+}
+
+std::string Socket::gethostname()
+{
+#ifdef _WIN32
+  DWORD dwHostNameLength = 0;
+  GetComputerNameExA( ComputerNameDnsHostname, NULL, &dwHostNameLength );
+  if ( dwHostNameLength > 0 )
+  {
+    char* hostname_temp = new char[dwHostNameLength];
+    if
+    (
+      GetComputerNameExA
+      (
+        ComputerNameDnsHostname,
+        hostname_temp,
+        &dwHostNameLength
+      )
+    )
+    {
+      std::string hostname( hostname_temp, dwHostNameLength );
+      delete [] hostname_temp;
+      return hostname;
+    }
+    else
+      delete [] hostname_temp;
+  }
+
+  return std::string();
+#else
+  char hostname[256];
+  ::gethostname( hostname, 256 );
+  return hostname;
+#endif
+}
+
+uint32_t Socket::get_last_error()
+{
+#ifdef _WIN32
+  return static_cast<uint32_t>( WSAGetLastError() );
+#else
+  return static_cast<uint32_t>( errno );
+#endif
+}
+
+auto_SocketAddress Socket::getpeername()
+{
+  struct sockaddr_storage peername_sockaddr_storage;
+  memset( &peername_sockaddr_storage, 0, sizeof( peername_sockaddr_storage ) );
+  socklen_t peername_sockaddr_storage_len = sizeof( peername_sockaddr_storage );
+  if
+  (
+    ::getpeername
+    (
+      *this,
+      reinterpret_cast<struct sockaddr*>( &peername_sockaddr_storage ),
+      &peername_sockaddr_storage_len
+    ) != -1
+  )
+    return new SocketAddress( peername_sockaddr_storage );
+  else
+    return NULL;
+}
+
+int Socket::get_platform_recv_flags( int flags )
+{
+  int platform_recv_flags = 0;
+
+  if ( ( flags & RECV_FLAG_MSG_OOB ) == RECV_FLAG_MSG_OOB )
+  {
+    platform_recv_flags |= MSG_OOB;
+    flags ^= RECV_FLAG_MSG_OOB;
+  }
+
+  if ( ( flags & RECV_FLAG_MSG_PEEK ) == RECV_FLAG_MSG_PEEK )
+  {
+    platform_recv_flags |= MSG_PEEK;
+    flags ^= RECV_FLAG_MSG_PEEK;
+  }
+
+  platform_recv_flags |= flags;
+
+  return platform_recv_flags;
+}
+
+int Socket::get_platform_send_flags( int flags )
+{
+  int platform_send_flags = 0;
+
+  if ( ( flags & SEND_FLAG_MSG_OOB ) == SEND_FLAG_MSG_OOB )
+  {
+    platform_send_flags |= MSG_OOB;
+    flags ^= SEND_FLAG_MSG_OOB;
+  }
+
+  if ( ( flags & SEND_FLAG_MSG_DONTROUTE ) == SEND_FLAG_MSG_DONTROUTE )
+  {
+    platform_send_flags |= MSG_DONTROUTE;
+    flags ^= SEND_FLAG_MSG_DONTROUTE;
+  }
+
+  platform_send_flags |= flags;
+
+  return platform_send_flags;
+}
+
+auto_SocketAddress Socket::getsockname()
+{
+  struct sockaddr_storage sockname_sockaddr_storage;
+  memset( &sockname_sockaddr_storage, 0, sizeof( sockname_sockaddr_storage ) );
+  socklen_t sockname_sockaddr_storage_len = sizeof( sockname_sockaddr_storage );
+  if
+  (
+    ::getsockname
+    (
+      *this,
+      reinterpret_cast<struct sockaddr*>( &sockname_sockaddr_storage ),
+      &sockname_sockaddr_storage_len
+    ) != -1
+  )
+    return new SocketAddress( sockname_sockaddr_storage );
+  else
+    return NULL;
+}
+
+bool Socket::is_closed() const
+{
+  return socket_ == -1;
+}
+
+bool Socket::listen()
+{
+  //int flag = 1;
+  //setsockopt
+  //(
+  //  *this,
+  //  IPPROTO_TCP,
+  //  TCP_NODELAY,
+  //  reinterpret_cast<char*>( &flag ),
+  //  sizeof( int )
+  //);
+
+  //flag = 1;
+  //setsockopt
+  //(
+  //  *this,
+  //  SOL_SOCKET,
+  //  SO_KEEPALIVE,
+  //  reinterpret_cast<char*>( &flag ),
+  //  sizeof( int )
+  //);
+
+  //linger lingeropt;
+  //lingeropt.l_onoff = 1;
+  //lingeropt.l_linger = 0;
+  //setsockopt
+  //(
+  //  *this,
+  //  SOL_SOCKET,
+  //  SO_LINGER,
+  //  reinterpret_cast<char*>( &lingeropt ),
+  //  static_cast<int>( sizeof( lingeropt ) )
+  //);
+
+  return ::listen( *this, SOMAXCONN ) != -1;
+}
+
+bool Socket::operator==( const Socket& other ) const
+{
+  return socket_ == other.socket_;
+}
+
+bool Socket::recreate()
+{
+  return recreate( AF_INET6 );
+}
+
+bool Socket::recreate( int domain )
+{
+  close();
+  socket_ = ::socket( domain, type, protocol );
+  if ( socket_ != -1 )
+  {
+    if ( !blocking_mode )
+      set_blocking_mode( false );
+    this->domain = domain;
+    return true;
+  }
+  else
+    return false;
+}
+
+ssize_t Socket::recv( yidl::runtime::Buffer& buffer, int flags )
+{
+  ssize_t recv_ret
+    = recv
+      (
+        static_cast<char*>( buffer ) + buffer.size(),
+        buffer.capacity() - buffer.size(),
+        flags
+      );
+
+  if ( recv_ret > 0 )
+    buffer.put( NULL, static_cast<size_t>( recv_ret ) );
+
+  return recv_ret;
+}
+
+ssize_t Socket::recv( void* buffer, size_t buffer_len, int flags )
+{
+  flags = get_platform_recv_flags( flags );
+
+#if defined(_WIN32)
+  return ::recv
+         (
+           *this,
+           static_cast<char*>( buffer ),
+           static_cast<int>( buffer_len ),
+           flags
+         ); // No real advantage to WSARecv on Win32 for one buffer
+#elif defined(__linux)
+  return ::recv( *this, buffer, buffer_len, flags|MSG_NOSIGNAL );
+#else
+  return ::recv( *this, buffer, buffer_len, flags );
+#endif
+}
+
+ssize_t Socket::send( const void* buffer, size_t buffer_len, int flags )
+{
+  flags = get_platform_send_flags( flags );
+
+#if defined(_WIN32)
+  DWORD dwWrittenLength;
+  WSABUF wsabuf;
+  wsabuf.len = static_cast<ULONG>( buffer_len );
+  wsabuf.buf = const_cast<char*>( static_cast<const char*>( buffer ) );
+
+  ssize_t send_ret
+    = WSASend
+      (
+        *this,
+        &wsabuf,
+        1,
+        &dwWrittenLength,
+        static_cast<DWORD>( flags ),
+        NULL,
+        NULL
+      );
+
+  if ( send_ret >= 0 )
+    return static_cast<ssize_t>( dwWrittenLength );
+  else
+    return send_ret;
+#else
+  return ::send( *this, buffer, buffer_len, flags|MSG_NOSIGNAL );
+#endif
+}
+
+ssize_t Socket::sendmsg
+(
+  const struct iovec* buffers,
+  uint32_t buffers_count,
+  int flags
+)
+{
+  flags = get_platform_send_flags( flags );
+
+#ifdef _WIN32
+  DWORD dwWrittenLength;
+#ifdef _WIN64
+  // The WSABUF .len is a ULONG, which is != size_t on Win64,
+  // so we have to truncate it here.
+  // This is easier (compiler warnings, using sizeof, etc.)
+  // than changing the struct iovec definition to use uint32_t.
+  std::vector<WSABUF> wsabufs( buffers_count );
+  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+  {
+    wsabufs[buffer_i].len = static_cast<ULONG>( buffers[buffer_i].iov_len );
+    wsabufs[buffer_i].buf = static_cast<char*>( buffers[buffer_i].iov_base );
+  }
+#endif
+
+  ssize_t send_ret
+    = WSASend
+      (
+        *this,
+#ifdef _WIN64
+        &wsabufs[0],
+#else
+        reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ),
+#endif
+        buffers_count,
+        &dwWrittenLength,
+        static_cast<DWORD>( flags ),
+        NULL,
+        NULL
+      );
+
+  if ( send_ret >= 0 )
+    return static_cast<ssize_t>( dwWrittenLength );
+  else
+    return send_ret;
+#else
+  struct msghdr msghdr_;
+  memset( &msghdr_, 0, sizeof( msghdr_ ) );
+  msghdr_.msg_iov = const_cast<iovec*>( buffers );
+  msghdr_.msg_iovlen = buffers_count;
+  return ::sendmsg( *this, &msghdr_, flags|MSG_NOSIGNAL );
+#endif
+}
+
+bool Socket::set_blocking_mode( bool blocking )
+{
+#ifdef _WIN32
+  unsigned long val = blocking ? 0UL : 1UL;
+  if ( ioctlsocket( *this, FIONBIO, &val ) != SOCKET_ERROR )
+  {
+    this->blocking_mode = blocking;
+    return true;
+  }
+  else
+    return false;
+#else
+  int current_fcntl_flags = fcntl( *this, F_GETFL, 0 );
+  if ( blocking )
+  {
+    if ( ( current_fcntl_flags & O_NONBLOCK ) == O_NONBLOCK )
+    {
+      if ( fcntl( *this, F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1 )
+      {
+        this->blocking_mode = true;
+        return true;
+      }
+      else
+        return false;
+    }
+    else
+      return true;
+  }
+  else
+  {
+    if ( fcntl( *this, F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1 )
+    {
+      this->blocking_mode = false;
+      return true;
+    }
+    else
+      return false;
+  }
+#endif
+}
+
+bool Socket::shutdown( bool shut_rd, bool shut_wr )
+{
+  int how;
+#ifdef _WIN32
+  if ( shut_rd && shut_wr ) how = SD_BOTH;
+  else if ( shut_rd ) how = SD_RECEIVE;
+  else if ( shut_wr ) how = SD_SEND;
+  else return false;
+
+  if ( ::shutdown( *this, how ) == 0 )
+#else
+  if ( shut_rd && shut_wr ) how = SHUT_RDWR;
+  else if ( shut_rd ) how = SHUT_RD;
+  else if ( shut_wr ) how = SHUT_WR;
+  else return false;
+
+  if ( ::shutdown( *this, how ) != -1 )
+#endif
+  {
+    connected = false;
+    return true;
+  }
+  else
+    return false;
+}
+
+bool Socket::want_connect() const
+{
+#ifdef _WIN32
+  switch ( WSAGetLastError() )
+  {
+    case WSAEALREADY:
+    case WSAEINPROGRESS:
+    case WSAEINVAL:
+    case WSAEWOULDBLOCK: return true;
+    default: return false;
+  }
+#else
+  switch ( errno )
+  {
+    case EALREADY:
+    case EINPROGRESS:
+    case EWOULDBLOCK: return true;
+    default: return false;
+  }
+#endif
+}
+
+bool Socket::want_read() const
+{
+#ifdef _WIN32
+  return WSAGetLastError() == WSAEWOULDBLOCK;
+#else
+  return errno == EWOULDBLOCK;
+#endif
+}
+
+bool Socket::want_write() const
+{
+#ifdef _WIN32
+  return WSAGetLastError() == WSAEWOULDBLOCK;
+#else
+  return errno == EWOULDBLOCK;
+#endif
+}
+
+
+
+// socket_address.cpp
+#ifdef _WIN32
+#undef INVALID_SOCKET
+#pragma warning( push )
+#pragma warning( disable: 4365 4995 )
+#include <ws2tcpip.h>
+#pragma warning( pop )
+#define INVALID_SOCKET  (SOCKET)(~0)
+#else
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <netinet/in.h>
+#include <sys/socket.h>
+#endif
+
+
+SocketAddress::SocketAddress( struct addrinfo& addrinfo_list )
+  : addrinfo_list( &addrinfo_list ), _sockaddr_storage( NULL )
+{ }
+
+SocketAddress::~SocketAddress()
+{
+  if ( addrinfo_list != NULL )
+    freeaddrinfo( addrinfo_list );
+  else if ( _sockaddr_storage != NULL )
+    delete _sockaddr_storage;
+}
+
+SocketAddress::SocketAddress
+(
+  const struct sockaddr_storage& _sockaddr_storage
+)
+{
+  addrinfo_list = NULL;
+  this->_sockaddr_storage = new struct sockaddr_storage;
+  memcpy_s
+  (
+    this->_sockaddr_storage,
+    sizeof( *this->_sockaddr_storage ),
+    &_sockaddr_storage,
+    sizeof( _sockaddr_storage )
+  );
+}
+
+auto_SocketAddress SocketAddress::create( const char* hostname )
+{
+  return create( hostname, 0 );
+}
+
+auto_SocketAddress SocketAddress::create( const char* hostname, uint16_t port )
+{
+  if ( hostname != NULL && strcmp( hostname, "*" ) )
+    hostname = NULL;
+
+  struct addrinfo* addrinfo_list = getaddrinfo( hostname, port );
+  if ( addrinfo_list != NULL )
+    return new SocketAddress( *addrinfo_list );
+  else
+  {
+    std::ostringstream what;
+    what << "error resolving host \"";
+    if ( hostname != NULL )
+      what << hostname;
+    else
+      what << "*";
+    what << "\": ";
+    what << YIELD::platform::Exception();
+
+    throw YIELD::platform::Exception( what.str() );
+  }
+}
+
+bool SocketAddress::as_struct_sockaddr
+(
+  int family,
+  struct sockaddr*& out_sockaddr,
+  socklen_t& out_sockaddrlen
+) const
+{
+  if ( addrinfo_list != NULL )
+  {
+    struct addrinfo* addrinfo_p = addrinfo_list;
+    while ( addrinfo_p != NULL )
+    {
+      if ( addrinfo_p->ai_family == family )
+      {
+        out_sockaddr = addrinfo_p->ai_addr;
+        out_sockaddrlen = static_cast<socklen_t>( addrinfo_p->ai_addrlen );
+        return true;
+      }
+      else
+        addrinfo_p = addrinfo_p->ai_next;
+    }
+  }
+  else if ( _sockaddr_storage->ss_family == family )
+  {
+    out_sockaddr = reinterpret_cast<struct sockaddr*>( _sockaddr_storage );
+    out_sockaddrlen = sizeof( *_sockaddr_storage );
+    return true;
+  }
+
+#ifdef _WIN32
+  ::WSASetLastError( WSAEAFNOSUPPORT );
+#else
+  errno = EAFNOSUPPORT;
+#endif
+  return false;
+}
+
+struct addrinfo*
+SocketAddress::getaddrinfo( const char* hostname, uint16_t port )
+{
+  const char* servname;
+#ifdef __sun
+  if ( hostname == NULL )
+    hostname = "0.0.0.0";
+  servname = NULL;
+#else
+  std::ostringstream servname_oss; // ltoa is not very portable
+  servname_oss << port; // servname = decimal port or service name.
+  std::string servname_str = servname_oss.str();
+  servname = servname_str.c_str();
+#endif
+
+  struct addrinfo addrinfo_hints;
+  memset( &addrinfo_hints, 0, sizeof( addrinfo_hints ) );
+  addrinfo_hints.ai_family = AF_UNSPEC;
+  if ( hostname == NULL )
+    addrinfo_hints.ai_flags |= AI_PASSIVE; // To get INADDR_ANYs
+
+  struct addrinfo* addrinfo_list;
+
+  int getaddrinfo_ret
+    = ::getaddrinfo( hostname, servname, &addrinfo_hints, &addrinfo_list );
+
+#ifdef _WIN32
+  if ( getaddrinfo_ret == -1 && WSAGetLastError() == WSANOTINITIALISED )
+  {
+    WORD wVersionRequested = MAKEWORD( 2, 2 );
+    WSADATA wsaData;
+    WSAStartup( wVersionRequested, &wsaData );
+
+    getaddrinfo_ret
+      = ::getaddrinfo( hostname, servname, &addrinfo_hints, &addrinfo_list );
+  }
+#endif
+
+  if ( getaddrinfo_ret == 0 )
+  {
+#ifdef __sun
+    struct addrinfo* addrinfo_p = addrinfo_list;
+    while ( addrinfo_p != NULL )
+    {
+      switch ( addrinfo_p->ai_family )
+      {
+        case AF_INET:
+        {
+          reinterpret_cast<struct sockaddr_in*>( addrinfo_p->ai_addr )
+            ->sin_port = htons( port );
+        }
+        break;
+
+        case AF_INET6:
+        {
+          reinterpret_cast<struct sockaddr_in6*>( addrinfo_p->ai_addr )
+            ->sin6_port = htons( port );
+        }
+        break;
+
+        default: DebugBreak();
+      }
+
+      addrinfo_p = addrinfo_p->ai_next;
+    }
+#endif
+
+    return addrinfo_list;
+  }
+  else
+    return NULL;
+}
+
+bool SocketAddress::getnameinfo
+(
+  std::string& out_hostname,
+  bool numeric
+) const
+{
+  char nameinfo[NI_MAXHOST];
+  if ( this->getnameinfo( nameinfo, NI_MAXHOST, numeric ) )
+  {
+    out_hostname.assign( nameinfo );
+    return true;
+  }
+  else
+    return false;
+}
+
+bool SocketAddress::getnameinfo
+(
+  char* out_hostname,
+  uint32_t out_hostname_len,
+  bool numeric
+) const
+{
+  if ( addrinfo_list != NULL )
+  {
+    struct addrinfo* addrinfo_p = addrinfo_list;
+    while ( addrinfo_p != NULL )
+    {
+      if
+      (
+        ::getnameinfo
+        (
+          addrinfo_p->ai_addr,
+          static_cast<socklen_t>( addrinfo_p->ai_addrlen ),
+          out_hostname,
+          out_hostname_len,
+          NULL,
+          0,
+          numeric ? NI_NUMERICHOST : 0
+        ) == 0
+      )
+        return true;
+      else
+        addrinfo_p = addrinfo_p->ai_next;
+    }
+    return false;
+  }
+  else
+    return ::getnameinfo
+           (
+             reinterpret_cast<sockaddr*>( _sockaddr_storage ),
+             static_cast<socklen_t>( sizeof( *_sockaddr_storage ) ),
+             out_hostname,
+             out_hostname_len,
+             NULL,
+             0,
+             numeric ? NI_NUMERICHOST : 0
+           ) == 0;
+}
+
+uint16_t SocketAddress::get_port() const
+{
+  if ( addrinfo_list != NULL )
+  {
+    switch ( addrinfo_list->ai_family )
+    {
+      case AF_INET:
+      {
+        return ntohs
+               (
+                 reinterpret_cast<struct sockaddr_in*>
+                 (
+                   addrinfo_list->ai_addr
+                 )->sin_port
+               );
+      }
+
+      case AF_INET6:
+      {
+        return ntohs
+               (
+                 reinterpret_cast<struct sockaddr_in6*>
+                 (
+                   addrinfo_list->ai_addr
+                 )->sin6_port
+               );
+      }
+
+      default:
+      {
+        DebugBreak();
+        return 0;
+      }
+    }
+  }
+  else
+  {
+    switch ( _sockaddr_storage->ss_family )
+    {
+      case AF_INET:
+      {
+        return ntohs
+               (
+                 reinterpret_cast<struct sockaddr_in*>( _sockaddr_storage )
+                   ->sin_port
+               );
+      }
+
+      case AF_INET6:
+      {
+        return ntohs
+               (
+                 reinterpret_cast<struct sockaddr_in6*>( _sockaddr_storage )
+                  ->sin6_port
+               );
+      }
+
+      default:
+      {
+        DebugBreak();
+        return 0;
+      }
+    }
+  }
+}
+
+bool SocketAddress::operator==( const SocketAddress& other ) const
+{
+  if ( addrinfo_list != NULL )
+  {
+    if ( other.addrinfo_list != NULL )
+    {
+      struct addrinfo* addrinfo_p = addrinfo_list;
+      while ( addrinfo_p != NULL )
+      {
+        struct addrinfo* other_addrinfo_p = other.addrinfo_list;
+        while ( other_addrinfo_p != NULL )
+        {
+          if
+          (
+            addrinfo_p->ai_addrlen == other_addrinfo_p->ai_addrlen &&
+            memcmp
+            (
+              addrinfo_p->ai_addr,
+              other_addrinfo_p->ai_addr,
+              addrinfo_p->ai_addrlen
+            ) == 0 &&
+            addrinfo_p->ai_family == other_addrinfo_p->ai_family &&
+            addrinfo_p->ai_protocol == other_addrinfo_p->ai_protocol &&
+            addrinfo_p->ai_socktype == other_addrinfo_p->ai_socktype
+          )
+            break;
+          else
+            other_addrinfo_p = other_addrinfo_p->ai_next;
+        }
+
+        if ( other_addrinfo_p != NULL ) // i.e. we found the addrinfo
+                                        // in the other's list
+          addrinfo_p = addrinfo_p->ai_next;
+        else
+          return false;
+      }
+
+      return true;
+    }
+    else
+      return false;
+  }
+  else if ( other._sockaddr_storage != NULL )
+    return memcmp
+           (
+             _sockaddr_storage,
+             other._sockaddr_storage,
+             sizeof( *_sockaddr_storage )
+           ) == 0;
+  else
+    return false;
+}
+
+
+// socket_pair.cpp
+#ifdef _WIN32
+#undef INVALID_SOCKET
+#pragma warning( push )
+#pragma warning( disable: 4365 4995 )
+#include <ws2tcpip.h>
+#pragma warning( pop )
+#define INVALID_SOCKET  (SOCKET)(~0)
+#else
+#include <sys/socket.h>
+#endif
+
+
+SocketPair::SocketPair( auto_Socket first_socket, auto_Socket second_socket )
+  : first_socket( first_socket ), second_socket( second_socket )
+{ }
+
+auto_SocketPair SocketPair::create()
+{
+  socket_t sv[2];
+
+#ifdef WIN32
+  socket_t listen_socket = ::socket( AF_INET, SOCK_STREAM, IPPROTO_TCP );
+
+  if
+  (
+    listen_socket == INVALID_SOCKET
+    &&
+    WSAGetLastError() == WSANOTINITIALISED
+  )
+  {
+    WORD wVersionRequested = MAKEWORD( 2, 2 );
+    WSADATA wsaData;
+    WSAStartup( wVersionRequested, &wsaData );
+
+    listen_socket = ::socket( AF_INET, SOCK_STREAM, 0 );
+  }
+
+  if ( listen_socket != INVALID_SOCKET )
+  {
+    struct sockaddr_in addr;
+    socklen_t addr_len = sizeof( addr );
+    memset( &addr, 0, sizeof( addr ) );
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = htonl( 0x7f000001 );
+    addr.sin_port = 0;
+
+    if
+    (
+      ::bind( listen_socket, ( struct sockaddr* )&addr, sizeof( addr ) )!= -1
+      &&
+      ::listen( listen_socket, 1 ) != -1
+      &&
+      ::getsockname( listen_socket, ( struct sockaddr* )&addr, &addr_len )
+        != -1
+    )
+    {
+      sv[0] = ::socket( AF_INET, SOCK_STREAM, 0 );
+      if ( sv[0] != INVALID_SOCKET )
+      {
+        if
+        (
+          ::connect
+          (
+            sv[0],
+            ( struct sockaddr* )&addr,
+            sizeof( addr )
+          ) != -1
+          &&
+          (
+            sv[1]
+            = ::accept( listen_socket, NULL, NULL )
+          ) != -1
+        )
+        {
+          closesocket( listen_socket );
+          return new SocketPair
+                     (
+                       new Socket( AF_INET, SOCK_STREAM, IPPROTO_TCP, sv[0] ),
+                       new Socket( AF_INET, SOCK_STREAM, IPPROTO_TCP, sv[1] )
+                     );
+        }
+        else
+        {
+          closesocket( sv[0] );
+          closesocket( listen_socket );
+        }
+      }
+      else
+        closesocket( listen_socket );
+    }
+    else
+      closesocket( listen_socket );
+  }
+
+  throw Exception();
+#else
+  if ( socketpair( AF_UNIX, SOCK_STREAM, 0, sv ) != -1 )
+  {
+    return new SocketPair
+              (
+                 new Socket( AF_UNIX, SOCK_STREAM, 0, sv[0] ),
+                 new Socket( AF_UNIX, SOCK_STREAM, 0, sv[1] )
+               );
+  }
+  else
+    throw Exception();
+#endif
+}
+
 
 
 // stat.cpp
@@ -2723,13 +7696,6 @@ bool Stat::operator==( const Stat& other ) const
 #endif
 }
 
-Stat::operator std::string() const
-{
-  std::ostringstream os;
-  operator<<( os, *this );
-  return os.str();
-}
-
 Stat::operator struct stat() const
 {
   struct stat stbuf;
@@ -2746,9 +7712,9 @@ Stat::operator struct stat() const
   stbuf.st_rdev = get_rdev();
 #endif
   stbuf.st_size = static_cast<off_t>( get_size() );
-  stbuf.st_atime = get_atime().as_unix_time_s();
-  stbuf.st_mtime = get_mtime().as_unix_time_s();
-  stbuf.st_ctime = get_ctime().as_unix_time_s();
+  stbuf.st_atime = static_cast<time_t>( get_atime().as_unix_time_s() );
+  stbuf.st_mtime = static_cast<time_t>( get_mtime().as_unix_time_s() );
+  stbuf.st_ctime = static_cast<time_t>( get_ctime().as_unix_time_s() );
 #ifndef _WIN32
   stbuf.st_blksize = get_blksize();
   stbuf.st_blocks = get_blocks();
@@ -2898,6 +7864,838 @@ void Stat::set_blocks( blkcnt_t blocks )
 #endif
 
 
+// stream.cpp
+#ifdef _WIN32
+#undef INVALID_SOCKET
+#pragma warning( push )
+#pragma warning( disable: 4365 4995 )
+#include <ws2tcpip.h>
+#pragma warning( pop )
+#define INVALID_SOCKET  (SOCKET)(~0)
+#endif
+
+
+bool Stream::close( fd_t fd )
+{
+  if ( fd != INVALID_FD )
+#ifdef _WIN32
+    return CloseHandle( fd ) == TRUE;
+#else
+    return ::close( fd ) != -1;
+#endif
+  else
+  {
+#ifdef _WIN32
+    SetLastError( ERROR_INVALID_HANDLE );
+#else
+    errno = EBADF;
+#endif
+    return false;
+  }
+}
+
+#ifdef _WIN32
+bool Stream::close( socket_t socket_ )
+{
+  if ( socket_ != INVALID_SOCKET )
+    return ::closesocket( socket_ ) != -1;
+  else
+  {
+#ifdef _WIN32
+    WSASetLastError( WSAENOTSOCK );
+#else
+    errno = EBADF;
+#endif
+    return false;
+  }
+}
+#endif
+
+#ifdef _WIN32
+bool Stream::set_blocking_mode( bool blocking, socket_t socket_ )
+{
+  unsigned long val = blocking ? 0UL : 1UL;
+  return ::ioctlsocket( socket_, FIONBIO, &val ) != SOCKET_ERROR;
+}
+#else
+bool Stream::set_blocking_mode( bool blocking, fd_t fd )
+{
+  int current_fcntl_flags = fcntl( fd, F_GETFL, 0 );
+  if ( blocking )
+  {
+    if ( ( current_fcntl_flags & O_NONBLOCK ) == O_NONBLOCK )
+      return fcntl( fd, F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1;
+    else
+      return true;
+  }
+  else
+    return fcntl( fd, F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1;
+}
+#endif
+
+
+
+// tcp_socket.cpp
+#if defined(_WIN32)
+#undef INVALID_SOCKET
+#pragma warning( push )
+#pragma warning( disable: 4365 4995 )
+#include <ws2tcpip.h>
+#include <mswsock.h>
+#pragma warning( pop )
+#define INVALID_SOCKET  (SOCKET)(~0)
+#define ECONNABORTED WSAECONNABORTED
+#else
+#include <netinet/in.h> // For the IPPROTO_* constants
+#include <netinet/tcp.h> // For the TCP_* constants
+#include <sys/socket.h>
+#endif
+
+
+#ifdef _WIN32
+void* TCPSocket::lpfnAcceptEx = NULL;
+void* TCPSocket::lpfnConnectEx = NULL;
+#endif
+
+
+TCPSocket::IOAcceptCB::IOAcceptCB
+(
+  auto_TCPSocket listen_tcp_socket,
+  AIOAcceptCallback& callback,
+  void* callback_context
+)
+  : IOCB<AIOAcceptCallback>( callback, callback_context ),
+    listen_tcp_socket( listen_tcp_socket )
+{ }
+
+void TCPSocket::IOAcceptCB::onAcceptCompletion
+(
+  auto_TCPSocket accepted_tcp_socket
+)
+{
+  callback.onAcceptCompletion( accepted_tcp_socket, callback_context );
+}
+
+void TCPSocket::IOAcceptCB::onAcceptError()
+{
+  onAcceptError( get_last_error() );
+}
+
+void TCPSocket::IOAcceptCB::onAcceptError( uint32_t error_code )
+{
+  callback.onAcceptError( error_code, callback_context );
+}
+
+
+class TCPSocket::BIOAcceptCB : public BIOCB, public IOAcceptCB
+{
+public:
+  BIOAcceptCB
+  (
+    auto_TCPSocket listen_tcp_socket,
+    AIOAcceptCallback& callback,
+    void* callback_context
+  ) : IOAcceptCB( listen_tcp_socket, callback, callback_context )
+  { }
+
+  // BIOCB
+  void execute()
+  {
+    if ( listen_tcp_socket->set_blocking_mode( true ) )
+    {
+      auto_TCPSocket accepted_tcp_socket = listen_tcp_socket->accept();
+      if ( accepted_tcp_socket != NULL )
+        onAcceptCompletion( accepted_tcp_socket );
+      else
+        onAcceptError();
+    }
+    else
+      onAcceptError();
+  }
+};
+
+
+class TCPSocket::NBIOAcceptCB : public NBIOCB, public IOAcceptCB
+{
+public:
+  NBIOAcceptCB
+  (
+    auto_TCPSocket listen_tcp_socket,
+    AIOAcceptCallback& callback,
+    void* callback_context
+  ) : NBIOCB( STATE_WANT_READ ),
+      IOAcceptCB( listen_tcp_socket, callback, callback_context )
+  { }
+
+  // NBIOCB
+  void execute()
+  {
+    if ( listen_tcp_socket->set_blocking_mode( false ) )
+    {
+      auto_TCPSocket accepted_tcp_socket = listen_tcp_socket->accept();
+      if ( accepted_tcp_socket != NULL )
+      {
+        set_state( STATE_COMPLETE );
+        onAcceptCompletion( accepted_tcp_socket );
+      }
+      else if ( listen_tcp_socket->want_read() )
+        set_state( STATE_WANT_READ );
+      else
+      {
+        set_state( STATE_ERROR );
+        onAcceptError();
+      }
+    }
+    else
+    {
+      set_state( STATE_ERROR );
+      onAcceptError();
+    }
+  }
+
+  socket_t get_fd() const { return *listen_tcp_socket; }
+};
+
+
+#ifdef _WIN32
+class TCPSocket::Win32AIOAcceptCB : public Win32AIOCB, public IOAcceptCB
+{
+public:
+  Win32AIOAcceptCB
+  (
+    auto_TCPSocket accepted_tcp_socket,
+    auto_TCPSocket listen_tcp_socket,
+    AIOAcceptCallback& callback,
+    void* callback_context
+  ) : IOAcceptCB( listen_tcp_socket, callback, callback_context ),
+      accepted_tcp_socket( accepted_tcp_socket )
+  { }
+
+  // Win32AIOCB
+  void onCompletion( DWORD )
+  {
+    onAcceptCompletion( accepted_tcp_socket );
+  }
+
+  void onError( DWORD dwErrorCode )
+  {
+    onAcceptError( static_cast<uint32_t>( dwErrorCode ) );
+  }
+
+
+  auto_TCPSocket accepted_tcp_socket;
+  char peername[88]; // ( sizeof( sockaddr_in6 ) + 16 ) * 2
+};
+
+
+class TCPSocket::Win32AIOConnectCB : public Win32AIOCB, IOConnectCB
+{
+public:
+  Win32AIOConnectCB
+  (
+    auto_SocketAddress peername,
+    auto_Socket socket_,
+    AIOConnectCallback& callback,
+    void* callback_context
+  ) : IOConnectCB( peername, socket_, callback, callback_context )
+  { }
+
+  // Win32AIOCB
+  void onCompletion( DWORD )
+  {
+    onConnectCompletion();
+  }
+
+  void onError( DWORD dwErrorCode )
+  {
+    onConnectError( static_cast<uint32_t>( dwErrorCode ) );
+  }
+};
+
+class TCPSocket::Win32AIORecvCB : public Win32AIOCB, public IORecvCB
+{
+public:
+  Win32AIORecvCB
+  (
+    yidl::runtime::auto_Buffer buffer,
+    auto_Socket socket_,
+    AIOReadCallback& callback,
+    void* callback_context
+  )
+    : IORecvCB( buffer, 0, socket_, callback, callback_context )
+  { }
+
+  // Win32AIOCB
+  void onCompletion( DWORD dwNumberOfBytesTransferred )
+  {
+    if ( dwNumberOfBytesTransferred > 0 )
+    {
+      buffer->put( NULL, dwNumberOfBytesTransferred );
+      onReadCompletion();
+    }
+    else
+      onReadError( ECONNABORTED );
+  }
+
+  void onError( DWORD dwErrorCode )
+  {
+    onReadError( static_cast<uint32_t>( dwErrorCode ) );
+  }
+};
+
+
+class TCPSocket::Win32AIOSendCB : public Win32AIOCB, public IOSendCB
+{
+public:
+  Win32AIOSendCB
+  (
+    yidl::runtime::auto_Buffer buffer,
+    auto_Socket socket_,
+    AIOWriteCallback& callback,
+    void* callback_context
+  )
+    : IOSendCB( buffer, 0, socket_, callback, callback_context )
+  { }
+
+  // Win32AIOCB
+  void onCompletion( DWORD dwNumberOfBytesTransferred )
+  {
+#ifdef _WIN32
+    if ( dwNumberOfBytesTransferred != buffer->size() )
+      DebugBreak();
+#endif
+    onWriteCompletion();
+  }
+
+  void onError( DWORD dwErrorCode )
+  {
+    onWriteError( dwErrorCode );
+  }
+};
+
+
+class TCPSocket::Win32AIOSendMsgCB : public Win32AIOCB, public IOSendMsgCB
+{
+public:
+  Win32AIOSendMsgCB
+  (
+    yidl::runtime::auto_Buffers buffers,
+    auto_Socket socket_,
+    AIOWriteCallback& callback,
+    void* callback_context
+  )
+    : IOSendMsgCB( buffers, 0, socket_, callback, callback_context )
+  { }
+
+  // Win32AIOCB
+  void onCompletion( DWORD )
+  {
+    onWriteCompletion();
+  }
+
+  void onError( DWORD dwErrorCode )
+  {
+    onWriteError( dwErrorCode );
+  }
+};
+#endif
+
+
+TCPSocket::TCPSocket( int domain, socket_t socket_ )
+  : Socket( domain, SOCK_STREAM, IPPROTO_TCP, socket_ )
+{ }
+
+auto_TCPSocket TCPSocket::accept()
+{
+  socket_t peer_socket = _accept();
+  if ( peer_socket != -1 )
+    return new TCPSocket( get_domain(), peer_socket );
+  else
+    return NULL;
+}
+
+socket_t TCPSocket::_accept()
+{
+  sockaddr_storage peername;
+  socklen_t peername_len = sizeof( peername );
+  return ::accept
+         (
+           *this,
+           reinterpret_cast<struct sockaddr*>( &peername ),
+           &peername_len
+         );
+}
+
+void
+TCPSocket::aio_accept
+(
+  AIOAcceptCallback& callback,
+  void* callback_context
+)
+{
+#ifdef _WIN32
+  if
+  (
+    io_queue != NULL
+    &&
+    io_queue->get_type_id() == Win32AIOQueue::TYPE_ID
+  )
+  {
+    if ( lpfnAcceptEx == NULL )
+    {
+      GUID GuidAcceptEx = WSAID_ACCEPTEX;
+      DWORD dwBytes;
+      WSAIoctl
+      (
+        *this,
+        SIO_GET_EXTENSION_FUNCTION_POINTER,
+        &GuidAcceptEx,
+        sizeof( GuidAcceptEx ),
+        &lpfnAcceptEx,
+        sizeof( lpfnAcceptEx ),
+        &dwBytes,
+        NULL,
+        NULL
+      );
+    }
+
+    auto_TCPSocket accepted_tcp_socket( TCPSocket::create( get_domain() ) );
+    if ( accepted_tcp_socket != NULL )
+    {
+      DWORD peername_len;
+      if ( get_domain() == AF_INET6 )
+        peername_len = sizeof( sockaddr_in6 );
+      else
+        peername_len = sizeof( sockaddr_in );
+
+      DWORD dwBytesReceived;
+
+      Win32AIOAcceptCB* aiocb
+        = new Win32AIOAcceptCB
+              (
+                accepted_tcp_socket,
+                inc_ref(),
+                callback,
+                callback_context
+              );
+
+      if
+      (
+        static_cast<LPFN_ACCEPTEX>( lpfnAcceptEx )
+        (
+          *this,
+          *accepted_tcp_socket,
+          aiocb->peername,
+          0,
+          peername_len + 16,
+          peername_len + 16,
+          &dwBytesReceived,
+          *aiocb
+        )
+        ||
+        WSAGetLastError() == WSA_IO_PENDING
+      )
+        return;
+      else
+        delete aiocb;
+    }
+    // else the TCPSocket::create failed
+
+    callback.onAcceptError( get_last_error(), callback_context );
+
+    return;
+  }
+#endif
+
+  // Try a non-blocking accept first
+  if ( set_blocking_mode( false ) )
+  {
+    auto_TCPSocket accepted_tcp_socket( accept() );
+    if ( accepted_tcp_socket != NULL )
+    {
+      callback.onAcceptCompletion( accepted_tcp_socket, callback_context );
+      return;
+    }
+    else if ( !want_read() )
+    {
+      callback.onAcceptError( get_last_error(), callback_context );
+      return;
+    }
+  }
+
+  // Next try to offload the accept to an IOQueue
+  if ( io_queue != NULL )
+  {
+    switch ( io_queue->get_type_id() )
+    {
+      case BIOQueue::TYPE_ID:
+      {
+        static_cast<BIOQueue*>( io_queue.get() )
+          ->submit
+            (
+              new BIOAcceptCB( inc_ref(), callback, callback_context )
+            );
+      }
+      return;
+
+      case NBIOQueue::TYPE_ID:
+      {
+        static_cast<NBIOQueue*>( io_queue.get() )
+          ->submit
+            (
+              new NBIOAcceptCB( inc_ref(), callback, callback_context )
+            );
+      }
+      return;
+    }
+  }
+
+  // Give up instead of blocking on accept
+  callback.onAcceptError( get_last_error(), callback_context );
+}
+
+void
+TCPSocket::aio_connect
+(
+  auto_SocketAddress peername,
+  AIOConnectCallback& callback,
+  void* callback_context
+)
+{
+#ifdef _WIN32
+  if
+  (
+    io_queue != NULL
+    &&
+    io_queue->get_type_id() == Win32AIOQueue::TYPE_ID
+  )
+  {
+    if ( lpfnConnectEx == NULL )
+    {
+      GUID GuidConnectEx = WSAID_CONNECTEX;
+      DWORD dwBytes;
+      WSAIoctl
+      (
+        *this,
+        SIO_GET_EXTENSION_FUNCTION_POINTER,
+        &GuidConnectEx,
+        sizeof( GuidConnectEx ),
+        &lpfnConnectEx,
+        sizeof( lpfnConnectEx ),
+        &dwBytes,
+        NULL,
+        NULL
+      );
+    }
+
+    for ( ;; )
+    {
+      struct sockaddr* name; socklen_t namelen;
+      if ( peername->as_struct_sockaddr( get_domain(), name, namelen ) )
+      {
+        auto_SocketAddress
+          ephemeral_sockname( SocketAddress::create( NULL, 0 ) );
+
+        if ( ephemeral_sockname != NULL && bind( *ephemeral_sockname ) )
+        {
+          DWORD dwBytesSent;
+
+          Win32AIOConnectCB* aiocb
+            = new Win32AIOConnectCB
+                  (
+                    peername,
+                    inc_ref(),
+                    callback,
+                    callback_context
+                  );
+
+          if
+          (
+            static_cast<LPFN_CONNECTEX>( lpfnConnectEx )
+            (
+              *this,
+              name,
+              namelen,
+              NULL,
+              0,
+              &dwBytesSent,
+              *aiocb
+            )
+            ||
+            WSAGetLastError() == WSA_IO_PENDING
+          )
+            return;
+          else
+          {
+            delete aiocb;
+            break;
+          }
+        }
+        else
+          break;
+      }
+      else if ( get_domain() == AF_INET6 )
+      {
+        if ( recreate( AF_INET ) )
+          continue;
+        else
+          break;
+      }
+      else
+        break;
+    }
+
+    callback.onConnectError( get_last_error(), callback_context );
+
+    return;
+  }
+#endif
+
+  Socket::aio_connect( peername, callback, callback_context );
+}
+
+void TCPSocket::aio_recv
+(
+  yidl::runtime::auto_Buffer buffer,
+  int flags,
+  AIOReadCallback& callback,
+  void* callback_context
+)
+{
+#ifdef _WIN32
+  if
+  (
+    io_queue != NULL
+    &&
+    io_queue->get_type_id() == Win32AIOQueue::TYPE_ID
+  )
+  {
+    WSABUF wsabuf[1];
+    wsabuf[0].buf = static_cast<char*>( *buffer ) + buffer->size();
+    wsabuf[0].len = static_cast<ULONG>( buffer->capacity() - buffer->size() );
+
+    DWORD dwNumberOfBytesReceived,
+          dwFlags = static_cast<DWORD>( get_platform_recv_flags( flags ) );
+
+    Win32AIORecvCB* aiocb
+      = new Win32AIORecvCB( buffer, inc_ref(), callback, callback_context );
+
+    if
+    (
+      WSARecv
+      (
+        *this,
+        wsabuf,
+        1,
+        &dwNumberOfBytesReceived,
+        &dwFlags,
+        *aiocb,
+        NULL // Win32AIORecvCB::WSAOverlappedCompletionRoutine
+      ) == 0
+      ||
+      WSAGetLastError() == WSA_IO_PENDING
+    )
+      return;
+    else
+    {
+      delete aiocb;
+      callback.onReadError( get_last_error(), callback_context );
+      return;
+    }
+  }
+#endif
+
+  Socket::aio_recv( buffer, flags, callback, callback_context );
+}
+
+void
+TCPSocket::aio_send
+(
+  yidl::runtime::auto_Buffer buffer,
+  int flags,
+  AIOWriteCallback& callback,
+  void* callback_context
+)
+{
+  // Don't translate flags here, since they'll be translated again
+  // on the ->send call (except on Win32)
+
+#ifdef _WIN32
+  if
+  (
+    io_queue != NULL
+    &&
+    io_queue->get_type_id() == YIELD::platform::Win32AIOQueue::TYPE_ID
+  )
+  {
+    WSABUF wsabuf[1];
+    wsabuf[0].buf = static_cast<char*>( *buffer );
+    wsabuf[0].len = static_cast<ULONG>( buffer->size() );
+
+    DWORD dwNumberOfBytesSent;
+
+    Win32AIOSendCB* aiocb
+      = new Win32AIOSendCB( buffer, inc_ref(), callback, callback_context );
+
+    if
+    (
+      WSASend
+      (
+        *this,
+        wsabuf,
+        1,
+        &dwNumberOfBytesSent,
+        static_cast<DWORD>( get_platform_send_flags( flags ) ),
+        *aiocb,
+        Win32AIOSendCB::WSAOverlappedCompletionRoutine
+      ) == 0
+      ||
+      WSAGetLastError() == WSA_IO_PENDING
+    )
+      return;
+    else
+    {
+      delete aiocb;
+      callback.onWriteError( get_last_error(), callback_context );
+      return;
+    }
+  }
+#endif
+
+  Socket::aio_send( buffer, flags, callback, callback_context );
+}
+
+void
+TCPSocket::aio_sendmsg
+(
+  yidl::runtime::auto_Buffers buffers,
+  int flags,
+  AIOWriteCallback& callback,
+  void* callback_context
+)
+{
+  // Don't translate flags here, since they'll be translated again
+  // on the ->sendmsg call (except on Win32)
+
+#ifdef _WIN32
+  if
+  (
+    io_queue != NULL
+    &&
+    io_queue->get_type_id() == Win32AIOQueue::TYPE_ID
+  )
+  {
+    DWORD dwNumberOfBytesSent;
+
+    Win32AIOSendMsgCB* aiocb
+      = new Win32AIOSendMsgCB( buffers, inc_ref(), callback, callback_context );
+
+#ifdef _WIN64
+    // See note in sendmsg re: the logic behind this
+    const struct iovec* iovecs = buffers->get_iovecs();
+    uint32_t iovecs_len = buffers->get_iovecs_len();
+    std::vector<WSABUF> wsabufs( iovecs_len );
+    for ( uint32_t iovec_i = 0; iovec_i < iovecs_len; iovec_i++ )
+    {
+      wsabufs[iovec_i].len = static_cast<ULONG>( iovecs[iovec_i].iov_len );
+      wsabufs[iovec_i].buf = static_cast<char*>( iovecs[iovec_i].iov_base );
+    }
+    if
+    (
+      WSASend
+      (
+        *this,
+        &wsabufs[0],
+        iovecs_len,
+        &dwNumberOfBytesSent,
+        0,
+        *aiocb,
+        Win32AIOSendMsgCB::WSAOverlappedCompletionRoutine
+      ) == 0
+      ||
+#else
+    if
+    (
+      WSASend
+      (
+        *this,
+        reinterpret_cast<WSABUF*>
+        (
+          const_cast<struct iovec*>
+          (
+            static_cast<const struct iovec*>( *buffers )
+          )
+        ),
+        buffers->size(),
+        &dwNumberOfBytesSent,
+        static_cast<DWORD>( get_platform_send_flags( flags ) ),
+        *aiocb,
+        Win32AIOSendMsgCB::WSAOverlappedCompletionRoutine
+      ) == 0
+      ||
+#endif
+      WSAGetLastError() == WSA_IO_PENDING
+    )
+      return;
+    else
+    {
+      delete aiocb;
+      callback.onWriteError( get_last_error(), callback_context );
+      return;
+    }
+  }
+#endif
+
+  Socket::aio_sendmsg( buffers, flags, callback, callback_context );
+}
+
+bool TCPSocket::associate( auto_IOQueue io_queue )
+{
+  if ( this->io_queue == NULL )
+  {
+    switch ( io_queue->get_type_id() )
+    {
+#ifdef _WIN32
+      case Win32AIOQueue::TYPE_ID:
+      {
+        if
+        (
+          static_cast<Win32AIOQueue*>( io_queue.get() )
+            ->associate( *this )
+        )
+        {
+          this->io_queue = io_queue;
+          return true;
+        }
+        else
+          return false;
+      }
+      break;
+#endif
+
+      default: return Socket::associate( io_queue );
+    }
+  }
+  else
+    return false;
+}
+
+auto_TCPSocket TCPSocket::create()
+{
+  return create( AF_INET6 );
+}
+
+auto_TCPSocket TCPSocket::create( int domain )
+{
+  socket_t socket_ = Socket::create( &domain, SOCK_STREAM, IPPROTO_TCP );
+
+  if ( socket_ != -1 )
+    return new TCPSocket( domain, socket_ );
+  else
+    return NULL;
+}
+
+
 // thread.cpp
 #ifdef _WIN32
 #include <windows.h>
@@ -2945,6 +8743,15 @@ unsigned long Thread::gettid()
   return thr_self();
 #else
   return 0;
+#endif
+}
+
+bool Thread::join()
+{
+#ifdef _WIN32
+  return WaitForSingleObject( handle, INFINITE ) == WAIT_OBJECT_0;
+#else
+  return pthread_join( handle, NULL ) != -1;
 #endif
 }
 
@@ -3112,8 +8919,10 @@ void Thread::yield()
 
 // time.cpp
 #if defined(_WIN32)
+#undef INVALID_SOCKET
 #include <windows.h> // For FILETIME
 #include <winsock.h> // For timeval
+#define INVALID_SOCKET  (SOCKET)(~0)
 #elif defined(__MACH__)
 #include <sys/time.h> // For gettimeofday
 #endif
@@ -3130,7 +8939,7 @@ const char* ISOMonths[]
 
 
 #ifdef _WIN32
-static inline ULONGLONG FILETIMEToUnixTimeNS( const FILETIME& file_time )
+static ULONGLONG FILETIMEToUnixTimeNS( const FILETIME& file_time )
 {
   ULARGE_INTEGER file_time_combined;
   file_time_combined.LowPart = file_time.dwLowDateTime;
@@ -3142,30 +8951,17 @@ static inline ULONGLONG FILETIMEToUnixTimeNS( const FILETIME& file_time )
   return file_time_combined.QuadPart;
 }
 
-static inline ULONG FILETIMEToUnixTimeS( const FILETIME& file_time )
-{
-  return static_cast<ULONG>( FILETIMEToUnixTimeNS( file_time ) / 1000000000 );
-}
-
-static inline ULONGLONG FILETIMEToUnixTimeNS( const FILETIME* file_time )
-{
-  if ( file_time )
-    return FILETIMEToUnixTimeNS( *file_time );
-  else
-    return 0;
-}
-
 // Adapted from http://support.microsoft.com/kb/167296
-static inline FILETIME UnixTimeSToFILETIME( uint32_t unix_time_s )
-{
- LONGLONG ll = Int32x32To64( unix_time_s, 10000000 ) + 116444736000000000;
- FILETIME file_time;
- file_time.dwLowDateTime = static_cast<DWORD>( ll );
- file_time.dwHighDateTime = ll >> 32;
- return file_time;
-}
+//static FILETIME UnixTimeSToFILETIME( uint32_t unix_time_s )
+//{
+// LONGLONG ll = Int32x32To64( unix_time_s, 10000000 ) + 116444736000000000;
+// FILETIME file_time;
+// file_time.dwLowDateTime = static_cast<DWORD>( ll );
+// file_time.dwHighDateTime = ll >> 32;
+// return file_time;
+//}
 
-static inline FILETIME UnixTimeNSToFILETIME( uint64_t unix_time_ns )
+static FILETIME UnixTimeNSToFILETIME( uint64_t unix_time_ns )
 {
   // Add the difference in nanoseconds between
   // January 1, 1601 (start of the Windows epoch) and
@@ -3178,7 +8974,7 @@ static inline FILETIME UnixTimeNSToFILETIME( uint64_t unix_time_ns )
   return file_time;
 }
 
-static inline SYSTEMTIME UnixTimeNSToUTCSYSTEMTIME( uint64_t unix_time_ns )
+static SYSTEMTIME UnixTimeNSToUTCSYSTEMTIME( uint64_t unix_time_ns )
 {
   FILETIME file_time = UnixTimeNSToFILETIME( unix_time_ns );
   SYSTEMTIME system_time;
@@ -3186,7 +8982,7 @@ static inline SYSTEMTIME UnixTimeNSToUTCSYSTEMTIME( uint64_t unix_time_ns )
   return system_time;
 }
 
-static inline SYSTEMTIME UnixTimeNSToLocalSYSTEMTIME( uint64_t unix_time_ns )
+static SYSTEMTIME UnixTimeNSToLocalSYSTEMTIME( uint64_t unix_time_ns )
 {
   SYSTEMTIME utc_system_time = UnixTimeNSToUTCSYSTEMTIME( unix_time_ns );
   TIME_ZONE_INFORMATION time_zone_information;
@@ -3221,6 +9017,16 @@ Time::Time()
 #endif
 }
 
+Time::Time( double unix_time_s )
+  : unix_time_ns
+    (
+      static_cast<uint64_t>
+      (
+        unix_time_s * static_cast<double>( NS_IN_S )
+      )
+    )
+{ }
+
 Time::Time( const struct timeval& tv )
 {
   unix_time_ns = tv.tv_sec * NS_IN_S + tv.tv_usec * NS_IN_US;
@@ -3234,7 +9040,10 @@ Time::Time( const FILETIME& file_time )
 
 Time::Time( const FILETIME* file_time )
 {
-  unix_time_ns = FILETIMEToUnixTimeNS( file_time );
+  if ( file_time != NULL )
+    unix_time_ns = FILETIMEToUnixTimeNS( *file_time );
+  else
+    unix_time_ns = 0;
 }
 #else
 Time::Time( const struct timespec& ts )
@@ -3508,6 +9317,218 @@ Time::operator std::string() const
   return iso_date_time;
 }
 
+Time& Time::operator=( const Time& other )
+{
+  unix_time_ns = other.unix_time_ns;
+  return *this;
+}
+
+Time& Time::operator=( uint64_t unix_time_ns )
+{
+  this->unix_time_ns = unix_time_ns;
+  return *this;
+}
+
+Time& Time::operator=( double unix_time_s )
+{
+  this->unix_time_ns =
+    static_cast<uint64_t>
+    (
+      unix_time_s * static_cast<double>( NS_IN_S )
+    );
+  return *this;
+}
+
+Time Time::operator+( const Time& other ) const
+{
+  return Time( unix_time_ns + other.unix_time_ns );
+}
+
+Time Time::operator+( uint64_t unix_time_ns ) const
+{
+  return Time( this->unix_time_ns + unix_time_ns );
+}
+
+Time Time::operator+( double unix_time_s ) const
+{
+  return Time( as_unix_time_s() + unix_time_s );
+}
+
+Time& Time::operator+=( const Time& other )
+{
+  unix_time_ns += other.unix_time_ns;
+  return *this;
+}
+
+Time& Time::operator+=( uint64_t unix_time_ns )
+{
+  this->unix_time_ns += unix_time_ns;
+  return *this;
+}
+
+Time& Time::operator+=( double unix_time_s )
+{
+  this->unix_time_ns +=
+    static_cast<uint64_t>
+    (
+      unix_time_s * static_cast<double>( NS_IN_S )
+    );
+
+  return *this;
+}
+
+Time Time::operator-( const Time& other ) const
+{
+  if ( unix_time_ns >= other.unix_time_ns )
+    return Time( unix_time_ns - other.unix_time_ns );
+  else
+    return Time( static_cast<uint64_t>( 0 ) );
+}
+
+Time Time::operator-( uint64_t unix_time_ns ) const
+{
+  if ( this->unix_time_ns >= unix_time_ns )
+    return Time( this->unix_time_ns - unix_time_ns );
+  else
+    return Time( static_cast<uint64_t>( 0 ) );
+}
+
+Time Time::operator-( double unix_time_s ) const
+{
+  double this_unix_time_s = as_unix_time_s();
+  if ( this_unix_time_s >= unix_time_s )
+    return Time( this_unix_time_s - unix_time_s );
+  else
+    return Time( static_cast<uint64_t>( 0 ) );
+}
+
+Time& Time::operator-=( const Time& other )
+{
+  if ( unix_time_ns >= other.unix_time_ns )
+    unix_time_ns -= other.unix_time_ns;
+  else
+    unix_time_ns = 0;
+
+  return *this;
+}
+
+Time& Time::operator-=( uint64_t unix_time_ns )
+{
+  if ( this->unix_time_ns >= unix_time_ns )
+    this->unix_time_ns -= unix_time_ns;
+  else
+    this->unix_time_ns = 0;
+
+  return *this;
+}
+
+Time& Time::operator-=( double unix_time_s )
+{
+  double this_unix_time_s = as_unix_time_s();
+  if ( this_unix_time_s >= unix_time_s )
+    this->unix_time_ns -= static_cast<uint64_t>( unix_time_s * NS_IN_S );
+  else
+    this->unix_time_ns = 0;
+
+  return *this;
+}
+
+Time& Time::operator*=( const Time& other )
+{
+  unix_time_ns *= other.unix_time_ns;
+  return *this;
+}
+
+bool Time::operator==( const Time& other ) const
+{
+  return unix_time_ns == other.unix_time_ns;
+}
+
+bool Time::operator==( uint64_t unix_time_ns ) const
+{
+  return this->unix_time_ns == unix_time_ns;
+}
+
+bool Time::operator==( double unix_time_s ) const
+{
+  return as_unix_time_s() == unix_time_s;
+}
+
+bool Time::operator!=( const Time& other ) const
+{
+  return unix_time_ns != other.unix_time_ns;
+}
+
+bool Time::operator!=( uint64_t unix_time_ns ) const
+{
+  return this->unix_time_ns != unix_time_ns;
+}
+
+bool Time::operator!=( double unix_time_s ) const
+{
+  return as_unix_time_s() != unix_time_s;
+}
+
+bool Time::operator<( const Time& other ) const
+{
+  return unix_time_ns < other.unix_time_ns;
+}
+
+bool Time::operator<( uint64_t unix_time_ns ) const
+{
+  return this->unix_time_ns < unix_time_ns;
+}
+
+bool Time::operator<( double unix_time_s ) const
+{
+  return as_unix_time_s() < unix_time_s;
+}
+
+bool Time::operator<=( const Time& other ) const
+{
+  return unix_time_ns <= other.unix_time_ns;
+}
+
+bool Time::operator<=( uint64_t unix_time_ns ) const
+{
+  return this->unix_time_ns <= unix_time_ns;
+}
+
+bool Time::operator<=( double unix_time_s ) const
+{
+  return as_unix_time_s() <= unix_time_s;
+}
+
+bool Time::operator>( const Time& other ) const
+{
+  return unix_time_ns > other.unix_time_ns;
+}
+
+bool Time::operator>( uint64_t unix_time_ns ) const
+{
+  return this->unix_time_ns > unix_time_ns;
+}
+
+bool Time::operator>( double unix_time_s ) const
+{
+  return as_unix_time_s() > unix_time_s;
+}
+
+bool Time::operator>=( const Time& other ) const
+{
+  return unix_time_ns >= other.unix_time_ns;
+}
+
+bool Time::operator>=( uint64_t unix_time_ns ) const
+{
+  return this->unix_time_ns >= unix_time_ns;
+}
+
+bool Time::operator>=( double unix_time_s ) const
+{
+  return as_unix_time_s() >= unix_time_s;
+}
+
 
 // timer_queue.cpp
 #ifdef _WIN32
@@ -3521,12 +9542,127 @@ Time::operator std::string() const
 TimerQueue* TimerQueue::default_timer_queue = NULL;
 
 
+#ifndef _WIN32
+class TimerQueue::Thread : public YIELD::platform::Thread
+{
+public:
+  Thread()
+  {
+    fd_event_poller = FDEventPoller::create();
+    new_timers_pipe = Pipe::create();
+    fd_event_poller->associate( new_timers_pipe->get_read_end() );
+    should_run = true;
+  }
+
+  void addTimer( Timer* timer )
+  {
+    new_timers_pipe->write( &timer, sizeof( timer ) );
+  }
+
+  void stop()
+  {
+    should_run = false;
+    addTimer( NULL );
+  }
+
+  // YIELD::platform::Thread
+  void run()
+  {
+    set_name( "TimerQueueThread" );
+
+    while ( should_run )
+    {
+      if ( timers.empty() )
+      {
+        if ( fd_event_poller->poll() )
+        {
+          Timer* new_timer;
+          new_timers_pipe->read( &new_timer, sizeof( new_timer ) );
+          if ( new_timer != NULL )
+          {
+            timers.push
+            (
+              std::make_pair( Time() + new_timer->get_timeout(), new_timer )
+            );
+          }
+          else
+            break;
+        }
+      }
+      else
+      {
+        Time current_time;
+        if ( timers.top().first <= current_time )
+        // Earliest timer has expired, fire it
+        {
+          TimerQueue::Timer* timer = timers.top().second;
+          timers.pop();
+
+          if ( !timer->deleted )
+          {
+            timer->fire();
+
+            if ( timer->get_period() != static_cast<uint64_t>( 0 ) )
+            {
+              timer->last_fire_time = Time();
+              timers.push
+              (
+                std::make_pair
+                (
+                  timer->last_fire_time + timer->get_period(),
+                  timer
+                )
+              );
+            }
+            else
+              TimerQueue::Timer::dec_ref( *timer );
+          }
+          else
+            TimerQueue::Timer::dec_ref( *timer );
+        }
+        else // Wait on the new timers queue until a new timer arrives
+             // or it's time to fire the next timer
+        {
+          if ( fd_event_poller->poll( timers.top().first - current_time ) )
+          {
+            TimerQueue::Timer* new_timer;
+            new_timers_pipe->read( &new_timer, sizeof( new_timer ) );
+            if ( new_timer != NULL )
+            {
+              timers.push
+              (
+                std::make_pair( Time() + new_timer->get_timeout(), new_timer )
+              );
+            }
+            else
+              break;
+          }
+        }
+      }
+    }
+  }
+
+private:
+  auto_FDEventPoller fd_event_poller;
+  auto_Pipe new_timers_pipe;
+  bool should_run;
+  std::priority_queue
+  <
+    std::pair<Time, Timer*>,
+    std::vector< std::pair<Time, Timer*> >,
+    std::greater< std::pair<Time, Timer*> >
+  > timers;
+};
+#endif
+
+
 TimerQueue::TimerQueue()
 {
 #ifdef _WIN32
   hTimerQueue = CreateTimerQueue();
 #else
-  thread.start();
+  thread = new Thread;
+  thread->start();
 #endif
 }
 
@@ -3542,7 +9678,8 @@ TimerQueue::~TimerQueue()
   if ( hTimerQueue != NULL )
     DeleteTimerQueueEx( hTimerQueue, NULL );
 #else
-  thread.stop();
+  thread->stop();
+  delete thread;
 #endif
 }
 
@@ -3555,13 +9692,13 @@ void TimerQueue::addTimer( yidl::runtime::auto_Object<Timer> timer )
     &timer->hTimer,
     hTimerQueue,
     Timer::WaitOrTimerCallback,
-    &timer->incRef(),
+    &timer->inc_ref(),
     static_cast<DWORD>( timer->get_timeout().as_unix_time_ms() ),
     static_cast<DWORD>( timer->get_period().as_unix_time_ms() ),
     WT_EXECUTEDEFAULT
   );
 #else
-  thread.addTimer( timer.release() );
+  thread->addTimer( timer.release() );
 #endif
 }
 
@@ -3613,98 +9750,6 @@ void TimerQueue::Timer::delete_()
 #endif
 }
 
-#ifndef _WIN32
-TimerQueue::Thread::Thread()
-{
-   should_run = true;
-}
-
-void TimerQueue::Thread::run()
-{
-  set_name( "TimerQueueThread" );
-
-  while ( should_run )
-  {
-    if ( timers.empty() )
-    {
-      TimerQueue::Timer* new_timer = new_timers_queue.dequeue();
-      if ( new_timer != NULL )
-      {
-        timers.push
-        (
-          std::make_pair
-          (
-            Time() + new_timer->get_timeout(),
-            new_timer
-          )
-        );
-      }
-      else
-        break;
-    }
-    else
-    {
-      Time current_time;
-      if ( timers.top().first <= current_time )
-      // Earliest timer has expired, fire it
-      {
-        TimerQueue::Timer* timer = timers.top().second;
-        timers.pop();
-
-        if ( !timer->deleted )
-        {
-          timer->fire();
-
-          if ( timer->get_period() != static_cast<uint64_t>( 0 ) )
-          {
-            timer->last_fire_time = Time();
-            timers.push
-            (
-              std::make_pair
-              (
-                timer->last_fire_time + timer->get_period(),
-                timer
-              )
-            );
-          }
-          else
-            TimerQueue::Timer::decRef( *timer );
-        }
-        else
-          TimerQueue::Timer::decRef( *timer );
-      }
-      else // Wait on the new timers queue until a new timer arrives
-           // or it's time to fire the next timer
-      {
-        TimerQueue::Timer* new_timer
-          = new_timers_queue.timed_dequeue
-            (
-              timers.top().first - current_time
-            );
-
-        if ( new_timer != NULL )
-        {
-          timers.push
-          (
-            std::make_pair
-            (
-              Time() + new_timer->get_timeout(),
-              new_timer
-            )
-          );
-        }
-      }
-    }
-  }
-}
-
-void TimerQueue::Thread::stop()
-{
-  should_run = false;
-  new_timers_queue.enqueue( NULL );
-}
-#endif
-
 #ifdef _WIN32
 VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
 (
@@ -3720,7 +9765,7 @@ VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
     this_->fire();
 
     if ( this_->get_period() == 0ULL )
-      TimerQueue::Timer::decRef( *this_ );
+      TimerQueue::Timer::dec_ref( *this_ );
     else
       this_->last_fire_time = Time();
   }
@@ -3728,6 +9773,451 @@ VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
     this_->last_fire_time = Time();
 }
 #endif
+
+
+// udp_socket.cpp
+#if defined(_WIN32)
+#undef INVALID_SOCKET
+#pragma warning( push )
+#pragma warning( disable: 4365 4995 )
+#include <ws2tcpip.h>
+#pragma warning( pop )
+#define INVALID_SOCKET  (SOCKET)(~0)
+#else
+#include <netinet/in.h> // For the IPPROTO_* constants
+#include <sys/socket.h>
+#endif
+
+
+class UDPSocket::IORecvFromCB : public IOCB<AIORecvFromCallback>
+{
+protected:
+  IORecvFromCB
+  (
+    yidl::runtime::auto_Buffer buffer,
+    int flags,
+    auto_UDPSocket udp_socket,
+    AIORecvFromCallback& callback,
+    void* callback_context
+  )
+  : IOCB<AIORecvFromCallback>( callback, callback_context ),
+    buffer( buffer ),
+    flags( flags ),
+    udp_socket( udp_socket )
+  { }
+
+
+  yidl::runtime::auto_Buffer buffer;
+  int flags;
+  auto_UDPSocket udp_socket;
+
+
+  void onRecvFromCompletion( struct sockaddr_storage& peername )
+  {
+    callback.onRecvFromCompletion
+    (
+      buffer,
+      new SocketAddress( peername ),
+      callback_context
+    );
+
+    buffer = NULL; // To release the reference
+  }
+
+  void onRecvFromError()
+  {
+    onRecvFromError( get_last_error() );
+  }
+
+  void onRecvFromError( uint32_t error_code )
+  {
+    buffer = NULL; // To release the reference
+    callback.onRecvFromError( error_code, callback_context );
+  }
+};
+
+
+class UDPSocket::BIORecvFromCB
+  : public BIOCB, public IORecvFromCB
+{
+public:
+  BIORecvFromCB
+  (
+    yidl::runtime::auto_Buffer buffer,
+    int flags,
+    auto_UDPSocket udp_socket,
+    AIORecvFromCallback& callback,
+    void* callback_context
+  ) : IORecvFromCB( buffer, flags, udp_socket, callback, callback_context )
+  { }
+
+  // BIOCB
+  void execute()
+  {
+    if ( udp_socket->set_blocking_mode( true ) )
+    {
+      struct sockaddr_storage peername;
+      ssize_t recvfrom_ret = udp_socket->recvfrom( *buffer, flags, peername );
+      if ( recvfrom_ret > 0 )
+        onRecvFromCompletion( peername );
+      else
+        onRecvFromError();
+    }
+    else
+      onRecvFromError();
+  }
+};
+
+
+class UDPSocket::NBIORecvFromCB
+  : public NBIOCB, public IORecvFromCB
+{
+public:
+  NBIORecvFromCB
+  (
+    yidl::runtime::auto_Buffer buffer,
+    int flags,
+    auto_UDPSocket udp_socket,
+    AIORecvFromCallback& callback,
+    void* callback_context
+  ) : NBIOCB( STATE_WANT_READ ),
+      IORecvFromCB( buffer, flags, udp_socket, callback, callback_context )
+  { }
+
+  // NBIOCB
+  void execute()
+  {
+    if ( udp_socket->set_blocking_mode( false ) )
+    {
+      struct sockaddr_storage peername;
+      ssize_t recvfrom_ret = udp_socket->recvfrom( *buffer, flags, peername );
+      if ( recvfrom_ret > 0 )
+      {
+        set_state( STATE_COMPLETE );
+        onRecvFromCompletion( peername );
+      }
+      else if ( udp_socket->want_read() )
+        set_state( STATE_WANT_READ );
+      else
+      {
+        set_state( STATE_ERROR );
+        onRecvFromError();
+      }
+    }
+    else
+    {
+      set_state( STATE_ERROR );
+      onRecvFromError();
+    }
+  }
+
+  socket_t get_fd() const { return *udp_socket; }
+};
+
+
+#ifdef _WIN32
+class UDPSocket::Win32AIORecvFromCB
+  : public Win32AIOCB, public IORecvFromCB
+{
+public:
+  Win32AIORecvFromCB
+  (
+    yidl::runtime::auto_Buffer buffer,
+    auto_UDPSocket udp_socket,
+    AIORecvFromCallback& callback,
+    void* callback_context
+  ) : IORecvFromCB( buffer, 0, udp_socket, callback, callback_context )
+  { }
+
+  // Win32AIOCB
+  void onCompletion( DWORD dwNumberOfBytesTransferred )
+  {
+    buffer->put( NULL, dwNumberOfBytesTransferred );
+    onRecvFromCompletion( peername );
+  }
+
+  void onError( DWORD dwErrorCode )
+  {
+    onRecvFromError( static_cast<uint32_t>( dwErrorCode ) );
+  }
+
+
+  struct sockaddr_storage peername;
+};
+#endif
+
+
+UDPSocket::UDPSocket( int domain, socket_t socket_ )
+  : Socket( domain, SOCK_DGRAM, IPPROTO_UDP, socket_ )
+{ }
+
+void
+UDPSocket::aio_recvfrom
+(
+  yidl::runtime::auto_Buffer buffer,
+  int flags,
+  AIORecvFromCallback& callback,
+  void* callback_context
+)
+{
+#ifdef _WIN32
+  if
+  (
+    io_queue != NULL
+    &&
+    io_queue->get_type_id() == Win32AIOQueue::TYPE_ID
+  )
+  {
+    WSABUF wsabuf[1];
+    wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) );
+    wsabuf[0].len = static_cast<ULONG>( buffer->capacity() - buffer->size() );
+
+    DWORD dwNumberOfBytesReceived,
+          dwFlags = static_cast<DWORD>( get_platform_recv_flags( flags ) );
+
+    Win32AIORecvFromCB* aiocb
+     = new Win32AIORecvFromCB( buffer, inc_ref(), callback, callback_context );
+
+    socklen_t peername_len = sizeof( aiocb->peername );
+
+    if
+    (
+      WSARecvFrom
+      (
+        *this,
+        wsabuf,
+        1,
+        &dwNumberOfBytesReceived,
+        &dwFlags,
+        reinterpret_cast<struct sockaddr*>( &aiocb->peername ),
+        &peername_len,
+        *aiocb,
+        NULL
+      ) == 0
+      ||
+      WSAGetLastError() == WSA_IO_PENDING
+    )
+      return;
+    else
+    {
+      delete aiocb;
+      callback.onRecvFromError( get_last_error(), callback_context );
+      return;
+    }
+  }
+#endif
+
+  // Try a non-blocking recvfrom first
+  if ( set_blocking_mode( false ) )
+  {
+    struct sockaddr_storage peername;
+    ssize_t recvfrom_ret = recvfrom( *buffer, flags, peername );
+    if ( recvfrom_ret > 0 )
+    {
+      callback.onRecvFromCompletion
+      (
+        buffer,
+        new SocketAddress( peername ),
+        callback_context
+      );
+      return;
+    }
+    else if ( !want_read( ))
+    {
+      callback.onRecvFromError( get_last_error(), callback_context );
+      return;
+    }
+  }
+
+  // Next try to offload the recvfrom to an IOQueue
+  if ( io_queue != NULL )
+  {
+    switch ( io_queue->get_type_id() )
+    {
+      case BIOQueue::TYPE_ID:
+      {
+        static_cast<BIOQueue*>( io_queue.get() )
+          ->submit
+            (
+              new BIORecvFromCB
+                  (
+                    buffer,
+                    flags,
+                    inc_ref(),
+                    callback,
+                    callback_context
+                  )
+            );
+      }
+      return;
+
+      case NBIOQueue::TYPE_ID:
+      {
+        static_cast<NBIOQueue*>( io_queue.get() )
+          ->submit
+            (
+              new NBIORecvFromCB
+                  (
+                    buffer,
+                    flags,
+                    inc_ref(),
+                    callback,
+                    callback_context
+                  )
+            );
+      }
+      return;
+    }
+  }
+
+  // Give up instead of blocking on recvfrom
+  callback.onRecvFromError( get_last_error(), callback_context );
+}
+
+auto_UDPSocket UDPSocket::create()
+{
+  int domain = AF_INET6;
+  socket_t socket_ = Socket::create( &domain, SOCK_DGRAM, IPPROTO_UDP );
+  if ( socket_ != -1 )
+    return new UDPSocket( domain, socket_ );
+  else
+    return NULL;
+}
+
+ssize_t
+UDPSocket::recvfrom
+(
+  yidl::runtime::Buffer& buffer,
+  int flags,
+  struct sockaddr_storage& peername
+)
+{
+  ssize_t recvfrom_ret
+    = recvfrom
+      (
+        static_cast<char*>( buffer ) + buffer.size(),
+        buffer.capacity() - buffer.size(),
+        flags,
+        peername
+      );
+
+  if ( recvfrom_ret > 0 )
+    buffer.put( NULL, static_cast<size_t>( recvfrom_ret ) );
+
+  return recvfrom_ret;
+}
+
+ssize_t
+UDPSocket::recvfrom
+(
+  void* buffer,
+  size_t buffer_len,
+  int flags,
+  struct sockaddr_storage& peername
+)
+{
+  socklen_t peername_len = sizeof( peername );
+  return ::recvfrom
+         (
+           *this,
+           static_cast<char*>( buffer ),
+           buffer_len,
+           flags,
+           reinterpret_cast<struct sockaddr*>( &peername ),
+           &peername_len
+         );
+}
+
+ssize_t
+UDPSocket::sendmsg
+(
+  const struct iovec* buffers,
+  uint32_t buffers_count,
+  const SocketAddress& peername,
+  int flags
+)
+{
+  flags = get_platform_send_flags( flags );
+
+  struct sockaddr* name; socklen_t namelen;
+  if ( peername.as_struct_sockaddr( get_domain(), name, namelen ) )
+  {
+#ifdef _WIN32
+    DWORD dwWrittenLength;
+#ifdef _WIN64
+    // The WSABUF .len is a ULONG, which is != size_t on Win64,
+    // so we have to truncate it here.
+    // This is easier (compiler warnings, using sizeof, etc.)
+    // than changing the struct iovec definition to use uint32_t.
+    std::vector<WSABUF> wsabufs( buffers_count );
+    for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+    {
+      wsabufs[buffer_i].len = static_cast<ULONG>( buffers[buffer_i].iov_len );
+      wsabufs[buffer_i].buf = static_cast<char*>( buffers[buffer_i].iov_base );
+    }
+#endif
+
+    ssize_t sendto_ret
+      = WSASendTo
+        (
+          *this,
+#ifdef _WIN64
+          &wsabufs[0],
+#else
+          reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ),
+#endif
+          buffers_count,
+          &dwWrittenLength,
+          static_cast<DWORD>( flags ),
+          name,
+          namelen,
+          NULL,
+          NULL
+        );
+
+    if ( sendto_ret >= 0 )
+      return static_cast<ssize_t>( dwWrittenLength );
+    else
+      return sendto_ret;
+#else
+    struct msghdr msghdr_;
+    memset( &msghdr_, 0, sizeof( msghdr_ ) );
+    msghdr_.msg_name = name;
+    msghdr_.msg_namelen = namelen;
+    msghdr_.msg_iov = const_cast<iovec*>( buffers );
+    msghdr_.msg_iovlen = buffers_count;
+    return ::sendmsg( *this, &msghdr_, flags|MSG_NOSIGNAL );
+#endif
+  }
+  else
+    return -1;
+}
+
+ssize_t
+UDPSocket::sendto
+(
+  const void* buffer,
+  size_t buffer_len,
+  int flags,
+  const SocketAddress& _peername
+)
+{
+  struct sockaddr* peername; socklen_t peername_len;
+  if ( _peername.as_struct_sockaddr( get_domain(), peername, peername_len ) )
+  {
+    return ::sendto
+           (
+             *this,
+             static_cast<const char*>( buffer ),
+             buffer_len,
+             flags,
+             peername,
+             peername_len
+           );
+  }
+  else
+    return -1;
+}
 
 
 // volume.cpp
@@ -4298,17 +10788,6 @@ bool Volume::symlink( const Path& old_path, const Path& new_path )
 #endif
 }
 
-bool Volume::touch( const Path& path )
-{
-  return touch( path, FILE_MODE_DEFAULT );
-}
-
-bool Volume::touch( const Path& path, mode_t mode )
-{
-  auto_File file = creat( path, mode );
-  return file != NULL;
-}
-
 bool Volume::truncate( const Path& path, uint64_t new_size )
 {
 #ifdef _WIN32
@@ -4396,31 +10875,227 @@ Path Volume::volname( const Path& path )
 #endif
 
 
+// win32_aio_queue.cpp
+#ifdef _WIN32
+
+
+#include <windows.h>
+
+
+class Win32AIOQueue::WorkerThread : public Thread
+{
+public:
+  WorkerThread( HANDLE hIoCompletionPort )
+    : hIoCompletionPort( hIoCompletionPort )
+  { }
+
+  // Thread
+  void run()
+  {
+    set_name( "Win32AIOQueue::WorkerThread" );
+
+    for ( ;; )
+    {
+      DWORD dwBytesTransferred;
+      ULONG_PTR ulCompletionKey;
+      LPOVERLAPPED lpOverlapped;
+
+      if
+      (
+        GetQueuedCompletionStatus
+        (
+          hIoCompletionPort,
+          &dwBytesTransferred,
+          &ulCompletionKey,
+          &lpOverlapped,
+          INFINITE
+        )
+      )
+      {
+        Win32AIOCB* aiocb = Win32AIOCB::from_OVERLAPPED( lpOverlapped );
+        aiocb->onCompletion( dwBytesTransferred );
+        delete aiocb;
+      }
+      else if ( lpOverlapped != NULL )
+      {
+        Win32AIOCB* aiocb = Win32AIOCB::from_OVERLAPPED( lpOverlapped );
+        aiocb->onError( ::GetLastError() );
+        delete aiocb;
+      }
+      else
+        break;
+    }
+  }
+
+private:
+  HANDLE hIoCompletionPort;
+};
+
+
+Win32AIOQueue::Win32AIOQueue( HANDLE hIoCompletionPort )
+  : hIoCompletionPort( hIoCompletionPort )
+{
+  uint16_t worker_thread_count
+    = Machine::getOnlineLogicalProcessorCount();
+
+  for
+  (
+    uint16_t worker_thread_i = 0;
+    worker_thread_i < worker_thread_count;
+    worker_thread_i++
+  )
+  {
+    WorkerThread* worker_thread = new WorkerThread( hIoCompletionPort );
+    worker_threads.push_back( worker_thread );
+    worker_thread->start();
+  }
+}
+
+Win32AIOQueue::~Win32AIOQueue()
+{
+  CloseHandle( hIoCompletionPort );
+
+  for
+  (
+    std::vector<WorkerThread*>::iterator
+      worker_thread_i = worker_threads.begin();
+    worker_thread_i != worker_threads.end();
+    worker_thread_i++
+  )
+  {
+    ( *worker_thread_i )->join();
+    WorkerThread::dec_ref( **worker_thread_i );
+  }
+}
+
+bool Win32AIOQueue::associate( socket_t socket_ )
+{
+  return associate( reinterpret_cast<void*>( socket_ ) );
+}
+
+bool Win32AIOQueue::associate( HANDLE handle )
+{
+  return CreateIoCompletionPort
+         (
+           handle,
+           hIoCompletionPort,
+           0,
+           0
+         ) != INVALID_HANDLE_VALUE;
+}
+
+auto_Win32AIOQueue Win32AIOQueue::create()
+{
+  HANDLE hIoCompletionPort
+    = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0 );
+
+  if ( hIoCompletionPort != INVALID_HANDLE_VALUE )
+    return new Win32AIOQueue( hIoCompletionPort );
+  else
+    throw Exception();
+}
+
+bool
+Win32AIOQueue::post
+(
+  Win32AIOCB* win32_aiocb,
+  DWORD dwNumberOfBytesTransferred,
+  ULONG_PTR dwCompletionKey
+)
+{
+  return PostQueuedCompletionStatus
+         (
+           hIoCompletionPort,
+           dwNumberOfBytesTransferred,
+           dwCompletionKey,
+           *win32_aiocb
+         ) == TRUE;
+}
+
+#endif
+
+
+// win32_aiocb.cpp
+#ifdef _WIN32
+
+
+
+Win32AIOCB::Win32AIOCB()
+{
+  memset( &overlapped, 0, sizeof( overlapped ) );
+  overlapped.this_ = this;
+}
+
+void
+Win32AIOCB::OverlappedCompletionRoutine
+(
+  unsigned long dwErrorCode,
+  unsigned long dwNumberOfBytesTransferred,
+  ::OVERLAPPED* lpOverlapped
+)
+{
+  Win32AIOCB* aiocb = from_OVERLAPPED( lpOverlapped );
+  if ( dwErrorCode == 0 )
+    aiocb->onCompletion( dwNumberOfBytesTransferred );
+  else
+    aiocb->onError( dwErrorCode );
+}
+
+void
+Win32AIOCB::WSAOverlappedCompletionRoutine
+(
+  unsigned long dwErrorCode,
+  unsigned long dwNumberOfBytesTransferred,
+  ::OVERLAPPED* lpOverlapped,
+  unsigned long // dwFlags
+)
+{
+  Win32AIOCB* aiocb = from_OVERLAPPED( lpOverlapped );
+  if ( dwErrorCode == 0 )
+    aiocb->onCompletion( dwNumberOfBytesTransferred );
+  else
+    aiocb->onError( dwErrorCode );
+}
+
+Win32AIOCB* Win32AIOCB::from_OVERLAPPED( ::OVERLAPPED* overlapped )
+{
+  return reinterpret_cast<OVERLAPPED*>( overlapped )->this_;
+}
+
+Win32AIOCB::operator OVERLAPPED*()
+{
+  return reinterpret_cast<::OVERLAPPED*>( &overlapped );
+}
+
+#endif
+
+
 // xdr_marshaller.cpp
 XDRMarshaller::XDRMarshaller()
 {
   buffer = new yidl::runtime::StringBuffer;
 }
 
-void XDRMarshaller::writeKey( const char* key )
+void XDRMarshaller::write_key( const char* key )
 {
   if ( !in_map_stack.empty() && in_map_stack.back() && key != NULL )
-    Marshaller::writeString( NULL, 0, key );
+    Marshaller::write( NULL, 0, key );
 }
 
-void XDRMarshaller::writeBoolean( const char* key, uint32_t tag, bool value )
+void XDRMarshaller::write( const char* key, uint32_t tag, bool value )
 {
-  writeInt32( key, tag, value ? 1 : 0 );
+  write( key, tag, value ? 1 : 0 );
 }
 
 void
-XDRMarshaller::writeBuffer
+XDRMarshaller::write
 (
-  const char* key, uint32_t tag,
+  const char* key,
+  uint32_t tag,
   yidl::runtime::auto_Buffer value
 )
 {
-  writeInt32( key, tag, static_cast<int32_t>( value->size() ) );
+  write( key, tag, static_cast<int32_t>( value->size() ) );
 
   buffer->put( static_cast<void*>( *value ), value->size() );
 
@@ -4431,18 +11106,18 @@ XDRMarshaller::writeBuffer
   }
 }
 
-void XDRMarshaller::writeDouble( const char* key, uint32_t, double value )
+void XDRMarshaller::write( const char* key, uint32_t, double value )
 {
-  writeKey( key );
+  write_key( key );
   uint64_t uint64_value;
   memcpy_s( &uint64_value, sizeof( uint64_value ), &value, sizeof( value ) );
   uint64_value = Machine::htonll( uint64_value );
   buffer->put( &uint64_value, sizeof( uint64_value ) );
 }
 
-void XDRMarshaller::writeFloat( const char* key, uint32_t, float value )
+void XDRMarshaller::write( const char* key, uint32_t, float value )
 {
-  writeKey( key );
+  write_key( key );
   uint32_t uint32_value;
   memcpy_s( &uint32_value, sizeof( uint32_value ), &value, sizeof( value ) );
 #ifdef __MACH__
@@ -4453,9 +11128,9 @@ void XDRMarshaller::writeFloat( const char* key, uint32_t, float value )
   buffer->put( &uint32_value, sizeof( uint32_value ) );
 }
 
-void XDRMarshaller::writeInt32( const char* key, uint32_t, int32_t value )
+void XDRMarshaller::write( const char* key, uint32_t, int32_t value )
 {
-  writeKey( key );
+  write_key( key );
 #ifdef __MACH__
   value = htonl( value );
 #else
@@ -4464,41 +11139,52 @@ void XDRMarshaller::writeInt32( const char* key, uint32_t, int32_t value )
   buffer->put( &value, sizeof( value ) );
 }
 
-void XDRMarshaller::writeInt64( const char* key, uint32_t, int64_t value )
+void XDRMarshaller::write( const char* key, uint32_t, int64_t value )
 {
-  writeKey( key );
+  write_key( key );
   value = Machine::htonll( value );
   buffer->put( &value, sizeof( value ) );
 }
 
-void
-XDRMarshaller::writeMap
+void XDRMarshaller::write
 (
   const char* key,
   uint32_t tag,
   const yidl::runtime::Map& value
 )
 {
-  writeInt32( key, tag, static_cast<int32_t>( value.get_size() ) );
+  write( key, tag, static_cast<int32_t>( value.get_size() ) );
   in_map_stack.push_back( true );
   value.marshal( *this );
   in_map_stack.pop_back();
 }
 
 void
-XDRMarshaller::writeSequence
+XDRMarshaller::write
 (
   const char* key,
   uint32_t tag,
   const yidl::runtime::Sequence& value
 )
 {
-  writeInt32( key, tag, static_cast<int32_t>( value.get_size() ) );
+  write( key, tag, static_cast<int32_t>( value.get_size() ) );
   value.marshal( *this );
 }
 
 void
-XDRMarshaller::writeString
+XDRMarshaller::write
+(
+  const char* key,
+  uint32_t,
+  const yidl::runtime::MarshallableObject& value
+)
+{
+  write_key( key );
+  value.marshal( *this );
+}
+
+void
+XDRMarshaller::write
 (
   const char* key,
   uint32_t tag,
@@ -4506,7 +11192,7 @@ XDRMarshaller::writeString
   size_t value_len
 )
 {
-  writeInt32( key, tag, static_cast<int32_t>( value_len ) );
+  write( key, tag, static_cast<int32_t>( value_len ) );
   buffer->put( static_cast<const void*>( value ), value_len );
   if ( value_len % 4 != 0 )
   {
@@ -4515,17 +11201,11 @@ XDRMarshaller::writeString
   }
 }
 
-void
-XDRMarshaller::writeStruct
-(
-  const char* key,
-  uint32_t,
-  const yidl::runtime::Struct& value
-)
+void XDRMarshaller::write( const char* key, uint32_t tag, uint32_t value )
 {
-  writeKey( key );
-  value.marshal( *this );
+  write( key, tag, static_cast<int32_t>( value ) );
 }
+
 
 
 // xdr_unmarshaller.cpp
@@ -4542,20 +11222,20 @@ void XDRUnmarshaller::read( void* buffer, size_t buffer_len )
   this->buffer->get( buffer, buffer_len );
 }
 
-bool XDRUnmarshaller::readBoolean( const char* key, uint32_t tag )
+bool XDRUnmarshaller::read_bool( const char* key, uint32_t tag )
 {
-  return readInt32( key, tag ) == 1;
+  return read_int32( key, tag ) == 1;
 }
 
 void
-XDRUnmarshaller::readBuffer
+XDRUnmarshaller::read
 (
   const char* key,
   uint32_t tag,
   yidl::runtime::auto_Buffer value
 )
 {
-  size_t size = readInt32( key, tag );
+  size_t size = read_int32( key, tag );
   if ( value->capacity() - value->size() < size ) DebugBreak();
   read( static_cast<void*>( *value ), size );
   value->put( NULL, size );
@@ -4566,7 +11246,7 @@ XDRUnmarshaller::readBuffer
   }
 }
 
-double XDRUnmarshaller::readDouble( const char*, uint32_t )
+double XDRUnmarshaller::read_double( const char*, uint32_t )
 {
   uint64_t uint64_value;
   read( &uint64_value, sizeof( uint64_value ) );
@@ -4582,7 +11262,7 @@ double XDRUnmarshaller::readDouble( const char*, uint32_t )
   return double_value;
 }
 
-float XDRUnmarshaller::readFloat( const char*, uint32_t )
+float XDRUnmarshaller::read_float( const char*, uint32_t )
 {
   uint32_t uint32_value;
   read( &uint32_value, sizeof( uint32_value ) );
@@ -4602,7 +11282,7 @@ float XDRUnmarshaller::readFloat( const char*, uint32_t )
   return float_value;
 }
 
-int32_t XDRUnmarshaller::readInt32( const char*, uint32_t )
+int32_t XDRUnmarshaller::read_int32( const char*, uint32_t )
 {
   int32_t value;
   read( &value, sizeof( value ) );
@@ -4613,7 +11293,7 @@ int32_t XDRUnmarshaller::readInt32( const char*, uint32_t )
 #endif
 }
 
-int64_t XDRUnmarshaller::readInt64( const char*, uint32_t )
+int64_t XDRUnmarshaller::read_int64( const char*, uint32_t )
 {
   int64_t value;
   read( &value, sizeof( value ) );
@@ -4621,27 +11301,38 @@ int64_t XDRUnmarshaller::readInt64( const char*, uint32_t )
 }
 
 void
-XDRUnmarshaller::readMap
+XDRUnmarshaller::read
 (
   const char* key,
   uint32_t tag,
   yidl::runtime::Map& value
 )
 {
-  size_t size = readInt32( key, tag );
+  size_t size = read_int32( key, tag );
   for ( size_t i = 0; i < size; i++ )
     value.unmarshal( *this );
 }
 
 void
-XDRUnmarshaller::readSequence
+XDRUnmarshaller::read
+(
+  const char*,
+  uint32_t,
+  yidl::runtime::MarshallableObject& value
+)
+{
+  value.unmarshal( *this );
+}
+
+void
+XDRUnmarshaller::read
 (
   const char* key,
   uint32_t tag,
   yidl::runtime::Sequence& value
 )
 {
-  size_t size = readInt32( key, tag );
+  size_t size = read_int32( key, tag );
   if ( size <= UINT16_MAX )
   {
     for ( size_t i = 0; i < size; i++ )
@@ -4650,14 +11341,14 @@ XDRUnmarshaller::readSequence
 }
 
 void
-XDRUnmarshaller::readString
+XDRUnmarshaller::read
 (
   const char* key,
   uint32_t tag,
   std::string& value
 )
 {
-  size_t str_len = readInt32( key, tag );
+  size_t str_len = read_int32( key, tag );
 
   if ( str_len < UINT16_MAX )
   {
@@ -4674,16 +11365,5 @@ XDRUnmarshaller::readString
       value.resize( str_len );
     }
   }
-}
-
-void
-XDRUnmarshaller::readStruct
-(
-  const char*,
-  uint32_t,
-  yidl::runtime::Struct& value
-)
-{
-  value.unmarshal( *this );
 }
 

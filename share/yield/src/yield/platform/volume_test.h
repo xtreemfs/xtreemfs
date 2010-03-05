@@ -49,9 +49,6 @@ namespace YIELD
     class VolumeTestCase : public yunit::TestCase
     {
     public:
-      VolumeTestCase<VolumeType> operator=( const VolumeTestCase<VolumeType>& )
-      { }
-
       virtual ~VolumeTestCase()
       { }
 

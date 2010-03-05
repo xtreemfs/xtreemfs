@@ -66,11 +66,6 @@ namespace YIELD
       virtual ~FileTestCase()
       { }
 
-      FileTestCase& operator=( const FileTestCase& ) 
-      { 
-        return *this; 
-      }
-
       void setUp()
       {
         tearDown();

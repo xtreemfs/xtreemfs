@@ -31,11 +31,13 @@
 using namespace xtreemfs;
 
 #ifdef _WIN32
+#undef INVALID_SOCKET
 #pragma warning( push )
 #pragma warning( disable: 4995 )
 #include <ws2tcpip.h>
 #include <mswsock.h>
 #pragma warning( pop )
+#define INVALID_SOCKET  (SOCKET)(~0)
 #else
 #include <errno.h>
 #include <netinet/in.h>
@@ -99,15 +101,10 @@ GridSSLSocket::create
   SSL* ssl = SSL_new( ctx->get_ssl_ctx() );
   if ( ssl != NULL )
   {
-#ifdef _WIN32
-    SOCKET socket_
-      = YIELD::ipc::Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
+    YIELD::platform::socket_t socket_
+      = YIELD::platform::Socket::create( &domain, SOCK_STREAM, IPPROTO_TCP );
+
     if ( socket_ != INVALID_SOCKET )
-#else
-    int socket_
-      = YIELD::ipc::Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
-    if ( socket_ != -1 )
-#endif
       return new GridSSLSocket( domain, socket_, ctx, ssl );
     else
       return NULL;
@@ -119,14 +116,14 @@ GridSSLSocket::create
 ssize_t GridSSLSocket::read( void* buffer, size_t buffer_len )
 {
   if ( check_handshake() )
-    return YIELD::ipc::TCPSocket::read( buffer, buffer_len );
+    return YIELD::platform::TCPSocket::read( buffer, buffer_len );
   else
     return -1;
 }
 
 bool GridSSLSocket::shutdown()
 {
-  return YIELD::ipc::TCPSocket::shutdown();
+  return YIELD::platform::TCPSocket::shutdown();
 }
 
 bool GridSSLSocket::want_read() const
@@ -134,7 +131,7 @@ bool GridSSLSocket::want_read() const
   if ( !did_handshake )
     return SSL_get_error( ssl, -1 ) == SSL_ERROR_WANT_READ;
   else
-    return YIELD::ipc::TCPSocket::want_read();
+    return YIELD::platform::TCPSocket::want_read();
 }
 
 bool GridSSLSocket::want_write() const
@@ -142,13 +139,13 @@ bool GridSSLSocket::want_write() const
   if ( !did_handshake )
     return SSL_get_error( ssl, -1 ) == SSL_ERROR_WANT_WRITE;
   else
-    return YIELD::ipc::TCPSocket::want_write();
+    return YIELD::platform::TCPSocket::want_write();
 }
 
 ssize_t GridSSLSocket::write( const void* buffer, size_t buffer_len )
 {
   if ( check_handshake() )
-    return YIELD::ipc::TCPSocket::write( buffer, buffer_len );
+    return YIELD::platform::TCPSocket::write( buffer, buffer_len );
   else
     return -1;
 }
@@ -156,7 +153,7 @@ ssize_t GridSSLSocket::write( const void* buffer, size_t buffer_len )
 ssize_t GridSSLSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
 {
   if ( check_handshake() )
-    return YIELD::ipc::TCPSocket::writev( buffers, buffers_count );
+    return YIELD::platform::TCPSocket::writev( buffers, buffers_count );
   else
     return -1;
 }

@@ -37,6 +37,7 @@
                 DebugInformationFormat="4"
                 ProgramDataBaseFileName="$(TargetDir)$(TargetName).pdb"
                 CompileAs="0"
+                DisableSpecificWarnings="4100;4512"
             />
             <Tool
                 Name="VCLibrarianTool"
@@ -81,6 +82,7 @@
                 UsePrecompiledHeader="0"
                 WarningLevel="3"
                 DebugInformationFormat="0"
+                DisableSpecificWarnings="4100;4512"
             />
             <Tool
                 Name="VCLibrarianTool"
@@ -155,7 +157,7 @@
     </References>
     <Files>
         
-        <Filter
+                <Filter
             Name="Source Files"
             Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
             UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
@@ -174,6 +176,7 @@
 </File>
 
         </Filter>
+
     </Files>
     <Globals>
     </Globals>

@@ -40,9 +40,6 @@ namespace xtreemfs
   public:
     const org::xtreemfs::interfaces::XCap& get_xcap() const { return xcap; }
 
-    // yidl::runtime::Object
-    YIDL_RUNTIME_OBJECT_PROTOTYPES( OpenFile, 0 );
-
     // YIELD::platform::File
     YIELD_PLATFORM_FILE_PROTOTYPES;
     size_t getpagesize();

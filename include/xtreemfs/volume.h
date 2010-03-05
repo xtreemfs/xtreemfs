@@ -102,9 +102,6 @@ namespace xtreemfs
 
     void release( SharedFile& );
 
-    // yidl::runtime::Object
-    YIDL_RUNTIME_OBJECT_PROTOTYPES( Volume, 0 );
-
     // YIELD::platform::Volume
     YIELD_PLATFORM_VOLUME_PROTOTYPES;
 

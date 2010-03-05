@@ -42,9 +42,6 @@ namespace xtreemfs
   public:
     const static uint64_t LIMIT_DIRECTORY_ENTRIES_COUNT_DEFAULT = 100;
 
-    // yidl::runtime::Object
-    YIDL_RUNTIME_OBJECT_PROTOTYPES( Directory, 0 );
-
     // YIELD::platform::Directory
     YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
 

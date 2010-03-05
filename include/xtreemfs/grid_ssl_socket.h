@@ -86,11 +86,8 @@ namespace xtreemfs
       : ssl_context( ssl_context )
     { }
 
-    // yidl::runtime::Object
-    YIDL_RUNTIME_OBJECT_PROTOTYPES( GridSSLSocketFactory, 0 );
-
     // YIELD::ipc::SocketFactory
-    YIELD::ipc::auto_Socket createSocket()
+    YIELD::platform::auto_Socket createSocket()
     {
       return GridSSLSocket::create( ssl_context ).release();
     }

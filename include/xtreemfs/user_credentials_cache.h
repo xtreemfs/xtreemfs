@@ -66,9 +66,6 @@ namespace xtreemfs
     );
 #endif
 
-    // yidl::runtime::Object
-    YIDL_RUNTIME_OBJECT_PROTOTYPES( UserCredentialsCache, 0 );
-
   private:
     // The former PolicyContainer
     std::vector<YIELD::platform::SharedLibrary*> policy_shared_libraries;

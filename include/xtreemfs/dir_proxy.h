@@ -121,9 +121,6 @@ namespace xtreemfs
         return ttl_s;
       }
 
-      // yidl::runtime::Object
-      YIDL_RUNTIME_OBJECT_PROTOTYPES( CachedAddressMappings, 0 );
-
     private:
       ~CachedAddressMappings() { }
 

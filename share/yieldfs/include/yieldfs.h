@@ -87,6 +87,65 @@ namespace yieldfs
   };
 
 
+  static inline std::ostream& 
+  operator<<
+  ( 
+    std::ostream& os, 
+    const YIELD::platform::Stat& stbuf 
+  )
+  {
+    os << "{ ";
+#ifndef _WIN32
+    os << "st_dev: " << stbuf.get_dev() << ", ";
+    os << "st_ino: " << stbuf.get_ino() << ", ";
+#endif
+    os << "st_mode: " << stbuf.get_mode() << " (";
+    if ( ( stbuf.get_mode() & S_IFDIR ) == S_IFDIR ) os << "S_IFDIR|";
+    if ( ( stbuf.get_mode() & S_IFCHR ) == S_IFCHR ) os << "S_IFCHR|";
+    if ( ( stbuf.get_mode() & S_IFREG ) == S_IFREG ) os << "S_IFREG|";
+#ifdef _WIN32
+    if ( ( stbuf.get_mode() & S_IREAD ) == S_IREAD ) os << "S_IREAD|";
+    if ( ( stbuf.get_mode() & S_IWRITE ) == S_IWRITE ) os << "S_IWRITE|";
+    if ( ( stbuf.get_mode() & S_IEXEC ) == S_IEXEC ) os << "S_IEXEC|";
+#else
+    if ( ( stbuf.get_mode() & S_IFBLK ) == S_IFBLK ) os << "S_IFBLK|";
+    if ( ( stbuf.get_mode() & S_IFLNK ) == S_IFLNK ) os << "S_IFLNK|";
+    if ( ( stbuf.get_mode() & S_IRUSR ) == S_IFDIR ) os << "S_IRUSR|";
+    if ( ( stbuf.get_mode() & S_IWUSR ) == S_IWUSR ) os << "S_IWUSR|";
+    if ( ( stbuf.get_mode() & S_IXUSR ) == S_IXUSR ) os << "S_IXUSR|";
+    if ( ( stbuf.get_mode() & S_IRGRP ) == S_IRGRP ) os << "S_IRGRP|";
+    if ( ( stbuf.get_mode() & S_IWGRP ) == S_IWGRP ) os << "S_IWGRP|";
+    if ( ( stbuf.get_mode() & S_IXGRP ) == S_IXGRP ) os << "S_IXGRP|";
+    if ( ( stbuf.get_mode() & S_IROTH ) == S_IROTH ) os << "S_IROTH|";
+    if ( ( stbuf.get_mode() & S_IWOTH ) == S_IWOTH ) os << "S_IWOTH|";
+    if ( ( stbuf.get_mode() & S_IXOTH ) == S_IXOTH ) os << "S_IXOTH|";
+    if ( ( stbuf.get_mode() & S_ISUID ) == S_ISUID ) os << "S_ISUID|";
+    if ( ( stbuf.get_mode() & S_ISGID ) == S_ISGID ) os << "S_ISGID|";
+    if ( ( stbuf.get_mode() & S_ISVTX ) == S_ISVTX ) os << "S_ISVTX|";
+#endif
+    os << "0), ";
+#ifndef _WIN32
+    os << "st_nlink: " << stbuf.get_nlink() << ", ";
+    os << "st_uid: " << stbuf.get_uid() << ", ";
+    os << "st_gid: " << stbuf.get_gid() << ", ";
+    os << "st_rdev: " << stbuf.get_rdev() << ", ";
+#endif
+    os << "st_size: " << stbuf.get_size() << ", ";
+    os << "st_atime: " << stbuf.get_atime() << ", ";
+    os << "st_mtime: " << stbuf.get_mtime() << ", ";
+    os << "st_ctime: " << stbuf.get_ctime() << ", ";
+#ifndef _WIN32
+    os << "st_blksize: " << stbuf.get_blksize() << ", ";
+    os << "st_blocks: " << stbuf.get_blocks() << ", ";
+#else
+    os << "attributes: " << stbuf.get_attributes() << ", ";
+#endif
+    os << " 0 }";
+    return os;
+  }
+
+
+
   class StackableDirectory : public YIELD::platform::Directory
   {
   public:

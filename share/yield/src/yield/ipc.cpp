@@ -1,4 +1,5 @@
 #include "yield/ipc.h"
+using namespace YIELD::ipc;
 
 
 // uriparser.h
@@ -8804,10 +8805,12 @@ void yajl_state_set(yajl_handle h, yajl_state state)
 
 // client.cpp
 #ifdef _WIN32
+#undef INVALID_SOCKET
 #pragma warning( push )
 #pragma warning( disable: 4995 )
 #include <ws2tcpip.h>
 #pragma warning( pop )
+#define INVALID_SOCKET  (SOCKET)(~0)
 #ifndef ECONNABORTED
 #define ECONNABORTED WSAECONNABORTED
 #endif
@@ -8818,14 +8821,14 @@ void yajl_state_set(yajl_handle h, yajl_state state)
 
 
 template <class RequestType, class ResponseType>
-YIELD::ipc::Client<RequestType, ResponseType>::Client
+Client<RequestType, ResponseType>::Client
 (
   uint16_t concurrency_level,
   uint32_t flags,
   YIELD::platform::auto_Log log,
   const YIELD::platform::Time& operation_timeout,
-  auto_SocketAddress peername,
-  uint8_t reconnect_tries_max,
+  YIELD::platform::auto_SocketAddress peername,
+  uint16_t reconnect_tries_max,
   auto_SocketFactory socket_factory
 )
   : concurrency_level( concurrency_level ),
@@ -8836,22 +8839,31 @@ YIELD::ipc::Client<RequestType, ResponseType>::Client
     reconnect_tries_max( reconnect_tries_max ),
     socket_factory( socket_factory )
 {
+  if ( log == NULL )
+  {
+    if ( ( flags & FLAG_TRACE_NETWORK_IO ) == FLAG_TRACE_NETWORK_IO )
+      flags ^= FLAG_TRACE_NETWORK_IO;
+
+    if ( ( flags & FLAG_TRACE_OPERATIONS ) == FLAG_TRACE_OPERATIONS )
+      flags ^= FLAG_TRACE_OPERATIONS;
+  }
+
   for ( uint16_t socket_i = 0; socket_i < concurrency_level; socket_i++ )
     sockets.enqueue( NULL ); // Enqueue a placeholder for each socket;
                              // the sockets will be created on demand
 }
 
 template <class RequestType, class ResponseType>
-YIELD::ipc::Client<RequestType, ResponseType>::~Client()
+Client<RequestType, ResponseType>::~Client()
 {
   for ( uint16_t socket_i = 0; socket_i < concurrency_level; socket_i++ )
   {
-    Socket* socket_ = sockets.try_dequeue();
+    YIELD::platform::Socket* socket_ = sockets.try_dequeue();
     if ( socket_ != NULL )
     {
       socket_->shutdown();
       socket_->close();
-      Socket::decRef( *socket_ );
+      YIELD::platform::Socket::dec_ref( *socket_ );
       socket_ = sockets.try_dequeue();
     }
     else
@@ -8860,34 +8872,29 @@ YIELD::ipc::Client<RequestType, ResponseType>::~Client()
 }
 
 template <class RequestType, class ResponseType>
-void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
+void Client<RequestType, ResponseType>::handleEvent
 (
   YIELD::concurrency::Event& ev
 )
 {
   switch ( ev.get_type_id() )
   {
-    case YIDL_RUNTIME_OBJECT_TYPE_ID( RequestType ):
+    case RequestType::TYPE_ID:
     {
       RequestType& request = static_cast<RequestType&>( ev );
 
-      if
-      (
-        ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) ==
-           this->CLIENT_FLAG_TRACE_OPERATIONS
-        &&
-        log != NULL
-      )
+      if ( ( flags & FLAG_TRACE_OPERATIONS ) == FLAG_TRACE_OPERATIONS )
       {
-        log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
         "yield::ipc::Client sending " << request.get_type_name() << "/" <<
         reinterpret_cast<uint64_t>( &request ) << " to <host>:" <<
         this->peername->get_port() << ".";
       }
 
+      YIELD::platform::Socket* socket_;
       for ( ;; )
       {
-        Socket* socket_ = sockets.dequeue(); // Blocking dequeue
+        socket_ = sockets.dequeue(); // Blocking dequeue
         if ( socket_ == NULL ) // We dequeued a placeholder;
                                // try to create the socket on demand
         {
@@ -8896,109 +8903,35 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
           {
             if
             (
-              ( this->flags & this->CLIENT_FLAG_TRACE_NETWORK_IO ) ==
-                 this->CLIENT_FLAG_TRACE_NETWORK_IO
-               &&
-               log != NULL
-               &&
-               log->get_level() >= YIELD::platform::Log::LOG_INFO
+              ( flags & FLAG_TRACE_NETWORK_IO ) == FLAG_TRACE_NETWORK_IO
+              &&
+              log->get_level() >= YIELD::platform::Log::LOG_INFO
             )
-            {
-              socket_ = new TracingSocket( socket_, log );
-            }
-          }
-          else
-          {
-            if ( log != NULL )
-            {
-              log->getStream( YIELD::platform::Log::LOG_ERR ) <<
-              "yield::ipc::Client: could not create new socket " <<
-              "to connect to <host>:"
-              << this->peername->get_port() <<
-              ", error: " << YIELD::platform::Exception() << ".";
-            }
+              socket_ = new TracingSocket( log, socket_ );
 
-            continue; // Try to dequeue another existing socket
+            break;
+          }
+          else if ( log != NULL )
+          {
+            log->get_stream( YIELD::platform::Log::LOG_ERR ) <<
+            "yield::ipc::Client: could not create new socket " <<
+            "to connect to <host>:"
+            << this->peername->get_port() <<
+            ", error: " << YIELD::platform::Exception() << ".";
           }
         }
-
-        if ( socket_->is_connected() )
-        {
-          if
-          (
-            ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) ==
-              this->CLIENT_FLAG_TRACE_OPERATIONS
-            &&
-            log != NULL
-          )
-          {
-            log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-            "yield::ipc::Client: writing " << request.get_type_name()
-            << "/" << reinterpret_cast<uint64_t>( &request ) <<
-            " to <host>:" << this->peername->get_port() <<
-            " on socket #" << static_cast<uint64_t>( *socket_ ) << ".";
-          }
-
-          AIOWriteControlBlock* aio_write_control_block =
-            new AIOWriteControlBlock( request.serialize(), *this, request );
-
-          YIELD::platform::TimerQueue::getDefaultTimerQueue().
-            addTimer
-            (
-              new OperationTimer
-              (
-                aio_write_control_block->incRef(),
-                operation_timeout
-              )
-            );
-
-          socket_->aio_write( aio_write_control_block );
-        }
-        else
-        {
-          if
-          (
-            ( this->flags & this->CLIENT_FLAG_TRACE_OPERATIONS ) ==
-              this->CLIENT_FLAG_TRACE_OPERATIONS
-            &&
-            log != NULL
-          )
-          {
-            log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-            "yield::ipc::Client: connecting to <host>:" <<
-            this->peername->get_port() <<
-            " with socket #" << static_cast<uint64_t>( *socket_ ) <<
-            " (try #" <<
-            static_cast<uint16_t>( request.get_reconnect_tries() + 1 ) <<
-            ").";
-          }
-
-          AIOConnectControlBlock* aio_connect_control_block =
-            new AIOConnectControlBlock( *this, request );
-
-          YIELD::platform::TimerQueue::getDefaultTimerQueue().
-            addTimer
-            (
-              new OperationTimer
-              (
-                aio_connect_control_block->incRef(),
-                operation_timeout
-              )
-            );
-
-          socket_->aio_connect( aio_connect_control_block );
-        }
-
-        Socket::decRef( *socket_ );
-
-        break;
       }
+
+      Connection* connection
+        = new Connection( *this, log, request, socket_ );
+
+      connection->connect();
     }
     break;
 
     default:
     {
-      YIELD::concurrency::Event::decRef( ev );
+      YIELD::concurrency::Event::dec_ref( ev );
     }
     break;
   }
@@ -9006,561 +8939,295 @@ void YIELD::ipc::Client<RequestType, ResponseType>::handleEvent
 
 
 template <class RequestType, class ResponseType>
-class YIELD::ipc::Client<RequestType, ResponseType>::AIOConnectControlBlock
-  : public Socket::AIOConnectControlBlock
+class Client<RequestType, ResponseType>::Connection
+  : public YIELD::platform::Socket::AIOConnectCallback,
+    public YIELD::platform::Socket::AIOReadCallback,
+    public YIELD::platform::Socket::AIOWriteCallback
 {
 public:
-  AIOConnectControlBlock
+  Connection
   (
-    Client<RequestType,ResponseType>& client,
-    yidl::runtime::auto_Object<RequestType> request
+    Client<RequestType, ResponseType>& client,
+    YIELD::platform::auto_Log log,
+    yidl::runtime::auto_Object<RequestType> request,
+    YIELD::platform::auto_Socket socket_
   )
-    : Socket::AIOConnectControlBlock( client.peername ),
-      client( client ),
-      request( request )
-  { }
-
-  AIOConnectControlBlock& operator=( const AIOConnectControlBlock& )
+  : client( client ),
+    log( log ),
+    operation_timeout( client.get_operation_timeout() ),
+    request( request ),
+    socket_( socket_ )
   {
-    return *this;
+    reconnect_tries = 0;
   }
 
-  // AIOControlBlock
-  void onCompletion( size_t )
+  void connect()
   {
-    if ( request_lock.try_acquire() )
+    if ( socket_->is_connected() )
+      onConnectCompletion( NULL );
+    else
     {
       if
       (
-        ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) ==
-          client.CLIENT_FLAG_TRACE_OPERATIONS
-        &&
-        client.log != NULL
+        ( client.get_flags() & FLAG_TRACE_OPERATIONS ) == FLAG_TRACE_OPERATIONS
       )
       {
-        client.log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-        "yield::ipc::Client: successfully connected to <host>:" <<
-        client.peername->get_port() << " on socket #" <<
-        static_cast<uint64_t>( *get_socket() ) << ".";
+        log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
+        "yield::ipc::Client: connecting to <host>:" <<
+        client.get_peername()->get_port() <<
+        " with socket #" << static_cast<uint64_t>( *socket_ ) <<
+        " (try #" <<
+        reconnect_tries+1
+        << ").";
       }
 
-      AIOWriteControlBlock* aio_write_control_block =
-        new AIOWriteControlBlock( request->serialize(), client, request );
-
-      YIELD::platform::TimerQueue::getDefaultTimerQueue().
-        addTimer
-        (
-          new OperationTimer
-          (
-            aio_write_control_block->incRef(),
-            client.operation_timeout
-          )
-        );
-
-      get_socket()->aio_write( aio_write_control_block );
-
-      request = NULL;
-    }
-  }
-
-  void onError( uint32_t error_code )
-  {
-    if ( request_lock.try_acquire() )
-    {
-      if ( client.log != NULL )
-      {
-        client.log->getStream( YIELD::platform::Log::LOG_ERR ) <<
-        "yield::ipc::Client: connect() to <host>:" <<
-        client.peername->get_port() <<
-        " failed: " <<
-        YIELD::platform::Exception( error_code ) << ".";
-      }
-
-      get_socket()->close();
-      if ( get_socket()->recreate() )
-        client.sockets.enqueue( get_socket().release() );
-      else
-        client.sockets.enqueue( NULL );
-
-      if ( request->get_reconnect_tries() < client.reconnect_tries_max )
-      {
-        request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
-        client.handleEvent( *request.release() );
-      }
-      else
-        request->respond
-        (
-          *( new YIELD::concurrency::ExceptionResponse( error_code ) )
-        );
-
-      request = NULL;
+      socket_->aio_connect( client.get_peername(), *this );
     }
   }
 
 private:
-  Client<RequestType,ResponseType>& client;
+  Client<RequestType, ResponseType>& client;
+  YIELD::platform::auto_Log log;
+  YIELD::platform::Time operation_timeout; // May be adjusted for timeouts
+  uint16_t reconnect_tries;
   yidl::runtime::auto_Object<RequestType> request;
-  YIELD::platform::Mutex request_lock;
-};
+  yidl::runtime::auto_Object<ResponseType> response;
+  YIELD::platform::auto_Socket socket_;
 
-
-template <class RequestType, class ResponseType>
-class YIELD::ipc::Client<RequestType, ResponseType>::AIOReadControlBlock
-  : public Socket::AIOReadControlBlock
-{
-public:
-  AIOReadControlBlock
-  (
-    yidl::runtime::auto_Buffer buffer,
-    Client<RequestType,ResponseType>& client,
-    yidl::runtime::auto_Object<RequestType> request,
-    yidl::runtime::auto_Object<ResponseType> response
-  )
-    : Socket::AIOReadControlBlock( buffer ),
-      client( client ),
-      request( request ), response( response )
-  { }
-
-  AIOReadControlBlock& operator=( const AIOReadControlBlock& )
-  {
-    return *this;
-  }
-
-  // AIOControlBlock
-  void onCompletion( size_t bytes_transferred )
-  {
-#ifdef _DEBUG
-    if ( bytes_transferred <= 0 )
-      DebugBreak();
-#endif
-
-    if ( request_lock.try_acquire() )
-    {
-      if
-      (
-        ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) ==
-          client.CLIENT_FLAG_TRACE_OPERATIONS
-        &&
-        client.log != NULL
-      )
-      {
-        client.log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-        "yield::ipc::Client: read " << bytes_transferred <<
-        " bytes from socket #" << static_cast<uint64_t>( *get_socket() ) <<
-        " for " << response->get_type_name() << "/" <<
-        reinterpret_cast<uint64_t>( response.get() ) << ".";
-      }
-
-      ssize_t deserialize_ret = response->deserialize( get_buffer() );
-
-      if ( deserialize_ret == 0 )
-      {
-        if
-        (
-          ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) ==
-            client.CLIENT_FLAG_TRACE_OPERATIONS
-          &&
-          client.log != NULL
-        )
-        {
-          client.log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-          "yield::ipc::Client: successfully deserialized " <<
-          response->get_type_name() <<
-            "/" << reinterpret_cast<uint64_t>( response.get() ) <<
-          ", responding to " << request->get_type_name() <<
-            "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
-        }
-
-        request->respond( *response.release() );
-        client.sockets.enqueue( get_socket().release() );
-      }
-      else if ( deserialize_ret > 0 )
-      {
-        yidl::runtime::auto_Buffer buffer( get_buffer() );
-        if ( buffer->capacity() - buffer->size() <
-             static_cast<size_t>( deserialize_ret ) )
-          buffer = new yidl::runtime::HeapBuffer( deserialize_ret );
-        // else re-use the same buffer
-
-        if
-        (
-          ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) ==
-            client.CLIENT_FLAG_TRACE_OPERATIONS
-          &&
-          client.log != NULL
-        )
-        {
-          client.log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-          "yield::ipc::Client: partially deserialized " <<
-          response->get_type_name() << "/" <<
-          reinterpret_cast<uint64_t>( response.get() ) <<
-          ", reading again with " << ( buffer->capacity() - buffer->size() ) <<
-          " byte buffer.";
-        }
-
-        AIOReadControlBlock* aio_read_control_block =
-          new AIOReadControlBlock
-          (
-            buffer,
-            client,
-            request.release(),
-            response.release()
-          );
-
-        YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer
-        (
-          new OperationTimer
-          (
-            aio_read_control_block->incRef(),
-            client.operation_timeout
-          )
-        );
-
-        get_socket()->aio_read( aio_read_control_block );
-      }
-      else
-      {
-        if ( client.log != NULL )
-        {
-          client.log->getStream( YIELD::platform::Log::LOG_ERR ) <<
-          "yield::ipc::Client: lost connection trying " <<
-            response->get_type_name() <<
-            "/" << reinterpret_cast<uint64_t>( response.get() ) <<
-          ", responding to " << request->get_type_name() <<
-            "/" << reinterpret_cast<uint64_t>( request.get() ) <<
-          " with ExceptionResponse.";
-        }
-
-        request->respond
-        (
-          *( new YIELD::concurrency::ExceptionResponse( ECONNABORTED ) )
-        );
-
-        get_socket()->shutdown();
-        get_socket()->close();
-        client.sockets.enqueue( get_socket().release() );
-      }
-
-      // Clear references so their objects will be deleted now instead of when
-      // the timeout occurs (the timeout has the last reference to this control block).
-      request = NULL;
-      response = NULL;
-      unlink_buffer();
-    }
-  }
-
+private:
   void onError( uint32_t error_code )
   {
-    if ( request_lock.try_acquire() )
+    socket_->shutdown();
+    socket_->close();
+
+    if ( reconnect_tries < client.get_reconnect_tries_max() )
     {
-      if ( client.log != NULL )
-      {
-        client.log->getStream( YIELD::platform::Log::LOG_ERR ) <<
-        "yield::ipc::Client: error reading " << response->get_type_name() <<
-          "/" << reinterpret_cast<uint64_t>( response.get() ) <<
-        " from socket #" << static_cast<uint64_t>( *get_socket() ) <<
-        ", error='" << YIELD::platform::Exception( error_code ) <<
-        "', responding to " << request->get_type_name() <<
-          "/" << reinterpret_cast<uint64_t>( request.get() ) <<
-          " with ExceptionResponse.";
-      }
-
-      get_socket()->shutdown();
-      get_socket()->close();
-      if ( get_socket()->recreate() )
-        client.sockets.enqueue( get_socket().release() );
-      else
-        client.sockets.enqueue( NULL );
-
-      if ( request->get_reconnect_tries() < client.reconnect_tries_max )
+      if ( socket_->recreate() ) // Try again
       {
         // Hack: if the read timed out, increase the timeout for the next try
         if ( error_code == ETIMEDOUT )
-          client.operation_timeout *= 2.0;
+          operation_timeout *= 2.0;
 
-        request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
-        client.handleEvent( *request.release() );
-      }
-      else
-      {
-        request->respond
-        (
-          *( new YIELD::concurrency::ExceptionResponse( error_code ) )
-        );
-        request = NULL;
-      }
+        reconnect_tries++;
 
-      unlink_buffer();
+        connect();
+
+        return;
+      }
     }
+
+    client.sockets.enqueue( NULL );
+
+    request->respond
+    (
+      *( new YIELD::concurrency::ExceptionResponse( error_code ) )
+    );
+
+    delete this;
   }
 
-private:
-  Client<RequestType,ResponseType>& client;
-  yidl::runtime::auto_Object<RequestType> request;
-  YIELD::platform::Mutex request_lock;
-  yidl::runtime::auto_Object<ResponseType> response;
-};
-
-
-template <class RequestType, class ResponseType>
-class YIELD::ipc::Client<RequestType, ResponseType>::AIOWriteControlBlock
-  : public Socket::AIOWriteControlBlock
-{
-public:
-  AIOWriteControlBlock
-  (
-    yidl::runtime::auto_Buffer buffer,
-    Client<RequestType,ResponseType>& client,
-    yidl::runtime::auto_Object<RequestType> request
-  )
-    : Socket::AIOWriteControlBlock( buffer ),
-      client( client ),
-      request( request )
-  { }
-
-  AIOWriteControlBlock& operator=( const AIOWriteControlBlock& )
+  // YIELD::platform::Socket::AIOConnectCallback
+  void onConnectCompletion( void* )
   {
-    return *this;
+    if
+    (
+      ( client.get_flags() & FLAG_TRACE_OPERATIONS ) == FLAG_TRACE_OPERATIONS
+    )
+    {
+      log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
+      "yield::ipc::Client: successfully connected to <host>:" <<
+      client.get_peername()->get_port() << " on socket #" <<
+      static_cast<uint64_t>( *socket_ ) << ".";
+
+      log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
+      "yield::ipc::Client: writing " << request->get_type_name()
+      << "/" << reinterpret_cast<uint64_t>( request.get() ) <<
+      " to <host>:" << client.get_peername()->get_port() <<
+      " on socket #" << static_cast<uint64_t>( *socket_ ) << ".";
+    }
+
+    socket_->aio_writev( request->serialize(), *this );
   }
 
-  // AIOControlBlock
-  void onCompletion( size_t bytes_transferred )
+  void onConnectError( uint32_t error_code, void* )
   {
-    if ( request_lock.try_acquire() )
+    if ( log != NULL )
+    {
+      log->get_stream( YIELD::platform::Log::LOG_ERR ) <<
+      "yield::ipc::Client: connect() to <host>:" <<
+      client.get_peername()->get_port() <<
+      " failed: " <<
+      YIELD::platform::Exception( error_code ) << ".";
+    }
+
+    onError( error_code );
+  }
+
+  // YIELD::platform::Socket::AIOReadCallback
+  void onReadCompletion( yidl::runtime::auto_Buffer buffer, void* )
+  {
+    if
+    (
+      ( client.get_flags() & FLAG_TRACE_OPERATIONS ) == FLAG_TRACE_OPERATIONS
+    )
+    {
+      log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
+      "yield::ipc::Client: read " << buffer->size() <<
+      " bytes from socket #" << static_cast<uint64_t>( *socket_ ) <<
+      " for " << response->get_type_name() << "/" <<
+      reinterpret_cast<uint64_t>( response.get() ) << ".";
+    }
+
+    ssize_t deserialize_ret = response->deserialize( buffer );
+
+    if ( deserialize_ret == 0 )
     {
       if
       (
-        ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) ==
-           client.CLIENT_FLAG_TRACE_OPERATIONS
-        &&
-        client.log != NULL
+        ( client.get_flags() & FLAG_TRACE_OPERATIONS ) == FLAG_TRACE_OPERATIONS
       )
       {
-        client.log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-        "yield::ipc::Client: wrote " << bytes_transferred <<
-        " bytes to socket #" << static_cast<uint64_t>( *get_socket() ) <<
-        " for " << request->get_type_name() <<
-          "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
-      }
-
-
-      yidl::runtime::auto_Object<ResponseType>
-        response
-        (
-          static_cast<ResponseType*>( request->createResponse().release() )
-        );
-
-      if
-      (
-        ( client.flags & client.CLIENT_FLAG_TRACE_OPERATIONS ) ==
-           client.CLIENT_FLAG_TRACE_OPERATIONS
-        &&
-        client.log != NULL
-      )
-      {
-        client.log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-        "yield::ipc::Client: created " << response->get_type_name() <<
+        log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
+        "yield::ipc::Client: successfully deserialized " <<
+        response->get_type_name() <<
           "/" << reinterpret_cast<uint64_t>( response.get() ) <<
-        " to " << request->get_type_name() <<
+        ", responding to " << request->get_type_name() <<
           "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
       }
 
+      request->respond( *response.release() );
 
-      AIOReadControlBlock* aio_read_control_block =
-        new AIOReadControlBlock
-        (
-          new yidl::runtime::HeapBuffer( 1024 ), client, request, response
-        );
+      client.sockets.enqueue( socket_.release() );
 
-      YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer
-      (
-        new OperationTimer
-        (
-          aio_read_control_block->incRef(),
-          client.operation_timeout
-        )
-      );
-
-      get_socket()->aio_read( aio_read_control_block );
-
-
-      request = NULL;
-      unlink_buffer();
+      delete this;
     }
-  }
-
-  void onError( uint32_t error_code )
-  {
-    if ( request_lock.try_acquire() )
+    else if ( deserialize_ret > 0 )
     {
-      if ( client.log != NULL )
-      {
-        client.log->getStream( YIELD::platform::Log::LOG_ERR ) <<
-        "yield::ipc::Client: error writing " <<
-        request->get_type_name() <<
-          "/" << reinterpret_cast<uint64_t>( request.get() ) <<
-        " to socket #" << static_cast<uint64_t>( *get_socket() ) <<
-        ", error='" << YIELD::platform::Exception( error_code ) <<
-        "', responding to " << request->get_type_name() <<
-          "/" << reinterpret_cast<uint64_t>( request.get() ) <<
-          " with ExceptionResponse.";
-      }
-
-      get_socket()->shutdown();
-      get_socket()->close();
-      if ( get_socket()->recreate() )
-        client.sockets.enqueue( get_socket().release() );
-      else
-        client.sockets.enqueue( NULL );
-
-      if ( request->get_reconnect_tries() < client.reconnect_tries_max )
-      {
-        request->set_reconnect_tries( request->get_reconnect_tries() + 1 );
-        client.handleEvent( *request.release() );
-      }
-      else
-      {
-        request->respond
-        (
-          *( new YIELD::concurrency::ExceptionResponse( error_code ) )
-        );
-        request = NULL;
-      }
-
-      unlink_buffer();
-    }
-  }
-
-private:
-  Client<RequestType,ResponseType>& client;
-  yidl::runtime::auto_Object<RequestType> request;
-  YIELD::platform::Mutex request_lock;
-};
-
-
-template <class RequestType, class ResponseType>
-class YIELD::ipc::Client<RequestType, ResponseType>::OperationTimer
-  : public YIELD::platform::TimerQueue::Timer
-{
-public:
-  OperationTimer
-  (
-    YIELD::platform::auto_AIOControlBlock aio_control_block,
-    const YIELD::platform::Time& operation_timeout
-  )
-    : YIELD::platform::TimerQueue::Timer( operation_timeout ),
-      aio_control_block( aio_control_block )
-  { }
-
-  void fire()
-  {
-    aio_control_block->onError( ETIMEDOUT );
-  }
-
-private:
-  YIELD::platform::auto_AIOControlBlock aio_control_block;
-};
-
-
-template class YIELD::ipc::Client<YIELD::ipc::HTTPRequest, YIELD::ipc::HTTPResponse>;
-template class YIELD::ipc::Client<YIELD::ipc::ONCRPCRequest, YIELD::ipc::ONCRPCResponse>;
-
-
-// gather_buffer.cpp
-YIELD::ipc::GatherBuffer::GatherBuffer
-(
-  const struct iovec* iovecs,
-  uint32_t iovecs_len
-)
-  : iovecs( iovecs ), iovecs_len( iovecs_len )
-{ }
-
-size_t YIELD::ipc::GatherBuffer::get
-(
-  void* into_buffer,
-  size_t into_buffer_len
-)
-{
-  char* into_buffer_p = static_cast<char*>( into_buffer );
-  size_t iovec_offset = position();
-
-  uint32_t iovec_i = 0;
-  while ( iovec_offset >= iovecs[iovec_i].iov_len )
-  {
-    iovec_offset -= iovecs[iovec_i].iov_len;
-    if ( ++iovec_i >= iovecs_len )
-      return 0;
-  }
-
-  for ( ;; )
-  {
-    if ( iovecs[iovec_i].iov_len - iovec_offset < into_buffer_len )
-    {
-      // into_buffer_len is larger than the current iovec
-      size_t copy_len = iovecs[iovec_i].iov_len - iovec_offset;
-      memcpy_s
+      if
       (
-        into_buffer_p,
-        into_buffer_len,
-        static_cast<char*>( iovecs[iovec_i].iov_base ) + iovec_offset,
-        copy_len
-      );
-      into_buffer_p += copy_len;
-      position( position() + copy_len );
-      if ( ++iovec_i < iovecs_len ) // Have more iovecs
+        buffer->capacity() - buffer->size() <
+        static_cast<size_t>( deserialize_ret )
+      )
+        buffer = new yidl::runtime::HeapBuffer( deserialize_ret );
+      // else re-use the same buffer
+
+      if
+      (
+        ( client.get_flags() & FLAG_TRACE_OPERATIONS )
+        == FLAG_TRACE_OPERATIONS
+      )
       {
-        into_buffer_len -= copy_len;
-        iovec_offset = 0;
+        log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
+        "yield::ipc::Client: partially deserialized " <<
+        response->get_type_name() << "/" <<
+        reinterpret_cast<uint64_t>( response.get() ) <<
+        ", reading again with " << ( buffer->capacity() - buffer->size() ) <<
+        " byte buffer.";
       }
-      else
-        break;
+
+      socket_->aio_read( buffer, *this );
     }
     else
-    {
-      // into_buffer_len is smaller than the current iovec
-      memcpy_s
-      (
-        into_buffer_p,
-        into_buffer_len,
-        static_cast<char*>( iovecs[iovec_i].iov_base ) + iovec_offset,
-        into_buffer_len
-      );
-      into_buffer_p += into_buffer_len;
-      position( position() + into_buffer_len );
-      break;
-    }
+      onError( ECONNABORTED );
   }
 
-  return into_buffer_p - static_cast<char*>( into_buffer );
-}
+  void onReadError( uint32_t error_code, void* )
+  {
+    if ( log != NULL )
+    {
+      log->get_stream( YIELD::platform::Log::LOG_ERR ) <<
+      "yield::ipc::Client: error reading " << response->get_type_name() <<
+        "/" << reinterpret_cast<uint64_t>( response.get() ) <<
+      " from socket #" << static_cast<uint64_t>( *socket_ ) <<
+      ", error='" << YIELD::platform::Exception( error_code ) <<
+      "', responding to " << request->get_type_name() <<
+        "/" << reinterpret_cast<uint64_t>( request.get() ) <<
+        " with ExceptionResponse.";
+    }
 
-size_t YIELD::ipc::GatherBuffer::size() const
-{
-  size_t _size = 0;
-  for ( uint32_t iovec_i = 0; iovec_i < iovecs_len; iovec_i++ )
-    _size += iovecs[iovec_i].iov_len;
-  return _size;
-}
+    onError( error_code );
+  }
+
+  // YIELD::platform::Socket::AIOWriteCallback
+  void onWriteCompletion( void* )
+  {
+    //if
+    //(
+    //  ( client.get_flags() & FLAG_TRACE_OPERATIONS ) == FLAG_TRACE_OPERATIONS
+    //)
+    //{
+    //  log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
+    //  "yield::ipc::Client: wrote " << bytes_transferred <<
+    //  " bytes to socket #" << static_cast<uint64_t>( *get_socket() ) <<
+    //  " for " << request->get_type_name() <<
+    //    "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
+    //}
+
+    yidl::runtime::auto_Object<ResponseType>
+      response( request->createResponse() );
+
+    if
+    (
+      ( client.get_flags() & FLAG_TRACE_OPERATIONS ) == FLAG_TRACE_OPERATIONS
+    )
+    {
+      log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
+      "yield::ipc::Client: created " << response->get_type_name() <<
+        "/" << reinterpret_cast<uint64_t>( response.get() ) <<
+      " to " << request->get_type_name() <<
+        "/" << reinterpret_cast<uint64_t>( request.get() ) << ".";
+    }
+
+    socket_->aio_read( new yidl::runtime::HeapBuffer( 1024 ), *this );
+  }
+
+  void onWriteError( uint32_t error_code, void* )
+  {
+    if ( log != NULL )
+    {
+      log->get_stream( YIELD::platform::Log::LOG_ERR ) <<
+      "yield::ipc::Client: error writing " <<
+      request->get_type_name() <<
+        "/" << reinterpret_cast<uint64_t>( request.get() ) <<
+      " to socket #" << static_cast<uint64_t>( *socket_ ) <<
+      ", error='" << YIELD::platform::Exception( error_code ) <<
+      "', responding to " << request->get_type_name() <<
+        "/" << reinterpret_cast<uint64_t>( request.get() ) <<
+        " with ExceptionResponse.";
+    }
+
+    onError( error_code );
+  }
+};
+
+
+template class Client<HTTPRequest, HTTPResponse>;
+template class Client<ONCRPCRequest, ONCRPCResponse>;
 
 
 // http_client.cpp
-YIELD::ipc::auto_HTTPClient
-  YIELD::ipc::HTTPClient::create
-  (
-    const URI& absolute_uri,
-    uint16_t concurrency_level,
-    uint32_t flags,
-    YIELD::platform::auto_Log log,
-    const YIELD::platform::Time& operation_timeout,
-    uint8_t reconnect_tries_max,
-    auto_SSLContext ssl_context
-  )
+auto_HTTPClient
+HTTPClient::create
+(
+  const URI& absolute_uri,
+  uint16_t concurrency_level,
+  uint32_t flags,
+  YIELD::platform::auto_Log log,
+  const YIELD::platform::Time& operation_timeout,
+  uint16_t reconnect_tries_max,
+  auto_SSLContext ssl_context
+)
 {
   URI checked_absolute_uri( absolute_uri );
   if ( checked_absolute_uri.get_port() == 0 )
     checked_absolute_uri.set_port( 80 );
 
-  auto_SocketAddress peername = SocketAddress::create( absolute_uri );
+  YIELD::platform::auto_SocketAddress peername
+    = YIELD::platform::SocketAddress::create
+      (
+        checked_absolute_uri.get_host().c_str(),
+        checked_absolute_uri.get_port()
+      );
 
   auto_SocketFactory socket_factory;
 
@@ -9584,12 +9251,17 @@ YIELD::ipc::auto_HTTPClient
 
   return new HTTPClient
   (
-    concurrency_level, flags, log, operation_timeout,
-    peername, reconnect_tries_max, socket_factory
+    concurrency_level,
+    flags,
+    log,
+    operation_timeout,
+    peername,
+    reconnect_tries_max,
+    socket_factory
   );
 }
 
-YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::GET
+auto_HTTPResponse HTTPClient::GET
 (
   const URI& absolute_uri,
   YIELD::platform::auto_Log log
@@ -9598,7 +9270,7 @@ YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::GET
   return sendHTTPRequest( "GET", absolute_uri, NULL, log );
 }
 
-YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::PUT
+auto_HTTPResponse HTTPClient::PUT
 (
   const URI& absolute_uri,
   yidl::runtime::auto_Buffer body,
@@ -9608,8 +9280,8 @@ YIELD::ipc::auto_HTTPResponse YIELD::ipc::HTTPClient::PUT
   return sendHTTPRequest( "PUT", absolute_uri, body, log );
 }
 
-YIELD::ipc::auto_HTTPResponse
-  YIELD::ipc::HTTPClient::PUT
+auto_HTTPResponse
+  HTTPClient::PUT
   (
     const URI& absolute_uri,
     const YIELD::platform::Path& body_file_path,
@@ -9631,8 +9303,8 @@ YIELD::ipc::auto_HTTPResponse
     throw YIELD::platform::Exception();
 }
 
-YIELD::ipc::auto_HTTPResponse
-  YIELD::ipc::HTTPClient::sendHTTPRequest
+auto_HTTPResponse
+  HTTPClient::sendHTTPRequest
   (
     const char* method,
     const URI& absolute_uri,
@@ -9657,22 +9329,22 @@ YIELD::ipc::auto_HTTPResponse
 
   YIELD::concurrency::auto_ResponseQueue<HTTPResponse>
     http_response_queue( new YIELD::concurrency::ResponseQueue<HTTPResponse> );
-  http_request->set_response_target( http_response_queue->incRef() );
+  http_request->set_response_target( http_response_queue->inc_ref() );
 
-  http_client->send( http_request->incRef() );
+  http_client->send( http_request->inc_ref() );
 
   return http_response_queue->dequeue();
 }
 
 
 // http_message.cpp
-YIELD::ipc::HTTPMessage::HTTPMessage( uint8_t reserve_iovecs_count )
+HTTPMessage::HTTPMessage( uint8_t reserve_iovecs_count )
   : RFC822Headers( reserve_iovecs_count )
 {
   http_version = 1;
 }
 
-YIELD::ipc::HTTPMessage::HTTPMessage
+HTTPMessage::HTTPMessage
 (
   uint8_t reserve_iovecs_count,
   yidl::runtime::auto_Buffer body
@@ -9682,7 +9354,7 @@ YIELD::ipc::HTTPMessage::HTTPMessage
   http_version = 1;
 }
 
-ssize_t YIELD::ipc::HTTPMessage::deserialize
+ssize_t HTTPMessage::deserialize
 (
   yidl::runtime::auto_Buffer buffer
 )
@@ -9749,11 +9421,7 @@ ssize_t YIELD::ipc::HTTPMessage::deserialize
                 );
           }
         }
-        else if
-        (
-          body->get_type_id() ==
-            YIDL_RUNTIME_OBJECT_TYPE_ID( yidl::runtime::StringBuffer )
-        )
+        else if ( !body->is_fixed() )
         {
           static_cast<yidl::runtime::StringBuffer*>( body.get() )->
             put
@@ -9764,7 +9432,7 @@ ssize_t YIELD::ipc::HTTPMessage::deserialize
         }
         else
         {
-          yidl::runtime::auto_StringBuffer
+          yidl::runtime::auto_Buffer
             concatenated_body( new yidl::runtime::StringBuffer );
           concatenated_body->put( *body, body->size() );
           concatenated_body->put
@@ -9791,9 +9459,8 @@ ssize_t YIELD::ipc::HTTPMessage::deserialize
   }
 }
 
-yidl::runtime::auto_Buffer YIELD::ipc::HTTPMessage::serialize()
+yidl::runtime::auto_Buffers HTTPMessage::serialize()
 {
-  // Finalize headers
   if ( body != NULL )
   {
     if ( get_header( "Content-Length", NULL ) == NULL )
@@ -9824,7 +9491,7 @@ yidl::runtime::auto_Buffer YIELD::ipc::HTTPMessage::serialize()
 
 
 // http_request.cpp
-YIELD::ipc::HTTPRequest::HTTPRequest()
+HTTPRequest::HTTPRequest()
   : HTTPMessage( 0 )
 {
   method[0] = 0;
@@ -9835,7 +9502,7 @@ YIELD::ipc::HTTPRequest::HTTPRequest()
   deserialize_state = DESERIALIZING_METHOD;
 }
 
-YIELD::ipc::HTTPRequest::HTTPRequest
+HTTPRequest::HTTPRequest
 (
   const char* method,
   const char* relative_uri,
@@ -9847,7 +9514,7 @@ YIELD::ipc::HTTPRequest::HTTPRequest
   init( method, relative_uri, host, body );
 }
 
-YIELD::ipc::HTTPRequest::HTTPRequest
+HTTPRequest::HTTPRequest
 (
   const char* method,
   const URI& absolute_uri,
@@ -9864,12 +9531,12 @@ YIELD::ipc::HTTPRequest::HTTPRequest
   );
 }
 
-YIELD::concurrency::auto_Response YIELD::ipc::HTTPRequest::createResponse()
+auto_HTTPResponse HTTPRequest::createResponse()
 {
   return new HTTPResponse;
 }
 
-void YIELD::ipc::HTTPRequest::init
+void HTTPRequest::init
 (
   const char* method,
   const char* relative_uri,
@@ -9890,12 +9557,12 @@ void YIELD::ipc::HTTPRequest::init
   deserialize_state = DESERIALIZE_DONE;
 }
 
-YIELD::ipc::HTTPRequest::~HTTPRequest()
+HTTPRequest::~HTTPRequest()
 {
   delete [] uri;
 }
 
-ssize_t YIELD::ipc::HTTPRequest::deserialize
+ssize_t HTTPRequest::deserialize
 (
   yidl::runtime::auto_Buffer buffer
 )
@@ -9994,12 +9661,12 @@ ssize_t YIELD::ipc::HTTPRequest::deserialize
   }
 }
 
-void YIELD::ipc::HTTPRequest::respond( uint16_t status_code )
+void HTTPRequest::respond( uint16_t status_code )
 {
   respond( *( new HTTPResponse( status_code ) ) );
 }
 
-void YIELD::ipc::HTTPRequest::respond
+void HTTPRequest::respond
 (
   uint16_t status_code,
   yidl::runtime::auto_Buffer body
@@ -10008,12 +9675,12 @@ void YIELD::ipc::HTTPRequest::respond
   respond( *( new HTTPResponse( status_code, body ) ) );
 }
 
-void YIELD::ipc::HTTPRequest::respond( YIELD::concurrency::Response& response )
+void HTTPRequest::respond( YIELD::concurrency::Response& response )
 {
   YIELD::concurrency::Request::respond( response );
 }
 
-yidl::runtime::auto_Buffer YIELD::ipc::HTTPRequest::serialize()
+yidl::runtime::auto_Buffers HTTPRequest::serialize()
 {
   RFC822Headers::set_iovec( 0, method, strnlen( method, 16 ) );
   RFC822Headers::set_iovec( 1, " ", 1 );
@@ -10022,28 +9689,23 @@ yidl::runtime::auto_Buffer YIELD::ipc::HTTPRequest::serialize()
   return HTTPMessage::serialize();
 }
 
-void YIELD::ipc::HTTPRequest::set_reconnect_tries( uint8_t reconnect_tries )
-{
-  this->reconnect_tries = reconnect_tries;
-}
-
 
 // http_response.cpp
-YIELD::ipc::HTTPResponse::HTTPResponse()
+HTTPResponse::HTTPResponse()
   : HTTPMessage( 0 )
 {
   memset( status_code_str, 0, sizeof( status_code_str ) );
   deserialize_state = DESERIALIZING_HTTP_VERSION;
 }
 
-YIELD::ipc::HTTPResponse::HTTPResponse( uint16_t status_code )
+HTTPResponse::HTTPResponse( uint16_t status_code )
   : HTTPMessage( 1 ), status_code( status_code )
 {
   http_version = 1;
   deserialize_state = DESERIALIZE_DONE;
 }
 
-YIELD::ipc::HTTPResponse::HTTPResponse
+HTTPResponse::HTTPResponse
 (
   uint16_t status_code,
   yidl::runtime::auto_Buffer body
@@ -10053,7 +9715,7 @@ YIELD::ipc::HTTPResponse::HTTPResponse
   deserialize_state = DESERIALIZE_DONE;
 }
 
-ssize_t YIELD::ipc::HTTPResponse::deserialize
+ssize_t HTTPResponse::deserialize
 (
   yidl::runtime::auto_Buffer buffer
 )
@@ -10144,7 +9806,7 @@ ssize_t YIELD::ipc::HTTPResponse::deserialize
   }
 }
 
-yidl::runtime::auto_Buffer YIELD::ipc::HTTPResponse::serialize()
+yidl::runtime::auto_Buffers HTTPResponse::serialize()
 {
   const char* status_line;
   size_t status_line_len;
@@ -10206,181 +9868,115 @@ yidl::runtime::auto_Buffer YIELD::ipc::HTTPResponse::serialize()
   return HTTPMessage::serialize();
 }
 
-void YIELD::ipc::HTTPResponse::set_body( yidl::runtime::auto_Buffer body )
+void HTTPResponse::set_body( yidl::runtime::auto_Buffer body )
 {
   this->body = body;
 }
 
-void YIELD::ipc::HTTPResponse::set_status_code( uint16_t status_code )
+void HTTPResponse::set_status_code( uint16_t status_code )
 {
   this->status_code = status_code;
 }
 
 
 // http_server.cpp
-class YIELD::ipc::HTTPServer::AIOWriteControlBlock
-  : public Socket::AIOWriteControlBlock
+class HTTPServer::Connection
+  : public YIELD::platform::Socket::AIOReadCallback,
+    public YIELD::platform::Socket::AIOWriteCallback,
+    public YIELD::concurrency::EventTarget
 {
 public:
-  AIOWriteControlBlock( yidl::runtime::auto_Buffer buffer )
-    : Socket::AIOWriteControlBlock( buffer )
-  { }
-
-  void onCompletion( size_t )
-  { }
-
-  void onError( uint32_t )
-  {
-    get_socket()->shutdown();
-    get_socket()->close();
-  }
-};
-
-
-class YIELD::ipc::HTTPServer::HTTPResponseTarget
-  : public YIELD::concurrency::EventTarget
-{
-public:
-  HTTPResponseTarget( auto_Socket socket_ )
-    : socket_( socket_ )
-  { }
-
-  // yidl::runtime::Object
-  YIDL_RUNTIME_OBJECT_PROTOTYPES( HTTPServer::HTTPResponseTarget, 0 );
-
-  // EventTarget
-  void send( YIELD::concurrency::Event& ev )
-  {
-    if ( ev.get_type_id() == YIDL_RUNTIME_OBJECT_TYPE_ID( HTTPResponse ) )
-    {
-      HTTPResponse& http_response = static_cast<HTTPResponse&>( ev );
-
-      socket_->aio_write
-      (
-        new AIOWriteControlBlock( http_response.serialize() )
-      );
-
-      HTTPResponse::decRef( http_response );
-    }
-    else
-      DebugBreak();
-  }
-
-private:
-  auto_Socket socket_;
-};
-
-
-class YIELD::ipc::HTTPServer::AIOReadControlBlock
-  : public Socket::AIOReadControlBlock
-{
-public:
-  AIOReadControlBlock
+  Connection
   (
-    yidl::runtime::auto_Buffer buffer,
-    auto_HTTPRequest http_request,
-    YIELD::concurrency::auto_EventTarget http_request_target
+    YIELD::concurrency::auto_EventTarget http_request_target,
+    YIELD::platform::auto_Socket socket_
   )
-    : Socket::AIOReadControlBlock( buffer ),
-      http_request( http_request ),
-      http_request_target( http_request_target )
+  : http_request_target( http_request_target ),
+    socket_( socket_ )
   { }
 
-  void onCompletion( size_t )
+  void read()
   {
-    for ( ;; )
-    {
-      ssize_t deserialize_ret = http_request->deserialize( get_buffer() );
-      if ( deserialize_ret == 0 )
-      {
-        http_request->set_response_target
-        (
-          new HTTPResponseTarget( get_socket() )
-        );
-        http_request_target->send( *http_request.release() );
-        http_request = new HTTPRequest;
-      }
-      else if ( deserialize_ret > 0 )
-      {
-        get_socket()->aio_read
-        (
-          new AIOReadControlBlock
-          (
-            new yidl::runtime::HeapBuffer( 1024 ),
-            http_request,
-            http_request_target
-          )
-        );
-
-        return;
-      }
-      else
-      {
-        get_socket()->shutdown();
-        get_socket()->close();
-        return;
-      }
-    }
-  }
-
-  void onError( uint32_t )
-  {
-    get_socket()->close();
+    socket_->aio_read( new yidl::runtime::HeapBuffer( 1024 ), *this );
   }
 
 private:
   auto_HTTPRequest http_request;
   YIELD::concurrency::auto_EventTarget http_request_target;
-};
-
-
-class YIELD::ipc::HTTPServer::AIOAcceptControlBlock
-  : public TCPSocket::AIOAcceptControlBlock
-{
-public:
-  AIOAcceptControlBlock
-  (
-    YIELD::concurrency::auto_EventTarget http_request_target,
-    YIELD::platform::auto_Log log
-  )
-    : http_request_target( http_request_target ), log( log )
-  { }
-
-  void onCompletion( size_t )
-  {
-    auto_Socket accepted_tcp_socket( get_accepted_tcp_socket().release() );
-    if ( log != NULL && log->get_level() >= YIELD::platform::Log::LOG_INFO )
-      accepted_tcp_socket = new TracingSocket( accepted_tcp_socket, log );
-
-    accepted_tcp_socket->aio_read
-    (
-      new AIOReadControlBlock
-      (
-        new yidl::runtime::HeapBuffer( 1024 ),
-        new HTTPRequest, http_request_target
-      )
-    );
-
-    static_cast<TCPSocket*>( get_socket().get() )
-      ->aio_accept( new AIOAcceptControlBlock( http_request_target, log ) );
-  }
-
-  void onError( uint32_t )
-  {
-    get_socket()->shutdown();
-    get_socket()->close();
-  }
+  YIELD::platform::auto_Socket socket_;
 
 private:
-  YIELD::concurrency::auto_EventTarget http_request_target;
-  YIELD::platform::auto_Log log;
+  // YIELD::platform::Socket::AIOReadCallback
+  void onReadCompletion( yidl::runtime::auto_Buffer buffer, void* )
+  {
+    if ( http_request == NULL )
+    {
+      http_request = new HTTPRequest;
+      http_request->set_response_target( inc_ref() );
+    }
+
+    for ( ;; )
+    {
+      ssize_t deserialize_ret = http_request->deserialize( buffer );
+      if ( deserialize_ret == 0 )
+      {
+        http_request_target->send( *http_request.release() );
+        http_request = new HTTPRequest;
+      }
+      else if ( deserialize_ret > 0 )
+      {
+        socket_->aio_read( new yidl::runtime::HeapBuffer( 1024 ), *this );
+        return;
+      }
+      else
+      {
+        socket_->shutdown();
+        socket_->close();
+        delete this;
+        return;
+      }
+    }
+  }
+
+  void onReadError( uint32_t, void* )
+  {
+    socket_->shutdown();
+    socket_->close();
+    delete this;
+  }
+
+  // YIELD::platform::Socket::AIOWriteCallback
+  void onWriteCompletion( void* )
+  {
+    read();
+  }
+
+  void onWriteError( uint32_t, void* )
+  {
+    socket_->shutdown();
+    socket_->close();
+    delete this;
+  }
+
+  // YIELD::concurrency::EventTarget
+  void send( YIELD::concurrency::Event& ev )
+  {
+    if ( ev.get_type_id() == HTTPResponse::TYPE_ID )
+    {
+      HTTPResponse& http_response = static_cast<HTTPResponse&>( ev );
+      socket_->aio_writev( http_response.serialize(), *this );
+      HTTPResponse::dec_ref( http_response );
+    }
+    else
+      DebugBreak();
+  }
 };
 
 
-YIELD::ipc::HTTPServer::HTTPServer
+HTTPServer::HTTPServer
 (
   YIELD::concurrency::auto_EventTarget http_request_target,
-  auto_TCPSocket listen_tcp_socket,
+  YIELD::platform::auto_TCPSocket listen_tcp_socket,
   YIELD::platform::auto_Log log
 )
   : http_request_target( http_request_target ),
@@ -10388,39 +9984,68 @@ YIELD::ipc::HTTPServer::HTTPServer
     log( log )
 {
   for ( uint8_t accept_i = 0; accept_i < 10; accept_i++ )
-  {
-    listen_tcp_socket->aio_accept
-    (
-      new AIOAcceptControlBlock( http_request_target, log )
-    );
-  }
+    listen_tcp_socket->aio_accept( *this );
 }
 
-YIELD::ipc::auto_HTTPServer
-  YIELD::ipc::HTTPServer::create
-  (
-    const URI& absolute_uri,
-    YIELD::concurrency::auto_EventTarget http_request_target,
-    YIELD::platform::auto_Log log,
-    auto_SSLContext ssl_context
-  )
+auto_HTTPServer
+HTTPServer::create
+(
+  const URI& absolute_uri,
+  YIELD::concurrency::auto_EventTarget http_request_target,
+  YIELD::platform::auto_Log log,
+  auto_SSLContext ssl_context
+)
 {
-  auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
+  YIELD::platform::auto_SocketAddress sockname
+    = YIELD::platform::SocketAddress::create
+      (
+        absolute_uri.get_host().c_str(),
+        absolute_uri.get_port()
+      );
 
-  auto_TCPSocket listen_tcp_socket;
+  YIELD::platform::auto_TCPSocket listen_tcp_socket;
 #ifdef YIELD_IPC_HAVE_OPENSSL
   if ( absolute_uri.get_scheme() == "https" && ssl_context != NULL )
     listen_tcp_socket = SSLSocket::create( ssl_context ).release();
   else
 #endif
-    listen_tcp_socket = TCPSocket::create();
+    listen_tcp_socket = YIELD::platform::TCPSocket::create();
 
-  if ( listen_tcp_socket != NULL &&
-       listen_tcp_socket->bind( sockname ) &&
-       listen_tcp_socket->listen() )
+  if
+  (
+    listen_tcp_socket != NULL
+    &&
+    listen_tcp_socket->bind( *sockname )
+    &&
+    listen_tcp_socket->listen()
+  )
     return new HTTPServer( http_request_target, listen_tcp_socket, log );
   else
     throw YIELD::platform::Exception();
+}
+
+void
+HTTPServer::onAcceptCompletion
+(
+  YIELD::platform::auto_TCPSocket accepted_tcp_socket,
+  void*
+)
+{
+  YIELD::platform::auto_Socket socket_;
+  if ( log != NULL && log->get_level() >= YIELD::platform::Log::LOG_INFO )
+    socket_ = new TracingSocket( log, accepted_tcp_socket->inc_ref() );
+  else
+    socket_ = accepted_tcp_socket.release();
+
+  Connection* connection = new Connection( http_request_target, socket_ );
+  connection->read();
+
+  listen_tcp_socket->aio_accept( *this );
+}
+
+void HTTPServer::onAcceptError( uint32_t, void* )
+{
+  listen_tcp_socket->aio_accept( *this );
 }
 
 
@@ -10430,7 +10055,7 @@ extern "C"
 };
 
 
-YIELD::ipc::JSONMarshaller::JSONMarshaller( bool write_empty_strings )
+JSONMarshaller::JSONMarshaller( bool write_empty_strings )
 : write_empty_strings( write_empty_strings )
 {
   buffer = new yidl::runtime::StringBuffer;
@@ -10438,7 +10063,7 @@ YIELD::ipc::JSONMarshaller::JSONMarshaller( bool write_empty_strings )
   writer = yajl_gen_alloc( NULL );
 }
 
-YIELD::ipc::JSONMarshaller::JSONMarshaller
+JSONMarshaller::JSONMarshaller
 (
   JSONMarshaller& parent_json_marshaller,
   const char* root_key
@@ -10449,13 +10074,13 @@ YIELD::ipc::JSONMarshaller::JSONMarshaller
     buffer( parent_json_marshaller.buffer )
 { }
 
-YIELD::ipc::JSONMarshaller::~JSONMarshaller()
+JSONMarshaller::~JSONMarshaller()
 {
 //  if ( root_key == NULL ) // This is the root JSONMarshaller
 //    yajl_gen_free( writer );
 }
 
-void YIELD::ipc::JSONMarshaller::flushYAJLBuffer()
+void JSONMarshaller::flushYAJLBuffer()
 {
   const unsigned char* buffer;
   unsigned int len;
@@ -10464,29 +10089,7 @@ void YIELD::ipc::JSONMarshaller::flushYAJLBuffer()
   yajl_gen_clear( writer );
 }
 
-void YIELD::ipc::JSONMarshaller::writeBoolean
-(
-  const char* key,
-  uint32_t,
-  bool value
-)
-{
-  writeKey( key );
-  yajl_gen_bool( writer, static_cast<int>( value ) );
-  flushYAJLBuffer();
-}
-
-void YIELD::ipc::JSONMarshaller::writeBuffer
-(
-  const char*,
-  uint32_t,
-  yidl::runtime::auto_Buffer
-)
-{
-  DebugBreak();
-}
-
-void YIELD::ipc::JSONMarshaller::writeKey( const char* key )
+void JSONMarshaller::write_key( const char* key )
 {
   if ( in_map && key != NULL )
   {
@@ -10499,45 +10102,44 @@ void YIELD::ipc::JSONMarshaller::writeKey( const char* key )
   }
 }
 
-void YIELD::ipc::JSONMarshaller::writeDouble
-(
-  const char* key,
-  uint32_t,
-  double value
-)
+void JSONMarshaller::write( const char* key, uint32_t, bool value )
 {
-  writeKey( key );
+  write_key( key );
+  yajl_gen_bool( writer, static_cast<int>( value ) );
+  flushYAJLBuffer();
+}
+
+void JSONMarshaller::write( const char*, uint32_t, yidl::runtime::auto_Buffer )
+{
+  DebugBreak();
+}
+
+void JSONMarshaller::write( const char* key, uint32_t, double value )
+{
+  write_key( key );
   yajl_gen_double( writer, value );
   flushYAJLBuffer();
 }
 
-void YIELD::ipc::JSONMarshaller::writeInt64
-(
-  const char* key,
-  uint32_t,
-  int64_t value
-)
+void JSONMarshaller::write( const char* key, uint32_t, int64_t value )
 {
-  writeKey( key );
+  write_key( key );
   yajl_gen_integer( writer, static_cast<long>( value ) );
   flushYAJLBuffer();
 }
 
-void YIELD::ipc::JSONMarshaller::writeMap
+void JSONMarshaller::write
 (
   const char* key,
   uint32_t,
   const yidl::runtime::Map& value
 )
 {
-  writeKey( key );
-  JSONMarshaller( *this, key ).writeMap( &value );
+  write_key( key );
+  JSONMarshaller( *this, key ).write( &value );
 }
 
-void YIELD::ipc::JSONMarshaller::writeMap
-(
-  const yidl::runtime::Map* value
-)
+void JSONMarshaller::write( const yidl::runtime::Map* value )
 {
   yajl_gen_map_open( writer );
   in_map = true;
@@ -10547,21 +10149,18 @@ void YIELD::ipc::JSONMarshaller::writeMap
   flushYAJLBuffer();
 }
 
-void YIELD::ipc::JSONMarshaller::writeStruct
+void JSONMarshaller::write
 (
   const char* key,
   uint32_t,
-  const yidl::runtime::Struct& value
+  const yidl::runtime::MarshallableObject& value
 )
 {
-  writeKey( key );
-  JSONMarshaller( *this, key ).writeStruct( &value );
+  write_key( key );
+  JSONMarshaller( *this, key ).write( &value );
 }
 
-void YIELD::ipc::JSONMarshaller::writeStruct
-(
-  const yidl::runtime::Struct* value
-)
+void JSONMarshaller::write( const yidl::runtime::MarshallableObject* value )
 {
   yajl_gen_map_open( writer );
   in_map = true;
@@ -10571,21 +10170,18 @@ void YIELD::ipc::JSONMarshaller::writeStruct
   flushYAJLBuffer();
 }
 
-void YIELD::ipc::JSONMarshaller::writeSequence
+void JSONMarshaller::write
 (
   const char* key,
   uint32_t,
   const yidl::runtime::Sequence& value
 )
 {
-  writeKey( key );
-  JSONMarshaller( *this, key ).writeSequence( &value );
+  write_key( key );
+  JSONMarshaller( *this, key ).write( &value );
 }
 
-void YIELD::ipc::JSONMarshaller::writeSequence
-(
-  const yidl::runtime::Sequence* value
-)
+void JSONMarshaller::write( const yidl::runtime::Sequence* value )
 {
   yajl_gen_array_open( writer );
   in_map = false;
@@ -10595,7 +10191,7 @@ void YIELD::ipc::JSONMarshaller::writeSequence
   flushYAJLBuffer();
 }
 
-void YIELD::ipc::JSONMarshaller::writeString
+void JSONMarshaller::write
 (
   const char* key,
   uint32_t,
@@ -10605,7 +10201,7 @@ void YIELD::ipc::JSONMarshaller::writeString
 {
   if ( value_len > 0 || write_empty_strings )
   {
-    writeKey( key );
+    write_key( key );
     yajl_gen_string
     (
       writer,
@@ -10623,10 +10219,10 @@ extern "C"
 };
 
 
-class YIELD::ipc::JSONUnmarshaller::JSONValue
+class JSONUnmarshaller::JSONValue
 {
 public:
-  JSONValue( yidl::runtime::auto_StringBuffer identifier, bool is_map )
+  JSONValue( yidl::runtime::auto_Buffer identifier, bool is_map )
     : identifier( identifier ), is_map( is_map )
   {
     as_double = 0;
@@ -10642,12 +10238,12 @@ public:
     delete next;
   }
 
-  yidl::runtime::auto_StringBuffer identifier;
+  yidl::runtime::auto_Buffer identifier;
   bool is_map;
 
   double as_double;
   int64_t as_integer;
-  yidl::runtime::auto_StringBuffer as_string;
+  yidl::runtime::auto_Buffer as_string;
 
   JSONValue *parent, *child, *prev, *next;
   bool have_read;
@@ -10663,7 +10259,7 @@ protected:
 };
 
 
-class YIELD::ipc::JSONUnmarshaller::JSONObject : public JSONValue
+class JSONUnmarshaller::JSONObject : public JSONValue
 {
 public:
   JSONObject( yidl::runtime::auto_Buffer json_buffer )
@@ -10814,7 +10410,7 @@ private:
 
   JSONValue& createNextJSONValue( bool is_map = false )
   {
-    yidl::runtime::auto_StringBuffer identifier;
+    yidl::runtime::auto_Buffer identifier;
     if ( next_map_key_len != 0 )
     {
       identifier
@@ -10858,7 +10454,7 @@ private:
 };
 
 yajl_callbacks
-  YIELD::ipc::JSONUnmarshaller::JSONObject::JSONObject_yajl_callbacks =
+  JSONUnmarshaller::JSONObject::JSONObject_yajl_callbacks =
 {
   handle_yajl_null,
   handle_yajl_boolean,
@@ -10874,7 +10470,7 @@ yajl_callbacks
 };
 
 
-YIELD::ipc::JSONUnmarshaller::JSONUnmarshaller
+JSONUnmarshaller::JSONUnmarshaller
 (
   yidl::runtime::auto_Buffer buffer
 )
@@ -10884,7 +10480,7 @@ YIELD::ipc::JSONUnmarshaller::JSONUnmarshaller
   next_json_value = root_json_value->child;
 }
 
-YIELD::ipc::JSONUnmarshaller::JSONUnmarshaller
+JSONUnmarshaller::JSONUnmarshaller
 (
   const char* root_key,
   JSONValue& root_json_value
@@ -10893,13 +10489,13 @@ YIELD::ipc::JSONUnmarshaller::JSONUnmarshaller
     next_json_value( root_json_value.child )
 { }
 
-YIELD::ipc::JSONUnmarshaller::~JSONUnmarshaller()
+JSONUnmarshaller::~JSONUnmarshaller()
 {
 //  if ( root_key == NULL )
 //    delete root_json_value;
 }
 
-bool YIELD::ipc::JSONUnmarshaller::readBoolean( const char* key, uint32_t )
+bool JSONUnmarshaller::read_bool( const char* key, uint32_t )
 {
   JSONValue* json_value = readJSONValue( key );
   if ( json_value )
@@ -10913,7 +10509,7 @@ bool YIELD::ipc::JSONUnmarshaller::readBoolean( const char* key, uint32_t )
     return false;
 }
 
-void YIELD::ipc::JSONUnmarshaller::readBuffer
+void JSONUnmarshaller::read
 (
   const char*,
   uint32_t,
@@ -10923,7 +10519,7 @@ void YIELD::ipc::JSONUnmarshaller::readBuffer
   DebugBreak();
 }
 
-double YIELD::ipc::JSONUnmarshaller::readDouble( const char* key, uint32_t )
+double JSONUnmarshaller::read_double( const char* key, uint32_t )
 {
   JSONValue* json_value = readJSONValue( key );
   if ( json_value )
@@ -10936,13 +10532,13 @@ double YIELD::ipc::JSONUnmarshaller::readDouble( const char* key, uint32_t )
         return static_cast<double>( json_value->as_integer );
     }
     else // Read the identifier
-      return atof( json_value->identifier->c_str() );
+      return atof( *json_value->identifier );
   }
   else
     return 0;
 }
 
-int64_t YIELD::ipc::JSONUnmarshaller::readInt64( const char* key, uint32_t )
+int64_t JSONUnmarshaller::read_int64( const char* key, uint32_t )
 {
   JSONValue* json_value = readJSONValue( key );
   if ( json_value )
@@ -10950,13 +10546,13 @@ int64_t YIELD::ipc::JSONUnmarshaller::readInt64( const char* key, uint32_t )
     if ( key != NULL ) // Read the value
       return json_value->as_integer;
     else // Read the identifier
-      return atoi( json_value->identifier->c_str() );
+      return atoi( *json_value->identifier );
   }
   else
     return 0;
 }
 
-void YIELD::ipc::JSONUnmarshaller::readMap
+void JSONUnmarshaller::read
 (
   const char* key,
   uint32_t,
@@ -10981,17 +10577,50 @@ void YIELD::ipc::JSONUnmarshaller::readMap
     return;
 
   JSONUnmarshaller child_json_unmarshaller( key, *json_value );
-  child_json_unmarshaller.readMap( value );
+  child_json_unmarshaller.read( value );
   json_value->have_read = true;
 }
 
-void YIELD::ipc::JSONUnmarshaller::readMap( yidl::runtime::Map& value )
+void JSONUnmarshaller::read( yidl::runtime::Map& value )
 {
   while ( next_json_value )
     value.unmarshal( *this );
 }
 
-void YIELD::ipc::JSONUnmarshaller::readSequence
+void JSONUnmarshaller::read
+(
+  const char* key,
+  uint32_t,
+  yidl::runtime::MarshallableObject& value
+)
+{
+  JSONValue* json_value;
+  if ( key != NULL )
+  {
+    json_value = readJSONValue( key );
+    if ( json_value == NULL )
+      return;
+  }
+  else if ( root_json_value && !root_json_value->have_read )
+  {
+    if ( root_json_value->is_map )
+      json_value = root_json_value;
+    else
+      return;
+  }
+  else
+    return;
+
+  JSONUnmarshaller( key, *json_value ).read( value );
+  json_value->have_read = true;
+}
+
+void JSONUnmarshaller::read( yidl::runtime::MarshallableObject& s )
+{
+  s.unmarshal( *this );
+}
+
+void JSONUnmarshaller::read
 (
   const char* key,
   uint32_t,
@@ -11015,12 +10644,11 @@ void YIELD::ipc::JSONUnmarshaller::readSequence
   else
     return;
 
-  JSONUnmarshaller child_json_unmarshaller( key, *json_value );
-  child_json_unmarshaller.readSequence( value );
+  JSONUnmarshaller( key, *json_value ).read( value );
   json_value->have_read = true;
 }
 
-void YIELD::ipc::JSONUnmarshaller::readSequence
+void JSONUnmarshaller::read
 (
   yidl::runtime::Sequence& value
 )
@@ -11029,7 +10657,7 @@ void YIELD::ipc::JSONUnmarshaller::readSequence
     value.unmarshal( *this );
 }
 
-void YIELD::ipc::JSONUnmarshaller::readString
+void JSONUnmarshaller::read
 (
   const char* key,
   uint32_t,
@@ -11042,54 +10670,15 @@ void YIELD::ipc::JSONUnmarshaller::readString
     if ( key != NULL ) // Read the value
     {
       if ( json_value->as_string != NULL )
-      {
-        str.assign
-        (
-          static_cast<const std::string&>( *json_value->as_string )
-        );
-      }
+        str.assign( *json_value->as_string, json_value->as_string->size() );
     }
     else // Read the identifier
-      str.assign( static_cast<const std::string&>( *json_value->identifier ) );
+      str.assign( *json_value->identifier );
   }
 }
 
-void YIELD::ipc::JSONUnmarshaller::readStruct
-(
-  const char* key,
-  uint32_t,
-  yidl::runtime::Struct& value
-)
-{
-  JSONValue* json_value;
-  if ( key != NULL )
-  {
-    json_value = readJSONValue( key );
-    if ( json_value == NULL )
-      return;
-  }
-  else if ( root_json_value && !root_json_value->have_read )
-  {
-    if ( root_json_value->is_map )
-      json_value = root_json_value;
-    else
-      return;
-  }
-  else
-    return;
-
-  JSONUnmarshaller child_json_unmarshaller( key, *json_value );
-  child_json_unmarshaller.readStruct( value );
-  json_value->have_read = true;
-}
-
-void YIELD::ipc::JSONUnmarshaller::readStruct( yidl::runtime::Struct& s )
-{
-  s.unmarshal( *this );
-}
-
-YIELD::ipc::JSONUnmarshaller::JSONValue*
-  YIELD::ipc::JSONUnmarshaller::readJSONValue( const char* key )
+JSONUnmarshaller::JSONValue*
+  JSONUnmarshaller::readJSONValue( const char* key )
 {
   if ( root_json_value->is_map )
   {
@@ -11136,165 +10725,87 @@ YIELD::ipc::JSONUnmarshaller::JSONValue*
 }
 
 
-// named_pipe.cpp
-#ifdef _WIN32
-#include <windows.h>
-#pragma warning( push )
-#pragma warning( disable: 4100 )
-#endif
-
-
-YIELD::ipc::auto_NamedPipe YIELD::ipc::NamedPipe::open
+// oncrpc_client.cpp
+auto_ONCRPCClient
+ONCRPCClient::create
 (
-  const YIELD::platform::Path& path,
+  const URI& absolute_uri,
+  yidl::runtime::auto_MarshallableObjectFactory marshallable_object_factory,
+  uint16_t concurrency_level,
   uint32_t flags,
-  mode_t mode
+  YIELD::platform::auto_Log log,
+  const YIELD::platform::Time& operation_timeout,
+  uint16_t reconnect_tries_max,
+  auto_SSLContext ssl_context
 )
 {
-#ifdef _WIN32
-  YIELD::platform::Path named_pipe_base_dir_path( TEXT( "\\\\.\\pipe" ) );
-  YIELD::platform::Path named_pipe_path( named_pipe_base_dir_path + path );
-
-  if ( ( flags & O_CREAT ) == O_CREAT ) // Server
-  {
-    HANDLE hPipe
-      = CreateNamedPipe
-        (
-          named_pipe_path,
-          PIPE_ACCESS_DUPLEX,
-          PIPE_TYPE_BYTE|PIPE_READMODE_BYTE|PIPE_WAIT,
-          PIPE_UNLIMITED_INSTANCES,
-          4096,
-          4096,
-          0,
-          NULL
-        );
-
-    if ( hPipe != INVALID_HANDLE_VALUE )
-      return new NamedPipe( new YIELD::platform::File( hPipe ), false );
-  }
-  else // Client
-  {
-    YIELD::platform::auto_File
-      underlying_file
+  YIELD::platform::auto_SocketAddress peername
+    = YIELD::platform::SocketAddress::create
       (
-        YIELD::platform::Volume().open( named_pipe_path, flags )
+        absolute_uri.get_host().c_str(),
+        absolute_uri.get_port()
       );
 
-    if ( underlying_file != NULL )
-      return new NamedPipe( underlying_file, true );
-  }
-#else
-  if ( ( flags & O_CREAT ) == O_CREAT )
+  auto_SocketFactory socket_factory;
+#ifdef YIELD_IPC_HAVE_OPENSSL
+  if ( absolute_uri.get_scheme() == "oncrpcs" )
   {
-    if ( ::mkfifo( path, mode ) != -1 ||
-         errno == EEXIST )
-      flags ^= O_CREAT;
-    else
-      return NULL;
+    if ( ssl_context == NULL )
+      ssl_context = SSLContext::create( SSLv23_client_method() );
+
+    socket_factory = new SSLSocketFactory( ssl_context );
   }
-
-  YIELD::platform::auto_File
-    underlying_file( YIELD::platform::Volume().open( path, flags ) );
-
-  if ( underlying_file != NULL )
-    return new NamedPipe( underlying_file );
-#endif
-
-  return NULL;
-}
-
-#ifdef _WIN32
-YIELD::ipc::NamedPipe::NamedPipe
-(
-  YIELD::platform::auto_File underlying_file,
-  bool connected
-)
-  : underlying_file( underlying_file ), connected( connected )
-{ }
-#else
-YIELD::ipc::NamedPipe::NamedPipe( YIELD::platform::auto_File underlying_file )
-  : underlying_file( underlying_file )
-{ }
-#endif
-
-#ifdef _WIN32
-bool YIELD::ipc::NamedPipe::connect()
-{
-  if ( connected )
-    return true;
   else
-  {
-    if ( ConnectNamedPipe( *underlying_file, NULL ) != 0 ||
-         GetLastError() == ERROR_PIPE_CONNECTED )
-    {
-      connected = true;
-      return true;
-    }
-    else
-      return false;
-  }
-}
 #endif
-
-ssize_t YIELD::ipc::NamedPipe::read( void* buffer, size_t buffer_len )
-{
-#ifdef _WIN32
-  if ( connect() )
-    return underlying_file->read( buffer, buffer_len );
+  if ( absolute_uri.get_scheme() == "oncrpcu" )
+    socket_factory = new UDPSocketFactory;
   else
-    return -1;
-#else
-  return underlying_file->read( buffer, buffer_len );
-#endif
-}
+    socket_factory = new TCPSocketFactory;
 
-ssize_t YIELD::ipc::NamedPipe::write( const void* buffer, size_t buffer_len )
-{
-#ifdef _WIN32
-  if ( connect() )
-    return underlying_file->write( buffer, buffer_len );
-  else
-    return -1;
-#else
-  return underlying_file->write( buffer, buffer_len );
-#endif
+  return new ONCRPCClient
+  (
+    concurrency_level,
+    flags,
+    log,
+    marshallable_object_factory,
+    operation_timeout,
+    peername,
+    reconnect_tries_max,
+    socket_factory
+  );
 }
-
-#ifdef _WIN32
-#pragma warning( pop )
-#endif
 
 
 // oncrpc_message.cpp
 template <class ONCRPCMessageType>
-YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage
+ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage
 (
-  YIELD::concurrency::auto_Interface interface_
+  yidl::runtime::auto_MarshallableObjectFactory marshallable_object_factory,
+  uint32_t xid
 )
-  : interface_( interface_ )
-{
-  xid = 0;
-  deserialize_state = DESERIALIZING_RECORD_FRAGMENT_MARKER;
-}
-
-template <class ONCRPCMessageType>
-YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage
-(
-  YIELD::concurrency::auto_Interface interface_,
-  uint32_t xid, yidl::runtime::auto_Struct body
-)
-  : interface_( interface_ ), xid( xid ), body( body )
+  : RPCMessage( marshallable_object_factory ),
+    xid( xid )
 {
   deserialize_state = DESERIALIZING_RECORD_FRAGMENT_MARKER;
 }
 
 template <class ONCRPCMessageType>
-YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::~ONCRPCMessage()
+ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage
+(
+   yidl::runtime::auto_MarshallableObject body,
+   uint32_t xid
+) : RPCMessage( body ),
+    xid( xid )
+{
+  deserialize_state = DESERIALIZING_RECORD_FRAGMENT_MARKER;
+}
+
+template <class ONCRPCMessageType>
+ONCRPCMessage<ONCRPCMessageType>::~ONCRPCMessage()
 { }
 
 template <class ONCRPCMessageType>
-ssize_t YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserialize
+ssize_t ONCRPCMessage<ONCRPCMessageType>::deserialize
 (
   yidl::runtime::auto_Buffer buffer
 )
@@ -11343,7 +10854,7 @@ ssize_t YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserialize
 
 template <class ONCRPCMessageType>
 ssize_t
-YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker
+ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker
 (
   yidl::runtime::auto_Buffer buffer
 )
@@ -11384,7 +10895,7 @@ YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragmentMarker
 
 template <class ONCRPCMessageType>
 ssize_t
-YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment
+ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment
 (
   yidl::runtime::auto_Buffer buffer
 )
@@ -11422,7 +10933,7 @@ YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeRecordFragment
 
 template <class ONCRPCMessageType>
 ssize_t
-YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment
+ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment
 (
   yidl::runtime::auto_Buffer buffer
 )
@@ -11472,38 +10983,42 @@ YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::deserializeLongRecordFragment
 }
 
 template <class ONCRPCMessageType>
-void YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::marshal
+void ONCRPCMessage<ONCRPCMessageType>::marshal
 (
   yidl::runtime::Marshaller& marshaller
-)
+) const
 {
-  marshaller.writeUint32( "xid", 0, xid );
+  marshaller.write( "xid", 0, xid );
 }
 
 template <class ONCRPCMessageType>
-yidl::runtime::auto_Buffer
-YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::serialize()
+yidl::runtime::auto_Buffers
+ONCRPCMessage<ONCRPCMessageType>::serialize()
 {
   YIELD::platform::XDRMarshaller xdr_marshaller;
-  xdr_marshaller.writeUint32( "record_fragment_marker", 0, 0 );
+
+  uint32_t record_fragment_marker = 0;
+  xdr_marshaller.write( "record_fragment_marker", 0, record_fragment_marker );
+
   static_cast<ONCRPCMessageType*>( this )->marshal( xdr_marshaller );
-  yidl::runtime::auto_StringBuffer xdr_buffer = xdr_marshaller.get_buffer();
+
+  yidl::runtime::auto_Buffer xdr_buffer = xdr_marshaller.get_buffer();
 
   uint32_t record_fragment_length
     = static_cast<uint32_t>( xdr_buffer->size() - sizeof( uint32_t ) );
-
   // Indicate that this is the last fragment
-  uint32_t record_fragment_marker
+  record_fragment_marker
     = record_fragment_length | ( 1 << 31 );
-
 #ifdef __MACH__
   record_fragment_marker = htonl( record_fragment_marker );
 #else
   record_fragment_marker
     = YIELD::platform::Machine::htonl( record_fragment_marker );
 #endif
-
-  static_cast<std::string&>( *xdr_buffer )
+  static_cast<std::string&>
+  (
+    *static_cast<yidl::runtime::StringBuffer*>( xdr_buffer.get() )
+  )
     .replace
     (
       0,
@@ -11512,1132 +11027,610 @@ YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::serialize()
       sizeof( uint32_t )
     );
 
-  return xdr_buffer.release();
+  return new yidl::runtime::Buffers( xdr_buffer.release() );
 }
 
 template <class ONCRPCMessageType>
-void YIELD::ipc::ONCRPCMessage<ONCRPCMessageType>::unmarshal
+void ONCRPCMessage<ONCRPCMessageType>::unmarshal
 (
   yidl::runtime::Unmarshaller& unmarshaller
 )
 {
-  xid = unmarshaller.readUint32( "xid", 0 );
+  xid = unmarshaller.read_uint32( "xid", 0 );
 }
 
-template class YIELD::ipc::ONCRPCMessage<YIELD::ipc::ONCRPCRequest>;
-template class YIELD::ipc::ONCRPCMessage<YIELD::ipc::ONCRPCResponse>;
+template class ONCRPCMessage<ONCRPCRequest>;
+template class ONCRPCMessage<ONCRPCResponse>;
 
 
 // oncrpc_request.cpp
-YIELD::ipc::ONCRPCRequest::ONCRPCRequest
+ONCRPCRequest::ONCRPCRequest
 (
-  YIELD::concurrency::auto_Interface interface_
-)
-  : ONCRPCMessage<ONCRPCRequest>( interface_ )
-{
-  reconnect_tries = 0;
-}
+   yidl::runtime::auto_MarshallableObjectFactory marshallable_object_factory
+ )
+  : ONCRPCMessage<ONCRPCRequest>( marshallable_object_factory, 0 )
+{ }
 
-YIELD::ipc::ONCRPCRequest::ONCRPCRequest
-(
-  YIELD::concurrency::auto_Interface interface_,
-  yidl::runtime::auto_Struct body
-)
-  : ONCRPCMessage<ONCRPCRequest>
-    (
-      interface_,
-      static_cast<uint32_t>( YIELD::platform::Time().as_unix_time_s() ),
-      body
-    )
-{
-  prog = 0x20000000 + interface_->get_type_id();
-  proc = body->get_type_id();
-  vers = interface_->get_type_id();
-  credential_auth_flavor = AUTH_NONE;
-  reconnect_tries = 0;
-}
-
-YIELD::ipc::ONCRPCRequest::ONCRPCRequest
-(
-  YIELD::concurrency::auto_Interface interface_,
-  uint32_t credential_auth_flavor,
-  yidl::runtime::auto_Struct credential,
-  yidl::runtime::auto_Struct body
-)
-  : ONCRPCMessage<ONCRPCRequest>
-    (
-      interface_,
-      static_cast<uint32_t>( YIELD::platform::Time().as_unix_time_s() ),
-      body
-    ),
-    credential_auth_flavor( credential_auth_flavor ),
-    credential( credential )
-{
-  prog = 0x20000000 + interface_->get_type_id();
-  proc = body->get_type_id();
-  vers = interface_->get_type_id();
-  reconnect_tries = 0;
-}
-
-YIELD::ipc::ONCRPCRequest::ONCRPCRequest
+// Outgoing
+ONCRPCRequest::ONCRPCRequest
 (
   uint32_t prog,
   uint32_t proc,
   uint32_t vers,
-  yidl::runtime::auto_Struct body
+  yidl::runtime::auto_MarshallableObject body,
+  yidl::runtime::auto_MarshallableObject cred,
+  yidl::runtime::auto_MarshallableObject verf
 )
   : ONCRPCMessage<ONCRPCRequest>
     (
-      NULL,
-      static_cast<uint32_t>( YIELD::platform::Time().as_unix_time_s() ),
-      body
+      body,
+      static_cast<uint32_t>( YIELD::platform::Time().as_unix_time_s() ) // xid
     ),
+    cred( cred ),
     prog( prog ),
     proc( proc ),
+    verf( verf ),
     vers( vers )
-{
-  credential_auth_flavor = AUTH_NONE;
-  reconnect_tries = 0;
-}
+{ }
 
-YIELD::ipc::ONCRPCRequest::ONCRPCRequest
-(
-  uint32_t prog,
-  uint32_t proc,
-  uint32_t vers,
-  uint32_t credential_auth_flavor,
-  yidl::runtime::auto_Struct credential,
-  yidl::runtime::auto_Struct body
-)
-  : ONCRPCMessage<ONCRPCRequest>
-    (
-      NULL,
-      static_cast<uint32_t>( YIELD::platform::Time().as_unix_time_s() ),
-      body
-    ),
-    prog( prog ),
-    proc( proc ),
-    vers( vers ),
-    credential_auth_flavor( credential_auth_flavor ),
-    credential( credential )
-{
-  reconnect_tries = 0;
-}
-
-YIELD::concurrency::auto_Response YIELD::ipc::ONCRPCRequest::createResponse()
+auto_ONCRPCResponse ONCRPCRequest::createResponse()
 {
   return new ONCRPCResponse
-            (
-              get_interface(),
-              get_xid(),
-              static_cast<Request*>( get_body().get() )
-                ->createResponse().release()
-            );
+             (
+               get_body()->get_type_id(),
+               get_marshallable_object_factory(),
+               get_xid()
+             );
 }
 
-void YIELD::ipc::ONCRPCRequest::marshal
-(
-  yidl::runtime::Marshaller& marshaller
-)
+void ONCRPCRequest::marshal( yidl::runtime::Marshaller& marshaller ) const
 {
   ONCRPCMessage<ONCRPCRequest>::marshal( marshaller );
 
-  marshaller.writeInt32( "msg_type", 0, 0 ); // MSG_CALL
-  marshaller.writeInt32( "rpcvers", 0, 2 );
-  marshaller.writeInt32( "prog", 0, prog );
-  marshaller.writeInt32( "vers", 0, vers );
-  marshaller.writeInt32( "proc", 0, proc );
+  marshaller.write( "msg_type", 0, 0 ); // MSG_CALL
+  marshaller.write( "rpcvers", 0, 2 );
+  marshaller.write( "prog", 0, prog );
+  marshaller.write( "vers", 0, vers );
+  marshaller.write( "proc", 0, proc );
 
-  marshaller.writeInt32( "credential_auth_flavor", 0, credential_auth_flavor );
-  if ( credential_auth_flavor == AUTH_NONE || credential == NULL )
-    marshaller.writeInt32( "credential_auth_body_length", 0, 0 );
+  if ( cred != NULL && cred->get_size() > 0 )
+  {
+    marshaller.write( "cred_auth_flavor", 0, cred->get_type_id() );
+    marshaller.write( "cred_auth_body_length", 0, cred->get_size() );
+    marshaller.write( "cred_auth_body", 0, *cred );
+  }
   else
   {
-    YIELD::platform::XDRMarshaller credential_auth_body_xdr_marshaller;
-    credential->marshal( credential_auth_body_xdr_marshaller );
-    marshaller.writeBuffer
-    (
-      "credential_auth_body",
-      0,
-      credential_auth_body_xdr_marshaller.get_buffer().release()
-    );
+    marshaller.write( "cred_auth_flavor", 0, AUTH_NONE );
+    marshaller.write( "cred_auth_body_length", 0, 0 );
   }
 
-  marshaller.writeInt32( "verf_auth_flavor", 0, AUTH_NONE );
-  marshaller.writeInt32( "verf_auth_body_length", 0, 0 );
-
-  marshaller.writeStruct( "body", 0, *get_body() );
-}
-
-void YIELD::ipc::ONCRPCRequest::respond
-(
-  YIELD::concurrency::Response& response
-)
-{
-  if ( this->get_response_target() == NULL )
+  if ( verf != NULL && verf->get_size() > 0 )
   {
-    YIELD::concurrency::auto_Interface interface_( get_interface() );
-    yidl::runtime::auto_Struct body( get_body() );
-
-    Request* interface_request = interface_->checkRequest( *body );
-
-    if ( interface_request != NULL )
-    {
-      if
-      (
-        response.get_type_id()
-          == YIDL_RUNTIME_OBJECT_TYPE_ID( ONCRPCResponse )
-      )
-      {
-        ONCRPCResponse& oncrpc_response
-          = static_cast<ONCRPCResponse&>( response );
-        yidl::runtime::auto_Struct oncrpc_response_body
-          = oncrpc_response.get_body();
-        YIELD::concurrency::Response* interface_response
-          = interface_->checkResponse( *oncrpc_response_body );
-        if ( interface_response != NULL )
-        {
-          YIELD::concurrency::Response::decRef( response );
-          return interface_request->respond( interface_response->incRef() );
-        }
-        else if
-        (
-          oncrpc_response_body->get_type_id() ==
-           YIDL_RUNTIME_OBJECT_TYPE_ID( YIELD::concurrency::ExceptionResponse )
-        )
-        {
-          YIELD::concurrency::Response::decRef( response );
-          return interface_request->respond
-                (
-                  static_cast<YIELD::concurrency::ExceptionResponse&>
-                  (
-                    *oncrpc_response_body.release()
-                  )
-                );
-        }
-      }
-      else
-        return interface_request->respond( response );
-    }
+    marshaller.write( "verf_auth_flavor", 0, verf->get_type_id() );
+    marshaller.write( "verf_auth_body_length", 0, verf->get_size() );
+    marshaller.write( "verf_auth_body", 0, *verf );
+  }
+  else
+  {
+    marshaller.write( "verf_auth_flavor", 0, AUTH_NONE );
+    marshaller.write( "verf_auth_body_length", 0, 0 );
   }
 
-  return Request::respond( response );
+  marshal_body( "body", 0, marshaller );
 }
 
-void YIELD::ipc::ONCRPCRequest::set_reconnect_tries( uint8_t reconnect_tries )
-{
-  this->reconnect_tries = reconnect_tries;
-}
-
-void YIELD::ipc::ONCRPCRequest::unmarshal
+void ONCRPCRequest::unmarshal
 (
   yidl::runtime::Unmarshaller& unmarshaller
 )
 {
   ONCRPCMessage<ONCRPCRequest>::unmarshal( unmarshaller );
 
-  int32_t msg_type = unmarshaller.readInt32( "msg_type", 0 );
+  uint32_t msg_type = unmarshaller.read_uint32( "msg_type", 0 );
   if ( msg_type == 0 ) // CALL
   {
-    uint32_t rpcvers = unmarshaller.readUint32( "rpcvers", 0 );
+    uint32_t rpcvers = unmarshaller.read_uint32( "rpcvers", 0 );
     if ( rpcvers == 2 )
     {
-      unmarshaller.readUint32( "prog", 0 );
-      unmarshaller.readUint32( "vers", 0 );
-      uint32_t proc = unmarshaller.readUint32( "proc", 0 );
+      unmarshaller.read_uint32( "prog", 0 );
+      unmarshaller.read_uint32( "vers", 0 );
+      uint32_t proc = unmarshaller.read_uint32( "proc", 0 );
 
-      unmarshaller.readUint32( "credential_auth_flavor", 0 );
-      std::string credential_auth_body;
-      unmarshaller.readString
-      (
-        "credential_auth_body",
-        0,
-        credential_auth_body
-      );
-
-      unmarshaller.readUint32( "verf_auth_flavor", 0 );
-      uint32_t verf_auth_body_length
-        = unmarshaller.readUint32( "credential_auth_body_length", 0 );
-      if ( verf_auth_body_length > 0 )
-        DebugBreak();
-
-      yidl::runtime::auto_Struct body( get_body() );
-      if ( body != NULL )
-        unmarshaller.readStruct( "body", 0, *body );
-      else
+      uint32_t cred_auth_flavor =
+        unmarshaller.read_uint32( "cred_auth_flavor", 0 );
+      if ( cred_auth_flavor != AUTH_NONE )
       {
-        body = get_interface()->createRequest( proc ).release();
-        if ( body != NULL )
+        cred
+          = get_marshallable_object_factory()
+              ->createMarshallableObject( cred_auth_flavor );
+
+        if ( cred != NULL )
         {
-          unmarshaller.readStruct( "body", 0, *body );
-          set_body( body );
+          unmarshaller.read_uint32( "cred_auth_body_length", 0 );
+          unmarshaller.read( "cred_auth_body", 0, *cred );
+        }
+        else
+        {
+          std::string cred;
+          unmarshaller.read( "cred_auth_body", 0, cred );
         }
       }
+
+      uint32_t verf_auth_flavor =
+        unmarshaller.read_uint32( "verf_auth_flavor", 0 );
+      if ( verf_auth_flavor != AUTH_NONE )
+      {
+        verf
+          = get_marshallable_object_factory()
+              ->createMarshallableObject( verf_auth_flavor );
+
+        if ( verf != NULL )
+        {
+          unmarshaller.read_uint32( "verf_auth_body_length", 0 );
+          unmarshaller.read( "verf_auth_body", 0, *verf );
+        }
+        else
+        {
+          std::string verf;
+          unmarshaller.read( "verf_auth_body", 0, verf );
+        }
+      }
+
+      unmarshal_new_Request_body( "body", 0, proc, unmarshaller );
     }
   }
 }
 
 
 // oncrpc_response.cpp
-YIELD::ipc::ONCRPCResponse::ONCRPCResponse
+ONCRPCResponse::ONCRPCResponse
 (
-  YIELD::concurrency::auto_Interface interface_
+  uint32_t default_body_type_id,
+  yidl::runtime::auto_MarshallableObjectFactory marshallable_object_factory,
+  uint32_t xid
 )
-  : ONCRPCMessage<ONCRPCResponse>( interface_ )
+  : ONCRPCMessage<ONCRPCResponse>( marshallable_object_factory, xid ),
+    default_body_type_id( default_body_type_id )
 { }
 
-YIELD::ipc::ONCRPCResponse::ONCRPCResponse
+// Outgoing
+ONCRPCResponse::ONCRPCResponse
 (
-  YIELD::concurrency::auto_Interface interface_,
-  uint32_t xid,
-  yidl::runtime::auto_Struct body
+  yidl::runtime::auto_MarshallableObject body,
+  uint32_t xid
 )
-  : ONCRPCMessage<ONCRPCResponse>( interface_, xid, body )
-{ }
-
-void YIELD::ipc::ONCRPCResponse::marshal
-(
-  yidl::runtime::Marshaller& marshaller
-)
+  : ONCRPCMessage<ONCRPCResponse>( body, xid )
 {
-  ONCRPCMessage<ONCRPCResponse>::marshal( marshaller );
-  marshaller.writeInt32( "msg_type", 0, 1 ); // MSG_REPLY
-  marshaller.writeInt32( "reply_stat", 0, 0 ); // MSG_ACCEPTED
-  marshaller.writeInt32( "verf_auth_flavor", 0, 0 );
-  marshaller.writeInt32( "verf_authbody_length", 0, 0 );
-  yidl::runtime::auto_Struct body( get_body() );
-  if ( body != NULL )
-  {
-    if
-    (
-      body->get_type_id()
-      != YIDL_RUNTIME_OBJECT_TYPE_ID( YIELD::concurrency::ExceptionResponse )
-    )
-    {
-      marshaller.writeInt32( "accept_stat", 0, 0 ); // SUCCESS
-      marshaller.writeStruct( "body", 0, *body );
-    }
-    else
-      marshaller.writeInt32( "accept_stat", 0, 5 ); // SYSTEM_ERR
-  }
-  else
-    marshaller.writeInt32( "accept_stat", 0, 5 ); // SYSTEM_ERR
+  default_body_type_id = 0;
 }
 
-void YIELD::ipc::ONCRPCResponse::unmarshal
+void ONCRPCResponse::marshal( yidl::runtime::Marshaller& marshaller ) const
+{
+  ONCRPCMessage<ONCRPCResponse>::marshal( marshaller );
+  marshaller.write( "msg_type", 0, 1 ); // MSG_REPLY
+  marshaller.write( "reply_stat", 0, 0 ); // MSG_ACCEPTED
+  marshaller.write( "verf_auth_flavor", 0, 0 );
+  marshaller.write( "verf_authbody_length", 0, 0 );
+  if
+  (
+    get_body() != NULL
+    &&
+    get_body()->get_type_id() != YIELD::concurrency::ExceptionResponse::TYPE_ID
+  )
+  {
+    marshaller.write( "accept_stat", 0, 0 ); // SUCCESS
+    marshaller.write( "body", 0, *get_body() );
+  }
+  else
+    marshaller.write( "accept_stat", 0, 5 ); // SYSTEM_ERR
+}
+
+void ONCRPCResponse::unmarshal
 (
   yidl::runtime::Unmarshaller& unmarshaller
 )
 {
   ONCRPCMessage<ONCRPCResponse>::unmarshal( unmarshaller );
 
-  yidl::runtime::auto_Struct body( get_body() );
-
-  int32_t msg_type = unmarshaller.readInt32( "msg_type", 0 );
+  uint32_t msg_type = unmarshaller.read_uint32( "msg_type", 0 );
   if ( msg_type == 1 ) // REPLY
   {
-    uint32_t reply_stat = unmarshaller.readUint32( "reply_stat", 0 );
+    uint32_t reply_stat = unmarshaller.read_uint32( "reply_stat", 0 );
     if ( reply_stat == 0 ) // MSG_ACCEPTED
     {
       uint32_t verf_auth_flavor
-        = unmarshaller.readUint32( "verf_auth_flavor", 0 );
+        = unmarshaller.read_uint32( "verf_auth_flavor", 0 );
 
       uint32_t verf_authbody_length
-        = unmarshaller.readUint32( "verf_authbody_length", 0 );
+        = unmarshaller.read_uint32( "verf_authbody_length", 0 );
 
       if ( verf_auth_flavor == 0 && verf_authbody_length == 0 )
       {
-        uint32_t accept_stat = unmarshaller.readUint32( "accept_stat", 0 );
+        uint32_t accept_stat = unmarshaller.read_uint32( "accept_stat", 0 );
 
         switch ( accept_stat )
         {
           case 0:
           {
-            if ( body != NULL )
-              unmarshaller.readStruct( "body", 0, *body );
+            unmarshal_new_Response_body
+            (
+              NULL,
+              0,
+              default_body_type_id,
+              unmarshaller
+            );
           }
           break;
 
-          case 1: body = new ONCRPCProgramUnavailableError; break;
-          case 2: body = new ONCRPCProgramMismatchError; break;
-          case 3: body = new ONCRPCProcedureUnavailableError; break;
-          case 4: body = new ONCRPCGarbageArgumentsError; break;
-          case 5: body = new ONCRPCSystemError; break;
+          case 1: set_body( new ONCRPCProgramUnavailableError ); break;
+          case 2: set_body( new ONCRPCProgramMismatchError ); break;
+          case 3: set_body( new ONCRPCProcedureUnavailableError ); break;
+          case 4: set_body( new ONCRPCGarbageArgumentsError ); break;
+          case 5: set_body( new ONCRPCSystemError ); break;
 
           default:
           {
-            body = get_interface()
-              ->createExceptionResponse( accept_stat ).release();
-
-            if ( body != NULL )
-              unmarshaller.readStruct( "body", 0, *body );
-            else
-              body = new ONCRPCSystemError;
+            if
+            (
+              !unmarshal_new_ExceptionResponse_body
+              (
+                NULL,
+                0,
+                accept_stat,
+                unmarshaller
+              )
+            )
+              set_body( new ONCRPCSystemError );
           }
           break;
         }
       }
       else
-        body = new YIELD::concurrency::ExceptionResponse
-               ( "ONC-RPC: received unexpected verification body" );
+      {
+        set_body
+        (
+          new YIELD::concurrency::ExceptionResponse
+              ( "ONC-RPC: received unexpected verification body" )
+        );
+      }
     }
     else if ( reply_stat == 1 ) // MSG_REJECTED
-      body = new ONCRPCMessageRejectedError;
+      set_body( new ONCRPCMessageRejectedError );
     else // Unknown reply_stat value
-      body = new ONCRPCMessageRejectedError;
+      set_body( new ONCRPCMessageRejectedError );
   }
   else // Unknown msg_type value
-    body = new ONCRPCMessageRejectedError;
-
-  set_body( body );
+    set_body( new ONCRPCMessageRejectedError );
 }
 
 
 // oncrpc_server.cpp
-class YIELD::ipc::ONCRPCServer::AIOWriteControlBlock
-  : public Socket::AIOWriteControlBlock
+class TCPONCRPCServer
+  : public ONCRPCServer,
+    public YIELD::platform::TCPSocket::AIOAcceptCallback
 {
 public:
-  AIOWriteControlBlock( yidl::runtime::auto_Buffer buffer )
-    : Socket::AIOWriteControlBlock( buffer )
-  { }
-
-  void onCompletion( size_t )
-  { }
-
-  void onError( uint32_t )
-  {
-    get_socket()->shutdown();
-    get_socket()->close();
-  }
-};
-
-
-class YIELD::ipc::ONCRPCServer::ONCRPCResponseTarget
-  : public YIELD::concurrency::EventTarget
-{
-public:
-  ONCRPCResponseTarget
+  TCPONCRPCServer
   (
-    YIELD::concurrency::auto_Interface interface_,
-    auto_ONCRPCRequest oncrpc_request,
-    auto_SocketAddress peername,
-    auto_Socket socket_
+    YIELD::platform::auto_TCPSocket listen_tcp_socket,
+    YIELD::platform::auto_Log log,
+    yidl::runtime::auto_MarshallableObjectFactory marshallable_object_factory,
+    YIELD::concurrency::auto_EventTarget oncrpc_request_target
   )
-    : interface_( interface_ ),
-      oncrpc_request( oncrpc_request ),
-      peername( peername ),
-      socket_( socket_ )
-  { }
-
-  // yidl::runtime::Object
-  YIDL_RUNTIME_OBJECT_PROTOTYPES( ONCRPCServer::ONCRPCResponseTarget, 0 );
-
-  // EventTarget
-  void send( YIELD::concurrency::Event& ev )
+  : ONCRPCServer( log, marshallable_object_factory, oncrpc_request_target ),
+    listen_tcp_socket( listen_tcp_socket )
   {
-    ONCRPCResponse
-      oncrpc_response( interface_, oncrpc_request->get_xid(), ev );
-
-    if ( peername != NULL )
-    {
-      static_cast<UDPSocket*>( socket_.get() )->sendto
-      (
-        oncrpc_response.serialize(),
-        peername
-      );
-    }
-    else
-    {
-      socket_->aio_write
-      (
-        new AIOWriteControlBlock( oncrpc_response.serialize() )
-      );
-    }
+    listen_tcp_socket->aio_accept( *this );
   }
 
 private:
-  YIELD::concurrency::auto_Interface interface_;
-  auto_ONCRPCRequest oncrpc_request;
-  auto_SocketAddress peername;
-  auto_Socket socket_;
-};
+  YIELD::platform::auto_TCPSocket listen_tcp_socket;
 
-
-class YIELD::ipc::ONCRPCServer::AIOReadControlBlock
-  : public Socket::AIOReadControlBlock
-{
-public:
-  AIOReadControlBlock
+private:
+  // YIELD::platform::TCPSocket::AIOAcceptCallback
+  void
+  onAcceptCompletion
   (
-    yidl::runtime::auto_Buffer buffer,
-    YIELD::concurrency::auto_Interface interface_,
-    auto_ONCRPCRequest oncrpc_request
+    YIELD::platform::auto_TCPSocket accepted_tcp_socket,
+    void*
   )
-    : Socket::AIOReadControlBlock( buffer ),
-      interface_( interface_ ),
-      oncrpc_request( oncrpc_request )
-  { }
-
-  void onCompletion( size_t )
   {
-    for ( ;; )
-    {
-      ssize_t deserialize_ret = oncrpc_request->deserialize( get_buffer() );
+    YIELD::platform::auto_Socket socket_;
+    if ( log != NULL && log->get_level() >= YIELD::platform::Log::LOG_INFO )
+      socket_ = new TracingSocket( log, accepted_tcp_socket->inc_ref() );
+    else
+      socket_ = accepted_tcp_socket.release();
 
-      if ( deserialize_ret == 0 )
-      {
-        yidl::runtime::auto_Struct oncrpc_request_body
-          = oncrpc_request->get_body();
-        YIELD::concurrency::Request* interface_request
-          = interface_->checkRequest( *oncrpc_request_body );
-        if ( interface_request != NULL )
-        {
-          oncrpc_request_body.release();
-
-          interface_request->set_response_target
-          (
-            new ONCRPCResponseTarget
+    Connection* connection
+      = new Connection
             (
-              interface_,
-              oncrpc_request,
-              NULL,
-              get_socket()
-            )
-          );
+              marshallable_object_factory,
+              oncrpc_request_target,
+              socket_
+            );
 
-          interface_->send( *interface_request );
+    connection->read();
+
+    listen_tcp_socket->aio_accept( *this );
+  }
+
+  void onAcceptError( uint32_t, void* )
+  {
+    listen_tcp_socket->aio_accept( *this );
+  }
+
+private:
+  class Connection
+    : public YIELD::platform::Socket::AIOReadCallback,
+      public YIELD::platform::Socket::AIOWriteCallback,
+      public YIELD::concurrency::EventTarget
+  {
+  public:
+    Connection
+    (
+      yidl::runtime::auto_MarshallableObjectFactory marshallable_object_factory,
+      YIELD::concurrency::auto_EventTarget oncrpc_request_target,
+      YIELD::platform::auto_Socket socket_
+    )
+    : marshallable_object_factory( marshallable_object_factory ),
+      oncrpc_request_target( oncrpc_request_target ),
+      socket_( socket_ )
+    { }
+
+    void read()
+    {
+      oncrpc_request = new ONCRPCRequest( marshallable_object_factory );
+      socket_->aio_read( new yidl::runtime::HeapBuffer( 1024 ), *this );
+    }
+
+  private:
+    yidl::runtime::auto_MarshallableObjectFactory marshallable_object_factory;
+    auto_ONCRPCRequest oncrpc_request;
+    YIELD::concurrency::auto_EventTarget oncrpc_request_target;
+    YIELD::platform::auto_Socket socket_;
+
+  private:
+    // YIELD::platform::Socket::AIOReadCallback
+    void onReadCompletion( yidl::runtime::auto_Buffer buffer, void* )
+    {
+      for ( ;; )
+      {
+        ssize_t deserialize_ret = oncrpc_request->deserialize( buffer );
+        if ( deserialize_ret == 0 )
+        {
+          oncrpc_request->set_response_target( inc_ref() );
+          oncrpc_request_target->send( *oncrpc_request );
+        }
+        else if ( deserialize_ret > 0 )
+        {
+          socket_->aio_read( new yidl::runtime::HeapBuffer( 1024 ), *this );
+          return;
         }
         else
-          DebugBreak();
-
-        oncrpc_request = new ONCRPCRequest( interface_ );
-      }
-      else if ( deserialize_ret > 0 )
-      {
-        get_socket()->aio_read
-        (
-          new AIOReadControlBlock
-          (
-            new yidl::runtime::HeapBuffer( deserialize_ret ),
-            interface_,
-            oncrpc_request
-          )
-        );
-
-        return;
-      }
-      else
-      {
-        get_socket()->shutdown();
-        get_socket()->close();
-        return;
+        {
+          socket_->shutdown();
+          socket_->close();
+          delete this;
+          return;
+        }
       }
     }
-  }
 
-  void onError( uint32_t )
-  {
-    get_socket()->close();
-  }
+    void onReadError( uint32_t, void* )
+    {
+      socket_->shutdown();
+      socket_->close();
+      delete this;
+    }
 
-private:
-  YIELD::concurrency::auto_Interface interface_;
-  auto_ONCRPCRequest oncrpc_request;
+    // YIELD::platform::Socket::AIOWriteCallback
+    void onWriteCompletion( void* )
+    {
+      read();
+    }
+
+    void onWriteError( uint32_t, void* )
+    {
+      socket_->shutdown();
+      socket_->close();
+      delete this;
+    }
+
+    // YIELD::concurrency::EventTarget
+    void send( YIELD::concurrency::Event& ev )
+    {
+      socket_->aio_writev
+      (
+        ONCRPCResponse
+        (
+          static_cast<YIELD::concurrency::Response&>( ev ),
+          oncrpc_request->get_xid()
+        ).serialize(),
+        *this
+      );
+
+      read();
+    }
+  };
 };
 
 
-class YIELD::ipc::ONCRPCServer::AIORecvFromControlBlock
-  : public UDPSocket::AIORecvFromControlBlock
+class UDPONCRPCServer
+  : public ONCRPCServer,
+    public YIELD::platform::UDPSocket::AIORecvFromCallback
 {
 public:
-  AIORecvFromControlBlock( YIELD::concurrency::auto_Interface interface_ )
-    : UDPSocket::AIORecvFromControlBlock
-      (
-        new yidl::runtime::HeapBuffer( 1024 )
-      ),
-      interface_( interface_ )
-  { }
-
-  // AIOControlBlock
-  void onCompletion( size_t )
+  UDPONCRPCServer
+  (
+    YIELD::platform::auto_Log log,
+    yidl::runtime::auto_MarshallableObjectFactory marshallable_object_factory,
+    YIELD::concurrency::auto_EventTarget oncrpc_request_target,
+    YIELD::platform::auto_UDPSocket udp_socket
+  )
+  : ONCRPCServer( log, marshallable_object_factory, oncrpc_request_target ),
+    udp_socket( udp_socket )
   {
-    ONCRPCRequest* oncrpc_request = new ONCRPCRequest( interface_ );
-    ssize_t deserialize_ret = oncrpc_request->deserialize( get_buffer() );
+    udp_socket->aio_recvfrom( new yidl::runtime::HeapBuffer( 1024 ), *this );
+  }
+
+private:
+  YIELD::platform::auto_UDPSocket udp_socket;
+
+private:
+  // YIELD::platform::UDPSocket::AIORecvFromCallback
+  void
+  onRecvFromCompletion
+  (
+    yidl::runtime::auto_Buffer buffer,
+    YIELD::platform::auto_SocketAddress peername,
+    void*
+  )
+  {
+    auto_ONCRPCRequest oncrpc_request
+      = new ONCRPCRequest( marshallable_object_factory );
+
+    ssize_t deserialize_ret = oncrpc_request->deserialize( buffer );
     if ( deserialize_ret == 0 )
     {
-      yidl::runtime::auto_Struct oncrpc_request_body
-        = oncrpc_request->get_body();
-      YIELD::concurrency::Request* interface_request
-        = interface_->checkRequest( *oncrpc_request_body );
-      if ( interface_request != NULL )
-      {
-        oncrpc_request_body.release();
+      Connection* connection
+        = new Connection
+              (
+                marshallable_object_factory,
+                oncrpc_request->get_xid(),
+                peername,
+                udp_socket
+              );
 
-        interface_request->set_response_target
-        (
-          new ONCRPCResponseTarget
-          (
-            interface_,
-            oncrpc_request,
-            get_peername(),
-            get_socket()
-          )
-        );
+      oncrpc_request->set_response_target( connection );
+      oncrpc_request_target->send( *oncrpc_request );
+    }
 
-        interface_->send( *interface_request );
-      }
+    udp_socket->aio_recvfrom( new yidl::runtime::HeapBuffer( 1024 ), *this );
+  }
 
-      static_cast<UDPSocket*>( get_socket().get() )->aio_recvfrom
+  void onRecvFromError( uint32_t, void* )
+  {
+    udp_socket->aio_recvfrom( new yidl::runtime::HeapBuffer( 1024 ), *this );
+  }
+
+private:
+  class Connection : public YIELD::concurrency::EventTarget
+  {
+  public:
+    Connection
+    (
+      yidl::runtime::auto_MarshallableObjectFactory marshallable_object_factory,
+      uint32_t oncrpc_request_xid,
+      YIELD::platform::auto_SocketAddress peername,
+      YIELD::platform::auto_UDPSocket udp_socket
+    )
+    : marshallable_object_factory( marshallable_object_factory ),
+      oncrpc_request_xid( oncrpc_request_xid ),
+      peername( peername ),
+      udp_socket( udp_socket )
+    { }
+
+  private:
+    yidl::runtime::auto_MarshallableObjectFactory marshallable_object_factory;
+    uint32_t oncrpc_request_xid;
+    YIELD::platform::auto_SocketAddress peername;
+    YIELD::platform::auto_UDPSocket udp_socket;
+
+  private:
+    // YIELD::concurrency::EventTarget
+    void send( YIELD::concurrency::Event& ev )
+    {
+      udp_socket->sendmsg
       (
-        new AIORecvFromControlBlock( interface_ )
+        *ONCRPCResponse
+        (
+          ev,
+          oncrpc_request_xid
+        ).serialize(),
+        *peername
       );
     }
-    else if ( deserialize_ret < 0 )
-      ONCRPCRequest::decRef( *oncrpc_request );
-    else
-      DebugBreak();
-  }
-
-  void onError( uint32_t )
-  {
-    // DebugBreak();
-  }
-
-private:
-  YIELD::concurrency::auto_Interface interface_;
+  };
 };
 
 
-class YIELD::ipc::ONCRPCServer::AIOAcceptControlBlock
-  : public TCPSocket::AIOAcceptControlBlock
-{
-public:
-  AIOAcceptControlBlock( YIELD::concurrency::auto_Interface interface_ )
-    : interface_( interface_ )
-  { }
-
-  void onCompletion( size_t )
-  {
-    get_accepted_tcp_socket()->aio_read
-    (
-      new AIOReadControlBlock
-      (
-        new yidl::runtime::HeapBuffer( 1024 ),
-        interface_,
-        new ONCRPCRequest( interface_ )
-      )
-    );
-
-    static_cast<TCPSocket*>( get_socket().get() )->aio_accept
-    (
-      new AIOAcceptControlBlock( interface_ )
-    );
-  }
-
-  void onError( uint32_t )
-  { }
-
-private:
-  YIELD::concurrency::auto_Interface interface_;
-};
-
-
-YIELD::ipc::ONCRPCServer::ONCRPCServer
+ONCRPCServer::ONCRPCServer
 (
-  YIELD::concurrency::auto_Interface interface_,
-  auto_Socket socket_
+  YIELD::platform::auto_Log log,
+  yidl::runtime::auto_MarshallableObjectFactory marshallable_object_factory,
+  YIELD::concurrency::auto_EventTarget oncrpc_request_target
 )
-  : interface_( interface_ ), socket_( socket_ )
+  : RPCServer( log, marshallable_object_factory ),
+    oncrpc_request_target( oncrpc_request_target )
 { }
 
-YIELD::ipc::auto_ONCRPCServer
-YIELD::ipc::ONCRPCServer::create
+auto_ONCRPCServer
+ONCRPCServer::create
 (
   const URI& absolute_uri,
-  YIELD::concurrency::auto_Interface interface_,
+  yidl::runtime::auto_MarshallableObjectFactory marshallable_object_factory,
+  YIELD::concurrency::auto_EventTarget oncrpc_request_target,
   YIELD::platform::auto_Log log,
   auto_SSLContext ssl_context
 )
 {
-  auto_SocketAddress sockname = SocketAddress::create( absolute_uri );
+  YIELD::platform::auto_SocketAddress sockname
+    = YIELD::platform::SocketAddress::create
+      (
+        absolute_uri.get_host().c_str(),
+        absolute_uri.get_port()
+      );
 
   if ( absolute_uri.get_scheme() == "oncrpcu" )
   {
-    auto_UDPSocket udp_socket( UDPSocket::create() );
-    if ( udp_socket != NULL &&
-         udp_socket->bind( sockname ) )
-    {
-      udp_socket->aio_recvfrom( new AIORecvFromControlBlock( interface_ ) );
-      return new ONCRPCServer( interface_, udp_socket.release() );
-    }
+    YIELD::platform::auto_UDPSocket
+      udp_socket( YIELD::platform::UDPSocket::create() );
+
+    if
+    (
+      udp_socket != NULL &&
+      udp_socket->bind( *sockname )
+    )
+      return new UDPONCRPCServer
+                 (
+                   log,
+                   marshallable_object_factory,
+                   oncrpc_request_target,
+                   udp_socket
+                 );
   }
   else
   {
-    auto_TCPSocket listen_tcp_socket;
+    YIELD::platform::auto_TCPSocket listen_tcp_socket;
 #ifdef YIELD_IPC_HAVE_OPENSSL
     if ( absolute_uri.get_scheme() == "oncrpcs" && ssl_context != NULL )
       listen_tcp_socket = SSLSocket::create( ssl_context ).release();
     else
 #endif
-      listen_tcp_socket = TCPSocket::create();
+      listen_tcp_socket = YIELD::platform::TCPSocket::create();
 
     if
     (
       listen_tcp_socket != NULL &&
-      listen_tcp_socket->bind( sockname ) &&
+      listen_tcp_socket->bind( *sockname ) &&
       listen_tcp_socket->listen()
     )
-    {
-      listen_tcp_socket->aio_accept( new AIOAcceptControlBlock( interface_ ) );
-      return new ONCRPCServer( interface_, listen_tcp_socket.release() );
-    }
+      return new TCPONCRPCServer
+                 (
+                   listen_tcp_socket,
+                   log,
+                   marshallable_object_factory,
+                   oncrpc_request_target
+                 );
   }
 
   throw YIELD::platform::Exception();
-}
-
-
-// pipe.cpp
-#ifdef _WIN32
-#include <windows.h>
-#endif
-
-
-void YIELD::ipc::Pipe::close()
-{
-#ifdef _WIN32
-  if ( ends[0] != INVALID_HANDLE_VALUE )
-  {
-    CloseHandle( ends[0] );
-    ends[0] = INVALID_HANDLE_VALUE;
-  }
-
-  if ( ends[1] != INVALID_HANDLE_VALUE )
-  {
-    CloseHandle( ends[1] );
-    ends[1] = INVALID_HANDLE_VALUE;
-  }
-#else
-  ::close( ends[0] );
-  ::close( ends[1] );
-#endif
-}
-
-YIELD::ipc::auto_Pipe YIELD::ipc::Pipe::create()
-{
-#ifdef _WIN32
-  SECURITY_ATTRIBUTES pipe_security_attributes;
-  pipe_security_attributes.nLength = sizeof( SECURITY_ATTRIBUTES );
-  pipe_security_attributes.bInheritHandle = TRUE;
-  pipe_security_attributes.lpSecurityDescriptor = NULL;
-  void* ends[2];
-  if ( CreatePipe( &ends[0], &ends[1], &pipe_security_attributes, 0 ) )
-  {
-    if
-    (
-      SetHandleInformation( ends[0], HANDLE_FLAG_INHERIT, 0 ) &&
-      SetHandleInformation( ends[1], HANDLE_FLAG_INHERIT, 0 )
-    )
-      return new Pipe( ends );
-    else
-    {
-      CloseHandle( ends[0] );
-      CloseHandle( ends[1] );
-    }
-  }
-#else
-  int ends[2];
-  if ( ::pipe( ends ) != -1 )
-    return new Pipe( ends );
-#endif
-
-  throw YIELD::platform::Exception();
-}
-
-#ifdef _WIN32
-YIELD::ipc::Pipe::Pipe( void* ends[2] )
-#else
-YIELD::ipc::Pipe::Pipe( int ends[2] )
-#endif
-{
-  this->ends[0] = ends[0];
-  this->ends[1] = ends[1];
-}
-
-YIELD::ipc::Pipe::~Pipe()
-{
-  close();
-}
-
-ssize_t YIELD::ipc::Pipe::read( void* buffer, size_t buffer_len )
-{
-#ifdef _WIN32
-  DWORD dwBytesRead;
-  if
-  (
-    ReadFile
-    (
-      ends[0],
-      buffer,
-      static_cast<DWORD>( buffer_len ),
-      &dwBytesRead,
-      NULL
-    )
-  )
-    return static_cast<ssize_t>( dwBytesRead );
-  else
-    return -1;
-#else
-  return ::read( ends[0], buffer, buffer_len );
-#endif
-}
-
-bool YIELD::ipc::Pipe::set_blocking_mode( bool blocking )
-{
-#ifdef _WIN32
-  return false;
-#else
-  int current_fcntl_flags = fcntl( ends[0], F_GETFL, 0 );
-  if ( blocking )
-  {
-    if ( ( current_fcntl_flags & O_NONBLOCK ) == O_NONBLOCK )
-    {
-      return fcntl
-             (
-               ends[0],
-               F_SETFL,
-               current_fcntl_flags ^ O_NONBLOCK
-             ) != -1
-             &&
-             fcntl
-             (
-               ends[1],
-               F_SETFL,
-               current_fcntl_flags ^ O_NONBLOCK
-             ) != -1;
-    }
-    else
-      return true;
-  }
-  else
-  {
-    return fcntl
-           (
-             ends[0],
-             F_SETFL,
-             current_fcntl_flags | O_NONBLOCK
-           ) != -1
-           &&
-           fcntl
-           (
-             ends[1],
-             F_SETFL,
-             current_fcntl_flags | O_NONBLOCK
-           ) != -1;
-  }
-#endif
-}
-
-ssize_t YIELD::ipc::Pipe::write( const void* buffer, size_t buffer_len )
-{
-#ifdef _WIN32
-  DWORD dwBytesWritten;
-  if
-  (
-    WriteFile
-    (
-      ends[1],
-      buffer,
-      static_cast<DWORD>( buffer_len ),
-      &dwBytesWritten,
-      NULL
-    )
-  )
-    return static_cast<ssize_t>( dwBytesWritten );
-  else
-    return -1;
-#else
-  return ::write( ends[1], buffer, buffer_len );
-#endif
-}
-
-
-// process.cpp
-#if defined(_WIN32)
-#include <windows.h>
-#else
-#include <signal.h>
-#include <sys/wait.h> // For waitpid
-#endif
-
-
-YIELD::ipc::auto_Process YIELD::ipc::Process::create
-(
-  const YIELD::platform::Path& command_line
-)
-{
-#ifdef _WIN32
-  auto_Pipe child_stdin, child_stdout, child_stderr;
-  //auto_Pipe child_stdin = Pipe::create(),
-  //                  child_stdout = Pipe::create(),
-  //                  child_stderr = Pipe::create();
-
-  STARTUPINFO startup_info;
-  ZeroMemory( &startup_info, sizeof( STARTUPINFO ) );
-  startup_info.cb = sizeof( STARTUPINFO );
-  //startup_info.hStdInput = *child_stdin->get_input_stream()->get_file();
-  //startup_info.hStdOutput = *child_stdout->get_output_stream()->get_file();
-  //startup_info.hStdError = *child_stdout->get_output_stream()->get_file();
-  //startup_info.dwFlags = STARTF_USESTDHANDLES;
-
-  PROCESS_INFORMATION proc_info;
-  ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );
-
-  if
-  (
-    CreateProcess
-    (
-      NULL,
-      const_cast<wchar_t*>( static_cast<const wchar_t*>( command_line ) ),
-      NULL,
-      NULL,
-      TRUE,
-      CREATE_NO_WINDOW,
-      NULL,
-      NULL,
-      &startup_info,
-      &proc_info
-    )
-  )
-  {
-    return new Process
-               (
-                 proc_info.hProcess,
-                 proc_info.hThread,
-                 child_stdin,
-                 child_stdout,
-                 child_stderr
-               );
-  }
-  else
-    throw YIELD::platform::Exception();
-#else
-  const char* argv[] = { static_cast<const char*>( NULL ) };
-  return create( command_line, argv );
-#endif
-}
-
-YIELD::ipc::auto_Process YIELD::ipc::Process::create( int argc, char** argv )
-{
-  std::vector<char*> argvv;
-  for ( int arg_i = 1; arg_i < argc; arg_i++ )
-    argvv.push_back( argv[arg_i] );
-  argvv.push_back( NULL );
-  return create( argv[0], const_cast<const char**>( &argvv[0] ) );
-}
-
-YIELD::ipc::auto_Process YIELD::ipc::Process::create
-(
-  const YIELD::platform::Path& executable_file_path,
-  const char** null_terminated_argv
-)
-{
-#ifdef _WIN32
-  const std::string& executable_file_path_str
-    = static_cast<const std::string&>( executable_file_path );
-
-  std::string command_line;
-  if ( executable_file_path_str.find( ' ' ) == -1 )
-    command_line.append( executable_file_path_str );
-  else
-  {
-    command_line.append( "\"", 1 );
-    command_line.append( executable_file_path_str );
-    command_line.append( "\"", 1 );
-  }
-
-  size_t arg_i = 0;
-  while ( null_terminated_argv[arg_i] != NULL )
-  {
-    command_line.append( " ", 1 );
-    command_line.append( null_terminated_argv[arg_i] );
-    arg_i++;
-  }
-
-  return create( command_line );
-#else
-  auto_Pipe child_stdin, child_stdout, child_stderr;
-  //auto_Pipe child_stdin = Pipe::create(),
-  //                  child_stdout = Pipe::create(),
-  //                  child_stderr = Pipe::create();
-
-  pid_t child_pid = fork();
-  if ( child_pid == -1 )
-    throw YIELD::platform::Exception();
-  else if ( child_pid == 0 ) // Child
-  {
-    //close( STDIN_FILENO );
-    // Set stdin to read end of stdin pipe
-    //dup2( *child_stdin->get_input_stream()->get_file(), STDIN_FILENO );
-
-    //close( STDOUT_FILENO );
-    // Set stdout to write end of stdout pipe
-    //dup2( *child_stdout->get_output_stream()->get_file(), STDOUT_FILENO );
-
-    //close( STDERR_FILENO );
-    // Set stderr to write end of stderr pipe
-    //dup2( *child_stderr->get_output_stream()->get_file(), STDERR_FILENO );
-
-    std::vector<char*> argv_with_executable_file_path;
-    argv_with_executable_file_path.push_back
-    (
-      const_cast<char*>( static_cast<const char*>( executable_file_path ) )
-    );
-    size_t arg_i = 0;
-    while ( null_terminated_argv[arg_i] != NULL )
-    {
-      argv_with_executable_file_path.push_back
-      (
-        const_cast<char*>( null_terminated_argv[arg_i] )
-      );
-      arg_i++;
-    }
-    argv_with_executable_file_path.push_back( NULL );
-
-    execv( executable_file_path, &argv_with_executable_file_path[0] );
-    return NULL; // Should never be reached
-  }
-  else // Parent
-    return new Process( child_pid, child_stdin, child_stdout, child_stderr );
-#endif
-}
-
-#ifdef _WIN32
-YIELD::ipc::Process::Process
-(
-  HANDLE hChildProcess,
-  HANDLE hChildThread,
-  auto_Pipe child_stdin,
-  auto_Pipe child_stdout,
-  auto_Pipe child_stderr
-)
-  : hChildProcess( hChildProcess ),
-    hChildThread( hChildThread ),
-#else
-YIELD::ipc::Process::Process
-(
-  pid_t child_pid,
-  auto_Pipe child_stdin,
-  auto_Pipe child_stdout,
-  auto_Pipe child_stderr
-)
-  : child_pid( child_pid ),
-#endif
-    child_stdin( child_stdin ),
-    child_stdout( child_stdout ),
-    child_stderr( child_stderr )
-{ }
-
-YIELD::ipc::Process::~Process()
-{
-#ifdef _WIN32
-  CloseHandle( hChildProcess );
-  CloseHandle( hChildThread );
-#endif
-}
-
-unsigned long YIELD::ipc::Process::getpid()
-{
-#ifdef _WIN32
-  return GetCurrentProcessId();
-#else
-  return ::getpid();
-#endif
-}
-
-bool YIELD::ipc::Process::kill()
-{
-#ifdef _WIN32
-  return TerminateProcess( hChildProcess, 0 ) == TRUE;
-#else
-  return ::kill( child_pid, SIGKILL ) == 0;
-#endif
-}
-
-bool YIELD::ipc::Process::poll( int* out_return_code )
-{
-#ifdef _WIN32
-  if ( WaitForSingleObject( hChildProcess, 0 ) != WAIT_TIMEOUT )
-  {
-    if ( out_return_code )
-    {
-      DWORD dwChildExitCode;
-      GetExitCodeProcess( hChildProcess, &dwChildExitCode );
-      *out_return_code = ( int )dwChildExitCode;
-    }
-
-    return true;
-  }
-  else
-    return false;
-#else
-  if ( waitpid( child_pid, out_return_code, WNOHANG ) > 0 )
-  {
-    // "waitpid() was successful. The value returned indicates the process ID
-    // of the child process whose status information was recorded in the
-    // storage pointed to by stat_loc."
-#ifdef __FreeBSD__
-    if ( WIFEXITED( *out_return_code ) ) // Child exited normally
-    {
-      *out_return_code = WEXITSTATUS( *out_return_code );
-#else
-    if ( WIFEXITED( out_return_code ) ) // Child exited normally
-    {
-      *out_return_code = WEXITSTATUS( out_return_code );
-#endif
-      return true;
-    }
-    else
-      return false;
-  }
-  // 0 = WNOHANG was specified on the options parameter, but no child process
-  // was immediately available.
-  // -1 = waitpid() was not successful. The errno value is set
-  // to indicate the error.
-  else
-    return false;
-#endif
-}
-
-bool YIELD::ipc::Process::terminate()
-{
-#ifdef _WIN32
-  return TerminateProcess( hChildProcess, 0 ) == TRUE;
-#else
-  return ::kill( child_pid, SIGTERM ) == 0;
-#endif
-}
-
-int YIELD::ipc::Process::wait()
-{
-#ifdef _WIN32
-  WaitForSingleObject( hChildProcess, INFINITE );
-  DWORD dwChildExitCode;
-  GetExitCodeProcess( hChildProcess, &dwChildExitCode );
-  return ( int )dwChildExitCode;
-#else
-  int stat_loc;
-  if ( waitpid( child_pid, &stat_loc, 0 ) >= 0 )
-    return stat_loc;
-  else
-    return -1;
-#endif
 }
 
 
 // rfc822_headers.cpp
-YIELD::ipc::RFC822Headers::RFC822Headers( uint8_t reserve_iovecs_count )
+RFC822Headers::RFC822Headers( uint8_t reserve_iovecs_count )
 {
   deserialize_state = DESERIALIZING_LEADING_WHITESPACE;
   buffer_p = stack_buffer;
@@ -12649,12 +11642,12 @@ YIELD::ipc::RFC822Headers::RFC822Headers( uint8_t reserve_iovecs_count )
   iovecs_filled = reserve_iovecs_count;
 }
 
-YIELD::ipc::RFC822Headers::~RFC822Headers()
+RFC822Headers::~RFC822Headers()
 {
   delete [] heap_buffer;
 }
 
-void YIELD::ipc::RFC822Headers::allocateHeapBuffer()
+void RFC822Headers::allocateHeapBuffer()
 {
   if ( heap_buffer_len == 0 )
   {
@@ -12686,11 +11679,7 @@ void YIELD::ipc::RFC822Headers::allocateHeapBuffer()
   }
 }
 
-ssize_t
-YIELD::ipc::RFC822Headers::deserialize
-(
-  yidl::runtime::auto_Buffer buffer
-)
+ssize_t RFC822Headers::deserialize( yidl::runtime::auto_Buffer buffer )
 {
   for ( ;; )
   {
@@ -12879,7 +11868,7 @@ YIELD::ipc::RFC822Headers::deserialize
   } // for ( ;; )
 }
 
-char* YIELD::ipc::RFC822Headers::get_header
+char* RFC822Headers::get_header
 (
   const char* header_name,
   const char* default_value
@@ -12906,12 +11895,13 @@ char* YIELD::ipc::RFC822Headers::get_header
   return const_cast<char*>( default_value );
 }
 
-yidl::runtime::auto_Buffer YIELD::ipc::RFC822Headers::serialize()
+yidl::runtime::auto_Buffers YIELD::ipc::RFC822Headers::serialize()
 {
-  if ( heap_iovecs != NULL )
-    return new GatherBuffer( heap_iovecs, iovecs_filled );
-  else
-    return new GatherBuffer( stack_iovecs, iovecs_filled );
+  return new yidl::runtime::Buffers
+             (
+               heap_iovecs != NULL ? heap_iovecs : stack_iovecs,
+               iovecs_filled
+             );
 }
 
 //void RFC822Headers::set_header( const char* header, size_t header_len )
@@ -12928,7 +11918,7 @@ yidl::runtime::auto_Buffer YIELD::ipc::RFC822Headers::serialize()
 //    */
 //}
 
-void YIELD::ipc::RFC822Headers::set_header
+void RFC822Headers::set_header
 (
   const char* header_name,
   const char* header_value
@@ -12940,7 +11930,7 @@ void YIELD::ipc::RFC822Headers::set_header
   set_next_iovec( "\r\n", 2 );
 }
 
-void YIELD::ipc::RFC822Headers::set_header
+void RFC822Headers::set_header
 (
   const char* header_name,
   char* header_value
@@ -12952,7 +11942,7 @@ void YIELD::ipc::RFC822Headers::set_header
   set_next_iovec( "\r\n", 2 );
 }
 
-void YIELD::ipc::RFC822Headers::set_header
+void RFC822Headers::set_header
 (
   char* header_name,
   char* header_value
@@ -12964,7 +11954,7 @@ void YIELD::ipc::RFC822Headers::set_header
   set_next_iovec( "\r\n", 2 );
 }
 
-void YIELD::ipc::RFC822Headers::set_header
+void RFC822Headers::set_header
 (
   const std::string& header_name,
   const std::string& header_value
@@ -12987,7 +11977,7 @@ void YIELD::ipc::RFC822Headers::set_header
   set_next_iovec( "\r\n", 2 );
 }
 
-void YIELD::ipc::RFC822Headers::set_iovec
+void RFC822Headers::set_iovec
 (
   uint8_t iovec_i,
   const char* data,
@@ -13009,7 +11999,7 @@ void YIELD::ipc::RFC822Headers::set_iovec
   }
 }
 
-void YIELD::ipc::RFC822Headers::set_next_iovec( char* data, size_t len )
+void RFC822Headers::set_next_iovec( char* data, size_t len )
 {
   if ( heap_buffer == NULL )
   {
@@ -13075,7 +12065,7 @@ void YIELD::ipc::RFC822Headers::set_next_iovec( char* data, size_t len )
   set_next_iovec( buffer_p_before, len );
 }
 
-void YIELD::ipc::RFC822Headers::set_next_iovec( const char* data, size_t len )
+void RFC822Headers::set_next_iovec( const char* data, size_t len )
 {
   struct iovec _iovec;
   _iovec.iov_base = const_cast<char*>( data );
@@ -13083,7 +12073,7 @@ void YIELD::ipc::RFC822Headers::set_next_iovec( const char* data, size_t len )
   set_next_iovec( _iovec );
 }
 
-void YIELD::ipc::RFC822Headers::set_next_iovec( const struct iovec& iovec )
+void RFC822Headers::set_next_iovec( const struct iovec& iovec )
 {
   if ( heap_iovecs == NULL )
   {
@@ -13111,2153 +12101,169 @@ void YIELD::ipc::RFC822Headers::set_next_iovec( const struct iovec& iovec )
 }
 
 
-// socket.cpp
-#ifdef _WIN32
-#pragma warning( 4 : 4365 )
-#pragma warning( push )
-#pragma warning( disable: 4995 )
-#include <ws2tcpip.h>
-#pragma warning( pop )
-#pragma comment( lib, "ws2_32.lib" )
-#else
-#include <arpa/inet.h>
-#include <errno.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <signal.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#endif
-
-
-YIELD::ipc::Socket::AIOQueue* YIELD::ipc::Socket::aio_queue = NULL;
-
-
-YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus
-YIELD::ipc::Socket::AIOConnectControlBlock::execute()
-{
-  if ( get_socket()->connect( get_peername() ) )
-    onCompletion( 0 );
-  else if ( get_socket()->want_connect() )
-    return EXECUTE_STATUS_WANT_WRITE;
-  else
-#ifdef _WIN32
-    onError( WSAGetLastError() );
-#else
-    onError( errno );
-#endif
-
-  return EXECUTE_STATUS_DONE;
-}
-
-
-YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus
-YIELD::ipc::Socket::AIOReadControlBlock::execute()
-{
-  ssize_t read_ret = get_socket()->read( buffer );
-  if ( read_ret > 0 )
-    onCompletion( static_cast<size_t>( read_ret ) );
-  else if ( read_ret == 0 )
-#ifdef _WIN32
-    onError( WSAECONNABORTED );
-#else
-    onError( ECONNABORTED );
-#endif
-  else if ( get_socket()->want_read() )
-    return EXECUTE_STATUS_WANT_READ;
-  else if ( get_socket()->want_write() )
-    return EXECUTE_STATUS_WANT_WRITE;
-  else
-#ifdef _WIN32
-    onError( WSAGetLastError() );
-#else
-    onError( errno );
-#endif
-
-  return EXECUTE_STATUS_DONE;
-}
-
-
-YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus
-YIELD::ipc::Socket::AIOWriteControlBlock::execute()
-{
-  ssize_t write_ret = get_socket()->write( get_buffer() );
-
-  if ( write_ret >= 0 )
-    onCompletion( static_cast<size_t>( write_ret ) );
-  else if ( get_socket()->want_write() )
-    return EXECUTE_STATUS_WANT_WRITE;
-  else if ( get_socket()->want_read() )
-    return EXECUTE_STATUS_WANT_READ;
-  else
-#ifdef _WIN32
-    onError( WSAGetLastError() );
-#else
-    onError( errno );
-#endif
-
-  return EXECUTE_STATUS_DONE;
-}
-
-
-YIELD::ipc::Socket::Socket
+// rpc_message.cpp
+RPCMessage::RPCMessage
 (
-  int domain,
-  int type,
-  int protocol,
-#ifdef _WIN32
-  SOCKET socket_
-#else
-  int socket_
-#endif
+  yidl::runtime::auto_MarshallableObjectFactory marshallable_object_factory
 )
-: domain( domain ), type( type ), protocol( protocol ), socket_( socket_ )
-{
-  blocking_mode = true;
-  connected = false;
-}
-
-YIELD::ipc::Socket::~Socket()
-{
-  close();
-}
-
-void YIELD::ipc::Socket::aio_connect
-(
-  auto_AIOConnectControlBlock aio_connect_control_block
-)
-{
-  aio_connect_nbio( aio_connect_control_block );
-}
-
-void YIELD::ipc::Socket::aio_connect_nbio
-(
-  auto_AIOConnectControlBlock aio_connect_control_block
-)
-{
-  aio_connect_control_block->set_socket( *this );
-
-  set_blocking_mode( false );
-  if ( connect( aio_connect_control_block->get_peername() ) )
-    aio_connect_control_block->onCompletion( 0 );
-  else if ( want_connect() )
-    get_aio_queue().submit( aio_connect_control_block.release() );
-  else
-#ifdef _WIN32
-    aio_connect_control_block->onError( WSAGetLastError() );
-#else
-    aio_connect_control_block->onError( errno );
-#endif
-}
-
-void YIELD::ipc::Socket::aio_read
-(
-  auto_AIOReadControlBlock aio_read_control_block
-)
-{
-#ifdef _WIN32
-  aio_read_iocp( aio_read_control_block );
-#else
-  aio_read_nbio( aio_read_control_block );
-#endif
-}
-
-#ifdef _WIN32
-void YIELD::ipc::Socket::aio_read_iocp
-(
-  auto_AIOReadControlBlock aio_read_control_block
-)
-{
-  aio_read_control_block->set_socket( *this );
-  get_aio_queue().associate( *this );
-
-  yidl::runtime::auto_Buffer buffer( aio_read_control_block->get_buffer() );
-  WSABUF wsabuf[1];
-  wsabuf[0].buf = static_cast<char*>( *buffer ) + buffer->size();
-  wsabuf[0].len = static_cast<ULONG>( buffer->capacity() - buffer->size() );
-  DWORD dwNumberOfBytesReceived, dwFlags = 0;
-  if
-  (
-    WSARecv
-    (
-      socket_,
-      wsabuf,
-      1,
-      &dwNumberOfBytesReceived,
-      &dwFlags,
-      *aio_read_control_block,
-      NULL
-    ) == 0
-    ||
-    WSAGetLastError() == WSA_IO_PENDING
-  )
-    aio_read_control_block.release();
-  else
-    aio_read_control_block->onError( WSAGetLastError() );
-}
-#endif
-
-void YIELD::ipc::Socket::aio_read_nbio
-(
-  auto_AIOReadControlBlock aio_read_control_block
-)
-{
-  aio_read_control_block->set_socket( *this );
-  set_blocking_mode( false );
-  ssize_t read_ret = read( aio_read_control_block->get_buffer() );
-  if ( read_ret > 0 )
-    aio_read_control_block->onCompletion( static_cast<size_t>( read_ret ) );
-  else if ( read_ret == 0 )
-#ifdef _WIN32
-    aio_read_control_block->onError( WSAECONNRESET );
-#else
-    aio_read_control_block->onError( ECONNRESET );
-#endif
-  else if ( want_read() || want_write() )
-    get_aio_queue().submit( aio_read_control_block.release() );
-  else
-#ifdef _WIN32
-    aio_read_control_block->onError( WSAGetLastError() );
-#else
-    aio_read_control_block->onError( errno );
-#endif
-}
-
-void YIELD::ipc::Socket::aio_write
-(
-  auto_AIOWriteControlBlock aio_write_control_block
-)
-{
-#ifdef _WIN32
-  aio_write_iocp( aio_write_control_block );
-#else
-  aio_write_nbio( aio_write_control_block );
-#endif
-}
-
-#ifdef _WIN32
-void YIELD::ipc::Socket::aio_write_iocp
-(
-  auto_AIOWriteControlBlock aio_write_control_block
-)
-{
-  aio_write_control_block->set_socket( *this );
-  get_aio_queue().associate( *this );
-
-  yidl::runtime::auto_Buffer buffer( aio_write_control_block->get_buffer() );
-  if ( buffer->get_type_id() == YIDL_RUNTIME_OBJECT_TYPE_ID( GatherBuffer ) )
-  {
-    DWORD dwNumberOfBytesSent;
-#ifdef _WIN64
-  // See note in writev re: the logic behind this
-  const struct iovec* iovecs
-    = static_cast<GatherBuffer*>( buffer.get() )->get_iovecs();
-  uint32_t iovecs_len
-    = static_cast<GatherBuffer*>( buffer.get() )->get_iovecs_len();
-  std::vector<WSABUF> wsabufs( iovecs_len );
-  for ( uint32_t iovec_i = 0; iovec_i < iovecs_len; iovec_i++ )
-  {
-    wsabufs[iovec_i].len = static_cast<ULONG>( iovecs[iovec_i].iov_len );
-    wsabufs[iovec_i].buf = static_cast<char*>( iovecs[iovec_i].iov_base );
-  }
-  if
-  (
-    WSASend
-    (
-      socket_,
-      &wsabufs[0],
-      iovecs_len,
-      &dwNumberOfBytesSent,
-      0,
-      *aio_write_control_block,
-      NULL
-    ) == 0
-    ||
-#else
-    if
-    (
-      WSASend
-      (
-        socket_,
-        reinterpret_cast<WSABUF*>
-        (
-          const_cast<struct iovec*>
-          (
-            static_cast<GatherBuffer*>( buffer.get() )->get_iovecs()
-          )
-        ),
-        static_cast<GatherBuffer*>( buffer.get() )->get_iovecs_len(),
-        &dwNumberOfBytesSent,
-        0,
-        *aio_write_control_block,
-        NULL
-      ) == 0
-      ||
-#endif
-      WSAGetLastError() == WSA_IO_PENDING
-    )
-      aio_write_control_block.release();
-    else
-      aio_write_control_block->onError( WSAGetLastError() );
-  }
-  else
-  {
-    WSABUF wsabuf[1];
-    wsabuf[0].buf = static_cast<char*>( *buffer );
-    wsabuf[0].len = static_cast<ULONG>( buffer->size() );
-    DWORD dwNumberOfBytesSent;
-    if
-    (
-      WSASend
-      (
-        socket_,
-        wsabuf,
-        1,
-        &dwNumberOfBytesSent,
-        0,
-        *aio_write_control_block,
-        NULL
-      ) == 0
-      ||
-      WSAGetLastError() == WSA_IO_PENDING
-    )
-      aio_write_control_block.release();
-    else
-      aio_write_control_block->onError( WSAGetLastError() );
-  }
-}
-#endif
-
-void YIELD::ipc::Socket::aio_write_nbio
-(
-  auto_AIOWriteControlBlock aio_write_control_block
-)
-{
-  aio_write_control_block->set_socket( *this );
-  set_blocking_mode( false );
-  ssize_t write_ret = write( aio_write_control_block->get_buffer() );
-  if ( write_ret >= 0 )
-    aio_write_control_block->onCompletion( static_cast<size_t>( write_ret ) );
-  else if ( want_write() || want_read() )
-    get_aio_queue().submit( aio_write_control_block.release() );
-  else
-#ifdef _WIN32
-    aio_write_control_block->onError( WSAGetLastError() );
-#else
-    aio_write_control_block->onError( errno );
-#endif
-}
-
-bool YIELD::ipc::Socket::bind( auto_SocketAddress to_sockaddr )
-{
-  for ( ;; )
-  {
-    struct sockaddr* name; socklen_t namelen;
-    if ( to_sockaddr->as_struct_sockaddr( domain, name, namelen ) )
-    {
-      if ( ::bind( *this, name, namelen ) != -1 )
-        return true;
-    }
-
-    if ( domain == AF_INET6 &&
-#ifdef _WIN32
-        WSAGetLastError() == WSAEAFNOSUPPORT )
-#else
-        errno == EAFNOSUPPORT )
-#endif
-    {
-      if ( recreate( AF_INET ) )
-        continue;
-      else
-        return false;
-    }
-    else
-      return false;
-  }
-}
-
-bool YIELD::ipc::Socket::close()
-{
-#ifdef _WIN32
-  if ( socket_ != INVALID_SOCKET )
-  {
-    if ( closesocket( socket_ ) != SOCKET_ERROR )
-    {
-      connected = false;
-      socket_ = INVALID_SOCKET;
-      return true;
-    }
-    else
-      return false;
-  }
-#else
-  if ( socket_ != -1 )
-  {
-    if ( ::close( socket_ ) != -1 )
-    {
-      connected = false;
-      socket_ = -1;
-      return true;
-    }
-    else
-      return false;
-  }
-#endif
-  else
-    return true;
-}
-
-bool YIELD::ipc::Socket::connect( auto_SocketAddress to_sockaddr )
-{
-  if ( !connected )
-  {
-    for ( ;; )
-    {
-      struct sockaddr* name; socklen_t namelen;
-      if ( to_sockaddr->as_struct_sockaddr( domain, name, namelen ) )
-      {
-        if ( ::connect( *this, name, namelen ) != -1 )
-        {
-          connected = true;
-          return true;
-        }
-        else
-        {
-#ifdef _WIN32
-          switch ( WSAGetLastError() )
-          {
-            case WSAEISCONN: connected = true; return true;
-            case WSAEAFNOSUPPORT:
-#else
-          switch ( errno )
-          {
-            case EISCONN: connected = true; return true;
-            case EAFNOSUPPORT:
-#endif
-            {
-              if ( domain == AF_INET6 &&
-                   recreate( AF_INET ) )
-                continue;
-              else
-                return false;
-            }
-            break;
-
-            default: return false;
-          }
-        }
-      }
-      else if ( domain == AF_INET6 &&
-                recreate( AF_INET ) )
-        continue;
-      else
-        return false;
-    }
-  }
-  else
-    return true;
-}
-
-#ifdef _WIN32
-SOCKET YIELD::ipc::Socket::create( int& domain, int type, int protocol )
-#else
-int YIELD::ipc::Socket::create( int& domain, int type, int protocol )
-#endif
-{
-#ifdef _WIN32
-  SOCKET socket_ = ::socket( domain, type, protocol );
-  if ( socket_ != INVALID_SOCKET )
-  {
-    if ( domain == AF_INET6 )
-    {
-      DWORD ipv6only = 0; // Allow dual-mode sockets
-      setsockopt
-      (
-        socket_,
-        IPPROTO_IPV6,
-        IPV6_V6ONLY,
-        ( char* )&ipv6only,
-        sizeof( ipv6only )
-      );
-    }
-  }
-  else if ( domain == AF_INET6 && WSAGetLastError() == WSAEAFNOSUPPORT )
-  {
-    domain = AF_INET;
-    socket_ = ::socket( AF_INET, type, protocol );
-    if ( socket_ == INVALID_SOCKET )
-      return INVALID_SOCKET;
-  }
-  else
-    return INVALID_SOCKET;
-
-  return socket_;
-#else
-  int socket_ = ::socket( AF_INET6, type, protocol );
-  if ( socket_ != -1 )
-    return socket_;
-  else if ( domain == AF_INET6 && errno == EAFNOSUPPORT )
-  {
-    domain = AF_INET;
-    return ::socket( AF_INET, type, protocol );
-  }
-  else
-    return -1;
-#endif
-}
-
-void YIELD::ipc::Socket::destroy()
-{
-  delete aio_queue;
-#ifdef _WIN32
-  WSACleanup();
-#endif
-}
-
-YIELD::ipc::Socket::AIOQueue& YIELD::ipc::Socket::get_aio_queue()
-{
-  if ( aio_queue == NULL )
-    aio_queue = new AIOQueue;
-  return *aio_queue;
-}
-
-bool YIELD::ipc::Socket::get_blocking_mode() const
-{
-  return blocking_mode;
-}
-
-std::string YIELD::ipc::Socket::getfqdn()
-{
-#ifdef _WIN32
-  DWORD dwFQDNLength = 0;
-  GetComputerNameExA( ComputerNameDnsHostname, NULL, &dwFQDNLength );
-  if ( dwFQDNLength > 0 )
-  {
-    char* fqdn_temp = new char[dwFQDNLength];
-    if
-    (
-      GetComputerNameExA
-      (
-        ComputerNameDnsFullyQualified,
-        fqdn_temp,
-        &dwFQDNLength
-      )
-    )
-    {
-      std::string fqdn( fqdn_temp, dwFQDNLength );
-      delete [] fqdn_temp;
-      return fqdn;
-    }
-    else
-      delete [] fqdn_temp;
-  }
-
-  return std::string();
-#else
-  char fqdn[256];
-  ::gethostname( fqdn, 256 );
-  char* first_dot = strstr( fqdn, "." );
-  if ( first_dot != NULL ) *first_dot = 0;
-
-  // getnameinfo does not return aliases, which means we get "localhost"
-  // on Linux if that's the first
-  // entry for 127.0.0.1 in /etc/hosts
-
-#ifndef __sun
-  char domainname[256];
-  // getdomainname is not a public call on Solaris, apparently
-  if ( getdomainname( domainname, 256 ) == 0 &&
-       domainname[0] != 0 &&
-       strcmp( domainname, "(none)" ) != 0 &&
-       strcmp( domainname, fqdn ) != 0 &&
-       strstr( domainname, "localdomain" ) == NULL )
-         strcat( fqdn, domainname );
-  else
-  {
-#endif
-    // Try gethostbyaddr, like Python
-    uint32_t local_host_addr = inet_addr( "127.0.0.1" );
-    struct hostent* hostents
-      = gethostbyaddr
-      (
-        reinterpret_cast<char*>( &local_host_addr ),
-        sizeof( uint32_t ),
-        AF_INET
-      );
-
-    if ( hostents != NULL )
-    {
-      if
-      (
-        strchr( hostents->h_name, '.' ) != NULL &&
-        strstr( hostents->h_name, "localhost" ) == NULL
-      )
-      {
-        strncpy( fqdn, hostents->h_name, 256 );
-      }
-      else
-      {
-        for ( unsigned char i = 0; hostents->h_aliases[i] != NULL; i++ )
-        {
-          if
-          (
-            strchr( hostents->h_aliases[i], '.' ) != NULL &&
-            strstr( hostents->h_name, "localhost" ) == NULL
-          )
-          {
-            strncpy( fqdn, hostents->h_aliases[i], 256 );
-            break;
-          }
-        }
-      }
-    }
-#ifndef __sun
-  }
-#endif
-  return fqdn;
-#endif
-}
-
-std::string YIELD::ipc::Socket::gethostname()
-{
-#ifdef _WIN32
-  DWORD dwHostNameLength = 0;
-  GetComputerNameExA( ComputerNameDnsHostname, NULL, &dwHostNameLength );
-  if ( dwHostNameLength > 0 )
-  {
-    char* hostname_temp = new char[dwHostNameLength];
-    if
-    (
-      GetComputerNameExA
-      (
-        ComputerNameDnsHostname,
-        hostname_temp,
-        &dwHostNameLength
-      )
-    )
-    {
-      std::string hostname( hostname_temp, dwHostNameLength );
-      delete [] hostname_temp;
-      return hostname;
-    }
-    else
-      delete [] hostname_temp;
-  }
-
-  return std::string();
-#else
-  char hostname[256];
-  ::gethostname( hostname, 256 );
-  return hostname;
-#endif
-}
-
-YIELD::ipc::auto_SocketAddress YIELD::ipc::Socket::getpeername()
-{
-  struct sockaddr_storage peername_sockaddr_storage;
-  memset( &peername_sockaddr_storage, 0, sizeof( peername_sockaddr_storage ) );
-  socklen_t peername_sockaddr_storage_len = sizeof( peername_sockaddr_storage );
-  if
-  (
-    ::getpeername
-    (
-      *this,
-      reinterpret_cast<struct sockaddr*>( &peername_sockaddr_storage ),
-      &peername_sockaddr_storage_len
-    ) != -1
-  )
-    return new SocketAddress( peername_sockaddr_storage );
-  else
-    return NULL;
-}
-
-YIELD::ipc::auto_SocketAddress YIELD::ipc::Socket::getsockname()
-{
-  struct sockaddr_storage sockname_sockaddr_storage;
-  memset( &sockname_sockaddr_storage, 0, sizeof( sockname_sockaddr_storage ) );
-  socklen_t sockname_sockaddr_storage_len = sizeof( sockname_sockaddr_storage );
-  if
-  (
-    ::getsockname
-    (
-      *this,
-      reinterpret_cast<struct sockaddr*>( &sockname_sockaddr_storage ),
-      &sockname_sockaddr_storage_len
-    ) != -1
-  )
-    return new SocketAddress( sockname_sockaddr_storage );
-  else
-    return NULL;
-}
-
-void YIELD::ipc::Socket::init()
-{
-#ifdef _WIN32
-  WORD wVersionRequested = MAKEWORD( 2, 2 );
-  WSADATA wsaData;
-  WSAStartup( wVersionRequested, &wsaData );
-#else
-  signal( SIGPIPE, SIG_IGN );
-#endif
-}
-
-bool YIELD::ipc::Socket::is_closed() const
-{
-#ifdef _WIN32
-  return socket_ == INVALID_SOCKET;
-#else
-  return socket_ == -1;
-#endif
-}
-
-bool YIELD::ipc::Socket::operator==( const Socket& other ) const
-{
-  return socket_ == other.socket_;
-}
-
-ssize_t YIELD::ipc::Socket::read( yidl::runtime::auto_Buffer buffer )
-{
-  ssize_t read_ret
-    = read
-      (
-        static_cast<char*>( *buffer ) + buffer->size(),
-        buffer->capacity() - buffer->size()
-      );
-
-  if ( read_ret > 0 )
-    buffer->put( NULL, static_cast<size_t>( read_ret ) );
-  return read_ret;
-}
-
-ssize_t YIELD::ipc::Socket::read( void* buffer, size_t buffer_len )
-{
-#if defined(_WIN32)
-  return ::recv
-         (
-           socket_,
-           static_cast<char*>( buffer ),
-           static_cast<int>( buffer_len ),
-           0
-         ); // No real advantage to WSARecv on Win32 for one buffer
-#elif defined(__linux)
-  return ::recv( socket_, buffer, buffer_len, MSG_NOSIGNAL );
-#else
-  return ::recv( socket_, buffer, buffer_len, 0 );
-#endif
-}
-
-bool YIELD::ipc::Socket::recreate()
-{
-  return recreate( AF_INET6 );
-}
-
-bool YIELD::ipc::Socket::recreate( int domain )
-{
-  close();
-#ifdef _WIN32
-  socket_ = ::socket( domain, type, protocol );
-  if ( socket_ != INVALID_SOCKET )
-#else
-  socket_ = ::socket( domain, type, protocol );
-  if ( socket_ != -1 )
-#endif
-  {
-    if ( !blocking_mode )
-      set_blocking_mode( false );
-    this->domain = domain;
-    return true;
-  }
-  else
-    return false;
-}
-
-bool YIELD::ipc::Socket::set_blocking_mode( bool blocking )
-{
-#ifdef _WIN32
-  unsigned long val = blocking ? 0 : 1;
-  if ( ioctlsocket( *this, FIONBIO, &val ) != SOCKET_ERROR )
-  {
-    this->blocking_mode = blocking;
-    return true;
-  }
-  else
-    return false;
-#else
-  int current_fcntl_flags = fcntl( *this, F_GETFL, 0 );
-  if ( blocking )
-  {
-    if ( ( current_fcntl_flags & O_NONBLOCK ) == O_NONBLOCK )
-    {
-      if ( fcntl( *this, F_SETFL, current_fcntl_flags ^ O_NONBLOCK ) != -1 )
-      {
-        this->blocking_mode = true;
-        return true;
-      }
-      else
-        return false;
-    }
-    else
-      return true;
-  }
-  else
-  {
-    if ( fcntl( *this, F_SETFL, current_fcntl_flags | O_NONBLOCK ) != -1 )
-    {
-      this->blocking_mode = false;
-      return true;
-    }
-    else
-      return false;
-  }
-#endif
-}
-
-bool YIELD::ipc::Socket::shutdown()
-{
-  connected = false;
-  return true;
-}
-
-bool YIELD::ipc::Socket::want_connect() const
-{
-#ifdef _WIN32
-  switch ( WSAGetLastError() )
-  {
-    case WSAEALREADY:
-    case WSAEINPROGRESS:
-    case WSAEINVAL:
-    case WSAEWOULDBLOCK: return true;
-    default: return false;
-  }
-#else
-  switch ( errno )
-  {
-    case EALREADY:
-    case EINPROGRESS:
-    case EWOULDBLOCK: return true;
-    default: return false;
-  }
-#endif
-}
-
-bool YIELD::ipc::Socket::want_read() const
-{
-#ifdef _WIN32
-  return WSAGetLastError() == WSAEWOULDBLOCK;
-#else
-  return errno == EWOULDBLOCK;
-#endif
-}
-
-bool YIELD::ipc::Socket::want_write() const
-{
-#ifdef _WIN32
-  return WSAGetLastError() == WSAEWOULDBLOCK;
-#else
-  return errno == EWOULDBLOCK;
-#endif
-}
-
-ssize_t YIELD::ipc::Socket::write( yidl::runtime::auto_Buffer buffer )
-{
-  if ( buffer->get_type_id() == YIDL_RUNTIME_OBJECT_TYPE_ID( GatherBuffer ) )
-    return writev
-           (
-             static_cast<GatherBuffer*>( buffer.get() )->get_iovecs(),
-             static_cast<GatherBuffer*>( buffer.get() )->get_iovecs_len()
-           );
-  else
-    return write( static_cast<void*>( *buffer ), buffer->size() );
-}
-
-ssize_t YIELD::ipc::Socket::write( const void* buffer, size_t buffer_len )
-{
-  // Go through writev to have a unified partial
-  // write path in TCPSocket::writev
-  struct iovec buffers[1];
-  buffers[0].iov_base = const_cast<void*>( buffer );
-  buffers[0].iov_len = buffer_len;
-  return writev( buffers, 1 );
-}
-
-ssize_t YIELD::ipc::Socket::writev
-(
-  const struct iovec* buffers,
-  uint32_t buffers_count
-)
-{
-#if defined(_WIN32)
-  DWORD dwWrittenLength;
-#ifdef _WIN64
-  // The WSABUF .len is a ULONG, which is != size_t on Win64,
-  // so we have to truncate it here.
-  // This is easier (compiler warnings, using sizeof, etc.)
-  // than changing the struct iovec definition to use uint32_t.
-  std::vector<WSABUF> wsabufs( buffers_count );
-  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-  {
-    wsabufs[buffer_i].len = static_cast<ULONG>( buffers[buffer_i].iov_len );
-    wsabufs[buffer_i].buf = static_cast<char*>( buffers[buffer_i].iov_base );
-  }
-  ssize_t write_ret
-    = WSASend
-      (
-        socket_,
-        &wsabufs[0],
-        buffers_count,
-        &dwWrittenLength,
-        0,
-        NULL,
-        NULL
-      );
-#else
-  ssize_t write_ret
-    = WSASend
-      (
-        socket_,
-        reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ),
-        buffers_count,
-        &dwWrittenLength,
-        0,
-        NULL,
-        NULL
-      );
-#endif
-  if ( write_ret >= 0 )
-    return static_cast<ssize_t>( dwWrittenLength );
-  else
-    return write_ret;
-#elif defined(__linux)
-  // Use sendmsg instead of writev to pass flags on Linux
-  struct msghdr _msghdr;
-  memset( &_msghdr, 0, sizeof( _msghdr ) );
-  _msghdr.msg_iov = const_cast<iovec*>( buffers );
-  _msghdr.msg_iovlen = buffers_count;
-  return ::sendmsg( socket_, &_msghdr, MSG_NOSIGNAL ); // MSG_NOSIGNAL
-                                                       // = disable SIGPIPE
-#elif defined(__sun)
-  // Sun's socket writev appears to be broken;
-  // concatenate the buffers and write()
-  std::string buffer;
-  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-  {
-    buffer.append
-    (
-      static_cast<char*>( buffers[buffer_i].iov_base ),
-      buffers[buffer_i].iov_len
-    );
-  }
-  return write( buffer.c_str(), buffer.size() );
-#else
-  return ::writev( socket_, buffers, buffers_count );
-#endif
-}
-
-
-// socket_address.cpp
-#ifdef _WIN32
-#pragma warning( 4 : 4365 )
-#pragma warning( push )
-#pragma warning( disable: 4995 )
-#include <ws2tcpip.h>
-#pragma warning( pop )
-#else
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#endif
-
-
-YIELD::ipc::SocketAddress::SocketAddress( struct addrinfo& addrinfo_list )
-  : addrinfo_list( &addrinfo_list ), _sockaddr_storage( NULL )
+  : marshallable_object_factory( marshallable_object_factory )
 { }
 
-YIELD::ipc::SocketAddress::~SocketAddress()
-{
-  if ( addrinfo_list != NULL )
-    freeaddrinfo( addrinfo_list );
-  else if ( _sockaddr_storage != NULL )
-    delete _sockaddr_storage;
-}
-
-YIELD::ipc::SocketAddress::SocketAddress
+// Outgoing
+RPCMessage::RPCMessage
 (
-  const struct sockaddr_storage& _sockaddr_storage
+  yidl::runtime::auto_MarshallableObject body
 )
-{
-  addrinfo_list = NULL;
-  this->_sockaddr_storage = new struct sockaddr_storage;
-  memcpy_s
-  (
-    this->_sockaddr_storage,
-    sizeof( *this->_sockaddr_storage ),
-    &_sockaddr_storage,
-    sizeof( _sockaddr_storage )
-  );
-}
+  : body( body )
+{ }
 
-YIELD::ipc::auto_SocketAddress
-YIELD::ipc::SocketAddress::create( const URI& uri )
-{
-  if ( uri.get_host() == "*" )
-    return create( NULL, uri.get_port() );
-  else
-    return create( uri.get_host().c_str(), uri.get_port() );
-}
-
-YIELD::ipc::auto_SocketAddress
-YIELD::ipc::SocketAddress::create( const char* hostname, uint16_t port )
-{
-  struct addrinfo* addrinfo_list = getaddrinfo( hostname, port );
-  if ( addrinfo_list != NULL )
-    return new SocketAddress( *addrinfo_list );
-  else
-  {
-    std::ostringstream what;
-    what << "error resolving host \"";
-    if ( hostname != NULL )
-      what << hostname;
-    else
-      what << "*";
-    what << "\": ";
-    what << YIELD::platform::Exception();
-
-    throw YIELD::platform::Exception( what.str() );
-  }
-}
-
-bool YIELD::ipc::SocketAddress::as_struct_sockaddr
+void RPCMessage::marshal_body
 (
-  int family,
-  struct sockaddr*& out_sockaddr,
-  socklen_t& out_sockaddrlen
-)
-{
-  if ( addrinfo_list != NULL )
-  {
-    struct addrinfo* addrinfo_p = addrinfo_list;
-    while ( addrinfo_p != NULL )
-    {
-      if ( addrinfo_p->ai_family == family )
-      {
-        out_sockaddr = addrinfo_p->ai_addr;
-        out_sockaddrlen = static_cast<socklen_t>( addrinfo_p->ai_addrlen );
-        return true;
-      }
-      else
-        addrinfo_p = addrinfo_p->ai_next;
-    }
-  }
-  else if ( _sockaddr_storage->ss_family == family )
-  {
-    out_sockaddr = reinterpret_cast<struct sockaddr*>( _sockaddr_storage );
-    out_sockaddrlen = sizeof( *_sockaddr_storage );
-    return true;
-  }
-
-#ifdef _WIN32
-  ::WSASetLastError( WSAEAFNOSUPPORT );
-#else
-  errno = EAFNOSUPPORT;
-#endif
-  return false;
-}
-
-struct addrinfo*
-YIELD::ipc::SocketAddress::getaddrinfo( const char* hostname, uint16_t port )
-{
-#ifdef _WIN32
-  Socket::init();
-#endif
-
-  const char* servname;
-#ifdef __sun
-  if ( hostname == NULL )
-    hostname = "0.0.0.0";
-  servname = NULL;
-#else
-  std::ostringstream servname_oss; // ltoa is not very portable
-  servname_oss << port; // servname = decimal port or service name.
-  std::string servname_str = servname_oss.str();
-  servname = servname_str.c_str();
-#endif
-
-  struct addrinfo addrinfo_hints;
-  memset( &addrinfo_hints, 0, sizeof( addrinfo_hints ) );
-  addrinfo_hints.ai_family = AF_UNSPEC;
-  if ( hostname == NULL )
-    addrinfo_hints.ai_flags |= AI_PASSIVE; // To get INADDR_ANYs
-
-  struct addrinfo* addrinfo_list;
-
-  int getaddrinfo_ret
-    = ::getaddrinfo
-      (
-        hostname,
-        servname,
-        &addrinfo_hints,
-        &addrinfo_list
-      );
-
-  if ( getaddrinfo_ret == 0 )
-  {
-#ifdef __sun
-    struct addrinfo* addrinfo_p = addrinfo_list;
-    while ( addrinfo_p != NULL )
-    {
-      switch ( addrinfo_p->ai_family )
-      {
-        case AF_INET:
-        {
-          reinterpret_cast<struct sockaddr_in*>( addrinfo_p->ai_addr )
-            ->sin_port = htons( port );
-        }
-        break;
-
-        case AF_INET6:
-        {
-          reinterpret_cast<struct sockaddr_in6*>( addrinfo_p->ai_addr )
-            ->sin6_port = htons( port );
-        }
-        break;
-
-        default: DebugBreak();
-      }
-
-      addrinfo_p = addrinfo_p->ai_next;
-    }
-#endif
-
-    return addrinfo_list;
-  }
-  else
-    return NULL;
-}
-
-bool YIELD::ipc::SocketAddress::getnameinfo
-(
-  std::string& out_hostname,
-  bool numeric
+  const char* key,
+  uint32_t tag,
+  yidl::runtime::Marshaller& marshaller
 ) const
 {
-  char nameinfo[NI_MAXHOST];
-  if ( this->getnameinfo( nameinfo, NI_MAXHOST, numeric ) )
-  {
-    out_hostname.assign( nameinfo );
-    return true;
-  }
-  else
-    return false;
+  if ( body != NULL )
+    marshaller.write( key, tag, *body );
 }
 
-bool YIELD::ipc::SocketAddress::getnameinfo
+void RPCMessage::set_body( yidl::runtime::MarshallableObject* body )
+{
+  this->body = body;
+}
+
+bool
+RPCMessage::unmarshal_new_ExceptionResponse_body
 (
-  char* out_hostname,
-  uint32_t out_hostname_len,
-  bool numeric
-) const
+  const char* key,
+  uint32_t tag,
+  uint32_t type_id,
+  yidl::runtime::Unmarshaller& unmarshaller
+)
 {
-  if ( addrinfo_list != NULL )
+  if ( marshallable_object_factory != NULL )
   {
-    struct addrinfo* addrinfo_p = addrinfo_list;
-    while ( addrinfo_p != NULL )
+    if
+    (
+      marshallable_object_factory->get_type_id()
+      ==
+      YIELD::concurrency::EventFactory::TYPE_ID
+    )
     {
-      if
-      (
-        ::getnameinfo
-        (
-          addrinfo_p->ai_addr,
-          static_cast<socklen_t>( addrinfo_p->ai_addrlen ),
-          out_hostname,
-          out_hostname_len,
-          NULL,
-          0,
-          numeric ? NI_NUMERICHOST : 0
-        ) == 0
-      )
+      body = static_cast<YIELD::concurrency::EventFactory*>
+             (
+               marshallable_object_factory.get()
+             )
+             ->createExceptionResponse( type_id ).release();
+
+      if ( body != NULL )
+      {
+        unmarshaller.read( key, tag, *body );
         return true;
-      else
-        addrinfo_p = addrinfo_p->ai_next;
-    }
-    return false;
-  }
-  else
-    return ::getnameinfo
-           (
-             reinterpret_cast<sockaddr*>( _sockaddr_storage ),
-             static_cast<socklen_t>( sizeof( *_sockaddr_storage ) ),
-             out_hostname,
-             out_hostname_len,
-             NULL,
-             0,
-             numeric ? NI_NUMERICHOST : 0
-           ) == 0;
-}
-
-uint16_t YIELD::ipc::SocketAddress::get_port() const
-{
-  if ( addrinfo_list != NULL )
-  {
-    switch ( addrinfo_list->ai_family )
-    {
-      case AF_INET:
-      {
-        return ntohs
-               (
-                 reinterpret_cast<struct sockaddr_in*>
-                 (
-                   addrinfo_list->ai_addr
-                 )->sin_port
-               );
-      }
-
-      case AF_INET6:
-      {
-        return ntohs
-               (
-                 reinterpret_cast<struct sockaddr_in6*>
-                 (
-                   addrinfo_list->ai_addr
-                 )->sin6_port
-               );
-      }
-
-      default:
-      {
-        DebugBreak();
-        return 0;
       }
     }
-  }
-  else
-  {
-    switch ( _sockaddr_storage->ss_family )
+
+    body = marshallable_object_factory->createMarshallableObject( type_id );
+    if ( body != NULL )
     {
-      case AF_INET:
-      {
-        return ntohs
-               (
-                 reinterpret_cast<struct sockaddr_in*>( _sockaddr_storage )
-                   ->sin_port
-               );
-      }
-
-      case AF_INET6:
-      {
-        return ntohs
-               (
-                 reinterpret_cast<struct sockaddr_in6*>( _sockaddr_storage )
-                  ->sin6_port
-               );
-      }
-
-      default:
-      {
-        DebugBreak();
-        return 0;
-      }
-    }
-  }
-}
-
-bool YIELD::ipc::SocketAddress::operator==( const SocketAddress& other ) const
-{
-  if ( addrinfo_list != NULL )
-  {
-    if ( other.addrinfo_list != NULL )
-    {
-      struct addrinfo* addrinfo_p = addrinfo_list;
-      while ( addrinfo_p != NULL )
-      {
-        struct addrinfo* other_addrinfo_p = other.addrinfo_list;
-        while ( other_addrinfo_p != NULL )
-        {
-          if
-          (
-            addrinfo_p->ai_addrlen == other_addrinfo_p->ai_addrlen &&
-            memcmp
-            (
-              addrinfo_p->ai_addr,
-              other_addrinfo_p->ai_addr,
-              addrinfo_p->ai_addrlen
-            ) == 0 &&
-            addrinfo_p->ai_family == other_addrinfo_p->ai_family &&
-            addrinfo_p->ai_protocol == other_addrinfo_p->ai_protocol &&
-            addrinfo_p->ai_socktype == other_addrinfo_p->ai_socktype
-          )
-            break;
-          else
-            other_addrinfo_p = other_addrinfo_p->ai_next;
-        }
-
-        if ( other_addrinfo_p != NULL ) // i.e. we found the addrinfo
-                                        // in the other's list
-          addrinfo_p = addrinfo_p->ai_next;
-        else
-          return false;
-      }
-
+      unmarshaller.read( key, tag, *body );
       return true;
     }
     else
       return false;
   }
-  else if ( other._sockaddr_storage != NULL )
-    return memcmp
-           (
-             _sockaddr_storage,
-             other._sockaddr_storage,
-             sizeof( *_sockaddr_storage )
-           ) == 0;
   else
     return false;
 }
 
-
-// socket_aio_queue.cpp
-#ifdef _WIN32
-#ifndef FD_SETSIZE
-#define FD_SETSIZE 1024
-#endif
-#pragma warning( 4 : 4365 )
-#pragma warning( push )
-#pragma warning( disable: 4995 )
-#include <ws2tcpip.h>
-#pragma warning( pop )
-#pragma warning( push )
-#pragma warning( disable: 4127 4389 ) // Warnings in the FD_* macros
-#else
-#include <errno.h>
-#include <signal.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__MACH__)
-#define YIELD_IPC_HAVE_FREEBSD_KQUEUE 1
-#include <netinet/in.h>
-#include <sys/types.h>
-#include <sys/event.h>
-#include <sys/time.h>
-#elif defined(__linux__)
-#define YIELD_IPC_HAVE_LINUX_EPOLL 1
-#include <sys/epoll.h>
-#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
-#include <port.h>
-#include <sys/poll.h>
-#else
-#include <poll.h>
-#include <vector>
-#endif
-#endif
-
-
-#ifdef _WIN32
-class YIELD::ipc::Socket::AIOQueue::IOCPWorkerThread
-  : public YIELD::platform::Thread
-{
-public:
-  IOCPWorkerThread( HANDLE hIoCompletionPort )
-    : hIoCompletionPort( hIoCompletionPort )
-  {
-    is_running = false;
-  }
-
-  void stop()
-  {
-    while ( is_running )
-      Thread::yield();
-  }
-
-  // Thread
-  void run()
-  {
-    is_running = true;
-
-    set_name( "Socket::AIOQueue::IOCPWorkerThread" );
-
-    for ( ;; )
-    {
-      DWORD dwBytesTransferred;
-      ULONG_PTR ulCompletionKey;
-      LPOVERLAPPED lpOverlapped;
-
-      if
-      (
-        GetQueuedCompletionStatus
-        (
-          hIoCompletionPort,
-          &dwBytesTransferred,
-          &ulCompletionKey,
-          &lpOverlapped,
-          INFINITE
-        )
-      )
-      {
-        YIELD::platform::AIOControlBlock* aio_control_block
-          = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
-
-        switch ( aio_control_block->get_type_id() )
-        {
-          case YIDL_RUNTIME_OBJECT_TYPE_ID( Socket::AIOConnectControlBlock ):
-          {
-            static_cast<Socket::AIOConnectControlBlock*>( aio_control_block )
-              ->get_socket()->connected = true;
-
-            aio_control_block->onCompletion( dwBytesTransferred );
-          }
-          break;
-
-          case YIDL_RUNTIME_OBJECT_TYPE_ID( Socket::AIOReadControlBlock ):
-          {
-            static_cast<Socket::AIOReadControlBlock*>( aio_control_block )
-              ->get_buffer()->put( NULL, dwBytesTransferred );
-
-            if ( dwBytesTransferred > 0 )
-              aio_control_block->onCompletion( dwBytesTransferred );
-            else
-              aio_control_block->onError( WSAECONNRESET );
-          }
-          break;
-
-          case YIDL_RUNTIME_OBJECT_TYPE_ID
-               ( UDPSocket::AIORecvFromControlBlock ):
-          {
-            static_cast<UDPSocket::AIORecvFromControlBlock*>
-            (
-              aio_control_block
-            )->get_buffer()->put( NULL, dwBytesTransferred );
-
-            aio_control_block->onCompletion( dwBytesTransferred );
-          }
-          break;
-
-          default:
-          {
-            aio_control_block->onCompletion( dwBytesTransferred );
-          }
-          break;
-        }
-
-        YIELD::platform::AIOControlBlock::decRef( *aio_control_block );
-      }
-      else if ( lpOverlapped != NULL )
-      {
-        YIELD::platform::AIOControlBlock* aio_control_block
-          = AIOControlBlock::from_OVERLAPPED( lpOverlapped );
-
-        aio_control_block->onError( ::GetLastError() );
-
-        YIELD::platform::AIOControlBlock::decRef( *aio_control_block );
-      }
-      else
-        break;
-    }
-
-    is_running = false;
-  }
-
-private:
-  HANDLE hIoCompletionPort;
-  bool is_running;
-};
-#endif
-
-
-class YIELD::ipc::Socket::AIOQueue::NBIOWorkerThread
-  : public YIELD::platform::Thread
-{
-public:
-  NBIOWorkerThread()
-  {
-    is_running = false;
-    should_run = true;
-
-#if defined(_WIN32)
-    FD_ZERO( &read_fds );
-    FD_ZERO( &write_fds );
-    FD_ZERO( &except_fds );
-#elif defined(YIELD_IPC_HAVE_LINUX_EPOLL)
-    poll_fd = epoll_create( 32768 );
-#elif defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE)
-    poll_fd = kqueue();
-#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
-    poll_fd = port_create();
-#endif
-
-#if defined(_WIN32)
-    auto_TCPSocket submit_listen_tcp_socket = TCPSocket::create( AF_INET );
-    if
-    (
-      submit_listen_tcp_socket != NULL &&
-      submit_listen_tcp_socket->bind
-      (
-        SocketAddress::create( "localhost", 0 )
-      ) &&
-      submit_listen_tcp_socket->listen()
-    )
-    {
-      submit_pipe_write_end = TCPSocket::create( AF_INET );
-      if
-      (
-        submit_pipe_write_end != NULL &&
-        submit_pipe_write_end->connect
-        (
-          submit_listen_tcp_socket->getsockname()
-        )
-      )
-      {
-        submit_pipe_read_end = submit_listen_tcp_socket->accept();
-        if
-        (
-          submit_pipe_read_end != NULL &&
-          submit_pipe_read_end->set_blocking_mode( false ) &&
-          associate( *submit_pipe_read_end, true, false )
-        )
-          return;
-      }
-    }
-#elif defined(__MACH__)
-    int socket_vector[2];
-    if ( ::socketpair( AF_UNIX, SOCK_STREAM, 0, socket_vector ) != -1 )
-    {
-      submit_pipe_read_end
-        = new Socket( AF_UNIX, SOCK_STREAM, 0, socket_vector[0] );
-
-      submit_pipe_write_end
-        = new Socket( AF_UNIX, SOCK_STREAM, 0, socket_vector[1] );
-
-      if
-      (
-        submit_pipe_read_end->set_blocking_mode( false ) &&
-        associate( *submit_pipe_read_end, true, false )
-      )
-         return;
-    }
-#else
-    submit_pipe = Pipe::create();
-    if ( submit_pipe != NULL &&
-         submit_pipe->set_blocking_mode( false ) &&
-         associate( submit_pipe->get_read_end(), true, false ) )
-        return;
-#endif
-
-    std::cerr << "yield::ipc::Socket::AIOQueue::NBIOWorkerThread: " <<
-                 "error creating submit pipe: " <<
-                 YIELD::platform::Exception()
-                 << "." << std::endl;
-  }
-
-  ~NBIOWorkerThread()
-  {
-#if defined(YIELD_IPC_HAVE_LINUX_EPOLL) || \
-    defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE) || \
-    defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
-    ::close( poll_fd );
-#endif
-  }
-
-  void submit( yidl::runtime::auto_Object<AIOControlBlock> aio_control_block )
-  {
-    AIOControlBlock* submit_aio_control_block = aio_control_block.release();
-#if defined(_WIN32) || defined(__MACH__)
-    submit_pipe_write_end->write
-    (
-      &submit_aio_control_block,
-      sizeof( submit_aio_control_block )
-    );
-#else
-    submit_pipe->write
-    (
-      &submit_aio_control_block,
-      sizeof( submit_aio_control_block )
-    );
-#endif
-  }
-
-  void stop()
-  {
-    should_run = false;
-#if defined(_WIN32) || defined(__MACH__)
-    submit_pipe_read_end->close();
-    submit_pipe_write_end->close();
-#else
-    submit_pipe->close();
-#endif
-    while ( is_running )
-      Thread::yield();
-  }
-
-  // Thread
-  void run()
-  {
-    is_running = true;
-    set_name( "Socket::AIOQueue::NBIOWorkerThread" );
-
-#if defined(_WIN32)
-    fd_set read_fds_copy, write_fds_copy, except_fds_copy;
-    FD_ZERO( &read_fds_copy );
-    FD_ZERO( &write_fds_copy );
-    FD_ZERO( &except_fds_copy );
-#elif defined(YIELD_IPC_HAVE_LINUX_EPOLL)
-    struct epoll_event returned_events[8192];
-#elif defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE)
-    struct kevent returned_events[8192];
-#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
-    port_event_t returned_events[1];
-#endif
-
-    while ( should_run )
-    {
-#if defined(_WIN32)
-      memcpy_s
-      (
-        &read_fds_copy,
-        sizeof( read_fds_copy ),
-        &read_fds,
-        sizeof( read_fds )
-      );
-
-      memcpy_s
-      (
-        &write_fds_copy,
-        sizeof( write_fds_copy ),
-        &write_fds,
-        sizeof( write_fds )
-      );
-
-      memcpy_s
-      (
-        &except_fds_copy,
-        sizeof( except_fds_copy ),
-        &except_fds,
-        sizeof( except_fds )
-      );
-
-      int active_fds
-        = select( 0, &read_fds_copy, &write_fds_copy, &except_fds_copy, NULL );
-#elif defined(YIELD_IPC_HAVE_LINUX_EPOLL)
-      int active_fds = epoll_wait( poll_fd, returned_events, 8192, -1 );
-#elif defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE)
-      int active_fds = kevent( poll_fd, 0, 0, returned_events, 8192, NULL );
-#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
-      int active_fds = port_get( poll_fd, returned_events, NULL );
-      if ( active_fds == 0 )
-        active_fds = 1;
-#else
-      int active_fds = poll( &pollfds[0], pollfds.size(), -1 );
-#endif
-
-      if ( active_fds > 0 && should_run )
-      {
-#ifdef _WIN32
-        std::map<SOCKET, AIOControlBlock*>::iterator fd_to_aio_control_block_i;
-        if ( FD_ISSET( *submit_pipe_read_end, &read_fds_copy ) )
-        {
-          active_fds--;
-          FD_CLR( *submit_pipe_read_end, &read_fds_copy );
-          dequeueSubmittedAIOControlBlocks();
-        }
-
-        fd_to_aio_control_block_i = fd_to_aio_control_block_map.begin();
-        while
-        (
-          active_fds > 0 &&
-          fd_to_aio_control_block_i != fd_to_aio_control_block_map.end()
-        )
-        {
-          SOCKET fd = fd_to_aio_control_block_i->first;
-          if ( FD_ISSET( fd, &read_fds_copy ) )
-            FD_CLR( fd, &read_fds_copy );
-          else if ( FD_ISSET( fd, &write_fds_copy ) )
-            FD_CLR( fd, &write_fds_copy );
-          else if ( FD_ISSET( fd, &except_fds_copy ) )
-             FD_CLR( fd, &except_fds_copy );
-          else
-          {
-            fd_to_aio_control_block_i++;
-            continue;
-          }
-
-          active_fds--;
-#else
-        std::map<int, AIOControlBlock*>::iterator fd_to_aio_control_block_i;
-        while ( active_fds > 0 )
-        {
-#if defined(YIELD_IPC_HAVE_LINUX_EPOLL) || \
-    defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE) || \
-    defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
-          active_fds--;
-#if defined(YIELD_IPC_HAVE_LINUX_EPOLL)
-          int fd = returned_events[active_fds].data.fd;
-#elif defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE)
-          int fd = returned_events[active_fds].ident;
-#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
-          int fd = returned_events[active_fds].portev_object;
-#else
-          DebugBreak(); // Look through pollfds
-#endif
-#endif
-
-#ifdef __MACH__
-          if ( fd == *submit_pipe_read_end )
-#else
-          if ( fd == submit_pipe->get_read_end() )
-#endif
-          {
-            dequeueSubmittedAIOControlBlocks();
-#ifdef YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS
-            toggle( submit_pipe->get_read_end(), true, false );
-#endif
-            continue;
-          }
-
-          fd_to_aio_control_block_i = fd_to_aio_control_block_map.find( fd );
-#endif
-
-          if ( processAIOControlBlock( fd_to_aio_control_block_i->second ) )
-          {
-#ifdef _WIN32
-            fd_to_aio_control_block_i
-              = fd_to_aio_control_block_map.erase( fd_to_aio_control_block_i );
-#else
-            fd_to_aio_control_block_map.erase( fd_to_aio_control_block_i );
-#endif
-          }
-        }
-      }
-      else if ( active_fds < 0 )
-      {
-#ifndef _WIN32
-        if ( errno != EINTR )
-#endif
-          std::cerr << "yield::ipc::Socket::AIOQueue::NBIOWorkerThread: " <<
-            "error on poll: " << YIELD::platform::Exception() <<
-            "." << std::endl;
-      }
-    }
-
-    is_running = false;
-  }
-
-private:
-  bool is_running, should_run;
-
-#if defined(_WIN32)
-  std::map<SOCKET, AIOControlBlock*> fd_to_aio_control_block_map;
-  fd_set read_fds, write_fds, except_fds;
-#else
-  std::map<int, AIOControlBlock*> fd_to_aio_control_block_map;
-#if defined(YIELD_IPC_HAVE_LINUX_EPOLL) || \
-    defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE) || \
-    defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
-  int poll_fd;
-#else
-  std::vector<pollfd> pollfds;
-#endif
-#endif
-
-#if defined(_WIN32)
-  auto_TCPSocket submit_pipe_read_end, submit_pipe_write_end;
-#elif defined(__MACH__)
-  auto_Socket submit_pipe_read_end, submit_pipe_write_end;
-#else
-  auto_Pipe submit_pipe;
-#endif
-
-#ifdef _WIN32
-  bool associate( SOCKET fd, bool enable_read, bool enable_write )
-#else
-  bool associate( int fd, bool enable_read, bool enable_write )
-#endif
-  {
-#if defined(_WIN32)
-    if ( enable_read )
-      FD_SET( fd, &read_fds );
-
-    if ( enable_write )
-    {
-        FD_SET( fd, &write_fds );
-        FD_SET( fd, &except_fds );
-    }
-
-    return true;
-#elif defined(YIELD_IPC_HAVE_LINUX_EPOLL)
-    struct epoll_event change_event;
-    memset( &change_event, 0, sizeof( change_event ) );
-    if ( enable_read ) change_event.events |= EPOLLIN;
-    if ( enable_write ) change_event.events |= EPOLLOUT;
-    change_event.data.fd = fd;
-    return epoll_ctl( poll_fd, EPOLL_CTL_ADD, fd, &change_event ) != -1;
-#elif defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE)
-    struct kevent change_events[2];
-
-    EV_SET
-    (
-      &change_events[0],
-      fd,
-      EVFILT_READ,
-      EV_ADD | ( enable_read ? EV_ENABLE : EV_DISABLE ),
-      0,
-      0,
-      NULL
-    );
-
-    EV_SET
-    (
-      &change_events[1],
-      fd,
-      EVFILT_WRITE,
-      EV_ADD | ( enable_write ? EV_ENABLE : EV_DISABLE ),
-      0,
-      0,
-      NULL
-    );
-
-    return kevent( poll_fd, change_events, 2, 0, 0, NULL ) != -1;
-#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
-    int events = 0;
-    if ( enable_read ) events |= POLLIN;
-    if ( enable_write ) events |= POLLOUT;
-    return port_associate( poll_fd, PORT_SOURCE_FD, fd, events, NULL ) != -1;
-#else
-    std::vector<struct pollfd>::size_type pollfd_i_max = pollfds.size();
-    for
-    (
-      std::vector<struct pollfd>::size_type pollfd_i = 0;
-      pollfd_i < pollfd_i_max;
-      pollfd_i++
-    )
-    {
-      if ( pollfds[pollfd_i].fd == fd )
-        return false;
-    }
-
-    struct pollfd attach_pollfd;
-    memset( &attach_pollfd, 0, sizeof( attach_pollfd ) );
-    if ( enable_read ) attach_pollfd.events |= POLLIN;
-    if ( enable_write ) attach_pollfd.events |= POLLOUT;
-    attach_pollfd.fd = fd;
-    attach_pollfd.revents = 0;
-    pollfds.push_back( attach_pollfd );
-    return true;
-#endif
-  }
-
-  void dequeueSubmittedAIOControlBlocks()
-  {
-    AIOControlBlock* aio_control_block;
-    for ( ;; )
-    {
-      ssize_t read_ret;
-#if defined(_WIN32) || defined(__MACH__)
-      read_ret
-        = submit_pipe_read_end->read
-          (
-            &aio_control_block,
-            sizeof( aio_control_block )
-          );
-#else
-      read_ret
-        = submit_pipe->read
-          (
-            &aio_control_block,
-            sizeof( aio_control_block )
-          );
-#endif
-      if ( read_ret == sizeof( aio_control_block ) )
-      {
-#ifdef _WIN32
-        SOCKET fd = *aio_control_block->get_socket();
-#else
-        int fd = *aio_control_block->get_socket();
-#endif
-        associate( fd, false, false );
-        if ( !processAIOControlBlock( aio_control_block ) )
-          fd_to_aio_control_block_map[fd] = aio_control_block;
-      }
-      else if ( read_ret <= 0 )
-        break;
-      else
-        DebugBreak();
-    }
-  }
-
-#ifdef _WIN32
-  void dissociate( SOCKET fd )
-#else
-  void dissociate( int fd )
-#endif
-  {
-#if defined(_WIN32)
-    FD_CLR( fd, &read_fds );
-    FD_CLR( fd, &write_fds );
-    FD_CLR( fd, &except_fds );
-#elif defined(YIELD_IPC_HAVE_LINUX_EPOLL)
-    // From the man page: In kernel versions before 2.6.9,
-    // the EPOLL_CTL_DEL operation required a non-NULL pointer in event,
-    // even though this argument is ignored. Since kernel 2.6.9,
-    // event can be specified as NULL when using EPOLL_CTL_DEL.
-    struct epoll_event change_event;
-    epoll_ctl( poll_fd, EPOLL_CTL_DEL, fd, &change_event );
-#elif defined(YIELD_IPC_HAVE_FREEBSD_KQUEUE)
-    struct kevent change_events[2];
-    EV_SET( &change_events[0], fd, EVFILT_READ, EV_DELETE, 0, 0, NULL );
-    EV_SET( &change_events[1], fd, EVFILT_WRITE, EV_DELETE, 0, 0, NULL );
-    kevent( poll_fd, change_events, 2, 0, 0, NULL );
-#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
-    port_dissociate( poll_fd, PORT_SOURCE_FD, fd );
-#else
-    for
-    (
-      std::vector<struct pollfd>::iterator pollfd_i = pollfds.begin();
-      pollfd_i != pollfds.end();
-    )
-    {
-      if ( ( *pollfd_i ).fd == fd )
-        pollfd_i = pollfds.erase( pollfd_i );
-      else
-        ++pollfd_i;
-    }
-#endif
-  }
-
-  bool processAIOControlBlock( AIOControlBlock* aio_control_block )
-  {
-#ifdef _WIN32
-    SOCKET fd = *aio_control_block->get_socket();
-#else
-    int fd = *aio_control_block->get_socket();
-#endif
-
-    switch ( aio_control_block->execute() )
-    {
-      case Socket::AIOControlBlock::EXECUTE_STATUS_DONE:
-      {
-        dissociate( fd );
-        AIOControlBlock::decRef( *aio_control_block );
-        return true;
-      }
-
-      case Socket::AIOControlBlock::EXECUTE_STATUS_WANT_READ:
-      {
-        toggle( fd, true, false );
-        return false;
-      }
-
-      case Socket::AIOControlBlock::EXECUTE_STATUS_WANT_WRITE:
-      {
-        toggle( fd, false, true );
-        return false;
-      }
-
-      default:
-      {
-        DebugBreak();
-        return false;
-      }
-    }
-  }
-
-#ifdef _WIN32
-  bool toggle( SOCKET fd, bool enable_read, bool enable_write )
-#else
-  bool toggle( int fd, bool enable_read, bool enable_write )
-#endif
-  {
-#if defined(_WIN32)
-    if ( enable_read )
-      FD_SET( fd, &read_fds );
-    else
-      FD_CLR( fd, &read_fds );
-
-    if ( enable_write )
-    {
-      FD_SET( fd, &write_fds );
-      FD_SET( fd, &except_fds );
-    }
-    else
-    {
-      FD_CLR( fd, &write_fds );
-      FD_CLR( fd, &except_fds );
-    }
-
-    return true;
-#elif defined(YIELD_IPC_HAVE_LINUX_EPOLL)
-    struct epoll_event change_event;
-    memset( &change_event, 0, sizeof( change_event ) );
-    if ( enable_read ) change_event.events |= EPOLLIN;
-    if ( enable_write ) change_event.events |= EPOLLOUT;
-    change_event.data.fd = fd;
-    return epoll_ctl( poll_fd, EPOLL_CTL_MOD, fd, &change_event ) != -1;
-#elif defined YIELD_IPC_HAVE_FREEBSD_KQUEUE
-    struct kevent change_events[2];
-
-    EV_SET
-    (
-      &change_events[0],
-      fd,
-      EVFILT_READ,
-      enable_read ? EV_ENABLE : EV_DISABLE,
-      0,
-      0,
-      NULL
-    );
-
-    EV_SET
-    (
-      &change_events[1],
-      fd,
-      EVFILT_WRITE,
-      enable_write ? EV_ENABLE : EV_DISABLE,
-      0,
-      0,
-      NULL
-    );
-
-    return kevent
-           (
-             poll_fd,
-             change_events,
-             2,
-             0,
-             0,
-             NULL
-           ) != -1
-           ||
-           errno == ENOENT; // ENOENT = the event was not originally enabled
-#elif defined(YIELD_IPC_HAVE_SOLARIS_EVENT_PORTS)
-    if ( enable_read || enable_write )
-    {
-      int events = 0;
-      if ( enable_read ) events |= POLLIN;
-      if ( enable_write ) events |= POLLOUT;
-      return port_associate( poll_fd, PORT_SOURCE_FD, fd, events, NULL ) != -1;
-    }
-    else
-      return port_dissociate( poll_fd, PORT_SOURCE_FD, fd ) != -1;
-#else
-    for
-    (
-      std::vector<struct pollfd>::iterator pollfd_i = pollfds.begin();
-      pollfd_i != pollfds.end();
-    )
-    {
-      if ( ( *pollfd_i ).fd == fd )
-      {
-        int events = 0;
-        if ( enable_read ) events |= POLLIN;
-        if ( enable_write ) events |= POLLOUT;
-        ( *pollfd_i ).events = events;
-        return true;
-      }
-    }
-
-    return false;
-#endif
-  }
-};
-
-
-YIELD::ipc::Socket::AIOQueue::AIOQueue()
-{
-#ifdef _WIN32
-  hIoCompletionPort
-    = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0 );
-  if ( hIoCompletionPort == INVALID_HANDLE_VALUE ) DebugBreak();
-
-  uint16_t iocp_worker_thread_count
-    = YIELD::platform::Machine::getOnlineLogicalProcessorCount();
-  for
-  (
-    uint16_t iocp_worker_thread_i = 0;
-    iocp_worker_thread_i < iocp_worker_thread_count;
-    iocp_worker_thread_i++
-  )
-  {
-    IOCPWorkerThread* iocp_worker_thread
-      = new IOCPWorkerThread( hIoCompletionPort );
-    iocp_worker_threads.push_back( iocp_worker_thread );
-    iocp_worker_thread->start();
-  }
-#endif
-}
-
-YIELD::ipc::Socket::AIOQueue::~AIOQueue()
-{
-#ifdef _WIN32
-  CloseHandle( hIoCompletionPort );
-
-  for
-  (
-    std::vector<IOCPWorkerThread*>::iterator
-      iocp_worker_thread_i = iocp_worker_threads.begin();
-    iocp_worker_thread_i != iocp_worker_threads.end();
-    iocp_worker_thread_i++
-  )
-  {
-    ( *iocp_worker_thread_i )->stop();
-    IOCPWorkerThread::decRef( **iocp_worker_thread_i );
-  }
-#endif
-
-  for
-  (
-    std::vector<NBIOWorkerThread*>::iterator
-      nbio_worker_thread_i = nbio_worker_threads.begin();
-    nbio_worker_thread_i != nbio_worker_threads.end();
-    nbio_worker_thread_i++
-  )
-  {
-    ( *nbio_worker_thread_i )->stop();
-    NBIOWorkerThread::decRef( **nbio_worker_thread_i );
-  }
-}
-
-#ifdef _WIN32
-void YIELD::ipc::Socket::AIOQueue::associate( Socket& socket_ )
-{
-  CreateIoCompletionPort
-  (
-    reinterpret_cast<HANDLE>( static_cast<SOCKET>( socket_ ) ),
-    hIoCompletionPort,
-    0,
-    0
-  );
-}
-#endif
-
-void YIELD::ipc::Socket::AIOQueue::submit
+bool
+RPCMessage::unmarshal_new_Request_body
 (
-  auto_AIOControlBlock aio_control_block
+  const char* key,
+  uint32_t tag,
+  uint32_t type_id,
+  yidl::runtime::Unmarshaller& unmarshaller
 )
 {
-  if ( nbio_worker_threads.empty() )
+  if ( marshallable_object_factory != NULL )
   {
-    uint16_t nbio_worker_thread_count
-      = YIELD::platform::Machine::getOnlineLogicalProcessorCount();
-    // uint16_t nbio_worker_thread_count = 1;
-    for
+    if
     (
-      uint16_t nbio_worker_thread_i = 0;
-      nbio_worker_thread_i < nbio_worker_thread_count;
-      nbio_worker_thread_i++
+      marshallable_object_factory->get_type_id()
+      ==
+      YIELD::concurrency::EventFactory::TYPE_ID
     )
     {
-      NBIOWorkerThread* nbio_worker_thread = new NBIOWorkerThread;
-      nbio_worker_thread->start();
-      nbio_worker_threads.push_back( nbio_worker_thread );
-    }
-  }
+      body = static_cast<YIELD::concurrency::EventFactory*>
+             (
+               marshallable_object_factory.get()
+             )
+             ->createRequest( type_id ).release();
 
-  nbio_worker_threads
-  [
-    YIELD::platform::Thread::gettid() % nbio_worker_threads.size()
-  ]->submit( aio_control_block );
+      if ( body != NULL )
+      {
+        unmarshaller.read( key, tag, *body );
+        return true;
+      }
+    }
+
+    body = marshallable_object_factory->createMarshallableObject( type_id );
+    if ( body != NULL )
+    {
+      unmarshaller.read( key, tag, *body );
+      return true;
+    }
+    else
+      return false;
+  }
+  else
+    return false;
 }
 
-#ifdef _WIN32
-#pragma warning( pop )
-#endif
+bool
+RPCMessage::unmarshal_new_Response_body
+(
+  const char* key,
+  uint32_t tag,
+  uint32_t type_id,
+  yidl::runtime::Unmarshaller& unmarshaller
+)
+{
+  if ( marshallable_object_factory != NULL )
+  {
+    if
+    (
+      marshallable_object_factory->get_type_id()
+      ==
+      YIELD::concurrency::EventFactory::TYPE_ID
+    )
+    {
+      body = static_cast<YIELD::concurrency::EventFactory*>
+             (
+               marshallable_object_factory.get()
+             )
+             ->createResponse( type_id ).release();
+
+      if ( body != NULL )
+      {
+        unmarshaller.read( key, tag, *body );
+        return true;
+      }
+    }
+
+    body = marshallable_object_factory->createMarshallableObject( type_id );
+    if ( body != NULL )
+    {
+      unmarshaller.read( key, tag, *body );
+      return true;
+    }
+    else
+      return false;
+  }
+  else
+    return false;
+}
 
 
 // ssl_context.cpp
@@ -15271,8 +12277,11 @@ void YIELD::ipc::Socket::AIOQueue::submit
 #ifdef _WIN32
 #pragma comment( lib, "libeay32.lib" )
 #pragma comment( lib, "ssleay32.lib" )
+#undef UUID
 #endif
 #endif
+
+// Must be after the #undef UUID
 
 
 #ifdef YIELD_IPC_HAVE_OPENSSL
@@ -15309,12 +12318,12 @@ static int pem_password_callback( char *buf, int size, int, void *userdata )
 }
 
 
-YIELD::ipc::SSLContext::SSLContext( SSL_CTX* ctx )
+SSLContext::SSLContext( SSL_CTX* ctx )
   : ctx( ctx )
 { }
 
-YIELD::ipc::auto_SSLContext
-YIELD::ipc::SSLContext::create
+auto_SSLContext
+SSLContext::create
 (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
   const
@@ -15325,8 +12334,8 @@ YIELD::ipc::SSLContext::create
   return new SSLContext( createSSL_CTX( method ) );
 }
 
-YIELD::ipc::auto_SSLContext
-YIELD::ipc::SSLContext::create
+auto_SSLContext
+SSLContext::create
 (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
   const
@@ -15393,8 +12402,8 @@ YIELD::ipc::SSLContext::create
   throw SSLException();
 }
 
-YIELD::ipc::auto_SSLContext
-YIELD::ipc::SSLContext::create
+auto_SSLContext
+SSLContext::create
 (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
   const
@@ -15473,8 +12482,8 @@ YIELD::ipc::SSLContext::create
   throw SSLException();
 }
 
-YIELD::ipc::auto_SSLContext
-YIELD::ipc::SSLContext::create
+auto_SSLContext
+SSLContext::create
 (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
   const
@@ -15537,17 +12546,17 @@ YIELD::ipc::SSLContext::create
 
 #else
 
-YIELD::ipc::SSLContext::SSLContext()
+SSLContext::SSLContext()
 { }
 
-YIELD::ipc::auto_SSLContext YIELD::ipc::SSLContext::create()
+auto_SSLContext SSLContext::create()
 {
   return new SSLContext;
 }
 
 #endif
 
-YIELD::ipc::SSLContext::~SSLContext()
+SSLContext::~SSLContext()
 {
 #ifdef YIELD_IPC_HAVE_OPENSSL
   SSL_CTX_free( ctx );
@@ -15557,7 +12566,7 @@ YIELD::ipc::SSLContext::~SSLContext()
 #ifdef YIELD_IPC_HAVE_OPENSSL
 
 SSL_CTX*
-YIELD::ipc::SSLContext::createSSL_CTX
+SSLContext::createSSL_CTX
 (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
   const
@@ -15589,45 +12598,42 @@ YIELD::ipc::SSLContext::createSSL_CTX
 // ssl_socket.cpp
 #ifdef YIELD_IPC_HAVE_OPENSSL
 
+
 #ifdef _WIN32
-#pragma warning( 4 : 4365 )
+#undef INVALID_SOCKET
 #pragma warning( push )
-#pragma warning( disable: 4995 )
+#pragma warning( disable: 4365 4995 )
 #include <ws2tcpip.h>
+#define INVALID_SOCKET  (SOCKET)(~0)
+#undef UUID
 #pragma warning( pop )
 #else
 #include <netinet/in.h> // For the IPPROTO_* constants
 #include <sys/socket.h>
 #endif
 
+// Must be after the #undef UUID
 
-YIELD::ipc::SSLSocket::SSLSocket
+
+SSLSocket::SSLSocket
 (
   int domain,
-#ifdef _WIN32
-  SOCKET socket_,
-#else
-  int socket_,
-#endif
+  YIELD::platform::socket_t socket_,
   auto_SSLContext ctx,
   SSL* ssl
 )
   : TCPSocket( domain, socket_ ), ctx( ctx ), ssl( ssl )
 { }
 
-YIELD::ipc::SSLSocket::~SSLSocket()
+SSLSocket::~SSLSocket()
 {
   SSL_free( ssl );
 }
 
-YIELD::ipc::auto_TCPSocket YIELD::ipc::SSLSocket::accept()
+YIELD::platform::auto_TCPSocket SSLSocket::accept()
 {
   SSL_set_fd( ssl, *this );
-#ifdef _WIN32
-  SOCKET peer_socket = TCPSocket::_accept();
-#else
-  int peer_socket = TCPSocket::_accept();
-#endif
+  YIELD::platform::socket_t peer_socket = TCPSocket::_accept();
   if ( peer_socket != -1 )
   {
     SSL* peer_ssl = SSL_new( ctx->get_ssl_ctx() );
@@ -15639,39 +12645,28 @@ YIELD::ipc::auto_TCPSocket YIELD::ipc::SSLSocket::accept()
     return NULL;
 }
 
-void YIELD::ipc::SSLSocket::aio_accept
-(
-  auto_AIOAcceptControlBlock aio_accept_control_block
-)
+bool SSLSocket::associate( YIELD::platform::auto_IOQueue io_queue )
 {
-  aio_accept_nbio( aio_accept_control_block );
+  if ( this->io_queue == NULL )
+  {
+    switch ( io_queue->get_type_id() )
+    {
+      case YIELD::platform::BIOQueue::TYPE_ID:
+      case YIELD::platform::NBIOQueue::TYPE_ID:
+      {
+        this->io_queue = io_queue;
+        return true;
+      }
+      break;
+
+      default: return false;
+    }
+  }
+  else
+    return false;
 }
 
-void YIELD::ipc::SSLSocket::aio_connect
-(
-  auto_AIOConnectControlBlock aio_connect_control_block
-)
-{
-  aio_connect_nbio( aio_connect_control_block );
-}
-
-void YIELD::ipc::SSLSocket::aio_read
-(
-  auto_AIOReadControlBlock aio_read_control_block
-)
-{
-  aio_read_nbio( aio_read_control_block );
-}
-
-void YIELD::ipc::SSLSocket::aio_write
-(
-  auto_AIOWriteControlBlock aio_write_control_block
-)
-{
-  aio_write_nbio( aio_write_control_block );
-}
-
-bool YIELD::ipc::SSLSocket::connect( auto_SocketAddress peername )
+bool SSLSocket::connect( const YIELD::platform::SocketAddress& peername )
 {
   if ( TCPSocket::connect( peername ) )
   {
@@ -15683,25 +12678,20 @@ bool YIELD::ipc::SSLSocket::connect( auto_SocketAddress peername )
     return false;
 }
 
-YIELD::ipc::auto_SSLSocket
-YIELD::ipc::SSLSocket::create( auto_SSLContext ctx )
+auto_SSLSocket SSLSocket::create( auto_SSLContext ctx )
 {
   return create( AF_INET6, ctx );
 }
 
-YIELD::ipc::auto_SSLSocket
-YIELD::ipc::SSLSocket::create( int domain, auto_SSLContext ctx )
+auto_SSLSocket SSLSocket::create( int domain, auto_SSLContext ctx )
 {
   SSL* ssl = SSL_new( ctx->get_ssl_ctx() );
   if ( ssl != NULL )
   {
-#ifdef _WIN32
-    SOCKET socket_ = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
-    if ( socket_ != INVALID_SOCKET )
-#else
-    int socket_ = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
+    YIELD::platform::socket_t socket_
+      = Socket::create( &domain, SOCK_STREAM, IPPROTO_TCP );
+
     if ( socket_ != -1 )
-#endif
       return new SSLSocket( domain, socket_, ctx, ssl );
     else
       return NULL;
@@ -15742,16 +12732,33 @@ void SSLSocket::info_callback( const SSL* ssl, int where, int ret )
     return;
 
   reinterpret_cast<SSLSocket*>( SSL_get_app_data( const_cast<SSL*>( ssl ) ) )
-    ->log->getStream( Log::LOG_NOTICE ) << "SSLSocket: " << info.str();
+    ->log->get_stream( Log::LOG_NOTICE ) << "SSLSocket: " << info.str();
 }
 */
 
-ssize_t YIELD::ipc::SSLSocket::read( void* buffer, size_t buffer_len )
+ssize_t SSLSocket::recv( void* buffer, size_t buffer_len, int )
 {
   return SSL_read( ssl, buffer, static_cast<int>( buffer_len ) );
 }
 
-bool YIELD::ipc::SSLSocket::shutdown()
+ssize_t SSLSocket::send( const void* buffer, size_t buffer_len, int )
+{
+  return SSL_write( ssl, buffer, static_cast<int>( buffer_len ) );
+}
+
+ssize_t
+SSLSocket::sendmsg
+(
+  const struct iovec* buffers,
+  uint32_t buffers_count,
+  int
+)
+{
+  // Concatenate the buffers
+  return YIELD::platform::OStream::writev( buffers, buffers_count );
+}
+
+bool SSLSocket::shutdown()
 {
   if ( SSL_shutdown( ssl ) != -1 )
     return TCPSocket::shutdown();
@@ -15759,479 +12766,17 @@ bool YIELD::ipc::SSLSocket::shutdown()
     return false;
 }
 
-bool YIELD::ipc::SSLSocket::want_read() const
+bool SSLSocket::want_read() const
 {
   return SSL_want_read( ssl ) == 1;
 }
 
-bool YIELD::ipc::SSLSocket::want_write() const
+bool SSLSocket::want_write() const
 {
   return SSL_want_write( ssl ) == 1;
 }
 
-ssize_t YIELD::ipc::SSLSocket::write( const void* buffer, size_t buffer_len )
-{
-  return SSL_write( ssl, buffer, static_cast<int>( buffer_len ) );
-}
-
-ssize_t
-YIELD::ipc::SSLSocket::writev
-(
-  const struct iovec* buffers,
-  uint32_t buffers_count
-)
-{
-  if ( buffers_count == 1 )
-    return write( buffers[0].iov_base, buffers[0].iov_len );
-  else
-  {
-    std::string buffer;
-    for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-    {
-      buffer.append
-      (
-        static_cast<const char*>( buffers[buffer_i].iov_base ),
-        buffers[buffer_i].iov_len
-      );
-    }
-    return write( buffer.c_str(), buffer.size() );
-  }
-}
-
 #endif
-
-
-// tcp_socket.cpp
-#if defined(_WIN32)
-#pragma warning( 4 : 4365 )
-#pragma warning( push )
-#pragma warning( disable: 4995 )
-#include <ws2tcpip.h>
-#include <mswsock.h>
-#pragma warning( pop )
-#else
-#include <netinet/in.h> // For the IPPROTO_* constants
-#include <netinet/tcp.h> // For the TCP_* constants
-#include <sys/socket.h>
-#endif
-
-#include <cstring>
-
-
-#ifdef _WIN32
-void* YIELD::ipc::TCPSocket::lpfnAcceptEx = NULL;
-void* YIELD::ipc::TCPSocket::lpfnConnectEx = NULL;
-#endif
-
-
-YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus
-YIELD::ipc::TCPSocket::AIOAcceptControlBlock::execute()
-{
-  accepted_tcp_socket =
-    static_cast<TCPSocket*>( get_socket().get() )->accept();
-
-  if ( accepted_tcp_socket != NULL )
-    onCompletion( 0 );
-#ifdef _WIN32
-  else if ( WSAGetLastError() == WSAEWOULDBLOCK )
-#else
-  else if ( errno == EWOULDBLOCK )
-#endif
-    return EXECUTE_STATUS_WANT_READ;
-  else
-#ifdef _WIN32
-    onError( WSAGetLastError() );
-#else
-    onError( errno );
-#endif
-
-  return EXECUTE_STATUS_DONE;
-}
-
-
-#ifdef _WIN32
-YIELD::ipc::TCPSocket::TCPSocket( int domain, SOCKET socket_ )
-#else
-YIELD::ipc::TCPSocket::TCPSocket( int domain, int socket_ )
-#endif
-  : Socket( domain, SOCK_STREAM, IPPROTO_TCP, socket_ )
-{
-  partial_write_len = 0;
-}
-
-YIELD::ipc::auto_TCPSocket YIELD::ipc::TCPSocket::accept()
-{
-#ifdef _WIN32
-  SOCKET peer_socket = _accept();
-  if ( peer_socket != INVALID_SOCKET )
-#else
-  int peer_socket = _accept();
-  if ( peer_socket != -1 )
-#endif
-    return new TCPSocket( get_domain(), peer_socket );
-  else
-    return NULL;
-}
-
-#ifdef _WIN32
-SOCKET YIELD::ipc::TCPSocket::_accept()
-#else
-int YIELD::ipc::TCPSocket::_accept()
-#endif
-{
-  sockaddr_storage peername_storage;
-  socklen_t peername_storage_len = sizeof( peername_storage );
-  return ::accept
-         (
-           *this,
-           reinterpret_cast<struct sockaddr*>( &peername_storage ),
-           &peername_storage_len
-         );
-}
-
-void
-YIELD::ipc::TCPSocket::aio_accept
-(
-  auto_AIOAcceptControlBlock aio_accept_control_block
-)
-{
-#ifdef _WIN32
-  aio_accept_iocp( aio_accept_control_block );
-#else
-  aio_accept_nbio( aio_accept_control_block );
-#endif
-}
-
-#ifdef _WIN32
-void
-YIELD::ipc::TCPSocket::aio_accept_iocp
-(
-  auto_AIOAcceptControlBlock aio_accept_control_block
-)
-{
-  aio_accept_control_block->set_socket( *this );
-  get_aio_queue().associate( *this );
-
-  if ( lpfnAcceptEx == NULL )
-  {
-    GUID GuidAcceptEx = WSAID_ACCEPTEX;
-    DWORD dwBytes;
-    WSAIoctl
-    (
-      *this,
-      SIO_GET_EXTENSION_FUNCTION_POINTER,
-      &GuidAcceptEx,
-      sizeof( GuidAcceptEx ),
-      &lpfnAcceptEx,
-      sizeof( lpfnAcceptEx ),
-      &dwBytes,
-      NULL,
-      NULL
-    );
-  }
-
-  aio_accept_control_block->accepted_tcp_socket = TCPSocket::create( get_domain() );
-
-  DWORD sizeof_peername;
-  if ( get_domain() == AF_INET6 )
-    sizeof_peername = sizeof( sockaddr_in6 );
-  else
-    sizeof_peername = sizeof( sockaddr_in );
-
-  DWORD dwBytesReceived;
-  if
-  (
-    static_cast<LPFN_ACCEPTEX>( lpfnAcceptEx )
-    (
-      *this,
-      *aio_accept_control_block->accepted_tcp_socket,
-      aio_accept_control_block->peername,
-      0,
-      sizeof_peername + 16,
-      sizeof_peername + 16,
-      &dwBytesReceived,
-      ( LPOVERLAPPED )*aio_accept_control_block
-    )
-    ||
-    WSAGetLastError() == WSA_IO_PENDING
-  )
-    aio_accept_control_block.release();
-  else
-    aio_accept_control_block->onError( WSAGetLastError() );
-}
-#endif
-
-void
-YIELD::ipc::TCPSocket::aio_accept_nbio
-(
-  auto_AIOAcceptControlBlock aio_accept_control_block
-)
-{
-  aio_accept_control_block->set_socket( *this );
-  set_blocking_mode( false );
-  get_aio_queue().submit( aio_accept_control_block.release() );
-}
-
-void
-YIELD::ipc::TCPSocket::aio_connect
-(
-  auto_AIOConnectControlBlock aio_connect_control_block
-)
-{
-#ifdef _WIN32
-  aio_connect_iocp( aio_connect_control_block );
-#else
-  aio_connect_nbio( aio_connect_control_block );
-#endif
-}
-
-#ifdef _WIN32
-void
-YIELD::ipc::TCPSocket::aio_connect_iocp
-(
-  auto_AIOConnectControlBlock aio_connect_control_block
-)
-{
-  aio_connect_control_block->set_socket( *this );
-
-  if ( lpfnConnectEx == NULL )
-  {
-    GUID GuidConnectEx = WSAID_CONNECTEX;
-    DWORD dwBytes;
-    WSAIoctl
-    (
-      *this,
-      SIO_GET_EXTENSION_FUNCTION_POINTER,
-      &GuidConnectEx,
-      sizeof( GuidConnectEx ),
-      &lpfnConnectEx,
-      sizeof( lpfnConnectEx ),
-      &dwBytes,
-      NULL,
-      NULL
-    );
-  }
-
-  for ( ;; )
-  {
-    struct sockaddr* name; socklen_t namelen;
-    if
-    (
-      aio_connect_control_block->get_peername()->as_struct_sockaddr
-      (
-        get_domain(),
-        name,
-        namelen
-      )
-    )
-    {
-      if ( bind( SocketAddress::create( NULL, 0 ) ) )
-      {
-        get_aio_queue().associate( *this );
-
-        DWORD dwBytesSent;
-        if
-        (
-          static_cast<LPFN_CONNECTEX>( lpfnConnectEx )
-          (
-            *this,
-            name,
-            namelen,
-            NULL,
-            0,
-            &dwBytesSent,
-            *aio_connect_control_block
-          )
-          ||
-          WSAGetLastError() == WSA_IO_PENDING
-        )
-        {
-          aio_connect_control_block.release();
-          return;
-        }
-        else
-          break;
-      }
-      else
-        break;
-    }
-    else if ( get_domain() == AF_INET6 )
-    {
-      if ( recreate( AF_INET ) )
-      {
-        get_aio_queue().associate( *this );
-        continue; // Try to connect again
-      }
-      else
-        break;
-    }
-    else
-      break;
-  }
-
-  aio_connect_control_block->onError( WSAGetLastError() );
-}
-#endif
-
-YIELD::ipc::auto_TCPSocket YIELD::ipc::TCPSocket::create()
-{
-  return create( AF_INET6 );
-}
-
-YIELD::ipc::auto_TCPSocket YIELD::ipc::TCPSocket::create( int domain )
-{
-#ifdef _WIN32
-  SOCKET socket_ = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );
-  if ( socket_ != INVALID_SOCKET )
-#else
-  int socket_ = Socket::create( domain, SOCK_STREAM, IPPROTO_TCP );;
-  if ( socket_ != -1 )
-#endif
-    return new TCPSocket( domain, socket_ );
-  else
-    return NULL;
-}
-
-bool YIELD::ipc::TCPSocket::listen()
-{
-  int flag = 1;
-  setsockopt
-  (
-    *this,
-    IPPROTO_TCP,
-    TCP_NODELAY,
-    reinterpret_cast<char*>( &flag ),
-    sizeof( int )
-  );
-
-  flag = 1;
-  setsockopt
-  (
-    *this,
-    SOL_SOCKET,
-    SO_KEEPALIVE,
-    reinterpret_cast<char*>( &flag ),
-    sizeof( int )
-  );
-
-  linger lingeropt;
-  lingeropt.l_onoff = 1;
-  lingeropt.l_linger = 0;
-  setsockopt
-  (
-    *this,
-    SOL_SOCKET,
-    SO_LINGER,
-    reinterpret_cast<char*>( &lingeropt ),
-    static_cast<int>( sizeof( lingeropt ) )
-  );
-
-  return ::listen( *this, SOMAXCONN ) != -1;
-}
-
-bool YIELD::ipc::TCPSocket::shutdown()
-{
-#ifdef _WIN32
-  if ( ::shutdown( *this, SD_BOTH ) == 0 )
-#else
-  if ( ::shutdown( *this, SHUT_RDWR ) != -1 )
-#endif
-    return YIELD::ipc::Socket::shutdown();
-  else
-    return false;
-}
-
-ssize_t
-YIELD::ipc::TCPSocket::writev
-(
-  const struct iovec* buffers,
-  uint32_t buffers_count
-)
-{
-  size_t buffers_len = 0;
-  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-    buffers_len += buffers[buffer_i].iov_len;
-
-  ssize_t ret = 0;
-
-  for ( ;; )
-  {
-    // Recalculate these every time we do a socket writev
-    // Less efficient than other ways but it reduces the
-    // number of (rarely-tested) branches
-    uint32_t wrote_until_buffer_i = 0;
-    size_t wrote_until_buffer_i_pos = 0;
-
-    if ( partial_write_len > 0 )
-    {
-      size_t temp_partial_write_len = partial_write_len;
-      for ( ;; )
-      {
-        if ( buffers[wrote_until_buffer_i].iov_len < temp_partial_write_len )
-        {
-          // The buffer and part of the next was already written
-          temp_partial_write_len -= buffers[wrote_until_buffer_i].iov_len;
-          wrote_until_buffer_i++;
-        }
-        else if
-        (
-          buffers[wrote_until_buffer_i].iov_len == temp_partial_write_len
-        )
-        {
-          // The buffer was already written, but none of the next
-          temp_partial_write_len = 0;
-          wrote_until_buffer_i++;
-          break;
-        }
-        else // Part of the buffer was written
-        {
-          wrote_until_buffer_i_pos = temp_partial_write_len;
-          break;
-        }
-      }
-    }
-
-    ssize_t Socket_writev_ret;
-    if ( wrote_until_buffer_i_pos == 0 ) // Writing whole buffers
-    {
-      Socket_writev_ret
-        = Socket::writev
-          (
-            &buffers[wrote_until_buffer_i],
-            buffers_count - wrote_until_buffer_i
-          );
-    }
-    else // Writing part of a buffer
-    {
-      struct iovec temp_iovec;
-
-      temp_iovec.iov_base
-        = static_cast<char*>( buffers[wrote_until_buffer_i].iov_base )
-          + wrote_until_buffer_i_pos;
-
-      temp_iovec.iov_len = buffers[wrote_until_buffer_i].iov_len
-                           - wrote_until_buffer_i_pos;
-
-      Socket_writev_ret = Socket::writev( &temp_iovec, 1 );
-    }
-
-    if ( Socket_writev_ret > 0 )
-    {
-      ret += Socket_writev_ret;
-      partial_write_len += Socket_writev_ret;
-      if ( partial_write_len == buffers_len )
-      {
-        partial_write_len = 0;
-        return ret;
-      }
-      else
-        continue; // A large write filled the socket buffer,
-                  // try to write again until we finish or get an error
-    }
-    else
-      return Socket_writev_ret;
-  }
-}
 
 
 // tracing_socket.cpp
@@ -16240,10 +12785,10 @@ YIELD::ipc::TCPSocket::writev
 #endif
 
 
-YIELD::ipc::TracingSocket::TracingSocket
+TracingSocket::TracingSocket
 (
-  auto_Socket underlying_socket,
-  YIELD::platform::auto_Log log
+  YIELD::platform::auto_Log log,
+  YIELD::platform::auto_Socket underlying_socket
 )
   : Socket
     (
@@ -16252,92 +12797,67 @@ YIELD::ipc::TracingSocket::TracingSocket
       underlying_socket->get_protocol(),
       *underlying_socket
     ),
-    underlying_socket( underlying_socket ), log( log )
+    log( log ),
+    underlying_socket( underlying_socket )
 { }
 
-void
-YIELD::ipc::TracingSocket::aio_connect
-(
-  auto_AIOConnectControlBlock aio_connect_control_block
-)
-{
-  aio_connect_nbio( aio_connect_control_block );
-}
-
-void
-YIELD::ipc::TracingSocket::aio_read
-(
-  auto_AIOReadControlBlock aio_read_control_block
-)
-{
-  aio_read_nbio( aio_read_control_block );
-}
-
-void
-YIELD::ipc::TracingSocket::aio_write
-(
-  auto_AIOWriteControlBlock aio_write_control_block
-)
-{
-  aio_write_nbio( aio_write_control_block );
-}
-
-bool YIELD::ipc::TracingSocket::bind( auto_SocketAddress to_sockaddr )
+bool TracingSocket::bind( const YIELD::platform::SocketAddress& to_sockaddr )
 {
   return underlying_socket->bind( to_sockaddr );
 }
 
-bool YIELD::ipc::TracingSocket::close()
+bool TracingSocket::close()
 {
   return underlying_socket->close();
 }
 
-bool YIELD::ipc::TracingSocket::connect( auto_SocketAddress to_sockaddr )
+bool TracingSocket::connect( const YIELD::platform::SocketAddress& peername )
 {
   std::string to_hostname;
-  if ( to_sockaddr->getnameinfo( to_hostname ) )
+  if ( peername.getnameinfo( to_hostname ) )
   {
-    log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+    log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
       "yield::ipc::TracingSocket: connecting socket #" <<
       static_cast<uint64_t>( *this ) <<
       " to " << to_hostname << ".";
   }
-  return underlying_socket->connect( to_sockaddr );
+
+  return underlying_socket->connect( peername );
 }
 
-bool YIELD::ipc::TracingSocket::get_blocking_mode() const
+bool TracingSocket::get_blocking_mode() const
 {
   return underlying_socket->get_blocking_mode();
 }
 
-YIELD::ipc::auto_SocketAddress YIELD::ipc::TracingSocket::getpeername()
+YIELD::platform::auto_SocketAddress TracingSocket::getpeername()
 {
   return underlying_socket->getpeername();
 }
 
-YIELD::ipc::auto_SocketAddress YIELD::ipc::TracingSocket::getsockname()
+YIELD::platform::auto_SocketAddress TracingSocket::getsockname()
 {
   return underlying_socket->getsockname();
 }
 
-ssize_t YIELD::ipc::TracingSocket::read( void* buffer, size_t buffer_len )
+ssize_t TracingSocket::recv( void* buffer, size_t buffer_len, int flags )
 {
-  log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+  log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
     "yield::ipc::TracingSocket: trying to read " << buffer_len <<
     " bytes from socket #" << static_cast<uint64_t>( *this ) << ".";
 
-  ssize_t read_ret = underlying_socket->read( buffer, buffer_len );
+  ssize_t recv_ret = underlying_socket->recv( buffer, buffer_len, flags );
 
-  if ( read_ret > 0 )
+  if ( recv_ret > 0 )
   {
-    log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-      "yield::ipc::TracingSocket: read " << read_ret <<
+    log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket: read " << recv_ret <<
       " bytes from socket #" << static_cast<uint64_t>( *this ) << ".";
 
     log->write
     (
       buffer,
-      static_cast<size_t>( read_ret ),
+      static_cast<size_t>( recv_ret ),
       YIELD::platform::Log::LOG_DEBUG
     );
 
@@ -16345,91 +12865,45 @@ ssize_t YIELD::ipc::TracingSocket::read( void* buffer, size_t buffer_len )
   }
   else if
   (
-    read_ret == 0 ||
+    recv_ret == 0 ||
     ( !underlying_socket->want_read() && !underlying_socket->want_write() )
   )
-    log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+    log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
       "yield::ipc::TracingSocket: lost connection while trying to read " <<
       "socket #" << static_cast<uint64_t>( *this ) << ".";
 
-  return read_ret;
-}
-
-bool YIELD::ipc::TracingSocket::set_blocking_mode( bool blocking )
-{
-  return underlying_socket->set_blocking_mode( blocking );
-}
-
-
-bool YIELD::ipc::TracingSocket::want_connect() const
-{
-  bool want_connect_ret = underlying_socket->want_connect();
-
-  if ( want_connect_ret )
-  {
-    log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-      "yield::ipc::TracingSocket: would block on connect on socket #" <<
-      static_cast<uint64_t>( *this ) << ".";
-  }
-
-  return want_connect_ret;
-}
-
-bool YIELD::ipc::TracingSocket::want_read() const
-{
-  bool want_read_ret = underlying_socket->want_read();
-
-  if ( want_read_ret )
-  {
-    log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-      "yield::ipc::TracingSocket: would block on read on socket #" <<
-      static_cast<uint64_t>( *this ) << ".";
-  }
-
-  return want_read_ret;
-}
-
-bool YIELD::ipc::TracingSocket::want_write() const
-{
-  bool want_write_ret = underlying_socket->want_write();
-
-  if ( want_write_ret )
-  {
-    log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-      "yield::ipc::TracingSocket: would block on write on socket #" <<
-      static_cast<uint64_t>( *this ) << ".";
-  }
-
-  return want_write_ret;
+  return recv_ret;
 }
 
 ssize_t
-YIELD::ipc::TracingSocket::writev
+TracingSocket::sendmsg
 (
   const struct iovec* buffers,
-  uint32_t buffers_count
+  uint32_t buffers_count,
+  int flags
 )
 {
   size_t buffers_len = 0;
   for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
     buffers_len += buffers[buffer_i].iov_len;
 
-  log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+  log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
     "yield::ipc::TracingSocket: trying to write " << buffers_len <<
     " bytes to socket #" << static_cast<uint64_t>( *this ) << ".";
 
-  ssize_t writev_ret = underlying_socket->writev( buffers, buffers_count );
+  ssize_t sendmsg_ret
+    = underlying_socket->sendmsg( buffers, buffers_count, flags );
 
-  if ( writev_ret >= 0 )
+  if ( sendmsg_ret >= 0 )
   {
-    size_t temp_writev_ret = static_cast<size_t>( writev_ret );
-    log->getStream( YIELD::platform::Log::LOG_INFO ) <<
-      "yield::ipc::TracingSocket: wrote " << writev_ret <<
+    size_t temp_sendmsg_ret = static_cast<size_t>( sendmsg_ret );
+    log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket: wrote " << sendmsg_ret <<
       " bytes to socket #" << static_cast<uint64_t>( *this ) << ".";
 
     for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
     {
-      if ( buffers[buffer_i].iov_len <= temp_writev_ret )
+      if ( buffers[buffer_i].iov_len <= temp_sendmsg_ret )
       {
         log->write
         (
@@ -16438,20 +12912,21 @@ YIELD::ipc::TracingSocket::writev
           YIELD::platform::Log::LOG_DEBUG
         );
 
-        temp_writev_ret -= buffers[buffer_i].iov_len;
+        temp_sendmsg_ret -= buffers[buffer_i].iov_len;
       }
       else
       {
         log->write
         (
           buffers[buffer_i].iov_base,
-          temp_writev_ret,
+          temp_sendmsg_ret,
           YIELD::platform::Log::LOG_DEBUG
         );
 
         break;
       }
     }
+
     log->write( "\n", YIELD::platform::Log::LOG_DEBUG );
   }
   else if
@@ -16460,247 +12935,59 @@ YIELD::ipc::TracingSocket::writev
     !underlying_socket->want_write()
   )
   {
-    log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
+    log->get_stream( YIELD::platform::Log::LOG_DEBUG ) <<
       "yield::ipc::TracingSocket: lost connection while trying to write to " <<
       "socket #" <<  static_cast<uint64_t>( *this ) << ".";
   }
 
-  return writev_ret;
+  return sendmsg_ret;
 }
 
-
-// udp_socket.cpp
-#if defined(_WIN32)
-#pragma warning( 4 : 4365 )
-#pragma warning( push )
-#pragma warning( disable: 4995 )
-#include <ws2tcpip.h>
-#pragma warning( pop )
-#else
-#include <netinet/in.h> // For the IPPROTO_* constants
-#include <sys/socket.h>
-#endif
-
-
-YIELD::ipc::Socket::AIOControlBlock::ExecuteStatus
-YIELD::ipc::UDPSocket::AIORecvFromControlBlock::execute()
+bool TracingSocket::set_blocking_mode( bool blocking )
 {
-  ssize_t recvfrom_ret =
-    static_cast<UDPSocket*>( get_socket().get() )->
-      recvfrom( buffer, *peername );
-
-  if ( recvfrom_ret > 0 )
-    onCompletion( static_cast<size_t>( recvfrom_ret ) );
-  else if ( recvfrom_ret == 0 )
-    DebugBreak();
-  else if ( get_socket()->want_read() )
-    return EXECUTE_STATUS_WANT_READ;
-  else
-#ifdef _WIN32
-    onError( WSAGetLastError() );
-#else
-    onError( errno );
-#endif
-
-  return EXECUTE_STATUS_DONE;
+  return underlying_socket->set_blocking_mode( blocking );
 }
 
-
-YIELD::ipc::UDPSocket::UDPSocket
-(
-  int domain,
-#ifdef _WIN32
-  SOCKET socket_
-#else
-  int socket_
-#endif
-)
-  : Socket( domain, SOCK_DGRAM, IPPROTO_UDP, socket_ )
-{ }
-
-void
-YIELD::ipc::UDPSocket::aio_recvfrom
-(
-  auto_AIORecvFromControlBlock aio_recvfrom_control_block
-)
+bool TracingSocket::want_connect() const
 {
-#ifdef _WIN32
-  aio_recvfrom_iocp( aio_recvfrom_control_block );
-#else
-  aio_recvfrom_nbio( aio_recvfrom_control_block );
-#endif
-}
+  bool want_connect_ret = underlying_socket->want_connect();
 
-#ifdef _WIN32
-void
-YIELD::ipc::UDPSocket::aio_recvfrom_iocp
-(
-  auto_AIORecvFromControlBlock aio_recvfrom_control_block
-)
-{
-  aio_recvfrom_control_block->set_socket( *this );
-  get_aio_queue().associate( *this );
-
-  yidl::runtime::auto_Buffer buffer( aio_recvfrom_control_block->get_buffer() );
-  WSABUF wsabuf[1];
-  wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) );
-  wsabuf[0].len = static_cast<ULONG>( buffer->capacity() - buffer->size() );
-  DWORD dwNumberOfBytesReceived, dwFlags = 0;
-  socklen_t peername_len = sizeof( *aio_recvfrom_control_block->peername );
-  if
-  (
-    WSARecvFrom
-    (
-      *this,
-      wsabuf,
-      1,
-      &dwNumberOfBytesReceived,
-      &dwFlags,
-      reinterpret_cast<struct sockaddr*>
-      (
-        aio_recvfrom_control_block->peername
-      ),
-      &peername_len,
-      *aio_recvfrom_control_block,
-      NULL
-    ) == 0
-    ||
-    WSAGetLastError() == WSA_IO_PENDING
-  )
-       aio_recvfrom_control_block.release();
-  else
-    aio_recvfrom_control_block->onError( WSAGetLastError() );
-}
-#endif
-
-void
-YIELD::ipc::UDPSocket::aio_recvfrom_nbio
-(
-  auto_AIORecvFromControlBlock aio_recvfrom_control_block
-)
-{
-  aio_recvfrom_control_block->set_socket( *this );
-  set_blocking_mode( false );
-  get_aio_queue().submit( aio_recvfrom_control_block.release() );
-}
-
-YIELD::ipc::auto_UDPSocket YIELD::ipc::UDPSocket::create()
-{
-  int domain = AF_INET6;
-#ifdef _WIN32
-  SOCKET socket_ = Socket::create( domain, SOCK_DGRAM, IPPROTO_UDP );
-  if ( socket_ != INVALID_SOCKET )
-#else
-  int socket_ = Socket::create( domain, SOCK_DGRAM, IPPROTO_UDP );
-  if ( socket_ != -1 )
-#endif
-    return new UDPSocket( domain, socket_ );
-  else
+  if ( want_connect_ret )
   {
-    domain = AF_INET;
-    socket_ = Socket::create( domain, SOCK_DGRAM, IPPROTO_UDP );
-    if ( socket_ != -1 )
-      return new UDPSocket( domain, socket_ );
-    else
-      return NULL;
+    log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket: would block on connect on socket #" <<
+      static_cast<uint64_t>( *this ) << ".";
   }
+
+  return want_connect_ret;
 }
 
-ssize_t
-YIELD::ipc::UDPSocket::recvfrom
-(
-  yidl::runtime::auto_Buffer buffer,
-  struct sockaddr_storage& peername
-)
+bool TracingSocket::want_read() const
 {
-  ssize_t recvfrom_ret
-    = recvfrom
-      (
-        static_cast<char*>( *buffer ) + buffer->size(),
-        buffer->capacity() - buffer->size(),
-        peername
-      );
+  bool want_recv_ret = underlying_socket->want_read();
 
-  if ( recvfrom_ret > 0 )
-    buffer->put( NULL, static_cast<size_t>( recvfrom_ret ) );
-
-  return recvfrom_ret;
-}
-
-ssize_t
-YIELD::ipc::UDPSocket::recvfrom
-(
-  void* buffer,
-  size_t buffer_len,
-  struct sockaddr_storage& peername
-)
-{
-  socklen_t peername_len = sizeof( peername );
-  return ::recvfrom
-         (
-           *this,
-           static_cast<char*>( buffer ),
-           buffer_len,
-           0,
-           reinterpret_cast<struct sockaddr*>( &peername ),
-           &peername_len
-         );
-}
-
-ssize_t
-YIELD::ipc::UDPSocket::sendto
-(
-  yidl::runtime::auto_Buffer buffer,
-  auto_SocketAddress peername
-)
-{
-  return sendto( static_cast<void*>( *buffer ), buffer->size(), peername );
-}
-
-ssize_t
-YIELD::ipc::UDPSocket::sendto
-(
-  const void* buffer,
-  size_t buffer_len,
-  auto_SocketAddress _peername
-)
-{
-  struct sockaddr* peername; socklen_t peername_len;
-  if ( _peername->as_struct_sockaddr( get_domain(), peername, peername_len ) )
+  if ( want_recv_ret )
   {
-    return ::sendto
-           (
-             *this,
-             static_cast<const char*>( buffer ),
-             buffer_len,
-             0,
-             peername,
-             peername_len
-           );
+    log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket: would block on read on socket #" <<
+      static_cast<uint64_t>( *this ) << ".";
   }
-  else
-    return -1;
+
+  return want_recv_ret;
 }
 
-
-YIELD::ipc::UDPSocket::AIORecvFromControlBlock::AIORecvFromControlBlock
-(
-  yidl::runtime::auto_Buffer buffer
-)
-: buffer( buffer )
+bool TracingSocket::want_write() const
 {
-  peername = new sockaddr_storage;
-}
+  bool want_write_ret = underlying_socket->want_write();
 
-YIELD::ipc::UDPSocket::AIORecvFromControlBlock::~AIORecvFromControlBlock()
-{
-  delete peername;
-}
+  if ( want_write_ret )
+  {
+    log->get_stream( YIELD::platform::Log::LOG_INFO ) <<
+      "yield::ipc::TracingSocket: would block on write on socket #" <<
+      static_cast<uint64_t>( *this ) << ".";
+  }
 
-YIELD::ipc::auto_SocketAddress
-YIELD::ipc::UDPSocket::AIORecvFromControlBlock::get_peername() const
-{
-  return new SocketAddress( *peername );
+  return want_write_ret;
 }
 
 
@@ -16710,26 +12997,26 @@ extern "C"
 };
 
 
-YIELD::ipc::URI::URI( const char* uri )
+URI::URI( const char* uri )
 {
   init( uri, strnlen( uri, UINT16_MAX ) );
 }
 
-YIELD::ipc::URI::URI( const std::string& uri )
+URI::URI( const std::string& uri )
 {
   init( uri.c_str(), uri.size() );
 }
 
-YIELD::ipc::URI::URI( const char* uri, size_t uri_len )
+URI::URI( const char* uri, size_t uri_len )
 {
   init( uri, uri_len );
 }
 
-YIELD::ipc::URI::URI( const char* scheme, const char* host, uint16_t port )
+URI::URI( const char* scheme, const char* host, uint16_t port )
   : scheme( scheme ), host( host ), port( port ), resource( "/" )
 { }
 
-YIELD::ipc::URI::URI
+URI::URI
 (
   const char* scheme,
   const char* host,
@@ -16739,22 +13026,22 @@ YIELD::ipc::URI::URI
   : scheme( scheme ), host( host ), port( port ), resource( resource )
 { }
 
-YIELD::ipc::URI::URI( const URI& other )
+URI::URI( const URI& other )
 : scheme( other.scheme ), user( other.user ), password( other.password ),
   host( other.host ), port( other.port ), resource( other.resource )
 { }
 
-YIELD::ipc::auto_URI YIELD::ipc::URI::parse( const char* uri )
+auto_URI URI::parse( const char* uri )
 {
   return parse( uri, strnlen( uri, UINT16_MAX ) );
 }
 
-YIELD::ipc::auto_URI YIELD::ipc::URI::parse( const std::string& uri )
+auto_URI URI::parse( const std::string& uri )
 {
   return parse( uri.c_str(), uri.size() );
 }
 
-YIELD::ipc::auto_URI YIELD::ipc::URI::parse( const char* uri, size_t uri_len )
+auto_URI URI::parse( const char* uri, size_t uri_len )
 {
   UriParserStateA parser_state;
   UriUriA parsed_uri;
@@ -16772,7 +13059,7 @@ YIELD::ipc::auto_URI YIELD::ipc::URI::parse( const char* uri, size_t uri_len )
   }
 }
 
-void YIELD::ipc::URI::init( const char* uri, size_t uri_len )
+void URI::init( const char* uri, size_t uri_len )
 {
   UriParserStateA parser_state;
   UriUriA parsed_uri;
@@ -16789,7 +13076,7 @@ void YIELD::ipc::URI::init( const char* uri, size_t uri_len )
   }
 }
 
-void YIELD::ipc::URI::init( UriUriA& parsed_uri )
+void URI::init( UriUriA& parsed_uri )
 {
   scheme.assign
   (
@@ -16894,7 +13181,7 @@ void YIELD::ipc::URI::init( UriUriA& parsed_uri )
 }
 
 std::string
-YIELD::ipc::URI::get_query_value
+URI::get_query_value
 (
   const std::string& key,
   const char* default_query_value
@@ -16910,7 +13197,7 @@ YIELD::ipc::URI::get_query_value
 }
 
 std::multimap<std::string, std::string>::const_iterator
-YIELD::ipc::URI::get_query_values( const std::string& key ) const
+URI::get_query_values( const std::string& key ) const
 {
   return query.find( key );
 }
@@ -16918,7 +13205,11 @@ YIELD::ipc::URI::get_query_values( const std::string& key ) const
 
 // uuid.cpp
 #if defined(_WIN32)
-#include <Rpc.h>
+namespace win32_Rpc_h
+{
+  #define RPC_NO_WINDOWS_H
+  #include <Rpc.h>
+};
 #pragma comment( lib, "Rpcrt4.lib" )
 #endif
 
@@ -16931,11 +13222,11 @@ YIELD::ipc::URI::get_query_values( const std::string& key ) const
 #endif
 
 
-YIELD::ipc::UUID::UUID()
+UUID::UUID()
 {
 #if defined(_WIN32)
-  win32_uuid = new ::UUID;
-  UuidCreate( static_cast<::UUID*>( win32_uuid ) );
+  win32_uuid = new win32_Rpc_h::UUID;
+  win32_Rpc_h::UuidCreate( static_cast<win32_Rpc_h::UUID*>( win32_uuid ) );
 #elif defined(YIELD_IPC_HAVE_LIBUUID)
   uuid_generate( libuuid_uuid );
 #else
@@ -16965,14 +13256,17 @@ YIELD::ipc::UUID::UUID()
 #endif
 }
 
-YIELD::ipc::UUID::UUID( const std::string& from_string )
+UUID::UUID( const std::string& from_string )
 {
 #if defined(_WIN32)
-  win32_uuid = new ::UUID;
-  UuidFromStringA
+  win32_uuid = new win32_Rpc_h::UUID;
+  win32_Rpc_h::UuidFromStringA
   (
-    reinterpret_cast<RPC_CSTR>( const_cast<char*>( from_string.c_str() ) ),
-    static_cast<::UUID*>( win32_uuid )
+    reinterpret_cast<win32_Rpc_h::RPC_CSTR>
+    (
+      const_cast<char*>( from_string.c_str() )
+    ),
+    static_cast<win32_Rpc_h::UUID*>( win32_uuid )
   );
 #elif defined(YIELD_IPC_HAVE_LIBUUID)
   uuid_parse( from_string.c_str(), libuuid_uuid );
@@ -16981,17 +13275,22 @@ YIELD::ipc::UUID::UUID( const std::string& from_string )
 #endif
 }
 
-YIELD::ipc::UUID::~UUID()
+UUID::~UUID()
 {
 #if defined(_WIN32)
-  delete static_cast<::UUID*>( win32_uuid );
+  delete static_cast<win32_Rpc_h::UUID*>( win32_uuid );
 #endif
 }
 
-bool YIELD::ipc::UUID::operator==( const YIELD::ipc::UUID& other ) const
+bool UUID::operator==( const UUID& other ) const
 {
 #ifdef _WIN32
-  return memcmp( win32_uuid, other.win32_uuid, sizeof( ::UUID ) ) == 0;
+  return memcmp
+         (
+           win32_uuid,
+           other.win32_uuid,
+           sizeof( win32_Rpc_h::UUID )
+         ) == 0;
 #elif defined(YIELD_IPC_HAVE_LIBUUID)
   return uuid_compare( libuuid_uuid, other.libuuid_uuid ) == 0;
 #else
@@ -16999,13 +13298,17 @@ bool YIELD::ipc::UUID::operator==( const YIELD::ipc::UUID& other ) const
 #endif
 }
 
-YIELD::ipc::UUID::operator std::string() const
+UUID::operator std::string() const
 {
 #if defined(_WIN32)
-  RPC_CSTR temp_to_string;
-  UuidToStringA( static_cast<::UUID*>( win32_uuid ), &temp_to_string );
+  win32_Rpc_h::RPC_CSTR temp_to_string;
+  win32_Rpc_h::UuidToStringA
+  (
+    static_cast<win32_Rpc_h::UUID*>( win32_uuid ),
+    &temp_to_string
+  );
   std::string to_string( reinterpret_cast<char*>( temp_to_string ) );
-  RpcStringFreeA( &temp_to_string );
+  win32_Rpc_h::RpcStringFreeA( &temp_to_string );
   return to_string;
 #elif defined(YIELD_IPC_HAVE_LIBUUID)
   char out[37];

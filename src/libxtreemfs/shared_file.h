@@ -53,9 +53,6 @@ namespace xtreemfs
       org::xtreemfs::interfaces::FileCredentials& file_credentials
     );
 
-    // yidl::runtime::Object
-    YIDL_RUNTIME_OBJECT_PROTOTYPES( SharedFile, 0 );
-
     // YIELD::platform::File
     yidl::runtime::auto_Object<YIELD::platform::Stat> getattr();
 

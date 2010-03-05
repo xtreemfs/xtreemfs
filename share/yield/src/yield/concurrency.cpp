@@ -29,7 +29,7 @@ public:
 
     while ( is_running )
     {
-      event_queue->enqueue( stage_shutdown_event->incRef() );
+      event_queue->enqueue( stage_shutdown_event->inc_ref() );
       nanosleep( 5.0 );
     }
   }
@@ -108,61 +108,8 @@ ColorStageGroup::~ColorStageGroup()
   )
   {
     ( *thread_i )->stop();
-    Thread::decRef( **thread_i );
+    Thread::dec_ref( **thread_i );
   }
-}
-
-
-// event_handler.cpp
-EventHandler::EventHandler()
-  : redirect_event_target( NULL )
-{ }
-
-void EventHandler::handleUnknownEvent( Event& ev )
-{
-  switch ( ev.get_type_id() )
-  {
-    case YIDL_RUNTIME_OBJECT_TYPE_ID( Stage::StartupEvent ):
-    case YIDL_RUNTIME_OBJECT_TYPE_ID( Stage::ShutdownEvent ):
-    {
-      Event::decRef( ev );
-    }
-    break;
-
-    default:
-    {
-      std::cerr << get_type_name() << " dropping unknown event: " <<
-                   ev.get_type_name() << std::endl;
-
-      Event::decRef( ev );
-    }
-    break;
-  }
-}
-
-void EventHandler::send( Event& ev )
-{
-  if ( redirect_event_target != NULL )
-    redirect_event_target->send( ev );
-  else if ( isThreadSafe() )
-    handleEvent( ev );
-  else
-  {
-    handleEvent_lock.acquire();
-    handleEvent( ev );
-    handleEvent_lock.release();
-  }
-}
-
-void EventHandler::set_redirect_event_target
-(
-  EventTarget* redirect_event_target
-)
-{
-  if ( this->redirect_event_target == NULL )
-    this->redirect_event_target = redirect_event_target;
-  else
-    DebugBreak();
 }
 
 
@@ -181,7 +128,7 @@ EventTargetMux::~EventTargetMux()
     event_target_i < event_targets_len;
     event_target_i++
   )
-    EventTarget::decRef( *event_targets[event_target_i] );
+    EventTarget::dec_ref( *event_targets[event_target_i] );
 
   delete [] event_targets;
 }
@@ -276,10 +223,10 @@ MG1VisitPolicy::MG1VisitPolicy( Stage** stages ) : VisitPolicy( stages )
 
 bool MG1VisitPolicy::populatePollingTable()
 {
-  double rho_sqrt[YIELD_STAGES_PER_GROUP_MAX], rho_sqrt_sum = 0;
+  double rho_sqrt[YIELD_CONCURRENCY_STAGES_PER_GROUP_MAX], rho_sqrt_sum = 0;
   memset( rho_sqrt, 0, sizeof( rho_sqrt ) );
 
-  for ( uint8_t s_i = 0; s_i < YIELD_STAGES_PER_GROUP_MAX; s_i++ )
+  for ( uint8_t s_i = 0; s_i < YIELD_CONCURRENCY_STAGES_PER_GROUP_MAX; s_i++ )
   {
     if ( stages[s_i] )
     {
@@ -299,10 +246,10 @@ bool MG1VisitPolicy::populatePollingTable()
     // frequency[i] = sqrt( rho[i] * ( 1.0 - rho[i] ) ) /
     //                ( sum( sqrt( rho[j] * ( 1.0 - rho[j] ) ) for all j )
     // occurrences[i] = frequency[i] * YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE
-    uint32_t m[YIELD_STAGES_PER_GROUP_MAX], m_count = 0, m_total = 0;
+    uint32_t m[YIELD_CONCURRENCY_STAGES_PER_GROUP_MAX], m_count = 0, m_total = 0;
     uint32_t max_m = 0; uint8_t fill_s_i;
 
-    for ( uint8_t s_i = 0; s_i < YIELD_STAGES_PER_GROUP_MAX; s_i++ )
+    for ( uint8_t s_i = 0; s_i < YIELD_CONCURRENCY_STAGES_PER_GROUP_MAX; s_i++ )
     {
       if ( rho_sqrt[s_i] > 0 )
       {
@@ -340,7 +287,7 @@ bool MG1VisitPolicy::populatePollingTable()
             YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE / m_count
           );
 
-      for ( uint8_t s_i = 0; s_i < YIELD_STAGES_PER_GROUP_MAX; s_i++ )
+      for ( uint8_t s_i = 0; s_i < YIELD_CONCURRENCY_STAGES_PER_GROUP_MAX; s_i++ )
       {
         if ( rho_sqrt[s_i] > 0 )
         {
@@ -355,7 +302,7 @@ bool MG1VisitPolicy::populatePollingTable()
     memset( polling_table, fill_s_i, sizeof( polling_table ) );
 
     uint32_t m_i = 0, m_i_end;
-    for ( uint8_t s_i = 0; s_i < YIELD_STAGES_PER_GROUP_MAX; s_i++ )
+    for ( uint8_t s_i = 0; s_i < YIELD_CONCURRENCY_STAGES_PER_GROUP_MAX; s_i++ )
     {
       for ( m_i_end = m_i + m[s_i]; m_i < m_i_end; m_i++ )
       {
@@ -369,7 +316,7 @@ bool MG1VisitPolicy::populatePollingTable()
 #ifdef _DEBUG
     //// Make sure every stage with a nonzero rho is represented
     //// in the polling table
-    //for ( uint8_t s_i = 0; s_i < YIELD_STAGES_PER_GROUP_MAX; s_i++ )
+    //for ( uint8_t s_i = 0; s_i < YIELD_CONCURRENCY_STAGES_PER_GROUP_MAX; s_i++ )
     //{
     //      if ( rho_sqrt[s_i] > 0 )
     //      {
@@ -518,7 +465,7 @@ PollingStageGroup<VisitPolicyType>::~PollingStageGroup()
   )
   {
     ( *thread_i )->stop();
-    Thread::decRef( **thread_i );
+    Thread::dec_ref( **thread_i );
   }
 }
 
@@ -568,7 +515,7 @@ public:
 
     for ( ;; )
     {
-      stage->send( stage_shutdown_event->incRef() );
+      stage->send( stage_shutdown_event->inc_ref() );
       if ( is_running )
         nanosleep( 0.5 );
       else
@@ -596,9 +543,6 @@ public:
       YIELD::platform::Thread::yield();
   }
 
-  // yidl::runtime::Object
-  YIDL_RUNTIME_OBJECT_PROTOTYPES( SEDAStageGroup::Thread, 0 );
-
 private:
   ~Thread() { }
 
@@ -624,7 +568,7 @@ SEDAStageGroup::~SEDAStageGroup()
     thread_i != threads.end();
     thread_i++
   )
-    Thread::decRef( **thread_i );
+    Thread::dec_ref( **thread_i );
 }
 
 void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
@@ -732,18 +676,17 @@ StageGroup::StageGroup()
 
 StageGroup::~StageGroup()
 {
-  for ( uint8_t stage_i = 0; stage_i < YIELD_STAGES_PER_GROUP_MAX; stage_i++ )
-    Stage::decRef( stages[stage_i] );
+  for ( uint8_t stage_i = 0; stage_i < YIELD_CONCURRENCY_STAGES_PER_GROUP_MAX; stage_i++ )
+    Stage::dec_ref( stages[stage_i] );
 }
 
 void StageGroup::addStage( auto_Stage stage )
 {
   unsigned char stage_i;
-  for ( stage_i = 0; stage_i < YIELD_STAGES_PER_GROUP_MAX; stage_i++ )
+  for ( stage_i = 0; stage_i < YIELD_CONCURRENCY_STAGES_PER_GROUP_MAX; stage_i++ )
   {
     if ( stages[stage_i] == NULL )
     {
-      stage->get_event_handler()->set_redirect_event_target( stage.get() );
       stage->set_stage_id( stage_i );
       stages[stage_i] = stage.release();
       return;

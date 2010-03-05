@@ -59,11 +59,6 @@ namespace YIELD
       virtual ~DirectoryTestCase()
       { }
 
-      DirectoryTestCase& operator=( const DirectoryTestCase& ) 
-      { 
-        return *this; 
-      }
-
       void setUp()
       {
         tearDown();
@@ -73,11 +68,11 @@ namespace YIELD
 
         if 
         ( 
-           !volume->touch
+           volume->creat
            ( 
              YIELD::platform::Path( YIELD_PLATFORM_DIRECTORY_TEST_DIR_NAME )
              / YIELD_PLATFORM_FILE_TEST_FILE_NAME 
-           )
+           ) != NULL
          )
           throw Exception();
 

@@ -45,7 +45,8 @@ except ImportError:
     sys.path.append( os.path.join( YIDL_DIR_PATH, "src", "py" ) )
 
 from yidl.compiler.idl_parser import parseIDL
-from yidl.generators import generate_cpp, generate_proj, generate_SConscript, generate_vcproj
+from yidl.generators import generate_proj, generate_SConscript, generate_vcproj
+from yidl.generators import generate_yield_cpp
 from yidl.utilities import copy_file, format_src, pad, write_file 
 
 
@@ -85,13 +86,13 @@ for source_file_path, target_file_path in copy_file_paths.iteritems():
 for interface_idl_file_name in os.listdir( INTERFACES_DIR_PATH ):
     if interface_idl_file_name.endswith( ".idl" ):
 		if interface_idl_file_name == "nettest_interface.idl":
-			generate_cpp( 
+			generate_yield_cpp( 
               os.path.join( INTERFACES_DIR_PATH, interface_idl_file_name ),
 			  os.path.join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs", "nettest_interface.h" ),
               force=options.force 
             )
 		else:
-			generate_cpp( 
+			generate_yield_cpp( 
 				os.path.join( INTERFACES_DIR_PATH, interface_idl_file_name ), 
 				os.path.join( XTREEMFS_DIR_PATH, "include", "xtreemfs", "interfaces", os.path.splitext( interface_idl_file_name )[0] + ".h" ),
                 force=options.force
