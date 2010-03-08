@@ -51,15 +51,15 @@ namespace nettest_xtreemfs
     static yidl::runtime::auto_Object<NettestProxy>
     create
     (
-      const YIELD::ipc::URI& absolute_uri,
+      const yield::ipc::URI& absolute_uri,
       uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
       uint32_t flags = 0,
-      YIELD::platform::auto_Log log = NULL,
-      const YIELD::platform::Time& operation_timeout =
+      yield::platform::auto_Log log = NULL,
+      const yield::platform::Time& operation_timeout =
         OPERATION_TIMEOUT_DEFAULT,
       uint8_t reconnect_tries_max =
         RECONNECT_TRIES_MAX_DEFAULT,
-      YIELD::ipc::auto_SSLContext ssl_context = NULL
+      yield::ipc::auto_SSLContext ssl_context = NULL
     )
     {
       if ( absolute_uri.get_port() != 0 )
@@ -70,13 +70,13 @@ namespace nettest_xtreemfs
           flags,
           log,
           operation_timeout,
-          YIELD::ipc::SocketAddress::create( absolute_uri ),
+          yield::ipc::SocketAddress::create( absolute_uri ),
           reconnect_tries_max,
           createSocketFactory( absolute_uri, ssl_context )
         );
       }
       else
-        throw YIELD::platform::Exception( "must specify port in URI" );
+        throw yield::platform::Exception( "must specify port in URI" );
 
     }
 
@@ -93,11 +93,11 @@ namespace nettest_xtreemfs
     (
       uint16_t concurrency_level,
       uint32_t flags,
-      YIELD::platform::auto_Log log,
-      const YIELD::platform::Time& operation_timeout,
-      YIELD::ipc::auto_SocketAddress peername,
+      yield::platform::auto_Log log,
+      const yield::platform::Time& operation_timeout,
+      yield::ipc::auto_SocketAddress peername,
       uint8_t reconnect_tries_max,
-      YIELD::ipc::auto_SocketFactory socket_factory
+      yield::ipc::auto_SocketFactory socket_factory
     )
       : xtreemfs::Proxy<org::xtreemfs::interfaces::NettestInterface>
         (

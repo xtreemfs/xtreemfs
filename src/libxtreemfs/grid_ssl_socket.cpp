@@ -30,35 +30,15 @@
 #include "xtreemfs/grid_ssl_socket.h"
 using namespace xtreemfs;
 
-#ifdef _WIN32
-#undef INVALID_SOCKET
-#pragma warning( push )
-#pragma warning( disable: 4995 )
-#include <ws2tcpip.h>
-#include <mswsock.h>
-#pragma warning( pop )
-#define INVALID_SOCKET  (SOCKET)(~0)
-#else
-#include <errno.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <sys/socket.h>
-#include <unistd.h>
-#endif
-
 
 GridSSLSocket::GridSSLSocket
-(
-  int domain,
-#ifdef _WIN32
-  SOCKET socket_,
-#else
-  int socket_,
-#endif
-  YIELD::ipc::auto_SSLContext ctx,
-  SSL* ssl
+( 
+  int domain, 
+  yield::platform::socket_t socket_, 
+  SSL* ssl,
+  SSLContext& ssl_context
 )
-  : YIELD::ipc::SSLSocket( domain, socket_, ctx, ssl )
+  : SSLSocket( domain, socket_, ssl, ssl_context )
 {
   did_handshake = false;
 }
@@ -69,7 +49,7 @@ bool GridSSLSocket::check_handshake()
     return true;
   else
   {
-    int SSL_do_handshake_ret = SSL_do_handshake( ssl );
+    int SSL_do_handshake_ret = SSL_do_handshake( *this );
     if ( SSL_do_handshake_ret == 1 )
     {
       did_handshake = true;
@@ -82,30 +62,21 @@ bool GridSSLSocket::check_handshake()
   }
 }
 
-yidl::runtime::auto_Object<GridSSLSocket>
-GridSSLSocket::create
-(
-  YIELD::ipc::auto_SSLContext ctx
-)
+GridSSLSocket* GridSSLSocket::create( SSLContext& ssl_context )
 {
-  return create( AF_INET6, ctx );
+  return create( DOMAIN_DEFAULT, ssl_context );
 }
 
-yidl::runtime::auto_Object<GridSSLSocket>
-GridSSLSocket::create
-(
-  int domain,
-  YIELD::ipc::auto_SSLContext ctx
-)
+GridSSLSocket* GridSSLSocket::create( int domain, SSLContext& ssl_context )
 {
-  SSL* ssl = SSL_new( ctx->get_ssl_ctx() );
+  SSL* ssl = SSL_new( ssl_context );
   if ( ssl != NULL )
   {
-    YIELD::platform::socket_t socket_
-      = YIELD::platform::Socket::create( &domain, SOCK_STREAM, IPPROTO_TCP );
+    yield::platform::socket_t socket_
+      = Socket::create( &domain, TYPE, PROTOCOL );
 
     if ( socket_ != INVALID_SOCKET )
-      return new GridSSLSocket( domain, socket_, ctx, ssl );
+      return new GridSSLSocket( domain, socket_, ssl, ssl_context );
     else
       return NULL;
   }
@@ -113,47 +84,52 @@ GridSSLSocket::create
     return NULL;
 }
 
-ssize_t GridSSLSocket::read( void* buffer, size_t buffer_len )
+ssize_t GridSSLSocket::recv( void* buffer, size_t buffer_len, int flags )
 {
   if ( check_handshake() )
-    return YIELD::platform::TCPSocket::read( buffer, buffer_len );
+    return TCPSocket::recv( buffer, buffer_len, flags );
+  else
+    return -1;
+}
+
+ssize_t GridSSLSocket::send( const void* buffer, size_t buffer_len, int flags )
+{
+  if ( check_handshake() )
+    return TCPSocket::send( buffer, buffer_len, flags );
+  else
+    return -1;
+}
+
+ssize_t GridSSLSocket::sendmsg
+( 
+  const struct iovec* iov, 
+  uint32_t iovlen, 
+  int flags 
+)
+{
+  if ( check_handshake() )
+    return TCPSocket::sendmsg( iov, iovlen, flags );
   else
     return -1;
 }
 
 bool GridSSLSocket::shutdown()
 {
-  return YIELD::platform::TCPSocket::shutdown();
+  return TCPSocket::shutdown();
 }
 
 bool GridSSLSocket::want_read() const
 {
   if ( !did_handshake )
-    return SSL_get_error( ssl, -1 ) == SSL_ERROR_WANT_READ;
+    return SSL_get_error( *this, -1 ) == SSL_ERROR_WANT_READ;
   else
-    return YIELD::platform::TCPSocket::want_read();
+    return TCPSocket::want_read();
 }
 
 bool GridSSLSocket::want_write() const
 {
   if ( !did_handshake )
-    return SSL_get_error( ssl, -1 ) == SSL_ERROR_WANT_WRITE;
+    return SSL_get_error( *this, -1 ) == SSL_ERROR_WANT_WRITE;
   else
-    return YIELD::platform::TCPSocket::want_write();
-}
-
-ssize_t GridSSLSocket::write( const void* buffer, size_t buffer_len )
-{
-  if ( check_handshake() )
-    return YIELD::platform::TCPSocket::write( buffer, buffer_len );
-  else
-    return -1;
-}
-
-ssize_t GridSSLSocket::writev( const struct iovec* buffers, uint32_t buffers_count )
-{
-  if ( check_handshake() )
-    return YIELD::platform::TCPSocket::writev( buffers, buffers_count );
-  else
-    return -1;
+    return TCPSocket::want_write();
 }

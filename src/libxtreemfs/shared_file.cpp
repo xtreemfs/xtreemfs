@@ -31,7 +31,6 @@
 #include "open_file.h"
 #include "stat.h"
 #include "xtreemfs/volume.h"
-using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
 #include "yieldfs.h"
@@ -106,7 +105,7 @@ public:
     buffer( buffer )
   { }
 
-  YIELD::concurrency::auto_Response createResponse()
+  yield::concurrency::auto_Response createResponse()
   {
     return new ReadResponse( buffer );
   }
@@ -130,9 +129,9 @@ public:
 
 SharedFile::SharedFile
 (
-  YIELD::platform::auto_Log log,
+  Log& log,
   auto_Volume parent_volume,
-  const YIELD::platform::Path& path
+  const Path& path
 ) : log( log ),
     parent_volume( parent_volume ),
     path( path )
@@ -174,14 +173,14 @@ void SharedFile::close( xtreemfs::OpenFile& open_file )
     }
   }
 
-  // Don't decRef open_file, since we didn't keep a reference
-  // OpenFile::decRef( open_file );
+  // Don't dec_ref open_file, since we didn't keep a reference
+  // OpenFile::dec_ref( open_file );
 
   if ( reader_count == 0 && writer_count == 0 )
     parent_volume->release( *this );
 }
 
-YIELD::platform::auto_Stat SharedFile::getattr()
+yield::platform::auto_Stat SharedFile::getattr()
 {
   return parent_volume->getattr( path );
 }
@@ -220,7 +219,7 @@ bool SharedFile::listxattr( std::vector<std::string>& out_names )
   return parent_volume->listxattr( path, out_names );
 }
 
-YIELD::platform::auto_File
+yield::platform::auto_File
 SharedFile::open
 (
   FileCredentials& file_credentials
@@ -234,7 +233,7 @@ SharedFile::open
   else
     ++writer_count;
 
-  return new xtreemfs::OpenFile( incRef(), file_credentials.get_xcap() );
+  return new xtreemfs::OpenFile( inc_ref(), file_credentials.get_xcap() );
 }
 
 ssize_t
@@ -247,7 +246,7 @@ SharedFile::read
 )
 {
   std::vector<ReadResponse*> read_responses;
-  YIELD::platform::auto_Log log( parent_volume->get_log() );
+  Log& log( parent_volume->get_log() );
   ssize_t ret = 0;
 
   try
@@ -255,10 +254,10 @@ SharedFile::read
 #ifdef _DEBUG
     if
     (
-      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
-         Volume::VOLUME_FLAG_TRACE_FILE_IO
+      ( parent_volume->get_flags() & Volume::FLAG_TRACE_FILE_IO ) ==
+         Volume::FLAG_TRACE_FILE_IO
     )
-      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+      log->getStream( yield::platform::Log::LOG_INFO ) <<
         "xtreemfs::SharedFile::read( rbuf, size=" << size <<
         ", offset=" << offset <<
         " )";
@@ -271,10 +270,10 @@ SharedFile::read
     uint32_t stripe_size = xlocs.get_replicas()[0].get_striping_policy().
                              get_stripe_size() * 1024;
 
-    YIELD::concurrency::auto_ResponseQueue<ReadResponse>
+    yield::concurrency::auto_ResponseQueue<ReadResponse>
       read_response_queue
       (
-        new YIELD::concurrency::ResponseQueue<ReadResponse>
+        new yield::concurrency::ResponseQueue<ReadResponse>
       );
     size_t expected_read_response_count = 0;
 
@@ -289,11 +288,11 @@ SharedFile::read
 #ifdef _DEBUG
       if
       (
-        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
-        Volume::VOLUME_FLAG_TRACE_FILE_IO
+        ( parent_volume->get_flags() & Volume::FLAG_TRACE_FILE_IO ) ==
+        Volume::FLAG_TRACE_FILE_IO
       )
       {
-        log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        log->getStream( yield::platform::Log::LOG_INFO ) <<
           "xtreemfs::SharedFile: issuing read # " <<
           ( expected_read_response_count + 1 ) <<
           " for " << object_size <<
@@ -317,7 +316,7 @@ SharedFile::read
           static_cast<uint32_t>( object_size ),
           new ReadBuffer( rbuf_p, object_size )
         );
-      read_request->set_response_target( read_response_queue->incRef() );
+      read_request->set_response_target( read_response_queue->inc_ref() );
       read_request->set_selected_file_replica( selected_file_replica );
 
       parent_volume->get_osd_proxy_mux()->send( *read_request );
@@ -330,10 +329,10 @@ SharedFile::read
 #ifdef _DEBUG
     if
     (
-      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
-      Volume::VOLUME_FLAG_TRACE_FILE_IO
+      ( parent_volume->get_flags() & Volume::FLAG_TRACE_FILE_IO ) ==
+      Volume::FLAG_TRACE_FILE_IO
     )
-      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+      log->getStream( yield::platform::Log::LOG_INFO ) <<
         "xtreemfs::SharedFile: issued " << expected_read_response_count <<
         " parallel reads.";
 #endif
@@ -346,7 +345,7 @@ SharedFile::read
     )
     {
       ReadResponse& read_response = read_response_queue->dequeue();
-      // Object::decRef( read_response );
+      // Object::dec_ref( read_response );
       read_responses.push_back( &read_response );
 
       yidl::runtime::auto_Buffer data( read_response.get_object_data().get_data() );
@@ -356,10 +355,10 @@ SharedFile::read
         selected_file_replica = read_response.get_selected_file_replica();
 
 #ifdef _DEBUG
-      if ( ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
-            Volume::VOLUME_FLAG_TRACE_FILE_IO )
+      if ( ( parent_volume->get_flags() & Volume::FLAG_TRACE_FILE_IO ) ==
+            Volume::FLAG_TRACE_FILE_IO )
       {
-        log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        log->getStream( yield::platform::Log::LOG_INFO ) <<
           "xtreemfs::SharedFile: read " << data->size() <<
           " bytes from file " << xcap.get_file_id() <<
           " with " << zero_padding << " bytes of zero padding" <<
@@ -383,7 +382,7 @@ SharedFile::read
         }
         else
         {
-          log->getStream( YIELD::platform::Log::LOG_ERR ) <<
+          log->getStream( yield::platform::Log::LOG_ERR ) <<
             "xtreemfs::SharedFile: received zero_padding (data size=" <<
             data->size() << ", zero_padding=" << zero_padding <<
             ") larger than available buffer space (" <<
@@ -407,11 +406,11 @@ SharedFile::read
 
     if
     (
-      ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
-       Volume::VOLUME_FLAG_TRACE_FILE_IO
+      ( parent_volume->get_flags() & Volume::FLAG_TRACE_FILE_IO ) ==
+       Volume::FLAG_TRACE_FILE_IO
     )
     {
-      log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+      log->getStream( yield::platform::Log::LOG_INFO ) <<
         "xtreemfs::SharedFile: read " << ret <<
         " bytes from file " << xcap.get_file_id() <<
         " in total, returning from read().";
@@ -435,7 +434,7 @@ SharedFile::read
     read_response_i != read_responses.end();
     read_response_i++
   )
-    ReadResponse::decRef( **read_response_i );
+    ReadResponse::dec_ref( **read_response_i );
 
   return ret;
 }
@@ -566,7 +565,7 @@ SharedFile::truncate
     (
       path,
       new Stat( osd_write_response ),
-      YIELD::platform::Volume::SETATTR_SIZE,
+      yield::platform::Volume::SETATTR_SIZE,
       xcap
     );
   }
@@ -622,10 +621,10 @@ SharedFile::write
 #ifdef _DEBUG
   if
   (
-    ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
-    Volume::VOLUME_FLAG_TRACE_FILE_IO
+    ( parent_volume->get_flags() & Volume::FLAG_TRACE_FILE_IO ) ==
+    Volume::FLAG_TRACE_FILE_IO
   )
-    log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+    log->getStream( yield::platform::Log::LOG_INFO ) <<
       "xtreemfs::SharedFile::write( wbuf, size=" << size <<
       ", offset=" << offset << " )";
 #endif
@@ -638,10 +637,10 @@ SharedFile::write
     uint32_t stripe_size = xlocs.get_replicas()[0].get_striping_policy().
                              get_stripe_size() * 1024;
 
-    YIELD::concurrency::auto_ResponseQueue<OSDInterface::writeResponse>
+    yield::concurrency::auto_ResponseQueue<OSDInterface::writeResponse>
       write_response_queue
       (
-        new YIELD::concurrency::ResponseQueue<OSDInterface::writeResponse>
+        new yield::concurrency::ResponseQueue<OSDInterface::writeResponse>
       );
     size_t expected_write_response_count = 0;
 
@@ -677,11 +676,11 @@ SharedFile::write
 #ifdef _DEBUG
       if
       (
-        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
-           Volume::VOLUME_FLAG_TRACE_FILE_IO
+        ( parent_volume->get_flags() & Volume::FLAG_TRACE_FILE_IO ) ==
+           Volume::FLAG_TRACE_FILE_IO
       )
       {
-        log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        log->getStream( yield::platform::Log::LOG_INFO ) <<
           "xtreemfs::SharedFile: issuing write # " <<
           ( expected_write_response_count + 1 ) <<
           " of " << object_size <<
@@ -693,7 +692,7 @@ SharedFile::write
       }
 #endif
 
-      write_request->set_response_target( write_response_queue->incRef() );
+      write_request->set_response_target( write_response_queue->inc_ref() );
       parent_volume->get_osd_proxy_mux()->send( *write_request );
       expected_write_response_count++;
 
@@ -720,10 +719,10 @@ SharedFile::write
 #ifdef _DEBUG
       if
       (
-        ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
-           Volume::VOLUME_FLAG_TRACE_FILE_IO
+        ( parent_volume->get_flags() & Volume::FLAG_TRACE_FILE_IO ) ==
+           Volume::FLAG_TRACE_FILE_IO
       )
-        log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        log->getStream( yield::platform::Log::LOG_INFO ) <<
           "xtreemfs::SharedFile::write received response # " <<
           ( write_response_i + 1 ) << " of " <<
           expected_write_response_count << ".";
@@ -737,17 +736,17 @@ SharedFile::write
 #ifdef _DEBUG
         if
         (
-          ( parent_volume->get_flags() & Volume::VOLUME_FLAG_TRACE_FILE_IO ) ==
-              Volume::VOLUME_FLAG_TRACE_FILE_IO
+          ( parent_volume->get_flags() & Volume::FLAG_TRACE_FILE_IO ) ==
+              Volume::FLAG_TRACE_FILE_IO
         )
-          log->getStream( YIELD::platform::Log::LOG_INFO ) <<
+          log->getStream( yield::platform::Log::LOG_INFO ) <<
             "xtreemfs::SharedFile: OSD write response is newer than latest known.";
 #endif
 
         latest_osd_write_response = write_response.get_osd_write_response();
       }
 
-      // yidl::runtime::Object::decRef( write_response );
+      // yidl::runtime::Object::dec_ref( write_response );
       write_responses.push_back( &write_response );
     }
 
@@ -757,7 +756,7 @@ SharedFile::write
       (
         path,
         new Stat( latest_osd_write_response ),
-        YIELD::platform::Volume::SETATTR_SIZE,
+        yield::platform::Volume::SETATTR_SIZE,
         xcap
       );
     }
@@ -782,7 +781,7 @@ SharedFile::write
     write_response_i != write_responses.end();
     write_response_i++
    )
-     OSDInterface::writeResponse::decRef( **write_response_i );
+     OSDInterface::writeResponse::dec_ref( **write_response_i );
 
   return ret;
 }

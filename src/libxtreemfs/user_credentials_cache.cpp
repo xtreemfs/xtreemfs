@@ -28,7 +28,9 @@
 
 
 #include "xtreemfs/user_credentials_cache.h"
-using namespace org::xtreemfs::interfaces;
+using yield::platform::iconv;
+using yield::platform::Path;
+using yield::platform::SharedLibrary;
 using namespace xtreemfs;
 
 #ifdef _WIN32
@@ -70,12 +72,12 @@ UserCredentialsCache::~UserCredentialsCache()
 {
   for
   (
-    std::vector<YIELD::platform::SharedLibrary*>::iterator
+    std::vector<SharedLibrary*>::iterator 
       policy_shared_library_i = policy_shared_libraries.begin();
     policy_shared_library_i != policy_shared_libraries.end();
     policy_shared_library_i++
   )
-    YIELD::platform::SharedLibrary::decRef( **policy_shared_library_i );
+    yield::platform::SharedLibrary::dec_ref( **policy_shared_library_i );
 
 #ifndef _WIN32
   for
@@ -120,11 +122,7 @@ UserCredentialsCache::~UserCredentialsCache()
 #endif
 }
 
-void
-UserCredentialsCache::getCurrentUserCredentials
-(
-  UserCredentials& out_user_credentials
-)
+UserCredentials* UserCredentialsCache::getCurrentUserCredentials()
 {
 //#ifdef _DEBUG
 //  if
@@ -132,7 +130,7 @@ UserCredentialsCache::getCurrentUserCredentials
 //    ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) ==
 //    PROXY_FLAG_TRACE_AUTH && log != NULL
 //  )
-//    log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
+//    log->getStream( yield::platform::Log::LOG_DEBUG ) <<
 //      "xtreemfs::Proxy: getting current user credentials.";
 //#endif
 
@@ -147,117 +145,37 @@ UserCredentialsCache::getCurrentUserCredentials
       dwLevel,
       ( LPBYTE *)&user_info
     ) == NERR_Success
+    &&
+    user_info != NULL
   )
-  {
-    if ( user_info !=NULL )
+  {    
+    iconv* iconv = iconv::open( iconv::CODE_CHAR, iconv::CODE_UTF8 );
+    if ( iconv != NULL )
     {
-      int username_wcslen =
-        static_cast<int>( wcsnlen( user_info->wkui1_username, UINT16_MAX ) );
-      int username_strlen =
-        WideCharToMultiByte
-        (
-          GetACP(),
-          0,
-          user_info->wkui1_username,
-          username_wcslen,
-          NULL,
-          0,
-          0,
-          NULL
-        );
+      std::string group_id, user_id;
+      ( *iconv )( user_info->wkui1_username, user_id );
+      ( *iconv )( user_info->wkui1_logon_domain, group_id );
+      UserCredentials* user_credentials
+        = new UserCredentials( user_id, group_id, "" );
 
-      char* user_id = new char[username_strlen+1];
-      WideCharToMultiByte
-      (
-        GetACP(),
-        0,
-        user_info->wkui1_username,
-        username_wcslen,
-        user_id,
-        username_strlen+1,
-        0,
-        NULL
-      );
-
-      out_user_credentials.set_user_id( user_id, username_strlen );
-      delete [] user_id;
-
-      int logon_domain_wcslen =
-        static_cast<int>( wcsnlen( user_info->wkui1_logon_domain, UINT16_MAX ) );
-      int logon_domain_strlen =
-        WideCharToMultiByte
-        (
-          GetACP(),
-          0,
-          user_info->wkui1_logon_domain,
-          logon_domain_wcslen,
-          NULL,
-          0,
-          0,
-          NULL
-        );
-
-      char* group_id = new char[logon_domain_strlen+1];
-      WideCharToMultiByte
-      (
-        GetACP(),
-        0,
-        user_info->wkui1_logon_domain,
-        logon_domain_wcslen,
-        group_id,
-        logon_domain_strlen+1,
-        0,
-        NULL
-      );
-      std::string group_id_str( group_id, logon_domain_strlen );
-      delete [] group_id;
-      StringSet group_ids;
-      group_ids.push_back( group_id_str );
-      out_user_credentials.set_group_ids( group_ids );
-
+      iconv::dec_ref( *iconv );
       NetApiBufferFree( user_info );
 
-      return;
+      return user_credentials;
     }
-
-    throw
-      YIELD::platform::Exception( "could not retrieve user_id and group_id" );
   }
+
+    return NULL;
 #else
   uid_t caller_uid = yieldfs::FUSE::geteuid();
-  gid_t caller_gid = yieldfs::FUSE::getegid();
-
-  if
-  (
-    caller_uid != static_cast<uid_t>( -1 ) &&
-    caller_gid != static_cast<gid_t>( -1 ) &&
-    getUserCredentialsFrompasswd
-    (
-      caller_uid,
-      caller_gid,
-      out_user_credentials
-    )
-  )
-     return;
-
-  else
-  {
+  if ( caller_uid == static_cast<uid_t>( -1 ) )
     caller_uid = ::geteuid();
+
+  gid_t caller_gid = yieldfs::FUSE::getegid();
+  if ( caller_gid == static_cast<gid_t>( -1 ) )
     caller_gid = ::getegid();
 
-    if
-    (
-      getUserCredentialsFrompasswd
-      (
-        caller_uid,
-        caller_gid,
-        out_user_credentials
-      )
-    )
-      return;
-    else
-      throw YIELD::platform::Exception();
-  }
+  return getUserCredentialsFrompasswd( caller_uid, caller_gid );
 #endif
 }
 
@@ -266,7 +184,7 @@ void* UserCredentialsCache::getPolicyFunction( const char* name )
 {
   for
   (
-    std::vector<YIELD::platform::SharedLibrary*>::iterator
+    std::vector<SharedLibrary*>::iterator
       policy_shared_library_i = policy_shared_libraries.begin();
     policy_shared_library_i != policy_shared_libraries.end();
     policy_shared_library_i++
@@ -277,8 +195,8 @@ void* UserCredentialsCache::getPolicyFunction( const char* name )
       return policy_function;
   }
 
-  std::vector<YIELD::platform::Path> policy_dir_paths;
-  policy_dir_paths.push_back( YIELD::platform::Path() );
+  std::vector<Path> policy_dir_paths;
+  policy_dir_paths.push_back( Path() );
 #ifdef _WIN32
   policy_dir_paths.push_back( "src\\policies\\lib" );
 #else
@@ -286,72 +204,56 @@ void* UserCredentialsCache::getPolicyFunction( const char* name )
   policy_dir_paths.push_back( "/lib/xtreemfs/policies/" );
 #endif
 
-  YIELD::platform::auto_Volume volume = new YIELD::platform::Volume;
+  yield::platform::Volume* volume = new yield::platform::Volume;
   for
   (
-    std::vector<YIELD::platform::Path>::iterator
+    std::vector<Path>::iterator
       policy_dir_path_i = policy_dir_paths.begin();
     policy_dir_path_i != policy_dir_paths.end();
     policy_dir_path_i++
   )
   {
-    YIELD::platform::auto_Directory directory 
-      = volume->opendir( *policy_dir_path_i );
+    yield::platform::Directory* dir = volume->opendir( *policy_dir_path_i );
 
-    if ( directory != NULL )
+    if ( dir != NULL )
     {
-      YIELD::platform::Directory::auto_Entry
-        dirent = directory->readdir();
+      yield::platform::Directory::Entry* dirent = dir->readdir();
 
       while ( dirent != NULL )
       {
-        if ( dirent->ISREG() )
+        if ( volume->isfile( *policy_dir_path_i / dirent->get_name() ) )
         {
-          const std::string&
-            file_name = static_cast<const std::string&>( dirent->get_name() );
-
-          std::string::size_type
-            dll_pos = file_name.find
-                      ( 
-                        static_cast<const std::string&>
-                        ( 
-                          YIELD::platform::SharedLibrary::SHLIBSUFFIX 
-                        ) 
-                      );
+          const Path::string_type& file_name = dirent->get_name();
+          Path::string_type::size_type dll_pos 
+            = file_name.find( SharedLibrary::SHLIBSUFFIX );
 
           if
           (
-            dll_pos != std::string::npos &&
+            dll_pos != Path::string_type::npos &&
             dll_pos != 0 &&
             file_name[dll_pos-1] == '.'
           )
           {
-            YIELD::platform::Path policy_shared_library_path
-              = *policy_dir_path_i / file_name;
-
-            YIELD::platform::auto_SharedLibrary policy_shared_library
-              = YIELD::platform::SharedLibrary::open
-                ( 
-                  policy_shared_library_path 
-                );
+            SharedLibrary* policy_shared_library
+              = SharedLibrary::open( *policy_dir_path_i / file_name  );
 
             if ( policy_shared_library != NULL )
             {
-              void* policy_function = policy_shared_library->getFunction( name );
+              void* policy_function 
+                = policy_shared_library->getFunction( name );
               if ( policy_function != NULL )
-              {
-                policy_shared_libraries.push_back
-                ( 
-                  policy_shared_library.release() 
-                );
-              }
+                policy_shared_libraries.push_back( policy_shared_library );
               return policy_function;
             }
           }
 
-          dirent = directory->readdir();
+          yield::platform::Directory::Entry::dec_ref( *dirent );
+
+          dirent = dir->readdir();
         }
       }
+
+      yield::platform::Directory::dec_ref( *dir );
     }
   }
 
@@ -374,7 +276,7 @@ UserCredentialsCache::getpasswdFromUserCredentials
 //    ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH &&
 //    log != NULL
 //  )
-//    log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
+//    log->getStream( yield::platform::Log::LOG_DEBUG ) <<
 //      "xtreemfs::Proxy: getting passwd from UserCredentials (user_id=" <<
 //      user_id << ", group_id=" << group_id << ").";
 //#endif
@@ -402,7 +304,7 @@ UserCredentialsCache::getpasswdFromUserCredentials
 //        ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH &&
 //        log != NULL
 //      )
-//        log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
+//        log->getStream( yield::platform::Log::LOG_DEBUG ) <<
 //          "xtreemfs::Proxy: found user and group IDs in cache, " <<
 //          user_id << "=" << out_uid << ", " << group_id << "=" <<
 //          out_gid << ".";
@@ -425,7 +327,7 @@ UserCredentialsCache::getpasswdFromUserCredentials
 //      ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH &&
 //      log != NULL
 //    )
-//      log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
+//      log->getStream( yield::platform::Log::LOG_DEBUG ) <<
 //        "xtreemfs::Proxy: calling get_passwd_from_user_credentials_ret " <<
 //        "with user_id=" << user_id << ", group_id=" << group_id << ".";
 //#endif
@@ -445,7 +347,7 @@ UserCredentialsCache::getpasswdFromUserCredentials
     //  ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) ==
     //  PROXY_FLAG_TRACE_AUTH && log != NULL
     //)
-    //  log->getStream( YIELD::platform::Log::LOG_ERR ) <<
+    //  log->getStream( yield::platform::Log::LOG_ERR ) <<
     //    "xtreemfs::Proxy: get_passwd_from_user_credentials_ret with user_id="
     //    << user_id << ", group_id=" << group_id << " failed with errno=" <<
     //    ( get_passwd_from_user_credentials_ret * -1 );
@@ -459,7 +361,7 @@ UserCredentialsCache::getpasswdFromUserCredentials
 //      ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH &&
 //      log != NULL
 //    )
-//      log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
+//      log->getStream( yield::platform::Log::LOG_DEBUG ) <<
 //        "xtreemfs::Proxy: calling getpwnam_r and getgrnam_r with user_id=" <<
 //        user_id << ", group_id=" << group_id << ".";
 //#endif
@@ -503,7 +405,7 @@ UserCredentialsCache::getpasswdFromUserCredentials
       out_uid = 0;
       out_gid = 0;
       //if ( log != NULL )
-      //  log->getStream( YIELD::platform::Log::LOG_WARNING ) <<
+      //  log->getStream( yield::platform::Log::LOG_WARNING ) <<
       //    "xtreemfs::Proxy: getpwnam_r and getgrnam_r with user_id=" <<
       //    user_id << ", group_id=" << group_id << " failed, errno=" <<
       //    errno << ", setting user/group to root.";
@@ -519,7 +421,7 @@ UserCredentialsCache::getpasswdFromUserCredentials
 //    ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH &&
 //      log != NULL
 //  )
-//    log->getStream( YIELD::platform::Log::LOG_DEBUG ) << "xtreemfs::Proxy: " <<
+//    log->getStream( yield::platform::Log::LOG_DEBUG ) << "xtreemfs::Proxy: " <<
 //      user_id << "=" << out_uid << ", " <<
 //      group_id << "=" << out_gid <<
 //      ", storing in cache.";
@@ -566,7 +468,7 @@ UserCredentialsCache::getUserCredentialsFrompasswd
 //    ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH &&
 //    log != NULL
 //  )
-//    log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
+//    log->getStream( yield::platform::Log::LOG_DEBUG ) <<
 //      "xtreemfs::Proxy: getting UserCredentials from passwd (uid=" <<
 //      uid << ", gid=" << gid << ").";
 //#endif
@@ -593,7 +495,7 @@ UserCredentialsCache::getUserCredentialsFrompasswd
 //        ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH &&
 //        log != NULL
 //      )
-//        log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
+//        log->getStream( yield::platform::Log::LOG_DEBUG ) <<
 //          "xtreemfs::Proxy: found UserCredentials in cache, " <<
 //          uid << "=" << out_user_credentials.get_user_id() << ", " <<
 //          gid << "=" << out_user_credentials.get_group_ids()[0] << ".";
@@ -614,7 +516,7 @@ UserCredentialsCache::getUserCredentialsFrompasswd
 //      ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH &&
 //      log != NULL
 //    )
-//      log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
+//      log->getStream( yield::platform::Log::LOG_DEBUG ) <<
 //        "xtreemfs::Proxy: calling get_user_credentials_from_passwd with uid="
 //        << uid << ", gid=" << gid << ".";
 //#endif
@@ -638,7 +540,7 @@ UserCredentialsCache::getUserCredentialsFrompasswd
 //        ( this->get_flags() & PROXY_FLAG_TRACE_AUTH ) == PROXY_FLAG_TRACE_AUTH &&
 //        log != NULL
 //      )
-//        log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
+//        log->getStream( yield::platform::Log::LOG_DEBUG ) <<
 //          "xtreemfs::Proxy: calling get_user_credentials_from_passwd " <<
 //          "with uid=" << uid << ", gid=" << gid << " returned " <<
 //          get_user_credentials_from_passwd_ret <<
@@ -692,7 +594,7 @@ UserCredentialsCache::getUserCredentialsFrompasswd
 //            PROXY_FLAG_TRACE_AUTH &&
 //            log != NULL
 //          )
-//            log->getStream( YIELD::platform::Log::LOG_DEBUG ) <<
+//            log->getStream( yield::platform::Log::LOG_DEBUG ) <<
 //              "xtreemfs::Proxy: get_user_credentials_from_passwd succeeded, " <<
 //              uid << "=" << out_user_credentials.get_user_id() << ", " <<
 //              gid << "=" << out_user_credentials.get_group_ids()[0] << ".";

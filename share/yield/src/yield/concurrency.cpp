@@ -1,14 +1,15 @@
 #include "yield/concurrency.h"
-using namespace YIELD::concurrency;
+using namespace yield::concurrency;
+using yield::platform::TimerQueue;
 
 
 // color_stage_group.cpp
-class ColorStageGroup::Thread : public ::YIELD::platform::Thread
+class ColorStageGroup::Thread : public ::yield::platform::Thread
 {
 public:
   Thread
   (
-    auto_STLEventQueue event_queue,
+    STLEventQueue& event_queue,
     uint16_t logical_processor_i,
     const char* name
   )
@@ -16,7 +17,6 @@ public:
       logical_processor_i( logical_processor_i ),
       name( name )
   {
-    is_running = false;
     should_run = true;
   }
 
@@ -27,40 +27,35 @@ public:
     yidl::runtime::auto_Object<Stage::ShutdownEvent>
       stage_shutdown_event( new Stage::ShutdownEvent );
 
-    while ( is_running )
-    {
-      event_queue->enqueue( stage_shutdown_event->inc_ref() );
-      nanosleep( 5.0 );
-    }
+    event_queue.enqueue( stage_shutdown_event->inc_ref() );
+
+    join();
   }
 
   // Thread
   void run()
   {
-    is_running = true;
-
     this->set_name( name.c_str() );
     this->set_processor_affinity( logical_processor_i );
 
     while ( should_run )
     {
-      Event* event = event_queue->dequeue();
+      Event* event = event_queue.dequeue();
       if ( event != NULL )
       {
-        if ( event->get_next_stage() != NULL )
-          event->get_next_stage()->visit( *event );
+        DebugBreak();
+        //if ( event->get_next_stage() != NULL )
+        //  event->get_next_stage()->visit( *event );
       }
     }
-
-    is_running = false;
   }
 
 private:
-  auto_STLEventQueue event_queue;
+  STLEventQueue& event_queue;
   uint16_t logical_processor_i;
   std::string name;
 
-  bool is_running, should_run;
+  bool should_run;
 };
 
 
@@ -74,7 +69,7 @@ ColorStageGroup::ColorStageGroup
   event_queue = new STLEventQueue;
 
   uint16_t online_logical_processor_count
-    = YIELD::platform::Machine::getOnlineLogicalProcessorCount();
+    = yield::platform::ProcessorSet::getOnlineLogicalProcessorCount();
 
   if ( thread_count == -1 )
     thread_count = static_cast<int16_t>( online_logical_processor_count );
@@ -89,7 +84,7 @@ ColorStageGroup::ColorStageGroup
     Thread* thread
       = new Thread
             (
-              event_queue,
+              *event_queue,
               logical_processor_i % online_logical_processor_count,
               name
             );
@@ -133,7 +128,7 @@ EventTargetMux::~EventTargetMux()
   delete [] event_targets;
 }
 
-void EventTargetMux::addEventTarget( auto_EventTarget event_target )
+void EventTargetMux::addEventTarget( EventTarget& event_target )
 {
   EventTarget** new_event_targets = new EventTarget*[event_targets_len+1];
   if ( event_targets != NULL )
@@ -149,7 +144,7 @@ void EventTargetMux::addEventTarget( auto_EventTarget event_target )
     delete [] event_targets;
   }
   event_targets = new_event_targets;
-  event_targets[event_targets_len] = event_target.release();
+  event_targets[event_targets_len] = &event_target.inc_ref();
   event_targets_len++;
 }
 
@@ -345,7 +340,7 @@ bool MG1VisitPolicy::populatePollingTable()
 // polling_stage_group.cpp
 template <class VisitPolicyType>
 class PollingStageGroup<VisitPolicyType>::Thread
-  : public ::YIELD::platform::Thread
+  : public ::yield::platform::Thread
 {
 public:
   Thread( uint16_t logical_processor_i, const char* name, Stage** stages )
@@ -353,22 +348,18 @@ public:
       name( name ),
       visit_policy( stages )
   {
-    is_running = false;
     should_run = true;
   }
 
   void stop()
   {
     should_run = false;
-    while ( is_running )
-      Thread::yield();
+    join();
   }
 
   // Thread
   void run()
   {
-    is_running = true;
-
     this->set_name( name.c_str() );
 
     if ( !this->set_processor_affinity( logical_processor_i ) )
@@ -376,11 +367,11 @@ public:
       std::cerr << "yield::concurrency::PollingStageGroup::Thread: " <<
                    "error on set_processor_affinity( " <<
                    logical_processor_i << " ): " <<
-                   YIELD::platform::Exception() <<
+                   yield::platform::Exception() <<
                    "." << std::endl;
     }
 
-    YIELD::platform::Time visit_timeout( 0.5 );
+    Time visit_timeout( 0.5 );
     uint64_t successful_visits = 0, total_visits = 0;
 
     while ( should_run )
@@ -407,8 +398,6 @@ public:
       static_cast<double>( successful_visits ) /
         static_cast<double>( total_visits )
       << std::endl;
-
-    is_running = false;
   }
 
 private:
@@ -416,7 +405,7 @@ private:
   std::string name;
   VisitPolicyType visit_policy;
 
-  bool is_running, should_run;
+  bool should_run;
 };
 
 
@@ -431,7 +420,8 @@ PollingStageGroup<VisitPolicyType>::PollingStageGroup
   : use_thread_local_event_queues( use_thread_local_event_queues )
 {
   uint16_t online_logical_processor_count
-    = YIELD::platform::Machine::getOnlineLogicalProcessorCount();
+    = yield::platform::ProcessorSet::getOnlineLogicalProcessorCount();
+
   if ( thread_count == -1 )
     thread_count = static_cast<int16_t>( online_logical_processor_count );
 
@@ -477,78 +467,72 @@ template class PollingStageGroup<WavefrontVisitPolicy>;
 
 
 // request.cpp
-auto_EventTarget Request::get_response_target() const
+Request::Request()
+{
+  response_target = NULL;
+}
+
+Request::~Request()
+{
+  EventTarget::dec_ref( response_target );
+}
+
+EventTarget* Request::get_response_target() const
 {
   return response_target;
 }
 
 void Request::respond( Response& response )
 {
-  response_target->send( response );
+  if ( response_target != NULL )
+    response_target->send( response );
+  else
+    Response::dec_ref( response );
 }
 
-void Request::set_response_target( auto_EventTarget response_target )
+void Request::set_response_target( EventTarget* response_target )
 {
-  this->response_target = response_target;
+  EventTarget::dec_ref( this->response_target );
+  this->response_target = &response_target->inc_ref();
 }
 
 
 // seda_stage_group.cpp
-class SEDAStageGroup::Thread : public ::YIELD::platform::Thread
+class SEDAStageGroup::Thread : public yield::platform::Thread
 {
 public:
-  Thread( auto_Stage stage )
+  Thread( Stage& stage )
     : stage( stage )
   {
-    is_running = false;
     should_run = true;
   }
 
-  auto_Stage get_stage() { return stage; }
+  Stage& get_stage() { return stage; }
 
   void stop()
   {
     should_run = false;
 
-    yidl::runtime::auto_Object<Stage::ShutdownEvent> stage_shutdown_event
-      = new Stage::ShutdownEvent;
+    stage.send( *new Stage::ShutdownEvent );
 
-    for ( ;; )
-    {
-      stage->send( stage_shutdown_event->inc_ref() );
-      if ( is_running )
-        nanosleep( 0.5 );
-      else
-        break;
-    }
+    join();
   }
 
   // Thread
   void run()
   {
-    is_running = true;
-
-    Thread::set_name( stage->get_stage_name() );
+    Thread::set_name( stage.get_stage_name() );
 
     while ( should_run )
-      stage->visit();
-
-    is_running = false;
-  }
-
-  void start()
-  {
-    ::YIELD::platform::Thread::start();
-    while ( !is_running )
-      YIELD::platform::Thread::yield();
+      stage.visit();
   }
 
 private:
   ~Thread() { }
 
-  auto_Stage stage;
+  Stage& stage;
 
-  bool is_running, should_run;
+  bool should_run;
 };
 
 
@@ -571,7 +555,7 @@ SEDAStageGroup::~SEDAStageGroup()
     Thread::dec_ref( **thread_i );
 }
 
-void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
+void SEDAStageGroup::startThreads( Stage& stage, int16_t thread_count )
 {
   for ( unsigned short thread_i = 0; thread_i < thread_count; thread_i++ )
   {
@@ -583,44 +567,49 @@ void SEDAStageGroup::startThreads( auto_Stage stage, int16_t thread_count )
 
 
 // stage.cpp
-class Stage::StatisticsTimer : public YIELD::platform::TimerQueue::Timer
+class Stage::StatisticsTimer : public TimerQueue::Timer
 {
 public:
-  StatisticsTimer( yidl::runtime::auto_Object<Stage> stage )
+  StatisticsTimer( Stage& stage )
     : Timer( 5.0, 5.0 ),
-      stage( stage ),
+      stage( stage.inc_ref() ),
       last_fire_time( static_cast<uint64_t>( 0 ) )
   { }
+
+  ~StatisticsTimer()
+  {
+    Stage::dec_ref( stage );
+  }
 
   // TimerQueue::Timer
   void fire()
   {
-    if ( stage->event_queue_arrival_count > 0 )
+    if ( stage.event_queue_arrival_count > 0 )
     {
-      YIELD::platform::Time
-        elapsed_time( YIELD::platform::Time() - last_fire_time );
+      Time
+        elapsed_time( Time() - last_fire_time );
 
-      stage->arrival_rate_s
-        = static_cast<double>( stage->event_queue_arrival_count ) /
+      stage.arrival_rate_s
+        = static_cast<double>( stage.event_queue_arrival_count ) /
           elapsed_time.as_unix_time_s();
 
-      stage->event_queue_arrival_count = 0;
+      stage.event_queue_arrival_count = 0;
 
-      stage->service_rate_s
-        = static_cast<double>( YIELD::platform::Time::NS_IN_S ) /
-          stage->event_processing_time_sampler
+      stage.service_rate_s
+        = static_cast<double>( Time::NS_IN_S ) /
+          stage.event_processing_time_sampler
             .get_percentile( 0.95 );
 
-      stage->rho = stage->arrival_rate_s / stage->service_rate_s;
+      stage.rho = stage.arrival_rate_s / stage.service_rate_s;
 
-      last_fire_time = YIELD::platform::Time();
+      last_fire_time = Time();
     }
   }
 
 private:
-  auto_Stage stage;
+  Stage& stage;
 
-  YIELD::platform::Time last_fire_time;
+  Time last_fire_time;
 };
 
 
@@ -637,9 +626,9 @@ Stage::Stage( const char* name )
   // events_processed_total = 0;
 
 #ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
-  performance_counters = YIELD::platform::PerformanceCounterSet::create();
-  performance_counters->addEvent( YIELD::platform::PerformanceCounterSet::EVENT_L1_DCM );
-  performance_counters->addEvent( YIELD::platform::PerformanceCounterSet::EVENT_L2_ICM );
+  performance_counters = yield::platform::PerformanceCounterSet::create();
+  performance_counters->addEvent( yield::platform::PerformanceCounterSet::EVENT_L1_DCM );
+  performance_counters->addEvent( yield::platform::PerformanceCounterSet::EVENT_L2_ICM );
   std::memset
   (
     performance_counter_totals,
@@ -648,10 +637,7 @@ Stage::Stage( const char* name )
   );
 #endif
 
-  YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer
-  (
-    new StatisticsTimer( this )
-  );
+  TimerQueue::getDefaultTimerQueue().addTimer( *new StatisticsTimer( *this ) );
 }
 
 Stage::~Stage()
@@ -680,7 +666,7 @@ StageGroup::~StageGroup()
     Stage::dec_ref( stages[stage_i] );
 }
 
-void StageGroup::addStage( auto_Stage stage )
+void StageGroup::addStage( Stage* stage )
 {
   unsigned char stage_i;
   for ( stage_i = 0; stage_i < YIELD_CONCURRENCY_STAGES_PER_GROUP_MAX; stage_i++ )
@@ -688,7 +674,7 @@ void StageGroup::addStage( auto_Stage stage )
     if ( stages[stage_i] == NULL )
     {
       stage->set_stage_id( stage_i );
-      stages[stage_i] = stage.release();
+      stages[stage_i] = stage;
       return;
     }
   }
@@ -725,7 +711,7 @@ public:
 
 ThreadLocalEventQueue::ThreadLocalEventQueue()
 {
-  tls_key = YIELD::platform::Thread::key_create();
+  tls_key = yield::platform::Thread::key_create();
 }
 
 ThreadLocalEventQueue::~ThreadLocalEventQueue()
@@ -748,12 +734,21 @@ Event* ThreadLocalEventQueue::dequeue()
     return all_processor_event_queue.dequeue();
 }
 
+Event* ThreadLocalEventQueue::dequeue( const Time& timeout )
+{
+  Event* event = getEventStack()->pop();
+  if ( event != NULL )
+    return event;
+  else
+    return all_processor_event_queue.dequeue( timeout );
+}
+
 bool ThreadLocalEventQueue::enqueue( Event& ev )
 {
   EventStack* event_stack
     = static_cast<EventStack*>
     (
-      YIELD::platform::Thread::getspecific( tls_key )
+      yield::platform::Thread::getspecific( tls_key )
     );
 
   if ( event_stack != NULL )
@@ -770,29 +765,16 @@ ThreadLocalEventQueue::EventStack* ThreadLocalEventQueue::getEventStack()
   EventStack* event_stack
     = static_cast<EventStack*>
     (
-      YIELD::platform::Thread::getspecific( tls_key )
+      yield::platform::Thread::getspecific( tls_key )
     );
 
   if ( event_stack == NULL )
   {
     event_stack = new EventStack;
-    YIELD::platform::Thread::setspecific( tls_key, event_stack );
+    yield::platform::Thread::setspecific( tls_key, event_stack );
     event_stacks.push_back( event_stack );
   }
   return event_stack;
-}
-
-Event*
-ThreadLocalEventQueue::timed_dequeue
-(
-  const YIELD::platform::Time& timeout
-)
-{
-  Event* event = getEventStack()->pop();
-  if ( event != NULL )
-    return event;
-  else
-    return all_processor_event_queue.timed_dequeue( timeout );
 }
 
 Event* ThreadLocalEventQueue::try_dequeue()

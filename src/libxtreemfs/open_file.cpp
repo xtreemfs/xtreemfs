@@ -28,15 +28,14 @@
 
 
 #include "open_file.h"
-using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
 
-class OpenFile::XCapTimer : public YIELD::platform::TimerQueue::Timer
+class OpenFile::XCapTimer : public yield::platform::TimerQueue::Timer
 {
 public:
-  XCapTimer( auto_OpenFile open_file, const YIELD::platform::Time& timeout )
-    : YIELD::platform::TimerQueue::Timer( timeout ),
+  XCapTimer( auto_OpenFile open_file, const Time& timeout )
+    : yield::platform::TimerQueue::Timer( timeout ),
       open_file( open_file )
   { }
 
@@ -45,7 +44,7 @@ public:
     return *this;
   }
 
-  // YIELD::platform::TimerQueue::Timer
+  // yield::platform::TimerQueue::Timer
   void fire()
   {
     if ( !open_file->closed ) // See note in OpenFile::OpenFile
@@ -55,7 +54,7 @@ public:
         XCap renewed_xcap;
 
         //open_file->parent_volume->get_log()->
-        //  getStream( YIELD::platform::Log::LOG_INFO ) <<
+        //  getStream( yield::platform::Log::LOG_INFO ) <<
         //  "xtreemfs::OpenFile: renewing XCap for file " <<
         //  open_file->file_credentials.get_xcap().get_file_id() << ".";
 
@@ -67,7 +66,7 @@ public:
         );
 
         //open_file->parent_volume->get_log()->
-        //  getStream( YIELD::platform::Log::LOG_INFO ) <<
+        //  getStream( yield::platform::Log::LOG_INFO ) <<
         //  "xtreemfs::OpenFile: successfully renewed XCap for open_file " <<
         //  open_file->file_credentials.get_xcap().get_file_id() << ".";
 
@@ -78,20 +77,20 @@ public:
           // Add another timer for the renewed xcap
           // Don't use periods here on the pessimistic assumption that
           // most xcaps will never be renewed
-          YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer
+          yield::platform::TimerQueue::getDefaultTimerQueue().addTimer
           (
             new XCapTimer
             (
               open_file,
               ( renewed_xcap.get_expire_timeout_s() -
                 XCAP_EXPIRE_TIMEOUT_S_MIN )
-              * YIELD::platform::Time::NS_IN_S
+              * Time::NS_IN_S
             )
           );
         }
         //else
         //  open_file->parent_volume->get_log()->
-        //    getStream( YIELD::platform::Log::LOG_ERR ) <<
+        //    getStream( yield::platform::Log::LOG_ERR ) <<
         //      "xtreemfs::OpenFile: received xcap for file " <<
         //      renewed_xcap.get_file_id() <<
         //      "that expires in less than " <<
@@ -101,7 +100,7 @@ public:
       catch ( std::exception& )
       {
         //open_file->parent_volume->get_log()->
-        //  getStream( YIELD::platform::Log::LOG_ERR ) <<
+        //  getStream( yield::platform::Log::LOG_ERR ) <<
         //  "xtreemfs::OpenFile: caught exception trying to renew XCap for file " <<
         //  open_file->file_credentials.get_xcap().get_file_id() <<
         //  ": " << exc.what() << ".";
@@ -137,19 +136,19 @@ OpenFile::OpenFile
     // That means that the OpenFile will not be deleted until the xcap expires!
     // -> it's important to explicitly close() instead of relying on the destructor
     // close(). (The FUSE interface explicitly close()s on release()).
-    YIELD::platform::TimerQueue::getDefaultTimerQueue().addTimer
+    yield::platform::TimerQueue::getDefaultTimerQueue().addTimer
     (
       new XCapTimer
       (
-        incRef(),
+        inc_ref(),
 //        10 * NS_IN_S
         ( xcap.get_expire_timeout_s() - XCAP_EXPIRE_TIMEOUT_S_MIN ) 
-        * YIELD::platform::Time::NS_IN_S
+        * Time::NS_IN_S
       )
     );
   }
   //else
-  //  parent_volume->get_log()->getStream( YIELD::platform::Log::LOG_ERR ) <<
+  //  parent_volume->get_log()->getStream( yield::platform::Log::LOG_ERR ) <<
   //    "xtreemfs::OpenFile: received xcap that expires in less than " <<
   //    XCAP_EXPIRE_TIMEOUT_S_MIN <<
   //    " seconds, will not try to renew.";
@@ -176,7 +175,7 @@ bool OpenFile::datasync()
   return sync();
 }
 
-YIELD::platform::auto_Stat OpenFile::getattr()
+yield::platform::auto_Stat OpenFile::getattr()
 {
   return parent_shared_file->getattr();
 }

@@ -46,65 +46,50 @@
 
 namespace xtreemfs
 {
-  class OSDProxy : public Proxy<org::xtreemfs::interfaces::OSDInterface>
+  class OSDProxy
+    : public Proxy
+             <
+               org::xtreemfs::interfacesOSDInterface,
+               org::xtreemfs::interfacesOSDInterfaceEventFactory,
+               org::xtreemfs::interfacesOSDInterfaceEventSender
+             >
   {
   public:
-    static yidl::runtime::auto_Object<OSDProxy>
+    static OSDProxy&
     create
     (
-      const YIELD::ipc::URI& absolute_uri,
+      const URI& absolute_uri,
       uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
-      uint32_t flags = 0,
-      YIELD::platform::auto_Log log = NULL,
-      const YIELD::platform::Time& operation_timeout =
-        OPERATION_TIMEOUT_DEFAULT,
-      uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
-      YIELD::ipc::auto_SSLContext ssl_context = NULL,
-      auto_UserCredentialsCache user_credentials_cache = NULL
+      uint32_t flags = FLAGS_DEFAULT,
+      Log* log = NULL,
+      const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT,
+      uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
+      SSLContext* ssl_context = NULL, // Steals this reference
+      UserCredentialsCache* user_credentials_cache = NULL
     );
 
     // yidl::runtime::Object
-    OSDProxy& incRef() { return yidl::runtime::Object::incRef( *this ); }
-
-    // YIELD::concurrency::EventTarget
-    void send( YIELD::concurrency::Event& ev )
-    {
-      // Bypass Proxy so no credentials are attached;
-      // the credentials for OSD operations are in FileCredentials passed
-      // explicitly to the operation
-      YIELD::ipc::
-        ONCRPCClient<org::xtreemfs::interfaces::OSDInterface>::send( ev );
-    }
+    OSDProxy& inc_ref() { return yidl::runtime::Object::inc_ref( *this ); }
 
   private:
     OSDProxy
     (
       uint16_t concurrency_level,
       uint32_t flags,
-      YIELD::platform::auto_Log log,
-      const YIELD::platform::Time& operation_timeout,
-      YIELD::ipc::auto_SocketAddress peername,
-      uint8_t reconnect_tries_max,
-      YIELD::ipc::auto_SocketFactory socket_factory,
-      auto_UserCredentialsCache user_credentials_cache
-    )
-      : Proxy<org::xtreemfs::interfaces::OSDInterface>
-      (
-        concurrency_level,
-        flags,
-        log,
-        operation_timeout,
-        peername,
-        reconnect_tries_max,
-        socket_factory,
-        user_credentials_cache
-      )
-    { }
+      IOQueue& io_queue,
+      Log* log,
+      const Time& operation_timeout,
+      SocketAddress& peername,
+      uint16_t reconnect_tries_max,
+      SocketFactory& socket_factory,
+      UserCredentialsCache* user_credentials_cache
+    );
 
     ~OSDProxy() { }
-  };
 
-  typedef yidl::runtime::auto_Object<OSDProxy> auto_OSDProxy;
+    // ONCRPCClient
+    ONCRPCRequest& createONCRPCRequest( MarshallableObject& body );
+  };
 };
 
 

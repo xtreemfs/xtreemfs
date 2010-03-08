@@ -6,7 +6,6 @@ module org
   {
     module interfaces
     {
-      const uint32_t ONCRPC_AUTH_FLAVOR = 1326;
       const string ONCRPC_SCHEME = "oncrpc";
       const string ONCRPCG_SCHEME = "oncrpcg";
       const string ONCRPCS_SCHEME = "oncrpcs";

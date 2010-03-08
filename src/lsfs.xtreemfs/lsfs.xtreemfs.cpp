@@ -48,11 +48,11 @@ namespace lsfs_xtreemfs
     { }
 
   private:
-    YIELD::ipc::auto_URI dir_uri;
+    yield::ipc::auto_URI dir_uri;
     std::string volume_name;
 
 
-    // YIELD::Main
+    // yield::Main
     int _main( int, char** )
     {
       ServiceSet services;
@@ -123,10 +123,10 @@ namespace lsfs_xtreemfs
           volume_name = dir_uri->get_resource().c_str() + 1;
       }
       else if ( files_count == 0 )
-        throw YIELD::platform::Exception( "must specify a DIR[/volume] URI" );
+        throw yield::platform::Exception( "must specify a DIR[/volume] URI" );
       else
       {
-        throw YIELD::platform::Exception
+        throw yield::platform::Exception
         (
           "extra parameters after the DIR[/volume] URI"
         );

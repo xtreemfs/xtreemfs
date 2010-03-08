@@ -43,64 +43,26 @@
 #define YIELD_CONCURRENCY_STAGES_PER_GROUP_MAX 64
 
 
-namespace YIELD
+namespace yield
 {
   namespace concurrency
   {
-    class Event;
-    typedef yidl::runtime::auto_Object<Event> auto_Event;
-
-    class EventTarget;
-    typedef yidl::runtime::auto_Object<EventTarget> auto_EventTarget;
-
-    class EventHandler;
-    typedef yidl::runtime::auto_Object<EventHandler> auto_EventHandler;
-
-    class EventQueue;
-    typedef yidl::runtime::auto_Object<EventQueue> auto_EventQueue;
-
-    class STLEventQueue;
-    typedef yidl::runtime::auto_Object<STLEventQueue> auto_STLEventQueue;
-
-    class Request;
-    typedef yidl::runtime::auto_Object<Request> auto_Request;
-
-    class Response;
-    typedef yidl::runtime::auto_Object<Response> auto_Response;
-
     class ExceptionResponse;
-    typedef yidl::runtime::auto_Object<ExceptionResponse>
-      auto_ExceptionResponse;
-
+    class Request;
+    class Response;
     class Stage;
-    typedef yidl::runtime::auto_Object<Stage> auto_Stage;
 
 
-    class Event : public yidl::runtime::Struct
+    using yield::platform::Time;
+
+
+    class Event : public yidl::runtime::MarshallableObject
     {
     public:
-      Event()
-        : next_stage( NULL )
-      { }
-
-      Stage* get_next_stage() const
-      {
-          return next_stage;
-      }
-
-      void set_next_stage( Stage* next_stage )
-      {
-          this->next_stage = next_stage;
-      }
-
-      // yidl::runtime::Object
-      Event& inc_ref() { return yidl::runtime::Object::inc_ref( *this ); }
-
-    protected:
       virtual ~Event() { }
 
-    private:
-      Stage* next_stage;
+      // yidl::runtime::Object
+      Event& inc_ref() { return Object::inc_ref( *this ); }
     };
 
 
@@ -109,18 +71,63 @@ namespace YIELD
     public:
       virtual ~EventFactory() { }
 
-      virtual auto_ExceptionResponse 
-      createExceptionResponse( uint32_t type_id )
+      virtual ExceptionResponse* createExceptionResponse( uint32_t type_id )
       {
         return NULL;
       }
 
-      virtual auto_Request createRequest( uint32_t type_id )
+      virtual ExceptionResponse* 
+      createExceptionResponse
+      ( 
+        const char* type_name
+      )
       {
         return NULL;
       }
 
-      virtual auto_Response createResponse( uint32_t type_id )
+      virtual Request* createRequest( uint32_t type_id )
+      {
+        return NULL;
+      }
+
+      virtual Request* createRequest( const char* type_name )
+      {
+        return NULL;
+      }
+
+      virtual Response* createResponse( uint32_t type_id )
+      {
+        return NULL;
+      }
+
+      virtual Response* createResponse( const char* type_name )
+      {
+        return NULL;
+      }
+
+      virtual ExceptionResponse* 
+      isExceptionResponse
+      ( 
+        yidl::runtime::MarshallableObject& marshallable_object 
+      ) const
+      {
+        return NULL;
+      }
+
+      virtual Request* 
+      isRequest
+      ( 
+        yidl::runtime::MarshallableObject& marshallable_object 
+      ) const
+      {
+        return NULL;
+      }
+
+      virtual Response*
+      isResponse
+      ( 
+        yidl::runtime::MarshallableObject& marshallable_object 
+      ) const
       {
         return NULL;
       }
@@ -133,13 +140,11 @@ namespace YIELD
     class EventTarget : public yidl::runtime::Object
     {
     public:
+      // send( Event& ) always steals a reference to the Event
       virtual void send( Event& ) = 0;
 
       // yidl::runtime::Object
-      EventTarget& inc_ref() 
-      { 
-        return yidl::runtime::Object::inc_ref( *this ); 
-      }
+      EventTarget& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
       EventTarget() { }
@@ -152,7 +157,7 @@ namespace YIELD
     public:
       EventTargetMux();
 
-      void addEventTarget( auto_EventTarget event_target );
+      void addEventTarget( EventTarget& event_target );
 
       // EventTarget
       void send( Event& );
@@ -174,10 +179,7 @@ namespace YIELD
       virtual void handleEvent( Event& ) = 0;
 
       // yidl::runtime::Object
-      EventHandler& inc_ref() 
-      { 
-        return yidl::runtime::Object::inc_ref( *this ); 
-      }
+      EventHandler& inc_ref() { return Object::inc_ref( *this ); }
 
       // EventTarget
       void send( Event& ev )
@@ -197,15 +199,12 @@ namespace YIELD
     {
     public:
       virtual Event* dequeue() = 0;
-      virtual bool enqueue( Event& ) = 0;
-      virtual Event* timed_dequeue( const YIELD::platform::Time& timeout ) = 0;
+      virtual Event* dequeue( const Time& timeout ) = 0;
+      virtual bool enqueue( Event& ) = 0;      
       virtual Event* try_dequeue() = 0;
 
-      // EventTarget
-      void send( Event& event )
-      {
-        enqueue( event );
-      }
+      // EventTarget      
+      void send( Event& event ) { enqueue( event ); }
     };
 
 
@@ -472,15 +471,7 @@ namespace YIELD
         return element;
       }
 
-      bool enqueue( ElementType element )
-      {
-        bool enqueued =
-          NonBlockingFiniteQueue<ElementType, QueueLength>::enqueue( element );
-        signal.release();
-        return enqueued;
-      }
-
-      ElementType timed_dequeue( const YIELD::platform::Time& timeout )
+      ElementType dequeue( const Time& timeout )
       {
         ElementType element
           = NonBlockingFiniteQueue<ElementType, QueueLength>::dequeue();
@@ -489,9 +480,17 @@ namespace YIELD
           return element;
         else
         {
-          signal.timed_acquire( timeout );
+          signal.acquire( timeout );
           return NonBlockingFiniteQueue<ElementType, QueueLength>::dequeue();
         }
+      }
+
+      bool enqueue( ElementType element )
+      {
+        bool enqueued =
+          NonBlockingFiniteQueue<ElementType, QueueLength>::enqueue( element );
+        signal.release();
+        return enqueued;
       }
 
       ElementType try_dequeue()
@@ -500,7 +499,7 @@ namespace YIELD
       }
 
     private:
-      YIELD::platform::Semaphore signal;
+      yield::platform::Semaphore signal;
     };
 
 
@@ -515,15 +514,15 @@ namespace YIELD
         return SynchronizedNonBlockingFiniteQueue<Event*,1024>::dequeue();
       }
 
+      Event* dequeue( const Time& timeout )
+      {
+        return SynchronizedNonBlockingFiniteQueue<Event*,1024>
+                 ::dequeue( timeout );
+      }
+
       bool enqueue( Event& ev )
       {
         return SynchronizedNonBlockingFiniteQueue<Event*,1024>::enqueue( &ev );
-      }
-
-      Event* timed_dequeue( const YIELD::platform::Time& timeout )
-      {
-        return SynchronizedNonBlockingFiniteQueue<Event*,1024>
-                 ::timed_dequeue( timeout );
       }
 
       Event* try_dequeue()
@@ -555,24 +554,15 @@ namespace YIELD
         }
       }
 
-      bool enqueue( ElementType element )
+      ElementType dequeue( const Time& timeout )
       {
-        lock.acquire();
-        std::queue<ElementType>::push( element );
-        lock.release();
-        signal.release();
-        return true;
-      }
-
-      ElementType timed_dequeue( const YIELD::platform::Time& timeout )
-      {
-        YIELD::platform::Time timeout_left( timeout );
+        Time timeout_left( timeout );
 
         for ( ;; )
         {
-          YIELD::platform::Time start_time;
+          Time start_time;
 
-          if ( signal.timed_acquire( timeout_left ) )
+          if ( signal.acquire( timeout_left ) )
           {
             if ( lock.try_acquire() )
             {
@@ -588,12 +578,21 @@ namespace YIELD
             }
           }
 
-          YIELD::platform::Time elapsed_time; elapsed_time -= start_time;
+          Time elapsed_time; elapsed_time -= start_time;
           if ( elapsed_time < timeout_left )
             timeout_left -= elapsed_time;
           else
             return NULL;
         }
+      }
+
+      bool enqueue( ElementType element )
+      {
+        lock.acquire();
+        std::queue<ElementType>::push( element );
+        lock.release();
+        signal.release();
+        return true;
       }
 
       ElementType try_dequeue()
@@ -615,8 +614,8 @@ namespace YIELD
       }
 
     private:
-      YIELD::platform::Mutex lock;
-      YIELD::platform::Semaphore signal;
+      yield::platform::Mutex lock;
+      yield::platform::Semaphore signal;
     };
 
 
@@ -625,20 +624,23 @@ namespace YIELD
         private SynchronizedSTLQueue<Event*>
     {
     public:
+      // yidl::runtime::Object
+      STLEventQueue& inc_ref() { return Object::inc_ref( *this ); }
+
       // EventQueue
       Event* dequeue()
       {
         return SynchronizedSTLQueue<Event*>::dequeue();
       }
 
+      Event* dequeue( const Time& timeout )
+      {
+        return SynchronizedSTLQueue<Event*>::dequeue( timeout );
+      }
+
       bool enqueue( Event& ev )
       {
         return SynchronizedSTLQueue<Event*>::enqueue( &ev );
-      }
-
-      Event* timed_dequeue( const YIELD::platform::Time& timeout )
-      {
-        return SynchronizedSTLQueue<Event*>::timed_dequeue( timeout );
       }
 
       Event* try_dequeue()
@@ -656,8 +658,8 @@ namespace YIELD
 
       // EventQueue
       Event* dequeue();
-      bool enqueue( Event& );
-      Event* timed_dequeue( const YIELD::platform::Time& timeout );
+      Event* dequeue( const Time& timeout );
+      bool enqueue( Event& );      
       Event* try_dequeue();
 
     private:
@@ -674,30 +676,35 @@ namespace YIELD
     class Request : public Event
     {
     public:
-      auto_EventTarget get_response_target() const;
-      virtual void respond( Response& response );
-      void set_response_target( auto_EventTarget response_target );
+      Request();
+      virtual ~Request();
 
-    protected:
-      Request() { }
-      virtual ~Request() { }
+      EventTarget* get_response_target() const;
+      virtual void respond( Response& response );
+      void set_response_target( EventTarget* response_target );
+
+      // yidl::runtime::Object
+      Request& inc_ref() { return Object::inc_ref( *this ); }
 
     private:
-      auto_EventTarget response_target;
+      EventTarget* response_target;
     };
 
 
     class Response : public Event
     {
-    protected:
+    public:
       Response() { }
       virtual ~Response() { }
+
+      // yidl::runtime::Object
+      Response& inc_ref() { return Object::inc_ref( *this ); }
     };
 
 
     class ExceptionResponse
       : public Response,
-        public YIELD::platform::Exception
+        public yield::platform::Exception
     {
     public:
       ExceptionResponse() { }
@@ -734,6 +741,9 @@ namespace YIELD
       {
         throw ExceptionResponse( *this );
       }
+
+      // yidl::runtime::Object
+      ExceptionResponse& inc_ref() { return Object::inc_ref( *this ); }
 
       // yidl::runtime::RTTIObject
       YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ExceptionResponse, 102 );
@@ -782,7 +792,7 @@ namespace YIELD
 
           default:
           {
-            throw YIELD::platform::Exception
+            throw yield::platform::Exception
                   (
                     "ResponseQueue::dequeue: received unexpected, " \
                     "non-exception event type"
@@ -792,15 +802,10 @@ namespace YIELD
         }
       }
 
-      void enqueue( Event& ev )
-      {
-        SynchronizedSTLQueue<Event*>::enqueue( &ev );
-      }
-
-      ResponseType& timed_dequeue( const YIELD::platform::Time& timeout )
+      ResponseType& dequeue( const Time& timeout )      
       {
         Event* dequeued_ev 
-          = SynchronizedSTLQueue<Event*>::timed_dequeue( timeout );
+          = SynchronizedSTLQueue<Event*>::dequeue( timeout );
 
         if ( dequeued_ev != NULL )
         {
@@ -825,13 +830,13 @@ namespace YIELD
                 throw;
               }
 
-              throw YIELD::platform::Exception( "should never reach this point" );
+              throw yield::platform::Exception( "should never reach this point" );
             }
             break;
 
             default:
             {
-              throw YIELD::platform::Exception
+              throw yield::platform::Exception
                    (
                      "ResponseQueue::dequeue: received unexpected, " \
                      " non-exception event type"
@@ -841,7 +846,12 @@ namespace YIELD
           }
         }
         else
-          throw YIELD::platform::Exception( "ResponseQueue::dequeue: timed out" );
+          throw yield::platform::Exception( "ResponseQueue::dequeue: timed out" );
+      }
+
+      void enqueue( Event& ev )
+      {
+        SynchronizedSTLQueue<Event*>::enqueue( &ev );
       }
 
       // EventTarget
@@ -869,7 +879,7 @@ namespace YIELD
     <
       typename SampleType, 
       size_t ArraySize, 
-      class LockType = YIELD::platform::NOPLock
+      class LockType = yield::platform::NOPLock
     >
     class Sampler
     {
@@ -1006,11 +1016,16 @@ namespace YIELD
       class StartupEvent : public Event
       {
       public:
-        StartupEvent( auto_Stage stage )
-          : stage( stage )
+        StartupEvent( Stage& stage )
+          : stage( stage.inc_ref() )
         { }
 
-        auto_Stage get_stage() { return stage; }
+        ~StartupEvent()
+        {
+          Stage::dec_ref( stage );
+        }
+
+        Stage& get_stage() { return stage; }
 
         // yidl::runtime::RTTIObject
         YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( Stage::StartupEvent, 104 );
@@ -1020,7 +1035,7 @@ namespace YIELD
         void unmarshal( yidl::runtime::Unmarshaller& ) { }
 
       private:
-        auto_Stage stage;
+        Stage& stage;
       };
 
 
@@ -1041,20 +1056,23 @@ namespace YIELD
       double get_service_rate_s() const { return service_rate_s; }
       uint8_t get_stage_id() const { return id; }
       const char* get_stage_name() const { return name; }
-      virtual auto_EventHandler get_event_handler() = 0;
+      virtual EventHandler& get_event_handler() = 0;
       virtual bool visit() = 0;
-      virtual bool visit( const YIELD::platform::Time& timeout ) = 0;
+      virtual bool visit( const Time& timeout ) = 0;
       virtual void visit( Event& event ) = 0;
+
+      // yidl::runtime::Object
+      Stage& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
       Stage( const char* name );
       virtual ~Stage();
 
-      Sampler<uint64_t, 1024, YIELD::platform::Mutex>
+      Sampler<uint64_t, 1024, yield::platform::Mutex>
         event_processing_time_sampler;
       uint32_t event_queue_length, event_queue_arrival_count;
   #ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
-      YIELD::platform::auto_PerformanceCounterSet performance_counters;
+      yield::platform::auto_PerformanceCounterSet performance_counters;
       uint64_t performance_counter_totals[2];
   #endif
 
@@ -1076,13 +1094,19 @@ namespace YIELD
     public:
       StageImpl
       (
-        yidl::runtime::auto_Object<EventHandlerType> event_handler,
-        yidl::runtime::auto_Object<EventQueueType> event_queue
+        EventHandlerType& event_handler,
+        EventQueueType& event_queue
       )
-        : Stage( event_handler->get_event_handler_name() ),
+        : Stage( event_handler.get_event_handler_name() ),
           event_handler( event_handler ),
           event_queue( event_queue )
       { }
+      
+      virtual ~StageImpl()
+      {
+        EventHandlerType::dec_ref( event_handler );
+        EventQueueType::dec_ref( event_queue );
+      }
 
       // EventTarget
       void send( Event& event )
@@ -1104,12 +1128,12 @@ namespace YIELD
         }
         */
 
-        event.set_next_stage( this );
+        // event.set_next_stage( this );
 
         ++event_queue_length;
         ++event_queue_arrival_count;
 
-        if ( event_queue->enqueue( event ) )
+        if ( event_queue.enqueue( event ) )
           return;
         else
         {
@@ -1121,19 +1145,16 @@ namespace YIELD
       // Stage
       const char* get_stage_name() const
       {
-          return event_handler->get_event_handler_name();
+        return event_handler.get_event_handler_name();
       }
 
-      auto_EventHandler get_event_handler()
-      {
-        return event_handler->inc_ref();
-      }
+      EventHandler& get_event_handler() { return event_handler; }
 
       bool visit()
       {
         lock.acquire();
 
-        Event* event = event_queue->dequeue();
+        Event* event = event_queue.dequeue();
         if ( event != NULL )
         {
           --event_queue_length;
@@ -1141,7 +1162,7 @@ namespace YIELD
 
           for ( ;; )
           {
-            event = event_queue->try_dequeue();
+            event = event_queue.try_dequeue();
             if ( event != NULL )
             {
               --event_queue_length;
@@ -1162,11 +1183,11 @@ namespace YIELD
         }
       }
 
-      bool visit( const YIELD::platform::Time& timeout )
+      bool visit( const Time& timeout )
       {
         if ( lock.try_acquire() )
         {
-          Event* event = event_queue->timed_dequeue( timeout );
+          Event* event = event_queue.dequeue( timeout );
           if ( event != NULL )
           {
             --event_queue_length;
@@ -1174,7 +1195,7 @@ namespace YIELD
 
             for ( ;; )
             {
-              event = event_queue->try_dequeue();
+              event = event_queue.try_dequeue();
               if ( event != NULL )
               {
                 --event_queue_length;
@@ -1207,20 +1228,20 @@ namespace YIELD
       }
 
     private:
-      yidl::runtime::auto_Object<EventHandlerType> event_handler;
-      yidl::runtime::auto_Object<EventQueueType> event_queue;
+      EventHandlerType& event_handler;
+      EventQueueType& event_queue;
 
       LockType lock;
 
       void callEventHandler( Event& event )
       {
-        YIELD::platform::Time start_time;
+        Time start_time;
 
   #ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
         performance_counters->startCounting();
   #endif
 
-        event_handler->handleEvent( event );
+        event_handler.handleEvent( event );
 
   #ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
         uint64_t performance_counter_counts[2];
@@ -1229,7 +1250,7 @@ namespace YIELD
         performance_counter_totals[1] += performance_counter_counts[1];
   #endif
 
-        YIELD::platform::Time event_processing_time;
+        Time event_processing_time;
         event_processing_time -= start_time;
         if ( event_processing_time < 10.0 )
         {
@@ -1243,38 +1264,33 @@ namespace YIELD
     class StageGroup : public yidl::runtime::Object
     {
     public:
+      // createStage steals the event_handler reference passed to it,
+      // to allow createStage( *new EventHandlerType )
       template <class EventHandlerType>
-      auto_Stage createStage
-      (
-        yidl::runtime::auto_Object<EventHandlerType> event_handler
-      )
+      Stage* createStage( EventHandlerType& event_handler )
       {
-        return createStage
-        (
-          static_cast<EventHandler*>( event_handler.release() )
-        );
+        return createStage( static_cast<EventHandler&>( event_handler ) );
       }
 
       template <class EventHandlerType>
-      auto_Stage createStage
+      Stage*
+      createStage
       (
-        yidl::runtime::auto_Object<EventHandlerType> event_handler,
+        EventHandlerType& event_handler,
         int16_t thread_count
       )
       {
         return createStage
         (
-          static_cast<EventHandler*>
-          (
-            event_handler.release()
-          ),
+          static_cast<EventHandler&>( event_handler ),
           thread_count
         );
       }
 
-      virtual auto_Stage createStage
+      virtual Stage* 
+      createStage
       (
-        yidl::runtime::auto_Object<EventHandler> event_handler,
+        EventHandler& event_handler,
         int16_t thread_count = 1
       ) = 0;
 
@@ -1284,13 +1300,11 @@ namespace YIELD
       StageGroup();
       virtual ~StageGroup();
 
-      void addStage( auto_Stage stage );
+      void addStage( Stage* stage );
 
     private:
       Stage* stages[YIELD_CONCURRENCY_STAGES_PER_GROUP_MAX];
     };
-
-    typedef yidl::runtime::auto_Object<StageGroup> auto_StageGroup;
 
 
     template <class StageGroupType> // CRTP
@@ -1298,9 +1312,9 @@ namespace YIELD
     {
     public:
       template <class EventHandlerType>
-      auto_Stage createStage
+      Stage* createStage
       (
-        yidl::runtime::auto_Object<EventHandlerType> event_handler
+        EventHandlerType& event_handler
       )
       {
         return static_cast<StageGroupType*>( this )
@@ -1308,9 +1322,9 @@ namespace YIELD
       }
 
       template <class EventHandlerType>
-      auto_Stage createStage
+      Stage* createStage
       (
-        yidl::runtime::auto_Object<EventHandlerType> event_handler,
+        EventHandlerType& event_handler,
         int16_t thread_count
       )
       {
@@ -1319,9 +1333,9 @@ namespace YIELD
       }
 
       // StageGroup
-      auto_Stage createStage
+      Stage* createStage
       (
-        yidl::runtime::auto_Object<EventHandler> event_handler,
+        EventHandler& event_handler,
         int16_t thread_count = 1
       )
       {
@@ -1347,13 +1361,14 @@ namespace YIELD
       ~ColorStageGroup();
 
       template <class EventHandlerType>
-      auto_Stage createStage
+      Stage* createStage
       (
-        yidl::runtime::auto_Object<EventHandlerType> event_handler,
+        EventHandlerType& event_handler,
         int16_t thread_count
       )
       {
-        auto_Stage stage;
+        Stage* stage;
+
         if ( thread_count == 1 )
         {
           stage
@@ -1361,8 +1376,8 @@ namespace YIELD
                   <
                     EventHandlerType,
                     STLEventQueue,
-                    YIELD::platform::NOPLock
-                  >( event_handler, event_queue );
+                    yield::platform::NOPLock
+                  >( event_handler, event_queue->inc_ref() );
         }
         else
         {
@@ -1371,12 +1386,12 @@ namespace YIELD
                   <
                     EventHandlerType,
                     STLEventQueue,
-                    YIELD::platform::Mutex
-                  >( event_handler, event_queue );
+                    yield::platform::Mutex
+                  >( event_handler, event_queue->inc_ref() );
         }
 
         // TODO: check flags before sending this
-        //event_handler->handleEvent( *( new Stage::StartupEvent( stage ) ) );
+        //event_handler->handleEvent( *new Stage::StartupEvent( stage ) );
 
         this->addStage( stage );
 
@@ -1384,7 +1399,7 @@ namespace YIELD
       }
 
     private:
-      auto_STLEventQueue event_queue;
+      STLEventQueue* event_queue;
 
       class Thread;
       std::vector<Thread*> threads;
@@ -1416,13 +1431,14 @@ namespace YIELD
       );
 
       template <class EventHandlerType>
-      auto_Stage createStage
+      Stage* createStage
       (
-        yidl::runtime::auto_Object<EventHandlerType> event_handler,
+        EventHandlerType& event_handler,
         int16_t thread_count
       )
       {
-        auto_Stage stage;
+        Stage* stage;
+
         if ( use_thread_local_event_queues )
         {
           if ( thread_count == 1 )
@@ -1432,8 +1448,8 @@ namespace YIELD
                     <
                       EventHandlerType,
                       ThreadLocalEventQueue,
-                      YIELD::platform::Mutex
-                    >( event_handler, new ThreadLocalEventQueue );
+                      yield::platform::Mutex
+                    >( event_handler, *new ThreadLocalEventQueue );
           }
           else
           {
@@ -1442,8 +1458,8 @@ namespace YIELD
                     <
                       EventHandlerType,
                       ThreadLocalEventQueue,
-                      YIELD::platform::NOPLock
-                    >( event_handler, new ThreadLocalEventQueue );
+                      yield::platform::NOPLock
+                    >( event_handler, *new ThreadLocalEventQueue );
           }
         }
         else
@@ -1455,8 +1471,8 @@ namespace YIELD
                     <
                       EventHandlerType,
                       STLEventQueue,
-                      YIELD::platform::Mutex
-                    >( event_handler, new STLEventQueue );
+                      yield::platform::Mutex
+                    >( event_handler, *new STLEventQueue );
           }
           else
           {
@@ -1465,13 +1481,13 @@ namespace YIELD
                     <
                       EventHandlerType,
                       STLEventQueue,
-                      YIELD::platform::NOPLock
-                    >( event_handler, new STLEventQueue );
+                      yield::platform::NOPLock
+                    >( event_handler, *new STLEventQueue );
           }
         }
 
         // TODO: check flags before sending this
-        //event_handler->handleEvent( *( new Stage::StartupEvent( stage ) ) );
+        //event_handler->handleEvent( *new Stage::StartupEvent( stage ) );
 
         this->addStage( stage );
 
@@ -1650,17 +1666,17 @@ namespace YIELD
       SEDAStageGroup() { }
 
       template <class EventHandlerType>
-      auto_Stage createStage
+      Stage* createStage
       (
-        yidl::runtime::auto_Object<EventHandlerType> event_handler,
+        EventHandlerType& event_handler,
         int16_t thread_count
       )
       {
         if ( thread_count <= 0 )
           thread_count
-          = YIELD::platform::Machine::getOnlinePhysicalProcessorCount();
+          = yield::platform::ProcessorSet::getOnlinePhysicalProcessorCount();
 
-        auto_Stage stage;
+        Stage* stage;
         if ( thread_count == 1 )
         {
           stage
@@ -1668,8 +1684,8 @@ namespace YIELD
                   <
                     EventHandlerType,
                     STLEventQueue,
-                    YIELD::platform::Mutex
-                  >( event_handler, new STLEventQueue );
+                    yield::platform::Mutex
+                  >( event_handler, *new STLEventQueue );
         }
         else
         {
@@ -1678,16 +1694,16 @@ namespace YIELD
                   <
                     EventHandlerType,
                     STLEventQueue,
-                    YIELD::platform::NOPLock
-                  >( event_handler, new STLEventQueue );
+                    yield::platform::NOPLock
+                  >( event_handler, *new STLEventQueue );
         }
 
         // TODO: check flags before sending this
-        //event_handler->handleEvent( *( new Stage::StartupEvent( stage ) ) );
+        //event_handler->handleEvent( *new Stage::StartupEvent( stage ) );
 
         this->addStage( stage );
 
-        startThreads( stage, thread_count );
+        startThreads( *stage, thread_count );
 
         return stage;
       }
@@ -1698,7 +1714,7 @@ namespace YIELD
     private:
       class Thread;
       std::vector<Thread*> threads;
-      void startThreads( auto_Stage stage, int16_t thread_count );
+      void startThreads( Stage& stage, int16_t thread_count );
     };
   };
 };

@@ -1,28 +1,33 @@
 #include "yield/platform.h"
-using namespace YIELD::platform;
+using namespace yield::platform;
 
 
 // bio_queue.cpp
 class BIOQueue::WorkerThread : public Thread
 {
 public:
-  WorkerThread( BIOCB* biocb )
+  WorkerThread( BIOCB& biocb )
     : biocb( biocb )
   { }
 
   // Thread
   void run()
   {
-    biocb->execute();
-    delete biocb;
+    biocb.execute();
+    BIOCB::dec_ref( biocb );
   }
 
 private:
-  BIOCB* biocb;
+  BIOCB& biocb;
 };
 
 
-void BIOQueue::submit( BIOCB* biocb )
+BIOQueue& BIOQueue::create()
+{
+  return *new BIOQueue;
+}
+
+void BIOQueue::submit( BIOCB& biocb )
 {
   WorkerThread* worker_thread = new WorkerThread( biocb );
   worker_thread->start();
@@ -83,13 +88,13 @@ Directory::~Directory()
 #endif
 }
 
-Directory::auto_Entry Directory::readdir()
+Directory::Entry* Directory::readdir()
 {
 #ifdef _WIN32
   if ( first_find_data != NULL )
   {
     Entry* entry
-      = new Entry( first_find_data->cFileName, new Stat( *first_find_data ) );
+      = new Entry( first_find_data->cFileName, *new Stat( *first_find_data ) );
     delete first_find_data;
     first_find_data = NULL;
     return entry;
@@ -97,11 +102,11 @@ Directory::auto_Entry Directory::readdir()
 
   WIN32_FIND_DATA next_find_data;
   if ( FindNextFileW( hDirectory, &next_find_data ) )
-    return new Entry( next_find_data.cFileName, new Stat( next_find_data ) );
+    return new Entry( next_find_data.cFileName, *new Stat( next_find_data ) );
 #else
   struct dirent* next_dirent = ::readdir( static_cast<DIR*>( dirp ) );
   if ( next_dirent != NULL )
-    return new Entry( next_dirent->d_name, next_dirent->d_type );
+    return new Entry( next_dirent->d_name );
 #endif
 
   return NULL;
@@ -109,63 +114,16 @@ Directory::auto_Entry Directory::readdir()
 
 
 Directory::Entry::Entry( const Path& name )
-  : name( name )
-{
-#ifndef _WIN32
-  d_type = DT_UNKNOWN;
-#endif
-}
-
-Directory::Entry::Entry( const Path& name, auto_Stat stbuf )
-  : name( name ), stbuf( stbuf )
-{
-#ifndef _WIN32
-  d_type = DT_UNKNOWN;
-#endif
-}
-
-#ifndef _WIN32
-Directory::Entry::Entry( const char* d_name, unsigned char d_type )
-  : name( d_name ), d_type( d_type )
+  : name( name ), stbuf( NULL )
 { }
-#endif
 
-bool Directory::Entry::ISDIR() const
-{
-  if ( stbuf != NULL )
-    return stbuf->ISDIR();
-  else
-#ifdef _WIN32
-    return false;
-#else
-    return d_type == DT_DIR;
-#endif
-}
+Directory::Entry::Entry( const Path& name, Stat& stbuf )
+  : name( name ), stbuf( &stbuf )
+{ }
 
-#ifndef _WIN32
-bool Directory::Entry::ISLNK() const
+Directory::Entry::~Entry()
 {
-  if ( stbuf != NULL )
-    return stbuf->ISLNK();
-  else
-#ifdef _WIN32
-    return false;
-#else
-    return d_type == DT_LNK;
-#endif
-}
-#endif
-
-bool Directory::Entry::ISREG() const
-{
-  if ( stbuf != NULL )
-    return stbuf->ISREG();
-  else
-#ifdef _WIN32
-    return false;
-#else
-    return d_type == DT_REG;
-#endif
+  Stat::dec_ref( stbuf );
 }
 
 
@@ -380,7 +338,7 @@ void Exception::set_error_message( const char* error_message )
 #endif
 
 
-namespace YIELD
+namespace yield
 {
   namespace platform
   {
@@ -469,11 +427,11 @@ namespace YIELD
         close( epfd );
       }
 
-      static epollFDEventPoller* create()
+      static epollFDEventPoller& create()
       {
         int epfd = epoll_create( 32768 );
         if ( epfd != -1 )
-          return new epollFDEventPoller( epfd );
+          return *new epollFDEventPoller( epfd );
         else
           throw Exception();
       }
@@ -603,11 +561,11 @@ namespace YIELD
         close( port );
       }
 
-      static EventPortFDEventPoller* create()
+      static EventPortFDEventPoller& create()
       {
         int port = port_create();
         if ( port != -1 )
-          return new EventPortFDEventPoller( port );
+          return *new EventPortFDEventPoller( port );
         else
           throw Exception();
       }
@@ -685,12 +643,21 @@ namespace YIELD
 
       bool toggle( fd_t fd, bool want_read, bool want_write )
       {
-        void* context;
-        if ( find_context( fd, &context ) )
+        if ( want_read || want_write )
         {
+          void* context;
+          if ( find_context( fd, &context ) )
+          {
+            int events = 0
+            if ( want_read ) events |= POLLIN;
+            if ( want_write ) events |= POLLOUT;
+            return port_associate( poll_fd, PORT_SOURCE_FD, fd, events, context ) != -1;
+          }
+          else
+            return false;
         }
         else
-          return false;
+          return port_dissociate( poll_fd, PORT_SOURCE_FD, fd ) != -1;
       }
 
     private:
@@ -714,11 +681,11 @@ namespace YIELD
         close( kq );
       }
 
-      static kqueueFDEventPoller* create()
+      static kqueueFDEventPoller& create()
       {
         int kq = kqueue();
         if ( kq != -1 )
-          return new kqueueFDEventPoller( kq );
+          return *new kqueueFDEventPoller( kq );
         else
           throw Exception();
       }
@@ -881,9 +848,9 @@ namespace YIELD
     class pollFDEventPoller : public FDEventPollerImpl
     {
     public:
-      static pollFDEventPoller* create()
+      static pollFDEventPoller& create()
       {
-        return new pollFDEventPoller;
+        return *new pollFDEventPoller;
       }
 
       // FDEventPoller
@@ -1038,9 +1005,9 @@ namespace YIELD
     class selectFDEventPoller : public FDEventPollerImpl
     {
     public:
-      static selectFDEventPoller* create()
+      static selectFDEventPoller& create()
       {
-        return new selectFDEventPoller;
+        return *new selectFDEventPoller;
       }
 
       // FDEventPoller
@@ -1240,7 +1207,7 @@ namespace YIELD
 };
 
 
-auto_FDEventPoller FDEventPoller::create()
+FDEventPoller& FDEventPoller::create()
 {
 #if defined(_WIN32)
   return selectFDEventPoller::create();
@@ -1410,7 +1377,7 @@ size_t File::getpagesize()
 #endif
 }
 
-auto_Stat File::getattr()
+Stat* File::getattr()
 {
 #ifdef _WIN32
   BY_HANDLE_FILE_INFORMATION by_handle_file_information;
@@ -1731,6 +1698,9 @@ ssize_t File::writev( const struct iovec* buffers, uint32_t buffers_count )
 #include <windows.h>
 #else
 #include <iconv.h>
+#ifdef __sun
+#undef iconv
+#endif
 #if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__sun)
 #define ICONV_SOURCE_CAST const char**
 #else
@@ -1780,7 +1750,7 @@ const char* iconv::Code_to_iconv_code( Code code )
 }
 #endif
 
-auto_iconv iconv::open( Code tocode, Code fromcode )
+yield::platform::iconv* iconv::open( Code tocode, Code fromcode )
 {
 #ifdef _WIN32
   UINT to_code_page = Code_to_win32_code_page( tocode );
@@ -1797,7 +1767,7 @@ auto_iconv iconv::open( Code tocode, Code fromcode )
   if ( cd != reinterpret_cast<iconv_t>( -1 ) )
     return new iconv( cd );
   else
-    throw Exception();
+    return NULL;
 #endif
 }
 
@@ -1868,11 +1838,14 @@ iconv::operator()
 
   return static_cast<size_t>( -1 );
 #else
-  // Reset the converter
-  if ( ::iconv( cd, NULL, 0, NULL, 0 ) != static_cast<size_t>( -1 ) )
+  if ( reset() )
   {
     // Now try to convert; will return ( size_t )-1 on failure
+#ifdef __sun
+    return ::libiconv
+#else
     return ::iconv
+#endif
            (
              cd,
              ( ICONV_SOURCE_CAST )inbuf,
@@ -1966,7 +1939,7 @@ bool iconv::operator()( const std::string& inbuf, std::string& outbuf )
   return false;
 #else
   // Reset the converter
-  if ( ::iconv( cd, NULL, 0, NULL, 0 ) != static_cast<size_t>( -1 ) )
+  if ( reset() )
   {
     char* inbuf_c = const_cast<char*>( inbuf.c_str() );
     size_t inbytesleft = inbuf.size();
@@ -1979,7 +1952,11 @@ bool iconv::operator()( const std::string& inbuf, std::string& outbuf )
       size_t outbytesleft = outbuf_c_len;
 
       size_t iconv_ret
+#ifdef __sun
+        = ::libiconv
+#else
         = ::iconv
+#endif
           (
             cd,
             ( ICONV_SOURCE_CAST )&inbuf_c,
@@ -2103,17 +2080,28 @@ bool iconv::operator()( const std::wstring& inbuf, std::string& outbuf )
 }
 #endif
 
+#ifndef _WIN32
+bool iconv::reset()
+{
+#ifdef __sun
+  return ::libiconv( cd, NULL, 0, NULL, 0 ) != static_cast<size_t>( -1 );
+#else
+  return ::iconv( cd, NULL, 0, NULL, 0 ) != static_cast<size_t>( -1 );
+#endif
+}
+#endif
+
 
 // istream.cpp
 void
 IStream::aio_read
 (
-  yidl::runtime::auto_Buffer buffer,
+  Buffer& buffer,
   AIOReadCallback& callback,
   void* callback_context
 )
 {
-  ssize_t read_ret = read( *buffer );
+  ssize_t read_ret = read( buffer );
   if ( read_ret >= 0 )
   {
     callback.onReadCompletion
@@ -2123,14 +2111,18 @@ IStream::aio_read
     );
   }
   else
+  {
 #ifdef _WIN32
     callback.onReadError( GetLastError(), callback_context );
 #else
     callback.onReadError( errno, callback_context );
 #endif
+  }
+
+  Buffer::dec_ref( buffer );
 }
 
-ssize_t IStream::read( yidl::runtime::Buffer& buffer )
+ssize_t IStream::read( Buffer& buffer )
 {
   ssize_t read_ret
     = read
@@ -2140,27 +2132,32 @@ ssize_t IStream::read( yidl::runtime::Buffer& buffer )
       );
 
   if ( read_ret > 0 )
-    buffer.put( NULL, static_cast<size_t>( read_ret ) );
+    buffer.put( static_cast<size_t>( read_ret ) );
 
   return read_ret;
 }
 
 
 // log.cpp
-namespace YIELD
+namespace yield
 {
   namespace platform
   {
     class FileLog : public Log
     {
     public:
-      FileLog( auto_File file, Level level )
-        : Log( level ), file( file )
+      FileLog( File& file, Level level )
+        : Log( level ), file( &file )
       { }
 
       FileLog( const Path& file_path, Level level ) // Lazy open
         : Log( level ), file_path( file_path )
       { }
+
+      ~FileLog()
+      {
+        File::dec_ref( file );
+      }
 
       // Log
       void write( const char* str, size_t str_len )
@@ -2176,7 +2173,7 @@ namespace YIELD
       }
 
     private:
-      auto_File file;
+      File* file;
       Path file_path;
     };
 
@@ -2201,17 +2198,17 @@ namespace YIELD
 };
 
 
-Log::Stream::Stream( auto_Log log, Log::Level level )
+Log::Stream::Stream( Log& log, Log::Level level )
   : log( log ), level( level )
 { }
 
 Log::Stream::Stream( const Stream& other )
-  : log( other.log ), level( other.level )
+  : log( other.log.inc_ref() ), level( other.level )
 { }
 
 Log::Stream::~Stream()
 {
-  if ( level <= log->get_level() && !oss.str().empty() )
+  if ( level <= log.get_level() && !oss.str().empty() )
   {
     std::ostringstream stamped_oss;
     stamped_oss << static_cast<std::string>( Time() );
@@ -2233,26 +2230,29 @@ Log::Stream::~Stream()
     stamped_oss << oss.str();
     stamped_oss << std::endl;
 
-    log->write( stamped_oss.str(), level );
+    log.write( stamped_oss.str(), level );
   }
+
+  Log::dec_ref( log );
 }
 
-auto_Log Log::open( std::ostream& underlying_ostream, Level level )
+
+Log& Log::open( std::ostream& underlying_ostream, Level level )
 {
-  return new ostreamLog( underlying_ostream, level );
+  return *new ostreamLog( underlying_ostream, level );
 }
 
-auto_Log Log::open( const Path& file_path, Level level, bool lazy )
+Log& Log::open( const Path& file_path, Level level, bool lazy )
 {
   if ( lazy )
-    return new FileLog( file_path, level );
+    return *new FileLog( file_path, level );
   else
   {
-    auto_File file = Volume().open( file_path, O_CREAT|O_WRONLY|O_APPEND );
+    File* file = Volume().open( file_path, O_CREAT|O_WRONLY|O_APPEND );
     if ( file != NULL )
-      return new FileLog( file, level );
+      return *new FileLog( *file, level );
     else
-      return NULL;
+      throw Exception();
   }
 }
 
@@ -2335,101 +2335,6 @@ void Log::write( const unsigned char* str, size_t str_len, Level level )
 }
 
 
-// machine.cpp
-#ifdef _WIN32
-#include <windows.h>
-#else
-#if defined(__MACH__)
-#include <mach/mach.h>
-#include <mach/mach_error.h>
-#elif defined(__sun)
-#include <sys/processor.h> // For p_online
-#include <kstat.h> // For kstat
-#endif
-#endif
-
-
-uint16_t Machine::getLogicalProcessorsPerPhysicalProcessor()
-{
-  return getOnlineLogicalProcessorCount() / getOnlinePhysicalProcessorCount();
-}
-
-uint16_t Machine::getOnlineLogicalProcessorCount()
-{
-  uint16_t online_logical_processor_count = 0;
-
-#if defined(_WIN32)
-  SYSTEM_INFO available_info;
-  GetSystemInfo( &available_info );
-  online_logical_processor_count
-    = static_cast<uint16_t>( available_info.dwNumberOfProcessors );
-#elif defined(__linux__)
-  long _online_logical_processor_count = sysconf( _SC_NPROCESSORS_ONLN );
-  if ( _online_logical_processor_count != -1 )
-    online_logical_processor_count = _online_logical_processor_count;
-#elif defined(__MACH__)
-  host_basic_info_data_t basic_info;
-  host_info_t info = (host_info_t)&basic_info;
-  host_flavor_t flavor = HOST_BASIC_INFO;
-  mach_msg_type_number_t count = HOST_BASIC_INFO_COUNT;
-
-  if ( host_info( mach_host_self(), flavor, info, &count ) == KERN_SUCCESS )
-    online_logical_processor_count = basic_info.avail_cpus;
-#elif defined(__sun)
-  online_logical_processor_count = 0;
-  processorid_t cpuid_max = sysconf( _SC_CPUID_MAX );
-  for ( processorid_t cpuid_i = 0; cpuid_i <= cpuid_max; cpuid_i++)
-  {
-    if ( p_online( cpuid_i, P_STATUS ) == P_ONLINE )
-      online_logical_processor_count++;
-  }
-#endif
-
-  if ( online_logical_processor_count > 0 )
-    return online_logical_processor_count;
-  else
-    return 1;
-}
-
-uint16_t Machine::getOnlinePhysicalProcessorCount()
-{
-#if defined(__sun)
-  kstat_ctl_t* kc;
-
-  kc = kstat_open();
-  if ( kc )
-  {
-    uint16_t online_physical_processor_count = 1;
-
-    kstat* ksp = kstat_lookup( kc, "cpu_info", -1, NULL );
-    int32_t last_core_id = 0;
-    while ( ksp )
-    {
-      kstat_read( kc, ksp, NULL );
-      kstat_named_t* knp;
-      knp = ( kstat_named_t* )kstat_data_lookup( ksp, "core_id" );
-      if ( knp )
-      {
-        int32_t this_core_id = knp->value.i32;
-        if ( this_core_id != last_core_id )
-        {
-          online_physical_processor_count++;
-          last_core_id = this_core_id;
-        }
-      }
-      ksp = ksp->ks_next;
-    }
-
-    kstat_close( kc );
-
-    return online_physical_processor_count;
-  }
-#endif
-
-  return getOnlineLogicalProcessorCount();
-}
-
-
 // memory_mapped_file.cpp
 #ifdef _WIN32
 #include <windows.h>
@@ -2440,7 +2345,7 @@ uint16_t Machine::getOnlinePhysicalProcessorCount()
 
 MemoryMappedFile::MemoryMappedFile
 (
-  auto_File underlying_file,
+  File& underlying_file,
   uint32_t open_flags
 )
   : underlying_file( underlying_file ),
@@ -2451,6 +2356,12 @@ MemoryMappedFile::MemoryMappedFile
 #endif
   size_ = 0;
   start = NULL;
+}
+
+MemoryMappedFile::~MemoryMappedFile()
+{
+  close();
+  File::dec_ref( underlying_file );
 }
 
 bool MemoryMappedFile::close()
@@ -2474,11 +2385,10 @@ bool MemoryMappedFile::close()
   }
 #endif
 
-  return underlying_file->close();
+  return underlying_file.close();
 }
 
-auto_MemoryMappedFile
-MemoryMappedFile::open( const Path& path )
+MemoryMappedFile* MemoryMappedFile::open( const Path& path )
 {
   return open
          (
@@ -2490,8 +2400,7 @@ MemoryMappedFile::open( const Path& path )
           );
 }
 
-auto_MemoryMappedFile
-MemoryMappedFile::open( const Path& path, uint32_t flags )
+MemoryMappedFile* MemoryMappedFile::open( const Path& path, uint32_t flags )
 {
   return open
          (
@@ -2503,7 +2412,7 @@ MemoryMappedFile::open( const Path& path, uint32_t flags )
          );
 }
 
-auto_MemoryMappedFile
+MemoryMappedFile*
 MemoryMappedFile::open
 (
   const Path& path,
@@ -2513,7 +2422,7 @@ MemoryMappedFile::open
   size_t minimum_size
 )
 {
-  auto_File file( Volume().open( path, flags, mode, attributes ) );
+  File* file = Volume().open( path, flags, mode, attributes );
 
   if ( file != NULL )
   {
@@ -2525,9 +2434,12 @@ MemoryMappedFile::open
       uliFileSize.LowPart = GetFileSize( *file, &uliFileSize.HighPart );
       current_file_size = static_cast<size_t>( uliFileSize.QuadPart );
 #else
-      auto_Stat stbuf = file->stat();
+      Stat* stbuf = file->stat();
       if ( stbuf != NULL )
+      {
         current_file_size = stbuf->get_size();
+        Stat::dec_ref( *stbuf );
+      }
       else
         current_file_size = 0;
 #endif
@@ -2535,19 +2447,19 @@ MemoryMappedFile::open
     else
       current_file_size = 0;
 
-    auto_MemoryMappedFile
-      memory_mapped_file( new MemoryMappedFile( file, flags ) );
+    MemoryMappedFile* memory_mapped_file
+      = new MemoryMappedFile( *file, flags );
 
     if
     (
-      memory_mapped_file->resize
-      (
-        std::max( minimum_size, current_file_size )
-      )
+      memory_mapped_file->resize( std::max( minimum_size, current_file_size ) )
     )
       return memory_mapped_file;
     else
+    {
+      delete memory_mapped_file;
       return NULL;
+    }
   }
   else
     return NULL;
@@ -2582,7 +2494,7 @@ bool MemoryMappedFile::resize( size_t new_size )
     (
       size() == new_size
       ||
-      underlying_file->truncate( new_size ) )
+      underlying_file.truncate( new_size ) )
     {
 #ifdef _WIN32
       unsigned long map_flags = PAGE_READONLY;
@@ -2594,7 +2506,7 @@ bool MemoryMappedFile::resize( size_t new_size )
 
       mapping = CreateFileMapping
                 (
-                  *underlying_file,
+                  underlying_file,
                   NULL, map_flags,
                   uliNewSize.HighPart,
                   uliNewSize.LowPart,
@@ -2618,14 +2530,14 @@ bool MemoryMappedFile::resize( size_t new_size )
         mmap_flags |= PROT_WRITE;
 
       void* mmap_ret = mmap
-                      (
-                        0,
-                        new_size,
-                        mmap_flags,
-                        MAP_SHARED,
-                        *underlying_file,
-                        0
-                      );
+                       (
+                         0,
+                         new_size,
+                         mmap_flags,
+                         MAP_SHARED,
+                         underlying_file,
+                         0
+                       );
 
       if ( mmap_ret != MAP_FAILED )
       {
@@ -2711,17 +2623,7 @@ bool Mutex::acquire()
 #endif
 }
 
-bool Mutex::try_acquire()
-{
-#ifdef _WIN32
-  DWORD dwRet = WaitForSingleObjectEx( hMutex, 0, TRUE );
-  return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
-#else
-  return pthread_mutex_trylock( &pthread_mutex ) == 0;
-#endif
-}
-
-bool Mutex::timed_acquire( const Time& timeout )
+bool Mutex::acquire( const Time& timeout )
 {
 #ifdef _WIN32
   DWORD timeout_ms = static_cast<DWORD>( timeout.as_unix_time_ms() );
@@ -2752,6 +2654,16 @@ void Mutex::release()
 #endif
 }
 
+bool Mutex::try_acquire()
+{
+#ifdef _WIN32
+  DWORD dwRet = WaitForSingleObjectEx( hMutex, 0, TRUE );
+  return dwRet == WAIT_OBJECT_0 || dwRet == WAIT_ABANDONED;
+#else
+  return pthread_mutex_trylock( &pthread_mutex ) == 0;
+#endif
+}
+
 
 // named_pipe.cpp
 #ifdef _WIN32
@@ -2761,12 +2673,7 @@ void Mutex::release()
 #endif
 
 
-auto_NamedPipe NamedPipe::open
-(
-  const Path& path,
-  uint32_t flags,
-  mode_t mode
-)
+NamedPipe* NamedPipe::open( const Path& path, uint32_t flags, mode_t mode )
 {
 #ifdef _WIN32
   Path named_pipe_base_dir_path( TEXT( "\\\\.\\pipe" ) );
@@ -2792,7 +2699,7 @@ auto_NamedPipe NamedPipe::open
   }
   else // Client
   {
-    auto_File underlying_file( Volume().open( named_pipe_path, flags ) );
+    File* underlying_file = Volume().open( named_pipe_path, flags );
     if ( underlying_file != NULL )
     {
       fd_t fd;
@@ -2808,7 +2715,11 @@ auto_NamedPipe NamedPipe::open
         DUPLICATE_SAME_ACCESS
       );
 
-      return new NamedPipe( fd, true );
+      NamedPipe* named_pipe = new NamedPipe( fd, true );
+
+      File::dec_ref( *underlying_file );
+
+      return named_pipe;
     }
   }
 #else
@@ -2825,9 +2736,13 @@ auto_NamedPipe NamedPipe::open
       return NULL;
   }
 
-  auto_File underlying_file( Volume().open( path, flags ) );
+  File* underlying_file = Volume().open( path, flags );
   if ( underlying_file != NULL )
-    return new NamedPipe( dup( *underlying_file ) );
+  {
+    NamedPipe* named_pipe = new NamedPipe( dup( *underlying_file ) );
+    File::dec_ref( *underlying_file );
+    return named_pipe;
+  }
 #endif
 
   return NULL;
@@ -2891,25 +2806,31 @@ ssize_t NamedPipe::write( const void* buffer, size_t buffer_len )
 class NBIOQueue::WorkerThread : public Thread
 {
 public:
-  static yidl::runtime::auto_Object<WorkerThread> create()
+  ~WorkerThread()
   {
-    auto_FDEventPoller fd_event_poller( FDEventPoller::create() );
+    FDEventPoller::dec_ref( fd_event_poller );
+    SocketPair::dec_ref( submit_pipe );
+  }
 
-    auto_SocketPair submit_pipe( SocketPair::create() );
+  static WorkerThread& create()
+  {
+    FDEventPoller& fd_event_poller = FDEventPoller::create();
+    SocketPair& submit_pipe = SocketPair::create();
+
     if
     (
-      submit_pipe->first().set_blocking_mode( false )
+      submit_pipe.first().set_blocking_mode( false )
       &&
-      fd_event_poller->associate( submit_pipe->first(), true, false )
+      fd_event_poller.associate( submit_pipe.first(), true, false )
     )
-      return new WorkerThread( fd_event_poller, submit_pipe );
+      return *new WorkerThread( fd_event_poller, submit_pipe );
     else
       throw Exception();
   }
 
   void submit( NBIOCB* nbiocb )
   {
-    submit_pipe->second().write( &nbiocb, sizeof( nbiocb ) );
+    submit_pipe.second().write( &nbiocb, sizeof( nbiocb ) );
   }
 
   // Thread
@@ -2921,21 +2842,21 @@ public:
 
     for ( ;; )
     {
-      int fd_events_count = fd_event_poller->poll( fd_events, 64 );
+      int fd_events_count = fd_event_poller.poll( fd_events, 64 );
       if ( fd_events_count > 0 )
       {
         for ( int fd_event_i = 0; fd_event_i < fd_events_count; fd_event_i++ )
         {
           const FDEventPoller::FDEvent& fd_event = fd_events[fd_event_i];
 
-          if ( fd_event.get_fd() == submit_pipe->first() )
+          if ( fd_event.get_fd() == submit_pipe.first() )
           {
             // Read submitted NBIOCB's
             NBIOCB* nbiocb;
             for ( ;; )
             {
               ssize_t read_ret
-                = submit_pipe->first().read( &nbiocb, sizeof( nbiocb ) );
+                = submit_pipe.first().read( &nbiocb, sizeof( nbiocb ) );
 
               if ( read_ret == sizeof( nbiocb ) )
               {
@@ -2946,7 +2867,7 @@ public:
                     case NBIOCB::STATE_WANT_CONNECT:
                     case NBIOCB::STATE_WANT_WRITE:
                     {
-                      fd_event_poller->associate
+                      fd_event_poller.associate
                       (
                         nbiocb->get_fd(),
                         nbiocb,
@@ -2958,7 +2879,7 @@ public:
 
                     case NBIOCB::STATE_WANT_READ:
                     {
-                      fd_event_poller->associate
+                      fd_event_poller.associate
                       (
                         nbiocb->get_fd(),
                         nbiocb,
@@ -2994,20 +2915,20 @@ public:
               case NBIOCB::STATE_WANT_CONNECT:
               case NBIOCB::STATE_WANT_WRITE:
               {
-                fd_event_poller->toggle( nbiocb->get_fd(), false, true );
+                fd_event_poller.toggle( nbiocb->get_fd(), false, true );
               }
               break;
 
               case NBIOCB::STATE_WANT_READ:
               {
-                fd_event_poller->toggle( nbiocb->get_fd(), true, false );
+                fd_event_poller.toggle( nbiocb->get_fd(), true, false );
               }
               break;
 
               case NBIOCB::STATE_COMPLETE:
               case NBIOCB::STATE_ERROR:
               {
-                fd_event_poller->dissociate( nbiocb->get_fd() );
+                fd_event_poller.dissociate( nbiocb->get_fd() );
                 delete nbiocb;
               }
               break;
@@ -3027,13 +2948,13 @@ public:
   }
 
 private:
-  WorkerThread( auto_FDEventPoller fd_event_poller, auto_SocketPair submit_pipe )
+  WorkerThread( FDEventPoller& fd_event_poller, SocketPair& submit_pipe )
     : fd_event_poller( fd_event_poller ), submit_pipe( submit_pipe )
   { }
 
 private:
-  auto_FDEventPoller fd_event_poller;
-  auto_SocketPair submit_pipe;
+  FDEventPoller& fd_event_poller;
+  SocketPair& submit_pipe;
 };
 
 
@@ -3060,10 +2981,11 @@ NBIOQueue::~NBIOQueue()
   }
 }
 
-auto_NBIOQueue NBIOQueue::create()
+NBIOQueue& NBIOQueue::create()
 {
   std::vector<WorkerThread*> worker_threads;
-  uint16_t worker_thread_count = Machine::getOnlineLogicalProcessorCount();
+  uint16_t worker_thread_count
+    = ProcessorSet::getOnlineLogicalProcessorCount();
   // uint16_t worker_thread_count = 1;
   for
   (
@@ -3072,18 +2994,17 @@ auto_NBIOQueue NBIOQueue::create()
     worker_thread_i++
   )
   {
-    WorkerThread* worker_thread = WorkerThread::create().release();
-    worker_thread->start();
-    worker_threads.push_back( worker_thread );
+    WorkerThread& worker_thread = WorkerThread::create();
+    worker_thread.start();
+    worker_threads.push_back( &worker_thread );
   }
 
-  return new NBIOQueue( worker_threads );
+  return *new NBIOQueue( worker_threads );
 }
 
-void NBIOQueue::submit( NBIOCB* nbiocb )
+void NBIOQueue::submit( NBIOCB& nbiocb )
 {
-  if ( nbiocb != NULL )
-    worker_threads[Thread::gettid() % worker_threads.size()]->submit( nbiocb );
+  worker_threads[Thread::gettid() % worker_threads.size()]->submit( &nbiocb );
 }
 
 
@@ -4180,16 +4101,16 @@ OptionParser::print_usage
 void
 OStream::aio_write
 (
-  yidl::runtime::auto_Buffer buffer,
+  Buffer& buffer,
   AIOWriteCallback& callback,
   void* callback_context
 )
 {
-  ssize_t write_ret = write( *buffer );
+  ssize_t write_ret = write( buffer );
   if ( write_ret >= 0 )
   {
 #ifdef _DEBUG
-    if ( static_cast<size_t>( write_ret ) != buffer->size() )
+    if ( static_cast<size_t>( write_ret ) != buffer.size() )
       DebugBreak();
 #endif
     callback.onWriteCompletion( callback_context );
@@ -4200,17 +4121,19 @@ OStream::aio_write
 #else
     callback.onWriteError( errno, callback_context );
 #endif
+
+  Buffer::dec_ref( buffer );
 }
 
 void
 OStream::aio_writev
 (
-  yidl::runtime::auto_Buffers buffers,
+  Buffers& buffers,
   AIOWriteCallback& callback,
   void* callback_context
 )
 {
-  ssize_t writev_ret = writev( *buffers );
+  ssize_t writev_ret = writev( buffers );
   if ( writev_ret >= 0 )
     callback.onWriteCompletion( callback_context );
   else
@@ -4219,14 +4142,15 @@ OStream::aio_writev
 #else
     callback.onWriteError( errno, callback_context );
 #endif
+  Buffer::dec_ref( buffers );
 }
 
-ssize_t OStream::write( const yidl::runtime::Buffer& buffer )
+ssize_t OStream::write( const Buffer& buffer )
 {
   return write( static_cast<void*>( buffer ), buffer.size() );
 }
 
-ssize_t OStream::writev( const yidl::runtime::Buffers& buffers )
+ssize_t OStream::writev( const Buffers& buffers )
 {
   return writev( buffers, buffers.size() );
 }
@@ -4258,27 +4182,32 @@ ssize_t OStream::writev( const struct iovec* buffers, uint32_t buffers_count )
 #endif
 
 
+Path::Path( char narrow_path, iconv::Code narrow_path_code )
+{
+  init( &narrow_path, 1, narrow_path_code );
+}
+
+Path::Path( const char* narrow_path, iconv::Code narrow_path_code )
+{
+  init( narrow_path, strlen( narrow_path ), narrow_path_code );
+}
+
+Path::Path
+(
+  const char* narrow_path,
+  size_t narrow_path_len,
+  iconv::Code narrow_path_code
+)
+{
+  init( narrow_path, narrow_path_len, narrow_path_code );
+}
+
+Path::Path( const std::string& narrow_path, iconv::Code narrow_path_code )
+{
+  init( narrow_path.c_str(), narrow_path.size(), narrow_path_code );
+}
+
 #ifdef _WIN32
-Path::Path( char narrow_path )
-{
-  init( &narrow_path, 1 );
-}
-
-Path::Path( const char* narrow_path )
-{
-  init( narrow_path, strlen( narrow_path ) );
-}
-
-Path::Path( const char* narrow_path, size_t narrow_path_len )
-{
-  init( narrow_path, narrow_path_len );
-}
-
-Path::Path( const std::string& narrow_path )
-{
-  init( narrow_path.c_str(), narrow_path.size() );
-}
-
 Path::Path( wchar_t wide_path )
   : path( 1, wide_path )
 { }
@@ -4294,23 +4223,11 @@ Path::Path( const wchar_t* wide_path, size_t wide_path_len )
 Path::Path( const std::wstring& wide_path )
   : path( wide_path )
 { }
-#else
-Path::Path( char narrow_path )
-  : path( 1, narrow_path )
-{ }
-
-Path::Path( const char* narrow_path )
-  : path( narrow_path )
-{ }
-
-Path::Path( const char* narrow_path, size_t narrow_path_len )
-  : path( narrow_path, narrow_path_len )
-{ }
-
-Path::Path( const std::string& narrow_path )
-  : path( narrow_path )
-{ }
 #endif
+
+Path::Path( const Path& path )
+  : path( path.path )
+{ }
 
 Path Path::abspath() const
 {
@@ -4331,16 +4248,62 @@ Path Path::abspath() const
 #endif
 }
 
-#ifdef _WIN32
-void Path::init( const char* narrow_path, size_t narrow_path_len )
+std::string Path::encode( iconv::Code tocode ) const
 {
+#ifdef _WIN32
+  char narrow_path[PATH_MAX];
+
+  int narrow_path_len
+    = WideCharToMultiByte
+      (
+        iconv::Code_to_win32_code_page( tocode ),
+        0,
+        *this,
+        ( int )size(),
+        narrow_path,
+        PATH_MAX,
+        0,
+        0
+      );
+
+  return std::string( narrow_path, narrow_path_len );
+#else
+  if ( tocode == iconv::CODE_CHAR )
+    return path;
+  else
+  {
+    iconv* iconv = iconv::open( tocode, iconv::CODE_CHAR );
+    if ( iconv != NULL )
+    {
+      std::string encoded_path;
+      ( *iconv )( path, encoded_path );
+      delete iconv;
+      return encoded_path;
+    }
+    else
+    {
+      DebugBreak();
+      return path;
+    }
+  }
+#endif
+}
+
+void Path::init
+(
+  const char* narrow_path,
+  size_t narrow_path_len,
+  iconv::Code narrow_path_code
+)
+{
+#ifdef _WIN32
   wchar_t wide_path[PATH_MAX];
   this->path.assign
   (
     wide_path,
     MultiByteToWideChar
     (
-      GetACP(),
+      iconv::Code_to_win32_code_page( narrow_path_code ),
       0,
       narrow_path,
       static_cast<int>( narrow_path_len ),
@@ -4348,28 +4311,32 @@ void Path::init( const char* narrow_path, size_t narrow_path_len )
       PATH_MAX
     )
   );
-}
-
-Path::operator std::string() const
-{
-  char narrow_path[PATH_MAX];
-
-  int narrow_path_len
-    = WideCharToMultiByte
-    (
-      GetACP(),
-      0,
-      *this,
-      ( int )size(),
-      narrow_path,
-      PATH_MAX,
-      0,
-      0
-    );
-
-  return std::string( narrow_path, narrow_path_len );
-}
+#else
+  if ( narrow_path_code == iconv::CODE_CHAR )
+    this->path.assign( narrow_path, narrow_path_len );
+  else
+  {
+    iconv* iconv = iconv::open( iconv::CODE_CHAR, narrow_path_code );
+    if ( iconv != NULL )
+    {
+      if ( ( *iconv )( std::string( narrow_path, narrow_path_len ), path ) )
+      {
+        delete iconv;
+        return;
+      }
+      else
+        DebugBreak();
+    }
+    else
+      DebugBreak();
+  }
 #endif
+}
+
+Path::string_type::value_type Path::operator[]( string_type::size_type i )const
+{
+  return path[i];
+}
 
 bool Path::operator==( const Path& path ) const
 {
@@ -4537,7 +4504,7 @@ std::pair<Path, Path> Path::splitext() const
 #endif
 
 
-auto_PerformanceCounterSet PerformanceCounterSet::create()
+PerformanceCounterSet* PerformanceCounterSet::create()
 {
 #if defined(__sun)
   cpc_t* cpc = cpc_open( CPC_VER_CURRENT );
@@ -4718,7 +4685,7 @@ bool Pipe::close()
     return false;
 }
 
-auto_Pipe Pipe::create()
+Pipe& Pipe::create()
 {
   fd_t ends[2];
 #ifdef _WIN32
@@ -4733,7 +4700,7 @@ auto_Pipe Pipe::create()
       SetHandleInformation( ends[0], HANDLE_FLAG_INHERIT, 0 ) &&
       SetHandleInformation( ends[1], HANDLE_FLAG_INHERIT, 0 )
     )
-      return new Pipe( ends );
+      return *new Pipe( ends );
     else
     {
       CloseHandle( ends[0] );
@@ -4742,7 +4709,7 @@ auto_Pipe Pipe::create()
   }
 #else
   if ( ::pipe( ends ) != -1 )
-    return new Pipe( ends );
+    return *new Pipe( ends );
 #endif
 
   throw Exception();
@@ -4822,11 +4789,11 @@ ssize_t Pipe::write( const void* buffer, size_t buffer_len )
 #endif
 
 
-auto_Process Process::create( const Path& command_line )
+Process& Process::create( const Path& command_line )
 {
 #ifdef _WIN32
-  auto_Pipe child_stdin, child_stdout, child_stderr;
-  //auto_Pipe child_stdin = Pipe::create(),
+  Pipe *child_stdin = NULL, *child_stdout = NULL, *child_stderr = NULL;
+  //Pipe* child_stdin = Pipe::create(),
   //                  child_stdout = Pipe::create(),
   //                  child_stderr = Pipe::create();
 
@@ -4858,14 +4825,14 @@ auto_Process Process::create( const Path& command_line )
     )
   )
   {
-    return new Process
-               (
-                 proc_info.hProcess,
-                 proc_info.hThread,
-                 child_stdin,
-                 child_stdout,
-                 child_stderr
-               );
+    return *new Process
+                (
+                  proc_info.hProcess,
+                  proc_info.hThread,
+                  child_stdin,
+                  child_stdout,
+                  child_stderr
+                );
   }
   else
     throw Exception();
@@ -4875,7 +4842,7 @@ auto_Process Process::create( const Path& command_line )
 #endif
 }
 
-auto_Process Process::create( int argc, char** argv )
+Process& Process::create( int argc, char** argv )
 {
   std::vector<char*> argvv;
   for ( int arg_i = 1; arg_i < argc; arg_i++ )
@@ -4884,7 +4851,8 @@ auto_Process Process::create( int argc, char** argv )
   return create( argv[0], const_cast<const char**>( &argvv[0] ) );
 }
 
-auto_Process Process::create
+Process&
+Process::create
 (
   const Path& executable_file_path,
   const char** null_terminated_argv
@@ -4914,8 +4882,8 @@ auto_Process Process::create
 
   return create( command_line );
 #else
-  auto_Pipe child_stdin, child_stdout, child_stderr;
-  //auto_Pipe child_stdin = Pipe::create(),
+  Pipe *child_stdin = NULL, *child_stdout = NULL, *child_stderr = NULL;
+  //Pipe* child_stdin = Pipe::create(),
   //                  child_stdout = Pipe::create(),
   //                  child_stderr = Pipe::create();
 
@@ -4953,10 +4921,11 @@ auto_Process Process::create
     argv_with_executable_file_path.push_back( NULL );
 
     execv( executable_file_path, &argv_with_executable_file_path[0] );
-    return NULL; // Should never be reached
+
+    throw Exception(); // Should never be reached
   }
   else // Parent
-    return new Process( child_pid, child_stdin, child_stdout, child_stderr );
+    return *new Process( child_pid, child_stdin, child_stdout, child_stderr );
 #endif
 }
 
@@ -4965,9 +4934,9 @@ Process::Process
 (
   HANDLE hChildProcess,
   HANDLE hChildThread,
-  auto_Pipe child_stdin,
-  auto_Pipe child_stdout,
-  auto_Pipe child_stderr
+  Pipe* child_stdin,
+  Pipe* child_stdout,
+  Pipe* child_stderr
 )
   : hChildProcess( hChildProcess ),
     hChildThread( hChildThread ),
@@ -4975,9 +4944,9 @@ Process::Process
 Process::Process
 (
   pid_t child_pid,
-  auto_Pipe child_stdin,
-  auto_Pipe child_stdout,
-  auto_Pipe child_stderr
+  Pipe* child_stdin,
+  Pipe* child_stdout,
+  Pipe* child_stderr
 )
   : child_pid( child_pid ),
 #endif
@@ -4992,6 +4961,9 @@ Process::~Process()
   CloseHandle( hChildProcess );
   CloseHandle( hChildThread );
 #endif
+  Pipe::dec_ref( child_stdin );
+  Pipe::dec_ref( child_stdout );
+  Pipe::dec_ref( child_stderr );
 }
 
 unsigned long Process::getpid()
@@ -5034,7 +5006,7 @@ bool Process::poll( int* out_return_code )
     // "waitpid() was successful. The value returned indicates the process ID
     // of the child process whose status information was recorded in the
     // storage pointed to by stat_loc."
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__sun)
     if ( WIFEXITED( *out_return_code ) ) // Child exited normally
     {
       *out_return_code = WEXITSTATUS( *out_return_code );
@@ -5084,9 +5056,16 @@ int Process::wait()
 
 
 // processor_set.cpp
-#if defined(__linux)
+#if defined(_WIN32)
+#include <windows.h>
+#elif defined(__linux)
 #include <sched.h>
+#elif defined(__MACH__)
+#include <mach/mach.h>
+#include <mach/mach_error.h>
 #elif defined(__sun)
+#include <kstat.h> // For kstat
+#include <sys/processor.h> // For p_online
 #include <sys/pset.h>
 #endif
 
@@ -5193,6 +5172,86 @@ bool ProcessorSet::empty() const
 #endif
 }
 
+uint16_t ProcessorSet::getLogicalProcessorsPerPhysicalProcessor()
+{
+  return getOnlineLogicalProcessorCount() / getOnlinePhysicalProcessorCount();
+}
+
+uint16_t ProcessorSet::getOnlineLogicalProcessorCount()
+{
+  uint16_t online_logical_processor_count = 0;
+
+#if defined(_WIN32)
+  SYSTEM_INFO available_info;
+  GetSystemInfo( &available_info );
+  online_logical_processor_count
+    = static_cast<uint16_t>( available_info.dwNumberOfProcessors );
+#elif defined(__linux__)
+  long _online_logical_processor_count = sysconf( _SC_NPROCESSORS_ONLN );
+  if ( _online_logical_processor_count != -1 )
+    online_logical_processor_count = _online_logical_processor_count;
+#elif defined(__MACH__)
+  host_basic_info_data_t basic_info;
+  host_info_t info = (host_info_t)&basic_info;
+  host_flavor_t flavor = HOST_BASIC_INFO;
+  mach_msg_type_number_t count = HOST_BASIC_INFO_COUNT;
+
+  if ( host_info( mach_host_self(), flavor, info, &count ) == KERN_SUCCESS )
+    online_logical_processor_count = basic_info.avail_cpus;
+#elif defined(__sun)
+  online_logical_processor_count = 0;
+  processorid_t cpuid_max = sysconf( _SC_CPUID_MAX );
+  for ( processorid_t cpuid_i = 0; cpuid_i <= cpuid_max; cpuid_i++)
+  {
+    if ( p_online( cpuid_i, P_STATUS ) == P_ONLINE )
+      online_logical_processor_count++;
+  }
+#endif
+
+  if ( online_logical_processor_count > 0 )
+    return online_logical_processor_count;
+  else
+    return 1;
+}
+
+uint16_t ProcessorSet::getOnlinePhysicalProcessorCount()
+{
+#if defined(__sun)
+  kstat_ctl_t* kc;
+
+  kc = kstat_open();
+  if ( kc )
+  {
+    uint16_t online_physical_processor_count = 1;
+
+    kstat* ksp = kstat_lookup( kc, "cpu_info", -1, NULL );
+    int32_t last_core_id = 0;
+    while ( ksp )
+    {
+      kstat_read( kc, ksp, NULL );
+      kstat_named_t* knp;
+      knp = ( kstat_named_t* )kstat_data_lookup( ksp, "core_id" );
+      if ( knp )
+      {
+        int32_t this_core_id = knp->value.i32;
+        if ( this_core_id != last_core_id )
+        {
+          online_physical_processor_count++;
+          last_core_id = this_core_id;
+        }
+      }
+      ksp = ksp->ks_next;
+    }
+
+    kstat_close( kc );
+
+    return online_physical_processor_count;
+  }
+#endif
+
+  return getOnlineLogicalProcessorCount();
+}
+
 bool ProcessorSet::isset( uint16_t processor_i ) const
 {
 #if defined(_WIN32)
@@ -5288,7 +5347,7 @@ bool Semaphore::acquire()
 #endif
 }
 
-bool Semaphore::timed_acquire( const Time& timeout )
+bool Semaphore::acquire( const Time& timeout )
 {
 #if defined(_WIN32)
   DWORD timeout_ms = static_cast<DWORD>( timeout.as_unix_time_ms() );
@@ -5307,6 +5366,17 @@ bool Semaphore::timed_acquire( const Time& timeout )
 #endif
 }
 
+void Semaphore::release()
+{
+#if defined(_WIN32)
+  ReleaseSemaphore( hSemaphore, 1, NULL );
+#elif defined(__MACH__)
+  semaphore_signal( sem );
+#else
+  sem_post( &sem );
+#endif
+}
+
 bool Semaphore::try_acquire()
 {
 #if defined(_WIN32)
@@ -5317,17 +5387,6 @@ bool Semaphore::try_acquire()
   return semaphore_timedwait( sem, timeout_m_ts ) == KERN_SUCCESS;
 #else
   return sem_trywait( &sem ) == 0;
-#endif
-}
-
-void Semaphore::release()
-{
-#if defined(_WIN32)
-  ReleaseSemaphore( hSemaphore, 1, NULL );
-#elif defined(__MACH__)
-  semaphore_signal( sem );
-#else
-  sem_post( &sem );
 #endif
 }
 
@@ -5351,11 +5410,11 @@ void Semaphore::release()
 
 
 #if defined(_WIN32)
-const Path SharedLibrary::SHLIBSUFFIX( "dll" );
+const wchar_t* SharedLibrary::SHLIBSUFFIX = L"dll";
 #elif defined(__MACH__)
-const Path SharedLibrary::SHLIBSUFFIX( "dylib" );
+const char* SharedLibrary::SHLIBSUFFIX = "dylib";
 #else
-const Path SharedLibrary::SHLIBSUFFIX( "so" );
+const char* SharedLibrary::SHLIBSUFFIX = "so";
 #endif
 
 
@@ -5396,11 +5455,7 @@ void* SharedLibrary::getFunction
     return missing_function_return_value;
 }
 
-auto_SharedLibrary SharedLibrary::open
-(
-  const Path& file_prefix,
-  const char* argv0
-)
+SharedLibrary* SharedLibrary::open( const Path& file_prefix, const char* argv0 )
 {
   void* handle;
   if ( ( handle = DLOPEN( file_prefix ) ) != NULL )
@@ -5471,10 +5526,13 @@ auto_SharedLibrary SharedLibrary::open
 #endif
 
 
+int Socket::DOMAIN_DEFAULT = AF_INET6;
+
+
 Socket::IOConnectCB::IOConnectCB
 (
-  auto_SocketAddress peername,
-  auto_Socket socket_,
+  SocketAddress& peername,
+  Socket& socket_,
   AIOConnectCallback& callback,
   void* callback_context
 )
@@ -5482,6 +5540,12 @@ Socket::IOConnectCB::IOConnectCB
     peername( peername ),
     socket_( socket_ )
 { }
+
+Socket::IOConnectCB::~IOConnectCB()
+{
+  SocketAddress::dec_ref( peername );
+  Socket::dec_ref( socket_ );
+}
 
 void Socket::IOConnectCB::onConnectCompletion()
 {
@@ -5501,9 +5565,9 @@ void Socket::IOConnectCB::onConnectError( uint32_t error_code )
 
 Socket::IORecvCB::IORecvCB
 (
-  yidl::runtime::auto_Buffer buffer,
+  Buffer& buffer,
   int flags,
-  auto_Socket socket_,
+  Socket& socket_,
   AIOReadCallback& callback,
   void* callback_context
 )
@@ -5513,12 +5577,16 @@ Socket::IORecvCB::IORecvCB
     socket_( socket_ )
 { }
 
+Socket::IORecvCB::~IORecvCB()
+{
+  Buffer::dec_ref( buffer );
+  Socket::dec_ref( socket_ );
+}
 
 void Socket::IORecvCB::onReadCompletion()
 {
-  // Assumes buffer->put( NULL, recv_ret ) has already been called
+  // Assumes buffer->put( recv_ret ) has already been called
   callback.onReadCompletion( buffer, callback_context );
-  buffer = NULL; // To release the reference
 }
 
 void Socket::IORecvCB::onReadError()
@@ -5528,16 +5596,15 @@ void Socket::IORecvCB::onReadError()
 
 void Socket::IORecvCB::onReadError( uint32_t error_code )
 {
-  buffer = NULL; // To release the reference
   callback.onReadError( error_code, callback_context );
 }
 
 
 Socket::IOSendCB::IOSendCB
 (
-  yidl::runtime::auto_Buffer buffer,
+  Buffer& buffer,
   int flags,
-  auto_Socket socket_,
+  Socket& socket_,
   AIOWriteCallback& callback,
   void* callback_context
 )
@@ -5547,10 +5614,14 @@ Socket::IOSendCB::IOSendCB
     socket_( socket_ )
 { }
 
+Socket::IOSendCB::~IOSendCB()
+{
+  Buffer::dec_ref( buffer );
+  Socket::dec_ref( socket_ );
+}
 
 void Socket::IOSendCB::onWriteCompletion()
 {
-  buffer = NULL; // To release the reference
   callback.onWriteCompletion( callback_context );
 }
 
@@ -5561,16 +5632,15 @@ void Socket::IOSendCB::onWriteError()
 
 void Socket::IOSendCB::onWriteError( uint32_t error_code )
 {
-  buffer = NULL; // To release the reference
   callback.onWriteError( error_code, callback_context );
 }
 
 
 Socket::IOSendMsgCB::IOSendMsgCB
 (
-  yidl::runtime::auto_Buffers buffers,
+  Buffers& buffers,
   int flags,
-  auto_Socket socket_,
+  Socket& socket_,
   AIOWriteCallback& callback,
   void* callback_context
 )
@@ -5580,9 +5650,14 @@ Socket::IOSendMsgCB::IOSendMsgCB
     socket_( socket_ )
 { }
 
+Socket::IOSendMsgCB::~IOSendMsgCB()
+{
+  Buffers::dec_ref( buffers );
+  Socket::dec_ref( socket_ );
+}
+
 void Socket::IOSendMsgCB::onWriteCompletion()
 {
-  buffers = NULL; // To release the reference
   callback.onWriteCompletion( callback_context );
 }
 
@@ -5593,7 +5668,6 @@ void Socket::IOSendMsgCB::onWriteError()
 
 void Socket::IOSendMsgCB::onWriteError( uint32_t error_code )
 {
-  buffers = NULL; // To release the reference
   callback.onWriteError( error_code, callback_context );
 }
 
@@ -5603,8 +5677,8 @@ class Socket::BIOConnectCB : public BIOCB, public IOConnectCB
 public:
   BIOConnectCB
   (
-    auto_SocketAddress peername,
-    auto_Socket socket_,
+    SocketAddress& peername,
+    Socket& socket_,
     AIOConnectCallback& callback,
     void* callback_context
   )
@@ -5614,9 +5688,9 @@ public:
   // BIOCB
   void execute()
   {
-    if ( socket_->set_blocking_mode( true ) )
+    if ( get_socket().set_blocking_mode( true ) )
     {
-      if ( socket_->connect( *peername ) )
+      if ( get_socket().connect( get_peername() ) )
         onConnectCompletion();
       else
         onConnectError();
@@ -5632,9 +5706,9 @@ class Socket::BIORecvCB : public BIOCB, public IORecvCB
 public:
   BIORecvCB
   (
-    yidl::runtime::auto_Buffer buffer,
+    Buffer& buffer,
     int flags,
-    auto_Socket socket_,
+    Socket& socket_,
     AIOReadCallback& callback,
     void* callback_context
   )
@@ -5644,9 +5718,9 @@ public:
   // BIOCB
   void execute()
   {
-    if ( socket_->set_blocking_mode( true ) )
+    if ( get_socket().set_blocking_mode( true ) )
     {
-      ssize_t recv_ret = socket_->recv( *buffer, flags );
+      ssize_t recv_ret = get_socket().recv( get_buffer(), get_flags() );
       if ( recv_ret > 0 )
         onReadCompletion();
       else if ( recv_ret == 0 )
@@ -5665,9 +5739,9 @@ class Socket::BIOSendCB : public BIOCB, public IOSendCB
 public:
   BIOSendCB
   (
-    yidl::runtime::auto_Buffer buffer,
+    Buffer& buffer,
     int flags,
-    auto_Socket socket_,
+    Socket& socket_,
     AIOWriteCallback& callback,
     void* callback_context
   )
@@ -5677,13 +5751,13 @@ public:
   // BIOCB
   void execute()
   {
-    if ( socket_->set_blocking_mode( true ) )
+    if ( get_socket().set_blocking_mode( true ) )
     {
-      ssize_t send_ret = socket_->send( *buffer, flags );
+      ssize_t send_ret = get_socket().send( get_buffer(), get_flags() );
       if ( send_ret >= 0 )
       {
 #ifdef _WIN32
-        if ( static_cast<size_t>( send_ret ) != buffer->size() )
+        if ( static_cast<size_t>( send_ret ) != get_buffer().size() )
           DebugBreak();
 #endif
         onWriteCompletion();
@@ -5703,9 +5777,9 @@ class Socket::BIOSendMsgCB
 public:
   BIOSendMsgCB
   (
-    yidl::runtime::auto_Buffers buffers,
+    Buffers& buffers,
     int flags,
-    auto_Socket socket_,
+    Socket& socket_,
     AIOWriteCallback& callback,
     void* callback_context
   )
@@ -5715,9 +5789,9 @@ public:
   // BIOCB
   void execute()
   {
-    if ( socket_->set_blocking_mode( true ) )
+    if ( get_socket().set_blocking_mode( true ) )
     {
-      ssize_t sendmsg_ret = socket_->sendmsg( *buffers, flags );
+      ssize_t sendmsg_ret = get_socket().sendmsg( get_buffers(), get_flags() );
       if ( sendmsg_ret >= 0 )
         onWriteCompletion();
       else
@@ -5734,8 +5808,8 @@ class Socket::NBIOConnectCB : public NBIOCB, public IOConnectCB
 public:
   NBIOConnectCB
   (
-    auto_SocketAddress peername,
-    auto_Socket socket_,
+    SocketAddress& peername,
+    Socket& socket_,
     AIOConnectCallback& callback,
     void* callback_context
   )
@@ -5746,14 +5820,14 @@ public:
   // NBIOCB
   void execute()
   {
-    if ( socket_->set_blocking_mode( false ) )
+    if ( get_socket().set_blocking_mode( false ) )
     {
-      if ( socket_->connect( *peername ) )
+      if ( get_socket().connect( get_peername() ) )
       {
         set_state( STATE_COMPLETE );
         onConnectCompletion();
       }
-      else if ( socket_->want_connect() )
+      else if ( get_socket().want_connect() )
         set_state( STATE_WANT_CONNECT );
       else
       {
@@ -5768,7 +5842,7 @@ public:
     }
   }
 
-  socket_t get_fd() const { return *socket_; }
+  socket_t get_fd() const { return get_socket(); }
 };
 
 
@@ -5778,9 +5852,9 @@ public:
   NBIORecvCB
   (
     State state,
-    yidl::runtime::auto_Buffer buffer,
+    Buffer& buffer,
     int flags,
-    auto_Socket socket_,
+    Socket& socket_,
     AIOReadCallback& callback,
     void* callback_context
   )
@@ -5791,9 +5865,9 @@ public:
   // NBIOCB
   void execute()
   {
-    if ( socket_->set_blocking_mode( false ) )
+    if ( get_socket().set_blocking_mode( false ) )
     {
-      ssize_t recv_ret = socket_->recv( *buffer, flags );
+      ssize_t recv_ret = get_socket().recv( get_buffer(), get_flags() );
       if ( recv_ret > 0 )
       {
         set_state( STATE_COMPLETE );
@@ -5804,9 +5878,9 @@ public:
         set_state( STATE_ERROR );
         onReadError( ECONNABORTED );
       }
-      else if ( socket_->want_read() )
+      else if ( get_socket().want_read() )
         set_state( STATE_WANT_READ );
-      else if ( socket_->want_write() )
+      else if ( get_socket().want_write() )
         set_state( STATE_WANT_WRITE );
       else
       {
@@ -5821,7 +5895,7 @@ public:
     }
   }
 
-  socket_t get_fd() const { return *socket_; }
+  socket_t get_fd() const { return get_socket(); }
 };
 
 
@@ -5831,9 +5905,9 @@ public:
   NBIOSendCB
   (
     State state,
-    yidl::runtime::auto_Buffer buffer,
+    Buffer& buffer,
     int flags,
-    auto_Socket socket_,
+    Socket& socket_,
     AIOWriteCallback& callback,
     void* callback_context
   )
@@ -5844,21 +5918,21 @@ public:
   // NBIOCB
   void execute()
   {
-    if ( socket_->set_blocking_mode( false ) )
+    if ( get_socket().set_blocking_mode( false ) )
     {
-      ssize_t send_ret = socket_->send( *buffer, flags );
+      ssize_t send_ret = get_socket().send( get_buffer(), get_flags() );
       if ( send_ret >= 0 )
       {
 #ifdef _WIN32
-        if ( static_cast<size_t>( send_ret ) != buffer->size() )
+        if ( static_cast<size_t>( send_ret ) != get_buffer().size() )
           DebugBreak();
 #endif
         set_state( STATE_COMPLETE );
         onWriteCompletion();
       }
-      else if ( socket_->want_write() )
+      else if ( get_socket().want_write() )
         set_state( STATE_WANT_WRITE );
-      else if ( socket_->want_read() )
+      else if ( get_socket().want_read() )
         set_state( STATE_WANT_READ );
       else
       {
@@ -5873,7 +5947,7 @@ public:
     }
   }
 
-  socket_t get_fd() const { return *socket_; }
+  socket_t get_fd() const { return get_socket(); }
 };
 
 
@@ -5883,9 +5957,9 @@ public:
   NBIOSendMsgCB
   (
     State state,
-    yidl::runtime::auto_Buffers buffers,
+    Buffers& buffers,
     int flags,
-    auto_Socket socket_,
+    Socket& socket_,
     AIOWriteCallback& callback,
     void* callback_context
   )
@@ -5896,17 +5970,17 @@ public:
   // NBIOCB
   void execute()
   {
-    if ( socket_->set_blocking_mode( false ) )
+    if ( get_socket().set_blocking_mode( false ) )
     {
-      ssize_t sendmsg_ret = socket_->sendmsg( *buffers, flags );
+      ssize_t sendmsg_ret = get_socket().sendmsg( get_buffers(), get_flags() );
       if ( sendmsg_ret >= 0 )
       {
         set_state( STATE_COMPLETE );
         onWriteCompletion();
       }
-      else if ( socket_->want_write() )
+      else if ( get_socket().want_write() )
         set_state( STATE_WANT_WRITE );
-      else if ( socket_->want_read() )
+      else if ( get_socket().want_read() )
         set_state( STATE_WANT_READ );
       else
       {
@@ -5921,7 +5995,7 @@ public:
     }
   }
 
-  socket_t get_fd() const { return *socket_; }
+  socket_t get_fd() const { return get_socket(); }
 };
 
 
@@ -5930,17 +6004,19 @@ Socket::Socket( int domain, int type, int protocol, socket_t socket_ )
 {
   blocking_mode = true;
   connected = false;
+  io_queue = NULL;
 }
 
 Socket::~Socket()
 {
   close();
+  IOQueue::dec_ref( io_queue );
 }
 
 void
 Socket::aio_connect
 (
-  auto_SocketAddress peername,
+  SocketAddress& peername,
   AIOConnectCallback& callback,
   void* callback_context
 )
@@ -5948,7 +6024,7 @@ Socket::aio_connect
   // Try a non-blocking connect first (for e.g. localhost)
   if ( set_blocking_mode( false ) )
   {
-    if ( connect( *peername ) )
+    if ( connect( peername ) )
     {
       callback.onConnectCompletion( callback_context );
       return;
@@ -5966,32 +6042,32 @@ Socket::aio_connect
     {
       case BIOQueue::TYPE_ID:
       {
-        static_cast<BIOQueue*>( io_queue.get() )
+        static_cast<BIOQueue*>( io_queue )
           ->submit
             (
-              new BIOConnectCB
-                  (
-                    peername,
-                    inc_ref(),
-                    callback,
-                    callback_context
-                  )
+              *new BIOConnectCB
+                   (
+                     peername.inc_ref(),
+                     inc_ref(),
+                     callback,
+                     callback_context
+                   )
             );
       }
       return;
 
       case NBIOQueue::TYPE_ID:
       {
-        static_cast<NBIOQueue*>( io_queue.get() )
+        static_cast<NBIOQueue*>( io_queue )
           ->submit
             (
-              new NBIOConnectCB
-                  (
-                    peername,
-                    inc_ref(),
-                    callback,
-                    callback_context
-                  )
+              *new NBIOConnectCB
+                    (
+                      peername.inc_ref(),
+                      inc_ref(),
+                      callback,
+                      callback_context
+                    )
             );
       }
       return;
@@ -5999,7 +6075,7 @@ Socket::aio_connect
   }
 
   set_blocking_mode( true );
-  if ( connect( *peername ) )
+  if ( connect( peername ) )
     callback.onConnectCompletion( callback_context );
   else
     callback.onConnectError( get_last_error(), callback_context );
@@ -6008,7 +6084,7 @@ Socket::aio_connect
 void
 Socket::aio_recv
 (
-  yidl::runtime::auto_Buffer buffer,
+  Buffer& buffer,
   int flags,
   AIOReadCallback& callback,
   void* callback_context
@@ -6017,20 +6093,23 @@ Socket::aio_recv
   // Try a non-blocking recv first
   if ( set_blocking_mode( false ) )
   {
-    ssize_t recv_ret = recv( *buffer, flags );
+    ssize_t recv_ret = recv( buffer, flags );
     if ( recv_ret > 0 )
     {
       callback.onReadCompletion( buffer, callback_context );
+      Buffer::dec_ref( buffer );
       return;
     }
     else if ( recv_ret == 0 )
     {
       callback.onReadError( ECONNABORTED, callback_context );
+      Buffer::dec_ref( buffer );
       return;
     }
     else if ( !want_read() && !want_write() )
     {
       callback.onReadError( get_last_error(), callback_context );
+      Buffer::dec_ref( buffer );
       return;
     }
   }
@@ -6042,37 +6121,37 @@ Socket::aio_recv
     {
       case BIOQueue::TYPE_ID:
       {
-        static_cast<BIOQueue*>( io_queue.get() )
+        static_cast<BIOQueue*>( io_queue )
           ->submit
             (
-              new BIORecvCB
-                  (
-                    buffer,
-                    flags,
-                    inc_ref(),
-                    callback,
-                    callback_context
-                  )
+              *new BIORecvCB
+                   (
+                     buffer,
+                     flags,
+                     inc_ref(),
+                     callback,
+                     callback_context
+                   )
             );
       }
       return;
 
       case NBIOQueue::TYPE_ID:
       {
-        static_cast<NBIOQueue*>( io_queue.get() )
+        static_cast<NBIOQueue*>( io_queue )
           ->submit
             (
-              new NBIORecvCB
-                  (
-                    want_read()
-                      ? NBIORecvCB::STATE_WANT_READ
-                      : NBIORecvCB::STATE_WANT_WRITE,
-                    buffer,
-                    flags,
-                    inc_ref(),
-                    callback,
-                    callback_context
-                  )
+              *new NBIORecvCB
+                   (
+                     want_read()
+                       ? NBIORecvCB::STATE_WANT_READ
+                       : NBIORecvCB::STATE_WANT_WRITE,
+                     buffer,
+                     flags,
+                     inc_ref(),
+                     callback,
+                     callback_context
+                   )
             );
       }
       return;
@@ -6081,12 +6160,13 @@ Socket::aio_recv
 
   // Nothing worked, return an error
   callback.onReadError( get_last_error(), callback_context );
+  Buffer::dec_ref( buffer );
 }
 
 void
 Socket::aio_send
 (
-  yidl::runtime::auto_Buffer buffer,
+  Buffer& buffer,
   int flags,
   AIOWriteCallback& callback,
   void* callback_context
@@ -6098,19 +6178,21 @@ Socket::aio_send
   // Try a non-blocking send first
   if ( set_blocking_mode( false ) )
   {
-    ssize_t send_ret = send( *buffer, flags );
+    ssize_t send_ret = send( buffer, flags );
     if ( send_ret >= 0 )
     {
 #ifdef _WIN32
-      if ( static_cast<size_t>( send_ret ) != buffer->size() )
+      if ( static_cast<size_t>( send_ret ) != buffer.size() )
         DebugBreak();
 #endif
       callback.onWriteCompletion( callback_context );
+      Buffer::dec_ref( buffer );
       return;
     }
     else if ( !want_write() && !want_read() )
     {
       callback.onWriteError( get_last_error(), callback_context );
+      Buffer::dec_ref( buffer );
       return;
     }
   }
@@ -6122,37 +6204,37 @@ Socket::aio_send
     {
       case BIOQueue::TYPE_ID:
       {
-        static_cast<BIOQueue*>( io_queue.get() )
+        static_cast<BIOQueue*>( io_queue )
           ->submit
             (
-              new BIOSendCB
-                  (
-                    buffer,
-                    flags,
-                    inc_ref(),
-                    callback,
-                    callback_context
-                  )
+              *new BIOSendCB
+                   (
+                     buffer,
+                     flags,
+                     inc_ref(),
+                     callback,
+                     callback_context
+                   )
             );
       }
       return;
 
       case NBIOQueue::TYPE_ID:
       {
-        static_cast<NBIOQueue*>( io_queue.get() )
+        static_cast<NBIOQueue*>( io_queue )
           ->submit
             (
-              new NBIOSendCB
-                  (
-                    want_write()
-                      ? NBIOSendCB::STATE_WANT_WRITE
-                      : NBIOSendCB::STATE_WANT_READ,
-                    buffer,
-                    flags,
-                    inc_ref(),
-                    callback,
-                    callback_context
-                  )
+               *new NBIOSendCB
+                    (
+                      want_write()
+                        ? NBIOSendCB::STATE_WANT_WRITE
+                        : NBIOSendCB::STATE_WANT_READ,
+                      buffer,
+                      flags,
+                      inc_ref(),
+                      callback,
+                      callback_context
+                    )
             );
       }
       return;
@@ -6162,22 +6244,23 @@ Socket::aio_send
 
   // Finally, try a blocking send
   set_blocking_mode( true );
-  ssize_t send_ret = send( *buffer, flags );
+  ssize_t send_ret = send( buffer, flags );
   if ( send_ret >= 0 )
   {
 #ifdef _DEBUG
-    if ( static_cast<size_t>( send_ret ) != buffer->size() )
+    if ( static_cast<size_t>( send_ret ) != buffer.size() )
       DebugBreak();
 #endif
     callback.onWriteCompletion( callback_context );
   }
   else
     callback.onWriteError( get_last_error(), callback_context );
+  Buffer::dec_ref( buffer );
 }
 
 void Socket::aio_sendmsg
 (
-  yidl::runtime::auto_Buffers buffers,
+  Buffers& buffers,
   int flags,
   AIOWriteCallback& callback,
   void* callback_context
@@ -6186,15 +6269,17 @@ void Socket::aio_sendmsg
   // Try a non-blocking sendmsg first
   if ( set_blocking_mode( false ) )
   {
-    ssize_t sendmsg_ret = sendmsg( *buffers, flags );
+    ssize_t sendmsg_ret = sendmsg( buffers, flags );
     if ( sendmsg_ret >= 0 )
     {
       callback.onWriteCompletion( callback_context );
+      Buffer::dec_ref( buffers );
       return;
     }
     else if ( !want_write() && !want_read() )
     {
       callback.onWriteError( get_last_error(), callback_context );
+      Buffer::dec_ref( buffers );
       return;
     }
   }
@@ -6206,37 +6291,37 @@ void Socket::aio_sendmsg
     {
       case BIOQueue::TYPE_ID:
       {
-        static_cast<BIOQueue*>( io_queue.get() )
+        static_cast<BIOQueue*>( io_queue )
           ->submit
             (
-              new BIOSendMsgCB
-                  (
-                    buffers,
-                    flags,
-                    inc_ref(),
-                    callback,
-                    callback_context
-                  )
+              *new BIOSendMsgCB
+                   (
+                     buffers,
+                     flags,
+                     inc_ref(),
+                     callback,
+                     callback_context
+                   )
             );
       }
       return;
 
       case NBIOQueue::TYPE_ID:
       {
-        static_cast<NBIOQueue*>( io_queue.get() )
+        static_cast<NBIOQueue*>( io_queue )
           ->submit
             (
-              new NBIOSendMsgCB
-                  (
-                    want_write()
-                      ? NBIOSendCB::STATE_WANT_WRITE
-                      : NBIOSendCB::STATE_WANT_READ,
-                    buffers,
-                    flags,
-                    inc_ref(),
-                    callback,
-                    callback_context
-                  )
+              *new NBIOSendMsgCB
+                   (
+                     want_write()
+                       ? NBIOSendCB::STATE_WANT_WRITE
+                       : NBIOSendCB::STATE_WANT_READ,
+                     buffers,
+                     flags,
+                     inc_ref(),
+                     callback,
+                     callback_context
+                   )
             );
       }
       return;
@@ -6247,23 +6332,24 @@ void Socket::aio_sendmsg
 
   // Finally, try a blocking sendmsg
   set_blocking_mode( true );
-  ssize_t sendmsg_ret = sendmsg( *buffers, flags );
+  ssize_t sendmsg_ret = sendmsg( buffers, flags );
   if ( sendmsg_ret >= 0 )
     callback.onWriteCompletion( callback_context );
   else
     callback.onWriteError( get_last_error(), callback_context );
+  Buffer::dec_ref( buffers );
 }
 
-bool Socket::associate( auto_IOQueue io_queue )
+bool Socket::associate( IOQueue& io_queue )
 {
   if ( this->io_queue == NULL )
   {
-    switch ( io_queue->get_type_id() )
+    switch ( io_queue.get_type_id() )
     {
       case BIOQueue::TYPE_ID:
       case NBIOQueue::TYPE_ID:
       {
-        this->io_queue = io_queue;
+        set_io_queue( io_queue );
         return true;
       }
       break;
@@ -6376,7 +6462,12 @@ bool Socket::connect( const SocketAddress& peername )
     return true;
 }
 
-auto_Socket Socket::create( int domain, int type, int protocol )
+Socket* Socket::create( int type, int protocol )
+{
+  return create( DOMAIN_DEFAULT, type, protocol );
+}
+
+Socket* Socket::create( int domain, int type, int protocol )
 {
   socket_t socket_ = create( &domain, type, protocol );
   if ( socket_ != INVALID_SOCKET )
@@ -6578,7 +6669,7 @@ uint32_t Socket::get_last_error()
 #endif
 }
 
-auto_SocketAddress Socket::getpeername()
+SocketAddress* Socket::getpeername() const
 {
   struct sockaddr_storage peername_sockaddr_storage;
   memset( &peername_sockaddr_storage, 0, sizeof( peername_sockaddr_storage ) );
@@ -6615,6 +6706,10 @@ int Socket::get_platform_recv_flags( int flags )
 
   platform_recv_flags |= flags;
 
+#ifdef __linux
+  platform_recv_flags |= MSG_NOSIGNAL;
+#endif
+
   return platform_recv_flags;
 }
 
@@ -6634,12 +6729,14 @@ int Socket::get_platform_send_flags( int flags )
     flags ^= SEND_FLAG_MSG_DONTROUTE;
   }
 
-  platform_send_flags |= flags;
+#ifdef __linux
+  platform_send_flags |= MSG_NOSIGNAL;
+#endif
 
   return platform_send_flags;
 }
 
-auto_SocketAddress Socket::getsockname()
+SocketAddress* Socket::getsockname() const
 {
   struct sockaddr_storage sockname_sockaddr_storage;
   memset( &sockname_sockaddr_storage, 0, sizeof( sockname_sockaddr_storage ) );
@@ -6662,6 +6759,22 @@ bool Socket::is_closed() const
 {
   return socket_ == -1;
 }
+
+#ifdef _WIN64
+void
+Socket::iovecs_to_wsabufs
+(
+   const struct iovec* iov,
+   std::vector<struct iovec64>& wsabufs
+)
+{
+  for ( uint32_t iov_i = 0; iov_i < buffers_count; iov_i++ )
+  {
+    wsabufs[iov_i].buf = static_cast<char*>( buffers[iov_i].iov_base );
+    wsabufs[iov_i].len = static_cast<ULONG>( buffers[iov_i].iov_len );
+  }
+}
+#endif
 
 bool Socket::listen()
 {
@@ -6725,7 +6838,7 @@ bool Socket::recreate( int domain )
     return false;
 }
 
-ssize_t Socket::recv( yidl::runtime::Buffer& buffer, int flags )
+ssize_t Socket::recv( Buffer& buffer, int flags )
 {
   ssize_t recv_ret
     = recv
@@ -6736,7 +6849,7 @@ ssize_t Socket::recv( yidl::runtime::Buffer& buffer, int flags )
       );
 
   if ( recv_ret > 0 )
-    buffer.put( NULL, static_cast<size_t>( recv_ret ) );
+    buffer.put( static_cast<size_t>( recv_ret ) );
 
   return recv_ret;
 }
@@ -6745,7 +6858,7 @@ ssize_t Socket::recv( void* buffer, size_t buffer_len, int flags )
 {
   flags = get_platform_recv_flags( flags );
 
-#if defined(_WIN32)
+#ifdef _WIN32
   return ::recv
          (
            *this,
@@ -6753,8 +6866,6 @@ ssize_t Socket::recv( void* buffer, size_t buffer_len, int flags )
            static_cast<int>( buffer_len ),
            flags
          ); // No real advantage to WSARecv on Win32 for one buffer
-#elif defined(__linux)
-  return ::recv( *this, buffer, buffer_len, flags|MSG_NOSIGNAL );
 #else
   return ::recv( *this, buffer, buffer_len, flags );
 #endif
@@ -6787,7 +6898,7 @@ ssize_t Socket::send( const void* buffer, size_t buffer_len, int flags )
   else
     return send_ret;
 #else
-  return ::send( *this, buffer, buffer_len, flags|MSG_NOSIGNAL );
+  return ::send( *this, buffer, buffer_len, flags );
 #endif
 }
 
@@ -6803,16 +6914,8 @@ ssize_t Socket::sendmsg
 #ifdef _WIN32
   DWORD dwWrittenLength;
 #ifdef _WIN64
-  // The WSABUF .len is a ULONG, which is != size_t on Win64,
-  // so we have to truncate it here.
-  // This is easier (compiler warnings, using sizeof, etc.)
-  // than changing the struct iovec definition to use uint32_t.
   std::vector<WSABUF> wsabufs( buffers_count );
-  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-  {
-    wsabufs[buffer_i].len = static_cast<ULONG>( buffers[buffer_i].iov_len );
-    wsabufs[buffer_i].buf = static_cast<char*>( buffers[buffer_i].iov_base );
-  }
+  iovecs_to_wsabufs( buffers, wsabufs );
 #endif
 
   ssize_t send_ret
@@ -6840,7 +6943,7 @@ ssize_t Socket::sendmsg
   memset( &msghdr_, 0, sizeof( msghdr_ ) );
   msghdr_.msg_iov = const_cast<iovec*>( buffers );
   msghdr_.msg_iovlen = buffers_count;
-  return ::sendmsg( *this, &msghdr_, flags|MSG_NOSIGNAL );
+  return ::sendmsg( *this, &msghdr_, flags );
 #endif
 }
 
@@ -6883,6 +6986,14 @@ bool Socket::set_blocking_mode( bool blocking )
       return false;
   }
 #endif
+}
+
+void Socket::set_io_queue( IOQueue& io_queue )
+{
+  if ( this->io_queue == NULL )
+    this->io_queue = &io_queue.inc_ref();
+  else
+    DebugBreak();
 }
 
 bool Socket::shutdown( bool shut_rd, bool shut_wr )
@@ -6997,32 +7108,26 @@ SocketAddress::SocketAddress
   );
 }
 
-auto_SocketAddress SocketAddress::create( const char* hostname )
+SocketAddress* SocketAddress::create()
+{
+  return create( NULL );
+}
+
+SocketAddress* SocketAddress::create( const char* hostname )
 {
   return create( hostname, 0 );
 }
 
-auto_SocketAddress SocketAddress::create( const char* hostname, uint16_t port )
+SocketAddress* SocketAddress::create( const char* hostname, uint16_t port )
 {
-  if ( hostname != NULL && strcmp( hostname, "*" ) )
+  if ( hostname != NULL && strcmp( hostname, "*" ) == 0 )
     hostname = NULL;
 
   struct addrinfo* addrinfo_list = getaddrinfo( hostname, port );
   if ( addrinfo_list != NULL )
     return new SocketAddress( *addrinfo_list );
   else
-  {
-    std::ostringstream what;
-    what << "error resolving host \"";
-    if ( hostname != NULL )
-      what << hostname;
-    else
-      what << "*";
-    what << "\": ";
-    what << YIELD::platform::Exception();
-
-    throw YIELD::platform::Exception( what.str() );
-  }
+    return NULL;
 }
 
 bool SocketAddress::as_struct_sockaddr
@@ -7089,7 +7194,7 @@ SocketAddress::getaddrinfo( const char* hostname, uint16_t port )
     = ::getaddrinfo( hostname, servname, &addrinfo_hints, &addrinfo_list );
 
 #ifdef _WIN32
-  if ( getaddrinfo_ret == -1 && WSAGetLastError() == WSANOTINITIALISED )
+  if ( getaddrinfo_ret == WSANOTINITIALISED )
   {
     WORD wVersionRequested = MAKEWORD( 2, 2 );
     WSADATA wsaData;
@@ -7328,11 +7433,17 @@ bool SocketAddress::operator==( const SocketAddress& other ) const
 #endif
 
 
-SocketPair::SocketPair( auto_Socket first_socket, auto_Socket second_socket )
+SocketPair::SocketPair( Socket& first_socket, Socket& second_socket )
   : first_socket( first_socket ), second_socket( second_socket )
 { }
 
-auto_SocketPair SocketPair::create()
+SocketPair::~SocketPair()
+{
+  Socket::dec_ref( first_socket );
+  Socket::dec_ref( second_socket );
+}
+
+SocketPair& SocketPair::create()
 {
   socket_t sv[2];
 
@@ -7391,11 +7502,14 @@ auto_SocketPair SocketPair::create()
         )
         {
           closesocket( listen_socket );
-          return new SocketPair
-                     (
-                       new Socket( AF_INET, SOCK_STREAM, IPPROTO_TCP, sv[0] ),
-                       new Socket( AF_INET, SOCK_STREAM, IPPROTO_TCP, sv[1] )
-                     );
+
+          Socket* first_socket
+            = new Socket( AF_INET, SOCK_STREAM, IPPROTO_TCP, sv[0] );
+
+          Socket* second_socket
+            = new Socket( AF_INET, SOCK_STREAM, IPPROTO_TCP, sv[1] );
+
+          return *new SocketPair( *first_socket, *second_socket );
         }
         else
         {
@@ -7414,11 +7528,9 @@ auto_SocketPair SocketPair::create()
 #else
   if ( socketpair( AF_UNIX, SOCK_STREAM, 0, sv ) != -1 )
   {
-    return new SocketPair
-              (
-                 new Socket( AF_UNIX, SOCK_STREAM, 0, sv[0] ),
-                 new Socket( AF_UNIX, SOCK_STREAM, 0, sv[1] )
-               );
+    Socket* first_socket = new Socket( AF_UNIX, SOCK_STREAM, 0, sv[0] );
+    Socket* second_socket = new Socket( AF_UNIX, SOCK_STREAM, 0, sv[1] );
+    return *new SocketPair( *first_socket, *second_socket );
   }
   else
     throw Exception();
@@ -7938,6 +8050,7 @@ bool Stream::set_blocking_mode( bool blocking, fd_t fd )
 // tcp_socket.cpp
 #if defined(_WIN32)
 #undef INVALID_SOCKET
+#undef WSABUF
 #pragma warning( push )
 #pragma warning( disable: 4365 4995 )
 #include <ws2tcpip.h>
@@ -7952,6 +8065,9 @@ bool Stream::set_blocking_mode( bool blocking, fd_t fd )
 #endif
 
 
+int TCPSocket::PROTOCOL = IPPROTO_TCP;
+int TCPSocket::TYPE = SOCK_STREAM;
+
 #ifdef _WIN32
 void* TCPSocket::lpfnAcceptEx = NULL;
 void* TCPSocket::lpfnConnectEx = NULL;
@@ -7960,7 +8076,7 @@ void* TCPSocket::lpfnConnectEx = NULL;
 
 TCPSocket::IOAcceptCB::IOAcceptCB
 (
-  auto_TCPSocket listen_tcp_socket,
+  TCPSocket& listen_tcp_socket,
   AIOAcceptCallback& callback,
   void* callback_context
 )
@@ -7968,10 +8084,12 @@ TCPSocket::IOAcceptCB::IOAcceptCB
     listen_tcp_socket( listen_tcp_socket )
 { }
 
-void TCPSocket::IOAcceptCB::onAcceptCompletion
-(
-  auto_TCPSocket accepted_tcp_socket
-)
+TCPSocket::IOAcceptCB::~IOAcceptCB()
+{
+  TCPSocket::dec_ref( listen_tcp_socket );
+}
+
+void TCPSocket::IOAcceptCB::onAcceptCompletion( TCPSocket& accepted_tcp_socket )
 {
   callback.onAcceptCompletion( accepted_tcp_socket, callback_context );
 }
@@ -7992,7 +8110,7 @@ class TCPSocket::BIOAcceptCB : public BIOCB, public IOAcceptCB
 public:
   BIOAcceptCB
   (
-    auto_TCPSocket listen_tcp_socket,
+    TCPSocket& listen_tcp_socket,
     AIOAcceptCallback& callback,
     void* callback_context
   ) : IOAcceptCB( listen_tcp_socket, callback, callback_context )
@@ -8001,11 +8119,14 @@ public:
   // BIOCB
   void execute()
   {
-    if ( listen_tcp_socket->set_blocking_mode( true ) )
+    if ( get_listen_tcp_socket().set_blocking_mode( true ) )
     {
-      auto_TCPSocket accepted_tcp_socket = listen_tcp_socket->accept();
+      TCPSocket* accepted_tcp_socket = get_listen_tcp_socket().accept();
       if ( accepted_tcp_socket != NULL )
-        onAcceptCompletion( accepted_tcp_socket );
+      {
+        onAcceptCompletion( *accepted_tcp_socket );
+        TCPSocket::dec_ref( *accepted_tcp_socket );
+      }
       else
         onAcceptError();
     }
@@ -8020,7 +8141,7 @@ class TCPSocket::NBIOAcceptCB : public NBIOCB, public IOAcceptCB
 public:
   NBIOAcceptCB
   (
-    auto_TCPSocket listen_tcp_socket,
+    TCPSocket& listen_tcp_socket,
     AIOAcceptCallback& callback,
     void* callback_context
   ) : NBIOCB( STATE_WANT_READ ),
@@ -8030,15 +8151,16 @@ public:
   // NBIOCB
   void execute()
   {
-    if ( listen_tcp_socket->set_blocking_mode( false ) )
+    if ( get_listen_tcp_socket().set_blocking_mode( false ) )
     {
-      auto_TCPSocket accepted_tcp_socket = listen_tcp_socket->accept();
+      TCPSocket* accepted_tcp_socket = get_listen_tcp_socket().accept();
       if ( accepted_tcp_socket != NULL )
       {
         set_state( STATE_COMPLETE );
-        onAcceptCompletion( accepted_tcp_socket );
+        onAcceptCompletion( *accepted_tcp_socket );
+        TCPSocket::dec_ref( *accepted_tcp_socket );
       }
-      else if ( listen_tcp_socket->want_read() )
+      else if ( get_listen_tcp_socket().want_accept() )
         set_state( STATE_WANT_READ );
       else
       {
@@ -8053,7 +8175,7 @@ public:
     }
   }
 
-  socket_t get_fd() const { return *listen_tcp_socket; }
+  socket_t get_fd() const { return get_listen_tcp_socket(); }
 };
 
 
@@ -8063,8 +8185,8 @@ class TCPSocket::Win32AIOAcceptCB : public Win32AIOCB, public IOAcceptCB
 public:
   Win32AIOAcceptCB
   (
-    auto_TCPSocket accepted_tcp_socket,
-    auto_TCPSocket listen_tcp_socket,
+    TCPSocket& accepted_tcp_socket,
+    TCPSocket& listen_tcp_socket,
     AIOAcceptCallback& callback,
     void* callback_context
   ) : IOAcceptCB( listen_tcp_socket, callback, callback_context ),
@@ -8083,7 +8205,7 @@ public:
   }
 
 
-  auto_TCPSocket accepted_tcp_socket;
+  TCPSocket& accepted_tcp_socket;
   char peername[88]; // ( sizeof( sockaddr_in6 ) + 16 ) * 2
 };
 
@@ -8093,8 +8215,8 @@ class TCPSocket::Win32AIOConnectCB : public Win32AIOCB, IOConnectCB
 public:
   Win32AIOConnectCB
   (
-    auto_SocketAddress peername,
-    auto_Socket socket_,
+    SocketAddress& peername,
+    Socket& socket_,
     AIOConnectCallback& callback,
     void* callback_context
   ) : IOConnectCB( peername, socket_, callback, callback_context )
@@ -8117,8 +8239,8 @@ class TCPSocket::Win32AIORecvCB : public Win32AIOCB, public IORecvCB
 public:
   Win32AIORecvCB
   (
-    yidl::runtime::auto_Buffer buffer,
-    auto_Socket socket_,
+    Buffer& buffer,
+    Socket& socket_,
     AIOReadCallback& callback,
     void* callback_context
   )
@@ -8130,7 +8252,7 @@ public:
   {
     if ( dwNumberOfBytesTransferred > 0 )
     {
-      buffer->put( NULL, dwNumberOfBytesTransferred );
+      get_buffer().put( dwNumberOfBytesTransferred );
       onReadCompletion();
     }
     else
@@ -8149,8 +8271,8 @@ class TCPSocket::Win32AIOSendCB : public Win32AIOCB, public IOSendCB
 public:
   Win32AIOSendCB
   (
-    yidl::runtime::auto_Buffer buffer,
-    auto_Socket socket_,
+    Buffer& buffer,
+    Socket& socket_,
     AIOWriteCallback& callback,
     void* callback_context
   )
@@ -8161,7 +8283,7 @@ public:
   void onCompletion( DWORD dwNumberOfBytesTransferred )
   {
 #ifdef _WIN32
-    if ( dwNumberOfBytesTransferred != buffer->size() )
+    if ( dwNumberOfBytesTransferred != get_buffer().size() )
       DebugBreak();
 #endif
     onWriteCompletion();
@@ -8179,8 +8301,8 @@ class TCPSocket::Win32AIOSendMsgCB : public Win32AIOCB, public IOSendMsgCB
 public:
   Win32AIOSendMsgCB
   (
-    yidl::runtime::auto_Buffers buffers,
-    auto_Socket socket_,
+    Buffers& buffers,
+    Socket& socket_,
     AIOWriteCallback& callback,
     void* callback_context
   )
@@ -8202,10 +8324,10 @@ public:
 
 
 TCPSocket::TCPSocket( int domain, socket_t socket_ )
-  : Socket( domain, SOCK_STREAM, IPPROTO_TCP, socket_ )
+  : Socket( domain, TYPE, PROTOCOL, socket_ )
 { }
 
-auto_TCPSocket TCPSocket::accept()
+TCPSocket* TCPSocket::accept()
 {
   socket_t peer_socket = _accept();
   if ( peer_socket != -1 )
@@ -8236,9 +8358,9 @@ TCPSocket::aio_accept
 #ifdef _WIN32
   if
   (
-    io_queue != NULL
+    get_io_queue() != NULL
     &&
-    io_queue->get_type_id() == Win32AIOQueue::TYPE_ID
+    get_io_queue()->get_type_id() == Win32AIOQueue::TYPE_ID
   )
   {
     if ( lpfnAcceptEx == NULL )
@@ -8259,7 +8381,7 @@ TCPSocket::aio_accept
       );
     }
 
-    auto_TCPSocket accepted_tcp_socket( TCPSocket::create( get_domain() ) );
+    TCPSocket* accepted_tcp_socket = TCPSocket::create( get_domain() );
     if ( accepted_tcp_socket != NULL )
     {
       DWORD peername_len;
@@ -8273,7 +8395,7 @@ TCPSocket::aio_accept
       Win32AIOAcceptCB* aiocb
         = new Win32AIOAcceptCB
               (
-                accepted_tcp_socket,
+                *accepted_tcp_socket,
                 inc_ref(),
                 callback,
                 callback_context
@@ -8310,13 +8432,14 @@ TCPSocket::aio_accept
   // Try a non-blocking accept first
   if ( set_blocking_mode( false ) )
   {
-    auto_TCPSocket accepted_tcp_socket( accept() );
+    TCPSocket* accepted_tcp_socket = accept();
     if ( accepted_tcp_socket != NULL )
     {
-      callback.onAcceptCompletion( accepted_tcp_socket, callback_context );
+      callback.onAcceptCompletion( *accepted_tcp_socket, callback_context );
+      TCPSocket::dec_ref( *accepted_tcp_socket );
       return;
     }
-    else if ( !want_read() )
+    else if ( !want_accept() )
     {
       callback.onAcceptError( get_last_error(), callback_context );
       return;
@@ -8324,26 +8447,26 @@ TCPSocket::aio_accept
   }
 
   // Next try to offload the accept to an IOQueue
-  if ( io_queue != NULL )
+  if ( get_io_queue() != NULL )
   {
-    switch ( io_queue->get_type_id() )
+    switch ( get_io_queue()->get_type_id() )
     {
       case BIOQueue::TYPE_ID:
       {
-        static_cast<BIOQueue*>( io_queue.get() )
+        static_cast<BIOQueue*>( get_io_queue() )
           ->submit
             (
-              new BIOAcceptCB( inc_ref(), callback, callback_context )
+              *new BIOAcceptCB( inc_ref(), callback, callback_context )
             );
       }
       return;
 
       case NBIOQueue::TYPE_ID:
       {
-        static_cast<NBIOQueue*>( io_queue.get() )
+        static_cast<NBIOQueue*>( get_io_queue() )
           ->submit
             (
-              new NBIOAcceptCB( inc_ref(), callback, callback_context )
+              *new NBIOAcceptCB( inc_ref(), callback, callback_context )
             );
       }
       return;
@@ -8357,7 +8480,7 @@ TCPSocket::aio_accept
 void
 TCPSocket::aio_connect
 (
-  auto_SocketAddress peername,
+  SocketAddress& peername,
   AIOConnectCallback& callback,
   void* callback_context
 )
@@ -8365,9 +8488,9 @@ TCPSocket::aio_connect
 #ifdef _WIN32
   if
   (
-    io_queue != NULL
+    get_io_queue() != NULL
     &&
-    io_queue->get_type_id() == Win32AIOQueue::TYPE_ID
+    get_io_queue()->get_type_id() == Win32AIOQueue::TYPE_ID
   )
   {
     if ( lpfnConnectEx == NULL )
@@ -8391,43 +8514,50 @@ TCPSocket::aio_connect
     for ( ;; )
     {
       struct sockaddr* name; socklen_t namelen;
-      if ( peername->as_struct_sockaddr( get_domain(), name, namelen ) )
+      if ( peername.as_struct_sockaddr( get_domain(), name, namelen ) )
       {
-        auto_SocketAddress
-          ephemeral_sockname( SocketAddress::create( NULL, 0 ) );
+        SocketAddress* ephemeral_sockname = SocketAddress::create();
 
-        if ( ephemeral_sockname != NULL && bind( *ephemeral_sockname ) )
+        if ( ephemeral_sockname != NULL )
         {
-          DWORD dwBytesSent;
+          if ( bind( *ephemeral_sockname ) )
+          {
+            DWORD dwBytesSent;
 
-          Win32AIOConnectCB* aiocb
-            = new Win32AIOConnectCB
-                  (
-                    peername,
-                    inc_ref(),
-                    callback,
-                    callback_context
-                  );
+            Win32AIOConnectCB* aiocb
+              = new Win32AIOConnectCB
+                    (
+                      peername.inc_ref(),
+                      inc_ref(),
+                      callback,
+                      callback_context
+                    );
 
-          if
-          (
-            static_cast<LPFN_CONNECTEX>( lpfnConnectEx )
+            if
             (
-              *this,
-              name,
-              namelen,
-              NULL,
-              0,
-              &dwBytesSent,
-              *aiocb
+              static_cast<LPFN_CONNECTEX>( lpfnConnectEx )
+              (
+                *this,
+                name,
+                namelen,
+                NULL,
+                0,
+                &dwBytesSent,
+                *aiocb
+              )
+              ||
+              WSAGetLastError() == WSA_IO_PENDING
             )
-            ||
-            WSAGetLastError() == WSA_IO_PENDING
-          )
-            return;
+              return;
+            else
+            {
+              delete aiocb;
+              break;
+            }
+          }
           else
           {
-            delete aiocb;
+            SocketAddress::dec_ref( *ephemeral_sockname );
             break;
           }
         }
@@ -8456,7 +8586,7 @@ TCPSocket::aio_connect
 
 void TCPSocket::aio_recv
 (
-  yidl::runtime::auto_Buffer buffer,
+  Buffer& buffer,
   int flags,
   AIOReadCallback& callback,
   void* callback_context
@@ -8465,20 +8595,26 @@ void TCPSocket::aio_recv
 #ifdef _WIN32
   if
   (
-    io_queue != NULL
+    get_io_queue() != NULL
     &&
-    io_queue->get_type_id() == Win32AIOQueue::TYPE_ID
+    get_io_queue()->get_type_id() == Win32AIOQueue::TYPE_ID
   )
   {
     WSABUF wsabuf[1];
-    wsabuf[0].buf = static_cast<char*>( *buffer ) + buffer->size();
-    wsabuf[0].len = static_cast<ULONG>( buffer->capacity() - buffer->size() );
+    wsabuf[0].buf = static_cast<char*>( buffer ) + buffer.size();
+    wsabuf[0].len = static_cast<ULONG>( buffer.capacity() - buffer.size() );
 
     DWORD dwNumberOfBytesReceived,
           dwFlags = static_cast<DWORD>( get_platform_recv_flags( flags ) );
 
     Win32AIORecvCB* aiocb
-      = new Win32AIORecvCB( buffer, inc_ref(), callback, callback_context );
+      = new Win32AIORecvCB
+            (
+              buffer,
+              inc_ref(),
+              callback,
+              callback_context
+            );
 
     if
     (
@@ -8511,7 +8647,7 @@ void TCPSocket::aio_recv
 void
 TCPSocket::aio_send
 (
-  yidl::runtime::auto_Buffer buffer,
+  Buffer& buffer,
   int flags,
   AIOWriteCallback& callback,
   void* callback_context
@@ -8523,26 +8659,34 @@ TCPSocket::aio_send
 #ifdef _WIN32
   if
   (
-    io_queue != NULL
+    get_io_queue() != NULL
     &&
-    io_queue->get_type_id() == YIELD::platform::Win32AIOQueue::TYPE_ID
+    get_io_queue()->get_type_id() == Win32AIOQueue::TYPE_ID
   )
   {
-    WSABUF wsabuf[1];
-    wsabuf[0].buf = static_cast<char*>( *buffer );
-    wsabuf[0].len = static_cast<ULONG>( buffer->size() );
+#ifdef _WIN32
+    struct iovec wsabuf = buffer;
+#else
+    struct iovec64 wsabuf = buffer;
+#endif
 
     DWORD dwNumberOfBytesSent;
 
     Win32AIOSendCB* aiocb
-      = new Win32AIOSendCB( buffer, inc_ref(), callback, callback_context );
+      = new Win32AIOSendCB
+            (
+              buffer,
+              inc_ref(),
+              callback,
+              callback_context
+            );
 
     if
     (
       WSASend
       (
         *this,
-        wsabuf,
+        reinterpret_cast<LPWSABUF>( &wsabuf ),
         1,
         &dwNumberOfBytesSent,
         static_cast<DWORD>( get_platform_send_flags( flags ) ),
@@ -8568,7 +8712,7 @@ TCPSocket::aio_send
 void
 TCPSocket::aio_sendmsg
 (
-  yidl::runtime::auto_Buffers buffers,
+  Buffers& buffers,
   int flags,
   AIOWriteCallback& callback,
   void* callback_context
@@ -8580,9 +8724,9 @@ TCPSocket::aio_sendmsg
 #ifdef _WIN32
   if
   (
-    io_queue != NULL
+    get_io_queue() != NULL
     &&
-    io_queue->get_type_id() == Win32AIOQueue::TYPE_ID
+    get_io_queue()->get_type_id() == Win32AIOQueue::TYPE_ID
   )
   {
     DWORD dwNumberOfBytesSent;
@@ -8591,49 +8735,33 @@ TCPSocket::aio_sendmsg
       = new Win32AIOSendMsgCB( buffers, inc_ref(), callback, callback_context );
 
 #ifdef _WIN64
-    // See note in sendmsg re: the logic behind this
-    const struct iovec* iovecs = buffers->get_iovecs();
-    uint32_t iovecs_len = buffers->get_iovecs_len();
-    std::vector<WSABUF> wsabufs( iovecs_len );
-    for ( uint32_t iovec_i = 0; iovec_i < iovecs_len; iovec_i++ )
-    {
-      wsabufs[iovec_i].len = static_cast<ULONG>( iovecs[iovec_i].iov_len );
-      wsabufs[iovec_i].buf = static_cast<char*>( iovecs[iovec_i].iov_base );
-    }
+    std::vector<iovec64> wsabufs( buffers->get_iovecs_len() );
+    iovecs_to_wsabufs( buffers->get_iovecs(), wsabufs );
+#endif
+
     if
     (
       WSASend
       (
         *this,
-        &wsabufs[0],
-        iovecs_len,
-        &dwNumberOfBytesSent,
-        0,
-        *aiocb,
-        Win32AIOSendMsgCB::WSAOverlappedCompletionRoutine
-      ) == 0
-      ||
+#ifdef _WIN64
+        reinterpret_cast<LPWSABUF>( &wsabufs[0] ),
 #else
-    if
-    (
-      WSASend
-      (
-        *this,
-        reinterpret_cast<WSABUF*>
+        reinterpret_cast<LPWSABUF>
         (
           const_cast<struct iovec*>
           (
-            static_cast<const struct iovec*>( *buffers )
+            static_cast<const struct iovec*>( buffers )
           )
         ),
-        buffers->size(),
+#endif
+        buffers.size(),
         &dwNumberOfBytesSent,
         static_cast<DWORD>( get_platform_send_flags( flags ) ),
         *aiocb,
         Win32AIOSendMsgCB::WSAOverlappedCompletionRoutine
       ) == 0
       ||
-#endif
       WSAGetLastError() == WSA_IO_PENDING
     )
       return;
@@ -8645,26 +8773,24 @@ TCPSocket::aio_sendmsg
     }
   }
 #endif
-
   Socket::aio_sendmsg( buffers, flags, callback, callback_context );
 }
 
-bool TCPSocket::associate( auto_IOQueue io_queue )
+bool TCPSocket::associate( IOQueue& io_queue )
 {
-  if ( this->io_queue == NULL )
+  if ( get_io_queue() == NULL )
   {
-    switch ( io_queue->get_type_id() )
+    switch ( io_queue.get_type_id() )
     {
 #ifdef _WIN32
       case Win32AIOQueue::TYPE_ID:
       {
         if
         (
-          static_cast<Win32AIOQueue*>( io_queue.get() )
-            ->associate( *this )
+          static_cast<Win32AIOQueue&>( io_queue ).associate( *this )
         )
         {
-          this->io_queue = io_queue;
+          set_io_queue( io_queue );
           return true;
         }
         else
@@ -8680,19 +8806,32 @@ bool TCPSocket::associate( auto_IOQueue io_queue )
     return false;
 }
 
-auto_TCPSocket TCPSocket::create()
+TCPSocket* TCPSocket::create()
 {
-  return create( AF_INET6 );
+  return create( DOMAIN_DEFAULT );
 }
 
-auto_TCPSocket TCPSocket::create( int domain )
+TCPSocket* TCPSocket::create( int domain )
 {
-  socket_t socket_ = Socket::create( &domain, SOCK_STREAM, IPPROTO_TCP );
-
+  socket_t socket_ = create( &domain );
   if ( socket_ != -1 )
     return new TCPSocket( domain, socket_ );
   else
     return NULL;
+}
+
+socket_t TCPSocket::create( int* domain )
+{
+  return Socket::create( domain, TYPE, PROTOCOL );
+}
+
+bool TCPSocket::want_accept() const
+{
+#ifdef _WIN32
+  return WSAGetLastError() == WSAEWOULDBLOCK;
+#else
+  return errno == EWOULDBLOCK;
+#endif
 }
 
 
@@ -8715,6 +8854,7 @@ Thread::Thread()
 {
   handle = 0;
   id = 0;
+  state = STATE_READY;
 }
 
 Thread::~Thread()
@@ -8882,6 +9022,9 @@ void Thread::start()
   pthread_create( &handle, &attr, &thread_stub, this );
   pthread_attr_destroy( &attr );
 #endif
+
+  while ( state == STATE_READY )
+    yield();
 }
 
 #ifdef _WIN32
@@ -8898,7 +9041,11 @@ void* Thread::thread_stub( void* this_ )
   static_cast<Thread*>( this_ )->id = thr_self();
 #endif
 
+  static_cast<Thread*>( this_ )->state = STATE_RUNNING;
+
   static_cast<Thread*>( this_ )->run();
+
+  static_cast<Thread*>( this_ )->state = STATE_STOPPED;
 
   return 0;
 }
@@ -8908,7 +9055,7 @@ void Thread::yield()
 #if defined(_WIN32)
   SwitchToThread();
 #elif defined(__MACH__)
-  pthread_yield_np();
+  pthread_YIELD_np();
 #elif defined(__sun)
   sleep( 0 );
 #else
@@ -9543,20 +9690,26 @@ TimerQueue* TimerQueue::default_timer_queue = NULL;
 
 
 #ifndef _WIN32
-class TimerQueue::Thread : public YIELD::platform::Thread
+class TimerQueue::Thread : public yield::platform::Thread
 {
 public:
   Thread()
+   : fd_event_poller( FDEventPoller::create() ),
+     new_timers_pipe( Pipe::create() )
   {
-    fd_event_poller = FDEventPoller::create();
-    new_timers_pipe = Pipe::create();
-    fd_event_poller->associate( new_timers_pipe->get_read_end() );
+    fd_event_poller.associate( new_timers_pipe.get_read_end() );
     should_run = true;
+  }
+
+  ~Thread()
+  {
+    FDEventPoller::dec_ref( fd_event_poller );
+    Pipe::dec_ref( new_timers_pipe );
   }
 
   void addTimer( Timer* timer )
   {
-    new_timers_pipe->write( &timer, sizeof( timer ) );
+    new_timers_pipe.write( timer, sizeof( timer ) );
   }
 
   void stop()
@@ -9565,7 +9718,7 @@ public:
     addTimer( NULL );
   }
 
-  // YIELD::platform::Thread
+  // yield::platform::Thread
   void run()
   {
     set_name( "TimerQueueThread" );
@@ -9574,10 +9727,10 @@ public:
     {
       if ( timers.empty() )
       {
-        if ( fd_event_poller->poll() )
+        if ( fd_event_poller.poll() )
         {
           Timer* new_timer;
-          new_timers_pipe->read( &new_timer, sizeof( new_timer ) );
+          new_timers_pipe.read( &new_timer, sizeof( new_timer ) );
           if ( new_timer != NULL )
           {
             timers.push
@@ -9623,10 +9776,10 @@ public:
         else // Wait on the new timers queue until a new timer arrives
              // or it's time to fire the next timer
         {
-          if ( fd_event_poller->poll( timers.top().first - current_time ) )
+          if ( fd_event_poller.poll( timers.top().first - current_time ) )
           {
             TimerQueue::Timer* new_timer;
-            new_timers_pipe->read( &new_timer, sizeof( new_timer ) );
+            new_timers_pipe.read( &new_timer, sizeof( new_timer ) );
             if ( new_timer != NULL )
             {
               timers.push
@@ -9643,8 +9796,8 @@ public:
   }
 
 private:
-  auto_FDEventPoller fd_event_poller;
-  auto_Pipe new_timers_pipe;
+  FDEventPoller& fd_event_poller;
+  Pipe& new_timers_pipe;
   bool should_run;
   std::priority_queue
   <
@@ -9683,22 +9836,22 @@ TimerQueue::~TimerQueue()
 #endif
 }
 
-void TimerQueue::addTimer( yidl::runtime::auto_Object<Timer> timer )
+void TimerQueue::addTimer( Timer& timer )
 {
 #ifdef _WIN32
-  timer->hTimerQueue = hTimerQueue;
+  timer.hTimerQueue = hTimerQueue;
   CreateTimerQueueTimer
   (
-    &timer->hTimer,
+    &timer.hTimer,
     hTimerQueue,
     Timer::WaitOrTimerCallback,
-    &timer->inc_ref(),
-    static_cast<DWORD>( timer->get_timeout().as_unix_time_ms() ),
-    static_cast<DWORD>( timer->get_period().as_unix_time_ms() ),
+    &timer.inc_ref(),
+    static_cast<DWORD>( timer.get_timeout().as_unix_time_ms() ),
+    static_cast<DWORD>( timer.get_period().as_unix_time_ms() ),
     WT_EXECUTEDEFAULT
   );
 #else
-  thread->addTimer( timer.release() );
+  thread->addTimer( &timer.inc_ref() );
 #endif
 }
 
@@ -9789,14 +9942,18 @@ VOID CALLBACK TimerQueue::Timer::WaitOrTimerCallback
 #endif
 
 
+int UDPSocket::PROTOCOL = IPPROTO_UDP;
+int UDPSocket::TYPE = SOCK_DGRAM;
+
+
 class UDPSocket::IORecvFromCB : public IOCB<AIORecvFromCallback>
 {
 protected:
   IORecvFromCB
   (
-    yidl::runtime::auto_Buffer buffer,
+    Buffer& buffer,
     int flags,
-    auto_UDPSocket udp_socket,
+    UDPSocket& udp_socket,
     AIORecvFromCallback& callback,
     void* callback_context
   )
@@ -9806,22 +9963,28 @@ protected:
     udp_socket( udp_socket )
   { }
 
+  ~IORecvFromCB()
+  {
+    Buffer::dec_ref( buffer );
+    UDPSocket::dec_ref( udp_socket );
+  }
 
-  yidl::runtime::auto_Buffer buffer;
-  int flags;
-  auto_UDPSocket udp_socket;
-
+  Buffer& get_buffer() const { return buffer; }
+  int get_flags() const { return flags; }
+  UDPSocket& get_udp_socket() const { return udp_socket; }
 
   void onRecvFromCompletion( struct sockaddr_storage& peername )
   {
+    SocketAddress* peername_sa = new SocketAddress( peername );
+
     callback.onRecvFromCompletion
     (
       buffer,
-      new SocketAddress( peername ),
+      *peername_sa,
       callback_context
     );
 
-    buffer = NULL; // To release the reference
+    SocketAddress::dec_ref( *peername_sa );
   }
 
   void onRecvFromError()
@@ -9831,9 +9994,13 @@ protected:
 
   void onRecvFromError( uint32_t error_code )
   {
-    buffer = NULL; // To release the reference
     callback.onRecvFromError( error_code, callback_context );
   }
+
+private:
+  Buffer& buffer;
+  int flags;
+  UDPSocket& udp_socket;
 };
 
 
@@ -9843,21 +10010,23 @@ class UDPSocket::BIORecvFromCB
 public:
   BIORecvFromCB
   (
-    yidl::runtime::auto_Buffer buffer,
+    Buffer& buffer,
     int flags,
-    auto_UDPSocket udp_socket,
+    UDPSocket& udp_socket,
     AIORecvFromCallback& callback,
     void* callback_context
   ) : IORecvFromCB( buffer, flags, udp_socket, callback, callback_context )
   { }
 
+private:
   // BIOCB
   void execute()
   {
-    if ( udp_socket->set_blocking_mode( true ) )
+    if ( get_udp_socket().set_blocking_mode( true ) )
     {
       struct sockaddr_storage peername;
-      ssize_t recvfrom_ret = udp_socket->recvfrom( *buffer, flags, peername );
+      ssize_t recvfrom_ret
+        = get_udp_socket().recvfrom( get_buffer(), get_flags(), peername );
       if ( recvfrom_ret > 0 )
         onRecvFromCompletion( peername );
       else
@@ -9875,28 +10044,31 @@ class UDPSocket::NBIORecvFromCB
 public:
   NBIORecvFromCB
   (
-    yidl::runtime::auto_Buffer buffer,
+    Buffer& buffer,
     int flags,
-    auto_UDPSocket udp_socket,
+    UDPSocket& udp_socket,
     AIORecvFromCallback& callback,
     void* callback_context
   ) : NBIOCB( STATE_WANT_READ ),
       IORecvFromCB( buffer, flags, udp_socket, callback, callback_context )
   { }
 
+private:
   // NBIOCB
   void execute()
   {
-    if ( udp_socket->set_blocking_mode( false ) )
+    if ( get_udp_socket().set_blocking_mode( false ) )
     {
       struct sockaddr_storage peername;
-      ssize_t recvfrom_ret = udp_socket->recvfrom( *buffer, flags, peername );
+      ssize_t recvfrom_ret
+        = get_udp_socket().recvfrom( get_buffer(), get_flags(), peername );
+
       if ( recvfrom_ret > 0 )
       {
         set_state( STATE_COMPLETE );
         onRecvFromCompletion( peername );
       }
-      else if ( udp_socket->want_read() )
+      else if ( get_udp_socket().want_read() )
         set_state( STATE_WANT_READ );
       else
       {
@@ -9911,7 +10083,7 @@ public:
     }
   }
 
-  socket_t get_fd() const { return *udp_socket; }
+  socket_t get_fd() const { return get_udp_socket(); }
 };
 
 
@@ -9922,17 +10094,20 @@ class UDPSocket::Win32AIORecvFromCB
 public:
   Win32AIORecvFromCB
   (
-    yidl::runtime::auto_Buffer buffer,
-    auto_UDPSocket udp_socket,
+    Buffer& buffer,
+    UDPSocket& udp_socket,
     AIORecvFromCallback& callback,
     void* callback_context
   ) : IORecvFromCB( buffer, 0, udp_socket, callback, callback_context )
   { }
 
+  struct sockaddr_storage peername;
+
+private:
   // Win32AIOCB
   void onCompletion( DWORD dwNumberOfBytesTransferred )
   {
-    buffer->put( NULL, dwNumberOfBytesTransferred );
+    get_buffer().put( dwNumberOfBytesTransferred );
     onRecvFromCompletion( peername );
   }
 
@@ -9940,21 +10115,18 @@ public:
   {
     onRecvFromError( static_cast<uint32_t>( dwErrorCode ) );
   }
-
-
-  struct sockaddr_storage peername;
 };
 #endif
 
 
 UDPSocket::UDPSocket( int domain, socket_t socket_ )
-  : Socket( domain, SOCK_DGRAM, IPPROTO_UDP, socket_ )
+  : Socket( domain, TYPE, PROTOCOL, socket_ )
 { }
 
 void
 UDPSocket::aio_recvfrom
 (
-  yidl::runtime::auto_Buffer buffer,
+  Buffer& buffer,
   int flags,
   AIORecvFromCallback& callback,
   void* callback_context
@@ -9963,20 +10135,26 @@ UDPSocket::aio_recvfrom
 #ifdef _WIN32
   if
   (
-    io_queue != NULL
+    get_io_queue() != NULL
     &&
-    io_queue->get_type_id() == Win32AIOQueue::TYPE_ID
+    get_io_queue()->get_type_id() == Win32AIOQueue::TYPE_ID
   )
   {
-    WSABUF wsabuf[1];
-    wsabuf[0].buf = static_cast<CHAR*>( static_cast<void*>( *buffer ) );
-    wsabuf[0].len = static_cast<ULONG>( buffer->capacity() - buffer->size() );
+    WSABUF wsabuf;
+    wsabuf.buf = static_cast<CHAR*>( buffer ) + buffer.size();
+    wsabuf.len = static_cast<ULONG>( buffer.capacity() - buffer.size() );
 
     DWORD dwNumberOfBytesReceived,
           dwFlags = static_cast<DWORD>( get_platform_recv_flags( flags ) );
 
     Win32AIORecvFromCB* aiocb
-     = new Win32AIORecvFromCB( buffer, inc_ref(), callback, callback_context );
+     = new Win32AIORecvFromCB
+           (
+             buffer,
+             inc_ref(),
+             callback,
+             callback_context
+           );
 
     socklen_t peername_len = sizeof( aiocb->peername );
 
@@ -9985,7 +10163,7 @@ UDPSocket::aio_recvfrom
       WSARecvFrom
       (
         *this,
-        wsabuf,
+        &wsabuf,
         1,
         &dwNumberOfBytesReceived,
         &dwFlags,
@@ -10011,59 +10189,58 @@ UDPSocket::aio_recvfrom
   if ( set_blocking_mode( false ) )
   {
     struct sockaddr_storage peername;
-    ssize_t recvfrom_ret = recvfrom( *buffer, flags, peername );
+    ssize_t recvfrom_ret = recvfrom( buffer, flags, peername );
     if ( recvfrom_ret > 0 )
     {
-      callback.onRecvFromCompletion
-      (
-        buffer,
-        new SocketAddress( peername ),
-        callback_context
-      );
+      SocketAddress* peername_sa = new SocketAddress( peername );
+      callback.onRecvFromCompletion( buffer, *peername_sa, callback_context );
+      SocketAddress::dec_ref( *peername_sa );
+      Buffer::dec_ref( buffer );
       return;
     }
     else if ( !want_read( ))
     {
       callback.onRecvFromError( get_last_error(), callback_context );
+      Buffer::dec_ref( buffer );
       return;
     }
   }
 
   // Next try to offload the recvfrom to an IOQueue
-  if ( io_queue != NULL )
+  if ( get_io_queue() != NULL )
   {
-    switch ( io_queue->get_type_id() )
+    switch ( get_io_queue()->get_type_id() )
     {
       case BIOQueue::TYPE_ID:
       {
-        static_cast<BIOQueue*>( io_queue.get() )
+        static_cast<BIOQueue*>( get_io_queue() )
           ->submit
             (
-              new BIORecvFromCB
-                  (
-                    buffer,
-                    flags,
-                    inc_ref(),
-                    callback,
-                    callback_context
-                  )
+              *new BIORecvFromCB
+                   (
+                     buffer,
+                     flags,
+                     inc_ref(),
+                     callback,
+                     callback_context
+                   )
             );
       }
       return;
 
       case NBIOQueue::TYPE_ID:
       {
-        static_cast<NBIOQueue*>( io_queue.get() )
+        static_cast<NBIOQueue*>( get_io_queue() )
           ->submit
             (
-              new NBIORecvFromCB
-                  (
-                    buffer,
-                    flags,
-                    inc_ref(),
-                    callback,
-                    callback_context
-                  )
+               *new NBIORecvFromCB
+                    (
+                      buffer,
+                      flags,
+                      inc_ref(),
+                      callback,
+                      callback_context
+                    )
             );
       }
       return;
@@ -10072,12 +10249,13 @@ UDPSocket::aio_recvfrom
 
   // Give up instead of blocking on recvfrom
   callback.onRecvFromError( get_last_error(), callback_context );
+  Buffer::dec_ref( buffer );
 }
 
-auto_UDPSocket UDPSocket::create()
+UDPSocket* UDPSocket::create()
 {
   int domain = AF_INET6;
-  socket_t socket_ = Socket::create( &domain, SOCK_DGRAM, IPPROTO_UDP );
+  socket_t socket_ = Socket::create( &domain, TYPE, PROTOCOL );
   if ( socket_ != -1 )
     return new UDPSocket( domain, socket_ );
   else
@@ -10087,10 +10265,10 @@ auto_UDPSocket UDPSocket::create()
 ssize_t
 UDPSocket::recvfrom
 (
-  yidl::runtime::Buffer& buffer,
+  Buffer& buffer,
   int flags,
   struct sockaddr_storage& peername
-)
+) const
 {
   ssize_t recvfrom_ret
     = recvfrom
@@ -10102,7 +10280,7 @@ UDPSocket::recvfrom
       );
 
   if ( recvfrom_ret > 0 )
-    buffer.put( NULL, static_cast<size_t>( recvfrom_ret ) );
+    buffer.put( static_cast<size_t>( recvfrom_ret ) );
 
   return recvfrom_ret;
 }
@@ -10114,7 +10292,7 @@ UDPSocket::recvfrom
   size_t buffer_len,
   int flags,
   struct sockaddr_storage& peername
-)
+) const
 {
   socklen_t peername_len = sizeof( peername );
   return ::recvfrom
@@ -10135,7 +10313,7 @@ UDPSocket::sendmsg
   uint32_t buffers_count,
   const SocketAddress& peername,
   int flags
-)
+) const
 {
   flags = get_platform_send_flags( flags );
 
@@ -10145,16 +10323,8 @@ UDPSocket::sendmsg
 #ifdef _WIN32
     DWORD dwWrittenLength;
 #ifdef _WIN64
-    // The WSABUF .len is a ULONG, which is != size_t on Win64,
-    // so we have to truncate it here.
-    // This is easier (compiler warnings, using sizeof, etc.)
-    // than changing the struct iovec definition to use uint32_t.
-    std::vector<WSABUF> wsabufs( buffers_count );
-    for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-    {
-      wsabufs[buffer_i].len = static_cast<ULONG>( buffers[buffer_i].iov_len );
-      wsabufs[buffer_i].buf = static_cast<char*>( buffers[buffer_i].iov_base );
-    }
+    std::vector<struct iovec64> wsabufs( buffers_count );
+    iovecs_to_wsabufs( buffers, wsabufs );
 #endif
 
     ssize_t sendto_ret
@@ -10162,9 +10332,9 @@ UDPSocket::sendmsg
         (
           *this,
 #ifdef _WIN64
-          &wsabufs[0],
+          reinterpret_cast<LPWSABUF>( &wsabufs[0] ),
 #else
-          reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ),
+          reinterpret_cast<LPWSABUF>( const_cast<struct iovec*>( buffers ) ),
 #endif
           buffers_count,
           &dwWrittenLength,
@@ -10186,7 +10356,7 @@ UDPSocket::sendmsg
     msghdr_.msg_namelen = namelen;
     msghdr_.msg_iov = const_cast<iovec*>( buffers );
     msghdr_.msg_iovlen = buffers_count;
-    return ::sendmsg( *this, &msghdr_, flags|MSG_NOSIGNAL );
+    return ::sendmsg( *this, &msghdr_, flags );
 #endif
   }
   else
@@ -10200,7 +10370,7 @@ UDPSocket::sendto
   size_t buffer_len,
   int flags,
   const SocketAddress& _peername
-)
+) const
 {
   struct sockaddr* peername; socklen_t peername_len;
   if ( _peername.as_struct_sockaddr( get_domain(), peername, peername_len ) )
@@ -10265,26 +10435,26 @@ bool Volume::access( const Path& path, int amode )
 #ifndef _WIN32
 bool Volume::chmod( const Path& path, mode_t mode )
 {
-  auto_Stat stbuf( new Stat );
-  stbuf->set_mode( mode );
+  Stat stbuf;
+  stbuf.set_mode( mode );
   return setattr( path, stbuf, SETATTR_MODE );
 }
 
 bool Volume::chown( const Path& path, uid_t uid, uid_t gid )
 {
-  auto_Stat stbuf( new Stat );
-  stbuf->set_uid( uid );
-  stbuf->set_gid( gid );
+  Stat stbuf;
+  stbuf.set_uid( uid );
+  stbuf.set_gid( gid );
   return setattr( path, stbuf, SETATTR_UID|SETATTR_GID );
 }
 #endif
 
-auto_File Volume::creat( const Path& path )
+File* Volume::creat( const Path& path )
 {
   return creat( path, FILE_MODE_DEFAULT );
 }
 
-auto_File Volume::creat( const Path& path, mode_t mode )
+File* Volume::creat( const Path& path, mode_t mode )
 {
   return open( path, O_CREAT|O_WRONLY|O_TRUNC, mode );
 }
@@ -10296,17 +10466,31 @@ bool Volume::exists( const Path& path )
 
 bool Volume::isdir( const Path& path )
 {
-  auto_Stat stbuf( getattr( path ) );
-  return stbuf != NULL && stbuf->ISDIR();
+  Stat* stbuf = getattr( path );
+  if ( stbuf != NULL )
+  {
+    bool isdir = stbuf->ISDIR();
+    Stat::dec_ref( *stbuf );
+    return isdir;
+  }
+  else
+    return false;
 }
 
 bool Volume::isfile( const Path& path )
 {
-  auto_Stat stbuf( getattr( path ) );
-  return stbuf != NULL && stbuf->ISREG();
+  Stat* stbuf = getattr( path );
+  if ( stbuf != NULL )
+  {
+    bool isfile = stbuf->ISREG();
+    Stat::dec_ref( *stbuf );
+    return isfile;
+  }
+  else
+    return false;
 }
 
-auto_Stat Volume::getattr( const Path& path )
+Stat* Volume::getattr( const Path& path )
 {
 #ifdef _WIN32
   WIN32_FIND_DATA find_data;
@@ -10430,22 +10614,22 @@ bool Volume::mktree( const Path& path, mode_t mode )
   return ret;
 }
 
-auto_File Volume::open( const Path& path )
+File* Volume::open( const Path& path )
 {
   return open( path, O_RDONLY, FILE_MODE_DEFAULT, 0 );
 }
 
-auto_File Volume::open( const Path& path, uint32_t flags )
+File* Volume::open( const Path& path, uint32_t flags )
 {
   return open( path, flags, FILE_MODE_DEFAULT, 0 );
 }
 
-auto_File Volume::open( const Path& path, uint32_t flags, mode_t mode )
+File* Volume::open( const Path& path, uint32_t flags, mode_t mode )
 {
   return open( path, flags, mode, 0 );
 }
 
-auto_File
+File*
 Volume::open
 (
   const Path& path,
@@ -10523,7 +10707,7 @@ Volume::open
   return NULL;
 }
 
-auto_Directory Volume::opendir( const Path& path )
+Directory* Volume::opendir( const Path& path )
 {
 #ifdef _WIN32
   std::wstring search_pattern( path );
@@ -10547,7 +10731,7 @@ auto_Directory Volume::opendir( const Path& path )
   return NULL;
 }
 
-auto_Path Volume::readlink( const Path& path )
+Path* Volume::readlink( const Path& path )
 {
 #ifdef _WIN32
   ::SetLastError( ERROR_NOT_SUPPORTED );
@@ -10594,13 +10778,19 @@ bool Volume::rmdir( const Path& path )
 
 bool Volume::rmtree( const Path& path )
 {
-  auto_Directory dir = opendir( path );
+  Directory* dir = opendir( path );
   if ( dir != NULL )
   {
-    Directory::auto_Entry dirent = dir->readdir();
+    Directory::Entry* dirent = dir->readdir();
     while ( dirent != NULL )
     {
-      if ( dirent->ISDIR() )
+      bool isdir;
+      if ( dirent->get_stat() != NULL )
+        isdir = dirent->get_stat()->ISDIR();
+      else
+        isdir = this->isdir( path / dirent->get_name() );
+
+      if ( isdir )
       {
         if
         (
@@ -10610,17 +10800,29 @@ bool Volume::rmtree( const Path& path )
         )
         {
           if ( !rmtree( path / dirent->get_name() ) )
+          {
+            Directory::Entry::dec_ref( *dirent );
+            Directory::dec_ref( *dir );
             return false;
+          }
         }
       }
       else
       {
         if ( !unlink( path / dirent->get_name() ) )
+        {
+          Directory::Entry::dec_ref( *dirent );
+          Directory::dec_ref( *dir );
           return false;
+        }
       }
+
+      Directory::Entry::dec_ref( *dirent );
 
       dirent = dir->readdir();
     }
+
+    Directory::dec_ref( *dir );
 
     return rmdir( path );
   }
@@ -10628,7 +10830,7 @@ bool Volume::rmtree( const Path& path )
     return false;
 }
 
-bool Volume::setattr( const Path& path, auto_Stat stbuf, uint32_t to_set )
+bool Volume::setattr( const Path& path, const Stat& stbuf, uint32_t to_set )
 {
 #ifdef _WIN32
   if
@@ -10638,23 +10840,28 @@ bool Volume::setattr( const Path& path, auto_Stat stbuf, uint32_t to_set )
     ( to_set & SETATTR_CTIME ) == SETATTR_CTIME
   )
   {
-    auto_File file = open( path, O_WRONLY );
+    File* file = open( path, O_WRONLY );
     if ( file!= NULL )
     {
-      FILETIME ftCreationTime = stbuf->get_ctime(),
-               ftLastAccessTime = stbuf->get_atime(),
-               ftLastWriteTime = stbuf->get_mtime();
+      FILETIME ftCreationTime = stbuf.get_ctime(),
+               ftLastAccessTime = stbuf.get_atime(),
+               ftLastWriteTime = stbuf.get_mtime();
 
-      return SetFileTime
-             (
-               *file,
-               ( to_set & SETATTR_CTIME ) == SETATTR_CTIME
-                 ? &ftCreationTime : NULL,
-               ( to_set & SETATTR_ATIME ) == SETATTR_ATIME
-                 ? &ftLastAccessTime : NULL,
-               ( to_set & SETATTR_MTIME ) == SETATTR_MTIME
-                 ? &ftLastWriteTime : NULL
-             ) != 0;
+      bool ret = SetFileTime
+                 (
+                   *file,
+                   ( to_set & SETATTR_CTIME ) == SETATTR_CTIME
+                     ? &ftCreationTime : NULL,
+                   ( to_set & SETATTR_ATIME ) == SETATTR_ATIME
+                     ? &ftLastAccessTime : NULL,
+                   ( to_set & SETATTR_MTIME ) == SETATTR_MTIME
+                     ? &ftLastWriteTime : NULL
+                 ) != 0;
+
+      File::dec_ref( * file );
+
+      return ret;
+
     }
     else
       return false;
@@ -10662,13 +10869,13 @@ bool Volume::setattr( const Path& path, auto_Stat stbuf, uint32_t to_set )
 
   if ( ( to_set & SETATTR_ATTRIBUTES ) == SETATTR_ATTRIBUTES )
   {
-    if ( SetFileAttributes( path, stbuf->get_attributes() ) == 0 )
+    if ( SetFileAttributes( path, stbuf.get_attributes() ) == 0 )
       return false;
   }
 #else
   if ( ( to_set & SETATTR_MODE ) == SETATTR_MODE )
   {
-    if ( ::chmod( path, stbuf->get_mode() ) == -1 )
+    if ( ::chmod( path, stbuf.get_mode() ) == -1 )
       return false;
   }
 
@@ -10676,18 +10883,18 @@ bool Volume::setattr( const Path& path, auto_Stat stbuf, uint32_t to_set )
   {
     if ( ( to_set & SETATTR_GID ) == SETATTR_GID ) // Change both
     {
-      if ( ::chown( path, stbuf->get_uid(), stbuf->get_gid() ) == -1 )
+      if ( ::chown( path, stbuf.get_uid(), stbuf.get_gid() ) == -1 )
         return false;
     }
     else // Only change the uid
     {
-      if ( ::chown( path, stbuf->get_uid(), -1 ) == -1 )
+      if ( ::chown( path, stbuf.get_uid(), -1 ) == -1 )
         return false;
     }
   }
   else if ( ( to_set & SETATTR_GID ) == SETATTR_GID ) // Only change the gid
   {
-    if ( ::chown( path, -1, stbuf->get_gid() ) == -1 )
+    if ( ::chown( path, -1, stbuf.get_gid() ) == -1 )
       return false;
   }
 
@@ -10698,8 +10905,8 @@ bool Volume::setattr( const Path& path, auto_Stat stbuf, uint32_t to_set )
   )
   {
     struct timeval tv[2];
-    tv[0] = stbuf->get_atime();
-    tv[1] = stbuf->get_mtime();
+    tv[0] = stbuf.get_atime();
+    tv[1] = stbuf.get_mtime();
     if ( ::utimes( path, tv ) == -1 )
       return false;
   }
@@ -10734,7 +10941,7 @@ Volume::setxattr
   return false;
 }
 
-auto_Stat Volume::stat( const Path& path )
+Stat* Volume::stat( const Path& path )
 {
   return getattr( path );
 }
@@ -10788,13 +10995,26 @@ bool Volume::symlink( const Path& old_path, const Path& new_path )
 #endif
 }
 
+bool Volume::touch( const Path& path )
+{
+  File* file = creat( path );
+  if ( file != NULL )
+  {
+    File::dec_ref( *file );
+    return true;
+  }
+  else
+    return false;
+}
+
 bool Volume::truncate( const Path& path, uint64_t new_size )
 {
 #ifdef _WIN32
-  auto_File file = Volume::open( path, O_CREAT|O_WRONLY, FILE_MODE_DEFAULT );
+  File* file = Volume::open( path, O_CREAT|O_WRONLY, FILE_MODE_DEFAULT );
   if ( file!= NULL )
   {
     file->truncate( new_size );
+    File::dec_ref( *file );
     return true;
   }
   else
@@ -10821,9 +11041,9 @@ Volume::utime
   const Time& mtime
 )
 {
-  auto_Stat stbuf = new Stat;
-  stbuf->set_atime( atime );
-  stbuf->set_mtime( mtime );
+  Stat stbuf;
+  stbuf.set_atime( atime );
+  stbuf.set_mtime( mtime );
   return setattr( path, stbuf, SETATTR_ATIME|SETATTR_MTIME );
 }
 
@@ -10836,10 +11056,10 @@ Volume::utime
   const Time& ctime
 )
 {
-  auto_Stat stbuf = new Stat;
-  stbuf->set_atime( atime );
-  stbuf->set_mtime( mtime );
-  stbuf->set_ctime( ctime );
+  Stat stbuf;
+  stbuf.set_atime( atime );
+  stbuf.set_mtime( mtime );
+  stbuf.set_ctime( ctime );
   return setattr( path, stbuf, SETATTR_ATIME|SETATTR_MTIME|SETATTR_CTIME );
 }
 
@@ -10936,7 +11156,7 @@ Win32AIOQueue::Win32AIOQueue( HANDLE hIoCompletionPort )
   : hIoCompletionPort( hIoCompletionPort )
 {
   uint16_t worker_thread_count
-    = Machine::getOnlineLogicalProcessorCount();
+    = ProcessorSet::getOnlineLogicalProcessorCount();
 
   for
   (
@@ -10984,13 +11204,13 @@ bool Win32AIOQueue::associate( HANDLE handle )
          ) != INVALID_HANDLE_VALUE;
 }
 
-auto_Win32AIOQueue Win32AIOQueue::create()
+Win32AIOQueue& Win32AIOQueue::create()
 {
   HANDLE hIoCompletionPort
     = CreateIoCompletionPort( INVALID_HANDLE_VALUE, NULL, 0, 0 );
 
   if ( hIoCompletionPort != INVALID_HANDLE_VALUE )
-    return new Win32AIOQueue( hIoCompletionPort );
+    return *new Win32AIOQueue( hIoCompletionPort );
   else
     throw Exception();
 }
@@ -10998,7 +11218,7 @@ auto_Win32AIOQueue Win32AIOQueue::create()
 bool
 Win32AIOQueue::post
 (
-  Win32AIOCB* win32_aiocb,
+  Win32AIOCB& win32_aiocb,
   DWORD dwNumberOfBytesTransferred,
   ULONG_PTR dwCompletionKey
 )
@@ -11008,7 +11228,7 @@ Win32AIOQueue::post
            hIoCompletionPort,
            dwNumberOfBytesTransferred,
            dwCompletionKey,
-           *win32_aiocb
+           win32_aiocb
          ) == TRUE;
 }
 
@@ -11068,302 +11288,4 @@ Win32AIOCB::operator OVERLAPPED*()
 }
 
 #endif
-
-
-// xdr_marshaller.cpp
-XDRMarshaller::XDRMarshaller()
-{
-  buffer = new yidl::runtime::StringBuffer;
-}
-
-void XDRMarshaller::write_key( const char* key )
-{
-  if ( !in_map_stack.empty() && in_map_stack.back() && key != NULL )
-    Marshaller::write( NULL, 0, key );
-}
-
-void XDRMarshaller::write( const char* key, uint32_t tag, bool value )
-{
-  write( key, tag, value ? 1 : 0 );
-}
-
-void
-XDRMarshaller::write
-(
-  const char* key,
-  uint32_t tag,
-  yidl::runtime::auto_Buffer value
-)
-{
-  write( key, tag, static_cast<int32_t>( value->size() ) );
-
-  buffer->put( static_cast<void*>( *value ), value->size() );
-
-  if ( value->size() % 4 != 0 )
-  {
-    static char zeros[] = { 0, 0, 0 };
-    buffer->put( static_cast<const void*>( zeros ), 4 - ( value->size() % 4 ) );
-  }
-}
-
-void XDRMarshaller::write( const char* key, uint32_t, double value )
-{
-  write_key( key );
-  uint64_t uint64_value;
-  memcpy_s( &uint64_value, sizeof( uint64_value ), &value, sizeof( value ) );
-  uint64_value = Machine::htonll( uint64_value );
-  buffer->put( &uint64_value, sizeof( uint64_value ) );
-}
-
-void XDRMarshaller::write( const char* key, uint32_t, float value )
-{
-  write_key( key );
-  uint32_t uint32_value;
-  memcpy_s( &uint32_value, sizeof( uint32_value ), &value, sizeof( value ) );
-#ifdef __MACH__
-  uint32_value = htonl( uint32_value );
-#else
-  uint32_value = Machine::htonl( uint32_value );
-#endif
-  buffer->put( &uint32_value, sizeof( uint32_value ) );
-}
-
-void XDRMarshaller::write( const char* key, uint32_t, int32_t value )
-{
-  write_key( key );
-#ifdef __MACH__
-  value = htonl( value );
-#else
-  value = Machine::htonl( value );
-#endif
-  buffer->put( &value, sizeof( value ) );
-}
-
-void XDRMarshaller::write( const char* key, uint32_t, int64_t value )
-{
-  write_key( key );
-  value = Machine::htonll( value );
-  buffer->put( &value, sizeof( value ) );
-}
-
-void XDRMarshaller::write
-(
-  const char* key,
-  uint32_t tag,
-  const yidl::runtime::Map& value
-)
-{
-  write( key, tag, static_cast<int32_t>( value.get_size() ) );
-  in_map_stack.push_back( true );
-  value.marshal( *this );
-  in_map_stack.pop_back();
-}
-
-void
-XDRMarshaller::write
-(
-  const char* key,
-  uint32_t tag,
-  const yidl::runtime::Sequence& value
-)
-{
-  write( key, tag, static_cast<int32_t>( value.get_size() ) );
-  value.marshal( *this );
-}
-
-void
-XDRMarshaller::write
-(
-  const char* key,
-  uint32_t,
-  const yidl::runtime::MarshallableObject& value
-)
-{
-  write_key( key );
-  value.marshal( *this );
-}
-
-void
-XDRMarshaller::write
-(
-  const char* key,
-  uint32_t tag,
-  const char* value,
-  size_t value_len
-)
-{
-  write( key, tag, static_cast<int32_t>( value_len ) );
-  buffer->put( static_cast<const void*>( value ), value_len );
-  if ( value_len % 4 != 0 )
-  {
-    static char zeros[] = { 0, 0, 0 };
-    buffer->put( static_cast<const void*>( zeros ), 4 - ( value_len % 4 ) );
-  }
-}
-
-void XDRMarshaller::write( const char* key, uint32_t tag, uint32_t value )
-{
-  write( key, tag, static_cast<int32_t>( value ) );
-}
-
-
-
-// xdr_unmarshaller.cpp
-XDRUnmarshaller::XDRUnmarshaller( yidl::runtime::auto_Buffer buffer )
-  : buffer( buffer )
-{ }
-
-void XDRUnmarshaller::read( void* buffer, size_t buffer_len )
-{
-//#ifdef _DEBUG
-//  if ( this->buffer->size() - this->buffer->position() < buffer_len )
-//    DebugBreak();
-//#endif
-  this->buffer->get( buffer, buffer_len );
-}
-
-bool XDRUnmarshaller::read_bool( const char* key, uint32_t tag )
-{
-  return read_int32( key, tag ) == 1;
-}
-
-void
-XDRUnmarshaller::read
-(
-  const char* key,
-  uint32_t tag,
-  yidl::runtime::auto_Buffer value
-)
-{
-  size_t size = read_int32( key, tag );
-  if ( value->capacity() - value->size() < size ) DebugBreak();
-  read( static_cast<void*>( *value ), size );
-  value->put( NULL, size );
-  if ( size % 4 != 0 )
-  {
-    char zeros[3];
-    read( zeros, 4 - ( size % 4 ) );
-  }
-}
-
-double XDRUnmarshaller::read_double( const char*, uint32_t )
-{
-  uint64_t uint64_value;
-  read( &uint64_value, sizeof( uint64_value ) );
-  uint64_value = Machine::ntohll( uint64_value );
-  double double_value;
-  memcpy_s
-  (
-    &double_value,
-    sizeof( double_value ),
-    &uint64_value,
-    sizeof( uint64_value )
-  );
-  return double_value;
-}
-
-float XDRUnmarshaller::read_float( const char*, uint32_t )
-{
-  uint32_t uint32_value;
-  read( &uint32_value, sizeof( uint32_value ) );
-#ifdef __MACH__
-  uint32_value = ntohl( uint32_value );
-#else
-  uint32_value = Machine::ntohl( uint32_value );
-#endif
-  float float_value;
-  memcpy_s
-  (
-    &float_value,
-    sizeof( float_value ),
-    &uint32_value,
-    sizeof( uint32_value )
-  );
-  return float_value;
-}
-
-int32_t XDRUnmarshaller::read_int32( const char*, uint32_t )
-{
-  int32_t value;
-  read( &value, sizeof( value ) );
-#ifdef __MACH__
-  return ntohl( value );
-#else
-  return Machine::ntohl( value );
-#endif
-}
-
-int64_t XDRUnmarshaller::read_int64( const char*, uint32_t )
-{
-  int64_t value;
-  read( &value, sizeof( value ) );
-  return Machine::ntohll( value );
-}
-
-void
-XDRUnmarshaller::read
-(
-  const char* key,
-  uint32_t tag,
-  yidl::runtime::Map& value
-)
-{
-  size_t size = read_int32( key, tag );
-  for ( size_t i = 0; i < size; i++ )
-    value.unmarshal( *this );
-}
-
-void
-XDRUnmarshaller::read
-(
-  const char*,
-  uint32_t,
-  yidl::runtime::MarshallableObject& value
-)
-{
-  value.unmarshal( *this );
-}
-
-void
-XDRUnmarshaller::read
-(
-  const char* key,
-  uint32_t tag,
-  yidl::runtime::Sequence& value
-)
-{
-  size_t size = read_int32( key, tag );
-  if ( size <= UINT16_MAX )
-  {
-    for ( size_t i = 0; i < size; i++ )
-      value.unmarshal( *this );
-  }
-}
-
-void
-XDRUnmarshaller::read
-(
-  const char* key,
-  uint32_t tag,
-  std::string& value
-)
-{
-  size_t str_len = read_int32( key, tag );
-
-  if ( str_len < UINT16_MAX )
-  {
-    if ( str_len != 0 )
-    {
-      size_t padded_str_len = str_len % 4;
-      if ( padded_str_len == 0 )
-        padded_str_len = str_len;
-      else
-        padded_str_len = str_len + 4 - padded_str_len;
-
-      value.resize( padded_str_len );
-      read( const_cast<char*>( value.c_str() ), padded_str_len );
-      value.resize( str_len );
-    }
-  }
-}
 

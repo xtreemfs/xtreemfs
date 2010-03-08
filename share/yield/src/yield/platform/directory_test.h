@@ -36,20 +36,18 @@
 #define YIELD_PLATFORM_DIRECTORY_TEST_DIR_NAME "directory_test"
 
 
-namespace YIELD
+namespace yield
 {
   namespace platform
   {
     class DirectoryTestCase : public yunit::TestCase
     {
     public:
-      DirectoryTestCase
-      (
-        const std::string& name,
-        YIELD::platform::auto_Volume volume = NULL
-      )
+      DirectoryTestCase( const std::string& name, Volume* volume = NULL )
         : yunit::TestCase( name )
       {
+        directory = NULL;
+          
         if ( volume != NULL )
           this->volume = volume;
         else
@@ -60,7 +58,7 @@ namespace YIELD
       { }
 
       void setUp()
-      {
+      {        
         tearDown();
 
         if ( !volume->mkdir( YIELD_PLATFORM_DIRECTORY_TEST_DIR_NAME ) )
@@ -68,11 +66,11 @@ namespace YIELD
 
         if 
         ( 
-           volume->creat
+           !volume->touch
            ( 
-             YIELD::platform::Path( YIELD_PLATFORM_DIRECTORY_TEST_DIR_NAME )
+             yield::platform::Path( YIELD_PLATFORM_DIRECTORY_TEST_DIR_NAME )
              / YIELD_PLATFORM_FILE_TEST_FILE_NAME 
-           ) != NULL
+           )
          )
           throw Exception();
 
@@ -83,19 +81,16 @@ namespace YIELD
 
       void tearDown()
       {
-        directory.reset( NULL );
+        Directory::dec_ref( directory );
         volume->rmtree( YIELD_PLATFORM_DIRECTORY_TEST_DIR_NAME );
       }
 
     protected:
-      YIELD::platform::auto_Directory get_directory() const 
-      { 
-        return directory; 
-      }
+      Directory& get_directory() const { return *directory; }
 
     private:
-      YIELD::platform::auto_Directory directory;
-      YIELD::platform::auto_Volume volume;
+      Directory* directory;
+      Volume* volume;
     };
 
 
@@ -103,7 +98,7 @@ namespace YIELD
     class Directory_##TestCaseName##Test : public DirectoryTestCase \
     { \
     public:\
-      Directory_##TestCaseName##Test( YIELD::platform::auto_Volume volume = NULL ) \
+      Directory_##TestCaseName##Test( yield::platform::Volume* volume = NULL ) \
         : DirectoryTestCase( "Directory_" # TestCaseName "Test", volume ) \
       { } \
       void runTest(); \
@@ -113,12 +108,14 @@ namespace YIELD
 
     YIELD_PLATFORM_DIRECTORY_TEST_CASE( readdir )
     {
-      Directory::auto_Entry entry = get_directory()->readdir();
-      ASSERT_EQUAL( entry->get_name(), "." );
-      entry = get_directory()->readdir();
-      ASSERT_EQUAL( entry->get_name(), ".." );
-      entry = get_directory()->readdir();
-      ASSERT_EQUAL( entry->get_name(), YIELD_PLATFORM_FILE_TEST_FILE_NAME );
+      Directory::Entry* dirent = get_directory().readdir();
+      ASSERT_NOTEQUAL( dirent, NULL );
+      ASSERT_EQUAL( dirent->get_name(), "." );
+      dirent = get_directory().readdir();
+      ASSERT_EQUAL( dirent->get_name(), ".." );
+      dirent = get_directory().readdir();
+      ASSERT_EQUAL( dirent->get_name(), YIELD_PLATFORM_FILE_TEST_FILE_NAME );
+      Directory::Entry::dec_ref( *dirent );
     }
 
 
@@ -129,8 +126,9 @@ namespace YIELD
       DirectoryTestSuite( const std::string& name )
         : TestSuite( name )
       {
-        YIELD::platform::auto_Volume volume = new VolumeType;
-        addTest( new Directory_readdirTest( volume ) );
+        Volume* volume = new VolumeType;
+        addTest( new Directory_readdirTest( &volume->inc_ref() ) );
+        Volume::dec_ref( *volume );
       }
     };
   };

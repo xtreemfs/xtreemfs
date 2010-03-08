@@ -44,67 +44,55 @@
 
 namespace xtreemfs
 {
-  class Path;
-
-
-  class MRCProxy : public Proxy<org::xtreemfs::interfaces::MRCInterface>
+  class MRCProxy 
+    : public Proxy
+             <
+               org::xtreemfs::interfaces::MRCInterface,
+               org::xtreemfs::interfaces::MRCInterfaceEventFactory,
+               org::xtreemfs::interfaces::MRCInterfaceEventSender
+             >
   {
   public:
-    static yidl::runtime::auto_Object<MRCProxy>
+    static MRCProxy&
     create
     (
-      const YIELD::ipc::URI& absolute_uri,
+      const URI& absolute_uri,
       uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
-      uint32_t flags = 0,
-      YIELD::platform::auto_Log log = NULL,
-      const YIELD::platform::Time& operation_timeout =
-        OPERATION_TIMEOUT_DEFAULT,
-      const char* password = "",
-      uint8_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
-      YIELD::ipc::auto_SSLContext ssl_context = NULL,
-      auto_UserCredentialsCache user_credentials_cache = NULL
+      uint32_t flags = FLAGS_DEFAULT,
+      Log* log = NULL,
+      const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT,
+      const std::string& password = "",
+      uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
+      SSLContext* ssl_context = NULL, // Steals this reference
+      UserCredentialsCache* user_credentials_cache = NULL
     );
 
-    // Proxy
-    virtual void
-    getCurrentUserCredentials
-    (
-      org::xtreemfs::interfaces::UserCredentials& out_user_credentials
-    );
+    // yidl::runtime::Object
+    MRCProxy& inc_ref() { return Object::inc_ref( *this ); }
 
   private:
     MRCProxy
     (
       uint16_t concurrency_level,
       uint32_t flags,
-      YIELD::platform::auto_Log log,
-      const YIELD::platform::Time& operation_timeout,
+      IOQueue& io_queue,
+      Log* log,
+      const Time& operation_timeout,
       const std::string& password,
-      YIELD::ipc::auto_SocketAddress peername,
-      uint8_t reconnect_tries_max,
-      YIELD::ipc::auto_SocketFactory socket_factory,
-      auto_UserCredentialsCache user_credentials_cache
-    )
-      : Proxy<org::xtreemfs::interfaces::MRCInterface>
-        (
-          concurrency_level,
-          flags,
-          log,
-          operation_timeout,
-          peername,
-          reconnect_tries_max,
-          socket_factory,
-          user_credentials_cache
-        ),
-        password( password )
-    { }
+      SocketAddress& peername,
+      uint16_t reconnect_tries_max,
+      SocketFactory& socket_factory,
+      UserCredentialsCache* user_credentials_cache
+    );
 
     ~MRCProxy() { }
 
+    // yield::ipc::ONCRPCClient
+    ONCRPCRequest& createONCRPCRequest( MarshallableObject& body );
+
+  private:
     std::string password;
   };
-
-  typedef yidl::runtime::auto_Object<MRCProxy> auto_MRCProxy;
 };
 
 #endif

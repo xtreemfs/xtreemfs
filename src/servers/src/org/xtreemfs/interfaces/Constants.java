@@ -3,7 +3,6 @@ package org.xtreemfs.interfaces;
 
 public interface Constants
 {
-    public static final int ONCRPC_AUTH_FLAVOR = 1326;
     public static final String ONCRPC_SCHEME = "oncrpc";
     public static final String ONCRPCG_SCHEME = "oncrpcg";
     public static final String ONCRPCS_SCHEME = "oncrpcs";

@@ -19,7 +19,7 @@
 // ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
 // DISCLAIMED. IN NO EVENT SHALL Minor Gordon BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// OSDECT, INOSDECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
 // LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
@@ -28,53 +28,66 @@
 
 
 #include "xtreemfs/osd_proxy.h"
-using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
 
-auto_OSDProxy
-OSDProxy::create
+OSDProxy::OSDProxy
 (
-  const YIELD::ipc::URI& absolute_uri,
   uint16_t concurrency_level,
   uint32_t flags,
-  YIELD::platform::auto_Log log,
-  const YIELD::platform::Time& operation_timeout,
-  uint8_t reconnect_tries_max,
-  YIELD::ipc::auto_SSLContext ssl_context,
-  auto_UserCredentialsCache user_credentials_cache
+  IOQueue& io_queue,
+  Log* log,
+  const Time& operation_timeout,
+  SocketAddress& peername,
+  uint16_t reconnect_tries_max,
+  SocketFactory& socket_factory,
+  UserCredentialsCache* user_credentials_cache
 )
-{
-  YIELD::ipc::URI checked_uri( absolute_uri );
-
-  if ( checked_uri.get_port() == 0 )
-  {
-    if ( checked_uri.get_scheme() == ONCRPCG_SCHEME )
-      checked_uri.set_port( ONCRPCG_PORT_DEFAULT );
-    else if ( checked_uri.get_scheme() == ONCRPCS_SCHEME )
-      checked_uri.set_port( ONCRPCS_PORT_DEFAULT );
-    else if ( checked_uri.get_scheme() == ONCRPCU_SCHEME )
-      checked_uri.set_port( ONCRPCU_PORT_DEFAULT );
-    else
-      checked_uri.set_port( ONCRPC_PORT_DEFAULT );
-  }
-
-  if ( user_credentials_cache == NULL )
-    user_credentials_cache = new UserCredentialsCache;
-
-  return new OSDProxy
-  (
-    concurrency_level,
-    flags,
+: Proxy<OSDInterface, OSDInterfaceEventFactory, OSDInterfaceEventSender>
+  ( 
+    concurrency_level, 
+    flags, 
+    io_queue,
     log,
     operation_timeout,
-    YIELD::ipc::SocketAddress::create( checked_uri ),
+    peername,
     reconnect_tries_max,
-    createSocketFactory( checked_uri, ssl_context ),
+    socket_factory,
     user_credentials_cache
-  );
+  )
+{ }
+
+OSDProxy&
+OSDProxy::create
+(
+  const URI& absolute_uri,
+  uint16_t concurrency_level,
+  uint32_t flags,
+  Log* log,
+  const Time& operation_timeout,
+  uint16_t reconnect_tries_max,
+  SSLContext* ssl_context,
+  UserCredentialsCache* user_credentials_cache
+)
+{
+  return *new OSDProxy
+              (
+                concurrency_level,
+                flags,
+                yield::platform::NBIOQueue::create(),
+                log,
+                operation_timeout,
+                createSocketAddress( absolute_uri ),
+                reconnect_tries_max,
+                createSocketFactory( absolute_uri, ssl_context ),
+                user_credentials_cache
+              );
 }
 
+ONCRPCRequest& OSDProxy::createONCRPCRequest( MarshallableObject& body )
+{
+  return ONCRPCClient::createONCRPCRequest( body );
+}
 
 bool
 operator>

@@ -31,6 +31,26 @@
 #ifndef _YIELD_PLATFORM_H_
 #define _YIELD_PLATFORM_H_
 
+#ifdef __sun
+// Solaris's unistd.h defines a function yield that conflicts with the 
+// namespace yield. This ugliness is necessary to get around that.
+#ifdef __XOPEN_OR_POSIX
+#error
+#endif
+#define __XOPEN_OR_POSIX 1
+
+#ifdef __EXTENSIONS__
+#undef __EXTENSIONS__
+#include <unistd.h>
+#define __EXTENSIONS__ 1
+#else
+#include <unistd.h>
+#endif
+
+#undef __XOPEN_OR_POSIX
+
+#endif
+
 #include "yidl.h"
 
 #ifdef _WIN32
@@ -48,7 +68,7 @@ extern "C" { __declspec( dllimport ) unsigned long __stdcall GetLastError(); }
 #endif
 #ifdef __sun
 #include <libcpc.h>
-#define YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS 1
+// #define YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS 1
 #endif
 #ifdef YIELD_PLATFORM_HAVE_PAPI
 #define YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS 1
@@ -102,13 +122,13 @@ extern "C" { __declspec( dllimport ) unsigned long __stdcall GetLastError(); }
 #endif
 
 #define YIELD_PLATFORM_DIRECTORY_PROTOTYPES \
-  virtual YIELD::platform::Directory::auto_Entry readdir();
+  virtual yield::platform::Directory::Entry* readdir();
 
 
 #define YIELD_PLATFORM_FILE_PROTOTYPES \
   virtual bool close(); \
   virtual bool datasync(); \
-  virtual yidl::runtime::auto_Object<YIELD::platform::Stat> getattr(); \
+  virtual yield::platform::Stat* getattr(); \
   virtual bool getlk( bool exclusive, uint64_t offset, uint64_t length ); \
   virtual bool getxattr( const std::string& name, std::string& out_value ); \
   virtual bool listxattr( std::vector<std::string>& out_names ); \
@@ -135,74 +155,74 @@ extern "C" { __declspec( dllimport ) unsigned long __stdcall GetLastError(); }
   );
 
 #define YIELD_PLATFORM_VOLUME_PROTOTYPES \
-    virtual bool access( const YIELD::platform::Path& path, int amode ); \
-    virtual yidl::runtime::auto_Object<YIELD::platform::Stat> \
+    virtual bool access( const yield::platform::Path& path, int amode ); \
+    virtual yield::platform::Stat* \
     getattr \
     ( \
-      const YIELD::platform::Path& path \
+      const yield::platform::Path& path \
     ); \
     virtual bool \
     getxattr \
     ( \
-      const YIELD::platform::Path& path, \
+      const yield::platform::Path& path, \
       const std::string& name, \
       std::string& out_value \
     ); \
     virtual bool \
     link \
     ( \
-      const YIELD::platform::Path& old_path, \
-      const YIELD::platform::Path& new_path \
+      const yield::platform::Path& old_path, \
+      const yield::platform::Path& new_path \
     ); \
     virtual bool \
     listxattr \
     ( \
-      const YIELD::platform::Path& path, \
+      const yield::platform::Path& path, \
       std::vector<std::string>& out_names \
     ); \
-    virtual bool mkdir( const YIELD::platform::Path& path, mode_t mode ); \
-    virtual YIELD::platform::auto_File \
+    virtual bool mkdir( const yield::platform::Path& path, mode_t mode ); \
+    virtual yield::platform::File* \
     open \
     ( \
-      const YIELD::platform::Path& path, \
+      const yield::platform::Path& path, \
       uint32_t flags, \
       mode_t mode, \
       uint32_t attributes \
     ); \
-    virtual YIELD::platform::auto_Directory \
+    virtual yield::platform::Directory* \
     opendir \
     ( \
-      const YIELD::platform::Path& path \
+      const yield::platform::Path& path \
     ); \
-    virtual YIELD::platform::auto_Path \
+    virtual yield::platform::Path* \
     readlink \
     ( \
-      const YIELD::platform::Path& path \
+      const yield::platform::Path& path \
     ); \
     virtual bool \
     removexattr \
     ( \
-      const YIELD::platform::Path& path, \
+      const yield::platform::Path& path, \
       const std::string& name \
     ); \
     virtual bool \
     rename \
     ( \
-      const YIELD::platform::Path& from_path, \
-      const YIELD::platform::Path& to_path \
+      const yield::platform::Path& from_path, \
+      const yield::platform::Path& to_path \
     ); \
-    virtual bool rmdir( const YIELD::platform::Path& path ); \
+    virtual bool rmdir( const yield::platform::Path& path ); \
     virtual bool \
     setattr \
     ( \
-      const YIELD::platform::Path& path, \
-      yidl::runtime::auto_Object<YIELD::platform::Stat> stbuf, \
+      const yield::platform::Path& path, \
+      const yield::platform::Stat& stbuf, \
       uint32_t to_set \
     ); \
     virtual bool \
     setxattr \
     ( \
-      const YIELD::platform::Path& path, \
+      const yield::platform::Path& path, \
       const std::string& name, \
       const std::string& value, \
       int flags \
@@ -210,23 +230,23 @@ extern "C" { __declspec( dllimport ) unsigned long __stdcall GetLastError(); }
     virtual bool \
     statvfs \
     ( \
-      const YIELD::platform::Path& path, \
+      const yield::platform::Path& path, \
       struct statvfs& \
     ); \
     virtual bool \
     symlink \
     ( \
-      const YIELD::platform::Path& old_path, \
-      const YIELD::platform::Path& new_path \
+      const yield::platform::Path& old_path, \
+      const yield::platform::Path& new_path \
     ); \
     virtual bool \
     truncate \
     ( \
-      const YIELD::platform::Path& path, \
+      const yield::platform::Path& path, \
       uint64_t new_size \
     ); \
-    virtual bool unlink( const YIELD::platform::Path& path ); \
-    virtual YIELD::platform::Path volname( const YIELD::platform::Path& path );
+    virtual bool unlink( const yield::platform::Path& path ); \
+    virtual yield::platform::Path volname( const yield::platform::Path& path );
 
 
 #ifdef _WIN32
@@ -282,14 +302,14 @@ struct sockaddr_storage;
 struct timeval;
 
 
-namespace YIELD
+namespace yield
 {
   namespace platform
   {
 #ifdef _WIN32
     typedef void* fd_t;
 #ifndef INVALID_FD
-#define INVALID_FD reinterpret_cast<fd_t>( -1 )
+#define INVALID_FD reinterpret_cast<yield::platform::fd_t>( -1 )
 #endif
 #ifdef _WIN64
     typedef uint64_t socket_t;    
@@ -297,7 +317,7 @@ namespace YIELD
     typedef uint32_t socket_t;
 #endif
 #ifndef INVALID_SOCKET
-#define INVALID_SOCKET static_cast<socket_t>( -1 )
+#define INVALID_SOCKET static_cast<yield::platform::socket_t>( -1 )
 #endif
 #else // Unix
     typedef int fd_t;
@@ -310,88 +330,14 @@ namespace YIELD
 #endif
 #endif
 
-    class Path;
-    class Path; typedef yidl::runtime::auto_Object<Path> auto_Path;
-
-    class Directory;
-    typedef yidl::runtime::auto_Object<Directory> auto_Directory;
-
-    class File;
-    typedef yidl::runtime::auto_Object<File> auto_File;
-
-    class iconv;
-    typedef yidl::runtime::auto_Object<iconv> auto_iconv;
-
-    class IOQueue;
-    typedef yidl::runtime::auto_Object<IOQueue> auto_IOQueue;
-
-    class BIOQueue;
-    typedef yidl::runtime::auto_Object<BIOQueue> auto_BIOQueue;
-
-    class FDEventPoller;
-    typedef yidl::runtime::auto_Object<FDEventPoller> auto_FDEventPoller;
-
-    class Log;
-    typedef yidl::runtime::auto_Object<Log> auto_Log;
-
-    class MemoryMappedFile;
-    typedef yidl::runtime::auto_Object<MemoryMappedFile> auto_MemoryMappedFile;
-
-    class NamedPipe;
-    typedef yidl::runtime::auto_Object<NamedPipe> auto_NamedPipe;
-
-    class NBIOQueue;
-    typedef yidl::runtime::auto_Object<NBIOQueue> auto_NBIOQueue;
-
-    class OptionParser;
-    typedef yidl::runtime::auto_Object<OptionParser> auto_OptionParser;
-
-#ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
-    class PerformanceCounterSet;
-    typedef yidl::runtime::auto_Object<PerformanceCounterSet>
-      auto_PerformanceCounterSet;
-#endif
-
-    class Pipe;
-    typedef yidl::runtime::auto_Object<Pipe> auto_Pipe;
-
-    class Process;
-    typedef yidl::runtime::auto_Object<Process> auto_Process;
-
-    class ProcessorSet;
-    typedef yidl::runtime::auto_Object<ProcessorSet> auto_ProcessorSet;
-
-    class SharedLibrary;
-    typedef yidl::runtime::auto_Object<SharedLibrary> auto_SharedLibrary;
-
+  
     class SocketAddress;
-    typedef yidl::runtime::auto_Object<SocketAddress> auto_SocketAddress;
-
-    class Socket;
-    typedef yidl::runtime::auto_Object<Socket> auto_Socket;
-
-    class SocketPair;
-    typedef yidl::runtime::auto_Object<SocketPair> auto_SocketPair;
-
     class Stat;
-    typedef yidl::runtime::auto_Object<Stat> auto_Stat;
 
-    class TCPSocket;
-    typedef yidl::runtime::auto_Object<TCPSocket> auto_TCPSocket;
 
-    class TimerQueue;
-    typedef yidl::runtime::auto_Object<TimerQueue> auto_TimerQueue;
-
-    class UDPSocket;
-    typedef yidl::runtime::auto_Object<UDPSocket> auto_UDPSocket;
-
-    class Volume;
-    typedef yidl::runtime::auto_Object<Volume> auto_Volume;
-
-#ifdef _WIN32
-    class Win32AIOQueue;
-    typedef yidl::runtime::auto_Object<Win32AIOQueue> auto_Win32AIOQueue;
-#endif
+    using yidl::runtime::Buffer;
+    using yidl::runtime::Buffers;
+  
 
 
     class Stream
@@ -423,24 +369,21 @@ namespace YIELD
       class AIOReadCallback
       {
       public:
-        virtual void onReadCompletion
-        ( 
-          yidl::runtime::auto_Buffer buffer,
-          void* context
-        ) = 0;
-
+        // buffer is not a new reference; callees should inc_ref() their own
+        // references as necessary
+        virtual void onReadCompletion( Buffer& buffer, void* context ) = 0;
         virtual void onReadError( uint32_t error_code, void* context ) = 0;
       };
 
       virtual void 
       aio_read
       ( 
-        yidl::runtime::auto_Buffer buffer,
+        Buffer& buffer, // Steals this reference
         AIOReadCallback& callback,
         void* callback_context = NULL
       );
 
-      virtual ssize_t read( yidl::runtime::Buffer& buffer );
+      virtual ssize_t read( Buffer& buffer );
       virtual ssize_t read( void* buffer, size_t buffer_len ) = 0;
     };
 
@@ -463,7 +406,7 @@ namespace YIELD
       virtual void
       aio_write
       ( 
-        yidl::runtime::auto_Buffer buffer,
+        Buffer& buffer, // Steals this reference
         AIOWriteCallback& callback,
         void* callback_context = NULL
       );
@@ -471,7 +414,7 @@ namespace YIELD
       virtual void 
       aio_writev
       ( 
-        yidl::runtime::auto_Buffers buffers,
+        Buffers& buffers, // Steals this reference
         AIOWriteCallback& callback,
         void* callback_context = NULL
       );
@@ -479,10 +422,10 @@ namespace YIELD
       // Unlike aio_write/aio_writev, write and writev are not guaranteed
       // to write the full buffer(s), even in non-blocking mode, i.e.
       // they have POSIX semantics.
-      virtual ssize_t write( const yidl::runtime::Buffer& buffer );
+      virtual ssize_t write( const Buffer& buffer );
       // All non-pure virtual *write* methods delegate to the pure write
       virtual ssize_t write( const void* buffer, size_t buffer_len ) = 0;
-      virtual ssize_t writev( const yidl::runtime::Buffers& buffers );
+      virtual ssize_t writev( const Buffers& buffers );
 
       virtual ssize_t 
       writev
@@ -503,6 +446,60 @@ namespace YIELD
     };
 
 
+    class iconv : public yidl::runtime::Object
+    {
+    public:
+      ~iconv();
+
+      enum Code
+      {
+        CODE_CHAR,
+        CODE_ISO88591,
+        CODE_UTF8
+      };
+
+#ifdef _WIN32
+      static unsigned int Code_to_win32_code_page( Code code );
+#else
+      static const char* Code_to_iconv_code( Code code );
+#endif
+
+      static iconv* open( Code tocode, Code fromcode );
+
+      // Returns ( size_t )-1 on failure, like iconv.3
+      size_t
+      operator()
+      (
+        const char** inbuf,
+        size_t* inbytesleft,
+        char** outbuf,
+        size_t* outbytesleft
+      );
+
+      // Other operator()'s return false on failure
+      bool operator()( const std::string& inbuf, std::string& outbuf );
+#ifdef _WIN32
+      bool operator()( const std::string& inbuf, std::wstring& outbuf );
+      bool operator()( const std::wstring& inbuf, std::string& outbuf );
+#endif
+
+    private:
+#ifdef _WIN32
+      iconv( unsigned int from_code_page, unsigned int to_code_page );
+#else
+      iconv( void* cd );
+      bool reset();
+#endif
+
+    private:
+#ifdef _WIN32
+      unsigned int from_code_page, to_code_page;
+#else
+      void* cd;
+#endif
+    };
+
+
     class Path : public yidl::runtime::Object
     {
       // Path objects are currently immutable
@@ -516,10 +513,31 @@ namespace YIELD
 #endif
 
       Path() { }
-      Path( char narrow_path );
-      Path( const char* narrow_path );
-      Path( const char* narrow_path, size_t narrow_path_len );
-      Path( const std::string& narrow_path );
+
+      Path
+      ( 
+        char narrow_path,
+        iconv::Code narrow_path_code = iconv::CODE_CHAR
+      );
+
+      Path
+      ( 
+        const char* narrow_path, 
+        iconv::Code narrow_path_code = iconv::CODE_CHAR
+      );
+
+      Path
+      ( 
+        const char* narrow_path, 
+        size_t narrow_path_len, 
+        iconv::Code narrow_path_code = iconv::CODE_CHAR
+      );
+
+      Path
+      ( 
+        const std::string& narrow_path, 
+        iconv::Code narrow_path_code = iconv::CODE_CHAR
+      );
 #ifdef _WIN32
       Path( wchar_t wide_path );
       Path( const wchar_t* wide_path );
@@ -527,28 +545,19 @@ namespace YIELD
       Path( const std::wstring& wide_path );
 #endif
 
-      Path( const Path& path )
-        : path( path.path )
-      { }
-
-      ~Path() { }
+      Path( const Path& path );
 
       Path abspath() const;
       bool empty() const { return path.empty(); }
+      std::string encode( iconv::Code tocode = iconv::CODE_CHAR ) const;
       Path extension() const;
       Path filename() const;
-
       operator const string_type&() const { return path; }
       operator const string_type::value_type*() const { return path.c_str(); }
 #ifdef _WIN32
-      operator std::string() const;
+      operator std::string() const { return encode( iconv::CODE_CHAR ); }
 #endif
-
-      string_type::value_type operator[]( string_type::size_type i ) const
-      {
-        return path[i];
-      }
-
+      string_type::value_type operator[]( string_type::size_type i ) const;
       bool operator==( const Path& path ) const;
       bool operator==( const string_type& path ) const;
       bool operator==( string_type::value_type path ) const;
@@ -558,12 +567,10 @@ namespace YIELD
       bool operator!=( string_type::value_type path ) const;
       bool operator!=( const string_type::value_type* path ) const;
       bool operator<( const Path& path ) const; // For sorting
-      Path operator+( const Path& path ) const; // Appends to the path
-                                           // without adding a separator
+      Path operator+( const Path& path ) const; // Appends without adding a sep
       Path operator+( const string_type& path ) const;
       Path operator+( string_type::value_type path ) const;
       Path operator+( const string_type::value_type* path ) const;
-
       Path parent_path() const;
       Path root_path() const;
       size_t size() const { return path.size(); }
@@ -573,11 +580,10 @@ namespace YIELD
       Path stem();
 
     private:
-#ifdef _WIN32
-      void init( const char* narrow_path, size_t narrow_path_len );
-#endif
+      void init( const char*, size_t, iconv::Code );
 
-      string_type path;
+    private:
+      string_type path; // wide path on Win32, host charset path elsewhere
     };
 
     static inline std::ostream& operator<<( std::ostream& os, const Path& path )
@@ -796,32 +802,29 @@ namespace YIELD
         //     subclasses of Stat
       public:
         Entry( const Path& name );
-        Entry( const Path& name, auto_Stat stbuf );
+        Entry( const Path& name, Stat& stbuf ); // Steals reference to Stat
+        ~Entry();
 
         const Path& get_name() const { return name; }
-        auto_Stat get_stat() const { return stbuf; }
-
-        bool ISDIR() const;
-#ifndef _WIN32
-        bool ISLNK() const;
-#endif
-        bool ISREG() const;
+        Stat* get_stat() const { return stbuf; }
 
       private:
         Path name;
-        auto_Stat stbuf;
+        Stat* stbuf;
 
-#ifndef _WIN32
-        friend class Directory;
-        Entry( const char* d_name, unsigned char d_type );
-        unsigned char d_type;
-#endif
+        // This class used to have ISDIR(), ISREG(), etc. 
+        // methods like Stat to take advantage of Linux's d_type
+        // struct dirent member for optimizing things like
+        // rmtree (which reads a directory and branches according
+        // to the Entry type). d_type is not in POSIX's struct dirent
+        // and more strict POSIX implementations (like Sun's), so
+        // it's been removed here.
       };
 
-      typedef yidl::runtime::auto_Object<Entry> auto_Entry;
-
-
       YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
+
+      // yidl::runtime::Object
+      Directory& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
       Directory();
@@ -859,7 +862,7 @@ namespace YIELD
       inline operator fd_t() const { return fd; }
       virtual bool seek( uint64_t offset ); // SEEK_SET
       virtual bool seek( uint64_t offset, unsigned char whence );
-      auto_Stat stat() { return getattr(); }
+      Stat* stat() { return getattr(); }
       
       // IStream
       // read from the current file position
@@ -877,6 +880,9 @@ namespace YIELD
       );
 #endif
 
+      // yidl::runtime::Object
+      File& inc_ref() { return Object::inc_ref( *this ); }
+
     protected:
       File();
       virtual ~File() { close(); }
@@ -886,54 +892,6 @@ namespace YIELD
 
     private:
       fd_t fd;
-    };
-
-
-    class iconv : public yidl::runtime::Object
-    {
-    public:
-      enum Code
-      {
-        CODE_CHAR,
-        CODE_ISO88591,
-        CODE_UTF8
-      };
-
-      // open throws an exception on failure instead of returning NULL
-      static auto_iconv open( Code tocode, Code fromcode );
-
-      // Returns ( size_t )-1 on failure, like iconv.3
-      size_t
-      operator()
-      (
-        const char** inbuf,
-        size_t* inbytesleft,
-        char** outbuf,
-        size_t* outbytesleft
-      );
-
-      // Other operator()'s return false on failure
-      bool operator()( const std::string& inbuf, std::string& outbuf );
-#ifdef _WIN32
-      bool operator()( const std::string& inbuf, std::wstring& outbuf );
-      bool operator()( const std::wstring& inbuf, std::string& outbuf );
-#endif
-
-    private:
-#ifdef _WIN32
-      iconv( unsigned int from_code_page, unsigned int to_code_page );
-#else
-      iconv( void* cd );
-#endif
-      ~iconv();
-
-#ifdef _WIN32
-      static unsigned int Code_to_win32_code_page( Code code );
-      unsigned int from_code_page, to_code_page;
-#else
-      static const char* Code_to_iconv_code( Code code );
-      void* cd;
-#endif
     };
 
 
@@ -947,6 +905,10 @@ namespace YIELD
 
     class IOQueue : public yidl::runtime::RTTIObject
     {
+    public:
+      // yidl::runtime::Object
+      IOQueue& inc_ref() { return Object::inc_ref( *this ); }
+
     protected:
       IOQueue() { }
       virtual ~IOQueue() { }
@@ -964,8 +926,8 @@ namespace YIELD
     class BIOQueue : public IOQueue
     {
     public:
-      static auto_BIOQueue create() { return new BIOQueue; }
-      void submit( BIOCB* biocb ); // Takes ownership of biocb
+      static BIOQueue& create();
+      void submit( BIOCB& biocb ); // Takes ownership of biocb
 
       // yidl::runtime::RTTIObject
       YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( BIOQueue, 0 );
@@ -1007,10 +969,9 @@ namespace YIELD
         fd_t fd;
         bool want_read_, want_write_;
       };
-      
-        
-      // Throws exceptions
-      static auto_FDEventPoller create();
+
+
+      static FDEventPoller& create();
 
       bool associate( fd_t fd, bool want_read = true, bool want_write = false )
       {
@@ -1107,7 +1068,7 @@ namespace YIELD
         template <typename T>
         Stream& operator<<( T t )
         {
-          if ( level <= log->get_level() )
+          if ( level <= log.get_level() )
             oss << t;
           return *this;
         }
@@ -1115,17 +1076,17 @@ namespace YIELD
       private:
         friend class Log;
 
-        Stream( auto_Log log, Level );
+        Stream( Log& log, Level );
 
-        auto_Log log;
+        Log& log;
         Level level;
 
         std::ostringstream oss;
       };
 
 
-      static auto_Log open( std::ostream&, Level );
-      static auto_Log open( const Path& path, Level level, bool lazy = false );
+      static Log& open( std::ostream&, Level );
+      static Log& open( const Path& path, Level level, bool lazy = false );
 
       Level get_level() const { return level; }
       Stream get_stream() { return Stream( inc_ref(), level ); }
@@ -1139,7 +1100,7 @@ namespace YIELD
       void write( const char* str, size_t str_len, Level level );
 
       // yidl::runtime::Object
-      Log& inc_ref() { return yidl::runtime::Object::inc_ref( *this ); }
+      Log& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
       Log( Level level )
@@ -1155,101 +1116,13 @@ namespace YIELD
     };
 
 
-    class Machine
-    {
-    public:
-      static uint16_t getLogicalProcessorsPerPhysicalProcessor();
-      static uint16_t getOnlineLogicalProcessorCount();
-      static uint16_t getOnlinePhysicalProcessorCount();
-
-#ifndef __MACH__
-      // htons is a macro on OS X.. Thanks guys.
-      static inline uint16_t htons( uint16_t x )
-      {
-#ifdef __BIG_ENDIAN__
-        return x;
-#else
-        return ( x >> 8 ) | ( x << 8 );
-#endif
-      }
-
-      static inline uint32_t htonl( uint32_t x )
-      {
-#ifdef __BIG_ENDIAN__
-        return x;
-#else
-        return ( x >> 24 ) |
-               ( ( x << 8 ) & 0x00FF0000 ) |
-               ( ( x >> 8 ) & 0x0000FF00 ) |
-               ( x << 24 );
-#endif
-      }
-#endif
-
-      static inline uint64_t htonll( uint64_t x )
-      {
-#ifdef __BIG_ENDIAN__
-        return x;
-#else
-        return ( x >> 56 ) |
-               ( ( x << 40 ) & 0x00FF000000000000ULL ) |
-               ( ( x << 24 ) & 0x0000FF0000000000ULL ) |
-               ( ( x << 8 )  & 0x000000FF00000000ULL ) |
-               ( ( x >> 8)  & 0x00000000FF000000ULL ) |
-               ( ( x >> 24) & 0x0000000000FF0000ULL ) |
-               ( ( x >> 40 ) & 0x000000000000FF00ULL ) |
-               ( x << 56 );
-#endif
-      }
-
-#ifndef __MACH__
-      static inline uint16_t ntohs( uint16_t x )
-      {
-#ifdef __BIG_ENDIAN__
-        return x;
-#else
-        return ( x >> 8 ) | ( x << 8 );
-#endif
-      }
-
-      static inline uint32_t ntohl( uint32_t x )
-      {
-#ifdef __BIG_ENDIAN__
-        return x;
-#else
-        return ( x >> 24 ) |
-               ( ( x << 8 ) & 0x00FF0000 ) |
-               ( ( x >> 8 ) & 0x0000FF00 ) |
-               ( x << 24 );
-#endif
-      }
-#endif
-
-      static inline uint64_t ntohll( uint64_t x )
-      {
-#ifdef __BIG_ENDIAN__
-        return x;
-#else
-        return ( x >> 56 ) |
-               ( ( x << 40 ) & 0x00FF000000000000ULL ) |
-               ( ( x << 24 ) & 0x0000FF0000000000ULL ) |
-               ( ( x << 8 )  & 0x000000FF00000000ULL ) |
-               ( ( x >> 8 )  & 0x00000000FF000000ULL ) |
-               ( ( x >> 24) & 0x0000000000FF0000ULL ) |
-               ( ( x >> 40 ) & 0x000000000000FF00ULL ) |
-               ( x << 56 );
-#endif
-      }
-    };
-
-
     class MemoryMappedFile : public yidl::runtime::Object
     {
     public:
-      static auto_MemoryMappedFile open( const Path& path );
-      static auto_MemoryMappedFile open( const Path& path, uint32_t flags );
+      static MemoryMappedFile* open( const Path& path );
+      static MemoryMappedFile* open( const Path& path, uint32_t flags );
 
-      static auto_MemoryMappedFile 
+      static MemoryMappedFile*
       open
       (
         const Path& path,
@@ -1269,12 +1142,11 @@ namespace YIELD
       virtual bool sync( void* ptr, size_t length );
 
     protected:
-      MemoryMappedFile( auto_File underlying_file, uint32_t open_flags );
-
-      virtual ~MemoryMappedFile() { close(); }
+      MemoryMappedFile( File& underlying_file, uint32_t open_flags );
+      virtual ~MemoryMappedFile();
 
     private:
-      auto_File underlying_file;
+      File& underlying_file;
       uint32_t open_flags;
 
 #ifdef _WIN32
@@ -1295,7 +1167,7 @@ namespace YIELD
       // Have a separate function for timeout == 0 (never block) to
       // avoid an if branch on a critical path
       bool acquire(); // Blocking
-      bool timed_acquire( const Time& timeout ); // May block for timeout
+      bool acquire( const Time& timeout ); // May block for timeout
       bool try_acquire(); // Never blocks
       void release();
 
@@ -1311,8 +1183,7 @@ namespace YIELD
     class NamedPipe : public File
     {
     public:
-      // open returns NULL instead of throwing exceptions
-      static auto_NamedPipe
+      static NamedPipe*
       open
       (
         const Path& path,
@@ -1382,10 +1253,9 @@ namespace YIELD
     class NBIOQueue : public IOQueue
     {
     public:
-      // Throws exceptions
-      static auto_NBIOQueue create();
+      static NBIOQueue& create();
 
-      void submit( NBIOCB* nbiocb ); // Takes ownership of nbiocb
+      void submit( NBIOCB& nbiocb ); // Takes ownership of nbiocb
       
       // yidl::runtime::RTTIObject
       YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( NBIOQueue, 2 );
@@ -1405,9 +1275,9 @@ namespace YIELD
     {
     public:
       inline bool acquire() { return true; }
-      inline bool try_acquire() { return true; }
-      inline bool timed_acquire( const Time& ) { return true; }
+      inline bool acquire( const Time& ) { return true; }
       inline void release() { }
+      inline bool try_acquire() { return true; }      
     };
 
 
@@ -1529,7 +1399,7 @@ namespace YIELD
         EVENT_L2_ICM // L2 instruction cache miss
       };
 
-      static auto_PerformanceCounterSet create();
+      static PerformanceCounterSet* create();
 
       bool addEvent( Event event );
       bool addEvent( const char* name );
@@ -1556,8 +1426,7 @@ namespace YIELD
     class Pipe : public IOStream
     {
     public:
-      // Throws exceptions
-      static auto_Pipe create(); 
+      static Pipe& create(); 
 
       // Stream
       bool close();
@@ -1586,20 +1455,19 @@ namespace YIELD
     class Process : public yidl::runtime::Object
     {
     public:
-      // create( ... ) factory methods throw exceptions
-      static auto_Process create( const Path& executable_file_path );
-      static auto_Process create( int argc, char** argv );
+      static Process& create( const Path& executable_file_path );
+      static Process& create( int argc, char** argv );
 
-      static auto_Process
+      static Process&
       create
       (
         const Path& executable_file_path,
         const char** null_terminated_argv
       );
 
-      auto_Pipe get_stdin() const { return child_stdin; }
-      auto_Pipe get_stdout() const { return child_stdout; }
-      auto_Pipe get_stderr() const { return child_stderr; }
+      Pipe* get_stdin() const { return child_stdin; }
+      Pipe* get_stdout() const { return child_stdout; }
+      Pipe* get_stderr() const { return child_stderr; }
 
       static unsigned long getpid(); // Get current pid
       bool kill(); // SIGKILL
@@ -1616,9 +1484,9 @@ namespace YIELD
 #else
         pid_t child_pid,
 #endif
-        auto_Pipe child_stdin,
-        auto_Pipe child_stdout,
-        auto_Pipe child_stderr
+        Pipe* child_stdin,
+        Pipe* child_stdout,
+        Pipe* child_stderr
       );
 
       ~Process();
@@ -1628,7 +1496,7 @@ namespace YIELD
 #else
       int child_pid;
 #endif
-      auto_Pipe child_stdin, child_stdout, child_stderr;
+      Pipe *child_stdin, *child_stdout, *child_stderr;
     };
 
 
@@ -1642,6 +1510,9 @@ namespace YIELD
       void clear( uint16_t processor_i );
       uint16_t count() const;
       bool empty() const;
+      static uint16_t getLogicalProcessorsPerPhysicalProcessor();
+      static uint16_t getOnlineLogicalProcessorCount();
+      static uint16_t getOnlinePhysicalProcessorCount();
       bool isset( uint16_t processor_i ) const;
       bool set( uint16_t processor_i );
 
@@ -1669,9 +1540,9 @@ namespace YIELD
       ~Semaphore();
 
       bool acquire(); // Blocking
-      bool timed_acquire( const Time& timeout ); // May block for timeout
-      bool try_acquire(); // Never blocks
+      bool acquire( const Time& timeout ); // May block for timeout
       void release();
+      bool try_acquire(); // Never blocks
 
     private:
 #if defined(_WIN32)
@@ -1687,9 +1558,13 @@ namespace YIELD
     class SharedLibrary : public yidl::runtime::Object
     {
     public:
-      const static Path SHLIBSUFFIX;
+#ifdef _WIN32
+      const static wchar_t* SHLIBSUFFIX;
+#else
+      const static char* SHLIBSUFFIX;
+#endif
 
-      static auto_SharedLibrary
+      static SharedLibrary*
       open
       ( 
         const Path& file_prefix, 
@@ -1725,17 +1600,376 @@ namespace YIELD
     };
 
 
-    // SocketAddress comes first, since it's referenced by Socket
+    class Socket : public IOStream
+    {
+    public:
+      static int DOMAIN_DEFAULT; // AF_INET6
+      
+      // Platform-independent flag constants for recv
+      // These will be translated to platform-specific constants
+      // Any other bits set in recv( ..., flags ) will be passed through
+      const static int RECV_FLAG_MSG_OOB = 1;
+      const static int RECV_FLAG_MSG_PEEK = 2;
+
+      // Platform-independent flag constants for send
+      const static int SEND_FLAG_MSG_DONTROUTE = 1;
+      const static int SEND_FLAG_MSG_OOB = 2;
+
+
+      Socket( int domain, int type, int protocol, socket_t socket_ );
+      virtual ~Socket();      
+
+      // aio_connect is here and not in TCPSocket even though it's not 
+      // very useful (for e.g. UDPSockets), so that upper layers can
+      // be agnostic of which type of Socket they're connect()'ing
+      class AIOConnectCallback
+      {
+      public:
+        virtual void onConnectCompletion( void* context ) = 0;
+        virtual void onConnectError( uint32_t error_code, void* context ) = 0;
+      };
+
+      virtual void 
+      aio_connect
+      ( 
+        SocketAddress& peername,
+        AIOConnectCallback& callback,
+        void* callback_context = NULL
+      );
+
+      virtual void
+      aio_recv
+      ( 
+        Buffer& buffer, // Steals this reference
+        int flags,
+        AIOReadCallback& callback,
+        void* callback_context = NULL
+      );
+
+      virtual void 
+      aio_send
+      (
+        Buffer& buffer, // Steals this reference
+        int flags,
+        AIOWriteCallback& callback,
+        void* callback_context = NULL
+      );
+
+      virtual void
+      aio_sendmsg
+      (
+        Buffers& buffers, // Steals this reference
+        int flags,
+        AIOWriteCallback& callback,
+        void* callback_context = NULL
+      );
+
+      virtual bool associate( IOQueue& io_queue );
+      virtual bool bind( const SocketAddress& to_sockaddr );
+      virtual bool close();
+      virtual bool connect( const SocketAddress& peername );
+      static Socket* create( int type, int protocol );
+      static Socket* create( int domain, int type, int protocol );
+      virtual bool get_blocking_mode() const;
+      int get_domain() const { return domain; }
+      static std::string getfqdn();
+      static std::string gethostname();
+      SocketAddress* getpeername() const;
+      int get_protocol() const { return protocol; }
+      SocketAddress* getsockname() const;
+      int get_type() const { return type; }
+      bool is_closed() const;
+      inline bool is_connected() const { return connected; }
+      virtual bool listen();
+      bool operator==( const Socket& other ) const;
+      inline operator socket_t() const { return socket_; }
+      bool recreate();
+      bool recreate( int domain );
+
+      ssize_t recv( Buffer& buffer, int flags = 0 );
+
+      // The real recv method, can be overridden by subclasses
+      virtual ssize_t 
+      recv
+      ( 
+        void* buffer, 
+        size_t buffer_len, 
+        int flags = 0 
+      );
+
+      ssize_t send( const Buffer& buffer, int flags = 0 )
+      {
+        return send( buffer, buffer.size(), flags );
+      }
+
+      // The real send method, can be overridden by subclasses
+      virtual ssize_t
+      send
+      ( 
+        const void* buffer, 
+        size_t len, 
+        int flags = 0
+      );
+
+      ssize_t sendmsg( const Buffers& buffers, int flags = 0 )
+      {
+        return sendmsg( buffers, buffers.size(), flags );
+      }
+
+      // The real sendmsg method, can be overridden by subclasses
+      virtual ssize_t
+      sendmsg
+      ( 
+        const struct iovec* buffers,
+        uint32_t buffers_count,
+        int flags = 0
+      );
+
+      virtual bool set_blocking_mode( bool blocking );
+      virtual bool shutdown( bool shut_rd = true, bool shut_wr = true );
+      virtual bool want_connect() const;
+      virtual bool want_read() const;
+      virtual bool want_write() const;
+
+      // yidl::runtime::Object
+      Socket& inc_ref() { return Object::inc_ref( *this ); }
+
+      // IStream
+      void
+      aio_read
+      ( 
+        Buffer& buffer, // Steals this reference
+        AIOReadCallback& callback,
+        void* callback_context = NULL
+      )
+      {
+        aio_recv( buffer, 0, callback, callback_context );
+      }
+
+      ssize_t read( Buffer& buffer )
+      {
+        return IStream::read( buffer );
+      }
+
+      ssize_t read( void* buffer, size_t buffer_len )
+      {
+        return recv( buffer, buffer_len, 0 );
+      }
+
+      // OStream
+      void
+      aio_write
+      ( 
+        Buffer& buffer, // Steals this reference
+        AIOWriteCallback& callback,
+        void* callback_context = NULL
+      )
+      {
+        aio_send( buffer, 0, callback, callback_context );
+      }
+
+      void 
+      aio_writev
+      ( 
+        Buffers& buffers, // Steals this reference
+        AIOWriteCallback& callback,
+        void* callback_context = NULL
+      )
+      {
+        aio_sendmsg( buffers, 0, callback, callback_context );
+      }
+
+      ssize_t write( const Buffer& buffer )
+      {
+        return OStream::write( buffer );
+      }
+
+      ssize_t write( const void* buffer, size_t buffer_len )
+      {
+        return send( buffer, buffer_len, 0 );
+      }
+
+      ssize_t writev( const Buffers& buffers )
+      {
+        return OStream::writev( buffers );
+      }
+
+      ssize_t writev( const struct iovec* buffers, uint32_t buffers_count )
+      {
+        return sendmsg( buffers, buffers_count, 0 );
+      }
+
+    protected:
+      static socket_t create( int* domain, int type, int protocol );
+
+      IOQueue* get_io_queue() const { return io_queue; }
+      static uint32_t get_last_error(); // WSAGetLastError / errno
+      static int get_platform_recv_flags( int flags );
+      static int get_platform_send_flags( int flags );
+
+#ifdef _WIN64
+      void iovecs_to_wsabufs( const iovec*, std::vector<iovec64>& );
+#endif
+
+      void set_io_queue( IOQueue& io_queue );
+
+    protected:
+      template <class AIOCallbackType>
+      class IOCB
+      {
+      protected:
+        IOCB( AIOCallbackType& callback, void* callback_context )
+          : callback( callback ), callback_context( callback_context )
+        { }
+
+        AIOCallbackType& callback;
+        void* callback_context;
+      };
+
+
+      class IOConnectCB : public IOCB<AIOConnectCallback>
+      {
+      protected:
+        IOConnectCB
+        ( 
+          SocketAddress& peername, 
+          Socket& socket_, 
+          AIOConnectCallback& callback, 
+          void* callback_context
+        );
+
+        virtual ~IOConnectCB();
+
+        const SocketAddress& get_peername() const { return peername; }
+        Socket& get_socket() const { return socket_; }
+
+        void onConnectCompletion();
+        void onConnectError();
+        void onConnectError( uint32_t error_code );
+
+      private:
+        SocketAddress& peername;
+        Socket& socket_;
+      };
+
+
+      class IORecvCB : public IOCB<AIOReadCallback>
+      {
+      protected:
+        IORecvCB
+        ( 
+          Buffer& buffer, 
+          int flags, 
+          Socket& socket_, 
+          AIOReadCallback& callback, 
+          void* callback_context
+        );
+
+        virtual ~IORecvCB();
+
+        Buffer& get_buffer() const { return buffer; }
+        int get_flags() const { return flags; }
+        Socket& get_socket() const { return socket_; }
+
+        void onReadCompletion();
+        void onReadError();
+        void onReadError( uint32_t error_code );
+
+      private:
+        Buffer& buffer;
+        int flags;
+        Socket& socket_;
+      };
+
+
+      class IOSendCB : public IOCB<AIOWriteCallback>
+      {
+      protected:
+        IOSendCB
+        ( 
+          Buffer& buffer, 
+          int flags, 
+          Socket& socket_, 
+          AIOWriteCallback& callback, 
+          void* callback_context
+        );
+
+        virtual ~IOSendCB();
+
+        const Buffer& get_buffer() const { return buffer; }
+        int get_flags() const { return flags; }
+        Socket& get_socket() const { return socket_; }
+
+        void onWriteCompletion();
+        void onWriteError();
+        void onWriteError( uint32_t error_code );
+
+      private:
+        Buffer& buffer;
+        int flags;
+        Socket& socket_;
+      };
+
+
+      class IOSendMsgCB : public IOCB<AIOWriteCallback>
+      {
+      protected:
+        IOSendMsgCB
+        ( 
+          Buffers& buffers,
+          int flags, 
+          Socket& socket_, 
+          AIOWriteCallback& callback, 
+          void* callback_context
+        );
+
+        virtual ~IOSendMsgCB();
+
+        const Buffers& get_buffers() const { return buffers; }
+        int get_flags() const { return flags; }
+        Socket& get_socket() const { return socket_; }
+
+        void onWriteCompletion();
+        void onWriteError();
+        void onWriteError( uint32_t error_code );
+
+      private:
+        Buffers& buffers;
+        int flags;
+        Socket& socket_;
+      };
+
+    private:
+      Socket( const Socket& ) { DebugBreak(); } // Prevent copying
+
+    private:
+      int domain, type, protocol;
+      socket_t socket_;
+
+      bool blocking_mode, connected;
+      IOQueue* io_queue;
+
+    private:
+      class BIOConnectCB;
+      class BIORecvCB;
+      class BIOSendCB;
+      class BIOSendMsgCB;
+      class NBIOConnectCB;
+      class NBIORecvCB;
+      class NBIOSendCB;
+      class NBIOSendMsgCB;
+    };
+
+
     class SocketAddress : public yidl::runtime::Object // immutable
     {
     public:
       SocketAddress( struct addrinfo& ); // Takes ownership
       SocketAddress( const struct sockaddr_storage& ); // Copies
 
-      // create( ... ) factory methods throw exceptions
-      // hostname can be NULL for INADDR_ANY
-      static auto_SocketAddress create( const char* hostname );
-      static auto_SocketAddress create( const char* hostname, uint16_t port );
+      static SocketAddress* create(); // INADDR_ANY
+      static SocketAddress* create( const char* hostname );
+      static SocketAddress* create( const char* hostname, uint16_t port );
 
 #ifdef _WIN32
       bool as_struct_sockaddr
@@ -1775,8 +2009,15 @@ namespace YIELD
         return !operator==( other );
       }
 
+      // yidl::runtime::Object
+      SocketAddress& inc_ref() { return Object::inc_ref( *this ); }
+
     private:
-      SocketAddress( const SocketAddress& ) { DebugBreak(); } // Prevent copying
+      SocketAddress( const SocketAddress& ) 
+      { 
+        DebugBreak(); // Prevent copying
+      }
+
       ~SocketAddress();
 
       // Linked sockaddr's obtained from getaddrinfo(3)
@@ -1791,347 +2032,20 @@ namespace YIELD
     };
 
 
-    class Socket : public IOStream
-    {
-    public:
-      // Platform-independent flag constants for recv
-      // These will be translated to platform-specific constants
-      // Any other bits set in recv( ..., flags ) will be passed through
-      const static int RECV_FLAG_MSG_OOB = 1;
-      const static int RECV_FLAG_MSG_PEEK = 2;
-
-      // Platform-independent flag constants for send
-      const static int SEND_FLAG_MSG_DONTROUTE = 1;
-      const static int SEND_FLAG_MSG_OOB = 2;
-
-
-      Socket( int domain, int type, int protocol, socket_t socket_ );
-      virtual ~Socket();      
-
-      // aio_connect is here and not in TCPSocket even though it's not 
-      // very useful (for e.g. UDPSockets), so that upper layers can
-      // be agnostic of which type of Socket they're connect()'ing
-      class AIOConnectCallback
-      {
-      public:
-        virtual void onConnectCompletion( void* context ) = 0;
-        virtual void onConnectError( uint32_t error_code, void* context ) = 0;
-      };
-
-      virtual void 
-      aio_connect
-      ( 
-        auto_SocketAddress peername,
-        AIOConnectCallback& callback,
-        void* callback_context = NULL
-      );
-
-      virtual void
-      aio_recv
-      ( 
-        yidl::runtime::auto_Buffer buffer,
-        int flags,
-        AIOReadCallback& callback,
-        void* callback_context = NULL
-      );
-
-      virtual void 
-      aio_send
-      (
-        yidl::runtime::auto_Buffer buffer,
-        int flags,
-        AIOWriteCallback& callback,
-        void* callback_context = NULL
-      );
-
-      virtual void
-      aio_sendmsg
-      (
-        yidl::runtime::auto_Buffers buffers,
-        int flags,
-        AIOWriteCallback& callback,
-        void* callback_context = NULL
-      );
-
-      virtual bool associate( auto_IOQueue io_queue );
-      virtual bool bind( const SocketAddress& to_sockaddr );
-      virtual bool close();
-      virtual bool connect( const SocketAddress& peername );
-      static auto_Socket create( int domain, int type, int protocol );
-      virtual bool get_blocking_mode() const;
-      int get_domain() const { return domain; }
-      static std::string getfqdn();
-      static std::string gethostname();
-      auto_SocketAddress getpeername();
-      int get_protocol() const { return protocol; }
-      auto_SocketAddress getsockname();
-      int get_type() const { return type; }
-      bool is_closed() const;
-      inline bool is_connected() const { return connected; }
-      virtual bool listen();
-      bool operator==( const Socket& other ) const;
-      inline operator socket_t() const { return socket_; }
-      bool recreate();
-      bool recreate( int domain );
-
-      // Delegates
-      ssize_t recv( yidl::runtime::Buffer& buffer, int flags = 0 );
-
-      // The real recv method, can be overridden by subclasses
-      virtual ssize_t 
-      recv
-      ( 
-        void* buffer, 
-        size_t buffer_len, 
-        int flags = 0 
-      );
-
-      ssize_t send( const yidl::runtime::Buffer& buffer, int flags = 0 )
-      {
-        return send( buffer, buffer.size(), flags );
-      }
-
-      // The real send method, can be overridden by subclasses
-      virtual ssize_t
-      send
-      ( 
-        const void* buffer, 
-        size_t len, 
-        int flags = 0
-      );
-
-      ssize_t sendmsg( const yidl::runtime::Buffers& buffers, int flags = 0 )
-      {
-        return sendmsg( buffers, buffers.size(), flags );
-      }
-
-      // The real sendmsg method, can be overridden by subclasses
-      virtual ssize_t
-      sendmsg
-      ( 
-        const struct iovec* buffers,
-        uint32_t buffers_count,
-        int flags = 0
-      );
-
-      virtual bool set_blocking_mode( bool blocking );
-      virtual bool shutdown( bool shut_rd = true, bool shut_wr = true );
-      virtual bool want_connect() const;
-      virtual bool want_read() const;
-      virtual bool want_write() const;
-
-      // yidl::runtime::Object
-      Socket& inc_ref() { return yidl::runtime::Object::inc_ref( *this ); }
-
-      // IStream
-      void
-      aio_read
-      ( 
-        yidl::runtime::auto_Buffer buffer,
-        AIOReadCallback& callback,
-        void* callback_context = NULL
-      )
-      {
-        aio_recv( buffer, 0, callback, callback_context );
-      }
-
-      ssize_t read( yidl::runtime::Buffer& buffer )
-      {
-        return IStream::read( buffer );
-      }
-
-      ssize_t read( void* buffer, size_t buffer_len )
-      {
-        return recv( buffer, buffer_len, 0 );
-      }
-
-      // OStream
-      void
-      aio_write
-      ( 
-        yidl::runtime::auto_Buffer buffer,
-        AIOWriteCallback& callback,
-        void* callback_context = NULL
-      )
-      {
-        aio_send( buffer, 0, callback, callback_context );
-      }
-
-      void 
-      aio_writev
-      ( 
-        yidl::runtime::auto_Buffers buffers,
-        AIOWriteCallback& callback,
-        void* callback_context = NULL
-      )
-      {
-        aio_sendmsg( buffers, 0, callback, callback_context );
-      }
-
-      ssize_t write( const yidl::runtime::Buffer& buffer )
-      {
-        return OStream::write( buffer );
-      }
-
-      ssize_t write( const void* buffer, size_t buffer_len )
-      {
-        return send( buffer, buffer_len, 0 );
-      }
-
-      ssize_t writev( const yidl::runtime::Buffers& buffers )
-      {
-        return OStream::writev( buffers );
-      }
-
-      ssize_t writev( const struct iovec* buffers, uint32_t buffers_count )
-      {
-        return sendmsg( buffers, buffers_count, 0 );
-      }
-
-    protected:
-      static socket_t create( int* domain, int type, int protocol );
-      static uint32_t get_last_error(); // WSAGetLastError / errno
-      static int get_platform_recv_flags( int flags );
-      static int get_platform_send_flags( int flags );
-
-    protected:
-      template <class AIOCallbackType>
-      class IOCB
-      {
-      protected:
-        IOCB( AIOCallbackType& callback, void* callback_context )
-          : callback( callback ), callback_context( callback_context )
-        { }
-
-        AIOCallbackType& callback;
-        void* callback_context;
-      };
-
-
-      class IOConnectCB : public IOCB<AIOConnectCallback>
-      {
-      protected:
-        IOConnectCB
-        ( 
-          auto_SocketAddress peername, 
-          auto_Socket socket_, 
-          AIOConnectCallback& callback, 
-          void* callback_context
-        );
-
-        auto_SocketAddress peername;
-        auto_Socket socket_;
-
-        void onConnectCompletion();
-        void onConnectError();
-        void onConnectError( uint32_t error_code );
-      };
-
-
-      class IORecvCB : public IOCB<AIOReadCallback>
-      {
-      protected:
-        IORecvCB
-        ( 
-          yidl::runtime::auto_Buffer buffer, 
-          int flags, 
-          auto_Socket socket_, 
-          AIOReadCallback& callback, 
-          void* callback_context
-        );
-
-        yidl::runtime::auto_Buffer buffer;
-        int flags;
-        auto_Socket socket_;
-
-        void onReadCompletion();
-        void onReadError();
-        void onReadError( uint32_t error_code );
-      };
-
-
-      class IOSendCB : public IOCB<AIOWriteCallback>
-      {
-      protected:
-        IOSendCB
-        ( 
-          yidl::runtime::auto_Buffer buffer, 
-          int flags, 
-          auto_Socket socket_, 
-          AIOWriteCallback& callback, 
-          void* callback_context
-        );
-
-        yidl::runtime::auto_Buffer buffer;
-        int flags;
-        auto_Socket socket_;
-
-        void onWriteCompletion();
-        void onWriteError();
-        void onWriteError( uint32_t error_code );
-      };
-
-
-      class IOSendMsgCB : public IOCB<AIOWriteCallback>
-      {
-      protected:
-        IOSendMsgCB
-        ( 
-          yidl::runtime::auto_Buffers buffers,
-          int flags, 
-          auto_Socket socket_, 
-          AIOWriteCallback& callback, 
-          void* callback_context
-        );
-
-        yidl::runtime::auto_Buffers buffers;
-        int flags;
-        auto_Socket socket_;
-
-        void onWriteCompletion();
-        void onWriteError();
-        void onWriteError( uint32_t error_code );
-      };
-
-    protected:
-      YIELD::platform::auto_IOQueue io_queue;
-
-    private:
-      Socket( const Socket& ) { DebugBreak(); } // Prevent copying
-
-    private:
-      int domain, type, protocol;
-      socket_t socket_;
-
-      bool blocking_mode, connected;
-
-    private:
-      class BIOConnectCB;
-      class BIORecvCB;
-      class BIOSendCB;
-      class BIOSendMsgCB;
-      class NBIOConnectCB;
-      class NBIORecvCB;
-      class NBIOSendCB;
-      class NBIOSendMsgCB;
-    };
-
-
     class SocketPair : public yidl::runtime::Object
     {
     public:
-      // Throws exceptions
-      static auto_SocketPair create();
+      static SocketPair& create();
 
-      Socket& first() const { return *first_socket; }
-      Socket& second() const { return *second_socket; }
-
-    private:
-      SocketPair( auto_Socket first_socket, auto_Socket second_socket );
-      ~SocketPair() { }
+      Socket& first() const { return first_socket; }
+      Socket& second() const { return second_socket; }
 
     private:
-      auto_Socket first_socket, second_socket;
+      SocketPair( Socket& first_socket, Socket& second_socket );
+      ~SocketPair();
+
+    private:
+      Socket &first_socket, &second_socket;
     };
 
 
@@ -2187,6 +2101,8 @@ namespace YIELD
       );
 #endif
       Stat( const struct stat& stbuf );
+
+      virtual ~Stat() { }
 
 #ifndef _WIN32
       dev_t get_dev() const { return dev; }
@@ -2248,8 +2164,8 @@ namespace YIELD
       virtual void set_attributes( uint32_t attributes );
 #endif
 
-    protected:
-      virtual ~Stat() { }
+      // yidl::runtime::Object
+      Stat& inc_ref() { return Object::inc_ref( *this ); }
 
     private:
       // POSIX field order; Linux, FreeBSD, et al. all have different orders
@@ -2277,19 +2193,25 @@ namespace YIELD
     };
 
 
-
     class TCPSocket : public Socket
     {
     public:
-      virtual auto_TCPSocket accept();
+      static int PROTOCOL; // IPPROTO_TCP
+      static int TYPE; // SOCK_STREAM
+
+      virtual ~TCPSocket() { }
+
+      virtual TCPSocket* accept();
 
       class AIOAcceptCallback
       {
       public:
+        // accepted_tcp_socket is not a new reference; 
+        // callees should inc_ref() their own references as necessary
         virtual void 
         onAcceptCompletion
         ( 
-          auto_TCPSocket accepted_tcp_socket,
+          TCPSocket& accepted_tcp_socket,
           void* context
         ) = 0;
 
@@ -2303,19 +2225,17 @@ namespace YIELD
         void* callback_context = NULL
       );
 
-      // create( ... ) methods return NULL instead of throwing exceptions,
-      // since they're on the critical path of clients and servers
-      static auto_TCPSocket create(); // AF_INET6
-      static auto_TCPSocket create( int domain );
+      static TCPSocket* create(); // AF_INET6
+      static TCPSocket* create( int domain );
 
       // yidl::runtime::Object
-      TCPSocket& inc_ref() { return yidl::runtime::Object::inc_ref( *this ); }
+      TCPSocket& inc_ref() { return Object::inc_ref( *this ); }
 
       // Socket
       virtual void 
       aio_connect
       ( 
-        auto_SocketAddress peername,
+        SocketAddress& peername,
         AIOConnectCallback& callback,
         void* callback_context = NULL
       );
@@ -2323,7 +2243,7 @@ namespace YIELD
       virtual void
       aio_recv
       ( 
-        yidl::runtime::auto_Buffer buffer,
+        Buffer& buffer, // Steals this reference
         int flags,
         AIOReadCallback& callback,
         void* callback_context = NULL
@@ -2332,7 +2252,7 @@ namespace YIELD
       virtual void 
       aio_send
       (
-        yidl::runtime::auto_Buffer buffer,
+        Buffer& buffer, // Steals this reference
         int flags,
         AIOWriteCallback& callback,
         void* callback_context = NULL
@@ -2341,32 +2261,40 @@ namespace YIELD
       virtual void
       aio_sendmsg
       (
-        yidl::runtime::auto_Buffers buffers,
+        Buffers& buffers, // Steals this reference
         int flags,
         AIOWriteCallback& callback,
         void* callback_context = NULL
       );
 
-      virtual bool associate( auto_IOQueue io_queue );
+      virtual bool associate( IOQueue& io_queue );
+      virtual bool want_accept() const;
 
     protected:
-      TCPSocket( int domain, socket_t );
-      virtual ~TCPSocket() { }
+      TCPSocket( int domain, socket_t );      
 
       // _accept -> socket method used by subclasses (e.g. SSLSocket)
       socket_t _accept();
+      static socket_t create( int* domain );
 
     protected:
       class IOAcceptCB : public IOCB<AIOAcceptCallback>
       {
       protected:
-        IOAcceptCB( auto_TCPSocket, AIOAcceptCallback& callback, void* );
+        IOAcceptCB( TCPSocket&, AIOAcceptCallback& callback, void* );
+        virtual ~IOAcceptCB();
 
-        auto_TCPSocket listen_tcp_socket;
+        TCPSocket& get_listen_tcp_socket() const
+        {
+          return listen_tcp_socket;
+        }
 
-        void onAcceptCompletion( auto_TCPSocket accepted_tcp_socket );
+        void onAcceptCompletion( TCPSocket& accepted_tcp_socket );
         void onAcceptError();
         void onAcceptError( uint32_t error_code );
+
+      private:
+        TCPSocket& listen_tcp_socket;
       };
 
     private:
@@ -2396,31 +2324,33 @@ namespace YIELD
       unsigned long get_id() const { return id; }
       static void* getspecific( unsigned long key ); // Get TLS
       static unsigned long gettid(); // Get current thread ID
+      inline bool is_running() const { return state == STATE_RUNNING; }
       bool join(); // See pthread_join
       static unsigned long key_create(); // Create TLS key
       static void nanosleep( const Time& );
+      virtual void run() = 0;
       void set_name( const char* name );
       bool set_processor_affinity( unsigned short logical_processor_i );
       bool set_processor_affinity( const ProcessorSet& logical_processor_set );
       static void setspecific( unsigned long key, void* value ); // Set TLS
-      virtual void run() = 0;
-      virtual void start();
+      virtual void start(); // Only returns after run() has been called
       static void yield();
 
     private:
-      unsigned long id;
-#if defined(_WIN32)
-      void* handle;
-#else
-      pthread_t handle;
-#endif
-
-      static void setThreadName( unsigned long, const char* );
 #ifdef _WIN32
       static unsigned long __stdcall thread_stub( void* );
 #else
       static void* thread_stub( void* );
 #endif
+
+    private:
+#if defined(_WIN32)
+      void* handle;
+#else
+      pthread_t handle;
+#endif
+      unsigned long id;
+      enum { STATE_READY, STATE_RUNNING, STATE_STOPPED } state;
     };
 
 
@@ -2445,7 +2375,7 @@ namespace YIELD
         virtual void fire() = 0;
 
         // yidl::runtime::Object
-        Timer& inc_ref() { return yidl::runtime::Object::inc_ref( *this ); }
+        Timer& inc_ref() { return Object::inc_ref( *this ); }
 
       private:
         friend class TimerQueue;
@@ -2464,13 +2394,11 @@ namespace YIELD
         Time last_fire_time;
       };
 
-      typedef yidl::runtime::auto_Object<Timer> auto_Timer;
-
 
       TimerQueue();
       ~TimerQueue();
 
-      void addTimer( auto_Timer timer );
+      void addTimer( Timer& timer );
       static void destroyDefaultTimerQueue();
       static TimerQueue& getDefaultTimerQueue();
 
@@ -2492,14 +2420,22 @@ namespace YIELD
     class UDPSocket : public Socket
     {
     public:
+      static int PROTOCOL; // IPPROTO_UDP
+      static int TYPE; // SOCK_DGRAM
+
+
+      virtual ~UDPSocket() { }
+
       class AIORecvFromCallback
       {
       public:
+        // buffer and peername are not new references; 
+        // callees should inc_ref() their own references as necessary
         virtual void
         onRecvFromCompletion
         ( 
-          yidl::runtime::auto_Buffer buffer, 
-          auto_SocketAddress peername,
+          Buffer& buffer, 
+          SocketAddress& peername,
           void* context 
         ) = 0;
 
@@ -2514,7 +2450,7 @@ namespace YIELD
       void 
       aio_recvfrom
       ( 
-        yidl::runtime::auto_Buffer buffer,
+        Buffer& buffer, // Steals this reference
         AIORecvFromCallback& callback,
         void* callback_context = NULL
       )
@@ -2525,33 +2461,30 @@ namespace YIELD
       void 
       aio_recvfrom
       ( 
-        yidl::runtime::auto_Buffer buffer,
+        Buffer& buffer, // Steals this reference
         int flags,
         AIORecvFromCallback& callback,
         void* callback_context = NULL
       );
 
-      // create() returns NULL instead of throwing exceptions
-      static auto_UDPSocket create();
+      static UDPSocket* create();
 
       ssize_t
       recvfrom
-      (
-        yidl::runtime::Buffer& buffer,
-        struct sockaddr_storage& peername
-      )
+      ( 
+        Buffer& buffer,
+        struct sockaddr_storage& peername 
+      ) const
       {
         return recvfrom( buffer, 0, peername );
       }
 
-      // Delegates
-      ssize_t
-      recvfrom
+      ssize_t recvfrom
       (
-        yidl::runtime::Buffer& buffer,
+        Buffer& buffer,
         int flags,
         struct sockaddr_storage& peername
-      );
+      ) const;
 
       ssize_t
       recvfrom
@@ -2559,7 +2492,7 @@ namespace YIELD
         void* buffer,
         size_t buffer_len,
         struct sockaddr_storage& peername
-      )
+      ) const
       {
         return recvfrom( buffer, buffer_len, 0, peername );
       }
@@ -2572,15 +2505,15 @@ namespace YIELD
         size_t buffer_len,
         int flags,
         struct sockaddr_storage& peername
-      );
+      ) const;
 
       ssize_t
       sendmsg
       (
-        const yidl::runtime::Buffers& buffers,
+        const Buffers& buffers,
         const SocketAddress& peername,
         int flags = 0
-      )
+      ) const
       {
         return sendmsg( buffers, buffers.size(), peername, flags );
       }
@@ -2593,25 +2526,25 @@ namespace YIELD
         uint32_t buffers_count,
         const SocketAddress& peername,
         int flags = 0
-      );
+      ) const;
 
-      ssize_t
+      ssize_t 
       sendto
-      (
-        const yidl::runtime::Buffer& buffer,
-        const SocketAddress& peername
-      )
+      ( 
+        const Buffer& buffer, 
+        const SocketAddress& peername 
+      ) const
       {
         return sendto( buffer, 0, peername );
       }
 
-      ssize_t
+      ssize_t 
       sendto
       (
-        const yidl::runtime::Buffer& buffer,
+        const Buffer& buffer,
         int flags,
         const SocketAddress& peername
-      )
+      ) const
       {
         return sendto( buffer, buffer.size(), flags, peername );
       }
@@ -2622,12 +2555,11 @@ namespace YIELD
         const void* buffer,
         size_t buffer_len,
         const SocketAddress& peername
-      )
+      ) const
       {
         return sendto( buffer, buffer_len, 0, peername );
       }
 
-      // The real sendto method
       ssize_t
       sendto
       (
@@ -2635,14 +2567,13 @@ namespace YIELD
         size_t buffer_len,
         int flags,
         const SocketAddress& peername
-      );
+      ) const;
 
       // yidl::runtime::Object
-      UDPSocket& inc_ref() { return yidl::runtime::Object::inc_ref( *this ); }
+      UDPSocket& inc_ref() { return Object::inc_ref( *this ); }
 
     private:
       UDPSocket( int domain, socket_t );
-      ~UDPSocket() { }
 
     private:
       class BIORecvFromCB;
@@ -2652,7 +2583,6 @@ namespace YIELD
       class Win32AIORecvFromCB;
 #endif
     };
-
 
 
     class Volume : public yidl::runtime::Object
@@ -2692,8 +2622,8 @@ namespace YIELD
 #endif
 
       // Delegate to open
-      virtual auto_File creat( const Path& path );
-      virtual auto_File creat( const Path& path, mode_t mode );
+      virtual File* creat( const Path& path );
+      virtual File* creat( const Path& path, mode_t mode );
 
       // Delegate to getattr
       virtual bool exists( const Path& path );
@@ -2708,19 +2638,23 @@ namespace YIELD
       virtual bool mktree( const Path& path, mode_t mode );
 
       // Delegate to full open
-      virtual auto_File open( const Path& path );
-      virtual auto_File open( const Path& path, uint32_t flags );
-      virtual auto_File open( const Path& path, uint32_t flags, mode_t mode );
+      virtual File* open( const Path& path );
+      virtual File* open( const Path& path, uint32_t flags );
+      virtual File* open( const Path& path, uint32_t flags, mode_t mode );
 
       // Recursive rmdir + unlink
       virtual bool rmtree( const Path& path );
 
       // Delegates to getattr
-      virtual auto_Stat stat( const Path& path );
+      virtual Stat* stat( const Path& path );
+
+      // Delegates to open
+      bool touch( const Path& path ); 
 
       // Delegate to setattr
       virtual bool
-      utime(
+      utime
+      (
         const Path& path,
         const Time& atime,
         const Time& mtime
@@ -2734,6 +2668,9 @@ namespace YIELD
         const Time& mtime,
         const Time& ctime
       );
+
+      // yidl::runtime::Object
+      Volume& inc_ref() { return Object::inc_ref( *this ); }
     };
 
 
@@ -2798,8 +2735,7 @@ namespace YIELD
     class Win32AIOQueue : public IOQueue
     {
     public:
-      // Throws exceptions
-      static auto_Win32AIOQueue create();
+      static Win32AIOQueue& create();
 
       bool associate( socket_t socket_ );
       bool associate( void* handle );
@@ -2807,7 +2743,7 @@ namespace YIELD
       bool 
       post // PostQueuedCompletionStatus
       ( 
-        Win32AIOCB* win32_aiocb, 
+        Win32AIOCB& win32_aiocb, // Takes ownership of win32_aiocb
         unsigned long dwNumberOfBytesTransferred = 0,
         unsigned long dwCompletionKey = 0
       );
@@ -2825,45 +2761,6 @@ namespace YIELD
       std::vector<WorkerThread*> worker_threads;
     };
 #endif
-
-
-    class XDRMarshaller : public yidl::runtime::Marshaller
-    {
-    public:
-      XDRMarshaller();
-
-      yidl::runtime::auto_Buffer get_buffer() const { return buffer; }
-
-      // Marshaller
-      YIDL_MARSHALLER_PROTOTYPES;
-      void write( const char* key, uint32_t tag, float value );
-      void write( const char* key, uint32_t tag, int32_t value );
-      void write( const char* key, uint32_t tag, uint32_t value );
-      
-    protected:
-      virtual void write_key( const char* key );
-
-    private:
-      yidl::runtime::auto_Buffer buffer;
-      std::vector<bool> in_map_stack;
-    };
-
-
-    class XDRUnmarshaller : public yidl::runtime::Unmarshaller
-    {
-    public:
-      XDRUnmarshaller( yidl::runtime::auto_Buffer buffer );
-
-      // Unmarshaller
-      YIDL_UNMARSHALLER_PROTOTYPES;
-      float read_float( const char* key, uint32_t tag );
-      int32_t read_int32( const char* key, uint32_t tag );
-
-    private:
-      yidl::runtime::auto_Buffer buffer;
-
-      void read( void*, size_t );
-    };
   };
 };
 

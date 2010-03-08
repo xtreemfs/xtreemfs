@@ -38,16 +38,16 @@
 
 namespace xtreemfs
 {
+  using org::xtreemfs::interfaces::UserCredentials;
+
+
   class UserCredentialsCache : public yidl::runtime::Object
   {
   public:
     UserCredentialsCache();
     ~UserCredentialsCache();
 
-    void getCurrentUserCredentials
-    (
-      org::xtreemfs::interfaces::UserCredentials& out_user_credentials
-    );
+    UserCredentials* getCurrentUserCredentials();
 
 #ifndef _WIN32
     void getpasswdFromUserCredentials
@@ -58,17 +58,12 @@ namespace xtreemfs
       gid_t& out_gid
     );
 
-    bool getUserCredentialsFrompasswd
-    (
-      uid_t uid,
-      gid_t gid,
-      org::xtreemfs::interfaces::UserCredentials& out_user_credentials
-    );
+    UserCredentials* getUserCredentialsFrompasswd( uid_t uid, gid_t gid );
 #endif
 
   private:
     // The former PolicyContainer
-    std::vector<YIELD::platform::SharedLibrary*> policy_shared_libraries;
+    std::vector<yield::platform::SharedLibrary*> policy_shared_libraries;
 
     void* getPolicyFunction( const char* name );
 
@@ -76,8 +71,8 @@ namespace xtreemfs
     template <typename PolicyFunctionType>
     bool getPolicyFunction
     (
-      const YIELD::platform::Path& policy_shared_library_path,
-      YIELD::platform::auto_SharedLibrary policy_shared_library,
+      const Path& policy_shared_library_path,
+      yield::platform::auto_SharedLibrary policy_shared_library,
       const char* policy_function_name,
       PolicyFunctionType& out_policy_function
     )
@@ -101,17 +96,14 @@ namespace xtreemfs
     get_passwd_from_user_credentials_t get_passwd_from_user_credentials;
     std::map<std::string,std::map<std::string,std::pair<uid_t, gid_t>*>*>
       user_credentials_to_passwd_cache;
-    YIELD::platform::Mutex user_credentials_to_passwd_cache_lock;
+    yield::platform::Mutex user_credentials_to_passwd_cache_lock;
 
     get_user_credentials_from_passwd_t get_user_credentials_from_passwd;
-    std::map<gid_t,std::map<uid_t,org::xtreemfs::interfaces::UserCredentials*>*>
+    std::map<gid_t,std::map<uid_t,UserCredentials*>*>
       passwd_to_user_credentials_cache;
-    YIELD::platform::Mutex passwd_to_user_credentials_cache_lock;
+    yield::platform::Mutex passwd_to_user_credentials_cache_lock;
 #endif
   };
-
-  typedef yidl::runtime::auto_Object<UserCredentialsCache>
-    auto_UserCredentialsCache;
 };
 
 #endif

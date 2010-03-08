@@ -37,7 +37,7 @@
                 DebugInformationFormat="4"
                 ProgramDataBaseFileName="$(TargetDir)$(TargetName).pdb"
                 CompileAs="0"
-                DisableSpecificWarnings="4100;4512"
+                DisableSpecificWarnings="4100;4355;4512"
             />
             <Tool
                 Name="VCLibrarianTool"
@@ -82,7 +82,7 @@
                 UsePrecompiledHeader="0"
                 WarningLevel="3"
                 DebugInformationFormat="0"
-                DisableSpecificWarnings="4100;4512"
+                DisableSpecificWarnings="4100;4355;4512"
             />
             <Tool
                 Name="VCLibrarianTool"
@@ -194,10 +194,6 @@
     >
 </File>
 <File
-    RelativePath="..\..\include\xtreemfs\path.h"
-    >
-</File>
-<File
     RelativePath="..\..\include\xtreemfs\policy.h"
     >
 </File>
@@ -287,10 +283,6 @@
 </File>
 <File
     RelativePath="..\..\src\libxtreemfs\osd_proxy_mux.cpp"
-    >
-</File>
-<File
-    RelativePath="..\..\src\libxtreemfs\path.cpp"
     >
 </File>
 <File

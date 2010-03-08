@@ -1,5 +1,5 @@
-#ifndef _786904593_
-#define _786904593_
+#ifndef _1256982394_H_
+#define _1256982394_H_
 
 
 #include "yidl.h"
@@ -14,7 +14,9 @@ namespace org
     namespace interfaces
     {
   
-      class StringSet : public ::yidl::runtime::Sequence, public std::vector<std::string>
+      class StringSet
+        : public ::yidl::runtime::Sequence,
+          public std::vector<std::string>
       {
       public:
         StringSet() { }
@@ -22,13 +24,28 @@ namespace org
         StringSet( size_type size ) : std::vector<std::string>( size ) { }
         virtual ~StringSet() { }
   
-        // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( StringSet, 2010022216 );
+        // yidl::runtime::RTTIObject
+        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( StringSet, 2010030315 );
   
-        // yidl::Sequence
+        // yidl::runtime::MarshallableObject
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const
+        {
+          size_type value_i_max = size();
+          for ( size_type value_i = 0; value_i < value_i_max; value_i++ )
+          {
+            marshaller.write( "value", 0, ( *this )[value_i] );
+          }
+        }
+  
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller )
+        {
+          std::string value;
+          unmarshaller.read( "value", 0, value );
+          push_back( value );
+        }
+  
+        // yidl::runtime::Sequence
         size_t get_size() const { return size(); }
-        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { size_type value_i_max = size(); for ( size_type value_i = 0; value_i < value_i_max; value_i++ ) { marshaller.writeString( "value", 0, ( *this )[value_i] ); } }
-        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { std::string value; unmarshaller.readString( "value", 0, value ); push_back( value ); }
       };
   
       class UserCredentials : public ::yidl::runtime::Struct
@@ -36,26 +53,23 @@ namespace org
       public:
         UserCredentials() { }
         UserCredentials( const std::string& user_id, const org::xtreemfs::interfaces::StringSet& group_ids, const std::string& password ) : user_id( user_id ), group_ids( group_ids ), password( password ) { }
-        UserCredentials( const char* user_id, size_t user_id_len, const org::xtreemfs::interfaces::StringSet& group_ids, const char* password, size_t password_len ) : user_id( user_id, user_id_len ), group_ids( group_ids ), password( password, password_len ) { }
-        virtual ~UserCredentials() { }
+        virtual ~UserCredentials() {  }
   
-        void set_user_id( const std::string& user_id ) { set_user_id( user_id.c_str(), user_id.size() ); }
-        void set_user_id( const char* user_id, size_t user_id_len ) { this->user_id.assign( user_id, user_id_len ); }
         const std::string& get_user_id() const { return user_id; }
-        void set_group_ids( const org::xtreemfs::interfaces::StringSet&  group_ids ) { this->group_ids = group_ids; }
         const org::xtreemfs::interfaces::StringSet& get_group_ids() const { return group_ids; }
-        void set_password( const std::string& password ) { set_password( password.c_str(), password.size() ); }
-        void set_password( const char* password, size_t password_len ) { this->password.assign( password, password_len ); }
         const std::string& get_password() const { return password; }
+        void set_user_id( const std::string& user_id ) { this->user_id = user_id; }
+        void set_group_ids( const org::xtreemfs::interfaces::StringSet&  group_ids ) { this->group_ids = group_ids; }
+        void set_password( const std::string& password ) { this->password = password; }
   
         bool operator==( const UserCredentials& other ) const { return user_id == other.user_id && group_ids == other.group_ids && password == other.password; }
   
-        // yidl::runtime::Object
-        YIDL_RUNTIME_OBJECT_PROTOTYPES( UserCredentials, 2010022217 );
+        // yidl::runtime::RTTIObject
+        YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( UserCredentials, 2010030316 );
   
-        // yidl::Struct
-        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.writeString( "user_id", 0, user_id ); marshaller.writeSequence( "group_ids", 0, group_ids ); marshaller.writeString( "password", 0, password ); }
-        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.readString( "user_id", 0, user_id ); unmarshaller.readSequence( "group_ids", 0, group_ids ); unmarshaller.readString( "password", 0, password ); }
+        // yidl::runtime::MarshallableObject
+        void marshal( ::yidl::runtime::Marshaller& marshaller ) const { marshaller.write( "user_id", 0, user_id ); marshaller.write( "group_ids", 0, group_ids ); marshaller.write( "password", 0, password ); }
+        void unmarshal( ::yidl::runtime::Unmarshaller& unmarshaller ) { unmarshaller.read( "user_id", 0, user_id ); unmarshaller.read( "group_ids", 0, group_ids ); unmarshaller.read( "password", 0, password ); }
   
       protected:
         std::string user_id;
@@ -63,17 +77,7 @@ namespace org
         std::string password;
       };
   
-  
-  
+      };
     };
-  
-  
-  
   };
-  
-  
-
-};
-
 #endif
-

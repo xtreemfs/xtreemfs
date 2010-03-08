@@ -33,9 +33,6 @@
 
 #include "yield/concurrency.h"
 
-#ifdef YIELD_IPC_HAVE_LIBUUID
-#include <uuid/uuid.h>
-#endif
 #ifdef YIELD_IPC_HAVE_OPENSSL
 #include <openssl/ssl.h>
 #endif
@@ -50,107 +47,316 @@ typedef struct yajl_gen_t* yajl_gen;
 #define YIELD_RFC822_HEADERS_STACK_IOVECS_LENGTH 32
 
 
-namespace YIELD
+namespace yield
 {
   namespace ipc
   {
-    class HTTPClient;
-    typedef yidl::runtime::auto_Object<HTTPClient> auto_HTTPClient;
-
     class HTTPRequest;
-    typedef yidl::runtime::auto_Object<HTTPRequest> auto_HTTPRequest;
-
     class HTTPResponse;
-    typedef yidl::runtime::auto_Object<HTTPResponse> auto_HTTPResponse;
-
-    class HTTPServer;
-    typedef yidl::runtime::auto_Object<HTTPServer> auto_HTTPServer;
-	
-    class ONCRPCClient;
-    typedef yidl::runtime::auto_Object<ONCRPCClient> auto_ONCRPCClient;
-
     class ONCRPCRequest;
-	  typedef yidl::runtime::auto_Object<ONCRPCRequest> auto_ONCRPCRequest;
-
     class ONCRPCResponse;
-    typedef yidl::runtime::auto_Object<ONCRPCResponse> auto_ONCRPCResponse;	
-
-    class ONCRPCServer;
-    typedef yidl::runtime::auto_Object<ONCRPCServer> auto_ONCRPCServer;	
-
     class SocketFactory;
-    typedef yidl::runtime::auto_Object<SocketFactory> auto_SocketFactory;
-
     class SSLContext;
-    typedef yidl::runtime::auto_Object<SSLContext> auto_SSLContext;
-
-    class SSLSocket;
-    typedef yidl::runtime::auto_Object<SSLSocket> auto_SSLSocket;
-
     class URI;
-    typedef yidl::runtime::auto_Object<URI> auto_URI;
-
-    class UUID;
-    typedef yidl::runtime::auto_Object<UUID> auto_UUID;	
 
 
-    template <class RequestType, class ResponseType>
-    class Client : public YIELD::concurrency::EventHandler
+    using yidl::runtime::Buffer;
+    using yidl::runtime::Buffers;
+    using yidl::runtime::MarshallableObject;
+    using yidl::runtime::MarshallableObjectFactory;
+    using yidl::runtime::Marshaller;
+    using yidl::runtime::Unmarshaller;
+    using yidl::runtime::XDRMarshaller;
+    using yidl::runtime::XDRUnmarshaller;
+
+    using yield::concurrency::Event;
+    using yield::concurrency::EventHandler;
+    using yield::concurrency::EventFactory;
+    using yield::concurrency::EventTarget;
+    using yield::concurrency::ExceptionResponse;
+    using yield::concurrency::Request;
+    using yield::concurrency::Response;
+
+    using yield::platform::IOQueue;
+    using yield::platform::Log;    
+    using yield::platform::Socket;
+    using yield::platform::SocketAddress;
+    using yield::platform::TCPSocket;
+    using yield::platform::UDPSocket;
+    using yield::platform::Time;
+
+    
+
+    class SocketPeer
     {
     public:
-      const static uint16_t CONCURRENCY_LEVEL_DEFAULT = 4;
       const static uint32_t FLAG_TRACE_NETWORK_IO = 1;
       const static uint32_t FLAG_TRACE_OPERATIONS = 2;
-      const static uint64_t OPERATION_TIMEOUT_DEFAULT
-        = 5 * YIELD::platform::Time::NS_IN_S;
-      const static uint16_t RECONNECT_TRIES_MAX_DEFAULT = 2;
+      const static uint32_t FLAGS_DEFAULT = 0;
 
       uint32_t get_flags() const { return flags; }
 
-      YIELD::platform::auto_SocketAddress get_peername() const 
-      { 
-        return peername;
-      }
+    protected:
+      SocketPeer
+      (
+        uint32_t flags,
+        IOQueue& io_queue, // Steals this reference
+        Log* log
+      );
 
-      const YIELD::platform::Time& get_operation_timeout() const
-      { 
-        return operation_timeout; 
-      }
+      virtual ~SocketPeer();
 
+      // Two helpers for subclass factory methods
+      static IOQueue& createIOQueue();
+      static SocketAddress& createSocketAddress( const URI& absolute_uri );      
+
+      bool has_flag( uint32_t flag ) { return ( flags & flag ) == flag; }
+      IOQueue& get_io_queue() const { return io_queue; }
+      Log* get_log() const { return log; }
+
+    private:
+      uint32_t flags;
+      IOQueue& io_queue;
+      Log* log;
+    };
+
+
+    template <class RequestType, class ResponseType>
+    class SocketClient : public EventHandler, public SocketPeer
+    {
+    public:
+      const static uint16_t CONCURRENCY_LEVEL_DEFAULT = 4;
+      const static uint64_t OPERATION_TIMEOUT_DEFAULT = 5 * Time::NS_IN_S;
+      const static uint16_t RECONNECT_TRIES_MAX_DEFAULT = 2;
+
+      SocketAddress& get_peername() const { return peername; }
+      const Time& get_operation_timeout() const { return operation_timeout; }
       uint16_t get_reconnect_tries_max() const { return reconnect_tries_max; }
 
-      // YIELD::concurrency::EventHandler
-      virtual void handleEvent( YIELD::concurrency::Event& );
+      // yidl::runtime::Object
+      SocketClient<RequestType, ResponseType>& inc_ref() 
+      {
+        return Object::inc_ref( *this );
+      }
+
+      // yield::concurrency::EventHandler
+      virtual void handleEvent( Event& );
 
     protected:
-      Client
+      SocketClient
       (
         uint16_t concurrency_level, // e.g. the # of simultaneous conns for TCP
         uint32_t flags,
-        YIELD::platform::auto_Log log,
-        const YIELD::platform::Time& operation_timeout,
-        YIELD::platform::auto_SocketAddress peername,
+        IOQueue& io_queue, // Steals this reference
+        Log* log,
+        const Time& operation_timeout,
+        SocketAddress& peername, // Steals this reference
         uint16_t reconnect_tries_max,
-        auto_SocketFactory socket_factory
+        SocketFactory& socket_factory // Steals this reference
       );
 
-      virtual ~Client();
+      virtual ~SocketClient();
 
-      YIELD::platform::auto_Log get_log() const { return log; }
+      virtual ResponseType& createResponse( RequestType& request ) = 0;
 
     private:
       uint16_t concurrency_level;
-      uint32_t flags;
-      YIELD::platform::auto_Log log;
-      YIELD::platform::Time operation_timeout;
-      YIELD::platform::auto_SocketAddress peername;
+      Time operation_timeout;
+      SocketAddress& peername;
       uint16_t reconnect_tries_max;
-      YIELD::concurrency
-        ::SynchronizedSTLQueue<YIELD::platform::Socket*> sockets;
-      auto_SocketFactory socket_factory;
+      yield::concurrency::SynchronizedSTLQueue<Socket*> sockets;
+      SocketFactory& socket_factory;
 
     private:
       class Connection;
+    };
+
+
+    template <class RequestType, class ResponseType>
+    class SocketServer 
+      : public yidl::runtime::Object,
+        public SocketPeer,
+        public TCPSocket::AIOAcceptCallback,
+        public UDPSocket::AIORecvFromCallback
+    {
+    public:
+      // yidl::runtime::Object
+      SocketServer<RequestType, ResponseType>& inc_ref()
+      {
+        return Object::inc_ref( *this ); 
+      }
+
+    protected:
+      SocketServer
+      ( 
+        uint32_t flags,
+        IOQueue& io_queue, // Steals this reference
+        TCPSocket& listen_tcp_socket, // Steals this reference
+        Log* log, 
+        EventTarget& request_target // Steals this reference
+      );
+
+      SocketServer
+      ( 
+        uint32_t flags,
+        IOQueue& io_queue,
+        Log* log, 
+        EventTarget& request_target, 
+        UDPSocket& udp_socket 
+      );
+
+      virtual ~SocketServer();
+
+      // Subclasses must implement this
+      virtual RequestType* createRequest() const = 0;
+
+      EventTarget& get_request_target() const { return request_target; }
+
+      // Subclasses can override this to e.g. unwrap a request
+      // and send its body (as in ONC-RPC and JSON-RPC)
+      virtual void sendRequest( RequestType& request );
+
+    private:
+      // TCPSocket::AIOAcceptCallback
+      void onAcceptCompletion( TCPSocket& accepted_tcp_socket, void* );
+      void onAcceptError( uint32_t error_code, void* );
+
+      // UDPSocket::AIORecvFromCallback
+      void onRecvFromCompletion( Buffer& buffer, SocketAddress& peername, void* );
+      void onRecvFromError( uint32_t, void* );
+
+    private:
+      class TCPConnection;
+      class UDPConnection;
+
+    private:
+      TCPSocket* listen_tcp_socket;
+      EventTarget& request_target;
+      UDPSocket* udp_socket;
+    };
+
+
+    class RPCMessage
+    {
+    public:
+      MarshallableObject& get_body() const;
+
+    protected:
+      // Incoming
+      RPCMessage( MarshallableObjectFactory& );
+
+      // Outgoing
+      RPCMessage( MarshallableObject& body ); // Steals this reference
+
+      virtual ~RPCMessage();
+
+      MarshallableObjectFactory& get_marshallable_object_factory() const;
+
+      void marshal_body
+      ( 
+        const char* key, 
+        uint32_t tag, 
+        Marshaller& marshaller
+      ) const;
+
+      bool unmarshal_new_Request_body
+      ( 
+        const char* key, 
+        uint32_t tag,
+        uint32_t type_id,
+        Unmarshaller& unmarshaller
+      );
+
+      bool unmarshal_new_Response_body
+      ( 
+        const char* key, 
+        uint32_t tag,
+        uint32_t type_id,
+        Unmarshaller& unmarshaller
+      );
+
+      bool
+      unmarshal_new_ExceptionResponse_body
+      ( 
+        const char* key, 
+        uint32_t tag,
+        uint32_t type_id, 
+        Unmarshaller& unmarshaller
+      );
+
+      void set_body( yidl::runtime::MarshallableObject* body );
+
+    private:
+      MarshallableObject* body;
+      MarshallableObjectFactory* marshallable_object_factory;
+    };
+
+
+    class HTTPClient : public SocketClient<HTTPRequest, HTTPResponse>
+    {
+    public:
+      static HTTPClient&
+      create
+      (
+        const URI& absolute_uri,
+        uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
+        uint32_t flags = FLAGS_DEFAULT,
+        Log* log = NULL,
+        const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT,
+        uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
+        SSLContext* ssl_context = NULL // Steals this reference, to allow *new
+      );
+
+      static HTTPResponse& GET( const URI& absolute_uri, Log* log = NULL );
+
+      static
+      HTTPResponse&
+      PUT
+      (
+        const URI& absolute_uri,
+        Buffer& body, // Steals this reference
+        Log* log = NULL
+      );
+
+      static
+      HTTPResponse&
+      PUT
+      (
+        const URI& absolute_uri,
+        const yield::platform::Path& body_file_path,
+        Log* log = NULL
+      );
+
+      // yidl::runtime::Object
+      HTTPClient& inc_ref() { return Object::inc_ref( *this ); }
+
+    private:
+      HTTPClient
+      (
+        uint16_t concurrency_level,
+        uint32_t flags,
+        IOQueue& io_queue,
+        Log* log,
+        const Time& operation_timeout,
+        SocketAddress& peername,
+        uint16_t reconnect_tries_max,
+        SocketFactory& socket_factory
+      );
+
+      virtual ~HTTPClient() { }
+
+      // SocketClient
+      HTTPResponse& createResponse( HTTPRequest& http_request );
+
+      static
+      HTTPResponse&
+      sendHTTPRequest
+      (
+        const char* method,
+        const URI& uri,
+        Buffer* body,
+        Log* log
+      );
     };
 
 
@@ -160,7 +366,7 @@ namespace YIELD
       RFC822Headers( uint8_t reserve_iovecs_count = 0 );
       virtual ~RFC822Headers();
 
-      ssize_t deserialize( yidl::runtime::auto_Buffer );
+      ssize_t deserialize( Buffer& );
 
       char* get_header
       (
@@ -184,7 +390,7 @@ namespace YIELD
         const std::string& header_value
       );
 
-      yidl::runtime::auto_Buffers serialize();
+      Buffers& serialize();
 
     protected:
       const struct iovec* get_iovecs() const
@@ -251,16 +457,13 @@ namespace YIELD
     class HTTPMessage : public RFC822Headers
     {
     public:
-      yidl::runtime::auto_Buffer get_body() const { return body; }
+      Buffer* get_body() const { return body; }
       uint8_t get_http_version() const { return http_version; }
 
     protected:
-      HTTPMessage( uint8_t reserve_iovecs_count );
-      HTTPMessage( uint8_t reserve_iovecs_count, yidl::runtime::auto_Buffer );
+      HTTPMessage( uint8_t reserve_iovecs_count = 0, Buffer* body = NULL );
       HTTPMessage( const HTTPMessage& ) { DebugBreak(); } // Prevent copying
       virtual ~HTTPMessage() { }
-
-      yidl::runtime::auto_Buffer body;
 
       enum
       {
@@ -274,93 +477,66 @@ namespace YIELD
         DESERIALIZING_URI
       } deserialize_state;
 
-      uint8_t http_version;
+      virtual ssize_t deserialize( Buffer& );
+      virtual Buffers& serialize();
+      void set_http_version( uint8_t http_version );
 
-      virtual ssize_t deserialize( yidl::runtime::auto_Buffer );
-      virtual yidl::runtime::auto_Buffers serialize();
+    private:
+      Buffer* body;
+      uint8_t http_version;
     };
 
 
-    class HTTPResponse
-      : public YIELD::concurrency::Response, public HTTPMessage
+    class HTTPRequest : public Request, public HTTPMessage
     {
     public:
       // Incoming
-      HTTPResponse();
+      HTTPRequest();
 
       // Outgoing
-      HTTPResponse( uint16_t status_code );
-      HTTPResponse( uint16_t status_code, yidl::runtime::auto_Buffer body );
+      HTTPRequest 
+      (
+        const char* method,
+        const char* relative_uri,
+        const char* host
+      );
 
-      ssize_t deserialize( yidl::runtime::auto_Buffer );
-      uint16_t get_status_code() const { return status_code; }
-      yidl::runtime::auto_Buffers serialize();
-      void set_body( yidl::runtime::auto_Buffer body );
-      void set_status_code( uint16_t status_code );
-
-      // yidl::runtime::RTTIObject
-      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( HTTPResponse, 206 );
-
-      // yidl::runtime::MarshallableObject
-      void marshal( yidl::runtime::Marshaller& ) const { }
-      void unmarshal( yidl::runtime::Unmarshaller& ) { }
-
-    protected:
-      virtual ~HTTPResponse() { }
-
-    private:
-      HTTPResponse( const HTTPResponse& other ) // Prevent copying
-        : HTTPMessage( other )
-      { }
-
-      uint8_t http_version;
-      union { char status_code_str[4]; uint16_t status_code; };
-    };
-
-
-    class HTTPRequest
-      : public YIELD::concurrency::Request, public HTTPMessage
-    {
-    public:
-      HTTPRequest(); // Incoming
-
-      HTTPRequest // Outgoing
+      HTTPRequest
       (
         const char* method,
         const char* relative_uri,
         const char* host,
-        yidl::runtime::auto_Buffer body = NULL
+        Buffer& body // Steals this reference
       );
 
-      HTTPRequest // Outgoing
+      HTTPRequest
+      (
+        const char* method,
+        const URI& absolute_uri
+      );
+
+      HTTPRequest
       (
         const char* method,
         const URI& absolute_uri,
-        yidl::runtime::auto_Buffer body = NULL
+        Buffer& body // Steals this reference
       );
 
-      virtual auto_HTTPResponse createResponse(); // Used by Client
-      ssize_t deserialize( yidl::runtime::auto_Buffer );
-      uint8_t get_http_version() const { return http_version; }
+      ssize_t deserialize( Buffer& );
       const char* get_method() const { return method; }
       const char* get_uri() const { return uri; }
-      virtual void respond( uint16_t status_code );
-
-      virtual void respond
-      (
-        uint16_t status_code,
-        yidl::runtime::auto_Buffer body
-      );
-
-      virtual void respond( YIELD::concurrency::Response& response );
-      yidl::runtime::auto_Buffers serialize();      
+      void respond( HTTPResponse& http_response ); // Steals this reference
+      void respond( uint16_t status_code );
+      void respond( uint16_t status_code, Buffer& body ); // Steals this ref
+      void respond( ExceptionResponse& exception_response ); // Steals tihs ref
+      Buffers& serialize();
 
       // yidl::runtime::RTTIObject
       YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( HTTPRequest, 205 );
 
       // yidl::runtime::MarshallableObject
-      void marshal( yidl::runtime::Marshaller& ) const { }
-      void unmarshal( yidl::runtime::Unmarshaller& ) { }
+      void marshal( Marshaller& ) const { }
+      void unmarshal( Unmarshaller& ) { }
 
     protected:
       virtual ~HTTPRequest();
@@ -370,261 +546,91 @@ namespace YIELD
         : HTTPMessage( other )
       { }
 
-      void init
-      (
-        const char* method,
-        const char* relative_uri,
-        const char* host,
-        yidl::runtime::auto_Buffer body
-      );
+      void init( const char*, const char*, const char* );
 
+    private:
       char method[16];
       char* uri; size_t uri_len;
     };
 
 
-    class HTTPClient : public Client<HTTPRequest, HTTPResponse>
+    class HTTPResponse : public Response, public HTTPMessage
     {
     public:
-      // create( ... ) throws an exception instead of returning NULL
-      static auto_HTTPClient
-      create
-      (
-        const URI& absolute_uri,
-        uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
-        uint32_t flags = 0,
-        YIELD::platform::auto_Log log = NULL,
-        const YIELD::platform::Time& operation_timeout
-          = OPERATION_TIMEOUT_DEFAULT,
-        uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
-        auto_SSLContext ssl_context = NULL
-      );
+      // Incoming
+      HTTPResponse(); 
 
-      static auto_HTTPResponse
-      GET
-      (
-        const URI& absolute_uri,
-        YIELD::platform::auto_Log log = NULL
-      );
+      // Outgoing
+      HTTPResponse( uint16_t status_code );
+      HTTPResponse( uint16_t status_code, Buffer& body ); // Steals this ref
 
-      static auto_HTTPResponse
-      PUT
-      (
-        const URI& absolute_uri,
-        yidl::runtime::auto_Buffer body,
-        YIELD::platform::auto_Log log = NULL
-      );
+      ssize_t deserialize( Buffer& );
+      uint16_t get_status_code() const { return status_code; }
+      Buffers& serialize();
 
-      static auto_HTTPResponse
-      PUT
-      (
-        const URI& absolute_uri,
-        const YIELD::platform::Path& body_file_path,
-        YIELD::platform::auto_Log log = NULL
-      );
+      // yidl::runtime::RTTIObject
+      YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( HTTPResponse, 206 );
+
+      // yidl::runtime::MarshallableObject
+      void marshal( Marshaller& ) const { }
+      void unmarshal( Unmarshaller& ) { }
+
+    protected:
+      virtual ~HTTPResponse() { }
 
     private:
-      HTTPClient
-      (
-        uint16_t concurrency_level,
-        uint32_t flags,
-        YIELD::platform::auto_Log log,
-        const YIELD::platform::Time& operation_timeout,
-        YIELD::platform::auto_SocketAddress peername,
-        uint16_t reconnect_tries_max,
-        auto_SocketFactory socket_factory
-      )
-        : Client<HTTPRequest, HTTPResponse>
-          (
-            concurrency_level,
-            flags,
-            log,
-            operation_timeout,
-            peername,
-            reconnect_tries_max,
-            socket_factory
-          )
-      { }
+      HTTPResponse( const HTTPResponse& other ) // Prevent copying
+        : HTTPMessage( other )
+      {
+        DebugBreak();
+      }
 
-      virtual ~HTTPClient() { }
-
-      static auto_HTTPResponse
-      sendHTTPRequest
-      (
-        const char* method,
-        const URI& uri,
-        yidl::runtime::auto_Buffer body,
-        YIELD::platform::auto_Log log
-      );
+    private:
+      union { char status_code_str[4]; uint16_t status_code; };
     };
 
 
-    class HTTPServer 
-      : public yidl::runtime::Object,
-        public YIELD::platform::TCPSocket::AIOAcceptCallback
+    class HTTPServer : public SocketServer<HTTPRequest, HTTPResponse>
     {
     public:
-      static auto_HTTPServer
+      static HTTPServer&
       create
       (
         const URI& absolute_uri,
-        YIELD::concurrency::auto_EventTarget http_request_target,
-        YIELD::platform::auto_Log log = NULL,
-        auto_SSLContext ssl_context = NULL
+        EventTarget& http_request_target, // Steals this reference
+        uint32_t flags = FLAGS_DEFAULT,
+        Log* log = NULL,
+        SSLContext* ssl_context = NULL // Steals this reference, to allow *new
       );
+
+      // yidl::runtime::Object
+      HTTPServer& inc_ref() { return Object::inc_ref( *this ); }
 
     private:
       HTTPServer
       (
-        YIELD::concurrency::auto_EventTarget http_request_target,
-        YIELD::platform::auto_TCPSocket listen_tcp_socket,
-        YIELD::platform::auto_Log log
+        uint32_t flags,
+        EventTarget& http_request_target,
+        IOQueue& io_queue,
+        TCPSocket& listen_tcp_socket,
+        Log* log
       );
 
-      YIELD::concurrency::auto_EventTarget http_request_target;
-      YIELD::platform::auto_TCPSocket listen_tcp_socket;
-      YIELD::platform::auto_Log log;
-
-    private:
-      // YIELD::platform::TCPSocket::AIOAcceptCallback
-      void
-      onAcceptCompletion
-      ( 
-        YIELD::platform::auto_TCPSocket accepted_tcp_socket, 
-        void* 
-      );
-
-      void onAcceptError( uint32_t error_code, void* );
+      // SocketServer
+      HTTPRequest* createRequest() const { return new HTTPRequest; }
 
     private:
       class Connection;
     };
 
-    
-    template <class RPCRequestType, class RPCResponseType>
-    class RPCClient : public Client<RPCRequestType, RPCResponseType>
-    {
-    protected:
-      RPCClient
-      (
-        uint16_t concurrency_level,
-        uint32_t flags,
-        YIELD::platform::auto_Log log,
-        yidl::runtime::auto_MarshallableObjectFactory
-          marshallable_object_factory,
-        const YIELD::platform::Time& operation_timeout,
-        YIELD::platform::auto_SocketAddress peername,
-        uint16_t reconnect_tries_max,
-        auto_SocketFactory socket_factory
-      )
-        : Client<RPCRequestType, RPCResponseType>
-          (
-            concurrency_level,
-            flags,
-            log,
-            operation_timeout,
-            peername,
-            reconnect_tries_max,
-            socket_factory
-          )
-      { }
 
-    protected:
-      yidl::runtime::auto_MarshallableObjectFactory
-        marshallable_object_factory;
-    };
-
-
-    class RPCMessage
-    {
-    public:
-      yidl::runtime::auto_MarshallableObject get_body() const 
-      { 
-        return body;
-      }
-
-    protected:
-      // Incoming
-      RPCMessage( yidl::runtime::auto_MarshallableObjectFactory );
-
-      // Outgoing
-      RPCMessage( yidl::runtime::auto_MarshallableObject body );
-      
-      yidl::runtime::auto_MarshallableObjectFactory
-      get_marshallable_object_factory() const
-      {
-        return marshallable_object_factory;
-      }
-
-      void
-      marshal_body
-      ( 
-        const char* key, 
-        uint32_t tag, 
-        yidl::runtime::Marshaller& marshaller
-      ) const;
-
-      bool unmarshal_new_Request_body
-      ( 
-        const char* key, 
-        uint32_t tag,
-        uint32_t type_id,
-        yidl::runtime::Unmarshaller& unmarshaller
-      );
-
-      bool unmarshal_new_Response_body
-      ( 
-        const char* key, 
-        uint32_t tag,
-        uint32_t type_id,
-        yidl::runtime::Unmarshaller& unmarshaller
-      );
-
-      bool
-      unmarshal_new_ExceptionResponse_body
-      ( 
-        const char* key, 
-        uint32_t tag,
-        uint32_t type_id, 
-        yidl::runtime::Unmarshaller& unmarshaller
-      );
-
-      void set_body( yidl::runtime::MarshallableObject* body );
-
-    private:
-      yidl::runtime::auto_MarshallableObject body;
-      yidl::runtime::auto_MarshallableObjectFactory 
-        marshallable_object_factory;
-    };
-   
-
-    class RPCServer : public yidl::runtime::Object
-    {
-    protected:
-      RPCServer
-      ( 
-        YIELD::platform::auto_Log log,
-        yidl::runtime::auto_MarshallableObjectFactory 
-          marshallable_object_factory
-      )
-        : log( log ), 
-          marshallable_object_factory( marshallable_object_factory )
-      { }
-
-    protected:
-      YIELD::platform::auto_Log log;
-      yidl::runtime::auto_MarshallableObjectFactory 
-          marshallable_object_factory;
-    };
-
-
-    class JSONMarshaller : public yidl::runtime::Marshaller
+    class JSONMarshaller : public Marshaller
     {
     public:
       JSONMarshaller( bool write_empty_strings = true );
       virtual ~JSONMarshaller();
 
-      yidl::runtime::auto_Buffer get_buffer() const { return buffer; }
+      Buffer& get_buffer() const { return *buffer; }
 
       // Marshaller
       YIDL_MARSHALLER_PROTOTYPES;
@@ -642,20 +648,22 @@ namespace YIELD
       virtual void write( const yidl::runtime::MarshallableObject* );
 
     private:
+      void flushYAJLBuffer();
+
+    private:
+      Buffer* buffer;
       bool in_map;
       const char* root_key;
       bool write_empty_strings;
       yajl_gen writer;
 
-      void flushYAJLBuffer();
-      yidl::runtime::auto_Buffer buffer;
     };
 
 
-    class JSONUnmarshaller : public yidl::runtime::Unmarshaller
+    class JSONUnmarshaller : public Unmarshaller
     {
     public:
-      JSONUnmarshaller( yidl::runtime::auto_Buffer buffer );
+      JSONUnmarshaller( Buffer& buffer );
       virtual ~JSONUnmarshaller();
 
       // Unmarshaller
@@ -677,8 +685,68 @@ namespace YIELD
     };
 
 
-    class ONCRPCGarbageArgumentsError
-      : public YIELD::concurrency::ExceptionResponse
+    class ONCRPCClient : public SocketClient<ONCRPCRequest, ONCRPCResponse>
+    {
+    public:
+      static ONCRPCClient&
+      create
+      (
+        const URI& absolute_uri,
+        MarshallableObjectFactory&, // Steals this reference, to allow *new
+        uint32_t prog,
+        uint32_t vers,
+        uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
+        uint32_t flags = FLAGS_DEFAULT,
+        Log* log = NULL,
+        const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT,
+        uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
+        SSLContext* ssl_context = NULL // Steals this reference, to allow *new
+      );
+
+      // yidl::runtime::Object
+      ONCRPCClient& inc_ref() { return Object::inc_ref( *this ); }
+
+      // yield::concurrency::EventHandler
+      virtual void handleEvent( Event& );
+
+    protected:
+      ONCRPCClient
+      (
+        uint16_t concurrency_level,
+        uint32_t flags,
+        IOQueue& io_queue,
+        Log* log,
+        MarshallableObjectFactory& marshallable_object_factory,
+        const Time& operation_timeout,
+        SocketAddress& peername,
+        uint32_t prog,
+        uint16_t reconnect_tries_max,
+        SocketFactory& socket_factory,
+        uint32_t vers
+      );
+
+      virtual ~ONCRPCClient() { }
+
+      virtual ONCRPCRequest& createONCRPCRequest( MarshallableObject& body );
+
+      EventFactory* get_event_factory() const;
+      MarshallableObjectFactory& get_marshallable_object_factory() const;
+      uint32_t get_prog() const { return prog; }
+      uint32_t get_vers() const { return vers; }
+    
+      // SocketClient
+      virtual ONCRPCResponse& createResponse( ONCRPCRequest& oncrpc_request );
+
+    private:
+      class ONCRPCResponseTarget;
+
+    private:
+      MarshallableObjectFactory& marshallable_object_factory;
+      uint32_t prog, vers;
+    };
+
+
+    class ONCRPCGarbageArgumentsError : public ExceptionResponse
     {
     public:
       ONCRPCGarbageArgumentsError()
@@ -691,20 +759,28 @@ namespace YIELD
     class ONCRPCMessage : public RPCMessage
     {
     public:
-      virtual ssize_t deserialize( yidl::runtime::auto_Buffer );
+      const static uint32_t AUTH_NONE = 0;
+
+      virtual ssize_t deserialize( Buffer& );
+      MarshallableObject* get_verf() const { return verf; }
       uint32_t get_xid() const { return xid; }
-      yidl::runtime::auto_Buffers serialize();
+      Buffers& serialize();
 
     protected:
       // Incoming
       ONCRPCMessage
       ( 
-        yidl::runtime::auto_MarshallableObjectFactory, 
+        MarshallableObjectFactory& marshallable_object_factory,
         uint32_t xid
       );
 
       // Outgoing
-      ONCRPCMessage( yidl::runtime::auto_MarshallableObject, uint32_t xid );
+      ONCRPCMessage
+      ( 
+        MarshallableObject& body, // Steals this reference
+        MarshallableObject* verf, // Steals this reference
+        uint32_t xid 
+      );
 
       virtual ~ONCRPCMessage();
 
@@ -716,23 +792,28 @@ namespace YIELD
         DESERIALIZE_DONE
       } deserialize_state;
 
-      ssize_t deserializeRecordFragmentMarker( yidl::runtime::auto_Buffer );
-      ssize_t deserializeRecordFragment( yidl::runtime::auto_Buffer );
-      ssize_t deserializeLongRecordFragment( yidl::runtime::auto_Buffer );
+      ssize_t deserializeRecordFragmentMarker( Buffer& );
+      ssize_t deserializeRecordFragment( Buffer& );
+      ssize_t deserializeLongRecordFragment( Buffer& );
+
+      void marshal_opaque_auth( MarshallableObject*, Marshaller& ) const;      
+      void marshal_verf( Marshaller& ) const;
+      MarshallableObject* unmarshal_opaque_auth( Unmarshaller& );
+      void unmarshal_verf( Unmarshaller& );
 
       // yidl::runtime::Marshallable
-      void marshal( yidl::runtime::Marshaller& marshaller ) const;
-      void unmarshal( yidl::runtime::Unmarshaller& unmarshaller );
+      void marshal( Marshaller& marshaller ) const;
+      void unmarshal( Unmarshaller& unmarshaller );
 
     private:
       uint32_t record_fragment_length;
-      yidl::runtime::auto_Buffer record_fragment_buffer;
+      Buffer* record_fragment_buffer;
+      MarshallableObject* verf;
       uint32_t xid;
     };
 
 
-    class ONCRPCMessageRejectedError
-      : public YIELD::concurrency::ExceptionResponse
+    class ONCRPCMessageRejectedError : public ExceptionResponse
     {
     public:
       ONCRPCMessageRejectedError()
@@ -741,8 +822,7 @@ namespace YIELD
     };
 
 
-    class ONCRPCProcedureUnavailableError
-      : public YIELD::concurrency::ExceptionResponse
+    class ONCRPCProcedureUnavailableError : public ExceptionResponse
     {
     public:
       ONCRPCProcedureUnavailableError()
@@ -751,8 +831,7 @@ namespace YIELD
     };
 
 
-    class ONCRPCProgramMismatchError
-      : public YIELD::concurrency::ExceptionResponse
+    class ONCRPCProgramMismatchError : public ExceptionResponse
     {
     public:
       ONCRPCProgramMismatchError()
@@ -761,8 +840,7 @@ namespace YIELD
     };
 
 
-    class ONCRPCProgramUnavailableError
-      : public YIELD::concurrency::ExceptionResponse
+    class ONCRPCProgramUnavailableError : public ExceptionResponse
     {
     public:
       ONCRPCProgramUnavailableError()
@@ -771,53 +849,49 @@ namespace YIELD
     };
 
 
-    class ONCRPCRequest 
-      : public YIELD::concurrency::Request,
-        public ONCRPCMessage<ONCRPCRequest>
+    class ONCRPCRequest : public Request, public ONCRPCMessage<ONCRPCRequest>
     {
     public:
-      const static uint32_t AUTH_NONE = 0;
-
       // Incoming
-      ONCRPCRequest( yidl::runtime::auto_MarshallableObjectFactory );
+      ONCRPCRequest( MarshallableObjectFactory& );
 
       // Outgoing
       ONCRPCRequest
       (
-        uint32_t prog,
+        MarshallableObject& body, // Steals this reference
         uint32_t proc,
+        uint32_t prog,
         uint32_t vers,
-        yidl::runtime::auto_MarshallableObject body,
-        yidl::runtime::auto_MarshallableObject cred = NULL, // AUTH_NONE
-        yidl::runtime::auto_MarshallableObject verf = NULL // AUTH_NONE
+        MarshallableObject* cred = NULL, // = AUTH_NONE, steals this reference
+        MarshallableObject* verf = NULL // = AUTH_NONE, steals this reference
       );
 
-      virtual ~ONCRPCRequest() { }
+      virtual ~ONCRPCRequest();
 
-      virtual auto_ONCRPCResponse createResponse(); // Used by Client
-      yidl::runtime::auto_MarshallableObject get_cred() const { return cred; }
+      MarshallableObject* get_cred() const { return cred; }
       uint32_t get_prog() const { return prog; }
       uint32_t get_proc() const { return proc; }      
-      yidl::runtime::auto_MarshallableObject get_verf() const { return verf; }
       uint32_t get_vers() const { return vers; }
+      void respond( ONCRPCResponse& oncrpc_response ); // Steals this reference
+      void respond( MarshallableObject& response_body ); // Steals this ref
+      void respond( ExceptionResponse& exception_response ); // Steals this ref
 
       // yidl::runtime::RTTIObject
       YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ONCRPCRequest, 213 );
 
       // yidl::runtime::MarshallableObject
-      virtual void marshal( yidl::runtime::Marshaller& ) const;
-      virtual void unmarshal( yidl::runtime::Unmarshaller& );
+      virtual void marshal( Marshaller& marshaller ) const;
+      virtual void unmarshal( Unmarshaller& unmarshaller );
 
     private:      
-      yidl::runtime::auto_MarshallableObject cred;
+      MarshallableObject* cred;
       uint32_t prog, proc;
-      yidl::runtime::auto_MarshallableObject verf;
       uint32_t vers;
     };
 
 
     class ONCRPCResponse 
-      : public YIELD::concurrency::Response, 
+      : public Response, 
         public ONCRPCMessage<ONCRPCResponse>
     {
     public:
@@ -825,15 +899,16 @@ namespace YIELD
       ONCRPCResponse
       ( 
         uint32_t default_body_type_id,
-        yidl::runtime::auto_MarshallableObjectFactory,
+        MarshallableObjectFactory& marshallable_object_factory,
         uint32_t xid
       );
 
       // Outgoing
       ONCRPCResponse
-      (
-        yidl::runtime::auto_MarshallableObject body,
-        uint32_t xid
+      ( 
+        MarshallableObject& body, // Steals this reference
+        uint32_t xid,
+        MarshallableObject* verf = NULL // = AUTH_NONE, steals this reference
       );
       
       virtual ~ONCRPCResponse() { }
@@ -842,89 +917,77 @@ namespace YIELD
       YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( ONCRPCResponse, 208 );
 
       // yidl::runtime::MarshallableObject
-      virtual void marshal( yidl::runtime::Marshaller& ) const;
-      virtual void unmarshal( yidl::runtime::Unmarshaller& );
+      virtual void marshal( Marshaller& ) const;
+      virtual void unmarshal( Unmarshaller& );
 
     private:
       uint32_t default_body_type_id;
     };
 
 
-    class ONCRPCClient : public RPCClient<ONCRPCRequest, ONCRPCResponse>
+    class ONCRPCServer : public SocketServer<ONCRPCRequest, ONCRPCResponse>
     {
     public:
-      static auto_ONCRPCClient
+      static ONCRPCServer&
       create
       (
         const URI& absolute_uri,
-        yidl::runtime::auto_MarshallableObjectFactory,
-        uint16_t concurrency_level = CONCURRENCY_LEVEL_DEFAULT,
-        uint32_t flags = 0,
-        YIELD::platform::auto_Log log = NULL,
-        const YIELD::platform::Time& operation_timeout
-          = OPERATION_TIMEOUT_DEFAULT,
-        uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
-        auto_SSLContext ssl_context = NULL
+        MarshallableObjectFactory& marshallable_object_factory, // Steals this
+        EventTarget& request_target, // Steals this reference, to allow *new
+        uint32_t flags = FLAGS_DEFAULT,
+        Log* log = NULL,
+        bool send_oncrpc_requests = false, // false = send only bodies
+        SSLContext* ssl_context = NULL // Steals this reference, to allow *new
       );
 
-    protected:
-      ONCRPCClient
-      (
-        uint16_t concurrency_level,
-        uint32_t flags,
-        YIELD::platform::auto_Log log,
-        yidl::runtime::auto_MarshallableObjectFactory
-          marshallable_object_factory,
-        const YIELD::platform::Time& operation_timeout,
-        YIELD::platform::auto_SocketAddress peername,
-        uint16_t reconnect_tries_max,
-        auto_SocketFactory socket_factory
-      )
-        : RPCClient<ONCRPCRequest, ONCRPCResponse>
-          (
-            concurrency_level,
-            flags,
-            log,
-            marshallable_object_factory,
-            operation_timeout,
-            peername,
-            reconnect_tries_max,
-            socket_factory
-          )
-      { }
-
-      virtual ~ONCRPCClient() { }
-    };
-
-
-    class ONCRPCServer : public RPCServer
-    {
-    public:
-      static auto_ONCRPCServer
-      create
-      (
-        const URI& absolute_uri,
-        yidl::runtime::auto_MarshallableObjectFactory,
-        YIELD::concurrency::auto_EventTarget oncrpc_request_target,
-        YIELD::platform::auto_Log log = NULL,
-        auto_SSLContext ssl_context = NULL
-      ); // Throws exceptions
+      // yidl::runtime::Object
+      ONCRPCServer& inc_ref() { return Object::inc_ref( *this ); }
 
     protected:
       ONCRPCServer
       ( 
-        YIELD::platform::auto_Log log,
-        yidl::runtime::auto_MarshallableObjectFactory,
-        YIELD::concurrency::auto_EventTarget oncrpc_request_target          
+        uint32_t flags,
+        IOQueue& io_queue,
+        TCPSocket& listen_tcp_socket,
+        Log* log,
+        MarshallableObjectFactory& marshallable_object_factory,
+        EventTarget& request_target,
+        bool send_oncrpc_requests
       );
 
-    protected:
-      YIELD::concurrency::auto_EventTarget oncrpc_request_target;
+      ONCRPCServer
+      ( 
+        uint32_t flags,
+        IOQueue& io_queue,
+        Log* log,
+        MarshallableObjectFactory& marshallable_object_factory,
+        EventTarget& request_target,
+        bool send_oncrpc_requests,
+        UDPSocket& udp_socket  
+      );
+
+      EventFactory* get_event_factory() const;
+      MarshallableObjectFactory& get_marshallable_object_factory() const;
+
+      // SocketServer
+      virtual ONCRPCRequest* createRequest() const
+      { 
+        return new ONCRPCRequest( marshallable_object_factory );
+      }
+
+      virtual void sendRequest( ONCRPCRequest& oncrpc_request );
+
+
+    private:
+      class ONCRPCResponseTarget;
+
+    private:
+      MarshallableObjectFactory& marshallable_object_factory;
+      bool send_oncrpc_requests;
     };
 
 
-    class ONCRPCSystemError
-      : public YIELD::concurrency::ExceptionResponse
+    class ONCRPCSystemError : public ExceptionResponse
     {
     public:
       ONCRPCSystemError()
@@ -936,7 +999,10 @@ namespace YIELD
     class SocketFactory : public yidl::runtime::Object
     {
     public:
-      virtual YIELD::platform::auto_Socket createSocket() = 0;
+      virtual Socket* createSocket() = 0;
+
+      // yidl::runtime::Object
+      SocketFactory& inc_ref() { return Object::inc_ref( *this ); }
     };
 
 
@@ -944,9 +1010,7 @@ namespace YIELD
     {
     public:
 #ifdef YIELD_IPC_HAVE_OPENSSL
-      // create( ... ) factory methods throw exceptions
-
-      static auto_SSLContext
+      static SSLContext&
       create
       (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
@@ -955,19 +1019,19 @@ namespace YIELD
         SSL_METHOD* method = SSLv23_client_method()
       );
 
-      static auto_SSLContext
+      static SSLContext&
       create
       (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
         const
 #endif
         SSL_METHOD* method,
-        const YIELD::platform::Path& pem_certificate_file_path,
-        const YIELD::platform::Path& pem_private_key_file_path,
+        const yield::platform::Path& pem_certificate_file_path,
+        const yield::platform::Path& pem_private_key_file_path,
         const std::string& pem_private_key_passphrase
       );
 
-      static auto_SSLContext
+      static SSLContext&
       create
       (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
@@ -979,23 +1043,26 @@ namespace YIELD
         const std::string& pem_private_key_passphrase
       );
 
-      static auto_SSLContext
+      static SSLContext&
       create
       (
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
         const
 #endif
         SSL_METHOD* method,
-        const YIELD::platform::Path& pkcs12_file_path,
+        const yield::platform::Path& pkcs12_file_path,
         const std::string& pkcs12_passphrase
       );
 #else
-      static auto_SSLContext create();
+      static SSLContext& create();
 #endif
 
 #ifdef YIELD_IPC_HAVE_OPENSSL
-      SSL_CTX* get_ssl_ctx() const { return ctx; }
+       operator SSL_CTX*() const { return ctx; }
 #endif
+
+       // yidl::runtime::Object
+       SSLContext& inc_ref() { return Object::inc_ref( *this ); }
 
   private:
 #ifdef YIELD_IPC_HAVE_OPENSSL
@@ -1020,18 +1087,18 @@ namespace YIELD
 
 
 #ifdef YIELD_IPC_HAVE_OPENSSL
-    class SSLSocket : public YIELD::platform::TCPSocket
+    class SSLSocket : public TCPSocket
     {
     public:
-      // create( ... ) factory methods return NULL
-      // instead of throwing exceptions
-      static auto_SSLSocket create( auto_SSLContext );
-      static auto_SSLSocket create( int domain, auto_SSLContext ssl_context );
+      static SSLSocket* create( SSLContext& ssl_context );
+      static SSLSocket* create( int domain, SSLContext& ssl_context );
+
+      operator SSL*() const { return ssl; }
 
       // Socket
       // Will only associate with BIO or NBIO queues
-      bool associate( YIELD::platform::auto_IOQueue io_queue );
-      bool connect( const YIELD::platform::SocketAddress& peername );
+      bool associate( yield::platform::IOQueue& io_queue );
+      bool connect( const SocketAddress& peername );
       virtual ssize_t recv( void* buffer, size_t buffer_len, int );
       virtual ssize_t send( const void* buffer, size_t buffer_len, int );
 
@@ -1044,40 +1111,43 @@ namespace YIELD
         int flags
       );
 
-      // YIELD::platform::IStream
+      // yield::platform::IStream
       virtual bool want_read() const;
 
-      // YIELD::platform::OStream
+      // yield::platform::OStream
       virtual bool want_write() const;
       
-      // YIELD::platform::TCPSocket
-      YIELD::platform::auto_TCPSocket accept();
+      // TCPSocket
+      virtual TCPSocket* accept();
       virtual bool shutdown();
 
     protected:
-      SSLSocket( int, YIELD::platform::socket_t, auto_SSLContext, SSL* );
+      SSLSocket( int, yield::platform::socket_t, SSL*, SSLContext& );
       ~SSLSocket();
 
-      auto_SSLContext ctx;
+    private:
       SSL* ssl;
+      SSLContext& ssl_context;
     };
 
 
     class SSLSocketFactory : public SocketFactory
     {
     public:
-      SSLSocketFactory( auto_SSLContext ssl_context )
-        : ssl_context( ssl_context )
+      SSLSocketFactory( SSLContext& ssl_context )
+        : ssl_context( ssl_context.inc_ref() )
       { }
 
-      // SocketFactory
-      YIELD::platform::auto_Socket createSocket()
+      ~SSLSocketFactory()
       {
-        return SSLSocket::create( ssl_context ).release();
+        SSLContext::dec_ref( ssl_context );
       }
 
+      // SocketFactory
+      Socket* createSocket() { return SSLSocket::create( ssl_context ); }
+
     private:
-      auto_SSLContext ssl_context;
+      SSLContext& ssl_context;
     };
 #endif
 
@@ -1086,41 +1156,59 @@ namespace YIELD
     {
     public:
       // SocketFactory
-      YIELD::platform::auto_Socket createSocket()
-      {
-        return YIELD::platform::TCPSocket::create().release();
-      }
+      Socket* createSocket() { return TCPSocket::create(); }
     };
 
 
-    class TracingSocket : public YIELD::platform::Socket
+    // The underlying_X pattern doesn't work as well with Sockets as it does
+    // with Files, since Sockets have more state (like blocking mode, 
+    // bins, etc.). Thus TracingXSocket inherits from XSocket instead of trying
+    // to delegate everything.    
+    class TracingTCPSocket : public TCPSocket
     {
     public:
-      TracingSocket
-      (
-        YIELD::platform::auto_Log log,
-        YIELD::platform::auto_Socket underlying_socket
-      );
+      virtual ~TracingTCPSocket();
+
+      static TracingTCPSocket* create( Log& log );
+      static TracingTCPSocket* create( int domain, Log& log );
 
       // Socket
-      bool bind( const YIELD::platform::SocketAddress& to_sockaddr );
-      bool close();
-      bool connect( const YIELD::platform::SocketAddress& peername );
-      bool get_blocking_mode() const;
-      YIELD::platform::auto_SocketAddress getpeername();
-      YIELD::platform::auto_SocketAddress getsockname();
+      bool connect( const SocketAddress& peername );
       ssize_t recv( void* buffer, size_t buffer_len, int );
+      ssize_t send( const void* buffer, size_t buffer_len, int );
       ssize_t sendmsg( const struct iovec* buffers, uint32_t buffers_count, int );
-      bool set_blocking_mode( bool blocking );
       bool want_connect() const;
       bool want_read() const;
       bool want_write() const;
 
-    private:
-      ~TracingSocket() { }
+      // TCPSocket
+      TCPSocket* accept();
 
-      YIELD::platform::auto_Log log;
-      YIELD::platform::auto_Socket underlying_socket;
+    private:
+      TracingTCPSocket( int domain, Log& log, yield::platform::socket_t );
+
+    private:
+      Log& log;
+    };
+
+
+    class TracingTCPSocketFactory : public SocketFactory
+    {
+    public:
+      TracingTCPSocketFactory( Log& log )
+        : log( log.inc_ref() )
+      { }
+
+      ~TracingTCPSocketFactory()
+      {
+        Log::dec_ref( log );
+      }
+
+      // SocketFactory
+      Socket* createSocket() { return TracingTCPSocket::create( log ); }
+
+    private:
+      Log& log;
     };
 
 
@@ -1128,22 +1216,13 @@ namespace YIELD
     {
     public:
       // SocketFactory
-      YIELD::platform::auto_Socket createSocket()
-      {
-        return YIELD::platform::UDPSocket::create().release();
-      }
+      Socket* createSocket() { return UDPSocket::create(); }
     };
 
 
     class URI : public yidl::runtime::Object
     {
     public:
-      // parse( ... ) factory methods return NULL
-      // instead of throwing exceptions
-      static auto_URI parse( const char* uri );
-      static auto_URI parse( const std::string& uri );
-      static auto_URI parse( const char* uri, size_t uri_len );
-
       // Constructors throw exceptions
       URI( const char* uri );
       URI( const std::string& uri );
@@ -1168,23 +1247,30 @@ namespace YIELD
       std::string get_query_value
       (
         const std::string& key,
-        const char* default_query_value = ""
+        const char* default_value = ""
       ) const;
 
       std::multimap<std::string, std::string>::const_iterator
         get_query_values( const std::string& key ) const;
 
-      void set_port( unsigned short port ) { this->port = port; }
+      static URI* parse( const char* uri );
+      static URI* parse( const std::string& uri );
+      static URI* parse( const char* uri, size_t uri_len );
+
+      void set_scheme( const std::string& scheme ) { this->scheme = scheme; }
+      void set_host( const std::string& host ) { this->host = host; }
+      void set_user( const std::string& user ) { this->user = user; }
+      void set_password( const std::string& password );
+      void set_port( uint16_t port ) { this->port = port; }
+      void set_resource( const std::string& resource );
 
     private:
-      URI( UriUriStructA& parsed_uri )
-      {
-        init( parsed_uri );
-      }
+      URI( UriUriStructA& parsed_uri );
 
       void init( const char* uri, size_t uri_len );
       void init( UriUriStructA& parsed_uri );
 
+    private:
       std::string scheme, user, password, host;
       unsigned short port;
       std::string resource;
@@ -1205,8 +1291,10 @@ namespace YIELD
     private:
 #if defined(_WIN32)
       void* win32_uuid;
-#elif defined(YIELD_IPC_HAVE_LIBUUID)
-      uuid_t libuuid_uuid;
+#elif defined(YIELD_IPC_HAVE_LINUX_LIBUUID)
+      void* linux_libuuid_uuid;
+#elif defined(__sun)
+      void* sun_uuid;
 #else
       char generic_uuid[256];
 #endif

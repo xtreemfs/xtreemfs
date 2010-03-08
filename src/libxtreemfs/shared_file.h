@@ -34,8 +34,9 @@
 
 
 namespace xtreemfs
-{
+{ 
   class OpenFile;
+  using namespace org::xtreemfs::interfaces;
 
 
   class SharedFile : public yidl::runtime::Object
@@ -44,17 +45,17 @@ namespace xtreemfs
     void close( OpenFile& open_file );
 
     auto_Volume get_parent_volume() const { return parent_volume; }
-    const YIELD::platform::Path& get_path() const { return path; }
-    org::xtreemfs::interfaces::XLocSet get_xlocs() const { return xlocs; }
+    const Path& get_path() const { return path; }
+    XLocSet get_xlocs() const { return xlocs; }
 
-    YIELD::platform::auto_File
+    yield::platform::auto_File
     open
     (
       org::xtreemfs::interfaces::FileCredentials& file_credentials
     );
 
-    // YIELD::platform::File
-    yidl::runtime::auto_Object<YIELD::platform::Stat> getattr();
+    // yield::platform::File
+    yidl::runtime::auto_Object<Stat> getattr();
 
     bool
     getlk
@@ -147,23 +148,21 @@ namespace xtreemfs
 
     SharedFile
     (
-      YIELD::platform::auto_Log log,
+      Log& log,
       auto_Volume parent_volume,
-      const YIELD::platform::Path& path // The first, "authoritative" path
+      const Path& path // The first, "authoritative" path
                                         // used to open this file
     );
 
 
-    YIELD::platform::auto_Log log;
+    Log& log;
     auto_Volume parent_volume;
-    YIELD::platform::Path path;
+    Path path;
 
     uint32_t reader_count, writer_count;
     ssize_t selected_file_replica;
     org::xtreemfs::interfaces::XLocSet xlocs;
   };
-
-  typedef yidl::runtime::auto_Object<SharedFile> auto_SharedFile;
 };
 
 #endif

@@ -59,17 +59,17 @@ namespace rmfs_xtreemfs
       RMFS_XTREEMFS_OPTION_PASSWORD = 20
     };
 
-    YIELD::ipc::auto_URI dir_uri;
+    yield::ipc::auto_URI dir_uri;
     std::string password;
     std::string volume_name;
 
 
-    // YIELD::Main
+    // yield::Main
     int _main( int, char** )
     {
       auto_DIRProxy dir_proxy = createDIRProxy( *dir_uri );
 
-      YIELD::ipc::auto_URI mrc_uri
+      yield::ipc::auto_URI mrc_uri
         = dir_proxy->getVolumeURIFromVolumeName( volume_name );
 
       auto_MRCProxy mrc_proxy = createMRCProxy( *mrc_uri, password.c_str() );
@@ -85,14 +85,14 @@ namespace rmfs_xtreemfs
         dir_uri = parseVolumeURI( files[0], volume_name );
       else if ( files_count == 0 )
       {
-        throw YIELD::platform::Exception
+        throw yield::platform::Exception
         (
           "must specify the DIR/volume URI"
         );
       }
       else
       {
-        throw YIELD::platform::Exception
+        throw yield::platform::Exception
         (
           "extra parameters after the DIR/volume URI"
         );

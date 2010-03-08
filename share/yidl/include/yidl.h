@@ -313,14 +313,22 @@ extern "C"
 
 struct iovec // a WSABUF on 32-bit systems
 {
-  size_t iov_len; // the WSABUF .len is actually a ULONG,
-                  // which is != size_t on Win64
-                  // That means that we have to copy and
-                  // truncate an iovec to a WSABUF on Win64.
-                  // That's easier (in terms of warnings, use of sizeof, etc.)
-                  // than making this a uint32_t, however.
+  size_t iov_len; 
   void* iov_base;
 };
+
+// The WSABUF .len is actually a ULONG, which is != size_t on Win64.
+// That means that we have to copy and truncate an iovec to a WSABUF on Win64.
+// That's easier (in terms of warnings, use of sizeof, etc.) than having to
+// change size_t to uint32_t everywhere.
+
+#ifdef _WIN64
+struct iovec64 // a WSABUF on 64-bit systems
+{
+  uint32_t iov_len;
+  void* iov_base;
+};
+#endif
 
 #else // !_WIN32
 
@@ -385,8 +393,22 @@ namespace yidl
       return _InterlockedCompareExchange64( current_value, new_value, old_value );
 #elif defined(_WIN32)
       return InterlockedCompareExchange( current_value, new_value, old_value );
-#elif defined(__sun)
-      return atomic_cas_32( current_value, old_value, new_value );
+#elif defined(__sun) 
+#if defined(__LLP64__) || defined(__LP64)
+      return atomic_cas_64
+             ( 
+               reinterpret_cast<volatile uint64_t*>( current_value ),
+               static_cast<uint64_t>( old_value ), 
+               static_cast<uint64_t>( new_value )
+             );
+#else
+      return atomic_cas_32
+             ( 
+               reinterpret_cast<volatile uint32_t*>( current_value ),
+               static_cast<uint32_t>( old_value ), 
+               static_cast<uint32_t>( new_value )
+             );
+#endif
 #elif defined(__HAVE_GNUC_ATOMIC_BUILTINS)
       return __sync_val_compare_and_swap( current_value, old_value, new_value );
 #elif defined(__arm__)
@@ -454,7 +476,17 @@ namespace yidl
 #elif defined(_WIN32)
       return InterlockedDecrement( current_value );
 #elif defined(__sun)
-      return atomic_dec_32_nv( current_value );
+#if defined(__LLP64__) || defined(__LP64)
+      return atomic_dec_64_nv
+             ( 
+               reinterpret_cast<volatile uint64_t*>( current_value )
+             );
+#else
+      return atomic_dec_32_nv
+             ( 
+               reinterpret_cast<volatile uint32_t*>( current_value )
+             );
+#endif
 #elif defined(__HAVE_GNUC_ATOMIC_BUILTINS)
       return __sync_sub_and_fetch( current_value, 1 );
 #else
@@ -478,7 +510,17 @@ namespace yidl
 #elif defined(_WIN32)
       return InterlockedIncrement( current_value );
 #elif defined(__sun)
-      return atomic_inc_32_nv( current_value );
+#if defined(__LLP64__) || defined(__LP64)
+      return atomic_inc_64_nv
+             ( 
+               reinterpret_cast<volatile uint64_t*>( current_value )
+             );
+#else
+      return atomic_inc_32_nv
+             ( 
+               reinterpret_cast<volatile uint32_t*>( current_value )
+             );
+#endif
 #elif defined(__HAVE_GNUC_ATOMIC_BUILTINS)
       return __sync_add_and_fetch( current_value, 1 );
 #else
@@ -495,7 +537,19 @@ namespace yidl
 #endif
     }
 
-
+    // Atomic reference-counted objects
+    // Conventions for Objects:
+    // Object* method( ... ) -> Object* is a new reference
+    //   where method is usually a factory method.
+    //   Factory methods that return Object& throw exceptions;
+    //     those that return Object* return NULL instead.
+    //   The exception to this rule are getters that return an Object*
+    //   that is not a new reference
+    // method( const Object& ) -> Object is on stack, not a new reference
+    // method( Object* or Object* ) -> Object is on heap, but not a
+    //   new reference; callee should inc_ref() references for itself
+    //   as necessary  
+    // Exceptions to these conventions will be marked.
     class Object
     {
     public:
@@ -553,97 +607,52 @@ namespace yidl
     };
 
 
-    // auto_Object isike auto_ptr, but using Object::dec_ref instead of delete;
-    // an operator delete( void* ) on Object doesn't work, because the object
-    // is destructed before that call
+    // Similar to auto_ptr, but using object references instead of delete
+    // Unlike auto_ptr auto_Object is immutable, so there is no release(),
+    // reset(), or operator=().
+    // The class is primarily intended for use in testing, where an object
+    // should be deleted when it goes out of scope because of an exception.
     template <class ObjectType = Object>
     class auto_Object
     {
     public:
-      auto_Object()
-        : object( 0 )
-      { }
-
       auto_Object( ObjectType* object )
+        : object( *object )
+      {
+        if ( object == NULL )
+          DebugBreak();
+      }
+
+      auto_Object( ObjectType& object )
         : object( object )
       { }
 
-      auto_Object( ObjectType& object )
-        : object( &object )
-      { }
-
       auto_Object( const auto_Object<ObjectType>& other )
-      {
-  	    object = Object::inc_ref( other.object );
-      }
+        : object( Object::inc_ref( other.object ) )
+      { }
 
       ~auto_Object()
       {
         Object::dec_ref( object );
       }
 
-      inline ObjectType* get() const
+      ObjectType& get() const
       {
         return object;
       }
 
-      auto_Object& operator=( const auto_Object<ObjectType>& other )
-      {
-        Object::dec_ref( this->object );
-        object = Object::inc_ref( other.object );
-        return *this;
-      }
-
-      auto_Object& operator=( ObjectType* object )
-      {
-        Object::dec_ref( this->object );
-        this->object = object;
-        return *this;
-      }
-
-      inline bool operator==( const auto_Object<ObjectType>& other ) const
-      {
-        return object == other.object;
-      }
-
-      inline bool operator==( const ObjectType* other ) const
-      {
-        return object == other;
-      }
-
-      inline bool operator!=( const ObjectType* other ) const
-      {
-        return object != other;
-      }
-
-      // Creates sneaky bugs
-      // operator ObjectType*() const { return object; }
-
       inline ObjectType* operator->() const
       {
-        return get();
+        return &object;
       }
 
       inline ObjectType& operator*() const
       {
-        return *get();
-      }
-
-      inline ObjectType* release()
-      {
-        ObjectType* temp_object = object;
-        object = 0;
-        return temp_object;
-      }
-
-      inline void reset( ObjectType* object )
-      {
-        Object::dec_ref( this->object );
-        this->object = object;
+        return object;
       }
 
     private:
-      ObjectType* object;
+      ObjectType& object;
     };
 
 
@@ -652,6 +661,9 @@ namespace yidl
     public:
       virtual uint32_t get_type_id() const = 0;
       virtual const char* get_type_name() const = 0;
+
+      // Object
+      RTTIObject& inc_ref() { return Object::inc_ref( *this ); }
     };
 
 #define YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( type_name, type_id ) \
@@ -694,6 +706,16 @@ namespace yidl
         return iov;
       }
 
+#ifdef _WIN64
+      operator struct iovec64() const
+      {
+        struct iovec64 iov;
+        iov.iov_base = static_cast<char*>( *this );
+        iov.iov_len = static_cast<uint32_t>( size() );
+        return iov;
+      }
+#endif
+
       virtual operator void*() const = 0;
 
       bool operator==( const Buffer& other ) const
@@ -723,6 +745,30 @@ namespace yidl
       }
 
       // put: append bytes to the buffer, increases size but not position
+      size_t put( const Buffer& from_buffer )
+      {
+        return put( static_cast<void*>( from_buffer ), from_buffer.size() );
+      }
+
+      virtual size_t put( char from_char, size_t repeat_count )
+      {
+        size_t total_put_ret = 0;
+        for ( size_t char_i = 0; char_i < repeat_count; char_i++ )
+        {
+          size_t put_ret = put( &from_char, 1 );
+          if ( put_ret == 1 )
+            total_put_ret++;
+          else
+            break;
+        }
+        return total_put_ret;
+      }
+
+      size_t put( const struct iovec& from_iovec )
+      {
+        return put( from_iovec.iov_base, from_iovec.iov_len );
+      }
+
       size_t put( const char* from_string )
       {
         return put( from_string, strlen( from_string ) );
@@ -734,6 +780,10 @@ namespace yidl
       }
 
       virtual size_t put( const void* from_buf, size_t from_buf_len ) = 0;
+
+      // put( size_t ): increase the size, usually after copying data
+      // directly into the buffer
+      virtual void put( size_t len ) = 0;
 
       // size: the number of filled bytes, <= capacity
       virtual size_t size() const = 0;
@@ -751,18 +801,16 @@ namespace yidl
       size_t _position;
     };
 
-    typedef auto_Object<Buffer> auto_Buffer;
-
 
     class Buffers : public Object
     {
     public:
-      Buffers( auto_Buffer buffer )
+      Buffers( Buffer& buffer )
         : buffers( 1 ),
           iovecs( 1 )
       {
-        iovecs[0] = *buffer;
-        buffers[0] = buffer.release();        
+        iovecs[0] = buffer;
+        buffers[0] = &buffer.inc_ref();
       }
 
       Buffers( const struct iovec* iovecs, uint32_t iovecs_len )
@@ -793,10 +841,10 @@ namespace yidl
         return &iovecs[0];
       }
 
-      void push_back( auto_Buffer buffer )
+      void push_back( Buffer& buffer )
       {
-        iovecs.push_back( *buffer );
-        buffers.push_back( buffer.release() );
+        iovecs.push_back( buffer );
+        buffers.push_back( &buffer.inc_ref() );
       }
 
       void push_back( const struct iovec& iovec )
@@ -809,12 +857,13 @@ namespace yidl
         return static_cast<uint32_t>( iovecs.size() );
       }
 
+      // Object
+      Buffers& inc_ref() { return Object::inc_ref( *this ); }
+
     private:
       std::vector<Buffer*> buffers;
       std::vector<struct iovec> iovecs;
     };
-
-    typedef auto_Object<Buffers> auto_Buffers;
 
 
     class FixedBuffer : public Buffer
@@ -829,8 +878,8 @@ namespace yidl
       // Buffer
       size_t get( void* into_buffer, size_t into_buffer_len )
       {
-        if ( iov.iov_len - position() < into_buffer_len )
-          into_buffer_len = iov.iov_len - position();
+        if ( size() - position() < into_buffer_len )
+          into_buffer_len = size() - position();
 
         if ( into_buffer != NULL )
         {
@@ -855,22 +904,28 @@ namespace yidl
 
       virtual size_t put( const void* from_buffer, size_t from_buffer_len )
       {
-        if ( capacity() - iov.iov_len < from_buffer_len )
-          from_buffer_len = capacity() - iov.iov_len;
+        size_t put_len;
+        if ( capacity() - size() >= from_buffer_len )
+          put_len = from_buffer_len;
+        else
+          put_len = capacity() - size();
 
-        if ( from_buffer != NULL && from_buffer != iov.iov_base )
-        {
-          memcpy_s
-          (
-            static_cast<uint8_t*>( iov.iov_base ) + iov.iov_len,
-            capacity() - iov.iov_len,
-            from_buffer,
-            from_buffer_len
-          );
-        }
+        memcpy_s
+        (
+          static_cast<uint8_t*>( iov.iov_base ) + size(),
+          capacity() - size(),
+          from_buffer,
+          put_len
+        );
 
-        iov.iov_len += from_buffer_len;
-        return from_buffer_len;
+        iov.iov_len += put_len;
+
+        return put_len;
+      }
+
+      virtual void put( size_t put_len )
+      {
+        iov.iov_len += put_len;
       }
 
       size_t size() const { return iov.iov_len; }
@@ -914,36 +969,35 @@ namespace yidl
     class MarshallableObject : public RTTIObject
     {
     public:
-      virtual size_t get_size() const { return 0; }
       virtual void marshal( Marshaller& marshaller ) const = 0;
       virtual void unmarshal( Unmarshaller& unmarshaller ) = 0;
-    };
 
-    typedef auto_Object<MarshallableObject> auto_MarshallableObject;
+      // Object
+      MarshallableObject& inc_ref() { return Object::inc_ref( *this ); }
+    };
 
 
     class MarshallableObjectFactory : public RTTIObject
     {
     public:
-      virtual auto_MarshallableObject
-      createMarshallableObject
-      ( 
-        uint32_t type_id 
-      )
+      virtual MarshallableObject* createMarshallableObject( uint32_t type_id )
       {
         return NULL;
       }
+
+      // Object
+      MarshallableObjectFactory& inc_ref() { return Object::inc_ref( *this ); }
 
       // RTTIObject
       YIDL_RUNTIME_RTTI_OBJECT_PROTOTYPES( MarshallableObjectFactory, 1 );
     };
 
-    typedef auto_Object<MarshallableObjectFactory>
-      auto_MarshallableObjectFactory;
-
 
     class Map : public MarshallableObject
-    { };
+    {
+    public:
+      virtual size_t get_size() const = 0;
+    };
 
 
     class Sequence;
@@ -964,7 +1018,7 @@ namespace yidl
       (
         const char* key,
         uint32_t tag,
-        auto_Buffer value
+        const Buffer& value
       ) = 0;
 
 
@@ -1088,7 +1142,7 @@ namespace yidl
     ( \
       const char* key, \
       uint32_t tag, \
-     ::yidl::runtime::auto_Buffer value \
+      const ::yidl::runtime::Buffer& value \
     ); \
     virtual void write( const char* key, uint32_t tag, double value ); \
     virtual void write( const char* key, uint32_t tag, int64_t value ); \
@@ -1144,7 +1198,7 @@ namespace yidl
           os << "false, ";
       }
 
-      void write( const char*, uint32_t, auto_Buffer )
+      void write( const char*, uint32_t, const Buffer& )
       { }
 
       void write( const char*, uint32_t, double value )
@@ -1192,8 +1246,10 @@ namespace yidl
 
 
     class Sequence : public MarshallableObject
-    { };
-
+    { 
+    public:
+      virtual size_t get_size() const = 0;
+    };
 
     inline void
     PrettyPrinter::write
@@ -1258,9 +1314,10 @@ namespace yidl
         : _string( str, str_len )
       { }
 
-      const char* c_str() const { return _string.c_str(); }
       operator std::string&() { return _string; }
       operator const std::string&() const { return _string; }
+
+      // Buffer
       operator void*() const { return const_cast<char*>( _string.c_str() ); }
 
       bool operator==( const StringBuffer& other ) const
@@ -1281,23 +1338,32 @@ namespace yidl
 
       size_t get( void* into_buffer, size_t into_buffer_len )
       {
-        if ( size() - position() < into_buffer_len )
-          into_buffer_len = size() - position();
+        size_t get_len;
+        if ( size() - position() >= into_buffer_len )
+          get_len = into_buffer_len;
+        else
+          get_len = size() - position();
 
         memcpy_s
         (
           into_buffer,
           into_buffer_len,
           _string.c_str() + position(),
-          into_buffer_len
+          get_len
         );
 
-        position( position() + into_buffer_len );
+        position( position() + get_len );
 
-        return into_buffer_len;
+        return get_len;
       }
 
       bool is_fixed() const { return false; }
+
+      size_t put( char from_char, size_t repeat_count )
+      {
+        _string.append( repeat_count, from_char );
+        return repeat_count;
+      }
 
       size_t put( const void* from_buffer, size_t from_buffer_len )
       {
@@ -1310,6 +1376,7 @@ namespace yidl
         return from_buffer_len;
       }
 
+      void put( size_t ) { DebugBreak(); }
       size_t size() const { return _string.size(); }
 
     private:
@@ -1354,6 +1421,7 @@ namespace yidl
 
       // Buffer
       size_t put( const void*, size_t ) { return 0; }
+      void put( size_t ) { DebugBreak(); }
     };
 
 
@@ -1376,7 +1444,7 @@ namespace yidl
       (
         const char* key,
         uint32_t tag,
-        auto_Buffer value
+        Buffer& value
       ) = 0;
 
 
@@ -1471,7 +1539,7 @@ namespace yidl
     ( \
       const char* key, \
       uint32_t tag, \
-      ::yidl::runtime::auto_Buffer value \
+      ::yidl::runtime::Buffer& value \
     ); \
     virtual double read_double( const char* key, uint32_t tag ); \
     virtual int64_t read_int64( const char* key, uint32_t tag ); \
@@ -1503,6 +1571,370 @@ namespace yidl
       uint32_t tag, \
       std::string& value \
     );
+
+
+    class XDRMarshaller : public yidl::runtime::Marshaller
+    {
+    public:
+      XDRMarshaller()
+      {
+        buffer = new yidl::runtime::StringBuffer;
+      }
+
+      virtual ~XDRMarshaller()
+      {
+        Buffer::dec_ref( *buffer );
+      }
+
+      Buffer& get_buffer() const { return *buffer; }
+
+#ifndef htons
+      // htons is a macro on OS X.
+      static inline uint16_t htons( uint16_t x )
+      {
+#ifdef __BIG_ENDIAN__
+        return x;
+#else
+        return ( x >> 8 ) | ( x << 8 );
+#endif
+      }
+#endif
+
+#ifndef htonl
+      static inline uint32_t htonl( uint32_t x )
+      {
+#ifdef __BIG_ENDIAN__
+        return x;
+#else
+        return ( x >> 24 ) |
+               ( ( x << 8 ) & 0x00FF0000 ) |
+               ( ( x >> 8 ) & 0x0000FF00 ) |
+               ( x << 24 );
+#endif
+      }
+#endif
+
+      static inline uint64_t htonll( uint64_t x )
+      {
+#ifdef __BIG_ENDIAN__
+        return x;
+#else
+        return ( x >> 56 ) |
+               ( ( x << 40 ) & 0x00FF000000000000ULL ) |
+               ( ( x << 24 ) & 0x0000FF0000000000ULL ) |
+               ( ( x << 8 )  & 0x000000FF00000000ULL ) |
+               ( ( x >> 8)  & 0x00000000FF000000ULL ) |
+               ( ( x >> 24) & 0x0000000000FF0000ULL ) |
+               ( ( x >> 40 ) & 0x000000000000FF00ULL ) |
+               ( x << 56 );
+#endif
+      }
+
+      // Marshaller
+      void write( const char* key, uint32_t tag, bool value )
+      {
+        write( key, tag, value ? 1 : 0 );
+      }
+
+      void write( const char* key, uint32_t tag, const Buffer& value )
+      {
+        write( key, tag, static_cast<int32_t>( value.size() ) );
+
+        buffer->put( static_cast<void*>( value ), value.size() );
+
+        if ( value.size() % 4 != 0 )
+        {
+          static char zeros[] = { 0, 0, 0 };
+          buffer->put
+          ( 
+            static_cast<const void*>( zeros ), 
+            4 - ( value.size() % 4 ) 
+          );
+        }
+      }
+
+      void write( const char* key, uint32_t, double value )
+      {
+        write_key( key );
+        uint64_t uint64_value;
+        memcpy_s
+        ( 
+          &uint64_value, 
+          sizeof( uint64_value ), 
+          &value, 
+          sizeof( value ) 
+        );
+        uint64_value = htonll( uint64_value );
+        buffer->put( &uint64_value, sizeof( uint64_value ) );
+      }
+
+      void write( const char* key, uint32_t, float value )
+      {
+        write_key( key );
+        uint32_t uint32_value;
+        memcpy_s
+        ( 
+          &uint32_value, 
+          sizeof( uint32_value ), 
+          &value, 
+          sizeof( value ) 
+        );
+        uint32_value = htonl( uint32_value );
+        buffer->put( &uint32_value, sizeof( uint32_value ) );
+      }
+
+      void write( const char* key, uint32_t, int32_t value )
+      {
+        write_key( key );
+        value = htonl( value );
+        buffer->put( &value, sizeof( value ) );
+      }
+
+      void write( const char* key, uint32_t, int64_t value )
+      {
+        write_key( key );
+        value = htonll( value );
+        buffer->put( &value, sizeof( value ) );
+      }
+
+      void write
+      (
+        const char* key,
+        uint32_t tag,
+        const yidl::runtime::Map& value
+      )
+      {
+        write( key, tag, static_cast<int32_t>( value.get_size() ) );
+        in_map_stack.push_back( true );
+        value.marshal( *this );
+        in_map_stack.pop_back();
+      }
+
+      void write( const char* key, uint32_t tag, const Sequence& value )
+      {
+        write( key, tag, static_cast<int32_t>( value.get_size() ) );
+        value.marshal( *this );
+      }
+
+      void write( const char* key, uint32_t, const MarshallableObject& value )
+      {
+        write_key( key );
+        value.marshal( *this );
+      }
+
+      void write
+      (
+        const char* key,
+        uint32_t tag,
+        const char* value,
+        size_t value_len
+      )
+      {
+        write( key, tag, static_cast<int32_t>( value_len ) );
+        buffer->put( static_cast<const void*>( value ), value_len );
+        if ( value_len % 4 != 0 )
+        {
+          static char zeros[] = { 0, 0, 0 };
+          buffer->put
+          ( 
+            static_cast<const void*>( zeros ), 
+            4 - ( value_len % 4 ) 
+          );
+        }
+      }
+
+      void write( const char* key, uint32_t tag, uint32_t value )
+      {
+        write( key, tag, static_cast<int32_t>( value ) );
+      }
+      
+    protected:
+      virtual void write_key( const char* key )
+      {
+        if ( !in_map_stack.empty() && in_map_stack.back() && key != NULL )
+          Marshaller::write( NULL, 0, key );
+      }
+
+    private:
+      Buffer* buffer;
+      std::vector<bool> in_map_stack;
+    };
+
+
+    class XDRUnmarshaller : public yidl::runtime::Unmarshaller
+    {
+    public:
+      XDRUnmarshaller( Buffer& buffer )
+        : buffer( buffer.inc_ref() )
+      { }
+
+      ~XDRUnmarshaller()
+      {
+        Buffer::dec_ref( buffer );
+      }
+
+#ifndef ntohs
+      static inline uint16_t ntohs( uint16_t x )
+      {
+#ifdef __BIG_ENDIAN__
+        return x;
+#else
+        return ( x >> 8 ) | ( x << 8 );
+#endif
+      }
+#endif
+
+#ifndef ntohl
+      static inline uint32_t ntohl( uint32_t x )
+      {
+#ifdef __BIG_ENDIAN__
+        return x;
+#else
+        return ( x >> 24 ) |
+               ( ( x << 8 ) & 0x00FF0000 ) |
+               ( ( x >> 8 ) & 0x0000FF00 ) |
+               ( x << 24 );
+#endif
+      }
+#endif
+
+      static inline uint64_t ntohll( uint64_t x )
+      {
+#ifdef __BIG_ENDIAN__
+        return x;
+#else
+        return ( x >> 56 ) |
+               ( ( x << 40 ) & 0x00FF000000000000ULL ) |
+               ( ( x << 24 ) & 0x0000FF0000000000ULL ) |
+               ( ( x << 8 )  & 0x000000FF00000000ULL ) |
+               ( ( x >> 8 )  & 0x00000000FF000000ULL ) |
+               ( ( x >> 24) & 0x0000000000FF0000ULL ) |
+               ( ( x >> 40 ) & 0x000000000000FF00ULL ) |
+               ( x << 56 );
+#endif
+      }
+
+      // Unmarshaller
+      bool read_bool( const char* key, uint32_t tag )
+      {
+        return read_int32( key, tag ) == 1;
+      }
+
+      void read( const char* key, uint32_t tag, Buffer& value )
+      {
+        size_t size = read_int32( key, tag );
+        if ( value.capacity() - value.size() < size ) DebugBreak();
+        read( static_cast<void*>( value ), size );
+        value.put( size );
+        if ( size % 4 != 0 )
+        {
+          char zeros[3];
+          read( zeros, 4 - ( size % 4 ) );
+        }
+      }
+
+      double read_double( const char*, uint32_t )
+      {
+        uint64_t uint64_value;
+        read( &uint64_value, sizeof( uint64_value ) );
+        uint64_value = ntohll( uint64_value );
+        double double_value;
+        memcpy_s
+        (
+          &double_value,
+          sizeof( double_value ),
+          &uint64_value,
+          sizeof( uint64_value )
+        );
+        return double_value;
+      }
+
+      float read_float( const char*, uint32_t )
+      {
+        uint32_t uint32_value;
+        read( &uint32_value, sizeof( uint32_value ) );
+        uint32_value = ntohl( uint32_value );
+        float float_value;
+        memcpy_s
+        (
+          &float_value,
+          sizeof( float_value ),
+          &uint32_value,
+          sizeof( uint32_value )
+        );
+        return float_value;
+      }
+
+      int32_t read_int32( const char*, uint32_t )
+      {
+        int32_t value;
+        read( &value, sizeof( value ) );
+        return ntohl( value );
+      }
+
+      int64_t read_int64( const char*, uint32_t )
+      {
+        int64_t value;
+        read( &value, sizeof( value ) );
+        return ntohll( value );
+      }
+
+      void read( const char* key, uint32_t tag, Map& value )
+      {
+        size_t size = read_int32( key, tag );
+        for ( size_t i = 0; i < size; i++ )
+          value.unmarshal( *this );
+      }
+
+      void read( const char*, uint32_t, MarshallableObject& value )
+      {
+        value.unmarshal( *this );
+      }
+
+      void read( const char* key, uint32_t tag, Sequence& value )
+      {
+        size_t size = read_int32( key, tag );
+        if ( size <= UINT16_MAX )
+        {
+          for ( size_t i = 0; i < size; i++ )
+            value.unmarshal( *this );
+        }
+      }
+
+      void read( const char* key, uint32_t tag, std::string& value )
+      {
+        size_t str_len = read_int32( key, tag );
+
+        if ( str_len < UINT16_MAX )
+        {
+          if ( str_len != 0 )
+          {
+            size_t padded_str_len = str_len % 4;
+            if ( padded_str_len == 0 )
+              padded_str_len = str_len;
+            else
+              padded_str_len = str_len + 4 - padded_str_len;
+
+            value.resize( padded_str_len );
+            read( const_cast<char*>( value.c_str() ), padded_str_len );
+            value.resize( str_len );
+          }
+        }
+      }
+
+    private:
+      void read( void* buffer, size_t buffer_len )
+      {
+      //#ifdef _DEBUG
+      //  if ( this->buffer->size() - this->buffer->position() < buffer_len )
+      //    DebugBreak();
+      //#endif
+        this->buffer.get( buffer, buffer_len );
+      }
+
+    private:
+      Buffer& buffer;
+    };
   };
 };
 

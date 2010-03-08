@@ -35,7 +35,7 @@
 
 namespace xtreemfs
 {
-  class ProxyExceptionResponse : public YIELD::concurrency::ExceptionResponse
+  class ProxyExceptionResponse : public yield::concurrency::ExceptionResponse
   {
   public:
     virtual ~ProxyExceptionResponse() throw()

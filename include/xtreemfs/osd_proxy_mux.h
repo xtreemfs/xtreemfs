@@ -36,10 +36,7 @@
 
 namespace xtreemfs
 {
-  class PolicyContainer;
-
-
-  class OSDProxyMux : public org::xtreemfs::interfaces::OSDInterface
+  class OSDProxyMux : public org::xtreemfs::interfaces::OSDEventHandler
   {
   public:
     static yidl::runtime::auto_Object<OSDProxyMux>
@@ -50,20 +47,20 @@ namespace xtreemfs
         = OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
       uint32_t flags
         = 0,
-      YIELD::platform::auto_Log log
+      Log& log
         = NULL,
-      const YIELD::platform::Time& operation_timeout
+      const Time& operation_timeout
         = OSDProxy::OPERATION_TIMEOUT_DEFAULT,
       uint8_t reconnect_tries_max
         = OSDProxy::RECONNECT_TRIES_MAX_DEFAULT,
-      YIELD::ipc::auto_SSLContext ssl_context
+      yield::ipc::auto_SSLContext ssl_context
         = NULL,
-      auto_UserCredentialsCache user_credentials_cache
+      UserCredentialsCache* user_credentials_cache
         = NULL
     );
 
     // yidl::runtime::Object
-    OSDProxyMux& incRef() { return yidl::runtime::Object::incRef( *this ); }
+    OSDProxyMux& inc_ref() { return yidl::runtime::Object::inc_ref( *this ); }
 
   private:
     OSDProxyMux
@@ -71,11 +68,11 @@ namespace xtreemfs
       uint16_t concurrency_level,
       auto_DIRProxy dir_proxy,
       uint32_t flags,
-      YIELD::platform::auto_Log log,
-      const YIELD::platform::Time& operation_timeout,
+      Log& log,
+      const Time& operation_timeout,
       uint8_t reconnect_tries_max,
-      YIELD::ipc::auto_SSLContext ssl_context,
-      auto_UserCredentialsCache user_credentials_cache
+      yield::ipc::auto_SSLContext ssl_context,
+      UserCredentialsCache* user_credentials_cache
     );
 
     ~OSDProxyMux();
@@ -83,15 +80,15 @@ namespace xtreemfs
     uint16_t concurrency_level;
     auto_DIRProxy dir_proxy;
     uint32_t flags;
-    YIELD::platform::auto_Log log;
-    YIELD::platform::Time operation_timeout;
+    Log& log;
+    Time operation_timeout;
     uint8_t reconnect_tries_max;
-    YIELD::ipc::auto_SSLContext ssl_context;
-    auto_UserCredentialsCache user_credentials_cache;
+    yield::ipc::auto_SSLContext ssl_context;
+    UserCredentialsCache* user_credentials_cache;
 
     typedef std::map<std::string, OSDProxy*> OSDProxyMap;
     OSDProxyMap osd_proxies;
-    YIELD::concurrency::auto_StageGroup osd_proxy_stage_group;
+    yield::concurrency::auto_StageGroup osd_proxy_stage_group;
 
     auto_OSDProxy getOSDProxy
     (
@@ -114,8 +111,6 @@ namespace xtreemfs
     class ReadResponseTarget;
     class TruncateResponseTarget;
   };
-
-  typedef yidl::runtime::auto_Object<OSDProxyMux> auto_OSDProxyMux;
 };
 
 #endif

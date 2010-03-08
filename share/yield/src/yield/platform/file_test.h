@@ -43,20 +43,18 @@
 #define YIELD_PLATFORM_FILE_TEST_XATTR_VALUE "file_test_xattr_value"
 
 
-namespace YIELD
+namespace yield
 {
   namespace platform
   {
     class FileTestCase : public yunit::TestCase
     {
     public:
-      FileTestCase
-      (
-        const std::string& name,
-        YIELD::platform::auto_Volume volume = NULL
-      )
+      FileTestCase( const std::string& name, Volume* volume = NULL )
         : yunit::TestCase( name )
       {
+        file = NULL;
+
         if ( volume != NULL )
           this->volume = volume;
         else
@@ -64,7 +62,9 @@ namespace YIELD
       }
 
       virtual ~FileTestCase()
-      { }
+      {
+        Volume::dec_ref( *volume );
+      }
 
       void setUp()
       {
@@ -82,23 +82,23 @@ namespace YIELD
 
       void tearDown()
       {
-        file.reset( NULL );
+        File::dec_ref( file );
         volume->unlink( YIELD_PLATFORM_FILE_TEST_FILE_NAME );
       }
 
     protected:
-      auto_File get_file() const { return file; }
+      File& get_file() const { return *file; }
 
     private:
-      YIELD::platform::auto_Volume volume;
-      auto_File file;
+      File* file;
+      Volume* volume;
     };
 
 #define YIELD_PLATFORM_FILE_TEST_CASE( TestCaseName ) \
     class File_##TestCaseName##Test : public FileTestCase \
     { \
     public:\
-      File_##TestCaseName##Test( YIELD::platform::auto_Volume volume = NULL ) \
+      File_##TestCaseName##Test( yield::platform::Volume* volume = NULL ) \
         : FileTestCase( "File_" # TestCaseName "Test", volume ) \
       { } \
       void runTest(); \
@@ -108,51 +108,53 @@ namespace YIELD
 
     YIELD_PLATFORM_FILE_TEST_CASE( close )
     {
-      if ( !get_file()->close() )
+      if ( !get_file().close() )
         throw Exception();
-      ASSERT_FALSE( get_file()->close() );
+      ASSERT_FALSE( get_file().close() );
     }
 
     YIELD_PLATFORM_FILE_TEST_CASE( datasync )
     {
-      get_file()->write
+      get_file().write
       (
         YIELD_PLATFORM_FILE_TEST_STRING,
         YIELD_PLATFORM_FILE_TEST_STRING_LEN,
         0
       );
 
-      if ( !get_file()->datasync() )
+      if ( !get_file().datasync() )
         throw Exception();
 
       ASSERT_TRUE
       (
-        get_file()->getattr()->get_size()
+        get_file().getattr()->get_size()
           >= YIELD_PLATFORM_FILE_TEST_STRING_LEN
       );
     }
 
     YIELD_PLATFORM_FILE_TEST_CASE( getpagesize )
     {
-      size_t pagesize = get_file()->getpagesize();
+      size_t pagesize = get_file().getpagesize();
       ASSERT_EQUAL( pagesize % 2, 0 );
     }
 
     YIELD_PLATFORM_FILE_TEST_CASE( getattr )
     {
-      auto_Stat stbuf = get_file()->getattr();
+      Stat* stbuf = get_file().getattr();
+      if ( stbuf == NULL ) throw Exception();
       ASSERT_TRUE( stbuf->ISREG() );
       ASSERT_EQUAL( stbuf->get_size(), 0 );
       ASSERT_NOTEQUAL( stbuf->get_atime(), static_cast<uint64_t>( 0 ) );
       ASSERT_NOTEQUAL( stbuf->get_mtime(), static_cast<uint64_t>( 0 ) );
       ASSERT_NOTEQUAL( stbuf->get_ctime(), static_cast<uint64_t>( 0 ) );
+      Stat::dec_ref( *stbuf );
     }
 
     YIELD_PLATFORM_FILE_TEST_CASE( getxattr )
     {
       if
       (
-        get_file()->setxattr
+        get_file().setxattr
         (
           YIELD_PLATFORM_FILE_TEST_XATTR_NAME,
           YIELD_PLATFORM_FILE_TEST_XATTR_VALUE,
@@ -161,7 +163,7 @@ namespace YIELD
       )
       {
         std::string value;
-        get_file()->getxattr( YIELD_PLATFORM_FILE_TEST_XATTR_NAME, value );
+        get_file().getxattr( YIELD_PLATFORM_FILE_TEST_XATTR_NAME, value );
         ASSERT_EQUAL( value, YIELD_PLATFORM_FILE_TEST_XATTR_VALUE );
       }
 #ifdef YIELD_PLATFORM_HAVE_XATTR_H
@@ -174,7 +176,7 @@ namespace YIELD
     {
       if
       (
-        get_file()->setxattr
+        get_file().setxattr
         (
           YIELD_PLATFORM_FILE_TEST_XATTR_NAME,
           YIELD_PLATFORM_FILE_TEST_XATTR_VALUE,
@@ -183,7 +185,7 @@ namespace YIELD
       )
       {
         std::vector<std::string> names;
-        get_file()->listxattr( names );
+        get_file().listxattr( names );
         ASSERT_TRUE( names.size() >= 1 );
         for
         (
@@ -206,23 +208,23 @@ namespace YIELD
     YIELD_PLATFORM_FILE_TEST_CASE( operatorint )
     {
 #ifdef _WIN32
-      static_cast<void*>( *get_file() );
+      static_cast<void*>( get_file() );
 #else
-      static_cast<int>( *get_file() );
+      static_cast<int>( get_file() );
 #endif
     }
 
     YIELD_PLATFORM_FILE_TEST_CASE( read )
     {
       ssize_t bytes_written
-        = get_file()->write
+        = get_file().write
           (
             YIELD_PLATFORM_FILE_TEST_STRING,
             YIELD_PLATFORM_FILE_TEST_STRING_LEN,
             0
           );
       if ( bytes_written <= 0 ) throw Exception();
-      if ( !get_file()->sync() ) throw Exception();
+      if ( !get_file().sync() ) throw Exception();
       ASSERT_EQUAL( bytes_written, YIELD_PLATFORM_FILE_TEST_STRING_LEN );
 
       char test_str[YIELD_PLATFORM_FILE_TEST_STRING_LEN];
@@ -230,7 +232,7 @@ namespace YIELD
       {
         // Read multiple times to test caching files
         ssize_t bytes_read
-          = get_file()->read
+          = get_file().read
             (
               test_str,
               YIELD_PLATFORM_FILE_TEST_STRING_LEN,
@@ -254,7 +256,7 @@ namespace YIELD
     {
       if
       (
-        get_file()->setxattr
+        get_file().setxattr
         (
           YIELD_PLATFORM_FILE_TEST_XATTR_NAME,
           YIELD_PLATFORM_FILE_TEST_XATTR_VALUE,
@@ -262,7 +264,7 @@ namespace YIELD
         )
       )
       {
-        if ( !get_file()->removexattr( YIELD_PLATFORM_FILE_TEST_XATTR_NAME ) )
+        if ( !get_file().removexattr( YIELD_PLATFORM_FILE_TEST_XATTR_NAME ) )
           throw Exception();
       }
 #ifdef YIELD_PLATFORM_HAVE_XATTR_H
@@ -273,19 +275,19 @@ namespace YIELD
 
     YIELD_PLATFORM_FILE_TEST_CASE( setlk )
     {
-      if ( !get_file()->setlk( true, 0, 256 ) ) throw Exception();
+      if ( !get_file().setlk( true, 0, 256 ) ) throw Exception();
     }
 
     YIELD_PLATFORM_FILE_TEST_CASE( setlkw )
     {
-      if ( !get_file()->setlkw( true, 0, 256 ) ) throw Exception();
+      if ( !get_file().setlkw( true, 0, 256 ) ) throw Exception();
     }
 
     YIELD_PLATFORM_FILE_TEST_CASE( setxattr )
     {
       if
       (
-        get_file()->setxattr
+        get_file().setxattr
         (
           YIELD_PLATFORM_FILE_TEST_XATTR_NAME,
           YIELD_PLATFORM_FILE_TEST_XATTR_VALUE,
@@ -294,7 +296,7 @@ namespace YIELD
       )
       {
         std::string value;
-        get_file()->getxattr( YIELD_PLATFORM_FILE_TEST_XATTR_NAME, value );
+        get_file().getxattr( YIELD_PLATFORM_FILE_TEST_XATTR_NAME, value );
         ASSERT_EQUAL( value, YIELD_PLATFORM_FILE_TEST_XATTR_VALUE );
       }
 #ifdef YIELD_PLATFORM_HAVE_XATTR_H
@@ -305,19 +307,19 @@ namespace YIELD
 
     YIELD_PLATFORM_FILE_TEST_CASE( sync )
     {
-      get_file()->write
+      get_file().write
       (
         YIELD_PLATFORM_FILE_TEST_STRING,
         YIELD_PLATFORM_FILE_TEST_STRING_LEN,
         0
       );
 
-      if ( !get_file()->sync() )
+      if ( !get_file().sync() )
         throw Exception();
 
       ASSERT_TRUE
       (
-        get_file()->getattr()->get_size()
+        get_file().getattr()->get_size()
           >= YIELD_PLATFORM_FILE_TEST_STRING_LEN
       );
     }
@@ -326,44 +328,44 @@ namespace YIELD
     {
       if
       (
-        !get_file()->write
+        !get_file().write
         (
           YIELD_PLATFORM_FILE_TEST_STRING,
           YIELD_PLATFORM_FILE_TEST_STRING_LEN,
           0
         )
       )
-        throw YIELD::platform::Exception();
+        throw yield::platform::Exception();
 
-      if ( !get_file()->sync() )
+      if ( !get_file().sync() )
         throw Exception();
 
       ASSERT_TRUE
       (
-        get_file()->getattr()->get_size()
+        get_file().getattr()->get_size()
           >= YIELD_PLATFORM_FILE_TEST_STRING_LEN
       );
 
-      if ( !get_file()->truncate( 0 ) )
+      if ( !get_file().truncate( 0 ) )
         throw Exception();
 
-      if ( !get_file()->sync() )
+      if ( !get_file().sync() )
         throw Exception();
 
-      ASSERT_EQUAL( get_file()->getattr()->get_size(), 0 );
+      ASSERT_EQUAL( get_file().getattr()->get_size(), 0 );
     }
 
     YIELD_PLATFORM_FILE_TEST_CASE( unlk )
     {
-      if ( !get_file()->setlkw( true, 0, 256 ) )
+      if ( !get_file().setlkw( true, 0, 256 ) )
         throw Exception();
 #ifndef _WIN32
       // getlk will not be true because we're using the same pid
       // as the one that acquired the lock
-      if ( get_file()->getlk( true, 0, 256 ) )
+      if ( get_file().getlk( true, 0, 256 ) )
         throw Exception();
 #endif
-      if ( !get_file()->unlk( 0, 256 ) )
+      if ( !get_file().unlk( 0, 256 ) )
         throw Exception();
     }
 
@@ -375,22 +377,23 @@ namespace YIELD
       FileTestSuite( const std::string& name )
         : TestSuite( name )
       {
-        YIELD::platform::auto_Volume volume = new VolumeType;
-        addTest( new File_closeTest( volume ) );
-        addTest( new File_datasyncTest( volume ) );
-        addTest( new File_getpagesizeTest( volume ) );
-        addTest( new File_getattrTest( volume ) );
-        addTest( new File_getxattrTest( volume  ) );
-        addTest( new File_listxattrTest( volume ) );
-        addTest( new File_operatorintTest( volume ) );
-        addTest( new File_readTest( volume ) );
-        addTest( new File_removexattrTest( volume ) );
-        addTest( new File_setlkTest( volume ) );
-        addTest( new File_setlkwTest( volume ) );
-        addTest( new File_setxattrTest( volume ) );
-        addTest( new File_syncTest( volume ) );
-        addTest( new File_truncateTest( volume ) );
-        addTest( new File_unlkTest( volume ) );
+        Volume* volume = new VolumeType;
+        addTest( new File_closeTest( &volume->inc_ref() ) );
+        addTest( new File_datasyncTest( &volume->inc_ref() ) );
+        addTest( new File_getpagesizeTest( &volume->inc_ref() ) );
+        addTest( new File_getattrTest( &volume->inc_ref() ) );
+        addTest( new File_getxattrTest( &volume->inc_ref()  ) );
+        addTest( new File_listxattrTest( &volume->inc_ref() ) );
+        addTest( new File_operatorintTest( &volume->inc_ref() ) );
+        addTest( new File_readTest( &volume->inc_ref() ) );
+        addTest( new File_removexattrTest( &volume->inc_ref() ) );
+        addTest( new File_setlkTest( &volume->inc_ref() ) );
+        addTest( new File_setlkwTest( &volume->inc_ref() ) );
+        addTest( new File_setxattrTest( &volume->inc_ref() ) );
+        addTest( new File_syncTest( &volume->inc_ref() ) );
+        addTest( new File_truncateTest( &volume->inc_ref() ) );
+        addTest( new File_unlkTest( &volume->inc_ref() ) );
+        Volume::dec_ref( *volume );
       }
     };
   };

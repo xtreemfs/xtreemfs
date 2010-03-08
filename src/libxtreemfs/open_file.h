@@ -35,12 +35,15 @@
 
 namespace xtreemfs
 {
-  class OpenFile : public YIELD::platform::File
+  using namespace org::xtreemfs::interfaces;
+
+
+  class OpenFile : public yield::platform::File
   {
   public:
     const org::xtreemfs::interfaces::XCap& get_xcap() const { return xcap; }
 
-    // YIELD::platform::File
+    // yield::platform::File
     YIELD_PLATFORM_FILE_PROTOTYPES;
     size_t getpagesize();
 
@@ -62,8 +65,6 @@ namespace xtreemfs
     org::xtreemfs::interfaces::XCap xcap;
     yidl::runtime::auto_Object<XCapTimer> xcap_timer;
   };
-
-  typedef yidl::runtime::auto_Object<OpenFile> auto_OpenFile;
 };
 
 #endif

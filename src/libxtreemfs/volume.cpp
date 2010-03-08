@@ -35,8 +35,6 @@
 #include "stat_cache.h"
 #include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/osd_proxy.h"
-#include "xtreemfs/path.h"
-using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
 #include <errno.h>
@@ -65,13 +63,13 @@ Volume::Volume
 (
   auto_DIRProxy dir_proxy,
   uint32_t flags,
-  YIELD::platform::auto_Log log,
-  auto_MRCProxy mrc_proxy,
+  Log& log,
+  MRCProxy& mrc_proxy,
   const std::string& name,
   auto_OSDProxyMux osd_proxy_mux,
-  YIELD::concurrency::auto_StageGroup stage_group,
-  auto_UserCredentialsCache user_credentials_cache,
-  const YIELD::platform::Path& vivaldi_coordinates_file_path
+  yield::concurrency::auto_StageGroup stage_group,
+  UserCredentialsCache* user_credentials_cache,
+  const Path& vivaldi_coordinates_file_path
 )
   : dir_proxy( dir_proxy ),
     flags( flags ),
@@ -88,26 +86,26 @@ Volume::Volume
 
   if 
   ( 
-    ( flags & VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE ) 
-      == VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE 
+    ( flags & FLAG_WRITE_BACK_FILE_SIZE_CACHE ) 
+      == FLAG_WRITE_BACK_FILE_SIZE_CACHE 
   )
   {
     stat_cache_read_ttl_s = 0; // Don't cache read Stats
-    stat_cache_write_back_attrs = YIELD::platform::Volume::SETATTR_SIZE;
+    stat_cache_write_back_attrs = yield::platform::Volume::SETATTR_SIZE;
   }
   else if 
   ( 
-    ( flags & VOLUME_FLAG_WRITE_BACK_STAT_CACHE ) 
-      == VOLUME_FLAG_WRITE_BACK_STAT_CACHE 
+    ( flags & FLAG_WRITE_BACK_STAT_CACHE ) 
+      == FLAG_WRITE_BACK_STAT_CACHE 
   )
   {
     stat_cache_read_ttl_s = 5;
-    stat_cache_write_back_attrs = YIELD::platform::Volume::SETATTR_SIZE;
+    stat_cache_write_back_attrs = yield::platform::Volume::SETATTR_SIZE;
   }
   else if 
   ( 
-    ( flags & VOLUME_FLAG_WRITE_THROUGH_STAT_CACHE ) 
-      == VOLUME_FLAG_WRITE_THROUGH_STAT_CACHE
+    ( flags & FLAG_WRITE_THROUGH_STAT_CACHE ) 
+      == FLAG_WRITE_THROUGH_STAT_CACHE
   )
   {
     stat_cache_read_ttl_s = 5;
@@ -129,7 +127,7 @@ Volume::Volume
             stat_cache_write_back_attrs 
           );
 
-  uuid = YIELD::ipc::UUID();
+  uuid = yield::ipc::UUID();
 }
 
 Volume::~Volume()
@@ -137,7 +135,7 @@ Volume::~Volume()
   delete stat_cache;
 }
 
-bool Volume::access( const YIELD::platform::Path&, int )
+bool Volume::access( const Path&, int )
 {
   return true;
 }
@@ -145,18 +143,18 @@ bool Volume::access( const YIELD::platform::Path&, int )
 auto_Volume
 Volume::create
 (
-  const YIELD::ipc::URI& dir_uri,
+  const URI& dir_uri,
   const std::string& name,
   uint32_t flags,
-  YIELD::platform::auto_Log log,
+  Log& log,
   uint32_t proxy_flags,
-  const YIELD::platform::Time& proxy_operation_timeout,
+  const Time& proxy_operation_timeout,
   uint8_t proxy_reconnect_tries_max,
-  YIELD::ipc::auto_SSLContext proxy_ssl_context,
-  const YIELD::platform::Path& vivaldi_coordinates_file_path
+  yield::ipc::auto_SSLContext proxy_ssl_context,
+  const Path& vivaldi_coordinates_file_path
 )
 {
-  auto_UserCredentialsCache user_credentials_cache( new UserCredentialsCache );
+  UserCredentialsCache* user_credentials_cache( new UserCredentialsCache );
 
   auto_DIRProxy dir_proxy = DIRProxy::create
   (
@@ -170,14 +168,14 @@ Volume::create
     user_credentials_cache
   );
 
-  YIELD::ipc::auto_URI mrc_uri;
+  yield::ipc::auto_URI mrc_uri;
   std::string::size_type at_pos = name.find( '@' );
   if ( at_pos != std::string::npos )
     mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name.substr( 0, at_pos ) );
   else
     mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
 
-  auto_MRCProxy mrc_proxy = MRCProxy::create
+  MRCProxy& mrc_proxy = MRCProxy::create
   (
     *mrc_uri,
     MRCProxy::CONCURRENCY_LEVEL_DEFAULT,
@@ -205,8 +203,8 @@ Volume::create
     user_credentials_cache
   );
 
-  YIELD::concurrency::auto_StageGroup stage_group =
-    new YIELD::concurrency::SEDAStageGroup;
+  yield::concurrency::auto_StageGroup stage_group =
+    new yield::concurrency::SEDAStageGroup;
   stage_group->createStage( dir_proxy );
   stage_group->createStage( mrc_proxy );
   stage_group->createStage( osd_proxy_mux );
@@ -228,7 +226,7 @@ Volume::create
 void
 Volume::fsetattr
 (
-  const YIELD::platform::Path& path,
+  const Path& path,
   auto_Stat stbuf,
   uint32_t to_set,
   const XCap& write_xcap
@@ -237,7 +235,7 @@ Volume::fsetattr
   stat_cache->fsetattr( path, stbuf, to_set, write_xcap );
 }
 
-YIELD::platform::auto_Stat Volume::getattr( const YIELD::platform::Path& path )
+yield::platform::auto_Stat Volume::getattr( const Path& path )
 {
   VOLUME_OPERATION_BEGIN( stat ) 
   {
@@ -250,7 +248,7 @@ YIELD::platform::auto_Stat Volume::getattr( const YIELD::platform::Path& path )
 auto_SharedFile
 Volume::get_shared_file
 (
-  const YIELD::platform::Path& path
+  const Path& path
 )
 {
   SharedFile* shared_file;
@@ -264,11 +262,11 @@ Volume::get_shared_file
     shared_file = shared_file_i->second;
   else
   {
-    shared_file = new SharedFile( log, incRef(), path );
+    shared_file = new SharedFile( log, inc_ref(), path );
     shared_files[path] = shared_file;
   }
 
-  shared_file->incRef();
+  shared_file->inc_ref();
 
   shared_files_lock.release();
 
@@ -282,15 +280,15 @@ Volume::get_vivaldi_coordinates() const
 
   if ( !vivaldi_coordinates_file_path.empty() )
   {
-    YIELD::platform::auto_File vivaldi_coordinates_file =
-      YIELD::platform::Volume().open( vivaldi_coordinates_file_path );
+    yield::platform::auto_File vivaldi_coordinates_file =
+      yield::platform::Volume().open( vivaldi_coordinates_file_path );
     yidl::runtime::auto_Buffer vivaldi_coordinates_buffer
       (
         new yidl::runtime::StackBuffer
           <sizeof( VivaldiCoordinates)>
       );
     vivaldi_coordinates_file->read( vivaldi_coordinates_buffer );
-    YIELD::platform::XDRUnmarshaller xdr_unmarshaller( vivaldi_coordinates_buffer );
+    yield::platform::XDRUnmarshaller xdr_unmarshaller( vivaldi_coordinates_buffer );
     vivaldi_coordinates.unmarshal( xdr_unmarshaller );
   }
 
@@ -300,7 +298,7 @@ Volume::get_vivaldi_coordinates() const
 bool
 Volume::getxattr
 (
-  const YIELD::platform::Path& path,
+  const Path& path,
   const std::string& name,
   std::string& out_value
 )
@@ -319,8 +317,8 @@ Volume::getxattr
 bool
 Volume::link
 (
-  const YIELD::platform::Path& old_path,
-  const YIELD::platform::Path& new_path
+  const Path& old_path,
+  const Path& new_path
 )
 {
   // Don't stat_cache->evict( old_path ) in case there are file size updates
@@ -343,7 +341,7 @@ Volume::link
 bool
 Volume::listxattr
 (
-  const YIELD::platform::Path& path,
+  const Path& path,
   std::vector<std::string>& out_names
 )
 {
@@ -361,7 +359,7 @@ Volume::listxattr
 void 
 Volume::metadatasync
 (
-  const YIELD::platform::Path& path,
+  const Path& path,
   const XCap& write_xcap
 )
 {
@@ -372,7 +370,7 @@ Volume::metadatasync
   VOLUME_OPERATION_END( metadatasync );
 }
 
-bool Volume::mkdir( const YIELD::platform::Path& path, mode_t mode )
+bool Volume::mkdir( const Path& path, mode_t mode )
 {
   stat_cache->evict( path.parent_path() );
 
@@ -385,10 +383,10 @@ bool Volume::mkdir( const YIELD::platform::Path& path, mode_t mode )
   return false;
 }
 
-YIELD::platform::auto_File
+yield::platform::auto_File
 Volume::open
 (
-  const YIELD::platform::Path& path,
+  const Path& path,
   uint32_t flags,
   mode_t mode,
   uint32_t attributes
@@ -469,10 +467,10 @@ Volume::open
   return NULL;
 }
 
-YIELD::platform::auto_Directory 
+yield::platform::auto_Directory 
 Volume::opendir
 (
-  const YIELD::platform::Path& _path 
+  const Path& _path 
 )
 {
   Path path( this->name, _path );
@@ -510,16 +508,16 @@ Volume::opendir
   return NULL;
 }
 
-YIELD::platform::auto_Path Volume::readlink
+yield::platform::auto_Path Volume::readlink
 (
-  const YIELD::platform::Path& path
+  const Path& path
 )
 {
   VOLUME_OPERATION_BEGIN( readlink )
   {
     std::string link_target_path;
     mrc_proxy->readlink( Path( this->name, path ), link_target_path );
-    return new YIELD::platform::Path( link_target_path );
+    return new Path( link_target_path );
   }
   VOLUME_OPERATION_END( readlink );
   return NULL;
@@ -535,7 +533,7 @@ void Volume::release( SharedFile& shared_file )
   if ( shared_file_i != shared_files.end() )
   {
     shared_files.erase( shared_file_i );
-    SharedFile::decRef( shared_file );
+    SharedFile::dec_ref( shared_file );
   }
   else
     DebugBreak();
@@ -546,7 +544,7 @@ void Volume::release( SharedFile& shared_file )
 bool
 Volume::removexattr
 (
-  const YIELD::platform::Path& path,
+  const Path& path,
   const std::string& name
 )
 {
@@ -562,8 +560,8 @@ Volume::removexattr
 bool
 Volume::rename
 (
-  const YIELD::platform::Path& from_path,
-  const YIELD::platform::Path& to_path
+  const Path& from_path,
+  const Path& to_path
 )
 {
   // Don't evict from_path or to_path in case there are 
@@ -598,7 +596,7 @@ Volume::rename
 }
 
 bool
-Volume::rmdir( const YIELD::platform::Path& path )
+Volume::rmdir( const Path& path )
 {
   VOLUME_OPERATION_BEGIN( rmdir )
   {    
@@ -613,8 +611,8 @@ Volume::rmdir( const YIELD::platform::Path& path )
 bool
 Volume::setattr
 (
-  const YIELD::platform::Path& path,
-  YIELD::platform::auto_Stat _stbuf,
+  const Path& path,
+  yield::platform::auto_Stat _stbuf,
   uint32_t to_set
 )
 {
@@ -643,7 +641,7 @@ Volume::setattr
         stbuf->set_group_id( user_credentials.get_group_ids()[0] );
       }
       else
-        throw YIELD::platform::Exception( "could not look up uid and gid" );
+        throw yield::platform::Exception( "could not look up uid and gid" );
     }
     else if ( ( to_set & SETATTR_UID ) == SETATTR_UID )
     {
@@ -659,7 +657,7 @@ Volume::setattr
       )
         stbuf->set_user_id( user_credentials.get_user_id() );
       else
-        throw YIELD::platform::Exception( "could not look up uid" );
+        throw yield::platform::Exception( "could not look up uid" );
 
     }
     else if ( ( to_set & SETATTR_GID ) == SETATTR_GID )
@@ -676,7 +674,7 @@ Volume::setattr
       )
         stbuf->set_group_id( user_credentials.get_group_ids()[0] );
       else
-        throw YIELD::platform::Exception( "could not look up gid" );
+        throw yield::platform::Exception( "could not look up gid" );
     }
 #endif
 
@@ -691,7 +689,7 @@ Volume::setattr
 void
 Volume::set_errno
 (
-  YIELD::platform::Log* log,
+  Log* log,
   const char* operation_name,
   ProxyExceptionResponse& proxy_exception_response
 )
@@ -714,7 +712,7 @@ Volume::set_errno
 #endif
       default:
       {
-        log->getStream( YIELD::platform::Log::LOG_ERR ) <<
+        log->getStream( yield::platform::Log::LOG_ERR ) <<
           "xtreemfs: caught exception on " <<
           operation_name << ": " << proxy_exception_response;
       }
@@ -733,13 +731,13 @@ Volume::set_errno
 void
 Volume::set_errno
 (
-  YIELD::platform::Log* log,
+  Log* log,
   const char* operation_name,
   std::exception& exc
 )
 {
   if ( log != NULL )
-    log->getStream( YIELD::platform::Log::LOG_ERR ) <<
+    log->getStream( yield::platform::Log::LOG_ERR ) <<
       "xtreemfs::Volume: caught exception on " <<
       operation_name << ": " << exc.what();
 
@@ -754,7 +752,7 @@ Volume::set_errno
 bool
 Volume::setxattr
 (
-  const YIELD::platform::Path& path,
+  const Path& path,
   const std::string& name,
   const std::string& value,
   int flags
@@ -772,7 +770,7 @@ Volume::setxattr
 bool
 Volume::statvfs
 (
-  const YIELD::platform::Path&,
+  const Path&,
   struct statvfs& statvfsbuf
 )
 {
@@ -795,8 +793,8 @@ Volume::statvfs
 bool
 Volume::symlink
 (
-  const YIELD::platform::Path& to_path,
-  const YIELD::platform::Path& from_path
+  const Path& to_path,
+  const Path& from_path
 )
 {
   VOLUME_OPERATION_BEGIN( symlink )
@@ -809,12 +807,12 @@ Volume::symlink
   return false;
 }
 
-bool Volume::truncate( const YIELD::platform::Path& path, uint64_t new_size )
+bool Volume::truncate( const Path& path, uint64_t new_size )
 {
   VOLUME_OPERATION_BEGIN( truncate )
   {
-    YIELD::platform::auto_File file =
-      YIELD::platform::Volume::open( path, O_TRUNC );
+    yield::platform::auto_File file =
+      yield::platform::Volume::open( path, O_TRUNC );
 
     if ( file != NULL )
       return file->truncate( new_size );
@@ -825,7 +823,7 @@ bool Volume::truncate( const YIELD::platform::Path& path, uint64_t new_size )
   return false;
 }
 
-bool Volume::unlink( const YIELD::platform::Path& path )
+bool Volume::unlink( const Path& path )
 {
   VOLUME_OPERATION_BEGIN( unlink )
   {
@@ -850,7 +848,7 @@ bool Volume::unlink( const YIELD::platform::Path& path )
   return false;
 }
 
-YIELD::platform::Path Volume::volname( const YIELD::platform::Path& )
+Path Volume::volname( const Path& )
 {
   return name;
 }

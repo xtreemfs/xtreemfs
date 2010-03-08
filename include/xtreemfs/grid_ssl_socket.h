@@ -35,65 +35,53 @@
 
 namespace xtreemfs
 {
-  class GridSSLSocket : public YIELD::ipc::SSLSocket
+  using yield::ipc::SSLContext;
+  using yield::ipc::SSLSocket;
+
+
+  class GridSSLSocket : public SSLSocket
   {
   public:
-    static yidl::runtime::auto_Object<GridSSLSocket>
-    create
-    (
-      YIELD::ipc::auto_SSLContext
-    );
+    static GridSSLSocket* create( SSLContext& ssl_context );
+    static GridSSLSocket* create( int domain, SSLContext& ssl_context );
 
-    static yidl::runtime::auto_Object<GridSSLSocket>
-    create
-    (
-      int domain,
-      YIELD::ipc::auto_SSLContext
-    );
-
-    // YIELD::ipc::Socket
-    ssize_t read( void* buffer, size_t buffer_len );
+    // yield::ipc::Socket
+    ssize_t recv( void* buffer, size_t buffer_len, int );
+    ssize_t send( const void* buffer, size_t buffer_len, int );
+    ssize_t sendmsg( const struct iovec* buffers, uint32_t buffers_count, int );
     bool shutdown();
     bool want_read() const;
     bool want_write() const;
-    ssize_t write( const void* buffer, size_t buffer_len );
-    ssize_t writev( const struct iovec* buffers, uint32_t buffers_count );
 
   private:
-    GridSSLSocket
-    (
-      int domain,
-#if defined(_WIN64)
-      uint64_t socket_,
-#elif defined(_WIN32)
-      uint32_t socket_,
-#else
-      int socket_,
-#endif
-      YIELD::ipc::auto_SSLContext,
-      SSL* ssl
-    );
+    GridSSLSocket( int domain, yield::platform::socket_t, SSL*, SSLContext& );
 
+  private:
     bool did_handshake;
     bool check_handshake();
   };
 
 
-  class GridSSLSocketFactory : public YIELD::ipc::SocketFactory
+  class GridSSLSocketFactory : public yield::ipc::SocketFactory
   {
   public:
-    GridSSLSocketFactory( YIELD::ipc::auto_SSLContext ssl_context )
-      : ssl_context( ssl_context )
+    GridSSLSocketFactory( SSLContext& ssl_context )
+      : ssl_context( ssl_context.inc_ref() )
     { }
 
-    // YIELD::ipc::SocketFactory
-    YIELD::platform::auto_Socket createSocket()
+    ~GridSSLSocketFactory()
     {
-      return GridSSLSocket::create( ssl_context ).release();
+      SSLContext::dec_ref( ssl_context );
+    }
+
+    // SocketFactory
+    yield::ipc::Socket* createSocket()
+    {
+      return GridSSLSocket::create( ssl_context );
     }
 
   private:
-    YIELD::ipc::auto_SSLContext ssl_context;
+    SSLContext& ssl_context;
   };
 };
 

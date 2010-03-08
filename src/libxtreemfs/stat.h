@@ -47,13 +47,10 @@ namespace org
 
 namespace xtreemfs
 {
-  class UserCredentialsCache;
-
-
-  class Stat : public YIELD::platform::Stat
+  class Stat : public yield::platform::Stat
   {
   public:
-    Stat( const YIELD::platform::Stat& );
+    Stat( const Stat& );
     Stat( const org::xtreemfs::interfaces::Stat& );
     Stat( const org::xtreemfs::interfaces::OSDWriteResponse& );
     
@@ -69,14 +66,15 @@ namespace xtreemfs
     void set_truncate_epoch( uint32_t truncate_epoch );
     void set_user_id( const std::string& user_id );
 
+    // yidl::runtime::Object
+    Stat& inc_ref() { return Object::inc_ref( *this ); }
+
   private:
     uint64_t etag;
     std::string group_id;
     uint32_t truncate_epoch;
     std::string user_id;
   };
-
-  typedef yidl::runtime::auto_Object<Stat> auto_Stat;
 };
 
 #endif

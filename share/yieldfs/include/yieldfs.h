@@ -34,65 +34,105 @@
 
 #ifndef _WIN32
 #include <unistd.h>
-#endif
-
-#include <map>
-#include <string>
-
-#ifndef _WIN32
 struct fuse_args;
 #endif
 
 
 namespace yieldfs
 {
-#ifdef _WIN32
-  class FUSEWin32;
-#else
-  class FUSEUnix;
-#endif
+  using yield::platform::Directory;
+  using yield::platform::File;
+  using yield::platform::Log;
+  using yield::platform::Path;
+  using yield::platform::Stat;
+  using yield::platform::Volume;
 
 
   class FUSE
   {
   public:
-    const static uint32_t FUSE_FLAG_DEBUG = 1;
-    const static uint32_t FUSE_FLAG_DIRECT_IO = 2;
-    const static uint32_t FUSE_FLAGS_DEFAULT = 0;
+    virtual ~FUSE();
 
-    FUSE
-    (
-      YIELD::platform::auto_Volume volume,
-      uint32_t flags = FUSE_FLAGS_DEFAULT
-    );
-    ~FUSE();
+    const static uint32_t FLAG_DEBUG = 1;
+    const static uint32_t FLAG_DIRECT_IO = 2;
+    const static uint32_t FLAGS_DEFAULT = 0;
+
+    FUSE& create( Volume& volume, uint32_t flags = FLAGS_DEFAULT );
+
+    uint32_t get_flags() const { return flags; }
+    Volume& get_volume() const { return volume; }
 
     static uint32_t getpid();
 #ifdef _WIN32
-    int main( const char* drive_letter );
+    virtual int main( const Path& mount_point ) = 0;
 #else
     static uid_t geteuid();
     static gid_t getegid();
-    int main( char* argv0, const char* mount_point );
-    int main( struct fuse_args&, const char* mount_point );
+    virtual int main( char* argv0, const Path& mount_point ) = 0;
+    virtual int main( struct fuse_args&, const Path& mount_point ) = 0;
 #endif
 
   protected:
-#ifdef _WIN32
-    FUSEWin32* fuse_win32;
-#else
-    FUSEUnix* fuse_unix;
+    FUSE( uint32_t flags, Volume& volume ); // Steals the reference to volume
+  
+  protected:
+#ifndef _WIN32
     static bool is_running;
 #endif
+    uint32_t flags;
+    Volume& volume;
   };
 
 
-  static inline std::ostream& 
-  operator<<
-  ( 
-    std::ostream& os, 
-    const YIELD::platform::Stat& stbuf 
-  )
+  class StackableDirectory : public Directory
+  {
+  public:
+    // yield::platform::Directory
+    // virtual yield::platform::Directory methods that 
+    // delegate to underlying_directory
+    YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
+
+  protected:
+    StackableDirectory( Directory& underlying_directory ); // Steals the ref
+    virtual ~StackableDirectory();
+
+  private:
+    Directory& underlying_directory;
+  };
+
+
+  class StackableFile : public File
+  {
+  public:
+    // yield::platform::File
+    // virtual yield::platform::File methods that delegate to underlying_file
+    YIELD_PLATFORM_FILE_PROTOTYPES;
+
+  protected:
+    StackableFile( File& underlying_file ); // Steals the ref
+    virtual ~StackableFile();
+
+  private:
+    File& underlying_file;
+  };
+
+
+  class StackableVolume : public Volume
+  {
+  public:
+    // yield::platform::Volume methods that delegate to underlying_volume
+    YIELD_PLATFORM_VOLUME_PROTOTYPES;
+
+  protected:
+    StackableVolume( Volume& underlying_volume ); // Steals the ref
+    virtual ~StackableVolume();
+
+  private:
+    Volume& underlying_volume;
+  };
+
+
+  static inline std::ostream& operator<<( std::ostream& os, const Stat& stbuf )
   {
     os << "{ ";
 #ifndef _WIN32
@@ -145,107 +185,30 @@ namespace yieldfs
   }
 
 
-
-  class StackableDirectory : public YIELD::platform::Directory
-  {
-  public:
-    // YIELD::platform::Directory
-    // virtual YIELD::platform::Directory methods that 
-    // delegate to underlying_directory
-    YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
-
-  protected:
-    StackableDirectory
-    (
-      YIELD::platform::auto_Directory underlying_directory
-    )
-      : underlying_directory( underlying_directory )
-    { }
-
-    virtual ~StackableDirectory()
-    { }
-
-  private:
-    YIELD::platform::auto_Directory underlying_directory;
-  };
-
-
-  class StackableFile : public YIELD::platform::File
-  {
-  public:
-    // YIELD::platform::File
-    // virtual YIELD::platform::File methods that delegate to underlying_file
-    YIELD_PLATFORM_FILE_PROTOTYPES;
-
-  protected:
-    StackableFile
-    (
-      YIELD::platform::auto_File underlying_file
-    )
-      : underlying_file( underlying_file )
-    { }
-
-    virtual ~StackableFile()
-    { }
-
-  private:
-    YIELD::platform::auto_File underlying_file;
-  };
-
-
-  class StackableVolume : public YIELD::platform::Volume
-  {
-  public:
-    // YIELD::platform::Volume methods that delegate to underlying_volume
-    YIELD_PLATFORM_VOLUME_PROTOTYPES;
-
-  protected:
-    StackableVolume()
-    {
-      underlying_volume = new YIELD::platform::Volume;
-    }
-
-    StackableVolume( YIELD::platform::auto_Volume underlying_volume )
-      : underlying_volume( underlying_volume )
-    { }
-
-  private:
-    YIELD::platform::auto_Volume underlying_volume;
-  };
-
-
   class TracingVolume : public StackableVolume
   {
   public:
     TracingVolume(); // For testing
-
-    TracingVolume
-    (
-      YIELD::platform::auto_Volume underlying_volume
-    ); // Log to std::cout
-
-    TracingVolume
-    (
-      YIELD::platform::auto_Log log,
-      YIELD::platform::auto_Volume underlying_volume
-    );
+    // Steals references to underlying_volume
+    TracingVolume( Volume& underlying_volume ); // Log to std::cout
+    TracingVolume( Log& log, Volume& underlying_volume );
 
     // static trace methods for TracingDirectory and TracingFile to share
     static bool
     trace
     (
-      YIELD::platform::auto_Log log,
+      Log& log,
       const char* operation_name,
-      const YIELD::platform::Path& path,
+      const Path& path,
       bool operation_result
     );
 
     static bool
     trace
     (
-      YIELD::platform::auto_Log log,
+      Log& log,
       const char* operation_name,
-      const YIELD::platform::Path& path,
+      const Path& path,
       mode_t mode,
       bool operation_result
     );
@@ -253,19 +216,19 @@ namespace yieldfs
     static bool
     trace
     (
-      YIELD::platform::auto_Log log,
+      Log& log,
       const char* operation_name,
-      const YIELD::platform::Path& old_path,
-      const YIELD::platform::Path& new_path,
+      const Path& old_path,
+      const Path& new_path,
       bool operation_result
     );
 
     static bool
     trace
     (
-      YIELD::platform::auto_Log log,
+      Log& log,
       const char* operation_name,
-      const YIELD::platform::Path& path,
+      const Path& path,
       const std::string& xattr_name,
       const std::string& xattr_value,
       bool operation_result
@@ -274,9 +237,9 @@ namespace yieldfs
     static bool
     trace
     (
-      YIELD::platform::auto_Log log,
+      Log& log,
       const char* operation_name,
-      const YIELD::platform::Path& path,
+      const Path& path,
       uint64_t size,
       uint64_t offset,
       bool operation_result
@@ -285,17 +248,15 @@ namespace yieldfs
     static bool
     trace
     (
-      YIELD::platform::Log::Stream& log_stream,
+      Log::Stream& log_stream,
       bool operation_result
     );
 
-    // YIELD::platform::Volume
+    // yield::platform::Volume
     YIELD_PLATFORM_VOLUME_PROTOTYPES;
 
   private:
-    ~TracingVolume() { }
-
-    YIELD::platform::auto_Log log;
+    Log& log;
   };
 };
 

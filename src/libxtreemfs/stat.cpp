@@ -41,15 +41,15 @@ using namespace xtreemfs;
 #endif
 
 
-Stat::Stat( const YIELD::platform::Stat& stbuf )
-: YIELD::platform::Stat( stbuf )
+Stat::Stat( const Stat& stbuf )
+: yield::platform::Stat( stbuf )
 {
   etag = 0;
   truncate_epoch = 0;
 }
 
 Stat::Stat( const org::xtreemfs::interfaces::Stat& stbuf )
-: YIELD::platform::Stat
+: yield::platform::Stat
   (
 #ifdef _WIN32
     static_cast<mode_t>( stbuf.get_mode() ),

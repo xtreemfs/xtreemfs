@@ -28,9 +28,58 @@
 
 
 #include "xtreemfs/dir_proxy.h"
-using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
+
+class DIRProxy::CachedAddressMappings : public AddressMappingSet
+{
+public:
+  CachedAddressMappings
+  (
+    const AddressMappingSet& address_mappings,
+    uint32_t ttl_s
+  )
+  : AddressMappingSet( address_mappings ),
+    ttl_s( ttl_s )
+  { }
+
+  const Time& get_creation_time() const { return creation_time; }
+  uint32_t get_ttl_s() const { return ttl_s; }
+
+  // yidl::runtime::Object
+  CachedAddressMappings& inc_ref() { return Object::inc_ref( *this ); }
+
+private:
+  Time creation_time;
+  uint32_t ttl_s;
+};
+
+
+DIRProxy::DIRProxy
+(
+  uint16_t concurrency_level,
+  uint32_t flags,
+  IOQueue& io_queue,
+  Log* log,
+  const Time& operation_timeout,
+  SocketAddress& peername,
+  uint16_t reconnect_tries_max,
+  SocketFactory& socket_factory,
+  UserCredentialsCache* user_credentials_cache
+)
+: Proxy<DIRInterface, DIRInterfaceEventFactory, DIRInterfaceEventSender>
+  ( 
+    concurrency_level, 
+    flags, 
+    io_queue,
+    log,
+    operation_timeout,
+    peername,
+    reconnect_tries_max,
+    socket_factory,
+    user_credentials_cache
+  )
+{ }
 
 DIRProxy::~DIRProxy()
 {
@@ -41,53 +90,37 @@ DIRProxy::~DIRProxy()
     uuid_to_address_mappings_i != uuid_to_address_mappings_cache.end();
     uuid_to_address_mappings_i++
   )
-    CachedAddressMappings::decRef( *uuid_to_address_mappings_i->second );
+    CachedAddressMappings::dec_ref( *uuid_to_address_mappings_i->second );
 }
 
-auto_DIRProxy
+DIRProxy&
 DIRProxy::create
 (
-  const YIELD::ipc::URI& absolute_uri,
+  const URI& absolute_uri,
   uint16_t concurrency_level,
   uint32_t flags,
-  YIELD::platform::auto_Log log,
-  const YIELD::platform::Time& operation_timeout,
-  uint8_t reconnect_tries_max,
-  YIELD::ipc::auto_SSLContext ssl_context,
-  auto_UserCredentialsCache user_credentials_cache
+  Log* log,
+  const Time& operation_timeout,
+  uint16_t reconnect_tries_max,
+  SSLContext* ssl_context,
+  UserCredentialsCache* user_credentials_cache
 )
 {
-  YIELD::ipc::URI checked_uri( absolute_uri );
-
-  if ( checked_uri.get_port() == 0 )
-  {
-    if ( checked_uri.get_scheme() == ONCRPCG_SCHEME )
-      checked_uri.set_port( ONCRPCG_PORT_DEFAULT );
-    else if ( checked_uri.get_scheme() == ONCRPCS_SCHEME )
-      checked_uri.set_port( ONCRPCS_PORT_DEFAULT );
-    else if ( checked_uri.get_scheme() == ONCRPCU_SCHEME )
-      checked_uri.set_port( ONCRPCU_PORT_DEFAULT );
-    else
-      checked_uri.set_port( ONCRPC_PORT_DEFAULT );
-  }
-
-  if ( user_credentials_cache == NULL )
-    user_credentials_cache = new UserCredentialsCache;
-
-  return new DIRProxy
-  (
-    concurrency_level,
-    flags,
-    log,
-    operation_timeout,
-    YIELD::ipc::SocketAddress::create( checked_uri ),
-    reconnect_tries_max,
-    createSocketFactory( checked_uri, ssl_context ),
-    user_credentials_cache
-  );
+  return *new DIRProxy
+              (
+                concurrency_level,
+                flags,
+                yield::platform::NBIOQueue::create(),
+                log,
+                operation_timeout,
+                createSocketAddress( absolute_uri ),
+                reconnect_tries_max,
+                createSocketFactory( absolute_uri, ssl_context ),
+                user_credentials_cache
+              );
 }
 
-yidl::runtime::auto_Object<AddressMappingSet>
+AddressMappingSet*
 DIRProxy::getAddressMappingsFromUUID
 (
   const std::string& uuid
@@ -105,7 +138,7 @@ DIRProxy::getAddressMappingsFromUUID
 
       uint32_t cached_address_mappings_age_s =
         (
-          YIELD::platform::Time()-
+          Time() -
           cached_address_mappings->get_creation_time()
         ).as_unix_time_s();
 
@@ -115,13 +148,13 @@ DIRProxy::getAddressMappingsFromUUID
         cached_address_mappings->get_ttl_s()
       )
       {
-        cached_address_mappings->incRef();
+        cached_address_mappings->inc_ref();
         uuid_to_address_mappings_cache_lock.release();
         return cached_address_mappings;
       }
       else
       {
-        CachedAddressMappings::decRef( cached_address_mappings );
+        CachedAddressMappings::dec_ref( cached_address_mappings );
         uuid_to_address_mappings_cache.erase( uuid_to_address_mappings_i );
         uuid_to_address_mappings_cache_lock.release();
       }
@@ -141,21 +174,16 @@ DIRProxy::getAddressMappingsFromUUID
       );
 
     uuid_to_address_mappings_cache_lock.acquire();
-    uuid_to_address_mappings_cache[uuid] = &cached_address_mappings->incRef();
+    uuid_to_address_mappings_cache[uuid] = &cached_address_mappings->inc_ref();
     uuid_to_address_mappings_cache_lock.release();
 
     return cached_address_mappings;
   }
   else
-    throw YIELD::platform::Exception( "could not find address mappings for UUID" );
+    throw yield::platform::Exception( "could not find address mappings for UUID" );
 }
 
-
-YIELD::ipc::auto_URI
-DIRProxy::getVolumeURIFromVolumeName
-(
-  const std::string& volume_name
-)
+URI* DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_name )
 {
   ServiceSet services;
   xtreemfs_service_get_by_name( volume_name, services );
@@ -193,7 +221,7 @@ DIRProxy::getVolumeURIFromVolumeName
           )
           {
             if ( ( *address_mapping_i ).get_protocol() == ONCRPC_SCHEME )
-              return new YIELD::ipc::URI( ( *address_mapping_i ).get_uri() );
+              return new URI( ( *address_mapping_i ).get_uri() );
           }
 
           // Then GridSSL
@@ -205,7 +233,7 @@ DIRProxy::getVolumeURIFromVolumeName
           )
           {
             if ( ( *address_mapping_i ).get_protocol() == ONCRPCG_SCHEME )
-              return new YIELD::ipc::URI( ( *address_mapping_i ).get_uri() );
+              return new URI( ( *address_mapping_i ).get_uri() );
           }
 
           // Then SSL
@@ -217,7 +245,7 @@ DIRProxy::getVolumeURIFromVolumeName
           )
           {
             if ( ( *address_mapping_i ).get_protocol() == ONCRPCS_SCHEME )
-              return new YIELD::ipc::URI( ( *address_mapping_i ).get_uri() );
+              return new URI( ( *address_mapping_i ).get_uri() );
           }
 
           // Then UDP
@@ -229,12 +257,12 @@ DIRProxy::getVolumeURIFromVolumeName
           )
           {
             if ( ( *address_mapping_i ).get_protocol() == ONCRPCU_SCHEME )
-              return new YIELD::ipc::URI( ( *address_mapping_i ).get_uri() );
+              return new URI( ( *address_mapping_i ).get_uri() );
           }
         }
       }
     }
   }
 
-  throw YIELD::platform::Exception( "unknown volume" );
+  throw yield::platform::Exception( "unknown volume" );
 }

@@ -31,18 +31,20 @@
 #define _LIBXTREEMFS_DIRECTORY_H_
 
 #include "xtreemfs/mrc_proxy.h"
-#include "xtreemfs/path.h"
 #include "xtreemfs/user_credentials_cache.h"
 
 
 namespace xtreemfs
 {
-  class Directory : public YIELD::platform::Directory
+  using namespace org::xtreemfs::interfaces;
+
+
+  class Directory : public yield::platform::Directory
   {
   public:
     const static uint64_t LIMIT_DIRECTORY_ENTRIES_COUNT_DEFAULT = 100;
 
-    // YIELD::platform::Directory
+    // yield::platform::Directory
     YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
 
   private:
@@ -51,27 +53,25 @@ namespace xtreemfs
     Directory
     ( 
       const org::xtreemfs::interfaces::DirectoryEntrySet& first_directory_entries,
-      YIELD::platform::auto_Log log,
-      auto_MRCProxy mrc_proxy,
+      Log& log,
+      MRCProxy& mrc_proxy,
       bool names_only,
       const Path& path,
-      auto_UserCredentialsCache user_credentials_cache
+      UserCredentialsCache* user_credentials_cache
     );
 
     ~Directory()
     { }
 
     org::xtreemfs::interfaces::DirectoryEntrySet directory_entries;
-    YIELD::platform::auto_Log log;
-    auto_MRCProxy mrc_proxy;
+    Log& log;
+    MRCProxy& mrc_proxy;
     bool names_only;
     Path path;
     uint16_t read_directory_entry_i;
     uint64_t seen_directory_entries_count;
-    auto_UserCredentialsCache user_credentials_cache;
+    UserCredentialsCache* user_credentials_cache;
   };
-
-  typedef yidl::runtime::auto_Object<Directory> auto_Directory;
 };
 
 #endif

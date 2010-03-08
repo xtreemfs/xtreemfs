@@ -1,18 +1,17 @@
 #include "directory.h"
 #include "stat.h"
 #include "xtreemfs/volume.h"
-using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
 
 Directory::Directory
 ( 
-  const org::xtreemfs::interfaces::DirectoryEntrySet& first_directory_entries,
-  YIELD::platform::auto_Log log,
-  auto_MRCProxy mrc_proxy,
+  const DirectoryEntrySet& first_directory_entries,
+  Log& log,
+  MRCProxy& mrc_proxy,
   bool names_only,
   const Path& path,
-  auto_UserCredentialsCache user_credentials_cache
+  UserCredentialsCache* user_credentials_cache
 )
 : directory_entries( first_directory_entries ),
   log( log ),
@@ -25,7 +24,7 @@ Directory::Directory
   seen_directory_entries_count = first_directory_entries.size();
 }
 
-YIELD::platform::Directory::auto_Entry Directory::readdir()
+yield::platform::Directory::auto_Entry Directory::readdir()
 {
   if ( read_directory_entry_i >= directory_entries.size() )
   {
@@ -97,7 +96,7 @@ YIELD::platform::Directory::auto_Entry Directory::readdir()
 #endif
   }
   
-  return new YIELD::platform::Directory::Entry
+  return new yield::platform::Directory::Entry
              ( 
                read_directory_entry.get_name(), 
                stbuf 

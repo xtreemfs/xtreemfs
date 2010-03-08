@@ -28,11 +28,10 @@
 
 
 #include "xtreemfs/osd_proxy_mux.h"
-using namespace org::xtreemfs::interfaces;
 using namespace xtreemfs;
 
 
-class OSDProxyMux::ReadResponseTarget : public YIELD::concurrency::EventTarget
+class OSDProxyMux::ReadResponseTarget : public yield::concurrency::EventTarget
 {
 public:
   ReadResponseTarget
@@ -45,8 +44,8 @@ public:
       read_request( read_request )
   { }
 
-  // YIELD::concurrency::EventTarget
-  void send( YIELD::concurrency::Event& ev )
+  // yield::concurrency::EventTarget
+  void send( yield::concurrency::Event& ev )
   {
     switch ( ev.get_type_id() )
     {
@@ -62,7 +61,7 @@ public:
       break;
 
       case YIDL_RUNTIME_OBJECT_TYPE_ID
-        ( YIELD::concurrency::ExceptionResponse ):
+        ( yield::concurrency::ExceptionResponse ):
       {
         if
         (
@@ -80,9 +79,9 @@ public:
             -1 * read_request->get_selected_file_replica()
           );
 
-          osd_proxy_mux->send( read_request->incRef() );
+          osd_proxy_mux->send( read_request->inc_ref() );
 
-          YIELD::concurrency::Event::decRef( ev );
+          yield::concurrency::Event::dec_ref( ev );
         }
         else // There is only one replica, send the exception back
           original_response_target->send( ev );
@@ -98,20 +97,20 @@ public:
   }
 
 private:
-  YIELD::concurrency::auto_EventTarget original_response_target;
+  yield::concurrency::auto_EventTarget original_response_target;
   yidl::runtime::auto_Object<OSDProxyMux> osd_proxy_mux;
   yidl::runtime::auto_Object<readRequest> read_request;
 };
 
 
 class OSDProxyMux::TruncateResponseTarget
-  : public YIELD::concurrency::EventTarget
+  : public yield::concurrency::EventTarget
 {
 public:
   TruncateResponseTarget
   (
     size_t expected_response_count,
-    YIELD::concurrency::auto_EventTarget final_response_target
+    yield::concurrency::auto_EventTarget final_response_target
   )
     : expected_response_count( expected_response_count ),
       final_response_target( final_response_target )
@@ -121,16 +120,16 @@ public:
   {
     for
     (
-      std::vector<YIELD::concurrency::Event*>::iterator
+      std::vector<yield::concurrency::Event*>::iterator
         response_i = responses.begin();
       response_i != responses.end();
       response_i++
     )
-      YIELD::concurrency::Event::decRef( **response_i );
+      yield::concurrency::Event::dec_ref( **response_i );
   }
 
-  // YIELD::concurrency::EventTarget
-  void send( YIELD::concurrency::Event& ev )
+  // yield::concurrency::EventTarget
+  void send( yield::concurrency::Event& ev )
   {
     responses_lock.acquire();
 
@@ -140,7 +139,7 @@ public:
     {
       for
       (
-        std::vector<YIELD::concurrency::Event*>::iterator
+        std::vector<yield::concurrency::Event*>::iterator
           response_i = responses.begin();
         response_i != responses.end();
         response_i++
@@ -149,13 +148,13 @@ public:
         if
         (
           ( *response_i )->get_type_id() ==
-          YIDL_RUNTIME_OBJECT_TYPE_ID( YIELD::concurrency::ExceptionResponse )
+          YIDL_RUNTIME_OBJECT_TYPE_ID( yield::concurrency::ExceptionResponse )
         )
         {
           respond
           (
-            static_cast<YIELD::concurrency::ExceptionResponse*>
-              ( *response_i )->incRef(),
+            static_cast<yield::concurrency::ExceptionResponse*>
+              ( *response_i )->inc_ref(),
             final_response_target
           );
           responses_lock.release();
@@ -172,9 +171,9 @@ public:
 protected:
   virtual void respond
   (
-    yidl::runtime::auto_Object<YIELD::concurrency::ExceptionResponse>
+    yidl::runtime::auto_Object<yield::concurrency::ExceptionResponse>
       exception_response,
-    YIELD::concurrency::auto_EventTarget final_response_target
+    yield::concurrency::auto_EventTarget final_response_target
   )
   {
     final_response_target->send( *exception_response.release() );
@@ -182,19 +181,19 @@ protected:
 
   virtual void respond
   (
-    std::vector<YIELD::concurrency::Event*>& responses,
-    YIELD::concurrency::auto_EventTarget final_response_target
+    std::vector<yield::concurrency::Event*>& responses,
+    yield::concurrency::auto_EventTarget final_response_target
   )
   {
-    final_response_target->send( responses[responses.size() - 1]->incRef() );
+    final_response_target->send( responses[responses.size() - 1]->inc_ref() );
   }
 
 private:
   size_t expected_response_count;
-  YIELD::concurrency::auto_EventTarget final_response_target;
+  yield::concurrency::auto_EventTarget final_response_target;
 
-  std::vector<YIELD::concurrency::Event*> responses;
-  YIELD::platform::Mutex responses_lock;
+  std::vector<yield::concurrency::Event*> responses;
+  yield::platform::Mutex responses_lock;
 };
 
 
@@ -204,11 +203,11 @@ OSDProxyMux::create
   auto_DIRProxy dir_proxy,
   uint16_t concurrency_level,
   uint32_t flags,
-  YIELD::platform::auto_Log log,
-  const YIELD::platform::Time& operation_timeout,
+  Log& log,
+  const Time& operation_timeout,
   uint8_t reconnect_tries_max,
-  YIELD::ipc::auto_SSLContext ssl_context,
-  auto_UserCredentialsCache user_credentials_cache
+  yield::ipc::auto_SSLContext ssl_context,
+  UserCredentialsCache* user_credentials_cache
 )
 {
   if ( user_credentials_cache == NULL )
@@ -232,11 +231,11 @@ OSDProxyMux::OSDProxyMux
   uint16_t concurrency_level,
   yidl::runtime::auto_Object<DIRProxy> dir_proxy,
   uint32_t flags,
-  YIELD::platform::auto_Log log,
-  const YIELD::platform::Time& operation_timeout,
+  Log& log,
+  const Time& operation_timeout,
   uint8_t reconnect_tries_max,
-  YIELD::ipc::auto_SSLContext ssl_context,
-  auto_UserCredentialsCache user_credentials_cache
+  yield::ipc::auto_SSLContext ssl_context,
+  UserCredentialsCache* user_credentials_cache
 )
   : concurrency_level( concurrency_level ),
     dir_proxy( dir_proxy ),
@@ -247,7 +246,7 @@ OSDProxyMux::OSDProxyMux
     ssl_context( ssl_context ),
     user_credentials_cache( user_credentials_cache )
 {
-  osd_proxy_stage_group = new YIELD::concurrency::SEDAStageGroup;
+  osd_proxy_stage_group = new yield::concurrency::SEDAStageGroup;
 }
 
 OSDProxyMux::~OSDProxyMux()
@@ -258,7 +257,7 @@ OSDProxyMux::~OSDProxyMux()
     osd_proxies_i != osd_proxies.end();
     osd_proxies_i++
   )
-    OSDProxy::decRef( *osd_proxies_i->second );
+    OSDProxy::dec_ref( *osd_proxies_i->second );
 }
 
 auto_OSDProxy
@@ -330,7 +329,7 @@ OSDProxyMux::getOSDProxy
       return getOSDProxy( osd_uuid );
     }
 
-    default: DebugBreak(); throw YIELD::platform::Exception(); break;
+    default: DebugBreak(); throw yield::platform::Exception(); break;
   }
 }
 
@@ -341,7 +340,7 @@ auto_OSDProxy OSDProxyMux::getOSDProxy( const std::string& osd_uuid )
   OSDProxyMap::iterator osd_proxies_i = osd_proxies.find( osd_uuid );
 
   if ( osd_proxies_i != osd_proxies.end() )
-    osd_proxy = osd_proxies_i->second->incRef();
+    osd_proxy = osd_proxies_i->second->inc_ref();
   else
   {
     yidl::runtime::auto_Object<AddressMappingSet>
@@ -375,7 +374,7 @@ auto_OSDProxy OSDProxyMux::getOSDProxy( const std::string& osd_uuid )
           user_credentials_cache
         ).release();
 
-        osd_proxy_stage_group->createStage( osd_proxy->incRef() );
+        osd_proxy_stage_group->createStage( osd_proxy->inc_ref() );
       }
       else
 #endif
@@ -393,14 +392,14 @@ auto_OSDProxy OSDProxyMux::getOSDProxy( const std::string& osd_uuid )
           user_credentials_cache
         ).release();
 
-        osd_proxy_stage_group->createStage( osd_proxy->incRef() );
+        osd_proxy_stage_group->createStage( osd_proxy->inc_ref() );
       }
     }
 
     if ( osd_proxy != NULL )
-      osd_proxies[osd_uuid] = &osd_proxy->incRef();
+      osd_proxies[osd_uuid] = &osd_proxy->inc_ref();
     else
-      throw YIELD::platform::Exception( "no acceptable ONC-RPC URI for UUID" );
+      throw yield::platform::Exception( "no acceptable ONC-RPC URI for UUID" );
   }
 
   return osd_proxy;
@@ -423,9 +422,9 @@ void OSDProxyMux::handlereadRequest( readRequest& req )
     req.get_response_target()->get_type_id() !=
     YIDL_RUNTIME_OBJECT_TYPE_ID( ReadResponseTarget )
   )
-    req.set_response_target( new ReadResponseTarget( incRef(), req ) );
+    req.set_response_target( new ReadResponseTarget( inc_ref(), req ) );
 
-  static_cast<YIELD::concurrency::EventTarget*>
+  static_cast<yield::concurrency::EventTarget*>
     ( osd_proxy.get() )->send( req );
 }
 
@@ -447,12 +446,12 @@ void OSDProxyMux::handletruncateRequest( truncateRequest& req )
     replica_i != replicas.end();
     replica_i++
   )
-    static_cast<YIELD::concurrency::EventTarget*>
+    static_cast<yield::concurrency::EventTarget*>
     (
       getOSDProxy( ( *replica_i ).get_osd_uuids()[0] ).get()
-    )->send( req.incRef() );
+    )->send( req.inc_ref() );
 
-  truncateRequest::decRef( req );
+  truncateRequest::dec_ref( req );
 }
 
 void OSDProxyMux::handleunlinkRequest( unlinkRequest& req )
@@ -473,12 +472,12 @@ void OSDProxyMux::handleunlinkRequest( unlinkRequest& req )
     replica_i != replicas.end();
     replica_i++
   )
-    static_cast<YIELD::concurrency::EventTarget*>
+    static_cast<yield::concurrency::EventTarget*>
     (
       getOSDProxy( ( *replica_i ).get_osd_uuids()[0] ).get()
-    )->send( req.incRef() );
+    )->send( req.inc_ref() );
 
-  unlinkRequest::decRef( req );
+  unlinkRequest::dec_ref( req );
 }
 
 void OSDProxyMux::handlewriteRequest( writeRequest& req )

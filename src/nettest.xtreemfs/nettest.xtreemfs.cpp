@@ -99,10 +99,10 @@ namespace nettest_xtreemfs
     uint32_t rate;
     yidl::runtime::auto_Buffer recv_buffer;
     yidl::runtime::auto_Buffer send_buffer;
-    YIELD::ipc::auto_URI uri;
+    yield::ipc::auto_URI uri;
 
 
-    // YIELD::Main
+    // yield::Main
     int _main( int, char** )
     {
       auto_NettestProxy
@@ -125,7 +125,7 @@ namespace nettest_xtreemfs
       {
         sleep_after_each_call_ns
           = static_cast<uint64_t>( ( 1.0 / static_cast<double>( rate ) )
-            * static_cast<double>( YIELD::platform::Time::NS_IN_S ) );
+            * static_cast<double>( yield::platform::Time::NS_IN_S ) );
       }
       else
         sleep_after_each_call_ns = 0;
@@ -141,12 +141,12 @@ namespace nettest_xtreemfs
       std::cout << ":" << std::endl;
 
       uint64_t io_total_kb = 0;
-      YIELD::platform::Time rpc_time_total( static_cast<uint64_t>( 0 ) );
-      YIELD::platform::Time start_wall_time;
+      yield::platform::Time rpc_time_total( static_cast<uint64_t>( 0 ) );
+      yield::platform::Time start_wall_time;
 
       for ( uint32_t call_i = 0; call_i < num_calls; call_i++ )
       {
-        YIELD::platform::Time rpc_time_start;
+        yield::platform::Time rpc_time_start;
 
         if ( recv_buffer != NULL )
         {
@@ -161,16 +161,16 @@ namespace nettest_xtreemfs
         else
           nettest_proxy->nop();
 
-        rpc_time_total += YIELD::platform::Time() - rpc_time_start;
+        rpc_time_total += yield::platform::Time() - rpc_time_start;
 
         std::cout << "." << std::flush;
 
         if ( sleep_after_each_call_ns > 0 )
-          YIELD::platform::Thread::nanosleep( sleep_after_each_call_ns );
+          yield::platform::Thread::nanosleep( sleep_after_each_call_ns );
       }
 
-      YIELD::platform::Time end_wall_time;
-      YIELD::platform::Time wall_time_total( end_wall_time - start_wall_time );
+      yield::platform::Time end_wall_time;
+      yield::platform::Time wall_time_total( end_wall_time - start_wall_time );
 
       std::cout << std::endl << std::endl;
 
@@ -206,10 +206,10 @@ namespace nettest_xtreemfs
       {
         uri = parseURI( files[0] );
         if ( uri->get_port() == 0 )
-          throw YIELD::platform::Exception( "must specify a port" );
+          throw yield::platform::Exception( "must specify a port" );
       }
       else
-        throw YIELD::platform::Exception( "must specify a URI" );
+        throw yield::platform::Exception( "must specify a URI" );
     }
 
     void parseOption( int id, char* arg )

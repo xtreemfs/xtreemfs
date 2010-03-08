@@ -131,7 +131,7 @@ namespace mount_xtreemfs
         "--write-through-stat-cache"
       );
 
-      fuse_flags = yieldfs::FUSE::FUSE_FLAGS_DEFAULT;
+      fuse_flags = yieldfs::FUSE::FLAGS_DEFAULT;
       volume_flags = Volume::VOLUME_FLAGS_DEFAULT;
     }
 
@@ -157,7 +157,7 @@ namespace mount_xtreemfs
       MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_STAT_CACHE = 34
     };
 
-    YIELD::ipc::auto_URI dir_uri;
+    yield::ipc::auto_URI dir_uri;
     bool foreground;
     uint32_t fuse_flags;
     std::string fuse_o_args;
@@ -166,38 +166,38 @@ namespace mount_xtreemfs
     bool no_big_writes;
 #endif
     bool trace_volume_operations;
-    YIELD::platform::Path vivaldi_coordinates_file_path;
+    yield::platform::Path vivaldi_coordinates_file_path;
     std::string volume_name;
     uint32_t volume_flags;
 
 
-    // YIELD::Main
+    // yield::Main
     int _main( int argc, char** argv )
     {
       // Make sure the log level is set high enough for any
       // --trace options to show up
       if 
       ( 
-        get_log_level() < YIELD::platform::Log::LOG_INFO &&
+        get_log_level() < yield::platform::Log::LOG_INFO &&
         (
           get_proxy_flags() != 0
           ||
-          ( volume_flags & Volume::VOLUME_FLAG_TRACE_DATA_CACHE )
-              == Volume::VOLUME_FLAG_TRACE_DATA_CACHE
+          ( volume_flags & Volume::FLAG_TRACE_DATA_CACHE )
+              == Volume::FLAG_TRACE_DATA_CACHE
           ||
-          ( volume_flags & Volume::VOLUME_FLAG_TRACE_FILE_IO )
-              == Volume::VOLUME_FLAG_TRACE_FILE_IO
+          ( volume_flags & Volume::FLAG_TRACE_FILE_IO )
+              == Volume::FLAG_TRACE_FILE_IO
           ||
-          ( volume_flags & Volume::VOLUME_FLAG_TRACE_STAT_CACHE )
-              == Volume::VOLUME_FLAG_TRACE_STAT_CACHE
+          ( volume_flags & Volume::FLAG_TRACE_STAT_CACHE )
+              == Volume::FLAG_TRACE_STAT_CACHE
         )
       )
-        get_log()->set_level( YIELD::platform::Log::LOG_INFO );
+        get_log()->set_level( yield::platform::Log::LOG_INFO );
 
       // Create the XtreemFS volume in the parent as well as the child process
       // so that the parent will fail on most common errors
       // (like failed connections) before the child is created
-      YIELD::platform::auto_Volume volume =
+      yield::platform::auto_Volume volume =
         Volume::create
         (
           *dir_uri,
@@ -224,8 +224,8 @@ namespace mount_xtreemfs
 #else
         std::vector<char*> fuse_argvv;
         fuse_argvv.push_back( argv[0] );
-        if ( ( fuse_flags & yieldfs::FUSE::FUSE_FLAG_DEBUG ) ==
-             yieldfs::FUSE::FUSE_FLAG_DEBUG )
+        if ( ( fuse_flags & yieldfs::FUSE::FLAG_DEBUG ) ==
+             yieldfs::FUSE::FLAG_DEBUG )
           fuse_argvv.push_back( "-d" );
         fuse_argvv.push_back( "-o" );
         if ( !fuse_o_args.empty() )
@@ -236,7 +236,7 @@ namespace mount_xtreemfs
           fuse_o_args.append( ",big_writes" );
 #endif
         fuse_argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
-        get_log()->getStream( YIELD::platform::Log::LOG_INFO ) <<
+        get_log()->getStream( yield::platform::Log::LOG_INFO ) <<
             get_program_name() << ": passing -o " << fuse_o_args <<
             " to FUSE.";
         fuse_argvv.push_back( NULL );
@@ -261,7 +261,7 @@ namespace mount_xtreemfs
         {
           std::ostringstream log_file_path_oss;
           log_file_path_oss << "mount.xtreemfs-";
-          log_file_path_oss << YIELD::ipc::Process::getpid();
+          log_file_path_oss << yield::ipc::Process::getpid();
           log_file_path_oss << ".log";
           log_file_path = log_file_path_oss.str();
         }
@@ -270,8 +270,8 @@ namespace mount_xtreemfs
         child_argvv.push_back( NULL );
 
 
-        YIELD::ipc::auto_Process child_process =
-          YIELD::ipc::Process::create
+        yield::ipc::auto_Process child_process =
+          yield::ipc::Process::create
           (
             argv[0],
             const_cast<const char**>( &child_argvv[0] )
@@ -290,7 +290,7 @@ namespace mount_xtreemfs
 #ifndef _WIN32
             else if
             (
-              YIELD::platform::Volume().getxattr
+              yield::platform::Volume().getxattr
               (
                 mount_point,
                 "xtreemfs.url",
@@ -300,16 +300,16 @@ namespace mount_xtreemfs
               return 0; // Child started successfully
 #endif
             else
-             YIELD::platform::Thread::nanosleep( 0.1 );
+             yield::platform::Thread::nanosleep( 0.1 );
           }
 
           return 0; // Assume the child started successfully
         }
         else
         {
-          get_log()->getStream( YIELD::platform::Log::LOG_ERR ) <<
+          get_log()->getStream( yield::platform::Log::LOG_ERR ) <<
             get_program_name() << ": error creating child process: " <<
-            YIELD::platform::Exception() << ".";
+            yield::platform::Exception() << ".";
           return 1;
         }
       }
@@ -328,32 +328,32 @@ namespace mount_xtreemfs
           fuse_o_args.append( arg );
 
           if ( strstr( arg, "direct_io" ) != NULL )
-            fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DIRECT_IO;
+            fuse_flags |= yieldfs::FUSE::FLAG_DIRECT_IO;
         }
         break;
 
         case MOUNT_XTREEMFS_OPTION_TRACE_DATA_CACHE:
         {
-          volume_flags |= Volume::VOLUME_FLAG_TRACE_DATA_CACHE;
+          volume_flags |= Volume::FLAG_TRACE_DATA_CACHE;
         }
         break;
 
         case MOUNT_XTREEMFS_OPTION_TRACE_FILE_IO:
         {
-          volume_flags |= Volume::VOLUME_FLAG_TRACE_FILE_IO;
+          volume_flags |= Volume::FLAG_TRACE_FILE_IO;
         }
         break;
 
         case MOUNT_XTREEMFS_OPTION_TRACE_STAT_CACHE:
         {
-          volume_flags |= Volume::VOLUME_FLAG_TRACE_STAT_CACHE;
+          volume_flags |= Volume::FLAG_TRACE_STAT_CACHE;
         }
         break;
 
         case MOUNT_XTREEMFS_OPTION_TRACE_VOLUME_OPERATIONS:
         {          
           trace_volume_operations = true;
-          fuse_flags |= yieldfs::FUSE::FUSE_FLAG_DEBUG;
+          fuse_flags |= yieldfs::FUSE::FLAG_DEBUG;
         }
         break;
 
@@ -365,19 +365,19 @@ namespace mount_xtreemfs
 
         case MOUNT_XTREEMFS_OPTION_WRITE_BACK_DATA_CACHE:
         {
-          volume_flags |= Volume::VOLUME_FLAG_WRITE_BACK_DATA_CACHE;
+          volume_flags |= Volume::FLAG_WRITE_BACK_DATA_CACHE;
         }
         break;
 
         case MOUNT_XTREEMFS_OPTION_WRITE_BACK_STAT_CACHE:
         {
-          volume_flags |= Volume::VOLUME_FLAG_WRITE_BACK_STAT_CACHE;
+          volume_flags |= Volume::FLAG_WRITE_BACK_STAT_CACHE;
         }
         break;
 
         case MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_DATA_CACHE:
         {
-          volume_flags |= Volume::VOLUME_FLAG_WRITE_THROUGH_DATA_CACHE;
+          volume_flags |= Volume::FLAG_WRITE_THROUGH_DATA_CACHE;
         }
         break;
 
@@ -385,18 +385,18 @@ namespace mount_xtreemfs
         {
           if 
           ( 
-            ( volume_flags & Volume::VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE )
-              == Volume::VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE
+            ( volume_flags & Volume::FLAG_WRITE_BACK_FILE_SIZE_CACHE )
+              == Volume::FLAG_WRITE_BACK_FILE_SIZE_CACHE
           )
-            volume_flags ^= Volume::VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE;
+            volume_flags ^= Volume::FLAG_WRITE_BACK_FILE_SIZE_CACHE;
 
-          volume_flags |= Volume::VOLUME_FLAG_WRITE_THROUGH_FILE_SIZE_CACHE;
+          volume_flags |= Volume::FLAG_WRITE_THROUGH_FILE_SIZE_CACHE;
         }
         break;
 
         case MOUNT_XTREEMFS_OPTION_WRITE_THROUGH_STAT_CACHE:
         {
-          volume_flags |= Volume::VOLUME_FLAG_WRITE_THROUGH_STAT_CACHE;
+          volume_flags |= Volume::FLAG_WRITE_THROUGH_STAT_CACHE;
         }
         break;
 
@@ -417,14 +417,14 @@ namespace mount_xtreemfs
       }
       else if ( file_count < 2 )
       {
-        throw YIELD::platform::Exception
+        throw yield::platform::Exception
         (
           "must specify a DIR/volume URI and a mount point"
         );
       }
       else
       {
-        throw YIELD::platform::Exception
+        throw yield::platform::Exception
         (
           "extra parameters after the DIR/volume URI and mount point"
         );

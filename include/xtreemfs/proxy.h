@@ -32,128 +32,158 @@
 
 #include "xtreemfs/grid_ssl_socket.h"
 #include "xtreemfs/interfaces/constants.h"
-#include "xtreemfs/proxy_exception_response.h"
 #include "xtreemfs/interfaces/types.h"
+#include "xtreemfs/proxy_exception_response.h"
 #include "xtreemfs/user_credentials_cache.h"
-
-#include "yield.h"
 
 
 namespace xtreemfs
 {
-  class UserCredentialsCache;
+  using yidl::runtime::MarshallableObject;
+  using yidl::runtime::MarshallableObjectFactory;
+
+  using yield::ipc::ONCRPCClient;
+  using yield::ipc::ONCRPCRequest;
+  using yield::ipc::SocketFactory;
+  using yield::ipc::SSLContext;
+  using yield::ipc::URI;
+
+  using yield::platform::IOQueue;
+  using yield::platform::Log;
+  using yield::platform::SocketAddress;
+  using yield::platform::Time;
 
 
-  template <class InterfaceType>
-  class Proxy : public YIELD::ipc::ONCRPCClient<InterfaceType>
+  template 
+  <
+    class InterfaceType,
+    class InterfaceEventFactoryType,
+    class InterfaceEventSenderType
+  >
+  class Proxy 
+    : public InterfaceEventSenderType,
+      public yield::ipc::ONCRPCClient
   {
-  public:
-    // YIELD::concurrency::EventTarget
-    virtual void send( YIELD::concurrency::Event& ev )
-    {
-      if ( InterfaceType::checkRequest( ev ) != NULL )
-      {
-        org::xtreemfs::interfaces::UserCredentials* user_credentials
-          = new org::xtreemfs::interfaces::UserCredentials;
-
-        getCurrentUserCredentials( *user_credentials );
-
-        YIELD::ipc::ONCRPCRequest* oncrpc_request =
-            new YIELD::ipc::ONCRPCRequest
-            (
-              this->incRef(),
-              org::xtreemfs::interfaces::ONCRPC_AUTH_FLAVOR,
-              user_credentials,
-              ev
-            );
-
-        YIELD::ipc::ONCRPCClient<InterfaceType>::send( *oncrpc_request );
-      }
-      else
-        YIELD::ipc::ONCRPCClient<InterfaceType>::send( ev );
-
-    }
-
   protected:
+    // Steals all references except for user_credentials_cache
     Proxy
     (
       uint16_t concurrency_level,
       uint32_t flags,
-      YIELD::platform::auto_Log log,
-      const YIELD::platform::Time& operation_timeout,
-      YIELD::ipc::auto_SocketAddress peername,
-      uint8_t reconnect_tries_max,
-      YIELD::ipc::auto_SocketFactory socket_factory,
-      auto_UserCredentialsCache user_credentials_cache
+      IOQueue& io_queue,
+      Log* log,      
+      const Time& operation_timeout,
+      SocketAddress& peername,      
+      uint16_t reconnect_tries_max,
+      SocketFactory& socket_factory,
+      UserCredentialsCache* user_credentials_cache
     )
-      : YIELD::ipc::ONCRPCClient<InterfaceType>
-        (
-          concurrency_level,
-          flags,
-          log,
-          operation_timeout,
-          peername,
-          reconnect_tries_max,
-          socket_factory
-        ),
-        log( log ),
-        user_credentials_cache( user_credentials_cache )
-    { }
-
-    virtual ~Proxy()
-    { }
-
-    static YIELD::ipc::auto_SocketFactory
-    createSocketFactory
-    (
-      const YIELD::ipc::URI& absolute_uri,
-      YIELD::ipc::auto_SSLContext ssl_context
-    )
-    {
-      if
+    : InterfaceEventSenderType( *this ),
+      ONCRPCClient
       (
-        absolute_uri.get_scheme()
-          == org::xtreemfs::interfaces::ONCRPCG_SCHEME &&
-        ssl_context != NULL
-      )
-        return new GridSSLSocketFactory( ssl_context );
-
-      else if
-      (
-        absolute_uri.get_scheme()
-          == org::xtreemfs::interfaces::ONCRPCS_SCHEME &&
-        ssl_context != NULL
-      )
-        return new YIELD::ipc::SSLSocketFactory( ssl_context );
-
-      else if
-      (
-        absolute_uri.get_scheme() == org::xtreemfs::interfaces::ONCRPCU_SCHEME
-      )
-        return new YIELD::ipc::UDPSocketFactory;
-
-      else
-        return new YIELD::ipc::TCPSocketFactory;
-    }
-
-    void
-    getCurrentUserCredentials
-    (
-      org::xtreemfs::interfaces::UserCredentials& out_user_credentials
-    )
+        concurrency_level,
+        flags,
+        io_queue,
+        log,
+        *new InterfaceEventFactoryType,
+        operation_timeout,
+        peername,
+        0x20000000 + InterfaceType::TAG,
+        reconnect_tries_max,
+        socket_factory,
+        InterfaceType::TAG
+      )  
     {
       if ( user_credentials_cache != NULL )
+        this->user_credentials_cache = Object::inc_ref( user_credentials_cache );
+      else
+        this->user_credentials_cache = new UserCredentialsCache;
+    }
+
+    virtual ~Proxy()
+    {
+      UserCredentialsCache::dec_ref( *user_credentials_cache );
+    }
+
+    // ONCRPCClient
+    ONCRPCRequest& createONCRPCRequest( MarshallableObject& body )
+    {
+      UserCredentials* user_credentials;
+      if ( user_credentials_cache != NULL )
+        user_credentials = user_credentials_cache->getCurrentUserCredentials();
+      else
+        user_credentials = NULL;
+
+      return *new ONCRPCRequest
+                  ( 
+                    body, 
+                    body.get_type_id(), 
+                    get_prog(), 
+                    get_vers(),
+                    user_credentials
+                  );
+    }
+
+    // Helper methods for subclasses
+    static SocketAddress& createSocketAddress( const URI& absolute_uri )
+    {
+      const std::string& scheme = absolute_uri.get_scheme();
+
+      URI checked_absolute_uri( absolute_uri );
+      if ( checked_absolute_uri.get_port() == 0 )
       {
-        user_credentials_cache->getCurrentUserCredentials
-        (
-          out_user_credentials
-        );
+        if ( scheme == org::xtreemfs::interfaces::ONCRPCG_SCHEME )
+          checked_absolute_uri.set_port( InterfaceType::ONCRPCG_PORT_DEFAULT );
+        else if ( scheme == org::xtreemfs::interfaces::ONCRPCS_SCHEME )
+          checked_absolute_uri.set_port( InterfaceType::ONCRPCS_PORT_DEFAULT );
+        else if ( scheme == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
+          checked_absolute_uri.set_port( InterfaceType::ONCRPCU_PORT_DEFAULT );
+        else
+          checked_absolute_uri.set_port( InterfaceType::ONCRPC_PORT_DEFAULT );
       }
+
+      return ONCRPCClient::createSocketAddress( checked_absolute_uri );
+    }
+
+    static SocketFactory&
+    createSocketFactory
+    (
+      const URI& absolute_uri,
+      SSLContext* ssl_context
+    )
+    {
+      const std::string& scheme = absolute_uri.get_scheme();
+
+      URI checked_absolute_uri( absolute_uri );
+      if ( checked_absolute_uri.get_port() == 0 )
+      {
+        if ( scheme == org::xtreemfs::interfaces::ONCRPCG_SCHEME )
+          checked_absolute_uri.set_port( InterfaceType::ONCRPCG_PORT_DEFAULT );
+        else if ( scheme == org::xtreemfs::interfaces::ONCRPCS_SCHEME )
+          checked_absolute_uri.set_port( InterfaceType::ONCRPCS_PORT_DEFAULT );
+        else if ( scheme == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
+          checked_absolute_uri.set_port( InterfaceType::ONCRPCU_PORT_DEFAULT );
+        else
+          checked_absolute_uri.set_port( InterfaceType::ONCRPC_PORT_DEFAULT );
+      }
+
+      if ( scheme == ONCRPCG_SCHEME && ssl_context != NULL )
+        return *new GridSSLSocketFactory( *ssl_context );
+      else if ( scheme == ONCRPCS_SCHEME  && ssl_context != NULL )
+        return *new yield::ipc::SSLSocketFactory( *ssl_context );
+      else if ( scheme == ONCRPCU_SCHEME )
+        return *new yield::ipc::UDPSocketFactory;
+      else
+        return *new yield::ipc::TCPSocketFactory;
+    }
+
+    UserCredentialsCache* get_user_credentials_cache() const
+    {
+      return user_credentials_cache;
     }
 
   private:
-    YIELD::platform::auto_Log log;
-    auto_UserCredentialsCache user_credentials_cache;
+    UserCredentialsCache* user_credentials_cache;
   };
 };
 

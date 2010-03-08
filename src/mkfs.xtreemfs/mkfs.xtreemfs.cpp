@@ -64,7 +64,7 @@ namespace mkfs_xtreemfs
         "--mode",
         "n"
       );
-      fs.set_mode( YIELD::platform::Volume::DIRECTORY_MODE_DEFAULT );
+      fs.set_mode( yield::platform::Volume::DIRECTORY_MODE_DEFAULT );
 
       addOption
       (
@@ -131,16 +131,16 @@ namespace mkfs_xtreemfs
     };
 
 
-    YIELD::ipc::auto_URI dir_or_mrc_uri;
+    yield::ipc::auto_URI dir_or_mrc_uri;
     StatVFS fs;
     StripingPolicy fs_default_striping_policy;
     std::string mrc_password;
 
 
-    // YIELD::Main
+    // yield::Main
     int _main( int, char** )
     {
-      YIELD::ipc::auto_URI mrc_uri; // What we ultimately need to contact
+      yield::ipc::auto_URI mrc_uri; // What we ultimately need to contact
 
       // Check if the URI passed on the command line has a port that's
       // the same as an MRC default port
@@ -188,7 +188,7 @@ namespace mkfs_xtreemfs
             mrc_services
           );
         }
-        catch ( YIELD::platform::Exception& )
+        catch ( yield::platform::Exception& )
         {
           // dir_or_mrc_uri is an MRC URI after all
           mrc_uri = dir_or_mrc_uri;
@@ -197,7 +197,7 @@ namespace mkfs_xtreemfs
         if ( mrc_uri == NULL )
         {
           if ( mrc_services.empty() )
-            throw YIELD::platform::Exception( "could not find an MRC" );
+            throw yield::platform::Exception( "could not find an MRC" );
 
           // Select a random MRC
           std::srand( static_cast<unsigned int>( std::time( NULL ) ) );
@@ -223,7 +223,7 @@ namespace mkfs_xtreemfs
             )
             {
               mrc_uri
-                = new YIELD::ipc::URI( ( *mrc_address_mapping_i ).get_uri() );
+                = new yield::ipc::URI( ( *mrc_address_mapping_i ).get_uri() );
               break;
             }
           }
@@ -249,13 +249,13 @@ namespace mkfs_xtreemfs
               if ( ( *mrc_address_mapping_i ).get_protocol() == match_protocol )
               {
                 mrc_uri
-                 = new YIELD::ipc::URI( ( *mrc_address_mapping_i ).get_uri() );
+                 = new yield::ipc::URI( ( *mrc_address_mapping_i ).get_uri() );
                 break;
               }
             }
 
             if ( mrc_uri == NULL )
-             throw YIELD::platform::Exception( "could not an MRC" );
+             throw yield::platform::Exception( "could not an MRC" );
           }
         }
       }
@@ -347,14 +347,14 @@ namespace mkfs_xtreemfs
       }
       else if ( files_count == 0 )
       {
-        throw YIELD::platform::Exception
+        throw yield::platform::Exception
         (
           "must specify the <DIR|MRC>/volume URI"
         );
       }
       else
       {
-        throw YIELD::platform::Exception
+        throw yield::platform::Exception
         (
           "extra parameters after the <DIR|MRC>/volume URI"
         );

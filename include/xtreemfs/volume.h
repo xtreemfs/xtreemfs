@@ -42,51 +42,51 @@ namespace xtreemfs
   class StatCache;
 
 
-  class Volume : public YIELD::platform::Volume
+  class Volume : public yield::platform::Volume
   {
   public:
-    const static uint32_t VOLUME_FLAG_WRITE_BACK_DATA_CACHE = 1;
-    const static uint32_t VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE = 2;
-    const static uint32_t VOLUME_FLAG_WRITE_BACK_STAT_CACHE = 4;
-    const static uint32_t VOLUME_FLAG_WRITE_THROUGH_DATA_CACHE = 8;
-    const static uint32_t VOLUME_FLAG_WRITE_THROUGH_FILE_SIZE_CACHE = 16;
-    const static uint32_t VOLUME_FLAG_WRITE_THROUGH_STAT_CACHE = 32;
-    const static uint32_t VOLUME_FLAG_TRACE_DATA_CACHE = 64;
-    const static uint32_t VOLUME_FLAG_TRACE_FILE_IO = 128;
-    const static uint32_t VOLUME_FLAG_TRACE_STAT_CACHE = 256;
+    const static uint32_t FLAG_WRITE_BACK_DATA_CACHE = 1;
+    const static uint32_t FLAG_WRITE_BACK_FILE_SIZE_CACHE = 2;
+    const static uint32_t FLAG_WRITE_BACK_STAT_CACHE = 4;
+    const static uint32_t FLAG_WRITE_THROUGH_DATA_CACHE = 8;
+    const static uint32_t FLAG_WRITE_THROUGH_FILE_SIZE_CACHE = 16;
+    const static uint32_t FLAG_WRITE_THROUGH_STAT_CACHE = 32;
+    const static uint32_t FLAG_TRACE_DATA_CACHE = 64;
+    const static uint32_t FLAG_TRACE_FILE_IO = 128;
+    const static uint32_t FLAG_TRACE_STAT_CACHE = 256;
     const static uint32_t VOLUME_FLAGS_DEFAULT 
-      = VOLUME_FLAG_WRITE_BACK_FILE_SIZE_CACHE;
+      = FLAG_WRITE_BACK_FILE_SIZE_CACHE;
 
 
     static yidl::runtime::auto_Object<Volume>
     create
     (
-      const YIELD::ipc::URI& dir_uri,
+      const URI& dir_uri,
       const std::string& name,
       uint32_t flags = VOLUME_FLAGS_DEFAULT,
-      YIELD::platform::auto_Log log = NULL,
+      Log& log = NULL,
       uint32_t proxy_flags = 0,
-      const YIELD::platform::Time& proxy_operation_timeout
+      const Time& proxy_operation_timeout
         = DIRProxy::OPERATION_TIMEOUT_DEFAULT,
       uint8_t proxy_reconnect_tries_max
         = DIRProxy::RECONNECT_TRIES_MAX_DEFAULT,
-      YIELD::ipc::auto_SSLContext proxy_ssl_context = NULL,
-      const YIELD::platform::Path& vivaldi_coordinates_file_path
-        = YIELD::platform::Path()
+      yield::ipc::auto_SSLContext proxy_ssl_context = NULL,
+      const Path& vivaldi_coordinates_file_path
+        = Path()
     );
 
     // fsetattr is used for setting the file size
     void fsetattr
     (
-      const YIELD::platform::Path& path,
+      const Path& path,
       yidl::runtime::auto_Object<Stat> stbuf,
       uint32_t to_set,
       const org::xtreemfs::interfaces::XCap& write_xcap
     );
 
     uint32_t get_flags() const { return flags; }
-    YIELD::platform::auto_Log get_log() const { return log; }
-    auto_MRCProxy get_mrc_proxy() const { return mrc_proxy; }
+    Log& get_log() const { return log; }
+    MRCProxy& get_mrc_proxy() const { return mrc_proxy; }
     auto_OSDProxyMux get_osd_proxy_mux() const { return osd_proxy_mux; }
     const std::string& get_uuid() const { return uuid; }
 
@@ -96,19 +96,19 @@ namespace xtreemfs
     void 
     metadatasync
     (
-      const YIELD::platform::Path& path,
+      const Path& path,
       const org::xtreemfs::interfaces::XCap& write_xcap
     );
 
     void release( SharedFile& );
 
-    // YIELD::platform::Volume
+    // yield::platform::Volume
     YIELD_PLATFORM_VOLUME_PROTOTYPES;
 
     static void
     set_errno
     (
-      YIELD::platform::Log* log,
+      Log* log,
       const char* operation_name,
       ProxyExceptionResponse&
     );
@@ -116,7 +116,7 @@ namespace xtreemfs
     static void
     set_errno
     (
-      YIELD::platform::Log* log,
+      Log* log,
       const char* operation_name,
       std::exception&
     );
@@ -126,13 +126,13 @@ namespace xtreemfs
     (
       auto_DIRProxy dir_proxy,
       uint32_t flags,
-      YIELD::platform::auto_Log log,
-      auto_MRCProxy mrc_proxy,
+      Log& log,
+      MRCProxy& mrc_proxy,
       const std::string& name,
       auto_OSDProxyMux osd_proxy_mux,
-      YIELD::concurrency::auto_StageGroup stage_group,
-      auto_UserCredentialsCache user_credentials_cache,
-      const YIELD::platform::Path& vivaldi_coordinates_file_path
+      yield::concurrency::auto_StageGroup stage_group,
+      UserCredentialsCache* user_credentials_cache,
+      const Path& vivaldi_coordinates_file_path
     );
 
     ~Volume();
@@ -140,27 +140,25 @@ namespace xtreemfs
 
     auto_DIRProxy dir_proxy;
     uint32_t flags;
-    YIELD::platform::auto_Log log;
-    auto_MRCProxy mrc_proxy;
+    Log& log;
+    MRCProxy& mrc_proxy;
     std::string name;
     auto_OSDProxyMux osd_proxy_mux;
     std::map<std::string, SharedFile*> shared_files;
-    YIELD::platform::Mutex shared_files_lock;
-    YIELD::concurrency::auto_StageGroup stage_group;
+    yield::platform::Mutex shared_files_lock;
+    yield::concurrency::auto_StageGroup stage_group;
     std::string uuid;
     StatCache* stat_cache;
-    auto_UserCredentialsCache user_credentials_cache;
-    YIELD::platform::Path vivaldi_coordinates_file_path;
+    UserCredentialsCache* user_credentials_cache;
+    Path vivaldi_coordinates_file_path;
 
 
     yidl::runtime::auto_Object<SharedFile>
     get_shared_file
     (
-      const YIELD::platform::Path& path
+      const Path& path
     );
   };
-
-  typedef yidl::runtime::auto_Object<Volume> auto_Volume;
 };
 
 #endif
