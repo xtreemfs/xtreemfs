@@ -90,7 +90,7 @@ public class ONCRPCRequestHeader implements yidl.runtime.Object {
         writer.writeInt32(null,vers);
         writer.writeInt32(null,proc);
         if (user_credentials != null) {
-            writer.writeInt32(null,Constants.ONCRPC_AUTH_FLAVOR);
+            writer.writeInt32(null,UserCredentials.TAG);
             final int dataLength = user_credentials.getXDRSize();
             writer.writeInt32(null,dataLength);
             user_credentials.marshal(writer);
@@ -117,7 +117,7 @@ public class ONCRPCRequestHeader implements yidl.runtime.Object {
         proc = um.readInt32(null);
 //        System.out.println( "proc " + Integer.toString( proc ) );        
         auth_flavor = um.readInt32(null); // cred_auth_flavor
-        if (getAuth_flavor() == Constants.ONCRPC_AUTH_FLAVOR) {
+        if (getAuth_flavor() == UserCredentials.TAG) {
             int size = um.readInt32(null);
             user_credentials = new UserCredentials();
             user_credentials.unmarshal(um);
