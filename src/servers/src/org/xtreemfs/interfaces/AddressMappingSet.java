@@ -31,7 +31,7 @@ public class AddressMappingSet extends Sequence<AddressMapping>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030345; }
+    public int getTag() { return 2010030947; }
     public String getTypeName() { return "org::xtreemfs::interfaces::AddressMappingSet"; }
 
     public int getXDRSize()

@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_rwr_flease_msgResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010030685;
+    public static final int TAG = 2010031287;
 
     public xtreemfs_rwr_flease_msgResponse() {  }
 
@@ -32,10 +32,10 @@ public class xtreemfs_rwr_flease_msgResponse extends org.xtreemfs.interfaces.uti
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030685;
+    public static final long serialVersionUID = 2010031287;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030685; }
+    public int getTag() { return 2010031287; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_rwr_flease_msgResponse"; }
 
     public int getXDRSize()

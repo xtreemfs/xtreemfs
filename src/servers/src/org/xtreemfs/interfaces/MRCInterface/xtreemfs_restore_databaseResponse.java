@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_restore_databaseResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010030556;
+    public static final int TAG = 2010031158;
 
     public xtreemfs_restore_databaseResponse() {  }
 
@@ -32,10 +32,10 @@ public class xtreemfs_restore_databaseResponse extends org.xtreemfs.interfaces.u
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030556;
+    public static final long serialVersionUID = 2010031158;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030556; }
+    public int getTag() { return 2010031158; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::xtreemfs_restore_databaseResponse"; }
 
     public int getXDRSize()

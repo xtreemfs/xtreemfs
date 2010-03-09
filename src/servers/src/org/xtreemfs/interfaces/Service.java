@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class Service implements Struct
 {
-    public static final int TAG = 2010030348;
+    public static final int TAG = 2010030950;
 
     public Service() { type = ServiceType.SERVICE_TYPE_MIXED; data = new ServiceDataMap();  }
     public Service( ServiceType type, String uuid, long version, String name, long last_updated_s, ServiceDataMap data ) { this.type = type; this.uuid = uuid; this.version = version; this.name = name; this.last_updated_s = last_updated_s; this.data = data; }
@@ -45,10 +45,10 @@ public class Service implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030348;
+    public static final long serialVersionUID = 2010030950;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030348; }
+    public int getTag() { return 2010030950; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Service"; }
 
     public int getXDRSize()

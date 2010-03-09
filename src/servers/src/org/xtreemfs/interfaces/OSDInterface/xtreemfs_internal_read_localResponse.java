@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_internal_read_localResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010030657;
+    public static final int TAG = 2010031259;
 
     public xtreemfs_internal_read_localResponse() { returnValue = new InternalReadLocalResponse();  }
     public xtreemfs_internal_read_localResponse( InternalReadLocalResponse returnValue ) { this.returnValue = returnValue; }
@@ -36,10 +36,10 @@ public class xtreemfs_internal_read_localResponse extends org.xtreemfs.interface
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030657;
+    public static final long serialVersionUID = 2010031259;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030657; }
+    public int getTag() { return 2010031259; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_read_localResponse"; }
 
     public int getXDRSize()

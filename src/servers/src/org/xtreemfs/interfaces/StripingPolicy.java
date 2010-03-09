@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class StripingPolicy implements Struct
 {
-    public static final int TAG = 2010030333;
+    public static final int TAG = 2010030935;
 
     public StripingPolicy() { type = StripingPolicyType.STRIPING_POLICY_RAID0;  }
     public StripingPolicy( StripingPolicyType type, int stripe_size, int width ) { this.type = type; this.stripe_size = stripe_size; this.width = width; }
@@ -39,10 +39,10 @@ public class StripingPolicy implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030333;
+    public static final long serialVersionUID = 2010030935;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030333; }
+    public int getTag() { return 2010030935; }
     public String getTypeName() { return "org::xtreemfs::interfaces::StripingPolicy"; }
 
     public int getXDRSize()

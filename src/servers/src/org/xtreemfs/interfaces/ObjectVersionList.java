@@ -31,7 +31,7 @@ public class ObjectVersionList extends Sequence<ObjectVersion>
 
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030372; }
+    public int getTag() { return 2010030974; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ObjectVersionList"; }
 
     public int getXDRSize()

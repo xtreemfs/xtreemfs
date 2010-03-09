@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_rwr_updateRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010030686;
+    public static final int TAG = 2010031288;
 
     public xtreemfs_rwr_updateRequest() { file_credentials = new FileCredentials(); object_data = new ObjectData();  }
     public xtreemfs_rwr_updateRequest( FileCredentials file_credentials, String file_id, long object_number, long object_version, int offset, ObjectData object_data ) { this.file_credentials = file_credentials; this.file_id = file_id; this.object_number = object_number; this.object_version = object_version; this.offset = offset; this.object_data = object_data; }
@@ -49,10 +49,10 @@ public class xtreemfs_rwr_updateRequest extends org.xtreemfs.interfaces.utils.Re
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030686;
+    public static final long serialVersionUID = 2010031288;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030686; }
+    public int getTag() { return 2010031288; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_rwr_updateRequest"; }
 
     public int getXDRSize()

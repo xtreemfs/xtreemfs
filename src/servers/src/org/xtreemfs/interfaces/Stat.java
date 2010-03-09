@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class Stat implements Struct
 {
-    public static final int TAG = 2010030354;
+    public static final int TAG = 2010030956;
 
     public Stat() {  }
     public Stat( long dev, long ino, int mode, int nlink, String user_id, String group_id, long size, long atime_ns, long mtime_ns, long ctime_ns, int blksize, long etag, int truncate_epoch, int attributes ) { this.dev = dev; this.ino = ino; this.mode = mode; this.nlink = nlink; this.user_id = user_id; this.group_id = group_id; this.size = size; this.atime_ns = atime_ns; this.mtime_ns = mtime_ns; this.ctime_ns = ctime_ns; this.blksize = blksize; this.etag = etag; this.truncate_epoch = truncate_epoch; this.attributes = attributes; }
@@ -61,10 +61,10 @@ public class Stat implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030354;
+    public static final long serialVersionUID = 2010030956;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030354; }
+    public int getTag() { return 2010030956; }
     public String getTypeName() { return "org::xtreemfs::interfaces::Stat"; }
 
     public int getXDRSize()

@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_rwr_statusResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010030690;
+    public static final int TAG = 2010031292;
 
     public xtreemfs_rwr_statusResponse() { local_state = new ReplicaStatus();  }
     public xtreemfs_rwr_statusResponse( ReplicaStatus local_state ) { this.local_state = local_state; }
@@ -36,10 +36,10 @@ public class xtreemfs_rwr_statusResponse extends org.xtreemfs.interfaces.utils.R
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030690;
+    public static final long serialVersionUID = 2010031292;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030690; }
+    public int getTag() { return 2010031292; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_rwr_statusResponse"; }
 
     public int getXDRSize()

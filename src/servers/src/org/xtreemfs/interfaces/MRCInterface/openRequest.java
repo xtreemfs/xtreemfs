@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class openRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010030523;
+    public static final int TAG = 2010031125;
 
     public openRequest() { client_vivaldi_coordinates = new VivaldiCoordinates();  }
     public openRequest( String volume_name, String path, int flags, int mode, int attributes, VivaldiCoordinates client_vivaldi_coordinates ) { this.volume_name = volume_name; this.path = path; this.flags = flags; this.mode = mode; this.attributes = attributes; this.client_vivaldi_coordinates = client_vivaldi_coordinates; }
@@ -49,10 +49,10 @@ public class openRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030523;
+    public static final long serialVersionUID = 2010031125;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030523; }
+    public int getTag() { return 2010031125; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::openRequest"; }
 
     public int getXDRSize()

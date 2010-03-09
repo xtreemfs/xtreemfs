@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class renameResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010030527;
+    public static final int TAG = 2010031129;
 
     public renameResponse() { file_credentials = new FileCredentialsSet();  }
     public renameResponse( FileCredentialsSet file_credentials ) { this.file_credentials = file_credentials; }
@@ -36,10 +36,10 @@ public class renameResponse extends org.xtreemfs.interfaces.utils.Response
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030527;
+    public static final long serialVersionUID = 2010031129;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030527; }
+    public int getTag() { return 2010031129; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::renameResponse"; }
 
     public int getXDRSize()

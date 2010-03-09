@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class rmdirRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010030528;
+    public static final int TAG = 2010031130;
 
     public rmdirRequest() {  }
     public rmdirRequest( String volume_name, String path ) { this.volume_name = volume_name; this.path = path; }
@@ -41,10 +41,10 @@ public class rmdirRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030528;
+    public static final long serialVersionUID = 2010031130;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030528; }
+    public int getTag() { return 2010031130; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::rmdirRequest"; }
 
     public int getXDRSize()

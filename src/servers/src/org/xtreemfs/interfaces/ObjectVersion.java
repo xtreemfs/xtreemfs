@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class ObjectVersion implements Struct
 {
-    public static final int TAG = 2010030371;
+    public static final int TAG = 2010030973;
 
     public ObjectVersion() {  }
     public ObjectVersion( long object_number, long object_version ) { this.object_number = object_number; this.object_version = object_version; }
@@ -37,10 +37,10 @@ public class ObjectVersion implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030371;
+    public static final long serialVersionUID = 2010030973;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030371; }
+    public int getTag() { return 2010030973; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ObjectVersion"; }
 
     public int getXDRSize()

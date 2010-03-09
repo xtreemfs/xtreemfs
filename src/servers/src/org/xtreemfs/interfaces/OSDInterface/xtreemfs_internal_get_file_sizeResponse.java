@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_internal_get_file_sizeResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010030656;
+    public static final int TAG = 2010031258;
 
     public xtreemfs_internal_get_file_sizeResponse() {  }
     public xtreemfs_internal_get_file_sizeResponse( long returnValue ) { this.returnValue = returnValue; }
@@ -36,10 +36,10 @@ public class xtreemfs_internal_get_file_sizeResponse extends org.xtreemfs.interf
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030656;
+    public static final long serialVersionUID = 2010031258;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030656; }
+    public int getTag() { return 2010031258; }
     public String getTypeName() { return "org::xtreemfs::interfaces::OSDInterface::xtreemfs_internal_get_file_sizeResponse"; }
 
     public int getXDRSize()

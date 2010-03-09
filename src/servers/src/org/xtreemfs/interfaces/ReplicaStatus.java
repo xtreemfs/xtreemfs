@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class ReplicaStatus implements Struct
 {
-    public static final int TAG = 2010030373;
+    public static final int TAG = 2010030975;
 
     public ReplicaStatus() { objectVersions = new ObjectVersionList();  }
     public ReplicaStatus( long truncate_epoch, long file_size, long max_obj_version, ObjectVersionList objectVersions ) { this.truncate_epoch = truncate_epoch; this.file_size = file_size; this.max_obj_version = max_obj_version; this.objectVersions = objectVersions; }
@@ -41,10 +41,10 @@ public class ReplicaStatus implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030373;
+    public static final long serialVersionUID = 2010030975;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030373; }
+    public int getTag() { return 2010030975; }
     public String getTypeName() { return "org::xtreemfs::interfaces::ReplicaStatus"; }
 
     public int getXDRSize()

@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class setattrRequest extends org.xtreemfs.interfaces.utils.Request
 {
-    public static final int TAG = 2010030529;
+    public static final int TAG = 2010031131;
 
     public setattrRequest() { stbuf = new Stat();  }
     public setattrRequest( String volume_name, String path, Stat stbuf, int to_set ) { this.volume_name = volume_name; this.path = path; this.stbuf = stbuf; this.to_set = to_set; }
@@ -45,10 +45,10 @@ public class setattrRequest extends org.xtreemfs.interfaces.utils.Request
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030529;
+    public static final long serialVersionUID = 2010031131;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030529; }
+    public int getTag() { return 2010031131; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::setattrRequest"; }
 
     public int getXDRSize()

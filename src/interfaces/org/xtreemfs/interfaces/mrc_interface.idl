@@ -6,7 +6,7 @@
 
 module org
 {
-  module xtreemfs # 2010030314
+  module xtreemfs # 2010030916
   {
     module interfaces
     {
@@ -90,19 +90,19 @@ module org
         void ftruncate( XCap write_xcap, out XCap truncate_xcap ) # 3;
         void getattr( string volume_name, string path, uint64_t known_etag, out StatSet stbuf ) # 4;
         void getxattr( string volume_name, string path, string name, out string value ) # 5;
-        void link( string target_path, string link_path ) # 6;
+        void link( string volume_name, string target_path, string link_path ) # 6;
         void listxattr( string volume_name, string path, out StringSet names ) # 7;
         void mkdir( string volume_name, string path, uint32_t mode ) # 8;
         void open( string volume_name, string path, uint32_t flags, uint32_t mode, uint32_t attributes, VivaldiCoordinates client_vivaldi_coordinates, out FileCredentials file_credentials ) # 9;
         void readdir( string volume_name, string path, uint64_t known_etag, uint16_t limit_directory_entries_count, boolean names_only, uint64_t seen_directory_entries_count, out DirectoryEntrySet directory_entries ) # 10;
         void readlink( string volume_name, string path, out string link_target_path ) # 11;
         void removexattr( string volume_name, string path, string name ) # 12;
-        void rename( string source_path, string target_path, out FileCredentialsSet file_credentials ) # 13;
+        void rename( string volume_name, string source_path, string target_path, out FileCredentialsSet file_credentials ) # 13;
         void rmdir( string volume_name, string path ) # 14;
         void setattr( string volume_name, string path, Stat stbuf, uint32_t to_set ) # 15;
         void setxattr( string volume_name, string path, string name, string value, int flags ) # 16;
         void statvfs( string volume_name, uint64_t known_etag, out StatVFSSet stbuf ) # 17;
-        void symlink( string target_path, string link_path ) # 18;
+        void symlink( string volume_name, string target_path, string link_path ) # 18;
         void unlink( string volume_name, string path, out FileCredentialsSet file_credentials ) # 19;
 
         // XtreemFS-specific operations

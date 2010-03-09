@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class InternalGmax implements Struct
 {
-    public static final int TAG = 2010030364;
+    public static final int TAG = 2010030966;
 
     public InternalGmax() {  }
     public InternalGmax( long epoch, long file_size, long last_object_id ) { this.epoch = epoch; this.file_size = file_size; this.last_object_id = last_object_id; }
@@ -39,10 +39,10 @@ public class InternalGmax implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030364;
+    public static final long serialVersionUID = 2010030966;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030364; }
+    public int getTag() { return 2010030966; }
     public String getTypeName() { return "org::xtreemfs::interfaces::InternalGmax"; }
 
     public int getXDRSize()

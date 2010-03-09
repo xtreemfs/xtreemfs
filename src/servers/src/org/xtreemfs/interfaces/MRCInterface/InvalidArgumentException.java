@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCRPCException
 {
-    public static final int TAG = 2010030566;
+    public static final int TAG = 2010031168;
 
     public InvalidArgumentException() {  }
     public InvalidArgumentException( String error_message ) { this.error_message = error_message; }
@@ -36,10 +36,10 @@ public class InvalidArgumentException extends org.xtreemfs.interfaces.utils.ONCR
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030566;
+    public static final long serialVersionUID = 2010031168;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030566; }
+    public int getTag() { return 2010031168; }
     public String getTypeName() { return "org::xtreemfs::interfaces::MRCInterface::InvalidArgumentException"; }
 
     public int getXDRSize()

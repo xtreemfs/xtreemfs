@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class StatVFS implements Struct
 {
-    public static final int TAG = 2010030358;
+    public static final int TAG = 2010030960;
 
     public StatVFS() { access_control_policy = AccessControlPolicyType.ACCESS_CONTROL_POLICY_NULL; default_striping_policy = new StripingPolicy();  }
     public StatVFS( int bsize, long bavail, long blocks, String fsid, int namemax, AccessControlPolicyType access_control_policy, StripingPolicy default_striping_policy, long etag, int mode, String name, String owner_group_id, String owner_user_id ) { this.bsize = bsize; this.bavail = bavail; this.blocks = blocks; this.fsid = fsid; this.namemax = namemax; this.access_control_policy = access_control_policy; this.default_striping_policy = default_striping_policy; this.etag = etag; this.mode = mode; this.name = name; this.owner_group_id = owner_group_id; this.owner_user_id = owner_user_id; }
@@ -57,10 +57,10 @@ public class StatVFS implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030358;
+    public static final long serialVersionUID = 2010030960;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030358; }
+    public int getTag() { return 2010030960; }
     public String getTypeName() { return "org::xtreemfs::interfaces::StatVFS"; }
 
     public int getXDRSize()

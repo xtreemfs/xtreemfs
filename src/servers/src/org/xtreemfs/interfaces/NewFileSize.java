@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class NewFileSize implements Struct
 {
-    public static final int TAG = 2010030325;
+    public static final int TAG = 2010030927;
 
     public NewFileSize() {  }
     public NewFileSize( long size_in_bytes, int truncate_epoch ) { this.size_in_bytes = size_in_bytes; this.truncate_epoch = truncate_epoch; }
@@ -37,10 +37,10 @@ public class NewFileSize implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030325;
+    public static final long serialVersionUID = 2010030927;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030325; }
+    public int getTag() { return 2010030927; }
     public String getTypeName() { return "org::xtreemfs::interfaces::NewFileSize"; }
 
     public int getXDRSize()

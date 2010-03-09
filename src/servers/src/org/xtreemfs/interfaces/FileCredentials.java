@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class FileCredentials implements Struct
 {
-    public static final int TAG = 2010030339;
+    public static final int TAG = 2010030941;
 
     public FileCredentials() { xcap = new XCap(); xlocs = new XLocSet();  }
     public FileCredentials( XCap xcap, XLocSet xlocs ) { this.xcap = xcap; this.xlocs = xlocs; }
@@ -37,10 +37,10 @@ public class FileCredentials implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030339;
+    public static final long serialVersionUID = 2010030941;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030339; }
+    public int getTag() { return 2010030941; }
     public String getTypeName() { return "org::xtreemfs::interfaces::FileCredentials"; }
 
     public int getXDRSize()

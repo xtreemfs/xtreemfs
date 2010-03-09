@@ -15,7 +15,7 @@ import yidl.runtime.Unmarshaller;
 
 public class xtreemfs_address_mappings_removeResponse extends org.xtreemfs.interfaces.utils.Response
 {
-    public static final int TAG = 2010030416;
+    public static final int TAG = 2010031018;
 
     public xtreemfs_address_mappings_removeResponse() {  }
 
@@ -32,10 +32,10 @@ public class xtreemfs_address_mappings_removeResponse extends org.xtreemfs.inter
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030416;
+    public static final long serialVersionUID = 2010031018;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030416; }
+    public int getTag() { return 2010031018; }
     public String getTypeName() { return "org::xtreemfs::interfaces::DIRInterface::xtreemfs_address_mappings_removeResponse"; }
 
     public int getXDRSize()

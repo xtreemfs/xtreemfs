@@ -14,7 +14,7 @@ import yidl.runtime.Unmarshaller;
 
 public class InternalReadLocalResponse implements Struct
 {
-    public static final int TAG = 2010030366;
+    public static final int TAG = 2010030968;
 
     public InternalReadLocalResponse() { data = new ObjectData(); object_set = new ObjectListSet();  }
     public InternalReadLocalResponse( ObjectData data, ObjectListSet object_set ) { this.data = data; this.object_set = object_set; }
@@ -37,10 +37,10 @@ public class InternalReadLocalResponse implements Struct
 
 
     // java.io.Serializable
-    public static final long serialVersionUID = 2010030366;
+    public static final long serialVersionUID = 2010030968;
 
     // yidl.runtime.Object
-    public int getTag() { return 2010030366; }
+    public int getTag() { return 2010030968; }
     public String getTypeName() { return "org::xtreemfs::interfaces::InternalReadLocalResponse"; }
 
     public int getXDRSize()
