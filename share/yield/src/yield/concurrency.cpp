@@ -1,6 +1,5 @@
 #include "yield/concurrency.h"
 using namespace yield::concurrency;
-using yield::platform::TimerQueue;
 
 
 // color_stage_group.cpp
@@ -53,7 +52,7 @@ public:
 private:
   STLEventQueue& event_queue;
   uint16_t logical_processor_i;
-  std::string name;
+  string name;
 
   bool should_run;
 };
@@ -97,7 +96,7 @@ ColorStageGroup::~ColorStageGroup()
 {
   for
   (
-    std::vector<Thread*>::iterator thread_i = threads.begin();
+    vector<Thread*>::iterator thread_i = threads.begin();
     thread_i != threads.end();
     thread_i++
   )
@@ -156,7 +155,10 @@ void EventTargetMux::send( Event& ev )
 
 
 // mg1_visit_policy.cpp
+using std::sort;
+
 #include <cmath>
+using std::sqrt;
 
 #define YIELD_MG1_MIN_RO 0.005
 // Higher smoothing factor discounts older values faster
@@ -169,7 +171,7 @@ MG1VisitPolicy::MG1VisitPolicy( Stage** stages ) : VisitPolicy( stages )
   polling_table_pos = YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE;
   memset( last_rhos, 0, sizeof( last_rhos ) );
 
-  double inverse_golden_ratio = ( std::sqrt( 5.0 ) - 1.0 ) / 2.0;
+  double inverse_golden_ratio = ( sqrt( 5.0 ) - 1.0 ) / 2.0;
   double unit_circle[YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE],
          ordered_unit_circle[YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE+1];
 
@@ -184,7 +186,7 @@ MG1VisitPolicy::MG1VisitPolicy( Stage** stages ) : VisitPolicy( stages )
     ordered_unit_circle[uc_i] = unit_circle[uc_i];
   }
 
-  std::sort
+  sort
   (
     ordered_unit_circle,
     ordered_unit_circle+YIELD_CONCURRENCY_MG1_POLLING_TABLE_SIZE
@@ -231,7 +233,7 @@ bool MG1VisitPolicy::populatePollingTable()
       rho = YIELD_MG1_RHO_EMA_SMOOTHING_FACTOR * rho +
             ( 1 - YIELD_MG1_RHO_EMA_SMOOTHING_FACTOR ) * last_rhos[s_i];
       last_rhos[s_i] = rho;
-      rho_sqrt[s_i] = std::sqrt( rho * ( 1.0 - rho ) );
+      rho_sqrt[s_i] = sqrt( rho * ( 1.0 - rho ) );
       rho_sqrt_sum += rho_sqrt[s_i];
     }
   }
@@ -364,11 +366,11 @@ public:
 
     if ( !this->set_processor_affinity( logical_processor_i ) )
     {
-      std::cerr << "yield::concurrency::PollingStageGroup::Thread: " <<
+      cerr << "yield::concurrency::PollingStageGroup::Thread: " <<
                    "error on set_processor_affinity( " <<
                    logical_processor_i << " ): " <<
                    yield::platform::Exception() <<
-                   "." << std::endl;
+                   "." << endl;
     }
 
     Time visit_timeout( 0.5 );
@@ -393,16 +395,16 @@ public:
       }
     }
 
-    std::cout <<
+    cout <<
       "yield::concurrency::PollingStageGroup::Thread: visit efficiency = " <<
       static_cast<double>( successful_visits ) /
         static_cast<double>( total_visits )
-      << std::endl;
+      << endl;
   }
 
 private:
   uint16_t logical_processor_i;
-  std::string name;
+  string name;
   VisitPolicyType visit_policy;
 
   bool should_run;
@@ -449,7 +451,7 @@ PollingStageGroup<VisitPolicyType>::~PollingStageGroup()
 {
   for
   (
-    typename std::vector<Thread*>::iterator thread_i = threads.begin();
+    typename vector<Thread*>::iterator thread_i = threads.begin();
     thread_i != threads.end();
     thread_i++
   )
@@ -540,7 +542,7 @@ SEDAStageGroup::~SEDAStageGroup()
 {
   for
   (
-    std::vector<Thread*>::iterator thread_i = threads.begin();
+    vector<Thread*>::iterator thread_i = threads.begin();
     thread_i != threads.end();
     thread_i++
   )
@@ -548,7 +550,7 @@ SEDAStageGroup::~SEDAStageGroup()
 
   for
   (
-    std::vector<Thread*>::iterator thread_i = threads.begin();
+    vector<Thread*>::iterator thread_i = threads.begin();
     thread_i != threads.end();
     thread_i++
   )
@@ -567,6 +569,9 @@ void SEDAStageGroup::startThreads( Stage& stage, int16_t thread_count )
 
 
 // stage.cpp
+using yield::platform::TimerQueue;
+
+
 class Stage::StatisticsTimer : public TimerQueue::Timer
 {
 public:
@@ -629,12 +634,7 @@ Stage::Stage( const char* name )
   performance_counters = yield::platform::PerformanceCounterSet::create();
   performance_counters->addEvent( yield::platform::PerformanceCounterSet::EVENT_L1_DCM );
   performance_counters->addEvent( yield::platform::PerformanceCounterSet::EVENT_L2_ICM );
-  std::memset
-  (
-    performance_counter_totals,
-    0,
-    sizeof( performance_counter_totals )
-  );
+  memset( performance_counter_totals, 0, sizeof( performance_counter_totals ) );
 #endif
 
   TimerQueue::getDefaultTimerQueue().addTimer( *new StatisticsTimer( *this ) );
@@ -643,13 +643,13 @@ Stage::Stage( const char* name )
 Stage::~Stage()
 {
 #ifdef YIELD_PLATFORM_HAVE_PERFORMANCE_COUNTERS
-  std::cout << get_stage_name() << ": L1 data cache misses: " <<
+  cout << get_stage_name() << ": L1 data cache misses: " <<
     performance_counter_totals[0] <<
-    std::endl;
+    endl;
 
-  std::cout << get_stage_name() << ": L2 instruction cache misses: " <<
+  cout << get_stage_name() << ": L2 instruction cache misses: " <<
     performance_counter_totals[1] <<
-    std::endl;
+    endl;
 #endif
 }
 
@@ -718,7 +718,7 @@ ThreadLocalEventQueue::~ThreadLocalEventQueue()
 {
   for
   (
-    std::vector<EventStack*>::iterator event_stack_i = event_stacks.begin();
+    vector<EventStack*>::iterator event_stack_i = event_stacks.begin();
     event_stack_i != event_stacks.end();
     event_stack_i++
   )

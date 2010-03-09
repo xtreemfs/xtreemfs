@@ -33,7 +33,7 @@
 
 #include "yield/platform.h"
 
-#include <map>
+#include <algorithm> // For std::sort
 #include <queue>
 
 
@@ -666,7 +666,7 @@ namespace yield
       class EventStack;
 
       unsigned long tls_key;
-      std::vector<EventStack*> event_stacks;
+      vector<EventStack*> event_stacks;
       EventStack* getEventStack();
 
       SynchronizedSTLQueue<Event*> all_processor_event_queue;
@@ -886,7 +886,7 @@ namespace yield
     public:
       Sampler()
       {
-        std::memset( samples, 0, sizeof( samples ) );
+        memset( samples, 0, sizeof( samples ) );
         samples_pos = samples_count = 0;
         min = static_cast<SampleType>( ULONG_MAX ); max = 0; total = 0;
       }
@@ -1117,13 +1117,13 @@ namespace yield
         if ( running_stage != NULL )
         {
           running_stage->send_counters_lock.acquire();
-          std::map<const char*, uint64_t>::iterator send_counter_i
+          map<const char*, uint64_t>::iterator send_counter_i
             = running_stage->send_counters.find( this->get_stage_name() );
           if ( send_counter_i != running_stage->send_counters.end() )
             send_counter_i->second++;
           else
             running_stage->send_counters.insert
-              ( std::make_pair( this->get_stage_name(), 1 ) );
+              ( make_pair( this->get_stage_name(), 1 ) );
           running_stage->send_counters_lock.release();
         }
         */
@@ -1137,7 +1137,7 @@ namespace yield
           return;
         else
         {
-          std::cerr << get_stage_name() << ": event queue full, stopping.";
+          cerr << get_stage_name() << ": event queue full, stopping.";
           DebugBreak();
         }
       }
@@ -1402,7 +1402,7 @@ namespace yield
       STLEventQueue* event_queue;
 
       class Thread;
-      std::vector<Thread*> threads;
+      vector<Thread*> threads;
     };
 
 
@@ -1500,7 +1500,7 @@ namespace yield
       bool use_thread_local_event_queues;
 
       class Thread;
-      std::vector<Thread*> threads;
+      vector<Thread*> threads;
     };
 
 
@@ -1713,7 +1713,7 @@ namespace yield
 
     private:
       class Thread;
-      std::vector<Thread*> threads;
+      vector<Thread*> threads;
       void startThreads( Stage& stage, int16_t thread_count );
     };
   };

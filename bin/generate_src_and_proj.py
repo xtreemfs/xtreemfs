@@ -1,48 +1,52 @@
 #!/usr/bin/env python
 
-import os.path, sys
+import sys
+from os import chdir, listdir, sep as os_sep
+from os.path import abspath, dirname, exists, join, splitext
 from optparse import OptionParser
 
 
 # Constants
-MY_DIR_PATH = os.path.dirname( os.path.abspath( sys.modules[__name__].__file__ ) )
+MY_DIR_PATH = dirname( abspath( sys.modules[__name__].__file__ ) )
 
-GOOGLE_BREAKPAD_DIR_PATH = os.path.join( MY_DIR_PATH, "..", "share", "google-breakpad" )
-GOOGLE_BREAKPAD_INCLUDE_DIR_PATHS = ( os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src" ), )                   
-GOOGLE_BREAKPAD_OUTPUT_FILE_PATH = os.path.join( MY_DIR_PATH, "..", "lib", "google-breakpad" )
+GOOGLE_BREAKPAD_DIR_PATH = join( MY_DIR_PATH, "..", "share", "google-breakpad" )
+GOOGLE_BREAKPAD_INCLUDE_DIR_PATHS = ( join( GOOGLE_BREAKPAD_DIR_PATH, "src" ), )                   
+GOOGLE_BREAKPAD_OUTPUT_FILE_PATH = join( MY_DIR_PATH, "..", "lib", "google-breakpad" )
 
-YIDL_DIR_PATH = os.path.abspath( os.path.join( MY_DIR_PATH, "..", "..", "yidl" ) )
-YIELD_DIR_PATH = os.path.abspath( os.path.join( MY_DIR_PATH, "..", "..", "yield" ) )
-YIELDFS_DIR_PATH = os.path.abspath( os.path.join( MY_DIR_PATH, "..", "..", "yieldfs" ) )
+YIDL_DIR_PATH = abspath( join( MY_DIR_PATH, "..", "..", "yidl" ) )
+YIELD_DIR_PATH = abspath( join( MY_DIR_PATH, "..", "..", "yield" ) )
+YIELDFS_DIR_PATH = abspath( join( MY_DIR_PATH, "..", "..", "yieldfs" ) )
 
-XTREEMFS_DIR_PATH = os.path.abspath( os.path.join( MY_DIR_PATH, ".." ) )
+XTREEMFS_DIR_PATH = abspath( join( MY_DIR_PATH, ".." ) )
 
 
 DEFINES = ( "YIELD_IPC_HAVE_OPENSSL", )
 
-INCLUDE_DIR_PATHS = ( 
-    os.path.join( XTREEMFS_DIR_PATH, "include" ), 
-    os.path.join( XTREEMFS_DIR_PATH, "share", "yidl", "include" ),
-    os.path.join( XTREEMFS_DIR_PATH, "share", "yield", "include" ),                      
-    os.path.join( XTREEMFS_DIR_PATH, "share", "yieldfs", "include" )
+INCLUDE_DIR_PATHS = \
+( 
+    join( XTREEMFS_DIR_PATH, "include" ), 
+    join( XTREEMFS_DIR_PATH, "share", "yidl", "include" ),
+    join( XTREEMFS_DIR_PATH, "share", "yield", "include" ),                      
+    join( XTREEMFS_DIR_PATH, "share", "yieldfs", "include" )
 )
 
-IMPORTS = [
+IMPORTS = \
+[
     "import java.io.StringWriter;",
     "import org.xtreemfs.interfaces.utils.*;",
     "import org.xtreemfs.common.buffer.ReusableBuffer;",
     "import yidl.runtime.PrettyPrinter;",
 ]
 
-INTERFACES_DIR_PATH = os.path.join( XTREEMFS_DIR_PATH, "src", "interfaces", "org", "xtreemfs", "interfaces" )
+INTERFACES_DIR_PATH = join( XTREEMFS_DIR_PATH, "src", "interfaces", "org", "xtreemfs", "interfaces" )
                     
-LIB_DIR_PATHS = ( os.path.join( XTREEMFS_DIR_PATH, "lib" ), )
+LIB_DIR_PATHS = ( join( XTREEMFS_DIR_PATH, "lib" ), )
                     
                     
 try:
     import yidl
 except ImportError:
-    sys.path.append( os.path.join( YIDL_DIR_PATH, "src", "py" ) )
+    sys.path.append( join( YIDL_DIR_PATH, "src", "py" ) )
 
 from yidl.compiler.idl_parser import parseIDL
 from yidl.generators import generate_proj, generate_SConscript, generate_vcproj
@@ -60,41 +64,41 @@ options, ignore = option_parser.parse_args()
 
 copy_file_paths = {}
 # yidl
-copy_file_paths[os.path.join( YIDL_DIR_PATH, "include", "yidl.h" )] = os.path.join( XTREEMFS_DIR_PATH, "share", "yidl", "include", "yidl.h" )
+copy_file_paths[join( YIDL_DIR_PATH, "include", "yidl.h" )] = join( XTREEMFS_DIR_PATH, "share", "yidl", "include", "yidl.h" )
 # yunit
-copy_file_paths[os.path.join( YIDL_DIR_PATH, "include", "yunit.h" )] = os.path.join( XTREEMFS_DIR_PATH, "share", "yidl", "include", "yunit.h" )
+copy_file_paths[join( YIDL_DIR_PATH, "include", "yunit.h" )] = join( XTREEMFS_DIR_PATH, "share", "yidl", "include", "yunit.h" )
 # yield/main.h
-copy_file_paths[os.path.join( YIELD_DIR_PATH, "include", "yield", "main.h" )] = os.path.join( XTREEMFS_DIR_PATH, "share", "yield", "include", "yield", "main.h" )
+copy_file_paths[join( YIELD_DIR_PATH, "include", "yield", "main.h" )] = join( XTREEMFS_DIR_PATH, "share", "yield", "include", "yield", "main.h" )
 # Yield sub-project umbrella includes
 for file_stem in ( "concurrency", "ipc", "platform" ):
-  copy_file_paths[os.path.join( YIELD_DIR_PATH, "include", "yield", file_stem + ".h" )] = os.path.join( XTREEMFS_DIR_PATH, "share", "yield", "include", "yield", file_stem + ".h" )
-  copy_file_paths[os.path.join( YIELD_DIR_PATH, "src", "yield", file_stem + ".cpp" )] = os.path.join( XTREEMFS_DIR_PATH, "share", "yield", "src", "yield", file_stem + ".cpp" )
+  copy_file_paths[join( YIELD_DIR_PATH, "include", "yield", file_stem + ".h" )] = join( XTREEMFS_DIR_PATH, "share", "yield", "include", "yield", file_stem + ".h" )
+  copy_file_paths[join( YIELD_DIR_PATH, "src", "yield", file_stem + ".cpp" )] = join( XTREEMFS_DIR_PATH, "share", "yield", "src", "yield", file_stem + ".cpp" )
 # yield/platform _test.h's
 for test_h_file_prefix in ( "directory", "file", "volume" ):
-    copy_file_paths[os.path.join( YIELD_DIR_PATH, "src", "yield", "platform", test_h_file_prefix + "_test.h" )] = os.path.join( XTREEMFS_DIR_PATH, "share", "yield", "src", "yield", "platform", test_h_file_prefix + "_test.h" )
+    copy_file_paths[join( YIELD_DIR_PATH, "src", "yield", "platform", test_h_file_prefix + "_test.h" )] = join( XTREEMFS_DIR_PATH, "share", "yield", "src", "yield", "platform", test_h_file_prefix + "_test.h" )
    
 # YieldFS
-copy_file_paths[os.path.join( YIELDFS_DIR_PATH, "include", "yieldfs.h" )] = os.path.join( XTREEMFS_DIR_PATH, "share", "yieldfs", "include", "yieldfs.h" )
-copy_file_paths[os.path.join( YIELDFS_DIR_PATH, "src", "yieldfs.cpp" )] = os.path.join( XTREEMFS_DIR_PATH, "share", "yieldfs", "src", "yieldfs.cpp" )
+copy_file_paths[join( YIELDFS_DIR_PATH, "include", "yieldfs.h" )] = join( XTREEMFS_DIR_PATH, "share", "yieldfs", "include", "yieldfs.h" )
+copy_file_paths[join( YIELDFS_DIR_PATH, "src", "yieldfs.cpp" )] = join( XTREEMFS_DIR_PATH, "share", "yieldfs", "src", "yieldfs.cpp" )
 
 for source_file_path, target_file_path in copy_file_paths.iteritems():
-    if os.path.exists( source_file_path ):
+    if exists( source_file_path ):
         copy_file( source_file_path, target_file_path )
 
 
 # Generate .h interface definitions from .idl
-for interface_idl_file_name in os.listdir( INTERFACES_DIR_PATH ):
+for interface_idl_file_name in listdir( INTERFACES_DIR_PATH ):
     if interface_idl_file_name.endswith( ".idl" ):
 		if interface_idl_file_name == "nettest_interface.idl":
 			generate_yield_cpp( 
-              os.path.join( INTERFACES_DIR_PATH, interface_idl_file_name ),
-			  os.path.join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs", "nettest_interface.h" ),
+              join( INTERFACES_DIR_PATH, interface_idl_file_name ),
+			  join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs", "nettest_interface.h" ),
               force=options.force 
             )
 		else:
 			generate_yield_cpp( 
-				os.path.join( INTERFACES_DIR_PATH, interface_idl_file_name ), 
-				os.path.join( XTREEMFS_DIR_PATH, "include", "xtreemfs", "interfaces", os.path.splitext( interface_idl_file_name )[0] + ".h" ),
+				join( INTERFACES_DIR_PATH, interface_idl_file_name ), 
+				join( XTREEMFS_DIR_PATH, "include", "xtreemfs", "interfaces", splitext( interface_idl_file_name )[0] + ".h" ),
                 force=options.force
             ) 
 
@@ -105,22 +109,22 @@ format_src(
     force=options.force,
     project="XtreemFS", 
     src_paths=( 
-        os.path.join( XTREEMFS_DIR_PATH, "bin", "generate_src_and_proj.py" ),
-        os.path.join( XTREEMFS_DIR_PATH, "include" ),
-        os.path.join( XTREEMFS_DIR_PATH, "include", "xtreemfs" ),                        
-        os.path.join( XTREEMFS_DIR_PATH, "src", "libxtreemfs" ),
-        os.path.join( XTREEMFS_DIR_PATH, "src", "lsfs.xtreemfs" ),
-        os.path.join( XTREEMFS_DIR_PATH, "src", "mkfs.xtreemfs" ),
-        os.path.join( XTREEMFS_DIR_PATH, "src", "mount.xtreemfs" ),
-        os.path.join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs", "nettest.xtreemfs.cpp" ),
-        os.path.join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs", "nettest_proxy.h" ),
-        os.path.join( XTREEMFS_DIR_PATH, "src", "rmfs.xtreemfs" ),
+        join( XTREEMFS_DIR_PATH, "bin", "generate_src_and_proj.py" ),
+        join( XTREEMFS_DIR_PATH, "include" ),
+        join( XTREEMFS_DIR_PATH, "include", "xtreemfs" ),                        
+        join( XTREEMFS_DIR_PATH, "src", "libxtreemfs" ),
+        join( XTREEMFS_DIR_PATH, "src", "lsfs.xtreemfs" ),
+        join( XTREEMFS_DIR_PATH, "src", "mkfs.xtreemfs" ),
+        join( XTREEMFS_DIR_PATH, "src", "mount.xtreemfs" ),
+        join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs", "nettest.xtreemfs.cpp" ),
+        join( XTREEMFS_DIR_PATH, "src", "nettest.xtreemfs", "nettest_proxy.h" ),
+        join( XTREEMFS_DIR_PATH, "src", "rmfs.xtreemfs" ),
     )
 )
 
 
 # Generate project files
-os.chdir( os.path.join( XTREEMFS_DIR_PATH, "proj", "libxtreemfs" ) )
+chdir( join( XTREEMFS_DIR_PATH, "proj", "libxtreemfs" ) )
 generate_proj( 
     "libxtreemfs",      
     defines=DEFINES,
@@ -129,36 +133,37 @@ generate_proj(
     lib_dir_paths=LIB_DIR_PATHS,
     libs_win=( "libeay32.lib", "ssleay32.lib" ),
     libs_unix=( "crypto", "fuse", "ssl", ),
-    output_file_path=os.path.join( XTREEMFS_DIR_PATH, "lib", "xtreemfs" ),
+    output_file_path=join( XTREEMFS_DIR_PATH, "lib", "xtreemfs" ),
     src_paths=( 
-        os.path.join( XTREEMFS_DIR_PATH, "include", "xtreemfs" ),
-        os.path.join( XTREEMFS_DIR_PATH, "share", "yield", "src", "yield" ),
-        os.path.join( XTREEMFS_DIR_PATH, "share", "yieldfs", "src" ),
-        os.path.join( XTREEMFS_DIR_PATH, "src", "interfaces", "org", "xtreemfs" ),
-        os.path.join( XTREEMFS_DIR_PATH, "src", "libxtreemfs" ),
+        join( XTREEMFS_DIR_PATH, "include", "xtreemfs" ),
+        join( XTREEMFS_DIR_PATH, "include", "xtreemfs", "interfaces" ),
+        join( XTREEMFS_DIR_PATH, "share", "yield", "src", "yield" ),
+        join( XTREEMFS_DIR_PATH, "share", "yieldfs", "src" ),
+        join( XTREEMFS_DIR_PATH, "src", "interfaces", "org", "xtreemfs", "interfaces" ),
+        join( XTREEMFS_DIR_PATH, "src", "libxtreemfs" ),
     )
 )
                      
 for binary_name in ( "lsfs.xtreemfs", "mkfs.xtreemfs", "mount.xtreemfs", "nettest.xtreemfs", "rmfs.xtreemfs", "xtfs_vivaldi" ):
-    os.chdir( os.path.join( XTREEMFS_DIR_PATH, "proj", binary_name ) )
+    chdir( join( XTREEMFS_DIR_PATH, "proj", binary_name ) )
     generate_proj( 
                    binary_name, 
                    dependency_SConscripts=( 
-                                            os.path.join( XTREEMFS_DIR_PATH, "proj", "libxtreemfs", "libxtreemfs.SConscript" ),
-                                            os.path.join( XTREEMFS_DIR_PATH, "proj", "google-breakpad", "google-breakpad.SConscript" ),
+                                            join( XTREEMFS_DIR_PATH, "proj", "libxtreemfs", "libxtreemfs.SConscript" ),
+                                            join( XTREEMFS_DIR_PATH, "proj", "google-breakpad", "google-breakpad.SConscript" ),
                                           ),
                    defines=DEFINES,
-                   include_dir_paths=INCLUDE_DIR_PATHS + ( os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src" ), ),
+                   include_dir_paths=INCLUDE_DIR_PATHS + ( join( GOOGLE_BREAKPAD_DIR_PATH, "src" ), ),
                    force=options.force,
                    lib_dir_paths=LIB_DIR_PATHS,                   
                    libs=( "xtreemfs_d.lib", ),
-                   output_file_path=os.path.join( XTREEMFS_DIR_PATH, "bin", binary_name ),
-                   src_paths=( os.path.join( XTREEMFS_DIR_PATH, "src", binary_name ), ),
+                   output_file_path=join( XTREEMFS_DIR_PATH, "bin", binary_name ),
+                   src_paths=( join( XTREEMFS_DIR_PATH, "src", binary_name ), ),
                    type="exe",
                  )
 
                                       
-os.chdir( os.path.join( XTREEMFS_DIR_PATH, "proj", "google-breakpad" ) )
+chdir( join( XTREEMFS_DIR_PATH, "proj", "google-breakpad" ) )
 
 generate_SConscript( "google-breakpad", force=options.force )
 
@@ -169,12 +174,12 @@ generate_SConscript(
     output_file_path=GOOGLE_BREAKPAD_OUTPUT_FILE_PATH,
     src_paths=
     (
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "client", "minidump_file_writer.cc" ),
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "client", "linux" ),
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "*.c" ),
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "*.cc" ),
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "dwarf" ),
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "linux" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "client", "minidump_file_writer.cc" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "client", "linux" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "*.c" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "*.cc" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "dwarf" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "linux" ),
     )
 )
 
@@ -186,11 +191,11 @@ generate_SConscript(
     output_file_path=GOOGLE_BREAKPAD_OUTPUT_FILE_PATH,
     src_paths=
     (
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "client", "windows", "crash_generation", "*.cc" ),
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "client", "windows", "handler", "*.cc" ),
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "convert_UTF.c" ),
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "*.cc" ),
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "windows", "*.cc" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "client", "windows", "crash_generation", "*.cc" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "client", "windows", "handler", "*.cc" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "convert_UTF.c" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "*.cc" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "windows", "*.cc" ),
     )
 )
 
@@ -202,11 +207,11 @@ generate_vcproj(
     output_file_path=GOOGLE_BREAKPAD_OUTPUT_FILE_PATH,
     src_paths=
     (
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "client", "windows", "crash_generation", "*.cc" ),
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "client", "windows", "handler", "*.cc" ),
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "convert_UTF.c" ),
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "*.cc" ),
-        os.path.join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "windows", "*.cc" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "client", "windows", "crash_generation", "*.cc" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "client", "windows", "handler", "*.cc" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "convert_UTF.c" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "*.cc" ),
+        join( GOOGLE_BREAKPAD_DIR_PATH, "src", "common", "windows", "*.cc" ),
     )
 )
 
@@ -297,7 +302,7 @@ class XtreemFSJavaInterface(JavaInterface, JavaClass):
         return JavaClass.getImports( self ) + IMPORTS
 
     def getPackageDirPath( self ):                
-        return os.sep.join( self.getQualifiedName() )
+        return os_sep.join( self.getQualifiedName() )
     
     def getPackageName( self ): 
         return ".".join( self.getQualifiedName() )
@@ -393,10 +398,10 @@ class XtreemFSJavaTarget(JavaTarget): pass
 
 
 # Generate .java interfaces from .idl
-os.chdir( os.path.join( MY_DIR_PATH, "..", "src", "servers", "src" ) )        
-for interface_idl_file_name in os.listdir( INTERFACES_DIR_PATH ):
+chdir( join( MY_DIR_PATH, "..", "src", "servers", "src" ) )        
+for interface_idl_file_name in listdir( INTERFACES_DIR_PATH ):
     if interface_idl_file_name.endswith( ".idl" ):
         target = XtreemFSJavaTarget()
-        parseIDL( os.path.join( INTERFACES_DIR_PATH, interface_idl_file_name ), target )
+        parseIDL( join( INTERFACES_DIR_PATH, interface_idl_file_name ), target )
         target.generate()
 

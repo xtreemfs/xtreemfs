@@ -56,6 +56,8 @@
 #ifdef _WIN32
 typedef int ssize_t;
 extern "C" { __declspec( dllimport ) unsigned long __stdcall GetLastError(); }
+#include <string>
+using std::wstring;
 #else
 #include <errno.h>
 #include <limits.h>
@@ -78,18 +80,28 @@ extern "C" { __declspec( dllimport ) unsigned long __stdcall GetLastError(); }
 //#endif
 #endif
 
-#include <algorithm>
-#include <cstring>
-#include <exception>
-#include <fcntl.h>
-#include <memory>
+#include <exception> // for std::exception
+
+#include <fcntl.h> // For O_RDONLY, O_RDWR
+
 #include <iostream>
+using std::cerr;
+using std::endl;
+using std::cout;
+
+#include <ostream>
+using std::ostream;
+
 #include <sstream>
-#include <stdio.h>
-#include <stdlib.h>
+using std::ostringstream;
+
 #include <sys/stat.h>
 #include <sys/types.h>
+
 #include <utility>
+using std::make_pair;
+using std::pair;
+
 
 #ifdef _WIN32
 #ifndef DLLEXPORT
@@ -130,29 +142,23 @@ extern "C" { __declspec( dllimport ) unsigned long __stdcall GetLastError(); }
   virtual bool datasync(); \
   virtual yield::platform::Stat* getattr(); \
   virtual bool getlk( bool exclusive, uint64_t offset, uint64_t length ); \
-  virtual bool getxattr( const std::string& name, std::string& out_value ); \
-  virtual bool listxattr( std::vector<std::string>& out_names ); \
-  virtual ssize_t read( void* buffer, size_t buffer_len, uint64_t offset ); \
-  virtual bool removexattr( const std::string& name ); \
+  virtual bool getxattr( const string& name, string& out_value ); \
+  virtual bool listxattr( vector<string>& out_names ); \
+  virtual ssize_t read( void* buf, size_t buflen, uint64_t offset ); \
+  virtual bool removexattr( const string& name ); \
   virtual bool setlk( bool exclusive, uint64_t offset, uint64_t length ); \
   virtual bool setlkw( bool exclusive, uint64_t offset, uint64_t length ); \
   virtual bool \
   setxattr \
   ( \
-    const std::string& name, \
-    const std::string& value, \
+    const string& name, \
+    const string& value, \
     int flags \
   ); \
   virtual bool sync(); \
   virtual bool truncate( uint64_t offset ); \
   virtual bool unlk( uint64_t offset, uint64_t length ); \
-  virtual ssize_t \
-  write \
-  ( \
-    const void* buffer, \
-    size_t buffer_len, \
-    uint64_t offset \
-  );
+  virtual ssize_t write( const void* buf, size_t buflen, uint64_t offset );
 
 #define YIELD_PLATFORM_VOLUME_PROTOTYPES \
     virtual bool access( const yield::platform::Path& path, int amode ); \
@@ -165,8 +171,8 @@ extern "C" { __declspec( dllimport ) unsigned long __stdcall GetLastError(); }
     getxattr \
     ( \
       const yield::platform::Path& path, \
-      const std::string& name, \
-      std::string& out_value \
+      const string& name, \
+      string& out_value \
     ); \
     virtual bool \
     link \
@@ -178,7 +184,7 @@ extern "C" { __declspec( dllimport ) unsigned long __stdcall GetLastError(); }
     listxattr \
     ( \
       const yield::platform::Path& path, \
-      std::vector<std::string>& out_names \
+      vector<string>& out_names \
     ); \
     virtual bool mkdir( const yield::platform::Path& path, mode_t mode ); \
     virtual yield::platform::File* \
@@ -203,7 +209,7 @@ extern "C" { __declspec( dllimport ) unsigned long __stdcall GetLastError(); }
     removexattr \
     ( \
       const yield::platform::Path& path, \
-      const std::string& name \
+      const string& name \
     ); \
     virtual bool \
     rename \
@@ -223,8 +229,8 @@ extern "C" { __declspec( dllimport ) unsigned long __stdcall GetLastError(); }
     setxattr \
     ( \
       const yield::platform::Path& path, \
-      const std::string& name, \
-      const std::string& value, \
+      const string& name, \
+      const string& value, \
       int flags \
     ); \
     virtual bool \
@@ -384,7 +390,7 @@ namespace yield
       );
 
       virtual ssize_t read( Buffer& buffer );
-      virtual ssize_t read( void* buffer, size_t buffer_len ) = 0;
+      virtual ssize_t read( void* buf, size_t buflen ) = 0;
     };
 
 
@@ -424,15 +430,9 @@ namespace yield
       // they have POSIX semantics.
       virtual ssize_t write( const Buffer& buffer );
       // All non-pure virtual *write* methods delegate to the pure write
-      virtual ssize_t write( const void* buffer, size_t buffer_len ) = 0;
+      virtual ssize_t write( const void* buf, size_t buflen ) = 0;
       virtual ssize_t writev( const Buffers& buffers );
-
-      virtual ssize_t 
-      writev
-      ( 
-        const struct iovec* buffers, 
-        uint32_t buffers_count 
-      );
+      virtual ssize_t writev( const struct iovec* iov, uint32_t iovlen );
     };
 
     
@@ -477,10 +477,10 @@ namespace yield
       );
 
       // Other operator()'s return false on failure
-      bool operator()( const std::string& inbuf, std::string& outbuf );
+      bool operator()( const string& inbuf, string& outbuf );
 #ifdef _WIN32
-      bool operator()( const std::string& inbuf, std::wstring& outbuf );
-      bool operator()( const std::wstring& inbuf, std::string& outbuf );
+      bool operator()( const string& inbuf, wstring& outbuf );
+      bool operator()( const wstring& inbuf, string& outbuf );
 #endif
 
     private:
@@ -505,10 +505,10 @@ namespace yield
       // Path objects are currently immutable
     public:
 #ifdef _WIN32
-      typedef std::wstring string_type;
+      typedef wstring string_type;
       const static wchar_t SEPARATOR = L'\\';
 #else
-      typedef std::string string_type;
+      typedef string string_type;
       const static char SEPARATOR = '/';
 #endif
 
@@ -535,27 +535,27 @@ namespace yield
 
       Path
       ( 
-        const std::string& narrow_path, 
+        const string& narrow_path, 
         iconv::Code narrow_path_code = iconv::CODE_CHAR
       );
 #ifdef _WIN32
       Path( wchar_t wide_path );
       Path( const wchar_t* wide_path );
       Path( const wchar_t* wide_path, size_t wide_path_len );
-      Path( const std::wstring& wide_path );
+      Path( const wstring& wide_path );
 #endif
 
       Path( const Path& path );
 
       Path abspath() const;
       bool empty() const { return path.empty(); }
-      std::string encode( iconv::Code tocode = iconv::CODE_CHAR ) const;
+      string encode( iconv::Code tocode = iconv::CODE_CHAR ) const;
       Path extension() const;
       Path filename() const;
       operator const string_type&() const { return path; }
       operator const string_type::value_type*() const { return path.c_str(); }
 #ifdef _WIN32
-      operator std::string() const { return encode( iconv::CODE_CHAR ); }
+      operator string() const { return encode( iconv::CODE_CHAR ); }
 #endif
       string_type::value_type operator[]( string_type::size_type i ) const;
       bool operator==( const Path& path ) const;
@@ -574,9 +574,9 @@ namespace yield
       Path parent_path() const;
       Path root_path() const;
       size_t size() const { return path.size(); }
-      std::pair<Path, Path> split() const; // head, tail
-      void splitall( std::vector<Path>& ) const; // parts between separator
-      std::pair<Path, Path> splitext() const;
+      pair<Path, Path> split() const; // head, tail
+      void splitall( vector<Path>& ) const; // parts between separator
+      pair<Path, Path> splitext() const;
       Path stem();
 
     private:
@@ -586,12 +586,12 @@ namespace yield
       string_type path; // wide path on Win32, host charset path elsewhere
     };
 
-    static inline std::ostream& operator<<( std::ostream& os, const Path& path )
+    static inline ostream& operator<<( ostream& os, const Path& path )
     {
 #ifdef _WIN32
-      os << static_cast<std::string>( path );
+      os << static_cast<string>( path );
 #else
-      os << static_cast<const std::string&>( path );
+      os << static_cast<const string&>( path );
 #endif
       return os;
     }
@@ -703,7 +703,7 @@ namespace yield
 #else
       operator struct timespec() const;
 #endif
-      operator std::string() const;
+      operator string() const;
 
       Time& operator=( const Time& );
       Time& operator=( uint64_t unix_time_ns );
@@ -746,7 +746,7 @@ namespace yield
       uint64_t unix_time_ns;
     };
 
-    static inline std::ostream& operator<<( std::ostream& os, const Time& time )
+    static inline ostream& operator<<( ostream& os, const Time& time )
     {
       char iso_date_time[64];
       time.as_iso_date_time( iso_date_time, 64 );
@@ -762,9 +762,9 @@ namespace yield
       Exception();
       Exception( uint32_t error_code ); // Use a system error message
       Exception( const char* error_message );
-      Exception( const std::string& error_message );
+      Exception( const string& error_message );
       Exception( uint32_t error_code, const char* error_message );
-      Exception( uint32_t error_code, const std::string& error_message );
+      Exception( uint32_t error_code, const string& error_message );
       Exception( const Exception& other );
       virtual ~Exception() throw();
 
@@ -866,18 +866,16 @@ namespace yield
       
       // IStream
       // read from the current file position
-      virtual ssize_t read( void* buffer, size_t buffer_len );
+      virtual ssize_t read( Buffer& buffer );
+      virtual ssize_t read( void* buf, size_t buflen );
       
       // OStream
       // write to the current file position
-      virtual ssize_t write( const void* buffer, size_t buffer_len );
+      virtual ssize_t write( const Buffer& buffer );
+      virtual ssize_t write( const void* buf, size_t buflen );
 #ifndef _WIN32
-      virtual ssize_t
-      writev
-      ( 
-        const struct iovec* buffers, 
-        uint32_t buffers_count 
-      );
+      virtual ssize_t writev( const Buffers& buffers );
+      virtual ssize_t writev( const struct iovec* iov, uint32_t iovlen );
 #endif
 
       // yidl::runtime::Object
@@ -1081,11 +1079,11 @@ namespace yield
         Log& log;
         Level level;
 
-        std::ostringstream oss;
+        ostringstream oss;
       };
 
 
-      static Log& open( std::ostream&, Level );
+      static Log& open( ostream&, Level );
       static Log& open( const Path& path, Level level, bool lazy = false );
 
       Level get_level() const { return level; }
@@ -1094,7 +1092,7 @@ namespace yield
       void set_level( Level level ) { this->level = level; }
 
       void write( const char* str, Level level );
-      void write( const std::string& str, Level level );
+      void write( const string& str, Level level );
       void write( const void* str, size_t str_len, Level level );
       void write( const unsigned char* str, size_t str_len, Level level );
       void write( const char* str, size_t str_len, Level level );
@@ -1193,10 +1191,10 @@ namespace yield
 
 #ifdef _WIN32
       // IStream
-      ssize_t read( void* buffer, size_t buffer_len );
+      ssize_t read( void* buf, size_t buflen );
 
       // OStream
-      ssize_t write( const void* buffer, size_t buffer_len );
+      ssize_t write( const void* buf, size_t buflen );
 #endif
 
     private:
@@ -1263,11 +1261,11 @@ namespace yield
     private:
       class WorkerThread;
 
-      NBIOQueue( const std::vector<WorkerThread*>& worker_threads );
+      NBIOQueue( const vector<WorkerThread*>& worker_threads );
       ~NBIOQueue();
 
     private:
-      std::vector<WorkerThread*> worker_threads;
+      vector<WorkerThread*> worker_threads;
     };
 
 
@@ -1290,36 +1288,36 @@ namespace yield
       public:
        Option
         ( 
-          const std::string& arg,
-          const std::string& help,
+          const string& arg,
+          const string& help,
           bool require_value = false
         )
         : arg( arg ), help( help ), require_value( require_value )
         { }
 
-        const std::string& get_arg() const { return arg; }
-        const std::string& get_help() const { return help; }
+        const string& get_arg() const { return arg; }
+        const string& get_help() const { return help; }
         bool get_require_value() const { return require_value; }
-        const std::string& get_value() const { return value; }
+        const string& get_value() const { return value; }
 
         bool operator<( const Option& other ) const
         {
           return arg.compare( other.arg ) < 0;
         }
 
-        void set_value( const std::string& value ) { this->value = value; }
+        void set_value( const string& value ) { this->value = value; }
 
       private:
-        std::string arg, help;
+        string arg, help;
         bool require_value;
-        std::string value;
+        string value;
       };
 
 
       class InvalidValueException : public Exception
       {
       public:
-        InvalidValueException( const std::string& error_message )
+        InvalidValueException( const string& error_message )
           : Exception( 1, error_message )
         { }
       };
@@ -1328,7 +1326,7 @@ namespace yield
       class MissingValueException : public Exception
       {
       public:
-        MissingValueException( const std::string& error_message )
+        MissingValueException( const string& error_message )
           : Exception( 1, error_message )
         { }
       };
@@ -1337,7 +1335,7 @@ namespace yield
       class UnexpectedValueException : public Exception
       {
       public:
-        UnexpectedValueException( const std::string& error_message )
+        UnexpectedValueException( const string& error_message )
           : Exception( 1, error_message )
         { }
       };
@@ -1346,7 +1344,7 @@ namespace yield
       class UnregisteredOptionException : public Exception
       {
       public:
-        UnregisteredOptionException( const std::string& error_message )
+        UnregisteredOptionException( const string& error_message )
           : Exception( 1, error_message )
         { }
       };
@@ -1355,15 +1353,15 @@ namespace yield
       void 
       add_option
       ( 
-        const std::string& arg, 
+        const string& arg, 
         bool require_value = false 
       );
 
       void
       add_option
       ( 
-        const std::string& arg, 
-        const std::string& help, 
+        const string& arg, 
+        const string& help, 
         bool require_value = false 
       );
 
@@ -1372,19 +1370,19 @@ namespace yield
       ( 
         int argc, 
         char** argv, 
-        std::vector<Option>& parsed_options
+        vector<Option>& parsed_options
       );
 
       void 
       print_usage
       ( 
-        const std::string& program_name,
+        const string& program_name,
         const char* program_description = NULL,
         const char* files_usage = NULL
       );
 
     private:
-      std::vector<Option> options;
+      vector<Option> options;
     };
 
 
@@ -1411,7 +1409,7 @@ namespace yield
       PerformanceCounterSet( cpc_t* cpc, cpc_set_t* cpc_set );
       cpc_t* cpc; cpc_set_t* cpc_set;
 
-      std::vector<int> event_indices;
+      vector<int> event_indices;
       cpc_buf_t* start_cpc_buf;
 #elif defined(YIELD_PLATFORM_HAVE_PAPI)
       PerformanceCounterSet( int papi_eventset );
@@ -1438,10 +1436,10 @@ namespace yield
       bool set_write_blocking_mode( bool blocking );
 
       // IStream
-      ssize_t read( void* buffer, size_t buffer_len );
+      ssize_t read( void* buf, size_t buflen );
       
       // OStream
-      ssize_t write( const void* buffer, size_t buffer_len );
+      ssize_t write( const void* buf, size_t buflen );
 
     private:
       Pipe( fd_t ends[2] );
@@ -1605,6 +1603,10 @@ namespace yield
     public:
       static int DOMAIN_DEFAULT; // AF_INET6
       
+      typedef uint32_t Option;
+      const static Option OPTION_SO_KEEPALIVE = 1;
+      const static Option OPTION_SO_LINGER = 2;
+
       // Platform-independent flag constants for recv
       // These will be translated to platform-specific constants
       // Any other bits set in recv( ..., flags ) will be passed through
@@ -1672,8 +1674,8 @@ namespace yield
       static Socket* create( int domain, int type, int protocol );
       virtual bool get_blocking_mode() const;
       int get_domain() const { return domain; }
-      static std::string getfqdn();
-      static std::string gethostname();
+      static string getfqdn();
+      static string gethostname();
       SocketAddress* getpeername() const;
       int get_protocol() const { return protocol; }
       SocketAddress* getsockname() const;
@@ -1689,13 +1691,7 @@ namespace yield
       ssize_t recv( Buffer& buffer, int flags = 0 );
 
       // The real recv method, can be overridden by subclasses
-      virtual ssize_t 
-      recv
-      ( 
-        void* buffer, 
-        size_t buffer_len, 
-        int flags = 0 
-      );
+      virtual ssize_t recv( void* buf, size_t buflen, int flags = 0 );
 
       ssize_t send( const Buffer& buffer, int flags = 0 )
       {
@@ -1703,13 +1699,7 @@ namespace yield
       }
 
       // The real send method, can be overridden by subclasses
-      virtual ssize_t
-      send
-      ( 
-        const void* buffer, 
-        size_t len, 
-        int flags = 0
-      );
+      virtual ssize_t send( const void* buf, size_t len, int flags = 0 );
 
       ssize_t sendmsg( const Buffers& buffers, int flags = 0 )
       {
@@ -1720,12 +1710,13 @@ namespace yield
       virtual ssize_t
       sendmsg
       ( 
-        const struct iovec* buffers,
-        uint32_t buffers_count,
+        const struct iovec* iov,
+        uint32_t iovlen,
         int flags = 0
       );
 
       virtual bool set_blocking_mode( bool blocking );
+      virtual bool setsockopt( Option option, bool onoff );
       virtual bool shutdown( bool shut_rd = true, bool shut_wr = true );
       virtual bool want_connect() const;
       virtual bool want_read() const;
@@ -1751,9 +1742,9 @@ namespace yield
         return IStream::read( buffer );
       }
 
-      ssize_t read( void* buffer, size_t buffer_len )
+      ssize_t read( void* buf, size_t buflen )
       {
-        return recv( buffer, buffer_len, 0 );
+        return recv( buf, buflen, 0 );
       }
 
       // OStream
@@ -1784,9 +1775,9 @@ namespace yield
         return OStream::write( buffer );
       }
 
-      ssize_t write( const void* buffer, size_t buffer_len )
+      ssize_t write( const void* buf, size_t buflen )
       {
-        return send( buffer, buffer_len, 0 );
+        return send( buf, buflen, 0 );
       }
 
       ssize_t writev( const Buffers& buffers )
@@ -1794,9 +1785,9 @@ namespace yield
         return OStream::writev( buffers );
       }
 
-      ssize_t writev( const struct iovec* buffers, uint32_t buffers_count )
+      ssize_t writev( const struct iovec* iov, uint32_t iovlen )
       {
-        return sendmsg( buffers, buffers_count, 0 );
+        return sendmsg( iov, iovlen, 0 );
       }
 
     protected:
@@ -1808,7 +1799,7 @@ namespace yield
       static int get_platform_send_flags( int flags );
 
 #ifdef _WIN64
-      void iovecs_to_wsabufs( const iovec*, std::vector<iovec64>& );
+      void iovecs_to_wsabufs( const iovec*, vector<iovec64>& );
 #endif
 
       void set_io_queue( IOQueue& io_queue );
@@ -1896,6 +1887,8 @@ namespace yield
 
         virtual ~IOSendCB();
 
+        bool execute( bool blocking_mode );
+
         const Buffer& get_buffer() const { return buffer; }
         int get_flags() const { return flags; }
         Socket& get_socket() const { return socket_; }
@@ -1907,6 +1900,7 @@ namespace yield
       private:
         Buffer& buffer;
         int flags;
+        size_t partial_send_len;
         Socket& socket_;
       };
 
@@ -1925,7 +1919,10 @@ namespace yield
 
         virtual ~IOSendMsgCB();
 
+        bool execute( bool blocking_mode );
+
         const Buffers& get_buffers() const { return buffers; }
+        size_t get_buffers_len() const { return buffers_len; }
         int get_flags() const { return flags; }
         Socket& get_socket() const { return socket_; }
 
@@ -1935,7 +1932,9 @@ namespace yield
 
       private:
         Buffers& buffers;
+        size_t buffers_len;
         int flags;
+        size_t partial_send_len;
         Socket& socket_;
       };
 
@@ -1990,7 +1989,7 @@ namespace yield
       bool
       getnameinfo
       (
-        std::string& out_hostname,
+        string& out_hostname,
         bool numeric = true
       ) const;
 
@@ -2196,6 +2195,7 @@ namespace yield
     class TCPSocket : public Socket
     {
     public:
+      const static int OPTION_TCP_NODELAY = 4;
       static int PROTOCOL; // IPPROTO_TCP
       static int TYPE; // SOCK_STREAM
 
@@ -2268,6 +2268,7 @@ namespace yield
       );
 
       virtual bool associate( IOQueue& io_queue );
+      virtual bool setsockopt( Option option, bool onoff );
       virtual bool want_accept() const;
 
     protected:
@@ -2489,20 +2490,20 @@ namespace yield
       ssize_t
       recvfrom
       (
-        void* buffer,
-        size_t buffer_len,
+        void* buf,
+        size_t buflen,
         struct sockaddr_storage& peername
       ) const
       {
-        return recvfrom( buffer, buffer_len, 0, peername );
+        return recvfrom( buf, buflen, 0, peername );
       }
 
       // The real recvfrom method
       ssize_t
       recvfrom
       (
-        void* buffer,
-        size_t buffer_len,
+        void* buf,
+        size_t buflen,
         int flags,
         struct sockaddr_storage& peername
       ) const;
@@ -2522,8 +2523,8 @@ namespace yield
       ssize_t
       sendmsg
       (
-        const struct iovec* buffers,
-        uint32_t buffers_count,
+        const struct iovec* iov,
+        uint32_t iovlen,
         const SocketAddress& peername,
         int flags = 0
       ) const;
@@ -2549,22 +2550,21 @@ namespace yield
         return sendto( buffer, buffer.size(), flags, peername );
       }
 
-      ssize_t
-      sendto
+      ssize_t sendto
       (
-        const void* buffer,
-        size_t buffer_len,
+        const void* buf,
+        size_t buflen,
         const SocketAddress& peername
       ) const
       {
-        return sendto( buffer, buffer_len, 0, peername );
+        return sendto( buf, buflen, 0, peername );
       }
 
       ssize_t
       sendto
       (
-        const void* buffer,
-        size_t buffer_len,
+        const void* buf,
+        size_t buflen,
         int flags,
         const SocketAddress& peername
       ) const;
@@ -2758,7 +2758,7 @@ namespace yield
       void* hIoCompletionPort;
 
       class WorkerThread;
-      std::vector<WorkerThread*> worker_threads;
+      vector<WorkerThread*> worker_threads;
     };
 #endif
   };

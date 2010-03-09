@@ -1,8 +1,5 @@
 #include "yield/ipc.h"
 using namespace yield::ipc;
-using yidl::runtime::HeapBuffer;
-using yidl::runtime::StringBuffer;
-using yield::concurrency::EventFactory;
 
 
 // uriparser.h
@@ -9571,6 +9568,12 @@ HTTPServer::create
     listen_tcp_socket->bind( sockname )
     &&
     listen_tcp_socket->listen()
+    &&
+    listen_tcp_socket->setsockopt( Socket::OPTION_SO_KEEPALIVE, true )
+    &&
+    listen_tcp_socket->setsockopt( Socket::OPTION_SO_LINGER, true )
+    &&
+    listen_tcp_socket->setsockopt( TCPSocket::OPTION_TCP_NODELAY, true )
   )
   {
     SocketAddress::dec_ref( sockname );
@@ -9832,9 +9835,9 @@ public:
     {
       unsigned char* yajl_error_str
         = yajl_get_error( reader, 1, json_text, json_text_len );
-      std::ostringstream what;
+      ostringstream what;
       what << __FILE__ << ":" << __LINE__ << ": JSON parsing error: "
-        << reinterpret_cast<char*>( yajl_error_str ) << std::endl;
+        << reinterpret_cast<char*>( yajl_error_str ) << endl;
       yajl_free_error( yajl_error_str );
       throw yield::platform::Exception( what.str() );
     }
@@ -9848,7 +9851,7 @@ public:
 private:
   yajl_handle reader;
 
-  std::string type_name;
+  string type_name;
   uint32_t tag;
 
   // Parsing state
@@ -10208,7 +10211,7 @@ void JSONUnmarshaller::read
 (
   const char* key,
   uint32_t,
-  std::string& str
+  string& str
 )
 {
   JSONValue* json_value = readJSONValue( key );
@@ -10479,6 +10482,10 @@ void ONCRPCClient::ONCRPCResponseTarget::send( Event& ev )
 
 
 // oncrpc_message.cpp
+using yidl::runtime::HeapBuffer;
+using yidl::runtime::StringBuffer;
+
+
 template <class ONCRPCMessageType>
 ONCRPCMessage<ONCRPCMessageType>::ONCRPCMessage
 (
@@ -10756,7 +10763,7 @@ Buffers& ONCRPCMessage<ONCRPCMessageType>::serialize()
 #else
   record_fragment_marker = XDRMarshaller::htonl( record_fragment_marker );
 #endif
-  static_cast<std::string&>( static_cast<StringBuffer&>( xdr_buffer ) )
+  static_cast<string&>( static_cast<StringBuffer&>( xdr_buffer ) )
   .replace
   (
     0,
@@ -10796,7 +10803,7 @@ ONCRPCMessage<ONCRPCMessageType>::unmarshal_opaque_auth
     }
   }
 
-  std::string cred;
+  string cred;
   unmarshaller.read( "auth_body", 0, cred );
 
   return NULL;
@@ -11213,9 +11220,9 @@ void ONCRPCServer::sendRequest( ONCRPCRequest& oncrpc_request )
 RFC822Headers::RFC822Headers( uint8_t reserve_iovecs_count )
 {
   deserialize_state = DESERIALIZING_LEADING_WHITESPACE;
-  buffer_p = stack_buffer;
-  heap_buffer = NULL;
-  heap_buffer_len = 0;
+  buf_p = stack_buf;
+  heap_buf = NULL;
+  heap_buflen = 0;
   heap_iovecs = NULL;
   for ( uint8_t iovec_i = 0; iovec_i < reserve_iovecs_count; iovec_i++ )
     memset( &stack_iovecs[iovec_i], 0, sizeof( stack_iovecs[iovec_i] ) );
@@ -11224,38 +11231,38 @@ RFC822Headers::RFC822Headers( uint8_t reserve_iovecs_count )
 
 RFC822Headers::~RFC822Headers()
 {
-  delete [] heap_buffer;
+  delete [] heap_buf;
 }
 
 void RFC822Headers::allocateHeapBuffer()
 {
-  if ( heap_buffer_len == 0 )
+  if ( heap_buflen == 0 )
   {
-    heap_buffer = new char[512];
-    heap_buffer_len = 512;
+    heap_buf = new char[512];
+    heap_buflen = 512;
     memcpy_s
     (
-      heap_buffer,
-      heap_buffer_len,
-      stack_buffer,
-      buffer_p - stack_buffer
+      heap_buf,
+      heap_buflen,
+      stack_buf,
+      buf_p - stack_buf
     );
-    buffer_p = heap_buffer + ( buffer_p - stack_buffer );
+    buf_p = heap_buf + ( buf_p - stack_buf );
   }
   else
   {
-    heap_buffer_len += 512;
-    char* new_heap_buffer = new char[heap_buffer_len];
+    heap_buflen += 512;
+    char* new_heap_buf = new char[heap_buflen];
     memcpy_s
     (
-      new_heap_buffer,
-      heap_buffer_len,
-      heap_buffer,
-      buffer_p - heap_buffer
+      new_heap_buf,
+      heap_buflen,
+      heap_buf,
+      buf_p - heap_buf
     );
-    buffer_p = new_heap_buffer + ( buffer_p - heap_buffer );
-    delete [] heap_buffer;
-    heap_buffer = new_heap_buffer;
+    buf_p = new_heap_buf + ( buf_p - heap_buf );
+    delete [] heap_buf;
+    heap_buf = new_heap_buf;
   }
 }
 
@@ -11276,8 +11283,8 @@ ssize_t RFC822Headers::deserialize( Buffer& buffer )
               continue;
             else
             {
-              *buffer_p = c;
-              buffer_p++; // Don't need to check the end of the buffer here
+              *buf_p = c;
+              buf_p++; // Don't need to check the end of the buffer here
               deserialize_state = DESERIALIZING_HEADER_NAME;
               break;
             }
@@ -11307,16 +11314,16 @@ ssize_t RFC822Headers::deserialize( Buffer& buffer )
 
             default:
             {
-              *buffer_p = c;
+              *buf_p = c;
               advanceBufferPointer();
 
               for ( ;; )
               {
-                if ( buffer.get( buffer_p, 1 ) )
+                if ( buffer.get( buf_p, 1 ) )
                 {
-                  if ( *buffer_p == ':' )
+                  if ( *buf_p == ':' )
                   {
-                    *buffer_p = 0;
+                    *buf_p = 0;
                     advanceBufferPointer();
                     deserialize_state
                       = DESERIALIZING_HEADER_NAME_VALUE_SEPARATOR;
@@ -11348,7 +11355,7 @@ ssize_t RFC822Headers::deserialize( Buffer& buffer )
               continue;
             else
             {
-              *buffer_p = c;
+              *buf_p = c;
               advanceBufferPointer();
               deserialize_state = DESERIALIZING_HEADER_VALUE;
               break;
@@ -11364,11 +11371,11 @@ ssize_t RFC822Headers::deserialize( Buffer& buffer )
       {
         for ( ;; )
         {
-          if ( buffer.get( buffer_p, 1 ) == 1 )
+          if ( buffer.get( buf_p, 1 ) == 1 )
           {
-            if ( *buffer_p == '\r' )
+            if ( *buf_p == '\r' )
             {
-              *buffer_p = 0;
+              *buf_p = 0;
               advanceBufferPointer();
               deserialize_state = DESERIALIZING_HEADER_VALUE_TERMINATOR;
               break;
@@ -11410,24 +11417,24 @@ ssize_t RFC822Headers::deserialize( Buffer& buffer )
           {
             if ( c == '\n' )
             {
-              *buffer_p = 0;
+              *buf_p = 0;
 
               // Fill the iovecs so get_header will work
               // TODO: do this as we're parsing
-              const char* temp_buffer_p;
-              if ( heap_buffer != NULL )
-                temp_buffer_p = heap_buffer;
+              const char* temp_buf_p;
+              if ( heap_buf != NULL )
+                temp_buf_p = heap_buf;
               else
-                temp_buffer_p = stack_buffer;
+                temp_buf_p = stack_buf;
 
-              while ( temp_buffer_p < buffer_p )
+              while ( temp_buf_p < buf_p )
               {
-                const char* header_name = temp_buffer_p;
+                const char* header_name = temp_buf_p;
                 size_t header_name_len = strnlen( header_name, UINT16_MAX );
-                temp_buffer_p += header_name_len + 1;
-                const char* header_value = temp_buffer_p;
+                temp_buf_p += header_name_len + 1;
+                const char* header_value = temp_buf_p;
                 size_t header_value_len = strnlen( header_value, UINT16_MAX );
-                temp_buffer_p += header_value_len + 1;
+                temp_buf_p += header_value_len + 1;
                 set_next_iovec( header_name, header_name_len );
                 set_next_iovec( ": ", 2 );
                 set_next_iovec( header_value, header_value_len );
@@ -11536,8 +11543,8 @@ void RFC822Headers::set_header
 
 void RFC822Headers::set_header
 (
-  const std::string& header_name,
-  const std::string& header_value
+  const string& header_name,
+  const string& header_value
 )
 {
   set_next_iovec
@@ -11581,37 +11588,37 @@ void RFC822Headers::set_iovec
 
 void RFC822Headers::set_next_iovec( char* data, size_t len )
 {
-  if ( heap_buffer == NULL )
+  if ( heap_buf == NULL )
   {
     if
     (
-      ( buffer_p + len - stack_buffer )
+      ( buf_p + len - stack_buf )
         > YIELD_RFC822_HEADERS_STACK_BUFFER_LENGTH
     )
     {
-      heap_buffer = new char[len];
-      heap_buffer_len = len;
+      heap_buf = new char[len];
+      heap_buflen = len;
       // Don't need to copy anything from the stack buffer or change pointers,
       // since we're not deleting that memory or parsing over it again
-      buffer_p = heap_buffer;
+      buf_p = heap_buf;
     }
   }
   else if
   (
-    static_cast<size_t>( buffer_p + len - heap_buffer )
-      > heap_buffer_len
+    static_cast<size_t>( buf_p + len - heap_buf )
+      > heap_buflen
   )
   {
-    heap_buffer_len += len;
-    char* new_heap_buffer = new char[heap_buffer_len];
+    heap_buflen += len;
+    char* new_heap_buf = new char[heap_buflen];
     memcpy_s
     (
-      new_heap_buffer,
-      heap_buffer_len,
-      heap_buffer,
-      buffer_p - heap_buffer
+      new_heap_buf,
+      heap_buflen,
+      heap_buf,
+      buf_p - heap_buf
     );
-    // Since we're copying the old heap_buffer and deleting its contents
+    // Since we're copying the old heap_buf and deleting its contents
     // we need to adjust the pointers in all iovecs
     struct iovec* iovecs;
     if ( heap_iovecs != NULL )
@@ -11623,26 +11630,26 @@ void RFC822Headers::set_next_iovec( char* data, size_t len )
     {
       if
       (
-        iovecs[iovec_i].iov_base >= heap_buffer
+        iovecs[iovec_i].iov_base >= heap_buf
         &&
-        iovecs[iovec_i].iov_base <= buffer_p
+        iovecs[iovec_i].iov_base <= buf_p
       )
       {
         iovecs[iovec_i].iov_base
-          = new_heap_buffer +
-            ( static_cast<char*>( iovecs[iovec_i].iov_base ) - heap_buffer );
+          = new_heap_buf +
+            ( static_cast<char*>( iovecs[iovec_i].iov_base ) - heap_buf );
       }
     }
-    buffer_p = new_heap_buffer + ( buffer_p - heap_buffer );
-    delete [] heap_buffer;
-    heap_buffer = new_heap_buffer;
+    buf_p = new_heap_buf + ( buf_p - heap_buf );
+    delete [] heap_buf;
+    heap_buf = new_heap_buf;
   }
 
-  const char* buffer_p_before = buffer_p;
-  memcpy_s( buffer_p, len, data, len );
-  buffer_p += len;
+  const char* buf_p_before = buf_p;
+  memcpy_s( buf_p, len, data, len );
+  buf_p += len;
   if ( data[len-1] == 0 ) len--;
-  set_next_iovec( buffer_p_before, len );
+  set_next_iovec( buf_p_before, len );
 }
 
 void RFC822Headers::set_next_iovec( const char* data, size_t len )
@@ -11682,6 +11689,10 @@ void RFC822Headers::set_next_iovec( const struct iovec& iovec )
 
 
 // rpc_message.cpp
+using yield::concurrency::EventFactory;
+
+
+// Incoming
 RPCMessage::RPCMessage
 (
   MarshallableObjectFactory& marshallable_object_factory
@@ -12249,7 +12260,11 @@ SocketPeer::~SocketPeer()
 
 IOQueue& SocketPeer::createIOQueue()
 {
+#ifdef _WIN32
+  return yield::platform::Win32AIOQueue::create();
+#else
   return yield::platform::NBIOQueue::create();
+#endif
 }
 
 SocketAddress& SocketPeer::createSocketAddress( const URI& absolute_uri )
@@ -12435,8 +12450,16 @@ SocketServer<RequestType, ResponseType>::SocketServer
 {
   udp_socket = NULL;
 
-  for ( uint8_t accept_i = 0; accept_i < 10; accept_i++ )
-    listen_tcp_socket.aio_accept( *this );
+#ifdef _WIN32
+  if ( io_queue.get_type_id() == yield::platform::Win32AIOQueue::TYPE_ID )
+  {
+    for ( uint8_t aio_accept_i = 0; aio_accept_i < 10; aio_accept_i++ )
+      listen_tcp_socket.aio_accept( *this );
+  }
+  else
+#endif
+
+  listen_tcp_socket.aio_accept( *this );
 }
 
 template <class RequestType, class ResponseType>
@@ -12579,8 +12602,8 @@ namespace yield
 
 static int pem_password_callback( char *buf, int size, int, void *userdata )
 {
-  const std::string* pem_password
-    = static_cast<const std::string*>( userdata );
+  const string* pem_password
+    = static_cast<const string*>( userdata );
   if ( size > static_cast<int>( pem_password->size() ) )
     size = static_cast<int>( pem_password->size() );
   memcpy_s( buf, size, pem_password->c_str(), size );
@@ -12618,15 +12641,15 @@ SSLContext::create
   const yield::platform::Path& pem_certificate_file_path,
   const yield::platform::Path& pem_private_key_file_path,
 #endif
-  const std::string& pem_private_key_passphrase
+  const string& pem_private_key_passphrase
 )
 {
   SSL_CTX* ctx = createSSL_CTX( method );
 
 #ifdef _WIN32
   // Need to get a string on Windows, because SSL doesn't support wide paths
-  std::string pem_certificate_file_path( _pem_certificate_file_path );
-  std::string pem_private_key_file_path( _pem_private_key_file_path );
+  string pem_certificate_file_path( _pem_certificate_file_path );
+  string pem_private_key_file_path( _pem_private_key_file_path );
 #endif
 
   if
@@ -12649,7 +12672,7 @@ SSLContext::create
       SSL_CTX_set_default_passwd_cb_userdata
       (
         ctx,
-        const_cast<std::string*>( &pem_private_key_passphrase )
+        const_cast<string*>( &pem_private_key_passphrase )
       );
     }
 
@@ -12679,9 +12702,9 @@ SSLContext::create
   const
 #endif
   SSL_METHOD* method,
-  const std::string& pem_certificate_str,
-  const std::string& pem_private_key_str,
-  const std::string& pem_private_key_passphrase
+  const string& pem_certificate_str,
+  const string& pem_private_key_str,
+  const string& pem_private_key_passphrase
 )
 {
   SSL_CTX* ctx = createSSL_CTX( method );
@@ -12704,7 +12727,7 @@ SSLContext::create
           pem_certificate_bio,
           NULL,
           pem_password_callback,
-          const_cast<std::string*>( &pem_private_key_passphrase )
+          const_cast<string*>( &pem_private_key_passphrase )
         );
 
     if ( cert != NULL )
@@ -12729,7 +12752,7 @@ SSLContext::create
               pem_private_key_bio,
               NULL,
               pem_password_callback,
-              const_cast<std::string*>( &pem_private_key_passphrase )
+              const_cast<string*>( &pem_private_key_passphrase )
             );
 
         if ( pkey != NULL )
@@ -12764,14 +12787,14 @@ SSLContext::create
 #else
   const yield::platform::Path& pkcs12_file_path,
 #endif
-  const std::string& pkcs12_passphrase
+  const string& pkcs12_passphrase
 )
 {
   SSL_CTX* ctx = createSSL_CTX( method );
 
 #ifdef _WIN32
   // See note in the PEM create above re: the rationale for this
-  std::string pkcs12_file_path( _pkcs12_file_path );
+  string pkcs12_file_path( _pkcs12_file_path );
 #endif
 
 #ifdef _WIN32
@@ -12962,7 +12985,7 @@ SSLSocket* SSLSocket::create( int domain, SSLContext& ssl_context )
 /*
 void SSLSocket::info_callback( const SSL* ssl, int where, int ret )
 {
-  std::ostringstream info;
+  ostringstream info;
 
   int w = where & ~SSL_ST_MASK;
   if ( ( w & SSL_ST_CONNECT ) == SSL_ST_CONNECT ) info << "SSL_connect:";
@@ -12995,26 +13018,20 @@ void SSLSocket::info_callback( const SSL* ssl, int where, int ret )
 }
 */
 
-ssize_t SSLSocket::recv( void* buffer, size_t buffer_len, int )
+ssize_t SSLSocket::recv( void* buf, size_t buflen, int )
 {
-  return SSL_read( ssl, buffer, static_cast<int>( buffer_len ) );
+  return SSL_read( ssl, buf, static_cast<int>( buflen ) );
 }
 
-ssize_t SSLSocket::send( const void* buffer, size_t buffer_len, int )
+ssize_t SSLSocket::send( const void* buf, size_t buflen, int )
 {
-  return SSL_write( ssl, buffer, static_cast<int>( buffer_len ) );
+  return SSL_write( ssl, buf, static_cast<int>( buflen ) );
 }
 
-ssize_t
-SSLSocket::sendmsg
-(
-  const struct iovec* buffers,
-  uint32_t buffers_count,
-  int
-)
+ssize_t SSLSocket::sendmsg( const struct iovec* iov, uint32_t iovlen, int )
 {
   // Concatenate the buffers
-  return yield::platform::OStream::writev( buffers, buffers_count );
+  return yield::platform::OStream::writev( iov, iovlen );
 }
 
 bool SSLSocket::shutdown()
@@ -13084,7 +13101,7 @@ TracingTCPSocket* TracingTCPSocket::create( int domain, Log& log )
 
 bool TracingTCPSocket::connect( const SocketAddress& peername )
 {
-  std::string to_hostname;
+  string to_hostname;
   if ( peername.getnameinfo( to_hostname ) )
   {
     log.get_stream( Log::LOG_INFO ) <<
@@ -13096,27 +13113,20 @@ bool TracingTCPSocket::connect( const SocketAddress& peername )
   return TCPSocket::connect( peername );
 }
 
-ssize_t TracingTCPSocket::recv( void* buffer, size_t buffer_len, int flags )
+ssize_t TracingTCPSocket::recv( void* buf, size_t buflen, int flags )
 {
   log.get_stream( Log::LOG_INFO ) <<
-    "yield::ipc::TracingTCPSocket: trying to read " << buffer_len <<
+    "yield::ipc::TracingTCPSocket: trying to read " << buflen <<
     " bytes from socket #" << static_cast<uint64_t>( *this ) << ".";
 
-  ssize_t recv_ret = TCPSocket::recv( buffer, buffer_len, flags );
+  ssize_t recv_ret = TCPSocket::recv( buf, buflen, flags );
 
   if ( recv_ret > 0 )
   {
     log.get_stream( Log::LOG_INFO ) <<
       "yield::ipc::TracingTCPSocket: read " << recv_ret <<
       " bytes from socket #" << static_cast<uint64_t>( *this ) << ".";
-
-    log.write
-    (
-      buffer,
-      static_cast<size_t>( recv_ret ),
-      Log::LOG_DEBUG
-    );
-
+    log.write( buf, static_cast<size_t>( recv_ret ), Log::LOG_DEBUG );
     log.write( "\n", Log::LOG_DEBUG );
   }
   else if
@@ -13132,21 +13142,15 @@ ssize_t TracingTCPSocket::recv( void* buffer, size_t buffer_len, int flags )
   return recv_ret;
 }
 
-ssize_t
-TracingTCPSocket::send
-(
-  const void* buffer,
-  size_t buffer_len,
-  int flags
-)
+ssize_t TracingTCPSocket::send( const void* buf, size_t buflen, int flags )
 {
-  ssize_t send_ret = TCPSocket::send( buffer, buffer_len, flags );
+  ssize_t send_ret = TCPSocket::send( buf, buflen, flags );
   if ( send_ret >= 0 )
   {
     log.get_stream( Log::LOG_INFO ) <<
       "yield::ipc::TracingTCPSocket: wrote " << send_ret <<
       " bytes to socket #" << static_cast<uint64_t>( *this ) << ".";
-    log.write( buffer, buffer_len, Log::LOG_DEBUG );
+    log.write( buf, buflen, Log::LOG_DEBUG );
   }
   else if ( !TCPSocket::want_read() && !TCPSocket::want_write() )
   {
@@ -13160,20 +13164,20 @@ TracingTCPSocket::send
 
 ssize_t TracingTCPSocket::sendmsg
 (
-  const struct iovec* buffers,
-  uint32_t buffers_count,
+  const struct iovec* iov,
+  uint32_t iovlen,
   int flags
 )
 {
   size_t buffers_len = 0;
-  for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
-    buffers_len += buffers[buffer_i].iov_len;
+  for ( uint32_t iov_i = 0; iov_i < iovlen; iov_i++ )
+    buffers_len += iov[iov_i].iov_len;
 
   log.get_stream( Log::LOG_INFO ) <<
     "yield::ipc::TracingTCPSocket: trying to write " << buffers_len <<
     " bytes to socket #" << static_cast<uint64_t>( *this ) << ".";
 
-  ssize_t sendmsg_ret = TCPSocket::sendmsg( buffers, buffers_count, flags );
+  ssize_t sendmsg_ret = TCPSocket::sendmsg( iov, iovlen, flags );
 
   if ( sendmsg_ret >= 0 )
   {
@@ -13182,28 +13186,16 @@ ssize_t TracingTCPSocket::sendmsg
       "yield::ipc::TracingTCPSocket: wrote " << sendmsg_ret <<
       " bytes to socket #" << static_cast<uint64_t>( *this ) << ".";
 
-    for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+    for ( uint32_t iov_i = 0; iov_i < iovlen; iov_i++ )
     {
-      if ( buffers[buffer_i].iov_len <= temp_sendmsg_ret )
+      if ( iov[iov_i].iov_len <= temp_sendmsg_ret )
       {
-        log.write
-        (
-          buffers[buffer_i].iov_base,
-          buffers[buffer_i].iov_len,
-          Log::LOG_DEBUG
-        );
-
-        temp_sendmsg_ret -= buffers[buffer_i].iov_len;
+        log.write( iov[iov_i].iov_base, iov[iov_i].iov_len, Log::LOG_DEBUG );
+        temp_sendmsg_ret -= iov[iov_i].iov_len;
       }
       else
       {
-        log.write
-        (
-          buffers[buffer_i].iov_base,
-          temp_sendmsg_ret,
-          Log::LOG_DEBUG
-        );
-
+        log.write( iov[iov_i].iov_base, temp_sendmsg_ret, Log::LOG_DEBUG );
         break;
       }
     }
@@ -13274,7 +13266,7 @@ URI::URI( const char* uri )
   init( uri, strnlen( uri, UINT16_MAX ) );
 }
 
-URI::URI( const std::string& uri )
+URI::URI( const string& uri )
 {
   init( uri.c_str(), uri.size() );
 }
@@ -13330,13 +13322,19 @@ void URI::init( UriUriA& parsed_uri )
   scheme.assign
   (
     parsed_uri.scheme.first,
-    parsed_uri.scheme.afterLast - parsed_uri.scheme.first
+    static_cast<size_t>
+    (
+      parsed_uri.scheme.afterLast - parsed_uri.scheme.first
+    )
   );
 
   host.assign
   (
     parsed_uri.hostText.first,
-    parsed_uri.hostText.afterLast - parsed_uri.hostText.first
+    static_cast<size_t>
+    (
+      parsed_uri.hostText.afterLast - parsed_uri.hostText.first
+    )
   );
 
   if ( parsed_uri.portText.first != NULL )
@@ -13365,13 +13363,19 @@ void URI::init( UriUriA& parsed_uri )
         user.assign
         (
           parsed_uri.userInfo.first,
-          userInfo_p - parsed_uri.userInfo.first
+          static_cast<size_t>
+          (
+            userInfo_p - parsed_uri.userInfo.first
+          )
         );
 
         password.assign
         (
           userInfo_p + 1,
-          parsed_uri.userInfo.afterLast - userInfo_p - 1
+          static_cast<size_t>
+          (
+            parsed_uri.userInfo.afterLast - userInfo_p - 1
+          )
         );
 
         break;
@@ -13384,7 +13388,10 @@ void URI::init( UriUriA& parsed_uri )
       user.assign
       (
         parsed_uri.userInfo.first,
-        parsed_uri.userInfo.afterLast - parsed_uri.userInfo.first
+        static_cast<size_t>
+        (
+          parsed_uri.userInfo.afterLast - parsed_uri.userInfo.first
+        )
       );
     }
   }
@@ -13398,8 +13405,12 @@ void URI::init( UriUriA& parsed_uri )
       resource.append
       (
         path_segment->text.first,
-        path_segment->text.afterLast - path_segment->text.first
+        static_cast<size_t>
+        (
+          path_segment->text.afterLast - path_segment->text.first
+        )
       );
+
       path_segment = path_segment->next;
     }
     while ( path_segment != NULL );
@@ -13418,7 +13429,7 @@ void URI::init( UriUriA& parsed_uri )
       UriQueryListA* query_list_p = query_list;
       while ( query_list_p != NULL )
       {
-        query.insert( std::make_pair( query_list_p->key, query_list_p->value ) );
+        query.insert( make_pair( query_list_p->key, query_list_p->value ) );
         query_list_p = query_list_p->next;
       }
 
@@ -13429,15 +13440,15 @@ void URI::init( UriUriA& parsed_uri )
     resource = "/";
 }
 
-std::string
+string
 URI::get_query_value
 (
-  const std::string& key,
+  const string& key,
   const char* default_query_value
 ) const
 {
-  std::multimap<std::string, std::string>::const_iterator
-    query_value_i = query.find( key );
+  multimap<string, string>::const_iterator query_value_i
+    = query.find( key );
 
   if ( query_value_i != query.end() )
     return query_value_i->second;
@@ -13445,10 +13456,24 @@ URI::get_query_value
     return default_query_value;
 }
 
-std::multimap<std::string, std::string>::const_iterator
-URI::get_query_values( const std::string& key ) const
+multimap<string, string>::const_iterator
+URI::get_query_values
+(
+  const string& key
+) const
 {
   return query.find( key );
+}
+
+URI& URI::operator=( const URI& other )
+{
+  scheme = other.scheme;
+  user = other.user;
+  password = other.password;
+  host = other.host;
+  port = other.port;
+  resource = other.resource;
+  return *this;
 }
 
 URI* URI::parse( const char* uri )
@@ -13456,7 +13481,7 @@ URI* URI::parse( const char* uri )
   return parse( uri, strnlen( uri, UINT16_MAX ) );
 }
 
-URI* URI::parse( const std::string& uri )
+URI* URI::parse( const string& uri )
 {
   return parse( uri.c_str(), uri.size() );
 }
@@ -13479,12 +13504,12 @@ URI* URI::parse( const char* uri, size_t uri_len )
   }
 }
 
-void URI::set_password( const std::string& password )
+void URI::set_password( const string& password )
 {
   this->password = password;
 }
 
-void URI::set_resource( const std::string& resource )
+void URI::set_resource( const string& resource )
 {
   this->resource = resource;
 }
@@ -13523,7 +13548,7 @@ UUID::UUID()
   sun_uuid = new uuid_t;
   uuid_generate( *static_cast<uuid_t*>( sun_uuid ) );
 #else
-  std::strncpy( generic_uuid, Socket::getfqdn().c_str(), 256 );
+  strncpy( generic_uuid, Socket::getfqdn().c_str(), 256 );
 #ifdef YIELD_IPC_HAVE_OPENSSL
   SHA_CTX ctx; SHA1_Init( &ctx );
   SHA1_Update( &ctx, generic_uuid, strlen( generic_uuid ) );
@@ -13549,7 +13574,7 @@ UUID::UUID()
 #endif
 }
 
-UUID::UUID( const std::string& from_string )
+UUID::UUID( const string& from_string )
 {
 #if defined(_WIN32)
   win32_uuid = new win32_Rpc_h::UUID;
@@ -13574,7 +13599,7 @@ UUID::UUID( const std::string& from_string )
     *static_cast<uuid_t*>( sun_uuid )
   );
 #else
-  std::strncpy( generic_uuid, from_string.c_str(), 256 );
+  strncpy( generic_uuid, from_string.c_str(), 256 );
 #endif
 }
 
@@ -13615,7 +13640,7 @@ bool UUID::operator==( const UUID& other ) const
 #endif
 }
 
-UUID::operator std::string() const
+UUID::operator string() const
 {
 #if defined(_WIN32)
   win32_Rpc_h::RPC_CSTR temp_to_string;
@@ -13624,7 +13649,7 @@ UUID::operator std::string() const
     static_cast<win32_Rpc_h::UUID*>( win32_uuid ),
     &temp_to_string
   );
-  std::string to_string( reinterpret_cast<char*>( temp_to_string ) );
+  string to_string( reinterpret_cast<char*>( temp_to_string ) );
   win32_Rpc_h::RpcStringFreeA( &temp_to_string );
   return to_string;
 #elif defined(YIELD_IPC_HAVE_LINUX_LIBUUID)

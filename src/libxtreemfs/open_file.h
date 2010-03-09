@@ -35,12 +35,13 @@
 
 namespace xtreemfs
 {
-  using namespace org::xtreemfs::interfaces;
-
-
   class OpenFile : public yield::platform::File
   {
   public:
+    OpenFile( SharedFile& parent_shared_file, const XCap& xcap );
+    ~OpenFile();
+
+    SharedFile& get_parent_shared_file() const { return parent_shared_file; }
     const org::xtreemfs::interfaces::XCap& get_xcap() const { return xcap; }
 
     // yield::platform::File
@@ -48,22 +49,13 @@ namespace xtreemfs
     size_t getpagesize();
 
   private:
-    friend class SharedFile;
     class XCapTimer;
-    friend class XCapTimer;
 
-    OpenFile
-    (
-      auto_SharedFile parent_shared_file,
-      const org::xtreemfs::interfaces::XCap& xcap
-    );
-
-    ~OpenFile();
-
+  private:
     bool closed;
-    auto_SharedFile parent_shared_file;
-    org::xtreemfs::interfaces::XCap xcap;
-    yidl::runtime::auto_Object<XCapTimer> xcap_timer;
+    SharedFile& parent_shared_file;
+    XCap xcap;
+    XCapTimer* xcap_timer;
   };
 };
 

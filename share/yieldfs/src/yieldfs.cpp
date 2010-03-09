@@ -14,12 +14,9 @@ namespace yieldfs
       const Path& path,
       Directory& underlying_directory
     );
-
     virtual ~TracingDirectory();
-
     // yield::platform::Directory
     YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
-
   private:
     Log& log;
     Path path;
@@ -35,10 +32,8 @@ namespace yieldfs
   public:
     TracingFile( Log& log, const Path& path, File& underlying_file );
     virtual ~TracingFile();
-
     // yield::platform::File
     YIELD_PLATFORM_FILE_PROTOTYPES;
-
   private:
     Log& log;
     Path path;
@@ -47,9 +42,7 @@ namespace yieldfs
 
 
 // unix_fuse.h
-#ifndef _WIN32
 #define FUSE_USE_VERSION 26
-#include <fuse.h>
 #endif
 
 
@@ -212,8 +205,6 @@ namespace yieldfs
 #include <dokan.h>
 #pragma comment( lib, "dokan.lib" )
 #endif
-
-
 namespace yieldfs
 {
 #ifdef _WIN32
@@ -221,10 +212,8 @@ namespace yieldfs
   {
   public:
     Win32FUSE( uint32_t flags, Volume& volume );
-
     // FUSE
     int main( const Path& mount_point );
-
   private:
     static int DOKAN_CALLBACK
     CreateFile
@@ -236,42 +225,36 @@ namespace yieldfs
       DWORD FlagsAndAttributes,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     CreateDirectory
     (
       LPCWSTR FileName,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     CloseFile
     (
       LPCWSTR, // FileName,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     Cleanup
     (
       LPCWSTR FileName,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     DeleteDirectory
     (
       LPCWSTR FileName,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     DeleteFile
     (
       LPCWSTR, // FileName,
       PDOKAN_FILE_INFO
     );
-
     static int DOKAN_CALLBACK
     FindFiles
     (
@@ -279,14 +262,12 @@ namespace yieldfs
       PFillFindData FillFindData,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     FlushFileBuffers
     (
       LPCWSTR, // FileName,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     GetDiskFreeSpace
     (
@@ -295,12 +276,10 @@ namespace yieldfs
       PULONGLONG TotalNumberOfFreeBytes,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static inline File* get_file( PDOKAN_FILE_INFO DokanFileInfo )
     {
       return reinterpret_cast<File*>( DokanFileInfo->Context );
     }
-
     static int DOKAN_CALLBACK
     GetFileInformation
     (
@@ -308,7 +287,6 @@ namespace yieldfs
       LPBY_HANDLE_FILE_INFORMATION HandleFileInformation,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static inline Volume& get_volume( PDOKAN_FILE_INFO DokanFileInfo )
     {
       return reinterpret_cast<FUSE*>
@@ -316,7 +294,6 @@ namespace yieldfs
         DokanFileInfo->DokanOptions->GlobalContext
       )->get_volume();
     }
-
     static int DOKAN_CALLBACK
     GetVolumeInformation
     (
@@ -329,7 +306,6 @@ namespace yieldfs
       DWORD, // FileSystemNameSize,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     LockFile
     (
@@ -338,7 +314,6 @@ namespace yieldfs
       LONGLONG Length,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     MoveFile
     (
@@ -347,14 +322,12 @@ namespace yieldfs
       BOOL ReplaceIfExisting,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     OpenDirectory
     (
       LPCWSTR FileName,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     ReadFile
     (
@@ -365,7 +338,6 @@ namespace yieldfs
       LONGLONG Offset,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     SetEndOfFile
     (
@@ -373,7 +345,6 @@ namespace yieldfs
       LONGLONG ByteOffset,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     SetFileAttributes
     (
@@ -381,7 +352,6 @@ namespace yieldfs
       DWORD FileAttributes,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     SetFileTime
     (
@@ -391,7 +361,6 @@ namespace yieldfs
       CONST FILETIME*  LastWriteTime,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     UnlockFile
     (
@@ -400,10 +369,8 @@ namespace yieldfs
       LONGLONG Length,
       PDOKAN_FILE_INFO DokanFileInfo
     );
-
     static int DOKAN_CALLBACK
     Unmount( PDOKAN_FILE_INFO );
-
     static int DOKAN_CALLBACK
     WriteFile
     (
@@ -543,22 +510,22 @@ bool StackableFile::getlk( bool exclusive, uint64_t offset, uint64_t length )
   return underlying_file.getlk( exclusive, offset, length );
 }
 
-bool StackableFile::getxattr( const std::string& name, std::string& out_value )
+bool StackableFile::getxattr( const string& name, string& out_value )
 {
   return underlying_file.getxattr( name, out_value );
 }
 
-bool StackableFile::listxattr( std::vector<std::string>& out_names )
+bool StackableFile::listxattr( vector<string>& out_names )
 {
   return underlying_file.listxattr( out_names );
 }
 
-ssize_t StackableFile::read( void* buffer, size_t buffer_len, uint64_t offset )
+ssize_t StackableFile::read( void* buf, size_t buflen, uint64_t offset )
 {
-  return underlying_file.read( buffer, buffer_len, offset );
+  return underlying_file.read( buf, buflen, offset );
 }
 
-bool StackableFile::removexattr( const std::string& name )
+bool StackableFile::removexattr( const string& name )
 {
   return underlying_file.removexattr( name );
 }
@@ -576,8 +543,8 @@ bool StackableFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
 bool
 StackableFile::setxattr
 (
-  const std::string& name,
-  const std::string& value,
+  const string& name,
+  const string& value,
   int flags
 )
 {
@@ -599,15 +566,9 @@ bool StackableFile::unlk( uint64_t offset, uint64_t length )
   return underlying_file.unlk( offset, length );
 }
 
-ssize_t
-StackableFile::write
-(
-  const void* buffer,
-  size_t buffer_len,
-  uint64_t offset
-)
+ssize_t StackableFile::write( const void* buf, size_t buflen, uint64_t offset )
 {
-  return underlying_file.write( buffer, buffer_len, offset );
+  return underlying_file.write( buf, buflen, offset );
 }
 
 
@@ -635,8 +596,8 @@ bool
 StackableVolume::getxattr
 (
   const Path& path,
-  const std::string& name,
-  std::string& out_value
+  const string& name,
+  string& out_value
 )
 {
   return underlying_volume.getxattr( path, name, out_value );
@@ -650,7 +611,7 @@ bool StackableVolume::link( const Path& old_path, const Path& new_path )
 bool StackableVolume::listxattr
 (
   const Path& path,
-  std::vector<std::string>& out_names
+  vector<string>& out_names
 )
 {
   return underlying_volume.listxattr( path, out_names );
@@ -683,7 +644,7 @@ Path* StackableVolume::readlink( const Path& path )
   return underlying_volume.readlink( path );
 }
 
-bool StackableVolume::removexattr( const Path& path, const std::string& name )
+bool StackableVolume::removexattr( const Path& path, const string& name )
 {
   return underlying_volume.removexattr( path, name );
 }
@@ -713,8 +674,8 @@ bool
 StackableVolume::setxattr
 (
   const Path& path,
-  const std::string& name,
-  const std::string& value,
+  const string& name,
+  const string& value,
   int flags
 )
 {
@@ -776,7 +737,7 @@ Directory::Entry* TracingDirectory::readdir()
   {
     if ( log.get_level() >= Log::LOG_DEBUG && dirent->get_stat() != NULL )
     {
-      std::ostringstream stat_oss;
+      ostringstream stat_oss;
       stat_oss << *dirent->get_stat();
       log.get_stream( Log::LOG_DEBUG ) <<
         "yieldfs::TracingDirectory::readdir( " << path << " ) -> " <<
@@ -859,7 +820,7 @@ bool TracingFile::getlk( bool exclusive, uint64_t offset, uint64_t length )
   );
 }
 
-bool TracingFile::getxattr( const std::string& name, std::string& out_value )
+bool TracingFile::getxattr( const string& name, string& out_value )
 {
   return TracingVolume::trace
   (
@@ -872,7 +833,7 @@ bool TracingFile::getxattr( const std::string& name, std::string& out_value )
 }
 
 
-bool TracingFile::listxattr( std::vector<std::string>& out_names )
+bool TracingFile::listxattr( vector<string>& out_names )
 {
   return TracingVolume::trace
   (
@@ -883,22 +844,22 @@ bool TracingFile::listxattr( std::vector<std::string>& out_names )
   );
 }
 
-ssize_t TracingFile::read( void* rbuf, size_t size, uint64_t offset )
+ssize_t TracingFile::read( void* buf, size_t buflen, uint64_t offset )
 {
-  ssize_t read_ret = StackableFile::read( rbuf, size, offset );
+  ssize_t read_ret = StackableFile::read( buf, buflen, offset );
   TracingVolume::trace
   (
     log,
     "yieldfs::TracingFile::read",
     path,
-    size,
+    buflen,
     offset,
     read_ret >= 0
   );
   return read_ret;
 }
 
-bool TracingFile::removexattr( const std::string& name )
+bool TracingFile::removexattr( const string& name )
 {
   return TracingVolume::trace
   (
@@ -938,8 +899,8 @@ bool TracingFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
 
 bool TracingFile::setxattr
 (
-  const std::string& name,
-  const std::string& value,
+  const string& name,
+  const string& value,
   int flags
 )
 {
@@ -990,24 +951,18 @@ bool TracingFile::unlk( uint64_t offset, uint64_t length )
   );
 }
 
-ssize_t
-TracingFile::write
-(
-  const void* buffer,
-  size_t buffer_len,
-  uint64_t offset
-)
+ssize_t TracingFile::write( const void* buf, size_t buflen, uint64_t offset )
 {
-  ssize_t write_ret = StackableFile::write( buffer, buffer_len, offset );
+  ssize_t write_ret = StackableFile::write( buf, buflen, offset );
 
   TracingVolume::trace
   (
     log,
     "yieldfs::TracingFile::write",
     path,
-    buffer_len,
+    buflen,
     offset,
-    write_ret == static_cast<ssize_t>( buffer_len )
+    write_ret == static_cast<ssize_t>( buflen )
   );
 
   return write_ret;
@@ -1020,12 +975,12 @@ TracingFile::write
 
 TracingVolume::TracingVolume()
   : StackableVolume( *new Volume ),
-    log( Log::open( std::cout, Log::LOG_INFO ) )
+    log( Log::open( cout, Log::LOG_INFO ) )
 { }
 
 TracingVolume::TracingVolume( Volume& underlying_volume )
   : StackableVolume( underlying_volume ),
-    log( Log::open( std::cout, Log::LOG_INFO ) )
+    log( Log::open( cout, Log::LOG_INFO ) )
 { }
 
 TracingVolume::TracingVolume( Log& log, Volume& underlying_volume )
@@ -1050,7 +1005,7 @@ Stat* TracingVolume::getattr( const Path& path )
   trace( log, "yieldfs::TracingVolume::getattr", path, stbuf != NULL );
   if ( stbuf != NULL )
   {
-    std::ostringstream stbuf_oss;
+    ostringstream stbuf_oss;
     stbuf_oss << *stbuf;
     log.get_stream( Log::LOG_DEBUG ) <<
       "yieldfs::TracingVolume::getattr returning Stat " << stbuf_oss.str();
@@ -1061,8 +1016,8 @@ Stat* TracingVolume::getattr( const Path& path )
 bool TracingVolume::getxattr
 (
   const Path& path,
-  const std::string& name,
-  std::string& out_value
+  const string& name,
+  string& out_value
 )
 {
   return trace
@@ -1092,7 +1047,7 @@ bool
 TracingVolume::listxattr
 (
   const Path& path,
-  std::vector<std::string>& out_names
+  vector<string>& out_names
 )
 {
   if
@@ -1111,7 +1066,7 @@ TracingVolume::listxattr
     log_stream << "  yieldfs::TracingVolume: xattr names: ";
     for
     (
-      std::vector<std::string>::const_iterator name_i = out_names.begin();
+      vector<string>::const_iterator name_i = out_names.begin();
       name_i != out_names.end();
       name_i++
     )
@@ -1175,7 +1130,7 @@ Path* TracingVolume::readlink( const Path& path )
   return link_path;
 }
 
-bool TracingVolume::removexattr( const Path& path, const std::string& name )
+bool TracingVolume::removexattr( const Path& path, const string& name )
 {
   return trace
   (
@@ -1222,7 +1177,7 @@ TracingVolume::setattr
     log.get_stream( Log::LOG_INFO );
   log_stream << "yieldfs::TracingVolume::setattr( ";
   log_stream << path << ", ";
-  std::ostringstream stbuf_oss;
+  ostringstream stbuf_oss;
   stbuf_oss << stbuf;
   log_stream << stbuf_oss.str() << ", ";
   log_stream << to_set;
@@ -1238,8 +1193,8 @@ bool
 TracingVolume::setxattr
 (
   const Path& path,
-  const std::string& name,
-  const std::string& value,
+  const string& name,
+  const string& value,
   int32_t flags
 )
 {
@@ -1330,8 +1285,8 @@ TracingVolume::trace
   Log& log,
   const char* operation_name,
   const Path& path,
-  const std::string& xattr_name,
-  const std::string& xattr_value,
+  const string& xattr_name,
+  const string& xattr_value,
   bool operation_result
 )
 {
@@ -1531,7 +1486,7 @@ UnixFUSE::getxattr
    size_t size
 )
 {
-  std::string value_str;
+  string value_str;
   if ( get_volume().getxattr( path, name, value_str ) )
   {
     if ( size == 0 )
@@ -1555,7 +1510,7 @@ int UnixFUSE::link( const char* path, const char* linkpath )
 
 int UnixFUSE::listxattr( const char* path, char *list, size_t size )
 {
-  std::vector<std::string> xattr_names;
+  vector<string> xattr_names;
   if ( get_volume().listxattr( path, xattr_names ) )
   {
     if ( list != NULL && size > 0 )
@@ -1563,13 +1518,13 @@ int UnixFUSE::listxattr( const char* path, char *list, size_t size )
       size_t list_size_consumed = 0;
       for
       (
-        std::vector<std::string>::const_iterator
+        vector<string>::const_iterator
           xattr_name_i = xattr_names.begin();
         xattr_name_i != xattr_names.end();
         xattr_name_i++
       )
       {
-        const std::string& xattr_name = *xattr_name_i;
+        const string& xattr_name = *xattr_name_i;
         if ( xattr_name.size()+1 <= ( size - list_size_consumed ) )
         {
           memcpy
@@ -1593,7 +1548,7 @@ int UnixFUSE::listxattr( const char* path, char *list, size_t size )
 
       for
       (
-        std::vector<std::string>::const_iterator
+        vector<string>::const_iterator
           xattr_name_i = xattr_names.begin();
         xattr_name_i != xattr_names.end();
         xattr_name_i++
@@ -1910,7 +1865,7 @@ UnixFUSE::setxattr
   int flags
 )
 {
-  std::string value_str( value, size );
+  string value_str( value, size );
   if ( get_volume().setxattr( path, name, value_str, flags ) )
     return 0;
   else

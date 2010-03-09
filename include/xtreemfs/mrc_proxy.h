@@ -61,7 +61,7 @@ namespace xtreemfs
       uint32_t flags = FLAGS_DEFAULT,
       Log* log = NULL,
       const Time& operation_timeout = OPERATION_TIMEOUT_DEFAULT,
-      const std::string& password = "",
+      const string& password = "",
       uint16_t reconnect_tries_max = RECONNECT_TRIES_MAX_DEFAULT,
       SSLContext* ssl_context = NULL, // Steals this reference
       UserCredentialsCache* user_credentials_cache = NULL
@@ -78,7 +78,7 @@ namespace xtreemfs
       IOQueue& io_queue,
       Log* log,
       const Time& operation_timeout,
-      const std::string& password,
+      const string& password,
       SocketAddress& peername,
       uint16_t reconnect_tries_max,
       SocketFactory& socket_factory,
@@ -91,7 +91,7 @@ namespace xtreemfs
     ONCRPCRequest& createONCRPCRequest( MarshallableObject& body );
 
   private:
-    std::string password;
+    string password;
   };
 };
 

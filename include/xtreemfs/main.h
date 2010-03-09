@@ -135,7 +135,7 @@ namespace xtreemfs
         NULL,
         "EMERG|ALERT|CRIT|ERR|WARNING|NOTICE|INFO|DEBUG"
       );
-      log_level = yield::platform::Log::LOG_WARNING;
+      log_level = Log::LOG_WARNING;
 
       addOption
       (
@@ -252,10 +252,10 @@ namespace xtreemfs
       if ( log == NULL )
       {
         if ( log_file_path.empty() || log_file_path == "-" )
-          log = yield::platform::Log::open( std::cerr, get_log_level() );
+          log = Log::open( std::cerr, get_log_level() );
         else
           log =
-            yield::platform::Log::open
+            Log::open
             (
               log_file_path,
               get_log_level(),
@@ -266,12 +266,12 @@ namespace xtreemfs
       return log;
     }
 
-    const std::string& get_log_file_path() const
+    const string& get_log_file_path() const
     {
       return log_file_path;
     }
 
-    yield::platform::Log::Level get_log_level() const
+    Log::Level get_log_level() const
     {
       return log_level;
     }
@@ -333,21 +333,21 @@ namespace xtreemfs
 
     yield::ipc::auto_URI parseURI( const char* uri_c_str )
     {
-      std::string uri_str( uri_c_str );
-      if ( uri_str.find( "://" ) == std::string::npos )
+      string uri_str( uri_c_str );
+      if ( uri_str.find( "://" ) == string::npos )
       {
         if ( !pkcs12_file_path.empty() ||
             ( !pem_certificate_file_path.empty() &&
               !pem_private_key_file_path.empty() ) )
         {
           uri_str = org::xtreemfs::interfaces::ONCRPCS_SCHEME +
-                    std::string( "://" ) +
+                    string( "://" ) +
                     uri_str;
         }
         else
         {
           uri_str = org::xtreemfs::interfaces::ONCRPC_SCHEME +
-                    std::string( "://" ) +
+                    string( "://" ) +
                     uri_str;
         }
       }
@@ -359,7 +359,7 @@ namespace xtreemfs
     parseVolumeURI
     (
       const char* volume_uri_c_str,
-      std::string& volume_name
+      string& volume_name
     )
     {
       yield::ipc::auto_URI volume_uri = parseURI( volume_uri_c_str );
@@ -405,14 +405,14 @@ namespace xtreemfs
               strcmp( arg, "FATAL" ) == 0 ||
               strcmp( arg, "FAIL" ) == 0
             )
-              log_level = yield::platform::Log::LOG_EMERG;
+              log_level = Log::LOG_EMERG;
 
             else if
             (
               strcmp( arg, "LOG_ALERT" ) == 0 ||
               strcmp( arg, "ALERT" ) == 0
             )
-              log_level = yield::platform::Log::LOG_ALERT;
+              log_level = Log::LOG_ALERT;
 
             else if
             (
@@ -420,7 +420,7 @@ namespace xtreemfs
               strcmp( arg, "CRIT" ) == 0 ||
               strcmp( arg, "CRITICAL" ) == 0
             )
-              log_level = yield::platform::Log::LOG_CRIT;
+              log_level = Log::LOG_CRIT;
 
             else if
             (
@@ -428,7 +428,7 @@ namespace xtreemfs
               strcmp( arg, "ERR" ) == 0 ||
               strcmp( arg, "ERROR" ) == 0
             )
-              log_level = yield::platform::Log::LOG_ERR;
+              log_level = Log::LOG_ERR;
 
             else if
             (
@@ -436,21 +436,21 @@ namespace xtreemfs
               strcmp( arg, "WARNING" ) == 0 ||
               strcmp( arg, "WARN" ) == 0
             )
-              log_level = yield::platform::Log::LOG_WARNING;
+              log_level = Log::LOG_WARNING;
 
             else if
             (
               strcmp( arg, "LOG_NOTICE" ) == 0 ||
               strcmp( arg, "NOTICE" ) == 0
             )
-              log_level = yield::platform::Log::LOG_NOTICE;
+              log_level = Log::LOG_NOTICE;
 
             else if
             (
               strcmp( arg, "LOG_INFO" ) == 0 ||
               strcmp( arg, "INFO" ) == 0
             )
-              log_level = yield::platform::Log::LOG_INFO;
+              log_level = Log::LOG_INFO;
 
             else if
             (
@@ -458,17 +458,17 @@ namespace xtreemfs
               strcmp( arg, "DEBUG" ) == 0 ||
               strcmp( arg, "TRACE" ) == 0
             )
-              log_level = yield::platform::Log::LOG_DEBUG;
+              log_level = Log::LOG_DEBUG;
 
             else
-              log_level = yield::platform::Log::LOG_EMERG;
+              log_level = Log::LOG_EMERG;
           }
-          else if ( log_level_uint8 <= yield::platform::Log::LOG_DEBUG )
+          else if ( log_level_uint8 <= Log::LOG_DEBUG )
             log_level =
-              static_cast<yield::platform::Log::Level>( log_level_uint8 );
+              static_cast<Log::Level>( log_level_uint8 );
 
           else
-            log_level = yield::platform::Log::LOG_DEBUG;
+            log_level = Log::LOG_DEBUG;
         }
         break;
 
@@ -540,14 +540,14 @@ namespace xtreemfs
     }
 
   private:
-    std::string log_file_path;
-    yield::platform::Log::Level log_level;
-    std::string log_level_default_str;
+    string log_file_path;
+    Log::Level log_level;
+    string log_level_default_str;
     Time operation_timeout;
-    std::string pem_certificate_file_path,
+    string pem_certificate_file_path,
                 pem_private_key_file_path,
                 pem_private_key_passphrase;
-    std::string pkcs12_file_path, pkcs12_passphrase;
+    string pkcs12_file_path, pkcs12_passphrase;
     bool trace_auth, trace_network_io, trace_network_operations;
 
     Log& log;
@@ -593,16 +593,16 @@ namespace xtreemfs
       {
         Path dump_file_name( minidump_id );
         dump_file_name =
-          static_cast<const std::string&>( dump_file_name ) + ".dmp";
+          static_cast<const string&>( dump_file_name ) + ".dmp";
 
         Path dump_file_path( dump_path );
         dump_file_path = dump_file_path + dump_file_name;
 
-        std::string
+        string
           dump_absolute_uri( "http://www.xtreemfs.org/dump/dump.php?f=" );
-        dump_absolute_uri += static_cast<const std::string&>( dump_file_name );
+        dump_absolute_uri += static_cast<const string&>( dump_file_name );
 
-        get_log()->getStream( yield::platform::Log::LOG_EMERG ) <<
+        get_log()->get_stream( Log::LOG_EMERG ) <<
           get_program_name() << ": crashed on unknown exception, dumping to "
           << dump_file_path << " and trying to send to " << dump_absolute_uri;
 
@@ -617,7 +617,7 @@ namespace xtreemfs
         }
         catch ( std::exception& exc )
         {
-          get_log()->getStream( yield::platform::Log::LOG_EMERG ) <<
+          get_log()->get_stream( Log::LOG_EMERG ) <<
             get_program_name() <<
             ": exception trying to send dump to the server: " << exc.what();
         }

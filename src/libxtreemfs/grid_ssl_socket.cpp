@@ -84,7 +84,7 @@ GridSSLSocket* GridSSLSocket::create( int domain, SSLContext& ssl_context )
     return NULL;
 }
 
-ssize_t GridSSLSocket::recv( void* buffer, size_t buffer_len, int flags )
+ssize_t GridSSLSocket::recv( void* buf, size_t buflen, int flags )
 {
   if ( check_handshake() )
     return TCPSocket::recv( buffer, buffer_len, flags );
@@ -92,7 +92,7 @@ ssize_t GridSSLSocket::recv( void* buffer, size_t buffer_len, int flags )
     return -1;
 }
 
-ssize_t GridSSLSocket::send( const void* buffer, size_t buffer_len, int flags )
+ssize_t GridSSLSocket::send( const void* buf, size_t buflen, int flags )
 {
   if ( check_handshake() )
     return TCPSocket::send( buffer, buffer_len, flags );

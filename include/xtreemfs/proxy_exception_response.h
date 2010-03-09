@@ -44,12 +44,12 @@ namespace xtreemfs
     virtual uint32_t get_error_code() const { return 0; }
     uint32_t get_platform_error_code() const;
 
-    virtual const std::string& get_error_message() const
+    virtual const string& get_error_message() const
     {
       return empty_error_message;
     }
 
-    virtual const std::string& get_stack_trace() const
+    virtual const string& get_stack_trace() const
     {
       return empty_stack_trace;
     }
@@ -60,7 +60,7 @@ namespace xtreemfs
     {
       if ( what_str.empty() )
       {
-        std::ostringstream what_oss;
+        ostringstream what_oss;
         what_oss << "errno = " << get_error_code();
         what_oss << ", strerror = " << get_error_message();
         if ( !get_stack_trace().empty() )
@@ -81,7 +81,7 @@ namespace xtreemfs
     }
 
   private:
-    std::string empty_error_message, empty_stack_trace, what_str;
+    string empty_error_message, empty_stack_trace, what_str;
   };
 };
 

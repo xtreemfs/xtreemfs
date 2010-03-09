@@ -156,7 +156,7 @@ Exception::Exception( const char* error_message )
   set_error_message( error_message );
 }
 
-Exception::Exception( const std::string& error_message )
+Exception::Exception( const string& error_message )
   : error_code( 0 ), error_message( NULL )
 {
   set_error_message( error_message.c_str() );
@@ -168,7 +168,7 @@ Exception::Exception( uint32_t error_code, const char* error_message )
   set_error_message( error_message );
 }
 
-Exception::Exception( uint32_t error_code, const std::string& error_message )
+Exception::Exception( uint32_t error_code, const string& error_message )
   : error_code( error_code ), error_message( NULL )
 {
   set_error_message( error_message.c_str() );
@@ -306,8 +306,6 @@ void Exception::set_error_message( const char* error_message )
 
 
 // fd_event_poller.cpp
-#include <map>
-
 #ifdef _WIN32
 #ifndef FD_SETSIZE
 #define FD_SETSIZE 1024
@@ -413,7 +411,7 @@ namespace yield
       // toggle doesn't have to take the context
       // The map is protected and not private because the select()
       // implementation iterates over the fd's
-      typedef std::map<fd_t,void*> FDToContextMap;
+      typedef map<fd_t,void*> FDToContextMap;
       FDToContextMap fd_to_context_map;
     };
 
@@ -547,7 +545,7 @@ namespace yield
 
     private:
       int epfd;
-      std::vector<struct epoll_event> epoll_events;
+      vector<struct epoll_event> epoll_events;
     };
 #endif
 
@@ -667,7 +665,7 @@ namespace yield
 
     private:
       int port;
-      std::vector<port_event_t> port_events;
+      vector<port_event_t> port_events;
     };
 #endif
 
@@ -838,7 +836,7 @@ namespace yield
       { }
 
     private:
-      std::vector<struct kevent> kevents;
+      vector<struct kevent> kevents;
       int kq;
     };
 #endif
@@ -879,7 +877,7 @@ namespace yield
         {
           for
           (
-            std::vector<struct pollfd>::iterator pollfd_i = pollfds.begin();
+            vector<struct pollfd>::iterator pollfd_i = pollfds.begin();
             pollfd_i != pollfds.end();
             ++pollfd_i
           )
@@ -910,7 +908,7 @@ namespace yield
         if ( active_fds_count > 0 )
         {
           int fd_event_i = 0;
-          std::vector<struct pollfd>::const_iterator pollfd_i
+          vector<struct pollfd>::const_iterator pollfd_i
             = pollfds.begin();
 
           while
@@ -972,7 +970,7 @@ namespace yield
         {
           for
           (
-            std::vector<struct pollfd>::iterator pollfd_i = pollfds.begin();
+            vector<struct pollfd>::iterator pollfd_i = pollfds.begin();
             pollfd_i != pollfds.end();
             ++pollfd_i
           )
@@ -997,7 +995,7 @@ namespace yield
       { }
 
     private:
-      std::vector<struct pollfd> pollfds;
+      vector<struct pollfd> pollfds;
     };
 #endif
 
@@ -1409,7 +1407,7 @@ bool File::getlk( bool exclusive, uint64_t offset, uint64_t length )
 #endif
 }
 
-bool File::getxattr( const std::string& name, std::string& out_value )
+bool File::getxattr( const string& name, string& out_value )
 {
 #ifdef YIELD_PLATFORM_HAVE_XATTR_H
   ssize_t value_len = FGETXATTR( fd, name.c_str(), NULL, 0 );
@@ -1428,7 +1426,7 @@ bool File::getxattr( const std::string& name, std::string& out_value )
 #endif
 }
 
-bool File::listxattr( std::vector<std::string>& out_names )
+bool File::listxattr( vector<string>& out_names )
 {
 #ifdef YIELD_PLATFORM_HAVE_XATTR_H
   size_t names_len = FLISTXATTR( fd, NULL, 0 );
@@ -1440,7 +1438,7 @@ bool File::listxattr( std::vector<std::string>& out_names )
     do
     {
       size_t name_len = strlen( name );
-      out_names.push_back( std::string( name, name_len ) );
+      out_names.push_back( string( name, name_len ) );
       name += name_len;
     }
     while ( static_cast<size_t>( name - names ) < names_len );
@@ -1452,7 +1450,12 @@ bool File::listxattr( std::vector<std::string>& out_names )
 #endif
 }
 
-ssize_t File::read( void* buffer, size_t buffer_len )
+ssize_t File::read( Buffer& buffer )
+{
+  return IStream::read( buffer );
+}
+
+ssize_t File::read( void* buf, size_t buflen )
 {
 #ifdef _WIN32
   DWORD dwBytesRead;
@@ -1461,8 +1464,8 @@ ssize_t File::read( void* buffer, size_t buffer_len )
     ReadFile
     (
       *this,
-      buffer,
-      static_cast<DWORD>( buffer_len ),
+      buf,
+      static_cast<DWORD>( buflen ),
       &dwBytesRead,
       NULL
     )
@@ -1471,19 +1474,19 @@ ssize_t File::read( void* buffer, size_t buffer_len )
   else
     return -1;
 #else
-  return ::read( *this, buffer, buffer_len );
+  return ::read( *this, buf, buflen );
 #endif
 }
 
-ssize_t File::read( void* buffer, size_t buffer_len, uint64_t offset )
+ssize_t File::read( void* buf, size_t buflen, uint64_t offset )
 {
   if ( seek( offset, SEEK_SET ) )
-    return read( buffer, buffer_len );
+    return read( buf, buflen );
   else
     return -1;
 }
 
-bool File::removexattr( const std::string& name )
+bool File::removexattr( const string& name )
 {
 #ifdef YIELD_PLATFORM_HAVE_XATTR_H
   return FREMOVEXATTR( fd, name.c_str() ) != -1;
@@ -1574,8 +1577,8 @@ bool File::setlkw( bool exclusive, uint64_t offset, uint64_t length )
 
 bool File::setxattr
 (
-  const std::string& name,
-  const std::string& value,
+  const string& name,
+  const string& value,
   int flags
 )
 {
@@ -1650,7 +1653,12 @@ bool File::unlk( uint64_t offset, uint64_t length )
 #endif
 }
 
-ssize_t File::write( const void* buffer, size_t buffer_len )
+ssize_t File::write( const Buffer& buffer )
+{
+  return OStream::write( buffer );
+}
+
+ssize_t File::write( const void* buf, size_t buflen )
 {
 #ifdef _WIN32
   DWORD dwBytesWritten;
@@ -1659,8 +1667,8 @@ ssize_t File::write( const void* buffer, size_t buffer_len )
     WriteFile
     (
       *this,
-      buffer,
-      static_cast<DWORD>( buffer_len ),
+      buf,
+      static_cast<DWORD>( buflen ),
       &dwBytesWritten,
       NULL
     )
@@ -1669,22 +1677,27 @@ ssize_t File::write( const void* buffer, size_t buffer_len )
   else
     return -1;
 #else
-  return ::write( *this, buffer, buffer_len );
+  return ::write( *this, buf, buflen );
 #endif
 }
 
-ssize_t File::write( const void* buffer, size_t buffer_len, uint64_t offset )
+ssize_t File::write( const void* buf, size_t buflen, uint64_t offset )
 {
   if ( seek( offset ) )
-    return write( buffer, buffer_len );
+    return write( buf, buflen );
   else
     return -1;
 }
 
 #ifndef _WIN32
-ssize_t File::writev( const struct iovec* buffers, uint32_t buffers_count )
+ssize_t File::writev( Buffers& buffers )
 {
-  return ::writev( *this, buffers, buffers_count );
+  return OStream::writev( buffers );
+}
+
+ssize_t File::writev( const struct iovec* iov, uint32_t iovlen )
+{
+  return ::writev( *this, iov, iovlen );
 }
 #endif
 
@@ -1859,7 +1872,7 @@ iconv::operator()
 #endif
 }
 
-bool iconv::operator()( const std::string& inbuf, std::string& outbuf )
+bool iconv::operator()( const string& inbuf, string& outbuf )
 {
 #ifdef _WIN32
   int inbuf_w_len
@@ -1994,7 +2007,7 @@ bool iconv::operator()( const std::string& inbuf, std::string& outbuf )
 }
 
 #ifdef _WIN32
-bool iconv::operator()( const std::string& inbuf, std::wstring& outbuf )
+bool iconv::operator()( const string& inbuf, wstring& outbuf )
 {
   int outbuf_w_len
     = MultiByteToWideChar
@@ -2034,7 +2047,7 @@ bool iconv::operator()( const std::string& inbuf, std::wstring& outbuf )
   return false;
 }
 
-bool iconv::operator()( const std::wstring& inbuf, std::string& outbuf )
+bool iconv::operator()( const wstring& inbuf, string& outbuf )
 {
   int outbuf_c_len
     = WideCharToMultiByte
@@ -2181,7 +2194,7 @@ namespace yield
     class ostreamLog : public Log
     {
     public:
-      ostreamLog( std::ostream& underlying_ostream, Level level )
+      ostreamLog( ostream& underlying_ostream, Level level )
         : Log( level ), underlying_ostream( underlying_ostream )
       { }
 
@@ -2192,7 +2205,7 @@ namespace yield
       }
 
     private:
-      std::ostream& underlying_ostream;
+      ostream& underlying_ostream;
     };
   };
 };
@@ -2210,8 +2223,8 @@ Log::Stream::~Stream()
 {
   if ( level <= log.get_level() && !oss.str().empty() )
   {
-    std::ostringstream stamped_oss;
-    stamped_oss << static_cast<std::string>( Time() );
+    ostringstream stamped_oss;
+    stamped_oss << static_cast<string>( Time() );
     stamped_oss << " ";
     const char* level_str;
     switch ( level )
@@ -2228,7 +2241,7 @@ Log::Stream::~Stream()
     stamped_oss << level_str;
     stamped_oss << ": ";
     stamped_oss << oss.str();
-    stamped_oss << std::endl;
+    stamped_oss << endl;
 
     log.write( stamped_oss.str(), level );
   }
@@ -2237,7 +2250,7 @@ Log::Stream::~Stream()
 }
 
 
-Log& Log::open( std::ostream& underlying_ostream, Level level )
+Log& Log::open( ostream& underlying_ostream, Level level )
 {
   return *new ostreamLog( underlying_ostream, level );
 }
@@ -2261,7 +2274,7 @@ void Log::write( const char* str, Level level )
   write( str, strnlen( str, UINT16_MAX ), level );
 }
 
-void Log::write( const std::string& str, Level level )
+void Log::write( const string& str, Level level )
 {
   write( str.c_str(), str.size(), level );
 }
@@ -2336,6 +2349,8 @@ void Log::write( const unsigned char* str, size_t str_len, Level level )
 
 
 // memory_mapped_file.cpp
+using std::max;
+
 #ifdef _WIN32
 #include <windows.h>
 #else
@@ -2450,10 +2465,7 @@ MemoryMappedFile::open
     MemoryMappedFile* memory_mapped_file
       = new MemoryMappedFile( *file, flags );
 
-    if
-    (
-      memory_mapped_file->resize( std::max( minimum_size, current_file_size ) )
-    )
+    if ( memory_mapped_file->resize( max( minimum_size, current_file_size ) ) )
       return memory_mapped_file;
     else
     {
@@ -2780,18 +2792,18 @@ bool NamedPipe::connect()
   }
 }
 
-ssize_t NamedPipe::read( void* buffer, size_t buffer_len )
+ssize_t NamedPipe::read( void* buf, size_t buflen )
 {
   if ( connect() )
-    return File::read( buffer, buffer_len );
+    return File::read( buf, buflen );
   else
     return -1;
 }
 
-ssize_t NamedPipe::write( const void* buffer, size_t buffer_len )
+ssize_t NamedPipe::write( const void* buf, size_t buflen )
 {
   if ( connect() )
-    return File::write( buffer, buffer_len );
+    return File::write( buf, buflen );
   else
     return -1;
 }
@@ -2941,8 +2953,8 @@ public:
 #ifndef _WIN32
         if ( errno != EINTR )
 #endif
-          std::cerr << "NBIOQueue::WorkerThread: " <<
-            "error on poll: " << Exception() << "." << std::endl;
+          cerr << "NBIOQueue::WorkerThread: " <<
+            "error on poll: " << Exception() << "." << endl;
       }
     }
   }
@@ -2958,7 +2970,7 @@ private:
 };
 
 
-NBIOQueue::NBIOQueue( const std::vector<WorkerThread*>& worker_threads )
+NBIOQueue::NBIOQueue( const vector<WorkerThread*>& worker_threads )
   : worker_threads( worker_threads )
 { }
 
@@ -2966,7 +2978,7 @@ NBIOQueue::~NBIOQueue()
 {
   for
   (
-    std::vector<WorkerThread*>::iterator
+    vector<WorkerThread*>::iterator
       worker_thread_i = worker_threads.begin();
     worker_thread_i != worker_threads.end();
     worker_thread_i++
@@ -2983,7 +2995,7 @@ NBIOQueue::~NBIOQueue()
 
 NBIOQueue& NBIOQueue::create()
 {
-  std::vector<WorkerThread*> worker_threads;
+  vector<WorkerThread*> worker_threads;
   uint16_t worker_thread_count
     = ProcessorSet::getOnlineLogicalProcessorCount();
   // uint16_t worker_thread_count = 1;
@@ -3004,13 +3016,13 @@ NBIOQueue& NBIOQueue::create()
 
 void NBIOQueue::submit( NBIOCB& nbiocb )
 {
-  worker_threads[Thread::gettid() % worker_threads.size()]->submit( &nbiocb );
+  worker_threads[nbiocb.get_fd() % worker_threads.size()]->submit( &nbiocb );
 }
 
 
 // option_parser.cpp
-#include <sstream>
-
+#include <algorithm>
+using std::sort;
 
 /*! @file SimpleOpt.h
 
@@ -3903,24 +3915,24 @@ typedef CSimpleOptTempl<wchar_t> CSimpleOptW;
 void
 OptionParser::add_option
 (
-  const std::string& arg,
+  const string& arg,
   bool require_value
 )
 {
-  add_option( arg, std::string(), require_value );
+  add_option( arg, string(), require_value );
 }
 
 void
 OptionParser::add_option
 (
-  const std::string& arg,
-  const std::string& help,
+  const string& arg,
+  const string& help,
   bool require_value
 )
 {
   for
   (
-    std::vector<Option>::const_iterator option_i = options.begin();
+    vector<Option>::const_iterator option_i = options.begin();
     option_i != options.end();
     ++option_i
   )
@@ -3937,14 +3949,14 @@ OptionParser::parse_args
 (
   int argc,
   char** argv,
-  std::vector<Option>& parsed_options
+  vector<Option>& parsed_options
 )
 {
-  std::vector<CSimpleOpt::SOption> simpleopt_options;
+  vector<CSimpleOpt::SOption> simpleopt_options;
 
   for
   (
-    std::vector<Option>::size_type option_i = 0;
+    vector<Option>::size_type option_i = 0;
     option_i < options.size();
     option_i++
   )
@@ -3965,7 +3977,7 @@ OptionParser::parse_args
 
   // Make copies of the strings in argv so that
   // SimpleOpt can punch holes in them
-  std::vector<char*> argvv( argc );
+  vector<char*> argvv( argc );
   for ( int arg_i = 0; arg_i < argc; arg_i++ )
   {
     size_t arg_len = strnlen( argv[arg_i], SIZE_MAX ) + 1;
@@ -3983,7 +3995,7 @@ OptionParser::parse_args
       {
         for
         (
-          std::vector<Option>::iterator option_i = options.begin();
+          vector<Option>::iterator option_i = options.begin();
           option_i != options.end();
           ++option_i
         )
@@ -4007,7 +4019,7 @@ OptionParser::parse_args
 
       case SO_OPT_INVALID:
       {
-        std::string error_message( "unregistered option " );
+        string error_message( "unregistered option " );
         error_message.append( args.OptionText() );
         throw UnregisteredOptionException( error_message );
       }
@@ -4015,7 +4027,7 @@ OptionParser::parse_args
 
       case SO_ARG_INVALID:
       {
-        std::string error_message( "unexpected value to option " );
+        string error_message( "unexpected value to option " );
         error_message.append( args.OptionText() );
         throw UnexpectedValueException( error_message );
       }
@@ -4023,7 +4035,7 @@ OptionParser::parse_args
 
       case SO_ARG_MISSING:
       {
-        std::string error_message( "missing value to option " );
+        string error_message( "missing value to option " );
         error_message.append( args.OptionText() );
         throw MissingValueException( error_message );
       }
@@ -4031,7 +4043,7 @@ OptionParser::parse_args
 
       case SO_ARG_INVALID_DATA: // Argument looks like another option
       {
-        std::ostringstream error_message;
+        ostringstream error_message;
         error_message << args.OptionText() <<
           "requires a value, but you appear to have passed another option.";
         throw InvalidValueException( error_message.str() );
@@ -4048,7 +4060,7 @@ OptionParser::parse_args
 
   for
   (
-    std::vector<char*>::iterator arg_i = argvv.begin();
+    vector<char*>::iterator arg_i = argvv.begin();
     arg_i != argvv.end();
     arg_i++
   )
@@ -4061,39 +4073,39 @@ OptionParser::parse_args
 void
 OptionParser::print_usage
 (
-  const std::string& program_name,
+  const string& program_name,
   const char* program_description,
   const char* files_usage
 )
 {
-  std::cout << std::endl;
-  std::cout << program_name;
+  cout << endl;
+  cout << program_name;
   if ( program_description )
-    std::cout << ": " << program_description;
-  std::cout << std::endl;
-  std::cout << std::endl;
-  std::cout << "Usage:" << std::endl;
-  std::cout << "  " << program_name << " [options]";
+    cout << ": " << program_description;
+  cout << endl;
+  cout << endl;
+  cout << "Usage:" << endl;
+  cout << "  " << program_name << " [options]";
   if ( files_usage )
-    std::cout << " " << files_usage;
-  std::cout << std::endl;
-  std::cout << std::endl;
+    cout << " " << files_usage;
+  cout << endl;
+  cout << endl;
 
-  std::sort( options.begin(), options.end() );
+  sort( options.begin(), options.end() );
   for
   (
-    std::vector<Option>::const_iterator option_i = options.begin();
+    vector<Option>::const_iterator option_i = options.begin();
     option_i != options.end();
     option_i++
   )
   {
     const Option& option = *option_i;
-    std::cout << "  " << option.get_arg();
-    std::cout << "\t" << option.get_help();
-    std::cout << std::endl;
+    cout << "  " << option.get_arg();
+    cout << "\t" << option.get_help();
+    cout << endl;
   }
 
-  std::cout << std::endl;
+  cout << endl;
 }
 
 
@@ -4155,19 +4167,19 @@ ssize_t OStream::writev( const Buffers& buffers )
   return writev( buffers, buffers.size() );
 }
 
-ssize_t OStream::writev( const struct iovec* buffers, uint32_t buffers_count )
+ssize_t OStream::writev( const struct iovec* iov, uint32_t iovlen )
 {
-  if ( buffers_count == 1 )
-    return write( buffers[0].iov_base, buffers[0].iov_len );
+  if ( iovlen == 1 )
+    return write( iov[0].iov_base, iov[0].iov_len );
   else
   {
-    std::string buffer;
-    for ( uint32_t buffer_i = 0; buffer_i < buffers_count; buffer_i++ )
+    string buffer;
+    for ( uint32_t iov_i = 0; iov_i < iovlen; iov_i++ )
     {
       buffer.append
       (
-        static_cast<const char*>( buffers[buffer_i].iov_base ),
-        buffers[buffer_i].iov_len
+        static_cast<const char*>( iov[iov_i].iov_base ),
+        iov[iov_i].iov_len
       );
     }
 
@@ -4179,6 +4191,8 @@ ssize_t OStream::writev( const struct iovec* buffers, uint32_t buffers_count )
 // path.cpp
 #ifdef _WIN32
 #include <windows.h>
+#else
+#include <stdlib.h> // For realpath
 #endif
 
 
@@ -4202,7 +4216,7 @@ Path::Path
   init( narrow_path, narrow_path_len, narrow_path_code );
 }
 
-Path::Path( const std::string& narrow_path, iconv::Code narrow_path_code )
+Path::Path( const string& narrow_path, iconv::Code narrow_path_code )
 {
   init( narrow_path.c_str(), narrow_path.size(), narrow_path_code );
 }
@@ -4220,7 +4234,7 @@ Path::Path( const wchar_t* wide_path, size_t wide_path_len )
   : path( wide_path, wide_path_len )
 { }
 
-Path::Path( const std::wstring& wide_path )
+Path::Path( const wstring& wide_path )
   : path( wide_path )
 { }
 #endif
@@ -4248,7 +4262,7 @@ Path Path::abspath() const
 #endif
 }
 
-std::string Path::encode( iconv::Code tocode ) const
+string Path::encode( iconv::Code tocode ) const
 {
 #ifdef _WIN32
   char narrow_path[PATH_MAX];
@@ -4266,7 +4280,7 @@ std::string Path::encode( iconv::Code tocode ) const
         0
       );
 
-  return std::string( narrow_path, narrow_path_len );
+  return string( narrow_path, narrow_path_len );
 #else
   if ( tocode == iconv::CODE_CHAR )
     return path;
@@ -4275,7 +4289,7 @@ std::string Path::encode( iconv::Code tocode ) const
     iconv* iconv = iconv::open( tocode, iconv::CODE_CHAR );
     if ( iconv != NULL )
     {
-      std::string encoded_path;
+      string encoded_path;
       ( *iconv )( path, encoded_path );
       delete iconv;
       return encoded_path;
@@ -4319,7 +4333,7 @@ void Path::init
     iconv* iconv = iconv::open( iconv::CODE_CHAR, narrow_path_code );
     if ( iconv != NULL )
     {
-      if ( ( *iconv )( std::string( narrow_path, narrow_path_len ), path ) )
+      if ( ( *iconv )( string( narrow_path, narrow_path_len ), path ) )
       {
         delete iconv;
         return;
@@ -4413,7 +4427,7 @@ Path Path::parent_path() const
 {
   if ( *this != SEPARATOR )
   {
-    std::vector<Path> parts;
+    vector<Path> parts;
     splitall( parts );
     if ( parts.size() > 1 )
       return parts[parts.size()-2];
@@ -4427,7 +4441,7 @@ Path Path::parent_path() const
 Path Path::root_path() const
 {
 #ifdef _WIN32
-  std::vector<Path> path_parts;
+  vector<Path> path_parts;
   abspath().splitall( path_parts );
   return path_parts[0] + SEPARATOR;
 #else
@@ -4435,45 +4449,29 @@ Path Path::root_path() const
 #endif
 }
 
-std::pair<Path, Path> Path::split() const
+pair<Path, Path> Path::split() const
 {
-  string_type::size_type last_sep
-    = path.find_last_of( SEPARATOR );
-
-  if ( last_sep != string_type::npos )
-    return std::make_pair
-          (
-            path.substr( 0, last_sep ),
-            path.substr( last_sep + 1 )
-          );
+  string_type::size_type sep = path.find_last_of( SEPARATOR );
+  if ( sep != string_type::npos )
+    return make_pair( path.substr( 0, sep ), path.substr( sep + 1 ) );
   else
-    return std::make_pair( Path(), *this );
+    return make_pair( Path(), *this );
 }
 
-void Path::splitall( std::vector<Path>& parts ) const
+void Path::splitall( vector<Path>& parts ) const
 {
-  string_type::size_type last_sep
-    = path.find_first_not_of( SEPARATOR, 0 );
-
-  string_type::size_type next_sep
-    = path.find_first_of( SEPARATOR, last_sep );
+  string_type::size_type last_sep = path.find_first_not_of( SEPARATOR, 0 );
+  string_type::size_type next_sep = path.find_first_of( SEPARATOR, last_sep );
 
   while ( next_sep != string_type::npos || last_sep != string_type::npos )
   {
-    parts.push_back
-    (
-      path.substr( last_sep, next_sep - last_sep )
-    );
-
-    last_sep
-      = path.find_first_not_of( SEPARATOR, next_sep );
-
-    next_sep
-      = path.find_first_of( SEPARATOR, last_sep );
+    parts.push_back( path.substr( last_sep, next_sep - last_sep ) );
+    last_sep = path.find_first_not_of( SEPARATOR, next_sep );
+    next_sep = path.find_first_of( SEPARATOR, last_sep );
   }
 }
 
-std::pair<Path, Path> Path::splitext() const
+pair<Path, Path> Path::splitext() const
 {
   string_type::size_type last_dot;
 #ifdef _WIN32
@@ -4483,9 +4481,9 @@ std::pair<Path, Path> Path::splitext() const
 #endif
 
   if ( last_dot == 0 || last_dot == string_type::npos )
-    return std::make_pair( *this, Path() );
+    return make_pair( *this, Path() );
   else
-    return std::make_pair
+    return make_pair
            (
              path.substr( 0, last_dot ),
              path.substr( last_dot )
@@ -4628,7 +4626,7 @@ void PerformanceCounterSet::stopCounting( uint64_t* counts )
 
   for
   (
-    std::vector<int>::size_type event_index_i = 0;
+    vector<int>::size_type event_index_i = 0;
     event_index_i < event_indices.size();
     event_index_i++
   )
@@ -4715,7 +4713,7 @@ Pipe& Pipe::create()
   throw Exception();
 }
 
-ssize_t Pipe::read( void* buffer, size_t buffer_len )
+ssize_t Pipe::read( void* buf, size_t buflen )
 {
 #ifdef _WIN32
   DWORD dwBytesRead;
@@ -4724,8 +4722,8 @@ ssize_t Pipe::read( void* buffer, size_t buffer_len )
     ReadFile
     (
       ends[0],
-      buffer,
-      static_cast<DWORD>( buffer_len ),
+      buf,
+      static_cast<DWORD>( buflen ),
       &dwBytesRead,
       NULL
     )
@@ -4734,7 +4732,7 @@ ssize_t Pipe::read( void* buffer, size_t buffer_len )
   else
     return -1;
 #else
-  return ::read( ends[0], buffer, buffer_len );
+  return ::read( ends[0], buf, buflen );
 #endif
 }
 
@@ -4756,7 +4754,7 @@ bool Pipe::set_write_blocking_mode( bool blocking )
 #endif
 }
 
-ssize_t Pipe::write( const void* buffer, size_t buffer_len )
+ssize_t Pipe::write( const void* buf, size_t buflen )
 {
 #ifdef _WIN32
   DWORD dwBytesWritten;
@@ -4765,8 +4763,8 @@ ssize_t Pipe::write( const void* buffer, size_t buffer_len )
     WriteFile
     (
       ends[1],
-      buffer,
-      static_cast<DWORD>( buffer_len ),
+      buf,
+      static_cast<DWORD>( buflen ),
       &dwBytesWritten,
       NULL
     )
@@ -4775,7 +4773,7 @@ ssize_t Pipe::write( const void* buffer, size_t buffer_len )
   else
     return -1;
 #else
-  return ::write( ends[1], buffer, buffer_len );
+  return ::write( ends[1], buf, buflen );
 #endif
 }
 
@@ -4844,7 +4842,7 @@ Process& Process::create( const Path& command_line )
 
 Process& Process::create( int argc, char** argv )
 {
-  std::vector<char*> argvv;
+  vector<char*> argvv;
   for ( int arg_i = 1; arg_i < argc; arg_i++ )
     argvv.push_back( argv[arg_i] );
   argvv.push_back( NULL );
@@ -4859,10 +4857,10 @@ Process::create
 )
 {
 #ifdef _WIN32
-  const std::string& executable_file_path_str
-    = static_cast<const std::string&>( executable_file_path );
+  const string& executable_file_path_str
+    = static_cast<const string&>( executable_file_path );
 
-  std::string command_line;
+  string command_line;
   if ( executable_file_path_str.find( ' ' ) == -1 )
     command_line.append( executable_file_path_str );
   else
@@ -4904,7 +4902,7 @@ Process::create
     // Set stderr to write end of stderr pipe
     //dup2( *child_stderr->get_output_stream()->get_file(), STDERR_FILENO );
 
-    std::vector<char*> argv_with_executable_file_path;
+    vector<char*> argv_with_executable_file_path;
     argv_with_executable_file_path.push_back
     (
       const_cast<char*>( static_cast<const char*>( executable_file_path ) )
@@ -5612,12 +5610,43 @@ Socket::IOSendCB::IOSendCB
     buffer( buffer ),
     flags( flags ),
     socket_( socket_ )
-{ }
+{
+  partial_send_len = 0;
+}
 
 Socket::IOSendCB::~IOSendCB()
 {
   Buffer::dec_ref( buffer );
   Socket::dec_ref( socket_ );
+}
+
+bool Socket::IOSendCB::execute( bool blocking_mode )
+{
+  if ( get_socket().set_blocking_mode( blocking_mode ) )
+  {
+    for ( ;; ) // Keep trying partial sends
+    {
+      ssize_t send_ret
+        = get_socket().send
+          (
+            static_cast<const char*>( get_buffer() ) + partial_send_len,
+            get_flags()
+          );
+
+      if ( send_ret >= 0 )
+      {
+        partial_send_len += send_ret;
+        if ( partial_send_len == get_buffer().size() )
+          return true;
+        else
+          continue;
+      }
+      else
+        return false;
+    }
+  }
+  else
+    return false;
 }
 
 void Socket::IOSendCB::onWriteCompletion()
@@ -5648,12 +5677,101 @@ Socket::IOSendMsgCB::IOSendMsgCB
     buffers( buffers ),
     flags( flags ),
     socket_( socket_ )
-{ }
+{
+  buffers_len = 0;
+  const struct iovec* iov = get_buffers();
+  uint32_t iovlen = get_buffers().size();
+  for ( uint32_t iov_i = 0; iov_i < iovlen; iov_i++ )
+    buffers_len += iov[iov_i].iov_len;
+
+  partial_send_len = 0;
+}
 
 Socket::IOSendMsgCB::~IOSendMsgCB()
 {
   Buffers::dec_ref( buffers );
   Socket::dec_ref( socket_ );
+}
+
+bool Socket::IOSendMsgCB::execute( bool blocking_mode )
+{
+  if ( get_socket().set_blocking_mode( blocking_mode ) )
+  {
+    for ( ;; ) // Keep trying partial sends
+    {
+      ssize_t sendmsg_ret;
+      if ( partial_send_len == 0 )
+        sendmsg_ret = get_socket().sendmsg( buffers, get_flags() );
+      else
+      {
+        const struct iovec* iov = buffers;
+        uint32_t iovlen = buffers.size();
+
+        uint32_t sent_until_iov_i = 0;
+        size_t sent_until_iov_i_pos = 0;
+        size_t temp_partial_send_len = partial_send_len;
+        for ( ;; ) // Calculate write_until_iov_*
+        {
+          if ( iov[sent_until_iov_i].iov_len < temp_partial_send_len )
+          {
+            // The buffer and part of the next was already written
+            temp_partial_send_len -= iov[sent_until_iov_i].iov_len;
+            sent_until_iov_i++;
+          }
+          else if ( iov[sent_until_iov_i].iov_len == temp_partial_send_len )
+          {
+            // The buffer was already written, but none of the next
+            temp_partial_send_len = 0;
+            sent_until_iov_i++;
+            break;
+          }
+          else // Part of the buffer was written
+          {
+            sent_until_iov_i_pos = temp_partial_send_len;
+            break;
+          }
+        }
+
+        if ( sent_until_iov_i_pos == 0 ) // Writing whole buffers
+        {
+          sendmsg_ret
+            = get_socket().sendmsg
+              (
+                &iov[sent_until_iov_i],
+                iovlen - sent_until_iov_i,
+                get_flags()
+              );
+        }
+        else // Writing part of a buffer
+        {
+          struct iovec temp_iov;
+
+          temp_iov.iov_base
+            = static_cast<char*>( iov[sent_until_iov_i].iov_base )
+              + sent_until_iov_i_pos;
+
+          temp_iov.iov_len = iov[sent_until_iov_i].iov_len
+                               - sent_until_iov_i_pos;
+
+          sendmsg_ret = get_socket().sendmsg( &temp_iov, 1, get_flags() );
+        }
+      }
+
+      if ( sendmsg_ret >= 0 )
+      {
+        partial_send_len += sendmsg_ret;
+
+        if ( partial_send_len == buffers_len )
+          return true;
+        else
+          continue;
+      }
+      else
+        return false;
+    }
+  }
+  else
+    return false;
 }
 
 void Socket::IOSendMsgCB::onWriteCompletion()
@@ -5751,20 +5869,8 @@ public:
   // BIOCB
   void execute()
   {
-    if ( get_socket().set_blocking_mode( true ) )
-    {
-      ssize_t send_ret = get_socket().send( get_buffer(), get_flags() );
-      if ( send_ret >= 0 )
-      {
-#ifdef _WIN32
-        if ( static_cast<size_t>( send_ret ) != get_buffer().size() )
-          DebugBreak();
-#endif
-        onWriteCompletion();
-      }
-      else
-        onWriteError();
-    }
+    if ( IOSendCB::execute( true ) )
+      onWriteCompletion();
     else
       onWriteError();
   }
@@ -5789,14 +5895,8 @@ public:
   // BIOCB
   void execute()
   {
-    if ( get_socket().set_blocking_mode( true ) )
-    {
-      ssize_t sendmsg_ret = get_socket().sendmsg( get_buffers(), get_flags() );
-      if ( sendmsg_ret >= 0 )
-        onWriteCompletion();
-      else
-        onWriteError();
-    }
+    if ( IOSendMsgCB::execute( true ) )
+      onWriteCompletion();
     else
       onWriteError();
   }
@@ -5918,28 +6018,15 @@ public:
   // NBIOCB
   void execute()
   {
-    if ( get_socket().set_blocking_mode( false ) )
+    if ( IOSendCB::execute( false ) )
     {
-      ssize_t send_ret = get_socket().send( get_buffer(), get_flags() );
-      if ( send_ret >= 0 )
-      {
-#ifdef _WIN32
-        if ( static_cast<size_t>( send_ret ) != get_buffer().size() )
-          DebugBreak();
-#endif
-        set_state( STATE_COMPLETE );
-        onWriteCompletion();
-      }
-      else if ( get_socket().want_write() )
-        set_state( STATE_WANT_WRITE );
-      else if ( get_socket().want_read() )
-        set_state( STATE_WANT_READ );
-      else
-      {
-        set_state( STATE_ERROR );
-        onWriteError();
-      }
+      set_state( STATE_COMPLETE );
+      onWriteCompletion();
     }
+    else if ( get_socket().want_write() )
+      set_state( STATE_WANT_WRITE );
+    else if ( get_socket().want_read() )
+      set_state( STATE_WANT_READ );
     else
     {
       set_state( STATE_ERROR );
@@ -5970,24 +6057,15 @@ public:
   // NBIOCB
   void execute()
   {
-    if ( get_socket().set_blocking_mode( false ) )
+    if ( IOSendMsgCB::execute( false ) )
     {
-      ssize_t sendmsg_ret = get_socket().sendmsg( get_buffers(), get_flags() );
-      if ( sendmsg_ret >= 0 )
-      {
-        set_state( STATE_COMPLETE );
-        onWriteCompletion();
-      }
-      else if ( get_socket().want_write() )
-        set_state( STATE_WANT_WRITE );
-      else if ( get_socket().want_read() )
-        set_state( STATE_WANT_READ );
-      else
-      {
-        set_state( STATE_ERROR );
-        onWriteError();
-      }
+      set_state( STATE_COMPLETE );
+      onWriteCompletion();
     }
+    else if ( get_socket().want_write() )
+      set_state( STATE_WANT_WRITE );
+    else if ( get_socket().want_read() )
+      set_state( STATE_WANT_READ );
     else
     {
       set_state( STATE_ERROR );
@@ -6398,7 +6476,9 @@ bool Socket::close()
   if ( Stream::close( socket_ ) )
   {
     connected = false;
-    socket_ = INVALID_SOCKET;
+    // socket_ = INVALID_SOCKET;
+    // Don't set socket_ to INVALID socket_ so it can be dissociated from an
+    // event queue after it's close()'d
     return true;
   }
   else
@@ -6495,7 +6575,7 @@ socket_t Socket::create( int* domain, int type, int protocol )
     if ( *domain == AF_INET6 )
     {
       DWORD ipv6only = 0; // Allow dual-mode sockets
-      setsockopt
+      ::setsockopt
       (
         socket_,
         IPPROTO_IPV6,
@@ -6534,7 +6614,7 @@ bool Socket::get_blocking_mode() const
   return blocking_mode;
 }
 
-std::string Socket::getfqdn()
+string Socket::getfqdn()
 {
 #ifdef _WIN32
   DWORD dwFQDNLength = 0;
@@ -6552,7 +6632,7 @@ std::string Socket::getfqdn()
       )
     )
     {
-      std::string fqdn( fqdn_temp, dwFQDNLength );
+      string fqdn( fqdn_temp, dwFQDNLength );
       delete [] fqdn_temp;
       return fqdn;
     }
@@ -6560,7 +6640,7 @@ std::string Socket::getfqdn()
       delete [] fqdn_temp;
   }
 
-  return std::string();
+  return string();
 #else
   char fqdn[256];
   ::gethostname( fqdn, 256 );
@@ -6626,7 +6706,7 @@ std::string Socket::getfqdn()
 #endif
 }
 
-std::string Socket::gethostname()
+string Socket::gethostname()
 {
 #ifdef _WIN32
   DWORD dwHostNameLength = 0;
@@ -6644,7 +6724,7 @@ std::string Socket::gethostname()
       )
     )
     {
-      std::string hostname( hostname_temp, dwHostNameLength );
+      string hostname( hostname_temp, dwHostNameLength );
       delete [] hostname_temp;
       return hostname;
     }
@@ -6652,7 +6732,7 @@ std::string Socket::gethostname()
       delete [] hostname_temp;
   }
 
-  return std::string();
+  return string();
 #else
   char hostname[256];
   ::gethostname( hostname, 256 );
@@ -6765,51 +6845,19 @@ void
 Socket::iovecs_to_wsabufs
 (
    const struct iovec* iov,
-   std::vector<struct iovec64>& wsabufs
+   vector<struct iovec64>& wsabufs
 )
 {
-  for ( uint32_t iov_i = 0; iov_i < buffers_count; iov_i++ )
+  for ( uint32_t iov_i = 0; iov_i < wsabufs.size(); iov_i++ )
   {
-    wsabufs[iov_i].buf = static_cast<char*>( buffers[iov_i].iov_base );
-    wsabufs[iov_i].len = static_cast<ULONG>( buffers[iov_i].iov_len );
+    wsabufs[iov_i].buf = static_cast<char*>( iov[iov_i].iov_base );
+    wsabufs[iov_i].len = static_cast<ULONG>( iov[iov_i].iov_len );
   }
 }
 #endif
 
 bool Socket::listen()
 {
-  //int flag = 1;
-  //setsockopt
-  //(
-  //  *this,
-  //  IPPROTO_TCP,
-  //  TCP_NODELAY,
-  //  reinterpret_cast<char*>( &flag ),
-  //  sizeof( int )
-  //);
-
-  //flag = 1;
-  //setsockopt
-  //(
-  //  *this,
-  //  SOL_SOCKET,
-  //  SO_KEEPALIVE,
-  //  reinterpret_cast<char*>( &flag ),
-  //  sizeof( int )
-  //);
-
-  //linger lingeropt;
-  //lingeropt.l_onoff = 1;
-  //lingeropt.l_linger = 0;
-  //setsockopt
-  //(
-  //  *this,
-  //  SOL_SOCKET,
-  //  SO_LINGER,
-  //  reinterpret_cast<char*>( &lingeropt ),
-  //  static_cast<int>( sizeof( lingeropt ) )
-  //);
-
   return ::listen( *this, SOMAXCONN ) != -1;
 }
 
@@ -6854,7 +6902,7 @@ ssize_t Socket::recv( Buffer& buffer, int flags )
   return recv_ret;
 }
 
-ssize_t Socket::recv( void* buffer, size_t buffer_len, int flags )
+ssize_t Socket::recv( void* buf, size_t buflen, int flags )
 {
   flags = get_platform_recv_flags( flags );
 
@@ -6862,24 +6910,24 @@ ssize_t Socket::recv( void* buffer, size_t buffer_len, int flags )
   return ::recv
          (
            *this,
-           static_cast<char*>( buffer ),
-           static_cast<int>( buffer_len ),
+           static_cast<char*>( buf ),
+           static_cast<int>( buflen ),
            flags
          ); // No real advantage to WSARecv on Win32 for one buffer
 #else
-  return ::recv( *this, buffer, buffer_len, flags );
+  return ::recv( *this, buf, buflen, flags );
 #endif
 }
 
-ssize_t Socket::send( const void* buffer, size_t buffer_len, int flags )
+ssize_t Socket::send( const void* buf, size_t buflen, int flags )
 {
   flags = get_platform_send_flags( flags );
 
 #if defined(_WIN32)
   DWORD dwWrittenLength;
   WSABUF wsabuf;
-  wsabuf.len = static_cast<ULONG>( buffer_len );
-  wsabuf.buf = const_cast<char*>( static_cast<const char*>( buffer ) );
+  wsabuf.len = static_cast<ULONG>( buflen );
+  wsabuf.buf = const_cast<char*>( static_cast<const char*>( buf ) );
 
   ssize_t send_ret
     = WSASend
@@ -6898,24 +6946,19 @@ ssize_t Socket::send( const void* buffer, size_t buffer_len, int flags )
   else
     return send_ret;
 #else
-  return ::send( *this, buffer, buffer_len, flags );
+  return ::send( *this, buf, buflen, flags );
 #endif
 }
 
-ssize_t Socket::sendmsg
-(
-  const struct iovec* buffers,
-  uint32_t buffers_count,
-  int flags
-)
+ssize_t Socket::sendmsg( const struct iovec* iov, uint32_t iovlen, int flags )
 {
   flags = get_platform_send_flags( flags );
 
 #ifdef _WIN32
   DWORD dwWrittenLength;
 #ifdef _WIN64
-  std::vector<WSABUF> wsabufs( buffers_count );
-  iovecs_to_wsabufs( buffers, wsabufs );
+  vector<WSABUF> wsabufs( iovlen );
+  iovecs_to_wsabufs( iov, iovlen );
 #endif
 
   ssize_t send_ret
@@ -6925,9 +6968,9 @@ ssize_t Socket::sendmsg
 #ifdef _WIN64
         &wsabufs[0],
 #else
-        reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( buffers ) ),
+        reinterpret_cast<WSABUF*>( const_cast<struct iovec*>( iov ) ),
 #endif
-        buffers_count,
+        iovlen,
         &dwWrittenLength,
         static_cast<DWORD>( flags ),
         NULL,
@@ -6941,8 +6984,8 @@ ssize_t Socket::sendmsg
 #else
   struct msghdr msghdr_;
   memset( &msghdr_, 0, sizeof( msghdr_ ) );
-  msghdr_.msg_iov = const_cast<iovec*>( buffers );
-  msghdr_.msg_iovlen = buffers_count;
+  msghdr_.msg_iov = const_cast<iovec*>( iov );
+  msghdr_.msg_iovlen = iovlen;
   return ::sendmsg( *this, &msghdr_, flags );
 #endif
 }
@@ -6994,6 +7037,38 @@ void Socket::set_io_queue( IOQueue& io_queue )
     this->io_queue = &io_queue.inc_ref();
   else
     DebugBreak();
+}
+
+bool Socket::setsockopt( Option option, bool onoff )
+{
+  if ( option == OPTION_SO_KEEPALIVE )
+  {
+    int optval = onoff ? 1 : 0;
+    return ::setsockopt
+           (
+             *this,
+             SOL_SOCKET,
+             SO_KEEPALIVE,
+             reinterpret_cast<char*>( &optval ),
+             static_cast<int>( sizeof( optval ) )
+           ) == 0;
+  }
+  else if ( option == OPTION_SO_LINGER )
+  {
+    linger optval;
+    optval.l_onoff = onoff ? 1 : 0;
+    optval.l_linger = 0;
+    return ::setsockopt
+           (
+             *this,
+             SOL_SOCKET,
+             SO_LINGER,
+             reinterpret_cast<char*>( &optval ),
+             static_cast<int>( sizeof( optval ) )
+           ) == 0;
+  }
+  else
+    return false;
 }
 
 bool Socket::shutdown( bool shut_rd, bool shut_wr )
@@ -7176,9 +7251,9 @@ SocketAddress::getaddrinfo( const char* hostname, uint16_t port )
     hostname = "0.0.0.0";
   servname = NULL;
 #else
-  std::ostringstream servname_oss; // ltoa is not very portable
+  ostringstream servname_oss; // ltoa is not very portable
   servname_oss << port; // servname = decimal port or service name.
-  std::string servname_str = servname_oss.str();
+  string servname_str = servname_oss.str();
   servname = servname_str.c_str();
 #endif
 
@@ -7242,7 +7317,7 @@ SocketAddress::getaddrinfo( const char* hostname, uint16_t port )
 
 bool SocketAddress::getnameinfo
 (
-  std::string& out_hostname,
+  string& out_hostname,
   bool numeric
 ) const
 {
@@ -8286,6 +8361,7 @@ public:
     if ( dwNumberOfBytesTransferred != get_buffer().size() )
       DebugBreak();
 #endif
+
     onWriteCompletion();
   }
 
@@ -8310,8 +8386,13 @@ public:
   { }
 
   // Win32AIOCB
-  void onCompletion( DWORD )
+  void onCompletion( DWORD dwNumberOfBytesTransferred )
   {
+#ifdef _DEBUG
+    if ( dwNumberOfBytesTransferred < get_buffers_len() )
+      DebugBreak();
+#endif
+
     onWriteCompletion();
   }
 
@@ -8691,7 +8772,7 @@ TCPSocket::aio_send
         &dwNumberOfBytesSent,
         static_cast<DWORD>( get_platform_send_flags( flags ) ),
         *aiocb,
-        Win32AIOSendCB::WSAOverlappedCompletionRoutine
+        NULL // Win32AIOSendCB::WSAOverlappedCompletionRoutine
       ) == 0
       ||
       WSAGetLastError() == WSA_IO_PENDING
@@ -8735,7 +8816,7 @@ TCPSocket::aio_sendmsg
       = new Win32AIOSendMsgCB( buffers, inc_ref(), callback, callback_context );
 
 #ifdef _WIN64
-    std::vector<iovec64> wsabufs( buffers->get_iovecs_len() );
+    vector<iovec64> wsabufs( buffers->get_iovecs_len() );
     iovecs_to_wsabufs( buffers->get_iovecs(), wsabufs );
 #endif
 
@@ -8759,7 +8840,7 @@ TCPSocket::aio_sendmsg
         &dwNumberOfBytesSent,
         static_cast<DWORD>( get_platform_send_flags( flags ) ),
         *aiocb,
-        Win32AIOSendMsgCB::WSAOverlappedCompletionRoutine
+        NULL // Win32AIOSendMsgCB::WSAOverlappedCompletionRoutine
       ) == 0
       ||
       WSAGetLastError() == WSA_IO_PENDING
@@ -8773,6 +8854,7 @@ TCPSocket::aio_sendmsg
     }
   }
 #endif
+
   Socket::aio_sendmsg( buffers, flags, callback, callback_context );
 }
 
@@ -8832,6 +8914,24 @@ bool TCPSocket::want_accept() const
 #else
   return errno == EWOULDBLOCK;
 #endif
+}
+
+bool TCPSocket::setsockopt( Option option, bool onoff )
+{
+  if ( option == OPTION_TCP_NODELAY )
+  {
+    int optval = onoff ? 1 : 0;
+    return ::setsockopt
+           (
+             *this,
+             IPPROTO_TCP,
+             TCP_NODELAY,
+             reinterpret_cast<char*>( &optval ),
+             static_cast<int>( sizeof( optval ) )
+           ) == 0;
+  }
+  else
+    return Socket::setsockopt( option, onoff );
 }
 
 
@@ -9065,15 +9165,17 @@ void Thread::yield()
 
 
 // time.cpp
-#if defined(_WIN32)
+#ifdef _WIN32
 #undef INVALID_SOCKET
 #include <windows.h> // For FILETIME
 #include <winsock.h> // For timeval
 #define INVALID_SOCKET  (SOCKET)(~0)
-#elif defined(__MACH__)
+#else
+#include <stdio.h> // For snprintf
+#if defined(__MACH__)
 #include <sys/time.h> // For gettimeofday
 #endif
-
+#endif
 
 const char* HTTPDaysOfWeek[]
   = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
@@ -9457,7 +9559,7 @@ Time::operator struct timespec() const
 }
 #endif
 
-Time::operator std::string() const
+Time::operator string() const
 {
   char iso_date_time[30];
   as_iso_date_time( iso_date_time, 30 );
@@ -9735,7 +9837,7 @@ public:
           {
             timers.push
             (
-              std::make_pair( Time() + new_timer->get_timeout(), new_timer )
+              make_pair( Time() + new_timer->get_timeout(), new_timer )
             );
           }
           else
@@ -9760,7 +9862,7 @@ public:
               timer->last_fire_time = Time();
               timers.push
               (
-                std::make_pair
+                make_pair
                 (
                   timer->last_fire_time + timer->get_period(),
                   timer
@@ -9784,7 +9886,7 @@ public:
             {
               timers.push
               (
-                std::make_pair( Time() + new_timer->get_timeout(), new_timer )
+                make_pair( Time() + new_timer->get_timeout(), new_timer )
               );
             }
             else
@@ -9801,9 +9903,9 @@ private:
   bool should_run;
   std::priority_queue
   <
-    std::pair<Time, Timer*>,
-    std::vector< std::pair<Time, Timer*> >,
-    std::greater< std::pair<Time, Timer*> >
+    pair<Time, Timer*>,
+    vector< pair<Time, Timer*> >,
+    std::greater< pair<Time, Timer*> >
   > timers;
 };
 #endif
@@ -10288,8 +10390,8 @@ UDPSocket::recvfrom
 ssize_t
 UDPSocket::recvfrom
 (
-  void* buffer,
-  size_t buffer_len,
+  void* buf,
+  size_t buflen,
   int flags,
   struct sockaddr_storage& peername
 ) const
@@ -10298,8 +10400,8 @@ UDPSocket::recvfrom
   return ::recvfrom
          (
            *this,
-           static_cast<char*>( buffer ),
-           buffer_len,
+           static_cast<char*>( buf ),
+           buflen,
            flags,
            reinterpret_cast<struct sockaddr*>( &peername ),
            &peername_len
@@ -10309,8 +10411,8 @@ UDPSocket::recvfrom
 ssize_t
 UDPSocket::sendmsg
 (
-  const struct iovec* buffers,
-  uint32_t buffers_count,
+  const struct iovec* iov,
+  uint32_t iovlen,
   const SocketAddress& peername,
   int flags
 ) const
@@ -10323,7 +10425,7 @@ UDPSocket::sendmsg
 #ifdef _WIN32
     DWORD dwWrittenLength;
 #ifdef _WIN64
-    std::vector<struct iovec64> wsabufs( buffers_count );
+    vector<struct iovec64> wsabufs( iovlen );
     iovecs_to_wsabufs( buffers, wsabufs );
 #endif
 
@@ -10334,9 +10436,9 @@ UDPSocket::sendmsg
 #ifdef _WIN64
           reinterpret_cast<LPWSABUF>( &wsabufs[0] ),
 #else
-          reinterpret_cast<LPWSABUF>( const_cast<struct iovec*>( buffers ) ),
+          reinterpret_cast<LPWSABUF>( const_cast<struct iovec*>( iov ) ),
 #endif
-          buffers_count,
+          iovlen,
           &dwWrittenLength,
           static_cast<DWORD>( flags ),
           name,
@@ -10354,8 +10456,8 @@ UDPSocket::sendmsg
     memset( &msghdr_, 0, sizeof( msghdr_ ) );
     msghdr_.msg_name = name;
     msghdr_.msg_namelen = namelen;
-    msghdr_.msg_iov = const_cast<iovec*>( buffers );
-    msghdr_.msg_iovlen = buffers_count;
+    msghdr_.msg_iov = const_cast<iovec*>( iov );
+    msghdr_.msg_iovlen = iovlen;
     return ::sendmsg( *this, &msghdr_, flags );
 #endif
   }
@@ -10366,8 +10468,8 @@ UDPSocket::sendmsg
 ssize_t
 UDPSocket::sendto
 (
-  const void* buffer,
-  size_t buffer_len,
+  const void* buf,
+  size_t buflen,
   int flags,
   const SocketAddress& _peername
 ) const
@@ -10378,8 +10480,8 @@ UDPSocket::sendto
     return ::sendto
            (
              *this,
-             static_cast<const char*>( buffer ),
-             buffer_len,
+             static_cast<const char*>( buf ),
+             buflen,
              flags,
              peername,
              peername_len
@@ -10396,7 +10498,8 @@ UDPSocket::sendto
 #pragma warning( push )
 #pragma warning( disable: 4100 )
 #else
-#include <dirent.h>
+#include <dirent.h> // for DIR
+#include <stdio.h>
 #include <sys/statvfs.h>
 #include <sys/time.h>
 #include <utime.h>
@@ -10511,8 +10614,8 @@ Stat* Volume::getattr( const Path& path )
 bool Volume::getxattr
 (
   const Path& path,
-  const std::string& name,
-  std::string& out_value
+  const string& name,
+  string& out_value
 )
 {
 #if defined(YIELD_PLATFORM_HAVE_XATTR_H)
@@ -10543,7 +10646,7 @@ bool Volume::link( const Path& old_path, const Path& new_path )
 #endif
 }
 
-bool Volume::listxattr( const Path& path, std::vector<std::string>& out_names )
+bool Volume::listxattr( const Path& path, vector<string>& out_names )
 {
 #if defined(YIELD_PLATFORM_HAVE_XATTR_H)
   size_t names_len = LISTXATTR( path, NULL, 0 );
@@ -10555,7 +10658,7 @@ bool Volume::listxattr( const Path& path, std::vector<std::string>& out_names )
     do
     {
       size_t name_len = strlen( name );
-      out_names.push_back( std::string( name, name_len ) );
+      out_names.push_back( string( name, name_len ) );
       name += name_len;
     }
     while ( static_cast<size_t>( name - names ) < names_len );
@@ -10604,7 +10707,7 @@ bool Volume::mktree( const Path& path, mode_t mode )
 {
   bool ret = true;
 
-  std::pair<Path, Path> path_parts = path.split();
+  pair<Path, Path> path_parts = path.split();
   if ( !path_parts.first.empty() )
     ret &= mktree( path_parts.first, mode );
 
@@ -10710,7 +10813,7 @@ Volume::open
 Directory* Volume::opendir( const Path& path )
 {
 #ifdef _WIN32
-  std::wstring search_pattern( path );
+  wstring search_pattern( path );
   if ( search_pattern.size() > 0 &&
        search_pattern[search_pattern.size()-1] != L'\\' )
     search_pattern.append( L"\\" );
@@ -10720,12 +10823,10 @@ Directory* Volume::opendir( const Path& path )
   HANDLE hDirectory = FindFirstFileW( search_pattern.c_str(), &find_data );
   if ( hDirectory != INVALID_HANDLE_VALUE )
     return new Directory( hDirectory, find_data );
-#elif !defined(__sun)
+#else
   DIR* dirp = ::opendir( path );
   if ( dirp != NULL )
     return new Directory( dirp );
-#else
-  errno = ENOTSUP;
 #endif
 
   return NULL;
@@ -10746,7 +10847,7 @@ Path* Volume::readlink( const Path& path )
 #endif
 }
 
-bool Volume::removexattr( const Path& path, const std::string& name )
+bool Volume::removexattr( const Path& path, const string& name )
 {
 #if defined(YIELD_PLATFORM_HAVE_XATTR_H)
   return REMOVEXATTR( path, name.c_str() ) != -1;
@@ -10919,8 +11020,8 @@ bool
 Volume::setxattr
 (
   const Path& path,
-  const std::string& name,
-  const std::string& value,
+  const string& name,
+  const string& value,
   int flags
 )
 {
@@ -11177,7 +11278,7 @@ Win32AIOQueue::~Win32AIOQueue()
 
   for
   (
-    std::vector<WorkerThread*>::iterator
+    vector<WorkerThread*>::iterator
       worker_thread_i = worker_threads.begin();
     worker_thread_i != worker_threads.end();
     worker_thread_i++

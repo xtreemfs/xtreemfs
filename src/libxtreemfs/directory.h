@@ -36,7 +36,8 @@
 
 namespace xtreemfs
 {
-  using namespace org::xtreemfs::interfaces;
+  using org::xtreemfs::interfaces::DirectoryEntry;
+  using org::xtreemfs::interfaces::DirectoryEntrySet;
 
 
   class Directory : public yield::platform::Directory
@@ -44,33 +45,27 @@ namespace xtreemfs
   public:
     const static uint64_t LIMIT_DIRECTORY_ENTRIES_COUNT_DEFAULT = 100;
 
+    Directory
+    ( 
+      const DirectoryEntrySet& first_directory_entries,      
+      bool names_only,
+      Volume& parent_volume,
+      const Path& path
+    );
+
+    virtual ~Directory();
+
     // yield::platform::Directory
     YIELD_PLATFORM_DIRECTORY_PROTOTYPES;
 
   private:
-    friend class Volume;
-
-    Directory
-    ( 
-      const org::xtreemfs::interfaces::DirectoryEntrySet& first_directory_entries,
-      Log& log,
-      MRCProxy& mrc_proxy,
-      bool names_only,
-      const Path& path,
-      UserCredentialsCache* user_credentials_cache
-    );
-
-    ~Directory()
-    { }
-
-    org::xtreemfs::interfaces::DirectoryEntrySet directory_entries;
-    Log& log;
+    DirectoryEntrySet directory_entries;
     MRCProxy& mrc_proxy;
     bool names_only;
+    Volume& parent_volume;
     Path path;
     uint16_t read_directory_entry_i;
     uint64_t seen_directory_entries_count;
-    UserCredentialsCache* user_credentials_cache;
   };
 };
 

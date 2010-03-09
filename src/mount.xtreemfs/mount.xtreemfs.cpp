@@ -178,7 +178,7 @@ namespace mount_xtreemfs
       // --trace options to show up
       if 
       ( 
-        get_log_level() < yield::platform::Log::LOG_INFO &&
+        get_log_level() < Log::LOG_INFO &&
         (
           get_proxy_flags() != 0
           ||
@@ -192,7 +192,7 @@ namespace mount_xtreemfs
               == Volume::FLAG_TRACE_STAT_CACHE
         )
       )
-        get_log()->set_level( yield::platform::Log::LOG_INFO );
+        get_log()->set_level( Log::LOG_INFO );
 
       // Create the XtreemFS volume in the parent as well as the child process
       // so that the parent will fail on most common errors
@@ -236,7 +236,7 @@ namespace mount_xtreemfs
           fuse_o_args.append( ",big_writes" );
 #endif
         fuse_argvv.push_back( const_cast<char*>( fuse_o_args.c_str() ) );
-        get_log()->getStream( yield::platform::Log::LOG_INFO ) <<
+        get_log()->get_stream( Log::LOG_INFO ) <<
             get_program_name() << ": passing -o " << fuse_o_args <<
             " to FUSE.";
         fuse_argvv.push_back( NULL );
@@ -307,7 +307,7 @@ namespace mount_xtreemfs
         }
         else
         {
-          get_log()->getStream( yield::platform::Log::LOG_ERR ) <<
+          get_log()->get_stream( Log::LOG_ERR ) <<
             get_program_name() << ": error creating child process: " <<
             yield::platform::Exception() << ".";
           return 1;

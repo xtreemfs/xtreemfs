@@ -57,7 +57,7 @@ namespace yield
     protected:
       VolumeTestCase
       (
-        const std::string& name,
+        const string& name,
         Volume& volume
       )
         : yunit::TestCase( name ), volume( volume )
@@ -175,7 +175,7 @@ namespace yield
         )
       )
       {
-        std::string value;
+        string value;
         this->get_volume().getxattr
         (
           YIELD_PLATFORM_FILE_TEST_FILE_NAME,
@@ -256,7 +256,7 @@ namespace yield
         )
       )
       {
-        std::vector<std::string> names;
+        vector<string> names;
         this->get_volume().listxattr
         (
           YIELD_PLATFORM_FILE_TEST_FILE_NAME,
@@ -265,7 +265,7 @@ namespace yield
 
         for
         (
-          std::vector<std::string>::const_iterator name_i = names.begin();
+          vector<string>::const_iterator name_i = names.begin();
           name_i != names.end();
           name_i++
         )
@@ -417,7 +417,7 @@ namespace yield
         )
       )
       {
-        std::string value;
+        string value;
         this->get_volume().getxattr
         (
           YIELD_PLATFORM_FILE_TEST_FILE_NAME,
@@ -576,7 +576,7 @@ namespace yield
     class VolumeTestSuite : public yunit::TestSuite
     {
     public:
-      VolumeTestSuite( const std::string& name )
+      VolumeTestSuite( const string& name )
         : yunit::TestSuite( name )
       {
         Volume* volume = new VolumeType;

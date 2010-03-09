@@ -28,6 +28,8 @@
 
 
 #include "xtreemfs/dir_proxy.h"
+using org::xtreemfs::interfaces::ServiceSet;
+using org::xtreemfs::interfaces::ServiceDataMap;
 using namespace xtreemfs;
 
 
@@ -67,7 +69,12 @@ DIRProxy::DIRProxy
   SocketFactory& socket_factory,
   UserCredentialsCache* user_credentials_cache
 )
-: Proxy<DIRInterface, DIRInterfaceEventFactory, DIRInterfaceEventSender>
+: Proxy
+  <
+    org::xtreemfs::interfaces::DIRInterface,
+    org::xtreemfs::interfaces::DIRInterfaceEventFactory,
+    org::xtreemfs::interfaces::DIRInterfaceEventSender
+  >
   ( 
     concurrency_level, 
     flags, 
@@ -85,7 +92,7 @@ DIRProxy::~DIRProxy()
 {
   for
   (
-    std::map<std::string, CachedAddressMappings*>::iterator
+    std::map<string, CachedAddressMappings*>::iterator
       uuid_to_address_mappings_i = uuid_to_address_mappings_cache.begin();
     uuid_to_address_mappings_i != uuid_to_address_mappings_cache.end();
     uuid_to_address_mappings_i++
@@ -120,15 +127,15 @@ DIRProxy::create
               );
 }
 
-AddressMappingSet*
+AddressMappingSet&
 DIRProxy::getAddressMappingsFromUUID
 (
-  const std::string& uuid
+  const string& uuid
 )
 {
   if ( uuid_to_address_mappings_cache_lock.try_acquire() )
   {
-    std::map<std::string, CachedAddressMappings*>::iterator
+    std::map<string, CachedAddressMappings*>::iterator
       uuid_to_address_mappings_i = uuid_to_address_mappings_cache.find( uuid );
 
     if ( uuid_to_address_mappings_i != uuid_to_address_mappings_cache.end() )
@@ -150,7 +157,7 @@ DIRProxy::getAddressMappingsFromUUID
       {
         cached_address_mappings->inc_ref();
         uuid_to_address_mappings_cache_lock.release();
-        return cached_address_mappings;
+        return *cached_address_mappings;
       }
       else
       {
@@ -177,16 +184,16 @@ DIRProxy::getAddressMappingsFromUUID
     uuid_to_address_mappings_cache[uuid] = &cached_address_mappings->inc_ref();
     uuid_to_address_mappings_cache_lock.release();
 
-    return cached_address_mappings;
+    return *cached_address_mappings;
   }
   else
     throw yield::platform::Exception( "could not find address mappings for UUID" );
 }
 
-URI* DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_name )
+URI DIRProxy::getVolumeURIFromVolumeName( const string& volume_name_utf8 )
 {
   ServiceSet services;
-  xtreemfs_service_get_by_name( volume_name, services );
+  xtreemfs_service_get_by_name( volume_name_utf8, services  );
   if ( !services.empty() )
   {
     for
@@ -221,7 +228,7 @@ URI* DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_name )
           )
           {
             if ( ( *address_mapping_i ).get_protocol() == ONCRPC_SCHEME )
-              return new URI( ( *address_mapping_i ).get_uri() );
+              return URI( ( *address_mapping_i ).get_uri() );
           }
 
           // Then GridSSL
@@ -233,7 +240,7 @@ URI* DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_name )
           )
           {
             if ( ( *address_mapping_i ).get_protocol() == ONCRPCG_SCHEME )
-              return new URI( ( *address_mapping_i ).get_uri() );
+              return URI( ( *address_mapping_i ).get_uri() );
           }
 
           // Then SSL
@@ -245,7 +252,7 @@ URI* DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_name )
           )
           {
             if ( ( *address_mapping_i ).get_protocol() == ONCRPCS_SCHEME )
-              return new URI( ( *address_mapping_i ).get_uri() );
+              return URI( ( *address_mapping_i ).get_uri() );
           }
 
           // Then UDP
@@ -257,7 +264,7 @@ URI* DIRProxy::getVolumeURIFromVolumeName( const std::string& volume_name )
           )
           {
             if ( ( *address_mapping_i ).get_protocol() == ONCRPCU_SCHEME )
-              return new URI( ( *address_mapping_i ).get_uri() );
+              return URI( ( *address_mapping_i ).get_uri() );
           }
         }
       }

@@ -43,7 +43,7 @@ namespace yield
     class DirectoryTestCase : public yunit::TestCase
     {
     public:
-      DirectoryTestCase( const std::string& name, Volume* volume = NULL )
+      DirectoryTestCase( const string& name, Volume* volume = NULL )
         : yunit::TestCase( name )
       {
         directory = NULL;
@@ -123,7 +123,7 @@ namespace yield
     class DirectoryTestSuite : public yunit::TestSuite
     {
     public:
-      DirectoryTestSuite( const std::string& name )
+      DirectoryTestSuite( const string& name )
         : TestSuite( name )
       {
         Volume* volume = new VolumeType;

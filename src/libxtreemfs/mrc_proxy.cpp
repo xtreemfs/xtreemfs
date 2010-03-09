@@ -38,13 +38,18 @@ MRCProxy::MRCProxy
   IOQueue& io_queue,
   Log* log,
   const Time& operation_timeout,
-  const std::string& password,
+  const string& password,
   SocketAddress& peername,
   uint16_t reconnect_tries_max,
   SocketFactory& socket_factory,
   UserCredentialsCache* user_credentials_cache
 )
-: Proxy<MRCInterface, MRCInterfaceEventFactory, MRCInterfaceEventSender>
+: Proxy
+  <
+    org::xtreemfs::interfaces::MRCInterface,
+    org::xtreemfs::interfaces::MRCInterfaceEventFactory,
+    org::xtreemfs::interfaces::MRCInterfaceEventSender
+  >
   ( 
     concurrency_level, 
     flags, 
@@ -59,7 +64,6 @@ MRCProxy::MRCProxy
   password( password )
 { }
 
-
 MRCProxy&
 MRCProxy::create
 (
@@ -68,7 +72,7 @@ MRCProxy::create
   uint32_t flags,
   Log* log,
   const Time& operation_timeout,
-  const std::string& password,
+  const string& password,
   uint16_t reconnect_tries_max,
   SSLContext* ssl_context,
   UserCredentialsCache* user_credentials_cache
@@ -94,10 +98,11 @@ ONCRPCRequest& MRCProxy::createONCRPCRequest( MarshallableObject& body )
   UserCredentials* user_credentials;
   if ( get_user_credentials_cache() != NULL )
   {
-    user_credentials = new UserCredentials;
-    get_user_credentials_cache()
-      ->getCurrentUserCredentials( *user_credentials );
-    user_credentials->set_password( password );
+    user_credentials 
+      = get_user_credentials_cache()->getCurrentUserCredentials();
+
+    if ( user_credentials != NULL )
+      user_credentials->set_password( password );
   }
   else
     user_credentials = NULL;

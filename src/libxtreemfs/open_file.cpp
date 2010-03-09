@@ -34,15 +34,10 @@ using namespace xtreemfs;
 class OpenFile::XCapTimer : public yield::platform::TimerQueue::Timer
 {
 public:
-  XCapTimer( auto_OpenFile open_file, const Time& timeout )
+  XCapTimer( OpenFile& open_file, const Time& timeout )
     : yield::platform::TimerQueue::Timer( timeout ),
-      open_file( open_file )
+      open_file( open_file.inc_ref() )
   { }
-
-  XCapTimer& operator=( XCapTimer& )
-  {
-    return *this;
-  }
 
   // yield::platform::TimerQueue::Timer
   void fire()
@@ -54,11 +49,11 @@ public:
         XCap renewed_xcap;
 
         //open_file->parent_volume->get_log()->
-        //  getStream( yield::platform::Log::LOG_INFO ) <<
+        //  get_stream( Log::LOG_INFO ) <<
         //  "xtreemfs::OpenFile: renewing XCap for file " <<
         //  open_file->file_credentials.get_xcap().get_file_id() << ".";
 
-        open_file->parent_shared_file->get_parent_volume()->get_mrc_proxy()
+        open_file.parent_shared_file->get_parent_volume()->get_mrc_proxy()
           ->xtreemfs_renew_capability
         (
           open_file->get_xcap(),
@@ -66,7 +61,7 @@ public:
         );
 
         //open_file->parent_volume->get_log()->
-        //  getStream( yield::platform::Log::LOG_INFO ) <<
+        //  get_stream( Log::LOG_INFO ) <<
         //  "xtreemfs::OpenFile: successfully renewed XCap for open_file " <<
         //  open_file->file_credentials.get_xcap().get_file_id() << ".";
 
@@ -90,7 +85,7 @@ public:
         }
         //else
         //  open_file->parent_volume->get_log()->
-        //    getStream( yield::platform::Log::LOG_ERR ) <<
+        //    get_stream( Log::LOG_ERR ) <<
         //      "xtreemfs::OpenFile: received xcap for file " <<
         //      renewed_xcap.get_file_id() <<
         //      "that expires in less than " <<
@@ -100,7 +95,7 @@ public:
       catch ( std::exception& )
       {
         //open_file->parent_volume->get_log()->
-        //  getStream( yield::platform::Log::LOG_ERR ) <<
+        //  get_stream( Log::LOG_ERR ) <<
         //  "xtreemfs::OpenFile: caught exception trying to renew XCap for file " <<
         //  open_file->file_credentials.get_xcap().get_file_id() <<
         //  ": " << exc.what() << ".";
@@ -113,12 +108,8 @@ private:
 };
 
 
-OpenFile::OpenFile
-(
-  auto_SharedFile parent_shared_file,
-  const XCap& xcap
-)
-: parent_shared_file( parent_shared_file ),
+OpenFile::OpenFile( SharedFile& parent_shared_file, const XCap& xcap )
+: parent_shared_file( parent_shared_file.inc_ref() ),
   xcap( xcap )
 {
   closed = false;
@@ -148,7 +139,7 @@ OpenFile::OpenFile
     );
   }
   //else
-  //  parent_volume->get_log()->getStream( yield::platform::Log::LOG_ERR ) <<
+  //  parent_volume->get_log()->get_stream( Log::LOG_ERR ) <<
   //    "xtreemfs::OpenFile: received xcap that expires in less than " <<
   //    XCAP_EXPIRE_TIMEOUT_S_MIN <<
   //    " seconds, will not try to renew.";
@@ -191,12 +182,12 @@ size_t OpenFile::getpagesize()
     .get_striping_policy().get_stripe_size() * 1024;
 }
 
-bool OpenFile::getxattr( const std::string& name, std::string& out_value )
+bool OpenFile::getxattr( const string& name, string& out_value )
 {
   return parent_shared_file->getxattr( name, out_value );
 }
 
-bool OpenFile::listxattr( std::vector<std::string>& out_names )
+bool OpenFile::listxattr( vector<string>& out_names )
 {
   return parent_shared_file->listxattr( out_names );
 }
@@ -206,7 +197,7 @@ ssize_t OpenFile::read( void* rbuf, size_t size, uint64_t offset )
   return parent_shared_file->read( rbuf, size, offset, xcap );
 }
 
-bool OpenFile::removexattr( const std::string& name )
+bool OpenFile::removexattr( const string& name )
 {
   return parent_shared_file->removexattr( name );
 }
@@ -224,8 +215,8 @@ bool OpenFile::setlkw( bool exclusive, uint64_t offset, uint64_t length )
 bool
 OpenFile::setxattr
 (
-  const std::string& name,
-  const std::string& value,
+  const string& name,
+  const string& value,
   int flags
 )
 {

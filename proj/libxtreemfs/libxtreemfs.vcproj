@@ -213,6 +213,128 @@
     RelativePath="..\..\include\xtreemfs\volume.h"
     >
 </File>
+<File
+    RelativePath="..\..\include\xtreemfs\interfaces\constants.h"
+    >
+</File>
+<File
+    RelativePath="..\..\include\xtreemfs\interfaces\dir_interface.h"
+    >
+</File>
+<File
+    RelativePath="..\..\include\xtreemfs\interfaces\mrc_interface.h"
+    >
+</File>
+<File
+    RelativePath="..\..\include\xtreemfs\interfaces\mrc_osd_types.h"
+    >
+</File>
+<File
+    RelativePath="..\..\include\xtreemfs\interfaces\osd_interface.h"
+    >
+</File>
+<File
+    RelativePath="..\..\include\xtreemfs\interfaces\types.h"
+    >
+</File>
+<File
+    RelativePath="..\..\src\interfaces\org\xtreemfs\interfaces\constants.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\src\interfaces\org\xtreemfs\interfaces\dir_interface.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\src\interfaces\org\xtreemfs\interfaces\mrc_interface.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\src\interfaces\org\xtreemfs\interfaces\mrc_osd_types.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\src\interfaces\org\xtreemfs\interfaces\nettest_interface.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\src\interfaces\org\xtreemfs\interfaces\osd_interface.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
+<File
+    RelativePath="..\..\src\interfaces\org\xtreemfs\interfaces\types.idl"
+    >
+    <FileConfiguration
+        Name="Debug|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+    <FileConfiguration
+        Name="Release|Win32"
+        ExcludedFromBuild="true"
+        >
+    </FileConfiguration>
+</File>
 
         </Filter>
 

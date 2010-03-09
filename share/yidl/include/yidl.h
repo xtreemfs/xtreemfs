@@ -255,15 +255,28 @@ typedef uint64_t  uintmax_t;
 
 #else // !_WIN32
 
+#include <cstring>
+using std::memcmp;
+using std::memcpy;
+using std::strlen;
+
 #include <stdint.h>
 #include <sys/uio.h> // For struct iovec
 
+#ifdef __linux__
+#include <string.h> // For strnlen
+#endif
+
 #endif // _WIN32
 
-#include <cstring>
-#include <ostream>
 #include <string>
+using std::string;
+
+#include <map> // For Map subclasses to use
+using std::map;
+
 #include <vector>
+using std::vector;
 
 
 #if defined(_WIN64)
@@ -774,7 +787,7 @@ namespace yidl
         return put( from_string, strlen( from_string ) );
       }
 
-      size_t put( const std::string& from_string )
+      size_t put( const string& from_string )
       {
         return put( from_string.c_str(), from_string.size() );
       }
@@ -829,7 +842,7 @@ namespace yidl
       {
         for 
         ( 
-          std::vector<Buffer*>::iterator buffer_i = buffers.begin(); 
+          vector<Buffer*>::iterator buffer_i = buffers.begin(); 
           buffer_i != buffers.end(); 
           buffer_i++ 
         )
@@ -861,8 +874,8 @@ namespace yidl
       Buffers& inc_ref() { return Object::inc_ref( *this ); }
 
     private:
-      std::vector<Buffer*> buffers;
-      std::vector<struct iovec> iovecs;
+      vector<Buffer*> buffers;
+      vector<struct iovec> iovecs;
     };
 
 
@@ -1086,7 +1099,7 @@ namespace yidl
       (
         const char* key,
         uint32_t tag,
-        const std::string& value
+        const string& value
       )
       {
         write( key, tag, value.c_str(), value.size() );
@@ -1177,92 +1190,11 @@ namespace yidl
     );
 
 
-    class PrettyPrinter : public Marshaller
-    {
-    public:
-      PrettyPrinter( std::ostream& os )
-        : os( os )
-      { }
-
-      PrettyPrinter& operator=( const PrettyPrinter& )
-      {
-        return *this;
-      }
-
-      // Marshaller
-      void write( const char*, uint32_t, bool value )
-      {
-        if ( value )
-          os << "true, ";
-        else
-          os << "false, ";
-      }
-
-      void write( const char*, uint32_t, const Buffer& )
-      { }
-
-      void write( const char*, uint32_t, double value )
-      {
-        os << value << ", ";
-      }
-
-      void write( const char*, uint32_t, int64_t value )
-      {
-        os << value << ", ";
-      }
-
-      void write( const char*, uint32_t, const Map& value )
-      {
-        os << value.get_type_name() << "( ";
-        value.marshal( *this );
-        os << " ), ";
-      }
-
-      void write( const char*, uint32_t, const Sequence& value );
-
-      void 
-      write
-      (
-        const char*,
-        uint32_t,
-        const char* value,
-        size_t value_len
-      )
-      {
-        os.write( value, value_len );
-        os << ", ";
-      }
-
-      void write( const char*, uint32_t, const MarshallableObject& value )
-      {
-        os << value.get_type_name() << "( ";
-        value.marshal( *this );
-        os << " ), ";
-      }
-
-    private:
-      std::ostream& os;
-    };
-
-
     class Sequence : public MarshallableObject
     { 
     public:
       virtual size_t get_size() const = 0;
     };
-
-    inline void
-    PrettyPrinter::write
-    (
-      const char*,
-      uint32_t,
-      const Sequence& value
-    )
-    {
-      os << "[ ";
-      value.marshal( *this );
-      os << " ], ";
-    }
 
 
     template <size_t Capacity>
@@ -1302,7 +1234,7 @@ namespace yidl
         _string.reserve( capacity );
       }
 
-      StringBuffer( const std::string& str )
+      StringBuffer( const string& str )
         : _string( str )
       { }
 
@@ -1314,8 +1246,8 @@ namespace yidl
         : _string( str, str_len )
       { }
 
-      operator std::string&() { return _string; }
-      operator const std::string&() const { return _string; }
+      operator string&() { return _string; }
+      operator const string&() const { return _string; }
 
       // Buffer
       operator void*() const { return const_cast<char*>( _string.c_str() ); }
@@ -1380,7 +1312,7 @@ namespace yidl
       size_t size() const { return _string.size(); }
 
     private:
-      std::string _string;
+      string _string;
     };
 
 
@@ -1506,7 +1438,7 @@ namespace yidl
       (
         const char* key,
         uint32_t tag,
-        std::string& value
+        string& value
       ) = 0;
 
 
@@ -1569,7 +1501,7 @@ namespace yidl
     ( \
       const char* key, \
       uint32_t tag, \
-      std::string& value \
+      string& value \
     );
 
 
@@ -1757,7 +1689,7 @@ namespace yidl
 
     private:
       Buffer* buffer;
-      std::vector<bool> in_map_stack;
+      vector<bool> in_map_stack;
     };
 
 
@@ -1901,7 +1833,7 @@ namespace yidl
         }
       }
 
-      void read( const char* key, uint32_t tag, std::string& value )
+      void read( const char* key, uint32_t tag, string& value )
       {
         size_t str_len = read_int32( key, tag );
 

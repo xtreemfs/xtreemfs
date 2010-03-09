@@ -35,6 +35,12 @@
 #include "stat_cache.h"
 #include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/osd_proxy.h"
+using org::xtreemfs::interfaces::DirectoryEntrySet;
+using org::xtreemfs::interfaces::FileCredentialsSet;
+using org::xtreemfs::interfaces::StatSet;
+using org::xtreemfs::interfaces::StatVFSSet;
+using org::xtreemfs::interfaces::StringSet;
+using yield::concurrency::StageGroup;
 using namespace xtreemfs;
 
 #include <errno.h>
@@ -51,31 +57,31 @@ using namespace xtreemfs;
 #define VOLUME_OPERATION_END( OperationName ) \
   catch ( ProxyExceptionResponse& proxy_exception_response ) \
   { \
-    set_errno( log.get(), #OperationName, proxy_exception_response ); \
+    set_errno( log, #OperationName, proxy_exception_response ); \
   } \
   catch ( std::exception& exc ) \
   { \
-    set_errno( log.get(), #OperationName, exc ); \
+    set_errno( log, #OperationName, exc ); \
   } \
 
 
 Volume::Volume
 (
-  auto_DIRProxy dir_proxy,
+  DIRProxy& dir_proxy,
   uint32_t flags,
-  Log& log,
+  Log* log,
   MRCProxy& mrc_proxy,
-  const std::string& name,
-  auto_OSDProxyMux osd_proxy_mux,
-  yield::concurrency::auto_StageGroup stage_group,
-  UserCredentialsCache* user_credentials_cache,
+  const string& name_utf8,
+  OSDProxyMux& osd_proxy_mux,
+  yield::concurrency::StageGroup& stage_group,
+  UserCredentialsCache& user_credentials_cache,
   const Path& vivaldi_coordinates_file_path
 )
   : dir_proxy( dir_proxy ),
     flags( flags ),
-    log( log ),
+    log( Object::inc_ref( log ) ),
     mrc_proxy( mrc_proxy ),
-    name( name ),
+    name_utf8( name_utf8 ),
     osd_proxy_mux( osd_proxy_mux ),
     stage_group( stage_group ),
     user_credentials_cache( user_credentials_cache ),
@@ -84,29 +90,17 @@ Volume::Volume
   double stat_cache_read_ttl_s;
   uint32_t stat_cache_write_back_attrs;
 
-  if 
-  ( 
-    ( flags & FLAG_WRITE_BACK_FILE_SIZE_CACHE ) 
-      == FLAG_WRITE_BACK_FILE_SIZE_CACHE 
-  )
+  if ( has_flag( FLAG_WRITE_BACK_FILE_SIZE_CACHE ) )
   {
     stat_cache_read_ttl_s = 0; // Don't cache read Stats
     stat_cache_write_back_attrs = yield::platform::Volume::SETATTR_SIZE;
   }
-  else if 
-  ( 
-    ( flags & FLAG_WRITE_BACK_STAT_CACHE ) 
-      == FLAG_WRITE_BACK_STAT_CACHE 
-  )
+  else if ( has_flag( FLAG_WRITE_BACK_STAT_CACHE ) )
   {
     stat_cache_read_ttl_s = 5;
     stat_cache_write_back_attrs = yield::platform::Volume::SETATTR_SIZE;
   }
-  else if 
-  ( 
-    ( flags & FLAG_WRITE_THROUGH_STAT_CACHE ) 
-      == FLAG_WRITE_THROUGH_STAT_CACHE
-  )
+  else if ( has_flag( FLAG_WRITE_THROUGH_STAT_CACHE ) )
   {
     stat_cache_read_ttl_s = 5;
     stat_cache_write_back_attrs = 0;
@@ -123,7 +117,7 @@ Volume::Volume
             mrc_proxy, 
             stat_cache_read_ttl_s, 
             user_credentials_cache, 
-            name, 
+            name_utf8, 
             stat_cache_write_back_attrs 
           );
 
@@ -132,6 +126,11 @@ Volume::Volume
 
 Volume::~Volume()
 {
+  DIRProxy::dec_ref( dir_proxy );
+  Log::dec_ref( log );
+  OSDProxyMux::dec_ref( osd_proxy_mux );
+  yield::concurrency::StageGroup::dec_ref( stage_group );
+  UserCredentialsCache::dec_ref( user_credentials_cache );
   delete stat_cache;
 }
 
@@ -140,102 +139,110 @@ bool Volume::access( const Path&, int )
   return true;
 }
 
-auto_Volume
+Volume&
 Volume::create
 (
   const URI& dir_uri,
-  const std::string& name,
+  const string& name_utf8,
   uint32_t flags,
-  Log& log,
+  Log* log,
   uint32_t proxy_flags,
   const Time& proxy_operation_timeout,
   uint8_t proxy_reconnect_tries_max,
-  yield::ipc::auto_SSLContext proxy_ssl_context,
+  SSLContext* proxy_ssl_context,
   const Path& vivaldi_coordinates_file_path
 )
 {
-  UserCredentialsCache* user_credentials_cache( new UserCredentialsCache );
+  UserCredentialsCache* user_credentials_cache = new UserCredentialsCache;
 
-  auto_DIRProxy dir_proxy = DIRProxy::create
-  (
-    dir_uri,
-    DIRProxy::CONCURRENCY_LEVEL_DEFAULT,
-    proxy_flags,
-    log,
-    proxy_operation_timeout,
-    proxy_reconnect_tries_max,
-    proxy_ssl_context,
-    user_credentials_cache
-  );
+  DIRProxy& dir_proxy 
+    = DIRProxy::create
+      (
+        dir_uri,
+        DIRProxy::CONCURRENCY_LEVEL_DEFAULT,
+        proxy_flags,
+        log,
+        proxy_operation_timeout,
+        proxy_reconnect_tries_max,
+        proxy_ssl_context,
+        user_credentials_cache
+      );
 
-  yield::ipc::auto_URI mrc_uri;
-  std::string::size_type at_pos = name.find( '@' );
-  if ( at_pos != std::string::npos )
-    mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name.substr( 0, at_pos ) );
+  URI mrc_uri;  
+  string::size_type at_pos = name_utf8.find( '@' );
+  if ( at_pos != string::npos )
+    mrc_uri = dir_proxy.getVolumeURIFromVolumeName( name_utf8.substr( 0, at_pos ) );
   else
-    mrc_uri = dir_proxy->getVolumeURIFromVolumeName( name );
+    mrc_uri = dir_proxy.getVolumeURIFromVolumeName( name_utf8 );
 
-  MRCProxy& mrc_proxy = MRCProxy::create
-  (
-    *mrc_uri,
-    MRCProxy::CONCURRENCY_LEVEL_DEFAULT,
-    proxy_flags,
-    log,
-    proxy_operation_timeout,
-    "",
-    proxy_reconnect_tries_max,
-    proxy_ssl_context,
-    user_credentials_cache
-  );
+  MRCProxy& mrc_proxy 
+    = MRCProxy::create
+      (
+        mrc_uri,
+        MRCProxy::CONCURRENCY_LEVEL_DEFAULT,
+        proxy_flags,
+        log,
+        proxy_operation_timeout,
+        "",
+        proxy_reconnect_tries_max,
+        proxy_ssl_context,
+        user_credentials_cache
+      );
 
   StatSet stbuf;
-  mrc_proxy->getattr( name + "/", 0, stbuf );
+  mrc_proxy.getattr( name_utf8, "/", 0, stbuf );
 
-  auto_OSDProxyMux osd_proxy_mux = OSDProxyMux::create
-  (
-    dir_proxy,
-    OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
-    proxy_flags,
-    log,
-    proxy_operation_timeout,
-    proxy_reconnect_tries_max,
-    proxy_ssl_context,
-    user_credentials_cache
-  );
+  OSDProxyMux& osd_proxy_mux 
+    = OSDProxyMux::create
+      (
+        dir_proxy,
+        OSDProxy::CONCURRENCY_LEVEL_DEFAULT,
+        proxy_flags,
+        log,
+        proxy_operation_timeout,
+        proxy_reconnect_tries_max,
+        proxy_ssl_context,
+        user_credentials_cache
+      );
 
-  yield::concurrency::auto_StageGroup stage_group =
-    new yield::concurrency::SEDAStageGroup;
-  stage_group->createStage( dir_proxy );
-  stage_group->createStage( mrc_proxy );
-  stage_group->createStage( osd_proxy_mux );
+  StageGroup& stage_group = *new yield::concurrency::SEDAStageGroup;
+  stage_group.createStage( dir_proxy );
+  stage_group.createStage( mrc_proxy );
+  stage_group.createStage( osd_proxy_mux );
 
-  return new Volume
-  (
-    dir_proxy,
-    flags,
-    log,
-    mrc_proxy,
-    name,
-    osd_proxy_mux,
-    stage_group,
-    user_credentials_cache,
-    vivaldi_coordinates_file_path
-  );
+  return *new Volume
+              (
+                dir_proxy,
+                flags,
+                log,
+                mrc_proxy,
+                name_utf8,
+                osd_proxy_mux,
+                stage_group,
+                *user_credentials_cache,
+                vivaldi_coordinates_file_path
+              );
 }
 
 void
 Volume::fsetattr
 (
   const Path& path,
-  auto_Stat stbuf,
+  const Stat& stbuf,
   uint32_t to_set,
   const XCap& write_xcap
 )
 {
-  stat_cache->fsetattr( path, stbuf, to_set, write_xcap );
+  stat_cache->fsetattr
+  ( 
+    path.encode( iconv::CODE_UTF8 ), 
+    stbuf, 
+    to_set, 
+    write_xcap 
+  );
 }
 
-yield::platform::auto_Stat Volume::getattr( const Path& path )
+yield::platform::Stat* Volume::getattr( const Path& path )
 {
   VOLUME_OPERATION_BEGIN( stat ) 
   {
@@ -245,24 +252,20 @@ yield::platform::auto_Stat Volume::getattr( const Path& path )
   return NULL;
 }
 
-auto_SharedFile
-Volume::get_shared_file
-(
-  const Path& path
-)
+SharedFile& Volume::get_shared_file( const Path& path )
 {
   SharedFile* shared_file;
 
   shared_files_lock.acquire();
 
-  std::map<std::string, SharedFile*>::const_iterator shared_file_i
+  map<string, SharedFile*>::const_iterator shared_file_i
     = shared_files.find( path );
 
   if ( shared_file_i != shared_files.end() )
     shared_file = shared_file_i->second;
   else
   {
-    shared_file = new SharedFile( log, inc_ref(), path );
+    shared_file = new SharedFile( *this, path );
     shared_files[path] = shared_file;
   }
 
@@ -270,7 +273,7 @@ Volume::get_shared_file
 
   shared_files_lock.release();
 
-  return shared_file;
+  return *shared_file;
 }
 
 VivaldiCoordinates
@@ -280,34 +283,45 @@ Volume::get_vivaldi_coordinates() const
 
   if ( !vivaldi_coordinates_file_path.empty() )
   {
-    yield::platform::auto_File vivaldi_coordinates_file =
+    yield::platform::File* vivaldi_coordinates_file =
       yield::platform::Volume().open( vivaldi_coordinates_file_path );
-    yidl::runtime::auto_Buffer vivaldi_coordinates_buffer
-      (
-        new yidl::runtime::StackBuffer
-          <sizeof( VivaldiCoordinates)>
-      );
-    vivaldi_coordinates_file->read( vivaldi_coordinates_buffer );
-    yield::platform::XDRUnmarshaller xdr_unmarshaller( vivaldi_coordinates_buffer );
-    vivaldi_coordinates.unmarshal( xdr_unmarshaller );
+
+    if ( vivaldi_coordinates_file != NULL )
+    {
+      yidl::runtime::StackBuffer<sizeof( VivaldiCoordinates )>
+        vivaldi_coordinates_buffer;
+
+      vivaldi_coordinates_file->read( vivaldi_coordinates_buffer );
+      yield::platform::File::dec_ref( *vivaldi_coordinates_file );
+
+      yidl::runtime::XDRUnmarshaller 
+        xdr_unmarshaller( vivaldi_coordinates_buffer );
+      vivaldi_coordinates.unmarshal( xdr_unmarshaller );
+    }
   }
 
   return vivaldi_coordinates;
 }
 
-bool
+bool 
 Volume::getxattr
 (
   const Path& path,
-  const std::string& name,
-  std::string& out_value
+  const string& name,
+  string& out_value
 )
 {
   // Always pass through
 
   VOLUME_OPERATION_BEGIN( getxattr )
   {
-    mrc_proxy->getxattr( Path( this->name, path ), name, out_value );
+    mrc_proxy.getxattr
+    ( 
+      this->name_utf8, 
+      path.encode( iconv::CODE_UTF8 ), 
+      name, 
+      out_value 
+    );
     return true;
   }
   VOLUME_OPERATION_END( getxattr );
@@ -326,10 +340,11 @@ Volume::link
 
   VOLUME_OPERATION_BEGIN( link )
   {
-    mrc_proxy->link
+    mrc_proxy.link
     (
-      Path( this->name, old_path ),
-      Path( this->name, new_path )
+      name_utf8,
+      old_path.encode( iconv::CODE_UTF8 ),
+      new_path.encode( iconv::CODE_UTF8 )
     );
 
     return true;
@@ -342,13 +357,13 @@ bool
 Volume::listxattr
 (
   const Path& path,
-  std::vector<std::string>& out_names
+  vector<string>& out_names
 )
 {
   VOLUME_OPERATION_BEGIN( listxattr )
   {
     StringSet names;
-    mrc_proxy->listxattr( Path( this->name, path ), names );
+    mrc_proxy.listxattr( name_utf8, path.encode( iconv::CODE_UTF8 ), names );
     out_names.assign( names.begin(), names.end() );
     return true;
   }
@@ -376,14 +391,14 @@ bool Volume::mkdir( const Path& path, mode_t mode )
 
   VOLUME_OPERATION_BEGIN( mkdir )
   {
-    mrc_proxy->mkdir( Path( this->name, path ), mode );
+    mrc_proxy.mkdir( name_utf8, path.encode( iconv::CODE_UTF8 ), mode );
     return true;
   }
   VOLUME_OPERATION_END( mkdir );
   return false;
 }
 
-yield::platform::auto_File
+yield::platform::File*
 Volume::open
 (
   const Path& path,
@@ -451,9 +466,10 @@ Volume::open
 #endif
 
     FileCredentials file_credentials;
-    mrc_proxy->open
+    mrc_proxy.open
     (
-      Path( this->name, path ),
+      name_utf8, 
+      path.encode( iconv::CODE_UTF8 ),
       system_v_flags,
       mode,
       attributes,
@@ -461,27 +477,25 @@ Volume::open
       file_credentials
     );
 
-    return get_shared_file( path )->open( file_credentials );
+    SharedFile& shared_file = get_shared_file( path );
+    OpenFile& open_file = shared_file.open( file_credentials );
+    SharedFile::dec_ref( shared_file );
+    return &open_file;
   }
   VOLUME_OPERATION_END( open );
   return NULL;
 }
 
-yield::platform::auto_Directory 
-Volume::opendir
-(
-  const Path& _path 
-)
+yield::platform::Directory* Volume::opendir( const Path& path  )
 {
-  Path path( this->name, _path );
-
   VOLUME_OPERATION_BEGIN( opendir )
   {
     DirectoryEntrySet first_directory_entries;
 
-    mrc_proxy->readdir
+    mrc_proxy.readdir
     ( 
-      path,
+      name_utf8,
+      path.encode( iconv::CODE_UTF8 ),
       0, // known_etag
       Directory::LIMIT_DIRECTORY_ENTRIES_COUNT_DEFAULT,
       false, // names_only
@@ -497,27 +511,27 @@ Volume::opendir
     return new Directory
                ( 
                  first_directory_entries, 
-                 log, 
-                 mrc_proxy, 
-                 false, 
-                 path,
-                 user_credentials_cache
+                 false,
+                 *this,
+                 path
                );
   }
   VOLUME_OPERATION_END( opendir );
   return NULL;
 }
 
-yield::platform::auto_Path Volume::readlink
-(
-  const Path& path
-)
+Path* Volume::readlink( const Path& path )
 {
   VOLUME_OPERATION_BEGIN( readlink )
   {
-    std::string link_target_path;
-    mrc_proxy->readlink( Path( this->name, path ), link_target_path );
-    return new Path( link_target_path );
+    string link_target_path;
+    mrc_proxy.readlink
+    ( 
+      name_utf8, 
+      path.encode( iconv::CODE_UTF8 ), 
+      link_target_path 
+    );
+    return new Path( link_target_path, iconv::CODE_UTF8 );
   }
   VOLUME_OPERATION_END( readlink );
   return NULL;
@@ -527,7 +541,7 @@ void Volume::release( SharedFile& shared_file )
 {
   shared_files_lock.acquire();
 
-  std::map<std::string, SharedFile*>::iterator shared_file_i
+  map<string, SharedFile*>::iterator shared_file_i
     = shared_files.find( shared_file.get_path() );
 
   if ( shared_file_i != shared_files.end() )
@@ -541,28 +555,18 @@ void Volume::release( SharedFile& shared_file )
   shared_files_lock.release();
 }
 
-bool
-Volume::removexattr
-(
-  const Path& path,
-  const std::string& name
-)
+bool Volume::removexattr( const Path& path, const string& name )
 {
   VOLUME_OPERATION_BEGIN( removexattr )
   {
-    mrc_proxy->removexattr( Path( this->name, path ), name );
+    mrc_proxy.removexattr( name_utf8, path.encode( iconv::CODE_UTF8 ), name );
     return true;
   }
   VOLUME_OPERATION_END( removexattr );
   return false;
 }
 
-bool
-Volume::rename
-(
-  const Path& from_path,
-  const Path& to_path
-)
+bool Volume::rename( const Path& from_path, const Path& to_path )
 {
   // Don't evict from_path or to_path in case there are 
   // outstanding file size updates
@@ -573,20 +577,22 @@ Volume::rename
   {
     FileCredentialsSet file_credentials_set;
 
-    mrc_proxy->rename
+    mrc_proxy.rename
     (
-      Path( this->name, from_path ),
-      Path( this->name, to_path ),
+      name_utf8,
+      from_path.encode( iconv::CODE_UTF8 ),
+      to_path.encode( iconv::CODE_UTF8 ),
       file_credentials_set
     );
 
     if ( !file_credentials_set.empty() )
     {
-      osd_proxy_mux->unlink
-      ( 
-        file_credentials_set[0], 
-        file_credentials_set[0].get_xcap().get_file_id()
-      );
+      DebugBreak();
+      //osd_proxy_mux.unlink
+      //( 
+      //  file_credentials_set[0], 
+      //  file_credentials_set[0].get_xcap().get_file_id()
+      //);
     }
 
     return true;
@@ -595,12 +601,11 @@ Volume::rename
   return false;
 }
 
-bool
-Volume::rmdir( const Path& path )
+bool Volume::rmdir( const Path& path )
 {
   VOLUME_OPERATION_BEGIN( rmdir )
   {    
-    mrc_proxy->rmdir( Path( this->name, path ) );
+    mrc_proxy.rmdir( name_utf8, path.encode( iconv::CODE_UTF8 ) );
     stat_cache->evict( path );
     return true;
   }
@@ -612,13 +617,13 @@ bool
 Volume::setattr
 (
   const Path& path,
-  yield::platform::auto_Stat _stbuf,
+  const yield::platform::Stat& _stbuf,
   uint32_t to_set
 )
 {
   VOLUME_OPERATION_BEGIN( setattr )
   {
-    auto_Stat stbuf( new Stat( *_stbuf ) );
+    Stat stbuf( _stbuf );
 #ifndef _WIN32
     if 
     ( 
@@ -626,53 +631,56 @@ Volume::setattr
       ( to_set & SETATTR_GID ) == SETATTR_GID 
     )
     {
-      UserCredentials user_credentials;
-      if 
-      ( 
-        user_credentials_cache->getUserCredentialsFrompasswd
-        (
-          stbuf->get_uid(),
-          stbuf->get_gid(),
-          user_credentials
-        )
-      )
+      UserCredentials user_credentials
+        = user_credentials_cache->getUserCredentialsFrompasswd
+          (
+            stbuf.get_uid(),
+            stbuf.get_gid(),
+            user_credentials
+          );
+
+      if ( user_credentials != NULL )
       {
-        stbuf->set_user_id( user_credentials.get_user_id() );
-        stbuf->set_group_id( user_credentials.get_group_ids()[0] );
+        stbuf.set_user_id( user_credentials->get_user_id() );
+        stbuf.set_group_id( user_credentials->get_group_ids()[0] );
+        UserCredentials::dec_ref( *user_credentials );
       }
       else
         throw yield::platform::Exception( "could not look up uid and gid" );
     }
     else if ( ( to_set & SETATTR_UID ) == SETATTR_UID )
     {
-      UserCredentials user_credentials;
-      if 
-      ( 
-        user_credentials_cache->getUserCredentialsFrompasswd
-        (
-          stbuf->get_uid(),
-          static_cast<gid_t>( -1 ),
-          user_credentials
-        )
-      )
-        stbuf->set_user_id( user_credentials.get_user_id() );
+      UserCredentials user_credentials
+        = user_credentials_cache->getUserCredentialsFrompasswd
+          (
+            stbuf.get_uid(),
+            stbuf.get_gid(),
+            user_credentials
+          );
+
+      if ( user_credentials != NULL )
+      {
+        stbuf.set_user_id( user_credentials->get_user_id() );        
+        UserCredentials::dec_ref( *user_credentials );
+      }        
       else
         throw yield::platform::Exception( "could not look up uid" );
-
     }
     else if ( ( to_set & SETATTR_GID ) == SETATTR_GID )
     {
-      UserCredentials user_credentials;
-      if 
-      ( 
-        user_credentials_cache->getUserCredentialsFrompasswd
-        (
-          static_cast<uid_t>( -1 ),
-          stbuf->get_gid(),
-          user_credentials
-        )
-      )
-        stbuf->set_group_id( user_credentials.get_group_ids()[0] );
+      UserCredentials user_credentials
+        = user_credentials_cache->getUserCredentialsFrompasswd
+          (
+            stbuf.get_uid(),
+            stbuf.get_gid(),
+            user_credentials
+          );
+
+      if ( user_credentials != NULL )
+      {
+        stbuf.set_group_id( user_credentials->get_group_ids()[0] );
+        UserCredentials::dec_ref( *user_credentials );
+      }
       else
         throw yield::platform::Exception( "could not look up gid" );
     }
@@ -712,7 +720,7 @@ Volume::set_errno
 #endif
       default:
       {
-        log->getStream( yield::platform::Log::LOG_ERR ) <<
+        log->get_stream( Log::LOG_ERR ) <<
           "xtreemfs: caught exception on " <<
           operation_name << ": " << proxy_exception_response;
       }
@@ -737,7 +745,7 @@ Volume::set_errno
 )
 {
   if ( log != NULL )
-    log->getStream( yield::platform::Log::LOG_ERR ) <<
+    log->get_stream( Log::LOG_ERR ) <<
       "xtreemfs::Volume: caught exception on " <<
       operation_name << ": " << exc.what();
 
@@ -753,31 +761,33 @@ bool
 Volume::setxattr
 (
   const Path& path,
-  const std::string& name,
-  const std::string& value,
+  const string& name,
+  const string& value,
   int flags
 )
 {
   VOLUME_OPERATION_BEGIN( setxattr )
   {
-    mrc_proxy->setxattr( Path( this->name, path ), name, value, flags );
+    mrc_proxy.setxattr
+    ( 
+      name_utf8, 
+      path.encode( iconv::CODE_UTF8 ), 
+      name, 
+      value, 
+      flags 
+    );
     return true;
   }
   VOLUME_OPERATION_END( setxattr );
   return false;
 }
 
-bool
-Volume::statvfs
-(
-  const Path&,
-  struct statvfs& statvfsbuf
-)
+bool Volume::statvfs( const Path&, struct statvfs& statvfsbuf )
 {
   VOLUME_OPERATION_BEGIN( statvfs )
   {
     StatVFSSet xtreemfs_statvfsbuf;
-    mrc_proxy->statvfs( this->name, 0, xtreemfs_statvfsbuf );
+    mrc_proxy.statvfs( name_utf8, 0, xtreemfs_statvfsbuf );
     memset( &statvfsbuf, 0, sizeof( statvfsbuf ) );
     statvfsbuf.f_bavail = xtreemfs_statvfsbuf[0].get_bavail();
     statvfsbuf.f_bfree = xtreemfs_statvfsbuf[0].get_bavail();
@@ -799,7 +809,12 @@ Volume::symlink
 {
   VOLUME_OPERATION_BEGIN( symlink )
   {
-    mrc_proxy->symlink( to_path, Path( this->name, from_path ) );
+    mrc_proxy.symlink
+    ( 
+      name_utf8,
+      to_path.encode( iconv::CODE_UTF8 ), 
+      from_path.encode( iconv::CODE_UTF8 )
+    );
     stat_cache->evict( from_path.parent_path() );
     return true;
   }
@@ -811,11 +826,15 @@ bool Volume::truncate( const Path& path, uint64_t new_size )
 {
   VOLUME_OPERATION_BEGIN( truncate )
   {
-    yield::platform::auto_File file =
-      yield::platform::Volume::open( path, O_TRUNC );
+    yield::platform::File* file 
+      = yield::platform::Volume::open( path, O_TRUNC );
 
     if ( file != NULL )
-      return file->truncate( new_size );
+    {
+      bool ret = file->truncate( new_size );
+      yield::platform::File::dec_ref( *file );
+      return ret;
+    }
     else
       return false;
   }
@@ -828,15 +847,21 @@ bool Volume::unlink( const Path& path )
   VOLUME_OPERATION_BEGIN( unlink )
   {
     FileCredentialsSet file_credentials_set;
-    mrc_proxy->unlink( Path( this->name, path ), file_credentials_set );
+    mrc_proxy.unlink
+    ( 
+      name_utf8, 
+      path.encode( iconv::CODE_UTF8 ), 
+      file_credentials_set 
+    );
 
     if ( !file_credentials_set.empty() )
     {
-      osd_proxy_mux->unlink
-      ( 
-        file_credentials_set[0], 
-        file_credentials_set[0].get_xcap().get_file_id()
-      );
+      DebugBreak();
+      //osd_proxy_mux->unlink
+      //( 
+      //  file_credentials_set[0], 
+      //  file_credentials_set[0].get_xcap().get_file_id()
+      //);
     }
 
     // Don't stat_cache->evict( path ) in case there are 
@@ -850,5 +875,5 @@ bool Volume::unlink( const Path& path )
 
 Path Volume::volname( const Path& )
 {
-  return name;
+  return name_utf8;
 }

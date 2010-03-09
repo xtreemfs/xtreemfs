@@ -46,8 +46,8 @@ namespace xtreemfs
     static GridSSLSocket* create( int domain, SSLContext& ssl_context );
 
     // yield::ipc::Socket
-    ssize_t recv( void* buffer, size_t buffer_len, int );
-    ssize_t send( const void* buffer, size_t buffer_len, int );
+    ssize_t recv( void* buf, size_t buflen, int );
+    ssize_t send( const void* buf, size_t buflen, int );
     ssize_t sendmsg( const struct iovec* buffers, uint32_t buffers_count, int );
     bool shutdown();
     bool want_read() const;

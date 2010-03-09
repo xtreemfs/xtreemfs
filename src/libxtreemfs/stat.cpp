@@ -41,7 +41,7 @@ using namespace xtreemfs;
 #endif
 
 
-Stat::Stat( const Stat& stbuf )
+Stat::Stat( const yield::platform::Stat& stbuf )
 : yield::platform::Stat( stbuf )
 {
   etag = 0;
@@ -138,7 +138,7 @@ void Stat::set_etag( uint64_t etag )
   this->etag = etag;
 }
 
-void Stat::set_group_id( const std::string& group_id ) 
+void Stat::set_group_id( const string& group_id ) 
 { 
   this->group_id = group_id; 
 }
@@ -148,7 +148,7 @@ void Stat::set_truncate_epoch( uint32_t truncate_epoch )
   this->truncate_epoch = truncate_epoch;
 }
 
-void Stat::set_user_id( const std::string& user_id )
+void Stat::set_user_id( const string& user_id )
 { 
   this->user_id = user_id; 
 }

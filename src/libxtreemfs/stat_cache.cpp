@@ -31,6 +31,7 @@
 using org::xtreemfs::interfaces::MRCInterfaceEvents;
 using org::xtreemfs::interfaces::StatSet;
 using namespace xtreemfs;
+using yield::platform::Volume;
 
 
 class StatCache::Entry
@@ -84,28 +85,16 @@ public:
       this->stbuf->set_ino( stbuf.get_ino() );
 #endif
 
-      if 
-      ( 
-        ( write_back_attrs & yield::platform::Volume::SETATTR_MODE )
-           != yield::platform::Volume::SETATTR_MODE
-      )
+      if ( !have_write_back_attr( Volume::SETATTR_MODE ) )
         this->stbuf->set_mode( static_cast<mode_t>( stbuf.get_mode() ) );
 
       this->stbuf->set_nlink( static_cast<nlink_t>( stbuf.get_nlink() ) );
 
 #ifndef _WIN32
-      if 
-      ( 
-        ( write_back_attrs & yield::platform::Volume::SETATTR_GID )
-           != yield::platform::Volume::SETATTR_GID
-      )
+      if ( !have_write_back_attr( Volume::SETATTR_GID )
         this->stbuf->set_group_id( stbuf.get_group_id() );
 
-      if 
-      ( 
-        ( write_back_attrs & yield::platform::Volume::SETATTR_UID )
-           != yield::platform::Volume::SETATTR_UID
-      )
+      if ( !have_write_back_attr(  Volume::SETATTR_UID ) )
         this->stbuf->set_user_id( stbuf.get_user_id() );
 #endif
 
@@ -118,44 +107,24 @@ public:
           this->stbuf->set_size( stbuf.get_size() );
 
           // Pretend we never changed the size
-          if 
-          ( 
-            ( write_back_attrs & yield::platform::Volume::SETATTR_SIZE )
-               == yield::platform::Volume::SETATTR_SIZE
-          )
-            write_back_attrs ^= yield::platform::Volume::SETATTR_SIZE;
+          if ( have_write_back_attr( Volume::SETATTR_SIZE ) )
+            write_back_attrs ^= Volume::SETATTR_SIZE;
         }
       }
       else // A truncate_epoch we got from the server is less than our own?!
         DebugBreak();
 
-      if 
-      ( 
-        ( write_back_attrs & yield::platform::Volume::SETATTR_ATIME )
-           != yield::platform::Volume::SETATTR_ATIME
-      )
+      if ( !have_write_back_attr( Volume::SETATTR_ATIME ) )
         this->stbuf->set_atime( stbuf.get_atime_ns() );
 
-      if 
-      ( 
-        ( write_back_attrs & yield::platform::Volume::SETATTR_MTIME )
-           != yield::platform::Volume::SETATTR_MTIME
-      )
+      if ( !have_write_back_attr( Volume::SETATTR_MTIME ) )
         this->stbuf->set_mtime( stbuf.get_mtime_ns() );
 
-      if 
-      ( 
-        ( write_back_attrs & yield::platform::Volume::SETATTR_CTIME )
-           != yield::platform::Volume::SETATTR_CTIME
-      )
+      if ( !have_write_back_attr( Volume::SETATTR_CTIME ) )
         this->stbuf->set_ctime( stbuf.get_ctime_ns() );
 
 #ifdef _WIN32
-      if 
-      ( 
-        ( write_back_attrs & yield::platform::Volume::SETATTR_ATTRIBUTES )
-           != yield::platform::Volume::SETATTR_ATTRIBUTES
-      )
+      if ( !have_write_back_attr( Volume::SETATTR_ATTRIBUTES ) )
         this->stbuf->set_attributes( stbuf.get_attributes() );
 #else
       this->stbuf->set_blksize( stbuf.get_blksize() );
@@ -176,6 +145,12 @@ public:
   }
 
 private:
+  bool have_write_back_attr( uint32_t attr ) const
+  {
+    return ( write_back_attrs & attr ) == attr;
+  }
+
+private:
   Time refresh_time; // Last time the Stat was set from
                                       // an org::xtreemfs::interfaces::Stat
                                       // or 0 if the contents did not come
@@ -189,17 +164,14 @@ StatCache::StatCache
 ( 
   MRCProxy& mrc_proxy, 
   const Time& read_ttl, 
-  UserCredentialsCache* user_credentials_cache,
-  const std::string& volume_name,
+  UserCredentialsCache& user_credentials_cache,
+  const string& volume_name_utf8,
   uint32_t write_back_attrs
 ) 
 : mrc_proxy( mrc_proxy.inc_ref() ), 
   read_ttl( read_ttl ), 
-  user_credentials_cache
-  ( 
-    yidl::runtime::Object::inc_ref( user_credentials_cache ) 
-  ),
-  volume_name( volume_name ),
+  user_credentials_cache( user_credentials_cache.inc_ref() ),
+  volume_name_utf8( volume_name_utf8 ),
   write_back_attrs( write_back_attrs )
 { }
 
@@ -212,6 +184,9 @@ StatCache::~StatCache()
     entry_i++ 
   )
     delete entry_i->second;
+
+  MRCProxy::dec_ref( mrc_proxy );
+  UserCredentialsCache::dec_ref( user_credentials_cache );
 }
 
 void StatCache::evict( const Path& path )
@@ -297,7 +272,13 @@ Stat* StatCache::getattr( const Path& path )
   StatSet if_stbuf;
   try
   {
-    mrc_proxy.getattr( volume_name, path, entry_etag, if_stbuf );
+    mrc_proxy.getattr
+    ( 
+      volume_name_utf8, 
+      path.encode( iconv::CODE_UTF8 ), 
+      entry_etag, 
+      if_stbuf 
+    );
   }
   catch ( ... ) // Probably not found
   {
@@ -393,18 +374,21 @@ void StatCache::metadatasync( const Path& path, const XCap& write_xcap )
 void StatCache::setattr( const Path& path, const Stat& stbuf, uint32_t to_set )
 {
 #ifdef _DEBUG
-  if 
-  ( 
-    ( to_set & yield::platform::Volume::SETATTR_SIZE ) 
-      == yield::platform::Volume::SETATTR_SIZE 
-  )
+  if ( ( to_set & Volume::SETATTR_SIZE ) == Volume::SETATTR_SIZE  )
     DebugBreak();
 #endif
 
-
   uint32_t write_through_attrs = ~write_back_attrs & to_set;
   if ( write_through_attrs != 0 )
-    mrc_proxy.setattr( volume_name, path, stbuf, write_through_attrs );
+  {
+    mrc_proxy.setattr
+    ( 
+      volume_name_utf8, 
+      path.encode( iconv::CODE_UTF8 ), 
+      stbuf, 
+      write_through_attrs 
+    );
+  }
 
   _setattr( path, stbuf, to_set );
 }

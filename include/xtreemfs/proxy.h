@@ -39,6 +39,11 @@
 
 namespace xtreemfs
 {
+  using org::xtreemfs::interfaces::ONCRPC_SCHEME;
+  using org::xtreemfs::interfaces::ONCRPCG_SCHEME;
+  using org::xtreemfs::interfaces::ONCRPCS_SCHEME;
+  using org::xtreemfs::interfaces::ONCRPCU_SCHEME;
+
   using yidl::runtime::MarshallableObject;
   using yidl::runtime::MarshallableObjectFactory;
 
@@ -48,8 +53,10 @@ namespace xtreemfs
   using yield::ipc::SSLContext;
   using yield::ipc::URI;
 
+  using yield::platform::iconv;
   using yield::platform::IOQueue;
   using yield::platform::Log;
+  using yield::platform::Path;
   using yield::platform::SocketAddress;
   using yield::platform::Time;
 
@@ -127,16 +134,16 @@ namespace xtreemfs
     // Helper methods for subclasses
     static SocketAddress& createSocketAddress( const URI& absolute_uri )
     {
-      const std::string& scheme = absolute_uri.get_scheme();
+      const string& scheme = absolute_uri.get_scheme();
 
       URI checked_absolute_uri( absolute_uri );
       if ( checked_absolute_uri.get_port() == 0 )
       {
-        if ( scheme == org::xtreemfs::interfaces::ONCRPCG_SCHEME )
+        if ( scheme == ONCRPCG_SCHEME )
           checked_absolute_uri.set_port( InterfaceType::ONCRPCG_PORT_DEFAULT );
-        else if ( scheme == org::xtreemfs::interfaces::ONCRPCS_SCHEME )
+        else if ( scheme == ONCRPCS_SCHEME )
           checked_absolute_uri.set_port( InterfaceType::ONCRPCS_PORT_DEFAULT );
-        else if ( scheme == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
+        else if ( scheme == ONCRPCU_SCHEME )
           checked_absolute_uri.set_port( InterfaceType::ONCRPCU_PORT_DEFAULT );
         else
           checked_absolute_uri.set_port( InterfaceType::ONCRPC_PORT_DEFAULT );
@@ -152,16 +159,16 @@ namespace xtreemfs
       SSLContext* ssl_context
     )
     {
-      const std::string& scheme = absolute_uri.get_scheme();
+      const string& scheme = absolute_uri.get_scheme();
 
       URI checked_absolute_uri( absolute_uri );
       if ( checked_absolute_uri.get_port() == 0 )
       {
-        if ( scheme == org::xtreemfs::interfaces::ONCRPCG_SCHEME )
+        if ( scheme == ONCRPCG_SCHEME )
           checked_absolute_uri.set_port( InterfaceType::ONCRPCG_PORT_DEFAULT );
-        else if ( scheme == org::xtreemfs::interfaces::ONCRPCS_SCHEME )
+        else if ( scheme == ONCRPCS_SCHEME )
           checked_absolute_uri.set_port( InterfaceType::ONCRPCS_PORT_DEFAULT );
-        else if ( scheme == org::xtreemfs::interfaces::ONCRPCU_SCHEME )
+        else if ( scheme == ONCRPCU_SCHEME )
           checked_absolute_uri.set_port( InterfaceType::ONCRPCU_PORT_DEFAULT );
         else
           checked_absolute_uri.set_port( InterfaceType::ONCRPC_PORT_DEFAULT );

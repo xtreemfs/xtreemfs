@@ -30,7 +30,11 @@
 #ifndef _LIBXTREEMFS_STAT_CACHE_H_
 #define _LIBXTREEMFS_STAT_CACHE_H_
 
+#include <map>
+using std::map;
+
 #include "stat.h"
+
 #include "xtreemfs/mrc_proxy.h"
 #include "xtreemfs/user_credentials_cache.h"
 
@@ -48,8 +52,8 @@ namespace xtreemfs
     ( 
       MRCProxy& mrc_proxy, 
       const Time& read_ttl,
-      UserCredentialsCache* user_credentials_cache,
-      const std::string& volume_name,
+      UserCredentialsCache& user_credentials_cache,
+      const string& volume_name_utf8,
       uint32_t write_back_attrs = yield::platform::Volume::SETATTR_SIZE
     );
 
@@ -84,8 +88,8 @@ namespace xtreemfs
   private:    
     MRCProxy& mrc_proxy;
     Time read_ttl; // Time to keep Stats read from the server
-    UserCredentialsCache* user_credentials_cache;
-    std::string volume_name;
+    UserCredentialsCache& user_credentials_cache;
+    string volume_name_utf8;
     uint32_t write_back_attrs; // SETATTR_ types to write back
 
     class Entry;

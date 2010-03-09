@@ -40,6 +40,8 @@ namespace xtreemfs
   class SharedFile;
   class Stat;
   class StatCache;
+  using org::xtreemfs::interfaces::VivaldiCoordinates;
+  using org::xtreemfs::interfaces::XCap;
 
 
   class Volume : public yield::platform::Volume
@@ -54,110 +56,92 @@ namespace xtreemfs
     const static uint32_t FLAG_TRACE_DATA_CACHE = 64;
     const static uint32_t FLAG_TRACE_FILE_IO = 128;
     const static uint32_t FLAG_TRACE_STAT_CACHE = 256;
-    const static uint32_t VOLUME_FLAGS_DEFAULT 
-      = FLAG_WRITE_BACK_FILE_SIZE_CACHE;
+    const static uint32_t FLAGS_DEFAULT = FLAG_WRITE_BACK_FILE_SIZE_CACHE;
 
 
-    static yidl::runtime::auto_Object<Volume>
+    virtual ~Volume();
+
+    Volume&
     create
     (
       const URI& dir_uri,
-      const std::string& name,
-      uint32_t flags = VOLUME_FLAGS_DEFAULT,
-      Log& log = NULL,
+      const std::string& name_utf8,
+      uint32_t flags = FLAGS_DEFAULT,
+      Log* log = NULL,
       uint32_t proxy_flags = 0,
       const Time& proxy_operation_timeout
         = DIRProxy::OPERATION_TIMEOUT_DEFAULT,
       uint8_t proxy_reconnect_tries_max
         = DIRProxy::RECONNECT_TRIES_MAX_DEFAULT,
-      yield::ipc::auto_SSLContext proxy_ssl_context = NULL,
-      const Path& vivaldi_coordinates_file_path
-        = Path()
+      SSLContext* proxy_ssl_context = NULL,
+      const Path& vivaldi_coordinates_file_path = Path()
     );
 
     // fsetattr is used for setting the file size
     void fsetattr
     (
       const Path& path,
-      yidl::runtime::auto_Object<Stat> stbuf,
+      const Stat& stbuf,
       uint32_t to_set,
-      const org::xtreemfs::interfaces::XCap& write_xcap
+      const XCap& write_xcap
     );
 
+    DIRProxy& get_dir_proxy() const { return dir_proxy; }
     uint32_t get_flags() const { return flags; }
-    Log& get_log() const { return log; }
+    Log* get_log() const { return log; }
     MRCProxy& get_mrc_proxy() const { return mrc_proxy; }
-    auto_OSDProxyMux get_osd_proxy_mux() const { return osd_proxy_mux; }
-    const std::string& get_uuid() const { return uuid; }
+    const std::string& get_name() const { return name_utf8; }
+    OSDProxyMux& get_osd_proxy_mux() const { return osd_proxy_mux; }
+    const string& get_uuid() const { return uuid; }
 
-    org::xtreemfs::interfaces::VivaldiCoordinates
-    get_vivaldi_coordinates() const;
+    UserCredentialsCache& get_user_credentials_cache() const
+    { 
+      return user_credentials_cache; 
+    }
 
-    void 
-    metadatasync
-    (
-      const Path& path,
-      const org::xtreemfs::interfaces::XCap& write_xcap
-    );
+    VivaldiCoordinates get_vivaldi_coordinates() const;
 
+    bool has_flag( uint32_t flag ) { return ( flags & flag ) == flag; }
+
+    void metadatasync( const Path& path, const XCap& write_xcap );
     void release( SharedFile& );
+
+    void set_errno( const char*, ProxyExceptionResponse& );
+    void set_errno( const char*, std::exception& );
 
     // yield::platform::Volume
     YIELD_PLATFORM_VOLUME_PROTOTYPES;
 
-    static void
-    set_errno
-    (
-      Log* log,
-      const char* operation_name,
-      ProxyExceptionResponse&
-    );
-
-    static void
-    set_errno
-    (
-      Log* log,
-      const char* operation_name,
-      std::exception&
-    );
-
   private:
     Volume
     (
-      auto_DIRProxy dir_proxy,
+      DIRProxy& dir_proxy,
       uint32_t flags,
-      Log& log,
+      Log* log,
       MRCProxy& mrc_proxy,
-      const std::string& name,
-      auto_OSDProxyMux osd_proxy_mux,
-      yield::concurrency::auto_StageGroup stage_group,
-      UserCredentialsCache* user_credentials_cache,
+      const string& name_utf8,
+      OSDProxyMux& osd_proxy_mux,
+      yield::concurrency::StageGroup& stage_group,
+      UserCredentialsCache& user_credentials_cache,
       const Path& vivaldi_coordinates_file_path
     );
 
-    ~Volume();
+    SharedFile& get_shared_file( const Path& path );
 
-
-    auto_DIRProxy dir_proxy;
+  private:
+    DIRProxy& dir_proxy;
     uint32_t flags;
-    Log& log;
+    Log* log;
     MRCProxy& mrc_proxy;
-    std::string name;
-    auto_OSDProxyMux osd_proxy_mux;
-    std::map<std::string, SharedFile*> shared_files;
+    std::string name_utf8;
+    OSDProxyMux& osd_proxy_mux;
+    map<string, SharedFile*> shared_files;
     yield::platform::Mutex shared_files_lock;
-    yield::concurrency::auto_StageGroup stage_group;
-    std::string uuid;
+    yield::concurrency::StageGroup& stage_group;
+    string uuid;
     StatCache* stat_cache;
-    UserCredentialsCache* user_credentials_cache;
+    UserCredentialsCache& user_credentials_cache;
     Path vivaldi_coordinates_file_path;
-
-
-    yidl::runtime::auto_Object<SharedFile>
-    get_shared_file
-    (
-      const Path& path
-    );
   };
 };
 

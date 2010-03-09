@@ -43,7 +43,12 @@ OSDProxy::OSDProxy
   SocketFactory& socket_factory,
   UserCredentialsCache* user_credentials_cache
 )
-: Proxy<OSDInterface, OSDInterfaceEventFactory, OSDInterfaceEventSender>
+: Proxy
+  <
+    org::xtreemfs::interfaces::OSDInterface,
+    org::xtreemfs::interfaces::OSDInterfaceEventFactory,
+    org::xtreemfs::interfaces::OSDInterfaceEventSender
+  >
   ( 
     concurrency_level, 
     flags, 

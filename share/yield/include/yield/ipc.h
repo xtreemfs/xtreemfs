@@ -59,6 +59,7 @@ namespace yield
     class SSLContext;
     class URI;
 
+    using std::multimap;
 
     using yidl::runtime::Buffer;
     using yidl::runtime::Buffers;
@@ -386,8 +387,8 @@ namespace yield
 
       void set_header
       (
-        const std::string& header_name,
-        const std::string& header_value
+        const string& header_name,
+        const string& header_value
       );
 
       Buffers& serialize();
@@ -417,10 +418,10 @@ namespace yield
         DESERIALIZE_DONE
       } deserialize_state;
 
-      char stack_buffer[YIELD_RFC822_HEADERS_STACK_BUFFER_LENGTH],
-           *heap_buffer,
-           *buffer_p;
-      size_t heap_buffer_len;
+      char stack_buf[YIELD_RFC822_HEADERS_STACK_BUFFER_LENGTH],
+           *heap_buf,
+           *buf_p;
+      size_t heap_buflen;
 
       struct iovec stack_iovecs[YIELD_RFC822_HEADERS_STACK_IOVECS_LENGTH],
                    *heap_iovecs;
@@ -428,23 +429,16 @@ namespace yield
 
       inline void advanceBufferPointer()
       {
-        buffer_p++;
+        buf_p++;
 
-        if ( heap_buffer == NULL )
+        if ( heap_buf == NULL )
         {
-          if
-          (
-            buffer_p - stack_buffer <
-              YIELD_RFC822_HEADERS_STACK_BUFFER_LENGTH
-          )
+          if ( buf_p - stack_buf < YIELD_RFC822_HEADERS_STACK_BUFFER_LENGTH )
             return;
           else
             allocateHeapBuffer();
         }
-        else if
-        (
-          static_cast<size_t>( buffer_p - heap_buffer ) < heap_buffer_len
-        )
+        else if ( static_cast<size_t>( buf_p - heap_buf ) < heap_buflen )
           return;
         else
           allocateHeapBuffer();
@@ -1028,7 +1022,7 @@ namespace yield
         SSL_METHOD* method,
         const yield::platform::Path& pem_certificate_file_path,
         const yield::platform::Path& pem_private_key_file_path,
-        const std::string& pem_private_key_passphrase
+        const string& pem_private_key_passphrase
       );
 
       static SSLContext&
@@ -1038,9 +1032,9 @@ namespace yield
         const
 #endif
         SSL_METHOD* method,
-        const std::string& pem_certificate_str,
-        const std::string& pem_private_key_str,
-        const std::string& pem_private_key_passphrase
+        const string& pem_certificate_str,
+        const string& pem_private_key_str,
+        const string& pem_private_key_passphrase
       );
 
       static SSLContext&
@@ -1051,7 +1045,7 @@ namespace yield
 #endif
         SSL_METHOD* method,
         const yield::platform::Path& pkcs12_file_path,
-        const std::string& pkcs12_passphrase
+        const string& pkcs12_passphrase
       );
 #else
       static SSLContext& create();
@@ -1099,17 +1093,11 @@ namespace yield
       // Will only associate with BIO or NBIO queues
       bool associate( yield::platform::IOQueue& io_queue );
       bool connect( const SocketAddress& peername );
-      virtual ssize_t recv( void* buffer, size_t buffer_len, int );
-      virtual ssize_t send( const void* buffer, size_t buffer_len, int );
+      virtual ssize_t recv( void* buf, size_t buflen, int );
+      virtual ssize_t send( const void* buf, size_t buflen, int );
 
       // Delegates to send, since OpenSSL has no gather I/O
-      virtual ssize_t 
-      sendmsg
-      ( 
-        const struct iovec* buffers, 
-        uint32_t buffers_count, 
-        int flags
-      );
+      virtual ssize_t sendmsg( const struct iovec* iov, uint32_t iovlen, int );
 
       // yield::platform::IStream
       virtual bool want_read() const;
@@ -1174,9 +1162,9 @@ namespace yield
 
       // Socket
       bool connect( const SocketAddress& peername );
-      ssize_t recv( void* buffer, size_t buffer_len, int );
-      ssize_t send( const void* buffer, size_t buffer_len, int );
-      ssize_t sendmsg( const struct iovec* buffers, uint32_t buffers_count, int );
+      ssize_t recv( void* buf, size_t buflen, int );
+      ssize_t send( const void* buf, size_t buflen, int );
+      ssize_t sendmsg( const struct iovec* iov, uint32_t iovlen, int );
       bool want_connect() const;
       bool want_read() const;
       bool want_write() const;
@@ -1223,46 +1211,48 @@ namespace yield
     class URI : public yidl::runtime::Object
     {
     public:
-      // Constructors throw exceptions
-      URI( const char* uri );
-      URI( const std::string& uri );
-      URI( const char* uri, size_t uri_len );
+      URI();
       URI( const char* scheme, const char* host, uint16_t port );
       URI( const char* scheme, const char* host, uint16_t port, const char* resource );
       URI( const URI& other );
+      // Parsing constructors throw exceptions
+      URI( const char* uri );
+      URI( const string& uri );
+      URI( const char* uri, size_t uri_len );
       virtual ~URI() { }
 
-      const std::string& get_scheme() const { return scheme; }
-      const std::string& get_host() const { return host; }
-      const std::string& get_user() const { return user; }
-      const std::string& get_password() const { return password; }
+      const string& get_scheme() const { return scheme; }
+      const string& get_host() const { return host; }
+      const string& get_user() const { return user; }
+      const string& get_password() const { return password; }
       unsigned short get_port() const { return port; }
-      const std::string& get_resource() const { return resource; }
+      const string& get_resource() const { return resource; }
+      const multimap<string, string>& get_query() const { return query; }
 
-      const std::multimap<std::string, std::string>& get_query() const
-      {
-        return query;
-      }
-
-      std::string get_query_value
+      string get_query_value
       (
-        const std::string& key,
+        const string& key,
         const char* default_value = ""
       ) const;
 
-      std::multimap<std::string, std::string>::const_iterator
-        get_query_values( const std::string& key ) const;
+      multimap<string, string>::const_iterator
+      get_query_values
+      ( 
+        const string& key 
+      ) const;
+
+      URI& operator=( const URI& );
 
       static URI* parse( const char* uri );
-      static URI* parse( const std::string& uri );
+      static URI* parse( const string& uri );
       static URI* parse( const char* uri, size_t uri_len );
 
-      void set_scheme( const std::string& scheme ) { this->scheme = scheme; }
-      void set_host( const std::string& host ) { this->host = host; }
-      void set_user( const std::string& user ) { this->user = user; }
-      void set_password( const std::string& password );
+      void set_scheme( const string& scheme ) { this->scheme = scheme; }
+      void set_host( const string& host ) { this->host = host; }
+      void set_user( const string& user ) { this->user = user; }
+      void set_password( const string& password );
       void set_port( uint16_t port ) { this->port = port; }
-      void set_resource( const std::string& resource );
+      void set_resource( const string& resource );
 
     private:
       URI( UriUriStructA& parsed_uri );
@@ -1271,10 +1261,10 @@ namespace yield
       void init( UriUriStructA& parsed_uri );
 
     private:
-      std::string scheme, user, password, host;
+      string scheme, user, password, host;
       unsigned short port;
-      std::string resource;
-      std::multimap<std::string, std::string> query;
+      string resource;
+      multimap<string, string> query;
     };
 
 
@@ -1282,11 +1272,11 @@ namespace yield
     {
     public:
       UUID();
-      UUID( const std::string& uuid_from_string );
+      UUID( const string& uuid_from_string );
       ~UUID();
 
       bool operator==( const UUID& ) const;
-      operator std::string() const;
+      operator string() const;
 
     private:
 #if defined(_WIN32)

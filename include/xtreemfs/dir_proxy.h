@@ -41,9 +41,6 @@
 #pragma warning( pop )
 #endif
 
-#include <map>
-#include <string>
-
 
 namespace xtreemfs
 {
@@ -72,8 +69,8 @@ namespace xtreemfs
       UserCredentialsCache* user_credentials_cache = NULL
     );
 
-    AddressMappingSet* getAddressMappingsFromUUID( const std::string& uuid );
-    URI* getVolumeURIFromVolumeName( const std::string& volume_name );
+    AddressMappingSet& getAddressMappingsFromUUID( const string& uuid );
+    URI getVolumeURIFromVolumeName( const string& volume_name_utf8 );
 
     // yidl::runtime::Object
     DIRProxy& inc_ref() { return Object::inc_ref( *this ); }
@@ -96,7 +93,7 @@ namespace xtreemfs
 
   private:
     class CachedAddressMappings;
-    std::map<std::string, CachedAddressMappings*> 
+    map<string, CachedAddressMappings*> 
       uuid_to_address_mappings_cache;
     yield::platform::Mutex uuid_to_address_mappings_cache_lock;
   };

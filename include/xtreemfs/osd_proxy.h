@@ -49,9 +49,9 @@ namespace xtreemfs
   class OSDProxy
     : public Proxy
              <
-               org::xtreemfs::interfacesOSDInterface,
-               org::xtreemfs::interfacesOSDInterfaceEventFactory,
-               org::xtreemfs::interfacesOSDInterfaceEventSender
+               org::xtreemfs::interfaces::OSDInterface,
+               org::xtreemfs::interfaces::OSDInterfaceEventFactory,
+               org::xtreemfs::interfaces::OSDInterfaceEventSender
              >
   {
   public:

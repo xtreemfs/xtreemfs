@@ -132,7 +132,7 @@ namespace yieldfs
   };
 
 
-  static inline std::ostream& operator<<( std::ostream& os, const Stat& stbuf )
+  static inline ostream& operator<<( ostream& os, const Stat& stbuf )
   {
     os << "{ ";
 #ifndef _WIN32
@@ -190,7 +190,7 @@ namespace yieldfs
   public:
     TracingVolume(); // For testing
     // Steals references to underlying_volume
-    TracingVolume( Volume& underlying_volume ); // Log to std::cout
+    TracingVolume( Volume& underlying_volume ); // Log to cout
     TracingVolume( Log& log, Volume& underlying_volume );
 
     // static trace methods for TracingDirectory and TracingFile to share
@@ -229,8 +229,8 @@ namespace yieldfs
       Log& log,
       const char* operation_name,
       const Path& path,
-      const std::string& xattr_name,
-      const std::string& xattr_value,
+      const string& xattr_name,
+      const string& xattr_value,
       bool operation_result
     );
 

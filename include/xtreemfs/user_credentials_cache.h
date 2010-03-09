@@ -30,6 +30,9 @@
 #ifndef _XTREEMFS_USER_CREDENTIALS_CACHE_H_
 #define _XTREEMFS_USER_CREDENTIALS_CACHE_H_
 
+#include <map>
+using std::map;
+
 #include "xtreemfs/interfaces/types.h"
 #include "xtreemfs/policy.h"
 
@@ -52,8 +55,8 @@ namespace xtreemfs
 #ifndef _WIN32
     void getpasswdFromUserCredentials
     (
-      const std::string& user_id,
-      const std::string& group_id,
+      const string& user_id,
+      const string& group_id,
       uid_t& out_uid,
       gid_t& out_gid
     );
@@ -61,46 +64,23 @@ namespace xtreemfs
     UserCredentials* getUserCredentialsFrompasswd( uid_t uid, gid_t gid );
 #endif
 
-  private:
-    // The former PolicyContainer
-    std::vector<yield::platform::SharedLibrary*> policy_shared_libraries;
+    // yidl::runtime::Object
+    UserCredentialsCache& inc_ref() { return Object::inc_ref( *this ); }
 
+  private:
     void* getPolicyFunction( const char* name );
 
-/*
-    template <typename PolicyFunctionType>
-    bool getPolicyFunction
-    (
-      const Path& policy_shared_library_path,
-      yield::platform::auto_SharedLibrary policy_shared_library,
-      const char* policy_function_name,
-      PolicyFunctionType& out_policy_function
-    )
-    {
-      PolicyFunctionType policy_function =
-        policy_shared_library->
-          getFunction<PolicyFunctionType>( policy_function_name );
+  private:
+    vector<yield::platform::SharedLibrary*> policy_shared_libraries;
 
-      if ( policy_function != NULL )
-      {
-        out_policy_function = policy_function;
-        return true;
-      }
-      else
-        return false;
-    }
-*/
-
-    // The actual credentials caches
 #ifndef _WIN32
     get_passwd_from_user_credentials_t get_passwd_from_user_credentials;
-    std::map<std::string,std::map<std::string,std::pair<uid_t, gid_t>*>*>
+    map<string,map<string,pair<uid_t, gid_t>*>*>
       user_credentials_to_passwd_cache;
     yield::platform::Mutex user_credentials_to_passwd_cache_lock;
 
     get_user_credentials_from_passwd_t get_user_credentials_from_passwd;
-    std::map<gid_t,std::map<uid_t,UserCredentials*>*>
-      passwd_to_user_credentials_cache;
+    map<gid_t,map<uid_t,UserCredentials*>*> passwd_to_user_credentials_cache;
     yield::platform::Mutex passwd_to_user_credentials_cache_lock;
 #endif
   };

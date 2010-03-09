@@ -28,60 +28,64 @@
 
 
 #include "xtreemfs/osd_proxy_mux.h"
+#include "xtreemfs/dir_proxy.h"
+using org::xtreemfs::interfaces::AddressMappingSet;
+using org::xtreemfs::interfaces::Replica;
+using org::xtreemfs::interfaces::ReplicaSet;
+using org::xtreemfs::interfaces::StripingPolicy;
+using org::xtreemfs::interfaces::STRIPING_POLICY_RAID0;
+using yield::concurrency::Event;
+using yield::concurrency::EventTarget;
+using yield::concurrency::ExceptionResponse;
 using namespace xtreemfs;
 
 
-class OSDProxyMux::ReadResponseTarget : public yield::concurrency::EventTarget
+class OSDProxyMux::ReadResponseTarget : public EventTarget
 {
 public:
-  ReadResponseTarget
-  (
-    auto_OSDProxyMux osd_proxy_mux,
-    yidl::runtime::auto_Object <readRequest> read_request
-  )
-    : original_response_target( read_request->get_response_target() ),
-      osd_proxy_mux( osd_proxy_mux ),
-      read_request( read_request )
+  ReadResponseTarget( OSDProxyMux& osd_proxy_mux, readRequest& read_request )
+    : original_response_target( read_request.get_response_target() ),
+      osd_proxy_mux( osd_proxy_mux.inc_ref() ),
+      read_request( read_request ) // Steals this reference
   { }
 
-  // yield::concurrency::EventTarget
-  void send( yield::concurrency::Event& ev )
+  // EventTarget
+  void send( Event& ev )
   {
     switch ( ev.get_type_id() )
     {
-      case YIDL_RUNTIME_OBJECT_TYPE_ID( readResponse ):
+      case readResponse::TYPE_ID:
       {
         static_cast<readResponse&>( ev ).set_selected_file_replica
         (
-          read_request->get_selected_file_replica()
+          read_request.get_selected_file_replica()
         );
 
         original_response_target->send( ev );
       }
       break;
 
-      case YIDL_RUNTIME_OBJECT_TYPE_ID
-        ( yield::concurrency::ExceptionResponse ):
+      case ExceptionResponse::TYPE_ID:
       {
         if
         (
-          read_request->get_file_credentials().get_xlocs().
+          read_request.get_file_credentials().get_xlocs().
             get_replicas().size() > 1
         )
         {
           // Set selected_replica to -1 * the index of
           // the failed replica and retry
-          if ( read_request->get_selected_file_replica() <= 0 )
+          if ( read_request.get_selected_file_replica() <= 0 )
             DebugBreak();
 
-          read_request->set_selected_file_replica
+          read_request.set_selected_file_replica
           (
-            -1 * read_request->get_selected_file_replica()
+            -1 * read_request.get_selected_file_replica()
           );
 
-          osd_proxy_mux->send( read_request->inc_ref() );
+          osd_proxy_mux.send( read_request.inc_ref() );
 
-          yield::concurrency::Event::dec_ref( ev );
+          Event::dec_ref( ev );
         }
         else // There is only one replica, send the exception back
           original_response_target->send( ev );
@@ -97,39 +101,40 @@ public:
   }
 
 private:
-  yield::concurrency::auto_EventTarget original_response_target;
-  yidl::runtime::auto_Object<OSDProxyMux> osd_proxy_mux;
-  yidl::runtime::auto_Object<readRequest> read_request;
+  EventTarget* original_response_target;
+  OSDProxyMux& osd_proxy_mux;
+  readRequest& read_request;
 };
 
 
-class OSDProxyMux::TruncateResponseTarget
-  : public yield::concurrency::EventTarget
+class OSDProxyMux::TruncateResponseTarget : public EventTarget
 {
 public:
   TruncateResponseTarget
   (
     size_t expected_response_count,
-    yield::concurrency::auto_EventTarget final_response_target
+    EventTarget& final_response_target
   )
     : expected_response_count( expected_response_count ),
-      final_response_target( final_response_target )
+      final_response_target( final_response_target.inc_ref() )
   { }
 
   virtual ~TruncateResponseTarget()
   {
     for
     (
-      std::vector<yield::concurrency::Event*>::iterator
+      vector<Event*>::iterator
         response_i = responses.begin();
       response_i != responses.end();
       response_i++
     )
-      yield::concurrency::Event::dec_ref( **response_i );
+      Event::dec_ref( **response_i );
+
+    EventTarget::dec_ref( final_response_target );
   }
 
-  // yield::concurrency::EventTarget
-  void send( yield::concurrency::Event& ev )
+  // EventTarget
+  void send( Event& ev )
   {
     responses_lock.acquire();
 
@@ -139,115 +144,86 @@ public:
     {
       for
       (
-        std::vector<yield::concurrency::Event*>::iterator
-          response_i = responses.begin();
+        vector<Event*>::iterator response_i = responses.begin();
         response_i != responses.end();
         response_i++
       )
       {
-        if
-        (
-          ( *response_i )->get_type_id() ==
-          YIDL_RUNTIME_OBJECT_TYPE_ID( yield::concurrency::ExceptionResponse )
-        )
+        if ( ( *response_i )->get_type_id() == ExceptionResponse::TYPE_ID )
         {
-          respond
-          (
-            static_cast<yield::concurrency::ExceptionResponse*>
-              ( *response_i )->inc_ref(),
-            final_response_target
+          final_response_target.send
+          (             
+            static_cast<ExceptionResponse&>( **response_i ).inc_ref()
           );
+
           responses_lock.release();
+
           return;
         }
       }
 
-      respond( responses, final_response_target );
+      final_response_target.send( responses[responses.size() - 1]->inc_ref() );
     }
 
     responses_lock.release();
   }
 
-protected:
-  virtual void respond
-  (
-    yidl::runtime::auto_Object<yield::concurrency::ExceptionResponse>
-      exception_response,
-    yield::concurrency::auto_EventTarget final_response_target
-  )
-  {
-    final_response_target->send( *exception_response.release() );
-  }
-
-  virtual void respond
-  (
-    std::vector<yield::concurrency::Event*>& responses,
-    yield::concurrency::auto_EventTarget final_response_target
-  )
-  {
-    final_response_target->send( responses[responses.size() - 1]->inc_ref() );
-  }
-
 private:
   size_t expected_response_count;
-  yield::concurrency::auto_EventTarget final_response_target;
+  EventTarget& final_response_target;
 
-  std::vector<yield::concurrency::Event*> responses;
+  vector<Event*> responses;
   yield::platform::Mutex responses_lock;
 };
 
 
-auto_OSDProxyMux
+OSDProxyMux&
 OSDProxyMux::create
 (
-  auto_DIRProxy dir_proxy,
+  DIRProxy& dir_proxy,
   uint16_t concurrency_level,
   uint32_t flags,
-  Log& log,
+  Log* log,
   const Time& operation_timeout,
   uint8_t reconnect_tries_max,
-  yield::ipc::auto_SSLContext ssl_context,
+  SSLContext* ssl_context,
   UserCredentialsCache* user_credentials_cache
 )
 {
-  if ( user_credentials_cache == NULL )
-    user_credentials_cache = new UserCredentialsCache;
-
-  return new OSDProxyMux
-  (
-    concurrency_level,
-    dir_proxy,
-    flags,
-    log,
-    operation_timeout,
-    reconnect_tries_max,
-    ssl_context,
-    user_credentials_cache
-  );
+  return *new OSDProxyMux
+              (
+                concurrency_level,
+                dir_proxy,
+                flags,
+                log,
+                operation_timeout,
+                reconnect_tries_max,
+                ssl_context,
+                user_credentials_cache
+              );
 }
 
 OSDProxyMux::OSDProxyMux
 (
   uint16_t concurrency_level,
-  yidl::runtime::auto_Object<DIRProxy> dir_proxy,
+  DIRProxy& dir_proxy,
   uint32_t flags,
-  Log& log,
+  Log* log,
   const Time& operation_timeout,
   uint8_t reconnect_tries_max,
-  yield::ipc::auto_SSLContext ssl_context,
+  SSLContext* ssl_context,
   UserCredentialsCache* user_credentials_cache
 )
   : concurrency_level( concurrency_level ),
-    dir_proxy( dir_proxy ),
+    dir_proxy( dir_proxy.inc_ref() ),
     flags( flags ),
-    log( log ),
+    log( Object::inc_ref( log ) ),
     operation_timeout( operation_timeout ),
     reconnect_tries_max( reconnect_tries_max ),
-    ssl_context( ssl_context ),
-    user_credentials_cache( user_credentials_cache )
-{
-  osd_proxy_stage_group = new yield::concurrency::SEDAStageGroup;
-}
+    ssl_context( Object::inc_ref( ssl_context ) ),
+    user_credentials_cache( Object::inc_ref( user_credentials_cache ) ),
+    osd_proxy_stage_group( *new yield::concurrency::SEDAStageGroup )
+{ }
 
 OSDProxyMux::~OSDProxyMux()
 {
@@ -258,10 +234,16 @@ OSDProxyMux::~OSDProxyMux()
     osd_proxies_i++
   )
     OSDProxy::dec_ref( *osd_proxies_i->second );
+
+  DIRProxy::dec_ref( dir_proxy );
+  Log::dec_ref( log );
+  yield::concurrency::StageGroup::dec_ref( osd_proxy_stage_group );
+  SSLContext::dec_ref( ssl_context );
+  UserCredentialsCache::dec_ref( user_credentials_cache );
 }
 
-auto_OSDProxy
-OSDProxyMux::getOSDProxy
+OSDProxy&
+OSDProxyMux::get_osd_proxy
 (
   OSDProxyRequest& osd_proxy_request,
   const FileCredentials& file_credentials,
@@ -325,26 +307,25 @@ OSDProxyMux::getOSDProxy
     case STRIPING_POLICY_RAID0:
     {
       size_t osd_i = object_number % striping_policy.get_width();
-      const std::string& osd_uuid = selected_file_replica->get_osd_uuids()[osd_i];
-      return getOSDProxy( osd_uuid );
+      const string& osd_uuid = selected_file_replica->get_osd_uuids()[osd_i];
+      return get_osd_proxy( osd_uuid );
     }
 
     default: DebugBreak(); throw yield::platform::Exception(); break;
   }
 }
 
-auto_OSDProxy OSDProxyMux::getOSDProxy( const std::string& osd_uuid )
+OSDProxy& OSDProxyMux::get_osd_proxy( const string& osd_uuid )
 {
-  auto_OSDProxy osd_proxy;
+  OSDProxy* osd_proxy = NULL;
 
   OSDProxyMap::iterator osd_proxies_i = osd_proxies.find( osd_uuid );
-
   if ( osd_proxies_i != osd_proxies.end() )
-    osd_proxy = osd_proxies_i->second->inc_ref();
+    osd_proxy = &osd_proxies_i->second->inc_ref();
   else
   {
     yidl::runtime::auto_Object<AddressMappingSet>
-      address_mappings = dir_proxy->getAddressMappingsFromUUID( osd_uuid );
+      address_mappings = dir_proxy.getAddressMappingsFromUUID( osd_uuid );
 
     for
     (
@@ -362,37 +343,39 @@ auto_OSDProxy OSDProxyMux::getOSDProxy( const std::string& osd_uuid )
            )
          )
       {
-        osd_proxy = OSDProxy::create
-        (
-          ( *address_mapping_i ).get_uri(),
-          concurrency_level,
-          flags,
-          log,
-          operation_timeout,
-          reconnect_tries_max,
-          ssl_context,
-          user_credentials_cache
-        ).release();
+        osd_proxy 
+          = &OSDProxy::create
+            (
+              ( *address_mapping_i ).get_uri(),
+              concurrency_level,
+              flags,
+              log,
+              operation_timeout,
+              reconnect_tries_max,
+              ssl_context,
+              user_credentials_cache
+            );
 
-        osd_proxy_stage_group->createStage( osd_proxy->inc_ref() );
+        osd_proxy_stage_group.createStage( osd_proxy->inc_ref() );
       }
       else
 #endif
       if ( ( *address_mapping_i ).get_protocol() == ONCRPC_SCHEME )
       {
-        osd_proxy = OSDProxy::create
-        (
-          ( *address_mapping_i ).get_uri(),
-          concurrency_level,
-          flags,
-          log,
-          operation_timeout,
-          reconnect_tries_max,
-          ssl_context,
-          user_credentials_cache
-        ).release();
+        osd_proxy 
+          = &OSDProxy::create
+            (
+              ( *address_mapping_i ).get_uri(),
+              concurrency_level,
+              flags,
+              log,
+              operation_timeout,
+              reconnect_tries_max,
+              ssl_context,
+              user_credentials_cache
+            );
 
-        osd_proxy_stage_group->createStage( osd_proxy->inc_ref() );
+        osd_proxy_stage_group.createStage( osd_proxy->inc_ref() );
       }
     }
 
@@ -402,54 +385,50 @@ auto_OSDProxy OSDProxyMux::getOSDProxy( const std::string& osd_uuid )
       throw yield::platform::Exception( "no acceptable ONC-RPC URI for UUID" );
   }
 
-  return osd_proxy;
+  return *osd_proxy;
 }
 
 void OSDProxyMux::handlereadRequest( readRequest& req )
 {
-  auto_OSDProxy osd_proxy
-  (
-    getOSDProxy
-    (
-      req,
-      req.get_file_credentials(),
-      req.get_object_number()
-    )
-  );
+  OSDProxy& osd_proxy 
+    = get_osd_proxy
+      ( 
+        req,
+        req.get_file_credentials(),
+        req.get_object_number()
+      );
 
-  if
-  (
-    req.get_response_target()->get_type_id() !=
-    YIDL_RUNTIME_OBJECT_TYPE_ID( ReadResponseTarget )
-  )
-    req.set_response_target( new ReadResponseTarget( inc_ref(), req ) );
+  req.set_response_target( new ReadResponseTarget( *this, req ) );
 
-  static_cast<yield::concurrency::EventTarget*>
-    ( osd_proxy.get() )->send( req );
+  static_cast<EventTarget&>( osd_proxy ).send( req );
+
+  OSDProxy::dec_ref( osd_proxy );
 }
 
 void OSDProxyMux::handletruncateRequest( truncateRequest& req )
 {
-  const ReplicaSet&
-    replicas = req.get_file_credentials().get_xlocs().get_replicas();
+  const ReplicaSet& replicas
+    = req.get_file_credentials().get_xlocs().get_replicas();
 
   if ( req.get_response_target() != NULL )
+  {
     req.set_response_target
     (
-      new TruncateResponseTarget( replicas.size(), req.get_response_target() )
+      new TruncateResponseTarget( replicas.size(), *req.get_response_target() )
     );
+  }
 
   for
   (
-    ReplicaSet::const_iterator
-      replica_i = replicas.begin();
+    ReplicaSet::const_iterator replica_i = replicas.begin();
     replica_i != replicas.end();
     replica_i++
   )
-    static_cast<yield::concurrency::EventTarget*>
-    (
-      getOSDProxy( ( *replica_i ).get_osd_uuids()[0] ).get()
-    )->send( req.inc_ref() );
+  {
+    OSDProxy& osd_proxy = get_osd_proxy( ( *replica_i ).get_osd_uuids()[0] );
+    osd_proxy.send( req.inc_ref() );
+    OSDProxy::dec_ref( osd_proxy );
+  }
 
   truncateRequest::dec_ref( req );
 }
@@ -460,34 +439,41 @@ void OSDProxyMux::handleunlinkRequest( unlinkRequest& req )
     replicas = req.get_file_credentials().get_xlocs().get_replicas();
 
   if ( req.get_response_target() != NULL )
+  {
     req.set_response_target
     (
-      new TruncateResponseTarget( replicas.size(), req.get_response_target() )
+      new TruncateResponseTarget( replicas.size(), *req.get_response_target() )
     );
+  }
 
   for
   (
-    ReplicaSet::const_iterator
-      replica_i = replicas.begin();
+    ReplicaSet::const_iterator replica_i = replicas.begin();
     replica_i != replicas.end();
     replica_i++
   )
-    static_cast<yield::concurrency::EventTarget*>
-    (
-      getOSDProxy( ( *replica_i ).get_osd_uuids()[0] ).get()
-    )->send( req.inc_ref() );
+  {
+    OSDProxy& osd_proxy = get_osd_proxy( ( *replica_i ).get_osd_uuids()[0] );
+    osd_proxy.send( req.inc_ref() );
+    OSDProxy::dec_ref( osd_proxy );
+  }
 
   unlinkRequest::dec_ref( req );
 }
 
 void OSDProxyMux::handlewriteRequest( writeRequest& req )
 {
-  getOSDProxy
-  (
-    req,
-    req.get_file_credentials(),
-    req.get_object_number()
-  )->send( req );
+  OSDProxy& osd_proxy 
+    = get_osd_proxy
+      (
+        req,
+        req.get_file_credentials(),
+        req.get_object_number()
+      );
+
+  osd_proxy.send( req );
+
+  OSDProxy::dec_ref( osd_proxy );
 }
 
 void OSDProxyMux::handlextreemfs_lock_acquireRequest
@@ -495,12 +481,17 @@ void OSDProxyMux::handlextreemfs_lock_acquireRequest
   xtreemfs_lock_acquireRequest& req
 )
 {
-  getOSDProxy
-  (
-    req,
-    req.get_file_credentials(),
-    0
-  )->send( req );
+  OSDProxy& osd_proxy 
+    = get_osd_proxy
+      (
+        req,
+        req.get_file_credentials(),
+        0
+      );
+
+  osd_proxy.send( req );
+
+  OSDProxy::dec_ref( osd_proxy );
 }
 
 void OSDProxyMux::handlextreemfs_lock_checkRequest
@@ -508,12 +499,17 @@ void OSDProxyMux::handlextreemfs_lock_checkRequest
   xtreemfs_lock_checkRequest& req
 )
 {
-  getOSDProxy
-  (
-    req,
-    req.get_file_credentials(),
-    0
-  )->send( req );
+  OSDProxy& osd_proxy 
+    = get_osd_proxy
+      (
+        req,
+        req.get_file_credentials(),
+        0
+      );
+
+  osd_proxy.send( req );
+
+  OSDProxy::dec_ref( osd_proxy );
 }
 
 void OSDProxyMux::handlextreemfs_lock_releaseRequest
@@ -521,11 +517,15 @@ void OSDProxyMux::handlextreemfs_lock_releaseRequest
   xtreemfs_lock_releaseRequest& req
 )
 {
-  getOSDProxy
-  (
-    req,
-    req.get_file_credentials(),
-    0
-  )->send( req );
-}
+  OSDProxy& osd_proxy 
+    = get_osd_proxy
+      (
+        req,
+        req.get_file_credentials(),
+        0
+      );
 
+  osd_proxy.send( req );
+
+  OSDProxy::dec_ref( osd_proxy );
+}

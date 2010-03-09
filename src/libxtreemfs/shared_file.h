@@ -36,50 +36,51 @@
 namespace xtreemfs
 { 
   class OpenFile;
-  using namespace org::xtreemfs::interfaces;
+
+  using org::xtreemfs::interfaces::XLocSet;
+  using org::xtreemfs::interfaces::FileCredentials;
+
 
 
   class SharedFile : public yidl::runtime::Object
   {
   public:
+    SharedFile( Volume& parent_volume, const Path& path );
+    ~SharedFile() { } // See note below re: parent_volume
+
     void close( OpenFile& open_file );
 
-    auto_Volume get_parent_volume() const { return parent_volume; }
+    Volume& get_parent_volume() const { return parent_volume; }
     const Path& get_path() const { return path; }
     XLocSet get_xlocs() const { return xlocs; }
 
-    yield::platform::auto_File
-    open
-    (
-      org::xtreemfs::interfaces::FileCredentials& file_credentials
-    );
+    OpenFile& open( const FileCredentials& file_credentials );
 
     // yield::platform::File
-    yidl::runtime::auto_Object<Stat> getattr();
+    yield::platform::Stat* getattr();
 
-    bool
+    bool 
     getlk
     (
       bool exclusive,
       uint64_t offset,
       uint64_t length,
-      const org::xtreemfs::interfaces::XCap& xcap
+      const XCap& xcap
     );
 
-    bool getxattr( const std::string& name, std::string& out_value );
+    bool getxattr( const string& name, string& out_value );
+    bool listxattr( vector<string>& out_names );
 
-    bool listxattr( std::vector<std::string>& out_names );
-
-    ssize_t
+    ssize_t 
     read
     (
-      void* buffer,
-      size_t buffer_len,
+      void* buf,
+      size_t buflen,
       uint64_t offset,
-      const org::xtreemfs::interfaces::XCap& xcap
+      const XCap& xcap
     );
 
-    bool removexattr( const std::string& name );
+    bool removexattr( const string& name );
 
     bool
     setlk
@@ -87,7 +88,7 @@ namespace xtreemfs
       bool exclusive,
       uint64_t offset,
       uint64_t length,
-      const org::xtreemfs::interfaces::XCap& xcap
+      const XCap& xcap
     );
 
     bool
@@ -96,68 +97,40 @@ namespace xtreemfs
       bool exclusive,
       uint64_t offset,
       uint64_t length,
-      const org::xtreemfs::interfaces::XCap& xcap
+      const XCap& xcap
     );
 
     bool
     setxattr
     (
-      const std::string& name,
-      const std::string& value,
+      const string& name,
+      const string& value,
       int flags
     );
 
-    bool
-    sync
-    (
-      const org::xtreemfs::interfaces::XCap& xcap
-    );
-
-    bool
-    truncate
-    (
-      uint64_t offset,
-      org::xtreemfs::interfaces::XCap& xcap
-    );
-
-    bool
-    unlk
-    (
-      uint64_t offset,
-      uint64_t length,
-      const org::xtreemfs::interfaces::XCap& xcap
-    );
+    bool sync( const XCap& xcap );
+    bool truncate( uint64_t offset, XCap& xcap );
+    bool unlk( uint64_t offset, uint64_t length, const XCap& xcap );
 
     ssize_t
     write
     (
-      const void* buffer,
-      size_t buffer_len,
+      const void* buf,
+      size_t buflen,
       uint64_t offset,
-      const org::xtreemfs::interfaces::XCap& xcap
+      const XCap& xcap
     );
 
   private:
-    friend class Volume;
-
     class ReadBuffer;
     class ReadRequest;
     class ReadResponse;
     class WriteBuffer;
 
-
-    SharedFile
-    (
-      Log& log,
-      auto_Volume parent_volume,
-      const Path& path // The first, "authoritative" path
-                                        // used to open this file
-    );
-
-
-    Log& log;
-    auto_Volume parent_volume;
-    Path path;
+  private:
+    Volume& parent_volume; // This is not a new reference, since that would
+                           // create a reference cycle with Volume
+    Path path; // The first, "authoritative" path used to open this file
 
     uint32_t reader_count, writer_count;
     ssize_t selected_file_replica;

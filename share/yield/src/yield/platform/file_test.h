@@ -50,7 +50,7 @@ namespace yield
     class FileTestCase : public yunit::TestCase
     {
     public:
-      FileTestCase( const std::string& name, Volume* volume = NULL )
+      FileTestCase( const string& name, Volume* volume = NULL )
         : yunit::TestCase( name )
       {
         file = NULL;
@@ -162,7 +162,7 @@ namespace yield
         )
       )
       {
-        std::string value;
+        string value;
         get_file().getxattr( YIELD_PLATFORM_FILE_TEST_XATTR_NAME, value );
         ASSERT_EQUAL( value, YIELD_PLATFORM_FILE_TEST_XATTR_VALUE );
       }
@@ -184,12 +184,12 @@ namespace yield
         )
       )
       {
-        std::vector<std::string> names;
+        vector<string> names;
         get_file().listxattr( names );
         ASSERT_TRUE( names.size() >= 1 );
         for
         (
-          std::vector<std::string>::const_iterator name_i = names.begin();
+          vector<string>::const_iterator name_i = names.begin();
           name_i != names.end();
           name_i++
         )
@@ -295,7 +295,7 @@ namespace yield
         )
       )
       {
-        std::string value;
+        string value;
         get_file().getxattr( YIELD_PLATFORM_FILE_TEST_XATTR_NAME, value );
         ASSERT_EQUAL( value, YIELD_PLATFORM_FILE_TEST_XATTR_VALUE );
       }
@@ -374,7 +374,7 @@ namespace yield
     class FileTestSuite : public yunit::TestSuite
     {
     public:
-      FileTestSuite( const std::string& name )
+      FileTestSuite( const string& name )
         : TestSuite( name )
       {
         Volume* volume = new VolumeType;
