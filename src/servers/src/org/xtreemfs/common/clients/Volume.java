@@ -368,7 +368,7 @@ public class Volume {
     void rename(String src, String dest) throws IOException {
         RPCResponse response = null;
         try {
-            response = mrcClient.rename(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName+src),fixPath(volumeName+dest));
+            response = mrcClient.rename(mrcClient.getDefaultServerAddress(), userCreds, fixPath(volumeName), fixPath(src), fixPath(dest));
             response.get();
         } catch (MRCException ex) {
            throw wrapException(ex);

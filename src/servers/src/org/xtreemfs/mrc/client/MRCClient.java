@@ -269,10 +269,10 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
-    public RPCResponse link(InetSocketAddress server, UserCredentials credentials, String targetPath,
+    public RPCResponse link(InetSocketAddress server, UserCredentials credentials, String volumeName, String targetPath,
         String linkPath) {
         
-        linkRequest rq = new linkRequest(targetPath, linkPath);
+        linkRequest rq = new linkRequest(volumeName, targetPath, linkPath);
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override
@@ -418,10 +418,10 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
-    public RPCResponse<FileCredentialsSet> rename(InetSocketAddress server, UserCredentials credentials,
+    public RPCResponse<FileCredentialsSet> rename(InetSocketAddress server, UserCredentials credentials, String volumeName,
         String sourcePath, String targetPath) {
         
-        renameRequest rq = new renameRequest(sourcePath, targetPath);
+        renameRequest rq = new renameRequest(volumeName, sourcePath, targetPath);
         RPCResponse<FileCredentialsSet> r = sendRequest(server, rq.getTag(), rq,
             new RPCResponseDecoder<FileCredentialsSet>() {
                 
@@ -515,10 +515,10 @@ public class MRCClient extends ONCRPCClient {
         return r;
     }
     
-    public RPCResponse symlink(InetSocketAddress server, UserCredentials credentials, String targetPath,
+    public RPCResponse symlink(InetSocketAddress server, UserCredentials credentials, String volumeName, String targetPath,
         String linkPath) {
         
-        symlinkRequest rq = new symlinkRequest(targetPath, linkPath);
+        symlinkRequest rq = new symlinkRequest(volumeName, targetPath, linkPath);
         RPCResponse r = sendRequest(server, rq.getTag(), rq, new RPCResponseDecoder() {
             
             @Override

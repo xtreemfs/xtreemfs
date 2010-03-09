@@ -57,7 +57,7 @@ public class CreateSymLinkOperation extends MRCOperation {
         
         validateContext(rq);
         
-        final Path p = new Path(rqArgs.getLink_path());
+        final Path p = new Path(rqArgs.getVolume_name() + "/" + rqArgs.getLink_path());
         
         final StorageManager sMan = vMan.getStorageManagerByName(p.getComp(0));
         final PathResolver res = new PathResolver(sMan, p);

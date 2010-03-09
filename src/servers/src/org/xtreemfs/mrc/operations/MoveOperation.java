@@ -70,7 +70,7 @@ public class MoveOperation extends MRCOperation {
         
         validateContext(rq);
         
-        final Path sp = new Path(rqArgs.getSource_path());
+        final Path sp = new Path(rqArgs.getVolume_name() + "/" + rqArgs.getSource_path());
         
         final StorageManager sMan = vMan.getStorageManagerByName(sp.getComp(0));
         final PathResolver sRes = new PathResolver(sMan, sp);
@@ -85,7 +85,7 @@ public class MoveOperation extends MRCOperation {
                 .getParentsParentId(), rq.getDetails().userId, rq.getDetails().superUser,
             rq.getDetails().groupIds);
         
-        Path tp = new Path(rqArgs.getTarget_path());
+        Path tp = new Path(rqArgs.getVolume_name() + "/" + rqArgs.getTarget_path());
         
         // check arguments
         if (sp.getCompCount() == 1)

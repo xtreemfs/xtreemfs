@@ -302,9 +302,9 @@ public class MRCTest extends TestCase {
             new VivaldiCoordinates()));
         
         // create and test a symbolic link
-        invokeSync(client.symlink(mrcAddress, uc, volumeName + "/test.txt", volumeName + "/testAlias.txt"));
+        invokeSync(client.symlink(mrcAddress, uc, volumeName, "test.txt", "testAlias.txt"));
         String target = invokeSync(client.readlink(mrcAddress, uc, volumeName, "testAlias.txt"));
-        assertEquals(volumeName + "/test.txt", target);
+        assertEquals("test.txt", target);
     }
     
     public void testHardLink() throws Exception {
@@ -320,7 +320,7 @@ public class MRCTest extends TestCase {
             new VivaldiCoordinates()));
         
         // create a new link
-        invokeSync(client.link(mrcAddress, uc, volumeName + "/test1.txt", volumeName + "/test2.txt"));
+        invokeSync(client.link(mrcAddress, uc, volumeName, "test1.txt", "test2.txt"));
         
         // check whether both links refer to the same file
         Stat stat1 = invokeSync(client.getattr(mrcAddress, uc, volumeName, "test1.txt")).get(0);
@@ -350,8 +350,7 @@ public class MRCTest extends TestCase {
         // create two links to a directory
         invokeSync(client.mkdir(mrcAddress, uc, volumeName, "testDir1", 0));
         try {
-            invokeSync(client.link(mrcAddress, uc, volumeName + "/testDir1", volumeName
-                + "/testDir1/testDir2"));
+            invokeSync(client.link(mrcAddress, uc, volumeName, "testDir1", "testDir1/testDir2"));
             fail("links to directories should not be allowed");
         } catch (Exception exc) {
         }
@@ -402,8 +401,8 @@ public class MRCTest extends TestCase {
         
         // create some symlinks
         invokeSync(client.mkdir(mrcAddress, uc, volumeName, "dir", 0));
-        invokeSync(client.symlink(mrcAddress, uc, volumeName + "/test2.txt", volumeName + "/link"));
-        invokeSync(client.symlink(mrcAddress, uc, "somewhere", volumeName + "/link2"));
+        invokeSync(client.symlink(mrcAddress, uc, volumeName, volumeName + "/test2.txt", "link"));
+        invokeSync(client.symlink(mrcAddress, uc, volumeName, "somewhere", "link2"));
         
         // open a symlink
         FileCredentials creds = invokeSync(client.open(mrcAddress, uc, volumeName, "link",
@@ -503,77 +502,74 @@ public class MRCTest extends TestCase {
         // move some files and directories
         
         // file -> none (create w/ different name)
-        invokeSync(client.rename(mrcAddress, uc, volumeName + "/test.txt", volumeName + "/mainDir/bla.txt"));
+        invokeSync(client.rename(mrcAddress, uc, volumeName, "test.txt", "mainDir/bla.txt"));
         assertTree(mrcAddress, uid, gids, volumeName, "", "mainDir/bla.txt", "blub.txt", "mainDir",
             "mainDir/subDir", "mainDir/subDir/newDir");
         
         // file -> file (overwrite)
-        invokeSync(client.rename(mrcAddress, uc, volumeName + "/mainDir/bla.txt", volumeName + "/blub.txt"));
+        invokeSync(client.rename(mrcAddress, uc, volumeName, "mainDir/bla.txt", "blub.txt"));
         
         assertTree(mrcAddress, uid, gids, volumeName, "", "blub.txt", "mainDir", "mainDir/subDir",
             "mainDir/subDir/newDir");
         
         // file -> none (create w/ same name)
-        invokeSync(client.rename(mrcAddress, uc, volumeName + "/blub.txt", volumeName + "/mainDir/blub.txt"));
+        invokeSync(client.rename(mrcAddress, uc, volumeName, "blub.txt", "mainDir/blub.txt"));
         assertTree(mrcAddress, uid, gids, volumeName, "", "mainDir/blub.txt", "mainDir", "mainDir/subDir",
             "mainDir/subDir/newDir");
         
         // file -> dir (invalid operation)
         try {
-            invokeSync(client.rename(mrcAddress, uc, volumeName + "/mainDir/blub.txt", volumeName
-                + "/mainDir/subDir"));
+            invokeSync(client.rename(mrcAddress, uc, volumeName, "mainDir/blub.txt", "mainDir/subDir"));
             fail("move file -> directory should not be possible");
         } catch (MRCException exc) {
         }
         
         // file -> file (same path, should have no effect)
-        invokeSync(client.rename(mrcAddress, uc, volumeName + "/mainDir/blub.txt", volumeName
-            + "/mainDir/blub.txt"));
+        invokeSync(client.rename(mrcAddress, uc, volumeName, "mainDir/blub.txt", "mainDir/blub.txt"));
         assertTree(mrcAddress, uid, gids, volumeName, "", "mainDir/blub.txt", "mainDir", "mainDir/subDir",
             "mainDir/subDir/newDir");
         
         // file -> file (same directory)
-        invokeSync(client.rename(mrcAddress, uc, volumeName + "/mainDir/blub.txt", volumeName
-            + "/mainDir/blub2.txt"));
+        invokeSync(client.rename(mrcAddress, uc, volumeName, "mainDir/blub.txt", "mainDir/blub2.txt"));
         assertTree(mrcAddress, uid, gids, volumeName, "", "mainDir/blub2.txt", "mainDir", "mainDir/subDir",
             "mainDir/subDir/newDir");
         
         // dir -> none (create w/ same name)
-        invokeSync(client.rename(mrcAddress, uc, volumeName + "/mainDir/subDir", volumeName + "/subDir"));
+        invokeSync(client.rename(mrcAddress, uc, volumeName, "mainDir/subDir", "subDir"));
         
         assertTree(mrcAddress, uid, gids, volumeName, "", "mainDir/blub2.txt", "mainDir", "subDir",
             "subDir/newDir");
         
         // dir -> dir (overwrite, should fail because of non-empty subdirectory)
         try {
-            invokeSync(client.rename(mrcAddress, uc, volumeName + "/subDir/newDir", volumeName + "/subDir"));
+            invokeSync(client.rename(mrcAddress, uc, volumeName, "subDir/newDir", "subDir"));
             fail("moved directory to non-empty directory");
         } catch (MRCException exc) {
         }
         
         // dir -> dir (overwrite)
         invokeSync(client.unlink(mrcAddress, uc, volumeName, "mainDir/blub2.txt"));
-        invokeSync(client.rename(mrcAddress, uc, volumeName + "/subDir", volumeName + "/mainDir"));
+        invokeSync(client.rename(mrcAddress, uc, volumeName, "subDir", "mainDir"));
         assertTree(mrcAddress, uid, gids, volumeName, "", "mainDir", "mainDir/newDir");
         
         // dir -> volume (should fail because volume can't be overwritten)
         try {
-            invokeSync(client.rename(mrcAddress, uc, volumeName + "/mainDir/newDir", volumeName));
+            invokeSync(client.rename(mrcAddress, uc, volumeName, "mainDir/newDir", ""));
             fail("move overwrote volume root");
         } catch (MRCException exc) {
         }
         
         // dir -> invalid volume (should fail)
         try {
-            invokeSync(client.rename(mrcAddress, uc, volumeName, "somewhere"));
+            invokeSync(client.rename(mrcAddress, uc, volumeName, "", "somewhere"));
             fail("moved to invalid volume");
         } catch (MRCException exc) {
         }
         
         assertTree(mrcAddress, uid, gids, volumeName, "", "mainDir", "mainDir/newDir");
         
-        invokeSync(client.symlink(mrcAddress, uc, volumeName + "/mainDir", volumeName + "/link"));
-        invokeSync(client.rename(mrcAddress, uc, volumeName + "/link", volumeName + "/newlink"));
+        invokeSync(client.symlink(mrcAddress, uc, volumeName, "mainDir", "link"));
+        invokeSync(client.rename(mrcAddress, uc, volumeName, "link", "newlink"));
         
     }
     
@@ -754,8 +750,8 @@ public class MRCTest extends TestCase {
         invokeSync(client.unlink(mrcAddress, uc1, posixVolName, "stickyDir/newfile.txt"));
         invokeSync(client.open(mrcAddress, uc3, posixVolName, "stickyDir/newfile.txt",
             FileAccessManager.O_CREAT, 0, 0, new VivaldiCoordinates()));
-        invokeSync(client.rename(mrcAddress, uc1, posixVolName + "/stickyDir/newfile.txt", posixVolName
-            + "/stickyDir/newfile2.txt"));
+        invokeSync(client.rename(mrcAddress, uc1, posixVolName, "stickyDir/newfile.txt",
+            "stickyDir/newfile2.txt"));
         
         // create a file and set sticky bit on the directory; now, only the
         // owner should be allowed to delete/rename the nested file
@@ -770,14 +766,14 @@ public class MRCTest extends TestCase {
         } catch (MRCException exc) {
         }
         try {
-            invokeSync(client.rename(mrcAddress, uc1, posixVolName + "/stickyDir/newfile.txt", posixVolName
-                + "/stickyDir/newfile3.txt"));
+            invokeSync(client.rename(mrcAddress, uc1, posixVolName, "stickyDir/newfile.txt",
+                "stickyDir/newfile3.txt"));
             fail("access should have been denied due to insufficient renaming permissions (sticky bit)");
         } catch (MRCException exc) {
         }
         
-        invokeSync(client.rename(mrcAddress, uc2, posixVolName + "/stickyDir/newfile.txt", posixVolName
-            + "/stickyDir/newfile3.txt"));
+        invokeSync(client.rename(mrcAddress, uc2, posixVolName, "stickyDir/newfile.txt",
+            "stickyDir/newfile3.txt"));
         invokeSync(client.unlink(mrcAddress, uc2, posixVolName, "stickyDir/newfile3.txt"));
     }
     
